@@ -72,21 +72,32 @@
 	act_message(user, src, MSG_SELF(span_notice("You cut the load limiter cable.")), MSG_OTHERS(span_notice("%U% cuts a cable in %T%.")))
 	return ITEM_INTERACT_SUCCESS
 
-EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
-	INTERACT_ITEM("Insert key", PROC_REF(interaction_engine_key)), \
-	INTERACT_ALT("Remove key", PROC_REF(interaction_engine_remove_key)), \
-	INTERACT_VERB("Start engine", PROC_REF(engine_start_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/engine/proc/pred_engine_stopped, "the engine is already running")), \
-	INTERACT_VERB("Stop engine", PROC_REF(engine_stop_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/engine/proc/pred_engine_running, "the engine is already stopped")), \
-	INTERACT_VERB("Remove key", PROC_REF(engine_remove_key), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/engine/proc/pred_engine_has_key, null)), \
-)
+CAPABILITIES(/obj/vehicle/train/engine)
+	op("engine_key", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Insert key"), then(PROC_REF(interaction_engine_key)))
+	op("engine_remove_key_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Remove key"), then(PROC_REF(interaction_engine_remove_key)))
+	op("engine_start_engine", menu(), label("Start engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), FALSE, because = MSG(vehicle/already_running))), then(PROC_REF(engine_start_engine)))
+	op("engine_stop_engine", menu(), label("Stop engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), TRUE, because = MSG(vehicle/already_stopped))), then(PROC_REF(engine_stop_engine)))
+	op("engine_remove_key", menu(), label("Remove key"), needs(req_on_holder_turf(), req_capable(), req(PROC_REF(pred_engine_has_key_holds), because = PROC_REF(pred_engine_has_key_refusal))), then(PROC_REF(engine_remove_key)))
+
+/// Requirement (was REQ pred_engine_has_key): the legacy check answers TRUE to pass.
+/obj/vehicle/train/engine/proc/pred_engine_has_key_holds(datum/act/op/A)
+	var/answer = pred_engine_has_key(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why pred_engine_has_key refuses: the legacy check text, else the clause reason.
+/obj/vehicle/train/engine/proc/pred_engine_has_key_refusal(datum/act/op/A)
+	var/answer = pred_engine_has_key(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 /// Old attackby: the key goes in the ignition (a key is always used up here, even with one already in).
-/obj/vehicle/train/engine/proc/interaction_engine_key(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/vehicle/train/engine/proc/interaction_engine_key(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W, key_type))
-		return FALSE
+		return OP_DECLINE
 	if(!key)
 		move_into(src, nameof(src.key), W, user)
-	return TRUE
+	return OP_OK
 
 /*
 //cargo trains are open topped, so there is a chance the projectile will hit the mob ridding the train instead
@@ -194,23 +205,27 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 /obj/vehicle/train/engine/click_ctrl(mob/user)
 	if(Adjacent(user))
 		if(on)
-			engine_stop_engine(user)
+			engine_stop_for(user)
 			return CLICK_ACTION_SUCCESS
 
-		engine_start_engine(user)
+		engine_start_for(user)
 		return CLICK_ACTION_SUCCESS
 
 	return ..()
 
 /// Old click_alt: pull the key when adjacent.
-/obj/vehicle/train/engine/proc/interaction_engine_remove_key(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/engine/proc/interaction_engine_remove_key(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!Adjacent(user))
-		return FALSE
-	engine_remove_key(user)
-	return TRUE
+		return OP_DECLINE
+	engine_remove_key(A)
+	return OP_OK
 
 /// Old verb "Start engine".
-/obj/vehicle/train/engine/proc/engine_start_engine(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/engine/proc/engine_start_engine(datum/act/op/A)
+	return engine_start_for(A.actor)
+
+/obj/vehicle/train/engine/proc/engine_start_for(mob/user)
 	if(!ishuman(user))
 		return
 
@@ -226,7 +241,10 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 			to_chat(user, "[src]'s engine won't start.")
 
 /// Old verb "Stop engine".
-/obj/vehicle/train/engine/proc/engine_stop_engine(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/engine/proc/engine_stop_engine(datum/act/op/A)
+	return engine_stop_for(A.actor)
+
+/obj/vehicle/train/engine/proc/engine_stop_for(mob/user)
 	if(!ishuman(user))
 		return
 
@@ -235,7 +253,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 		to_chat(user, "You stop [src]'s engine.")
 
 /// Old verb "Remove key".
-/obj/vehicle/train/engine/proc/engine_remove_key(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/engine/proc/engine_remove_key(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ishuman(user))
 		return
 
@@ -534,12 +553,6 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/trolley_tank, TYPE_PROC_REF(/atom, ap
 	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
 
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
-/obj/vehicle/train/engine/proc/pred_engine_running(mob/actor, atom/target, obj/item/held)
-	return on
-
-/obj/vehicle/train/engine/proc/pred_engine_stopped(mob/actor, atom/target, obj/item/held)
-	return !on
-
 /obj/vehicle/train/engine/proc/pred_engine_has_key(mob/actor, atom/target, obj/item/held)
 	return !!key
 

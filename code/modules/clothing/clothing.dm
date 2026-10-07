@@ -94,10 +94,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_over
 		rig_self_detach()
 
 /// Old click_alt: take off an attached accessory. Falls through to the default alt-click, as before.
-/obj/item/clothing/proc/clothing_remove_accessory_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/proc/clothing_remove_accessory_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(Adjacent(user) || user == src.loc)
 		removetie_proc(user)
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	. = ..()
@@ -449,24 +450,24 @@ TYPE_TABLE(/obj/item/clothing/gloves/ring, fit_spec, list(REQ_FITS_BODYTYPES(lis
 	pickup_sound = SFX_ITEMS_PICKUP_HAT
 	helmet_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head, \
-	INTERACT_SELF(null, PROC_REF(head_light_self)), \
-	INTERACT_ROBOT("Pick up hat", PROC_REF(head_robot_pick_up)), \
-	INTERACT_SILICON("Wear hat", PROC_REF(head_silicon_wear)), \
-)
+CAPABILITIES(/obj/item/clothing/head)
+	op("head_light_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Head light self"), then(PROC_REF(head_light_self)))
+	op("head_robot_pick_up", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), priority(OP_PRIORITY_DEFAULT - 1), label("Pick up hat"), then(PROC_REF(head_robot_pick_up)))
+	op("head_silicon_wear", remote(), priority(OP_PRIORITY_DEFAULT - 2), label("Wear hat"), then(PROC_REF(head_silicon_wear)))
 
 /// Old attack_self: toggle the helmet light. Returns FALSE as the old body returned nothing,
 /// so subtypes' legacy attack_self bodies that ran after ..() still run.
-/obj/item/clothing/head/proc/head_light_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/proc/head_light_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(light_range)
 		if(!isturf(user.loc))
 			to_chat(user, "You cannot toggle the light while in this [user.loc]")
-			return FALSE
+			return OP_DECLINE
 		update_flashlight(user)
 		to_chat(user, "You [light_on ? "enable" : "disable"] the helmet light.")
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/head/proc/update_flashlight(mob/user = null)
 	set_light_on(!light_on)
@@ -478,8 +479,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	user.update_mob_action_buttons()
 
 /// Old attack_ai: a silicon wears the hat; otherwise the default.
-/obj/item/clothing/head/proc/head_silicon_wear(mob/user, obj/item/held, datum/interaction/interaction)
-	return mob_wear_hat(user) ? TRUE : FALSE
+/obj/item/clothing/head/proc/head_silicon_wear(datum/act/op/A)
+	var/mob/user = A.actor
+	return mob_wear_hat(user) ? OP_OK : OP_DECLINE
 
 /obj/item/clothing/head/attack_generic(mob/user)
 	if(!mob_wear_hat(user))
@@ -637,10 +639,28 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/head, TYPE_PROC_REF(/atom, appearance
 	var/list/inside_emotes
 	COOLDOWN_DECLARE(recent_squish)
 
+MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
+
 CAPABILITIES(/obj/item/clothing/shoes)
 	owns_one(nameof(shoes), /obj/item/clothing/shoes)
 	owns_one(nameof(squeak), /datum/squeak)
 	owns_one(nameof(holding), /obj/item)
+	op("drag", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 2), label("Drop onto"), then(PROC_REF(interaction_drag)))
+	op("shoes_draw_knife_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Shoes draw knife hand"), then(PROC_REF(shoes_draw_knife_hand)))
+	op("shoes_shake_out_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Shoes shake out self"), then(PROC_REF(shoes_shake_out_self)))
+	op("shoes_stuff_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Shoes stuff item"), then(PROC_REF(shoes_stuff_item)))
+	op("shoes_toggle_layer_verb", menu(), label("Switch Shoe Layer"), needs(carried(), req_not(req_is(nameof(shoes_under_pants), -1), because = MSG(shoes/layer_locked))), then(PROC_REF(shoes_toggle_layer_verb)))
+	op("shoes_draw_knife_verb", menu(), label("Draw Boot Knife"), needs(carried(), req(PROC_REF(pred_holding_knife_holds), because = PROC_REF(pred_holding_knife_refusal))), then(PROC_REF(shoes_draw_knife_verb)))
+
+/// Requirement (was REQ_ON pred_holding_knife): the legacy check answers TRUE to pass.
+/obj/item/clothing/shoes/proc/pred_holding_knife_holds(datum/act/op/A)
+	var/answer = pred_holding_knife(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why pred_holding_knife refuses: the legacy check text, else the clause reason.
+/obj/item/clothing/shoes/proc/pred_holding_knife_refusal(datum/act/op/A)
+	var/answer = pred_holding_knife(A.actor, src, A.held)
+	return istext(answer) ? answer : "there is no knife in it"
 
 TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_TESHARI, SPECIES_VOX))))
 
@@ -655,7 +675,8 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 
 
 /// Old verb "Draw Boot Knife" (offered while a knife is held).
-/obj/item/clothing/shoes/proc/shoes_draw_knife_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/shoes/proc/shoes_draw_knife_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		draw_knife(user)
 
@@ -690,14 +711,15 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	return
 
 /// Old attack_hand: draw the knife held in worn shoes.
-/obj/item/clothing/shoes/proc/shoes_draw_knife_hand(mob/living/M, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/shoes/proc/shoes_draw_knife_hand(datum/act/op/A)
+	var/mob/living/M = A.actor
 	if(can_hold_knife == 1 && holding && src.loc == M)
 		draw_knife(M)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /// Old verb "Switch Shoe Layer".
-/obj/item/clothing/shoes/proc/shoes_toggle_layer_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/shoes/proc/shoes_toggle_layer_verb(datum/act/op/A)
 	shoes_under_pants = !shoes_under_pants
 	update_icon()
 
@@ -834,8 +856,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 		M.update_inv_shoes()
 
 /// Old attack_self: shake micros out. Runs the clothing circuit first, as the old ..() did.
-/obj/item/clothing/shoes/proc/shoes_shake_out_self(mob/user, obj/item/held, datum/interaction/interaction)
-	clothing_circuit_self(user, held, interaction)
+/obj/item/clothing/shoes/proc/shoes_shake_out_self(datum/act/op/A)
+	var/mob/user = A.actor
+	clothing_circuit_self(A)
 	for(var/mob/M in contents_of(src))
 		if(isvoice(M)) //Don't knock voices out!
 			continue
@@ -1113,13 +1136,28 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, TYPE_PROC_REF(/atom, appearance
 
 	update_icon_define_digi = "icons/inventory/uniform/mob_digi.dmi"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/under, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(under_worn_hand)), \
-	INTERACT_VERB("Toggle Suit Sensors", PROC_REF(under_toggle_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Roll Down Jumpsuit", PROC_REF(under_rollsuit_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/clothing/under/proc/pred_can_roll_down, "it can't be rolled down")), \
-	INTERACT_VERB("Roll Up Sleeves", PROC_REF(under_rollsleeves_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/clothing/under/proc/pred_can_roll_sleeves, "its sleeves can't be rolled")), \
-	INTERACT_VERB("Holster", PROC_REF(under_holster_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/clothing/under/proc/pred_has_holster, "it has no holster")), \
-)
+MSG_DEF_SELF(under/no_roll_down, "It can't be rolled down.")
+MSG_DEF_SELF(under/no_roll_sleeves, "Its sleeves can't be rolled.")
+
+CAPABILITIES(/obj/item/clothing/under)
+	op("under_worn_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Under worn hand"), then(PROC_REF(under_worn_hand)))
+	op("under_toggle_verb", menu(), label("Toggle Suit Sensors"), needs(carried()), then(PROC_REF(under_toggle_verb)))
+	op("under_rollsuit_verb", menu(), label("Roll Down Jumpsuit"), needs(carried(), req_not(req_is(nameof(rolled_down), -1), because = MSG(under/no_roll_down))), then(PROC_REF(under_rollsuit_verb)))
+	op("under_rollsleeves_verb", menu(), label("Roll Up Sleeves"), needs(carried(), req_not(req_is(nameof(rolled_sleeves), -1), because = MSG(under/no_roll_sleeves))), then(PROC_REF(under_rollsleeves_verb)))
+	op("under_holster_verb", menu(), label("Holster"), needs(carried(), req(PROC_REF(pred_has_holster_holds), because = PROC_REF(pred_has_holster_refusal))), then(PROC_REF(under_holster_verb)))
+
+
+
+/// Requirement (was REQ_ON pred_has_holster): the legacy check answers TRUE to pass.
+/obj/item/clothing/under/proc/pred_has_holster_holds(datum/act/op/A)
+	var/answer = pred_has_holster(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why pred_has_holster refuses: the legacy check text, else the clause reason.
+/obj/item/clothing/under/proc/pred_has_holster_refusal(datum/act/op/A)
+	var/answer = pred_has_holster(A.actor, src, A.held)
+	return istext(answer) ? answer : "it has no holster"
+
 
 /// Requirement: the uniform can be rolled down (replaces removing the verb at Initialize).
 /obj/item/clothing/under/proc/pred_can_roll_down(mob/actor, atom/target, obj/item/held)
@@ -1131,21 +1169,24 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 
 /// Requirement: a holster is attached (replaces the holster adding its verb to the uniform).
 /obj/item/clothing/under/proc/pred_has_holster(mob/actor, atom/target, obj/item/held)
-	return !!(locate_in_list(accessories, /obj/item/clothing/accessory/holster))
-
-/// Old holster verb the holster added to the uniform: holster or draw with the attached holster.
-/obj/item/clothing/under/proc/under_holster_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/item/clothing/accessory/holster/H = locate_in_list(accessories, /obj/item/clothing/accessory/holster)
-	if(H)
-		H.holster_quick_holster_verb(user)
-
-/// Old attack_hand: a worn uniform isn't pulled off by a click; its accessories get the touch.
-/obj/item/clothing/under/proc/under_worn_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if ((ishuman(user) || issmall(user)) && src.loc == user)
-		if(LAZYLEN(accessories))
-			clothing_accessory_hand(user, held, interaction)
+	for(var/obj/item/clothing/accessory/holster/H in accessories)
 		return TRUE
 	return FALSE
+
+/// Old holster verb the holster added to the uniform: holster or draw with the attached holster.
+/obj/item/clothing/under/proc/under_holster_verb(datum/act/op/A)
+	var/obj/item/clothing/accessory/holster/H = locate_in_list(accessories, /obj/item/clothing/accessory/holster)
+	if(H)
+		H.holster_quick_holster_verb(A)
+
+/// Old attack_hand: a worn uniform isn't pulled off by a click; its accessories get the touch.
+/obj/item/clothing/under/proc/under_worn_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	if ((ishuman(user) || issmall(user)) && src.loc == user)
+		if(LAZYLEN(accessories))
+			clothing_accessory_hand(A)
+		return OP_OK
+	return OP_DECLINE
 
 // ALLOW(init/INSTANCE_STATE): takes the sensor setting its wearer prefers and checks its rolled sprite
 /obj/item/clothing/under/Initialize(mapload)
@@ -1315,11 +1356,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 
 
 /// Old verb "Toggle Suit Sensors".
-/obj/item/clothing/under/proc/under_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/under/proc/under_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	set_sensors(user)
 
 /// Old verb "Roll Down Jumpsuit".
-/obj/item/clothing/under/proc/under_rollsuit_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/under/proc/under_rollsuit_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
@@ -1355,7 +1398,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	worn_protection_changed()
 
 /// Old verb "Roll Up Sleeves".
-/obj/item/clothing/under/proc/under_rollsleeves_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/under/proc/under_rollsleeves_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
@@ -1477,16 +1521,17 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 
 /// Old attack_robot: ran ..() first (attack_ai: wear the hat, else the item default), then an
 /// adjacent cyborg starts picking the hat up.
-/obj/item/clothing/head/proc/head_robot_pick_up(mob/living/silicon/robot/user, obj/item/held, datum/interaction/interaction)
-	if(!head_silicon_wear(user, held, interaction))
+/obj/item/clothing/head/proc/head_robot_pick_up(datum/act/op/A)
+	var/mob/living/silicon/robot/user = A.actor
+	if(!mob_wear_hat(user))
 		actor_use_default(/datum/input_adapter/ai, user, src)
 
 	if(!Adjacent(user))
-		return TRUE
+		return OP_OK
 
 	balloon_alert(user, "picking up hat...")
 	task_timed(user, 3 SECONDS, src, src, PROC_REF(robot_hat_done), list(user))
-	return TRUE
+	return OP_OK
 
 /obj/item/clothing/head/proc/robot_hat_done(mob/living/silicon/robot/user)
 	if(!Adjacent(user) || user.incapacitated())
@@ -1497,22 +1542,15 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 /obj/item/clothing
 	MATERIAL_BULK(MAT_FIBERS, 50)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
-	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(shoes_draw_knife_hand)), \
-	INTERACT_USE(null, PROC_REF(shoes_shake_out_self)), \
-	INTERACT_ITEM(null, PROC_REF(shoes_stuff_item)), \
-	INTERACT_VERB("Switch Shoe Layer", PROC_REF(shoes_toggle_layer_verb), REQ_IN_INVENTORY, REQ_BECAUSE(REQ_NOT(REQ_FIELD_EQ("shoes_under_pants", -1)), "it cannot be worn above your suit")), \
-	INTERACT_VERB("Draw Boot Knife", PROC_REF(shoes_draw_knife_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/proc/pred_holding_knife, "there is no knife in it")), \
-)
-
 /// Old MouseDrop_T.
-/obj/item/clothing/shoes/proc/interaction_drag(mob/living/user, mob/living/target, datum/interaction/interaction)
-	if(!istype(user)) return FALSE // If the user passed in isn't a living mob, exit
-	if(target != user) return FALSE // If the user didn't drag themselves, exit
-	if(user.incapacitated() || user?.buckled_to()) return FALSE // If user is incapacitated or src?.buckled_to(), exit
-	if(get_holder_of_type(src, /mob/living/carbon/human) == user) return FALSE // No jumping into your own equipment
-	if(ishuman(user) && user.get_effective_size() > 0.25) return FALSE // Only micro characters
+/obj/item/clothing/shoes/proc/interaction_drag(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/target = A.held
+	if(!istype(user)) return OP_DECLINE // If the user passed in isn't a living mob, exit
+	if(target != user) return OP_DECLINE // If the user didn't drag themselves, exit
+	if(user.incapacitated() || user?.buckled_to()) return OP_DECLINE // If user is incapacitated or src?.buckled_to(), exit
+	if(get_holder_of_type(src, /mob/living/carbon/human) == user) return OP_DECLINE // No jumping into your own equipment
+	if(ishuman(user) && user.get_effective_size() > 0.25) return OP_DECLINE // Only micro characters
 
 	var/full = 0
 	for(var/mob/M in contents_of(src))
@@ -1525,13 +1563,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 		to_chat(user, span_warning("You crawl into \the [src]!"))
 		user.forceMove(src)
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing
 	COOLDOWN_DECLARE(struggle_cooldown)
 
 /// Old attackby ("sideways" override): stuff a micro or a knife into the shoes.
-/obj/item/clothing/shoes/proc/shoes_stuff_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/clothing/shoes/proc/shoes_stuff_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I,/obj/item/holder/micro))
 		var/full = 0
 		for(var/mob/M in contents_of(src))
@@ -1548,20 +1588,20 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 				to_chat(M, span_warning("[user] stuffs you into \the [src]!"))
 				M.forceMove(src)
 				to_chat(user, span_notice("You stuff \the [M] into \the [src]!"))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if((can_hold_knife == 1) && (istype(I, /obj/item/material/shard) || \
 		istype(I, /obj/item/material/butterfly) || \
 		istype(I, /obj/item/material/kitchen/utensil) || \
 		istype(I, /obj/item/material/knife/tacknife)))
 		if(holding)
 			to_chat(user, span_warning("\The [src] is already holding \a [holding]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!move_into(src, nameof(src.holding), I, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " shoves %I% into %T%."), item = I)
 		update_icon()
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/clothing/gloves
 	sprite_sheets = list(

@@ -44,7 +44,7 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 	else
 		return TRUE
 
-// Added ahead of the sink's own interactions (its declare_interactions() override in watercloset.dm).
+// Added ahead of the sink's own ops (its CAPABILITIES block in watercloset.dm).
 
 /// Old attackby: wash the soggy item before it can interact with the sink.
 /obj/structure/sink/proc/sink_wash_gurgled_item(datum/act/op/A)

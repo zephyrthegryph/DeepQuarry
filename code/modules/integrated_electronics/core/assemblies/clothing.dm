@@ -48,6 +48,10 @@ CAPABILITIES(/obj/item/clothing)
 	verb_entry(/obj/item/clothing/proc/change_color, when = nameof(polychromic))
 	drag_onto(PROC_REF(mousedrop_input))
 	param(nameof(default_material), pos = 1)
+	op("clothing_accessory_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), then(PROC_REF(clothing_accessory_item)))
+	op("clothing_accessory_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), then(PROC_REF(clothing_accessory_hand)))
+	op("clothing_remove_accessory_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 3), label("Alternate use"), then(PROC_REF(clothing_remove_accessory_alt)))
+	op("clothing_circuit_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), then(PROC_REF(clothing_circuit_self)))
 
 /obj/item/clothing/examine(mob/user)
 	. = ..()
@@ -71,18 +75,19 @@ CAPABILITIES(/obj/item/clothing)
 	return IC.attackby(I, user)
 
 /// Old attack_self: work the integrated circuit. FALSE when there is none, so self-use falls through.
-/obj/item/clothing/proc/clothing_circuit_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/proc/clothing_circuit_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(helmet_handling)
-		return FALSE
+		return OP_DECLINE
 	if(IC)
 		if(IC.opened)
 			IC.attack_self(user)
 		else
 			action_circuit.do_work()
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 // Does most of the repeatative setup.
 /obj/item/clothing/proc/setup_integrated_circuit(new_type)

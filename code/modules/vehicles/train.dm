@@ -140,13 +140,15 @@ APPEARANCE_TEMPLATE(/obj/vehicle/train, "{initial(icon_state)}{open?_open:}")
 	return OP_OK
 
 /// Shared trolley step (security and rover trolleys): wirecutters on an open panel toggle the load limiter.
-/obj/vehicle/train/proc/interaction_train_limiter_cable(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/vehicle/train/proc/interaction_train_limiter_cable(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!open || !W.has_tool_quality(TOOL_WIRECUTTER))
-		return FALSE
+		return OP_DECLINE
 	passenger_allowed = !passenger_allowed
 	act_message(user, src, MSG_SELF(span_notice("You [passenger_allowed ? "cut" : "mend"] the load limiter cable.")), \
 		MSG_OTHERS(span_notice("%U% [passenger_allowed ? "cuts" : "mends"] a cable in %T%.")))
-	return TRUE
+	return OP_OK
 
 /// Old verb "Unlatch".
 /obj/vehicle/train/proc/train_unlatch(datum/act/op/A)
@@ -271,8 +273,11 @@ APPEARANCE_TEMPLATE(/obj/vehicle/train, "{initial(icon_state)}{open?_open:}")
 /obj/vehicle/train/proc/lead() as /obj/vehicle/train
 	return lead
 
+MSG_DEF_SELF(vehicle/already_running, "The engine is already running.")
+MSG_DEF_SELF(vehicle/already_stopped, "The engine is already stopped.")
+
 CAPABILITIES(/obj/vehicle/train)
 	links(/obj/vehicle/train::lead, /obj/vehicle/train::tow)
-	op("train_drag", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Load"), then(PROC_REF(interaction_train_drag)))
-	op("train_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction train hand"), then(PROC_REF(interaction_train_hand)))
+	op("train_drag", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 2), label("Load"), then(PROC_REF(interaction_train_drag)))
+	op("train_hand", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Interaction train hand"), then(PROC_REF(interaction_train_hand)))
 	op("train_unlatch", menu(), label("Unlatch"), needs(req_adjacent(), req_capable(), req(PROC_REF(pred_train_unlatchable_holds), because = PROC_REF(pred_train_unlatchable_refusal))), then(PROC_REF(train_unlatch)))

@@ -19,10 +19,10 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 OM_FIELD(/obj/item/uv_light, on, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/uv_light, PERIODIC_SLOW, "on")
 
 CAPABILITIES(/obj/item/uv_light)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	every(2 SECONDS, then(PROC_REF(uv_light_step)), when = nameof(on))
 
 /// Old attack_self.
 /obj/item/uv_light/proc/interaction_self(datum/act/op/A)
@@ -53,7 +53,7 @@ CAPABILITIES(/obj/item/uv_light)
 			if(dq_get_fluorescent(I) == 2) dq_set_fluorescent(I, 1)
 		rel_clear(src, nameof(reset_objects))
 
-/obj/item/uv_light/periodic_step()
+/obj/item/uv_light/proc/uv_light_step(datum/act/timer/tick)
 	clear_last_scan()
 	if(on)
 		step_alpha = round(255/range)

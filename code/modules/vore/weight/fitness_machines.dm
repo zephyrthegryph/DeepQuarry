@@ -12,11 +12,12 @@
 	var/weightloss_power = 1
 
 // Ungated, as the old attack_hand overrides never called ..(): the machinery operability checks never applied.
-EXTEND_INTERACTIONS(/obj/machinery/fitness, INTERACT_HAND_UNGATED("Work out", PROC_REF(fitness_workout_hand)))
+CAPABILITIES(/obj/machinery/fitness)
+	op("fitness_workout_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Work out"), then(PROC_REF(fitness_workout_hand)))
 
 /// Old attack_hand: work out, burning nutrition and weight.
-/obj/machinery/fitness/proc/fitness_workout_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/machinery/fitness/proc/fitness_workout_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.nutrition < 70)
 		to_chat(user, span_notice("You need more energy to workout with the [src]!"))
 
@@ -32,6 +33,7 @@ EXTEND_INTERACTIONS(/obj/machinery/fitness, INTERACT_HAND_UNGATED("Work out", PR
 		to_chat(user, span_notice("[message]."))
 		for(var/s in workout_sounds)
 			playsound(src, s, 50, 1)
+	return OP_OK
 
 /obj/machinery/fitness/punching_bag
 	name = "punching bag"
@@ -112,14 +114,16 @@ CAPABILITIES(/obj/machinery/fitness/heavy)
 	idle_power_usage = 0
 	active_power_usage = 0
 
-EXTEND_INTERACTIONS(/obj/machinery/scale, INTERACT_HAND_UNGATED("Weigh", PROC_REF(scale_weigh_hand)))
+CAPABILITIES(/obj/machinery/scale)
+	op("scale_weigh_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Weigh"), then(PROC_REF(scale_weigh_hand)))
 
 /// Old attack_hand: read out the weight of whoever stands on it.
-/obj/machinery/scale/proc/scale_weigh_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/machinery/scale/proc/scale_weigh_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.loc != loc)
 		to_chat(user, span_notice("You need to be standing on top of the scale for it to work!"))
-		return
+		return OP_OK
 	if(user.weight) //Just in case.
 		var/kilograms = round(text2num(user.weight),4) / 2.20463
 		act_message(src, user, others = span_notice("%U% displays a reading of [user.weight]lb / [kilograms]kg when %T% stands on it."))
+	return OP_OK

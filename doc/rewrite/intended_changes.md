@@ -1944,8 +1944,7 @@ Pinned by `dq_life_om_tests.dm` (statuses, immunity, godmode, voluntary sleep) a
 * `EFFECT_CAN_MOVE` and `EFFECT_CAN_ACT`, OM composites nothing outside tests read, are gone. Feeding `STAT_CAN_ACT` from the statuses ("one stun
   path") is a separate step: it changes what ops refuse.
 * Life frames run under the kernel test clock again (`test_time()` drives the Life sweep, as the OM test scheduler ran the pipeline).
-/^>>>>>>> origin/master$/d
-## Body migration, slice 5: surgery steps are ops (rewrite/body-full)
+/^## Body migration, slice 5: surgery steps are ops (rewrite/body-full)
 
 Pinned by `dq_body_pin_surgery_incision` (a scalpel click on a lying patient on an operating table runs the incision to an outcome; green on the old
 code first) and the existing `dq_surgery_*` tests. Each `/datum/surgical_step` is an op `surgery_<step>` on the human (`code/modules/surgery/surgery_ops.dm`):
@@ -2421,3 +2420,4 @@ underlays of every creatable subtype of each converted chain, recorded from the 
 * **Tanks**: the pressure check runs while the tank is leaking, damaged or `handled` (set in equipped(), cleared in dropped() when no mob holds it) instead of testing `ismob(loc)` each run.
 * **Ticker reboot countdown and beam / mini hud ticks** re-arm with `after()` (a plain datum has no type-level every()).
 * **Tape recorder**: a recorder whose tape is missing or full when its tick runs now stops recording.
+- **Clothing, vore, vehicle and detective-work sweep (sweeps-clothing).** Deliberate differences from the legacy resolver: the void suit's "no modifying while worn" is `req_not_worn(SLOT_ID_SUIT)` (a human who is awake and wearing it; accessories and labelers are excluded by the op's `when()`), and the subtype copies on the response-team and AutoLok suits are gone (they declined and the base op answers); "Eject tank" and "Toggle Helmet" refuse when the suit holds no tank, cooler or helmet even when nobody wears it (the old requirement passed silently and the effect did nothing); the fingerprint card's "take your gloves off" refusal also shows for a used card; the tactical sec-vis glasses ask for the pattern first and toggle after the answer; the friendship bracelet, vehicle paint and smole colour prompts are `asks()` steps; the holster's menu "Holster" verb draws with the helping stance (a menu pick carries no click stance); vehicle engine and kickstand verbs need the actor on the vehicle's own tile (`req_on_holder_turf()`, was `REQ_REACH(0)`); refusal wording is the sentence form of the old fragments. New library requirements: `req_actor_slot_empty()` and `req_worn_by_actor()` (`code/library/items/actor_slot.dm`).

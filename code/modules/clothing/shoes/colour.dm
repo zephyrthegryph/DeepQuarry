@@ -111,21 +111,23 @@
 	icon_state = "orange"
 	rel_clear(src, nameof(chained))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/shoes/orange, \
-	INTERACT_USE("Remove cuffs", PROC_REF(orange_shoes_uncuff_self)), \
-	INTERACT_ITEM(null, PROC_REF(orange_shoes_cuff_item)), \
-)
+CAPABILITIES(/obj/item/clothing/shoes/orange)
+	op("orange_shoes_uncuff_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove cuffs"), then(PROC_REF(orange_shoes_uncuff_self)))
+	op("orange_shoes_cuff_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Orange shoes cuff item"), then(PROC_REF(orange_shoes_cuff_item)))
 
 /// Old attack_self: remove the cuffs, after the shoes' own self-use (the old ..()).
-/obj/item/clothing/shoes/orange/proc/orange_shoes_uncuff_self(mob/user, obj/item/held, datum/interaction/interaction)
-	shoes_shake_out_self(user, held, interaction)
+/obj/item/clothing/shoes/orange/proc/orange_shoes_uncuff_self(datum/act/op/A)
+	var/mob/user = A.actor
+	shoes_shake_out_self(A)
 	remove_cuffs(user)
 
 /// Old attackby: chain the shoes with handcuffs. The shoes' own item use (the old ..() first) follows.
-/obj/item/clothing/shoes/orange/proc/orange_shoes_cuff_item(mob/user, obj/item/H, datum/interaction/interaction)
+/obj/item/clothing/shoes/orange/proc/orange_shoes_cuff_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/H = A.held
 	if (istype(H, /obj/item/handcuffs))
 		attach_cuffs(H, user)
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/shoes/hitops
 	name = "white high-tops"

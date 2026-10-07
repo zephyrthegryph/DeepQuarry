@@ -113,16 +113,13 @@ TRACKED(/obj/item/clothing/accessory/badge/holo, emagged)
 	icon_state = "holobadge-cord"
 	slot_flags = SLOT_MASK | SLOT_TIE | SLOT_BELT
 
-DECLARE_EMAG(/obj/item/clothing/accessory/badge/holo, PROC_REF(on_emag), null, "The badge is already cracked.")
-
-/obj/item/clothing/accessory/badge/holo/mark_emagged()
+/obj/item/clothing/accessory/badge/holo/proc/on_emag(datum/act/op/A)
 	set_emagged(TRUE)
-/obj/item/clothing/accessory/badge/holo/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	set_emagged(TRUE)
-	to_chat(user, span_danger("You crack the holobadge security checks."))
-	return 1
+	to_chat(A.actor, span_danger("You crack the holobadge security checks."))
+	return OP_OK
 
 CAPABILITIES(/obj/item/clothing/accessory/badge/holo)
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	op("holobadge_imprint_item", item(/obj/item), needs(req(PROC_REF(imprint_credentials_holds), because = PROC_REF(imprint_credentials_refusal))), then(PROC_REF(holobadge_imprint_item)))
 
 /obj/item/clothing/accessory/badge/holo/proc/imprint_credentials_holds(datum/act/op/A)
@@ -315,19 +312,17 @@ CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
 	owns_one(nameof(current_film), /obj/item/dosimeter_film, starts = /obj/item/dosimeter_film)
 	op("dosimeter_remove_film_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Dosimeter remove film hand"), then(PROC_REF(dosimeter_remove_film_hand)))
 	op("dosimeter_insert_film", item(/obj/item/dosimeter_film), priority(OP_PRIORITY_DEFAULT - 1), label("Insert film"), then(PROC_REF(dosimeter_insert_film)))
+	every(2 SECONDS, then(PROC_REF(dosimeter_step)), when = PROC_REF(film_live))
 
 /// A film that can still darken is loaded: it reads the wearer's radiation.
-OM_DERIVE_FIELD(/obj/item/clothing/accessory/dosimeter, film_live, list("current_film", "current_film.state"))
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/accessory/dosimeter, PERIODIC_SLOW, "film_live")
-
-/obj/item/clothing/accessory/dosimeter/proc/film_live()
+/obj/item/clothing/accessory/dosimeter/proc/film_live(datum/act/A)
 	return current_film && current_film.state < 2
 
 /obj/item/clothing/accessory/dosimeter/Initialize(mapload)
 	. = ..()
 	update_state(current_film.state)
 
-/obj/item/clothing/accessory/dosimeter/periodic_step()
+/obj/item/clothing/accessory/dosimeter/proc/dosimeter_step(datum/act/timer/A)
 	check_holder()
 
 /// Old attack_hand: pull the film out while holding the dosimeter in the other hand.

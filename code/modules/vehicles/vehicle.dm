@@ -129,14 +129,6 @@ CAPABILITIES(/obj/vehicle)
 		return OP_PASS
 	return OP_DECLINE
 
-/// Shared paint step (bike, quad bike, trailer): a multitool on an open panel picks a new paint colour.
-/// Old attackby branch copied across those types; falls through when not applicable or cancelled.
-/obj/vehicle/proc/interaction_vehicle_paint(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!W.has_tool_quality(TOOL_MULTITOOL) || !open)
-		return FALSE
-	open_request(src, /datum/prompt/color/vehicle_paint, PROC_REF(vehicle_paint_picked), answerer = user, default = paint_color)
-	return TRUE
-
 /obj/vehicle/screwdriver_act(mob/user, obj/item/tool)
 	if(!mechanical)
 		return ..()

@@ -33,6 +33,7 @@
 
 CAPABILITIES(/obj/vehicle/train/engine/quadbike)
 	param(nameof(built_from_assembly), pos = 1)
+	op("vehicle_paint", tool(TOOL_MULTITOOL), when(req_is(nameof(open), TRUE)), priority(OP_PRIORITY_DEFAULT - 1), label("Paint"), wait(0), asks(/datum/prompt/color/vehicle_paint, fields = list("default" = nameof(paint_color)), step = "colour"), then(PROC_REF(vehicle_paint_picked)))
 
 /// Whether the bike was built from an assembly (its constructor param): it then brings no cell of its own.
 /obj/vehicle/train/engine/quadbike/var/built_from_assembly = FALSE
@@ -96,8 +97,6 @@ CAPABILITIES(/obj/vehicle/train/engine/quadbike/random)
 			pixel_y = 0
 		if(8)
 			pixel_y = 0
-
-EXTEND_INTERACTIONS(/obj/vehicle/train/engine/quadbike, INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)))
 
 DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/quadbike, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/vehicle/train/engine/quadbike/appearance_overlays()
@@ -282,4 +281,5 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/trolley/trailer, TYPE_PROC_REF(/atom,
 	Bodypaint.color = paint_color
 	. += Bodypaint
 
-EXTEND_INTERACTIONS(/obj/vehicle/train/trolley/trailer, INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)))
+CAPABILITIES(/obj/vehicle/train/trolley/trailer)
+	op("vehicle_paint", tool(TOOL_MULTITOOL), when(req_is(nameof(open), TRUE)), priority(OP_PRIORITY_DEFAULT - 1), label("Paint"), wait(0), asks(/datum/prompt/color/vehicle_paint, fields = list("default" = nameof(paint_color)), step = "colour"), then(PROC_REF(vehicle_paint_picked)))

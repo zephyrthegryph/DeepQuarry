@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Clothing, vore, vehicle and detective-work interactions, emags, hit reactions and periodic work moved to ops, hit hooks and every()"
+  - refactor: "Chameleon items reveal themselves on an EMP through a hit notice instead of a damage reaction"

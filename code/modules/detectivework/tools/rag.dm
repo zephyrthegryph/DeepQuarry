@@ -28,7 +28,6 @@
 	var/burn_time = 20 //if the rag burns for too long it turns to ashes
 
 OM_FIELD(/obj/item/reagent_containers/glass/rag, rag_lit, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/reagent_containers/glass/rag, PERIODIC_SLOW, "rag_lit")
 
 // A rag is not a container that is poured and drunk from: it soaks up from a tank or a bucket, wrings out into an open container (or onto the floor), wipes
 // things and people, smothers somebody whose mouth is aimed at, and is set alight by a flame when it is soaked in spirits or fuel (wiper(), and the ops
@@ -49,6 +48,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/rag)
 		needs(req_reagents(1, because = MSG(wiper/dry))), begins(MSG(rag/begin_wring_floor)), wait(PROC_REF(wring_floor_time)), then(PROC_REF(wrung_out)))
 	op("light", item(/obj/item/flame), when(cond_not(nameof(rag_lit))), label("Light it"), then(PROC_REF(lit_by_flame)))
 	op("rub", at_target(/mob/living), priority(OP_PRIORITY_PART), label("Use on"), begins(PROC_REF(rub_begins)), wait(PROC_REF(rub_wait)), then(PROC_REF(rubbed)))
+	every(2 SECONDS, then(PROC_REF(rag_step)), when = nameof(rag_lit))
 
 MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U% begins to wring out %I%.")
 
@@ -233,7 +233,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/rag, TYPE_PROC_REF(/a
 		replace_with(src, /obj/effect/decal/cleanable/ash)
 	update_name()
 
-/obj/item/reagent_containers/glass/rag/periodic_step()
+/obj/item/reagent_containers/glass/rag/proc/rag_step(datum/act/timer/A)
 	if(!can_ignite())
 		visible_message(span_warning("\The [src] burns out."))
 		extinguish()

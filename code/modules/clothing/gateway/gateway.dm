@@ -83,10 +83,9 @@ TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ON
 /// clear when the wearer is destroyed counts too) it declares the feeding work.
 OM_FIELD(/obj/item/clothing/gloves/stamina, worn_on_hands, FALSE, CHANGE_EXPLICIT)
 OM_FIELD_VIEW_OF(/obj/item/clothing/gloves/stamina, wearer, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/clothing/gloves/stamina, feeding_wearer, list("wearer", "worn_on_hands"))
-/obj/item/clothing/gloves/stamina/proc/feeding_wearer()
-	return wearer && worn_on_hands
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/gloves/stamina, PERIODIC_SLOW, "feeding_wearer")
+
+CAPABILITIES(/obj/item/clothing/gloves/stamina)
+	every(2 SECONDS, then(PROC_REF(stamina_step)), when = nameof(worn_on_hands))
 
 /obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
 	..()
@@ -106,8 +105,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/gloves/stamina, PERIODIC_SLOW, "feedin
 			H.custom_pain("Your hands feel strange",1)
 	..()
 
-/// Works every 2 s while worn on the hands (declared on feeding_wearer); taken off, it sleeps.
-/obj/item/clothing/gloves/stamina/periodic_step()
+/// Works every 2 s while worn on the hands (the every() in its capabilities); taken off, it sleeps.
+/obj/item/clothing/gloves/stamina/proc/stamina_step(datum/act/timer/A)
 	var/mob/living/carbon/human/H = wearer
 	if(!istype(H) || HAS_SYNTHETIC_BIOLOGY(H) || H.stat == DEAD)
 		return // Robots and dead people don't have a metabolism.

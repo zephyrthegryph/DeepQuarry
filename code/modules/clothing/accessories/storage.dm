@@ -14,6 +14,9 @@
 
 CAPABILITIES(/obj/item/clothing/accessory/storage)
 	owns_one(nameof(hold), starts = /obj/item/storage/internal)
+	op("storage_accessory_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Storage accessory hand"), then(PROC_REF(storage_accessory_hand)))
+	op("storage_accessory_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Storage accessory item"), then(PROC_REF(storage_accessory_item)))
+	op("storage_accessory_empty_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Empty"), then(PROC_REF(storage_accessory_empty_self)))
 
 /obj/item/clothing/accessory/storage/Initialize(mapload)
 	. = ..()
@@ -22,21 +25,16 @@ CAPABILITIES(/obj/item/clothing/accessory/storage)
 		on_rolled["down"] = icon_state
 
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/storage, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(storage_accessory_hand)), \
-	INTERACT_ITEM(null, PROC_REF(storage_accessory_item)), \
-	INTERACT_USE("Empty", PROC_REF(storage_accessory_empty_self)), \
-)
-
 /// Old attack_hand: open the storage when attached, else handle it as a storage item.
-/obj/item/clothing/accessory/storage/proc/storage_accessory_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/storage/proc/storage_accessory_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if (has_suit())	//if we are part of a suit
 		hold.open(user)
-		return TRUE
+		return OP_OK
 
 	if (hold.handle_attack_hand(user))	//otherwise interact as a regular storage item
-		return FALSE
-	return TRUE
+		return OP_DECLINE
+	return OP_OK
 
 /obj/item/clothing/accessory/storage/MouseDrop(obj/over_object)
 	if (has_suit())
@@ -46,11 +44,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/storage, \
 		..(over_object)
 
 /// Old attackby: the item goes to the internal storage.
-/obj/item/clothing/accessory/storage/proc/storage_accessory_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return hold.attackby(W, user) ? TRUE : INTERACTION_HANDLED_PASS
+/obj/item/clothing/accessory/storage/proc/storage_accessory_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	return hold.attackby(W, user) ? OP_OK : OP_PASS
 
 /// Old attack_self: empty the storage.
-/obj/item/clothing/accessory/storage/proc/storage_accessory_empty_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/storage/proc/storage_accessory_empty_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You empty [src]."))
 	var/turf/T = get_turf(src)
 	hold.hide_from(user)

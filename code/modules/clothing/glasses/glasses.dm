@@ -90,7 +90,7 @@ BLIND     // can't see anything
 	PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 
 CAPABILITIES(/obj/item/clothing/glasses)
-	op("glasses_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Glasses toggle self"), then(PROC_REF(glasses_toggle_self)))
+	op("glasses_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Glasses toggle self"), then(PROC_REF(glasses_toggle_self)))
 
 /// Old attack_self: toggle the optical matrix. FALSE where the old body returned nothing.
 /obj/item/clothing/glasses/proc/glasses_toggle_self(datum/act/op/A)
@@ -790,23 +790,22 @@ CAPABILITIES(/obj/item/clothing/glasses/aerogelgoggles)
 		"Scanning pattern 4" = image(icon = src.icon, icon_state = "tacsecvis4"),
 		)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis, INTERACT_USE("Scanning pattern", PROC_REF(tactical_sec_vis_pattern_self)))
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis)
+	op("tactical_sec_vis_pattern_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Scanning pattern"), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(tactical_sec_vis_choices)), "radius" = 36, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "pattern"), then(PROC_REF(tactical_sec_vis_pattern_self)))
 
-/// Old attack_self: pick a scanning pattern, after the glasses toggle (the old ..()).
-/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_pattern_self(mob/user, obj/item/held, datum/interaction/interaction)
-	glasses_toggle_self(user, held, interaction)
+/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_choices(datum/act/op/A)
+	return tac_sec_vis_anim
+
+/// Old attack_self: the glasses toggle (the old ..()), then the chosen scanning pattern.
+/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_pattern_self(datum/act/op/A)
+	var/mob/user = A.actor
+	glasses_toggle_self(A)
 	if(!istype(user) || user.incapacitated())
 		return
 
-	open_request(src, /datum/prompt/choice, PROC_REF(tactical_sec_vis_pattern_chosen), answerer = user, choices = tac_sec_vis_anim, anchor = src, radius = 36, require_near = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
-
-/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_pattern_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/choice = A.answer.value
+	var/choice = A.step_value("pattern")
 	var/static/list/options = list("Scanning pattern 1" = "tacsecvis1", "Scanning pattern 2" = "tacsecvis2", "Scanning pattern 3" = "tacsecvis3","Scanning pattern 4" ="tacsecvis4")
-	if(istype(user) && choice && options[choice] && !user.incapacitated() && in_range(user, src))
+	if(choice && options[choice] && !user.incapacitated() && in_range(user, src))
 		icon_state = options[choice]
 		user.update_inv_glasses()
 		user.update_mob_action_buttons()
