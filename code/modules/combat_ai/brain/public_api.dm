@@ -156,6 +156,7 @@
 	return entry && entry["disp"] <= DQ_DISPOSITION_HOSTILE
 
 /datum/ai_brain/proc/on_hear_say(mob/living/speaker, message)
+	stir_pack("member heard")
 	return
 
 /datum/ai_brain/vv_edit_var(var_name, var_value)

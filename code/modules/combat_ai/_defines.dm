@@ -105,8 +105,7 @@
 // Legacy carry-overs from the deleted ai_holder engine (AI_NORMAL,
 // MOVEMENT_*, ATTACK_*, AI_TARGET_*, ai_log) live in code/modules/ai/_defines.dm
 // so files included before this modular block can still see them.
-
-#endif // DQ_COMBAT_AI_DEFINES_DM
+// end of the include guard
 
 // Action loop cadence (brain/scheduling.dm, ai_packs.md B2).
 /// The action loop's default interval (and the rate an active behaviour ticks at unless it sets tick_interval).
@@ -115,3 +114,26 @@
 #define DQ_IDLE_STRETCH 3
 /// While engaged the brain re-selects at least this often even without an event.
 #define DQ_ENGAGED_RECHECK (1 SECOND)
+
+// ---------------------------------------------------------------------------
+// Packs (pack/, doc/rewrite/ai_packs.md B3).
+// ---------------------------------------------------------------------------
+/// Targeting doctrine: members spread over the pack's hostiles, at most `spread_cap` members on one.
+#define PACK_SPREAD "spread"
+/// Targeting doctrine: members follow the leader's target when they know it.
+#define PACK_FOCUS "focus"
+/// Seconds a calm pack waits between perceptions (event-only: nothing triggers them without chunk activity).
+#define PACK_PERCEIVE_CALM (5 SECONDS)
+/// A pack that knows a hostile (alert) or fights (engaged) perceives this often.
+#define PACK_PERCEIVE_ACTIVE (1 SECOND)
+/// An engaged pack with nobody on screen perceives this often.
+#define PACK_PERCEIVE_OFFSCREEN (2 SECONDS)
+/// A pack's upkeep (splits, merges, chunk re-cover).
+#define PACK_UPKEEP_INTERVAL (5 SECONDS)
+
+// Columns of a pack sighting (pack.sightings[REF(mob)]).
+#define SIGHT_SPOTTER 1
+#define SIGHT_FIRST_AT 2
+#define SIGHT_SEEN 3
+
+#endif

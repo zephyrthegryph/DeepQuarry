@@ -27,6 +27,20 @@ GLOBAL_DATUM_INIT(dq_faction_data_default, /datum/faction_data, new())
 	/// Disposition toward mobs without a brain or with no recognised faction.
 	var/unknown_disposition = DQ_DISPOSITION_NEUTRAL
 
+	// --- Packs (pack/pack.dm). Per faction: 0 radius is "everyone fights alone" (a pack of one). ---
+	/// Tiles within which another pack's leader makes this one merge into it (and a lone brain join it); 0 forms no packs.
+	var/pack_join_radius = 0
+	/// A member farther than this from its leader leaves the pack (the gap to pack_join_radius is the hysteresis).
+	var/pack_leave_radius = 9
+	/// Deciseconds before pack members other than the spotter learn of a sighting.
+	var/alert_delay = 0.75 SECONDS
+	/// Tiles within which a spotter's alert reaches a packmate.
+	var/comm_radius = 12
+	/// PACK_SPREAD or PACK_FOCUS.
+	var/pack_doctrine = PACK_SPREAD
+	/// Members per target under PACK_SPREAD.
+	var/spread_cap = 2
+
 /// Per-subtype type table of faction_key (string) => DQ_DISPOSITION_*.
 /// Override with TYPE_TABLE(); one shared table per subtype, no per-instance allocation.
 TYPE_TABLE_DECLARE(/datum/faction_data, get_relationships, list())

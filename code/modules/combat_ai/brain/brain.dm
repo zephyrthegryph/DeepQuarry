@@ -97,6 +97,8 @@ CAPABILITIES(/datum/ai_brain)
 	if(holder.client)
 		on_holder_login(holder)
 	rebuild_behaviors()
+	born_at = world.time
+	seek_pack()
 	return ..()
 
 
@@ -106,6 +108,7 @@ CAPABILITIES(/datum/ai_brain)
 /// A running behaviour is stopped (it ends ai_busy on holder) and the loops and chunk sleep are
 /// cancelled while holder is still set; phase 4 then clears holder and holder.ai_brain.
 /datum/ai_brain/lifecycle_prerelease()
+	leave_pack("brain deleted")
 	cancel_chunk_sleep()
 	if(active_behavior_type)
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
@@ -173,7 +176,8 @@ CAPABILITIES(/datum/ai_brain)
 	if(holder.client && !autopilot)
 		return
 	rebuild_behaviors()
-	model.update_perception(src)
+	// Perception is the pack's: this is only the backstop for a pack nothing has stirred for a window.
+	pack?.perceive_if_due()
 	expire_personal()
 	update_primary_threat()
 	selection_dirty = TRUE
@@ -458,12 +462,16 @@ CAPABILITIES(/datum/ai_brain)
 	// Target is visible again — reset the grace timer.
 	lose_threat_at = 0
 	var/new_threat = null
+	// The pack hands each member the hostiles it may pick from (doctrine: spread or focus); a pack of one gets its own list.
+	var/list/candidates = pack ? pack.targeting_candidates(src) : model.visible_hostiles
 	for(var/typepath as anything in target_selector_chain)
 		var/datum/target_selector/S = dq_get_selector(typepath)
-		new_threat = S.select(src, model.visible_hostiles)
+		new_threat = S.select(src, candidates)
 		if(new_threat)
 			break
 	if(new_threat != primary_threat)
+		trace("target [new_threat || "none"] (was [primary_threat || "none"]) from [length(candidates)] candidate(s)")
+		pack?.trace("[holder] assigned [new_threat || "no target"]")
 		rel_set(src, nameof(primary_threat), new_threat)
 		sync_fast_processing()
 
@@ -601,14 +609,17 @@ CAPABILITIES(/datum/ai_brain)
 	if(new_stat >= DEAD)
 		manage_processing(0)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
+		leave_pack("died")
 	else if(old_stat >= DEAD)
 		manage_processing(DQAI_PROCESSING)
+		seek_pack()
 
 /// Called by /mob/living/dq_notify_damage when the mob takes a hit.
 /datum/ai_brain/proc/notify_damage(amount, injury_kind, atom/attacker)
 	if(!model || !holder)
 		return
 	model.record_damage(amount, injury_kind, attacker)
+	stir_pack("member hurt")
 	if(ismob(attacker) && attacker != holder && should_retaliate_against(attacker))
 		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "hit me")
 		if(!primary_threat)

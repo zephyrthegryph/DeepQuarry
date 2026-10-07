@@ -17,7 +17,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 
 /mob/on_destroy(force)//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
-	publish_mob_chunk(src)
+	publish_mob_chunk(src, FALSE)
 	if(client)
 		stack_trace("Mob with client has been deleted.")
 
@@ -57,7 +57,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set_focus(src) // Key Handling
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	. = ..()
-	publish_mob_chunk(src)
+	publish_mob_chunk(src, TRUE)
 	log_mob_tag(src, "TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.
 

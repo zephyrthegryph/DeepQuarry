@@ -46,38 +46,13 @@
 /datum/world_model/proc/get_owner()
 	return owner
 
-/// Walks view() once and bucket-sorts everyone visible into hostile/friendly/neutral.
-/// Called from /datum/ai_brain/handle_strategicals at the slow tick.
+/// Perceives now: the brain's pack runs a pass (perception is the pack's, pack/perception.dm), which updates this model with the differences.
+/// Kept for callers that drive a brain by hand (tests, forced re-looks); a pack of one sees exactly what view() showed the brain.
 /datum/world_model/proc/update_perception(datum/ai_brain/brain)
 	var/mob/living/owner = get_owner()
 	if(!owner || !brain)
 		return
-
-	visible_hostiles ||= list()
-	rel_clear(src, nameof(visible_hostiles))
-	visible_friendlies ||= list()
-	rel_clear(src, nameof(visible_friendlies))
-	visible_neutrals ||= list()
-	rel_clear(src, nameof(visible_neutrals))
-
-	var/range = brain.vision_range
-	for(var/mob/living/M in view(range, owner))
-		if(M == owner)
-			continue
-		if(M.stat >= DEAD)
-			continue
-		var/disposition = brain.disposition_to(M)
-		if(disposition <= DQ_DISPOSITION_HOSTILE)
-			rel_add(src, nameof(visible_hostiles), M)
-		else if(disposition >= DQ_DISPOSITION_FRIENDLY)
-			rel_add(src, nameof(visible_friendlies), M)
-		else
-			rel_add(src, nameof(visible_neutrals), M)
-
-	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
-	trim_old_damage()
-	trim_old_sounds()
-	trim_old_hazards()
+	brain.pack?.perceive(TRUE)
 
 /// Record an incoming hit. Called by the brain's damage signal handler.
 /datum/world_model/proc/record_damage(amount, injury_kind, atom/attacker)

@@ -87,7 +87,8 @@ CAPABILITY_TYPE(ai_tactical, CAP_AI_TACTICAL, /datum/capability/ai_loop/tactical
 /datum/ai_brain/proc/action_interval()
 	var/interval = DQ_ACTION_TICK
 	if(active_behavior_type)
-		interval = dq_get_behavior(active_behavior_type).interval_for(src)
+		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
+		interval = B.interval_for(src)
 	armed_interval = interval
 	return interval
 
