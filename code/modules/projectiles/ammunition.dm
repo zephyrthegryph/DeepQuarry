@@ -179,6 +179,9 @@ CAPABILITIES(/obj/item/ammo_magazine)
 	owns_many(nameof(stored_ammo))
 	param(nameof(forge_material), pos = 1)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
+	op("load", item(/obj/item), label("Load"), then(PROC_REF(magazine_interaction_item)))
+	op("empty", in_hand(), label("Empty"), then(PROC_REF(magazine_interaction_self)))
+	op("hand", hand(), ungated(), then(PROC_REF(magazine_interaction_hand)))
 
 /// The construction material a lathe forged the magazine from (its constructor param), or null.
 /obj/item/ammo_magazine/var/forge_material
@@ -209,16 +212,12 @@ CAPABILITIES(/obj/item/ammo_magazine)
 			set_forged_material(forged)
 	update_icon()
 
-DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
-	INTERACT_ITEM("Load", PROC_REF(magazine_interaction_item)), \
-	INTERACT_USE("Empty", PROC_REF(magazine_interaction_self)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(magazine_interaction_hand)), \
-)
-
 /// Old attackby (both of its definitions: magazine-to-magazine loading ran first). It never
 /// called the base attackby: any item stops here, but afterattack still follows.
-/obj/item/ammo_magazine/proc/magazine_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/ammo_magazine/proc/magazine_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	if(!load_from_magazine(W, user))
 		return
 	make_rounds_real()
@@ -253,12 +252,13 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 	update_icon()
 
 /// Old attack_self: this dumps all the bullets right on the floor.
-/obj/item/ammo_magazine/proc/magazine_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/ammo_magazine/proc/magazine_interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	make_rounds_real()
 	if(can_remove_ammo)
 		if(!length(stored_ammo))
 			to_chat(user, span_notice("[src] is already empty!"))
-			return
+			return OP_OK
 		to_chat(user, span_notice("You empty [src]."))
 		play_sfx(src, SFX_CASING_SOUND)
 		after(src, 0.7 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list("casing_sound", 50, 1))
@@ -270,10 +270,11 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 		update_icon()
 	else
 		to_chat(user, span_notice("\The [src] is not designed to be unloaded."))
-		return
+	return OP_OK
 
 /// Old attack_hand: this puts one bullet from the magazine into your hand. FALSE goes on to pickup.
-/obj/item/ammo_magazine/proc/magazine_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/ammo_magazine/proc/magazine_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	make_rounds_real()
 	if(can_remove_ammo)	// For Smart Magazines
 		if(user.get_inactive_hand() == src)
@@ -283,8 +284,8 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 				user.put_in_hands(C)
 				act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 				update_icon()
-				return TRUE
-	return FALSE
+				return OP_OK
+	return OP_DECLINE
 
 /// Rounds loaded, real and latent.
 /obj/item/ammo_magazine/proc/ammo_count()
