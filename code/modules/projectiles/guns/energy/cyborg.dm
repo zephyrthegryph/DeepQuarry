@@ -313,13 +313,16 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 	var/active = 0 //Off by default.
 	var/lcolor = "#38e541"
 
-DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
-)
+CAPABILITIES(/obj/item/melee/robotic/blade)
+	op("use", in_hand(), then(PROC_REF(interaction_self)))
+	op("recolor", hand(), ungated(), gesture(GESTURE_ALT), needs(req_capable()),
+		asks(/datum/prompt/choice, fields = list("question" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "confirm"),
+		asks(/datum/prompt/color, fields = list("title" = "Choose Energy Color", "default" = nameof(lcolor), "timeout" = 0), step = "color", when = PROC_REF(recolor_confirmed)),
+		then(PROC_REF(interaction_alt)))
 
 /// Old attack_self.
-/obj/item/melee/robotic/blade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/melee/robotic/blade/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(active) //turning off
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		force = 0
@@ -329,7 +332,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
 	active = !active
 	to_chat(user, span_notice("[src] is now [active ? "on" : "off"]."))
 	update_icon()
-	return TRUE
+	return OP_OK
 
 DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/melee/robotic/blade/appearance_overlays()
@@ -349,23 +352,21 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appe
 		set_light(0)
 
 /// Old click_alt.
-/obj/item/melee/robotic/blade/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/melee/robotic/blade/proc/interaction_alt(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return TRUE
+		return OP_OK
 
-	var/_answer_k349 = rerun_ask(user, "k349", PROC_REF(interaction_alt), args, /datum/prompt/choice, question = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", choices = list("Yes", "No"), buttons = TRUE)
-	if(isnull(_answer_k349))
-		return TRUE
-	if(_answer_k349 == "Yes")
-		open_request(src, /datum/prompt/color, PROC_REF(blade_color_picked), answerer = user, default = lcolor, title = "Choose Energy Color", ask_flags = ASK_CAPABLE, timeout = 0)
+	if(A.step_value("confirm") == "Yes")
+		var/picked = A.step_value("color")
+		if(picked)
+			lcolor = sanitize_hexcolor(picked)
+		update_icon()
+	return OP_OK
 
-/obj/item/melee/robotic/blade/proc/blade_color_picked(datum/act/request/A)
-	if(!A.answer)
-		return
-	if(A.answer.value)
-		lcolor = sanitize_hexcolor(A.answer.value)
-	update_icon()
-	return TRUE
+/// The recolor was confirmed: the colour is asked.
+/obj/item/melee/robotic/blade/proc/recolor_confirmed(datum/act/op/A)
+	return A.step_value("confirm") == "Yes"
 
 /obj/item/melee/robotic/blade/examine(mob/user)
 	. = ..()

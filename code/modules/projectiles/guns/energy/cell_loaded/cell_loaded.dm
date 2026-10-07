@@ -149,11 +149,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/cell_loaded, TYPE_PROC_REF(/ato
 
 	var/list/modes
 
-EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC_REF(cell_mag_interaction_item)))
+CAPABILITIES(/obj/item/ammo_magazine/cell_mag)
+	op("cell_mag_load", item(/obj/item), priority(OP_PRIORITY_NORMAL + 1), label("Load"), then(PROC_REF(cell_mag_interaction_item)))
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/ammo_magazine/cell_mag/proc/cell_mag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/ammo_magazine/cell_mag/proc/cell_mag_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	make_rounds_real()
 	if(istype(W, /obj/item/ammo_casing/microbattery))
 		var/obj/item/ammo_casing/microbattery/B = W

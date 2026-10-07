@@ -343,15 +343,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/kinetic_accelerator, TYPE_PROC_REF(
 	. = ..()
 	. += span_notice("Occupies <b>[cost]%</b> of mod capacity.")
 
-DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/borg/upgrade/modkit)
+	op("install", item(/obj/item/gun/energy/kinetic_accelerator), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/borg/upgrade/modkit/proc/interaction_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/gun/energy/kinetic_accelerator))
-		install(A, user)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/obj/item/borg/upgrade/modkit/proc/interaction_item(datum/act/op/A)
+	var/obj/item/gun/energy/kinetic_accelerator/accelerator = A.held
+	install(accelerator, A.actor)
+	return OP_PASS
 
 /*
 /obj/item/borg/upgrade/modkit/afterInstall(mob/living/silicon/robot/R)
@@ -699,18 +698,15 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 	name = "adjustable tracer bolts"
 	desc = "Causes kinetic accelerator bolts to have an adjustable-colored tracer trail and explosion. Use in-hand to change color."
 
-EXTEND_INTERACTIONS(/obj/item/borg/upgrade/modkit/tracer/adjustable, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/borg/upgrade/modkit/tracer/adjustable)
+	op("recolor", in_hand(), needs(req_capable()), asks(/datum/prompt/color, fields = list("title" = "Choose Color", "default" = nameof(bolt_color), "timeout" = 0), step = "color"), then(PROC_REF(interaction_self)))
 
-/// Old attack_self.
-/obj/item/borg/upgrade/modkit/tracer/adjustable/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/color, PROC_REF(bolt_color_picked), answerer = user, default = bolt_color, title = "Choose Color", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-
-/obj/item/borg/upgrade/modkit/tracer/adjustable/proc/bolt_color_picked(datum/act/request/A)
-	if(!A.answer)
-		return
-	if(A.answer.value)
-		bolt_color = A.answer.value
-	return TRUE
+/// Old attack_self: the colour asked is the bolt colour.
+/obj/item/borg/upgrade/modkit/tracer/adjustable/proc/interaction_self(datum/act/op/A)
+	var/picked = A.step_value("color")
+	if(picked)
+		bolt_color = picked
+	return OP_OK
 
 #undef KA_ENVIRO_TYPE_COLD
 #undef KA_ENVIRO_TYPE_HOT

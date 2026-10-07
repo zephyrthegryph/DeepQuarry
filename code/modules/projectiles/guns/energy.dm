@@ -30,9 +30,11 @@
 	var/random_start_ammo = FALSE	//if TRUE, the weapon will spawn with randomly-determined ammo
 
 //if set, the weapon will recharge itself
-OM_FIELD(/obj/item/gun/energy, self_recharge, 0, CHANGE_EXPLICIT)
-/// Self-recharge (declared on self_recharge). Full, it parks; firing wakes it after a discharge.
-DECLARE_PERIODIC_WHILE(/obj/item/gun/energy, PERIODIC_SLOW, "self_recharge")
+/obj/item/gun/energy/var/self_recharge = 0
+/// TRUE while a self-recharging gun may be below full: firing raises it, a step that finds the cell full drops it.
+/obj/item/gun/energy/var/tmp/recharging = TRUE
+TRACKED(/obj/item/gun/energy, self_recharge)
+TRACKED(/obj/item/gun/energy, recharging)
 
 /obj/item/gun/energy/Initialize(mapload)
 	. = ..()
@@ -51,14 +53,16 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/energy, PERIODIC_SLOW, "self_recharge")
 /obj/item/gun/energy/get_cell()
 	return power_supply
 
-/obj/item/gun/energy/periodic_step()
+/// Self-recharge: full, it parks; firing wakes it after a discharge.
+/obj/item/gun/energy/proc/energy_gun_recharge_step(datum/act/timer/A)
 	if(self_recharge) //Every [recharge_time] ticks, recharge a shot for the battery
 		if(COOLDOWN_FINISHED(src, recharge_cooldown))	//Doesn't work if you've fired recently
 			if(!power_supply || power_supply.charge >= power_supply.maxcharge)
-				return PROCESS_KILL
+				set_recharging(FALSE)
+				return
 
 			charge_tick++
-			if(charge_tick < recharge_time) return 0
+			if(charge_tick < recharge_time) return
 			charge_tick = 0
 
 			var/rechargeamt = power_supply.maxcharge*0.2
@@ -66,7 +70,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/energy, PERIODIC_SLOW, "self_recharge")
 			if(use_external_power)
 				var/obj/item/cell/external = get_external_power_supply()
 				if(!external || !external.use(rechargeamt)) //Take power from the borg...
-					return 0
+					return
 
 			if(use_organic_power)
 				var/mob/living/carbon/human/H
@@ -101,16 +105,13 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/energy, PERIODIC_SLOW, "self_recharge")
 				M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD
 		else
 			charge_tick = 0
-	return 1
 
 /obj/item/gun/energy/switch_firemodes(mob/user)
 	if(..())
 		update_icon()
 
-DAMAGE_REACTION(/obj/item/gun/energy, DAMAGE_EMP, PROC_REF(energy_gun_emp_refresh))
-
 /// The pulse drained the cell (through the contents): show the new charge.
-/obj/item/gun/energy/proc/energy_gun_emp_refresh(datum/damage_packet/packet)
+/obj/item/gun/energy/proc/energy_gun_emp_refresh(datum/act/A)
 	update_icon()
 
 /obj/item/gun/energy/consume_next_projectile()
@@ -120,8 +121,8 @@ DAMAGE_REACTION(/obj/item/gun/energy, DAMAGE_EMP, PROC_REF(energy_gun_emp_refres
 	var/enhanced_cost = charge_cost * output_envelope
 	if(!power_supply.checked_use(enhanced_cost)) return null
 	power_supply.material_record_enhanced_output(charge_cost, output_envelope)
-	// Charge was drawn: wake the recharge (the self_recharge declaration refuses it on other guns).
-	om_task_periodic(src, PERIODIC_SLOW)
+	// Charge was drawn: wake the recharge.
+	set_recharging(TRUE)
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used?.update_ammo_hud(M, src)
@@ -185,6 +186,8 @@ DAMAGE_REACTION(/obj/item/gun/energy, DAMAGE_EMP, PROC_REF(energy_gun_emp_refres
 // the shield generator's gun, the generator's cell: a relation view across the hierarchy.
 CAPABILITIES(/obj/item/gun/energy)
 	ref_one(nameof(power_supply))
+	every(2 SECONDS, then(PROC_REF(energy_gun_recharge_step)), when = cond_all(nameof(self_recharge), nameof(recharging)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(energy_gun_emp_refresh)))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.

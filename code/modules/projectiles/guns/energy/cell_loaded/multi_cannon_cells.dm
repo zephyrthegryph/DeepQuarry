@@ -12,19 +12,21 @@
 	var/ticks = 1
 	var/ticks_to_charge = 3 // Reduced from 15 ticks to 3 for a faster recharge, which comes out to around 3 seconds on a localhost. These things are VERY rare.
 
-OM_FIELD(/obj/item/ammo_casing/macrobattery, charge, null, CHANGE_EXPLICIT)
-/// Below full charge: derived from charge (raised by set_charge()).
-OM_DERIVE_FIELD(/obj/item/ammo_casing/macrobattery, charge_short, list("charge"))
-/obj/item/ammo_casing/macrobattery/proc/charge_short()
-	return charge < max_charge
+/obj/item/ammo_casing/macrobattery/var/charge = null
+TRACKED(/obj/item/ammo_casing/macrobattery, charge)
+/// Below full charge (kept in step with the charge by Initialize(), expend() and recharge()).
+/obj/item/ammo_casing/macrobattery/var/charge_short = FALSE
+TRACKED(/obj/item/ammo_casing/macrobattery, charge_short)
 /// Recharges while below full; full, it parks until a shot is expended.
-DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charge_short")
+CAPABILITIES(/obj/item/ammo_casing/macrobattery)
+	every(2 SECONDS, then(PROC_REF(macrobattery_step)), when = nameof(charge_short))
 
 /obj/item/ammo_casing/macrobattery/Initialize(mapload, ...)
 	. = ..()
 	set_charge(max_charge)
+	set_charge_short(charge < max_charge)
 
-/obj/item/ammo_casing/macrobattery/periodic_step()
+/obj/item/ammo_casing/macrobattery/proc/macrobattery_step(datum/act/timer/A)
 	ticks++
 	if(ticks%ticks_to_charge == 0)
 		recharge()
@@ -33,6 +35,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 	if(charge)
 		ticks = 1 //so we have to start over on the charge time.
 		set_charge(charge - 1)
+		set_charge_short(charge < max_charge)
 		. = BB
 		//alright, the below seems jank. it IS jank, but for whatever reason I can't reuse BB. big bad
 		rel_take(src, nameof(BB))
@@ -51,6 +54,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 /obj/item/ammo_casing/macrobattery/proc/recharge()
 	if(charge < max_charge)
 		set_charge(charge + 1)
+		set_charge_short(charge < max_charge)
 		if(!BB)
 			rel_set(src, nameof(BB), new projectile_type)
 	if(istype(loc,/obj/item/gun/projectile/multi_cannon))
