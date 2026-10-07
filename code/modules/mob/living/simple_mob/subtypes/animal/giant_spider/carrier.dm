@@ -77,6 +77,7 @@
 			swarmling.melee_damage_lower = swarm_dam_lower
 			swarmling.melee_damage_upper = swarm_dam_upper
 			swarmling.faction = faction
+			swarmling.ai_brain?.serve(src) // sworn: it joins its carrier's pack and never splits off
 			swarmling.adjust_scale(0.75)
 			new_spiders += swarmling
 		else if(src)

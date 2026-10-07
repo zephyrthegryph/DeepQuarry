@@ -34,6 +34,7 @@ CAPABILITY_TYPE(ai_state_test_hush, CAP_AI_STATE_TEST_HUSH, /datum/capability/ai
 /datum/unit_test/dq_ai_state_transitions
 
 /datum/unit_test/dq_ai_state_transitions/Run()
+	test_driver_begin()
 	var/list/pair = ai_pair(ai_floor(0), ai_floor(2))
 	var/mob/living/simple_mob/combat_ai_tactics_subject/S = pair[1]
 	var/datum/ai_brain/B = S.ai_brain
@@ -48,6 +49,7 @@ CAPABILITY_TYPE(ai_state_test_hush, CAP_AI_STATE_TEST_HUSH, /datum/capability/ai
 	TEST_ASSERT_EQUAL(B.state_window(), PACK_PERCEIVE_CALM, "a calm brain does not ask its pack for the calm window")
 	B.give_target(pair[2], TRUE)
 	B.assess_state()
+	test_drain()
 	TEST_ASSERT_EQUAL(B.ai_state, /datum/capability/ai_state/engaged, "a brain with a target is not engaged")
 	TEST_ASSERT(granted(B, /datum/capability/ai_state/engaged) && !granted(B, /datum/capability/ai_state/calm), "modes() did not swap the capability")
 	TEST_ASSERT(B.state_allows(melee), "engaged did not allow a combat tactic")
@@ -64,16 +66,20 @@ CAPABILITY_TYPE(ai_state_test_hush, CAP_AI_STATE_TEST_HUSH, /datum/capability/ai
 	TEST_ASSERT(!B.state_allows(melee), "fleeing allowed a combat tactic")
 	B.stop_active(DQ_BEHAVIOR_STOP_COMPLETED)
 	TEST_ASSERT(B.ai_state != /datum/capability/ai_state/fleeing, "the brain stayed fleeing after the flight ended")
+	test_driver_end()
 
 /// A faction supplies its own state set: its calm is the hush state, which allows nothing.
 /datum/unit_test/dq_ai_state_faction_swap
 
 /datum/unit_test/dq_ai_state_faction_swap/Run()
+	test_driver_begin()
 	var/mob/living/simple_mob/S = pack_mob(0, /mob/living/simple_mob/combat_ai_pack_subject/states)
 	var/datum/ai_brain/B = S.ai_brain
+	test_drain()
 	TEST_ASSERT_EQUAL(B.ai_state, /datum/capability/ai_state/test_hush, "the brain did not start in its faction's calm")
 	TEST_ASSERT(!B.state_allows(dq_get_behavior(/datum/ai_behavior/idle_wander)), "the faction's calm still allowed a tactic")
 	TEST_ASSERT(granted(B, /datum/capability/ai_state/test_hush), "the faction's state capability is not granted")
+	test_driver_end()
 
 /// The leader is the member with the most authority: roles and the alpha trait hold on the stat, health and seniority add; a change re-elects.
 /datum/unit_test/dq_ai_roles_authority_election
@@ -197,5 +203,29 @@ CAPABILITY_TYPE(ai_state_test_hush, CAP_AI_STATE_TEST_HUSH, /datum/capability/ai
 		TEST_ASSERT_NOTNULL(first.ai_brain, "[type] has no brain")
 		TEST_ASSERT_EQUAL(first.ai_brain.pack, second.ai_brain.pack, "two [type] side by side did not form a pack")
 		TEST_ASSERT_EQUAL(length(first.ai_brain.pack.members), 2, "the [type] pack has the wrong size")
+
+/// Members hold their mob's relevance on the pack (the highest wins and a hold goes with its member); a member that sees in the dark is a sentinel.
+/datum/unit_test/dq_ai_pack_relevance_and_sentinel
+
+/datum/unit_test/dq_ai_pack_relevance_and_sentinel/Run()
+	test_driver_begin()
+	var/mob/living/simple_mob/A = pack_mob(0)
+	var/mob/living/simple_mob/B = pack_mob(1)
+	var/datum/ai_pack/P = A.ai_brain.pack
+	test_drain()
+	var/before = P.pack_relevance()
+	var/datum/observer = allocate(/datum)
+	hold(B, STAT_RELEVANCE, RELEVANCE_VISIBLE, observer)
+	test_drain()
+	TEST_ASSERT(P.pack_relevance() >= RELEVANCE_VISIBLE, "a member's relevance did not reach its pack")
+	release(B, STAT_RELEVANCE, observer)
+	test_drain()
+	TEST_ASSERT_EQUAL(P.pack_relevance(), before, "the pack kept a relevance its member no longer holds")
+	TEST_ASSERT(!A.ai_brain.is_sentinel(), "an ordinary member is a sentinel")
+	B.sight |= SEE_MOBS
+	TEST_ASSERT(B.ai_brain.is_sentinel(), "a member that sees mobs through walls is not a sentinel")
+	TEST_ASSERT(B.ai_brain.has_role(/datum/capability/ai_role/sentinel), "the sentinel role was not granted")
+	TEST_ASSERT_EQUAL(P.sentinels_first(list(A.ai_brain, B.ai_brain))[1], B.ai_brain, "sentinels do not come first")
+	test_driver_end()
 
 #endif

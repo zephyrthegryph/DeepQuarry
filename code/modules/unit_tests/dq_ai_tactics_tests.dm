@@ -187,13 +187,14 @@
 	H.forceMove(ai_floor(8))
 	TEST_ASSERT_NULL(dq_ai_test_eval(B, /datum/ai_behavior/charge_slam), "charge_slam scored beyond its maximum range")
 	H.forceMove(ai_floor(4))
-	// Commit to it by hand: the windup blocks reselection; the dash then lands and the behaviour completes.
+	// Commit to it by hand: the wind-up is an op that waits (the brain is busy); the dash then lands and the behaviour completes.
+	test_driver_begin()
 	B.run_behavior(/datum/ai_behavior/charge_slam, H, null)
 	TEST_ASSERT_EQUAL(B.active_behavior_type, /datum/ai_behavior/charge_slam, "charge_slam did not become the active behaviour")
 	TEST_ASSERT(B.is_busy(), "the windup did not block reselection")
 	var/before = H.injury_load(INJURY_CATEGORY_PHYSICAL)
-	var/datum/ai_behavior/charge_slam/C = dq_get_behavior(/datum/ai_behavior/charge_slam)
-	C.execute_dash(B, H)
+	test_time(MOB_CHARGE_WINDUP + 1 SECOND)
+	B.tactical_tick() // the loop resumes the tactic on the op's outcome
 	TEST_ASSERT(S.Adjacent(H), "the dash did not reach the target")
 	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_PHYSICAL) > before, "the dash dealt no injury")
 	TEST_ASSERT_NULL(B.active_behavior_type, "the behaviour did not finish after the dash")
@@ -204,8 +205,9 @@
 	B.run_behavior(/datum/ai_behavior/charge_slam, H, null)
 	B.stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 	var/at = get_dist(S, H)
-	C.execute_dash(B, H)
+	test_time(MOB_CHARGE_WINDUP + 1 SECOND)
 	TEST_ASSERT_EQUAL(get_dist(S, H), at, "a cancelled charge still dashed")
+	test_driver_end()
 
 // --- flee_low_hp and pack_retreat -------------------------------------------------------------
 

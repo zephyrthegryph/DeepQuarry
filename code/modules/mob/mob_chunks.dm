@@ -148,17 +148,18 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
  * counters first.
  */
 /proc/publish_mob_move(atom/old_loc, atom/movable/mover, player)
+	if(isliving(mover) && length(GLOB.mob_chunks)) // the living-mob index of every chunk that exists follows the mob, watched or not
+		var/living_new_id = mob_chunk_id(mover)
+		var/living_old_id = mob_chunk_id(old_loc)
+		if(living_old_id != living_new_id)
+			living_chunk_note(mover, living_old_id, FALSE)
+			living_chunk_note(mover, living_new_id, TRUE)
 	var/bits = GLOB.mob_chunk_watches ? CHANGE_CHUNK_ANY_MOB : 0
 	if(player && GLOB.player_chunk_watches)
 		bits |= CHANGE_CHUNK_PLAYER
 	if(!bits)
 		return
 	var/new_id = mob_chunk_id(mover)
-	if(isliving(mover))
-		var/old_living_id = mob_chunk_id(old_loc)
-		if(old_living_id != new_id)
-			living_chunk_note(mover, old_living_id, FALSE)
-			living_chunk_note(mover, new_id, TRUE)
 	mob_chunk_changed(new_id, bits)
 	if(bits & CHANGE_CHUNK_ANY_MOB)
 		var/old_id = mob_chunk_id(old_loc)

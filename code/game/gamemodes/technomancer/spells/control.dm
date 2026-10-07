@@ -39,6 +39,7 @@
 	if(isanimal(L))
 		var/mob/living/simple_mob/SM = L
 		rel_add(SM, nameof(SM.friends), src.owner_ref())
+	brain.ally_by_effect(src, owner_ref()) // the spell is the source: the standing goes with it
 
 	// Note, this should be refactored to drop priority overlays
 	L.add_overlay(control_overlay, TRUE)
@@ -58,6 +59,7 @@
 	if(isanimal(L))
 		var/mob/living/simple_mob/SM = L
 		rel_remove(SM, nameof(SM.friends), owner_ref())
+	unstanding(L, owner_ref(), src)
 
 	L.cut_overlay(control_overlay, TRUE)
 	rel_remove(src, nameof(controlled_mobs), L)

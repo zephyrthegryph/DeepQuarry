@@ -32,7 +32,7 @@
 	var/datum/ai_brain/B = S.ai_brain
 	var/datum/observer = allocate(/datum)
 	hold(S, STAT_RELEVANCE, RELEVANCE_VISIBLE, observer)
-	TEST_ASSERT_EQUAL(S.ai_action_interval(null), DQ_ACTION_TICK, "an idle brain's action interval is not the action tick")
+	TEST_ASSERT_EQUAL(S.ai_action_interval(null), DQ_CALM_TICK, "an idle brain's action interval is not the calm tick")
 	B.active_behavior_type = /datum/ai_behavior/idle_wander
 	TEST_ASSERT_EQUAL(S.ai_action_interval(null), DQ_ACTION_TICK, "the action interval does not follow the active behaviour (visible)")
 	release(S, STAT_RELEVANCE, observer)

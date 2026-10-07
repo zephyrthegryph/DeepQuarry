@@ -112,6 +112,10 @@
 #define DQ_ACTION_TICK (0.25 SECONDS)
 /// IDLE and BACKGROUND behaviours below RELEVANCE_VISIBLE tick this many times slower.
 #define DQ_IDLE_STRETCH 3
+/// The wind-up of a charge (the "mob_attacks.charge" op) before the dash.
+#define MOB_CHARGE_WINDUP (1.2 SECONDS)
+/// The action loop's interval while the brain has no target and no tactic running: the idle-selection cadence.
+#define DQ_CALM_TICK (2 SECONDS)
 /// While engaged the brain re-selects at least this often even without an event.
 #define DQ_ENGAGED_RECHECK (1 SECOND)
 

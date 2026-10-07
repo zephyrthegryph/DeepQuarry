@@ -52,6 +52,9 @@
 	/// asks for every pair of its members and sightings, so the answer is remembered; the key carries what the engine's own cache checks (the subject's
 	/// faction and whether a player has it).
 	var/list/disposition_memo = null
+	/// null: not known yet; TRUE when the mob holds a standing row of any provider but the faction tables and its pack (a grudge, an effect, a lord's, an
+	/// admin's): its answers differ from its faction's, so a pack asks it for itself.
+	var/standings_custom = null
 
 /// TRUE when the mob's faction or hostile-on-sight flag is not what the faction rows were placed for.
 /datum/ai_brain/proc/standings_stale()
@@ -72,6 +75,7 @@
 		unstanding(holder, key, SRC_AI_FACTION)
 	standings_keys = list()
 	disposition_memo = null
+	standings_custom = null
 	var/faction = holder.faction
 	var/aggro = aggro_on_sight()
 	standings_faction = faction
@@ -110,6 +114,18 @@
 /// A standing row of the mob changed (placed, replaced, released, expired, source deleted): what was remembered is stale.
 /datum/ai_brain/proc/standings_changed(datum/act/A)
 	disposition_memo = null
+	standings_custom = null
+
+/// TRUE when every standing this mob holds is a faction-table row or its pack's: it thinks what any packmate of its faction thinks.
+/datum/ai_brain/proc/plain_standings()
+	if(isnull(standings_custom))
+		standings_custom = FALSE
+		var/datum/stat_record/rec = holder?.rx?.stats
+		for(var/list/row as anything in rec?.holds)
+			if(row[H_STAT] == HOLD_STANDING && row[H_SOURCE] != SRC_AI_FACTION && !istype(row[H_SOURCE], /datum/ai_pack))
+				standings_custom = TRUE
+				break
+	return !standings_custom
 
 /// The grudges provider: this brain thinks `disposition` of `other` for `duration` deciseconds (0: until released), priority AI_STANDING_GRUDGE. One per subject.
 /// (The old add_personal(): the name stays for its callers; a row is a grudge whatever the value.)
@@ -155,3 +171,7 @@
 			standing(B.get_owner(), toward = faction_key, value = STANDING_ALLY, source = src, priority = AI_STANDING_PACK, reason = "pack member")
 		else
 			unstanding(B.get_owner(), faction_key, src)
+
+/// A tame, charm or control effect (`source`, a live datum) makes the brain regard `subject` as an ally for as long as the effect lives.
+/datum/ai_brain/proc/ally_by_effect(datum/source, subject)
+	return place_effect_standing(source, subject, DQ_DISPOSITION_ALLY)

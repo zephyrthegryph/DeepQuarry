@@ -14,6 +14,18 @@
 // A pass runs from the stir trigger (chunk activity, a member hurt or heard) coalesced to one run per window (perceive_interval()), and from a brain's
 // strategic backstop when the pack has not perceived for a window (perceive_if_due()). Nothing schedules a pass for a pack that nothing disturbs.
 
+/// While TRUE every pass adds the time of each stage to GLOB.ai_pack_stage_ms (stage name => ms): the cost test and profiling read it.
+GLOBAL_VAR_INIT(ai_pack_profile, FALSE)
+GLOBAL_LIST_EMPTY(ai_pack_stage_ms)
+/// Adds the time since `t` to the profile stage `name` (while profiling) and returns the new "since".
+/proc/ai_stage(name, t)
+	if(GLOB.ai_pack_profile)
+		GLOB.ai_pack_stage_ms[name] += TICK_USAGE_TO_MS(t)
+		return TICK_USAGE
+	return t
+
+#define PACK_STAGE(name) if(GLOB.ai_pack_profile) { GLOB.ai_pack_stage_ms[name] += TICK_USAGE_TO_MS(stage_t); stage_t = TICK_USAGE }
+
 /// Perception passes by all packs, line-of-sight lookups they made, and view() builds behind them (tests count these).
 GLOBAL_VAR_INIT(ai_pack_perceptions, 0)
 GLOBAL_VAR_INIT(ai_pack_los_checks, 0)
@@ -74,18 +86,37 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 		trace("perception parked: no member is relevant")
 		return
 	var/started = TICK_USAGE
+	var/stage_t = started
 	perceptions++
 	GLOB.ai_pack_perceptions++
 	EXPIRY_STAMP(src, last_perceived_at, CLOCK_WORLD)
 
 	// 1. candidates: the living mobs in the chunks that cover the members' vision (each mob is in exactly one chunk)
+	PACK_STAGE("setup")
 	var/list/chunks = covering_chunks(live)
+	PACK_STAGE("chunks")
 	cover_chunks(chunks)
+	PACK_STAGE("cover")
 	var/list/cands = list()
 	for(var/datum/mob_chunk/C as anything in chunks)
 		for(var/mob/living/L as anything in living_in_chunk(C.id))
 			if(L.stat < DEAD)
 				cands += L
+
+	PACK_STAGE("candidates")
+	// Members that think what their faction thinks are asked once per class (faction and attack-on-sight); one with a standing of its own is asked itself.
+	var/list/rep_of = list()
+	var/list/class_reps = list()
+	for(var/datum/ai_brain/B as anything in live)
+		if(B.plain_standings())
+			var/class_key = "[B.get_owner().faction]|[B.aggro_on_sight()]"
+			var/datum/ai_brain/rep = class_reps[class_key]
+			if(!rep)
+				rep = B
+				class_reps[class_key] = rep
+			rep_of[B] = rep
+		else
+			rep_of[B] = B
 
 	// 2-4. who is noted, who is seen
 	var/datum/faction_data/data = faction_data()
@@ -103,19 +134,32 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 		if(!in_range)
 			continue
 		var/needs_los = FALSE
+		var/datum/ai_brain/last_rep = null
 		for(var/datum/ai_brain/B as anything in in_range)
-			if(B.disposition_to(L) <= DQ_DISPOSITION_HOSTILE)
+			var/datum/ai_brain/rep = rep_of[B]
+			if(rep == last_rep)
+				continue // a pack is mostly one class: it is asked once
+			last_rep = rep
+			if(rep.disposition_to(L) <= DQ_DISPOSITION_HOSTILE)
 				needs_los = TRUE
 				break
 		var/datum/ai_brain/spotter = in_range[1]
 		var/seen = FALSE
 		if(needs_los)
 			hostile_candidates++
-			for(var/datum/ai_brain/B as anything in (length(in_range) > 1 ? nearest_first(in_range, L) : in_range))
+			var/list/order = length(in_range) > 1 ? nearest_first(in_range, L) : in_range
+			var/turf/target_turf = get_turf(L)
+			if(length(in_range) > 1 && (L.invisibility > 0 || (target_turf && target_turf.get_lumcount() < 0.1)))
+				order = sentinels_first(order) // a dark or invisible target: those who see in the dark look first
+			for(var/datum/ai_brain/B as anything in order)
 				if(member_sees(B, L, views))
 					spotter = B
 					seen = TRUE
 					break
+		seen_mobs += L
+		if(!needs_los)
+			seen_info += list(null) // nobody here thinks it hostile: no sighting to keep (a member out of range that does is told nothing)
+			continue
 		var/key = REF(L)
 		var/first_at = world.time
 		var/list/old = sightings?[key]
@@ -123,19 +167,27 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 			first_at = old[SIGHT_FIRST_AT]
 		var/list/info = list(REF(spotter), first_at, seen)
 		fresh[key] = info
-		seen_mobs += L
 		seen_info += list(info)
 
-	// knowledge: replace, relation-listing the mobs (only what changed)
+	PACK_STAGE("sight")
+	// knowledge: the persistent part is who was seen and since when (the mobs themselves are held only by this pass)
 	sightings = length(fresh) ? fresh : null
-	rel_swap(src, nameof(sighted), seen_mobs)
+	PACK_STAGE("knowledge")
 
-	// 5-6. publish to each member, the differences only
+	// 5-6. publish to each member, the differences only. A class's dispositions toward the sightings are worked out once.
+	var/list/class_disp = list()
 	var/pending_alert = INFINITY
 	var/changed_members = 0
 	for(var/datum/ai_brain/B as anything in live)
 		var/mob/living/me = B.get_owner()
 		var/my_ref = REF(B)
+		var/datum/ai_brain/rep = rep_of[B]
+		var/list/disps = class_disp[rep]
+		if(!disps)
+			disps = list()
+			for(var/mob/living/L as anything in seen_mobs)
+				disps += rep.disposition_to(L)
+			class_disp[rep] = disps
 		var/list/hostiles = list()
 		var/list/friendlies = list()
 		var/list/neutrals = list()
@@ -143,10 +195,10 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 			var/mob/living/L = seen_mobs[i]
 			if(L == me)
 				continue
-			var/list/S = seen_info[i]
-			var/disposition = B.disposition_to(L)
+			var/disposition = disps[i]
 			if(disposition <= DQ_DISPOSITION_HOSTILE)
-				if(!S[SIGHT_SEEN])
+				var/list/S = seen_info[i]
+				if(!S || !S[SIGHT_SEEN])
 					continue
 				if(S[SIGHT_SPOTTER] != my_ref)
 					var/datum/ai_brain/spotter = locate(S[SIGHT_SPOTTER])
@@ -161,9 +213,14 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 				friendlies += L
 			else
 				neutrals += L
+		PACK_STAGE("classify")
 		if(B.model.publish_perception(hostiles, friendlies, neutrals))
 			changed_members++
+			PACK_STAGE("swap")
 			B.perception_changed()
+			PACK_STAGE("brain_update")
+		else
+			PACK_STAGE("swap")
 	if(pending_alert < INFINITY)
 		after_unique(src, max(1, pending_alert), TYPE_PROC_REF(/datum/ai_pack, perceive_pending))
 	GLOB.ai_brain_cost_ms += TICK_USAGE_TO_MS(started)
@@ -234,26 +291,29 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 
 /// One perception list brought to `want` by removing what is gone and adding what is new. TRUE when anything changed.
 /datum/world_model/proc/swap_perceived(var_name, list/want)
-	return rel_swap(src, var_name, want)
-
-/// Brings the relation list `var_name` of `E` to `want` touching only the differences (rel_remove for what left, rel_add for what came). TRUE when anything changed.
-/proc/rel_swap(datum/E, var_name, list/want)
-	var/list/have = E.vars[var_name]
+	var/list/have = vars[var_name]
+	if(!length(have) && !length(want))
+		return FALSE
 	var/changed = FALSE
-	for(var/datum/D as anything in have?.Copy())
-		if(!(D in want))
-			rel_remove(E, var_name, D)
+	for(var/mob/living/M as anything in have.Copy())
+		if(!(M in want))
+			have -= M
 			changed = TRUE
-	for(var/datum/D as anything in want)
-		if(!(D in have))
-			rel_add(E, var_name, D)
+	for(var/mob/living/M as anything in want)
+		if(!(M in have))
+			have += M
 			changed = TRUE
 	return changed
 
 /// A pass changed what this brain knows: the event that re-picks its behaviour.
 /datum/ai_brain/proc/perception_changed()
 	trace("perception changed: [length(model.visible_hostiles)] hostile(s), [length(model.visible_friendlies)] friendly(ies)")
+	var/t = TICK_USAGE
 	update_primary_threat()
+	t = ai_stage("b_target", t)
 	assess_state()
+	t = ai_stage("b_state", t)
 	PUBLISH(src, ai_perceive)
+	t = ai_stage("b_notice", t)
 	invalidate_selection()
+	ai_stage("b_invalidate", t)

@@ -31,7 +31,6 @@ ACTION(ai_pack_stir, FIXED, notice = /datum/notice/ai_pack_stirred)
 	var/needs_upkeep = FALSE
 	/// Perception state (perception.dm).
 	var/list/sightings = null     // ref text of a mob => list(spotter ref text, first seen at, seen, last classified at)
-	var/list/sighted = null       // the mobs sightings names (a relation list: a deleted mob leaves it)
 	var/list/covered_ids = null   // the chunk ids watched now
 	var/list/chunk_tokens = null  // the chunk datums watched now
 	EXPIRY_DECLARE(last_perceived_at)
@@ -46,7 +45,6 @@ TRACKED(/datum/ai_pack, needs_upkeep)
 CAPABILITIES(/datum/ai_pack)
 	links(/datum/ai_pack::members, /datum/ai_brain::pack, a_many = TRUE)
 	ref_one(nameof(leader))
-	ref_many(nameof(sighted))
 	owns_many(nameof(intents), /datum/ai_intent)
 	on_notice(/datum/notice/ai_pack_stirred, coalesce(PROC_REF(perceive_interval)), then(PROC_REF(perceive_run)))
 	every(PACK_UPKEEP_INTERVAL, then(PROC_REF(upkeep_run)), when = nameof(needs_upkeep))
@@ -88,12 +86,20 @@ CAPABILITIES(/datum/ai_pack)
 		if(L && !QDELETED(L) && L.stat < DEAD && L.loc && !(L.client && !B.autopilot))
 			. += B
 
-/// The highest relevance (STAT_RELEVANCE) of any member's mob: the pack is as relevant as its most relevant member.
+/// The pack's relevance: the highest any member holds on it (sync_relevance()), so the pack is as relevant as its most relevant member.
 /datum/ai_pack/proc/pack_relevance()
-	. = RELEVANCE_NONE
-	for(var/datum/ai_brain/B as anything in members)
-		if(B.get_owner())
-			. = max(., stat_value(B.get_owner(), STAT_RELEVANCE))
+	return stat_value(src, STAT_RELEVANCE)
+
+/// `B` holds its mob's relevance on the pack (STAT_RELEVANCE is a MAX stat: the pack takes the highest of its members' holds, and a hold goes with its
+/// source, the brain). Called when the member joins and whenever its mob's relevance changes.
+/datum/ai_pack/proc/sync_relevance(datum/ai_brain/B)
+	var/mob/living/owner = B.get_owner()
+	release(src, STAT_RELEVANCE, B)
+	if(!owner || QDELETED(owner) || !(B in members))
+		return
+	var/level = stat_value(owner, STAT_RELEVANCE)
+	if(level > RELEVANCE_NONE)
+		hold(src, STAT_RELEVANCE, level, B, reason = "member relevance")
 
 // ---------------------------------------------------------------------------
 // Membership
@@ -108,6 +114,7 @@ CAPABILITIES(/datum/ai_pack)
 		old.remove_member(B, "joined pack #[serial]")
 	rel_add(src, nameof(members), B)
 	trace("[B.get_owner()] joined ([B.get_owner()?.type])")
+	sync_relevance(B)
 	sync_standings()
 	elect_leader()
 	stir("member joined")
@@ -117,6 +124,7 @@ CAPABILITIES(/datum/ai_pack)
 	if(!(B in members))
 		return
 	rel_remove(src, nameof(members), B)
+	release(src, STAT_RELEVANCE, B)
 	if(B.get_owner() && !QDELETED(B.get_owner()) && faction_key)
 		unstanding(B.get_owner(), faction_key, src)
 	trace("[B.get_owner()] left ([reason])")

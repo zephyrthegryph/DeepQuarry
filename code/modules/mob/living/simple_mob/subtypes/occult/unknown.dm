@@ -106,6 +106,7 @@
 		var/chosen_turf = pick(actual_turfs)
 		var/type_to_spawn = prob(15) ? /mob/living/simple_mob/glitch_boss_fake/strong : /mob/living/simple_mob/glitch_boss_fake
 		var/mob/living/simple_mob/newmob = new type_to_spawn(chosen_turf)
+		newmob.ai_brain?.serve(src) // the illusions are the boss's sworn
 		newmob.icon_living = src.icon_living
 		newmob.icon_state = src.icon_state
 		new /obj/effect/temp_visual/glitch(chosen_turf)

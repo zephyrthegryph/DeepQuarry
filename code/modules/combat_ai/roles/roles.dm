@@ -38,6 +38,11 @@ CAPABILITY_TYPE(ai_role_sentinel, CAP_AI_ROLE_SENTINEL, /datum/capability/ai_rol
 /mob/living/proc/ai_authority_changed(datum/act/A)
 	ai_brain?.pack?.elect_leader()
 
+/// The mob's relevance changed: its brain holds the new level on its pack.
+/mob/living/proc/ai_relevance_changed(datum/act/A)
+	if(ai_brain?.pack)
+		ai_brain.pack.sync_relevance(ai_brain)
+
 /// Gives the mob a role: the capability, and the authority it carries.
 /datum/ai_brain/proc/grant_role(role_type)
 	if(!holder || QDELETED(holder) || granted(holder, role_type))
@@ -107,6 +112,7 @@ CAPABILITY_TYPE(ai_role_sentinel, CAP_AI_ROLE_SENTINEL, /datum/capability/ai_rol
 	if(!new_lord || new_lord == holder || (lord == new_lord && has_role(/datum/capability/ai_role/sworn)))
 		return
 	rel_set(src, nameof(lord), new_lord)
+	new_lord.ai_brain?.grant_role(/datum/capability/ai_role/lord) // whoever has servants leads them
 	grant_role(/datum/capability/ai_role/sworn)
 	var/datum/ai_pack/lords_pack = new_lord.ai_brain?.pack
 	if(lords_pack && lords_pack != pack)
@@ -169,3 +175,27 @@ CAPABILITY_TYPE(ai_role_sentinel, CAP_AI_ROLE_SENTINEL, /datum/capability/ai_rol
 	for(var/datum/ai_brain/B as anything in pack?.members?.Copy())
 		if(B != src && B.lord == holder)
 			B.unserve()
+
+/// Does this brain's mob see what most do not: through darkness, invisibility or walls (a held sight flag or a long night vision)? Such a member is a
+/// sentinel: it is granted the role the first time it is asked, and a pack checks line of sight for a dark or invisible target from sentinels first.
+/datum/ai_brain/proc/is_sentinel()
+	var/mob/living/L = holder
+	if(!L || QDELETED(L))
+		return FALSE
+	if(has_role(/datum/capability/ai_role/sentinel))
+		return TRUE
+	if((L.sight & (SEE_MOBS | SEE_THRU)) || L.see_invisible > SEE_INVISIBLE_LIVING || L.see_in_dark >= 8)
+		grant_role(/datum/capability/ai_role/sentinel)
+		return TRUE
+	return FALSE
+
+/// `brains` with the sentinels first (each group keeps its order).
+/datum/ai_pack/proc/sentinels_first(list/brains)
+	var/list/first = list()
+	var/list/rest = list()
+	for(var/datum/ai_brain/B as anything in brains)
+		if(B.is_sentinel())
+			first += B
+		else
+			rest += B
+	return first + rest

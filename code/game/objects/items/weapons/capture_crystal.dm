@@ -115,8 +115,10 @@ CAPABILITIES(/obj/item/capture_crystal)
 		if(current_leader)
 			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] stopped following [current_leader]."))
 			AI.lose_follow()
+			unstanding(bound_mob, current_leader, src)
 		else
 			AI.set_follow(M)
+			AI.ally_by_effect(src, M) // the crystal is the source: the standing goes with it
 			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] started following [M]."))
 	else if(!(bound_mob in view(M)))
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is not able to hear your command."))
@@ -130,8 +132,10 @@ CAPABILITIES(/obj/item/capture_crystal)
 		if(current_leader)
 			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] stopped following [current_leader]."))
 			AI.lose_follow()
+			unstanding(bound_mob, current_leader, src)
 		else
 			AI.set_follow(M)
+			AI.ally_by_effect(src, M) // the crystal is the source: the standing goes with it
 			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] started following [M]."))
 
 //Don't really want people 'haha funny' capturing and releasing one another willy nilly. So! If you wanna release someone, you gotta destroy the thingy.

@@ -61,14 +61,15 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	TEST_ASSERT_NOTNULL(B, "simple mob did not receive an AI brain")
 	rel_clear(B, nameof(B.primary_threat))
 	B.active_behavior_type = null
-	TEST_ASSERT(B.hibernate_calm(), "calm brain refused spatial hibernation")
-	TEST_ASSERT(!B.loop_running(DQAI_PROCESSING), "hibernating brain remained in strategic processing")
-	var/wakes = B.chunk_wakes
-	publish_mob_chunk(M)
-	OM_TEST_WAIT_UNTIL(B.chunk_wakes > wakes, 60)
-	// Not loop_running(): a woken calm brain with nothing to do is due at once
-	// and may hibernate again before this line runs.
-	TEST_ASSERT(B.chunk_wakes > wakes, "movement publication did not wake nearby brain")
+	TEST_ASSERT(B.park_calm(), "calm brain refused to park")
+	TEST_ASSERT(!B.loop_running(DQAI_PROCESSING), "a parked brain remained awake")
+	// Somebody walks in: the pack, which watches the chunks around its members, perceives it and wakes the brain.
+	var/mob/living/visitor = allocate(/mob/living, run_loc_floor_top_right)
+	var/wakes = B.wakes
+	visitor.forceMove(M.loc)
+	B.pack.perceive(TRUE)
+	// Not loop_running(): a woken calm brain with nothing to do is due at once and may park again before this line runs.
+	TEST_ASSERT(B.wakes > wakes, "a mob arriving near a parked brain did not wake it")
 // dq_get_behavior(T) must return the same singleton across calls — the
 // flyweight contract is what makes per-mob state on brain.behavior_state /
 // source items work. A bug that returned a fresh instance per call would
@@ -371,14 +372,11 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 /datum/unit_test/dq_combat_ai_fast_processing_is_combat_scoped/Run()
 	var/mob/living/simple_mob/combat_ai_test_subject/hunter = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human)
-	TEST_ASSERT(!hunter.ai_brain.loop_running(DQAI_FASTPROCESSING), \
-		"idle AI brain was registered for quarter-second tactical processing")
+	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK, "an idle AI brain is not on the calm cadence")
 	hunter.ai_brain.give_target(target, TRUE)
-	TEST_ASSERT(hunter.ai_brain.loop_running(DQAI_FASTPROCESSING), \
-		"AI brain did not enter tactical processing after receiving a combat target")
+	TEST_ASSERT(hunter.ai_brain.action_interval() <= DQ_ACTION_TICK, "an AI brain with a combat target is not on the action cadence")
 	hunter.ai_brain.lose_target()
-	TEST_ASSERT(!hunter.ai_brain.loop_running(DQAI_FASTPROCESSING), \
-		"AI brain remained in tactical processing after losing its combat target")
+	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK, "an AI brain stayed on the action cadence after losing its combat target")
 
 
 // --- runtime: aggro-on-damage: retaliate_to_attacker drives primary_threat ---

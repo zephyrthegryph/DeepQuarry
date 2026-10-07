@@ -100,3 +100,40 @@ GLOBAL_VAR_INIT(ai_trace_all, FALSE)
 /// Assigns the mob this brain fights (a tactic that retargets, such as a retaliation, goes through this).
 /datum/ai_brain/proc/set_primary_target(mob/living/M)
 	rel_set(src, nameof(primary_threat), M)
+
+// ---------------------------------------------------------------------------
+// A tactic that waits on an op (charge: wind up, then dash): the brain is busy until the op ends, and the tactic resumes on the outcome.
+// ---------------------------------------------------------------------------
+
+/// Starts the op `key` as the active tactic's wait: null (and a trace) when it was refused, else the pending result the brain now waits on.
+/datum/ai_brain/proc/begin_waiting_op(key, atom/target, obj/item/held = null)
+	var/datum/op_result/result = act_waiting(key, target, held)
+	if(!result || result.outcome == ACT_REFUSED)
+		trace("op [key] refused: [result ? reason_text(result.reason) : "no result"]")
+		return null
+	if(!isnull(result.outcome))
+		return result // it ended at once
+	rel_set(src, nameof(waiting_op), result)
+	return result
+
+/// The op the tactic waited on ended: the tactic ends with its outcome.
+/datum/ai_brain/proc/op_wait_ended()
+	var/datum/op_result/result = waiting_op
+	rel_clear(src, nameof(waiting_op))
+	trace("waited op [result?.key] ended: outcome [result?.outcome]")
+	if(active_behavior_type)
+		stop_active(result?.outcome == ACT_COMMITTED ? DQ_BEHAVIOR_STOP_COMPLETED : DQ_BEHAVIOR_STOP_FAILED)
+
+/// The tactic ended (or was replaced) while its op waited: the op is cancelled with it.
+/datum/ai_brain/proc/cancel_waiting_op()
+	if(!waiting_op)
+		return
+	var/datum/op_result/result = waiting_op
+	rel_clear(src, nameof(waiting_op))
+	if(isnull(result.outcome) && holder)
+		op_pending_of(holder)?.cancel(/datum/msg/op/stopped)
+		trace("waited op [result.key] cancelled")
+
+/// A brain waiting on an op is busy: it neither selects nor ticks until the op ends.
+/datum/ai_brain/proc/waits_on_op()
+	return waiting_op && isnull(waiting_op.outcome)

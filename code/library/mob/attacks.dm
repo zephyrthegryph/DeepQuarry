@@ -48,6 +48,11 @@ MSG_DEF_SELF(mob_attacks/no_hands, "You can't pick things up.")
 		op("alarm", inputs(ai()), reach(REACH_ANY), label("Sound the alarm"),
 			needs(req_capable(), req_conscious()),
 			then(CAP_PROC(alarm))),
+		// A charge: a telegraphed wind-up, then a dash at the target (up to six tiles) that ends in a slam. Cancelled with its actor or its target.
+		op("charge", inputs(ai()), reach(REACH_VIEW), label("Charge"),
+			needs(req_capable(), req_conscious()),
+			wait(MOB_CHARGE_WINDUP, keeps = ALIVE | TARGET_PRESENT),
+			then(CAP_PROC(charge))),
 		// A charge's impact on an adjacent target: heavy damage and a knock-down.
 		op("slam", inputs(ai()), reach(REACH_ADJACENT), label("Slam"),
 			needs(req_capable(), req_conscious(), req_adjacent()),
@@ -157,9 +162,29 @@ MSG_DEF_SELF(mob_attacks/no_hands, "You can't pick things up.")
 	var/atom/victim = A.target
 	if(!istype(SM) || !istype(victim) || QDELETED(victim))
 		return OP_FAILED
+	slam_hit(SM, victim)
+	return OP_OK
+
+/// The impact: heavy damage and a knock-down.
+/datum/capability/lib/mob_attacks/proc/slam_hit(mob/living/simple_mob/SM, atom/victim)
 	generic_hit(victim, SM, rand(SM.melee_damage_lower, SM.melee_damage_upper) * MOB_SLAM_MULTIPLIER, "slams into")
 	act_message(SM, victim, others = span_danger("%U% slams into %T% with crushing force!"))
 	if(isliving(victim))
 		var/mob/living/V = victim
 		V.apply_effect(2, WEAKEN)
+
+/// The dash after the wind-up: up to six tiles toward the target, stopping on contact; a slam if it got there.
+/datum/capability/lib/mob_attacks/proc/charge(datum/act/op/A)
+	var/mob/living/simple_mob/SM = A.actor
+	var/atom/victim = A.target
+	if(!istype(SM) || !istype(victim) || QDELETED(victim))
+		return OP_FAILED
+	act_log(A, "charge [victim]")
+	for(var/i in 1 to 6)
+		if(!SM.Adjacent(victim))
+			step_to(SM, victim)
+		if(SM.Adjacent(victim))
+			break
+	if(SM.Adjacent(victim))
+		slam_hit(SM, victim)
 	return OP_OK

@@ -70,13 +70,14 @@
 	var/tmp/armed_interval = 0
 	/// world.time of the last behaviour selection (pick_and_run()); engaged brains re-select at least every DQ_ENGAGED_RECHECK.
 	EXPIRY_DECLARE(last_pick_at)
-	/// While hibernating: the chunks it watches (watch_mob_chunks()).
-	var/tmp/list/react_sleep_tokens
+	/// The op the active tactic is waiting on (act_waiting()), null when none.
+	var/datum/op_result/waiting_op = null
 
 CAPABILITIES(/datum/ai_brain)
 	ref_many(nameof(behavior_sources))
 	owns_one(nameof(model), /datum/world_model)
 	ref_one(nameof(lord))
+	ref_one(nameof(waiting_op))
 	modes(nameof(ai_state))
 
 /datum/ai_brain/New(mob/living/owner)
@@ -101,7 +102,6 @@ CAPABILITIES(/datum/ai_brain)
 	rebuild_behaviors()
 	EXPIRY_STAMP(src, born_at, CLOCK_WORLD)
 	set_ai_state(state_set()["calm"])
-	modes_sync(src, nameof(ai_state)) // a datum made with new is not initialized by the lifecycle: grant its first state now
 	seek_pack()
 	return ..()
 
@@ -113,7 +113,6 @@ CAPABILITIES(/datum/ai_brain)
 /// cancelled while holder is still set; phase 4 then clears holder and holder.ai_brain.
 /datum/ai_brain/lifecycle_prerelease()
 	leave_pack("brain deleted")
-	cancel_chunk_sleep()
 	if(active_behavior_type)
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 		B.stop(src, active_target(), active_source(), DQ_BEHAVIOR_STOP_QDEL)
@@ -154,10 +153,6 @@ CAPABILITIES(/datum/ai_brain)
 		DQAI_START_PROCESSING(src)
 	else
 		DQAI_STOP_PROCESSING(src)
-	if(desired & DQAI_FASTPROCESSING)
-		DQAI_START_FASTPROCESSING(src)
-	else
-		DQAI_STOP_FASTPROCESSING(src)
 
 /// Legacy stance setter; accepted as a no-op. The brain has no stance enum.
 /datum/ai_brain/proc/set_stance(_stance)
@@ -169,7 +164,7 @@ CAPABILITIES(/datum/ai_brain)
 		// Never qdel from the subsystem tick: the holder's Destroy (or a
 		// revive via on_stat_change) owns the brain's lifetime. Just stop
 		// ticking; on_stat_change re-arms processing if the mob comes back.
-		dqai_log("[holder] brain: strategic tick on dead/deleted holder, sleeping")
+		dqai_log("[holder] brain: tick on dead/deleted holder, sleeping")
 		manage_processing(0)
 		return
 	if(holder.client && !autopilot)
@@ -184,24 +179,18 @@ CAPABILITIES(/datum/ai_brain)
 		EXPIRY_SET(src, next_strategic_at, 2 SECONDS, CLOCK_WORLD)
 		sync_fast_processing()
 		return
-	// Calm: this is the ONLY place no-threat behaviors (wander, idle speak,
-	// walk_to_destination, return_home, follow_leader, scavenge, ...) get
-	// selected. The tactical loop is combat-scoped, so running pick_and_run
-	// here keeps idle cost at the strategic cadence rather than per-250ms.
+	// Calm: this is the place no-threat behaviors (wander, idle speak, walk_to_destination, return_home, follow_leader, scavenge, ...) get
+	// selected, on the slow cadence rather than per action tick.
 	var/idle_pending = pick_and_run()
 	if(active_behavior_type)
-		// A tick-driven idle behavior is running: let the fast loop drive it
-		// until it finishes (sync_fast_processing drops us again on DONE).
+		// A tick-driven idle behavior is running: the loop drives it until it finishes.
 		EXPIRY_SET(src, next_strategic_at, 2 SECONDS, CLOCK_WORLD)
-		sync_fast_processing()
 		return
 	EXPIRY_SET(src, next_strategic_at, idle_strategic_interval, CLOCK_WORLD)
-	sync_fast_processing()
-	// Only hibernate when nothing idle wants to run and no one-shot walk is
-	// queued. A brain with an idle behavior scoring > 0 (or cooling down
+	// Only park when nothing idle wants to run and no one-shot walk is queued. A brain with an idle behavior scoring > 0 (or cooling down
 	// toward one) stays on the slow cadence so it actually gets to act.
 	if(!idle_pending && !destination())
-		hibernate_calm()
+		park_calm()
 
 /// Tactical tick. Fast — 250ms. Runs while a threat exists OR while a
 /// tick-driven behavior (combat or idle) is active; see sync_fast_processing.
@@ -234,13 +223,10 @@ CAPABILITIES(/datum/ai_brain)
 				stop_active(DQ_BEHAVIOR_STOP_FAILED)
 
 	if(!primary_threat)
-		// Calm: idle selection lives on the strategic cadence (handle_strategicals),
-		// never here — that is what keeps wandering mobs off the 250ms loop.
-		// If the idle behavior just finished, ask for a prompt re-pick on the
-		// next 2s SSai tick instead of waiting out idle_strategic_interval.
+		// Calm: idle selection lives on the slow cadence (handle_strategicals), never here.
+		// If the idle behavior just finished, ask for a prompt re-pick on the next slow run.
 		if(!active_behavior_type)
 			next_strategic_at = 0
-		sync_fast_processing()
 		return
 
 	if(!selection_dirty && active_behavior_type)
@@ -407,6 +393,7 @@ CAPABILITIES(/datum/ai_brain)
 		return
 	var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 	trace("stop [active_behavior_type] (reason [reason])")
+	cancel_waiting_op()
 	B.stop(src, active_target(), active_source(), reason)
 	active_behavior_type = null
 	rel_clear(src, nameof(active_target))
@@ -423,15 +410,13 @@ CAPABILITIES(/datum/ai_brain)
 /datum/ai_brain/proc/invalidate_selection()
 	selection_dirty = TRUE
 	next_strategic_at = 0
-	wake_from_chunks()
+	wake_loops()
 	sync_fast_processing()
 	poke_action_loop()
 
-/// Keeps the quarter-second tactical loop limited to brains that have a combat
-/// target or a tick-driven behavior in flight (an idle walk still needs to step).
-/// Calm brains with nothing active never sit on the fast loop.
+/// The action loop runs while the brain is awake (not parked), alive and not player-driven.
 /datum/ai_brain/proc/sync_fast_processing()
-	var/should_process_fast = (primary_threat || active_behavior_type) && holder && !QDELETED(holder) && holder.stat < DEAD && (!holder.client || autopilot)
+	var/should_process_fast = (process_flags & DQAI_PROCESSING) && holder && !QDELETED(holder) && holder.stat < DEAD && (!holder.client || autopilot)
 	if(should_process_fast)
 		DQAI_START_FASTPROCESSING(src)
 	else
@@ -592,6 +577,8 @@ CAPABILITIES(/datum/ai_brain)
 /// The loops check this: TRUE while a task claims the brain's mob -- an ability's wind-up, a timed
 /// action, or a behavior that blocks reselection (code/datums/om/task.dm, task_busy()).
 /datum/ai_brain/proc/is_busy()
+	if(waits_on_op())
+		return TRUE
 	return holder ? task_busy(holder) : FALSE
 
 /// An AI mob starts an ability whose later steps are timers: a hold task claims the mob, so its
