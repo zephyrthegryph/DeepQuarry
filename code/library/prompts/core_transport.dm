@@ -26,3 +26,19 @@
 	rel_clear(src, nameof(window))
 	if(shown && !QDELETED(shown))
 		SStgui.close_uis(shown)
+
+
+/datum/prompt/focus_transport(mob/user, datum/shown)
+	if(istype(shown, /datum/tgui_modal/prompt))
+		// an inline question is shown in the window of the holder that asked
+		var/datum/tgui_modal/prompt/modal = shown
+		shown = modal.owning_source()
+		if(isnull(shown) || QDELETED(shown))
+			return
+	var/datum/tgui/ui = SStgui.get_open_ui(user, shown)
+	if(!ui)
+		return
+	ui.send_full_update()
+	var/datum/tgui_window/shown_window = ui.window()
+	if(shown_window)
+		winset(user, shown_window.id, "focus=true")

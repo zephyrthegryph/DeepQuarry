@@ -97,19 +97,11 @@ CAPABILITIES(/datum/prompt)
 	var/datum/shown = window
 	if(isnull(shown) || QDELETED(shown))
 		return
-	if(istype(shown, /datum/tgui_modal/prompt))
-		// an inline question is shown in the window of the holder that asked
-		var/datum/tgui_modal/prompt/modal = shown
-		shown = modal.owning_source()
-		if(isnull(shown) || QDELETED(shown))
-			return
-	var/datum/tgui/ui = SStgui.get_open_ui(user, shown)
-	if(!ui)
-		return
-	ui.send_full_update()
-	var/datum/tgui_window/shown_window = ui.window()
-	if(shown_window)
-		winset(user, shown_window.id, "focus=true")
+	return focus_transport(user, shown)
+
+/// Bring an existing question to the front through its presentation transport.
+/datum/prompt/proc/focus_transport(mob/user, datum/shown)
+	return
 
 // ---- the inline form: a modal of the asking holder's window (code/engine/present/prompt_modals.dm) ----
 

@@ -283,7 +283,7 @@
 			continue
 		var/among = arg_part.args["among"]
 		if(!isnull(among) && istext(value) && S)
-			var/found = topic_resolve_ref(holder, value, S.type_of, among) // arg(among =): the ref is looked up in its source, never anywhere locate() reaches
+			var/found = holder.op_topic_resolve_ref(value, S.type_of, among) // arg(among =): the ref is looked up in its source, never anywhere locate() reaches
 			if(isnull(found))
 				schema_log(holder, name, "[name] names nothing among [among]: input refused")
 				return /datum/msg/op/bad_args
@@ -353,11 +353,7 @@
 		var/wanted = 0
 		for(var/datum/entry/part/req/rights/needed in P.needs)
 			wanted |= needed.args["rights"]
-		admin_log_denial(actor.client, "topic:[P.topic_key]", wanted)
-		var/attempt = "[key_name(actor)] tried href action '[P.topic_key]' on [holder.type] without sufficient rights"
-		log_admin(attempt)
-		log_href("TOPIC rights refused: [attempt]")
-		message_admins("[key_name_admin(actor)] tried href action '[P.topic_key]' on [holder.type] without sufficient rights.")
+		holder.op_topic_rights_denied(actor, P.topic_key, wanted)
 	return result
 
 /// The topic ops of a type, by topic key, in one namespace (null: plain hrefs); a subtype's own op for a key beats its parent's, as everywhere. Built once per type.
@@ -423,3 +419,21 @@
 
 /mob/proc/op_click_params(params)
 	return null
+
+
+/// Whether `user` may use this datum's href actions at all (checked before any row).
+/datum/proc/topic_allowed(mob/user, list/href_list)
+	return TRUE
+
+/// A datum whose href actions this one's links also reach (a page forwarding to its book):
+/// hrefs matching none of this type's rows are dispatched to it instead.
+/datum/proc/topic_forward()
+	return null
+
+/// Resolve a typed href argument through the world-facing topic transport.
+/datum/proc/op_topic_resolve_ref(raw, wanted, source)
+	return null
+
+/// Report a refused href to the administration transport.
+/datum/proc/op_topic_rights_denied(mob/actor, key, wanted)
+	return
