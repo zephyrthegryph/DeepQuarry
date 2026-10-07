@@ -23,15 +23,27 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	op("select_reagents", ui_act("select_reagents", arg("reagents")), then(PROC_REF(ui_act_select_reagents)))
 	op("purge_reagent", ui_act("purge_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_purge_reagent)))
 	op("purge_all", ui_act("purge_all"), then(PROC_REF(ui_act_purge_all)))
+	every(0.2 SECONDS, then(PROC_REF(syringe_gun_step)), when = nameof(synthesizing))
 
 /// Reagent ids selected for synthesis. Replaced whole (never mutated in place) so the setter raises.
-OM_FIELD_TYPED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, list, processed_reagents, null, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, synthesizing, list("chassis", "processed_reagents"))
-DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, PERIODIC_FAST, "synthesizing")
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/var/list/processed_reagents = null
+TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, processed_reagents)
 
-/// Derived field: mounted with reagents selected for synthesis.
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/synthesizing()
-	return chassis && length(processed_reagents)
+/// Mounted with reagents selected for synthesis: the every() runs while it holds. Refreshed when the mounting or the selection changes, and
+/// cleared when a step stops the processing (the old sweep dropped the gun until one of those changed).
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/var/synthesizing = FALSE
+TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, synthesizing)
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/synthesis_wanted()
+	return (chassis && length(processed_reagents)) ? TRUE : FALSE
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/attach(obj/mecha/M as obj)
+	. = ..()
+	set_synthesizing(synthesis_wanted())
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/detach(atom/moveto=null)
+	. = ..()
+	set_synthesizing(synthesis_wanted())
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/Initialize(mapload)
 	. = ..()
@@ -159,6 +171,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all"
 			selected += reagent_id
 			m++
 	set_processed_reagents(selected)
+	set_synthesizing(synthesis_wanted())
 	if(processed_reagents.len)
 		occupant_message("Reagent processing started.")
 		src.mecha_log_message("Reagent processing started.")
@@ -297,11 +310,14 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all"
 	update_equip_info()
 	return
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/periodic_step()
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/syringe_gun_step(datum/act/timer/A)
+	if(!chassis) // synthesizing is only set while mounted
+		return
 	if(!processed_reagents.len || reagents.total_volume >= reagents.maximum_volume || !chassis.has_charge(energy_drain))
 		occupant_message(span_warning("Reagent processing stopped."))
 		src.mecha_log_message("Reagent processing stopped.")
-		return PROCESS_KILL
+		set_synthesizing(FALSE)
+		return
 	var/amount = synth_speed / processed_reagents.len
 	for(var/reagent in processed_reagents)
 		reagents.add_reagent(reagent,amount)
@@ -340,10 +356,11 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all"
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/crisis_drone)
 	owns_one(nameof(MyBeam), /datum/beam)
+	every(2 SECONDS, then(PROC_REF(crisis_drone_step)), when = cond_not(nameof(jammed)))
 
 /// Jammed by a critical failure: the drone stays down until it is detached (and so reset).
-OM_FIELD(/obj/item/mecha_parts/mecha_equipment/crisis_drone, jammed, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/crisis_drone, PERIODIC_SLOW, list("chassis", "!jammed"))
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/var/jammed = FALSE
+TRACKED(/obj/item/mecha_parts/mecha_equipment/crisis_drone, jammed)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/Initialize(mapload)
 	. = ..()
@@ -375,7 +392,9 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 		TREAT_ANALGESIC = 0.2, \
 	))
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/periodic_step()	// Will continually try to find the patient most urgently in need of what the drone treats, and try to heal them.
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/crisis_drone_step(datum/act/timer/A)	// Will continually try to find the patient most urgently in need of what the drone treats, and try to heal them.
+	if(!chassis) // the drone only works mounted
+		return
 	if(chassis && enabled && chassis.has_charge(energy_drain) && (chassis?.slot_item(MECHA_SLOT_PILOT) || enable_special))
 		var/target_urgency = 0
 

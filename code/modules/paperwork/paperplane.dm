@@ -101,16 +101,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/paperplane, TYPE_PROC_REF(/atom, appearance_ov
 		H.emote("scream")
 
 /// Old click_alt: fold the paper into a plane.
-/obj/item/paper/proc/interaction_fold_plane(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+/obj/item/paper/proc/interaction_fold_plane(datum/act/op/A)
+	var/mob/living/carbon/user = A.actor
 	if(!plane_foldable)
-		return TRUE
+		return OP_OK
 	if ( istype(user) )
 		if( (!in_range(src, user)) || user.stat || user.restrained() )
-			return TRUE
+			return OP_OK
 		to_chat(user, span_notice("You fold [src] into the shape of a plane!"))
 		user.unEquip(src)
 		var/obj/item/I = new /obj/item/paperplane(user, src)
 		user.put_in_hands(I)
 	else
 		to_chat(user, span_notice(" You lack the dexterity to fold \the [src]. "))
-	return TRUE
+	return OP_OK

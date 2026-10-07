@@ -16,7 +16,7 @@
 	TEST_ASSERT(user.put_in_active_hand(cash), "the actor holds the original physical cash")
 	add_trait(cash, TRAIT_NODROP, "interim_atm_cash_sticky")
 	TEST_ASSERT(user.release_refusal(cash, user), "actual inventory refuses consumption of the sticky cash")
-	machine.interaction_atm_deposit_cash(user, cash, null)
+	machine.atm_take_cash(user, cash)
 	TEST_ASSERT_EQUAL(account.money, 200, "refused consumption grants no account funds")
 	TEST_ASSERT_EQUAL(SSsupply.currency_created, currency_before, "refused physical consumption creates no currency metric")
 	TEST_ASSERT_EQUAL(account.total_revenue, 0, "refused consumption records no revenue")
@@ -26,7 +26,7 @@
 	TEST_ASSERT_EQUAL(cash.loc, user, "refused deposit preserves inventory containment")
 	remove_trait(cash, TRAIT_NODROP, "interim_atm_cash_sticky")
 	account.suspended = TRUE
-	machine.interaction_atm_deposit_cash(user, cash, null)
+	machine.atm_take_cash(user, cash)
 	TEST_ASSERT(!QDELETED(cash), "an account refusing credit must preserve physical cash")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), cash, "suspended-account refusal preserves the exact original hand")
 	TEST_ASSERT_EQUAL(account.money, 200, "suspended-account refusal preserves account funds")
@@ -34,7 +34,7 @@
 	TEST_ASSERT_EQUAL(account.total_revenue, 0, "suspended-account refusal records no revenue")
 	TEST_ASSERT_EQUAL(LAZYLEN(account.transaction_log), 0, "suspended-account refusal records no transaction")
 	account.suspended = FALSE
-	machine.interaction_atm_deposit_cash(user, cash, null)
+	machine.atm_take_cash(user, cash)
 	TEST_ASSERT(QDELETED(cash), "allowed deposit consumes the exact original cash")
 	TEST_ASSERT_NULL(user.get_active_hand(), "allowed consumption clears the actual source hand")
 	TEST_ASSERT_EQUAL(SSsupply.currency_created, currency_before + 75, "one successful physical deposit records exactly its currency creation")

@@ -21,15 +21,14 @@
 
 /// What the spell is currently draining (a relation view). A field: it drains every 2 s while linked.
 OM_FIELD_VIEW(/obj/item/spell/energy_siphon, atom/movable, siphoning, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/spell/energy_siphon, PERIODIC_SLOW, "siphoning")
 
 // the siphon stops draining its target.
 /obj/item/spell/energy_siphon/on_destroy(force)
 	stop_siphoning()
 	..()
 
-/// Drains every 2 s while linked (declared on siphoning); unlinked, it sleeps.
-/obj/item/spell/energy_siphon/periodic_step()
+/// Drains every 2 s while linked (every() gated on siphoning); unlinked, the run is skipped.
+/obj/item/spell/energy_siphon/proc/energy_siphon_step(datum/act/timer/A)
 	if(!pay_energy(100))
 		to_chat(owner_ref(), span_warning("You can't afford to maintain the siphon link!"))
 		stop_siphoning()
@@ -201,4 +200,5 @@ APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon{siphoning?_dra
 	return siphoning
 
 CAPABILITIES(/obj/item/spell/energy_siphon)
+	every(2 SECONDS, then(PROC_REF(energy_siphon_step)), when = nameof(siphoning))
 	ref_many(nameof(things_to_siphon))

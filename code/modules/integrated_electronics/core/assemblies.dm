@@ -24,6 +24,13 @@
 
 CAPABILITIES(/obj/item/electronic_assembly)
 	owns_one(nameof(export_view), /datum/ic_export_view)
+	every(2 SECONDS, then(PROC_REF(assembly_power_step)), when = nameof(power_relevant))
+	op("assembly_self", in_hand(), label("Use"),
+		asks(/datum/prompt/choice, fields = list("question" = "What do you want to interact with?", "title" = "Interaction", "choices" = computed(PROC_REF(input_choices)), "timeout" = 0), step = "k_input"),
+		then(PROC_REF(interaction_self)))
+	op("assembly_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("assembly_robot_use", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(assembly_robot_use)))
+	op("assembly_rename", menu(), label("Rename Circuit"), needs(carried()), then(PROC_REF(assembly_rename_op)))
 	interface("ICAssembly", state = nameof(GLOB.tgui_physical_state))
 	without("ui_open")
 	op("export_circuit", ui_act("export_circuit"), then(PROC_REF(ui_act_export_circuit)))
@@ -38,18 +45,12 @@ CAPABILITIES(/obj/item/electronic_assembly)
 /// Cached flag: TRUE when this assembly has at least one circuit that draws or makes power (so
 /// handle_idle_power() actually has work to do). Recomputed on circuit/cell add/remove via
 /// Entered()/Exited(); null until first computed.
-OM_FIELD_TYPED(/obj/item/electronic_assembly, tmp, power_relevant, null, CHANGE_EXPLICIT)
+/obj/item/electronic_assembly/var/tmp/power_relevant = null
+TRACKED(/obj/item/electronic_assembly, power_relevant)
 
-/// Has power-relevant work (a battery plus a circuit that makes or draws idle power).
-OM_DERIVE_FIELD(/obj/item/electronic_assembly, has_power_work, list("power_relevant"))
-DECLARE_PERIODIC_WHILE(/obj/item/electronic_assembly, PERIODIC_SLOW, "has_power_work")
-
-/obj/item/electronic_assembly/proc/has_power_work()
-	if(isnull(power_relevant))
-		recompute_power_relevant()
-	return power_relevant
-
-/obj/item/electronic_assembly/periodic_step(seconds_per_tick)
+/// Idle power every 2 s while there is power-relevant work (a battery plus a circuit that makes or draws idle power).
+/obj/item/electronic_assembly/proc/assembly_power_step(datum/act/timer/A)
+	var/seconds_per_tick = 20 // the interval, in deciseconds, as the old sweep passed it
 	handle_idle_power(seconds_per_tick)
 
 // Any circuit or cell entering/leaving contents can change whether there's power-relevant work to
@@ -309,14 +310,14 @@ CAPABILITIES(/datum/ic_export_view)
 // End TGUI
 
 /// Old Rename Circuit verb: Rename your circuit, useful to stay organized.
-/obj/item/electronic_assembly/proc/electronic_assembly_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/electronic_assembly/proc/electronic_assembly_verb_rename(mob/user)
 	var/mob/M = user
 	if(!check_interactivity(M))
 		return
 
 	if(!ismob(M) || QDELETED(M))
 		return
-	open_request(src, /datum/prompt/text/electronics_rename, PROC_REF(rename_entered), answerer = M, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), question = "What do you want to name this?", default = name)
+	open_request(src, /datum/prompt/text/electronics_rename, PROC_REF(rename_entered), answerer = M, question = "What do you want to name this?", default = name)
 
 /obj/item/electronic_assembly/proc/rename_entered(datum/act/request/A)
 	var/datum/prompt/text/electronics_rename/request = A.request
@@ -426,15 +427,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 		G.afterattack(target, user, proximity, null)
 
 /// Old attackby.
-/obj/item/electronic_assembly/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/electronic_assembly/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/integrated_circuit))
-		if(!user.unEquip(I) && !isrobot(user)) //Robots cannot de-equip items in grippers.
-			return INTERACTION_HANDLED_PASS
+		if(!user.unEquip(I) && I.loc == user) //an item a gripper holds is not in the actor's own inventory, so it is no refusal
+			return OP_PASS
 		if(add_circuit(I, user))
 			to_chat(user, span_notice("You slide \the [I] inside \the [src]."))
 			play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 			tgui_interact(user)
-			return TRUE
+			return OP_OK
 
 	else if((istype(I, /obj/item/card/id) || istype(I, /obj/item/pda)) && !opened)
 		var/obj/item/card/id/id_card = null
@@ -447,7 +450,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 
 		if(!id_card)
 			to_chat(user, span_warning("You need an ID card to lock this assembly!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(locked)
 			// Trying to unlock
@@ -458,23 +461,23 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 				update_icon()
 			else
 				to_chat(user, span_warning("Access denied. This assembly was locked by [locked_by() ? locked_by().registered_name : "someone else"]."))
-			return TRUE
+			return OP_OK
 		else
 			// Trying to lock
 			locked = TRUE
 			rel_set(src, nameof(locked_by), id_card)
 			to_chat(user, span_notice("You lock \the [src]. Now only your ID card can unlock it."))
 			update_icon()
-			return TRUE
+			return OP_OK
 
 	else if(istype(I, /obj/item/integrated_electronics/wirer) || istype(I, /obj/item/integrated_electronics/debugger))
 		if(opened)
 			tgui_interact(user)
-			return TRUE
+			return OP_OK
 		else
 			to_chat(user, span_warning("\The [src] isn't opened, so you can't fiddle with the internal components.  \
 			Try using a crowbar."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 	else if(istype(I, /obj/item/integrated_electronics/detailer))
 		var/obj/item/integrated_electronics/detailer/D = I
@@ -484,21 +487,21 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 	else if(istype(I, /obj/item/cell/device))
 		if(!opened)
 			to_chat(user, span_warning("\The [src] isn't opened, so you can't put anything inside.  Try using a crowbar."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(battery)
 			to_chat(user, span_warning("\The [src] already has \a [battery] inside.  Remove it first if you want to replace it."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/cell/device/cell = I
 		if(!move_into(src, nameof(src.battery), cell, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		to_chat(user, span_notice("You slot \the [cell] inside \the [src]'s power supplier."))
 		tgui_interact(user)
-		return TRUE
+		return OP_OK
 
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/electronic_assembly/wrench_act(mob/user, obj/item/tool)
 	if(!can_anchor)
@@ -529,25 +532,35 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 	to_chat(user, span_warning("\The [src] isn't opened, so you can't fiddle with the internal components. Try using a crowbar."))
 	return ITEM_INTERACT_BLOCKING
 
-DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ROBOT("Use", PROC_REF(assembly_robot_use)), \
-	INTERACT_VERB("Rename Circuit", PROC_REF(electronic_assembly_verb_rename), REQ_IN_INVENTORY), \
-)
+/// The Rename Circuit menu entry.
+/obj/item/electronic_assembly/proc/assembly_rename_op(datum/act/op/A)
+	electronic_assembly_verb_rename(A.actor)
+	return OP_OK
 
-/// Old attack_self.
-/obj/item/electronic_assembly/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The names the self-use question offers.
+/obj/item/electronic_assembly/proc/input_choices(datum/act/op/A)
+	var/list/options = input_prompt_options()
+	return options[1]
+
+/// Old attack_self: ask which input circuit to use, then ask that circuit for its input.
+/obj/item/electronic_assembly/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!check_interactivity(user))
-		return TRUE
+		return OP_OK
 	if(opened)
 		tgui_interact(user)
-
-	if(!ismob(user) || QDELETED(user))
-		return TRUE
 	var/list/options = input_prompt_options()
-	open_request(src, /datum/prompt/choice/electronics_input, PROC_REF(input_selected), answerer = user, choices = options[1], captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction))
-	return TRUE
+	var/list/input_selection = options[1]
+	var/list/available_inputs = options[2]
+	var/selection = A.step_value("k_input")
+	var/obj/item/integrated_circuit/input/choice
+	if(selection)
+		var/index = input_selection.Find(selection)
+		choice = available_inputs[index]
+	if(choice)
+		choice.ask_for_input(user)
+	SStgui.update_uis(src)
+	return OP_OK
 
 /obj/item/electronic_assembly/proc/input_prompt_options()
 	var/list/input_selection = list()
@@ -566,70 +579,13 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 
 	return list(input_selection, available_inputs)
 
-/obj/item/electronic_assembly/proc/input_selected(datum/act/request/A)
-	var/datum/prompt/choice/electronics_input/request = A.request
-	if(!A.answer || request.captures_gone())
-		return
-	apply_input_selection(A)
-	SStgui.update_uis(src)
-
-/obj/item/electronic_assembly/proc/apply_input_selection(datum/act/request/A)
-	var/mob/user = A.request.answerer
-	if(!check_interactivity(user))
-		return TRUE
-	if(opened)
-		tgui_interact(user)
-	var/list/options = input_prompt_options()
-	var/list/input_selection = options[1]
-	var/list/available_inputs = options[2]
-	var/selection = A.answer.value
-	var/obj/item/integrated_circuit/input/choice
-	if(selection)
-		var/index = input_selection.Find(selection)
-		choice = available_inputs[index]
-	if(choice)
-		choice.ask_for_input(user)
-	return TRUE
-
-/datum/prompt/choice/electronics_input
-	question = "What do you want to interact with?"
-	title = "Interaction"
-	timeout = 0
-	var/obj/item/captured_item
-	var/datum/interaction/captured_interaction
-	var/item_expected = FALSE
-	var/interaction_expected = FALSE
-
-CAPABILITIES(/datum/prompt/choice/electronics_input)
-	ref_one(nameof(captured_item), /obj/item)
-	ref_one(nameof(captured_interaction), /datum/interaction)
-
-/datum/prompt/choice/electronics_input/prepare(datum/act/A)
-	. = ..()
-	var/obj/item/item = captured_item
-	var/datum/interaction/interaction = captured_interaction
-	rel_clear(src, nameof(captured_item))
-	rel_clear(src, nameof(captured_interaction))
-	rel_set(src, nameof(captured_item), item)
-	rel_set(src, nameof(captured_interaction), interaction)
-
-/datum/prompt/choice/electronics_input/proc/captures_gone()
-	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
-
-/datum/prompt/choice/electronics_input/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	if(captures_gone())
-		return "gone"
-	return null
-
 /// Old attack_robot: an adjacent cyborg uses it in hand; otherwise the default.
-/obj/item/electronic_assembly/proc/assembly_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/electronic_assembly/proc/assembly_robot_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!Adjacent(user))
-		return FALSE
+		return OP_DECLINE
 	attack_self(user)
-	return TRUE
+	return OP_OK
 
 // Returns true if power was successfully drawn.
 /obj/item/electronic_assembly/proc/draw_power(amount)

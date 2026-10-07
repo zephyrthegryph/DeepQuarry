@@ -505,10 +505,13 @@ CAPABILITIES(/obj/item/slimepotion)
 	desc = "A potent chemical mix that will mimic effects of other slime-produced agents."
 	icon_state = "potsilver"
 
-EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mimic_interaction_item)))
+CAPABILITIES(/obj/item/slimepotion/mimic)
+	op("mimic_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(mimic_interaction_item)))
 
 /// Old attackby.
-/obj/item/slimepotion/mimic/proc/mimic_interaction_item(mob/living/user, mob/living/M, datum/interaction/interaction)
+/obj/item/slimepotion/mimic/proc/mimic_interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/M = A.held
 	if(istype(M, /obj/item/slimepotion/mimic))
 		to_chat(user, span_warning("You apply the mimic to the mimic, resulting a mimic that copies a mimic that copies a mimic that copies a mimic that-"))
 		var/location = get_turf(src)
@@ -518,8 +521,8 @@ EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mi
 		s.start()
 		consumed(M, src)
 		consume(src, user)
-		return ITEM_INTERACT_SUCCESS
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/slimepotion/sapience/get_mechanics_info(list/additional_information)
 	return ..(list("The slime or other animal needs to be alive for this to work. The development is not always immediate and may take indeterminate time before effects show.") + additional_information)

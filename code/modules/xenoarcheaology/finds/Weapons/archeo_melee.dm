@@ -37,14 +37,17 @@
 
 //The last human that touched us (an OM handle): the blade works on them while it has one.
 OM_FIELD_VIEW(/obj/item/melee/artifact_blade, tmp/mob/living/carbon/human, last_touched, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touched")
+
+CAPABILITIES(/obj/item/melee/artifact_blade)
+	every(2 SECONDS, then(PROC_REF(artifact_blade_step)), when = nameof(last_touched))
+	op("blade_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /obj/item/melee/artifact_blade/examine(mob/user)
 	. = ..()
 	if(stored_blood && user == last_touched())
 		. += span_cult("You can sense the blade has about " + span_bold("[stored_blood]") + " lifeforce contained within it.")
 
-/obj/item/melee/artifact_blade/periodic_step()
+/obj/item/melee/artifact_blade/proc/artifact_blade_step(datum/act/timer/A)
 	if(!last_touched() || !stored_blood) //Nobody has touched us yet or we have no energy...For now.
 		return
 	if(!last_touched() || last_touched().stat == DEAD) //If our user doesn't exist or is dead, stop processing until the next unlucky sod touches us.
@@ -153,15 +156,14 @@ DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touc
 		to_chat(user, span_cult("An overwhelming feeling of dread comes over you as you pick up the sword. You feel as though it has become attached to you."))
 		rel_set(src, nameof(last_touched), user)
 
-DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/melee/artifact_blade/proc/cooled_down)))
 
-/// Requirement: the blade rests between actions.
-/obj/item/melee/artifact_blade/proc/cooled_down(mob/user, atom/target, obj/item/held)
-	return COOLDOWN_FINISHED(src, special_cooldown) ? TRUE : "the blade does not respond to your attempts, having recently performed an action"
-
-/// Old attack_self.
-/obj/item/melee/artifact_blade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	return blade_action_stage(user, held, interaction, list())
+/// Old attack_self. The blade rests between actions (a cooldown is no tracked state, so it is refused here rather than by a requirement).
+/obj/item/melee/artifact_blade/proc/interaction_self(datum/act/op/A)
+	if(!COOLDOWN_FINISHED(src, special_cooldown))
+		to_chat(A.actor, span_warning("the blade does not respond to your attempts, having recently performed an action"))
+		return OP_OK
+	blade_action_stage(A.actor, A.held, null, list())
+	return OP_OK
 
 /obj/item/melee/artifact_blade/proc/blade_action_stage(mob/user, obj/item/held, datum/interaction/interaction, list/answers)
 	COOLDOWN_START(src, special_cooldown, 12 SECONDS)

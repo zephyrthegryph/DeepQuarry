@@ -84,28 +84,36 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 	if(iscultist(user))
 		. += "This spell circle reads: <i>[word1] [word2] [word3]</i>."
 
-EXTEND_INTERACTIONS(/obj/effect/rune, \
-	INTERACT_INSERT(/obj/item/book/tome, PROC_REF(interaction_erase_rune), "Erase rune"), \
-	INTERACT_INSERT(/obj/item/nullrod, PROC_REF(interaction_nullrod_rune), "Disrupt rune"), \
-	INTERACT_HAND("Invoke", PROC_REF(interaction_invoke_rune)), \
-)
+CAPABILITIES(/obj/effect/rune)
+	op("erase_rune", item(/obj/item/book/tome), label("Erase rune"), then(PROC_REF(interaction_erase_rune)))
+	op("nullrod_rune", item(/obj/item/nullrod), label("Disrupt rune"), then(PROC_REF(interaction_nullrod_rune)))
+	op("invoke_rune", hand(), label("Invoke"), then(PROC_REF(interaction_invoke_rune)))
+	every(3 SECONDS, then(PROC_REF(manifest_tick)), when = nameof(manifesting))
 
 /// Old attackby: a cultist's tome undoes the rune.
-/obj/effect/rune/proc/interaction_erase_rune(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/rune/proc/interaction_erase_rune(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!iscultist(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	to_chat(user, "You retrace your steps, carefully undoing the lines of the rune.")
 	consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Old attackby: a null rod disrupts the rune.
-/obj/effect/rune/proc/interaction_nullrod_rune(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/rune/proc/interaction_nullrod_rune(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You disrupt the vile magic with the deadening field of the null rod!"))
 	consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-/// Old attack_hand: speak the rune's words.
-/obj/effect/rune/proc/interaction_invoke_rune(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand, as an op: speak the rune's words. The touch is used up whatever the rune does.
+/obj/effect/rune/proc/interaction_invoke_rune(datum/act/op/A)
+	var/mob/living/user = A.actor
+	invoke_rune_words(user)
+	return OP_OK
+
+/// Speaks the rune's words.
+/obj/effect/rune/proc/invoke_rune_words(mob/living/user)
 	. = TRUE
 	if(!iscultist(user))
 		to_chat(user, "You can't mouth the arcane scratchings without fumbling over them.")

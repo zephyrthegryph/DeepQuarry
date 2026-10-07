@@ -95,14 +95,14 @@
 	COOLDOWN_DECLARE(event_cooldown)
 	var/active = 0
 
-DECLARE_PERIODIC(/obj/item/coin/uranium, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/coin/uranium)
+	every(2 SECONDS, then(PROC_REF(uranium_coin_step)))
 
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/item/coin/uranium/periodic_step()
+/// Radiates only while a mob is close enough to be affected; with none near, the run does nothing.
+/obj/item/coin/uranium/proc/uranium_coin_step(datum/act/timer/A)
 	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+		return
 	radiate()
-	..()
 
 /obj/item/coin/uranium/proc/radiate()
 	if(active)

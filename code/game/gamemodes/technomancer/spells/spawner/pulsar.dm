@@ -32,12 +32,17 @@
 	var/pulses_remaining = 3
 	var/pulse_delay = 2 SECONDS
 
-/// Pulses on the declared repeat. A subtype that runs its own loop (the snake) sets it FALSE.
-OM_FIELD(/obj/effect/temporary_effect/pulse, pulsing, TRUE, CHANGE_EXPLICIT)
-DECLARE_REPEAT(/obj/effect/temporary_effect/pulse, "pulse_delay", pulse_step, "pulsing")
+/// Pulses on the declared every(). A subtype that runs its own loop (the snake) sets it FALSE.
+/obj/effect/temporary_effect/pulse/var/pulsing = TRUE
+TRACKED(/obj/effect/temporary_effect/pulse, pulsing)
 
 CAPABILITIES(/obj/effect/temporary_effect/pulse)
 	after_init(0, then(PROC_REF(first_pulse)))
+	every(PROC_REF(pulse_interval), then(PROC_REF(pulse_step)), when = nameof(pulsing))
+
+/// The every() interval: the effect's pulse_delay.
+/obj/effect/temporary_effect/pulse/proc/pulse_interval(datum/act/A)
+	return pulse_delay
 
 /// The first pulse, as the effect appears.
 /obj/effect/temporary_effect/pulse/proc/first_pulse(datum/act/timer/A)
@@ -47,14 +52,13 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse)
 /obj/effect/temporary_effect/pulse/proc/pulse_loop()
 	return pulse_step()
 
-/// DECLARE_REPEAT: one pulse, or the end of the effect once pulses_remaining is spent.
-/obj/effect/temporary_effect/pulse/proc/pulse_step()
+/// every(): one pulse, or the end of the effect once pulses_remaining is spent.
+/obj/effect/temporary_effect/pulse/proc/pulse_step(datum/act/timer/A)
 	if(pulses_remaining > 0)
 		pulses_remaining--
 		on_pulse()
 		return
 	consume(src)
-	return REPEAT_STOP
 
 // Override for specific effects.
 /obj/effect/temporary_effect/pulse/proc/on_pulse()

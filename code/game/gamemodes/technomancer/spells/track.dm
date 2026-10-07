@@ -56,7 +56,7 @@ CAPABILITIES(/obj/item/spell/track)
 		set_tracking(TRUE)
 		track()
 
-/// DECLARE_REPEAT while tracking: point towards the tracked thing.
+/// every() while tracking: point towards the tracked thing.
 /obj/item/spell/track/proc/track(datum/act/timer/A)
 	if(!tracked())
 		icon_state = "track_unknown"

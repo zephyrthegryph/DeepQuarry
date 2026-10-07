@@ -110,7 +110,13 @@ CAPABILITIES(/obj/machinery/computer/mecha)
 
 	return data
 
-DAMAGE_REACTION(/obj/item/mecha_parts/mecha_tracking, DAMAGE_EMP, TYPE_PROC_REF(/atom, damage_reaction_qdel))
+CAPABILITIES(/obj/item/mecha_parts/mecha_tracking)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(tracking_emp))))
+
+/// An EMP destroys the beacon outright.
+/obj/item/mecha_parts/mecha_tracking/proc/tracking_emp(datum/act/hit/emp/A)
+	destroyed(src)
+	return OP_OK
 
 /obj/item/mecha_parts/mecha_tracking/proc/in_mecha()
 	if(istype(loc, /obj/mecha))

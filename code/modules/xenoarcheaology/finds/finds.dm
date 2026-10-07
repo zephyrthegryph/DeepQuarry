@@ -21,6 +21,7 @@ CAPABILITIES(/obj/item/strangerock)
 	param(nameof(inside_item_type), pos = 1)
 	rolls(nameof(pixel_x), range_of(-8, 8))
 	rolls(nameof(pixel_y), range_of(-8, 0))
+	op("strangerock_item", item(/obj/item), label("Use"), then(PROC_REF(strangerock_item)))
 
 /// The find the rock holds (its constructor param), or 0 for a research sample at most.
 /obj/item/strangerock/var/inside_item_type = 0
@@ -55,13 +56,15 @@ CAPABILITIES(/obj/item/strangerock)
 			else	//if we somehow glitched
 				return	//do nothing
 
-DECLARE_INTERACTIONS(/obj/item/strangerock, INTERACT_ITEM(null, PROC_REF(strangerock_item)))
+/obj/item/strangerock/proc/strangerock_item(datum/act/op/A)
+	return strangerock_use(A.actor, A.held)
 
 /// Old attackby: mine it away or sample it; anything else may crumble it (after a bag gathers it, as its ..() did first).
-/obj/item/strangerock/proc/strangerock_item(mob/user, obj/item/I, datum/interaction/interaction)
+/// Answers OP_OK when a bag gathered it, OP_PASS otherwise.
+/obj/item/strangerock/proc/strangerock_use(mob/user, obj/item/I)
 	if(istype(I, /obj/item/pickaxe)) //Whatever, if you use a hand pick it should work just like a brush. No reason for otherwise.
 		if(loc?.release_refusal(src, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/inside = locate_within(src, /obj/item)
 		if(inside)
 			inside.forceMove(get_turf(src))
@@ -69,19 +72,19 @@ DECLARE_INTERACTIONS(/obj/item/strangerock, INTERACT_ITEM(null, PROC_REF(strange
 		else
 			visible_message(span_info("\The [src] is mined away into nothing."))
 		consume(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(I, /obj/item/core_sampler))
 		var/obj/item/core_sampler/S = I
 		S.sample_item(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	var/obj/item/storage/bag = I
 	var/gathered = istype(bag) && bag.try_collect(src, user)
 	if(prob(33))
 		src.visible_message(span_warning("[src] crumbles away, leaving some dust and gravel behind."))
 		consume(src, user)
-	return gathered ? TRUE : INTERACTION_HANDLED_PASS
+	return gathered ? OP_OK : OP_PASS
 
 /obj/item/strangerock/welder_act(mob/user, obj/item/tool)
 	var/obj/item/weldingtool/welder = tool.get_welder()

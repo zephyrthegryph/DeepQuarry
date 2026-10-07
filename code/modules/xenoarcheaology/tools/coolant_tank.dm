@@ -14,12 +14,13 @@
 	if(Proj.get_structure_damage())
 		explode()
 
-DAMAGE_REACTION(/obj/structure/reagent_dispensers/coolanttank, DAMAGE_EXPLOSION, PROC_REF(tank_blast_explode))
+CAPABILITIES(/obj/structure/reagent_dispensers/coolanttank)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
 
 /// A blast bursts the tank.
-/obj/structure/reagent_dispensers/coolanttank/proc/tank_blast_explode(datum/damage_packet/packet)
+/obj/structure/reagent_dispensers/coolanttank/proc/tank_blast_explode(datum/act/hit/explosion/A)
 	explode()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/structure/reagent_dispensers/coolanttank/proc/explode()
 	var/datum/effect/effect/system/smoke_spread/S = new /datum/effect/effect/system/smoke_spread

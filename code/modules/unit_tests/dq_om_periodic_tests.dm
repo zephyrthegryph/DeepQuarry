@@ -464,24 +464,6 @@
 
 /datum/unit_test/dq_om_items_run_only_when_they_can_act/Run()
 	var/turf/T = locate(world.maxx - 2, world.maxy - 2, test_floor().z)
-	// Proximity gate: a uranium coin with nobody near sleeps on the chunks around it.
-	for(var/mob/living/L in range(world.view, T))
-		TEST_FAIL("the test corner is not empty") // the gate needs an empty neighbourhood
-		return
-	var/obj/item/coin/uranium/coin = allocate(/obj/item/coin/uranium, T)
-	TEST_ASSERT_EQUAL(coin.periodic_step(20), PROCESS_KILL, "a radiation source with nobody near kept stepping")
-	TEST_ASSERT(length(coin.proximity_chunks), "a sleeping radiation source watches no chunks")
-	om_task_periodic_stop(coin)
-	var/mob/living/visitor = allocate(/mob/living, locate(1, 1, T.z))
-	visitor.forceMove(get_step(T, WEST))
-	for(var/i in 1 to 40)
-		om_test_ticks(1)
-		if(coin.periodic_pipe)
-			break
-	TEST_ASSERT(coin.periodic_pipe == PERIODIC_SLOW, "a mob coming near did not wake the radiation source")
-	TEST_ASSERT(!coin.proximity_chunks, "a woken radiation source kept its chunk watches")
-	qdel(visitor)
-
 	// Start and stop conditions.
 	var/obj/item/chainsaw/saw = allocate(/obj/item/chainsaw, test_floor())
 	TEST_ASSERT(!saw.periodic_pipe, "a chainsaw that is off runs")

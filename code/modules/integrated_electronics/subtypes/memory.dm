@@ -84,13 +84,14 @@
 	var/datum/integrated_io/O = outputs[1]
 	O.push_data()
 
-DECLARE_INTERACTIONS(/obj/item/integrated_circuit/memory/constant, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/integrated_circuit/memory/constant)
+	op("constant_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/integrated_circuit/memory/constant/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_circuit/memory/constant/proc/interaction_self(datum/act/op/A)
 	var/datum/circuit_memory_review/review = new
-	review.start(user, src, held, interaction, TRUE)
-	return TRUE
+	review.start(A.actor, src, A.held, null, TRUE)
+	return OP_OK
 
 /obj/item/integrated_circuit/memory/constant/proc/memory_type_selected(datum/circuit_memory_review/review)
 	var/mob/user = review.user_value()
