@@ -99,7 +99,7 @@ Replacements that **exist** and only need caller conversion: `wait()`/`silent_wa
 | G2 | `code/engine/kernel/inbox.dm:97,159`, `lifeforms/input.dm:134` | `var/obj/item/held` in the engine. | Type it `/obj` or `/atom/movable`. |
 | G3 | tools/analyze | No layering lint covering `code/engine/**` → library/content. | Add one. |
 | G4 | Near-zero legacy forms with no ban: `DECLARE_VERB` (4), `EVENT_HANDLER` (1), `DECLARE_UI`/`UI_ACT` comment residue, `om_after` (~7–38) | Cheap wins. | Convert the last callers, then hard-ban (per AGENTS §3b). |
-| G5 | `final_api.html` §19 (still "0b, clean base (now)"); AGENTS §3a (`wait`, `asks`, `open_request`, `granted_verb` marked new); `completion_plan.md` (09-27, links a missing migration_plan.md) | Agents plan from wrong state. | Update §19 and the AGENTS table; archive completion_plan.md. |
+| G5 | `final_api.html` §19 (still "0b, clean base (now)"); AGENTS §3a (`wait`, `asks`, `open_request`, `granted_verb` marked new); `completion_plan.md` (09-27, links a missing migration_plan.md) | Agents plan from wrong state. | Update §19 and the AGENTS table; archive completion_plan.md (done: doc/rewrite/archive/completion_plan.md). |
 | G6 | `om_retirement.md` §7 counts disagree with fresh greps (`OM_EMIT` 110 vs 13 files; `om_attach` 44 vs 12) | Unclear progress. | Recount with a script and record the command. |
 | G7 | `rel_remove` doc comment ("disposed of by on_destroy") vs `rel_take` ("keeps it") | Misleading. | Fix wording. |
 
