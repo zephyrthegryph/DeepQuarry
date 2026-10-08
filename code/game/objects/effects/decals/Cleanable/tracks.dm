@@ -12,7 +12,7 @@ TRACKED(/datum/fluidtrack, basecolor)
 
 /datum/fluidtrack/New(_direction,_color,_wet)
 	src.direction=_direction
-	src.basecolor=_color
+	set_basecolor(_color)
 	src.wet=_wet
 
 /obj/effect/decal/cleanable/blood/tracks/reveal_blood()

@@ -46,10 +46,14 @@ the draw must not make them):
 
 | Form | Answers | Use |
 |---|---|---|
-| `look.contents_of(slot, type)` | the types held in `slot` (null: the default slot) that are a `type`: a real thing by its own type, a latent one (declared by `starts_with`, not made yet) by its entry's type, once each | classify or count (`for(var/kind in look.contents_of(CONTAINER_SLOT_INTERIOR, /obj/item/gun))`, `ispath(kind, /obj/item/gun/energy)`): the gun cabinet draws a gun per laser or projectile gun it holds without making any |
-| `look.things_in(slot, type)` | the real things of `type` in `slot`, each watched | show them (the vehicle cage draws the vehicle behind its frame) |
+| `look.contents_of(src, slot, type)` | the types held in `slot` (null: the default slot) that are a `type`: a real thing by its own type, a latent one (declared by `starts_with`, not made yet) by its entry's type, once each | classify or count (`for(var/kind in look.contents_of(src, CONTAINER_SLOT_INTERIOR, /obj/item/gun))`, `ispath(kind, /obj/item/gun/energy)`): the gun cabinet draws a gun per laser or projectile gun it holds without making any |
+| `look.things_in(src, slot, type)` | the real things of `type` in `slot`, each watched | show them (the vehicle cage draws the vehicle behind its frame) |
 
-Both stand for `SLOT_OCCUPANCY_KEY` on the holder (`READS_AS`, read by `tools/analyze` from the builder call): a thing entering or leaving the slot, a
+`look.picture_of(thing)` answers `list(icon, icon_state, dir)` of another atom (a cliff cuts the ground above it out of the turf's picture) and
+`look.show_copy_of(thing, layer)` adds a copy of another atom as an overlay in its own plane (the caged vehicle); both watch the atom, so a change
+published on it redraws the holder, and a draw never reads another atom's vars itself (the `dx_untracked_read` ratchet).
+
+Both slot forms stand for `SLOT_OCCUPANCY_KEY` on the holder (`READS_AS`, read by `tools/analyze` from the builder call): a thing entering or leaving the slot, a
 latent entry made or used (`latent_set_count()`), and the holder declaring its generator (`set_latent_declared()`) redraw it. `slot_kinds()`
 (`code/engine/refs/containment/api.dm`) is the atom proc behind `contents_of()`: with a ledger it reads the ledger; without one it answers from the
 declared generator when the holder has not declared it yet, else it opens the ledger. It never rolls the generator into things and never materializes.

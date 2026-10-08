@@ -741,6 +741,14 @@ CAPABILITIES(/atom/movable/screen/inventory)
 
 // Hand slots are special to handle the handcuffs overlay
 /atom/movable/screen/inventory/hand
+	/// The picture of the handcuffs over this hand (the right hand's, unless the hand is the left one).
+	var/handcuff_state = "r_hand_hud_handcuffs"
+
+/atom/movable/screen/inventory/hand/left
+	handcuff_state = "l_hand_hud_handcuffs"
+
+/atom/movable/screen/inventory/hand/right
+	handcuff_state = "r_hand_hud_handcuffs"
 
 /atom/movable/screen/inventory/hand/draw(datum/look/look)
 	..()
@@ -749,7 +757,7 @@ CAPABILITIES(/atom/movable/screen/inventory)
 		return
 	var/mob/living/carbon/C = hud.mymob()
 	if(iscarbon(C) && C.get_equipped_item(SLOT_ID_HANDCUFFED))
-		look.overlay(look_overlay_image('icons/mob/screen_gen.dmi', (hud.l_hand_hud_object == src) ? "l_hand_hud_handcuffs" : "r_hand_hud_handcuffs"))
+		look.overlay(look_overlay_image('icons/mob/screen_gen.dmi', handcuff_state))
 
 // PIP stuff
 /atom/movable/screen/component_button

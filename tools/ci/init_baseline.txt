@@ -373,7 +373,6 @@ initialize	code/game/objects/structures/catwalk.dm	/obj/structure/catwalk/Initia
 initialize	code/game/objects/structures/cliff.dm	/obj/structure/cliff/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/__closets.dm	/obj/structure/closet/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/__closets.dm	/obj/structure/closet/bluespace/Initialize(mapload)
-initialize	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	/obj/structure/closet/secure_closet/guncabinet/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	/obj/structure/closet/secure_closet/guncabinet/excursion/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	/obj/structure/closet/secure_closet/medical3/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	/obj/structure/closet/secure_closet/chief_medical_officer/Initialize(mapload)
@@ -391,7 +390,6 @@ initialize	code/game/objects/structures/crates_lockers/closets/utility_closets.d
 initialize	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	/obj/structure/closet/wardrobe/red/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/crates.dm	/obj/structure/closet/crate/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/largecrate.dm	/obj/structure/largecrate/Initialize(mapload)
-initialize	code/game/objects/structures/crates_lockers/largecrate.dm	/obj/structure/largecrate/vehicle/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/largecrate.dm	/obj/structure/largecrate/animal/pred/Initialize(mapload) //This is nessesary to get a random one each time.
 initialize	code/game/objects/structures/crates_lockers/largecrate.dm	/obj/structure/largecrate/piano/Initialize(mapload) //This is nessesary to get a random one each time.
 initialize	code/game/objects/structures/crates_lockers/vehiclecage.dm	/obj/structure/vehiclecage/Initialize(mapload)

@@ -38,7 +38,7 @@
 	rel_set(A, nameof(A.ability_master), src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
-	A.ability_icon_state = ability_icon_given
+	A.set_ability_icon_state(ability_icon_given)
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments

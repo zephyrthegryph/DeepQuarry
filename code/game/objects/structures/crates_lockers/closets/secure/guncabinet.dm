@@ -13,7 +13,7 @@
 		return
 	var/lazors = 0
 	var/shottas = 0
-	for(var/kind in look.contents_of(CONTAINER_SLOT_INTERIOR, /obj/item/gun))
+	for(var/kind in look.contents_of(src, CONTAINER_SLOT_INTERIOR, /obj/item/gun))
 		if(ispath(kind, /obj/item/gun/energy))
 			lazors++
 		if(ispath(kind, /obj/item/gun/projectile))

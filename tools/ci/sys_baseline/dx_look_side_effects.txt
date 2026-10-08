@@ -1,7 +1,4 @@
 # sys_lint baseline for tools/ci/sys_rules/dx_look_side_effects.py (doc/rewrite/systems.md); shrink-only, target 0
-dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibility = INVISIBILITY_NONE
-dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibility = INVISIBILITY_ABSTRACT
-dx_appearance_side_effect	code/_onclick/hud/screen_objects.dm	handcuff_overlay = image("icon"='icons/mob/screen_gen.dmi', "icon_state"=state)
 dx_appearance_side_effect	code/game/gamemodes/technomancer/spells/illusion.dm	temp_image.transform = M
 dx_appearance_side_effect	code/game/machinery/doors/brigdoors.dm	set_picture("ai_bsod")
 dx_appearance_side_effect	code/game/machinery/doors/brigdoors.dm	maptext = ""
@@ -80,27 +77,6 @@ dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	engine_paint_mask = i
 dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	engine_paint_mask.color = engine_paint
 dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	central_paint_mask = image(icon, "[initial_icon]-mask+central", src.layer + 2)
 dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	central_paint_mask.color = central_paint
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/humans.dm	if(basecolor == "rainbow") basecolor = get_random_colour(1)
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/humans.dm	name = "oil"
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/humans.dm	desc = "It's quite oily."
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/humans.dm	name = "synthetic blood"
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/humans.dm	desc = "It's quite greasy."
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/humans.dm	name = initial(name)
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/humans.dm	desc = initial(desc)
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/humans.dm	fleshcolor = get_random_colour(1)
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/humans.dm	giblets.color = fleshcolor
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/humans.dm	if(basecolor == "rainbow") basecolor = get_random_colour(1)
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/tracks.dm	track.overlay=null
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/tracks.dm	I.color = track.basecolor
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/tracks.dm	track.fresh=0
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/tracks.dm	track.overlay=I
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/tracks.dm	rel_add(src, nameof(stack), track, stack_idx)
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/tracks.dm	updatedtracks=0 // Clear our memory of updated tracks.
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/vore.dm	if(custombasecolor == "rainbow") custombasecolor = get_random_colour(1)
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/vore.dm	name = custombasename
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/vore.dm	desc = custombasedesc
-dx_appearance_side_effect	code/game/objects/items/bodybag.dm	I.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/game/objects/items/bodybag.dm	I.color = COLOR_LIME
 dx_appearance_side_effect	code/game/objects/items/devices/radio/intercom.dm	on = A?.powered(EQUIP)
 dx_appearance_side_effect	code/game/objects/items/devices/radio/intercom.dm	set_light(0)
 dx_appearance_side_effect	code/game/objects/items/devices/radio/intercom.dm	set_light_on(FALSE)
@@ -145,20 +121,6 @@ dx_appearance_side_effect	code/game/objects/items/weapons/tools/zspicytools.dm	s
 dx_appearance_side_effect	code/game/objects/mail.dm	envelope.color = colored_envelope
 dx_appearance_side_effect	code/game/objects/mail.dm	stamp_image.appearance_flags |= RESET_COLOR
 dx_appearance_side_effect	code/game/objects/mail.dm	postmark_image.appearance_flags |= RESET_COLOR
-dx_appearance_side_effect	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	gun.icon_state = "laser"
-dx_appearance_side_effect	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	gun.icon_state = "projectile"
-dx_appearance_side_effect	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	gun.pixel_x = i*4
-dx_appearance_side_effect	code/game/objects/structures/crates_lockers/vehiclecage.dm	underlays.Cut()
-dx_appearance_side_effect	code/game/objects/structures/crates_lockers/vehiclecage.dm	framepaint.plane = MOB_PLANE
-dx_appearance_side_effect	code/game/objects/structures/crates_lockers/vehiclecage.dm	framepaint.color = paint_color
-dx_appearance_side_effect	code/game/objects/structures/crates_lockers/vehiclecage.dm	showcase.layer = src.layer - 0.1
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = main_color
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = main_color
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = stripe_color
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = main_color
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.plane = ABOVE_OBJ_PLANE
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.layer = ABOVE_WINDOW_LAYER
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = main_color
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = color
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = color
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	D.blend_mode = BLEND_MULTIPLY

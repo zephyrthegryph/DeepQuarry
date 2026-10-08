@@ -976,7 +976,8 @@ impl<'a, 'e> Walk<'a, 'e> {
         // A look builder call that stands for a key (`READS_AS(/datum/look/proc/contents_of, KEY)`): the draw it sits in reads that key on its holder.
         if ty == "/datum/look" {
             if let Some(k) = self.reads_as_for(&ty, name) {
-                let holder = fr.this.clone();
+                // The holder is the call's first argument (`look.contents_of(src, ...)`); a call without one reads the draw's own holder.
+                let holder = argv.first().filter(|a| a.tracked()).cloned().unwrap_or_else(|| fr.this.clone());
                 if holder.tracked() {
                     let r = Read { root: holder.root_name(), hops: holder.hops.clone(), var: k.0.clone(), owner: String::new(), kind: ReadKind::Accessor, hop_ok: holder.hop_ok };
                     self.add_read(r, &rel, line);

@@ -104,7 +104,7 @@
 		using.alpha = HUD.ui_alpha
 		rel_add(HUD, nameof(HUD.adding), using)
 
-		inv_box = new /atom/movable/screen/inventory/hand()
+		inv_box = new /atom/movable/screen/inventory/hand/right()
 		rel_set(inv_box, nameof(inv_box.hud), HUD)
 		inv_box.name = "r_hand"
 		inv_box.icon = HUD.ui_style
@@ -119,7 +119,7 @@
 		rel_add(HUD, nameof(HUD.adding), inv_box)
 		slot_info["[SLOT_ID_HAND_R]"] = inv_box.screen_loc
 
-		inv_box = new /atom/movable/screen/inventory/hand()
+		inv_box = new /atom/movable/screen/inventory/hand/left()
 		rel_set(inv_box, nameof(inv_box.hud), HUD)
 		inv_box.name = "l_hand"
 		inv_box.icon = HUD.ui_style
