@@ -574,7 +574,7 @@ TRACKED(/obj/machinery/disposal, occupied)
 
 /// Turns the bin to face a direction; a wall bin also moves its outlet.
 /obj/machinery/disposal/proc/face(new_dir)
-	dir = new_dir
+	set_dir(new_dir)
 
 // the icon & overlays reflect mode & status
 /obj/machinery/disposal/draw(datum/look/look)
