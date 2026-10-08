@@ -169,34 +169,22 @@
 	var/dorsal_color = "#FFFFFF"
 	var/belly_color = "#FFFFFF"
 
-	var/image/dorsal_image
-	var/image/belly_image
 
 // ALLOW(init/INSTANCE_STATE): rolls its dorsal and belly colours
 /mob/living/simple_mob/animal/passive/fish/icebass/Initialize(mapload)
 	. = ..()
-	dorsal_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))
-	belly_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))
-	update_icon()
+	set_dorsal_color(rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue)))
+	set_belly_color(rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue)))
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/icebass, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/passive/fish/icebass/appearance_overlays()
-	. = list()
-	. += ..()
+TRACKED(/mob/living/simple_mob/animal/passive/fish/icebass, dorsal_color)
+TRACKED(/mob/living/simple_mob/animal/passive/fish/icebass, belly_color)
 
-	if(!dorsal_image)
-		dorsal_image = image(icon, "[icon_state]_mask-body")
-	if(!belly_image)
-		belly_image = image(icon, "[icon_state]_mask-belly")
-
-	dorsal_image.icon_state = "[icon_state]_mask-body"
-	belly_image.icon_state = "[icon_state]_mask-belly"
-
-	dorsal_image.color = dorsal_color
-	belly_image.color = belly_color
-
-	. += dorsal_image
-	. += belly_image
+/// The tinted dorsal and belly masks over the fish.
+/mob/living/simple_mob/animal/passive/fish/icebass/draw(datum/look/look)
+	..()
+	var/state = look.state_so_far(src)
+	look.overlay(look_overlay_image(icon, "[state]_mask-body", color = dorsal_color))
+	look.overlay(look_overlay_image(icon, "[state]_mask-belly", color = belly_color))
 
 /datum/category_item/catalogue/fauna/rockfish
 	name = "Sivian Fauna - Rock Puffer"
@@ -237,28 +225,19 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/icebass, TYPE
 
 	var/head_color = "#FFFFFF"
 
-	var/image/head_image
-
 	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif
 
 // ALLOW(init/INSTANCE_STATE): rolls its head colour
 /mob/living/simple_mob/animal/passive/fish/rockfish/Initialize(mapload)
 	. = ..()
-	head_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))
-	update_icon()
+	set_head_color(rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue)))
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/rockfish, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/passive/fish/rockfish/appearance_overlays()
-	. = list()
-	. += ..()
-	if(!head_image)
-		head_image = image(icon, "[icon_state]_mask")
+TRACKED(/mob/living/simple_mob/animal/passive/fish/rockfish, head_color)
 
-	head_image.icon_state = "[icon_state]_mask"
-
-	head_image.color = head_color
-
-	. += head_image
+/// The tinted head mask over the fish.
+/mob/living/simple_mob/animal/passive/fish/rockfish/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "[look.state_so_far(src)]_mask", color = head_color))
 
 /datum/category_item/catalogue/fauna/solarfish
 	name = "Sivian Fauna - Solar Fin"

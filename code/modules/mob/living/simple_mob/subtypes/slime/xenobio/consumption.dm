@@ -93,7 +93,7 @@
 
 	if(L.buckle_mob(src, forced = TRUE))
 		rel_set(src, nameof(victim), L)
-		update_icon()
+		set_consuming(TRUE)
 		ai_busy_begin() // Don't want the AI to interfere with eatting.
 		victim.visible_message(
 			span_danger("\The [src] latches onto \the [victim]!"),
@@ -109,7 +109,7 @@
 		span_notice("\The [src] slides off of you!")
 		)
 	rel_clear(src, nameof(victim))
-	update_icon()
+	set_consuming(FALSE)
 	ai_busy_end() // Resume normal operations.
 
 /mob/living/simple_mob/slime/xenobio/proc/can_consume(mob/living/L)

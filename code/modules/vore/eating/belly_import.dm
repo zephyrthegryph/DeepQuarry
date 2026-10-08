@@ -1190,7 +1190,7 @@ CAPABILITIES(/datum/vore_look/import_panel)
 		rel_clear(new_belly, nameof(new_belly.items_preserved))
 		new_belly.update_internal_overlay()
 
-	host.handle_belly_update()
+	PUBLISH(host, belly_change)
 	host.updateVRPanel()
 	unsaved_changes = TRUE
 

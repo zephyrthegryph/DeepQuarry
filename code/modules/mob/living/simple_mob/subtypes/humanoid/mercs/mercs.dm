@@ -404,7 +404,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 	name = "armored mercenary"
 	desc = "A tough looking individual, armed with a submachine gun."
 	icon_state = "syndicatespace-ranged"
-	icon_living = "syndicatespceace-ranged"
+	icon_living = "syndicatespace-ranged"
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=100" // Same armor as their voidsuit.
 	base_attack_cooldown = 5 // Two attacks a second or so.
 	reload_max = 20

@@ -112,11 +112,10 @@
 /mob/living/simple_mob/vore/alienanimals/startreader/proc/handle_flip()
 	if(flipped)
 		set_armor(dq_armor_none())
-		icon_living = "startreader_flipped"
+		set_icon_living("startreader_flipped")
 		status_adjust(STAT_STUNNED, flip_cooldown)
 	else
 		set_armor(dq_armor(list(MELEE = 100, BULLET = 100, LASER = 100, ENERGY = 100, BIO = 100, ARMOR_RAD = 100)))
-		icon_living = "startreader"
+		set_icon_living("startreader")
 		status_set(STAT_STUNNED, 0)
 
-	update_icon()

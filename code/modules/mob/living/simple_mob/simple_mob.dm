@@ -21,13 +21,14 @@
 
 	//Settings for played mobs
 	var/show_stat_health = 1		// Does the percentage health show in the stat panel for the mob
+	var/draws_life_state = TRUE		// FALSE: the type keeps its mapped icon_state and its base draw adds no life state, hands, fullness, pounce or eyes
 	var/has_hands = 0				// Set to 1 to enable the use of hands and the hands hud
 	var/humanoid_hands = 0			// Can a player in this mob use things like guns or AI cards?
 	var/hand_form = "hands"			// Used in IsHumanoidToolUser. 'Your X are not fit-'.
 	var/list/hud_gears				// Slots to show on the hud (typically none)
 	var/ui_icons					// Icon file path to use for the HUD, otherwise generic icons are used
-	var/r_hand_sprite				// If they have hands,
-	var/l_hand_sprite				// they could use some icons.
+	var/image/r_hand_sprite				// If they have hands,
+	var/image/l_hand_sprite				// they could use some icons.
 	var/player_msg					// Message to print to players about 'how' to play this mob on login.
 
 	//Mob icon/appearance settings
@@ -35,8 +36,6 @@
 	var/icon_dead = ""				// The iconstate if we're dead, required
 	var/icon_gib = "generic_gib"	// The iconstate for being gibbed, optional. Defaults to a generic gib animation.
 	var/icon_rest = null			// The iconstate for resting, optional
-	var/image/modifier_overlay = null // Holds overlays from modifiers.
-	var/image/eye_layer = null		// Holds the eye overlay.
 	var/has_eye_glow = FALSE		// If true, adds an overlay over the lighting plane for [icon_state]-eyes.
 	var/custom_eye_color = null
 	attack_icon = 'icons/effects/effects.dmi' //Just the default, played like the weapon attack anim
@@ -172,6 +171,14 @@
 	strip_pref = FALSE
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
+TRACKED(/mob/living/simple_mob, icon_living)
+TRACKED(/mob/living/simple_mob, icon_dead)
+TRACKED(/mob/living/simple_mob, icon_rest)
+TRACKED(/mob/living/simple_mob, spitting)
+TRACKED(/mob/living/simple_mob, pouncing)
+TRACKED(/mob/living/simple_mob, r_hand_sprite)
+TRACKED(/mob/living/simple_mob, l_hand_sprite)
+
 CAPABILITIES(/mob/living/simple_mob)
 	op("reload", ai(), wait(PROC_REF(reload_wait)), then(PROC_REF(reload_done)))
 	mob_attacks()
@@ -223,8 +230,8 @@ CAPABILITIES(/mob/living/simple_mob)
 	if(languages.len)
 		default_language = languages[1]
 
-	if(has_eye_glow)
-		add_eyes()
+	if(!icon_living) // Prevent the mob from turning invisible if icon_living is null.
+		set_icon_living(initial(icon_state))
 
 	if(organ_names)
 		organ_names = GET_DECL(organ_names)
@@ -239,8 +246,6 @@ CAPABILITIES(/mob/living/simple_mob)
 
 // eye glow comes off and belly contents are released.
 /mob/living/simple_mob/on_destroy(force)
-	if(has_eye_glow)
-		remove_eyes()
 	release_vore_contents()
 	..()
 
@@ -291,7 +296,6 @@ CAPABILITIES(/mob/living/simple_mob)
 	if(!picked_color)
 		color = A.answer.value
 	picked_color = TRUE
-	update_icon()
 
 /mob/living/simple_mob/SelfMove(turf/n, direct, movetime)
 	var/turf/old_turf = get_turf(src)
@@ -355,14 +359,6 @@ CAPABILITIES(/mob/living/simple_mob)
 	. = ..()
 	. += ""
 	. += "Health: [round(vitality() * 100)]%"
-
-/mob/living/simple_mob/lay_down()
-	..()
-	if(resting && icon_rest)
-		icon_state = icon_rest
-	else
-		icon_state = icon_living
-	update_icon()
 
 /mob/living/simple_mob/proc/chase_target(ticker)
 	if(QDELETED(movement_target))
@@ -477,14 +473,12 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		to_chat(src,span_warning("This simplemob has no vore sprite."))
 	else if(isnull(vore_icons_cache))
 		vore_icons_cache = vore_icons
-		vore_icons = 0
+		set_vore_icons(0)
 		to_chat(src,span_warning("Vore sprite disabled."))
 	else
-		vore_icons = vore_icons_cache
+		set_vore_icons(vore_icons_cache)
 		vore_icons_cache = null
 		to_chat(src,span_warning("Vore sprite enabled."))
-
-	update_icon()
 
 /// Simple mob slip logic, should be overriden if you want the simple mob to slip under certain conditions
 /mob/living/simple_mob/proc/animal_slip(wet_level, dirtslip)
@@ -555,34 +549,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 			return id
 	if(myid)
 		return myid
-
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/appearance_overlays()
-	. = list()
-	. += ..()
-	if(vore_active)
-		var/voremob_awake = FALSE
-		if(icon_state == icon_living)
-			voremob_awake = TRUE
-		update_fullness()
-		if(!vore_fullness)
-			update_transform()
-			return .
-		else if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)) && (vore_icons & SA_ICON_LIVING))
-			icon_state = "[icon_living]-[vore_fullness]"
-		else if(stat >= DEAD && (vore_icons & SA_ICON_DEAD))
-			icon_state = "[icon_dead]-[vore_fullness]"
-		else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED) ) && icon_rest && (vore_icons & SA_ICON_REST))
-			icon_state = "[icon_rest]-[vore_fullness]"
-		if(vore_eyes && voremob_awake) //Update eye layer if applicable.
-			remove_eyes()
-			add_eyes()
-	update_transform()
-	. += add_vore_fullness_overlays() // Appends per-belly-class overlays; see living_bellies.dm.
-
-/mob/living/simple_mob/regenerate_icons()
-	..()
-	update_icon()
 
 /mob/living/simple_mob/proc/will_eat(mob/living/M)
 	if(client) //You do this yourself, dick!
@@ -674,7 +640,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	ai_busy_begin() // AI TEMPORARY EDIT
 	. = animal_nom(M)
 	playsound(src, swallowsound, 50, 1)
-	update_icon()
 
 	if(.)
 		// If we succesfully ate them, lose the target
@@ -783,7 +748,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 			// The nom took seconds: the pred may have been deleted (or died into a belly) meanwhile.
 			if(QDELETED(src))
 				return
-			update_icon()
 			ai_busy_end()
 		return TRUE
 	return FALSE

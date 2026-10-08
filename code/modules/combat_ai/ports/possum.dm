@@ -2,7 +2,7 @@
 // on the deleted /datum/ai_holder/simple_mob/passive/possum subtype.
 //
 // State lives on the possum mob now. respond_to_damage is the trigger, and
-// update_icon reads the angry flag. The play-dead tick logic moves into a
+// the draw reads the angry flag. The play-dead tick logic moves into a
 // background behavior that runs on the slow tick.
 
 /mob/living/simple_mob/animal/passive/opossum
@@ -21,26 +21,26 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/opossum, get_ai_behaviors, list
 		if(!client)
 			if(!is_angry)
 				act_message(src, null, others = span_infoplain(span_bold("%U%") + " hisses!"))
-				is_angry = TRUE
+				set_is_angry(TRUE)
 				COOLDOWN_START(src, be_angery_until, rand(30 SECONDS, 1 MINUTE))
 			else
 				act_message(src, null, others = span_infoplain(span_bold("%U%") + " dies!"))
 				set_resting(TRUE)
 				COOLDOWN_START(src, play_dead_until, rand(1 MINUTE, 2 MINUTES))
-		update_icon()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/opossum, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/passive/opossum/appearance_overlays()
-	. = list()
-	// Override to read the local is_angry flag instead of the deleted ai_holder.
+TRACKED(/mob/living/simple_mob/animal/passive/opossum, is_angry)
+
+/// The base look, with the opossum's own state last (it plays dead, hisses or sleeps). Reads the local is_angry flag instead of the deleted ai_holder.
+/mob/living/simple_mob/animal/passive/opossum/draw(datum/look/look)
+	..()
 	if(stat == DEAD || (resting && is_angry))
-		icon_state = icon_dead
+		look.state(icon_dead)
 	else if(resting || stat == UNCONSCIOUS)
-		icon_state = "[icon_living]_sleep"
+		look.state("[icon_living]_sleep")
 	else if(is_angry)
-		icon_state = "[icon_living]_angry"
+		look.state("[icon_living]_angry")
 	else
-		icon_state = icon_living
+		look.state(icon_living)
 
 // Background behavior — ticks the resting / angry state machine the legacy
 // ai_holder's handle_special_strategical used to.
@@ -65,17 +65,13 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/opossum, TYPE_PROC
 	var/mob/living/simple_mob/animal/passive/opossum/possum = brain.holder
 	if(possum.resting && !COOLDOWN_FINISHED(possum, play_dead_until))
 		return DQ_BEHAVIOR_DONE
-	var/last_resting = possum.resting
-	var/last_angery = possum.is_angry
 	possum.set_resting((possum.stat == UNCONSCIOUS))
 	if(!possum.resting)
 		brain.wander = TRUE
 		possum.set_stat(CONSCIOUS)
-		possum.is_angry = (!COOLDOWN_FINISHED(possum, be_angery_until)) || prob(1)
+		possum.set_is_angry((!COOLDOWN_FINISHED(possum, be_angery_until)) || prob(1))
 	else
 		brain.wander = FALSE
 		possum.set_stat(UNCONSCIOUS)
-		possum.is_angry = FALSE
-	if(last_resting != possum.resting || last_angery != possum.is_angry)
-		possum.update_icon()
+		possum.set_is_angry(FALSE)
 	return DQ_BEHAVIOR_DONE

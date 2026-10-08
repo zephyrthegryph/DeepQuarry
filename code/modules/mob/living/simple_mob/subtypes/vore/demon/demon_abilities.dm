@@ -145,7 +145,6 @@
 /mob/living/simple_mob/vore/demon/proc/demon_phased_out(original_canmove)
 	invisibility = INVISIBILITY_LEVEL_TWO
 	see_invisible = INVISIBILITY_LEVEL_TWO
-	update_icon()
 	alpha = 127
 
 	set_is_shifting(FALSE)
@@ -180,7 +179,6 @@
 				to_chat(target,span_vwarning("\The [src] phases in around you, [vore_selected.vore_verb]ing you into their [vore_selected.get_belly_name()]!"))
 
 	// Do this after the potential vore, so we get the belly
-	update_icon()
 
 	shift_state = AB_SHIFT_NONE
 	if(from_temporary)
@@ -356,7 +354,6 @@
 				to_chat(target,span_vwarning("\The [src] phases in around you, [vore_selected.vore_verb]ing you into their [vore_selected.get_belly_name()]!"))
 
 	// Do this after the potential vore, so we get the belly
-	update_icon()
 
 	shift_state = AB_SHIFT_NONE
 	EXPIRY_STAMP(src, last_shift, CLOCK_WORLD)

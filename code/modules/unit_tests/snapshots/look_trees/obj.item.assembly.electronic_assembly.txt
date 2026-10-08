@@ -1,5 +1,2 @@
-/obj/item/assembly/electronic_assembly icon: icons/obj/assemblies/new_assemblies.dmi
-/obj/item/assembly/electronic_assembly state: setup_device
-/obj/item/assembly/electronic_assembly dir: 2
-/obj/item/assembly/electronic_assembly overlay: icons/obj/assemblies/new_assemblies.dmi:setup_device:8:#000000
+/obj/item/assembly/electronic_assembly runtime: DECLARE: code/modules/integrated_electronics/core/assemblies/device.dm:13: [op_clash] /obj/item/assembly/electronic_assembly: ops "attach" (code/modules/assembly/assembly.dm:74) and "electronic_assembly_interaction_item" take the same input (item(/obj/item), intent use) at the same tier (part) -- give one a different input, a different tier, or passes() on the first; order them in the composing bundle's click_order(), or with priority(above("attach")); or make their when() parts mutually exclusive%//%["code/engine/declare/table.dm",69]%//%
 

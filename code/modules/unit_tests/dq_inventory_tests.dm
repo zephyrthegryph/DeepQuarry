@@ -84,7 +84,7 @@
 	var/obj/item/tool/wrench/A = allocate(/obj/item/tool/wrench, T)
 	var/obj/item/tool/screwdriver/B = allocate(/obj/item/tool/screwdriver, T)
 	var/obj/item/tool/crowbar/C = allocate(/obj/item/tool/crowbar, T)
-	H.hand = FALSE // right hand active
+	H.set_hand(FALSE) // right hand active
 
 	TEST_ASSERT(H.put_in_hands(A), "the first item goes in a hand")
 	dq_assert_in_slot(H, A, SLOT_ID_HAND_R, "pickup to the active hand")
@@ -112,7 +112,7 @@
 	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_BELT), "the belt slot is empty")
 
 	// Drop the active hand.
-	H.hand = FALSE
+	H.set_hand(FALSE)
 	H.drop_item()
 	TEST_ASSERT_EQUAL(belt.loc, T, "drop_item puts the active hand's item on the floor")
 	TEST_ASSERT_NULL(H.get_right_hand(), "the dropped hand is empty")
@@ -134,7 +134,7 @@
 	if(!target || target.density)
 		target = get_step(T, WEST)
 	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, T)
-	H.hand = FALSE
+	H.set_hand(FALSE)
 	TEST_ASSERT(H.put_in_r_hand(W), "hold the wrench")
 	TEST_ASSERT(H.throw_item(target), "throw it")
 	TEST_ASSERT_NULL(H.get_right_hand(), "the thrown item left the hand")

@@ -56,7 +56,7 @@
 /datum/unit_test/proc/dq_give_zone_sel(mob/M)
 	if(!M.zone_sel)
 		rel_set(M, nameof(/mob::zone_sel), new /atom/movable/screen/zone_sel())
-		M.zone_sel.selecting = BP_TORSO
+		M.zone_sel.set_selecting(BP_TORSO)
 
 /// An attacker and a target on adjacent open tiles, the attacker facing it.
 /datum/unit_test/proc/dq_combat_pair(target_type)

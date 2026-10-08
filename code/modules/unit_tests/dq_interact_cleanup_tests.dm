@@ -152,7 +152,7 @@ GLOBAL_LIST_EMPTY(dq_interact_cleanup_calls)
 	TEST_ASSERT(findtext(S.desc, "broken"), "combat mode: the syringe is stabbed in and breaks")
 
 	var/obj/item/reagent_containers/syringe/ld50_syringe/big = allocate(/obj/item/reagent_containers/syringe/ld50_syringe, T)
-	big.mode = NEEDLE_INJECT
+	big.set_mode(NEEDLE_INJECT)
 	big.reagents.add_reagent(REAGENT_ID_WATER, 10)
 	user.drop_item()
 	user.put_in_active_hand(big)

@@ -121,9 +121,8 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	if(can_pick_shell)
 		var/random = pick(shell_types)
 		icon_state = shell_types[random] // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-		shell_accessories = list("[icon_state]-eyes-blue")
+		set_shell_accessories(list("[icon_state]-eyes-blue"))
 
-	update_icon()
 	updatename()
 
 /mob/living/silicon/robot/drone/setup_camera()
@@ -162,21 +161,19 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	real_name = "[initial(name)] ([serial_number])"
 	name = real_name
 
-DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/silicon/robot/drone/appearance_overlays()
-	. = list()
-	if(islist(shell_accessories))
-		. += shell_accessories
-	. += add_hat_overlay()
+TRACKED(/mob/living/silicon/robot/drone, shell_accessories)
+
+/// A drone's look is its shell accessories and its hat; the sprite datum sheet is not used.
+/mob/living/silicon/robot/drone/look_parts(datum/look/look)
+	look.watch(hat)
+	for(var/accessory in shell_accessories)
+		look.overlay(accessory)
+	look.overlay(hat_look())
 
 /// Drones wear hats through the shared robot hat procs, drawn at their own offsets.
-/mob/living/silicon/robot/drone/add_hat_overlay()
-	. = list()
+/mob/living/silicon/robot/drone/hat_look()
 	if(hat)
-		. += get_hat_icon(hat, hat_x_offset, hat_y_offset)
-
-/mob/living/silicon/robot/drone/update_worn_icons()
-	return
+		return get_hat_icon(hat, hat_x_offset, hat_y_offset)
 
 /mob/living/silicon/robot/drone/proc/dq_do_pick_shell(mob/actor, obj/item/held, datum/interaction/ability/interaction)
 	var/list/choices = shell_types.Copy()
@@ -233,13 +230,13 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, TYPE_PROC_REF(/atom, ap
 
 /mob/living/silicon/robot/drone/proc/shell_customize_finish(shell_state, eyes, plating)
 	icon_state = shell_state
-	shell_accessories = null
+	var/list/accessories
 	if(eyes)
-		LAZYADD(shell_accessories, "[shell_state]-eyes-[eyes]")
+		LAZYADD(accessories, "[shell_state]-eyes-[eyes]")
 	if(plating)
-		LAZYADD(shell_accessories, "[shell_state]-shell-[plating]")
+		LAZYADD(accessories, "[shell_state]-shell-[plating]")
+	set_shell_accessories(accessories)
 	can_pick_shell = FALSE
-	update_icon()
 
 /datum/interaction/ability/self/robot_pick_shell
 	id = ABILITY_ID_ROBOT_PICK_SHELL

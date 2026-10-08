@@ -179,13 +179,12 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 	robotact?.update_static_data_for_all_viewers()
 	proto_set(src, nameof(sprite_datum), new_datum)
 	if(!istype(src,/mob/living/silicon/robot/drone))
-		sprite_type = sprite_datum.name
+		set_sprite_type(sprite_datum.name)
 
 /mob/living/silicon/robot/proc/transform_module()
 	resize(size_multiplier, animate = FALSE) //Gets the size down to a normal size.
 	transform_with_anim()
 	var/tempheight = vis_height
-	update_icon()
 	// This is bad but I dunno other way to 'reset' our resize offset based on vis_height changes other than resizing to normal and back.
 	if(tempheight != vis_height)
 		var/tempsize = size_multiplier

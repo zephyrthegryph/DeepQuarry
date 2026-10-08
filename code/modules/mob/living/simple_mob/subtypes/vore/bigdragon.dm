@@ -247,10 +247,9 @@ I think I covered everything.
 /mob/living/simple_mob/vore/bigdragon/Initialize(mapload)
 	. = ..()
 	src.adjust_nutrition(src.max_nutrition)
-	build_icons(1)
+	randomize_style()
 	add_language(LANGUAGE_DRUDAKAR)
 	add_language(LANGUAGE_UNATHI)
-	icon_state = "dragon_maneNone" // ALLOW(decl): set after build_icons()
 
 /mob/living/simple_mob/vore/bigdragon/runechat_y_offset(width, height)
 	return (..()*size_multiplier) + 40
@@ -314,88 +313,48 @@ I think I covered everything.
 ///		Icon generation stuff
 ///
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/bigdragon/appearance_overlays()
-	. = list()
-	. += ..()
-	update_fullness()
-	build_icons()
-
-/mob/living/simple_mob/vore/bigdragon/proc/build_icons(random)
-	cut_overlays()
+/// The dragon's modular look: tinted underbelly, body, ears, mane, horns and eyes layers, plus rage and flame overlays.
+/mob/living/simple_mob/vore/bigdragon/draw(datum/look/look)
+	..()
 	if(stat == DEAD)
-		plane = MOB_LAYER
+		look.set_plane(MOB_LAYER)
 		return
-	else
-		plane = ABOVE_MOB_PLANE
-	if(random)
-		var/list/bodycolors = list("#1E1E1E","#3F3F3F","#545454","#969696","#DBDBDB","#ABBBD8","#3D0B00","#3A221D","#77554F","#281D1B","#631F00","#964421","#936B24","#381313","#380000","#682121","#700E00","#44525B","#283035","#29353D","#353E44","#281000","#38261A","#302F3D","#322E3A","#262738")
-		under = pick(underbelly_styles)
-		overlay_colors["Underbelly"] = pick(bodycolors)
-		body_style = pick(body_styles)
-		overlay_colors["Body"] = pick(bodycolors)
-		ears = pick(ear_styles)
-		overlay_colors["Ears"] = get_random_colour(0, 100, 150)
-		mane = pick(mane_styles)
-		overlay_colors["Mane"] = pick(bodycolors)
-		horns = pick(horn_styles)
-		var/list/horncolors = list("#000000","#151515","#303030","#606060","#808080","#AAAAAA","#CCCCCC","#EEEEEE","#FFFFFF")
-		overlay_colors["Horns"] = pick(horncolors)
-		eyes = pick(eye_styles)
-		overlay_colors["Eyes"] = get_random_colour(1)
-
-	var/image/I = image(icon, "dragon_under[under][resting? "-rest" : (vore_fullness? "-[vore_fullness]" : null)]")
-	I.color = overlay_colors["Underbelly"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "dragon_body[body_style][resting? "-rest" : null]")
-	I.color = overlay_colors["Body"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "dragon_ears[ears][resting? "-rest" : null]")
-	I.color = overlay_colors["Ears"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "dragon_mane[mane][resting? "-rest" : null]")
-	I.color = overlay_colors["Mane"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "dragon_horns[horns][resting? "-rest" : null]")
-	I.color = overlay_colors["Horns"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "dragon_eyes[eyes][resting? "-rest" : null]")
-	I.color = overlay_colors["Eyes"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = PLANE_LIGHTING_ABOVE
-	add_overlay(I)
-
+	look.set_plane(ABOVE_MOB_PLANE)
+	look.state("dragon_maneNone")
+	var/rest_suffix = resting ? "-rest" : null
+	look.overlay(look_overlay_image(icon, "dragon_under[under][resting ? "-rest" : (vore_fullness ? "-[vore_fullness]" : null)]", MOB_LAYER, MOB_PLANE, color = overlay_colors["Underbelly"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "dragon_body[body_style][rest_suffix]", MOB_LAYER, MOB_PLANE, color = overlay_colors["Body"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "dragon_ears[ears][rest_suffix]", MOB_LAYER, MOB_PLANE, color = overlay_colors["Ears"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "dragon_mane[mane][rest_suffix]", MOB_LAYER, MOB_PLANE, color = overlay_colors["Mane"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "dragon_horns[horns][rest_suffix]", MOB_LAYER, MOB_PLANE, color = overlay_colors["Horns"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "dragon_eyes[eyes][rest_suffix]", plane = PLANE_LIGHTING_ABOVE, color = overlay_colors["Eyes"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
 	if(enraged)
-		I = image(icon, "dragon_rage")
-		I.appearance_flags |= PIXEL_SCALE
-		I.plane = MOB_PLANE
-		I.layer = MOB_LAYER
-		add_overlay(I)
+		look.overlay(look_overlay_image(icon, "dragon_rage", MOB_LAYER, MOB_PLANE, appearance_flags = PIXEL_SCALE))
 	if(flames)
-		I = image(icon, "dragon_flame[resting? "-rest" : null]")
-		I.appearance_flags |= PIXEL_SCALE
-		I.plane = PLANE_LIGHTING_ABOVE
-		add_overlay(I)
+		look.overlay(look_overlay_image(icon, "dragon_flame[rest_suffix]", plane = PLANE_LIGHTING_ABOVE, appearance_flags = PIXEL_SCALE))
+
+/// Rolls a random modular style and colour set (spawn time).
+/mob/living/simple_mob/vore/bigdragon/proc/randomize_style()
+	var/list/bodycolors = list("#1E1E1E","#3F3F3F","#545454","#969696","#DBDBDB","#ABBBD8","#3D0B00","#3A221D","#77554F","#281D1B","#631F00","#964421","#936B24","#381313","#380000","#682121","#700E00","#44525B","#283035","#29353D","#353E44","#281000","#38261A","#302F3D","#322E3A","#262738")
+	var/list/horncolors = list("#000000","#151515","#303030","#606060","#808080","#AAAAAA","#CCCCCC","#EEEEEE","#FFFFFF")
+	set_under(pick(underbelly_styles))
+	set_body_style(pick(body_styles))
+	set_ears(pick(ear_styles))
+	set_mane(pick(mane_styles))
+	set_horns(pick(horn_styles))
+	set_eyes(pick(eye_styles))
+	paint("Underbelly", pick(bodycolors))
+	paint("Body", pick(bodycolors))
+	paint("Ears", get_random_colour(0, 100, 150))
+	paint("Mane", pick(bodycolors))
+	paint("Horns", pick(horncolors))
+	paint("Eyes", get_random_colour(1))
+
+/// Recolours one layer; the colour table is replaced whole so the tracked write is seen.
+/mob/living/simple_mob/vore/bigdragon/proc/paint(part, value)
+	var/list/colors = overlay_colors.Copy()
+	colors[part] = value
+	set_overlay_colors(colors)
 
 /mob/living/simple_mob/vore/bigdragon/proc/set_style()
 	set name = "Set Dragon Style"
@@ -488,21 +447,20 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		return
 	switch(ask.overlay)
 		if("Underbelly")
-			under = ask.style
+			set_under(ask.style)
 		if("Body")
-			body_style = ask.style
+			set_body_style(ask.style)
 		if("Ears")
-			ears = ask.style
+			set_ears(ask.style)
 		if("Mane")
-			mane = ask.style
+			set_mane(ask.style)
 		if("Horns")
-			horns = ask.style
+			set_horns(ask.style)
 		if("Eyes")
-			eyes = ask.style
+			set_eyes(ask.style)
 		else
 			return
-	overlay_colors[ask.overlay] = ask.value
-	build_icons()
+	paint(ask.overlay, ask.value)
 
 ///
 ///		Vore stuff
@@ -678,11 +636,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	if(!src.noenrage)
 		if(!src.enraged)
 			if(src.vitality() <= 0.5)
-				src.enraged = 1
-				after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list("No more games. COME HERE."))
+				set_enraged(1)
+				after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list("No more games. COME HERE."), keeps_dead = TRUE)
 		if(src.enraged)
 			if(src.vitality() >= 0.5)
-				src.enraged = 0
+				set_enraged(0)
 	if(src.resting)	//Give them a way to slowly heal over time while player controlled
 		src.mend(TREAT_TISSUE_REPAIR, 2.5)
 		src.mend(TREAT_BURN_CARE, 2.5)
@@ -789,8 +747,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
 	if(!enraged)
 		ai_busy_begin()
-	flames = 1
-	build_icons()
+	set_flames(1)
 	after(src, charge_warmup, PROC_REF(firebreathend), key = "firebreathtimer", with = list(A), keeps_dead = TRUE)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
@@ -805,8 +762,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	P.launch_projectile(A, BP_TORSO, src)
 	ai_busy_end()
 	set_glow_toggle(0)
-	flames = 0
-	build_icons()
+	set_flames(0)
 
 /obj/item/projectile/bullet/dragon
 	use_submunitions = 1
@@ -890,7 +846,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 //dragon variant that'll swap back to hostile if pissed off
 //Attack overrides to let us """Attack""" allies and heal them
 /mob/living/simple_mob/vore/bigdragon/proc/enrage(atom/movable/attacker)
-	enraged = 1
+	set_enraged(1)
 	norange = 0
 	faction = FACTION_DRAGON
 	say("HAVE IT YOUR WAY THEN")
@@ -944,35 +900,44 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		if((LAZYLEN(input_style_list) == 12) && (input_style_list[2] in underbelly_styles) && (input_style_list[4] in body_styles) && (input_style_list[6] in ear_styles) && (input_style_list[8] in mane_styles) && (input_style_list[10] in horn_styles) && (input_style_list[12] in ear_styles))
 			try
 				if(rgb2num(input_style_list[1]))
-					overlay_colors["Underbelly"] = input_style_list[1]
+					paint("Underbelly", input_style_list[1])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			under = input_style_list[2]
+			set_under(input_style_list[2])
 			try
 				if(rgb2num(input_style_list[3]))
-					overlay_colors["Body"] = input_style_list[3]
+					paint("Body", input_style_list[3])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			body_style = input_style_list[4]
+			set_body_style(input_style_list[4])
 			try
 				if(rgb2num(input_style_list[5]))
-					overlay_colors["Ears"] = input_style_list[5]
+					paint("Ears", input_style_list[5])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			ears = input_style_list[6]
+			set_ears(input_style_list[6])
 			try
 				if(rgb2num(input_style_list[7]))
-					overlay_colors["Mane"] = input_style_list[7]
+					paint("Mane", input_style_list[7])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			mane = input_style_list[8]
+			set_mane(input_style_list[8])
 			try
 				if(rgb2num(input_style_list[9]))
-					overlay_colors["Horns"] = input_style_list[9]
+					paint("Horns", input_style_list[9])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			horns = input_style_list[10]
+			set_horns(input_style_list[10])
 			try
 				if(rgb2num(input_style_list[11]))
-					overlay_colors["Eyes"] = input_style_list[11]
+					paint("Eyes", input_style_list[11])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			eyes = input_style_list[12]
-			build_icons()
+			set_eyes(input_style_list[12])
+
+TRACKED(/mob/living/simple_mob/vore/bigdragon, overlay_colors)
+TRACKED(/mob/living/simple_mob/vore/bigdragon, under)
+TRACKED(/mob/living/simple_mob/vore/bigdragon, body_style)
+TRACKED(/mob/living/simple_mob/vore/bigdragon, ears)
+TRACKED(/mob/living/simple_mob/vore/bigdragon, mane)
+TRACKED(/mob/living/simple_mob/vore/bigdragon, horns)
+TRACKED(/mob/living/simple_mob/vore/bigdragon, eyes)
+TRACKED(/mob/living/simple_mob/vore/bigdragon, enraged)
+TRACKED(/mob/living/simple_mob/vore/bigdragon, flames)
 
 CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)

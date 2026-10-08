@@ -216,32 +216,19 @@
 
 /mob/living/simple_mob/on_death(gibbed)
 	. = ..()
-	update_icon()
 	release_vore_contents()
 	set_density(FALSE) //We don't block even if we did before
-
-	if(has_eye_glow)
-		remove_eyes()
 
 	if(LAZYLEN(loot_list)) //Drop any loot
 		for(var/path in loot_list)
 			if(prob(loot_list[path]))
 				new path(get_turf(src))
 
-	after(src, 0.3 SECONDS, PROC_REF(callback_update_icon), key = "update_icon_timer")
-
 	set_ghostjoin(0)
 	registry_leave(REGISTRY_GHOST_PODS, src)
-	ghostjoin_icon()
 
-/// Undo what on_death() cleared: a revived creature blocks again, glows again and looks alive.
+/// Undo what on_death() cleared: a revived creature blocks again.
 /mob/living/simple_mob/on_revived(reason, datum/source)
 	. = ..()
 	set_density(initial(density))
-	if(has_eye_glow)
-		add_eyes()
-	update_icon()
-
-/mob/living/simple_mob/proc/callback_update_icon()
-	update_icon()
 

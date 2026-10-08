@@ -53,10 +53,9 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	var/friend_name = null // Lock befriending to this character
 
 /mob/living/simple_mob/animal/passive/cat/Initialize(mapload)
-	icon_living = "[initial(icon_state)]"
-	icon_dead = "[initial(icon_state)]_dead"
-	icon_rest = "[initial(icon_state)]_rest"
-	update_icon()
+	set_icon_living("[initial(icon_state)]")
+	set_icon_dead("[initial(icon_state)]_dead")
+	set_icon_rest("[initial(icon_state)]_rest")
 	return ..()
 
 /mob/living/simple_mob/animal/passive/cat/get_available_emotes()

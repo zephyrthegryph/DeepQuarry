@@ -57,6 +57,7 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("joint_dislocate", ai(), begins(PROC_REF(joint_dislocate_text)), wait(10 SECONDS), then(PROC_REF(grab_joint_human_done)))
 
 CAPABILITIES(/mob/living/silicon/robot)
+	on_change(nameof(sprite_datum), ANY, then(PROC_REF(sprite_changed)))
 	every(0.8 SECONDS, then(PROC_REF(transform_animation_sounds)), when = nameof(transform_sounds_left))
 	remote_interface(reach = BORG_INTERFACE_REACH)
 	// Its chassis manipulators: what a cyborg with no gripper selected still does by touch (a closet, a bulb, its own modules). 16.8 gives a cyborg

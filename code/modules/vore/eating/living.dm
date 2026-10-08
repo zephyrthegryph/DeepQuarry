@@ -685,7 +685,7 @@
 			rel_add(SA, nameof(SA.prey_excludes), src)
 		log_and_message_admins("used the OOC escape button to get out of [key_name(B.owner)] ([B.owner ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[B.owner.x];Y=[B.owner.y];Z=[B.owner.z]'>JMP</a>" : "null"])", src)
 
-		B.owner.handle_belly_update() //This is run whenever a belly's contents are changed.
+		PUBLISH(B.owner, belly_change) //This is run whenever a belly's contents are changed.
 
 	//You're in a dogborg!
 	else if(istype(loc, /obj/item/dogborg/sleeper))
@@ -1697,7 +1697,7 @@
 			add_attack_logs(user,TR,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to [TR]'s [TB]")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
 		RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_VORE, 1, 0, TB)
 		if(RTB.count_liquid_for_sprite || TB.count_liquid_for_sprite)
-			handle_belly_update()
+			PUBLISH(src, belly_change)
 
 	else if(TR.receive_reagents == FALSE)
 		to_chat(user, span_vwarning("This person's prefs dont allow that!"))
@@ -1726,9 +1726,9 @@
 		RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_VORE, 1, 0, TB)
 		add_attack_logs(user,TR,"Transfered reagents from [TG]'s [RTB] to [TR]'s [TB]")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
 		if(RTB.count_liquid_for_sprite)
-			handle_belly_update()
+			PUBLISH(src, belly_change)
 		if(TB.count_liquid_for_sprite)
-			TR.handle_belly_update()
+			PUBLISH(TR, belly_change)
 
 /// Transfer into the stomach (ingested) of the user or an adjacent mob. Its prompts belong to the vore_transfer_reagents verb re-run.
 /mob/living/proc/vore_transfer_to_stomach(mob/living/TG, obj/belly/RTB, transfer_amount, list/liquid_answers, datum/prompt/choice/vore_liquid_transfer/captures)
@@ -1752,7 +1752,7 @@
 		RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_INGEST, 1, 0, null)
 		add_attack_logs(user,TR,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to [TR]'s Stomach")
 		if(RTB.count_liquid_for_sprite)
-			handle_belly_update()
+			PUBLISH(src, belly_change)
 
 	else if(TR.receive_reagents == FALSE)
 		to_chat(user, span_vwarning("This person's prefs dont allow that!"))
@@ -1767,7 +1767,7 @@
 		RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_INGEST, 1, 0, null)
 		add_attack_logs(user,TR,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to [TR]'s Stomach")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
 		if(RTB.count_liquid_for_sprite)
-			handle_belly_update()
+			PUBLISH(src, belly_change)
 
 /// Transfer into an adjacent or held reagent container. Its prompts belong to the vore_transfer_reagents verb re-run.
 /mob/living/proc/vore_transfer_to_container(mob/living/TG, obj/belly/RTB, transfer_amount, list/liquid_answers, datum/prompt/choice/vore_liquid_transfer/captures)
@@ -1803,7 +1803,7 @@
 	RTB.reagents.vore_trans_to_con(T, transfer_amount, 1, 0)
 	add_attack_logs(user, T,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to a [T]")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
 	if(RTB.count_liquid_for_sprite)
-		handle_belly_update()
+		PUBLISH(src, belly_change)
 
 /// Spill onto the floor as a puddle. Its prompts belong to the vore_transfer_reagents verb re-run.
 /mob/living/proc/vore_transfer_to_floor(mob/living/TG, obj/belly/RTB, transfer_amount)
@@ -1812,7 +1812,7 @@
 		return
 	var/amount_removed = RTB.reagents.remove_any(transfer_amount)
 	if(RTB.count_liquid_for_sprite)
-		handle_belly_update()
+		PUBLISH(src, belly_change)
 	var/puddle_amount = round(amount_removed/5)
 
 	if(puddle_amount == 0)

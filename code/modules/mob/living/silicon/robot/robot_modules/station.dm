@@ -391,9 +391,8 @@ CAPABILITIES(/obj/item/robot_module)
 	var/obj/item/reagent_containers/syringe/S = locate_in_list(src.modules, /obj/item/reagent_containers/syringe)
 	if(S && S.mode == 2)
 		S.reagents.clear_reagents()
-		S.mode = initial(S.mode)
+		S.set_mode(initial(S.mode))
 		S.desc = initial(S.desc)
-		S.update_icon()
 
 	var/obj/item/reagent_containers/spray/PS = locate_in_list(src.emag, /obj/item/reagent_containers/spray)
 	if(PS)
@@ -459,9 +458,8 @@ CAPABILITIES(/obj/item/robot_module)
 	var/obj/item/reagent_containers/syringe/S = locate_in_list(src.modules, /obj/item/reagent_containers/syringe)
 	if(S && S.mode == 2)
 		S.reagents.clear_reagents()
-		S.mode = initial(S.mode)
+		S.set_mode(initial(S.mode))
 		S.desc = initial(S.desc)
-		S.update_icon()
 
 	var/obj/item/reagent_containers/spray/PS = locate_in_list(src.emag, /obj/item/reagent_containers/spray)
 	if(PS)
@@ -567,7 +565,6 @@ CAPABILITIES(/obj/item/robot_module)
 		return
 	if(T.power_supply.charge < T.power_supply.maxcharge)
 		T.power_supply.give(T.charge_cost * amount)
-		T.update_icon()
 	else
 		T.charge_tick = 0
 
@@ -872,9 +869,8 @@ CAPABILITIES(/obj/item/robot_module)
 	var/obj/item/reagent_containers/syringe/S = locate_in_list(src.modules, /obj/item/reagent_containers/syringe)
 	if(S && S.mode == 2)
 		S.reagents.clear_reagents()
-		S.mode = initial(S.mode)
+		S.set_mode(initial(S.mode))
 		S.desc = initial(S.desc)
-		S.update_icon()
 
 	..()
 

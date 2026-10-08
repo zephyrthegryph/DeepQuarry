@@ -52,23 +52,25 @@
 /datum/robot_sprite/proc/sprite_flag_check(flag_to_check)
 	return (sprite_flags & flag_to_check)
 
-/datum/robot_sprite/proc/handle_extra_icon_updates(mob/living/silicon/robot/ourborg)
+/// The equipment-based parts of the look: the speed, shield, melee and gun sprites of the active modules.
+/datum/robot_sprite/proc/look_extras(datum/look/look, mob/living/silicon/robot/ourborg)
 	if(ourborg.resting) //Don't do ANY of the overlay code if we're resting. It just won't look right!
 		return
 	if(sprite_flag_check(ROBOT_HAS_SHIELD_SPEED_SPRITE))
 		if(ourborg.has_active_type(/obj/item/borg/combat/shield) && ourborg.has_active_type(/obj/item/borg/combat/mobility))
-			ourborg.add_overlay("[sprite_icon_state]-speed_shield")
+			look.overlay("[sprite_icon_state]-speed_shield")
 			return //Stop here. No need to add more overlays. Nothing else is compatible.
 
 	if(sprite_flag_check(ROBOT_HAS_SPEED_SPRITE) && ourborg.has_active_type(/obj/item/borg/combat/mobility))
-		ourborg.icon_state = "[sprite_icon_state]-roll"
+		look.state("[sprite_icon_state]-roll")
 		return //Stop here. No need to add more overlays. Nothing else is compatible.
 
 	if(sprite_flag_check(ROBOT_HAS_SHIELD_SPRITE))
 		if(ourborg.has_active_type(/obj/item/borg/combat/shield))
 			var/obj/item/borg/combat/shield/shield = locate_in_list(ourborg, /obj/item/borg/combat/shield)
+			look.watch(shield)
 			if(shield && shield.active)
-				ourborg.add_overlay("[sprite_icon_state]-shield")
+				look.overlay("[sprite_icon_state]-shield")
 
 	if(ourborg.activated_module_type_list(list(/obj/item/melee/robotic, /obj/item/gun/energy/robotic)))
 		for(var/thing_to_check in ourborg.get_active_modules()) //We look at our active modules. Let's peep!
@@ -76,31 +78,30 @@
 			//Melee Check
 			if(istype(thing_to_check, /obj/item/melee/robotic))
 				var/obj/item/melee/robotic/melee = thing_to_check
-				melee.refresh_light(TRUE)
 				if(sprite_flag_check(ROBOT_HAS_MELEE_SPRITE) && melee.weapon_flag_check(COUNTS_AS_ROBOTIC_MELEE))
-					ourborg.add_overlay("[sprite_icon_state]-melee")
+					look.overlay("[sprite_icon_state]-melee")
 					continue
 				if(sprite_flag_check(ROBOT_HAS_DAGGER_SPRITE) && melee.weapon_flag_check(COUNTS_AS_ROBOT_DAGGER))
-					ourborg.add_overlay("[sprite_icon_state]-dagger")
+					look.overlay("[sprite_icon_state]-dagger")
 					continue
 				if(sprite_flag_check(ROBOT_HAS_BLADE_SPRITE) && melee.weapon_flag_check(COUNTS_AS_ROBOT_BLADE))
-					ourborg.add_overlay("[sprite_icon_state]-blade")
+					look.overlay("[sprite_icon_state]-blade")
 					continue
 
 			//Gun Check
 			if(istype(thing_to_check, /obj/item/gun/energy/robotic))
 				var/obj/item/gun/energy/robotic/gun = thing_to_check
 				if(sprite_flag_check(ROBOT_HAS_GUN_SPRITE) && gun.gun_flag_check(COUNTS_AS_ROBOT_GUN))
-					ourborg.add_overlay("[sprite_icon_state]-gun")
+					look.overlay("[sprite_icon_state]-gun")
 					continue
 				if(sprite_flag_check(ROBOT_HAS_LASER_SPRITE) && gun.gun_flag_check(COUNTS_AS_ROBOT_LASER))
-					ourborg.add_overlay("[sprite_icon_state]-laser")
+					look.overlay("[sprite_icon_state]-laser")
 					continue
 				if(sprite_flag_check(ROBOT_HAS_TASER_SPRITE) && gun.gun_flag_check(COUNTS_AS_ROBOT_TASER))
-					ourborg.add_overlay("[sprite_icon_state]-taser")
+					look.overlay("[sprite_icon_state]-taser")
 					continue
 				if(sprite_flag_check(ROBOT_HAS_DISABLER_SPRITE) && gun.gun_flag_check(COUNTS_AS_ROBOT_DISABLER))
-					ourborg.add_overlay("[sprite_icon_state]-disabler")
+					look.overlay("[sprite_icon_state]-disabler")
 					continue
 	//These are outliers that don't fit the normal sprite flags. These should not be expanded unless absolutely neccessary.
 	if(ourborg.activated_module_type_list(list(/obj/item/pickaxe)))
@@ -108,7 +109,7 @@
 			if(istype(thing_to_check, /obj/item/pickaxe))
 				var/obj/item/pickaxe/melee = thing_to_check
 				if(sprite_flag_check(ROBOT_HAS_MELEE_SPRITE) && melee.weapon_flag_check(COUNTS_AS_ROBOTIC_MELEE))
-					ourborg.add_overlay("[sprite_icon_state]-melee")
+					look.overlay("[sprite_icon_state]-melee")
 					continue
 
 /datum/robot_sprite/proc/get_belly_overlay(mob/living/silicon/robot/ourborg, size = 1, b_class)
@@ -121,7 +122,7 @@
 				//vore_capacity_ex list. Finally, if the borg has a red/green light sleeper, it'll use g or r appended to the end.
 				//Bellies with lights should be defined in belly_light_list
 				var/sleeperColor = "g"
-				if(ourborg.sleeper_red_light() || LAZYACCESS(ourborg.vore_light_states, b_class) == 1) // Is our belly safe, or gurgling cuties?
+				if(ourborg.sleeper_red_light() || ourborg.belly_light(b_class) == 1) // Is our belly safe, or gurgling cuties?
 					sleeperColor = "r"
 				return "[sprite_icon_state]-[b_class]-[size]-[sleeperColor]"
 
@@ -133,10 +134,12 @@
 			return "[sprite_icon_state]-[b_class]-[size]-[sleeperColor]"
 	return "[sprite_icon_state]-[b_class]-[size]"
 
+/// The borg's resting pose, or "Default" when this sprite has no such pose.
+/datum/robot_sprite/proc/valid_rest_style(mob/living/silicon/robot/ourborg)
+	return (ourborg.rest_style in rest_sprite_options) ? ourborg.rest_style : "Default"
+
 /datum/robot_sprite/proc/get_belly_resting_overlay(mob/living/silicon/robot/ourborg, size = 1, b_class)
-	if(!(ourborg.rest_style in rest_sprite_options))
-		ourborg.rest_style = "Default"
-	switch(ourborg.rest_style)
+	switch(valid_rest_style(ourborg))
 		if("Sit")
 			return "[get_belly_overlay(ourborg, size, b_class)]-sit"
 		if("Bellyup")
@@ -170,7 +173,7 @@
 	if(LAZYLEN(sprite_decals))
 		if(!ourborg.resting)
 			return "[sprite_icon_state]-[type]"
-		switch(ourborg.rest_style)
+		switch(valid_rest_style(ourborg))
 			if("Sit")
 				return "[sprite_icon_state]-[type]-sit"
 			if("Bellyup")
@@ -180,9 +183,7 @@
 
 
 /datum/robot_sprite/proc/get_rest_sprite(mob/living/silicon/robot/ourborg)
-	if(!(ourborg.rest_style in rest_sprite_options))
-		ourborg.rest_style = "Default"
-	switch(ourborg.rest_style)
+	switch(valid_rest_style(ourborg))
 		if("Sit")
 			return "[sprite_icon_state]-sit"
 		if("Bellyup")

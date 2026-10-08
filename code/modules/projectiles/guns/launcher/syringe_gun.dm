@@ -11,13 +11,16 @@ MATERIAL_MIX(/obj/item/syringe_cartridge, list(MAT_STEEL = 125, MAT_GLASS = 375)
 	w_class = ITEMSIZE_TINY
 	var/tmp/obj/item/reagent_containers/syringe/syringe
 
-DECLARE_APPEARANCE_PROC(/obj/item/syringe_cartridge, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/syringe_cartridge/appearance_overlays()
-	. = list()
-	underlays.Cut()
-	if(syringe())
-		underlays += image(syringe().icon, src, syringe().icon_state)
-		if(length(syringe().filling)) underlays += syringe().filling
+/// The loaded syringe and its filling, drawn with the cartridge (the legacy look put them under the cartridge sprite; the look has no underlays).
+/obj/item/syringe_cartridge/draw(datum/look/look)
+	..()
+	var/obj/item/reagent_containers/syringe/loaded = syringe()
+	if(!loaded)
+		return
+	look.watch(loaded)
+	look.overlay(look_overlay_image(loaded.icon, loaded.icon_state))
+	if(loaded.reagents.total_volume && loaded.mode != NEEDLE_BROKEN && loaded.mode != NEEDLE_CAPPED)
+		look.overlay(look_overlay_image(loaded.icon, "filler[round(loaded.reagents.total_volume, round(loaded.reagents.maximum_volume / 3))]", color = loaded.reagents.get_color()))
 
 /// Old attackby.
 /obj/item/syringe_cartridge/proc/interaction_item(datum/act/op/A)

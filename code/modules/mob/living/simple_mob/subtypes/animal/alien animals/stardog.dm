@@ -639,7 +639,6 @@ MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 		//legacy ai_holder.hostile/retaliate replaced with brain API.
 		s.ai_brain?.set_hostile(FALSE)
 		s.set_ghostjoin(TRUE)
-		s.ghostjoin_icon()
 
 	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
 	if(s && istype(s,/obj/effect/overmap/visitable/ship/simplemob/stardog))
@@ -1520,7 +1519,6 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 	set_density(FALSE)
 	set_opacity(0)
 	state = 1
-	changed(src)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 	countdown = rand(10,20)
@@ -1538,7 +1536,6 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 	set_density(TRUE)
 	set_opacity(1)
 	state = 0
-	changed(src)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 	countdown = rand(50,250)

@@ -3,13 +3,6 @@ dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibili
 dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibility = INVISIBILITY_ABSTRACT
 dx_appearance_side_effect	code/_onclick/hud/screen_objects.dm	selecting_appearance = mutable_appearance('icons/mob/zone_sel.dmi', "[selecting]")
 dx_appearance_side_effect	code/_onclick/hud/screen_objects.dm	handcuff_overlay = image("icon"='icons/mob/screen_gen.dmi', "icon_state"=state)
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/shield_armor.dm	item_state = "shield_armor_[active]"
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/shield_armor.dm	set_light(2, 1, l_color = "#006AFF")
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/shield_armor.dm	set_light(0, 0, l_color = "#000000")
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	item_state = ready_icon_state
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	set_light(2, 1, l_color = "#006AFF")
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	item_state = normal_icon_state
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	set_light(0, 0, l_color = "#000000")
 dx_appearance_side_effect	code/game/gamemodes/technomancer/spells/illusion.dm	temp_image.transform = M
 dx_appearance_side_effect	code/game/machinery/doors/brigdoors.dm	set_picture("ai_bsod")
 dx_appearance_side_effect	code/game/machinery/doors/brigdoors.dm	maptext = ""
@@ -179,8 +172,6 @@ dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = mai
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.plane = ABOVE_OBJ_PLANE
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.layer = ABOVE_WINDOW_LAYER
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = main_color
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	connections = string_list(list("0","0","0","0"))
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	other_connections = string_list(list("0","0","0","0"))
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = color
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = color
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	D.blend_mode = BLEND_MULTIPLY
@@ -262,9 +253,7 @@ dx_appearance_side_effect	code/game/objects/structures/window.dm	flags &= ~ON_BO
 dx_appearance_side_effect	code/game/turfs/simulated/dungeon/wall.dm	I.color = material.icon_colour
 dx_appearance_side_effect	code/game/turfs/simulated/floor_icon.dm	name = flooring.name
 dx_appearance_side_effect	code/game/turfs/simulated/floor_icon.dm	desc = flooring.desc
-dx_appearance_side_effect	code/game/turfs/simulated/floor_icon.dm	flooring_override = icon_state
 dx_appearance_side_effect	code/game/turfs/simulated/wall_icon.dm	I.color = material.icon_colour
-dx_appearance_side_effect	code/game/turfs/simulated/wall_types.dm	I.color = stripe_color
 dx_appearance_side_effect	code/game/turfs/simulated/wall_types.dm	I.color = stripe_color
 dx_appearance_side_effect	code/modules/artifice/telecube.dm	glow.plane = PLANE_LIGHTING_ABOVE
 dx_appearance_side_effect	code/modules/artifice/telecube.dm	charge.plane = PLANE_LIGHTING_ABOVE
@@ -275,22 +264,6 @@ dx_appearance_side_effect	code/modules/artifice/telecube.dm	charge.color = glow_
 dx_appearance_side_effect	code/modules/assembly/holder.dm	master.update_icon()
 dx_appearance_side_effect	code/modules/assembly/timer.dm	attached_overlays = list()
 dx_appearance_side_effect	code/modules/assembly/timer.dm	attached_overlays += "timer_timing"
-dx_appearance_side_effect	code/modules/blob2/blobs/base_blob.dm	name = "[overmind.blob_type.name] [base_name]" // This is in update_icon() because inert blobs can turn into other blobs with magic if another blob core claims it with pulsing.
-dx_appearance_side_effect	code/modules/blob2/blobs/base_blob.dm	set_light(3, 3, color)
-dx_appearance_side_effect	code/modules/blob2/blobs/base_blob.dm	name = "inert [base_name]"
-dx_appearance_side_effect	code/modules/blob2/blobs/base_blob.dm	set_light(0)
-dx_appearance_side_effect	code/modules/blob2/blobs/core.dm	blob_overlay.color = overmind.blob_type.color
-dx_appearance_side_effect	code/modules/blob2/blobs/core.dm	name = "[overmind.blob_type.name] [base_name]"
-dx_appearance_side_effect	code/modules/blob2/blobs/node.dm	name = "[overmind.blob_type.name] [base_name]"
-dx_appearance_side_effect	code/modules/blob2/blobs/node.dm	blob_overlay.color = overmind.blob_type.color
-dx_appearance_side_effect	code/modules/blob2/blobs/normal.dm	desc = "A thin lattice of slightly twitching tendrils."
-dx_appearance_side_effect	code/modules/blob2/blobs/normal.dm	desc = "A thick wall of writhing tendrils."
-dx_appearance_side_effect	code/modules/blob2/blobs/normal.dm	name = "[overmind.blob_type.name]"
-dx_appearance_side_effect	code/modules/blob2/blobs/normal.dm	name = "inert [base_name]"
-dx_appearance_side_effect	code/modules/blob2/blobs/shield.dm	desc = "A wall of twitching tendrils."
-dx_appearance_side_effect	code/modules/blob2/blobs/shield.dm	desc = initial(desc)
-dx_appearance_side_effect	code/modules/blob2/blobs/shield.dm	name = "[base_name] [overmind.blob_type.name]"
-dx_appearance_side_effect	code/modules/blob2/blobs/shield.dm	name = "inert [base_name] blob"
 dx_appearance_side_effect	code/modules/body/organs/organ_icon.dm	damage_state = n_is
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(0)
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light_on(FALSE)
@@ -300,10 +273,6 @@ dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(0)
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light_on(FALSE)
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(2)
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light_on(TRUE)
-dx_appearance_side_effect	code/modules/clothing/clothing.dm	GLOB.light_overlay_cache["[light_overlay]_icon"] = image(icon = 'icons/obj/light_overlays.dmi', icon_state = "[light_overlay]")
-dx_appearance_side_effect	code/modules/clothing/clothing.dm	helmet_light = GLOB.light_overlay_cache["[light_overlay]_icon"]
-dx_appearance_side_effect	code/modules/clothing/clothing.dm	GLOB.light_overlay_cache[cache_key] = image(icon = use_icon, icon_state = "[light_overlay]")
-dx_appearance_side_effect	code/modules/clothing/clothing.dm	helmet_light = null
 dx_appearance_side_effect	code/modules/clothing/spacesuits/rig/rig.dm	mob_icon = icon(icon = species_icon, icon_state = "[icon_state]")
 dx_appearance_side_effect	code/modules/economy/cash.dm	name = "[worth] [initial_name]\s"
 dx_appearance_side_effect	code/modules/economy/cash.dm	desc = "It's worth [worth] [initial_name]s."
@@ -556,8 +525,6 @@ dx_appearance_side_effect	code/modules/projectiles/guns/energy/cyborg.dm	blade_o
 dx_appearance_side_effect	code/modules/projectiles/guns/energy/protector.dm	charge_overlay.pixel_x = ammo_x_offset * (i - 1)
 dx_appearance_side_effect	code/modules/projectiles/guns/energy/protector.dm	flashlight_overlay.pixel_x = flight_x_offset
 dx_appearance_side_effect	code/modules/projectiles/guns/energy/protector.dm	flashlight_overlay.pixel_y = flight_y_offset
-dx_appearance_side_effect	code/modules/projectiles/guns/launcher/pneumatic.dm	item_state = "pneumatic-tank"
-dx_appearance_side_effect	code/modules/projectiles/guns/launcher/pneumatic.dm	item_state = "pneumatic"
 dx_appearance_side_effect	code/modules/projectiles/guns/launcher/syringe_gun.dm	underlays.Cut()
 dx_appearance_side_effect	code/modules/projectiles/guns/launcher/syringe_gun.dm	if(length(syringe().filling)) underlays += syringe().filling
 dx_appearance_side_effect	code/modules/projectiles/guns/projectile/automatic.dm	item_state = icon_state
@@ -571,8 +538,6 @@ dx_appearance_side_effect	code/modules/reagents/reagent_containers/syringes.dm	f
 dx_appearance_side_effect	code/modules/reagents/reagent_containers/syringes.dm	filling.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/reagents/reagent_containers/syringes.dm	item_state = "syringe_[rounded_vol]"
 dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_filter.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_furnace.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_furnace.dm	filling.color = beaker.reagents.get_color()
 dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_mixer.dm	filling.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_pump.dm	filling.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_vat.dm	filling.color = reagents.get_color()

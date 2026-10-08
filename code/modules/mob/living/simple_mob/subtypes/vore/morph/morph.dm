@@ -103,7 +103,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	if(morphed)
 		to_chat(src, span_warning("You must restore to your original form first!"))
 		return
-	morphed = TRUE
+	set_morphed(TRUE)
 	rel_set(src, nameof(form), target)
 
 	act_message(src, target, null, MSG_OTHERS(span_warning("%U% suddenly twists and changes shape, becoming a copy of %T%!")))
@@ -144,7 +144,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	if(!morphed)
 		to_chat(src, span_warning("You're already in your normal form!"))
 		return
-	morphed = FALSE
+	set_morphed(FALSE)
 
 	if(!silent)
 		act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly collapses in on itself, dissolving into a pile of flesh!")))
@@ -224,13 +224,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	else
 		..()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/morph/appearance_overlays()
-	. = list()
+TRACKED(/mob/living/simple_mob/vore/morph, morphed)
+
+/// A morphed mob wears its copied form's appearance, so it draws nothing (the look stays untouched); in its own form it is an ordinary simple mob.
+/mob/living/simple_mob/vore/morph/draw(datum/look/look)
 	if(morphed)
-		return .
-	. += ..()
-	return .
+		return
+	..()
 
 /mob/living/simple_mob/vore/morph/update_icons()
 	if(morphed)

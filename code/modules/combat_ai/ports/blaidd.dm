@@ -203,9 +203,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/blaidd, get_ai_target_selectors, list( \
 	if(threat && get_dist(B, threat) > 1)
 		want_cloak = TRUE
 	if(want_cloak && !B.blaidd_invisibility)
-		B.blaidd_invisibility = 1
-		B.update_icon()
+		B.set_blaidd_invisibility(1)
 	else if(!want_cloak && B.blaidd_invisibility)
-		B.blaidd_invisibility = 0
-		B.update_icon()
+		B.set_blaidd_invisibility(0)
 	return DQ_BEHAVIOR_DONE

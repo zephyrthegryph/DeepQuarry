@@ -169,7 +169,7 @@
 			connected_to.trans_to_holder(reagents, rand(1,reagents.maximum_volume) ) // Fill back up to a random amount
 
 	if(connection_mode == CHEM_VORE && human_owner().vore_selected.count_liquid_for_sprite)
-		human_owner().handle_belly_update()
+		PUBLISH(human_owner(), belly_change)
 
 	if(prob(5) && (reagents.total_volume > 0 || connected_to.total_volume > 0))
 		var/atom/pumper = other.get_carrier()

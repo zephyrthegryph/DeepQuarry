@@ -42,7 +42,7 @@
 			new_mimic.name = name
 			new_mimic.desc = desc
 			new_mimic.icon_state = "open"
-			new_mimic.icon_living = "open"
+			new_mimic.set_icon_living("open")
 		else
 			return ..()
 	else
@@ -178,7 +178,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 			new_mimic.name = name
 			new_mimic.desc = desc
 			new_mimic.icon_state = "amimicopen"
-			new_mimic.icon_living = "amimicopen"
+			new_mimic.set_icon_living("amimicopen")
 		else
 			spent(src.loc)
 			new/obj/machinery/door/airlock/maintenance/common (src.loc) //Places the Airlock
@@ -242,15 +242,10 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	mimic_chance = 30
 	mimic_active = TRUE
 
-/// Draws itself entirely: drop the parent's keyed declarations.
-APPEARANCE_NONE(/obj/structure/closet/crate/mimic/closet)
-DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/closet/crate/mimic/closet/appearance_overlays()
-	. = list()
-	if(opened)
-		icon_state = "copen"
-	else
-		icon_state = "cmimic"
+/// Draws itself entirely: the open or closed sprite of the mimic closet, with none of the closet's usual overlays.
+/obj/structure/closet/crate/mimic/closet/draw(datum/look/look)
+	..()
+	look.state(opened ? "copen" : "cmimic")
 
 /obj/structure/closet/crate/mimic/closet/open()
 	if(src.opened)
@@ -268,7 +263,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(
 			new_mimic.name = name
 			new_mimic.desc = desc
 			new_mimic.icon_state = "cmimicopen"
-			new_mimic.icon_living = "cmimicopen"
+			new_mimic.set_icon_living("cmimicopen")
 		else
 			return ..()
 	else

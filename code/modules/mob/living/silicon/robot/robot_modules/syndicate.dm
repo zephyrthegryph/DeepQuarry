@@ -163,9 +163,8 @@
 	var/obj/item/reagent_containers/syringe/S = locate_in_list(src.modules, /obj/item/reagent_containers/syringe)
 	if(S && S.mode == 2)
 		S.reagents.clear_reagents()
-		S.mode = initial(S.mode)
+		S.set_mode(initial(S.mode))
 		S.desc = initial(S.desc)
-		S.update_icon()
 	..()
 
 /obj/item/robot_module/robot/syndicate/ninja

@@ -2,6 +2,8 @@
 	name = "sonadile"
 	desc = "A tall, oddly proportioned bipedal reptile. Whilst its body is fairly large on its own, the incredibly long neck brings its height up to near 14 feet tall. Covered in green scales with a yellow underbelly, with a long thin tail, short legs and stubby arms. It has orange frills down its spine and the eyes are an odd grey colour, it doesn't appear to be able to see very well."
 	catalogue_data = list(/datum/category_item/catalogue/fauna/sonadile)
+	/// Ten seconds after the last meal: the full sprite shows its settled second stage.
+	var/settled = FALSE
 	tt_desc = "Crocodylidae"
 	icon = 'icons/mob/vore64x64.dmi'
 	icon_dead = "sonadile-dead"
@@ -71,33 +73,23 @@
 	Whilst not entirely blind, it appears to have difficulty discerning differences between shapes and movement, but once it hears something that it interprets as prey, it attempts to swallow the creature whole and alive, lashing its head forward on the massively long neck."
 	value = CATALOGUER_REWARD_HARD
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/sonadile, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/sonadile/appearance_overlays()
-	. = list()
-	. += ..()
-	if(vore_active)
-		var/voremob_awake = FALSE
-		if(icon_state == icon_living)
-			voremob_awake = TRUE
-		update_fullness()
-		if(!vore_fullness)
-			update_transform()
-			return .
-		else if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)) && (vore_icons & SA_ICON_LIVING))
-			icon_state = "[icon_living]-[vore_fullness]"
-			after(src, 10 SECONDS, PROC_REF(settle_full_icon))
-		else if(stat >= DEAD && (vore_icons & SA_ICON_DEAD))
-			icon_state = "[icon_dead]-[vore_fullness]"
-		else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED) ) && icon_rest && (vore_icons & SA_ICON_REST))
-			icon_state = "[icon_rest]-[vore_fullness]"
-			after(src, 10 SECONDS, PROC_REF(settle_full_icon))
-		if(vore_eyes && voremob_awake) //Update eye layer if applicable.
-			remove_eyes()
-			add_eyes()
-	update_transform()
+/// Ten seconds after a meal, a full sonadile's sprite settles to its second stage (see settle_full_icon()).
+/mob/living/simple_mob/vore/sonadile/draw(datum/look/look)
+	..()
+	if(vore_active && settled && vore_fullness && (look.state_so_far(src) == "[icon_living]-[vore_fullness]"))
+		look.state("[icon_living]-2")
 
-/// Ten seconds after a meal, the full sprite settles to its second stage.
+CAPABILITIES(/mob/living/simple_mob/vore/sonadile)
+	on_change(nameof(vore_fullness), ANY, then(PROC_REF(fullness_changed)))
+
+/// A new meal unsettles the sprite and starts the ten second wait for it to settle again.
+/mob/living/simple_mob/vore/sonadile/proc/fullness_changed(datum/act/A)
+	set_settled(FALSE)
+	if(vore_fullness)
+		after(src, 10 SECONDS, PROC_REF(settle_full_icon), key = "settle_full_icon")
+
+TRACKED(/mob/living/simple_mob/vore/sonadile, settled)
+
 /mob/living/simple_mob/vore/sonadile/proc/settle_full_icon()
 	if(vore_fullness)
-		icon_state = "[icon_living]-2"
-		update_transform()
+		set_settled(TRUE)

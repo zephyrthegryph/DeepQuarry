@@ -65,7 +65,6 @@
 	if(hat)
 		var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(user))
-		update_icon()
 		if(user == src)
 			to_chat(user, span_notice("You removed your hat."))
 			return
@@ -97,7 +96,6 @@
 				if(!move_into(src, nameof(src.hat), new_hat, user, ledger_slot = SLOT_ID_BODY)) // out of the paw, onto the head
 					return
 				to_chat(user, span_notice("You put on the hat."))
-				update_icon()
 			return
 		else if(ishuman(user))
 			var/mob/living/carbon/human/H = user

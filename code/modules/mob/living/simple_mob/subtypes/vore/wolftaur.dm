@@ -41,10 +41,9 @@
 /mob/living/simple_mob/vore/wolftaur/Initialize(mapload)
 	. = ..()
 	if(random_skin)
-		icon_living = pick(skins)
-		icon_rest = "[icon_living]_rest"
-		icon_dead = "[icon_living]-dead"
-		update_icon()
+		set_icon_living(pick(skins))
+		set_icon_rest("[icon_living]_rest")
+		set_icon_dead("[icon_living]-dead")
 	var/oursize = rand(100, 140) / 100
 	resize(oursize)
 

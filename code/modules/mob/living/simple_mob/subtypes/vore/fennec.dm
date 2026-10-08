@@ -123,22 +123,12 @@
 	response_help = "pats the paw of"
 	response_disarm = "somehow shoves aside"
 
-	var/image/bigshadow
 	var/autodoom = TRUE
 
-/mob/living/simple_mob/vore/fennec/huge/Initialize(mapload)
-	. = ..()
-	bigshadow = image(icon, icon_state = "shadow")
-	bigshadow.plane = MOB_PLANE
-	bigshadow.layer = BELOW_MOB_LAYER
-	bigshadow.appearance_flags = RESET_COLOR|RESET_TRANSFORM
-	add_overlay(bigshadow) // ALLOW(decl): the overlay is an image built per instance, which a declaration cannot express
-
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/fennec/huge, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/fennec/huge/appearance_overlays()
-	. = list()
-	. += ..()
-	. += bigshadow
+/// The huge fennec's shadow under its body.
+/mob/living/simple_mob/vore/fennec/huge/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "shadow", BELOW_MOB_LAYER, MOB_PLANE, appearance_flags = (RESET_COLOR|RESET_TRANSFORM)))
 
 /mob/living/simple_mob/vore/fennec/huge/load_default_bellies()
 	. = ..()

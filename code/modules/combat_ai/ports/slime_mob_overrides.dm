@@ -61,41 +61,40 @@
 			. += "It has been subjugated by force, at least for now."
 
 /mob/living/simple_mob/slime/xenobio/update_mood()
-	var/old_mood = mood
+	var/new_mood = mood
 	var/pacified = FALSE
 	var/obedient = 0
 	if(incapacitated(INCAPACITATION_DISABLED))
-		mood = "sad"
+		new_mood = "sad"
 		pacified = TRUE
 	else if(harmless)
-		mood = ":33"
+		new_mood = ":33"
 		pacified = TRUE
 	else if(slime_state)
 		if(slime_state.rabid)
-			mood = "angry"
+			new_mood = "angry"
 		else if(ai_brain?.primary_target())
-			mood = "mischevous"
+			new_mood = "mischevous"
 		else if(slime_state.discipline)
-			mood = "pout"
+			new_mood = "pout"
 			pacified = TRUE
 		else
-			mood = ":3"
+			new_mood = ":3"
 			pacified = TRUE
 		obedient = slime_state.obedience
 	else
-		mood = ":3"
+		new_mood = ":3"
 		pacified = TRUE
 	if(obedient < 5)
 		pacified = FALSE
+	set_mood(new_mood)
 	if(!client)
 		if(faction != FACTION_SLIME)
 			update_allowed_vore_types(TRUE)
-		else if(old_mood == "angry")
+		else if(mood == "angry")
 			update_allowed_vore_types(FALSE, harmless)
 		else
 			update_allowed_vore_types(pacified, harmless)
-	if(old_mood != mood)
-		update_icon()
 
 // Feral slime — also needs to know about discipline (just in case the AI is
 // somehow checking it). Feral slimes don't have slime_state; they only need
