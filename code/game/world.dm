@@ -315,7 +315,7 @@ GLOBAL_VAR(restart_counter)
 	if(unit_test_is_focused_run())
 		start_delay = 2 SECONDS
 #endif
-	SSticker.OnRoundstart(om_callable(null, GLOBAL_PROC_REF(om_after), null, start_delay, after_start))
+	SSticker.OnRoundstart(deferred_call(null, GLOBAL_PROC_REF(after), null, start_delay, after_start))
 
 /// after() target: ends the round now (a test-harness run with no tests compiled in).
 /proc/force_end_round()
@@ -389,8 +389,8 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	// Localhost-only census of the OM deadline wheel: entries per bucket, how many are still live
 	// (their generation matches the rec's armed deadline) and which owner types/behaviours hold them.
 	if (diag == "omdeadlines")
-		var/datum/om/scheduler/sched = om_scheduler()
-		var/datum/om/registry/reg = om_registry()
+		var/datum/time_scheduler/sched = time_scheduler()
+		var/datum/definition_registry/reg = definition_registry()
 		var/total = 0
 		var/live = 0
 		var/max_bucket = 0
@@ -671,7 +671,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		log_world("Test run failed!\n[fail_reasons.Join("\n")]")
 	// Shut down once Reboot() has returned (the MC is already down, so this is a world tick
 	// callback, not a timer): deleting the world from inside Reboot() leaves byond in a bad way.
-	world_next_tick(om_callable(null, GLOBAL_PROC_REF(world_finish_test_shutdown)))
+	world_next_tick(deferred_call(null, GLOBAL_PROC_REF(world_finish_test_shutdown)))
 
 /proc/world_finish_test_shutdown()
 	spent(world) //shut it down
@@ -680,7 +680,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 /// whose follow-up must run after they return, including after the MC has shut down.
 GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 
-/// `spec` is an om_callable() spec.
+/// `spec` is a deferred_call() spec.
 /proc/world_next_tick(list/spec)
 	GLOB.world_next_tick_callbacks += list(spec)
 
@@ -697,7 +697,7 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 	var/list/due = GLOB.world_next_tick_callbacks
 	GLOB.world_next_tick_callbacks = list()
 	for(var/list/spec as anything in due)
-		om_run_async(spec)
+		deferred_run_async(spec)
 	if(frame)
 		frame.callbacks += max(TICK_USAGE - started, 0)
 

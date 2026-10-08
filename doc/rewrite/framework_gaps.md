@@ -168,3 +168,19 @@ What converting every `TOPIC_ACTION` row outside the machinery folder to an op s
 | J7 | `/obj/item/rig` EMP | `electrocute_mob(null)` runs on EMP when the rig has no wearer. | Guard the call on a wearer. |
 | J8 | `chem_canister` refill text | The refill strings held a literal tab where `	he` was written ("You fill <tab>he ..."). Fixed in rewrite/integ-6. | DONE. |
 | J9 (DONE, rewrite/gaps-j) | tests | The pin's stardog left its ship in `GLOB.map_sectors` (`unregister_z_levels()` removed numbers from a text-keyed list); fixed, with `dq_gap/overmap_sector_unregisters_its_levels`. `i7_bulk` still fails, alone too, on a gravity generator part's break during its destroy (code/game/machinery). | Fix the gravity generator part (Codex's). |
+
+
+## K. Requests and remaining declarations audit (2026-10-07)
+
+| ID | Where | Problem | Required form |
+|---|---|---|---|
+| K1 (extends J2a) | Cryopod storage, transportpod entry notice, petrification consent, VR/AR consoles | `op_request_fields()` forcibly sets `answerer = A.actor`. These flows ask the loaded occupant, selected target, or a newly transferred avatar while retaining the operator's identity or running from a notice. Retargeting the actor changes consent authority and lifecycle. | A declared answerer/retarget step with the original actor preserved, including notice-started workflows. |
+| K2 | Camera assembly four requests | The name answer constructs and places the camera before direction; the direction answer changes live preview before confirmation. No retries back to direction. Cancellation preserves effects already performed. An operation's effect list runs only after all asks. | Declared intermediate effects, bounded retry, and explicit cancellation semantics. |
+| K3 | Medical kiosk | `wake_lock()` stores its user, consumes active power and sends its wake message before the question. Cancellation/timeout suspends the session. Moving those effects after the answer changes machine operation while the question is open. | A declared request-open lifecycle effect and cleanup hook; `on_interrupt` alone supplies no before-question effect. |
+| K4 | Ghost VR avatar naming | Appearance copy, mind/key transfer, equipment and verb grants happen before the name prompt. The answerer is the newly created avatar. | A declared workflow continuation after actor transformation; preserve the original spawn/transfer order. |
+| K5 | Four machinery loot declarations and three shared caches | The supported `DECLARE_LOOT` and `DECLARE_SHARED_CACHE` macros still exist; there is no final capability constructor for either on this master. Expanding their bodies or renaming the macros would hide the same model. | Native loot and shared-cache entries, then convert their callers. |
+| K6 | Doppler explosion observer | `OM_WORLD` is `GLOB.om_world`, the world notice bus. It is not the timer global owner; substituting that owner would silently disconnect explosion delivery. | An engine-owned world notice bus with an explicit publication/observation contract. |
+
+| K7 | Singularity delayed directional step | BYOND `step()` has no callable `/proc/step` path. Replacing `om_step` with a renamed identical shim would hide the same legacy callback, and `after()` currently needs a callable handler. | A native timed directional movement part/callable primitive with the same movement semantics. |
+
+| K8 | Food replicator scanned-product cost | The operator is also the answerer. The selected arbitrary scanned food type must be instantiated, its initialized reagent volume read, then disposed before container/nutriment refusal. Static nutriment values do not describe arbitrary subtype initialization. A pure requirement cannot construct and delete the candidate. | A pure declared product-cost provider, or native preparation/continuation preserving initialization and deletion timing before cost requirements. |

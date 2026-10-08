@@ -3,14 +3,16 @@
 	build_path = /obj/machinery/access_button
 	board_type = new /datum/frame/frame_types/button
 
-/obj/item/circuitboard/airlock_cycling/multitool_act(mob/user, obj/item/tool)
-	open_request(src, /datum/prompt/choice, PROC_REF(board_type_chosen), answerer = user, question = "What do you want to reconfigure the board to?", title = "Multitool-Circuitboard interface", choices = list("Button", "Sensor", "Controller - Standard", "Controller - Advanced", "Controller - Access"), ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return ITEM_INTERACT_SUCCESS
+CAPABILITIES(/obj/item/circuitboard/airlock_cycling)
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), label("Configure"),
+		asks(/datum/prompt/choice, fields = list("title" = "Multitool-Circuitboard interface", "question" = "What do you want to reconfigure the board to?", "choices" = list("Button", "Sensor", "Controller - Standard", "Controller - Advanced", "Controller - Access"), "subject" = computed(PROC_REF(board_subject)), "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), step = "board_type", keeps = ADJACENT | ALIVE),
+		then(PROC_REF(board_type_chosen)))
 
-/obj/item/circuitboard/airlock_cycling/proc/board_type_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/result = A.answer.value
+/obj/item/circuitboard/airlock_cycling/proc/board_subject(datum/act/op/A)
+	return src
+
+/obj/item/circuitboard/airlock_cycling/proc/board_type_chosen(datum/act/op/A)
+	var/result = A.step_value("board_type")
 	switch(result)
 		if("Button")
 			name = T_BOARD("cycling airlock button")
@@ -27,4 +29,4 @@
 		if("Controller - Access")
 			name = T_BOARD("cycling airlock controller (access)")
 			build_path = /obj/machinery/embedded_controller/radio/airlock/access_controller
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK

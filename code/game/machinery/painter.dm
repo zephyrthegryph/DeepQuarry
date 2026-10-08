@@ -57,7 +57,7 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL)
 	interface("ColorMate")
 	op("switch_modes", ui_act("switch_modes", arg("mode", num())), then(PROC_REF(ui_act_switch_modes)))
-	op("choose_color", ui_act("choose_color"), then(PROC_REF(ui_act_choose_color)))
+	op("choose_color", ui_act("choose_color"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/color, fields = list("default" = computed(PROC_REF(colour_default)), "title" = "ColorMate colour picking", "question" = "Choose a color: ", "timeout" = 0), when = PROC_REF(colour_item_present)), then(PROC_REF(ui_act_choose_color)))
 	op("paint", ui_act("paint"), then(PROC_REF(ui_act_paint)))
 	op("drop", ui_act("drop"), then(PROC_REF(ui_act_drop)))
 	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
@@ -168,15 +168,11 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	.["buildsat"] = build_sat
 	.["buildval"] = build_val
 
-/// Re-checked: the person is still next to the painter and able.
-/obj/machinery/gear_painter/proc/colour_valid(datum/request/R)
-	return answerer_holds(R, ANSWER_NEAR_SUBJECT | ANSWER_CAPABLE, src)
+/obj/machinery/gear_painter/proc/colour_item_present(datum/act/op/A)
+	return !!read_once(inserted)
 
-/obj/machinery/gear_painter/proc/color_chosen(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	activecolor = A.answer.value
-	SStgui.update_uis(src)
+/obj/machinery/gear_painter/proc/colour_default(datum/act/op/A)
+	return read_once(activecolor)
 
 /obj/machinery/gear_painter/proc/ui_act_switch_modes(datum/act/op/A, mode)
 	if(!(inserted))
@@ -185,11 +181,10 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	return TRUE
 
 /obj/machinery/gear_painter/proc/ui_act_choose_color(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!(inserted))
-		return
-	open_request(src, /datum/prompt/color, PROC_REF(color_chosen), valid = PROC_REF(colour_valid), answerer = user, default = activecolor, title = "ColorMate colour picking", question = "Choose a color: ", timeout = 0)
-	return TRUE
+	if(A.answer?.value)
+		activecolor = A.answer.value
+		SStgui.update_uis(src)
+	return OP_OK
 
 /obj/machinery/gear_painter/proc/ui_act_paint(datum/act/op/A)
 	var/mob/user = A.actor

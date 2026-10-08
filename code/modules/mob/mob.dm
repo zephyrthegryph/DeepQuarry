@@ -1005,7 +1005,7 @@ SETTER(/mob, stat)
 	. = (stat != new_stat)
 	stat = new_stat
 	if(.)
-		changed(src, CHANGE_MOB_STAT)
+		state_changed(src, CHANGE_MOB_STAT, nameof(stat))
 		PUBLISH_CHANGE(src, nameof(stat))
 
 /mob/verb/face_direction()

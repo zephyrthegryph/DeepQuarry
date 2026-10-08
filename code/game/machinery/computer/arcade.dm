@@ -1173,7 +1173,7 @@ TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 	// Have the customer punch in the PIN before checking if there's enough money. Prevents people from figuring out acct is
 	// empty at high security levels
 	if(customer_account.security_level != 0) //If card requires pin authentication (ie seclevel 1 or 2)
-		open_request(src, /datum/prompt/number/claw_pin, PROC_REF(card_pin_entered), valid = PROC_REF(request_usable), answerer = user, account = I.associated_account_number, timeout = 0)
+		perform_op(user, src, "clawmachine_card_pin", I, origin = ORIGIN_SYSTEM)
 		return 0
 	return charge_account(customer_account)
 
@@ -1184,10 +1184,10 @@ TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 	min_value = null
 	var/account
 
-/obj/machinery/computer/arcade/clawmachine/proc/card_pin_entered(datum/act/request/A)
+/obj/machinery/computer/arcade/clawmachine/proc/card_pin_entered(datum/act/op/A)
 	if(!A.answer)
 		return
-	var/datum/prompt/number/claw_pin/R = A.request
+	var/datum/prompt/number/claw_pin/R = A.answer
 	var/datum/money_account/customer_account = attempt_account_access(R.account, A.answer.value, 2)
 	if(!customer_account)
 		visible_message(span_info("Unable to access account: incorrect credentials."))
@@ -1223,6 +1223,7 @@ TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 /// TGUI Stuff
 
 CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
+	op("clawmachine_card_pin", ai(), needs(req_adjacent(), req_capable()), asks(/datum/prompt/number/claw_pin, fields = list("account" = computed(PROC_REF(pin_account)), "timeout" = 0)), then(PROC_REF(card_pin_entered)))
 	interface("ClawMachine")
 	op("newgame", ui_act("newgame"), then(PROC_REF(ui_act_newgame)))
 	op("return", ui_act("return"), then(PROC_REF(ui_act_return)))
@@ -1396,3 +1397,8 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 /obj/machinery/computer/arcade/orion_trail/proc/topic_orion_trade(datum/act/op/A, trade)
 	orion_trade(A.actor, A.args)
 	return OP_OK
+
+/// The swipe already ran; capture the account for this PIN question, not a later card edit.
+/obj/machinery/computer/arcade/clawmachine/proc/pin_account(datum/act/op/A)
+	var/obj/item/card/id/card = A.held
+	return read_once(card?.associated_account_number)

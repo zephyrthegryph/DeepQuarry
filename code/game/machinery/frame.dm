@@ -313,6 +313,7 @@ GLOBAL_LIST(construction_frame_floor)
 	var/list/req_component_names = null
 
 CAPABILITIES(/obj/structure/frame)
+	construction(native_frame_graph())
 	owns_many(nameof(components))
 	climb()
 	param(nameof(dir), pos = 1)
@@ -385,6 +386,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
 		set_density(TRUE)
 
+	seed_native_frame_graph()
 	update_icon()
 
 	make_rotatable()
