@@ -73,7 +73,7 @@ around it, and each one's `edges_changed()` writes its own TRACKED masks through
 
 | Turf | Masks | The draw shows |
 |---|---|---|
-| floor, water | `edge_mask` (border bits and inner-corner bits from `flooring.test_link()` against the eight neighbours), `edge_spill` (the edge overlays a stronger neighbour spills onto it), `no_ceiling` (open space above, not outdoors) | the flooring's edges and corners, the spilled edges, the ceiling gap |
+| floor, water, open space | `edge_mask` (border bits and inner-corner bits from `flooring.test_link()` against the eight neighbours), `edge_spill` (the edge overlays a stronger neighbour spills onto it), `no_ceiling` (open space above, not outdoors) | the flooring's edges and corners, the spilled edges, the ceiling gap |
 | solid rock, flesh | `open_mask` (the cardinal neighbours that are not dense) | the lip toward each open side |
 | wall | `wall_connections` (from the index mask, the doors and hull corners beside it) | the connections of its material's sprite |
 
