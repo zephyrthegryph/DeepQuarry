@@ -266,3 +266,90 @@ fn canonical_indexes_cannot_overwrite_pinned_strings() {
         Err(CompositionError::InvalidBinding(Key::String(_), 0))
     ));
 }
+
+#[test]
+fn physical_procedure_namespace_preserves_declarations_and_implicit_overrides() {
+    let mut symbols = SymbolTable::default();
+    let owner = symbols.intern("/datum/probe").unwrap();
+    let name = symbols.intern("work").unwrap();
+    let root = symbols.intern("/").unwrap();
+    let declared = proc_path(&symbols, owner, name, Namespace::Proc, true).unwrap();
+    let overridden = proc_path(&symbols, owner, name, Namespace::Proc, false).unwrap();
+    assert_eq!(declared, "/datum/probe/proc/work");
+    assert_eq!(overridden, "/datum/probe/work");
+    // Same callable name, different physical typesof namespace membership.
+    assert!(declared.starts_with("/datum/probe/proc/"));
+    assert!(!overridden.starts_with("/datum/probe/proc/"));
+    assert_eq!(
+        proc_path(&symbols, owner, name, Namespace::Verb, true).unwrap(),
+        "/datum/probe/verb/work"
+    );
+    assert_eq!(
+        proc_path(&symbols, owner, name, Namespace::Verb, false).unwrap(),
+        "/datum/probe/work"
+    );
+    assert_eq!(
+        proc_path(&symbols, root, name, Namespace::Proc, false).unwrap(),
+        "/proc/work"
+    );
+}
+
+#[test]
+fn captured_override_chain_keeps_physical_namespace_and_super_occurrences_distinct() {
+    use std::path::Path;
+    struct Source;
+    impl dm_preprocess::SourceProvider for Source {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            Ok("/datum/probe\n/datum/probe/proc/work()\n    return 1\n/datum/probe/work()\n    return ..() + 1\n".into())
+        }
+    }
+    struct NoFields;
+    impl crate::class_projection::CapturedFieldEvaluator for NoFields {
+        fn evaluate(
+            &self,
+            _: SymbolId,
+            _: &dm_ir::SymbolicExpression,
+        ) -> Result<dm_ir::SemanticValue, String> {
+            Err("fixture has no field initializers".into())
+        }
+    }
+    let frontend = dm_tree::frontend::build_with_config(
+        Path::new("fixture.dme"),
+        &Source,
+        &Default::default(),
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: None,
+            observer: None,
+        },
+    )
+    .unwrap();
+    let plan =
+        crate::class_projection::project(&frontend.snapshot, &frontend.emission_order, &NoFields)
+            .unwrap();
+    let chain = plan
+        .chains
+        .iter()
+        .find(|chain| chain.name == SymbolId::of("work"))
+        .unwrap();
+    assert_eq!(chain.entries.len(), 2);
+    let paths = chain
+        .entries
+        .iter()
+        .map(|key| {
+            let declared = *plan.procedure_declarations.get(key).unwrap();
+            proc_path(
+                frontend.snapshot.tree.symbols(),
+                chain.owner,
+                chain.name,
+                Namespace::Proc,
+                declared,
+            )
+            .unwrap()
+        })
+        .collect::<Vec<_>>();
+    // The overriding body remains first; its ..() target retains the distinct
+    // formal occurrence/key and explicit namespace identity underneath it.
+    assert_eq!(paths, ["/datum/probe/work", "/datum/probe/proc/work"]);
+    assert_ne!(chain.entries[0], chain.entries[1]);
+}

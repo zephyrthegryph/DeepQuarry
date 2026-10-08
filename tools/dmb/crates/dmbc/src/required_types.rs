@@ -222,6 +222,7 @@ mod tests {
     use super::*;
     fn projection() -> ClassProjection {
         ClassProjection {
+            procedure_declarations: Default::default(),
             tree_identity: 0,
             occurrence_count: 1,
             types: vec![

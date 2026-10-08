@@ -51,6 +51,8 @@ pub struct ProcedureChain {
 }
 #[derive(Clone, Debug)]
 pub struct ClassProjection {
+    /// Exact source occurrence mode for physical proc/verb namespace paths.
+    pub procedure_declarations: Arc<BTreeMap<Key, bool>>,
     pub shared_slot_order: Arc<[Key]>,
     pub procedure_statics: Arc<[ProcedureStaticProjection]>,
     pub runtime_writes: Arc<[(usize, dm_link::InitializerIdentity)]>,
@@ -217,6 +219,7 @@ fn project_inner(
         })
         .map(|value| (value.occurrence, &value.value))
         .collect();
+    let mut procedure_declarations = BTreeMap::new();
     let mut group_order = Vec::new();
     let mut procs: BTreeMap<(SymbolId, SymbolId, bool), Vec<(bool, Key)>> = BTreeMap::new();
     for &id in order {
@@ -369,6 +372,7 @@ fn project_inner(
                         occurrence,
                     }
                 };
+                procedure_declarations.insert(key, member.definition == DefinitionMode::Declare);
                 if !procs.contains_key(&(owner, member.name, verb)) {
                     group_order.push((owner, member.name, verb));
                 }
@@ -408,6 +412,7 @@ fn project_inner(
         })
         .collect::<Vec<_>>();
     Ok(ClassProjection {
+        procedure_declarations: Arc::new(procedure_declarations),
         shared_slot_order: fields
             .iter()
             .filter(|field| field.role == FieldRole::Declaration && field.shared)

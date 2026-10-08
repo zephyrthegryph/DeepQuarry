@@ -44,13 +44,24 @@ fn proc_path(
     symbols: &SymbolTable,
     owner: SymbolId,
     name: SymbolId,
+    namespace: Namespace,
+    declared: bool,
 ) -> Result<String, CompositionError> {
     let owner = text(symbols, owner)?;
     let name = text(symbols, name)?;
+    let namespace = match namespace {
+        Namespace::Proc => "proc",
+        Namespace::Verb => "verb",
+    };
     Ok(if owner == "/" {
-        format!("/proc/{name}")
+        format!("/{namespace}/{name}")
+    } else if declared {
+        format!("{owner}/{namespace}/{name}")
     } else {
-        format!("{owner}/proc/{name}")
+        // Physical namespace membership records the source declaration form.
+        // Implicit overrides are callable methods but are excluded by
+        // typesof("/owner/proc"). Symbolic keys still retain their namespace.
+        format!("{owner}/{name}")
     })
 }
 /// Every retained linker binding is checked against the pinned wire artifact.
@@ -647,10 +658,26 @@ fn compose_records(
             ]);
         }
         let args_id = append_list(&mut dmb, args)?;
-        let mut path = proc_path(symbols, owner, name)?;
-        if identity.namespace == Namespace::Verb {
-            path = path.replacen("/proc/", "/verb/", 1);
-        }
+        let procedure_key = match identity.namespace {
+            Namespace::Proc => Key::Proc {
+                owner,
+                name,
+                occurrence: identity.occurrence,
+            },
+            Namespace::Verb => Key::Verb {
+                owner,
+                name,
+                occurrence: identity.occurrence,
+            },
+        };
+        let declared = match projection {
+            Some((plan, _)) => *plan
+                .procedure_declarations
+                .get(&procedure_key)
+                .ok_or_else(|| unsupported("missing source procedure declaration provenance"))?,
+            None => true,
+        };
+        let path = proc_path(symbols, owner, name, identity.namespace, declared)?;
         let path_id = string_index.intern(&mut dmb, path.as_bytes())?;
         let default_display = text(symbols, name)?.replace('_', " ");
         let display = abi
