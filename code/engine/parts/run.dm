@@ -376,6 +376,8 @@
 	var/key
 	/// The request the current asks() opened.
 	var/datum/request/request
+	/// The mob the open question was put to when it is not the actor (asks(answerer =)).
+	var/mob/answerer
 	var/started_at = 0
 	/// REF text of the target a claims() op holds while it waits.
 	var/claim_ref
@@ -402,6 +404,7 @@ CAPABILITIES(/datum/pending_op)
 	ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME)
 	ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME)
 	ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME)
+	ref_one(nameof(answerer), /mob, on_other_deleted = OTHER_DELETE_ME) // asks(answerer =): the third party an open question was put to
 	ref_one(nameof(request), /datum/request, on_other_deleted = OTHER_CLEAR) // the open question: it ends first when its owner (this record) is deleted, so it must not hold it back
 	owns_one(nameof(progbar), /datum/progress_view)
 	owns_one(nameof(cog), /datum/cog_view)
@@ -417,9 +420,9 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 /// REF(pending op) -> every pending op that is waiting, the system-origin ones too ("List Pending Ops").
 GLOBAL_LIST_EMPTY(op_pending_all)
 
-/// What this pending op holds against the actor's other input right now: hands and body while a timed wait runs.
+/// What this pending op holds against the actor's other input right now: hands and body while a timed wait runs or one of its questions is open.
 /datum/pending_op/proc/claims_live()
-	if(!active || !timed_wait)
+	if(!active || !(timed_wait || request?.is_open()))
 		return 0
 	return claim_mask & (CLAIM_HANDS | CLAIM_BODY)
 
@@ -588,11 +591,16 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			// The keeps first: a start handler may write state that republishes and re-checks this op before the wait is set up.
 			keeps = W.args["keeps"] & op_default_keeps(A, binding)
 			if(!began && delay > 0)
+				// A starts() handler may refuse like a requirement (a /datum/msg type): the op ends before the wait begins and nothing was announced.
+				for(var/start_handler in oplan.starts)
+					var/start_refusal = op_call(A, start_handler)
+					if(ispath(start_refusal, /datum/msg))
+						log_game("op [key]: starts() refused: [start_refusal]")
+						suspend_act()
+						return cancel(start_refusal)
 				began = TRUE
 				oplan.begins?.feedback(A)
 				oplan.start_plays?.feedback(A)
-				for(var/start_handler in oplan.starts)
-					op_call(A, start_handler)
 			suspend_act()
 			if(delay > 0)
 				timed_wait = TRUE
@@ -612,6 +620,14 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			keeps = Q.args["keeps"] & op_default_keeps(A, binding) & ~STAY // an open question outlives a step the actor takes
 			var/list/fields = op_request_fields(A, Q)
 			fields["step_name"] = Q.args["step"]
+			var/mob/third
+			if(Q.args["answerer"])
+				third = op_call(A, Q.args["answerer"])
+				if(!ismob(third) || QDELETED(third))
+					log_game("op [key]: asks(answerer =) named nobody to ask")
+					suspend_act()
+					return cancel(/datum/msg/op/failed)
+				fields["answerer"] = third
 			var/datum/request/R = request_open(src, Q.args["type"], TYPE_PROC_REF(/datum/pending_op, request_done), fields, A)
 			// Opening can synchronously finish this question and resume a later step.
 			// Its callback already owns that progress; do not attach the closed request
@@ -622,6 +638,10 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 				suspend_act()
 				return cancel(/datum/msg/op/failed)
 			rel_set(src, nameof(request), R)
+			rel_set(src, nameof(answerer), third == A.actor ? null : third)
+			if(answerer)
+				watch_answerer(answerer)
+				log_game("op [key]: question [R.type] put to [key_name(answerer)] on behalf of [key_name(A.actor)]")
 			R.waiting = result // ALLOW(ownership): the caller's plain record: the request hands it back to test_answer()
 			suspend_act()
 			return
@@ -770,6 +790,13 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 /// The reason a keep broke, or null: HELD, ADJACENT, TARGET_PRESENT and ALIVE.
 /datum/pending_op/proc/keeps_reason(datum/act/op/A)
 	var/mob/M = A.actor
+	var/mob/third = answerer
+	if(third && request?.is_open())
+		// a question put to someone else: they must stay able to answer and within reach of the actor
+		if(QDELETED(third) || third.stat != CONSCIOUS)
+			return /datum/msg/op/stopped
+		if(M ? !M.Adjacent(third) : (A.target_atom && !third.Adjacent(A.target_atom)))
+			return /datum/msg/op/stopped
 	if((keeps & HELD) && M && REF(M.held_for_ops()) != start_hand_ref)
 		return /datum/msg/op/stopped
 	if((keeps & ADJACENT) && M && A.target_atom)
@@ -820,6 +847,22 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		rx_watch_adjust(watched, pair[2], 1)
 		var/index = "[REF(watched)]|[pair[2]]"
 		var/list/on = GLOB.op_watchers[index]
+		if(!on)
+			on = list()
+			GLOB.op_watchers[index] = on
+		on |= src
+
+/// A question was put to a third party: where they are and their stat are watched like the actor's, so moving away or falling ends the op now.
+/datum/pending_op/proc/watch_answerer(mob/M)
+	if(!watching)
+		watching = list()
+	for(var/key_name in list(OP_KEEP_MOVED, "stat"))
+		var/index = "[REF(M)]|[key_name]"
+		var/list/on = GLOB.op_watchers[index]
+		if(on && (src in on))
+			continue
+		rx_watch_adjust(M, key_name, 1)
+		watching += list(list(M, key_name))
 		if(!on)
 			on = list()
 			GLOB.op_watchers[index] = on

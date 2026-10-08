@@ -38,6 +38,7 @@ CAPABILITIES(/obj/h4_collector)
 	test_driver_begin()
 	test_prompts_reset()
 	run_h4()
+	GLOB.test_prompts = null
 	test_driver_end()
 
 /datum/unit_test/dq_h4/proc/run_h4()
@@ -115,6 +116,110 @@ CAPABILITIES(/obj/h4_collector)
 	TEST_ASSERT_EQUAL(length(GLOB.op_pending_all), pending_before, "no pending op is left")
 	TEST_ASSERT_NULL(test_answer(M, "late"), "a late answer finds nothing")
 
+// ---------------------------------------------------------------- claims over the asks() phase, asks(answerer =), starts() refusals
+
+MSG_DEF_SELF(h4/not_now, "Not now.")
+
+/obj/h4_kiosk
+	name = "h4 kiosk"
+	anchored = TRUE
+	var/scans = 0
+	var/consent
+	/// The mob the scan question goes to.
+	var/mob/patient
+
+CAPABILITIES(/obj/h4_kiosk)
+	op("held_ask", ui_act("held_ask"), claims(CLAIM_TARGET), asks(/datum/prompt/text, fields = list("question" = "Name?", "timeout" = 0), step = "name"), then(PROC_REF(scanned)))
+	op("hands_ask", ui_act("hands_ask"), claims(CLAIM_HANDS), asks(/datum/prompt/text, fields = list("question" = "Name?", "timeout" = 0), step = "name"), then(PROC_REF(scanned)))
+	op("hands_other", ui_act("hands_other"), claims(CLAIM_HANDS), then(PROC_REF(scanned)))
+	op("scan", ui_act("scan"), asks(/datum/prompt/yes_no, fields = list("question" = "Consent to a scan?", "timeout" = 0), step = "consent", answerer = PROC_REF(consenter), ends_on_no = TRUE), then(PROC_REF(scanned)))
+	op("refused_start", ui_act("refused_start"), wait(2 SECONDS), starts(PROC_REF(refuse_start)), then(PROC_REF(scanned)))
+
+/obj/h4_kiosk/proc/consenter(datum/act/op/A)
+	return patient
+
+/obj/h4_kiosk/proc/refuse_start(datum/act/op/A)
+	return MSG(h4/not_now)
+
+/obj/h4_kiosk/proc/scanned(datum/act/op/A)
+	scans++
+	consent = A.step_value("consent")
+	return OP_OK
+
+/datum/unit_test/dq_h4/claims_hold_while_a_question_is_open
+
+/datum/unit_test/dq_h4/claims_hold_while_a_question_is_open/run_h4()
+	var/mob/living/simple_mob/e0_fixture/first = actor()
+	var/mob/living/simple_mob/e0_fixture/second = actor()
+	var/obj/h4_kiosk/K = allocate(/obj/h4_kiosk)
+	var/datum/op_result/waiting = test_ui(first, K, "held_ask", list())
+	TEST_ASSERT_NULL(waiting?.outcome, "the first actor's question is open")
+	var/datum/op_result/refused = test_ui(second, K, "held_ask", list())
+	TEST_ASSERT_EQUAL(refused?.outcome, ACT_REFUSED, "a second actor is refused while the first one's question is open")
+	TEST_ASSERT_EQUAL(refused?.reason, /datum/msg/op/claimed, "because it is in use")
+	test_answer(first, null, REQ_CANCELLED)
+	var/datum/op_result/allowed = test_ui(second, K, "held_ask", list())
+	TEST_ASSERT_NULL(allowed?.outcome, "after the first cancels, the second one's question opens")
+	test_answer(second, "ok")
+	TEST_ASSERT_EQUAL(K.scans, 1, "and runs to its end")
+	// hands: the actor's own claim holds against an input that cannot stop it
+	var/datum/op_result/open_hands = test_ui(first, K, "hands_ask", list())
+	TEST_ASSERT_NULL(open_hands?.outcome, "the hands claim is taken when the question opens")
+	var/datum/op_result/busy = op_perform_by_key(first, K, null, "hands_other", ORIGIN_AI, AUTH_PHYSICAL, FALSE)
+	TEST_ASSERT_EQUAL(busy?.outcome, ACT_REFUSED, "an AI input needing the same hands is refused")
+	TEST_ASSERT_EQUAL(busy?.reason, /datum/msg/op/busy, "as busy")
+	test_answer(first, null, REQ_CANCELLED)
+	var/datum/op_result/free = op_perform_by_key(first, K, null, "hands_other", ORIGIN_AI, AUTH_PHYSICAL, FALSE)
+	TEST_ASSERT_EQUAL(free?.outcome, ACT_COMMITTED, "the claim is released when the op is cancelled")
+
+/datum/unit_test/dq_h4/a_third_party_answers_the_question
+
+/datum/unit_test/dq_h4/a_third_party_answers_the_question/run_h4()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/simple_mob/e0_fixture/doctor = allocate(/mob/living/simple_mob/e0_fixture, T)
+	var/mob/living/simple_mob/e0_fixture/patient = allocate(/mob/living/simple_mob/e0_fixture, get_step(T, EAST))
+	var/obj/h4_kiosk/K = allocate(/obj/h4_kiosk, T)
+	K.patient = patient
+	// consent
+	var/datum/op_result/waiting = test_ui(doctor, K, "scan", list())
+	TEST_ASSERT_NULL(waiting?.outcome, "the op waits for the patient")
+	var/datum/prompt/asked = GLOB.test_prompts[1]
+	TEST_ASSERT(asked.answerer == patient, "the question went to the patient, not the actor")
+	TEST_ASSERT_NULL(test_answer(doctor, TRUE), "the actor has no question to answer")
+	var/datum/op_result/done = test_answer(patient, TRUE)
+	TEST_ASSERT_EQUAL(done?.outcome, ACT_COMMITTED, "a patient who consents lets the op proceed")
+	TEST_ASSERT_EQUAL(K.scans, 1, "the effect ran")
+	TEST_ASSERT_EQUAL(K.consent, TRUE, "and read the answer like any other")
+	// decline: a no
+	test_ui(doctor, K, "scan", list())
+	var/datum/op_result/declined = test_answer(patient, FALSE)
+	TEST_ASSERT_EQUAL(declined?.outcome, ACT_REFUSED, "a patient who says no ends the op")
+	// decline: the window closed
+	test_ui(doctor, K, "scan", list())
+	var/datum/op_result/closed = test_answer(patient, null, REQ_CANCELLED)
+	TEST_ASSERT_EQUAL(closed?.outcome, ACT_REFUSED, "a patient who closes the prompt ends the op")
+	TEST_ASSERT_EQUAL(K.scans, 1, "neither scanned")
+	// moves away
+	var/datum/op_result/leaving = test_ui(doctor, K, "scan", list())
+	TEST_ASSERT_NULL(leaving?.outcome, "the question is open again")
+	patient.forceMove(get_step(get_step(get_step(T, EAST), EAST), EAST))
+	TEST_ASSERT_EQUAL(leaving?.outcome, ACT_REFUSED, "a patient who moves out of reach ends the op")
+	TEST_ASSERT_EQUAL(K.scans, 1, "without a scan")
+	TEST_ASSERT_NULL(test_answer(patient, TRUE), "and their question is closed")
+
+/datum/unit_test/dq_h4/a_starts_refusal_ends_the_op_before_the_wait
+
+/datum/unit_test/dq_h4/a_starts_refusal_ends_the_op_before_the_wait/run_h4()
+	var/mob/living/simple_mob/e0_fixture/M = actor()
+	var/obj/h4_kiosk/K = allocate(/obj/h4_kiosk)
+	var/pending_before = length(GLOB.op_pending_all)
+	var/datum/op_result/refused = test_ui(M, K, "refused_start", list())
+	TEST_ASSERT_EQUAL(refused?.outcome, ACT_REFUSED, "the op ends")
+	TEST_ASSERT_EQUAL(refused?.reason, MSG(h4/not_now), "with the handler's message")
+	TEST_ASSERT_EQUAL(length(GLOB.op_pending_all), pending_before, "no wait is pending")
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(K.scans, 0, "and the effect never ran")
+
 // ---------------------------------------------------------------- the ban flows
 
 /// A holder whose writes are recorded instead of made: the flows are tested up to the write, with exactly what would be written.
@@ -137,6 +242,13 @@ CAPABILITIES(/obj/h4_collector)
 /datum/admins/dq_ban_flow_fixture/unbanpanel()
 	panels++
 
+/// A clientless test panel: its links are open to the test actor (the owner check and the token are the panel's own and need a client).
+/datum/admins/dq_ban_flow_fixture/op_topic_actor_ok(mob/actor)
+	return TRUE
+
+/datum/admins/dq_ban_flow_fixture/op_topic_token_ok(mob/actor, token)
+	return TRUE
+
 /datum/unit_test/dq_h4/ban
 	abstract_type = /datum/unit_test/dq_h4/ban
 
@@ -151,6 +263,7 @@ CAPABILITIES(/obj/h4_collector)
 /// Starts `key` on the holder as an admin call with `arg_values`.
 /datum/unit_test/dq_h4/ban/proc/start(mob/actor, datum/admins/H, key, list/arg_values)
 	test_prompts_reset()
+	arg_values[OP_TOPIC_HREF] = list("admin_token" = "test")
 	return op_perform_by_key(actor, H, null, key, ORIGIN_UI, AUTH_ADMIN, FALSE, arg_values)
 
 /// The prompt kinds asked so far, in order, as short names.

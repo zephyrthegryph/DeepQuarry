@@ -396,8 +396,11 @@
 /// returns TRUE the same question is asked again (its fields are computed again, so it can name the next thing) and the answers accumulate in
 /// order: A.step_values("name") is the list, A.step_value("name") the latest. When x returns FALSE the workflow goes on to the next step.
 /// A cancel at any round ends the op as for any step.
-/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null, ends_on_no = FALSE, repeats = null)
-	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when, "ends_on_no" = ends_on_no, "repeats" = repeats))
+/// `answerer` (PROC_REF(x), x(datum/act/op/A) returns a mob): this question goes to that mob, not to the actor (a kiosk asks the patient, a cryopod asks the
+/// sleeper). The answer lands in the op like any other. The op ends with the usual feedback to the actor if that mob declines, closes the prompt, is deleted,
+/// cannot act any more or moves out of reach of the actor while the question is open; the same holds if the actor goes. x returning no mob ends the op as failed.
+/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null, ends_on_no = FALSE, repeats = null, answerer = null)
+	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when, "ends_on_no" = ends_on_no, "repeats" = repeats, "answerer" = answerer))
 
 /datum/entry/part/asks
 	part_name = "asks"
@@ -608,7 +611,8 @@
 
 /// starts(PROC_REF(x)): x(datum/act/op/A) runs when the op's first wait starts, with the begins() message: the effects that belong to the moment the work
 /// begins (a flick, facing the target, an admin log line, warning a hidden mob). It runs once, only for a wait that lasts, and changes nothing the
-/// op's cost or refusal depend on.
+/// op's cost or refusal depend on. Like a requirement it may return a reason (a /datum/msg type): the op then ends with that message before the wait begins
+/// (no begins() message, no progress bar, no timer), nothing spent; any other return value is ignored.
 /proc/starts(handler)
 	return part_make(/datum/entry/part/starts, list("handler" = handler))
 
