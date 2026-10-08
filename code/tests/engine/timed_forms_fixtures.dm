@@ -4,6 +4,7 @@
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 MSG_DEF_SELF(tf/begins, "You begin the long work.")
+MSG_DEF_SELF(tf/masked, "Take the mask off first.")
 
 /obj/tf_site
 	name = "timed forms site"
@@ -20,7 +21,7 @@ CAPABILITIES(/obj/tf_site)
 	op("ask", menu(), asks(/datum/prompt/yes_no, fields = list("question" = "Go on?"), ends_on_no = TRUE), then(PROC_REF(finished)))
 	op("ask_check", menu(), asks(/datum/prompt/yes_no/tf_check, fields = list("question" = "Sure?")), then(PROC_REF(finished)))
 	op("range", ai(), reach(REACH_RANGE(1)), wait(3 SECONDS, keeps = WAIT_KEEPS_DEFAULT & ~STAY), then(PROC_REF(finished)))
-	op("worn", menu(), needs(req(PROC_REF(mask_off))), wait(3 SECONDS), then(PROC_REF(finished)))
+	op("worn", menu(), needs(req(PROC_REF(mask_off), because = MSG(tf/masked))), wait(3 SECONDS), then(PROC_REF(finished)))
 	op("cap", menu(), captures(nameof(amount), resume = CANCEL_IF_CHANGED), wait(3 SECONDS), then(PROC_REF(finished)))
 	op("sys", ai(), reach(REACH_ANY), wait(3 SECONDS), then(PROC_REF(finished)))
 

@@ -505,11 +505,6 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	P.advance()
 	return P.result
 
-/// The reach policy an op works under: its reach() when it declares one, else its binding's.
-/proc/op_reach_policy(datum/op_plan/P, datum/entry/part/bind/B)
-	var/declared = P ? LAZYACCESS(P.selects, "reach") : null
-	return isnull(declared) ? B?.reach_policy() : declared
-
 /// The keeps an op's waits run under by default: all four where they apply (no HELD without a held item, no ADJACENT without a spatial reach).
 /proc/op_default_keeps(datum/act/op/A, datum/entry/part/bind/B)
 	. = WAIT_KEEPS_DEFAULT
