@@ -1,6 +1,9 @@
 
+/// The silk the weaver can spend; the weave buttons read it, so it is written through its setter.
+/datum/trait_state/weaver/var/silk_reserve = 100
+TRACKED(/datum/trait_state/weaver, silk_reserve)
+
 /datum/trait_state/weaver
-	var/silk_reserve = 100
 	var/silk_max_reserve = 500
 	var/silk_color = "#FFFFFF"
 	var/silk_production = FALSE
@@ -31,63 +34,8 @@
 
 /datum/trait_state/weaver/proc/process_weaver_silk()
 	if(silk_reserve < silk_max_reserve && silk_production == TRUE && owner.nutrition > 100)
-		silk_reserve = min(silk_reserve + silk_generation_amount, silk_max_reserve)
+		set_silk_reserve(min(silk_reserve + silk_generation_amount, silk_max_reserve))
 		owner.adjust_nutrition(-(nutrtion_per_silk*silk_generation_amount))
-
-/// Pick a recipe, then confirm it; "No" goes back to the list.
-/datum/trait_state/weaver/proc/weave_item()
-	if(!owner?.client)
-		return
-	open_request(src, /datum/prompt/choice/weave, PROC_REF(weave_choice_made), answerer = owner, choices = GLOB.all_weavable)
-
-/// Picking a weaver recipe. Re-checked on the answer: conscious, and a real recipe.
-/datum/prompt/choice/weave
-	title = "Weave Choice"
-	question = "What would you like to weave?"
-	ask_flags = ASK_CONSCIOUS
-	timeout = 0
-
-/datum/prompt/choice/weave/recheck_extra()
-	var/reason = ..()
-	if(reason)
-		return reason
-	return istype(GLOB.all_weavable[value], /datum/weaver_recipe/item) ? null : "not a recipe"
-
-/// "Weave this?"; a no goes back to the recipe list.
-/datum/prompt/choice/weave_confirmation
-	title = "Confirmation"
-	ask_flags = ASK_CONSCIOUS
-	timeout = 0
-	buttons = TRUE
-	var/datum/weaver_recipe/item/recipe
-
-CAPABILITIES(/datum/prompt/choice/weave_confirmation)
-	ref_one(nameof(recipe), /datum/weaver_recipe/item)
-
-/datum/prompt/choice/weave_confirmation/prepare(datum/act/A)
-	..()
-	var/datum/weaver_recipe/item/captured_recipe = recipe
-	rel_clear(src, nameof(recipe))
-	rel_set(src, nameof(recipe), captured_recipe)
-	var/static/list/confirmation_buttons = list("Yes", "No")
-	choices = confirmation_buttons
-	question = "Are you sure you want to weave [recipe.title]? It will cost you [recipe.cost] silk."
-
-/datum/trait_state/weaver/proc/weave_choice_made(datum/act/request/A)
-	if(!A.answer)
-		return
-	open_request(src, /datum/prompt/choice/weave_confirmation, PROC_REF(weave_confirmed), answerer = owner, recipe = GLOB.all_weavable[A.answer.value])
-
-/datum/trait_state/weaver/proc/weave_confirmed(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/weave_confirmation/ask = A.answer
-	if(QDELETED(ask.recipe))
-		return
-	if(ask.value != "Yes")
-		weave_item()
-		return
-	weave_check(ask.recipe.cost, ask.recipe.result_type)
 
 /datum/trait_state/weaver/proc/silk_color_picked(datum/act/request/A)
 	if(!A.answer)
@@ -103,11 +51,11 @@ CAPABILITIES(/datum/trait_state/weaver)
 	op("new_silk_color", ui_act("new_silk_color"), then(PROC_REF(ui_act_new_silk_color)))
 	op("toggle_silk_production", ui_act("toggle_silk_production"), then(PROC_REF(ui_act_toggle_silk_production)))
 	op("check_silk_amount", ui_act("check_silk_amount"), then(PROC_REF(ui_act_check_silk_amount)))
-	op("weave_binding", ui_act("weave_binding"), then(PROC_REF(ui_act_weave_binding)))
-	op("weave_floor", ui_act("weave_floor"), then(PROC_REF(ui_act_weave_floor)))
-	op("weave_wall", ui_act("weave_wall"), then(PROC_REF(ui_act_weave_wall)))
-	op("weave_nest", ui_act("weave_nest"), then(PROC_REF(ui_act_weave_nest)))
-	op("weave_trap", ui_act("weave_trap"), then(PROC_REF(ui_act_weave_trap)))
+	op("weave_binding", ui_act("weave_binding"), needs(req(PROC_REF(weave_silk_binding), because = PROC_REF(weave_silk_refusal)), req_conscious(), req(PROC_REF(weave_site_free), because = PROC_REF(weave_site_refusal))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
+	op("weave_floor", ui_act("weave_floor"), needs(req(PROC_REF(weave_silk_floor), because = PROC_REF(weave_silk_refusal)), req_conscious(), req(PROC_REF(weave_site_free), because = PROC_REF(weave_site_refusal))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
+	op("weave_wall", ui_act("weave_wall"), needs(req(PROC_REF(weave_silk_wall), because = PROC_REF(weave_silk_refusal)), req_conscious(), req(PROC_REF(weave_site_free), because = PROC_REF(weave_site_refusal))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
+	op("weave_nest", ui_act("weave_nest"), needs(req(PROC_REF(weave_silk_nest), because = PROC_REF(weave_silk_refusal)), req_conscious(), req(PROC_REF(weave_site_free), because = PROC_REF(weave_site_refusal))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
+	op("weave_trap", ui_act("weave_trap"), needs(req(PROC_REF(weave_silk_trap), because = PROC_REF(weave_silk_refusal)), req_conscious(), req(PROC_REF(weave_site_free), because = PROC_REF(weave_site_refusal))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
 
 /mob/living/proc/weaver_control_panel()
 	set name = "Weaver Control Panel"
@@ -160,64 +108,74 @@ CAPABILITIES(/datum/trait_state/weaver)
 	to_chat(owner, span_info("Your silk reserves are at [silk_reserve]/[silk_max_reserve]."))
 	return FALSE
 
-/datum/trait_state/weaver/proc/ui_act_weave_binding(datum/act/op/A)
-	weave_check(50, /obj/item/clothing/suit/weaversilk_bindings)
-	return TRUE
+/// What each weave button costs in silk and makes, by op key.
+TYPE_TABLE_DECLARE(/datum/trait_state/weaver, recipes, list(
+	"weave_binding" = list(50, /obj/item/clothing/suit/weaversilk_bindings),
+	"weave_floor" = list(25, /obj/effect/weaversilk/floor),
+	"weave_wall" = list(100, /obj/effect/weaversilk/wall),
+	"weave_nest" = list(100, /obj/structure/bed/double/weaversilk_nest),
+	"weave_trap" = list(250, /obj/effect/weaversilk/trap)))
 
-/datum/trait_state/weaver/proc/ui_act_weave_floor(datum/act/op/A)
-	weave_check(25, /obj/effect/weaversilk/floor)
-	return TRUE
+/// The silk cost of the button pressed.
+/datum/trait_state/weaver/proc/weave_cost(datum/act/op/A)
+	var/list/recipe = TYPE_TABLE_GET(src, recipes)[A.oplan.key]
+	return recipe[1]
 
-/datum/trait_state/weaver/proc/ui_act_weave_wall(datum/act/op/A)
-	weave_check(100, /obj/effect/weaversilk/wall)
-	return TRUE
+/// The thing the button pressed makes.
+/datum/trait_state/weaver/proc/weave_product(datum/act/op/A)
+	var/list/recipe = TYPE_TABLE_GET(src, recipes)[A.oplan.key]
+	return recipe[2]
 
-/datum/trait_state/weaver/proc/ui_act_weave_nest(datum/act/op/A)
-	weave_check(100, /obj/structure/bed/double/weaversilk_nest)
-	return TRUE
+/// Enough silk for a weave of `cost`; one requirement proc per button so each reads a constant cost.
+/datum/trait_state/weaver/proc/weave_silk_for(cost)
+	return cost <= silk_reserve
 
-/datum/trait_state/weaver/proc/ui_act_weave_trap(datum/act/op/A)
-	weave_check(250, /obj/effect/weaversilk/trap)
-	return TRUE
-/*
- * Checks to see if we can create the object
-*/
-/datum/trait_state/weaver/proc/weave_check(cost, weaved_object)
-	if(cost > silk_reserve)
-		to_chat(owner, span_warning("You don't have enough silk to weave that!"))
-		return
+/datum/trait_state/weaver/proc/weave_silk_binding(datum/act/op/A)
+	return weave_silk_for(50)
 
-	if(owner.stat)
-		to_chat(owner, span_warning("You can't do that in your current state!"))
-		return
+/datum/trait_state/weaver/proc/weave_silk_floor(datum/act/op/A)
+	return weave_silk_for(25)
 
-	if(!isturf(owner.loc))
-		to_chat(owner, span_warning("You can't weave here!"))
-		return
+/datum/trait_state/weaver/proc/weave_silk_wall(datum/act/op/A)
+	return weave_silk_for(100)
 
-	if(locate_within(owner.loc, weaved_object))
-		to_chat(owner, span_warning("You can't create another one in the same tile here!"))
-		return
+/datum/trait_state/weaver/proc/weave_silk_nest(datum/act/op/A)
+	return weave_silk_for(100)
 
-	task_timed(owner, ((cost/25) SECONDS), owner, src, PROC_REF(weave_done), list(cost, weaved_object))
+/datum/trait_state/weaver/proc/weave_silk_trap(datum/act/op/A)
+	return weave_silk_for(250)
 
-/datum/trait_state/weaver/proc/weave_done(cost, weaved_object)
-	if(cost > silk_reserve)
-		to_chat(owner, span_warning("You don't have enough silk to weave that!"))
-		return
+/datum/trait_state/weaver/proc/weave_silk_refusal(datum/act/op/A)
+	return /datum/msg/weaver/no_silk
 
-	if(!isturf(owner.loc))
-		to_chat(owner, span_warning("You can't weave here!"))
-		return
+/// The weaver stands on a turf with none of the product on it (where they stand is fixed while a weave is open: moving ends it).
+/datum/trait_state/weaver/proc/weave_site_free(datum/act/op/A)
+	return read_once(weave_site_text(A) == null)
 
-	if(locate_within(owner.loc, weaved_object))
-		to_chat(owner, span_warning("You can't create another one in the same tile!"))
-		return
+/datum/trait_state/weaver/proc/weave_site_text(datum/act/op/A)
+	var/mob/M = A.actor
+	if(!isturf(M?.loc))
+		return /datum/msg/weaver/no_room
+	if(locate_within(M.loc, weave_product(A)))
+		return /datum/msg/weaver/already_there
+	return null
 
-	silk_reserve = max(silk_reserve - cost, 0)
-	var/atom/object = new weaved_object(owner.loc)
+/datum/trait_state/weaver/proc/weave_site_refusal(datum/act/op/A)
+	return weave_site_text(A) || /datum/msg/req_failed
+
+MSG_DEF_SELF(weaver/no_silk, span_warning("You don't have enough silk to weave that!"))
+MSG_DEF_SELF(weaver/no_room, span_warning("You can't weave here!"))
+MSG_DEF_SELF(weaver/already_there, span_warning("You can't create another one in the same tile here!"))
+
+/// A weave takes one second per 25 silk it costs.
+/datum/trait_state/weaver/proc/weave_time(datum/act/op/A)
+	return (weave_cost(A) / 25) SECONDS
+
+/datum/trait_state/weaver/proc/weave_done(datum/act/op/A)
+	set_silk_reserve(max(silk_reserve - weave_cost(A), 0))
+	var/product = weave_product(A)
+	var/atom/object = new product(owner.loc)
 	object.color = silk_color
-	return
 
 /// Trait system: silk production.
 /// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).

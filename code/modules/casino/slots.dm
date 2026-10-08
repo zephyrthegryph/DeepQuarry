@@ -63,7 +63,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appear
 
 /obj/machinery/slot_machine/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
-	if(task_busy(src))
+	if(work_busy(src))
 		to_chat(user, span_notice("The slot machine is currently running."))
 		return OP_OK
 	return OP_DECLINE
@@ -82,7 +82,7 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 
 /// Requirement: the reels aren't spinning.
 /obj/machinery/slot_machine/proc/not_running(mob/user, atom/target, obj/item/held)
-	return !task_busy(src)
+	return !work_busy(src)
 
 /obj/machinery/slot_machine/proc/interaction_attackby(datum/act/op/A)
 	var/mob/user = A.actor
@@ -102,7 +102,7 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 		return
 	if (isbroken)
 		return
-	if (task_busy(src))
+	if (work_busy(src))
 		to_chat(user,span_notice("The slot machine is currently rolling."))
 		return
 	if(cashmoney.worth < 5)
@@ -117,7 +117,7 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 	if(cashmoney.worth <= 0)
 		consume(cashmoney, user)
 
-	task_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
+	hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	icon_state = "slotmachine_rolling"
 	play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE_PULL)
 
@@ -214,7 +214,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom
 
 /obj/machinery/station_slot_machine/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
-	if(task_busy(src))
+	if(work_busy(src))
 		to_chat(user, span_notice("The slot machine is currently running."))
 		return OP_OK
 	return OP_DECLINE
@@ -233,7 +233,7 @@ MSG_DEF_SELF(station_slot_machine/unanchored, "the slot machine isn't secured")
 
 /// Requirement: the reels aren't spinning.
 /obj/machinery/station_slot_machine/proc/not_running(mob/user, atom/target, obj/item/held)
-	return !task_busy(src)
+	return !work_busy(src)
 
 /obj/machinery/station_slot_machine/proc/interaction_attackby(datum/act/op/A)
 	var/mob/user = A.actor
@@ -253,7 +253,7 @@ MSG_DEF_SELF(station_slot_machine/unanchored, "the slot machine isn't secured")
 		return
 	if (isbroken)
 		return
-	if (task_busy(src))
+	if (work_busy(src))
 		to_chat(user,span_notice("The slot machine is currently rolling."))
 		return
 	if(cashmoney.worth < 5)
@@ -267,7 +267,7 @@ MSG_DEF_SELF(station_slot_machine/unanchored, "the slot machine isn't secured")
 	if(cashmoney.worth <= 0)
 		consume(cashmoney, user)
 
-	task_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
+	hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	icon_state = "ntslotmachine_rolling"
 	play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE_PULL)
 

@@ -22,6 +22,9 @@ STAT(/atom, light_range, MAX, virtual = TRUE)
 /// Held while the entity is set aside (absorbed prey, a body kept for reforming): Life admits no frame and its own-clock timers and cadences pause.
 /// hold(E, STAT_SUSPENDED, TRUE, source) / release(E, STAT_SUSPENDED, source).
 STAT(/datum, suspended, ANY, virtual = TRUE)
+/// Held while a worker, tool or machine is busy with a timed piece of work (hold_busy() in code/library/jobs/busy.dm): a requirement reads it
+/// (req_is(STAT_BUSY_WORK, FALSE)), a gate asks work_busy().
+STAT(/datum, busy_work, ANY, virtual = TRUE)
 STAT(/atom, clock_rate, MIN, base = 1, virtual = TRUE)
 /// How much anything cares about this entity now (RELEVANCE_*): the highest level any source holds. A sequence with min_relevance sweeps a member only
 /// at or above it; hold(E, STAT_RELEVANCE, RELEVANCE_NEAR, source) / release(E, STAT_RELEVANCE, source), and a datum source deleted drops its hold.

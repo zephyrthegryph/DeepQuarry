@@ -179,7 +179,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 	if(!..())
 		return
 
-	if(task_busy(src))
+	if(bot_busy())
 		return
 
 	if(istype(A, /obj/machinery/portable_atmospherics/hydroponics))
@@ -194,25 +194,25 @@ CAPABILITIES(/mob/living/bot/farmbot)
 				update_icons()
 				act_message(src, A, others = span_notice("%U% starts [T.dead? "removing the plant from" : "harvesting"] %T%."))
 
-				task_start(/datum/task/timed/farm_job, src, T, job = FARMBOT_COLLECT, busy = src)
+				bot_work(3 SECONDS, T, PROC_REF(farm_job_done), FARMBOT_COLLECT, PROC_REF(farm_job_end))
 			if(FARMBOT_WATER)
 				action = "water"
 				update_icons()
 				act_message(src, A, others = span_notice("%U% starts watering %T%."))
 
-				task_start(/datum/task/timed/farm_job, src, T, job = FARMBOT_WATER, busy = src)
+				bot_work(3 SECONDS, T, PROC_REF(farm_job_done), FARMBOT_WATER, PROC_REF(farm_job_end))
 			if(FARMBOT_UPROOT)
 				action = "hoe"
 				update_icons()
 				act_message(src, A, others = span_notice("%U% starts uprooting the weeds in %T%."))
 
-				task_start(/datum/task/timed/farm_job, src, T, job = FARMBOT_UPROOT, busy = src)
+				bot_work(3 SECONDS, T, PROC_REF(farm_job_done), FARMBOT_UPROOT, PROC_REF(farm_job_end))
 			if(FARMBOT_NUTRIMENT)
 				action = "fertile"
 				update_icons()
 				act_message(src, A, others = span_notice("%U% starts fertilizing %T%."))
 
-				task_start(/datum/task/timed/farm_job, src, T, job = FARMBOT_NUTRIMENT, busy = src)
+				bot_work(3 SECONDS, T, PROC_REF(farm_job_done), FARMBOT_NUTRIMENT, PROC_REF(farm_job_end))
 
 	else if(istype(A, /obj/structure/sink))
 		if(!tank || tank.reagents.total_volume >= tank.reagents.maximum_volume)
@@ -225,7 +225,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 	else if(emagged && ishuman(A))
 		var/action = pick("weed", "water")
 
-		task_hold_busy(src, 5 SECONDS) // Some delay
+		bot_hold(5 SECONDS) // Some delay
 		switch(action)
 			if("weed")
 				flick("farmbot_hoe", src)
@@ -241,40 +241,34 @@ CAPABILITIES(/mob/living/bot/farmbot)
 				act_message(src, A, others = span_danger("%U% splashes %T% with water!"))
 				tank.reagents.splash(A, 100)
 
-/// Three seconds of work on a tray (harvest, water, weed or fertilize: `job`); the bot is busy.
-/datum/task/timed/farm_job
-	duration = 3 SECONDS
-	complete_proc = /mob/living/bot/farmbot/proc/farm_job_done
-	cancel_proc = /mob/living/bot/farmbot/proc/farm_job_end
-	var/job
-
-/mob/living/bot/farmbot/proc/farm_job_end(datum/task/timed/farm_job/task)
+/// A job on a tray that ended (done or broken off): the bot stops showing the work.
+/mob/living/bot/farmbot/proc/farm_job_end(datum/act/op/A)
 	action = ""
 	update_icons()
-	var/atom/tray = task.target
+	var/atom/tray = A.target
 	tray?.update_icon()
 
 /// One second of refilling from a sink, repeated until the tank is full or interrupted.
 /mob/living/bot/farmbot/proc/refill_step(atom/A)
 	if(tank.reagents.total_volume < tank.reagents.maximum_volume)
-		task_timed(src, 1 SECOND, target = A, receiver = src, on_done = PROC_REF(refill_pulse), done_args = list(A), on_fail = PROC_REF(refill_end), busy = src)
+		bot_work(1 SECOND, A, PROC_REF(refill_pulse), null, PROC_REF(refill_end))
 		return
 	refill_end()
 
-/mob/living/bot/farmbot/proc/refill_pulse(atom/A)
+/mob/living/bot/farmbot/proc/refill_pulse(datum/act/op/A)
 	tank.reagents.add_reagent("water", 100)
 	if(prob(5))
 		play_sfx(src, SFX_EFFECTS_SLOSH)
-	refill_step(A)
+	refill_step(A.target)
 
-/mob/living/bot/farmbot/proc/refill_end()
+/mob/living/bot/farmbot/proc/refill_end(datum/act/op/A = null)
 	action = ""
 	update_icons()
 	act_message(src, null, others = span_notice("%U% finishes refilling its tank."))
 
-/mob/living/bot/farmbot/proc/farm_job_done(datum/task/timed/farm_job/task)
-	var/obj/machinery/portable_atmospherics/hydroponics/T = task.target
-	switch(task.job)
+/mob/living/bot/farmbot/proc/farm_job_done(datum/act/op/A)
+	var/obj/machinery/portable_atmospherics/hydroponics/T = A.target
+	switch(work_arg)
 		if(FARMBOT_COLLECT)
 			act_message(src, T, others = span_notice("%U% [T.dead? "removes the plant from" : "harvests"] %T%."))
 			T.attack_hand(src)
@@ -288,7 +282,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 		if(FARMBOT_NUTRIMENT)
 			act_message(src, T, others = span_notice("%U% fertilizes %T%."))
 			T.reagents.add_reagent(REAGENT_ID_AMMONIA, 10)
-	farm_job_end(task)
+	farm_job_end(A)
 
 /mob/living/bot/farmbot/explode()
 	act_message(src, null, others = span_danger("%U% blows apart!"))

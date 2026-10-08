@@ -10,9 +10,11 @@
 	var/finished = FALSE
 	var/datum/gas_mixture/pod_air/air
 
+TRACKED(/obj/structure/drop_pod, finished)
+
 CAPABILITIES(/obj/structure/drop_pod)
 	owns_one(nameof(air), /datum/gas_mixture/pod_air)
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(10 SECONDS), needs(req(PROC_REF(is_finished), because = MSG(drop_pod/not_opened))), begins(MSG(drop_pod/breaking_down)), then(PROC_REF(wrench_act_done)))
 	op("open", hand(), label("Open"), then(PROC_REF(interaction_open)))
 	param(nameof(cargo_at_make), pos = 1, keep = FALSE)
 	param(nameof(auto_open), pos = 2)
@@ -115,7 +117,7 @@ CAPABILITIES(/obj/structure/drop_pod)
 		AM.forceMove(loc)
 		AM.set_dir(SOUTH) // cus
 	rel_clear(src, nameof(air))
-	finished = TRUE
+	set_finished(TRUE)
 
 /obj/structure/drop_pod/proc/interaction_open(datum/act/op/A)
 	var/mob/living/user = A.actor
@@ -127,18 +129,15 @@ CAPABILITIES(/obj/structure/drop_pod)
 			act_message(user, src, MSG_SELF(span_infoplain("You open %T%!")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " opens %T%!")))
 	return TRUE
 
-/obj/structure/drop_pod/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/O = A.held
-	if(!finished)
-		to_chat(user, span_warning("\The [src] hasn't been opened yet. Do that first."))
-		return OP_OK
-	to_chat(user, span_notice("You start breaking down \the [src]."))
-	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user, O))
-	return OP_OK
+MSG_DEF_SELF(drop_pod/not_opened, span_warning("%T% hasn't been opened yet. Do that first."))
+MSG_DEF_SELF(drop_pod/breaking_down, span_notice("You start breaking down %T%."))
 
-/obj/structure/drop_pod/proc/wrench_act_timed_done(mob/user, obj/item/O)
-	playsound(user, O.usesound, 50, 1)
+/obj/structure/drop_pod/proc/is_finished(datum/act/op/A)
+	return finished
+
+/obj/structure/drop_pod/proc/wrench_act_done(datum/act/op/A)
+	var/obj/item/O = A.held
+	playsound(A.actor, O.usesound, 50, 1)
 	replace_with(src, /obj/item/stack/material/plasteel, 10)
 
 /obj/structure/drop_pod/return_air()

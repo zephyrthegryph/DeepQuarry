@@ -1973,6 +1973,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/fluff/nikki, equip_spec, dq_spec_join(..(), 
 
 CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 	owns_one(nameof(translocator), /obj/item/perfect_tele)
+	op("nikki_hat_equip", item(/obj/item/perfect_tele), when(PROC_REF(hat_in_off_hand)), priority(OP_PRIORITY_NORMAL), label("Slip a translocator in"), begins(PROC_REF(equip_text)), wait(2 SECONDS), then(PROC_REF(translocator_equip_done)))
 	op("nikki_hat_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Nikki hat item"), then(PROC_REF(nikki_hat_item)))
 	op("nikki_hat_unload_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Nikki hat unload hand"), then(PROC_REF(nikki_hat_unload_hand)))
 	op("nikki_hat_unequip_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Remove translocator"), then(PROC_REF(nikki_hat_unequip_alt)))
@@ -1984,18 +1985,31 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 	var/mob/user = A.actor
 	translocator_unequip(translocator, user)
 
-/obj/item/clothing/head/fluff/nikki/proc/translocator_equip(obj/item/perfect_tele/T, mob/living/carbon/human/user)
-	task_timed(user, 2 SECONDS, T, src, PROC_REF(translocator_equip_done), list(T, user))
+/// The op's `when()`: the hat is in the inactive hand (a translocator used on a hat held any other way goes to the one inside).
+/obj/item/clothing/head/fluff/nikki/proc/hat_in_off_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	return read_once(user.get_inactive_hand()) == src
 
-/obj/item/clothing/head/fluff/nikki/proc/translocator_equip_done(obj/item/perfect_tele/T, mob/living/carbon/human/user)
+/obj/item/clothing/head/fluff/nikki/proc/equip_text(datum/act/op/A)
+	if (translocator)
+		return msg_text(null, span_notice("%U% starts to pull \a [translocator] out of %T% to swap it out with %I%..."), \
+			span_notice("You start pulling \the [translocator] pops out of its compartment with a soft 'click' as you replace it with %I%...."))
+	return msg_text(null, span_notice("%U% begins slipping %I% into %T%..."), \
+		span_notice("You begin to snap %I% into a small, hidden compartment inside %T%..."))
+
+/// Slip in (or swap) a translocator: two seconds.
+/obj/item/clothing/head/fluff/nikki/proc/translocator_equip_done(datum/act/op/A)
+	var/obj/item/perfect_tele/T = A.held
+	var/mob/living/carbon/human/user = A.actor
 	var/obj/item/perfect_tele/old = rel_take(src, nameof(src.translocator)) // handed back below, not disposed of
 	if(!move_into(src, nameof(src.translocator), T, user))
 		rel_set(src, nameof(src.translocator), old)
-		return
+		return OP_FAILED
 	if(old)
 		user.put_in_hands(old)
 	user.show_message("[icon2html(src, user.client)]*click!*")
 	play_sfx(src, SFX_MACHINES_CLICK, 0.6)
+	return OP_OK
 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_unequip(obj/item/perfect_tele/T, mob/living/carbon/human/user)
 	if (translocator)
@@ -2042,23 +2056,11 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 
 	else return 1
 
-/// Old attackby: slot in (or swap) a translocator, or hand the item to the one inside.
+/// Old attackby: hand the item to the translocator inside (slipping one in is nikki_hat_equip).
 /obj/item/clothing/head/fluff/nikki/proc/nikki_hat_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
-	if (istype(I, /obj/item/perfect_tele) && user.get_inactive_hand() == src)
-		if (translocator)
-			act_message(user, src, others = span_notice("%U% starts to pull \a [translocator] out of %T% to swap it out with %I%..."), \
-				blind = span_notice("You start pulling \the [translocator] pops out of its compartment with a soft 'click' as you replace it with %I%...."), \
-				item = I)
-		else
-			act_message(user, src, others = span_notice("%U% begins slipping %I% into %T%..."), \
-				blind = span_notice("You begin to snap %I% into a small, hidden compartment inside %T%..."), \
-				item = I)
-		// This works for both adding and replacing a translocator
-		translocator_equip(I, user)
-		return OP_OK
-	else if (translocator)
+	if (translocator)
 		translocator.attackby(I, user)
 		return OP_OK
 	return OP_DECLINE

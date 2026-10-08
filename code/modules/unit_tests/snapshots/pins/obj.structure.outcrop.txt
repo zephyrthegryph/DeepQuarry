@@ -67,5 +67,12 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: climb.climb, climb.climb_menu, drag_buckle, item, melee_hit
+human|/obj/item/pickaxe menu: Climb
+human|/obj/item/pickaxe menu: Dig
+human|/obj/item/pickaxe menu: Hit
+human|/obj/item/pickaxe menu: Move To Top
+human|/obj/item/pickaxe menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pickaxe menu: Use
+human|/obj/item/pickaxe click: Click: Dig
+keys: climb.climb, climb.climb_menu, drag_buckle, item, melee_hit, pickaxe
 

@@ -39,21 +39,19 @@ TYPE_TABLE_DECLARE(/obj/item/bedsheet, bedsheet_dream_messages, list("white"))
 	return OP_OK
 
 CAPABILITIES(/obj/item/bedsheet)
-	op("use_item", item(/obj/item), then(PROC_REF(interaction_item)))
+	op("use_item", item(/obj/item), when(req(PROC_REF(held_is_sharp))), begins(MSG(bedsheet/cutting)), wait(5 SECONDS), then(PROC_REF(cut_up)))
 	op("lay_out", in_hand(), label("Lay out"), then(PROC_REF(bedsheet_self)))
 
-/// Old attackby.
-/obj/item/bedsheet/proc/interaction_item(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/I = A.held
-	if(is_sharp(I))
-		act_message(user, src, MSG_SELF(span_notice("You begin cutting up %T% with [I].")), \
-			MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins cutting up %T% with [I].")))
-		task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return OP_PASS
-	return OP_DECLINE
+MSG_DEF(bedsheet/cutting, span_notice("You begin cutting up %T% with %I%."), span_infoplain(span_bold("%U%") + " begins cutting up %T% with %I%."))
 
-/obj/item/bedsheet/proc/attackby_timed_done(mob/user)
+/obj/item/bedsheet/proc/held_is_sharp(datum/act/op/A)
+	return is_sharp(A.held)
+
+/obj/item/bedsheet/proc/cut_up(datum/act/op/A)
+	return cut_into_rags(A.actor)
+
+/// The cutting itself: the sheet is consumed and rags are left in its place (FALSE when it can't be let go).
+/obj/item/bedsheet/proc/cut_into_rags(mob/user)
 	var/turf/T = drop_location()
 	var/message = span_notice("You cut [src] into pieces!")
 	if(!consume(src, user))

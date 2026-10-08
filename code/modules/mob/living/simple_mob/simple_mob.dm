@@ -173,6 +173,7 @@
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
 CAPABILITIES(/mob/living/simple_mob)
+	op("reload", ai(), wait(PROC_REF(reload_wait)), then(PROC_REF(reload_done)))
 	mob_attacks()
 	ref_many(nameof(tamers))
 	owns_one(nameof(myid), /obj/item/card/id)
@@ -182,7 +183,9 @@ CAPABILITIES(/mob/living/simple_mob)
 	verb_entry(/mob/verb/observe, hidden = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/animal_nom, when = nameof(vore_active)) // useable before the vorgans initialise
 	verb_entry(/mob/living/proc/shred_limb, when = nameof(vore_active))
-	verb_entry(/mob/living/simple_mob/proc/nutrition_heal)
+	op("nutrition_heal", menu(button = "Nutrition Heal"), needs(req(PROC_REF(hungry_enough_to_heal), because = PROC_REF(too_hungry_to_heal_text))),
+		asks(/datum/prompt/number/animal_nutrition_heal, fields = list("question" = computed(PROC_REF(nutrition_heal_question))), ends_on_no = TRUE, step = "amount"),
+		wait(PROC_REF(nutrition_heal_time)), then(PROC_REF(nutrition_heal_done)))
 	verb_entry(/mob/living/simple_mob/proc/use_headset) // TGPanel
 	verb_entry(/mob/living/simple_mob/proc/use_pda) // TGPanel
 	verb_entry(/mob/living/simple_mob/proc/pick_size, login = TRUE)
@@ -703,7 +706,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	grant(src, granted_verb(/mob/living/proc/vertical_nom), src)
 	grant(src, granted_verb(/mob/living/simple_mob/proc/animal_nom), src)
 	grant(src, granted_verb(/mob/living/proc/shred_limb), src)
-	grant(src, granted_verb(/mob/living/simple_mob/proc/nutrition_heal), src)
 	grant(src, granted_verb(/mob/living/proc/eat_trash), src)
 	grant(src, granted_verb(/mob/living/proc/toggle_trash_catching), src)
 

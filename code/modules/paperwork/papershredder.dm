@@ -150,39 +150,31 @@ MSG_DEF_SELF(papershredder/empty, "it is empty")
 CAPABILITIES(/obj/item/shreddedp)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 	rolls(nameof(color), PROC_REF(roll_color))
-	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("burn", item(/obj/item/flame/lighter), label("Burn"), needs(req(PROC_REF(can_burn), silent = TRUE), req(PROC_REF(lighter_lit), because = MSG(shreddedp/not_lit))),
+		begins(MSG(shreddedp/burning)), wait(2 SECONDS), on_interrupt(PROC_REF(burn_interrupted)), then(PROC_REF(burnpaper_done)))
+
+MSG_DEF(shreddedp/burning, span_warning("You hold %I% up to %T%, burning it slowly."), span_warning("%U% holds %I% up to %T%. It looks like %THEYRE% trying to burn it!"))
+MSG_DEF_SELF(shreddedp/not_lit, span_warning("%I% is not lit."))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/shreddedp/proc/roll_color(datum/roller/R)
 	return R.chance(65) ? R.choose(list("#BABABA", "#7F7F7F")) : color
 
-/// Old attackby.
-/obj/item/shreddedp/proc/interaction_item(datum/act/op/A)
+/// Requirement: the burner's hands are free (a restrained one is silently refused).
+/obj/item/shreddedp/proc/can_burn(datum/act/op/A)
+	return !A.actor.restrained()
+
+/// Requirement: the lighter is lit.
+/obj/item/shreddedp/proc/lighter_lit(datum/act/op/A)
+	var/obj/item/flame/lighter/P = A.held
+	return !!P?.lit
+
+/// The lighter wavered or the burner left.
+/obj/item/shreddedp/proc/burn_interrupted(datum/act/op/A)
+	to_chat(A.actor, span_warning("You must hold [A.held] steady to burn the [src]."))
+
+/obj/item/shreddedp/proc/burnpaper_done(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	if(istype(W, /obj/item/flame/lighter))
-		burnpaper(W, user)
-	else
-		return OP_DECLINE
-	return OP_PASS
-
-/obj/item/shreddedp/proc/burnpaper(obj/item/flame/lighter/P, mob/user)
-	if(user.restrained())
-		return
-	if(!P.lit)
-		to_chat(user, span_warning("\The [P] is not lit."))
-		return
-	act_message(user, src, MSG_SELF(span_warning("You hold %I% up to %T%, burning it slowly.")), \
-		MSG_OTHERS(span_warning("%U% holds %I% up to %T%. It looks like %THEYRE% trying to burn it!")), \
-		item = P)
-	task_start(/datum/task/timed/shreddedp_burnpaper, user, src, receiver = src, fail_message = span_warning("You must hold \the [P] steady to burn \the [src]."))
-
-/datum/task/timed/shreddedp_burnpaper
-	duration = 2 SECONDS
-	complete_proc = /obj/item/shreddedp/proc/burnpaper_done
-
-/obj/item/shreddedp/proc/burnpaper_done(datum/task/timed/shreddedp_burnpaper/task)
-	var/mob/user = task.actor
 	act_message(user, src, MSG_SELF(span_danger("You burn right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.")), \
 		MSG_OTHERS(span_danger("%U% burns right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.")))
 	FireBurn()

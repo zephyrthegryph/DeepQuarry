@@ -191,6 +191,7 @@
 	// hold hands or body while they wait (CLAIM_*) against what this op needs. The actor's policy decides: a player's input stops the older op
 	// (and tells them), an AI's is refused as busy. The game acting for itself (ORIGIN_SYSTEM) neither waits on the actor's pending ops nor ends
 	// them: it is not the actor deciding something else.
+	var/list/to_stop // the older waits this input stops, once it is known to go ahead (a refused input stops nothing)
 	if(actor && R.origin != ORIGIN_SYSTEM)
 		var/list/mine = op_pendings_of(actor)
 		// the same op on the same target whose question is open: its window is shown again, nothing starts
@@ -212,8 +213,7 @@
 					result.reason = /datum/msg/op/busy
 					TEST_REC_OUTCOME(C.oplan.key, ACT_REFUSED, result.reason, actor)
 					return result
-				for(var/datum/pending_op/stopped as anything in blocking)
-					stopped.cancel(/datum/msg/op/stopped)
+				to_stop = blocking
 	var/datum/act/op/A = op_act_for(C, actor, R.target, R.held, R.origin, R.authority)
 	A.oplan = C.oplan // ALLOW(ownership): a pooled transient: reset on release
 	A.binding = C.binding // ALLOW(ownership): a pooled transient: reset on release
@@ -237,6 +237,8 @@
 	if(actor && R.origin != ORIGIN_SYSTEM && length(C.oplan.steps) && length(op_pendings_of(actor)) >= OP_PENDING_CAP)
 		log_game("op: [C.oplan.key] by [key_name(actor)] refused: [OP_PENDING_CAP] pending ops are open already")
 		return op_end(A, ACT_REFUSED, /datum/msg/op/too_many_pending)
+	for(var/datum/pending_op/stopped as anything in to_stop)
+		stopped.cancel(/datum/msg/op/stopped)
 	A.started = TRUE
 	if(length(C.oplan.steps))
 		return op_wait_begin(A, C)
@@ -457,17 +459,10 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			return P
 	return null
 
-/// What an op holds while it waits (CLAIM_*): its claims() when it declares them, else the actor's hands and body for a timed wait on a physical
-/// binding (a tool in use, a movement-locked action). A question or a window button's wait holds nothing.
+/// What an op holds while it waits (CLAIM_*): its claims(), else the mask op_derive_claims() computed from its parts when the table was built. An actor has any number
+/// of pending ops; only ops whose claims overlap conflict.
 /proc/op_claim_hold(datum/op_plan/P, datum/entry/part/bind/B)
-	if(!isnull(P.claim_mask))
-		return P.claim_mask
-	if(!B?.physical())
-		return 0
-	for(var/step_part in P.steps)
-		if(istype(step_part, /datum/entry/part/wait))
-			return CLAIM_HANDS | CLAIM_BODY
-	return 0
+	return isnull(P.claim_mask) ? 0 : P.claim_mask
 
 /// What an op needs free when it starts: what it holds, and the hands for any physical input (a click works with them).
 /proc/op_claim_check(datum/op_plan/P, datum/entry/part/bind/B)
@@ -500,7 +495,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	P.act = A // ALLOW(handlers, ownership): the pending op carries its act across a wait on purpose, and the act is released when the op ends (end_pending)
 	A.pending = P // ALLOW(ownership): a pooled transient: reset on release
 	P.claim_mask = op_claim_hold(A.oplan, A.binding)
-	if(A.actor && A.origin != ORIGIN_SYSTEM)
+	if(A.actor)
 		P.registered = TRUE
 		P.registered_ref = "[REF(A.actor)]"
 		LAZYADD(GLOB.op_pending_by_actor[P.registered_ref], P)
@@ -515,11 +510,12 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 /// The keeps an op's waits run under by default: all four where they apply (no HELD without a held item, no ADJACENT without a spatial reach).
 /proc/op_default_keeps(datum/act/op/A, datum/entry/part/bind/B)
 	. = WAIT_KEEPS_DEFAULT
-	if(A.origin == ORIGIN_SYSTEM || !A.actor)
+	if(!A.actor)
 		. &= ~STAY
 	if(isnull(A.held_provider()))
 		. &= ~HELD
-	if(!B || B.reach_policy() != REACH_ADJACENT || A.origin == ORIGIN_SYSTEM || !A.actor)
+	var/policy = op_reach_policy(A.oplan, B)
+	if(!B || !(policy == REACH_ADJACENT || policy >= REACH_RANGE_BASE) || !A.actor)
 		. &= ~ADJACENT
 
 /// The act's entity references move to the relations: the act holds nothing strongly while the op waits.
@@ -577,10 +573,15 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			if(!resume_act())
 				return cancel(/datum/msg/op/target_gone)
 			var/delay = W.wait_time(A)
-			if(!began && oplan.begins && delay > 0)
-				began = TRUE
-				oplan.begins.feedback(A)
+			take_capture(A)
+			// The keeps first: a start handler may write state that republishes and re-checks this op before the wait is set up.
 			keeps = W.args["keeps"] & op_default_keeps(A, binding)
+			if(!began && delay > 0)
+				began = TRUE
+				oplan.begins?.feedback(A)
+				oplan.start_plays?.feedback(A)
+				for(var/start_handler in oplan.starts)
+					op_call(A, start_handler)
 			suspend_act()
 			if(delay > 0)
 				timed_wait = TRUE
@@ -637,6 +638,10 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(why)
 		suspend_act()
 		return cancel(why)
+	var/why_captured = op_resume_captured(act)
+	if(why_captured)
+		suspend_act()
+		return cancel(why_captured)
 	suspend_act()
 	advance()
 
@@ -653,7 +658,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/datum/act/op/A = act
 	// A confirms() answered "no" ends the op and nothing is spent.
 	var/datum/entry/part/asks/Q = oplan.steps[cursor - 1]
-	if(Q.args["confirms"] && !R.value)
+	if((Q.args["confirms"] || Q.args["ends_on_no"]) && !R.value)
 		suspend_act()
 		return cancel(/datum/msg/op/answer_no)
 	A.request = R // ALLOW(ownership): a pooled transient: reset on release
@@ -736,8 +741,13 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/mob/M = A.actor
 	if((keeps & HELD) && M && REF(M.held_for_ops()) != start_hand_ref)
 		return /datum/msg/op/stopped
-	if((keeps & ADJACENT) && M && A.target_atom && !M.Adjacent(A.target_atom))
-		return /datum/msg/op/stopped
+	if((keeps & ADJACENT) && M && A.target_atom)
+		var/policy = op_reach_policy(oplan, binding)
+		if(policy >= REACH_RANGE_BASE)
+			if(get_dist(M, A.target_atom) > policy - REACH_RANGE_BASE)
+				return /datum/msg/op/stopped // an ai() op with reach(REACH_RANGE(n)): the worker stays within n tiles of its job
+		else if(!M.Adjacent(A.target_atom))
+			return /datum/msg/op/stopped
 	if((keeps & TARGET_PRESENT) && A.target_atom && target_turf && get_turf(A.target_atom) != target_turf)
 		return /datum/msg/op/stopped
 	if((keeps & ALIVE) && M && M.stat != CONSCIOUS)
@@ -1162,24 +1172,34 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		P.plays.feedback(A)
 
 /datum/entry/part/says/proc/feedback(datum/act/op/A)
-	var/msg = src.args["msg"]
-	if(istext(msg)) // says(PROC_REF(x)) / says(CAP_PROC(x)): x(datum/act/A) returns the /datum/msg type this commit tells (a toggle says what it did)
-		msg = op_call(A, msg)
-	if(ispath(msg, /datum/msg) && A.actor)
-		A.actor.op_feedback_message(istype(A.target, /atom) ? A.target : null, msg, A.held_provider())
+	op_tell_msg(A, src.args["msg"], src.args["others"], src.args["blind"])
 
 /// What the actor and onlookers are told when the op starts waiting.
 /datum/entry/part/begins/proc/feedback(datum/act/op/A)
-	var/msg = src.args["msg"]
-	if(istext(msg))
+	op_tell_msg(A, src.args["msg"], src.args["others"], src.args["blind"])
+
+/// says() / begins(): `msg` is a /datum/msg type, a PROC_REF(x) / CAP_PROC(x) whose x(datum/act/A) returns a /datum/msg type or a msg_text(self, others, blind)
+/// (a line that names the held item, the victims or a material), or plain text for the actor. `others` and `blind` are the constant lines of the part.
+/proc/op_tell_msg(datum/act/op/A, msg, others = null, blind = null)
+	if(istext(msg)) // x(datum/act/A): what this moment tells (a toggle says what it did)
 		msg = op_call(A, msg)
-	if(ispath(msg, /datum/msg) && A.actor)
-		A.actor.op_feedback_message(istype(A.target, /atom) ? A.target : null, msg, A.held_provider())
+	if(!A.actor)
+		return
+	var/atom/target = istype(A.target, /atom) ? A.target : null
+	if(ispath(msg, /datum/msg))
+		if(isnull(others) && isnull(blind))
+			A.actor.op_feedback_message(target, msg, A.held_provider())
+		else
+			A.actor.op_feedback_message_lines(target, msg, A.held_provider(), others, blind)
+		return
+	if(islist(msg) && length(msg) == 4 && msg[1] == "msg_text")
+		var/list/text_lines = msg
+		A.actor.op_feedback_lines(target, text_lines[2], text_lines[3] || others, text_lines[4] || blind, A.held_provider())
 
 /datum/entry/part/plays/proc/feedback(datum/act/op/A)
 	var/atom/where = istype(A.target, /atom) ? A.target : A.actor
 	if(where && src.args["sfx"])
-		where.op_feedback_sound(src.args["sfx"])
+		where.op_feedback_sound(src.args["sfx"], src.args["volume"])
 
 /// The op's log line: committed ops that declared logs(), and every refusal after the op started or declared logs().
 /proc/op_log(datum/act/op/A, mob/actor, outcome, reason)
@@ -1397,5 +1417,11 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	return TRUE
 /mob/proc/op_feedback_message(atom/target, msg, obj/held)
 	return
-/atom/proc/op_feedback_sound(sfx)
+/// A message type with the part's own constant others / blind lines.
+/mob/proc/op_feedback_message_lines(atom/target, msg, obj/held, others, blind)
+	return
+/// A message built at run time (msg_text()).
+/mob/proc/op_feedback_lines(atom/target, self, others, blind, obj/held)
+	return
+/atom/proc/op_feedback_sound(sfx, volume = null)
 	return

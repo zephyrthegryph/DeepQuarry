@@ -21,7 +21,7 @@ CAPABILITIES(/obj/structure/trash_pile)
 		asks(/datum/prompt/yes_no, fields = list("title" = "Are you sure you want to squeek?", "question" = "Are you -sure- you want to become a mouse?", "timeout" = 0), keeps = TARGET_PRESENT),
 		then(PROC_REF(mouse_confirmed)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
-	op("search", hand(), label("Search"), then(PROC_REF(interaction_search)))
+	op("search", hand(), label("Search"), claims(), needs(req(/mob/living/carbon/human, of = ON_ACTOR, silent = TRUE)), begins(PROC_REF(search_begins)), wait(PROC_REF(search_time)), then(PROC_REF(searched)))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /// Rolled before init (rolls()): what the pile looks like.
@@ -80,11 +80,12 @@ CAPABILITIES(/obj/structure/trash_pile)
 
 /// Why a ghost may not become a mouse here, or null.
 /obj/structure/trash_pile/proc/mouse_refusal(datum/act/op/A)
-	return mouse_spawn_refusal(A.actor, get_turf(src))
+	return read_once(mouse_spawn_refusal(A.actor, get_turf(src))) // the config, the bans and the death time are asked when the click is made
 
 /// Why `user` may not spawn as a mouse at `T`, or null: the config, the ghost-role ban, respawn rules, the admin levels and the mouse respawn time.
+/// None of it is round state an op could watch (config, bans, a client's death time): it reads nothing the graph follows, and a requirement calls it inside read_once().
 /proc/mouse_spawn_refusal(mob/observer/user, turf/T)
-	READS_FROM() // the config, the bans and the client's death time are not round state an op could watch
+	READS_FROM()
 	if(CONFIG_GET(flag/disable_player_mice))
 		return "Spawning as a mouse is currently disabled."
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
@@ -121,32 +122,26 @@ MSG_DEF_SELF(trash_pile/may_not_respawn, "You may not respawn now.")
 	holder.visible_message("[host] crawls out of \the [src].")
 	return
 
-/// Old attack_hand: search the pile.
-/obj/structure/trash_pile/proc/interaction_search(datum/act/op/A)
+MSG_DEF(trash_pile/searching, "You search through %T%.", "%U% searches through %T%.")
+
+/// The start of a search: whoever hides in the pile is warned, and the searcher says so.
+/obj/structure/trash_pile/proc/search_begins(datum/act/op/A)
+	if(hider())
+		to_chat(hider(), span_warning("[A.actor] is searching the trash pile you're in!"))
+	return /datum/msg/trash_pile/searching
+
+/// How long a search takes, drawn when it starts.
+/obj/structure/trash_pile/proc/search_time(datum/act/op/A)
+	return rand(4 SECONDS, 6 SECONDS)
+
+/obj/structure/trash_pile/proc/searched(datum/act/op/A)
 	var/mob/user = A.actor
-	//Human mob
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-
-		if(task_busy(src)) // a search claims the pile
-			to_chat(H, span_warning("\The [src] is already being searched."))
-			return TRUE
-
-		act_message(H, user, MSG_SELF(span_notice("You search through \the [src].")), MSG_OTHERS("%T% searches through \the [src]."))
-		if(hider())
-			to_chat(hider(),span_warning("[user] is searching the trash pile you're in!"))
-
-		//Do the searching
-		task_timed(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
-	return TRUE
-
-/obj/structure/trash_pile/proc/attack_hand_timed_done(mob/user)
 	if(hider() && prob(50))
 		//If there was a hider, chance to reveal them
 		to_chat(hider(),span_danger("You've been discovered!"))
 		hider().forceMove(get_turf(src))
 		rel_clear(src, nameof(hider))
-		to_chat(user,span_danger("Some sort of creature leaps out of \the [src]!"))
+		to_chat(user,span_danger("Some sort of creature leaps out of 	he [src]!"))
 	else
 		loot_search(src, user, searchedby, 5)
 

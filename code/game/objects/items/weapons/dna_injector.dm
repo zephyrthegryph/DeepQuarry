@@ -19,8 +19,12 @@
 	// Removed subtype, replaced with flag. Allows for safe injectors. Mostly for admin usage.
 	var/has_radiation = TRUE
 
+MSG_DEF(dnainjector/injecting, null, span_danger("%U% is trying to inject %T% with %I%!"))
+
 CAPABILITIES(/obj/item/dnainjector)
 	owns_one(nameof(buf), /datum/dna2/record)
+	op("inject", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Inject"),
+		needs(req_adjacent(), req(PROC_REF(advanced_user), silent = TRUE)), begins(MSG(dnainjector/injecting)), wait(5 SECONDS), then(PROC_REF(injected)))
 
 TYPE_TABLE_DECLARE(/obj/item/dnainjector, injector_random_selector, null)
 
@@ -143,21 +147,12 @@ TYPE_TABLE_DECLARE(/obj/item/dnainjector, injector_random_selector, null)
 	spent(src, M)
 	return uses
 
-/obj/item/dnainjector/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if (!user.IsAdvancedToolUser())
-		return ITEM_INTERACT_FAILURE
-	if (task_busy(src))
-		return ITEM_INTERACT_FAILURE
+/obj/item/dnainjector/proc/advanced_user(datum/act/op/A)
+	return read_once(A.actor.IsAdvancedToolUser())
 
-	act_message(user, src, others = span_danger("%U% is trying to inject \the [M] with %T%!"))
-
-
-	task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user), claims = TRUE)
-	return TRUE
-
-/obj/item/dnainjector/proc/attack_timed_done(mob/living/M, mob/living/user)
-
-
+/obj/item/dnainjector/proc/injected(datum/act/op/A)
+	var/mob/living/M = A.target
+	var/mob/living/user = A.actor
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 	user.do_attack_animation(M)
 
@@ -166,10 +161,10 @@ TYPE_TABLE_DECLARE(/obj/item/dnainjector, injector_random_selector, null)
 	var/mob/living/carbon/human/H = M
 	if(!istype(H))
 		to_chat(user, span_warning("Apparently it didn't work..."))
-		return ITEM_INTERACT_FAILURE
+		return OP_FAILED
 
 	inject(M, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // Traitgenes Injectors are randomized now due to no hardcoded genes. Split into good or bad, and then versions that specify what they do on the label.
 // Otherwise scroll down further for how to make unique injectors

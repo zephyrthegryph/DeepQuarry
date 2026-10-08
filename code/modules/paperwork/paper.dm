@@ -84,6 +84,8 @@ CAPABILITIES(/obj/item/paper)
 	op("paper_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	op("paper_fold_plane", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Fold into a plane"), then(PROC_REF(interaction_fold_plane)))
 	op("paper_silicon_read", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Read"), then(PROC_REF(paper_silicon_read)))
+	op("wipe_lipstick", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Wipe off lipstick"), when(req(PROC_REF(wipes_other_mouth))),
+		needs(req_adjacent()), begins(MSG(paper/wiping)), wait(1 SECOND), then(PROC_REF(wipe_lipstick_done)))
 	op("paper_rename", menu(), label("Rename paper"), needs(carried()), then(PROC_REF(paper_rename_op)))
 	param(nameof(info), pos = 1)
 	param(nameof(name), pos = 2)
@@ -402,10 +404,18 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 	tgui_interact(user)
 	return OP_OK
 
-/obj/item/paper/proc/wipe_lipstick_done(mob/living/user, mob/living/carbon/human/H)
-	act_message(user, H, MSG_SELF(span_notice("You wipe off %T%'s lipstick.")), MSG_OTHERS(span_notice("%U% wipes %T%'s lipstick off with \the [src].")))
+MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span_warning("%U% begins to wipe %T%'s lipstick off with %I%."))
+
+/// The wipe aims at the mouth, and at somebody else (what is aimed at is fixed while the click is decided).
+/obj/item/paper/proc/wipes_other_mouth(datum/act/op/A)
+	return A.target != A.actor && read_once(A.actor.zone_sel?.selecting) == O_MOUTH
+
+/obj/item/paper/proc/wipe_lipstick_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	act_message(A.actor, H, MSG_SELF(span_notice("You wipe off %T%'s lipstick.")), MSG_OTHERS(span_notice("%U% wipes %T%'s lipstick off with \the [src].")))
 	H.set_lip_style(null)
 	H.update_icons_body()
+	return OP_OK
 
 /obj/item/paper/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(user.zone_sel.selecting == O_EYES)
@@ -420,11 +430,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 				to_chat(user, span_notice("You wipe off the lipstick with [src]."))
 				H.set_lip_style(null)
 				H.update_icons_body()
-			else
-				act_message(user, H, MSG_SELF(span_notice("You begin to wipe off %T%'s lipstick.")), \
-					MSG_OTHERS(span_warning("%U% begins to wipe %T%'s lipstick off with \the [src].")))
-				task_timed(user, 1 SECOND, H, src, PROC_REF(wipe_lipstick_done), list(user, H))
-				return ITEM_INTERACT_SUCCESS
 
 /obj/item/paper/proc/set_content(text,title)
 	if(title)

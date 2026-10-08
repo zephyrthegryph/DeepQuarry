@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "DNA injectors, tape rolls, mail, bonfires, paper lipstick wiping, smart magazine cells, bag-valve masks, airway kits and hardsuit module repairs are now timed ops"
+  - bugfix: "Mending a hardsuit module with cable now works on an almost destroyed module"

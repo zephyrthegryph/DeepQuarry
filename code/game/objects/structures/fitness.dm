@@ -41,7 +41,7 @@ CAPABILITIES(/obj/structure/fitness/punchingbag)
 
 CAPABILITIES(/obj/structure/fitness/weightlifter)
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
-	op("lift", hand(), label("Lift"), when(req_actor_kind(/mob/living/carbon/human)), needs(req(PROC_REF(can_lift), because = PROC_REF(lift_refusal))), then(PROC_REF(interaction_hand)))
+	op("lift", hand(), label("Lift"), when(req_actor_kind(/mob/living/carbon/human)), needs(req(PROC_REF(can_lift), because = PROC_REF(lift_refusal))), claims(), begins(PROC_REF(lift_begins)), wait(PROC_REF(lift_time)), on_interrupt(PROC_REF(lift_interrupted)), then(PROC_REF(lifted)))
 
 /obj/structure/fitness/weightlifter/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -52,42 +52,44 @@ CAPABILITIES(/obj/structure/fitness/weightlifter)
 
 /// Requirement: the person can lift right now.
 /obj/structure/fitness/weightlifter/proc/can_lift(datum/act/op/A)
-	return isnull(weightlift_refusal(A.actor, src))
+	return read_once(isnull(weightlift_refusal(A.actor))) // nutrition and weight are asked when the lift starts
 
 /obj/structure/fitness/weightlifter/proc/lift_refusal(datum/act/op/A)
-	return weightlift_refusal(A.actor, src)
+	return weightlift_refusal(A.actor)
 
-/// Why `user` can't use the weight machine `machine` now, or null: on it, fed, heavy enough, and nobody else on it.
-/proc/weightlift_refusal(mob/living/carbon/human/user, obj/structure/fitness/weightlifter/machine)
-	READS_FROM() // a body's place, nutrition and weight are asked when the lift starts; the lift itself claims the machine
-	if(user.loc != machine.loc)
+/// Why `user` can't use the weight machine now, or null: on it, fed, heavy enough, and nobody else on it.
+/obj/structure/fitness/weightlifter/proc/weightlift_refusal(mob/lifter)
+	var/mob/living/carbon/human/user = lifter
+	if(user.loc != loc)
 		return "You must be on the weight machine to use it."
 	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
 		return "You need more energy to lift weights, go eat something."
 	if(user.weight < 70) // Add weight loss to old fitness equipment
 		return "You're too skinny to risk losing any more weight."
-	if(task_busy(machine))
-		return "The weight machine is already in use by somebody else."
 	return null
 
-/// Old attack_hand: a person on the machine lifts its weights.
-/obj/structure/fitness/weightlifter/proc/interaction_hand(datum/act/op/A)
+/// How long a lift takes: heavier weights take longer.
+/obj/structure/fitness/weightlifter/proc/lift_time(datum/act/op/A)
+	return 3 SECONDS + (weight * 10)
+
+/// The start of a lift: the weights rise and the lifter faces the machine. It says nothing.
+/obj/structure/fitness/weightlifter/proc/lift_begins(datum/act/op/A)
 	var/mob/living/carbon/human/user = A.actor
 	play_sfx(src, SFX_EFFECTS_WEIGHTLIFTER)
 	user.set_dir(SOUTH)
 	flick("[icon_state]_[weight]", src)
-	task_timed(user, 3 SECONDS + (weight * 10), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
-	return OP_OK
+	return null
 
-/obj/structure/fitness/weightlifter/proc/attack_hand_timed_done(mob/living/carbon/human/user)
+/obj/structure/fitness/weightlifter/proc/lifted(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
 	play_sfx(src, SFX_EFFECTS_WEIGHTDROP)
 	user.adjust_nutrition(weight * -10)
 	var/weightloss_enhanced = weightloss_power * (weight * 0.5)
 	user.weight -= 0.25 * weightloss_enhanced * (0.01 * user.weight_loss)
 	to_chat(user, span_notice("You lift the weights [qualifiers[weight]]."))
 
-/obj/structure/fitness/weightlifter/proc/attack_hand_timed_failed(mob/living/carbon/human/user)
-	to_chat(user, span_notice("Against your previous judgement, perhaps working out is not for you."))
+/obj/structure/fitness/weightlifter/proc/lift_interrupted(datum/act/op/A)
+	to_chat(A.actor, span_notice("Against your previous judgement, perhaps working out is not for you."))
 
 /obj/structure/fitness/boxing_ropes
 	name = "ropes"

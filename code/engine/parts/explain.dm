@@ -11,6 +11,19 @@
 //
 // The text is deterministic (types, not names or refs) so a test can compare it with a golden.
 
+/// What an op holds while it waits, for the debug output: "hands+body (derived)", "none", "target (claims())".
+/proc/op_claims_text(datum/op_plan/P)
+	if(!P || isnull(P.claim_mask))
+		return "none"
+	var/list/held = list()
+	if(P.claim_mask & CLAIM_HANDS)
+		held += "hands"
+	if(P.claim_mask & CLAIM_BODY)
+		held += "body"
+	if(P.claim_mask & CLAIM_TARGET)
+		held += "target"
+	return "[length(held) ? jointext(held, "+") : "none"] ([P.claims_derived ? "derived" : "claims()"])"
+
 /// The tier a number stands for, by name.
 /proc/op_tier_name(tier)
 	switch(tier)
@@ -73,7 +86,7 @@
 	var/binding_text = C.binding ? C.binding.describe() : "legacy"
 	var/key = C.oplan ? C.oplan.key : "legacy:[C.legacy?.type]"
 	var/origin_text = C.oplan ? C.oplan.origin : "legacy"
-	var/line = "[index ? "[index]. " : ""][key] [binding_text] tier=[op_tier_name(C.tier)] side=[C.side == CAND_TARGET ? "target" : (C.side == CAND_HELD ? "held" : "actor")] @ [origin_text]"
+	var/line = "[index ? "[index]. " : ""][key] [binding_text] tier=[op_tier_name(C.tier)] claims=[op_claims_text(C.oplan)] side=[C.side == CAND_TARGET ? "target" : (C.side == CAND_HELD ? "held" : "actor")] @ [origin_text]"
 	var/path_why = (!C.dropped_by && C.oplan?.space) ? op_cand_path_reason(R, C) : null
 	if(C.oplan?.space)
 		var/atom/T = (C.side == CAND_TARGET) ? R.target : C.holder

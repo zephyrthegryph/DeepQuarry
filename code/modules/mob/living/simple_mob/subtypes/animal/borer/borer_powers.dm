@@ -107,11 +107,27 @@
 		return
 	infest_target(A.answer.value)
 
-/// Infests mob with borer.
-/mob/living/simple_mob/animal/borer/proc/infest_dislodged(mob/living/carbon/human/infest_target)
-	to_chat(src, span_danger("As [infest_target] moves away, you are dislodged and fall to the ground."))
+/// The "infest" op was interrupted: the target moved away, or the borer did.
+/mob/living/simple_mob/animal/borer/proc/infest_dislodged(datum/act/op/A)
+	to_chat(src, span_danger("As [A.target] moves away, you are dislodged and fall to the ground."))
 
-/mob/living/simple_mob/animal/borer/proc/infest_done(mob/living/carbon/human/infest_target)
+/// The start of the "infest" op: what the borer and its target are told, by whether a helmet is in the way.
+/mob/living/simple_mob/animal/borer/proc/infest_started(datum/act/op/A)
+	var/mob/living/carbon/human/infest_target = A.target
+	if(infest_target.check_head_coverage())
+		to_chat(src, span_alien("You begin to flatten and squirm into \the [infest_target]'s helmet to find a way inside them."))
+		to_chat(infest_target, span_vdanger("Something slimy begins trying to find a way past your helmet..."))
+	else
+		to_chat(infest_target, span_vdanger("Something slimy begins probing at the opening of your ear canal..."))
+	to_chat(src, span_alien("You slither up to \the [infest_target] and begin probing at their ear canal..."))
+
+/// How long entering takes: longer past a helmet.
+/mob/living/simple_mob/animal/borer/proc/infest_wait(datum/act/op/A)
+	var/mob/living/carbon/human/infest_target = A.target
+	return infest_target.check_head_coverage() ? 5.5 SECONDS : 3 SECONDS
+
+/mob/living/simple_mob/animal/borer/proc/infest_done(datum/act/op/A)
+	var/mob/living/carbon/human/infest_target = A.target
 	var/mob/living/carbon/human/host
 	if(!infest_target || QDELETED(src))
 		return
@@ -157,8 +173,6 @@
 		to_chat(src, span_warning("You cannot infest someone who is already infested!"))
 		return
 
-	var/entering_timer = 30
-	var/protected = FALSE
 	var/obj/item/organ/external/E = infest_target.organs_by_name[BP_HEAD]
 	if(!E || E.is_stump())
 		to_chat(src, span_warning("\The [infest_target] does not have a head!"))
@@ -167,18 +181,7 @@
 	if(!infest_target.should_have_organ(O_BRAIN))
 		to_chat(src, span_warning("\The [infest_target] does not seem to have an ear canal to breach."))
 		return
-	if(infest_target.check_head_coverage())
-		to_chat(src, span_alien("You begin to flatten and squirm into \the [infest_target]'s helmet to find a way inside them."))
-		entering_timer = 55
-		protected = TRUE
-
-	if(!protected)
-		to_chat(infest_target, span_vdanger("Something slimy begins probing at the opening of your ear canal..."))
-	else
-		to_chat(infest_target, span_vdanger("Something slimy begins trying to find a way past your helmet..."))
-	to_chat(src, span_alien("You slither up to \the [infest_target] and begin probing at their ear canal..."))
-
-	task_timed(src, entering_timer, target = infest_target, receiver = src, on_done = PROC_REF(infest_done), done_args = list(infest_target), on_fail = PROC_REF(infest_dislodged), fail_args = list(infest_target))
+	perform_op(src, infest_target, "infest", null, ORIGIN_AI, AUTH_AI)
 
 
 /**

@@ -54,5 +54,9 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Scan anomaly
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Scan anomaly
-keys: drag_buckle, pass_insert, pass_insert_2, scan_anomaly
+human|/obj/item/anomaly_scanner menu: Move To Top
+human|/obj/item/anomaly_scanner menu: Scan anomaly
+human|/obj/item/anomaly_scanner menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/anomaly_scanner click: Click: Scan anomaly
+keys: buffer_anomaly, drag_buckle, pass_insert, pass_insert_2, scan_anomaly
 

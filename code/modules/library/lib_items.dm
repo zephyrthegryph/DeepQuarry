@@ -237,7 +237,9 @@ CAPABILITIES(/obj/item/book)
 	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), when(req_is(nameof(carved))), then(PROC_REF(interaction_store)))
 	op("edit", item(/obj/item/pen), priority(OP_PRIORITY_DEFAULT - 2), when(req_is(nameof(carved), FALSE)), asks(/datum/prompt/choice, fields = list("question" = "What would you like to change?", "title" = "Change What?", "choices" = list("Title", "Contents", "Author", "Cancel"), "timeout" = 0), step = "k248", when = req_is(nameof(unique), FALSE)), asks(/datum/prompt/text, fields = list("question" = "Write a new title:", "encode" = FALSE, "timeout" = 0), step = "k251", when = PROC_REF(editing_title)), asks(/datum/prompt/text, fields = list("question" = "Write your book's contents (HTML NOT allowed):", "max_len" = MAX_BOOK_MESSAGE_LEN, "multiline" = TRUE, "name_text" = ((MAX_BOOK_MESSAGE_LEN) <= MAX_NAME_LEN), "timeout" = 0), step = "k259", when = PROC_REF(editing_contents)), asks(/datum/prompt/text, fields = list("question" = "Write the author's name:", "max_len" = MAX_LNAME_LEN, "name_text" = ((MAX_LNAME_LEN) <= MAX_NAME_LEN), "timeout" = 0), step = "k266", when = PROC_REF(editing_author)), then(PROC_REF(interaction_edit)))
 	op("scan", item(/obj/item/barcodescanner), priority(OP_PRIORITY_DEFAULT - 3), when(req_is(nameof(carved), FALSE)), then(PROC_REF(interaction_scan)))
-	op("carve", item(/obj/item/material/knife), priority(OP_PRIORITY_DEFAULT - 4), when(req_is(nameof(carved), FALSE)), then(PROC_REF(interaction_carve)))
+	op("carve", item(/obj/item/material/knife), priority(OP_PRIORITY_DEFAULT - 4), when(req_is(nameof(carved), FALSE)), begins(PROC_REF(carve_text)), wait(3 SECONDS), then(PROC_REF(carve_done)))
+	op("carve_cutters", tool(TOOL_WIRECUTTER), when(req_is(nameof(carved), FALSE)), begins(PROC_REF(carve_text)), wait(3 SECONDS), then(PROC_REF(carve_done)))
+	op("carve_cutters_blocked", tool(TOOL_WIRECUTTER), when(req_is(nameof(carved))), priority(OP_PRIORITY_PART + 1), needs(req(PROC_REF(never), silent = TRUE)))
 
 TRACKED(/obj/item/book, carved)
 TRACKED(/obj/item/book, unique)
@@ -361,21 +363,16 @@ TRACKED(/obj/item/book, unique)
 				to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title added to general inventory.'")
 	return OP_PASS
 
-/// Old attackby with a knife.
-/obj/item/book/proc/interaction_carve(datum/act/op/A)
-	return carve_pages(A.actor) ? OP_OK : OP_DECLINE
+/// The line of the start names the book by its title.
+/obj/item/book/proc/carve_text(datum/act/op/A)
+	return msg_text(span_notice("You begin to carve out [title]."))
 
-/obj/item/book/wirecutter_act(mob/user, obj/item/tool)
-	return carve_pages(user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+/// A carved book is a plain refusal for wirecutters: the tool does not go on to a hit.
+/obj/item/book/proc/never(datum/act/op/A)
+	return FALSE
 
-/obj/item/book/proc/carve_pages(mob/user)
-	if(carved)
-		return FALSE
-	to_chat(user, span_notice("You begin to carve out [title]."))
-	task_timed(user, 3 SECONDS, src, src, PROC_REF(carve_done), list(user))
-	return TRUE
-
-/obj/item/book/proc/carve_done(mob/user)
+/obj/item/book/proc/carve_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(carved)
 		return
 	to_chat(user, span_notice("You carve out the pages from [title]! You didn't want to read it anyway."))

@@ -32,17 +32,6 @@
 				plastic.add_charge(2000)
 			return
 
-		else if(istype(M,/mob/living/silicon/robot/drone) && !M.client)
-
-			var/mob/living/silicon/robot/D = src.loc
-
-			if(!istype(D))
-				return
-
-			to_chat(D, span_danger("You begin decompiling [M]."))
-
-			task_start(/datum/task/timed/matter_decompiler_decompile_drone, D, src, receiver = src, M = M)
-			return
 		else
 			continue
 

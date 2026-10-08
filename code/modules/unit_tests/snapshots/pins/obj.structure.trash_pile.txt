@@ -2,7 +2,7 @@ human|none menu: Climb
 human|none menu: Search
 human|none click: Click: Search
 robot|none menu: Climb
-robot|none menu: Search
+robot|none menu: Search (refused: )
 robot|none click: Click: Search
 ai|none click: nothing
 ghost|none menu: Become mouse (refused: You may not respawn now.)

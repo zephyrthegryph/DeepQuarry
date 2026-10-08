@@ -76,6 +76,9 @@
 	confidential = FALSE
 )
 	OP_PURE_GUARD("a message was sent to a player")
+#ifdef UNIT_TESTS
+	test_chat_note(target, html || text)
+#endif
 	if(isnull(Kernel) || !SSbehaviours?.initialized || !KERNEL_RUNNING(INITSTAGE_LAST)) // the chat lane runs once the MC does
 		to_chat_immediate(target, html, type, text, avoid_highlighting)
 		return

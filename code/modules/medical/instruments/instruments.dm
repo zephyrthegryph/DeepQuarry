@@ -20,16 +20,20 @@
 	icon_state = "health"
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/thermometer_medical/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(!ishuman(M))
-		to_chat(user, span_warning("You can't get a reading from this."))
-		return ITEM_INTERACT_SUCCESS
-	var/mob/living/carbon/human/H = M
-	act_message(user, H, MSG_SELF(span_notice("You take %T%'s temperature.")), MSG_OTHERS(span_notice("%U% takes %T%'s temperature.")))
-	task_timed(user, 3 SECONDS, H, src, PROC_REF(read_temperature), list(user, H))
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF(thermometer_medical/taking, span_notice("You take %T%'s temperature."), span_notice("%U% takes %T%'s temperature."))
+MSG_DEF_SELF(thermometer_medical/not_human, span_warning("You can't get a reading from this."))
 
-/obj/item/thermometer_medical/proc/read_temperature(mob/living/user, mob/living/carbon/human/H)
+CAPABILITIES(/obj/item/thermometer_medical)
+	op("take", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(target_is_human), because = MSG(thermometer_medical/not_human))),
+		begins(MSG(thermometer_medical/taking)), wait(3 SECONDS), then(PROC_REF(read_temperature)))
+
+/// Requirement: the patient is a human.
+/obj/item/thermometer_medical/proc/target_is_human(datum/act/op/A)
+	return ishuman(A.target)
+
+/obj/item/thermometer_medical/proc/read_temperature(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/human/H = A.target
 	var/c = H.get_temperature_reading_c()
 	to_chat(user, span_notice("Reading: <b>[c]°C</b>."))
 
@@ -44,17 +48,20 @@
 	icon_state = "health"
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/bp_cuff/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(!ishuman(M))
-		to_chat(user, span_warning("You can't fit the cuff on this."))
-		return ITEM_INTERACT_SUCCESS
-	var/mob/living/carbon/human/H = M
-	act_message(user, src, MSG_SELF(span_notice("You wrap %T% around [H]'s arm and begin pumping.")), \
-		MSG_OTHERS(span_notice("%U% starts wrapping %T% around [H]'s arm.")))
-	task_timed(user, 12 SECONDS, H, src, PROC_REF(read_pressure), list(user, H))
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF(bp_cuff/wrapping, span_notice("You wrap %I% around %T%'s arm and begin pumping."), span_notice("%U% starts wrapping %I% around %T%'s arm."))
+MSG_DEF_SELF(bp_cuff/not_human, span_warning("You can't fit the cuff on this."))
 
-/obj/item/bp_cuff/proc/read_pressure(mob/living/user, mob/living/carbon/human/H)
+CAPABILITIES(/obj/item/bp_cuff)
+	op("take", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(target_is_human), because = MSG(bp_cuff/not_human))),
+		begins(MSG(bp_cuff/wrapping)), wait(12 SECONDS), then(PROC_REF(read_pressure)))
+
+/// Requirement: the patient is a human.
+/obj/item/bp_cuff/proc/target_is_human(datum/act/op/A)
+	return ishuman(A.target)
+
+/obj/item/bp_cuff/proc/read_pressure(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/human/H = A.target
 	var/list/bp = H.get_bp_reading()
 	if(!bp)
 		to_chat(user, span_warning("You can't find a pulse to measure pressure against."))
@@ -71,17 +78,20 @@
 	icon_state = "health"
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/pulse_oximeter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(!ishuman(M))
-		to_chat(user, span_warning("You can't clip this to anything useful here."))
-		return ITEM_INTERACT_SUCCESS
-	var/mob/living/carbon/human/H = M
-	act_message(user, src, MSG_SELF(span_notice("You clip %T% to [H]'s fingertip and wait for the reading.")), \
-		MSG_OTHERS(span_notice("%U% clips %T% to [H]'s fingertip.")))
-	task_timed(user, 4 SECONDS, H, src, PROC_REF(read_oximetry), list(user, H))
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF(pulse_oximeter/clipping, span_notice("You clip %I% to %T%'s fingertip and wait for the reading."), span_notice("%U% clips %I% to %T%'s fingertip."))
+MSG_DEF_SELF(pulse_oximeter/not_human, span_warning("You can't clip this to anything useful here."))
 
-/obj/item/pulse_oximeter/proc/read_oximetry(mob/living/user, mob/living/carbon/human/H)
+CAPABILITIES(/obj/item/pulse_oximeter)
+	op("take", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(target_is_human), because = MSG(pulse_oximeter/not_human))),
+		begins(MSG(pulse_oximeter/clipping)), wait(4 SECONDS), then(PROC_REF(read_oximetry)))
+
+/// Requirement: the patient is a human.
+/obj/item/pulse_oximeter/proc/target_is_human(datum/act/op/A)
+	return ishuman(A.target)
+
+/obj/item/pulse_oximeter/proc/read_oximetry(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/human/H = A.target
 	var/sat = H.get_o2_sat_reading()
 	var/bpm = H.get_pulse_reading_bpm()
 	if(!bpm)

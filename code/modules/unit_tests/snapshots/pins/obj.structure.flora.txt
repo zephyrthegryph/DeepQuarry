@@ -54,5 +54,11 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, item, melee_hit
+human|/obj/item/shovel menu: Hit
+human|/obj/item/shovel menu: Move To Top
+human|/obj/item/shovel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/shovel menu: Uproot
+human|/obj/item/shovel menu: Use
+human|/obj/item/shovel click: Click: Uproot
+keys: drag_buckle, item, melee_hit, uproot
 

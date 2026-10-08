@@ -303,7 +303,7 @@ CAPABILITIES(/obj/item/bedsheet/pillow/exercise)
 	icon_state = "dumbbell"
 
 CAPABILITIES(/obj/item/entrepreneur/dumbbell)
-	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_exercise_holds), because = PROC_REF(can_exercise_refusal))), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_exercise_holds), because = PROC_REF(can_exercise_refusal))), wait(3 SECONDS), then(PROC_REF(exercise_done)))
 
 /// Requirement: the user isn't too hungry to exercise.
 /obj/item/entrepreneur/dumbbell/proc/can_exercise(mob/user, atom/target, obj/item/held)
@@ -323,13 +323,8 @@ CAPABILITIES(/obj/item/entrepreneur/dumbbell)
 	var/answer = can_exercise(A.actor, src, A.held)
 	return istext(answer) ? answer : /datum/msg/req_failed
 
-/obj/item/entrepreneur/dumbbell/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	var/mob/living/M = user
-	task_timed(user, 3 SECONDS, src, src, PROC_REF(exercise_done), list(M))
-	return TRUE
-
-/obj/item/entrepreneur/dumbbell/proc/exercise_done(mob/living/M)
+/obj/item/entrepreneur/dumbbell/proc/exercise_done(datum/act/op/A)
+	var/mob/living/M = A.actor
 	var/mob/user = M
 	M.adjust_nutrition(-10)
 	to_chat(user, span_notice("You successfully perform a [src] exercise!"))
@@ -462,7 +457,7 @@ CAPABILITIES(/obj/item/entrepreneur/emf)
 	var/accurate = FALSE
 
 CAPABILITIES(/obj/item/entrepreneur/spirit_board)
-	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(can_slide_holds), because = PROC_REF(can_slide_refusal))), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(can_slide_holds), because = PROC_REF(can_slide_refusal))), wait(3 SECONDS), then(PROC_REF(spirit_slide_done)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "What should it land on next?", "title" = "Next result", "choices" = nameof(possible_results), "timeout" = 0), step = "k451", when = PROC_REF(alt_asks)), then(PROC_REF(interaction_alt)))
 	op("spirit_board_ghost_guide", observer(), label("Guide"), needs(req(PROC_REF(can_ghost_guide_holds), because = PROC_REF(can_ghost_guide_refusal))), asks(/datum/prompt/choice, fields = list("question" = "What should it land on next?", "title" = "Next result", "choices" = nameof(possible_results), "timeout" = 0), step = "k459", when = PROC_REF(ghost_asks)), then(PROC_REF(spirit_board_ghost_guide)))
 
@@ -486,16 +481,11 @@ CAPABILITIES(/obj/item/entrepreneur/spirit_board)
 /obj/item/entrepreneur/spirit_board/proc/can_ghost_guide_refusal(datum/act/op/A)
 	return "you cannot interact with this board because you are banned from playing ghost roles"
 
-/// Old attackby.
-/obj/item/entrepreneur/spirit_board/proc/interaction_item(datum/act/op/A)
+/obj/item/entrepreneur/spirit_board/proc/spirit_slide_done(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/reagent_containers/food/drinks/W = A.held
 	if(!istype(user))
-		return OP_PASS
-	task_timed(user, 3 SECONDS, src, src, PROC_REF(spirit_slide_done), list(W, user))
-	return OP_PASS
-
-/obj/item/entrepreneur/spirit_board/proc/spirit_slide_done(obj/item/reagent_containers/food/drinks/W, mob/living/user)
+		return OP_OK
 	var/result = 0
 	if(next_result)
 		result = next_result

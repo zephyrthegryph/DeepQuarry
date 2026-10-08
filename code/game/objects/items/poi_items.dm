@@ -196,7 +196,8 @@ TRACKED(/obj/item/poi/broken_drone_circuit, fried)
 
 CAPABILITIES(/obj/item/poi/broken_drone_circuit)
 	// the old attack_self: study the circuit for a while
-	op("analyze", in_hand(), label("Analyze"), then(PROC_REF(interaction_self)))
+	op("analyze", in_hand(), label("Analyze"), when(cond_not(nameof(fried))), begins(MSG(drone_circuit/analyzing)), wait(5 SECONDS), then(PROC_REF(analyzed)))
+	op("analyze_fried", in_hand(), label("Analyze"), when(nameof(fried)), then(PROC_REF(analyzed_fried)))
 	// the old attackby: screwdriver, wirecutters, multitool and analyzer on the blackbox (a fried board is past saving)
 	op("work", item(/obj/item), label("Use"), needs(req_is(nameof(fried), FALSE, because = MSG(drone_circuit/fried))), then(PROC_REF(interaction_item)))
 
@@ -268,18 +269,14 @@ MSG_DEF_SELF(drone_circuit/fried, "It's covered in black marks, you feel there's
 
 	return OP_DECLINE
 
-/// Old attack_self.
-/obj/item/poi/broken_drone_circuit/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
+MSG_DEF(drone_circuit/analyzing, "You take your time to analyze the circuit...", "%U% is studiously examining %T%")
 
-	act_message(user, src, MSG_SELF("You take your time to analyze the circuit..."), MSG_OTHERS("%U% is studiously examining %T%"))
+/// What the board shows, from what has been done to it.
+/obj/item/poi/broken_drone_circuit/proc/analysis_text()
 	var/message = ""
 	if(fried)
-		message += "Amidst the scorch mark, you barely make out [drone_name] stenciled on the board... \n"
-		to_chat(user, message)
-		return OP_OK
-	else
-		message += "You see [drone_name] stenciled onto the board on close inspection! This looks like a secure drone intelligence strata. \n"
+		return "Amidst the scorch mark, you barely make out [drone_name] stenciled on the board... \n"
+	message += "You see [drone_name] stenciled onto the board on close inspection! This looks like a secure drone intelligence strata. \n"
 
 	if(unlocked)
 		message += "The power logic to the blackbox is scorched. Whatever secrets lie in the blackbox are yours for taking! \n"
@@ -294,9 +291,14 @@ MSG_DEF_SELF(drone_circuit/fried, "It's covered in black marks, you feel there's
 		It looks like a single pulse will fry this system for good\n"
 	if(unscrewed && !has_paper)
 		message += "Looks like there's a printer without any paper in it."
+	return message
 
-	task_timed(user, delay = 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, message))
+/obj/item/poi/broken_drone_circuit/proc/analyzed(datum/act/op/A)
+	to_chat(A.actor, analysis_text())
+
+/// A fried board is read at once.
+/obj/item/poi/broken_drone_circuit/proc/analyzed_fried(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF("You take your time to analyze the circuit..."), MSG_OTHERS("%U% is studiously examining %T%"))
+	to_chat(A.actor, analysis_text())
 	return OP_OK
 
-/obj/item/poi/broken_drone_circuit/proc/attack_self_timed_done(mob/user, message)
-	to_chat(user, message)

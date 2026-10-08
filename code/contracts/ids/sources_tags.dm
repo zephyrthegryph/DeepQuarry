@@ -7,6 +7,7 @@
 SOURCE_DEF(status)
 SOURCE_DEF(vv)
 SOURCE_DEF(ai_control)
+SOURCE_DEF(busy_work)
 SOURCE_DEF(held_item)
 SOURCE_DEF(all)
 /// A round event that holds a machine's state for good (an AI locked out of a door by a runtime): released by no one but an admin.

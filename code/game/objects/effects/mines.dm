@@ -379,20 +379,21 @@ CAPABILITIES(/obj/effect/mine)
 
 	var/list/allowed_gadgets = null
 
-/// Old attack_self.
-/obj/item/mine/proc/interaction_self(datum/act/op/A)
+MSG_DEF(mine/priming, span_infoplain("You start priming %T%. Hold still!"), "%U% starts priming %T%.")
+
+/// The start of priming: the admin log line, the fingerprint and what is said (a start hook that answers its message).
+/obj/item/mine/proc/priming_begins(datum/act/op/A)
 	var/mob/user = A.actor
 	add_fingerprint(user)
 	msg_admin_attack("[key_name_admin(user)] primed \a [src]")
-	act_message(user, null, MSG_SELF("You start priming \the [src.name]. Hold still!"), MSG_OTHERS("%U% starts priming \the [src.name]."))
-	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list(user))
-	return TRUE
+	return /datum/msg/mine/priming
 
-/obj/item/mine/proc/attack_self_timed_done(mob/user)
+/obj/item/mine/proc/primed(datum/act/op/A)
 	play_sfx(src, SFX_WEAPONS_ARMBOMB)
-	prime(user)
+	prime(A.actor)
 
-/obj/item/mine/proc/attack_self_timed_failed(mob/user)
+/obj/item/mine/proc/priming_failed(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, null, others = "%U% triggers \the [src.name]!", blind = "You accidentally trigger \the [src.name]!")
 	prime(user, TRUE)
 
@@ -487,19 +488,17 @@ CAPABILITIES(/obj/effect/mine)
 	return ..()
 
 CAPABILITIES(/obj/item/mine)
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
-	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(10 SECONDS), needs(req(PROC_REF(has_trap), silent = TRUE)), begins(MSG(mine/removing_trap)), then(PROC_REF(screwdriver_act_done)))
+	op("self", in_hand(), label("Use"), begins(PROC_REF(priming_begins)), wait(10 SECONDS), on_interrupt(PROC_REF(priming_failed)), then(PROC_REF(primed)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-/obj/item/mine/proc/screwdriver_used(datum/act/op/A)
-	var/mob/living/user = A.actor
-	if(!trap)
-		return OP_OK
-	to_chat(user, span_notice("You begin removing \the [trap]."))
-	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
-	return OP_OK
+MSG_DEF_SELF(mine/removing_trap, span_notice("You begin removing the trap from %T%."))
 
-/obj/item/mine/proc/screwdriver_act_timed_done(mob/living/user)
+/obj/item/mine/proc/has_trap(datum/act/op/A)
+	return !!trap
+
+/obj/item/mine/proc/screwdriver_act_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!(trap))
 		return
 	to_chat(user, span_notice("You finish disconnecting the mine's trigger."))

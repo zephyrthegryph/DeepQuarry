@@ -122,8 +122,8 @@ MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here
 TRACKED(/obj/structure/marker_beacon, picked_color)
 
 CAPABILITIES(/obj/structure/marker_beacon)
-	op("pick_up", hand(), ungated(), then(PROC_REF(picked_up_by_hand)))
-	op("pick_up_into", item(/obj/item/stack/marker_beacon), passes(), then(PROC_REF(picked_up_into_stack)))
+	op("pick_up", hand(), ungated(), needs(req(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_by_hand)))
+	op("pick_up_into", item(/obj/item/stack/marker_beacon), passes(), needs(req(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_into_stack)))
 	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), then(PROC_REF(recolor_asked)))
 	param(nameof(color_at_make), pos = 1, apply = PROC_REF(light_beacon))
 
@@ -153,16 +153,19 @@ CAPABILITIES(/obj/structure/marker_beacon)
 	look.state("[icon_base][lowertext(picked_color)]-on")
 	look.light(light_range, light_power, GLOB.marker_beacon_colors[picked_color])
 
+MSG_DEF_SELF(marker_beacon/picking_up, span_notice("You start picking %T% up..."))
+
+/// Requirement: a permanent beacon stays.
+/obj/structure/marker_beacon/proc/removable(datum/act/op/A)
+	return !read_once(perma) // a beacon is permanent from the day it is made
+
+/// How long picking the beacon up takes.
+/obj/structure/marker_beacon/proc/remove_wait(datum/act/op/A)
+	return remove_speed
+
 /// An empty hand takes the beacon up after a wait (a permanent one stays).
 /obj/structure/marker_beacon/proc/picked_up_by_hand(datum/act/op/A)
 	var/mob/living/user = A.actor
-	if(perma)
-		return OP_OK
-	to_chat(user, span_notice("You start picking [src] up..."))
-	task_timed(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
-	return OP_OK
-
-/obj/structure/marker_beacon/proc/attack_hand_timed_done(mob/living/user)
 	var/obj/item/stack/marker_beacon/M = new(loc)
 	M.set_picked_color(picked_color)
 	transfer_fingerprints_to(M)
@@ -171,23 +174,17 @@ CAPABILITIES(/obj/structure/marker_beacon)
 		replace_with(src, M)
 	else
 		consume(M, user)
+	return OP_OK
 
 /// A beacon stack held against a placed beacon takes it back into the stack after a wait (a permanent one stays).
 /obj/structure/marker_beacon/proc/picked_up_into_stack(datum/act/op/A)
-	var/mob/user = A.actor
-	if(perma)
-		return OP_OK
 	var/obj/item/stack/marker_beacon/M = A.held
-	to_chat(user, span_notice("You start picking [src] up..."))
-	task_timed(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(M))
-	return OP_OK
-
-/obj/structure/marker_beacon/proc/attackby_timed_done(obj/item/stack/marker_beacon/M)
 	if(!(M.get_amount() + 1 <= M.max_amount))
-		return
+		return OP_OK
 	M.add(1)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	consume(src)
+	return OP_OK
 
 /// The alt-click: ask which colour the beacon should be (a permanent one ignores it silently).
 /obj/structure/marker_beacon/proc/recolor_asked(datum/act/op/A)

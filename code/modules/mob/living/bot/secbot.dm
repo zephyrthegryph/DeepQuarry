@@ -81,7 +81,7 @@
 	endurance = 130
 
 /mob/living/bot/secbot/update_icons()
-	if(on && task_busy(src))
+	if(on && bot_busy())
 		icon_state = "[default_icon_state]-c"
 	else
 		icon_state = "[default_icon_state][on]"
@@ -349,25 +349,26 @@ CAPABILITIES(/mob/living/bot/secbot)
 			H.stun_effect_act(0, stun_strength, null, electric = TRUE)
 			play_sfx(src, SFX_WEAPONS_EGLOVES)
 			do_attack_animation(H)
-			task_hold_busy(src, 2, PROC_REF(update_icons))
+			bot_hold(2, PROC_REF(update_icons))
 			update_icons()
 			act_message(H, src, others = span_warning("%U% was prodded by %T% with a stun baton!"))
 			insult(H)
 		else
 			play_sfx(src, SFX_WEAPONS_HANDCUFFS, extrarange = -2)
 			act_message(src, H, others = span_warning("%U% is trying to put handcuffs on %T%!"))
-			bot_work(6 SECONDS, H, PROC_REF(UnarmedAttack_secbot_done), list(H))
+			bot_work(6 SECONDS, H, PROC_REF(handcuffed))
 	else if(isliving(M))
 		var/mob/living/L = M
 		L.injure(INJURY_BLUNT, xeno_harm_strength, null, src)
 		do_attack_animation(M)
 		play_sfx(src, SFX_SWING_HIT, 2)
-		task_hold_busy(src, 2, PROC_REF(update_icons))
+		bot_hold(2, PROC_REF(update_icons))
 		update_icons()
 		act_message(M, src, others = span_warning("%U% was beaten by %T% with a stun baton!"))
 		insult(L)
 
-/mob/living/bot/secbot/proc/UnarmedAttack_secbot_done(mob/living/carbon/human/H)
+/mob/living/bot/secbot/proc/handcuffed(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
 	if(!H.get_equipped_item(SLOT_ID_HANDCUFFED))
 		if(istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/rig) && istype(H.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/gauntlets/rig))
 			H.equip_to_slot_or_del(new /obj/item/handcuffs/cable(H), SLOT_ID_HANDCUFFED) // Better to be cable cuffed than stun-locked

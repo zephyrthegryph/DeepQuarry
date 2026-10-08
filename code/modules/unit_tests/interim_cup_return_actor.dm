@@ -21,7 +21,7 @@
 	TEST_ASSERT_EQUAL(cooler.cups, 10, "full dispenser refuses an eleventh cup")
 	TEST_ASSERT(!QDELETED(extra), "capacity refusal preserves the exact empty paper cup")
 	var/list/before = turf_contents_of_type(T, /obj/item/reagent_containers/food/drinks/sillycup)
-	cooler.interaction_hand(actor, null, null)
+	test_op_handler(cooler, "interaction_hand", actor)
 	var/list/products = turf_contents_of_type(T, /obj/item/reagent_containers/food/drinks/sillycup) - before
 	TEST_ASSERT_EQUAL(length(products), 1, "real dispensing creates exactly one actual paper cup")
 	var/obj/item/reagent_containers/food/drinks/sillycup/cup = own(products[1])

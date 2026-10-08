@@ -215,6 +215,18 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 	LAZYOR(S.every_parked, index)
 	every_hop_ensure(holder)
 
+/// TRUE while a type-level every() of `holder` has a run scheduled (it is armed, not parked behind its `when =`): the readable state that
+/// replaces om_task_periodic_running().
+/proc/every_running(datum/holder)
+	var/index = 0
+	for(var/datum/centry/C as anything in compiled_entries(table_of(holder), ENTRY_EVERY))
+		if(!isnull(C.owner))
+			continue
+		index++
+		if(after_pending(holder, "every:type:[index]"))
+			return TRUE
+	return FALSE
+
 /// The wake of every parked every(): the synthesized on_change hook of an every() with `when =` runs this when the condition becomes true. Each parked
 /// every() whose condition holds now is armed an interval from now.
 /proc/type_every_wake(datum/act/A)

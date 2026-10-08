@@ -82,6 +82,14 @@
 /datum/request/proc/recheck_extra()
 	return null
 
+/// The thing the question is about: when an op asked it (asks()), `owner` is the op's pending record and this is the op's holder; else the owner itself.
+/// A prompt's recheck_extra() reads this, never `owner`, to ask about the machine it was opened for.
+/datum/request/proc/owner_holder()
+	var/datum/pending_op/pending = owner
+	if(istype(pending))
+		return pending.holder
+	return owner
+
 /// A request that has ended can not be answered again.
 /datum/request/proc/is_open()
 	return isnull(outcome) && !QDELETED(src)

@@ -120,6 +120,10 @@ TRACKED(/obj/structure/reflector, admin)
 
 CAPABILITIES(/obj/structure/reflector)
 	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(reflector_not_admin_holds), because = PROC_REF(reflector_not_admin_refusal))), then(PROC_REF(interaction_item)))
+	op("dismantle", tool(TOOL_WRENCH), label("Dismantle"), when(PROC_REF(can_be_deconstructed)), needs(req(PROC_REF(not_anchored), because = MSG(reflector/unweld_first))),
+		begins(MSG(reflector/dismantling)), wait(2 SECONDS), then(PROC_REF(dismantled)))
+	op("weld_down", lit_welder(fuel = 1), label("Weld to the floor"), when(PROC_REF(not_anchored)), begins(MSG(reflector/welding_down), blind = span_hear("You hear welding.")), wait(2 SECONDS), then(PROC_REF(welded_down)))
+	op("cut_free", lit_welder(fuel = 1), label("Cut free"), when(nameof(anchored)), priority(OP_PRIORITY_PART + 1), then(PROC_REF(cut_free)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Rotate"), when(req(PROC_REF(reflector_finished_holds))), then(PROC_REF(interaction_alt)))
 
 /obj/structure/reflector/proc/reflector_not_admin(mob/actor, atom/target, obj/item/held)
@@ -144,38 +148,11 @@ CAPABILITIES(/obj/structure/reflector)
 		playsound(W, W.usesound, 50, 1)
 		return TRUE
 
-	if(W.has_tool_quality(TOOL_WRENCH) && can_decon)
-		if(anchored)
-			to_chat(user, span_warning("Unweld [src] from the floor first!"))
-			return TRUE
-		act_message(user, src, MSG_SELF(span_notice("You start to dismantle %T%...")), MSG_OTHERS(span_notice("%U% starts to dismantle %T%.")))
-
-		task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-	else if(W.get_welder())
-		var/obj/item/weldingtool/I = W.get_welder()
-		if(!anchored)
-			if(!I.get_fuel())
-				to_chat(user, span_warning("You require fuel to weld the [src]!"))
-				return TRUE
-
-			act_message(user, src, MSG_SELF(span_notice("You start to weld %T% to the floor...")), \
-				MSG_OTHERS(span_notice("%U% starts to weld %T% to the floor.")), \
-				MSG_BLIND(span_hear("You hear welding.")))
-
-			task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, I))
-			return TRUE
-		else
-			if(!I.remove_fuel(1,user))
-				return TRUE
-
-			act_message(user, src, MSG_SELF(span_notice("You start to cut %T% free from the floor...")), \
-				MSG_OTHERS(span_notice("%U% starts to cut %T% free from the floor.")), \
-				MSG_BLIND(span_hear("You hear welding.")))
-			set_anchored(FALSE)
-			to_chat(user, span_notice("You cut [src] free from the floor."))
+	if(W.get_welder() || (W.has_tool_quality(TOOL_WRENCH) && can_decon))
+		return TRUE
 
 	//Finishing the frame
-	else if(istype(W, /obj/item/stack/material))
+	if(istype(W, /obj/item/stack/material))
 		if(finished)
 			return TRUE
 		var/obj/item/stack/material/S = W
@@ -196,19 +173,31 @@ CAPABILITIES(/obj/structure/reflector)
 				replace_with(src, /obj/structure/reflector/box)
 	return TRUE
 
-/obj/structure/reflector/proc/attackby_timed_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%...")), MSG_OTHERS(span_notice("%U% dismantles %T%.")))
+MSG_DEF(reflector/unweld_first, span_warning("Unweld the reflector from the floor first!"), null)
+MSG_DEF(reflector/dismantling, span_notice("You start to dismantle %T%..."), span_notice("%U% starts to dismantle %T%."))
+MSG_DEF(reflector/welding_down, span_notice("You start to weld %T% to the floor..."), span_notice("%U% starts to weld %T% to the floor."))
+
+/// A wrench takes it apart only when it can be deconstructed (a fixed property of the type).
+/obj/structure/reflector/proc/can_be_deconstructed(datum/act/op/A)
+	return !!read_once(can_decon)
+
+/obj/structure/reflector/proc/not_anchored(datum/act/op/A)
+	return !anchored
+
+/obj/structure/reflector/proc/dismantled(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You dismantle %T%...")), MSG_OTHERS(span_notice("%U% dismantles %T%.")))
 	if(buildstackamount)
 		new buildstacktype(drop_location(), buildstackamount)
 	replace_with(src, framebuildstacktype, framebuildstackamount)
-/obj/structure/reflector/proc/attackby_timed_done2(mob/user, obj/item/weldingtool/I)
-	if(!I.remove_fuel(1,user))
-		to_chat(user, span_warning("You require fuel to weld the [src]!"))
-		return
+
+/obj/structure/reflector/proc/welded_down(datum/act/op/A)
 	set_anchored(TRUE)
-	act_message(user, src, MSG_SELF(span_notice("You weld %T% to the floor...")), \
-		MSG_OTHERS(span_notice("%U% welds %T% to the floor.")), \
-		MSG_BLIND(span_hear("You hear welding.")))
+	act_message(A.actor, src, MSG_SELF(span_notice("You weld %T% to the floor...")), 		MSG_OTHERS(span_notice("%U% welds %T% to the floor.")), 		MSG_BLIND(span_hear("You hear welding.")))
+
+/obj/structure/reflector/proc/cut_free(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You start to cut %T% free from the floor...")), 		MSG_OTHERS(span_notice("%U% starts to cut %T% free from the floor.")), 		MSG_BLIND(span_hear("You hear welding.")))
+	set_anchored(FALSE)
+	to_chat(A.actor, span_notice("You cut [src] free from the floor."))
 
 /obj/structure/reflector/proc/rotate(mob/user)
 	if (!can_rotate || admin)

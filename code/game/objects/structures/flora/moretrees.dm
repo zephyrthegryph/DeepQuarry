@@ -24,7 +24,7 @@
 	if(is_stump)
 		return
 
-	is_stump = TRUE
+	set_is_stump(TRUE)
 	set_density(FALSE)
 	icon_state = "[icon_state]_stump"
 	cut_overlays()

@@ -30,7 +30,7 @@ human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench menu: Use wrench (refused: )
 human|/obj/item/tool/wrench menu: Yank the flush lever
 human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Flush

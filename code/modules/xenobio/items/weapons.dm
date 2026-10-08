@@ -208,7 +208,6 @@ CAPABILITIES(/obj/item/xenobio)
 	name = "portable slime processor"
 	desc = "An industrial grinder used to automate the process of slime core extraction.  It can also recycle biomatter. This one appears miniturized"
 	icon_state = "chainsaw0"
-	var/processing = FALSE // So I heard you like processing.
 	var/list/to_be_processed
 	var/monkeys_recycled = 0
 
@@ -216,76 +215,85 @@ CAPABILITIES(/obj/item/xenobio)
 /obj/item/slime_grinder/var/cube_making = FALSE
 TRACKED(/obj/item/slime_grinder, cube_making)
 
+/// What the grinder is working on: the REF text of the target of the running grind, or "cubes" while the last monkey's cubes are made. Null: free.
+/obj/item/slime_grinder/var/grinding = null
+
+// Instead of bringing the slime to the grinder, lets bring the grinder to the slime! This will process slimes and monkies one at a time:
+// the grinder is busy for a whole grind, a slime's cores one timed action each, a monkey one timed action and then the cubes.
 CAPABILITIES(/obj/item/slime_grinder)
 	every(1 SECOND, then(PROC_REF(make_cubes)), when = nameof(cube_making))
+	op("grind_monkey", at_target(/mob/living/carbon/human/monkey), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Grind"),
+		needs(req_adjacent(), req(PROC_REF(grinder_free), silent = TRUE), req(PROC_REF(target_processable), because = PROC_REF(cannot_process_text))),
+		claims(0), starts(PROC_REF(grind_started)), wait(1.5 SECONDS), on_interrupt(PROC_REF(grind_ended)), then(PROC_REF(grind_monkey)))
+	op("grind_slime", at_target(/mob/living/simple_mob/slime), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Grind"),
+		needs(req_adjacent(), req(PROC_REF(grinder_free), silent = TRUE), req(PROC_REF(target_processable), because = PROC_REF(cannot_process_text))),
+		claims(0), starts(PROC_REF(grind_started)), wait(1.5 SECONDS), on_interrupt(PROC_REF(grind_ended)), then(PROC_REF(grind_core_done)))
 
-/// Grinds `AM`: one core per timed action for slimes; a monkey is one timed action, then cubes.
-/obj/item/slime_grinder/proc/extract(atom/movable/AM, mob/living/user)
-	processing = TRUE
-	if(istype(AM, /mob/living/simple_mob/slime))
-		grind_core(AM, user)
-		return
-	if(istype(AM, /mob/living/carbon/human/monkey))
-		play_sfx(src, SFX_MACHINES_JUICER)
-		task_timed(user, 1.5 SECONDS, src, src, PROC_REF(grind_monkey), list(AM), on_fail = PROC_REF(grind_ended))
-		return
-	processing = FALSE
+/// Requirement: nothing else is being ground (another target, or the cubes of the last monkey). The grind the op itself started does not refuse it.
+/obj/item/slime_grinder/proc/grinder_free(datum/act/op/A)
+	var/working = read_once(grinding) // a plain var: the juicer starts inside the wait, and a published write there would re-check the op half-started
+	return isnull(working) || working == "\ref[A.target]"
 
-/obj/item/slime_grinder/proc/grind_core(mob/living/simple_mob/slime/S, mob/living/user)
-	if(!S.cores)
-		consumed(S, src)
-		processing = FALSE
-		return
+/// Requirement: the target is a dead slime or a dead monkey.
+/obj/item/slime_grinder/proc/target_processable(datum/act/op/A)
+	return can_insert(A.target)
+
+/obj/item/slime_grinder/proc/cannot_process_text(datum/act/op/A)
+	return span_warning("\The [src] cannot process \the [A.target] at this time.")
+
+/// The juicer starts and the grinder is busy until the grind ends.
+/obj/item/slime_grinder/proc/grind_started(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_JUICER)
-	task_timed(user, 1.5 SECONDS, src, src, PROC_REF(grind_core_done), list(S, user), on_fail = PROC_REF(grind_ended))
+	grinding = "\ref[A.target]"
 
-/obj/item/slime_grinder/proc/grind_core_done(mob/living/simple_mob/slime/S, mob/living/user)
-	new S.coretype(get_turf(S))
-	play_sfx(src, SFX_EFFECTS_SPLAT)
-	S.cores--
-	grind_core(S, user)
+/// A grind that ends without finishing: the grinder is free again.
+/obj/item/slime_grinder/proc/grind_ended(datum/act/op/A)
+	grinding = null
 
-/obj/item/slime_grinder/proc/grind_monkey(mob/living/carbon/human/M)
+/// One core out of the slime; the next core is the same op again, and a slime with none left is consumed.
+/obj/item/slime_grinder/proc/grind_core_done(datum/act/op/A)
+	var/mob/living/simple_mob/slime/S = A.target
+	grinding = null
+	if(S.cores > 0)
+		new S.coretype(get_turf(S))
+		play_sfx(src, SFX_EFFECTS_SPLAT)
+		S.cores--
+	if(S.cores > 0)
+		log_game("slime grinder: [key_name(A.actor)] keeps grinding [S] ([S.cores] cores left)")
+		perform_op(A.actor, S, "grind_slime", src, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+		return OP_OK
+	consumed(S, src)
+	return OP_OK
+
+/obj/item/slime_grinder/proc/grind_monkey(datum/act/op/A)
 	play_sfx(src, SFX_EFFECTS_SPLAT)
-	consumed(M, src)
+	consumed(A.target, src)
 	monkeys_recycled++
+	grinding = "cubes" // the grinder stays busy until the cubes are made
 	set_cube_making(TRUE)
+	return OP_OK
 
 /// One monkey cube a second while four monkeys' worth is recycled.
 /obj/item/slime_grinder/proc/make_cubes(datum/act/timer/A)
 	if(monkeys_recycled < 4)
-		processing = FALSE
+		grinding = null
 		set_cube_making(FALSE)
 		return
 	new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
 	play_sfx(src, SFX_EFFECTS_SPLAT)
 	monkeys_recycled -= 4
 
-/obj/item/slime_grinder/proc/grind_ended()
-	processing = FALSE
-
 /obj/item/slime_grinder/proc/can_insert(atom/movable/AM)
 	if(istype(AM, /mob/living/simple_mob/slime))
 		var/mob/living/simple_mob/slime/S = AM
-		if(S.stat != DEAD)
+		if(read_once(S.stat) != DEAD)
 			return FALSE
 		return TRUE
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
-		if(!istype(H.species, /datum/species/monkey))
+		if(!istype(read_once(H.species), /datum/species/monkey))
 			return FALSE
-		if(H.stat != DEAD)
+		if(read_once(H.stat) != DEAD)
 			return FALSE
 		return TRUE
 	return FALSE
-
-/obj/item/slime_grinder/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(processing)
-		return ITEM_INTERACT_FAILURE
-	if(!can_insert(M))
-		to_chat(user, span_warning("\The [src] cannot process \the [M] at this time."))
-		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
-		return ITEM_INTERACT_FAILURE
-
-	extract(M, user)
-	return ..()

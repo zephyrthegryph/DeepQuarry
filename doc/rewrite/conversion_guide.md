@@ -355,3 +355,69 @@ What to know:
 * **Checks.** `analyze` rejects a `make()` naming a param its type does not declare or leaving out a required one, a write to a `per_type` var
   outside its build proc, and an ALLOW whose reason describes one of these forms (`lifeforms` lint). `escape_hatches` keeps the count of the
   remaining `ALLOW(init/...)`, `ALLOW(lifecycle)`, `ALLOW(sys_usr_outside_verb)`, content `qdel(` and content `usr` sites, which only falls.
+
+## 12. Timed actions: task_timed, task_start, task_busy
+
+A timed action a player does is an op with a `wait()` part. The old call sat inside a handler that had already been converted (`then(PROC_REF(interaction_x))`
+whose body ends in `task_timed(...)`) or inside a legacy `attack*()` override. The pins `dq_timed_pin/*` record the behaviour on the legacy form
+(duration, a move, a dropped item or a lost target cancels, what completion does, what is said); a conversion keeps each assertion.
+
+**Parts.** What the old call said maps one to one:
+
+| Old | Op |
+|---|---|
+| `task_timed(user, DUR, ...)` | `wait(DUR)` (a runtime duration is `wait(PROC_REF(x))`, `x(datum/act/A)` returns deciseconds) |
+| `on_done = PROC_REF(done), done_args = list(user, I)` | `then(PROC_REF(done))`, `done(datum/act/op/A)`: `A.actor`, `A.held`, `A.target`, `A.holder` |
+| the "You begin ..." message before the call | `begins(MSG(x))`, `MSG_DEF_SELF(x, "You begin %T% ...")` or `MSG_DEF(x, self, others)` (`%U%` user, `%T%` target, `%I%` item) |
+| the finishing message | `says(MSG(x))` or stay in the `then()` proc |
+| checks and refusals before the call | `when(...)` if the click is not this op's (falls through), `needs(req(PROC_REF(x), because = MSG(y)))` if the actor is refused |
+| `M.use(5)` / `consume` of the held stack | `stack(/obj/item/stack/x, 5)` as the binding (the cost is reserved at the end) |
+| `on_fail = ...`, `fail_message` | `on_interrupt(PROC_REF(x))` (`A.reason`) |
+| `claims = TRUE`, `busy = X`, `if(task_busy(X)) return` | `claims()` on the op, `req_unclaimed()` for an op that must not run over a claiming one |
+| `IGNORE_USER_LOC_CHANGE` / `IGNORE_HELD_ITEM` / `IGNORE_TARGET_LOC_CHANGE` | `wait(DUR, keeps = HELD \| ADJACENT)` (drop `STAY` for a wait the actor may walk away from) |
+| `progress = FALSE` | `silent_wait()` |
+| `task_start(/datum/task/timed/x, user, target, var = ...)` | the task's vars become the op: `duration` the `wait()`, `complete_proc` the `then()`, `fail_message` the `on_interrupt()`; state it carried is `captures(nameof(v))` on the op or a field of the target |
+| a legacy `attack()` / `attack_hand()` / `attackby()` that starts the task | an `op("key", hand() / item(T) / in_hand() / tool(Q) / menu(), ...)` in the type's `CAPABILITIES`; the override is deleted |
+| a bot or script starting the action | `op("key", ai(), wait(...), then(...))` and `perform_op(user, target, "key", origin = ORIGIN_SYSTEM)` |
+
+**What does not change.** Exclusivity is `claims()` and nothing else: an op that declares none holds nothing, and a second input from the same player does not
+stop the first (the old task refused a second action on the same target; an op that must not be run twice says `claims()`). The start message, the start sound and
+a start-time effect (`begins()`, `plays(SFX, at_start = TRUE)`, `starts(PROC_REF(x))`) happen when the wait starts, not at the end. A bot or mob doing a job is an
+`ai()` op (`perform_op(actor, target, key, null, ORIGIN_AI, AUTH_AI)` or `ORIGIN_SYSTEM`): the wait registers a pending op of its actor and keeps the default
+keeps (`TARGET_PRESENT`, `STAY`), so a target carried off or a mob that moves ends the work. A tool act that refused a state and ended the click
+(`ITEM_INTERACT_BLOCKING`) is an op of the same tool with a `when()` for that state and `needs(req(PROC_REF(never), silent = TRUE))`: the tool does not fall through to a hit.
+A line that names the held item, the victims or a material is `begins(PROC_REF(x))` with `x` returning `msg_text(self, others, blind)`. A "no" to a
+prompt that ends the op is `asks(..., ends_on_no = TRUE)`. A field that must not change during a wait is `captures(nameof(v), resume = CANCEL_IF_CHANGED)`.
+A thing that is busy but is not an actor is `hold_busy()` / `work_busy()` / `release_busy()` (code/library/jobs/busy.dm); "is its `every()` armed" is `every_running()`.
+
+**What a `when()` or `req()` may read.** A tracked var (make a plain var `TRACKED` and write it through its setter when it changes in play), a stat, a relation, or
+an accessor with `READS_AS`. A value that is effectively fixed while a click is being decided (where an item lies, a player's key, the config, what stands on a
+tile) is wrapped in `read_once(x)`. Do not move a read into a global proc with a blanket `READS_FROM()`, and do not rename a var to get past the lint.
+
+**Two entry shapes that blocked about two hundred sites.**
+
+* *A verb, an ability or a prompt answer starts the work* (`*_chosen`, `*_agreed(datum/act/request/A)`, a `/mob/living/proc/verb` that asks and then waits). The actor's own
+  op is a `menu(button =, bind =)` binding (origin `ORIGIN_VERB` for the Abilities entry and the action button, `ORIGIN_HOTKEY` for a keybind), on the mob's `CAPABILITIES`
+  (or a capability it is granted, `grant(E, capability, source)`). The question is an `asks(/datum/prompt/choice, fields = list(...), ends_on_no = TRUE)` step of the same
+  op, the work is the `wait()` after it, the effect is the `then()` reading `A.answer` and `A.captured(nameof(v))`:
+  `op("shapeshift", menu(button = "Shapeshift"), asks(/datum/prompt/choice/form), begins(MSG(x)), wait(3 SECONDS), then(PROC_REF(changed)))`. The old `open_request(..,
+  PROC_REF(x_chosen))` and the `x_chosen` handler go; the verb stub is deleted. The handler that was reached by a prompt for another reason (an admin window) keeps its
+  own op and calls `perform_op(actor, holder, "key", null, ORIGIN_VERB, AUTH_PHYSICAL)`.
+* *A held item's `attack()` / `afterattack()` / `*_act()` override does the timed work on another thing.* The timed part is an op of the item's `CAPABILITIES` with an
+  `at_target(T)` binding (the item used on a target of type T; `answers(INTENT_USE, ...)` for the intent), or an op of the target's `CAPABILITIES` with `item(T)` / `tool(Q)`
+  when the target is the one type that cares. The override keeps only what is instant, or is deleted; a refusal the override ended the click with is a `needs(req(.., silent =
+  TRUE))` or a blocked op (see above). Prefer the item side when the item acts on many targets (a lick, a scanner), the target side when many items act on one target (a door).
+
+**Recipe, per file.** (1) Read the type's `CAPABILITIES`, every proc named in it, and every caller of the legacy proc. (2) Write the pin first if `dq_timed_pin`
+has no assertion for the shape: drive `test_click(user, target, held)`, `test_time()`, read `test_chat_of(user)`; run it on the legacy form. (3) Convert; delete the
+old proc and the done proc it names; keep behaviour. (4) `bash tools/dq_focused_test.sh 'dq_timed_pin/*'` (distinct run dir per agent), then
+`bash tools/ci/check_ratchets.sh`.
+
+**Pitfalls found.**
+
+* Two ops on one input (`hand()`) with `when(PROC_REF(a))` / `when(PROC_REF(b))` are an `op_clash` even when the procs exclude each other: give one a tier,
+  `priority(OP_PRIORITY_TAKE_OUT)`, not `priority(above(key))` (that is counted by the `op_order` ceiling).
+* A `req(PROC_REF(x))` that reads a stack's amount fails the `reads` lint (the amount is untracked): use `stack(T, n)`. An `ALLOW(reads)` that no longer triggers is
+  itself an error (`allow_annotations --unused`).
+* Heredocs through the shell eat backslashes (`\a`, `\the`): write DM with the Write/Edit tools.
+* A pin that reads `timed_tasks_of(user)` only sees the legacy form: use the `running()` / `was_cancelled()` helpers of `dq_timed_pin`, which read a pending op as well.

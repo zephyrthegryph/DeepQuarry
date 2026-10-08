@@ -80,7 +80,7 @@
 
 CAPABILITIES(/obj/structure/meteorite)
 	climb()
-	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item/pickaxe), label("Use"), begins(PROC_REF(break_apart_text)), wait(PROC_REF(break_apart_time)), then(PROC_REF(break_apart_done)))
 
 // ALLOW(init/INSTANCE_STATE): rolls the ore or artifact this meteorite holds
 /obj/structure/meteorite/Initialize(mapload)
@@ -99,23 +99,22 @@ CAPABILITIES(/obj/structure/meteorite)
 		if(91 to 100)
 			new /obj/machinery/artifact(src)
 
-/obj/structure/meteorite/proc/break_apart_done(mob/M)
+/obj/structure/meteorite/proc/break_apart_done(datum/act/op/A)
+	var/mob/M = A.actor
 	act_message(M, src, MSG_SELF(span_warning("You break apart %T%.")), MSG_OTHERS(span_warning("%U% breaks apart %T%.")))
 	for(var/obj/O in contents_of(src))
 		O.forceMove(get_turf(src))
 	destroyed(src, M, BRUTE)
 
-/// Old attackby.
-/obj/structure/meteorite/proc/interaction_item(datum/act/op/A)
-	var/mob/M = A.actor
-	var/obj/item/I = A.held
-	if(istype(I, /obj/item/pickaxe))
-		var/obj/item/pickaxe/P = I
-		act_message(M, src, MSG_SELF(span_warning("You start [P.drill_verb] %T%.")), MSG_OTHERS(span_warning("%U% starts [P.drill_verb] %T%.")))
+/// The lines of the start name what the pickaxe does.
+/obj/structure/meteorite/proc/break_apart_text(datum/act/op/A)
+	var/obj/item/pickaxe/P = A.held
+	return msg_text(span_warning("You start [P.drill_verb] %T%."), span_warning("%U% starts [P.drill_verb] %T%."))
 
-		task_timed(M, P.digspeed*3, src, src, PROC_REF(break_apart_done), list(M))
-		return OP_PASS
-	return OP_PASS
+/// Three times the pickaxe's dig time.
+/obj/structure/meteorite/proc/break_apart_time(datum/act/op/A)
+	var/obj/item/pickaxe/P = A.held
+	return P.digspeed * 3
 
 /// Accessor for the strike_target var.
 /datum/event/meteor_strike/proc/strike_target() as /turf

@@ -52,6 +52,12 @@ CAPABILITIES(/mob/living/carbon)
 	owns_one(nameof(ingested), /datum/reagents/metabolism/ingested)
 	owns_one(nameof(touching), /datum/reagents/metabolism/touch)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(species_emp_effects)))
+	// Resisting (resist.dm): resist_restraints() / resist_buckle() start these by key; the resister has to stand still. A throat cut from a neck grab (carbon_defense.dm).
+	op("cuff_remove", ai(), begins(PROC_REF(cuff_remove_text)), wait(PROC_REF(cuff_breakout_time)), then(PROC_REF(cuff_remove_done)))
+	op("cuff_break", ai(), begins(PROC_REF(cuff_break_text)), wait(5 SECONDS), on_interrupt(PROC_REF(cuff_break_failed)), then(PROC_REF(cuff_break_done)))
+	op("buckle_escape", ai(), begins(PROC_REF(buckle_escape_text)), wait(2 MINUTES), then(PROC_REF(buckle_escape_done)))
+	op("slit_throat", ai(), begins(MSG(throat/slit)), wait(2 SECONDS), then(PROC_REF(attack_throat_carbon_done)))
+	op("pat_out_flames", ai(), begins(MSG(pat_out/begin)), wait(1.5 SECONDS), then(PROC_REF(help_shake_act_carbon_done)))
 	op("vv_addorgan", topic_in(VV_TOPIC, VV_HK_ADDORGAN), needs(req_rights(R_SPAWN)), asks(/datum/prompt/choice/vv_spawn, fields = list("title" = "Organ", "question" = "Please choose an organ to add.", "choices" = computed(PROC_REF(vv_organ_type_choices))), step = "organ"), then(PROC_REF(vv_organ_added_apply)))
 	op("vv_remorgan", topic_in(VV_TOPIC, VV_HK_REMOVEORGAN), needs(req_rights(R_SPAWN)), asks(/datum/prompt/choice/vv_spawn, fields = list("title" = "Organ", "question" = "Please choose an organ to remove.", "choices" = computed(PROC_REF(vv_organ_choices))), step = "organ"), then(PROC_REF(vv_organ_removed_apply)))
 

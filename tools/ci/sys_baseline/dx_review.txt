@@ -137,8 +137,6 @@ manual_push	code/datums/capabilities/library/stamp_target.dm	changed(A, CHANGE_C
 manual_push	code/datums/capabilities/library/writable.dm	changed(A, CHANGE_CAPABILITY)
 manual_push	code/datums/capabilities/library/writable.dm	changed(A, CHANGE_CAPABILITY)
 manual_push	code/datums/capabilities/timed.dm	changed(D, CHANGE_EXPLICIT, var_name)
-manual_push	code/datums/om/library.dm	changed(M, CHANGE_MOB_STATUS)
-manual_push	code/datums/om/library.dm	changed(M, CHANGE_MOB_STATUS)
 manual_push	code/datums/sys/appearance.dm	changed(T, CHANGE_NEIGHBOURS)
 manual_push	code/datums/sys/appearance.dm	changed(A, CHANGE_NEIGHBOURS)
 manual_push	code/game/area/areas.dm	changed(src, CHANGE_AREA_POWER)
