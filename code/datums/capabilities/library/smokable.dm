@@ -83,14 +83,14 @@
 		if(lit_state)
 			look.state(lit_state)
 		return
-	var/datum/cap_smokable_data/D = holder.cap_data?[key]
+	var/datum/cap_smokable_data/D = capability_data(holder)?[key]
 	if(burnt_state && !isnull(D?.burn_left))
 		look.state(burnt_state)
 
 /// Burn time I has left.
 /proc/cap_smokable_burn_left(obj/item/I)
 	var/datum/capability/smokable/C = cap_of(I, /datum/capability/smokable)
-	var/datum/cap_smokable_data/D = I.cap_data?[C.key]
+	var/datum/cap_smokable_data/D = capability_data(I)?[C.key]
 	return isnull(D?.burn_left) ? C.burn_time : D.burn_left
 
 /// Burns `amount` of I's time; a burnt out I goes out. TRUE while it still burns.

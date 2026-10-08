@@ -271,10 +271,6 @@
 /// place. caps_intern_list() applies it; refining a key nothing declared is an init error. A key that
 /// names a capability which is not an op refines that capability: its refined() makes the replacement
 /// from the same named fields.
-/datum/capability/refine
-	var/base_key
-	var/list/overrides
-
 /// key: the op's key (or a capability's). delay: the new wait. effect: the new handler (PROC_REF). input: the new
 /// `using`. action: the new ACT_*. priority: the new OP_PRIORITY_*. No field has two meanings. (A reagent holder is
 /// reagents() in a CAPABILITIES block, changed with configure(reagents(...)): code/library/reagents/reagents.dm.)
@@ -369,3 +365,12 @@ GLOBAL_VAR(op_gesture_now)
 	var/datum/op_def/newer = cap_op_of(later)
 	var/datum/op_def/older = cap_op_of(earlier)
 	return newer && older && !newer.legacy && !older.legacy && !newer.replaces
+
+/datum/capability/entry/operation_conflicts(datum/capability/earlier)
+	return cap_op_key_conflict(src, earlier)
+
+/datum/capability/entry/operation_key()
+	return cap_op_of(src)?.key
+
+/datum/capability/entry/operation_refined(datum/capability/refine/R)
+	return cap_op_refined(src, R)

@@ -11,7 +11,7 @@
 //   the op's when conditions hold.
 //
 // Order: the bind profile's intent list, then the op's tier, then target before held before actor, then the more specific held-item binding
-// (an item type narrower than /obj/item, then a tool quality, then a broad item), then declaration order; an explicit priority(above/below)
+// (an item type narrower than /obj, then a tool quality, then a broad item), then declaration order; an explicit priority(above/below)
 // or click_order() moves an op over all of that. The first candidate runs through Require, Wait and Do. If Require refuses the player sees the reason and the input never
 // falls through; only Match failures fall through. If nothing survives and a gate dropped something, the engine shows the best near-miss's reason.
 //
@@ -50,7 +50,7 @@
 /datum/op_resolution
 	var/mob/actor
 	var/atom/target
-	var/obj/item/held
+	var/obj/held
 	var/origin
 	var/authority
 	var/gesture
@@ -123,7 +123,7 @@
 /proc/op_intents_for(mob/actor, gesture)
 	switch(gesture)
 		if(GESTURE_CLICK, GESTURE_SELF)
-			if(actor && STANCE_IS_HOSTILE(actor.input_stance()))
+			if(actor && STANCE_IS_HOSTILE(actor.op_input_stance()))
 				return list(INTENT_ATTACK, INTENT_USE)
 			return list(INTENT_USE)
 		if(GESTURE_ALT)
@@ -159,13 +159,13 @@
 // ---- candidate collection ----
 
 /// The input's own match of a binding: does this (actor, target, held) fit what the binding asks for? Silent.
-/proc/op_binding_fits(datum/entry/part/bind/B, mob/actor, datum/target, obj/item/held, datum/holder, side)
+/proc/op_binding_fits(datum/entry/part/bind/B, mob/actor, datum/target, obj/held, datum/holder, side)
 	switch(B.bind_kind)
 		if(BIND_TOOL)
-			if(!isitem(held) || side != CAND_TARGET)
+			if(!op_item_like(held) || side != CAND_TARGET)
 				return FALSE
 			for(var/quality in B.args["quality"])
-				if(held.has_tool_quality(quality))
+				if(held.op_tool_quality(quality))
 					return TRUE
 			return FALSE
 		if(BIND_ITEM, BIND_STACK)
@@ -342,7 +342,7 @@
 	return seq
 
 /// Builds the candidate list of an input. `gesture` null means a pick by key or a menu read (no intent filter). Pass 1: cheap gates only.
-/proc/op_resolve(mob/actor, atom/target, obj/item/held, origin, authority, gesture = null, key = null, include_legacy = FALSE, keep_dropped = FALSE)
+/proc/op_resolve(mob/actor, atom/target, obj/held, origin, authority, gesture = null, key = null, include_legacy = FALSE, keep_dropped = FALSE)
 	RETURN_TYPE(/datum/op_resolution)
 	// A resolution that names a key, or explains itself, keeps every candidate and the filter that dropped it; the rest never allocate a
 	// candidate for one the binding's own input or the intent drops silently.
@@ -366,7 +366,7 @@
 	if(actor && !QDELETED(actor) && actor != target)
 		seq = op_collect_side(R, actor, CAND_ACTOR, key, gesture, keep_dropped, seq)
 	if(include_legacy)
-		op_legacy_candidates(R)
+		input_compatibility().compatibility_candidates(R)
 	op_resolution_sort(R)
 	if(!length(R.ordered))
 		for(var/datum/op_cand/C as anything in R.all)
@@ -444,7 +444,7 @@
 			return
 		C.rank = best
 		var/list/stances = LAZYACCESS(P.selects, "stance")
-		if(length(stances) && !(R.actor?.input_stance() in stances))
+		if(length(stances) && !(R.actor?.op_input_stance() in stances))
 			C.dropped_by = GATE_MATCH
 			return
 		var/pinned = LAZYACCESS(P.selects, "gesture")
@@ -551,21 +551,14 @@
 
 /// How specific a binding is about the held item, for op_specificity_sort: of two candidates answering one input at one intent and tier, on
 /// one side, the more specific binding answers first. 0: the binding names no held item (hand(), in_hand(), at_target(), ...), and is not
-/// compared. 1: a broad item (item(/obj/item), stack(/obj/item)), whatever when() or acceptance proc gates it (stock's stockable, the
-/// airlock's prying_weapon: opaque, so they rank as what they bind). 2: a tool quality (tool(Q), any_of_tools(...)). 4 and up: an item
-/// or stack type narrower than /obj/item, ranked by path depth (item(/obj/item/pen) is 4, item(/obj/item/stack/material/plasteel) 6). So:
-/// exact item type > tool quality > broad item type.
+/// compared. Inventory-specific ranks come from the library: a broad inventory item ranks below a tool quality,
+/// and a narrower inventory item ranks above it by its declared type depth. Other dragged types rank zero.
 /proc/op_binding_specificity(datum/entry/part/bind/B)
 	switch(B.bind_kind)
 		if(BIND_TOOL)
 			return 2
 		if(BIND_ITEM, BIND_STACK)
-			var/type = B.args["type"]
-			if(!ispath(type, /obj/item))
-				return 0 // a mob or structure dragged in (climb_in's item(/mob/living)): not a held item
-			if(type == /obj/item)
-				return 1
-			return length(splittext("[type]", "/")) // "/obj/item/pen" -> 4 pieces ("", obj, item, pen): /obj/item/X is 4, one more per level
+			return operation_compatibility().item_specificity(B.args["type"])
 	return 0
 
 /// Binding specificity: within each run of candidates tied on intent rank, tier and side, the held-item bindings (op_binding_specificity
@@ -614,7 +607,7 @@
 // ---- the act a candidate runs in ----
 
 /// A pooled op context for candidate C and an input: the fields a requirement or a condition reads. The caller releases it.
-/proc/op_act_for(datum/op_cand/C, mob/actor, datum/target, obj/item/held, origin, authority)
+/proc/op_act_for(datum/op_cand/C, mob/actor, datum/target, obj/held, origin, authority)
 	RETURN_TYPE(/datum/act/op)
 	var/datum/act/op/A = take(/datum/act/op)
 	A.key = C.oplan.key
@@ -623,7 +616,7 @@
 	A.activation = C.activation // ALLOW(ownership): a pooled transient: reset on release
 	A.source = C.activation ? C.activation.source : C.holder // ALLOW(ownership): a pooled transient: reset on release
 	A.actor = actor
-	A.held = held
+	A.set_held_provider(held)
 	// An op with no target binding has A.target = A.holder (an actor's own op, a self ui_act()).
 	// An actor-side op that declares a reach (a natural weapon's bite) is aimed at what the input addressed.
 	var/aimed = C.side == CAND_ACTOR && !isnull(target) && target != actor && (!isnull(LAZYACCESS(C.oplan.selects, "reach")) || C.binding?.bind_kind == BIND_CLICKS)
@@ -654,7 +647,7 @@
 		if(!op_cand_when(R, C))
 			continue
 		if(op_cand_path_reason(R, C))
-			// A catch-all (item(/obj/item): set anything down inside, swallow anything) behind a closed door claims nothing: it is dropped as if
+			// A catch-all (item(/obj): set anything down inside, swallow anything) behind a closed door claims nothing: it is dropped as if
 			// its door were a when(), so the click goes on to what the held thing does by itself (package wrap on a shut locker).
 			if(!op_cand_catch_all(C))
 				set_aside ||= C
@@ -668,7 +661,7 @@
 
 /// Is candidate C a catch-all: its item() binding takes any item or movable?
 /proc/op_cand_catch_all(datum/op_cand/C)
-	return C.item_type == /obj/item || C.item_type == /atom/movable || C.item_type == /obj
+	return operation_compatibility().broad_item_type(C.item_type) || C.item_type == /atom/movable || C.item_type == /obj
 
 /// Does candidate C's binding take the held thing (item(), tool(), stack(), in_hand())? A hand() binding answers whatever is held.
 /proc/op_cand_takes_held(datum/op_cand/C)
@@ -701,6 +694,8 @@
 /// provider set generation), the ids never reused (a ref would be). An entity's act generation bumps when a published key, a relation, a stat, its place or
 /// its contents change (op_changed()), and the provider set generation when an activation with provides attaches or detaches, so a stale read never
 /// matches: the key itself is what changed. Only a menu that shows a cooldown also carries the time it was read at (a cooldown ends with no publication).
+// Temporary synchronous read scope: list(parent frame, encountered read_once).
+GLOBAL_LIST(op_menu_read_frame)
 GLOBAL_LIST_EMPTY(op_menu_cache) // ALLOW(cache): keyed by generations, so a state change makes the old entry unreachable; bounded by OP_MENU_CACHE_MAX
 #define OP_MENU_CACHE_MAX 512
 /// Menus built (cache misses) since the world started: a test or a bench reads it.
@@ -717,10 +712,10 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 /proc/action_options(mob/actor, atom/target, held_or_route, route = null)
 	// The legacy shape action_options(user, target, route) passes a ROUTE_* text; it keeps its own implementation.
 	if(!isnull(held_or_route) && !isobj(held_or_route) && !ismob(held_or_route))
-		return legacy_action_options(actor, target, held_or_route)
+		return input_compatibility().compatibility_menu(actor, target, held_or_route)
 	if(isnull(held_or_route) && isnull(route) && !op_has_ops(target) && !op_has_ops(actor))
-		return legacy_action_options(actor, target)
-	var/obj/item/held = held_or_route
+		return input_compatibility().compatibility_menu(actor, target)
+	var/obj/held = held_or_route
 	return op_menu(actor, target, held)
 
 /// Does the entity have any op of the new engine?
@@ -735,7 +730,22 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	return FALSE
 
 /// The menu of `target` for `actor`: every op a pick (origin ORIGIN_MENU) could reach, with whether Require would pass now and why not.
-/proc/op_menu(mob/actor, atom/target, obj/item/held)
+/proc/op_menu(mob/actor, atom/target, obj/held)
+	var/list/previous = GLOB.op_menu_read_frame
+	var/list/frame = list(previous, FALSE)
+	var/previous_pure_depth = GLOB.op_pure_depth
+	GLOB.op_menu_read_frame = frame
+	try
+		. = op_menu_read(actor, target, held, frame)
+	catch(var/exception/fault)
+		GLOB.op_menu_read_frame = previous
+		// An aborted condition may not have reached its matching op_pure_end().
+		GLOB.op_pure_depth = previous_pure_depth
+		throw fault
+	GLOB.op_menu_read_frame = previous
+
+/// Builds or reuses rows within the caller's synchronous admission read.
+/proc/op_menu_read(mob/actor, atom/target, obj/held, list/frame)
 	var/stamp = op_now()
 	// An entity that has been asked about keeps a record, so what moves or changes it from now on bumps its generation.
 	var/datum/rx_state/actor_state = actor ? rx_of(actor) : null
@@ -768,9 +778,25 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			enabled = FALSE
 			reason = reason_text(why)
 		rows += list(list("key" = C.oplan.key, "label" = op_label(C.oplan), "enabled" = enabled, "reason" = reason, "id" = C.oplan.key, "name" = op_label(C.oplan)))
+	// A modern actor can inspect an unconverted target: retain that target's legacy radial
+	// rows (and their route/state refusals) beside the actual engine candidates.
+	var/list/legacy_rows = input_compatibility().compatibility_menu(actor, target, ROUTE_PHYSICAL, operations_only = TRUE)
+	for(var/list/legacy_row as anything in legacy_rows)
+		var/key = legacy_row["id"]
+		if(seen[key])
+			continue
+		seen[key] = TRUE
+		var/list/row = legacy_row.Copy()
+		row["key"] = key
+		row["label"] = legacy_row["name"]
+		rows += list(row)
+	// Legacy requirements can read uncached data: evaluate their current refusals each tick.
+	if(length(legacy_rows))
+		timed = TRUE
 	if(length(GLOB.op_menu_cache) >= OP_MENU_CACHE_MAX)
 		GLOB.op_menu_cache.Cut()
-	GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null)
+	if(!frame[2])
+		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null)
 	return rows.Copy()
 
 /// The reason Require would refuse candidate C now (the requirements only, nothing reserved), or null.
@@ -786,9 +812,9 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 /proc/screentip_for(mob/actor, atom/target, held_or_gesture, gesture = null)
 	if(isnull(gesture))
 		if(istext(held_or_gesture))
-			return legacy_screentip_for(actor, target, held_or_gesture)
+			return input_compatibility().compatibility_screentip(actor, target, held_or_gesture)
 		gesture = GESTURE_CLICK
-	var/obj/item/held = held_or_gesture
+	var/obj/held = held_or_gesture
 	if(!istext(held_or_gesture) && !isnull(held_or_gesture) && !isobj(held_or_gesture))
 		return null
 	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), gesture, null, FALSE)
@@ -814,3 +840,9 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		if(GESTURE_RIGHT)
 			return "Right-click"
 	return "[gesture]"
+
+/mob/proc/op_input_stance()
+	return null
+
+/obj/proc/op_tool_quality(quality)
+	return FALSE

@@ -65,7 +65,8 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	set_scan_temp("Scanner ready.", "good")
 	updatemodules()
 
-OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/computer/cloning/var/autoprocess = 0
+TRACKED_BRIDGED(/obj/machinery/computer/cloning, autoprocess, CHANGE_MACHINE_SETTINGS)
 // its linked cloners are released.
 /obj/machinery/computer/cloning/on_destroy(force)
 	releasecloner()

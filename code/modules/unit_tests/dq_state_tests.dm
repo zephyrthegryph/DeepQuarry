@@ -84,7 +84,7 @@ CAPABILITIES(/datum/dq_state_probe)
 	var/tested = 0
 	var/list/tested_paths
 	for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
-		if(!initial(path.latent_safe) || is_abstract(path))
+		if(!latent_type_safe(path) || is_abstract(path))
 			continue
 		tested++
 		LAZYSET(tested_paths, path, TRUE)

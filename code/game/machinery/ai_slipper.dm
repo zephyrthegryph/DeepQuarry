@@ -13,8 +13,10 @@
 	var/cooldown_timeleft = 0
 	req_access = list(ACCESS_AI_UPLOAD)
 
-OM_FIELD(/obj/machinery/ai_slipper, cooldown_on, 0, CHANGE_MACHINE_SETTINGS)
-DECLARE_REPEAT(/obj/machinery/ai_slipper, 0.5 SECONDS, slip_process, "cooldown_on")
+/obj/machinery/ai_slipper/var/cooldown_on = FALSE
+TRACKED_BRIDGED(/obj/machinery/ai_slipper, cooldown_on, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/ai_slipper/var/cooldown_stopped = FALSE
+TRACKED(/obj/machinery/ai_slipper, cooldown_stopped)
 
 /obj/machinery/ai_slipper/proc/appearance_on()
 	return (!power_lost() && !broken_now() && !disabled) ? 1 : 0
@@ -64,12 +66,18 @@ DECLARE_REPEAT(/obj/machinery/ai_slipper, 0.5 SECONDS, slip_process, "cooldown_o
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/ai_slipper)
+	on_change(PROC_REF(emagged), ANY, then(PROC_REF(reset_cooldown_repeat)))
+	on_change(nameof(density), ANY, then(PROC_REF(reset_cooldown_repeat)))
+	on_change(nameof(use_power), ANY, then(PROC_REF(reset_cooldown_repeat)))
+	every(0.5 SECONDS, then(PROC_REF(slip_process)), when = cond_all(nameof(cooldown_on), cond_not(nameof(cooldown_stopped))))
+	on_change(nameof(cooldown_on), ANY, then(PROC_REF(reset_cooldown_repeat)))
 	interface("AiSlipper", title = "AI Liquid Dispenser")
+	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
 	op("toggle_on", ui_act("toggle_on"), then(PROC_REF(ui_act_toggle_on)))
 	op("toggle_use", ui_act("toggle_use"), then(PROC_REF(ui_act_toggle_use)))
 	extend(TAG_UI, needs(any_of(req_is(nameof(locked), FALSE, because = MSG(ai_slipper/panel_locked)), req_actor_kind(/mob/living/silicon, because = MSG(ai_slipper/panel_locked)))))
 	op("ai_slipper_toggle_lock", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_toggle_lock)))
-	op("ai_slipper_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
+	op("ai_slipper_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_use)))
 
 MSG_DEF_SELF(ai_slipper/panel_locked, "Control panel is locked!")
 
@@ -99,14 +107,18 @@ MSG_DEF_SELF(ai_slipper/panel_locked, "Control panel is locked!")
 	set_cooldown_on(1)
 	return TRUE
 
-/obj/machinery/ai_slipper/proc/slip_process()
+/obj/machinery/ai_slipper/proc/reset_cooldown_repeat(datum/act/A)
+	set_cooldown_stopped(FALSE)
+
+/obj/machinery/ai_slipper/proc/slip_process(datum/act/timer/A)
 	var/ticksleft = cooldown_time - world.timeofday
 	if(ticksleft > 0)
 		if(ticksleft > 1e5)
-			cooldown_time = world.timeofday + 10	// midnight rollover
+			cooldown_time = world.timeofday + 1 SECOND	// midnight rollover
 		cooldown_timeleft = (ticksleft / 10)
 		return
 	if(uses <= 0)
-		return REPEAT_STOP
+		set_cooldown_stopped(TRUE)
+		return
 	set_cooldown_on(0)
 	power_change()

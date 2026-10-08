@@ -211,7 +211,7 @@ GLOBAL_DATUM_INIT(io_lane, /datum/io_lane, new)
 	if(!isnull(E))
 		if(QDELETED(E))
 			return 0
-		owner_h = om_handle(E) // ALLOW(ownership): the IO lane keeps its own queue and a deletion-safe handle to the job owner
+		owner_h = entity_handle(E) // the IO lane keeps its own queue and a deletion-safe handle to the job owner
 		if(!owner_h)
 			return 0
 	var/datum/io_job/J = new
@@ -346,7 +346,7 @@ GLOBAL_DATUM_INIT(io_lane, /datum/io_lane, new)
 		return
 	var/datum/E = null
 	if(J.owner_h)
-		E = om_resolve(J.owner_h) // ALLOW(ownership): the IO lane keeps its own queue and a deletion-safe handle to the job owner
+		E = resolve_handle(J.owner_h) // the IO lane keeps its own queue and a deletion-safe handle to the job owner
 		if(!E)
 			lane.count_stat(K, IO_STAT_DROPPED)
 			log_qdel("IO: dropped [K.name] callback [J.on_done]: its owner was deleted")
@@ -360,7 +360,7 @@ GLOBAL_DATUM_INIT(io_lane, /datum/io_lane, new)
 	if(captured)
 		call_args += captured
 	try
-		om_guarded_call(E, J.on_done, call_args)
+		deferred_guarded_call(E, J.on_done, call_args)
 	catch(var/exception/e)
 		dq_report_caught(e, "io [K.name] callback [J.on_done] on [E]")
 

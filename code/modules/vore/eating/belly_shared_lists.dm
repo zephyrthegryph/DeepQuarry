@@ -241,5 +241,5 @@ GLOBAL_TABLE(belly_default_lists, GLOBAL_PROC_REF(build_belly_default_lists))
 		. += "items_preserved"
 	if(belly_surrounding)
 		. += "belly_surrounding"
-	if(ledger)
+	if(containment_ledger())
 		. += "ledger"

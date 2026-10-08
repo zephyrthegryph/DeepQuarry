@@ -45,7 +45,6 @@ CAPABILITIES(/obj/vehicle/train/engine/quadbike)
 		rel_set(src, nameof(cell), new /obj/item/cell/high(src))
 		rel_set(src, nameof(soundloop), new /datum/looping_sound/idle_carengine(list(src), FALSE))
 	turn_off()
-	update_icon()
 
 /obj/vehicle/train/engine/quadbike/built
 	built_from_assembly = TRUE
@@ -98,37 +97,12 @@ CAPABILITIES(/obj/vehicle/train/engine/quadbike/random)
 		if(8)
 			pixel_y = 0
 
-DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/quadbike, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/vehicle/train/engine/quadbike/appearance_overlays()
-	. = list()
-	. += ..()
-	if(custom_frame)
-		var/image/Bodypaint = new(icon = 'icons/obj/custom_items_vehicle.dmi', icon_state = "[frame_state]_a", layer = src.layer)
-		Bodypaint.color = paint_color
-		. += Bodypaint
-
-		var/image/Overmob = new(icon = 'icons/obj/custom_items_vehicle.dmi', icon_state = "[frame_state]_overlay", layer = src.layer + 0.2) //over mobs
-		var/image/Overmob_color = new(icon = 'icons/obj/custom_items_vehicle.dmi', icon_state = "[frame_state]_overlay_a", layer = src.layer + 0.2) //over the over mobs, gives the color.
-		Overmob.plane = MOB_PLANE
-		Overmob_color.plane = MOB_PLANE
-		Overmob_color.color = paint_color
-
-		. += Overmob
-		. += Overmob_color
-		return .
-
-	var/image/Bodypaint = new(icon = paint_base, icon_state = "[frame_state]_a", layer = src.layer)
-	Bodypaint.color = paint_color
-	. += Bodypaint
-
-	var/image/Overmob = new(icon = paint_base, icon_state = "[frame_state]_overlay", layer = src.layer + 0.2) //over mobs
-	var/image/Overmob_color = new(icon = paint_base, icon_state = "[frame_state]_overlay_a", layer = src.layer + 0.2) //over the over mobs, gives the color.
-	Overmob.plane = MOB_PLANE
-	Overmob_color.plane = MOB_PLANE
-	Overmob_color.color = paint_color
-
-	. += Overmob
-	. += Overmob_color
+/obj/vehicle/train/engine/quadbike/draw(datum/look/look)
+	..()
+	var/paint_icon = custom_frame ? 'icons/obj/custom_items_vehicle.dmi' : paint_base
+	look.overlay(look_overlay_image(paint_icon, "[frame_state]_a", layer = layer, color = paint_color))
+	look.overlay(look_overlay_image(paint_icon, "[frame_state]_overlay", layer = layer + 0.2, plane = MOB_PLANE))
+	look.overlay(look_overlay_image(paint_icon, "[frame_state]_overlay_a", layer = layer + 0.2, plane = MOB_PLANE, color = paint_color))
 
 /obj/vehicle/train/engine/quadbike/Bump(atom/Obstacle)
 	if(!istype(Obstacle, /atom/movable))
@@ -222,7 +196,6 @@ CAPABILITIES(/obj/vehicle/train/trolley/trailer/random)
 
 /obj/vehicle/train/trolley/trailer/Initialize(mapload)
 	. = ..()
-	update_icon()
 
 /obj/vehicle/train/trolley/trailer/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -272,14 +245,10 @@ CAPABILITIES(/obj/vehicle/train/trolley/trailer/random)
 			to_chat(D, span_danger("You hit [M]!"))
 			add_attack_logs(D,M,"Ran over with [src.name]")
 
-DECLARE_APPEARANCE_PROC(/obj/vehicle/train/trolley/trailer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/vehicle/train/trolley/trailer/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/vehicle/train/trolley/trailer/draw(datum/look/look)
+	..()
 
-	var/image/Bodypaint = new(icon = 'icons/obj/vehicles_64x64.dmi', icon_state = "[initial(icon_state)]_a", layer = src.layer)
-	Bodypaint.color = paint_color
-	. += Bodypaint
+	look.overlay(look_overlay_image('icons/obj/vehicles_64x64.dmi', "[initial(icon_state)]_a", layer = layer, color = paint_color))
 
 CAPABILITIES(/obj/vehicle/train/trolley/trailer)
 	op("vehicle_paint", tool(TOOL_MULTITOOL), when(req_is(nameof(open), TRUE)), priority(OP_PRIORITY_DEFAULT - 1), label("Paint"), wait(0), asks(/datum/prompt/color/vehicle_paint, fields = list("default" = nameof(paint_color)), step = "colour"), then(PROC_REF(vehicle_paint_picked)))

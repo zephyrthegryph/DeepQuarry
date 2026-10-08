@@ -1,103 +1,16 @@
-// Object-model core: deadlines (doc/rewrite/object_model_core.md section A.5). Rates live in
-// the Rust world (om_rate_linear() and friends, world_watch.dm).
-//
-// A deadline is three numbers in a wheel bucket and three in the entity's
-// record: no datum per timer, no signal registration, no FFI call. One
-// deadline per (entity, behaviour); setting it again replaces it (the old
-// wheel entry goes stale by generation and is skipped when it comes round).
+// Legacy spellings and subtype paths retain compatibility; implementation lives in the engine.
 
-/// Calls B.on_deadline(E) after `delay` deciseconds (in B's clock, if it has one). `sub`
-/// keys further deadlines of the same behaviour on the same entity: OM_DL_THROTTLE is the
-/// scheduler's deferred wake, OM_DL_STAGE + n a pipeline stage's rewake (on_keyed_deadline()).
 /proc/om_deadline(datum/E, delay, B, sub = 0)
-	var/datum/om/behaviour/def = om_registry().behaviour(B)
-	var/datum/om/rec/rec = om_rec_of(E)
-	if(!rec)
-		return FALSE
-	var/datum/om/scheduler/sched = rec.sched
-	var/key = def.id + sub * OM_DL_SUB
-	var/gen = ++sched.gen
-	var/t = sched.now()
-	var/local_target = null
-	var/due = t + max(delay, 0)
-	if(def.clock_idx)
-		var/rate = om_clock_rate(rec, def.clock_idx)
-		local_target = om_clock_local(rec, def.clock_idx) + max(delay, 0)
-		due = rate > 0 ? t + max(delay, 0) / rate : null
-	var/list/D = rec.deadlines
-	var/k = 0
-	for(var/i in 1 to length(D) step 3)
-		if(D[i] == key)
-			k = i
-			break
-	if(k)
-		D[k + 1] = gen
-		D[k + 2] = local_target
-	else
-		LAZYADD(rec.deadlines, list(key, gen, local_target))
-	if(!isnull(due))
-		sched.insert_deadline(rec, key, gen, due)
-	return TRUE
+	return deadline_deadline(arglist(args))
 
 /proc/om_cancel_after(datum/E, B, sub = 0)
-	var/datum/om/rec/rec = E?.om_rec
-	if(!rec?.deadlines)
-		return FALSE
-	var/key = om_registry().behaviour(B).id + sub * OM_DL_SUB
-	var/list/D = rec.deadlines
-	for(var/i in 1 to length(D) step 3)
-		if(D[i] == key)
-			D.Cut(i, i + 3)
-			if(!length(D))
-				rec.deadlines = null
-			return TRUE
-	return FALSE
+	return deadline_cancel_after(arglist(args))
 
-/// Cancels every deadline of `B` on `E`, whatever its sub-key.
 /proc/om_cancel_all_after(datum/E, B)
-	var/datum/om/rec/rec = E?.om_rec
-	if(!rec?.deadlines)
-		return
-	var/bid = om_registry().behaviour(B).id
-	var/list/D = rec.deadlines
-	var/i = 1
-	while(i <= length(D))
-		if(D[i] % OM_DL_SUB == bid)
-			D.Cut(i, i + 3)
-			continue
-		i += 3
-	if(!length(D))
-		rec.deadlines = null
+	return deadline_cancel_all_after(arglist(args))
 
 /proc/om_deadline_pending(datum/E, B, sub = 0)
-	var/datum/om/rec/rec = E?.om_rec
-	if(!rec?.deadlines)
-		return FALSE
-	var/key = om_registry().behaviour(B).id + sub * OM_DL_SUB
-	for(var/i in 1 to length(rec.deadlines) step 3)
-		if(rec.deadlines[i] == key)
-			return TRUE
-	return FALSE
+	return deadline_deadline_pending(arglist(args))
 
-/// A clock's rate changed: clocked deadlines get a new generation and a new
-/// real-time position (a rate increase must not wait for the old position).
 /proc/om_clock_reschedule(datum/om/rec/rec, cidx)
-	var/list/D = rec.deadlines
-	if(!D)
-		return
-	var/datum/om/registry/reg = om_registry()
-	var/datum/om/scheduler/sched = rec.sched
-	var/t = sched.now()
-	for(var/i in 1 to length(D) step 3)
-		var/local_target = D[i + 2]
-		if(isnull(local_target))
-			continue
-		var/datum/om/behaviour/B = reg.behaviours[D[i] % OM_DL_SUB]
-		if(B.clock_idx != cidx)
-			continue
-		var/gen = ++sched.gen
-		D[i + 1] = gen
-		var/rate = om_clock_rate(rec, cidx)
-		if(rate > 0)
-			var/remaining = max(local_target - om_clock_local(rec, cidx), 0)
-			sched.insert_deadline(rec, D[i], gen, t + remaining / rate)
+	return deadline_clock_reschedule(arglist(args))

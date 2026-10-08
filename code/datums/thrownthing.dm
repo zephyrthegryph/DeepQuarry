@@ -5,20 +5,9 @@
 // continuous throwing lane (PERIODIC_THROWING, code/datums/om/periodic.dm): throw_at() starts it,
 // periodic_step() moves it once per server tick, and it parks when it lands (finalize() deletes it).
 
-/// A throw in flight -> the movable being thrown (which holds it as `throwing`). Read with
-/// throw_subject(). Deleting the movable deletes the throw; the unlink clears its `throwing`.
-/datum/om/relation/throw_of
-	name = "throw"
-	source_single = TRUE
-	target_single = TRUE
-	on_target_delete = OM_END_DELETE_OTHER
-
-/datum/om/relation/throw_of/on_unlink(datum/thrownthing/source, atom/movable/target, datum/om/edge/edge)
-	unobserve(target, /datum/notice/living_turf_collision, source)
-	if(target.throwing == source)
-		rel_clear(target, nameof(target.throwing))
-
 /datum/thrownthing
+	/// The movable being thrown (which holds this throw as `throwing`). Deleting the movable deletes the throw. Read with throw_subject().
+	var/atom/movable/subject
 	///The original intended target of the throw (a relation view).
 	var/atom/initial_target
 	///The turf that the target was on, if it's not a turf itself (a relation view).
@@ -68,9 +57,16 @@
 	/// If our thrownthing has been blocked
 	var/blocked = FALSE
 
+CAPABILITIES(/datum/thrownthing)
+	ref_one(nameof(subject), /atom/movable, on_other_deleted = OTHER_DELETE_ME)
+
+/// The movable this throw carries, or null.
+/datum/thrownthing/proc/throw_subject() as /atom/movable
+	return subject
+
 /datum/thrownthing/New(atom/movable/thrownthing, atom/target, init_dir, maxrange, speed, mob/thrower, diagonals_first, force, gentle, callback, target_zone)
 	. = ..()
-	om_link(src, thrownthing, /datum/om/relation/throw_of)
+	rel_set(src, nameof(subject), thrownthing)
 	observe(thrownthing, /datum/notice/living_turf_collision, src, then(PROC_REF(hit_atom)))
 	rel_set(src, nameof(starting_turf), get_turf(thrownthing))
 	var/turf/target_turf = get_turf(target)
@@ -114,6 +110,8 @@
 /// Phase 2: the throw leaves the throwing lane (the throw_of unlink clears the movable's `throwing`).
 /datum/thrownthing/lifecycle_dematerialize()
 	. = ..()
+	if(!QDELETED(subject))
+		unobserve(subject, /datum/notice/living_turf_collision, src)
 	om_task_periodic_stop(src)
 
 /// One server tick of flight on the throwing lane (was SSthrowing.fire()).

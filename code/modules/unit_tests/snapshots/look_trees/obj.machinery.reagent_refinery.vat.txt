@@ -1,7 +1,7 @@
 /obj/machinery/reagent_refinery/vat icon: icons/obj/machines/refinery_machines.dmi
 /obj/machinery/reagent_refinery/vat state: vat
 /obj/machinery/reagent_refinery/vat dir: 2
-/obj/machinery/reagent_refinery/vat overlay: icons/obj/machines/refinery_machines.dmi:vat:8:#000000 x2
+/obj/machinery/reagent_refinery/vat overlay: icons/obj/machines/refinery_machines.dmi:vat:8:#000000
 /obj/machinery/reagent_refinery/vat overlay: icons/obj/machines/refinery_machines.dmi:vat_cons:-32767
 /obj/machinery/reagent_refinery/vat overlay: icons/obj/machines/refinery_machines.dmi:vat_dot_on:-32767
 

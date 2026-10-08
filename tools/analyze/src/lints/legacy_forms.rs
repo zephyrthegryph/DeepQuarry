@@ -15,7 +15,7 @@ static META: Meta = Meta {
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "banned_name", hint: "the form was deleted: use its replacement (the hint after the name, in [lint.legacy_forms.lists] banned of tools/ci/lint_scopes.toml)" }],
     allow: &[],
-    lists: &["banned"],
+    lists: &["banned", "banned_outside"],
 };
 
 struct LegacyForms;
@@ -30,6 +30,7 @@ impl Lint for LegacyForms {
     }
 
     fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
+        scan_outside(cx, f, out);
         let banned: Vec<(&str, &str)> = cx.list("banned").iter().map(|e| e.split_once('=').map(|(n, h)| (n.trim(), h.trim())).unwrap_or((e.trim(), ""))).collect();
         if banned.is_empty() {
             return;
@@ -47,6 +48,32 @@ impl Lint for LegacyForms {
                     }
                     from = end;
                 }
+            }
+        }
+    }
+}
+
+/// `banned_outside` entries are `name @ prefix;prefix = hint`: the name is gone everywhere except under the listed path prefixes (the
+/// folders that still have callers). Shrink the prefixes as callers convert; delete the entry's prefixes entirely when none remain.
+fn scan_outside(cx: &Cx, f: &SourceFile, out: &mut Sink) {
+    for entry in cx.list("banned_outside") {
+        let Some((left, hint)) = entry.split_once('=') else { continue };
+        let Some((name, prefixes)) = left.split_once('@') else { continue };
+        let name = name.trim();
+        if prefixes.split(';').map(str::trim).any(|p| !p.is_empty() && f.rel.starts_with(p)) {
+            continue;
+        }
+        for (number, line) in f.code().numbered() {
+            let b = line.as_bytes();
+            let mut from = 0;
+            while let Some(p) = line[from..].find(name) {
+                let at = from + p;
+                let end = at + name.len();
+                if (at == 0 || !is_word(b[at - 1])) && (end >= b.len() || !is_word(b[end])) {
+                    out.site_msg("banned_name", number, format!("{} is gone here: {}", name, hint.trim()));
+                    break;
+                }
+                from = end;
             }
         }
     }

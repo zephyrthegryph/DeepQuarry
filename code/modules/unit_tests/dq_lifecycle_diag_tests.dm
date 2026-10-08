@@ -144,7 +144,6 @@ CAPABILITIES(/datum/dq_diag_owner_b)
 	name = "init refuser"
 	var/tmp/datum/dq_diag_clean/made_in_init
 	var/fragile_destroy = FALSE
-	latent_safe = FALSE
 
 /obj/item/dq_diag_init_refuser/Initialize(mapload)
 	..()

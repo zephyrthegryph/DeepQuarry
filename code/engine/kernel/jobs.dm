@@ -69,7 +69,7 @@
 /// A cursor job's work is done: `on_done` is a proc on the owner, or a stored call (callable()).
 /proc/job_cursor_done(datum/owner, on_done)
 	if(islist(on_done))
-		om_run(on_done)
+		deferred_run(on_done)
 	else if(on_done)
 		call(owner, on_done)()
 

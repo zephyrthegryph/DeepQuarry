@@ -1,5 +1,80 @@
-/obj/machinery/computer/shuttle_control/emergency|human|none => |
-/obj/machinery/computer/shuttle_control/emergency|robot|none => |gen_robot_interaction_swallow:not possible right now
-/obj/machinery/computer/shuttle_control/emergency|ai|none => |
-/obj/machinery/computer/shuttle_control/emergency|ghost|none => |
+human|none menu: Climb
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Climb
+robot|none click: nothing
+ai|none click: nothing
+ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Scan ID
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Use item
+human|/obj/item/tool/screwdriver click: Click: Use item
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Scan ID
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Use item
+human|/obj/item/tool/crowbar click: Click: Use item
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Scan ID
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Use item
+human|/obj/item/tool/wrench click: Click: Use item
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Scan ID
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Use item
+human|/obj/item/tool/wirecutters click: Click: Use item
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Scan ID
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Use item
+human|/obj/item/multitool click: Click: Use item
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Scan ID
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Use item
+human|/obj/item/weldingtool click: Click: Use item
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Scan ID
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Use item
+human|/obj/item/stack/cable_coil click: Click: Use item
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Scan ID
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Use item
+human|/obj/item/stack/material/steel click: Click: Use item
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Scan ID
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Use item
+human|/obj/item/card/id click: Click: Use item
+human|/obj/item menu: Climb
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Scan ID
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Use item
+human|/obj/item/gripper deleted itself on creation
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Scan ID
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use item
+human|/obj/item/card/emag click: Click: Use
+keys: cancel, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag.subvert, emag.use, force, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, move, robot_remote_blocked, scan_id, set_codes, use_gripper, use_item
 

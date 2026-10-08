@@ -10,6 +10,11 @@
 // directly instead of the legacy HTML body.
 
 CAPABILITIES(/obj/machinery/magnetic_controller)
+	on_change(PROC_REF(emagged), ANY, then(PROC_REF(reset_path_repeat)))
+	on_change(nameof(density), ANY, then(PROC_REF(reset_path_repeat)))
+	on_change(nameof(use_power), ANY, then(PROC_REF(reset_path_repeat)))
+	every(PROC_REF(magnet_delay), then(PROC_REF(magnet_move_step)), when = cond_all(nameof(path_moving), cond_not(nameof(path_stopped))))
+	on_change(nameof(path_moving), ANY, then(PROC_REF(reset_path_repeat)))
 	started_work(step = PROC_REF(work_step), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	interface("MagneticConsole", title = "Magnetic Control Console", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")

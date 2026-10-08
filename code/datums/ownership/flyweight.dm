@@ -22,5 +22,3 @@ GLOBAL_LIST_INIT(flyweight_types, typecacheof(list(
 )))
 
 /// TRUE when `D` is a flyweight: shared by type, never owned, skipped by the destroy leak check.
-/proc/is_flyweight(datum/D)
-	return isdatum(D) && !!GLOB.flyweight_types?[D.type]

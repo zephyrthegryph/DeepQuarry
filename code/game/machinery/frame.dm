@@ -318,6 +318,7 @@ CAPABILITIES(/obj/structure/frame)
 	param(nameof(dir), pos = 1)
 	param(nameof(building), pos = 2)
 	param(nameof(type_at_make), pos = 3)
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/structure/frame/computer //used for maps
 	frame_type = new /datum/frame/frame_types/computer
@@ -390,14 +391,15 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 
 // The board, cables, glass and tool steps are the frame's construction graph:
 // frame_construction.dm. Stock parts still go in here until C6.
-DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/frame/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
+/obj/structure/frame/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/P = A.held
 	// A construction tool with no step here does nothing (it used to stop at its *_act hook).
 	for(var/quality in list(TOOL_SCREWDRIVER, TOOL_CROWBAR, TOOL_WRENCH, TOOL_WIRECUTTER, TOOL_WELDER))
 		if(P.has_tool_quality(quality))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	if(istype(P, /obj/item/stack/cable_coil) && state == FRAME_WIRED && frame_type.frame_class == FRAME_CLASS_MACHINE)
 		for(var/I in req_components)
 			if(istype(P, I) && (req_components[I] > 0))
@@ -427,7 +429,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 					install_part(user,P)
 
 	update_icon()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/frame/proc/install_part(mob/user, obj/item/P, defer_feedback = FALSE)
 	var/installed_part = FALSE

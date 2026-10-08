@@ -38,7 +38,6 @@ CAPABILITIES(/obj/machinery/photocopier)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("insert", inputs(item(/obj/item/paper), item(/obj/item/photo), item(/obj/item/paper_bundle)), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_insert)))
 	op("insert_toner", item(/obj/item/toner), priority(OP_PRIORITY_DEFAULT - 2), label("Insert toner"), then(PROC_REF(interaction_insert_toner)))
-	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
 	default_parts()
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(photocopier_blast_spill)))
 

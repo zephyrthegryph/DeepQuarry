@@ -239,11 +239,12 @@ GLOBAL_LIST_INIT(dq_lifecycle_clean_types, list(
 ))
 
 /datum/unit_test/dq_lifecycle_sandbox/Run()
+	set_global("dq_lifecycle_snapshot_var_keys", GLOB.dq_lifecycle_snapshot_var_keys)
 	var/list/failures = list()
 	var/tested = 0
 	var/list/tested_paths
 	for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
-		if(!(initial(path.latent_safe) || (path in GLOB.dq_lifecycle_clean_types)) || is_abstract(path))
+		if(!(latent_type_safe(path) || (path in GLOB.dq_lifecycle_clean_types)) || is_abstract(path))
 			continue
 		tested++
 		LAZYSET(tested_paths, path, TRUE)

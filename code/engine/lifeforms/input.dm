@@ -110,7 +110,7 @@ GLOBAL_REAL_VAR(list/input_falling)
 	if(!C || !user)
 		return FALSE
 	if(!entered)
-		closeToolTip(user, holder)
+		user.close_declared_tooltip(holder)
 		return TRUE
 	var/datum/entry/E = C.item
 	var/answer = call(holder, E.args["handler"])(user)
@@ -125,17 +125,17 @@ GLOBAL_REAL_VAR(list/input_falling)
 	var/theme = E.args["theme"]
 	if(istext(theme) && (theme in holder.vars))
 		theme = holder.vars[theme] // tooltip(theme = nameof(var)): the holder's own style
-	openToolTip(user, holder, params, title = title, content = content, theme = theme || "")
+	user.open_declared_tooltip(holder, params, title, content, theme || "")
 	return TRUE
 
 /// Runs `callback` with `actor` as the acting mob (usr) for the procs below it that still read it; restores the previous one. Returns the
 /// callback's result.
-/proc/with_actor(mob/actor, datum/callback/callback, ...)
+/proc/with_actor(mob/actor, datum/actor_callback/callback, ...)
 	var/mob/previous = usr
 	usr = actor
 	try
 		if(istype(callback))
-			. = length(args) > 2 ? callback.Invoke(arglist(args.Copy(3))) : callback.Invoke()
+			. = length(args) > 2 ? callback.invoke_actor(arglist(args.Copy(3))) : callback.invoke_actor()
 		else // with_actor(actor, target, proc_ref, args...): the same without a callback datum (GLOBAL_PROC as the target for a global proc)
 			var/target = callback
 			var/proc_ref = args[3]
@@ -149,3 +149,15 @@ GLOBAL_REAL_VAR(list/input_falling)
 /// The acting mob of the native input running now (usr), for the engine's own entry points. Content gets its actor as an argument.
 /proc/input_actor()
 	return usr
+
+/// A compatibility callback has an engine-level invocation interface.
+/datum/actor_callback
+
+/datum/actor_callback/proc/invoke_actor(...)
+	return
+
+/mob/proc/close_declared_tooltip(atom/holder)
+	return
+
+/mob/proc/open_declared_tooltip(atom/holder, params, title, content, theme)
+	return

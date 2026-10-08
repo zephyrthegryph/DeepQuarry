@@ -1,42 +1,23 @@
 // Orbiting: one atom circling another (ghost follow, tesla miniballs, admin
-// orbit, the toilet gag). Replaces the old orbiter component: the orbit IS an
-// edge of /datum/om/relation/orbiting (orbiter -> center), read through
-// ORBIT_TARGET()/ORBITERS() (om.dm). Nothing about it is stored on either
-// atom; the orbiter's pre-orbit transform rides on the edge's `data`.
+// orbit, the toilet gag). The orbit IS a sparse declared link (links() in
+// CAPABILITIES(/atom/movable), code/engine/declare/link_state.dm): LK_ORBITING on
+// the orbiter, LK_ORBITERS on the centre, which may be any atom (a turf too).
+// Nothing about it is stored on either atom; the orbiter's pre-orbit transform
+// rides on the link (link_data_set).
 //
-// The relation singleton is also the movement listener: it watches the
-// orbiters, the centers and whatever holds a center (a bag, a mob), and
-// keeps every orbiter on its center's turf.
+// One listener, /datum/orbit_watcher, watches the move notices of the orbiters,
+// the centres and whatever holds a centre (a bag, a mob), and keeps every
+// orbiter on its centre's turf.
 
-/datum/om/relation/orbiting
-	name = "orbit"
-	source_single = TRUE
+/datum/orbit_watcher
 
-/datum/om/relation/orbiting/on_link(atom/movable/source, atom/target, datum/om/edge/edge)
-	if(!istype(source) || !istype(target))
-		return
-	watch(source)
-	if(ismovable(target))
-		watch(target)
-		watch_holders(target)
+GLOBAL_DATUM_INIT(orbit_watcher, /datum/orbit_watcher, new)
 
-/datum/om/relation/orbiting/on_unlink(atom/movable/source, atom/target, datum/om/edge/edge)
-	if(istype(source) && !QDELETED(source))
-		source.SpinAnimation(0, 0)
-		var/matrix/saved = edge.data?["transform"]
-		if(istype(saved))
-			source.transform = saved
-	if(istype(source))
-		source.orbit_ended(target)
-	maybe_unwatch(source)
-	if(ismovable(target))
-		maybe_unwatch(target)
-
-/datum/om/relation/orbiting/proc/watch(atom/movable/AM)
+/datum/orbit_watcher/proc/watch(atom/movable/AM)
 	if(!QDELETED(AM))
 		observe(AM, /datum/notice/moved, src, then(PROC_REF(on_moved)))
 
-/datum/om/relation/orbiting/proc/watch_holders(atom/movable/center)
+/datum/orbit_watcher/proc/watch_holders(atom/movable/center)
 	var/atom/movable/holder = center.loc
 	var/depth = 0
 	while(ismovable(holder) && depth++ < 16)
@@ -44,25 +25,25 @@
 		holder = holder.loc
 
 /// Stops listening to `AM` once it neither orbits nor is orbited. Holders are
-/// dropped lazily, the next time they move with no center inside.
-/datum/om/relation/orbiting/proc/maybe_unwatch(atom/movable/AM)
+/// dropped lazily, the next time they move with no centre inside.
+/datum/orbit_watcher/proc/maybe_unwatch(atom/movable/AM)
 	if(QDELETED(AM))
 		return
 	if(AM?.orbit_target() || LAZYLEN(AM?.orbiter_list()))
 		return
 	unobserve(AM, /datum/notice/moved, src)
 
-/datum/om/relation/orbiting/proc/on_moved(datum/act/notice/A)
+/datum/orbit_watcher/proc/on_moved(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/movable/mover = A.target
 	var/involved = FALSE
-	// An orbiter that left its center's turf stops orbiting.
+	// An orbiter that left its centre's turf stops orbiting.
 	var/atom/center = mover?.orbit_target()
 	if(center)
 		involved = TRUE
 		if(mover.loc != get_turf(center))
-			om_unlink(mover, center, /datum/om/relation/orbiting)
-	// A center (or something holding one) moved: bring its orbiters along.
+			link_break(mover, LK_ORBITING, center)
+	// A centre (or something holding one) moved: bring its orbiters along.
 	if(LAZYLEN(mover?.orbiter_list()))
 		involved = TRUE
 		follow(mover)
@@ -73,11 +54,11 @@
 	if(!involved)
 		unobserve(mover, /datum/notice/moved, src)
 
-/datum/om/relation/orbiting/proc/follow(atom/movable/center)
+/datum/orbit_watcher/proc/follow(atom/movable/center)
 	var/turf/T = get_turf(center)
 	for(var/atom/movable/orbiter as anything in center?.orbiter_list())
 		if(!T)
-			om_unlink(orbiter, center, /datum/om/relation/orbiting)
+			link_break(orbiter, LK_ORBITING, center)
 			continue
 		if(!QDELETED(orbiter) && orbiter.loc != T)
 			orbiter.forceMove(T, movetime = MOVE_GLIDE_CALC(center.glide_size, 0))
@@ -96,10 +77,14 @@
 		return
 	// Re-orbiting the same center restarts it with the new parameters.
 	stop_orbit()
-	var/datum/om/edge/edge = om_link(src, A, /datum/om/relation/orbiting)
-	if(!istype(edge))
+	if(!link_make(src, LK_ORBITING, A))
 		return
-	edge.data = list("transform" = matrix(transform))
+	link_data_set(src, LK_ORBITING, "transform", matrix(transform))
+	GLOB.orbit_watcher.watch(src)
+	if(ismovable(A))
+		var/atom/movable/center = A
+		GLOB.orbit_watcher.watch(center)
+		GLOB.orbit_watcher.watch_holders(center)
 
 	// Head first!
 	if(pre_rotation)
@@ -115,15 +100,26 @@
 
 	forceMove(get_turf(A))
 	to_chat(src, span_notice("Now orbiting [A]."))
-	return edge
+	return TRUE
 
 /// Ends this atom's orbit, if any.
 /atom/movable/proc/stop_orbit()
 	var/atom/center = src?.orbit_target()
 	if(center)
-		om_unlink(src, center, /datum/om/relation/orbiting)
+		link_break(src, LK_ORBITING, center)
 
-/// Hook: this atom's orbit around `center` just ended (the edge is gone).
+/// The orbit link broke (its a_on_unlink hook): the spin stops, the transform it saved comes back and the watcher lets go of what no longer orbits.
+/atom/movable/proc/orbit_released(atom/center)
+	SpinAnimation(0, 0)
+	var/matrix/saved = link_data_get(src, LK_ORBITING, "transform")
+	if(istype(saved))
+		transform = saved
+	orbit_ended(center)
+	GLOB.orbit_watcher.maybe_unwatch(src)
+	if(ismovable(center))
+		GLOB.orbit_watcher.maybe_unwatch(center)
+
+/// Hook: this atom's orbit around `center` just ended (the link is gone).
 /atom/movable/proc/orbit_ended(atom/center)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
@@ -131,4 +127,4 @@
 /// Ends every orbit around this atom.
 /atom/movable/proc/stop_orbiters()
 	for(var/atom/movable/orbiter as anything in orbiter_list())
-		om_unlink(orbiter, src, /datum/om/relation/orbiting)
+		link_break(orbiter, LK_ORBITING, src)

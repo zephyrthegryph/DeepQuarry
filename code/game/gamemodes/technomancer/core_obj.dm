@@ -149,6 +149,8 @@ OM_FIELD_VIEW(/obj/item/technomancer_core, mob/living, wearer, CHANGE_EXPLICIT)
 		spent(src)
 
 CAPABILITIES(/obj/spellbutton)
+	// a spell button is an interface object, not a body
+	without("melee_hit")
 	click_on(PROC_REF(click_input))
 	param(nameof(spellpath), pos = 1)
 	param(nameof(name), pos = 2)

@@ -1,0 +1,1341 @@
+// Object-model core: the registry (doc/rewrite/object_model_core.md, "Boot").
+//
+// Built once, on first use (SSbehaviours.Initialize() forces it at boot).
+// It instantiates every DEF, parses every table row, compiles run order,
+// wake tables, event handler tables and derived order, and collects every
+// declaration error in `errors` (each also a stack_trace unless `quiet`).
+// Unit tests build private registries from a named set of decls.
+
+GLOBAL_DATUM(om_reg, /datum/definition_registry)
+
+/proc/definition_registry()
+	RETURN_TYPE(/datum/definition_registry)
+	if(!GLOB.om_reg)
+		GLOB.om_reg = new /datum/definition_registry
+		GLOB.om_reg.build()
+	return GLOB.om_reg
+
+/datum/definition_registry
+	parent_type = /datum/core_definition
+	var/list/errors
+	/// Collect errors without stack traces (tests of broken tables).
+	var/quiet = FALSE
+	/// Null: every non-skipped bundle/decl. Else only these (plus their includes).
+	var/list/only_bundles
+	/// Also build DEFs marked registry_skip (private test registries).
+	var/include_skipped = FALSE
+	var/built = FALSE
+
+	var/list/behaviours
+	var/list/behaviour_by_type
+	var/list/effects
+	var/list/effect_by_id
+	var/list/clocks
+	var/list/clock_by_id
+	var/list/relations
+	var/list/relation_by_type
+	/// Holder type (as slot_holder_key() returns it) -> ordered list of
+	/// /datum/relation_definition/slot instances declared for it (build_slot_holders()).
+	var/list/slot_groups_by_holder
+	/// Every declared holder type, longest-declared-path-first, so
+	/// slot_group_for() finds the most-derived match first.
+	var/list/slot_holder_types
+	var/list/event_types
+	var/list/event_idx
+	/// event idx -> list of behaviour ids handling it (subtypes flattened).
+	/// Per event index: list(type, parent, ...) up to (not including) /datum/definition_event.
+	var/list/event_lineage
+	var/list/event_handlers
+	var/list/derived
+	var/list/derived_by_name
+	var/list/checks_cache
+	var/list/named_checks
+	var/list/services
+	/// Every stage type -> its def (categories included), and the pipelines in id order.
+	var/list/stage_by_type
+	var/list/pipelines
+	var/list/bundles
+	var/list/bundle_by_type
+	var/list/decls
+	/// Every type some decl applies to (on_materialize checks this).
+	var/list/decl_typecache
+	/// bundle type -> flattened list of bundles (includes first, then itself).
+	var/list/expansions
+	/// entity type -> /datum/scheduler_type_table (lazy).
+	var/list/type_tables
+	/// Internal behaviours (expiry, tasks, ui, edge refresh).
+	var/datum/scheduled_behaviour/expiry_behaviour
+	var/datum/scheduled_behaviour/timer_behaviour
+	var/datum/scheduled_behaviour/ui_behaviour
+	var/datum/scheduled_behaviour/edge_behaviour
+
+/datum/definition_registry/proc/error(msg)
+	errors += msg
+	if(!quiet)
+		stack_trace("om registry: [msg]")
+
+/proc/definition_is_abstract(datum/core_definition/D)
+	return D.abstract_type == D.type
+
+/datum/definition_registry/proc/build()
+	if(built)
+		return
+	type_metadata_registry()
+	built = TRUE
+	engine_prepare_interfaces()
+	build_bundles()
+	build_clocks()
+	build_effects()
+	build_named_checks()
+	build_relations()
+	build_slot_holders()
+	build_events()
+	build_stages()
+	build_behaviours()
+	build_derived()
+	build_event_tables()
+	build_services()
+	check_field_reads()
+	for(var/problem in scheduler_field_check_derived_inputs())
+		error(problem)
+
+// ---------------------------------------------------------------- bundles
+
+/datum/definition_registry/proc/bundle_instance(path)
+	var/datum/definition_bundle/B = bundle_by_type[path]
+	if(B)
+		return B
+	if(!ispath(path, /datum/definition_bundle) && !ispath(path, /datum/definition_decl))
+		error("[path] is not a bundle")
+		return null
+	B = new path
+	bundle_by_type[path] = B
+	bundles += B
+	if(istype(B, /datum/definition_decl))
+		var/datum/definition_decl/D = B
+		if(!definition_is_abstract(D))
+			var/list/of_list = islist(D.of) ? D.of : list(D.of)
+			var/ok = length(of_list) > 0
+			for(var/of_path in of_list)
+				if(!ispath(of_path))
+					ok = FALSE
+			if(!ok)
+				error("[D.type]: `of` must be a type path or a list of them")
+			else
+				decls += D
+	return B
+
+/datum/definition_registry/proc/build_bundles()
+	var/list/roots
+	if(!isnull(only_bundles))
+		roots = only_bundles
+	else
+		roots = list()
+		for(var/path in subtypesof(/datum/definition_bundle) | subtypesof(/datum/definition_decl))
+			var/datum/definition_bundle/proto = path
+			if(initial(proto.registry_skip) || initial(proto.abstract_type) == path)
+				continue
+			roots += path
+	for(var/path in roots)
+		bundle_instance(path)
+	for(var/datum/definition_bundle/B as anything in bundles.Copy())
+		expand(B.type, list())
+	for(var/datum/definition_decl/D as anything in decls)
+		for(var/of_path in (islist(D.of) ? D.of : list(D.of)))
+			for(var/path in typesof(of_path))
+				decl_typecache[path] = TRUE
+
+/// Flattened include list of `path`: every included bundle (depth first, each
+/// once), then `path` itself.
+/datum/definition_registry/proc/expand(path, list/stack)
+	if(expansions[path])
+		return expansions[path]
+	if(path in stack)
+		error("bundle include cycle: [jointext(stack + path, " -> ")]")
+		return list()
+	var/datum/definition_bundle/B = bundle_instance(path)
+	if(!B)
+		return list()
+	var/list/out = list()
+	stack += path
+	for(var/inc in B.include)
+		for(var/datum/definition_bundle/sub as anything in expand(inc, stack))
+			out |= sub
+	stack -= path
+	out |= B
+	expansions[path] = out
+	return out
+
+// ---------------------------------------------------------------- clocks and effects
+
+/datum/definition_registry/proc/build_clocks()
+	var/list/rows = list(
+		CLOCK_BIO = list("min" = 0, "max" = 10),
+	)
+	for(var/datum/definition_bundle/B as anything in bundles)
+		for(var/id in B.clocks)
+			rows[id] = B.clocks[id]
+	for(var/id in rows)
+		var/list/row = rows[id]
+		var/datum/clock_definition/C = new
+		C.id = id
+		if(islist(row))
+			for(var/key in row)
+				if(!(key in list("min", "max")))
+					error("clock [id]: unknown key [key]")
+			if(!isnull(row["min"]))
+				C.min_rate = row["min"]
+			if(!isnull(row["max"]))
+				C.max_rate = row["max"]
+		clocks += C
+		C.idx = length(clocks)
+		clock_by_id[id] = C
+
+/datum/definition_registry/proc/build_effects()
+	var/list/rows = standard_effects()
+	for(var/datum/clock_definition/C as anything in clocks)
+		if(C.id == CLOCK_BIO)
+			continue // its rate is the clock_rate_bio stat (contribution_clock_compute())
+		rows["clock:[C.id]:mult"] = list("combine" = COMBINE_MULTIPLY, "channel" = CHANGE_CLOCK, "default" = 1, "kind" = OM_EFFECT_CLOCK_MULT, "clock" = C.id)
+		rows["clock:[C.id]:inhibit"] = list("combine" = COMBINE_MAX, "channel" = CHANGE_CLOCK, "default" = 0, "kind" = OM_EFFECT_CLOCK_INHIBIT, "clock" = C.id)
+	for(var/datum/definition_bundle/B as anything in bundles)
+		for(var/id in B.effects)
+			if(rows[id])
+				error("effect [id] defined twice (second in [B.type])")
+			rows[id] = B.effects[id]
+	var/static/list/allowed
+	if(!allowed)
+		allowed = list("combine", "stacking", "channel", "publishes", "default", "expr", "type", "kind", "clock", "implies")
+	for(var/id in rows)
+		var/list/row = rows[id]
+		if(!islist(row))
+			error("effect [id]: row must be a list")
+			continue
+		var/path = row["type"] || /datum/effect_definition
+		if(!ispath(path, /datum/effect_definition))
+			error("effect [id]: type [path] is not a /datum/effect_definition")
+			path = /datum/effect_definition
+		var/datum/effect_definition/E = new path
+		E.id = id
+		for(var/key in row)
+			if(!(key in allowed))
+				error("effect [id]: unknown key [key]")
+		E.implies = row["implies"]
+		if(!isnull(row["combine"]))
+			E.combine = row["combine"]
+		if(!(E.combine in list(COMBINE_ANY, COMBINE_SUM, COMBINE_MAX, COMBINE_MIN, COMBINE_MULTIPLY, COMBINE_SUM_PER_KEY)))
+			error("effect [id]: bad combine [E.combine]")
+			E.combine = COMBINE_ANY
+		if(!isnull(row["stacking"]))
+			E.stacking = row["stacking"]
+		if(!(E.stacking in list(STACKING_REPLACE, STACKING_EXTEND, STACKING_MAX)))
+			error("effect [id]: bad stacking [E.stacking]")
+			E.stacking = STACKING_REPLACE
+		E.channel = row["channel"] || 0
+		E.publishes = row["publishes"]
+		E.kind = row["kind"] || OM_EFFECT_PLAIN
+		E.expr = row["expr"]
+		if("default" in row)
+			E.default_value = row["default"]
+		else
+			switch(E.combine)
+				if(COMBINE_ANY)
+					E.default_value = FALSE
+				if(COMBINE_MULTIPLY)
+					E.default_value = 1
+				if(COMBINE_SUM_PER_KEY)
+					E.default_value = null
+				else
+					E.default_value = 0
+		if(row["clock"])
+			var/datum/clock_definition/C = clock_by_id[row["clock"]]
+			E.clock_idx = C?.idx
+			if(E.kind == OM_EFFECT_CLOCK_MULT)
+				C.mult_idx = length(effects) + 1
+			else if(E.kind == OM_EFFECT_CLOCK_INHIBIT)
+				C.inhibit_idx = length(effects) + 1
+		effects += E
+		E.idx = length(effects)
+		effect_by_id[id] = E
+	// Implied effects.
+	for(var/datum/effect_definition/E as anything in effects)
+		for(var/implied in E.implies)
+			var/datum/effect_definition/other = effect_by_id[implied]
+			if(!other || other.expr || other == E)
+				error("effect [E.id]: implies unknown or composite effect [implied]")
+				continue
+			LAZYADD(E.implies_idx, other.idx)
+	// Composite dependencies.
+	for(var/datum/effect_definition/E as anything in effects)
+		if(!E.expr)
+			continue
+		var/list/refs = list()
+		if(!definition_effect_expr_refs(E.expr, refs))
+			error("effect [E.id]: malformed expr")
+			E.expr = null
+			continue
+		for(var/ref in refs)
+			var/datum/effect_definition/part = effect_by_id[ref]
+			if(!part)
+				error("effect [E.id]: expr names unknown effect [ref]")
+				continue
+			if(part.expr)
+				error("effect [E.id]: composites of composites are not supported ([ref])")
+				continue
+			LAZYADD(part.dependents, E.idx)
+
+/// Collects effect ids named in a composite expression. FALSE if malformed.
+/proc/definition_effect_expr_refs(expr, list/out)
+	if(istext(expr))
+		out |= expr
+		return TRUE
+	if(!islist(expr))
+		return FALSE
+	var/list/L = expr
+	if(!length(L) || !(L[1] in list("all", "any", "not", "sum")))
+		return FALSE
+	if(L[1] == "not" && length(L) != 2)
+		return FALSE
+	for(var/i in 2 to length(L))
+		if(!definition_effect_expr_refs(L[i], out))
+			return FALSE
+	return TRUE
+
+/datum/definition_registry/proc/effect(id)
+	RETURN_TYPE(/datum/effect_definition)
+	var/datum/effect_definition/E = effect_by_id[id]
+	if(!E)
+		CRASH("om: unknown effect [id]")
+	return E
+
+// ---------------------------------------------------------------- checks
+
+/datum/definition_registry/proc/build_named_checks()
+	for(var/datum/definition_bundle/B as anything in bundles)
+		for(var/name in B.checks)
+			if(named_checks[name])
+				error("check [name] defined twice (second in [B.type])")
+			named_checks[name] = B.checks[name]
+	for(var/name in named_checks)
+		if(!definition_check_get(named_checks[name], src))
+			error("check [name]: malformed spec")
+
+// ---------------------------------------------------------------- relations
+
+/datum/definition_registry/proc/build_relations()
+	for(var/path in subtypesof(/datum/relation_definition))
+		var/datum/relation_definition/R = new path
+		if(definition_is_abstract(R) || (R.registry_skip && !include_skipped))
+			continue
+		relations += R
+		R.id = length(relations)
+		relation_by_type[compatibility_type(path)] = R
+		switch(R.shape)
+			if(REL_ONE_TO_ONE)
+				R.source_single = TRUE
+				R.target_single = TRUE
+			if(REL_ONE_TO_MANY)
+				R.source_single = FALSE
+				R.target_single = TRUE
+			if(REL_MANY_TO_MANY, REL_SYMMETRIC)
+				R.source_single = FALSE
+				R.target_single = FALSE
+		if(R.source_view && !R.source_single)
+			error("relation [path]: source_view needs a single-target shape")
+		if(R.target_view && !R.target_single)
+			error("relation [path]: target_view needs a single-source shape")
+		for(var/inc in R.include)
+			for(var/datum/definition_bundle/B as anything in expand(inc, list()))
+				R.contributes = definition_merge_assoc(R.contributes, B.contributes)
+				R.source_contributes = definition_merge_assoc(R.source_contributes, B.source_contributes)
+		// Two loops, not `a | b`: in DM `list | null` appends null as an element.
+		for(var/list/table in list(R.contributes, R.source_contributes))
+			for(var/id in table)
+				if(!effect_by_id[id])
+					error("relation [path]: contributes unknown effect [id]")
+		if(R.active_if)
+			R.compiled_active_if = definition_check_get(R.active_if, src)
+			if(!R.compiled_active_if)
+				error("relation [path]: malformed active_if")
+		if(R.holds_while)
+			R.compiled_holds_while = definition_check_get(R.holds_while, src)
+			if(!R.compiled_holds_while)
+				error("relation [path]: malformed holds_while")
+
+// ---------------------------------------------------------------- slots (containment.md §3)
+
+/// Groups every built /datum/relation_definition/slot decl by its declared `holder`
+/// (a type, or list of types), in declaration order (ties on `order`, lowest
+/// first). Replaces the old per-holder-type slot_def_types() override: a
+/// holder's slot list is the group whose key is the most-derived ancestor of
+/// slot_holder_key() among every declared key -- the same resolution a proc
+/// override chain would give, without one.
+/datum/definition_registry/proc/build_slot_holders()
+	var/list/order_serial = list()
+	for(var/datum/relation_definition/R as anything in relations)
+		if(!istype(R, /datum/relation_definition/slot))
+			continue
+		var/datum/relation_definition/slot/S = R
+		if(!S.holder)
+			continue
+		var/list/holders = islist(S.holder) ? S.holder : list(S.holder)
+		for(var/h in holders)
+			var/list/group = slot_groups_by_holder[h]
+			if(!group)
+				group = list()
+				slot_groups_by_holder[h] = group
+				slot_holder_types += h
+			group += S
+			order_serial[S] = length(order_serial) + 1
+	// Most-derived holder type first, so slot_group_for()'s first match wins.
+	sortTim(slot_holder_types, GLOBAL_PROC_REF(cmp_slot_holder_type_derived))
+	for(var/h in slot_groups_by_holder)
+		var/list/group = slot_groups_by_holder[h]
+		sortTim(group, /proc/cmp_slot_decl_order)
+
+/proc/cmp_slot_holder_type_derived(a, b)
+	if(a == b)
+		return 0
+	if(ispath(a, b))
+		return -1 // a is a subtype of b: a is more derived, sorts first
+	if(ispath(b, a))
+		return 1
+	return 0
+
+/proc/cmp_slot_decl_order(datum/relation_definition/slot/a, datum/relation_definition/slot/b)
+	if(a.order != b.order)
+		return a.order - b.order
+	return a.id - b.id
+
+/// The slot decls declared for holder type (or key) `key`, or null: the group
+/// of the most-derived declared holder type that `key` is a subtype of (or
+/// equal to). Null when nothing was declared for it.
+/datum/definition_registry/proc/slot_group_for(key)
+	// The most-derived declared holder type `key` is (or is a subtype of). The list is sorted by a partial order only (unrelated types compare equal),
+	// so the first match is not always the deepest: pick the one no other match is a subtype of.
+	var/best = null
+	for(var/h in slot_holder_types)
+		if(key == h || ispath(key, h))
+			if(isnull(best) || ispath(h, best))
+				best = h
+	return isnull(best) ? null : slot_groups_by_holder[best]
+
+/// Returns a new list: a's entries, then b's (b wins). Neither is modified.
+/proc/definition_merge_assoc(list/a, list/b)
+	if(!length(b))
+		return a
+	. = a ? a.Copy() : list()
+	for(var/key in b)
+		.[key] = b[key]
+
+// ---------------------------------------------------------------- events
+
+/datum/definition_registry/proc/build_events()
+	for(var/path in subtypesof(/datum/definition_event))
+		event_types += path
+		event_idx[path] = length(event_types)
+	// Per event index: the event's type and its ancestors below /datum/definition_event,
+	// most-derived first (hook delivery honours ancestry, as behaviour tables do).
+	event_lineage = new /list(length(event_types))
+	for(var/e in 1 to length(event_types))
+		var/list/lineage = list()
+		var/path = event_types[e]
+		while(path && path != /datum/definition_event)
+			lineage += path
+			path = type2parent(path)
+		event_lineage[e] = lineage
+
+// ---------------------------------------------------------------- behaviours
+
+/datum/definition_registry/proc/build_behaviours()
+	var/list/pending = list()
+	var/static/list/tick_keys
+	if(!tick_keys)
+		tick_keys = list("every", "clock", "lane", "max_interval", "max_dt", "relevance", "order_after", "requires", "step_interval", "max_catchup")
+	for(var/path in subtypesof(/datum/scheduled_behaviour))
+		if(ispath(path, /datum/scheduled_behaviour/inline))
+			continue
+		var/datum/scheduled_behaviour/B = new path
+		if(definition_is_abstract(B) || (B.registry_skip && !include_skipped))
+			continue
+		if(!B.name)
+			B.name = "[path]"
+		// wake_on is derived from reads (fields.dm): a read field's channel always wakes it.
+		B.wake_on |= field_reads_mask(B.reads_of, B.reads)
+		pending += B
+		behaviour_by_type[path] = B
+	expiry_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/expiry]
+	timer_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/timers]
+	ui_behaviour = presentation_behaviour()
+	edge_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/edge_refresh]
+	// Inline behaviours from table rows.
+	for(var/datum/definition_bundle/bundle as anything in bundles)
+		bundle.compiled_behaviours = list()
+		for(var/proc_path in bundle.reacts)
+			var/mask = bundle.reacts[proc_path]
+			if(!isnum(mask) || !mask)
+				error("[bundle.type] reacts: [proc_path] needs a non-zero channel mask")
+				continue
+			var/datum/scheduled_behaviour/inline/B = make_inline_behaviour()
+			B.mode = "react"
+			B.system_key = km_bundle_key(bundle)
+			B.call_path = proc_path
+			B.wake_on = mask
+			B.name = "[bundle.type]:[proc_path]"
+			pending += B
+			bundle.compiled_behaviours += B
+		for(var/proc_path in bundle.ticks)
+			var/list/row = bundle.ticks[proc_path]
+			if(!islist(row))
+				error("[bundle.type] ticks: [proc_path] row must be a list")
+				continue
+			var/bad = FALSE
+			for(var/key in row)
+				if(!(key in tick_keys))
+					error("[bundle.type] ticks: [proc_path] unknown key [key]")
+					bad = TRUE
+			if(!isnum(row["every"]) || row["every"] <= 0)
+				error("[bundle.type] ticks: [proc_path] needs every > 0")
+				bad = TRUE
+			if(bad)
+				continue
+			var/datum/scheduled_behaviour/inline/B = make_inline_behaviour()
+			B.mode = "tick"
+			B.system_key = km_bundle_key(bundle)
+			B.call_path = proc_path
+			B.every = row["every"]
+			B.clock = row["clock"]
+			B.lane = row["lane"] || LANE_SIMULATION
+			B.max_interval = row["max_interval"] || 0
+			B.max_dt = row["max_dt"] || 0
+			B.relevance = row["relevance"]
+			B.order_after = row["order_after"]
+			B.requires = row["requires"]
+			B.name = "[bundle.type]:[proc_path]"
+			pending += B
+			bundle.compiled_behaviours += B
+		for(var/event_path in bundle.events)
+			if(!ispath(event_path, /datum/definition_event))
+				error("[bundle.type] events: [event_path] is not an event type")
+				continue
+			var/datum/scheduled_behaviour/inline/B = make_inline_behaviour()
+			B.mode = "event"
+			B.system_key = km_bundle_key(bundle)
+			B.call_path = bundle.events[event_path]
+			B.handles = list(event_path)
+			B.name = "[bundle.type]:[event_path]"
+			pending += B
+			bundle.compiled_behaviours += B
+		for(var/path in bundle.behaviours)
+			if(!behaviour_by_type[path])
+				error("[bundle.type] behaviours: unknown behaviour [path]")
+	for(var/datum/scheduled_behaviour/B as anything in pending)
+		var/datum/work_pipeline/P = B
+		if(istype(P))
+			compile_pipeline(P)
+	for(var/datum/scheduled_behaviour/B as anything in pending)
+		compile_behaviour(B)
+	behaviours = definition_topo_order(pending, src)
+	var/steps = 0
+	for(var/i in 1 to length(behaviours))
+		var/datum/scheduled_behaviour/B = behaviours[i]
+		B.id = i
+		if(B.step_interval)
+			B.step_idx = ++steps
+		var/datum/work_pipeline/P = B
+		if(istype(P))
+			pipelines += P
+			P.pipe_idx = length(pipelines)
+	km_bind_behaviours(behaviours)
+
+// ---------------------------------------------------------------- stages and pipelines
+
+/// Instantiates every stage type (flyweights) and finds each one's family root.
+/datum/definition_registry/proc/build_stages()
+	for(var/path in subtypesof(/datum/work_stage))
+		if(compatibility_type(path) == /datum/work_stage)
+			continue
+		var/datum/work_stage/T = new path
+		if(T.registry_skip && !include_skipped)
+			continue
+		stage_by_type[path] = T
+		if(!T.name)
+			T.name = "[path]"
+	for(var/path in stage_by_type)
+		var/datum/work_stage/T = stage_by_type[path]
+		if(definition_stage_is_category(path, src))
+			continue
+		var/root = path
+		while(TRUE)
+			var/parent = type2parent(root)
+			if(compatibility_type(parent) == /datum/work_stage || definition_stage_is_category(parent, src))
+				break
+			root = parent
+		T.family = root
+		T.depth = definition_type_depth(T.of)
+		// wake_on is derived from reads (fields.dm): a read field's channel always wakes the stage.
+		T.wake_on |= field_reads_mask(T.of, T.reads)
+	for(var/datum/definition_bundle/B as anything in bundles)
+		for(var/path in B.stages)
+			var/datum/work_stage/T = stage_by_type[path]
+			if(!T || !T.family)
+				error("[B.type] stages: [path] is not a stage")
+			else if(!T.pipeline)
+				error("[B.type] stages: [path] names no pipeline")
+
+/// A grouping type sets `category` to its own path. Subtypes inherit a path that isn't theirs
+/// (the abstract_type idiom), so only the declaring type is a category.
+/proc/definition_stage_is_category(path, datum/definition_registry/reg)
+	if(reg.compatibility_type(path) == /datum/work_stage)
+		return TRUE
+	var/datum/work_stage/T = reg.stage_by_type[path]
+	return T?.category == path
+
+/// Number of parent_type hops from `path` up to /datum.
+/proc/definition_type_depth(path)
+	. = 0
+	while(path && path != /datum)
+		path = type2parent(path)
+		.++
+
+/// Orders a pipeline's stages, compiles run_if, facts and wake masks, and lists its variants.
+/datum/definition_registry/proc/compile_pipeline(datum/work_pipeline/P)
+	P.reactive = !P.every && !P.step_interval
+	P.frame_hooks = compatibility_type(P.frame_type) != /datum/work_frame
+	P.variants = list()
+	P.roots = list()
+	P.plans = list()
+	if(P.reactive)
+		P.park_after = 0
+	// Facts, from a prototype frame.
+	if(!ispath(P.frame_type, /datum/work_frame))
+		error("[P.name]: frame_type [P.frame_type] is not a /datum/work_frame")
+		P.frame_type = /datum/work_frame
+	var/datum/work_frame/proto = new P.frame_type
+	P.fact_index = list()
+	P.fact_procs = list()
+	P.fact_deps = list()
+	for(var/fact_name in proto.facts)
+		var/list/row = proto.facts[fact_name]
+		if(!islist(row) || !length(row) || isnull(row[1]))
+			error("[P.name]: fact [fact_name] needs list(compute proc, depends_on)")
+			continue
+		if(length(P.fact_procs) >= 24)
+			error("[P.name]: more than 24 facts")
+			break
+		P.fact_procs += row[1]
+		P.fact_deps += (length(row) > 1 ? row[2] : 0)
+		P.fact_index[fact_name] = length(P.fact_procs)
+	// Family roots: listed types, or every family under a listed category that belongs here.
+	for(var/listed in P.stages)
+		if(!stage_by_type[listed] && compatibility_type(listed) != /datum/work_stage)
+			error("[P.name]: stages names unknown stage [listed]")
+			continue
+		if(definition_stage_is_category(listed, src))
+			for(var/path in stage_by_type)
+				var/datum/work_stage/T = stage_by_type[path]
+				if(T.family == path && !T.extra && T.pipeline == P.type && ispath(path, listed))
+					P.roots |= path
+		else
+			var/datum/work_stage/T = stage_by_type[listed]
+			P.roots |= T.family
+	// Every family this pipeline can run: its roots, plus extras and decl-listed stages naming it.
+	var/list/listed_by_decls = list()
+	for(var/datum/definition_bundle/B as anything in bundles)
+		for(var/path in B.stages)
+			listed_by_decls[path] = TRUE
+	var/list/families = P.roots.Copy()
+	for(var/path in stage_by_type)
+		var/datum/work_stage/T = stage_by_type[path]
+		if(T.family == path && T.pipeline == P.type && (T.extra || listed_by_decls[path]))
+			families |= path
+	var/list/nodes = list()
+	for(var/path in stage_by_type)
+		var/datum/work_stage/T = stage_by_type[path]
+		if(!T.family || !(T.family in families))
+			continue
+		// A path segment that only inherits its parent's `of` is not a variant of its own.
+		if(path != T.family)
+			var/datum/work_stage/parent = stage_by_type[type2parent(path)]
+			if(parent && parent.of == T.of)
+				continue
+		nodes += T
+		if(!P.variants[T.family])
+			P.variants[T.family] = list()
+		P.variants[T.family] += T
+	for(var/root in P.variants)
+		P.variants[root] = sortTim(P.variants[root], GLOBAL_PROC_REF(cmp_om_stage_variant))
+	// Order: after/before between families, then `order`, then path; deterministic.
+	var/n = length(nodes)
+	nodes = sortTim(nodes, GLOBAL_PROC_REF(cmp_om_stage_order))
+	var/list/index_of = list()
+	for(var/i in 1 to n)
+		index_of[nodes[i]] = i
+	var/list/succ = new /list(n)
+	for(var/i in 1 to n)
+		succ[i] = list()
+	for(var/i in 1 to n)
+		var/datum/work_stage/T = nodes[i]
+		for(var/other in T.after)
+			var/datum/work_stage/O = stage_by_type[other]
+			if(!O)
+				error("[T.type]: after names unknown stage [other]")
+				continue
+			for(var/datum/work_stage/V as anything in P.variants[O.family])
+				if(index_of[V])
+					succ[index_of[V]] |= i
+		for(var/other in T.before)
+			var/datum/work_stage/O = stage_by_type[other]
+			if(!O)
+				error("[T.type]: before names unknown stage [other]")
+				continue
+			for(var/datum/work_stage/V as anything in P.variants[O.family])
+				if(index_of[V])
+					succ[i] |= index_of[V]
+	var/list/order = definition_kahn(succ, n)
+	if(length(order) < n)
+		var/list/stuck = list()
+		for(var/i in 1 to n)
+			if(!(i in order))
+				var/datum/work_stage/T = nodes[i]
+				stuck += "[T.type]"
+				order += i
+		error("[P.name]: stage after/before cycle among: [jointext(stuck, ", ")]")
+	P.stage_defs = list()
+	for(var/i in order)
+		var/datum/work_stage/T = nodes[i]
+		P.stage_defs += T
+		T.pos = length(P.stage_defs)
+	var/wake = P.wake_all
+	for(var/datum/work_stage/T as anything in P.stage_defs)
+		T.wake_mask = T.wake_on | P.wake_all
+		wake |= T.wake_mask
+		T.fact_covered = 0
+		for(var/i in 1 to length(P.fact_deps))
+			var/deps = P.fact_deps[i]
+			if(deps && !(deps & ~T.wake_mask))
+				T.fact_covered |= 1 << (i - 1)
+		compile_run_if(P, T)
+		T.gated = !isnull(T.run_if) || T.min_interval > 0
+	P.wake_on |= wake
+	P.run_mode = (P.frame_hooks ? OM_PIPE_MODE_HOOKS : 0) | (length(P.fact_procs) ? OM_PIPE_MODE_FACTS : 0) \
+		| (P.profile_stride ? OM_PIPE_MODE_PROFILING : 0) | (P.reactive ? OM_PIPE_MODE_REACTIVE : 0) \
+		| (!P.reactive && P.park_after ? OM_PIPE_MODE_PARKS : 0)
+
+/// Deepest `of` first; between equal depths, the least derived stage type.
+/proc/cmp_om_stage_variant(datum/work_stage/a, datum/work_stage/b)
+	if(a.depth != b.depth)
+		return b.depth - a.depth
+	return definition_type_depth(a.type) - definition_type_depth(b.type)
+
+/proc/cmp_om_stage_order(datum/work_stage/a, datum/work_stage/b)
+	if(a.order != b.order)
+		return a.order - b.order
+	return sorttext(b.type, a.type)
+
+/// run_if: a conjunction of facts compiles to two bit masks; anything else to a check whose
+/// target is the frame.
+/datum/definition_registry/proc/compile_run_if(datum/work_pipeline/P, datum/work_stage/T)
+	T.fact_req = 0
+	T.fact_forbid = 0
+	T.run_if_general = FALSE
+	T.run_if_deps = 0
+	T.skip_idles = FALSE
+	if(isnull(T.run_if))
+		return
+	var/list/names = list()
+	definition_run_if_fact_names(T.run_if, names)
+	var/every_fact_raises = TRUE
+	var/fact_deps = 0
+	for(var/fact_name in names)
+		var/i = P.fact_index[fact_name]
+		if(!i)
+			error("[T.type]: run_if names unknown fact [fact_name] ([P.name])")
+			return
+		if(!P.fact_deps[i])
+			every_fact_raises = FALSE
+		fact_deps |= P.fact_deps[i]
+	var/list/masks = list(0, 0)
+	if(definition_run_if_masks(T.run_if, P, masks, FALSE))
+		T.fact_req = masks[1]
+		T.fact_forbid = masks[2]
+		T.run_if_deps = fact_deps
+	else
+		T.compiled_run_if = definition_check_get(T.run_if, src)
+		if(!T.compiled_run_if)
+			error("[T.type]: malformed run_if")
+			return
+		T.run_if_general = TRUE
+		T.run_if_deps = T.compiled_run_if.depends_on | fact_deps
+	// A skipped stage idles when everything that can unblock it raises a channel it wakes on.
+	T.skip_idles = every_fact_raises && T.run_if_deps && !(T.run_if_deps & ~T.wake_mask)
+
+/// Fills masks (req, forbid) from FACT, NOT_OF(FACT) and ALL_OF of those. FALSE otherwise.
+/proc/definition_run_if_masks(spec, datum/work_pipeline/P, list/masks, negated)
+	if(!islist(spec))
+		return FALSE
+	var/list/L = spec
+	if(length(L) == 1 && definition_registry().compatibility_type(L[1]) == /datum/requirement_definition/fact)
+		var/i = P.fact_index[L[L[1]]]
+		if(!i)
+			return FALSE
+		masks[negated ? 2 : 1] |= 1 << (i - 1)
+		return TRUE
+	if(!length(L) || !istext(L[1]))
+		return FALSE
+	switch(L[1])
+		if("not")
+			return !negated && length(L) == 2 && definition_run_if_masks(L[2], P, masks, TRUE)
+		if("all")
+			if(negated)
+				return FALSE
+			for(var/i in 2 to length(L))
+				if(!definition_run_if_masks(L[i], P, masks, FALSE))
+					return FALSE
+			return TRUE
+	return FALSE
+
+/// Fact names anywhere in a spec.
+/proc/definition_run_if_fact_names(spec, list/out)
+	if(!islist(spec))
+		return
+	var/list/L = spec
+	if(length(L) == 1 && definition_registry().compatibility_type(L[1]) == /datum/requirement_definition/fact)
+		out |= L[L[1]]
+		return
+	for(var/part in L)
+		if(islist(part))
+			definition_run_if_fact_names(part, out)
+
+/datum/definition_registry/proc/compile_behaviour(datum/scheduled_behaviour/B)
+	if(B.clock)
+		var/datum/clock_definition/C = clock_by_id[B.clock]
+		if(!C)
+			error("[B.name]: unknown clock [B.clock]")
+		else
+			B.clock_idx = C.idx
+	if(!(B.lane in 1 to OM_LANE_COUNT))
+		error("[B.name]: bad lane [B.lane]")
+		B.lane = LANE_SIMULATION
+	if(B.wake_if)
+		B.compiled_wake_if = definition_check_get(B.wake_if, src)
+		if(!B.compiled_wake_if)
+			error("[B.name]: malformed wake_if")
+	B.requires_mask = 0
+	if(B.requires)
+		B.compiled_requires = list()
+		for(var/spec in definition_spec_list(B.requires))
+			var/datum/requirement_definition/C = definition_check_get(spec, src)
+			if(!C)
+				error("[B.name]: malformed requires entry")
+				continue
+			B.compiled_requires += C
+			B.requires_mask |= C.depends_on
+	B.compiled_related = definition_compile_related(B.wake_on_related, src, B.name)
+	if(!length(B.compiled_related))
+		B.compiled_related = null
+	for(var/list/entry as anything in B.compiled_related)
+		var/list/path = entry[1]
+		if(length(path) == 1)
+			B.related_added_mask |= entry[2] & (CHANGE_RELATION_ADDED | CHANGE_RELATION_REMOVED)
+	B.interest = B.wake_on | B.requires_mask | B.related_added_mask
+	var/list/intervals = list(B.every, B.every, B.every, B.every)
+	if(B.relevance)
+		if(length(B.relevance) != 4)
+			error("[B.name]: relevance needs 4 entries (NONE, NEAR, VISIBLE, WATCHED)")
+		else
+			for(var/i in 1 to 4)
+				if(!isnull(B.relevance[i]))
+					intervals[i] = B.relevance[i]
+	B.compiled_intervals = intervals
+	B.compiled_max_interval = B.max_interval || (max(intervals) * 4)
+	if(B.max_interval && B.every && B.max_interval < B.every)
+		error("[B.name]: max_interval below every")
+	for(var/path in B.order_after)
+		if(!behaviour_by_type[path])
+			error("[B.name]: order_after names unknown behaviour [path]")
+	for(var/path in B.handles)
+		if(!ispath(path, /datum/definition_event))
+			error("[B.name]: handles [path], not an event type")
+
+/// A spec list may be a single spec (typepath, name, combinator) or a list of specs.
+/proc/definition_spec_list(spec)
+	if(isnull(spec))
+		return list() // no requires: nothing to check
+	if(!islist(spec))
+		return list(spec)
+	var/list/L = spec
+	if(length(L) && istext(L[1]) && (L[1] in list("all", "any", "not")))
+		return list(spec)
+	// A single parameterised spec list(path = arg).
+	if(length(L) == 1 && ispath(L[1]) && !isnull(L[L[1]]))
+		return list(spec)
+	return L
+
+/// wake_on_related / related_inputs: relation type = mask, or list(rel, rel..., mask) entries.
+/proc/definition_compile_related(list/table, datum/definition_registry/reg, owner_name)
+	. = list()
+	for(var/key in table)
+		var/list/path = list()
+		var/mask
+		if(islist(key))
+			var/list/L = key
+			if(length(L) < 2 || !isnum(L[length(L)]))
+				reg.error("[owner_name]: related entry must be list(relation..., mask)")
+				continue
+			for(var/i in 1 to length(L) - 1)
+				path += L[i]
+			mask = L[length(L)]
+		else
+			path += key
+			mask = table[key]
+		var/list/ids = list()
+		var/ok = TRUE
+		for(var/rel_path in path)
+			var/datum/relation_definition/R = reg.relation_by_type[rel_path]
+			if(!R)
+				reg.error("[owner_name]: unknown relation [rel_path]")
+				ok = FALSE
+				break
+			ids += R.id
+		if(!ok)
+			continue
+		if(!isnum(mask) || !mask)
+			reg.error("[owner_name]: related entry for [rel_path_text(path)] needs a mask")
+			continue
+		. += list(list(ids, mask))
+
+/proc/rel_path_text(list/path)
+	return jointext(path, ">")
+
+/// Kahn's algorithm over order_after, deterministic by name. Cycles are boot
+/// errors. Producer -> consumer edges (produces & wake_on) are added where
+/// they don't create a cycle.
+/proc/definition_topo_order(list/nodes, datum/definition_registry/reg)
+	var/n = length(nodes)
+	var/list/index_of = list()
+	var/list/sorted_nodes = sortTim(nodes.Copy(), GLOBAL_PROC_REF(cmp_om_behaviour_name))
+	for(var/i in 1 to n)
+		var/datum/scheduled_behaviour/B = sorted_nodes[i]
+		index_of[B] = i
+	var/list/succ = new /list(n)
+	for(var/i in 1 to n)
+		succ[i] = list()
+	for(var/i in 1 to n)
+		var/datum/scheduled_behaviour/B = sorted_nodes[i]
+		for(var/path in B.order_after)
+			var/datum/scheduled_behaviour/A = reg.behaviour_by_type[path]
+			if(A && index_of[A])
+				succ[index_of[A]] |= i
+	var/list/order = definition_kahn(succ, n)
+	if(length(order) < n)
+		var/list/stuck = list()
+		for(var/i in 1 to n)
+			if(!(i in order))
+				var/datum/scheduled_behaviour/B = sorted_nodes[i]
+				stuck += B.name
+				order += i
+		reg.error("behaviour order_after cycle among: [jointext(stuck, ", ")]")
+	else
+		// Soft producer -> consumer edges.
+		for(var/i in 1 to n)
+			var/datum/scheduled_behaviour/P = sorted_nodes[i]
+			if(!P.produces)
+				continue
+			for(var/j in 1 to n)
+				if(i == j)
+					continue
+				var/datum/scheduled_behaviour/C = sorted_nodes[j]
+				if(!(C.wake_on & P.produces) || (j in succ[i]))
+					continue
+				if(definition_reaches(succ, j, i))
+					continue
+				succ[i] |= j
+		order = definition_kahn(succ, n)
+	. = list()
+	for(var/i in order)
+		. += sorted_nodes[i]
+
+/proc/definition_kahn(list/succ, n)
+	var/list/indeg = new /list(n)
+	for(var/i in 1 to n)
+		indeg[i] = 0
+	for(var/i in 1 to n)
+		for(var/j in succ[i])
+			indeg[j]++
+	var/list/ready = list()
+	for(var/i in 1 to n)
+		if(!indeg[i])
+			ready += i
+	. = list()
+	while(length(ready))
+		var/i = ready[1]
+		ready.Cut(1, 2)
+		. += i
+		for(var/j in succ[i])
+			indeg[j]--
+			if(!indeg[j])
+				// Keep deterministic: insert in index order.
+				var/pos = 1
+				while(pos <= length(ready) && ready[pos] < j)
+					pos++
+				ready.Insert(pos, j)
+
+/proc/definition_reaches(list/succ, start, goal)
+	var/list/seen = list()
+	var/list/stack = list(start)
+	while(length(stack))
+		var/i = stack[length(stack)]
+		stack.len--
+		if(i == goal)
+			return TRUE
+		if(seen["[i]"])
+			continue
+		seen["[i]"] = TRUE
+		for(var/j in succ[i])
+			stack += j
+	return FALSE
+
+/proc/cmp_om_behaviour_name(datum/scheduled_behaviour/a, datum/scheduled_behaviour/b)
+	return sorttext(b.name, a.name)
+
+// ---------------------------------------------------------------- derived
+
+/datum/definition_registry/proc/build_derived()
+	for(var/path in subtypesof(/datum/derived_definition))
+		var/datum/derived_definition/D = new path
+		if(definition_is_abstract(D) || (D.registry_skip && !include_skipped))
+			continue
+		if(!D.name)
+			D.name = "[path]"
+		add_derived(D, "[path]")
+	for(var/datum/definition_bundle/B as anything in bundles)
+		for(var/row in B.derived)
+			var/datum/derived_definition/D = parse_derived_row(row, B)
+			if(D)
+				add_derived(D, "[B.type]")
+	for(var/datum/derived_definition/D as anything in derived)
+		compile_derived(D)
+	order_derived()
+
+/datum/definition_registry/proc/add_derived(datum/derived_definition/D, where)
+	if(derived_by_name[D.name])
+		error("derived [D.name] defined twice (second in [where])")
+		return
+	derived += D
+	D.idx = length(derived)
+	derived_by_name[D.name] = D
+	if(D.type != /datum/derived_definition)
+		derived_by_name[D.type] = D
+
+/datum/definition_registry/proc/parse_derived_row(row, datum/definition_bundle/B)
+	if(!islist(row))
+		error("[B.type] derived: row must be a DERIVE*() list")
+		return null
+	var/list/L = row
+	var/static/list/allowed
+	if(!allowed)
+		allowed = list("derive", "name", "expr", "channel", "over", "reader", "inputs", "derived_inputs", "member_inputs", "max_age", "related_inputs")
+	for(var/key in L)
+		if(!istext(key) || !(key in allowed))
+			error("[B.type] derived: unknown key [key]")
+			return null
+	var/kind = L["derive"]
+	if(!istext(L["name"]))
+		error("[B.type] derived: row needs a name")
+		return null
+	var/datum/derived_definition/D = new /datum/derived_definition
+	D.name = L["name"]
+	D.channel = L["channel"] || 0
+	D.inputs = L["inputs"] || 0
+	D.derived_inputs = L["derived_inputs"]
+	D.member_inputs = L["member_inputs"] || 0
+	D.max_age = L["max_age"] || 0
+	D.related_inputs = L["related_inputs"]
+	switch(kind)
+		if("check")
+			D.expr = L["expr"]
+			if(isnull(D.expr))
+				error("[B.type] derived [D.name]: DERIVE needs a check expression")
+				return null
+		if("sum")
+			D.aggregate = AGG_SUM
+		if("count")
+			D.aggregate = AGG_COUNT
+		if("any")
+			D.aggregate = AGG_ANY
+		if("all")
+			D.aggregate = AGG_ALL
+		if("min")
+			D.aggregate = AGG_MIN
+		if("max")
+			D.aggregate = AGG_MAX
+		else
+			error("[B.type] derived [D.name]: unknown kind [kind]")
+			return null
+	if(D.aggregate)
+		D.over = L["over"]
+		D.reader = L["reader"]
+		if(isnull(D.over))
+			error("[B.type] derived [D.name]: aggregate needs `over`")
+			return null
+		if(D.aggregate != AGG_COUNT && isnull(D.reader))
+			error("[B.type] derived [D.name]: aggregate needs a reader")
+			return null
+	return D
+
+/datum/definition_registry/proc/compile_derived(datum/derived_definition/D)
+	if(D.expr)
+		D.compiled_expr = definition_check_get(D.expr, src)
+		if(!D.compiled_expr)
+			error("derived [D.name]: malformed check expression")
+		else
+			D.inputs |= D.compiled_expr.depends_on
+	if(D.aggregate)
+		if(islist(D.over) && length(D.over) == 2 && D.over[1] == "slot")
+			D.over_slot = D.over[2]
+			D.inputs |= CHANGE_CONTENTS
+		else
+			var/datum/relation_definition/R = relation_by_type[D.over]
+			if(!R)
+				error("derived [D.name]: over names unknown relation [D.over]")
+			else
+				D.over_rel_id = R.id
+		if(islist(D.reader) && D.reader[1] == "derived")
+			var/datum/derived_definition/src_d = derived_by_name[D.reader[2]]
+			if(!src_d)
+				error("derived [D.name]: reader names unknown derived [D.reader[2]]")
+			else if(!src_d.channel)
+				error("derived [D.name]: reader derived [src_d.name] has no channel")
+			else
+				D.member_inputs |= src_d.channel
+		else if(islist(D.reader) && D.reader[1] == "effect")
+			var/datum/effect_definition/eff = effect_by_id[D.reader[2]]
+			if(!eff)
+				error("derived [D.name]: reader names unknown effect [D.reader[2]]")
+			else
+				D.member_inputs |= eff.channel | CHANGE_EFFECTS
+	for(var/name in D.derived_inputs)
+		var/datum/derived_definition/src_d = derived_by_name[name]
+		if(!src_d)
+			error("derived [D.name]: input names unknown derived [name]")
+		else if(!src_d.channel)
+			error("derived [D.name]: input derived [name] has no channel")
+		else
+			D.inputs |= src_d.channel
+	D.compiled_related = definition_compile_related(D.related_inputs, src, "derived [D.name]")
+	if(!length(D.compiled_related))
+		D.compiled_related = null
+
+/// Orders derived values so inputs come first; a cycle is a boot error.
+/datum/definition_registry/proc/order_derived()
+	var/n = length(derived)
+	var/list/succ = new /list(n)
+	for(var/i in 1 to n)
+		succ[i] = list()
+	for(var/datum/derived_definition/D as anything in derived)
+		for(var/name in D.derived_inputs)
+			var/datum/derived_definition/src_d = derived_by_name[name]
+			if(src_d)
+				succ[src_d.idx] |= D.idx
+		if(islist(D.reader) && D.reader[1] == "derived")
+			var/datum/derived_definition/src_d = derived_by_name[D.reader[2]]
+			if(src_d && src_d != D)
+				succ[src_d.idx] |= D.idx
+	var/list/order = definition_kahn(succ, n)
+	if(length(order) < n)
+		var/list/stuck = list()
+		for(var/i in 1 to n)
+			if(!(i in order))
+				var/datum/derived_definition/D = derived[i]
+				stuck += D.name
+				order += i
+		error("derived input cycle among: [jointext(stuck, ", ")]")
+	for(var/pos in 1 to length(order))
+		var/datum/derived_definition/D = derived[order[pos]]
+		D.order = pos
+
+/datum/definition_registry/proc/derived_def(name_or_type)
+	RETURN_TYPE(/datum/derived_definition)
+	var/datum/derived_definition/D = derived_by_name[name_or_type]
+	if(!D)
+		CRASH("om: unknown derived [name_or_type]")
+	return D
+
+// ---------------------------------------------------------------- event tables
+
+/datum/definition_registry/proc/build_event_tables()
+	var/nb = length(behaviours)
+	event_handlers = new /list(length(event_types))
+	for(var/e in 1 to length(event_types))
+		var/event_path = event_types[e]
+		var/list/flags = null
+		for(var/datum/scheduled_behaviour/B as anything in behaviours)
+			for(var/handled in B.handles)
+				if(ispath(event_path, handled))
+					if(!flags)
+						flags = new /list(nb)
+					flags[B.id] = TRUE
+					break
+		event_handlers[e] = flags
+
+// ---------------------------------------------------------------- services
+
+/datum/definition_registry/proc/build_services()
+	for(var/path in subtypesof(/datum/service_definition))
+		var/datum/service_definition/S = new path
+		if(definition_is_abstract(S) || (S.registry_skip && !include_skipped))
+			continue
+		services += S
+		S.id = length(services)
+
+// ---------------------------------------------------------------- per entity type
+
+/// The compiled table for `path`: every decl whose `of` is an ancestor,
+/// general first, with includes expanded. Built once per concrete type.
+/datum/definition_registry/proc/type_table(path)
+	RETURN_TYPE(/datum/scheduler_type_table)
+	var/datum/scheduler_type_table/T = type_tables[path]
+	if(T)
+		return T
+	T = new
+	type_tables[path] = T
+	// General first: by the inheritance depth of the `of` entry that matched.
+	var/list/applicable = list()
+	for(var/datum/definition_decl/D as anything in decls)
+		var/best = -1
+		for(var/of_path in (islist(D.of) ? D.of : list(D.of)))
+			if(ispath(path, of_path))
+				best = max(best, definition_type_depth(of_path))
+		if(best >= 0)
+			applicable[D] = best
+	applicable = sortTim(applicable, GLOBAL_PROC_REF(cmp_numeric_asc), TRUE)
+	var/list/seen = list()
+	var/list/behaviour_set = list()
+	for(var/datum/definition_decl/D as anything in applicable)
+		for(var/datum/definition_bundle/B as anything in expand(D.type, list()))
+			if(seen[B])
+				continue
+			seen[B] = TRUE
+			for(var/datum/scheduled_behaviour/inline_b as anything in B.compiled_behaviours)
+				behaviour_set |= inline_b
+			for(var/bpath in B.behaviours)
+				var/datum/scheduled_behaviour/full = behaviour_by_type[bpath]
+				if(full)
+					behaviour_set |= full
+			for(var/stage_path in B.stages)
+				T.stages |= stage_path
+			for(var/row in B.ui)
+				T.ui += list(row)
+			for(var/id in B.self_effects)
+				T.self_effects += list(id, B.self_effects[id])
+	T.behaviours = sortTim(behaviour_set, GLOBAL_PROC_REF(cmp_om_behaviour_id))
+	for(var/datum/service_definition/S as anything in services)
+		var/mine = 0
+		for(var/observed in S.wake_on_any)
+			if(ispath(path, observed))
+				mine |= S.wake_on_any[observed]
+		if(mine)
+			T.service_mask |= mine
+			LAZYADD(T.services, S)
+			LAZYADD(T.service_masks, mine)
+	T.sys_periodic_mask = periodic_mask_for(path)
+	T.derived_relays = scheduler_field_derived_relays_of(path)
+	for(var/i in 1 to length(T.derived_relays) step 2)
+		T.relay_mask |= scheduler_field_field_table(path)[T.derived_relays[i]]
+	return T
+
+/proc/cmp_om_behaviour_id(datum/scheduled_behaviour/a, datum/scheduled_behaviour/b)
+	return a.id - b.id
+
+/datum/definition_registry/proc/behaviour(path_or_def)
+	RETURN_TYPE(/datum/scheduled_behaviour)
+	if(istype(path_or_def, /datum/scheduled_behaviour))
+		return path_or_def
+	var/datum/scheduled_behaviour/B = behaviour_by_type[compatibility_type(path_or_def)]
+	if(!B)
+		CRASH("om: unknown behaviour [path_or_def]")
+	return B
+
+/datum/definition_registry/proc/relation(path)
+	RETURN_TYPE(/datum/relation_definition)
+	var/datum/relation_definition/R = relation_by_type[compatibility_type(path)]
+	if(!R)
+		CRASH("om: unknown relation [path]")
+	return R
+
+
+
+
+/// A compatibility carrier may redirect an old abstract alias to its real singleton type.
+/datum/definition_registry/proc/compatibility_type(path)
+	return path
+
+/// A synthesized callback carrier, overridable by compatibility presentation/profiling.
+/datum/definition_registry/proc/make_inline_behaviour()
+	return new /datum/scheduled_behaviour/inline
+
+/// The application supplies its own effect definitions through this registry hook.
+/datum/definition_registry/proc/standard_effects()
+	return list()
+
+/// The presentation adapter supplies its real scheduled delivery definition.
+/datum/definition_registry/proc/presentation_behaviour()
+	return null
+
+/datum/definition_registry/New()
+	if(!errors)
+		errors = list()
+	if(!behaviours)
+		behaviours = list()
+	if(!behaviour_by_type)
+		behaviour_by_type = list()
+	if(!effects)
+		effects = list()
+	if(!effect_by_id)
+		effect_by_id = list()
+	if(!clocks)
+		clocks = list()
+	if(!clock_by_id)
+		clock_by_id = list()
+	if(!relations)
+		relations = list()
+	if(!relation_by_type)
+		relation_by_type = list()
+	if(!slot_groups_by_holder)
+		slot_groups_by_holder = list()
+	if(!slot_holder_types)
+		slot_holder_types = list()
+	if(!event_types)
+		event_types = list()
+	if(!event_idx)
+		event_idx = list()
+	if(!event_handlers)
+		event_handlers = list()
+	if(!derived)
+		derived = list()
+	if(!derived_by_name)
+		derived_by_name = list()
+	if(!checks_cache)
+		checks_cache = list()
+	if(!named_checks)
+		named_checks = list()
+	if(!services)
+		services = list()
+	if(!stage_by_type)
+		stage_by_type = list()
+	if(!pipelines)
+		pipelines = list()
+	if(!bundles)
+		bundles = list()
+	if(!bundle_by_type)
+		bundle_by_type = list()
+	if(!decls)
+		decls = list()
+	if(!decl_typecache)
+		decl_typecache = list()
+	if(!expansions)
+		expansions = list()
+	if(!type_tables)
+		type_tables = list()
+	..()

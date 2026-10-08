@@ -6,5 +6,5 @@
 /obj/item/flamethrower/full state: flamethrowerbase
 /obj/item/flamethrower/full dir: 2
 /obj/item/flamethrower/full overlay: icons/obj/flamethrower.dmi:+igniter1:-32767
-/obj/item/flamethrower/full overlay: icons/obj/flamethrower.dmi:flamethrowerbase:8:#000000 x2
+/obj/item/flamethrower/full overlay: icons/obj/flamethrower.dmi:flamethrowerbase:8:#000000
 

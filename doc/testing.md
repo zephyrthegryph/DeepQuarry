@@ -434,6 +434,23 @@ record) recompiles as before. This is why `deepquarry.test.dmb`/`.rsc` are no
 longer deleted after a run — only the derived `.dme` text is, since it's
 cheap to regenerate.
 
+### Shared build caches
+
+Fresh worktrees should not pay cold build costs:
+
+- **Analyzer.** `analyze-build` runs cargo with `CARGO_TARGET_DIR` set to a shared dir
+  (`DQ_ANALYZE_TARGET`; default `E:/dq-cache/analyze-target` on Windows when `E:` exists, else
+  `~/.cache/dq/analyze-target`; `off` builds in the worktree) and copies the binary to the worktree's
+  own `tools/analyze/target/release/` path with its `.key` file. Dependencies compile once; cargo's lock
+  serialises concurrent worktrees (cargo prints `Blocking waiting for file lock`). Editing
+  `tools/analyze/src` still recompiles the analyzer crate itself (about 2.5 minutes). The content-keyed
+  binary cache (`DQ_ANALYZE_CACHE`) still serves unchanged sources instantly.
+- **Bun.** `tools/bootstrap/javascript_.ps1` downloads Bun into `DQ_BUN_CACHE` (default
+  `E:\dq-cache\bun` when `E:` exists; `off` or an unwritable dir falls back to `tools/bootstrap/.cache`),
+  keyed by version. It downloads into a temp dir and renames it into place, so concurrent bootstraps are safe.
+- **Heartbeat.** `Juke.exec` prints `still running: <command> (<m>s)` to stderr every 60 s while a child
+  process runs (cargo, the DM compile, DreamDaemon, icon repack), so a long step is not mistaken for a hang.
+
 ### Working tree with someone else's unfinished work
 
 If another branch of work has left the manifest pointing at deleted files, or

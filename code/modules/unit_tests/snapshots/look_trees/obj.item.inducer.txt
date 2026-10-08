@@ -5,13 +5,13 @@
 /obj/item/inducer/unloaded icon: icons/obj/tools_vr.dmi
 /obj/item/inducer/unloaded state: inducer-engi
 /obj/item/inducer/unloaded dir: 2
-/obj/item/inducer/unloaded overlay: icons/obj/tools_vr.dmi:inducer-engi:8:#000000 x2
+/obj/item/inducer/unloaded overlay: icons/obj/tools_vr.dmi:inducer-engi:8:#000000
 /obj/item/inducer/unloaded overlay: icons/obj/tools_vr.dmi:inducer-nobat:-32767
 /obj/item/inducer/sci icon: icons/obj/tools_vr.dmi
 /obj/item/inducer/sci state: inducer-sci
 /obj/item/inducer/sci dir: 2
 /obj/item/inducer/sci overlay: icons/obj/tools_vr.dmi:inducer-nobat:-32767
-/obj/item/inducer/sci overlay: icons/obj/tools_vr.dmi:inducer-sci:8:#000000 x2
+/obj/item/inducer/sci overlay: icons/obj/tools_vr.dmi:inducer-sci:8:#000000
 /obj/item/inducer/syndicate icon: icons/obj/tools_vr.dmi
 /obj/item/inducer/syndicate state: inducer-syndi
 /obj/item/inducer/syndicate dir: 2

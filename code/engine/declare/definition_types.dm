@@ -1,0 +1,414 @@
+// Object-model core: DEF types (doc/rewrite/object_model_core.md).
+//
+// Every DEF is a singleton built once by the registry (registry.dm). Its
+// declaration vars are read-only after boot; the registry writes the
+// compiled_* / id vars once, during build. Nothing per entity lives on a DEF:
+// per-entity state is on the entity's /datum/scheduler_record, per-scheduler state on
+// the scheduler. That is what makes "shared mutable per-type config"
+// impossible by construction.
+//
+// Paths live under /datum/core_definition/ because /datum/event and /datum/effect already
+// exist in this codebase (xenoarch and random events).
+
+/datum/core_definition
+	/// A type whose abstract_type is its own path is not instantiated.
+	abstract_type = /datum/core_definition
+	/// Only built by registries that name it explicitly (unit tests that
+	/// need deliberately broken declarations).
+	var/registry_skip = FALSE
+
+// ===================================================================== behaviours
+
+/datum/scheduled_behaviour
+	parent_type = /datum/core_definition
+	abstract_type = /datum/scheduled_behaviour
+	var/name
+	/// Target interval between tick() calls, deciseconds. 0: no cadence.
+	var/every = 0
+	/// Hard staleness bound, deciseconds. 0: 4 * every. Rings close to it borrow budget.
+	var/max_interval = 0
+	/// Seconds. A tick with a larger dt is split into equal substeps.
+	var/max_dt = 0
+	/// Seconds. Fixed-step discrete work: on_step(E) runs once per step elapsed.
+	var/step_interval = 0
+	/// Max on_step() calls per tick; the rest is dropped and counted as a breach.
+	var/max_catchup = 5
+	/// CLOCK_* domain id. dt is scaled by the entity's rate in that domain.
+	var/clock
+	/// LANE_*.
+	var/lane = LANE_SIMULATION
+	/// Behaviour types this one runs after (topological, compiled at boot).
+	var/list/order_after
+	/// Interval per relevance level: list(NONE, NEAR, VISIBLE, WATCHED), each
+	/// deciseconds, OM_PARK, or null for `every`. Null list: `every` always.
+	var/list/relevance
+	/// Channels on the entity that wake this behaviour (on_wake).
+	var/wake_on = 0
+	/// Declared fields (fields.dm) of `reads_of` this behaviour reads to decide there is work.
+	/// The registry ORs their channels into wake_on at boot; list only the other channels there.
+	var/list/reads
+	var/reads_of
+	/// relation type (or list of relation types, a path) -> channel mask on the
+	/// related entity. CHANGE_RELATION_ADDED/REMOVED here mean edges of that
+	/// relation being added to or removed from this entity.
+	var/list/wake_on_related
+	/// Native (Rust-owned) watch bits; see native.dm.
+	var/wake_on_native = 0
+	/// Check spec: on_wake runs only when it passes.
+	var/wake_if
+	/// Check specs gating roster membership (re-checked only when their
+	/// depends_on channels change).
+	var/list/requires
+	/// Event types handled (subtypes included).
+	var/list/handles
+	/// Output channel. Behaviours waking on it are ordered after this one.
+	var/produces = 0
+	/// Set if hooks call contribution_hold(): holds not repeated on the next call are released.
+	var/holds = FALSE
+	/// Deciseconds. on_wake runs at most this often per entity: wakes in between are
+	/// coalesced (their bits unioned) and delivered by a deadline when the interval ends.
+	var/min_interval = 0
+	/// RUNLEVEL_* mask. Outside these runlevels the behaviour's rings don't run (one test per
+	/// ring per pass, none per entity) and resume without catch-up. 0: every runlevel.
+	var/runlevels = 0
+	/// The measurement system this behaviour's cost is charged to (code/controllers/measure/systems.dm): set to
+	/// override the rule that derives it from the type path.
+	var/system_key
+
+	// ---- compiled by the registry ----
+	var/id = 0
+	/// Fixed-step behaviours: this behaviour's index in rec.steps (the step accumulators).
+	var/step_idx = 0
+	var/clock_idx = 0
+	var/datum/requirement_definition/compiled_wake_if
+	var/list/compiled_requires
+	var/requires_mask = 0
+	/// list of list(list(relation ids path), mask)
+	var/list/compiled_related
+	var/related_added_mask = 0
+	/// Resolved intervals per relevance level (4 numbers, 0 = no cadence).
+	var/list/compiled_intervals
+	var/compiled_max_interval = 0
+	/// wake_on | requires_mask, the channels this behaviour contributes to listen masks.
+	var/interest = 0
+	/// Index of the measurement system (km_bind_behaviours()); 0 until the registry binds it.
+	var/system_idx = 0
+
+/datum/scheduled_behaviour/proc/tick(datum/E, dt)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/datum/scheduled_behaviour/proc/on_wake(datum/E, changes)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/datum/scheduled_behaviour/proc/on_deadline(datum/E)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/datum/scheduled_behaviour/proc/on_step(datum/E)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/// A deadline set with a sub-key (deadline_deadline(E, delay, B, sub)), sub >= OM_DL_STAGE.
+/datum/scheduled_behaviour/proc/on_keyed_deadline(datum/E, sub)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/datum/scheduled_behaviour/proc/on_start(datum/E)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/datum/scheduled_behaviour/proc/on_stop(datum/E)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/// The entity `E` is being destroyed. Runs in the destroy transaction's phase 4, before the
+/// declared links (DECLARE_REF) are cleared, so E's vars still read; on_stop follows in phase 5.
+/// Every attached behaviour gets it, started or not. The behaviour's destroy hook: put teardown
+/// here instead of a Destroy() override on the entity.
+/datum/scheduled_behaviour/proc/on_entity_destroy(datum/E)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/// Fallback for events whose type defines no typed handler.
+/datum/scheduled_behaviour/proc/on_event(datum/E, datum/definition_event/event)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/// Rust-owned watch delivery (native.dm).
+/datum/scheduled_behaviour/proc/on_native(datum/E, native_bits)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/// A behaviour synthesised from a decl's reacts/ticks/events row: calls a
+/// proc on the entity itself (src is the entity, typed).
+/datum/scheduled_behaviour/inline
+	abstract_type = /datum/scheduled_behaviour/inline
+	var/call_path
+	var/mode
+
+/datum/scheduled_behaviour/inline/tick(datum/E, dt)
+	call(E, call_path)(dt)
+
+/datum/scheduled_behaviour/inline/on_wake(datum/E, changes)
+	call(E, call_path)(changes)
+
+/datum/scheduled_behaviour/inline/on_deadline(datum/E)
+	call(E, call_path)()
+
+/datum/scheduled_behaviour/inline/on_event(datum/E, datum/definition_event/event)
+	call(E, call_path)(event)
+
+// ===================================================================== events
+
+/datum/definition_event
+	parent_type = /datum/core_definition
+	abstract_type = /datum/definition_event
+	/// before_* events are synchronous and may return EVENT_VETO.
+	var/before = FALSE
+	/// Re-entrant emits of the same type to the same entity keep only the latest. Off by default: an event is an
+	/// occurrence (something happened, once), so every one is delivered, in order. Only a state-like event whose
+	/// latest value is all that matters opts in.
+	var/coalesce = FALSE
+	/// Dropped inside bulk_begin()/bulk_end(). Off by default: occurrences are never suppressed in bulk; only a
+	/// cosmetic event opts in.
+	var/skip_in_bulk = FALSE
+	/// Delivered at once even inside another delivery (never queued), like a direct call.
+	/// Cross-entity events are sync so their listeners see the state the sender is in.
+	var/sync = FALSE
+	/// before/ events only: every handler runs and their numeric returns are ORed into
+	/// `result` (the event's documented result bits), instead of stopping at the first
+	/// EVENT_VETO. Such events may nest on one entity.
+	var/accumulate = FALSE
+	/// Numeric handler returns, ORed. om_emit() returns it for sync and accumulate events.
+	var/result = 0
+	/// Set by om_emit().
+	var/datum/entity
+
+/// Double dispatch: typed events override this to call their own
+/// /datum/scheduled_behaviour/proc/on_<event>(E, event), declared next to the event.
+/datum/definition_event/proc/dispatch(datum/scheduled_behaviour/B, datum/E)
+	return B.on_event(E, src)
+
+/datum/definition_event/before
+	abstract_type = /datum/definition_event/before
+	before = TRUE
+	coalesce = FALSE
+
+// ===================================================================== relations
+
+/datum/relation_definition
+	parent_type = /datum/core_definition
+	abstract_type = /datum/relation_definition
+	var/name
+	/// A source has at most one edge of this relation.
+	var/source_single = FALSE
+	/// A target has at most one edge of this relation.
+	var/target_single = FALSE
+	/// OM_REL_REPLACE or OM_REL_REFUSE when a single end is already taken.
+	var/conflict = OM_REL_REPLACE
+	/// OM_END_UNLINK or OM_END_DELETE_OTHER when that end is deleted.
+	var/on_source_delete = OM_END_UNLINK
+	var/on_target_delete = OM_END_UNLINK
+	/// effect id -> value (number or FROM_VAR("x") read from the source) held on the target.
+	var/list/contributes
+	/// effect id -> value (number or FROM_VAR("x") read from the target) held on the source (the occupant).
+	var/list/source_contributes
+	/// Check spec (actor = source, target = target); contributions apply only while it passes.
+	var/active_if
+	/// Check spec (actor = source, target = target): the edge holds only while it passes and is
+	/// unlinked outright the moment it fails (range, same-z, visibility), rather than just losing
+	/// its contributions. Runs alongside active_if off the same watched channels.
+	var/holds_while
+	/// REL_ONE_TO_ONE, REL_ONE_TO_MANY, REL_MANY_TO_MANY or REL_SYMMETRIC (sets source_single /
+	/// target_single at registration). Null: the singles as written.
+	var/shape
+	/// Framework-maintained view vars: the source's var naming its target (1:1 from the source),
+	/// and the target's var naming its source. Raw writes are banned (ownership_lint.py).
+	var/source_view
+	var/target_view
+	/// List-undo: a list var on the target the source is added to on link and removed from on
+	/// unlink (alternate_appearance viewers, lg_imageholder, song listeners, multicam).
+	var/undo_list
+	/// A proc name on the source recomputing a view from linked() after every structural change
+	/// (omni filter/mixer port roles).
+	var/derived_view
+	/// entity_clone(): an edge leaving the cloned subtree is re-linked to the clone.
+	var/clone_follows = FALSE
+	/// Bundles whose relation fields (contributes, grants_*) are merged in.
+	var/list/include
+
+	var/id = 0
+	var/datum/requirement_definition/compiled_active_if
+	var/datum/requirement_definition/compiled_holds_while
+
+/// Hooks get both ends, never null: an end being deleted is QDELETED but not null.
+/datum/relation_definition/proc/on_link(datum/source, datum/target, datum/relation_edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/datum/relation_definition/proc/on_unlink(datum/source, datum/target, datum/relation_edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/// A member leaving through its own domain proc (relation_leave()): a cloning pod releasing its
+/// occupant record, a jukebox listener walking off, a resleever, a conveyor switch. Runs before
+/// the edge is unlinked; `member` is the end that asked.
+/datum/relation_definition/proc/on_member_leave(datum/source, datum/target, datum/member)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/// One edge, held by both ends' recs.
+/datum/relation_edge
+	parent_type = /datum/core_definition
+	var/datum/relation_definition/rel
+	var/datum/source
+	var/datum/target
+	/// Aggregate contributions cached on the edge: stride 2 (derived idx, value).
+	var/list/cache
+	/// Contributions currently applied (active_if passed).
+	var/active = FALSE
+	/// Relation-specific payload the linker attaches (e.g. an orbit's saved transform).
+	var/list/data
+	/// Why the edge is being unlinked (RELATION_*), readable in on_unlink().
+	var/unlink_reason
+
+// ===================================================================== checks
+
+/datum/requirement_definition
+	parent_type = /datum/core_definition
+	abstract_type = /datum/requirement_definition
+	/// Channels whose change can flip the answer (on the actor unless noted).
+	var/depends_on = 0
+	/// Parameter (resolved against the actor if it is FROM_VAR(...)).
+	var/arg
+	/// Cache key (set by definition_check_get()).
+	var/key
+
+/// Returns null when the check passes, else a short reason.
+/datum/requirement_definition/proc/why_not(datum/actor, datum/target)
+	SHOULD_NOT_SLEEP(TRUE)
+	return null
+
+// ===================================================================== derived
+
+/datum/derived_definition
+	parent_type = /datum/core_definition
+	abstract_type = /datum/derived_definition
+	/// Name used by derived_derived(E, name); defaults to the type path.
+	var/name
+	/// Channels on the entity that make the value dirty.
+	var/inputs = 0
+	/// Other derived names used as inputs (ordered before this one).
+	var/list/derived_inputs
+	/// relation type (or path list) -> mask on related entities.
+	var/list/related_inputs
+	/// Output channel raised when the value changes (0: lazy only, no channel).
+	var/channel = 0
+	/// Deciseconds: recompute on read if older (engine-owned inputs).
+	var/max_age = 0
+	/// AGG_* over `over`.
+	var/aggregate = AGG_NONE
+	/// Relation type (members are the sources of edges whose target is the entity), or OVER_SLOT(id).
+	var/over
+	/// FROM_VAR/FROM_DERIVED/FROM_EFFECT reader for a member's contribution.
+	var/reader
+	/// Channels on members that change their contribution.
+	var/member_inputs = 0
+	/// Check spec for DERIVE() rows.
+	var/expr
+
+	var/idx = 0
+	var/order = 0
+	var/over_rel_id = 0
+	var/over_slot
+	var/datum/requirement_definition/compiled_expr
+	/// list of list(list(relation ids path), mask)
+	var/list/compiled_related
+
+/// Plain derived values compute from the entity.
+/datum/derived_definition/proc/compute(datum/E)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(compiled_expr)
+		return isnull(compiled_expr.why_not(E, null))
+	return null
+
+/// Aggregate member contribution.
+/datum/derived_definition/proc/contribution(datum/member)
+	SHOULD_NOT_SLEEP(TRUE)
+	return definition_read(member, reader)
+
+/// AGG_CUSTOM hooks: return the new aggregate value.
+/datum/derived_definition/proc/on_member_added(datum/E, datum/member, old_value, contribution)
+	return old_value
+
+/datum/derived_definition/proc/on_member_removed(datum/E, datum/member, old_value, contribution)
+	return old_value
+
+/datum/derived_definition/proc/on_member_changed(datum/E, datum/member, old_value, old_contribution, new_contribution)
+	return old_value
+
+// ===================================================================== effects and clocks
+
+/// One generic effect type configured by a table row; subclass only for custom logic.
+/datum/effect_definition
+	parent_type = /datum/core_definition
+	abstract_type = /datum/effect_definition
+	var/id
+	var/idx = 0
+	var/combine = COMBINE_ANY
+	var/stacking = STACKING_REPLACE
+	var/channel = 0
+	/// The change key (PUBLISH_CHANGE) a change of this effect publishes on its entity, or null (row "publishes").
+	var/publishes
+	/// Value when nothing contributes.
+	var/default_value
+	/// Composite: an expression over other effect ids (ALL_OF/ANY_OF/NOT_OF/SUM_OF). No contributions of its own.
+	var/list/expr
+	var/kind = OM_EFFECT_PLAIN
+	var/clock_idx = 0
+	/// Composite effects that read this one (idx list).
+	var/list/dependents
+	/// Effect ids the entity holds on itself while this effect is in effect (godmode holds the
+	/// incapacitation immunities). Compiled to `implies_idx`.
+	var/list/implies
+	var/list/implies_idx
+	/// Status effects (idx) naming this effect as their immunity: gaining it ends them.
+	var/list/blocks
+
+/// Called after the value on `E` changed. Subclasses add custom logic.
+/datum/effect_definition/proc/on_changed(datum/E, old_value, new_value)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/datum/clock_definition
+	parent_type = /datum/core_definition
+	abstract_type = /datum/clock_definition
+	var/id
+	var/idx = 0
+	var/min_rate = 0
+	var/max_rate = 10
+	/// Registry indices (definition_registry().effects) of the effects that multiply and inhibit this clock.
+	var/mult_idx
+	var/inhibit_idx
+
+// ===================================================================== services
+
+/// Global observers: wake_on_any = list(type = mask). on_changes(E, bits)
+/// runs once per tick per entity with the union of bits.
+/datum/service_definition
+	parent_type = /datum/core_definition
+	abstract_type = /datum/service_definition
+	var/list/wake_on_any
+	var/id = 0
+
+/datum/service_definition/proc/on_changes(datum/E, bits)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+
+
+
+/datum/scheduled_behaviour/internal
+	abstract_type = /datum/scheduled_behaviour/internal

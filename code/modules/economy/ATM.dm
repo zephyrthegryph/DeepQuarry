@@ -91,7 +91,7 @@ MSG_DEF_SELF(atm/firewalled, "A firewall prevents you from interfacing with this
 
 /// Takes the card the user holds: emag error, resolve an emag card, or slot an ID.
 /obj/machinery/atm/proc/atm_take_card(mob/user, obj/item/card/held)
-	if(emagged > 0)
+	if(emagged() > 0)
 		//prevent inserting id into an emagged ATM
 		to_chat(user, span_boldwarning("[icon2html(src, user.client)] CARD READER ERROR. This system has been compromised!"))
 		return TRUE
@@ -160,8 +160,8 @@ MSG_DEF_SELF(atm/firewalled, "A firewall prevents you from interfacing with this
 /obj/machinery/atm/proc/ui_data_part_atm(datum/act/eval/A)
 	var/list/data = list()
 
-	data["emagged"] = emagged
-	if(emagged > 0)
+	data["emagged"] = emagged()
+	if(emagged() > 0)
 		return data
 
 	data["held_card"] = held_card()
@@ -220,7 +220,7 @@ CAPABILITIES(/obj/machinery/atm)
 	if(held_card())
 		release_held_id(A.actor)
 	else
-		if(emagged > 0)
+		if(emagged() > 0)
 			to_chat(A.actor, span_boldwarning("[icon2html(src, A.actor.client)] The ATM card reader rejected your ID because this machine has been sabotaged!"))
 		else
 			var/obj/item/I = A.actor.get_active_hand()

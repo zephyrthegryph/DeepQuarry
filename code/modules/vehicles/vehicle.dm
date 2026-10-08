@@ -135,7 +135,7 @@ CAPABILITIES(/obj/vehicle)
 	if(locked)
 		return ITEM_INTERACT_BLOCKING
 	open = !open
-	update_icon()
+	changed(src)
 	to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
@@ -213,7 +213,7 @@ CAPABILITIES(/obj/vehicle)
 	play_sfx(src, SFX_EFFECTS_VEHICLE_IGNITION_CAR) // New sound effects.
 	soundloop.start()
 	set_light(initial(light_range))
-	update_icon()
+	changed(src)
 	return TRUE
 
 /obj/vehicle/proc/turn_off()
@@ -225,7 +225,7 @@ CAPABILITIES(/obj/vehicle)
 	play_sfx(src, SFX_EFFECTS_VEHICLE_ENGINE_OFF) // New sound effects.
 	soundloop.stop()
 	set_light(0)
-	update_icon()
+	changed(src)
 
 /obj/vehicle/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor

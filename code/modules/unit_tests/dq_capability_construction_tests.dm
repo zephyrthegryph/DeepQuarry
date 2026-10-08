@@ -179,7 +179,7 @@
 	var/list/problems = bad_ladder.validate()
 	TEST_ASSERT(length(problems) && findtext(jointext(problems, ";"), "has a handler"), "a cost with a handler is reported: [jointext(problems, "; ")]")
 	TEST_ASSERT_EQUAL(bad_ladder.state_of(bad), "one", "the stage is read from the holder var")
-	TEST_ASSERT(!bad.cap_data, "a holder-var ladder keeps no capability data")
+	TEST_ASSERT(!capability_data(bad), "a holder-var ladder keeps no capability data")
 	own_turf_contents(T)
 
 /// Stage icons are drawn through draw(look), and the per-instance stage is made at init and dropped at destroy.
@@ -189,7 +189,7 @@
 	var/turf/T = test_floor()
 	var/obj/cap_fixture/ladder_probe/probe = allocate(/obj/cap_fixture/ladder_probe, T)
 	var/datum/capability/construction/C = cap_of(probe, /datum/capability/construction)
-	var/datum/ladder_progress/progress = probe.cap_data?[C.key]
+	var/datum/ladder_progress/progress = capability_data(probe)?[C.key]
 	TEST_ASSERT(progress, "on_holder_init made the stage data")
 	TEST_ASSERT_EQUAL(progress?.stage, "start", "on the start stage")
 
@@ -201,7 +201,7 @@
 	TEST_ASSERT_EQUAL(probe.icon_state, initial(probe.icon_state), "no step or set writes icon_state; the look applies it")
 
 	C.legacy_holder_destroy(probe)
-	TEST_ASSERT(!probe.cap_data?[C.key], "on_holder_destroy dropped the stage data")
+	TEST_ASSERT(!capability_data(probe)?[C.key], "on_holder_destroy dropped the stage data")
 	TEST_ASSERT(QDELETED(progress), "and deleted it")
 	TEST_ASSERT_EQUAL(drawn_state(probe), "probe_base", "with no data the holder reads as the start stage")
 	own_turf_contents(T)

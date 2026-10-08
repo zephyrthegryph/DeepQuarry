@@ -594,14 +594,14 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 /obj/machinery/computer/scan_consolenew/proc/ui_act_togglelock(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_BUTTON)
 	if(connected() && connected().get_occupant())
-		connected().locked = !(connected().locked)
+		connected().set_locked(!(connected().locked))
 	return TRUE
 
 /obj/machinery/computer/scan_consolenew/proc/ui_act_pulseradiation(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_BUTTON)
 	set_irradiating(radiation_duration)
 	var/lock_state = connected().locked
-	connected().locked = TRUE //lock it
+	connected().set_locked(TRUE) //lock it
 	after(src, radiation_duration SECONDS, PROC_REF(do_pulse), with = list(lock_state))
 	return TRUE
 
@@ -645,7 +645,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 
 	set_irradiating(radiation_duration)
 	var/lock_state = connected().locked
-	connected().locked = TRUE //lock it
+	connected().set_locked(TRUE) //lock it
 
 	//We call the do_irradiate proc here after radation_duration SECONDS
 	after(src, radiation_duration SECONDS, PROC_REF(do_irradiate), with = list(lock_state, block))
@@ -714,7 +714,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 				return TRUE
 			set_irradiating(2)
 			var/lock_state = connected().locked
-			connected().locked = 1//lock it
+			connected().set_locked(1)//lock it
 			after(src, 2 SECONDS, PROC_REF(do_transfer), with = list(lock_state, bufferId))
 			return TRUE
 		if("createInjector")
@@ -854,7 +854,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 /obj/machinery/computer/scan_consolenew/proc/do_irradiate(lock_state, block)
 	var/mob/living/carbon/WC = connected()?.get_occupant()
 	set_irradiating(0)
-	connected().locked = lock_state
+	connected().set_locked(lock_state)
 	if(!WC)
 		return
 
@@ -887,7 +887,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 /obj/machinery/computer/scan_consolenew/proc/do_pulse(lock_state)
 	var/mob/living/carbon/WC = connected()?.get_occupant()
 	set_irradiating(0)
-	connected().locked = lock_state
+	connected().set_locked(lock_state)
 
 	if(!WC)
 		return
@@ -912,7 +912,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 
 /obj/machinery/computer/scan_consolenew/proc/do_transfer(lock_state, bufferId)
 	set_irradiating(0)
-	connected().locked = lock_state
+	connected().set_locked(lock_state)
 
 	play_sfx(src, SFX_KEYBOARD)
 

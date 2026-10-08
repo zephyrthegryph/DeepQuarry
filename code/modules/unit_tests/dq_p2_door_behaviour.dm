@@ -41,7 +41,7 @@
 
 /// Whether the door has been emagged.
 /proc/p2_door_emagged(obj/machinery/door/D)
-	return D.emagged || is_emagged(D)
+	return D.emagged() || is_emagged(D)
 
 /// Whether emergency access is engaged.
 /proc/p2_door_emergency(obj/machinery/door/D)
@@ -189,9 +189,16 @@
 	/// TRUE: real time and the live kernel (a door deadline that reads world.time).
 	var/live = FALSE
 
+/datum/unit_test/dq_p2_door/New()
+	..()
+	// Visibility queries share this persistent cache. Warm it before the runner
+	// snapshots globals so an isolated door test leaves no lazy-init warning.
+	dview(0, test_floor())
+
 /datum/unit_test/dq_p2_door/Run()
 	if(!live)
 		test_driver_begin()
+		set_global(nameof(GLOB.test_prompts), list())
 		p2_door_capture_prompts()
 	run_gate()
 	if(!live)
@@ -1696,7 +1703,8 @@
 /datum/unit_test/dq_p2_door/firedoor_silicon_uses_it_through_the_prompt/run_gate()
 	var/obj/machinery/door/firedoor/D = make_door(/obj/machinery/door/firedoor)
 	var/mob/living/silicon/ai/AI = make_ai()
-	D.silicon_use(AI)
+	p2_door_click(AI, D, null)
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(AI), "the real silicon click opens the remote-use question")
 	p2_door_answer(AI, TRUE)
 	settle()
 	TEST_ASSERT(D.density, "an AI closes a firedoor through the same question")

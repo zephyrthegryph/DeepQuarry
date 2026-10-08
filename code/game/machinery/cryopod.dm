@@ -146,7 +146,6 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 	density = TRUE
 
 //Cryopods themselves.
-OM_DERIVE_FIELD(/obj/machinery/cryopod, cryopod_occupied, list(CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
 /// Derived field: the pod holds someone. The occupant slot's link/unlink raises
 /// CHANGE_RELATION_ADDED/REMOVED on the pod (om_link/om_unlink).
 /obj/machinery/cryopod/proc/cryopod_occupied()

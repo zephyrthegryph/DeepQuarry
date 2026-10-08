@@ -83,6 +83,7 @@
 /// The values of E5's generated READ_* constants (code/engine/_generated/reads.dm, included after the stat layer): the holder root, a plain var read, a system read.
 #define SREAD_ROOT_HOLDER 1
 #define SREAD_KIND_VAR 0
+#define SREAD_KIND_ACCESSOR 1
 #define SREAD_KIND_SYSTEM 3
 
 /// What the next marked evaluation is expected to cost, for the budget check before it runs: a fixed charge in test builds (TEST_EVAL_COST), an estimate in

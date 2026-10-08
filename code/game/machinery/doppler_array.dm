@@ -26,9 +26,12 @@
 	observe(OM_WORLD, /datum/notice/world_explosion, src, then(PROC_REF(sense_explosion)))
 	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
 
+MSG_DEF_SELF(doppler/needs_parts, "needs a rapid part exchange device")
+
 CAPABILITIES(/obj/machinery/doppler_array)
 	interface("DopplerArray")
 	ui_shape(explosions = list_of(row(index = int(), time = schema_text(), x = int(), y = int(), z = int(), devastation_range = num(), heavy_impact_range = num(), light_impact_range = num(), seconds_taken = num())))
+	op("part_replacement_impl", inputs(item(/obj/item/storage/part_replacer), menu()), needs(req(/obj/item/storage/part_replacer, because = MSG(doppler/needs_parts)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(PROC_REF(interaction_part_replacement_impl)))
 
 /obj/machinery/doppler_array/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -79,10 +82,10 @@ CAPABILITIES(/obj/machinery/doppler_array)
 	else
 		icon_state = "[initial(icon_state)]_off"
 
-EXTEND_INTERACTIONS(/obj/machinery/doppler_array, \
-	INTERACT_INSERT(/obj/item/storage/part_replacer, PROC_REF(interaction_part_replacement_impl), "Replace parts"), \
-)
-
-/obj/machinery/doppler_array/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/doppler_array/proc/interaction_part_replacement_impl(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	add_fingerprint(user)
-	return default_part_replacement(user, held) ? TRUE : FALSE
+	if(default_part_replacement(user, held))
+		return OP_OK
+	return OP_DECLINE

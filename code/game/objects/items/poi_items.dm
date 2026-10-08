@@ -235,7 +235,7 @@ MSG_DEF_SELF(drone_circuit/fried, "It's covered in black marks, you feel there's
 			deaf_message = span_bold("[src]") + " flashes red repeatedly", runemessage= "Beep! Beep!")
 			to_chat(user, span_warning("The components spark from the multitool's unregulated pulse. \
 			Perhaps it'd been better to use more sophisticated tools..."))
-			fried = TRUE
+			set_fried(TRUE)
 			message_turf.visible_message(message = span_bold("[src]") + " FLASHES VIOLENTLY!",
 			blind_message = "ZAP!", runemessage = "CRACKLE!")
 			var/used_hand = user.get_organ(user.get_active_hand())

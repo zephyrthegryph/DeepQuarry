@@ -618,6 +618,15 @@ const analyzeCacheDir = (): string | null => {
   if (process.platform === 'win32' && fs.existsSync('E:/')) return 'E:/dq-cache/analyze-bin';
   return path.join(os.homedir(), '.cache', 'dq', 'analyze-bin');
 };
+// Shared cargo target dir for the analyzer (DQ_ANALYZE_TARGET; `off` builds in the worktree).
+const analyzeSharedTargetDir = (): string | null => {
+  const env = process.env.DQ_ANALYZE_TARGET;
+  if (env === 'off' || env === '0') return null;
+  if (env) return path.resolve(env);
+  if (process.env.CARGO_TARGET_DIR) return null;
+  if (process.platform === 'win32' && fs.existsSync('E:/')) return 'E:/dq-cache/analyze-target';
+  return path.join(os.homedir(), '.cache', 'dq', 'analyze-target');
+};
 const analyzeSourceKey = (): string => {
   const hash = createHash('sha256').update(`analyze-v1|${process.platform}|${process.arch}|`);
   const files = [
@@ -671,7 +680,22 @@ export const AnalyzeBuildTarget = new Juke.Target({
     return true;
   },
   executes: async () => {
-    await Juke.exec('cargo', ['build', '--release', '--manifest-path', 'tools/analyze/Cargo.toml']);
+    // Build into one shared target dir (cargo's own lock serialises concurrent worktrees and
+    // different sources rebuild incrementally), then copy the binary to this worktree's path.
+    const shared = analyzeSharedTargetDir();
+    if (shared) {
+      fs.mkdirSync(shared, { recursive: true });
+      Juke.logger.info(`analyze: building in shared target ${shared} (waits on cargo's lock if another build is running)`);
+      const cargoEnv = { ...process.env, CARGO_TARGET_DIR: path.resolve(shared) };
+      await Juke.exec('cargo', ['build', '--release', '--manifest-path', 'tools/analyze/Cargo.toml'], { env: cargoEnv });
+      const built = path.join(path.resolve(shared), 'release', path.basename(ANALYZE_BIN));
+      fs.mkdirSync(path.dirname(ANALYZE_BIN), { recursive: true });
+      const tmpBin = `${ANALYZE_BIN}.${process.pid}.tmp`;
+      fs.copyFileSync(built, tmpBin);
+      fs.renameSync(tmpBin, ANALYZE_BIN);
+    } else {
+      await Juke.exec('cargo', ['build', '--release', '--manifest-path', 'tools/analyze/Cargo.toml']);
+    }
     const key = analyzePendingKey;
     if (!key) return;
     fs.writeFileSync(`${ANALYZE_BIN}.key`, key);

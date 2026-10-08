@@ -3,7 +3,7 @@
 //! A pooled type (a subtype of `/datum/pooled`, or declared with `POOL_DECLARE`) is taken with
 //! `take(type)` and given back with `.release()`, never built with `new`. Fails when `new` builds a
 //! pooled type outside the exempt files, or a file calls `take()` / `pool_take()` but never
-//! releases anything.
+//! releases anything. A straight-line factory may instead return its acquired local to the caller.
 //!
 //! Quirks kept: a line containing the literal text `ALLOW(pool)` is skipped wholesale (even inside a
 //! comment, and it is not an `allowed()` call: no comment-line-above form, and it also hides a
@@ -75,12 +75,41 @@ fn facts_of(f: &SourceFile) -> Facts {
     Facts { pooled: pooled.into_iter().collect() }
 }
 
+/// A factory transfers the acquired object only when an unconditionally assigned local is
+/// returned unchanged at the same top-level indentation, within the same proc. Conditional
+/// returns, reassignment and other earlier returns do not establish this contract.
+fn returned_acquisition(lines: &[&str], at: usize) -> bool {
+    let declaration = strip(lines[at]);
+    let Some(local) = pat!(r"^\tvar/(?:[A-Za-z0-9_]+/)+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:pool_take|take)\(/datum/[A-Za-z0-9_/]+\)\s*$").captures(&declaration) else {
+        return false;
+    };
+    let name = local.s(1);
+    for raw in &lines[at + 1..] {
+        let line = strip(raw);
+        if !line.trim().is_empty() && !line.starts_with('\t') && !line.starts_with(' ') {
+            break;
+        }
+        let trimmed = line.trim();
+        if trimmed.starts_with("return") {
+            return line == format!("\treturn {}", name);
+        }
+        // Writes to members initialize the packet; writes to the local change its identity.
+        if let Some(write) = pat!(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:=|\+=|-=|\*=|/=)").captures(&line) {
+            if write.s(1) == name {
+                return false;
+            }
+        }
+    }
+    false
+}
+
 /// The sites of one file given the pooled-type index: `(rule, line, message)` in emission order.
 fn judge(f: &SourceFile, pooled: &BTreeSet<String>, exempt_prefixes: &[String]) -> Vec<(u8, u32, String)> {
     let mut out: Vec<(u8, u32, String)> = Vec::new();
     let exempt = starts_with_any(&f.rel, exempt_prefixes);
     let mut takes: Vec<(usize, String)> = Vec::new();
     let mut releases = false;
+    let lines: Vec<&str> = f.raw().lines().collect();
     for (number, raw) in f.raw().numbered() {
         if raw.contains("ALLOW(pool)") {
             continue;
@@ -90,7 +119,9 @@ fn judge(f: &SourceFile, pooled: &BTreeSet<String>, exempt_prefixes: &[String]) 
             releases = true;
         }
         for t in pat!(r"\b(?:pool_take|take)\((/datum/[A-Za-z0-9_/]+)").captures_iter(&line) {
-            takes.push((number, t.s(1).to_string()));
+            if !returned_acquisition(&lines, number - 1) {
+                takes.push((number, t.s(1).to_string()));
+            }
         }
         if exempt {
             continue;
@@ -161,6 +192,17 @@ impl Lint for Pool {
             out.sites.len()
         };
         let good = "/datum/foo\n\tparent_type = /datum/pooled\n\n/proc/f()\n\tvar/datum/foo/F = take(/datum/foo)\n\tF.release()\n";
+        let factory = "/datum/foo\n\tparent_type = /datum/pooled\n\n/proc/factory()\n\tvar/datum/foo/packet = take(/datum/foo)\n\tpacket.zone = 1\n\treturn packet\n";
+        let reassigned = factory.replace("\tpacket.zone = 1", "\tpacket = null");
+        let conditional = factory.replace("\treturn packet", "\tif(ok)\n\t\treturn packet");
+        let multiple = factory.replace("\tpacket.zone = 1", "\tvar/datum/foo/other = take(/datum/foo)");
+        if run(vec![("factory.dm", factory)]) != 0
+            || run(vec![("reassigned.dm", &reassigned)]) == 0
+            || run(vec![("conditional.dm", &conditional)]) == 0
+            || run(vec![("multiple.dm", &multiple)]) == 0
+        {
+            return Err("factory return contract misclassified".into());
+        }
         let bad_new = "/proc/g()\n\tvar/datum/foo/F = new /datum/foo\n";
         let bad_leak = [("a.dm", "/datum/foo\n\tparent_type = /datum/pooled\n"), ("c.dm", "/proc/h()\n\treturn take(/datum/foo)\n")];
         if run(vec![("a.dm", good)]) != 0 {

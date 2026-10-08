@@ -2,12 +2,12 @@
 /obj/item/weldingtool state: welder
 /obj/item/weldingtool dir: 2
 /obj/item/weldingtool overlay: icons/obj/tools.dmi:welder100:-32767
-/obj/item/weldingtool overlay: icons/obj/tools.dmi:welder:8:#000000 x2
+/obj/item/weldingtool overlay: icons/obj/tools.dmi:welder:8:#000000
 /obj/item/weldingtool/spell icon: icons/obj/tools.dmi
 /obj/item/weldingtool/spell state: welder
 /obj/item/weldingtool/spell dir: 2
 /obj/item/weldingtool/spell overlay: icons/obj/tools.dmi:welder100:-32767
-/obj/item/weldingtool/spell overlay: icons/obj/tools.dmi:welder:8:#000000 x2
+/obj/item/weldingtool/spell overlay: icons/obj/tools.dmi:welder:8:#000000
 /obj/item/weldingtool/alien icon: icons/obj/abductor.dmi
 /obj/item/weldingtool/alien state: welder
 /obj/item/weldingtool/alien dir: 2
@@ -20,29 +20,29 @@
 /obj/item/weldingtool/brass state: brasswelder
 /obj/item/weldingtool/brass dir: 2
 /obj/item/weldingtool/brass overlay: icons/obj/tools.dmi:brasswelder100:-32767
-/obj/item/weldingtool/brass overlay: icons/obj/tools.dmi:brasswelder:8:#000000 x2
+/obj/item/weldingtool/brass overlay: icons/obj/tools.dmi:brasswelder:8:#000000
 /obj/item/weldingtool/dummy icon: icons/obj/tools.dmi
 /obj/item/weldingtool/dummy state: welder
 /obj/item/weldingtool/dummy dir: 2
 /obj/item/weldingtool/dummy overlay: icons/obj/tools.dmi:welder-on:-32767
 /obj/item/weldingtool/dummy overlay: icons/obj/tools.dmi:welder100:-32767
-/obj/item/weldingtool/dummy overlay: icons/obj/tools.dmi:welder:8:#000000 x2
+/obj/item/weldingtool/dummy overlay: icons/obj/tools.dmi:welder:8:#000000
 /obj/item/weldingtool/dummy/altevian icon: icons/obj/tools.dmi
 /obj/item/weldingtool/dummy/altevian state: welder
 /obj/item/weldingtool/dummy/altevian dir: 2
 /obj/item/weldingtool/dummy/altevian overlay: icons/obj/tools.dmi:welder-on:-32767
 /obj/item/weldingtool/dummy/altevian overlay: icons/obj/tools.dmi:welder100:-32767
-/obj/item/weldingtool/dummy/altevian overlay: icons/obj/tools.dmi:welder:8:#000000 x2
+/obj/item/weldingtool/dummy/altevian overlay: icons/obj/tools.dmi:welder:8:#000000
 /obj/item/weldingtool/largetank icon: icons/obj/tools.dmi
 /obj/item/weldingtool/largetank state: indwelder
 /obj/item/weldingtool/largetank dir: 2
 /obj/item/weldingtool/largetank overlay: icons/obj/tools.dmi:indwelder100:-32767
-/obj/item/weldingtool/largetank overlay: icons/obj/tools.dmi:indwelder:8:#000000 x2
+/obj/item/weldingtool/largetank overlay: icons/obj/tools.dmi:indwelder:8:#000000
 /obj/item/weldingtool/hugetank icon: icons/obj/tools.dmi
 /obj/item/weldingtool/hugetank state: upindwelder
 /obj/item/weldingtool/hugetank dir: 2
 /obj/item/weldingtool/hugetank overlay: icons/obj/tools.dmi:upindwelder100:-32767
-/obj/item/weldingtool/hugetank overlay: icons/obj/tools.dmi:upindwelder:8:#000000 x2
+/obj/item/weldingtool/hugetank overlay: icons/obj/tools.dmi:upindwelder:8:#000000
 /obj/item/weldingtool/mini icon: icons/obj/tools.dmi
 /obj/item/weldingtool/mini state: miniwelder
 /obj/item/weldingtool/mini dir: 2
@@ -69,7 +69,7 @@
 /obj/item/weldingtool/electric state: arcwelder
 /obj/item/weldingtool/electric dir: 2
 /obj/item/weldingtool/electric overlay: icons/obj/tools.dmi:arcwelder100:-32767
-/obj/item/weldingtool/electric overlay: icons/obj/tools.dmi:arcwelder:8:#000000 x2
+/obj/item/weldingtool/electric overlay: icons/obj/tools.dmi:arcwelder:8:#000000
 /obj/item/weldingtool/electric/unloaded icon: icons/obj/tools.dmi
 /obj/item/weldingtool/electric/unloaded state: arcwelder
 /obj/item/weldingtool/electric/unloaded dir: 2

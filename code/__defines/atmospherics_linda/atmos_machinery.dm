@@ -1,3 +1,7 @@
+/// Shared by firedoor logic and generated gas-level capability declarations.
+#define FIREDOOR_MAX_TEMP 50 // °C
+#define FIREDOOR_MIN_TEMP 0
+
 /// Used when an atmos machine has "external" selected.
 /// Found in `pressure_checks` of vents and air alarms.
 #define ATMOS_EXTERNAL_BOUND (1 << 0)

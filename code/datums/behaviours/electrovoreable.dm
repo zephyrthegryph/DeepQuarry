@@ -1,8 +1,11 @@
 /// Electrovore interaction for power cells (was /datum/element/electrovoreable, added to
 /// every cell). A self-use interaction declared on /obj/item/cell (power/cell.dm); FALSE
 /// moves on to the next self-use, so non-electrovores fall through.
-/obj/item/cell/proc/interaction_electrovore(mob/user, obj/item/held, datum/interaction/interaction)
-	return (electrovore_attack_self(user, interaction.stance) & COMPONENT_CANCEL_ATTACK_CHAIN) ? TRUE : FALSE
+/obj/item/cell/proc/electrovore_charge(datum/act/op/A)
+	return (electrovore_attack_self(A.actor, I_HELP) & COMPONENT_CANCEL_ATTACK_CHAIN) ? OP_OK : OP_DECLINE
+
+/obj/item/cell/proc/electrovore_drain(datum/act/op/A)
+	return (electrovore_attack_self(A.actor, I_HURT) & COMPONENT_CANCEL_ATTACK_CHAIN) ? OP_OK : OP_DECLINE
 
 /// Electrovores charge (help, obligate) or drain (harm) the cell by hand.
 /obj/item/cell/proc/electrovore_attack_self(mob/user, stance)

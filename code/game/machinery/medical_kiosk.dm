@@ -41,7 +41,6 @@
 	/// This determines if the kiosk can dispense or not. Edit the below line to FALSE if you don't want them to do such.
 	var/can_dispense = TRUE
 
-
 /obj/machinery/medical_kiosk/proc/appearance_awake()
 	return (operable() && active_user()) ? 1 : 0
 
@@ -52,13 +51,13 @@
 	if(panel_open == 1)
 		look.state("kiosk_open")
 
-EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
-	INTERACT_HAND(null, PROC_REF(medical_kiosk_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(medical_kiosk_interaction_item)), \
-)
+CAPABILITIES(/obj/machinery/medical_kiosk)
+	op("medical_kiosk_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(medical_kiosk_interaction_hand)))
+	op("medical_kiosk_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(medical_kiosk_interaction_item)))
 
 /// Old attack_hand.
-/obj/machinery/medical_kiosk/proc/medical_kiosk_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/medical_kiosk/proc/medical_kiosk_interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(istype(user) && Adjacent(user))
 		if(!operable() || panel_open)
 			to_chat(user, span_warning("\The [src] seems to be nonfunctional..."))
@@ -66,11 +65,15 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 			to_chat(user, span_warning("Another patient has begin using this machine. Please wait for them to finish, or their session to time out."))
 		else
 			start_using(user)
-	return TRUE
+	return OP_OK
 
 /// Old attackby.
-/obj/machinery/medical_kiosk/proc/medical_kiosk_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	return default_part_replacement(user, O) ? TRUE : FALSE
+/obj/machinery/medical_kiosk/proc/medical_kiosk_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	if(default_part_replacement(user, O))
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/medical_kiosk/proc/wake_lock(mob/living/user)
 	rel_set(src, nameof(active_user), user)

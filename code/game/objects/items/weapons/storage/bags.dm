@@ -173,7 +173,7 @@ CAPABILITIES(/obj/item/storage/bag/sheetsnatcher)
 		if(S.type == sheet.type)
 			// we are violating the amount limitation because these are not sane objects
 			sheet.set_amount(sheet.get_amount() + amount, TRUE)
-			ledger?.refresh(sheet)
+			containment_ledger()?.refresh(sheet)
 			S.use(amount) // will qdel() if we use it all
 			refresh_hud()
 			return TRUE
@@ -220,7 +220,7 @@ CAPABILITIES(/obj/item/storage/bag/sheetsnatcher)
 		var/newstack_amt = S.get_amount() - S.max_amount
 		new S.type(src, newstack_amt) // The one we'll keep to replace the one we give
 		S.set_amount(S.max_amount) // The one we hand to the clicker
-		ledger?.refresh(S)
+		containment_ledger()?.refresh(S)
 
 	return ..()
 

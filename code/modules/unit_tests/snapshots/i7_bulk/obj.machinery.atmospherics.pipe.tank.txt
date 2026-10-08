@@ -1,5 +1,77 @@
-/obj/machinery/atmospherics/pipe/tank|human|none => |
-/obj/machinery/atmospherics/pipe/tank|robot|none => |gen_robot_interaction_swallow:not possible right now
-/obj/machinery/atmospherics/pipe/tank|ai|none => |
-/obj/machinery/atmospherics/pipe/tank|ghost|none => |
+human|none menu: Climb
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Climb
+robot|none click: nothing
+ai|none click: nothing
+ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Swallow
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Swallow
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Swallow
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Swallow
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Swallow
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Swallow
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Swallow
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Swallow
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Swallow
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Swallow
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Seal (refused: It has no crack to seal.)
+human|/obj/item/weldingtool menu: Swallow
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Seal
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Swallow
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Swallow
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Fit engineered material
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Swallow
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Fit engineered material
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Swallow
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Swallow
+human|/obj/item menu: Climb
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Swallow
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Swallow
+human|/obj/item/stack/material menu: Climb
+human|/obj/item/stack/material menu: Fit engineered material
+human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Swallow
+human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material click: Click: Fit engineered material
+human|/obj/item/pipe_painter menu: Climb
+human|/obj/item/pipe_painter menu: Move To Top
+human|/obj/item/pipe_painter menu: Paint pipe (refused: You can't do that right now.)
+human|/obj/item/pipe_painter menu: Painter
+human|/obj/item/pipe_painter menu: Swallow
+human|/obj/item/pipe_painter menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pipe_painter click: Click: Painter
+keys: climb.climb, climb.climb_menu, drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, painter, robot_remote_blocked, seal, swallow, unwrench
 

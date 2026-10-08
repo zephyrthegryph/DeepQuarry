@@ -9,24 +9,15 @@
 	max_integrity = 10
 
 //similar to weeds, but only barfed out by nurses manually
+/obj/effect/spider/melee_scale()
+	return 0.25
+
+/obj/effect/spider/melee_passes()
+	return TRUE
+
 CAPABILITIES(/obj/effect/spider)
-	op("hit_web", item(/obj/item), then(PROC_REF(interaction_hit_web)))
+	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
-
-/// Old attackby: any item hits the web (afterattack still follows, as before).
-/obj/effect/spider/proc/interaction_hit_web(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/held = A.held
-	var/obj/item/W = held
-	user.setClickCooldown(user.get_attack_speed(W))
-
-	if(LAZYLEN(W.attack_verb))
-		act_message(src, user, others = span_warning("%U% has been [pick(W.attack_verb)] with %I%[user ? " by %T%." : "."]"), item = W)
-	else
-		act_message(src, user, others = span_warning("%U% has been attacked with %I%[user ? " by %T%." : "."]"), item = W)
-
-	receive_weapon_hit(W, user, W.force / 4)
-	return OP_PASS
 
 /obj/effect/spider/proc/welder_used(datum/act/op/A)
 	var/mob/user = A.actor

@@ -27,7 +27,7 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 /// on_change(cond, ENTER | EXIT | ANY, parts...). The legacy form takes a list of reads and a handler.
 /proc/on_change(cond, edge, ENTRY_SLOTS, at_most = 0, when = null)
 	if(!isnum(edge))
-		return legacy_on_change(cond, edge, at_most, when)
+		return reaction_on_change(cond, edge, at_most, when)
 	return entry_make(ENTRY_ON_CHANGE, null, list("cond" = cond, "edge" = edge), entry_flatten(ENTRY_SLOT_LIST))
 
 /// The keys whose publication means `cond` may have changed, for holder E.
@@ -51,8 +51,10 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 		return list(copytext(cond, 1, findtext(cond, ".")))
 	if(cond in E.vars)
 		return list(cond)
+	if(hascall(E, "__setter_[cond]"))
+		. |= list(cond)
 	for(var/read in stat_generated_reads(E, cond))
-		if(!findtext(read, ".") && !findtext(read, ":"))
+		if(!findtext(read, ".") && (!findtext(read, ":") || findtext(read, "capkey:") == 1))
 			. |= read
 
 /// The value the hook's condition or key has on E now: a boolean for an edge hook, the raw value for ANY.
@@ -140,7 +142,7 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 		if(!length(paths))
 			GLOB.change_hop_keys -= last
 
-/// TRUE when a type-level on_change of E's type reads `key` (rx_readers() asks, so changed() publishes it).
+/// TRUE when a type-level on_change of E's type reads `key` (rx_readers() asks, so state_changed() publishes it).
 /proc/hooks_watching(datum/E, key)
 	if(!islist(GLOB?.change_index_by_type))
 		return FALSE

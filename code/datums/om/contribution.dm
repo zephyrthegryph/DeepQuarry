@@ -1,558 +1,92 @@
-// Object-model core: contributions, grants, clocks, relevance, suspension
-// (doc/rewrite/object_model_core.md sections E and A.7-A.8).
-//
-// One store per entity for everything that is "a source makes something
-// true or adds to a number on a target": statuses, stat modifiers, grants,
-// clock multipliers and inhibitions, relevance, suspension holds. An effect
-// type (one table row) says how contributions combine and stack and which
-// channel reports a change.
-//
-// There is no public setter for the combined value: it only changes through
-// om_apply()/om_hold()/om_release(), and a hold dies with its source, so an
-// override cannot outlive whatever imposed it.
+/// Legacy contribution APIs forward to the engine store.
 
-#define OM_C_EFFECT 0
-#define OM_C_SOURCE 1
-#define OM_C_VALUE 2
-#define OM_C_EXPIRES 3
-#define OM_C_KEY 4
-#define OM_C_EPOCH 5
-#define OM_C_STRIDE 6
-
-/// Timed contribution: expires after `duration` (deciseconds) via the deadline wheel.
 /proc/om_apply(datum/target, effect_id, datum/source, duration, value = TRUE, key)
-	var/datum/om/effect/eff = om_registry().effect(effect_id)
-	var/datum/om/rec/rec = om_rec_of(target)
-	if(!rec || !source)
-		return FALSE
-	var/t = rec.sched.now()
-	om_contrib_set(rec, eff, source, value, t + max(duration, 1), key, duration)
-	om_expiry_reschedule(rec)
-	return TRUE
+	return contribution_apply(arglist(args))
 
-/// Held contribution: lasts until released or until `source` is deleted.
-/// Inside a hook of a `holds` behaviour, it also lasts only while the hook
-/// keeps making it (see om_reconcile_holds()).
 /proc/om_hold(datum/target, effect_id, datum/source, value = TRUE, key)
-	var/datum/om/effect/eff = om_registry().effect(effect_id)
-	var/datum/om/rec/rec = om_rec_of(target)
-	if(!rec || !source || QDELETED(source))
-		return FALSE
-	om_contrib_set(rec, eff, source, value, 0, key, 0)
-	var/datum/om/scheduler/sched = rec.sched
-	var/datum/om/rec/ctx = sched.ctx_rec
-	if(ctx)
-		var/list/log = ctx.hold_log
-		var/found = FALSE
-		for(var/i in 1 to length(log) step 5)
-			if(log[i] == sched.ctx_bid && log[i + 1] == target && log[i + 2] == eff.idx && log[i + 3] == source && log[i + 4] == key)
-				found = TRUE
-				break
-		if(!found)
-			LAZYADD(ctx.hold_log, list(sched.ctx_bid, target, eff.idx, source, key))
-			LAZYOR(rec.hook_holders, ctx.owner)
-	return TRUE
+	return contribution_hold(arglist(args))
 
-/// Timed contribution ending exactly at `expires_at` (the target's scheduler
-/// time, deciseconds), whatever the effect's stacking rule: for callers that
-/// already computed the new expiry (set or adjust a remaining duration). An
-/// expiry at or before now releases it.
 /proc/om_apply_until(datum/target, effect_id, datum/source, expires_at, value = TRUE, key)
-	var/datum/om/rec/rec = om_rec_of(target)
-	if(!rec || !source)
-		return FALSE
-	return om_contrib_until(rec, om_registry().effect(effect_id), source, expires_at, value, key)
+	return contribution_apply_until(arglist(args))
 
-/// om_apply_until() for callers holding the effect def (one id lookup per call).
 /proc/om_contrib_until(datum/om/rec/rec, datum/om/effect/eff, datum/source, expires_at, value = TRUE, key)
-	var/t = rec.sched.now()
-	if(expires_at <= t)
-		var/i = rec.contribs ? om_contrib_find(rec, eff.idx, source, key) : 0
-		if(i)
-			om_contrib_remove(rec, eff, i)
-			om_expiry_reschedule(rec)
-		return FALSE
-	om_contrib_set(rec, eff, source, value, expires_at, key, expires_at - t, TRUE)
-	om_expiry_reschedule(rec)
-	return TRUE
+	return contribution_contrib_until(arglist(args))
 
-/// Expiry of `source`'s contribution to effect idx `eidx`: 0 for a hold, null when none.
 /proc/om_contrib_expiry(datum/om/rec/rec, eidx, datum/source, key)
-	var/i = rec.contribs ? om_contrib_find(rec, eidx, source, key) : 0
-	return i ? rec.contribs[i + OM_C_EXPIRES] : null
+	return contribution_contrib_expiry(arglist(args))
 
-/// Releases every timed contribution to `eff` on `rec` (holds stay).
 /proc/om_contrib_release_timed(datum/om/rec/rec, datum/om/effect/eff)
-	var/i = 1
-	var/removed = FALSE
-	while(i <= length(rec.contribs))
-		if(rec.contribs[i + OM_C_EFFECT] == eff.idx && rec.contribs[i + OM_C_EXPIRES])
-			om_contrib_remove(rec, eff, i)
-			removed = TRUE
-			continue
-		i += OM_C_STRIDE
-	if(removed)
-		om_expiry_reschedule(rec)
+	return contribution_contrib_release_timed(arglist(args))
 
-/// When `source`'s contribution to `effect_id` on `target` expires (scheduler
-/// time, deciseconds): 0 for a hold, null when there is none.
 /proc/om_expires_at(datum/target, effect_id, datum/source, key)
-	var/datum/om/rec/rec = target?.om_rec
-	if(!rec?.contribs)
-		return null
-	return om_contrib_expiry(rec, om_registry().effect(effect_id).idx, source, key)
+	return contribution_expires_at(arglist(args))
 
-/// The time `E`'s scheduler runs on (world.time live, injected in tests). Use it
-/// with om_apply_until()/om_expires_at() so tests on a test scheduler agree.
 /proc/om_time_of(datum/E)
-	var/datum/om/rec/rec = E?.om_rec
-	return rec ? rec.sched.now() : om_scheduler().now()
+	return scheduler_time_of(arglist(args))
 
 /proc/om_release(datum/target, effect_id, datum/source, key)
-	var/datum/om/rec/rec = target?.om_rec
-	if(!rec?.contribs)
-		return FALSE
-	var/datum/om/effect/eff = om_registry().effect(effect_id)
-	var/i = om_contrib_find(rec, eff.idx, source, key)
-	if(!i)
-		return FALSE
-	om_contrib_remove(rec, eff, i)
-	return TRUE
+	return contribution_release(arglist(args))
 
-/// TRUE when the combined value differs from the effect's default (for
-/// COMBINE_ANY: when anything contributes).
 /proc/om_has(datum/target, effect_id)
-	var/v = om_value_of(target, effect_id)
-	if(islist(v))
-		return length(v) > 0
-	var/datum/om/effect/eff = om_registry().effect(effect_id)
-	return v != eff.default_value
+	return contribution_has(arglist(args))
 
-/// The combined value. COMBINE_SUM_PER_KEY returns a shared list (read only).
 /proc/om_value_of(datum/target, effect_id)
-	var/datum/om/effect/eff = om_registry().effect(effect_id)
-	var/datum/om/rec/rec = target?.om_rec
-	if(!rec)
-		if(eff.expr)
-			return om_effect_eval(null, eff.expr)
-		return eff.default_value
-	return om_effect_value(rec, eff)
-
-// ---------------------------------------------------------------- store internals
+	return contribution_value_of(arglist(args))
 
 /proc/om_contrib_find(datum/om/rec/rec, eidx, source, key)
-	var/list/C = rec.contribs
-	for(var/i in 1 to length(C) step OM_C_STRIDE)
-		if(C[i + OM_C_EFFECT] == eidx && C[i + OM_C_SOURCE] == source && C[i + OM_C_KEY] == key)
-			return i
-	return 0
+	return contribution_contrib_find(arglist(args))
 
 /proc/om_contrib_set(datum/om/rec/rec, datum/om/effect/eff, datum/source, value, expires, key, duration, exact = FALSE)
-	if(eff.expr)
-		CRASH("om: [eff.id] is a composite effect; contribute to its parts")
-	if(eff.combine == COMBINE_SUM_PER_KEY && (isnull(key) || isnum(key)))
-		CRASH("om: [eff.id] needs a text or path key")
-	var/datum/om/scheduler/sched = rec.sched
-	if(eff.clock_idx)
-		om_clock_settle(rec, eff.clock_idx)
-	var/old = om_effect_value(rec, eff)
-	var/i = om_contrib_find(rec, eff.idx, source, key)
-	if(i)
-		var/list/C = rec.contribs
-		if(exact)
-			C[i + OM_C_VALUE] = value
-			C[i + OM_C_EXPIRES] = expires
-		else if(expires)
-			var/old_expires = C[i + OM_C_EXPIRES]
-			switch(eff.stacking)
-				if(STACKING_REPLACE)
-					C[i + OM_C_VALUE] = value
-					C[i + OM_C_EXPIRES] = old_expires ? expires : 0
-				if(STACKING_EXTEND)
-					C[i + OM_C_VALUE] = value
-					if(old_expires)
-						C[i + OM_C_EXPIRES] = max(old_expires, sched.now()) + duration
-				if(STACKING_MAX)
-					C[i + OM_C_VALUE] = max(C[i + OM_C_VALUE], value)
-					if(old_expires)
-						C[i + OM_C_EXPIRES] = max(old_expires, expires)
-		else
-			C[i + OM_C_VALUE] = value
-			C[i + OM_C_EXPIRES] = 0
-		C[i + OM_C_EPOCH] = sched.cur_epoch
-	else
-		LAZYADD(rec.contribs, list(eff.idx, source, value, expires, key, sched.cur_epoch))
-		var/datum/om/rec/srec = om_rec_of(source)
-		if(srec)
-			LAZYOR(srec.held_on, rec.owner)
-	om_cval_drop(rec, eff.idx)
-	om_effect_changed(rec, eff, old)
+	return contribution_contrib_set(arglist(args))
 
 /proc/om_contrib_remove(datum/om/rec/rec, datum/om/effect/eff, i)
-	if(eff.clock_idx)
-		om_clock_settle(rec, eff.clock_idx)
-	var/old = om_effect_value(rec, eff)
-	rec.contribs.Cut(i, i + OM_C_STRIDE)
-	if(!length(rec.contribs))
-		rec.contribs = null
-	om_cval_drop(rec, eff.idx)
-	om_effect_changed(rec, eff, old)
+	return contribution_contrib_remove(arglist(args))
 
 /proc/om_cval_drop(datum/om/rec/rec, eidx)
-	var/list/V = rec.cval
-	for(var/i in 1 to length(V) step 2)
-		if(V[i] == eidx)
-			V.Cut(i, i + 2)
-			return
+	return contribution_cval_drop(arglist(args))
 
 /proc/om_effect_value(datum/om/rec/rec, datum/om/effect/eff)
-	if(eff.expr)
-		return om_effect_eval(rec, eff.expr)
-	var/list/V = rec.cval
-	for(var/i in 1 to length(V) step 2)
-		if(V[i] == eff.idx)
-			return V[i + 1]
-	var/value = eff.default_value
-	var/list/C = rec.contribs
-	var/any = FALSE
-	for(var/i in 1 to length(C) step OM_C_STRIDE)
-		if(C[i + OM_C_EFFECT] != eff.idx)
-			continue
-		var/v = C[i + OM_C_VALUE]
-		switch(eff.combine)
-			if(COMBINE_ANY)
-				if(v)
-					value = TRUE
-			if(COMBINE_SUM)
-				value = (any ? value : 0) + v
-			if(COMBINE_MAX)
-				value = any ? max(value, v) : v
-			if(COMBINE_MIN)
-				value = any ? min(value, v) : v
-			if(COMBINE_MULTIPLY)
-				value = (any ? value : 1) * v
-			if(COMBINE_SUM_PER_KEY)
-				if(!any)
-					value = list()
-				var/list/per_key = value
-				var/key = C[i + OM_C_KEY]
-				per_key[key] = (per_key[key] || 0) + v
-		any = TRUE
-	if(eff.combine == COMBINE_MAX && any && !isnull(eff.default_value))
-		value = max(value, eff.default_value)
-	if(eff.combine == COMBINE_SUM_PER_KEY && !any)
-		value = list()
-	LAZYADD(rec.cval, list(eff.idx, value))
-	return value
+	return contribution_effect_value(arglist(args))
 
-/// Evaluates a composite expression: text ids, ALL_OF/ANY_OF/NOT_OF/SUM_OF.
 /proc/om_effect_eval(datum/om/rec/rec, expr)
-	if(istext(expr))
-		var/datum/om/effect/part = om_registry().effect(expr)
-		var/v = rec ? om_effect_value(rec, part) : part.default_value
-		return v
-	var/list/L = expr
-	switch(L[1])
-		if("not")
-			return !om_effect_eval(rec, L[2])
-		if("all")
-			for(var/i in 2 to length(L))
-				if(!om_effect_eval(rec, L[i]))
-					return FALSE
-			return TRUE
-		if("any")
-			for(var/i in 2 to length(L))
-				if(om_effect_eval(rec, L[i]))
-					return TRUE
-			return FALSE
-		if("sum")
-			. = 0
-			for(var/i in 2 to length(L))
-				. += om_effect_eval(rec, L[i])
+	return contribution_effect_eval(arglist(args))
 
-/// After a contribution changed: framework kinds, subclass hook, composites, channel.
 /proc/om_effect_changed(datum/om/rec/rec, datum/om/effect/eff, old)
-	var/new_value = om_effect_value(rec, eff)
-	if(!islist(new_value) && new_value == old)
-		return
-	var/datum/E = rec.owner
-	if(eff.implies_idx && !!old != !!new_value)
-		// Implied effects are held by the entity itself, keyed by the implying effect.
-		var/list/effects = om_registry().effects
-		var/key = "implied:[eff.id]"
-		for(var/idx in eff.implies_idx)
-			if(new_value)
-				om_contrib_set(rec, effects[idx], E, TRUE, 0, key, 0)
-			else
-				var/i = om_contrib_find(rec, idx, E, key)
-				if(i)
-					om_contrib_remove(rec, effects[idx], i)
-	if(eff.blocks && new_value && !old)
-		// An immunity gained ends the timed statuses it blocks.
-		var/list/effects = om_registry().effects
-		for(var/idx in eff.blocks)
-			om_contrib_release_timed(rec, effects[idx])
-	switch(eff.kind)
-		if(OM_EFFECT_CLOCK_MULT, OM_EFFECT_CLOCK_INHIBIT)
-			om_clock_changed(rec, eff.clock_idx)
-			om_timers_rate_changed(rec)
-	eff.on_changed(E, old, new_value)
-	var/bits = eff.channel | CHANGE_EFFECTS
-	var/list/keys = eff.publishes ? list(eff.publishes) : null
-	if(eff.dependents)
-		var/list/effects = om_registry().effects
-		for(var/dep_idx in eff.dependents)
-			var/datum/om/effect/dep = effects[dep_idx]
-			bits |= dep.channel
-			if(dep.publishes)
-				LAZYOR(keys, dep.publishes)
-	if(E)
-		changed(E, bits)
-		for(var/key in keys)
-			PUBLISH_CHANGE(E, key)
+	return contribution_effect_changed(arglist(args))
 
-// ---------------------------------------------------------------- expiry
-
-/// The next expiry on `rec`, as one deadline of the internal expiry behaviour.
 /proc/om_expiry_reschedule(datum/om/rec/rec)
-	var/soonest = 0
-	var/list/C = rec.contribs
-	for(var/i in 1 to length(C) step OM_C_STRIDE)
-		var/exp = C[i + OM_C_EXPIRES]
-		if(exp && (!soonest || exp < soonest))
-			soonest = exp
-	var/datum/om/registry/reg = om_registry()
-	if(soonest)
-		om_deadline(rec.owner, max(soonest - rec.sched.now(), 0), reg.expiry_behaviour)
-	else
-		om_cancel_after(rec.owner, reg.expiry_behaviour)
+	return contribution_expiry_reschedule(arglist(args))
 
-/datum/om/behaviour/internal
-	abstract_type = /datum/om/behaviour/internal
-
-/datum/om/behaviour/internal/expiry
-	name = "om: contribution expiry"
-	lane = LANE_URGENT
-
-/datum/om/behaviour/internal/expiry/on_deadline(datum/E)
-	var/datum/om/rec/rec = E.om_rec
-	if(!rec)
-		return
-	var/t = rec.sched.now()
-	var/list/effects = om_registry().effects
-	var/i = 1
-	while(i <= length(rec.contribs))
-		var/exp = rec.contribs[i + OM_C_EXPIRES]
-		if(exp && exp <= t)
-			om_contrib_remove(rec, effects[rec.contribs[i + OM_C_EFFECT]], i)
-			continue
-		i += OM_C_STRIDE
-	om_expiry_reschedule(rec)
-
-// ---------------------------------------------------------------- source lifetime and hooks
-
-/// Releases every contribution `source` holds anywhere (source deleted, edge unlinked).
 /proc/om_release_all_from(datum/source)
-	var/datum/om/rec/srec = source.om_rec
-	if(!srec?.held_on)
-		return
-	var/list/targets = srec.held_on
-	srec.held_on = null
-	var/list/effects = om_registry().effects
-	for(var/datum/target as anything in targets)
-		var/datum/om/rec/rec = target.om_rec
-		if(!rec)
-			continue
-		var/i = 1
-		while(i <= length(rec.contribs))
-			if(rec.contribs[i + OM_C_SOURCE] == source)
-				om_contrib_remove(rec, effects[rec.contribs[i + OM_C_EFFECT]], i)
-				continue
-			i += OM_C_STRIDE
-		om_expiry_reschedule(rec)
+	return contribution_release_all_from(arglist(args))
 
-/// Target teardown: forget the contributions on `E` and every back-reference to it.
 /proc/om_clear_target(datum/E)
-	var/datum/om/rec/rec = E.om_rec
-	if(!rec)
-		return
-	var/list/C = rec.contribs
-	for(var/i in 1 to length(C) step OM_C_STRIDE)
-		var/datum/source = C[i + OM_C_SOURCE]
-		var/datum/om/rec/srec = source?.om_rec
-		if(srec)
-			LAZYREMOVE(srec.held_on, E)
-	for(var/datum/holder as anything in rec.hook_holders)
-		var/datum/om/rec/hrec = holder.om_rec
-		if(!hrec?.hold_log)
-			continue
-		var/j = 1
-		while(j <= length(hrec.hold_log))
-			if(hrec.hold_log[j + 1] == E)
-				hrec.hold_log.Cut(j, j + 5)
-				continue
-			j += 5
-	rec.hook_holders = null
-	rec.contribs = null
-	rec.cval = null
-	rec.named_verbs = null
+	return contribution_clear_target(arglist(args))
 
-/// After a `holds` hook returns: every hold the hook made before but not this
-/// time is released.
 /proc/om_reconcile_holds(datum/om/rec/rec, bid, epoch)
-	var/list/log = rec.hold_log
-	if(!log)
-		return
-	var/list/effects = om_registry().effects
-	var/j = 1
-	while(j <= length(log))
-		if(log[j] != bid)
-			j += 5
-			continue
-		var/datum/target = log[j + 1]
-		var/datum/om/rec/trec = target?.om_rec
-		var/i = trec ? om_contrib_find(trec, log[j + 2], log[j + 3], log[j + 4]) : 0
-		if(i && trec.contribs[i + OM_C_EPOCH] == epoch)
-			j += 5
-			continue
-		log.Cut(j, j + 5)
-		if(i)
-			om_contrib_remove(trec, effects[trec.contribs[i + OM_C_EFFECT]], i)
-	if(!length(log))
-		rec.hold_log = null
+	return contribution_reconcile_holds(arglist(args))
 
-/// Behaviour stopped: all of its hook holds go.
 /proc/om_release_hook_holds(datum/om/rec/rec, bid)
-	var/list/log = rec.hold_log
-	if(!log)
-		return
-	var/list/effects = om_registry().effects
-	var/j = 1
-	while(j <= length(log))
-		if(log[j] != bid)
-			j += 5
-			continue
-		var/datum/target = log[j + 1]
-		var/eidx = log[j + 2]
-		var/source = log[j + 3]
-		var/key = log[j + 4]
-		log.Cut(j, j + 5)
-		var/datum/om/rec/trec = target?.om_rec
-		if(!trec)
-			continue
-		var/i = om_contrib_find(trec, eidx, source, key)
-		if(i)
-			om_contrib_remove(trec, effects[eidx], i)
-	if(!length(log))
-		rec.hold_log = null
+	return contribution_release_hook_holds(arglist(args))
 
-// ---------------------------------------------------------------- clocks
-
-/// Stride 4 entry for clock `cidx`, created on first need.
 /proc/om_clock_entry(datum/om/rec/rec, cidx)
-	var/list/K = rec.clocks
-	for(var/i in 1 to length(K) step 4)
-		if(K[i] == cidx)
-			return i
-	var/t = rec.sched.now()
-	LAZYADD(rec.clocks, list(cidx, om_clock_compute(rec, cidx), t, t))
-	return length(rec.clocks) - 3
+	return contribution_clock_entry(arglist(args))
 
 /proc/om_clock_compute(datum/om/rec/rec, cidx)
-	var/datum/om/registry/reg = om_registry()
-	var/datum/om/clock_def/C = reg.clocks[cidx]
-	if(C.id == CLOCK_BIO)
-		// Biological time runs at the clock_rate_bio stat (MIN, base 1): stasis holds it lower (bio_clock_rate_changed()).
-		var/mob/living/L = rec.owner
-		return istype(L) ? clamp(L.clock_rate_bio, C.min_rate, C.max_rate) : 1
-	var/mult = om_effect_value(rec, reg.effects[C.mult_idx])
-	var/inhibit = om_effect_value(rec, reg.effects[C.inhibit_idx])
-	return clamp(mult * (1 - clamp(inhibit, 0, 1)), C.min_rate, C.max_rate)
+	return contribution_clock_compute(arglist(args))
 
-/// The entity's rate in clock `cidx` (1 when nothing modifies it).
 /proc/om_clock_rate(datum/om/rec/rec, cidx)
-	var/list/K = rec.clocks
-	for(var/i in 1 to length(K) step 4)
-		if(K[i] == cidx)
-			return K[i + 1]
-	return om_clock_compute(rec, cidx)
+	return contribution_clock_rate(arglist(args))
 
-/// Local (clock) time in deciseconds.
 /proc/om_clock_local(datum/om/rec/rec, cidx)
-	var/list/K = rec.clocks
-	for(var/i in 1 to length(K) step 4)
-		if(K[i] == cidx)
-			return K[i + 2] + (rec.sched.now() - K[i + 3]) * K[i + 1]
-	return rec.sched.now()
+	return contribution_clock_local(arglist(args))
 
-/// Folds elapsed time into local time at the current rate. Always before a rate change.
 /proc/om_clock_settle(datum/om/rec/rec, cidx)
-	var/i = om_clock_entry(rec, cidx)
-	var/list/K = rec.clocks
-	var/t = rec.sched.now()
-	K[i + 2] += (t - K[i + 3]) * K[i + 1]
-	K[i + 3] = t
+	return contribution_clock_settle(arglist(args))
 
-/// After a clock effect changed: new rate, clocked deadlines re-inserted,
-/// roster re-synced (a zero rate sleeps cadence work).
 /proc/om_clock_changed(datum/om/rec/rec, cidx)
-	var/i = om_clock_entry(rec, cidx)
-	var/list/K = rec.clocks
-	var/new_rate = om_clock_compute(rec, cidx)
-	if(K[i + 1] == new_rate)
-		return
-	K[i + 1] = new_rate
-	om_clock_reschedule(rec, cidx)
-	om_sync_all(rec)
+	return contribution_clock_changed(arglist(args))
 
-/// The time on `E`'s clock `clock_id`, in deciseconds (doc/rewrite/final_api.html section 3). Body and medical code that needs
-/// "how much biological time has passed" reads CLOCK_BIO here instead of world.time: it runs at the clock_rate_bio stat, so
-/// stasis slows or stops it. An entity whose clock never moved off rate 1 reads its scheduler's time.
-/proc/clock_now(datum/E, clock_id)
-	var/datum/om/clock_def/C = om_registry().clock_by_id[clock_id]
-	if(!C)
-		CRASH("om: unknown clock [clock_id]")
-	var/datum/om/rec/rec = E?.om_rec
-	return rec ? om_clock_local(rec, C.idx) : om_scheduler().now()
-
-/// STAT_CLOCK_RATE_BIO of `E` moved: biological time so far is folded in at the old rate, then the bio clock, its deadlines,
-/// timers and cadences take the new one.
-/proc/bio_clock_rate_changed(datum/E)
-	var/datum/om/rec/rec = E.om_rec
-	if(!rec)
-		return
-	var/static/bio_idx
-	if(!bio_idx)
-		var/datum/om/clock_def/C = om_registry().clock_by_id[CLOCK_BIO]
-		bio_idx = C.idx
-	om_clock_settle(rec, bio_idx)
-	om_clock_changed(rec, bio_idx)
-	om_timers_rate_changed(rec)
-
-// ---------------------------------------------------------------- relevance and suspension
-
-/// STAT_RELEVANCE of `E` moved to `level`: the OM record's behaviours pick their cadence by it (rec.relevance) and the Rust side mirrors
-/// it; CHANGE_RELEVANCE wakes the sequences sweeping E (seq_channels(), through the dispatch).
-/proc/relevance_changed(datum/E, level)
-	var/datum/om/rec/rec = E.om_rec
-	if(rec)
-		rec.relevance = level
-		om_sync_all(rec)
-	om_native_relevance(E, level)
-	changed(E, CHANGE_RELEVANCE) // ALLOW(sys_manual_push): the stat changed; its channel readers (the sequence sweep, OM cadences) still listen by channel
-
-/// STAT_SUSPENDED of `E` flipped: the OM record's cadences and own-clock timers stop or resume with it.
-/proc/suspended_changed(datum/E)
-	var/datum/om/rec/rec = E.om_rec
-	if(!rec)
-		return
-	om_sync_all(rec)
-	om_timers_rate_changed(rec)
-
-#undef OM_C_EFFECT
-#undef OM_C_SOURCE
-#undef OM_C_VALUE
-#undef OM_C_EXPIRES
-#undef OM_C_KEY
-#undef OM_C_EPOCH
-#undef OM_C_STRIDE
+/datum/om/behaviour/internal/expiry
+	parent_type = /datum/scheduled_behaviour/internal/expiry
+	abstract_type = /datum/om/behaviour/internal/expiry

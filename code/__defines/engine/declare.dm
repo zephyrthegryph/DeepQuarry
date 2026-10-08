@@ -42,6 +42,13 @@
 #define OTHER_CLEAR 1
 /// on_other_deleted: the holder is deleted too.
 #define OTHER_DELETE_ME 2
+/// links(conflict =): linking an end that takes one link and already has one. REPLACE (the default) breaks the old link, its hooks running; REFUSE keeps it
+/// and the new link is not made (code/engine/declare/link_state.dm).
+#define REPLACE 1
+#define REFUSE 2
+/// The text of one end of a sparse link: links(LINK_END(/mob/living, LK_BUCKLED_TO), LINK_END(/atom/movable, LK_BUCKLED_MOBS), sparse = TRUE, ...). A sparse end names a
+/// key, not a var (a base type cannot carry a var for every pair it takes part in), so there is no `::` to write.
+#define LINK_END(TYPE, KEY) ("[TYPE]::[KEY]")
 /// on_destroy policies of owns_one / owns_many.
 #define ON_DESTROY_DELETE 1
 #define ON_DESTROY_SPILL 2

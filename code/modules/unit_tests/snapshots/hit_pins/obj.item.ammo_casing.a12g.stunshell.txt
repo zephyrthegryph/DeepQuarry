@@ -3,18 +3,12 @@ emag | refresh_bits: 1 -> 0
 emag | refresh_queued: 131071 -> 0
 emp 1 | BB: /obj/item/projectile/energy/electrode/stunshot -> null
 emp 1 | icon_state: 'stunshell' -> 'stunshell-spent'
-emp 1 | look_key: null -> 'stunshell-spent|||||||||||||'
-emp 1 | look_set_bits: 0 -> 2
 emp 1 | refresh_bits: 1 -> 0
 emp 1 | refresh_queued: 131071 -> 0
-emp 1 | refresh_swept: 0 -> 1
 emp 2 | BB: /obj/item/projectile/energy/electrode/stunshot -> null
 emp 2 | icon_state: 'stunshell' -> 'stunshell-spent'
-emp 2 | look_key: null -> 'stunshell-spent|||||||||||||'
-emp 2 | look_set_bits: 0 -> 2
 emp 2 | refresh_bits: 1 -> 0
 emp 2 | refresh_queued: 131071 -> 0
-emp 2 | refresh_swept: 0 -> 1
 explosion 1 | deleted
 explosion 2 | atom_integrity: down
 explosion 2 | refresh_bits: 1 -> 0

@@ -4,6 +4,7 @@ robot|none menu: Take apart
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Smash
 human|/obj/item/tool/screwdriver menu: Take apart

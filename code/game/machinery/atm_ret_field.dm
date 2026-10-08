@@ -221,7 +221,7 @@ DESTROY_EFFECTS(/obj/structure/atmospheric_retention_field, new /datum/destroy_e
 
 CAPABILITIES(/obj/structure/atmospheric_retention_field)
 	smoothing()
-	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
 /obj/structure/atmospheric_retention_field/proc/interaction_hand(datum/act/op/A)

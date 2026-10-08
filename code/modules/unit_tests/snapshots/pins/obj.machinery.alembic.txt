@@ -8,42 +8,49 @@ robot|none click: Click: Boil
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Boil
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Take reagent
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/crowbar menu: Boil
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Take reagent
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Boil
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Take reagent
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Use
 human|/obj/item/tool/wirecutters menu: Boil
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Take reagent
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Boil
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Take reagent
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Boil
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Take reagent
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Boil
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Take reagent
@@ -51,19 +58,29 @@ human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do 
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Boil
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Take reagent
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Boil
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Take reagent
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Boil
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Take reagent
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
 human|/obj/item/potion_material menu: Boil
+human|/obj/item/potion_material menu: Hit
 human|/obj/item/potion_material menu: Move To Top
 human|/obj/item/potion_material menu: Place reagent
 human|/obj/item/potion_material menu: Take reagent
@@ -71,17 +88,12 @@ human|/obj/item/potion_material menu: Toggle Digestable (refused: You can't do t
 human|/obj/item/potion_material menu: Use
 human|/obj/item/potion_material click: Click: Place reagent
 human|/obj/item/potion_base menu: Boil
+human|/obj/item/potion_base menu: Hit
 human|/obj/item/potion_base menu: Move To Top
 human|/obj/item/potion_base menu: Place base
 human|/obj/item/potion_base menu: Take reagent
 human|/obj/item/potion_base menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/potion_base menu: Use
 human|/obj/item/potion_base click: Click: Place base
-human|/obj/item menu: Boil
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Take reagent
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item menu: Use
-human|/obj/item click: Click: Use
-keys: brew, drag_buckle, gen_robot_interaction_swallow, load_base, load_reagent, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, no_use, take_reagent
+keys: brew, drag_buckle, load_base, load_reagent, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, no_use, robot_remote_blocked, take_reagent
 

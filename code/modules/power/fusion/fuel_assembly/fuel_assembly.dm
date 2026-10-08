@@ -124,10 +124,14 @@ CAPABILITIES(/obj/item/fuel_assembly)
 		explosion(src.loc, 1, 2, 4, 6)
 		destroyed(src)
 
-DECLARE_INTERACTIONS(/obj/item/fuel_assembly/blitz/unshielded, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/fuel_assembly/blitz/unshielded)
+	op("unshielded_lead_shell", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+	op("pick_up", hand(), label("Pick up"), then(PROC_REF(unshielded_pick_up)))
 
 /// Old attackby.
-/obj/item/fuel_assembly/blitz/unshielded/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/fuel_assembly/blitz/unshielded/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/obj/item/stack/material/lead/M = I
 	if(istype(M))
 		if(M.get_amount() > 5)
@@ -135,17 +139,17 @@ DECLARE_INTERACTIONS(/obj/item/fuel_assembly/blitz/unshielded, INTERACT_ITEM(nul
 			consume(src, user)
 			var/obj/item/fuel_assembly/blitz/shielded/rod = new(get_turf(user))
 			user.put_in_hands(rod)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			to_chat(user,span_warning("You need at least five sheets of lead to add shielding!"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-EXTEND_INTERACTIONS(/obj/item/fuel_assembly/blitz/unshielded, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(unshielded_pick_up)))
 
 /// Picking the unshielded rod up irradiates the holder.
-/obj/item/fuel_assembly/blitz/unshielded/proc/unshielded_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/fuel_assembly/blitz/unshielded/proc/unshielded_pick_up(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
+	pick_up_by_hand(user)
 
 	if(!ishuman(user))
 		return

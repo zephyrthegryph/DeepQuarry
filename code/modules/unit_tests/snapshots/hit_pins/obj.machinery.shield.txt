@@ -1,23 +1,21 @@
 blob | survives
 emag | blocks_light: 0 -> 1
-emag | om_rec: null -> /datum/om/rec
+emag | om_rec: null -> /datum/scheduler_record
 emag | opacity: 0 -> 1
 emp 1 | deleted
 emp 1 | turf: +/obj/effect/effect/sparks x5
 emp 2 | atom_integrity: down
-emp 2 | cap_data: null -> list(1)
 emp 2 | refresh_queued: 131071 -> 0
 emp 2 | turf: +/obj/effect/overlay x1
 explosion 1 | deleted
 explosion 2 | atom_integrity: down
-explosion 2 | cap_data: null -> list(1)
 explosion 3 | atom_integrity: down
 projectile | atom_integrity: down
 projectile | blocks_light: 0 -> 1
-projectile | om_rec: null -> /datum/om/rec
+projectile | om_rec: null -> /datum/scheduler_record
 projectile | opacity: 0 -> 1
 thrown | atom_integrity: down
 thrown | blocks_light: 0 -> 1
-thrown | om_rec: null -> /datum/om/rec
+thrown | om_rec: null -> /datum/scheduler_record
 thrown | opacity: 0 -> 1
 

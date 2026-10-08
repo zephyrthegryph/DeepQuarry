@@ -129,7 +129,6 @@
 #define CADENCE_BASE_DT 0.5
 
 // Stat presets (statuses and godmode are stats: code/library/mob/statuses.dm).
-#define EFFECT_BUCKLED "buckled"
 
 // The biological clock domain: it runs at the clock_rate_bio stat (code/datums/om/contribution.dm, om_clock_compute()).
 #define CLOCK_BIO "bio"

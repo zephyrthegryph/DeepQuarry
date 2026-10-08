@@ -316,10 +316,6 @@ CAPABILITIES(/obj/machinery/power/turbine)
 		id = answer.value
 	return OP_OK
 
-/// Anything else held to it does nothing.
-/obj/machinery/computer/turbine_computer/proc/swallowed(datum/act/op/A)
-	return OP_OK
-
 CAPABILITIES(/obj/machinery/computer/turbine_computer)
 	after_init(0, then(PROC_REF(find_machinery)))
 	ref_one(nameof(compressor), /obj/machinery/compressor)
@@ -327,7 +323,6 @@ CAPABILITIES(/obj/machinery/computer/turbine_computer)
 	op("set_ident", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0),
 		asks(/datum/prompt/text, fields = list("title" = "Turbine control", "question" = "Enter a new ident tag.", "default" = nameof(id), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(ident_entered)))
-	op("swallow", item(/obj/item), label("Use"), wait(0), then(PROC_REF(swallowed)))
 	interface("TurbineControl")
 	op("power-on", ui_act("power-on"), then(PROC_REF(ui_act_power_on)))
 	op("power-off", ui_act("power-off"), then(PROC_REF(ui_act_power_off)))

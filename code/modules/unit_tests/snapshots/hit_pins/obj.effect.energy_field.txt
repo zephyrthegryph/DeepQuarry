@@ -1,11 +1,11 @@
 blob | survives
-emag | om_rec: null -> /datum/om/rec
+emag | om_rec: null -> /datum/scheduler_record
 emp 1 | refresh_bits: 8388608 -> 0
 emp 1 | refresh_queued: 131071 -> 0
 emp 2 | nothing
-explosion 1 | om_rec: null -> /datum/om/rec
-explosion 2 | om_rec: null -> /datum/om/rec
-explosion 3 | om_rec: null -> /datum/om/rec
-projectile | om_rec: null -> /datum/om/rec
+explosion 1 | om_rec: null -> /datum/scheduler_record
+explosion 2 | om_rec: null -> /datum/scheduler_record
+explosion 3 | om_rec: null -> /datum/scheduler_record
+projectile | om_rec: null -> /datum/scheduler_record
 thrown | nothing
 

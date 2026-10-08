@@ -173,7 +173,16 @@ pub fn parts() -> Vec<Part> {
             line(r"^(DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\(|^/[A-Za-z0-9_/]+/declare_interactions\(|^DAMAGE_REACTION(_AFTER)?\(|^DECLARE_EMAG(_REPEATABLE)?\(|^DECLARE_PERIODIC(_WHILE|_WHILE_ALL)?\(|^DECLARE_REPEAT\("),
         )
         .flt(vec![Flt::KeepPaths("legacy_forms_converted")])
-        .allow(Allow::Strict),
+        .allow(Allow::None),
+        Part::new(
+            "legacy_field_forms_banned_in_converted_folders",
+            "legacy field forms: banned in the field-converted folders",
+            "Use TRACKED/TRACKED_BRIDGED or the actual capability state setter; these folders completed their field migration.",
+            Files::Code,
+            line(r"^(OM_FIELD(_[A-Z_]+)?|OM_DERIVE_FIELD|OM_FLAG_FIELD)\("),
+        )
+        .flt(vec![Flt::KeepPaths("legacy_fields_converted")])
+        .allow(Allow::None),
         Part::new(
             "bump_ratchet_on_bumped_overrides",
             "bump: ratchet on Bumped() overrides",

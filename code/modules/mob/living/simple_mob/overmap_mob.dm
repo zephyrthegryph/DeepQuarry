@@ -124,8 +124,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A mob made with no marker makes its own.
 /mob/living/simple_mob/vore/overmap/proc/link_marker(marker)
-	if(child_om_marker)
-		om_link(src, child_om_marker, /datum/om/relation/overmap_mob_marker)
 	if(!om_child_type)
 		log_and_message_admins("An improperly configured OM mob tried to spawn, and was deleted.")
 		spent(src)
@@ -133,28 +131,19 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 	// Maps with no overmap can still spawn overmap mobs (e.g. admin
 	// summon, unit tests). Skip the marker: there's nothing for it
 	// to render against, and a marker that fails to initialise takes
-	// us with it through the overmap_mob_marker relation.
+	// us with it (its on_destroy()).
 	if(!using_map?.use_overmap)
 		return
 	if(!child_om_marker)
 		var/obj/effect/overmap/visitable/C = new om_child_type(loc, src)
 		rel_set(src, nameof(child_om_marker), C)
-		// The marker's Initialize() may have failed and deleted itself.
-		if(!QDELETED(C))
-			om_link(src, C, /datum/om/relation/overmap_mob_marker)
 
 
-/// Overmap mob -> the marker that shows it. A marker destroyed on its own (not
-/// by its mob, which owns it) takes the mob with it: the mob is invisible and
-/// does nothing without the marker.
-/datum/om/relation/overmap_mob_marker
-	name = "overmap mob marker"
-	source_single = TRUE
-	target_single = TRUE
-
-/datum/om/relation/overmap_mob_marker/on_unlink(mob/living/simple_mob/vore/overmap/source, obj/effect/overmap/target, datum/om/edge/edge)
-	if(QDELETED(target) && !QDELETED(source))
-		source.expire(0)
+/// A marker destroyed on its own (not by its mob, which owns it) takes the mob with it: the mob is invisible and does nothing without the marker.
+/obj/effect/overmap/visitable/simplemob/on_destroy(force)
+	if(parent && !QDELETED(parent))
+		parent.expire(0)
+	..()
 
 //SHIP
 
@@ -198,6 +187,12 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/simplemob)
 
 // Ownership is a tree: the mob owns its marker (child_om_marker, OWN);
 // the marker's `parent` is only a relation back, cleared when the mob goes.
+
+/// A marker destroyed on its own (not by its mob, which owns it) takes the mob with it.
+/obj/effect/overmap/visitable/ship/simplemob/on_destroy(force)
+	if(parent && !QDELETED(parent))
+		parent.expire(0)
+	..()
 
 /obj/effect/overmap/visitable/ship/simplemob/get_scan_data(mob/user)
 	if(!known)

@@ -298,7 +298,7 @@ impl Lint for Api {
         for l in pattern_sites(f, &self.vars_helpers) {
             emit(out, f, "vars_helpers", l);
         }
-        if !rel.starts_with("code/datums/om/fields.dm") {
+        if !rel.starts_with("code/engine/state/field_tables.dm") {
             for l in pattern_sites(f, &self.vars_write) {
                 emit(out, f, "vars_write", l);
             }
@@ -309,7 +309,7 @@ impl Lint for Api {
         for l in pattern_sites(f, &self.accessor_macros) {
             emit(out, f, "accessor_macros", l);
         }
-        if !rel.starts_with("code/datums/om/world_watch.dm") {
+        if rel != "code/engine/time/native_wakes.dm" && rel != "code/datums/om/world_watch.dm" {
             for l in pattern_sites(f, &self.raw_world_bind) {
                 emit(out, f, "raw_world_bind", l);
             }

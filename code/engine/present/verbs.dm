@@ -1,5 +1,5 @@
 // Verb entries and granted verbs (doc/rewrite/final_api.html, section 13 "Verbs and abilities"): the one declaration of a verb a type or a capability has,
-// kept in the verb store (code/datums/om/grant_verbs.dm), which stays the only writer of a verbs list.
+// kept in the verb store (code/engine/present/verb_store.dm), which stays the only writer of a verbs list.
 //
 //   CAPABILITIES(/mob/living/simple_mob/vore/wolf)
 //       verb_entry(/mob/living/proc/set_size, login = TRUE)           on a mob once a player has had it (the old DECLARE_LOGIN_VERB)
@@ -143,18 +143,18 @@ GLOBAL_LIST_EMPTY(verb_entry_sets) // type -> /datum/verb_entry_set, or FALSE fo
 
 /// Where a granted verb lands: on = ON_SOURCE puts it on the activation's source (an item's own verb) while the holder has the activation, else on the
 /// holder. The verb store reads the live activations (verb_activations_want()), so an activation ending takes the verb away with it.
-/proc/verb_grant_target(datum/activation/A, datum/entry/E)
+/proc/verb_entry_target(datum/activation/A, datum/entry/E)
 	return (E.args["on"] == ON_SOURCE) ? A.source : A.holder
 
 /datum/entry_engine/verb_entry_grant/apply(datum/activation/A, datum/entry/E, datum/centry/C)
-	var/datum/target = verb_grant_target(A, E)
+	var/datum/target = verb_entry_target(A, E)
 	if(!isdatum(target) || QDELETED(target))
 		return FALSE
 	verb_store_sync(target, list(verb_entry_key(E)))
 	return TRUE
 
 /datum/entry_engine/verb_entry_grant/remove(datum/activation/A, datum/entry/E)
-	var/datum/target = verb_grant_target(A, E)
+	var/datum/target = verb_entry_target(A, E)
 	if(!isdatum(target) || QDELETED(target))
 		return
 	verb_store_sync(target, list(verb_entry_key(E))) // the activation is already dead: the store reads the live ones

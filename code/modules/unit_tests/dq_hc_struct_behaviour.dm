@@ -9,7 +9,7 @@
 /datum/unit_test/dq_hc_struct/Run()
 	test_driver_begin()
 	test_rng(23)
-	test_prompts_reset()
+	set_global(nameof(GLOB.test_prompts), list())
 	run_gate()
 	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
 		own_turf_contents(T)
@@ -114,10 +114,10 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/holoplant/P = allocate(/obj/machinery/holoplant, tile(3, 2))
 	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, tile(2, 2))
-	TEST_ASSERT(!P.emagged, "starts clean")
+	TEST_ASSERT(!P.emagged(), "starts clean")
 	hci_click(H, P, E)
 	settle()
-	TEST_ASSERT(P.emagged, "an emag subverts the plant")
+	TEST_ASSERT(P.emagged(), "an emag subverts the plant")
 
 /datum/unit_test/dq_hc_struct/biowaste_tank_takes_emag_again
 /datum/unit_test/dq_hc_struct/biowaste_tank_takes_emag_again/run_gate()

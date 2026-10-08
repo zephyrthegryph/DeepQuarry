@@ -20,6 +20,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/computer/specops_shuttle)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	interface("SpecopsShuttle", title = "Special Operations Shuttle", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
