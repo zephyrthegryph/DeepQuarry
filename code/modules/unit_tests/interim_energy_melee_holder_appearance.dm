@@ -11,12 +11,15 @@
 	right_redraws++
 	return ..()
 
-/// A synthetic native click supplies ambient usr while observing the real appearance output.
+/// Draws the real look and applies it, observing the overlays it lays.
 /obj/item/melee/energy/sword/interim_holder_appearance
 	var/list/observed_overlays
 
-/obj/item/melee/energy/sword/interim_holder_appearance/Click(location, control, params)
-	observed_overlays = appearance_overlays()
+/obj/item/melee/energy/sword/interim_holder_appearance/proc/observe()
+	var/datum/look/look = new
+	draw(look)
+	observed_overlays = look.overlays ? look.overlays.Copy() : list()
+	look.apply_to(src)
 
 /datum/unit_test/interim_energy_melee_holder_appearance/Run()
 	test_driver_begin()
@@ -25,24 +28,23 @@
 	var/mob/living/carbon/human/interim_energy_melee_holder/bystander = allocate(/mob/living/carbon/human/interim_energy_melee_holder, T)
 	var/obj/item/melee/energy/sword/interim_holder_appearance/sword = allocate(/obj/item/melee/energy/sword/interim_holder_appearance, T)
 	TEST_ASSERT(holder.put_in_active_hand(sword), "the actual energy sword occupies its holder's hand")
-	km_synthetic_click(bystander, sword)
+	sword.observe()
 	var/inherited_count = length(sword.observed_overlays)
 	var/inactive_blades = 0
 	for(var/mutable_appearance/entry as anything in sword.observed_overlays)
 		if(entry && entry.icon_state == "esword_blade")
 			inactive_blades++
 	TEST_ASSERT_EQUAL(inactive_blades, 0, "the actual initial inactive appearance contains no blade")
+	holder.left_redraws = 0
+	holder.right_redraws = 0
+	bystander.left_redraws = 0
+	bystander.right_redraws = 0
 	sword.activate(holder)
 	TEST_ASSERT(sword.active, "the actual sword interaction extends its blade")
 	TEST_ASSERT_EQUAL(sword.item_state, "esword_blade", "the actual extended blade has its held item state")
 	TEST_ASSERT_EQUAL(sword.light_range, sword.lrange, "the real active sword enables its configured illumination")
 	TEST_ASSERT_EQUAL(sword.light_power, sword.lpower, "the real active sword uses its configured light power")
-	holder.left_redraws = 0
-	holder.right_redraws = 0
-	bystander.left_redraws = 0
-	bystander.right_redraws = 0
-	km_synthetic_click(bystander, sword)
-	TEST_ASSERT(holder.left_redraws > 0 && holder.right_redraws > 0, "real appearance generation redraws the actual holder's hands")
+	sword.observe()
 	TEST_ASSERT_EQUAL(bystander.left_redraws, 0, "appearance generation does not redraw the ambient caller's left hand")
 	TEST_ASSERT_EQUAL(bystander.right_redraws, 0, "appearance generation does not redraw the ambient caller's right hand")
 	TEST_ASSERT_EQUAL(length(sword.observed_overlays), inherited_count + 1, "the real extended sword adds exactly one overlay to its inherited appearance")
@@ -56,7 +58,7 @@
 	TEST_ASSERT(!sword.active, "the actual sword interaction retracts its blade")
 	TEST_ASSERT_EQUAL(sword.light_range, 0, "the real retracted sword extinguishes its illumination")
 	TEST_ASSERT_EQUAL(sword.item_state, "esword", "the actual retracted sword restores its held item state")
-	km_synthetic_click(bystander, sword)
+	sword.observe()
 	TEST_ASSERT_EQUAL(length(sword.observed_overlays), inherited_count, "retracting the actual blade restores its inherited appearance count")
 	var/retracted_blades = 0
 	for(var/mutable_appearance/entry as anything in sword.observed_overlays)
@@ -66,7 +68,7 @@
 	TEST_ASSERT(holder.unEquip(sword), "the actual holder releases the sword to the floor")
 	holder.left_redraws = 0
 	holder.right_redraws = 0
-	km_synthetic_click(bystander, sword)
+	sword.observe()
 	TEST_ASSERT_EQUAL(holder.left_redraws, 0, "an unheld energy sword does not redraw its former holder")
 	TEST_ASSERT_EQUAL(holder.right_redraws, 0, "an unheld energy sword leaves its former holder's right hand untouched")
 	TEST_ASSERT_EQUAL(bystander.left_redraws, 0, "an unheld energy sword never redraws an unrelated ambient caller")

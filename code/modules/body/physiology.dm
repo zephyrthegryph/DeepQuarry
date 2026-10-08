@@ -43,8 +43,8 @@
 	var/source_name
 	/// When the support lapses (a cooldown; 0 = until removed).
 	COOLDOWN_DECLARE(expires_at)
-	/// Optional validity check (performer adjacent, machine powered...): an om_callable() spec.
-	var/list/still_valid
+	/// Optional validity check (performer adjacent, machine powered...): a PROC_REF on the source, called as source.still_valid() (holder_call()).
+	var/still_valid
 
 
 /datum/body_support/proc/is_valid()
@@ -52,7 +52,7 @@
 		return FALSE
 	if(!source)
 		return FALSE
-	if(still_valid && !om_run(still_valid))
+	if(still_valid && !holder_call(source, still_valid))
 		return FALSE
 	return TRUE
 
@@ -80,15 +80,15 @@ CAPABILITIES(/datum/body)
 
 /// A floor on `factor_id` from `source` for `duration` (0 = until removed or
 /// `still_valid` fails). Re-adding from the same source refreshes it.
-/datum/body/proc/add_support(datum/source, factor_id, floor, duration = 0, list/still_valid)
+/datum/body/proc/add_support(datum/source, factor_id, floor, duration = 0, still_valid)
 	return set_support(source, factor_id, floor, null, duration, still_valid)
 
 /// A multiplier below 1 on `factor_id` from `source`: a restriction (a
 /// chokehold on the airway, a crushing grip on the chest).
-/datum/body/proc/add_restriction(datum/source, factor_id, multiplier, duration = 0, list/still_valid)
+/datum/body/proc/add_restriction(datum/source, factor_id, multiplier, duration = 0, still_valid)
 	return set_support(source, factor_id, null, multiplier, duration, still_valid)
 
-/datum/body/proc/set_support(datum/source, factor_id, floor, multiplier, duration, list/still_valid)
+/datum/body/proc/set_support(datum/source, factor_id, floor, multiplier, duration, still_valid)
 	if(!physiology || !source)
 		return null
 	var/datum/body_support/S

@@ -124,7 +124,7 @@
 	if(!C || !signal || signal.encryption != cap_signaler_code(O) || is_jammed(O))
 		return FALSE
 	if(C.on_signal)
-		holder_call(O, C.on_signal, signal)
+		holder_call(O, C.on_signal, list(signal))
 	changed(O, CHANGE_CAPABILITY)
 	return TRUE
 

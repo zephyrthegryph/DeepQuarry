@@ -64,7 +64,8 @@ CAPABILITIES(/obj/machinery/appliance)
 	default_parts()
 
 /// Whether or not the machine is currently operating (cooking its contents).
-OM_FIELD(/obj/machinery/appliance, cooking, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/appliance/var/cooking = FALSE
+TRACKED(/obj/machinery/appliance, cooking)
 
 // cooking food and its containers go with the machine.
 /// A cooker that starts with its switch off is made so at initialization (machinery Initialize()).

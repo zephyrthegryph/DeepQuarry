@@ -12,7 +12,7 @@
 	var/power_use = 15
 
 /// The field it projects while active (activate() .. deactivate()).
-OM_FIELD_VIEW(/obj/machinery/suspension_gen, obj/effect/suspension_field, suspension_field, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/suspension_gen/var/obj/effect/suspension_field/suspension_field
 
 CAPABILITIES(/obj/machinery/suspension_gen)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(suspension_field), wakes_on = list(nameof(suspension_field)))
@@ -125,7 +125,6 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 		desc = "It has stubby bolts aligned along its tracks for stabilising."
 		icon_state = "suspension"
 	play_sfx(loc, SFX_ITEMS_RATCHET, 0.8, vary = FALSE)
-	update_icon()
 	return OP_OK
 
 /obj/machinery/suspension_gen/proc/interaction_insert_cell(datum/act/op/A)
@@ -188,7 +187,6 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] activates with a low hum."))
 	icon_state = "suspension_on"
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
-	update_icon()
 
 	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 		I.forceMove(suspension_field)
@@ -225,19 +223,16 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 	rel_clear(src, nameof(suspension_field))
 	icon_state = "suspension_wrenched"
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
-	update_icon()
 
 // its field deactivates.
 /obj/machinery/suspension_gen/on_destroy(force)
 	deactivate()
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/suspension_gen, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/suspension_gen/appearance_overlays()
-	. = list()
+/obj/machinery/suspension_gen/draw(datum/look/look)
 	if(panel_open)
-		. += "suspension_panel"
-	. += ..()
+		look.overlay("suspension_panel")
+	..()
 
 /obj/effect/suspension_field
 	name = "energy field"

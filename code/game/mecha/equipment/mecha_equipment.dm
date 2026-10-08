@@ -22,7 +22,7 @@
 	var/step_delay = 0	// Does the component slow/speed up the suit?
 
 /// The mech this is mounted on. A field: equipment declares its periodic work on it.
-OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_EXPLICIT)
+/obj/item/mecha_parts/mecha_equipment/var/obj/mecha/chassis
 
 /// Starts the equipment cooldown (ready again after equip_cooldown). TRUE while it can act on
 /// `target`: the act no longer waits for the cooldown.
@@ -252,6 +252,7 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 	return
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment)
+	ref_one(nameof(chassis))
 	op("detach", topic("detach"), then(PROC_REF(topic_detach)))
 
 // Equipment hrefs come from the exosuit's control panel: only its conscious pilot uses them.

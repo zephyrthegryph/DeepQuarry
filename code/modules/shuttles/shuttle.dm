@@ -37,8 +37,8 @@
 
 	// Future Thoughts: Baystation put "docking" stuff in a subtype, leaving base type pure and free of docking stuff. Is this best?
 
-OM_FLAG_FIELD(/datum/shuttle, shuttle_flags, SHUTTLE_FLAGS_NONE, CHANGE_DATUM_A)
-OM_FIELD_SETTER(/datum/shuttle, process_state, CHANGE_DATUM_A)
+/datum/shuttle/var/shuttle_flags = SHUTTLE_FLAGS_NONE
+TRACKED(/datum/shuttle, shuttle_flags)
 /// Long jump in transit. A field: the transit repeat runs while it is set. It is a flag rather than
 /// the destination view itself, so a landmark destroyed mid-jump still ends the jump at arrival time
 /// (falling back to the start) instead of stranding the shuttle in transit.
@@ -116,14 +116,16 @@ CAPABILITIES(/datum/shuttle)
 		SSsupply.shuttle = null
 	return ..()
 
-/// The process_state setter: om_set() writes it and raises its declared channel (CHANGE_DATUM_A); the step's gate follows.
+/// The process_state setter: a change publishes the tracked key; the step's gate follows.
 /datum/shuttle/proc/set_process_state(new_state)
-	var/wrote = write_process_state(new_state)
+	var/wrote = FALSE
+	if(process_state != new_state)
+		process_state = new_state
+		tracked_changed(src, nameof(process_state))
+		wrote = TRUE
 	refresh_working()
 	return wrote
-
-/datum/shuttle/proc/write_process_state(new_state)
-	return om_set(src, "process_state", new_state)
+SETTER(/datum/shuttle, process_state)
 
 // This is called after all shuttles have been initialized by SSshuttles, but before sectors have been initialized.
 // Importantly for subtypes, all shuttles will have been initialized and mothershuttles hooked up by the time this is called.

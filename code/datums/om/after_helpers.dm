@@ -4,10 +4,6 @@
 // so its channel is raised, and a "temporary X that undoes itself" is a timed status or
 // contribution (om_apply(), status_at_least()), never a var written back by name.
 
-/// after() target: deletes the owner.
-/datum/proc/om_qdel_self()
-	spent(src)
-
 /// after() target: deletes the owner as one batched destroy
 /// (code/datums/lifecycle/batch.dm), with `extra` in the same set.
 /datum/proc/om_qdel_batch_self(list/extra)
@@ -15,14 +11,6 @@
 	if(extra)
 		doomed += extra
 	qdel_batch(doomed)
-
-/// Deletes `D` after `delay` deciseconds of its own clock. Null-safe.
-/proc/om_qdel_after(datum/D, delay)
-	if(!D || QDELETED(D))
-		return
-	if(!isdatum(D)) // an image or a list: nothing owns it, so the global owner does
-		return after(null, delay, GLOBAL_PROC_REF(qdel), with = list(D))
-	return after(D, delay, TYPE_PROC_REF(/datum, om_qdel_self))
 
 /// Knocks the thing about: `steps` random steps, a few deciseconds apart.
 /atom/movable/proc/scatter_steps(steps)

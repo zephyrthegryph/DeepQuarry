@@ -17,7 +17,7 @@
 /datum/unit_test/dq_pathfinder_search_runtime_releases_mutex
 
 /datum/unit_test/dq_pathfinder_search_runtime_releases_mutex/Run()
-	var/datum/om/service/pathfinder/service = allocate(/datum/om/service/pathfinder)
+	var/datum/system/pathing/service = SSpathing
 	var/datum/pathfinding/dq_test_crash/crasher = new(null, null, null, 1, 8)
 	var/threw = FALSE
 	try
@@ -36,7 +36,7 @@
 /datum/unit_test/dq_pathfinder_timeout_releases_waiter
 
 /datum/unit_test/dq_pathfinder_timeout_releases_waiter/Run()
-	var/datum/om/service/pathfinder/service = allocate(/datum/om/service/pathfinder)
+	var/datum/system/pathing/service = SSpathing
 	// Someone else holds the mutex for longer than this waiter will wait.
 	service.pathfinding_mutex = TRUE
 	for(var/i in 1 to 12)

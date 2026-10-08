@@ -81,17 +81,18 @@ CAPABILITIES(/obj/item/perfect_tele)
 			rel_add(src, nameof(beacons), nb)
 	loc_network = null //Consumed
 
-DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/perfect_tele/appearance_overlays()
-	. = list()
-	if(!power_source)
-		icon_state = "[initial(icon_state)]_o"
-	else if(ready && (power_source.check_charge(charge_cost) || power_source.fully_charged()))
-		icon_state = "[initial(icon_state)]"
-	else
-		icon_state = "[initial(icon_state)]_w"
+TRACKED(/obj/item/perfect_tele, ready)
 
-	. += ..()
+/obj/item/perfect_tele/draw(datum/look/look)
+	look.watch(power_source)
+	if(!power_source)
+		look.state("[initial(icon_state)]_o")
+	else if(ready && (power_source.check_charge(charge_cost) || power_source.fully_charged()))
+		look.state("[initial(icon_state)]")
+	else
+		look.state("[initial(icon_state)]_w")
+
+	..()
 
 /obj/item/perfect_tele/proc/rebuild_radial_images()
 	LAZYCLEARLIST(radial_images)
@@ -145,7 +146,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele, TYPE_PROC_REF(/atom, appearance_
 		to_chat(user,span_notice("You eject \the [power_source] from \the [src]."))
 		user.put_in_hands(power_source)
 		rel_take(src, nameof(power_source))
-		update_icon()
 	else
 		to_chat(user,span_notice("[src] does not have a power cell."))
 
@@ -209,7 +209,6 @@ This device records all warnings given and teleport events for admin review in c
 			return OP_OK
 		power_source.update_icon() //Why doesn't a cell do this already? :|
 		to_chat(user,span_notice("You insert \the [power_source] into \the [src]."))
-		update_icon()
 
 	else if(istype(W,/obj/item/perfect_tele_beacon))
 		var/obj/item/perfect_tele_beacon/tb = W
@@ -319,7 +318,7 @@ This device records all warnings given and teleport events for admin review in c
 	if(!ready || !destination() || !power_source)
 		return
 	//Bzzt.
-	ready = 0
+	set_ready(FALSE)
 	power_source.use(charge_cost)
 
 	//Unbuckle taur riders
@@ -387,14 +386,12 @@ This device records all warnings given and teleport events for admin review in c
 			//Phase-in effect for grabbed person
 			phase_in(grabbed,get_turf(grabbed))
 
-	update_icon()
 	after(src, 30 SECONDS, PROC_REF(translocator_ready))
 
 	LAZYSET(logged_events, "[world.time]", "[user] teleported [target] to [real_dest] [televored ? "(Belly: [lowertext(real_dest.name)])" : null]")
 
 /obj/item/perfect_tele/proc/translocator_ready()
-	ready = 1
-	update_icon()
+	set_ready(TRUE)
 
 /obj/item/perfect_tele/proc/phase_out(mob/M,turf/T)
 
@@ -539,8 +536,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 /obj/item/perfect_tele/frontier/unload_ammo(mob/user, ignore_inactive_hand_check = 0)
 	if(recharging)
 		return
-	recharging = 1
-	update_icon()
+	set_recharging(TRUE)
 	act_message(user, src, MSG_SELF(span_notice("You open %T% and start pumping the handle.")), \
 		MSG_OTHERS(span_notice("%U% opens %T% and starts pumping the handle.")))
 	pump_handle(user)
@@ -557,17 +553,16 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	pump_handle(user)
 
 /obj/item/perfect_tele/frontier/proc/pump_done()
-	recharging = 0
-	update_icon()
+	set_recharging(FALSE)
 
-DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele/frontier, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/perfect_tele/frontier/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/perfect_tele/frontier, recharging)
+
+/obj/item/perfect_tele/frontier/draw(datum/look/look)
 	if(recharging)
-		icon_state = "[initial(icon_state)]_o"
-		update_held_icon()
-		return .
-	. += ..()
+		look.state("[initial(icon_state)]_o")
+		// the hands that hold it redraw when the look changes its sprite (look.apply_to())
+		return
+	..()
 
 /obj/item/perfect_tele/frontier/staff
 	name = "centcom translocator"

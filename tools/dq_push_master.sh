@@ -16,6 +16,7 @@
 # tools/hooks/pre-push refuses a push to master that did not come from here (install: tools/hooks/install_pre_push.sh).
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
+export DQ_ANALYZE_PROFILE=release # the gate lints with the full release analyzer, not the local dev-fast one
 
 die() { echo "dq_push_master: REFUSED: $*" >&2; exit 1; }
 

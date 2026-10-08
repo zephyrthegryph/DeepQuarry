@@ -78,7 +78,7 @@
 	if (timeout)
 		src.timeout = timeout
 		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
-		om_qdel_after(src, timeout)
+		expire(timeout)
 	/// Checks for empty numbers - bank accounts, etc.
 	if(max_value == 0)
 		src.min_value = 0

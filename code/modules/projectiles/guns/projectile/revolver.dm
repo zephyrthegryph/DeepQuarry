@@ -380,10 +380,9 @@ CAPABILITIES(/obj/item/gun/projectile/revolver/lemat)
 	else
 		add_overlay("inspector_on")
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/revolver/consul, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/revolver/consul/appearance_overlays()
-	. = list()
-	update_charge()
+/obj/item/gun/projectile/revolver/consul/draw(datum/look/look)
+	..()
+	look.effect(PROC_REF(update_charge))
 
 
 //Dunno why .380 ammo was in here but Im not touching it. Rest was moved to other files.

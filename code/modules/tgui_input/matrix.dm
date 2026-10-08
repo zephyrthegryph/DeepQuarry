@@ -59,7 +59,7 @@
 	if (timeout)
 		src.timeout = timeout
 		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
-		om_qdel_after(src, timeout)
+		expire(timeout)
 	color_matrix_last = default.Copy()
 
 /**

@@ -34,6 +34,7 @@
 	var/datum/station_holomap/holomap_datum
 
 CAPABILITIES(/obj/machinery/station_map)
+	ref_one(nameof(watching_mob))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(watching_mob), wakes_on = list(nameof(watching_mob)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	owns_one(nameof(holomap_datum), starts = /datum/station_holomap)
@@ -41,7 +42,7 @@ CAPABILITIES(/obj/machinery/station_map)
 	op("fingerprint", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_fingerprint)))
 
 /// The mob looking at the map (startWatching()/stopWatching()); it checks on them while set.
-OM_FIELD_VIEW(/obj/machinery/station_map, mob, watching_mob, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/station_map/var/mob/watching_mob
 /obj/machinery/station_map/Initialize(mapload)
 	. = ..()
 	original_zLevel = loc.z

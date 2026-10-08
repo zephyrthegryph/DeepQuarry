@@ -36,9 +36,10 @@
 	var/empowered = FALSE //If our next atack is empowered (2x damage)
 
 //The last human that touched us (an OM handle): the blade works on them while it has one.
-OM_FIELD_VIEW(/obj/item/melee/artifact_blade, tmp/mob/living/carbon/human, last_touched, CHANGE_EXPLICIT)
+/obj/item/melee/artifact_blade/var/tmp/mob/living/carbon/human/last_touched
 
 CAPABILITIES(/obj/item/melee/artifact_blade)
+	ref_one(nameof(last_touched))
 	every(2 SECONDS, then(PROC_REF(artifact_blade_step)), when = nameof(last_touched))
 	op("blade_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 

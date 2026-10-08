@@ -210,20 +210,26 @@
 /datum/unit_test/dq_capability_frame_ladder
 
 /datum/unit_test/dq_capability_frame_ladder/Run()
+	test_driver_begin()
+	defer_cleanup(src, PROC_REF(interim_native_frame_driver_end))
 	var/turf/T = test_floor()
-	var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)
-	var/datum/capability/construction/C = frame.cap_frame_ladder()
-	var/datum/construction_ladder/ladder = C.ladder_for(frame)
-	var/list/problems = ladder.validate()
-	TEST_ASSERT(!length(problems), "valid: [jointext(problems, "; ")]")
-	TEST_ASSERT_EQUAL(ladder.state_of(frame), frame.anchored ? "placed" : "loose", "the stage is read from the frame's state")
-	var/datum/interaction/capability/construction_step/glass_step = null
-	for(var/datum/interaction/capability/construction_step/step as anything in ladder.edges)
-		if(step.to_state == "paneled")
-			glass_step = step
-	TEST_ASSERT(glass_step, "a glass step")
-	TEST_ASSERT_EQUAL(glass_step?.item_text(), "2 glass sheets", "the entry's name names the item")
-	qdel(C) // a capability made outside capabilities(): its ladder, stages and costs go with it
+	var/obj/structure/frame/computer/frame = allocate(/obj/structure/frame/computer, T)
+	var/datum/capability/construction/C = cap_of(frame, CAP_CONSTRUCTION)
+	TEST_ASSERT(C?.graph, "the real frame declares a compiled native construction graph")
+	TEST_ASSERT_EQUAL(frame.state, FRAME_PLACED, "the building computer frame initializes physically placed")
+	TEST_ASSERT_EQUAL(graph_current(frame), STAGE_MACHINE_FRAME_PLACED, "the native graph preserves the actual building-frame initial state")
+	var/datum/graph_edge/glass_step = graph_edge_for(C.graph, STAGE_MACHINE_FRAME_PANELED, "add_glass")
+	TEST_ASSERT(glass_step, "the real graph contains its panel construction edge")
+	TEST_ASSERT(STAGE_MACHINE_FRAME_WIRED in glass_step.from, "the actual panel edge leaves the wired stage")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.enable_godmode()
+	frame.state = FRAME_WIRED
+	frame.seed_native_frame_graph()
+	var/obj/item/stack/material/glass/glass = allocate(/obj/item/stack/material/glass, T, 5)
+	TEST_ASSERT(interim_native_frame_step(frame, H, "construction.build:machine_frame_paneled.add_glass", glass), "the declared edge runs through real native menu dispatch")
+	TEST_ASSERT_EQUAL(glass.get_amount(), 3, "the actual declared stack cost spends exactly two glass sheets")
+	TEST_ASSERT_EQUAL(graph_current(frame), STAGE_MACHINE_FRAME_PANELED, "the real graph advances to paneled")
+	TEST_ASSERT_EQUAL(frame.state, FRAME_PANELED, "the actual frame state agrees with the graph")
 
 /// cap_deconstruct() offers a crowbar Dismantle behind the panel.
 /datum/unit_test/dq_capability_deconstruct

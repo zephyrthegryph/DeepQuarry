@@ -269,7 +269,7 @@
  * be pointed at directly with no wrapper.
  */
 /datum/interaction/proc/run_effect(mob/actor, atom/target, obj/item/held)
-	return holder_call(target, effect, actor, held, src)
+	return holder_call(target, effect, list(actor, held, src))
 
 /// Tells the actor why they can't do this right now.
 /datum/interaction/proc/tell_blocked(mob/actor, atom/target, reason)

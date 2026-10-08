@@ -150,7 +150,7 @@
 	if(cap_has(holder, C.bit) == on)
 		return FALSE
 	if(C.apply)
-		var/result = holder_call(holder, C.apply, on, user)
+		var/result = holder_call(holder, C.apply, list(on, user))
 		if(istext(result))
 			return refuse(user, result)
 		if(!result)

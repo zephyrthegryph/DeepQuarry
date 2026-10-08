@@ -53,7 +53,7 @@
 /datum/system/atoms
 	/// The frame currently initializing atoms, or null (no batch, or its frame is yielding).
 	var/tmp/datum/materialize_batch/active_batch
-	/// Test hook: when set, every chunk boundary suspends the frame and calls this.
+	/// Test hook: when set to list(owner, PROC_REF), every chunk boundary suspends the frame and calls owner.proc(batch).
 	var/tmp/list/batch_yield_probe
 	/// Every frame that opened, in order, when a test is recording (else null).
 	var/list/batch_trace
@@ -101,7 +101,7 @@
 	active_batch = null
 	clear_tracked_initalize(batch.source)
 	if(probe)
-		om_run(probe, batch)
+		holder_call(probe[1], probe[2], list(batch))
 
 /// Resumes a suspended frame.
 /datum/system/atoms/proc/batch_resume(datum/materialize_batch/batch)

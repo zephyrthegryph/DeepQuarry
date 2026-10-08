@@ -206,16 +206,11 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 		name = "anchored "
 	name += "[secure ? "secure " : ""]windoor assembly[created_name ? " ([created_name])" : ""]"
 
-// The assembly's own template does not apply: draw() below is the look, and update_icon() marks it for it.
-APPEARANCE_NONE(/obj/structure/windoor_assembly)
-
-// ALLOW(sys_update_icon): bridge only; it draws nothing, it marks the assembly so draw() runs
-/obj/structure/windoor_assembly/update_icon()
-	changed(src)
-
-/obj/structure/windoor_assembly/draw(datum/look/look)
-	..()
-	look.state("[facing]_[secure]windoor_assembly[sprite_state()]")
+DECLARE_APPEARANCE_PROC(/obj/structure/windoor_assembly, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/windoor_assembly/appearance_overlays()
+	. = list()
+	icon_state = "[facing]_[secure]windoor_assembly[sprite_state()]"
+	. += ..()
 
 /obj/structure/windoor_assembly/handle_rotation_verbs(angle, mob/user)
 	var/wired = sprite_state() == "02"

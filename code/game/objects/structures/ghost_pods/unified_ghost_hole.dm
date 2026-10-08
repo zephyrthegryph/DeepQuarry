@@ -60,7 +60,6 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/unified_hole)
 			create_lurker(user)
 	set_used(TRUE)
 	icon_state = icon_state_opened
-	update_icon()
 	registry_leave(REGISTRY_GHOST_PODS, src)
 	return OP_OK
 
@@ -156,12 +155,9 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/unified_hole)
 
 DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/unified_hole, REGISTRY_GHOST_PODS)
 
-/obj/structure/ghost_pod/ghost_activated/unified_hole/Initialize(mapload)
-	. = ..()
-	update_icon()
-
-DECLARE_APPEARANCE(/obj/structure/ghost_pod/ghost_activated/unified_hole, "used", list("0" = list(APPEARANCE_OVERLAYS = list("rift_glow")), "" = list(APPEARANCE_OVERLAYS = list("rift_glow"))))
-APPEARANCE_EMISSIVE(/obj/structure/ghost_pod/ghost_activated/unified_hole, "used", list("0" = "rift_glow", "" = "rift_glow"))
+/obj/structure/ghost_pod/ghost_activated/unified_hole/draw(datum/look/look)
+	..()
+	look.glow("rift_glow", when = !used)
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/redgate
 	name = "Redspace inhabitant hole"

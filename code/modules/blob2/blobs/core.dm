@@ -116,7 +116,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 // ALLOW(init/INSTANCE_STATE): a core shows itself at once, and a placed core or one with an overmind makes none of its own
 /obj/structure/blob/core/Initialize(mapload)
 	. = ..()
-	update_icon() //so it atleast appears
 
 	if(placed_at_make || overmind)
 		make_overmind = FALSE
@@ -126,8 +125,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	if(!make_overmind)
 		return
 	create_overmind(controller())
-	if(overmind)
-		update_icon()
 
 // leaves a core chunk; its overmind dies with it.
 /obj/structure/blob/core/on_destroy(force)
@@ -136,16 +133,12 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	if(overmind)
 		ended_with(overmind, src)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/blob/core/appearance_overlays()
-	. = list()
-	color = null
-	var/mutable_appearance/blob_overlay = mutable_appearance('icons/mob/blob.dmi', "blob")
-	if(overmind)
-		blob_overlay.color = overmind.blob_type.color
-		name = "[overmind.blob_type.name] [base_name]"
-	. += blob_overlay
-	. += "blob_core_overlay"
+/// A core draws no colour of its own: the blob body under it is tinted by its overmind, and the core overlay sits on top.
+/obj/structure/blob/core/look_parts(datum/look/look)
+	look.overlay(look_appearance('icons/mob/blob.dmi', "blob", color = look_tint))
+	if(look_title)
+		look.identity(name = "[look_title] [base_name]")
+	look.overlay("blob_core_overlay")
 
 /obj/structure/blob/core/proc/core_step(datum/act/timer/A)
 	if(QDELETED(src))
@@ -176,7 +169,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 		rel_set(src, nameof(overmind), B)
 		rel_set(B, nameof(B.blob_core), src)
 		B.ai_controlled = TRUE
-		update_icon()
+		sync_overmind_look()
 		return TRUE
 
 	COOLDOWN_START(src, overmind_get_delay, 15 SECONDS) //if this fails, we'll try again in 15 seconds
@@ -213,7 +206,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 		B.key = new_overmind.key
 		rel_set(B, nameof(B.blob_core), src)
 		rel_set(src, nameof(overmind), B)
-		update_icon()
+		sync_overmind_look()
 		if(B.mind && !B.mind.special_role)
 			B.mind.special_role = "Blob Overmind"
 		return TRUE

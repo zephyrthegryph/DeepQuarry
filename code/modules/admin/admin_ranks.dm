@@ -22,7 +22,7 @@ GLOBAL_PROTECT(protected_ranks)
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)
 		if (name == "NoRank") //only del if this is a true creation (and not just a New() proc call), other wise trialmins/coders could abuse this to deadmin other admins
-			om_qdel_after(src, 0)
+			expire(0)
 			CRASH("Admin proc call creation of admin datum")
 		return
 	name = init_name

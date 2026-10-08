@@ -10,6 +10,7 @@
 	var/atom/movable/screen/skybox/local_skybox
 
 CAPABILITIES(/obj/item/communicator)
+	ref_many(nameof(communicating))
 	every(2 SECONDS, then(PROC_REF(communicator_step)), when = PROC_REF(has_connections))
 	after_init(5 SECONDS, then(PROC_REF(register_to_holder)))
 	// alt-click ejects the loaded ID (a silicon's alt-click goes on to its own)

@@ -1,0 +1,17 @@
+/obj/item/melee/robotic/baton icon: icons/obj/weapons.dmi
+/obj/item/melee/robotic/baton state: stunbaton
+/obj/item/melee/robotic/baton dir: 2
+/obj/item/melee/robotic/baton overlay: icons/obj/weapons.dmi:stunbaton:8:#000000
+/obj/item/melee/robotic/baton/arm icon: icons/obj/decals.dmi
+/obj/item/melee/robotic/baton/arm state: shock
+/obj/item/melee/robotic/baton/arm dir: 2
+/obj/item/melee/robotic/baton/arm overlay: icons/obj/decals.dmi:shock:8:#000000
+/obj/item/melee/robotic/baton/shocker icon: icons/obj/weapons.dmi
+/obj/item/melee/robotic/baton/shocker state: shocker
+/obj/item/melee/robotic/baton/shocker dir: 2
+/obj/item/melee/robotic/baton/shocker overlay: icons/obj/weapons.dmi:shocker:8:#000000
+/obj/item/melee/robotic/baton/slime icon: icons/obj/weapons.dmi
+/obj/item/melee/robotic/baton/slime state: slimebaton_active
+/obj/item/melee/robotic/baton/slime dir: 2
+/obj/item/melee/robotic/baton/slime overlay: icons/obj/weapons.dmi:slimebaton_active:8:#000000
+

@@ -81,7 +81,7 @@
 	act_message(actor, null, others = span_notice("%U% finishes pulling dark energies around themselves, creating a portal."))
 	log_and_message_admins("[key_name_admin(actor)] created a tunnel to the dark at [get_area(T)]!")
 	template.annihilate_plants(T)
-	template.load_async(T, TRUE, om_callable(template, TYPE_PROC_REF(/datum/map_template/shelter, shelter_loaded), T.x, T.y, T.z))
+	template.load_async(T, TRUE, TYPE_PROC_REF(/datum/map_template/shelter, shelter_loaded), template, list(T.x, T.y, T.z))
 	SK.created_dark_tunnel = TRUE
 	SK.shadekin_adjust_energy(-(DARK_TUNNEL_COST - 10)) //Leaving enough energy to actually activate the portal
 	return TRUE

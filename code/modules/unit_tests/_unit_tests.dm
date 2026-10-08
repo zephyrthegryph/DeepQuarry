@@ -393,6 +393,7 @@
 #include "dq_reagents_start_snapshot.dm"
 #include "dq_conversion_pins.dm"
 #include "dq_draw_framework.dm"
+#include "dq_draw_sweep_3c.dm"
 #include "dq_look_pins.dm"
 #include "dq_hit_pins.dm"
 #include "dq_interaction_entry_tests.dm"
@@ -1207,6 +1208,14 @@
 #include "round2_upload_module_click.dm"
 #include "interim_camera_doppler_menu_parity.dm"
 #include "dq_round2_menu_refusal_restore_tests.dm"
+
+#include "dq_round3_living_action_status_tests.dm"
+#include "dq_round3_frame_construction_tests.dm"
+#include "dq_round3_requests_root.dm"
+#include "dq_round3_requests_a.dm"
+#include "dq_round3_requests_b.dm"
+#include "dq_round3_requests_c.dm"
+#include "dq_round3_requests_d.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

@@ -26,7 +26,7 @@
 	// registered shuttle runs it: an unregistered one is dropped by its creator). Register it by
 	// hand, as the processing-set line below already does.
 	shuttle.registered = TRUE
-	shuttle.shuttle_flags_add(SHUTTLE_FLAGS_PROCESS)
+	shuttle.set_shuttle_flags(shuttle.shuttle_flags | SHUTTLE_FLAGS_PROCESS)
 	SSshuttles.process_shuttles |= shuttle
 	shuttle.set_process_state(IDLE_STATE)
 	TEST_ASSERT(!shuttle.shuttle_working(), "idle shuttle declared as working")

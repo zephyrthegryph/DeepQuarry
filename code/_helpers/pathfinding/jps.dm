@@ -106,7 +106,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	var/adjacency_call = src.adjacency_call
 	var/heuristic_call = src.heuristic_call
 	var/datum/context = search_context()
-	var/datum/om/service/pathfinder/pathfinder = om_pathfinder()
+	var/datum/system/pathing/pathfinder = SSpathing
 	if(pathfinder.pathfinding_cycle >= SHORT_REAL_LIMIT)
 		pathfinder.pathfinding_cycle = 0
 	// our cycle. used to determine if a turf was pathed on by us. in theory, this isn't entirely collision resistant,

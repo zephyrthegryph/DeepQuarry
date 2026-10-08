@@ -230,10 +230,10 @@ MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 	var/frequency = PUB_FREQ
 
 /// Points at its target (or counts a reset) every 2 s while tracking; idle, it sleeps.
-OM_FIELD(/obj/item/beacon_locator, scan_ticks, 0, CHANGE_EXPLICIT)
-OM_FIELD_VIEW(/obj/item/beacon_locator, tmp/obj/item/radio, target_radio, CHANGE_EXPLICIT)
+/obj/item/beacon_locator/var/scan_ticks = 0
+TRACKED(/obj/item/beacon_locator, scan_ticks)
+/obj/item/beacon_locator/var/tmp/obj/item/radio/target_radio
 /// Scanning for a beacon or tracking one: derived from scan_ticks and target_radio.
-OM_DERIVE_FIELD(/obj/item/beacon_locator, locating, list("scan_ticks", "target_radio"))
 /obj/item/beacon_locator/proc/locating()
 	return scan_ticks || target_radio
 
@@ -276,6 +276,7 @@ OM_DERIVE_FIELD(/obj/item/beacon_locator, locating, list("scan_ticks", "target_r
 
 
 CAPABILITIES(/obj/item/beacon_locator)
+	ref_one(nameof(target_radio))
 	every(2 SECONDS, then(PROC_REF(beacon_locator_step)))
 	op("interaction_open", in_hand(), label("Open"), then(PROC_REF(interaction_open)))
 	interface("BeaconLocator", state = nameof(GLOB.tgui_inventory_state))

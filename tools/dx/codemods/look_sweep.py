@@ -440,6 +440,8 @@ def main():
     ap.add_argument("--show", action="store_true", help="convert: print the generated draws")
     ap.add_argument("--sites", action="store_true")
     ap.add_argument("--paths", nargs="*", default=None)
+    ap.add_argument("--dirs", nargs="*", default=None, help="write scope, enforced by _guard")
+    ap.add_argument("--files", nargs="*", default=None, help="write scope, enforced by _guard")
     args = ap.parse_args()
     os.chdir(ROOT)
     if args.mode == "dead":

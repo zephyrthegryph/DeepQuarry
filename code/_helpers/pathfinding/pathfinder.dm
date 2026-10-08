@@ -1,148 +1,58 @@
 //* This file is explicitly licensed under the MIT license. *//
 //* Copyright (c) 2023 Citadel Station developers.          *//
 
-#define PATHFINDER_TIMEOUT 50
-/// A cached failure is also dropped after this long, because not every map edit bumps the navigation revision.
-#define PATHFINDER_FAILURE_TTL (30 SECONDS)
-/// The failure cache is emptied when it grows past this many entries.
-#define PATHFINDER_FAILURE_CACHE_MAX 2048
-
-/// The pathfinder: an object-model service (completion plan §3.6, wave F2) with no fire loop.
-/// Searches run synchronously in the caller under one mutex, as they did under SSpathfinder:
-/// multi "threading" in BYOND only adds overhead, so one search runs at a time and the rest
-/// wait (stoplag) up to PATHFINDER_TIMEOUT. Reach it with om_pathfinder().
-/datum/om/service/pathfinder
-
-	/// pathfinding mutex - most algorithms depend on this
-	/// multi "threading" in byond just adds overhead
-	/// from everything trying to re-queue their executions
-	/// for this reason, much like with maploading,
-	/// it's somewhat pointless to have more than one operation going
-	/// at a time
-	var/pathfinding_mutex = FALSE
-	/// pathfinding calls blocked
-	var/pathfinding_blocked = 0
-	/// pathfinding cycle - this is usable because of the mutex
-	/// this is used in place of a closed list in algorithms like JPS
-	/// to maximize performance.
-	var/tmp/pathfinding_cycle = 0
-	/// Failed search key -> list(GLOB.ai_navigation_revision, world.time) when it failed (Q9).
-	var/list/failed_searches
-	/// Searches answered from failed_searches.
-	var/failure_cache_hits = 0
-
 /**
  * be aware that this emits a set of disjunct nodes
  * use [jps_output_turfs()] to convert them into a proper turf path list.
  *
  * Please see [code/__HELPERS/pathfinding/jps.dm] for details on what JPS does/is.
  */
-/datum/om/service/pathfinder/proc/get_path_jps(atom/movable/actor = GLOB.generic_pathfinding_actor, turf/goal, turf/start = get_turf(actor), target_distance = 1, max_path_length = 128)
+/proc/path_jps(atom/movable/actor = GLOB.generic_pathfinding_actor, turf/goal, turf/start = get_turf(actor), target_distance = 1, max_path_length = 128)
 	var/datum/pathfinding/jps/instance = new(actor, start, goal, target_distance, max_path_length)
-	return run_pathfinding(instance)
+	return SSpathing.run_pathfinding(instance)
 
 /**
  * Please see [code/__HELPERS/pathfinding/astar.dm] for details on what JPS does/is.
  */
-/datum/om/service/pathfinder/proc/get_path_astar(atom/movable/actor = GLOB.generic_pathfinding_actor, turf/goal, turf/start = get_turf(actor), target_distance = 1, max_path_length = 128)
+/proc/path_astar(atom/movable/actor = GLOB.generic_pathfinding_actor, turf/goal, turf/start = get_turf(actor), target_distance = 1, max_path_length = 128)
 	var/datum/pathfinding/astar/instance = new(actor, start, goal, target_distance, max_path_length)
-	return run_pathfinding(instance)
+	return SSpathing.run_pathfinding(instance)
 
 //default_ai_pathfinding was a /datum/ai_brain helper. The modern
 // brain has its own wrapper in code/modules/combat_ai/brain/pathing.dm
 // (`dq_pathfind`). The legacy proc has no remaining callers and is removed.
 
-/datum/om/service/pathfinder/proc/default_circuit_pathfinding(obj/item/electronic_assembly/assembly, turf/goal, min_dist = 1, max_path = 128, list/access)
+/proc/path_for_circuit(obj/item/electronic_assembly/assembly, turf/goal, min_dist = 1, max_path = 128, list/access)
 	var/datum/pathfinding/jps/instance = new(assembly, get_turf(assembly), goal, min_dist, max_path)
 	instance.ss13_with_access = access.Copy()
-	return jps_output_turfs(run_pathfinding(instance))
+	return jps_output_turfs(SSpathing.run_pathfinding(instance))
 
-/datum/om/service/pathfinder/proc/default_bot_pathfinding(mob/living/bot/bot, turf/goal, min_dist = 1, max_path = 128)
+/proc/path_for_bot(mob/living/bot/bot, turf/goal, min_dist = 1, max_path = 128)
 	var/turf/start = get_turf(bot)
 	if(!istype(start) || !istype(goal) || start.z != goal.z)
 		return null
 	var/datum/pathfinding/jps/instance = new(bot, start, goal, min_dist, max_path)
 	instance.ss13_with_access = bot.botcard.access?.Copy()
-	return jps_output_turfs(run_pathfinding(instance))
+	return jps_output_turfs(SSpathing.run_pathfinding(instance))
 
-/// Waits for the search mutex. Returns FALSE if it is still held after `timeout`. pathfinding_blocked
-/// counts the callers waiting here; the only exit from this proc is the bottom, so it is always put back.
-/datum/om/service/pathfinder/proc/wait_for_mutex(started_at, timeout = PATHFINDER_TIMEOUT)
-	++pathfinding_blocked
-	// Many waiters back off further, so a pile-up does not turn into a stoplag storm.
-	var/backoff = pathfinding_blocked < 10 ? 1 : 3
-	. = TRUE
-	while(pathfinding_mutex)
-		stoplag(backoff) // ALLOW(scheduler): mutex held across the search's CHECK_TICK yields
-		if(ELAPSED_SINCE(src, started_at, CLOCK_WORLD) > timeout)
-			. = FALSE
-			break
-	--pathfinding_blocked
-
-/datum/om/service/pathfinder/proc/run_pathfinding(datum/pathfinding/instance)
-	var/started_at = world.time
-	if(!wait_for_mutex(started_at))
-		stack_trace("pathfinder timeout; check debug logs.")
-		log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
-		return null
-	var/failure_key = instance.failure_cache_key()
-	var/navigation_revision = GLOB.ai_navigation_revision
-	if(failure_key)
-		var/list/failure = LAZYACCESS(failed_searches, failure_key)
-		if(failure)
-			if(failure[1] == navigation_revision && ELAPSED_SINCE(src, failure[2], CLOCK_WORLD) < PATHFINDER_FAILURE_TTL)
-				failure_cache_hits++
-				return null
-			LAZYREMOVE(failed_searches, failure_key)
-	pathfinding_mutex = TRUE
-	try
-		. = instance.search()
-	catch(var/exception/search_error)
-		// A search that runtimes must not leave the mutex held: every later request would wait out
-		// the timeout and get nothing. The caller still sees the original exception.
-		pathfinding_mutex = FALSE
-		throw search_error
-	pathfinding_mutex = FALSE
-	if(ELAPSED_SINCE(src, started_at, CLOCK_WORLD) > PATHFINDER_TIMEOUT)
-		stack_trace("pathfinder timeout; check debug logs.")
-		log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
-	if(failure_key && !length(.))
-		if(LAZYLEN(failed_searches) >= PATHFINDER_FAILURE_CACHE_MAX)
-			failed_searches = null
-		LAZYSET(failed_searches, failure_key, list(navigation_revision, world.time))
-
-/// The pathfinder service singleton (the live registry's instance).
-/proc/om_pathfinder()
-	RETURN_TYPE(/datum/om/service/pathfinder)
-	var/static/datum/om/service/pathfinder/service
-	if(!service)
-		service = locate_in_list(om_registry().services, /datum/om/service/pathfinder)
-		if(!service)
-			service = new
-	return service
-
-#undef PATHFINDER_TIMEOUT
-#undef PATHFINDER_FAILURE_TTL
-#undef PATHFINDER_FAILURE_CACHE_MAX
-
-/proc/astar_debug(turf/target)
+/proc/astar_debug(mob/user, turf/target)
 	if(isnull(target))
 		return
-	return om_pathfinder().get_path_astar(usr, target, get_turf(usr))
+	return path_astar(user, target, get_turf(user))
 
-/proc/jps_debug(turf/target)
+/proc/jps_debug(mob/user, turf/target)
 	if(isnull(target))
 		return
-	return om_pathfinder().get_path_jps(usr, target, get_turf(usr))
+	return path_jps(user, target, get_turf(user))
 
-/proc/old_astar_debug(turf/target)
+/proc/old_astar_debug(mob/user, turf/target)
 	if(isnull(target))
 		return
-	return graph_astar(get_turf(usr), target, TYPE_PROC_REF(/turf, CardinalTurfsWithAccess), TYPE_PROC_REF(/turf, Distance), 0, 128, 1)
+	return graph_astar(get_turf(user), target, TYPE_PROC_REF(/turf, CardinalTurfsWithAccess), TYPE_PROC_REF(/turf, Distance), 0, 128, 1)
 
 /proc/pathfinding_run_all(turf/start = get_turf(usr), turf/goal)
-	var/pass_silicons_astar = om_pathfinder().get_path_astar(goal = goal, start = start, target_distance = 1, max_path_length = 256)
-	var/pass_silicons_jps = om_pathfinder().get_path_jps(goal = goal, start = start, target_distance = 1, max_path_length = 256)
+	var/pass_silicons_astar = path_astar(goal = goal, start = start, target_distance = 1, max_path_length = 256)
+	var/pass_silicons_jps = path_jps(goal = goal, start = start, target_distance = 1, max_path_length = 256)
 	// old astar has been cut because it's such horrible code it's not worth benchmarking against the other 3.
 	// var/pass_old_astar = graph_astar(
 	// 	start,

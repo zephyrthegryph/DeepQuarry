@@ -127,11 +127,17 @@
 	var/opened = 0
 	var/datum/shuttle/autodock/overmap/parent_shuttle
 	var/base_tank = /obj/item/tank/phoron
+	/// Whether a tank sits in the port, kept for the look.
+	var/loaded = FALSE
+
+TRACKED(/obj/structure/fuel_port, opened)
+TRACKED(/obj/structure/fuel_port, loaded)
 
 /obj/structure/fuel_port/Initialize(mapload)
 	. = ..()
 	if(base_tank)
 		new base_tank(src)
+	set_loaded(contents_count(src) > 0)
 
 /obj/structure/fuel_port/heavy
 	base_tank = /obj/item/tank/phoron/pressurized
@@ -149,20 +155,18 @@
 		return TRUE
 	else if(contents_count(src) > 0)
 		user.put_in_hands(contents[1])
-	update_icon()
+		set_loaded(contents_count(src) > 0)
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/fuel_port, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/fuel_port/appearance_overlays()
-	. = list()
+/obj/structure/fuel_port/draw(datum/look/look)
 	if(opened)
-		if(contents_count(src) > 0)
-			icon_state = icon_full
+		if(loaded)
+			look.state(icon_full)
 		else
-			icon_state = icon_empty
+			look.state(icon_empty)
 	else
-		icon_state = icon_closed
-	. += ..()
+		look.state(icon_closed)
+	..()
 
 /// Old attackby.
 /obj/structure/fuel_port/proc/interaction_item(datum/act/op/A)
@@ -175,14 +179,13 @@ DECLARE_APPEARANCE_PROC(/obj/structure/fuel_port, TYPE_PROC_REF(/atom, appearanc
 		if(contents_count(src) == 0)
 			user.unEquip(W, src)
 			W.forceMove(src)
-	update_icon()
+			set_loaded(contents_count(src) > 0)
 	return OP_PASS
 
 /obj/structure/fuel_port/crowbar_act(mob/user, obj/item/tool)
-	opened = !opened
+	set_opened(!opened)
 	to_chat(user, span_notice("You [opened ? "open up" : "tightly shut"] \the [src] door."))
 	play_sfx(src, opened ? SFX_EFFECTS_LOCKER_OPEN : SFX_EFFECTS_LOCKER_CLOSE)
-	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
 // Walls hide stuff inside them, but we want to be visible.

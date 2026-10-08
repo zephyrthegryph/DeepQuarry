@@ -547,7 +547,7 @@
 
 // ---------------------------------------------------------------- declared fields (code/datums/om/fields.dm)
 // What Life stages read to decide there is work, and the channel each raises. Written only through
-// the generated set_<name>() setters (or om_set()); stages that read them wake on them.
+// the generated set_<name>() setters; stages that read them wake on them.
 
 /// Technomancer instability.
 /mob/living/var/instability = 0 // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added

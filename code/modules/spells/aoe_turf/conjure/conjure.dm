@@ -66,7 +66,7 @@ How they spawn stuff is decided by behaviour vars, which are explained below
 
 		if(duration)
 			if(!istype(summoned_object, /turf))
-				om_qdel_after(summoned_object, duration)
+				summoned_object.expire(duration)
 		conjure_animation(animation, spawn_place)
 	return
 

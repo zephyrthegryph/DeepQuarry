@@ -1,0 +1,19 @@
+/obj/effect/plant growth_threshold=0 runtime: Division by zero
+/obj/effect/plant growth_threshold=1 +state: mushroom7-3
+/obj/effect/plant growth_threshold=1 -state: mushroom7-0
+/obj/effect/plant growth_threshold=2 +state: mushroom7-3
+/obj/effect/plant growth_threshold=2 -state: mushroom7-0
+/obj/effect/plant growth_type=1 +state: worms
+/obj/effect/plant growth_type=1 -state: mushroom7-0
+/obj/effect/plant growth_type=2 +state: vines-0
+/obj/effect/plant growth_type=2 -state: mushroom7-0
+/obj/effect/plant/single growth_threshold=0 runtime: Division by zero
+/obj/effect/plant/single growth_threshold=1 +state: mushroom7-3
+/obj/effect/plant/single growth_threshold=1 -state: mushroom7-0
+/obj/effect/plant/single growth_threshold=2 +state: mushroom7-3
+/obj/effect/plant/single growth_threshold=2 -state: mushroom7-0
+/obj/effect/plant/single growth_type=1 +state: worms
+/obj/effect/plant/single growth_type=1 -state: mushroom7-0
+/obj/effect/plant/single growth_type=2 +state: vines-0
+/obj/effect/plant/single growth_type=2 -state: mushroom7-0
+

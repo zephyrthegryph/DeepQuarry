@@ -241,6 +241,10 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 	icon_state = "roulette_ball_glass"
 
 	var/obj/item/holder/trapped
+	/// Whether a mob is trapped inside (kept here so the look reads only the ball's own state).
+	var/holds_mob = FALSE
+
+TRACKED(/obj/item/roulette_ball/hollow, holds_mob)
 
 /obj/item/roulette_ball/hollow/examine(mob/user)
 	.=..()
@@ -269,18 +273,17 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 			return OP_PASS
 		if(!move_into(src, nameof(src.trapped), H, user))
 			return OP_PASS
+		set_holds_mob(TRUE)
 		to_chat(user, span_notice("You trap \the [H] inside the glass roulette ball."))
 		to_chat(H.held_mob, span_warning("\The [user] traps you inside a glass roulette ball!"))
-		update_icon()
 	return OP_PASS
 
-DECLARE_APPEARANCE_PROC(/obj/item/roulette_ball/hollow, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/roulette_ball/hollow/appearance_overlays()
-	. = list()
-	if(trapped && trapped.held_mob)
-		icon_state = "roulette_ball_glass_full"
+/obj/item/roulette_ball/hollow/draw(datum/look/look)
+	..()
+	if(holds_mob)
+		look.state("roulette_ball_glass_full")
 	else
-		icon_state = "roulette_ball_glass"
+		look.state("roulette_ball_glass")
 
 MSG_DEF_SELF(casino/ball_full, "this ball already has something trapped in it")
 
@@ -296,12 +299,12 @@ MSG_DEF_SELF(casino/ball_full, "this ball already has something trapped in it")
 			to_chat(user, span_notice("You take \the [trapped] out of the glass roulette ball."))
 			to_chat(trapped.held_mob, span_notice("\The [user] takes you out of a glass roulette ball."))
 		rel_take(src, nameof(trapped))
-		update_icon()
+		set_holds_mob(FALSE)
 	return OP_OK
 
 /obj/item/roulette_ball/hollow/on_holder_escape()
 	rel_take(src, nameof(trapped))
-	update_icon()
+	set_holds_mob(FALSE)
 
 /obj/item/roulette_ball/hollow/on_spin()
 	if(trapped && trapped.held_mob)

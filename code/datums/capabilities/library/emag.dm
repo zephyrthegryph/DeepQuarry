@@ -51,7 +51,7 @@
 		return refuse(user, C.already_say)
 	if(C.effect)
 		// The effect decides first: FALSE (or a reason) refuses, and nothing is set or spent.
-		var/result = holder_call(holder, C.effect, user, card)
+		var/result = holder_call(holder, C.effect, list(user, card))
 		if(istext(result))
 			return refuse(user, result)
 		if(!isnull(result) && !result)

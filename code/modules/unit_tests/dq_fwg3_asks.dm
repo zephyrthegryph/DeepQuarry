@@ -5,6 +5,7 @@
 	abstract_type = /datum/unit_test/dq_fwg3_ask
 
 /datum/unit_test/dq_fwg3_ask/Run()
+	set_global(nameof(GLOB.test_prompts), list())
 	test_driver_begin()
 	p2cl_capture_prompts()
 	run_fwg3()

@@ -1,7 +1,4 @@
 # sys_lint baseline for tools/ci/sys_rules/usr_use.py (doc/rewrite/systems.md); shrink-only, target 0
-usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return om_pathfinder().get_path_astar(usr, target, get_turf(usr))
-usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return om_pathfinder().get_path_jps(usr, target, get_turf(usr))
-usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return graph_astar(get_turf(usr), target, TYPE_PROC_REF(/turf, CardinalTurfsWithAccess), TYPE_PROC_REF(/turf, Distance), 0, 128, 1)
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_all(turf/start = get_turf(usr), turf/goal)
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_benchmark(times = 1000, turf/source = get_turf(usr))
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	if(!can_use(usr))

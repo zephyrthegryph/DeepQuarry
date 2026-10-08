@@ -1,10 +1,29 @@
 blob | survives
 emag | atom_integrity: down
+emag | light_range: 2 -> 0
+emag | name: 'blob' -> 'inert blob'
+emag | refresh_queued: 131071 -> 0
+emp 1 | light_range: 2 -> 0
+emp 1 | name: 'blob' -> 'inert blob'
 emp 1 | refresh_queued: 131071 -> 0
-emp 2 | nothing
+emp 2 | light_range: 2 -> 0
+emp 2 | name: 'blob' -> 'inert blob'
+emp 2 | refresh_queued: 131071 -> 0
 explosion 1 | deleted
 explosion 2 | atom_integrity: down
+explosion 2 | light_range: 2 -> 0
+explosion 2 | name: 'blob' -> 'inert blob'
+explosion 2 | refresh_queued: 131071 -> 0
 explosion 3 | atom_integrity: down
+explosion 3 | light_range: 2 -> 0
+explosion 3 | name: 'blob' -> 'inert blob'
+explosion 3 | refresh_queued: 131071 -> 0
 projectile | atom_integrity: down
+projectile | light_range: 2 -> 0
+projectile | name: 'blob' -> 'inert blob'
+projectile | refresh_queued: 131071 -> 0
 thrown | atom_integrity: down
+thrown | light_range: 2 -> 0
+thrown | name: 'blob' -> 'inert blob'
+thrown | refresh_queued: 131071 -> 0
 

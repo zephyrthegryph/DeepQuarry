@@ -176,33 +176,27 @@ CAPABILITIES(/obj/item/toy/sword)
 /// Old attack_self: extend or retract the plastic blade.
 /obj/item/toy/sword/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	active = !active
+	set_active(!active)
 	if(active)
 		to_chat(user, span_notice("You extend the plastic blade with a quick flick of your wrist."))
 		play_sfx(src, SFX_WEAPONS_SABERON)
-		item_state = "[icon_state]_blade"
 		w_class = ITEMSIZE_LARGE
 	else
 		to_chat(user, span_notice("You push the plastic blade back down into the handle."))
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
-		item_state = "[icon_state]"
 		w_class = ITEMSIZE_SMALL
-	update_icon()
 	add_fingerprint(user)
 	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/toy/sword/appearance_overlays()
-	. = list()
-	. += ..()
-	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
-	blade_overlay.color = lcolor
-	if(active)
-		. += blade_overlay
-	var/mob/living/carbon/human/holder = loc
-	if(istype(holder))
-		holder.update_inv_l_hand()
-		holder.update_inv_r_hand()
+TRACKED(/obj/item/toy/sword, active)
+TRACKED(/obj/item/toy/sword, lcolor)
+
+/// The look: the plastic blade over the hilt, in the blade's colour.
+/obj/item/toy/sword/draw(datum/look/look)
+	..()
+	var/base = look.state_so_far(src)
+	look.overlay(look_appearance(icon, "[base]_blade", color = lcolor), active)
+	look.held_state(active ? "[base]_blade" : base)
 
 /// The recolour was confirmed: the colour picker is next.
 /obj/item/toy/sword/proc/recolor_confirmed(datum/act/op/A)
@@ -215,8 +209,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, TYPE_PROC_REF(/atom, appearance_ove
 	if(!R)
 		return OP_OK
 	if(R.value)
-		lcolor = sanitize_hexcolor(R.value)
-	update_icon()
+		set_lcolor(sanitize_hexcolor(R.value))
 	return OP_OK
 
 /obj/item/toy/sword/examine(mob/user)
@@ -233,7 +226,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, TYPE_PROC_REF(/atom, appearance_ove
 		else
 			rainbow = FALSE
 		to_chat(user, span_notice("You manipulate the color controller in [src]."))
-		update_icon()
 	return OP_PASS
 /obj/item/toy/katana
 	name = "replica katana"

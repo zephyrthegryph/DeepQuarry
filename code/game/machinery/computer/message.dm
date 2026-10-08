@@ -66,25 +66,26 @@ MSG_DEF_SELF(message_monitor/too_hot, "It is too hot to mess with!")
 TRACKED(/obj/machinery/computer/message_monitor, emag)
 
 CAPABILITIES(/obj/machinery/computer/message_monitor)
+	ref_one(nameof(linkedServer), /obj/machinery/message_server)
 	extend("disconnect", needs(req(PROC_REF(cool_enough), because = MSG(message_monitor/too_hot))))
 	after_init(0, then(PROC_REF(link_default_server)))
 	interface("MessageMonitor")
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("auth", ui_act("auth", arg("key", schema_text(4096))), then(PROC_REF(ui_act_auth)))
 	op("deauth", ui_act("deauth"), then(PROC_REF(ui_act_deauth)))
-	op("find", ui_act("find"), then(PROC_REF(ui_act_find)))
+	op("find", ui_act("find"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/choice, fields = list("title" = "Select a server.", "question" = "Please select a server.", "choices" = computed(PROC_REF(server_prompt_choices)), "timeout" = 0), when = PROC_REF(multiple_servers)), then(PROC_REF(ui_act_find)))
 	op("hack", ui_act("hack"), then(PROC_REF(ui_act_hack)))
 	op("active", ui_act("active"), then(PROC_REF(ui_act_active)))
 	op("del_pda", ui_act("del_pda"), then(PROC_REF(ui_act_del_pda)))
 	op("del_rc", ui_act("del_rc"), then(PROC_REF(ui_act_del_rc)))
-	op("pass", ui_act("pass"), then(PROC_REF(ui_act_pass)))
+	op("pass", ui_act("pass"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/text, fields = list("question" = "Please enter the current decryption key.", "timeout" = 0), step = "current_key", when = PROC_REF(key_action_ready)), asks(/datum/prompt/text, fields = list("question" = "Please enter the new key (3 - 16 characters max):", "max_len" = 16, "timeout" = 0), step = "new_key", when = PROC_REF(current_key_matches)), then(PROC_REF(ui_act_pass)))
 	op("delete", ui_act("delete", arg("id"), arg("type", schema_text(4096))), then(PROC_REF(ui_act_delete)))
 	op("set_sender", ui_act("set_sender", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_sender)))
 	op("set_sender_job", ui_act("set_sender_job", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_sender_job)))
 	op("set_recipient", ui_act("set_recipient", arg("val")), then(PROC_REF(ui_act_set_recipient)))
 	op("set_message", ui_act("set_message", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_message)))
 	op("send_message", ui_act("send_message"), then(PROC_REF(ui_act_send_message)))
-	op("addtoken", ui_act("addtoken"), then(PROC_REF(ui_act_addtoken)))
+	op("addtoken", ui_act("addtoken"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/text, fields = list("title" = "Token creation", "question" = "Enter text you want to be filtered out", "timeout" = 0), when = PROC_REF(key_action_ready)), then(PROC_REF(ui_act_addtoken)))
 	op("deltoken", ui_act("deltoken", arg("deltoken", num())), then(PROC_REF(ui_act_deltoken)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
@@ -203,8 +204,11 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 //Find a server
 
 /obj/machinery/computer/message_monitor/proc/ui_act_find(datum/act/op/A)
+	if(A.answer)
+		server_selected(A)
+		return OP_OK
 	if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1)
-		open_request(src, /datum/prompt/choice, PROC_REF(server_selected), valid = PROC_REF(request_usable), answerer = A.actor, title = "Select a server.", question = "Please select a server.", choices = server_choices(), timeout = 0)
+		server_selected(A)
 	else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
 		rel_set(src, nameof(/obj/machinery/computer/message_monitor::linkedServer), REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 		set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
@@ -254,12 +258,15 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 //Change the password - KEY REQUIRED
 
 /obj/machinery/computer/message_monitor/proc/ui_act_pass(datum/act/op/A)
+	if(A.answer)
+		current_key_entered(A)
+		return OP_OK
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
-	open_request(src, /datum/prompt/text, PROC_REF(current_key_entered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Please enter the current decryption key.", timeout = 0)
+	current_key_entered(A)
 	. = TRUE
 //Delete the log.
 
@@ -368,12 +375,15 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	. = TRUE
 
 /obj/machinery/computer/message_monitor/proc/ui_act_addtoken(datum/act/op/A)
+	if(A.answer)
+		token_entered(A)
+		return OP_OK
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
-	open_request(src, /datum/prompt/text, PROC_REF(token_entered), valid = PROC_REF(request_usable), answerer = A.actor, title = "Token creation", question = "Enter text you want to be filtered out", timeout = 0)
+	token_entered(A)
 	. = TRUE
 
 /obj/machinery/computer/message_monitor/proc/ui_act_deltoken(datum/act/op/A, deltoken)
@@ -396,7 +406,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 		choices[label] = server
 	return choices
 
-/obj/machinery/computer/message_monitor/proc/server_selected(datum/act/request/A)
+/obj/machinery/computer/message_monitor/proc/server_selected(datum/act/op/A)
 	if(!A.answer)
 		return
 	var/obj/machinery/message_server/server = server_choices()[A.answer.value]
@@ -405,21 +415,22 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	rel_set(src, nameof(linkedServer), server)
 	set_temp("NOTICE: Server selected.", "alert")
 
-/obj/machinery/computer/message_monitor/proc/current_key_entered(datum/act/request/A)
+/obj/machinery/computer/message_monitor/proc/current_key_entered(datum/act/op/A)
 	if(!A.answer)
 		return
-	var/dkey = trim(A.answer.value)
+	var/dkey = trim(A.step_value("current_key"))
 	if(!dkey || !linkedServer())
 		return
 	if(linkedServer().decryptkey != dkey)
 		temp = incorrectkey
 		return
-	open_request(src, /datum/prompt/text, PROC_REF(new_key_entered), valid = PROC_REF(request_usable), answerer = A.request.answerer, question = "Please enter the new key (3 - 16 characters max):", max_len = 16, timeout = 0)
+	if(!isnull(A.step_value("new_key")))
+		new_key_entered(A)
 
-/obj/machinery/computer/message_monitor/proc/new_key_entered(datum/act/request/A)
+/obj/machinery/computer/message_monitor/proc/new_key_entered(datum/act/op/A)
 	if(!A.answer)
 		return
-	var/newkey = trim(A.answer.value)
+	var/newkey = trim(A.step_value("new_key"))
 	if(!linkedServer())
 		return
 	if(length(newkey) <= 3)
@@ -430,7 +441,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 		linkedServer().decryptkey = newkey
 	set_temp("NOTICE: Decryption key set.", "average")
 
-/obj/machinery/computer/message_monitor/proc/token_entered(datum/act/request/A)
+/obj/machinery/computer/message_monitor/proc/token_entered(datum/act/op/A)
 	if(A.answer && linkedServer())
 		linkedServer().spamfilter += A.answer.value
 
@@ -465,3 +476,18 @@ CAPABILITIES(/obj/item/paper/monitorkey)
 /// The custom recipient PDA (a relation view).
 /obj/machinery/computer/message_monitor/proc/customrecepient() as /obj/item/pda
 	return customrecepient
+
+/obj/machinery/computer/message_monitor/proc/multiple_servers(datum/act/op/A)
+	return read_once(REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS)) > 1
+
+/obj/machinery/computer/message_monitor/proc/server_prompt_choices(datum/act/op/A)
+	return read_once(server_choices())
+
+/obj/machinery/computer/message_monitor/proc/key_action_ready(datum/act/op/A)
+	var/obj/machinery/message_server/server = linkedServer()
+	return read_once(auth) && server && !server.power_lost() && !server.broken_now()
+
+/obj/machinery/computer/message_monitor/proc/current_key_matches(datum/act/op/A)
+	var/key = trim(A.step_value("current_key"))
+	var/obj/machinery/message_server/server = linkedServer()
+	return key && server && read_once(server.decryptkey) == key

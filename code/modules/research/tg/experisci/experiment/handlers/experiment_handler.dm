@@ -29,8 +29,8 @@ CAPABILITIES(/datum/experiment_handler)
 	var/disallowed_traits
 	/// Additional configuration flags for how the experiment_handler operates
 	var/config_flags
-	/// Callback that, when supplied, can be called from the UI
-	var/list/start_experiment_spec // an om_callable() spec, run with the selected experiment
+	/// When supplied, a UI button runs it: a PROC_REF on the owner, called as owner.start_experiment(selected experiment) (holder_call())
+	var/start_experiment
 
 /// The experiment handler of this movable, if it has one. Owned: deleted with it.
 /// Not saved: the holder's Initialize() makes a fresh handler; the selected experiment is session state.
@@ -46,7 +46,7 @@ CAPABILITIES(/datum/experiment_handler)
  * * config_mode - The define that determines how the experiment_handler should display the configuration UI
  * * disallowed_traits - Flags that control what experiment traits are blacklisted by this experiment handler
  * * config_flags - Flags that control the operational behaviour of the experiment handler, see experiment defines
- * * start_experiment_spec - When provided (an om_callable() spec) adds a UI button to use it to the start the experiment
+ * * start_experiment - When provided (a PROC_REF on the owner) adds a UI button to use it to the start the experiment
  * * experiment_events - list(event path = handler proc ref) hooked on the owner
  */
 /datum/experiment_handler/New(atom/movable/new_owner,
@@ -55,7 +55,7 @@ CAPABILITIES(/datum/experiment_handler)
 	config_mode = EXPERIMENT_CONFIG_ATTACKSELF,
 	disallowed_traits = null,
 	config_flags = null,
-	list/start_experiment_spec = null,
+	start_experiment = null,
 	list/experiment_events
 )
 	. = ..()
@@ -71,7 +71,7 @@ CAPABILITIES(/datum/experiment_handler)
 	src.blacklisted_experiments = blacklisted_experiments
 	src.disallowed_traits = disallowed_traits
 	src.config_flags = config_flags
-	src.start_experiment_spec = start_experiment_spec
+	src.start_experiment = start_experiment
 
 	for(var/event_path in experiment_events)
 		if(ispath(event_path, /datum/notice))
@@ -375,7 +375,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /datum/experiment_handler/ui_data(datum/act/eval/A)
 	. = list(
 		"always_active" = (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE),
-		"has_start_callback" = !isnull(start_experiment_spec),
+		"has_start_callback" = !isnull(start_experiment),
 	)
 	.["techwebs"] = list()
 	for (var/datum/techweb/techwebs as anything in SSresearch.techwebs)
@@ -438,7 +438,8 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	return OP_OK
 
 /datum/experiment_handler/proc/ui_act_start_experiment_callback(datum/act/op/A)
-	om_run(start_experiment_spec, selected_experiment())
+	if(start_experiment && !QDELETED(owner))
+		holder_call(owner, start_experiment, list(selected_experiment()))
 
 
 /// the selected_experiment this refers to (a relation view: null once it is deleted).

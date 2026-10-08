@@ -311,9 +311,6 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 	if(bcell) // declared default: starts empty
 		bcell.charge = 0
 
-OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, sbin, CHANGE_EXPLICIT)
-OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, smanipulator, CHANGE_EXPLICIT)
-OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, scapacitor, CHANGE_EXPLICIT)
 
 /obj/item/medigun_backpack/proc/get_medigun()
 	return tethered_handheld()

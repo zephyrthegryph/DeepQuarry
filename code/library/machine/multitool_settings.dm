@@ -45,7 +45,7 @@ CAPABILITY_TYPE(multitool_settings, CAP_MULTITOOL_SETTINGS, /datum/capability/li
 	for(var/list/setting in settings)
 		if(R?.value == setting[1])
 			if(setting[3] == "action")
-				holder_call(A.holder, setting[2], A)
+				op_call(A, setting[2])
 			else
 				perform_op(A.actor, A.holder, "multitool_settings.set_[setting[2]]", null, ORIGIN_SYSTEM)
 			break

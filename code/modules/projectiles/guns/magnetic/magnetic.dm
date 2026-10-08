@@ -26,9 +26,9 @@
 	var/state = 0
 
 /// Currently installed powercell.
-OM_FIELD_VIEW(/obj/item/gun/magnetic, obj/item/cell, cell, CHANGE_EXPLICIT)
+/obj/item/gun/magnetic/var/obj/item/cell/cell
 /// Installed capacitor. Higher rating == faster charge between shots. Set to a path to spawn with one of that type.
-OM_FIELD_VIEW(/obj/item/gun/magnetic, obj/item/stock_parts/capacitor, capacitor, CHANGE_EXPLICIT)
+/obj/item/gun/magnetic/var/obj/item/stock_parts/capacitor/capacitor
 
 CAPABILITIES(/obj/item/gun/magnetic)
 	every(2 SECONDS, then(PROC_REF(magnetic_step)), when = PROC_REF(steps_now))

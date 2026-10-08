@@ -40,13 +40,13 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 	return emotions
 
 /mob/living/silicon/ai/proc/set_ai_status_displays()
-	var/list/ai_emotions = get_ai_emotions(ckey)
-	open_request(src, /datum/prompt/choice, PROC_REF(ai_status_display_chosen), answerer = src, title = "AI Status", question = "Please, select a status:", choices = ai_emotions, timeout = 0)
+	perform_op(src, src, "ai_status_displays", null, ORIGIN_SYSTEM)
 
-/mob/living/silicon/ai/proc/ai_status_display_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/emote = A.answer.value
+/mob/living/silicon/ai/proc/status_display_options(datum/act/op/A)
+	return get_ai_emotions(ckey)
+
+/mob/living/silicon/ai/proc/ai_status_display_chosen(datum/act/op/A)
+	var/emote = A.step_value("emotion")
 	for (var/obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES)) //change status
 		if(istype(M, /obj/machinery/ai_status_display))
 			var/obj/machinery/ai_status_display/AISD = M

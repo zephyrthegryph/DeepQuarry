@@ -189,7 +189,7 @@ CAPABILITIES(/obj/vehicle)
 	pulse2.set_anchored(TRUE)
 	pulse2.set_dir(pick(GLOB.cardinal))
 
-	om_qdel_after(pulse2, 1 SECOND)
+	pulse2.expire(1 SECOND)
 	if(on)
 		turn_off()
 

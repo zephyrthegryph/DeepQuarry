@@ -90,7 +90,7 @@
 	if (timeout)
 		src.timeout = timeout
 		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
-		om_qdel_after(src, timeout)
+		expire(timeout)
 
 /**
  * Waits for a user's response to the tgui_list_input's prompt before returning. Returns early if

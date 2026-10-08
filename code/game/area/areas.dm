@@ -50,6 +50,9 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	var/sound_env = STANDARD_STATION
 	var/base_turf //The base turf type of the area, which can be used to override the z-level's base turf
 	VAR_PROTECTED/color_grading = null // Color blending for clients that enter this area
+TRACKED(/area, eject)
+TRACKED(/area, fire)
+TRACKED(/area, party)
 
 /area/New()
 	// Used by the maploader, this must be done in New, not init
@@ -197,59 +200,52 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 /area/proc/fire_alert()
 	if(!fire)
-		fire = 1	//used for firedoor checks
-		update_icon()
+		set_fire(1)	//used for firedoor checks
 		firedoors_update()
 
 /area/proc/fire_reset()
 	if (fire)
-		fire = 0	//used for firedoor checks
-		update_icon()
+		set_fire(0)	//used for firedoor checks
 		firedoors_update()
 
 /area/proc/readyalert()
 	if(!eject)
-		eject = 1
-		update_icon()
+		set_eject(1)
 	return
 
 /area/proc/readyreset()
 	if(eject)
-		eject = 0
-		update_icon()
+		set_eject(0)
 	return
 
 /area/proc/partyalert()
 	if (!( party ))
-		party = 1
-		update_icon()
+		set_party(1)
 		firedoors_update()
 	return
 
 /area/proc/partyreset()
 	if (party)
-		party = 0
-		update_icon()
+		set_party(0)
 		firedoors_update()
 	return
 
-DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/area/appearance_overlays()
-	. = list()
+/area/draw(datum/look/look)
+	..()
 	if ((fire || eject || party) && (!requires_power||power_environ) && !istype(src, /area/space))//If it doesn't require power, can still activate this proc.
 		if(fire && !eject && !party)
-			icon_state = null // Let lights take care of it
+			look.state(null) // Let lights take care of it
 		/*else if(atmosalm && !fire && !eject && !party)
-			icon_state = "bluenew"*/
+			look.state("bluenew")*/
 		else if(!fire && eject && !party)
-			icon_state = "red"
+			look.state("red")
 		else if(party && !fire && !eject)
-			icon_state = "party"
+			look.state("party")
 		else
-			icon_state = "blue-red"
+			look.state("blue-red")
 	else
 	//	new lighting behaviour with obj lights
-		icon_state = null
+		look.state(null)
 
 TRACKED(/area, power_equip)
 TRACKED(/area, power_light)
@@ -307,8 +303,6 @@ TRACKED(/area, always_unpowered)
 	for(var/obj/machinery/M as anything in power_machines)
 		if(M.power_subscriber)
 			M.power_change()
-	if (fire || eject || party)
-		update_icon()
 
 /// Watts the area's machines ask of `chan` (the standing draw, the sum of their contributions) plus the one-off draws booked since the last
 /// power step. `include_static` FALSE leaves the standing draw out.

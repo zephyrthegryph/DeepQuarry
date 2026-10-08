@@ -291,7 +291,8 @@ MATERIAL_MIX(/obj/item/stock_parts/capacitor, list(MAT_STEEL = 50,MAT_GLASS = 50
 	var/max_charge = 1000
 
 /// Stored charge; read by its holder's derived fields as "capacitor.charge" (magnetic guns).
-OM_FIELD(/obj/item/stock_parts/capacitor, charge, 0, CHANGE_EXPLICIT)
+/obj/item/stock_parts/capacitor/var/charge = 0
+TRACKED(/obj/item/stock_parts/capacitor, charge)
 
 /obj/item/stock_parts/capacitor/Initialize(mapload)
 	. = ..()

@@ -483,7 +483,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	..()
 
 /// These control what toggleable processes are executed within periodic_step() (MECHA_PROC_*).
-OM_FLAG_FIELD(/obj/mecha, current_processes, MECHA_PROC_INT_TEMP, CHANGE_EXPLICIT)
+/obj/mecha/var/current_processes = MECHA_PROC_INT_TEMP
+TRACKED(/obj/mecha, current_processes)
 /// Derived field: the cabin simulation has something to advance -- a pilot, or inertial movement /
 /// internal damage. An empty parked mech with neither does not tick. Pilot entry/exit raise the
 /// relation channels (the pilot slot's om_link/om_unlink).
@@ -2850,12 +2851,12 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 //////// Mecha process() helpers ////////
 /////////////////////////////////////////
 /obj/mecha/proc/stop_process(process)
-	current_processes_remove(process)
+	set_current_processes(current_processes & ~process)
 	if(process == MECHA_PROC_INT_TEMP)
 		set_cabin_regulating(FALSE)
 
 /obj/mecha/proc/start_process(process)
-	current_processes_add(process)
+	set_current_processes(current_processes | process)
 
 /////////////
 /obj/mecha/cloak()

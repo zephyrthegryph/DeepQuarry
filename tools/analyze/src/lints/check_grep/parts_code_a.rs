@@ -19,6 +19,14 @@ pub fn parts() -> Vec<Part> {
         )
         .allow(Allow::Strict)
         .flt(vec![Flt::DropPaths("call_ext_allow"), drop(r":\s*//|:\s*\*|// .*call_ext")]),
+        Part::new(
+            "holder_call_proc_ref_only",
+            "holder_call: PROC_REF only",
+            "holder_call(owner, proc, with) takes a PROC_REF()/TYPE_PROC_REF()/GLOBAL_PROC_REF() (or one stored from them), never a string literal; `with` is the argument list, as after() takes it.",
+            Files::Code,
+            line(r#"holder_call\([^,()]+,\s*""#),
+        )
+        .allow(Allow::Strict),
         // R10: the two checks that read their names from the generated bindings are dynamic (scan_tree).
         Part::new(
             "r10_bindings_init_seeds_referenced_outside_a_var_edit",

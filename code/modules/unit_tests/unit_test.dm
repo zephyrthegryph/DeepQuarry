@@ -283,17 +283,17 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 /// assumptions" flakiness pattern: a test that only passed because a shared
 /// turf happened to already be warm, or because the CI machine happened to be
 /// fast enough that round N finished within a guessed frame count). Returns
-/// TRUE the moment `om_run(condition)` is truthy, FALSE if `max_attempts` is
-/// exhausted first. `advance` may be null to just poll `condition` on a sleep.
-/proc/wait_for_condition(list/condition, list/advance, max_attempts = 60)
+/// TRUE the moment `condition` is truthy, FALSE if `max_attempts` is
+/// exhausted first. `condition` and `advance` are GLOBAL_PROC_REFs called with their `_with` lists; `advance` may be null to just poll `condition` on a sleep.
+/proc/wait_for_condition(condition, list/condition_with, advance, list/advance_with, max_attempts = 60)
 	for(var/i in 1 to max_attempts)
-		if(om_run(condition))
+		if(call(condition)(arglist(condition_with || list())))
 			return TRUE
 		if(advance)
-			om_run(advance)
+			call(advance)(arglist(advance_with || list()))
 		else
 			sleep(world.tick_lag)
-	return om_run(condition)
+	return call(condition)(arglist(condition_with || list()))
 
 /// The focused test types: the file named by the test-focus world param
 /// (`dm-test --focus=`, tools/dq_focused_test.sh) when given, otherwise every
@@ -489,7 +489,7 @@ GLOBAL_VAR(dq_test_select_names)
 	/// Original config values set_config() changed, each boxed in a one-element
 	/// list (so a saved null is still a saved value); restored on destroy.
 	var/tmp/list/saved_configs
-	/// om_callable() specs defer_cleanup() queued; run last-first on destroy.
+	/// Rows list(target, PROC_REF, with) defer_cleanup() queued; run last-first on destroy.
 	var/tmp/list/deferred_cleanups
 
 /// A stable, deterministic seed for a test's own name: same input, same
@@ -616,16 +616,23 @@ GLOBAL_VAR(dq_test_select_names)
 /// even if a TEST_ASSERT returned from Run() early or Run() runtimed. For cleanup that isn't a
 /// qdel(): releasing a site, unregistering from a global list. A null target calls a global proc.
 /datum/unit_test/proc/defer_cleanup(datum/target, proc_ref, ...)
-	var/list/spec = om_callable(arglist(args))
-	if(spec)
-		LAZYADD(deferred_cleanups, list(spec))
+	var/list/with = length(args) > 2 ? args.Copy(3) : null
+	if(target)
+		LAZYADD(deferred_cleanups, list(list(target, proc_ref, with)))
+	else
+		LAZYADD(deferred_cleanups, list(list(src, TYPE_PROC_REF(/datum/unit_test, run_global_cleanup), list(proc_ref) + with)))
+
+/// A deferred cleanup that is a global proc taking no holder: defer_cleanup(null, GLOBAL_PROC_REF(x), args...).
+/datum/unit_test/proc/run_global_cleanup(proc_ref, ...)
+	call(proc_ref)(arglist(args.Copy(2)))
 
 /datum/unit_test/proc/run_deferred_cleanups()
 	var/list/pending = deferred_cleanups
 	deferred_cleanups = null
 	for(var/i in length(pending) to 1 step -1)
 		try
-			om_run(pending[i])
+			var/list/row = pending[i]
+			holder_call(row[1], row[2], row[3])
 		catch(var/exception/e)
 			// Teardown runs after the test's result is logged: fail the run, not just the test.
 			log_world("::error::UNIT TEST CLEANUP RUNTIME: [type]: [e.name] at [e.file]:[e.line]")
