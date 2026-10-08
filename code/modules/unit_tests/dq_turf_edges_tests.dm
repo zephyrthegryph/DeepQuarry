@@ -168,3 +168,37 @@
 	TEST_ASSERT(N.edge_mask & WEST, "a floor made beside a wall has a border toward it: [N.edge_mask]")
 	TEST_ASSERT(!(W.smooth_mask & EAST), "and the wall does not join a floor")
 	put_tiles_back()
+
+// ---- a cliff that blocks edges: the edges beside it follow it coming and going ----
+
+/datum/unit_test/dq_turf_edges/cliff_blocks_and_releases_edges/Run()
+	take_tiles()
+	var/turf/simulated/floor/water/deep/D = make_first(/turf/simulated/floor/water/deep)
+	make_second(/turf/simulated/floor/water)
+	D = first_tile()
+	TEST_ASSERT(length(D.edge_spill), "deep water beside shallow water takes its edge")
+	var/obj/structure/cliff/C = allocate(/obj/structure/cliff, D)
+	settle()
+	TEST_ASSERT(!length(D.edge_spill), "a cliff made on the tile takes the edge off it")
+	qdel(C)
+	settle()
+	D = first_tile()
+	TEST_ASSERT(length(D.edge_spill), "and the edge is back once the cliff is removed at runtime")
+	put_tiles_back()
+
+// ---- open space: its edges are a mask too ----
+
+/datum/unit_test/dq_turf_edges/open_space_takes_edges/Run()
+	take_tiles()
+	if(!HasBelow(first_at[3]))
+		return // open space needs a level below it; this map's level has none
+	var/turf/simulated/open/O = make_first(/turf/simulated/open)
+	make_second(/turf/simulated/floor/outdoors/snow)
+	O = first_tile()
+	TEST_ASSERT(length(O.edge_spill), "open space beside a stronger turf takes its edge")
+	var/key_before = O.rx?.look_key
+	make_second(/turf/simulated/floor/plating)
+	O = first_tile()
+	TEST_ASSERT(!length(O.edge_spill), "and loses it when that turf is gone")
+	TEST_ASSERT(O.rx?.look_key != key_before, "with a redraw")
+	put_tiles_back()

@@ -43,7 +43,7 @@
 /// Tests if we shouldn't apply a turf edge. Returns the blocker if one exists.
 /turf/simulated/proc/forbid_turf_edge()
 	for(var/obj/structure/S in contents)
-		if(S.block_turf_edges)
+		if(S.block_turf_edges && !QDELETED(S)) // one being taken away has already stopped blocking
 			return S
 	return null
 

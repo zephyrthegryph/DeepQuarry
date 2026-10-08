@@ -87,10 +87,11 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 /// The cardinal borders and inner corners of this tile's flooring (packed as the draw reads them), the edges that spill onto it, and whether the
 /// open space above shows through: written by the adjacency index when this tile or a neighbour changed (code/game/turfs/turf_edges.dm).
 /turf/simulated/floor/var/edge_mask = 0
-/turf/simulated/floor/var/list/edge_spill
 /turf/simulated/floor/var/no_ceiling = FALSE
 TRACKED(/turf/simulated/floor, edge_mask)
-TRACKED(/turf/simulated/floor, edge_spill)
+/// The edge overlays the stronger turfs around spill onto this one (null for none): floors and open space draw them.
+/turf/simulated/var/list/edge_spill
+TRACKED(/turf/simulated, edge_spill)
 TRACKED(/turf/simulated/floor, no_ceiling)
 
 /turf/simulated/floor/edges_changed(mask)
@@ -151,11 +152,6 @@ TRACKED(/turf/simulated/floor, no_ceiling)
 			var/edge_state = T.get_edge_icon_state()
 			LAZYADD(spill, CACHED_KEY(turf_edge_overlays, "[edge_state]-[checkdir]", T.icon_edge, edge_state, checkdir)) // Usually [icon_state]-[dirnum]
 	return spill
-
-// The edges from adjacent turfs onto us, not our own 'internal' edges, as the overlays to show now.
-// Open space (code/modules/multiz/turf.dm) still asks for them at update_icon() time; a floor's come from edge_spill, kept by the adjacency index.
-/turf/simulated/proc/update_icon_edge()
-	return edge_spill_overlays() || list()
 
 //Tests whether this flooring will smooth with the specified turf
 //You can override this if you want a flooring to have super special snowflake smoothing behaviour

@@ -75,6 +75,7 @@ CAPABILITIES(/obj/structure/cliff)
 /obj/structure/cliff/lifecycle_dematerialize()
 	. = ..()
 	unregister_dangerous_to_step()
+	turf_edges_refresh(get_turf(src)) // the tiles around it spill their edges onto the ground it stood on (it is QDELETED here, so it no longer blocks them)
 
 /obj/structure/cliff/Moved(atom/oldloc)
 	. = ..()

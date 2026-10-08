@@ -72,7 +72,6 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 /turf/simulated/open/sim_after_init(datum/act/timer/A)
 	..()
 	make_z_transparent(FALSE)
-	update_icon()
 
 /turf/simulated/open/Entered(atom/movable/mover, atom/oldloc)
 	..()
@@ -95,11 +94,18 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 			depth += 1
 		. += "It is about [depth] levels deep."
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/open, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/open/appearance_overlays()
-	. = list()
-	. += update_icon_edge()
-	. += GLOB.openspace_backdrop_one_for_all //Special grey square for projecting backdrop darkness filter on it.
+/// The edges of the stronger turfs around it (edge_spill, kept by the adjacency index) and the backdrop.
+/turf/simulated/open/draw(datum/look/look)
+	..()
+	for(var/image/spill_image as anything in edge_spill)
+		look.overlay(spill_image)
+	look.overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
+
+/turf/simulated/open/edges_changed(mask)
+	..()
+	var/list/spill = edge_spill_overlays()
+	if(!same_images(edge_spill, spill))
+		set_edge_spill(spill)
 
 // Straight copy from space.
 CAPABILITIES(/turf/simulated/open)
