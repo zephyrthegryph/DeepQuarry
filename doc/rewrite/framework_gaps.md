@@ -312,6 +312,14 @@ buttons and shuttle time edit (single-question flows; they need only `asks()`), 
 Tests: one per flow, driving `test_ui()` with `test_answer()` for each step including a cancel mid-flow (no ban written) and a "No" at the temporary step (permanent ban).
 
 
+### Op additions for questions (rewrite/notices-asks, implemented)
+
+1. **Claims cover the asks() phase.** `pending_op.claims_live()` counts an open question as well as a timed wait; the target claim already began with the workflow. Tests `dq_h4/claims_hold_while_a_question_is_open`.
+2. **`asks(..., answerer = PROC_REF(x))`.** The question goes to the mob `x(A)` returns (`pending_op.answerer`, a relation: deleting it ends the op). Its position and stat are watched while the question is open; moving out of reach of the actor, falling, declining or closing ends the op. Test `dq_h4/a_third_party_answers_the_question`.
+3. **`starts()` handlers may return a reason** (a `/datum/msg` type), ending the op before the wait. Test `dq_h4/a_starts_refusal_ends_the_op_before_the_wait`.
+
+Forms are in `doc/rewrite/conversion_guide.md` section 13.
+
 ### J6 audit: the first 50 `keeps_dead = TRUE` sites outside `code/game/machinery`, `code/modules/power` and the engine
 
 Verdicts come from reading each handler. REMOVED: the opt-out is gone (the handler only null-checks, takes no datum from `with`, or would runtime on null). KEPT: the handler tail is cleanup that must run with the argument gone. Behaviour tests (`dq_keeps_dead_cleanup_tests.dm`, `dq_keeps_dead_cleanup_more_tests.dm`) schedule the real handler with `keeps_dead`, delete the argument and assert the cleanup; sites marked T have one. The tests call the handler through `after()` as the site does, not the site's own code. Untested: highlander (needs a client) and bluespace_connection (the relation and capability setup is not exercised).

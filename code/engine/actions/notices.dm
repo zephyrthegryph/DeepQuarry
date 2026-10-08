@@ -206,8 +206,6 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 			GLOB.act_chain.len = chain_len
 
 /proc/notice_drain_late()
-	var/depth = GLOB.act_depth
-	var/chain_len = length(GLOB.act_chain)
 	GLOB.notice_draining_late = TRUE
 	var/passes = 0
 	while(length(GLOB.notice_late_queue) && passes < DRAIN_MAX_PASSES)

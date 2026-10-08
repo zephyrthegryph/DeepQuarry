@@ -421,3 +421,18 @@ old proc and the done proc it names; keep behaviour. (4) `bash tools/dq_focused_
   itself an error (`allow_annotations --unused`).
 * Heredocs through the shell eat backslashes (`\a`, `\the`): write DM with the Write/Edit tools.
 * A pin that reads `timed_tasks_of(user)` only sees the legacy form: use the `running()` / `was_cancelled()` helpers of `dq_timed_pin`, which read a pending op as well.
+
+## 13. Three op forms for questions (rewrite/notices-asks)
+
+* **A step that repeats.** `asks(/datum/prompt/x, fields = ..., step = "job", repeats = PROC_REF(more))`. After each answer and the op's re-checks, `more(datum/act/op/A)` runs (pure,
+  reads only); while it returns TRUE the same question is asked again, its `computed()` fields recomputed (`A.step_values("job")` has the answers so far, so the question can name the
+  next job). `A.step_values("job")` is the whole list in order, `A.step_value("job")` the latest. A cancel at any round ends the op with nothing written. `when =` composes: a skipped
+  step asks nothing. The ban panel is the model (`code/modules/admin/topic/admin_topic_bans.dm`).
+* **Claims cover the question phase.** An op's claims (`claims(...)`, or the ones derived from its waits) are held from the moment its first question opens until it ends, not only
+  during a timed wait. `CLAIM_TARGET`: another actor's op on the same target is refused with `MSG(op/claimed)` ("in use") while the question is open and allowed once it is cancelled,
+  answered or impossible. `CLAIM_HANDS` / `CLAIM_BODY`: the actor's other input is refused as busy (an AI) or stops the open question (a player). Deleting the actor releases them.
+* **A question for someone else.** `asks(/datum/prompt/yes_no, fields = ..., step = "consent", answerer = PROC_REF(patient), ends_on_no = TRUE)`: `patient(datum/act/op/A)` returns the mob
+  the question goes to. The answer is read as `A.step_value("consent")`. A decline (a no, a closed prompt), a deleted answerer, one who is no longer conscious or who moves out of reach of the
+  actor ends the op with the usual feedback to the actor; so does the actor going. A handler that returns no mob ends the op as failed.
+* **`starts(PROC_REF(x))` may refuse.** Return a `/datum/msg` type from `x(datum/act/op/A)` and the op ends with that message before the wait begins (no begins() message, no bar, no timer);
+  any other return value is ignored, so existing handlers are unchanged.
