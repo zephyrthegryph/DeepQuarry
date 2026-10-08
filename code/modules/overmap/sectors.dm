@@ -37,6 +37,9 @@
 
 	var/base = 0		//starting sector, counts as station_levels
 	var/in_space = 1	//can be accessed via lucky EVA
+	/// The player and sealed levels registering this sector added (the ones it takes back when it unregisters).
+	var/list/added_player_levels
+	var/list/added_sealed_levels
 
 	var/hide_from_reports = FALSE
 
@@ -147,8 +150,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	for(var/zlevel in map_z)
 		GLOB.map_sectors["[zlevel]"] = src
 
+	// Only the levels this sector made player or sealed are taken back at unregister: a level the map (or another sector) already had stays.
+	added_player_levels = map_z - using_map.player_levels
 	using_map.player_levels |= map_z
 	if(!in_space)
+		added_sealed_levels = map_z - using_map.sealed_levels
 		using_map.sealed_levels |= map_z
 
 /obj/effect/overmap/visitable/proc/unregister_z_levels()
@@ -158,9 +164,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 		if(GLOB.map_sectors["[zlevel]"] == src)
 			GLOB.map_sectors -= "[zlevel]"
 
-	using_map.player_levels -= map_z
-	if(!in_space)
-		using_map.sealed_levels -= map_z
+	using_map.player_levels -= added_player_levels
+	using_map.sealed_levels -= added_sealed_levels
+	added_player_levels = null
+	added_sealed_levels = null
 
 /obj/effect/overmap/visitable/get_scan_data()
 	if(!known)
