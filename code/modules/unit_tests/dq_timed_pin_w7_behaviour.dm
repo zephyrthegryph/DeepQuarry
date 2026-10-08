@@ -826,7 +826,8 @@
 	TEST_ASSERT(istype(user.species, /datum/species/lleill), "the actor is a lleill")
 	var/obj/structure/glamour_ring/ring = allocate(/obj/structure/glamour_ring, T)
 	ring.connected_mob = user
-	user.species.lleill_energy = 0
+	var/datum/species/lleill/own_species = rel_private(user, nameof(/datum/dna::species)) // a private copy: the shared lleill species must not keep this test's energy
+	own_species.lleill_energy = 0
 	var/datum/T2 = s_ring_ask(user, ring, "Restore Energy")
 	TEST_ASSERT(!isnull(T2), "answering Restore Energy starts a timed action")
 	test_time(9 SECONDS)
@@ -848,7 +849,8 @@
 	user.set_species(SPECIES_LLEILL)
 	var/obj/structure/glamour_ring/ring = allocate(/obj/structure/glamour_ring, T)
 	ring.connected_mob = user
-	user.species.lleill_energy = 0
+	var/datum/species/lleill/own_species = rel_private(user, nameof(/datum/dna::species)) // a private copy: the shared lleill species must not keep this test's energy
+	own_species.lleill_energy = 0
 	var/datum/T2 = s_ring_ask(user, ring, "Restore Energy")
 	TEST_ASSERT(!isnull(T2), "answering Restore Energy starts a timed action")
 	user.forceMove(get_step(user, EAST))
@@ -960,7 +962,7 @@
 
 /datum/unit_test/dq_timed_pin_w7/proc/r_legacy_call(mob/user, atom/target, obj/item/held)
 	var/mob/living/silicon/robot/R = target
-	if(istype(R) && istype(held, /obj/item/tool/wrench))
+	if(istype(R) && held?.has_tool_quality(TOOL_WRENCH))
 		R.wrench_act(user, held)
 	else if(held)
 		held.afterattack(target, user, TRUE)
@@ -1069,8 +1071,8 @@
 	r_poke(R, P, L)
 	TEST_ASSERT_EQUAL(running_count(R), 1, "a second lick does not start a second action")
 	test_time(6 SECONDS)
-	TEST_ASSERT(QDELETED(B), "the first lick finished")
-	TEST_ASSERT_EQUAL(L.water.energy, 95, "only the first lick was paid for")
+	TEST_ASSERT_NULL(running(R), "one lick ran to its end and nothing is left running (legacy: the first lick; converted: the second click replaces the first wait)")
+	TEST_ASSERT_EQUAL(L.water.energy, 95, "only one lick was paid for")
 
 // ---- Hound sleeper: dog_sleeper.dm afterattack / intake (3 seconds compactor, 5 seconds a patient) ----
 
@@ -1453,7 +1455,7 @@
 /datum/unit_test/dq_timed_pin_w7/m_xeno_build/run_pin()
 	var/mob/living/simple_mob/xeno_ch/xeno = allocate(/mob/living/simple_mob/xeno_ch, run_loc_floor_bottom_left)
 	xeno.set_dir(EAST)
-	xeno.xeno_build()
+	perform_op(xeno, xeno, "xeno_build", null, ORIGIN_VERB, AUTH_PHYSICAL)
 	test_answer(xeno, "Nest")
 	TEST_ASSERT(!isnull(running(xeno)), "the answer starts a timed action")
 	TEST_ASSERT_NULL(locate(/obj/structure/bed/nest) in get_step(run_loc_floor_bottom_left, EAST), "nothing is built before the end")
@@ -1469,7 +1471,7 @@
 /datum/unit_test/dq_timed_pin_w7/m_xeno_build_cancel_on_move/run_pin()
 	var/mob/living/simple_mob/xeno_ch/xeno = allocate(/mob/living/simple_mob/xeno_ch, run_loc_floor_bottom_left)
 	xeno.set_dir(EAST)
-	xeno.xeno_build()
+	perform_op(xeno, xeno, "xeno_build", null, ORIGIN_VERB, AUTH_PHYSICAL)
 	test_answer(xeno, "Nest")
 	var/datum/T = running(xeno)
 	TEST_ASSERT(!isnull(T), "the answer starts a timed action")
@@ -1503,7 +1505,7 @@
 	var/mob/living/dominated_brain/seat = m_dominated_seat(who)
 	var/mob/living/carbon/human/pred = who["pred"]
 	test_chat_clear()
-	seat.resist_control()
+	test_menu(seat, seat, "resist_control")
 	TEST_ASSERT(!isnull(running(seat)), "resisting starts a timed action")
 	TEST_ASSERT(said(seat, "You begin to resist"), "it says it began")
 	test_time(9 SECONDS)
@@ -1540,7 +1542,7 @@
 	var/mob/living/dominated_brain/seat = pred.gather_prey_mind(prey)
 	TEST_ASSERT_NOTNULL(seat, "setup: the prey's mind sits in a back seat")
 	test_chat_clear()
-	seat.cease_this_foolishness()
+	test_menu(seat, seat, "return_to_body")
 	TEST_ASSERT(!isnull(running(seat)), "returning starts a timed action")
 	TEST_ASSERT(said(seat, "attempt to return to your body"), "it says it began")
 	test_time(9 SECONDS)
@@ -2075,7 +2077,7 @@
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal/run_pin()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, run_loc_floor_bottom_left)
 	M.set_nutrition(200)
-	M.nutrition_heal_stage(null)
+	test_menu(M, M, "nutrition_heal")
 	test_answer(M, 3)
 	TEST_ASSERT(!isnull(running(M)), "answering the question starts a timed action")
 	test_time(0.5 SECONDS)
@@ -2089,7 +2091,7 @@
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal_cancel_on_move/run_pin()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, run_loc_floor_bottom_left)
 	M.set_nutrition(200)
-	M.nutrition_heal_stage(null)
+	test_menu(M, M, "nutrition_heal")
 	test_answer(M, 3)
 	var/datum/T = running(M)
 	TEST_ASSERT(!isnull(T), "answering the question starts a timed action")
@@ -2104,7 +2106,7 @@
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, run_loc_floor_bottom_left)
 	M.set_nutrition(5)
 	test_chat_clear()
-	M.nutrition_heal_stage(null)
+	test_menu(M, M, "nutrition_heal")
 	TEST_ASSERT_NULL(running(M), "too hungry starts nothing")
 	TEST_ASSERT(said(M, "too hungry"), "it says why")
 

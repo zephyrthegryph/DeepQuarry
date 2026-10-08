@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Timed actions of mobs, cyborgs, stripping, resisting, vore, NIF, xenobio and the glamour ring and weaver are ops with waits instead of legacy tasks"

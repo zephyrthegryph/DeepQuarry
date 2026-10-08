@@ -18,7 +18,9 @@
 	var/was_mob
 
 CAPABILITIES(/mob/living/dominated_brain)
-	verb_entry(/mob/living/dominated_brain/proc/resist_control)
+	op("resist_control", menu(button = "Resist Control"), when(PROC_REF(resisting_control)), starts(PROC_REF(resist_control_started)), wait(10 SECONDS), then(PROC_REF(resist_control_done)), on_interrupt(PROC_REF(resist_control_interrupted)))
+	op("resist_control_dominate", menu(button = "Resist Control"), when(PROC_REF(dominating_predator)), then(PROC_REF(resist_control_dominate)))
+	op("return_to_body", menu(button = "Return to Body"), when(PROC_REF(body_is_here)), starts(PROC_REF(return_to_body_started)), wait(10 SECONDS), then(PROC_REF(return_to_body_done)), on_interrupt(PROC_REF(return_to_body_interrupted)))
 	param(nameof(pred_body), pos = 1)
 	param(nameof(prey_name), pos = 2)
 	param(nameof(prey_body), pos = 3, apply = PROC_REF(take_seat))
@@ -93,16 +95,27 @@ CAPABILITIES(/mob/living/dominated_brain)
 /mob/living/dominated_brain/proc/resist_domination_confirmed(datum/act/request/A)
 	if(!A.answer || A.answer.value != "Yes")
 		return
-	if(mind != pred_mind || !pred_body?.prey_controlled)
-		return
+	perform_op(src, src, "resist_control", null, ORIGIN_VERB, AUTH_PHYSICAL)
+
+/// The "resist_control" op is offered while a predator's mind holds this brain's body and this brain wields it.
+/mob/living/dominated_brain/proc/resisting_control(datum/act/op/A)
+	return read_once(!(pred_mind && pred_body.mind == pred_mind) && mind == pred_mind && pred_body.prey_controlled)
+
+/// The "resist_control_dominate" op is offered while the predator's mind is in its own body (resisting means dominating it back).
+/mob/living/dominated_brain/proc/dominating_predator(datum/act/op/A)
+	return read_once(pred_mind && pred_body.mind == pred_mind)
+
+/mob/living/dominated_brain/proc/resist_control_dominate(datum/act/op/A)
+	dominate_predator()
+
+/mob/living/dominated_brain/proc/resist_control_started(datum/act/op/A)
 	to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
 	to_chat(pred_body, span_danger("You feel the captive mind of [src] begin to resist your control."))
-	task_timed(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(process_resist_dominated_brain_done), done_args = list(), on_fail = PROC_REF(process_resist_dominated_brain_failed), fail_args = list())
 
-/mob/living/dominated_brain/proc/process_resist_dominated_brain_done()
+/mob/living/dominated_brain/proc/resist_control_done(datum/act/op/A)
 	restore_control()
 
-/mob/living/dominated_brain/proc/process_resist_dominated_brain_failed()
+/mob/living/dominated_brain/proc/resist_control_interrupted(datum/act/op/A)
 	to_chat(src, span_notice("Your attempt to regain control has been interrupted..."))
 	to_chat(pred_body, span_notice("The dominant sensation fades away..."))
 
@@ -137,7 +150,6 @@ CAPABILITIES(/mob/living/dominated_brain)
 		prey_goes_here.real_name = src.prey_name
 		src.languages -= src.temp_languages
 		prey_goes_here.languages |= src.prey_langs
-		grant(prey_goes_here, granted_verb(/mob/living/dominated_brain/proc/cease_this_foolishness), prey_goes_here)
 
 	else		//The prey body does not exist, let's put them in the back seat instead!
 		var/mob/living/dominated_brain/ndb = new /mob/living/dominated_brain(pred_body, pred_body, prey_name)
@@ -391,30 +403,6 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 	to_chat(src, span_danger("You haven't been taken over, and shouldn't have this verb. I'll clean that up for you. Report this on the github, it is a bug."))
 	revoke(src, granted_verb(/mob/proc/release_predator), src)
 
-/mob/living/dominated_brain/proc/resist_control()
-	set category = VERB_CAT_ABILITIES_VORE
-	set name = "Resist Control"
-	set desc = "Attempt to resist control."
-
-	if(pred_mind && pred_body.mind == pred_mind)
-		dominate_predator()
-		return
-
-	if(mind == pred_mind && pred_body.prey_controlled)
-		to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
-		to_chat(pred_body, span_danger("You feel the captive mind of [src] begin to resist your control."))
-
-		task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(resist_control_dominated_brain_done), done_args = list(), on_fail = PROC_REF(resist_control_dominated_brain_failed), fail_args = list())
-	else
-		to_chat(src, span_warning("\The [pred_body] is already dominated, and cannot be controlled at this time."))
-
-/mob/living/dominated_brain/proc/resist_control_dominated_brain_done()
-	restore_control()
-
-/mob/living/dominated_brain/proc/resist_control_dominated_brain_failed()
-	to_chat(src, span_notice("Your attempt to regain control has been interrupted..."))
-	to_chat(pred_body, span_notice("The dominant sensation fades away..."))
-
 /mob/living/proc/dominate_prey()
 	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Dominate Prey"
@@ -565,29 +553,21 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 	to_chat(src, span_notice("Your attempt to gather [M]'s mind has been interrupted."))
 	return
 
-/mob/living/dominated_brain/proc/cease_this_foolishness()
-	set category = VERB_CAT_ABILITIES_VORE
-	set name = "Return to Body"
-	set desc = "If your body is inside of your predator still, attempts to re-insert yourself into it."
+/// The "return_to_body" op is offered while this brain's body is inside the predator still.
+/mob/living/dominated_brain/proc/body_is_here(datum/act/op/A)
+	return read_once(prey_body && prey_body.loc.loc == pred_body)
 
+/mob/living/dominated_brain/proc/return_to_body_started(datum/act/op/A)
+	to_chat(src, span_notice("You exert your will and attempt to return to your body!!!"))
+	to_chat(pred_body, span_warning("\The [src] resists your hold and attempts to return to their body!"))
+
+/mob/living/dominated_brain/proc/return_to_body_done(datum/act/op/A)
 	if(prey_body && prey_body.loc.loc == pred_body)
-		to_chat(src, span_notice("You exert your will and attempt to return to your body!!!"))
-		to_chat(pred_body, span_warning("\The [src] resists your hold and attempts to return to their body!"))
-		task_timed(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(cease_this_foolishness_dominated_brain_done), done_args = list(), on_fail = PROC_REF(cease_this_foolishness_dominated_brain_failed), fail_args = list())
-	else if(prey_body)
-		to_chat(src, span_warning("You can sense your body... but it is not contained within [pred_body]... You cannot return to it at this time."))
-	else
-		to_chat(src, span_warning("Your body seems to no longer exist, so, you cannot return to it."))
-		revoke(src, granted_verb(/mob/living/dominated_brain/proc/cease_this_foolishness), src)
-
-/mob/living/dominated_brain/proc/cease_this_foolishness_dominated_brain_done()
-	if(prey_body && prey_body.loc.loc == pred_body)
-
 		return_to_body()
 	else
 		to_chat(src, span_warning("Your attempt to regain your body has been interrupted..."))
 
-/mob/living/dominated_brain/proc/cease_this_foolishness_dominated_brain_failed()
+/mob/living/dominated_brain/proc/return_to_body_interrupted(datum/act/op/A)
 	to_chat(src, span_warning("Your attempt to regain your body has been interrupted..."))
 
 /mob/living/proc/lend_prey_control()
@@ -749,7 +729,6 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 
 	M.languages -= M.temp_languages
 	db.languages |= M.languages
-	grant(db, granted_verb(/mob/living/dominated_brain/proc/cease_this_foolishness), db)
 
 	absorb_langs()
 

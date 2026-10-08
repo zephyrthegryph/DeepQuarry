@@ -699,43 +699,47 @@ MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic li
 
 ////////////////////////////////
 // Special Promethean """surgery"""
-/obj/item/nif/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(!ishuman(M) || !ishuman(user) || (M == user))
-		return ..()
+/// The op's `when()`: another person with a slime body, the chest aimed at. Anything else is an ordinary hit.
+/obj/item/nif/proc/stuffable(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.target
+	var/mob/living/carbon/human/U = A.actor
+	if(!istype(U) || !istype(T) || U == T)
+		return FALSE
+	return read_once(T.species?.is_slime_bodied) && read_once(U.zone_sel?.selecting) == BP_TORSO
 
-	var/mob/living/carbon/human/U = user
-	var/mob/living/carbon/human/T = M
+/// Requirement: nothing worn on the body to interfere.
+/obj/item/nif/proc/stuff_in_unclothed(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.target
+	return !read_once(T.get_equipped_item(SLOT_ID_UNIFORM) || T.get_equipped_item(SLOT_ID_SUIT))
 
-	if(T.species?.is_slime_bodied && target_zone == BP_TORSO)
-		if(T.get_equipped_item(SLOT_ID_UNIFORM) || T.get_equipped_item(SLOT_ID_SUIT))
-			to_chat(user,span_warning("Remove any clothing they have on, as it might interfere!"))
-			return ITEM_INTERACT_FAILURE
-		var/obj/item/organ/external/eo = T.get_organ(BP_TORSO)
-		if(!eo)
-			to_chat(user,span_warning("They should probably regrow their torso first."))
-			return ITEM_INTERACT_FAILURE
-		act_message(U, src, MSG_SELF(span_notice("You begin installing %T% into [T]'s chest by just stuffing it in.")), \
-			MSG_OTHERS(span_notice("%U% begins installing %T% into [T]'s chest by just stuffing it in.")), \
-			MSG_BLIND("There's a wet SQUISH noise."))
-		task_start(/datum/task/timed/nif_stuff_in, user, T, receiver = src, eo = eo, target_zone = BP_TORSO)
-		return ITEM_INTERACT_SUCCESS
-	else
-		return ..()
+/obj/item/nif/proc/stuff_in_clothed_text(datum/act/op/A)
+	return span_warning("Remove any clothing they have on, as it might interfere!")
 
-/datum/task/timed/nif_stuff_in
-	duration = 20 SECONDS
-	complete_proc = /obj/item/nif/proc/stuff_in_done
-	var/obj/item/organ/external/eo
+/// Requirement: the chest is there to stuff it into.
+/obj/item/nif/proc/stuff_in_torso(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.target
+	return !isnull(read_once(T.get_organ(BP_TORSO)))
 
-/obj/item/nif/proc/stuff_in_done(datum/task/timed/nif_stuff_in/task)
-	var/mob/living/user = task.actor
-	var/mob/living/carbon/human/T = task.target
-	var/obj/item/organ/external/eo = task.eo
+/obj/item/nif/proc/stuff_in_torso_text(datum/act/op/A)
+	return span_warning("They should probably regrow their torso first.")
+
+/obj/item/nif/proc/stuffing_text(datum/act/op/A)
+	return msg_text(span_notice("You begin installing %I% into %T%'s chest by just stuffing it in."), \
+		span_notice("%U% begins installing %I% into %T%'s chest by just stuffing it in."), \
+		span_notice("There's a wet SQUISH noise."))
+
+/obj/item/nif/proc/stuff_in_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/human/T = A.target
+	var/obj/item/organ/external/eo = T.get_organ(BP_TORSO)
+	if(!eo)
+		return OP_FAILED
 	user.unEquip(src)
 	forceMove(eo)
 	rel_add(eo, nameof(eo.implants), src)
 	implant(T)
 	play_sfx(T, SFX_EFFECTS_SLIME_SQUISH)
+	return OP_OK
 
 /mob/living/carbon/human/proc/set_nif_examine()
 	set name = "NIF Appearance"

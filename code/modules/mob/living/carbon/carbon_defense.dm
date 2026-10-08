@@ -51,23 +51,24 @@
 	if(!W.edge || !W.force || W.obj_damage_type() != BRUTE)
 		return 0 //unsuitable weapon
 
-	act_message(user, src, others = span_danger("%U% begins to slit %T%'s throat with %I%!"), item = W)
-
 	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD) //also should prevent user from triggering this repeatedly
-	task_start(/datum/task/timed/carbon_attack_throat_carbon, user, src, receiver = src, W = W, G = G)
+	perform_op(user, src, "slit_throat", W, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 
-/datum/task/timed/carbon_attack_throat_carbon
-	duration = 2 SECONDS
-	complete_proc = /mob/living/carbon/proc/attack_throat_carbon_done
-	var/obj/item/W
-	var/obj/item/grab/G
+MSG_DEF(throat/slit, null, span_danger("%U% begins to slit %T%'s throat with %I%!"))
 
-/mob/living/carbon/proc/attack_throat_carbon_done(datum/task/timed/carbon_attack_throat_carbon/task)
-	var/obj/item/W = task.W
-	var/obj/item/grab/G = task.G
-	var/mob/user = task.actor
-	if(!(G && G?.grab_assailant() == user && G?.grab_target() == src)) //check that we still have a grab
+/// The grab `user` holds on this mob, if any.
+/mob/living/carbon/proc/grab_held_by(mob/user)
+	for(var/obj/item/grab/G in src?.grabbed_by_list())
+		if(G?.grab_assailant() == user)
+			return G
+	return null
+
+/mob/living/carbon/proc/attack_throat_carbon_done(datum/act/op/A)
+	var/obj/item/W = A.held
+	var/mob/user = A.actor
+	var/obj/item/grab/G = grab_held_by(user)
+	if(!G || !W) //check that we still have a grab
 		return 0
 
 	var/damage_mod = 1

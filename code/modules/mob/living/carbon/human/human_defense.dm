@@ -556,39 +556,27 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 	if(!..())
 		return 0
 
-	var/organ_chance = 50
-	var/damage = shank_armor_helper(W, G, user)
-	var/obj/item/organ/external/chest = get_organ(hit_zone)
-
-	if(W.edge)
-		organ_chance = 75
 	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD)
-	act_message(user, src, others = span_danger("%U% begins to twist %I% around inside %T%'s [chest]!"), item = W)
-	task_start(/datum/task/timed/human_shank_attack_human, user, src, receiver = src, W = W, G = G, organ_chance = organ_chance, damage = damage, chest = chest)
+	perform_op(user, src, "shank_twist", W, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 
-/datum/task/timed/human_shank_attack_human
-	duration = 2 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/shank_attack_human_done
-	var/obj/item/W
-	var/obj/item/grab/G
-	var/organ_chance
-	var/damage
-	var/obj/item/organ/external/chest
+/mob/living/carbon/human/proc/shank_twist_text(datum/act/op/A)
+	var/obj/item/W = A.held
+	return msg_text(null, span_danger("%U% begins to twist [W] around inside %T%'s [get_organ(BP_TORSO)]!"))
 
-/mob/living/carbon/human/proc/shank_attack_human_done(datum/task/timed/human_shank_attack_human/task)
-	var/obj/item/W = task.W
-	var/obj/item/grab/G = task.G
-	var/mob/user = task.actor
-	var/organ_chance = task.organ_chance
-	var/damage = task.damage
-	var/obj/item/organ/external/chest = task.chest
-	if(!(G && G?.grab_assailant() == user && G?.grab_target() == src)) //check that we still have a grab
+/mob/living/carbon/human/proc/shank_attack_human_done(datum/act/op/A)
+	var/obj/item/W = A.held
+	var/mob/user = A.actor
+	var/obj/item/grab/G = grab_held_by(user)
+	if(!G || !W) //check that we still have a grab
 		return 0
+	var/organ_chance = W.edge ? 75 : 50
+	var/damage = shank_armor_helper(W, G, user)
+	var/obj/item/organ/external/chest = get_organ(BP_TORSO)
 
 	act_message(user, src, others = span_danger("%U% twists %I% around inside %T%'s [chest]!"), item = W)
 
-	if(prob(organ_chance))
+	if(chest && prob(organ_chance))
 		var/obj/item/organ/internal/selected_organ = pick(chest.held_organs())
 		injure(INJURY_CUT, damage * 0.5, selected_organ, W, affliction = /datum/affliction/lesion/laceration)
 		G.note_action()

@@ -9,6 +9,7 @@
 CAPABILITIES(/mob/living/simple_mob/animal/borer)
 	ref_one(nameof(borer_host_mob), /mob/living/carbon/human, on_unlink = PROC_REF(host_lost))
 	immune_to_incapacitation()
+	op("infest", ai(), reach(REACH_RANGE(1)), starts(PROC_REF(infest_started)), wait(PROC_REF(infest_wait)), then(PROC_REF(infest_done)), on_interrupt(PROC_REF(infest_dislodged)))
 	after_init(0, then(PROC_REF(find_player)))
 	owns_one(nameof(ghost_check), /datum/ghost_query)
 	owns_one(nameof(host_brain), /mob/living/captive_brain)

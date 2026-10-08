@@ -18,7 +18,10 @@
 	name = T_BOARD("slime processor")
 	build_path = /obj/machinery/processor
 
+TRACKED(/obj/machinery/processor, processing)
+
 CAPABILITIES(/obj/machinery/processor)
+	every(1 SECOND, then(PROC_REF(processing_step)), when = nameof(processing))
 	op("start", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Start"), needs(req_is(nameof(processing), FALSE, because = MSG(processor/processing))), then(PROC_REF(interaction_start)))
 	op("eject", menu(), label("Eject Processor"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
 	op("insert", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_insert)))
@@ -65,48 +68,45 @@ MSG_DEF_SELF(processor/processing, "the processor is in the process of processin
 /obj/machinery/processor/proc/begin_processing()
 	if(processing)
 		return // Already doing it.
-	processing = TRUE
+	set_processing(TRUE)
 	play_sfx(src, SFX_MACHINES_JUICER, 2)
-	task_start(/datum/task/slime_processing, src)
+	log_game("slime processor [src] ([x],[y],[z]) starts with [length(to_be_processed)] things inside")
+	processing_step() // the first step is at once; every() (the block above) does the rest, a second apart
 
 /// The processor at work: one thing a second (a core out of a slime, a body processed, or a
 /// monkey cube pressed from the recycled bodies) until it is empty.
-/datum/task/slime_processing
-	name = "slime processing"
-	steps = list(/obj/machinery/processor/proc/processing_step = 0)
-	complete_proc = /obj/machinery/processor/proc/processing_done
-	cancel_proc = /obj/machinery/processor/proc/processing_done
-
-/obj/machinery/processor/proc/processing_step(datum/task/T)
-	var/atom/movable/AM = LAZYACCESS(to_be_processed, 1)
-	if(istype(AM, /mob/living/simple_mob/slime))
-		var/mob/living/simple_mob/slime/S = AM
-		if(S.cores)
-			new S.coretype(get_turf(src))
+/obj/machinery/processor/proc/processing_step(datum/act/timer/A)
+	while(processing)
+		var/atom/movable/AM = LAZYACCESS(to_be_processed, 1)
+		if(istype(AM, /mob/living/simple_mob/slime))
+			var/mob/living/simple_mob/slime/S = AM
+			if(S.cores)
+				new S.coretype(get_turf(src))
+				play_sfx(src, SFX_EFFECTS_SPLAT)
+				S.cores--
+				return
+			rel_remove(src, nameof(to_be_processed), S)
+			consumed(S, src)
+			return
+		if(ishuman(AM))
 			play_sfx(src, SFX_EFFECTS_SPLAT)
-			S.cores--
-			return STEP_REPEAT(1 SECOND)
-		rel_remove(src, nameof(to_be_processed), S)
-		consumed(S, src)
-		return STEP_REPEAT(1 SECOND)
-	if(ishuman(AM))
-		play_sfx(src, SFX_EFFECTS_SPLAT)
-		rel_remove(src, nameof(to_be_processed), AM)
-		consumed(AM, src)
-		monkeys_recycled++
-		return STEP_REPEAT(1 SECOND)
-	if(AM)
-		rel_remove(src, nameof(to_be_processed), AM)
-		return STEP_REPEAT(0)
-	if(monkeys_recycled >= monkeys_per_cube)
-		new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
-		play_sfx(src, SFX_EFFECTS_SPLAT)
-		monkeys_recycled -= monkeys_per_cube
-		return STEP_REPEAT(1 SECOND)
-	return STEP_DONE
+			rel_remove(src, nameof(to_be_processed), AM)
+			consumed(AM, src)
+			monkeys_recycled++
+			return
+		if(AM)
+			rel_remove(src, nameof(to_be_processed), AM)
+			continue // not a body: dropped at once, the next thing is looked at in the same step
+		if(monkeys_recycled >= monkeys_per_cube)
+			new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
+			play_sfx(src, SFX_EFFECTS_SPLAT)
+			monkeys_recycled -= monkeys_per_cube
+			return
+		processing_done()
+		return
 
-/obj/machinery/processor/proc/processing_done(datum/task/T)
-	processing = FALSE
+/obj/machinery/processor/proc/processing_done()
+	set_processing(FALSE)
 	play_sfx(src, SFX_MACHINES_DING)
 
 /obj/machinery/processor/proc/can_insert(atom/movable/AM)
