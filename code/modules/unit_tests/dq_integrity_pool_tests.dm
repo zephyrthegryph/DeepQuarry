@@ -32,8 +32,8 @@
 	var/old_type = T.type
 	var/turf/simulated/wall/W = T.ChangeTurf(/turf/simulated/wall)
 	TEST_ASSERT(istype(W), "ChangeTurf should make a wall")
-	W.material = get_material_by_name(MAT_PLASTEEL)
-	W.reinf_material = get_material_by_name(MAT_PLASTEEL)
+	W.set_material(get_material_by_name(MAT_PLASTEEL))
+	W.set_reinf_material(get_material_by_name(MAT_PLASTEEL))
 	W.update_material()
 	var/cap = W.material.integrity + W.reinf_material.integrity
 	TEST_ASSERT(W.uses_integrity, "walls use integrity")
@@ -65,7 +65,7 @@
 
 	// Changing the material keeps the damage already done.
 	W.take_damage(30)
-	W.reinf_material = null
+	W.set_reinf_material(null)
 	W.update_material()
 	TEST_ASSERT_EQUAL(W.max_integrity, W.material.integrity, "an unreinforced wall's cap is its plating")
 	TEST_ASSERT_EQUAL(W.get_integrity(), W.material.integrity - 30, "a material change keeps the wall's damage")

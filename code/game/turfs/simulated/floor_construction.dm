@@ -114,9 +114,9 @@
 
 /datum/interaction/construction/floor/weld_dents/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/turf/simulated/floor/floor = target
-	floor.icon_state = "plating"
-	floor.burnt = null
-	floor.broken = null
+	floor.set_broken(null)
+	floor.set_burnt(null)
+	floor.set_scorch_state(null)
 	floor.restore_floor_integrity()
 	return TRUE
 

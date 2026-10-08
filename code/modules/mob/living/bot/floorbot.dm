@@ -269,7 +269,7 @@ CAPABILITIES(/mob/living/bot/floorbot)
 /mob/living/bot/floorbot/proc/improved_floor(datum/act/op/A)
 	var/turf/simulated/floor/F = A.target
 	if(!F.flooring)
-		F.set_flooring(get_flooring_data(floor_build_type))
+		F.install_flooring(get_flooring_data(floor_build_type))
 		addTiles(-1)
 /mob/living/bot/floorbot/proc/collected_tiles(datum/act/op/A)
 	var/obj/item/stack/tile/floor/T = A.target

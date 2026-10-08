@@ -61,6 +61,9 @@
 #define ADJ_KIND_SMOOTH "smooth"
 /// Conveyor belts: a belt finds the belts before and after it.
 #define ADJ_KIND_CONVEYOR "conveyor"
+/// Simulated turfs hearing each other's edges (code/game/turfs/turf_edges.dm): a turf whose edge-relevant state changed has its neighbours' masks
+/// recomputed, so a turf's draw reads its own tracked mask and never a neighbour.
+#define ADJ_KIND_TURF_EDGE "turf_edge"
 /// Every direction a smoothing member looks at: the faces and the corners.
 #define ADJ_ALL_AROUND (ADJ_CARDINAL | ADJ_DIAGONALS)
 /// Junction bits of the corners in an adjacency() mask (the faces use their BYOND direction bits).

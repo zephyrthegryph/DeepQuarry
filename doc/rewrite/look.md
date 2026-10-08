@@ -62,3 +62,20 @@ requirements in `needs`]** (the lock takes `lamp =`: it shows as a glowing `lock
     look.glow("charge", charge_level)       // apc-charge-N, else charge-N, emissive
     look.light(2, 0.25, COLOR_GREEN)
 ```
+
+## 5. A turf and its neighbour turfs (turf edges)
+
+A turf's draw must not read its neighbours: a neighbour's state is not the turf's own, and the engine cannot hear it change. The adjacency index does
+the listening (code/game/turfs/turf_edges.dm, `ADJ_KIND_TURF_EDGE`; every simulated turf is a member). When a member, or a turf beside it, is placed,
+moved, removed or replaced (`ChangeTurf` ends with `turf_edges_refresh()`), or reports that something an edge reads changed (`edge_inputs_changed()`
+from `on_change()` of its flooring, the state it draws or its density; it only acts when its `edge_key()` moved), the index recomputes the members
+around it, and each one's `edges_changed()` writes its own TRACKED masks through their setters:
+
+| Turf | Masks | The draw shows |
+|---|---|---|
+| floor, water, open space | `edge_mask` (border bits and inner-corner bits from `flooring.test_link()` against the eight neighbours), `edge_spill` (the edge overlays a stronger neighbour spills onto it), `no_ceiling` (open space above, not outdoors) | the flooring's edges and corners, the spilled edges, the ceiling gap |
+| solid rock, flesh | `open_mask` (the cardinal neighbours that are not dense) | the lip toward each open side |
+| wall | `wall_connections` (from the index mask, the doors and hull corners beside it) | the connections of its material's sprite |
+
+What a neighbour reads of a floor's sprite is `edge_look_state()`, a function of the floor's tracked state (`flooring`, `flooring_override`, damage,
+scorch), never of another turf's drawn `icon_state`. Nothing in these chains calls `update_icon()`, `changed(src)` or `appearance_notify_neighbours()`.

@@ -363,7 +363,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 		footstep = FOOTSTEP_PLATING
 		barefootstep = FOOTSTEP_HARD_BAREFOOT
 		clawfootstep = FOOTSTEP_HARD_CLAW
-		water_state = "goo_inactive"
+		set_water_state("goo_inactive")
 		digesting = FALSE
 		digest_synth = FALSE
 		digest_robot = FALSE
@@ -375,7 +375,6 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 			R.update_icon()
 		for(var/obj/structure/dummystairs/hazardledge/stairs in turf_contents_of_type(src, /obj/structure/dummystairs/hazardledge))
 			stairs.icon_state = "stair_hazard"
-		update_icon()
 		return
 	name = "nanite goop."
 	desc = "A deep pool of pulsating, possibly deadly nanite goop."
@@ -384,7 +383,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 	footstep = FOOTSTEP_WATER
 	barefootstep = FOOTSTEP_WATER
 	clawfootstep = FOOTSTEP_WATER
-	water_state = "goo_active"
+	set_water_state("goo_active")
 	digesting = digest
 	digest_synth = synth
 	digest_robot = robot
@@ -400,5 +399,4 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 		stairs.icon_state = "stair_hazard_nanite"
 	for(var/atom/AM in turf_contents_of_type(src, /atom))
 		Entered(AM)
-	update_icon()
 

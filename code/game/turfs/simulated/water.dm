@@ -24,23 +24,26 @@
 
 	var/watercolor = null
 
-/turf/simulated/floor/water/proc/handle_water_icons()
-	icon_state = under_state // This isn't set at compile time in order for it to show as water in the map editor.
-	var/image/water_sprite = image(icon = water_icon, icon_state = water_state, layer = WATER_LAYER)
-	add_overlay(water_sprite)
+TRACKED(/turf/simulated/floor/water, water_state)
 
 /turf/simulated/floor/water/Initialize(mapload)
 	. = ..()
-	update_icon()
 	handle_fish()
 	// soundloop = new(list(src), FALSE) // Removing soundloop for now.
 	// soundloop.start() // Removing soundloop for now.
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/floor/water/appearance_overlays()
-	. = list()
-	. += ..()
-	handle_water_icons()
+/// The floor's look, then the water over its bed.
+/turf/simulated/floor/water/draw(datum/look/look)
+	..()
+	look_water(look)
+
+/// The bed shows its state (it is not set at compile time in order for the turf to show as water in the map editor) and the water sprite lies over it.
+/turf/simulated/floor/water/proc/look_water(datum/look/look)
+	look.state(under_state)
+	look.overlay(look_overlay_image(water_icon, water_state, layer = WATER_LAYER))
+
+/turf/simulated/floor/water/edge_look_state()
+	return under_state
 
 /turf/simulated/floor/water/get_edge_icon_state()
 	return "water_shallow"

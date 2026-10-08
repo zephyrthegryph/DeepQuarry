@@ -202,7 +202,7 @@
 	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
 		own_turf_contents(T)
 	for(var/turf/simulated/floor/F as anything in p2_floors)
-		F.set_flooring(p2_floors[F])
+		F.install_flooring(p2_floors[F])
 	test_driver_end()
 
 /datum/unit_test/dq_p2_smes/proc/run_gate()

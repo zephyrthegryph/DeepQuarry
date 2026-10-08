@@ -103,7 +103,7 @@
 	var/turf/simulated/wall/wall = run_loc_floor_bottom_left.ChangeTurf(/turf/simulated/wall)
 	defer_cleanup(wall, TYPE_PROC_REF(/turf, ChangeTurf), restore_floor_type)
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	wall.set_material(steel, steel, steel)
+	wall.apply_materials(steel, steel, steel)
 	TEST_ASSERT_EQUAL(wall.construction_stage, 6, "A reinforced wall must start with an intact outer grille")
 	TEST_ASSERT(interim_construction_step(wall, actor, /datum/interaction/construction/wall/cut_grille), "Cutting the grille failed")
 	TEST_ASSERT_EQUAL(wall.construction_stage, 5, "Cutting the grille must expose the support lines")

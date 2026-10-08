@@ -228,6 +228,8 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 			for(var/datum/hook/H as anything in batch[E])
 				if(H.activation && (H.activation.dead || !H.activation.runs))
 					continue
+				if(!change_hook_applies(E, H))
+					continue
 				try
 					if(!hook_conditions_hold(H, E))
 						continue
@@ -238,6 +240,19 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 					act_unwind(depth, chain_len, "on_change drain", fault)
 	if(length(GLOB.hook_change_pending))
 		log_world("ACT: the on_change drain stopped after [DRAIN_MAX_PASSES] passes with [length(GLOB.hook_change_pending)] holder(s) still marked (a hook keeps writing what another hook watches); they wait for the next drain point")
+
+/// Whether the hook marked against E is E's own. A turf that was replaced (ChangeTurf) since the mark is another object of another type behind the
+/// same reference, and a hook of the old type is not its own; a hook an activation brought belongs to its holder.
+/proc/change_hook_applies(datum/E, datum/hook/H)
+	if(H.activation)
+		return TRUE
+	var/index = change_index_of(E)
+	if(!index)
+		return FALSE
+	for(var/key in H.reads)
+		if(H in index[key])
+			return TRUE
+	return FALSE
 
 /proc/hook_change_eval(datum/E, datum/hook/H)
 	var/datum/rx_state/rx = rx_of(E)

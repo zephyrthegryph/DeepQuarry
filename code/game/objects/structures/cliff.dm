@@ -51,6 +51,8 @@ two tiles on initialization, and which way a cliff is facing may change during m
 /obj/structure/cliff/Initialize(mapload)
 	. = ..()
 	register_dangerous_to_step()
+	if(!mapload)
+		turf_edges_refresh(get_turf(src)) // the tiles around it stop spilling their edges onto it (a map load computes them once at its end)
 
 CAPABILITIES(/obj/structure/cliff)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
@@ -73,6 +75,7 @@ CAPABILITIES(/obj/structure/cliff)
 /obj/structure/cliff/lifecycle_dematerialize()
 	. = ..()
 	unregister_dangerous_to_step()
+	turf_edges_refresh(get_turf(src)) // the tiles around it spill their edges onto the ground it stood on (it is QDELETED here, so it no longer blocks them)
 
 /obj/structure/cliff/Moved(atom/oldloc)
 	. = ..()
