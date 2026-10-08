@@ -3699,3 +3699,23 @@ The single focused capture wrote 23 selected pin types, 15 selected i7 types and
 | /obj/machinery/vr_sleeper/alien | Entry uses native timed operations and keys, with the same occupancy rules. Reused non-harm Hit rows align with master. |
 | /obj/machinery/washing_machine | Grab and resist timing use native operation keys. Reused non-harm Hit rows align with master. |
 | /obj/structure/AIcore | Native add_cables/add_panel keys expose typed material bindings, adding stack-material held rows; actual construction costs and states are regression tested. |
+
+## Draw structures, effects and HUD buttons (rewrite/draw-structures)
+
+Converted to `draw(look)` over tracked state, with their `update_icon()` and `changed(src)` calls gone: closets, crates and lockers (`closet_look()` is the one overridable part: the egg, the statue, the gun cabinet, the body bags and the mind locker replace it), the gun cabinet, the vehicle cage, the cliff, the railing, the low wall frames (bay, eris), the janitorial cart, the bonfire and fireplace (fuel is a `CONTAINER_SLOT_FUEL` slot), the cleanable decal family (blood, gibs, tracks, reagent puddles, crayon, chem coating), the fire axe cabinet, display case, inflatable door and simple door (their plain vars are `TRACKED`), the ability buttons and the hand screens. New builder forms: `look.contents_of(src, slot, type)` (the types a slot holds, real and declared, nothing made; stands for `SLOT_OCCUPANCY_KEY`), `look.things_in(src, slot, type)`, `look.picture_of(thing)`, `look.show_copy_of(thing, layer)`; `/atom/proc/slot_kinds()` behind the first; the latent ledger now publishes the slot's occupancy when an entry is made or used (`latent_set_count()`) and when a holder declares its generator.
+
+Not converted, and why: the window family (`window.dm`, `window_construction.dm`, the bay and eris windows in `low_wall.dm`) because `/obj/structure/window/fancy_shuttle` (turfs/simulated/fancy_shuttles.dm, another lane) and `survival_pod` windows still draw through legacy providers and inherit the base; the windoor assembly because `windowdoor.dm` (machinery lane) writes its `facing` by hand; the grille's `changed(src)` because the RCD repair in `turfs/simulated/walls.dm` writes `destroyed` by hand; `bombspawner.dm`'s `V.update_icon()` because the transfer valve is still a legacy provider.
+
+Pins were not recorded in this lane (the committed snapshots are the base); the merge blesses against these expected classes. Rows that change, by cause:
+
+* **A look drawn from the start.** The legacy providers ran at the first `update_icon()` (a closet's `closet_after_init`, a cliff's `shape_cliff`); the draw runs at creation. Rows: the cliff roots show `cliff-<dir><variant>...` where the mapped state was; closets show the closed/open state of their decal icon.
+* **No `color = null` on a closet.** The decal swap no longer clears the atom colour; the look sets only the icon. No row changes unless a closet type maps a colour.
+* **Blockers follow the drawn state.** Closets, crates, the cabinet, the vehicle cage and the cliff change their sprite through the look, so the plane-8 emissive blocker row follows the made state, as in the furniture round.
+* **Gun cabinet.** Guns are drawn from the slot by type (`laser`/`projectile`, one per gun, three at most) and nothing is made by the draw; rows are the same states, the guns stay declared.
+* **Body bags.** The label and the stasis indicator are look layers; the label is the tracked `has_label`.
+* **Vehicle cage.** The caged vehicle is an overlay behind the frame (the look has no underlays): an `underlay:` row becomes an `overlay:` row.
+* **Cleanable decals.** The janitor mark is `janhud<n>` with `n` rolled at creation (seeded), not `rand()` per draw. Gibs are the file icon tinted by the blood colour with the flesh as a `RESET_COLOR` overlay (the legacy flesh image was built with a direction where the state belonged and never showed; the icon was a blended runtime icon): the `icon:` row is the file, a `<state>_flesh` overlay row appears. Dried decals are drawn darker under their dried name from the tracked `dried`. A reagent puddle of blood or water is named and drawn as the blood decal it is (legacy: no name, no colour).
+* **Bonfire.** Its fuel is the `fuel` slot; rows do not change.
+* **Ability and hand buttons.** Not pinned (not `/obj`/`/mob`).
+
+Hybrid fixes outside the three folders, each the minimum a conversion needed: callers of the new setters (`set_basecolor()`, `set_fleshcolor()`, `set_synthblood()`, `set_ability_icon_state()`) in `modules/body`, `modules/mob`, `modules/event`, `modules/admin`, `modules/xenoarcheaology`; the body bag providers in `items/bodybag.dm` and `items/robobag.dm` (closet descendants).

@@ -118,6 +118,20 @@
 	TEST_ASSERT(("door_open" in overlays_now), "an open cabinet shows its open door: [json_encode(overlays_now)]")
 	TEST_ASSERT_EQUAL(dq_count_of(overlays_now, "laser") + dq_count_of(overlays_now, "projectile"), 0, "and no gun")
 
+/// A declared gun added to a cabinet that holds nothing made redraws it too: the latent entry publishes the slot's occupancy.
+/datum/unit_test/dq_draw_guncabinet_hears_a_latent_entry
+
+/datum/unit_test/dq_draw_guncabinet_hears_a_latent_entry/Run()
+	var/obj/structure/closet/secure_closet/guncabinet/cabinet = allocate(/obj/structure/closet/secure_closet/guncabinet, test_floor())
+	refresh_flush()
+	TEST_ASSERT_EQUAL(dq_count_of(dq_structure_overlays(cabinet), "laser"), 0, "an empty cabinet shows no gun")
+	var/datum/latent_entry/entry = cabinet.latent_add(/obj/item/gun/energy/gun, 2)
+	if(!entry)
+		return // the gun cannot be held declared here: the real-gun test covers the redraw
+	refresh_flush()
+	TEST_ASSERT_EQUAL(dq_count_of(dq_structure_overlays(cabinet), "laser"), 2, "two declared guns are two laser guns on the shelf without making any: [json_encode(dq_structure_overlays(cabinet))]")
+	TEST_ASSERT_EQUAL(cabinet.latent_count(CONTAINER_SLOT_INTERIOR), 2, "and both are still declared")
+
 /// look.contents_of(): the types held, real and declared, filtered by type, with nothing made.
 /datum/unit_test/dq_draw_slot_kinds_count_declared_and_real
 
