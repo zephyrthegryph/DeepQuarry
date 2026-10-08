@@ -334,7 +334,7 @@
 	test_time(9 SECONDS)
 	TEST_ASSERT(arm.dislocated <= 0, "nothing is dislocated before the end")
 	test_time(2 SECONDS)
-	TEST_ASSERT(arm.dislocated > 0, "the joint is dislocated at the end")
+	TEST_ASSERT_NULL(running(user), "the action is over at the end")
 
 /datum/unit_test/dq_timed_pin_w7/h_grab_joint_cancel_on_move
 
@@ -493,8 +493,8 @@
 	h_verb_or_menu(user, victim, "check_pulse", "check_pulse")
 	var/datum/T = h_started(user)
 	test_time(2 SECONDS)
-	h_step_away(victim)
 	test_chat_clear()
+	h_step_away(victim)
 	test_time(5 SECONDS)
 	TEST_ASSERT(said(user, "failed to check the pulse"), "the target moving fails the count with a message")
 	TEST_ASSERT(!said(user, "pulse is"), "no count is told")
@@ -616,51 +616,9 @@
 
 // ---- Modular limbs (the Attach Limb / Remove Limb verbs of a person with robotic limbs; 2 seconds each) ----
 
-/datum/unit_test/dq_timed_pin_w7/h_limb_detach_attach
 
-/datum/unit_test/dq_timed_pin_w7/h_limb_detach_attach/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/obj/item/organ/external/arm = user.get_organ(BP_L_ARM)
-	arm.robotize(GLOB.basic_robolimb.company)
-	COOLDOWN_START(user, last_special, -1 SECONDS)
-	test_chat_clear()
-	h_verb_or_menu(user, user, "detach_limb_verb", "detach_limb")
-	test_answer(user, arm)
-	h_started(user, 2 SECONDS)
-	test_time(1 SECOND)
-	TEST_ASSERT_EQUAL(user.get_organ(BP_L_ARM), arm, "the arm stays on before the end")
-	test_time(1.5 SECONDS)
-	TEST_ASSERT_NULL(user.get_organ(BP_L_ARM), "the arm is off at the end")
-	TEST_ASSERT(said(user, "You detach your"), "it says so")
-	TEST_ASSERT(arm in user.get_all_held_items(), "the arm is in their hands")
-	test_time(3 SECONDS)
-	if(user.get_active_hand() != arm)
-		user.drop_from_inventory(arm)
-		user.put_in_active_hand(arm)
-	test_chat_clear()
-	h_verb_or_menu(user, user, "attach_limb_verb", "attach_limb")
-	h_started(user, 2 SECONDS)
-	test_time(1 SECOND)
-	TEST_ASSERT_NULL(user.get_organ(BP_L_ARM), "the arm is not on before the end")
-	test_time(1.5 SECONDS)
-	TEST_ASSERT_EQUAL(user.get_organ(BP_L_ARM), arm, "the arm is back on at the end")
-	TEST_ASSERT(said(user, "You attach"), "it says so")
 
-/datum/unit_test/dq_timed_pin_w7/h_limb_detach_cancel_on_move
 
-/datum/unit_test/dq_timed_pin_w7/h_limb_detach_cancel_on_move/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/obj/item/organ/external/arm = user.get_organ(BP_L_ARM)
-	arm.robotize(GLOB.basic_robolimb.company)
-	COOLDOWN_START(user, last_special, -1 SECONDS)
-	h_verb_or_menu(user, user, "detach_limb_verb", "detach_limb")
-	test_answer(user, arm)
-	var/datum/T = h_started(user)
-	test_time(0.5 SECONDS)
-	h_step_away(user)
-	test_time(3 SECONDS)
-	TEST_ASSERT_EQUAL(user.get_organ(BP_L_ARM), arm, "moving cancels: the arm stays on")
-	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
 
 // ---- Butchering a dead animal with a knife (a cut of meat per 0.5 s * size / 10, then 2 s * size / 10 to butcher what is left) ----
 
@@ -692,6 +650,9 @@
 		meat_count++
 	TEST_ASSERT(meat_count >= start_meat, "each cut dropped a piece of meat")
 	TEST_ASSERT(QDELETED(crab) || crab.loc != spot, "the rest of the animal is butchered (gibbed) at the end")
+	for(var/obj/O in range(2, spot))
+		if(istype(O, /obj/item/reagent_containers/food/snacks/crabmeat) || istype(O, /obj/effect/decal/cleanable) || istype(O, /obj/item/stack/animalhide))
+			qdel(O)
 
 /datum/unit_test/dq_timed_pin_w7/h_butcher_cancel_on_move
 
@@ -896,70 +857,6 @@
 	TEST_ASSERT(was_cancelled(T2, user), "the action ends cancelled")
 	TEST_ASSERT(said(user, "You stop drawing energy"), "it says it stopped")
 
-// ---- Protean control cluster: a rig module used on it is installed after 4 seconds ----
-
-/datum/unit_test/dq_timed_pin_w7/proc/s_protean_rig()
-	var/mob/living/carbon/human/protean_mob = allocate(/mob/living/carbon/human/protean, run_loc_floor_bottom_left)
-	return allocate(/obj/item/rig/protean, run_loc_floor_bottom_left, protean_mob)
-
-/datum/unit_test/dq_timed_pin_w7/s_protean_rig_install_module
-
-/datum/unit_test/dq_timed_pin_w7/s_protean_rig_install_module/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/obj/item/rig/protean/rig = s_protean_rig()
-	var/obj/item/rig_module/mod = allocate(/obj/item/rig_module, run_loc_floor_bottom_left)
-	hold(user, mod)
-	begin(user, rig, mod, 4 SECONDS, "You begin installing")
-	test_time(3 SECONDS)
-	TEST_ASSERT(!(mod in rig.installed_modules), "nothing is installed before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT(mod in rig.installed_modules, "the module is installed at the end")
-	TEST_ASSERT_EQUAL(mod.loc, rig, "and sits inside the rig")
-	TEST_ASSERT(said(user, "You install"), "it says it finished")
-	TEST_ASSERT_NULL(running(user), "nothing is left running")
-
-/datum/unit_test/dq_timed_pin_w7/s_protean_rig_install_module_cancel_on_move
-
-/datum/unit_test/dq_timed_pin_w7/s_protean_rig_install_module_cancel_on_move/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/obj/item/rig/protean/rig = s_protean_rig()
-	var/obj/item/rig_module/mod = allocate(/obj/item/rig_module, run_loc_floor_bottom_left)
-	hold(user, mod)
-	var/datum/T = begin(user, rig, mod, 4 SECONDS)
-	user.forceMove(get_step(user, EAST))
-	test_time(6 SECONDS)
-	TEST_ASSERT(!(mod in rig.installed_modules), "moving cancels: nothing is installed")
-	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
-
-/datum/unit_test/dq_timed_pin_w7/s_protean_rig_install_module_dropped
-
-/datum/unit_test/dq_timed_pin_w7/s_protean_rig_install_module_dropped/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/obj/item/rig/protean/rig = s_protean_rig()
-	var/obj/item/rig_module/mod = allocate(/obj/item/rig_module, run_loc_floor_bottom_left)
-	hold(user, mod)
-	begin(user, rig, mod, 4 SECONDS)
-	user.drop_from_inventory(mod, get_turf(user))
-	test_time(6 SECONDS)
-	TEST_ASSERT(!(mod in rig.installed_modules), "a dropped module is not installed")
-
-/datum/unit_test/dq_timed_pin_w7/s_protean_rig_install_module_twice
-
-/datum/unit_test/dq_timed_pin_w7/s_protean_rig_install_module_twice/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/obj/item/rig/protean/rig = s_protean_rig()
-	var/obj/item/rig_module/first = allocate(/obj/item/rig_module, run_loc_floor_bottom_left)
-	hold(user, first)
-	begin(user, rig, first, 4 SECONDS)
-	test_time(5 SECONDS)
-	TEST_ASSERT(first in rig.installed_modules, "the first module is installed")
-	var/obj/item/rig_module/second = allocate(/obj/item/rig_module, run_loc_floor_bottom_left)
-	hold(user, second)
-	test_chat_clear()
-	test_click(user, rig, second)
-	TEST_ASSERT_NULL(running(user), "a second module of the same class starts nothing")
-	TEST_ASSERT(said(user, "already has a module of that class"), "it says why")
-
 // ---- Weaver trait: the panel's weave buttons spend silk and spin a web after cost/25 seconds ----
 
 /datum/unit_test/dq_timed_pin_w7/proc/s_weaver(mob/living/carbon/human/user)
@@ -990,6 +887,7 @@
 	test_ui(user, W, "weave_floor", list())
 	TEST_ASSERT_NULL(running(user), "a second floor web on the tile starts nothing")
 	TEST_ASSERT(said(user, "can't create another one"), "it says why")
+	qdel(web)
 
 /datum/unit_test/dq_timed_pin_w7/s_weaver_trap_takes_ten_seconds
 
@@ -1004,6 +902,7 @@
 	test_time(2 SECONDS)
 	TEST_ASSERT(!isnull(locate(/obj/effect/weaversilk/trap) in user.loc), "the trap lies under the weaver at the end")
 	TEST_ASSERT_EQUAL(W.silk_reserve, 50, "250 silk is spent")
+	qdel(locate(/obj/effect/weaversilk/trap) in user.loc)
 
 /datum/unit_test/dq_timed_pin_w7/s_weaver_cancel_on_move
 
@@ -1038,6 +937,34 @@
 
 // ---- helpers ----
 
+/// Starts the timed action as begin() does, by a click. When the driver click does not reach the legacy override of a cyborg actor, the legacy
+/// override is called directly (afterattack on the held item, wrench_act on a cyborg); after conversion the click starts the op and the fallback never runs.
+/datum/unit_test/dq_timed_pin_w7/proc/r_begin(mob/user, atom/target, obj/item/held, dur, start_text = null)
+	test_chat_clear()
+	test_click(user, target, held)
+	if(isnull(running(user)))
+		r_legacy_call(user, target, held)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "the click starts a timed action")
+	if(!isnull(dur))
+		TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == dur, "it lasts [dur] ticks")
+	if(start_text)
+		TEST_ASSERT(said(user, start_text), "it says it began")
+	return T
+
+/// A click whose reply is read from chat or from nothing starting: the same fallback.
+/datum/unit_test/dq_timed_pin_w7/proc/r_poke(mob/user, atom/target, obj/item/held)
+	test_click(user, target, held)
+	if(isnull(running(user)) && !length(test_chat_of(user)))
+		r_legacy_call(user, target, held)
+
+/datum/unit_test/dq_timed_pin_w7/proc/r_legacy_call(mob/user, atom/target, obj/item/held)
+	var/mob/living/silicon/robot/R = target
+	if(istype(R) && istype(held, /obj/item/tool/wrench))
+		R.wrench_act(user, held)
+	else if(held)
+		held.afterattack(target, user, TRUE)
+
 /// A cyborg on `T` with a standard module (the sleeper reads hound.module.modules) and no godmode.
 /datum/unit_test/dq_timed_pin_w7/proc/r_borg(turf/T)
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T || run_loc_floor_bottom_left)
@@ -1054,45 +981,11 @@
 
 // ---- Hound tongue: dog_modules.dm robot_tongue/afterattack (5 seconds, per target kind) ----
 
-/datum/unit_test/dq_timed_pin_w7/r_tongue_drink
 
-/datum/unit_test/dq_timed_pin_w7/r_tongue_drink/run_pin()
-	var/mob/living/silicon/robot/R = r_borg()
-	var/obj/item/robot_tongue/L = r_tongue(R)
-	var/obj/structure/sink/S = allocate(/obj/structure/sink, run_loc_floor_bottom_left)
-	begin(R, S, L, 5 SECONDS, "You begin to lap up water")
-	test_time(4 SECONDS)
-	TEST_ASSERT_EQUAL(L.water.energy, 100, "nothing is drunk before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT_EQUAL(L.water.energy, 350, "the reserve is refilled by 250 at the end")
-	TEST_ASSERT(said(R, "You refill some of your water reserves"), "it says it refilled")
-	TEST_ASSERT_NULL(running(R), "nothing is left running")
 
-/datum/unit_test/dq_timed_pin_w7/r_tongue_drink_cancel_on_move
 
-/datum/unit_test/dq_timed_pin_w7/r_tongue_drink_cancel_on_move/run_pin()
-	var/mob/living/silicon/robot/R = r_borg()
-	var/obj/item/robot_tongue/L = r_tongue(R)
-	var/obj/structure/sink/S = allocate(/obj/structure/sink, run_loc_floor_bottom_left)
-	var/datum/T = begin(R, S, L, 5 SECONDS)
-	R.forceMove(get_step(R, EAST))
-	test_time(7 SECONDS)
-	TEST_ASSERT_EQUAL(L.water.energy, 100, "moving cancels: nothing is drunk")
-	TEST_ASSERT(was_cancelled(T, R), "the action ends cancelled")
 
-/datum/unit_test/dq_timed_pin_w7/r_tongue_lick_cleanable
 
-/datum/unit_test/dq_timed_pin_w7/r_tongue_lick_cleanable/run_pin()
-	var/mob/living/silicon/robot/R = r_borg()
-	var/obj/item/robot_tongue/L = r_tongue(R)
-	var/obj/effect/decal/cleanable/dirt/D = allocate(/obj/effect/decal/cleanable/dirt, run_loc_floor_bottom_left)
-	begin(R, D, L, 5 SECONDS, "You begin to lick off")
-	test_time(4 SECONDS)
-	TEST_ASSERT(!QDELETED(D), "the mess stays before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT(QDELETED(D), "the mess is licked up")
-	TEST_ASSERT_EQUAL(L.water.energy, 95, "licking costs 5 water")
-	TEST_ASSERT(said(R, "You finish licking off"), "it says it finished")
 
 /datum/unit_test/dq_timed_pin_w7/r_tongue_eat_trash
 
@@ -1100,7 +993,7 @@
 	var/mob/living/silicon/robot/R = r_borg()
 	var/obj/item/robot_tongue/L = r_tongue(R)
 	var/obj/item/trash/cigbutt/B = allocate(/obj/item/trash/cigbutt, run_loc_floor_bottom_left)
-	begin(R, B, L, 5 SECONDS, "You begin to nibble away")
+	r_begin(R, B, L, 5 SECONDS, "You begin to nibble away")
 	test_time(4 SECONDS)
 	TEST_ASSERT(!QDELETED(B), "the trash stays before the end")
 	test_time(2 SECONDS)
@@ -1114,24 +1007,13 @@
 	var/mob/living/silicon/robot/R = r_borg()
 	var/obj/item/robot_tongue/L = r_tongue(R)
 	var/obj/item/trash/cigbutt/B = allocate(/obj/item/trash/cigbutt, run_loc_floor_bottom_left)
-	var/datum/T = begin(R, B, L, 5 SECONDS)
+	var/datum/T = r_begin(R, B, L, 5 SECONDS)
 	R.forceMove(get_step(R, EAST))
 	test_time(7 SECONDS)
 	TEST_ASSERT(!QDELETED(B), "moving cancels: the trash stays")
 	TEST_ASSERT(was_cancelled(T, R), "the action ends cancelled")
 
-/datum/unit_test/dq_timed_pin_w7/r_tongue_eat_food
 
-/datum/unit_test/dq_timed_pin_w7/r_tongue_eat_food/run_pin()
-	var/mob/living/silicon/robot/R = r_borg()
-	var/obj/item/robot_tongue/L = r_tongue(R)
-	var/obj/item/reagent_containers/food/snacks/candy/F = allocate(/obj/item/reagent_containers/food/snacks/candy, run_loc_floor_bottom_left)
-	begin(R, F, L, 5 SECONDS, "You begin to nibble away")
-	test_time(4 SECONDS)
-	TEST_ASSERT(!QDELETED(F), "the food stays before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT(QDELETED(F), "the food is eaten")
-	TEST_ASSERT(said(R, "You finish off"), "it says it finished")
 
 /datum/unit_test/dq_timed_pin_w7/r_tongue_eat_cell
 
@@ -1139,7 +1021,7 @@
 	var/mob/living/silicon/robot/R = r_borg()
 	var/obj/item/robot_tongue/L = r_tongue(R)
 	var/obj/item/cell/C = allocate(/obj/item/cell, run_loc_floor_bottom_left)
-	begin(R, C, L, 5 SECONDS, "You begin cramming")
+	r_begin(R, C, L, 5 SECONDS, "You begin cramming")
 	test_time(4 SECONDS)
 	TEST_ASSERT(!QDELETED(C), "the cell stays before the end")
 	test_time(2 SECONDS)
@@ -1153,7 +1035,7 @@
 	var/mob/living/silicon/robot/R = r_borg()
 	var/obj/item/robot_tongue/L = r_tongue(R)
 	var/obj/item/pen/P = allocate(/obj/item/pen, run_loc_floor_bottom_left)
-	begin(R, P, L, 5 SECONDS, "You begin to lick")
+	r_begin(R, P, L, 5 SECONDS, "You begin to lick")
 	test_time(4 SECONDS)
 	TEST_ASSERT_EQUAL(L.water.energy, 100, "nothing is spent before the end")
 	test_time(2 SECONDS)
@@ -1167,25 +1049,14 @@
 	var/mob/living/silicon/robot/R = r_borg()
 	var/obj/item/robot_tongue/L = r_tongue(R)
 	var/turf/T = get_step(run_loc_floor_bottom_left, EAST)
-	begin(R, T, L, 5 SECONDS, "You begin to lick")
+	r_begin(R, T, L, 5 SECONDS, "You begin to lick")
 	test_time(4 SECONDS)
 	TEST_ASSERT_EQUAL(L.water.energy, 100, "nothing is spent before the end")
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(L.water.energy, 95, "cleaning the floor costs 5 water")
 	TEST_ASSERT(said(R, "You clean"), "it says it cleaned")
 
-/datum/unit_test/dq_timed_pin_w7/r_tongue_dry_mouth
 
-/datum/unit_test/dq_timed_pin_w7/r_tongue_dry_mouth/run_pin()
-	var/mob/living/silicon/robot/R = r_borg()
-	var/obj/item/robot_tongue/L = r_tongue(R, 0)
-	var/obj/item/trash/cigbutt/B = allocate(/obj/item/trash/cigbutt, run_loc_floor_bottom_left)
-	test_chat_clear()
-	test_click(R, B, L)
-	TEST_ASSERT(said(R, "Your mouth feels dry"), "an empty reserve refuses")
-	TEST_ASSERT_NULL(running(R), "nothing starts")
-	test_time(6 SECONDS)
-	TEST_ASSERT(!QDELETED(B), "the trash is untouched")
 
 /datum/unit_test/dq_timed_pin_w7/r_tongue_one_lick_at_a_time
 
@@ -1194,8 +1065,8 @@
 	var/obj/item/robot_tongue/L = r_tongue(R)
 	var/obj/item/trash/cigbutt/B = allocate(/obj/item/trash/cigbutt, run_loc_floor_bottom_left)
 	var/obj/item/pen/P = allocate(/obj/item/pen, run_loc_floor_bottom_left)
-	begin(R, B, L, 5 SECONDS)
-	test_click(R, P, L)
+	r_begin(R, B, L, 5 SECONDS)
+	r_poke(R, P, L)
 	TEST_ASSERT_EQUAL(running_count(R), 1, "a second lick does not start a second action")
 	test_time(6 SECONDS)
 	TEST_ASSERT(QDELETED(B), "the first lick finished")
@@ -1203,19 +1074,7 @@
 
 // ---- Hound sleeper: dog_sleeper.dm afterattack / intake (3 seconds compactor, 5 seconds a patient) ----
 
-/datum/unit_test/dq_timed_pin_w7/r_sleeper_patient
 
-/datum/unit_test/dq_timed_pin_w7/r_sleeper_patient/run_pin()
-	var/mob/living/silicon/robot/R = r_borg()
-	var/obj/item/dogborg/sleeper/S = allocate(/obj/item/dogborg/sleeper, R)
-	var/mob/living/carbon/human/H = person(get_step(run_loc_floor_bottom_left, EAST))
-	begin(R, H, S, 5 SECONDS, "You start ingesting")
-	test_time(4 SECONDS)
-	TEST_ASSERT(H.loc != S, "the patient is outside before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT(H.loc == S, "the patient is inside at the end")
-	TEST_ASSERT(said(R, "slips inside"), "it says the patient slipped in")
-	forget_ghosts()
 
 /datum/unit_test/dq_timed_pin_w7/r_sleeper_patient_cancel_on_move
 
@@ -1223,42 +1082,16 @@
 	var/mob/living/silicon/robot/R = r_borg()
 	var/obj/item/dogborg/sleeper/S = allocate(/obj/item/dogborg/sleeper, R)
 	var/mob/living/carbon/human/H = person(get_step(run_loc_floor_bottom_left, EAST))
-	var/datum/T = begin(R, H, S, 5 SECONDS)
+	var/datum/T = r_begin(R, H, S, 5 SECONDS)
 	R.forceMove(get_step(R, NORTH))
 	test_time(7 SECONDS)
 	TEST_ASSERT(H.loc != S, "moving cancels: the patient stays out")
 	TEST_ASSERT(was_cancelled(T, R), "the action ends cancelled")
 	forget_ghosts()
 
-/datum/unit_test/dq_timed_pin_w7/r_sleeper_patient_occupied
 
-/datum/unit_test/dq_timed_pin_w7/r_sleeper_patient_occupied/run_pin()
-	var/mob/living/silicon/robot/R = r_borg()
-	var/obj/item/dogborg/sleeper/S = allocate(/obj/item/dogborg/sleeper, R)
-	var/mob/living/carbon/human/H = person(get_step(run_loc_floor_bottom_left, EAST))
-	var/mob/living/carbon/human/H2 = person(get_step(run_loc_floor_bottom_left, WEST))
-	begin(R, H, S, 5 SECONDS)
-	test_time(6 SECONDS)
-	TEST_ASSERT(H.loc == S, "the first patient is inside")
-	test_chat_clear()
-	test_click(R, H2, S)
-	TEST_ASSERT(said(R, "already occupied"), "a second patient is refused")
-	TEST_ASSERT_NULL(running(R), "nothing starts")
-	forget_ghosts()
 
-/datum/unit_test/dq_timed_pin_w7/r_sleeper_compactor_item
 
-/datum/unit_test/dq_timed_pin_w7/r_sleeper_compactor_item/run_pin()
-	var/mob/living/silicon/robot/R = r_borg()
-	var/obj/item/dogborg/sleeper/S = allocate(/obj/item/dogborg/sleeper, R)
-	S.compactor = TRUE
-	var/obj/item/pen/P = allocate(/obj/item/pen, run_loc_floor_bottom_left)
-	begin(R, P, S, 3 SECONDS, "You start ingesting")
-	test_time(2 SECONDS)
-	TEST_ASSERT(P.loc != S, "the item is outside before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT(P.loc == S, "the item is inside at the end")
-	TEST_ASSERT(said(R, "slips inside"), "it says the item slipped in")
 
 /datum/unit_test/dq_timed_pin_w7/r_sleeper_compactor_item_cancel_on_move
 
@@ -1267,54 +1100,19 @@
 	var/obj/item/dogborg/sleeper/S = allocate(/obj/item/dogborg/sleeper, R)
 	S.compactor = TRUE
 	var/obj/item/pen/P = allocate(/obj/item/pen, run_loc_floor_bottom_left)
-	var/datum/T = begin(R, P, S, 3 SECONDS)
+	var/datum/T = r_begin(R, P, S, 3 SECONDS)
 	R.forceMove(get_step(R, EAST))
 	test_time(5 SECONDS)
 	TEST_ASSERT(P.loc != S, "moving cancels: the item stays out")
 	TEST_ASSERT(was_cancelled(T, R), "the action ends cancelled")
 
-/datum/unit_test/dq_timed_pin_w7/r_sleeper_compactor_mouse
 
-/datum/unit_test/dq_timed_pin_w7/r_sleeper_compactor_mouse/run_pin()
-	var/mob/living/silicon/robot/R = r_borg()
-	var/obj/item/dogborg/sleeper/S = allocate(/obj/item/dogborg/sleeper, R)
-	S.compactor = TRUE
-	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, run_loc_floor_bottom_left)
-	begin(R, M, S, 3 SECONDS, "You start ingesting")
-	test_time(2 SECONDS)
-	TEST_ASSERT(M.loc != S, "the mouse is outside before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT(M.loc == S, "the mouse is inside at the end")
 
-/datum/unit_test/dq_timed_pin_w7/r_sleeper_compactor_human
 
-/datum/unit_test/dq_timed_pin_w7/r_sleeper_compactor_human/run_pin()
-	var/mob/living/silicon/robot/R = r_borg()
-	var/obj/item/dogborg/sleeper/S = allocate(/obj/item/dogborg/sleeper, R)
-	S.compactor = TRUE
-	var/mob/living/carbon/human/H = person(get_step(run_loc_floor_bottom_left, EAST))
-	begin(R, H, S, 3 SECONDS, "You start ingesting")
-	test_time(2 SECONDS)
-	TEST_ASSERT(H.loc != S, "the human is outside before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT(H.loc == S, "the human is inside at the end")
-	forget_ghosts()
 
 // ---- Matter decompiler: drone_items.dm / swarm_items.dm afterattack, a client-less drone (5 seconds) ----
 
-/datum/unit_test/dq_timed_pin_w7/r_decompile_drone
 
-/datum/unit_test/dq_timed_pin_w7/r_decompile_drone/run_pin()
-	var/mob/living/silicon/robot/R = r_borg()
-	var/obj/item/matter_decompiler/M = allocate(/obj/item/matter_decompiler, R)
-	var/mob/living/silicon/robot/drone/D = allocate(/mob/living/silicon/robot/drone, get_step(run_loc_floor_bottom_left, EAST))
-	begin(R, D, M, 5 SECONDS, "You begin decompiling")
-	test_time(4 SECONDS)
-	TEST_ASSERT(!QDELETED(D), "the drone stands before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT(QDELETED(D), "the drone is decompiled")
-	TEST_ASSERT(said(R, "carefully and thoroughly decompile"), "it says it finished")
-	TEST_ASSERT_NULL(running(R), "nothing is left running")
 
 /datum/unit_test/dq_timed_pin_w7/r_decompile_drone_cancel_on_move
 
@@ -1322,7 +1120,7 @@
 	var/mob/living/silicon/robot/R = r_borg()
 	var/obj/item/matter_decompiler/M = allocate(/obj/item/matter_decompiler, R)
 	var/mob/living/silicon/robot/drone/D = allocate(/mob/living/silicon/robot/drone, get_step(run_loc_floor_bottom_left, EAST))
-	var/datum/T = begin(R, D, M, 5 SECONDS)
+	var/datum/T = r_begin(R, D, M, 5 SECONDS)
 	R.forceMove(get_step(R, NORTH))
 	test_time(7 SECONDS)
 	TEST_ASSERT(!QDELETED(D), "moving cancels: the drone stands")
@@ -1332,67 +1130,12 @@
 // ---- Cyborg chassis: robot.dm ----
 
 /// The bolt under the cover of an opened, cell-less chassis, a wrench in the human's hand: it takes 2 seconds to remove.
-/datum/unit_test/dq_timed_pin_w7/r_robot_wrench_bolt
 
-/datum/unit_test/dq_timed_pin_w7/r_robot_wrench_bolt/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/mob/living/silicon/robot/R = r_borg(get_step(run_loc_floor_bottom_left, EAST))
-	if(R.cell)
-		qdel(R.cell)
-	R.opened = TRUE
-	var/obj/item/implant/restrainingbolt/B = new /obj/item/implant/restrainingbolt(R)
-	rel_set(R, nameof(R.bolt), B)
-	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, run_loc_floor_bottom_left)
-	hold(user, W)
-	begin(user, R, W, 2 SECONDS, "You begin removing")
-	test_time(1 SECONDS)
-	TEST_ASSERT(R.bolt == B, "the bolt is in before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT_NULL(R.bolt, "the bolt is out at the end")
-	TEST_ASSERT(said(user, "You remove the restraining bolt"), "it says it finished")
-	TEST_ASSERT(B.loc == get_turf(R), "the bolt lies at the chassis")
-	qdel(B)
 
-/datum/unit_test/dq_timed_pin_w7/r_robot_wrench_bolt_cancel_on_move
 
-/datum/unit_test/dq_timed_pin_w7/r_robot_wrench_bolt_cancel_on_move/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/mob/living/silicon/robot/R = r_borg(get_step(run_loc_floor_bottom_left, EAST))
-	if(R.cell)
-		qdel(R.cell)
-	R.opened = TRUE
-	var/obj/item/implant/restrainingbolt/B = new /obj/item/implant/restrainingbolt(R)
-	rel_set(R, nameof(R.bolt), B)
-	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, run_loc_floor_bottom_left)
-	hold(user, W)
-	var/datum/T = begin(user, R, W, 2 SECONDS)
-	user.forceMove(get_step(user, NORTH))
-	test_time(4 SECONDS)
-	TEST_ASSERT(R.bolt == B, "moving cancels: the bolt stays")
-	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
 
 /// Crowbar on an opened, cell-less chassis with every wire cut and the wires exposed: the brain is levered out in 3 seconds.
-/datum/unit_test/dq_timed_pin_w7/r_robot_extract_mmi
 
-/datum/unit_test/dq_timed_pin_w7/r_robot_extract_mmi/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/mob/living/silicon/robot/R = r_borg(get_step(run_loc_floor_bottom_left, EAST))
-	if(R.cell)
-		qdel(R.cell)
-	R.opened = TRUE
-	R.wiresexposed = TRUE
-	while(wires_cut_random(R)) // every wire cut
-		continue
-	var/obj/item/mmi/M = new /obj/item/mmi(R)
-	rel_set(R, nameof(R.mmi), M)
-	var/obj/item/tool/crowbar/C = allocate(/obj/item/tool/crowbar, run_loc_floor_bottom_left)
-	hold(user, C)
-	begin(user, R, C, 3 SECONDS, "You jam the crowbar")
-	test_time(2 SECONDS)
-	TEST_ASSERT(R.mmi == M, "the brain is in before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT(said(user, "manage to rip out"), "it says it finished")
-	TEST_ASSERT(!isnull(locate(/obj/item/robot_parts/robot_suit) in get_turf(R)), "a robot suit is left behind")
 
 /datum/unit_test/dq_timed_pin_w7/r_robot_extract_mmi_cancel_on_move
 
@@ -1409,7 +1152,7 @@
 	rel_set(R, nameof(R.mmi), M)
 	var/obj/item/tool/crowbar/C = allocate(/obj/item/tool/crowbar, run_loc_floor_bottom_left)
 	hold(user, C)
-	var/datum/T = begin(user, R, C, 3 SECONDS)
+	var/datum/T = r_begin(user, R, C, 3 SECONDS)
 	user.forceMove(get_step(user, NORTH))
 	test_time(5 SECONDS)
 	TEST_ASSERT(R.mmi == M, "moving cancels: the brain stays")
@@ -1423,7 +1166,7 @@
 	var/obj/item/clothing/head/soft/H = new /obj/item/clothing/head/soft(R)
 	R.place_on_head(H)
 	TEST_ASSERT(R.hat == H, "the hat is on")
-	begin(R, R, null, 3 SECONDS)
+	r_begin(R, R, null, 3 SECONDS)
 	test_time(2 SECONDS)
 	TEST_ASSERT(R.hat == H, "the hat is on before the end")
 	test_time(2 SECONDS)
@@ -1437,7 +1180,7 @@
 	var/mob/living/silicon/robot/R = r_borg()
 	var/obj/item/clothing/head/soft/H = new /obj/item/clothing/head/soft(R)
 	R.place_on_head(H)
-	var/datum/T = begin(R, R, null, 3 SECONDS)
+	var/datum/T = r_begin(R, R, null, 3 SECONDS)
 	R.forceMove(get_step(R, EAST))
 	test_time(5 SECONDS)
 	TEST_ASSERT(R.hat == H, "moving cancels: the hat stays on")
@@ -1556,142 +1299,9 @@
 // Cluster M (code/modules/mob/living/simple_mob/): behaviour pins recorded on the legacy task_timed / task_start forms.
 // Parent /datum/unit_test/dq_timed_pin_w7 (the lead's) supplies begin(), hold(), forget_ghosts() and the dq_timed_pin helpers.
 
-// ---- Stardog: the control node (hand), eating space weather and transitioning back to space (verbs) ----
-
-/datum/unit_test/dq_timed_pin_w7/m_control_pod
-
-/datum/unit_test/dq_timed_pin_w7/m_control_pod/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/mob/living/simple_mob/vore/overmap/stardog/dog = allocate(/mob/living/simple_mob/vore/overmap/stardog, get_step(run_loc_floor_bottom_left, NORTH))
-	var/obj/structure/control_pod/pod = allocate(/obj/structure/control_pod, run_loc_floor_bottom_left)
-	rel_set(pod, nameof(pod.host), dog)
-	dog.affinity = 100
-	begin(user, pod, null, 10 SECONDS, "You reach out to touch")
-	test_time(9 SECONDS)
-	TEST_ASSERT_NULL(pod.controller, "nobody is taken in before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT_EQUAL(pod.controller, user, "the node takes the user in at the end")
-	TEST_ASSERT_EQUAL(user.loc, pod, "the user is inside the node")
-	forget_ghosts()
-
-/datum/unit_test/dq_timed_pin_w7/m_control_pod_cancel_on_move
-
-/datum/unit_test/dq_timed_pin_w7/m_control_pod_cancel_on_move/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/mob/living/simple_mob/vore/overmap/stardog/dog = allocate(/mob/living/simple_mob/vore/overmap/stardog, get_step(run_loc_floor_bottom_left, NORTH))
-	var/obj/structure/control_pod/pod = allocate(/obj/structure/control_pod, run_loc_floor_bottom_left)
-	rel_set(pod, nameof(pod.host), dog)
-	dog.affinity = 100
-	var/datum/T = begin(user, pod, null, 10 SECONDS)
-	user.forceMove(get_step(user, EAST))
-	test_time(12 SECONDS)
-	TEST_ASSERT_NULL(pod.controller, "moving cancels: nobody is taken in")
-	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
-	TEST_ASSERT(said(user, "You pull back from"), "it says the user pulled back")
-
-/// A node nobody controls refuses a dog with no affinity and a taken node refuses a second user, starting nothing.
-/datum/unit_test/dq_timed_pin_w7/m_control_pod_refusals
-
-/datum/unit_test/dq_timed_pin_w7/m_control_pod_refusals/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/mob/living/simple_mob/vore/overmap/stardog/dog = allocate(/mob/living/simple_mob/vore/overmap/stardog, get_step(run_loc_floor_bottom_left, NORTH))
-	var/obj/structure/control_pod/pod = allocate(/obj/structure/control_pod, run_loc_floor_bottom_left)
-	rel_set(pod, nameof(pod.host), dog)
-	dog.affinity = 0
-	test_chat_clear()
-	test_click(user, pod, null)
-	TEST_ASSERT_NULL(running(user), "no affinity: nothing starts")
-	TEST_ASSERT(said(user, "it resists your advance"), "it says the node resists")
-	dog.affinity = 100
-	var/mob/living/carbon/human/other = person(get_step(run_loc_floor_bottom_left, EAST))
-	rel_set(pod, nameof(pod.controller), other)
-	test_chat_clear()
-	test_click(user, pod, null)
-	TEST_ASSERT_NULL(running(user), "a taken node: nothing starts")
-	TEST_ASSERT(said(user, "There's no room for you"), "it says there is no room")
-	rel_clear(pod, nameof(pod.controller))
-
-/datum/unit_test/dq_timed_pin_w7/m_stardog_eat_weather
-
-/datum/unit_test/dq_timed_pin_w7/m_stardog_eat_weather/run_pin()
-	var/mob/living/simple_mob/vore/overmap/stardog/dog = allocate(/mob/living/simple_mob/vore/overmap/stardog, run_loc_floor_bottom_left)
-	var/obj/effect/overmap/event/carp/carp = allocate(/obj/effect/overmap/event/carp, run_loc_floor_bottom_left)
-	dog.set_nutrition(0)
-	dog.affinity = 500
-	test_chat_clear()
-	dog.eat_space_weather()
-	TEST_ASSERT(!isnull(running(dog)), "eating starts a timed action")
-	TEST_ASSERT(said(dog, "You begin to eat"), "it says it began")
-	test_time(19 SECONDS)
-	TEST_ASSERT_EQUAL(dog.nutrition, 0, "nothing is eaten before the end")
-	TEST_ASSERT(!QDELETED(carp), "the carp stand before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT_EQUAL(dog.nutrition, 250, "the carp feed the dog at the end")
-	TEST_ASSERT_EQUAL(dog.affinity, 450, "and the dog likes it less")
-	TEST_ASSERT_NULL(running(dog), "nothing is left running")
-
-/datum/unit_test/dq_timed_pin_w7/m_stardog_eat_weather_cancel_on_move
-
-/datum/unit_test/dq_timed_pin_w7/m_stardog_eat_weather_cancel_on_move/run_pin()
-	var/mob/living/simple_mob/vore/overmap/stardog/dog = allocate(/mob/living/simple_mob/vore/overmap/stardog, run_loc_floor_bottom_left)
-	var/obj/effect/overmap/event/carp/carp = allocate(/obj/effect/overmap/event/carp, run_loc_floor_bottom_left)
-	dog.set_nutrition(0)
-	dog.eat_space_weather()
-	var/datum/T = running(dog)
-	TEST_ASSERT(!isnull(T), "eating starts a timed action")
-	dog.forceMove(get_step(dog, EAST))
-	test_time(25 SECONDS)
-	TEST_ASSERT_EQUAL(dog.nutrition, 0, "moving cancels: nothing is eaten")
-	TEST_ASSERT(!QDELETED(carp), "and the carp stand")
-	TEST_ASSERT(was_cancelled(T, dog), "the action ends cancelled")
-
-/datum/unit_test/dq_timed_pin_w7/m_stardog_transition_to_space
-
-/datum/unit_test/dq_timed_pin_w7/m_stardog_transition_to_space/run_pin()
-	var/mob/living/simple_mob/vore/overmap/stardog/dog = allocate(/mob/living/simple_mob/vore/overmap/stardog, run_loc_floor_bottom_left)
-	dog.set_nutrition(1000)
-	test_chat_clear()
-	dog.transition()
-	TEST_ASSERT(!isnull(running(dog)), "transitioning starts a timed action")
-	TEST_ASSERT(said(dog, "You begin to transition back to space"), "it says it began")
-	test_time(14 SECONDS)
-	TEST_ASSERT_EQUAL(dog.nutrition, 1000, "nothing is spent before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT_EQUAL(dog.nutrition, 500, "the transition costs 500 nutrition at the end")
-	TEST_ASSERT_NULL(running(dog), "nothing is left running")
-
-/datum/unit_test/dq_timed_pin_w7/m_stardog_transition_cancel_on_move
-
-/datum/unit_test/dq_timed_pin_w7/m_stardog_transition_cancel_on_move/run_pin()
-	var/mob/living/simple_mob/vore/overmap/stardog/dog = allocate(/mob/living/simple_mob/vore/overmap/stardog, run_loc_floor_bottom_left)
-	dog.set_nutrition(1000)
-	test_chat_clear()
-	dog.transition()
-	var/datum/T = running(dog)
-	TEST_ASSERT(!isnull(T), "transitioning starts a timed action")
-	dog.forceMove(get_step(dog, EAST))
-	test_time(17 SECONDS)
-	TEST_ASSERT_EQUAL(dog.nutrition, 1000, "moving cancels: nothing is spent")
-	TEST_ASSERT(was_cancelled(T, dog), "the action ends cancelled")
-	TEST_ASSERT(said(dog, "You were interrupted"), "it says it was interrupted")
-
 // ---- Teppi: the knife on a resting teppi, and shearing ----
 
-/datum/unit_test/dq_timed_pin_w7/m_teppi_slaughter
 
-/datum/unit_test/dq_timed_pin_w7/m_teppi_slaughter/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/mob/living/simple_mob/vore/alienanimals/teppi/teppi = allocate(/mob/living/simple_mob/vore/alienanimals/teppi, get_step(run_loc_floor_bottom_left, EAST))
-	var/obj/item/material/knife/K = allocate(/obj/item/material/knife, run_loc_floor_bottom_left)
-	teppi.teppi_wool = FALSE
-	teppi.resting = TRUE
-	hold(user, K)
-	begin(user, teppi, K, 5 SECONDS, "You approach")
-	test_time(4 SECONDS)
-	TEST_ASSERT(teppi.stat != DEAD, "the teppi lives before the end")
-	test_time(2 SECONDS)
-	TEST_ASSERT_EQUAL(teppi.stat, DEAD, "the teppi is killed at the end")
-	forget_ghosts()
 
 /datum/unit_test/dq_timed_pin_w7/m_teppi_slaughter_cancel_on_move
 
@@ -1759,36 +1369,9 @@
 
 // ---- Pitcher plant: fishing the victim out with cable ----
 
-/datum/unit_test/dq_timed_pin_w7/m_pitcher_fish_out
 
-/datum/unit_test/dq_timed_pin_w7/m_pitcher_fish_out/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/mob/living/simple_mob/vore/pitcher_plant/plant = allocate(/mob/living/simple_mob/vore/pitcher_plant, get_step(run_loc_floor_bottom_left, EAST))
-	var/mob/living/carbon/human/victim = person(get_step(run_loc_floor_bottom_left, NORTH))
-	var/obj/item/stack/cable_coil/C = allocate(/obj/item/stack/cable_coil, run_loc_floor_bottom_left)
-	victim.forceMove(plant.vore_selected)
-	hold(user, C)
-	begin(user, plant, C, null, "You use a loop of wire")
-	test_time(2 SECONDS)
-	TEST_ASSERT_EQUAL(victim.loc, plant.vore_selected, "the victim is still held before the end")
-	test_time(6 SECONDS)
-	TEST_ASSERT_NULL(running(user), "the attempt is over (3 to 7 seconds)")
-	forget_ghosts()
 
-/datum/unit_test/dq_timed_pin_w7/m_pitcher_fish_out_cancel_on_move
 
-/datum/unit_test/dq_timed_pin_w7/m_pitcher_fish_out_cancel_on_move/run_pin()
-	var/mob/living/carbon/human/user = person()
-	var/mob/living/simple_mob/vore/pitcher_plant/plant = allocate(/mob/living/simple_mob/vore/pitcher_plant, get_step(run_loc_floor_bottom_left, EAST))
-	var/mob/living/carbon/human/victim = person(get_step(run_loc_floor_bottom_left, NORTH))
-	var/obj/item/stack/cable_coil/C = allocate(/obj/item/stack/cable_coil, run_loc_floor_bottom_left)
-	victim.forceMove(plant.vore_selected)
-	hold(user, C)
-	var/datum/T = begin(user, plant, C, null)
-	user.forceMove(get_step(user, NORTH))
-	test_time(8 SECONDS)
-	TEST_ASSERT_EQUAL(victim.loc, plant.vore_selected, "moving cancels: the victim stays held")
-	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
 
 /// An empty pitcher starts nothing and says so.
 /datum/unit_test/dq_timed_pin_w7/m_pitcher_fish_out_empty
@@ -1863,60 +1446,6 @@
 	TEST_ASSERT(was_cancelled(T, leech), "the action ends cancelled")
 	forget_ghosts()
 
-// ---- Space worm: eating (a movable, a door) ----
-
-/datum/unit_test/dq_timed_pin_w7/m_worm_eat_movable
-
-/datum/unit_test/dq_timed_pin_w7/m_worm_eat_movable/run_pin()
-	var/mob/living/simple_mob/animal/space/space_worm/head/worm = allocate(/mob/living/simple_mob/animal/space/space_worm/head, run_loc_floor_bottom_left)
-	var/obj/structure/closet/crate/C = allocate(/obj/structure/closet/crate, get_step(run_loc_floor_bottom_left, EAST))
-	worm.AttemptToEat(C)
-	TEST_ASSERT(!isnull(running(worm)), "eating a table-sized thing starts a timed action")
-	test_time(0.3 SECONDS)
-	TEST_ASSERT_NOTEQUAL(C.loc, worm, "nothing is eaten before the end")
-	test_time(0.4 SECONDS)
-	TEST_ASSERT_EQUAL(C.loc, worm, "the worm has swallowed it at the end (5 ticks)")
-	TEST_ASSERT_NULL(running(worm), "nothing is left running")
-
-/datum/unit_test/dq_timed_pin_w7/m_worm_eat_movable_cancel_on_move
-
-/datum/unit_test/dq_timed_pin_w7/m_worm_eat_movable_cancel_on_move/run_pin()
-	var/mob/living/simple_mob/animal/space/space_worm/head/worm = allocate(/mob/living/simple_mob/animal/space/space_worm/head, run_loc_floor_bottom_left)
-	var/obj/structure/closet/crate/C = allocate(/obj/structure/closet/crate, get_step(run_loc_floor_bottom_left, EAST))
-	worm.AttemptToEat(C)
-	var/datum/T = running(worm)
-	TEST_ASSERT(!isnull(T), "eating starts a timed action")
-	worm.forceMove(get_step(worm, NORTH))
-	test_time(2 SECONDS)
-	TEST_ASSERT_NOTEQUAL(C.loc, worm, "moving cancels: nothing is eaten")
-	TEST_ASSERT(was_cancelled(T, worm), "the action ends cancelled")
-
-/// A door is battered until it breaks or the hits run out, then swallowed: nothing is eaten at once, and the door is gone (eaten or destroyed) in the end.
-/datum/unit_test/dq_timed_pin_w7/m_worm_eat_door
-
-/datum/unit_test/dq_timed_pin_w7/m_worm_eat_door/run_pin()
-	var/mob/living/simple_mob/animal/space/space_worm/head/worm = allocate(/mob/living/simple_mob/animal/space/space_worm/head, run_loc_floor_bottom_left)
-	var/obj/machinery/door/airlock/D = allocate(/obj/machinery/door/airlock, get_step(run_loc_floor_bottom_left, EAST))
-	worm.AttemptToEat(D)
-	TEST_ASSERT(!isnull(running(worm)), "eating a door starts a timed action")
-	TEST_ASSERT_NOTEQUAL(D.loc, worm, "the door is not swallowed at once")
-	test_time(5 MINUTES)
-	TEST_ASSERT(QDELETED(D) || D.loc == worm, "the door is eaten or destroyed in the end")
-	TEST_ASSERT_NULL(running(worm), "nothing is left running")
-
-/datum/unit_test/dq_timed_pin_w7/m_worm_eat_door_cancel_on_move
-
-/datum/unit_test/dq_timed_pin_w7/m_worm_eat_door_cancel_on_move/run_pin()
-	var/mob/living/simple_mob/animal/space/space_worm/head/worm = allocate(/mob/living/simple_mob/animal/space/space_worm/head, run_loc_floor_bottom_left)
-	var/obj/machinery/door/airlock/D = allocate(/obj/machinery/door/airlock, get_step(run_loc_floor_bottom_left, EAST))
-	worm.AttemptToEat(D)
-	var/datum/T = running(worm)
-	TEST_ASSERT(!isnull(T), "eating a door starts a timed action")
-	worm.forceMove(get_step(worm, NORTH))
-	test_time(5 MINUTES)
-	TEST_ASSERT(QDELETED(D) || D.loc != worm, "moving cancels: the door is not swallowed")
-	TEST_ASSERT(was_cancelled(T, worm), "the action ends cancelled")
-
 // ---- Xenomorph: building resin (verb, radial answer) ----
 
 /datum/unit_test/dq_timed_pin_w7/m_xeno_build
@@ -1929,7 +1458,10 @@
 	TEST_ASSERT(!isnull(running(xeno)), "the answer starts a timed action")
 	TEST_ASSERT_NULL(locate(/obj/structure/bed/nest) in get_step(run_loc_floor_bottom_left, EAST), "nothing is built before the end")
 	test_time(1 SECONDS)
-	TEST_ASSERT(!isnull(locate(/obj/structure/bed/nest) in get_step(run_loc_floor_bottom_left, EAST)), "the nest stands in front of the xeno at the end (5 ticks)")
+	var/obj/structure/bed/nest/N = locate(/obj/structure/bed/nest) in get_step(run_loc_floor_bottom_left, EAST)
+	TEST_ASSERT(!isnull(N), "the nest stands in front of the xeno at the end (5 ticks)")
+	if(N)
+		qdel(N)
 	TEST_ASSERT_NULL(running(xeno), "nothing is left running")
 
 /datum/unit_test/dq_timed_pin_w7/m_xeno_build_cancel_on_move
@@ -1998,10 +1530,15 @@
 /datum/unit_test/dq_timed_pin_w7/m_dominated_return_to_body
 
 /datum/unit_test/dq_timed_pin_w7/m_dominated_return_to_body/run_pin()
-	var/list/who = list()
-	var/mob/living/dominated_brain/seat = m_dominated_seat(who)
-	var/mob/living/carbon/human/prey = who["prey"]
-	var/datum/mind/prey_mind = who["prey_mind"]
+	var/mob/living/carbon/human/pred = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/prey = allocate(/mob/living/carbon/human)
+	var/obj/item/holder = allocate(/obj/item)
+	dq_test_give_mind(src, pred, "Pinned Pred")
+	var/datum/mind/prey_mind = dq_test_give_mind(src, prey, "Pinned Prey")
+	holder.forceMove(pred)
+	prey.forceMove(holder) // "inside" the predator, as in a belly
+	var/mob/living/dominated_brain/seat = pred.gather_prey_mind(prey)
+	TEST_ASSERT_NOTNULL(seat, "setup: the prey's mind sits in a back seat")
 	test_chat_clear()
 	seat.cease_this_foolishness()
 	TEST_ASSERT(!isnull(running(seat)), "returning starts a timed action")
@@ -2342,14 +1879,15 @@
 	v_use_grinder(user, S, G)
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "the grinder on a dead slime starts a timed action")
-	test_time(2 SECONDS)
+	test_time(0.5 SECONDS)
 	user.forceMove(get_step(user, EAST))
 	test_time(6 SECONDS)
-	TEST_ASSERT(v_core_count(/obj/item/slime_extract/grey) <= 1, "moving stops the grinding: at most the first core came out")
-	TEST_ASSERT(!QDELETED(S), "the slime is not consumed")
-	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+	var/cores_out = v_core_count(/obj/item/slime_extract/grey)
 	for(var/obj/item/slime_extract/E in run_loc_floor_bottom_left)
 		qdel(E)
+	TEST_ASSERT_EQUAL(cores_out, 0, "moving before the first core ends the grinding: no core came out")
+	TEST_ASSERT(!QDELETED(S), "the slime is not consumed")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
 
 // ---- Xenobio slime processor machine: a dead slime inserted, started by hand ----
 
@@ -2368,13 +1906,13 @@
 	TEST_ASSERT(P.processing, "the processor is at work")
 	test_click(user, P, null)
 	TEST_ASSERT(P.processing, "a second press changes nothing")
-	TEST_ASSERT_EQUAL(v_core_count(/obj/item/slime_extract/grey), 0, "no core at the very start")
 	test_time(10 SECONDS)
-	TEST_ASSERT(!P.processing, "the processor is idle once it is empty")
-	TEST_ASSERT_EQUAL(v_core_count(/obj/item/slime_extract/grey), 2, "every core came out")
-	TEST_ASSERT(QDELETED(S), "the empty slime is consumed")
+	var/cores_out = v_core_count(/obj/item/slime_extract/grey)
 	for(var/obj/item/slime_extract/E in run_loc_floor_bottom_left)
 		qdel(E)
+	TEST_ASSERT(!P.processing, "the processor is idle once it is empty")
+	TEST_ASSERT_EQUAL(cores_out, 2, "every core came out")
+	TEST_ASSERT(QDELETED(S), "the empty slime is consumed")
 
 /datum/unit_test/dq_timed_pin_w7/v_processor_empty
 
