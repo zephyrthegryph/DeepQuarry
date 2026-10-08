@@ -108,5 +108,5 @@ human|/obj/item/tank menu: Toggle lid
 human|/obj/item/tank menu: Toggle Tray Lid
 human|/obj/item/tank menu: Use
 human|/obj/item/tank click: Click: Insert tank
-keys: bolt, close_lid, drag_buckle, freezer, ghost_harvest, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, port, remove_label, robot_remote_blocked, sample, set_light, tank_bay.holding.insert, tend, tk_harvest, toggle_lid, use_item
+keys: bolt, close_lid, drag_buckle, freezer, ghost_harvest, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, port, remove_label, robot_remote_blocked, sample, set_light, tank_bay.holding.insert, tend, tk_harvest, toggle_lid, use_item
 

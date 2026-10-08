@@ -44,5 +44,5 @@ human|/obj/item/stack/nanopaste menu: Move To Top
 human|/obj/item/stack/nanopaste menu: Repair (refused: This machine is already in perfect condition.)
 human|/obj/item/stack/nanopaste menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/nanopaste click: Click: Repair
-keys: buffer, cleartemp, delete, drag_buckle, flush, freq, id, link, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, network, range, repair, robot_remote_blocked, toggle, ui_open, unlink
+keys: buffer, cleartemp, delete, drag_buckle, flush, freq, id, link, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, network, range, repair, robot_remote_blocked, toggle, ui_open, unlink
 

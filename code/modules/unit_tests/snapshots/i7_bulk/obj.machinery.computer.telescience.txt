@@ -73,5 +73,5 @@ human|/obj/item/gps menu: Move To Top
 human|/obj/item/gps menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/gps menu: Use item
 human|/obj/item/gps click: Click: Use item
-keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, eject, ejectGPS, insert_crystal, insert_gps, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, recal, receive, robot_remote_blocked, send, setdistance, setMemory, setrotation, setz, use_gripper, use_item, use_multitool
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, eject, ejectGPS, insert_crystal, insert_gps, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, recal, receive, robot_remote_blocked, send, setdistance, setMemory, setrotation, setz, use_gripper, use_item, use_multitool
 

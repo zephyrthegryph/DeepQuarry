@@ -58,5 +58,5 @@ human|/obj/item/pda menu: Reset PDA (refused: You can't do that.)
 human|/obj/item/pda menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pda menu: Use
 human|/obj/item/pda click: Click: Use
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, multitool_settings.configure, multitool_settings.set_command, multitool_settings.set_frequency, multitool_settings.set_master_tag, press, robot_remote_blocked
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, multitool_settings.configure, multitool_settings.set_command, multitool_settings.set_frequency, multitool_settings.set_master_tag, press, robot_remote_blocked
 

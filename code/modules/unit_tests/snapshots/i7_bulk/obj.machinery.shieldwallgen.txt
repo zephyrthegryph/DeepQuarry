@@ -83,5 +83,5 @@ human|/obj/item/pda menu: Swipe ID
 human|/obj/item/pda menu: Toggle (refused: the shield generator needs to be firmly secured to the floor first)
 human|/obj/item/pda menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pda click: Click: Swipe ID
-keys: climb.climb, climb.climb_menu, drag_buckle, hit, id_swipe, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, toggle, use_wrench
+keys: climb.climb, climb.climb_menu, drag_buckle, hit, id_swipe, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, toggle, use_wrench
 

@@ -157,7 +157,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 		req(PROC_REF(idle_for_the_wrench), because = MSG(porta_turret/active)),
 		req(PROC_REF(not_anchoring_in_space), because = MSG(porta_turret/in_space))))
 	op("salvage", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/obj/machinery, stat_is_broken)), wait(2 SECONDS), then(PROC_REF(salvaged)))
-	op("strike", item(/obj/item), hostile(), then(PROC_REF(struck)))
+	op("strike", item(/obj/item), hostile(), when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))), then(PROC_REF(struck)))
 
 	section(window, "The turret's window, its buttons, and who may use them")
 	interface("PortableTurret")

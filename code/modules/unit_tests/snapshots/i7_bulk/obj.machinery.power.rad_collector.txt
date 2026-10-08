@@ -65,5 +65,5 @@ human|/obj/item/tank/phoron menu: Load phoron tank (refused: It needs to be secu
 human|/obj/item/tank/phoron menu: Move To Top
 human|/obj/item/tank/phoron menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tank/phoron click: Click: Load phoron tank
-keys: anchor.toggle, cable_place, climb.climb, climb.climb_menu, drag_buckle, eject, load, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, toggle
+keys: anchor.toggle, cable_place, climb.climb, climb.climb_menu, drag_buckle, eject, load, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, toggle
 

@@ -60,5 +60,5 @@ human|/obj/item/pipe_meter menu: Put back
 human|/obj/item/pipe_meter menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pipe_meter menu: Ui open
 human|/obj/item/pipe_meter click: Click: Put back
-keys: anchor, dispense_pipe, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, put_back, put_back_meter, p_layer, robot_remote_blocked, shove_back, ui_open
+keys: anchor, dispense_pipe, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, put_back, put_back_meter, p_layer, robot_remote_blocked, shove_back, ui_open
 

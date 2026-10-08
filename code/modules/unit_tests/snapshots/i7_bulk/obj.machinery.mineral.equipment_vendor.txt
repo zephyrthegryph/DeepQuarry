@@ -50,5 +50,5 @@ human|/obj/item/mining_voucher menu: Move To Top
 human|/obj/item/mining_voucher menu: Redeem voucher
 human|/obj/item/mining_voucher menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/mining_voucher click: Click: Redeem voucher
-keys: drag_buckle, insert_id, logoff, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, part_replacement, purchase, robot_remote_blocked, use_crowbar, use_screwdriver, voucher
+keys: drag_buckle, insert_id, logoff, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, purchase, robot_remote_blocked, use_crowbar, use_screwdriver, voucher
 

@@ -132,5 +132,5 @@ human|/obj/item/reagent_containers/food/drinks/shaker menu: Set transfer amount
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Use
 human|/obj/item/reagent_containers/food/drinks/shaker click: Click: Drain
-keys: climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, reagent_filter_flip, reagent_filter_set_filter, reagent_filter_use, reagent_refinery_drain, reagent_refinery_set_transfer_amount, robot_remote_blocked, use_wrench
+keys: climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, reagent_filter_flip, reagent_filter_set_filter, reagent_filter_use, reagent_refinery_drain, reagent_refinery_set_transfer_amount, robot_remote_blocked, use_wrench
 

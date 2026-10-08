@@ -64,5 +64,5 @@ human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: Yo
 human|/obj/item/storage/part_replacer menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage/part_replacer menu: Ui open
 human|/obj/item/storage/part_replacer click: Click: Replace parts
-keys: build, build_queue, clear_queue, construction.dismantle, del_queue_part, drag_buckle, fabricator.drop_here, fabricator.remove_mat, fabricator.store, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, panel.open, part_replacement.replace, robot_remote_blocked, stop_queue, ui_open
+keys: build, build_queue, clear_queue, construction.dismantle, del_queue_part, drag_buckle, fabricator.drop_here, fabricator.remove_mat, fabricator.store, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, panel.open, part_replacement.replace, robot_remote_blocked, stop_queue, ui_open
 

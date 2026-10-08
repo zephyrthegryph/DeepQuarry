@@ -72,5 +72,5 @@ human|/obj/item/stack/material/plastic menu: Move To Top
 human|/obj/item/stack/material/plastic menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/plastic menu: Use
 human|/obj/item/stack/material/plastic click: Click: Add plastic
-keys: add_beaker, add_large_injector, add_plastic, add_small_injector, drag_buckle, drag_plastic, eject_beaker, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, swallow, use
+keys: add_beaker, add_large_injector, add_plastic, add_small_injector, drag_buckle, drag_plastic, eject_beaker, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, use
 

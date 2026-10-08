@@ -80,5 +80,5 @@ human|/obj/item/taperoll menu: Tape
 human|/obj/item/taperoll menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/taperoll menu: Use
 human|/obj/item/taperoll click: Click: Tape
-keys: busy, doors.close, doors.open, drag_buckle, emag.subvert, emag.use, force_claws, force_generic, hatch, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, pry, pry_tool, reinforce, remote_use, remove_electronics, repair, robot_remote_blocked, strike, tape, unreinforce, use, weld, welded, weld_plasteel
+keys: busy, doors.close, doors.open, drag_buckle, emag.subvert, emag.use, force_claws, force_generic, hatch, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, pry, pry_tool, reinforce, remote_use, remove_electronics, repair, robot_remote_blocked, strike, tape, unreinforce, use, weld, welded, weld_plasteel
 

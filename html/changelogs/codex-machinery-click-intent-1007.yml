@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Non-harm machine interactions no longer select an item strike; harm clicks still damage machinery."

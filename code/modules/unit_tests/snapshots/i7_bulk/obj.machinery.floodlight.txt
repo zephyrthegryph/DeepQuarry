@@ -113,5 +113,5 @@ human|/obj/item menu: Turn Around
 human|/obj/item menu: Use
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-keys: climb.climb, climb.climb_menu, drag_buckle, floodlight_silicon_use, item, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, use, use_crowbar, use_screwdriver
+keys: climb.climb, climb.climb_menu, drag_buckle, floodlight_silicon_use, item, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, use, use_crowbar, use_screwdriver
 

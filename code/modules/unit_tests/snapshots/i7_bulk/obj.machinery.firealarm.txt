@@ -63,5 +63,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Trigger
 human|/obj/item menu: Use
 human|/obj/item click: Click: Trigger
-keys: cut_out, drag_buckle, firealarm_trigger, firealarm_use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, use_multitool, use_screwdriver
+keys: cut_out, drag_buckle, firealarm_trigger, firealarm_use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, use_multitool, use_screwdriver
 

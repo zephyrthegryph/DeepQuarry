@@ -97,5 +97,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item click: Click: Ui open
-keys: dispense, door, drag_buckle, eject_guy, get_out, lock, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, move_inside, robot_remote_blocked, togglesafeties, toggleUV, ui_open, use, use_item, use_screwdriver, uv
+keys: dispense, door, drag_buckle, eject_guy, get_out, lock, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, move_inside, robot_remote_blocked, togglesafeties, toggleUV, ui_open, use, use_item, use_screwdriver, uv
 

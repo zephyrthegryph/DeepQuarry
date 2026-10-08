@@ -145,5 +145,5 @@ human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
 wires: Electrification, ID Scan, Safety
-keys: apply_paintjob, cycler_insert_grab, cycler_insert_helmet, cycler_insert_suit, cycler_leave, cycler_use, department, dispense, drag_buckle, eject_guy, emag.subvert, emag.use, lock, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, radlevel, repair_suit, robot_remote_blocked, species, ui_open, use_hacking_tools, use_screwdriver, uv
+keys: apply_paintjob, cycler_insert_grab, cycler_insert_helmet, cycler_insert_suit, cycler_leave, cycler_use, department, dispense, drag_buckle, eject_guy, emag.subvert, emag.use, lock, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, radlevel, repair_suit, robot_remote_blocked, species, ui_open, use_hacking_tools, use_screwdriver, uv
 

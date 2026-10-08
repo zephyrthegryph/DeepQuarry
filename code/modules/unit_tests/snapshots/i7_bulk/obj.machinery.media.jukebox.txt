@@ -85,5 +85,5 @@ human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
 wires: Hack, Next, Prev, Primary Power, Reverse, Speeddown, Speedup, Start, Stop
-keys: add_new_track, change_track, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, fingerprint, interact, loopmode, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, play, remove_new_track, robot_remote_blocked, stop, ui_open, use_multitool, use_wirecutter, use_wrench, volume
+keys: add_new_track, change_track, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, fingerprint, interact, loopmode, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, play, remove_new_track, robot_remote_blocked, stop, ui_open, use_multitool, use_wirecutter, use_wrench, volume
 
