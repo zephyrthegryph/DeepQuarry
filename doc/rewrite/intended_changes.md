@@ -3495,3 +3495,11 @@ actual winner. It checks real Use execution, harm integrity loss and an explicit
 AI attack without harm click stance, with clean boot and no state leak. Final
 compilation had 0 errors; DreamChecker had 0 diagnostics; lint and ratchets passed.
 No full suite ran, and no baseline, ceiling or ALLOW annotation was changed.
+
+## Batch 9 merge pins (rewrite/integ-9)
+
+Merging machinery-click-intent with ui-outputs and timed-tasks changed these pins; the rows were reviewed and blessed by class.
+
+* **`pins/` machinery files (334 files, 3629 removed `menu: Hit` rows, 8 `click:` rows `Click: Hit` -> `nothing`).** The class of "Machinery non-harm item clicks" above: the same intent correction applies to the `dq_conversion_pin` copies of the machinery types, not only to `i7_bulk`. Only removals of `menu: Hit` and the `Click: Hit` -> `nothing` change; no other row moved.
+* **`look_states/obj.item.melee.robotic.baton.txt` (20 rows).** The sampled variable set for the arm and slime batons shifted (`gurgled` is sampled, `randpixel` no longer is) because the merged branches changed the variable list the look-state sampler walks on `/obj/item`; the arm and slime looks themselves (`electrified arm`/`shock`, `slimebaton`/`slimebaton_active`) are unchanged.
+* **Stale interim tests.** `interim_confetti_cleanup` and `interim_snow_shovel_cleanup` asserted the old handler/commit shape; the ops are now `wait()` ops (timed-tasks), so they assert the actor has a pending op.

@@ -14,7 +14,6 @@ ghost|none menu: Force Eject (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Alt-click
 human|/obj/item/tool/screwdriver menu: Force Eject
-human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Insert
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
@@ -24,7 +23,6 @@ human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Alt-click
 human|/obj/item/tool/crowbar menu: Force Eject
-human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Insert
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
@@ -33,7 +31,6 @@ human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Insert
 human|/obj/item/tool/wrench menu: Alt-click
 human|/obj/item/tool/wrench menu: Force Eject
-human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Insert
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
@@ -42,7 +39,6 @@ human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Insert
 human|/obj/item/tool/wirecutters menu: Alt-click
 human|/obj/item/tool/wirecutters menu: Force Eject
-human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Insert
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
@@ -51,7 +47,6 @@ human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Insert
 human|/obj/item/multitool menu: Alt-click
 human|/obj/item/multitool menu: Force Eject
-human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Insert
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
@@ -61,7 +56,6 @@ human|/obj/item/multitool menu: Use multitool
 human|/obj/item/multitool click: Click: Use multitool
 human|/obj/item/weldingtool menu: Alt-click
 human|/obj/item/weldingtool menu: Force Eject
-human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Insert
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
@@ -71,7 +65,6 @@ human|/obj/item/weldingtool menu: Use welder
 human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Alt-click
 human|/obj/item/stack/cable_coil menu: Force Eject
-human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Insert
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
@@ -81,7 +74,6 @@ human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Insert
 human|/obj/item/stack/material/steel menu: Alt-click
 human|/obj/item/stack/material/steel menu: Force Eject
-human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Insert
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
@@ -90,7 +82,6 @@ human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Insert
 human|/obj/item/card/id menu: Alt-click
 human|/obj/item/card/id menu: Force Eject
-human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Insert
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
@@ -100,7 +91,6 @@ human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Insert
 human|/obj/item menu: Alt-click
 human|/obj/item menu: Force Eject
-human|/obj/item menu: Hit
 human|/obj/item menu: Insert
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
