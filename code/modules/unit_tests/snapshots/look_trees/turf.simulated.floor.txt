@@ -158,11 +158,12 @@
 /turf/simulated/floor/outdoors/grass/seasonal icon: icons/seasonal/turf.dmi
 /turf/simulated/floor/outdoors/grass/seasonal state: grass-autumn0
 /turf/simulated/floor/outdoors/grass/seasonal dir: 2
+/turf/simulated/floor/outdoors/grass/seasonal overlay: icons/seasonal/turf.dmi:autumn-overlay2:-45
 /turf/simulated/floor/outdoors/grass/seasonal overlay: icons/seasonal/turf.dmi:grass_edges:-32767 x8
 /turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow icon: icons/seasonal/turf.dmi
 /turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow state: grass-autumn11
 /turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow dir: 2
-/turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow overlay: icons/seasonal/turf.dmi:autumn-overlay6:-45
+/turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow overlay: icons/seasonal/turf.dmi:autumn-overlay1:-45
 /turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow overlay: icons/seasonal/turf.dmi:grass_edges:-32767 x8
 /turf/simulated/floor/outdoors/grass/heavy icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/outdoors/grass/heavy state: grass-heavy2
