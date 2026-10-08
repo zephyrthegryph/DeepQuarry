@@ -485,6 +485,7 @@ pub fn freeze_artifact_tables_with_workers(
             contribution.replay(
                 &mut inventory,
                 &mut string_inventory,
+                symbols,
                 &mut units,
                 &mut helpers,
             );

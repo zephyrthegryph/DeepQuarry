@@ -1,4 +1,114 @@
 use super::*;
+
+#[test]
+fn prepared_runtime_syntax_matches_compatibility_classification_and_diagnostics() {
+    use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
+    struct Empty;
+    impl Resolver for Empty {
+        fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {
+            ResolvedMeaning::Missing
+        }
+    }
+    struct Legacy<'a>(&'a dyn CapturedInitializerEvaluator);
+    impl CapturedInitializerEvaluator for Legacy<'_> {
+        fn evaluate(
+            &self,
+            owner: SymbolId,
+            value: &SymbolicExpression,
+        ) -> Result<Evaluation, String> {
+            self.0.evaluate(owner, value)
+        }
+        fn evaluate_write(
+            &self,
+            write: &InitializerWrite,
+            value: &SymbolicExpression,
+        ) -> Result<Evaluation, String> {
+            self.0.evaluate_write(write, value)
+        }
+    }
+    let engine = crate::engine::EngineSnapshot::from_bytes(
+        include_bytes!("../../../../fixtures/native_template.bin"),
+        1,
+    )
+    .unwrap();
+    let mut symbols = SymbolTable::default();
+    let owner = symbols.intern("/").unwrap();
+    let name = symbols.intern("prepared_fixture").unwrap();
+    for source in ["17", "list(1,2)", "rand(1,2)", "\"[rand(1,2)]\"", "1 +"] {
+        let value = expression(source, &mut symbols).unwrap();
+        let captured = write(owner, name, InitializerValue::Expression(value.clone()));
+        let production = crate::driver_facts::DriverEvaluator {
+            pure_calls: None,
+            resource_search_context: None,
+            resolver: &Empty,
+            symbols: &symbols,
+        };
+        let wrapped = EngineCapturedEvaluator {
+            engine: &engine,
+            evaluator: &production,
+        };
+        let prepared = classify(std::slice::from_ref(&captured), &symbols, &wrapped);
+        let compatibility = classify(std::slice::from_ref(&captured), &symbols, &Legacy(&wrapped));
+        match (prepared, compatibility) {
+            (Ok(prepared), Ok(compatibility)) => {
+                assert_eq!(prepared.writes.len(), compatibility.writes.len());
+                for (a, b) in prepared.writes.iter().zip(&compatibility.writes) {
+                    assert_eq!(a.default, b.default);
+                    assert_eq!(a.phase, b.phase);
+                    assert_eq!(a.runtime_value, b.runtime_value);
+                }
+                assert_eq!(
+                    prepared
+                        .groups
+                        .iter()
+                        .map(|group| (&group.receiver, &group.writes))
+                        .collect::<Vec<_>>(),
+                    compatibility
+                        .groups
+                        .iter()
+                        .map(|group| (&group.receiver, &group.writes))
+                        .collect::<Vec<_>>()
+                );
+            }
+            (Err(prepared), Err(compatibility)) => assert_eq!(prepared, compatibility),
+            _ => panic!("prepared and compatibility classification differ: {source}"),
+        }
+        if source == "1 +" {
+            assert_eq!(
+                production
+                    .evaluate_prepared_write(&captured, &value)
+                    .err()
+                    .unwrap(),
+                "captured scalar expression failed parsing"
+            );
+        } else {
+            let (_, prepared) = wrapped.evaluate_prepared_write(&captured, &value).unwrap();
+            let prepared = prepared.expect("engine wrapper forwards prepared syntax");
+            assert_eq!(prepared.source, value.source_text(&symbols).unwrap());
+            assert_eq!(
+                prepared.ast,
+                dm_syntax::parse_expression(&prepared.source).expr.unwrap()
+            );
+        }
+    }
+    struct Runtime;
+    impl CapturedInitializerEvaluator for Runtime {
+        fn evaluate(&self, _: SymbolId, _: &SymbolicExpression) -> Result<Evaluation, String> {
+            Ok(Evaluation::Runtime)
+        }
+    }
+    let malformed = expression("1 +", &mut symbols).unwrap();
+    let mut captured = write(owner, name, InitializerValue::Expression(malformed));
+    assert_eq!(
+        classify(std::slice::from_ref(&captured), &symbols, &Runtime).unwrap_err(),
+        "invalid initializer expression"
+    );
+    captured.declaration_flags = Some(2);
+    assert_eq!(
+        classify(&[captured], &symbols, &Runtime).unwrap_err(),
+        "const initializer is not scalar"
+    );
+}
 #[test]
 fn nested_pure_calls_keep_literal_allocation_and_reject_unavailable_components() {
     use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};

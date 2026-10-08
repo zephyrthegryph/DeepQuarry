@@ -143,6 +143,35 @@ increase. More writer stages are being measured; repeated string-index builds
 and serial freezing are current optimization candidates. Receipt:
 `E:/dmb-native-v2-phase0/review-power-focus/native-retries/retry-7435fdd300be4e39ace430cb9de5b329/receipt.json`.
 
+## Latest completed cold diagnostic (r)
+
+Frozen compiler `28df6da4bd`, SHA256
+`e136b50a9f0b1ca207aa59af6c721b92570cd8f0d8f5db2d22c192122aee521d`,
+compiled the same historical captured project at eight workers with no compiler
+cache or daemon. Measured child wall: **128.7563 s**; independent fresh child:
+**42.4478 s**. Both completed below 285 s. DMB/RSC bytes and normalized diagnostics
+match each other and the preceding p output; this is not runtime parity.
+CPU-quality checks pass: total CPU **67.328125 s**, critical-path bounds
+**27.203125–28.515625 s**, private peak **2,340,421,632 bytes**. All CPU and memory
+acceptance targets remain unmet; a single run is not an acceptance median.
+
+Resource discovery allocations fell from 879.0 MB (p) to 98.8 MB; composition
+allocations from 895.9 MB to 714.6 MB. Peak private memory fell by about 104 MB.
+Composition CPU bounds are 3.0625–3.125 s. Parallel freezing has worker maximum
+0.84375–0.90625 s, but total CPU 4.390625–4.953125 s and allocations 1,761.5 MB,
+above p's serial 3.265625–3.328125 s and 1,618.9 MB. The next freeze change targets
+worker contribution copies while retaining deterministic inventory replay.
+Total CPU increased from p's 60.140625 s; no overall CPU speedup is claimed.
+Receipt and complete trace:
+`E:/dmb-native-v2-phase0/review-power-focus/native-retries/retry-a8ac72b771e4450b997f993a9d30e0d8/`.
+
+The complete three-run cohort passed all fresh-output and CPU-quality checks.
+Measured wall times: 128.7563, 38.5667 and 35.5683 s; median **38.5667 s**.
+Fresh-child median: **37.7291 s**. Total CPU median: **65.5625 s**; critical CPU
+median bounds: **24.46875–25.78125 s**. Maximum private peak: **2,340,421,632 bytes**.
+The throughput and memory targets still fail. Cohort evidence:
+`E:/dmb-native-v2-phase0/review-power-focus/cold-cohort-e136b50a9f0b.json`.
+
 ## Focused runtime gate
 
 The human authorized one bounded focused trusted-mode comparison after Rust/output checks, with no full runtime suite authorization. Both worlds completed one focused trusted replay; neither timed out or crashed. This is a single comparison, not full runtime parity.

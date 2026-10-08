@@ -563,14 +563,41 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
         write: &dm_ir::InitializerWrite,
         expression: &SymbolicExpression,
     ) -> Result<Evaluation, String> {
-        Ok(self
-            .scalar_in(
+        Ok(self.evaluate_prepared_write(write, expression)?.0)
+    }
+    fn evaluate_prepared_write(
+        &self,
+        write: &dm_ir::InitializerWrite,
+        expression: &SymbolicExpression,
+    ) -> Result<
+        (
+            Evaluation,
+            Option<crate::initializer_policy::PreparedInitializerExpression>,
+        ),
+        String,
+    > {
+        let text = expression
+            .source_text(self.symbols)
+            .ok_or("expression spelling is not captured")?;
+        let parsed = dm_syntax::parse_expression(&text);
+        if !parsed.diagnostics.is_empty() {
+            return Err("captured scalar expression failed parsing".into());
+        }
+        let Some(ast) = parsed.expr else {
+            return Ok((Evaluation::Runtime, None));
+        };
+        let evaluation = self
+            .scalar_ast_in(
                 write.lexical_owner,
-                expression,
+                &ast,
                 write.lexical_procedure,
                 &RefCell::new(std::collections::HashSet::new()),
             )?
-            .map_or(Evaluation::Runtime, Evaluation::Scalar))
+            .map_or(Evaluation::Runtime, Evaluation::Scalar);
+        Ok((
+            evaluation,
+            Some(crate::initializer_policy::PreparedInitializerExpression { source: text, ast }),
+        ))
     }
     fn evaluate_ast_write(
         &self,

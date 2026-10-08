@@ -160,24 +160,24 @@ pub(super) fn logical_lines(source: &str) -> Vec<LogicalLine> {
 /// Remove comments before line-oriented preprocessing. Keep every newline and
 /// byte position so directives inside a block comment cannot become active.
 pub(super) fn strip_source_comments(source: &str) -> Cow<'_, str> {
-    let lexed = lex_spans(source);
-    let comments: Vec<_> = lexed
-        .tokens
-        .into_iter()
-        .filter(|token| token.kind == TokenKind::Comment)
-        .collect();
-    if comments.is_empty() {
-        return Cow::Borrowed(source);
-    }
-    let mut bytes = source.as_bytes().to_vec();
-    for token in comments {
+    let mut bytes = None;
+    let _ = dm_syntax::visit_tokens(source, |token| {
+        if token.kind != TokenKind::Comment {
+            return;
+        }
+        let bytes = bytes.get_or_insert_with(|| source.as_bytes().to_vec());
         for byte in &mut bytes[token.span.range()] {
             if !matches!(*byte, b'\r' | b'\n') {
                 *byte = b' ';
             }
         }
+    });
+    match bytes {
+        None => Cow::Borrowed(source),
+        Some(bytes) => {
+            Cow::Owned(String::from_utf8(bytes).expect("comment removal preserves UTF-8"))
+        }
     }
-    Cow::Owned(String::from_utf8(bytes).expect("comment removal preserves UTF-8"))
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -193,12 +193,19 @@ pub(super) fn logical_state(source: &str) -> LogicalState {
     if source.is_empty() {
         return LogicalState::default();
     }
-    let lexed = lex_spans(source);
-    let last = lexed.tokens.last();
+    let mut last = None;
+    let mut depth = 0isize;
+    let diagnostics = dm_syntax::visit_tokens(source, |token| {
+        match token.text(source) {
+            "(" | "[" => depth += 1,
+            ")" | "]" => depth -= 1,
+            _ => {}
+        }
+        last = Some(token);
+    });
     let open_literal = last.is_some_and(|token| {
         token.kind == TokenKind::String
-            && lexed
-                .diagnostics
+            && diagnostics
                 .iter()
                 .any(|diagnostic| diagnostic.span.start == token.span.start)
     });
@@ -208,20 +215,16 @@ pub(super) fn logical_state(source: &str) -> LogicalState {
             && token.span.end == source.len()
             && !token.text(source).ends_with("\"}")
     });
-    let mut depth = 0isize;
-    for token in &lexed.tokens {
-        match token.text(source) {
-            "(" | "[" => depth += 1,
-            ")" | "]" => depth -= 1,
-            _ => {}
-        }
-    }
     LogicalState {
         open_literal,
         open_block_string,
         open_expression: depth > 0,
     }
 }
+
+#[cfg(test)]
+#[path = "source_lines_tests.rs"]
+mod lexical_allocation_tests;
 
 pub(super) fn split_word(input: &str) -> (&str, &str) {
     let end = input.find(char::is_whitespace).unwrap_or(input.len());

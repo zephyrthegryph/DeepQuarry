@@ -1,6 +1,7 @@
 use super::*;
 use crate::{expand_traced, DiagnosticKind, ExpandLocation};
 use dm_syntax::{lex_spans, SpanToken};
+use std::borrow::Cow;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
 
@@ -198,24 +199,32 @@ pub(super) fn expand_region(
             let lookup: &dyn crate::MacroLookup = recording
                 .as_ref()
                 .map_or(&segment.macros as &dyn crate::MacroLookup, |lookup| lookup);
-            let text = match expand_traced(
-                line.text.trim_end_matches(['\r', '\n']),
-                lookup,
-                ExpandLocation {
-                    file_name: &file_name,
-                    line: line.source_line,
-                },
-                &mut trace,
-            ) {
-                Ok(text) => text,
-                Err(message) => {
-                    output.diagnostics.push(Diagnostic {
-                        path: plan.occurrences[region.occurrence].path.as_ref().clone(),
+            let source = line.text.trim_end_matches(['\r', '\n']);
+            // Empty indentation cannot contain a macro, interpolation, lexical
+            // error or traced invocation. Keep the original source slice instead
+            // of lexing and copying it; recorder input ordinals still advance.
+            let text = if source.bytes().all(|byte| matches!(byte, b' ' | b'\t')) {
+                Cow::Borrowed(source)
+            } else {
+                match expand_traced(
+                    source,
+                    lookup,
+                    ExpandLocation {
+                        file_name: &file_name,
                         line: line.source_line,
-                        kind: DiagnosticKind::Macro,
-                        message,
-                    });
-                    line.text.trim_end_matches(['\r', '\n']).to_owned()
+                    },
+                    &mut trace,
+                ) {
+                    Ok(text) => Cow::Owned(text),
+                    Err(message) => {
+                        output.diagnostics.push(Diagnostic {
+                            path: plan.occurrences[region.occurrence].path.as_ref().clone(),
+                            line: line.source_line,
+                            kind: DiagnosticKind::Macro,
+                            message,
+                        });
+                        Cow::Borrowed(source)
+                    }
                 }
             };
             let macro_expansions = Arc::new(macro_expansions);
@@ -245,6 +254,63 @@ mod tests {
         fn read(&self, path: &Path) -> Result<String, String> {
             self.0.get(path).cloned().ok_or_else(|| "missing".into())
         }
+    }
+    #[test]
+    fn indentation_only_lines_match_full_expansion_and_preserve_origins() {
+        let provider = Memory(
+            [(
+                PathBuf::from("project.dme"),
+                "#define VALUE 9\n\n \t\nvar/value = VALUE\n\t\n".into(),
+            )]
+            .into_iter()
+            .collect(),
+        );
+        let plan = plan_regions(Path::new("project.dme"), &provider, &BTreeMap::new());
+        let mut blank_count = 0;
+        for (index, region) in plan.regions.iter().enumerate() {
+            let output = expand_region(&plan, index, None);
+            let mut expected = String::new();
+            let mut origins = Vec::new();
+            for segment in &region.segments {
+                for line in &segment.lines {
+                    let source = line.text.trim_end_matches(['\r', '\n']);
+                    if source.bytes().all(|byte| matches!(byte, b' ' | b'\t')) {
+                        blank_count += 1;
+                    }
+                    let text = expand_traced(
+                        source,
+                        &segment.macros,
+                        ExpandLocation {
+                            file_name: &plan.semantic_path(region.occurrence),
+                            line: line.source_line,
+                        },
+                        &mut |_, _, _| {},
+                    )
+                    .unwrap();
+                    for part in text.strip_suffix('\n').unwrap_or(&text).split('\n') {
+                        let start = expected.len();
+                        expected.push_str(part);
+                        expected.push('\n');
+                        origins.push((
+                            Span::new(start, expected.len()),
+                            line.source_line,
+                            line.source_span,
+                        ));
+                    }
+                }
+            }
+            assert_eq!(output.text, expected);
+            assert!(output.diagnostics.is_empty());
+            assert_eq!(
+                output
+                    .lines
+                    .iter()
+                    .map(|(span, line, source, _)| (*span, *line, *source))
+                    .collect::<Vec<_>>(),
+                origins
+            );
+        }
+        assert!(blank_count > 0);
     }
     #[test]
     fn contiguous_regions_preserve_line_origins_and_macro_chains() {

@@ -548,6 +548,17 @@ fn parallel_fixture() -> (ColdFrontend, Vec<LoweredUnit>) {
     let mut lowered = lower_frontend(&frontend, &Host, &Policy, LoweringConfig::default());
     assert!(lowered.diagnostics.is_empty(), "{:?}", lowered.diagnostics);
     for unit in &mut lowered.units {
+        // Inventory must preserve binary template payloads rather than their
+        // UTF-8 symbolic keys, including companion artifacts and duplicates.
+        let key = "parallel-template".to_owned();
+        unit.code
+            .procedure
+            .strings
+            .extend([key.clone(), key.clone()]);
+        unit.code
+            .procedure
+            .format_templates
+            .insert(key, vec![0xff, 0x16, b'X']);
         unit.source_helpers
             .push(crate::argument_sources::LoweredHelper {
                 owner: unit.identity,
@@ -576,6 +587,12 @@ fn parallel_freeze_preserves_tables_code_helpers_and_debug_at_one_two_eight_work
         .unwrap()
     };
     let baseline = freeze(1);
+    assert_eq!(
+        baseline
+            .tables
+            .content(Key::String(SymbolId::of_bytes(&[0xff, 0x16, b'X']))),
+        Some(&[0xff, 0x16, b'X'][..])
+    );
     for workers in [2, 8] {
         let current = freeze(workers);
         assert_eq!(current.tables.assignments(), baseline.tables.assignments());

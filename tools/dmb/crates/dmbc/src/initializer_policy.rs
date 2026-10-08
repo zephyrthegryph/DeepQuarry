@@ -10,6 +10,12 @@ pub enum Evaluation {
     Scalar(SemanticValue),
     Runtime,
 }
+/// Request-local syntax prepared by the evaluator's existing admission path.
+/// It contains no cached resolution result or independent dependency domain.
+pub struct PreparedInitializerExpression {
+    pub source: String,
+    pub ast: dm_syntax::Expr,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BindingKnowledge {
     Modifiers(u32),
@@ -22,6 +28,15 @@ pub enum BindingKnowledge {
     },
 }
 pub trait CapturedInitializerEvaluator {
+    /// Compatibility evaluators keep their exact evaluation/error behavior.
+    /// Production may return the already parsed expression for runtime lowering.
+    fn evaluate_prepared_write(
+        &self,
+        write: &InitializerWrite,
+        value: &SymbolicExpression,
+    ) -> Result<(Evaluation, Option<PreparedInitializerExpression>), String> {
+        Ok((self.evaluate_write(write, value)?, None))
+    }
     /// Borrow an already parsed subtree. Compatibility evaluators retain their
     /// existing captured-token path and lexical context checks.
     fn evaluate_ast_write(
@@ -86,6 +101,13 @@ pub struct EngineCapturedEvaluator<'a> {
     pub evaluator: &'a dyn CapturedInitializerEvaluator,
 }
 impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
+    fn evaluate_prepared_write(
+        &self,
+        write: &InitializerWrite,
+        value: &SymbolicExpression,
+    ) -> Result<(Evaluation, Option<PreparedInitializerExpression>), String> {
+        self.evaluator.evaluate_prepared_write(write, value)
+    }
     fn evaluate_ast_write(
         &self,
         write: &InitializerWrite,
@@ -666,7 +688,8 @@ fn classify_from_facts(
                 return Err("array allocation lacks authored shape".into())
             }
             InitializerValue::Expression(value) => {
-                match evaluator.evaluate_write(&write, value)? {
+                let (evaluation, prepared) = evaluator.evaluate_prepared_write(&write, value)?;
+                match evaluation {
                     Evaluation::Scalar(value) if !matches!(value, SemanticValue::List(_)) => {
                         (DefaultValue::Scalar(value), None)
                     }
@@ -674,18 +697,23 @@ fn classify_from_facts(
                         if constant_binding {
                             return Err("const initializer is not scalar".into());
                         }
-                        let text = value
-                            .source_text(symbols)
-                            .ok_or("initializer spelling missing")?;
-                        let parsed = dm_syntax::parse_expression(&text);
-                        if !parsed.diagnostics.is_empty() {
-                            return Err("invalid initializer expression".into());
-                        }
-                        let expr = parsed
-                            .expr
-                            .as_ref()
-                            .ok_or("missing initializer expression")?;
-                        parsed_runtime = Some(expr.clone());
+                        let PreparedInitializerExpression { source: text, ast } = match prepared {
+                            Some(prepared) => prepared,
+                            None => {
+                                let text = value
+                                    .source_text(symbols)
+                                    .ok_or("initializer spelling missing")?;
+                                let parsed = dm_syntax::parse_expression(&text);
+                                if !parsed.diagnostics.is_empty() {
+                                    return Err("invalid initializer expression".into());
+                                }
+                                PreparedInitializerExpression {
+                                    source: text,
+                                    ast: parsed.expr.ok_or("missing initializer expression")?,
+                                }
+                            }
+                        };
+                        let expr = &ast;
                         let literal =
                             matches!(evaluation, Evaluation::Scalar(SemanticValue::List(_)))
                                 || scalar_literal(expr, &write, symbols, &text, evaluator)?;
@@ -698,6 +726,7 @@ fn classify_from_facts(
                         } else {
                             DefaultValue::Scalar(SemanticValue::Null)
                         };
+                        parsed_runtime = Some(ast);
                         (
                             default,
                             Some(if literal {

@@ -5,6 +5,9 @@
 //! consume this library once their declaration/lowering contracts are complete.
 
 pub mod cache_maintenance;
+pub mod cli;
+pub mod request;
+pub mod request_runner;
 pub mod debug_sources;
 pub mod diagnostics;
 pub mod expansion_memo;

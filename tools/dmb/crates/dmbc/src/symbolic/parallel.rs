@@ -2,40 +2,52 @@
 use super::*;
 
 enum Op {
-    String(SymbolId, Arc<[u8]>),
-    Spelling(SymbolId, Arc<[u8]>),
     Slot(SlotAlias),
     Entry(Entry),
 }
 #[derive(Default)]
 struct Ops(Vec<Op>);
 impl InventorySink for Ops {
-    fn string(&mut self, id: SymbolId, bytes: &[u8]) {
-        self.0.push(Op::String(id, Arc::from(bytes)));
-    }
+    // Freezing emits only procedure.strings (see freezing.rs). Retain that
+    // exact ordered roster by moving its buffers after successful validation,
+    // rather than copying every occurrence into an Arc before deduplication.
+    fn string(&mut self, _id: SymbolId, _bytes: &[u8]) {}
     fn slot(&mut self, alias: SlotAlias) {
         self.0.push(Op::Slot(alias));
     }
 }
-impl Ops {
-    fn spelling(&mut self, id: SymbolId, bytes: &[u8]) {
-        self.0.push(Op::Spelling(id, Arc::from(bytes)));
+struct OwnedStrings {
+    spellings: Vec<String>,
+    templates: std::collections::HashMap<String, Vec<u8>>,
+}
+
+impl OwnedStrings {
+    fn take(procedure: &mut dm_codegen_byond::SimpleProc) -> Self {
+        Self {
+            spellings: std::mem::take(&mut procedure.strings),
+            templates: std::mem::take(&mut procedure.format_templates),
+        }
     }
-    fn debug(&mut self, origins: &crate::debug_sources::DebugOrigins) {
-        let mut seen = std::collections::HashSet::new();
-        for origin in &origins.entries {
-            if seen.insert(origin.semantic_path.as_str()) {
-                self.string(
-                    SymbolId::of(&origin.semantic_path),
-                    origin.semantic_path.as_bytes(),
-                );
-            }
+    fn replay(&self, inventory: &mut LinkInventory, strings: &mut StringInventory) {
+        for spelling in &self.spellings {
+            let bytes = self
+                .templates
+                .get(spelling)
+                .map(Vec::as_slice)
+                .unwrap_or_else(|| spelling.as_bytes());
+            strings.append(inventory, SymbolId::of_bytes(bytes), bytes);
         }
     }
 }
+struct HelperContribution {
+    helper: FrozenHelper,
+    strings: OwnedStrings,
+    ops: Ops,
+}
 pub(super) struct Contribution {
     unit: FrozenUnit,
-    helpers: Vec<FrozenHelper>,
+    strings: OwnedStrings,
+    helpers: Vec<HelperContribution>,
     ops: Ops,
 }
 impl Contribution {
@@ -43,19 +55,41 @@ impl Contribution {
         self,
         inventory: &mut LinkInventory,
         strings: &mut StringInventory,
+        symbols: &SymbolTable,
         units: &mut Vec<FrozenUnit>,
         helpers: &mut Vec<FrozenHelper>,
     ) {
-        for op in self.ops.0 {
-            match op {
-                Op::String(id, bytes) => strings.append(inventory, id, &bytes),
-                Op::Spelling(id, bytes) => strings.append_spelling(inventory, id, &bytes),
-                Op::Slot(alias) => inventory.slots.push(alias),
-                Op::Entry(entry) => inventory.entries.push(entry),
-            }
+        self.strings.replay(inventory, strings);
+        for id in [
+            self.unit.lowered.identity.owner,
+            self.unit.lowered.identity.name,
+        ] {
+            strings.append_spelling(
+                inventory,
+                id,
+                symbols
+                    .text(id)
+                    .expect("spelling checked before contribution publication")
+                    .as_bytes(),
+            );
         }
+        append_debug_inventory(&self.unit.lowered.debug_origins, inventory, strings);
+        replay_ops(self.ops, inventory);
         units.push(self.unit);
-        helpers.extend(self.helpers);
+        for contribution in self.helpers {
+            contribution.strings.replay(inventory, strings);
+            append_debug_inventory(&contribution.helper.debug_origins, inventory, strings);
+            replay_ops(contribution.ops, inventory);
+            helpers.push(contribution.helper);
+        }
+    }
+}
+fn replay_ops(ops: Ops, inventory: &mut LinkInventory) {
+    for op in ops.0 {
+        match op {
+            Op::Slot(alias) => inventory.slots.push(alias),
+            Op::Entry(entry) => inventory.entries.push(entry),
+        }
     }
 }
 fn freeze_unit(
@@ -76,37 +110,33 @@ fn freeze_unit(
         freeze_detail,
     )?;
     for id in [lowered.identity.owner, lowered.identity.name] {
-        ops.spelling(
-            id,
-            symbols
-                .text(id)
-                .ok_or(IntegrationError::MissingSpelling(id))?
-                .as_bytes(),
-        );
+        symbols
+            .text(id)
+            .ok_or(IntegrationError::MissingSpelling(id))?;
     }
-    ops.debug(&lowered.debug_origins);
     // Exact frozen code content is known. Remaining proc metadata belongs
     // to explicit emitter policy, separately retained in LoweredUnit.
     ops.0.push(Op::Entry(Entry {
         key: unit_key(lowered.identity),
         content: procedure_content(&lowered, &frozen.code().canonical_bytes()),
     }));
-    for helper in std::mem::take(&mut lowered.source_helpers) {
+    let strings = OwnedStrings::take(&mut lowered.code.procedure);
+    for mut helper in std::mem::take(&mut lowered.source_helpers) {
         if helper.owner != lowered.identity || !helper.code.procedure.argument_names.is_empty() {
             return Err(IntegrationError::Freeze {
                 unit: lowered.identity,
                 message: "invalid companion owner/formal frame".into(),
             });
         }
+        let mut helper_ops = Ops::default();
         let frozen_helper = freezing::freeze_artifact_to_sink(
             &helper.code,
             helper.owner,
             source_bindings,
             external,
-            &mut ops,
+            &mut helper_ops,
             freeze_detail,
         )?;
-        ops.debug(&helper.debug_origins);
         let key = helper_key(helper.owner, helper.argument);
         let mut content = b"dm-argument-source-v1\0".to_vec();
         let code = frozen_helper.code().canonical_bytes();
@@ -116,18 +146,23 @@ fn freeze_unit(
             content.extend_from_slice(&(name.len() as u64).to_le_bytes());
             content.extend_from_slice(name.as_bytes());
         }
-        ops.0.push(Op::Entry(Entry {
+        helper_ops.0.push(Op::Entry(Entry {
             key,
             content: content.into(),
         }));
-        helpers.push(FrozenHelper {
-            owner: helper.owner,
-            argument: helper.argument,
-            frozen: Arc::new(frozen_helper),
-            current_image: None,
-            features: BytecodeFeatures::of(&helper.code.procedure.code),
-            debug_origins: helper.debug_origins,
-            local_names: helper.code.procedure.local_names,
+        let helper_strings = OwnedStrings::take(&mut helper.code.procedure);
+        helpers.push(HelperContribution {
+            strings: helper_strings,
+            ops: helper_ops,
+            helper: FrozenHelper {
+                owner: helper.owner,
+                argument: helper.argument,
+                frozen: Arc::new(frozen_helper),
+                current_image: None,
+                features: BytecodeFeatures::of(&helper.code.procedure.code),
+                debug_origins: helper.debug_origins,
+                local_names: helper.code.procedure.local_names,
+            },
         });
     }
     let unit = FrozenUnit {
@@ -136,7 +171,12 @@ fn freeze_unit(
         frozen: Arc::new(frozen),
         current_image: None,
     };
-    Ok(Contribution { unit, helpers, ops })
+    Ok(Contribution {
+        unit,
+        strings,
+        helpers,
+        ops,
+    })
 }
 
 /// At most one outstanding owned unit per worker; results cannot accumulate a
@@ -230,4 +270,37 @@ pub(super) fn freeze_units(
         }
         outcome
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ordered_string_roster_and_binary_templates_move_without_payload_copies() {
+        let mut procedure = dm_codegen_byond::SimpleProc {
+            strings: vec!["literal".into(), "template".into(), "literal".into()],
+            ..Default::default()
+        };
+        procedure
+            .format_templates
+            .insert("template".into(), vec![0xff, 0x16, b'X']);
+        let literal = procedure.strings[0].as_ptr();
+        let template = procedure.format_templates["template"].as_ptr();
+        let owned = OwnedStrings::take(&mut procedure);
+        assert!(procedure.strings.is_empty());
+        assert!(procedure.format_templates.is_empty());
+        assert_eq!(owned.spellings[0].as_ptr(), literal);
+        assert_eq!(owned.templates["template"].as_ptr(), template);
+        assert_eq!(owned.spellings, ["literal", "template", "literal"]);
+        let mut inventory = LinkInventory::default();
+        let mut strings = StringInventory::new(&inventory);
+        owned.replay(&mut inventory, &mut strings);
+        assert_eq!(inventory.entries.len(), 2);
+        assert_eq!(
+            inventory.entries[0].key,
+            Key::String(SymbolId::of("literal"))
+        );
+        assert_eq!(inventory.entries[1].content.as_ref(), &[0xff, 0x16, b'X']);
+    }
 }

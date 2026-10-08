@@ -194,6 +194,52 @@ struct IncludeReceipt {
     suppressed: bool,
 }
 impl SourceReceipt {
+    fn matches(&self, source: &ColdFrontend) -> bool {
+        use dm_preprocess::regions::{NonTextKind, OrderedItem};
+        let occurrences = source.snapshot.occurrences.source_order();
+        self.tree == source.snapshot.tree.identity()
+            && self.occurrence_tree == source.snapshot.occurrences.tree_identity()
+            && self.occurrences.len() == occurrences.len()
+            && self
+                .occurrences
+                .iter()
+                .zip(occurrences)
+                .all(|((target, provenance), entry)| {
+                    *target == entry.target && provenance == &entry.provenance
+                })
+            && self.includes.len() == source.plan.occurrences.len()
+            && self
+                .includes
+                .iter()
+                .zip(&source.plan.occurrences)
+                .all(|(saved, entry)| {
+                    saved.path == entry.path
+                        && saved.semantic_path == entry.semantic_path
+                        && saved.parent == entry.parent
+                        && saved.directive_span == entry.directive_span
+                        && saved.directive_line == entry.directive_line
+                        && saved.suppressed == entry.suppressed
+                })
+            && self.items.len() == source.plan.items.len()
+            && self
+                .items
+                .iter()
+                .zip(&source.plan.items)
+                .all(|(saved, item)| {
+                    *saved
+                        == match *item {
+                            OrderedItem::Text(index) => (0, index),
+                            OrderedItem::NonText {
+                                occurrence,
+                                kind: NonTextKind::Map,
+                            } => (1, occurrence),
+                            OrderedItem::NonText {
+                                occurrence,
+                                kind: NonTextKind::Skin,
+                            } => (2, occurrence),
+                        }
+                })
+    }
     fn capture(source: &ColdFrontend) -> Self {
         use dm_preprocess::regions::{NonTextKind, OrderedItem};
         Self {
@@ -296,7 +342,7 @@ impl crate::composition::NonTextOutputStage for PreparedOutputStage {
             .collect()
     }
     fn validate_source(&self, source: &ColdFrontend) -> Result<(), String> {
-        if self.receipt != SourceReceipt::capture(source) {
+        if !self.receipt.matches(source) {
             return Err(
                 "prepared nontext stage differs from exact source occurrence/provenance roster"
                     .into(),
