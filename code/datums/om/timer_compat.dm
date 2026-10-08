@@ -39,9 +39,6 @@
 /proc/om_run(list/spec, ...)
 	return deferred_run(arglist(args))
 
-/proc/om_run_async(list/spec, ...)
-	return deferred_run_async(arglist(args))
-
 /proc/om_resolve_value(value, nulls_for_gone)
 	return resolve_captured_value(arglist(args))
 

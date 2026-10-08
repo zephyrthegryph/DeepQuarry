@@ -107,7 +107,8 @@
 	var/sustain_exponential_dropoff = 1.4
 
 /// Are we currently playing? song_step() plays the song while set (the every() below).
-OM_FIELD(/datum/song, playing, FALSE, CHANGE_DATUM_A)
+/datum/song/var/playing = FALSE
+TRACKED(/datum/song, playing)
 
 /datum/song/reactions()
 	. = ..()

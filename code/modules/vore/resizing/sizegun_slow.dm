@@ -27,7 +27,8 @@
 TRACKED(/obj/item/slow_sizegun, sizeshift_mode)
 
 /// Set to true when scanning, to stop multiple scans.
-OM_FIELD(/obj/item/slow_sizegun, busy, FALSE, CHANGE_EXPLICIT)
+/obj/item/slow_sizegun/var/busy = FALSE
+TRACKED(/obj/item/slow_sizegun, busy)
 /// The look (the draw sweep: from its template).
 /obj/item/slow_sizegun/draw(datum/look/look)
 	..()

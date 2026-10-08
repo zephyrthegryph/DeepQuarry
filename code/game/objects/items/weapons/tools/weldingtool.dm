@@ -42,9 +42,11 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	tool_qualities = list(TOOL_WELDER)
 
 //Whether or not the welding tool is off(0), on(1) or currently welding(2)
-OM_FIELD(/obj/item/weldingtool, welding, 0, CHANGE_EXPLICIT)
+/obj/item/weldingtool/var/welding = 0
+TRACKED(/obj/item/weldingtool, welding)
 /// If true, keeps the welder processing even while off (fuel regeneration).
-OM_FIELD(/obj/item/weldingtool, always_process, FALSE, CHANGE_EXPLICIT)
+/obj/item/weldingtool/var/always_process = FALSE
+TRACKED(/obj/item/weldingtool, always_process)
 
 /// Whether the periodic burn/regeneration runs: lit, or a welder that always processes (the every() gate, polled; a subtype overrides it).
 /obj/item/weldingtool/proc/burner_active(datum/act/A)
@@ -495,7 +497,7 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 // The weldpack owns its nozzle (implicit OWN); the nozzle names its pack (one-sided REL).
 /// The pack this nozzle belongs to (a relation view, set once in Initialize()): a field, so its
 /// automatic clear when the pack is destroyed re-evaluates burner_active.
-OM_FIELD_VIEW(/obj/item/weldingtool/tubefed, obj/item/weldpack, mounted_pack, CHANGE_EXPLICIT)
+/obj/item/weldingtool/tubefed/var/obj/item/weldpack/mounted_pack
 
 /// A nozzle works (and watches its hose) only while it is out of its pack.
 /obj/item/weldingtool/tubefed/burner_active(datum/act/A)
@@ -717,3 +719,6 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 /// Relation view: equip mount (reads null once it is gone).
 /obj/item/weldingtool/electric/mounted/exosuit/proc/equip_mount() as /obj/item/mecha_parts/mecha_equipment
 	return equip_mount
+
+CAPABILITIES(/obj/item/weldingtool/tubefed)
+	ref_one(nameof(mounted_pack))

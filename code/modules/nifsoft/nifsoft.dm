@@ -145,11 +145,6 @@
 
 	return nif_result
 
-//Called when an implant expires
-/datum/nifsoft/proc/expire()
-	uninstall()
-	return
-
 //Called when installed from a disk
 /datum/nifsoft/proc/disk_install(mob/living/carbon/human/target,mob/living/carbon/human/user)
 	return TRUE

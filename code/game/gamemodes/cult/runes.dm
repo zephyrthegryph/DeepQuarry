@@ -532,7 +532,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 
 /// The summoner of a manifested homunculus (a relation view). A field: they bleed for it while
 /// set; a summoner who is destroyed is cleared by the framework, which ends the repeat.
-OM_FIELD_VIEW(/obj/effect/rune, mob/living, manifest_user, CHANGE_EXPLICIT)
+/obj/effect/rune/var/mob/living/manifest_user
 /// The manifested homunculus (a relation view).
 /obj/effect/rune/var/mob/living/carbon/human/dummy/manifest_dummy
 /// A homunculus is manifested: manifest_tick() runs every 3 seconds while it is (the gate of the rune's every()).

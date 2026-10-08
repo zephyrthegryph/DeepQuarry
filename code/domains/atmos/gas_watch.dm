@@ -81,7 +81,7 @@ CAPABILITY_TYPE(gas_watch, CAP_GAS_WATCH, /datum/capability/lib/gas_watch, key =
 		return
 	var/datum/capability/lib/gas_watch/def = cap_of(target, CAP_GAS_WATCH)
 	if(def?.changed)
-		holder_call(target, def.changed, observation, observation_index)
+		holder_call(target, def.changed, list(observation, observation_index))
 
 // ---- a holder that sleeps on several mixtures ----
 //

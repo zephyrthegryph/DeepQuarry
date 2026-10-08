@@ -173,7 +173,8 @@ REGISTRY_MEMBERSHIP(/datum/event, REGISTRY_ACTIVE_EVENTS)
 
 /// TRUE from New() until the event service completes it: one event step every 2 s while set
 /// (the every() below). Events made with external_use never step on their own.
-OM_FIELD_TYPED(/datum/event, tmp, event_active, FALSE, CHANGE_DATUM_A)
+/datum/event/var/tmp/event_active = FALSE
+TRACKED(/datum/event, event_active)
 
 /datum/event/reactions()
 	. = ..()

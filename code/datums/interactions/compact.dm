@@ -58,7 +58,7 @@
 	return "[type]:[id]"
 
 /datum/interaction/generic/run_effect(mob/actor, atom/target, obj/item/held)
-	var/ran = holder_call(target, effect, actor, held, src)
+	var/ran = holder_call(target, effect, list(actor, held, src))
 	// Handled, but the input isn't used up: the entry's caller lets afterattack / the loot panel follow.
 	if(ran == INTERACTION_HANDLED_PASS && GLOB.interaction_entry_actors[actor])
 		GLOB.interaction_entry_pass[actor] = TRUE

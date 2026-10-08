@@ -205,14 +205,14 @@ CAPABILITIES(/datum/admins)
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)
 		if (!target) //only del if this is a true creation (and not just a New() proc call), other wise trialmins/coders could abuse this to deadmin other admins
-			om_qdel_after(src, 0)
+			expire(0)
 			CRASH("Admin proc call creation of admin datum")
 		return
 	if(!ckey)
-		om_qdel_after(src, 0)
+		expire(0)
 		CRASH("Admin datum created without a ckey")
 	if(!istype(ranks))
-		om_qdel_after(src, 0)
+		expire(0)
 		CRASH("Admin datum created with invalid ranks: [ranks] ([json_encode(ranks)])")
 	target = ckey
 	name = "[ckey]'s admin datum ([join_admin_ranks(ranks)])"

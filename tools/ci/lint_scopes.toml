@@ -682,6 +682,13 @@ banned = [
   "DECLARE_NO_REAGENTS = without(CAP_REAGENTS) in the type's CAPABILITIES block",
   "set_reagent_var = reagents(..., starts_from = ...) in CAPABILITIES",
   "create_reagents_on = reagents() in CAPABILITIES makes the holder (its preinit hook)",
+  "om_run_async = after(owner, 0, PROC_REF(x), with = list(...)), or the API's then = / owner = / with = (after_done())",
+  "om_qdel_after = D.expire(delay), the lifecycle verb on any datum",
+  "om_qdel_self = D.expire(delay), the lifecycle verb on any datum",
+  "om_pathfinder = SSpathing (the path system owns the mutex and the failure cache); a caller that can wait opens a /datum/io/path request",
+  "om_set = the field's generated set_x() setter",
+  "OM_FIELD_TYPED = a plain var and TRACKED(T, v)",
+  "OM_FLAG_FIELD_BITS = a plain var and TRACKED(T, v), or cap_keys(...)",
 ]
 
 [lint.look_converted.lists]

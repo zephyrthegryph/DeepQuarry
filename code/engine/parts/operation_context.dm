@@ -65,6 +65,10 @@
 			var/datum/pending_op/pending = ctx // a wait of the part engine (code/engine/parts/run.dm)
 			pending.reads_changed()
 			continue
+		if(istype(ctx, /datum/every_hop_watch))
+			var/datum/every_hop_watch/hop_watch = ctx // a parked every() following a relation hop (code/engine/actions/every.dm)
+			hop_watch.reads_changed()
+			continue
 		if(istype(ctx, /datum/task))
 			var/datum/task/task = ctx // a running task (code/engine/kernel/tasks.dm)
 			task.reads_changed()

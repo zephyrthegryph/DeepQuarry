@@ -87,7 +87,7 @@ CAPABILITIES(/datum/prompt/choice/map_template_place)
 		to_chat(user, "Failed to place map")
 		return
 	var/turf/place_at = ask.place_at
-	template.load_async(place_at, TRUE, om_callable(template, TYPE_PROC_REF(/datum/map_template, admin_placed), user))
+	template.load_async(place_at, TRUE, TYPE_PROC_REF(/datum/map_template, admin_placed), template, list(user))
 
 ADMIN_VERB(map_template_load_on_new_z, R_SPAWN, "Map template - New Z", "Spawns a new map template at the selected z level.", ADMIN_CATEGORY_DEBUG_EVENTS)
 	// Replay input is only a synchronous answered request from this verb.
@@ -125,7 +125,7 @@ ADMIN_VERB(map_template_load_on_new_z, R_SPAWN, "Map template - New Z", "Spawns 
 	if(isnull(_answer_a3))
 		return
 	if(_answer_a3 == "Yes")
-		template.load_new_z_async(FALSE, om_callable(template, TYPE_PROC_REF(/datum/map_template, admin_placed_z), user))
+		template.load_new_z_async(FALSE, TYPE_PROC_REF(/datum/map_template, admin_placed_z), template, list(user))
 
 ADMIN_VERB(map_template_upload, R_SPAWN, "Map Template - Upload", "Uploads the selected map template to the template storage.", ADMIN_CATEGORY_DEBUG_EVENTS)
 	var/map = input(user, "Choose a Map Template to upload to template storage","Upload Map Template") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog

@@ -71,7 +71,7 @@ CAPABILITIES(/datum/gap_every_datum)
 /datum/gap_every_datum/proc/gated_tick(datum/act/timer/A)
 	gated_ticks++
 
-/// A gate that is a proc (its reads may be incomplete): the every() keeps polling instead of parking.
+/// A gate that is a proc: the every() parks on the tracked reads of its body.
 /obj/gap_every_proc
 	name = "gap every proc target"
 	var/on = FALSE
@@ -413,3 +413,32 @@ CAPABILITIES(/obj/gap_handover_holder)
 	var/list/salvage
 
 #endif
+
+/// A type-level every() held by a relation (ref_one): it parks while nothing is linked and wakes on rel_set().
+/obj/gap_every_rel
+	name = "gap every relation target"
+	var/obj/target
+	var/ticks = 0
+
+CAPABILITIES(/obj/gap_every_rel)
+	ref_one(nameof(target))
+	every(1 SECOND, then(PROC_REF(tick)), when = nameof(target))
+
+/obj/gap_every_rel/proc/tick(datum/act/timer/A)
+	ticks++
+
+/// A type-level every() whose gate reads through a relation hop (target.active): it parks, follows the relation when it retargets, and wakes on the remote write.
+/obj/gap_every_hop
+	name = "gap every hop target"
+	var/obj/gap_every/target
+	var/ticks = 0
+
+CAPABILITIES(/obj/gap_every_hop)
+	ref_one(nameof(target))
+	every(1 SECOND, then(PROC_REF(tick)), when = PROC_REF(target_active))
+
+/obj/gap_every_hop/proc/target_active(datum/act/eval/A)
+	return target && target.active
+
+/obj/gap_every_hop/proc/tick(datum/act/timer/A)
+	ticks++

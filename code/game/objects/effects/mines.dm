@@ -63,7 +63,7 @@ CAPABILITIES(/obj/effect/mine)
 		trap_item.forceMove(MI)
 		own_move(trap_item, MI, nameof(MI.trap)) // from the disarmed casing to the dropped mine
 		wires_detach_all(src) // kick all the signallers off
-	om_qdel_after(src, 0)
+	expire(0)
 
 /// The bad disarm wire, cut: it goes off in two seconds.
 /obj/effect/mine/proc/bad_disarm_wire_cut(datum/act/A)

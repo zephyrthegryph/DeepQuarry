@@ -13,10 +13,11 @@
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
 /// Proximity alarm countdown in steps (meteor_alarm()); while it runs the diffuser is silenced.
-OM_FIELD(/obj/machinery/shield_diffuser, alarm, 0, CHANGE_MACHINE_SETTINGS)
-OM_FIELD(/obj/machinery/shield_diffuser, enabled, TRUE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/shield_diffuser/var/alarm = 0
+TRACKED(/obj/machinery/shield_diffuser, alarm)
+/obj/machinery/shield_diffuser/var/enabled = TRUE
+TRACKED(/obj/machinery/shield_diffuser, enabled)
 /// It has a step to take: an alarm to count down, or a diffuse pass while enabled.
-OM_DERIVE_FIELD(/obj/machinery/shield_diffuser, diffuser_has_work, list("enabled", "alarm"))
 /obj/machinery/shield_diffuser/proc/diffuser_has_work()
 	return enabled || alarm
 // ALLOW(init/INSTANCE_STATE): takes its built parts and hides under the floor tile it is placed on

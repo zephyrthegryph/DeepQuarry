@@ -9,7 +9,8 @@ CAPABILITIES(/datum/sun_holder)
 	owns_one(nameof(sun), /atom/movable/sun_visuals)
 
 /// world.time the running rainbow() ends; rainbow_step() runs every 0.3 s while set (the every() below).
-OM_FIELD_TYPED(/datum/sun_holder, tmp, rainbow_ends_at, 0, CHANGE_DATUM_A)
+/datum/sun_holder/var/tmp/rainbow_ends_at = 0
+TRACKED(/datum/sun_holder, rainbow_ends_at)
 
 /datum/sun_holder/reactions()
 	. = ..()

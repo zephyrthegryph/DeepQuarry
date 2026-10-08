@@ -154,5 +154,5 @@ SYSTEM_DEF(pois)
 	if(!template_to_use)
 		return FALSE
 	// The loader is already gone: annihilate_bounds() removed it with the rest of its tile.
-	template_to_use.load_async(T, FALSE, om_callable(src, PROC_REF(poi_loaded)))
+	template_to_use.load_async(T, FALSE, PROC_REF(poi_loaded), src)
 	return TRUE

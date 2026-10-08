@@ -157,7 +157,6 @@ manual_push	code/modules/body/body_effects.dm	changed(src, CHANGE_MOB_CONDITIONS
 manual_push	code/modules/body/injury.dm	changed(src, CHANGE_MOB_HEALTH)
 manual_push	code/modules/body/injury.dm	changed(src, CHANGE_MOB_HEALTH)
 manual_push	code/modules/body/injury.dm	changed(src, CHANGE_MOB_HEALTH)
-manual_push	code/modules/heat/heat.dm	changed(src, CHANGE_MACHINE_SETTINGS) // the declared field's machine channel
 manual_push	code/modules/heat/heat_mobs.dm	changed(src, CHANGE_MOB_VITALS)
 manual_push	code/modules/heat/heat_mobs.dm	changed(src, CHANGE_MOB_VITALS)
 manual_push	code/modules/medical/stabilisation/stasis.dm	changed(src, CHANGE_MOB_CONDITIONS)
@@ -177,7 +176,6 @@ manual_push	code/modules/mob/mutations.dm	changed(src, CHANGE_MOB_CONDITIONS)
 manual_push	code/modules/overmap/overmap_object.dm	changed(src, CHANGE_EXPLICIT)
 manual_push	code/modules/power/apc.dm	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet
 manual_push	code/modules/reagents/holder/holder.dm	changed(my_atom, CHANGE_CONTENTS)
-manual_push	code/modules/recycling/conveyor2.dm	changed(src, CHANGE_MACHINE_SETTINGS)
 manual_push	code/modules/recycling/disposal_machines.dm	changed(src, CHANGE_MACHINE_SETTINGS)
 output_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	to_chat(world, span_danger("Seed type [seed.get_trait(TRAIT_PLANT_ICON)] cannot find a growth stage value."))
 output_side_effect	code/modules/mob/living/silicon/robot/robot_ui_module.dm	to_chat(R, span_warning("Robot Sprites have not been initialized yet. How are you choosing a sprite? Harass a coder."))

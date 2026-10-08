@@ -62,7 +62,7 @@
 	var/list_type = pref_for_category(params["category"])
 	if(!list_type)
 		return PREF_UPDATE_REJECTED
-	preferences.update_many(om_callable(src, PROC_REF(add_trait_atomic), preferences, list_type, trait_path))
+	preferences.update_many(src, PROC_REF(add_trait_atomic), list(preferences, list_type, trait_path))
 	return PREF_UPDATE_ACCEPTED
 
 /datum/preference_editor/trait_picker/proc/ui_act_remove_trait(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)

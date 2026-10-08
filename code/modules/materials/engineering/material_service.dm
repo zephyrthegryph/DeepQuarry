@@ -300,7 +300,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	unobserve(source, /datum/notice/turf_change, src)
 	rel_clear(src, nameof(watched_turf))
 	watches_dirty = TRUE
-	post_change_callbacks += list(om_callable(src, PROC_REF(environment_changed)))
+	post_change_callbacks += list(list(src, PROC_REF(environment_changed)))
 
 /datum/material_service/proc/environment_changed(topology_changed = TRUE)
 	// Sleeping means the previous environment had no continuing effect. Do not

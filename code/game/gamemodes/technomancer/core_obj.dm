@@ -33,13 +33,14 @@
 	var/universal = FALSE // Allows non-technomancers to use the core -
 
 CAPABILITIES(/obj/item/technomancer_core)
+	ref_one(nameof(wearer))
 	owns_many(nameof(spells))
 	owns_many(nameof(summoned_mobs))
 	op("technomancer_core_toggle_lock_effect", menu(), label("Toggle Core Lock"), needs(carried()), then(PROC_REF(technomancer_core_toggle_lock_effect)))
 	every(2 SECONDS, then(PROC_REF(technomancer_core_step)), when = nameof(wearer))
 
 /// Reference to the mob wearing the core. A field: it regenerates and keeps its wearer's upkeep while worn.
-OM_FIELD_VIEW(/obj/item/technomancer_core, mob/living, wearer, CHANGE_EXPLICIT)
+/obj/item/technomancer_core/var/mob/living/wearer
 
 // its summons are dismissed with it.
 /obj/item/technomancer_core/on_destroy(force)

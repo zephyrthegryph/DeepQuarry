@@ -95,8 +95,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 
 /// The open connections (communicating is a relation list, voice_mobs an owned list): fields, so the
 /// accessors and the framework's auto-clears (a partner or voice destroyed) re-evaluate the watchdog.
-OM_FIELD_VIEW_OF(/obj/item/communicator, communicating, CHANGE_EXPLICIT)
-OM_FIELD_VIEW_OF(/obj/item/communicator, voice_mobs, CHANGE_EXPLICIT)
 /// The connection watchdog runs while a connection is open (its every() gate, polled: the lists are relations).
 /obj/item/communicator/proc/has_connections(datum/act/A)
 	return length(voice_mobs) || length(communicating)

@@ -61,7 +61,8 @@ CAPABILITIES(/datum/spell)
 ///////////////////////
 
 /// TRUE while recharging: recharge_tick() adds a second's worth every second (the every() below).
-OM_FIELD(/datum/spell, recharging, FALSE, CHANGE_DATUM_A)
+/datum/spell/var/recharging = FALSE
+TRACKED(/datum/spell, recharging)
 
 /datum/spell/reactions()
 	. = ..()
@@ -187,7 +188,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 			spell.icon_state = overlay_icon_state
 			spell.set_anchored(TRUE)
 			spell.set_density(FALSE)
-			om_qdel_after(spell, overlay_lifespan)
+			spell.expire(overlay_lifespan)
 	return valid_targets
 
 /datum/spell/proc/after_cast(list/targets)

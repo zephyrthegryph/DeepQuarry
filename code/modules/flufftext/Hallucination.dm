@@ -140,7 +140,7 @@ CAPABILITIES(/datum/hallucinations)
 		spent(src)
 		return
 	handle_hallucinating()
-	om_qdel_after(src, rand(3,9)SECONDS)
+	expire(rand(3,9)SECONDS)
 
 /datum/hallucinations/xenochimera/handle_hallucinating()
 	var/halpick = rand(1,100)

@@ -17,8 +17,9 @@
 TRACKED(/obj/item/tvcamera, streaming)
 
 /// Relation view: the atom being broadcast; the feed follows it while set.
-OM_FIELD_VIEW(/obj/item/tvcamera, atom, showing, CHANGE_EXPLICIT)
+/obj/item/tvcamera/var/atom/showing
 CAPABILITIES(/obj/item/tvcamera)
+	ref_one(nameof(showing))
 	every(2 SECONDS, then(PROC_REF(tvcamera_step)), when = nameof(showing))
 	owns_one(nameof(camera), starts = /obj/machinery/camera/network/thunder)
 	owns_one(nameof(radio), starts = /obj/item/radio)
@@ -139,7 +140,7 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 	special_handling = TRUE
 
 /// Relation view: the atom being broadcast; the feed follows it while set.
-OM_FIELD_VIEW(/obj/item/clothing/accessory/bodycam, atom, showing, CHANGE_EXPLICIT)
+/obj/item/clothing/accessory/bodycam/var/atom/showing
 
 CAPABILITIES(/obj/item/clothing/accessory/bodycam)
 	every(2 SECONDS, then(PROC_REF(bodycam_step)), when = nameof(showing))

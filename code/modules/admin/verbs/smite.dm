@@ -433,8 +433,8 @@ GLOBAL_VAR(redspace_abduction_z)
 	var/obj/item/clothing/hood = new /obj/item/clothing/head/hood_vr/hotdog_hood
 	H.equip_to_slot_if_possible(suit, SLOT_ID_SUIT, 0, 0, 1)
 	H.equip_to_slot_if_possible(hood, SLOT_ID_HEAD, 0, 0, 1)
-	om_qdel_after(suit, 5 SECONDS)
-	om_qdel_after(hood, 5 SECONDS)
+	suit.expire(5 SECONDS)
+	hood.expire(5 SECONDS)
 
 /datum/prompt/choice/client_smite
 	timeout = 0

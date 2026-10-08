@@ -228,3 +228,28 @@ Counts on origin/master eac3bc655d: `om_link(` 51 lines in 26 files, of which 30
 | K7-codex1 | Singularity delayed directional step | BYOND `step()` has no callable `/proc/step` path. Replacing `om_step` with a renamed identical shim would hide the same legacy callback, and `after()` currently needs a callable handler. | A native timed directional movement part/callable primitive with the same movement semantics. |
 
 | K8-codex1 | Food replicator scanned-product cost | The operator is also the answerer. The selected arbitrary scanned food type must be instantiated, its initialized reagent volume read, then disposed before container/nutriment refusal. Static nutriment values do not describe arbitrary subtype initialization. A pure requirement cannot construct and delete the candidate. | A pure declared product-cost provider, or native preparation/continuation preserving initialization and deletion timing before cost requirements. |
+## K-omfields. Stored calls (om_callable / om_run) and tgui wakes (rewrite/om-fields)
+
+**KF1-KF4 are done except the `om_watch` probes (machinery lane).** `om_callable` / `om_run` stay defined only for `airlock_control.dm`, `firedoor.dm` and the OM watch tests; they are deleted and hard-banned in the commit that converts those two. `om_run_async` is deleted and banned.
+
+| ID | Shape | What it took |
+|---|---|---|
+| KF1 (DONE) | Completion of an async API | `then = PROC_REF`, `owner =` (the datum it runs on; null for a global proc) and `with = list()`, as `after()` takes them. On completion the API calls `after(owner, 0, then, with = with + results)` itself, so a deleted owner or datum argument drops the call. Converted: `load_async`, `load_new_z_async`, `generate_site_async`, `acquire_z`, `wipe_z_async` (`job_cursor(... done_with)`), `plan_async`, `materialize_async`, `tgui_alert_async`; callers: admin template loads, ERT, trader, poi service, shelter capsule, dark tunnel, expedition chain, ghost query. |
+| KF2 (DONE) | A hook stored on a record, run at one event | No notice fits (the record has no owner publishing the event), so each stores owner / PROC_REF / `with` and runs it with `holder_call(owner, proc, with)`, which has the shape of `after()`, takes a PROC_REF only (a string literal is a `check_grep` error) and calls nothing when the owner is gone. Sites: throw landing (`throw_at(then =, then_owner =, then_with =)`), `/datum/effect_remover.on_clear` (a PROC_REF on its owning item), `experiment_handler.start_experiment`, `body_support.still_valid` (returns the answer), `preferences.update_many(owner, PROC_REF, with)`, runechat queue rows `list(owner, PROC_REF, with)`, unit-test `defer_cleanup` rows. The tgui alert and ghost query took KF1, because a deleted observer must drop the call. |
+| KF3 (DONE) | Deferred or queued call | `SSticker.OnRoundstart(owner, PROC_REF, with, delay)` runs `after(owner, delay, PROC_REF, with = with)` at round start (or at once); `world_next_tick(GLOBAL_PROC_REF)`; `post_change_callbacks` rows `list(owner, PROC_REF, with)` run as `after(owner, 0, PROC_REF, with = with + new turf)`; autowiki and remote_materials use `OnRoundstart`. |
+| KF4 (DONE except om_watch) | Benchmark and engine probes | `measure_event(name, PROC_REF)`, `batch_yield_probe = list(owner, PROC_REF)`, `wait_for_condition(GLOBAL_PROC_REF, list(args), ...)`. The `om_watch_arm_*` getters stay with the machinery lane. |
+
+### Proc-gate parking (rewrite/om-fields)
+
+`every(when = PROC_REF(x))` parks on the tracked reads of the gate proc (the generated reads table `stat_generated_reads()`, the same table a requirement or a stat contribution reads) and wakes when any of them publishes. A gate proc that reads untracked state is a `sem/reads unknown_read` / `unannotated_global` error at build time. A gate with a relation hop (`host.stat`) still polls, because the wake does not subscribe through a hop; a gate that throws keeps polling (nothing would wake it). `dq_gap/every_with_a_proc_gate_parks` pins it; contagion's spread lane is the first user (its gate reads only the strain's own tracked state; whether the host is dead now is the step's check).
+
+### K-U: why tgui windows still use the OM wakes
+
+(Owned by the UI-outputs lane; nothing converted here.)
+
+`/datum/tgui` binds a watch on `CHANGE_GENERIC_MASK` of its host (`om_ui_bind`) and its user's mob channels (`om_ui_status_bind`). The design (final_api section 13) re-runs `ui_data(A)` once per frame when a tracked read changed, which `ui_push_mark()` already does for converted hosts. Converting `tgui.dm` is blocked by:
+
+1. **530 manual `SStgui.update_uis()` calls in 206 files** (top hosts: admin_newscaster_panel 27, edit_player_panel 18, computer/cloning 14, misc_admin_panels 13, magnetic_console_panel 12, edit_memory_panel 12, agentcard 10, vore living 8, appearance_changer 8, traffic_control_panel 8, newscaster 8, notes_panels 7). Each marks a host whose `tgui_data()` reads state that is not tracked.
+2. **Untracked reads in `tgui_data()` bodies**: the generated `ui_from()` reads come only from tracked vars and stats.
+3. **Hand change marks**: about 70 `changed(src, CHANNEL)` sites outside the OM folder (injury.dm, areas.dm, signaler.dm, mutations.dm, life_om.dm, species traits, heat_mobs, body_effects, asset_list, items.dm, meteors, capability library files).
+4. **User status** (window closes when the user moves or is stunned) needs `lives_while` / `on_change` on tracked stats instead of mob channels.

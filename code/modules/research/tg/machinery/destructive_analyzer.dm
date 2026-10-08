@@ -21,7 +21,8 @@ MSG_DEF_SELF(analyzer/busy, "It's busy right now.")
 	var/datum/remote_materials/rmat
 
 /// Busy analysing an item (or recycling parts).
-OM_FIELD(/obj/machinery/rnd/destructive_analyzer, busy, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/rnd/destructive_analyzer/var/busy = FALSE
+TRACKED(/obj/machinery/rnd/destructive_analyzer, busy)
 
 ///Reset the state of this machine
 /obj/machinery/rnd/destructive_analyzer/proc/reset_busy()

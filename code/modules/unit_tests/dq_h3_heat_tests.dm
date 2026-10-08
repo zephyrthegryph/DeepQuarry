@@ -246,8 +246,8 @@
 	// checkpoint notes. Kept short (not 500 frames) so this fails fast instead
 	// of adding 30+ seconds to every run while that's open.
 	var/heated = wait_for_condition(
-		om_callable(null, GLOBAL_PROC_REF(dq_h3_probe_warmer_than), probe, start),
-		om_callable(null, GLOBAL_PROC_REF(vg_world_run_steps), 1),
+		GLOBAL_PROC_REF(dq_h3_probe_warmer_than), list(probe, start),
+		GLOBAL_PROC_REF(vg_world_run_steps), list(1),
 		20,
 	)
 	TEST_ASSERT(heated, "the heat domain heats it (KNOWN ISSUE: heat-domain coupling, not test isolation -- see doc/testing.md flaky notes)")
