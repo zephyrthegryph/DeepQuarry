@@ -152,8 +152,7 @@ TRACKED_BRIDGED(/mob/living/simple_mob/vore/aggressive/macrophage, deathwatch, C
 		act_message(src, null, null, MSG_OTHERS(span_warning("%U% shrivels up and dies, unable to survive!")))
 		var/obj/effect/decal/cleanable/blood/sick = new(loc)
 		sick.name = "plasma"
-		sick.basecolor = "#47cbcf"
-		sick.color = sick.basecolor
+		sick.set_basecolor("#47cbcf")
 		sick.pixel_x = rand(-24, 24)
 		sick.pixel_y = rand(-24, 24)
 		rel_add(sick, nameof(sick.viruses), base_disease.Copy())

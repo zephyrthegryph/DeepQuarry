@@ -5,52 +5,37 @@
 	req_one_access = list(ACCESS_ARMORY)
 	closet_appearance = null
 
-/obj/structure/closet/secure_closet/guncabinet/Initialize(mapload)
-	. = ..()
-	update_icon()
-
-/obj/structure/closet/secure_closet/guncabinet/toggle()
-	..()
-	update_icon()
-
-APPEARANCE_NONE(/obj/structure/closet/secure_closet/guncabinet)
-DECLARE_APPEARANCE_PROC(/obj/structure/closet/secure_closet/guncabinet, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/closet/secure_closet/guncabinet/appearance_overlays()
-	. = list()
+/// The cabinet keeps its mapped sprite and draws its door and the guns behind it: one per laser or projectile gun it holds (up to three, the commoner kind
+/// first), read from the slot without making the guns that are only declared.
+/obj/structure/closet/secure_closet/guncabinet/closet_look(datum/look/look)
 	if(opened)
-		. += "door_open"
+		look.overlay("door_open")
+		return
+	var/lazors = 0
+	var/shottas = 0
+	for(var/kind in look.contents_of(CONTAINER_SLOT_INTERIOR, /obj/item/gun))
+		if(ispath(kind, /obj/item/gun/energy))
+			lazors++
+		if(ispath(kind, /obj/item/gun/projectile))
+			shottas++
+	for(var/i in 0 to 2)
+		if(lazors || shottas) // only make icons if we have one of the two types.
+			var/gun_state
+			if(lazors > shottas)
+				lazors--
+				gun_state = "laser"
+			else if(shottas)
+				shottas--
+				gun_state = "projectile"
+			look.overlay(look_overlay_image(icon, gun_state, pixel_x = i * 4))
+	look.overlay("door")
+	look.overlay("sealed", when = is_welded(src))
+	if(broken)
+		look.overlay("broken")
+	else if(lock_locked(src))
+		look.overlay("locked")
 	else
-		var/lazors = 0
-		var/shottas = 0
-		latent_materialize_all() // a walk needs real things (C5)
-		for (var/obj/item/gun/G in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-			if (istype(G, /obj/item/gun/energy))
-				lazors++
-			if (istype(G, /obj/item/gun/projectile))
-				shottas++
-		for (var/i = 0 to 2)
-			if(lazors || shottas) // only make icons if we have one of the two types.
-				var/image/gun = image(icon(src.icon))
-				if (lazors > shottas)
-					lazors--
-					gun.icon_state = "laser"
-				else if (shottas)
-					shottas--
-					gun.icon_state = "projectile"
-				gun.pixel_x = i*4
-				. += gun
-
-		. += "door"
-
-		if(is_welded(src))
-			. += "sealed"
-
-		if(broken)
-			. += "broken"
-		else if (lock_locked(src))
-			. += "locked"
-		else
-			. += "open"
+		look.overlay("open")
 
 /obj/structure/closet/secure_closet/guncabinet/excursion
 	name = "expedition weaponry cabinet"

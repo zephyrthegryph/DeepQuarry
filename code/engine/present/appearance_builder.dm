@@ -41,6 +41,8 @@
 	var/list/neighbour_types
 	/// Anything was set: a type that draws nothing keeps its mapped appearance.
 	var/touched = FALSE
+	/// The atom whose draw is running (set by refresh_look() for the length of the draw, null otherwise): contents_of() and things_in() read its slots.
+	var/atom/holder
 
 GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 
@@ -69,6 +71,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	watched = null
 	neighbour_types = null
 	touched = FALSE
+	holder = null
 
 /// The base icon_state. The last call wins (a capability's broken state is overridden by a type
 /// that draws its own broken state after ..()). Returns `name`, so a draw that builds on the state it
@@ -223,6 +226,39 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	if(!when || isnull(state))
 		return
 	LAZYADD(overlays, look_overlay_image(holder.icon, "[state]-eyes", plane = PLANE_LIGHTING_ABOVE, color = color, appearance_flags = holder.appearance_flags))
+
+/**
+ * What the holder keeps in `slot` (null: its default slot) that is a `type`, as the types held: real things by their own type, and latent ones (a
+ * cabinet's declared guns, not made yet) by the type of their entry, once each. A draw that only classifies its contents (a gun cabinet counting energy and
+ * projectile guns) reads this and materializes nothing. The draw hears the slot's occupancy: a thing entering or leaving, and a latent entry made or used.
+ *	for(var/kind in look.contents_of(CONTAINER_SLOT_INTERIOR, /obj/item/gun))
+ *		if(ispath(kind, /obj/item/gun/energy))
+ */
+/datum/look/proc/contents_of(slot, type = /atom/movable)
+	RETURN_TYPE(/list)
+	touched = TRUE
+	if(!holder)
+		return list()
+	return holder.slot_kinds(slot, type)
+
+READS_AS(/datum/look/proc/contents_of, SLOT_OCCUPANCY_KEY)
+
+/**
+ * The real things of `type` in the holder's `slot` (null: its default slot), for a draw that shows them (a caged vehicle). Each is watched: a change
+ * published on it redraws the holder. The draw hears the slot's occupancy as it does for contents_of().
+ */
+/datum/look/proc/things_in(slot, type = /atom/movable)
+	RETURN_TYPE(/list)
+	touched = TRUE
+	. = list()
+	if(!holder)
+		return
+	for(var/atom/movable/thing as anything in holder.slot_contents(slot))
+		if(istype(thing, type))
+			. += thing
+			watch(thing)
+
+READS_AS(/datum/look/proc/things_in, SLOT_OCCUPANCY_KEY)
 
 /// Another icon file for the base state.
 /datum/look/proc/set_icon(file)

@@ -17,10 +17,9 @@
 			var/obj/effect/decal/cleanable/blood/gibs/gib = new gib_type(location)
 			// Apply human species colouration to masks.
 			if(fleshcolor)
-				gib.fleshcolor = fleshcolor
+				gib.set_fleshcolor(fleshcolor)
 			if(bloodcolor)
-				gib.basecolor = bloodcolor
-			gib.update_icon()
+				gib.set_basecolor(bloodcolor)
 			gib.init_forensic_data()
 			gib.add_blooddna(MobDNA, null)
 			if(isturf(location) && length(directions))

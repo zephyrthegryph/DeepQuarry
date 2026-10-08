@@ -19,6 +19,8 @@
 #define CONTAINER_SLOT_DISPOSAL "disposal"
 /// A vehicle cage's one vehicle (C11).
 #define CONTAINER_SLOT_VEHICLE_CAGE "vehicle"
+/// The wood and logs a bonfire or a fireplace burns.
+#define CONTAINER_SLOT_FUEL "fuel"
 /// A transit tube pod's rider(s) (C11).
 #define CONTAINER_SLOT_TRANSIT_POD "transit_pod"
 

@@ -285,9 +285,8 @@ BLOOD_VOLUME_SURVIVE = 40
 
 	// Update appearance.
 	if(source.data["blood_colour"])
-		B.basecolor = source.data["blood_colour"]
-		B.synthblood = synth
-		B.update_icon()
+		B.set_basecolor(source.data["blood_colour"])
+		B.set_synthblood(synth)
 
 	if(source.data["blood_name"])
 		B.name = source.data["blood_name"]

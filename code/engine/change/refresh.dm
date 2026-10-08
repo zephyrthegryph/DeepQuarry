@@ -471,9 +471,11 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 /proc/refresh_look(atom/A, apply = TRUE)
 	var/datum/look/L = GLOB.look_builder
 	L.reset()
+	L.holder = A
 	DERIVED_EVAL_BEGIN
 	A.draw(L)
 	DERIVED_EVAL_END
+	L.holder = null
 	// Transient flashes (look_flash()) sit on top of whatever draw() described.
 	var/datum/cap_engine_state/engine = capability_data(A)?[/datum/cap_engine_state] // inline cap_engine_state_of(): every look refresh passes here
 	if(engine)

@@ -37,22 +37,22 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood/reagent)
 	dryname = "dried [spill_name]"
 	desc = "It's a puddle of [spill_name]"
 	drydesc = "It's a dried puddle of [spill_name]"
-	basecolor = spill_color
+	set_basecolor(spill_color)
 
 	custombasename = "[spill_name]"
 	custombasedesc = "It's a puddle of [spill_name]"
-	custombasecolor = spill_color
+	custombasecolor = basecolor
 
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/reagent, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/decal/cleanable/blood/reagent/appearance_overlays()
-	if(custombasecolor == "rainbow") custombasecolor = get_random_colour(1)
-	. = list()
-
-	color = custombasecolor
-	name = custombasename
-	desc = custombasedesc
+/// A puddle of a reagent other than blood or water is drawn in the reagent's colour, under its name; blood and water keep the blood's own look.
+/obj/effect/decal/cleanable/blood/reagent/cleanable_look(datum/look/look)
+	if(isnull(custombasename))
+		return ..()
+	look.set_color(dried ? adjust_brightness(custombasecolor, -50) : custombasecolor)
+	if(dried)
+		dried_look(look)
+	else
+		look.identity(name = custombasename, desc = custombasedesc)
+	janitor_hud(look)
 
 /obj/effect/decal/cleanable/blood/reagent/Crossed(mob/living/carbon/human/perp)
 	//Nothing, we dont wanna spread our mess all over, at least not until people want that

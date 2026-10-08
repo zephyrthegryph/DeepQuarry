@@ -183,7 +183,6 @@
 	zone_sel.icon = HUD.ui_style
 	zone_sel.alpha = HUD.ui_alpha
 	zone_sel.cut_overlays()
-	zone_sel.update_icon()
 
 	//Handle the gun settings buttons
 	rel_set(src, nameof(gun_setting_icon), new /atom/movable/screen/gun/mode(null))

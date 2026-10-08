@@ -39,8 +39,7 @@
 		drop.add_overlay(drips)
 		drop.drips |= drips
 
-	B.basecolor = blood_color
-	B.update_icon()
+	B.set_basecolor(blood_color)
 	if(istype(B, drop)) //We're a drop.
 		B.name = "drips of something"
 	else //We're a puddle.

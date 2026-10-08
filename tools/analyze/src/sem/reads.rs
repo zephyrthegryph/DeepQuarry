@@ -973,6 +973,17 @@ impl<'a, 'e> Walk<'a, 'e> {
             return Val::local(None);
         }
         let Some(ty) = v.ty.clone() else { return Val::local(None) };
+        // A look builder call that stands for a key (`READS_AS(/datum/look/proc/contents_of, KEY)`): the draw it sits in reads that key on its holder.
+        if ty == "/datum/look" {
+            if let Some(k) = self.reads_as_for(&ty, name) {
+                let holder = fr.this.clone();
+                if holder.tracked() {
+                    let r = Read { root: holder.root_name(), hops: holder.hops.clone(), var: k.0.clone(), owner: String::new(), kind: ReadKind::Accessor, hop_ok: holder.hop_ok };
+                    self.add_read(r, &rel, line);
+                }
+            }
+            return Val::local(None);
+        }
         let Some(p) = sem.proc_ref(&ty, name).filter(|p| !p.ty().get().path.is_empty()) else {
             if v.tracked() && sem.ty(&ty).is_some() && !is_builtin_name(name) && !self.eng.sem.is_subtype(&ty, "/datum/act") {
                 self.diag("unknown_call", &rel, line, format!("{} has no proc `{}`", ty, name));

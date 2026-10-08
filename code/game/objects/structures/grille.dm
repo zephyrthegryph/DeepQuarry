@@ -14,6 +14,8 @@
 	integrity_failure = 0.375
 	var/destroyed = FALSE
 
+TRACKED(/obj/structure/grille, destroyed)
+
 /// The look (the draw sweep: from its template).
 /obj/structure/grille/draw(datum/look/look)
 	..()
@@ -171,15 +173,13 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	var/wtype = ST.material.created_window
 	var/obj/structure/window/WD = new wtype(loc, dir_to_set, 1)
 	to_chat(user, span_notice("You place the [WD] on [src]."))
-	WD.update_icon()
 
 // Crossing the integrity_failure threshold turns the grille into a passable broken stub.
 /obj/structure/grille/atom_break(damage_flag)
 	. = ..()
 	if(!destroyed)
 		set_density(FALSE)
-		destroyed = TRUE
-		changed(src)
+		set_destroyed(TRUE)
 		new /obj/item/stack/rods(get_turf(src))
 
 // Reaching 0 integrity clears the grille entirely, dropping its last rod.

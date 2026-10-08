@@ -26,7 +26,19 @@
 	var/datum/material/material
 	var/grille_type
 
-DECLARE_APPEARANCE(/obj/structure/low_wall, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "blank")))
+TRACKED(/obj/structure/low_wall, material)
+
+/obj/structure/low_wall/draw(datum/look/look)
+	..()
+	low_wall_look(look)
+
+/// The sprite of the frame: the base type has none of its own (a blank), each style draws its corners over the connections.
+/obj/structure/low_wall/proc/low_wall_look(datum/look/look)
+	look.state("blank")
+
+/// The tint of the wall's material (a shared definition that never changes: the draw hears of a new material through the tracked `material`).
+/obj/structure/low_wall/proc/material_colour()
+	return material?.icon_colour
 
 CAPABILITIES(/obj/structure/low_wall)
 	smoothing()
@@ -50,7 +62,7 @@ CAPABILITIES(/obj/structure/low_wall)
 		WARNING("[src] on invalid turf [T] at [x],[y],[z]")
 		spent(src)
 		return
-	material = get_material_by_name(materialtype)
+	set_material(get_material_by_name(materialtype))
 	max_integrity = material.integrity
 	update_integrity(max_integrity)
 
@@ -182,53 +194,33 @@ MSG_DEF_SELF(low_wall/assembling_window, span_notice("Assembling window..."))
 		return TRUE
 	return FALSE
 
-// Bay's version
-/// Draws itself entirely: drop the parent's keyed declarations.
-APPEARANCE_NONE(/obj/structure/low_wall/bay)
-DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/low_wall/bay/appearance_overlays()
-	. = list()
-
-	var/image/I
-	var/main_color = material.icon_colour
+// Bay's version: the mapped sprite, with the frame drawn corner by corner over the connections.
+/obj/structure/low_wall/bay/low_wall_look(datum/look/look)
+	if(!length(connections) || !length(other_connections))
+		return
+	var/main_color = material_colour()
 	for(var/i = 1 to 4)
 		if(other_connections[i] != "0")
-			I = image(icon, "frame_other[other_connections[i]]", dir = 1<<(i-1))
-			I.color = main_color
+			look.overlay(look_overlay_image(icon, "frame_other[other_connections[i]]", dir = 1<<(i-1), color = main_color))
 		else
-			I = image(icon, "frame[connections[i]]", dir = 1<<(i-1))
-			I.color = main_color
-		. += I
+			look.overlay(look_overlay_image(icon, "frame[connections[i]]", dir = 1<<(i-1), color = main_color))
 
 	if(stripe_color)
 		for(var/i = 1 to 4)
 			if(other_connections[i] != "0")
-				I = image(icon, "stripe_other[other_connections[i]]", dir = 1<<(i-1))
+				look.overlay(look_overlay_image(icon, "stripe_other[other_connections[i]]", dir = 1<<(i-1), color = stripe_color))
 			else
-				I = image(icon, "stripe[connections[i]]", dir = 1<<(i-1))
-			I.color = stripe_color
-			. += I
+				look.overlay(look_overlay_image(icon, "stripe[connections[i]]", dir = 1<<(i-1), color = stripe_color))
 
 // Eris's version
-/// Draws itself entirely: drop the parent's keyed declarations.
-APPEARANCE_NONE(/obj/structure/low_wall/eris)
-DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/eris, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/low_wall/eris/appearance_overlays()
-	. = list()
-
-	var/image/I
-	var/main_color = material.icon_colour
+/obj/structure/low_wall/eris/low_wall_look(datum/look/look)
+	if(!length(connections) || !length(other_connections))
+		return
+	var/main_color = material_colour()
 	for(var/i = 1 to 4)
-		I = image(icon, "frame[connections[i]]", dir = 1<<(i-1))
-		I.color = main_color
-		. += I
-
+		look.overlay(look_overlay_image(icon, "frame[connections[i]]", dir = 1<<(i-1), color = main_color))
 		if(other_connections[i] != "0")
-			I = image(icon, "frame_other[other_connections[i]]", dir = 1<<(i-1))
-			I.plane = ABOVE_OBJ_PLANE
-			I.layer = ABOVE_WINDOW_LAYER
-			I.color = main_color
-			. += I
+			look.overlay(look_overlay_image(icon, "frame_other[other_connections[i]]", plane = ABOVE_OBJ_PLANE, layer = ABOVE_WINDOW_LAYER, dir = 1<<(i-1), color = main_color))
 
 /// Emitters and the like can't take a low wall down in one shot.
 /obj/structure/low_wall/projectile_damage(obj/item/projectile/P, def_zone)

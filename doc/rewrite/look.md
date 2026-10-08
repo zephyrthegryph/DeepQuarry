@@ -39,6 +39,21 @@ airlock hides bolts and emergency, the vendor its panel, wires, broken and dark 
 requirements in `needs`]** (the lock takes `lamp =`: it shows as a glowing `locked` / `unlocked` lamp while the holder is lit, see `is_lit(A)`). `CAP_NO_LAYER` and `layer=` are the old form; see
 [migration_guide.md](migration_guide.md) Part F.
 
+## 2a. Reading a slot
+
+A draw that shows what a holder keeps reads the slot through the builder, not through `contents` or `slot_contents()` (a walk needs real things;
+the draw must not make them):
+
+| Form | Answers | Use |
+|---|---|---|
+| `look.contents_of(slot, type)` | the types held in `slot` (null: the default slot) that are a `type`: a real thing by its own type, a latent one (declared by `starts_with`, not made yet) by its entry's type, once each | classify or count (`for(var/kind in look.contents_of(CONTAINER_SLOT_INTERIOR, /obj/item/gun))`, `ispath(kind, /obj/item/gun/energy)`): the gun cabinet draws a gun per laser or projectile gun it holds without making any |
+| `look.things_in(slot, type)` | the real things of `type` in `slot`, each watched | show them (the vehicle cage draws the vehicle behind its frame) |
+
+Both stand for `SLOT_OCCUPANCY_KEY` on the holder (`READS_AS`, read by `tools/analyze` from the builder call): a thing entering or leaving the slot, a
+latent entry made or used (`latent_set_count()`), and the holder declaring its generator (`set_latent_declared()`) redraw it. `slot_kinds()`
+(`code/engine/refs/containment/api.dm`) is the atom proc behind `contents_of()`: with a ledger it reads the ledger; without one it answers from the
+declared generator when the holder has not declared it yet, else it opens the ledger. It never rolls the generator into things and never materializes.
+
 ## 3. Checks and tooling
 
 - **Outputs have no side effects:** `draw()` is a reactive proc (`dx_reactive_write` flags a state write, `to_chat`

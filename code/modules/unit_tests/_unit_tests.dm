@@ -393,6 +393,7 @@
 #include "dq_reagents_start_snapshot.dm"
 #include "dq_conversion_pins.dm"
 #include "dq_draw_framework.dm"
+#include "dq_draw_structures.dm"
 #include "dq_draw_sweep_3c.dm"
 #include "dq_look_pins.dm"
 #include "dq_hit_pins.dm"

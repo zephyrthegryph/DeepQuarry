@@ -35,16 +35,11 @@ CAPABILITIES(/obj/structure/closet/secure_closet)
 	op("slice", item(/obj/item/melee/energy/blade), label("Slice open"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(blade_sliced)))
 	op("lock_with_item", item(/obj/item), label("Toggle Lock"), when(cond_not(nameof(opened))), when(req_credential_worn(null)), priority(OP_PRIORITY_DEFAULT + 1),
 		needs(req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), req(PROC_REF(actor_outside), because = MSG(secure_closet/inside))), toggles(LOCK_LOCKED), says(PROC_REF(lock_toggled_message)), plays(SFX_MACHINES_CLICK))
-	on_change(LOCK_LOCKED, ANY, then(PROC_REF(lock_changed)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(secure_closet_emp)))
 
 /// Whoever works the lock is not shut in with it.
 /obj/structure/closet/secure_closet/proc/actor_outside(datum/act/op/A)
 	return A.actor?.loc != src // ALLOW(reads): where the one at the lock is, read when the entry is offered and again at the click
-
-/// A locked or unlocked locker is drawn again.
-/obj/structure/closet/secure_closet/proc/lock_changed(datum/act/A)
-	update_icon()
 
 /// A locked locker is shut for good until unlocked: it opens only unlocked.
 /obj/structure/closet/secure_closet/can_open()
@@ -63,7 +58,6 @@ CAPABILITIES(/obj/structure/closet/secure_closet)
 	if(!broken)
 		if(prob(50/severity))
 			force_lock(!lock_locked(src))
-			update_icon()
 		if(prob(20/severity) && !opened)
 			if(!lock_locked(src))
 				open()
@@ -103,15 +97,13 @@ CAPABILITIES(/obj/structure/closet/secure_closet)
 			act_message(src, user, others = span_warning("%U% has been broken by %T% with \an [emag_source]!"), blind = "You hear a faint electrical spark.")
 		else
 			visible_message(span_warning("\The [src] sparks and breaks open!"), "You hear a faint electrical spark.")
-		update_icon()
 		return 1
 
-/obj/structure/closet/secure_closet/proc/appearance_lock_state()
+/// A broken lock shows emagged, a working one by whether it holds.
+/obj/structure/closet/secure_closet/closet_lock_look()
 	if(broken)
 		return "emagged"
 	return lock_locked(src) ? "locked" : "unlocked"
-
-APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet, "closed_{appearance_lock_state}{appearance_sealed?_welded:}")
 
 /obj/structure/closet/secure_closet/req_breakout()
 	if(!opened && lock_locked(src)) return 1
@@ -127,6 +119,8 @@ APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet, "closed_{appearance_loc
 	name = "mind secured locker"
 	var/datum/mind/owner
 	var/self_del = 1
+	/// The owner's picture at the time the locker was made, drawn on its door.
+	var/tmp/image/owner_picture
 	anchored = 0
 
 // Only the mind it was made for works the lock.
@@ -146,9 +140,12 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 		name = "Owned by [owner_ref().name]"
 		if(owner_ref().current)
 			var/icon/I = get_flat_icon(owner_ref().current, dir=SOUTH, no_anim=TRUE)
-			var/image/IM = image(I, pixel_x = (32 - I.Width()))
-			add_overlay(IM)
+			owner_picture = image(I, pixel_x = (32 - I.Width()))
 			spent(I)
+
+/obj/structure/closet/secure_closet/mind/closet_look(datum/look/look)
+	..()
+	look.overlay(owner_picture, when = !isnull(owner_picture))
 
 /obj/structure/closet/secure_closet/mind/allowed(mob/user)
 	if(user.mind == owner_ref()) // ALLOW(reads): whose mind it is is read at the click; the locker is made for one mind and never changes it
@@ -161,14 +158,9 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 	if(self_del)
 		spent(src)
 
-/// A mind's locker takes nothing in: it only resolves its look.
+/// A mind's locker takes nothing in.
 /obj/structure/closet/secure_closet/mind/closet_after_init(datum/act/timer/A)
-	if(ispath(closet_appearance))
-		closet_appearance = GLOB.closet_appearances[closet_appearance]
-		if(istype(closet_appearance))
-			icon = closet_appearance.icon
-			color = null
-	update_icon()
+	return
 
 /// Relation view: owner (reads null once it is gone).
 /obj/structure/closet/secure_closet/mind/proc/owner_ref() as /datum/mind

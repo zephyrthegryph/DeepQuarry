@@ -1151,9 +1151,8 @@ Note that amputating the affected organ does in fact remove the infection from t
 				gore = new /obj/effect/decal/cleanable/blood/gibs/robot(droploc)
 			else
 				gore = new /obj/effect/decal/cleanable/blood/gibs(droploc)
-				gore.fleshcolor = use_flesh_colour
-				gore.basecolor = use_blood_colour
-				gore.update_icon()
+				gore.set_fleshcolor(use_flesh_colour)
+				gore.set_basecolor(use_blood_colour)
 
 			gore.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),5)
 
