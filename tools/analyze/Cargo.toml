@@ -43,3 +43,14 @@ incremental = false
 
 [profile.dev]
 opt-level = 1
+
+# Local profile for the build tool's `analyze-build` (tools/build/build.ts picks it unless CI is set or
+# DQ_ANALYZE_PROFILE=release). Same optimisation level family as release but no LTO, many codegen units and
+# incremental, so editing tools/analyze/src recompiles only the changed units (about 10 s instead of
+# about 2 minutes); the lint runs at the same speed within noise. CI and the push gate build `release`.
+[profile.dev-fast]
+inherits = "release"
+opt-level = 2
+lto = false
+incremental = true
+codegen-units = 256

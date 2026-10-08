@@ -605,7 +605,11 @@ export const VerdigrisTarget = new Juke.Target({
 const ANALYZE_DIR = process.env.CARGO_TARGET_DIR
   ? `${process.env.CARGO_TARGET_DIR}`
   : 'tools/analyze/target';
-const ANALYZE_BIN = `${ANALYZE_DIR}/release/${process.platform === 'win32' ? 'analyze.exe' : 'analyze'}`;
+// Cargo profile for the analyzer: `release` (CI, the push gate; DQ_ANALYZE_PROFILE=release) or `dev-fast`
+// (local default: incremental, no LTO; an edit under tools/analyze/src rebuilds in about 10 s, not 2 minutes).
+const ANALYZE_PROFILE = process.env.DQ_ANALYZE_PROFILE || (process.env.CI ? 'release' : 'dev-fast');
+const analyzeCargoArgs = (): string[] => ['build', '--profile', ANALYZE_PROFILE, '--manifest-path', 'tools/analyze/Cargo.toml'];
+const ANALYZE_BIN = `${ANALYZE_DIR}/${ANALYZE_PROFILE}/${process.platform === 'win32' ? 'analyze.exe' : 'analyze'}`;
 
 // The analyze binary is cached by content outside the worktrees (DQ_ANALYZE_CACHE, default
 // E:/dq-cache/analyze-bin on Windows, else ~/.cache/dq/analyze-bin; `off` disables it), keyed by a
@@ -628,7 +632,7 @@ const analyzeSharedTargetDir = (): string | null => {
   return path.join(os.homedir(), '.cache', 'dq', 'analyze-target');
 };
 const analyzeSourceKey = (): string => {
-  const hash = createHash('sha256').update(`analyze-v1|${process.platform}|${process.arch}|`);
+  const hash = createHash('sha256').update(`analyze-v1|${ANALYZE_PROFILE}|${process.platform}|${process.arch}|`);
   const files = [
     'tools/analyze/Cargo.toml',
     'tools/analyze/Cargo.lock',
@@ -687,14 +691,14 @@ export const AnalyzeBuildTarget = new Juke.Target({
       fs.mkdirSync(shared, { recursive: true });
       Juke.logger.info(`analyze: building in shared target ${shared} (waits on cargo's lock if another build is running)`);
       const cargoEnv = { ...process.env, CARGO_TARGET_DIR: path.resolve(shared) };
-      await Juke.exec('cargo', ['build', '--release', '--manifest-path', 'tools/analyze/Cargo.toml'], { env: cargoEnv });
-      const built = path.join(path.resolve(shared), 'release', path.basename(ANALYZE_BIN));
+      await Juke.exec('cargo', analyzeCargoArgs(), { env: cargoEnv });
+      const built = path.join(path.resolve(shared), ANALYZE_PROFILE, path.basename(ANALYZE_BIN));
       fs.mkdirSync(path.dirname(ANALYZE_BIN), { recursive: true });
       const tmpBin = `${ANALYZE_BIN}.${process.pid}.tmp`;
       fs.copyFileSync(built, tmpBin);
       fs.renameSync(tmpBin, ANALYZE_BIN);
     } else {
-      await Juke.exec('cargo', ['build', '--release', '--manifest-path', 'tools/analyze/Cargo.toml']);
+      await Juke.exec('cargo', analyzeCargoArgs());
     }
     const key = analyzePendingKey;
     if (!key) return;
