@@ -12,11 +12,12 @@ human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Use
+human|/obj/item/tool/wrench menu: Anchor frame
 human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: Click: Use
+human|/obj/item/tool/wrench click: Click: Anchor frame
 human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
@@ -27,11 +28,12 @@ human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Use
+human|/obj/item/weldingtool menu: Dismantle frame
 human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: Click: Use
+human|/obj/item/weldingtool click: Click: Dismantle frame
 human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
@@ -59,5 +61,5 @@ human|/obj/item/stack/material menu: Move To Top
 human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material menu: Use
 human|/obj/item/stack/material click: Click: Use
-keys: add_cables, add_panel, ai_core_install, drag_buckle, melee_hit
+keys: add_cables, add_panel, ai_core_install, anchor, dismantle, drag_buckle, melee_hit, unanchor, welder_wrong_stage, wrench_wrong_stage
 
