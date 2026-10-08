@@ -457,8 +457,7 @@ MSG_DEF_SELF(records/not_authenticated, "You must log in first.")
 
 /datum/prompt/choice/medical_record_edit/prepare(datum/act/A)
 	..()
-	var/datum/act/op/OA = A
-	var/obj/machinery/computer/med_data/console = OA.holder
+	var/obj/machinery/computer/med_data/console = A.holder
 	var/field = console.edit_field(arguments)
 	question = console.field_edit_questions[field]
 	choices = console.field_edit_choices[field]
@@ -469,8 +468,7 @@ MSG_DEF_SELF(records/not_authenticated, "You must log in first.")
 
 /datum/prompt/text/medical_record_edit/prepare(datum/act/A)
 	..()
-	var/datum/act/op/OA = A
-	var/obj/machinery/computer/med_data/console = OA.holder
+	var/obj/machinery/computer/med_data/console = A.holder
 	question = console.field_edit_questions[console.edit_field(arguments)]
 	default = islist(arguments) ? arguments["value"] : null
 

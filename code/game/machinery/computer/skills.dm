@@ -852,8 +852,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 
 /datum/prompt/choice/skills_record_edit/prepare(datum/act/A)
 	..()
-	var/datum/act/op/OA = A
-	var/obj/machinery/computer/skills/console = OA.holder
+	var/obj/machinery/computer/skills/console = A.holder
 	var/field = console.edit_field(arguments)
 	question = console.field_edit_questions[field]
 	choices = console.field_edit_choices[field]
@@ -864,8 +863,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 
 /datum/prompt/text/skills_record_edit/prepare(datum/act/A)
 	..()
-	var/datum/act/op/OA = A
-	var/obj/machinery/computer/skills/console = OA.holder
+	var/obj/machinery/computer/skills/console = A.holder
 	question = console.field_edit_questions[console.edit_field(arguments)]
 	default = islist(arguments) ? arguments["value"] : null
 

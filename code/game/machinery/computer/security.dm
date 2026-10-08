@@ -461,8 +461,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 
 /datum/prompt/choice/security_record_edit/prepare(datum/act/A)
 	..()
-	var/datum/act/op/OA = A
-	var/obj/machinery/computer/secure_data/console = OA.holder
+	var/obj/machinery/computer/secure_data/console = A.holder
 	var/field = console.edit_field(arguments)
 	question = console.field_edit_questions[field]
 	choices = console.field_edit_choices[field]
@@ -473,8 +472,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 
 /datum/prompt/text/security_record_edit/prepare(datum/act/A)
 	..()
-	var/datum/act/op/OA = A
-	var/obj/machinery/computer/secure_data/console = OA.holder
+	var/obj/machinery/computer/secure_data/console = A.holder
 	question = console.field_edit_questions[console.edit_field(arguments)]
 	default = islist(arguments) ? arguments["value"] : null
 
