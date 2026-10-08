@@ -10,6 +10,10 @@ use dm_resources::{
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeSet, io};
+pub struct ObservedValidation {
+    pub exact: bool,
+    pub now: u128,
+}
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ResourceManifest {
     version: u32,
@@ -110,7 +114,14 @@ impl ResourceManifest {
         now: u128,
         authenticate: impl FnOnce(ResourceIdentity) -> io::Result<bool>,
     ) -> io::Result<Option<ValidatedResources>> {
-        self.validate_observed(policy, demand, provider, exact, now, authenticate, None)
+        self.validate_observed(
+            policy,
+            demand,
+            provider,
+            ObservedValidation { exact, now },
+            authenticate,
+            None,
+        )
     }
     /// Timings include unsuccessful admission attempts. Filesystem proof capture
     /// precedes this call and must be measured by the caller separately.
@@ -119,11 +130,11 @@ impl ResourceManifest {
         policy: u128,
         demand: &ResourceDemand,
         provider: &impl SnapshotProvider,
-        exact: bool,
-        now: u128,
+        validation: ObservedValidation,
         authenticate: impl FnOnce(ResourceIdentity) -> io::Result<bool>,
         observer: Option<ResourceValidationObserver<'_>>,
     ) -> io::Result<Option<ValidatedResources>> {
+        let ObservedValidation { exact, now } = validation;
         if self.version != 1 || self.policy != policy {
             return Ok(None);
         }
@@ -319,8 +330,10 @@ mod tests {
                 3,
                 &demand,
                 &provider,
-                true,
-                20_000_000_000,
+                ObservedValidation {
+                    exact: true,
+                    now: 20_000_000_000
+                },
                 |value| Ok(value == archive),
                 Some(&observer)
             )

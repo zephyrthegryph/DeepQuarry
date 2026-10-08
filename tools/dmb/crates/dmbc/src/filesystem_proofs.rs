@@ -460,9 +460,9 @@ fn parse_batch(bytes: &[u8], volume: u32, proof: &mut DirectoryProof) -> io::Res
         let extent = 104usize
             .checked_add(length)
             .ok_or_else(|| invalid("directory name overflow"))?;
-        if length % 2 != 0
+        if !length.is_multiple_of(2)
             || extent > row.len()
-            || (next != 0 && (next % 8 != 0 || next < extent || next > row.len()))
+            || (next != 0 && (!next.is_multiple_of(8) || next < extent || next > row.len()))
         {
             return Err(invalid("invalid directory row extent"));
         }

@@ -201,9 +201,11 @@ impl EngineSnapshot {
                     owner,
                     kind,
                     &mut symbols,
-                    &mut members,
-                    &mut opaque,
-                    &mut procedure_layouts,
+                    ProcedureOutputs {
+                        members: &mut members,
+                        opaque: &mut opaque,
+                        layouts: &mut procedure_layouts,
+                    },
                 )?;
             }
         }
@@ -241,9 +243,11 @@ impl EngineSnapshot {
             root,
             MemberKind::Proc,
             &mut symbols,
-            &mut members,
-            &mut opaque,
-            &mut procedure_layouts,
+            ProcedureOutputs {
+                members: &mut members,
+                opaque: &mut opaque,
+                layouts: &mut procedure_layouts,
+            },
         )?;
         let hierarchy = EngineHierarchy {
             schema: identity,
@@ -501,16 +505,24 @@ impl EngineSnapshot {
             .map_err(EngineError::Inventory)
     }
 }
+struct ProcedureOutputs<'a> {
+    members: &'a mut Vec<IntrinsicMember>,
+    opaque: &'a mut Vec<OpaqueMember>,
+    layouts: &'a mut Vec<EngineProcedureLayout>,
+}
 fn extract_procs(
     dmb: &Dmb,
     list: u32,
     owner: SymbolId,
     kind: MemberKind,
     symbols: &mut SymbolTable,
-    members: &mut Vec<IntrinsicMember>,
-    opaque: &mut Vec<OpaqueMember>,
-    layouts: &mut Vec<EngineProcedureLayout>,
+    outputs: ProcedureOutputs<'_>,
 ) -> Result<(), EngineError> {
+    let ProcedureOutputs {
+        members,
+        opaque,
+        layouts,
+    } = outputs;
     if list == NONE {
         return Ok(());
     }

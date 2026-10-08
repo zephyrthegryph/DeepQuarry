@@ -81,6 +81,35 @@ structured events as if the two channels were disjoint or complete.
 
 ## Stage 0 acceptance correction
 
+### Saved per-test boundary evidence
+
+The preserved native `tests.log` starts `nuke_cinematic` at
+03:15:19.462 (line 57) and the next test at 03:15:23.023. Its raw
+`runtime-errors.log` lines 406417, 406423 and 406426 contain blank-origin
+`03:15:20 : list index out of bounds` records within that interval. Native
+`stderr.log` lines 4403–4406 report PASS. Both producers' preserved
+`unit_tests.json` record 134 runtimes for this test; BYOND's failure message
+contains two power_bridge line-154 errors. These facts establish temporal
+coexistence, not ownership or correspondence of the blank-origin records.
+
+The first native stderr bounds stack instead names `/proc/dq_lifecycle_time`
+(lines 6–20). Blank-origin bounds records are therefore not uniquely identified
+as power errors by their message. No matching native process_power stack was
+found in this inspected stderr channel.
+
+Eight tests in this particular preserved pair contain line-154 failure messages;
+the earlier review describes nine apparent failures. Those are different
+observations and must not be silently substituted. All eight native results pass
+but retain nonzero runtime counts. The frozen error handler keys cooldowns by
+`[E.file][E.line]` and applies silencing before `GLOB.current_test.Fail`; blank
+origins can share that key. This is a concrete reporting mechanism, not proof
+that a particular power event was silenced.
+
+The updated raw normalizer admits blank-origin records as unlocated events,
+instead of parse failures. Historical normalized artifacts remain unchanged;
+the old byte-for-byte replay claim applies only to the earlier parser. No new
+runtime or complete-log replay was performed for this update.
+
 ### Current source inspection after review cleanup
 
 The frozen `var/static/random_seed` storage mismatch is a definite historical
@@ -102,3 +131,23 @@ counts, and require source-aware emitted debug data before interpreting
 per-test exception parity. Closing this case requires controlled source-aware
 runtime evidence of receiver state and event operands; opcode presence alone
 does not close it.
+
+### Debug-emission audit
+
+Read-only comparison examined the original dumps at
+`D:/dmb-native-v2-phase0/power-bridge-native-code.log` and
+`D:/dmb-native-v2-phase0/power-bridge-byond-code.log`. The native
+`process_power` dump contains no `DbgFile` or `DbgLine` instructions; BYOND's
+contains both, including `DbgLine [154]`. Consequently the historical native
+dump cannot establish source-aware error attribution for this procedure. This
+is an omission, not evidence of a wrong file-table index in an emitted debug
+instruction.
+
+Current source emits `SourceFile` and `SourceLine` operands, resolves the file's
+semantic-path symbol through the same string assignment used in composition,
+and writes the absolute line as a literal. The composed header enables debug
+data. No current table-domain mismatch was found in that chain. This source
+inspection and the old dump establish a historical reporting difference;
+they do not demonstrate current runtime repair or identify the receiver/index
+responsible for each unlocated event. Gameplay opcode-shape comparisons that
+remove debug instructions must not be described as complete instruction parity.

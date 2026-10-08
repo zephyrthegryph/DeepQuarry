@@ -382,12 +382,9 @@ impl DriverEvaluator<'_> {
             },
             |expr| dm_codegen_byond::nameof_reference(expr).map(str::to_owned),
             |raw| {
-                let Some(path) = raw
+                let path = raw
                     .strip_prefix('\'')
-                    .and_then(|path| path.strip_suffix('\''))
-                else {
-                    return None;
-                };
+                    .and_then(|path| path.strip_suffix('\''))?;
                 if path.contains(['\0', '\'', '[', ']']) {
                     *failure.borrow_mut() =
                         Some("resource literal requires captured decoder".into());
@@ -986,6 +983,7 @@ fn prepare_source_abi_mode(
                     let policy = &policy;
                     let identities = &identities;
                     scope.spawn(move || {
+                        let _profile = dm_profile::stage("cold.abi_preparation");
                         ordinals
                             .iter()
                             .map(|ordinal| {

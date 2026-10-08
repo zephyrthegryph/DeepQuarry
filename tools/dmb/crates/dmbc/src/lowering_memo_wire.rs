@@ -537,8 +537,14 @@ fn rebind<R: Resolver>(
 /// All variants have been typed and checked before any current resolver reads.
 pub(crate) struct Candidates(Vec<Candidate>);
 enum Candidate {
-    Executable(Payload),
+    Executable(Box<Payload>),
     Failure(FailurePayload),
+}
+/// Current source occurrence used when rebasing a persisted procedure result.
+pub(crate) struct ProcedureReplayContext<'a> {
+    pub frontend: &'a dm_tree::frontend::ColdFrontend,
+    pub body: &'a dm_tree::frontend::BodyOccurrence,
+    pub parsed: Option<&'a dm_syntax::Item>,
 }
 #[derive(Default)]
 pub(crate) struct ProcedureLookup {
@@ -562,7 +568,7 @@ pub(crate) fn candidates(bytes: &[u8]) -> Result<Candidates, String> {
             }
             values.push(Candidate::Failure(value));
         } else {
-            values.push(Candidate::Executable(payload(bytes)?));
+            values.push(Candidate::Executable(Box::new(payload(bytes)?)));
         }
     }
     Ok(Candidates(values))
@@ -623,11 +629,9 @@ impl Candidates {
         self,
         key: &[u8],
         identity: ProcedureIdentity,
-        frontend: &dm_tree::frontend::ColdFrontend,
-        body: &dm_tree::frontend::BodyOccurrence,
+        context: ProcedureReplayContext<'_>,
         host: &R,
         prepared: &crate::procedure_policy::PreparedUnit,
-        parsed: Option<&dm_syntax::Item>,
     ) -> ProcedureLookup {
         let mut result = ProcedureLookup {
             miss: Some(crate::lowering_memo::MemoMissReason::FullKeyMismatch),
@@ -652,7 +656,14 @@ impl Candidates {
                     return result;
                 }
                 Candidate::Executable(v) => {
-                    match rebind(v, frontend, body, host, prepared, parsed) {
+                    match rebind(
+                        *v,
+                        context.frontend,
+                        context.body,
+                        host,
+                        prepared,
+                        context.parsed,
+                    ) {
                         Ok(unit) => {
                             result.unit = Some(unit);
                             return result;
@@ -705,7 +716,7 @@ mod executable_tests {
         .unwrap();
         let restored =
             decode_executable(&bytes, b"exact typed initializer", &Host(false), 0).unwrap();
-        let framed = dm_cache::encode_variants(&[bytes.clone()]).unwrap();
+        let framed = dm_cache::encode_variants(std::slice::from_ref(&bytes)).unwrap();
         assert_eq!(candidates(&framed).unwrap().0.len(), 1);
         let mut bad = bytes.clone();
         *bad.last_mut().unwrap() ^= 1;
@@ -888,7 +899,7 @@ mod executable_tests {
             &errors,
         )
         .unwrap();
-        let success_only = dm_cache::encode_variants(&[success.clone()]).unwrap();
+        let success_only = dm_cache::encode_variants(std::slice::from_ref(&success)).unwrap();
         let replay = candidates(&success_only)
             .unwrap()
             .anonymous(b"anonymous", &Host(false), 0);

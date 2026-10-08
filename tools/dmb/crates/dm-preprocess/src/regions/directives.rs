@@ -546,13 +546,12 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                                 .rev()
                                 .find(|record| {
                                     record.matches(
-                                        &context.0,
+                                        context.0,
                                         &context.1,
                                         end - cursor,
                                         &self.environment,
                                         &self.conditionals,
-                                        &self.plan.file_dirs,
-                                        &self.file_dir_definitions,
+                                        (&self.plan.file_dirs, &self.file_dir_definitions),
                                     )
                                 });
                         if let Some(record) = hit {

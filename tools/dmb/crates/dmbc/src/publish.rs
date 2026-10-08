@@ -678,7 +678,17 @@ mod tests {
             .join(pair.name())
             .join("deepquarry.dmb");
         let mut permissions = fs::metadata(&path).unwrap().permissions();
+        #[cfg(windows)]
+        #[expect(
+            clippy::permissions_set_readonly_false,
+            reason = "On Windows this clears only the read-only attribute; the Unix branch preserves mode bits."
+        )]
         permissions.set_readonly(false);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            permissions.set_mode(permissions.mode() | 0o200);
+        }
         fs::set_permissions(&path, permissions).unwrap();
         let mut file = OpenOptions::new().write(true).open(&path).unwrap();
         use std::io::Write;

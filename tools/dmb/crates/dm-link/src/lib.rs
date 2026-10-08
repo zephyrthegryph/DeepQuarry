@@ -716,11 +716,13 @@ mod tests {
     fn procedure_allocation_skips_native_absent_slot_in_both_order_modes() {
         let owner = SymbolId::of("/datum/owner");
         let name = SymbolId::of("repeated");
-        let mut inventory = LinkInventory::default();
-        inventory.spellings = vec![
-            (owner, Arc::from(b"/datum/owner".as_slice())),
-            (name, Arc::from(b"repeated".as_slice())),
-        ];
+        let mut inventory = LinkInventory {
+            spellings: vec![
+                (owner, Arc::from(b"/datum/owner".as_slice())),
+                (name, Arc::from(b"repeated".as_slice())),
+            ],
+            ..Default::default()
+        };
         let mut order = Vec::new();
         for occurrence in 0..65536 {
             let key = Key::Proc {
@@ -749,8 +751,10 @@ mod tests {
             }
             assert_eq!(tables.index(order[65535]), Some(0x10000));
         }
-        let mut invalid = LinkInventory::default();
-        invalid.spellings = inventory.spellings.clone();
+        let mut invalid = LinkInventory {
+            spellings: inventory.spellings.clone(),
+            ..Default::default()
+        };
         invalid.entries.push(inventory.entries[0].clone());
         invalid.fixed.push((order[0], 0xffff));
         assert_eq!(

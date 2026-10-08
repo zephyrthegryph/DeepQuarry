@@ -92,8 +92,7 @@ pub fn lower<R: Resolver>(
     resource_search_context: Option<u128>,
 ) -> Result<LoweredInitializers, InitializerLoweringError> {
     lower_plan(
-        frontend,
-        plan,
+        (frontend, plan),
         evaluator,
         host,
         resource_search_context,
@@ -130,8 +129,7 @@ pub fn lower_captured_observed_memo<R: Resolver>(
 ) -> Result<LoweredInitializers, InitializerLoweringError> {
     startup.validate_for(frontend)?;
     lower_plan(
-        frontend,
-        startup.plan(),
+        (frontend, startup.plan()),
         evaluator,
         host,
         resource_search_context,
@@ -160,8 +158,7 @@ pub fn lower_captured_observed<R: Resolver>(
 }
 
 fn lower_plan<R: Resolver>(
-    frontend: &ColdFrontend,
-    plan: &InitializerPlan,
+    captured: (&ColdFrontend, &InitializerPlan),
     evaluator: &dyn CapturedInitializerEvaluator,
     host: &R,
     resource_search_context: Option<u128>,
@@ -169,6 +166,7 @@ fn lower_plan<R: Resolver>(
     observer: Option<&InitializerObserver<'_>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
 ) -> Result<LoweredInitializers, InitializerLoweringError> {
+    let (frontend, plan) = captured;
     if frontend.snapshot.tree.identity() != plan.source.tree.identity()
         || frontend.snapshot.occurrences.tree_identity() != plan.source.occurrences.tree_identity()
         || plan.writes.len() != plan.origins.len()

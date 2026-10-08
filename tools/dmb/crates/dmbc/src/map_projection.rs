@@ -288,6 +288,40 @@ fn push_runs(
     Ok(())
 }
 
+/// Production classification from the same immutable resolver used by lowering.
+/// Exact parent ancestry, rather than lexical path prefixes, determines map kind.
+pub struct ResolverClassifier<'a, R: dm_ir::Resolver>(pub &'a R);
+impl<R: dm_ir::Resolver> InstanceClassifier for ResolverClassifier<'_, R> {
+    fn classify(&self, path: SymbolId) -> Result<InstanceKind, String> {
+        use dm_ir::{ResolveQuery, ResolvedMeaning};
+        match self.0.resolve(ResolveQuery::Type(path)) {
+            ResolvedMeaning::Symbol(actual) if actual == path => {}
+            ResolvedMeaning::Unsupported(_) => {
+                return Err("map type inventory is incomplete".into())
+            }
+            _ => return Err("map type is absent or inconsistent".into()),
+        }
+        let chain = match self.0.resolve(ResolveQuery::Ancestry(path)) {
+            ResolvedMeaning::Symbols(chain) => chain,
+            ResolvedMeaning::Unsupported(_) => return Err("map ancestry is not certified".into()),
+            _ => return Err("map ancestry is absent or inconsistent".into()),
+        };
+        for ancestor in std::iter::once(path).chain(chain) {
+            for (root, kind) in [
+                ("/turf", InstanceKind::Turf),
+                ("/area", InstanceKind::Area),
+                ("/obj", InstanceKind::Object),
+                ("/mob", InstanceKind::Mob),
+            ] {
+                if ancestor == SymbolId::of(root) {
+                    return Ok(kind);
+                }
+            }
+        }
+        Err("map atom has no turf/area/object/mob ancestor".into())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -416,38 +450,5 @@ mod tests {
             project(&[map], config, &Kinds),
             Err(Error::ObjectGapOverflow)
         ));
-    }
-}
-/// Production classification from the same immutable resolver used by lowering.
-/// Exact parent ancestry, rather than lexical path prefixes, determines map kind.
-pub struct ResolverClassifier<'a, R: dm_ir::Resolver>(pub &'a R);
-impl<R: dm_ir::Resolver> InstanceClassifier for ResolverClassifier<'_, R> {
-    fn classify(&self, path: SymbolId) -> Result<InstanceKind, String> {
-        use dm_ir::{ResolveQuery, ResolvedMeaning};
-        match self.0.resolve(ResolveQuery::Type(path)) {
-            ResolvedMeaning::Symbol(actual) if actual == path => {}
-            ResolvedMeaning::Unsupported(_) => {
-                return Err("map type inventory is incomplete".into())
-            }
-            _ => return Err("map type is absent or inconsistent".into()),
-        }
-        let chain = match self.0.resolve(ResolveQuery::Ancestry(path)) {
-            ResolvedMeaning::Symbols(chain) => chain,
-            ResolvedMeaning::Unsupported(_) => return Err("map ancestry is not certified".into()),
-            _ => return Err("map ancestry is absent or inconsistent".into()),
-        };
-        for ancestor in std::iter::once(path).chain(chain) {
-            for (root, kind) in [
-                ("/turf", InstanceKind::Turf),
-                ("/area", InstanceKind::Area),
-                ("/obj", InstanceKind::Object),
-                ("/mob", InstanceKind::Mob),
-            ] {
-                if ancestor == SymbolId::of(root) {
-                    return Ok(kind);
-                }
-            }
-        }
-        Err("map atom has no turf/area/object/mob ancestor".into())
     }
 }

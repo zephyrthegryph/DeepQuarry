@@ -19,6 +19,7 @@ REFERENCE = re.compile(r"\[0x[0-9a-f]+\]|0x[0-9a-f]+", re.I)
 PROC = re.compile(r"^proc name:\s*.*?\((/[^\n]+)\)\s*$", re.M)
 SOURCE = re.compile(r"^\s*source file:\s*(.*?),(\d+)\s*$", re.M)
 RAW = re.compile(r"^(?:\d{2}:\d{2}:\d{2}\s+)?(.*?\.dm):(\d+)\s+(.+)$")
+RAW_UNLOCATED = re.compile(r"^(?:\d{2}:\d{2}:\d{2}\s+)?:\s+(.+)$")
 
 
 def normalize(message):
@@ -77,11 +78,18 @@ def read_runtime(directory, raw_only=False):
                     coverage["non_test_owned"] += 1
             else:
                 match = RAW.match(line.rstrip())
-                if not match:
+                unlocated = RAW_UNLOCATED.match(line.rstrip()) if not match else None
+                if not match and not unlocated:
                     coverage["parse_errors"] += 1
                     continue
-                source, location, message = match.groups()
-                key = identity(message, source.replace("\\", "/"), int(location))
+                if match:
+                    source, location, message = match.groups()
+                    key = identity(message, source.replace("\\", "/"), int(location))
+                else:
+                    message = unlocated.group(1)
+                    # Blank origins are admitted as errors, never assigned to a
+                    # nearby test, a known procedure, or a located raw event.
+                    key = identity(message)
                 coverage["raw_events"] += 1
                 coverage["ownership_unavailable"] += 1
             counts[key] += 1

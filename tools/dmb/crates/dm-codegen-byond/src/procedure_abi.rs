@@ -873,7 +873,9 @@ mod tests {
             name: symbols.intern("value").unwrap(),
             declared_type: Some(symbols.intern("/datum").unwrap()),
             list_element_type: None,
-            flags: 2,
+            // Const (bit 2) is supported and checked by the lexical binding
+            // tests. Static (bit 1) still has no certified formal policy.
+            flags: 1,
             array: None,
             default: None,
             input_annotation: None,

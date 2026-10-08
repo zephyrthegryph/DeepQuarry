@@ -181,7 +181,7 @@ fn failed_base_falls_back_to_unsuperseded_originals_without_cross_segment_refere
     let root = Temp::new();
     let cache = Cache::open(&root.0, Limits::default()).unwrap();
     let original = record(1, 1);
-    cache.publish(&[original.clone()]).unwrap();
+    cache.publish(std::slice::from_ref(&original)).unwrap();
     // Preserve originals exactly as a Windows mapped-reader sharing failure does.
     let original_path = fs::read_dir(&root.0)
         .unwrap()
@@ -291,7 +291,7 @@ fn recently_published_unleased_segments_survive_lease_compaction() {
     let root = Temp::new();
     let cache = Cache::open(&root.0, Limits::default()).unwrap();
     let input = record(9, 1);
-    cache.publish(&[input.clone()]).unwrap();
+    cache.publish(std::slice::from_ref(&input)).unwrap();
     let result = cache
         .compact_leased(
             SystemTime::now(),
@@ -336,7 +336,7 @@ fn oversized_singleton_population_and_compaction_preserve_the_record() {
     assert!(cache.snapshot().unwrap().get(entry.key, check).is_some());
     // Publication through a captured writer does not mutate this reader snapshot.
     let extra = record(9002, 1);
-    snapshot.publish(&[extra.clone()]).unwrap();
+    snapshot.publish(std::slice::from_ref(&extra)).unwrap();
     assert!(snapshot.get(extra.key, validate).is_none());
     assert!(cache.snapshot().unwrap().get(extra.key, validate).is_some());
 }

@@ -397,11 +397,11 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(fields.len(), 4);
         assert_eq!(fields[0], (true, true, None));
-        assert_eq!(fields[1].0, true);
-        assert_eq!(fields[1].1, true);
-        assert_eq!(fields[2].0, true);
-        assert_eq!(fields[2].1, true);
-        assert_eq!(fields[3].0, false);
+        assert!(fields[1].0);
+        assert!(fields[1].1);
+        assert!(fields[2].0);
+        assert!(fields[2].1);
+        assert!(!fields[3].0);
         let procedures = ledger
             .events
             .iter()

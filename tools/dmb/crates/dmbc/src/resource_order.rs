@@ -488,10 +488,11 @@ fn indexed_event_literals<'a>(
 /// Certified single-DMF imports precede code, with skin assets before the raw
 /// DMF. Map literals follow code in captured template/atom/assignment order.
 /// Multiple skin import phasing remains unsupported; selection itself is known.
+pub type NonTextImports = (Vec<Arc<str>>, Vec<Arc<str>>);
 pub fn nontext_imports(
     nontext: &crate::non_text::CapturedNonText,
     captured: &dm_resources::capture::CapturedResources,
-) -> Result<(Vec<Arc<str>>, Vec<Arc<str>>), String> {
+) -> Result<NonTextImports, String> {
     let aliases: Vec<&str> = captured
         .resources
         .inputs
@@ -503,7 +504,7 @@ pub fn nontext_imports(
 pub fn metadata_nontext_imports(
     nontext: &crate::non_text::CapturedNonText,
     catalog: &dm_resources::catalog::ResourceCatalog,
-) -> Result<(Vec<Arc<str>>, Vec<Arc<str>>), String> {
+) -> Result<NonTextImports, String> {
     let aliases: Vec<&str> = catalog
         .record()
         .aliases
@@ -516,7 +517,7 @@ fn import_order(
     nontext: &crate::non_text::CapturedNonText,
     aliases: &[&str],
     lookups: &[dm_resources::native_resolver::CapturedResourceLookup],
-) -> Result<(Vec<Arc<str>>, Vec<Arc<str>>), String> {
+) -> Result<NonTextImports, String> {
     use dm_resources::native_resolver::CapturedResourceOutcome;
     if nontext.skin.model.interfaces.len() > 1 {
         return Err("multiple DMF resource import phases require a distinguishing contract".into());

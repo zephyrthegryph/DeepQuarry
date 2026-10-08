@@ -218,8 +218,8 @@ impl<R: Resolver> NativeResourceResolver<R> {
     pub fn catalog(&self) -> crate::catalog::ResourceCatalog {
         let mut contexts = self
             .contexts
-            .iter()
-            .map(|(_, bytes)| bytes.to_vec())
+            .values()
+            .map(|bytes| bytes.to_vec())
             .collect::<Vec<_>>();
         contexts.sort();
         let mut lookups = self

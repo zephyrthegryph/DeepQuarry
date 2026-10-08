@@ -609,8 +609,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                     memo_policy,
                     demand,
                     &proofs,
-                    exact_inputs,
-                    now_ns(),
+                    dmbc::resource_manifest::ObservedValidation {
+                        exact: exact_inputs,
+                        now: now_ns(),
+                    },
                     |identity| {
                         Ok(store.verify(*prior_pair, exact_inputs).is_ok_and(|pair| {
                             pair.rsc_bytes == identity.bytes && pair.rsc_hash == identity.hash

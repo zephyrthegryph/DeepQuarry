@@ -1,7 +1,9 @@
 //! Versioned compact grammar-descriptor payloads. No file IDs or executable ASTs.
 use dm_syntax::{Diagnostic, DiagnosticKind, Item, ItemKind, Span};
 use serde::{Deserialize, Serialize};
-pub(super) const VERSION: u32 = 3;
+// Embedded declaration-fact schema and semantics belong to this identity:
+// changing them must invalidate both independent and region-enriched fragments.
+pub(super) const VERSION: u32 = 4;
 #[derive(Serialize, Deserialize)]
 struct Node {
     kind: u8,
@@ -141,10 +143,8 @@ pub(super) fn encode_with_facts(
         },
     )
 }
-pub(super) fn decode_with_facts(
-    bytes: &[u8],
-    source: &str,
-) -> Option<(Vec<Item>, Vec<Diagnostic>, Option<Vec<u8>>)> {
+type DecodedFacts = (Vec<Item>, Vec<Diagnostic>, Option<Vec<u8>>);
+pub(super) fn decode_with_facts(bytes: &[u8], source: &str) -> Option<DecodedFacts> {
     let payload: Payload = dm_wire::decode(VERSION, bytes, bytes.len()).ok()?;
     if payload.version != VERSION {
         return None;
@@ -196,5 +196,25 @@ mod tests {
         assert_eq!(decoded, items);
         assert_eq!(diagnostics, errors);
         assert_eq!(facts, Some(vec![1, 2, 3]));
+    }
+    #[test]
+    fn previous_fact_schema_cannot_reuse_parser_fragment_identity() {
+        const PREVIOUS_VERSION: u32 = 3;
+        let source = "/datum/probe\n    var/value = 1\n";
+        let ast = dm_syntax::parse_declaration_skeleton(source);
+        let items = super::super::compact_declarations(ast.items, 0);
+        let current = encode_with_facts(&items, &[], 0, None).unwrap();
+        let mut previous: Payload = dm_wire::decode(VERSION, &current, current.len()).unwrap();
+        previous.version = PREVIOUS_VERSION;
+        let old_wire = dm_wire::encode(PREVIOUS_VERSION, &previous).unwrap();
+        assert!(decode_with_facts(&old_wire, source).is_none());
+        // Even a relabelled outer envelope cannot admit an old payload version.
+        let relabelled = dm_wire::encode(VERSION, &previous).unwrap();
+        assert!(decode_with_facts(&relabelled, source).is_none());
+        assert!(decode_with_facts(&current, source).is_some());
+        assert_ne!(
+            dm_preprocess::regions::FragmentRecord::lookup_key(PREVIOUS_VERSION, source),
+            dm_preprocess::regions::FragmentRecord::lookup_key(VERSION, source),
+        );
     }
 }

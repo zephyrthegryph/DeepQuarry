@@ -2,6 +2,8 @@
 """Revision-5 benchmark driver. Runs only its compiler children, never a world."""
 import argparse
 import csv
+import concurrent.futures
+from collections import deque
 import io
 import hashlib
 import json
@@ -26,9 +28,11 @@ STAGE_BUDGETS = {"input": (0.5, 1.0), "frontend": (3.0, 12.0),
 
 def sha(path):
     digest = hashlib.sha256()
+    buffer = bytearray(1024 * 1024)
+    view = memoryview(buffer)
     with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
+        while size := stream.readinto(buffer):
+            digest.update(view[:size])
     return digest.hexdigest()
 
 
@@ -40,9 +44,30 @@ def source_path(root, relative):
 
 
 def check_snapshot(root, expected):
-    for relative, digest in expected.items():
+    # Resolve and hash every input on every check. Only two files are active,
+    # with one reusable 1 MiB read buffer each; no stamp-based trust shortcut.
+    def check(item):
+        relative, digest = item
         if sha(source_path(root, relative)) != digest.lower():
             raise ValueError("frozen input changed: " + relative)
+
+    items = iter(expected.items())
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        pending = deque()
+        for _ in range(8):
+            item = next(items, None)
+            if item is not None:
+                pending.append(pool.submit(check, item))
+        try:
+            while pending:
+                # Consume in captured order so the earliest mismatch is stable.
+                pending.popleft().result()
+                item = next(items, None)
+                if item is not None:
+                    pending.append(pool.submit(check, item))
+        finally:
+            for future in pending:
+                future.cancel()
 
 
 def normalized_diagnostics(path, policy):
@@ -58,14 +83,25 @@ def normalized_diagnostics(path, policy):
     return [line for line in lines if not measurement(line)]
 
 
+def normal_windows_path(path):
+    """Compare canonical Windows drive/UNC spellings without the API prefix."""
+    value = str(path)
+    if os.name == "nt":
+        if value.startswith("\\\\?\\UNC\\"):
+            value = "\\\\" + value[8:]
+        elif value.startswith("\\\\?\\"):
+            value = value[4:]
+    return Path(value).resolve()
+
+
 def compare_measured_diagnostics(measured_log, oracle_log, root, policy):
     prefix = "native verification passed: output and diagnostics match; evidence "
     lines = oracle_log.read_text(encoding="utf-8").splitlines()
     evidence = [line[len(prefix):] for line in lines if line.startswith(prefix)]
     if len(evidence) != 1:
         raise ValueError("oracle must report exactly one successful evidence directory")
-    directory = Path(evidence[0]).resolve()
-    if not directory.is_relative_to(root):
+    directory = normal_windows_path(evidence[0])
+    if not directory.is_relative_to(normal_windows_path(root)):
         raise ValueError("oracle evidence escaped private project")
     measured = normalized_diagnostics(measured_log, policy)
     result = {"measured_normalized_sha256": hashlib.sha256(
@@ -187,10 +223,54 @@ def cpu_quality(row):
     if not isinstance(calibration, dict):
         calibration = {}
     method = calibration.get("method")
-    if method == "QueryThreadCycleTime":
+    thread_calibrations = row.get("thread_calibrations")
+    if thread_calibrations is not None:
+        if row.get("cpu_conversion_complete") is not True:
+            errors.append("per-thread CPU conversion is incomplete")
+        if not isinstance(thread_calibrations, list) or not thread_calibrations:
+            errors.append("missing/invalid per-thread calibrations")
+            thread_calibrations = []
+        thread_ids = []
+        for thread in thread_calibrations:
+            if not isinstance(thread, dict):
+                errors.append("invalid per-thread calibration record")
+                continue
+            thread_ids.append(thread.get("thread"))
+            if method == "QueryThreadCycleTime":
+                if thread.get("status") != "valid_observed_envelope":
+                    errors.append("unavailable per-thread cycle calibration")
+                if not metric(thread.get("cycles_per_cpu_second"), True):
+                    errors.append("invalid per-thread cycle rate")
+                if not metric(thread.get("observed_cpu_s")) or thread["observed_cpu_s"] < 1.0:
+                    errors.append("per-thread calibration has less than 1 s thread CPU")
+                if type(thread.get("checked_subintervals")) is not int or thread["checked_subintervals"] < 2:
+                    errors.append("per-thread calibration lacks two stability windows")
+                uncertainty = thread.get("envelope_relative_quantization_uncertainty")
+                if not metric(uncertainty) or uncertainty > CPU_CROSSCHECK_TOLERANCE:
+                    errors.append("per-thread envelope uncertainty exceeds 5%")
+                for name in ("max_relative_rate_deviation", "max_relative_quantization_uncertainty"):
+                    if not metric(thread.get(name)):
+                        errors.append("missing per-thread stability evidence " + name)
+                drift, uncertainty = (thread.get("max_relative_rate_deviation"),
+                                      thread.get("max_relative_quantization_uncertainty"))
+                if (thread.get("status") == "valid_observed_envelope" and metric(drift)
+                        and metric(uncertainty) and drift > CPU_CROSSCHECK_TOLERANCE + uncertainty):
+                    errors.append("per-thread rate is unstable despite valid status")
+            elif method == "CLOCK_THREAD_CPUTIME_ID":
+                if thread.get("status") != "native_nanoseconds":
+                    errors.append("unavailable native thread CPU clock")
+        if any(not isinstance(t, str) or not t for t in thread_ids):
+            errors.append("invalid/duplicate calibration thread identity")
+        elif len(set(thread_ids)) != len(thread_ids):
+            errors.append("invalid/duplicate calibration thread identity")
+        if method not in ("QueryThreadCycleTime", "CLOCK_THREAD_CPUTIME_ID"):
+            errors.append("unknown/missing thread CPU clock calibration")
+    elif method == "QueryThreadCycleTime":
         for name in ("cycles_per_cpu_second", "calibration_cpu_s", "calibration_wall_s"):
             if not metric(calibration.get(name), positive=True):
                 errors.append("invalid Windows calibration " + name)
+        if metric(calibration.get("calibration_cpu_s")) and calibration["calibration_cpu_s"] < 0.5:
+            errors.append("Windows calibration has less than 500 ms thread CPU")
     elif method != "CLOCK_THREAD_CPUTIME_ID":
         errors.append("unknown/missing thread CPU clock calibration")
     if not metric(calibration.get("calibration_wall_s")):
@@ -495,6 +575,11 @@ def main():
                            "total_cpu_s": report.get("total_cpu_s"), "covered_thread_cpu_s": report.get("covered_thread_cpu_s"),
                            "critical_path_stages": report.get("critical_path_stages"), "calibration": report.get("calibration"),
                            "cpu_crosscheck_ratio": report.get("cpu_crosscheck_ratio"), "coverage_notes": report.get("coverage_notes"),
+                           "cpu_precision_scope": report.get("cpu_precision_scope"),
+                           "coarse_covered_thread_cpu_s": report.get("coarse_covered_thread_cpu_s"),
+                           "coarse_cpu_crosscheck_ratio": report.get("coarse_cpu_crosscheck_ratio"),
+                           "thread_calibrations": report.get("thread_calibrations"),
+                           "cpu_conversion_complete": report.get("cpu_conversion_complete"),
                            "io_coverage": report.get("io_coverage"), "process_io_scope": "whole_measured_process",
                            "attributed_io": [{"stage": stage.get("name"), "read_bytes": stage.get("attributed_read_bytes"),
                                               "write_bytes": stage.get("attributed_write_bytes"), "blocked_s": stage.get("io_blocked_s"),

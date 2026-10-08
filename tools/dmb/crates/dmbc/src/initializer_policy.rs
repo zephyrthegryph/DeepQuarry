@@ -846,7 +846,7 @@ mod tests {
             declared_array: None,
             declaration_flags: None,
         };
-        let classified = classify(&[write.clone()], &symbols, &Mutable).unwrap();
+        let classified = classify(std::slice::from_ref(&write), &symbols, &Mutable).unwrap();
         assert_eq!(classified.writes[0].write, write);
         assert_eq!(classified.writes[0].write.declaration_flags, None);
         assert_eq!(classified.groups[0].receiver, Some(child));
@@ -988,7 +988,7 @@ mod tests {
         );
         let result = classify(
             &[runtime.clone(), literal.clone(), runtime],
-            &mut symbols,
+            &symbols,
             &Evaluator,
         )
         .unwrap();
@@ -1013,7 +1013,7 @@ mod tests {
         };
         let result = classify(
             &[instance(result.writes[0].write.clone()), instance(literal)],
-            &mut symbols,
+            &symbols,
             &Evaluator,
         )
         .unwrap();
@@ -1041,7 +1041,7 @@ mod tests {
             InitializerValue::ArrayAllocation(Arc::clone(&array)),
         );
         item.declared_array = Some(array);
-        let result = classify(&[item], &mut symbols, &Evaluator).unwrap();
+        let result = classify(&[item], &symbols, &Evaluator).unwrap();
         assert_eq!(result.writes[0].phase, Some(Phase::LiteralAllocation));
         assert_eq!(
             result.writes[0].default,
@@ -1057,7 +1057,7 @@ mod tests {
             InitializerValue::Expression(expression("run()", &mut symbols).unwrap()),
         );
         item.declaration_flags = Some(2);
-        assert!(classify(&[item], &mut symbols, &Evaluator)
+        assert!(classify(&[item], &symbols, &Evaluator)
             .unwrap_err()
             .contains("const"));
     }

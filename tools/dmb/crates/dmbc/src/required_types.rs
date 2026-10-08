@@ -114,10 +114,7 @@ pub fn admit(
     fn values(value: &SemanticValue, requests: &mut Vec<SymbolId>) {
         match value {
             SemanticValue::Type(path)
-                if dm_codegen_byond::NativePrimitiveType::from_symbol(*path).is_some() =>
-            {
-                ()
-            }
+                if dm_codegen_byond::NativePrimitiveType::from_symbol(*path).is_some() => {}
             SemanticValue::Type(path) => requests.push(*path),
             SemanticValue::Procedure(identity) => requests.push(identity.owner),
             SemanticValue::ModifiedInstance(instance) => requests.push(instance.runtime_type()),

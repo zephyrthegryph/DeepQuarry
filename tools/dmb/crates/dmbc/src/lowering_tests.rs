@@ -170,7 +170,51 @@ fn procedure_memo_reuses_resident_and_disk_and_rebases_shifted_origins() {
             .counts
             .pending_dropped
             .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    // Queue pressure flushes records instead of skipping memo population.
+    assert_eq!(
+        bounded
+            .counts
+            .published_records
+            .load(std::sync::atomic::Ordering::Relaxed),
         2
+    );
+    assert_eq!(
+        bounded
+            .counts
+            .publication_failed
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    let flushed =
+        crate::lowering_memo::ProcedureMemo::with_disk(11, bounded_cache.snapshot().unwrap());
+    let replayed = lower_frontend_with_memo(
+        &frontend,
+        &host,
+        &NoParameters,
+        LoweringConfig::default(),
+        &startup,
+        &flushed,
+    );
+    assert!(
+        replayed.diagnostics.is_empty(),
+        "{:?}",
+        replayed.diagnostics
+    );
+    assert_eq!(
+        flushed
+            .counts
+            .disk_hits
+            .load(std::sync::atomic::Ordering::Relaxed),
+        2
+    );
+    assert_eq!(
+        flushed
+            .counts
+            .recomputed
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
     );
     assert_eq!(
         bounded
@@ -502,11 +546,19 @@ fn startup_admission_filters_declarations_and_preserves_distinct_static_slots() 
 #[test]
 fn global_units_use_global_storage_against_the_real_tree() {
     let frontend = frontend("var/counter = 1\n/proc/read()\n    return counter\n");
-    let batch = lower_frontend(
+    // The real pipeline overlays the complete captured procedure-static roster
+    // even when this source has no statics. The bare tree deliberately cannot
+    // certify absence in the ProcedureStatic query domain.
+    let startup = crate::startup::capture(&frontend).unwrap();
+    let host = startup
+        .resolver(&frontend, frontend.snapshot.tree.as_ref())
+        .unwrap();
+    let batch = lower_frontend_with_statics(
         &frontend,
-        frontend.snapshot.tree.as_ref(),
+        &host,
         &NoParameters,
         LoweringConfig::default(),
+        &startup,
     );
     assert!(batch.diagnostics.is_empty(), "{:?}", batch.diagnostics);
     let body = frontend.body(&frontend.bodies[0]).unwrap();
@@ -515,8 +567,31 @@ fn global_units_use_global_storage_against_the_real_tree() {
         ..Default::default()
     };
     bindings.globals.insert("counter".into());
-    let reference =
+    let mut reference =
         dm_codegen_byond::compile_simple_proc_with_bindings(&body.children, &bindings).unwrap();
+    // String-only legacy bindings name globals by spelling. Resolver lowering
+    // names the exact root slot (var/counter), as certified by its sidecar.
+    // Canonicalize only that known reference operand before comparing code.
+    for item in &mut reference.code.items {
+        if let dm_codegen_byond::Item::Instruction(instruction) = item {
+            for operand in &mut instruction.operands {
+                if let dm_codegen_byond::Word::Variable(dm_codegen_byond::VariableWord::Global(
+                    name,
+                )) = operand
+                {
+                    assert_eq!(name.as_str(), "counter");
+                    *name = "var/counter".into();
+                }
+            }
+        }
+    }
+    assert!(batch.units[0]
+        .code
+        .slots
+        .iter()
+        .any(|(symbol, slot)| symbol.key == "var/counter"
+            && slot.owner == dm_ir::SymbolId::of("/")
+            && slot.name == dm_ir::SymbolId::of("counter")));
     let mut without_debug = batch.units[0].code.procedure.clone();
     without_debug.code.items.retain(|item| !matches!(item, dm_codegen_byond::Item::Instruction(instruction) if matches!(instruction.opcode,0x84|0x85)));
     assert_eq!(without_debug, reference);

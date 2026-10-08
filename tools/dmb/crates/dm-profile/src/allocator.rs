@@ -14,10 +14,29 @@ fn allocated(size: usize) {
     let live = LIVE
         .fetch_add(size as u64, Ordering::Relaxed)
         .saturating_add(size as u64);
+    allocation_event(size, live);
+}
+fn allocation_event(size: usize, live: u64) {
     PEAK.fetch_max(live, Ordering::Relaxed);
     let _ = ALLOCATIONS.try_with(|value| value.set(value.get().saturating_add(1)));
     let _ = BYTES.try_with(|value| value.set(value.get().saturating_add(size as u64)));
     let _ = LOCAL_PEAK.try_with(|value| value.set(value.get().max(live)));
+}
+/// A successful realloc replaces one live allocation. Applying the size delta
+/// in one atomic operation avoids exposing an artificial deallocated interval
+/// to concurrent allocations and peak observations.
+fn replace_live(counter: &AtomicU64, old_size: usize, new_size: usize) -> u64 {
+    if new_size >= old_size {
+        let growth = (new_size - old_size) as u64;
+        counter
+            .fetch_add(growth, Ordering::Relaxed)
+            .saturating_add(growth)
+    } else {
+        let shrink = (old_size - new_size) as u64;
+        counter
+            .fetch_sub(shrink, Ordering::Relaxed)
+            .saturating_sub(shrink)
+    }
 }
 // Delegates all allocation behavior unchanged to System; counters never allocate.
 unsafe impl GlobalAlloc for CountingAllocator {
@@ -42,8 +61,8 @@ unsafe impl GlobalAlloc for CountingAllocator {
     unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, size: usize) -> *mut u8 {
         let result = unsafe { System.realloc(pointer, layout, size) };
         if !result.is_null() {
-            LIVE.fetch_sub(layout.size() as u64, Ordering::Relaxed);
-            allocated(size);
+            let live = replace_live(&LIVE, layout.size(), size);
+            allocation_event(size, live);
         }
         result
     }
@@ -67,4 +86,43 @@ pub(crate) fn restore_peak(previous: u64) -> u64 {
 }
 pub(crate) fn peak() -> u64 {
     PEAK.load(Ordering::Relaxed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{atomic::AtomicBool, Arc, Barrier};
+
+    #[test]
+    fn concurrent_realloc_observers_never_see_an_artificial_freed_allocation() {
+        let live = Arc::new(AtomicU64::new(100));
+        let start = Arc::new(Barrier::new(2));
+        let done = Arc::new(AtomicBool::new(false));
+        let observer = {
+            let live = Arc::clone(&live);
+            let start = Arc::clone(&start);
+            let done = Arc::clone(&done);
+            std::thread::spawn(move || {
+                start.wait();
+                loop {
+                    let observed = live.load(Ordering::Relaxed);
+                    assert!(
+                        observed == 100 || observed == 200,
+                        "unexpected live bytes: {observed}"
+                    );
+                    if done.load(Ordering::Acquire) {
+                        break;
+                    }
+                }
+            })
+        };
+        start.wait();
+        for _ in 0..10_000 {
+            replace_live(&live, 100, 200);
+            replace_live(&live, 200, 100);
+        }
+        done.store(true, Ordering::Release);
+        observer.join().unwrap();
+        assert_eq!(live.load(Ordering::Relaxed), 100);
+    }
 }

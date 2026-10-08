@@ -324,14 +324,14 @@ impl<R: Resolver> EngineResolverHost<R> {
         for spelling in ["TRUE", "FALSE"] {
             let name = SymbolId::of(spelling);
             let value = pinned_constants.values.get(&name);
-            if engine
+            let physically_const = engine
                 .declaration_modifiers(SymbolId::of("/"), name)
                 .map_err(|error| format!("pinned constant metadata {error:?}"))?
-                .is_some_and(|flags| flags & 2 != 0)
-                && value.is_some()
-                && self.constants.values.get(&name) == value
-            {
-                positive_constants.insert(name, value.unwrap().clone());
+                .is_some_and(|flags| flags & 2 != 0);
+            if let Some(value) = value.filter(|value| {
+                physically_const && self.constants.values.get(&name) == Some(*value)
+            }) {
+                positive_constants.insert(name, value.clone());
             }
         }
         let mut bytes =
@@ -903,16 +903,13 @@ mod tests {
             after.configuration_identity()
         );
         let type_query = Q::RuntimeType(SymbolId::of("/datum/unrelated"));
-        assert_ne!(
-            before.resolve(type_query.clone()),
-            after.resolve(type_query)
-        );
+        assert_ne!(before.resolve(type_query), after.resolve(type_query));
         let variable_query = Q::Var {
             owner: SymbolId::of("/datum/unrelated"),
             name: SymbolId::of("fresh"),
         };
         assert_ne!(
-            before.resolve(variable_query.clone()),
+            before.resolve(variable_query),
             after.resolve(variable_query)
         );
         let proc_query = Q::Proc {
@@ -920,10 +917,7 @@ mod tests {
             name: SymbolId::of("new_function"),
             verb: false,
         };
-        assert_ne!(
-            before.resolve(proc_query.clone()),
-            after.resolve(proc_query)
-        );
+        assert_ne!(before.resolve(proc_query), after.resolve(proc_query));
     }
     #[test]
     fn pinned_authored_variable_absence_preserves_global_and_field_shadow_domains() {
@@ -985,10 +979,15 @@ mod tests {
         for name in [shadow, SymbolId::of("ambiguous_counter")] {
             assert_eq!(host.resolve(Q::UniqueStaticVar(name)), M::Missing);
         }
-        for name in ["never_captured_variable", "tag"] {
-            let query = Q::UniqueStaticVar(SymbolId::of(name));
-            assert_eq!(host.resolve(query), M::Unsupported(query));
-        }
+        let unknown = Q::UniqueStaticVar(SymbolId::of("never_captured_variable"));
+        assert_eq!(host.resolve(unknown), M::Unsupported(unknown));
+        // The pinned engine positively declares tag as an instance field.
+        // This is an authoritative counterexample to shared-slot uniqueness,
+        // even though the rest of the intrinsic inventory remains partial.
+        assert_eq!(
+            host.resolve(Q::UniqueStaticVar(SymbolId::of("tag"))),
+            M::Missing
+        );
         for (spelling, value) in [("TRUE", 1.0_f32), ("FALSE", 0.0_f32)] {
             let name = SymbolId::of(spelling);
             assert_eq!(
@@ -1004,10 +1003,7 @@ mod tests {
             owner: SymbolId::of("/datum/shadow"),
             name: SymbolId::of("FALSE"),
         };
-        assert_eq!(
-            host.resolve(shadow_query.clone()),
-            M::Unsupported(shadow_query)
-        );
+        assert_eq!(host.resolve(shadow_query), M::Unsupported(shadow_query));
         assert!(
             matches!(host.resolve(Q::GlobalVar(global)),M::Member{owner:actual,..} if actual==root)
         );
@@ -1046,13 +1042,11 @@ mod tests {
             host.resolve(Q::PredefinedConstant(SymbolId::of("NORTH"))),
             M::Value(_)
         ));
-        for name in ["never_captured_variable"] {
-            let query = Q::Var {
-                owner,
-                name: SymbolId::of(name),
-            };
-            assert_eq!(host.resolve(query), M::Unsupported(query));
-        }
+        let query = Q::Var {
+            owner,
+            name: SymbolId::of("never_captured_variable"),
+        };
+        assert_eq!(host.resolve(query), M::Unsupported(query));
         let unknown_owner = Q::Var {
             owner: SymbolId::of("/never_captured_owner"),
             name: global,
@@ -1109,7 +1103,13 @@ mod tests {
                     _ => Vec::new(),
                 })
                 .collect();
-            assert_eq!(globals, vec![expected_text]);
+            // Resolver globals use canonical root-slot symbols, not the
+            // source spelling used by the legacy string-only encoder.
+            assert_eq!(globals, vec![format!("var/{expected_text}")]);
+            assert!(code
+                .slots
+                .values()
+                .any(|slot| slot.owner == root && slot.name == expected));
         }
     }
     #[test]

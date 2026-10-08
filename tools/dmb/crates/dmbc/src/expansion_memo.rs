@@ -149,7 +149,8 @@ impl DiskExpansionMemo {
             .1
             .get(&key)
             .map(|record| Arc::clone(&record.payload));
-        let load = |bytes: &[u8]| -> Result<Vec<(Vec<u8>, Arc<T>)>, String> {
+        type LoadedVariants<T> = Vec<(Vec<u8>, Arc<T>)>;
+        let load = |bytes: &[u8]| -> Result<LoadedVariants<T>, String> {
             dm_cache::decode_variants(bytes)?
                 .into_iter()
                 .map(|bytes| {

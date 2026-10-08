@@ -5,5 +5,11 @@
   "utc": "2026-10-07T02:15:45.6691652Z",
   "arguments": [
     "probe.dme"
-  ]
+  ],
+  "embedded_test_fixture": {
+    "path": "probe.rsc",
+    "bytes": 303,
+    "sha256": "151c9a4ec0d2805cd85423b59f5b92910190b68b528e7fe3a91e709a3adf7472",
+    "payloads_match_preserved_comparison": true
+  }
 }

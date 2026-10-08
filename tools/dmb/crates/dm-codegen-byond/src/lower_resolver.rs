@@ -89,60 +89,111 @@ pub(crate) struct ProjectResolver<'a> {
     pub resource_search_context: Option<u128>,
 }
 impl ProjectResolver<'_> {
-    pub fn modified_instance(&self, path: &str, lexical_owner: &str,
-        fields: &[(String, dm_syntax::Expr)], origin: Option<u32>) -> Result<String, LowerError> {
+    pub fn modified_instance(
+        &self,
+        path: &str,
+        lexical_owner: &str,
+        fields: &[(String, dm_syntax::Expr)],
+        origin: Option<u32>,
+    ) -> Result<String, LowerError> {
         let query = Q::RuntimeType(SymbolId::of(path));
         let M::Symbol(runtime_type) = self.answer(query)? else {
-            return Err(self.error(query, "modified instance needs a captured ordinary runtime type"));
+            return Err(self.error(
+                query,
+                "modified instance needs a captured ordinary runtime type",
+            ));
         };
         if runtime_type != SymbolId::of(path) {
             return Err(self.error(query, "modified instance base is not an ordinary type"));
         }
-        let descriptor = dm_ir::ModifiedInstance::capture_with_resources(runtime_type,
-            SymbolId::of(lexical_owner), self.resource_search_context, fields,
-            |raw| crate::decode_constant_string_literal(raw).ok().flatten(), None,
+        let descriptor = dm_ir::ModifiedInstance::capture_with_resources(
+            runtime_type,
+            SymbolId::of(lexical_owner),
+            self.resource_search_context,
+            fields,
+            |raw| crate::decode_constant_string_literal(raw).ok().flatten(),
+            None,
             |path| {
                 let query = match self.resource_search_context {
-                    Some(search_context) => Q::ResourceIn { path: SymbolId::of(path), search_context },
+                    Some(search_context) => Q::ResourceIn {
+                        path: SymbolId::of(path),
+                        search_context,
+                    },
                     None => Q::Resource(SymbolId::of(path)),
                 };
                 match self.answer(query).map_err(|error| error.reason)? {
-                    M::Resource { path, content } => Ok(dm_ir::CapturedModifiedResource { path, content }),
+                    M::Resource { path, content } => {
+                        Ok(dm_ir::CapturedModifiedResource { path, content })
+                    }
                     _ => Err("modified resource needs a positive captured payload identity".into()),
                 }
-            })
-            .map_err(|reason|self.error(query, &reason))?;
+            },
+        )
+        .map_err(|reason| self.error(query, &reason))?;
         let alias = descriptor.alias();
         let symbol = crate::Symbol::new(crate::Table::Instance, &alias);
         let mut descriptors = self.modified_instances.borrow_mut();
-        if descriptors.get(&symbol).is_some_and(|old| old.descriptor.canonical_bytes() != descriptor.canonical_bytes()) {
+        if descriptors
+            .get(&symbol)
+            .is_some_and(|old| old.descriptor.canonical_bytes() != descriptor.canonical_bytes())
+        {
             return Err(self.error(query, "modified instance identity collision"));
         }
-        descriptors.entry(symbol).or_insert(CapturedModifiedInstance {
-            descriptor, field_origins: vec![origin; fields.len()], origin,
-        });
+        descriptors
+            .entry(symbol)
+            .or_insert(CapturedModifiedInstance {
+                descriptor,
+                field_origins: vec![origin; fields.len()],
+                origin,
+            });
         Ok(alias)
     }
 
-    pub fn procedure_value_key(&self, identity: dm_ir::ProcedureIdentity) -> Result<String, LowerError> {
-        let key = format!("procedure-value:{:016x}:{:016x}:{}:{}", identity.owner.bits(),
-            identity.name.bits(), u8::from(identity.verb), identity.occurrence);
+    pub fn procedure_value_key(
+        &self,
+        identity: dm_ir::ProcedureIdentity,
+    ) -> Result<String, LowerError> {
+        let key = format!(
+            "procedure-value:{:016x}:{:016x}:{}:{}",
+            identity.owner.bits(),
+            identity.name.bits(),
+            u8::from(identity.verb),
+            identity.occurrence
+        );
         let symbol = crate::Symbol::new(crate::Table::Proc, &key);
         let old = self.procedure_values.borrow_mut().insert(symbol, identity);
         if old.is_some_and(|old| old != identity) {
-            return Err(self.error(Q::ProcedureValue { owner: identity.owner, name: identity.name,
-                verb: identity.verb, formal: true }, "conflicting procedure literal answers"));
+            return Err(self.error(
+                Q::ProcedureValue {
+                    owner: identity.owner,
+                    name: identity.name,
+                    verb: identity.verb,
+                    formal: true,
+                },
+                "conflicting procedure literal answers",
+            ));
         }
         Ok(key)
     }
     pub fn procedure_literal(&self, path: &str) -> Result<String, LowerError> {
-        let query = dm_ir::procedure_value_query(path).ok_or_else(||
-            self.error(Q::Type(SymbolId::of(path)), "unsupported procedure literal shape"))?;
-        let Q::ProcedureValue { owner, name, verb, .. } = query else { unreachable!() };
+        let query = dm_ir::procedure_value_query(path).ok_or_else(|| {
+            self.error(
+                Q::Type(SymbolId::of(path)),
+                "unsupported procedure literal shape",
+            )
+        })?;
+        let Q::ProcedureValue {
+            owner, name, verb, ..
+        } = query
+        else {
+            unreachable!()
+        };
         match self.answer(query)? {
             M::Value(SemanticValue::Procedure(identity))
                 if identity.owner == owner && identity.name == name && identity.verb == verb =>
-                self.procedure_value_key(identity),
+            {
+                self.procedure_value_key(identity)
+            }
             _ => Err(self.error(query, "procedure literal is not positively captured")),
         }
     }
@@ -248,18 +299,27 @@ impl ProjectResolver<'_> {
     }
     pub fn error(&self, query: Q, reason: &str) -> LowerError {
         let names = match query {
-            Q::Var { owner, name } | Q::HasMemberVar { owner, name }
-            | Q::DeclaredVarType { owner, name } | Q::VarStorage { owner, name }
-            | Q::Proc { owner, name, .. } | Q::ProcedureValue { owner, name, .. }
-            | Q::OverrideChain { owner, name, .. } | Q::Constant { owner, name }
-            | Q::StaticVar { owner, name } | Q::HasMemberProc { owner, name } => {
+            Q::Var { owner, name }
+            | Q::HasMemberVar { owner, name }
+            | Q::DeclaredVarType { owner, name }
+            | Q::VarStorage { owner, name }
+            | Q::Proc { owner, name, .. }
+            | Q::ProcedureValue { owner, name, .. }
+            | Q::OverrideChain { owner, name, .. }
+            | Q::Constant { owner, name }
+            | Q::StaticVar { owner, name }
+            | Q::HasMemberProc { owner, name } => {
                 match (self.symbols.text(owner), self.symbols.text(name)) {
                     (Some(owner), Some(name)) => format!(" (owner={owner}, name={name})"),
                     _ => String::new(),
                 }
             }
-            Q::GlobalVar(name) | Q::GlobalProc(name) | Q::UniqueStaticVar(name)
-            | Q::PredefinedConstant(name) => self.symbols.text(name)
+            Q::GlobalVar(name)
+            | Q::GlobalProc(name)
+            | Q::UniqueStaticVar(name)
+            | Q::PredefinedConstant(name) => self
+                .symbols
+                .text(name)
                 .map(|name| format!(" (name={name})"))
                 .unwrap_or_default(),
             _ => String::new(),
@@ -280,7 +340,11 @@ impl ProjectResolver<'_> {
         match self.answer(query)? {
             M::Missing => Ok(false),
             M::Presence(value) => Ok(value),
-            M::Member { .. } | M::IntrinsicProc { .. } | M::RetainedProc { .. } | M::Symbol(_) | M::Slot { .. } => Ok(true),
+            M::Member { .. }
+            | M::IntrinsicProc { .. }
+            | M::RetainedProc { .. }
+            | M::Symbol(_)
+            | M::Slot { .. } => Ok(true),
             _ => Err(self.error(query, "invalid presence answer")),
         }
     }
@@ -348,18 +412,27 @@ impl ProjectResolver<'_> {
         // A positively issued procedure therefore selects the callable without
         // requiring an unrelated negative answer from a partial engine catalog.
         let (answer, query, namespace) = match procedure {
-            answer @ (M::Member { .. } | M::IntrinsicProc { .. } | M::RetainedProc { verb: false, .. }) =>
-                (answer, proc_query, "proc"),
+            answer @ (M::Member { .. }
+            | M::IntrinsicProc { .. }
+            | M::RetainedProc { verb: false, .. }) => (answer, proc_query, "proc"),
             M::Missing => match self.answer(verb_query)? {
                 M::Missing => return Ok(None),
-                answer @ (M::Member { .. } | M::RetainedProc { verb: true, .. }) => (answer, verb_query, "verb"),
-                _ => return Err(self.error(verb_query, "procedure declaration metadata unavailable")),
+                answer @ (M::Member { .. } | M::RetainedProc { verb: true, .. }) => {
+                    (answer, verb_query, "verb")
+                }
+                _ => {
+                    return Err(self.error(verb_query, "procedure declaration metadata unavailable"))
+                }
             },
             _ => return Err(self.error(proc_query, "procedure declaration metadata unavailable")),
         };
         match answer {
-            M::RetainedProc { declaring_owner, name, verb, .. }
-                if name == name_id && verb == (namespace == "verb") => {
+            M::RetainedProc {
+                declaring_owner,
+                name,
+                verb,
+                ..
+            } if name == name_id && verb == (namespace == "verb") => {
                 // This exact engine procedure is already linked in the retained
                 // prefix. Runtime name dispatch needs no fabricated source unit.
                 self.text(query, declaring_owner)?;
@@ -393,17 +466,27 @@ impl ProjectResolver<'_> {
                 _ => Err(self.error(query, "procedure return metadata unavailable")),
             };
         };
-        let Some(annotation) = data.procedure.as_ref()
-            .and_then(|metadata| metadata.signature.return_annotation.as_ref()) else {
+        let Some(annotation) = data
+            .procedure
+            .as_ref()
+            .and_then(|metadata| metadata.signature.return_annotation.as_ref())
+        else {
             return Ok(None);
         };
-        let text = annotation.source_text(self.symbols)
+        let text = annotation
+            .source_text(self.symbols)
             .ok_or_else(|| self.error(query, "return annotation spelling unavailable"))?;
         let text = text.trim();
         // Unions and scalar annotations do not establish one class receiver.
-        if !text.starts_with('/') || text.contains('|') { return Ok(None); }
-        let Some(expression) = dm_syntax::parse_expression(text).expr else { return Ok(None); };
-        let dm_syntax::ExprKind::TypePath(path) = expression.kind else { return Ok(None); };
+        if !text.starts_with('/') || text.contains('|') {
+            return Ok(None);
+        }
+        let Some(expression) = dm_syntax::parse_expression(text).expr else {
+            return Ok(None);
+        };
+        let dm_syntax::ExprKind::TypePath(path) = expression.kind else {
+            return Ok(None);
+        };
         self.runtime_type(&path).map(Some)
     }
     pub fn constant(&self, name: &str) -> Result<Option<SemanticValue>, LowerError> {
@@ -443,28 +526,55 @@ mod tests {
     fn typed_list_contexts_query_container_runtime_type() {
         let mut symbols = SymbolTable::default();
         symbols.intern("/list").unwrap();
-        let host = Host { reads: Mutex::new(Vec::new()), answer: |query| match query {
-            Q::RuntimeType(id) if id == SymbolId::of("/list") => M::Symbol(id),
-            Q::Ancestry(id) if id == SymbolId::of("/list") => M::Symbols(vec![id]),
-            other => M::Unsupported(other),
-        }};
+        let host = Host {
+            reads: Mutex::new(Vec::new()),
+            answer: |query| match query {
+                Q::RuntimeType(id) if id == SymbolId::of("/list") => M::Symbol(id),
+                Q::Ancestry(id) if id == SymbolId::of("/list") => M::Symbols(vec![id]),
+                other => M::Unsupported(other),
+            },
+        };
         for source in [
             "/proc/p()\n    var/list/datum/item/values = new()\n    return values\n",
             "/proc/p()\n    var/list/datum/item/values = locate()\n    return values\n",
             "/proc/p(values)\n    values = new()\n    return values\n",
         ] {
             let parameters = source.contains("p(values)");
-            let result = lower(source, ProcedureInputs {
-                parameters: if parameters { vec!["values".into()] } else { vec![] },
-                parameter_types: if parameters { std::collections::HashMap::from([("values".into(), "/list/datum/item".into())]) } else { Default::default() },
-                ..Default::default()
-            }, &symbols, &host);
+            let result = lower(
+                source,
+                ProcedureInputs {
+                    parameters: if parameters {
+                        vec!["values".into()]
+                    } else {
+                        vec![]
+                    },
+                    parameter_types: if parameters {
+                        std::collections::HashMap::from([(
+                            "values".into(),
+                            "/list/datum/item".into(),
+                        )])
+                    } else {
+                        Default::default()
+                    },
+                    ..Default::default()
+                },
+                &symbols,
+                &host,
+            );
             assert!(result.is_ok(), "{source}: {:?}", result.err());
         }
-        assert!(host.reads.lock().unwrap().iter().any(|query| matches!(query, Q::RuntimeType(id) if *id == SymbolId::of("/list"))));
+        assert!(host
+            .reads
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|query| matches!(query, Q::RuntimeType(id) if *id == SymbolId::of("/list"))));
     }
     #[test]
     fn known_untyped_field_shadows_global_type_demand() {
+        let mut symbols = SymbolTable::default();
+        symbols.intern("/datum/item").unwrap();
+        symbols.intern("field").unwrap();
         let host = Host {
             reads: Mutex::new(Vec::new()),
             answer: |query| match query {
@@ -487,7 +597,7 @@ mod tests {
                 current_type_path: Some("/datum/item".into()),
                 ..Default::default()
             },
-            &SymbolTable::default(),
+            &symbols,
             &host,
         );
         assert!(code.is_ok(), "{:?}", code.as_ref().err());
@@ -559,10 +669,21 @@ mod tests {
             reads: Mutex::new(vec![]),
             answer: |query| match query {
                 Q::GlobalVar(id) if id == SymbolId::of("counter") => M::Presence(true),
+                Q::VarStorage { owner, name }
+                    if owner == SymbolId::of("/") && name == SymbolId::of("counter") =>
+                {
+                    M::Slot {
+                        symbol: SymbolId::of("var/counter"),
+                        owner,
+                        name,
+                    }
+                }
                 _ => M::Unsupported(query),
             },
         };
-        let symbols = SymbolTable::default();
+        let mut symbols = SymbolTable::default();
+        symbols.intern("/").unwrap();
+        symbols.intern("counter").unwrap();
         assert!(lower(
             "/proc/p(value)\n    return value\n",
             ProcedureInputs {
@@ -586,6 +707,10 @@ mod tests {
             .lock()
             .unwrap()
             .contains(&Q::GlobalVar(SymbolId::of("counter"))));
+        assert!(host.reads.lock().unwrap().contains(&Q::VarStorage {
+            owner: SymbolId::of("/"),
+            name: SymbolId::of("counter"),
+        }));
     }
     #[test]
     fn unsupported_queries_cannot_become_dynamic_fallback_success() {
@@ -703,13 +828,27 @@ mod tests {
             answer: M::Unsupported,
         };
         for (source, inputs, expected) in [
-            ("/world/proc/p()\n    return world\n", ProcedureInputs {
-                current_type_path: Some("/world".into()), ..Default::default()
-            }, crate::VariableWord::World),
-            ("/proc/p(world)\n    return world\n", ProcedureInputs {
-                parameters: vec!["world".into()], ..Default::default()
-            }, crate::VariableWord::Arg(0)),
-            ("/proc/p()\n    var/world = null\n    return world\n", ProcedureInputs::default(), crate::VariableWord::Local(0)),
+            (
+                "/world/proc/p()\n    return world\n",
+                ProcedureInputs {
+                    current_type_path: Some("/world".into()),
+                    ..Default::default()
+                },
+                crate::VariableWord::World,
+            ),
+            (
+                "/proc/p(world)\n    return world\n",
+                ProcedureInputs {
+                    parameters: vec!["world".into()],
+                    ..Default::default()
+                },
+                crate::VariableWord::Arg(0),
+            ),
+            (
+                "/proc/p()\n    var/world = null\n    return world\n",
+                ProcedureInputs::default(),
+                crate::VariableWord::Local(0),
+            ),
         ] {
             let code = lower(source, inputs, &SymbolTable::default(), &host).unwrap();
             assert!(code.procedure.code.items.iter().any(|item| matches!(item,
@@ -727,19 +866,38 @@ mod tests {
             answer: |query| match query {
                 Q::RuntimeType(owner) if owner == SymbolId::of("/world") => M::Symbol(owner),
                 Q::HasMemberProc { owner, name }
-                    if owner == SymbolId::of("/world") && name == SymbolId::of("Genesis") => M::Presence(true),
-                Q::Proc { owner, name, verb: false }
-                    if owner == SymbolId::of("/world") && name == SymbolId::of("Genesis") => M::IntrinsicProc { declaring_owner: owner, name },
+                    if owner == SymbolId::of("/world") && name == SymbolId::of("Genesis") =>
+                {
+                    M::Presence(true)
+                }
+                Q::Proc {
+                    owner,
+                    name,
+                    verb: false,
+                } if owner == SymbolId::of("/world") && name == SymbolId::of("Genesis") => {
+                    M::IntrinsicProc {
+                        declaring_owner: owner,
+                        name,
+                    }
+                }
                 Q::Proc { verb: true, .. } => M::Missing,
                 other => M::Unsupported(other),
             },
         };
-        let result = lower("/world/proc/p()\n    return world.Genesis()\n", ProcedureInputs {
-            current_type_path: Some("/world".into()), ..Default::default()
-        }, &symbols, &host);
+        let result = lower(
+            "/world/proc/p()\n    return world.Genesis()\n",
+            ProcedureInputs {
+                current_type_path: Some("/world".into()),
+                ..Default::default()
+            },
+            &symbols,
+            &host,
+        );
         assert!(result.is_ok(), "{:?}", result.err());
-        assert!(!host.reads.lock().unwrap().iter().any(|query| matches!(query,
-            Q::HasMemberVar { .. } | Q::VarStorage { .. } | Q::GlobalVar(_))));
+        assert!(!host.reads.lock().unwrap().iter().any(|query| matches!(
+            query,
+            Q::HasMemberVar { .. } | Q::VarStorage { .. } | Q::GlobalVar(_)
+        )));
     }
     #[test]
     fn args_receiver_type_preserves_lexical_shadows_without_outer_variable_queries() {
@@ -751,29 +909,59 @@ mod tests {
             answer: |query| match query {
                 Q::RuntimeType(owner) if owner == SymbolId::of("/list") => M::Symbol(owner),
                 Q::HasMemberProc { owner, name }
-                    if owner == SymbolId::of("/list") && name == SymbolId::of("Copy") => M::Presence(true),
-                Q::Proc { owner, name, verb: false }
-                    if owner == SymbolId::of("/list") && name == SymbolId::of("Copy") => M::IntrinsicProc { declaring_owner: owner, name },
+                    if owner == SymbolId::of("/list") && name == SymbolId::of("Copy") =>
+                {
+                    M::Presence(true)
+                }
+                Q::Proc {
+                    owner,
+                    name,
+                    verb: false,
+                } if owner == SymbolId::of("/list") && name == SymbolId::of("Copy") => {
+                    M::IntrinsicProc {
+                        declaring_owner: owner,
+                        name,
+                    }
+                }
                 Q::Proc { verb: true, .. } => M::Missing,
                 other => M::Unsupported(other),
             },
         };
         for (source, inputs, variable) in [
-            ("/datum/demo/proc/p()\n    return args.Copy(3)\n", ProcedureInputs {
-                current_type_path: Some("/datum/demo".into()), ..Default::default()
-            }, crate::VariableWord::Args),
-            ("/proc/p(args)\n    return args.Copy(3)\n", ProcedureInputs {
-                parameters: vec!["args".into()], ..Default::default()
-            }, crate::VariableWord::Arg(0)),
-            ("/proc/p()\n    var/args = null\n    return args.Copy(3)\n", ProcedureInputs::default(), crate::VariableWord::Local(0)),
+            (
+                "/datum/demo/proc/p()\n    return args.Copy(3)\n",
+                ProcedureInputs {
+                    current_type_path: Some("/datum/demo".into()),
+                    ..Default::default()
+                },
+                crate::VariableWord::Args,
+            ),
+            (
+                "/proc/p(args)\n    return args.Copy(3)\n",
+                ProcedureInputs {
+                    parameters: vec!["args".into()],
+                    ..Default::default()
+                },
+                crate::VariableWord::Arg(0),
+            ),
+            (
+                "/proc/p()\n    var/args = null\n    return args.Copy(3)\n",
+                ProcedureInputs::default(),
+                crate::VariableWord::Local(0),
+            ),
         ] {
             let code = lower(source, inputs, &symbols, &host).unwrap();
             assert!(code.procedure.code.items.iter().any(|item| matches!(item,
                 crate::Item::Instruction(instruction) if instruction.operands.iter().any(|word| matches!(word,
                     crate::Word::Variable(crate::VariableWord::SetCache(owner, _)) if owner.as_ref() == &variable)))));
         }
-        assert!(!host.reads.lock().unwrap().iter().any(|query| matches!(query,
-            Q::HasMemberVar { .. } | Q::VarStorage { .. } | Q::GlobalVar(_) | Q::DeclaredVarType { .. })));
+        assert!(!host.reads.lock().unwrap().iter().any(|query| matches!(
+            query,
+            Q::HasMemberVar { .. }
+                | Q::VarStorage { .. }
+                | Q::GlobalVar(_)
+                | Q::DeclaredVarType { .. }
+        )));
     }
     #[test]
     fn positive_member_call_does_not_require_unrelated_global_proc_absence() {
@@ -784,29 +972,61 @@ mod tests {
             reads: Mutex::new(vec![]),
             answer: |query| match query {
                 Q::HasMemberProc { owner, name }
-                    if owner == SymbolId::of("/icon") && name == SymbolId::of("Turn") => M::Presence(true),
-                Q::Proc { owner, name, verb: false }
-                    if owner == SymbolId::of("/icon") && name == SymbolId::of("Turn") => M::IntrinsicProc { declaring_owner: owner, name },
+                    if owner == SymbolId::of("/icon") && name == SymbolId::of("Turn") =>
+                {
+                    M::Presence(true)
+                }
+                Q::Proc {
+                    owner,
+                    name,
+                    verb: false,
+                } if owner == SymbolId::of("/icon") && name == SymbolId::of("Turn") => {
+                    M::IntrinsicProc {
+                        declaring_owner: owner,
+                        name,
+                    }
+                }
                 Q::Proc { verb: true, .. } => M::Missing,
                 other => M::Unsupported(other),
             },
         };
-        let code = lower("/icon/proc/p()\n    Turn(90)\n", ProcedureInputs {
-            current_type_path: Some("/icon".into()), ..Default::default()
-        }, &symbols, &host);
+        let code = lower(
+            "/icon/proc/p()\n    Turn(90)\n",
+            ProcedureInputs {
+                current_type_path: Some("/icon".into()),
+                ..Default::default()
+            },
+            &symbols,
+            &host,
+        );
         assert!(code.is_ok(), "{:?}", code.err());
-        assert!(!host.reads.lock().unwrap().iter().any(|query| matches!(query, Q::GlobalProc(_))));
+        assert!(!host
+            .reads
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|query| matches!(query, Q::GlobalProc(_))));
     }
     #[test]
     fn modified_resource_aliases_share_descriptor_content_after_recorded_queries() {
         let owner = SymbolId::of("/obj/base");
-        let host = Host { reads: Mutex::new(vec![]), answer: |query| match query {
-            Q::RuntimeType(id) if id == SymbolId::of("/obj/base") => M::Symbol(id),
-            Q::ResourceIn { path, search_context: 7 } if path == SymbolId::of("one.txt") || path == SymbolId::of("two.txt") => M::Resource { path, content: 99 },
-            other => M::Unsupported(other),
-        }};
+        let host = Host {
+            reads: Mutex::new(vec![]),
+            answer: |query| match query {
+                Q::RuntimeType(id) if id == SymbolId::of("/obj/base") => M::Symbol(id),
+                Q::ResourceIn {
+                    path,
+                    search_context: 7,
+                } if path == SymbolId::of("one.txt") || path == SymbolId::of("two.txt") => {
+                    M::Resource { path, content: 99 }
+                }
+                other => M::Unsupported(other),
+            },
+        };
         let mut symbols = SymbolTable::default();
-        for spelling in ["/obj/base", "one.txt", "two.txt"] { symbols.intern(spelling).unwrap(); }
+        for spelling in ["/obj/base", "one.txt", "two.txt"] {
+            symbols.intern(spelling).unwrap();
+        }
         let code = lower("/proc/p()\n    . = /obj/base{asset='one.txt'}\n    return (/obj/base{asset='two.txt'})\n",
             ProcedureInputs { resource_search_context: Some(7), ..Default::default() }, &symbols, &host).unwrap();
         assert_eq!(code.modified_instances.len(), 1);
@@ -815,27 +1035,50 @@ mod tests {
         assert_eq!(descriptor.resources().values().next().unwrap().content, 99);
         let reads = host.reads.lock().unwrap();
         for path in [SymbolId::of("one.txt"), SymbolId::of("two.txt")] {
-            assert!(reads.contains(&Q::ResourceIn { path, search_context: 7 }));
+            assert!(reads.contains(&Q::ResourceIn {
+                path,
+                search_context: 7
+            }));
         }
     }
     #[test]
     fn modified_literal_captures_ordered_assignments_and_emits_instance_reference() {
         let owner = SymbolId::of("/obj/base");
-        let host = Host { reads: Mutex::new(vec![]), answer: |query| match query {
-            Q::RuntimeType(id) if id == SymbolId::of("/obj/base") => M::Symbol(id),
-            Q::Ancestry(id) if id == SymbolId::of("/obj/base") => M::Symbols(vec![id, SymbolId::of("/obj")]),
-            other => M::Unsupported(other),
-        }};
+        let host = Host {
+            reads: Mutex::new(vec![]),
+            answer: |query| match query {
+                Q::RuntimeType(id) if id == SymbolId::of("/obj/base") => M::Symbol(id),
+                Q::Ancestry(id) if id == SymbolId::of("/obj/base") => {
+                    M::Symbols(vec![id, SymbolId::of("/obj")])
+                }
+                other => M::Unsupported(other),
+            },
+        };
         let mut symbols = SymbolTable::default();
         symbols.intern("/obj/base").unwrap();
         symbols.intern("/obj").unwrap();
-        let code = lower("/proc/p()\n    return (/obj/base{a=1;a=2;b=list(/obj/base)})\n",
-            ProcedureInputs::default(), &symbols, &host).unwrap();
+        let code = lower(
+            "/proc/p()\n    return (/obj/base{a=1;a=2;b=list(/obj/base)})\n",
+            ProcedureInputs::default(),
+            &symbols,
+            &host,
+        )
+        .unwrap();
         let (symbol, captured) = code.modified_instances.iter().next().unwrap();
         assert_eq!(code.modified_instances.len(), 1);
         assert_eq!(captured.descriptor.runtime_type(), owner);
-        assert_eq!(captured.descriptor.fields().iter().map(|(name,_)|name.as_str()).collect::<Vec<_>>(), ["a","a","b"]);
-        let crate::Table::Instance = symbol.table else { panic!("wrong identity domain") };
+        assert_eq!(
+            captured
+                .descriptor
+                .fields()
+                .iter()
+                .map(|(name, _)| name.as_str())
+                .collect::<Vec<_>>(),
+            ["a", "a", "b"]
+        );
+        let crate::Table::Instance = symbol.table else {
+            panic!("wrong identity domain")
+        };
         assert!(code.procedure.code.items.iter().any(|item| matches!(item,
             crate::Item::Instruction(instruction) if instruction.operands.iter().any(|word| matches!(word,
                 crate::Word::Value(crate::ValueWord::Instance(alias)) if alias == &captured.descriptor.alias())))));
@@ -1018,13 +1261,37 @@ mod tests {
         let host = Host {
             reads: Mutex::new(vec![]),
             answer: |query| match query {
-                Q::Proc { owner, name, verb: false } if name == SymbolId::of("authored") =>
-                    M::Member { owner, name, fingerprint: 1, data: std::sync::Arc::new(Default::default()) },
-                Q::Proc { owner, name, verb: false } if name == SymbolId::of("intrinsic") =>
-                    M::IntrinsicProc { declaring_owner: owner, name },
-                Q::Proc { name, verb: false, .. } if name == SymbolId::of("verb_only") => M::Missing,
-                Q::Proc { owner, name, verb: true } if name == SymbolId::of("verb_only") =>
-                    M::Member { owner, name, fingerprint: 2, data: std::sync::Arc::new(Default::default()) },
+                Q::Proc {
+                    owner,
+                    name,
+                    verb: false,
+                } if name == SymbolId::of("authored") => M::Member {
+                    owner,
+                    name,
+                    fingerprint: 1,
+                    data: std::sync::Arc::new(Default::default()),
+                },
+                Q::Proc {
+                    owner,
+                    name,
+                    verb: false,
+                } if name == SymbolId::of("intrinsic") => M::IntrinsicProc {
+                    declaring_owner: owner,
+                    name,
+                },
+                Q::Proc {
+                    name, verb: false, ..
+                } if name == SymbolId::of("verb_only") => M::Missing,
+                Q::Proc {
+                    owner,
+                    name,
+                    verb: true,
+                } if name == SymbolId::of("verb_only") => M::Member {
+                    owner,
+                    name,
+                    fingerprint: 2,
+                    data: std::sync::Arc::new(Default::default()),
+                },
                 _ => M::Unsupported(query),
             },
         };
@@ -1040,31 +1307,76 @@ mod tests {
             runtime_types: RefCell::new(Default::default()),
             resource_search_context: None,
         };
-        assert_eq!(lookup.member_proc("/datum/probe", "authored").unwrap(),
-            Some("/datum/probe/proc/authored".into()));
-        assert_eq!(lookup.member_proc("/datum/probe", "intrinsic").unwrap(), None);
+        assert_eq!(
+            lookup.member_proc("/datum/probe", "authored").unwrap(),
+            Some("/datum/probe/proc/authored".into())
+        );
+        assert_eq!(
+            lookup.member_proc("/datum/probe", "intrinsic").unwrap(),
+            None
+        );
         assert_eq!(host.reads.lock().unwrap().len(), 2);
-        assert!(host.reads.lock().unwrap().iter().all(|query|
-            matches!(query, Q::Proc { verb: false, .. })));
-        assert_eq!(lookup.member_proc("/datum/probe", "verb_only").unwrap(),
-            Some("/datum/probe/verb/verb_only".into()));
+        assert!(host
+            .reads
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|query| matches!(query, Q::Proc { verb: false, .. })));
+        assert_eq!(
+            lookup.member_proc("/datum/probe", "verb_only").unwrap(),
+            Some("/datum/probe/verb/verb_only".into())
+        );
         assert!(lookup.member_proc("/datum/probe", "unknown").is_err());
     }
     #[test]
     fn procedure_literal_lowering_keeps_exact_formal_identity_sidecar() {
-        let owner=SymbolId::of("/datum/base"); let name=SymbolId::of("callback");
-        let identity=dm_ir::ProcedureIdentity {owner,name,verb:false,occurrence:0};
-        let host=Host {reads:Mutex::new(vec![]),answer:|query| match query {
-            Q::ProcedureValue {owner:found,name:found_name,verb:false,formal:true}
-                if found==SymbolId::of("/datum/base") && found_name==SymbolId::of("callback") => M::Value(SemanticValue::Procedure(dm_ir::ProcedureIdentity {owner:found,name:found_name,verb:false,occurrence:0})),
-            _=>M::Unsupported(query),
-        }};
-        let parsed=dm_syntax::parse("/proc/p()\n    return list(/datum/base/proc/callback)\n");
-        let code=crate::compile_simple_proc_with_resolver(&parsed.items[0].children,
-            &ProcedureInputs::default(),&SymbolTable::default(),&host).unwrap();
-        assert_eq!(code.procedure_values.len(),1);
-        assert_eq!(code.procedure_values.values().next(),Some(&identity));
-        assert_eq!(host.reads.lock().unwrap().as_slice(),&[Q::ProcedureValue {owner,name,verb:false,formal:true}]);
+        let owner = SymbolId::of("/datum/base");
+        let name = SymbolId::of("callback");
+        let identity = dm_ir::ProcedureIdentity {
+            owner,
+            name,
+            verb: false,
+            occurrence: 0,
+        };
+        let host = Host {
+            reads: Mutex::new(vec![]),
+            answer: |query| match query {
+                Q::ProcedureValue {
+                    owner: found,
+                    name: found_name,
+                    verb: false,
+                    formal: true,
+                } if found == SymbolId::of("/datum/base")
+                    && found_name == SymbolId::of("callback") =>
+                {
+                    M::Value(SemanticValue::Procedure(dm_ir::ProcedureIdentity {
+                        owner: found,
+                        name: found_name,
+                        verb: false,
+                        occurrence: 0,
+                    }))
+                }
+                _ => M::Unsupported(query),
+            },
+        };
+        let parsed = dm_syntax::parse("/proc/p()\n    return list(/datum/base/proc/callback)\n");
+        let code = crate::compile_simple_proc_with_resolver(
+            &parsed.items[0].children,
+            &ProcedureInputs::default(),
+            &SymbolTable::default(),
+            &host,
+        )
+        .unwrap();
+        assert_eq!(code.procedure_values.len(), 1);
+        assert_eq!(code.procedure_values.values().next(), Some(&identity));
+        assert_eq!(
+            host.reads.lock().unwrap().as_slice(),
+            &[Q::ProcedureValue {
+                owner,
+                name,
+                verb: false,
+                formal: true
+            }]
+        );
     }
-
 }

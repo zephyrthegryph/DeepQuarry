@@ -20,6 +20,21 @@ def sha(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
+def diagnostics(path, policy):
+    # Match the exact observational whitelist used by the native cold oracle.
+    # Everything else remains significant, including unknown messages, order
+    # and duplicate counts. All runs use the same source path.
+    def measurement(line):
+        for prefix, names in policy["stage_prefixes"].items():
+            if line.startswith(prefix):
+                name, separator, _ = line[len(prefix):].partition(":")
+                if separator and name in names:
+                    return True
+        return any(line.startswith(prefix) for prefix in policy["prefixes"])
+    return [line for line in path.read_text(encoding="utf-8").splitlines()
+            if not measurement(line)]
+
+
 def outputs(project):
     return (project.with_suffix(".dmb"), project.with_suffix(".rsc"),
             project.with_suffix(".dmb-pair.json"))
@@ -70,6 +85,11 @@ def main():
     if relative.is_absolute() or ".." in relative.parts or relative.suffix.lower() != ".dme":
         parser.error("--project must be a relative .dme path within the fixture")
     native_hash = sha(args.native)
+    policy_path = Path(__file__).resolve().parent.parent / "diagnostic-measurements.json"
+    policy_hash = sha(policy_path)
+    policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    if policy.get("schema") != 1:
+        raise ValueError("unsupported diagnostic measurement policy")
     if native_hash != args.native_sha256.lower():
         raise ValueError("release executable differs from supplied frozen SHA256")
     original_project = args.fixture / relative
@@ -103,6 +123,7 @@ def main():
             raise ValueError(f"fixture copy changed bytes: {key}")
     project = source_dir / relative
     report = {"schema": 1, "native_sha256": native_hash,
+              "diagnostic_policy_sha256": policy_hash,
               "engine_template_sha256": sha(args.engine_template),
               "fixture": str(args.fixture), "project": str(relative),
               "source_sha256": input_hashes, "defines": args.define,
@@ -135,6 +156,8 @@ def main():
                                              timeout=min(args.timeout, remaining), check=False,
                                              creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
                 result["exit_code"] = process.returncode
+                result["diagnostics"] = diagnostics(run_dir / "compiler.log", policy)
+                result["compiler_log_sha256"] = sha(run_dir / "compiler.log")
                 if process.returncode != 0:
                     raise ValueError("compiler did not successfully publish the fixture")
                 result["published"] = published(project, store)
@@ -143,12 +166,15 @@ def main():
                         raise ValueError(f"source changed during comparison: {key}")
                 if sha(args.native) != native_hash or sha(args.engine_template) != report["engine_template_sha256"]:
                     raise ValueError("compiler or engine template changed during comparison")
-                current = (result["published"]["pair"], result["published"]["sha256"])
+                if sha(policy_path) != policy_hash:
+                    raise ValueError("diagnostic measurement policy changed during comparison")
+                current = (result["published"]["pair"], result["published"]["sha256"],
+                           result["diagnostics"])
                 if baseline is None:
                     baseline = current
                 result["passed"] = current == baseline
                 if not result["passed"]:
-                    result["error"] = "published DMB/RSC bytes or pair identity differ from first run"
+                    result["error"] = "published DMB/RSC bytes, pair identity or diagnostics differ from first run"
                 for output in outputs(project):
                     shutil.copyfile(output, run_dir / output.name)
             except (subprocess.TimeoutExpired, TimeoutError) as error:

@@ -189,7 +189,7 @@ impl MapMemo {
             return;
         }
         let mut state = self.resident.lock().unwrap_or_else(|e| e.into_inner());
-        if self.disk.is_some() {
+        if let Some(disk) = &self.disk {
             let record_key = Self::record_key(key, geometry);
             let previous = state
                 .pending
@@ -211,7 +211,7 @@ impl MapMemo {
                 let records: Vec<_> = std::mem::take(&mut state.pending).into_values().collect();
                 drop(state);
                 let count = records.len() as u64;
-                let result = self.disk.as_ref().unwrap().publish(&records);
+                let result = disk.publish(&records);
                 match result {
                     Ok(_) => {
                         self.counts
@@ -561,7 +561,11 @@ mod tests {
         let first = memo.parse(input(1)).unwrap();
         memo.parse(input(2)).unwrap();
         let first = memo
-            .project(&[first.clone()], defaults(), &Host { mob: false })
+            .project(
+                std::slice::from_ref(&first),
+                defaults(),
+                &Host { mob: false },
+            )
             .unwrap();
         let parsed = memo.parse(input(3)).unwrap();
         let second = memo
@@ -586,17 +590,17 @@ mod tests {
         let host = Host { mob: false };
         let recording = RecordingResolver::new(&host);
         let value = crate::map_projection::project(
-            &[plan.clone()],
+            std::slice::from_ref(&plan),
             defaults(),
             &crate::map_projection::ResolverClassifier(&recording),
         )
         .unwrap();
-        let geometry = geometry_key(1, &[plan.clone()], defaults());
+        let geometry = geometry_key(1, std::slice::from_ref(&plan), defaults());
         let bytes = wire::encode_geometry(&geometry, &value, &recording.reads()).unwrap();
         assert!(wire::admit_geometry(
             &bytes,
             &geometry,
-            &[plan.clone()],
+            std::slice::from_ref(&plan),
             defaults(),
             &Host { mob: false }
         )
@@ -630,7 +634,11 @@ mod tests {
         let memo = MapMemo::with_disk(1, 16 * 1024 * 1024, cache.snapshot().unwrap());
         let first = memo.parse(input(1)).unwrap();
         let projection = memo
-            .project(&[first.clone()], defaults(), &Host { mob: false })
+            .project(
+                std::slice::from_ref(&first),
+                defaults(),
+                &Host { mob: false },
+            )
             .unwrap();
         let pending = memo.take_pending();
         assert_eq!(pending.len(), 2);

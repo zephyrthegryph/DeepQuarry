@@ -160,7 +160,7 @@ fn admit_coverage<'a>(
             return Err("scalar default has unexpected runtime initializer coverage".into());
         }
         defaults.push(CapturedDefault {
-            origin_kind: origin.kind.clone(),
+            origin_kind: origin.kind,
             source_ordinal: ordinal,
             occurrence: origin.occurrence,
             value: fact.default.clone(),

@@ -352,10 +352,9 @@ pub fn compose_projected_with_symbols(
         .items
         .iter()
         .any(|item| matches!(item, dm_preprocess::regions::OrderedItem::NonText { .. }))
+        && stage.is_none()
     {
-        if stage.is_none() {
-            return Err(unsupported("map/skin materialization is not supplied"));
-        }
+        return Err(unsupported("map/skin materialization is not supplied"));
     }
     if let Some(stage) = stage {
         stage.validate_source(frontend).map_err(unsupported)?;

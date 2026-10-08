@@ -74,6 +74,7 @@ fn capture_impl(
             .map(|bodies| {
                 let capture_body = &capture_body;
                 scope.spawn(move || {
+                    let _profile = dm_profile::stage("cold.startup_capture");
                     bodies
                         .iter()
                         .map(capture_body)

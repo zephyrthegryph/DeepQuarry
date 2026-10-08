@@ -448,7 +448,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
                 .map(|unit| (&unit.code, &unit.debug_origins)),
         );
     let modified_defaults =
-        crate::modified_initializers::default_seeds(frontend, &plan, &initialization.classified)
+        crate::modified_initializers::default_seeds(frontend, plan, &initialization.classified)
             .map_err(ColdError::Initializer)?;
     let modified = crate::modified_initializers::collect_with_defaults(
         seeds,

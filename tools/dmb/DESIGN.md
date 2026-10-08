@@ -882,8 +882,15 @@ are rejected (D10).
   - **Context:** wall time, peak private memory and the count of competing processes. Wall time is
     recorded for information only.
 - **Thread CPU precision.** On Windows, `GetThreadTimes` advances in 15.6 ms ticks, too coarse for
-  short spans. Spans use `QueryThreadCycleTime`, converted with a cycles-per-second rate calibrated
-  at startup; totals are cross-checked against `GetProcessTimes`. On Linux, `CLOCK_THREAD_CPUTIME_ID`.
+  short spans. Spans retain raw `QueryThreadCycleTime` intervals per thread until finalization,
+  then convert with that thread's own naturally observed paired cycle/`GetThreadTimes` envelope
+  (at least 500 ms CPU), never a global startup rate or process-total scaling. Rate stability
+  requires two independent observed subintervals of at least 500 ms CPU each; a subinterval
+  differing from the envelope rate by more than 5% plus declared coarse-clock quantization
+  uncertainty invalidates conversion. Missing, backwards, insufficient or unstable thread
+  clocks leave affected stage CPU unavailable. Unobserved shorter frequency changes remain
+  a precision limitation. Independent coarse thread counters are audit metrics, not acceptance
+  substitutes; totals are cross-checked against `GetProcessTimes`. On Linux, `CLOCK_THREAD_CPUTIME_ID`.
 - **Contention bias.** Shared caches and hyperthread siblings inflate CPU time somewhat on a busy
   machine. A result within 10% over its budget is rerun; it fails if the median of three is still
   over. Nothing is ever stopped to make a run quieter.

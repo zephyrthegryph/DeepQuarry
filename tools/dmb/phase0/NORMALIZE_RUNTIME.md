@@ -1,5 +1,19 @@
 # Runtime comparison inputs
 
+## Blank-origin recognition update
+
+Raw records such as `03:15:20 : list index out of bounds` and
+`: list index out of bounds` now count as raw events with unknown source, line,
+procedure and test ownership. They remain distinct from located errors with the
+same message. Unknown ownership is never inferred from timestamps or stacks in
+another channel. Raw and structured totals remain separate.
+
+This changes interpretation of saved logs: earlier parser versions rejected
+these records as parse errors. Historical normalized artifacts and their hashes
+are preserved unchanged; their previously reproduced hashes do not certify
+outputs produced with this recognition update. No new full-log replay is claimed.
+The focused regression is `test_normalize_runtime.py`.
+
 `normalize_runtime.py --run byond:preserved=DIR --run byond:1=DIR --run byond:2=DIR --run byond:3=DIR --run native:preserved=DIR --run native:1=DIR --run native:2=DIR --run native:3=DIR --output report.json`
 
 Each dedicated directory contains its own `unit_tests.json`, stdout/stderr, and copied `runtime.log.json` and `runtime-errors.log` where available. Do not combine global runtime-errors.log with a specific run's log. Structured JSONL is the selected detailed channel. Raw logs are independently streamed and counted, never summed with it. They are not assumed to be mirrors: historical raw logs can contain far more events. Reports include raw normalized counts and unmatched location/message counts; these heuristic multisets do not prove event correspondence. Complete cross-channel coverage is never asserted. When structured logs are absent, one raw source is selected in order: runtime-errors.log, stderr.log, stderr, stdout.log, stdout. Unrecognized lines are counted as parse coverage gaps; raw fallback cannot establish procedure coverage.

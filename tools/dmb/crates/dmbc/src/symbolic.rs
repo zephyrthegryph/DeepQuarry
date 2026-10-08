@@ -61,9 +61,12 @@ impl CurrentImage {
         tables: &LinkTables,
         features: BytecodeFeatures,
     ) -> Result<Self, IntegrationError> {
-        let image = tables
-            .link(frozen.code(), &origins.source_bindings())
-            .map_err(IntegrationError::Link)?;
+        let image = {
+            let source = origins.source_bindings();
+            tables
+                .link(frozen.code(), &source)
+                .map_err(IntegrationError::Link)?
+        };
         let mut paths = Vec::new();
         let mut indexes = std::collections::HashMap::new();
         let roster = origins
@@ -347,6 +350,7 @@ pub fn freeze_artifact_tables(
             return Err(IntegrationError::DuplicateUnit(unit.identity));
         }
     }
+    let freeze_profile = dm_profile::stage("linking.freeze_artifacts");
     for lowered in batch.units {
         let frozen = freeze_artifact(
             &lowered.code,
@@ -510,8 +514,13 @@ pub fn freeze_artifact_tables(
             local_names: unit.code.procedure.local_names.clone(),
         });
     }
-    let tables = LinkTables::build(inventory).map_err(IntegrationError::Link)?;
+    drop(freeze_profile);
+    let tables = {
+        let _profile = dm_profile::stage("linking.table_assignment");
+        LinkTables::build(inventory).map_err(IntegrationError::Link)?
+    };
     // Validate once and retain images certified for these exact current inputs.
+    let image_profile = dm_profile::stage("linking.current_images");
     for unit in &mut units {
         unit.current_image = Some(CurrentImage::issue(
             &unit.frozen,
@@ -536,6 +545,7 @@ pub fn freeze_artifact_tables(
             unit.features,
         )?);
     }
+    drop(image_profile);
     Ok(FrozenBatch {
         units,
         tables,

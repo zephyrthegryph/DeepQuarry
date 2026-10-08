@@ -238,13 +238,12 @@ impl SemanticTree {
                     M::InstanceField { .. } => {
                         non_unique.insert(member.name);
                     }
-                    M::Slot { owner, name, .. } => {
+                    M::Slot { owner, name, .. }
                         if shared
                             .insert(name, owner)
-                            .is_some_and(|previous| previous != owner)
-                        {
-                            non_unique.insert(name);
-                        }
+                            .is_some_and(|previous| previous != owner) =>
+                    {
+                        non_unique.insert(name);
                     }
                     _ => {}
                 }

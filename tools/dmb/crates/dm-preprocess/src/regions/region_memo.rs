@@ -239,9 +239,10 @@ impl ExpansionRecord {
         &self.text
     }
 }
+type RecordedMacroReads = BTreeMap<(usize, String), Option<Arc<Macro>>>;
 #[derive(Default)]
 pub(super) struct Recorder {
-    reads: RefCell<BTreeMap<(usize, String), Option<Arc<Macro>>>>,
+    reads: RefCell<RecordedMacroReads>,
     locations: RefCell<BTreeSet<(usize, bool)>>,
 }
 pub(super) struct RecordingLookup<'a> {

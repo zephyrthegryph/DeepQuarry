@@ -118,7 +118,7 @@ fn actual_cold_modified_descriptors_keep_type_dedup_and_src_override_writes() {
     let words = image
         .proc_code_words(holder.initializer_proc_id() as usize)
         .unwrap();
-    let constructor = byond_dmb::bytecode::decode(&words).unwrap();
+    let constructor = byond_dmb::bytecode::decode(words).unwrap();
     assert!(constructor
         .iter()
         .any(|instruction| instruction.name == "New"));
@@ -187,7 +187,7 @@ fn actual_cold_modified_descriptors_keep_type_dedup_and_src_override_writes() {
         let words = image
             .proc_code_words(descriptor.initializer as usize)
             .unwrap();
-        let decoded = byond_dmb::bytecode::decode(&words).unwrap();
+        let decoded = byond_dmb::bytecode::decode(words).unwrap();
         let setters = decoded
             .iter()
             .filter(|instruction| instruction.name == "SetVar")
@@ -214,7 +214,7 @@ fn actual_cold_modified_descriptors_keep_type_dedup_and_src_override_writes() {
         "display metadata uses the native underscore-to-space default"
     );
     let words = image.proc_code_words(proc_id).unwrap();
-    let decoded = byond_dmb::bytecode::decode(&words).unwrap();
+    let decoded = byond_dmb::bytecode::decode(words).unwrap();
     assert!(decoded
         .iter()
         .any(|instruction| instruction.name == "PushVal"

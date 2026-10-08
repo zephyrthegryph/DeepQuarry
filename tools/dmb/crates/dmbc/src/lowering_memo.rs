@@ -273,7 +273,7 @@ impl ProcedureMemo {
             .get(Self::record_key(key), |bytes, _symbols| {
                 let variants = dm_cache::decode_variants(bytes)?;
                 for variant in variants {
-                    crate::lowering_memo_wire::validate(&variant)?;
+                    crate::lowering_memo_wire::validate(variant)?;
                 }
                 Ok(())
             })
@@ -288,11 +288,9 @@ impl ProcedureMemo {
         &self,
         key: &[u8],
         identity: dm_ir::ProcedureIdentity,
-        frontend: &dm_tree::frontend::ColdFrontend,
-        body: &dm_tree::frontend::BodyOccurrence,
+        context: crate::lowering_memo_wire::ProcedureReplayContext<'_>,
         host: &R,
         prepared: &crate::procedure_policy::PreparedUnit,
-        parsed: Option<&dm_syntax::Item>,
     ) -> crate::lowering_memo_wire::ProcedureLookup {
         let Some(snapshot) = &self.disk else {
             return crate::lowering_memo_wire::ProcedureLookup {
@@ -319,7 +317,7 @@ impl ProcedureMemo {
             return Default::default();
         };
         let _profile = dm_profile::stage("lowering.disk_validate_replay");
-        candidates.procedure(key, identity, frontend, body, host, prepared, parsed)
+        candidates.procedure(key, identity, context, host, prepared)
     }
     pub(crate) fn queue_disk(
         &self,
@@ -486,7 +484,7 @@ impl ProcedureMemo {
                 payload: bytes.into(),
             },
         );
-        if pending.bytes >= self.limits.pending_bytes.min(8 * 1024 * 1024).max(1) {
+        if pending.bytes >= self.limits.pending_bytes.clamp(1, 8 * 1024 * 1024) {
             let records = std::mem::take(&mut *pending)
                 .records
                 .into_values()

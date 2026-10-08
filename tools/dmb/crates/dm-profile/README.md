@@ -53,9 +53,46 @@ which does not run destructors. Artifact write errors are reported.
 
 ## CPU accounting
 
-Windows uses `QueryThreadCycleTime`, converted by a 250 ms startup-thread
-calibration against `GetThreadTimes`. Core/frequency differences and the coarse
-calibration clock can bias that rate. Linux uses `CLOCK_THREAD_CPUTIME_ID`.
+Primary `cpu_s`, `max_thread_cpu_s`, `exclusive_cpu_s`, folded CPU stacks and
+`critical_path_cpu_s` retain calibrated `QueryThreadCycleTime` measurements as
+required by DESIGN. An independent process crosscheck disagreement leaves these
+estimates uncertified; `cpu_precision_scope` states that limitation.
+
+Separately named `coarse_thread_cpu_s`, `coarse_max_thread_cpu_s`, and
+`coarse_exclusive_thread_cpu_s` use independent `GetThreadTimes` kernel plus user
+CPU at the same logical boundaries. `coarse_covered_thread_cpu_s` and
+`coarse_cpu_crosscheck_ratio` aggregate only this audit clock. Approximately
+15.625 ms accounting ticks limit precision: short spans can report zero, which
+is not evidence of no work. Coarse audit fields **must not substitute** for
+primary CPU in DESIGN acceptance or the benchmark harness. No metric is scaled
+to another clock or to process totals. Failed samples invalidate only their
+own clock's measurements.
+
+Cycle intervals remain raw and retain their thread identity until finalization.
+Each thread's naturally observed paired cycle/coarse envelope supplies its own
+rate: no startup busy loop, worker busy loop, global fallback, or process-total
+normalization. Stability requires at least two disjoint observed intervals with
+500 ms coarse CPU each, therefore at least 1 s in the envelope. A single window
+cannot certify itself. `thread_calibrations` retains status, observed CPU,
+checked-window count, rate drift and quantization uncertainty. Insufficient,
+failed, backwards or unstable threads leave affected stage CPU null.
+
+Subinterval drift greater than 5% **plus** conservative coarse uncertainty
+invalidates the rate. Two nominal 15.625 ms ticks bound each observed interval's
+duration uncertainty; the subinterval/envelope ratio propagates both errors.
+At 1 s the envelope duration uncertainty is 3.125%; a 500 ms window is 6.25%,
+and the combined comparison uncertainty is larger. This is not a claim of 5%
+measurement accuracy. Sub-500ms frequency changes may remain unobserved. The
+independent process CPU crosscheck retains its own acceptance threshold.
+
+`cpu_conversion_complete` is false when any observed thread cannot be converted.
+`cpu_folded_omitted_threads` identifies threads excluded from the CPU folded
+artifact; that artifact is partial when this list is nonempty. Chrome interval
+arguments use `cpu_raw` and `cpu_raw_units` (Windows cycles or Linux native ns),
+not falsely labelled converted nanoseconds. Older frozen reports used one
+startup rate across all threads: their CPU metrics remain estimates requiring
+their original crosscheck and must not be relabelled as per-thread measurements.
+Linux uses `CLOCK_THREAD_CPUTIME_ID`.
 Unavailable or backwards samples invalidate the affected stage's CPU metrics;
 wall time is never substituted.
 
@@ -80,6 +117,26 @@ in entered intervals; uninstrumented threads, including trace writers, are not
 covered by the folded CPU stacks.
 
 ## Allocations, memory, and I/O
+
+Summary scope labels are additive JSON fields; existing numeric fields retain
+their meanings. Reports from older frozen binaries lack these labels and must
+be interpreted using the same rules:
+
+| Metric | Scope |
+| --- | --- |
+| Report `wall_s` | Elapsed wall time of the profile interval. |
+| Stage `wall_s` | Sum of outermost same-name intervals on each participating thread. Concurrent intervals add, so this is **not phase elapsed time**. Use the coordinator span in the Chrome trace for elapsed phase time. |
+| Stage `allocations`, `allocated_bytes` | Sum of thread-local inclusive interval counter deltas. Same-name nesting counts only the outermost interval; differently named parents and children overlap. A root stage observes its own thread, not all workers, so a child worker stage may exceed the root. There is no process allocation-count total in this report. |
+| Stage `peak_live_bytes` | Maximum process-wide requested live allocation bytes observed at allocations on participating stage threads. This is neither stage-owned memory nor a complete process peak during the stage. |
+| Stage `sampled_peak_private_bytes` | Current process private bytes sampled while the stage is active; overlapping stages share samples. Short stages and between-sample peaks can be missed. |
+| Report `peak_allocator_live_bytes` | Process-lifetime peak requested live allocation bytes recorded by the allocator, including allocations outside the profile interval. |
+| Report `peak_private_bytes` | OS process-lifetime private-memory peak, including work outside the profile interval. |
+
+For example, eight simultaneous worker intervals of four seconds contribute
+roughly 32 seconds to stage `wall_s`, even if the phase finishes in four seconds.
+Stage totals must not be summed to reconstruct whole-build wall time or
+allocation totals. Allocation counts include successful reallocations as events;
+requested byte totals count their new sizes, rather than net live-byte growth.
 
 Allocation counts and requested bytes are thread-local deltas accumulated across
 stage participants. They include nested work and profiler overhead. Stage

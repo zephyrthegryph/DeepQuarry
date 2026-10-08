@@ -42,6 +42,15 @@ fn trace_cpu_flame_and_summary_artifacts_are_written() {
     assert_eq!(leaf.io_failed_calls, 1);
     assert!(leaf.io_call_elapsed_s.is_some_and(|value| value >= 0.0));
     assert!(report.total_cpu_s.is_some());
+    #[cfg(windows)]
+    {
+        // This tiny fixture cannot supply two natural 500 ms calibration windows.
+        assert!(!report.cpu_conversion_complete);
+        assert!(report.covered_thread_cpu_s.is_none());
+        assert!(report.critical_path_cpu_s.is_none());
+        assert!(!report.cpu_folded_omitted_threads.is_empty());
+        assert!(leaf.cpu_s.is_none());
+    }
     for stage in &report.stages {
         if let (Some(exclusive), Some(inclusive)) = (stage.exclusive_cpu_s, stage.cpu_s) {
             assert!(
@@ -59,7 +68,6 @@ fn trace_cpu_flame_and_summary_artifacts_are_written() {
     }
     for suffix in [
         "report.json",
-        "cpu.folded",
         "cpu.svg",
         "wall.folded",
         "wall.svg",
@@ -71,6 +79,16 @@ fn trace_cpu_flame_and_summary_artifacts_are_written() {
                 .len()
                 > 0
         );
+    }
+    let cpu_folded = std::fs::metadata(path.with_extension("cpu.folded")).unwrap();
+    if report.cpu_conversion_complete {
+        assert!(cpu_folded.len() > 0);
+    } else {
+        // An empty measurement is valid evidence of unavailable calibration;
+        // the SVG must explain absence rather than invent a measured sample.
+        assert!(std::fs::read_to_string(path.with_extension("cpu.svg"))
+            .unwrap()
+            .contains("No measured cpu spans available"));
     }
     assert!(std::fs::metadata(&path).unwrap().len() > 0);
     let chrome = std::fs::read_to_string(&path).unwrap();

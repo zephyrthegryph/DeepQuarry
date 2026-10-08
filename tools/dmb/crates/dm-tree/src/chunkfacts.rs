@@ -7,7 +7,14 @@ use dm_ir::*;
 use dm_syntax::{Span as SyntaxSpan, TokenKind};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-const SCHEMA: u32 = 1;
+const SCHEMA: u32 = 2;
+#[derive(Serialize, Deserialize)]
+enum ScalarConstant {
+    Null,
+    Number(u32),
+    Text(Vec<u8>),
+    Type(SymbolId),
+}
 #[derive(Serialize, Deserialize)]
 struct Expression(Vec<(u8, SymbolId, [usize; 2])>);
 #[derive(Serialize, Deserialize)]
@@ -42,6 +49,7 @@ struct Procedure {
 }
 #[derive(Serialize, Deserialize)]
 struct Metadata {
+    constant: Option<ScalarConstant>,
     declared: Option<SymbolId>,
     element: Option<SymbolId>,
     display: Option<SymbolId>,
@@ -56,7 +64,7 @@ struct Metadata {
 #[derive(Serialize, Deserialize)]
 enum Declaration {
     Type(SymbolId, Option<SymbolId>),
-    Member(SymbolId, SymbolId, u8, u8, Metadata, u128),
+    Member(SymbolId, SymbolId, u8, u8, Box<Metadata>, u128),
 }
 #[derive(Serialize, Deserialize)]
 enum Event {
@@ -322,10 +330,23 @@ fn proc(value: Procedure, symbols: &SymbolTable) -> Option<Arc<ProcedureMetadata
     }))
 }
 fn metadata(value: &DeclarationMeaning) -> Option<Metadata> {
-    if value.inherited_opaque.is_some() || value.resolved_constant.is_some() {
+    if value.inherited_opaque.is_some() {
         return None;
     }
     Some(Metadata {
+        constant: value
+            .resolved_constant
+            .as_ref()
+            .map(|constant| {
+                Some(match constant {
+                    SemanticValue::Null => ScalarConstant::Null,
+                    SemanticValue::NumberBits(bits) => ScalarConstant::Number(*bits),
+                    SemanticValue::Text(text) => ScalarConstant::Text(text.to_vec()),
+                    SemanticValue::Type(path) => ScalarConstant::Type(*path),
+                    _ => return None,
+                })
+            })
+            .transpose_option()?,
         declared: value.declared_type,
         element: value.list_element_type,
         display: value.display_name,
@@ -341,7 +362,20 @@ fn metadata(value: &DeclarationMeaning) -> Option<Metadata> {
 fn meta(value: Metadata, symbols: &SymbolTable) -> Option<DeclarationMeaning> {
     let result = DeclarationMeaning {
         inherited_opaque: None,
-        resolved_constant: None,
+        resolved_constant: value
+            .constant
+            .map(|constant| {
+                Some(match constant {
+                    ScalarConstant::Null => SemanticValue::Null,
+                    ScalarConstant::Number(bits) => SemanticValue::NumberBits(bits),
+                    ScalarConstant::Text(text) => SemanticValue::Text(text.into()),
+                    ScalarConstant::Type(path) => {
+                        symbols.text(path)?;
+                        SemanticValue::Type(path)
+                    }
+                })
+            })
+            .transpose_option()?,
         declared_type: symbol(value.declared, symbols)?,
         list_element_type: symbol(value.element, symbols)?,
         display_name: symbol(value.display, symbols)?,
@@ -409,7 +443,7 @@ pub(super) fn encode(
                             DefinitionMode::Reopen => 2,
                             DefinitionMode::Implicit => 3,
                         },
-                        metadata(meaning)?,
+                        Box::new(metadata(meaning)?),
                         *content,
                     ),
                 })
@@ -530,7 +564,7 @@ pub(super) fn decode(
                 Declaration::Member(owner, name, tag, mode, meaning, content) => {
                     symbols.text(owner)?;
                     symbols.text(name)?;
-                    let meaning = meta(meaning, &symbols)?;
+                    let meaning = meta(*meaning, &symbols)?;
                     if xxhash_rust::xxh3::xxh3_128(&meaning.canonical) != content {
                         return None;
                     }
@@ -660,6 +694,55 @@ pub(super) fn decode(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn scalar_null_and_type_constants_roundtrip_and_require_type_symbols() {
+        let source = "/datum/base\n    var/static/const/empty = null\n    var/static/const/type_value = /datum/base\n";
+        let parsed = dm_syntax::parse_declaration_skeleton(source);
+        assert!(parsed.diagnostics.is_empty());
+        let ast = dm_syntax::AstFile {
+            items: parsed.items,
+            ..Default::default()
+        };
+        let mut expected = crate::from_ast(&ast, SymbolTable::default(), FileId(0), 0, 0).unwrap();
+        let ledger = capture(&ast.items, "/", &mut expected.symbols).unwrap();
+        let values: Vec<_> = expected
+            .skeletons
+            .iter()
+            .filter_map(|row| match row {
+                Skeleton::Member { metadata, .. } => metadata.resolved_constant.clone(),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            values,
+            vec![
+                SemanticValue::Null,
+                SemanticValue::Type(SymbolId::of("/datum/base"))
+            ]
+        );
+        let bytes = encode(&expected, &ledger, 0).unwrap();
+        let (decoded, rebound) = decode(&bytes, source, 0).unwrap();
+        assert!(decoded.skeletons == expected.skeletons);
+        assert_eq!(decoded.symbols.ordered(), expected.symbols.ordered());
+        assert_eq!(decoded.origins, expected.origins);
+        assert_eq!(rebound.events, ledger.events);
+
+        let type_metadata = expected
+            .skeletons
+            .iter()
+            .find_map(|row| match row {
+                Skeleton::Member { metadata, .. }
+                    if matches!(metadata.resolved_constant, Some(SemanticValue::Type(_))) =>
+                {
+                    Some(metadata)
+                }
+                _ => None,
+            })
+            .unwrap();
+        // A wire type value has no authority without its exact symbol receipt.
+        assert!(meta(metadata(type_metadata).unwrap(), &SymbolTable::default()).is_none());
+        assert!(meta(metadata(type_metadata).unwrap(), &expected.symbols).is_some());
+    }
     #[test]
     fn typed_chunk_facts_roundtrip_preserves_all_metadata_and_rebases_origins() {
         let source="/datum/base\n    var/list/obj/items[2]\n    var/static/const/value = 7\n    proc/read(list/obj/args[], count = 2 as num)\n        if(value)\n            set waitfor = 0\n        else\n            set name = \"display\"\n        return count\n/datum/base/child\n    parent_type = /datum/base\n/datum/base/value = 9\n";

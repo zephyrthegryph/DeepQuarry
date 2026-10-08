@@ -115,7 +115,7 @@ pub fn map_defaults(
         if !authored {
             continue;
         }
-        if !member.is_some_and(|member| member.metadata.initializer.is_some()) {
+        if member.is_none_or(|member| member.metadata.initializer.is_none()) {
             return Err(format!(
                 "world.{name} authored default has no certified effective initializer"
             ));

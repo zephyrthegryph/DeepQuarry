@@ -16,6 +16,10 @@ DIAGNOSTIC = re.compile(
     r"^(.*?):(\d+):(error|warning(?: \([^)]*\))?|native unsupported|internal compiler error):\s?(.*)$"
 )
 UNLOCATED = re.compile(r"^(error|native unsupported|internal compiler error):\s?(.*)$")
+DIAGNOSTIC_SHAPED = re.compile(
+    r"(?:^|:)\s*(?:error|warning|fatal|native unsupported|internal compiler error)\b",
+    re.IGNORECASE,
+)
 DEFAULT_CASES = ["outer_field-corrected", "outer_constant-corrected",
                  "receiver_constant", "lexical_constant"]
 
@@ -42,6 +46,11 @@ def normalize(text, directory):
         elif (match := UNLOCATED.match(line)):
             records.append({"file": None, "line": None,
                             "severity": match[1], "message": match[2]})
+        elif DIAGNOSTIC_SHAPED.search(line):
+            # Keep unsupported diagnostic formats as evidence and fail the gate
+            # even when both producers happen to emit the same unknown format.
+            records.append({"file": None, "line": None,
+                            "severity": "unrecognized diagnostic", "message": line})
     return records
 
 
@@ -116,6 +125,9 @@ def main():
         passed = (unchanged and not reference["timed_out"] and not candidate["timed_out"]
                   and reference["exit_code"] != 0 and candidate["exit_code"] != 0
                   and any(row["severity"] == "error" for row in reference["diagnostics"])
+                  and not any(row["severity"] == "unrecognized diagnostic"
+                              for run_result in (reference, candidate)
+                              for row in run_result["diagnostics"])
                   and reference["diagnostics"] == candidate["diagnostics"])
         results.append({"case": case, "source_sha256": source_hash, "defines": args.define,
                         "source_unchanged": unchanged, "passed": passed,

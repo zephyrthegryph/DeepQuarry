@@ -29,5 +29,24 @@ class RuntimeNormalization(unittest.TestCase):
             self.assertFalse(coverage["complete"])
             self.assertEqual(coverage["unlocated_procedure"],1)
 
+    def test_blank_origin_raw_records_remain_unlocated_and_separate(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            (root/"runtime-errors.log").write_text(
+                "03:15:20 code/example.dm:154 list index out of bounds\n"
+                "03:15:20 : list index out of bounds\n"
+                ": list index out of bounds\n"
+                "unrecognized diagnostic\n")
+            counts,_,coverage=read_runtime(root, raw_only=True)
+            self.assertEqual(counts[("list index out of bounds",None,"code/example.dm",154)],1)
+            self.assertEqual(counts[("list index out of bounds",None,None,None)],2)
+            self.assertEqual(coverage["raw_events"],3)
+            self.assertEqual(coverage["parse_errors"],1)
+            self.assertEqual(coverage["unlocated_source"],2)
+            self.assertEqual(coverage["unlocated_procedure"],3)
+            self.assertEqual(coverage["ownership_unavailable"],3)
+            self.assertEqual(coverage["test_owned"],0)
+            self.assertFalse(coverage["complete"])
+
 if __name__ == "__main__":
     unittest.main()

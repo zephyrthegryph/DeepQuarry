@@ -253,34 +253,36 @@ fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
             let slices = &slices;
             let results = &results;
             let next = &next;
-            handles.push(scope.spawn(move || loop {
+            handles.push(scope.spawn(move || {
                 let _profile = dm_profile::stage("cold.procedure_lowering");
-                let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                let Some(slice) = slices.get(index) else {
-                    break;
-                };
-                let outcomes = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    slice
-                        .iter()
-                        .map(|body| lower_one_memo(frontend, body, host, policy, startup, memo))
-                        .collect::<Vec<_>>()
-                }))
-                .unwrap_or_else(|_| {
-                    slice
-                        .iter()
-                        .map(|body| {
-                            Err(vec![LoweringDiagnostic {
-                                kind: DiagnosticKind::Internal,
-                                identity: None,
-                                origin: body.source.clone(),
-                                message: "procedure lowering worker panicked".into(),
-                            }])
-                        })
-                        .collect()
-                });
-                *results[index]
-                    .lock()
-                    .unwrap_or_else(|error| error.into_inner()) = Some(outcomes);
+                loop {
+                    let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    let Some(slice) = slices.get(index) else {
+                        break;
+                    };
+                    let outcomes = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        slice
+                            .iter()
+                            .map(|body| lower_one_memo(frontend, body, host, policy, startup, memo))
+                            .collect::<Vec<_>>()
+                    }))
+                    .unwrap_or_else(|_| {
+                        slice
+                            .iter()
+                            .map(|body| {
+                                Err(vec![LoweringDiagnostic {
+                                    kind: DiagnosticKind::Internal,
+                                    identity: None,
+                                    origin: body.source.clone(),
+                                    message: "procedure lowering worker panicked".into(),
+                                }])
+                            })
+                            .collect()
+                    });
+                    *results[index]
+                        .lock()
+                        .unwrap_or_else(|error| error.into_inner()) = Some(outcomes);
+                }
             }));
         }
         for handle in handles {
@@ -453,11 +455,13 @@ fn lower_one_memo<R: Resolver, P: AbiPolicy>(
     let disk = memo.lookup_procedure(
         &key,
         identity,
-        frontend,
-        body,
+        crate::lowering_memo_wire::ProcedureReplayContext {
+            frontend,
+            body,
+            parsed: parsed.as_ref().map(|parsed| parsed.item()),
+        },
         host,
         &prepared,
-        parsed.as_ref().map(|parsed| parsed.item()),
     );
     if let Some(errors) = disk
         .errors
@@ -785,7 +789,7 @@ fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         Some(abi) => crate::argument_sources::lower_helpers(
             crate::argument_sources::HelperInputs {
                 frontend,
-                parsed: &parsed,
+                parsed,
                 metadata,
                 owner: identity,
                 inputs: &inputs,

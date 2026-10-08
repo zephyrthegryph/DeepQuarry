@@ -83,8 +83,7 @@ impl DirectiveRecord {
         inputs: usize,
         environment: &MacroEnvironment,
         conditionals: &[Conditional],
-        file_dirs: &[std::path::PathBuf],
-        definitions: &[Macro],
+        file_dirs: (&[std::path::PathBuf], &[Macro]),
     ) -> bool {
         self.inputs == inputs
             && self.source.as_ref() == source
@@ -101,7 +100,7 @@ impl DirectiveRecord {
             && self
                 .file_dirs
                 .as_ref()
-                .is_none_or(|(paths, values)| paths == file_dirs && values == definitions)
+                .is_none_or(|(paths, values)| paths == file_dirs.0 && values == file_dirs.1)
     }
     pub(super) fn actions(&self) -> &[Action] {
         &self.actions

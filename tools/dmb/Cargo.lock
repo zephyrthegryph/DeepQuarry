@@ -161,6 +161,7 @@ dependencies = [
 name = "dm-preprocess"
 version = "0.1.0"
 dependencies = [
+ "dm-profile",
  "dm-syntax",
  "dm-wire",
  "im",

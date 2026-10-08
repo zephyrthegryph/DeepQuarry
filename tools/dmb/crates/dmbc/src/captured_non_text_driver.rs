@@ -608,7 +608,11 @@ mod tests {
             if !matches!(domain, MissingDomain::Skin) {
                 assert_eq!(stages.last().unwrap().stage, CaptureStage::AssetCapture);
                 assert!(!stages.last().unwrap().succeeded);
-                assert_eq!(stages.len(), 2);
+                assert_eq!(stages.len(), 3);
+                assert_eq!(stages[0].stage, CaptureStage::NonTextParsing);
+                assert_eq!(stages[1].stage, CaptureStage::ResourceDemand);
+                assert!(stages[0].succeeded);
+                assert!(stages[1].succeeded);
             }
             match domain {
                 MissingDomain::Code => match result {

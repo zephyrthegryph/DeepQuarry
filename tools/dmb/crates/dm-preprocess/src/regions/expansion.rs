@@ -68,16 +68,20 @@ fn expand_regions_inner(
             for _ in 0..worker_count {
                 let next = &next;
                 let outputs = &outputs;
-                scope.spawn(move || loop {
-                    let index = next.fetch_add(1, Ordering::Relaxed);
-                    if index >= count {
-                        break;
+                scope.spawn(move || {
+                    let _profile = dm_profile::stage("frontend.expansion");
+                    loop {
+                        let index = next.fetch_add(1, Ordering::Relaxed);
+                        if index >= count {
+                            break;
+                        }
+                        let output = match memo {
+                            Some(memo) => region_memo::expand(plan, index, memo),
+                            None => expand_region(plan, index, None),
+                        };
+                        outputs.lock().expect("expansion output lock poisoned")[index] =
+                            Some(output);
                     }
-                    let output = match memo {
-                        Some(memo) => region_memo::expand(plan, index, memo),
-                        None => expand_region(plan, index, None),
-                    };
-                    outputs.lock().expect("expansion output lock poisoned")[index] = Some(output);
                 });
             }
         });

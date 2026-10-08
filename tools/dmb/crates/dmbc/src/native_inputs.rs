@@ -94,30 +94,33 @@ impl NativeInputs {
                     let candidates = &candidates;
                     let outputs = &outputs;
                     let next = &next;
-                    scope.spawn(move || loop {
+                    scope.spawn(move || {
                         let _profile = dm_profile::stage("input_scan");
-                        let index = next.fetch_add(1, Ordering::Relaxed);
-                        if index >= candidates.len() {
-                            break;
+                        loop {
+                            let index = next.fetch_add(1, Ordering::Relaxed);
+                            if index >= candidates.len() {
+                                break;
+                            }
+                            // A speculative failure is not an input diagnostic and
+                            // is never cached as absence or a required-read error.
+                            let Ok(prepared) = prepare_source(provider, &candidates[index]) else {
+                                continue;
+                            };
+                            let Ok(mut outputs) = outputs.lock() else {
+                                break;
+                            };
+                            outputs[index] = Some(prepared);
                         }
-                        // A speculative failure is not an input diagnostic and
-                        // is never cached as absence or a required-read error.
-                        let Ok(prepared) = prepare_source(provider, &candidates[index]) else {
-                            continue;
-                        };
-                        let Ok(mut outputs) = outputs.lock() else {
-                            break;
-                        };
-                        outputs[index] = Some(prepared);
                     })
                 })
                 .collect::<Vec<_>>();
             // Join every worker, including after an earlier panic. Code defects
             // are internal failures; only ordinary read errors are optional.
-            handles
-                .into_iter()
-                .map(|handle| handle.join().is_ok())
-                .fold(true, |all, succeeded| all && succeeded)
+            let mut all_joined = true;
+            for handle in handles {
+                all_joined &= handle.join().is_ok();
+            }
+            all_joined
         });
         if !workers_succeeded {
             return Err(NativeInputError::InternalPreparation {

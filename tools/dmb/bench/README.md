@@ -1,6 +1,6 @@
 # dmb-bench — revision 5 protocol
 
-The benchmark harness is scaffolding for root-run traces. It has not been run on the full project. No new acceptance result is claimed. Historical rows imported from A–K remain context only.
+The harness has run all nine eight-worker cold/body-edit/unchanged samples on the frozen DeepQuarry inputs; their output and diagnostic oracles passed. CPU acceptance is not evaluable because cycle-derived CPU fails its independent process crosscheck, and I/O byte budgets fail. All nine two-worker regression runs also oracle-passed; their medians are recorded. The harness exits 1 because acceptance fails, not because compilation or its output oracle failed. See [../STATUS.md](../STATUS.md) for measured medians and evidence. Historical rows imported from A–K remain context only.
 
 ## Protocol
 
@@ -48,9 +48,11 @@ Replace the example compiler token with the actual frozen executable path. `--ca
 
 The profiler contract is schema 1. For trace `run.trace.json`, it reads `run.trace.report.json`, retaining `critical_path_cpu_s`, `total_cpu_s`, stages, I/O bytes, allocation availability and private memory. Chrome trace and sibling CPU/wall folded stacks and SVGs remain raw evidence.
 
+New Windows reports retain `thread_calibrations`: each participating thread needs its own naturally observed CPU envelope and at least two disjoint 500 ms stability windows. Missing or unstable conversion blocks CPU acceptance. Envelope quantization uncertainty must be at most 5%, and the independent covered/process CPU crosscheck still has its 5% tolerance. Older startup-calibrated receipts retain their original interpretation; they are never relabelled as per-thread measurements. Coarse audit counters cannot repair missing high-resolution CPU.
+
 `stage-map.json` must explicitly map nonoverlapping, sequential trace stage names to every revision-5 budget domain: `input`, `frontend`, `tree`, `resources_maps`, `abi_initializers`, `lowering`, `link`, `composition_publication`. Names must come from actual trace output. Do not map nested spans twice or guess names before instrumentation is wired. Critical-path totals must be issued by the profiler's explicit sequential top-stage configuration. Missing domains or metrics block acceptance.
 
-The current harness supports cold, body-edit and unchanged scenarios. The broader edit corpus, history replay, daemon and six-worktree benchmark remain open. An eight-worker cold CPU baseline and ten-heaviest-span write-up are still required.
+The current harness supports cold, body-edit and unchanged scenarios. The broader edit corpus, history replay, daemon and six-worktree benchmark remain open. The ten-heaviest-span write-up is provisional until clock accounting passes; an accepted eight-worker cold CPU baseline is still required. Independent `coarse_*` CPU counters are retained for clock auditing and never replace the high-resolution acceptance fields.
 
 ## Historical import
 
