@@ -93,6 +93,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(loc, /obj/structure/disposalpipe/trunk)
 
 	add_disposal_connection()
+	face(dir)
 	observe(src, /datum/notice/disposal_receive, src, then(PROC_REF(on_disposal_receive)))
 	if(trunk)
 		PUBLISH_LEGACY(src, /datum/notice/disposal_link, trunk)
@@ -210,7 +211,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		to_chat(user, span_blue("You empty the bag."))
 		for(var/obj/item/O in T.slot_contents())
 			T.remove_from_storage(O,src)
-		changed(src)
+		sync_occupied()
 		return
 
 	if(istype(I, /obj/item/material/ashtray))
@@ -220,7 +221,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 			for(var/obj/item/O in contents_of(A))
 				O.forceMove(src)
 			A.sync_butts()
-			changed(src)
+			sync_occupied()
 			return
 
 	var/obj/item/grab/G = I
@@ -251,13 +252,13 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 			act_message(user, victim, MSG_SELF(span_danger("You toss %T% into \the [src].")), \
 				MSG_OTHERS(span_danger("%U% tosses %T% into \the [src].")), \
 				MSG_BLIND(span_warning("Pr-Thunk")))
-			changed(src)
+			sync_occupied()
 			return
 
 		I.forceMove(src)
 
 	act_message(user, src, MSG_SELF("You place %I% into %T%."), MSG_OTHERS("%U% places %I% into %T%."), MSG_BLIND("Ca-Clunk"), item = I)
-	changed(src)
+	sync_occupied()
 	return
 
 /obj/machinery/disposal/proc/multitool_used(datum/act/op/A)
@@ -369,8 +370,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	new_bin.set_broken_condition(broken_now())
 	new_bin.set_maintenance(under_maintenance())
 	new_bin.set_mode(mode)
-	new_bin.dir = new_dir
-	changed(new_bin) // the new dir: sets up wall outlets
+	new_bin.face(new_dir)
 	new_bin.visible_message("\The [src] reconfigures into \a [new_bin]!")
 	// Effects
 	play_sfx(new_bin, SFX_ITEMS_JAWS_CUT)
@@ -418,7 +418,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	else
 		act_message(target, user, MSG_SELF(span_userdanger("%T% stuffs %U% into \the [src].")), MSG_OTHERS(span_danger("%T% stuffs %U% into \the [src].")))
 		add_attack_logs(user,target,"Disposals dunked")
-	changed(src)
+	sync_occupied()
 
 // attempt to move while inside
 /obj/machinery/disposal/relaymove(mob/user)
@@ -436,7 +436,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 // leave the disposal
 /obj/machinery/disposal/proc/go_out(mob/user)
 	user.forceMove(get_turf(src))
-	changed(src)
+	sync_occupied()
 
 /obj/machinery/disposal
 	silicon_use = SILICON_USE_UI
@@ -445,7 +445,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	if(broken_now())
 		return
 	flush = !flush
-	changed(src)
+	update_icon()
 */
 // human interact with machine
 /obj/machinery/disposal/proc/interaction_disposal_use(datum/act/op/A)
@@ -561,9 +561,20 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_DISPOSAL))
 		AM.forceMove(get_turf(src))
 		AM.pipe_eject(0)
-	changed(src)
+	sync_occupied()
 
 TRACKED(/obj/machinery/disposal, flush)
+/// Whether anything is inside, kept for the look.
+/obj/machinery/disposal/var/occupied = FALSE
+TRACKED(/obj/machinery/disposal, occupied)
+
+/// Whether anything is inside, as the look reads it: refreshed wherever the contents change.
+/obj/machinery/disposal/proc/sync_occupied()
+	set_occupied(length(slot_contents(CONTAINER_SLOT_DISPOSAL)) > 0)
+
+/// Turns the bin to face a direction; a wall bin also moves its outlet.
+/obj/machinery/disposal/proc/face(new_dir)
+	dir = new_dir
 
 // the icon & overlays reflect mode & status
 /obj/machinery/disposal/draw(datum/look/look)
@@ -583,7 +594,7 @@ TRACKED(/obj/machinery/disposal, flush)
 		return
 
 	// 	check for items in disposal - occupied light
-	look.overlay("[controls_iconstate]-full", when = length(slot_contents(CONTAINER_SLOT_DISPOSAL)) > 0)
+	look.overlay("[controls_iconstate]-full", when = occupied)
 
 	// charging and ready light
 	if(mode == DISPOSALMODE_CHARGING)
@@ -692,7 +703,7 @@ TRACKED(/obj/machinery/disposal, flush)
 		set_mode(DISPOSALMODE_CHARGING) // switch to charging
 
 	wake_for_state_change()
-	changed(src)
+	sync_occupied()
 
 // called when area power changes
 /obj/machinery/disposal/power_change()
@@ -751,7 +762,7 @@ TRACKED(/obj/machinery/disposal, flush)
 	else
 		visible_message("\The [source] bounces off of \the [src]'s rim!")
 		return ..()
-	changed(src)
+	sync_occupied()
 
 // Ideally, deconstruct would be a proc on /machinery, but you cant have nice things with polaris.
 // AKA: FUKKIN CHANGE THIS WHEN THAT HAPPENS!!!!!1!!   pls. -Reo
@@ -799,10 +810,19 @@ TRACKED(/obj/machinery/disposal, flush)
 
 	density = FALSE
 
+/// The direction the wall outlet faces, kept as tracked state for the look.
+/obj/machinery/disposal/wall/var/outlet_dir = 0
+
+TRACKED(/obj/machinery/disposal/wall, outlet_dir)
+
+/obj/machinery/disposal/wall/face(new_dir)
+	..()
+	set_outlet_dir(new_dir)
+
 /// A wall bin sits in the wall it faces: the look moves it (an effect, since it writes the pixel offset).
 /obj/machinery/disposal/wall/look_parts(datum/look/look)
 	..()
-	look.effect(PROC_REF(look_effect_wall_offset), dir)
+	look.effect(PROC_REF(look_effect_wall_offset), outlet_dir)
 
 /obj/machinery/disposal/wall/proc/look_effect_wall_offset(facing)
 	switch(facing)

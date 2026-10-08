@@ -81,6 +81,8 @@ CAPABILITIES(/obj/item/perfect_tele)
 			rel_add(src, nameof(beacons), nb)
 	loc_network = null //Consumed
 
+TRACKED(/obj/item/perfect_tele, ready)
+
 /obj/item/perfect_tele/draw(datum/look/look)
 	look.watch(power_source)
 	if(!power_source)
@@ -144,7 +146,6 @@ CAPABILITIES(/obj/item/perfect_tele)
 		to_chat(user,span_notice("You eject \the [power_source] from \the [src]."))
 		user.put_in_hands(power_source)
 		rel_take(src, nameof(power_source))
-		changed(src)
 	else
 		to_chat(user,span_notice("[src] does not have a power cell."))
 
@@ -317,7 +318,7 @@ This device records all warnings given and teleport events for admin review in c
 	if(!ready || !destination() || !power_source)
 		return
 	//Bzzt.
-	ready = 0
+	set_ready(FALSE)
 	power_source.use(charge_cost)
 
 	//Unbuckle taur riders
@@ -385,14 +386,12 @@ This device records all warnings given and teleport events for admin review in c
 			//Phase-in effect for grabbed person
 			phase_in(grabbed,get_turf(grabbed))
 
-	changed(src)
 	after(src, 30 SECONDS, PROC_REF(translocator_ready))
 
 	LAZYSET(logged_events, "[world.time]", "[user] teleported [target] to [real_dest] [televored ? "(Belly: [lowertext(real_dest.name)])" : null]")
 
 /obj/item/perfect_tele/proc/translocator_ready()
-	ready = 1
-	changed(src)
+	set_ready(TRUE)
 
 /obj/item/perfect_tele/proc/phase_out(mob/M,turf/T)
 
@@ -537,8 +536,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 /obj/item/perfect_tele/frontier/unload_ammo(mob/user, ignore_inactive_hand_check = 0)
 	if(recharging)
 		return
-	recharging = 1
-	changed(src)
+	set_recharging(TRUE)
 	act_message(user, src, MSG_SELF(span_notice("You open %T% and start pumping the handle.")), \
 		MSG_OTHERS(span_notice("%U% opens %T% and starts pumping the handle.")))
 	pump_handle(user)
@@ -555,8 +553,9 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	pump_handle(user)
 
 /obj/item/perfect_tele/frontier/proc/pump_done()
-	recharging = 0
-	changed(src)
+	set_recharging(FALSE)
+
+TRACKED(/obj/item/perfect_tele/frontier, recharging)
 
 /obj/item/perfect_tele/frontier/draw(datum/look/look)
 	if(recharging)

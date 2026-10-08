@@ -86,7 +86,6 @@
 	smooth_mask = mask
 	update_connections()
 	update_icon()
-	changed(src)
 
 /obj/structure/proc/update_connections(propagate = 0)
 	if(propagate)

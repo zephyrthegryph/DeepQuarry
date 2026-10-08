@@ -34,7 +34,7 @@ TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 		if(reagents.total_volume <= 0)
 			set_mixer_angle(mixer_angle + (mixer_rotation_rate))
 			set_mixer_angle((360 + mixer_angle) % 360)
-			changed(src)
+			update_icon()
 		set_got_input(FALSE)
 		return
 
@@ -48,29 +48,35 @@ TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 		return
 	set_mixer_angle(mixer_angle + (mixer_rotation_rate))
 	set_mixer_angle((360 + mixer_angle) % 360)
-	changed(src)
+	update_icon()
 	set_got_input(FALSE)
 
-/obj/machinery/reagent_refinery/mixer/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/reagent_refinery/mixer/appearance_overlays()
+	. = list()
 	// GOOBY!
 	if(reagents && reagents.total_volume >= 5)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
 		switch(percent)
-			if(5 to 20) percent = 2
-			if(20 to 40) percent = 4
-			if(40 to 60) percent = 6
-			if(60 to 80) percent = 8
-			if(80 to INFINITY) percent = 10
-		look.overlay(look_overlay_image(icon, "mixer_r_[percent]", color = reagents.get_color(), dir = dir))
+			if(5 to 20)			percent = 2
+			if(20 to 40) 		percent = 4
+			if(40 to 60)		percent = 6
+			if(60 to 80)		percent = 8
+			if(80 to INFINITY)	percent = 10
+		var/image/filling = image(icon, loc, "mixer_r_[percent]",dir = dir)
+		filling.color = reagents.get_color()
+		. += filling
 	// Get main dir pipe
-	look.overlay(look_overlay_image(icon, "mixer_cons", dir = dir))
+	var/image/pipe = image(icon, icon_state = "mixer_cons", dir = dir)
+	. += pipe
 	if(anchored)
 		if(operable())
-			look.overlay(look_overlay_image(icon, "mixer_dot_[ got_input ? "on" : "off" ]"))
-		look.overlay(update_input_connection_overlays("mixer_intakes"))
+			var/image/dot = image(icon, icon_state = "mixer_dot_[ got_input ? "on" : "off" ]")
+			. += dot
+		. += update_input_connection_overlays("mixer_intakes")
 	// Get mixer overlay
-	look.overlay(look_overlay_image(icon, "mixer_arm", dir = angle2dir(mixer_angle)))
+	var/image/arm = image(icon, icon_state = "mixer_arm", dir = angle2dir(mixer_angle))
+	. += arm
 
 /obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation(datum/act/op/A)
 	var/mob/user = A.actor
@@ -103,7 +109,7 @@ TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 	// If we transfered anything, then inform process() of it!
 	if(.)
 		set_got_input(TRUE)
-		changed(src)
+		update_icon()
 
 /// Busy while it turns between inputs; it waits (asleep) facing an input until reagents arrive.
 /obj/machinery/reagent_refinery/mixer/refinery_busy()

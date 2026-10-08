@@ -196,6 +196,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 
 /// The name follows the step: anchored, wired, near finished.
 /obj/structure/windoor_assembly/proc/update_state()
+	update_icon()
 	name = ""
 	if(built(src, STAGE_WINDOOR_ASSEMBLY_BOARDED))
 		name = "near finished "
@@ -204,6 +205,13 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 	else if(built(src, STAGE_WINDOOR_ASSEMBLY_SECURED))
 		name = "anchored "
 	name += "[secure ? "secure " : ""]windoor assembly[created_name ? " ([created_name])" : ""]"
+
+// The assembly's own template does not apply: draw() below is the look, and update_icon() marks it for it.
+APPEARANCE_NONE(/obj/structure/windoor_assembly)
+
+// ALLOW(sys_update_icon): bridge only; it draws nothing, it marks the assembly so draw() runs
+/obj/structure/windoor_assembly/update_icon()
+	changed(src)
 
 /obj/structure/windoor_assembly/draw(datum/look/look)
 	..()
@@ -217,6 +225,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 	if(.)
 		if(wired)
 			update_nearby_tiles(need_rebuild=1)
+		update_icon()
 
 /// Flips the windoor assembly: whether the door opens to the left or the right.
 /obj/structure/windoor_assembly/proc/flipped(datum/act/op/A)
@@ -226,5 +235,5 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 	else
 		facing = "l"
 		to_chat(A.actor, "The windoor will now slide to the left.")
-	changed(src)
+	update_icon()
 	return OP_OK
