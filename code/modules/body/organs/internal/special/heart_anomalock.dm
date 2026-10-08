@@ -32,7 +32,8 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 
 
 /obj/item/organ/internal/heart/machine/anomalock/handle_organ_mod_special(removed)
-	if(!core)
+	// a prebuilt heart runs this at creation, before it has an owner
+	if(!core || !owner)
 		return
 
 	if(!removed)
