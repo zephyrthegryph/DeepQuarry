@@ -45,27 +45,26 @@ TRACKED(/obj/item/material/fishing_rod, strung)
 	else
 		..()
 
-/obj/item/material/fishing_rod/proc/string_done(mob/user, obj/item/stack/cable_coil/C)
-	if(strung || !C.use(5))
+/obj/item/material/fishing_rod/proc/string_done(datum/act/op/A)
+	var/mob/user = A.actor
+	if(strung)
 		return
 	set_strung(TRUE)
 	to_chat(user, span_notice("You string \the [src]!"))
 
+/// How long stringing takes: ten to twenty seconds, rolled when it starts.
+/obj/item/material/fishing_rod/proc/string_time(datum/act/op/A)
+	return rand(10 SECONDS, 20 SECONDS)
+
 CAPABILITIES(/obj/item/material/fishing_rod)
+	op("fishing_rod_string", stack(/obj/item/stack/cable_coil, 5), priority(OP_PRIORITY_DEFAULT), label("Use"), when(req_is(nameof(strung), FALSE)), wait(PROC_REF(string_time)), then(PROC_REF(string_done)))
 	op("fishing_rod_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(fishing_rod_item)))
 
-/// Old attackby: string the rod or swap its bait; bait falls through as its ..() did.
+/// Old attackby: swap the rod's bait; anything else falls through as its ..() did.
 /obj/item/material/fishing_rod/proc/fishing_rod_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
-	if(istype(I, /obj/item/stack/cable_coil) && !strung)
-		var/obj/item/stack/cable_coil/C = I
-		if(C.get_amount() < 5)
-			to_chat(user, span_warning("You do not have enough length in \the [C] to string this!"))
-			return OP_PASS
-		task_timed(user, rand(10 SECONDS, 20 SECONDS), src, src, PROC_REF(string_done), list(user, C))
-		return OP_PASS
-	else if(istype(I, bait_type))
+	if(istype(I, bait_type))
 		if(Bait)
 			Bait.forceMove(get_turf(user))
 			to_chat(user, span_notice("You swap \the [Bait] with \the [I]."))

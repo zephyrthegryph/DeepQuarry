@@ -91,24 +91,35 @@
 	var/decompression_amount = 70
 	var/used = FALSE
 
-/obj/item/decompression_needle/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	var/mob/living/carbon/human/H = M
-	if(!istype(H) || stance == I_HURT)
-		return ..()
-	if(used)
-		to_chat(user, span_warning("\The [src] has already been used."))
-		return ITEM_INTERACT_SUCCESS
-	if(target_zone != BP_TORSO)
-		to_chat(user, span_warning("Aim for [H]'s chest."))
-		return ITEM_INTERACT_SUCCESS
-	act_message(user, src, MSG_SELF(span_notice("You line %T% up between [H]'s ribs.")), MSG_OTHERS(span_warning("%U% lines %T% up between [H]'s ribs.")))
-	task_timed(user, 3 SECONDS, H, src, PROC_REF(needle_done), list(user, H))
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF(decompression_needle/lining_up, span_notice("You line %I% up between %T%'s ribs."), span_warning("%U% lines %I% up between %T%'s ribs."))
 
-/obj/item/decompression_needle/proc/needle_done(mob/living/user, mob/living/carbon/human/H)
+CAPABILITIES(/obj/item/decompression_needle)
+	op("decompress", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE),
+		needs(req(PROC_REF(unused), because = PROC_REF(used_text)), req(PROC_REF(aimed_at_chest), because = PROC_REF(aim_text))),
+		begins(MSG(decompression_needle/lining_up)), wait(3 SECONDS), then(PROC_REF(needle_done)))
+
+TRACKED(/obj/item/decompression_needle, used)
+
+/// Requirement: the needle has not been used.
+/obj/item/decompression_needle/proc/unused(datum/act/op/A)
+	return !used
+
+/obj/item/decompression_needle/proc/used_text(datum/act/op/A)
+	return span_warning("\The [src] has already been used.")
+
+/// Requirement: the user aims at the chest (what is aimed at is fixed while the click is decided).
+/obj/item/decompression_needle/proc/aimed_at_chest(datum/act/op/A)
+	return read_once(A.actor.zone_sel?.selecting) == BP_TORSO
+
+/obj/item/decompression_needle/proc/aim_text(datum/act/op/A)
+	return span_warning("Aim for [A.target]'s chest.")
+
+/obj/item/decompression_needle/proc/needle_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/human/H = A.target
 	if(used)
 		return
-	used = TRUE
+	set_used(TRUE)
 	name = "used [initial(name)]"
 	H.custom_pain("Something sharp punches between your ribs!", 30)
 	if(decompress(H))

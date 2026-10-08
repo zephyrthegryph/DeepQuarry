@@ -117,6 +117,8 @@ TRACKED(/obj/machinery/shieldgen, malfunction)
 
 TRACKED(/obj/machinery/shieldgen, is_open)
 
+MSG_DEF_SELF(shieldgen/rewiring, span_notice("You begin to replace the wires."))
+
 CAPABILITIES(/obj/machinery/shieldgen)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_many(nameof(deployed_shields))
@@ -124,7 +126,7 @@ CAPABILITIES(/obj/machinery/shieldgen)
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
-	op("shieldgen_repair", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Repair wiring"), when(req(PROC_REF(needs_repair_holds))), then(PROC_REF(interaction_repair)))
+	op("shieldgen_repair", stack(/obj/item/stack/cable_coil, 1), priority(OP_PRIORITY_DEFAULT - 1), label("Repair wiring"), when(req(PROC_REF(needs_repair_holds))), begins(MSG(shieldgen/rewiring)), wait(3 SECONDS), then(PROC_REF(rewire_done)))
 	op("shieldgen_toggle_lock", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle lock"), then(PROC_REF(interaction_toggle_lock)))
 	op("shieldgen_insert_cell", item(/obj/item/cell), priority(OP_PRIORITY_DEFAULT - 1), label("Insert cell"), then(PROC_REF(interaction_insert_cell)))
 	op("shieldgen_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(unlocked_holds), because = PROC_REF(unlocked_refusal)), req(PROC_REF(panel_closed_holds), because = PROC_REF(panel_closed_refusal))), then(PROC_REF(interaction_toggle)))
@@ -284,19 +286,12 @@ CAPABILITIES(/obj/machinery/shieldgen)
 /obj/machinery/shieldgen/proc/needs_repair(mob/actor, atom/target, obj/item/held)
 	return malfunction && is_open
 
-/obj/machinery/shieldgen/proc/interaction_repair(datum/act/op/A)
+/obj/machinery/shieldgen/proc/rewire_done(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/stack/cable_coil/coil = A.held
-	to_chat(user, span_notice("You begin to replace the wires."))
-	task_timed(user, 3 SECONDS, src, src, PROC_REF(rewire_done), list(user, coil))
-	return OP_OK
-
-/obj/machinery/shieldgen/proc/rewire_done(mob/user, obj/item/stack/cable_coil/coil)
-	if (coil.use(1))
-		repair_damage(max_integrity)
-		set_malfunction(0)
-		to_chat(user, span_notice("You repair the [src]!"))
-		changed(src)
+	repair_damage(max_integrity)
+	set_malfunction(0)
+	to_chat(user, span_notice("You repair the [src]!"))
+	changed(src)
 
 /obj/machinery/shieldgen/proc/interaction_toggle_lock(datum/act/op/A)
 	var/mob/user = A.actor

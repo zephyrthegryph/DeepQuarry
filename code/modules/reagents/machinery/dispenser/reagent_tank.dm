@@ -361,6 +361,7 @@ TRACKED(/obj/structure/reagent_dispensers/water_cooler, bottle)
 CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	climb()
 	op("interaction_hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
+	op("unfasten_jug", tool(TOOL_WRENCH), when(nameof(bottle)), starts(PROC_REF(jug_started)), wait(2 SECONDS), then(PROC_REF(unfasten_jug_done)))
 	op("bottle", item(/obj/item/reagent_containers/glass/cooler_bottle), needs(req(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req(PROC_REF(cooler_no_bottle), because = MSG(water_cooler/has_bottle))),
 		begins(MSG(water_cooler/screwing)), wait(2 SECONDS), then(PROC_REF(bottle_done)))
 	op("cupholder", stack(/obj/item/stack/material/plastic, 1), needs(req(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req(PROC_REF(cooler_no_cupholder), because = MSG(water_cooler/has_cupholder))),
@@ -416,7 +417,13 @@ MSG_DEF_SELF(water_cooler/has_cupholder, span_warning("There is already a cup di
 	to_chat(user, span_notice("You attach a cup dispenser onto the water-cooler."))
 	set_cupholder(1)
 
-/obj/structure/reagent_dispensers/water_cooler/proc/unfasten_jug_done(mob/user)
+/// The wrench is at the jug: the cooler takes a print and the tool its sound, as the wait starts.
+/obj/structure/reagent_dispensers/water_cooler/proc/jug_started(datum/act/op/A)
+	add_fingerprint(A.actor)
+	playsound(src, A.held.usesound, 50, TRUE)
+
+/obj/structure/reagent_dispensers/water_cooler/proc/unfasten_jug_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!bottle)
 		return
 	to_chat(user, span_notice("You unfasten the jug."))
@@ -428,10 +435,6 @@ MSG_DEF_SELF(water_cooler/has_cupholder, span_warning("There is already a cup di
 
 /obj/structure/reagent_dispensers/water_cooler/wrench_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
-	if(bottle)
-		playsound(src, tool.usesound, 50, TRUE)
-		task_timed(user, 2 SECONDS, src, src, PROC_REF(unfasten_jug_done), list(user))
-		return ITEM_INTERACT_SUCCESS
 	use_tool(user, tool, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool))
 	return ITEM_INTERACT_SUCCESS
 

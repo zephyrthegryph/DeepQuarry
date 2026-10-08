@@ -255,6 +255,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
+	op("cloak", ai(), claims(NONE), wait(1 SECOND, keeps = TARGET_PRESENT | ALIVE), then(PROC_REF(cloak_done)), on_interrupt(PROC_REF(cloak_interrupted)))
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)
 	. = ..()
@@ -417,20 +418,21 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 	endurance = 150
 */
 
-/// Cloaks over one second: the fade runs as a task (cancelled if the mouse dies or is deleted),
+/// Cloaks over one second: the fade runs as an op (cancelled if the mouse dies or is deleted),
 /// so Life never waits for it.
 /mob/living/simple_mob/animal/space/mouse_army/stealth/proc/start_cloaking()
 	if(!cloak_begin())
 		return
 	animate(src, alpha = 0, time = 1 SECOND)
-	if(istext(task_start(/datum/task/mob_work/cloak, src, src)))
+	var/datum/op_result/R = perform_op(src, src, "cloak", null, ORIGIN_AI, AUTH_AI)
+	if(!R || R.outcome == ACT_REFUSED)
 		cloak_finish()
 
-/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_done(datum/task/task)
+/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_done(datum/act/op/A)
 	alpha = initial(alpha)
 	cloak_finish()
 
-/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_interrupted(datum/task/task)
+/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_interrupted(datum/act/op/A)
 	alpha = initial(alpha)
 	uncloak()
 

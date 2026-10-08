@@ -77,23 +77,21 @@
 	plank_type = /obj/item/stack/material/wood/hard
 
 CAPABILITIES(/obj/item/stack/material/log)
-	op("log_interaction_item", item(/obj/item), then(PROC_REF(log_interaction_item)))
+	op("log_cut", item(/obj/item), when(req(PROC_REF(item_cuts))), wait(PROC_REF(cut_time)), then(PROC_REF(cut_planks_done)))
 
-/// Old attackby.
-/obj/item/stack/material/log/proc/log_interaction_item(datum/act/op/A)
-	var/mob/user = A.actor
+/// The held item has a cutting edge and some force.
+/obj/item/stack/material/log/proc/item_cuts(datum/act/op/A)
 	var/obj/item/W = A.held
-	if(!istype(W) || W.force <= 0)
-		return OP_DECLINE
-	if(W.sharp && W.edge)
-		var/time = (3 SECONDS / max(W.force / 10, 1)) * W.toolspeed
-		user.setClickCooldown(time)
-		task_timed(user, time, src, src, PROC_REF(cut_planks_done), list(user, src.material.name))
-	else
-		return OP_DECLINE
-	return OP_PASS
+	return read_once(istype(W) && W.force > 0 && W.sharp && W.edge)
 
-/obj/item/stack/material/log/proc/cut_planks_done(mob/user, our_material_name)
+/// A sharper, stronger blade cuts faster.
+/obj/item/stack/material/log/proc/cut_time(datum/act/op/A)
+	var/obj/item/W = A.held
+	return (3 SECONDS / max(W.force / 10, 1)) * W.toolspeed
+
+/obj/item/stack/material/log/proc/cut_planks_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/our_material_name = src.material.name
 	if(!use(1))
 		return
 	to_chat(user, span_notice("You cut up a log into planks."))

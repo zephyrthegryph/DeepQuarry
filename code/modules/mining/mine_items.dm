@@ -324,7 +324,7 @@ CAPABILITIES(/obj/item/stack/flag)
 
 CAPABILITIES(/obj/item/stack/lightpole)
 	without("ui_open")
-	op("lightpole_self", in_hand(), label("Plant"), needs(req(PROC_REF(can_plant_holds), because = PROC_REF(can_plant_refusal))), then(PROC_REF(lightpole_self)))
+	op("lightpole_self", in_hand(), label("Plant"), needs(req(PROC_REF(can_plant_holds), because = PROC_REF(can_plant_refusal))), wait(8 SECONDS), then(PROC_REF(plant_done)))
 
 /obj/item/stack/lightpole/red
 	name = "red flags"
@@ -364,13 +364,9 @@ CAPABILITIES(/obj/item/stack/lightpole)
 	var/answer = can_plant(A.actor, src, A.held)
 	return istext(answer) ? answer : /datum/msg/req_failed
 
-/obj/item/stack/lightpole/proc/lightpole_self(datum/act/op/A)
+/obj/item/stack/lightpole/proc/plant_done(datum/act/op/A)
 	var/mob/user = A.actor
 	var/turf/T = get_turf(user)
-	task_timed(user, 8 SECONDS, src, src, PROC_REF(plant_done), list(user, T))
-	return TRUE
-
-/obj/item/stack/lightpole/proc/plant_done(mob/user, turf/T)
 	if(locate_within(T, /obj/structure/trailblazer))
 		return
 	var/obj/structure/trailblazer/newlightpole = new blazer_type(T)
@@ -396,7 +392,7 @@ CAPABILITIES(/obj/item/stack/lightpole)
 
 CAPABILITIES(/obj/structure/trailblazer)
 	climb()
-	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), ungated(), label("Use"), wait(8 SECONDS), then(PROC_REF(knock_down_done)))
 
 /obj/structure/trailblazer/Initialize(mapload)
 	. = ..()
@@ -406,16 +402,10 @@ CAPABILITIES(/obj/structure/trailblazer)
 	icon_state = "redtrail_light_on"
 	set_light(2, 2, "#FF0000")
 
-/obj/structure/trailblazer/proc/knock_down_done(mob/user)
+/obj/structure/trailblazer/proc/knock_down_done(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = "%U% knocks down %T%.")
 	replace_with(src, stack_type, 1)
-
-/// Old attack_hand.
-/obj/structure/trailblazer/proc/interaction_hand(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!istext(task_timed(user, 8 SECONDS, src, src, PROC_REF(knock_down_done), list(user))))
-		return TRUE
-	return TRUE
 
 /obj/structure/trailblazer/red
 	name = "trail blazer"

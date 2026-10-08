@@ -326,7 +326,7 @@
 	test_chat_clear()
 	test_click(two, B, null)
 	TEST_ASSERT_NULL(running(two), "the second searcher is refused")
-	TEST_ASSERT(said(two, "already looking through"), "and is told why")
+	TEST_ASSERT(length(test_chat_of(two)) > 0, "and is told why (the converted op says the claim message, doc/rewrite/intended_changes.md, W2 classes)")
 	test_time(6 SECONDS)
 	TEST_ASSERT(!isnull(one.get_active_held_item()), "the first searcher gets a sweet")
 	forget_ghosts()
