@@ -3,7 +3,9 @@ use dm_syntax::{Diagnostic, DiagnosticKind, Item, ItemKind, Span};
 use serde::{Deserialize, Serialize};
 // Embedded declaration-fact schema and semantics belong to this identity:
 // changing them must invalidate both independent and region-enriched fragments.
-pub(super) const VERSION: u32 = 4;
+// Lexical proc settings are unconditional declarations; old guarded metadata
+// must never replay under the same fragment identity.
+pub(super) const VERSION: u32 = 5;
 #[derive(Serialize, Deserialize)]
 struct Node {
     kind: u8,
@@ -199,7 +201,7 @@ mod tests {
     }
     #[test]
     fn previous_fact_schema_cannot_reuse_parser_fragment_identity() {
-        const PREVIOUS_VERSION: u32 = 3;
+        const PREVIOUS_VERSION: u32 = 4;
         let source = "/datum/probe\n    var/value = 1\n";
         let ast = dm_syntax::parse_declaration_skeleton(source);
         let items = super::super::compact_declarations(ast.items, 0);

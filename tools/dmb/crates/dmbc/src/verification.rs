@@ -160,18 +160,23 @@ struct MeasurementPolicy {
 fn is_measurement(line: &str) -> bool {
     static POLICY: std::sync::OnceLock<MeasurementPolicy> = std::sync::OnceLock::new();
     let policy = POLICY.get_or_init(|| {
-        let policy: MeasurementPolicy = serde_json::from_str(include_str!(
-            "../../../diagnostic-measurements.json"
-        ))
-        .expect("embedded diagnostic measurement policy must be valid");
-        assert_eq!(policy.schema, 1, "unsupported diagnostic measurement policy");
+        let policy: MeasurementPolicy =
+            serde_json::from_str(include_str!("../../../diagnostic-measurements.json"))
+                .expect("embedded diagnostic measurement policy must be valid");
+        assert_eq!(
+            policy.schema, 1,
+            "unsupported diagnostic measurement policy"
+        );
         policy
     });
     policy.stage_prefixes.iter().any(|(prefix, names)| {
         line.strip_prefix(prefix.as_str())
             .and_then(|tail| tail.split_once(':'))
             .is_some_and(|(name, _)| names.iter().any(|known| known == name))
-    }) || policy.prefixes.iter().any(|prefix| line.starts_with(prefix.as_str()))
+    }) || policy
+        .prefixes
+        .iter()
+        .any(|prefix| line.starts_with(prefix.as_str()))
 }
 fn run_child(arguments: &[String], log: &Path, deadline: Instant) -> io::Result<Option<i32>> {
     if Instant::now() >= deadline {

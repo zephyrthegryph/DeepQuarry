@@ -156,7 +156,13 @@ impl ProcedureSignature {
             );
             append_expression(&mut bytes, parameter.default.as_ref());
             bytes.push(u8::from(parameter.list_element_type.is_some()));
-            bytes.extend_from_slice(&parameter.list_element_type.map(SymbolId::bits).unwrap_or(0).to_le_bytes());
+            bytes.extend_from_slice(
+                &parameter
+                    .list_element_type
+                    .map(SymbolId::bits)
+                    .unwrap_or(0)
+                    .to_le_bytes(),
+            );
             append_expression(&mut bytes, parameter.input_annotation.as_ref());
             append_expression(&mut bytes, parameter.source_expression.as_ref());
         }
@@ -367,23 +373,47 @@ pub struct DeclarationMeaning {
 impl DeclarationMeaning {
     pub fn canonical_bytes(&self) -> Vec<u8> {
         fn part(out: &mut Vec<u8>, bytes: &[u8]) {
-            out.extend_from_slice(&(bytes.len() as u64).to_le_bytes()); out.extend_from_slice(bytes);
+            out.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
+            out.extend_from_slice(bytes);
         }
         fn optional(out: &mut Vec<u8>, bytes: Option<Vec<u8>>) {
             out.push(u8::from(bytes.is_some()));
-            if let Some(bytes) = bytes { part(out, &bytes); }
+            if let Some(bytes) = bytes {
+                part(out, &bytes);
+            }
         }
         let mut out = b"dm-declaration-meaning-v1\0".to_vec();
-        optional(&mut out, self.inherited_opaque.as_ref().map(|v| v.canonical_bytes()));
-        for value in [self.declared_type, self.list_element_type, self.display_name] {
+        optional(
+            &mut out,
+            self.inherited_opaque.as_ref().map(|v| v.canonical_bytes()),
+        );
+        for value in [
+            self.declared_type,
+            self.list_element_type,
+            self.display_name,
+        ] {
             optional(&mut out, value.map(|v| v.bits().to_le_bytes().to_vec()));
         }
         out.extend_from_slice(&self.flags.to_le_bytes());
-        optional(&mut out, self.procedure.as_ref().map(|v| v.canonical_bytes()));
+        optional(
+            &mut out,
+            self.procedure.as_ref().map(|v| v.canonical_bytes()),
+        );
         optional(&mut out, self.array.as_ref().map(|v| v.canonical_bytes()));
-        optional(&mut out, self.initializer.as_ref().map(|v| v.canonical_bytes()));
-        optional(&mut out, self.declared_initializer.as_ref().map(|v| v.canonical_bytes()));
-        optional(&mut out, self.resolved_constant.as_ref().map(|v| v.canonical_bytes()));
+        optional(
+            &mut out,
+            self.initializer.as_ref().map(|v| v.canonical_bytes()),
+        );
+        optional(
+            &mut out,
+            self.declared_initializer
+                .as_ref()
+                .map(|v| v.canonical_bytes()),
+        );
+        optional(
+            &mut out,
+            self.resolved_constant.as_ref().map(|v| v.canonical_bytes()),
+        );
         part(&mut out, &self.canonical);
         out
     }

@@ -1,13 +1,13 @@
 //! Resource inputs shared by the direct compiler, its cache key, and RSC writer.
 //! Callers resolve DM file literals to an authored archive name and a disk path.
 
-pub mod native_resolver;
 pub mod capture;
 pub mod catalog;
+pub mod native_resolver;
 
-use byond_dmb::rsc::{NamedResource, ResourceKind};
 #[cfg(test)]
 use byond_dmb::rsc::Entry;
+use byond_dmb::rsc::{NamedResource, ResourceKind};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
@@ -100,8 +100,12 @@ impl ResourceSet {
             {
                 continue;
             }
-            let mut file = fs::File::open(&request.disk_path).map_err(|error|
-                io::Error::new(error.kind(), format!("{}: {error}", request.disk_path.display())))?;
+            let mut file = fs::File::open(&request.disk_path).map_err(|error| {
+                io::Error::new(
+                    error.kind(),
+                    format!("{}: {error}", request.disk_path.display()),
+                )
+            })?;
             let length = file.metadata()?.len();
             let mut candidate = fingerprint.clone();
             candidate.update((request.archive_name.len() as u64).to_le_bytes());
@@ -153,8 +157,12 @@ impl ResourceSet {
             {
                 continue;
             }
-            let bytes = fs::read(&request.disk_path).map_err(|error|
-                io::Error::new(error.kind(), format!("{}: {error}", request.disk_path.display())))?;
+            let bytes = fs::read(&request.disk_path).map_err(|error| {
+                io::Error::new(
+                    error.kind(),
+                    format!("{}: {error}", request.disk_path.display()),
+                )
+            })?;
             let content_digest: [u8; 32] = Sha256::digest(&bytes).into();
             if let Some((_, previous)) = names.insert(
                 request.archive_name.clone(),
@@ -190,7 +198,11 @@ impl ResourceSet {
     }
 
     pub fn rsc_bytes(&self) -> io::Result<Vec<u8>> {
-        let resources = self.inputs.iter().map(|input| &input.named).collect::<Vec<_>>();
+        let resources = self
+            .inputs
+            .iter()
+            .map(|input| &input.named)
+            .collect::<Vec<_>>();
         byond_dmb::rsc::named_archive_bytes(&resources)
     }
 }

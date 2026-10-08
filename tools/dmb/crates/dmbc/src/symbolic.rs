@@ -12,10 +12,41 @@ pub struct ReferenceBindings {
     pub references: BTreeMap<Symbol, SymRef>,
 }
 pub struct FrozenUnit {
-    pub lowered: LoweredUnit,
+    pub lowered: FrozenUnitMetadata,
     pub frozen: Arc<FrozenProc>,
     current_image: Option<CurrentImage>,
     features: BytecodeFeatures,
+}
+/// Composition-only metadata: resolver receipts and rich instructions are released.
+pub struct FrozenUnitMetadata {
+    pub identity: UnitIdentity,
+    pub origin: dm_tree::frontend::BodyOccurrence,
+    pub abi: Option<Arc<crate::procedure_policy::PreparedAbi>>,
+    pub debug_origins: crate::debug_sources::DebugOrigins,
+    pub frame: FrozenFrame,
+}
+pub struct FrozenFrame {
+    pub local_count: u32,
+    pub local_names: Vec<String>,
+    pub argument_names: Vec<String>,
+    pub argument_type_flags: Vec<u32>,
+}
+impl FrozenUnitMetadata {
+    fn consume(unit: LoweredUnit) -> Self {
+        let procedure = unit.code.procedure;
+        Self {
+            identity: unit.identity,
+            origin: unit.origin,
+            abi: unit.abi,
+            debug_origins: unit.debug_origins,
+            frame: FrozenFrame {
+                local_count: procedure.local_count,
+                local_names: procedure.local_names,
+                argument_names: procedure.argument_names,
+                argument_type_flags: procedure.argument_type_flags,
+            },
+        }
+    }
 }
 pub struct FrozenHelper {
     pub owner: UnitIdentity,
@@ -351,7 +382,7 @@ pub fn freeze_artifact_tables(
         }
     }
     let freeze_profile = dm_profile::stage("linking.freeze_artifacts");
-    for lowered in batch.units {
+    for mut lowered in batch.units {
         let frozen = freeze_artifact(
             &lowered.code,
             lowered.identity,
@@ -381,7 +412,7 @@ pub fn freeze_artifact_tables(
             key: unit_key(lowered.identity),
             content: procedure_content(&lowered, &frozen.code().canonical_bytes()),
         });
-        for helper in &lowered.source_helpers {
+        for helper in std::mem::take(&mut lowered.source_helpers) {
             if helper.owner != lowered.identity || !helper.code.procedure.argument_names.is_empty()
             {
                 return Err(IntegrationError::Freeze {
@@ -417,13 +448,13 @@ pub fn freeze_artifact_tables(
                 frozen: Arc::new(frozen_helper),
                 current_image: None,
                 features: BytecodeFeatures::of(&helper.code.procedure.code),
-                debug_origins: helper.debug_origins.clone(),
-                local_names: helper.code.procedure.local_names.clone(),
+                debug_origins: helper.debug_origins,
+                local_names: helper.code.procedure.local_names,
             });
         }
         units.push(FrozenUnit {
             features: BytecodeFeatures::of(&lowered.code.procedure.code),
-            lowered,
+            lowered: FrozenUnitMetadata::consume(lowered),
             frozen: Arc::new(frozen),
             current_image: None,
         });

@@ -513,6 +513,14 @@ rebuilt every build.
 - **Semantic tree:** types, vars, procs, inheritance, override chains, signatures, flags,
   metadata settings and constant values. It has no absolute positions and no references into
   token buffers.
+- **Procedure settings:** `set` statements are proc-wide lexical declarations in encounter
+  order, including declarations nested under runtime `if`, loops or `spawn`. Runtime
+  ancestors do not guard ABI metadata; later assignments overwrite earlier assignments.
+  Removing setting leaves preserves executable containers and condition evaluation.
+  Direct evidence: pinned BYOND proc38151 `/obj/item/beacon_locator/process` has flags
+  `0x180`, including background `0x100`, despite its setting being inside runtime guards
+  and `spawn`. OpenDream's [block compiler](https://github.com/OpenDreamProject/OpenDream/blob/master/DMCompiler/DM/Builders/DMProcBuilder.cs)
+  also explicitly treats settings as unconditional to their block.
 - **Reuse condition:** the semantic tree is reused when the ordered sequence of declaration
   skeletons is unchanged. Order is part of the condition because override order and redefinitions
   depend on it: moving an unchanged file in the `.dme` changes the sequence without changing any

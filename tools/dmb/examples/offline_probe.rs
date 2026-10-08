@@ -4,14 +4,26 @@ use std::{env, fs, path::PathBuf};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input = PathBuf::from(env::args_os().nth(1).ok_or("INPUT.dmb OUTPUT.dmb")?);
     let output = PathBuf::from(env::args_os().nth(2).ok_or("missing output")?);
-    if input == output { return Err("diagnostic output must be separate".into()); }
+    if input == output {
+        return Err("diagnostic output must be separate".into());
+    }
     let mut dmb = Dmb::from_bytes(&fs::read(&input)?)?;
-    let mut words = dmb.proc_code_words(2282).ok_or("missing Master.Initialize")?.to_vec();
+    let mut words = dmb
+        .proc_code_words(2282)
+        .ok_or("missing Master.Initialize")?
+        .to_vec();
     if words.get(0x5cf..0x5d5) != Some(&[0x50, 1, 0x34, 65500, 65509, 93][..]) {
-        return Err(format!("unexpected instruction sequence: {:?}", words.get(0x5cf..0x5d5)).into());
+        return Err(format!(
+            "unexpected instruction sequence: {:?}",
+            words.get(0x5cf..0x5d5)
+        )
+        .into());
     }
     words[0x5d0] = 0;
-    dmb.replace_proc_code(2282, &bytecode::decode(&words).map_err(|error| format!("{error:?}"))?)?;
+    dmb.replace_proc_code(
+        2282,
+        &bytecode::decode(&words).map_err(|error| format!("{error:?}"))?,
+    )?;
     dmb.validate_references()?;
     let bytes = dmb.to_bytes()?;
     let readback = Dmb::from_bytes(&bytes)?;

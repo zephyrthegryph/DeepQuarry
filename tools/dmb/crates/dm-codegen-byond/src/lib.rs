@@ -71,16 +71,35 @@ pub enum Word {
 /// BYOND's compound `V` operand. A number contains its IEEE-754 bit pattern;
 /// string indices are relocated after the string ledger is frozen.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub enum NativePrimitiveType { List, Savefile }
+pub enum NativePrimitiveType {
+    List,
+    Savefile,
+}
 impl NativePrimitiveType {
     pub fn from_path(path: &str) -> Option<Self> {
-        match path { "/list" => Some(Self::List), "/savefile" => Some(Self::Savefile), _ => None }
+        match path {
+            "/list" => Some(Self::List),
+            "/savefile" => Some(Self::Savefile),
+            _ => None,
+        }
     }
     pub fn from_symbol(path: dm_ir::SymbolId) -> Option<Self> {
-        [Self::List, Self::Savefile].into_iter().find(|kind| dm_ir::SymbolId::of(kind.path()) == path)
+        [Self::List, Self::Savefile]
+            .into_iter()
+            .find(|kind| dm_ir::SymbolId::of(kind.path()) == path)
     }
-    pub fn path(self) -> &'static str { match self { Self::List => "/list", Self::Savefile => "/savefile" } }
-    pub fn tag(self) -> u8 { match self { Self::List => 40, Self::Savefile => 36 } }
+    pub fn path(self) -> &'static str {
+        match self {
+            Self::List => "/list",
+            Self::Savefile => "/savefile",
+        }
+    }
+    pub fn tag(self) -> u8 {
+        match self {
+            Self::List => 40,
+            Self::Savefile => 36,
+        }
+    }
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ValueWord {

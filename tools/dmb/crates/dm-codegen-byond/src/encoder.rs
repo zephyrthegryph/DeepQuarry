@@ -308,8 +308,10 @@ fn encode_internal(
                 .map_err(|error| LinkError::Decode(format!("{error:?}")))?,
         );
     }
+    // Membership only: sorting does not affect emitted words or error order.
+    legal_slots.sort_unstable();
     for slot in branch_slots {
-        if !legal_slots.contains(&slot) {
+        if legal_slots.binary_search(&slot).is_err() {
             return Err(LinkError::BranchOperandIsNotTarget { offset: slot });
         }
     }

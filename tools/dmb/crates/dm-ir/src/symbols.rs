@@ -7,7 +7,9 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct SymbolId(u64);
 
 impl SymbolId {

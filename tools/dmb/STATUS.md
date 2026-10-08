@@ -1,6 +1,10 @@
-# Native compiler status — 7 October 2026
+# Native compiler status — 8 October 2026
 
-[DESIGN.md revision 5](DESIGN.md) governs this work. Phase 0 close-out is **open**: the cleanup and release-suite repairs are implemented, but accepted CPU evidence and runtime parity are unresolved. Phase 1 throughput, the daemon and later disk-cache acceptance remain unfinished. New disk-cache features are frozen.
+[DESIGN.md revision 5](DESIGN.md) governs this work. Phase 0 close-out is **open**: the cleanup and release-suite repairs are implemented, but one cold run now has accepted CPU uncertainty bounds; the median CPU baseline, body-edit trace and runtime parity remain unresolved. Phase 1 throughput, the daemon and later disk-cache acceptance remain unfinished. New disk-cache features are frozen.
+
+## Latest checked snapshot
+
+Compiler f (commit 83c1f30d9f) passed 244 targeted release tests, workspace/all-target Clippy and 35 Python regressions. Its single cold audit passed the fresh-output oracle and CPU-quality check (52.0421 s wall, 79.078125 s process CPU, 3.219 GB peak private memory). Earlier full-suite counts below describe their identified snapshots. The current cleanup/memory batch passed Clippy; its repeated full release suite was cancelled during compilation to prioritize the confirmed ABI blockers. The focused native fixture currently fails three procedure ABI settings before runtime startup. No runtime parity conclusion is available.
 
 ## Current evidence
 
@@ -60,6 +64,12 @@ The frozen e compiler (release, LTO disabled) completed one cold compile in 197.
 
 The next source batch merges observed same-thread coverage intervals before assigning endpoint uncertainty, while leaving independent stage bounds and the 5% process check intact. ABI preparation uses one bounded pool across dependency waves to avoid hundreds of short worker intervals. The measured resource-capture bottleneck now indexes missing lookups once and consumes the existing resource demand rather than discovering it again. These changes are implemented; targeted release gates and a new bounded output comparison are pending. The rich-IR lifetime patch remains external and unapplied so its effect can be measured separately. A whole-workspace file-cap inventory still finds 17 Rust files above 1,000 lines; the lowering split does not close that general cleanup gate. Separate frontend, profiler and ABI module cleanup patches are being prepared. No runtime comparison has run.
 
+## f audit: usable single-run CPU bounds
+
+The committed resource/pool batch (`83c1f30d9f`) passed 244 targeted release tests, workspace/all-target Clippy with warnings denied, and 35 Python regressions. Its frozen release executable (LTO disabled) completed one eight-worker cold audit with 52.0421 s profiler wall, 79.078125 s process CPU, critical bounds 35.1875�36.5 s and peak private memory 3,219,111,936 bytes. Covered-thread/process bounds were 0.9533689�0.9871567: the entire interval is within the independent 5% gate, and the harness reports no CPU-quality errors. This establishes usable single-run bounds, not median acceptance or Phase 1 throughput success. Resource/map maximum-thread bounds remain 9.140625�9.203125 s and symbolic linking 7.640625�7.703125 s. The separate fresh-output and diagnostic oracle passed. Evidence: `E:/dmb-native-v2-phase0/review-bounds-clock-audit-20261008-f/receipt.json`.
+
+A subsequent uncommitted source batch integrates real private-module/file-cap cleanup, rich-IR release after freezing and sorted branch-target validation. Formatting passes and no Rust file in `crates/` exceeds 1,000 lines, and release workspace/all-target Clippy passed. The repeated full release workspace suite was cancelled during compilation; it has no pass result. Fresh output checks remain outstanding. It is not represented by f's timings.
+
 ## Runtime parity remains open
 
 See [phase0/POWER_RUNTIME_AUDIT.md](phase0/POWER_RUNTIME_AUDIT.md). Offline replay of the historical normalizer reproduced SHA256 `1e39336baf63c6a2e9132a66dbff9666c712eba0348d61b5019d45aaf14c95c2`; that hash does not describe the corrected parser. The preserved comparison has 40 stable differing signatures and 79 variable signatures, plus two BYOND access violations. Native blank-origin errors cannot be assigned to a proc from those logs.
@@ -78,3 +88,15 @@ Worker profiling now covers expansion, startup capture and ABI preparation at wo
 - Begin worst-stage throughput work only after close-out evidence is usable; each optimization requires before/after traces. Split oversized `simple.rs` while working in its measured lowering boundaries.
 
 Historical narratives: [prior status](archive/STATUS-20261007-pre-review.md), [disk-cache cohorts](archive/PHASE2_PROGRESS-20261007-pre-review.md). Neither closes a phase.
+
+### Focused runtime compilation blocker (8 October)
+
+The frozen focused fixture compiled with BYOND 516.1687 in 222.2041 s (exit 0). Native compiler f stopped in 17.5509 s on three ABI settings: two authored source restrictions using view(usr, 1), and the beacon locator process setting reported as a non-scalar. Neither DreamDaemon was launched. Evidence is in E:/dmb-native-v2-phase0/review-power-focus/compile/receipt.json. These are compiler admission failures requiring repair before the authorized trusted runtime comparison; they are not runtime parity results.
+
+### Pending integration boundaries
+
+The source-size gate (python tools/dmb/check_source_shape.py) scans all workspace source, tests, examples and explicit dev-script targets. It currently reports ten oversized reference/format/audit files; private-module splits are prepared externally and have not been type-checked. The native crate cleanup is already applied. Native ABI repairs for explicit usr-centered view sources and lexical proc settings are prepared separately; the parser fragment version will advance to 5 when that repair is applied. Frozen fixture BYOND metadata confirms source kind/radius 1/1 for both view sites and background flag 0x100 on beacon_locator/process. The repeated full release build was stopped during reference-translator test compilation. Both ABI repairs and the private ABI test split are now applied; targeted dm-tree/codegen release tests, Clippy and the compiler build are running. The preceding full-suite counts remain the full-suite evidence, not a claim about this repaired snapshot.
+
+### Applied ABI repair checks
+
+Lexical settings extraction, parser-wire version 5, explicit view(usr, 1) admission and the private ABI test module are applied. The final targeted release run passed 371 tests (267 codegen, 104 tree), zero failures; targeted all-target Clippy passed with warnings denied in 27.21 s. The first run found one stale compact-body assertion (103 tree passes, one failure); it now requires preservation of empty executable guards. Evidence: review-abi-repair-targeted-final.log and review-abi-repair-clippy.log under E:/dmb-native-v2-phase0. The compiler rebuild is ongoing; focused source compilation and fresh-output comparison have not yet been retried.

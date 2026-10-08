@@ -14,7 +14,7 @@ fn code_edit_crosses_nullable_list_id_and_promotes_object_width() {
     let bytes = dmb.to_bytes().unwrap();
     let decoded = Dmb::from_bytes(&bytes).unwrap();
     assert_eq!(decoded.lists.len(), 0x10001);
-    assert_eq!(decoded.proc_code_words(0), Some([0x50,7,0].as_slice()));
+    assert_eq!(decoded.proc_code_words(0), Some([0x50, 7, 0].as_slice()));
     assert_eq!(decoded.to_bytes().unwrap(), bytes);
 }
 

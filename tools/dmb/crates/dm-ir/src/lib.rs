@@ -19,12 +19,14 @@ pub use initializer::{
     InitializerScope, InitializerTarget, InitializerUnit, InitializerValue, InitializerWrite,
 };
 pub mod map;
-pub mod skin;
 mod modified_instance;
+pub mod skin;
 pub use modified_instance::{CapturedModifiedResource, ModifiedInstance};
 pub mod constants;
 mod procedure_static;
-pub use procedure_static::{ProcedureIdentity, ProcedureStaticDeclaration, ProcedureStaticIdentity};
+pub use procedure_static::{
+    ProcedureIdentity, ProcedureStaticDeclaration, ProcedureStaticIdentity,
+};
 
 mod resolver;
 pub use resolver::{procedure_value_query, ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};

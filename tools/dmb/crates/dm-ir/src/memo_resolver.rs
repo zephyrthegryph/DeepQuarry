@@ -1,12 +1,12 @@
 //! Optional request-local reuse beneath dependency-recording consumers.
 use crate::{ResolveQuery, ResolvedMeaning, Resolver, SemanticValue};
 use std::collections::HashMap;
+#[cfg(test)]
+use std::sync::Mutex;
 use std::sync::{
     atomic::{AtomicU64, AtomicUsize, Ordering},
     RwLock,
 };
-#[cfg(test)]
-use std::sync::Mutex;
 
 /// Aggregate request-local observations; concurrent snapshots are approximate.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -94,7 +94,8 @@ impl<R: Resolver + ?Sized> Resolver for MemoResolver<'_, R> {
         let meaning = self.host.resolve(query);
         // Admission is monotonic. Once full, avoid millions of exclusive-lock
         // attempts for uncached queries while preserving all existing hits.
-        if self.retained_entries.load(Ordering::Relaxed) < self.entry_budget && retainable(&meaning) {
+        if self.retained_entries.load(Ordering::Relaxed) < self.entry_budget && retainable(&meaning)
+        {
             if let Ok(mut entries) = self.entries.write() {
                 if entries.len() < self.entry_budget
                     && !entries.contains_key(&query)

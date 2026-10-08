@@ -28,8 +28,15 @@ pub fn project_declaration_type(path: &str) -> DeclarationType<'_> {
 
 /// Redundant declaration namespace segments do not become type names.
 pub fn normalize_declaration_type(mut path: &str) -> &str {
-    while let Some(tail) = path.strip_prefix("var/").or_else(|| path.strip_prefix("/var/")) {
-        path = if path.starts_with('/') { &path[4..] } else { tail };
+    while let Some(tail) = path
+        .strip_prefix("var/")
+        .or_else(|| path.strip_prefix("/var/"))
+    {
+        path = if path.starts_with('/') {
+            &path[4..]
+        } else {
+            tail
+        };
     }
     path
 }

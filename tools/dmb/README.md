@@ -71,6 +71,7 @@ typed `ResourceKind` values; other byte codes remain available as `Other`.
 From the repository root:
 
 ```powershell
+python tools/dmb/check_source_shape.py
 cargo test --manifest-path tools/dmb/Cargo.toml
 cargo run --manifest-path tools/dmb/Cargo.toml -- rsc-info deepquarry.rsc
 cargo run --manifest-path tools/dmb/Cargo.toml -- rsc-copy deepquarry.rsc copied.rsc

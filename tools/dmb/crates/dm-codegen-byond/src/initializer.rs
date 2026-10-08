@@ -198,9 +198,9 @@ fn attach_target_slots(
     });
     for (symbol, slot) in slots {
         if !references.contains(&symbol) {
-            return Err(InitializerError::Invalid(
-                format!("initializer did not emit its exact shared target: {symbol:?}, {slot:?}"),
-            ));
+            return Err(InitializerError::Invalid(format!(
+                "initializer did not emit its exact shared target: {symbol:?}, {slot:?}"
+            )));
         }
         if code
             .slots
@@ -225,16 +225,32 @@ pub fn lower_modified_assignments<R: Resolver>(
     context: InitializerContext<'_>,
     host: &R,
 ) -> Result<ResolverProc, InitializerError> {
-    let owner = context.symbols.text(receiver).ok_or_else(|| InitializerError::Invalid("modified receiver spelling missing".into()))?;
+    let owner = context
+        .symbols
+        .text(receiver)
+        .ok_or_else(|| InitializerError::Invalid("modified receiver spelling missing".into()))?;
     for (name, value) in fields {
         let lexed = dm_syntax::lex(name);
         if lexed.tokens.len() != 1 || lexed.tokens[0].kind != dm_syntax::TokenKind::Ident {
-            return Err(InitializerError::Invalid("modified target is not an identifier".into()));
+            return Err(InitializerError::Invalid(
+                "modified target is not an identifier".into(),
+            ));
         }
         admit_modified_rhs(value)?;
     }
-    let inputs = ProcedureInputs { current_type_path: Some(owner.to_owned()), resource_search_context:context.resource_search_context, ..Default::default() };
-    crate::simple::compile_modified_fields_with_resolver(fields, &inputs, context.symbols, host, context.debug).map_err(InitializerError::Lowering)
+    let inputs = ProcedureInputs {
+        current_type_path: Some(owner.to_owned()),
+        resource_search_context: context.resource_search_context,
+        ..Default::default()
+    };
+    crate::simple::compile_modified_fields_with_resolver(
+        fields,
+        &inputs,
+        context.symbols,
+        host,
+        context.debug,
+    )
+    .map_err(InitializerError::Lowering)
 }
 fn admit_modified_rhs(value: &dm_syntax::Expr) -> Result<(), InitializerError> {
     use dm_syntax::ExprKind;
@@ -244,25 +260,79 @@ fn admit_modified_rhs(value: &dm_syntax::Expr) -> Result<(), InitializerError> {
             if raw.starts_with('"') || raw.starts_with('@') || raw.starts_with("{\"") {
                 match crate::decode_constant_string_literal(raw) {
                     Ok(Some(_)) => (),
-                    _ => return Err(InitializerError::Unsupported("modified initializer interpolated string is not certified".into())),
+                    _ => {
+                        return Err(InitializerError::Unsupported(
+                            "modified initializer interpolated string is not certified".into(),
+                        ))
+                    }
                 }
             }
         }
         ExprKind::TypePath(_) => (),
         ExprKind::Group(value) => admit_modified_rhs(value)?,
-        ExprKind::Unary {op,value} if matches!(op.as_str(), "+" | "-" | "!" | "~") => admit_modified_rhs(value)?,
-        ExprKind::Binary {op,lhs,rhs} if matches!(op.as_str(), "+" | "-" | "*" | "/" | "%" | "**" | "<<" | ">>" | "&" | "|" | "^" | "&&" | "||" | "==" | "!=" | "<" | ">" | "<=" | ">=") => { admit_modified_rhs(lhs)?; admit_modified_rhs(rhs)?; }
-        ExprKind::Conditional {condition,then_value,else_value} => { admit_modified_rhs(condition)?; admit_modified_rhs(then_value)?; admit_modified_rhs(else_value)?; }
-        ExprKind::Call {callee,args} if matches!(&callee.kind, ExprKind::Ident(name) if name == "list" || name == "newlist") => {
+        ExprKind::Unary { op, value } if matches!(op.as_str(), "+" | "-" | "!" | "~") => {
+            admit_modified_rhs(value)?
+        }
+        ExprKind::Binary { op, lhs, rhs }
+            if matches!(
+                op.as_str(),
+                "+" | "-"
+                    | "*"
+                    | "/"
+                    | "%"
+                    | "**"
+                    | "<<"
+                    | ">>"
+                    | "&"
+                    | "|"
+                    | "^"
+                    | "&&"
+                    | "||"
+                    | "=="
+                    | "!="
+                    | "<"
+                    | ">"
+                    | "<="
+                    | ">="
+            ) =>
+        {
+            admit_modified_rhs(lhs)?;
+            admit_modified_rhs(rhs)?;
+        }
+        ExprKind::Conditional {
+            condition,
+            then_value,
+            else_value,
+        } => {
+            admit_modified_rhs(condition)?;
+            admit_modified_rhs(then_value)?;
+            admit_modified_rhs(else_value)?;
+        }
+        ExprKind::Call { callee, args } if matches!(&callee.kind, ExprKind::Ident(name) if name == "list" || name == "newlist") => {
             for argument in args {
-                if let ExprKind::Binary {op,lhs,rhs} = &argument.kind {
-                    if op == "=" { if !matches!(&lhs.kind,ExprKind::Ident(_)) {admit_modified_rhs(lhs)?;} admit_modified_rhs(rhs)?; continue; }
+                if let ExprKind::Binary { op, lhs, rhs } = &argument.kind {
+                    if op == "=" {
+                        if !matches!(&lhs.kind, ExprKind::Ident(_)) {
+                            admit_modified_rhs(lhs)?;
+                        }
+                        admit_modified_rhs(rhs)?;
+                        continue;
+                    }
                 }
                 admit_modified_rhs(argument)?;
             }
         }
-        ExprKind::ObjectInitializer {object,fields} => { admit_modified_rhs(object)?; for (_,value) in fields { admit_modified_rhs(value)?; } }
-        _ => return Err(InitializerError::Unsupported("modified initializer RHS has an unproven scoped name or runtime operation".into())),
+        ExprKind::ObjectInitializer { object, fields } => {
+            admit_modified_rhs(object)?;
+            for (_, value) in fields {
+                admit_modified_rhs(value)?;
+            }
+        }
+        _ => {
+            return Err(InitializerError::Unsupported(
+                "modified initializer RHS has an unproven scoped name or runtime operation".into(),
+            ))
+        }
     }
     Ok(())
 }
@@ -528,10 +598,17 @@ mod tests {
     fn modified_assignments_use_src_for_known_fields_without_storage_queries() {
         struct Facts;
         impl Resolver for Facts {
-            fn resolve(&self, query:ResolveQuery)->ResolvedMeaning {
+            fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
                 match query {
-                    ResolveQuery::HasMemberVar {owner,name} if owner == dm_ir::SymbolId::of("/obj/base") && name == dm_ir::SymbolId::of("amount") => ResolvedMeaning::Presence(true),
-                    ResolveQuery::VarStorage {..} => panic!("modifier setter must not consult ordinary static storage"),
+                    ResolveQuery::HasMemberVar { owner, name }
+                        if owner == dm_ir::SymbolId::of("/obj/base")
+                            && name == dm_ir::SymbolId::of("amount") =>
+                    {
+                        ResolvedMeaning::Presence(true)
+                    }
+                    ResolveQuery::VarStorage { .. } => {
+                        panic!("modifier setter must not consult ordinary static storage")
+                    }
                     _ => ResolvedMeaning::Unsupported(query),
                 }
             }
@@ -539,11 +616,33 @@ mod tests {
         let mut symbols = SymbolTable::default();
         let owner = symbols.intern("/obj/base").unwrap();
         let value = dm_syntax::parse_expression("1").expr.unwrap();
-        let result = lower_modified_assignments(&[("amount".into(),value)],owner,InitializerContext {symbols:&symbols,resource_search_context:None,debug:None},&Facts).unwrap();
+        let result = lower_modified_assignments(
+            &[("amount".into(), value)],
+            owner,
+            InitializerContext {
+                symbols: &symbols,
+                resource_search_context: None,
+                debug: None,
+            },
+            &Facts,
+        )
+        .unwrap();
         assert!(result.procedure.code.items.iter().any(|item| matches!(item,crate::Item::Instruction(instruction) if instruction.opcode == opcode::SET_VAR && instruction.operands == [crate::Word::Variable(crate::VariableWord::SetCache(Box::new(crate::VariableWord::Src),Box::new(crate::VariableWord::Field("amount".into()))))])));
         for source in ["C", "src.amount", "run()", "\"[amount]\""] {
             let value = dm_syntax::parse_expression(source).expr.unwrap();
-            assert!(matches!(lower_modified_assignments(&[("amount".into(),value)],owner,InitializerContext {symbols:&symbols,resource_search_context:None,debug:None},&Facts),Err(InitializerError::Unsupported(_))));
+            assert!(matches!(
+                lower_modified_assignments(
+                    &[("amount".into(), value)],
+                    owner,
+                    InitializerContext {
+                        symbols: &symbols,
+                        resource_search_context: None,
+                        debug: None
+                    },
+                    &Facts
+                ),
+                Err(InitializerError::Unsupported(_))
+            ));
         }
     }
     #[test]
@@ -645,7 +744,10 @@ mod tests {
                 .symbol,
             SymbolId::of("exact-slot")
         );
-        assert!(!result.code.slots.contains_key(&Symbol::new(Table::Variable, "counter")));
+        assert!(!result
+            .code
+            .slots
+            .contains_key(&Symbol::new(Table::Variable, "counter")));
         assert!(matches!(result.code.procedure.code.items.last(),
             Some(crate::Item::Instruction(ins)) if ins.opcode == opcode::END));
         assert!(!result.code.procedure.code.items.iter().any(
@@ -655,14 +757,22 @@ mod tests {
         let before = code.procedure.code.clone();
         let symbol = Symbol::new(Table::Variable, "var/counter");
         let slot = code.slots[&symbol].clone();
-        attach_target_slots(&mut code, vec![(symbol.clone(), slot.clone()),
-            (symbol.clone(), slot.clone())]).unwrap();
+        attach_target_slots(
+            &mut code,
+            vec![
+                (symbol.clone(), slot.clone()),
+                (symbol.clone(), slot.clone()),
+            ],
+        )
+        .unwrap();
         assert_eq!(code.procedure.code, before);
         assert_eq!(code.slots.len(), 1);
         let mut conflicting = slot.clone();
         conflicting.name = dm_ir::SymbolId::of("different-name");
-        assert!(matches!(attach_target_slots(&mut code, vec![(symbol, conflicting)]),
-            Err(InitializerError::Invalid(message)) if message.contains("conflicts")));
+        assert!(
+            matches!(attach_target_slots(&mut code, vec![(symbol, conflicting)]),
+            Err(InitializerError::Invalid(message)) if message.contains("conflicts"))
+        );
         assert!(matches!(attach_target_slots(&mut code,
             vec![(Symbol::new(Table::String, "counter"), slot)]),
             Err(InitializerError::Invalid(message)) if message.contains("exact shared target")));

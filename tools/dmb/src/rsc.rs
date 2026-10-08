@@ -267,29 +267,47 @@ pub fn read_entry(reader: &mut impl Read) -> io::Result<Option<Entry>> {
 pub fn named_archive_bytes(resources: &[&NamedResource]) -> io::Result<Vec<u8>> {
     let mut size = 0usize;
     for resource in resources {
-        size = size.checked_add(named_entry_size(resource)?.checked_add(5)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput,"RSC archive too large"))?)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput,"RSC archive too large"))?;
+        size = size
+            .checked_add(named_entry_size(resource)?.checked_add(5).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidInput, "RSC archive too large")
+            })?)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "RSC archive too large"))?;
     }
     let mut output = Vec::new();
-    output.try_reserve_exact(size).map_err(|error| io::Error::new(io::ErrorKind::OutOfMemory,error))?;
-    for resource in resources { write_named(&mut output,resource)?; }
+    output
+        .try_reserve_exact(size)
+        .map_err(|error| io::Error::new(io::ErrorKind::OutOfMemory, error))?;
+    for resource in resources {
+        write_named(&mut output, resource)?;
+    }
     Ok(output)
 }
 
 fn named_entry_size(resource: &NamedResource) -> io::Result<usize> {
-    if resource.name.contains(&0) { return Err(io::Error::new(io::ErrorKind::InvalidInput,"RSC name contains NUL")); }
-    let size = NAMED_HEADER_SIZE.checked_add(resource.name.len()).and_then(|size| size.checked_add(1))
+    if resource.name.contains(&0) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "RSC name contains NUL",
+        ));
+    }
+    let size = NAMED_HEADER_SIZE
+        .checked_add(resource.name.len())
+        .and_then(|size| size.checked_add(1))
         .and_then(|size| size.checked_add(resource.data.len()))
-        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput,"RSC entry is too large"))?;
-    if size > MAX_ENTRY_SIZE { return Err(io::Error::new(io::ErrorKind::InvalidInput,"RSC entry is too large")); }
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "RSC entry is too large"))?;
+    if size > MAX_ENTRY_SIZE {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "RSC entry is too large",
+        ));
+    }
     Ok(size)
 }
 
 /// Write a named resource by reference, with identical framing to `write_entry`.
 pub fn write_named(writer: &mut impl Write, resource: &NamedResource) -> io::Result<()> {
     writer.write_all(&(named_entry_size(resource)? as u32).to_le_bytes())?;
-    writer.write_all(&[1,resource.kind])?;
+    writer.write_all(&[1, resource.kind])?;
     writer.write_all(&resource.id.to_le_bytes())?;
     writer.write_all(&resource.timestamp.to_le_bytes())?;
     writer.write_all(&resource.source_timestamp.to_le_bytes())?;
@@ -301,9 +319,14 @@ pub fn write_named(writer: &mut impl Write, resource: &NamedResource) -> io::Res
 
 pub fn write_entry(writer: &mut impl Write, entry: &Entry) -> io::Result<()> {
     match entry {
-        Entry::Named(resource) => write_named(writer,resource),
-        Entry::Opaque { wrapper,payload } => {
-            if payload.len() > MAX_ENTRY_SIZE { return Err(io::Error::new(io::ErrorKind::InvalidInput,"RSC entry is too large")); }
+        Entry::Named(resource) => write_named(writer, resource),
+        Entry::Opaque { wrapper, payload } => {
+            if payload.len() > MAX_ENTRY_SIZE {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "RSC entry is too large",
+                ));
+            }
             writer.write_all(&(payload.len() as u32).to_le_bytes())?;
             writer.write_all(&[*wrapper])?;
             writer.write_all(payload)

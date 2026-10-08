@@ -399,7 +399,10 @@ mod tests {
     #[test]
     fn typed_list_hints_export_as_structural_facts_separate_from_arrays() {
         let rows = source_rows("/datum/probe\n    var/list/datum/item/values\n    proc/read(list/datum/item/argument)\n        return 1\n");
-        let field = rows.iter().find(|row| row["row"] == "member" && row["name"] == "values").unwrap();
+        let field = rows
+            .iter()
+            .find(|row| row["row"] == "member" && row["name"] == "values")
+            .unwrap();
         assert_eq!(field["declared_type"], "/list");
         assert_eq!(field["list_element_type"], "/datum/item");
         assert_eq!(field["list_element_type_status"], "known");

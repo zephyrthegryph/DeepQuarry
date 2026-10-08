@@ -10,19 +10,23 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
-mod directives;
 mod directive_memo;
-pub use directive_memo::{DirectiveRecord,DIRECTIVE_VERSION};
+mod directives;
+pub use directive_memo::{DirectiveRecord, DIRECTIVE_VERSION};
 mod environment;
 pub mod prepared_source;
 pub use environment::MacroEnvironment;
 mod expansion;
 pub mod region_memo;
-pub use region_memo::{ExpansionMemo, ExpansionRecord, FragmentRecord, EXPANSION_VERSION, FRAGMENT_VERSION};
+pub use region_memo::{
+    ExpansionMemo, ExpansionRecord, FragmentRecord, EXPANSION_VERSION, FRAGMENT_VERSION,
+};
 #[cfg(test)]
 mod tests;
 
-pub use expansion::{expand_regions, expand_regions_text, expand_regions_text_with_memo, ExpandedRegions};
+pub use expansion::{
+    expand_regions, expand_regions_text, expand_regions_text_with_memo, ExpandedRegions,
+};
 
 /// An accepted or suppressed include directive, including its parent chain.
 #[derive(Clone, Debug)]
@@ -107,7 +111,7 @@ pub enum OrderedItem {
 
 #[derive(Clone, Debug, Default)]
 pub struct DirectivePlan {
-    pub source_texts: BTreeMap<PathBuf,Arc<str>>,
+    pub source_texts: BTreeMap<PathBuf, Arc<str>>,
     pub occurrences: Vec<IncludeOccurrence>,
     pub regions: Vec<IncludeRegion>,
     pub items: Vec<OrderedItem>,
@@ -134,7 +138,14 @@ pub fn plan_regions<P: SourceProvider>(
     directives::plan(project, provider, defines)
 }
 
-pub fn plan_regions_with_memo<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,memo:&dyn ExpansionMemo)->DirectivePlan{directives::plan_with_memo(project,provider,defines,Some(memo))}
+pub fn plan_regions_with_memo<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    memo: &dyn ExpansionMemo,
+) -> DirectivePlan {
+    directives::plan_with_memo(project, provider, defines, Some(memo))
+}
 
 impl DirectivePlan {
     /// Source declaration projection follows directive encounter order.
