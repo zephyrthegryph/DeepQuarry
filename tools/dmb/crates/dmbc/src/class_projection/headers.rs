@@ -1,11 +1,11 @@
 //! Finalize effective native appearance defaults after source members are written.
 //! Each known property uses its wire accessor; callback flags remain independent.
 use super::*;
-use dm_ir::SymbolTable;
 use byond_dmb::{
     dmb::{Class, Dmb},
     ids::NONE,
 };
+use dm_ir::SymbolTable;
 use std::collections::{BTreeSet, VecDeque};
 
 pub(crate) fn finalize_headers(
@@ -46,6 +46,9 @@ pub(crate) fn finalize_headers(
             )));
         }
     }
+    let client_owners = routing::client_configuration_order(projection, tables)?
+        .into_iter()
+        .collect::<HashSet<_>>();
     let mut own: HashMap<u32, HashSet<&str>> = HashMap::new();
     let mut override_own: HashMap<u32, HashSet<&str>> = HashMap::new();
     for field in projection
@@ -53,7 +56,9 @@ pub(crate) fn finalize_headers(
         .iter()
         .filter(|field| field.intrinsic && field.role == FieldRole::Assignment)
     {
-        if separate_header_owner(field.owner) {
+        if routing::separate_type_record(field.owner)
+            || routing::separate_intrinsic_field(field, &client_owners, symbols)?
+        {
             continue;
         }
         let id = projected_class_index(field.owner, tables, &class_ids, symbols)?;
@@ -76,7 +81,7 @@ pub(crate) fn finalize_headers(
     let ids = projection
         .types
         .iter()
-        .filter(|ty| !separate_header_owner(ty.path))
+        .filter(|ty| !routing::separate_type_record(ty.path))
         .map(|ty| projected_class_index(ty.path, tables, &class_ids, symbols))
         .collect::<Result<BTreeSet<_>, _>>()?;
     let order = parent_order(dmb, &ids)?;
@@ -190,12 +195,6 @@ pub(crate) fn finalize_headers(
         }
     }
     Ok(())
-}
-
-// These source namespaces have separate world/global output records, never
-// Class records. This matches materialize_types, not an unknown-owner fallback.
-fn separate_header_owner(owner: SymbolId) -> bool {
-    owner == SymbolId::of("/") || owner == SymbolId::of("/world")
 }
 
 fn projected_class_index(
@@ -446,6 +445,8 @@ mod routing_tests {
         let world = symbols.intern("/world").unwrap();
         let atom = symbols.intern("/atom").unwrap();
         let name = symbols.intern("name").unwrap();
+        let savefile = symbols.intern("/savefile").unwrap();
+        let version = symbols.intern("byond_version").unwrap();
         let projection = ClassProjection {
             shared_slot_order: Arc::from([]),
             procedure_statics: Arc::from([]),
@@ -467,16 +468,32 @@ mod routing_tests {
                 },
             ]
             .into(),
-            fields: vec![FieldProjection {
-                owner: world,
-                declaring_owner: world,
-                name,
-                role: FieldRole::Assignment,
-                wire_flags: None,
-                intrinsic: true,
-                shared: false,
-                value: crate::initializer_policy::DefaultValue::Scalar(dm_ir::SemanticValue::Null),
-            }]
+            fields: vec![
+                FieldProjection {
+                    owner: savefile,
+                    declaring_owner: savefile,
+                    name: version,
+                    role: FieldRole::Assignment,
+                    wire_flags: None,
+                    intrinsic: true,
+                    shared: false,
+                    value: crate::initializer_policy::DefaultValue::Scalar(
+                        dm_ir::SemanticValue::Null,
+                    ),
+                },
+                FieldProjection {
+                    owner: world,
+                    declaring_owner: world,
+                    name,
+                    role: FieldRole::Assignment,
+                    wire_flags: None,
+                    intrinsic: true,
+                    shared: false,
+                    value: crate::initializer_policy::DefaultValue::Scalar(
+                        dm_ir::SemanticValue::Null,
+                    ),
+                },
+            ]
             .into(),
             chains: Arc::from([]),
             procedure_declarations: Arc::new(BTreeMap::new()),

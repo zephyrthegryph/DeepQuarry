@@ -4,11 +4,12 @@
 use crate::initializer_policy::DefaultValue;
 mod callbacks;
 mod headers;
+mod routing;
 pub use callbacks::materialize_callback_flags;
-pub(super) use headers::finalize_headers;
 use dm_ir::{SemanticValue, SymbolId, SymbolicExpression};
 use dm_link::Key;
 use dm_tree::{DefinitionMode, MemberKind, OccurrenceId, Target, TreeSnapshot};
+pub(super) use headers::finalize_headers;
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     sync::Arc,
@@ -475,7 +476,7 @@ pub fn materialize_types(
     let mut type_ids = retained.clone();
     for ty in projection.types.iter() {
         let path = spelling(ty.path)?;
-        if path == "/" || path == "/world" {
+        if routing::separate_type_record(ty.path) {
             continue;
         }
         let index = tables

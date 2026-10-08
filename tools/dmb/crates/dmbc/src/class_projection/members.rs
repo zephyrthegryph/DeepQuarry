@@ -112,18 +112,7 @@ pub fn materialize_members(
         .collect::<Result<Vec<_>, ProjectionError>>()?;
     let directives = crate::world_projection::project(world_values)
         .map_err(|error| ProjectionError::Unsupported(format!("world policy {error:?}")))?;
-    let client = SymbolId::of("/client");
-    let client_types = projection
-        .types
-        .iter()
-        .filter_map(|typ| {
-            tables
-                .index(Key::Type(typ.path))
-                .map(|ordinal| (typ.path, typ.parent, ordinal))
-        })
-        .collect::<Vec<_>>();
-    let client_order = crate::client_projection::configuration_order(client, &client_types)
-        .map_err(|error| ProjectionError::Unsupported(format!("client order {error:?}")))?;
+    let client_order = routing::client_configuration_order(projection, tables)?;
     let client_owners: HashSet<_> = client_order.iter().copied().collect();
     let client_directives = client_header_directives(&projection.fields, &client_order, symbols)?;
     crate::client_projection::apply(dmb, &client_directives);
@@ -426,19 +415,7 @@ pub fn materialize_members(
         .iter()
         .filter(|field| field.role == FieldRole::Assignment)
     {
-        if field.owner == world && field.intrinsic {
-            continue;
-        }
-        if field.owner == savefile && field.intrinsic && field.name == SymbolId::of("byond_version")
-        {
-            continue;
-        }
-        if client_owners.contains(&field.owner)
-            && field.intrinsic
-            && crate::client_projection::is_header_field(text(field.name)?)
-            && !(text(field.name)? == "preload_rsc"
-                && matches!(&field.value, DefaultValue::Scalar(SemanticValue::Text(_))))
-        {
+        if routing::separate_intrinsic_field(field, &client_owners, symbols)? {
             continue;
         }
         if field.shared {
