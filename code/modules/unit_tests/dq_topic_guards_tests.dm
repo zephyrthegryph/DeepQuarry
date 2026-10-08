@@ -24,11 +24,20 @@
 		TEST_ASSERT_EQUAL(mob_state_knows_language(M), length(M.languages) > 0, "removing [L.name] keeps the key in step")
 	TEST_ASSERT_EQUAL(mob_state_knows_language(M), FALSE, "a mob that knows nothing has the key off")
 
+/// An exosuit whose maintenance links are open to the clientless test actor: the real topic_usable() needs a player's client (CanUseTopic() closes the UI of a
+/// mindless mob), which is the gate and not what the guards below test. They test the bolts and reach requirements the links declare.
+/obj/mecha/working/ripley/dq_topic_guard_fixture
+
+/obj/mecha/working/ripley/dq_topic_guard_fixture/topic_usable(datum/act/op/A)
+	return !!A.actor && !A.actor.stat
+
 /datum/unit_test/om/dq_topic_guards
 
 /// Performs `key` on `target` as `actor` (an admin) and returns the result; the questions it opened are in GLOB.test_prompts.
 /datum/unit_test/om/dq_topic_guards/proc/perform(mob/actor, atom/target, key, list/arg_values = null)
 	test_prompts_reset()
+	arg_values = arg_values ? arg_values.Copy() : list()
+	arg_values[OP_TOPIC_HREF] = list("admin_token" = "test") // the href a link click arrives by: the admin panel's token requirement refuses an op with none
 	return op_perform_by_key(actor, target, null, key, ORIGIN_UI, AUTH_ADMIN, FALSE, arg_values)
 
 /datum/unit_test/om/dq_topic_guards/proc/refused_without_question(datum/op_result/R, reason_type, what)
@@ -65,7 +74,7 @@
 	var/fail
 	step = "mech"
 	// The mech: tank valve and passenger removal need the bolts exposed.
-	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
+	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley/dq_topic_guard_fixture, T)
 	fail = refused_without_question(perform(actor, mech, "set_internal_tank_valve"), null, "valve with the bolts hidden")
 	TEST_ASSERT_NULL(fail, fail)
 	mech.set_state(MECHA_BOLTS_SECURED)
