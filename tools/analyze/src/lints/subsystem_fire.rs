@@ -1,4 +1,4 @@
-//! Port of `tools/ci/subsystem_fire_lint.py` (K4, doc/rewrite/completion_plan.md sec 3.6).
+//! Port of `tools/ci/subsystem_fire_lint.py` (K4, doc/rewrite/archive/completion_plan.md sec 3.6).
 //!
 //! The MC is a thin kernel; periodic gameplay work is a lane on the OM global owner or a behaviour,
 //! never a new subsystem `fire()` loop. Fails on any `/datum/controller/subsystem/<name>[/...]/fire(`

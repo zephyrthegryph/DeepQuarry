@@ -19,6 +19,7 @@ STAT(/obj/e3_rules, e3_top, TOP)
 STAT(/obj/e3_rules, e3_set, SET)
 STAT(/obj/e3_rules, e3_mask_and, MASK_AND, base = 15)
 STAT(/obj/e3_rules, e3_mask_or, MASK_OR)
+STAT(/obj/e3_rules, e3_keyed, SUM_PER_KEY)
 STAT(/obj/e3_rules, e3_formula, FORMULA, formula = PROC_REF(compute_formula), reads = list("e3_seed", "e3_sum"))
 
 TRACKED(/obj/e3_rules, e3_seed)

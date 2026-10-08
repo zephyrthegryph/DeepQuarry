@@ -15,6 +15,8 @@ SYSTEM_DEF(turf_cascade)
 	VAR_PRIVATE/next_group_delay = DEFAULT_CONVERSION_DELAY
 
 	VAR_PRIVATE/list/currentrun = list()
+	/// How many of currentrun are converted already: an index cursor, so a step never removes from the front of the list one by one.
+	VAR_PRIVATE/run_at = 0
 	VAR_PRIVATE/list/remaining_turf = list()
 	VAR_PRIVATE/turf_iterations = 0
 
@@ -27,7 +29,7 @@ SYSTEM_DEF(turf_cascade)
 	. += every(2, PROC_REF(grow_cascade), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
 
 /datum/system/turf_cascade/stat_entry(msg)
-	return "[msg]C: [length(currentrun)] | R: [length(remaining_turf)] | R: [conversion_rate] | P: [turf_replace_type]"
+	return "[msg]C: [length(currentrun) - run_at] | R: [length(remaining_turf)] | R: [conversion_rate] | P: [turf_replace_type]"
 
 /datum/system/turf_cascade/proc/has_work()
 	return !isnull(turf_replace_type)
@@ -40,18 +42,20 @@ SYSTEM_DEF(turf_cascade)
 	if(!resumed)
 		if(!COOLDOWN_FINISHED(src, next_group_time)) // Wait for next expansion
 			return STEP_DONE
-		if(!turf_replace_type || (!length(remaining_turf) && !length(currentrun)))
+		if(!turf_replace_type || (!length(remaining_turf) && run_at >= length(currentrun)))
 			stop_cascade()
 			return STEP_PARK
 		COOLDOWN_START(src, next_group_time, next_group_delay)
 
-		if(!length(currentrun) && length(remaining_turf) && turf_iterations <= 0)
+		if(run_at >= length(currentrun) && length(remaining_turf) && turf_iterations <= 0)
+			currentrun.Cut()
+			run_at = 0
 			// Create a random list of tiles to expand with instead of doing it in order
 			var/subtractive_rand_max = conversion_rate * (1 - (conversion_probability / 100))
 			var/i = 10 // Always do at least a handful of the oldest, to avoid spots that linger unfilled
 			while(i-- > 0)
 				var/turf/next = remaining_turf[1]
-				remaining_turf -= next
+				remaining_turf.Cut(1, 2)
 				currentrun += next
 				if(!length(remaining_turf))
 					break
@@ -61,8 +65,9 @@ SYSTEM_DEF(turf_cascade)
 				turf_iterations = max(1, conversion_rate - rand(0, subtractive_rand_max)) // Allows for slower rates and more messy growth, min 1, max conversion_rate
 
 	while(turf_iterations-- > 0)
-		var/turf/next = pick(remaining_turf)
-		remaining_turf -= next
+		var/at = rand(1, length(remaining_turf))
+		var/turf/next = remaining_turf[at]
+		remaining_turf.Cut(at, at + 1)
 		currentrun += next
 		if(!length(remaining_turf))
 			break
@@ -70,9 +75,8 @@ SYSTEM_DEF(turf_cascade)
 			resuming = TRUE
 			return STEP_YIELD
 
-	while(length(currentrun))
-		var/turf/changing = currentrun[1]
-		currentrun -= changing
+	while(run_at < length(currentrun))
+		var/turf/changing = currentrun[++run_at]
 
 		// Convert turf if we are not the replacement type already
 		if(changing.type != turf_replace_type)
@@ -83,6 +87,8 @@ SYSTEM_DEF(turf_cascade)
 			resuming = TRUE
 			return STEP_YIELD
 
+	currentrun.Cut()
+	run_at = 0
 	return STEP_DONE
 
 /// Called when we have no more turfs to convert, or an admin wants to emergency stop
@@ -90,6 +96,7 @@ SYSTEM_DEF(turf_cascade)
 	turf_replace_type = null
 	remaining_turf.Cut()
 	currentrun.Cut()
+	run_at = 0
 	conversion_rate = DEFAULT_CONVERSION_RATE
 	conversion_probability = DEFAULT_CONVERSION_PROB
 	next_group_delay = DEFAULT_CONVERSION_DELAY

@@ -57,6 +57,7 @@
 CAPABILITIES(/obj/structure/reagent_dispensers)
 	reagents(5000)
 	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_item)))
+	extend("melee_hit", when(cond_not(req(/obj/item/reagent_containers)))) // a container click on a tank taps it, hostile or not, instead of hitting it
 	op("interaction_alt", hand(), ungated(), gesture(GESTURE_ALT), then(PROC_REF(interaction_alt)))
 	op("reagent_dispenser_set_aptft", menu(), label("Set transfer amount"), when(PROC_REF(has_transfer_amounts)), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(reagent_dispenser_set_aptft_a1_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "a1"), then(PROC_REF(reagent_dispenser_set_aptft)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(dispenser_blob_burst))))

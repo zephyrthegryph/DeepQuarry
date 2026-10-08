@@ -126,7 +126,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/cryptdrake)
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	after(src, 0.5 SECONDS, PROC_REF(do_special_attack_2), with = list(L)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 0.5 SECONDS, PROC_REF(do_special_attack_2), with = list(L), keeps_dead = TRUE) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 /mob/living/simple_mob/vore/cryptdrake/proc/do_special_attack_2(mob/living/L)
 

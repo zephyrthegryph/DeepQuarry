@@ -1,5 +1,5 @@
 //! Port of `tools/ci/organ_slots_lint.py`: internal organs live only in keyed ledger slots
-//! (doc/rewrite/completion_plan.md 3.4).
+//! (doc/rewrite/archive/completion_plan.md 3.4).
 //!
 //! The mob-side caches `internal_organs` / `internal_organs_by_name` and the limb's
 //! `internal_organs` are deleted. Ceiling 0: any use fails.

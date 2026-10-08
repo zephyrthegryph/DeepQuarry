@@ -4,18 +4,18 @@ emag | hacked: 0 -> 1
 emag | is_emagged: 0 -> 1
 emag | light_on: 0 -> 1
 emag | light_range: 0 -> 2
-emag | refresh_bits: 9 -> 0
+emag | refresh_bits: 1 -> 0
 emag | refresh_queued: 131071 -> 0
 emag | req_access: null -> list(0)
 emag | req_one_access: null -> list(0)
 emp 1 | light_on: 0 -> 1
 emp 1 | light_range: 0 -> 2
-emp 1 | refresh_bits: 9 -> 0
+emp 1 | refresh_bits: 1 -> 0
 emp 1 | refresh_queued: 131071 -> 0
 emp 1 | turf: +/obj/effect/overlay x1
 emp 2 | light_on: 0 -> 1
 emp 2 | light_range: 0 -> 2
-emp 2 | refresh_bits: 9 -> 0
+emp 2 | refresh_bits: 1 -> 0
 emp 2 | refresh_queued: 131071 -> 0
 emp 2 | turf: +/obj/effect/overlay x1
 explosion 1 | deleted
@@ -23,21 +23,21 @@ explosion 1 | turf: +/obj/effect/effect/sparks x5
 explosion 2 | atom_integrity: down
 explosion 2 | light_on: 0 -> 1
 explosion 2 | light_range: 0 -> 2
-explosion 2 | refresh_bits: 9 -> 0
+explosion 2 | refresh_bits: 1 -> 0
 explosion 2 | refresh_queued: 131071 -> 0
 explosion 3 | atom_integrity: down
 explosion 3 | light_on: 0 -> 1
 explosion 3 | light_range: 0 -> 2
-explosion 3 | refresh_bits: 9 -> 0
+explosion 3 | refresh_bits: 1 -> 0
 explosion 3 | refresh_queued: 131071 -> 0
 projectile | atom_integrity: down
 projectile | light_on: 0 -> 1
 projectile | light_range: 0 -> 2
-projectile | refresh_bits: 9 -> 0
+projectile | refresh_bits: 1 -> 0
 projectile | refresh_queued: 131071 -> 0
 thrown | atom_integrity: down
 thrown | light_on: 0 -> 1
 thrown | light_range: 0 -> 2
-thrown | refresh_bits: 9 -> 0
+thrown | refresh_bits: 1 -> 0
 thrown | refresh_queued: 131071 -> 0
 

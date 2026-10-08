@@ -30,8 +30,9 @@ CAPABILITIES(/turf/unsimulated/wall/supermatter)
 	op("supermatter_wall_robot", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(PROC_REF(supermatter_wall_robot)))
 	op("supermatter_wall_silicon_examine", remote(), priority(OP_PRIORITY_DEFAULT - 2), label("Examine"), then(PROC_REF(supermatter_wall_examine)))
 	op("supermatter_wall_ghost_examine", observer(), label("Examine"), then(PROC_REF(supermatter_wall_examine)))
+	// The item op is declared first: a held item answers before the bare-hand touch (which would dust the player), and a click that is not on harm intent is refused.
+	op("supermatter_wall_item", item(/obj/item), needs(req(TYPE_PROC_REF(/atom, harm_click_only), because = MSG(harm_click_only))), priority(OP_PRIORITY_DEFAULT - 1), label("Touch with"), then(PROC_REF(supermatter_wall_item)))
 	op("supermatter_wall_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(PROC_REF(supermatter_wall_hand)))
-	op("supermatter_wall_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Touch with"), then(PROC_REF(supermatter_wall_item)))
 
 /// Old attack_robot: a cyborg touches it only from next to it.
 /turf/unsimulated/wall/supermatter/proc/supermatter_wall_robot(datum/act/op/A)
@@ -60,7 +61,7 @@ CAPABILITIES(/turf/unsimulated/wall/supermatter)
 	Consume(user)
 	return OP_OK
 
-/// Old attackby.
+/// Old attackby: a harm-intent touch with an item turns the item to dust; any other click with an item leaves it alone.
 /turf/unsimulated/wall/supermatter/proc/supermatter_wall_item(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/W = A.held
@@ -73,7 +74,7 @@ CAPABILITIES(/turf/unsimulated/wall/supermatter)
 
 	user.drop_from_inventory(W)
 	Consume(W)
-	return OP_PASS
+	return OP_OK
 
 
 /turf/unsimulated/wall/supermatter/Bumped(atom/AM as mob|obj)

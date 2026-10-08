@@ -3,51 +3,35 @@
 // `new /x/proc/y(target, ...)` (lint sys_verb_write, no ALLOW accepted).
 //
 // A verb is on an atom or a client when
-//     not hidden:  no GRANT_VERB_HIDE source hides it and the type doesn't DECLARE_VERB_HIDE it
-//     and one of:  a GRANT_VERB source grants it
+//     not hidden:  no hidden granted_verb activation hides it and the type doesn't DECLARE_VERB_HIDE it
+//     and one of:  a granted_verb activation grants it
 //                  the type declares it (a /type/verb/ it inherits, DECLARE_VERB,
 //                  DECLARE_VERB_IF with the var true, DECLARE_LOGIN_VERB once a player had it)
 //
-// Runtime changes go through the contribution store:
+// Runtime changes are capabilities (code/engine/present/verbs.dm):
 //
-//     contribution_grant(M, GRANT_VERB, /mob/living/proc/ventcrawl, source)     // on while source holds it
-//     contribution_revoke(M, GRANT_VERB, /mob/living/proc/ventcrawl, source)
-//     contribution_grant(M, GRANT_VERB_HIDE, /mob/verb/observe, source)         // off while source holds it
-//     om_grant_for(C, GRANT_VERB_HIDE, /client/verb/adminhelp, source, 2 MINUTES)   // timed
-//     contribution_grant(M, GRANT_VERB, VERB_NAMED(path, "Name", "Desc"), source)             // renamed verb
+//     grant(M, granted_verb(/mob/living/proc/ventcrawl), source)                // on while source holds it
+//     revoke(M, granted_verb(/mob/living/proc/ventcrawl), source)
+//     grant(M, granted_verb(/mob/verb/observe, hidden = TRUE), source)          // off while source holds it
+//     grant(C, granted_verb(/client/verb/adminhelp, hidden = TRUE), source, 2 MINUTES)   // timed
+//     grant(M, granted_verb(path, verb_name = "Name", verb_desc = "Desc"), source)       // renamed verb
 //
-// A source's deletion drops its holds, so nothing pairs an add with a remove. Both effects share
-// one change hook (verb_store_sync()), which recomputes the rule above for each key whose state
-// flipped: a type verb that a grant also covered survives the grant's revoke, and a hide lifted
-// brings back exactly what the rule says (no mixed-source desync).
+// A source's deletion ends its activations, so nothing pairs an add with a remove. Every activation that adds or ends a verb entry calls
+// verb_store_sync(), which recomputes the rule above for the key: a type verb that a grant also covered survives the grant's revoke, and a hide
+// lifted brings back exactly what the rule says (no mixed-source desync).
 //
 // What a type has by what it is costs no per-instance store entry: DECLARE_VERB and friends
 // (code/__defines/lifecycle_decl.dm) live in the type's declaration table and are applied at init
 // (Login for DECLARE_LOGIN_VERB). A per-instance grant is for what can change.
 //
-// Clients are not datums: `contribution_grant(client, ...)` goes to the client's /datum/client_verbs holder
+// Clients are not datums: a grant to a client goes to the client's /datum/client_verbs holder
 // (made on first grant, owned by the client), so client verb sets follow the same rules.
 // Sources with no datum of their own (the server config, an admin's hand edit) use
 // verb_source(VERB_SOURCE_*), one shared datum per name.
 
-/datum/effect_definition/grant_verb
-
-/datum/effect_definition/grant_verb/on_changed(datum/E, old_value, new_value)
-	var/list/old_list = islist(old_value) ? old_value : null
-	var/list/new_list = islist(new_value) ? new_value : null
-	var/list/changed
-	for(var/key in new_list)
-		if((new_list[key] > 0) != (old_list?[key] > 0))
-			LAZYOR(changed, key)
-	for(var/key in old_list)
-		if((old_list[key] > 0) != (new_list?[key] > 0))
-			LAZYOR(changed, key)
-	if(changed)
-		verb_store_sync(E, changed)
-
 // ---------------------------------------------------------------- keys and sources
 
-/// The GRANT_VERB key for verb `verb_path` shown as `name`/`desc` (use VERB_NAMED()).
+/// The store key for verb `verb_path` shown as `name`/`desc` (use VERB_NAMED()).
 /proc/verb_named_key(verb_path, name, desc)
 	return "[verb_path]\n[replacetext("[name]", "\n", " ")]\n[replacetext("[desc]", "\n", " ")]"
 
@@ -77,7 +61,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	/// Grant holder for this client's verbs (made on first grant).
 	var/datum/client_verbs/verb_store
 
-/// A client's grant target: contribution_grant() and friends on a client land here.
+/// A client's grant target: grants on a client land here.
 /datum/client_verbs
 	var/client/owner
 
@@ -119,10 +103,26 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 		owner_of[verb_path] = owner_type
 	return owner_type
 
+/// What the live activations say about verb `key` on `E`: -1 when one hides it (a hide beats a grant), 1 when one grants it, 0 when none does.
+/proc/verb_activations_want(datum/E, key)
+	var/granted = FALSE
+	for(var/list/pool in list(E.rx?.activations, E.rx?.sourced))
+		for(var/datum/activation/A as anything in pool)
+			if(A.dead)
+				continue
+			for(var/datum/centry/C as anything in activation_plan(A.def))
+				var/datum/entry/entry = C.item
+				if(!istype(entry) || entry.kind != ENTRY_VERB || verb_entry_key(entry) != key || verb_entry_target(A, entry) != E)
+					continue
+				if(entry.args["hidden"])
+					return -1
+				granted = TRUE
+	return granted ? 1 : 0
+
 /// The store's rule for key `key` on `owner` (an atom or client), store entries on `E`.
 /proc/verb_store_wants(datum/E, owner, key)
-	var/list/hides = E?.om_rec ? contribution_value_of(E, GRANT_VERB_HIDE) : null
-	if(hides?[key] > 0)
+	var/active = verb_activations_want(E, key)
+	if(active < 0)
 		return FALSE
 	var/datum/lifecycle_decls/decls = isatom(owner) ? lifecycle_decls_of(owner) : null
 	if(decls && (decls.work & DECL_WORK_VERBS) && decls.verbs_hidden && (key in decls.verbs_hidden))
@@ -134,8 +134,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 			return FALSE
 	if(isatom(owner) && verb_entries_want(owner, key) == FALSE)
 		return FALSE // verb_entry(path, hidden = TRUE)
-	var/list/grants = E?.om_rec ? contribution_value_of(E, GRANT_VERB) : null
-	if(grants?[key] > 0)
+	if(active > 0)
 		return TRUE
 	// granted_verbs() (capabilities' verbs(), a mob's species and traits): derived, applied by the refresh engine.
 	if(isatom(owner))

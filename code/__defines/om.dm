@@ -95,48 +95,14 @@
 /// is for hot setters that want the listen-mask test inlined.
 #define OM_CHANGED(E, bits) if((E).om_listen & (bits)) { om_dispatch_change(E, bits) }
 
-// ---- Effects (section E). combine / stacking values for effect table rows. ----
-#define COMBINE_ANY 1
-#define COMBINE_SUM 2
-#define COMBINE_MAX 3
-#define COMBINE_MIN 4
-#define COMBINE_MULTIPLY 5
-#define COMBINE_SUM_PER_KEY 6
 
-#define STACKING_REPLACE 1
-#define STACKING_EXTEND 2
-#define STACKING_MAX 3
-
-// Effect kinds the framework itself reacts to.
-#define OM_EFFECT_PLAIN 0
-#define OM_EFFECT_CLOCK_MULT 1
-#define OM_EFFECT_CLOCK_INHIBIT 2
-
-// Built-in effect ids (library.dm defines the rest).
-
-// Grant kinds (effects with COMBINE_SUM_PER_KEY).
-#define GRANT_ABILITY "grant_ability"
-#define GRANT_LANGUAGE "grant_language"
-/// A verb on an atom or client while any source grants it (code/datums/om/grant_verbs.dm).
-#define GRANT_VERB "grant_verb"
-/// A verb off an atom or client while any source hides it; beats every grant and the type's own verbs.
-#define GRANT_VERB_HIDE "grant_verb_hide"
-/// A GRANT_VERB / GRANT_VERB_HIDE key for verb PATH shown under its own NAME and DESC (a renamed
-/// verb instance, `new PATH(target, NAME, DESC)`). Grant, revoke and hide it by this same key.
+/// The key of verb PATH shown under its own NAME and DESC (a renamed verb instance, `new PATH(target, NAME, DESC)`): what
+/// verb_entry(path, name =, desc =) and has_verb() use.
 #define VERB_NAMED(PATH, NAME, DESC) verb_named_key(PATH, NAME, DESC)
 /// verb_source() names: shared sources for verb grants nothing else owns.
 #define VERB_SOURCE_CONFIG "config"
 #define VERB_SOURCE_ADMIN "admin"
-/// A capability on an atom while any source grants it (code/datums/capabilities/condition.dm): a temporary
-/// condition with behaviour, `om_grant_for(A, GRANT_CAPABILITY, /datum/capability/condition/x, source, time)`.
-#define GRANT_CAPABILITY "grant_capability"
-#define GRANT_ACCESS "grant_access"
-#define GRANT_TRAIT "grant_trait"
-/// A system's publication cadence: the id names a step length (cadence.dm), and the
-/// system runs at the shortest one any live grant names.
-#define GRANT_CADENCE "grant_cadence"
-
-// Cadence ids for GRANT_CADENCE. Shortest step wins; the system's own step (CADENCE_BASE_DT) applies with none held.
+// Cadence ids (STAT_CADENCE_HOLDS keys). Shortest step wins; the system's own step (CADENCE_BASE_DT) applies with none held.
 /// A canister rupture, hull breach or pressure-jump storm: gas publishes every 0.1 s.
 #define CADENCE_GAS_FAST "gas_fast"
 /// Something visibly moving but not violent: gas publishes every 0.25 s.
@@ -145,9 +111,6 @@
 #define CADENCE_BASE_DT 0.5
 
 // Stat presets (statuses and godmode are stats: code/library/mob/statuses.dm).
-/// Body effects on a mob (code/modules/body/body_effects.dm): keyed by /datum/body_effect type,
-/// value = stacks. Timed ones expire on the mob's body clock.
-#define EFFECT_BODY_EFFECTS "body_effects"
 
 // The biological clock domain: it runs at the clock_rate_bio stat (code/datums/om/contribution.dm, om_clock_compute()).
 #define CLOCK_BIO "bio"
@@ -199,7 +162,6 @@
 // One-line derived declarations (plain lists; see decl.dm).
 #define FROM_VAR(name) list("var", name)
 #define FROM_DERIVED(name) list("derived", name)
-#define FROM_EFFECT(id) list("effect", id)
 #define OVER_SLOT(id) list("slot", id)
 #define DERIVE(name, expr, channel) list("derive" = "check", "name" = name, "expr" = expr, "channel" = channel)
 #define DERIVE_SUM(name, over, reader, channel) list("derive" = "sum", "name" = name, "over" = over, "reader" = reader, "channel" = channel)
@@ -211,13 +173,8 @@
 
 // ---- Events (section G). ----
 #define EVENT_VETO 1
-/// Emits `path`, constructed with `args`, on `E` when a behaviour or hook wants it (no
-/// allocation otherwise). Evaluates to om_emit()'s return: the ORed handler results for
-/// sync and accumulate events, EVENT_VETO or null for classic before/ events, else 0.
-#define OM_EMIT(E, path, args...) (om_wants(E, path) ? om_emit(E, new path(##args)) : 0)
 /// The entity world-wide events go to (was SEND_GLOBAL_SIGNAL's target).
 #define OM_WORLD (GLOB.om_world)
-#define OM_EMIT_WORLD(path, args...) OM_EMIT(GLOB.om_world, path, ##args)
 
 // Attachment state bits (rec.att_state).
 #define OM_ATT_STARTED (1<<0)

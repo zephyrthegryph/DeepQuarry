@@ -12,6 +12,12 @@ STAT(/obj/machinery, in_maintenance, ANY, virtual = TRUE)
 STAT(/obj/machinery, switched_on, ALL, base = TRUE, virtual = TRUE)
 /// The machine is whole: false while any source holds it broken (SRC_DAMAGE: atom_break() until atom_fix()). The BROKEN condition bit, inverted.
 STAT(/obj/machinery, intact, ALL, base = TRUE, virtual = TRUE)
+/// Body effect type -> its stack count: one hold per applied effect (hold(L, STAT_BODY_EFFECT_COUNTS, stacks, L, key = path)); read with body_effects().
+STAT(/mob/living, body_effect_counts, SUM_PER_KEY, virtual = TRUE)
+/// Trait -> the number of sources holding it: hold(E, STAT_TRAIT_HOLDS, 1, source, key = trait) (code/_helpers/traits.dm).
+STAT(/datum, trait_holds, SUM_PER_KEY, virtual = TRUE)
+/// Cadence id -> holds on a publication step cadence (code/datums/om/cadence.dm).
+STAT(/datum, cadence_holds, SUM_PER_KEY, virtual = TRUE)
 STAT(/mob/living, can_act, ALL)
 STAT(/mob/living, can_move, ALL)
 STAT(/mob/living, acts_via, MASK_AND, base = ORIGIN_ALL)

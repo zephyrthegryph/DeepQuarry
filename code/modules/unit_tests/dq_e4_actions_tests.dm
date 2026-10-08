@@ -238,9 +238,9 @@
 	var/datum/om_test_entity/e4_twin/listener = entity(made, /datum/om_test_entity/e4_twin)
 	var/obj/e4_fixture/plain/bumped_thing = new
 	made += bumped_thing
-	// OM_EMIT of the event reaches the on_notice listener through the twin notice.
+	// Emitting the event reaches the on_notice listener through the twin notice.
 	PUBLISH_LEGACY(listener, /datum/notice/atom_bumped, bumped_thing)
-	TEST_ASSERT_EQUAL(listener.notices_heard, 1, "OM_EMIT of the event published its twin notice to the on_notice listener")
+	TEST_ASSERT_EQUAL(listener.notices_heard, 1, "Emitting the event published its twin notice to the on_notice listener")
 	TEST_ASSERT_EQUAL(listener.last_bumped, bumped_thing, "with the payload")
 	// It does not bounce: the notice the event published is not emitted back as an event.
 	TEST_ASSERT_EQUAL(listener.notices_heard, 1, "the twin did not bounce back")

@@ -18,103 +18,103 @@ human|/obj/item/tool/screwdriver menu: Bang on
 human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Knock on
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Smolebuilding item
+human|/obj/item/tool/screwdriver menu: Smash
 human|/obj/item/tool/screwdriver menu: Take apart
 human|/obj/item/tool/screwdriver menu: Take Building Apart
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use Color Pieces
-human|/obj/item/tool/screwdriver click: Click: Knock on
+human|/obj/item/tool/screwdriver click: Click: Smash
 human|/obj/item/tool/crowbar menu: Bang on
 human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Knock on
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Smolebuilding item
+human|/obj/item/tool/crowbar menu: Smash
 human|/obj/item/tool/crowbar menu: Take apart
 human|/obj/item/tool/crowbar menu: Take Building Apart
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use Color Pieces
-human|/obj/item/tool/crowbar click: Click: Knock on
+human|/obj/item/tool/crowbar click: Click: Smash
 human|/obj/item/tool/wrench menu: Bang on
 human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Knock on
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Smolebuilding item
+human|/obj/item/tool/wrench menu: Smash
 human|/obj/item/tool/wrench menu: Take apart
 human|/obj/item/tool/wrench menu: Take Building Apart
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use Color Pieces
-human|/obj/item/tool/wrench click: Click: Knock on
+human|/obj/item/tool/wrench click: Click: Smash
 human|/obj/item/tool/wirecutters menu: Bang on
 human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Knock on
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Smolebuilding item
+human|/obj/item/tool/wirecutters menu: Smash
 human|/obj/item/tool/wirecutters menu: Take apart
 human|/obj/item/tool/wirecutters menu: Take Building Apart
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use Color Pieces
-human|/obj/item/tool/wirecutters click: Click: Knock on
+human|/obj/item/tool/wirecutters click: Click: Smash
 human|/obj/item/multitool menu: Bang on
 human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Knock on
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Smolebuilding item
+human|/obj/item/multitool menu: Smash
 human|/obj/item/multitool menu: Take apart
 human|/obj/item/multitool menu: Take Building Apart
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use Color Pieces
-human|/obj/item/multitool click: Click: Knock on
+human|/obj/item/multitool click: Click: Smash
 human|/obj/item/weldingtool menu: Bang on
 human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Knock on
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Smolebuilding item
+human|/obj/item/weldingtool menu: Smash
 human|/obj/item/weldingtool menu: Take apart
 human|/obj/item/weldingtool menu: Take Building Apart
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use Color Pieces
-human|/obj/item/weldingtool click: Click: Knock on
+human|/obj/item/weldingtool click: Click: Smash
 human|/obj/item/stack/cable_coil menu: Bang on
 human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Knock on
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Smolebuilding item
+human|/obj/item/stack/cable_coil menu: Smash
 human|/obj/item/stack/cable_coil menu: Take apart
 human|/obj/item/stack/cable_coil menu: Take Building Apart
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use Color Pieces
-human|/obj/item/stack/cable_coil click: Click: Knock on
+human|/obj/item/stack/cable_coil click: Click: Smash
 human|/obj/item/stack/material/steel menu: Bang on
 human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Knock on
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Smolebuilding item
+human|/obj/item/stack/material/steel menu: Smash
 human|/obj/item/stack/material/steel menu: Take apart
 human|/obj/item/stack/material/steel menu: Take Building Apart
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use Color Pieces
-human|/obj/item/stack/material/steel click: Click: Knock on
+human|/obj/item/stack/material/steel click: Click: Smash
 human|/obj/item/card/id menu: Bang on
 human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Knock on
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Smolebuilding item
+human|/obj/item/card/id menu: Smash
 human|/obj/item/card/id menu: Take apart
 human|/obj/item/card/id menu: Take Building Apart
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use Color Pieces
-human|/obj/item/card/id click: Click: Knock on
+human|/obj/item/card/id click: Click: Smash
 human|/obj/item menu: Bang on
 human|/obj/item menu: Hit
 human|/obj/item menu: Knock on
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Smolebuilding item
+human|/obj/item menu: Smash
 human|/obj/item menu: Take apart
 human|/obj/item menu: Take Building Apart
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use Color Pieces
-human|/obj/item click: Click: Knock on
+human|/obj/item click: Click: Smash
 keys: drag_buckle, melee_hit, smolebuilding_bang, smolebuilding_dismantle, smolebuilding_item, smolebuilding_knock_grab, smolebuilding_knock_help, smolebuilding_verb_color, smolebuilding_verb_dismantle
 

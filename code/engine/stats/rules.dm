@@ -13,6 +13,7 @@
 //   SET       the union of the members                the empty set  tokens none            grant or revoke; no override
 //   MASK_AND  the bits every contribution allows      base = (all bits)  bitmask  none      the override replaces the mask
 //   MASK_OR   the bits any contribution sets          base 0      bitmask   none            the override replaces the mask
+//   SUM_PER_KEY  a list of key -> the sum of the holds naming that key  the empty list  number per key  none  holds only (hold(..., key =)); no override
 //   FORMULA   the result of one formula proc          the formula's own  any  none          the override replaces the result until released
 
 /// Row layout of a contribution list passed to stat_combine(): flat, three entries each.
@@ -111,6 +112,8 @@
 			return FALSE
 		for(var/token in la)
 			if(!(token in lb))
+				return FALSE
+			if(!isnum(token) && la[token] != lb[token]) // a key -> value list (SUM_PER_KEY): the values count too
 				return FALSE
 		return TRUE
 	return a == b

@@ -104,7 +104,7 @@
 /datum/unit_test/retire_after_independent_handler_argument/proc/exercise_timer(datum/owner, handler, datum/payload)
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	var/faults_before = GLOB.total_runtimes
-	TEST_ASSERT(after(owner, 0.1 SECONDS, handler, key = "retire_argument_probe", with = list(payload)), "Actual timer must accept the real owner and independent argument")
+	TEST_ASSERT(after(owner, 0.1 SECONDS, handler, key = "retire_argument_probe", with = list(payload), keeps_dead = TRUE), "Actual timer must accept the real owner and independent argument")
 	TEST_ASSERT(after_pending(owner, "retire_argument_probe"), "Actual timer must be pending before argument deletion")
 	qdel(payload)
 	test_time(0.2 SECONDS)
@@ -335,7 +335,7 @@
 	var/obj/item/dnainjector/injector = allocate(/obj/item/dnainjector, computer)
 	computer.gene_sequencing = TRUE
 	var/faults = GLOB.total_runtimes
-	after(computer, 0.1 SECONDS, TYPE_PROC_REF(/obj/machinery/computer/transhuman/resleeving, dispense_injector), key = "retire_injector_probe", with = list(injector))
+	after(computer, 0.1 SECONDS, TYPE_PROC_REF(/obj/machinery/computer/transhuman/resleeving, dispense_injector), key = "retire_injector_probe", with = list(injector), keeps_dead = TRUE)
 	qdel(injector)
 	test_time(0.2 SECONDS)
 	TEST_ASSERT(!after_pending(computer, "retire_injector_probe"), "Actual completion timer fires after injector deletion")
@@ -395,7 +395,7 @@
 		set_welded(end, TRUE)
 		TEST_ASSERT(is_welded(end), "The real exit is welded before its origin disappears")
 	var/faults = length(kernel().fault_log)
-	after(grub, 0.1 SECONDS, TYPE_PROC_REF(/mob/living/simple_mob/animal/solargrub_larva, ventcrawl_arrive), key = "c4_grub_arrival", with = list(origin, end, 3))
+	after(grub, 0.1 SECONDS, TYPE_PROC_REF(/mob/living/simple_mob/animal/solargrub_larva, ventcrawl_arrive), key = "c4_grub_arrival", with = list(origin, end, 3), keeps_dead = TRUE)
 	TEST_ASSERT(after_pending(grub, "c4_grub_arrival"), "The real arrival callback is pending with independent vents")
 	if(remove_origin)
 		qdel(origin)
@@ -537,7 +537,7 @@
 		spawned = allocate(/mob/living/carbon/human, surface)
 		handler = TYPE_PROC_REF(/obj/item/antag_spawner/technomancer_apprentice, finish_technomancer_spawn)
 	var/faults = length(kernel().fault_log)
-	after(spawner, 0.1 SECONDS, handler, key = "c4_spawn_finish", with = list(spawned))
+	after(spawner, 0.1 SECONDS, handler, key = "c4_spawn_finish", with = list(spawned), keeps_dead = TRUE)
 	TEST_ASSERT(after_pending(spawner, "c4_spawn_finish"), "Actual spawner queues its production finish callback")
 	qdel(spawned)
 	test_time(0.1 SECONDS)
@@ -560,7 +560,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, surface)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, surface)
 	var/faults = length(kernel().fault_log)
-	after(spell, 1 SECOND, TYPE_PROC_REF(/obj/item/spell/apportation, finish_apportation_grab), key = "c4_apportation", with = list(user, target))
+	after(spell, 1 SECOND, TYPE_PROC_REF(/obj/item/spell/apportation, finish_apportation_grab), key = "c4_apportation", with = list(user, target), keeps_dead = TRUE)
 	TEST_ASSERT(after_pending(spell, "c4_apportation"), "Actual spell owns its delayed grab callback")
 	qdel(user)
 	test_time(1 SECOND)
@@ -850,7 +850,7 @@
 	TEST_ASSERT(!QDELETED(spell) && spell.owner_ref() == caster && spell.core == core, "Actual spell constructor binds caster and worn core")
 	var/original_instability = caster.instability
 	var/faults = length(kernel().fault_log)
-	after(spell, 0.1 SECONDS, TYPE_PROC_REF(/obj/item/spell/resurrect, resurrect_finish), key = "c4_resurrect_body", with = list(target, caster))
+	after(spell, 0.1 SECONDS, TYPE_PROC_REF(/obj/item/spell/resurrect, resurrect_finish), key = "c4_resurrect_body", with = list(target, caster), keeps_dead = TRUE)
 	TEST_ASSERT(after_pending(spell, "c4_resurrect_body"), "Real spell owns resurrection continuation")
 	qdel(target)
 	test_time(0.1 SECONDS)
@@ -872,7 +872,7 @@
 	var/obj/machinery/maint_recycler/c4_shot_probe/recycler = allocate(/obj/machinery/maint_recycler/c4_shot_probe, surface)
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, surface)
 	var/faults = GLOB.total_runtimes
-	after(recycler, 0.1 SECONDS, TYPE_PROC_REF(/obj/machinery/maint_recycler/c4_shot_probe, probe_shoot), key = "c4_recycler_shot", with = list(victim))
+	after(recycler, 0.1 SECONDS, TYPE_PROC_REF(/obj/machinery/maint_recycler/c4_shot_probe, probe_shoot), key = "c4_recycler_shot", with = list(victim), keeps_dead = TRUE)
 	TEST_ASSERT(after_pending(recycler, "c4_recycler_shot"), "The real timer captures its independent victim")
 	qdel(victim)
 	test_time(0.1 SECONDS)

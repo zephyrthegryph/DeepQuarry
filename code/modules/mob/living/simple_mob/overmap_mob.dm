@@ -114,12 +114,12 @@ CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
 	armor_spec = "melee=1000;bullet=1000;laser=1000;energy=1000;bomb=1000;bio=1000;rad=1000"
 
 	var/scanner_desc
-	var/obj/effect/overmap/visitable/simplemob/child_om_marker
+	var/obj/effect/overmap/visitable/child_om_marker
 	var/om_child_type
 	var/shipvore = FALSE	//Enable this to allow the mob to eat spaceships by dragging them onto its sprite.
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap)
-	owns_one(nameof(child_om_marker), /obj/effect/overmap/visitable/simplemob)
+	owns_one(nameof(child_om_marker), /obj/effect/overmap/visitable)
 	param(nameof(child_om_marker), pos = 1, apply = PROC_REF(link_marker))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A mob made with no marker makes its own.
@@ -135,7 +135,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 	if(!using_map?.use_overmap)
 		return
 	if(!child_om_marker)
-		var/obj/effect/overmap/visitable/simplemob/C = new om_child_type(loc, src)
+		var/obj/effect/overmap/visitable/C = new om_child_type(loc, src)
 		rel_set(src, nameof(child_om_marker), C)
 
 

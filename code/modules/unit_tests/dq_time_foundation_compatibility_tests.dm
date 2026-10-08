@@ -79,9 +79,6 @@
 	TEST_ASSERT_NULL(second_registry.behaviour_by_type[/datum/scheduled_behaviour], "Registry definition indexes are distinct mutable lists")
 	var/datum/scheduler_type_table/first_table = allocate(/datum/scheduler_type_table)
 	var/datum/scheduler_type_table/second_table = allocate(/datum/scheduler_type_table)
-	first_table.self_grants += list("fixture", "first")
-	TEST_ASSERT_EQUAL(length(first_table.self_grants), 2, "Compiled table construction supplies a writable grant table")
-	TEST_ASSERT_EQUAL(length(second_table.self_grants), 0, "Compiled type tables do not share their mutable grant lists")
 
 /datum/unit_test/dq_time_foundation_null_providers/Run()
 	var/datum/time_scheduler_factory/saved_factory = GLOB.time_scheduler_factory

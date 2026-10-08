@@ -106,13 +106,19 @@
 	return C
 
 /// The actor clicks `target` with `held` in hand (nothing: an empty hand), in `stance`, and waits.
+/datum/unit_test/dq_p2_reagents
+	/// The op result of the last rc_click() (for a failure message).
+	var/datum/op_result/rc_last_click
+
 /datum/unit_test/dq_p2_reagents/proc/rc_click(mob/living/carbon/human/H, atom/target, obj/item/held, stance = I_HELP, settle = TRUE)
 	H.drop_item()
 	if(held)
 		H.put_in_active_hand(held)
 	H.set_use_stance(stance)
 	H.next_click = 0
-	input_submit(new /datum/input_event/click(H, target, null, null, "left=1"))
+	var/datum/input_event/click/click = new(H, target, null, null, "left=1")
+	input_submit(click)
+	rc_last_click = click.result
 	if(settle)
 		rc_settle()
 	H.set_use_stance(I_HELP)
@@ -374,7 +380,7 @@
 	var/tank_before = tank.reagents.total_volume
 	var/obj/item/reagent_containers/C = rc_filled(/obj/item/reagent_containers/glass/beaker, 0)
 	rc_click(H, tank, C, I_HURT)
-	TEST_ASSERT_EQUAL(C.reagents.total_volume, 10, "a hostile click taps the closed tank as well")
+	TEST_ASSERT_EQUAL(C.reagents.total_volume, 10, "a hostile click taps the closed tank as well (ran [rc_last_click?.key] [rc_last_click?.outcome] [rc_last_click?.reason])")
 	TEST_ASSERT_EQUAL(tank.reagents.total_volume, tank_before - 10, "taking its water")
 	rc_alt_click(H, tank, null)
 	TEST_ASSERT(tank.open_top, "an alt-click opens the tank's top")
