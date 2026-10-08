@@ -66,7 +66,13 @@
 	TEST_ASSERT_NULL(P.slot_item(OCCUPANT_SLOT_CRYOPOD), "cancellation leaves the pod empty")
 
 /datum/unit_test/dq_timed_pin/last_occupant/cycler_shock
+	var/empty_grab = FALSE
+
+/datum/unit_test/dq_timed_pin/last_occupant/cycler_shock/empty
+	empty_grab = TRUE
+
 /datum/unit_test/dq_timed_pin/last_occupant/cycler_shock/run_pin()
+	set_global(nameof(GLOB.status_policies), GLOB.status_policies)
 	var/turf/T = run_loc_floor_bottom_left
 	var/area/A = get_area(T)
 	var/obj/machinery/power/apc/old_apc = A.get_apc()
@@ -94,14 +100,26 @@
 	if(H.get_active_hand() != G)
 		H.put_in_active_hand(G)
 	TEST_ASSERT_EQUAL(H.get_active_hand(), G, "the shock victim actually holds the live grab")
+	if(empty_grab)
+		TEST_ASSERT(link_break(G, LK_GRABBING, V), "the real grab releases its passenger before the click")
+		TEST_ASSERT_NULL(G.grab_target(), "the empty-grab variant actually has no passenger")
+		TEST_ASSERT_EQUAL(H.get_active_hand(), G, "the empty actual grab remains in the actor's hand")
 	TEST_ASSERT(!H.has_status(STAT_STUNNED), "the actor starts unstunned")
+	test_chat_clear()
 	test_menu(H, M, "cycler_insert_grab")
 	for(var/obj/effect/effect/sparks/S in T)
 		own(S)
 	TEST_ASSERT(H.has_status(STAT_STUNNED), "the real powered machine shock stuns the actor")
 	TEST_ASSERT_NULL(running(H), "a successful shock prevents the actual timed insertion")
+	TEST_ASSERT_NULL(op_pending_of(H), "the reentrant shock cancellation leaves no pending operation")
+	TEST_ASSERT(!op_claimed(M), "the cancelled insertion releases the machine claim")
+	for(var/line in test_chat_of(V))
+		TEST_ASSERT(!findtext(lowertext("[line]"), "starts putting"), "shock aborts before the insertion begins announcement")
 	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_SUIT_CYCLER), "shock leaves the real occupant slot empty")
 	TEST_ASSERT_EQUAL(V.loc, T, "shock leaves the victim outside")
+	test_time(3 SECONDS)
+	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_SUIT_CYCLER), "the refused shock cannot leave a late insertion timer")
+	TEST_ASSERT_NULL(op_pending_of(H), "the refused shock stays finished after the former wait deadline")
 	rel_set(A, nameof(A.apc), old_apc)
 
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_loader_moves
@@ -136,3 +154,22 @@
 	TEST_ASSERT_NULL(running(loader), "deleting the answerer cannot start a loader task")
 	TEST_ASSERT_NULL(P.slot_item(OCCUPANT_SLOT_CRYOPOD), "a deleted passenger never acquires custody")
 	TEST_ASSERT(QDELETED(R) || !R.is_open(), "the deleted passenger's actual question closes")
+
+/datum/unit_test/dq_timed_pin/last_occupant/cryo_clientless
+/datum/unit_test/dq_timed_pin/last_occupant/cryo_clientless/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod, T)
+	var/mob/living/carbon/human/loader = person(T)
+	var/mob/living/carbon/human/passenger = person(T)
+	interim_keep_awake(loader)
+	interim_keep_awake(passenger)
+	TEST_ASSERT_NULL(passenger.client, "the actual passenger has no client; the production predicate is used")
+	var/datum/request/R = consent(P, passenger, loader)
+	TEST_ASSERT_NULL(R, "the production clientless path skips consent rather than opening a question")
+	TEST_ASSERT(running(loader), "the clientless passenger starts the loader's real wait")
+	TEST_ASSERT_NULL(running(passenger), "the clientless passenger does not own the loader's operation")
+	test_time(1 SECOND)
+	TEST_ASSERT_NULL(P.slot_item(OCCUPANT_SLOT_CRYOPOD), "the clientless fallback still waits before taking custody")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(P.slot_item(OCCUPANT_SLOT_CRYOPOD), passenger, "the production clientless fallback acquires the passenger after the wait")
+	TEST_ASSERT_EQUAL(passenger.loc, P, "the clientless fallback's physical location matches the occupant ledger")

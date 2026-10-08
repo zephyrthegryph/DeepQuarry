@@ -3,6 +3,9 @@
 	var/end_mode = "complete"
 
 /datum/unit_test/dq_timed_pin/last_medical_kiosk/run_pin()
+	set_global(nameof(GLOB.dview_mob), GLOB.dview_mob)
+	set_global(nameof(GLOB.latency_last_ineligible), GLOB.latency_last_ineligible)
+	set_global(nameof(GLOB.latency_last_pin_reason), GLOB.latency_last_pin_reason)
 	var/mob/living/carbon/human/user = person()
 	var/obj/machinery/medical_kiosk/K = allocate(/obj/machinery/medical_kiosk, user.loc)
 	K.set_grid_power(TRUE)
