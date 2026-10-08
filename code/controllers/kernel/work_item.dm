@@ -229,12 +229,12 @@
 
 /// The stage vocabulary of the work-item model, on every existing stage: it should run while it is not idle.
 /// Stages keep idle()/wake_on/rewake_delay; this is the inverted, declared-reads form the kernel asks.
-/datum/om/stage/proc/should_step(datum/E)
+/datum/work_stage/proc/should_step(datum/E)
 	SHOULD_NOT_SLEEP(TRUE)
 	return !idle(E)
 
 /// The declared reads of a stage: its `reads` fields, plus its wake channels as a mask (`wake_mask`).
-/datum/om/stage/proc/declared_reads()
+/datum/work_stage/proc/declared_reads()
 	return reads ? reads.Copy() : list()
 
 /// A work item that runs one stage (a family root or variant type) on every entity that has it in `members`:
@@ -245,7 +245,7 @@
 
 /// Builds the adapter for `stage_type`. `owner_type` is what kernel_register_work() files it under.
 /proc/stage_work_item(stage_type, members = null, interval = 1 SECONDS, phase = KERNEL_PHASE_P)
-	var/datum/om/stage/T = om_registry().stage_by_type[stage_type]
+	var/datum/work_stage/T = definition_registry().stage_by_type[stage_type]
 	if(!T)
 		CRASH("stage_work_item: [stage_type] is not a stage")
 	var/datum/work_item/stage/W = new(null, interval, null, members, phase)
@@ -258,7 +258,7 @@
 	return src
 
 /datum/work_item/stage/runnable(datum/owner, datum/member)
-	var/datum/om/stage/T = om_registry().stage_by_type[stage_type]
+	var/datum/work_stage/T = definition_registry().stage_by_type[stage_type]
 	return T && (!member || T.should_step(member))
 
 /datum/work_item/stage/perform(datum/owner, datum/member, dt)

@@ -1,3 +1,5 @@
+#define HANDS_KEY "working_hands"
+
 // Providers, the actor gate and the reach gate (doc/rewrite/final_api.html, section 8 "Origin, reach, provider, authority and channel", "Who may
 // act, and what they can reach"; section 19 "E2, parts").
 //
@@ -22,7 +24,7 @@
 /// (when(PROC_REF(has_working_hand), ...), hands.dm). The condition is read when the provider set is read; what changes it (a limb attached or lost)
 /// publishes HANDS_KEY and bumps the actor's provider set generation (hands_refresh()), so a cached menu is stale at once.
 /proc/hands()
-	return when(TYPE_PROC_REF(/mob/living, has_working_hand), provides(AFF_MANIPULATE | AFF_ATTACK | AFF_HOLD, reach = 1), reads = list(HANDS_KEY))
+	return when(TYPE_PROC_REF(/datum, can_provide_hands), provides(AFF_MANIPULATE | AFF_ATTACK | AFF_HOLD, reach = 1), reads = list(HANDS_KEY))
 
 /// One provider in play: the declaration and the entity that gives it.
 /datum/prov
@@ -63,7 +65,7 @@
 /proc/act_gen_of(datum/D)
 	return D?.rx ? D.rx.act_gen : 0
 
-/// An entity's state changed (a published key, a relation, a stat, its contents or its place): the menus cached on its generation are unreachable now.
+/// An entity's state state_changed (a published key, a relation, a stat, its contents or its place): the menus cached on its generation are unreachable now.
 /// An entity nobody has asked about yet has no record and nothing cached on it.
 /proc/op_changed(datum/D)
 	if(D?.rx)
@@ -84,26 +86,26 @@
 		if(container_state.observed?[OP_KEEP_HAND])
 			publish_change(container, OP_KEEP_HAND)
 
-/// A keep of a waiting op on `D` changed (the actor swapped hands): published when something watches it.
+/// A keep of a waiting op on `D` state_changed (the actor swapped hands): published when something watches it.
 /proc/op_keep_poke(datum/D, key)
 	if(D.rx?.observed?[key])
 		publish_change(D, key)
 
 /// The providers an actor holding `held` has now: its own table's, its live activations', the held item's, and the carrier's (what holds `held` for
 /// the actor: a cyborg's gripper). Each is a /datum/prov.
-/proc/providers_for(mob/actor, obj/item/held)
+/proc/providers_for(mob/actor, obj/held)
 	. = list()
 	if(actor && !QDELETED(actor))
 		provider_collect(actor, actor, .)
-		var/obj/item/carrier = actor.held_carrier()
+		var/obj/carrier = actor.held_carrier()
 		if(carrier && carrier != held && !QDELETED(carrier))
 			provider_collect(carrier, carrier, .)
-	if(held && !QDELETED(held) && isitem(held)) // a dragged mob is no provider
+	if(held && !QDELETED(held) && op_item_like(held)) // a dragged mob is no provider
 		provider_collect(held, held, .)
 
 /// What the actor's ops see as its held item (A.held): what is in its active hand. A cyborg with a gripper selected holds what the gripper carries.
 /mob/proc/held_for_ops()
-	return get_active_hand()
+	return null
 
 /// The item that carries the actor's held item for it and is a provider in its own right (a cyborg's selected gripper), or null. It counts as the
 /// held item when the provider of an op is chosen, and what an op takes out goes into it (op_deliver()).
@@ -111,11 +113,11 @@
 	return null
 
 /// Can this item carry `thing` for `actor` now? An item that provides AFF_HOLD or AFF_HOLD_SMALL and carries things (a gripper) overrides it.
-/obj/item/proc/can_carry(obj/item/thing, mob/actor)
+/obj/proc/can_carry(obj/thing, mob/actor)
 	return FALSE
 
 /// Carries `thing` for `actor` (it is already out of where it was). TRUE when it holds it now.
-/obj/item/proc/carry(obj/item/thing, mob/actor)
+/obj/proc/carry(obj/thing, mob/actor)
 	return FALSE
 
 /proc/provider_collect(datum/D, datum/source, list/into)
@@ -183,7 +185,7 @@
 
 /// The mask of origins the actor can act through (acts_via), ORIGIN_ALL for what has none.
 /proc/actor_acts_via(mob/actor)
-	if(istype(actor, /mob/living))
+	if(actor?.op_uses_actor_stats())
 		var/mask = stat_value(actor, STAT_ACTS_VIA)
 		return isnull(mask) ? ORIGIN_ALL : mask
 	return ORIGIN_ALL
@@ -227,7 +229,7 @@
 
 /// The reason an op of `plan` cannot reach `target`, or null when it can, and the provider that does it (set in `chosen`). Providers are
 /// the actor's and the held item's now.
-/proc/reach_gate(mob/actor, atom/target, obj/item/held, datum/op_plan/P, datum/entry/part/bind/B, authority, list/chosen)
+/proc/reach_gate(mob/actor, atom/target, obj/held, datum/op_plan/P, datum/entry/part/bind/B, authority, list/chosen)
 	var/policy = op_reach_policy(P, B)
 	var/need = op_affordance(P, B, held)
 	var/list/provs = providers_for(actor, held)
@@ -304,7 +306,7 @@
 	return null
 
 /// The provider that performs an op among `fits`: the held item's (or the carrier's that holds it: a cyborg's gripper), else the shortest reach.
-/proc/reach_pick_provider(list/fits, obj/item/held, obj/item/carrier = null)
+/proc/reach_pick_provider(list/fits, obj/held, obj/carrier = null)
 	var/datum/prov/best = null
 	for(var/datum/prov/V as anything in fits)
 		if(!best)
@@ -359,7 +361,7 @@
 	return isnull(chosen) ? B.reach_policy() : chosen
 
 /// The affordance mask an op's binding needs of its provider (a tool binding needs the held tool's own).
-/proc/op_affordance(datum/op_plan/P, datum/entry/part/bind/B, obj/item/held)
+/proc/op_affordance(datum/op_plan/P, datum/entry/part/bind/B, obj/held)
 	var/chosen = LAZYACCESS(P.selects, "by")
 	return isnull(chosen) ? B.affordance() : chosen
 
@@ -435,3 +437,7 @@
 		return TRUE
 	var/chosen = LAZYACCESS(P.selects, "authority")
 	return !!(authority & (isnull(chosen) ? B.authority_mask() : chosen))
+
+/// Gameplay adapters may withdraw manipulation providers when a body loses its hands.
+/datum/proc/can_provide_hands(datum/act/A)
+	return TRUE

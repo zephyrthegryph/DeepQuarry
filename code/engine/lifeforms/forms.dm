@@ -238,7 +238,7 @@
 /// (not GLOB): plans are built while the globals are still being made, and rx_readers() reads it on every tracked write.
 GLOBAL_REAL_VAR(list/lifeform_watch_keys)
 
-/// TRUE when a form of E's type follows `key` (rx_readers() asks, so changed() publishes the write).
+/// TRUE when a form of E's type follows `key` (rx_readers() asks, so state_changed() publishes the write).
 /proc/lifeform_watching(datum/E, key)
 	if(!lifeform_watch_keys?[key])
 		return FALSE
@@ -280,7 +280,7 @@ GLOBAL_REAL_VAR(list/lifeform_watch_keys)
 /proc/lifeform_datum_new(datum/D)
 	if(length(GLOB?.make_pending))
 		make_pending_for(D) // a make() of this type: its params, before anything else
-	lifecycle_decls_init(D) // preinit (rolls, params) and owns_one/owns_many starts =
+	lifecycle_initialize(D) // preinit (rolls, params) and owns_one/owns_many starts =
 	var/datum/type_table/T = table_of(D)
 	if(T.hook_flags & ENGINE_HOOK_MODES)
 		modes_init(D, T) // a plain datum with modes() starts in the state its var names, as an atom does when it initializes
@@ -289,4 +289,11 @@ GLOBAL_REAL_VAR(list/lifeform_watch_keys)
 		if(param_drop_pending?[D])
 			params_drop(D)
 	hooks_change_baseline(D) // the baseline of an on_change hook, and of the wake hook of an every() below
-	type_every_arm(D, T) // a type-level every() of a plain datum: armed when it is made, on its own clock; its timers go with it (qdel)
+	type_every_arm(D, T) // Plain-datum repeat timers are owned by the datum and leave with it.
+
+/// Legacy declaration policy is outside the lifecycle kernel.
+/proc/lifecycle_initialize(datum/D, mapload = FALSE)
+	return D.initialize_compatibility(mapload)
+
+/datum/proc/initialize_compatibility(mapload)
+	return

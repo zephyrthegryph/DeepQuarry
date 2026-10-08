@@ -6,7 +6,7 @@
 // components. Events still embed their own HTML for now (the
 // per-event handlers each emit ad-hoc buttons that haven't been
 // unpacked); HtmlRenderer + forwardTopic relays their links to the
-// arcade's TOPIC_ACTION rows. The typed buttons call orion_* procs.
+// arcade's topic bindings. The typed buttons call orion_* procs.
 
 // arcade.dm #undefs the ORION_STATUS_* macros at end-of-file, so
 // re-shadow the integer values here for use in our panel.
@@ -32,7 +32,7 @@
 
 	if(gameStatus == ORION_STATUS_GAMEOVER)
 		play_sfx(src, SFX_ARCADE_ORI_FAIL, ignore_walls = FALSE)
-		if(emagged)
+		if(emagged())
 			if(food <= 0)
 				user.set_nutrition(0)
 				to_chat(user, span_danger(span_large("Your body instantly contracts to that of one who has not eaten in months. Agonizing cramps seize you as you fall to the floor.")))
@@ -85,13 +85,28 @@
 	return data
 
 CAPABILITIES(/obj/machinery/computer/arcade/orion_trail)
+	op("href_slow", topic("slow"), then(PROC_REF(topic_orion_slow)))
+	op("href_useengine", topic("useengine"), then(PROC_REF(topic_orion_useengine)))
+	op("href_useelec", topic("useelec"), then(PROC_REF(topic_orion_useelec)))
+	op("href_usehull", topic("usehull"), then(PROC_REF(topic_orion_usehull)))
+	op("href_wait", topic("wait"), then(PROC_REF(topic_orion_wait)))
+	op("href_keepspeed", topic("keepspeed"), then(PROC_REF(topic_orion_keepspeed)))
+	op("href_holedeath", topic("holedeath"), then(PROC_REF(topic_orion_holedeath)))
+	op("href_eventclose", topic("eventclose"), then(PROC_REF(topic_orion_eventclose)))
+	op("href_buycrew", topic("buycrew"), then(PROC_REF(topic_orion_buycrew)))
+	op("href_sellcrew", topic("sellcrew"), then(PROC_REF(topic_orion_sellcrew)))
+	op("href_leave_spaceport", topic("leave_spaceport"), then(PROC_REF(topic_orion_leave_spaceport)))
+	op("href_raid_spaceport", topic("raid_spaceport"), then(PROC_REF(topic_orion_raid_spaceport)))
+	op("href_buyparts", topic("buyparts", arg("buyparts", num(), optional = TRUE)), then(PROC_REF(topic_orion_buyparts)))
+	op("href_trade", topic("trade", arg("trade", num(), optional = TRUE)), then(PROC_REF(topic_orion_trade)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	op("menu", ui_act(), then(PROC_REF(native_orion_ui_menu)))
 	op("new_game", ui_act(), then(PROC_REF(native_orion_ui_new_game)))
 	op("continue", ui_act(), then(PROC_REF(native_orion_ui_continue)))
 	op("blackhole_continue", ui_act(), then(PROC_REF(native_orion_ui_blackhole_continue)))
 	op("blackhole_around", ui_act(), then(PROC_REF(native_orion_ui_blackhole_around)))
-	op("killcrew", ui_act(), then(PROC_REF(native_orion_ui_killcrew)))
-	op("close", ui_act(), then(PROC_REF(native_orion_ui_close)))
+	op("killcrew", inputs(ui_act(), topic("killcrew")), then(PROC_REF(native_orion_ui_killcrew)))
+	op("close", inputs(ui_act(), topic("close")), then(PROC_REF(native_orion_ui_close)))
 	interface("OrionTrail", title = "The Orion Trail", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
 	ui_shape(screen = schema_text(), reasons = list_of(), event_html = any, turn = num(), stop_name = any, stop_blurb = any, crew = list_of(), food = num(), fuel = num(), engine = num(), hull = num(), electronics = num(), at_blackhole = bool())

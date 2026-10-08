@@ -181,10 +181,14 @@ CAPABILITIES(/datum/shuttle/autodock/ferry/specops)
 	brightness_range = 5
 	brightness_power = 1
 	brightness_color = "#DA0205"
-	state = 0
+	var/state = 0
 
-/obj/machinery/light/small/readylight/set_state(new_state)
-	. = ..()
+/obj/machinery/light/small/readylight/proc/set_state(new_state)
+	. = FALSE
+	if(state != new_state)
+		state = new_state
+		tracked_bridged_changed(src, "state")
+		. = TRUE
 	if(state)
 		brightness_color = "00FF00"
 	else
@@ -205,3 +209,5 @@ CAPABILITIES(/datum/shuttle/autodock/ferry/specops)
 			var/obj/machinery/light/small/readylight/light = locate_within(T, /obj/machinery/light/small/readylight)
 			if(light) light.set_state(1)
 
+
+SETTER(/obj/machinery/light/small/readylight, state)

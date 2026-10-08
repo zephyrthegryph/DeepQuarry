@@ -1,6 +1,4 @@
 #define FIREDOOR_MAX_PRESSURE_DIFF 25 // kPa
-#define FIREDOOR_MAX_TEMP 50 // °C
-#define FIREDOOR_MIN_TEMP 0
 // Bitflags
 #define FIREDOOR_ALERT_HOT		1
 #define FIREDOOR_ALERT_COLD		2
@@ -33,7 +31,23 @@
 	var/net_id
 	var/list/areas_added
 	/// The mixture ids of the air watches a shut door has armed (null while it has none).
-	var/list/sleeping_mixture_ids
+	var/list/datum/native_watch/gas/air_watches
+	var/sleeping_signature
+	var/datum/gas_mixture/dependency_air_0
+	var/air_hot_0 = FALSE
+	var/air_cold_0 = FALSE
+	var/datum/gas_mixture/dependency_air_1
+	var/air_hot_1 = FALSE
+	var/air_cold_1 = FALSE
+	var/datum/gas_mixture/dependency_air_2
+	var/air_hot_2 = FALSE
+	var/air_cold_2 = FALSE
+	var/datum/gas_mixture/dependency_air_3
+	var/air_hot_3 = FALSE
+	var/air_cold_3 = FALSE
+	var/datum/gas_mixture/dependency_air_4
+	var/air_hot_4 = FALSE
+	var/air_cold_4 = FALSE
 	/// Lazy list of names who opened this door during an alert.
 	var/list/users_to_open
 
@@ -53,6 +67,16 @@
 	)
 	var/open_sound = SFX_MACHINES_FIRELOCKOPEN // firedoor sound variable.
 	var/close_sound = SFX_MACHINES_FIRELOCKCLOSE // firedoor sound variable.
+TRACKED(/obj/machinery/door/firedoor, air_hot_0)
+TRACKED(/obj/machinery/door/firedoor, air_cold_0)
+TRACKED(/obj/machinery/door/firedoor, air_hot_1)
+TRACKED(/obj/machinery/door/firedoor, air_cold_1)
+TRACKED(/obj/machinery/door/firedoor, air_hot_2)
+TRACKED(/obj/machinery/door/firedoor, air_cold_2)
+TRACKED(/obj/machinery/door/firedoor, air_hot_3)
+TRACKED(/obj/machinery/door/firedoor, air_cold_3)
+TRACKED(/obj/machinery/door/firedoor, air_hot_4)
+TRACKED(/obj/machinery/door/firedoor, air_cold_4)
 TRACKED(/obj/machinery/door/firedoor, dir_alerts)
 TRACKED(/obj/machinery/door/firedoor, pdiff_alert)
 
@@ -151,13 +175,40 @@ MSG_DEF_SELF(firedoor/need_wield, "You need to be wielding that to do that.")
 MSG_DEF_SELF(firedoor/busy_prying, "Someone's busy prying at it!")
 
 CAPABILITIES(/obj/machinery/door/firedoor)
+	owns_many(nameof(air_watches), /datum/native_watch/gas)
+	ref_one(nameof(dependency_air_0), /datum/gas_mixture)
+	gas_level(into = nameof(air_hot_0), reading = CH_GAS_TEMPERATURE, above = convert_c2k(FIREDOOR_MAX_TEMP - 0.01), hysteresis = 0, air = nameof(dependency_air_0))
+	on_change(nameof(air_hot_0), ANY, then(PROC_REF(temperature_level_changed)))
+	gas_level(into = nameof(air_cold_0), reading = CH_GAS_TEMPERATURE, below = convert_c2k(FIREDOOR_MIN_TEMP + 0.01), hysteresis = 0, air = nameof(dependency_air_0))
+	on_change(nameof(air_cold_0), ANY, then(PROC_REF(temperature_level_changed)))
+	ref_one(nameof(dependency_air_1), /datum/gas_mixture)
+	gas_level(into = nameof(air_hot_1), reading = CH_GAS_TEMPERATURE, above = convert_c2k(FIREDOOR_MAX_TEMP - 0.01), hysteresis = 0, air = nameof(dependency_air_1))
+	on_change(nameof(air_hot_1), ANY, then(PROC_REF(temperature_level_changed)))
+	gas_level(into = nameof(air_cold_1), reading = CH_GAS_TEMPERATURE, below = convert_c2k(FIREDOOR_MIN_TEMP + 0.01), hysteresis = 0, air = nameof(dependency_air_1))
+	on_change(nameof(air_cold_1), ANY, then(PROC_REF(temperature_level_changed)))
+	ref_one(nameof(dependency_air_2), /datum/gas_mixture)
+	gas_level(into = nameof(air_hot_2), reading = CH_GAS_TEMPERATURE, above = convert_c2k(FIREDOOR_MAX_TEMP - 0.01), hysteresis = 0, air = nameof(dependency_air_2))
+	on_change(nameof(air_hot_2), ANY, then(PROC_REF(temperature_level_changed)))
+	gas_level(into = nameof(air_cold_2), reading = CH_GAS_TEMPERATURE, below = convert_c2k(FIREDOOR_MIN_TEMP + 0.01), hysteresis = 0, air = nameof(dependency_air_2))
+	on_change(nameof(air_cold_2), ANY, then(PROC_REF(temperature_level_changed)))
+	ref_one(nameof(dependency_air_3), /datum/gas_mixture)
+	gas_level(into = nameof(air_hot_3), reading = CH_GAS_TEMPERATURE, above = convert_c2k(FIREDOOR_MAX_TEMP - 0.01), hysteresis = 0, air = nameof(dependency_air_3))
+	on_change(nameof(air_hot_3), ANY, then(PROC_REF(temperature_level_changed)))
+	gas_level(into = nameof(air_cold_3), reading = CH_GAS_TEMPERATURE, below = convert_c2k(FIREDOOR_MIN_TEMP + 0.01), hysteresis = 0, air = nameof(dependency_air_3))
+	on_change(nameof(air_cold_3), ANY, then(PROC_REF(temperature_level_changed)))
+	ref_one(nameof(dependency_air_4), /datum/gas_mixture)
+	gas_level(into = nameof(air_hot_4), reading = CH_GAS_TEMPERATURE, above = convert_c2k(FIREDOOR_MAX_TEMP - 0.01), hysteresis = 0, air = nameof(dependency_air_4))
+	on_change(nameof(air_hot_4), ANY, then(PROC_REF(temperature_level_changed)))
+	gas_level(into = nameof(air_cold_4), reading = CH_GAS_TEMPERATURE, below = convert_c2k(FIREDOOR_MIN_TEMP + 0.01), hysteresis = 0, air = nameof(dependency_air_4))
+	on_change(nameof(air_cold_4), ANY, then(PROC_REF(temperature_level_changed)))
 	ref_one(nameof(turbolift_floor), /datum/turbolift_floor)
 	op("busy", inputs(hand(), item(/obj/item)), priority(OP_PRIORITY_CLAW + 8), when(nameof(operating)), wait(0), then(PROC_REF(nothing_done)))
 	op("use", hand(), label("Use"), priority(OP_PRIORITY_PART), wait(0),
 		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req(PROC_REF(can_work), because = MSG(firedoor/dead)),
 			req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))),
 		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)), "yes_text" = computed(PROC_REF(use_yes)))), then(PROC_REF(used)))
-	op("remote_use", ai(), wait(0),
+	// A silicon link and a pilot bump ask the same question by this key.
+	op("remote_use", remote(), wait(0),
 		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req(PROC_REF(can_work), because = MSG(firedoor/dead)),
 			req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))),
 		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)), "yes_text" = computed(PROC_REF(use_yes)))), then(PROC_REF(used)))
@@ -227,13 +278,6 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	if(needs_to_close)
 		after(src, 5 SECONDS, PROC_REF(autoclose_check), key = "reclose", clock = CLOCK_WORLD)
 	return OP_OK
-
-/// An AI's use, a cyborg's use from afar and a pilot's mecha bumping a shut one all ask as a hand would: the same question, whoever is at the door.
-DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_REF(silicon_use)))
-
-/obj/machinery/door/firedoor/proc/silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	perform_op(user, src, "remote_use", origin = ORIGIN_SYSTEM)
-	return TRUE
 
 /// A pilot's mecha bumping a shut one asks the pilot.
 /obj/machinery/door/firedoor/door_bumped(datum/act/A)
@@ -412,7 +456,7 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	else
 		clear_gas_dependencies()
 
-/// Arms one gas value watch (code/datums/om/watch.dm) per dependency turf (the door's own plus its four cardinal neighbours), all sharing
+/// Arms native gas watches per distinct mixture of the dependency turfs (the door's own plus its four cardinal neighbours), all sharing
 /// firedoor_atmos_signature() as their getter: whichever one notices a change first recomputes the full signature and wakes the door if it
 /// actually crossed a pressure or temperature band edge, not on every harmless diffusion tick. A shut door never polls the air.
 /obj/machinery/door/firedoor/proc/hibernate_until_air_changes()
@@ -420,23 +464,60 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	var/list/dependency_turfs = list(get_turf(src))
 	for(var/direction in GLOB.cardinal)
 		dependency_turfs += get_step(src, direction)
-	var/list/getter = om_callable(src, PROC_REF(firedoor_atmos_signature))
-	var/list/wake = om_callable(src, PROC_REF(wake_from_air))
-	// One signature for all five watches: it reads the same five turfs' air whichever mixture woke it.
-	var/signature = firedoor_atmos_signature()
-	for(var/index in 1 to length(dependency_turfs))
-		var/turf/T = dependency_turfs[index]
-		var/datum/gas_mixture/air = T?.return_air()
-		var/mixture_id = air?.arena_id()
-		if(isnull(mixture_id))
-			continue
-		LAZYSET(sleeping_mixture_ids, "turf[index]", mixture_id)
-		om_watch_arm_value(src, "turf[index]", mixture_id, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_TEMPERATURE, getter, wake_callback = wake, current_value = signature)
+	var/list/mixtures = list()
+	var/turf/dependency_0 = dependency_turfs[1]
+	rel_set(src, nameof(dependency_air_0), dependency_0?.return_air())
+	if(dependency_air_0)
+		mixtures += dependency_air_0
+	var/turf/dependency_1 = dependency_turfs[2]
+	rel_set(src, nameof(dependency_air_1), dependency_1?.return_air())
+	if(dependency_air_1)
+		mixtures += dependency_air_1
+	var/turf/dependency_2 = dependency_turfs[3]
+	rel_set(src, nameof(dependency_air_2), dependency_2?.return_air())
+	if(dependency_air_2)
+		mixtures += dependency_air_2
+	var/turf/dependency_3 = dependency_turfs[4]
+	rel_set(src, nameof(dependency_air_3), dependency_3?.return_air())
+	if(dependency_air_3)
+		mixtures += dependency_air_3
+	var/turf/dependency_4 = dependency_turfs[5]
+	rel_set(src, nameof(dependency_air_4), dependency_4?.return_air())
+	if(dependency_air_4)
+		mixtures += dependency_air_4
+	gas_level_rearm_all(src)
+	// Settle every level before capturing the signature: opening crossings are inert.
+	sleeping_signature = firedoor_atmos_signature()
+	gas_watch_many(src, nameof(air_watches), mixtures, GAS_DEPENDENCY_PRESSURE, PROC_REF(air_heard))
 
 /obj/machinery/door/firedoor/proc/clear_gas_dependencies()
-	for(var/key in sleeping_mixture_ids)
-		om_watch_disarm(src, key)
-	sleeping_mixture_ids = null
+	gas_watch_many_clear(src, nameof(air_watches))
+	sleeping_signature = null
+	for(var/datum/capability/lib/gas_level/def as anything in table_cap_defs(table_of(src), CAP_GAS_LEVEL))
+		var/datum/cap_data/gas_level/data = gas_level_data(src, def)
+		if(data)
+			rel_clear(data, nameof(data.watch))
+			data.armed_id = null
+	rel_clear(src, nameof(dependency_air_0))
+	rel_clear(src, nameof(dependency_air_1))
+	rel_clear(src, nameof(dependency_air_2))
+	rel_clear(src, nameof(dependency_air_3))
+	rel_clear(src, nameof(dependency_air_4))
+
+/obj/machinery/door/firedoor/proc/temperature_level_changed(datum/act/A)
+	if(density && !isnull(sleeping_signature))
+		reconsider_air_signature()
+
+/obj/machinery/door/firedoor/proc/air_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+	reconsider_air_signature()
+
+/obj/machinery/door/firedoor/proc/reconsider_air_signature()
+	var/signature = firedoor_atmos_signature()
+	if(signature != sleeping_signature)
+		sleeping_signature = signature
+		SSmachines.gas_woken_last++
+		gas_dependency_wake_count++
+		wake_from_air()
 
 /// The air crossed a band edge: the door reads it and goes back to waiting.
 /obj/machinery/door/firedoor/proc/wake_from_air()
@@ -447,18 +528,22 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 
 /obj/machinery/door/firedoor/proc/firedoor_atmos_signature()
 	var/signature = getOPressureDifferential(src.loc) >= FIREDOOR_MAX_PRESSURE_DIFF
-	var/datum/gas_mixture/local_air = loc?.return_air()
-	signature = (signature << 2) | (local_air ? firedoor_temperature_band(local_air.return_temperature()) : 0)
-	var/list/cardinal_air = getCardinalAirInfo(src.loc, list("temperature", "pressure"))
-	for(var/index = 1; index <= 4; index++)
-		var/list/tileinfo = cardinal_air[index]
-		signature = (signature << 2) | (tileinfo ? firedoor_temperature_band(tileinfo[1]) : 0)
+	var/band_0 = dependency_air_0 ? ((air_hot_0 ? FIREDOOR_ALERT_HOT : 0) | (air_cold_0 ? FIREDOOR_ALERT_COLD : 0)) : 0
+	signature = (signature << 2) | band_0
+	var/band_1 = dependency_air_1 ? ((air_hot_1 ? FIREDOOR_ALERT_HOT : 0) | (air_cold_1 ? FIREDOOR_ALERT_COLD : 0)) : 0
+	signature = (signature << 2) | band_1
+	var/band_2 = dependency_air_2 ? ((air_hot_2 ? FIREDOOR_ALERT_HOT : 0) | (air_cold_2 ? FIREDOOR_ALERT_COLD : 0)) : 0
+	signature = (signature << 2) | band_2
+	var/band_3 = dependency_air_3 ? ((air_hot_3 ? FIREDOOR_ALERT_HOT : 0) | (air_cold_3 ? FIREDOOR_ALERT_COLD : 0)) : 0
+	signature = (signature << 2) | band_3
+	var/band_4 = dependency_air_4 ? ((air_hot_4 ? FIREDOOR_ALERT_HOT : 0) | (air_cold_4 ? FIREDOOR_ALERT_COLD : 0)) : 0
+	signature = (signature << 2) | band_4
 	return signature
 
 // Gas subscriptions are keyed by the mixtures of the turf the door sat on and its neighbours. After a move those ids are stale, so they are re-armed.
 /obj/machinery/door/firedoor/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	if(sleeping_mixture_ids)
+	if(air_watches)
 		hibernate_until_air_changes()
 
 /// A shut door on the map waits on its air from the moment the world is up.
@@ -622,8 +707,6 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	glass = 1
 
 #undef FIREDOOR_MAX_PRESSURE_DIFF
-#undef FIREDOOR_MAX_TEMP
-#undef FIREDOOR_MIN_TEMP
 
 #undef FIREDOOR_ALERT_HOT
 #undef FIREDOOR_ALERT_COLD

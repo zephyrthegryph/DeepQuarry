@@ -31,6 +31,7 @@
 
 CAPABILITIES(/obj/machinery/computer/supplycomp)
 	op("open_ui", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(lets_in_holds), because = PROC_REF(lets_in_refusal))), then(TYPE_PROC_REF(/atom, op_open_ui)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /// Requirement (was REQ_* lets_in): the legacy check answers TRUE to pass.
 /obj/machinery/computer/supplycomp/proc/lets_in_holds(datum/act/op/A)
@@ -45,14 +46,15 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 /obj/machinery/computer/supplycomp/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), null)
-/obj/machinery/computer/supplycomp/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/supplycomp/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!can_order_contraband)
 		to_chat(user, span_notice("Special supplies unlocked."))
 		authorization |= SUP_CONTRABAND
 		req_access = list()
 		can_order_contraband = TRUE
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/computer/supplycomp/proc/can_manage_budget(mob/user, department)
 	if(issilicon(user))

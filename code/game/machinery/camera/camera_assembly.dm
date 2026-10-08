@@ -24,10 +24,14 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 
 CAPABILITIES(/obj/item/camera_assembly)
 	owns_many(nameof(upgrades))
+	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 
 
 /// Old attackby.
-/obj/item/camera_assembly/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/camera_assembly/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	switch(state)
 		if(2)
 			if(istype(W, /obj/item/stack/cable_coil))
@@ -37,17 +41,17 @@ CAPABILITIES(/obj/item/camera_assembly)
 					state = 3
 				else
 					to_chat(user, span_warning("You need 2 coils of wire to wire the assembly."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 	// Upgrades!
 	if(is_type_in_list(W, possible_upgrades) && !is_type_in_list(W, upgrades)) // Is a possible upgrade and isn't in the camera already.
 		if(!move_into(src, nameof(upgrades), W, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, "You attach \the [W] into the assembly inner circuits.")
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	// Taking out upgrades
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/camera_assembly/wrench_act(mob/user, obj/item/tool)
 	if(state == 0 && isturf(loc))
@@ -187,15 +191,10 @@ CAPABILITIES(/datum/prompt/yes_no/camera_direction_ok)
 		else
 			look.state("cameracase")
 
-DECLARE_INTERACTIONS(/obj/item/camera_assembly, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/item/camera_assembly/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/camera_assembly/proc/interaction_hand(datum/act/op/A)
 	if(!anchored)
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /// Welds (a timed tool job); `on_done` runs on src with `done_args` when it is done. 0 if busy or refused.

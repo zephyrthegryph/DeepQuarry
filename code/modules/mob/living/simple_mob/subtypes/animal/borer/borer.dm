@@ -302,8 +302,9 @@
 	unset_machine()
 
 	host.unset_machine()
-	// om_unlink's on_unlink (library.dm) drops us from the head organ's implants list.
-	om_unlink(src, host, /datum/om/relation/host_of)
+	// Unlinking drops us from the head organ's implants list (host_lost(), called here too: the hook is not told while we are being deleted).
+	host_lost(host)
+	rel_set(src, nameof(borer_host_mob), null)
 
 /mob/living/simple_mob/animal/borer/proc/transfer_personality(mob/candidate)
 	if(!candidate)

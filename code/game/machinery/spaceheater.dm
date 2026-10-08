@@ -22,7 +22,7 @@
 
 	var/obj/item/cell/cell
 	var/cell_type = /obj/item/cell/high
-	state = 0
+	var/state = 0
 	var/set_temperature = T0C + 20	//K
 	var/min_temperature = DEFAULT_MIN_TEMP
 	var/max_temperature = DEFAULT_MAX_TEMP
@@ -263,3 +263,5 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 #undef DEFAULT_MAX_TEMP
 #undef DEFAULT_HEATING_POWER
 
+
+TRACKED_BRIDGED(/obj/machinery/space_heater, state, CHANGE_MACHINE_SETTINGS)

@@ -1,5 +1,65 @@
-/obj/machinery/alarm|human|none => |
-/obj/machinery/alarm|robot|none => |gen_robot_interaction_swallow:not possible right now
-/obj/machinery/alarm|ai|none => |
-/obj/machinery/alarm|ghost|none => |
+human|none menu: Ui open
+human|none click: Click: Ui open
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Toggle worn
+robot|none menu: Ui open
+robot|none click: Click: Toggle worn
+ai|none menu: Ui open
+ai|none click: Click: Ui open
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Open
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Ui open
+human|/obj/item/tool/screwdriver click: Click: Open
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Ui open
+human|/obj/item/tool/crowbar click: Click: Ui open
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Ui open
+human|/obj/item/tool/wrench click: Click: Ui open
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Ui open
+human|/obj/item/tool/wirecutters click: Click: Cut out
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Ui open
+human|/obj/item/multitool click: Click: Ui open
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Ui open
+human|/obj/item/weldingtool click: Click: Ui open
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Ui open
+human|/obj/item/stack/cable_coil click: Click: Ui open
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Ui open
+human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle (refused: Access denied.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id click: Click: Toggle
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Ui open
+human|/obj/item/pda menu: Move To Top
+human|/obj/item/pda menu: Remove cartridge (refused: You can't do that.)
+human|/obj/item/pda menu: Remove id (refused: You can't do that.)
+human|/obj/item/pda menu: Remove pen (refused: You can't do that.)
+human|/obj/item/pda menu: Reset PDA (refused: You can't do that.)
+human|/obj/item/pda menu: Toggle (refused: Access denied.)
+human|/obj/item/pda menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pda menu: Ui open
+human|/obj/item/pda click: Click: Toggle
+wires: AI Control, Atmospherics Alarm, ID Scan, Primary Power, Siphon
+keys: alarm, ch4_scrub, co2_scrub, cut_out, direction, drag_buckle, excheck, fuel_scrub, incheck, lock, lock.toggle, lock.toggle_worn, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, mode, n2o_scrub, n2_scrub, o2_scrub, panel.open, panic_siphon, power, rcon, reset, reset_external_pressure, reset_internal_pressure, robot_remote_blocked, scrubbing, set_external_pressure, set_internal_pressure, temperature, threshold, tox_scrub, ui_open, wires.open
 

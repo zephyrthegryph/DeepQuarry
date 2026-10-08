@@ -375,6 +375,19 @@
 	TEST_ASSERT(by_id["bayed"] && !by_id["bayed"]["enabled"], "the bayed op is listed but disabled (the bay is closed)")
 	TEST_ASSERT(by_id["bayed"]["reason"], "with its reason")
 	TEST_ASSERT(!by_id[ACT_REPAIR], "rows are ops, not actions")
+	// The target's old operation declarations remain visible beside a modern actor's ops;
+	// legacy hand/tool presets must not duplicate a converted target's actual engine entries.
+	var/obj/machinery/door/airlock/converted = allocate(/obj/machinery/door/airlock, T)
+	var/list/old_shapes = list()
+	for(var/list/row as anything in input_compatibility().compatibility_menu(H, converted, ROUTE_PHYSICAL))
+		old_shapes[row["id"]] = TRUE
+	var/list/named_operations = list()
+	for(var/list/row as anything in input_compatibility().compatibility_menu(H, converted, ROUTE_PHYSICAL, operations_only = TRUE))
+		named_operations[row["id"]] = TRUE
+	TEST_ASSERT_EQUAL(length(named_operations), 0, "The fully converted airlock exposes no legacy named operations")
+	for(var/list/row as anything in op_menu(H, converted, null))
+		TEST_ASSERT(!(old_shapes[row["id"]] && !named_operations[row["id"]] && !op_index_of_table(table_of(converted)).by_key[row["id"]] && !op_index_of_table(table_of(H)).by_key[row["id"]]), "A converted target's legacy-shaped [row["id"]] row was reintroduced beside its native operations")
+
 
 	F.hook_log = null
 	TEST_ASSERT(perform_action(H, F, ACT_LOCK), "perform_action runs the op")
@@ -448,12 +461,12 @@
 	// A change nobody published is still caught by the re-check when the wait ends.
 	TEST_ASSERT(perform_action(H, F, ACT_TOGGLE), "starts again")
 	var/pending_id = GLOB.op_pending[1]
-	F.cap_state |= CAP_LOCKED
+	capability_runtime(F).bits |= CAP_LOCKED
 	cancel_after(H, "op_wait")
 	op_wait_done(pending_id)
 	TEST_ASSERT_NULL(F.calls, "the after-wait re-check refuses a stale go-ahead")
 	TEST_ASSERT_EQUAL(length(GLOB.op_pending), 0, "the context was released")
-	F.cap_state &= ~CAP_LOCKED
+	capability_runtime(F).bits &= ~CAP_LOCKED
 
 	// And a wait that ends with everything holding commits, through op_before / op_after.
 	TEST_ASSERT(perform_action(H, F, ACT_TOGGLE), "starts a third time")

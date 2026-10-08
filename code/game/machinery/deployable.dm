@@ -10,6 +10,7 @@ Deployable items
 	req_access = list(ACCESS_SECURITY)//I'm changing this until these are properly tested./N
 
 /obj/machinery/deployable/barrier
+	var/emagged = 0
 	name = "deployable barrier"
 	desc = "A deployable barrier. Swipe your ID card to lock/unlock it."
 	icon = 'icons/obj/objects.dmi'
@@ -323,3 +324,10 @@ CAPABILITIES(/obj/structure/barricade/cutout)
 	icon_state = "cutout_random"
 
 DECLARE_LOOT(/obj/random/cutout, LOOT_TABLE(LOOT_TYPES(1, subtypesof(/obj/structure/barricade/cutout))), LOOT_CHANCE(20)) // Only spawns 20% of the time to avoid being predictable
+
+/obj/machinery/deployable/barrier/set_emagged(value)
+	if(emagged == value)
+		return FALSE
+	emagged = value
+	tracked_bridged_changed(src, "emagged")
+	return TRUE

@@ -11,6 +11,7 @@ ai|none menu: Use
 ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Flush
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Wooden item
@@ -18,6 +19,7 @@ human|/obj/item/tool/screwdriver menu: Wooden touch
 human|/obj/item/tool/screwdriver menu: Yank the flush lever
 human|/obj/item/tool/screwdriver click: Click: Wooden item
 human|/obj/item/tool/crowbar menu: Flush
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use crowbar
@@ -26,6 +28,7 @@ human|/obj/item/tool/crowbar menu: Wooden touch
 human|/obj/item/tool/crowbar menu: Yank the flush lever
 human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Flush
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use wrench (refused: )
@@ -34,6 +37,7 @@ human|/obj/item/tool/wrench menu: Wooden touch
 human|/obj/item/tool/wrench menu: Yank the flush lever
 human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Flush
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Wooden item
@@ -41,6 +45,7 @@ human|/obj/item/tool/wirecutters menu: Wooden touch
 human|/obj/item/tool/wirecutters menu: Yank the flush lever
 human|/obj/item/tool/wirecutters click: Click: Wooden item
 human|/obj/item/multitool menu: Flush
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Wooden item
@@ -48,6 +53,7 @@ human|/obj/item/multitool menu: Wooden touch
 human|/obj/item/multitool menu: Yank the flush lever
 human|/obj/item/multitool click: Click: Wooden item
 human|/obj/item/weldingtool menu: Flush
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Wooden item
@@ -55,6 +61,7 @@ human|/obj/item/weldingtool menu: Wooden touch
 human|/obj/item/weldingtool menu: Yank the flush lever
 human|/obj/item/weldingtool click: Click: Wooden item
 human|/obj/item/stack/cable_coil menu: Flush
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
@@ -63,6 +70,7 @@ human|/obj/item/stack/cable_coil menu: Wooden touch
 human|/obj/item/stack/cable_coil menu: Yank the flush lever
 human|/obj/item/stack/cable_coil click: Click: Wooden item
 human|/obj/item/stack/material/steel menu: Flush
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Wooden item
@@ -70,6 +78,7 @@ human|/obj/item/stack/material/steel menu: Wooden touch
 human|/obj/item/stack/material/steel menu: Yank the flush lever
 human|/obj/item/stack/material/steel click: Click: Wooden item
 human|/obj/item/card/id menu: Flush
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
@@ -78,11 +87,12 @@ human|/obj/item/card/id menu: Wooden touch
 human|/obj/item/card/id menu: Yank the flush lever
 human|/obj/item/card/id click: Click: Wooden item
 human|/obj/item menu: Flush
+human|/obj/item menu: Hit
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Wooden item
 human|/obj/item menu: Wooden touch
 human|/obj/item menu: Yank the flush lever
 human|/obj/item click: Click: Wooden item
-keys: drag_buckle, flush, flush_yank, silicon_use, use_crowbar, use_wrench, wooden_item, wooden_item_cyborg, wooden_touch
+keys: drag_buckle, flush, flush_yank, melee_hit, silicon_use, use_crowbar, use_wrench, wooden_item, wooden_item_cyborg, wooden_touch
 

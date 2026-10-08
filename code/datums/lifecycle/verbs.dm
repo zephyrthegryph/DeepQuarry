@@ -1,5 +1,5 @@
 // L3: the verbs that replace direct qdel() call sites (roadmap L track,
-// doc/rewrite/lifecycle.md §5). `qdel()` remains the engine underneath every
+// doc/rewrite/lifecycle.md Â§5). `qdel()` remains the engine underneath every
 // one of these; what they add is the checked, declarative intent a hand
 // `qdel(x)` site doesn't carry (was this removal allowed? does something get
 // carried over? is this timed or death-driven?), so the destroy transaction
@@ -64,7 +64,7 @@
 		var/atom/movable/built = path
 		if(QDELETED(built))
 			return null
-		original.lifecycle_successor = built
+		original.set_containment_successor(built)
 		om_handle_forward(original, built)
 		ending_cause(original, END_REPLACED, built)
 		qdel(original)
@@ -77,7 +77,7 @@
 	var/atom/movable/successor = new path(arglist(ctor_args))
 	if(QDELETED(successor))
 		return null
-	original.lifecycle_successor = successor
+	original.set_containment_successor(successor)
 	om_handle_forward(original, successor)
 	ending_cause(original, END_REPLACED, successor)
 	qdel(original)
@@ -132,7 +132,7 @@
 /// many were deleted.
 /atom/proc/slot_clear(slot_id)
 	. = 0
-	// DELETE never materializes a latent entry (lifecycle.md §3): drop them
+	// DELETE never materializes a latent entry (lifecycle.md Â§3): drop them
 	// as data.
 	if(has_latent())
 		var/datum/ledger/L = dq_ledger(src)
@@ -200,8 +200,8 @@
 
 /// The sealed death pipeline (/mob/proc/death(), code/modules/mob/death.dm)
 /// calls this as its final hook, after on_death() and every listener, so all
-/// subtype remains and messages are already out (doc/rewrite/lifecycle.md §5,
-/// §7). A no-op unless delete_on_death is set; skipped if the mob was revived
+/// subtype remains and messages are already out (doc/rewrite/lifecycle.md Â§5,
+/// Â§7). A no-op unless delete_on_death is set; skipped if the mob was revived
 /// or deleted (gibbed) along the way.
 /mob/living/proc/lifecycle_on_death_finalized()
 	if(delete_on_death && stat == DEAD && !QDELETED(src))
@@ -209,8 +209,8 @@
 
 // ---- destroy_effects (declared, phase 6) ----
 
-/// Declared destruction effects (L3, doc/rewrite/lifecycle.md §2 phase 6,
-/// §5): message, sound, debris and neighbour update, applied by
+/// Declared destruction effects (L3, doc/rewrite/lifecycle.md Â§2 phase 6,
+/// Â§5): message, sound, debris and neighbour update, applied by
 /// phase 6 of destroy_transaction() (transaction.dm) instead of a hand `visible_message()`/`playsound()`/
 /// `new debris()` block in Destroy(). A type overrides destroy_effects()
 /// (transaction.dm) to return one, built once as a proc-local static (same

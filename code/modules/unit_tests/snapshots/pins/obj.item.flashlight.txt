@@ -62,10 +62,13 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Remove cell
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage click: Click: Remove cell
+human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell menu: Drain its charge (refused: not in your hand)
 human|/obj/item/cell menu: Install cell
 human|/obj/item/cell menu: Move To Top
 human|/obj/item/cell menu: Remove cell
 human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell menu: Use
 human|/obj/item/cell click: Click: Install cell
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, insert_cell, kit_customize, kit_customize_last, move_to_top, pick_up_item, switch, take_cell, toggle_digestable
 

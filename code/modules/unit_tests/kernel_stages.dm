@@ -43,7 +43,7 @@
 /datum/unit_test/kernel_stage_adapter_graph
 
 /datum/unit_test/kernel_stage_adapter_graph/Run()
-	var/datum/om/registry/reg = om_registry()
+	var/datum/definition_registry/reg = definition_registry()
 	var/adapted = 0
 	var/with_reads = 0
 	var/declared_reads = 0
@@ -52,7 +52,7 @@
 	var/list/missing = list()
 	var/list/by_family = list()
 	for(var/stage_type in reg.stage_by_type)
-		var/datum/om/stage/T = reg.stage_by_type[stage_type]
+		var/datum/work_stage/T = reg.stage_by_type[stage_type]
 		if(!T.pipeline || !T.family)
 			continue
 		var/datum/work_item/stage/W = stage_work_item(stage_type, null, 1 SECONDS)
@@ -69,7 +69,7 @@
 	TEST_ASSERT_EQUAL(with_reads, declared_reads, "declared reads carry over to the adapters (no stage left in the registry declares any once the AI stages are gone)")
 	// The stage after-edges, within a pipeline, as work-item edges.
 	for(var/datum/work_item/stage/W as anything in items)
-		var/datum/om/stage/T = reg.stage_by_type[W.stage_type]
+		var/datum/work_stage/T = reg.stage_by_type[W.stage_type]
 		var/list/edges = list()
 		for(var/family in T.after)
 			var/datum/work_item/stage/target = by_family["[T.pipeline]:[family]"]

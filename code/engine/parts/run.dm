@@ -55,7 +55,7 @@
 /// was the holder's own window's.
 /// The tgui window the button was pressed in, or null (a driver-built press, any other input).
 /datum/act/op/proc/window_ui()
-	RETURN_TYPE(/datum/tgui)
+	RETURN_TYPE(/datum)
 	return LAZYACCESS(src.args, OP_UI_TGUI)
 
 /datum/act/op/proc/window_forwarder()
@@ -87,14 +87,14 @@
 /proc/perform_op(mob/actor, datum/target, key, held_or_route = null, origin = ORIGIN_AI, authority = null, trace = FALSE)
 	// The legacy shape names a ROUTE_* text as the fourth argument.
 	if(!isnull(held_or_route) && !isobj(held_or_route))
-		return legacy_perform_op(actor, target, key, held_or_route, isobj(origin) ? origin : null)
-	var/obj/item/held = held_or_route
+		return operation_compatibility().perform(actor, target, key, held_or_route, isobj(origin) ? origin : null)
+	var/obj/held = held_or_route
 	if(!isatom(target) && !isdatum(target))
 		return null
 	if(!istext(key) || !op_known_anywhere(actor, target, held, key))
 		// a legacy op named by its key or text keeps running the legacy way
-		if(isatom(target) && istext(key) && op_entry_named(actor, target, key))
-			return legacy_perform_op(actor, target, key, ROUTE_PHYSICAL, held)
+		if(isatom(target) && istext(key) && operation_compatibility().named(actor, target, key))
+			return operation_compatibility().perform(actor, target, key, ROUTE_PHYSICAL, held)
 		var/datum/op_result/unknown = new
 		unknown.key = key
 		unknown.origin = origin
@@ -106,7 +106,7 @@
 	return op_perform_by_key(actor, target, held, key, origin, authority || AUTH_PHYSICAL, trace)
 
 /// Does the target, the held item or the actor have an op of that key?
-/proc/op_known_anywhere(mob/actor, datum/target, obj/item/held, key)
+/proc/op_known_anywhere(mob/actor, datum/target, obj/held, key)
 	var/list/activation_out = list()
 	if(op_plan_for(target, key, activation_out))
 		return TRUE
@@ -117,7 +117,7 @@
 	return FALSE
 
 /// Resolution by key, then the run.
-/proc/op_perform_by_key(mob/actor, atom/target, obj/item/held, key, origin, authority, trace, list/arg_values = null)
+/proc/op_perform_by_key(mob/actor, atom/target, obj/held, key, origin, authority, trace, list/arg_values = null)
 	RETURN_TYPE(/datum/op_result)
 	OP_PURE_GUARD("perform_op(\"[key]\") on [target?.type] was run")
 	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, authority, null, key, FALSE)
@@ -150,7 +150,7 @@
 
 /// perform_intent(actor, target, INTENT_X, held): the same path through the ops with a physical binding; returns the key of the op that ran,
 /// or null.
-/proc/perform_intent(mob/actor, atom/target, intent, obj/item/held)
+/proc/perform_intent(mob/actor, atom/target, intent, obj/held)
 	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, null, null, FALSE)
 	for(var/datum/op_cand/C as anything in R.all)
 		if(C.dropped_by || !C.binding.physical())
@@ -174,7 +174,7 @@
 	OP_PURE_GUARD("the actor was told something")
 	var/text = reason_text(reason)
 	if(text)
-		to_chat(actor, span_warning(text))
+		actor.op_notify(text)
 
 // ---- starting an op ----
 
@@ -186,7 +186,7 @@
 	result.key = C.oplan.key
 	result.origin = R.origin
 	if(C.legacy)
-		return op_run_legacy(C, R, result)
+		return op_run_compatibility(C, R, result)
 	// An actor has any number of pending ops: a question never keeps another input out. What conflicts is claims: the pending ops of the actor that
 	// hold hands or body while they wait (CLAIM_*) against what this op needs. The actor's policy decides: a player's input stops the older op
 	// (and tells them), an AI's is refused as busy. The game acting for itself (ORIGIN_SYSTEM) neither waits on the actor's pending ops nor ends
@@ -264,15 +264,15 @@
 
 /proc/op_require_reason_inner(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
 	if(B && B.physical() && A.origin != ORIGIN_SYSTEM && !(A.authority & AUTH_ADMIN))
-		var/mob/living/L = A.actor
-		if(istype(L) && !stat_value(L, STAT_CAN_ACT) && !LAZYACCESS(P.selects, "capable_ignoring"))
+		var/mob/L = A.actor
+		if(L?.op_uses_actor_stats() && !stat_value(L, STAT_CAN_ACT) && !LAZYACCESS(P.selects, "capable_ignoring"))
 			return stat_hold_reason(L, STAT_CAN_ACT) || /datum/msg/req_not_capable
 	// The hand gate: a hand() op needs a hand that works (conscious, not stunned), and on a machine what the old attack_hand passed first (power,
 	// posture, dexterity) unless it says ungated(): the old interactions that never called ..() (INTERACT_HAND_UNGATED) skipped hand_gate(), not the actor.
 	// A tk() op has the actor half of it and never the machine half: a mind has no posture or dexterity, and the old attack_tk never ran hand_gate().
 	if(B && (B.bind_kind == BIND_HAND || B.bind_kind == BIND_TK) && A.origin != ORIGIN_SYSTEM && !(A.authority & AUTH_ADMIN))
-		var/mob/living/toucher = A.actor
-		if(istype(toucher) && (toucher.stat != CONSCIOUS || toucher.incapacitated(INCAPACITATION_STUNNED)))
+		var/mob/toucher = A.actor
+		if(toucher && !toucher.op_hand_capable())
 			return /datum/msg/req_not_capable
 		var/atom/gated = A.target
 		if(B.bind_kind == BIND_HAND && istype(gated) && !LAZYACCESS(P.selects, "ungated"))
@@ -354,8 +354,8 @@
 	/// Where the actor stood when the op started (the STAY keep).
 	var/turf/start_loc
 	/// The progress bar and the cog of the wait now running, and whether this wait was meant to draw one (a headless actor draws none).
-	var/datum/progressbar/progbar
-	var/datum/cogbar/cog
+	var/datum/progress_view/progbar
+	var/datum/cog_view/cog
 	var/progress_planned = FALSE
 	var/steps_done = 0
 	/// The actor's pending slot, and whether the pending ended.
@@ -390,8 +390,8 @@ CAPABILITIES(/datum/pending_op)
 	ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME)
 	ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME)
 	ref_one(nameof(request), /datum/request, on_other_deleted = OTHER_CLEAR) // the open question: it ends first when its owner (this record) is deleted, so it must not hold it back
-	owns_one(nameof(progbar), /datum/progressbar)
-	owns_one(nameof(cog), /datum/cogbar)
+	owns_one(nameof(progbar), /datum/progress_view)
+	owns_one(nameof(cog), /datum/cog_view)
 
 /datum/pending_op
 	var/datum/holder
@@ -479,17 +479,17 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	P.activation = C.activation // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 	P.cap = C.cap
 	P.key = A.key
-	P.provider_is_held = !isnull(A.provider) && A.provider == A.held
+	P.provider_is_held = !isnull(A.provider) && A.provider == A.held_provider()
 	P.started_at = op_now()
 	P.keeps = op_default_keeps(A, A.binding)
-	P.start_hand_ref = REF(A.actor?.get_active_hand())
+	P.start_hand_ref = REF(A.actor?.held_for_ops())
 	var/atom/T = A.target
 	P.start_loc = A.actor?.loc // ALLOW(ownership): a turf or container: plain location data, never deleted by the op
 	P.target_turf = istype(T) ? get_turf(T) : null // ALLOW(ownership): a turf: plain location data, never deleted by the op
 	rel_set(P, nameof(P.holder), A.holder)
 	rel_set(P, nameof(P.target), A.target)
 	rel_set(P, nameof(P.actor), A.actor)
-	rel_set(P, nameof(P.held), A.held)
+	rel_set(P, nameof(P.held), A.held_provider())
 	P.act = A // ALLOW(handlers, ownership): the pending op carries its act across a wait on purpose, and the act is released when the op ends (end_pending)
 	A.pending = P // ALLOW(ownership): a pooled transient: reset on release
 	P.claim_mask = op_claim_hold(A.oplan, A.binding)
@@ -510,7 +510,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	. = WAIT_KEEPS_DEFAULT
 	if(!A.actor)
 		. &= ~STAY
-	if(isnull(A.held))
+	if(isnull(A.held_provider()))
 		. &= ~HELD
 	if(!B || B.reach_policy() != REACH_ADJACENT || !A.actor)
 		. &= ~ADJACENT
@@ -527,7 +527,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	A.target = null
 	A.target_atom = null // ALLOW(ownership): a pooled transient: reset on release
 	A.actor = null
-	A.held = null
+	A.set_held_provider(null)
 	A.provider = null
 	A.source = null // ALLOW(ownership): a pooled transient: reset on release
 	A.activation = null // ALLOW(ownership): a pooled transient: reset on release
@@ -543,7 +543,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	A.holder = holder // ALLOW(ownership): a pooled transient: reset on release
 	A.target = target
 	A.actor = actor
-	A.held = held
+	A.set_held_provider(held)
 	A.cap = cap
 	A.activation = activation // ALLOW(ownership): a pooled transient: reset on release
 	A.source = activation ? activation.source : holder // ALLOW(ownership): a pooled transient: reset on release
@@ -596,13 +596,18 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			take_capture(A)
 			keeps = Q.args["keeps"] & op_default_keeps(A, binding) & ~STAY // an open question outlives a step the actor takes
 			var/list/fields = op_request_fields(A, Q)
+			fields["step_name"] = Q.args["step"]
 			var/datum/request/R = request_open(src, Q.args["type"], TYPE_PROC_REF(/datum/pending_op, request_done), fields, A)
+			// Opening can synchronously finish this question and resume a later step.
+			// Its callback already owns that progress; do not attach the closed request
+			// to a finished pending record or overwrite the next step's live request.
+			if(!active || QDELETED(src) || (R && (QDELETED(R) || !R.is_open())))
+				return
 			if(!R)
 				suspend_act()
 				return cancel(/datum/msg/op/failed)
 			rel_set(src, nameof(request), R)
 			R.waiting = result // ALLOW(ownership): the caller's plain record: the request hands it back to test_answer()
-			R.step_name = Q.args["step"]
 			suspend_act()
 			return
 		cursor++
@@ -611,28 +616,11 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		return cancel(/datum/msg/op/target_gone)
 	finish()
 
-/// A timed wait starts: its actor sees a progress bar fill over the delay and onlookers a cog, as a legacy timed action showed (silent_wait() opts out).
 /datum/pending_op/proc/progress_begin(delay)
-	progress_end(TRUE)
-	var/mob/user = actor
-	if(oplan.silent_wait || !istype(user) || origin == ORIGIN_SYSTEM)
-		return
-	progress_planned = TRUE
-	if(user.client)
-		var/atom/where = target
-		rel_set(src, nameof(progbar), new /datum/progressbar(user, delay, istype(where) ? where : user))
-		progbar.animate_fill(delay)
-	if(delay >= 1 SECONDS)
-		rel_set(src, nameof(cog), new /datum/cogbar(user, 'icons/effects/progressbar.dmi', "cog"))
+	return
 
-/// The bar and the cog go: filled on success, failed when the wait was broken.
 /datum/pending_op/proc/progress_end(success)
-	// both fade out and delete themselves: handed off, not owned
-	var/datum/progressbar/old_bar = own_take(src, nameof(progbar))
-	if(!QDELETED(old_bar))
-		old_bar.end_progress(success)
-	var/datum/cogbar/old_cog = own_take(src, nameof(cog))
-	old_cog?.remove()
+	return
 
 /// A timed wait ended.
 /datum/pending_op/proc/step_done()
@@ -736,8 +724,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		return why
 	// A window button's op answers in its window: it stops when the window is gone or no longer interactive (the legacy prompts asked
 	// their window after every answer).
-	var/datum/tgui/pressed_in = A.window_ui()
-	if(pressed_in && (QDELETED(pressed_in) || QDELETED(pressed_in.src_object()) || pressed_in.status != STATUS_INTERACTIVE))
+	var/datum/pressed_in = A.window_ui()
+	if(pressed_in && (QDELETED(pressed_in) || !pressed_in.op_window_interactive()))
 		return /datum/msg/op/stopped
 	for(var/cond in oplan.conds)
 		if(!op_cond(A, cond))
@@ -747,7 +735,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 /// The reason a keep broke, or null: HELD, ADJACENT, TARGET_PRESENT and ALIVE.
 /datum/pending_op/proc/keeps_reason(datum/act/op/A)
 	var/mob/M = A.actor
-	if((keeps & HELD) && M && REF(M.get_active_hand()) != start_hand_ref)
+	if((keeps & HELD) && M && REF(M.held_for_ops()) != start_hand_ref)
 		return /datum/msg/op/stopped
 	if((keeps & ADJACENT) && M && A.target_atom && !M.Adjacent(A.target_atom))
 		return /datum/msg/op/stopped
@@ -885,7 +873,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	op_changed(claimed)
 	var/atom/A = claimed
 	if(istype(A))
-		A.update_icon()
+		A.op_claim_changed()
 
 /// The claim ends with the wait.
 /datum/pending_op/proc/release_claim()
@@ -899,7 +887,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		op_changed(claimed)
 		var/atom/A = claimed
 		if(istype(A) && !QDELETED(A))
-			A.update_icon()
+			A.op_claim_changed()
 
 /// The pending record is done: it leaves the actor's slot, its timers go, the request is closed.
 /datum/pending_op/proc/end_pending()
@@ -1191,23 +1179,18 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/atom/target = istype(A.target, /atom) ? A.target : null
 	if(ispath(msg, /datum/msg))
 		if(isnull(others) && isnull(blind))
-			act_message_t(A.actor, target, msg, A.held)
-			return
-		var/datum/msg/def = msg_def(msg)
-		var/list/lines = def.texts(A.actor, target, A.held)
-		act_message(A.actor, target, msg_span(lines[1], def.span_class), msg_span(others || lines[2], def.span_class), msg_span(blind || lines[3], def.span_class), def.range || world.view, A.held)
+			A.actor.op_feedback_message(target, msg, A.held_provider())
+		else
+			A.actor.op_feedback_message_lines(target, msg, A.held_provider(), others, blind)
 		return
 	if(islist(msg) && length(msg) == 4 && msg[1] == "msg_text")
 		var/list/text_lines = msg
-		act_message(A.actor, target, text_lines[2], text_lines[3] || others, text_lines[4] || blind, item = A.held)
+		A.actor.op_feedback_lines(target, text_lines[2], text_lines[3] || others, text_lines[4] || blind, A.held_provider())
 
 /datum/entry/part/plays/proc/feedback(datum/act/op/A)
 	var/atom/where = istype(A.target, /atom) ? A.target : A.actor
 	if(where && src.args["sfx"])
-		if(isnull(src.args["volume"]))
-			play_sfx(where, src.args["sfx"])
-		else
-			play_sfx(where, src.args["sfx"], src.args["volume"])
+		where.op_feedback_sound(src.args["sfx"], src.args["volume"])
 
 /// The op's log line: committed ops that declared logs(), and every refusal after the op started or declared logs().
 /proc/op_log(datum/act/op/A, mob/actor, outcome, reason)
@@ -1266,7 +1249,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			var/datum/entry/part/says/S = part
 			var/msg = S.args["msg"]
 			if(ispath(msg, /datum/msg) && istype(holder, /atom))
-				act_message_t(holder, holder, msg)
+				holder.op_timer_message(msg)
 	T.release()
 
 // ---- effects ----
@@ -1279,7 +1262,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		if(ON_ACTOR)
 			return A.actor
 		if(ON_HELD)
-			return A.held
+			return A.held_provider()
 	return A.target
 
 /// The source a holds() or grants() uses by default: the activation when it lands on the op's own holder, else the op holder.
@@ -1362,36 +1345,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/datum/activation/owner = (source == A.activation && A.activation && !A.activation.dead) ? A.activation : null
 	return grant(entity, src.args["what"], source, src.args["lasts"], src.args["bound"], owner) ? OP_OK : OP_FAILED
 
-/datum/entry/part/effect/fixes/run_effect(datum/act/op/A)
-	var/obj/O = A.holder
-	if(istype(O) && O.max_integrity)
-		O.repair_damage(O.max_integrity)
-	return OP_OK
 
-/datum/entry/part/effect/becomes/run_effect(datum/act/op/A)
-	var/atom/movable/AM = A.holder
-	if(!istype(AM))
-		return OP_FAILED
-	return replace_with(AM, src.args["type"]) ? OP_OK : OP_FAILED
 
-/datum/entry/part/effect/spawns/run_effect(datum/act/op/A)
-	var/atom/where = A.holder
-	if(!istype(where))
-		return OP_FAILED
-	var/spawn_path = src.args["type"]
-	if(ispath(spawn_path, /obj/item/stack)) // a stack spawns as one pile of n
-		new spawn_path(get_turf(where), src.args["n"])
-		return OP_OK
-	for(var/i in 1 to src.args["n"])
-		new spawn_path(get_turf(where))
-	return OP_OK
 
-/datum/entry/part/effect/opens_ui/run_effect(datum/act/op/A)
-	var/datum/D = A.holder
-	if(!D || !A.actor)
-		return OP_FAILED
-	D.tgui_interact(A.actor)
-	return OP_OK
 
 /datum/entry/part/effect/shares_effects/run_effect(datum/act/op/A)
 	var/datum/op_plan/other = op_plan_for(A.holder, src.args["key"], list())
@@ -1406,17 +1362,6 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		if(report != OP_OK)
 			return report
 	return OP_OK
-
-// ---- put_in / take_out ----
-
-/datum/entry/part/effect/put_in/precheck(datum/act/op/A)
-	var/obj/item/thing = A.held
-	if(!thing)
-		return null
-	if(istype(A.target, /atom) && op_var_slot(A.target, src.args["slot"]))
-		return varslot_refusal(A.target, src.args["slot"], thing, A.actor)
-	var/why = slot_precheck(A.target, src.args["slot"], thing, A.actor)
-	return why || op_insert_precheck(A.target, thing, src.args["slot"])
 
 /// The pre-check of the insert action (E4): the needs hooks of the holder's table and activations asked about this insert, nothing started.
 /// A reason, or null. Allocates only when something hooks the action.
@@ -1439,131 +1384,35 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	F.release()
 	return reason
 
-/datum/entry/part/effect/put_in/run_effect(datum/act/op/A)
-	var/atom/holder = A.target
-	var/obj/item/thing = A.held
-	if(!thing || !istype(holder))
-		return OP_FAILED
-	var/slot_id = src.args["slot"]
-	// A one-item slot over a var of the holder (a cell bay): the item goes into the holder and the var names it.
-	if(op_var_slot(holder, slot_id))
-		var/var_why = varslot_refusal(holder, slot_id, thing, A.actor)
-		if(var_why)
-			A.reason = var_why
-			return OP_REFUSED
-		var/atom/var_from = thing.loc
-		if(!varslot_insert(holder, slot_id, thing, A.actor))
-			A.reason = /datum/msg/op/failed
-			return OP_REFUSED
-		if(rel_kind(holder, slot_id) != OWNK_OWN) // a declared owned var moved through move_into(), which recorded the row already
-			TEST_REC_TRANSFER(thing, var_from, holder, slot_id)
-		return OP_OK
-	// Under a stack(T, n) binding the put splits off exactly the reserved units and moves that split.
-	var/atom/movable/moving = thing
-	var/datum/reservation/stack_units = null
-	for(var/datum/reservation/R as anything in A.reservations)
-		if(R.res_id == RES_STACK && R.held == thing)
-			stack_units = R
-	if(stack_units)
-		var/obj/item/split = op_split_units(thing, stack_units.amount)
-		if(!split)
-			return OP_FAILED
-		moving = split
-	var/why = slot_precheck(holder, slot_id, moving, A.actor)
-	if(why)
-		A.reason = why
-		if(moving != thing)
-			op_merge_units(thing, moving)
-		return OP_REFUSED
-	// The insert is a world action: its hooks may refuse it or take it over, and its notice goes out when it lands. move_into() runs it.
-	if(!move_into(holder, slot_id, moving, A.actor))
-		if(moving != thing)
-			op_merge_units(thing, moving)
-		A.reason = GLOB.act_last_reason || /datum/msg/op/not_available
-		return (GLOB.act_last_outcome & ACT_REPLACED) ? OP_REPLACED : OP_REFUSED
-	if(stack_units)
-		stack_units.moved = TRUE
-	return OP_OK
 
-/datum/entry/part/effect/take_out/precheck(datum/act/op/A)
-	return null
-
-/datum/entry/part/effect/take_out/run_effect(datum/act/op/A)
-	var/atom/holder = A.target
-	if(!istype(holder))
-		return OP_FAILED
-	var/slot_id = src.args["slot"]
-	var/obj/item/carrier = op_carrier(A)
-	if(op_var_slot(holder, slot_id))
-		var/atom/movable/taken = varslot_take(holder, slot_id, A.actor, carrier)
-		if(!taken)
-			return OP_REFUSED
-		TEST_REC_TRANSFER(taken, holder, taken.loc, slot_id)
-		return OP_OK
-	var/list/inside = holder.slot_contents(slot_id)
-	if(!length(inside))
-		return OP_REFUSED
-	var/atom/movable/thing = inside[1]
-	var/atom/destination = get_turf(A.actor || holder)
-	var/carried = carrier && istype(thing, /obj/item) && carrier.can_carry(thing, A.actor)
-	if(!carried && A.actor && istype(thing, /obj/item))
-		var/obj/item/I = thing
-		if(!A.actor.put_in_hands(I))
-			destination = get_turf(A.actor)
-		else
-			TEST_REC_TRANSFER(thing, holder, A.actor, slot_id)
-			return OP_OK
-	if(!holder.slot_remove(thing, destination, A.actor))
-		return OP_FAILED
-	if(carried && carrier.carry(thing, A.actor)) // out of the slot onto the floor, then into the carrier (a gripper's pocket)
-		destination = carrier
-	TEST_REC_TRANSFER(thing, holder, destination, slot_id)
-	return OP_OK
-
-/// The provider of an op that carries what it takes (a cyborg's gripper, not the actor's own hand), or null.
-/proc/op_carrier(datum/act/op/A)
-	var/obj/item/carrier = A.provider
-	if(!istype(carrier) || carrier == A.held)
-		return null
-	return carrier
-
-/// Where something an op took out goes: into the provider that carries it (a gripper), else the actor's hands, else the actor's floor. TRUE
-/// when it reached the carrier or a hand.
-/proc/op_deliver(datum/act/op/A, obj/item/thing)
-	var/obj/item/carrier = op_carrier(A)
-	if(carrier && carrier.can_carry(thing, A.actor) && carrier.carry(thing, A.actor))
-		return TRUE
-	if(A.actor && A.actor.put_in_hands(thing))
-		return TRUE
-	thing.forceMove(get_turf(A.actor || A.target_atom))
+/// Interfaces to presentation and actor policy used by an operation.
+/datum/progress_view
+	abstract_type = /datum/progress_view
+/datum/progress_view/proc/animate_fill(delay)
+	return
+/datum/progress_view/proc/end_progress(success)
+	return
+/datum/cog_view
+	abstract_type = /datum/cog_view
+/datum/cog_view/proc/remove()
+	return
+/datum/proc/op_window_interactive()
 	return FALSE
-
-/// Splits `n` units off a stack item into a new item (the original keeps the rest).
-/proc/op_split_units(obj/item/I, n)
-	RETURN_TYPE(/obj/item)
-	if(istype(I, /obj/item/stack))
-		var/obj/item/stack/S = I
-		return S.split(n)
-	var/amount = op_var(I, "amount")
-	if(!isnum(amount) || amount < n)
-		return null
-	if(amount == n)
-		return I
-	var/obj/item/clone = new I.type(null)
-	clone.vars["amount"] = n // ALLOW(api): units moved between two items of one type: the engine's own bookkeeping
-	I.vars["amount"] = amount - n // ALLOW(api): units moved between two items of one type: the engine's own bookkeeping
-	return clone
-
-/// Puts a split's units back (an insert that was refused after the split).
-/proc/op_merge_units(obj/item/original, obj/item/split)
-	if(original == split)
-		return
-	if(istype(original, /obj/item/stack) && istype(split, /obj/item/stack))
-		var/obj/item/stack/S = original
-		S.add(split.vars["amount"])
-		qdel(split) // ALLOW(lifecycle): a split of a stack made inside an op and never placed in the world: it holds nothing to unlink
-		return
-	var/amount = op_var(original, "amount")
-	if(isnum(amount))
-		original.vars["amount"] = amount + split.vars["amount"] // ALLOW(api): units moved between two items of one type: the engine's own bookkeeping
-	qdel(split) // ALLOW(lifecycle): a split of a stack made inside an op and never placed in the world: it holds nothing to unlink
+/atom/proc/op_claim_changed()
+	return
+/mob/proc/op_notify(text)
+	return
+/mob/proc/op_uses_actor_stats()
+	return FALSE
+/mob/proc/op_hand_capable()
+	return TRUE
+/mob/proc/op_feedback_message(atom/target, msg, obj/held)
+	return
+/// A message type with the part's own constant others / blind lines.
+/mob/proc/op_feedback_message_lines(atom/target, msg, obj/held, others, blind)
+	return
+/// A message built at run time (msg_text()).
+/mob/proc/op_feedback_lines(atom/target, self, others, blind, obj/held)
+	return
+/atom/proc/op_feedback_sound(sfx, volume = null)
+	return

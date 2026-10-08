@@ -122,10 +122,12 @@ pub fn parse_file(rel: &str, code: &View, decls: &mut HashMap<String, Vec<Var>>,
     let block_head = pat_match!(r"^var(/(tmp|static|global|const))*\s*$");
     let var_decl = pat_match!(r"^var((?:/[A-Za-z_]\w*)+)\s*(?:\[[^\]]*\])?\s*(?:=|$|as\b)");
     let latent_re = pat_match!(r"^latent_safe\s*=\s*(TRUE|FALSE|1|0)\b");
+    let latent_registration = pat_match!(r"^register\(\s*(/[A-Za-z_][\w/]*)\s*,\s*TYPE_META_LATENT_SAFE\s*,\s*(TRUE|FALSE|1|0)\s*\)");
     let empty = BTreeSet::new();
 
     let mut cur: Option<String> = None; // current type block
     let mut in_proc = false; // inside a proc body
+    let mut in_metadata_registration = false;
     let mut block_mods: Option<BTreeSet<String>> = None; // modifiers of an open `var` / `var/tmp` block
     let mut block_indent = 0usize;
     for (no, raw) in code.numbered() {
@@ -141,6 +143,7 @@ pub fn parse_file(rel: &str, code: &View, decls: &mut HashMap<String, Vec<Var>>,
         if indent == 0 {
             block_mods = None;
             in_proc = false;
+            in_metadata_registration = false;
             cur = None;
             let Some(m) = header.captures(text) else { continue };
             let g1 = m.s(1);
@@ -158,6 +161,11 @@ pub fn parse_file(rel: &str, code: &View, decls: &mut HashMap<String, Vec<Var>>,
                 };
                 let _owner = format!("/{}", segs[..k].join("/"));
                 in_proc = true;
+                in_metadata_registration = matches!(full.as_str(),
+                    "/datum/type_metadata_registry/register_defaults" |
+                    "/datum/type_metadata_registry/register_test_defaults" |
+                    "/datum/type_metadata_registry/proc/register_defaults" |
+                    "/datum/type_metadata_registry/proc/register_test_defaults");
                 continue;
             }
             if let Some(k) = segs.iter().position(|s| *s == "var") {
@@ -171,6 +179,11 @@ pub fn parse_file(rel: &str, code: &View, decls: &mut HashMap<String, Vec<Var>>,
             continue;
         }
         if in_proc {
+            if in_metadata_registration {
+                if let Some(m) = latent_registration.captures(text) {
+                    latent.insert(m.s(1).to_string(), matches!(m.s(2), "TRUE" | "1"));
+                }
+            }
             continue;
         }
         let Some(cur_t) = cur.as_deref() else { continue };
@@ -280,7 +293,7 @@ impl Schema {
     }
 
     pub fn build(tree: &Tree, files: &[&SourceFile]) -> Schema {
-        let facts: Vec<SchemaFacts> = oi::sharded_facts("schema-facts", files, |f| {
+        let facts: Vec<SchemaFacts> = oi::sharded_facts("schema-facts-type-metadata-v2", files, |f| {
             let mut decls: HashMap<String, Vec<Var>> = HashMap::new();
             let mut latent: HashMap<String, bool> = HashMap::new();
             parse_file(&f.rel, f.code(), &mut decls, &mut latent);
@@ -446,5 +459,25 @@ mod tests {
         assert!(!v[3].saved());
         assert_eq!(latent["/obj/thing"], true);
         assert_eq!(latent["/obj/thing/sub"], false);
+    }
+
+    #[test]
+    fn parse_inherited_latent_metadata_registration() {
+        let f = SourceFile::from_text("code/a.dm", concat!(
+            "/datum/type_metadata_registry/register_defaults()\n",
+            "\tregister(/obj/thing, TYPE_META_LATENT_SAFE, TRUE)\n",
+            "\tregister(/obj/thing/sub, TYPE_META_LATENT_SAFE, FALSE)\n",
+            "\tregister(/obj/other, TYPE_META_SLOT_HOOKS, TRUE)\n",
+            "/proc/unrelated()\n",
+            "\tregister(/obj/ignored, TYPE_META_LATENT_SAFE, TRUE)\n"));
+        let mut decls = HashMap::new();
+        let mut latent = HashMap::new();
+        parse_file(&f.rel, f.code(), &mut decls, &mut latent);
+        assert_eq!(latent.len(), 2);
+        assert!(latent["/obj/thing"]);
+        assert!(!latent["/obj/thing/sub"]);
+        let schema = Schema { latent, ..Schema::default() };
+        assert!(schema.effective_latent("/obj/thing/child"));
+        assert!(!schema.effective_latent("/obj/thing/sub/child"));
     }
 }

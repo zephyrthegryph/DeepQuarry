@@ -249,19 +249,29 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
             && bs == be
             && ranges.iter().any(|&(oidx, s, e)| HOOK_FORMS[oidx].kw == "asks" && s != e && start >= s && start < e);
         // A then() or when() inside a hook that carries its own context (instead, adjusts, on_notice, on_op, on_change, after_init) runs in that context.
-        let mut ctx = if in_asks_when { Ctx::Op } else { f.ctx };
+        let in_op_when = f.kw == "when" && enclosing_op_start(body, start).is_some_and(|op_start| {
+            !ranges.iter().any(|&(oidx, s, e)| s > op_start && s != e && start >= s && start < e
+                && matches!(HOOK_FORMS[oidx].kw, "every" | "after" | "delayed" | "contributes" | "contributes_to" | "outputs" | "look_layer"))
+        });
+        let mut ctx = if in_asks_when || in_op_when { Ctx::Op } else { f.ctx };
         let mut notice = String::new();
+        let mut role = f.role;
         if matches!(f.kw, "then" | "when") {
             let mut outer: Option<&(usize, usize, usize)> = None;
             for r in &ranges {
                 let (oidx, s, e) = *r;
                 let kw = HOOK_FORMS[oidx].kw;
-                if matches!(kw, "instead" | "adjusts" | "on_notice" | "on_op" | "on_change" | "after_init") && s != e && start >= s && start < e && outer.map(|o| s <= o.1).unwrap_or(true) {
+                let carries_context = matches!(kw, "instead" | "adjusts" | "on_notice" | "on_op" | "on_change" | "after_init")
+                    || (f.kw == "then" && matches!(kw, "every" | "after" | "delayed"));
+                if carries_context && s != e && start >= s && start < e && outer.map(|o| s >= o.1).unwrap_or(true) {
                     outer = Some(r);
                 }
             }
             if let Some(&(oidx, s, e)) = outer {
                 ctx = HOOK_FORMS[oidx].ctx;
+                if f.kw == "then" && HOOK_FORMS[oidx].role == Role::Reaction {
+                    role = Role::Reaction;
+                }
                 match HOOK_FORMS[oidx].kw {
                     "on_notice" => notice = split_args(&body[s..e]).first().cloned().unwrap_or_default(),
                     "on_op" => notice = "/datum/notice/op_done".to_string(),
@@ -269,9 +279,33 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
                 }
             }
         }
-        let ui_args = if f.kw == "then" { op_ui_args(body, start) } else { None };
-        out.push(HandlerRef { owner: ty, cap_proc, cap_type: cap_type.clone(), proc, form: f.kw, ctx, role: f.role, rel: m.rel.clone(), line: m.line_at(start), notice, ui_args });
+        let condition_value = f.kw == "on_change" && split_args(&body[bs..be]).first().is_some_and(|argument| {
+            body[bs..be].find(argument).is_some_and(|offset| start >= bs + offset && start < bs + offset + argument.len())
+        });
+        if condition_value { ctx = Ctx::Eval; }
+        if condition_value { role = Role::Output; }
+        let ui_args = if f.kw == "then" && ctx == Ctx::Op { op_ui_args(body, start) } else { None };
+        out.push(HandlerRef { owner: ty, cap_proc, cap_type: cap_type.clone(), proc, form: f.kw, ctx, role, rel: m.rel.clone(), line: m.line_at(start), notice, ui_args });
     }
+}
+
+/// The innermost operation containing this reference; ordinary op when() is evaluated by op_cond with the full operation context.
+fn enclosing_op_start(body: &str, pos: usize) -> Option<usize> {
+    let bytes = body.as_bytes();
+    let mut found = None;
+    let mut i = 0;
+    while i < pos {
+        if bytes[i].is_ascii_alphabetic() || bytes[i] == b'_' {
+            let begin = i;
+            while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_') { i += 1; }
+            if &body[begin..i] == "op" {
+                let mut open = i;
+                while open < bytes.len() && bytes[open].is_ascii_whitespace() { open += 1; }
+                if bytes.get(open) == Some(&b'(') && matching_paren(body, open).is_some_and(|close| pos > open && pos < close) { found = Some(open); }
+            }
+        } else { i += 1; }
+    }
+    found
 }
 
 /// The `arg("name", ...)` names of the `ui_act(...)` / `topic(...)` bindings of the innermost `op(...)` call around `pos` of `body`; `None` when
@@ -362,4 +396,79 @@ fn holder_arg(m: &Marker) -> String {
         }
     }
     String::new()
+}
+
+#[cfg(test)]
+mod context_tests {
+    use super::*;
+    use crate::tree::{SourceFile, Tree};
+
+    fn handlers(source: &str) -> Vec<HandlerRef> {
+        let file = SourceFile::from_text("code/content/probe.dm", source);
+        let tree = Tree::from_files(vec![file]);
+        let decls = Decls::get(&tree);
+        let mut found = Vec::new();
+        for marker in &decls.markers {
+            marker_handlers(marker, &mut found);
+        }
+        assert!(!found.is_empty(), "the fixture must discover its declarations");
+        found
+    }
+
+    #[test]
+    fn change_value_getter_is_an_output_but_handler_is_a_reaction() {
+        let found = handlers("CAPABILITIES(/datum/probe)\n\ton_change(cond_all(PROC_REF(value), PROC_REF(other)), ANY, then(PROC_REF(deliver)))\n");
+        let value = found.iter().find(|h| h.proc == "value").unwrap();
+        assert_eq!(value.ctx, Ctx::Eval);
+        assert_eq!(value.role, Role::Output);
+        assert!(value.role.reads_covered());
+        assert_eq!(found.iter().find(|h| h.proc == "other").unwrap().role, Role::Output);
+        let deliver = found.iter().find(|h| h.proc == "deliver").unwrap();
+        assert_eq!(deliver.ctx, Ctx::Notice);
+        assert_eq!(deliver.role, Role::Reaction);
+    }
+
+    #[test]
+    fn only_notice_carried_then_handlers_gain_reaction_role() {
+        let found = handlers("CAPABILITIES(/datum/probe)
+	on_notice(/datum/notice/probe, then(PROC_REF(noticed)))
+	on_op(\"use\", then(PROC_REF(completed)))
+	every(10, then(PROC_REF(tick)))
+	op(\"ordinary\", then(PROC_REF(effect)))
+");
+        for name in ["noticed", "completed"] {
+            let handler = found.iter().find(|h| h.proc == name).unwrap();
+            assert_eq!(handler.role, Role::Reaction);
+            assert_eq!(handler.ctx, Ctx::Notice);
+        }
+        assert_eq!(found.iter().find(|h| h.proc == "tick").unwrap().role, Role::Effect);
+        assert_eq!(found.iter().find(|h| h.proc == "effect").unwrap().role, Role::Effect);
+    }
+
+    #[test]
+    fn operation_when_receives_full_op_but_periodic_when_does_not() {
+        let found = handlers("CAPABILITIES(/datum/probe)\n\top(\"use\", item(/obj), when(PROC_REF(offered)), then(PROC_REF(use)))\n\top(\"nested\", every(10, when = PROC_REF(ready), then(PROC_REF(tick))))\n\tevery(10, when = PROC_REF(standalone_ready), then(PROC_REF(standalone_tick)))\n");
+        assert_eq!(found.iter().find(|h| h.proc == "offered").unwrap().ctx, Ctx::Op);
+        assert_eq!(found.iter().find(|h| h.proc == "ready").unwrap().ctx, Ctx::Eval);
+        assert_eq!(found.iter().find(|h| h.proc == "standalone_ready").unwrap().ctx, Ctx::Eval);
+        assert_eq!(found.iter().find(|h| h.proc == "tick").unwrap().ctx, Ctx::Timer);
+    }
+
+    #[test]
+    fn nested_every_members_effect_uses_timer_context() {
+        let found = handlers("CAPABILITIES(/datum/system/probe)\n\tevery(10, then(PROC_REF(visit)), members = /datum/member, when = PROC_REF(ready))\n\top(\"ordinary\", then(PROC_REF(ordinary)))\n");
+        let visit = found.iter().find(|h| h.proc == "visit").unwrap();
+        assert_eq!(visit.ctx, Ctx::Timer);
+        assert_eq!(visit.form, "then");
+        assert_eq!(found.iter().find(|h| h.proc == "ready").unwrap().ctx, Ctx::Eval, "every admission conditions remain evaluation contexts");
+        assert_eq!(found.iter().find(|h| h.proc == "ordinary").unwrap().ctx, Ctx::Op, "ordinary effects retain operation contexts");
+    }
+
+    #[test]
+    fn nearest_timer_carrier_wins_and_does_not_take_ui_args() {
+        let found = handlers("CAPABILITIES(/datum/probe)\n\top(\"press\", ui_act(\"press\", arg(\"value\")), on_notice(/datum/notice/probe, delayed(10, then(PROC_REF(later)))))\n");
+        let later = found.iter().find(|h| h.proc == "later").unwrap();
+        assert_eq!(later.ctx, Ctx::Timer, "a delayed effect receives a timer rather than its enclosing notice");
+        assert!(later.ui_args.is_none(), "timer callbacks do not inherit UI invocation parameters");
+    }
 }

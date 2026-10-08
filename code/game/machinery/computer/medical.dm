@@ -52,6 +52,7 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(edit_question)), "default" = computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)),
 		then(PROC_REF(modal_edit)))
 	op("add_c", ui_act("modal:add_c", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), then(PROC_REF(modal_add_comment)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(med_data_emp)))
 
 /obj/machinery/computer/med_data/Initialize(mapload)
 	. = ..()
@@ -553,9 +554,10 @@ MSG_DEF_SELF(records/not_authenticated, "You must log in first.")
 	if(update_now)
 		SStgui.update_uis(src)
 
-DAMAGE_REACTION(/obj/machinery/computer/med_data, DAMAGE_EMP, PROC_REF(med_data_emp))
 /// An EMP scrambles or wipes some of the records.
-/obj/machinery/computer/med_data/proc/med_data_emp(datum/damage_packet/packet)
+/obj/machinery/computer/med_data/proc/med_data_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(!operable())
 		return
 

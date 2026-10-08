@@ -11,6 +11,7 @@
 	var/obj/item/mmi/brain = null
 
 CAPABILITIES(/obj/structure/AIcore)
+	op("ai_core_install", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	owns_one(nameof(laws), /datum/ai_laws)
 
 // ALLOW(init/INSTANCE_STATE): a map-placed core starts with the map's default law set
@@ -19,10 +20,12 @@ CAPABILITIES(/obj/structure/AIcore)
 	if(mapload)
 		rel_set(src, nameof(laws), new using_map.default_law_type)
 
-DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
 
 /// Old attackby.
-/obj/structure/AIcore/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
+/obj/structure/AIcore/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/P = A.held
 
 	switch(state)
 		if(1)
@@ -36,17 +39,17 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 				var/obj/item/stack/cable_coil/C = P
 				if (C.get_amount() < 5)
 					to_chat(user, span_warning("You need five coils of wire to add them to the frame."))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				to_chat(user, span_notice("You start to add cables to the frame."))
 				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, C))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 		if(3)
 			if(istype(P, /obj/item/stack/material) && P.get_material_name() == MAT_RGLASS)
 				var/obj/item/stack/RG = P
 				if (RG.get_amount() < 2)
 					to_chat(user, span_warning("You need two sheets of glass to put in the glass panel."))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				to_chat(user, span_notice("You start to put in the glass panel."))
 				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, RG))
@@ -78,23 +81,23 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 				var/mob/living/carbon/brain/occupant = M.get_occupant()
 				if(!occupant)
 					to_chat(user, span_warning("Sticking an empty [P] into the frame would sort of defeat the purpose."))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				if(occupant.stat == DEAD)
 					to_chat(user, span_warning("Sticking a dead [P] into the frame would sort of defeat the purpose."))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(jobban_isbanned(occupant, JOB_AI))
 					to_chat(user, span_warning("This [P] does not seem to fit."))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(occupant.mind)
 					SSantag.clear_antag_roles(occupant.mind, 1)
 
 				if(!move_into(src, nameof(src.brain), P, user))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				to_chat(user, "Added [P].")
 				icon_state = "3b"
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/AIcore/proc/attackby_timed_done(mob/user, obj/item/stack/cable_coil/C)
 	if(!(state == 2))

@@ -1,76 +1,47 @@
 blob | deleted
 blob | destroyed
-emag | emagged: 0 -> 1
+emag | is_emagged: 0 -> 1
 emag | item_power_usage: 500 -> 2500
 emag | last_to_emag: null -> /mob/living/carbon/human
 emag | light_on: 0 -> 1
 emag | light_range: 0 -> 2
-emag | look_key: null -> 'computer|||||||||2,1,||||tech_key|part:holocontrol::1'
-emag | look_overlays: null -> list(3)
-emag | look_set_bits: 0 -> 258
 emag | refresh_bits: 9 -> 0
 emag | refresh_queued: 131071 -> 0
-emag | refresh_swept: 0 -> 1
 emag | safety_disabled: 0 -> 1
 emp 1 | light_on: 0 -> 1
 emp 1 | light_range: 0 -> 2
-emp 1 | look_key: null -> 'computer|||||||||2,1,||||tech_key|part:holocontrol::1'
-emp 1 | look_overlays: null -> list(3)
-emp 1 | look_set_bits: 0 -> 258
 emp 1 | refresh_bits: 9 -> 0
 emp 1 | refresh_queued: 131071 -> 0
-emp 1 | refresh_swept: 0 -> 1
 emp 1 | turf: +/obj/effect/overlay x1
 emp 2 | light_on: 0 -> 1
 emp 2 | light_range: 0 -> 2
-emp 2 | look_key: null -> 'computer|||||||||2,1,||||tech_key|part:holocontrol::1'
-emp 2 | look_overlays: null -> list(3)
-emp 2 | look_set_bits: 0 -> 258
 emp 2 | refresh_bits: 9 -> 0
 emp 2 | refresh_queued: 131071 -> 0
-emp 2 | refresh_swept: 0 -> 1
 emp 2 | turf: +/obj/effect/overlay x1
 explosion 1 | deleted
 explosion 1 | turf: +/obj/effect/effect/sparks x5
 explosion 2 | atom_integrity: down
-explosion 2 | cap_data: null -> list(1)
 explosion 2 | change_long_cooldown: 0 -> <set>
 explosion 2 | change_short_cooldown: 0 -> <set>
 explosion 2 | light_on: 0 -> 1
 explosion 2 | light_range: 0 -> 2
-explosion 2 | look_key: null -> 'computer|||||||||2,1,||||tech_key|part:computer_broken::1'
-explosion 2 | look_overlays: null -> list(3)
-explosion 2 | look_set_bits: 0 -> 258
 explosion 2 | refresh_bits: 9 -> 0
 explosion 2 | refresh_queued: 131071 -> 0
-explosion 2 | refresh_swept: 0 -> 1
 explosion 3 | atom_integrity: down
 explosion 3 | change_long_cooldown: 0 -> <set>
 explosion 3 | change_short_cooldown: 0 -> <set>
 explosion 3 | light_on: 0 -> 1
 explosion 3 | light_range: 0 -> 2
-explosion 3 | look_key: null -> 'computer|||||||||2,1,||||tech_key|part:holocontrol::1'
-explosion 3 | look_overlays: null -> list(3)
-explosion 3 | look_set_bits: 0 -> 258
 explosion 3 | refresh_bits: 9 -> 0
 explosion 3 | refresh_queued: 131071 -> 0
-explosion 3 | refresh_swept: 0 -> 1
 projectile | atom_integrity: down
 projectile | light_on: 0 -> 1
 projectile | light_range: 0 -> 2
-projectile | look_key: null -> 'computer|||||||||2,1,||||tech_key|part:holocontrol::1'
-projectile | look_overlays: null -> list(3)
-projectile | look_set_bits: 0 -> 258
 projectile | refresh_bits: 9 -> 0
 projectile | refresh_queued: 131071 -> 0
-projectile | refresh_swept: 0 -> 1
 thrown | atom_integrity: down
 thrown | light_on: 0 -> 1
 thrown | light_range: 0 -> 2
-thrown | look_key: null -> 'computer|||||||||2,1,||||tech_key|part:holocontrol::1'
-thrown | look_overlays: null -> list(3)
-thrown | look_set_bits: 0 -> 258
 thrown | refresh_bits: 9 -> 0
 thrown | refresh_queued: 131071 -> 0
-thrown | refresh_swept: 0 -> 1
 

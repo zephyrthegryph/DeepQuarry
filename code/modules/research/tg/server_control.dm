@@ -71,7 +71,7 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 
 /obj/machinery/computer/rdservercontrol/proc/ui_gate(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!allowed(user) && !emagged)
+	if(!allowed(user) && !emagged())
 		balloon_alert(user, "access denied!")
 		play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 		return FALSE

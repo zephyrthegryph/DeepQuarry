@@ -39,11 +39,11 @@
 	look.glow("panel", "open")
 	look.apply_to(A)
 	TEST_ASSERT_EQUAL(A.icon_state, "fix-lit", "the base takes the variant the icon has and ignores the one it lacks")
-	TEST_ASSERT(("panel-open" in A.look_overlays), "part(name, value) resolves name-value: [json_encode(A.look_overlays)]")
-	TEST_ASSERT(("charge-3" in A.look_overlays), "a numeric value resolves")
-	TEST_ASSERT(!("legacy_thing" in A.look_overlays), "names are exact: an underscore state is not found")
-	TEST_ASSERT(!("nothere" in A.look_overlays), "a part with no state draws nothing")
-	TEST_ASSERT_EQUAL(length(A.look_overlays), 3, "two parts and the emissive of the glowing one")
+	TEST_ASSERT(("panel-open" in A.rx?.look_overlays), "part(name, value) resolves name-value: [json_encode(A.rx?.look_overlays)]")
+	TEST_ASSERT(("charge-3" in A.rx?.look_overlays), "a numeric value resolves")
+	TEST_ASSERT(!("legacy_thing" in A.rx?.look_overlays), "names are exact: an underscore state is not found")
+	TEST_ASSERT(!("nothere" in A.rx?.look_overlays), "a part with no state draws nothing")
+	TEST_ASSERT_EQUAL(length(A.rx?.look_overlays), 3, "two parts and the emissive of the glowing one")
 	TEST_ASSERT(length(GLOB.look_missing_parts["[A.type]"]), "the missing part is recorded in test builds")
 
 	// A base-prefixed part wins over the shared one.
@@ -52,7 +52,7 @@
 	var/datum/look/second = new
 	second.part("panel", "open")
 	second.apply_to(B)
-	TEST_ASSERT(("fix-panel-open" in B.look_overlays) && !("panel-open" in B.look_overlays), "<base>-part wins over the shared part")
+	TEST_ASSERT(("fix-panel-open" in B.rx?.look_overlays) && !("panel-open" in B.rx?.look_overlays), "<base>-part wins over the shared part")
 
 	// hide() is exact; glow() with no part of that name adds the part, glowing.
 	var/datum/look/third = new
@@ -398,3 +398,32 @@
 	TEST_ASSERT(built.anchored, "and its anchoring")
 	var/datum/ladder_stage/plain = build_insert(/obj/item/stock_parts/capacitor, name = "icon", icon = "x")
 	TEST_ASSERT_EQUAL(plain.name, "icon", "a part named like an argument keeps its name")
+
+/obj/dq_look_cache_empty/draw(look)
+	return ..()
+
+/datum/unit_test/dq_look_cache_lifetime/Run()
+	var/obj/dq_look_cache_empty/A = allocate(/obj/dq_look_cache_empty)
+	TEST_ASSERT(isnull(A.rx), "A plain atom starts without an allocated reaction cache")
+	refresh_look(A, FALSE)
+	refresh_verbs(A, FALSE)
+	refresh_granted_verbs(A, FALSE)
+	refresh_sweep_track(A)
+	TEST_ASSERT(isnull(A.rx), "Read-only empty look and verb probes leave reaction storage unallocated")
+	var/obj/visible = allocate(/obj)
+	var/datum/look/L = allocate(/datum/look)
+	L.alpha = 111
+	L.overlay("cache-probe")
+	L.add_look_filter("cache-filter", list("type" = "blur", "size" = 1))
+	L.vis = list(visible)
+	L.apply_to(A)
+	TEST_ASSERT_EQUAL(A.alpha, 111, "Applying a look writes its actual base appearance")
+	TEST_ASSERT(A.rx?.look_set_bits && ("cache-probe" in A.rx?.look_overlays), "Applied appearance records the set properties and overlays in reaction state")
+	TEST_ASSERT(("cache-filter" in A.rx?.look_filters), "The actual applied filter is recorded for later removal")
+	TEST_ASSERT((visible in A.vis_contents) && (visible in A.rx?.look_vis), "Visible contents and their removal cache agree")
+	L.reset()
+	L.apply_to(A)
+	TEST_ASSERT_EQUAL(A.alpha, initial(A.alpha), "Removing the look restores the base appearance")
+	TEST_ASSERT_EQUAL(A.rx?.look_set_bits, 0, "The removed look leaves no recorded base property")
+	TEST_ASSERT(isnull(A.rx?.look_overlays) && isnull(A.rx?.look_filters) && isnull(A.rx?.look_vis), "The removed look clears every owned appearance cache")
+	TEST_ASSERT(!(visible in A.vis_contents), "Removing the look removes its actual visible contents")

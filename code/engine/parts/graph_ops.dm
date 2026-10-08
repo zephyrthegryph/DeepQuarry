@@ -248,7 +248,7 @@
 		return OP_OK
 	var/atom/movable/AM = E
 	if(istype(AM) && !QDELETED(AM))
-		consume(AM, A.actor)
+		AM.op_consume(A.actor)
 	return OP_OK
 
 /// A dismantle with a ruined(): the children are the ordinary effects, args["ruled"] the rows list(condition, effects). The first row whose condition
@@ -272,33 +272,14 @@
 			return report
 	return OP_OK
 
-/// Puts back what a ledger entry names, where the holder is: stack units and consumed items as new things, the contents of a slot out of it.
 /proc/graph_refund(datum/E, list/ledger, mob/actor)
-	var/turf/where = get_turf(E)
-	if(!where)
-		return
-	for(var/list/row in ledger?["rows"])
-		switch(row["res"])
-			if(RES_STACK)
-				if(row["moved"] || !ispath(row["type"], /obj/item))
-					continue
-				var/item_path = row["type"]
-				var/obj/item/refunded = ispath(item_path, /obj/item/stack) ? new item_path(where, row["n"]) : new item_path(where)
-				if(!isnull(row["material"]) && ("material" in refunded.vars))
-					refunded.vars["material"] = row["material"] // ALLOW(api): the refund restores the material the ledger recorded
-				if(!ispath(item_path, /obj/item/stack) && ("amount" in refunded.vars))
-					refunded.vars["amount"] = row["n"] // ALLOW(api): the refund restores the units the ledger recorded
-			if(RES_ITEM)
-				if(ispath(row["type"], /atom/movable))
-					var/refunded_type = row["type"]
-					new refunded_type(where)
-			if("slot")
-				var/atom/holder = E
-				if(!istype(holder))
-					continue
-				for(var/atom/movable/thing as anything in holder.slot_contents(row["slot"]))
-					if(holder.slot_remove(thing, where, actor))
-						TEST_REC_TRANSFER(thing, holder, where, row["slot"])
+	E.graph_refund(ledger, actor)
+
+/datum/proc/graph_refund(list/ledger, mob/actor)
+	return
+
+/atom/movable/proc/op_consume(mob/actor)
+	return
 
 // ---- reading and placing the stage (phase 2) ----
 
@@ -329,11 +310,15 @@ MSG_DEF_SELF(construction/not_built, "It isn't built that far.")
 	if(!S || !def?.graph || !graph_declares(def.graph, stage))
 		declare_report("graph_place([E?.type]): it has no stage [stage_key(stage) || stage] in graph [cap_id]")
 		return FALSE
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	var/was = S.current
+#endif
 	S.history = null
 	S.seeded = TRUE
 	S.current = stage
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	if(was != stage)
 		TEST_REC_DELTA(E, "stage:[cap_id]", was, stage)
+#endif
 	engine_key_changed(E, "graph:[cap_id]")
 	return TRUE

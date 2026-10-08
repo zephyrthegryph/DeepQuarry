@@ -149,7 +149,6 @@ CAPABILITIES(/obj/machinery/power/smes)
 		wait(5 SECONDS), then(PROC_REF(terminal_taken_down)), says(MSG(smes/terminal_cut)))
 	op("weld", lit_welder(fuel = 0), at(SPACE_PANEL), needs(req(PROC_REF(casing_damaged), because = MSG(smes/whole))),
 		wait(PROC_REF(repair_time)), then(PROC_REF(casing_repaired)), says(MSG(smes/repaired)))
-	op("swallow", item(/obj/item), at(SPACE_PANEL), priority(OP_PRIORITY_DEFAULT))
 
 /// A unit's input terminal (rust_architecture.md step 3): its own entity, on its own region, naming the SMES unit
 /// (verdigris/domains/power/src/components.rs's `SmesInputTerminal`) -- unlike the generic terminal, or an APC's own, this is a real network

@@ -55,7 +55,7 @@ CAPABILITIES(/datum/capability/deconstruct)
 	return list(dismantle)
 
 /datum/capability/deconstruct/examine(atom/holder, mob/user)
-	if(behind && (behind & ~holder.cap_state))
+	if(behind && (behind & ~capability_bits(holder)))
 		return null
 	return list(span_notice("It could be pried apart into its frame with a crowbar."))
 

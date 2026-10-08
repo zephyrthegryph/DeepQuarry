@@ -15,10 +15,10 @@
 	var/obj/item/sample = hud.shown[1]
 	TEST_ASSERT(sample == first || sample == second, "The shown sample must be one of the actual inserted parts")
 	TEST_ASSERT(findtext(sample.maptext, "2"), "The real grouped HUD must render the count of two parts")
-	TEST_ASSERT(sample.latent_pins?[hud], "The real HUD must pin its displayed stock part")
+	TEST_ASSERT(sample.latent_pin_count(hud), "The real HUD must pin its displayed stock part")
 	storage.close(actor)
 	TEST_ASSERT(QDELETED(hud), "Closing the last viewer must destroy its actual HUD")
 	TEST_ASSERT_EQUAL(sample.maptext, "", "HUD destruction must remove the displayed part's count text")
-	TEST_ASSERT(!sample.latent_pins?[hud], "HUD destruction must release its displayed part's actual lifetime pin")
+	TEST_ASSERT(!sample.latent_pin_count(hud), "HUD destruction must release its displayed part's actual lifetime pin")
 	TEST_ASSERT_EQUAL(GLOB.storage_hud_count, hud_count_before, "Closing the HUD must restore its global count")
 	TEST_ASSERT(!QDELETED(first) && !QDELETED(second), "Closing a HUD must preserve both stored parts")

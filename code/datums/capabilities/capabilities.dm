@@ -1,12 +1,6 @@
 // capabilities(), cap_state, capability data, gating and the capability interaction entry
 // (doc/rewrite/dx_conventions.md §2). The datum interface is in _capability.dm.
 
-/atom
-	/// One bit per boolean capability state (CAP_*). A type default is free per instance.
-	var/cap_state = 0
-	/// Lazily created per-instance capability data: capability key -> datum (cap_data()).
-	var/tmp/list/cap_data
-
 /// The capabilities this type has, in declaration order (menu, examine and draw order). Built once
 /// per type and cached: `. = ..()` then `. += ...`; `. = without(., /datum/capability/x)` drops one.
 /// Pure: read no instance state here.
@@ -25,144 +19,49 @@
 
 /// The type's capability declarations: capabilities() (parents first), then its CAPABILITY() lines (parents first).
 /// type_list()'s builder: built once per type, interned by caps_intern_list().
-/proc/caps_build(atom/A)
-	. = A.capabilities()
-	var/list/declared = list()
-	A.declared_capabilities(declared)
-	if(length(declared))
-		. += declared
-
-/// The cached capability list of A's type. Shared: never write into it.
-/proc/caps_of(atom/A)
-	RETURN_TYPE(/list)
-	return type_list(A, GLOBAL_PROC_REF(caps_build), GLOBAL_PROC_REF(caps_intern_list))
-
-/// Interns every capability of a freshly built list: identical constructor calls anywhere in the tree
-/// (a type and each subtype that calls ..(), or two types with the same settings) share ONE datum, so
-/// its built entries and their compiled predicates are shared too (the flyweight, review 2 H2).
-/proc/caps_intern_list(list/built)
-	. = list()
-	var/list/at_key = list()
-	for(var/entry in built)
-		if(istype(entry, /datum/capability/refine))
-			cap_apply_refine(., at_key, entry)
-			continue
-		if(!istype(entry, /datum/capability))
-			. += entry
-			continue
-		var/datum/capability/C = cap_intern(entry)
-		// One capability per key: a later entry with the same key replaces the earlier one in its
-		// position (a bundle's plain panel is replaced by maintenance_hatch()'s gated one).
-		var/slot = at_key["[C.key]"]
-		if(slot)
-			// An op key declared twice is an init error, unless the later one says replace = TRUE
-			// (or is a refine(), handled above): two ops of one key silently shadowing each other is a bug.
-			if(cap_op_key_conflict(C, .[slot]))
-				stack_trace("duplicate op key '[cap_op_of(C).key]' in one capabilities() list: use refine() or replace = TRUE")
-			.[slot] = C
-			continue
-		. += C
-		at_key["[C.key]"] = length(.)
-
-/// Applies refine() R to the op it names in list `into` (at_key: key -> position), or, when the key names a
-/// capability that is not an op, to that capability through its refined().
-/proc/cap_apply_refine(list/into, list/at_key, datum/capability/refine/R)
-	var/slot = at_key["op:[R.base_key]"]
-	if(slot)
-		into[slot] = cap_intern(cap_op_refined(into[slot], R))
-		return
-	slot = at_key["[R.base_key]"]
-	if(!slot)
-		stack_trace("refine('[R.base_key]') refines an op or capability nothing declared")
-		return
-	var/datum/capability/base = into[slot]
-	var/datum/capability/refined = base.refined(R.overrides)
-	if(refined)
-		refined.key = base.key
-		into[slot] = cap_intern(refined)
-
 /// The shared capability equal to C (same type, same saved settings), registering C if it's new.
-/proc/cap_intern(datum/capability/C)
-	var/signature = datum_signature(C)
-	var/datum/capability/known = GLOB.caps_interned[signature]
-	if(known)
-		return known
-	GLOB.caps_interned[signature] = C
-	return C
-
-/// signature -> the one shared capability with those settings.
-GLOBAL_LIST_EMPTY(caps_interned)
-
 /// The capability of A with this key (a type, or an explicit key), or null.
 /proc/legacy_cap_of(atom/A, key)
-	for(var/datum/capability/C as anything in caps_all(A))
-		if(C.key == key || (ispath(key) && istype(C, key)))
-			return C
-	return null
+	return capability_lookup(A, key)
 
 /// L without the entries whose key is `key`, or which are of type `key`. Returns a new list.
 /proc/legacy_without(list/L, key)
-	. = list()
-	for(var/entry in L)
-		var/datum/capability/C = entry
-		if(istype(C) && (C.key == key || (ispath(key) && istype(C, key))))
-			continue
-		. += entry
-
-/datum/capability/New()
-	..()
-	if(isnull(key))
-		key = type
+	return capability_list_without(L, key)
 
 // ---- state ----
 
 /// TRUE when every bit in `bits` is set on A.
 /proc/cap_has(atom/A, bits)
-	return (A.cap_state & bits) == bits
+	return (capability_bits(A) & bits) == bits
 
 /// Sets or clears `bits` on A through the change path. TRUE when the state changed.
 /proc/cap_set(atom/A, bits, on)
 	if(isnull(on))
 		CRASH("cap_set: `on` is required (TRUE to set, FALSE to clear) for [A?.type]")
-	var/was = A.cap_state
-	if(on)
-		A.cap_state |= bits
-	else
-		A.cap_state &= ~bits
-	if(was == A.cap_state)
+	var/was = capability_bits(A)
+	var/now = on ? (was | bits) : (was & ~bits)
+	if(was == now)
 		return FALSE
+	capability_runtime(A).bits = now
 	changed(A, CHANGE_CAPABILITY)
 	// Waiting operations watch cap_state through their requirements' reads (operations/op_ctx.dm).
-	op_reads_changed(A, OP_KEY_CAP_STATE)
+	engine_key_changed(A, OP_KEY_CAP_STATE)
 	return TRUE
 
 /// The per-instance data datum of capability C on A, created on first use (C.data_type).
 /proc/legacy_cap_data(atom/A, datum/capability/C)
-	var/datum/D = A.cap_data?[C.key]
-	if(D || !C.data_type)
-		return D
-	D = new C.data_type
-	LAZYSET(A.cap_data, C.key, D)
-	return D
-
-/datum/capability
-	/// The datum type cap_data() creates per instance, or null for bit-only state.
-	var/data_type
-	/// This capability's interaction entries, built once (shared by every holder of the type).
-	var/tmp/list/built_entries
+	return capability_instance_data(A, C)
 
 // The accessors, written once per capability.
 /proc/cover_is_open(atom/A)
-	return !!(A.cap_state & CAP_COVER_OPEN)
+	return !!(capability_bits(A) & CAP_COVER_OPEN)
 /proc/panel_is_open(atom/A)
 	READS_FROM(A)
-	return !!(A.cap_state & CAP_PANEL_OPEN) || !!(cap_of(A, CAP_PANEL) && panel_open(A, null)) // a converted holder keeps it as a capability key (a boolean: a null `when` draws unconditionally)
+	return !!(capability_bits(A) & CAP_PANEL_OPEN) || !!(cap_of(A, CAP_PANEL) && panel_open(A, null)) // a converted holder keeps it as a capability key (a boolean: a null `when` draws unconditionally)
 /proc/is_locked(atom/A)
-	return !!(A.cap_state & CAP_LOCKED)
-/proc/is_emagged(atom/A)
-	return !!(A.cap_state & CAP_EMAGGED) || (cap_of(A, CAP_EMAG) && emag_emagged(A)) // a converted holder keeps it as a capability key
+	return !!(capability_bits(A) & CAP_LOCKED)
 /proc/is_broken(atom/A)
-	if(A.cap_state & CAP_BROKEN)
+	if(capability_bits(A) & CAP_BROKEN)
 		return TRUE
 	var/obj/machinery/M = A // a converted machine's breakable() reads the machine's own BROKEN bit
 	return istype(M) && M.broken_now() && cap_of(A, CAP_BREAKABLE)
@@ -188,11 +87,6 @@ GLOBAL_LIST_EMPTY(caps_interned)
  *		if(initial(profile_type) != /datum/diagnostic_profile/health_analyzer)
  *			. += /obj/item/healthanalyzer/proc/toggle_adv
  */
-/atom/proc/type_verbs()
-	SHOULD_CALL_PARENT(TRUE)
-	RETURN_TYPE(/list)
-	return list()
-
 /// Whether A has power for its entries. Machines answer through their power state; anything else
 /// is always powered. The powered capability overrides nothing: it reads this.
 /atom/proc/cap_powered()
@@ -227,61 +121,25 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		// pipeline wakes on (wake_all), so declaring a capability or a membership woke its holder at init.
 		refresh_mark(holder, DEP_ALL)
 
-/// TYPE_DERIVES_* known so far for A's type. A type seen for the first time is TYPE_DERIVES_PENDING
-/// (plus CAPS when it has capabilities) until its first refresh fills in LOOK and VERBS.
-/proc/type_derive_flags(atom/A)
-	var/known = GLOB.type_derives_cache[A.type]
-	if(!isnull(known))
-		return known
-	. = TYPE_DERIVES_PENDING
-	if(length(caps_of(A)) || present_declares_look(A))
-		. |= TYPE_DERIVES_CAPS
-	if(length(type_list(A, TYPE_PROC_REF(/atom, type_verbs))))
-		. |= TYPE_DERIVES_TYPE_VERBS
-	if(derived_table_of(A))
-		. |= TYPE_DERIVES_DEPS
-	if(look_table_has_layers(table_of(A)))
-		. |= TYPE_DERIVES_LOOK // look_layer() entries draw through look_layers_draw(): the type has a look the refresh engine keeps up
-	GLOB.type_derives_cache[A.type] = .
-
-/// A refresh of A just ran draw() and hidden_verbs(): record what its type derives (first time only).
-/proc/type_derive_record(atom/A, drew, hid, side = TRUE)
-	var/flags = GLOB.type_derives_cache[A.type]
-	if(isnull(flags) || !(flags & TYPE_DERIVES_PENDING))
-		return
-	flags &= ~TYPE_DERIVES_PENDING
-	if(drew)
-		flags |= TYPE_DERIVES_LOOK
-	if(hid)
-		flags |= TYPE_DERIVES_VERBS
-	if(side)
-		flags |= TYPE_DERIVES_SIDE
-	GLOB.type_derives_cache[A.type] = flags
-
-/// Whether A's type derives anything the refresh engine keeps up (a look or hidden verbs; unknown yet
-/// counts as yes).
-/proc/type_derives(atom/A)
-	return !!(type_derive_flags(A) & (TYPE_DERIVES_LOOK | TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING))
-
-GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive flags, filled on first use and written in place as a type's capabilities change; shared caches hand out read-only values
-
 /// Runs every capability's on_destroy and drops the data. Called from /atom/Destroy().
 /proc/caps_destroy(atom/holder)
 	if(holder.timed_until)
 		timed_cancel_all(holder)
 	var/flags = GLOB.type_derives_cache[holder.type]
-	if(!isnull(flags) && !(flags & TYPE_DERIVES_CAPS) && !holder.cap_data && !holder.cap_extras)
+	if(!isnull(flags) && !(flags & TYPE_DERIVES_CAPS) && !capability_data(holder) && !capability_extras(holder))
 		return
 	var/list/caps = caps_all(holder)
 	for(var/datum/capability/C as anything in caps)
 		C.legacy_holder_destroy(holder)
 		cap_leave_systems(holder, C)
-	holder.cap_extras = null
-	for(var/key in holder.cap_data)
-		var/datum/D = holder.cap_data[key]
-		if(isdatum(D))
-			ended_with(D, holder)
-	holder.cap_data = null
+	var/datum/capability_runtime/runtime = capability_runtime_peek(holder)
+	if(runtime)
+		runtime.extras = null
+		for(var/key in runtime.data)
+			var/datum/D = runtime.data[key]
+			if(isdatum(D))
+				ended_with(D, holder)
+		runtime.data = null
 
 
 /// Examine lines from every capability, in list order (appended by /atom/examine()).
@@ -306,14 +164,6 @@ GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive
 		caps[C.ui_key()] = mine
 	if(caps)
 		data["caps"] = caps
-
-/// Every capability's hidden verbs plus the type's own hidden_verbs().
-/proc/caps_hidden_verbs(atom/holder)
-	. = list()
-	for(var/datum/capability/C as anything in caps_all(holder))
-		var/list/hidden = C.hidden_verbs(holder)
-		if(hidden)
-			. |= hidden
 
 /// The capability interaction entries of A's type (resolver candidates).
 /proc/cap_interactions(atom/A)
@@ -377,21 +227,21 @@ GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive
 		return "it's broken"
 	if(!entry.works_unpowered && !A.cap_powered())
 		return "it has no power"
-	if(entry.behind & ~A.cap_state)
-		var/missing = entry.behind & ~A.cap_state
+	if(entry.behind & ~capability_bits(A))
+		var/missing = entry.behind & ~capability_bits(A)
 		if(missing & CAP_COVER_OPEN)
 			return "open the cover first"
 		return "open the maintenance panel first"
 	if(entry.cooldown && cap_engine_state_of(A)?.entry_cooldowns?[entry.id] > world.time) // ALLOW(sys_world_time_expiry): a keyed per-entry cooldown table on the atom (entry id to end time): one var per entry would be dozens, and keyed cooldowns have no declared form
 		return "it isn't ready yet"
-	if(entry.blocked_by & A.cap_state)
-		var/present = entry.blocked_by & A.cap_state
+	if(entry.blocked_by & capability_bits(A))
+		var/present = entry.blocked_by & capability_bits(A)
 		if(present & CAP_COVER_OPEN)
 			return "close the cover first"
 		if(present & CAP_PANEL_OPEN)
 			return "close the maintenance panel first"
 		return "you can't do that in its current state"
-	if(entry.locked_by && (A.cap_state & entry.locked_by))
+	if(entry.locked_by && (capability_bits(A) & entry.locked_by))
 		return "it's locked"
 	if(entry.at && !entry.op)
 		// An op entry's compartment is asked in its context's route stage; only legacy entries ask here.
@@ -532,34 +382,6 @@ GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive
 /// The atom whose capability this entry is, for a dispatch: the target, except a use_at entry (the held item).
 /datum/interaction/capability/proc/holder_of(datum/dispatch_context/ctx)
 	return ctx.target
-/// The engine's lazy per-atom records, kept in the atom's cap_data under this datum's type so that an atom spends no
-/// base-type var on a feature it is not using: a capability entry's cooldowns and look_flash()'s transient visuals.
-/// Made on first write (cap_engine_state_make()), read without making one (cap_engine_state_of()); cap_data's teardown
-/// (caps_destroy()) deletes it with the atom.
-/datum/cap_engine_state
-	/// entry id -> world.time when a capability entry's cooldown ends (entry `cooldown =`). Lazy.
-	var/list/entry_cooldowns
-	/// state -> TRUE for the overlays look_flash() is showing now. Lazy.
-	var/list/look_flashes
-	/// The base state look_flash(as_state = TRUE) is showing now, or null.
-	var/look_flash_state
-	/// state -> the token of the flash that owns it, so look_flash_end() ends only its own. Lazy.
-	var/list/look_flash_tokens
-
-/// A's engine record, or null when the engine has kept nothing for it.
-/proc/cap_engine_state_of(atom/A)
-	RETURN_TYPE(/datum/cap_engine_state)
-	return A.cap_data?[/datum/cap_engine_state]
-
-/// A's engine record, made when it has none.
-/proc/cap_engine_state_make(atom/A)
-	RETURN_TYPE(/datum/cap_engine_state)
-	var/datum/cap_engine_state/state = A.cap_data?[/datum/cap_engine_state]
-	if(!state)
-		state = new
-		LAZYSET(A.cap_data, /datum/cap_engine_state, state)
-	return state
-
 /// Starts entry E's cooldown on A (after a success).
 /proc/cap_entry_cooldown_start(atom/A, datum/interaction/capability/E)
 	if(!E?.cooldown || QDELETED(A))
@@ -789,3 +611,10 @@ GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive
 			stepped = TRUE
 	if(!stepped)
 		return PROCESS_KILL
+
+/atom/capability_declarations()
+	. = capabilities()
+	var/list/declared = list()
+	declared_capabilities(declared)
+	if(length(declared))
+		. += declared

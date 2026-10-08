@@ -49,4 +49,4 @@
 	if(!isatom(holder) || QDELETED(holder))
 		return
 	if(look_table_has_layers(table_of(holder)))
-		changed(holder)
+		state_changed(holder)

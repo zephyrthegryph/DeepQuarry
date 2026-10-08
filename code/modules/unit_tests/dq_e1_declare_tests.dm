@@ -55,7 +55,7 @@
   owns_one (var=gizmo, type=/obj/item/e1_part, starts=/obj/item/e1_part, on_destroy=1, otherwise=1)
   owns_many (var=gizmos, type=/obj/item/e1_part, on_destroy=1, otherwise=1)
   ref_many (var=watchers, type=/mob, on_other_deleted=1)
-  link (a_type=/obj/e1_fixture, a_var=partner, b_type=/obj/e1_fixture, b_var=partner)
+  link (a_type=/obj/e1_fixture, a_var=partner, b_type=/obj/e1_fixture, b_var=partner, a_on_other_deleted=1, b_on_other_deleted=1, conflict=1)
   slot (id=e1_slot, accepts=list, capacity=1)
   while_slotted (slot=e1_slot, on=2, /datum/capability/e1_beacon)
     contributes "armed_glow" (stat=light_range, value=4) when(e1_armed)
@@ -70,7 +70,7 @@
   owns_one (var=gizmo, type=/obj/item/e1_part, starts=/obj/item/e1_part, on_destroy=1, otherwise=1)
   owns_many (var=gizmos, type=/obj/item/e1_part, on_destroy=1, otherwise=1)
   ref_many (var=watchers, type=/mob, on_other_deleted=1)
-  link (a_type=/obj/e1_fixture, a_var=partner, b_type=/obj/e1_fixture, b_var=partner)
+  link (a_type=/obj/e1_fixture, a_var=partner, b_type=/obj/e1_fixture, b_var=partner, a_on_other_deleted=1, b_on_other_deleted=1, conflict=1)
   slot (id=e1_slot, accepts=list, capacity=1)
   while_slotted (slot=e1_slot, on=2, /datum/capability/e1_beacon)
     contributes "armed_glow" (stat=light_range, value=4) when(e1_armed)
@@ -688,3 +688,35 @@
 	TEST_ASSERT_EQUAL(refunded, 3, "undo pops every transition")
 	TEST_ASSERT_EQUAL(graph_current(D), STAGE_DOOR_FRAME, "and the instance is at the stage it began with")
 	TEST_ASSERT_EQUAL(length(graph_history(D)), 0, "with an empty history")
+
+/datum/unit_test/dq_e1/table_built_before_the_registry
+
+/// A table built while the globals are still being made (the intercom global builds /obj's) names its capabilities too: the registry is
+/// created on first use, not by a global initializer that runs after.
+/datum/unit_test/dq_e1/table_built_before_the_registry/run_e1()
+	var/list/saved_infos = GLOB.capability_infos
+	var/saved_built = GLOB.capability_infos_built
+	GLOB.capability_infos = null
+	GLOB.capability_infos_built = null
+	var/datum/type_table/early = table_compile(/obj/e1_fixture, null, list(e1_widget("a", power = 3), e1_solo()), "early.dm:1")
+	TEST_ASSERT_NOTNULL(early, "the early table built")
+	TEST_ASSERT_EQUAL(length(early.caps), 2, "an early-built table holds both capabilities, none dropped")
+	TEST_ASSERT_NOTNULL(table_cap_defs(early, CAP_E1_WIDGET, "a")[1], "the widget is in the early table")
+	TEST_ASSERT_EQUAL(length(reports()), 0, "building before the registry reported nothing")
+	GLOB.capability_infos = saved_infos
+	GLOB.capability_infos_built = saved_built
+
+/datum/unit_test/dq_e1/table_base_capabilities_reach_subtypes
+
+/// Every capability on /obj's table is on /obj/item's, and without(CAP_X) of one on a subtype names something.
+/datum/unit_test/dq_e1/table_base_capabilities_reach_subtypes/run_e1()
+	var/datum/type_table/base = table_of_type(/obj/e1_fixture)
+	var/datum/type_table/child = table_of_type(/obj/e1_fixture/plain)
+	TEST_ASSERT_NOTNULL(base, "the base table")
+	TEST_ASSERT(length(base.caps) > 0, "the base fixture declares capabilities")
+	for(var/key in base.caps)
+		TEST_ASSERT(!isnull(child.caps[key]), "capability [key] declared on the base reaches its subtype")
+	var/datum/type_table/obj_table = table_of_type(/obj/item)
+	TEST_ASSERT_NOTNULL(obj_table, "the /obj/item table")
+	for(var/key in table_of_type(/obj).caps)
+		TEST_ASSERT(!isnull(obj_table.caps[key]), "capability [key] declared on /obj reaches /obj/item")

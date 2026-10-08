@@ -1,5 +1,5 @@
 // The ONLY place cap_state bits are allocated (doc/rewrite/dx_conventions.md §2, review L1 / review 2 C2).
-// /atom/var/cap_state holds one bit per boolean capability state. DM bitwise math is safe to 24 bits.
+// Capability runtime state holds one bit per boolean capability state. DM bitwise math is safe to 24 bits.
 // tools/ci/cap_bits_lint.py fails CI if a CAP_* bit is defined anywhere else, two share a value, or one
 // reaches 1<<24. Take the next free bit here; never reuse a retired one in the same release.
 

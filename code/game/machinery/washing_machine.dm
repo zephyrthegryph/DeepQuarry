@@ -20,7 +20,7 @@
 	clickvol = 40
 
 	circuit = /obj/item/circuitboard/washing
-	state = EMPTY_OPEN
+	var/state = EMPTY_OPEN
 	var/hacked = TRUE //Bleh, screw hacking, let's have it hacked by default.
 	var/gibs_ready = FALSE
 	var/obj/crayon
@@ -30,7 +30,14 @@
 		/obj/item/clothing/head/helmet/space
 		)
 
+MSG_DEF_SELF(washing_machine/not_inside, "you aren't inside it")
+
 CAPABILITIES(/obj/machinery/washing_machine)
+	op("washing_machine_use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_washing_machine_use_item)))
+	op("washing_machine_start", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Start"), then(PROC_REF(interaction_washing_machine_start)))
+	op("washing_machine_start_washing", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Start Washing"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_washing_machine_start_washing)))
+	op("washing_machine_climb_out", menu(), reach(REACH_ANY), priority(OP_PRIORITY_DEFAULT - 2), label("Climb out"), needs(req(PROC_REF(actor_inside_holds), because = MSG(washing_machine/not_inside))), then(PROC_REF(interaction_washing_machine_climb_out)))
+	op("washing_machine_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_washing_machine_use)))
 	owns_many(nameof(washing), on_destroy = ON_DESTROY_SPILL)
 	climb()
 	extend("machine_panel", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
@@ -42,33 +49,14 @@ CAPABILITIES(/obj/machinery/washing_machine)
 
 
 
-/obj/machinery/washing_machine/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/washing_machine_use_item,
-		/datum/interaction/machine_alt/washing_machine_start,
-		/datum/interaction/machine_verb/washing_machine_start_washing,
-		/datum/interaction/machine_verb/washing_machine_climb_out,
-		/datum/interaction/machine_hand/ungated/washing_machine_use,
-	)
-	..()
-
 /// Both player entry points pass their actor into the cycle starter.
-/datum/interaction/machine_alt/washing_machine_start
-	id = "washing_machine_start"
-	name = "Start"
-	consumes_input = FALSE
-	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_start
-
-/obj/machinery/washing_machine/proc/interaction_washing_machine_start(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/washing_machine/proc/interaction_washing_machine_start(datum/act/op/A)
+	var/mob/user = A.actor
 	start(user = user)
 	return TRUE
 
-/datum/interaction/machine_verb/washing_machine_start_washing
-	id = "washing_machine_start_washing"
-	name = "Start Washing"
-	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_start_washing
-
-/obj/machinery/washing_machine/proc/interaction_washing_machine_start_washing(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/washing_machine/proc/interaction_washing_machine_start_washing(datum/act/op/A)
+	var/mob/user = A.actor
 	start(user = user)
 	return TRUE
 
@@ -120,16 +108,11 @@ CAPABILITIES(/obj/machinery/washing_machine)
 	else
 		set_state(FULL_CLOSED)
 
-/datum/interaction/machine_verb/washing_machine_climb_out
-	id = "washing_machine_climb_out"
-	name = "Climb out"
-	requires = list(REQ_ON(PRED_ACTOR, /obj/machinery/washing_machine/proc/actor_inside, "you aren't inside it"))
-	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_climb_out
-
 /obj/machinery/washing_machine/proc/actor_inside(mob/actor, atom/target, obj/item/held)
 	return actor.loc == target
 
-/obj/machinery/washing_machine/proc/interaction_washing_machine_climb_out(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/washing_machine/proc/interaction_washing_machine_climb_out(datum/act/op/A)
+	var/mob/user = A.actor
 	user_climb_out(user)
 	return TRUE
 
@@ -151,7 +134,7 @@ CAPABILITIES(/obj/machinery/washing_machine)
 		to_chat(user, "Someone shut the door on you!")
 /obj/machinery/washing_machine/proc/user_climb_out_timed_done2(mob/user)
 	act_message(user, src, others = "%U% climbs out of %T%!")
-	interaction_washing_machine_use(user, null, null, force = TRUE)
+	toggle_door(user, force = TRUE)
 
 /obj/machinery/washing_machine/container_resist(mob/living/escapee)
 	user_climb_out(escapee)
@@ -163,15 +146,12 @@ CAPABILITIES(/obj/machinery/washing_machine)
 	if(panel_open == 1)
 		look.overlay("panel")
 
-/datum/interaction/machine_item/washing_machine_use_item
-	id = "washing_machine_use_item"
-	name = "Use"
-	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_use_item
-
 // Where the old body called a bare ..() and fell through to update_icon() below it (rather
 // than returning), the base attackby signal is approximated as a no-op: that fallback is a
 // generic atom hook with no other behavior on this type, but note it as an approximation.
-/obj/machinery/washing_machine/proc/interaction_washing_machine_use_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/washing_machine/proc/interaction_washing_machine_use_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/pen/crayon) || istype(W,/obj/item/stamp))
 		if(state in list (EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
 			if(!crayon())
@@ -222,12 +202,10 @@ CAPABILITIES(/obj/machinery/washing_machine)
 /obj/machinery/washing_machine/proc/idle_and_empty(datum/act/op/A)
 	return state == EMPTY_CLOSED && !LAZYLEN(washing)
 
-/datum/interaction/machine_hand/ungated/washing_machine_use
-	id = "washing_machine_use"
-	name = "Use"
-	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_use
+/obj/machinery/washing_machine/proc/interaction_washing_machine_use(datum/act/op/A)
+	return toggle_door(A.actor)
 
-/obj/machinery/washing_machine/proc/interaction_washing_machine_use(mob/user, obj/item/held, datum/interaction/interaction, force = FALSE)
+/obj/machinery/washing_machine/proc/toggle_door(mob/user, force = FALSE)
 	if(user.loc == src && !force)
 		return TRUE //No interacting with it from the inside!
 	switch(state)
@@ -267,6 +245,10 @@ CAPABILITIES(/obj/machinery/washing_machine)
 
 	return TRUE
 
+
+/obj/machinery/washing_machine/proc/actor_inside_holds(datum/act/op/A)
+	return A.actor && (A.actor in contents_of(src))
+
 #undef EMPTY_OPEN
 #undef EMPTY_CLOSED
 #undef FULL_OPEN
@@ -286,3 +268,5 @@ CAPABILITIES(/obj/machinery/washing_machine)
 /// crayon (a relation view: it reads null once the target is deleted).
 /obj/machinery/washing_machine/proc/crayon() as /obj
 	return crayon
+
+TRACKED_BRIDGED(/obj/machinery/washing_machine, state, CHANGE_MACHINE_SETTINGS)

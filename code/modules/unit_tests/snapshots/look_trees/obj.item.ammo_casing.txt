@@ -373,162 +373,162 @@
 /obj/item/ammo_casing/microbattery icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery state: nsfw_batt
 /obj/item/ammo_casing/microbattery dir: 2
-/obj/item/ammo_casing/microbattery overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000
 /obj/item/ammo_casing/microbattery overlay: icons/obj/ammo_vr.dmi:nsfw_batt_ends:-32767
 /obj/item/ammo_casing/microbattery/medical icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical dir: 2
-/obj/item/ammo_casing/microbattery/medical overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767
 /obj/item/ammo_casing/microbattery/medical/brute icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/brute state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/brute dir: 2
-/obj/item/ammo_casing/microbattery/medical/brute overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/brute overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/brute overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#bf0000
 /obj/item/ammo_casing/microbattery/medical/burn icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/burn state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/burn dir: 2
-/obj/item/ammo_casing/microbattery/medical/burn overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/burn overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/burn overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#ff8000
 /obj/item/ammo_casing/microbattery/medical/stabilize icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/stabilize state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/stabilize dir: 2
-/obj/item/ammo_casing/microbattery/medical/stabilize overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/stabilize overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/stabilize overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#0080ff
 /obj/item/ammo_casing/microbattery/medical/toxin icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/toxin state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/toxin dir: 2
-/obj/item/ammo_casing/microbattery/medical/toxin overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/toxin overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/toxin overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#00a000
 /obj/item/ammo_casing/microbattery/medical/omni icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/omni state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/omni dir: 2
-/obj/item/ammo_casing/microbattery/medical/omni overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/omni overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/omni overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#8040ff
 /obj/item/ammo_casing/microbattery/medical/antirad icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/antirad state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/antirad dir: 2
-/obj/item/ammo_casing/microbattery/medical/antirad overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/antirad overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/antirad overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#008000
 /obj/item/ammo_casing/microbattery/medical/brute2 icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/brute2 state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/brute2 dir: 2
-/obj/item/ammo_casing/microbattery/medical/brute2 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/brute2 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/brute2 overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#bf0000
 /obj/item/ammo_casing/microbattery/medical/burn2 icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/burn2 state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/burn2 dir: 2
-/obj/item/ammo_casing/microbattery/medical/burn2 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/burn2 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/burn2 overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#ff8000
 /obj/item/ammo_casing/microbattery/medical/stabilize2 icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/stabilize2 state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/stabilize2 dir: 2
-/obj/item/ammo_casing/microbattery/medical/stabilize2 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/stabilize2 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/stabilize2 overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#0080ff
 /obj/item/ammo_casing/microbattery/medical/omni2 icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/omni2 state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/omni2 dir: 2
-/obj/item/ammo_casing/microbattery/medical/omni2 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/omni2 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/omni2 overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#8040ff
 /obj/item/ammo_casing/microbattery/medical/toxin2 icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/toxin2 state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/toxin2 dir: 2
-/obj/item/ammo_casing/microbattery/medical/toxin2 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/toxin2 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/toxin2 overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#00a000
 /obj/item/ammo_casing/microbattery/medical/haste icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/haste state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/haste dir: 2
-/obj/item/ammo_casing/microbattery/medical/haste overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/haste overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/haste overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#ff3300
 /obj/item/ammo_casing/microbattery/medical/resist icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/resist state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/resist dir: 2
-/obj/item/ammo_casing/microbattery/medical/resist overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/resist overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/resist overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#555555
 /obj/item/ammo_casing/microbattery/medical/corpse_mend icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/corpse_mend state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/corpse_mend dir: 2
-/obj/item/ammo_casing/microbattery/medical/corpse_mend overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/corpse_mend overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/corpse_mend overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#669900
 /obj/item/ammo_casing/microbattery/medical/brute3 icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/brute3 state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/brute3 dir: 2
-/obj/item/ammo_casing/microbattery/medical/brute3 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/brute3 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/brute3 overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#bf0000
 /obj/item/ammo_casing/microbattery/medical/burn3 icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/burn3 state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/burn3 dir: 2
-/obj/item/ammo_casing/microbattery/medical/burn3 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/burn3 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/burn3 overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#ff8000
 /obj/item/ammo_casing/microbattery/medical/toxin3 icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/toxin3 state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/toxin3 dir: 2
-/obj/item/ammo_casing/microbattery/medical/toxin3 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/toxin3 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/toxin3 overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#00a000
 /obj/item/ammo_casing/microbattery/medical/omni3 icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/omni3 state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/omni3 dir: 2
-/obj/item/ammo_casing/microbattery/medical/omni3 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/omni3 overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/omni3 overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#8040ff
 /obj/item/ammo_casing/microbattery/medical/shrink icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/shrink state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/shrink dir: 2
-/obj/item/ammo_casing/microbattery/medical/shrink overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/shrink overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/shrink overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#910ffc
 /obj/item/ammo_casing/microbattery/medical/grow icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/grow state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/grow dir: 2
-/obj/item/ammo_casing/microbattery/medical/grow overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/grow overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/grow overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#fc0fdc
 /obj/item/ammo_casing/microbattery/medical/normalsize icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/medical/normalsize state: nerd_batt
 /obj/item/ammo_casing/microbattery/medical/normalsize dir: 2
-/obj/item/ammo_casing/microbattery/medical/normalsize overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/medical/normalsize overlay: icons/obj/ammo_vr.dmi:nerd_batt:8:#000000
 /obj/item/ammo_casing/microbattery/medical/normalsize overlay: icons/obj/ammo_vr.dmi:nerd_batt_ends:-32767:#c70fec
 /obj/item/ammo_casing/microbattery/combat icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/combat state: nsfw_batt
 /obj/item/ammo_casing/microbattery/combat dir: 2
-/obj/item/ammo_casing/microbattery/combat overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/combat overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000
 /obj/item/ammo_casing/microbattery/combat overlay: icons/obj/ammo_vr.dmi:nsfw_batt_ends:-32767
 /obj/item/ammo_casing/microbattery/combat/lethal icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/combat/lethal state: nsfw_batt
 /obj/item/ammo_casing/microbattery/combat/lethal dir: 2
-/obj/item/ammo_casing/microbattery/combat/lethal overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/combat/lethal overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000
 /obj/item/ammo_casing/microbattery/combat/lethal overlay: icons/obj/ammo_vr.dmi:nsfw_batt_ends:-32767:#bf3d3d
 /obj/item/ammo_casing/microbattery/combat/stun icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/combat/stun state: nsfw_batt
 /obj/item/ammo_casing/microbattery/combat/stun dir: 2
-/obj/item/ammo_casing/microbattery/combat/stun overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/combat/stun overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000
 /obj/item/ammo_casing/microbattery/combat/stun overlay: icons/obj/ammo_vr.dmi:nsfw_batt_ends:-32767:#0f81bc
 /obj/item/ammo_casing/microbattery/combat/net icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/combat/net state: nsfw_batt
 /obj/item/ammo_casing/microbattery/combat/net dir: 2
-/obj/item/ammo_casing/microbattery/combat/net overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/combat/net overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000
 /obj/item/ammo_casing/microbattery/combat/net overlay: icons/obj/ammo_vr.dmi:nsfw_batt_ends:-32767:#43f136
 /obj/item/ammo_casing/microbattery/combat/xray icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/combat/xray state: nsfw_batt
 /obj/item/ammo_casing/microbattery/combat/xray dir: 2
-/obj/item/ammo_casing/microbattery/combat/xray overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/combat/xray overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000
 /obj/item/ammo_casing/microbattery/combat/xray overlay: icons/obj/ammo_vr.dmi:nsfw_batt_ends:-32767:#32c025
 /obj/item/ammo_casing/microbattery/combat/shotstun icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/combat/shotstun state: nsfw_batt
 /obj/item/ammo_casing/microbattery/combat/shotstun dir: 2
-/obj/item/ammo_casing/microbattery/combat/shotstun overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/combat/shotstun overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000
 /obj/item/ammo_casing/microbattery/combat/shotstun overlay: icons/obj/ammo_vr.dmi:nsfw_batt_ends:-32767:#88ffff
 /obj/item/ammo_casing/microbattery/combat/ion icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/combat/ion state: nsfw_batt
 /obj/item/ammo_casing/microbattery/combat/ion dir: 2
-/obj/item/ammo_casing/microbattery/combat/ion overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/combat/ion overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000
 /obj/item/ammo_casing/microbattery/combat/ion overlay: icons/obj/ammo_vr.dmi:nsfw_batt_ends:-32767:#d084d6
 /obj/item/ammo_casing/microbattery/combat/stripper icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/combat/stripper state: nsfw_batt
 /obj/item/ammo_casing/microbattery/combat/stripper dir: 2
-/obj/item/ammo_casing/microbattery/combat/stripper overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/combat/stripper overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000
 /obj/item/ammo_casing/microbattery/combat/stripper overlay: icons/obj/ammo_vr.dmi:nsfw_batt_ends:-32767:#fc8d0f
 /obj/item/ammo_casing/microbattery/combat/final icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/microbattery/combat/final state: nsfw_batt
 /obj/item/ammo_casing/microbattery/combat/final dir: 2
-/obj/item/ammo_casing/microbattery/combat/final overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000 x2
+/obj/item/ammo_casing/microbattery/combat/final overlay: icons/obj/ammo_vr.dmi:nsfw_batt:8:#000000
 /obj/item/ammo_casing/microbattery/combat/final overlay: icons/obj/ammo_vr.dmi:nsfw_batt_ends:-32767:#fcfc0f
 /obj/item/ammo_casing/macrobattery icon: icons/obj/ammo_vr.dmi
 /obj/item/ammo_casing/macrobattery state: macrobat_wtf

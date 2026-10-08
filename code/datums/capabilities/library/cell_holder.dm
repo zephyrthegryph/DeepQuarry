@@ -85,9 +85,9 @@
 		return FALSE
 	if(!works_unpowered && !holder.cap_powered())
 		return FALSE
-	if(behind & ~holder.cap_state)
+	if(behind & ~capability_bits(holder))
 		return FALSE
-	if(blocked_by & holder.cap_state)
+	if(blocked_by & capability_bits(holder))
 		return FALSE
 	return TRUE
 

@@ -18,7 +18,7 @@
 //! A kind is READ_KIND_VAR (0), READ_KIND_ACCESSOR (1), READ_KIND_NATIVE (2) or READ_KIND_SYSTEM (3).
 //! `rank` is the evaluation order of the handler's derived reads (0 = reads only base state).
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::sem::decls::Decls;
 use crate::sem::gen::{GenCx, GenOut, Generator};
@@ -63,10 +63,13 @@ impl Generator for Reads {
         let handlers: Vec<_> = cx.handlers().into_iter().filter(|h| h.role.reads_covered() && !h.owner.is_empty()).collect();
         let mut rows: BTreeMap<String, Vec<Row>> = BTreeMap::new();
         let mut ranks: BTreeMap<String, u32> = BTreeMap::new();
+        let mut capability_keys = BTreeSet::new();
+        let defines = Decls::get(cx.tree).defines.iter().cloned().collect();
         if !handlers.is_empty() {
             if let Some(sem) = cx.sem() {
                 let decls = Decls::get(cx.tree);
                 let ann = Annotations::get(&sem, &decls);
+                capability_keys.extend(ann.capkey_accessors.values().cloned());
                 let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE);
                 for h in &handlers {
                     let id = format!("{}::{}", h.owner, h.proc);
@@ -120,7 +123,7 @@ impl Generator for Reads {
                     ReadKind::Native => 2,
                     ReadKind::System => 3,
                 };
-                let mut parts = vec![roots.id(root).to_string(), kind_id.to_string(), names.id(var).to_string()];
+                let mut parts = vec![roots.id(root).to_string(), kind_id.to_string(), names.id(&canonical_read_key(kind, var, &capability_keys, &defines)).to_string()];
                 for h in hops {
                     parts.push(names.id(h).to_string());
                 }
@@ -152,33 +155,80 @@ impl Generator for Reads {
         }
         out.line("))");
         out.blank();
-        // BYOND refuses one list literal of about 760 assoc entries here ("missing comma or right-paren"), so the table is built from chunks.
-        const CHUNK: usize = 300;
-        out.doc("\"<type>::<proc>\" = list(rank, list(root id, kind, name id, hop name ids...), ...), in chunks of at most 300 entries (a single list literal this large does not compile). Never edited by hand.");
-        let chunks: Vec<&[String]> = entries.chunks(CHUNK).collect();
-        for (i, chunk) in chunks.iter().enumerate() {
-            out.line(format!("/proc/generated_reads_chunk_{}()", i));
-            out.line("\treturn list(");
-            out.line(chunk.join(",\n"));
-            out.line("\t)");
-            out.blank();
-        }
-        out.doc("The whole reads table, assembled from its chunks.");
-        out.line("/proc/generated_reads_assemble()");
-        out.line("\t. = list()");
-        out.line("\tvar/list/chunks = list(");
-        for i in 0..chunks.len() {
-            out.line(format!("\t\tgenerated_reads_chunk_{}(){}", i, if i + 1 < chunks.len() { "," } else { "" }));
-        }
-        out.line("\t)");
-        out.line("\tfor(var/list/chunk as anything in chunks)");
-        out.line("\t\tfor(var/key in chunk)");
-        out.line("\t\t\t.[key] = chunk[key]");
-        out.blank();
-        out.line("GLOBAL_LIST_INIT(generated_reads_table, generated_reads_assemble())");
+        out.doc("Chunked read rows; one global initializer assembles the complete table.");
+        out.line(read_table_initializer(&entries));
     }
 }
 
 pub fn register(reg: &mut Vec<Box<dyn Generator>>) {
     reg.push(Box::new(Reads));
+}
+
+/// A declared capability accessor reads the actual numeric key published by capability_key_changed.
+/// Keep its define as DM interpolation so the generated name uses the authoritative compile-time ID.
+fn canonical_read_key(kind: &ReadKind, name: &str, capability_keys: &BTreeSet<String>, defines: &BTreeSet<String>) -> String {
+    if *kind == ReadKind::Accessor && capability_keys.contains(name) {
+        format!("capkey:[{name}]")
+    } else if *kind == ReadKind::Accessor && defines.contains(name) {
+        format!("[{name}]")
+    } else {
+        name.to_string()
+    }
+}
+
+/// Keep large lists outside macro arguments and limit each literal to the master's 300-row bound.
+fn read_table_initializer(entries: &[String]) -> String {
+    let chunks: Vec<_> = entries.chunks(300).collect();
+    let mut lines = Vec::new();
+    for (i, chunk) in chunks.iter().enumerate() {
+        lines.push(format!("/proc/generated_reads_chunk_{i}()"));
+        lines.push("\treturn list(".to_string());
+        lines.push(chunk.join(",\n"));
+        lines.push("\t)".to_string());
+    }
+    lines.push("/proc/generated_reads_assemble()".to_string());
+    lines.push("\t. = list()".to_string());
+    lines.push("\tvar/list/chunks = list(".to_string());
+    for i in 0..chunks.len() {
+        lines.push(format!("\t\tgenerated_reads_chunk_{}(){}", i, if i + 1 < chunks.len() { "," } else { "" }));
+    }
+    lines.push("\t)".to_string());
+    lines.push("\tfor(var/list/chunk as anything in chunks)".to_string());
+    lines.push("\t\tfor(var/key in chunk)".to_string());
+    lines.push("\t\t\t.[key] = chunk[key]".to_string());
+    lines.push("GLOBAL_LIST_INIT(generated_reads_table, generated_reads_assemble())".to_string());
+    lines.join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{canonical_read_key, read_table_initializer};
+    use crate::sem::reads::ReadKind;
+    use std::collections::BTreeSet;
+    #[test]
+    fn declared_capability_accessor_uses_its_actual_published_key() {
+        let keys = BTreeSet::from(["EMAG_EMAGGED".to_string()]);
+        let defines = BTreeSet::from(["OP_KEY_CAP_STATE".to_string()]);
+        assert_eq!(canonical_read_key(&ReadKind::Accessor, "EMAG_EMAGGED", &keys, &defines), "capkey:[EMAG_EMAGGED]");
+        assert_eq!(canonical_read_key(&ReadKind::Accessor, "cap_state", &keys, &defines), "cap_state");
+        assert_eq!(canonical_read_key(&ReadKind::Accessor, "OP_KEY_CAP_STATE", &keys, &defines), "[OP_KEY_CAP_STATE]");
+        assert_eq!(canonical_read_key(&ReadKind::Var, "EMAG_EMAGGED", &keys, &defines), "EMAG_EMAGGED");
+        assert_eq!(canonical_read_key(&ReadKind::Accessor, "UNKNOWN_STATE", &keys, &defines), "UNKNOWN_STATE");
+    }
+
+
+    #[test]
+    fn large_read_table_has_bounded_chunks_and_one_real_initializer() {
+        let rows = (0..3000).map(|i| format!("\t\t\"/datum/fixture::read_{i}\" = list(0, list(1, 0, {i}))")).collect::<Vec<_>>();
+        assert!(rows.iter().map(String::len).sum::<usize>() > 65536);
+        let text = read_table_initializer(&rows);
+        assert_eq!(text.matches("/proc/generated_reads_chunk_").count(), 10);
+        assert_eq!(text.matches("GLOBAL_LIST_INIT(generated_reads_table,").count(), 1);
+        assert!(text.contains("GLOBAL_LIST_INIT(generated_reads_table, generated_reads_assemble())"));
+        assert!(!text.contains("GLOBAL_LIST(generated_reads_table)"));
+        assert_eq!(text.matches(" = list(0, list(1, 0,").count(), 3000);
+        for chunk in text.split("/proc/generated_reads_chunk_").skip(1) {
+            assert_eq!(chunk.matches(" = list(0, list(1, 0,").count(), 300);
+        }
+    }
 }

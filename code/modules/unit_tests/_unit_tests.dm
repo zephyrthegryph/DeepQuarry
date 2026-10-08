@@ -183,7 +183,7 @@
 #include "unit_test.dm"
 #include "vbo_tests.dm"
 #include "vore_tests.dm"
-// DQ fork tests — need TEST_ASSERT* macros in scope, which are #undef'd at
+// DQ fork tests â€” need TEST_ASSERT* macros in scope, which are #undef'd at
 // the bottom of this file.
 #include "dq_c6_machine_parts_tests.dm"
 #include "dq_atmos_tests.dm"
@@ -392,6 +392,7 @@
 #include "dq_chem_math_pins.dm"
 #include "dq_reagents_start_snapshot.dm"
 #include "dq_conversion_pins.dm"
+#include "dq_draw_framework.dm"
 #include "dq_look_pins.dm"
 #include "dq_hit_pins.dm"
 #include "dq_interaction_entry_tests.dm"
@@ -451,6 +452,8 @@
 #include "dq_om_core_fix_tests.dm"
 #include "dq_om_pipeline_tests.dm"
 #include "dq_om_relations_tests.dm"
+#include "dq_rel_lifecycle_pins.dm"
+#include "dq_links_hit_pins.dm"
 #include "dq_om_scheduler_tests.dm"
 #include "dq_om_lane_isolation_tests.dm"
 #include "dq_om_io_tests.dm"
@@ -1195,6 +1198,22 @@
 #include "dq_ownership_accessor_retirement_tests.dm"
 #include "dq_ownership_policy_retirement_tests.dm"
 #include "dq_ownership_teardown_retirement_tests.dm"
+
+#include "dq_every_options_tests.dm"
+#include "dq_time_foundation_compatibility_tests.dm"
+#include "dq_engine_policy_adapter_tests.dm"
+#include "dq_engine_foundation_adapter_tests.dm"
+#include "dq_read_once_machinery_tests.dm"
+#include "interim_cell_hand_menu.dm"
+#include "dq_round2_gravity_teardown.dm"
+#include "dq_read_once_menu_tests.dm"
+
+#include "interim_machine_missing_item_menus.dm"
+#include "interim_shuttle_authorize_menu.dm"
+#include "round2_borgupload_empty_selection.dm"
+#include "round2_upload_module_click.dm"
+#include "interim_camera_doppler_menu_parity.dm"
+#include "dq_round2_menu_refusal_restore_tests.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

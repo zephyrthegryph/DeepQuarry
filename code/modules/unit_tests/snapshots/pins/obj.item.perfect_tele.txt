@@ -62,10 +62,13 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Remove cell
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage click: Click: Remove cell
+human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell menu: Drain its charge (refused: not in your hand)
 human|/obj/item/cell menu: Insert
 human|/obj/item/cell menu: Move To Top
 human|/obj/item/cell menu: Remove cell
 human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell menu: Use
 human|/obj/item/cell click: Click: Insert
 human|/obj/item/perfect_tele_beacon menu: Insert
 human|/obj/item/perfect_tele_beacon menu: Move To Top

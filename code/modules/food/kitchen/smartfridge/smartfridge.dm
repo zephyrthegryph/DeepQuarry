@@ -40,6 +40,7 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	owns_one(nameof(soundloop), /datum/looping_sound/fridge)
 	owns_many(nameof(item_records))
 	interface("SmartVend")
+	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
 	// Release takes `amount` out of record `index`; with no amount it asks how many (the old act_ask re-run).
 	op("release", ui_act("Release", arg("amount", num(default = 0)), arg("index", num())),
 		asks(/datum/prompt/number, fields = list("question" = "How many items?", "title" = "How many items would you like to take out?", "default" = 1, "timeout" = 0), step = "amount", when = PROC_REF(release_asks_amount)),
@@ -55,7 +56,7 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("smartfridge_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(is_powered_for_stocking_holds), because = PROC_REF(is_powered_for_stocking_refusal))), then(PROC_REF(smartfridge_interaction_item)))
-	op("smartfridge_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(smartfridge_interaction_hand)))
+	op("smartfridge_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(smartfridge_interaction_hand)))
 	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wire_tool_used)))
 
 /obj/machinery/smartfridge/proc/wire_lights()
@@ -388,7 +389,7 @@ CAPABILITIES(/obj/machinery/smartfridge/secure)
 /obj/machinery/smartfridge/secure/ui_act_release(datum/act/op/A, amount, index)
 	var/mob/user = A.actor
 	if(user.contents.Find(src) || (in_range(src, user) && istype(loc, /turf)))
-		if((!allowed(user) && scan_id) && !emagged && locked != -1)
+		if((!allowed(user) && scan_id) && !emagged() && locked != -1)
 			to_chat(user, span_warning("Access denied."))
 			return TRUE
 	return ..()

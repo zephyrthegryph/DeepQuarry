@@ -47,40 +47,18 @@ Possible to do for anyone motivated enough:
 	var/holo_range = 5 // Change to change how far the AI can move away from the holopad before deactivating.
 
 CAPABILITIES(/obj/machinery/hologram/holopad)
+	op("holopad_request_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Request AI presence"), asks(/datum/prompt/yes_no, fields = list("title" = "Request AI", "question" = "Would you like to request an AI's presence?", "timeout" = 0), when = PROC_REF(holopad_human_actor)), then(PROC_REF(ai_request_answered)))
+	op("holopad_request_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Request AI presence"), asks(/datum/prompt/yes_no, fields = list("title" = "Request AI", "question" = "Would you like to request an AI's presence?", "timeout" = 0), when = PROC_REF(holopad_human_actor)), then(PROC_REF(ai_request_answered)))
+	op("holopad_project", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Project"), then(PROC_REF(holopad_silicon_use)))
 	started_work(step = PROC_REF(work_step))
 	ref_many(nameof(masters))
 	owns_many(nameof(holograms), /obj/effect/overlay/aiholo)
 	display_disconnect_op()
 
-/obj/machinery/hologram/holopad/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/holopad_request,
-		/datum/interaction/machine_hand/ungated/holopad_request,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Project", PROC_REF(holopad_silicon_use)))
-	..()
-
-/datum/interaction/machine_item/holopad_request
-	id = "holopad_request_item"
-	name = "Request AI presence"
-	held_type = /obj/item
-	effect = /obj/machinery/hologram/holopad/proc/interaction_request
-
-/datum/interaction/machine_hand/ungated/holopad_request
-	id = "holopad_request_hand"
-	name = "Request AI presence"
-	effect = /obj/machinery/hologram/holopad/proc/interaction_request
-
-/obj/machinery/hologram/holopad/proc/interaction_request(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction) //Carn: Hologram requests.
-	if(!istype(user))
-		return TRUE
-	open_request(src, /datum/prompt/yes_no, PROC_REF(ai_request_answered), answerer = user, title = "Request AI", question = "Would you like to request an AI's presence?", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return TRUE
-
-/obj/machinery/hologram/holopad/proc/ai_request_answered(datum/act/request/A)
+/obj/machinery/hologram/holopad/proc/ai_request_answered(datum/act/op/A)
 	if(!A.answer || !A.answer.value)
 		return
-	var/mob/living/carbon/human/user = A.request.answerer
+	var/mob/living/carbon/human/user = A.actor
 	if(COOLDOWN_FINISHED(src, request_cooldown)) //don't spam the AI with requests you jerk!
 		COOLDOWN_START(src, request_cooldown, 20 SECONDS)
 		to_chat(user, span_notice("You request an AI's presence."))
@@ -92,9 +70,10 @@ CAPABILITIES(/obj/machinery/hologram/holopad)
 		to_chat(user, span_notice("A request for AI presence was already sent recently."))
 
 /// Old attack_ai: the AI moves its eye here, then makes or clears its hologram. Nothing for cyborgs.
-/obj/machinery/hologram/holopad/proc/holopad_silicon_use(mob/living/silicon/ai/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/hologram/holopad/proc/holopad_silicon_use(datum/act/op/A)
+	var/mob/living/silicon/ai/user = A.actor
 	if(!istype(user))
-		return TRUE
+		return OP_OK
 	/*There are pretty much only three ways to interact here.
 	I don't need to check for client since they're clicking on an object.
 	This may change in the future but for now will suffice.*/
@@ -105,7 +84,7 @@ CAPABILITIES(/obj/machinery/hologram/holopad)
 		activate_holo(user)
 	else//If there is a hologram, remove it.
 		clear_holo(user)
-	return TRUE
+	return OP_OK
 
 /// The hologram this pad projects for `user`, or null. (Replaces LAZYACCESS(masters, user): masters
 /// is now a plain list of AIs, and the pad owns the holograms.)
@@ -267,3 +246,6 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 #undef HOLOGRAM_POWER_USAGE
 #undef IS_RANGE_BASED
 
+
+/obj/machinery/hologram/holopad/proc/holopad_human_actor(datum/act/op/A)
+	return istype(A.actor, /mob/living/carbon/human)

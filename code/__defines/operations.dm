@@ -51,6 +51,8 @@
 
 /// The read key of an atom's cap_state bits (req_set / req_clear publish and read it).
 #define OP_KEY_CAP_STATE "cap_state"
+#define OP_KEY_CAP_DATA "cap_data"
+#define OP_KEY_CAP_EXTRAS "cap_extras"
 
 // ---- compartments ----
 /// door = CAP_KEY: the boundary's physical route passes only for an actor with access.

@@ -64,7 +64,7 @@
 	icon_state = "crema_switch"
 
 CAPABILITIES(/obj/machinery/button/holosign)
-	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
 /// Holosigns sharing our id (keyed).
 /obj/machinery/button/holosign/var/list/obj/machinery/holosign/controlled_signs

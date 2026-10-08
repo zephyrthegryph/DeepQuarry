@@ -9,7 +9,7 @@
 		if(raise[1] == E && (raise[2] & mask))
 			.++
 
-/// The registry knows the core fields with their family channels, the derived operable field and
+/// The registry knows the core fields with their family channels, the operability stat reader and
 /// the registered hand-written setters (anchored, density, use_power).
 /datum/unit_test/dq_sys_fields_registered
 
@@ -19,7 +19,13 @@
 	TEST_ASSERT_EQUAL(F["on"], CHANGE_MACHINE_SETTINGS, "on channel")
 	TEST_ASSERT_EQUAL(F["locked"], CHANGE_MACHINE_MODE, "locked channel")
 	TEST_ASSERT_EQUAL(F["stat"], CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER, "stat channel")
-	TEST_ASSERT_EQUAL(F["operable"], CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER, "operable channel")
+	TEST_ASSERT_NULL(F["operable"], "operable is a stat reader, not a legacy scheduler field")
+	var/obj/machinery/recharger/M = allocate(/obj/machinery/recharger)
+	M.set_grid_power(TRUE)
+	M.set_broken_condition(FALSE)
+	TEST_ASSERT(M.operable(), "the stat reader observes powered, intact machinery")
+	M.set_broken_condition(TRUE)
+	TEST_ASSERT(!M.operable(), "the stat reader follows the actual broken condition")
 	TEST_ASSERT(F["anchored"] & CHANGE_MACHINE_ANCHORED, "anchored does not raise CHANGE_MACHINE_ANCHORED on a machine")
 	TEST_ASSERT(F["density"] & CHANGE_MACHINE_SETTINGS, "density does not raise CHANGE_MACHINE_SETTINGS on a machine")
 	TEST_ASSERT(F["use_power"] & CHANGE_MACHINE_SETTINGS, "use_power does not raise CHANGE_MACHINE_SETTINGS")

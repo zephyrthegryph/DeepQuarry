@@ -55,7 +55,7 @@
 	var/datum/capability/label/C = cap_label_cap(A)
 	if(!C)
 		return null
-	var/datum/cap_label_data/D = A.cap_data?[C.key]
+	var/datum/cap_label_data/D = capability_data(A)?[C.key]
 	return D?.label
 
 /// Sets A's label through its name, or clears it with null.

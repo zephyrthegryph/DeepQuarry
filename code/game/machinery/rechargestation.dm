@@ -24,10 +24,13 @@
 	var/wire_power_use = 500	// power used per point of burn damage repaired.
 
 /// The internal buffer cell (the station steps only while it has one).
-OM_FIELD_VIEW(/obj/machinery/recharge_station, obj/item/cell, cell, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/recharge_station/var/obj/item/cell/cell
+/datum/scheduler_field_definition/obj/machinery/recharge_station/cell
+	of = /obj/machinery/recharge_station
+	field = "cell"
+	channel = CHANGE_MACHINE_SETTINGS
 
 /// Not BROKEN (an unpowered station still runs off its cell, so operable() is too strict).
-OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, list("stat"))
 /obj/machinery/recharge_station/proc/unbroken()
 	return !broken_now()
 
@@ -44,7 +47,6 @@ OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, list("stat"))
 	slot_id = OCCUPANT_SLOT_RECHARGE_STATION
 	name = "recharge station"
 	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
-
 
 /obj/machinery/recharge_station/proc/has_cell_power()
 	return cell && cell.percent() > 0
@@ -166,37 +168,26 @@ OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, list("stat"))
 	go_out()
 	return
 
-/obj/machinery/recharge_station/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/recharge_station_part_replacement,
-		/datum/interaction/machine_item/recharge_station_insert_grab,
-		/datum/interaction/machine_drag/recharge_station_insert,
-		/datum/interaction/machine_verb/recharge_station_eject,
-		/datum/interaction/machine_verb/recharge_station_enter,
-	)
-	..()
+/// Requirement (was REQ_* is_vacant): the legacy check answers TRUE to pass.
+/obj/machinery/recharge_station/proc/is_vacant_holds(datum/act/op/A)
+	var/answer = is_vacant(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/datum/interaction/machine_item/recharge_station_part_replacement
-	id = "recharge_station_part_replacement"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/recharge_station/proc/is_vacant, null))
-	effect = /obj/machinery/recharge_station/proc/interaction_part_replacement_impl
+/// Requirement (was REQ_* grab_holds_living): the legacy check answers TRUE to pass.
+/obj/machinery/recharge_station/proc/grab_holds_living_holds(datum/act/op/A)
+	var/answer = grab_holds_living(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
 /obj/machinery/recharge_station/proc/is_vacant(mob/actor, atom/target, obj/item/held)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	return !occupant
 
-/obj/machinery/recharge_station/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	return default_part_replacement(user, held) ? TRUE : FALSE
-
-/datum/interaction/machine_item/recharge_station_insert_grab
-	id = "recharge_station_insert_grab"
-	name = "Put in recharger"
-	held_type = /obj/item/grab
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/recharge_station/proc/is_vacant, null), REQ_ON(PRED_TARGET, /obj/machinery/recharge_station/proc/grab_holds_living, null))
-	effect = /obj/machinery/recharge_station/proc/interaction_insert_grab
+/obj/machinery/recharge_station/proc/interaction_part_replacement_impl(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(default_part_replacement(user, held))
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/recharge_station/proc/grab_holds_living(mob/actor, atom/target, obj/item/held)
 	if(get_dist(src, actor) >= 2)
@@ -204,44 +195,32 @@ OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, list("stat"))
 	var/obj/item/grab/G = held
 	return isliving(G?.grab_target())
 
-/obj/machinery/recharge_station/proc/interaction_insert_grab(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/recharge_station/proc/interaction_insert_grab(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/obj/item/grab/G = held
 	var/mob/living/M = G?.grab_target()
 	consume(held, user)
 	go_in(M)
-	return FALSE
+	return OP_DECLINE
 
-/datum/interaction/machine_drag/recharge_station_insert
-	id = "recharge_station_drag_insert"
-	name = "Put in recharger"
-	held_type = /mob
-	effect = /obj/machinery/recharge_station/proc/interaction_drag_insert
-
-/obj/machinery/recharge_station/proc/interaction_drag_insert(mob/user, atom/movable/dropping, datum/interaction/interaction)
+/obj/machinery/recharge_station/proc/interaction_drag_insert(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/dropping = A.held
 	var/mob/target = dropping
 	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user))
-		return TRUE
+		return OP_OK
 	go_in(target)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_verb/recharge_station_eject
-	id = "recharge_station_eject"
-	name = "Eject Recharger"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/recharge_station/proc/interaction_eject
-
-/obj/machinery/recharge_station/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/recharge_station/proc/interaction_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	go_out()
 	add_fingerprint(user)
 	return TRUE
 
-/datum/interaction/machine_verb/recharge_station_enter
-	id = "recharge_station_enter"
-	name = "Enter Recharger"
-	category = INTERACTION_CAT_INSERT
-	effect = /obj/machinery/recharge_station/proc/interaction_enter
-
-/obj/machinery/recharge_station/proc/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/recharge_station/proc/interaction_enter(datum/act/op/A)
+	var/mob/user = A.actor
 	go_in(user)
 	return TRUE
 
@@ -306,12 +285,23 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, TYPE_PROC_REF(/atom, ap
 
 	. += build_overlays()
 
+MSG_DEF_SELF(recharge_station/needs_parts, "needs a rapid part exchange device")
+MSG_DEF_SELF(recharge_station/needs_grab, "needs a grab")
+MSG_DEF_SELF(recharge_station/needs_mob, "needs a mob")
+MSG_DEF_SELF(recharge_station/needs_living_grab, "needs a grab holding a living mob")
+
 CAPABILITIES(/obj/machinery/recharge_station)
+	ref_one(nameof(cell), /obj/item/cell) // component_parts owns the cell
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(cell), gate = PROC_REF(unbroken), wakes_on = list(STAT_OPERABLE, nameof(cell)), unpowered = TRUE)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	extend("machine_panel", needs(req(PROC_REF(station_empty), silent = TRUE)))
 	extend("machine_panel_close", needs(req(PROC_REF(station_empty), silent = TRUE)))
 	extend("machine_deconstruct", needs(req(PROC_REF(station_empty), silent = TRUE)))
+	op("recharge_station_part_replacement", inputs(item(/obj/item/storage/part_replacer), menu()), needs(req(/obj/item/storage/part_replacer, because = MSG(recharge_station/needs_parts)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), when(req(PROC_REF(is_vacant_holds))), then(PROC_REF(interaction_part_replacement_impl)))
+	op("recharge_station_insert_grab", inputs(item(/obj/item/grab), menu()), needs(req(/obj/item/grab, because = MSG(recharge_station/needs_grab)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Put in recharger"), when(req(PROC_REF(is_vacant_holds))), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(grab_holds_living_holds)))), needs(req(PROC_REF(grab_holds_living_holds), because = MSG(recharge_station/needs_living_grab))), then(PROC_REF(interaction_insert_grab)))
+	op("recharge_station_drag_insert", inputs(item(/mob), menu()), needs(req(/mob, because = MSG(recharge_station/needs_mob)), req_adjacent(), req_capable()), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put in recharger"), then(PROC_REF(interaction_drag_insert)))
+	op("recharge_station_eject", menu(), label("Eject Recharger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
+	op("recharge_station_enter", menu(), label("Enter Recharger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_enter)))
 
 /// Something walked into it (the bump action's notice).
 /obj/machinery/recharge_station/proc/bumped_into(datum/act/A)
@@ -408,11 +398,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station/ghost_pod_recharger, TYP
 
 	. += build_overlays()
 
-
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/recharge_station/step_start_condition()
 	return TRUE // tops up its buffer
-
-/obj/machinery/recharge_station/relations()
-	. = ..()
-	. += rel_one(nameof(cell)) // component_parts owns the cell

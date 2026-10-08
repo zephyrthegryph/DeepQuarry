@@ -10,6 +10,17 @@ MSG_DEF_SELF(e2/locked, "It is locked.")
 MSG_DEF_SELF(e2/is_open, "It is open.")
 MSG_DEF_SELF(e2/no_name, "It needs a name first.")
 
+// A headless interactive transport for the input-kind fixture. Production obj topic
+// admission still checks its normal tgui gate, including the actual actor's distance.
+/mob/living/simple_mob/e0_fixture/e2_topic_actor/default_can_use_tgui_topic(src_object)
+	if(stat)
+		return STATUS_DISABLED
+	if(incapacitated())
+		return STATUS_UPDATE
+	if(!loc)
+		return STATUS_CLOSE
+	return min(STATUS_INTERACTIVE, loc.contents_tgui_distance(src_object, src))
+
 /// A crowbar-like tool and a key and a cloth: the things a held item can be.
 /obj/item/e2_key
 	name = "e2 key"

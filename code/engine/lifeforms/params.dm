@@ -103,7 +103,7 @@
 	if(ispath(type, /atom))
 		if(ispath(type, /turf))
 			var/turf/T = get_turf(at)
-			return T?.ChangeTurf(type)
+			return T?.replace_surface(type)
 		return new type(at, M)
 	M.made_type = type
 	GLOB.make_pending += M
@@ -160,7 +160,7 @@ GLOBAL_REAL_VAR(list/param_given)
 			var/list/held = list()
 			for(var/atom/movable/part in M.parts)
 				if(isatom(D))
-					part.forceMove(D)
+					part.move_for_construction(D)
 				held += part
 			D.vars[E.args["var"]] = held
 			given += E.args["var"]
@@ -252,3 +252,10 @@ GLOBAL_REAL_VAR(list/param_drop_pending)
 	for(var/datum/centry/C as anything in P.param_drops)
 		var/datum/entry/E = C.item
 		holder.vars[E.args["var"]] = initial(holder.vars[E.args["var"]])
+
+/// Construction transport policies are provided by the world library.
+/turf/proc/replace_surface(type)
+	return
+
+/atom/movable/proc/move_for_construction(atom/holder)
+	return

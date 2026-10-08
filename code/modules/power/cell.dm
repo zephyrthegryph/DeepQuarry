@@ -65,7 +65,15 @@ TRACKED(/obj/item/cell, recharging)
 TRACKED(/obj/item/cell, gradual_charge_left)
 
 // A self-charging cell steps every two seconds while it is below full; a gradual charge steps every second while it has steps left.
+MSG_DEF_SELF(cell/needs_item, "needs an item")
+MSG_DEF_SELF(cell/not_in_hand, "not in your hand")
+
 CAPABILITIES(/obj/item/cell)
+	op("inject_cell", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(/obj/item, because = MSG(cell/needs_item)), req_adjacent(), req_capable()), then(PROC_REF(interaction_item)))
+	op("electrovore_charge", inputs(in_hand(), menu()), needs(req(PROC_REF(electrovore_in_hand), because = MSG(cell/not_in_hand))), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HELP), label("Charge with your body"), then(PROC_REF(electrovore_charge)))
+	op("electrovore_drain", inputs(in_hand(), menu()), needs(req(PROC_REF(electrovore_in_hand), because = MSG(cell/not_in_hand))), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HURT), label("Drain its charge"), then(PROC_REF(electrovore_drain)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(cell_emp_drain)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(cell_blast_corrupt)))
 	every(2 SECONDS, then(PROC_REF(recharge_step)), when = cond_all(nameof(self_recharge), nameof(recharging)))
 	every(1 SECOND, then(PROC_REF(gradual_charge_tick)), when = nameof(gradual_charge_left))
 
@@ -387,10 +395,12 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 			return ITEM_INTERACT_SUCCESS
 	..()
 
-DECLARE_INTERACTIONS(/obj/item/cell, INTERACT_ITEM(null, PROC_REF(interaction_item)), INTERACT_SELF_AS(I_HELP, "Charge with your body", PROC_REF(interaction_electrovore)), INTERACT_SELF_AS(I_HURT, "Drain its charge", PROC_REF(interaction_electrovore)))
+
 
 /// Old attackby.
-/obj/item/cell/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/cell/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/reagent_containers/syringe))
 		var/obj/item/reagent_containers/syringe/S = W
 
@@ -404,7 +414,7 @@ DECLARE_INTERACTIONS(/obj/item/cell, INTERACT_ITEM(null, PROC_REF(interaction_it
 			message_admins("LOG: [user.name] ([user.ckey]) injected a power cell with phoron, rigging it to explode.")
 
 		S.reagents.clear_reagents()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/cell/proc/explode()
 	// use() and give() can both be reached before qdel drains.  Make detonation
@@ -448,20 +458,24 @@ DECLARE_INTERACTIONS(/obj/item/cell, INTERACT_ITEM(null, PROC_REF(interaction_it
 	if (prob(10))
 		rigged = 1 //broken batterys are dangerous
 
-DAMAGE_REACTION(/obj/item/cell, DAMAGE_EMP, PROC_REF(cell_emp_drain))
+
 
 /// A pulse drains charge, less the material's EMP resistance.
-/obj/item/cell/proc/cell_emp_drain(datum/damage_packet/packet)
+/obj/item/cell/proc/cell_emp_drain(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	charge -= (charge / packet.severity) * (1 - material_emp_resistance / 100)
 	if (charge < 0)
 		charge = 0
 
 	update_icon()
 
-DAMAGE_REACTION_AFTER(/obj/item/cell, DAMAGE_EXPLOSION, PROC_REF(cell_blast_corrupt))
+
 
 /// A cell that survives a blast can come out of it corrupted.
-/obj/item/cell/proc/cell_blast_corrupt(datum/damage_packet/packet)
+/obj/item/cell/proc/cell_blast_corrupt(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(prob(50 / packet.severity))
 		corrupt()
 
@@ -480,3 +494,7 @@ DAMAGE_REACTION_AFTER(/obj/item/cell, DAMAGE_EXPLOSION, PROC_REF(cell_blast_corr
 		return round(damage)
 	else
 		return 0
+
+/// Immediate admission samples the real hand getters, including robot virtual hands; these effects never suspend.
+/obj/item/cell/proc/electrovore_in_hand(datum/act/op/A)
+	return A.actor && (read_once(A.actor.get_active_hand()) == src || read_once(A.actor.get_inactive_hand()) == src)

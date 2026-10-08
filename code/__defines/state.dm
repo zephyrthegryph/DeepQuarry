@@ -44,3 +44,9 @@
 #define STATE_VERSION_DEFAULT 1
 /// The version legacy (pre-L1) flat blobs are read as.
 #define STATE_VERSION_LEGACY 0
+
+// Inherited type policy keys: independent of per-instance state and prototype allocation.
+#define TYPE_META_LATENT_SAFE "latent_safe"
+#define TYPE_META_LATENT_CONTENTS "latent_contents"
+#define TYPE_META_LATENT_IDLE_DELAY "latent_idle_delay"
+#define TYPE_META_SLOT_HOOKS "has_slot_hooks"

@@ -258,7 +258,7 @@ CAPABILITIES(/obj/machinery/pointdefense)
 	if(get_dist(M, src) > kill_range)
 		return FALSE
 	// If we can shoot it, then shoot
-	if(emagged || !space_los(M))
+	if(emagged() || !space_los(M))
 		return FALSE
 
 	return TRUE

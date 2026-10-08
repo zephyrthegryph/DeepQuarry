@@ -161,10 +161,18 @@
 	C.schedule_camera_timer()
 
 /// Status displays: static modes sleep; moving content has one timer; shuttle modes watch the key.
-/datum/unit_test/dq_om_wake_status_display
+/obj/machinery/status_display/dq_wake_notice_probe
+	var/shuttle_wakes = 0
 
-/datum/unit_test/dq_om_wake_status_display/Run()
-	var/obj/machinery/status_display/D = allocate(/obj/machinery/status_display, test_floor())
+/obj/machinery/status_display/dq_wake_notice_probe/shuttle_schedule_seen(datum/act/A)
+	shuttle_wakes++
+	..()
+
+/datum/unit_test/dq_om_wake_status_display
+	parent_type = /datum/unit_test/dq_p2_engine
+
+/datum/unit_test/dq_om_wake_status_display/run_gate()
+	var/obj/machinery/status_display/dq_wake_notice_probe/D = allocate(/obj/machinery/status_display/dq_wake_notice_probe, test_floor())
 	D.set_grid_power(TRUE)
 	var/datum/signal/S = new
 	S.data["command"] = "blank"
@@ -194,12 +202,12 @@
 	D.receive_signal(S)
 	TEST_ASSERT_EQUAL(D.shuttle_key_id, SHUTTLE_SCHEDULE_EVAC, "shuttle mode is not watching the evac shuttle")
 	TEST_ASSERT_NULL(D.sleep_violation(), "a shuttle display's audit failed")
-	if(!after_pending(D, "refresh_token")) // No evac under way: only the key wakes it.
-		var/failure = om_wake_test(D, om_callable(src, PROC_REF(publish_evac)))
-		TEST_ASSERT(!failure, failure)
-
-/datum/unit_test/dq_om_wake_status_display/proc/publish_evac()
-	changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
+	var/before = D.shuttle_wakes
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(D.shuttle_wakes, before, "An unchanged shuttle schedule sends no notice wake")
+	PUBLISH(SSemergency_shuttle, shuttle_schedule_change)
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(D.shuttle_wakes, before + 1, "The actual typed shuttle schedule notice wakes the display exactly once")
 
 /datum/looping_sound/dq_test
 	mid_sounds = list('sound/machines/button.ogg' = 1)

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The capability registry no longer depends on global init order; an unresolvable capability constructor is now a hard error"
+  - code_imp: "dq_hit_pin settles each type's first-instance refresh state so it no longer varies with test order"

@@ -55,7 +55,7 @@
 	icon_state = "crema_switch"
 
 CAPABILITIES(/obj/machinery/button/neonsign)
-	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
 /// Neon signs sharing our id (keyed).
 /obj/machinery/button/neonsign/var/list/obj/machinery/neonsign/controlled_signs

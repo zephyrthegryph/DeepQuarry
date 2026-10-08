@@ -64,7 +64,7 @@
 	var/datum/capability/writable/C = cap_of(A, /datum/capability/writable)
 	if(!C)
 		return null
-	var/datum/cap_writable_data/D = A.cap_data?[C.key]
+	var/datum/cap_writable_data/D = capability_data(A)?[C.key]
 	return D?.text
 
 /// Visible characters A still takes.
@@ -72,7 +72,7 @@
 	var/datum/capability/writable/C = cap_of(A, /datum/capability/writable)
 	if(!C)
 		return 0
-	var/datum/cap_writable_data/D = A.cap_data?[C.key]
+	var/datum/cap_writable_data/D = capability_data(A)?[C.key]
 	return max(0, C.max_length - (D ? D.used : 0))
 
 /**
@@ -95,7 +95,7 @@
 /// Clears what is written on A.
 /proc/cap_writable_clear(atom/A)
 	var/datum/capability/writable/C = cap_of(A, /datum/capability/writable)
-	var/datum/cap_writable_data/D = A.cap_data?[C?.key]
+	var/datum/cap_writable_data/D = capability_data(A)?[C?.key]
 	if(!D?.text)
 		return
 	D.text = null

@@ -163,31 +163,8 @@ impl Lint for SemHandlers {
         let engine_bases = base_flags.iter().any(|b| *b);
         if engine_bases {
             if let Some(sem) = cx.sem() {
-                for name in STD_OUTPUTS {
-                    let mut base: Option<(String, Vec<String>)> = None;
-                    let mut defs: Vec<(String, String, u32, Vec<String>)> = Vec::new();
-                    for ty in sem.objtree.iter_types() {
-                        let Some(tp) = ty.get().procs.get(*name) else { continue };
-                        let path = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-                        for v in &tp.value {
-                            let rel = sem.rel(v.location).to_string();
-                            let params: Vec<String> = v.parameters.iter().map(|p| p.name.clone()).collect();
-                            if rel.starts_with("code/engine/") {
-                                if base.as_ref().map(|(p, _)| path.len() < p.len()).unwrap_or(true) {
-                                    base = Some((path.clone(), params));
-                                }
-                            } else {
-                                defs.push((path.clone(), rel, v.location.line, params));
-                            }
-                        }
-                    }
-                    if let Some((bty, bparams)) = base {
-                        for (ty, rel, line, params) in defs {
-                            if params != bparams {
-                                put(out, "output_signature", &rel, line, format!("{}::{}({}) overrides {}::{}({})", ty, name, params.join(", "), bty, name, bparams.join(", ")));
-                            }
-                        }
-                    }
+                for (rel, line, msg) in output_signature_findings(&sem) {
+                    put(out, "output_signature", &rel, line, msg);
                 }
             }
         }
@@ -246,4 +223,73 @@ impl Lint for SemHandlers {
 
 pub fn register(reg: &mut Registry) {
     reg.add(SemHandlers);
+}
+
+/// Compare an override with the nearest actual engine declaration on its parent_type chain.
+/// Unrelated output protocols (atom draw versus capability draw) do not share a signature.
+fn output_signature_findings(sem: &Sem) -> Vec<(String, u32, String)> {
+    let mut found = Vec::new();
+    for name in STD_OUTPUTS {
+        let mut bases = std::collections::BTreeMap::<String, Vec<String>>::new();
+        let mut defs = Vec::<(String, String, u32, Vec<String>)>::new();
+        for ty in sem.objtree.iter_types() {
+            let Some(tp) = ty.get().procs.get(*name) else { continue };
+            let path = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
+            for v in &tp.value {
+                let rel = sem.rel(v.location).to_string();
+                let params: Vec<String> = v.parameters.iter().map(|p| p.name.clone()).collect();
+                if rel.starts_with("code/engine/") {
+                    bases.insert(path.clone(), params);
+                } else {
+                    defs.push((path.clone(), rel, v.location.line, params));
+                }
+            }
+        }
+        for (ty, rel, line, params) in defs {
+            let mut ancestor = Some(ty.clone());
+            while let Some(path) = ancestor {
+                if let Some(base_params) = bases.get(&path) {
+                    if &params != base_params {
+                        found.push((rel, line, format!("{}::{}({}) overrides {}::{}({})", ty, name, params.join(", "), path, name, base_params.join(", "))));
+                    }
+                    break;
+                }
+                ancestor = sem.parent_of(&path);
+            }
+        }
+    }
+    found
+}
+
+#[cfg(test)]
+mod output_tests {
+    use super::*;
+    use crate::tree::{SourceFile, Tree};
+
+    fn fixture() -> (tempfile::TempDir, Sem) {
+        let root = tempfile::tempdir().unwrap();
+        let sources = [
+            ("code/engine/present/protocols.dm", "/datum/look\n/atom/proc/draw(datum/look/look)\n\treturn\n/datum/capability\n/datum/capability/proc/draw(atom/holder, datum/look/look)\n\treturn\n"),
+            ("code/library/output_probe.dm", "/obj/good/draw(datum/look/look)\n\treturn\n/datum/nonlexical\n\tparent_type = /datum/capability\n/datum/nonlexical/draw(atom/holder, datum/look/look)\n\treturn\n/obj/bad/draw(atom/holder, datum/look/look)\n\treturn\n/datum/malformed_cap\n\tparent_type = /datum/capability\n/datum/malformed_cap/draw(datum/look/look)\n\treturn\n/datum/unrelated/proc/draw(value)\n\treturn\n"),
+        ];
+        let mut files = Vec::new();
+        for (rel, text) in sources {
+            let path = root.path().join(rel);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, text).unwrap();
+            files.push(SourceFile::from_text(rel, text));
+        }
+        let sem = Sem::build(root.path(), &Tree::from_files(files)).unwrap();
+        assert!(sem.errors.is_empty(), "invalid semantic fixture: {:?}", sem.errors);
+        (root, sem)
+    }
+
+    #[test]
+    fn distinct_draw_protocols_follow_actual_ancestry() {
+        let (_root, sem) = fixture();
+        let found = output_signature_findings(&sem);
+        assert_eq!(found.len(), 2, "valid atom/capability outputs and an unrelated draw proc are accepted: {:?}", found);
+        assert!(found.iter().any(|(_, _, message)| message.contains("/obj/bad::draw") && message.contains("overrides /atom::draw")));
+        assert!(found.iter().any(|(_, _, message)| message.contains("/datum/malformed_cap::draw") && message.contains("overrides /datum/capability::draw")));
+    }
 }

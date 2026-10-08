@@ -90,8 +90,7 @@
 /area/survivalpod/superpose/HydroCave)
 "cN" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /obj/structure/table/glass,
 /turf/simulated/floor/carpet,
@@ -311,8 +310,7 @@
 /area/survivalpod/superpose/HydroCave)
 "jY" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /turf/simulated/floor/tiled/dark,
 /area/survivalpod/superpose/HydroCave)
@@ -348,7 +346,6 @@
 "lY" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -650,8 +647,7 @@
 /area/survivalpod/superpose/HydroCave)
 "qw" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /obj/machinery/portable_atmospherics/hydroponics,
 /obj/item/seeds/pumpkinseed,
@@ -763,7 +759,6 @@
 /area/survivalpod/superpose/HydroCave)
 "tu" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -1028,7 +1023,6 @@
 "Cs" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -1092,8 +1086,7 @@
 /area/survivalpod/superpose/HydroCave)
 "EE" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 8;
-	on = 1
+	dir = 8
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
 /obj/effect/decal/cleanable/dirt,
@@ -1124,8 +1117,7 @@
 /area/survivalpod/superpose/HydroCave)
 "Fh" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /obj/structure/bed,
 /obj/item/bedsheet/mime,
@@ -1136,9 +1128,7 @@
 /turf/template_noop,
 /area/template_noop)
 "FB" = (
-/obj/machinery/atmospherics/unary/vent_pump{
-	on = 1
-	},
+/obj/machinery/atmospherics/unary/vent_pump,
 /turf/simulated/floor/tiled/red,
 /area/survivalpod/superpose/HydroCave)
 "Ge" = (
@@ -1431,7 +1421,6 @@
 /area/survivalpod/superpose/HydroCave)
 "Nq" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -1461,7 +1450,6 @@
 /obj/structure/disposalpipe/segment,
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -1575,7 +1563,6 @@
 	},
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -1766,7 +1753,6 @@
 "Uq" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 8;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},

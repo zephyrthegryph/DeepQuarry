@@ -8,6 +8,13 @@
 	use_power = USE_POWER_OFF
 	var/charge = null
 	var/label = "a"
+	var/on = FALSE
+	var/active = FALSE
+	var/locked = FALSE
+
+TRACKED_BRIDGED(/obj/machinery/dq_appearance_probe, on, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/dq_appearance_probe, active, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/dq_appearance_probe, locked, CHANGE_MACHINE_MODE)
 
 APPEARANCE_TEMPLATE(/obj/machinery/dq_appearance_probe, "probe{on}{operable}{label?@label:}{initial(icon_state)}")
 APPEARANCE_LEVEL(/obj/machinery/dq_appearance_probe, "charge", 4, "lvl%p")

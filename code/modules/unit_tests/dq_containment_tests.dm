@@ -319,7 +319,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 			return FALSE
 		var/listed = 0
 		for(var/atom/H as anything in holders)
-			if(H.ledger?.entries[T])
+			if(H.containment_ledger()?.entries[T])
 				listed++
 		var/expect = (T.loc in holders) ? 1 : 0
 		if(listed != expect)
@@ -616,7 +616,6 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 
 /obj/item/dq_containment_test/hooked
 	name = "hooked test item"
-	has_slot_hooks = TRUE
 	sharp = TRUE // so it can enter the box's sharp-only "main" slot too
 	var/list/log
 

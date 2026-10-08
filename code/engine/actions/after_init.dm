@@ -36,7 +36,7 @@
 	if(!isatom(holder))
 		after_init_arm(holder, mapload)
 		return
-	SSatoms.after_init_wait(holder)
+	materialization_host().after_init_wait(holder)
 
 /// Arms every after_init() entry of `holder`'s type table: a delay of 0 runs now, a positive one is an after() from now.
 /proc/after_init_arm(datum/holder, mapload)

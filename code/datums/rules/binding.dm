@@ -381,7 +381,10 @@ CAPABILITIES(/datum)
 				if(!state_is_saved(thing, var_name))
 					stack_trace("rule transform sets [var_name] on [thing.type], which is not saved state")
 					continue
-				thing.vars[var_name] = op[3] // ALLOW(api): rule effects of kind RULE_SET_VAR: the var is named by the rule table
+				if(var_name == OP_KEY_CAP_STATE)
+					capability_runtime(thing).bits = op[3]
+				else
+					thing.vars[var_name] = op[3] // ALLOW(api): rule effects of kind RULE_SET_VAR: the var is named by the rule table
 			if(RULE_OP_SWAP)
 				var/atom/movable/M = thing
 				var/turf/T = get_turf(thing)

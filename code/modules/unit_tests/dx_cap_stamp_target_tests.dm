@@ -30,7 +30,7 @@
 	TEST_ASSERT_EQUAL(cap_stamps_of(F)[1], "This form has been stamped with the rubber stamp.", "the stamp line names the stamp")
 	TEST_ASSERT_EQUAL(caps_examine(F, H)[1], span_italics("This form has been stamped with the rubber stamp."), "examine shows it")
 	refresh_flush()
-	TEST_ASSERT("paper_[stamp.icon_state]" in F.look_overlays, "draw shows the stamp mark")
+	TEST_ASSERT("paper_[stamp.icon_state]" in F.rx?.look_overlays, "draw shows the stamp mark")
 
 	seal.stamptext = "Sealed by the Secretary."
 	stamp_entry.perform(H, F, seal)

@@ -1,4 +1,4 @@
-// Orphan audit (doc/rewrite/ownership.md §1.5).
+// Orphan audit (doc/rewrite/ownership.md Â§1.5).
 //
 // Two findings:
 //   - orphan: an entity stamped as owned whose owner no longer names it (or is dying);
@@ -45,7 +45,7 @@
 			. += "orphan: [D.type] is stamped as owned by [H.type].[D.own_slot], which no longer holds it (overwritten or dropped without _own_set/own_take)[own_audit_owner_note(D, H)]"
 			own_unstamp(D)
 	stamped = null
-	for(var/datum/om/rec/rec as anything in recs)
+	for(var/datum/scheduler_record/rec as anything in recs)
 		if(rec.torn_down || !rec.owner)
 			continue
 		if(own_audit_rec_dropped(rec))
@@ -63,13 +63,13 @@
 	for(var/datum/thing) // every live datum
 		if(thing.own_holder_ref)
 			stamped += thing
-		else if(istype(thing, /datum/om/rec))
+		else if(istype(thing, /datum/scheduler_record))
 			recs += thing
 	return list(stamped, recs)
 
 /// TRUE when rec's owner is referenced by nothing but its own record: unowned, not in the world,
 /// not a registered singleton, and refcount() accounted for by the record's internal references.
-/proc/own_audit_rec_dropped(datum/om/rec/rec)
+/proc/own_audit_rec_dropped(datum/scheduler_record/rec)
 	var/datum/O = rec.owner
 	if(QDELETED(O) || is_registered(O) || owner_of(O))
 		return FALSE
@@ -77,7 +77,7 @@
 		var/atom/A = O
 		if(A.loc || isturf(A) || isarea(A))
 			return FALSE
-	if(istype(O, /datum/controller) || istype(O, /datum/om))
+	if(istype(O, /datum/controller) || istype(O, /datum/core_definition))
 		return FALSE
 	// An entity fading out on its own (om_qdel_after(): a pending self-delete) is on its way out,
 	// not dropped.
@@ -90,7 +90,7 @@
 		if(name == "owner" || name == "vars")
 			continue
 		internal += state_count_refs_in(rec.vars[name], O, 0)
-	for(var/datum/om/edge/edge as anything in rec.edges)
+	for(var/datum/relation_edge/edge as anything in rec.edges)
 		if(edge.source == O)
 			internal++
 		if(edge.target == O)
@@ -107,7 +107,7 @@
 		// Armed like the entities the audit looks for (a pending timer), so the scheduler's own
 		// references to it (its deadline) are part of the measured overhead.
 		after(probe, 1 HOURS, TYPE_PROC_REF(/datum/own_audit_probe, noop))
-		var/datum/om/rec/rec = om_rec_of(probe)
+		var/datum/scheduler_record/rec = om_rec_of(probe)
 		var/internal = 1
 		for(var/name in rec.vars)
 			if(name == "owner" || name == "vars")

@@ -100,9 +100,9 @@ CAPABILITIES(/datum/capability/construction)
 		progress.stage = built.start || built.states[1]
 
 /datum/capability/construction/legacy_holder_destroy(atom/holder)
-	var/datum/ladder_progress/progress = holder.cap_data?[key]
+	var/datum/ladder_progress/progress = capability_data(holder)?[key]
 	if(progress)
-		LAZYREMOVE(holder.cap_data, key)
+		LAZYREMOVE(capability_runtime(holder).data, key)
 		ended_with(progress, holder)
 
 /// The stage's icon state, when the ladder draws its stages. Writes no holder state (ladder_for()
@@ -579,7 +579,7 @@ CAPABILITIES(/datum/construction_ladder)
 		return holder_call(target, state_get)
 	if(state_var)
 		return target.vars[state_var]
-	var/datum/ladder_progress/progress = target.cap_data?[cap.key]
+	var/datum/ladder_progress/progress = capability_data(target)?[cap.key]
 	return progress?.stage || start || states[1]
 
 /// Stores the stage on the holder.
