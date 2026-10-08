@@ -108,7 +108,7 @@
 	wall_turf.ChangeTurf(/turf/simulated/wall)
 	var/turf/simulated/wall/wall = wall_turf
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	wall.set_material(steel, steel, steel)
+	wall.apply_materials(steel, steel, steel)
 	wall.set_construction_stage(5)
 	var/list/lines = construction_examine_lines(H, wall)
 	var/text = jointext(lines, "\n")
@@ -131,7 +131,7 @@
 	var/turf/simulated/wall/wall = wall_turf
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	var/datum/material/plasteel = get_material_by_name(MAT_PLASTEEL)
-	wall.set_material(steel, plasteel, steel)
+	wall.apply_materials(steel, plasteel, steel)
 	TEST_ASSERT_EQUAL(wall.construction_stage, 6, "a reinforced wall starts at 6")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
@@ -192,7 +192,7 @@
 	wall_turf.ChangeTurf(/turf/simulated/wall)
 	var/turf/simulated/wall/wall = wall_turf
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	wall.set_material(steel, null, steel)
+	wall.apply_materials(steel, null, steel)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 	welder.toolspeed = 1
@@ -224,7 +224,7 @@
 	wall_turf.ChangeTurf(/turf/simulated/wall)
 	var/turf/simulated/wall/wall = wall_turf
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	wall.set_material(steel, steel, steel)
+	wall.apply_materials(steel, steel, steel)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 	H.put_in_active_hand(welder)

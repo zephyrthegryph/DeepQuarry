@@ -156,13 +156,12 @@
 /turf/simulated/floor/outdoors/grass state: grass1
 /turf/simulated/floor/outdoors/grass dir: 2
 /turf/simulated/floor/outdoors/grass/seasonal icon: icons/seasonal/turf.dmi
-/turf/simulated/floor/outdoors/grass/seasonal state: grass-autumn0
+/turf/simulated/floor/outdoors/grass/seasonal state: grass-autumn2
 /turf/simulated/floor/outdoors/grass/seasonal dir: 2
 /turf/simulated/floor/outdoors/grass/seasonal overlay: icons/seasonal/turf.dmi:grass_edges:-32767 x8
 /turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow icon: icons/seasonal/turf.dmi
-/turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow state: grass-autumn11
+/turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow state: grass-autumn0
 /turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow dir: 2
-/turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow overlay: icons/seasonal/turf.dmi:autumn-overlay6:-45
 /turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow overlay: icons/seasonal/turf.dmi:grass_edges:-32767 x8
 /turf/simulated/floor/outdoors/grass/heavy icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/outdoors/grass/heavy state: grass-heavy2
@@ -257,19 +256,19 @@
 /turf/simulated/floor/water icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water state: rock
 /turf/simulated/floor/water dir: 2
-/turf/simulated/floor/water overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/digestive_enzymes icon: icons/turf/stomach_vr.dmi
 /turf/simulated/floor/water/digestive_enzymes state: flesh_floor
 /turf/simulated/floor/water/digestive_enzymes dir: 2
-/turf/simulated/floor/water/digestive_enzymes overlay: icons/turf/stomach_vr.dmi:enzyme_shallow:-32767 x2
+/turf/simulated/floor/water/digestive_enzymes overlay: icons/turf/stomach_vr.dmi:enzyme_shallow:-32767
 /turf/simulated/floor/water/digestive_enzymes/nanites icon: icons/turf/nanitegoo.dmi
 /turf/simulated/floor/water/digestive_enzymes/nanites state: reinforced
 /turf/simulated/floor/water/digestive_enzymes/nanites dir: 2
-/turf/simulated/floor/water/digestive_enzymes/nanites overlay: icons/turf/nanitegoo.dmi:goo_inactive:-32767 x2
+/turf/simulated/floor/water/digestive_enzymes/nanites overlay: icons/turf/nanitegoo.dmi:goo_inactive:-32767
 /turf/simulated/floor/water/underwater icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/underwater state: rock
 /turf/simulated/floor/water/underwater dir: 2
-/turf/simulated/floor/water/underwater overlay: icons/turf/outdoors.dmi:seafloor:-32767 x2
+/turf/simulated/floor/water/underwater overlay: icons/turf/outdoors.dmi:seafloor:-32767
 /turf/simulated/floor/water/underwater/open icon: icons/turf/open_space.dmi
 /turf/simulated/floor/water/underwater/open state: black_open_lighter
 /turf/simulated/floor/water/underwater/open dir: 2
@@ -282,71 +281,71 @@
 /turf/simulated/floor/water/deep icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/deep state: abyss
 /turf/simulated/floor/water/deep dir: 2
-/turf/simulated/floor/water/deep overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/deep overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/deep/ocean icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/deep/ocean state: abyss
 /turf/simulated/floor/water/deep/ocean dir: 2
-/turf/simulated/floor/water/deep/ocean overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/deep/ocean overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/deep/ocean/diving icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/deep/ocean/diving state: abyss
 /turf/simulated/floor/water/deep/ocean/diving dir: 2
-/turf/simulated/floor/water/deep/ocean/diving overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/deep/ocean/diving overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/deep/pool icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/deep/pool state: abyss
 /turf/simulated/floor/water/deep/pool dir: 2
-/turf/simulated/floor/water/deep/pool overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/deep/pool overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/deep/indoors icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/deep/indoors state: abyss
 /turf/simulated/floor/water/deep/indoors dir: 2
-/turf/simulated/floor/water/deep/indoors overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/deep/indoors overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/deep/virgo3c icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/deep/virgo3c state: abyss
 /turf/simulated/floor/water/deep/virgo3c dir: 2
-/turf/simulated/floor/water/deep/virgo3c overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/deep/virgo3c overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/pool icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/pool state: pool
 /turf/simulated/floor/water/pool dir: 2
-/turf/simulated/floor/water/pool overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/pool overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/blood icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/blood state: rock
 /turf/simulated/floor/water/blood dir: 2
-/turf/simulated/floor/water/blood overlay: icons/turf/outdoors.dmi:bloodshallow:-32767 x2
+/turf/simulated/floor/water/blood overlay: icons/turf/outdoors.dmi:bloodshallow:-32767
 /turf/simulated/floor/water/indoors icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/indoors state: rock
 /turf/simulated/floor/water/indoors dir: 2
-/turf/simulated/floor/water/indoors overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/indoors overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/indoors/virgo3b icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/indoors/virgo3b state: rock
 /turf/simulated/floor/water/indoors/virgo3b dir: 2
-/turf/simulated/floor/water/indoors/virgo3b overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/indoors/virgo3b overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/hotspring icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/hotspring state: rock
 /turf/simulated/floor/water/hotspring dir: 2
-/turf/simulated/floor/water/hotspring overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/hotspring overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/virgo3c icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/virgo3c state: rock
 /turf/simulated/floor/water/virgo3c dir: 2
-/turf/simulated/floor/water/virgo3c overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/virgo3c overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/turfpack icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/turfpack state: rock
 /turf/simulated/floor/water/turfpack dir: 2
-/turf/simulated/floor/water/turfpack overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/turfpack overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/turfpack/airless icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/turfpack/airless state: rock
 /turf/simulated/floor/water/turfpack/airless dir: 2
-/turf/simulated/floor/water/turfpack/airless overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/turfpack/airless overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/turfpack/station icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/turfpack/station state: rock
 /turf/simulated/floor/water/turfpack/station dir: 2
-/turf/simulated/floor/water/turfpack/station overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/turfpack/station overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/turfpack/sif icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/turfpack/sif state: rock
 /turf/simulated/floor/water/turfpack/sif dir: 2
-/turf/simulated/floor/water/turfpack/sif overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/turfpack/sif overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/water/turfpack/thor icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water/turfpack/thor state: rock
 /turf/simulated/floor/water/turfpack/thor dir: 2
-/turf/simulated/floor/water/turfpack/thor overlay: icons/turf/outdoors.dmi:water_shallow:-32767 x2
+/turf/simulated/floor/water/turfpack/thor overlay: icons/turf/outdoors.dmi:water_shallow:-32767
 /turf/simulated/floor/lava icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/lava state: lava
 /turf/simulated/floor/lava dir: 2

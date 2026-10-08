@@ -140,7 +140,7 @@
 	wall_turf.ChangeTurf(/turf/simulated/wall)
 	var/turf/simulated/wall/wall = wall_turf
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	wall.set_material(steel, steel, steel)
+	wall.apply_materials(steel, steel, steel)
 	TEST_ASSERT(!(wall_thermite_coat() in wall.appearance_overlays()), "a bare wall draws no coating")
 	TEST_ASSERT(wall.set_thermite(TRUE), "set_thermite() reports the change")
 	TEST_ASSERT(wall_thermite_coat() in wall.appearance_overlays(), "a coated wall draws it")
