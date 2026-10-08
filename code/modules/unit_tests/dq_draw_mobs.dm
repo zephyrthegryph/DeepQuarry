@@ -159,8 +159,9 @@
 		after++
 	TEST_ASSERT_EQUAL(after, before, "deleting a worm leaves no severed head")
 	var/obj/structure/blob/core/core = allocate(/obj/structure/blob/core, T)
-	refresh_flush()
+	if(!core.overmind)
+		core.create_overmind(null, TRUE) // an AI core makes its overmind at once
 	var/mob/observer/blob/overmind = core.overmind
-	if(overmind)
-		qdel(core)
-		TEST_ASSERT(QDELETED(overmind), "the overmind goes with its core")
+	TEST_ASSERT(overmind, "the core has an overmind")
+	qdel(core)
+	TEST_ASSERT(QDELETED(overmind), "the overmind goes with its core")
