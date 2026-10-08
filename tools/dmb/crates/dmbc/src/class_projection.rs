@@ -2,6 +2,10 @@
 //! remains separate: instance declarations are variable records, shared fields
 //! additionally acquire VM footer slots, and field selectors remain strings.
 use crate::initializer_policy::DefaultValue;
+mod callbacks;
+mod headers;
+pub use callbacks::materialize_callback_flags;
+pub(super) use headers::finalize_headers;
 use dm_ir::{SemanticValue, SymbolId, SymbolicExpression};
 use dm_link::Key;
 use dm_tree::{DefinitionMode, MemberKind, OccurrenceId, Target, TreeSnapshot};

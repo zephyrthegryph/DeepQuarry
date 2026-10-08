@@ -798,6 +798,12 @@ fn compose_records(
             values,
         )
         .map_err(|e| unsupported(format!("class members {e:?}")))?;
+        crate::class_projection::finalize_headers(
+            &mut dmb, engine_bytes, plan, &batch.tables, symbols,
+        )
+        .map_err(|e| unsupported(format!("class headers {e:?}")))?;
+        crate::class_projection::materialize_callback_flags(&mut dmb, plan, &batch.tables)
+            .map_err(|e| unsupported(format!("class callbacks {e:?}")))?;
     }
     if let Some(stage) = stage {
         let attached = stage.apply(&mut dmb, batch).map_err(unsupported)?;

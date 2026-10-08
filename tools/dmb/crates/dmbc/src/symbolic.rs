@@ -382,6 +382,10 @@ pub fn freeze_artifact_tables(
             return Err(IntegrationError::DuplicateUnit(unit.identity));
         }
     }
+    // Tiny per-procedure scopes materially perturb throughput and yield broad
+    // quantization bounds. Enable them only for a separate diagnostic run.
+    let freeze_detail =
+        std::env::var_os("DMB_PROFILE_FREEZE_DETAIL").is_some_and(|value| value == "1");
     let freeze_profile = dm_profile::stage("linking.freeze_artifacts");
     for mut lowered in batch.units {
         let frozen = freeze_artifact(
@@ -391,6 +395,7 @@ pub fn freeze_artifact_tables(
             external,
             &mut inventory,
             &mut string_inventory,
+            freeze_detail,
         )?;
         for id in [lowered.identity.owner, lowered.identity.name] {
             string_inventory.append_spelling(
@@ -428,6 +433,7 @@ pub fn freeze_artifact_tables(
                 external,
                 &mut inventory,
                 &mut string_inventory,
+                freeze_detail,
             )?;
             append_debug_inventory(&helper.debug_origins, &mut inventory, &mut string_inventory);
             let key = helper_key(helper.owner, helper.argument);
@@ -499,6 +505,7 @@ pub fn freeze_artifact_tables(
             external,
             &mut inventory,
             &mut string_inventory,
+            freeze_detail,
         )?;
         append_debug_inventory(&unit.debug_origins, &mut inventory, &mut string_inventory);
         let mut content = b"dm-initializer-code-v1\0".to_vec();
@@ -765,6 +772,7 @@ fn freeze_artifact(
     external: &ReferenceBindings,
     inventory: &mut LinkInventory,
     strings: &mut StringInventory,
+    freeze_detail: bool,
 ) -> Result<FrozenProc, IntegrationError> {
     let mut bindings = BTreeMap::new();
     for spelling in &code.procedure.strings {
@@ -878,12 +886,14 @@ fn freeze_artifact(
             Ok(selected)
         },
         |stage| {
-            dm_profile::stage(match stage {
-                FreezeStage::Encoding => "freeze.encoding",
-                FreezeStage::DecodeValidation => "freeze.decode_validation",
-                FreezeStage::Binding => "freeze.semantic_binding",
-                FreezeStage::SymbolicConstruction => "freeze.symbolic_construction",
-                FreezeStage::SiteValidation => "freeze.site_validation",
+            freeze_detail.then(|| {
+                dm_profile::stage(match stage {
+                    FreezeStage::Encoding => "freeze.encoding",
+                    FreezeStage::DecodeValidation => "freeze.decode_validation",
+                    FreezeStage::Binding => "freeze.semantic_binding",
+                    FreezeStage::SymbolicConstruction => "freeze.symbolic_construction",
+                    FreezeStage::SiteValidation => "freeze.site_validation",
+                })
             })
         },
     )

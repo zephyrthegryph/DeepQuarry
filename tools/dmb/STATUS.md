@@ -4,6 +4,8 @@
 
 ## Implemented and checked
 
+- Detailed freeze instrumentation in compiler k failed the independent CPU check (covered/process interval 0.89984–0.93309) and added substantial measurement overhead. Its timings are rejected as performance evidence. Fine freeze spans now require `DMB_PROFILE_FREEZE_DETAIL=1`; normal tracing retains the broader measurements. Allocation observations identify owned decode validation as a substantial allocation source, but the fine CPU bounds cannot rank those stages reliably.
+
 - Commit `83c1f30d9f`: bounded persistent ABI worker pool, reuse of captured resource demand, indexed missing-resource lookup, and same-thread interval-union CPU coverage.
 - Commit `8d667228af`: release rich procedure IR after freezing, sorted branch-target validation, private-module cleanup throughout native crates, lexical proc-wide settings, parser fragment version 5, explicit `view(usr, 1)` source metadata, and a workspace source-size gate.
 - The preceding full release suite passed **1,403 tests, zero failures** (`review-piecewise-split-workspace.log`). This count describes that snapshot.
