@@ -1,5 +1,6 @@
 /// Actual bonfire completion returns all five configured wood sheets and removes the fire.
 /datum/unit_test/interim_bonfire_dismantle/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/bonfire/fire = allocate(/obj/structure/bonfire, T)
@@ -7,7 +8,7 @@
 	TEST_ASSERT(!fire.burning, "the fixture is an extinguished bonfire")
 	TEST_ASSERT_EQUAL(fire.get_fuel_amount(), 0, "the real bonfire starts without fuel")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/stack/material/wood)), 0, "the floor starts without recovered wood")
-	fire.dismantle_timed_done(user)
+	test_op_handler(fire, "dismantle_done", user)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(fire), "actual dismantling completion consumes the bonfire")
 	TEST_ASSERT_NULL(locate_within(T, /obj/structure/bonfire), "completion leaves no duplicate bonfire")
@@ -17,6 +18,7 @@
 		sheets += wood.get_amount()
 	TEST_ASSERT_EQUAL(sheets, 5, "actual completion returns exactly five wood sheets")
 	TEST_ASSERT_NULL(user.get_active_hand(), "dismantling does not equip recovered material")
+	test_driver_end()
 
 /// Actual catwalk deconstruction returns two rods on solid floor and its installed tile.
 /datum/unit_test/interim_catwalk_dismantle

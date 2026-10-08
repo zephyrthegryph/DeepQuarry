@@ -3338,3 +3338,14 @@ Pins were taken from the machinery side on every conflict and regenerated with `
 * **`hit_pins/` thermal glasses, sechailer, kinetic crusher**: the `refresh_bits: 2 -> 0` rows are gone. A draw mark no longer stays pending after the hit: the `add_overlay()` single-blocker fix (draw framework) means the emissive redraw these items queued is settled inside the hit. `refresh_queued` rows remain.
 * **Line numbers**: two `runtime while making it` rows (stardog, nikki rig) carry the line of `lifecycle_links.dm` in the stack; the link teardown call added two lines.
 * **Not blessed**: the `look_trees` row of `electronic_assembly` (it would record the pre-existing `op_clash` runtime in place of its overlay) stays as before.
+
+## Timed actions as ops, B additions
+
+Pinned by `code/modules/unit_tests/dq_timed_pin_w8_behaviour.dm` (nine pins green on the legacy forms; the mop, plastique, ladder weld, maintenance panel weld, hardsuit cable mend and blank-envelope open could not be driven on the legacy form, because the driver's click does not reach a legacy `afterattack()` / `*_act()` override, and were dropped).
+
+* **Class: the target of the task is the real target.** The DNA injector, tape roll and mail used to name the item as the task's target, so a patient who left or was deleted did not stop the work. The op's target is the patient; a lost patient ends the work. Pins: `dna_injector` (no loss line), `tape_*`.
+* **Class: a refusal the old handler wrote is a requirement with the same words.** The grip, head, eyes, mouth, worn face cover, the smart magazine's attached cell, and the bag-valve mask's seal; a roll used in the help stance falls through (`stance(I_DISARM, I_GRAB, I_HURT)`) instead of answering a failure.
+* **Class: the grip on a taped patient is checked when the work ends too**, as the old done procs did.
+* **Class: a latent legacy bug is fixed.** Cable mended a hardsuit module only when `damage != 1`, yet the handler let only `damage == 1` through, so cable never mended anything. Now an almost destroyed module (2) is mended to 1 and 0 and 1 are refused ("no damage" / "crude tools").
+* **Class: a refusal that was a balloon alert is a chat line** (someone else's mail; the pins do not assert it).
+* A bonfire that is empty (or a permanent one) is taken apart by its own `dismantle` op; the fuel is taken out by `hand`. A blank envelope has `seal` (unsealed) and `open` (sealed) in hand; opening a blank envelope still hands nothing out (`special_handling`), as before.

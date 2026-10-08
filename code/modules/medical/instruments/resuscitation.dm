@@ -19,21 +19,28 @@
 	icon_state = "medical"
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/bag_valve_mask/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	var/mob/living/carbon/human/H = M
-	if(!istype(H) || stance == I_HURT)
-		return ..()
-	if(!H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_MASK) && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
-		to_chat(user, span_warning("You can't get a seal over [H]'s face."))
-		return ITEM_INTERACT_SUCCESS
-	act_message(user, src, MSG_SELF(span_notice("You seal %T% over [H]'s face and start squeezing.")), \
-		MSG_OTHERS(span_notice("%U% seals %T% over [H]'s face and starts squeezing.")))
-	task_timed(user, 2 SECONDS, H, src, PROC_REF(squeeze_done), list(user, H))
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF(bvm/sealing, span_notice("You seal %I% over %T%'s face and start squeezing."), span_notice("%U% seals %I% over %T%'s face and starts squeezing."))
+MSG_DEF_SELF(bvm/no_seal, span_warning("You can't get a seal over %T%'s face."))
 
-/obj/item/bag_valve_mask/proc/squeeze_done(mob/living/user, mob/living/carbon/human/H)
-	if(!apply_ventilation(H))
-		to_chat(user, span_warning("The bag won't empty - air isn't getting into [H]'s lungs!"))
+CAPABILITIES(/obj/item/bag_valve_mask)
+	op("squeeze", at_target(/mob/living/carbon/human), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Ventilate"),
+		needs(req_adjacent(), req(PROC_REF(sealable), because = MSG(bvm/no_seal))), begins(MSG(bvm/sealing)), wait(2 SECONDS), then(PROC_REF(squeeze_done)))
+
+/// Requirement: the patient has a mouth and nothing worn covers the face (what is worn is fixed while the click is decided).
+/obj/item/bag_valve_mask/proc/sealable(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	if(!read_once(H.check_has_mouth()))
+		return FALSE
+	var/obj/item/mask = H.get_equipped_item(SLOT_ID_MASK)
+	if(mask && (read_once(mask.body_parts_covered) & FACE))
+		return FALSE
+	var/obj/item/hat = H.get_equipped_item(SLOT_ID_HEAD)
+	return !(hat && (read_once(hat.body_parts_covered) & FACE))
+
+/obj/item/bag_valve_mask/proc/squeeze_done(datum/act/op/A)
+	if(!apply_ventilation(A.target))
+		to_chat(A.actor, span_warning("The bag won't empty - air isn't getting into [A.target]'s lungs!"))
+	return OP_OK
 
 /// Deliver a cycle of breaths: a floor under the breathing drive. It can't
 /// push past a closed airway (the airway factor still multiplies it), so the
@@ -55,26 +62,35 @@
 	/// Airway treatment delivered per use.
 	var/airway_amount = 60
 
-/obj/item/airway_kit/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	var/mob/living/carbon/human/H = M
-	if(!istype(H) || stance == I_HURT)
-		return ..()
-	if(target_zone != O_MOUTH && target_zone != BP_HEAD)
-		to_chat(user, span_warning("Aim for [H]'s mouth."))
-		return ITEM_INTERACT_SUCCESS
-	if(!H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_MASK) && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)))
-		to_chat(user, span_warning("You can't get into [H]'s mouth."))
-		return ITEM_INTERACT_SUCCESS
-	act_message(user, src, MSG_SELF(span_notice("You start working %T% into [H]'s airway.")), \
-		MSG_OTHERS(span_notice("%U% starts working %T% into [H]'s airway.")))
-	task_timed(user, 4 SECONDS, H, src, PROC_REF(airway_done), list(user, H))
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF(airway_kit/working, span_notice("You start working %I% into %T%'s airway."), span_notice("%U% starts working %I% into %T%'s airway."))
+MSG_DEF_SELF(airway_kit/aim, span_warning("Aim for %T%'s mouth."))
+MSG_DEF_SELF(airway_kit/no_mouth, span_warning("You can't get into %T%'s mouth."))
 
-/obj/item/airway_kit/proc/airway_done(mob/living/user, mob/living/carbon/human/H)
+CAPABILITIES(/obj/item/airway_kit)
+	op("clear_airway", at_target(/mob/living/carbon/human), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Clear the airway"),
+		needs(req_adjacent(), req(PROC_REF(aimed_at_mouth), because = MSG(airway_kit/aim)), req(PROC_REF(mouth_open), because = MSG(airway_kit/no_mouth))),
+		begins(MSG(airway_kit/working)), wait(4 SECONDS), then(PROC_REF(airway_done)))
+
+/// Requirement: the user aims at the mouth or the head (what is aimed at is fixed while the click is decided).
+/obj/item/airway_kit/proc/aimed_at_mouth(datum/act/op/A)
+	var/zone = read_once(A.actor.zone_sel?.selecting)
+	return zone == O_MOUTH || zone == BP_HEAD
+
+/// Requirement: the patient has a mouth and no mask over it.
+/obj/item/airway_kit/proc/mouth_open(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	if(!read_once(H.check_has_mouth()))
+		return FALSE
+	var/obj/item/mask = H.get_equipped_item(SLOT_ID_MASK)
+	return !(mask && (read_once(mask.body_parts_covered) & FACE))
+
+/obj/item/airway_kit/proc/airway_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
 	if(clear_airway(H))
-		act_message(user, H, MSG_SELF(span_notice("You clear %T%'s airway.")), MSG_OTHERS(span_notice("%U% clears %T%'s airway.")))
+		act_message(A.actor, H, MSG_SELF(span_notice("You clear %T%'s airway.")), MSG_OTHERS(span_notice("%U% clears %T%'s airway.")))
 	else
-		to_chat(user, span_notice("[H]'s airway is already clear."))
+		to_chat(A.actor, span_notice("[H]'s airway is already clear."))
+	return OP_OK
 
 /obj/item/airway_kit/proc/clear_airway(mob/living/carbon/human/H)
 	return H.mend(TREAT_AIRWAY, airway_amount) > 0

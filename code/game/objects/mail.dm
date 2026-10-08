@@ -93,13 +93,15 @@ TRACKED(/obj/item/mail/blank, set_recipient)
 CAPABILITIES(/obj/item/mail/blank)
 	// a blank envelope is sealed or opened in hand, not unwrapped
 	without("unwrap")
-	op("seal", in_hand(), label("Seal or open"), then(PROC_REF(interaction_seal)))
+	op("seal", in_hand(), label("Seal"), when(cond_not(nameof(sealed))), wait(1.5 SECONDS), then(PROC_REF(seal_done)))
+	op("open", in_hand(), label("Open"), when(nameof(sealed)), priority(OP_PRIORITY_NORMAL + 1), needs(req(PROC_REF(may_open), because = MSG(mail/not_yours))), claims(),
+		wait(1.5 SECONDS), then(PROC_REF(unwrap_timed_done)))
 	// a pen addresses a sealed envelope (to a player picked from the directory)
 	op("address", item(/obj/item/pen), label("Address"), priority(OP_PRIORITY_PART + 1),
 		asks(/datum/prompt/choice, fields = list("title" = "Recipients", "question" = "Choose recipient", "choices" = computed(PROC_REF(recipient_choices)), "timeout" = 0), when = PROC_REF(addressable)),
 		then(PROC_REF(recipient_chosen)))
 	// the old attackby: anything goes inside an open, empty envelope (a tagger tags it first, then goes on here)
-	op("put_in", item(/obj/item), label("Put inside"), then(PROC_REF(interaction_blank_item)))
+	op("put_in", item(/obj/item), label("Put inside"), when(req(PROC_REF(fillable))), wait(1.5 SECONDS), then(PROC_REF(placed_inside)))
 	// alt-click takes the contents back out of an open envelope
 	op("take_out", hand(), ungated(), gesture(GESTURE_ALT), label("Take out"), then(PROC_REF(interaction_alt)))
 
@@ -107,31 +109,18 @@ CAPABILITIES(/obj/item/mail/blank)
 /obj/item/mail/blank/proc/addressable(datum/act/op/A)
 	return sealed && !set_recipient
 
-/// Old attackby: the item goes inside an open, empty envelope.
-/obj/item/mail/blank/proc/interaction_blank_item(datum/act/op/A)
+/// An open, empty envelope takes an item (what it holds and whether it is sealed are fixed while the click is decided).
+/obj/item/mail/blank/proc/fillable(datum/act/op/A)
+	return !read_once(set_content) && !sealed
+
+/obj/item/mail/blank/proc/placed_inside(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	if(!set_content && !sealed)
-		task_start(/datum/task/timed/blank_attackby, user, user, receiver = src, W = W)
-	return OP_PASS
-
-/datum/task/timed/blank_attackby
-	duration = 1.5 SECONDS
-	complete_proc = /obj/item/mail/blank/proc/attackby_timed_done
-	cancel_proc = /obj/item/mail/blank/proc/attackby_timed_failed
-	var/obj/item/W
-
-/obj/item/mail/blank/proc/attackby_timed_done(datum/task/timed/blank_attackby/task)
-	var/obj/item/W = task.W
-	var/mob/user = task.actor
 	user.drop_item()
 	W.forceMove(src)
 	balloon_alert(user, "placed \the [W] into \the [src]")
 	set_content = TRUE
-	return
-
-/obj/item/mail/blank/proc/attackby_timed_failed(datum/task/timed/blank_attackby/task)
-	set_content = FALSE
+	return OP_OK
 
 /// The players who can be sent mail (not antagonists, and listed in the directory).
 /obj/item/mail/blank/proc/recipient_choices(datum/act/op/A)
@@ -177,21 +166,10 @@ CAPABILITIES(/obj/item/mail/blank)
 	if(A.answer.value && !sealed)
 		desc = "A signed envelope, from [A.answer.value]."
 
-/// Old attack_self: seal an open envelope, or open a sealed one.
-/obj/item/mail/blank/proc/interaction_seal(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!sealed)
-		task_timed(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list())
-		return OP_OK
-	unwrap(user)
-	return OP_OK
-
-/obj/item/mail/blank/proc/attack_self_timed_done()
+/// The envelope is sealed.
+/obj/item/mail/blank/proc/seal_done(datum/act/op/A)
 	set_sealed(TRUE)
-	return
-
-/obj/item/mail/blank/proc/attack_self_timed_failed()
-	set_sealed(FALSE)
+	return OP_OK
 
 DECLARE_APPEARANCE_PROC(/obj/item/mail, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/mail/appearance_overlays()
@@ -224,7 +202,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/mail, TYPE_PROC_REF(/atom, appearance_overlays
 
 CAPABILITIES(/obj/item/mail)
 	// the old attack_self: open the letter
-	op("unwrap", in_hand(), label("Unwrap"), then(PROC_REF(interaction_unwrap)))
+	op("unwrap", in_hand(), label("Unwrap"), needs(req(PROC_REF(may_open), because = MSG(mail/not_yours))), claims(), wait(1.5 SECONDS), then(PROC_REF(unwrap_timed_done)))
 	// a destination tagger labels it
 	op("tag", item(/obj/item/destTagger), label("Tag"), priority(OP_PRIORITY_PART + 2), then(PROC_REF(interaction_tag)))
 
@@ -245,29 +223,22 @@ CAPABILITIES(/obj/item/mail)
 		balloon_alert(user, "destination not set!")
 
 
-/// Old attack_self: open the letter.
-/obj/item/mail/proc/interaction_unwrap(datum/act/op/A)
-	unwrap(A.actor)
-	return OP_OK
+MSG_DEF_SELF(mail/not_yours, "You can't open somebody's mail! That's <em>illegal</em>")
 
-/obj/item/mail/proc/unwrap(mob/user)
-	if(addressee)
-		var/datum/mind/recipient = addressee
-		if(recipient && recipient.current?.dna.unique_enzymes != user.dna.unique_enzymes)
-			balloon_alert(user, "you can't open somebody's mail! That's <em>illegal</em>")
-			return FALSE
-
-	if(task_busy(src)) // opening claims the envelope
-		balloon_alert(user, "already opening that!")
-		return FALSE
-
-	return !istext(task_timed(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(unwrap_timed_done), done_args = list(user), busy = src))
+/// Somebody else's mail stays shut: the addressee's enzymes are the opener's (who is who is fixed while the click is decided).
+/obj/item/mail/proc/may_open(datum/act/op/A)
+	var/datum/mind/recipient = read_once(addressee)
+	if(!recipient)
+		return TRUE
+	var/mob/user = A.actor
+	return read_once(recipient.current?.dna.unique_enzymes) == read_once(user.dna.unique_enzymes)
 
 /// Opened: out come the contents (special handling keeps them in).
-/obj/item/mail/proc/unwrap_timed_done(mob/user)
+/obj/item/mail/proc/unwrap_timed_done(datum/act/op/A)
 	if(special_handling)
-		return
-	after_unwrap(user)
+		return OP_OK
+	after_unwrap(A.actor)
+	return OP_OK
 
 /obj/item/mail/proc/after_unwrap(mob/user)
 	user.temporarilyRemoveItemFromInventory(src, TRUE)
