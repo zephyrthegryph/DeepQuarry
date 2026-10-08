@@ -3,6 +3,7 @@
 	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	user.enable_godmode() // the ten-second waits would leave a bare human unable to act
 	var/obj/item/reagent_containers/food/snacks/customizable/fullycustom/sandwich = allocate(/obj/item/reagent_containers/food/snacks/customizable/fullycustom, T)
 	var/obj/item/reagent_containers/food/snacks/donut/ingredient = allocate(/obj/item/reagent_containers/food/snacks/donut, T)
 	sandwich.reagents.clear_reagents()

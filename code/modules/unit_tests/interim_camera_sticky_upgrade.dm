@@ -1,5 +1,6 @@
 /// The real camera upgrade route respects inventory release and records removable list members from its first insertion.
 /datum/unit_test/interim_camera_sticky_upgrade/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/camera_assembly/assembly = allocate(/obj/item/camera_assembly, T)
@@ -10,12 +11,12 @@
 	TEST_ASSERT(user.put_in_active_hand(upgrade), "the actor holds the actual supported camera upgrade")
 	add_trait(upgrade, TRAIT_NODROP, "interim_camera_sticky_upgrade")
 	TEST_ASSERT(user.release_refusal(upgrade, user), "the real inventory refuses the sticky upgrade")
-	assembly.interaction_item(user, upgrade, null)
+	test_click(user, assembly, upgrade)
 	TEST_ASSERT_NULL(assembly.upgrades, "refused release records no upgrade member")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), upgrade, "refused release preserves the exact held slot")
 	TEST_ASSERT_EQUAL(upgrade.loc, user, "refused release preserves actual inventory containment")
 	remove_trait(upgrade, TRAIT_NODROP, "interim_camera_sticky_upgrade")
-	assembly.interaction_item(user, upgrade, null)
+	test_click(user, assembly, upgrade)
 	TEST_ASSERT(islist(assembly.upgrades), "the first actual upgrade creates a real upgrade list")
 	TEST_ASSERT_EQUAL(LAZYLEN(assembly.upgrades), 1, "the first actual upgrade records exactly one member")
 	TEST_ASSERT(upgrade in assembly.upgrades, "the actual upgrade list contains the original sensor")

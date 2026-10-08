@@ -1,10 +1,11 @@
 /// Installing the actual held kit consumes its hand item and creates one floor structure at the actor's turf.
 /datum/unit_test/interim_floor_light_install/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/floor_light/kit = allocate(/obj/item/floor_light, T)
 	TEST_ASSERT(user.put_in_active_hand(kit), "the actual floor light kit is held")
-	TEST_ASSERT_EQUAL(kit.interaction_self(user, kit, null), TRUE, "actual floor light installation succeeds")
+	test_click(user, kit, kit, GESTURE_SELF)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(kit), "installation consumes the actual kit")
 	TEST_ASSERT_NULL(user.get_active_hand(), "installation correctly vacates the original kit's hand")
@@ -16,6 +17,7 @@
 
 /// A sticky floor light kit refuses installation before either a floor structure or hand mutation occurs.
 /datum/unit_test/interim_floor_light_install_refusal/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/floor_light/kit = allocate(/obj/item/floor_light, T)
@@ -23,7 +25,7 @@
 	add_trait(kit, TRAIT_NODROP, "interim_floor_light_install")
 	TEST_ASSERT(kit.loc.release_refusal(kit, user), "the actual sticky kit refuses release")
 	TEST_ASSERT(kit.can_install(user, kit, kit) != TRUE, "the installation requirement rejects the actual sticky kit")
-	TEST_ASSERT_EQUAL(kit.interaction_self(user, kit, null), FALSE, "the actual installation callback respects kit refusal")
+	test_click(user, kit, kit, GESTURE_SELF)
 	own_turf_contents(T)
 	TEST_ASSERT(!QDELETED(kit), "refusal preserves the actual kit")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), kit, "refusal preserves the kit's actual hand")

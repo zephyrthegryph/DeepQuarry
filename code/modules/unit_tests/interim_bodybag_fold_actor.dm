@@ -3,6 +3,7 @@
 	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	actor.enable_godmode() // five-second waits pass over this actor several times: a bare human would not stay conscious
 	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/closet/body_bag/cryobag/bag = allocate(/obj/structure/closet/body_bag/cryobag, T)
 	var/obj/item/reagent_containers/syringe/injector = allocate(/obj/item/reagent_containers/syringe, T)

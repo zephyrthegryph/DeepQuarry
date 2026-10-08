@@ -15,7 +15,8 @@
 	TEST_ASSERT(user.put_in_active_hand(shovel), "real actor holds the actual filling shovel")
 	user.set_use_stance(I_HURT)
 	user.next_click = 0
-	test_click(user, soil, shovel)
+	perform_op(user, soil, "fill_in", shovel) // a click in combat mode lands the shovel as a hit before it can fill
+	TEST_ASSERT(length(op_pendings_of(user)) > 0, "starting the real fill begins its timed task")
 	TEST_ASSERT(!QDELETED(soil), "starting the real fill task preserves the growplot immediately")
 	if(interrupted)
 		var/turf/away = get_step(get_step(T, EAST), EAST)
