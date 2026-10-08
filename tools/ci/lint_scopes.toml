@@ -97,6 +97,12 @@ try_calls = []
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 exempt_files = ["code/__defines/tgs.dm"]
 
+[lint.derived_reads.lists]
+# The window hosts whose ui_data(A) is held to "read only what is tracked" (untracked_ui_read, and undeclared_read for an exact type): the hosts
+# that have been converted (no SStgui.update_uis() or hand changed() mark left). A host joins here in the commit that converts it; when the last
+# window host is in, the list goes and the rule is global. Exact owner types.
+ui_hosts = []
+
 [lint.tracked]
 # tracked_lint.py exempt_path(): the TRACKED/SETTER/derive() index still reads these files; writes in them
 # are not counted.
@@ -255,6 +261,9 @@ core = [
 [lint.check_grep.lists]
 # The folders (a directory ends in `/`, else an exact file) where the legacy declaration forms of the sweeps (DECLARE_INTERACTIONS and EXTEND_INTERACTIONS,
 # DAMAGE_REACTION, DECLARE_EMAG, DECLARE_PERIODIC, DECLARE_REPEAT) reached zero: a hard ban there. Folders are only ever added.
+# The files (a directory ends in `/`, else an exact file) with no SStgui.update_uis() and no hand changed() mark left: a window there updates because its
+# ui_data(A) re-runs when something it reads changes. A hard ban there. Files are only ever added.
+ui_push_converted = []
 legacy_forms_converted = [
   "code/ATMOSPHERICS/",
   "code/_global_vars/",
@@ -638,6 +647,14 @@ banned = [
   "own_put = rel_add(holder, nameof(v), value, key): the engine's accessor is _own_put, never called from content",
   "ability_pay = a malf ability's price is costs = list(\"[RES_CPU]\" = price) on its request, or res_spend(user, RES_CPU, price) when it asks nothing",
   "explosion_contents_severity = declare blast_contents() (code/library/structures/blast_contents.dm); the explosion service reads explosion_contents_severity_of()",
+  "om_ui_bind = the window push is the UI push system (code/modules/tgui/ui_push.dm): a tracked change marks the host, phase R pushes once per frame",
+  "om_ui_unbind = the window push is the UI push system (code/modules/tgui/ui_push.dm)",
+  "om_ui_bind_table = the window push is the UI push system (code/modules/tgui/ui_push.dm)",
+  "om_ui_push = the window push is the UI push system: /datum/tgui/push_coalesced() (code/modules/tgui/ui_push.dm)",
+  "om_ui_status_bind = a window's status is /datum/tgui/status_watch() (code/modules/tgui/ui_status.dm)",
+  "om_ui_status_unbind = a window's status is /datum/tgui/status_unwatch() (code/modules/tgui/ui_status.dm)",
+  "om_ui_status = a window's status is re-checked in phase R by the UI push system (code/modules/tgui/ui_status.dm)",
+  "tgui_change_mask = the window push is the UI push system: nothing names change channels",
   "DECLARE_UI = interface(\"Window\") in the type's CAPABILITIES block (doc/rewrite/final_api.html section 13)",
   "DECLARE_UI_STATE = interface(..., state = nameof(GLOB.x_state)), or a tgui_state() override for a state per instance",
   "UI_ACT = op(\"action\", ui_act(\"action\", arg(...)), needs(...), then(PROC_REF(handler))) with handler(datum/act/op/A, args...)",
