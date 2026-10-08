@@ -1184,6 +1184,7 @@
 #include "dq_timer_argument_core_tests.dm"
 #include "dq_timer_argument_mob_tests.dm"
 #include "dq_timer_argument_transport_tests.dm"
+#include "dq_after_sequence_tests.dm"
 #include "dq_ownership_accessor_retirement_tests.dm"
 #include "dq_ownership_policy_retirement_tests.dm"
 #include "dq_ownership_teardown_retirement_tests.dm"
