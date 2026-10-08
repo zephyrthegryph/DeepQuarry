@@ -224,7 +224,7 @@ pub(super) fn plan_with_memo<P: SourceProvider>(
     for (name, definition) in &pass.plan.final_macros {
         pass.environment.insert(name, definition.clone(), None);
     }
-    let occurrence = pass.occurrence(project, None, Span::default(), 1);
+    let occurrence = pass.occurrence(project, None, None, Span::default(), 1);
     pass.visit(occurrence);
     pass.plan
 }
@@ -396,15 +396,16 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         &mut self,
         path: &Path,
         parent: Option<usize>,
+        include_spelling: Option<&Path>,
         directive_span: Span,
         directive_line: usize,
     ) -> usize {
         let index = self.plan.occurrences.len();
         let semantic_path = if let Some(parent) = parent {
             let parent_occurrence = &self.plan.occurrences[parent];
-            let relative = path
-                .strip_prefix(parent_occurrence.path.parent().unwrap_or(Path::new("")))
-                .unwrap_or(path);
+            // Preserve the authored include operand. Recovering it from an
+            // access path can leak drive/UNC roots after host normalization.
+            let relative = include_spelling.expect("child occurrence has include spelling");
             Path::new(parent_occurrence.semantic_path.as_ref())
                 .parent()
                 .unwrap_or(Path::new(""))
@@ -699,8 +700,8 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             .path
             .parent()
             .unwrap_or(Path::new(""))
-            .join(relative);
-        let occurrence = self.occurrence(&child, Some(parent), span, line);
+            .join(&relative);
+        let occurrence = self.occurrence(&child, Some(parent), Some(&relative), span, line);
         let kind = match child.extension().and_then(|extension| extension.to_str()) {
             Some(extension) if extension.eq_ignore_ascii_case("dmm") => Some(NonTextKind::Map),
             Some(extension) if extension.eq_ignore_ascii_case("dmf") => Some(NonTextKind::Skin),

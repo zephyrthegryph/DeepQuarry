@@ -162,6 +162,12 @@ cross-root sharing. Symlink/junction identity and case aliasing require captured
 Text includes resolve relative to the containing file, as observed in the base source.
 FILE_DIR resource roots resolve against the project directory. Host canonicalization is shared by fresh directive execution and cached effect
 replay. Provenance retains both that access identity and include spelling.
+Include spelling is carried directly from the authored operand. It is never
+recovered by stripping a parent directory from the host access path: on Windows,
+joining onto a verbatim (`\\?\`) host path removes `.` and `..` components, so a
+sibling include can cease to have its containing directory as a prefix. Falling
+back to that access path would insert the worktree root into semantic values.
+The nested-parent regression covers ordinary and verbatim roots independently.
 `__FILE__` uses the emitted spelling, not the normalized access identity. `__LINE__` is the current consuming line. These expansions
 are position dependencies; regions not observing them may share values across files.
 The base's simple `normalize` implementation drops parent components by popping; this

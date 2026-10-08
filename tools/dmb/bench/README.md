@@ -48,7 +48,7 @@ Replace the example compiler token with the actual frozen executable path. `--ca
 
 The profiler contract is schema 1. For trace `run.trace.json`, it reads `run.trace.report.json`, retaining `critical_path_cpu_s`, `total_cpu_s`, stages, I/O bytes, allocation availability and private memory. Chrome trace and sibling CPU/wall folded stacks and SVGs remain raw evidence.
 
-New Windows reports retain `thread_calibrations`: each participating thread needs its own naturally observed CPU envelope and at least two disjoint 500 ms stability windows. Missing or unstable conversion blocks CPU acceptance. Envelope quantization uncertainty must be at most 5%, and the independent covered/process CPU crosscheck still has its 5% tolerance. Older startup-calibrated receipts retain their original interpretation; they are never relabelled as per-thread measurements. Coarse audit counters cannot repair missing high-resolution CPU.
+New Windows reports retain `thread_calibrations` with local paired-clock windows. High-resolution conversion uses only covered intervals on that same thread; short tails remain unknown. The human approved explicit uncertainty bounds for short workers. Reports identify this separate acceptance path with `cpu_bounds_method: "paired_thread_cpu_quantization"`: budgets use upper endpoints, and the entire covered/process CPU ratio interval must fit within 5%. No midpoint or process-total scaling is used. Older startup-calibrated receipts retain their original interpretation and are never relabelled.
 
 `stage-map.json` must explicitly map nonoverlapping, sequential trace stage names to every revision-5 budget domain: `input`, `frontend`, `tree`, `resources_maps`, `abi_initializers`, `lowering`, `link`, `composition_publication`. Names must come from actual trace output. Do not map nested spans twice or guess names before instrumentation is wired. Critical-path totals must be issued by the profiler's explicit sequential top-stage configuration. Missing domains or metrics block acceptance.
 
@@ -64,7 +64,7 @@ The importer preserves raw small receipts byte-for-byte in `receipts/`, records 
 
 ## Measurement-quality gate
 
-CPU acceptance requires finite, nonnegative metrics (positive CPU totals), an identified thread clock, and a usable startup calibration. Windows must report positive cycle rate, calibration CPU and calibration wall duration. Native Linux thread CPU uses its nanosecond clock and does not need a cycle rate.
+CPU acceptance requires finite, nonnegative measurements, an identified thread clock and complete evidence for calibrated scalars or explicit uncertainty bounds. Legacy Windows startup reports retain their original positive rate and calibration durations. Native Linux uses its thread nanosecond clock. Bounded rows preserve unknown precise scalar fields. Median rows separately record `critical_path_cpu_budget_upper_s` and `cpu_acceptance_basis`; that upper bound is used for budgets and regression history, never presented as a precise CPU measurement.
 
 Covered exclusive thread CPU must agree with process CPU within **5%**. This is a measurement-quality tolerance, not permission to exceed an acceptance budget. The reported crosscheck must match its recorded totals; exclusive stage sums must match covered CPU. Missing clock samples, invalid stage names/counts, duplicate stages or inconsistent CPU sums decline acceptance. Allocation counting must be explicitly enabled and show observed allocations, not just a build-feature flag.
 

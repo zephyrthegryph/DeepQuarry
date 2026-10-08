@@ -29,6 +29,9 @@ pub struct StageReport {
     pub cpu_s: Option<f64>,
     pub max_thread_cpu_s: Option<f64>,
     pub exclusive_cpu_s: Option<f64>,
+    pub cpu_bounds_s: Option<clock::CpuBounds>,
+    pub max_thread_cpu_bounds_s: Option<clock::CpuBounds>,
+    pub exclusive_cpu_bounds_s: Option<clock::CpuBounds>,
     pub coarse_thread_cpu_s: Option<f64>,
     pub coarse_max_thread_cpu_s: Option<f64>,
     pub coarse_exclusive_thread_cpu_s: Option<f64>,
@@ -63,6 +66,12 @@ pub struct Report {
     pub critical_path_stages: Vec<String>,
     pub total_cpu_s: Option<f64>,
     pub covered_thread_cpu_s: Option<f64>,
+    pub critical_path_cpu_bounds_s: Option<clock::CpuBounds>,
+    pub covered_thread_cpu_bounds_s: Option<clock::CpuBounds>,
+    pub cpu_crosscheck_ratio_bounds: Option<clock::CpuBounds>,
+    pub cpu_bounds_method: &'static str,
+    pub covered_cpu_bounds_method: &'static str,
+    pub cpu_bounds_quantum_s: f64,
     pub peak_private_bytes: Option<u64>,
     pub peak_private_scope: &'static str,
     pub peak_allocator_live_bytes: u64,
@@ -86,6 +95,9 @@ pub struct Report {
 struct Entry {
     report: StageReport,
     threads: BTreeMap<String, u64>,
+    intervals: BTreeMap<String, Vec<clock::CpuInterval>>,
+    exclusive_intervals: BTreeMap<String, Vec<clock::CpuInterval>>,
+    interval_missing: bool,
     exclusive: u64,
     exclusive_threads: BTreeMap<String, u64>,
     cpu_valid: bool,
@@ -99,7 +111,7 @@ struct Entry {
 struct State {
     calibration: clock::Calibration,
     entries: Mutex<BTreeMap<&'static str, Entry>>,
-    folded: Mutex<BTreeMap<(String, String), u64>>,
+    folded: Mutex<BTreeMap<(String, String), Vec<clock::CpuInterval>>>,
     thread_envelopes: Mutex<BTreeMap<String, clock::ThreadEnvelope>>,
     wall_folded: Mutex<BTreeMap<String, u64>>,
 }
@@ -112,6 +124,78 @@ struct Frame {
 }
 thread_local! {static STACK:RefCell<Vec<Frame>>=const {RefCell::new(Vec::new())};}
 
+fn sum_bounds(values: impl Iterator<Item = clock::CpuBounds>) -> clock::CpuBounds {
+    values.fold(
+        clock::CpuBounds {
+            lower: 0.0,
+            upper: 0.0,
+        },
+        clock::CpuBounds::add,
+    )
+}
+// Union only observations from the same thread. Overlapping spans share clock
+// uncertainty; charging it once per nested segment would multiply one error.
+fn union_interval_bounds(mut intervals: Vec<clock::CpuInterval>) -> Option<clock::CpuBounds> {
+    intervals.sort_unstable_by_key(|i| (i.raw_begin, i.raw_end));
+    let mut merged: Vec<clock::CpuInterval> = Vec::new();
+    for interval in intervals {
+        if let Some(last) = merged.last_mut() {
+            if interval.raw_begin <= last.raw_end {
+                // Paired coarse endpoints must remain monotonic. Equal raw
+                // boundaries must have identical paired observations.
+                if interval.coarse_begin < last.coarse_begin
+                    || interval.coarse_begin > last.coarse_end
+                    || (interval.raw_begin == last.raw_begin
+                        && interval.coarse_begin != last.coarse_begin)
+                    || (interval.raw_begin == last.raw_end
+                        && interval.coarse_begin != last.coarse_end)
+                {
+                    return None;
+                }
+                if interval.raw_end > last.raw_end {
+                    if interval.coarse_end < last.coarse_end {
+                        return None;
+                    }
+                    last.raw_end = interval.raw_end;
+                    last.coarse_end = interval.coarse_end;
+                } else if interval.coarse_end > last.coarse_end
+                    || (interval.raw_end == last.raw_end && interval.coarse_end != last.coarse_end)
+                {
+                    return None;
+                }
+                continue;
+            }
+        }
+        merged.push(interval);
+    }
+    Some(sum_bounds(
+        merged.into_iter().map(|i| i.bounds(cfg!(windows))),
+    ))
+}
+fn interval_bounds(intervals: &[clock::CpuInterval]) -> clock::CpuBounds {
+    // Merge only exactly contiguous observations, never fill an unobserved gap.
+    let mut merged: Vec<clock::CpuInterval> = Vec::new();
+    for interval in intervals {
+        if let Some(last) = merged.last_mut() {
+            if last.raw_end == interval.raw_begin && last.coarse_end == interval.coarse_begin {
+                last.raw_end = interval.raw_end;
+                last.coarse_end = interval.coarse_end;
+                continue;
+            }
+        }
+        merged.push(*interval);
+    }
+    merged
+        .into_iter()
+        .map(|interval| interval.bounds(cfg!(windows)))
+        .fold(
+            clock::CpuBounds {
+                lower: 0.0,
+                upper: 0.0,
+            },
+            clock::CpuBounds::add,
+        )
+}
 fn cpu_interval(start: Option<u64>, end: Option<u64>) -> Option<u64> {
     end.zip(start)
         .and_then(|(end, start)| end.checked_sub(start))
@@ -144,7 +228,7 @@ fn coarse_segment(state: &State, now: Option<u64>) {
         }
     });
 }
-fn cpu_segment(state: &State, now: Option<u64>, wall: Instant) {
+fn cpu_segment(state: &State, now: Option<u64>, coarse: Option<u64>, wall: Instant) {
     STACK.with(|stack| {
         let mut stack = stack.borrow_mut();
         let path = stack
@@ -173,12 +257,29 @@ fn cpu_segment(state: &State, now: Option<u64>, wall: Instant) {
                     .exclusive_threads
                     .entry(thread.clone())
                     .or_default() += delta;
-                *state
-                    .folded
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .entry((thread, path))
-                    .or_default() += delta;
+                if let Some(interval) = clock::CpuInterval::from_samples(
+                    frame.last_cpu,
+                    now,
+                    frame.last_coarse_cpu,
+                    coarse,
+                ) {
+                    entries
+                        .entry(frame.name)
+                        .or_default()
+                        .exclusive_intervals
+                        .entry(thread.clone())
+                        .or_default()
+                        .push(interval);
+                    state
+                        .folded
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner())
+                        .entry((thread, path))
+                        .or_default()
+                        .push(interval);
+                } else {
+                    entries.entry(frame.name).or_default().interval_missing = true;
+                }
             } else {
                 state
                     .entries
@@ -232,7 +333,7 @@ pub fn stage(name: &'static str) -> StageGuard {
     let start_wall = Instant::now();
     let aggregate_interval = STACK.with(|stack| outermost_name(stack.borrow().as_slice(), name));
     if let Some(state) = &state {
-        cpu_segment(state, start_cpu, start_wall);
+        cpu_segment(state, start_cpu, start_coarse_cpu, start_wall);
         coarse_segment(state, start_coarse_cpu);
         memory::enter(state, name);
         STACK.with(|stack| {
@@ -338,7 +439,7 @@ impl Drop for StageGuard {
         };
         let (end_cpu, end_coarse_cpu) = cpu_boundary(state);
         let end_wall = Instant::now();
-        cpu_segment(state, end_cpu, end_wall);
+        cpu_segment(state, end_cpu, end_coarse_cpu, end_wall);
         coarse_segment(state, end_coarse_cpu);
         let cpu = cpu_interval(self.cpu, end_cpu);
         let coarse_cpu = cpu_interval(self.coarse_cpu, end_coarse_cpu);
@@ -365,6 +466,19 @@ impl Drop for StageGuard {
             cpu,
             self.aggregate_interval,
         );
+        if self.aggregate_interval {
+            if let Some(interval) =
+                clock::CpuInterval::from_samples(self.cpu, end_cpu, self.coarse_cpu, end_coarse_cpu)
+            {
+                entry
+                    .intervals
+                    .entry(format!("{:?}", std::thread::current().id()))
+                    .or_default()
+                    .push(interval);
+            } else {
+                entry.interval_missing = true;
+            }
+        }
         record_coarse_interval(
             entry,
             &format!("{:?}", std::thread::current().id()),
@@ -523,10 +637,23 @@ impl ProfileGuard {
             .iter()
             .map(|rate| (rate.thread.clone(), rate))
             .collect::<BTreeMap<_, _>>();
-        let omitted_threads = thread_calibrations
+        // A valid thread can still have a short tail outside its windows.
+        // Report actual omitted intervals, not merely calibration status.
+        let omitted_threads = self
+            .state
+            .folded
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
             .iter()
-            .filter(|rate| clock::convert(0, Some(rate), cfg!(windows)).is_none())
-            .map(|rate| rate.thread.clone())
+            .filter(|((thread, _), intervals)| {
+                intervals.iter().any(|interval| {
+                    clock::convert_interval(*interval, rates.get(thread).copied(), cfg!(windows))
+                        .is_none()
+                })
+            })
+            .map(|((thread, _), _)| thread.clone())
+            .collect::<std::collections::BTreeSet<_>>()
+            .into_iter()
             .collect::<Vec<_>>();
         let entries = self.state.entries.lock().unwrap_or_else(|e| e.into_inner());
         let stages = entries
@@ -540,25 +667,60 @@ impl ProfileGuard {
                     "process_requested_live_bytes_observed_on_stage_thread_allocations";
                 report.sampled_private_scope =
                     "process_current_private_bytes_sampled_while_stage_active_not_attributable";
-                if entry.cpu_valid && !entry.cpu_missing {
+                if entry.cpu_valid && !entry.cpu_missing && !entry.interval_missing {
                     let converted = entry
-                        .threads
+                        .intervals
                         .iter()
-                        .map(|(thread, raw)| {
-                            clock::convert(*raw, rates.get(thread).copied(), cfg!(windows))
+                        .map(|(thread, intervals)| {
+                            intervals
+                                .iter()
+                                .map(|interval| {
+                                    clock::convert_interval(
+                                        *interval,
+                                        rates.get(thread).copied(),
+                                        cfg!(windows),
+                                    )
+                                })
+                                .sum::<Option<f64>>()
                         })
                         .collect::<Option<Vec<_>>>();
                     if let Some(converted) = converted {
                         report.cpu_s = Some(converted.iter().sum());
                         report.max_thread_cpu_s = converted.into_iter().reduce(f64::max);
-                        report.exclusive_cpu_s = entry
-                            .exclusive_threads
-                            .iter()
-                            .map(|(thread, raw)| {
-                                clock::convert(*raw, rates.get(thread).copied(), cfg!(windows))
-                            })
-                            .sum::<Option<f64>>();
                     }
+                    report.exclusive_cpu_s = entry
+                        .exclusive_intervals
+                        .iter()
+                        .map(|(thread, intervals)| {
+                            intervals
+                                .iter()
+                                .map(|interval| {
+                                    clock::convert_interval(
+                                        *interval,
+                                        rates.get(thread).copied(),
+                                        cfg!(windows),
+                                    )
+                                })
+                                .sum::<Option<f64>>()
+                        })
+                        .sum::<Option<f64>>();
+                    let bounds = entry
+                        .intervals
+                        .values()
+                        .map(|intervals| interval_bounds(intervals))
+                        .collect::<Vec<_>>();
+                    report.cpu_bounds_s = Some(sum_bounds(bounds.iter().copied()));
+                    report.max_thread_cpu_bounds_s =
+                        bounds.into_iter().reduce(|a, b| clock::CpuBounds {
+                            lower: a.lower.max(b.lower),
+                            upper: a.upper.max(b.upper),
+                        });
+                    report.exclusive_cpu_bounds_s = Some(sum_bounds(
+                        entry
+                            .exclusive_intervals
+                            .values()
+                            .map(|intervals| interval_bounds(intervals)),
+                    ));
                 }
                 if entry.coarse_valid && !entry.coarse_missing {
                     report.coarse_thread_cpu_s =
@@ -571,6 +733,27 @@ impl ProfileGuard {
                 report
             })
             .collect::<Vec<_>>();
+        let covered_bounds = if entries
+            .values()
+            .any(|entry| !entry.cpu_valid || entry.cpu_missing || entry.interval_missing)
+        {
+            None
+        } else {
+            let mut by_thread: BTreeMap<String, Vec<clock::CpuInterval>> = BTreeMap::new();
+            for entry in entries.values() {
+                for (thread, intervals) in &entry.intervals {
+                    by_thread
+                        .entry(thread.clone())
+                        .or_default()
+                        .extend(intervals.iter().copied());
+                }
+            }
+            by_thread
+                .into_values()
+                .map(union_interval_bounds)
+                .collect::<Option<Vec<_>>>()
+                .map(|values| sum_bounds(values.into_iter()))
+        };
         drop(entries);
         let covered = stages
             .iter()
@@ -592,6 +775,21 @@ impl ProfileGuard {
                 .map(|name| stages.iter().find(|s| s.name == *name)?.max_thread_cpu_s)
                 .sum::<Option<f64>>()
         };
+        let critical_bounds =
+            if sequential_stages.is_empty() || unique.len() != sequential_stages.len() {
+                None
+            } else {
+                sequential_stages
+                    .iter()
+                    .map(|name| {
+                        stages
+                            .iter()
+                            .find(|s| s.name == *name)?
+                            .max_thread_cpu_bounds_s
+                    })
+                    .collect::<Option<Vec<_>>>()
+                    .map(|values| sum_bounds(values.into_iter()))
+            };
         let report = Report {
             schema: 1,
             wall_s: self.start.elapsed().as_secs_f64(),
@@ -600,6 +798,12 @@ impl ProfileGuard {
             critical_path_stages: sequential_stages.iter().map(|name| (*name).to_string()).collect(),
             total_cpu_s: total,
             covered_thread_cpu_s: covered,
+            critical_path_cpu_bounds_s: critical_bounds,
+            covered_thread_cpu_bounds_s: covered_bounds,
+            cpu_crosscheck_ratio_bounds: total.filter(|v| *v > 0.0).zip(covered_bounds).map(|(total, bounds)| clock::CpuBounds { lower: bounds.lower / total, upper: bounds.upper / total }),
+            cpu_bounds_method: "paired_thread_cpu_quantization",
+            covered_cpu_bounds_method: "participating_thread_interval_union",
+            cpu_bounds_quantum_s: if cfg!(windows) { 0.03125 } else { 0.0 },
             peak_private_bytes: process.peak_private_bytes,
             peak_private_scope: "process_lifetime_os_private_peak",
             peak_allocator_live_bytes: allocator::peak(),
@@ -610,18 +814,18 @@ impl ProfileGuard {
             calibration: self.state.calibration.clone(),
             cpu_crosscheck_ratio: covered.zip(total.filter(|v| *v > 0.0)).map(|(covered, total)| covered / total),
             cpu_precision_scope: if cfg!(windows) {
-                "per_thread_observed_cycle_rates_invalid_threads_unavailable_coarse_audit_not_acceptance"
+                "per_thread_piecewise_cycles_precise_unknown_outside_windows_paired_quantization_bounds"
             } else {
                 "native_thread_cpu_clock_platform_resolution"
             },
             coarse_covered_thread_cpu_s: coarse_covered,
             coarse_cpu_crosscheck_ratio: coarse_covered.zip(total.filter(|v| *v > 0.0)).map(|(covered, total)| covered / total),
             thread_calibrations: thread_calibrations.clone(),
-            cpu_conversion_complete: omitted_threads.is_empty(),
+            cpu_conversion_complete: covered.is_some() && critical.is_some() && omitted_threads.is_empty(),
             cpu_folded_omitted_threads: omitted_threads,
             stages,
             coverage_notes: vec![
-                "Windows primary CPU retains raw QueryThreadCycleTime intervals per thread until finish and converts using that thread's observed paired GetThreadTimes envelope with two disjoint windows of at least 500 ms CPU each (at least 1 s total). Subinterval rate drift beyond 5% plus declared coarse quantization uncertainty invalidates a thread; missing/backwards/insufficient clocks leave affected stages unavailable. No global rate fallback or process-total scaling. Unobserved sub-500ms frequency changes remain a precision limit. Chrome cpu_raw arguments are cycles on Windows and native ns on Linux, not finalized CPU seconds.".into(),
+                "Windows primary CPU preserves absolute cycle intervals and integrates overlapping local paired-clock windows of at least 500 ms CPU, requiring two natural windows. No global envelope rate, tail extrapolation or process scaling. Short tails remain unknown even on otherwise calibrated threads; omitted folded threads derive from actual interval conversion. Successful paired coarse boundaries provide duration bounds plus/minus 31.25 ms; missing/backwards clocks have no bound. Stage bounds add across disjoint exclusive segments and may be wide. Independent process coverage bounds union overlapping or exactly contiguous observed inclusive intervals per thread, charging shared endpoint uncertainty once; missing or inconsistent clock observations invalidate that union. Stage bound sums are correlated and need not equal union bounds. Bounds may be too wide to pass, and require upper-budget checks plus the entire independent process ratio within 5%. Frequency changes inside a window remain a precision limit. Chrome cpu_raw is cycles on Windows and native ns on Linux.".into(),
                 "CPU folded stacks use exclusive entered stage segments; uninstrumented threads/work are excluded. Chrome/flame wall traces come from tracing spans.".into(),
                 "Same-named nested spans on one thread contribute only their outermost inclusive CPU, wall and allocation interval to the named stage aggregate; call counts and individual Chrome spans retain every call.".into(),
                 "Allocator numbers include profiler overhead and nested scopes; peak_live is observed process allocator live bytes on current-thread allocations, not OS private memory attribution. Allocation counting requires the executable to install CountingAllocator.".into(),
@@ -635,14 +839,20 @@ impl ProfileGuard {
         let mut file =
             File::create(artifact_path(&self.path, ".cpu.folded")).map_err(|e| e.to_string())?;
         let mut converted_stacks = BTreeMap::<String, f64>::new();
-        for ((thread, stack), raw) in self
+        for ((thread, stack), intervals) in self
             .state
             .folded
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .iter()
         {
-            if let Some(seconds) = clock::convert(*raw, rates.get(thread).copied(), cfg!(windows)) {
+            if let Some(seconds) = intervals
+                .iter()
+                .map(|interval| {
+                    clock::convert_interval(*interval, rates.get(thread).copied(), cfg!(windows))
+                })
+                .sum::<Option<f64>>()
+            {
                 *converted_stacks.entry(stack.clone()).or_default() += seconds;
             }
         }
@@ -772,7 +982,7 @@ mod interval_tests {
                 last_wall: wall,
             })
         });
-        cpu_segment(&state, Some(20), wall);
+        cpu_segment(&state, Some(20), Some(20), wall);
         STACK.with(|stack| {
             stack.borrow_mut().push(Frame {
                 name: "child",
@@ -781,13 +991,13 @@ mod interval_tests {
                 last_wall: wall,
             })
         });
-        cpu_segment(&state, Some(30), wall);
+        cpu_segment(&state, Some(30), Some(30), wall);
         STACK.with(|stack| {
             let mut stack = stack.borrow_mut();
             stack.pop();
             stack.last_mut().unwrap().last_cpu = Some(30);
         });
-        cpu_segment(&state, Some(50), wall);
+        cpu_segment(&state, Some(50), Some(50), wall);
         let entries = state.entries.lock().unwrap();
         assert_eq!(entries["parent"].exclusive, 30);
         assert_eq!(entries["child"].exclusive, 10);
@@ -796,10 +1006,33 @@ mod interval_tests {
             cpu_interval(Some(10), Some(50)).unwrap()
         );
         drop(entries);
-        cpu_segment(&state, None, wall);
+        cpu_segment(&state, None, None, wall);
         assert!(state.entries.lock().unwrap()["parent"].cpu_missing);
         STACK.with(|stack| stack.borrow_mut().clear());
         assert_eq!(cpu_interval(Some(50), Some(49)), None);
         assert_eq!(cpu_interval(None, Some(50)), None);
+    }
+    #[test]
+    fn coverage_union_does_not_multiply_nested_quantization() {
+        let interval = |a, b| clock::CpuInterval {
+            raw_begin: a,
+            raw_end: b,
+            coarse_begin: a,
+            coarse_end: b,
+        };
+        let outer = interval(0, 1_000_000_000);
+        let nested =
+            union_interval_bounds(vec![outer, interval(10, 20), interval(20, 30)]).unwrap();
+        assert_eq!(nested.lower, outer.bounds(cfg!(windows)).lower);
+        assert_eq!(nested.upper, outer.bounds(cfg!(windows)).upper);
+        let disjoint = union_interval_bounds(vec![interval(0, 100), interval(200, 300)]).unwrap();
+        let expected = interval(0, 100)
+            .bounds(cfg!(windows))
+            .add(interval(200, 300).bounds(cfg!(windows)));
+        assert_eq!(disjoint.lower, expected.lower);
+        assert_eq!(disjoint.upper, expected.upper);
+        let mut inconsistent = interval(0, 1_000_000_000);
+        inconsistent.coarse_end += 1;
+        assert!(union_interval_bounds(vec![outer, inconsistent]).is_none());
     }
 }

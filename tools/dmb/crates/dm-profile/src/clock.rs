@@ -14,6 +14,66 @@ pub struct Calibration {
 const MIN_CALIBRATION_CPU_NS: u64 = 500_000_000;
 const COARSE_TICK_NS: f64 = 15_625_000.0;
 
+#[derive(Clone, Copy, Debug, Serialize)]
+pub struct CpuBounds {
+    pub lower: f64,
+    pub upper: f64,
+}
+impl CpuBounds {
+    pub fn add(self, other: Self) -> Self {
+        Self {
+            lower: self.lower + other.lower,
+            upper: self.upper + other.upper,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct CpuInterval {
+    pub raw_begin: u64,
+    pub raw_end: u64,
+    pub coarse_begin: u64,
+    pub coarse_end: u64,
+}
+impl CpuInterval {
+    pub fn from_samples(
+        begin: Option<u64>,
+        end: Option<u64>,
+        coarse_begin: Option<u64>,
+        coarse_end: Option<u64>,
+    ) -> Option<Self> {
+        let value = Self {
+            raw_begin: begin?,
+            raw_end: end?,
+            coarse_begin: coarse_begin?,
+            coarse_end: coarse_end?,
+        };
+        (value.raw_end >= value.raw_begin && value.coarse_end >= value.coarse_begin)
+            .then_some(value)
+    }
+    pub fn bounds(self, windows: bool) -> CpuBounds {
+        if !windows {
+            let value = (self.raw_end - self.raw_begin) as f64 / 1e9;
+            return CpuBounds {
+                lower: value,
+                upper: value,
+            };
+        }
+        let value = (self.coarse_end - self.coarse_begin) as f64 / 1e9;
+        let error = 2.0 * COARSE_TICK_NS / 1e9;
+        CpuBounds {
+            lower: (value - error).max(0.0),
+            upper: value + error,
+        }
+    }
+}
+#[derive(Clone, Debug, Serialize)]
+pub struct CalibrationWindow {
+    pub raw_begin: u64,
+    pub raw_end: u64,
+    pub coarse_cpu_s: f64,
+    pub cycles_per_cpu_second: f64,
+    pub relative_quantization_uncertainty: f64,
+}
 #[derive(Clone, Debug, Serialize)]
 pub struct ThreadCalibration {
     pub thread: String,
@@ -24,13 +84,14 @@ pub struct ThreadCalibration {
     pub max_relative_quantization_uncertainty: Option<f64>,
     pub envelope_relative_quantization_uncertainty: Option<f64>,
     pub status: &'static str,
+    pub windows: Vec<CalibrationWindow>,
 }
 #[derive(Default)]
 pub(crate) struct ThreadEnvelope {
     first: Option<(u64, u64)>,
     last: Option<(u64, u64)>,
     window: Option<(u64, u64)>,
-    intervals: Vec<(u64, u64)>,
+    intervals: Vec<CalibrationWindow>,
     failed: bool,
 }
 impl ThreadEnvelope {
@@ -49,8 +110,19 @@ impl ThreadEnvelope {
         self.first.get_or_insert(sample);
         let begin = *self.window.get_or_insert(sample);
         if sample.1 - begin.1 >= MIN_CALIBRATION_CPU_NS {
-            self.intervals
-                .push((sample.0 - begin.0, sample.1 - begin.1));
+            let cycles = sample.0 - begin.0;
+            let ns = sample.1 - begin.1;
+            if let Some(rate) = calibration_rate(Some(cycles), Some(ns)) {
+                self.intervals.push(CalibrationWindow {
+                    raw_begin: begin.0,
+                    raw_end: sample.0,
+                    coarse_cpu_s: ns as f64 / 1e9,
+                    cycles_per_cpu_second: rate,
+                    relative_quantization_uncertainty: 2.0 * COARSE_TICK_NS / ns as f64,
+                });
+            } else {
+                self.failed = true;
+            }
             self.window = Some(sample);
         }
         self.last = Some(sample);
@@ -69,6 +141,7 @@ impl ThreadEnvelope {
             max_relative_quantization_uncertainty: None,
             envelope_relative_quantization_uncertainty: None,
             status: "insufficient_cpu",
+            windows: Vec::new(),
         };
         if self.failed {
             result.status = "clock_failed_or_backwards";
@@ -92,15 +165,13 @@ impl ThreadEnvelope {
         let mut unstable = false;
         let mut max_drift: f64 = 0.0;
         let mut max_uncertainty: f64 = 0.0;
-        for &(window_cycles, window_ns) in &self.intervals {
-            let Some(window_rate) = calibration_rate(Some(window_cycles), Some(window_ns)) else {
-                result.status = "invalid_subinterval";
-                return result;
-            };
+        for window in &self.intervals {
+            let window_rate = window.cycles_per_cpu_second;
+            let window_ns = window.coarse_cpu_s * 1e9;
             let drift = (window_rate / rate - 1.0).abs();
             // Two coarse boundary ticks for each interval's duration, propagated
             // through the subinterval/envelope rate ratio. Conservative, explicit.
-            let window_error = 2.0 * COARSE_TICK_NS / window_ns as f64;
+            let window_error = 2.0 * COARSE_TICK_NS / window_ns;
             let total_error = 2.0 * COARSE_TICK_NS / ns as f64;
             let uncertainty = (1.0 + window_error) / (1.0 - total_error) - 1.0;
             max_drift = max_drift.max(drift);
@@ -109,16 +180,54 @@ impl ThreadEnvelope {
         }
         result.max_relative_rate_deviation = Some(max_drift);
         result.max_relative_quantization_uncertainty = Some(max_uncertainty);
-        if unstable {
-            result.status = "unstable_rate";
-            return result;
-        }
-        result.cycles_per_cpu_second = Some(rate);
-        result.status = "valid_observed_envelope";
+        // Envelope drift diagnoses why one rate is inappropriate. Conversion
+        // uses only the local paired windows, never this diagnostic mean.
+        result.cycles_per_cpu_second = (!unstable).then_some(rate);
+        result.windows = self.intervals.clone();
+        result.status = "valid_piecewise_windows";
         result
     }
 }
 
+pub(crate) fn convert_interval(
+    interval: CpuInterval,
+    calibration: Option<&ThreadCalibration>,
+    windows: bool,
+) -> Option<f64> {
+    let calibration = calibration?;
+    if !windows {
+        return (calibration.status == "native_nanoseconds")
+            .then_some((interval.raw_end - interval.raw_begin) as f64 / 1e9);
+    }
+    if calibration.status != "valid_piecewise_windows" {
+        return None;
+    }
+    if interval.raw_begin == interval.raw_end {
+        return Some(0.0);
+    }
+    let mut cursor = interval.raw_begin;
+    let mut seconds = 0.0;
+    let first = calibration
+        .windows
+        .partition_point(|window| window.raw_end <= cursor);
+    for window in &calibration.windows[first..] {
+        if window.raw_end <= cursor {
+            continue;
+        }
+        if window.raw_begin > cursor {
+            return None;
+        }
+        let end = interval.raw_end.min(window.raw_end);
+        seconds += (end - cursor) as f64 / window.cycles_per_cpu_second;
+        cursor = end;
+        if cursor == interval.raw_end {
+            return Some(seconds);
+        }
+    }
+    None // A short tail is not extrapolated from a previous window.
+}
+
+#[cfg(test)]
 pub(crate) fn convert(
     raw: u64,
     calibration: Option<&ThreadCalibration>,
@@ -365,8 +474,20 @@ mod calibration_tests {
         );
         envelope.observe(Some(3_000_000_000), Some(1_000_000_000));
         let drifted = envelope.finish("worker".into(), true);
-        assert_eq!(drifted.status, "unstable_rate");
+        assert_eq!(drifted.status, "valid_piecewise_windows");
         assert_eq!(convert(1, Some(&drifted), true), None);
+        let first =
+            CpuInterval::from_samples(Some(0), Some(2_000_000_000), Some(0), Some(500_000_000))
+                .unwrap();
+        let second = CpuInterval::from_samples(
+            Some(2_000_000_000),
+            Some(3_000_000_000),
+            Some(500_000_000),
+            Some(1_000_000_000),
+        )
+        .unwrap();
+        assert_eq!(convert_interval(first, Some(&drifted), true), Some(0.5));
+        assert_eq!(convert_interval(second, Some(&drifted), true), Some(0.5));
         envelope.observe(None, Some(1_100_000_000));
         assert_eq!(
             envelope.finish("worker".into(), true).status,
@@ -411,5 +532,47 @@ mod calibration_tests {
             calibration_rate(Some(1_500_000_000), Some(500_000_000)),
             Some(3_000_000_000.0)
         );
+    }
+    #[test]
+    fn piecewise_conversion_integrates_local_rates_and_declines_short_tail() {
+        let mut envelope = ThreadEnvelope::default();
+        envelope.observe(Some(100), Some(0));
+        envelope.observe(Some(2_000_000_100), Some(500_000_000));
+        envelope.observe(Some(3_000_000_100), Some(1_000_000_000));
+        envelope.observe(Some(3_100_000_100), Some(1_050_000_000));
+        let calibration = envelope.finish("worker".into(), true);
+        let crossing = CpuInterval::from_samples(
+            Some(1_000_000_100),
+            Some(2_500_000_100),
+            Some(250_000_000),
+            Some(750_000_000),
+        )
+        .unwrap();
+        assert_eq!(
+            convert_interval(crossing, Some(&calibration), true),
+            Some(0.5)
+        );
+        let tail = CpuInterval::from_samples(
+            Some(3_000_000_100),
+            Some(3_100_000_100),
+            Some(1_000_000_000),
+            Some(1_050_000_000),
+        )
+        .unwrap();
+        assert_eq!(convert_interval(tail, Some(&calibration), true), None);
+        let bounds = tail.bounds(true);
+        assert!((bounds.lower - 0.01875).abs() < 1e-12);
+        assert!((bounds.upper - 0.08125).abs() < 1e-12);
+    }
+    #[test]
+    fn short_clock_bounds_preserve_uncertainty_without_inventing_rate() {
+        let interval = CpuInterval::from_samples(Some(10), Some(20), Some(0), Some(0)).unwrap();
+        assert_eq!(interval.bounds(true).lower, 0.0);
+        assert_eq!(interval.bounds(true).upper, 0.03125);
+        assert_eq!(convert_interval(interval, None, true), None);
+        assert!(CpuInterval::from_samples(None, Some(20), Some(0), Some(0)).is_none());
+        assert!(CpuInterval::from_samples(Some(20), Some(10), Some(0), Some(0)).is_none());
+        assert_eq!(interval.bounds(false).lower, 10e-9);
+        assert_eq!(interval.bounds(false).upper, 10e-9);
     }
 }

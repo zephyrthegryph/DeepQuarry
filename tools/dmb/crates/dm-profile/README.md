@@ -187,3 +187,30 @@ completely covered. No complete-I/O acceptance claim follows from these samples.
 Exact blocked-I/O accounting would require an OS event or scheduler wait source;
 subtracting thread CPU from call wall time also includes unrelated preemption and
 is insufficient. The current compiler leaves blocked duration null.
+
+### No-elevation operation evidence and the remaining gate
+
+The existing synchronous wrappers already provide the obtainable operation
+measurements without an elevated tracing session:
+
+| Evidence | What it establishes | What it does not establish |
+| --- | --- | --- |
+| Successful read/write/copy return counts | Logical bytes returned or accepted by annotated operations | Physical disk traffic, durability, or bytes transferred before an opaque error |
+| Call elapsed duration and call/failure counts | Time inside the annotated synchronous operation and observed outcome | Time specifically blocked waiting for storage |
+| Process I/O counter deltas | OS-reported process transfer activity, including profiler output | Exclusive stage attribution or exclusively disk-device traffic |
+
+Cached reads and buffered writes can count logical bytes without corresponding
+physical device traffic. Copy wrappers count both logical input and output;
+their duration is one operation interval, not two separate storage waits.
+`dm-cache` reads/writes and its lease operations still bypass these wrappers;
+the report therefore cannot claim complete compiler operation coverage.
+
+Neither `GetThreadTimes`, `QueryThreadCycleTime`, process I/O counters, nor
+ordinary Rust filesystem return values identify the storage wait portion of a
+call. No additional truthful blocked-storage counter follows from combining
+these measurements. The blocked-I/O acceptance gate remains unavailable until
+an independently validated wait/event source and its coverage are supplied.
+This limitation is not resolved by renaming elapsed time or by using its
+difference from thread CPU.
+
+Process coverage bounds use `covered_cpu_bounds_method = participating_thread_interval_union`: observed inclusive intervals are unioned independently per thread, merging overlap and exact contiguity only. Missing or inconsistent paired clocks invalidate coverage. Exclusive stage bounds remain conservative per-segment bounds; their sum is correlated and can be much wider than the coverage union. No process scaling or gap filling is performed.

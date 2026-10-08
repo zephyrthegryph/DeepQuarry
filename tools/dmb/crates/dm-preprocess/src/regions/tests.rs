@@ -298,6 +298,49 @@ fn canonical_paths_preserve_unresolved_parent_components() {
 }
 
 #[test]
+fn nested_parent_includes_keep_authored_semantic_paths_across_roots() {
+    for root in [
+        "first-root",
+        "second-root",
+        "E:/capture-one",
+        "E:/capture-two",
+        r"\\?\E:\capture-one",
+        r"\\?\E:\capture-two",
+    ] {
+        let root = Path::new(root);
+        let provider = Memory(
+            [
+                (
+                    root.join("project.dme"),
+                    "#include \"maps/select/select.dm\"\n".into(),
+                ),
+                (
+                    root.join("maps/select/select.dm"),
+                    "#include \"../live/world.dm\"\n".into(),
+                ),
+                (
+                    root.join("maps/live/world.dm"),
+                    "#include \"items.dm\"\n".into(),
+                ),
+                (
+                    root.join("maps/live/items.dm"),
+                    "var/file = __FILE__\n".into(),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        );
+        let plan = plan_regions(&root.join("project.dme"), &provider, &BTreeMap::new());
+        assert!(plan.diagnostics.is_empty(), "{:?}", plan.diagnostics);
+        assert_eq!(plan.semantic_path(3), "maps/select/../live/items.dm");
+        assert_eq!(
+            expand_regions(&plan, 2).text.as_ref(),
+            "var/file = \"maps/select/../live/items.dm\"\n"
+        );
+    }
+}
+
+#[test]
 fn captured_paths_probe_parses_with_its_observed_type_member_context() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../fixtures/phase0/preprocess/paths-origins/phase0_runtime.dme");

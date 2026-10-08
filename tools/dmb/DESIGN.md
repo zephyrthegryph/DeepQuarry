@@ -881,16 +881,26 @@ are rejected (D10).
     budgets (§6.0), because CPU time does not include disk waits.
   - **Context:** wall time, peak private memory and the count of competing processes. Wall time is
     recorded for information only.
-- **Thread CPU precision.** On Windows, `GetThreadTimes` advances in 15.6 ms ticks, too coarse for
-  short spans. Spans retain raw `QueryThreadCycleTime` intervals per thread until finalization,
-  then convert with that thread's own naturally observed paired cycle/`GetThreadTimes` envelope
-  (at least 500 ms CPU), never a global startup rate or process-total scaling. Rate stability
-  requires two independent observed subintervals of at least 500 ms CPU each; a subinterval
-  differing from the envelope rate by more than 5% plus declared coarse-clock quantization
-  uncertainty invalidates conversion. Missing, backwards, insufficient or unstable thread
-  clocks leave affected stage CPU unavailable. Unobserved shorter frequency changes remain
-  a precision limitation. Independent coarse thread counters are audit metrics, not acceptance
-  substitutes; totals are cross-checked against `GetProcessTimes`. On Linux, `CLOCK_THREAD_CPUTIME_ID`.
+- **Thread CPU precision.** On Windows, `GetThreadTimes` advances in 15.625 ms ticks.
+  Spans retain absolute raw `QueryThreadCycleTime` intervals per thread until finalization,
+  then integrate overlaps with that thread's naturally observed paired-clock windows of
+  at least 500 ms CPU. Two independent windows are required. Rates are local to each window:
+  a varying frequency is never converted using one global or envelope rate. Short tails
+  outside calibrated windows retain unknown precise CPU; no rate is extrapolated.
+  Missing or backwards clocks remain unknown. Changes inside a calibration window remain
+  a precision limitation. Linux uses native `CLOCK_THREAD_CPUTIME_ID` nanoseconds.
+- **Explicit CPU uncertainty bounds (human-approved).** Successfully paired monotonic
+  `GetThreadTimes` boundaries may provide a short-interval lower/upper CPU bound using
+  the observed duration plus/minus two coarse ticks (31.25 ms). Negative lower endpoints
+  clamp to zero. Bounds require actual clock samples; a missing clock never becomes zero.
+  Sum bounds for disjoint contributions, take per-thread maxima for stage critical bounds,
+  and sum only the declared sequential stage bounds for pipeline critical CPU. Merge only
+  exactly contiguous observed intervals; do not fill missing work. Many tiny intervals may
+  produce bounds too wide for acceptance, which is a measurement failure, not permission
+  to choose a midpoint. Precise scalar CPU remains unavailable when conversion is incomplete.
+  Acceptance requires every relevant upper bound to meet its budget and the **entire**
+  covered-thread/process-CPU ratio interval to lie within the unchanged 5% crosscheck
+  tolerance. No process-total scaling, guessed cycle rate or tolerance relaxation is allowed.
 - **Contention bias.** Shared caches and hyperthread siblings inflate CPU time somewhat on a busy
   machine. A result within 10% over its budget is rerun; it fails if the median of three is still
   over. Nothing is ever stopped to make a run quieter.

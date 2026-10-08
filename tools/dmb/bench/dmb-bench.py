@@ -212,7 +212,103 @@ def metric(value, positive=False):
             and (value > 0 if positive else value >= 0))
 
 
+def cpu_bound(value):
+    return (isinstance(value, dict) and metric(value.get("lower"))
+            and metric(value.get("upper")) and value["lower"] <= value["upper"])
+
+
+def cpu_upper(record, scalar, bounds):
+    # Budget decisions use the worst permitted value, never a midpoint estimate.
+    if record.get("cpu_bounds_method") == "paired_thread_cpu_quantization":
+        value = record.get(bounds)
+        return value["upper"] if cpu_bound(value) else None
+    return record.get(scalar)
+
+
+def bounded_cpu_quality(row):
+    errors = [row["profile_error"]] if row.get("profile_error") else []
+    total = row.get("total_cpu_s")
+    if not metric(total, True):
+        errors.append("missing/invalid total_cpu_s")
+    calibration = row.get("calibration")
+    calibration = calibration if isinstance(calibration, dict) else {}
+    if calibration.get("method") not in ("QueryThreadCycleTime", "CLOCK_THREAD_CPUTIME_ID"):
+        errors.append("unknown/missing thread CPU clock calibration")
+    quantum = row.get("cpu_bounds_quantum_s")
+    expected = 0.03125 if calibration.get("method") == "QueryThreadCycleTime" else 0.0
+    if not metric(quantum) or quantum != expected:
+        errors.append("invalid CPU quantization bound")
+    fields = ("critical_path_cpu_bounds_s", "covered_thread_cpu_bounds_s", "cpu_crosscheck_ratio_bounds")
+    for field in fields:
+        if not cpu_bound(row.get(field)):
+            errors.append("missing/invalid " + field)
+    covered, ratio = row.get(fields[1]), row.get(fields[2])
+    if cpu_bound(covered) and cpu_bound(ratio) and metric(total, True):
+        for endpoint in ("lower", "upper"):
+            if not math.isclose(ratio[endpoint], covered[endpoint] / total, rel_tol=1e-6, abs_tol=1e-9):
+                errors.append("CPU crosscheck bounds do not match recorded totals")
+        if ratio["lower"] < 0.95 or ratio["upper"] > 1.05:
+            errors.append("covered/process CPU uncertainty is not wholly within 5%")
+    stages = row.get("stages")
+    if not isinstance(stages, list) or not stages or any(not isinstance(s, dict) for s in stages):
+        return errors + ["missing/invalid profile stages"]
+    names = [s.get("name") for s in stages]
+    if any(not isinstance(n, str) or not n for n in names) or len(names) != len(set(names)):
+        return errors + ["missing/duplicate profile stages"]
+    for stage in stages:
+        for field in ("cpu_bounds_s", "max_thread_cpu_bounds_s", "exclusive_cpu_bounds_s"):
+            if not cpu_bound(stage.get(field)):
+                errors.append("missing/invalid stage bound " + stage["name"] + ":" + field)
+        inclusive, maximum, exclusive = (stage.get("cpu_bounds_s"),
+                                         stage.get("max_thread_cpu_bounds_s"),
+                                         stage.get("exclusive_cpu_bounds_s"))
+        if cpu_bound(inclusive) and cpu_bound(maximum) and maximum["upper"] > inclusive["upper"] + 1e-9:
+            errors.append("stage maximum bound exceeds total bound")
+        if cpu_bound(inclusive) and cpu_bound(exclusive) and exclusive["lower"] > inclusive["upper"] + 1e-9:
+            errors.append("stage exclusive bound contradicts inclusive bound")
+        if not metric(stage.get("wall_s")):
+            errors.append("missing/invalid stage wall duration")
+        for field in ("allocations", "allocated_bytes", "peak_live_bytes", "calls"):
+            if type(stage.get(field)) is not int or stage[field] < (1 if field == "calls" else 0):
+                errors.append("missing/invalid stage count: " + field)
+    by_name = dict(zip(names, stages))
+    sequence = row.get("critical_path_stages")
+    if (not isinstance(sequence, list) or not sequence or any(not isinstance(n, str) for n in sequence)
+            or len(sequence) != len(set(sequence)) or any(n not in by_name for n in sequence)):
+        errors.append("missing/invalid sequential critical-path stage declaration")
+    else:
+        critical = row.get(fields[0])
+        if cpu_bound(critical) and all(cpu_bound(by_name[n].get("max_thread_cpu_bounds_s")) for n in sequence):
+            for endpoint in ("lower", "upper"):
+                if not math.isclose(sum(by_name[n]["max_thread_cpu_bounds_s"][endpoint] for n in sequence),
+                                    critical[endpoint], rel_tol=1e-6, abs_tol=1e-9):
+                    errors.append("critical bounds do not match declared stage maxima")
+    if cpu_bound(covered) and all(cpu_bound(s.get("exclusive_cpu_bounds_s")) for s in stages):
+        exclusive_sum = {endpoint: sum(s["exclusive_cpu_bounds_s"][endpoint] for s in stages)
+                         for endpoint in ("lower", "upper")}
+        coverage_method = row.get("covered_cpu_bounds_method")
+        if coverage_method == "participating_thread_interval_union":
+            # Stage endpoint errors are correlated. Their conservative sum can be
+            # wider than the independently merged same-thread coverage interval.
+            if (exclusive_sum["lower"] > covered["lower"] + 1e-9 or
+                    exclusive_sum["upper"] < covered["upper"] - 1e-9):
+                errors.append("covered union bounds contradict exclusive stage sum")
+        elif coverage_method is None:
+            for endpoint in ("lower", "upper"):
+                if not math.isclose(exclusive_sum[endpoint], covered[endpoint],
+                                    rel_tol=1e-6, abs_tol=1e-9):
+                    errors.append("covered bounds do not match exclusive stage sum")
+        else:
+            errors.append("unknown covered CPU bounds method")
+    if row.get("allocation_counting") is True and not any(
+            metric(s.get("allocations"), True) and metric(s.get("allocated_bytes"), True) for s in stages):
+        errors.append("allocation feature enabled without observed counting allocations")
+    return errors
+
+
 def cpu_quality(row):
+    if row.get("cpu_bounds_method") == "paired_thread_cpu_quantization":
+        return bounded_cpu_quality(row)
     errors = []
     if row.get("profile_error"):
         errors.append(row["profile_error"])
@@ -335,6 +431,10 @@ def medians(rows):
         if key in ("read_bytes", "write_bytes", "peak_private_bytes"):
             valid = valid and all(type(v) is int for v in values)
         result[key] = statistics.median(values) if valid else None
+    upper = [cpu_upper(row, "critical_path_cpu_s", "critical_path_cpu_bounds_s") for row in rows]
+    result["critical_path_cpu_budget_upper_s"] = statistics.median(upper) if all(metric(v) for v in upper) else None
+    result["cpu_acceptance_basis"] = ("uncertainty_upper_bound" if any(
+        row.get("cpu_bounds_method") == "paired_thread_cpu_quantization" for row in rows) else "calibrated_scalar")
     return result
 
 
@@ -345,7 +445,7 @@ def gate(scenario, rows, history, stage_map):
     if quality:
         return "not_evaluable", sorted(set(quality))
     summary = medians(rows)
-    required = ("critical_path_cpu_s", "total_cpu_s", "peak_private_bytes")
+    required = ("critical_path_cpu_budget_upper_s", "total_cpu_s", "peak_private_bytes")
     missing = [name for name in required if summary[name] is None]
     if not all(row.get("allocation_counting") is True for row in rows):
         missing.append("allocation counting")
@@ -354,7 +454,7 @@ def gate(scenario, rows, history, stage_map):
     failures = []
     target = TARGETS.get(scenario)
     if target:
-        for name, maximum in zip(("critical_path_cpu_s", "total_cpu_s"), target[:2]):
+        for name, maximum in zip(("critical_path_cpu_budget_upper_s", "total_cpu_s"), target[:2]):
             if maximum is not None and summary[name] > maximum:
                 failures.append(name + " exceeds scenario budget")
     if summary["peak_private_bytes"] > 1_500_000_000:
@@ -389,10 +489,14 @@ def gate(scenario, rows, history, stage_map):
             by_name = {s["name"]: s for s in row.get("stages", [])}
             if any(name not in by_name for name in names):
                 return "not_evaluable", ["missing mapped profile stage: " + domain]
-            if any(by_name[n].get("max_thread_cpu_s") is None or by_name[n].get("cpu_s") is None for n in names):
+            bounded = row.get("cpu_bounds_method") == "paired_thread_cpu_quantization"
+            def cost(stage, scalar, bounds):
+                return stage[bounds]["upper"] if bounded and cpu_bound(stage.get(bounds)) else stage.get(scalar)
+            if any(cost(by_name[n], "max_thread_cpu_s", "max_thread_cpu_bounds_s") is None
+                   or cost(by_name[n], "cpu_s", "cpu_bounds_s") is None for n in names):
                 return "not_evaluable", ["missing mapped stage CPU: " + domain]
-            costs.append((sum(by_name[n]["max_thread_cpu_s"] for n in names),
-                          sum(by_name[n]["cpu_s"] for n in names)))
+            costs.append((sum(cost(by_name[n], "max_thread_cpu_s", "max_thread_cpu_bounds_s") for n in names),
+                          sum(cost(by_name[n], "cpu_s", "cpu_bounds_s") for n in names)))
         if domain in STAGE_BUDGETS:
             limit = STAGE_BUDGETS[domain]
             if statistics.median(c[0] for c in costs) > limit[0] or statistics.median(c[1] for c in costs) > limit[1]:
@@ -400,8 +504,11 @@ def gate(scenario, rows, history, stage_map):
     prior = [r for r in history if r.get("kind") == "median" and r.get("scenario") == scenario
              and r.get("workers") == 8 and r.get("acceptance") in ("passed", "failed")]
     for field in ("critical_path_cpu_s", "total_cpu_s"):
-        values = [r[field] for r in prior[-3:] if metric(r.get(field))]
-        if values and summary[field] > statistics.median(values) * 1.2:
+        history_field = "critical_path_cpu_budget_upper_s" if field == "critical_path_cpu_s" else field
+        values = [r.get(history_field, r.get(field)) for r in prior[-3:]
+                  if metric(r.get(history_field, r.get(field)))]
+        current = summary["critical_path_cpu_budget_upper_s"] if field == "critical_path_cpu_s" else summary[field]
+        if values and current > statistics.median(values) * 1.2:
             failures.append(field + " regresses >20% from trailing median")
     return ("failed" if failures else "passed"), failures
 
@@ -580,6 +687,12 @@ def main():
                            "coarse_cpu_crosscheck_ratio": report.get("coarse_cpu_crosscheck_ratio"),
                            "thread_calibrations": report.get("thread_calibrations"),
                            "cpu_conversion_complete": report.get("cpu_conversion_complete"),
+                           "cpu_bounds_method": report.get("cpu_bounds_method"),
+                           "covered_cpu_bounds_method": report.get("covered_cpu_bounds_method"),
+                           "cpu_bounds_quantum_s": report.get("cpu_bounds_quantum_s"),
+                           "critical_path_cpu_bounds_s": report.get("critical_path_cpu_bounds_s"),
+                           "covered_thread_cpu_bounds_s": report.get("covered_thread_cpu_bounds_s"),
+                           "cpu_crosscheck_ratio_bounds": report.get("cpu_crosscheck_ratio_bounds"),
                            "io_coverage": report.get("io_coverage"), "process_io_scope": "whole_measured_process",
                            "attributed_io": [{"stage": stage.get("name"), "read_bytes": stage.get("attributed_read_bytes"),
                                               "write_bytes": stage.get("attributed_write_bytes"), "blocked_s": stage.get("io_blocked_s"),

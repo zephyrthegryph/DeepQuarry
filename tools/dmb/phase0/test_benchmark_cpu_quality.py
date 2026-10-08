@@ -63,6 +63,56 @@ class CpuQuality(unittest.TestCase):
                                             observed_cpu_s=0.001)], cpu_conversion_complete=True)
         self.assertEqual(bench.cpu_quality(row), [])
 
+    def bounded_row(self):
+        row = self.row()
+        bounds = dict(lower=0.98, upper=1.02)
+        row.update(cpu_bounds_method="paired_thread_cpu_quantization", cpu_bounds_quantum_s=0.03125,
+                   critical_path_cpu_s=None, covered_thread_cpu_s=None, cpu_crosscheck_ratio=None,
+                   cpu_conversion_complete=False, critical_path_cpu_bounds_s=bounds.copy(),
+                   covered_thread_cpu_bounds_s=bounds.copy(), cpu_crosscheck_ratio_bounds=bounds.copy())
+        row["stages"][0].update(cpu_s=None, max_thread_cpu_s=None, exclusive_cpu_s=None,
+                                cpu_bounds_s=bounds.copy(), max_thread_cpu_bounds_s=bounds.copy(),
+                                exclusive_cpu_bounds_s=bounds.copy())
+        return row
+
+    def test_bounded_short_workers_preserve_unknown_precise_values(self):
+        row = self.bounded_row()
+        self.assertEqual(bench.cpu_quality(row), [])
+        summary = bench.medians([row] * 3)
+        self.assertIsNone(summary["critical_path_cpu_s"])
+        self.assertEqual(summary["critical_path_cpu_budget_upper_s"], 1.02)
+        self.assertEqual(summary["cpu_acceptance_basis"], "uncertainty_upper_bound")
+
+    def test_wide_uncertainty_cannot_pass_crosscheck(self):
+        row = self.bounded_row()
+        row["cpu_crosscheck_ratio_bounds"]["upper"] = 1.06
+        self.assertIn("covered/process CPU uncertainty is not wholly within 5%", bench.cpu_quality(row))
+
+    def test_bounds_cannot_hide_missing_or_inconsistent_stages(self):
+        row = self.bounded_row()
+        row["stages"][0]["exclusive_cpu_bounds_s"]["lower"] = 0.90
+        self.assertIn("covered bounds do not match exclusive stage sum", bench.cpu_quality(row))
+        row["stages"][0]["max_thread_cpu_bounds_s"] = None
+        self.assertTrue(any("missing/invalid stage bound" in e for e in bench.cpu_quality(row)))
+
+    def test_union_coverage_retains_correlated_stage_uncertainty(self):
+        row = self.bounded_row()
+        row["covered_cpu_bounds_method"] = "participating_thread_interval_union"
+        row["stages"][0]["exclusive_cpu_bounds_s"] = dict(lower=0.5, upper=2.0)
+        self.assertEqual(bench.cpu_quality(row), [])
+        row["stages"][0]["exclusive_cpu_bounds_s"] = dict(lower=0.99, upper=1.01)
+        self.assertIn("covered union bounds contradict exclusive stage sum", bench.cpu_quality(row))
+        row["covered_cpu_bounds_method"] = "unknown"
+        self.assertIn("unknown covered CPU bounds method", bench.cpu_quality(row))
+
+    def test_malformed_calibration_and_contradictory_bounds_fail_closed(self):
+        row = self.bounded_row()
+        row["calibration"] = None
+        self.assertIn("unknown/missing thread CPU clock calibration", bench.cpu_quality(row))
+        row = self.bounded_row()
+        row["stages"][0]["max_thread_cpu_bounds_s"]["upper"] = 3.0
+        self.assertIn("stage maximum bound exceeds total bound", bench.cpu_quality(row))
+
 
 if __name__ == "__main__":
     unittest.main()
