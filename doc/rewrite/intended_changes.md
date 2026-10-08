@@ -3607,3 +3607,8 @@ Pinned by `code/modules/unit_tests/dq_notice_late_deleted_tests.dm` and `dq_asks
   the thunderdome, prison, lobby, mob-transform, artillery, get-mob and send-mob confirmations read their answer from their step.
 * An admin-authority call (`AUTH_ADMIN`, a forced op or a test) holds every ban right, as `req_rights()` already did.
 * `topic_rerun_ask()`, `topic_ask()`, `ban_topic_ask()` and the topic re-run record are deleted and their names are hard-banned.
+* **An op's claims are held while its questions are open.** Before, an open question held nothing (only a timed wait held hands and body), so `work_then_question` let other work
+  run beside an open question. Now an op that claims hands or body (written, or derived from a wait on an item or tool binding) keeps them through its question: a player's
+  other physical input stops the op, an AI's is refused as busy. Ops with no wait and no `claims()` derive no claim and are unchanged. The test that pinned the old behaviour is
+  renamed `work_then_question_holds_hands_through_the_question`.
+* `asks(answerer =)` and `starts()` returning a reason are additions (no existing op uses them).

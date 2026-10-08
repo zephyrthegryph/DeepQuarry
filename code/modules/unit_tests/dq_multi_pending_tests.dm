@@ -106,8 +106,8 @@ CAPABILITIES(/datum/dq_multi_panel)
 	TEST_ASSERT_EQUAL(refused?.reason, /datum/msg/op/busy, "an AI's second physical action is refused as busy")
 	TEST_ASSERT_NULL(first?.outcome, "and does not stop the work")
 
-/datum/unit_test/dq_prompt_interrupt/work_then_question_holds_hands_only_while_working
-/datum/unit_test/dq_prompt_interrupt/work_then_question_holds_hands_only_while_working/run_gate()
+/datum/unit_test/dq_prompt_interrupt/work_then_question_holds_hands_through_the_question
+/datum/unit_test/dq_prompt_interrupt/work_then_question_holds_hands_through_the_question/run_gate()
 	var/mob/living/carbon/human/H = make_person()
 	var/obj/e0_fixture/prompt_base/work_then_ask/W = make_box(/obj/e0_fixture/prompt_base/work_then_ask)
 	var/obj/e0_fixture/prompt_base/lever/L = make_box(/obj/e0_fixture/prompt_base/lever)
@@ -115,7 +115,7 @@ CAPABILITIES(/datum/dq_multi_panel)
 	test_time(2 SECONDS)
 	TEST_ASSERT_NOTNULL(op_pending_for(H, "work_ask")?.request, "the work is done and the op asks")
 	var/datum/op_result/other = test_click(H, L)
-	TEST_ASSERT_NOTNULL(op_pending_for(H, "work_ask"), "an open question holds nothing: other work does not end it")
+	TEST_ASSERT_NULL(op_pending_for(H, "work_ask"), "an open question holds the op's claims: a player's other work stops it")
 	TEST_ASSERT_NULL(other?.outcome, "the other work started")
 
 /datum/unit_test/dq_prompt_interrupt/claims_that_do_not_overlap_coexist

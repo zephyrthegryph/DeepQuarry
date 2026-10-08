@@ -131,7 +131,7 @@ MSG_DEF_SELF(h4/not_now, "Not now.")
 CAPABILITIES(/obj/h4_kiosk)
 	op("held_ask", ui_act("held_ask"), claims(CLAIM_TARGET), asks(/datum/prompt/text, fields = list("question" = "Name?", "timeout" = 0), step = "name"), then(PROC_REF(scanned)))
 	op("hands_ask", ui_act("hands_ask"), claims(CLAIM_HANDS), asks(/datum/prompt/text, fields = list("question" = "Name?", "timeout" = 0), step = "name"), then(PROC_REF(scanned)))
-	op("hands_other", ui_act("hands_other"), claims(CLAIM_HANDS), then(PROC_REF(scanned)))
+	op("hands_other", ai(), claims(CLAIM_HANDS), then(PROC_REF(scanned)))
 	op("scan", ui_act("scan"), asks(/datum/prompt/yes_no, fields = list("question" = "Consent to a scan?", "timeout" = 0), step = "consent", answerer = PROC_REF(consenter), ends_on_no = TRUE), then(PROC_REF(scanned)))
 	op("refused_start", ui_act("refused_start"), wait(2 SECONDS), starts(PROC_REF(refuse_start)), then(PROC_REF(scanned)))
 
@@ -282,7 +282,6 @@ CAPABILITIES(/obj/h4_kiosk)
 
 /datum/unit_test/dq_h4/ban/proc/target()
 	var/mob/living/carbon/human/T = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
-	T.ckey = "dqh4target"
 	return T
 
 /datum/unit_test/dq_h4/ban/temporary_ban_with_a_duration
