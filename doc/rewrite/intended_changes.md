@@ -3526,3 +3526,12 @@ Merging machinery-click-intent with ui-outputs and timed-tasks changed these pin
 - A keyed timer whose datum argument is deleted drops the call and clears its key (`after_pending()` is false afterwards); `keeps_dead = TRUE` still runs it
   with the argument null. The fulton chain, the cryptdrake landing and the transit-tube station completions opt in, because their tail must run.
 - The smole building and ruins "Smash" ops answer harm intent as well as use, so a harm-intent click with a held item smashes rather than landing a melee hit.
+
+## Batch 10 merge pins (rewrite/integ-10)
+
+Merging om-leftovers into master changed these pins; the rows were reviewed and blessed by class.
+
+* **`hit_pins/` machinery, computers and shield generators (`refresh_bits: 9 -> 0` becomes `1 -> 0`, `73 -> 0` becomes `65 -> 0`, `8 -> 0` row gone).** Bit 8 is `CHANGE_EFFECTS`: the OM effect store marked a machine's first draw with it when the machine's self-effect hold was made at init. The effect store is deleted, so only the explicit bit stays. Same cause as the draw-sweep class above.
+* **`hit_pins/obj.structure.reagent_dispensers.coolanttank` (four `om_rec: null -> /datum/scheduler_record` rows).** The tank no longer gets a scheduler record from an init-time effect hold; the record is created lazily by the first explosion or projectile hit that needs one.
+* **`hit_pins/obj.structure.smoleruins` (`emag`: deleted and two bricks -> nothing).** An emag swipe is a non-harm item click; the smole "Smash" op is gated by `harm_click_only` (see the destructive held-item class above).
+* **`pins/mob.living.simple_mob.vore.overmap.stardog` (`Nutrition heal` menu rows, keys `nutrition_heal` and `reload`).** The branch re-recorded this file before master's timed-tasks gave every simple mob the `nutrition_heal` op; the merge needs both.
