@@ -151,6 +151,8 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 				D.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
 				D.datum_flags |= DF_DESTROYING
 				PUBLISH_LEGACY(D, /datum/notice/qdeleting, force)
+				if(length(GLOB.notice_late_queue))
+					notice_late_subject_deleting(D) // notices queued past the depth cap for D reach its observers now, while D is still whole
 				ending_begin(D) // on_ending() hooks, lives_while() scopes, the ended notice with its cause (code/engine/lifeforms/lifetimes.dm)
 			if(DESTROY_STEP_LEAVE_REGISTRIES)
 				dq_lifecycle_leave_registries(D)

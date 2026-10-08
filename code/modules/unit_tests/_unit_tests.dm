@@ -528,6 +528,8 @@
 #include "dq_e3_stats_tests.dm"
 #include "dq_e4_actions_tests.dm"
 #include "dq_lane_a_tests.dm"
+#include "dq_notice_late_deleted_tests.dm"
+#include "dq_asks_repeat_tests.dm"
 #include "dq_engine_forms_tests.dm"
 #include "dq_veto_tests.dm"
 #include "dq_veto_sites_tests.dm"

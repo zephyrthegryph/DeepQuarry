@@ -11,7 +11,15 @@
 //
 // Depth. Handlers nest (a handler publishes a notice, whose handler starts an action ...). A notice published while GLOB.act_depth is at
 // ACT_MAX_DEPTH is queued to the next drain point (act_drain_point()), delivered late and out of publish order, logged with its chain, and a test
-// build fails on it: delayed, never dropped.
+// build fails on it: delayed, never dropped. Except when its holder is deleted before the drain, which is the only way a late notice is not delivered.
+//
+// The late queue and deleted things (framework_gaps D3). A queued row names its holder by handle and holds its notice with the target cleared: nothing in the
+// queue keeps a datum alive, so a queued notice never causes a hard delete.
+//  - A holder deleted while its notice waits: the notice is delivered, at the moment the holder's destroy transaction begins (notice_late_subject_deleting()),
+//    to every other receiver (the observers of the holder, the legacy reactions), with the holder in its deleting state (QDELETED, still whole); the
+//    holder's own hooks do not run, as for any notice published by a dying holder. The row then goes.
+//  - A receiver deleted while a notice waits for it (an observer, or a holder that was gone without a transaction): it gets nothing, and the row is
+//    dropped at the drain (a handle that no longer names a datum), the same rule as a timer whose owner is gone.
 //
 // Legacy bridge. A notice delivered here also reaches the legacy on_notice() reactions (code/datums/reactions) of its holder, and a notice a
 // legacy publish() delivers reaches the hooks here, so both sides run on one occurrence.
@@ -21,7 +29,8 @@
 	/// op_done's op key, which the on_op() filter reads (null on every other notice).
 	var/op_key
 
-/// The notices waiting for the next drain point: list(holder, notice, outcome, chain) in the order they were queued.
+/// The notices waiting for the next drain point: list(holder handle, notice, outcome, chain) in the order they were queued. The holder is a handle
+/// (entity_handle()), never a reference; the notice's target is cleared while it waits.
 GLOBAL_LIST_EMPTY(notice_late_queue)
 GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 
@@ -86,7 +95,8 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 	if(at_cap)
 		var/chain = act_chain_text()
 		GLOB.notice_late++
-		GLOB.notice_late_queue += list(list(holder, N, outcome, chain))
+		N.target = null // the row holds the holder by handle only: a queued notice keeps nothing alive
+		GLOB.notice_late_queue += list(list(entity_handle(holder) || entity_handle_of(holder), N, outcome, chain))
 		log_world("ACT: notice [N.type] from [holder?.type] queued to the next drain point: nested deeper than [ACT_MAX_DEPTH] ([chain])")
 		act_report(RULE_NOTICE_DEPTH, "notice [N.type] from [holder?.type] was queued to the next drain point (nested deeper than [ACT_MAX_DEPTH]; it is delivered late and out of publish order): [chain]")
 		return
@@ -159,9 +169,43 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 	if(length(GLOB.hook_change_pending))
 		hooks_drain_changes()
 
+/// The holder of a late-queue row: a handle resolves to a live datum (null once it was deleted); a datum put in a row by hand is itself.
+/proc/notice_late_holder(list/row)
+	var/holder = row[1]
+	return istext(holder) ? resolve_handle(holder) : holder
+
+/// Delivers one late row to every receiver and releases it. `holder` is the datum the row names (live, or in its deleting state).
+/proc/notice_late_deliver(datum/holder, list/row)
+	var/datum/notice/N = row[2]
+	try
+		if(holder)
+			N.target = holder
+			notice_deliver(holder, N, row[3])
+	catch(var/exception/fault)
+		// One throwing delivery must not strand the rest of the batch or leave the draining flag set (the late queue would never drain again).
+		dq_report_caught(fault, "late notice [N?.type] on [holder?.type]")
+		act_unwind(GLOB.act_depth, length(GLOB.act_chain), "late notice drain", fault)
+	N?.release()
+
+/// A holder's destroy transaction has begun (it is QDELETED and still whole): the notices queued for it are delivered now, to every receiver but its own
+/// hooks, with the holder in its deleting state, and their rows go. After this nothing in the queue names it.
+/proc/notice_late_subject_deleting(datum/holder)
+	for(var/i in length(GLOB.notice_late_queue) to 1 step -1)
+		var/list/row = GLOB.notice_late_queue[i]
+		var/row_holder = row[1]
+		if(row_holder != holder && (isnull(row_holder) || row_holder != entity_handle_of(holder)))
+			continue
+		GLOB.notice_late_queue.Cut(i, i + 1)
+		var/datum/notice/queued = row[2]
+		log_world("ACT: late notice [queued?.type] delivered to the observers of [holder.type] as it is deleted (\[[row[4]]\])")
+		var/depth = GLOB.act_depth
+		var/chain_len = length(GLOB.act_chain)
+		notice_late_deliver(holder, row)
+		GLOB.act_depth = depth
+		if(length(GLOB.act_chain) > chain_len)
+			GLOB.act_chain.len = chain_len
+
 /proc/notice_drain_late()
-	var/depth = GLOB.act_depth
-	var/chain_len = length(GLOB.act_chain)
 	GLOB.notice_draining_late = TRUE
 	var/passes = 0
 	while(length(GLOB.notice_late_queue) && passes < DRAIN_MAX_PASSES)
@@ -169,16 +213,15 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 		var/list/batch = GLOB.notice_late_queue
 		GLOB.notice_late_queue = list()
 		for(var/list/row as anything in batch)
-			var/datum/holder = row[1]
-			var/datum/notice/N = row[2]
-			try
-				if(!QDELETED(holder))
-					notice_deliver(holder, N, row[3])
-			catch(var/exception/fault)
-				// One throwing delivery must not strand the rest of the batch or leave the draining flag set (the late queue would never drain again).
-				dq_report_caught(fault, "late notice [N?.type] on [holder?.type]")
-				act_unwind(depth, chain_len, "late notice drain", fault)
-			N?.release()
+			var/datum/holder = notice_late_holder(row)
+			if(!holder || QDELETED(holder))
+				// The receiver was deleted before the drain: it gets nothing and its row is dropped (a holder mid-deletion was delivered to when its
+				// transaction began).
+				var/datum/notice/dropped = row[2]
+				log_world("ACT: late notice [dropped?.type] dropped: its holder was deleted before the drain (\[[row[4]]\])")
+				dropped?.release()
+				continue
+			notice_late_deliver(holder, row)
 	if(length(GLOB.notice_late_queue))
 		log_world("ACT: the late notice drain stopped after [DRAIN_MAX_PASSES] passes with [length(GLOB.notice_late_queue)] notice(s) still queued (a handler keeps publishing past the depth cap); they wait for the next drain point")
 	GLOB.notice_draining_late = FALSE

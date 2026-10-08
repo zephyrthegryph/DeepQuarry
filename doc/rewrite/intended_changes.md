@@ -3711,3 +3711,24 @@ Old-code behavior pins passed for all five paths before conversion (completion, 
 
 AIcore waits explicitly preserve legacy toolspeed and tool_skill_factor, with five fast-tool regression variants. The shared library fuel adapter resolves get_welder() for availability, reservation ownership and commit, matching the lit-welder requirement and supporting real transforming tools. This also fixes zero-cost wrapper commits after native dismantling; engine source is unchanged.
 
+
+## Notices and asks (D3, H4)
+
+Pinned by `code/modules/unit_tests/dq_notice_late_deleted_tests.dm` and `dq_asks_repeat_tests.dm`.
+
+* **A late notice (published past the depth cap) is no longer dropped when its holder is deleted before the drain.** It is delivered to the holder's observers and legacy
+  reactions as the holder's destroy transaction begins, with the holder in its deleting state; the holder's own hooks do not run (as for any notice from a dying holder). A
+  notice for a holder that is already gone, or an observer deleted before the drain, is dropped and logged. The queue holds a handle and a notice with no target, so it never keeps
+  a deleted datum alive.
+* **Ban panel questions are asked by the op, not by re-running the href.** The same questions in the same order (temporary or permanent, how long, why, the IP ban, one
+  confirmation per banned job), but: (1) the checks that used to run before the first question (a moderator without the right, a target who holds ban rights, a missing job
+  master, a kick of someone with more rights, a ghost-only or client-only target, admin jumping disabled) are refusals of the op with a reason, so the panel says why and
+  asks nothing; (2) a job ban of several jobs asks one reason for all of them, as before, and lifting asks once per banned job; (3) the legacy player note, the shuttle time edit and
+  the thunderdome, prison, lobby, mob-transform, artillery, get-mob and send-mob confirmations read their answer from their step.
+* An admin-authority call (`AUTH_ADMIN`, a forced op or a test) holds every ban right, as `req_rights()` already did.
+* `topic_rerun_ask()`, `topic_ask()`, `ban_topic_ask()` and the topic re-run record are deleted and their names are hard-banned.
+* **An op's claims are held while its questions are open.** Before, an open question held nothing (only a timed wait held hands and body), so `work_then_question` let other work
+  run beside an open question. Now an op that claims hands or body (written, or derived from a wait on an item or tool binding) keeps them through its question: a player's
+  other physical input stops the op, an AI's is refused as busy. Ops with no wait and no `claims()` derive no claim and are unchanged. The test that pinned the old behaviour is
+  renamed `work_then_question_holds_hands_through_the_question`.
+* `asks(answerer =)` and `starts()` returning a reason are additions (no existing op uses them).
