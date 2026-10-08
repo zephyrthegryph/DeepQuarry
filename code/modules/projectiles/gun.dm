@@ -485,7 +485,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 				pointblank = 0
 
 			if(ticker < burst)
-				after(src, burst_delay, PROC_REF(handle_gunfire), with = list(target, user, clickparams, pointblank, reflex, ++ticker, TRUE, stance))
+				after(src, burst_delay, PROC_REF(handle_gunfire), with = list(target, user, clickparams, pointblank, reflex, ++ticker, TRUE, stance), keeps_dead = TRUE)
 				return
 
 			if(ticker == burst)
@@ -559,7 +559,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 			if(ticker < burst)
 				// Bug fix: was incorrectly calling handle_gunfire (which requires a user arg);
 				// userless firing loop must recurse into handle_userless_gunfire.
-				after(src, burst_delay, PROC_REF(handle_userless_gunfire), with = list(target, ++ticker, TRUE))
+				after(src, burst_delay, PROC_REF(handle_userless_gunfire), with = list(target, ++ticker, TRUE), keeps_dead = TRUE)
 
 	add_attack_logs(src,target,"Fired [src.name] (Unmanned)")
 

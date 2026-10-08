@@ -194,13 +194,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 	else if(vitality() < 0.25) //phase 4 where it teleports then chains 3 attacks
 		rel_set(src, nameof(chain_target), A)
 		set_chain_number(3)
-		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A))
+		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A), keeps_dead = TRUE)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
 	else if(vitality() < 0.5) //teleports then chains 2 attacks
 		rel_set(src, nameof(chain_target), A)
 		set_chain_number(2)
-		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A))
+		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A), keeps_dead = TRUE)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
 	else if(vitality() < 0.75) //teleports then attacks
@@ -208,12 +208,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 		set_chain_number(1)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
-		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A))
+		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A), keeps_dead = TRUE)
 	else //attacks once
 		if(prob(50))
 			icon_state = "jellyfish_yellow"
 			icon_living = "jellyfish_yellow"
-			after(src, 4 SECONDS, PROC_REF(dash_attack), with = list(A))
+			after(src, 4 SECONDS, PROC_REF(dash_attack), with = list(A), keeps_dead = TRUE)
 		else
 			icon_state = "jellyfish_red"
 			icon_living = "jellyfish_red"
@@ -229,7 +229,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 
-	after(src, 0.5 SECONDS, PROC_REF(dash_attack_1), with = list(A)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 0.5 SECONDS, PROC_REF(dash_attack_1), with = list(A), keeps_dead = TRUE) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack_1(atom/A)

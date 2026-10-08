@@ -464,3 +464,21 @@ Second pass below covers every remaining site outside `code/game/machinery`, `co
 | screen_objects.dm:1087 | `end_empty_flash` | REMOVED | cosmetic flash cleanup of F/user client |
 
 Remaining open: the `code/game/machinery` and `code/modules/power` sites, untouched by this lane.
+
+#### Second-pass override: nine removals restored after review
+
+A second read found these removals unsafe; `keeps_dead = TRUE` is back on each (with `weather.dm:232`, the `dash_attack_1` continuation, which had none). Tested = a `keeps_dead_*` test in `dq_keeps_dead_cleanup_batch2_tests.dm`.
+
+| Site | Handler | Why it is kept | Test |
+|---|---|---|---|
+| shuttles/crashes.dm:47 | `after_crash(victims list, target)` | one deleted victim would drop the shuttle move and the surviving victims | none: needs a shuttle, landmark and victims |
+| vore/syndimobs.dm:85 | `do_special_attack_1` | it schedules `_2`, which ends the leap; dropped, the leap never lands | yes |
+| vore/weather.dm:197, 203, 211 | `astral_sea_warp` | restored on review; by reading, the null path only messages and returns, and the chain runs from `every(when = chain_number)`, so a test cannot tell the two apart | none |
+| vore/weather.dm:216, 232 | `dash_attack`, `dash_attack_1` | the continuation clears LEAPING | yes (`dash_attack_1`) |
+| xenoarcheaology/effects/resurrect.dm:93 | `artifact_revive_wakes(H, holder)` | a deleted artifact must not cancel the revive | none: needs a client on the body |
+| simple_mob/combat.dm:257 | `rocket_volley_end` | the `then_proc` follow-up (imperion microsingularity) would be lost | yes |
+| projectiles/gun.dm:488, 562 | `handle_gunfire`, `handle_userless_gunfire` | the burst caches the target turf and keeps firing after the target dies | none: needs a loaded gun |
+| vore/gateway/candy.dm:513, 524 | `barrage_shot` | the critter shot and the chain continue at a dead target's last place | none: spawns random mobs |
+| _onclick/hud/screen_objects.dm:1087 | `end_empty_flash` | `spent(F)` never runs if the user is gone | yes |
+
+`shuttle_specops.dm:172` `mauraders_close(special_ops)` is confirmed removed: its only datum argument is the area, which both finds the doors and is reset; nothing is left to act on if the area is gone.

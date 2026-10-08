@@ -82,7 +82,7 @@
 /mob/living/simple_mob/vore/otie/syndicate/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	do_windup_animation(A, leap_warmup)
-	after(src, leap_warmup, PROC_REF(do_special_attack_1), with = list(A)) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(do_special_attack_1), with = list(A), keeps_dead = TRUE) // For the telegraphing.
 
 
 /mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_1(atom/A)

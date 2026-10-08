@@ -441,3 +441,55 @@
 	qdel(SK)
 	scheduler_advance(2)
 	TEST_ASSERT_EQUAL(H.alpha, 127, "the mob finishes phasing out")
+
+/// The second-pass review restored these opt-outs: a continuation scheduled from a call that survives its target.
+/mob/living/simple_mob/dq_rocket_probe
+	var/followed = FALSE
+
+/mob/living/simple_mob/dq_rocket_probe/proc/rocket_followup(atom/target)
+	followed = TRUE
+
+/datum/unit_test/om/keeps_dead_rocket_volley_still_follows_up
+
+/datum/unit_test/om/keeps_dead_rocket_volley_still_follows_up/run_om(list/made)
+	var/turf/T = test_floor()
+	var/mob/living/simple_mob/dq_rocket_probe/M = allocate(/mob/living/simple_mob/dq_rocket_probe, T)
+	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
+	after(M, 1 SECONDS, TYPE_PROC_REF(/mob/living/simple_mob, rocket_volley_end), with = list(L, "The rack retracts.", TYPE_PROC_REF(/mob/living/simple_mob/dq_rocket_probe, rocket_followup)), keeps_dead = TRUE)
+	qdel(L)
+	scheduler_advance(2)
+	TEST_ASSERT(M.followed, "the follow-up of a rocket volley runs although the target died")
+
+/datum/unit_test/om/keeps_dead_syndicate_otie_leap_lands
+
+/datum/unit_test/om/keeps_dead_syndicate_otie_leap_lands/run_om(list/made)
+	var/turf/T = test_floor()
+	var/mob/living/simple_mob/vore/otie/syndicate/M = allocate(/mob/living/simple_mob/vore/otie/syndicate, T)
+	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
+	after(M, 1 SECONDS, TYPE_PROC_REF(/mob/living/simple_mob/vore/otie/syndicate, do_special_attack_1), with = list(L), keeps_dead = TRUE)
+	qdel(L)
+	scheduler_advance(4)
+	TEST_ASSERT(!(M.status_flags & LEAPING), "the leap is not left running because the target died before the windup ended")
+
+/datum/unit_test/om/keeps_dead_jellyfish_dash_lands
+
+/datum/unit_test/om/keeps_dead_jellyfish_dash_lands/run_om(list/made)
+	var/turf/T = test_floor()
+	var/mob/living/simple_mob/vore/boss_jellyfish/M = allocate(/mob/living/simple_mob/vore/boss_jellyfish, T)
+	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
+	M.set_status_flags(M.status_flags | LEAPING)
+	after(M, 1 SECONDS, TYPE_PROC_REF(/mob/living/simple_mob/vore/boss_jellyfish, dash_attack_1), with = list(L), keeps_dead = TRUE)
+	qdel(L)
+	scheduler_advance(2)
+	TEST_ASSERT(!(M.status_flags & LEAPING), "the dash ends although its target is gone")
+
+/datum/unit_test/om/keeps_dead_ammo_hud_flash_spends_itself
+
+/datum/unit_test/om/keeps_dead_ammo_hud_flash_spends_itself/run_om(list/made)
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/atom/movable/screen/ammo/F = allocate(/atom/movable/screen/ammo)
+	after(F, 1 SECONDS, TYPE_PROC_REF(/atom/movable/screen/ammo, end_empty_flash), with = list(user, F, null), keeps_dead = TRUE)
+	qdel(user)
+	scheduler_advance(2)
+	TEST_ASSERT(QDELETED(F), "the flash screen is spent when its user vanished")
