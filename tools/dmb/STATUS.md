@@ -4,6 +4,19 @@
 
 ## Implemented and checked
 
+- Current ownership/appearance batch: the classified cold path consumes linked
+  procedure, helper and global/class initializer buffers into the shared output
+  writer, then releases frozen IR/table inventories before encoding. Final
+  bytecode is completely visited after mutable output stages; reference and
+  independent decode checks remain. Runtime initializer groups index the one
+  classified-write ledger instead of cloning its ASTs. Relocation validation
+  borrows its encoder ledger and retains the same validation/error ordering.
+  Explicit ancestor appearance assignments override native subtype defaults;
+  explicit luminosity also retains BYOND's selector representation. All **241
+  compiler-library checks pass**, including borrowed/consuming output equality,
+  corrupt-stage rejection and pinned appearance fixtures. This batch's release
+  benchmark is pending; no speed or memory improvement is claimed yet.
+
 - Commit `4444f22e61` replaces the separate header/member routing exceptions with one shared intrinsic routing contract. All 21 focused class/routing checks and dmbc all-target Clippy pass. Three complete captured-source compiles and their three independent fresh-output oracles now pass. The earlier l/m routing failures are resolved; runtime and BYOND semantic parity are not claimed.
 
 - Commits `9d079bce60` and `067885825c`: finalize inherited class headers after authored members, preserve native subtype defaults and runtime override tokens, and derive known mouse callback flags from bound procedures. All 18 focused class checks and dmbc all-target Clippy pass. Real output comparison for these changes is pending; this is not a runtime parity result.

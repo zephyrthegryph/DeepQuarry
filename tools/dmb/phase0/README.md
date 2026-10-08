@@ -28,10 +28,19 @@ preserved for reference. This phase does not implement Phase 1.
 5. See [PROFILE.md](PROFILE.md) for cold and body-edit sampling with an external
    watchdog and separate stage/end-to-end evidence.
 
-New large artifacts live under `D:/dmb-native-v2-phase0`, outside the repository.
+Current large artifacts live under `E:/dmb-native-v2-phase0`, outside the repository;
+older receipts retain their original drive paths. Build caches live under
+`E:/dq-cache/`, and compiler worktrees under `E:/projects/dq-wt/`.
 Generated fixture DMB/RSC files are ignored. Source fixtures and compact evidence
 belong in the repository; raw logs and profiles remain in the dedicated artifact
 tree and are identified by receipts/hashes.
+
+The captured one-procedure variant prepared on 8 October changes only the
+`power_key_owner` guard literal in a private replay journal. Its manifest and
+integrity receipt are under `E:/dmb-native-v2-phase0/body-edit-variant-20261008-a/`.
+It is a cold-after-edit profiling input, not a warm incremental-latency result
+or a runtime-parity candidate. Never replace the preserved BYOND comparison
+input or run that intentionally changed program as the original runtime oracle.
 
 ## Publication probe
 

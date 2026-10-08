@@ -162,7 +162,7 @@ fn indexed_receiver_groups_preserve_interleaved_owner_and_global_order() {
             group
                 .writes
                 .iter()
-                .map(|write| write.source_ordinal)
+                .map(|&index| classified.writes[index].source_ordinal)
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
@@ -232,7 +232,7 @@ fn global_literal_phase_is_stable_and_instances_keep_encounter_order() {
         result.groups[0]
             .writes
             .iter()
-            .map(|write| write.source_ordinal)
+            .map(|&index| result.writes[index].source_ordinal)
             .collect::<Vec<_>>(),
         [1, 0, 2]
     );
@@ -257,7 +257,7 @@ fn global_literal_phase_is_stable_and_instances_keep_encounter_order() {
         result.groups[0]
             .writes
             .iter()
-            .map(|write| write.source_ordinal)
+            .map(|&index| result.writes[index].source_ordinal)
             .collect::<Vec<_>>(),
         [0, 1]
     );

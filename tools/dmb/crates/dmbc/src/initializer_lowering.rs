@@ -225,7 +225,11 @@ fn lower_plan<R: Resolver>(
         let mut assignments = Vec::with_capacity(group.writes.len());
         let mut entries = Vec::with_capacity(group.writes.len());
         let mut write_ordinals = Vec::with_capacity(group.writes.len());
-        for (index, write) in group.writes.iter().enumerate() {
+        for (index, &write_index) in group.writes.iter().enumerate() {
+            let write = classified
+                .writes
+                .get(write_index)
+                .ok_or("initializer group write missing")?;
             let origin = plan
                 .origins
                 .get(write.source_ordinal)
@@ -345,7 +349,11 @@ fn lower_plan<R: Resolver>(
             key.extend_from_slice(
                 &serde_json::to_vec(&resource_search_context).map_err(|error| error.to_string())?,
             );
-            for write in &group.writes {
+            for &write_index in &group.writes {
+                let write = classified
+                    .writes
+                    .get(write_index)
+                    .ok_or("initializer group write missing")?;
                 let bytes = write.write.canonical_bytes();
                 key.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
                 key.extend_from_slice(&bytes);
@@ -386,7 +394,11 @@ fn lower_plan<R: Resolver>(
                 code
             } else {
                 let recorder = crate::lowering_memo::RecordingResolver::new(host);
-                for write in &group.writes {
+                for &write_index in &group.writes {
+                    let write = classified
+                        .writes
+                        .get(write_index)
+                        .ok_or("initializer group write missing")?;
                     recorder.resolve(dm_ir::ResolveQuery::Ancestry(write.write.lexical_owner));
                     if let Some(identity) = write.write.lexical_procedure {
                         recorder.record_occurrence(identity);

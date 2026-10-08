@@ -192,7 +192,8 @@ pub enum RuntimeValue {
 pub struct RuntimeGroup {
     /// None is the global/shared VM initializer. Class receivers are explicit.
     pub receiver: Option<SymbolId>,
-    pub writes: Vec<ClassifiedWrite>,
+    /// Indices into ClassifiedInitializers::writes; runtime ASTs have one owner.
+    pub writes: Vec<usize>,
 }
 #[derive(Debug)]
 pub struct ClassifiedInitializers {
@@ -726,7 +727,11 @@ fn classify_from_facts(
     }
     let mut groups: Vec<RuntimeGroup> = Vec::new();
     let mut receiver_groups = std::collections::HashMap::new();
-    for write in classified.iter().filter(|write| write.phase.is_some()) {
+    for (write_index, write) in classified
+        .iter()
+        .enumerate()
+        .filter(|(_, write)| write.phase.is_some())
+    {
         let receiver = match write.write.target {
             InitializerTarget::Shared { .. } => None,
             InitializerTarget::ProcedureStatic(_) => None,
@@ -742,7 +747,7 @@ fn classify_from_facts(
             });
             index
         });
-        groups[index].writes.push(write.clone());
+        groups[index].writes.push(write_index);
     }
     for group in &mut groups {
         if group.receiver.is_none() {
@@ -750,7 +755,7 @@ fn classify_from_facts(
             // each phase retains source order. Instance writes are never sorted.
             group
                 .writes
-                .sort_by_key(|write| write.phase == Some(Phase::Runtime));
+                .sort_by_key(|index| classified[*index].phase == Some(Phase::Runtime));
         }
     }
     Ok(ClassifiedInitializers {

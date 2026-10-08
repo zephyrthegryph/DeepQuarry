@@ -155,6 +155,26 @@ fn current_link(
         .link(frozen.code(), &origins.source_bindings())
         .map_err(IntegrationError::Link)
 }
+fn take_current_link(
+    frozen: &Arc<FrozenProc>,
+    origins: &crate::debug_sources::DebugOrigins,
+    tables: &LinkTables,
+    certificate: &mut Option<CurrentImage>,
+) -> Result<ProcedureImage, IntegrationError> {
+    // Check the exact frozen/table/origin contract before moving any image data.
+    // Changed public artifacts retain the borrowed API's exact re-link fallback.
+    if certificate
+        .as_ref()
+        .is_some_and(|image| image.matches(frozen, origins, tables))
+    {
+        return Ok(certificate.take().expect("checked current image").image);
+    }
+    *certificate = None;
+    tables
+        .link(frozen.code(), &origins.source_bindings())
+        .map_err(IntegrationError::Link)
+}
+
 pub struct FrozenBatch {
     pub units: Vec<FrozenUnit>,
     pub tables: LinkTables,
@@ -213,7 +233,7 @@ impl FrozenBatch {
                 .filter(|image| image.matches(frozen, origins, tables))
             {
                 if let Some(index) = tables.index(key) {
-                    result.insert(index, (image.image.words.as_ref(), image.features));
+                    result.insert(index, (image.image.words.as_slice(), image.features));
                 }
             }
         }
@@ -248,6 +268,62 @@ impl FrozenBatch {
             );
         }
         result
+    }
+
+    /// Consume a linked image for output ownership transfer. Final composed
+    /// instructions still require complete validation after mutable output stages.
+    pub fn take_unit_image(
+        &mut self,
+        index: usize,
+        source: &SourceBindings,
+    ) -> Result<ProcedureImage, IntegrationError> {
+        let unit = self
+            .units
+            .get_mut(index)
+            .ok_or(IntegrationError::LoweringFailed(index))?;
+        if source.first_line == 0 && source.files.is_empty() && source.lines.is_empty() {
+            take_current_link(
+                &unit.frozen,
+                &unit.lowered.debug_origins,
+                &self.tables,
+                &mut unit.current_image,
+            )
+        } else {
+            unit.current_image = None;
+            self.tables
+                .link(unit.frozen.code(), source)
+                .map_err(IntegrationError::Link)
+        }
+    }
+    pub(crate) fn take_helper_image(
+        &mut self,
+        index: usize,
+    ) -> Result<ProcedureImage, IntegrationError> {
+        let unit = self
+            .helpers
+            .get_mut(index)
+            .ok_or(IntegrationError::LoweringFailed(index))?;
+        take_current_link(
+            &unit.frozen,
+            &unit.debug_origins,
+            &self.tables,
+            &mut unit.current_image,
+        )
+    }
+    pub(crate) fn take_initializer_image(
+        &mut self,
+        index: usize,
+    ) -> Result<ProcedureImage, IntegrationError> {
+        let unit = self
+            .initializers
+            .get_mut(index)
+            .ok_or(IntegrationError::LoweringFailed(index))?;
+        take_current_link(
+            &unit.frozen,
+            &unit.debug_origins,
+            &self.tables,
+            &mut unit.current_image,
+        )
     }
 
     /// Current source origins stay outside reusable code. Shared IR encoding is
@@ -661,7 +737,7 @@ fn unit_reference(identity: UnitIdentity) -> SymRef {
         },
     }
 }
-fn unit_key(identity: UnitIdentity) -> Key {
+pub(crate) fn unit_key(identity: UnitIdentity) -> Key {
     match identity.namespace {
         Namespace::Proc => Key::Proc {
             owner: identity.owner,

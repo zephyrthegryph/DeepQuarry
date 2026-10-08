@@ -351,39 +351,7 @@ pub fn compose_projected_with_symbols(
     stage: Option<&dyn NonTextOutputStage>,
     symbols: &SymbolTable,
 ) -> Result<Vec<u8>, CompositionError> {
-    if projection.tree_identity != frontend.snapshot.tree.identity()
-        || projection.occurrence_count != frontend.snapshot.occurrences.source_order().len()
-    {
-        return Err(unsupported(
-            "class projection does not cover this source model",
-        ));
-    }
-    if frontend
-        .plan
-        .items
-        .iter()
-        .any(|item| matches!(item, dm_preprocess::regions::OrderedItem::NonText { .. }))
-        && stage.is_none()
-    {
-        return Err(unsupported("map/skin materialization is not supplied"));
-    }
-    if let Some(stage) = stage {
-        stage.validate_source(frontend).map_err(unsupported)?;
-    }
-    let covered: HashSet<_> = batch
-        .units
-        .iter()
-        .map(|unit| unit.lowered.origin.declaration)
-        .collect();
-    if covered.len() != batch.units.len()
-        || frontend.bodies.len() != batch.units.len()
-        || frontend
-            .bodies
-            .iter()
-            .any(|body| !covered.contains(&body.declaration))
-    {
-        return Err(unsupported("source procedure coverage mismatch"));
-    }
+    owned::validate_projected(batch, frontend, projection, stage)?;
     compose_records(
         engine_bytes,
         batch,
@@ -395,6 +363,24 @@ pub fn compose_projected_with_symbols(
 fn compose_records(
     engine_bytes: &[u8],
     batch: &FrozenBatch,
+    symbols: &SymbolTable,
+    projection: Option<(
+        &crate::class_projection::ClassProjection,
+        &dyn crate::class_projection::TypeValuePolicy,
+    )>,
+    stage: Option<&dyn NonTextOutputStage>,
+) -> Result<Vec<u8>, CompositionError> {
+    compose_records_access(
+        engine_bytes,
+        owned::BatchAccess::Borrowed(batch),
+        symbols,
+        projection,
+        stage,
+    )
+}
+fn compose_records_access(
+    engine_bytes: &[u8],
+    mut batch: owned::BatchAccess<'_>,
     symbols: &SymbolTable,
     projection: Option<(
         &crate::class_projection::ClassProjection,
@@ -575,7 +561,7 @@ fn compose_records(
     let mut units = BTreeMap::new();
     for (index, unit) in batch.units.iter().enumerate() {
         let identity = unit.lowered.identity;
-        if units.insert(identity, (index, unit)).is_some() {
+        if units.insert(identity, index).is_some() {
             return Err(unsupported("duplicate procedure artifact"));
         }
     }
@@ -588,9 +574,13 @@ fn compose_records(
                 "procedure table indexes".into(),
             ));
         }
-        let &(unit_index, unit) = units
+        let &unit_index = units
             .get(&identity)
             .ok_or_else(|| unsupported("missing global procedure artifact"))?;
+        let linked_words = batch
+            .unit_words(unit_index)
+            .map_err(CompositionError::Link)?;
+        let unit = &batch.units[unit_index];
         let abi = unit
             .lowered
             .abi
@@ -605,10 +595,7 @@ fn compose_records(
         if proc.local_count as usize != proc.local_names.len() {
             return Err(unsupported("local metadata count mismatch"));
         }
-        let linked = batch
-            .link_unit(unit_index, &Default::default())
-            .map_err(CompositionError::Link)?;
-        let code_id = append_list(&mut dmb, linked.words.to_vec())?;
+        let code_id = append_list(&mut dmb, linked_words)?;
         let mut locals = Vec::new();
         for name in &proc.local_names {
             let name_id = string_index.intern(&mut dmb, name.as_bytes())?;
@@ -707,10 +694,11 @@ fn compose_records(
     let by_key: BTreeMap<_, _> = batch
         .helpers
         .iter()
-        .map(|helper| {
+        .enumerate()
+        .map(|(helper_index, helper)| {
             (
                 crate::symbolic::helper_key(helper.owner, helper.argument),
-                helper,
+                helper_index,
             )
         })
         .collect();
@@ -724,15 +712,17 @@ fn compose_records(
                 "helper procedure indexes".into(),
             ));
         }
-        let helper = by_key
+        let &helper_index = by_key
             .get(&key)
             .ok_or_else(|| unsupported("missing helper artifact"))?;
-        let image = batch.link_helper(helper).map_err(CompositionError::Link)?;
+        let words = batch
+            .helper_words(helper_index)
+            .map_err(CompositionError::Link)?;
         emit_anonymous(
             &mut dmb,
             &mut string_index,
-            &image.words,
-            &helper.local_names,
+            words,
+            &batch.helpers[helper_index].local_names,
         )?;
     }
     if initializers.len() != batch.initializers.len() {
@@ -741,7 +731,8 @@ fn compose_records(
     let initialization: BTreeMap<_, _> = batch
         .initializers
         .iter()
-        .map(|unit| (unit.identity, unit))
+        .enumerate()
+        .map(|(unit_index, unit)| (unit.identity, unit_index))
         .collect();
     if initialization.len() != batch.initializers.len() {
         return Err(unsupported("duplicate initializer artifact"));
@@ -753,13 +744,18 @@ fn compose_records(
                 "initializer indexes".into(),
             ));
         }
-        let unit = initialization
+        let &unit_index = initialization
             .get(&identity)
             .ok_or_else(|| unsupported("initializer artifact absent"))?;
-        let image = batch
-            .link_initializer(unit)
+        let words = batch
+            .initializer_words(unit_index)
             .map_err(CompositionError::Link)?;
-        emit_anonymous(&mut dmb, &mut string_index, &image.words, &unit.local_names)?;
+        emit_anonymous(
+            &mut dmb,
+            &mut string_index,
+            words,
+            &batch.initializers[unit_index].local_names,
+        )?;
         match identity {
             dm_link::InitializerIdentity::Global => {
                 if dmb.world.ids[4] != NONE {
@@ -799,14 +795,18 @@ fn compose_records(
         )
         .map_err(|e| unsupported(format!("class members {e:?}")))?;
         crate::class_projection::finalize_headers(
-            &mut dmb, engine_bytes, plan, &batch.tables, symbols,
+            &mut dmb,
+            engine_bytes,
+            plan,
+            &batch.tables,
+            symbols,
         )
         .map_err(|e| unsupported(format!("class headers {e:?}")))?;
         crate::class_projection::materialize_callback_flags(&mut dmb, plan, &batch.tables)
             .map_err(|e| unsupported(format!("class callbacks {e:?}")))?;
     }
     if let Some(stage) = stage {
-        let attached = stage.apply(&mut dmb, batch).map_err(unsupported)?;
+        let attached = stage.apply(&mut dmb, &batch).map_err(unsupported)?;
         if attached != stage_keys {
             return Err(unsupported("non-text output stage linker coverage differs"));
         }
@@ -826,7 +826,7 @@ fn compose_records(
             }
         }
     }
-    let feature_images = batch.feature_images();
+    let feature_images = batch.certified_features();
     let mut external = false;
     let mut debug = false;
     for index in 0..dmb.procs.len() {
@@ -856,6 +856,10 @@ fn compose_records(
                 unsupported(format!("invalid composed bytecode: proc={index}, path={path:?}, name={name:?}, error={e:?}, words[{start}..{end}]={:?}",&words[start..end]))
             })?;
     }
+    drop(feature_images);
+    // All output-stage and final instruction checks are complete. Consuming
+    // requests release frozen IR/table inventories before encode/decode overlap.
+    drop(batch);
     if external {
         dmb.header.flags |= 0x2000_0000;
     }
@@ -908,10 +912,10 @@ fn reserve_procedure_sentinel(dmb: &mut Dmb) {
 fn emit_anonymous(
     dmb: &mut Dmb,
     strings: &mut StringIndex,
-    words: &[u32],
+    words: Vec<u32>,
     names: &[String],
 ) -> Result<(), CompositionError> {
-    let code = append_list(dmb, words.to_vec())?;
+    let code = append_list(dmb, words)?;
     let mut locals = Vec::with_capacity(names.len());
     for name in names {
         let name = strings.intern(dmb, name.as_bytes())?;
@@ -940,3 +944,6 @@ fn emit_anonymous(
 #[cfg(test)]
 #[path = "composition/tests.rs"]
 mod tests;
+
+mod owned;
+pub use owned::{compose_global_fixture_owned, compose_projected_owned_with_symbols};

@@ -158,20 +158,28 @@ impl SymbolicCode {
     /// sites, and table-kind substitutions before any output index is assigned.
     /// `new` alone validates storage; it cannot infer an ABI from raw integers.
     pub fn validate_sites(&self, sites: &[(u32, RelocationKind)]) -> Result<(), RelocationError> {
-        self.validate_encoded_sites(
-            &sites
+        self.validate_encoded_sites_iter(
+            sites
                 .iter()
-                .map(|&(offset, kind)| (offset, kind, RelocationEncoding::Direct))
-                .collect::<Vec<_>>(),
+                .map(|&(offset, kind)| (offset, kind, RelocationEncoding::Direct)),
         )
     }
     pub fn validate_encoded_sites(
         &self,
         sites: &[(u32, RelocationKind, RelocationEncoding)],
     ) -> Result<(), RelocationError> {
+        self.validate_encoded_sites_iter(sites.iter().copied())
+    }
+
+    /// Validate a borrowed ledger in its encounter order without materializing
+    /// a temporary tuple vector. The slice API uses this same validation path.
+    pub fn validate_encoded_sites_iter(
+        &self,
+        sites: impl IntoIterator<Item = (u32, RelocationKind, RelocationEncoding)>,
+    ) -> Result<(), RelocationError> {
         let mut expected = HashMap::new();
         let mut covered = HashSet::new();
-        for &(offset, kind, encoding) in sites {
+        for (offset, kind, encoding) in sites {
             for delta in 0..encoding.width() {
                 let at = offset
                     .checked_add(delta)
@@ -360,6 +368,77 @@ fn encode_reference(bytes: &mut Vec<u8>, reference: SymRef) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn borrowed_site_ledgers_preserve_unsorted_validation_and_error_precedence() {
+        let packed = RelocationEncoding::PackedValue24 { tag: 6 };
+        let direct = RelocationEncoding::Direct;
+        let code = SymbolicCode::new(
+            vec![0; 6],
+            vec![
+                Relocation {
+                    offset: 3,
+                    reference: SymRef::BuiltinGlobalVars,
+                    encoding: direct,
+                },
+                Relocation {
+                    offset: 0,
+                    reference: SymRef::String(SymbolId::of("text")),
+                    encoding: packed,
+                },
+            ],
+        )
+        .unwrap();
+        let string = RelocationKind::String;
+        let variable = RelocationKind::Variable;
+        let fixtures = [
+            (vec![(3, variable, direct), (0, string, packed)], Ok(())),
+            (
+                vec![
+                    (3, string, direct),
+                    (0, variable, packed),
+                    (6, string, direct),
+                ],
+                Err(RelocationError::OutOfBounds(6)),
+            ),
+            (
+                vec![(0, string, packed), (1, variable, direct)],
+                Err(RelocationError::DuplicateSite(1)),
+            ),
+            (
+                vec![(3, variable, direct)],
+                Err(RelocationError::MissingSite(0)),
+            ),
+            (
+                vec![(3, string, direct), (0, variable, packed)],
+                Err(RelocationError::KindMismatch {
+                    offset: 0,
+                    expected: variable,
+                    actual: string,
+                }),
+            ),
+            (
+                vec![(3, variable, direct), (0, string, direct)],
+                Err(RelocationError::EncodingMismatch(0)),
+            ),
+            (
+                vec![
+                    (5, string, direct),
+                    (3, variable, direct),
+                    (2, string, direct),
+                    (0, string, packed),
+                ],
+                Err(RelocationError::MissingRelocation(2)),
+            ),
+        ];
+        for (sites, expected) in fixtures {
+            assert_eq!(code.validate_encoded_sites(&sites), expected);
+            assert_eq!(
+                code.validate_encoded_sites_iter(sites.iter().copied()),
+                expected
+            );
+        }
+    }
 
     #[test]
     fn packed_values_validate_both_words_encoding_and_range() {

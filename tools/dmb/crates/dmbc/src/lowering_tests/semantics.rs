@@ -270,7 +270,8 @@ fn captured_policy_prepares_guarded_settings_and_authoritative_layout() {
     batch.require_production_abi().unwrap();
     let abi = batch.units[0].abi.as_ref().unwrap();
     assert_eq!(abi.layout.category, Category::Null);
-    assert_eq!(abi.layout.flags, 0x24);
+    // DM set declarations apply lexically even inside an untaken if branch.
+    assert_eq!(abi.layout.flags, 0x25);
     assert_eq!(batch.units[0].code.procedure.argument_type_flags, [136]);
     let helper_frontend = self::frontend("/proc/source(value in list(value))\n    return value\n");
     let helpers = lower_frontend(&helper_frontend, &Host, &policy, LoweringConfig::default());

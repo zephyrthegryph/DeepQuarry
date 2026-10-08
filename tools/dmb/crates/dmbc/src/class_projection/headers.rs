@@ -85,6 +85,11 @@ pub(crate) fn finalize_headers(
         .map(|ty| projected_class_index(ty.path, tables, &class_ids, symbols))
         .collect::<Result<BTreeSet<_>, _>>()?;
     let order = parent_order(dmb, &ids)?;
+    // Explicit source assignments outrank native subtype defaults, even when
+    // the assigned value equals the ancestor's engine default. Share unchanged
+    // provenance sets across descendants rather than copying per class.
+    let mut effective_authored: HashMap<u32, Arc<HashSet<&str>>> = HashMap::new();
+    let mut effective_overrides: HashMap<u32, Arc<HashSet<&str>>> = HashMap::new();
     let mut authored_name = HashSet::new();
     let mut authored_text = HashSet::new();
     let mut pool = crate::composition::StringIndex::build(dmb)
@@ -92,6 +97,15 @@ pub(crate) fn finalize_headers(
     for id in order {
         let authored = own.get(&id).cloned().unwrap_or_default();
         let mut local = authored.clone();
+        let parent_id = dmb.classes[id as usize].parent_class_id();
+        let inherited_authored = effective_authored
+            .get(&parent_id)
+            .cloned()
+            .unwrap_or_default();
+        let inherited_overrides = effective_overrides
+            .get(&parent_id)
+            .cloned()
+            .unwrap_or_default();
         let path = dmb
             .string(dmb.classes[id as usize].path_string_id())
             .ok_or(ProjectionError::MissingMember)?;
@@ -121,7 +135,10 @@ pub(crate) fn finalize_headers(
                 }
             }
         }
-        let parent_id = dmb.classes[id as usize].parent_class_id();
+        local.retain(|name| authored.contains(name) || !inherited_authored.contains(name));
+        native_override_names.retain(|name| {
+            !std::str::from_utf8(name).is_ok_and(|name| inherited_overrides.contains(name))
+        });
         let inherited_name = authored_name.contains(&parent_id);
         let inherited_text = authored_text.contains(&parent_id);
         if parent_id != NONE {
@@ -145,6 +162,14 @@ pub(crate) fn finalize_headers(
                 &native_override_names,
             )?;
         }
+        effective_authored.insert(id, extend_provenance(inherited_authored, &authored));
+        effective_overrides.insert(
+            id,
+            extend_provenance(
+                inherited_overrides,
+                override_own.get(&id).unwrap_or(&HashSet::new()),
+            ),
+        );
         if authored.contains("name") && dmb.classes[id as usize].name_string_id() == NONE {
             // Native null-name reset restores the type leaf instead of leaving
             // a null display name. Keep this an authored effective name.
@@ -195,6 +220,18 @@ pub(crate) fn finalize_headers(
         }
     }
     Ok(())
+}
+
+fn extend_provenance<'a>(
+    inherited: Arc<HashSet<&'a str>>,
+    own: &HashSet<&'a str>,
+) -> Arc<HashSet<&'a str>> {
+    if own.is_empty() {
+        return inherited;
+    }
+    let mut combined = inherited.as_ref().clone();
+    combined.extend(own.iter().copied());
+    Arc::new(combined)
 }
 
 fn projected_class_index(

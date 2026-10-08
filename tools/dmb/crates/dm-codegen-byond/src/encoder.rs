@@ -102,7 +102,7 @@ pub fn freeze_proc_observed<G>(
         .map_err(FreezeError::Abi)?;
     let binding_guard = observe(FreezeStage::Binding);
     let mut words = encoded.linked.words;
-    let mut relocations = encoded.debug_relocations.clone();
+    let mut relocations = encoded.debug_relocations;
     for ((_, symbol), site) in encoded.linked.relocations.iter().zip(&encoded.sites) {
         let reference = bind(symbol).map_err(|message| FreezeError::Binder {
             symbol: symbol.clone(),
@@ -134,14 +134,8 @@ pub fn freeze_proc_observed<G>(
         SymbolicCode::new(words, relocations).map_err(FreezeError::Relocation)?
     };
     let site_guard = observe(FreezeStage::SiteValidation);
-    code.validate_encoded_sites(
-        &encoded
-            .sites
-            .iter()
-            .map(|s| (s.offset, s.kind, s.encoding))
-            .collect::<Vec<_>>(),
-    )
-    .map_err(FreezeError::Relocation)?;
+    code.validate_encoded_sites_iter(encoded.sites.iter().map(|s| (s.offset, s.kind, s.encoding)))
+        .map_err(FreezeError::Relocation)?;
     drop(site_guard);
     Ok(FrozenProc {
         code,

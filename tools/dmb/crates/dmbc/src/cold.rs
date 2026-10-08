@@ -521,9 +521,9 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     let symbolic_linking = stage.elapsed();
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::Composition);
-    let dmb = crate::composition::compose_projected_with_symbols(
+    let dmb = crate::composition::compose_projected_owned_with_symbols(
         links.engine_bytes,
-        &frozen,
+        frozen,
         frontend,
         &projection,
         declarations.type_values,

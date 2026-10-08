@@ -249,3 +249,77 @@ fn equal_selector_bytes_mask_parent_even_with_different_string_ids() {
     assert_eq!(defaults[0].name_string_id, child_name);
     assert_eq!(defaults[0].value, marker);
 }
+
+#[test]
+fn authored_ancestor_assignment_overrides_native_subtype_default_even_when_unchanged() {
+    let bytes = include_bytes!("../../../../fixtures/native_template.bin");
+    let mut dmb = image();
+    let mut symbols = SymbolTable::default();
+    let atom = symbols.intern("/atom").unwrap();
+    let area = symbols.intern("/area").unwrap();
+    let layer = symbols.intern("layer").unwrap();
+    let index = |dmb: &Dmb, path: &[u8]| {
+        dmb.classes
+            .iter()
+            .position(|class| dmb.string(class.path_string_id()) == Some(path))
+            .unwrap()
+    };
+    let atom_id = index(&dmb, b"/atom");
+    let area_id = index(&dmb, b"/area");
+    let inherited = dmb.classes[atom_id].layer_bits;
+    let native_area = dmb.classes[area_id].layer_bits;
+    assert_ne!(
+        inherited, native_area,
+        "pinned engine must exercise native subtype default"
+    );
+    let mut projection = ClassProjection {
+        shared_slot_order: Arc::from([]),
+        procedure_statics: Arc::from([]),
+        runtime_writes: Arc::from([]),
+        tree_identity: 0,
+        occurrence_count: 0,
+        types: vec![
+            TypeProjection {
+                path: atom,
+                parent: None,
+            },
+            TypeProjection {
+                path: area,
+                parent: Some(atom),
+            },
+        ]
+        .into(),
+        fields: vec![FieldProjection {
+            owner: atom,
+            declaring_owner: atom,
+            name: layer,
+            role: FieldRole::Assignment,
+            wire_flags: None,
+            intrinsic: true,
+            shared: false,
+            value: DefaultValue::Scalar(SemanticValue::NumberBits(inherited)),
+        }]
+        .into(),
+        chains: Arc::from([]),
+        procedure_declarations: Arc::new(BTreeMap::new()),
+    };
+    let tables = dm_link::LinkTables::build(Default::default()).unwrap();
+    finalize_headers(&mut dmb, bytes, &projection, &tables, &symbols).unwrap();
+    assert_eq!(dmb.classes[area_id].layer_bits, inherited);
+    // A source child assignment still wins over the authored parent.
+    dmb.classes[area_id].layer_bits = native_area;
+    let mut fields = projection.fields.to_vec();
+    fields.push(FieldProjection {
+        owner: area,
+        declaring_owner: area,
+        name: layer,
+        role: FieldRole::Assignment,
+        wire_flags: None,
+        intrinsic: true,
+        shared: false,
+        value: DefaultValue::Scalar(SemanticValue::NumberBits(native_area)),
+    });
+    projection.fields = fields.into();
+    finalize_headers(&mut dmb, bytes, &projection, &tables, &symbols).unwrap();
+    assert_eq!(dmb.classes[area_id].layer_bits, native_area);
+}

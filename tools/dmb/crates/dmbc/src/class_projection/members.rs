@@ -507,9 +507,21 @@ pub fn materialize_members(
                 "animate_movement" => dmb.classes[class as usize]
                     .set_animate_movement(integer(0.0, 255.0)? as u8)
                     .map_err(|e| ProjectionError::Unsupported(e.to_string()))?,
-                "luminosity" => dmb.classes[class as usize]
-                    .set_luminosity(integer(0.0, 7.0)? as u8)
-                    .map_err(|e| ProjectionError::Unsupported(e.to_string()))?,
+                "luminosity" => {
+                    dmb.classes[class as usize]
+                        .set_luminosity(integer(0.0, 7.0)? as u8)
+                        .map_err(|e| ProjectionError::Unsupported(e.to_string()))?;
+                    // Pinned BYOND stores authored luminosity both in the
+                    // appearance header and as a builtin selector default,
+                    // including assignments equal to the engine baseline.
+                    let selector = pool.intern(dmb, name.as_bytes()).map_err(|e| {
+                        ProjectionError::Unsupported(format!("luminosity selector {e:?}"))
+                    })?;
+                    let mut words = vec![selector];
+                    words.extend(encoded_constant(kind, value)?);
+                    let old = dmb.classes[class as usize].overrides;
+                    dmb.classes[class as usize].overrides = extend(dmb, old, words)?;
+                }
                 "appearance_flags" => {
                     dmb.classes[class as usize]
                         .set_appearance_flags(integer(0.0, u32::MAX as f32)? as u32)
@@ -593,3 +605,7 @@ pub fn materialize_members(
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "members_luminosity_tests.rs"]
+mod luminosity_tests;

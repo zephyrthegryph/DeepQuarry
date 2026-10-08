@@ -463,3 +463,73 @@ fn request_string_inventory_reuses_exact_bytes_and_preserves_conflicts() {
         matches!(LinkTables::build(inventory), Err(dm_link::LinkError::ContentCollision(key)) if key == Key::String(id))
     );
 }
+
+#[test]
+fn consuming_current_image_transfers_unique_words_and_invalidates_feature_receipt() {
+    let frontend = frontend();
+    let lowered = lower_frontend(&frontend, &Host, &Policy, LoweringConfig::default());
+    let mut batch = freeze_and_link_tables(
+        lowered,
+        frontend.snapshot.tree.symbols(),
+        &ReferenceBindings::default(),
+        LinkInventory::default(),
+    )
+    .unwrap();
+    let pointer = batch.units[0]
+        .current_image
+        .as_ref()
+        .unwrap()
+        .image
+        .words
+        .as_ptr();
+    let expected = batch
+        .tables
+        .link(
+            batch.units[0].frozen.code(),
+            &batch.units[0].lowered.debug_origins.source_bindings(),
+        )
+        .unwrap();
+    let words = batch
+        .take_unit_image(0, &SourceBindings::default())
+        .unwrap()
+        .into_words();
+    assert_eq!(words.as_ptr(), pointer);
+    assert_eq!(words.as_slice(), expected.words.as_slice());
+    assert!(batch.units[0].current_image.is_none());
+    assert!(batch.feature_images().is_empty());
+}
+
+#[test]
+fn consuming_changed_origins_relinks_instead_of_taking_stale_image() {
+    let frontend = frontend();
+    let lowered = lower_frontend(&frontend, &Host, &Policy, LoweringConfig::default());
+    let mut batch = freeze_and_link_tables(
+        lowered,
+        frontend.snapshot.tree.symbols(),
+        &ReferenceBindings::default(),
+        LinkInventory::default(),
+    )
+    .unwrap();
+    let retained = batch.link_unit(0, &SourceBindings::default()).unwrap();
+    for origin in &mut batch.units[0].lowered.debug_origins.entries {
+        origin.line += 50;
+    }
+    let expected = batch
+        .tables
+        .link(
+            batch.units[0].frozen.code(),
+            &batch.units[0].lowered.debug_origins.source_bindings(),
+        )
+        .unwrap();
+    let image = batch
+        .take_unit_image(0, &SourceBindings::default())
+        .unwrap();
+    assert_eq!(image, expected);
+    assert!(!Arc::ptr_eq(&image.words, &retained.words));
+    assert_ne!(image.words, retained.words);
+    assert!(batch.units[0].current_image.is_none());
+    batch.tables = LinkTables::build(LinkInventory::default()).unwrap();
+    assert!(batch
+        .take_unit_image(0, &SourceBindings::default())
+        .is_err());
+}

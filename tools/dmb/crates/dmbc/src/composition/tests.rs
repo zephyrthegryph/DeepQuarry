@@ -353,3 +353,85 @@ fn captured_override_chain_keeps_physical_namespace_and_super_occurrences_distin
     assert_eq!(paths, ["/datum/probe/work", "/datum/probe/proc/work"]);
     assert_ne!(chain.entries[0], chain.entries[1]);
 }
+
+fn ownership_fixture() -> (FrozenBatch, SymbolTable) {
+    struct Policy;
+    impl crate::lowering::AbiPolicy for Policy {
+        fn inputs(
+            &self,
+            _: crate::lowering::UnitIdentity,
+            _: &dm_ir::ProcedureMetadata,
+            _: &SymbolTable,
+            _: &dm_tree::frontend::SourceLocation,
+        ) -> Result<dm_codegen_byond::ProcedureInputs, String> {
+            Ok(Default::default())
+        }
+    }
+    let bytes = include_bytes!("../../../../fixtures/native_template.bin");
+    let engine = crate::engine::EngineSnapshot::from_bytes(bytes, 1).unwrap();
+    let frontend = frontend("/proc/ownership_transfer_probe()\n    return \"exact\"\n");
+    let mut symbols = engine.symbols().clone();
+    for (_, text) in frontend.snapshot.tree.symbols().ordered() {
+        symbols.intern(text).unwrap();
+    }
+    let mut lowered = crate::lowering::lower_frontend(
+        &frontend,
+        frontend.snapshot.tree.as_ref(),
+        &Policy,
+        Default::default(),
+    );
+    assert!(lowered.diagnostics.is_empty(), "{:?}", lowered.diagnostics);
+    assert_eq!(lowered.units.len(), 1);
+    lowered.units[0].abi = Some(std::sync::Arc::new(crate::procedure_policy::PreparedAbi {
+        layout: Default::default(),
+        argument_sources: Vec::new(),
+        source_helpers: Vec::new(),
+    }));
+    let links = crate::engine_link::capture(bytes, &engine).unwrap();
+    let batch = crate::symbolic::freeze_and_link_tables(
+        lowered,
+        &symbols,
+        &links.references,
+        links.inventory,
+    )
+    .unwrap();
+    (batch, symbols)
+}
+#[test]
+fn consuming_and_borrowed_composition_emit_identical_bytes() {
+    let (batch, symbols) = ownership_fixture();
+    let engine = include_bytes!("../../../../fixtures/native_template.bin");
+    let borrowed = compose_global_fixture(engine, &batch, &symbols).unwrap();
+    let consumed = compose_global_fixture_owned(engine, batch, &symbols).unwrap();
+    assert_eq!(borrowed, consumed);
+}
+#[test]
+fn consuming_composition_rejects_invalid_post_stage_instructions() {
+    struct Corrupt;
+    impl NonTextOutputStage for Corrupt {
+        fn validate_source(&self, _: &dm_tree::frontend::ColdFrontend) -> Result<(), String> {
+            Ok(())
+        }
+        fn apply(&self, dmb: &mut Dmb, batch: &FrozenBatch) -> Result<BTreeSet<Key>, String> {
+            let identity = batch.units[0].lowered.identity;
+            let proc_id = batch
+                .tables
+                .index(crate::symbolic::unit_key(identity))
+                .unwrap();
+            let code = dmb.procs[proc_id as usize].code_locals_args[0];
+            dmb.lists[code as usize] = vec![u32::MAX];
+            Ok(BTreeSet::new())
+        }
+    }
+    let (batch, symbols) = ownership_fixture();
+    let result = compose_records_access(
+        include_bytes!("../../../../fixtures/native_template.bin"),
+        owned::BatchAccess::Owned(batch),
+        &symbols,
+        None,
+        Some(&Corrupt),
+    );
+    assert!(
+        matches!(result, Err(CompositionError::Unsupported(message)) if message.contains("invalid composed bytecode"))
+    );
+}

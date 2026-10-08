@@ -391,7 +391,7 @@ impl LinkTables {
             .link(|reference| resolved.get(&reference).copied())
             .map_err(LinkError::Relocation)?;
         Ok(ProcedureImage {
-            words: words.into(),
+            words: Arc::new(words),
         })
     }
 }
@@ -473,7 +473,15 @@ pub struct SourceBindings {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProcedureImage {
-    pub words: Arc<[u32]>,
+    pub words: Arc<Vec<u32>>,
+}
+
+impl ProcedureImage {
+    /// Move the linked allocation when uniquely owned. A retained borrowed
+    /// snapshot gets an exact independent copy and remains unchanged.
+    pub fn into_words(self) -> Vec<u32> {
+        Arc::try_unwrap(self.words).unwrap_or_else(|shared| shared.as_ref().clone())
+    }
 }
 
 /// Initializer dependencies/registration order are supplied by semantic lowering,
@@ -910,5 +918,32 @@ mod tests {
             })
         );
         assert_eq!(code.words(), &[42, 0, 0, 0, 0]);
+    }
+}
+
+#[cfg(test)]
+mod image_ownership_tests {
+    use super::*;
+    #[test]
+    fn unique_linked_words_transfer_the_existing_allocation() {
+        let words = vec![1, 2, 3, 4];
+        let pointer = words.as_ptr();
+        let image = ProcedureImage {
+            words: Arc::new(words),
+        };
+        let transferred = image.into_words();
+        assert_eq!(transferred.as_ptr(), pointer);
+        assert_eq!(transferred, [1, 2, 3, 4]);
+    }
+    #[test]
+    fn retained_snapshot_stays_unchanged_when_words_are_consumed() {
+        let image = ProcedureImage {
+            words: Arc::new(vec![4, 5, 6]),
+        };
+        let snapshot = image.clone();
+        let mut transferred = image.into_words();
+        assert_ne!(transferred.as_ptr(), snapshot.words.as_ptr());
+        transferred[0] = 99;
+        assert_eq!(snapshot.words.as_slice(), &[4, 5, 6]);
     }
 }
