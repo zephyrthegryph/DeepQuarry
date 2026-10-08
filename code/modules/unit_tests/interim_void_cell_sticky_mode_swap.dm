@@ -1,5 +1,6 @@
 /// A real cell mode swap must consume its original and preserve actual charge fraction.
 /datum/unit_test/interim_void_cell_sticky_mode_swap/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/cell/void/cell = allocate(/obj/item/cell/void, T)
@@ -12,14 +13,14 @@
 	TEST_ASSERT(user.put_in_active_hand(cell), "the actor holds the exact original cell")
 	add_trait(cell, TRAIT_NODROP, "interim_void_cell_sticky")
 	TEST_ASSERT(user.release_refusal(cell, user), "actual inventory refuses sticky original cell consumption")
-	cell.interaction_self(user, cell, null)
+	test_click(user, cell, cell, GESTURE_SELF)
 	TEST_ASSERT(!QDELETED(cell), "refused mode swap preserves exact original cell")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), cell, "refused mode swap preserves original source hand")
 	TEST_ASSERT_EQUAL(cell.loc, user, "refused mode swap preserves inventory containment")
 	TEST_ASSERT_EQUAL(cell.charge, original_charge, "refused mode swap preserves original actual charge")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item)), floor_items_before - 1, "refused mode swap creates no floor replacement")
 	remove_trait(cell, TRAIT_NODROP, "interim_void_cell_sticky")
-	cell.interaction_self(user, cell, null)
+	test_click(user, cell, cell, GESTURE_SELF)
 	TEST_ASSERT(QDELETED(cell), "allowed mode swap consumes exact original cell")
 	var/obj/item/cell/device/weapon/recharge/alien/replacement = user.get_active_hand()
 	TEST_ASSERT(istype(replacement, /obj/item/cell/device/weapon/recharge/alien), "allowed mode swap returns its actual reciprocal cell type")

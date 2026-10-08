@@ -15,6 +15,10 @@ MSG_DEF_SELF(apc_frame/area_has_one, "This area already has an APC.")
 MSG_DEF_SELF(apc_frame/terminal_taken, "There is another network terminal here.")
 MSG_DEF_SELF(apc_frame/cut_terminal, "You cut the cables and disassemble the unused power terminal.")
 
+/// An APC frame is only ever an APC: the generic wall-frame choice of what to build is not asked.
+/obj/item/frame/apc/wall_type_needed(datum/act/op/A)
+	return FALSE
+
 /// An APC faces the wall it hangs on (its back to the builder).
 /obj/item/frame/apc/mount_dir(atom/wall, mob/user)
 	return get_dir(user, wall)

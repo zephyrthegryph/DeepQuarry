@@ -9,6 +9,7 @@
 	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	user.enable_godmode() // a mindless, clientless human is put to sleep by Life after about 5 s; the 10 s waits would pass over it
 	var/obj/item/reagent_containers/food/snacks/csandwich/sandwich = allocate(/obj/item/reagent_containers/food/snacks/csandwich, T)
 	var/obj/item/material/shard/shard = allocate(/obj/item/material/shard, T)
 	TEST_ASSERT_EQUAL(contents_count(sandwich), 0, "the actual initialized sandwich starts without hidden objects")

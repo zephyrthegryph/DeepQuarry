@@ -230,7 +230,7 @@
 	var/list/popped = graph_undo(E, src.args["cap"])
 	if(!popped)
 		return OP_FAILED
-	graph_refund(E, popped[2], A.actor)
+	E.graph_refund(popped[2], A.actor) // not the global name: inside this part, a bare graph_refund() is the part's own inherited proc, with the arguments shifted
 	for(var/datum/entry/part/undone/handler as anything in A.oplan?.undone)
 		op_call(A, handler.args["handler"])
 	return OP_OK
@@ -244,7 +244,7 @@
 	var/datum/E = A.holder
 	if(src.args["phase"] == "refund")
 		for(var/list/ledger in graph_ledger_all(E, src.args["cap"]))
-			graph_refund(E, ledger, A.actor)
+			E.graph_refund(ledger, A.actor)
 		return OP_OK
 	var/atom/movable/AM = E
 	if(istype(AM) && !QDELETED(AM))
@@ -271,9 +271,6 @@
 		if(report != OP_OK)
 			return report
 	return OP_OK
-
-/proc/graph_refund(datum/E, list/ledger, mob/actor)
-	E.graph_refund(ledger, actor)
 
 /datum/proc/graph_refund(list/ledger, mob/actor)
 	return
