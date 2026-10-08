@@ -253,3 +253,24 @@ Counts on origin/master eac3bc655d: `om_link(` 51 lines in 26 files, of which 30
 2. **Untracked reads in `tgui_data()` bodies**: the generated `ui_from()` reads come only from tracked vars and stats.
 3. **Hand change marks**: about 70 `changed(src, CHANNEL)` sites outside the OM folder (injury.dm, areas.dm, signaler.dm, mutations.dm, life_om.dm, species traits, heat_mobs, body_effects, asset_list, items.dm, meteors, capability library files).
 4. **User status** (window closes when the user moves or is stunned) needs `lives_while` / `on_change` on tracked stats instead of mob channels.
+
+### H4 design: branching ban flows as asks() steps (not implemented)
+
+Written for review (rewrite/om-leftovers). Today `topic_unbane`, `topic_unbanf`, the ban panel, the player-panel buttons, the shuttle time edit and the legacy player notes
+re-run the href with an answer slot ("a4", "a5", "a6", ...) through `ban_topic_ask()` / `topic_rerun_ask()` (115 sites). The branching is plain DM between the asks.
+
+What already exists: an op's `asks()` steps run in order, each can carry `when = PROC_REF(x)` (x(datum/act/op/A) reads the step is reached; a false `when` skips the step with no prompt
+and leaves `A.answer` as it was), and the answers are read with `A.step_value("step")`. That covers the two-level branch of the unban-edit flow:
+
+- step "temp" `asks(/datum/prompt/choice/admin_ban_topic, fields = list("question" = "Temporary Ban?", "choices" = list("Yes", "No")), step = "temp")`
+- step "minutes" `asks(/datum/prompt/number/admin_ban_topic, ..., step = "minutes", when = PROC_REF(ban_is_temporary))`, where `ban_is_temporary` is `A.step_value("temp") == "Yes"`
+- step "reason" `asks(/datum/prompt/text/..., step = "reason")`, and the handler (`then()`) does the write once, with every answer read from the steps.
+
+What is missing, and is the one framework addition H4 needs: a step that repeats. The per-job ban asks one question per banned job until the admin stops, and the
+answers are a list. Proposed part: `asks(..., step = "job", repeats = PROC_REF(more_jobs))`: after each answer the engine calls `more_jobs(datum/act/op/A)`; TRUE asks the
+step again (the field computation re-runs, so the question can name the next job), FALSE moves on. The answers are kept in order, `A.step_values("job")` returns the list, and
+`keeps = WAIT_KEEPS_DEFAULT` governs the abandoned flow as for any step. A cancel at any step ends the op with nothing written, as today.
+
+Order of work once the repeat part exists: (1) the unban/edit pair, (2) the add-ban flow including the IP ban branch (`when =` on the IP step), (3) the per-job loop, (4) the player-panel
+buttons and shuttle time edit (single-question flows; they need only `asks()`), (5) delete `topic_rerun_ask()`, `ban_topic_ask()` and the `rerun` of `/datum/prompt_rerun/topic`, and ban the names.
+Tests: one per flow, driving `test_ui()` with `test_answer()` for each step including a cancel mid-flow (no ban written) and a "No" at the temporary step (permanent ban).
