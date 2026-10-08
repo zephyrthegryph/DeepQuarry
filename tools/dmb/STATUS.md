@@ -4,6 +4,8 @@
 
 ## Implemented and checked
 
+- Commit `4444f22e61` replaces the separate header/member routing exceptions with one shared intrinsic routing contract. All 21 focused class/routing checks and dmbc all-target Clippy pass. Three complete captured-source compiles and their three independent fresh-output oracles now pass. The earlier l/m routing failures are resolved; runtime and BYOND semantic parity are not claimed.
+
 - Commits `9d079bce60` and `067885825c`: finalize inherited class headers after authored members, preserve native subtype defaults and runtime override tokens, and derive known mouse callback flags from bound procedures. All 18 focused class checks and dmbc all-target Clippy pass. Real output comparison for these changes is pending; this is not a runtime parity result.
 - Compiler l's captured run failed in header finalization after 38.17 s; no successful build timing is claimed. The finalizer incorrectly required ordinary class bindings for separately routed root/world records and retained engine classes. Routing is corrected with a full-finalizer regression; a new real output run is required.
 - Compiler m (`17ec7425a8`) also failed before output publication, after 32.72 s, because `/savefile` intrinsic defaults use a separate writer route. This is the second failed header integration round: DESIGN §8's stop-loss is reached. Header finalization must share the member writer's exact routing contract before further retries. Evidence: `E:/dmb-native-v2-phase0/review-power-focus/native-retries/retry-9851f518661a4c358ab8857f4d5a9dc3/receipt.json` and `cold.trace.report.json`. Its partial-run CPU and memory observations are not successful compile benchmarks.
@@ -36,7 +38,7 @@ The entire ratio interval passes the independent 5% check; CPU quality reports n
 
 Largest maximum-thread CPU bounds: resources/maps 9.140625–9.203125 s; symbolic linking 7.640625–7.703125 s; procedure lowering 3.4375–3.5 s; initializers 2.921875–2.984375 s; composition 2.71875–2.78125 s; input scan 2.53125–2.59375 s; tree resolution 1.875–1.9375 s. Speed and memory remain above target. The later memory/ABI changes have not been benchmarked.
 
-## Latest complete-source output and cold audit
+## Earlier single-run complete-source output and cold audit
 
 Commit `8554b25773` preserves explicit proc/verb declarations versus implicit override paths. All 11 composition tests and targeted all-target Clippy pass. Frozen compiler j cleared the focused project twice in harness wall 44.8504 s and 45.1297 s at two workers; DMB/RSC bytes and normalized diagnostics match. The repaired global-vars table has the same full 1,198 physical paths as BYOND and exactly the same 1,148 `/proc/` namespace entries. The previous extra 50 entries caused unintended lifecycle/override calls during global initialization. The repaired pair has not yet run; a second bounded focused runtime comparison was requested after the one-pair allowance was used.
 
@@ -54,6 +56,24 @@ A separate eight-worker no-cache/no-daemon run of the **historic focused DeepQua
 
 CPU quality reports no errors; the entire ratio passes the independent 5% crosscheck. This is one run, a different frozen source scope from compiler f's earlier audit, and not an acceptance median or a measured before/after speedup. CPU and memory remain above Phase 1 targets. Evidence: `E:/dmb-native-v2-phase0/review-power-focus/native-retries/retry-e0a7ff07c0604b2c91cb0d18e3426063/`. No body-edit measurement on this complete snapshot exists yet.
 
+## Latest three-run cold cohort
+
+Frozen compiler n, commit `4444f22e61`, SHA256 `7344e4fbae9046573dc9e9ffb89f637d4f8035ef4e0ef88fb1d759db1ef7dd36`; release with LTO disabled and allocation counting. Eight workers, no compiler cache, no daemon, strict captured replay of historical DeepQuarry test project `ac1af55d1a`, `comparison.dme`. This is not the current production-map manifest, nor an incremental-edit measurement.
+
+| Measurement | Result |
+| --- | ---: |
+| Complete compiler child wall, three-run median | 31.5695 s |
+| Complete child wall range | 27.6130–108.8052 s |
+| Independent fresh-output child wall, median | 29.9370 s |
+| Profiler wall, median | 30.9720 s |
+| Total process CPU, median | 63.546875 s |
+| Critical-path CPU uncertainty bounds, median | 23.5–24.8125 s |
+| Peak private memory, maximum | 2,551,934,976 bytes |
+
+All three CPU-quality checks pass the unchanged 5% process crosscheck. Every measured DMB/RSC and normalized diagnostic channel matches its independent fresh build; DMB/RSC hashes also agree across all three measured runs. DMB is 59,246,419 bytes; RSC is 223,679,650 bytes. Runtime validation is not included. The first measured run spent 38.663 s in input preparation and 38.260 s in resources/maps; the next spent 1.577 s and 3.957 s respectively. The large wall spread is retained, not hidden or claimed as a CPU speedup.
+
+Results and receipt links are recorded in `phase0/results.jsonl`; the external cohort summary is `E:/dmb-native-v2-phase0/review-power-focus/cold-cohort-7344e4fbae90.json`. Critical CPU still exceeds 20 s and private memory still exceeds 1.5 GB. These output/measurement gates pass, but Phase 0/1 are not complete. A bounded `/area` comparison against the pinned BYOND output confirms that recorded text/icon/callback/plane gaps no longer appear in the displayed prefix; layer 1 versus 2, luminosity default representation and initializer debug-opcode differences remain. Its 100-difference cap is not a whole-program discrepancy count (`E:/dmb-native-v2-phase0/review-native-n-byond-area-compare.log`).
+
 ## Focused runtime gate
 
 The human authorized one bounded focused trusted-mode comparison after Rust/output checks, with no full runtime suite authorization. Both worlds completed one focused trusted replay; neither timed out or crashed. This is a single comparison, not full runtime parity.
@@ -67,8 +87,8 @@ The single focused replay completed normally on both: BYOND 87.4669 s / 63 per-t
 ## Required next work
 
 1. Root-cause and repair the native-only global initialization/runtime differences from the completed focused pair. The authorized one-pair runtime allowance has been used; no full suite has run.
-2. Verify fresh output from the complete source-size splits, relocation-binding optimization and asset digest reuse. All are applied and pass source/type/targeted test gates; their combined release output remains unchecked.
-3. Measure the memory/link changes on the real captured project; obtain cold and body-edit traces and three-run CPU baselines, with the independent crosscheck unchanged.
+2. Resolve remaining BYOND semantic differences, including the recorded area layer gap; deterministic native output does not establish BYOND equivalence.
+3. Obtain the body-edit trace on the same captured project and current-production-map evidence. The three-run cold CPU baseline and memory/link measurements now exist, with the independent crosscheck unchanged.
 4. Close normalized frozen runtime baseline evidence, retaining per-test errors, seeds and nondeterministic classifications.
 5. Bring measured stages and memory within Phase 1 budgets, then implement the resident daemon. No-daemon disk-cache features remain frozen until those phases pass.
 
