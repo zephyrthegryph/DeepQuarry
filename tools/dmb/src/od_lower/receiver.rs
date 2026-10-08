@@ -1,7 +1,9 @@
+use super::*;
+
 /// Preserve native frozen receiver values when repeated direct-root selectors
 /// reuse Cache. Re-reading a mutable binding after a call can select a different
 /// object, and can also release Eval earlier than native code.
-fn retain_frozen_root_cache(
+pub(super) fn retain_frozen_root_cache(
     out: &mut Vec<u32>,
     offsets: &mut HashMap<u32, u32>,
     fixups: &mut [Fixup],

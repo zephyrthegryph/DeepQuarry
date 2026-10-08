@@ -625,11 +625,15 @@ fn insert(
     symbol: Symbol,
     reference: SymRef,
 ) -> Result<(), IntegrationError> {
-    if bindings
-        .insert(symbol.clone(), reference)
-        .is_some_and(|old| old != reference)
-    {
-        return Err(IntegrationError::ConflictingBinding(symbol));
+    match bindings.entry(symbol) {
+        std::collections::btree_map::Entry::Vacant(entry) => {
+            entry.insert(reference);
+        }
+        std::collections::btree_map::Entry::Occupied(mut entry) => {
+            if entry.insert(reference) != reference {
+                return Err(IntegrationError::ConflictingBinding(entry.key().clone()));
+            }
+        }
     }
     Ok(())
 }

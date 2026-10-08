@@ -355,6 +355,12 @@ impl LinkTables {
         let mut resolved = BTreeMap::new();
         for relocation in code.relocations() {
             let reference = relocation.reference;
+            // Immutable tables/source bindings give repeated references the
+            // same answer. Retain first-encounter resolution/error order.
+            let std::collections::btree_map::Entry::Vacant(entry) = resolved.entry(reference)
+            else {
+                continue;
+            };
             let index = match reference {
                 SymRef::LineDelta(delta) => source
                     .first_line
@@ -379,7 +385,7 @@ impl LinkTables {
                         .ok_or(LinkError::UnknownReference(reference))?
                 }
             };
-            resolved.insert(reference, index);
+            entry.insert(index);
         }
         let words = code
             .link(|reference| resolved.get(&reference).copied())

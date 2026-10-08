@@ -180,12 +180,25 @@ fn construction(
             } else {
                 value
             };
-            let Evaluation::Scalar(SemanticValue::Type(path)) =
-                evaluator.evaluate_ast_write(write, ast, source, symbols)?
-            else {
-                return Err(format!("initializer constructor type {path} is not captured").into());
-            };
-            new_key(path, args, source, write, symbols, evaluator, output)?;
+            match evaluator.evaluate_ast_write(write, ast, source, symbols)? {
+                Evaluation::Scalar(SemanticValue::Type(path)) => {
+                    new_key(path, args, source, write, symbols, evaluator, output)?;
+                }
+                Evaluation::Scalar(value @ SemanticValue::Procedure(_)) => {
+                    // BYOND constructs from the proc reference value (tag0x26),
+                    // not a fabricated class. Keep owner/namespace/occurrence
+                    // in the expression identity; executable lowering already
+                    // emits ProcPath followed by NEW for this captured target.
+                    output.push(5);
+                    framed(output, &evaluator.initializer_token_scalar(&value)?);
+                    arguments(args, false, source, write, symbols, evaluator, output)?;
+                }
+                _ => {
+                    return Err(
+                        format!("initializer constructor target {path} is not captured").into(),
+                    );
+                }
+            }
         }
         ExprKind::Ident(name) if name == "new" => {
             new_key(
@@ -289,6 +302,92 @@ mod tests {
                 .collect::<Vec<_>>()
                 .into(),
         }
+    }
+    #[test]
+    fn captured_proc_and_verb_constructor_defaults_keep_exact_identity() {
+        struct ProcHost;
+        impl dm_ir::Resolver for ProcHost {
+            fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
+                match query {
+                    dm_ir::ResolveQuery::ProcedureValue {
+                        owner, name, verb, ..
+                    } if owner == dm_ir::SymbolId::of("/datum/target")
+                        && name == dm_ir::SymbolId::of("callback") =>
+                    {
+                        dm_ir::ResolvedMeaning::Value(SemanticValue::Procedure(
+                            dm_ir::ProcedureIdentity {
+                                owner,
+                                name,
+                                verb,
+                                occurrence: 0,
+                            },
+                        ))
+                    }
+                    dm_ir::ResolveQuery::Type(id) if id == dm_ir::SymbolId::of("/datum/target") => {
+                        dm_ir::ResolvedMeaning::Symbol(id)
+                    }
+                    _ => dm_ir::Resolver::resolve(&Host, query),
+                }
+            }
+        }
+        let mut symbols = SymbolTable::default();
+        for name in [
+            "/datum/target",
+            "callback",
+            "/datum/token_target",
+            "/obj",
+            "value",
+        ] {
+            symbols.intern(name).unwrap();
+        }
+        let sources = [
+            "new /datum/target/verb/callback()",
+            "new /datum/target/verb/callback()",
+            "new /datum/target/proc/callback()",
+            "new /datum/token_target()",
+        ];
+        let writes: Vec<_> = sources
+            .iter()
+            .map(|source| InitializerWrite {
+                target: dm_ir::InitializerTarget::Instance {
+                    declaring_owner: dm_ir::SymbolId::of("/obj"),
+                    receiver_owner: dm_ir::SymbolId::of("/obj"),
+                    name: dm_ir::SymbolId::of("value"),
+                },
+                lexical_owner: dm_ir::SymbolId::of("/obj"),
+                lexical_procedure: None,
+                value: dm_ir::InitializerValue::Expression(expression(source, &mut symbols)),
+                declared_array: None,
+                declaration_flags: Some(0),
+            })
+            .collect();
+        let evaluator = crate::driver_facts::DriverEvaluator {
+            pure_calls: None,
+            resource_search_context: None,
+            resolver: &ProcHost,
+            symbols: &symbols,
+        };
+        let classified = crate::initializer_policy::classify_with_token_mode(
+            &writes, &symbols, &evaluator, false,
+        )
+        .unwrap();
+        let tokens: Vec<_> = classified
+            .writes
+            .iter()
+            .map(|write| {
+                assert_eq!(write.phase, Some(crate::initializer_policy::Phase::Runtime));
+                let crate::initializer_policy::DefaultValue::InitializerExpression {
+                    token, ..
+                } = &write.default
+                else {
+                    panic!("captured construction must retain native kind62 expression identity")
+                };
+                *token
+            })
+            .collect();
+        assert_eq!(tokens[0], tokens[1]);
+        assert_ne!(tokens[0], tokens[2]);
+        assert_ne!(tokens[0], tokens[3]);
     }
     #[test]
     fn native_allocation_default_partitions_match_across_scopes_and_debug() {

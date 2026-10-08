@@ -1,21 +1,23 @@
+use super::*;
+
 /// Lower OpenDream call forms into native BYOND call instructions.
-struct CallLowering<'a, 'code, R: SymbolResolver> {
-    code: &'code [u8],
-    reader: &'a mut Reader<'code>,
-    ids: &'a R,
-    start: usize,
-    out: &'a mut Vec<u32>,
-    offsets: &'a mut HashMap<u32, u32>,
-    fixups: &'a mut Vec<Fixup>,
-    world_flow: &'a mut WorldFlow,
-    state: &'a mut LowerState,
-    pending_view_range_iterator: &'a mut Option<u32>,
-    pending_orange_iterator: &'a mut bool,
-    is_initializer: bool,
+pub(super) struct CallLowering<'a, 'code, R: SymbolResolver> {
+    pub(super) code: &'code [u8],
+    pub(super) reader: &'a mut Reader<'code>,
+    pub(super) ids: &'a R,
+    pub(super) start: usize,
+    pub(super) out: &'a mut Vec<u32>,
+    pub(super) offsets: &'a mut HashMap<u32, u32>,
+    pub(super) fixups: &'a mut Vec<Fixup>,
+    pub(super) world_flow: &'a mut WorldFlow,
+    pub(super) state: &'a mut LowerState,
+    pub(super) pending_view_range_iterator: &'a mut Option<u32>,
+    pub(super) pending_orange_iterator: &'a mut bool,
+    pub(super) is_initializer: bool,
 }
 
 impl<R: SymbolResolver> CallLowering<'_, '_, R> {
-    fn lower(&mut self) -> Result<(), LowerError> {
+    pub(super) fn lower(&mut self) -> Result<(), LowerError> {
         let code = self.code;
         let reader = &mut *self.reader;
         let ids = self.ids;

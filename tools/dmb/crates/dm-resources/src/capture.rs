@@ -338,10 +338,15 @@ pub fn capture_discovered<P: CaptureProvider>(
         unsupported: capture.unsupported,
     })
 }
+#[derive(Clone)]
+struct CapturedCandidate {
+    bytes: Option<Arc<[u8]>>,
+    digest: Option<[u8; 32]>,
+}
 struct Capture<'a, P> {
     provider: &'a P,
     config: CaptureConfig<'a>,
-    files: HashMap<PathBuf, Option<Arc<[u8]>>>,
+    files: HashMap<PathBuf, CapturedCandidate>,
     inputs: Vec<ResourceInput>,
     aliases: HashMap<String, usize>,
     observations: Vec<CandidateObservation>,
@@ -349,8 +354,8 @@ struct Capture<'a, P> {
 }
 impl<P: CaptureProvider> Capture<'_, P> {
     fn read(&mut self, path: &Path) -> Result<Option<Arc<[u8]>>, CaptureError> {
-        let bytes = match self.files.get(path) {
-            Some(bytes) => bytes.clone(),
+        let CapturedCandidate { bytes, digest } = match self.files.get(path) {
+            Some(captured) => captured.clone(),
             None => {
                 let bytes =
                     self.provider
@@ -359,8 +364,15 @@ impl<P: CaptureProvider> Capture<'_, P> {
                             path: path.to_owned(),
                             source,
                         })?;
-                self.files.insert(path.to_owned(), bytes.clone());
-                bytes
+                let digest = bytes.as_ref().map(|bytes| Sha256::digest(bytes).into());
+                self.files.insert(
+                    path.to_owned(),
+                    CapturedCandidate {
+                        bytes: bytes.clone(),
+                        digest,
+                    },
+                );
+                CapturedCandidate { bytes, digest }
             }
         };
         self.observations.push(CandidateObservation {
@@ -368,7 +380,9 @@ impl<P: CaptureProvider> Capture<'_, P> {
             outcome: match &bytes {
                 None => CandidateOutcome::Missing,
                 Some(bytes) => CandidateOutcome::Captured {
-                    digest: Sha256::digest(bytes).into(),
+                    digest: digest.ok_or_else(|| {
+                        CaptureError::Invalid("captured resource has no source digest".into())
+                    })?,
                     length: bytes.len(),
                 },
             },
@@ -381,6 +395,15 @@ impl<P: CaptureProvider> Capture<'_, P> {
         bytes: Arc<[u8]>,
         span: Option<Span>,
     ) -> Result<CapturedResourceOutcome, CaptureError> {
+        // add is reached only after read captured this immutable candidate.
+        // Reuse its digest rather than hashing the same payload per alias twice.
+        let source_digest = self
+            .files
+            .get(&request.disk_path)
+            .and_then(|captured| captured.digest)
+            .ok_or_else(|| {
+                CaptureError::Invalid("resource input has no captured source digest".into())
+            })?;
         let encoded = self.config.encoded.iter().find(|input| {
             input.input.archive_name == request.archive_name
                 && normalize(&input.input.disk_path) == request.disk_path
@@ -388,7 +411,7 @@ impl<P: CaptureProvider> Capture<'_, P> {
         let input = if let Some(encoded) = encoded {
             // Encoded payload may legitimately differ from source bytes. These
             // records must be supplied by the current encoding capture stage.
-            if encoded.source_digest != <[u8; 32]>::from(Sha256::digest(&bytes)) {
+            if encoded.source_digest != source_digest {
                 return Err(CaptureError::Invalid(
                     "encoded resource did not consume the current source payload".into(),
                 ));
@@ -396,7 +419,7 @@ impl<P: CaptureProvider> Capture<'_, P> {
             encoded.input.clone()
         } else if self.config.policy.raw_supported(&request.archive_name) {
             ResourceInput {
-                content_digest: Sha256::digest(&bytes).into(),
+                content_digest: source_digest,
                 named: byond_dmb::rsc::NamedResource::from_data(
                     crate::kind_for_name(&request.archive_name).as_byte(),
                     request.archive_name.as_bytes().to_vec(),
@@ -950,4 +973,6 @@ mod tests {
             matches!(capture_expanded(&plan(),&expanded("/proc/p()\n    return 'x.txt'\n"),CaptureConfig {policy:&policy,encoded:&[],additional:&[]},&Denied),Err(CaptureError::Io {source,..}) if source.kind()==io::ErrorKind::PermissionDenied)
         );
     }
+    #[path = "capture_digest_tests.rs"]
+    mod digest_reuse;
 }

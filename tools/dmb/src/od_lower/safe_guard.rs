@@ -1,22 +1,24 @@
+use super::*;
+
 /// Lower null-guarded member access and its receiver cleanup branches.
-struct SafeGuardLowering<'a, 'code, R: SymbolResolver> {
-    code: &'code [u8],
-    reader: &'a mut Reader<'code>,
-    ids: &'a R,
-    start: usize,
-    out: &'a mut Vec<u32>,
-    offsets: &'a mut HashMap<u32, u32>,
-    fixups: &'a mut Vec<Fixup>,
-    state: &'a mut LowerState,
-    safe: &'a mut SafeAccessState,
-    pending_receivers: &'a mut Vec<PendingReceiver>,
-    guarded_assign_into: &'a mut HashMap<usize, (usize, usize)>,
-    guarded_assign_into_nested: &'a mut std::collections::HashSet<usize>,
+pub(super) struct SafeGuardLowering<'a, 'code, R: SymbolResolver> {
+    pub(super) code: &'code [u8],
+    pub(super) reader: &'a mut Reader<'code>,
+    pub(super) ids: &'a R,
+    pub(super) start: usize,
+    pub(super) out: &'a mut Vec<u32>,
+    pub(super) offsets: &'a mut HashMap<u32, u32>,
+    pub(super) fixups: &'a mut Vec<Fixup>,
+    pub(super) state: &'a mut LowerState,
+    pub(super) safe: &'a mut SafeAccessState,
+    pub(super) pending_receivers: &'a mut Vec<PendingReceiver>,
+    pub(super) guarded_assign_into: &'a mut HashMap<usize, (usize, usize)>,
+    pub(super) guarded_assign_into_nested: &'a mut std::collections::HashSet<usize>,
 }
 
 impl<R: SymbolResolver> SafeGuardLowering<'_, '_, R> {
     /// Returns true when the source loop must begin a new instruction.
-    fn lower(&mut self) -> Result<bool, LowerError> {
+    pub(super) fn lower(&mut self) -> Result<bool, LowerError> {
         let code = self.code;
         let reader = &mut *self.reader;
         let ids = self.ids;
