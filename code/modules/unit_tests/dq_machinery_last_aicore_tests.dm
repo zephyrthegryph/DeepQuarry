@@ -182,6 +182,9 @@
 	var/obj/item/weldingtool/W = allocate(/obj/item/weldingtool, tool)
 	rel_set(tool, nameof(tool.welder), W)
 	W.reagents.add_reagent(REAGENT_ID_FUEL, 10)
+	W.no_passive_burn = TRUE
+	W.setWelding(TRUE)
+	TEST_ASSERT(W.isOn(), "The actual wrapped welder is lit before resource commit")
 	var/fuel_before = W.get_fuel()
 	TEST_ASSERT(fuel_before >= 1, "The actual internal welder has spendable fuel")
 	var/datum/act/op/A = take(/datum/act/op)
