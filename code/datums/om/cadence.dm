@@ -42,6 +42,10 @@
 /datum/step_cadence/proc/cadence_changed()
 	return
 
+/datum/step_cadence/New()
+	..()
+	hooks_change_baseline(src) // a plain datum takes the baseline of its on_change hook itself
+
 CAPABILITIES(/datum/step_cadence)
 	on_change(STAT_CADENCE_HOLDS, ANY, then(PROC_REF(cadence_stat_changed)))
 

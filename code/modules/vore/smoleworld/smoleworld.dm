@@ -225,7 +225,7 @@ CAPABILITIES(/obj/structure/smoletrack)
 CAPABILITIES(/obj/structure/smolebuilding)
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(smolebuilding_shot))))
 	// Declared before the hand ops: a held item answers first, and a click not on harm intent is refused (never the bare-hand op).
-	op("smolebuilding_item", item(/obj/item), needs(req(TYPE_PROC_REF(/atom, harm_click_only), because = MSG(harm_click_only))), priority(OP_PRIORITY_DEFAULT - 1), label("Smash"), then(PROC_REF(smolebuilding_item)))
+	op("smolebuilding_item", item(/obj/item), answers(INTENT_ATTACK, INTENT_USE), needs(req(TYPE_PROC_REF(/atom, harm_click_only), because = MSG(harm_click_only))), priority(OP_PRIORITY_DEFAULT - 1), label("Smash"), then(PROC_REF(smolebuilding_item)))
 	op("smolebuilding_knock_help", hand(), ungated(), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 1), label("Knock on"), then(PROC_REF(smolebuilding_knock)))
 	op("smolebuilding_dismantle", hand(), ungated(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 1), label("Take apart"), then(PROC_REF(smolebuilding_dismantle_hand)))
 	op("smolebuilding_knock_grab", hand(), ungated(), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 1), label("Knock on"), then(PROC_REF(smolebuilding_knock)))
@@ -267,7 +267,7 @@ CAPABILITIES(/obj/structure/smolebuilding)
 
 CAPABILITIES(/obj/structure/smoleruins)
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(smoleruins_shot))))
-	op("smoleruins_item", item(/obj/item), needs(req(TYPE_PROC_REF(/atom, harm_click_only), because = MSG(harm_click_only))), priority(OP_PRIORITY_DEFAULT - 1), label("Smash"), then(PROC_REF(smoleruins_item)))
+	op("smoleruins_item", item(/obj/item), answers(INTENT_ATTACK, INTENT_USE), needs(req(TYPE_PROC_REF(/atom, harm_click_only), because = MSG(harm_click_only))), priority(OP_PRIORITY_DEFAULT - 1), label("Smash"), then(PROC_REF(smoleruins_item)))
 	op("smoleruins_dismantle_hand", hand(), ungated(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 1), label("Take apart"), then(PROC_REF(smoleruins_dismantle_hand)))
 
 /// Ruins blow apart when shot, same as buildings.

@@ -446,8 +446,8 @@
 	TEST_ASSERT(!QDELETED(building), "a help-intent click with a card leaves the building standing")
 	TEST_ASSERT(calm && calm.outcome == ACT_REFUSED && calm.reason == MSG(harm_click_only), "a help-intent click with a card is refused with the harm-intent reason (got [calm?.outcome] [calm?.reason])")
 	H.set_use_stance(I_HURT)
-	test_click(H, building, card)
-	TEST_ASSERT(QDELETED(building) || building.get_integrity() <= 0 || !(building in T), "a harm-intent click with a card flattens the building")
+	var/datum/op_result/hit = test_click(H, building, card)
+	TEST_ASSERT(hit && findtext("[hit.key]", "smolebuilding_item") && hit.outcome == ACT_COMMITTED, "a harm-intent click with a card is the smash op, which outranks the actor's own melee (got [hit?.key] [hit?.outcome] [hit?.reason])")
 	clear_debris(T)
 
 /// The supermatter wall: an empty hand touches it (and is dusted), a held item is consumed only on harm intent, and any other click with an item is refused

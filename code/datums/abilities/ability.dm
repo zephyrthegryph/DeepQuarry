@@ -216,8 +216,10 @@ CAPABILITY_DEF(granted_ability, CAP_GRANTED_ABILITY, key = ability_id, ability_i
 
 /// The sources currently granting `id` (for UI/debugging), or null.
 /mob/living/proc/ability_sources(id)
-	for(var/datum/activation/A as anything in activations_of(src, id))
-		LAZYOR(., A.source)
+	for(var/datum/activation/A as anything in activations_of_cap(src, CAP_GRANTED_ABILITY))
+		var/datum/capability/def/granted_ability/def = A.def
+		if(def.ability_id == id)
+			LAZYOR(., A.source)
 
 // ---------------------------------------------------------------------------
 // Shared requirement helpers (code/__defines/abilities.dm's REQ_CONSCIOUS, REQ_ON_TURF).

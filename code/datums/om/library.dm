@@ -3,10 +3,7 @@
 // statuses are stats (code/library/mob/statuses.dm).
 
 /proc/definition_standard_effects()
-	// ALLOW(sys_const_list_alloc): read once, while the OM registry builds inside the global controller's New(), before any GLOBAL_LIST_INIT exists
-	return list(
-		// Body effects (body_effects.dm): factor tables keyed by definition type, value = stacks.
-	)
+	return list() // no standard effect rows are left: statuses, body effects, grants and buckling are stats
 
 // ---------------------------------------------------------------- relations
 

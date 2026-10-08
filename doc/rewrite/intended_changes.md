@@ -3289,3 +3289,13 @@ Pins were taken from the machinery side on every conflict and regenerated with `
 * **`hit_pins/` thermal glasses, sechailer, kinetic crusher**: the `refresh_bits: 2 -> 0` rows are gone. A draw mark no longer stays pending after the hit: the `add_overlay()` single-blocker fix (draw framework) means the emissive redraw these items queued is settled inside the hit. `refresh_queued` rows remain.
 * **Line numbers**: two `runtime while making it` rows (stardog, nikki rig) carry the line of `lifecycle_links.dm` in the stack; the link teardown call added two lines.
 * **Not blessed**: the `look_trees` row of `electronic_assembly` (it would record the pre-existing `op_clash` runtime in place of its overlay) stays as before.
+
+## Grants, timers and the c4 boundary tests (rewrite/om-leftovers)
+
+- Grants are capabilities and keyed stats, not a grant store: abilities are `granted_ability(id)` activations, verbs and hides are `granted_verb()` activations
+  (the verb store reads the live activations), conditions are `held_condition(path)`, traits are holds on `STAT_TRAIT_HOLDS` and cadences holds on
+  `STAT_CADENCE_HOLDS`. The step cadence hears its holds through an on_change reaction, delivered at the next drain point rather than inline.
+  The OM `self_grants`, `grants_target` and `grants_occupant` rows, the legacy verb-path form of `grant()` and `hidden_verb()` are gone.
+- A keyed timer whose datum argument is deleted drops the call and clears its key (`after_pending()` is false afterwards); `keeps_dead = TRUE` still runs it
+  with the argument null. The fulton chain, the cryptdrake landing and the transit-tube station completions opt in, because their tail must run.
+- The smole building and ruins "Smash" ops answer harm intent as well as use, so a harm-intent click with a held item smashes rather than landing a melee hit.

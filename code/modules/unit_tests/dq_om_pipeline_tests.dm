@@ -464,20 +464,38 @@
 
 // --- Runlevels ------------------------------------------------------------------------
 
+/// A ring limited to the game runlevel (the observer's upkeep is an every() now, which has no runlevels of its own).
+/datum/pipe_gate_entity
+	var/upkeeps = 0
+
+/datum/om/decl/pipe_gate
+	of = /datum/pipe_gate_entity
+	behaviours = list(/datum/om/behaviour/test_gated)
+
+/datum/om/behaviour/test_gated
+	name = "test gated"
+	every = 1 SECONDS
+	runlevels = RUNLEVEL_GAME
+
+/datum/om/behaviour/test_gated/tick(datum/pipe_gate_entity/E, dt)
+	E.upkeeps++
+
 /// A behaviour's rings don't run outside its runlevels, and resume without catch-up.
 /datum/unit_test/om_pipeline/runlevels_dormant
 
 /datum/unit_test/om_pipeline/runlevels_dormant/run_pipeline()
-	var/mob/observer/dead/life_test/G = allocate(/mob/observer/dead/life_test)
-	scheduler_advance(OBSERVER_UPKEEP_INTERVAL / 10 * 2)
+	var/datum/pipe_gate_entity/G = new
+	om_start(G)
+	scheduler_advance(2)
 	var/before = G.upkeeps
+	TEST_ASSERT(before > 0, "it runs in its runlevel")
 	sched.runlevel = RUNLEVEL_LOBBY
-	scheduler_advance(OBSERVER_UPKEEP_INTERVAL / 10 * 3)
+	scheduler_advance(3)
 	TEST_ASSERT_EQUAL(G.upkeeps, before, "nothing runs outside the behaviour's runlevels")
 	sched.runlevel = RUNLEVEL_GAME
 	sched.run_pass(1e9)
 	TEST_ASSERT_EQUAL(G.upkeeps, before, "resuming is not a catch-up")
-	scheduler_advance(OBSERVER_UPKEEP_INTERVAL / 10 * 2)
+	scheduler_advance(2)
 	TEST_ASSERT(G.upkeeps > before, "it runs again in its runlevel")
 
 // --- Machines ------------------------------------------------------------------------
