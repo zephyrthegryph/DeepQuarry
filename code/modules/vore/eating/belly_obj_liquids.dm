@@ -58,7 +58,7 @@
 	for(var/reagent in generated_reagents)
 		reagents.add_reagent(reagent, generated_reagents[reagent], was_from_belly = TRUE)
 	if(count_liquid_for_sprite)
-		owner.handle_belly_update() //This is run whenever a belly's contents are changed.
+		PUBLISH(owner, belly_change) //This is run whenever a belly's contents are changed.
 	if(LAZYLEN(belly_surrounding))
 		PUBLISH_LEGACY(src, /datum/notice/belly_update_vore_fx, reagents.total_volume)
 

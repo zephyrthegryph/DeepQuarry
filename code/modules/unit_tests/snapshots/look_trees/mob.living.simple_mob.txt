@@ -222,11 +222,11 @@
 /mob/living/simple_mob/slime/feral/ruby state: slime adult
 /mob/living/simple_mob/slime/feral/ruby dir: 2
 /mob/living/simple_mob/slime/feral/ruby color: #ff3333
-/mob/living/simple_mob/slime/feral/ruby overlay: ::-32767 x2
 /mob/living/simple_mob/slime/feral/ruby overlay: ::8:#000000
 /mob/living/simple_mob/slime/feral/ruby overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/slime/feral/ruby overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/slime/feral/ruby overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/slime/feral/ruby overlay: icons/mob/modifier_effects.dmi:pink_sparkles:-32767
 /mob/living/simple_mob/slime/feral/ruby overlay: icons/mob/slime2.dmi:aslime-feral:-32767
 /mob/living/simple_mob/slime/feral/ruby overlay: icons/mob/slime2.dmi:slime light:-32767
 /mob/living/simple_mob/slime/feral/ruby overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -376,11 +376,11 @@
 /mob/living/simple_mob/slime/xenobio/ruby state: slime baby
 /mob/living/simple_mob/slime/xenobio/ruby dir: 2
 /mob/living/simple_mob/slime/xenobio/ruby color: #ff3333
-/mob/living/simple_mob/slime/xenobio/ruby overlay: ::-32767 x2
 /mob/living/simple_mob/slime/xenobio/ruby overlay: ::8:#000000
 /mob/living/simple_mob/slime/xenobio/ruby overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/slime/xenobio/ruby overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/slime/xenobio/ruby overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/slime/xenobio/ruby overlay: icons/mob/modifier_effects.dmi:pink_sparkles:-32767
 /mob/living/simple_mob/slime/xenobio/ruby overlay: icons/mob/slime2.dmi:aslime-:3:-32767
 /mob/living/simple_mob/slime/xenobio/ruby overlay: icons/mob/slime2.dmi:slime light:-32767
 /mob/living/simple_mob/slime/xenobio/ruby overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -1255,7 +1255,7 @@
 /mob/living/simple_mob/animal/passive/bird/parrot/kea overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/animal/passive/bird/parrot/kea overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/passive/bird/parrot/eclectus icon: icons/mob/birds.dmi
-/mob/living/simple_mob/animal/passive/bird/parrot/eclectus state: eclectusf
+/mob/living/simple_mob/animal/passive/bird/parrot/eclectus state: eclectus
 /mob/living/simple_mob/animal/passive/bird/parrot/eclectus dir: 2
 /mob/living/simple_mob/animal/passive/bird/parrot/eclectus overlay: ::8:#000000
 /mob/living/simple_mob/animal/passive/bird/parrot/eclectus overlay: icons/misc/buildmode.dmi:ais_1:39
@@ -2457,35 +2457,35 @@
 /mob/living/simple_mob/animal/space/tree overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/animal/space/tree overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/space/space_worm icon: icons/mob/worm.dmi
-/mob/living/simple_mob/animal/space/space_worm state: spaceworm
+/mob/living/simple_mob/animal/space/space_worm state: spacewormtail
 /mob/living/simple_mob/animal/space/space_worm dir: 2
 /mob/living/simple_mob/animal/space/space_worm overlay: ::8:#000000
 /mob/living/simple_mob/animal/space/space_worm overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/animal/space/space_worm overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/animal/space/space_worm overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/space/space_worm/head icon: icons/mob/worm.dmi
-/mob/living/simple_mob/animal/space/space_worm/head state: spacewormhead
+/mob/living/simple_mob/animal/space/space_worm/head state: spacewormhead1_hunt
 /mob/living/simple_mob/animal/space/space_worm/head dir: 2
 /mob/living/simple_mob/animal/space/space_worm/head overlay: ::8:#000000
 /mob/living/simple_mob/animal/space/space_worm/head overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/animal/space/space_worm/head overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/animal/space/space_worm/head overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/space/space_worm/head/severed icon: icons/mob/worm.dmi
-/mob/living/simple_mob/animal/space/space_worm/head/severed state: spacewormhead
+/mob/living/simple_mob/animal/space/space_worm/head/severed state: spacewormhead0_hunt
 /mob/living/simple_mob/animal/space/space_worm/head/severed dir: 2
 /mob/living/simple_mob/animal/space/space_worm/head/severed overlay: ::8:#000000
 /mob/living/simple_mob/animal/space/space_worm/head/severed overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/animal/space/space_worm/head/severed overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/animal/space/space_worm/head/severed overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/space/space_worm/head/short icon: icons/mob/worm.dmi
-/mob/living/simple_mob/animal/space/space_worm/head/short state: spacewormhead
+/mob/living/simple_mob/animal/space/space_worm/head/short state: spacewormhead1_hunt
 /mob/living/simple_mob/animal/space/space_worm/head/short dir: 2
 /mob/living/simple_mob/animal/space/space_worm/head/short overlay: ::8:#000000
 /mob/living/simple_mob/animal/space/space_worm/head/short overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/animal/space/space_worm/head/short overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/animal/space/space_worm/head/short overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/space/space_worm/head/long icon: icons/mob/worm.dmi
-/mob/living/simple_mob/animal/space/space_worm/head/long state: spacewormhead
+/mob/living/simple_mob/animal/space/space_worm/head/long state: spacewormhead1_hunt
 /mob/living/simple_mob/animal/space/space_worm/head/long dir: 2
 /mob/living/simple_mob/animal/space/space_worm/head/long overlay: ::8:#000000
 /mob/living/simple_mob/animal/space/space_worm/head/long overlay: icons/misc/buildmode.dmi:ais_1:39
@@ -2809,6 +2809,9 @@
 /mob/living/simple_mob/animal/synx state: synx_living
 /mob/living/simple_mob/animal/synx dir: 2
 /mob/living/simple_mob/animal/synx overlay: ::8:#000000
+/mob/living/simple_mob/animal/synx overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/animal/synx overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/animal/synx overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/synx overlay: icons/mob/synx_modular.dmi:synx_bodyNormal:-25
 /mob/living/simple_mob/animal/synx overlay: icons/mob/synx_modular.dmi:synx_eyesNormal:-25:#ff6a00
 /mob/living/simple_mob/animal/synx overlay: icons/mob/synx_modular.dmi:synx_hornsCapra:-25:#ffe100
@@ -2817,6 +2820,9 @@
 /mob/living/simple_mob/animal/synx/ai state: synx_living
 /mob/living/simple_mob/animal/synx/ai dir: 2
 /mob/living/simple_mob/animal/synx/ai overlay: ::8:#000000
+/mob/living/simple_mob/animal/synx/ai overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/animal/synx/ai overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/animal/synx/ai overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/synx/ai overlay: icons/mob/synx_modular.dmi:synx_bodyNormal:-25
 /mob/living/simple_mob/animal/synx/ai overlay: icons/mob/synx_modular.dmi:synx_eyesNormal:-25:#ff6a00
 /mob/living/simple_mob/animal/synx/ai overlay: icons/mob/synx_modular.dmi:synx_hornsCapra:-25:#ffe100
@@ -2825,6 +2831,9 @@
 /mob/living/simple_mob/animal/synx/ai/pet state: synx_living
 /mob/living/simple_mob/animal/synx/ai/pet dir: 2
 /mob/living/simple_mob/animal/synx/ai/pet overlay: ::8:#000000
+/mob/living/simple_mob/animal/synx/ai/pet overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/animal/synx/ai/pet overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/animal/synx/ai/pet overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/synx/ai/pet overlay: icons/mob/synx_modular.dmi:synx_bodyNormal:-25
 /mob/living/simple_mob/animal/synx/ai/pet overlay: icons/mob/synx_modular.dmi:synx_eyesNormal:-25:#ff6a00
 /mob/living/simple_mob/animal/synx/ai/pet overlay: icons/mob/synx_modular.dmi:synx_hornsCapra:-25:#ffe100
@@ -2833,6 +2842,9 @@
 /mob/living/simple_mob/animal/synx/ai/pet/clown state: synx_pet_rainbow
 /mob/living/simple_mob/animal/synx/ai/pet/clown dir: 2
 /mob/living/simple_mob/animal/synx/ai/pet/clown overlay: ::8:#000000
+/mob/living/simple_mob/animal/synx/ai/pet/clown overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/animal/synx/ai/pet/clown overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/animal/synx/ai/pet/clown overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/synx/ai/pet/clown overlay: icons/mob/synx_modular.dmi:synx_bodyNormal:-25
 /mob/living/simple_mob/animal/synx/ai/pet/clown overlay: icons/mob/synx_modular.dmi:synx_eyesNormal:-25:#ff6a00
 /mob/living/simple_mob/animal/synx/ai/pet/clown overlay: icons/mob/synx_modular.dmi:synx_hornsCapra:-25:#ffe100
@@ -2842,6 +2854,9 @@
 /mob/living/simple_mob/animal/synx/ai/pet/holo dir: 2
 /mob/living/simple_mob/animal/synx/ai/pet/holo alpha: 127
 /mob/living/simple_mob/animal/synx/ai/pet/holo overlay: ::8:#000000
+/mob/living/simple_mob/animal/synx/ai/pet/holo overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/animal/synx/ai/pet/holo overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/animal/synx/ai/pet/holo overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/synx/ai/pet/holo overlay: icons/mob/synx_modular.dmi:synx_bodyNormal:-25
 /mob/living/simple_mob/animal/synx/ai/pet/holo overlay: icons/mob/synx_modular.dmi:synx_eyesNormal:-25:#ff6a00
 /mob/living/simple_mob/animal/synx/ai/pet/holo overlay: icons/mob/synx_modular.dmi:synx_hornsCapra:-25:#ffe100
@@ -2850,6 +2865,9 @@
 /mob/living/simple_mob/animal/synx/ai/pet/debug state: synx_living
 /mob/living/simple_mob/animal/synx/ai/pet/debug dir: 2
 /mob/living/simple_mob/animal/synx/ai/pet/debug overlay: ::8:#000000
+/mob/living/simple_mob/animal/synx/ai/pet/debug overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/animal/synx/ai/pet/debug overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/animal/synx/ai/pet/debug overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/synx/ai/pet/debug overlay: icons/mob/synx_modular.dmi:synx_bodyNormal:-25
 /mob/living/simple_mob/animal/synx/ai/pet/debug overlay: icons/mob/synx_modular.dmi:synx_eyesNormal:-25:#ff6a00
 /mob/living/simple_mob/animal/synx/ai/pet/debug overlay: icons/mob/synx_modular.dmi:synx_hornsCapra:-25:#ffe100
@@ -2858,6 +2876,9 @@
 /mob/living/simple_mob/animal/synx/scp state: 939_living
 /mob/living/simple_mob/animal/synx/scp dir: 2
 /mob/living/simple_mob/animal/synx/scp overlay: ::8:#000000
+/mob/living/simple_mob/animal/synx/scp overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/animal/synx/scp overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/animal/synx/scp overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/synx/scp overlay: icons/mob/synxmanyvoices.dmi:synx_bodyNormal:-25
 /mob/living/simple_mob/animal/synx/scp overlay: icons/mob/synxmanyvoices.dmi:synx_eyesNormal:-25:#ff6a00
 /mob/living/simple_mob/animal/synx/scp overlay: icons/mob/synxmanyvoices.dmi:synx_hornsCapra:-25:#ffe100
@@ -2904,7 +2925,7 @@
 /mob/living/simple_mob/construct overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct overlay: icons/mob/construct.dmi:-eyes:7 x2
+/mob/living/simple_mob/construct overlay: icons/mob/construct.dmi:shade-eyes:7
 /mob/living/simple_mob/construct/shade icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/shade state: shade
 /mob/living/simple_mob/construct/shade dir: 2
@@ -2912,7 +2933,7 @@
 /mob/living/simple_mob/construct/shade overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/shade overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/shade overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/shade overlay: icons/mob/construct.dmi:shade-eyes:7 x2
+/mob/living/simple_mob/construct/shade overlay: icons/mob/construct.dmi:shade-eyes:7
 /mob/living/simple_mob/construct/artificer icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/artificer state: artificer
 /mob/living/simple_mob/construct/artificer dir: 2
@@ -2920,7 +2941,7 @@
 /mob/living/simple_mob/construct/artificer overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/artificer overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/artificer overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/artificer overlay: icons/mob/construct.dmi:artificer-eyes:7 x2
+/mob/living/simple_mob/construct/artificer overlay: icons/mob/construct.dmi:artificer-eyes:7
 /mob/living/simple_mob/construct/artificer/caster icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/artificer/caster state: caster_artificer
 /mob/living/simple_mob/construct/artificer/caster dir: 2
@@ -2928,7 +2949,7 @@
 /mob/living/simple_mob/construct/artificer/caster overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/artificer/caster overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/artificer/caster overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/artificer/caster overlay: icons/mob/construct.dmi:caster_artificer-eyes:7 x2
+/mob/living/simple_mob/construct/artificer/caster overlay: icons/mob/construct.dmi:caster_artificer-eyes:7
 /mob/living/simple_mob/construct/wraith icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/wraith state: floating
 /mob/living/simple_mob/construct/wraith dir: 2
@@ -2936,7 +2957,7 @@
 /mob/living/simple_mob/construct/wraith overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/wraith overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/wraith overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/wraith overlay: icons/mob/construct.dmi:floating-eyes:7 x2
+/mob/living/simple_mob/construct/wraith overlay: icons/mob/construct.dmi:floating-eyes:7
 /mob/living/simple_mob/construct/wraith/fast_jaunt icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/wraith/fast_jaunt state: floating
 /mob/living/simple_mob/construct/wraith/fast_jaunt dir: 2
@@ -2944,7 +2965,7 @@
 /mob/living/simple_mob/construct/wraith/fast_jaunt overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/wraith/fast_jaunt overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/wraith/fast_jaunt overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/wraith/fast_jaunt overlay: icons/mob/construct.dmi:floating-eyes:7 x2
+/mob/living/simple_mob/construct/wraith/fast_jaunt overlay: icons/mob/construct.dmi:floating-eyes:7
 /mob/living/simple_mob/construct/wraith/jaunt_spam icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/wraith/jaunt_spam state: floating
 /mob/living/simple_mob/construct/wraith/jaunt_spam dir: 2
@@ -2952,7 +2973,7 @@
 /mob/living/simple_mob/construct/wraith/jaunt_spam overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/wraith/jaunt_spam overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/wraith/jaunt_spam overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/wraith/jaunt_spam overlay: icons/mob/construct.dmi:floating-eyes:7 x2
+/mob/living/simple_mob/construct/wraith/jaunt_spam overlay: icons/mob/construct.dmi:floating-eyes:7
 /mob/living/simple_mob/construct/juggernaut icon: icons/mob/mob.dmi
 /mob/living/simple_mob/construct/juggernaut state: behemoth
 /mob/living/simple_mob/construct/juggernaut dir: 2
@@ -2960,7 +2981,7 @@
 /mob/living/simple_mob/construct/juggernaut overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/juggernaut overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/juggernaut overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/juggernaut overlay: icons/mob/mob.dmi:behemoth-eyes:7 x2
+/mob/living/simple_mob/construct/juggernaut overlay: icons/mob/mob.dmi:behemoth-eyes:7
 /mob/living/simple_mob/construct/juggernaut/behemoth icon: icons/mob/mob.dmi
 /mob/living/simple_mob/construct/juggernaut/behemoth state: behemoth
 /mob/living/simple_mob/construct/juggernaut/behemoth dir: 2
@@ -2968,7 +2989,7 @@
 /mob/living/simple_mob/construct/juggernaut/behemoth overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/juggernaut/behemoth overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/juggernaut/behemoth overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/juggernaut/behemoth overlay: icons/mob/mob.dmi:behemoth-eyes:7 x2
+/mob/living/simple_mob/construct/juggernaut/behemoth overlay: icons/mob/mob.dmi:behemoth-eyes:7
 /mob/living/simple_mob/construct/juggernaut/behemoth/unstoppable icon: icons/mob/mob.dmi
 /mob/living/simple_mob/construct/juggernaut/behemoth/unstoppable state: behemoth
 /mob/living/simple_mob/construct/juggernaut/behemoth/unstoppable dir: 2
@@ -2976,7 +2997,7 @@
 /mob/living/simple_mob/construct/juggernaut/behemoth/unstoppable overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/juggernaut/behemoth/unstoppable overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/juggernaut/behemoth/unstoppable overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/juggernaut/behemoth/unstoppable overlay: icons/mob/mob.dmi:behemoth-eyes:7 x2
+/mob/living/simple_mob/construct/juggernaut/behemoth/unstoppable overlay: icons/mob/mob.dmi:behemoth-eyes:7
 /mob/living/simple_mob/construct/proteon icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/proteon state: proteon
 /mob/living/simple_mob/construct/proteon dir: 2
@@ -2984,7 +3005,7 @@
 /mob/living/simple_mob/construct/proteon overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/proteon overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/proteon overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/proteon overlay: icons/mob/construct.dmi:proteon-eyes:7 x2
+/mob/living/simple_mob/construct/proteon overlay: icons/mob/construct.dmi:proteon-eyes:7
 /mob/living/simple_mob/construct/bishop icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/bishop state: bishop
 /mob/living/simple_mob/construct/bishop dir: 2
@@ -2992,7 +3013,7 @@
 /mob/living/simple_mob/construct/bishop overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/bishop overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/bishop overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/bishop overlay: icons/mob/construct.dmi:bishop-eyes:7 x2
+/mob/living/simple_mob/construct/bishop overlay: icons/mob/construct.dmi:bishop-eyes:7
 /mob/living/simple_mob/construct/bishop/arch icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/bishop/arch state: archbishop
 /mob/living/simple_mob/construct/bishop/arch dir: 2
@@ -3000,7 +3021,7 @@
 /mob/living/simple_mob/construct/bishop/arch overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/bishop/arch overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/bishop/arch overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/bishop/arch overlay: icons/mob/construct.dmi:archbishop-eyes:7 x2
+/mob/living/simple_mob/construct/bishop/arch overlay: icons/mob/construct.dmi:archbishop-eyes:7
 /mob/living/simple_mob/construct/cardinal icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/cardinal state: cardinal
 /mob/living/simple_mob/construct/cardinal dir: 2
@@ -3008,7 +3029,7 @@
 /mob/living/simple_mob/construct/cardinal overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/cardinal overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/cardinal overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/cardinal overlay: icons/mob/construct.dmi:cardinal-eyes:7 x2
+/mob/living/simple_mob/construct/cardinal overlay: icons/mob/construct.dmi:cardinal-eyes:7
 /mob/living/simple_mob/construct/deacon icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/deacon state: deacon
 /mob/living/simple_mob/construct/deacon dir: 2
@@ -3016,7 +3037,7 @@
 /mob/living/simple_mob/construct/deacon overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/deacon overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/deacon overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/deacon overlay: icons/mob/construct.dmi:deacon-eyes:7 x2
+/mob/living/simple_mob/construct/deacon overlay: icons/mob/construct.dmi:deacon-eyes:7
 /mob/living/simple_mob/construct/harvester icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/harvester state: harvester
 /mob/living/simple_mob/construct/harvester dir: 2
@@ -3024,7 +3045,7 @@
 /mob/living/simple_mob/construct/harvester overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/harvester overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/harvester overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/harvester overlay: icons/mob/construct.dmi:harvester-eyes:7 x2
+/mob/living/simple_mob/construct/harvester overlay: icons/mob/construct.dmi:harvester-eyes:7
 /mob/living/simple_mob/construct/harvester/greater icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/harvester/greater state: chosen
 /mob/living/simple_mob/construct/harvester/greater dir: 2
@@ -3032,7 +3053,7 @@
 /mob/living/simple_mob/construct/harvester/greater overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/harvester/greater overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/harvester/greater overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/harvester/greater overlay: icons/mob/construct.dmi:chosen-eyes:7 x2
+/mob/living/simple_mob/construct/harvester/greater overlay: icons/mob/construct.dmi:chosen-eyes:7
 /mob/living/simple_mob/construct/laity icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/laity state: laity
 /mob/living/simple_mob/construct/laity dir: 2
@@ -3040,7 +3061,7 @@
 /mob/living/simple_mob/construct/laity overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/laity overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/laity overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/laity overlay: icons/mob/construct.dmi:laity-eyes:7 x2
+/mob/living/simple_mob/construct/laity overlay: icons/mob/construct.dmi:laity-eyes:7
 /mob/living/simple_mob/construct/priest icon: icons/mob/construct.dmi
 /mob/living/simple_mob/construct/priest state: priest
 /mob/living/simple_mob/construct/priest dir: 2
@@ -3048,7 +3069,7 @@
 /mob/living/simple_mob/construct/priest overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/construct/priest overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/construct/priest overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/construct/priest overlay: icons/mob/construct.dmi:priest-eyes:7 x2
+/mob/living/simple_mob/construct/priest overlay: icons/mob/construct.dmi:priest-eyes:7
 /mob/living/simple_mob/vore icon: icons/mob/animal.dmi
 /mob/living/simple_mob/vore state: 
 /mob/living/simple_mob/vore dir: 2
@@ -3433,6 +3454,7 @@
 /mob/living/simple_mob/vore/retaliate/lion overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/vore/retaliate/lion overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/vore/retaliate/lion overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/vore/retaliate/lion overlay: icons/mob/vore64x32.dmi:mane:7
 /mob/living/simple_mob/vore/vore_hostile icon: icons/mob/animal.dmi
 /mob/living/simple_mob/vore/vore_hostile state: 
 /mob/living/simple_mob/vore/vore_hostile dir: 2
@@ -3910,32 +3932,41 @@
 /mob/living/simple_mob/vore/bigdragon state: dragon_maneNone
 /mob/living/simple_mob/vore/bigdragon dir: 2
 /mob/living/simple_mob/vore/bigdragon overlay: ::8:#000000
-/mob/living/simple_mob/vore/bigdragon overlay: icons/mob/vore128x64.dmi:dragon_bodyScaled:-25:#1e1e1e
-/mob/living/simple_mob/vore/bigdragon overlay: icons/mob/vore128x64.dmi:dragon_earsNormal:-25:#73966b
+/mob/living/simple_mob/vore/bigdragon overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/vore/bigdragon overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/vore/bigdragon overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/vore/bigdragon overlay: icons/mob/vore128x64.dmi:dragon_bodyScaled:-25:#969696
+/mob/living/simple_mob/vore/bigdragon overlay: icons/mob/vore128x64.dmi:dragon_earsNormal:-25:#706878
 /mob/living/simple_mob/vore/bigdragon overlay: icons/mob/vore128x64.dmi:dragon_eyesNormal:7:#ffff00
-/mob/living/simple_mob/vore/bigdragon overlay: icons/mob/vore128x64.dmi:dragon_hornsCurved2:-25:#151515
-/mob/living/simple_mob/vore/bigdragon overlay: icons/mob/vore128x64.dmi:dragon_maneNone:-25:#545454
-/mob/living/simple_mob/vore/bigdragon overlay: icons/mob/vore128x64.dmi:dragon_underPlated:-25:#283035
+/mob/living/simple_mob/vore/bigdragon overlay: icons/mob/vore128x64.dmi:dragon_hornsPointy:-25:#606060
+/mob/living/simple_mob/vore/bigdragon overlay: icons/mob/vore128x64.dmi:dragon_maneNone:-25:#dbdbdb
+/mob/living/simple_mob/vore/bigdragon overlay: icons/mob/vore128x64.dmi:dragon_underPlated:-25:#262738
 /mob/living/simple_mob/vore/bigdragon/friendly icon: icons/mob/vore128x64.dmi
 /mob/living/simple_mob/vore/bigdragon/friendly state: dragon_maneNone
 /mob/living/simple_mob/vore/bigdragon/friendly dir: 2
 /mob/living/simple_mob/vore/bigdragon/friendly overlay: ::8:#000000
-/mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/mob/vore128x64.dmi:dragon_bodyScaled:-25:#1e1e1e
-/mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/mob/vore128x64.dmi:dragon_earsNormal:-25:#73966b
+/mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/mob/vore128x64.dmi:dragon_bodyScaled:-25:#969696
+/mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/mob/vore128x64.dmi:dragon_earsNormal:-25:#706878
 /mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/mob/vore128x64.dmi:dragon_eyesNormal:7:#ffff00
-/mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/mob/vore128x64.dmi:dragon_hornsCurved2:-25:#151515
-/mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/mob/vore128x64.dmi:dragon_maneNone:-25:#545454
-/mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/mob/vore128x64.dmi:dragon_underPlated:-25:#283035
+/mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/mob/vore128x64.dmi:dragon_hornsPointy:-25:#606060
+/mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/mob/vore128x64.dmi:dragon_maneNone:-25:#dbdbdb
+/mob/living/simple_mob/vore/bigdragon/friendly overlay: icons/mob/vore128x64.dmi:dragon_underPlated:-25:#262738
 /mob/living/simple_mob/vore/bigdragon/friendly/maintpred icon: icons/mob/vore128x64.dmi
 /mob/living/simple_mob/vore/bigdragon/friendly/maintpred state: dragon_maneNone
 /mob/living/simple_mob/vore/bigdragon/friendly/maintpred dir: 2
 /mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: ::8:#000000
-/mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/mob/vore128x64.dmi:dragon_bodyScaled:-25:#1e1e1e
-/mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/mob/vore128x64.dmi:dragon_earsNormal:-25:#73966b
+/mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/mob/vore128x64.dmi:dragon_bodyScaled:-25:#969696
+/mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/mob/vore128x64.dmi:dragon_earsNormal:-25:#706878
 /mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/mob/vore128x64.dmi:dragon_eyesNormal:7:#ffff00
-/mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/mob/vore128x64.dmi:dragon_hornsCurved2:-25:#151515
-/mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/mob/vore128x64.dmi:dragon_maneNone:-25:#545454
-/mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/mob/vore128x64.dmi:dragon_underPlated:-25:#283035
+/mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/mob/vore128x64.dmi:dragon_hornsPointy:-25:#606060
+/mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/mob/vore128x64.dmi:dragon_maneNone:-25:#dbdbdb
+/mob/living/simple_mob/vore/bigdragon/friendly/maintpred overlay: icons/mob/vore128x64.dmi:dragon_underPlated:-25:#262738
 /mob/living/simple_mob/vore/demonAI icon: icons/mob/demon_vr.dmi
 /mob/living/simple_mob/vore/demonAI state: boxfox
 /mob/living/simple_mob/vore/demonAI dir: 2
@@ -4382,7 +4413,6 @@
 /mob/living/simple_mob/vore/zorgoia overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/vore/zorgoia overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/vore/zorgoia overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/vore/zorgoia overlay: icons/mob/zorgoia64x32.dmi:-eyes:7 x2
 /mob/living/simple_mob/vore/zorgoia overlay: icons/mob/zorgoia64x32.dmi:null:-25:#393939
 /mob/living/simple_mob/vore/zorgoia overlay: icons/mob/zorgoia64x32.dmi:null:-25:#6c5bff
 /mob/living/simple_mob/vore/zorgoia overlay: icons/mob/zorgoia64x32.dmi:zorgoia_belly:-25:#393939
@@ -4400,7 +4430,6 @@
 /mob/living/simple_mob/vore/zorgoia/tamed overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/vore/zorgoia/tamed overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/vore/zorgoia/tamed overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/vore/zorgoia/tamed overlay: icons/mob/zorgoia64x32.dmi:-eyes:7 x2
 /mob/living/simple_mob/vore/zorgoia/tamed overlay: icons/mob/zorgoia64x32.dmi:null:-25:#393939
 /mob/living/simple_mob/vore/zorgoia/tamed overlay: icons/mob/zorgoia64x32.dmi:null:-25:#6c5bff
 /mob/living/simple_mob/vore/zorgoia/tamed overlay: icons/mob/zorgoia64x32.dmi:zorgoia_belly:-25:#393939
@@ -5497,7 +5526,7 @@
 /mob/living/simple_mob/clockwork/fluff overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/clockwork/fluff overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/clockwork/fluff/Ignis icon: icons/mob/clockwork_mobs.dmi
-/mob/living/simple_mob/clockwork/fluff/Ignis state: ignis
+/mob/living/simple_mob/clockwork/fluff/Ignis state: clockwork_marauder_r
 /mob/living/simple_mob/clockwork/fluff/Ignis dir: 2
 /mob/living/simple_mob/clockwork/fluff/Ignis overlay: ::8:#000000
 /mob/living/simple_mob/clockwork/fluff/Ignis overlay: icons/misc/buildmode.dmi:ais_1:39
@@ -6612,13 +6641,13 @@
 /mob/living/simple_mob/mechanical/combat_drone/event overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/mechanical/combat_drone/event overlay: icons/mob/animal.dmi:drone-eyes:7
 /mob/living/simple_mob/mechanical/combat_drone/melee icon: icons/mob/animal.dmi
-/mob/living/simple_mob/mechanical/combat_drone/melee state: droneM
+/mob/living/simple_mob/mechanical/combat_drone/melee state: drone
 /mob/living/simple_mob/mechanical/combat_drone/melee dir: 2
 /mob/living/simple_mob/mechanical/combat_drone/melee overlay: ::8:#000000
 /mob/living/simple_mob/mechanical/combat_drone/melee overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/mechanical/combat_drone/melee overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/mechanical/combat_drone/melee overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/mechanical/combat_drone/melee overlay: icons/mob/animal.dmi:droneM-eyes:7
+/mob/living/simple_mob/mechanical/combat_drone/melee overlay: icons/mob/animal.dmi:drone-eyes:7
 /mob/living/simple_mob/mechanical/combat_drone/lesser icon: icons/mob/animal.dmi
 /mob/living/simple_mob/mechanical/combat_drone/lesser state: drone
 /mob/living/simple_mob/mechanical/combat_drone/lesser dir: 2
@@ -6729,147 +6758,147 @@
 /mob/living/simple_mob/humanoid/astral_collective icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective state: medi
 /mob/living/simple_mob/humanoid/astral_collective dir: 2
-/mob/living/simple_mob/humanoid/astral_collective overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/soul icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/soul state: medi
 /mob/living/simple_mob/humanoid/astral_collective/soul dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/soul overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/soul overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/soul overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/soul overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/soul overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/soul overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector state: clock_sergal
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer state: clock_cat_shield
 /mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/purity icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/purity state: purity
 /mob/living/simple_mob/humanoid/astral_collective/purity dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/purity overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/purity overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/purity overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/purity overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/purity overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/purity overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/ranged state: medi
 /mob/living/simple_mob/humanoid/astral_collective/ranged dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/ranged overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/ranged overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/ranged overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged/noodle icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/ranged/noodle state: noodle
 /mob/living/simple_mob/humanoid/astral_collective/ranged/noodle dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/ranged/noodle overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged/noodle overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/ranged/noodle overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged/noodle overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged/noodle overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/ranged/noodle overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged/taur icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/ranged/taur state: taur
 /mob/living/simple_mob/humanoid/astral_collective/ranged/taur dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/ranged/taur overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged/taur overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/ranged/taur overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged/taur overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged/taur overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/ranged/taur overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged/tesh icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/ranged/tesh state: tesh
 /mob/living/simple_mob/humanoid/astral_collective/ranged/tesh dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/ranged/tesh overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged/tesh overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/ranged/tesh overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged/tesh overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged/tesh overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/ranged/tesh overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged/wolf icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/ranged/wolf state: wolf
 /mob/living/simple_mob/humanoid/astral_collective/ranged/wolf dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/ranged/wolf overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged/wolf overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/ranged/wolf overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged/wolf overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged/wolf overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/ranged/wolf overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged/lizard icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/ranged/lizard state: breacher
 /mob/living/simple_mob/humanoid/astral_collective/ranged/lizard dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/ranged/lizard overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged/lizard overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/ranged/lizard overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged/lizard overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged/lizard overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/ranged/lizard overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged/zaddat icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/ranged/zaddat state: zaddat
 /mob/living/simple_mob/humanoid/astral_collective/ranged/zaddat dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/ranged/zaddat overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/ranged/zaddat overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/ranged/zaddat overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged/zaddat overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/ranged/zaddat overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/ranged/zaddat overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/body icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/body state: medi
 /mob/living/simple_mob/humanoid/astral_collective/body dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/body overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/body overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/body overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/body overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/body overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/body overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/body/dagger icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/body/dagger state: blade_tosser
 /mob/living/simple_mob/humanoid/astral_collective/body/dagger dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/body/dagger overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/body/dagger overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/body/dagger overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/body/dagger overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/body/dagger overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/body/dagger overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/body/juggernaught icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/body/juggernaught state: breaker
 /mob/living/simple_mob/humanoid/astral_collective/body/juggernaught dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/body/juggernaught overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/body/juggernaught overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/body/juggernaught overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/body/juggernaught overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/body/juggernaught overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/body/juggernaught overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/mind icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/mind state: medi
 /mob/living/simple_mob/humanoid/astral_collective/mind dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/mind overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/mind overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/mind overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/mind overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/mind overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/mind overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity state: space
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/mind/gravity overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/mind/gravity overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/astral_collective/mind/fire icon: icons/mob/eclipse.dmi
 /mob/living/simple_mob/humanoid/astral_collective/mind/fire state: flamer
 /mob/living/simple_mob/humanoid/astral_collective/mind/fire dir: 2
-/mob/living/simple_mob/humanoid/astral_collective/mind/fire overlay: ::-32767
 /mob/living/simple_mob/humanoid/astral_collective/mind/fire overlay: ::8:#000000
 /mob/living/simple_mob/humanoid/astral_collective/mind/fire overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/humanoid/astral_collective/mind/fire overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/humanoid/astral_collective/mind/fire overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/humanoid/astral_collective/mind/fire overlay: icons/mob/modifier_effects.dmi:poisoned:-32767
 /mob/living/simple_mob/humanoid/clown icon: icons/mob/animal.dmi
 /mob/living/simple_mob/humanoid/clown state: clown
 /mob/living/simple_mob/humanoid/clown dir: 2
@@ -8671,6 +8700,14 @@
 /mob/living/simple_mob/combat_ai_pack_subject/states overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/combat_ai_pack_subject/states overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/combat_ai_pack_subject/states overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/dq_draw_pred icon: icons/mob/animal.dmi
+/mob/living/simple_mob/dq_draw_pred state: mouse_gray
+/mob/living/simple_mob/dq_draw_pred dir: 2
+/mob/living/simple_mob/dq_draw_pred overlay: ::8:#000000
+/mob/living/simple_mob/dq_draw_pred overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/dq_draw_pred overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/dq_draw_pred overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/dq_draw_pred overlay: icons/mob/animal.dmi:mouse_gray-eyes:7
 /mob/living/simple_mob/fleshtaker icon: icons/mob/synxmanyvoices.dmi
 /mob/living/simple_mob/fleshtaker state: 939_living
 /mob/living/simple_mob/fleshtaker dir: 2

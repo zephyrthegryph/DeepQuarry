@@ -72,16 +72,16 @@
 	var/wellness = vitality()
 	if(wellness < 0.25)
 		icon_state = "rex_25"
-		icon_living = "rex_25"
+		set_icon_living("rex_25")
 	else if(wellness < 0.5)
 		icon_state = "rex_50"
-		icon_living = "rex_50"
+		set_icon_living("rex_50")
 	else if (wellness < 0.75)
 		icon_state = "rex_75"
-		icon_living = "rex_75"
+		set_icon_living("rex_75")
 	else if (wellness > 0.75)
 		icon_state = "rex"
-		icon_living = "rex"
+		set_icon_living("rex")
 
 /mob/living/simple_mob/vore/fossiltank/do_special_attack(atom/A, stance)
 	for(var/mob/living/L in orange(src, 14))
@@ -153,16 +153,16 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 	if(!A)
 		set_chain_number(0)
 		icon_state = "jellyfish"
-		icon_living = "jellyfish"
+		set_icon_living("jellyfish")
 		return
 	set_chain_number(chain_number - 1)
 	if(prob(50))
 		icon_state = "jellyfish_yellow"
-		icon_living = "jellyfish_yellow"
+		set_icon_living("jellyfish_yellow")
 		dash_attack(A)
 	else
 		icon_state = "jellyfish_red"
-		icon_living = "jellyfish_red"
+		set_icon_living("jellyfish_red")
 		summon_puddles(A)
 
 /mob/living/simple_mob/vore/boss_jellyfish/on_death(gibbed)
@@ -196,27 +196,27 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 		set_chain_number(3)
 		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A), keeps_dead = TRUE)
 		icon_state = "jellyfish_blue"
-		icon_living = "jellyfish_blue"
+		set_icon_living("jellyfish_blue")
 	else if(vitality() < 0.5) //teleports then chains 2 attacks
 		rel_set(src, nameof(chain_target), A)
 		set_chain_number(2)
 		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A), keeps_dead = TRUE)
 		icon_state = "jellyfish_blue"
-		icon_living = "jellyfish_blue"
+		set_icon_living("jellyfish_blue")
 	else if(vitality() < 0.75) //teleports then attacks
 		rel_set(src, nameof(chain_target), A)
 		set_chain_number(1)
 		icon_state = "jellyfish_blue"
-		icon_living = "jellyfish_blue"
+		set_icon_living("jellyfish_blue")
 		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A), keeps_dead = TRUE)
 	else //attacks once
 		if(prob(50))
 			icon_state = "jellyfish_yellow"
-			icon_living = "jellyfish_yellow"
+			set_icon_living("jellyfish_yellow")
 			after(src, 4 SECONDS, PROC_REF(dash_attack), with = list(A), keeps_dead = TRUE)
 		else
 			icon_state = "jellyfish_red"
-			icon_living = "jellyfish_red"
+			set_icon_living("jellyfish_red")
 			after(src, 4 SECONDS, PROC_REF(summon_puddles), with = list(A))
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack(atom/A) //spider dash attack
@@ -263,7 +263,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 	ai_busy_end()
 	if(!chain_number)
 		icon_state = "jellyfish"
-		icon_living = "jellyfish"
+		set_icon_living("jellyfish")
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/sniper_shot(atom/target)
 	var/obj/item/projectile/P = new /obj/item/projectile/beam/nutrition_gigabeam(get_turf(src))
@@ -275,7 +275,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 			L.apply_body_effect(/datum/body_effect/mmo_drop/jelly_fish, 3, src)
 	if(!chain_number)
 		icon_state = "jellyfish"
-		icon_living = "jellyfish"
+		set_icon_living("jellyfish")
 
 /obj/item/projectile/beam/nutrition_gigabeam
 	damage = 40

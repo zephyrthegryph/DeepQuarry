@@ -54,13 +54,29 @@
 // any direct caller still finds the proc.
 /mob/living/simple_mob/slime/xenobio/proc/inherit_information(mob/living/simple_mob/slime/xenobio/predecessor)
 	return
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/slime/xenobio/appearance_overlays()
-	. = list()
-	icon_living = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"][victim ? " eating" : ""]"
-	icon_dead = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"] dead"
-	icon_rest = icon_dead
-	. += ..()
+TRACKED(/mob/living/simple_mob/slime/xenobio, is_adult)
+// TRUE while it is feeding on something.
+/mob/living/simple_mob/slime/xenobio
+	var/consuming = FALSE
+TRACKED(/mob/living/simple_mob/slime/xenobio, consuming)
+
+/// The slime's sprite names follow its age and whether it is feeding.
+/mob/living/simple_mob/slime/xenobio/proc/sync_slime_sprites(datum/act/A)
+	set_icon_living(slime_living_state())
+	set_icon_dead(slime_dead_state())
+	set_icon_rest(icon_dead)
+
+/mob/living/simple_mob/slime/xenobio/proc/slime_living_state()
+	return "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"][consuming ? " eating" : ""]"
+
+/mob/living/simple_mob/slime/xenobio/proc/slime_dead_state()
+	return "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"] dead"
+
+/mob/living/simple_mob/slime/xenobio/draw(datum/look/look)
+	..()
+	// The base drew from icon_living, which the reaction above refreshes; the names are derived here too so the draw never trails it.
+	var/dead_state = slime_dead_state()
+	look.life_state(src, slime_living_state(), dead_state, dead_state)
 
 /mob/living/simple_mob/slime/xenobio/life_special_due()
 	return TRUE
@@ -93,27 +109,25 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 	if(is_adult)
 		return
 
-	is_adult = TRUE
+	set_is_adult(TRUE)
 	melee_damage_lower = round(melee_damage_lower * 2) // 20
 	melee_damage_upper = round(melee_damage_upper * 2) // 30
 	endurance = endurance_adult
 	max_nutrition = 1200
 	amount_grown = 0
-	update_icon()
 	update_name()
 
 /mob/living/simple_mob/slime/xenobio/proc/make_baby()
 	if(!is_adult)
 		return
 
-	is_adult = FALSE
+	set_is_adult(FALSE)
 	melee_damage_lower = round(melee_damage_lower / 2) // 20
 	melee_damage_upper = round(melee_damage_upper / 2) // 30
 	endurance = initial(endurance)
 	max_nutrition = initial(max_nutrition)
 	set_nutrition(400)
 	amount_grown = 0
-	update_icon()
 	update_name()
 
 /mob/living/simple_mob/slime/xenobio/proc/update_name()

@@ -1117,21 +1117,21 @@
 	if(!(belly_choice in host().vore_icon_bellies))
 		return FALSE
 	host().vore_selected.belly_sprite_to_affect = belly_choice
-	host().handle_belly_update()
+	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
 /datum/vore_look/proc/attr_b_affects_vore_sprites(mob/user, list/params, extra)
 	host().vore_selected.affects_vore_sprites = !host().vore_selected.affects_vore_sprites
-	host().handle_belly_update()
+	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
 /datum/vore_look/proc/attr_b_count_absorbed_prey_for_sprites(mob/user, list/params, extra)
 	host().vore_selected.count_absorbed_prey_for_sprite = !host().vore_selected.count_absorbed_prey_for_sprite
-	host().handle_belly_update()
+	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
@@ -1141,14 +1141,14 @@
 	if(!isnum(absorbed_multiplier_input))
 		return FALSE
 	host().vore_selected.absorbed_multiplier = CLAMP(absorbed_multiplier_input, 0.1, 3)
-	host().handle_belly_update()
+	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
 /datum/vore_look/proc/attr_b_count_items_for_sprites(mob/user, list/params, extra)
 	host().vore_selected.count_items_for_sprite = !host().vore_selected.count_items_for_sprite
-	host().handle_belly_update()
+	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
@@ -1158,14 +1158,14 @@
 	if(!isnum(item_multiplier_input))
 		return FALSE
 	host().vore_selected.item_multiplier = CLAMP(item_multiplier_input, 0.1, 10)
-	host().handle_belly_update()
+	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
 /datum/vore_look/proc/attr_b_health_impacts_size(mob/user, list/params, extra)
 	host().vore_selected.health_impacts_size = !host().vore_selected.health_impacts_size
-	host().handle_belly_update()
+	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
@@ -1181,7 +1181,7 @@
 	if(!isnum(size_factor_input))
 		return FALSE
 	host().vore_selected.size_factor_for_sprite = CLAMP(size_factor_input, 0.1, 3)
-	host().handle_belly_update()
+	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
@@ -1197,7 +1197,7 @@
 
 /datum/vore_look/proc/attr_b_count_liquid_for_sprites(mob/user, list/params, extra)
 	host().vore_selected.count_liquid_for_sprite = !host().vore_selected.count_liquid_for_sprite
-	host().handle_belly_update()
+	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
@@ -1207,7 +1207,7 @@
 	if(!isnum(liquid_multiplier_input))
 		return FALSE
 	host().vore_selected.liquid_multiplier = CLAMP(liquid_multiplier_input, 0.1, 10)
-	host().handle_belly_update()
+	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
@@ -1217,7 +1217,7 @@
 	if(!(GLOB.global_underwear.categories_by_name[new_undergarment]))
 		return FALSE
 	host().vore_selected.undergarment_chosen = new_undergarment
-	host().handle_belly_update()
+	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
@@ -1229,7 +1229,7 @@
 		return FALSE
 
 	host().vore_selected.undergarment_if_none = selected_underwear
-	host().handle_belly_update()
+	PUBLISH(host(), belly_change)
 	host().updateVRPanel()
 	if(.)
 		unsaved_changes = TRUE
@@ -1238,7 +1238,7 @@
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
 		host().vore_selected.undergarment_color = newcolor
-		host().handle_belly_update()
+		PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE

@@ -115,7 +115,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
 		return
 
 	flick("golem_pre_melee", src) // To force the animation to restart.
-	icon_living = "golem_pre_melee" // The animation will hold after this point until melee_post_animation() gets called.
+	set_icon_living("golem_pre_melee") // The animation will hold after this point until melee_post_animation() gets called.
 	icon_state = "golem_pre_melee"
 	setClickCooldown(2)
 
@@ -125,19 +125,19 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
 		return
 
 	flick("golem_post_melee", src)
-	icon_living = "golem"
+	set_icon_living("golem")
 	icon_state = "golem"
 	setClickCooldown(6)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/ranged_pre_animation(atom/A)
 	flick("golem_pre_ranged", src)
-	icon_living = "golem_pre_ranged"
+	set_icon_living("golem_pre_ranged")
 	icon_state = "golem_pre_ranged"
 	setClickCooldown(5)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/ranged_post_animation(atom/A)
 	flick("golem_post_ranged", src)
-	icon_living = "golem"
+	set_icon_living("golem")
 	icon_state = "golem"
 	setClickCooldown(5)
 

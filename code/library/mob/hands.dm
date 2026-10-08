@@ -23,6 +23,7 @@ CAPABILITIES(/mob/living/carbon/human)
 	param(nameof(species_at_make), pos = 1)
 
 CAPABILITIES(/mob/living/silicon/robot)
+	on_change(nameof(sprite_datum), ANY, then(PROC_REF(sprite_changed)))
 	every(0.8 SECONDS, then(PROC_REF(transform_animation_sounds)), when = nameof(transform_sounds_left))
 	remote_interface(reach = BORG_INTERFACE_REACH)
 	// Its chassis manipulators: what a cyborg with no gripper selected still does by touch (a closet, a bulb, its own modules). 16.8 gives a cyborg

@@ -70,7 +70,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/passive/mouse, preserve_mouse_i
 	else
 		. = ..()
 	set_ghostjoin(TRUE)
-	ghostjoin_icon()
 
 
 	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
@@ -83,9 +82,9 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/passive/mouse, preserve_mouse_i
 		body_color = pick( list("brown","gray","white","black") )
 	icon_state = "mouse_[body_color]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
 	item_state = "mouse_[body_color]"
-	icon_living = "mouse_[body_color]"
-	icon_dead = "mouse_[body_color]_dead"
-	icon_rest = "mouse_[body_color]_sleep"
+	set_icon_living("mouse_[body_color]")
+	set_icon_dead("mouse_[body_color]_dead")
+	set_icon_rest("mouse_[body_color]_sleep")
 	if (!keep_parent_data && body_color != "rat")
 		desc = "A small [body_color] rodent, often seen hiding in maintenance areas and making a nuisance of itself."
 		holder_type = /obj/item/holder/mouse/rat
@@ -129,7 +128,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/passive/mouse, preserve_mouse_i
 
 /mob/living/simple_mob/animal/passive/mouse/proc/splat()
 	src.set_stat(DEAD)
-	src.icon_dead = "mouse_[body_color]_splat"
+	src.set_icon_dead("mouse_[body_color]_splat")
 	src.icon_state = "mouse_[body_color]_splat"
 	layer = MOB_LAYER
 	if(client)
@@ -227,9 +226,9 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/operative/agent_cheese, p
 	var/new_mouse_colour = A.answer.value
 	icon_state = resting ? "mouse_[new_mouse_colour]_sleep" : "mouse_[new_mouse_colour]"
 	item_state = "mouse_[new_mouse_colour]"
-	icon_living = "mouse_[new_mouse_colour]"
-	icon_dead = "mouse_[new_mouse_colour]_dead"
-	icon_rest = "mouse_[new_mouse_colour]_sleep"
+	set_icon_living("mouse_[new_mouse_colour]")
+	set_icon_dead("mouse_[new_mouse_colour]_dead")
+	set_icon_rest("mouse_[new_mouse_colour]_sleep")
 	desc = "A small [new_mouse_colour] rodent, often seen hiding in maintenance areas and making a nuisance of itself."
 	holder_type = text2path("/obj/item/holder/mouse/[new_mouse_colour]")
 	to_chat(src, span_notice("You are now a [new_mouse_colour] mouse!"))
@@ -342,14 +341,14 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/mining)
 
 	icon_state = "mouse_miner" // ALLOW(decl): overrides the parent's colour pick
 	item_state = "mouse_miner"
-	icon_living = "mouse_miner"
-	icon_dead = "mouse_miner_dead"
-	icon_rest = "mouse_miner_sleep"
+	set_icon_living("mouse_miner")
+	set_icon_dead("mouse_miner_dead")
+	set_icon_rest("mouse_miner_sleep")
 	desc = "A lonely miner's best friend."
 
 /mob/living/simple_mob/animal/passive/mouse/mining/splat()
 	src.set_stat(DEAD)
-	src.icon_dead = "mouse_miner_splat"
+	src.set_icon_dead("mouse_miner_splat")
 	src.icon_state = "mouse_miner_splat"
 	layer = MOB_LAYER
 	if(client)

@@ -374,7 +374,7 @@ CAPABILITIES(/obj/belly)
 		var/mob/living/L = thing
 		startfx.Add(L)
 		startfx.Add(get_belly_surrounding(L.contents))
-		owner.handle_belly_update() // This is run whenever a belly's contents are changed.
+		PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
 	if(istype(thing,/obj/item))
 		var/obj/item/I = thing
 		startfx.Add(get_belly_surrounding(I.contents))
@@ -408,7 +408,7 @@ CAPABILITIES(/obj/belly)
 				reagents.splash_mob(living_mob, reagents.total_volume * 0.1, FALSE)
 			to_chat(living_mob, span_vwarning(span_bold("You splash into a pool of [reagent_name]!")))
 	if(!isliving(thing) && count_items_for_sprite) // If this is enabled also update fullness for non-living things
-		owner.handle_belly_update() // This is run whenever a belly's contents are changed.
+		PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
 
 // Called whenever an atom leaves this belly
 /obj/belly/Exited(atom/movable/thing, atom/OldLoc)
@@ -421,7 +421,7 @@ CAPABILITIES(/obj/belly)
 	if(isbelly(thing.loc))
 		var/obj/belly/NB = thing.loc
 		if(count_items_for_sprite && !NB.count_items_for_sprite)
-			owner.handle_belly_update()
+			PUBLISH(owner, belly_change)
 		return
 
 	// Remove vorefx from all those indirectly viewing as well
@@ -430,7 +430,7 @@ CAPABILITIES(/obj/belly)
 		var/mob/living/L = thing
 		endfx.Add(L)
 		endfx.Add(get_belly_surrounding(L.contents))
-		owner.handle_belly_update() // This is run whenever a belly's contents are changed.
+		PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
 	if(istype(thing,/obj/item))
 		var/obj/item/I = thing
 		endfx.Add(get_belly_surrounding(I.contents))
@@ -448,7 +448,7 @@ CAPABILITIES(/obj/belly)
 	// End of indirect vorefx changes
 	if(isitem(thing) && !isbelly(thing.loc)) // Digest stage effects. Don't bother adding overlays to stuff that won't make it back out.
 		if(count_items_for_sprite) // If this is enabled also update fullness for non-living things
-			owner.handle_belly_update() // This is run whenever a belly's contents are changed.
+			PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
 		var/obj/item/I = thing
 		if(I.gurgled && !I.stains_in_look())
 			I.cut_overlay(GLOB.gurgled_overlays[I.gurgled_color]) //No double-overlay for worn items.
@@ -721,7 +721,7 @@ CAPABILITIES(/obj/belly)
 			M.reagents.del_reagent(REAGENT_ID_ETHANOL)
 			M.reagents.trans_to_holder(Pred.ingested, M.reagents.total_volume, 0.5, TRUE)
 
-	owner.handle_belly_update()
+	PUBLISH(owner, belly_change)
 
 	//Incase they have the loop going, let's double check to stop it.
 	M.stop_sound_channel(CHANNEL_PREYLOOP)
@@ -762,7 +762,7 @@ CAPABILITIES(/obj/belly)
 			slot_remove(M, G)
 		else
 			dissolved(M, src)
-	owner.handle_belly_update()
+	PUBLISH(owner, belly_change)
 
 // Handle a mob being absorbed
 /obj/belly/proc/absorb_living(mob/living/M)
@@ -814,7 +814,7 @@ CAPABILITIES(/obj/belly)
 
 	//Update owner
 	owner.updateVRPanel()
-	owner.handle_belly_update()
+	PUBLISH(owner, belly_change)
 	// Finally, if they're to be sent to a special pudge belly, send them there
 	if(transferlocation_absorb)
 		var/obj/belly/dest_belly
@@ -841,7 +841,7 @@ CAPABILITIES(/obj/belly)
 
 	//Update owner
 	owner.updateVRPanel()
-	owner.handle_belly_update()
+	PUBLISH(owner, belly_change)
 
 /////////////////////////////////////////////////////////////////////////
 /obj/belly/proc/handle_absorb_langs()
@@ -927,7 +927,7 @@ CAPABILITIES(/obj/belly)
 	owner.updateVRPanel()
 	for(var/mob/living/M in contents)
 		M.updateVRPanel()
-	owner.handle_belly_update()
+	PUBLISH(owner, belly_change)
 
 //Autotransfer belly lookup
 /obj/belly/proc/compile_autotransfer_bellies()

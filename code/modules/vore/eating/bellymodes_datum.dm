@@ -44,7 +44,7 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 		else
 			B.handle_digestion_death(L)
 		if(!L)
-			B.owner.handle_belly_update()
+			PUBLISH(B.owner, belly_change)
 			return GLOB.digest_result_update
 	if(!L)
 		return
@@ -60,7 +60,7 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 			L.mend(TREAT_PLATING_REPAIR, paratox*2)
 			L.mend(TREAT_WIRING_REPAIR, paratox*2)
 			if(B.health_impacts_size) //Health probably changed so...
-				B.owner.handle_belly_update_buckets() //Only rebuilds the icon when a fullness bucket actually crosses a boundary.
+				PUBLISH(B.owner, belly_change) //Only rebuilds the icon when a fullness bucket actually crosses a boundary.
 			return
 
 	// Deal digestion damage (and feed the pred)
@@ -86,7 +86,7 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 	var/difference = B.owner.size_multiplier / L.size_multiplier
 
 	if(B.health_impacts_size)
-		B.owner.handle_belly_update_buckets()
+		PUBLISH(B.owner, belly_change)
 
 	consider_healthbar(L, old_vitality, B.owner)
 	if(offset && damage_gain > 0) // If any different than default weight, multiply the % of offset.
@@ -152,7 +152,7 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 		L.resize(L.size_multiplier - (0.01 * delta_factor)) // Shrink by 1% per baseline tick
 		if(L.size_multiplier <= B.shrink_grow_size) // Adds some feedback so the pred knows their prey has stopped shrinking.
 			to_chat(B.owner, span_vnotice("You feel [L] get as small as you would like within your [lowertext(B.name)]."))
-		B.owner.handle_belly_update()
+		PUBLISH(B.owner, belly_change)
 		. = ..()
 
 /datum/digest_mode/grow
@@ -164,7 +164,7 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 		L.resize(L.size_multiplier + (0.01 * delta_factor)) // Grow by 1% per baseline tick
 		if(L.size_multiplier >= B.shrink_grow_size) // Adds some feedback so the pred knows their prey has stopped growing.
 			to_chat(B.owner, span_vnotice("You feel [L] get as big as you would like within your [lowertext(B.name)]."))
-	B.owner.handle_belly_update()
+	PUBLISH(B.owner, belly_change)
 
 /datum/digest_mode/drain/sizesteal
 	id = DM_SIZE_STEAL
@@ -177,7 +177,7 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 		L.resize(L.size_multiplier - (0.01 * delta_factor)) //Shrink by 1% per baseline tick
 		if(L.size_multiplier <= B.shrink_grow_size) // Adds some feedback so the pred knows their prey has stopped shrinking.
 			to_chat(B.owner, span_vnotice("You feel [L] get as small as you would like within your [lowertext(B.name)]."))
-		B.owner.handle_belly_update()
+		PUBLISH(B.owner, belly_change)
 		. = ..()
 
 /datum/digest_mode/heal
@@ -207,7 +207,7 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 		if(synthetic_mended > 0)
 			B.owner.adjust_nutrition(-5 * delta_factor)
 		if(B.health_impacts_size)
-			B.owner.handle_belly_update_buckets()
+			PUBLISH(B.owner, belly_change)
 		consider_healthbar(L, old_vitality, B.owner)
 		if(organic_mended > 0 && L.nutrition <= 400)
 			L.adjust_nutrition(1 * delta_factor)

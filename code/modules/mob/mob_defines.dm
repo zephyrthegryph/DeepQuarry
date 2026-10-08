@@ -261,6 +261,7 @@
 	COOLDOWN_DECLARE(slip_protect)
 
 CAPABILITIES(/mob)
+	on_notice(/datum/notice/belly_changed, then(PROC_REF(belly_changed)))
 	mob_state()
 	ref_one(nameof(teleop))
 	telekinetic_reach()

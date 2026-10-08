@@ -40,8 +40,8 @@ Only physical attributes are copied.
 	name = target.name
 	desc = target.desc
 	icon = target.icon
-	icon_living = target.icon_living
-	icon_dead = target.icon_dead
+	set_icon_living(target.icon_living)
+	set_icon_dead(target.icon_dead)
 	pixel_x = target.pixel_x
 	pixel_y = target.pixel_y
 	melee_damage_lower = target.melee_damage_lower
@@ -52,7 +52,6 @@ Only physical attributes are copied.
 	set_armor(target.get_armor())
 	//steal base stats
 	//possibly steal vorgans
-	update_icon()
 
 //reset to original values
 /mob/living/simple_mob/fleshtaker/proc/revert_mimic()
@@ -60,8 +59,8 @@ Only physical attributes are copied.
 	name = base_values["name"]
 	desc = base_values["desc"]
 	icon = base_values["icon"]
-	icon_living = base_values["icon_living"]
-	icon_dead = base_values["icon_dead"]
+	set_icon_living(base_values["icon_living"])
+	set_icon_dead(base_values["icon_dead"])
 	pixel_x = base_values["pixel_x"]
 	pixel_y = base_values["pixel_y"]
 	melee_damage_lower = base_values["melee_damage_lower"]
@@ -70,7 +69,6 @@ Only physical attributes are copied.
 	fully_heal()
 	icon_state = icon_living
 	set_armor(base_values["armor"])
-	update_icon()
 
 /mob/living/simple_mob/fleshtaker/apply_melee_effects(atom/A)
 	if(istype(A,/mob/living/simple_mob) && !flesh_mimic)

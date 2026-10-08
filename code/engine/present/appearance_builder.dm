@@ -312,7 +312,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 
 /// A fresh overlay image for look.overlay() with its placement and tint set in one call (a draw() writes nothing, so an overlay raised, tinted, put on
 /// another plane or turned is built here): `icon_state` of `icon`, or the appearance of `of` (an atom drawn into the look, a scanner's patient).
-/proc/look_overlay_image(icon, icon_state, layer = FLOAT_LAYER, plane = FLOAT_PLANE, alpha = 255, pixel_x = 0, pixel_y = 0, color = null, dir = null, matrix/transform = null, list/filters = null, atom/of = null, appearance_flags = null)
+/proc/look_overlay_image(icon, icon_state, layer = FLOAT_LAYER, plane = FLOAT_PLANE, alpha = 255, pixel_x = 0, pixel_y = 0, color = null, dir = null, matrix/transform = null, list/filters = null, atom/of = null, appearance_flags = null, invisibility = null)
 	var/image/I = of ? image(of) : image(icon = icon, icon_state = icon_state)
 	I.layer = layer
 	I.plane = plane
@@ -329,6 +329,8 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		I.filters = filters
 	if(!isnull(appearance_flags))
 		I.appearance_flags = appearance_flags
+	if(!isnull(invisibility))
+		I.invisibility = invisibility
 	return I
 
 /datum/look/proc/set_color(value)

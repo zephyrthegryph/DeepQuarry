@@ -99,7 +99,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/sheep)
 	act_message(user, src, MSG_SELF(span_notice("You shear %T% with %I%.")), MSG_OTHERS(span_notice("%U% shears %T% with %I%.")), item = O)
 	new /obj/item/stack/material/fur/wool(get_turf(user))
 	harvestable_wool = FALSE
-	update_icon()
 
 
 /mob/living/simple_mob/vore/sheep/life_type_post_due()

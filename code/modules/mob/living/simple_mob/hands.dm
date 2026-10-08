@@ -55,12 +55,11 @@
 		var/image/standing = image(icon = t_icon, icon_state = t_state)
 		standing.color = get_equipped_item(SLOT_ID_HAND_R).color
 
-		r_hand_sprite = standing
+		set_r_hand_sprite(standing)
 
 	else
-		r_hand_sprite = null
+		set_r_hand_sprite(null)
 
-	update_icon()
 
 /mob/living/simple_mob/update_inv_l_hand()
 	if(QDESTROYING(src))
@@ -92,12 +91,11 @@
 		var/image/standing = image(icon = t_icon, icon_state = t_state)
 		standing.color = get_equipped_item(SLOT_ID_HAND_L).color
 
-		l_hand_sprite = standing
+		set_l_hand_sprite(standing)
 
 	else
-		l_hand_sprite = null
+		set_l_hand_sprite(null)
 
-	update_icon()
 
 //Can insert extra huds into the hud holder here.
 /mob/living/simple_mob/proc/extra_huds(datum/hud/hud,icon/ui_style,list/hud_elements)

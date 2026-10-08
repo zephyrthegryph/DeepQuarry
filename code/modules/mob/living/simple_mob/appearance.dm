@@ -1,71 +1,61 @@
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/appearance_overlays()
-	. = list()
-	. += ..()
-
-	. += modifier_overlay
-
-	if(!icon_living) // Prevent the mob from turning invisible if icon_living is null.
-		icon_living = initial(icon_state)
-
-	//Awake and normal
-	if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED) ))
-		icon_state = icon_living
-
-	//Dead
-	else if(stat >= DEAD)
-		icon_state = icon_dead
-
-	//Resting or KO'd
-	else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED) ) && icon_rest)
-		icon_state = icon_rest
-
-	//Backup
-	else
-		icon_state = initial(icon_state)
+/// A simple mob's whole look: its life state, hands, body effects, belly fullness, eyes, pounce and spit. Subtypes call ..() and refine
+/// (look.state_so_far(src) is the state chosen so far). Every input is tracked state: stat, resting, status_flags, the hand sprites,
+/// vore_fullness(_ex), pouncing and spitting, so a change redraws it with no call.
+/mob/living/simple_mob/draw(datum/look/look)
+	..()
+	var/state = look.life_state(src, icon_living, icon_rest, icon_dead)
+	var/awake = (state == icon_living)
+	var/eye_state = (has_eye_glow && awake) ? state : null
 
 	if(has_hands)
-		if(r_hand_sprite)
-			. += r_hand_sprite
-		if(l_hand_sprite)
-			. += l_hand_sprite
+		look.overlay(r_hand_sprite)
+		look.overlay(l_hand_sprite)
+	for(var/image/effect as anything in body_effect_overlays(TRUE))
+		look.overlay(effect)
 
-	if(has_eye_glow)
-		if(icon_state != icon_living)
-			remove_eyes()
-		else
-			add_eyes()
+	// Belly fullness: the sprite of the fullness suffix, and the per-class belly overlays of that state.
+	if(vore_active && vore_fullness)
+		if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)) && (vore_icons & SA_ICON_LIVING))
+			state = "[icon_living]-[vore_fullness]"
+		else if(stat >= DEAD && (vore_icons & SA_ICON_DEAD))
+			state = "[icon_dead]-[vore_fullness]"
+		else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED)) && icon_rest && (vore_icons & SA_ICON_REST))
+			state = "[icon_rest]-[vore_fullness]"
+		if(vore_eyes && awake)
+			eye_state = state
+		for(var/belly_state in vore_fullness_states(state))
+			look.overlay(belly_state)
 
+	// Pounce: the leap swaps the icon file and state and shifts the sprite; the crouch before it swaps the state.
+	var/leaping = pouncing && (status_flags & LEAPING)
+	var/draw_icon = icon
+	if(leaping)
+		if(!isnull(icon_state_pounce))
+			state = icon_state_pounce
+		if(!isnull(icon_pounce))
+			look.set_icon(icon_pounce)
+			draw_icon = icon_pounce
+		if(icon_pounce_x || icon_pounce_y)
+			look.offset(icon_pounce_x ? icon_pounce_x : initial(pixel_x), icon_pounce_y ? icon_pounce_y : initial(pixel_y))
+	else if(pouncing && !isnull(icon_state_prepounce))
+		state = icon_state_prepounce
 
-// If your simple mob's update_icon() call calls overlays.Cut(), this needs to be called after this, or manually apply modifier_overly to overlays.
-/mob/living/simple_mob/update_modifier_visuals()
-	var/image/effects = null
-	if(modifier_overlay)
-		cut_overlay(modifier_overlay)
-		modifier_overlay.cut_overlays()
-		effects = modifier_overlay
-	else
-		effects = new()
+	// A spit being readied.
+	if(spitting)
+		var/spit_state = null
+		if(!isnull(icon_overlay_spit) && (state == icon_living))
+			spit_state = icon_overlay_spit
+		else if(!isnull(icon_overlay_spit_pounce) && (state == icon_state_prepounce))
+			spit_state = icon_overlay_spit_pounce
+		if(spit_state)
+			look.overlay(look_overlay_image(draw_icon, spit_state, layer = MOB_LAYER, plane = MOB_PLANE, appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
 
-	for(var/image/I as anything in body_effect_overlays(TRUE))
-		effects.add_overlay(I)
+	// Ghosts see whether a revived mob can be joined.
+	if(ghostjoin)
+		look.overlay(look_overlay_image('icons/mob/hud_vr.dmi', "ghostjoin", plane = PLANE_GHOSTS, appearance_flags = (KEEP_APART|RESET_TRANSFORM), invisibility = INVISIBILITY_OBSERVER))
 
-	modifier_overlay = effects
-	add_overlay(modifier_overlay)
-
-/mob/living/simple_mob/proc/add_eyes()
-	if(!eye_layer)
-		eye_layer = image(icon, "[icon_state]-eyes")
-		if(custom_eye_color)
-			eye_layer.color = custom_eye_color
-		eye_layer.plane = PLANE_LIGHTING_ABOVE
-	eye_layer.appearance_flags = appearance_flags // . Make eye overlays respect the mob's scaling settings.
-	add_overlay(eye_layer)
-
-/mob/living/simple_mob/proc/remove_eyes()
-	cut_overlay(eye_layer)
-	spent(eye_layer)
-	eye_layer = null
+	look.state(state)
+	look.eyes(src, eye_state, custom_eye_color, !isnull(eye_state))
 
 /mob/living/simple_mob/gib()
 	..(icon_gib,1,icon) // we need to specify where the gib animation is stored

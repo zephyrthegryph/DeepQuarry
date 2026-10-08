@@ -68,15 +68,15 @@
 	if(wellness < 0.25)
 		special_attack_cooldown = 5 SECONDS
 		icon_state = "glitch_boss_25"
-		icon_living = "glitch_boss_25"
+		set_icon_living("glitch_boss_25")
 	else if(wellness < 0.5)
 		special_attack_cooldown = 10 SECONDS
 		icon_state = "glitch_boss_50"
-		icon_living = "glitch_boss_50"
+		set_icon_living("glitch_boss_50")
 	else if (wellness < 0.75)
 		special_attack_cooldown = 15 SECONDS
 		icon_state = "glitch_boss_75"
-		icon_living = "glitch_boss_75"
+		set_icon_living("glitch_boss_75")
 
 /mob/living/simple_mob/glitch_boss/proc/create_illusions(atom/A)
 	var/list/possible_turfs = list()
@@ -107,7 +107,7 @@
 		var/type_to_spawn = prob(15) ? /mob/living/simple_mob/glitch_boss_fake/strong : /mob/living/simple_mob/glitch_boss_fake
 		var/mob/living/simple_mob/newmob = new type_to_spawn(chosen_turf)
 		newmob.ai_brain?.serve(src) // the illusions are the boss's sworn
-		newmob.icon_living = src.icon_living
+		newmob.set_icon_living(src.icon_living)
 		newmob.icon_state = src.icon_state
 		new /obj/effect/temp_visual/glitch(chosen_turf)
 		actual_turfs -= chosen_turf

@@ -18,7 +18,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 				set_ghostjoin(FALSE)
 				registry_leave(REGISTRY_GHOST_PODS, src)
 
-			ghostjoin_icon()
 			. =  TRUE
 
 	if(!isnull(.))
@@ -91,7 +90,6 @@ TRACKED(/mob/living/simple_mob, ghostjoin)
 
 	// Clean up the simplemob
 	set_ghostjoin(FALSE)
-	ghostjoin_icon()
 	if(capture_caught)
 		to_chat(src, span_notice("You are bound to [revivedby], follow their commands within reason and to the best of your abilities, and avoid betraying or abandoning them.") + " " + span_warning("You are allied with [revivedby]. Do not attack anyone for no reason. Of course, you may do scenes as you like, but you must still respect preferences."))
 		act_message(src, null, others = "%U%'s eyes flicker with a curious intelligence.", runemessage = "looks around")
@@ -187,7 +185,6 @@ TRACKED(/mob/living/simple_mob, ghostjoin)
 	target.revivedby = user.name
 	target.set_ghostjoin(1)
 	registry_join(REGISTRY_GHOST_PODS, target)
-	target.ghostjoin_icon()
 	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
 	charges--
 	log_and_message_admins("used a denecrotizer to tame/offer a simplemob to ghosts: [target]. [ADMIN_FLW(src)]", user)
@@ -210,7 +207,6 @@ TRACKED(/mob/living/simple_mob, ghostjoin)
 	if(!target.mind) //if it doesn't have a mind then no one has been playing as it, and it is safe to offer to ghosts.
 		target.set_ghostjoin(1)
 		registry_join(REGISTRY_GHOST_PODS, target)
-		target.ghostjoin_icon()
 	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
 	charges--
 	if(charges == 0)
@@ -252,19 +248,6 @@ TRACKED(/mob/living/simple_mob, ghostjoin)
 		return ITEM_INTERACT_SUCCESS
 	else
 		return ..()
-
-/mob/living/simple_mob/proc/ghostjoin_icon() //puts an icon on mobs for ghosts, so they can see if a mob has been revived and is joinable
-	var/static/image/I
-	if(!I)
-		I = image('icons/mob/hud_vr.dmi', "ghostjoin")
-		I.invisibility = INVISIBILITY_OBSERVER
-		I.plane = PLANE_GHOSTS
-		I.appearance_flags = KEEP_APART|RESET_TRANSFORM
-
-	cut_overlay(I)
-
-	if(ghostjoin)
-		add_overlay(I)
 
 /obj/item/denecrotizer/medical //Can revive more things, but without the special ghost and faction stuff. For medical use.
 	name = "commercial denecrotizer"

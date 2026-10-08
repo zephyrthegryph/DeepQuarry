@@ -73,12 +73,11 @@
 	return isrobot(target)
 
 /mob/living/silicon/robot/proc/dq_do_toggle_glowy_stomach(mob/actor, obj/item/held, datum/interaction/ability/interaction)
-	glowy_enabled = !glowy_enabled
+	set_glowy_enabled(!glowy_enabled)
 	if(glowy_enabled)
 		to_chat(src, span_filter_notice("Your stomach will now glow and any naturally glowing accents you have will now appear!"))
 	else
 		to_chat(src, span_filter_notice("Your stomach will no longer glow, and any naturally glowing accents you have will be hidden!"))
-	update_icon()
 	return TRUE
 
 /datum/interaction/ability/self/robot_spark_plug

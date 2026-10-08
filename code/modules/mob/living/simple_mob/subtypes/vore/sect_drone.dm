@@ -84,6 +84,8 @@
 
 	allow_mind_transfer = TRUE
 
+TRACKED(/mob/living/simple_mob/vore/sect_drone, custom_eye_color)
+
 CAPABILITIES(/mob/living/simple_mob/vore/sect_drone)
 	verb_entry(/mob/living/simple_mob/vore/sect_drone/proc/set_abdomen_color, login = TRUE)
 
@@ -98,9 +100,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/sect_drone)
 	if(!A.answer)
 		return
 	if(A.answer.value)
-		custom_eye_color = A.answer.value
-		remove_eyes()
-		add_eyes()
+		set_custom_eye_color(A.answer.value)
 
 /datum/say_list/sect_drone
 	say_got_target = list("chitters threateningly!")

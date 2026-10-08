@@ -83,7 +83,6 @@
 		return
 	clear_module_slot(slot)
 	after_equip()
-	update_icon()
 	if(shown_robot_modules)
 		hud_used.update_robot_modules_display()
 
@@ -95,7 +94,7 @@
 /// Drop every module. Called on events (stat change, weapon lock, EMP),
 /// never per tick; does nothing (and redraws nothing) when already empty.
 /mob/living/silicon/robot/proc/uneq_all()
-	module_active = null
+	set_module_active(null)
 	var/removed_any_module = FALSE
 	for(var/slot in 1 to 3)
 		if(clear_module_slot(slot))
@@ -103,7 +102,6 @@
 	if(!removed_any_module)
 		return
 	after_equip()
-	update_icon()
 
 	// Refresh inventory if needed
 	if(hud_used && shown_robot_modules)
@@ -191,8 +189,7 @@
 		var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)
 		if(slot_screen)
 			slot_screen.icon_state = slot == module ? "inv[slot] +a" : "inv[slot]"
-	module_active = I
-	update_icon()
+	set_module_active(I)
 
 //deselect_module(module) - Deselects the module slot specified by "module"
 /mob/living/silicon/robot/proc/deselect_module(module) //Module is 1-3
@@ -204,8 +201,7 @@
 	var/atom/movable/screen/slot_screen = get_module_slot_screen(module)
 	if(slot_screen)
 		slot_screen.icon_state = "inv[module]"
-	module_active = null
-	update_icon()
+	set_module_active(null)
 
 //toggle_module(module) - Toggles the selection of the module slot specified by "module".
 /mob/living/silicon/robot/proc/toggle_module(module) //Module is 1-3
@@ -261,7 +257,6 @@
 		if(istype(O, /obj/item/borg/sight))
 			var/obj/item/borg/sight/S = O
 			set_sight_mode(sight_mode | S.sight_mode)
-		update_icon()
 		after_equip(O)
 		on_equipment_changed()
 		return
@@ -304,16 +299,17 @@
 /// A module left its slot, by whatever means: it is no longer active or seen.
 /mob/living/silicon/robot/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
 	..()
-	if(inserted)
-		return
 	var/slot = 0
 	for(var/i in 1 to 3)
 		if(slot_id == SLOT_ID_MODULE(i))
 			slot = i
 	if(!slot)
 		return
+	module_slots_changed(inserted ? null : thing)
+	if(inserted)
+		return
 	if(module_active == thing)
-		module_active = null
+		set_module_active(null)
 	if(istype(thing, /obj/item/borg/sight))
 		var/obj/item/borg/sight/S = thing
 		set_sight_mode(sight_mode & ~S.sight_mode)

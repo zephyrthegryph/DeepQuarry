@@ -588,7 +588,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 		add_eyes()
 		return .
 
-	update_fullness()
 
 	// Don't get a vore belly size if we have no belly size set!
 	var/belly_size = CLAMP(vore_fullness, 0, chassis_data.belly_states)

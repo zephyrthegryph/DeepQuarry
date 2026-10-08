@@ -74,7 +74,6 @@
 	var/datum/ai_brain/brain = M.ai_brain
 	if(ghostjoin)
 		M.set_ghostjoin(TRUE)
-		M.ghostjoin_icon()
 	if(!brain)
 		return
 	switch(mob_intent)

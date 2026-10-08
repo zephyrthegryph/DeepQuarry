@@ -183,40 +183,39 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 	//Change the all the icon info.
 	icon = 'icons/mob/demon_vr.dmi' //Mass majority of the sprites use this icon
 	icon_state = "[alternate_selection]"
-	icon_living = "[alternate_selection]"
-	icon_dead = "dead"
-	icon_rest = "[alternate_selection]_rest"
+	set_icon_living("[alternate_selection]")
+	set_icon_dead("dead")
+	set_icon_rest("[alternate_selection]_rest")
 	vis_height = 47 //Mass majority of sprites use vis_height = 47. If its different, its done below.
 	pixel_x = 0
-	vore_icons = FALSE //No stomach sprites unless specifically specified!
+	set_vore_icons(FALSE) //No stomach sprites unless specifically specified!
 	//This is where we handle the special ones!
 	switch(alternate_selection)
 		if("boxfox")
-			vore_icons = SA_ICON_LIVING
+			set_vore_icons(SA_ICON_LIVING)
 			vore_capacity = 1
 
 		if("wendigo")
-			vore_icons = SA_ICON_LIVING
+			set_vore_icons(SA_ICON_LIVING)
 			vore_capacity = 1
-			icon_dead = "[alternate_selection]_dead"
+			set_icon_dead("[alternate_selection]_dead")
 
 		//These are the larger variants, so we do some different stuff here!
 		if("brutola")
 			pixel_x = -8
 			vis_height = 64
-			vore_icons = SA_ICON_LIVING | SA_ICON_REST
+			set_vore_icons(SA_ICON_LIVING | SA_ICON_REST)
 			vore_capacity = 2
-			icon_dead = "[alternate_selection]_dead"
+			set_icon_dead("[alternate_selection]_dead")
 			icon = 'icons/mob/demon_alt.dmi'
 
 		if("ignia")
 			pixel_x = -8
 			vis_height = 64
-			vore_icons = SA_ICON_LIVING
+			set_vore_icons(SA_ICON_LIVING)
 			vore_capacity = 2
-			icon_dead = "[alternate_selection]_dead"
+			set_icon_dead("[alternate_selection]_dead")
 			icon = 'icons/mob/demon_alt.dmi'
-	update_icon()
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 TRACKED(/mob/living/simple_mob/vore/demon, is_shifting)

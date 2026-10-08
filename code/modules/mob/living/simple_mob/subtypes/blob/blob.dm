@@ -52,7 +52,6 @@ CAPABILITIES(/mob/living/simple_mob/blob)
 	if(!overmind && B.overmind)
 		rel_set(src, nameof(overmind), B.overmind)
 		faction = B.overmind.blob_type.faction
-		update_icon()
 
 	if(faction != B.faction && B.overmind)
 		injure(INJURY_BLUNT, rand(B.overmind.blob_type.damage_lower, B.overmind.blob_type.damage_upper), source = B)

@@ -46,7 +46,6 @@
 	mob_size = MOB_SMALL
 	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
-	var/static/list/overlays_cache = list() // ALLOW(cache): multi-key overlay table filled inline from mob state
 	var/do_seasons = TRUE
 	picked_color = FALSE
 
@@ -169,25 +168,11 @@
 			if("winter")
 				winterize()
 				return
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/squirrel, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/squirrel/appearance_overlays()
-	. = list()
-	. += ..()
-	var/combine_key
-	if(icon == 'icons/mob/alienanimals_x32.dmi')
-		combine_key = "small"
-	else
-		combine_key = "big"
-
-	combine_key = combine_key+icon_state
-	var/image/extra_image = overlays_cache[combine_key]
-	if(!extra_image)
-		extra_image = image(icon,null,"[icon_state]_eye")
-		extra_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-		overlays_cache[combine_key] = extra_image
-	. += extra_image
+/// The eyes, drawn unaffected by the tint of the body.
+/mob/living/simple_mob/vore/squirrel/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "[look.state_so_far(src)]_eye", appearance_flags = (RESET_COLOR|KEEP_APART|PIXEL_SCALE)))
 
 /mob/living/simple_mob/vore/squirrel/proc/winterize()
 	desc = desc + " It looks all plumped up for winter! Adorable!"
@@ -207,7 +192,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/squirrel, TYPE_PROC_REF(/ato
 	vore_capacity = 3
 	vore_bump_chance = 5
 	mob_size = MOB_LARGE
-	update_icon()
 
 /mob/living/simple_mob/vore/squirrel/verb/squirrel_color()
 	set name = "Pick Color"
@@ -226,7 +210,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/squirrel, TYPE_PROC_REF(/ato
 	if(A.answer.value)
 		color = A.answer.value
 	picked_color = TRUE
-	update_icon()
 
 /mob/living/simple_mob/vore/squirrel/small
 	do_seasons = FALSE

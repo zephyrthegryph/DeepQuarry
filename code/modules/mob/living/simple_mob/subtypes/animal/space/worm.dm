@@ -55,6 +55,7 @@
 	COOLDOWN_DECLARE(maw_cooldown_until)	// Ends maw_cooldown after the maw opens; also the auto-stop time while open.
 	var/maw_cooldown = 30 SECONDS
 	var/open_maw = FALSE	// Are we trying to eat things?
+	var/segment_dir = 0	// The directions of the links around this segment, from where its neighbours stand.
 
 	can_be_drop_prey = FALSE
 
@@ -96,20 +97,23 @@
 	..()
 	src.update_body_faction()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/space/space_worm/head/appearance_overlays()
-	. = list()
-	. += ..()
+/// The head: its maw and whether a segment follows it, with the heading it holds from that segment.
+/mob/living/simple_mob/animal/space/space_worm/head/draw(datum/look/look)
+	..()
+	var/state
 	if(!open_maw && !stat)
-		icon_state = "[icon_living][previous ? 1 : 0]_hunt"
+		state = "[icon_living][previous ? 1 : 0]_hunt"
 	else
-		icon_state = "[icon_living][previous ? 1 : 0]"
-
-	if(previous)
-		set_dir(get_dir(previous,src))
-
+		state = "[icon_living][previous ? 1 : 0]"
 	if(stat)
-		icon_state = "[icon_state]_dead"
+		state = "[state]_dead"
+	look.state(state)
+	if(previous)
+		look.set_dir(segment_dir)
+
+/// The head faces away from the segment behind it.
+/mob/living/simple_mob/animal/space/space_worm/head/refresh_links()
+	set_segment_dir(previous ? get_dir(previous, src) : 0)
 
 /mob/living/simple_mob/animal/space/space_worm/head/Initialize(mapload)
 	. = ..()
@@ -138,14 +142,16 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYP
 	else
 		set_maw(!open_maw)
 
+TRACKED(/mob/living/simple_mob/animal/space/space_worm, open_maw)
+TRACKED(/mob/living/simple_mob/animal/space/space_worm, segment_dir)
+
 /mob/living/simple_mob/animal/space/space_worm/proc/set_maw(state = FALSE)
-	open_maw = state
+	set_open_maw(state)
 	if(open_maw)
 		COOLDOWN_START(src, maw_cooldown_until, maw_cooldown)
 		movement_cooldown = initial(movement_cooldown) + 1.5
 	else
 		movement_cooldown = initial(movement_cooldown)
-	update_icon()
 
 /mob/living/simple_mob/animal/space/space_worm/on_death(gibbed)
 	..()
@@ -178,7 +184,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYP
 	if(prob(src.stomachProcessProbability))
 		src.ProcessStomach()
 
-	src.update_icon()
+	refresh_links()
 
 	return
 
@@ -209,7 +215,9 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYP
 		else
 			previous.z_transitioning = FALSE
 		previous.forceMove(old_loc)	// None of this 'ripped in half by an airlock' business.
-	update_icon()
+	refresh_links()
+	if(next)
+		next.refresh_links()
 
 /mob/living/simple_mob/animal/space/space_worm/head/Bump(atom/obstacle)
 	if(open_maw && !stat && obstacle != previous)
@@ -218,24 +226,28 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYP
 		rel_clear(src, nameof(currentlyEating))
 		. = ..(obstacle)
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/space/space_worm/appearance_overlays()
-	. = list()
+/// A segment: the sprite of the links around it (a midsection bends toward both neighbours, a tail faces the one it hangs from), tinted as that neighbour.
+/mob/living/simple_mob/animal/space/space_worm/draw(datum/look/look)
+	..()
+	var/state
 	if(previous) //midsection
-		icon_state = "spaceworm[get_dir(src,previous) | get_dir(src,next)]"
-		if(stat)
-			icon_state = "[icon_state]_dead"
-
+		state = "spaceworm[segment_dir]"
 	else //tail
-		icon_state = "spacewormtail"
-		if(stat)
-			icon_state = "[icon_state]_dead"
-		set_dir(get_dir(src,next))
-
+		state = "spacewormtail"
+		look.set_dir(segment_dir)
+	if(stat)
+		state = "[state]_dead"
+	look.state(state)
 	if(next)
-		color = next.color
+		look.watch(next)
+		look.set_color(next.color)
 
-	return .
+/// Recomputes the link direction from where the neighbours stand (they move; this segment's sprite follows).
+/mob/living/simple_mob/animal/space/space_worm/proc/refresh_links()
+	if(previous)
+		set_segment_dir(get_dir(src, previous) | get_dir(src, next))
+	else
+		set_segment_dir(next ? get_dir(src, next) : 0)
 
 /// Bump()'s deferred half: starts eating what the maw ran into.
 /mob/living/simple_mob/animal/space/space_worm/proc/bump_eat(atom/obstacle)
@@ -332,6 +344,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 
 	rel_set(src, nameof(previous), attachement)
 	rel_set(attachement, nameof(attachement.next), src)
+	refresh_links()
+	attachement.refresh_links()
 
 	return
 

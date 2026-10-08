@@ -18,7 +18,6 @@
 	desc = "A large quadrupedal AI platform, colloquially known as a 'think-tank' due to the flexible onboard intelligence."
 	icon = 'icons/mob/robots_thinktank.dmi'
 	icon_state = "tachi"
-	color = "#68a2f2"
 
 	cell_type =   /obj/item/cell/mech
 	module =      /obj/item/robot_module/robot/platform
@@ -73,7 +72,6 @@
 /mob/living/silicon/robot/platform/Initialize(mapload)
 	. = ..()
 	SetName("inactive [initial(name)]")
-	update_icon()
 	grant_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
 
 /// Platforms carry heavier armour plating (the ROBOT_SLOT_ARMOUR entry).

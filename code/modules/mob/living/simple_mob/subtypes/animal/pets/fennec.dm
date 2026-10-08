@@ -22,8 +22,7 @@
 	desc = "Domesticated fennec. Seems to like screaming just as much though."
 
 /mob/living/simple_mob/animal/passive/fennec/Initialize(mapload)
-	icon_living = "[initial(icon_state)]"
-	icon_dead = "[initial(icon_state)]_dead"
-	icon_rest = "[initial(icon_state)]_rest"
-	update_icon()
+	set_icon_living("[initial(icon_state)]")
+	set_icon_dead("[initial(icon_state)]_dead")
+	set_icon_rest("[initial(icon_state)]_rest")
 	return ..()

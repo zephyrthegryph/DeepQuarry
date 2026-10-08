@@ -95,7 +95,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo)
 		if(!move_into(src, nameof(src.hat), new_hat, user))
 			return
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src].  How adorable!"))
-		update_icon()
 		return
 
 /mob/living/simple_mob/animal/passive/armadillo/proc/remove_hat(mob/living/user)
@@ -106,14 +105,12 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo)
 		old_hat.forceMove(get_turf(src))
 		user.put_in_hands(old_hat)
 		to_chat(user, span_warning("You take away \the [src]'s [old_hat.name].  How mean."))
-		update_icon()
 
 /mob/living/simple_mob/animal/passive/armadillo/proc/drop_hat()
 	if(!hat)
 		return
 	var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 	old_hat.forceMove(get_turf(src))
-	update_icon()
 
 /obj/item/holder/armadillo
 	default_worn_icon = 'icons/mob/head.dmi'

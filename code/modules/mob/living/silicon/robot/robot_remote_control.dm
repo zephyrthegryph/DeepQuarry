@@ -27,7 +27,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 
 /mob/living/silicon/robot/proc/make_shell()
 	grant(src, granted_verb(/mob/living/silicon/robot/proc/transfer_shell_act), src) // TGPanel // add sideloader
-	shell = TRUE
+	set_shell(TRUE)
 	braintype = "AI Shell"
 	SetName("[modtype] AI Shell [num2text(ident)]")
 	rel_set(src, nameof(rbPDA), new /obj/item/pda/ai/shell(src))
@@ -36,7 +36,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	if(!QDELETED(camera))
 		camera.c_tag = real_name	//update the camera name too
 	notify_ai(ROBOT_NOTIFICATION_AI_SHELL)
-	update_icon()
 
 // ITION: Ai shell sideloading
 /mob/living/silicon/robot/proc/transfer_shell_act()
@@ -109,8 +108,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 
 	else if(mind)
 		to_chat(src, span_notice("Transferring Shell"))
-		deployed = FALSE
-		update_icon()
+		set_deployed(FALSE)
 		rel_clear(mainframe, nameof(mainframe.teleop))
 		rel_clear(mainframe, nameof(mainframe.deployed_shell))
 		SetName("[modtype] AI Shell [num2text(ident)]")
@@ -142,11 +140,10 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 		return
 	revoke(src, granted_verb(/mob/living/silicon/robot/proc/transfer_shell_act), src) // remove sideloader //
 	undeploy()
-	shell = FALSE
+	set_shell(FALSE)
 	registry_leave(REGISTRY_AI_SHELLS, src)
 	if(!QDELETED(camera))
 		camera.c_tag = real_name
-	update_icon()
 
 // This should be called before the AI client/mind is actually moved.
 /mob/living/silicon/robot/proc/deploy_init(mob/living/silicon/ai/AI)
@@ -159,8 +156,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 
 	// Have the borg have eyes when active.
 	rel_set(src, nameof(mainframe), AI)
-	deployed = TRUE
-	update_icon()
+	set_deployed(TRUE)
 
 	// Laws.
 	set_master_ai(mainframe, TRUE) // So they share laws.
@@ -196,8 +192,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 		to_chat(src, span_notice(message))
 	mind.transfer_to(mainframe)
 	src.copy_vore_prefs_to_mob(mainframe)
-	deployed = FALSE
-	update_icon()
+	set_deployed(FALSE)
 	rel_clear(mainframe, nameof(mainframe.teleop))
 	rel_clear(mainframe, nameof(mainframe.deployed_shell))
 	SetName("[modtype] AI Shell [num2text(ident)]")

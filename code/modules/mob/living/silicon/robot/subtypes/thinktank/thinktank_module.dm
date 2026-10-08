@@ -1,9 +1,15 @@
+TRACKED(/obj/item/robot_module/robot/platform, pupil_color)
+TRACKED(/obj/item/robot_module/robot/platform, body_color)
+TRACKED(/obj/item/robot_module/robot/platform, eye_color)
+TRACKED(/obj/item/robot_module/robot/platform, armor_color)
+TRACKED(/obj/item/robot_module/robot/platform, decals)
+
 /obj/item/robot_module/robot/platform
 
 	hide_on_manifest = TRUE
 
 	var/pupil_color =     COLOR_CYAN
-	var/base_color =      COLOR_WHITE
+	var/body_color =      COLOR_WHITE
 	var/eye_color =       COLOR_BEIGE
 	var/armor_color =    "#68a2f2"
 	var/user_icon =       'icons/mob/robots_thinktank.dmi'
@@ -40,8 +46,7 @@
 	var/mob/user = A.request.answerer
 	if(QDELETED(user))
 		return
-	pupil_color = (A.answer ? A.answer.value : null) || initial(pupil_color)
-	user.update_icon()
+	set_pupil_color((A.answer ? A.answer.value : null) || initial(pupil_color))
 
 /obj/item/robot_module/robot/platform/explorer
 	armor_color = "#528052"

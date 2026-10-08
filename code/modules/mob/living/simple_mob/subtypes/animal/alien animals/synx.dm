@@ -194,7 +194,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 //some things should be here that arent tho.
 	. = ..()
 	src.adjust_nutrition(src.max_nutrition)
-	build_icons(1)
+	roll_look()
 	if(!voremob_loaded)
 		voremob_loaded = TRUE
 		init_vore()
@@ -366,10 +366,8 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 
 /*		if(prob(forcefeedchance) && !ckey)//Forcefeeding code //Only triggers if not player-controlled //This does not currently work
 			L.status_at_least(STAT_WEAKENED, 2)
-			update_icon()
 			ai_busy_begin()
 			src.feed_self_to_grabbed(src,L)
-			update_icon()
 			ai_busy_end()
 */
 		if(L.reagents) //Seemingly broken. Would probably be really annoying anyways, so probably for the best that it doesn't work. -Azel
@@ -402,12 +400,9 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 
 /mob/living/simple_mob/animal/synx/ai/pet/clown/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(src.vore_fullness)
-		src.size_multiplier = 1+(0.5*src.vore_fullness)
-		src.update_icons()
-	if(!src.vore_fullness && src.size_multiplier != 1)
-		src.size_multiplier = 1
-		src.update_icons()
+	var/wanted_size = src.vore_fullness ? 1+(0.5*src.vore_fullness) : 1
+	if(src.size_multiplier != wanted_size)
+		src.resize(wanted_size, animate = FALSE, uncapped = TRUE)
 
 /mob/living/simple_mob/animal/synx/life_type_post_due()
 	return TRUE
@@ -447,9 +442,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 		plane = OBJ_PLANE
 		to_chat(src,span_notice("You are now hiding."))
 
-
-	update_icons()
-
 /mob/living/simple_mob/animal/synx/proc/disguise()
 	set name = "Toggle Form"
 	set desc = "Switch between amorphous and humanoid forms."
@@ -464,16 +456,15 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 		return
 	if(!transformed)
 		to_chat(src,span_warning("Now they see your true form."))
-		icon_living = transformed_state //Switch state to transformed state
+		set_icon_living(transformed_state) //Switch state to transformed state
 		movement_cooldown = 3
 	else // If transformed is true.
 		to_chat(src,span_warning("You changed back into your disguise."))
-		icon_living = initial(icon_living) //Switch state to what it was originally defined.
+		set_icon_living(initial(icon_living)) //Switch state to what it was originally defined.
 		movement_cooldown = 6
 
 
-	transformed = !transformed
-	update_icons()
+	set_transformed(!transformed)
 
 /mob/living/simple_mob/animal/synx/proc/randomspeech()
 	set name = "speak"
@@ -552,11 +543,11 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 		return
 
 	if(!stomach_distended && !transformed) //true if stomach distended is null, 0, or ""
-		stomach_distended = !stomach_distended //switch statement
+		set_stomach_distended(!stomach_distended) //switch statement
 		to_chat (src, span_notice("You disgorge your stomach, spilling its contents!"))
 		melee_damage_lower = 1 //Hopefully this will make all brute damage not apply while stomach is distended. I don't see a better way to do this.
 		melee_damage_upper = 1
-		icon_living = stomach_distended_state
+		set_icon_living(stomach_distended_state)
 		attacktext = attacktext.Copy()
 		attacktext += distend_attacktext
 		attacktext -= initial_attacktext
@@ -566,89 +557,67 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 			for(var/atom/movable/A in B)
 				play_sfx(src, SFX_EFFECTS_SPLAT)
 				B.release_specific_contents(A)
-		update_icons()
 		return
 
 	if(stomach_distended) //If our stomach has been vomitted
-		stomach_distended = !stomach_distended
+		set_stomach_distended(!stomach_distended)
 		to_chat (src, span_notice("You swallow your insides!"))
 		melee_damage_lower = SYNX_LOWER_DAMAGE //This is why I'm using a define
 		melee_damage_upper = SYNX_UPPER_DAMAGE
-		icon_living = initial(icon_living)
+		set_icon_living(initial(icon_living))
 		attacktext = attacktext.Copy()
 		attacktext += initial_attacktext
 		attacktext -= distend_attacktext
-		update_icons()
 		return
 
 ///
 ///		Icon generation stuff
 ///
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/synx/appearance_overlays()
-	. = list()
-	update_fullness()
-	build_icons()
-	for(var/belly_class in vore_fullness_ex)
-		var/vs_fullness = vore_fullness_ex[belly_class]
-		if(vs_fullness > 0)
-			if(transformed)
-				//transformed bellysprites dont exist yet. Uncomment this when they do. -Reo
-				//add_overlay("[iconstate]-t_[belly_class]-[vs_fullness]")
-				pass()
-			else
-				. += "[icon_state]_[belly_class]-[vs_fullness]"
+TRACKED(/mob/living/simple_mob/animal/synx, overlay_colors)
+TRACKED(/mob/living/simple_mob/animal/synx, body_style)
+TRACKED(/mob/living/simple_mob/animal/synx, horns)
+TRACKED(/mob/living/simple_mob/animal/synx, markings)
+TRACKED(/mob/living/simple_mob/animal/synx, eyes)
+TRACKED(/mob/living/simple_mob/animal/synx, transformed)
+TRACKED(/mob/living/simple_mob/animal/synx, stomach_distended)
 
-
-/mob/living/simple_mob/animal/synx/proc/build_icons(random)
-	cut_overlays()
+/// The modular look: tinted body, horns, markings and eyes layers over the base state, and the belly sprites unless transformed (they do not exist yet).
+/mob/living/simple_mob/animal/synx/draw(datum/look/look)
+	..()
 	if(stat == DEAD)
-		icon_state = "synx_dead"
-		plane = MOB_LAYER
+		look.state("synx_dead")
+		look.set_plane(MOB_LAYER)
 		return
-	if(random)
-		var/list/bodycolors = list("#FFFFFF")
-		body_style = pick(body_styles)
-		overlay_colors["Body"] = pick(bodycolors)
-		horns = pick(horn_styles)
-		var/list/horncolors = list("#FFE100","#A75A35","#1C4DFF","#FF0000","#404C6D","#2F2F2F","#55CE21","#711BFF","#DEDEE0")
-		overlay_colors["Horns"] = pick(horncolors)
-		var/list/markingcolors = list("#2F2F2F")
-		markings = pick(TYPE_TABLE_GET(src, synx_marking_styles))
-		overlay_colors["Marks"] = pick(markingcolors)
-		var/list/eyecolors = list("#FFE100","#FF6A00","#1C4DFF","#FF0000","#3D5EBE","#FF006E","#55CE21","#711BFF","#939EFF")
-		eyes = pick(eye_styles)
-		overlay_colors["Eyes"] = pick(eyecolors)
+	if(transformed)
+		//transformed bellysprites dont exist yet. Drop the base's belly layers when they do. -Reo
+		for(var/belly_state in vore_fullness_states(look.state_so_far(src)))
+			look.hide(belly_state)
+	var/suffix = transformed ? "-t" : null
+	var/hiding = (status_flags & HIDING)
+	var/layer_plane = hiding ? OBJ_PLANE : MOB_PLANE
+	var/layer_layer = hiding ? HIDING_LAYER : MOB_LAYER
+	look.overlay(look_overlay_image(icon, "synx_body[body_style][suffix][stomach_distended ? "-s" : null]", layer_layer, layer_plane, color = overlay_colors["Body"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "synx_horns[horns][suffix]", layer_layer, layer_plane, color = overlay_colors["Horns"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "synx_markings[markings][suffix]", layer_layer, layer_plane, color = overlay_colors["Marks"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "synx_eyes[eyes][suffix]", layer_layer, layer_plane, color = overlay_colors["Eyes"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
 
-
-	var/image/I = image(icon, "synx_body[body_style][transformed? "-t" : null][stomach_distended? "-s" : null]")
-	I.color = overlay_colors["Body"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = (status_flags & HIDING)? OBJ_PLANE : MOB_PLANE
-	I.layer = (status_flags & HIDING)? HIDING_LAYER : MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "synx_horns[horns][transformed? "-t" : null]")
-	I.color = overlay_colors["Horns"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = (status_flags & HIDING)? OBJ_PLANE : MOB_PLANE
-	I.layer = (status_flags & HIDING)? HIDING_LAYER : MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "synx_markings[markings][transformed? "-t" : null]")
-	I.color = overlay_colors["Marks"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = (status_flags & HIDING)? OBJ_PLANE : MOB_PLANE
-	I.layer = (status_flags & HIDING)? HIDING_LAYER : MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "synx_eyes[eyes][transformed? "-t" : null]")
-	I.color = overlay_colors["Eyes"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = (status_flags & HIDING)? OBJ_PLANE : MOB_PLANE
-	I.layer = (status_flags & HIDING)? HIDING_LAYER : MOB_LAYER
-	add_overlay(I)
+/// Rolls the modular style and colours of a new synx.
+/mob/living/simple_mob/animal/synx/proc/roll_look()
+	var/list/colors = overlay_colors.Copy()
+	var/list/bodycolors = list("#FFFFFF")
+	set_body_style(pick(body_styles))
+	colors["Body"] = pick(bodycolors)
+	set_horns(pick(horn_styles))
+	var/list/horncolors = list("#FFE100","#A75A35","#1C4DFF","#FF0000","#404C6D","#2F2F2F","#55CE21","#711BFF","#DEDEE0")
+	colors["Horns"] = pick(horncolors)
+	var/list/markingcolors = list("#2F2F2F")
+	set_markings(pick(TYPE_TABLE_GET(src, synx_marking_styles)))
+	colors["Marks"] = pick(markingcolors)
+	var/list/eyecolors = list("#FFE100","#FF6A00","#1C4DFF","#FF0000","#3D5EBE","#FF006E","#55CE21","#711BFF","#939EFF")
+	set_eyes(pick(eye_styles))
+	colors["Eyes"] = pick(eyecolors)
+	set_overlay_colors(colors)
 
 /mob/living/simple_mob/animal/synx/proc/set_style()
 	set name = "Set Style"
@@ -729,15 +698,16 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	var/datum/prompt/color/synx_part/ask = A.answer
 	switch(ask.style_var)
 		if("body_style")
-			body_style = ask.style
+			set_body_style(ask.style)
 		if("horns")
-			horns = ask.style
+			set_horns(ask.style)
 		if("markings")
-			markings = ask.style
+			set_markings(ask.style)
 		if("eyes")
-			eyes = ask.style
-	overlay_colors[ask.part] = ask.value
-	build_icons()
+			set_eyes(ask.style)
+	var/list/colors = overlay_colors.Copy()
+	colors[ask.part] = ask.value
+	set_overlay_colors(colors)
 
 ////////////////////////////////////////
 ////////////////PET VERSION/////////////

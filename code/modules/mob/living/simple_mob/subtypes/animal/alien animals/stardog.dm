@@ -640,7 +640,6 @@ MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 		//legacy ai_holder.hostile/retaliate replaced with brain API.
 		s.ai_brain?.set_hostile(FALSE)
 		s.set_ghostjoin(TRUE)
-		s.ghostjoin_icon()
 
 	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
 	if(s && istype(s,/obj/effect/overmap/visitable/ship/simplemob/stardog))

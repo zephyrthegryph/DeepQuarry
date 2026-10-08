@@ -84,3 +84,5 @@ ACTION(shuttle_schedule_change, FIXED, notice = /datum/notice/shuttle_schedule_c
 ACTION(mode_change, old_mode, new_mode, mode_var, FIXED)
 // standing() (code/engine/stats/standings.dm): a standing row of the holder was placed, replaced or went; its cached standings are dropped. `subject_key` is the row's key.
 ACTION(standing_change, subject_key, FIXED)
+// A belly of the holder changed what it shows of the holder's body: prey or items entered or left it, its liquid or a prey's health moved its size, or its sprite settings were edited. The holder recomputes its tracked fullness.
+ACTION(belly_change, FIXED, notice = /datum/notice/belly_changed)

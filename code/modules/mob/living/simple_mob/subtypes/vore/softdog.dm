@@ -242,7 +242,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/woof/cass)
 	sight = initial(sight)
 	see_in_dark = initial(see_in_dark)
 	see_invisible = initial(see_invisible)
-	update_icon()
 	act_message(src, null, null, MSG_OTHERS("%U% stops playing dead."), runemessage = "%U% stops playing dead")
 
 /mob/living/simple_mob/vore/woof/cass/proc/attack_hand_cass_failed(mob/living/carbon/human/M)

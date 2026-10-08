@@ -3,13 +3,6 @@ dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibili
 dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibility = INVISIBILITY_ABSTRACT
 dx_appearance_side_effect	code/_onclick/hud/screen_objects.dm	selecting_appearance = mutable_appearance('icons/mob/zone_sel.dmi', "[selecting]")
 dx_appearance_side_effect	code/_onclick/hud/screen_objects.dm	handcuff_overlay = image("icon"='icons/mob/screen_gen.dmi', "icon_state"=state)
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/shield_armor.dm	item_state = "shield_armor_[active]"
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/shield_armor.dm	set_light(2, 1, l_color = "#006AFF")
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/shield_armor.dm	set_light(0, 0, l_color = "#000000")
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	item_state = ready_icon_state
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	set_light(2, 1, l_color = "#006AFF")
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	item_state = normal_icon_state
-dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	set_light(0, 0, l_color = "#000000")
 dx_appearance_side_effect	code/game/gamemodes/technomancer/spells/illusion.dm	temp_image.transform = M
 dx_appearance_side_effect	code/game/machinery/doors/brigdoors.dm	set_picture("ai_bsod")
 dx_appearance_side_effect	code/game/machinery/doors/brigdoors.dm	maptext = ""
@@ -142,23 +135,6 @@ dx_appearance_side_effect	code/game/objects/items/glassjar.dm	desc = "A large ta
 dx_appearance_side_effect	code/game/objects/items/glassjar.dm	name = "glass jar with [S]"
 dx_appearance_side_effect	code/game/objects/items/glassjar.dm	desc = "A small jar with [S] inside."
 dx_appearance_side_effect	code/game/objects/items/glassjar.dm	desc = "[desc] It contains water."
-dx_appearance_side_effect	code/game/objects/items/toys/toy_customizable.dm	B.color = base_color
-dx_appearance_side_effect	code/game/objects/items/toys/toy_customizable.dm	our_image.color = value["color"]
-dx_appearance_side_effect	code/game/objects/items/toys/toy_customizable.dm	our_image.alpha = value["alpha"]
-dx_appearance_side_effect	code/game/objects/items/toys/toys.dm	blade_overlay.color = lcolor
-dx_appearance_side_effect	code/game/objects/items/weapons/RMS.dm	charge_stage = round((stored_charge/max_charge)*4)
-dx_appearance_side_effect	code/game/objects/items/weapons/RMS.dm	charge_stage = 4
-dx_appearance_side_effect	code/game/objects/items/weapons/material/kitchen.dm	I.color = loaded_color
-dx_appearance_side_effect	code/game/objects/items/weapons/melee/energy.dm	blade_overlay.color = lcolor
-dx_appearance_side_effect	code/game/objects/items/weapons/melee/energy.dm	blade_overlay.color = "FFFFFF"
-dx_appearance_side_effect	code/game/objects/items/weapons/policetape.dm	overlay.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/game/objects/items/weapons/policetape.dm	overlay.icon_state = "start"
-dx_appearance_side_effect	code/game/objects/items/weapons/policetape.dm	overlay.icon_state = "stop"
-dx_appearance_side_effect	code/game/objects/items/weapons/shields.dm	blade_overlay.color = lcolor
-dx_appearance_side_effect	code/game/objects/items/weapons/shields.dm	item_state = "[icon_state]_blade"
-dx_appearance_side_effect	code/game/objects/items/weapons/shields.dm	set_light(lrange, lpower, lcolor)
-dx_appearance_side_effect	code/game/objects/items/weapons/shields.dm	set_light(0)
-dx_appearance_side_effect	code/game/objects/items/weapons/shields.dm	item_state = "[icon_state]"
 dx_appearance_side_effect	code/game/objects/items/weapons/tanks/tanks.dm	tank.update_icon()
 dx_appearance_side_effect	code/game/objects/items/weapons/tanks/tanks.dm	tank.update_icon()
 dx_appearance_side_effect	code/game/objects/items/weapons/tools/weldingtool.dm	item_state = "[initial(item_state)]1"
@@ -170,15 +146,6 @@ dx_appearance_side_effect	code/game/objects/items/weapons/tools/zspicytools.dm	s
 dx_appearance_side_effect	code/game/objects/mail.dm	envelope.color = colored_envelope
 dx_appearance_side_effect	code/game/objects/mail.dm	stamp_image.appearance_flags |= RESET_COLOR
 dx_appearance_side_effect	code/game/objects/mail.dm	postmark_image.appearance_flags |= RESET_COLOR
-dx_appearance_side_effect	code/game/objects/structures/barricades.dm	I.color = material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/bonfire.dm	I.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/game/objects/structures/bonfire.dm	I.pixel_y = 13
-dx_appearance_side_effect	code/game/objects/structures/bonfire.dm	I.layer = MOB_LAYER + 0.1
-dx_appearance_side_effect	code/game/objects/structures/bonfire.dm	I.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/game/objects/structures/bonfire.dm	set_light(light_strength, light_strength, "#FF9933")
-dx_appearance_side_effect	code/game/objects/structures/bonfire.dm	set_light(0)
-dx_appearance_side_effect	code/game/objects/structures/bonfire.dm	grille_image.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/game/objects/structures/catwalk.dm	I.color = plating_color
 dx_appearance_side_effect	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	gun.icon_state = "laser"
 dx_appearance_side_effect	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	gun.icon_state = "projectile"
 dx_appearance_side_effect	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	gun.pixel_x = i*4
@@ -186,9 +153,6 @@ dx_appearance_side_effect	code/game/objects/structures/crates_lockers/vehiclecag
 dx_appearance_side_effect	code/game/objects/structures/crates_lockers/vehiclecage.dm	framepaint.plane = MOB_PLANE
 dx_appearance_side_effect	code/game/objects/structures/crates_lockers/vehiclecage.dm	framepaint.color = paint_color
 dx_appearance_side_effect	code/game/objects/structures/crates_lockers/vehiclecage.dm	showcase.layer = src.layer - 0.1
-dx_appearance_side_effect	code/game/objects/structures/lightpost.dm	set_light(5, 1, "#E9E4AF")
-dx_appearance_side_effect	code/game/objects/structures/lightpost.dm	glow.plane = PLANE_LIGHTING_ABOVE
-dx_appearance_side_effect	code/game/objects/structures/lightpost.dm	set_light(0)
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = main_color
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = main_color
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = stripe_color
@@ -196,93 +160,15 @@ dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = mai
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.plane = ABOVE_OBJ_PLANE
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.layer = ABOVE_WINDOW_LAYER
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = main_color
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	connections = string_list(list("0","0","0","0"))
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	other_connections = string_list(list("0","0","0","0"))
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = color
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = color
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	D.blend_mode = BLEND_MULTIPLY
 dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	D.alpha = damage_alpha
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	connections = string_list(list("0","0","0","0"))
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	other_connections = string_list(list("0","0","0","0"))
-dx_appearance_side_effect	code/game/objects/structures/medical_stand.dm	if(10 to 24) filling.icon_state = "reagent10"
-dx_appearance_side_effect	code/game/objects/structures/medical_stand.dm	if(25 to 49) filling.icon_state = "reagent25"
-dx_appearance_side_effect	code/game/objects/structures/medical_stand.dm	if(50 to 74) filling.icon_state = "reagent50"
-dx_appearance_side_effect	code/game/objects/structures/medical_stand.dm	if(75 to 79) filling.icon_state = "reagent75"
-dx_appearance_side_effect	code/game/objects/structures/medical_stand.dm	if(80 to 90) filling.icon_state = "reagent80"
-dx_appearance_side_effect	code/game/objects/structures/medical_stand.dm	if(91 to INFINITY) filling.icon_state = "reagent100"
-dx_appearance_side_effect	code/game/objects/structures/medical_stand.dm	filling.icon += reagents.get_color()
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/bed.dm	I.color = material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/bed.dm	GLOB.stool_cache[cache_key] = I
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/bed.dm	I.color = padding_material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/bed.dm	GLOB.stool_cache[padding_cache_key] = I
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/bed.dm	desc = initial(desc)
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/bed.dm	name = "[padding_material.display_name] [initial(name)]" //this is not perfect but it will do for now.
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/bed.dm	desc += " It's made of [material.use_name] and covered with [padding_material.use_name]."
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/bed.dm	name = "[material.display_name] [initial(name)]"
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/bed.dm	desc += " It's made of [material.use_name]."
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.plane = MOB_PLANE
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.layer = ABOVE_MOB_LAYER
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.color = padding_material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	GLOB.stool_cache[cache_key] = I
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.layer = ABOVE_MOB_LAYER
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.plane = MOB_PLANE
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.color = material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.layer = ABOVE_MOB_LAYER
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.plane = MOB_PLANE
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.color = padding_material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	name = "red [initial(name)]"
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	name = "[sofa_material] [initial(name)]"
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.plane = MOB_PLANE
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.layer = ABOVE_MOB_LAYER
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.color = padding_material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	GLOB.stool_cache[cache_key] = I
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	desc = initial(desc)
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	name = "[padding_material.display_name] [initial(name)]" //this is not perfect but it will do for now.
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	desc += " It's made of [material.use_name] and covered with [padding_material.use_name]."
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	name = "[material.display_name] [initial(name)]"
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	desc += " It's made of [material.use_name]."
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.color = material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	GLOB.stool_cache[cache_key] = I
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.color = padding_material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	GLOB.stool_cache[padding_cache_key] = I
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.plane = MOB_PLANE
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.layer = ABOVE_MOB_LAYER
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.color = material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	GLOB.stool_cache[cache_key] = I
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.color = padding_material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.plane = MOB_PLANE
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.layer = ABOVE_MOB_LAYER
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	GLOB.stool_cache[padding_cache_key] = I
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.plane = MOB_PLANE
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.layer = ABOVE_MOB_LAYER
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.color = material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	GLOB.stool_cache[cache_key] = I
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.plane = MOB_PLANE
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.layer = ABOVE_MOB_LAYER
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.color = padding_material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	GLOB.stool_cache[cache_key] = I
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.plane = MOB_PLANE
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.layer = ABOVE_MOB_LAYER
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.plane = MOB_PLANE
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.layer = ABOVE_MOB_LAYER
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	I.color = material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/stools.dm	I.color = material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/stools.dm	GLOB.stool_cache[cache_key] = I
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/stools.dm	I.color = padding_material.icon_colour
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/stools.dm	GLOB.stool_cache[padding_cache_key] = I
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/stools.dm	name = "[padding_material.display_name] [initial(name)]" //this is not perfect but it will do for now.
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/stools.dm	desc = "A padded stool. Apply butt. It's made of [material.use_name] and covered with [padding_material.use_name]."
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/stools.dm	name = "[material.display_name] [initial(name)]"
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/stools.dm	desc = "A stool. Apply butt with care. It's made of [material.use_name]."
-dx_appearance_side_effect	code/game/objects/structures/stool_bed_chair_nest/wheelchair.dm	O.plane = MOB_PLANE
-dx_appearance_side_effect	code/game/objects/structures/watercloset.dm	colorful_shower.color = reagents.get_color() //Whatever the fuck happens to be spewing out of here.
 dx_appearance_side_effect	code/game/objects/structures/window.dm	flags &= ~ON_BORDER // Removes ON_BORDER
 dx_appearance_side_effect	code/game/turfs/simulated/dungeon/wall.dm	I.color = material.icon_colour
 dx_appearance_side_effect	code/game/turfs/simulated/floor_icon.dm	name = flooring.name
 dx_appearance_side_effect	code/game/turfs/simulated/floor_icon.dm	desc = flooring.desc
-dx_appearance_side_effect	code/game/turfs/simulated/floor_icon.dm	flooring_override = icon_state
 dx_appearance_side_effect	code/game/turfs/simulated/wall_icon.dm	I.color = material.icon_colour
-dx_appearance_side_effect	code/game/turfs/simulated/wall_types.dm	I.color = stripe_color
 dx_appearance_side_effect	code/game/turfs/simulated/wall_types.dm	I.color = stripe_color
 dx_appearance_side_effect	code/modules/artifice/telecube.dm	glow.plane = PLANE_LIGHTING_ABOVE
 dx_appearance_side_effect	code/modules/artifice/telecube.dm	charge.plane = PLANE_LIGHTING_ABOVE
@@ -293,22 +179,6 @@ dx_appearance_side_effect	code/modules/artifice/telecube.dm	charge.color = glow_
 dx_appearance_side_effect	code/modules/assembly/holder.dm	master.update_icon()
 dx_appearance_side_effect	code/modules/assembly/timer.dm	attached_overlays = list()
 dx_appearance_side_effect	code/modules/assembly/timer.dm	attached_overlays += "timer_timing"
-dx_appearance_side_effect	code/modules/blob2/blobs/base_blob.dm	name = "[overmind.blob_type.name] [base_name]" // This is in update_icon() because inert blobs can turn into other blobs with magic if another blob core claims it with pulsing.
-dx_appearance_side_effect	code/modules/blob2/blobs/base_blob.dm	set_light(3, 3, color)
-dx_appearance_side_effect	code/modules/blob2/blobs/base_blob.dm	name = "inert [base_name]"
-dx_appearance_side_effect	code/modules/blob2/blobs/base_blob.dm	set_light(0)
-dx_appearance_side_effect	code/modules/blob2/blobs/core.dm	blob_overlay.color = overmind.blob_type.color
-dx_appearance_side_effect	code/modules/blob2/blobs/core.dm	name = "[overmind.blob_type.name] [base_name]"
-dx_appearance_side_effect	code/modules/blob2/blobs/node.dm	name = "[overmind.blob_type.name] [base_name]"
-dx_appearance_side_effect	code/modules/blob2/blobs/node.dm	blob_overlay.color = overmind.blob_type.color
-dx_appearance_side_effect	code/modules/blob2/blobs/normal.dm	desc = "A thin lattice of slightly twitching tendrils."
-dx_appearance_side_effect	code/modules/blob2/blobs/normal.dm	desc = "A thick wall of writhing tendrils."
-dx_appearance_side_effect	code/modules/blob2/blobs/normal.dm	name = "[overmind.blob_type.name]"
-dx_appearance_side_effect	code/modules/blob2/blobs/normal.dm	name = "inert [base_name]"
-dx_appearance_side_effect	code/modules/blob2/blobs/shield.dm	desc = "A wall of twitching tendrils."
-dx_appearance_side_effect	code/modules/blob2/blobs/shield.dm	desc = initial(desc)
-dx_appearance_side_effect	code/modules/blob2/blobs/shield.dm	name = "[base_name] [overmind.blob_type.name]"
-dx_appearance_side_effect	code/modules/blob2/blobs/shield.dm	name = "inert [base_name] blob"
 dx_appearance_side_effect	code/modules/body/organs/organ_icon.dm	damage_state = n_is
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(0)
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light_on(FALSE)
@@ -318,10 +188,6 @@ dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(0)
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light_on(FALSE)
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(2)
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light_on(TRUE)
-dx_appearance_side_effect	code/modules/clothing/clothing.dm	GLOB.light_overlay_cache["[light_overlay]_icon"] = image(icon = 'icons/obj/light_overlays.dmi', icon_state = "[light_overlay]")
-dx_appearance_side_effect	code/modules/clothing/clothing.dm	helmet_light = GLOB.light_overlay_cache["[light_overlay]_icon"]
-dx_appearance_side_effect	code/modules/clothing/clothing.dm	GLOB.light_overlay_cache[cache_key] = image(icon = use_icon, icon_state = "[light_overlay]")
-dx_appearance_side_effect	code/modules/clothing/clothing.dm	helmet_light = null
 dx_appearance_side_effect	code/modules/clothing/spacesuits/rig/rig.dm	mob_icon = icon(icon = species_icon, icon_state = "[icon_state]")
 dx_appearance_side_effect	code/modules/economy/cash.dm	name = "[worth] [initial_name]\s"
 dx_appearance_side_effect	code/modules/economy/cash.dm	desc = "It's worth [worth] [initial_name]s."
@@ -462,79 +328,6 @@ dx_appearance_side_effect	code/modules/mob/living/silicon/robot/robot_gripper_ha
 dx_appearance_side_effect	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	item_display.pixel_y = 0
 dx_appearance_side_effect	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	item_display.plane = plane
 dx_appearance_side_effect	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	item_display.layer = layer + 0.01
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	underlays.Cut()
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.color = tank_module.base_color
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.color = tank_module.armor_color
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.color = tank_module.decals[decal]
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.color = tank_module.eye_color
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.color = tank_module.pupil_color
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.plane = PLANE_LIGHTING_ABOVE
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/appearance.dm	icon_living = initial(icon_state)
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_cache = icon
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_cache = null
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_cache = null
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_x_old = pixel_x
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_x_old = null
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_x_old = null
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_y_old = pixel_y
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_y_old = null
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_y_old = null
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	I.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	I.layer = MOB_LAYER
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	I.pixel_y = -7
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	I.color = hat.color
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	I.appearance_flags = RESET_COLOR | KEEP_APART
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	I.blend_mode = BLEND_OVERLAY
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spacewhale.dm	child_om_marker.icon_state = "space_whale_restless"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spacewhale.dm	child_om_marker.icon_state = "space_whale"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/hyena/hyena.dm	I.pixel_y = -15 // Hyenas are smol! - TODO: Test this.
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/hyena/hyena.dm	I.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/armadillo.dm	I.pixel_y = -7 // Smol
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/armadillo.dm	I.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	dorsal_image = image(icon, "[icon_state]_mask-body")
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	belly_image = image(icon, "[icon_state]_mask-belly")
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	dorsal_image.icon_state = "[icon_state]_mask-body"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	belly_image.icon_state = "[icon_state]_mask-belly"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	dorsal_image.color = dorsal_color
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	belly_image.color = belly_color
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	head_image = image(icon, "[icon_state]_mask")
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	head_image.icon_state = "[icon_state]_mask"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	head_image.color = head_color
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/sif/racoon.dm	I.pixel_y = -15 // Sakimm are tiny!
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/sif/racoon.dm	I.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	set_dir(get_dir(previous,src))
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	set_dir(get_dir(src,next))
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	extra_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	overlays_cache[combine_key] = extra_image
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/mechanical/ward/monitor_ward.dm	icon_living = "[initial(icon_state)]_spotted"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/mechanical/ward/monitor_ward.dm	set_glow_color("#FF0000")
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/mechanical/ward/monitor_ward.dm	icon_living = "[initial(icon_state)]"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/mechanical/ward/monitor_ward.dm	set_glow_color("#00FF00")
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.pixel_y = -7 // Slimes are small.
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.color = hat.color
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.appearance_flags = RESET_COLOR | KEEP_APART
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.blend_mode = BLEND_OVERLAY
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	icon_living = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"][victim ? " eating" : ""]"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	icon_dead = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"] dead"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	icon_rest = icon_dead
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	vore_capacity = 3
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/vore/raptor.dm	icon_living = "[initial_icon]_fat"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/vore/raptor.dm	icon_living = "[initial_icon]"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/vore/seagull.dm	movement_cooldown = 10
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/vore/seagull.dm	movement_cooldown = initial(movement_cooldown)
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	tailimage.icon_state = icon_state
-dx_appearance_side_effect	code/modules/modular_computers/NTNet/NTNet_relay.dm	noisy = TRUE
-dx_appearance_side_effect	code/modules/modular_computers/NTNet/NTNet_relay.dm	noisy = FALSE
 dx_appearance_side_effect	code/modules/modular_computers/computers/modular_computer/core.dm	set_light(0)
 dx_appearance_side_effect	code/modules/modular_computers/computers/modular_computer/core.dm	set_light(light_strength)
 dx_appearance_side_effect	code/modules/modular_computers/computers/subtypes/dev_laptop.dm	set_light(0) // No glow from closed laptops
@@ -580,8 +373,6 @@ dx_appearance_side_effect	code/modules/projectiles/guns/energy/cyborg.dm	blade_o
 dx_appearance_side_effect	code/modules/projectiles/guns/energy/protector.dm	charge_overlay.pixel_x = ammo_x_offset * (i - 1)
 dx_appearance_side_effect	code/modules/projectiles/guns/energy/protector.dm	flashlight_overlay.pixel_x = flight_x_offset
 dx_appearance_side_effect	code/modules/projectiles/guns/energy/protector.dm	flashlight_overlay.pixel_y = flight_y_offset
-dx_appearance_side_effect	code/modules/projectiles/guns/launcher/pneumatic.dm	item_state = "pneumatic-tank"
-dx_appearance_side_effect	code/modules/projectiles/guns/launcher/pneumatic.dm	item_state = "pneumatic"
 dx_appearance_side_effect	code/modules/projectiles/guns/launcher/syringe_gun.dm	underlays.Cut()
 dx_appearance_side_effect	code/modules/projectiles/guns/launcher/syringe_gun.dm	if(length(syringe().filling)) underlays += syringe().filling
 dx_appearance_side_effect	code/modules/projectiles/guns/projectile/automatic.dm	item_state = icon_state
@@ -594,29 +385,7 @@ dx_appearance_side_effect	code/modules/reagents/machinery/pump.dm	I.color = reag
 dx_appearance_side_effect	code/modules/reagents/reagent_containers/syringes.dm	filling = image(icon, src, "filler[rounded_vol]")
 dx_appearance_side_effect	code/modules/reagents/reagent_containers/syringes.dm	filling.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/reagents/reagent_containers/syringes.dm	item_state = "syringe_[rounded_vol]"
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_x = 2
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	label_y = rand(-6, 11)
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_y = label_y
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	label_x = rand(-8, 6)
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_x = label_x
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_y = -3
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	tag_x = rand(-2, 3)
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_x = tag_x
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_y = 9
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	tag_x = rand(-8, 6)
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_x = tag_x
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_y = -3
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_y = -1
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_y = -5
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_y = -2
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_y = 0
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	tag_x = rand(0,5)
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_x = tag_x
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_y = 3
-dx_appearance_side_effect	code/modules/recycling/disposal_mail.dm	I.pixel_y = -3
 dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_filter.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_furnace.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_furnace.dm	filling.color = beaker.reagents.get_color()
 dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_mixer.dm	filling.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_pump.dm	filling.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_vat.dm	filling.color = reagents.get_color()
@@ -624,46 +393,6 @@ dx_appearance_side_effect	code/modules/refinery/equipment/chemcontainer.dm	chems
 dx_appearance_side_effect	code/modules/refinery/equipment/pumprelay.dm	filling.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/shieldgen/energy_field.dm	set_light(3, 3, "#66FFFF")
 dx_appearance_side_effect	code/modules/shieldgen/energy_field.dm	set_light(3, 5, "#FF9900")
-dx_appearance_side_effect	code/modules/shieldgen/shield_gen.dm	set_light(0)
-dx_appearance_side_effect	code/modules/shieldgen/shield_gen.dm	set_light(4, 2, "#00CCFF")
-dx_appearance_side_effect	code/modules/shieldgen/shield_gen.dm	set_light(0)
-dx_appearance_side_effect	code/modules/tables/tables.dm	I.color = material().icon_colour
-dx_appearance_side_effect	code/modules/tables/tables.dm	I.alpha = 255 * material().opacity
-dx_appearance_side_effect	code/modules/tables/tables.dm	name = "[material().display_name] table"
-dx_appearance_side_effect	code/modules/tables/tables.dm	name = "table frame"
-dx_appearance_side_effect	code/modules/tables/tables.dm	I.color = reinforced().icon_colour
-dx_appearance_side_effect	code/modules/tables/tables.dm	I.alpha = 255 * reinforced().opacity
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	bodypaint.color = paint_color
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	overmob.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	overmob_color.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	overmob_color.color = paint_color
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	bodypaint.color = paint_color
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	overmob.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	overmob_color.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	overmob_color.color = paint_color
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	bodypaint.color = paint_color
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	overmob.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	overmob_color.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	overmob_color.color = paint_color
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	bodypaint.color = paint_color
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	overmob.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	overmob_color.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/bike.dm	overmob_color.color = paint_color
-dx_appearance_side_effect	code/modules/vehicles/cargo_train.dm	O.layer = FLY_LAYER
-dx_appearance_side_effect	code/modules/vehicles/cargo_train.dm	O.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/cargo_train.dm	chems.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/vehicles/cargo_train.dm	Bodypaint.color = paint_color
-dx_appearance_side_effect	code/modules/vehicles/janicart.dm	O.layer = FLY_LAYER
-dx_appearance_side_effect	code/modules/vehicles/janicart.dm	O.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/quad.dm	Bodypaint.color = paint_color
-dx_appearance_side_effect	code/modules/vehicles/quad.dm	Overmob.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/quad.dm	Overmob_color.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/quad.dm	Overmob_color.color = paint_color
-dx_appearance_side_effect	code/modules/vehicles/quad.dm	Bodypaint.color = paint_color
-dx_appearance_side_effect	code/modules/vehicles/quad.dm	Overmob.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/quad.dm	Overmob_color.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/vehicles/quad.dm	Overmob_color.color = paint_color
-dx_appearance_side_effect	code/modules/vehicles/quad.dm	Bodypaint.color = paint_color
 dx_appearance_side_effect	code/modules/vore/fluffstuff/custom_items.dm	name = initial(name)
 dx_appearance_side_effect	code/modules/vore/fluffstuff/custom_items.dm	desc = initial(desc)
 dx_appearance_side_effect	code/modules/vore/resizing/sizegun.dm	item_state = "[initial_icon_state]-[grow_mode]"
