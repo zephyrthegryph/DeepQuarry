@@ -1,0 +1,19 @@
+initial | books: [{"author":"Pin Author A","title":"Pin Book One","category":"Fiction","id":"1"},{"author":"Pin Author B","title":"Pin Book Two","category":"Reference","id":"2"}]
+initial | error: ""
+initial | sort_by: "author"
+sorted_by_title | books: [{"author":"Pin Author A","title":"Pin Book One","category":"Fiction","id":"1"},{"author":"Pin Author B","title":"Pin Book Two","category":"Reference","id":"2"}]
+sorted_by_title | error: ""
+sorted_by_title | sort_by: "title"
+ordered_by_id | books: [{"author":"Pin Author B","title":"Pin Book Two","category":"Reference","id":"2"},{"author":"Pin Author A","title":"Pin Book One","category":"Fiction","id":"1"}]
+ordered_by_id | error: ""
+ordered_by_id | sort_by: "title"
+book_deleted | books: [{"author":"Pin Author B","title":"Pin Book Two","category":"Reference","id":"2"}]
+book_deleted | error: ""
+book_deleted | sort_by: "title"
+error_shown | books: [{"author":"Pin Author B","title":"Pin Book Two","category":"Reference","id":"2"}]
+error_shown | error: "Pin query failed"
+error_shown | sort_by: "title"
+empty | books: []
+empty | error: ""
+empty | sort_by: "title"
+

@@ -1,0 +1,91 @@
+initial | channel: {"ref":"[ref]","name":"","author":"","locked":0,"censored":0,"is_admin_channel":0}
+initial | channels: [{"ref":"[ref]","name":"Station Announcements","author":"NanoTrasen","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"The Gibson Gazette","author":"Editor Mike Hammers","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Oculum Content Aggregator","author":"Oculus v6rev7","locked":1,"censored":0,"is_admin_channel":1}]
+initial | channel_messages: []
+initial | company_name: "NanoTrasen-testing"
+initial | has_wanted: 0
+initial | message: {"ref":"[ref]","title":null,"body":"","author":"","time_stamp":"","has_image":0}
+initial | screen: 0
+initial | signature: "Pin Officer"
+initial | wanted_issue: null
+create_channel_screen | channel: {"ref":"[ref]","name":"","author":"","locked":0,"censored":0,"is_admin_channel":0}
+create_channel_screen | channels: [{"ref":"[ref]","name":"Station Announcements","author":"NanoTrasen","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"The Gibson Gazette","author":"Editor Mike Hammers","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Oculum Content Aggregator","author":"Oculus v6rev7","locked":1,"censored":0,"is_admin_channel":1}]
+create_channel_screen | channel_messages: []
+create_channel_screen | company_name: "NanoTrasen-testing"
+create_channel_screen | has_wanted: 0
+create_channel_screen | message: {"ref":"[ref]","title":null,"body":"","author":"","time_stamp":"","has_image":0}
+create_channel_screen | screen: 2
+create_channel_screen | signature: "Pin Officer"
+create_channel_screen | wanted_issue: null
+channel_draft | channel: {"ref":"[ref]","name":"Dq Pin Channel","author":"","locked":1,"censored":0,"is_admin_channel":0}
+channel_draft | channels: [{"ref":"[ref]","name":"Station Announcements","author":"NanoTrasen","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"The Gibson Gazette","author":"Editor Mike Hammers","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Oculum Content Aggregator","author":"Oculus v6rev7","locked":1,"censored":0,"is_admin_channel":1}]
+channel_draft | channel_messages: []
+channel_draft | company_name: "NanoTrasen-testing"
+channel_draft | has_wanted: 0
+channel_draft | message: {"ref":"[ref]","title":null,"body":"","author":"","time_stamp":"","has_image":0}
+channel_draft | screen: 2
+channel_draft | signature: "Pin Officer"
+channel_draft | wanted_issue: null
+channel_created | channel: {"ref":"[ref]","name":"Dq Pin Channel","author":"","locked":1,"censored":0,"is_admin_channel":0}
+channel_created | channels: [{"ref":"[ref]","name":"Station Announcements","author":"NanoTrasen","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"The Gibson Gazette","author":"Editor Mike Hammers","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Oculum Content Aggregator","author":"Oculus v6rev7","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Dq Pin Channel","author":"Pin Officer","locked":1,"censored":0,"is_admin_channel":1}]
+channel_created | channel_messages: []
+channel_created | company_name: "NanoTrasen-testing"
+channel_created | has_wanted: 0
+channel_created | message: {"ref":"[ref]","title":null,"body":"","author":"","time_stamp":"","has_image":0}
+channel_created | screen: 5
+channel_created | signature: "Pin Officer"
+channel_created | wanted_issue: null
+story_draft | channel: {"ref":"[ref]","name":"Dq Pin Channel","author":"","locked":1,"censored":0,"is_admin_channel":0}
+story_draft | channels: [{"ref":"[ref]","name":"Station Announcements","author":"NanoTrasen","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"The Gibson Gazette","author":"Editor Mike Hammers","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Oculum Content Aggregator","author":"Oculus v6rev7","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Dq Pin Channel","author":"Pin Officer","locked":1,"censored":0,"is_admin_channel":1}]
+story_draft | channel_messages: []
+story_draft | company_name: "NanoTrasen-testing"
+story_draft | has_wanted: 0
+story_draft | message: {"ref":"[ref]","title":"Pin Story","body":"Pin story body.","author":"","time_stamp":"","has_image":0}
+story_draft | screen: 3
+story_draft | signature: "Pin Officer"
+story_draft | wanted_issue: null
+story_posted | channel: {"ref":"[ref]","name":"Dq Pin Channel","author":"","locked":1,"censored":0,"is_admin_channel":0}
+story_posted | channels: [{"ref":"[ref]","name":"Station Announcements","author":"NanoTrasen","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"The Gibson Gazette","author":"Editor Mike Hammers","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Oculum Content Aggregator","author":"Oculus v6rev7","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Dq Pin Channel","author":"Pin Officer","locked":1,"censored":0,"is_admin_channel":1}]
+story_posted | channel_messages: []
+story_posted | company_name: "NanoTrasen-testing"
+story_posted | has_wanted: 0
+story_posted | message: {"ref":"[ref]","title":"Pin Story","body":"Pin story body.","author":"","time_stamp":"","has_image":0}
+story_posted | screen: 4
+story_posted | signature: "Pin Officer"
+story_posted | wanted_issue: null
+channel_shown | channel: {"ref":"[ref]","name":"Dq Pin Channel","author":"Pin Officer","locked":1,"censored":0,"is_admin_channel":1}
+channel_shown | channels: [{"ref":"[ref]","name":"Station Announcements","author":"NanoTrasen","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"The Gibson Gazette","author":"Editor Mike Hammers","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Oculum Content Aggregator","author":"Oculus v6rev7","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Dq Pin Channel","author":"Pin Officer","locked":1,"censored":0,"is_admin_channel":1}]
+channel_shown | channel_messages: [{"ref":"[ref]","title":"Pin Story","body":"Pin story body.","author":"Pin Officer","time_stamp":"00:00","has_image":0}]
+channel_shown | company_name: "NanoTrasen-testing"
+channel_shown | has_wanted: 0
+channel_shown | message: {"ref":"[ref]","title":"Pin Story","body":"Pin story body.","author":"","time_stamp":"","has_image":0}
+channel_shown | screen: 9
+channel_shown | signature: "Pin Officer"
+channel_shown | wanted_issue: null
+censored | channel: {"ref":"[ref]","name":"Dq Pin Channel","author":"Pin Officer","locked":1,"censored":1,"is_admin_channel":1}
+censored | channels: [{"ref":"[ref]","name":"Station Announcements","author":"NanoTrasen","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"The Gibson Gazette","author":"Editor Mike Hammers","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Oculum Content Aggregator","author":"Oculus v6rev7","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Dq Pin Channel","author":"Pin Officer","locked":1,"censored":1,"is_admin_channel":1}]
+censored | channel_messages: [{"ref":"[ref]","title":"Pin Story","body":"Pin story body.","author":"REDACTED","time_stamp":"00:00","has_image":0}]
+censored | company_name: "NanoTrasen-testing"
+censored | has_wanted: 0
+censored | message: {"ref":"[ref]","title":"Pin Story","body":"Pin story body.","author":"","time_stamp":"","has_image":0}
+censored | screen: 9
+censored | signature: "Pin Officer"
+censored | wanted_issue: null
+wanted_issued | channel: {"ref":"[ref]","name":"Dq Pin Channel","author":"Pin Officer","locked":1,"censored":1,"is_admin_channel":1}
+wanted_issued | channels: [{"ref":"[ref]","name":"Station Announcements","author":"NanoTrasen","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"The Gibson Gazette","author":"Editor Mike Hammers","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Oculum Content Aggregator","author":"Oculus v6rev7","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Dq Pin Channel","author":"Pin Officer","locked":1,"censored":1,"is_admin_channel":1}]
+wanted_issued | channel_messages: [{"ref":"[ref]","title":"Pin Story","body":"Pin story body.","author":"REDACTED","time_stamp":"00:00","has_image":0}]
+wanted_issued | company_name: "NanoTrasen-testing"
+wanted_issued | has_wanted: 1
+wanted_issued | message: {"ref":"[ref]","title":"Pin Story","body":"Pin story body.","author":"","time_stamp":"","has_image":0}
+wanted_issued | screen: 18
+wanted_issued | signature: "Pin Officer"
+wanted_issued | wanted_issue: {"author":"Pin Fugitive","body":"Wanted for pinning.","backup_author":"Pin Officer","has_image":0}
+wanted_cancelled | channel: {"ref":"[ref]","name":"Dq Pin Channel","author":"Pin Officer","locked":1,"censored":1,"is_admin_channel":1}
+wanted_cancelled | channels: [{"ref":"[ref]","name":"Station Announcements","author":"NanoTrasen","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"The Gibson Gazette","author":"Editor Mike Hammers","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Oculum Content Aggregator","author":"Oculus v6rev7","locked":1,"censored":0,"is_admin_channel":1},{"ref":"[ref]","name":"Dq Pin Channel","author":"Pin Officer","locked":1,"censored":1,"is_admin_channel":1}]
+wanted_cancelled | channel_messages: [{"ref":"[ref]","title":"Pin Story","body":"Pin story body.","author":"REDACTED","time_stamp":"00:00","has_image":0}]
+wanted_cancelled | company_name: "NanoTrasen-testing"
+wanted_cancelled | has_wanted: 0
+wanted_cancelled | message: {"ref":"[ref]","title":"Pin Story","body":"Pin story body.","author":"","time_stamp":"","has_image":0}
+wanted_cancelled | screen: 17
+wanted_cancelled | signature: "Pin Officer"
+wanted_cancelled | wanted_issue: null
+
