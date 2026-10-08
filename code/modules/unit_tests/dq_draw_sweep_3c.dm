@@ -9,10 +9,10 @@
 	var/obj/item/folder/folder = allocate(/obj/item/folder, T)
 	var/obj/item/paper/page = allocate(/obj/item/paper, T)
 	refresh_flush()
-	TEST_ASSERT(!("folder_paper" in folder.look_overlays), "an empty folder shows no paper: [json_encode(folder.look_overlays)]")
+	TEST_ASSERT(!("folder_paper" in folder.rx?.look_overlays), "an empty folder shows no paper: [json_encode(folder.rx?.look_overlays)]")
 	TEST_ASSERT(move_into(folder, null, page), "the page goes in the folder")
 	refresh_flush()
-	TEST_ASSERT(("folder_paper" in folder.look_overlays), "a folder with a page shows it by itself: [json_encode(folder.look_overlays)]")
+	TEST_ASSERT(("folder_paper" in folder.rx?.look_overlays), "a folder with a page shows it by itself: [json_encode(folder.rx?.look_overlays)]")
 
 /datum/unit_test/dq_draw_sweep_3c_paperplane
 
@@ -21,11 +21,11 @@
 	var/obj/item/paperplane/plane = allocate(/obj/item/paperplane, T)
 	var/obj/item/stamp/stamp = allocate(/obj/item/stamp, T)
 	refresh_flush()
-	TEST_ASSERT(!length(plane.look_overlays), "a plain plane draws no stamps: [json_encode(plane.look_overlays)]")
+	TEST_ASSERT(!length(plane.rx?.look_overlays), "a plain plane draws no stamps: [json_encode(plane.rx?.look_overlays)]")
 	plane.internalPaper.stamped = list(stamp.type)
 	plane.sync_stamps()
 	refresh_flush()
-	TEST_ASSERT(("paperplane_[stamp.icon_state]" in plane.look_overlays), "a stamped plane draws the stamp: [json_encode(plane.look_overlays)]")
+	TEST_ASSERT(("paperplane_[stamp.icon_state]" in plane.rx?.look_overlays), "a stamped plane draws the stamp: [json_encode(plane.rx?.look_overlays)]")
 
 /datum/unit_test/dq_draw_sweep_3c_blob
 
@@ -96,10 +96,10 @@
 	var/turf/T = test_floor()
 	var/obj/machinery/disposal/bin = allocate(/obj/machinery/disposal, T)
 	refresh_flush()
-	TEST_ASSERT(!("disposal-handle" in bin.look_overlays), "a bin with its handle up shows no handle: [json_encode(bin.look_overlays)]")
+	TEST_ASSERT(!("disposal-handle" in bin.rx?.look_overlays), "a bin with its handle up shows no handle: [json_encode(bin.rx?.look_overlays)]")
 	bin.set_flush(TRUE)
 	refresh_flush()
-	TEST_ASSERT(("disposal-handle" in bin.look_overlays), "a pulled handle draws by itself: [json_encode(bin.look_overlays)]")
+	TEST_ASSERT(("disposal-handle" in bin.rx?.look_overlays), "a pulled handle draws by itself: [json_encode(bin.rx?.look_overlays)]")
 	bin.set_flush(FALSE)
 	refresh_flush()
-	TEST_ASSERT(!("disposal-handle" in bin.look_overlays), "and goes with the handle: [json_encode(bin.look_overlays)]")
+	TEST_ASSERT(!("disposal-handle" in bin.rx?.look_overlays), "and goes with the handle: [json_encode(bin.rx?.look_overlays)]")
