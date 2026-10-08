@@ -15,7 +15,7 @@
   explicit luminosity also retains BYOND's selector representation. All **241
   compiler-library checks pass**, including borrowed/consuming output equality,
   corrupt-stage rejection and pinned appearance fixtures. This batch's release
-  benchmark is pending; no speed or memory improvement is claimed yet.
+  benchmark is recorded below. This is not daemon/incremental acceptance.
 
 - Commit `4444f22e61` replaces the separate header/member routing exceptions with one shared intrinsic routing contract. All 21 focused class/routing checks and dmbc all-target Clippy pass. Three complete captured-source compiles and their three independent fresh-output oracles now pass. The earlier l/m routing failures are resolved; runtime and BYOND semantic parity are not claimed.
 
@@ -69,7 +69,7 @@ A separate eight-worker no-cache/no-daemon run of the **historic focused DeepQua
 
 CPU quality reports no errors; the entire ratio passes the independent 5% crosscheck. This is one run, a different frozen source scope from compiler f's earlier audit, and not an acceptance median or a measured before/after speedup. CPU and memory remain above Phase 1 targets. Evidence: `E:/dmb-native-v2-phase0/review-power-focus/native-retries/retry-e0a7ff07c0604b2c91cb0d18e3426063/`. No body-edit measurement on this complete snapshot exists yet.
 
-## Latest three-run cold cohort
+## Previous three-run cold cohort
 
 Frozen compiler n, commit `4444f22e61`, SHA256 `7344e4fbae9046573dc9e9ffb89f637d4f8035ef4e0ef88fb1d759db1ef7dd36`; release with LTO disabled and allocation counting. Eight workers, no compiler cache, no daemon, strict captured replay of historical DeepQuarry test project `ac1af55d1a`, `comparison.dme`. This is not the current production-map manifest, nor an incremental-edit measurement.
 
@@ -86,6 +86,46 @@ Frozen compiler n, commit `4444f22e61`, SHA256 `7344e4fbae9046573dc9e9ffb89f637d
 All three CPU-quality checks pass the unchanged 5% process crosscheck. Every measured DMB/RSC and normalized diagnostic channel matches its independent fresh build; DMB/RSC hashes also agree across all three measured runs. DMB is 59,246,419 bytes; RSC is 223,679,650 bytes. Runtime validation is not included. The first measured run spent 38.663 s in input preparation and 38.260 s in resources/maps; the next spent 1.577 s and 3.957 s respectively. The large wall spread is retained, not hidden or claimed as a CPU speedup.
 
 Results and receipt links are recorded in `phase0/results.jsonl`; the external cohort summary is `E:/dmb-native-v2-phase0/review-power-focus/cold-cohort-7344e4fbae90.json`. Critical CPU still exceeds 20 s and private memory still exceeds 1.5 GB. These output/measurement gates pass, but Phase 0/1 are not complete. A bounded `/area` comparison against the pinned BYOND output confirms that recorded text/icon/callback/plane gaps no longer appear in the displayed prefix; layer 1 versus 2, luminosity default representation and initializer debug-opcode differences remain. Its 100-difference cap is not a whole-program discrepancy count (`E:/dmb-native-v2-phase0/review-native-n-byond-area-compare.log`).
+
+## Latest ownership/appearance cold cohort
+
+Frozen compiler o, commit `1062e9d273`, SHA256
+`d23facd6803ef9e0106311dd849c6f760cb222c7996941b9d2c3d29fa1fa90d1`.
+The same historical captured project, eight workers, no cache and no daemon:
+
+| Measurement | Three-run result |
+| --- | ---: |
+| Complete compiler child wall, median | 38.9219 s |
+| Complete child wall range | 34.5439–95.1301 s |
+| Independent fresh-output child wall, median | 40.9078 s |
+| Total process CPU, median | 66.5625 s |
+| Critical-path CPU bounds, median | 28.078125–29.390625 s |
+| Peak private memory, maximum | 2,437,070,848 bytes |
+
+All three measured outputs/diagnostic channels match their independent fresh
+builds; outputs are deterministic across the cohort and all independent CPU
+checks pass. Memory is lower than compiler n, but CPU and wall medians are
+higher. This does **not** meet the speed or memory targets. The first run spent
+31.540 s preparing inputs and 33.222 s in resources/maps; its full wall time is
+retained. A stage comparison is required before attributing the CPU change.
+DMB size is 59,271,929 bytes; RSC remains 223,679,650 bytes. Runtime is untested.
+Receipts are in `phase0/results.jsonl`; external summary:
+`E:/dmb-native-v2-phase0/review-power-focus/cold-cohort-d23facd6803e.json`.
+
+The bounded `/area` output comparison no longer displays the layer or luminosity
+differences present in compiler n's prefix. Initializer debug-instruction
+ordering/count differences remain. The 100-difference cap prevents treating this
+as a whole-program parity result. Evidence:
+`E:/dmb-native-v2-phase0/review-native-o-byond-area-compare.log`.
+
+The private one-procedure literal variant also passed its fresh-output and
+diagnostic oracle plus CPU crosscheck: single measured child 98.7828 s, fresh
+child 120.2571 s, total CPU 64.640625 s, critical CPU bounds
+31.609375–32.9375 s, peak private 2,449,235,968 bytes. Both child runs stayed under
+285 s. This is **cold compilation of changed inputs, not warm incremental
+latency**, and is not a median. Its differing source identity and output pair
+are kept separate from runtime-parity inputs. Evidence:
+`E:/dmb-native-v2-phase0/body-edit-run-20261008-a/receipt.json`.
 
 ## Focused runtime gate
 

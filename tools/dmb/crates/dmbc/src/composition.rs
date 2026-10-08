@@ -388,7 +388,10 @@ fn compose_records_access(
     )>,
     stage: Option<&dyn NonTextOutputStage>,
 ) -> Result<Vec<u8>, CompositionError> {
-    let mut dmb = Dmb::from_bytes(engine_bytes).map_err(CompositionError::Decode)?;
+    let mut dmb = {
+        let _profile = dm_profile::stage("composition.decode_engine");
+        Dmb::from_bytes(engine_bytes).map_err(CompositionError::Decode)?
+    };
     if let Some((plan, _)) = projection {
         let required: BTreeMap<_, _> = plan.runtime_writes.iter().copied().collect();
         let mut actual = BTreeMap::new();
@@ -794,6 +797,7 @@ fn compose_records_access(
             values,
         )
         .map_err(|e| unsupported(format!("class members {e:?}")))?;
+        let headers_profile = dm_profile::stage("composition.authored_headers");
         crate::class_projection::finalize_headers(
             &mut dmb,
             engine_bytes,
@@ -802,6 +806,7 @@ fn compose_records_access(
             symbols,
         )
         .map_err(|e| unsupported(format!("class headers {e:?}")))?;
+        drop(headers_profile);
         crate::class_projection::materialize_callback_flags(&mut dmb, plan, &batch.tables)
             .map_err(|e| unsupported(format!("class callbacks {e:?}")))?;
     }
@@ -826,6 +831,7 @@ fn compose_records_access(
             }
         }
     }
+    let final_validation = dm_profile::stage("composition.final_instruction_validation");
     let feature_images = batch.certified_features();
     let mut external = false;
     let mut debug = false;
@@ -857,6 +863,7 @@ fn compose_records_access(
             })?;
     }
     drop(feature_images);
+    drop(final_validation);
     // All output-stage and final instruction checks are complete. Consuming
     // requests release frozen IR/table inventories before encode/decode overlap.
     drop(batch);
@@ -869,12 +876,18 @@ fn compose_records_access(
     // Choose the wide table ABI explicitly for the composed model. No instruction
     // operand is guessed/rebased; shared symbolic linking already fixed those.
     dmb.header.flags |= 0x4000_0000;
+    let references_profile = dm_profile::stage("composition.reference_validation");
     dmb.validate_references()
         .map_err(CompositionError::Decode)?;
-    let bytes = dmb.to_bytes().map_err(CompositionError::Decode)?;
+    drop(references_profile);
+    let bytes = {
+        let _profile = dm_profile::stage("composition.encode");
+        dmb.to_bytes().map_err(CompositionError::Decode)?
+    };
     // The encoded image owns its bytes; release the source graph before
     // constructing the independent round-trip validation graph.
     drop(dmb);
+    let _profile = dm_profile::stage("composition.independent_roundtrip");
     Dmb::from_bytes(&bytes)
         .and_then(|decoded| decoded.validate_references())
         .map_err(CompositionError::Decode)?;

@@ -131,7 +131,20 @@ pub enum RelocationError {
 impl SymbolicCode {
     pub fn new(words: Vec<u32>, mut relocations: Vec<Relocation>) -> Result<Self, RelocationError> {
         u32::try_from(words.len()).map_err(|_| RelocationError::WordCountOverflow)?;
-        let mut seen = HashSet::new();
+        // A checked interval proof eliminates covered-word storage only when
+        // encounter order is already canonical and every interval is disjoint.
+        // Failed proofs use the original validation order, including overflow.
+        let canonical = relocations
+            .iter()
+            .try_fold(0, |end, relocation| {
+                if relocation.offset < end {
+                    None
+                } else {
+                    relocation.offset.checked_add(relocation.encoding.width())
+                }
+            })
+            .is_some();
+        let mut seen = (!canonical).then(HashSet::new);
         for relocation in &relocations {
             for delta in 0..relocation.encoding.width() {
                 let at = relocation
@@ -141,7 +154,7 @@ impl SymbolicCode {
                 let word = words
                     .get(at as usize)
                     .ok_or(RelocationError::OutOfBounds(at))?;
-                if !seen.insert(at) {
+                if seen.as_mut().is_some_and(|seen| !seen.insert(at)) {
                     return Err(RelocationError::Duplicate(at));
                 }
                 if *word != 0 {
@@ -149,7 +162,9 @@ impl SymbolicCode {
                 }
             }
         }
-        relocations.sort_unstable_by_key(|relocation| relocation.offset);
+        if !canonical {
+            relocations.sort_unstable_by_key(|relocation| relocation.offset);
+        }
         Ok(Self { words, relocations })
     }
 
@@ -368,6 +383,111 @@ fn encode_reference(bytes: &mut Vec<u8>, reference: SymRef) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // Retain the original storage validator as an independent error-order oracle.
+    fn original_storage_validation(
+        words: Vec<u32>,
+        mut relocations: Vec<Relocation>,
+    ) -> Result<SymbolicCode, RelocationError> {
+        u32::try_from(words.len()).map_err(|_| RelocationError::WordCountOverflow)?;
+        let mut seen = HashSet::new();
+        for relocation in &relocations {
+            for delta in 0..relocation.encoding.width() {
+                let at = relocation
+                    .offset
+                    .checked_add(delta)
+                    .ok_or(RelocationError::OutOfBounds(relocation.offset))?;
+                let word = words
+                    .get(at as usize)
+                    .ok_or(RelocationError::OutOfBounds(at))?;
+                if !seen.insert(at) {
+                    return Err(RelocationError::Duplicate(at));
+                }
+                if *word != 0 {
+                    return Err(RelocationError::NonzeroPlaceholder(at));
+                }
+            }
+        }
+        relocations.sort_unstable_by_key(|relocation| relocation.offset);
+        Ok(SymbolicCode { words, relocations })
+    }
+
+    #[test]
+    fn canonical_storage_fast_path_preserves_generic_errors_and_content() {
+        let direct = RelocationEncoding::Direct;
+        let packed = RelocationEncoding::PackedValue24 { tag: 6 };
+        let site = |offset, encoding| Relocation {
+            offset,
+            reference: SymRef::String(SymbolId::of("text")),
+            encoding,
+        };
+        let cases = [
+            (vec![], vec![], None),
+            (vec![0; 4], vec![site(0, packed), site(2, packed)], None),
+            (vec![0; 4], vec![site(3, direct), site(0, packed)], None),
+            (
+                vec![0; 4],
+                vec![site(0, packed), site(1, direct)],
+                Some(RelocationError::Duplicate(1)),
+            ),
+            (
+                vec![0; 4],
+                vec![site(1, direct), site(0, packed)],
+                Some(RelocationError::Duplicate(1)),
+            ),
+            (
+                vec![1],
+                vec![site(0, direct)],
+                Some(RelocationError::NonzeroPlaceholder(0)),
+            ),
+            (
+                vec![0, 1],
+                vec![site(0, packed)],
+                Some(RelocationError::NonzeroPlaceholder(1)),
+            ),
+            (
+                vec![0],
+                vec![site(0, packed)],
+                Some(RelocationError::OutOfBounds(1)),
+            ),
+            (
+                vec![0; 4],
+                vec![site(u32::MAX, packed)],
+                Some(RelocationError::OutOfBounds(u32::MAX)),
+            ),
+            (
+                vec![1; 4],
+                vec![site(0, direct), site(u32::MAX, packed)],
+                Some(RelocationError::NonzeroPlaceholder(0)),
+            ),
+            (
+                vec![1; 4],
+                vec![site(4, direct), site(0, direct)],
+                Some(RelocationError::OutOfBounds(4)),
+            ),
+        ];
+        for (words, relocations, expected_error) in cases {
+            let expected = original_storage_validation(words.clone(), relocations.clone());
+            assert_eq!(expected.as_ref().err(), expected_error.as_ref());
+            assert_eq!(SymbolicCode::new(words, relocations), expected);
+        }
+        // Both interval widths, both encounter orders, overlaps, out-of-bounds
+        // and competing nonzero/duplicate failures, independent of golden cases.
+        for bits in 0..16 {
+            let words: Vec<_> = (0..4).map(|at| (bits >> at) & 1).collect();
+            for left in 0..6 {
+                for right in 0..6 {
+                    for encoding in [direct, packed] {
+                        let relocations = vec![site(left, encoding), site(right, packed)];
+                        assert_eq!(
+                            SymbolicCode::new(words.clone(), relocations.clone()),
+                            original_storage_validation(words.clone(), relocations)
+                        );
+                    }
+                }
+            }
+        }
+    }
 
     #[test]
     fn borrowed_site_ledgers_preserve_unsorted_validation_and_error_precedence() {
