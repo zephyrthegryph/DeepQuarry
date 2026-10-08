@@ -172,7 +172,7 @@
 		specialattackprojectile = /obj/item/projectile/energy/lightingspark/nanoweave
 		rng_cycle = rand(1,5)
 		say("PROTOCOL: WARP. DRIVE.")
-		after(src, 2 SECONDS, PROC_REF(teleport_attack), with = list(A, rng_cycle, 3), keeps_dead = TRUE)
+		after(src, 2 SECONDS, PROC_REF(teleport_attack), with = list(A, rng_cycle, 3))
 		attackcycle = 0
 	else if(attackcycle == 4)
 		specialattackprojectile = /obj/item/projectile/knockback
@@ -219,7 +219,7 @@
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				after(src, 0.5 SECONDS, PROC_REF(teleport_attack), with = list(A, 1), keeps_dead = TRUE)
+				after(src, 0.5 SECONDS, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 		if(I_HURT) // Phase 1. Teaching the player the three funny attacks
 			if(attackcycle == 1)
@@ -228,7 +228,7 @@
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				after(src, 2 SECONDS, PROC_REF(teleport_attack), with = list(A, 1), keeps_dead = TRUE)
+				after(src, 2 SECONDS, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 		if(I_GRAB) // Phase 2
 			if(attackcycle == 1)
@@ -237,7 +237,7 @@
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1), keeps_dead = TRUE)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/green
@@ -262,7 +262,7 @@
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1), keeps_dead = TRUE)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 			else if(attackcycle > 2)
 				attackcycle = 1
@@ -292,7 +292,7 @@
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 3), keeps_dead = TRUE)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 3))
 				attackcycle = 0
 			else if(attackcycle == 3)
 				say("PROTOCOL: SWEEP. FIGURATION: B.")
@@ -301,7 +301,7 @@
 				attackcycle = 0
 			else if(attackcycle == 4)
 				say("PROTOCOL: TELEPORT.")
-				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 5), keeps_dead = TRUE)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 5))
 				attackcycle = 0
 			else if(attackcycle == 5)
 				say("PROTOCOL: LASERBLADE.")
@@ -310,7 +310,7 @@
 				attackcycle = 0
 			else if(attackcycle == 6)
 				say("PROTOCOL: TELEPORT.")
-				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1), keeps_dead = TRUE)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 */
 
@@ -410,15 +410,15 @@
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1), keeps_dead = TRUE)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1), keeps_dead = TRUE)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1), keeps_dead = TRUE)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 
 		if(I_HURT) //phase 1 3 safe zones

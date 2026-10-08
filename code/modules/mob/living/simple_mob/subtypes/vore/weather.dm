@@ -194,13 +194,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 	else if(vitality() < 0.25) //phase 4 where it teleports then chains 3 attacks
 		rel_set(src, nameof(chain_target), A)
 		set_chain_number(3)
-		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A), keeps_dead = TRUE)
+		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A))
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
 	else if(vitality() < 0.5) //teleports then chains 2 attacks
 		rel_set(src, nameof(chain_target), A)
 		set_chain_number(2)
-		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A), keeps_dead = TRUE)
+		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A))
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
 	else if(vitality() < 0.75) //teleports then attacks
@@ -208,12 +208,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 		set_chain_number(1)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
-		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A), keeps_dead = TRUE)
+		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A))
 	else //attacks once
 		if(prob(50))
 			icon_state = "jellyfish_yellow"
 			icon_living = "jellyfish_yellow"
-			after(src, 4 SECONDS, PROC_REF(dash_attack), with = list(A), keeps_dead = TRUE)
+			after(src, 4 SECONDS, PROC_REF(dash_attack), with = list(A))
 		else
 			icon_state = "jellyfish_red"
 			icon_living = "jellyfish_red"

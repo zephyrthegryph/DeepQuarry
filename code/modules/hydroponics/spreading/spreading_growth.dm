@@ -130,7 +130,7 @@
 		return
 	var/obj/effect/plant/child = new(get_turf(src),seed(),parent())
 
-	after(src, 0.1 SECONDS, PROC_REF(spread_child_settles), with = list(child, target_turf), keeps_dead = TRUE) // This should do a little bit of animation.
+	after(src, 0.1 SECONDS, PROC_REF(spread_child_settles), with = list(child, target_turf)) // This should do a little bit of animation.
 
 /obj/effect/plant/proc/die_off()
 	// Kill off our plant.

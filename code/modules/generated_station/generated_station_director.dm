@@ -152,7 +152,7 @@ CAPABILITIES(/datum/generated_station_director)
 	if(strategic_online && department_connected[source_department_id])
 		propagate_report(report)
 	if(report.expires_at)
-		after(src, lifetime, PROC_REF(expire_report), with = list(report.id, report.expires_at), keeps_dead = TRUE)
+		after(src, lifetime, PROC_REF(expire_report), with = list(report.id, report.expires_at))
 	return report
 
 /datum/generated_station_director/proc/propagate_report(datum/generated_station_knowledge_report/report)

@@ -519,7 +519,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 			item = P)
 		play_sfx(src, SFX_BUREAUCRACY_PAPERBURN)
 
-		after(src, 2 SECONDS, PROC_REF(burn_through), with = list(user, P, class), keeps_dead = TRUE)
+		after(src, 2 SECONDS, PROC_REF(burn_through), with = list(user, P, class))
 
 
 /obj/item/paper/get_worn_icon_state(slot_name)

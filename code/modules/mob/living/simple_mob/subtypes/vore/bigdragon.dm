@@ -679,7 +679,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		if(!src.enraged)
 			if(src.vitality() <= 0.5)
 				src.enraged = 1
-				after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list("No more games. COME HERE."), keeps_dead = TRUE)
+				after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list("No more games. COME HERE."))
 		if(src.enraged)
 			if(src.vitality() >= 0.5)
 				src.enraged = 0

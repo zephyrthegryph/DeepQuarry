@@ -190,7 +190,7 @@
 	return result
 
 /datum/system/contracts/proc/schedule_contract_evidence_prune(contract_id)
-	after(src, CONTRACT_EVIDENCE_RETENTION, PROC_REF(prune_contract_evidence), with = list(contract_id), keeps_dead = TRUE)
+	after(src, CONTRACT_EVIDENCE_RETENTION, PROC_REF(prune_contract_evidence), with = list(contract_id))
 
 /datum/system/contracts/proc/prune_contract_evidence(contract_id)
 	for(var/evidence_id in evidence_by_id.Copy())

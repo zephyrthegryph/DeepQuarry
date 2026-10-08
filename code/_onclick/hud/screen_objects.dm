@@ -1084,7 +1084,7 @@ CAPABILITIES(/atom/movable/screen/mapper/mapbutton)
 			F.icon_state = "frame"
 			user.client.screen += F
 			flick("[hud_state_empty]_flash", F)
-			after(src, 2 SECONDS, PROC_REF(end_empty_flash), with = list(user, F, empty), keeps_dead = TRUE)
+			after(src, 2 SECONDS, PROC_REF(end_empty_flash), with = list(user, F, empty))
 	else
 		warned = FALSE
 		overlays += image('icons/mob/screen_ammo.dmi', src, "[hud_state]")

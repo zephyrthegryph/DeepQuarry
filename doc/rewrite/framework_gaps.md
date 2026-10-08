@@ -318,4 +318,149 @@ Verdicts come from reading each handler. REMOVED: the opt-out is gone (the handl
 | transit_tubes.dm:121 | `launch_close` | REMOVED | it sets `pod_moving` itself, so nothing is left stuck when dropped |
 | transit_tubes.dm:128 | `launch_go` | KEPT | a deleted pod must still clear `pod_moving` |
 
-Open: the 164 sites after these (including every `code/game/machinery` and `code/modules/power` site, which this lane may not touch).
+Second pass below covers every remaining site outside `code/game/machinery`, `code/modules/power` and the engine.
+
+
+### J6 audit, second pass: the remaining sites outside machinery, power and the engine
+
+88 opt-outs removed, 47 sites kept. Verdicts from reading each handler (four readers, then spot-checked: `phase_shift.dm:313` was reverted to KEPT because the handler restores the owner mob). A kept CLEANUP site has a test in `dq_keeps_dead_cleanup_batch2_tests.dm` unless it says UNTESTED. Where several sites are a chain of one handler (fulton, jaunt, vent crawl) one test covers the chain. Removed sites with no datum in `with` were never affected by the opt-out.
+
+| Site | Handler | Verdict | Why |
+|---|---|---|---|
+| transit_tubes.dm:163 | `arrival_open` | KEPT, CLEANUP | opens station, chains arrival_opened (pod_moving reset) with pod |
+| transit_tubes.dm:168 | `arrival_opened` | KEPT, CLEANUP | pod_moving = 0 regardless of pod |
+| watercloset.dm:335 | `refill_done` | REMOVED | no datum arg |
+| watercloset.dm:357 | `tertiary_flush` | KEPT, CLEANUP | completed tail schedules refill_done(FALSE) clearing refilling |
+| watercloset.dm:359 | `tertiary_flush` | REMOVED | non-final branch only touches flushed |
+| watercloset.dm:372 | `refill_done` | REMOVED | no datum arg |
+| walls.dm:322 | `thermitemelt_cleanup` | REMOVED | if(O) only |
+| lock.dm:52 | `lock_wire_relocks` | REMOVED | holder is only subject |
+| needle.dm:380 | `needle_inject_cycle` | KEPT, CLEANUP | deleted user/target goes to needle_inject_finish resetting holder mode to draw |
+| debug.dm:574 | `admin_boost_supermatter` | REMOVED | if(SM) |
+| telecube.dm:200 | `fade_back_in` | REMOVED | QDELETED(AM) return |
+| telecube.dm:233 | `clear_blur` | REMOVED | if(AM) visual |
+| balloon_alert.dm:97 | `remove_image_from_client` | REMOVED | only touches deleted things |
+| heart_anomalock.dm:57 | `clear_lightning_overlay` | KEPT, CLEANUP | nulls src.lightning_overlay, cancels timer |
+| heart_anomalock.dm:61 | `clear_lightning_overlay` | KEPT, CLEANUP | same handler |
+| body_backup.dm:30 | `_dq_body_backup_after_spawn` | REMOVED | QDELETED return |
+| reactive_armour.dm:383 | `end_stealth` | KEPT, CLEANUP | in_stealth = FALSE on src |
+| slime_state.dm:173 | `/mob/say` | REMOVED | string arg |
+| voice_commands.dm:14 | `/mob/say` | REMOVED | string arg |
+| contract_evidence.dm:193 | `prune_contract_evidence` | REMOVED | scalar |
+| contract_offer.dm:210 | `reconcile_offer_board` | REMOVED | scalar |
+| contract_requirement.dm:394 | `complete_duration` | REMOVED | scalars |
+| contract_requirement.dm:494 | `complete_stage` | REMOVED | scalars |
+| faction_agent_contracts.dm:362 | `queue_agent_vetting` | REMOVED | scalars |
+| faction_agent_contracts.dm:369 | `queue_agent_offers` | REMOVED | scalars |
+| scanner.dm:44 | `detective_scanner_blood_report` | REMOVED | cosmetic |
+| vending.dm:563 | `finish_vend` | KEPT, CLEANUP | R null branch set_vend_ready(TRUE)+rel_clear |
+| vending.dm:596 | `bonus_vend` | REMOVED | if(R) |
+| snacks.dm:337 | `food_finished_emote` | REMOVED | emote on user |
+| generated_station_defenders.dm:366 | `complete_logistics_delivery` | KEPT, CLEANUP-UNTESTED | sleep_squad(squad_id) tail; needs full runtime/agents |
+| generated_station_director.dm:155 | `expire_report` | REMOVED | scalars |
+| HolodeckControl.dm:354 | `atmos_test_ignite` | REMOVED | cosmetic, guarded |
+| seed_mobs.dm:12 | `living_product_unclaimed` | REMOVED | QDELETED return |
+| spreading_growth.dm:133 | `spread_child_settles` | REMOVED | QDELETED return |
+| hydroponics/spreading/spreading_response.dm:21 | `entangle` | REMOVED | `!victim` returns first; only touches victim |
+| integrated_electronics/subtypes/reagents.dm:153 | `inject_mob` | KEPT, UNSURE | null L runs activate_pin(3) (failure pulse to next circuit), a signal not a hold release |
+| maint_recycler/code/maint_recycler.dm:285 | `door_finished_moving` | REMOVED | no deletable datum arg |
+| maint_recycler/code/maint_recycler.dm:292 | `door_finished_moving` | REMOVED | no deletable datum arg |
+| medical/contagion/engineered/traits/hair.dm:48 | `change_hair` | REMOVED | `!H` returns; only edits H |
+| medical/contagion/engineered/traits/hair.dm:52 | `change_hair` | REMOVED | `!H` returns; only edits H |
+| mining/fulton.dm:107 | `fulton_inflate` | KEPT, CLEANUP | chain link: schedules fulton_launch..fulton_release which consume(holder); dropping strands the holder (existing test c4_fulton_deleted_payload covers whole chain) |
+| mining/fulton.dm:118 | `fulton_launch` | KEPT, CLEANUP | chain link to fulton_arrive/release; ishuman(null) safe (covered by c4_fulton_deleted_payload) |
+| mining/fulton.dm:127 | `fulton_arrive` | KEPT, CLEANUP | chain link, moves holder to landing and schedules retract (covered by c4_fulton_deleted_payload) |
+| mining/fulton.dm:134 | `fulton_retract` | KEPT, CLEANUP | chain link to fulton_land/release (covered by c4_fulton_deleted_payload) |
+| mining/fulton.dm:139 | `fulton_land` | KEPT, CLEANUP | cut_overlays, schedules fulton_release; `if(A)` guards (covered by c4_fulton_deleted_payload, interim_fulton_landing_release) |
+| mining/fulton.dm:147 | `fulton_release` | KEPT, CLEANUP | `if(A)` guard then consume(src) disposes the holder (covered by c4_fulton_deleted_payload) |
+| mining/shelter_atoms.dm:339 | `delete_preview_render` | REMOVED | `user?.client` only touches the deleted user |
+| mob/living/bot/secbot.dm:56 | `say` | REMOVED | no datum arg, cosmetic |
+| mob/living/carbon/human/emote.dm:539 | `flip_end` | REMOVED | args are density/flag values, no deletable datum |
+| mob/living/carbon/human/examine.dm:281 | `pulse_check_result` | REMOVED | `user &&` guard, only messages user |
+| mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm:157 | `do_trigger` | KEPT, CLEANUP-UNTESTED | null L takes the "fail to catch" branch and spent(src, L) consumes the maw; maw Initialize self-deletes on the lit test map |
+| mob/living/carbon/human/species/shadekin/state/powers/phase_shift.dm:313 | `complete_phase_out` | KEPT, CLEANUP | the handler applies the phase-out to the owner mob and only the shadekin datum is the deleted argument; dropping skips the whole phase-out (found in review, the audit said NULL_SAFE) |
+| mob/living/carbon/human/species/station/protean/protean_rig.dm:103 | `AssimilateBag` | REMOVED | `spawned && !P` returns; QDELETED(B) returns |
+| mob/living/carbon/human/species/station/protean/protean_species.dm:181 | `finish_survival_gear` | REMOVED | QDELETED(H) returns first |
+| mob/living/carbon/human/species/station/station_special_abilities.dm:1295 | `target_lunge_land` | KEPT, CLEANUP | clears LEAPING on src even when target gone |
+| mob/living/carbon/human/species/xenomorphs/alien_powers.dm:354 | `leap_land` | KEPT, CLEANUP | clears LEAPING on src before the `!T` miss branch |
+| mob/living/living.dm:407 | `clear_fullscreen` | REMOVED | no deletable datum arg |
+| mob/living/living.dm:487 | `do_vomit` | REMOVED | args are values/flags, no deletable datum |
+| mob/living/silicon/robot/cloak.dm:174 | `robot_cloak_remove_wibble` | REMOVED | `L?.` guard; only touches L (the owner itself) |
+| mob/living/silicon/robot/dogborg/dog_modules.dm:444 | `leap_land` | KEPT, CLEANUP | clears LEAPING on src before the `!T` miss branch |
+| mob/living/simple_mob/combat.dm:257 | `rocket_volley_end` | REMOVED | retract message cosmetic; then_proc only a follow-up shot at the gone target |
+| mob/living/simple_mob/combat.dm:280 | `attack_delay_done` | KEPT, CLEANUP | ai_busy_end() runs before the QDELETED(A) return; dropping leaves AI hold |
+| mob/living/simple_mob/simple_mob.dm:943 | `leap_land` | KEPT, CLEANUP | clears LEAPING on src before the `!T` miss branch |
+| mob/living/simple_mob/subtypes/animal/giant_spider/tunneler.dm:88 | `tunnel_dig` | KEPT, CLEANUP (UNTESTED: the test leaked the dig effects on its block) | A only used in a message; tail submerges and runs the dig chain ending in ai_busy_end/emerge |
+| mob/living/simple_mob/subtypes/animal/giant_spider/tunneler.dm:189 | `tunnel_step_check` | REMOVED | args are turfs and a list, no deletable datum; handler null-checks |
+| mob/living/simple_mob/subtypes/animal/passive/fish.dm:60 | `say` | REMOVED | no datum arg, cosmetic |
+| mob/living/simple_mob/subtypes/glamour/ddraig.dm:163 | `lunge_1` | KEPT, CLEANUP | `!L` branch calls ai_busy_end(); dropping leaves AI hold |
+| mob/living/simple_mob/subtypes/glamour/ddraig.dm:178 | `lunge_2` | KEPT, CLEANUP | clears LEAPING and ai_busy_end() before the `if(L ...)` check |
+| ddraig.dm:196 | `firebreathend` | KEPT, CLEANUP | QDELETED(A) branch calls ai_busy_end() to release the owner busy hold |
+| cultist.dm:102 | `do_special_attack_1` | KEPT, CLEANUP | A is null-checked and every path ends in ai_busy_end() on the owner |
+| cyber_horror.dm:142 | `do_special_attack_1` | KEPT, UNSURE | no null guard on A; sets LEAPING then chains do_special_attack_2 without keeps_dead (dropped when A gone), so LEAPING/busy leak anyway; needs inner keeps_dead |
+| eventsubtype.dm:175 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:222 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:231 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:240 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:265 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:295 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:304 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:313 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:413 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:417 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:421 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| wraith.dm:60 | `do_special_attack_1` | KEPT, CLEANUP | A is null-checked and every path ends in ai_busy_end() on the owner |
+| bigdragon.dm:682 | `/mob/living/say` | REMOVED | no deletable datum argument |
+| bigdragon.dm:753 | `chargeend` | KEPT, CLEANUP | QDELETED(A) branch calls ai_busy_end() |
+| bigdragon.dm:794 | `firebreathend` | KEPT, CLEANUP | QDELETED(A) branch calls ai_busy_end() |
+| blackholemobs.dm:79 | `doLeap` | KEPT, CLEANUP | !L branch calls ai_busy_end() |
+| cryptdrake.dm:114 | `do_special_attack_1` | KEPT, CLEANUP | !L branch calls ai_busy_end() |
+| cryptdrake.dm:129 | `do_special_attack_2` | KEPT, CLEANUP | clears LEAPING and ai_busy_end() regardless of L |
+| demon_abilities.dm:55 | `demon_phased_in` | REMOVED | no deletable datum argument |
+| demon_abilities.dm:143 | `demon_phased_in` | REMOVED | no deletable datum argument |
+| frog.dm:70 | `chargeend` | KEPT, UNSURE | no null guard on A (old_style_target/launch at null may runtime before ai_busy_end); busy hold only self-expires by cap |
+| candy.dm:363 | `chargeend` | KEPT, UNSURE | same as frog: no null guard on A before ai_busy_end |
+| candy.dm:513 | `barrage_shot` | REMOVED | attack volley only, launch at null target is not cleanup |
+| candy.dm:524 | `barrage_shot` | REMOVED | attack volley only, launch at null target is not cleanup |
+| candy.dm:542 | `/obj/item/projectile/launch_projectile` | REMOVED | fires extra projectile at target; would runtime/no-op on null |
+| gryphon.dm:116 | `do_special_attack_1` | KEPT, CLEANUP | !L branch calls ai_busy_end() |
+| scel.dm:172 | `lunge_1` | KEPT, CLEANUP | !L branch calls ai_busy_end() |
+| scel.dm:187 | `lunge_2` | KEPT, CLEANUP | clears LEAPING and ai_busy_end() regardless of L |
+| solargrub_larva.dm:149 | `ventcrawl_arrive` | KEPT, CLEANUP | null end_vent forceMoves the larva out of the vent it is inside (unsticks owner) |
+| syndimobs.dm:85 | `do_special_attack_1` | REMOVED | only throws at A and schedules _2 itself; null A is a no-op leap |
+| vore_hostile.dm:199 | `do_special_attack_1` | KEPT, CLEANUP | !L branch calls ai_busy_end() releasing the AI busy hold set by do_special_attack |
+| weather.dm:197 | `astral_sea_warp` | REMOVED | null target just to_chat and returns FALSE |
+| weather.dm:203 | `astral_sea_warp` | REMOVED | same |
+| weather.dm:211 | `astral_sea_warp` | REMOVED | same |
+| weather.dm:216 | `dash_attack` | REMOVED | null A does ai_busy_begin then ai_busy_end, net no-op |
+| remote_view.dm:529 | `remote_view_decouple` | REMOVED | cache_mob is owner and would runtime on null .client |
+| game.dm:34 | `game_evaluate` | REMOVED | next is a proc ref, not a datum |
+| nif.dm:120 | `persist_on_death` | REMOVED | QDELETED(source) check then nothing |
+| faxmachine.dm:505 | `visible_message` | REMOVED | no datum args |
+| paper.dm:522 | `burn_through` | REMOVED | null user/P falls to to_chat message only |
+| paper_bundle.dm:94 | `burn_through` | REMOVED | same |
+| gun.dm:488 | `handle_gunfire` | REMOVED | QDELETED(user) returns first; target null cached to turf |
+| gun.dm:562 | `handle_userless_gunfire` | REMOVED | only continues the burst; no cleanup tail |
+| chem_synthesizer.dm:798 | `bottle_product` | REMOVED | string arg only |
+| disposal_outlet.dm:127 | `expel_contents` | KEPT, UNSURE | gas is holder-owned and dies with the holder; items loop may need to run to free items, could not confirm items are stranded |
+| v_garbosystem.dm:183 | `crunch_item` | REMOVED | A null-checked, only touches A |
+| v_garbosystem.dm:187 | `crunch_thing` | REMOVED | A null-checked, only touches A |
+| autoresleever.dm:284 | `install_nif_software` | REMOVED | only touches the deleted nif (owner too) |
+| computers.dm:530 | `dispense_injector` | KEPT, CLEANUP | null I branch clears gene_sequencing busy flag |
+| crashes.dm:47 | `after_crash` | REMOVED | null target returns early; nothing to restore |
+| shuttle_specops.dm:172 | `mauraders_close` | REMOVED | only touches the area (the deleted arg) |
+| ethereal_jaunt.dm:41 | `jaunt_resurface` | KEPT, CLEANUP | any missing arg calls jaunt_finish which frees the jaunter and spends holder/animation |
+| ethereal_jaunt.dm:53 | `jaunt_reform` | KEPT, CLEANUP | same jaunt_finish path |
+| ethereal_jaunt.dm:60 | `jaunt_finish` | KEPT, CLEANUP | restores canmove, moves jaunter out, spends holder/animation |
+| hyper_pad.dm:130 | `animate_discharge` | REMOVED | cosmetic overlay clear on P |
+| hyper_pad.dm:191 | `animate_charge` | REMOVED | cosmetic overlay add on P |
+| vorepanel.dm:1178 | `help_out_done` | REMOVED | M?.loc check returns; only messages and release of M |
+| vorepanel.dm:1196 | `inner_devour_done` | REMOVED | guarded by TB/host/M presence, only acts on them |
+| resurrect.dm:93 | `artifact_revive_wakes` | REMOVED | null H returns; holder only messaged |
+| talking.dm:59 | `SaySomething` | REMOVED | no datum args |
+| extracts.dm:1058 | `slime_extract_explode` | REMOVED | would explode at null turf; only acts on the extract |
+| game.dm:353 | `flick_overlay_end` | REMOVED | only removes image I from clients; I is the deleted thing |
+| alert.dm:55 | `alert_timeout` | REMOVED | null-checks alert; deleted alert already cleared |
+| screen_objects.dm:1087 | `end_empty_flash` | REMOVED | cosmetic flash cleanup of F/user client |
+
+Remaining open: the `code/game/machinery` and `code/modules/power` sites, untouched by this lane.

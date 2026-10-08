@@ -171,7 +171,7 @@ CAPABILITIES(/obj/item/borg/cloak)
 	// raw `visibility`, so we don't clobber another source mid-flourish.
 	L.apply_combined_alpha(0.1 SECONDS)
 	apply_wibbly_filters(L, 0.5 SECONDS)
-	after(L, 0.5 SECONDS, GLOBAL_PROC_REF(robot_cloak_remove_wibble), with = list(L, FALSE), keeps_dead = TRUE)
+	after(L, 0.5 SECONDS, GLOBAL_PROC_REF(robot_cloak_remove_wibble), with = list(L, FALSE))
 
 /datum/body_effect/robot_cloak/proc/attacked_in_cloak(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)

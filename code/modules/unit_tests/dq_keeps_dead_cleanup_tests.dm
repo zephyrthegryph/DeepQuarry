@@ -12,6 +12,7 @@
 	qdel(smoke)
 	scheduler_advance(2)
 	TEST_ASSERT_EQUAL(S.total_smoke, 2, "a smoke puff deleted before it expired still frees its slot of the emitter")
+	qdel(S)
 
 /datum/unit_test/om/keeps_dead_confetti_counter_still_drops
 
@@ -23,6 +24,7 @@
 	qdel(confetti)
 	scheduler_advance(2)
 	TEST_ASSERT_EQUAL(S.total_confetti, 2, "a confetti puff deleted before it expired still frees its slot of the emitter")
+	qdel(S)
 
 /datum/unit_test/om/keeps_dead_mend_rune_releases_its_strain
 

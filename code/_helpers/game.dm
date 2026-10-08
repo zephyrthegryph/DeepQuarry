@@ -350,7 +350,7 @@
 /proc/flick_overlay(image/I, list/show_to, duration, gc_after)
 	for(var/client/C in show_to)
 		C.images += I
-	after(null, duration, GLOBAL_PROC_REF(flick_overlay_end), with = list(I, show_to, gc_after), keeps_dead = TRUE) // the global owner: clients own no entity
+	after(null, duration, GLOBAL_PROC_REF(flick_overlay_end), with = list(I, show_to, gc_after)) // the global owner: clients own no entity
 
 /proc/flick_overlay_view(image/I, atom/target, duration, gc_after) //wrapper for the above, flicks to everyone who can see the target atom
 	var/list/viewing = list()

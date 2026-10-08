@@ -319,7 +319,7 @@ TRACKED(/turf/simulated/wall, thermite)
 	F.icon_state = "dmg[rand(1,4)]"
 	to_chat(user, span_warning("The thermite starts melting through the wall."))
 
-	after(src, 10 SECONDS, PROC_REF(thermitemelt_cleanup), with = list(O), keeps_dead = TRUE)
+	after(src, 10 SECONDS, PROC_REF(thermitemelt_cleanup), with = list(O))
 //	F.sd_LumReset()		//TODO: ~Carn
 	return
 
