@@ -133,7 +133,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	if(overmind)
 		var/mob/observer/blob/dying = overmind
 		ended_with(dying, src)
-		qdel(dying)
+		consume(dying)
 
 /// A core draws no colour of its own: the blob body under it is tinted by its overmind, and the core overlay sits on top.
 /obj/structure/blob/core/look_parts(datum/look/look)

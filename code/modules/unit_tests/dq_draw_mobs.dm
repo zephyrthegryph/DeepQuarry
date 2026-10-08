@@ -165,3 +165,19 @@
 	TEST_ASSERT(overmind, "the core has an overmind")
 	qdel(core)
 	TEST_ASSERT(QDELETED(overmind), "the overmind goes with its core")
+
+/// The gripper draws the item it holds: taking one or letting it go redraws the gripper with no call.
+/datum/unit_test/dq_draw_gripper_redraws_on_held_item
+
+/datum/unit_test/dq_draw_gripper_redraws_on_held_item/Run()
+	var/turf/T = test_floor()
+	var/obj/item/gripper/G = allocate(/obj/item/gripper, T)
+	var/obj/item/pen/P = allocate(/obj/item/pen, T)
+	refresh_flush()
+	var/before = length(G.overlays)
+	G.update_ref(P)
+	refresh_flush()
+	TEST_ASSERT(length(G.overlays) > before, "a held item is drawn over the gripper")
+	G.update_ref(null)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(length(G.overlays), before, "and gone when it is let go")
