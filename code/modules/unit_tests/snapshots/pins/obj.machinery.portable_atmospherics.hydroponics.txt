@@ -14,6 +14,7 @@ robot|none click: Click: Use
 ai|none click: nothing
 ghost|none menu: Harvest (refused: )
 ghost|none click: Click: Harvest
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Remove Label
 human|/obj/item/tool/screwdriver menu: Set Light
@@ -22,6 +23,7 @@ human|/obj/item/tool/screwdriver menu: Toggle lid
 human|/obj/item/tool/screwdriver menu: Toggle Tray Lid
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Use
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Remove Label
 human|/obj/item/tool/crowbar menu: Set Light
@@ -31,6 +33,7 @@ human|/obj/item/tool/crowbar menu: Toggle Tray Lid
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Anchor
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Remove Label
 human|/obj/item/tool/wrench menu: Set Light
@@ -39,6 +42,7 @@ human|/obj/item/tool/wrench menu: Toggle lid
 human|/obj/item/tool/wrench menu: Toggle Tray Lid
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Anchor
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Remove Label
 human|/obj/item/tool/wirecutters menu: Set Light
@@ -48,6 +52,7 @@ human|/obj/item/tool/wirecutters menu: Toggle lid
 human|/obj/item/tool/wirecutters menu: Toggle Tray Lid
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Take a sample
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Remove Label
 human|/obj/item/multitool menu: Set Light
@@ -57,6 +62,7 @@ human|/obj/item/multitool menu: Toggle lid
 human|/obj/item/multitool menu: Toggle Tray Lid
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Toggle cryogenic freezing
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Remove Label
 human|/obj/item/weldingtool menu: Set Light
@@ -65,6 +71,7 @@ human|/obj/item/weldingtool menu: Toggle lid
 human|/obj/item/weldingtool menu: Toggle Tray Lid
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Use
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Remove Label
@@ -74,6 +81,7 @@ human|/obj/item/stack/cable_coil menu: Toggle lid
 human|/obj/item/stack/cable_coil menu: Toggle Tray Lid
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Remove Label
 human|/obj/item/stack/material/steel menu: Set Light
@@ -82,6 +90,7 @@ human|/obj/item/stack/material/steel menu: Toggle lid
 human|/obj/item/stack/material/steel menu: Toggle Tray Lid
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove Label
@@ -91,6 +100,7 @@ human|/obj/item/card/id menu: Toggle lid
 human|/obj/item/card/id menu: Toggle Tray Lid
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Hit
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Remove Label
 human|/obj/item menu: Set Light
@@ -99,6 +109,7 @@ human|/obj/item menu: Toggle lid
 human|/obj/item menu: Toggle Tray Lid
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
+human|/obj/item/tank menu: Hit
 human|/obj/item/tank menu: Insert tank
 human|/obj/item/tank menu: Move To Top
 human|/obj/item/tank menu: Remove Label
@@ -108,5 +119,5 @@ human|/obj/item/tank menu: Toggle lid
 human|/obj/item/tank menu: Toggle Tray Lid
 human|/obj/item/tank menu: Use
 human|/obj/item/tank click: Click: Insert tank
-keys: bolt, close_lid, drag_buckle, freezer, ghost_harvest, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, port, remove_label, robot_remote_blocked, sample, set_light, tank_bay.holding.insert, tend, tk_harvest, toggle_lid, use_item
+keys: bolt, close_lid, drag_buckle, freezer, ghost_harvest, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, port, remove_label, robot_remote_blocked, sample, set_light, tank_bay.holding.insert, tend, tk_harvest, toggle_lid, use_item
 

@@ -487,13 +487,13 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			// last look set (overlays, filters, vis_contents, base properties).
 			L.apply_to(A)
 			rx_of(A).look_key = null
-		if(apply && A.cap_data?[/datum/cap_engine_state])
+		if(apply && capability_data(A)?[/datum/cap_engine_state])
 			look_watch_sync(A, null)
 		return null
 	var/key = L.change_key()
 	if(apply)
 		// What the draw read of other entities: a change on any of them redraws A (kept in line with every draw, applied or not).
-		if(L.watched || A.cap_data?[/datum/cap_engine_state])
+		if(L.watched || capability_data(A)?[/datum/cap_engine_state])
 			look_watch_sync(A, L.watched)
 		if(key != A.rx?.look_key)
 			var/atom/outer = GLOB.refresh_applying

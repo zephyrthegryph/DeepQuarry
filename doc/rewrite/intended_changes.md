@@ -3267,3 +3267,12 @@ Pinned by `code/modules/unit_tests/dq_rel_lifecycle_pins.dm` and the `dq_om_rela
   `add_overlay()` merges them only when the atom has no overlays left, `cut_overlay()` never takes the blocker with a layer, and `cut_overlays()` keeps it.
   Every pin row that changes is that class: a `blocker x2` becoming the one blocker, or a probe row that only gained and lost the blocker.
 * The lightpost is a plain draw over tracked `lit` and `festive`; its light follows the look (`look.light()`, `look.light_off()`).
+
+## Batch 7b merge (fixes-small + links-hit + draw-framework on the machinery master)
+
+Pins were taken from the machinery side on every conflict and regenerated with `--bless` after the last merge; the classes below are every change that bless made.
+
+* **links-hit rows on the machinery pins** (360 `pins/` files): the `melee_hit` classes of the relations section above (`menu: Hit`, `keys:` gains `melee_hit`, `Move To Top` / `Toggle Digestable` / own-op rows on formerly empty menus, `Strike` becomes `Hit`). Where a swallow op is gone, a tool's `click: Click: Use` becomes `Click: Use item`, `Click: Toggle` (another listed op is now the best answer) or `nothing`.
+* **`hit_pins/` thermal glasses, sechailer, kinetic crusher**: the `refresh_bits: 2 -> 0` rows are gone. A draw mark no longer stays pending after the hit: the `add_overlay()` single-blocker fix (draw framework) means the emissive redraw these items queued is settled inside the hit. `refresh_queued` rows remain.
+* **Line numbers**: two `runtime while making it` rows (stardog, nikki rig) carry the line of `lifecycle_links.dm` in the stack; the link teardown call added two lines.
+* **Not blessed**: the `look_trees` row of `electronic_assembly` (it would record the pre-existing `op_clash` runtime in place of its overlay) stays as before.

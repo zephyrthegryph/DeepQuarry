@@ -18,6 +18,7 @@ ghost|none menu: Rotate Counter Clockwise
 ghost|none menu: Turn Around
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Rotate Clockwise
 human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise
@@ -25,6 +26,7 @@ human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do 
 human|/obj/item/tool/screwdriver menu: Turn Around
 human|/obj/item/tool/screwdriver click: nothing
 human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Rotate Clockwise
 human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise
@@ -33,6 +35,7 @@ human|/obj/item/tool/crowbar menu: Turn Around
 human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Bolt to the floor
 human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Rotate Clockwise
 human|/obj/item/tool/wrench menu: Rotate Counter Clockwise
@@ -40,6 +43,7 @@ human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.
 human|/obj/item/tool/wrench menu: Turn Around
 human|/obj/item/tool/wrench click: Click: Bolt to the floor
 human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Rotate Clockwise
 human|/obj/item/tool/wirecutters menu: Rotate Counter Clockwise
@@ -47,6 +51,7 @@ human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do 
 human|/obj/item/tool/wirecutters menu: Turn Around
 human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Rotate Clockwise
 human|/obj/item/multitool menu: Rotate Counter Clockwise
@@ -54,6 +59,7 @@ human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Turn Around
 human|/obj/item/multitool click: nothing
 human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Rotate Clockwise
 human|/obj/item/weldingtool menu: Rotate Counter Clockwise
@@ -62,6 +68,7 @@ human|/obj/item/weldingtool menu: Turn Around
 human|/obj/item/weldingtool menu: Weld to the floor (refused: It needs to be wrenched to the floor.)
 human|/obj/item/weldingtool click: Click: Weld to the floor
 human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Lay cable
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
@@ -71,6 +78,7 @@ human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do 
 human|/obj/item/stack/cable_coil menu: Turn Around
 human|/obj/item/stack/cable_coil click: Click: Lay cable
 human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Repair with steel (refused: It's already fully repaired.)
 human|/obj/item/stack/material/steel menu: Rotate Clockwise
@@ -79,6 +87,7 @@ human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't
 human|/obj/item/stack/material/steel menu: Turn Around
 human|/obj/item/stack/material/steel click: Click: Repair with steel
 human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Rotate Clockwise
@@ -88,6 +97,7 @@ human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Turn Around
 human|/obj/item/card/id click: Click: Toggle
 human|/obj/item menu: Climb
+human|/obj/item menu: Hit
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Rotate Clockwise
 human|/obj/item menu: Rotate Counter Clockwise
@@ -95,6 +105,7 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Turn Around
 human|/obj/item click: nothing
 human|/obj/item/pda menu: Climb
+human|/obj/item/pda menu: Hit
 human|/obj/item/pda menu: Move To Top
 human|/obj/item/pda menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item/pda menu: Remove id (refused: You can't do that.)
@@ -107,6 +118,7 @@ human|/obj/item/pda menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pda menu: Turn Around
 human|/obj/item/pda click: Click: Toggle
 human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Hit
 human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Rotate Clockwise
 human|/obj/item/card/emag menu: Rotate Counter Clockwise
@@ -115,6 +127,7 @@ human|/obj/item/card/emag menu: Turn Around
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
 human|/obj/item/anomaly_scanner menu: Climb
+human|/obj/item/anomaly_scanner menu: Hit
 human|/obj/item/anomaly_scanner menu: Move To Top
 human|/obj/item/anomaly_scanner menu: Rotate Clockwise
 human|/obj/item/anomaly_scanner menu: Rotate Counter Clockwise
@@ -122,5 +135,5 @@ human|/obj/item/anomaly_scanner menu: Toggle anomalous mode
 human|/obj/item/anomaly_scanner menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/anomaly_scanner menu: Turn Around
 human|/obj/item/anomaly_scanner click: Click: Toggle anomalous mode
-keys: anomalous, cable_place, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, floor_weld.bolt, floor_weld.weld, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, particle, repair, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, toggle
+keys: anomalous, cable_place, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, floor_weld.bolt, floor_weld.weld, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, particle, repair, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, toggle
 
