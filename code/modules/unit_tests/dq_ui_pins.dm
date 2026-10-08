@@ -22,13 +22,22 @@
 /// A window stand-in for the pins and the push tests: counts the pushes the framework delivers to it (no client, no browser).
 /datum/tgui/dq_ui_probe
 	var/pushes = 0
+	/// The UI_PUSH_* bits the last delivery carried.
+	var/last_owed = 0
+	/// Status re-checks (process_status() calls) the framework made.
+	var/status_checks = 0
 
 /datum/tgui/dq_ui_probe/New()
 	return
 
-/datum/tgui/dq_ui_probe/push_coalesced()
+/datum/tgui/dq_ui_probe/push_coalesced(owed = UI_PUSH_DATA)
 	pushes++
+	last_owed = owed
 	return TRUE
+
+/datum/tgui/dq_ui_probe/process_status()
+	status_checks++
+	return FALSE
 
 /// One scripted host. Abstract; the subtypes live in dq_ui_pins_*.dm.
 /datum/ui_pin

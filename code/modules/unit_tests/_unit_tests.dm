@@ -397,6 +397,7 @@
 #include "dq_ui_pins.dm"
 #include "dq_ui_pins_admin.dm"
 #include "dq_ui_pins_other.dm"
+#include "dq_ui_outputs_tests.dm"
 #include "dq_interaction_entry_tests.dm"
 #include "dx_cap_anchor_tests.dm"
 #include "dx_cap_assembly_tests.dm"
