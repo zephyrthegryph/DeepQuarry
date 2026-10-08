@@ -102,6 +102,7 @@
 		if(QDELETED(made))
 			. = list("deleted itself on creation")
 		else
+			stat_drain_point() // a tick runs the on_change reactions (a floor's edges follow the flooring it was laid with) before it draws
 			appearance_flush()
 			. = dq_look_pin_lines(made)
 	catch(var/exception/e)

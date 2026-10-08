@@ -71,7 +71,7 @@
 /proc/turf_edges_refresh(turf/center)
 	if(!center)
 		return
-	for(var/turf/simulated/S as anything in RANGE_TURFS(1, center))
+	for(var/turf/simulated/S in RANGE_TURFS(1, center)) // `in`, not `as anything`: the filter keeps space and unsimulated tiles out
 		S.edges_refresh()
 
 /// Tracing for the edge masks (a mask that is wrong is hard to see): written to the world log when GLOB.turf_edge_tracing is on.

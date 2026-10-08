@@ -30,17 +30,22 @@
 	RETURN_TYPE(/turf)
 	return locate(second_at[1], second_at[2], second_at[3])
 
+/// What a kernel tick does between a change and the next draw: the on_change reactions run at a drain point, then the looks are drawn.
+/datum/unit_test/dq_turf_edges/proc/settle()
+	stat_drain_point()
+	appearance_flush()
+
 /// Makes the first tile a turf of `type` and settles the draws; returns it.
 /datum/unit_test/dq_turf_edges/proc/make_first(type)
 	RETURN_TYPE(/turf)
 	var/turf/made = first_tile().ChangeTurf(type)
-	appearance_flush()
+	settle()
 	return made
 
 /datum/unit_test/dq_turf_edges/proc/make_second(type)
 	RETURN_TYPE(/turf)
 	var/turf/made = second_tile().ChangeTurf(type)
-	appearance_flush()
+	settle()
 	return made
 
 /datum/unit_test/dq_turf_edges/proc/put_tiles_back()
@@ -50,7 +55,8 @@
 /// How many overlays of the turf show `state`.
 /datum/unit_test/dq_turf_edges/proc/overlays_showing(turf/T, state)
 	var/count = 0
-	for(var/image/overlay_image in T.overlays)
+	for(var/overlay_entry in T.overlays) // appearances, not images: no type filter on the loop variable
+		var/image/overlay_image = overlay_entry
 		if(overlay_image.icon_state == state)
 			count++
 	return count
@@ -66,13 +72,13 @@
 	var/key_before = A.rx?.look_key
 
 	B.install_flooring(get_flooring_data(/datum/decl/flooring/tiling))
-	appearance_flush()
+	settle()
 	TEST_ASSERT(A.edge_mask & EAST, "grass beside another flooring has a border on that side: [A.edge_mask]")
 	TEST_ASSERT(length(A.overlays) > overlays_before, "the edge overlay is drawn on the grass ([length(A.overlays)] vs [overlays_before])")
 	TEST_ASSERT(A.rx?.look_key != key_before, "the grass redrew with no update_icon() call")
 
 	B.install_flooring(get_flooring_data(/datum/decl/flooring/grass))
-	appearance_flush()
+	settle()
 	TEST_ASSERT(!(A.edge_mask & EAST), "and the border goes when the neighbour is grass again: [A.edge_mask]")
 	TEST_ASSERT_EQUAL(length(A.overlays), overlays_before, "with its overlay")
 	put_tiles_back()
@@ -133,9 +139,9 @@
 	TEST_ASSERT_EQUAL(overlays_showing(D, D.water_state), 1, "the water sprite is on the tile once")
 	var/shown_state = D.water_state
 	D.set_water_state("water_deep")
-	appearance_flush()
+	settle()
 	D.set_water_state(shown_state)
-	appearance_flush()
+	settle()
 	TEST_ASSERT_EQUAL(overlays_showing(D, D.water_state), 1, "and still once after the state changed and came back")
 	put_tiles_back()
 
