@@ -618,7 +618,6 @@ TRACKED(/obj/item/clothing/accessory/collar/khcrystal, watching)
 /obj/item/clothing/accessory/collar/khcrystal/proc/update_state(tostate)
 	state = tostate
 	icon_state = "[initial(icon_state)][tostate]"
-	update_icon()
 
 /obj/item/paper/khcrystal_manual
 	name = "VM-LC91-1 manual"

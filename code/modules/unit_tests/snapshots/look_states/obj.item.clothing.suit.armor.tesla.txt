@@ -1,0 +1,17 @@
+/obj/item/clothing/suit/armor/tesla active=0 +state: tesla_armor_0
+/obj/item/clothing/suit/armor/tesla active=0 +overlay: icons/inventory/suit/item.dmi:tesla_armor_0:8:#000000
+/obj/item/clothing/suit/armor/tesla active=0 -state: tesla_armor_1
+/obj/item/clothing/suit/armor/tesla active=0 -overlay: icons/inventory/suit/item.dmi:tesla_armor_1:8:#000000
+/obj/item/clothing/suit/armor/tesla ready=0 +state: tesla_armor_0
+/obj/item/clothing/suit/armor/tesla ready=0 +overlay: icons/inventory/suit/item.dmi:tesla_armor_0:8:#000000
+/obj/item/clothing/suit/armor/tesla ready=0 -state: tesla_armor_1
+/obj/item/clothing/suit/armor/tesla ready=0 -overlay: icons/inventory/suit/item.dmi:tesla_armor_1:8:#000000
+/obj/item/clothing/suit/armor/tesla/vistor active=0 +state: tesla_armor_0
+/obj/item/clothing/suit/armor/tesla/vistor active=0 +overlay: icons/inventory/suit/item.dmi:tesla_armor_0:8:#000000
+/obj/item/clothing/suit/armor/tesla/vistor active=0 -state: tesla_armor_1
+/obj/item/clothing/suit/armor/tesla/vistor active=0 -overlay: icons/inventory/suit/item.dmi:tesla_armor_1:8:#000000
+/obj/item/clothing/suit/armor/tesla/vistor ready=0 +state: tesla_armor_0
+/obj/item/clothing/suit/armor/tesla/vistor ready=0 +overlay: icons/inventory/suit/item.dmi:tesla_armor_0:8:#000000
+/obj/item/clothing/suit/armor/tesla/vistor ready=0 -state: tesla_armor_1
+/obj/item/clothing/suit/armor/tesla/vistor ready=0 -overlay: icons/inventory/suit/item.dmi:tesla_armor_1:8:#000000
+

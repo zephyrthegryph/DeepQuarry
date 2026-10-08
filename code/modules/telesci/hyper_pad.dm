@@ -111,7 +111,7 @@ CAPABILITIES(/obj/machinery/hyperpad/centre)
 			var/obj/machinery/hyperpad/new_pad = new /obj/machinery/hyperpad(T)
 			rel_add(src, nameof(linked), new_pad) // the centre's pieces go with it
 			rel_set(new_pad, nameof(new_pad.primary), src)
-			new_pad.dir = dirs[iterate]
+			new_pad.set_dir(dirs[iterate])
 			iterate += 1
 		if(length(linked) == 8)
 			ready = 1

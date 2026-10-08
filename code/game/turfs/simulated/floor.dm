@@ -17,7 +17,10 @@
 	var/list/old_decals = null
 
 	// Flooring data.
+	/// The icon_state a flooring with a range of variants (has_base_range) was rolled to, rolled once when the flooring is laid; null: the flooring's own.
 	var/flooring_override
+	/// Which of the four damaged-plating sprites (dmg1-4) this floor shows once broken or burnt, rolled when it is damaged.
+	var/plating_damage_state = 1
 	var/initial_flooring
 	var/datum/decl/flooring/flooring
 	var/mineral = DEFAULT_WALL_MATERIAL
@@ -25,6 +28,9 @@
 
 	thermal_conductivity = 0.040
 	heat_capacity = FLOOR_HEAT_CAPACITY
+
+TRACKED(/turf/simulated/floor, flooring_override)
+TRACKED(/turf/simulated/floor, plating_damage_state)
 
 /turf/simulated/floor/is_plating()
 	return (!flooring || flooring.is_plating)
@@ -57,10 +63,19 @@
 	decals = old_decals
 	old_decals = current_decals
 
+/// The sprite a flooring with a range of variants is laid with: its base (and the season's) with one of its variant numbers.
+/turf/simulated/floor/proc/rolled_flooring_state()
+	var/state = flooring.icon_base
+	if(flooring.check_season)
+		state = "[state]-[GLOB.world_time_season]"
+	return "[state][rand(0, flooring.has_base_range)]"
+
 /turf/simulated/floor/proc/set_flooring(datum/decl/flooring/newflooring, initializing)
 	if(is_plating() && !initializing) // Plating -> Flooring
 		swap_decals()
 	flooring = newflooring
+	if(flooring?.has_base_range && !flooring_override)
+		set_flooring_override(rolled_flooring_state()) // rolled once here, not on every draw
 	if(!initializing)
 		restore_floor_integrity()
 		update_icon()
@@ -93,7 +108,7 @@
 	set_light(0)
 	broken = null
 	burnt = null
-	flooring_override = null
+	set_flooring_override(null)
 	levelupdate()
 
 	if(!defer_icon_update)

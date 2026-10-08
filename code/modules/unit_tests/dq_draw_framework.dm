@@ -151,3 +151,252 @@ TRACKED(/obj/dq_draw_watched, shown)
 	H.stat = DEAD
 	TEST_ASSERT_EQUAL(look.life_state(H, "live", "rest", "dead"), "dead", "a dead one shows the dead state")
 	H.stat = CONSCIOUS
+
+// ---- dir: a draw that reads dir redraws when set_dir() changes it; look.offset() ----
+
+/obj/dq_draw_facing
+	name = "draw facing"
+	icon = 'icons/obj/stock_parts.dmi'
+	icon_state = "fix"
+
+/obj/dq_draw_facing/draw(datum/look/look)
+	..()
+	look.overlay("facing-[dir]")
+	if(dir == NORTH)
+		look.offset(0, -32)
+
+/datum/unit_test/dq_draw_dir_read_redraws_on_set_dir
+
+/datum/unit_test/dq_draw_dir_read_redraws_on_set_dir/Run()
+	var/turf/T = test_floor()
+	var/obj/dq_draw_facing/A = allocate(/obj/dq_draw_facing, T)
+	refresh_flush()
+	A.set_dir(SOUTH)
+	refresh_flush()
+	TEST_ASSERT(("facing-[SOUTH]" in A.rx?.look_overlays), "the draw read the dir: [json_encode(A.rx?.look_overlays)]")
+	A.set_dir(EAST)
+	refresh_flush()
+	TEST_ASSERT(("facing-[EAST]" in A.rx?.look_overlays), "a change of dir through set_dir() redraws: [json_encode(A.rx?.look_overlays)]")
+	TEST_ASSERT(!("facing-[SOUTH]" in A.rx?.look_overlays), "and the old facing is gone")
+	A.setDir(WEST)
+	refresh_flush()
+	TEST_ASSERT(("facing-[WEST]" in A.rx?.look_overlays), "setDir() is the same path: [json_encode(A.rx?.look_overlays)]")
+
+/datum/unit_test/dq_draw_offset_follows_the_look
+
+/datum/unit_test/dq_draw_offset_follows_the_look/Run()
+	var/turf/T = test_floor()
+	var/obj/dq_draw_facing/A = allocate(/obj/dq_draw_facing, T)
+	refresh_flush()
+	A.set_dir(NORTH)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(A.pixel_y, -32, "look.offset() moves the holder")
+	A.set_dir(SOUTH)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(A.pixel_y, initial(A.pixel_y), "a draw that stops naming the offset gives the mapped one back")
+
+/datum/unit_test/dq_draw_wall_bin_sits_in_its_wall
+
+/datum/unit_test/dq_draw_wall_bin_sits_in_its_wall/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/disposal/wall/A = allocate(/obj/machinery/disposal/wall, T)
+	refresh_flush()
+	A.face(NORTH)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(A.pixel_y, -32, "a wall bin facing north is offset into the wall")
+	A.face(EAST)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(A.pixel_x, -32, "turning it moves it to the wall it faces now")
+	TEST_ASSERT_EQUAL(A.pixel_y, 0, "and out of the first one")
+
+// ---- look.watch() and the proof types: the medical stand, the furnace ----
+
+/datum/unit_test/dq_draw_medical_stand_follows_its_beaker
+
+/datum/unit_test/dq_draw_medical_stand_follows_its_beaker/Run()
+	var/turf/T = test_floor()
+	var/obj/structure/medical_stand/S = allocate(/obj/structure/medical_stand, T)
+	var/obj/item/reagent_containers/glass/beaker/B = allocate(/obj/item/reagent_containers/glass/beaker, T)
+	refresh_flush()
+	rel_set(S, nameof(S.beaker), B)
+	refresh_flush()
+	TEST_ASSERT(("beaker" in S.rx?.look_overlays), "the beaker is drawn: [json_encode(S.rx?.look_overlays)]")
+	TEST_ASSERT(("line" in S.rx?.look_overlays), "with the line not attached")
+	var/before = S.rx?.look_key
+	B.reagents.add_reagent(REAGENT_ID_WATER, 30)
+	refresh_flush()
+	TEST_ASSERT(S.rx?.look_key != before, "filling the beaker redraws the stand through the watch")
+	rel_take(S, nameof(S.beaker))
+	refresh_flush()
+	TEST_ASSERT(!("beaker" in S.rx?.look_overlays), "and it goes when the beaker is taken")
+
+/datum/unit_test/dq_draw_furnace_flip_and_turn_redraw
+
+/datum/unit_test/dq_draw_furnace_flip_and_turn_redraw/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/reagent_refinery/furnace/F = allocate(/obj/machinery/reagent_refinery/furnace, T)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(F.icon_state, "furnace_l", "a furnace sinters to its left")
+	F.set_filter_side(1)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(F.icon_state, "furnace_r", "the tracked side redraws it")
+	var/before = F.rx?.look_key
+	F.set_dir(EAST)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(F.dir, EAST, "it turned")
+	TEST_ASSERT(F.rx?.look_key != before || !F.reagents.total_volume, "a turn redraws a furnace that shows a filling")
+
+// ---- look.neighbours() and the proof types: the refinery hub, the table; dir published by a native turn ----
+
+/datum/unit_test/dq_draw_hub_hears_its_neighbour
+
+/datum/unit_test/dq_draw_hub_hears_its_neighbour/Run()
+	var/turf/T = test_floor()
+	var/turf/ahead = get_step(T, SOUTH)
+	var/obj/machinery/reagent_refinery/hub/H = allocate(/obj/machinery/reagent_refinery/hub, T)
+	H.set_dir(SOUTH)
+	refresh_flush()
+	TEST_ASSERT(H.rx?.look_key, "the hub drew")
+	TEST_ASSERT(ahead.rel_watchers, "and watches the turf it faces")
+	var/before = H.rx?.look_key
+	// The pump is made and turned elsewhere first, so its arrival is the only change the hub is told about.
+	var/obj/machinery/reagent_refinery/pump/P = allocate(/obj/machinery/reagent_refinery/pump, get_step(T, NORTH))
+	P.set_dir(NORTH)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(H.rx?.look_key, before, "a machine elsewhere changes nothing")
+	P.forceMove(ahead)
+	refresh_flush()
+	TEST_ASSERT(H.rx?.look_key != before, "a machine arriving on the turf it faces redraws the hub")
+	before = H.rx?.look_key
+	P.set_dir(SOUTH)
+	refresh_flush()
+	TEST_ASSERT(H.rx?.look_key != before, "and its turning away redraws it again (the neighbour's dir is watched)")
+	P.set_dir(NORTH)
+	refresh_flush()
+	before = H.rx?.look_key
+	qdel(P)
+	refresh_flush()
+	TEST_ASSERT(H.rx?.look_key != before, "and so does its leaving")
+
+/datum/unit_test/dq_draw_dir_published_by_a_native_turn
+
+/datum/unit_test/dq_draw_dir_published_by_a_native_turn/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/reagent_refinery/furnace/F = allocate(/obj/machinery/reagent_refinery/furnace, T)
+	refresh_flush()
+	var/before = F.rx?.look_key
+	F.dir = EAST // BYOND turns a mover on Move() without calling set_dir(); this is what that leaves behind
+	F.Moved(T, EAST)
+	refresh_flush()
+	TEST_ASSERT(F.rx?.look_key != before || !F.reagents.total_volume, "Moved() publishes a dir that changed")
+	before = F.rx?.look_key
+	F.Moved(T, EAST)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(F.rx?.look_key, before, "and nothing when it did not")
+
+/datum/unit_test/dq_draw_table_connections_are_tracked
+
+/datum/unit_test/dq_draw_table_connections_are_tracked/Run()
+	var/turf/T = test_floor()
+	var/obj/structure/table/A = allocate(/obj/structure/table, T)
+	refresh_flush()
+	var/before = A.rx?.look_key
+	A.set_connections(string_list(list("1", "0", "0", "0")))
+	refresh_flush()
+	TEST_ASSERT(A.rx?.look_key != before, "the table redraws when its connections change")
+
+// ---- floors: the variant is rolled once into tracked state, not in the draw ----
+
+/datum/unit_test/dq_draw_floor_variant_is_rolled_once
+
+/datum/unit_test/dq_draw_floor_variant_is_rolled_once/Run()
+	var/turf/T = test_floor()
+	var/turf/spot = get_step(T, EAST)
+	var/turf/simulated/floor/F = spot.ChangeTurf(/turf/simulated/floor/grass)
+	TEST_ASSERT(F.flooring?.has_base_range, "a grass floor has a range of variants")
+	TEST_ASSERT(F.flooring_override, "its variant was rolled when the flooring was laid: [F.flooring_override]")
+	var/rolled = F.flooring_override
+	for(var/i in 1 to 5)
+		F.update_icon()
+		appearance_flush()
+		TEST_ASSERT_EQUAL(F.icon_state, rolled, "a redraw keeps the rolled variant")
+	F.set_flooring_override(null)
+	TEST_ASSERT_EQUAL(F.flooring_override, null, "the override is set through its tracked setter")
+	spot.ChangeTurf(T.type)
+
+// ---- cards: the sprite stack is tracked ----
+
+/datum/unit_test/dq_draw_card_redraws_on_sprite_stack
+
+/datum/unit_test/dq_draw_card_redraws_on_sprite_stack/Run()
+	var/turf/T = test_floor()
+	var/obj/item/card/id/C = allocate(/obj/item/card/id, T)
+	refresh_flush()
+	var/before = C.rx?.look_key
+	C.set_sprite_stack(list("base-stamp", "top-red"))
+	refresh_flush()
+	TEST_ASSERT(C.rx?.look_key != before, "setting the sprite stack redraws the card without an update_icon() call")
+	TEST_ASSERT_EQUAL(C.icon_state, "base-stamp", "its first layer is the base")
+
+// ---- furniture: the chair's armrests follow who is buckled; the cached image helper shares one image per key ----
+
+/datum/unit_test/dq_draw_chair_follows_buckling
+
+/datum/unit_test/dq_draw_chair_follows_buckling/Run()
+	var/turf/T = test_floor()
+	var/obj/structure/bed/chair/bay/chair/C = allocate(/obj/structure/bed/chair/bay/chair, T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	refresh_flush()
+	var/before = C.rx?.look_key
+	C.buckle_mob(H, TRUE, FALSE)
+	refresh_flush()
+	TEST_ASSERT(C.has_buckled_mobs(), "the mob is buckled")
+	TEST_ASSERT(C.rx?.look_key != before, "buckling a mob redraws the chair (its armrests) without an update_icon() call")
+	C.unbuckle_mob(H, TRUE)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(C.rx?.look_key, before, "and unbuckling takes them off again")
+
+/datum/unit_test/dq_draw_cached_image_is_shared
+
+/datum/unit_test/dq_draw_cached_image_is_shared/Run()
+	var/image/A = look_cached_image("test-key", 'icons/obj/furniture.dmi', "bed", "#ff0000", MOB_PLANE, ABOVE_MOB_LAYER)
+	var/image/B = look_cached_image("test-key", 'icons/obj/furniture.dmi', "bed", "#ff0000", MOB_PLANE, ABOVE_MOB_LAYER)
+	TEST_ASSERT(A == B, "one key is one shared image")
+	TEST_ASSERT_EQUAL(A.plane, MOB_PLANE, "built with its plane")
+	TEST_ASSERT_EQUAL(A.color, "#ff0000", "and its tint")
+
+// ---- clothing: a lit helmet shows its lamp on the item and on every species' worn sprite ----
+
+/datum/unit_test/dq_draw_helmet_lamp_worn_by_sprite_sheet_species
+
+/datum/unit_test/dq_draw_helmet_lamp_worn_by_sprite_sheet_species/Run()
+	var/turf/T = test_floor()
+	var/obj/item/clothing/head/helmet/H = allocate(/obj/item/clothing/head/helmet, T)
+	H.sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi')
+	refresh_flush()
+	var/before = H.rx?.look_key
+	H.set_light_on(TRUE)
+	refresh_flush()
+	TEST_ASSERT(H.rx?.look_key != before, "lighting the lamp redraws the helmet (the lit lamp is a layer of its look)")
+	var/image/worn = H.make_worn_icon(SPECIES_TESHARI, slot_head_str, FALSE, 'icons/inventory/head/mob.dmi', 0)
+	TEST_ASSERT(!isnull(worn), "a worn sprite is made for a species with its own sheet")
+	var/found = FALSE
+	for(var/layer in worn.overlays)
+		var/mutable_appearance/MA = new(layer)
+		if(MA.icon_state == H.light_overlay)
+			found = TRUE
+	TEST_ASSERT(found, "and it carries the helmet lamp (the cache key used to differ between the writer and the reader, so this species never had one)")
+
+/datum/unit_test/dq_draw_clothing_shows_its_blood
+
+/datum/unit_test/dq_draw_clothing_shows_its_blood/Run()
+	var/turf/T = test_floor()
+	var/obj/item/clothing/under/color/blue/C = allocate(/obj/item/clothing/under/color/blue, T)
+	refresh_flush()
+	var/before = C.rx?.look_key
+	C.init_forensic_data().add_blooddna(null, null)
+	TEST_ASSERT(C.forensic_data?.has_blooddna(), "the garment carries blood DNA")
+	dq_set_was_bloodied(C, TRUE)
+	dq_set_blood_color(C, "#aa0000")
+	refresh_flush()
+	TEST_ASSERT(C.rx?.look_key != before, "a bloodied garment draws its stain from the tracked blood colour, without add_blood() adding an overlay")

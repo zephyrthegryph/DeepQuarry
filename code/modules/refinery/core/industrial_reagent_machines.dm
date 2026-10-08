@@ -41,6 +41,10 @@
 // wrenching, turning, a player's setting (interaction_ran()), power.
 
 /// Wakes this machine and the refinery machines next to it (a change here can unblock them).
+/// Whether a hub standing `back` of this machine takes what it sends (the machine feeds the hub): by default, when it faces the hub.
+/obj/machinery/reagent_refinery/proc/hub_intake(back)
+	return dir == back
+
 /obj/machinery/reagent_refinery/proc/wake_refinery_line()
 	work_start(src)
 	for(var/direction in GLOB.cardinal)

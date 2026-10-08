@@ -20,6 +20,8 @@
 	var/containment_policy_disabled = FALSE
 	/// Cache of the last applied appearance and derived verb decisions.
 	var/look_key
+	/// The dir last published to a drawn mover's look (Moved() compares it, because Move() turns a mover natively).
+	var/look_seen_dir
 	var/list/look_overlays
 	var/list/refresh_hidden_verbs
 	var/list/refresh_granted_verbs

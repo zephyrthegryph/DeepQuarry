@@ -59,7 +59,7 @@ DECL_KINDS = ("APPEARANCE_TEMPLATE", "APPEARANCE_LEVEL", "APPEARANCE_EMISSIVE", 
 DECL_START = re.compile(r"^(" + "|".join(DECL_KINDS) + r")\((/[\w/]+)")
 NO_EDIT = ("code/modules/unit_tests/", "code/tests/", "code/engine/", "code/__defines/", "code/_generated/", "code/modules/benchmarks/")
 LOOK_SETTERS = {"color": "set_color", "alpha": "set_alpha", "layer": "set_layer", "plane": "set_plane", "dir": "set_dir", "icon": "set_icon", "transform": "set_transform"}
-COVERED_BUILTINS = {"density", "opacity", "anchored"}
+COVERED_BUILTINS = {"density", "opacity", "anchored", "dir"}  # dir: /atom/set_dir() publishes it (a tracked read of every drawn atom)
 KEYWORDS = {
     "if", "else", "for", "while", "do", "switch", "return", "var", "in", "to", "step", "as", "new", "del", "null", "src", "usr", "TRUE", "FALSE",
     "list", "world", "GLOB", "look", "break", "continue", "set", "global", "proc", "verb", "tmp", "static", "const", "drawn_state", "INFINITY",
@@ -501,6 +501,7 @@ def provider_lines(ix, t, rel, start, end, has_parent_provider):
     if has_parent_provider and not saw_super:
         raise Residue("replaces_parent")
     out = fold_images(out)
+    out = fold_offsets(out)
     # trailing blank lines, and a bare return that ends the body, go
     while out and (not out[-1].strip() or (strip_code(out[-1]).strip() == "return" and re.match(r"^\t\S", out[-1]))):
         out.pop()
@@ -508,6 +509,29 @@ def provider_lines(ix, t, rel, start, end, has_parent_provider):
         ind = next((re.match(r"^[ \t]*", x).group(0) for x in out if x.strip()), "\t")
         out.insert(0, ind + "var/drawn_state = look.state_so_far(src)")
     return out
+
+
+def fold_offsets(lines):
+    """`pixel_x = X` and `pixel_y = Y` (both, at one indent) become one `look.offset(x = X, y = Y)` at the later of the two (the holder's pixel
+    offset is part of the look). One of the pair alone stays residue: look.offset() sets both."""
+    out = list(lines)
+    marks = {}
+    for i, line in enumerate(out):
+        m = re.match(r"^([ 	]*)__offset_([xy])__ (.*)$", line)
+        if m:
+            marks.setdefault((m.group(1), m.group(2)), []).append((i, m.group(3)))
+    done = set()
+    for ind in {k[0] for k in marks}:
+        xs, ys = marks.get((ind, "x"), []), marks.get((ind, "y"), [])
+        if len(xs) != 1 or len(ys) != 1:
+            raise Residue("writes_state:pixel_offset")
+        (xi, xv), (yi, yv) = xs[0], ys[0]
+        out[max(xi, yi)] = "%slook.offset(x = %s, y = %s)" % (ind, xv, yv)
+        done.add(min(xi, yi))
+    kept = [l for i, l in enumerate(out) if i not in done]
+    if any("__offset_" in l for l in kept):
+        raise Residue("writes_state:pixel_offset")
+    return kept
 
 
 def fold_images(lines):
@@ -629,7 +653,27 @@ def split_control(stmt):
     return stmt[: k + 1], stmt[k + 1 :].strip()
 
 
+NEIGH_DIR = r"((?:[^()]|\([^()]*\))+?)"
+NEIGH_FORMS = (
+    # locate_on(get_step(get_turf(src), D), /T), locate_within(get_step(src, D), /T)
+    (re.compile(r"\blocate_(?:on|within)\(\s*get_step\(\s*(?:get_turf\(src\)|src)\s*,\s*" + NEIGH_DIR + r"\s*\)\s*,\s*(/[\w/]+)\s*\)"), 1, 2),
+    # locate(/T, get_step(src, D))
+    (re.compile(r"\blocate\(\s*(/[\w/]+)\s*,\s*get_step\(\s*(?:get_turf\(src\)|src)\s*,\s*" + NEIGH_DIR + r"\s*\)\s*\)"), 2, 1),
+    # locate(/T) in get_step(src, D)
+    (re.compile(r"\blocate\(\s*(/[\w/]+)\s*\)\s+in\s+get_step\(\s*(?:get_turf\(src\)|src)\s*,\s*" + NEIGH_DIR + r"\s*\)"), 2, 1),
+)
+
+
+def neighbour_calls(expr):
+    """The legacy ways to ask what stands on the turf a direction away (locate on get_step) become look.neighbour(src, dir, /type): the draw
+    then hears a mover of that type arriving or leaving, and the neighbour's own tracked changes."""
+    for rx, dir_group, type_group in NEIGH_FORMS:
+        expr = rx.sub(lambda m: "look.neighbour(src, %s, %s)" % (m.group(dir_group).strip(), m.group(type_group)), expr)
+    return expr
+
+
 def fix_expr(expr, state_reads):
+    expr = neighbour_calls(expr)
     code = strip_code(expr)
     if re.search(r"(?<![\w.])\.(?![\w.])", code.replace("..", "")):
         raise Residue("dot_use")
@@ -665,6 +709,8 @@ def translate_stmt(ix, t, stmt, locals_, state_reads):
             return "look.state(%s)" % fix_expr(rhs, False)
         if lhs in LOOK_SETTERS and op == "=":
             return "look.%s(%s)" % (LOOK_SETTERS[lhs], fix_expr(rhs, state_reads))
+        if lhs in ("pixel_x", "pixel_y") and op == "=":
+            return "__offset_%s__ %s" % (lhs[-1], fix_expr(rhs, state_reads))  # fold_offsets() pairs the two into look.offset()
         if lhs == "item_state" and op == "=":
             return "look.held_state(%s)" % fix_expr(rhs, state_reads)
         if lhs in ("name", "desc") and op == "=":
@@ -851,12 +897,22 @@ def plan_component(ix, comp):
         rel, s, e = ix.providers[t][0]
         return any(strip_code(x).strip() in ("..()", ". = ..()", ". += ..()") for x in ix.files[rel].lines[s + 1 : e])
     parts_mode = any(ix.providers.get(t) and not has_super(t) and any(ix.providers.get(a) for a in ix.chain(t)[1:] if a in members) for t in comp)
+    # A type that draws nothing (APPEARANCE_NONE) under a provider is an empty look_parts(): it hides what the provider set, whatever that was
+    # (a state, an icon, a colour), which look.hide() cannot take back.
+    if not parts_mode and any([d[0] for d in ix.decls.get(t, [])] == ["APPEARANCE_NONE"] and not ix.providers.get(t) and not ix.draws.get(t) and any(ix.providers.get(a) for a in ix.chain(t)[1:] if a in members) for t in comp):
+        parts_mode = True
     for t in comp:
         lines = []
         anc = [a for a in ix.chain(t)[1:] if a in members]
         if parts_mode and ix.decls.get(t) and any(ix.providers.get(a) for a in anc):
-            if any(d[0] in ("APPEARANCE_TEMPLATE", "DECLARE_APPEARANCE", "APPEARANCE_NONE") for d in ix.decls[t]):
+            if any(d[0] in ("APPEARANCE_TEMPLATE", "DECLARE_APPEARANCE") for d in ix.decls[t]):
                 raise Residue("order")
+            if any(d[0] == "APPEARANCE_NONE" for d in ix.decls[t]):
+                # APPEARANCE_NONE under providers: the type draws none of what they draw, so its look_parts() is empty (no ..())
+                if len(ix.decls[t]) != 1 or ix.providers.get(t) or ix.draws.get(t):
+                    raise Residue("order")
+                plans[t] = {"lines": [], "parts_none": ix.decls[t][0], "extras": []}
+                continue
         for kind, rel, first, last, raw in ix.decls.get(t, []):
             if kind == "APPEARANCE_NONE":
                 lines += none_lines(t, [plans[a]["lines"] for a in anc if a in plans])
@@ -867,7 +923,10 @@ def plan_component(ix, comp):
                     raise Residue("template_parse")
                 lines.append("\tlook.state(%s)" % template_expr(ix, t, args[1][1:-1]))
                 keyed_state[t] = True
-                if any(provider_sets_state.get(a) or keyed_state.get(a) == "layer" for a in anc):
+                # A template below a layer that sets the state is fine when this type erases that layer (an empty DECLARE_APPEARANCE of the
+                # same var): the chain draws the parent's layer first and this template's state after it, so the template wins, as it did.
+                erased = {macro_args(d[4])[1].strip('"') for d in ix.decls.get(t, []) if d[0] == "DECLARE_APPEARANCE" and len(macro_args(d[4])) == 3 and macro_args(d[4])[2].strip() == "list()"}
+                if any(provider_sets_state.get(a) or (keyed_state.get(a) == "layer" and not (layer_vars[a] and layer_vars[a] <= erased)) for a in anc):
                     raise Residue("order")
             elif kind == "DECLARE_APPEARANCE":
                 args = macro_args(raw)
@@ -875,6 +934,8 @@ def plan_component(ix, comp):
                     raise Residue("rows_parse")
                 var = args[1].strip('"')
                 if var != "null" and any(var in layer_vars[a] for a in anc):
+                    if args[2].strip() == "list()" and keyed_state.get(t) is True:
+                        continue  # erases the parent's layer; this type's template state (drawn after it) already wins
                     raise Residue("layer_override")
                 layer_vars[t].add(var)
                 ll = layer_lines(ix, t, args[1], args[2])
@@ -918,7 +979,7 @@ def lint_shape(lines, ix=None, t=None, watch=None):
     """Residue for generated lines a draw may not hold (sys/dx_reactive): a write to a member of anything, or a read through another object
     (anything but src, look, GLOB, the reagents relation, or a local the body built: an image, a matrix, a list)."""
     text = "\n".join(strip_code(x) for x in lines)
-    built = set(re.findall(r"\bvar/(?:[\w/]+/)?(\w+)\s*=\s*(?:image|mutable_appearance|matrix|icon|list|look_appearance|emissive_appearance)\b", text))
+    built = set(re.findall(r"\bvar/(?:[\w/]+/)?(\w+)\s*=\s*(?:image|mutable_appearance|matrix|icon|list|look_appearance|emissive_appearance)\b|look\.neighbours?\(", text))
     for code in text.split("\n"):
         c = code.strip()
         c = re.sub(r"^(?:else\s+)?if\s*\((?:[^()]|\([^()]*\))*\)\s*", "", c)
@@ -986,7 +1047,7 @@ def verdict(ix, comp, plans):
         reads, calls, hops = body_reads(ix, t, plans[t]["lines"] + plans[t].get("parts", []))
         calls.discard("look_parts")
         for h in hops:
-            if not ix.tracked_on(t, h) or True:
+            if h != "reagents" and not ix.tracked_on(t, h):  # reagents is a watched relation of every holder; # a hop through a tracked var is covered: the draw watches the other end (look.watch)
                 untracked.add(h + ".*")
         for v in reads:
             if v in hops:
@@ -1058,6 +1119,10 @@ def apply_component(ix, comp, plans, covered, untracked, edits):
         decls = ix.decls.get(t, [])
         prov = ix.providers.get(t)
         own = ix.draws.get(t)
+        if "parts_none" in plans[t]:
+            _k, drel, first, last, _raw = plans[t]["parts_none"]
+            edits[drel].append((first, last, ["/// Draws none of what the providers above draw (was APPEARANCE_NONE).", "%s/look_parts(datum/look/look)" % t, "	return"]))
+            continue
         if "parts" in plans[t]:
             if own:
                 raise Residue("own_draw_parts")

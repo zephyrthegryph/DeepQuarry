@@ -66,6 +66,8 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle)
 	flags_inv = HIDEHOLSTER
 	var/open = 0	//0 is closed, 1 is open, -1 means it won't be able to toggle
 
+TRACKED(/obj/item/clothing/suit/storage/hooded/toggle, open)
+
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
 	op("hooded_toggle_toggle_verb", menu(), label("Toggle Coat Buttons"), needs(carried()), then(PROC_REF(hooded_toggle_toggle_verb)))
 
@@ -76,13 +78,11 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
 		return 0
 
 	if(open == 1) //Will check whether icon state is currently set to the "open" or "closed" state and switch it around with a message to the user
-		open = 0
-		update_icon()
+		set_open(0)
 		flags_inv = HIDETIE|HIDEHOLSTER
 		to_chat(user, "You button up the coat.")
 	else if(open == 0)
-		open = 1
-		update_icon()
+		set_open(1)
 		flags_inv = HIDEHOLSTER
 		to_chat(user, "You unbutton the coat.")
 	else //in case some goofy admin switches icon states around without switching the icon_open or icon_closed
@@ -90,16 +90,13 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
 		return
 	if(istype(hood,/obj/item/clothing/head/hood/toggleable)) //checks if a hood (which you should use) is attached
 		var/obj/item/clothing/head/hood/toggleable/T = hood
-		T.open = open //copy the jacket's open state to the hood
-		T.update_icon() //user as an arg to fix a weird runtime
+		T.set_open(open) //copy the jacket's open state to the hood
 		T.update_clothing_icon()
 	update_clothing_icon() //so our overlays update
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/storage/hooded/toggle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/suit/storage/hooded/toggle/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = "[toggleicon][open ? "_open" : ""][hood_up ? "_t" : ""]"
+/obj/item/clothing/suit/storage/hooded/toggle/look_parts(datum/look/look)
+	..()
+	look.state("[toggleicon][open ? "_open" : ""][hood_up ? "_t" : ""]")
 
 //New Vest 4 pocket storage and badge toggles, until suit accessories are a thing.
 /obj/item/clothing/suit/storage/vest/heavy/Initialize(mapload)

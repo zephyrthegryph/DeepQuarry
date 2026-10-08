@@ -16,7 +16,9 @@ TRACKED(/obj/item/card/id/guest, expired)
 	var/reason = "NOT SPECIFIED"
 	special_handling = TRUE
 
-APPEARANCE_NONE(/obj/item/card/id/guest)
+/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/obj/item/card/id/guest/look_parts(datum/look/look)
+	return
 
 /obj/item/card/id/guest/GetAccess()
 	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
@@ -76,13 +78,11 @@ CAPABILITIES(/obj/item/card/id/guest)
 		//rip guest pass </3
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + "deactivates %T%."))
 		icon_state = "guest-invalid"
-		update_icon()
 		EXPIRY_STAMP(src, expiration_time, CLOCK_WORLD)
 		set_expired(TRUE)
 
 /obj/item/card/id/guest/Initialize(mapload)
 	. = ..()
-	update_icon()
 
 /// The pass turns red when its expiry lapses, however it was made (terminal, admin spawn, map).
 EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(pass_lapsed))
@@ -92,7 +92,6 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 		return
 	visible_message(span_warning("\The [src] flashes a few times before turning red."))
 	icon_state = "guest-invalid"
-	update_icon()
 	set_expired(TRUE)
 
 /////////////////////////////////////////////

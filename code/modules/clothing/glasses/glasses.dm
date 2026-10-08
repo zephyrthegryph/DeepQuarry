@@ -527,11 +527,13 @@ CAPABILITIES(/obj/item/clothing/glasses/welding)
 CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/aviator)
 	op("aviator_mode_self", in_hand(), label("Switch mode"), then(PROC_REF(aviator_mode_self)))
 
+TRACKED(/obj/item/clothing/glasses/sunglasses/sechud/aviator, on)
+
 /// Old attack_self.
 /obj/item/clothing/glasses/sunglasses/sechud/aviator/proc/aviator_mode_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(toggleable && !user.incapacitated())
-		on = !on
+		set_on(!on)
 		if(on)
 			flash_protection = FLASH_PROTECTION_NONE
 			enables_planes = away_planes
@@ -542,19 +544,17 @@ CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/aviator)
 			away_planes = enables_planes
 			enables_planes = null
 			to_chat(user, "You switch \the [src] to flash protection mode.")
-		update_icon()
 		user << sound(get_sfx(activation_sound))
 		user.recalculate_vis()
 		user.update_inv_glasses()
 		user.update_mob_action_buttons()
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/glasses/sunglasses/sechud/aviator, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/glasses/sunglasses/sechud/aviator/appearance_overlays()
-	. = list()
+/obj/item/clothing/glasses/sunglasses/sechud/aviator/draw(datum/look/look)
+	..()
 	if(on)
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 	else
-		icon_state = off_state
+		look.state(off_state)
 
 /obj/item/clothing/glasses/sunglasses/sechud/aviator/prescription
 	name = "prescription security HUD aviators"

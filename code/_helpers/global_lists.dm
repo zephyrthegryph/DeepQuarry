@@ -584,7 +584,6 @@ GLOBAL_LIST_INIT(vr_mob_spawner_options, list(
 	))
 
 //global lists I found in various files and moved here for housekeeping
-GLOBAL_LIST_EMPTY(stool_cache) //haha stool // ALLOW(cache): hot overlay pooling; readers out of scope
 GLOBAL_LIST_EMPTY(emotes_by_key)
 GLOBAL_LIST_EMPTY(random_maps)
 GLOBAL_LIST_EMPTY(map_count)

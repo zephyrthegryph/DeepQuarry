@@ -222,7 +222,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		gargoyle.pixel_x = pixel_x
 		gargoyle.pixel_y = pixel_y
 		gargoyle.is_shifted = initial_is_shifted
-		gargoyle.dir = dir
+		gargoyle.set_dir(dir)
 		gargoyle.lying = initial_lying
 		gargoyle.lying_prev = initial_lying_prev
 		gargoyle.toggle_tail(wagging, FALSE)

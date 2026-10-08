@@ -53,7 +53,6 @@
 	desc = "Groovy!"
 	icon_state = "psyche"
 	LAZYSET(item_state_slots, slot_w_uniform_str, "psyche")
-	update_icon()
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/under/chameleon)
@@ -96,7 +95,6 @@ CAPABILITIES(/obj/item/clothing/under/chameleon)
 	name = "grey cap"
 	desc = "It's a baseball hat in a tasteful grey colour."
 	icon_state = "greysoft"
-	update_icon()
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/head/chameleon)
@@ -138,7 +136,6 @@ CAPABILITIES(/obj/item/clothing/head/chameleon)
 	name = "armor"
 	desc = "An armored vest that protects against some damage."
 	icon_state = "armor"
-	update_icon()
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/suit/chameleon)
@@ -179,7 +176,6 @@ CAPABILITIES(/obj/item/clothing/suit/chameleon)
 	name = "black shoes"
 	desc = "A pair of black shoes."
 	icon_state = "black"
-	update_icon()
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/shoes/chameleon)
@@ -278,7 +274,6 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon)
 	name = "black gloves"
 	desc = "It looks like a pair of gloves, but it seems to have a small dial inside."
 	icon_state = "black"
-	update_icon()
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/gloves/chameleon)
@@ -319,7 +314,6 @@ CAPABILITIES(/obj/item/clothing/gloves/chameleon)
 	name = "gas mask"
 	desc = "It's a gas mask."
 	icon_state = "gas_alt" // file change
-	update_icon()
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/mask/chameleon)
@@ -362,7 +356,6 @@ CAPABILITIES(/obj/item/clothing/mask/chameleon)
 	name = "Optical Meson Scanner"
 	desc = "It's a set of mesons."
 	icon_state = "meson"
-	update_icon()
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/glasses/chameleon)
@@ -447,7 +440,6 @@ CAPABILITIES(/obj/item/storage/belt/chameleon)
 	name = "black tie"
 	desc = "Looks like a black tie, but his one also has a dial inside."
 	icon_state = "blacktie"
-	update_icon()
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/accessory/chameleon)
@@ -467,7 +459,6 @@ CAPABILITIES(/obj/item/clothing/accessory/chameleon)
 		return
 
 	disguise(GLOB.chamelion_accessory_choices[picked])
-	update_icon()
 
 //*****************
 //**Chameleon Gun**

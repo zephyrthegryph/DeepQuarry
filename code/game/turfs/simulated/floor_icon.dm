@@ -21,9 +21,6 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor, TYPE_PROC_REF(/atom, appearance_o
 									// ition Start
 			if(flooring.check_season)
 				icon_state = "[icon_state]-[GLOB.world_time_season]" // ition End
-			if(flooring.has_base_range)
-				icon_state = "[icon_state][rand(0,flooring.has_base_range)]"
-				flooring_override = icon_state
 
 		// Apply edges, corners, and inner corners.
 		if(flooring.flags & TURF_HAS_EDGES)
@@ -51,7 +48,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor, TYPE_PROC_REF(/atom, appearance_o
 
 	if(is_plating() && !(isnull(broken) && isnull(burnt))) //temp, todo
 		icon = 'icons/turf/flooring/plating.dmi'
-		icon_state = "dmg[rand(1,4)]"
+		icon_state = "dmg[plating_damage_state]"
 	else if(flooring)
 		if(!isnull(broken) && (flooring.flags & TURF_CAN_BREAK))
 			if(istype(src, /turf/simulated/floor/wood))

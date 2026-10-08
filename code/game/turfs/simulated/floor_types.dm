@@ -21,7 +21,7 @@
 	var/obj/landed_holder/new_holder = new(null)
 	T.lighting_clear_overlay()
 	new_holder.turf_type = T.type
-	new_holder.dir = T.dir
+	new_holder.set_dir(T.dir)
 	new_holder.icon = T.icon
 	new_holder.icon_state =  T.icon_state
 	new_holder.copy_overlays(T, TRUE)

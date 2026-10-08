@@ -90,7 +90,9 @@ CAPABILITIES(/obj/effect/weaversilk/wall)
 	icon_state = "nest"
 	base_icon = "nest"
 
-APPEARANCE_NONE(/obj/structure/bed/double/weaversilk_nest)
+/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/obj/structure/bed/double/weaversilk_nest/look_parts(datum/look/look)
+	return
 
 CAPABILITIES(/obj/structure/bed/double/weaversilk_nest)
 	op("tear_down", hand(), stance(I_HURT), label("Tear down"), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(interaction_tear_down)))

@@ -223,7 +223,8 @@
 		overlays.Remove(blood_overlay)
 	if(gurgled && clean_types & CLEAN_WASH)
 		set_gurgled(FALSE)
-		cut_overlay(GLOB.gurgled_overlays[gurgled_color])
+		if(!stains_in_look())
+			cut_overlay(GLOB.gurgled_overlays[gurgled_color])
 	// phoron contamination wash branch removed; .contaminated +
 	// GLOB.contamination_overlay are gone (ZAS contamination machinery wasn't
 	// ported under LINDA). Restore if contamination gameplay returns.

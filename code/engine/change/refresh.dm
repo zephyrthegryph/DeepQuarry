@@ -494,7 +494,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 	if(apply)
 		// What the draw read of other entities: a change on any of them redraws A (kept in line with every draw, applied or not).
 		if(L.watched || capability_data(A)?[/datum/cap_engine_state])
-			look_watch_sync(A, L.watched)
+			look_watch_sync(A, L.watched, L.neighbour_types)
 		if(key != A.rx?.look_key)
 			var/atom/outer = GLOB.refresh_applying
 			GLOB.refresh_applying = A
@@ -691,7 +691,7 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 
 /// Brings `A`'s subscriptions to other entities in line with what its draw reads now (`keys`: own keys, null for none). The record is kept
 /// in the atom's engine state, which only an atom that has watched something (or kept a cooldown or a flash) owns.
-/proc/look_watch_sync(atom/A, list/keys)
+/proc/look_watch_sync(atom/A, list/keys, list/neighbour_types)
 	var/datum/cap_engine_state/engine = keys ? cap_engine_state_make(A) : cap_engine_state_of(A)
 	if(!engine)
 		return
@@ -707,3 +707,19 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 			if(seen)
 				rel_observe(seen, A)
 	engine.look_watching = keys
+	engine.look_neighbour_types = neighbour_types
+
+/// A mover entered or left an atom some draw watches through look.neighbours() (a turf): the watchers that look for a type the mover is redraw.
+/proc/look_neighbour_moved(atom/T, atom/movable/mover)
+	for(var/key in T.rel_watchers)
+		var/atom/watcher = own_locate(key)
+		if(!isatom(watcher) || QDELING(watcher))
+			continue
+		var/list/types = cap_engine_state_of(watcher)?.look_neighbour_types
+		var/seen = FALSE // a watcher that asked for no neighbours (look.watch(container)) is not told of every mover
+		for(var/type in types)
+			if(istype(mover, type))
+				seen = TRUE
+				break
+		if(seen)
+			state_changed(watcher)

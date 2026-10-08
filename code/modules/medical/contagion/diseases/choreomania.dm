@@ -33,7 +33,7 @@
 				to_chat(host, span_notice("You really want to start a conga line!"))
 			if(prob(2))
 				for(var/D in dance)
-					host.dir = D
+					host.set_dir(D)
 					animate(host, pixel_x = 5, time = 5)
 					animate(host, pixel_x = -5, time = 5)
 					animate(host, pixel_x = host.default_pixel_x, pixel_y = host.default_pixel_x, time = 2)

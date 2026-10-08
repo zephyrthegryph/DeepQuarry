@@ -1,0 +1,9 @@
+/obj/item/clothing/suit/armor/shield active=1 +state: shield_armor_1
+/obj/item/clothing/suit/armor/shield active=1 +overlay: icons/inventory/suit/item.dmi:shield_armor_1:8:#000000
+/obj/item/clothing/suit/armor/shield active=1 -state: shield_armor_0
+/obj/item/clothing/suit/armor/shield active=1 -overlay: icons/inventory/suit/item.dmi:shield_armor_0:8:#000000
+/obj/item/clothing/suit/armor/shield active=2 +state: shield_armor_2
+/obj/item/clothing/suit/armor/shield active=2 +overlay: icons/inventory/suit/item.dmi:shield_armor_2:8:#000000
+/obj/item/clothing/suit/armor/shield active=2 -state: shield_armor_0
+/obj/item/clothing/suit/armor/shield active=2 -overlay: icons/inventory/suit/item.dmi:shield_armor_0:8:#000000
+

@@ -39,8 +39,7 @@
 
 	if(!user.technomancer_pay_energy(damage_to_energy_cost))
 		to_chat(user, span_danger("Your shield fades due to lack of energy!"))
-		active = 0
-		update_icon()
+		set_active(FALSE)
 		return 0
 
 	damage = damage - damage_blocked
@@ -68,20 +67,19 @@ CAPABILITIES(/obj/item/clothing/suit/armor/shield)
 /// Old attack_self.
 /obj/item/clothing/suit/armor/shield/proc/shield_armor_toggle_self(datum/act/op/A)
 	var/mob/user = A.actor
-	active = !active
+	set_active(!active)
 	to_chat(user, span_notice("You [active ? "" : "de"]activate \the [src]."))
-	update_icon()
 	user.update_inv_wear_suit()
 	user.update_mob_action_buttons()
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/armor/shield, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/suit/armor/shield/appearance_overlays()
-	. = list()
-	icon_state = "shield_armor_[active]"
-	item_state = "shield_armor_[active]"
+TRACKED(/obj/item/clothing/suit/armor/shield, active)
+
+/// Lit while the shield is up; the worn suit follows through the held state.
+/obj/item/clothing/suit/armor/shield/draw(datum/look/look)
+	..()
+	look.state("shield_armor_[active]")
+	look.held_state("shield_armor_[active]")
 	if(active)
-		set_light(2, 1, l_color = "#006AFF")
+		look.light(2, 1, "#006AFF")
 	else
-		set_light(0, 0, l_color = "#000000")
-	. += ..()
-	return .
+		look.light_off()

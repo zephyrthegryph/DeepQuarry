@@ -1,0 +1,36 @@
+/obj/structure/closet/secure_closet/guncabinet icon: icons/obj/guncabinet.dmi
+/obj/structure/closet/secure_closet/guncabinet state: base
+/obj/structure/closet/secure_closet/guncabinet dir: 2
+/obj/structure/closet/secure_closet/guncabinet overlay: icons/obj/guncabinet.dmi:base:8:#000000
+/obj/structure/closet/secure_closet/guncabinet overlay: icons/obj/guncabinet.dmi:door:-32767
+/obj/structure/closet/secure_closet/guncabinet overlay: icons/obj/guncabinet.dmi:locked:-32767
+/obj/structure/closet/secure_closet/guncabinet/sidearm icon: icons/obj/guncabinet.dmi
+/obj/structure/closet/secure_closet/guncabinet/sidearm state: base
+/obj/structure/closet/secure_closet/guncabinet/sidearm dir: 2
+/obj/structure/closet/secure_closet/guncabinet/sidearm overlay: icons/obj/guncabinet.dmi:base:8:#000000
+/obj/structure/closet/secure_closet/guncabinet/sidearm overlay: icons/obj/guncabinet.dmi:door:-32767
+/obj/structure/closet/secure_closet/guncabinet/sidearm overlay: icons/obj/guncabinet.dmi:laser:-32767 x3
+/obj/structure/closet/secure_closet/guncabinet/sidearm overlay: icons/obj/guncabinet.dmi:locked:-32767
+/obj/structure/closet/secure_closet/guncabinet/rifle icon: icons/obj/guncabinet.dmi
+/obj/structure/closet/secure_closet/guncabinet/rifle state: base
+/obj/structure/closet/secure_closet/guncabinet/rifle dir: 2
+/obj/structure/closet/secure_closet/guncabinet/rifle overlay: icons/obj/guncabinet.dmi:base:8:#000000
+/obj/structure/closet/secure_closet/guncabinet/rifle overlay: icons/obj/guncabinet.dmi:door:-32767
+/obj/structure/closet/secure_closet/guncabinet/rifle overlay: icons/obj/guncabinet.dmi:laser:-32767 x2
+/obj/structure/closet/secure_closet/guncabinet/rifle overlay: icons/obj/guncabinet.dmi:locked:-32767
+/obj/structure/closet/secure_closet/guncabinet/rifle overlay: icons/obj/guncabinet.dmi:projectile:-32767
+/obj/structure/closet/secure_closet/guncabinet/phase icon: icons/obj/guncabinet.dmi
+/obj/structure/closet/secure_closet/guncabinet/phase state: base
+/obj/structure/closet/secure_closet/guncabinet/phase dir: 2
+/obj/structure/closet/secure_closet/guncabinet/phase overlay: icons/obj/guncabinet.dmi:base:8:#000000
+/obj/structure/closet/secure_closet/guncabinet/phase overlay: icons/obj/guncabinet.dmi:door:-32767
+/obj/structure/closet/secure_closet/guncabinet/phase overlay: icons/obj/guncabinet.dmi:laser:-32767 x3
+/obj/structure/closet/secure_closet/guncabinet/phase overlay: icons/obj/guncabinet.dmi:locked:-32767
+/obj/structure/closet/secure_closet/guncabinet/excursion icon: icons/obj/guncabinet.dmi
+/obj/structure/closet/secure_closet/guncabinet/excursion state: base
+/obj/structure/closet/secure_closet/guncabinet/excursion dir: 2
+/obj/structure/closet/secure_closet/guncabinet/excursion overlay: icons/obj/guncabinet.dmi:base:8:#000000
+/obj/structure/closet/secure_closet/guncabinet/excursion overlay: icons/obj/guncabinet.dmi:door:-32767
+/obj/structure/closet/secure_closet/guncabinet/excursion overlay: icons/obj/guncabinet.dmi:laser:-32767 x3
+/obj/structure/closet/secure_closet/guncabinet/excursion overlay: icons/obj/guncabinet.dmi:locked:-32767
+

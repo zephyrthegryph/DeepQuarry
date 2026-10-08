@@ -225,15 +225,8 @@ DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECT
 	if(bcamera.status)
 		PUBLISH_LEGACY(bcamera, /datum/notice/movable_attempted_move, null, null)
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/accessory/bodycam, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/accessory/bodycam/appearance_overlays()
-	. = list()
-	. += ..()
-	var/mob/living/carbon/human/H = loc
-	if(istype(H))
-		H.update_inv_r_hand()
-		H.update_inv_l_hand()
-		H.update_inv_belt()
+/obj/item/clothing/accessory/bodycam/draw(datum/look/look)
+	..()
 
 //Assembly by roboticist
 

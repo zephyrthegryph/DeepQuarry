@@ -50,3 +50,7 @@
 		return
 	if(look_table_has_layers(table_of(holder)))
 		state_changed(holder)
+
+/// How the look applies a dir to its holder; the atom layer answers with set_dir() (code/game/atom/_atom.dm).
+/atom/proc/look_set_dir(new_dir)
+	return

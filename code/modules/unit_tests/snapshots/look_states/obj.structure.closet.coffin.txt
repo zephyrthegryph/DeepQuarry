@@ -1,0 +1,3 @@
+/obj/structure/closet/coffin opened=1 +state: open
+/obj/structure/closet/coffin opened=1 -state: closed_unlocked
+

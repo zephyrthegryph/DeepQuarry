@@ -42,7 +42,7 @@
  *
  *   bash tools/dq_pin.sh --look-tree /obj/item/gun [...]
  *
- * Abstract types and the unit tests' uncreatables are left out; turfs and areas are not made (only objs and mobs). Each
+ * Abstract types and the unit tests' uncreatables are left out; a turf type is made by turning the tile east of the test floor into it (and back); areas are not made. Each
  * type is made with the RNG reseeded from its path, so a pin does not depend on the types made before it. A whole-type
  * sweep, so it runs in the exhaustive tier (and by name).
  */
@@ -62,11 +62,11 @@
 	for(var/root in expected_by_type)
 		var/list/rows = list()
 		for(var/type in typesof(root))
-			if(!ispath(type, /obj) && !ispath(type, /mob))
+			if(!ispath(type, /obj) && !ispath(type, /mob) && !ispath(type, /turf))
 				continue
 			if(is_abstract(type) || (type in uncreatables))
 				continue
-			for(var/line in dq_look_capture(type, T))
+			for(var/line in (ispath(type, /turf) ? dq_look_capture_turf(type, get_step(T, EAST)) : dq_look_capture(type, T)))
 				rows += "[type] [line]"
 		actual_by_type[root] = rows
 	var/report = dq_snapshot_compare(DQ_LOOK_TREE_DIR, "look_trees", actual_by_type, expected_by_type, bad)
@@ -77,6 +77,7 @@
 /// Makes one `type` on T (the RNG reseeded from its path), lets the presentation lane settle and returns its look rows; a
 /// runtime while it is made or drawn is a row of its own, so one broken type does not end the pin.
 /datum/unit_test/proc/dq_look_capture(type, turf/T)
+	log_test("look pin: making [type]") // a type that hangs names itself in the log
 	rand_seed(dq_test_seed_for("[type]"))
 	try
 		var/atom/target = dq_snapshot_allocate(type, T)
@@ -90,6 +91,24 @@
 		var/static/regex/where = regex(@"^\S+\.dm:\d+:")
 		. = list("runtime: [where.Replace(e.name, "")]") // without the file and line, which move with unrelated edits
 	own_turf_contents(T)
+
+/// dq_look_capture() for a turf type: `spot` is turned into it, drawn and turned back. The made turf is the look; the RNG is reseeded from the path.
+/datum/unit_test/proc/dq_look_capture_turf(type, turf/spot)
+	var/old_type = spot.type
+	log_test("look pin: making [type]")
+	rand_seed(dq_test_seed_for("[type]"))
+	try
+		var/turf/made = spot.ChangeTurf(type)
+		if(QDELETED(made))
+			. = list("deleted itself on creation")
+		else
+			appearance_flush()
+			. = dq_look_pin_lines(made)
+	catch(var/exception/e)
+		var/static/regex/where = regex(@"^\S+\.dm:\d+:")
+		. = list("runtime: [where.Replace(e.name, "")]")
+	var/turf/restored = locate(spot.x, spot.y, spot.z)
+	restored.ChangeTurf(old_type)
 
 /// The look rows of one atom (see the file comment), sorted so the file diffs cleanly.
 /proc/dq_look_pin_lines(atom/target)

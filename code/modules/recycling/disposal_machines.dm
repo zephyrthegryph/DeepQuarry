@@ -574,7 +574,7 @@ TRACKED(/obj/machinery/disposal, occupied)
 
 /// Turns the bin to face a direction; a wall bin also moves its outlet.
 /obj/machinery/disposal/proc/face(new_dir)
-	dir = new_dir
+	set_dir(new_dir)
 
 // the icon & overlays reflect mode & status
 /obj/machinery/disposal/draw(datum/look/look)
@@ -810,34 +810,18 @@ TRACKED(/obj/machinery/disposal, occupied)
 
 	density = FALSE
 
-/// The direction the wall outlet faces, kept as tracked state for the look.
-/obj/machinery/disposal/wall/var/outlet_dir = 0
-
-TRACKED(/obj/machinery/disposal/wall, outlet_dir)
-
-/obj/machinery/disposal/wall/face(new_dir)
-	..()
-	set_outlet_dir(new_dir)
-
-/// A wall bin sits in the wall it faces: the look moves it (an effect, since it writes the pixel offset).
+/// A wall bin sits in the wall it faces: the look offsets it by its dir (a change of dir redraws).
 /obj/machinery/disposal/wall/look_parts(datum/look/look)
 	..()
-	look.effect(PROC_REF(look_effect_wall_offset), outlet_dir)
-
-/obj/machinery/disposal/wall/proc/look_effect_wall_offset(facing)
-	switch(facing)
+	switch(dir)
 		if(NORTH)
-			pixel_x = 0
-			pixel_y = -32
+			look.offset(0, -32)
 		if(SOUTH)
-			pixel_x = 0
-			pixel_y = 32
+			look.offset(0, 32)
 		if(EAST)
-			pixel_x = -32
-			pixel_y = 0
+			look.offset(-32, 0)
 		if(WEST)
-			pixel_x = 32
-			pixel_y = 0
+			look.offset(32, 0)
 
 #undef DISPOSALMODE_EJECTONLY
 #undef DISPOSALMODE_OFF

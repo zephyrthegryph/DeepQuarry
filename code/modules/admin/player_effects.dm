@@ -250,7 +250,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 	shadekin.real_name = shadekin.name
 	shadekin.init_vore(TRUE)
 	shadekin.can_be_drop_pred = TRUE
-	shadekin.dir = SOUTH
+	shadekin.set_dir(SOUTH)
 	shadekin.ability_flags |= 0x1
 	shadekin.phase_out(get_turf(shadekin)) //Homf
 	var/datum/shadekin/smite_SK = shadekin.get_shadekin_state()

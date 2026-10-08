@@ -43,50 +43,50 @@ MSG_DEF_SELF(medical_stand/cannot, "You can't do that.")
 TRACKED(/obj/structure/medical_stand, valve_opened)
 /obj/structure/medical_stand/var/mob/living/carbon/attached
 
-/obj/structure/medical_stand/Initialize(mapload)
-	. = ..()
-	update_icon()
-DECLARE_APPEARANCE_PROC(/obj/structure/medical_stand, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/medical_stand/appearance_overlays()
-	. = list()
-
-	if (tank)
-		if (breather())
-			. += "tube_active"
-		else
-			. += "tube"
-		if(istype(tank,/obj/item/tank/anesthetic))
-			. += "tank_anest"
-		else if(istype(tank,/obj/item/tank/nitrogen))
-			. += "tank_nitro"
-		else if(istype(tank,/obj/item/tank/oxygen))
-			. += "tank_oxyg"
-		else if(istype(tank,/obj/item/tank/phoron))
-			. += "tank_plasma"
-		else
-			. += "tank_other"
-
+/// The tank and the beaker on the stand, drawn from what they are: a change of either (the beaker's level or colour) redraws the stand.
+/obj/structure/medical_stand/draw(datum/look/look)
+	..()
+	look.watch(tank)
+	look.watch(beaker)
+	if(tank)
+		look.overlay(breather() ? "tube_active" : "tube")
+		look.overlay(tank_look_state(tank))
 	if(beaker)
-		. += "beaker"
-		if(attached())
-			. += "line_active"
-		else
-			. += "line"
+		look.overlay("beaker")
+		look.overlay(attached() ? "line_active" : "line")
 		var/datum/reagents/reagents = beaker.reagents
-		var/percent = round((reagents.total_volume / beaker.volume) * 100)
 		if(reagents.total_volume)
-			var/image/filling = image('icons/obj/medical_stand.dmi', src, "reagent")
+			var/percent = round((reagents.total_volume / beaker.volume) * 100)
+			look.overlay(look_overlay_image('icons/obj/medical_stand.dmi', fill_look_state(percent), color = reagents.get_color()))
 
-			switch(percent)
-				if(10 to 24) 	filling.icon_state = "reagent10"
-				if(25 to 49)	filling.icon_state = "reagent25"
-				if(50 to 74)	filling.icon_state = "reagent50"
-				if(75 to 79)	filling.icon_state = "reagent75"
-				if(80 to 90)	filling.icon_state = "reagent80"
-				if(91 to INFINITY)	filling.icon_state = "reagent100"
-			if (filling.icon)
-				filling.icon += reagents.get_color()
-				. += filling
+/// The overlay state of the tank by what it holds.
+/obj/structure/medical_stand/proc/tank_look_state(obj/item/tank/T)
+	if(istype(T, /obj/item/tank/anesthetic))
+		return "tank_anest"
+	if(istype(T, /obj/item/tank/nitrogen))
+		return "tank_nitro"
+	if(istype(T, /obj/item/tank/oxygen))
+		return "tank_oxyg"
+	if(istype(T, /obj/item/tank/phoron))
+		return "tank_plasma"
+	return "tank_other"
+
+/// The overlay state of the reagent bag by how full it is (under a tenth the bare "reagent").
+/obj/structure/medical_stand/proc/fill_look_state(percent)
+	switch(percent)
+		if(10 to 24)
+			return "reagent10"
+		if(25 to 49)
+			return "reagent25"
+		if(50 to 74)
+			return "reagent50"
+		if(75 to 79)
+			return "reagent75"
+		if(80 to 90)
+			return "reagent80"
+		if(91 to INFINITY)
+			return "reagent100"
+	return "reagent"
 
 // the breathing mask retracts from its patient.
 /obj/structure/medical_stand/lifecycle_prerelease()
@@ -149,14 +149,12 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 				act_message(user, target, MSG_SELF(span_notice("You begin inserting needle into %T%'s vein.")), \
 					MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins inserting needle into %T%'s vein.")))
 				task_start(/datum/task/timed/medical_stand_needle_inserted, user, target, receiver = src)
-			update_icon()
 
 /obj/structure/medical_stand/proc/needle_removed()
 	if(!attached())
 		return
 	visible_message("\The [attached()] is taken off \the [src]")
 	rel_clear(src, nameof(attached))
-	update_icon()
 
 /obj/structure/medical_stand/proc/needle_slipped(datum/task/timed/medical_stand_needle_inserted/task)
 	var/mob/living/carbon/human/target = task.target
@@ -179,7 +177,6 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 	act_message(user, target, MSG_SELF(span_notice("You hook %T% up to \the [src].")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + "hooks %T% up to \the [src].")))
 	rel_set(src, nameof(attached), target)
-	update_icon()
 
 /obj/structure/medical_stand/proc/MouseDrop_timed_done(mob/living/carbon/human/target, mob/user)
 	if(!can_apply_to_target(target, user))
@@ -194,7 +191,6 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 		rel_set(src, nameof(contained), new mask_type(src))
 	rel_clear(src, nameof(breather))
 	src.visible_message(span_infoplain(span_bold("\The [contained]") + " slips to \the [src]!"))
-	update_icon()
 	return
 /obj/structure/medical_stand/proc/MouseDrop_timed_done2(mob/living/carbon/human/target, mob/user)
 	if(!can_apply_to_target(target, user))
@@ -204,7 +200,6 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 		MSG_OTHERS(span_notice("%U% has placed \the mask on %T%'s mouth.")))
 	if(attach_mask(target))
 		src.add_fingerprint(user)
-		update_icon()
 	return
 
 /// Old attack_hand (it never reached the structure gate).
@@ -241,7 +236,6 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 				user.put_in_hands(tank)
 				rel_take(src, nameof(tank))
 				set_valve_opened(FALSE)
-				update_icon()
 				return
 			else if (!is_loosen)
 				act_message(user, src, MSG_SELF(span_warning("You try to remove \the [tank] from %T% but it won't budge.")), \
@@ -258,19 +252,16 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 						breather().internals?.icon_state = "internal0"
 						breather().internal = null
 					set_valve_opened(FALSE)
-					update_icon()
 				else
 					act_message(user, src, others = span_infoplain(span_bold("%U%") + " opens valve on %T%!"), blind = span_notice("You open valve on %T%."))
 					if(breather())
 						breather().internal = tank
 						breather().internals?.icon_state = "internal1"
 					set_valve_opened(TRUE)
-					update_icon()
 		if ("Remove vessel")
 			if(beaker)
 				beaker.forceMove(loc)
 				rel_take(src, nameof(beaker))
-				update_icon()
 
 /obj/structure/medical_stand/proc/medical_stand_toggle_mode_effect(datum/act/op/A)
 	var/mob/user = A.actor
@@ -351,7 +342,6 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 				return TRUE
 			act_message(user, src, MSG_SELF(span_notice("You attach %I% to %T%.")), MSG_OTHERS(span_bold("%U%") + " attaches %I% to %T%."), item = tank)
 			src.add_fingerprint(user)
-			update_icon()
 		return TRUE
 
 	if (istype(W, /obj/item/reagent_containers))
@@ -361,7 +351,6 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 		if(!move_into(src, nameof(src.beaker), W, user))
 			return TRUE
 		to_chat(user, "You attach \the [W] to \the [src].")
-		update_icon()
 		return TRUE
 	return OP_DECLINE
 
@@ -418,7 +407,6 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 				rel_set(src, nameof(contained), new mask_type (src))
 			src.visible_message(span_bold("\The [contained]") + " slips to \the [src]!")
 			rel_clear(src, nameof(breather))
-			update_icon()
 			return
 		if(valve_opened)
 			if (tank)
@@ -438,13 +426,11 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 			visible_message("The needle is ripped out of [src.attached()], doesn't that hurt?")
 			attached().injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
 			rel_clear(src, nameof(attached))
-			update_icon()
 
 	if(beaker)
 		if(mode) // Give blood
 			if(beaker.volume > 0)
 				beaker.reagents.trans_to_mob(attached(), transfer_amount, CHEM_BLOOD)
-				update_icon()
 		else // Take blood
 			var/amount = beaker.reagents.maximum_volume - beaker.reagents.total_volume
 			amount = min(amount, 4)
@@ -475,7 +461,6 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 				beaker.reagents.update_total()
 				beaker.on_reagent_change()
 				beaker.reagents.handle_reactions()
-				update_icon()
 
 
 /obj/structure/medical_stand/anesthetic

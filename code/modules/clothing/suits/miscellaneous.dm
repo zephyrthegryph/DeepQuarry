@@ -933,6 +933,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/flannel)
 	op("flannel_button_verb", menu(), label("Toggle Shirt Buttons"), needs(carried()), then(PROC_REF(flannel_button_verb)))
 
 /// Old verb "Roll Sleeves".
+TRACKED(/obj/item/clothing/suit/storage/flannel, rolled)
+TRACKED(/obj/item/clothing/suit/storage/flannel, tucked)
+TRACKED(/obj/item/clothing/suit/storage/flannel, buttoned)
+
 /obj/item/clothing/suit/storage/flannel/proc/flannel_roll_sleeves_verb(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!isliving(user))
@@ -941,14 +945,13 @@ CAPABILITIES(/obj/item/clothing/suit/storage/flannel)
 		return
 
 	if(rolled == 0)
-		rolled = 1
+		set_rolled(1)
 		body_parts_covered &= ~(ARMS)
 		to_chat(user, span_notice("You roll up the sleeves of your [src]."))
 	else
-		rolled = 0
+		set_rolled(0)
 		body_parts_covered = initial(body_parts_covered)
 		to_chat(user, span_notice("You roll down the sleeves of your [src]."))
-	update_icon()
 	worn_protection_changed()
 
 /// Old verb "Toggle Shirt Tucking".
@@ -958,12 +961,11 @@ CAPABILITIES(/obj/item/clothing/suit/storage/flannel)
 		return
 
 	if(tucked == 0)
-		tucked = 1
+		set_tucked(1)
 		to_chat(user, span_notice("You tuck in your your [src]."))
 	else
-		tucked = 0
+		set_tucked(0)
 		to_chat(user, span_notice("You untuck your [src]."))
-	update_icon()
 
 /// Old verb "Toggle Shirt Buttons".
 /obj/item/clothing/suit/storage/flannel/proc/flannel_button_verb(datum/act/op/A)
@@ -972,26 +974,24 @@ CAPABILITIES(/obj/item/clothing/suit/storage/flannel)
 		return
 
 	if(buttoned == 0)
-		buttoned = 1
+		set_buttoned(1)
 		flags_inv = HIDETIE|HIDEHOLSTER
 		to_chat(user, span_notice("You button your [src]."))
 	else
-		buttoned = 0
+		set_buttoned(0)
 		flags_inv = HIDEHOLSTER
 		to_chat(user, span_notice("You unbutton your [src]."))
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/storage/flannel, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/suit/storage/flannel/appearance_overlays()
-	. = list()
-	icon_state = initial(icon_state)
+/obj/item/clothing/suit/storage/flannel/look_parts(datum/look/look)
+	var/flannel_state = initial(icon_state)
 	if(rolled)
-		icon_state += "r"
+		flannel_state += "r"
 	if(tucked)
-		icon_state += "t"
+		flannel_state += "t"
 	if(buttoned)
-		icon_state += "b"
-	update_clothing_icon()
+		flannel_state += "b"
+	look.state(flannel_state)
+	look.effect(PROC_REF(update_clothing_icon))
 
 /obj/item/clothing/suit/storage/flannel/red
 	desc = "A comfy, red flannel shirt.  Unleash your inner hipster."

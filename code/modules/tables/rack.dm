@@ -14,12 +14,15 @@
 /obj/structure/table/rack/update_desc()
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/structure/table/rack, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/table/rack/appearance_overlays()
-	. = list()
-	if(material()) // for rack colors based on materials
-		color = material().icon_colour
-	return .
+/obj/structure/table/rack/draws_layers()
+	return FALSE
+
+/// A rack takes the colour of what it is plated with.
+/obj/structure/table/rack/draw(datum/look/look)
+	..()
+	var/colour = plating_colour()
+	if(colour)
+		look.set_color(colour)
 
 /obj/structure/table/rack/holorack
 	can_dismantle = FALSE

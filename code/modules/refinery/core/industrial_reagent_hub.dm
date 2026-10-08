@@ -15,7 +15,6 @@
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
-	update_icon()
 
 /obj/machinery/reagent_refinery/hub/refinery_step()
 	if(!anchored)
@@ -34,36 +33,13 @@
 			// dump reagents to next refinery machine
 			transfer_tank( tanker.reagents, target, dir)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/hub, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/hub/appearance_overlays()
-	. = list()
-	var/turf/T = get_step(get_turf(src),dir)
-	var/obj/machinery/other = locate_on(T, /obj/machinery/reagent_refinery)
-	var/intake = FALSE
-	if(other && other.anchored)// Waste processors do not connect to anything as outgoing
-		if(istype(other,/obj/machinery/reagent_refinery/splitter))
-			if(GLOB.reverse_dir[dir] in list(turn(other.dir,90),turn(other.dir,-90)))
-				intake = TRUE
-		else if(!istype(other,/obj/machinery/reagent_refinery/waste_processor))
-			// weird handling for side connections... Otherwise, anything pointing into use gets connected back!
-			if(istype(other,/obj/machinery/reagent_refinery/filter))
-				var/obj/machinery/reagent_refinery/filter/filt = other
-				var/check_dir = 0
-				if(filt.get_filter_side() == 1)
-					check_dir = turn(filt.dir, 270)
-				else
-					check_dir = turn(filt.dir, 90)
-				if(check_dir == GLOB.reverse_dir[dir])
-					intake = TRUE
-			if(other.dir == GLOB.reverse_dir[dir])
-				intake = TRUE
-	// Get main dir pipe
-	if(intake)
-		var/image/pipe = image(icon, icon_state = "hub_intakes", dir = dir)
-		. += pipe
-	else
-		var/image/pipe = image(icon, icon_state = "hub_cons", dir = dir)
-		. += pipe
+/// The hub's pipe shows whether the machine it faces feeds into it (intake) or the hub feeds that machine. The neighbour is looked for ahead and
+/// watched: it appearing, leaving, turning or being unanchored redraws the hub.
+/obj/machinery/reagent_refinery/hub/draw(datum/look/look)
+	..()
+	var/obj/machinery/reagent_refinery/other = look.neighbour(src, dir, /obj/machinery/reagent_refinery)
+	var/intake = other?.anchored && other.hub_intake(GLOB.reverse_dir[dir])
+	look.overlay(look_overlay_image(icon, intake ? "hub_intakes" : "hub_cons", dir = dir))
 
 /obj/machinery/reagent_refinery/hub/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	if(istype(origin_machine,/obj/machinery/reagent_refinery/hub)) // Hubs cannot send into other hubs

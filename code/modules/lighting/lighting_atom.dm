@@ -194,7 +194,9 @@ SETTER(/atom, opacity)
 		return
 	. = light_on
 	light_on = new_value
+	tracked_changed(src, nameof(light_on)) // a drawn thing that shows its lamp redraws
 	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_on, .)
+SETTER(/atom, light_on)
 
 /// Setter for the light flags of this atom.
 /atom/proc/set_light_flags(new_value)

@@ -44,7 +44,7 @@
 		//Teleporting time.
 		user.forceMove(tele_target)
 		var/new_dir = get_dir(user, chosen_target)
-		user.dir = new_dir
+		user.set_dir(new_dir)
 		fx_sparks(src, 5, FALSE)
 		adjust_instability(12)
 

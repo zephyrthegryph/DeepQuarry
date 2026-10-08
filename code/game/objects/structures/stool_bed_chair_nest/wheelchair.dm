@@ -17,7 +17,6 @@
 
 /obj/structure/bed/chair/wheelchair/Initialize(mapload, new_material, new_padding_material)
 	. = ..()
-	update_icon()
 
 /obj/structure/bed/chair/wheelchair/motor
 	name = "electric wheelchair"
@@ -33,12 +32,9 @@
 	max_mob_buckle_size = MOB_MEDIUM
 	folded_type = /obj/item/wheelchair/motor/small
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bed/chair/wheelchair/appearance_overlays()
-	. = list()
-	var/image/O = image(icon = icon, icon_state = "[icon_state]_overlay", layer = ABOVE_MOB_LAYER)
-	O.plane = MOB_PLANE
-	. += O
+/obj/structure/bed/chair/wheelchair/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
+	look.overlay(look_cached_image("[initial(icon)]-[drawn_state]-overlay", initial(icon), "[drawn_state]_overlay", null, MOB_PLANE, ABOVE_MOB_LAYER))
 
 /obj/structure/bed/chair/wheelchair/set_dir()
 	. = ..()

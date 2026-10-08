@@ -1,0 +1,155 @@
+/turf/simulated/wall icon: icons/turf/wall_masks.dmi
+/turf/simulated/wall state: blank
+/turf/simulated/wall dir: 2
+/turf/simulated/wall overlay: icons/turf/wall_masks.dmi:solid0:-32767:#666666 x2
+/turf/simulated/wall overlay: icons/turf/wall_masks.dmi:solid3:-32767:#666666
+/turf/simulated/wall overlay: icons/turf/wall_masks.dmi:solid6:-32767:#666666
+/turf/simulated/wall/cult icon: icons/turf/wall_masks.dmi
+/turf/simulated/wall/cult state: blank
+/turf/simulated/wall/cult dir: 2
+/turf/simulated/wall/cult overlay: icons/turf/wall_masks.dmi:cult0:-32767:#402821 x4
+/turf/simulated/wall/cult overlay: icons/turf/wall_masks.dmi:reinf_cult:-32767:#402821
+/turf/simulated/wall/fancy_shuttle icon: icons/turf/fancy_shuttles/_fancy_helpers.dmi
+/turf/simulated/wall/fancy_shuttle state: blank
+/turf/simulated/wall/fancy_shuttle dir: 2
+/turf/simulated/wall/fancy_shuttle underlay: icons/turf/space.dmi:white:-82
+/turf/simulated/wall/fancy_shuttle underlay: icons/turf/space.dmi:white:6
+/turf/simulated/wall/r_wall icon: icons/turf/wall_masks.dmi
+/turf/simulated/wall/r_wall state: blank
+/turf/simulated/wall/r_wall dir: 2
+/turf/simulated/wall/r_wall overlay: icons/turf/wall_masks.dmi:reinf_over:-32767:#777777
+/turf/simulated/wall/r_wall overlay: icons/turf/wall_masks.dmi:solid0:-32767:#777777 x2
+/turf/simulated/wall/r_wall overlay: icons/turf/wall_masks.dmi:solid3:-32767:#777777
+/turf/simulated/wall/r_wall overlay: icons/turf/wall_masks.dmi:solid6:-32767:#777777
+/turf/simulated/wall/shull icon: icons/turf/wall_masks.dmi
+/turf/simulated/wall/shull state: blank
+/turf/simulated/wall/shull dir: 2
+/turf/simulated/wall/shull overlay: icons/turf/wall_masks.dmi:hull0:-32767:#666677 x2
+/turf/simulated/wall/shull overlay: icons/turf/wall_masks.dmi:hull3:-32767:#666677
+/turf/simulated/wall/shull overlay: icons/turf/wall_masks.dmi:hull6:-32767:#666677
+/turf/simulated/wall/rshull icon: icons/turf/wall_masks.dmi
+/turf/simulated/wall/rshull state: blank
+/turf/simulated/wall/rshull dir: 2
+/turf/simulated/wall/rshull overlay: icons/turf/wall_masks.dmi:hull0:-32767:#666677 x2
+/turf/simulated/wall/rshull overlay: icons/turf/wall_masks.dmi:hull3:-32767:#666677
+/turf/simulated/wall/rshull overlay: icons/turf/wall_masks.dmi:hull6:-32767:#666677
+/turf/simulated/wall/rshull overlay: icons/turf/wall_masks.dmi:reinf_mesh:-32767:#666677
+/turf/simulated/wall/rpshull icon: icons/turf/wall_masks.dmi
+/turf/simulated/wall/rpshull state: blank
+/turf/simulated/wall/rpshull dir: 2
+/turf/simulated/wall/rpshull overlay: icons/turf/wall_masks.dmi:hull0:-32767:#777788 x4
+/turf/simulated/wall/rpshull overlay: icons/turf/wall_masks.dmi:reinf_mesh:-32767:#777788
+/turf/simulated/wall/thull icon: icons/turf/wall_masks.dmi
+/turf/simulated/wall/thull state: blank
+/turf/simulated/wall/thull dir: 2
+/turf/simulated/wall/thull overlay: icons/turf/wall_masks.dmi:hull0:-32767:#d1e6e3 x4
+/turf/simulated/wall/iron icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/iron state: blank
+/turf/simulated/wall/iron dir: 2
+/turf/simulated/wall/iron overlay: icons/turf/wall_masks.dmi:metal0:-32767:#5c5454 x4
+/turf/simulated/wall/diamond icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/diamond state: blank
+/turf/simulated/wall/diamond dir: 2
+/turf/simulated/wall/diamond overlay: icons/turf/wall_masks.dmi:stone0:-32767:#00ffe1 x4
+/turf/simulated/wall/gold icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/gold state: blank
+/turf/simulated/wall/gold dir: 2
+/turf/simulated/wall/gold overlay: icons/turf/wall_masks.dmi:metal0:-32767:#edd12f x4
+/turf/simulated/wall/r_lead icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/r_lead state: blank
+/turf/simulated/wall/r_lead dir: 2
+/turf/simulated/wall/r_lead overlay: icons/turf/wall_masks.dmi:metal0:-32767:#273956 x4
+/turf/simulated/wall/r_lead overlay: icons/turf/wall_masks.dmi:reinf_metal:-32767:#273956
+/turf/simulated/wall/phoron icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/phoron state: blank
+/turf/simulated/wall/phoron dir: 2
+/turf/simulated/wall/phoron overlay: icons/turf/wall_masks.dmi:stone0:-32767:#fc2bc5 x4
+/turf/simulated/wall/sandstone icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/sandstone state: blank
+/turf/simulated/wall/sandstone dir: 2
+/turf/simulated/wall/sandstone overlay: icons/turf/wall_masks.dmi:stone0:-32767:#d9c179 x4
+/turf/simulated/wall/golddiamond icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/golddiamond state: blank
+/turf/simulated/wall/golddiamond dir: 2
+/turf/simulated/wall/golddiamond overlay: icons/turf/wall_masks.dmi:metal0:-32767:#edd12f x4
+/turf/simulated/wall/golddiamond overlay: icons/turf/wall_masks.dmi:reinf_metal:-32767:#00ffe1
+/turf/simulated/wall/snowbrick icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/snowbrick state: blank
+/turf/simulated/wall/snowbrick dir: 2
+/turf/simulated/wall/snowbrick overlay: icons/turf/wall_masks.dmi:stone0:-32767:#d8fdff x4
+/turf/simulated/wall/concrete icon: icons/turf/wall_masks.dmi
+/turf/simulated/wall/concrete state: blank
+/turf/simulated/wall/concrete dir: 2
+/turf/simulated/wall/concrete overlay: icons/turf/wall_masks.dmi:brick0:-32767:#808080 x4
+/turf/simulated/wall/concrete overlay: icons/turf/wall_texture.dmi:concrete:-32767
+/turf/simulated/wall/skipjack icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/skipjack state: blank
+/turf/simulated/wall/skipjack dir: 2
+/turf/simulated/wall/skipjack overlay: icons/turf/wall_masks.dmi:metal0:-32767:#6c7364 x4
+/turf/simulated/wall/titanium icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/titanium state: blank
+/turf/simulated/wall/titanium dir: 2
+/turf/simulated/wall/titanium overlay: icons/turf/wall_masks.dmi:metal0:-32767:#d1e6e3 x4
+/turf/simulated/wall/durasteel icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/durasteel state: blank
+/turf/simulated/wall/durasteel dir: 2
+/turf/simulated/wall/durasteel overlay: icons/turf/wall_masks.dmi:metal0:-32767:#6ea7be x4
+/turf/simulated/wall/durasteel overlay: icons/turf/wall_masks.dmi:reinf_metal:-32767:#6ea7be
+/turf/simulated/wall/wood icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/wood state: blank
+/turf/simulated/wall/wood dir: 2
+/turf/simulated/wall/wood overlay: icons/turf/wall_masks.dmi:wood0:-32767:#9c5930 x4
+/turf/simulated/wall/log_sif icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/log_sif state: blank
+/turf/simulated/wall/log_sif dir: 2
+/turf/simulated/wall/log_sif overlay: icons/turf/wall_masks.dmi:log0:-32767:#0099cc x4
+/turf/simulated/wall/eris icon: icons/turf/wall_masks_eris.dmi
+/turf/simulated/wall/eris state: blank
+/turf/simulated/wall/eris dir: 2
+/turf/simulated/wall/eris overlay: icons/turf/wall_masks_eris.dmi:solid0:-32767:#666666 x2
+/turf/simulated/wall/eris overlay: icons/turf/wall_masks_eris.dmi:solid3:-32767:#666666
+/turf/simulated/wall/eris overlay: icons/turf/wall_masks_eris.dmi:solid6:-32767:#666666
+/turf/simulated/wall/bay icon: icons/turf/wall_masks_bay.dmi
+/turf/simulated/wall/bay state: blank
+/turf/simulated/wall/bay dir: 2
+/turf/simulated/wall/bay overlay: icons/turf/wall_masks_bay.dmi:solid0:-32767:#666666 x2
+/turf/simulated/wall/bay overlay: icons/turf/wall_masks_bay.dmi:solid3:-32767:#666666
+/turf/simulated/wall/bay overlay: icons/turf/wall_masks_bay.dmi:solid6:-32767:#666666
+/turf/simulated/wall/tgmc icon: icons/turf/wall_masks_tgmc.dmi
+/turf/simulated/wall/tgmc state: metal0
+/turf/simulated/wall/tgmc dir: 2
+/turf/simulated/wall/rplastihull icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/rplastihull state: blank
+/turf/simulated/wall/rplastihull dir: 2
+/turf/simulated/wall/rplastihull overlay: icons/turf/wall_masks.dmi:hull0:-32767:#585658 x4
+/turf/simulated/wall/rplastihull overlay: icons/turf/wall_masks.dmi:reinf_mesh:-32767:#585658
+/turf/simulated/wall/elevator icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/elevator state: blank
+/turf/simulated/wall/elevator dir: 2
+/turf/simulated/wall/elevator overlay: icons/turf/wall_masks.dmi:metal0:-32767:#666666 x4
+/turf/simulated/wall/solidrock runtime: cannot read from list
+/turf/simulated/wall/solidrock/mossyrockpoi runtime: cannot read from list
+/turf/simulated/wall/uranium icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/uranium state: blank
+/turf/simulated/wall/uranium dir: 2
+/turf/simulated/wall/uranium overlay: icons/turf/wall_masks.dmi:solid0:-32767:#666666 x2
+/turf/simulated/wall/uranium overlay: icons/turf/wall_masks.dmi:solid3:-32767:#666666
+/turf/simulated/wall/uranium overlay: icons/turf/wall_masks.dmi:solid6:-32767:#666666
+/turf/simulated/wall/stonelogs icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/stonelogs state: blank
+/turf/simulated/wall/stonelogs dir: 2
+/turf/simulated/wall/stonelogs overlay: icons/turf/wall_masks.dmi:brick0:-32767:#808080 x4
+/turf/simulated/wall/stonelogs overlay: icons/turf/wall_masks.dmi:reinf_metal:-32767:#9c5930
+/turf/simulated/wall/stonelogs overlay: icons/turf/wall_texture.dmi:concrete:-32767
+/turf/simulated/wall/glass icon: icons/obj/structures_vr.dmi
+/turf/simulated/wall/glass state: blank
+/turf/simulated/wall/glass dir: 2
+/turf/simulated/wall/glass overlay: icons/turf/wall_masks.dmi:metal0:-32767:#00e1ff x4
+/turf/simulated/wall/virgo2 icon: icons/turf/wall_masks.dmi
+/turf/simulated/wall/virgo2 state: blank
+/turf/simulated/wall/virgo2 dir: 2
+/turf/simulated/wall/virgo2 color: #eacd7c
+/turf/simulated/wall/virgo2 overlay: icons/turf/wall_masks.dmi:solid0:-32767:#666666 x2
+/turf/simulated/wall/virgo2 overlay: icons/turf/wall_masks.dmi:solid3:-32767:#666666
+/turf/simulated/wall/virgo2 overlay: icons/turf/wall_masks.dmi:solid6:-32767:#666666
+

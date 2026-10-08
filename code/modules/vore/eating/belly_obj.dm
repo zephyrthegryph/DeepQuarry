@@ -455,7 +455,7 @@ CAPABILITIES(/obj/belly)
 		if(count_items_for_sprite) // If this is enabled also update fullness for non-living things
 			owner.handle_belly_update() // This is run whenever a belly's contents are changed.
 		var/obj/item/I = thing
-		if(I.gurgled)
+		if(I.gurgled && !I.stains_in_look())
 			I.cut_overlay(GLOB.gurgled_overlays[I.gurgled_color]) //No double-overlay for worn items.
 			I.add_overlay(GLOB.gurgled_overlays[I.gurgled_color])
 		if(I.d_mult < 1)

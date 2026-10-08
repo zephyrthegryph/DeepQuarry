@@ -80,9 +80,13 @@ CAPABILITIES(/obj/structure/bed/pillowpile)
 // The front piece is the pile's other half: the pile owns it (implicit OWN, deleted with the
 // pile); the front names the pile one-sided (cleared if the pile goes first).
 
-APPEARANCE_NONE(/obj/structure/bed/pillowpilefront)
+/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/obj/structure/bed/pillowpilefront/look_parts(datum/look/look)
+	return
 
-APPEARANCE_NONE(/obj/structure/bed/pillowpile)
+/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/obj/structure/bed/pillowpile/look_parts(datum/look/look)
+	return
 
 CAPABILITIES(/obj/structure/bed/pillowpilefront)
 	bed_hands_off()

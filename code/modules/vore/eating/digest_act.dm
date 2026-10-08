@@ -76,7 +76,7 @@
 				cleanname = "[d_stage_name] [oldname]"
 				wash(CLEAN_ALL)
 				if(istype(B))
-					gurgled_color = B.contamination_color //Apply the correct color setting so uncontaminable things can still have the right overlay.
+					set_gurgled_color(B.contamination_color) //Apply the correct color setting so uncontaminable things can still have the right overlay.
 					gurgle_contaminate(B, B.contamination_flavor, B.contamination_color)
 	if(digest_stage <= 0)
 		if(istype(src, /obj/item/pda))
@@ -186,8 +186,7 @@
 		icon_state = "[initial(icon_state)]_digested"
 	else
 		if(!sprite_stack.Find("digested"))
-			sprite_stack += "digested"
-	update_icon()
+			set_sprite_stack(sprite_stack + "digested") // a new list: the card's own stack is never the shared initial one
 	return FALSE
 
 /obj/item/holder/digest_act(atom/movable/item_storage = null)
