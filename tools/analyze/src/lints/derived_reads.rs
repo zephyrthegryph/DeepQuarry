@@ -75,7 +75,7 @@ static META: Meta = Meta {
 fn proc_kind(name: &str) -> Option<&'static str> {
     match name {
         "should_run" => Some("runs"),
-        "draw" | "hidden_verbs" => Some("drawn"),
+        "draw" | "draw_charge_state" | "charge_state_name" | "hidden_verbs" => Some("drawn"),
         "tgui_data" | "ui_data" => Some("ui"),
         "push_to_rust" => Some("push"),
         _ => None,

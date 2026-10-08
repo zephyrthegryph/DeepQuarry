@@ -216,6 +216,7 @@ CAPABILITIES(/obj/item/gun/energy)
 /// The look: the charge meter state, over what the capabilities and the gun base drew.
 /obj/item/gun/energy/draw(datum/look/look)
 	..()
+	look.watch(power_supply) // a view, not a child: its charge changes redraw the gun
 	draw_charge_state(look)
 
 /// The base name of the gun's charge states ("laser" for laser100): the fire mode's state, else the icon's own.

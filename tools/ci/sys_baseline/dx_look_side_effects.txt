@@ -2,7 +2,6 @@
 dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibility = INVISIBILITY_NONE
 dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibility = INVISIBILITY_ABSTRACT
 dx_appearance_side_effect	code/_onclick/hud/screen_objects.dm	handcuff_overlay = image("icon"='icons/mob/screen_gen.dmi', "icon_state"=state)
-dx_appearance_side_effect	code/game/gamemodes/technomancer/spells/illusion.dm	temp_image.transform = M
 dx_appearance_side_effect	code/game/machinery/doors/brigdoors.dm	set_picture("ai_bsod")
 dx_appearance_side_effect	code/game/machinery/doors/brigdoors.dm	maptext = ""
 dx_appearance_side_effect	code/game/machinery/feeder.dm	if(0 to 9) filling.icon_state = "reagent0"
@@ -101,15 +100,6 @@ dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/vore.dm	nam
 dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/vore.dm	desc = custombasedesc
 dx_appearance_side_effect	code/game/objects/items/bodybag.dm	I.appearance_flags = RESET_COLOR
 dx_appearance_side_effect	code/game/objects/items/bodybag.dm	I.color = COLOR_LIME
-dx_appearance_side_effect	code/game/objects/items/devices/radio/intercom.dm	on = A?.powered(EQUIP)
-dx_appearance_side_effect	code/game/objects/items/devices/radio/intercom.dm	set_light(0)
-dx_appearance_side_effect	code/game/objects/items/devices/radio/intercom.dm	set_light_on(FALSE)
-dx_appearance_side_effect	code/game/objects/items/devices/radio/intercom.dm	set_light(0)
-dx_appearance_side_effect	code/game/objects/items/devices/radio/intercom.dm	set_light_on(FALSE)
-dx_appearance_side_effect	code/game/objects/items/devices/radio/intercom.dm	set_light(2)
-dx_appearance_side_effect	code/game/objects/items/devices/radio/intercom.dm	set_light_on(TRUE)
-dx_appearance_side_effect	code/game/objects/items/devices/radio/jammer.dm	last_overlay_percent = overlay_percent
-dx_appearance_side_effect	code/game/objects/items/fantasy_items.dm	transforming = 0
 dx_appearance_side_effect	code/game/objects/items/glassjar.dm	underlays.Cut()
 dx_appearance_side_effect	code/game/objects/items/glassjar.dm	name = initial(name)
 dx_appearance_side_effect	code/game/objects/items/glassjar.dm	desc = initial(desc)
@@ -136,12 +126,6 @@ dx_appearance_side_effect	code/game/objects/items/glassjar.dm	desc = "A small ja
 dx_appearance_side_effect	code/game/objects/items/glassjar.dm	desc = "[desc] It contains water."
 dx_appearance_side_effect	code/game/objects/items/weapons/tanks/tanks.dm	tank.update_icon()
 dx_appearance_side_effect	code/game/objects/items/weapons/tanks/tanks.dm	tank.update_icon()
-dx_appearance_side_effect	code/game/objects/items/weapons/tools/weldingtool.dm	item_state = "[initial(item_state)]1"
-dx_appearance_side_effect	code/game/objects/items/weapons/tools/weldingtool.dm	item_state = initial(item_state)
-dx_appearance_side_effect	code/game/objects/items/weapons/tools/weldingtool.dm	set_light(flame_intensity, flame_intensity, flame_color)
-dx_appearance_side_effect	code/game/objects/items/weapons/tools/weldingtool.dm	set_light(0)
-dx_appearance_side_effect	code/game/objects/items/weapons/tools/zspicytools.dm	set_light(flame_intensity, flame_intensity, flame_color)
-dx_appearance_side_effect	code/game/objects/items/weapons/tools/zspicytools.dm	set_light(0)
 dx_appearance_side_effect	code/game/objects/mail.dm	envelope.color = colored_envelope
 dx_appearance_side_effect	code/game/objects/mail.dm	stamp_image.appearance_flags |= RESET_COLOR
 dx_appearance_side_effect	code/game/objects/mail.dm	postmark_image.appearance_flags |= RESET_COLOR
@@ -352,25 +336,6 @@ dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/pa
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	light_range = 4
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	set_light(light_range, 2, light_color)
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	set_light(0, 0, "#FFFFFF")
-dx_appearance_side_effect	code/modules/projectiles/ammunition/handful.dm	name = "handful of [caliber] rounds"
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/bsharpoon.dm	transforming = 0
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	mode_bar.color = batt_color
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	barrel_color.alpha = 150
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	barrel_color.color = batt_color
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	charge_bar.pixel_x = i
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	charge_bar.color = batt_color
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	cap.color = batt.type_color
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	cap.pixel_x = current * x_offset //Caps don't need a pixel_y offset
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	charge.color = "#29EAF4" //Could use battery color but eh.
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	charge.pixel_x = current * x_offset
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/cell_loaded/multi_cannon.dm	x.color = indicator_colour
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/cyborg.dm	blade_overlay.color = lcolor
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/protector.dm	charge_overlay.pixel_x = ammo_x_offset * (i - 1)
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/protector.dm	flashlight_overlay.pixel_x = flight_x_offset
-dx_appearance_side_effect	code/modules/projectiles/guns/energy/protector.dm	flashlight_overlay.pixel_y = flight_y_offset
-dx_appearance_side_effect	code/modules/projectiles/guns/projectile/automatic.dm	item_state = icon_state
-dx_appearance_side_effect	code/modules/projectiles/guns/projectile/automatic.dm	item_state = "l6[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"]"
-dx_appearance_side_effect	code/modules/projectiles/guns/projectile/automatic.dm	item_state = "mg42"
 dx_appearance_side_effect	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	underlays.Cut()
 dx_appearance_side_effect	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	cat_filling.color = catalyst.reagents.get_color()
 dx_appearance_side_effect	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	ves_filling.color = src.reagents.get_color()
@@ -385,4 +350,3 @@ dx_appearance_side_effect	code/modules/shieldgen/energy_field.dm	set_light(3, 3,
 dx_appearance_side_effect	code/modules/shieldgen/energy_field.dm	set_light(3, 5, "#FF9900")
 dx_appearance_side_effect	code/modules/vore/fluffstuff/custom_items.dm	name = initial(name)
 dx_appearance_side_effect	code/modules/vore/fluffstuff/custom_items.dm	desc = initial(desc)
-dx_appearance_side_effect	code/modules/vore/resizing/sizegun.dm	item_state = "[initial_icon_state]-[grow_mode]"

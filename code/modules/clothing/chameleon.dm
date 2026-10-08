@@ -477,6 +477,14 @@ CAPABILITIES(/obj/item/clothing/accessory/chameleon)
 	battery_lock = 1
 
 	var/copy_projectile	// a projectile type path
+	/// The icon_state of the gun it mimics (null: its own base sprite); the look draws it, so a redraw keeps the disguise.
+	var/disguise_state
+
+TRACKED(/obj/item/gun/energy/chameleon, disguise_state)
+
+/// The look: the mimicked gun's sprite, whatever the charge.
+/obj/item/gun/energy/chameleon/charge_state_name()
+	return disguise_state ? disguise_state : initial(icon_state)
 
 /obj/item/gun/energy/chameleon/on_materialize()
 	if(!LAZYLEN(GLOB.gun_choices))
@@ -505,7 +513,7 @@ CAPABILITIES(/obj/item/clothing/accessory/chameleon)
 /obj/item/gun/energy/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "desert eagle"
 	desc = "It's a desert eagle."
-	icon_state = "deagle"
+	set_disguise_state("deagle")
 	if (ismob(src.loc))
 		var/mob/M = src.loc
 		M.update_inv_r_hand()
@@ -513,6 +521,7 @@ CAPABILITIES(/obj/item/clothing/accessory/chameleon)
 
 /obj/item/gun/energy/chameleon/disguise(newtype)
 	var/obj/item/gun/copy = ..()
+	set_disguise_state(copy.icon_state)
 
 	flags_inv = copy.flags_inv
 	if(copy.fire_sound)

@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/ghost_trap)
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
 			rel_clear(src, nameof(captured_entity))
 			our_entity.forceMove(get_turf(src))
-					return
+			return
 
 	to_chat(user, span_info("There appears to be nothing in the trap!"))
 	return
@@ -106,7 +106,7 @@ CAPABILITIES(/obj/item/ghost_trap)
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
 			rel_clear(src, nameof(captured_entity))
 			announce_escape(our_entity)
-		
+
 /obj/item/ghost_trap/proc/announce_escape(mob/our_entity)
 	var/area/our_area = get_area(src)
 	log_and_message_admins("[our_entity] escaped \the [name] at \the [our_area]", our_entity)
@@ -232,7 +232,7 @@ CAPABILITIES(/obj/item/ghost_trap)
 		catch_ghost(passing_entity)
 		set_deployed(FALSE)
 		set_anchored(FALSE)
-			log_and_message_admins("has been captured at \the [get_area(loc)] by the [name], last touched by [forensic_data?.get_lastprint()]", passing_entity)
+		log_and_message_admins("has been captured at \the [get_area(loc)] by the [name], last touched by [forensic_data?.get_lastprint()]", passing_entity)
 
 /obj/item/ghost_trap/proc/ghost_trap_hidden_vore_effect(datum/act/op/A)
 	var/mob/user = A.actor

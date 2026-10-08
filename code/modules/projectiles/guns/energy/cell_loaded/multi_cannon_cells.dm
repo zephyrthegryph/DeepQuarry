@@ -17,6 +17,7 @@ TRACKED(/obj/item/ammo_casing/macrobattery, charge)
 /// Below full charge (kept in step with the charge by Initialize(), expend() and recharge()).
 /obj/item/ammo_casing/macrobattery/var/charge_short = FALSE
 TRACKED(/obj/item/ammo_casing/macrobattery, charge_short)
+TRACKED(/obj/item/ammo_casing/macrobattery, bat_colour)
 /// Recharges while below full; full, it parks until a shot is expended.
 CAPABILITIES(/obj/item/ammo_casing/macrobattery)
 	every(2 SECONDS, then(PROC_REF(macrobattery_step)), when = nameof(charge_short))

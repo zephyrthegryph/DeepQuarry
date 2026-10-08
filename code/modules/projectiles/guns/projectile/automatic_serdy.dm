@@ -1231,7 +1231,7 @@ TYPE_TABLE(/obj/item/gun/projectile/automatic/wt550, projectile_initial_transfor
 /obj/item/gun/projectile/automatic/z8/draw(datum/look/look)
 	..()
 	if(ammo_magazine)
-		look.state("carbine-[round(CLAMP(length(ammo_magazine.stored_ammo)/2,0,10),2)]")
+		look.state("carbine-[round(CLAMP(ammo_magazine.ammo_count()/2,0,10),2)]")
 	else
 		look.state("carbine-e")
 

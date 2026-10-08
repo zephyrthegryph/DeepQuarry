@@ -46,7 +46,7 @@ TYPE_TABLE_DECLARE(/obj/item/radio/intercom, intercom_channel_setup, null)
 		if(/obj/item/radio/intercom/raider)
 			internal_channels[num2text(RAID_FREQ)] = list(ACCESS_SYNDICATE)
 
-/obj/item/radio/intercom/proc/on_observer_apc(datum/act/notice/A)
+/obj/item/radio/intercom/proc/on_observer_apc(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/area/A = get_area(src)
 	set_on(A?.powered(EQUIP))

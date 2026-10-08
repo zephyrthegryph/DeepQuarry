@@ -174,6 +174,7 @@ CAPABILITIES(/obj/item/ammo_casing)
 	var/list/ammo_states	//values
 
 TRACKED(/obj/item/ammo_magazine, latent_rounds)
+TRACKED(/obj/item/ammo_magazine, max_ammo)
 
 CAPABILITIES(/obj/item/ammo_magazine)
 	owns_many(nameof(stored_ammo))
@@ -320,7 +321,7 @@ CAPABILITIES(/obj/item/ammo_magazine)
 		var/new_state = null
 		for(var/idx in 1 to length(icon_keys))
 			var/threshold = LAZYACCESS(icon_keys, idx)
-			if (threshold >= ammo_count())
+			if (threshold >= length(stored_ammo) + latent_rounds)
 				new_state = LAZYACCESS(ammo_states, idx)
 				break
 		look.state(new_state ? new_state : initial(icon_state))

@@ -288,7 +288,7 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 		look.state("l6[cover_open ? "open" : "closed"]mag")
 		look.held_state("l6[cover_open ? "open" : "closed"]mag")
 	else
-		look.state("l6[cover_open ? "open" : "closed"][ammo_magazine ? round(length(ammo_magazine.stored_ammo), 25) : "-empty"]")
+		look.state("l6[cover_open ? "open" : "closed"][ammo_magazine ? round(ammo_magazine.ammo_count(), 25) : "-empty"]")
 		look.held_state("l6[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"]")
 
 /obj/item/gun/projectile/automatic/l6_saw/load_ammo(obj/item/A, mob/user)
@@ -682,7 +682,7 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	look.state((ammo_magazine)? "SMG-IS" : "SMG-IS-empty")
 	if(!ammo_magazine)
 		return
-	var/ratio = length(ammo_magazine.stored_ammo) / ammo_magazine.max_ammo
+	var/ratio = ammo_magazine.ammo_count() / ammo_magazine.max_ammo
 	if(ratio < 0.25 && ratio != 0)
 		ratio = 0.25
 	ratio = round(ratio, 0.25) * 100
@@ -813,7 +813,7 @@ TRACKED(/obj/item/gun/projectile/automatic/mg42, cover_open)
 
 /obj/item/gun/projectile/automatic/mg42/draw(datum/look/look)
 	..()
-	look.state("mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && length(ammo_magazine.stored_ammo) == 0 ? "0" : ""]")
+	look.state("mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && ammo_magazine.ammo_count() == 0 ? "0" : ""]")
 	look.held_state("mg42")
 
 /obj/item/gun/projectile/automatic/mg42/load_ammo(obj/item/A, mob/user)
