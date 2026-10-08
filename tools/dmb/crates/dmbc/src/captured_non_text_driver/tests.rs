@@ -529,3 +529,6 @@ fn unsupported_map_type_reports_current_origin_and_query_spellings() {
     );
     assert!(!measurements.last().unwrap().succeeded);
 }
+
+#[path = "publication.rs"]
+mod publication;

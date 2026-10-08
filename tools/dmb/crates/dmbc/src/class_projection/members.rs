@@ -13,6 +13,19 @@ pub fn materialize_members(
     symbols: &dm_ir::SymbolTable,
     value_types: &dyn TypeValuePolicy,
 ) -> Result<(), ProjectionError> {
+    let mut pool = crate::composition::StringIndex::build(dmb)
+        .map_err(|e| ProjectionError::Unsupported(format!("world strings {e:?}")))?;
+    materialize_members_with_strings(dmb, projection, tables, symbols, value_types, &mut pool)
+}
+
+pub(crate) fn materialize_members_with_strings(
+    dmb: &mut byond_dmb::dmb::Dmb,
+    projection: &ClassProjection,
+    tables: &dm_link::LinkTables,
+    symbols: &dm_ir::SymbolTable,
+    value_types: &dyn TypeValuePolicy,
+    pool: &mut crate::composition::StringIndex,
+) -> Result<(), ProjectionError> {
     use byond_dmb::{dmb::Variable, ids::NONE};
     let mut mob_order = Vec::new();
     for ty in projection.types.iter() {
@@ -137,12 +150,11 @@ pub fn materialize_members(
             }
         }
     }
-    let mut world_strings = crate::composition::StringIndex::build(dmb)
-        .map_err(|e| ProjectionError::Unsupported(format!("world strings {e:?}")))?;
+
     crate::world_writer::apply(
         dmb,
         &directives,
-        &mut world_strings,
+        pool,
         &Defaults {
             tables,
             values: value_types,
@@ -181,7 +193,7 @@ pub fn materialize_members(
             dmb,
             script,
             &mut ScriptBindings {
-                strings: &mut world_strings,
+                strings: pool,
                 resources: value_types,
             },
         )
@@ -217,8 +229,7 @@ pub fn materialize_members(
             }
         }
     }
-    let mut pool = crate::composition::StringIndex::build(dmb)
-        .map_err(|e| ProjectionError::Unsupported(format!("string writer {e:?}")))?;
+
     fn list(dmb: &mut byond_dmb::dmb::Dmb, words: Vec<u32>) -> Result<u32, ProjectionError> {
         crate::composition::append_list(dmb, words)
             .map_err(|error| ProjectionError::Unsupported(format!("list writer {error:?}")))
@@ -334,7 +345,7 @@ pub fn materialize_members(
         let name = pool
             .intern(dmb, text(field.name)?.as_bytes())
             .map_err(|e| ProjectionError::Unsupported(format!("field name {e:?}")))?;
-        let (kind, value) = scalar(dmb, &mut pool, &field.value, tables, value_types)?;
+        let (kind, value) = scalar(dmb, pool, &field.value, tables, value_types)?;
         let variable = u32::try_from(dmb.variables.len())
             .map_err(|_| ProjectionError::Unsupported("variable record overflow".into()))?;
         dmb.variables.push(Variable { kind, value, name });
@@ -373,7 +384,7 @@ pub fn materialize_members(
             .map_err(|error| {
                 ProjectionError::Unsupported(format!("procedure static name {error:?}"))
             })?;
-        let (kind, value) = scalar(dmb, &mut pool, &local.value, tables, value_types)?;
+        let (kind, value) = scalar(dmb, pool, &local.value, tables, value_types)?;
         let variable = u32::try_from(dmb.variables.len())
             .map_err(|_| ProjectionError::Unsupported("procedure static record overflow".into()))?;
         dmb.variables.push(Variable { kind, value, name });
@@ -428,7 +439,7 @@ pub fn materialize_members(
             .ok_or(ProjectionError::MissingMember)?;
         if field.intrinsic && !declarations.contains_key(&(field.declaring_owner, field.name)) {
             let name = text(field.name)?;
-            let (kind, value) = scalar(dmb, &mut pool, &field.value, tables, value_types)?;
+            let (kind, value) = scalar(dmb, pool, &field.value, tables, value_types)?;
             let numeric = match &field.value {
                 DefaultValue::Scalar(SemanticValue::NumberBits(bits)) => {
                     Some(f32::from_bits(*bits))
@@ -542,7 +553,7 @@ pub fn materialize_members(
         let variable = *declarations
             .get(&(field.declaring_owner, field.name))
             .ok_or(ProjectionError::MissingMember)?;
-        let (kind, value) = scalar(dmb, &mut pool, &field.value, tables, value_types)?;
+        let (kind, value) = scalar(dmb, pool, &field.value, tables, value_types)?;
         let mut words = vec![variable];
         words.extend(encoded_constant(kind, value)?);
         let old = dmb.classes[class as usize].lists_and_procs[3];

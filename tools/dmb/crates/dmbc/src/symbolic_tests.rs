@@ -533,3 +533,104 @@ fn consuming_changed_origins_relinks_instead_of_taking_stale_image() {
         .take_unit_image(0, &SourceBindings::default())
         .is_err());
 }
+
+fn parallel_fixture() -> (ColdFrontend, Vec<LoweredUnit>) {
+    struct Many;
+    impl dm_preprocess::SourceProvider for Many {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            Ok((0..17)
+                .map(|i| format!("/proc/unit_{i}()\n    return \"shared\"\n"))
+                .collect())
+        }
+    }
+    let frontend =
+        dm_tree::frontend::build(Path::new("parallel.dme"), &Many, &BTreeMap::new(), 1).unwrap();
+    let mut lowered = lower_frontend(&frontend, &Host, &Policy, LoweringConfig::default());
+    assert!(lowered.diagnostics.is_empty(), "{:?}", lowered.diagnostics);
+    for unit in &mut lowered.units {
+        unit.source_helpers
+            .push(crate::argument_sources::LoweredHelper {
+                owner: unit.identity,
+                argument: 0,
+                code: unit.code.clone(),
+                debug_origins: unit.debug_origins.clone(),
+            });
+    }
+    (frontend, lowered.units)
+}
+#[test]
+fn parallel_freeze_preserves_tables_code_helpers_and_debug_at_one_two_eight_workers() {
+    let (frontend, units) = parallel_fixture();
+    let freeze = |workers| {
+        freeze_artifact_tables_with_workers(
+            LoweringBatch {
+                units: units.clone(),
+                diagnostics: Vec::new(),
+            },
+            frontend.snapshot.tree.symbols(),
+            &ReferenceBindings::default(),
+            LinkInventory::default(),
+            Vec::new(),
+            workers,
+        )
+        .unwrap()
+    };
+    let baseline = freeze(1);
+    for workers in [2, 8] {
+        let current = freeze(workers);
+        assert_eq!(current.tables.assignments(), baseline.tables.assignments());
+        assert_eq!(current.units.len(), baseline.units.len());
+        assert_eq!(current.helpers.len(), baseline.helpers.len());
+        for &key in baseline.tables.assignments().keys() {
+            assert_eq!(current.tables.content(key), baseline.tables.content(key));
+        }
+        for (index, (left, right)) in baseline.units.iter().zip(&current.units).enumerate() {
+            assert_eq!(left.lowered.identity, right.lowered.identity);
+            assert_eq!(left.lowered.debug_origins, right.lowered.debug_origins);
+            assert_eq!(
+                baseline.link_unit(index, &Default::default()).unwrap(),
+                current.link_unit(index, &Default::default()).unwrap()
+            );
+        }
+        for (left, right) in baseline.helpers.iter().zip(&current.helpers) {
+            assert_eq!((left.owner, left.argument), (right.owner, right.argument));
+            assert_eq!(left.debug_origins, right.debug_origins);
+            assert_eq!(
+                baseline.link_helper(left).unwrap(),
+                current.link_helper(right).unwrap()
+            );
+        }
+    }
+}
+#[test]
+fn parallel_freeze_returns_first_source_error_even_when_later_tasks_fail() {
+    let (frontend, mut units) = parallel_fixture();
+    let first = units[0].identity;
+    units[0].source_helpers[0].owner = units[1].identity;
+    units[2].code.procedure.code.items = vec![dm_codegen_byond::Item::Instruction(
+        dm_codegen_byond::Instruction {
+            opcode: u32::MAX,
+            operands: Vec::new(),
+        },
+    )];
+    for workers in [1, 2, 8] {
+        let result = freeze_artifact_tables_with_workers(
+            LoweringBatch {
+                units: units.clone(),
+                diagnostics: Vec::new(),
+            },
+            frontend.snapshot.tree.symbols(),
+            &ReferenceBindings::default(),
+            LinkInventory::default(),
+            Vec::new(),
+            workers,
+        );
+        match result {
+            Err(IntegrationError::Freeze { unit, message }) => {
+                assert_eq!(unit, first);
+                assert_eq!(message, "invalid companion owner/formal frame");
+            }
+            _ => panic!("expected the first source-order helper error"),
+        }
+    }
+}

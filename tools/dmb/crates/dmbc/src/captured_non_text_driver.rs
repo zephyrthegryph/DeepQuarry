@@ -75,7 +75,26 @@ pub struct CapturedNonTextOutput<R> {
     pub resource_archive_order: Vec<usize>,
     pub retained_resource_inputs: Option<crate::input_snapshot::InputSnapshot>,
 }
+/// Exact owned publication facts after executable composition has finished.
+/// Captured source models, resolver caches and linking inventories do not cross
+/// this boundary. The archive and authenticated reuse metadata move unchanged.
+pub struct PublicationNonText {
+    pub archive: crate::assets::ResourceArchive,
+    pub resource_catalog: dm_resources::catalog::ResourceCatalog,
+    pub resource_archive_order: Vec<usize>,
+    pub retained_resource_inputs: Option<crate::input_snapshot::InputSnapshot>,
+}
+
 impl<R> CapturedNonTextOutput<R> {
+    pub fn into_publication(self) -> PublicationNonText {
+        PublicationNonText {
+            archive: self.resources.archive,
+            resource_catalog: self.resource_catalog,
+            resource_archive_order: self.resource_archive_order,
+            retained_resource_inputs: self.retained_resource_inputs,
+        }
+    }
+
     pub fn stage<'a>(
         &'a self,
         frontend: &'a ColdFrontend,

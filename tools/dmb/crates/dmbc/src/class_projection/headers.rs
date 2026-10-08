@@ -8,12 +8,26 @@ use byond_dmb::{
 use dm_ir::SymbolTable;
 use std::collections::{BTreeSet, VecDeque};
 
+#[cfg(test)]
 pub(crate) fn finalize_headers(
     dmb: &mut Dmb,
     engine_bytes: &[u8],
     projection: &ClassProjection,
     tables: &dm_link::LinkTables,
     symbols: &dm_ir::SymbolTable,
+) -> Result<(), ProjectionError> {
+    let mut pool = crate::composition::StringIndex::build(dmb)
+        .map_err(|e| ProjectionError::Unsupported(format!("header strings {e:?}")))?;
+    finalize_headers_with_strings(dmb, engine_bytes, projection, tables, symbols, &mut pool)
+}
+
+pub(crate) fn finalize_headers_with_strings(
+    dmb: &mut Dmb,
+    engine_bytes: &[u8],
+    projection: &ClassProjection,
+    tables: &dm_link::LinkTables,
+    symbols: &dm_ir::SymbolTable,
+    pool: &mut crate::composition::StringIndex,
 ) -> Result<(), ProjectionError> {
     let engine = Dmb::from_bytes(engine_bytes)
         .map_err(|error| ProjectionError::Unsupported(format!("header engine {error}")))?;
@@ -92,8 +106,7 @@ pub(crate) fn finalize_headers(
     let mut effective_overrides: HashMap<u32, Arc<HashSet<&str>>> = HashMap::new();
     let mut authored_name = HashSet::new();
     let mut authored_text = HashSet::new();
-    let mut pool = crate::composition::StringIndex::build(dmb)
-        .map_err(|error| ProjectionError::Unsupported(format!("header strings {error:?}")))?;
+
     for id in order {
         let authored = own.get(&id).cloned().unwrap_or_default();
         let mut local = authored.clone();

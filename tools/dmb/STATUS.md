@@ -127,6 +127,22 @@ latency**, and is not a median. Its differing source identity and output pair
 are kept separate from runtime-parity inputs. Evidence:
 `E:/dmb-native-v2-phase0/body-edit-run-20261008-a/receipt.json`.
 
+## Subsequent diagnostic trace
+
+The subsequent diagnostic release p (`f076d70cd6`, SHA256
+`1e28b69f305736a0bf1c44172e0673f8116665168fe04499cf2250e14055cb60`)
+passed one complete captured-source compile and its fresh-output/diagnostic
+oracle. CPU quality passed: child wall 135.0148 s, fresh child 143.8679 s,
+total process CPU 60.140625 s, critical CPU bounds 28.75–30.0625 s, peak
+private 2,444,591,104 bytes. This single run is not a new acceptance median.
+The extra broad composition spans show final instruction validation at
+0.328125–0.390625 CPU s, authored headers at 0.5–0.5625 s, encoding at
+0.171875–0.234375 s and independent decoding at 0.21875–0.28125 s.
+Thus the final visitor does not account for the whole earlier 1.59 s composition
+increase. More writer stages are being measured; repeated string-index builds
+and serial freezing are current optimization candidates. Receipt:
+`E:/dmb-native-v2-phase0/review-power-focus/native-retries/retry-7435fdd300be4e39ace430cb9de5b329/receipt.json`.
+
 ## Focused runtime gate
 
 The human authorized one bounded focused trusted-mode comparison after Rust/output checks, with no full runtime suite authorization. Both worlds completed one focused trusted replay; neither timed out or crashed. This is a single comparison, not full runtime parity.

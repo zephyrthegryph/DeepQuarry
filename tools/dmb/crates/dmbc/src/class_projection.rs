@@ -9,7 +9,7 @@ pub use callbacks::materialize_callback_flags;
 use dm_ir::{SemanticValue, SymbolId, SymbolicExpression};
 use dm_link::Key;
 use dm_tree::{DefinitionMode, MemberKind, OccurrenceId, Target, TreeSnapshot};
-pub(super) use headers::finalize_headers;
+pub(super) use headers::finalize_headers_with_strings;
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     sync::Arc,
@@ -453,6 +453,18 @@ pub fn materialize_types(
     tables: &dm_link::LinkTables,
     symbols: &dm_ir::SymbolTable,
 ) -> Result<(), ProjectionError> {
+    let mut strings = crate::composition::StringIndex::build(dmb)
+        .map_err(|e| ProjectionError::Unsupported(format!("type strings {e:?}")))?;
+    materialize_types_with_strings(dmb, projection, tables, symbols, &mut strings)
+}
+
+pub(crate) fn materialize_types_with_strings(
+    dmb: &mut byond_dmb::dmb::Dmb,
+    projection: &ClassProjection,
+    tables: &dm_link::LinkTables,
+    symbols: &dm_ir::SymbolTable,
+    strings: &mut crate::composition::StringIndex,
+) -> Result<(), ProjectionError> {
     use byond_dmb::{dmb::Class, ids::NONE};
     let spelling = |symbol| {
         symbols.text(symbol).ok_or_else(|| {
@@ -522,8 +534,7 @@ pub fn materialize_types(
             ));
         }
     }
-    let mut strings = crate::composition::StringIndex::build(dmb)
-        .map_err(|e| ProjectionError::Unsupported(format!("type strings {e:?}")))?;
+
     let mut constructed: BTreeMap<u32, Class> = BTreeMap::new();
     let parents = planned.iter().map(|(&index, ty)| {
         let parent = ty
@@ -575,6 +586,7 @@ pub fn materialize_types(
 #[path = "class_projection/members.rs"]
 mod members;
 pub use members::materialize_members;
+pub(crate) use members::materialize_members_with_strings;
 
 fn encoded_constant(kind: u8, value: u32) -> Result<Vec<u32>, ProjectionError> {
     if kind != 42 && value > 0x00ff_ffff {
@@ -728,3 +740,7 @@ mod construction_order_tests {
 #[cfg(test)]
 #[path = "class_projection_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "class_projection/shared_writer_tests.rs"]
+mod shared_writer_tests;

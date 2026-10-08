@@ -711,6 +711,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             Err(error) => return Err(format!("native compilation: {error:?}").into()),
         };
         let compilation_seconds = compilation_started.elapsed().as_secs_f64();
+        // Compilation and its diagnostics have finished. End resolver/value
+        // borrows before consuming source captures into exact publication facts.
+        drop(compilation_resolver);
+        let publication = nontext.into_publication();
         let cache_flush_profile = dm_profile::stage("cache_flush");
         if let (Some(cache), Some(memo)) = (&memo_cache, &procedure_memo) {
             let records = memo.take_pending();
@@ -767,7 +771,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             Some(session) => session.identity()?,
             None => xxhash_rust::xxh3::xxh3_128(project.to_string_lossy().as_bytes()),
         };
-        let pair = match &nontext.resources.archive {
+        let pair = match &publication.archive {
             dmbc::assets::ResourceArchive::Captured(bytes) => {
                 store.publish(session_id, &output.dmb, bytes)?
             }
@@ -801,7 +805,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         if let Some(session) = &session.filter(|_| !verification_capture) {
             let mut inputs = inputs_capture.snapshot()?;
-            if let Some(retained) = &nontext.retained_resource_inputs {
+            if let Some(retained) = &publication.retained_resource_inputs {
                 inputs.merge(retained)?;
             }
             let publication_proofs = dmbc::filesystem_proofs::BulkFileSystemProofs::capture(
@@ -814,7 +818,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                     let path = project.with_extension(extension);
                     capture_output_digest(&mut outputs, &path)?;
                 }
-                let asset_paths = nontext
+                let asset_paths = publication
                     .resource_catalog
                     .record()
                     .aliases
@@ -823,10 +827,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                     .collect();
                 let resource_manifest = dmbc::resource_manifest::ResourceManifest::capture(
                     memo_policy,
-                    &nontext.resource_catalog,
+                    &publication.resource_catalog,
                     inputs.select_files(&asset_paths)?,
-                    nontext.resource_archive_order.clone(),
-                    nontext.resources.archive.identity(),
+                    publication.resource_archive_order.clone(),
+                    publication.archive.identity(),
                 )?;
                 session.store(dmbc::session::Record {
                     inputs,
