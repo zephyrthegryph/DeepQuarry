@@ -330,8 +330,9 @@ pub fn capture_with_resource_reuse<
         )
     } else {
         let resources = timed(observer, CaptureStage::AssetCapture, || {
-            let resources = crate::assets::capture(frontend, &captured.assets, resource_provider)
-                .map_err(|error| error.to_string())?;
+            let resources =
+                crate::assets::capture_discovered(demand, &captured.assets, resource_provider)
+                    .map_err(|error| error.to_string())?;
             reject_missing_literals(frontend, &captured, &resources)?;
             resources
                 .require_complete()
@@ -444,11 +445,16 @@ fn reject_missing_demands(
     if extra_count != nontext.assets.origins.len() || literals.len() < extra_count {
         return Err("internal compiler error: resource literal origin coverage mismatch".into());
     }
+    let missing_paths = lookups
+        .iter()
+        .filter(|entry| entry.outcome == CapturedResourceOutcome::Missing)
+        .map(|entry| entry.path.as_str())
+        .collect::<std::collections::HashSet<_>>();
     let code_count = literals.len() - extra_count;
     for (index, literal) in literals.iter().enumerate() {
-        let missing = lookups.iter().any(|entry| {
-            entry.path == literal.path && entry.outcome == CapturedResourceOutcome::Missing
-        });
+        // Preserve any-Missing semantics even for contradictory duplicate
+        // lookup records; retain literal encounter order for the first error.
+        let missing = missing_paths.contains(literal.path.as_str());
         if !missing {
             continue;
         }
@@ -570,6 +576,62 @@ mod tests {
             }
             dm_resources::capture::CaptureProvider::read_candidate(&Source, path)
         }
+    }
+    #[test]
+    fn contradictory_missing_lookups_preserve_first_literal_error() {
+        use dm_resources::native_resolver::{CapturedResourceLookup, CapturedResourceOutcome};
+        let bytes = include_bytes!("../../../fixtures/native_template.bin");
+        let engine = crate::engine::EngineSnapshot::from_bytes(bytes, 1).unwrap();
+        let seed = engine.frontend_seed();
+        let domain = MissingDomain::Code;
+        let frontend = dm_tree::frontend::build_with_config(
+            Path::new("game/project.dme"),
+            &domain,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
+        let nontext = crate::non_text::capture_with_map_memo(&frontend, &domain, None).unwrap();
+        let demand = dm_resources::capture::discover_demand(
+            &frontend.plan,
+            &frontend.expanded,
+            &nontext.assets.literals,
+            &nontext.assets.skins,
+        )
+        .unwrap();
+        let lookups = vec![
+            CapturedResourceLookup {
+                path: "asset.txt".into(),
+                search_context: demand.context.identity(),
+                outcome: CapturedResourceOutcome::Missing,
+            },
+            CapturedResourceLookup {
+                path: "missing.png".into(),
+                search_context: demand.context.identity(),
+                outcome: CapturedResourceOutcome::Missing,
+            },
+            CapturedResourceLookup {
+                path: "missing.png".into(),
+                search_context: demand.context.identity(),
+                outcome: CapturedResourceOutcome::Unsupported,
+            },
+        ];
+        let error =
+            reject_missing_demands(&frontend, &nontext, &demand.literals, &lookups).unwrap_err();
+        assert!(
+            error.ends_with("source.dm:1:error: 'missing.png': cannot find file"),
+            "{error}"
+        );
+        let mut reordered = lookups;
+        reordered.reverse();
+        assert_eq!(
+            reject_missing_demands(&frontend, &nontext, &demand.literals, &reordered).unwrap_err(),
+            error
+        );
     }
     #[test]
     fn missing_literal_errors_preserve_domain_and_current_source_origin() {

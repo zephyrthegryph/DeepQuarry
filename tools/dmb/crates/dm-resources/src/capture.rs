@@ -215,6 +215,27 @@ pub fn capture_expanded_with_literals<P: CaptureProvider>(
     provider: &P,
 ) -> Result<CapturedResources, CaptureError> {
     let demand = discover_demand(plan, expanded, extra_literals, config.additional)?;
+    capture_discovered(demand, config, provider)
+}
+/// Consume one already-discovered demand without rediscovering expanded grammar.
+/// The additional-input order and qualified search context must match capture.
+pub fn capture_discovered<P: CaptureProvider>(
+    demand: ResourceDemand,
+    config: CaptureConfig<'_>,
+    provider: &P,
+) -> Result<CapturedResources, CaptureError> {
+    if demand.additional != config.additional {
+        return Err(CaptureError::Invalid(
+            "resource demand additional inputs differ from capture configuration".into(),
+        ));
+    }
+    if demand.source_literal_count > demand.literals.len()
+        || search_context(&demand.root, &demand.directories)?.bytes() != demand.context.bytes()
+    {
+        return Err(CaptureError::Invalid(
+            "resource demand context or source prefix is inconsistent".into(),
+        ));
+    }
     let ResourceDemand {
         context,
         literals,
@@ -582,6 +603,87 @@ fn collect_string(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn discovered_capture_preserves_search_reads_order_payloads_and_configuration() {
+        let files = [
+            ("game/late/map.txt", b"map" as &[u8]),
+            ("game/source.txt", b"source" as &[u8]),
+            ("game/extra.txt", b"extra" as &[u8]),
+            ("game/extra2.txt", b"extra2" as &[u8]),
+        ];
+        let ordinary = memory(&files);
+        let reused = memory(&files);
+        let source = expanded("/proc/p()\n    return 'source.txt'\n");
+        let plan = plan();
+        let policy = policy();
+        let extras = [
+            LiteralRequest {
+                path: "map.txt".into(),
+                span: Span::new(1, 9),
+            },
+            LiteralRequest {
+                path: "source.txt".into(),
+                span: Span::new(10, 22),
+            },
+        ];
+        let additional = [
+            ResourceRequest {
+                archive_name: "extra.txt".into(),
+                disk_path: PathBuf::from("game/extra.txt"),
+            },
+            ResourceRequest {
+                archive_name: "extra2.txt".into(),
+                disk_path: PathBuf::from("game/extra2.txt"),
+            },
+        ];
+        let config = || CaptureConfig {
+            policy: &policy,
+            encoded: &[],
+            additional: &additional,
+        };
+        let before =
+            capture_expanded_with_literals(&plan, &source, config(), &extras, &ordinary).unwrap();
+        let demand = discover_demand(&plan, &source, &extras, &additional).unwrap();
+        let after = capture_discovered(demand, config(), &reused).unwrap();
+        assert_eq!(*ordinary.reads.borrow(), *reused.reads.borrow());
+        assert_eq!(before.context.bytes(), after.context.bytes());
+        assert_eq!(before.lookups, after.lookups);
+        assert_eq!(before.observations, after.observations);
+        assert_eq!(before.literals, after.literals);
+        assert_eq!(before.source_literal_count, after.source_literal_count);
+        assert_eq!(before.resources.fingerprint, after.resources.fingerprint);
+        assert_eq!(
+            before
+                .resources
+                .inputs
+                .iter()
+                .map(|v| (
+                    &v.archive_name,
+                    &v.disk_path,
+                    v.named.asset_bytes().unwrap()
+                ))
+                .collect::<Vec<_>>(),
+            after
+                .resources
+                .inputs
+                .iter()
+                .map(|v| (
+                    &v.archive_name,
+                    &v.disk_path,
+                    v.named.asset_bytes().unwrap()
+                ))
+                .collect::<Vec<_>>()
+        );
+        let mut demand = discover_demand(&plan, &source, &extras, &additional).unwrap();
+        demand.additional.reverse();
+        let untouched = memory(&files);
+        assert!(capture_discovered(demand, config(), &untouched).is_err());
+        assert!(untouched.reads.borrow().is_empty());
+        let mut demand = discover_demand(&plan, &source, &extras, &additional).unwrap();
+        demand.context = CapturedSearchContext::new(b"unrelated context".as_slice());
+        assert!(capture_discovered(demand, config(), &untouched).is_err());
+        assert!(untouched.reads.borrow().is_empty());
+    }
     use std::cell::RefCell;
     struct Memory {
         files: HashMap<PathBuf, Arc<[u8]>>,

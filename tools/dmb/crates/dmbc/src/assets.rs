@@ -123,6 +123,25 @@ pub fn capture<P: CaptureProvider>(
     )
 }
 
+/// Use the driver's existing demand; capture checks exact additional inputs
+/// and search context before reading any candidates.
+pub fn capture_discovered<P: CaptureProvider>(
+    demand: dm_resources::capture::ResourceDemand,
+    extra: &ExtraAssets,
+    provider: &P,
+) -> Result<CapturedResources, CaptureError> {
+    let policy = dm_resources::encoding::byond516_raw_policy();
+    dm_resources::capture::capture_discovered(
+        demand,
+        CaptureConfig {
+            policy: &policy,
+            encoded: &extra.encoded_skins,
+            additional: &extra.skins,
+        },
+        provider,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -11,6 +11,7 @@ use crate::{
 use dm_codegen_byond::procedure_abi::{AbiError, ProcLayout};
 use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver, SemanticValue, SymbolId, SymbolicExpression};
 use dm_tree::{constants::Constant, frontend::ColdFrontend, MemberId, MemberKind};
+use rayon::prelude::*;
 use std::{
     cell::RefCell,
     collections::{BTreeMap, HashMap},
@@ -958,85 +959,93 @@ fn prepare_source_abi_mode(
             }
         }
     }
-    while !ready.is_empty() {
-        let inherited = DriverInheritedFacts {
-            frontend,
-            engine,
-            source_layouts: &layouts,
-            boundaries,
-            unit_members: &index,
-        };
-        let lexical = LexicalAbiEvaluator(evaluator);
-        let selected_evaluator: &dyn CapturedConstantEvaluator =
-            if lexical_statics { &lexical } else { evaluator };
-        let policy = crate::procedure_policy::CapturedProcedurePolicy {
-            evaluator: selected_evaluator,
-            inherited: &inherited,
-            resource_search_context,
-        };
-        let worker_count = workers.clamp(1, 8).min(ready.len());
-        let chunk = ready.len().div_ceil(worker_count);
-        let wave = std::thread::scope(|scope| {
-            let handles: Vec<_> = ready
-                .chunks(chunk)
-                .map(|ordinals| {
-                    let policy = &policy;
-                    let identities = &identities;
-                    scope.spawn(move || {
-                        let _profile = dm_profile::stage("cold.abi_preparation");
-                        ordinals
-                            .iter()
-                            .map(|ordinal| {
-                                let body = &frontend.bodies[*ordinal];
-                                let result = (|| {
-                                    let node = tree
-                                        .member(body.member)
-                                        .ok_or_else(|| AbiError("body member missing".into()))?;
-                                    let metadata =
-                                        node.metadata.procedure.as_ref().ok_or_else(|| {
-                                            AbiError("procedure metadata unsupported".into())
-                                        })?;
-                                    let parsed = frontend.compact_body(body).map_err(|error| {
-                                        AbiError(format!("body parse: {error:?}"))
-                                    })?;
-                                    let context = AbiContext {
-                                        identity: identities[&body.member],
-                                        symbols: evaluator.symbols,
-                                        origin: &body.source,
-                                        resolver: evaluator.resolver,
-                                    };
-                                    policy.prepare(metadata, parsed, &context)
-                                })();
-                                (*ordinal, result)
+    // One bounded request-local pool survives every dependency wave. The
+    // outer worker span covers the complete worker loop, avoiding a new
+    // short calibration envelope and coarse interval bound for every wave.
+    if !ready.is_empty() {
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(workers.clamp(1, 8).min(frontend.bodies.len().max(1)))
+            .build_scoped(
+                |thread| {
+                    let _profile = dm_profile::stage("cold.abi_preparation");
+                    thread.run();
+                },
+                |pool| -> Result<(), AbiError> {
+                    while !ready.is_empty() {
+                        let inherited = DriverInheritedFacts {
+                            frontend,
+                            engine,
+                            source_layouts: &layouts,
+                            boundaries,
+                            unit_members: &index,
+                        };
+                        let lexical = LexicalAbiEvaluator(evaluator);
+                        let selected_evaluator: &dyn CapturedConstantEvaluator =
+                            if lexical_statics { &lexical } else { evaluator };
+                        let policy = crate::procedure_policy::CapturedProcedurePolicy {
+                            evaluator: selected_evaluator,
+                            inherited: &inherited,
+                            resource_search_context,
+                        };
+                        // Indexed collection preserves ready encounter order. install returns
+                        // only after the wave and all sibling jobs finish, including unwinding.
+                        let wave = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            pool.install(|| {
+                                ready
+                                    .par_iter()
+                                    .map(|ordinal| {
+                                        let body = &frontend.bodies[*ordinal];
+                                        let result = (|| {
+                                            let node =
+                                                tree.member(body.member).ok_or_else(|| {
+                                                    AbiError("body member missing".into())
+                                                })?;
+                                            let metadata =
+                                                node.metadata.procedure.as_ref().ok_or_else(
+                                                    || {
+                                                        AbiError(
+                                                            "procedure metadata unsupported".into(),
+                                                        )
+                                                    },
+                                                )?;
+                                            let parsed =
+                                                frontend.compact_body(body).map_err(|error| {
+                                                    AbiError(format!("body parse: {error:?}"))
+                                                })?;
+                                            let context = AbiContext {
+                                                identity: identities[&body.member],
+                                                symbols: evaluator.symbols,
+                                                origin: &body.source,
+                                                resolver: evaluator.resolver,
+                                            };
+                                            policy.prepare(metadata, parsed, &context)
+                                        })();
+                                        (*ordinal, result)
+                                    })
+                                    .collect::<Vec<_>>()
                             })
-                            .collect::<Vec<_>>()
-                    })
-                })
-                .collect();
-            handles
-                .into_iter()
-                .map(|handle| {
-                    handle
-                        .join()
-                        .map_err(|_| AbiError("ABI preparation worker panicked".into()))
-                })
-                .collect::<Result<Vec<_>, _>>()
-        })?;
-        ready.clear();
-        for (ordinal, result) in wave.into_iter().flatten() {
-            remaining[ordinal] = false;
-            match result {
-                Ok(unit) => {
-                    let layout = unit.require_production_abi()?.layout.clone();
-                    layouts.insert(frontend.bodies[ordinal].member, layout);
-                    results[ordinal] = Some(unit);
-                    ready.extend(dependents[ordinal].iter().copied());
-                }
-                Err(error) => {
-                    failures.insert(ordinal, error.to_string());
-                }
-            }
-        }
+                        }))
+                        .map_err(|_| AbiError("ABI preparation worker panicked".into()))?;
+                        ready.clear();
+                        for (ordinal, result) in wave {
+                            remaining[ordinal] = false;
+                            match result {
+                                Ok(unit) => {
+                                    let layout = unit.require_production_abi()?.layout.clone();
+                                    layouts.insert(frontend.bodies[ordinal].member, layout);
+                                    results[ordinal] = Some(unit);
+                                    ready.extend(dependents[ordinal].iter().copied());
+                                }
+                                Err(error) => {
+                                    failures.insert(ordinal, error.to_string());
+                                }
+                            }
+                        }
+                    }
+                    Ok(())
+                },
+            )
+            .map_err(|error| AbiError(format!("ABI worker pool creation failed: {error}")))??;
     }
     for (ordinal, pending) in remaining.into_iter().enumerate() {
         if pending {
