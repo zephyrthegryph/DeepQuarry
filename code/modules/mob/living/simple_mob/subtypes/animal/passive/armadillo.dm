@@ -57,18 +57,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo)
 /mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_hand_grab(datum/act/op/A)
 	return armadillo_interaction_hand(A, I_GRAB)
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/passive/armadillo/appearance_overlays()
-	. = list()
-	. += ..()
-
-	// Hat simulator.
-	if(hat)
-		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
-		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
-		I.pixel_y = -7 // Smol
-		I.appearance_flags = RESET_COLOR
-		. += I
+/// The hat it wears, drawn over the legacy provider's state (look.hat() reads the hat's own sprite and hears it change).
+/mob/living/simple_mob/animal/passive/armadillo/draw(datum/look/look)
+	..()
+	look.hat(hat, -7) // Smol
 
 // Clicked on by empty hand.
 
@@ -133,8 +125,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, TYPE_PR
 
 /mob/living/simple_mob/animal/passive/armadillo/torta/Initialize(mapload)
 	. = ..()
-	if(hat)
-		update_icon()
 
 /datum/say_list/armadillo
 	emote_hear = list("churrs","rumbles","chirrs")

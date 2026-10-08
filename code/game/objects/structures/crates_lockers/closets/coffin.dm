@@ -42,7 +42,7 @@ CAPABILITIES(/obj/structure/closet/grave)
 	without("door")
 	without("stuff")
 	without("devour")
-	without("strike")
+	without("melee_hit")
 	op("climb_in", hand(), label("Climb in"), at(SPACE_INTERIOR), wait(5 SECONDS), begins(MSG(grave/climb_start)), then(PROC_REF(climbed_in)), says(MSG(grave/climbed)),
 		on_interrupt(PROC_REF(climb_interrupted)))
 	// ALLOW(door_gates): the same shovel smooths or unearths a filled grave, and op_order reads this when() to keep the three apart

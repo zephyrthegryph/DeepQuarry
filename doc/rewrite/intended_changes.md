@@ -3243,3 +3243,36 @@ The final capture differs in 40 hit classes / 468 rows. All 62 master `emp 1 / r
 | `/obj/structure/grille` | 21 / 0 | Appearance-cache bookkeeping is now in rx_state, which the producer already excludes; these raw bookkeeping transitions no longer appear. Existing physical hit, integrity, product and deletion rows remain recorded. |
 | `/obj/structure/noticeboard` | 15 / 0 | Appearance-cache bookkeeping is now in rx_state, which the producer already excludes; these raw bookkeeping transitions no longer appear. Existing physical hit, integrity, product and deletion rows remain recorded. |
 | `/obj/vehicle` | 2 / 3 | The scheduler record is engine-owned /datum/scheduler_record instead of /datum/om/rec; the recorded lazy scheduler allocation remains visible under its new type. The added public is_emagged 0 -> 1 row directly observes actual subversion; it adds coverage of the existing effect rather than a new gameplay effect. |
+
+## Relations conversion (rewrite/relations)
+
+Pinned by `code/modules/unit_tests/dq_rel_lifecycle_pins.dm` and the `dq_om_relation_*` tests, written green on the legacy relations first.
+
+* **A leash that outlives its pet's step stops on the next slow step** instead of stopping its periodic work in the unlink: `periodic_step()` returns `PROCESS_KILL` when it clears the leash. A leash on nobody does nothing in between.
+* **An overmap mob's marker deleting on its own expires the mob** through the marker's `on_destroy` (its `parent`) instead of the relation hook; a marker supplied to a mob without setting its own `parent` no longer takes the mob with it.
+* **A throw's `subject` stays set after the throw lands** (until the throw is deleted a tick later); the old edge did the same.
+
+* **Buckle, pull and grab are sparse declared links (KR2).** A rider moved off its seat's tile by a forced move is now let go one tick later (the old range check never fired for a `forceMove`). A pull made on something not within a tile is refused instead of linking and breaking at once.
+* **`melee_hit` is the lowest tier.** The closet's blow was tier 20 and now answers after every specific op of the closet; an open closet in combat mode puts a held item down rather than hitting it. A coffin and a statue drop `melee_hit` (was `strike`); pin `keys:` rows change.
+* **12 swallow ops are gone.** A held item no longer has its use swallowed by a tank, cable layer, seed extractor, pAI radio, shower, torch, SMES, turbine computer, injector maker, photocopier, stardog console or conveyor (robot): the item's own ops (a spray bottle) answer, else the legacy click runs. Pin rows `... menu: Use` / `click: Use` for those types disappear.
+* **Objects without an op can now be hit with a held item in combat.** Every `/obj` has the `melee_hit` op (lowest tier): a crowbar in combat mode on a vending machine, a tank, a shower, a console now takes the blow (`receive_weapon_hit`, the item's force). Specific ops still answer first. Opted out (no hit): items, effects, singularities, bellies, soulgems, spell buttons, the wall torch. Pin rows: `keys:` gains `melee_hit` on every object type and `click:` rows for a held item in combat change from `nothing` to `Hit`.
+* **The web and the weeds take a quarter of the force through the damage pipeline** (the weeds used `take_damage` directly before); the solar panel and the canister lose their bespoke messages ("hits it with" wording of the capability).
+* **A blast door answers an ID card with the access refusal**, no longer with the silent swallow (its `allowed()` has always been FALSE).
+* **Orbits can circle a turf** and keep the orbiter's saved transform on the link; `holds_while` listens to move notices (observe) again.
+* **Pin classes of the `melee_hit` bless** (about 500 pin files): `menu: Hit` for a held item on every object type (the new op; refused with the stance reason outside combat), `keys:` gains `melee_hit`, `menu: Move To Top` / `Toggle Digestable` appear on rows whose menu was empty (any listed op brings them), `click:` rows that were `nothing` become `Hit` where combat is the best answer; the web and weeds hit only in combat mode now (it was any stance), so a spiderling or a weed's click label shows its touch (`Stomp`, `Touch weeds`) where `Hit web` / `Hit weeds` was; `Strike` menu rows (closet, canister, solar) are `Hit`; rows of the 12 swallow targets lose `Use`. Moved lines of unchanged text (sorting) are not changes.
+
+## The duplicate emissive blocker (draw framework, KD22)
+
+* The old `add_overlay()` merged the priority overlays into every add, so pins recorded a duplicate emissive blocker after each redraw; one blocker is drawn now.
+  `add_overlay()` merges them only when the atom has no overlays left, `cut_overlay()` never takes the blocker with a layer, and `cut_overlays()` keeps it.
+  Every pin row that changes is that class: a `blocker x2` becoming the one blocker, or a probe row that only gained and lost the blocker.
+* The lightpost is a plain draw over tracked `lit` and `festive`; its light follows the look (`look.light()`, `look.light_off()`).
+
+## Batch 7b merge (fixes-small + links-hit + draw-framework on the machinery master)
+
+Pins were taken from the machinery side on every conflict and regenerated with `--bless` after the last merge; the classes below are every change that bless made.
+
+* **links-hit rows on the machinery pins** (360 `pins/` files): the `melee_hit` classes of the relations section above (`menu: Hit`, `keys:` gains `melee_hit`, `Move To Top` / `Toggle Digestable` / own-op rows on formerly empty menus, `Strike` becomes `Hit`). Where a swallow op is gone, a tool's `click: Click: Use` becomes `Click: Use item`, `Click: Toggle` (another listed op is now the best answer) or `nothing`.
+* **`hit_pins/` thermal glasses, sechailer, kinetic crusher**: the `refresh_bits: 2 -> 0` rows are gone. A draw mark no longer stays pending after the hit: the `add_overlay()` single-blocker fix (draw framework) means the emissive redraw these items queued is settled inside the hit. `refresh_queued` rows remain.
+* **Line numbers**: two `runtime while making it` rows (stardog, nikki rig) carry the line of `lifecycle_links.dm` in the stack; the link teardown call added two lines.
+* **Not blessed**: the `look_trees` row of `electronic_assembly` (it would record the pre-existing `op_clash` runtime in place of its overlay) stays as before.

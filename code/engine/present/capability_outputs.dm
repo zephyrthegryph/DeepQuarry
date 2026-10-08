@@ -20,6 +20,8 @@
 	var/look_flash_state
 	/// state -> the token of the flash that owns it, so look_flash_end() ends only its own. Lazy.
 	var/list/look_flash_tokens
+	/// Own keys of the entities the atom's draw reads (look.watch()): state_changed() on any of them marks the atom. Lazy.
+	var/list/look_watching
 
 /// A's engine record, or null when the engine has kept nothing for it.
 /proc/cap_engine_state_of(atom/A)

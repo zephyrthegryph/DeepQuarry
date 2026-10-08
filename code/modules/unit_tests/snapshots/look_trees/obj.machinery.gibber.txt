@@ -1,11 +1,11 @@
 /obj/machinery/gibber icon: icons/obj/kitchen.dmi
 /obj/machinery/gibber state: grinder
 /obj/machinery/gibber dir: 2
-/obj/machinery/gibber overlay: icons/obj/kitchen.dmi:grinder:8:#000000 x2
+/obj/machinery/gibber overlay: icons/obj/kitchen.dmi:grinder:8:#000000
 /obj/machinery/gibber overlay: icons/obj/kitchen.dmi:grjam:-32767
 /obj/machinery/gibber/autogibber icon: icons/obj/kitchen.dmi
 /obj/machinery/gibber/autogibber state: grinder
 /obj/machinery/gibber/autogibber dir: 2
-/obj/machinery/gibber/autogibber overlay: icons/obj/kitchen.dmi:grinder:8:#000000 x2
+/obj/machinery/gibber/autogibber overlay: icons/obj/kitchen.dmi:grinder:8:#000000
 /obj/machinery/gibber/autogibber overlay: icons/obj/kitchen.dmi:grjam:-32767
 

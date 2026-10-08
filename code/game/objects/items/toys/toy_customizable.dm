@@ -9,22 +9,12 @@
 	var/list/possible_overlays
 	var/list/added_overlays
 
-DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/customizable, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/toy/plushie/customizable/appearance_overlays()
-	. = list()
-	var/mutable_appearance/B = mutable_appearance(icon, icon_state)
-	B.color = base_color
-	. += B
+/obj/item/toy/plushie/customizable/draw(datum/look/look)
+	..()
+	look.overlay(look_appearance(icon, look.state_so_far(src), color = base_color))
 	if(added_overlays)
 		for(var/key, value in added_overlays)
-			var/mutable_appearance/our_image = mutable_appearance(icon, key)
-			our_image.color = value["color"]
-			our_image.alpha = value["alpha"]
-			. += our_image
-
-/obj/item/toy/plushie/customizable/Initialize(mapload)
-	. = ..()
-	update_icon()
+			look.overlay(look_appearance(icon, key, color = value["color"], alpha = value["alpha"]))
 
 /// /obj/item/toy/plushie/customizable's window data.
 /obj/item/toy/plushie/customizable/ui_data(datum/act/eval/A)
@@ -88,7 +78,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/customizable, TYPE_PROC_REF(/atom,
 		return FALSE
 	. = TRUE
 	added_overlays[new_overlay] = list(color = "#FFFFFF", alpha = 255)
-	update_icon()
+	changed(src)
 
 /obj/item/toy/plushie/customizable/proc/ui_act_remove_overlay(datum/act/op/A, removed_overlay_arg)
 	if(!ui_gate(A))
@@ -100,7 +90,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/customizable, TYPE_PROC_REF(/atom,
 		return FALSE
 	. = TRUE
 	added_overlays.Remove(removed_overlay)
-	update_icon()
+	changed(src)
 
 /obj/item/toy/plushie/customizable/proc/ui_act_change_overlay_color(datum/act/op/A, icon_state)
 	if(!ui_gate(A))
@@ -115,7 +105,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/customizable, TYPE_PROC_REF(/atom,
 	if(!target)
 		return FALSE
 	target["color"] = A.step_value("color")
-	update_icon()
+	changed(src)
 
 /obj/item/toy/plushie/customizable/proc/ui_act_move_overlay_up(datum/act/op/A, icon)
 	if(!ui_gate(A))
@@ -127,7 +117,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/customizable, TYPE_PROC_REF(/atom,
 	. = TRUE
 	if (idx < added_overlays.len)
 		added_overlays.Swap(idx, idx + 1)
-	update_icon()
+	changed(src)
 
 /obj/item/toy/plushie/customizable/proc/ui_act_move_overlay_down(datum/act/op/A, icon)
 	if(!ui_gate(A))
@@ -139,14 +129,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/customizable, TYPE_PROC_REF(/atom,
 	. = TRUE
 	if (idx > 1)
 		added_overlays.Swap(idx, idx - 1)
-	update_icon()
+	changed(src)
 
 /obj/item/toy/plushie/customizable/proc/ui_act_change_base_color(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
 	. = TRUE
 	base_color = A.step_value("color")
-	update_icon()
+	changed(src)
 
 /obj/item/toy/plushie/customizable/proc/ui_act_set_overlay_alpha(datum/act/op/A, alpha, icon_state)
 	if(!ui_gate(A))
@@ -157,7 +147,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/customizable, TYPE_PROC_REF(/atom,
 	. = TRUE
 	var/new_alpha = alpha
 	target["alpha"] = new_alpha
-	update_icon()
+	changed(src)
 
 /obj/item/toy/plushie/customizable/proc/ui_act_import_config(datum/act/op/A, config)
 	if(!ui_gate(A))
@@ -178,7 +168,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/customizable, TYPE_PROC_REF(/atom,
 			var/new_color = sanitize_hexcolor(overlay["color"])
 			var/new_alpha = CLAMP(text2num(overlay["alpha"]), 0, 255)
 			added_overlays[overlay["icon_state"]] = list(color = new_color, alpha = new_alpha)
-	update_icon()
+	changed(src)
 
 CAPABILITIES(/obj/item/toy/plushie/customizable)
 	op("clear", ui_act(), then(PROC_REF(ui_act_clear)))
@@ -205,7 +195,7 @@ CAPABILITIES(/obj/item/toy/plushie/customizable)
 		added_overlays = list()
 	added_overlays.Cut()
 	base_color = "#FFFFFF"
-	update_icon()
+	changed(src)
 	return OP_OK
 
 /obj/item/toy/plushie/customizable/proc/ui_act_rename(datum/act/op/A, name)

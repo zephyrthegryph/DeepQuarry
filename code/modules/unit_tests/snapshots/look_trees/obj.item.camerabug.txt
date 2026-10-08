@@ -1,0 +1,9 @@
+/obj/item/camerabug icon: icons/obj/grenade.dmi
+/obj/item/camerabug state: camgrenade
+/obj/item/camerabug dir: 2
+/obj/item/camerabug overlay: icons/obj/grenade.dmi:camgrenade:8:#000000
+/obj/item/camerabug/spy icon: icons/obj/weapons.dmi
+/obj/item/camerabug/spy state: eshield
+/obj/item/camerabug/spy dir: 2
+/obj/item/camerabug/spy overlay: icons/obj/weapons.dmi:eshield:8:#000000
+

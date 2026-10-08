@@ -128,8 +128,7 @@
 	to_chat(src, span_alien("You wiggle into [infest_target]'s ear."))
 	if(!infest_target.stat)
 		to_chat(infest_target, span_vdanger("Something disgusting and slimy wiggles into your ear!"))
-	// om_link's on_link (library.dm) adds us to the head organ's implants list.
-	om_link(src, infest_target, /datum/om/relation/host_of)
+	take_host(infest_target) // also lists us in the head organ's implants
 	host = infest_target
 	forceMove(host)
 

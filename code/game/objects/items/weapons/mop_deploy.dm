@@ -45,6 +45,8 @@
 // Mops and soap on an effect (decals, runes, overlays) go straight to their afterattack
 // cleaning: nothing else about the effect (signals, less specific interactions) reacts.
 CAPABILITIES(/obj/effect)
+	// effects are not things to swing at: a decal, a spark, a gas cloud (the few that take a blow, the web and the weeds, declare melee_hit again)
+	without("melee_hit")
 	op("pass_insert", item(/obj/item/mop_deploy), label("Insert a mop"), passes())
 	op("pass_insert_2", item(/obj/item/soap), label("Insert a soap"), passes())
 

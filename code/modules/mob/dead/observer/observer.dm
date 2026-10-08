@@ -1,13 +1,27 @@
+/// The name of the observer's following var (the reverse-index key follower_list() reads).
+#define OBSERVER_FOLLOWING_VAR "following"
+
 /mob/observer
 	name = "observer"
 	desc = "This shouldn't appear"
 	density = FALSE
 	vis_flags = NONE
 	var/mob/living/body_backup = null //add reforming
+	/// The movable this observer follows (and orbits): a reference, cleared when the target is deleted. Read with following_target().
+	var/atom/movable/following
 
 CAPABILITIES(/mob/observer)
+	ref_one(nameof(following), /atom/movable)
 	owns_one(nameof(body_backup), /mob/living)
 	every(OBSERVER_UPKEEP_INTERVAL, then(PROC_REF(upkeep_step)))
+
+/// The movable this observer follows, or null.
+/mob/observer/proc/following_target() as /atom/movable
+	return following
+
+/// The observers following this mob.
+/mob/proc/follower_list() as /list
+	return rel_sources_via(src, OBSERVER_FOLLOWING_VAR)
 
 /mob/observer/dead
 	name = "ghost"
@@ -509,7 +523,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 			rot_seg = 36 //360/10 bby, smooth enough aproximation of a circle
 	*/
 
-	om_link(src, target, /datum/om/relation/following) // replaces any previous follow
+	rel_set(src, nameof(following), target) // replaces any previous follow
 	orbit(target, orbitsize, FALSE, 20, rot_seg)
 
 /mob/observer/dead/orbit()
@@ -526,9 +540,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	animate(pixel_y = default_pixel_y, time = 10, loop = -1)
 
 /mob/observer/dead/proc/stop_following()
-	var/atom/movable/followed = src?.following_target()
-	if(followed)
-		om_unlink(src, followed, /datum/om/relation/following)
+	rel_set(src, nameof(following), null)
 	stop_orbit()
 
 /mob/proc/update_following()

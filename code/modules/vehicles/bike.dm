@@ -44,7 +44,6 @@ CAPABILITIES(/obj/vehicle/bike)
 	ion.set_up(src)
 	turn_off()
 	icon_state = "[bike_icon]_off"
-	update_icon()
 
 /// A frame the builder fits a cell to: it starts without the factory cell.
 /obj/vehicle/bike/built/ownership()
@@ -71,7 +70,6 @@ CAPABILITIES(/obj/vehicle/bike/random)
 	if(isnull(picked))
 		return
 	paint_color = picked
-	update_icon()
 
 /obj/vehicle/bike/click_ctrl(mob/user)
 	if(Adjacent(user) && anchored)
@@ -188,7 +186,7 @@ CAPABILITIES(/obj/vehicle/bike/random)
 	ion.start()
 	set_anchored(TRUE)
 
-	update_icon()
+	changed(src)
 
 	var/mob/pulledby = src?.pulled_by_mob()
 	if(pulledby)
@@ -199,7 +197,7 @@ CAPABILITIES(/obj/vehicle/bike/random)
 	ion.stop()
 	set_anchored(kickstand)
 
-	update_icon()
+	changed(src)
 
 	..()
 
@@ -210,78 +208,12 @@ CAPABILITIES(/obj/vehicle/bike/random)
 		return
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/vehicle/bike, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/vehicle/bike/appearance_overlays()
-	. = list()
-
-	if(custom_icon)
-		if(on)
-			var/image/bodypaint = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_on_a", src.layer)
-			bodypaint.color = paint_color
-			. += bodypaint
-
-			var/image/overmob = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_on_overlay", MOB_LAYER + 1)
-			var/image/overmob_color = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_on_overlay_a", MOB_LAYER + 1)
-			overmob.plane = MOB_PLANE
-			overmob_color.plane = MOB_PLANE
-			overmob_color.color = paint_color
-			. += overmob
-			. += overmob_color
-			if(open)
-				icon_state = "[bike_icon]_on-open"
-			else
-				icon_state = "[bike_icon]_on"
-		else
-			var/image/bodypaint = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_off_a", src.layer)
-			bodypaint.color = paint_color
-			. += bodypaint
-
-			var/image/overmob = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_off_overlay", MOB_LAYER + 1)
-			var/image/overmob_color = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_off_overlay_a", MOB_LAYER + 1)
-			overmob.plane = MOB_PLANE
-			overmob_color.plane = MOB_PLANE
-			overmob_color.color = paint_color
-			. += overmob
-			. += overmob_color
-			if(open)
-				icon_state = "[bike_icon]_off-open"
-			else
-				icon_state = "[bike_icon]_off"
-		. += ..()
-		return .
-
-	if(on)
-		var/image/bodypaint = image('icons/obj/bike.dmi', "[bike_icon]_on_a", src.layer)
-		bodypaint.color = paint_color
-		. += bodypaint
-
-		var/image/overmob = image('icons/obj/bike.dmi', "[bike_icon]_on_overlay", MOB_LAYER + 1)
-		var/image/overmob_color = image('icons/obj/bike.dmi', "[bike_icon]_on_overlay_a", MOB_LAYER + 1)
-		overmob.plane = MOB_PLANE
-		overmob_color.plane = MOB_PLANE
-		overmob_color.color = paint_color
-		. += overmob
-		. += overmob_color
-		if(open)
-			icon_state = "[bike_icon]_on-open"
-		else
-			icon_state = "[bike_icon]_on"
-	else
-		var/image/bodypaint = image('icons/obj/bike.dmi', "[bike_icon]_off_a", src.layer)
-		bodypaint.color = paint_color
-		. += bodypaint
-
-		var/image/overmob = image('icons/obj/bike.dmi', "[bike_icon]_off_overlay", MOB_LAYER + 1)
-		var/image/overmob_color = image('icons/obj/bike.dmi', "[bike_icon]_off_overlay_a", MOB_LAYER + 1)
-		overmob.plane = MOB_PLANE
-		overmob_color.plane = MOB_PLANE
-		overmob_color.color = paint_color
-		. += overmob
-		. += overmob_color
-		if(open)
-			icon_state = "[bike_icon]_off-open"
-		else
-			icon_state = "[bike_icon]_off"
-
-	. += ..()
+/obj/vehicle/bike/draw(datum/look/look)
+	..()
+	var/paint_icon = custom_icon ? 'icons/obj/custom_items_vehicle.dmi' : 'icons/obj/bike.dmi'
+	var/power_state = on ? "on" : "off"
+	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_a", layer = layer, color = paint_color))
+	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_overlay", layer = MOB_LAYER + 1, plane = MOB_PLANE))
+	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_overlay_a", layer = MOB_LAYER + 1, plane = MOB_PLANE, color = paint_color))
+	look.state("[bike_icon]_[power_state][open ? "-open" : ""]")
 

@@ -1,0 +1,17 @@
+/obj/item/taperecorder playing=1 +state: taperecorder_playing
+/obj/item/taperecorder playing=1 +overlay: icons/obj/device.dmi:taperecorder_playing:8:#000000
+/obj/item/taperecorder playing=1 -state: taperecorder_idle
+/obj/item/taperecorder playing=1 -overlay: icons/obj/device.dmi:taperecorder_idle:8:#000000
+/obj/item/taperecorder playing=2 +state: taperecorder_playing
+/obj/item/taperecorder playing=2 +overlay: icons/obj/device.dmi:taperecorder_playing:8:#000000
+/obj/item/taperecorder playing=2 -state: taperecorder_idle
+/obj/item/taperecorder playing=2 -overlay: icons/obj/device.dmi:taperecorder_idle:8:#000000
+/obj/item/taperecorder recording=1 +state: taperecorder_recording
+/obj/item/taperecorder recording=1 +overlay: icons/obj/device.dmi:taperecorder_recording:8:#000000
+/obj/item/taperecorder recording=1 -state: taperecorder_idle
+/obj/item/taperecorder recording=1 -overlay: icons/obj/device.dmi:taperecorder_idle:8:#000000
+/obj/item/taperecorder recording=2 +state: taperecorder_recording
+/obj/item/taperecorder recording=2 +overlay: icons/obj/device.dmi:taperecorder_recording:8:#000000
+/obj/item/taperecorder recording=2 -state: taperecorder_idle
+/obj/item/taperecorder recording=2 -overlay: icons/obj/device.dmi:taperecorder_idle:8:#000000
+

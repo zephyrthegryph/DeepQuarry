@@ -379,6 +379,14 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		target.rel_watchers -= key
 		UNSETEMPTY(target.rel_watchers)
 
+/// `watcher` reads `target` in an output (look.watch()): state_changed(target) marks `watcher` too, until rel_unobserve() takes it back. One call,
+/// one count, like a watched view; the caller pairs them (the look's subscription follows the draw).
+/proc/rel_observe(datum/target, datum/watcher)
+	_rel_watch(target, watcher)
+
+/proc/rel_unobserve(datum/target, datum/watcher)
+	_rel_unwatch(target, watcher)
+
 /// state_changed() raised on `target`: marks every live source that watches it through a relation view.
 /proc/rel_notify_watchers(datum/target)
 	for(var/key in target.rel_watchers)
@@ -407,6 +415,14 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		var/names = index[source_ref]
 		for(var/name in (islist(names) ? names : list(names)))
 			. += list(list(S, name))
+
+/// Every source whose var `var_name` names `target`, as a list: the reverse index read for one var (a one-ended link needs no var on the
+/// target's type). Empty when none; a fresh list.
+/proc/rel_sources_via(datum/target, var_name)
+	. = list()
+	for(var/list/pair as anything in rel_sources(target))
+		if(pair[2] == var_name)
+			. += pair[1]
 
 /// How many references to `target` relation views hold (one per single view, one per list view
 /// holding it). For refcount accounting (latent collapse).

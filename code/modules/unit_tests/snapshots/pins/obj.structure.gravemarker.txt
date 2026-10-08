@@ -7,43 +7,57 @@ ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Carve
 human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: Click: Carve
 human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use wrench
 human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: nothing
 human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
-keys: carve, climb.climb, climb.climb_menu, drag_buckle, use_wrench
+human|/obj/item menu: Climb
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: nothing
+keys: carve, climb.climb, climb.climb_menu, drag_buckle, melee_hit, use_wrench
 

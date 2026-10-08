@@ -2,7 +2,7 @@
 /obj/item/material/fishing_rod state: fishing_rod
 /obj/item/material/fishing_rod dir: 2
 /obj/item/material/fishing_rod color: #9c5930
-/obj/item/material/fishing_rod overlay: icons/obj/weapons.dmi:fishing_rod:8:#000000 x2
+/obj/item/material/fishing_rod overlay: icons/obj/weapons.dmi:fishing_rod:8:#000000
 /obj/item/material/fishing_rod overlay: icons/obj/weapons.dmi:fishing_rod_string:-32767
 /obj/item/material/fishing_rod/built icon: icons/obj/weapons.dmi
 /obj/item/material/fishing_rod/built state: fishing_rod
@@ -13,7 +13,7 @@
 /obj/item/material/fishing_rod/modern state: fishing_rod_modern
 /obj/item/material/fishing_rod/modern dir: 2
 /obj/item/material/fishing_rod/modern color: #d1e6e3
-/obj/item/material/fishing_rod/modern overlay: icons/obj/weapons.dmi:fishing_rod_modern:8:#000000 x2
+/obj/item/material/fishing_rod/modern overlay: icons/obj/weapons.dmi:fishing_rod_modern:8:#000000
 /obj/item/material/fishing_rod/modern overlay: icons/obj/weapons.dmi:fishing_rod_modern_string:-32767
 /obj/item/material/fishing_rod/modern/built icon: icons/obj/weapons.dmi
 /obj/item/material/fishing_rod/modern/built state: fishing_rod_modern
@@ -24,12 +24,12 @@
 /obj/item/material/fishing_rod/modern/cheap state: fishing_rod_modern
 /obj/item/material/fishing_rod/modern/cheap dir: 2
 /obj/item/material/fishing_rod/modern/cheap color: #cccccc
-/obj/item/material/fishing_rod/modern/cheap overlay: icons/obj/weapons.dmi:fishing_rod_modern:8:#000000 x2
+/obj/item/material/fishing_rod/modern/cheap overlay: icons/obj/weapons.dmi:fishing_rod_modern:8:#000000
 /obj/item/material/fishing_rod/modern/cheap overlay: icons/obj/weapons.dmi:fishing_rod_modern_string:-32767
 /obj/item/material/fishing_rod/modern/strong icon: icons/obj/weapons.dmi
 /obj/item/material/fishing_rod/modern/strong state: fishing_rod_modern
 /obj/item/material/fishing_rod/modern/strong dir: 2
 /obj/item/material/fishing_rod/modern/strong color: #6ea7be
-/obj/item/material/fishing_rod/modern/strong overlay: icons/obj/weapons.dmi:fishing_rod_modern:8:#000000 x2
+/obj/item/material/fishing_rod/modern/strong overlay: icons/obj/weapons.dmi:fishing_rod_modern:8:#000000
 /obj/item/material/fishing_rod/modern/strong overlay: icons/obj/weapons.dmi:fishing_rod_modern_string:-32767
 

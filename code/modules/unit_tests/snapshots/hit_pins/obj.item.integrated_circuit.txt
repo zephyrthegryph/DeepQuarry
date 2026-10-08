@@ -1,6 +1,6 @@
 blob | survives
 emag | nothing
-emp 1 | nothing
+emp 1 | refresh_queued: 131071 -> 0
 emp 2 | nothing
 explosion 1 | deleted
 explosion 2 | atom_integrity: down

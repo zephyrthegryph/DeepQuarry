@@ -18,7 +18,6 @@
 
 CAPABILITIES(/obj/machinery/cablelayer)
 	op("cablelayer_load", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Load cable"), then(PROC_REF(interaction_load)))
-	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Cut cable"), needs(req_full(nameof(cable), because = MSG(cablelayer/no_cable))),
 		asks(/datum/prompt/number/cablelayer_cut, fields = list("default" = computed(PROC_REF(cut_default)))),
 		then(PROC_REF(cable_length_entered)))

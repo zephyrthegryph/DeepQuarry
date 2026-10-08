@@ -20,10 +20,12 @@
 	return null
 
 /// Phase 4 (doc/rewrite/lifecycle.md sec 2): rich relation edges, watches and forwards (the OM
-/// core), then owned values by policy, then REF views on both ends.
+/// core), the sparse declared links, then owned values by policy, then REF views on both ends.
 /proc/dq_lifecycle_clear_links(datum/D)
 	if(D.om_rec)
 		entity_teardown_links(D)
+	if(D.rx?.link_ends)
+		link_teardown(D) // sparse declared links (code/engine/declare/link_state.dm): both ends told, the other end's policy applied
 	if(GLOB.dq_lifecycle_trace_depth)
 		log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: om teardown done")
 	own_teardown(D)

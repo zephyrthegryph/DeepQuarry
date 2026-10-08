@@ -17,6 +17,8 @@
 	var/delete_message = "Delete Message"
 
 CAPABILITIES(/obj/soulgem)
+	// a soulgem is an abstract container of minds
+	without("melee_hit")
 	owns_many(nameof(brainmobs))
 
 // The soulgem's saved state is its saved vars (see code/datums/state/schema.dm);

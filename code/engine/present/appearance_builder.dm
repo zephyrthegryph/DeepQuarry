@@ -30,6 +30,10 @@
 	/// look.identity(): the name and description shown, or null (unchanged).
 	var/identity_name
 	var/identity_desc
+	/// look.effect(): list(proc_ref, args...) entries run on the holder, after the look is applied, outside the output.
+	var/list/effects
+	/// look.watch(): own keys of the other entities this draw read (a hat's sprite, a container's contents): a change on any of them redraws the holder.
+	var/list/watched
 	/// Anything was set: a type that draws nothing keeps its mapped appearance.
 	var/touched = FALSE
 
@@ -54,6 +58,8 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	held_state = null
 	identity_name = null
 	identity_desc = null
+	effects = null
+	watched = null
 	touched = FALSE
 
 /// The base icon_state. The last call wins (a capability's broken state is overridden by a type
@@ -145,6 +151,44 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 			return
 	LAZYADD(parts, list(list("[name]", wanted, TRUE)))
 
+/**
+ * An effect of this look that is not drawing: `proc_ref(args...)` runs on the holder once the look has been applied (the look changed), outside
+ * the output, so it may write state, start a sound loop or call another entity. Draw stays pure (it only names the effect); a
+ * state-bound effect (a value that must follow a var even when the look does not change) is on_change(). Effects are part of the change
+ * key, so a draw that stops naming one does not leave it behind, and one that names a different value runs again. Only `when` is true.
+ *	look.effect(PROC_REF(add_eyes), has_eye_glow)
+ */
+/datum/look/proc/effect(proc_ref, ...)
+	touched = TRUE
+	if(isnull(proc_ref))
+		return
+	LAZYADD(effects, list(args.Copy()))
+
+/// effect() only `when` is true: the condition first, so `look.effect_if(vore_eyes, PROC_REF(add_eyes))` reads like the legacy `if(vore_eyes) add_eyes()`.
+/datum/look/proc/effect_if(when, proc_ref, ...)
+	touched = TRUE
+	if(!when || isnull(proc_ref))
+		return
+	LAZYADD(effects, list(args.Copy(2)))
+
+/**
+ * This draw read `thing` (a hat's item_state, a container's contents, a part's look): a change published on `thing` redraws the holder, as a
+ * change of the holder's own state does. The subscription follows the draw, so a draw that stops reading `thing` stops hearing it. The thing
+ * publishes through its tracked vars or changed(); a plain var it writes is not heard. Null reads nothing.
+ */
+/datum/look/proc/watch(datum/thing)
+	if(!isdatum(thing) || QDELETED(thing))
+		return
+	LAZYOR(watched, OWN_KEY(thing))
+
+/// A mob's glowing eyes: the "<state>-eyes" sprite of its icon, above the lighting plane (so it glows in the dark), tinted `color` when given.
+/// What add_eyes()/remove_eyes() hung on the mob; the draw only says whether they show.
+/datum/look/proc/eyes(atom/holder, state, color, when = TRUE)
+	touched = TRUE
+	if(!when || isnull(state))
+		return
+	LAZYADD(overlays, look_overlay_image(holder.icon, "[state]-eyes", plane = PLANE_LIGHTING_ABOVE, color = color, appearance_flags = holder.appearance_flags))
+
 /// Another icon file for the base state.
 /datum/look/proc/set_icon(file)
 	icon = file
@@ -233,11 +277,12 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 
 /// A fresh overlay image for look.overlay() with its placement and tint set in one call (a draw() writes nothing, so an overlay raised, tinted, put on
 /// another plane or turned is built here): `icon_state` of `icon`, or the appearance of `of` (an atom drawn into the look, a scanner's patient).
-/proc/look_overlay_image(icon, icon_state, layer = FLOAT_LAYER, plane = FLOAT_PLANE, alpha = 255, pixel_y = 0, color = null, dir = null, matrix/transform = null, list/filters = null, atom/of = null)
+/proc/look_overlay_image(icon, icon_state, layer = FLOAT_LAYER, plane = FLOAT_PLANE, alpha = 255, pixel_x = 0, pixel_y = 0, color = null, dir = null, matrix/transform = null, list/filters = null, atom/of = null, appearance_flags = null)
 	var/image/I = of ? image(of) : image(icon = icon, icon_state = icon_state)
 	I.layer = layer
 	I.plane = plane
 	I.alpha = alpha
+	I.pixel_x = pixel_x
 	I.pixel_y = pixel_y
 	if(!isnull(color))
 		I.color = color
@@ -247,6 +292,8 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		I.transform = transform
 	if(length(filters))
 		I.filters = filters
+	if(!isnull(appearance_flags))
+		I.appearance_flags = appearance_flags
 	return I
 
 /datum/look/proc/set_color(value)
@@ -332,6 +379,11 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	if(filters)
 		for(var/name in filters)
 			parts += "[name]=[json_encode(filters[name])]"
+	for(var/list/entry in effects)
+		var/list/bits = list()
+		for(var/bit in entry)
+			bits += "[bit]"
+		parts += "fx:[jointext(bits, ":")]"
 	if(vis)
 		for(var/atom/movable/thing as anything in vis)
 			parts += "vis:[SHARED_CACHE_UID(thing)]"
