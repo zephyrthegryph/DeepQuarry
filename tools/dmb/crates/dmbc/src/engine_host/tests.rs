@@ -612,3 +612,100 @@ fn captured_aliases_and_ordinary_types_do_not_imply_negative_completeness() {
         M::Missing
     );
 }
+
+#[test]
+fn lexical_type_namespace_exclusion_preserves_authored_shadows_and_real_lowering() {
+    use std::path::Path;
+    struct Source;
+    impl dm_preprocess::SourceProvider for Source {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            Ok("/datum/probe\n/datum/probe/proc/read()\n    return __TYPE__\n/datum/shadow\n    var/__TYPE__ = 7\n".into())
+        }
+    }
+    let bytes = include_bytes!("../../../../fixtures/native_template.bin");
+    let engine = crate::engine::EngineSnapshot::from_bytes(bytes, 1)
+        .unwrap()
+        .with_bootstrap_catalog()
+        .unwrap();
+    let seed = engine.frontend_seed();
+    let frontend = dm_tree::frontend::build_with_config(
+        Path::new("project.dme"),
+        &Source,
+        &Default::default(),
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
+    )
+    .unwrap();
+    let mut symbols = frontend.snapshot.tree.symbols().clone();
+    let constants = ConstantCatalog::native_516_1687(&mut symbols).unwrap();
+    let runtime = RuntimeAliasCatalog::new(
+        engine.identity(),
+        &symbols,
+        Vec::new(),
+        frontend
+            .snapshot
+            .tree
+            .types()
+            .iter()
+            .map(|node| node.path)
+            .collect(),
+        Completeness::Partial,
+    )
+    .unwrap();
+    let base = EngineResolverHost::new(frontend.snapshot.tree.clone(), constants, runtime);
+    let base_identity = base.configuration_identity();
+    let host = base.with_pinned_variables(&engine, &frontend).unwrap();
+    assert_ne!(host.configuration_identity(), base_identity);
+
+    let name = SymbolId::of("__TYPE__");
+    let owner = SymbolId::of("/datum/probe");
+    assert_eq!(host.resolve(Q::VarStorage { owner, name }), M::Missing);
+    assert_eq!(host.resolve(Q::GlobalVar(name)), M::Missing);
+    assert_eq!(
+        host.resolve(Q::HasMemberVar { owner, name }),
+        M::Presence(false)
+    );
+    let shadow_owner = SymbolId::of("/datum/shadow");
+    assert!(matches!(
+        host.resolve(Q::VarStorage {
+            owner: shadow_owner,
+            name
+        }),
+        M::InstanceField { .. }
+    ));
+    let unknown = Q::VarStorage {
+        owner: SymbolId::of("/datum/uncaptured"),
+        name,
+    };
+    assert_eq!(host.resolve(unknown), M::Unsupported(unknown));
+    let body = frontend.bodies.iter().next().unwrap();
+    let parsed = frontend.body(body).unwrap();
+    let inputs = dm_codegen_byond::ProcedureInputs {
+        current_type_path: Some("/datum/probe".into()),
+        ..Default::default()
+    };
+    // The real lowering path performs its field/storage query before recognizing
+    // __TYPE__; this must no longer fail on Unsupported VarStorage.
+    dm_codegen_byond::compile_simple_proc_with_resolver(
+        &parsed.children,
+        &inputs,
+        frontend.snapshot.tree.symbols(),
+        &host,
+    )
+    .unwrap();
+}
+
+#[test]
+fn lexical_type_exclusion_checks_root_globals_and_generated_fields() {
+    let catalog = serde_json::json!({"Types": [{"Path": "/", "GlobalVariables": {"__TYPE__": 0}}]});
+    assert!(verify_lexical_type_namespace(&catalog, &BTreeSet::new()).is_err());
+    let catalog = serde_json::json!({"Types": []});
+    assert!(
+        verify_lexical_type_namespace(&catalog, &BTreeSet::from([SymbolId::of("__TYPE__")]))
+            .is_err()
+    );
+    assert!(verify_lexical_type_namespace(&catalog, &BTreeSet::new()).is_ok());
+}

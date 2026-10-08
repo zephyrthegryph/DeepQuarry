@@ -244,8 +244,9 @@ impl<R: Resolver> EngineResolverHost<R> {
         ));
         Ok(self)
     }
-    /// Name exclusion is limited to authored declarations under one pinned
-    /// engine schema. Unknown names and catalog intrinsics remain unsupported.
+    /// Name exclusion is limited to authored declarations and the proven lexical
+    /// __TYPE__ intrinsic under one pinned engine schema. Unknown names and
+    /// physical catalog intrinsics remain unsupported.
     pub fn with_pinned_variables(
         mut self,
         engine: &crate::engine::EngineSnapshot,
@@ -296,6 +297,7 @@ impl<R: Resolver> EngineResolverHost<R> {
         {
             intrinsic.insert(field.name);
         }
+        verify_lexical_type_namespace(&catalog, &intrinsic)?;
         let mut names: HashSet<_> = frontend
             .snapshot
             .tree
@@ -308,6 +310,11 @@ impl<R: Resolver> EngineResolverHost<R> {
             .map(|member| member.name)
             .filter(|name| !intrinsic.contains(name))
             .collect();
+        // __TYPE__ is a lexical expression intrinsic, not physical storage.
+        // The exact pinned template/catalog exclude it in every variable
+        // namespace, including root globals. Resolution below still checks
+        // captured source positives first and requires an ordinary known owner.
+        names.insert(SymbolId::of("__TYPE__"));
         // Positive compiler constants are a separate semantic domain from root
         // runtime globals. Only exact pinned values may certify lexical absence.
         let pinned_constants = ConstantCatalog::native_516_1687(&mut catalog_symbols)
@@ -335,7 +342,7 @@ impl<R: Resolver> EngineResolverHost<R> {
             }
         }
         let mut bytes =
-            b"pinned-authored-variable-absence-v3;physical-boolean-constants;captured-slot-uniqueness".to_vec();
+            b"pinned-authored-variable-absence-v4;physical-boolean-constants;captured-slot-uniqueness;lexical-type-full-namespace-exclusion".to_vec();
         bytes.extend_from_slice(&engine.identity().to_le_bytes());
         bytes.extend_from_slice(crate::engine::catalog::CATALOG_SCHEMA.as_bytes());
         bytes.extend_from_slice(CATALOG);
@@ -546,6 +553,48 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
         }
     }
 }
+/// Verify the finite lexical intrinsic against every physical variable domain.
+/// Root globals must participate even though general authored-name exclusion
+/// treats pinned compiler constants separately.
+fn verify_lexical_type_namespace(
+    catalog: &serde_json::Value,
+    physical_names: &BTreeSet<SymbolId>,
+) -> Result<(), String> {
+    for owner in catalog["Types"]
+        .as_array()
+        .ok_or("native variable catalog absent")?
+    {
+        for domain in ["Variables", "GlobalVariables"] {
+            if let Some(values) = owner.get(domain) {
+                let values = values
+                    .as_object()
+                    .ok_or("native variable domain malformed")?;
+                if values.contains_key("__TYPE__") {
+                    return Err("pinned catalog declares __TYPE__ storage".into());
+                }
+            }
+        }
+        if let Some(values) = owner.get("ConstVariables") {
+            for value in values
+                .as_array()
+                .ok_or("native const variable catalog malformed")?
+            {
+                if value
+                    .as_str()
+                    .ok_or("native const variable name malformed")?
+                    == "__TYPE__"
+                {
+                    return Err("pinned catalog declares __TYPE__ constant storage".into());
+                }
+            }
+        }
+    }
+    if physical_names.contains(&SymbolId::of("__TYPE__")) {
+        return Err("pinned generated catalog declares __TYPE__ storage".into());
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 #[path = "engine_host/tests.rs"]
 mod tests;
