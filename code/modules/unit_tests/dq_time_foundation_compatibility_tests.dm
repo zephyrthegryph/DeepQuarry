@@ -24,9 +24,6 @@
 	var/datum/scheduled_behaviour/inline/inline_callback = definition_registry().make_inline_behaviour()
 	TEST_ASSERT(istype(inline_callback, /datum/om/behaviour/inline), "A synthesized callback still passes existing profiler inline identity checks")
 	qdel(inline_callback)
-	var/datum/definition_registry/registry = definition_registry()
-	TEST_ASSERT(registry.ui_behaviour, "The presentation adapter supplies an actual registered delivery behaviour")
-	TEST_ASSERT_EQUAL(registry.ui_behaviour, registry.behaviour_by_type[/datum/om/behaviour/internal/ui_push], "The engine retains the concrete presentation behaviour identity used by existing sessions")
 
 // Legacy child branches retain their inherited engine behaviour, even though their old
 // path parents are compatibility aliases rather than their actual runtime parents.

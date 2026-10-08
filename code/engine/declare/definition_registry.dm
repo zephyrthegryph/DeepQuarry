@@ -63,10 +63,9 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 	var/list/expansions
 	/// entity type -> /datum/scheduler_type_table (lazy).
 	var/list/type_tables
-	/// Internal behaviours (expiry, tasks, ui, edge refresh).
+	/// Internal behaviours (expiry, tasks, edge refresh).
 	var/datum/scheduled_behaviour/expiry_behaviour
 	var/datum/scheduled_behaviour/timer_behaviour
-	var/datum/scheduled_behaviour/ui_behaviour
 	var/datum/scheduled_behaviour/edge_behaviour
 
 /datum/definition_registry/proc/error(msg)
@@ -472,7 +471,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 		behaviour_by_type[path] = B
 	expiry_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/expiry]
 	timer_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/timers]
-	ui_behaviour = presentation_behaviour()
 	edge_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/edge_refresh]
 	// Inline behaviours from table rows.
 	for(var/datum/definition_bundle/bundle as anything in bundles)
@@ -1288,10 +1286,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 /// The application supplies its own effect definitions through this registry hook.
 /datum/definition_registry/proc/standard_effects()
 	return list()
-
-/// The presentation adapter supplies its real scheduled delivery definition.
-/datum/definition_registry/proc/presentation_behaviour()
-	return null
 
 /datum/definition_registry/New()
 	if(!errors)

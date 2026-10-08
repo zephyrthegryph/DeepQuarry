@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Windows are pushed once per frame when something their host shows changes, and their status (range, hands, ability to act) is re-checked from published keys; the first wave of window hosts no longer call update_uis()"

@@ -61,14 +61,6 @@
 /**
  * public
  *
- * The om change channels that raise a coalesced push to this datum's open UIs.
- */
-/datum/proc/tgui_change_mask()
-	return CHANGE_GENERIC_MASK
-
-/**
- * public
- *
  * Forces an update on static data. Should be done manually whenever something
  * happens to change static data.
  *

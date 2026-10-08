@@ -2663,6 +2663,15 @@ Each changed pin row is one of these classes; nothing else was blessed. `dq_inte
   `i7_bulk` still fails alone and combined on master for another reason (a gravity generator part's break during its own destroy, `hold(...): the holder is deleted`), which is in
   `code/game/machinery`.
 
+## Window outputs (rewrite/ui-outputs)
+
+Pinned by `dq_ui_data_pin` (`snapshots/ui_pins/`, recorded on the code before the conversion; no row changes) and `dq_ui_outputs_*`.
+
+* **Pushes are once per frame.** The OM push throttle (2 ds per window) is gone: a window gets at most one delivery per tick, in phase R, however many requests and tracked writes reached it. `update_uis()` and `request_push()` queue the same delivery.
+* **Status class.** A window's status is re-checked when the user's or host's location, the user's stat, status, hands, equipment, conditions, client or can-act stat publish a key. Hands (`MOB_KEY_HANDS`) and a movable host's move (`ATOM_KEY_LOC`) are new keys; nothing else changed what decides a status.
+* **Hand `update_uis()` class.** In the converted hosts (agentcard, appearance_changer, vorepanel_set_attribute, notes panels, the admin panels in `ui_push_converted`) a deleted `update_uis(src)` is replaced by the framework: an op handler that returns TRUE refreshes its window (as before), and an answered question (`open_request` handler) now pushes its owner's windows (and, for a handler on a window, that window's host). Handlers that refused to answer no longer push (the old calls ran on a cancelled answer too).
+* **Unban and delete-book panels** track their data (`shown_rows`, `books`, `error_msg`).
+
 ## Machinery final admission and gravity teardown (2026-10-07)
 
 - Camera attack admission, AI upload level admission, robot remote admission, floor-light custody, suit cycler custom-item admission, and Santa actor identity explicitly sample their current input state with `read_once()`. These samples do not claim a subscription. Menus that sample are rebuilt, including enclosing menus, so mutable instantaneous admission never uses an old generation cache. Tracked-only menus retain their cache. Waiting requirements still require real tracked dependencies for mutable conditions.

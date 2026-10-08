@@ -169,6 +169,13 @@ What converting every `TOPIC_ACTION` row outside the machinery folder to an op s
 | J8 | `chem_canister` refill text | The refill strings held a literal tab where `	he` was written ("You fill <tab>he ..."). Fixed in rewrite/integ-6. | DONE. |
 | J9 (DONE, rewrite/gaps-j) | tests | The pin's stardog left its ship in `GLOB.map_sectors` (`unregister_z_levels()` removed numbers from a text-keyed list); fixed, with `dq_gap/overmap_sector_unregisters_its_levels`. `i7_bulk` still fails, alone too, on a gravity generator part's break during its destroy (code/game/machinery). | Fix the gravity generator part (Codex's). |
 
+## K. UI outputs (rewrite/ui-outputs, prefix KU)
+
+* **KU-1: per-window dynamic read recording.** A window's reads are the static ones (generated from `ui_data` bodies, or a declared `ui_from()`): a non-exact host is marked by any tracked write, an exact one by its declared reads. Reads through a relation or a global (`holder.screen`, `GLOB.news_network`) are not seen by the generated reads, and `untracked_ui_read` checks own vars only. Recording what `ui_data` reads per open window, and subscribing to exactly that, is open.
+* **KU-2: hosts that show state they cannot track.** The admin panels (edit_player_panel, edit_memory_panel, newscaster, magnetic and traffic consoles), the vore panel (dozens of writers of `unsaved_changes`/`active_tab`), the appearance changer and the notes panels read mob, client, machine or relation state written all over the tree. They update because an op handler that returns TRUE refreshes the acting window (`on_act_message`) and an answered question refreshes its owner's windows (`request_end`). They are not in `ui_hosts`; each joins when its vars are tracked. Known stale case: the magnetic console lists `magnetic_module` fields (`on`, `electricity_level`) that change on other objects (code/game/machinery, not tracked from the controller).
+* **KU-3: `/datum/vore_look` external updates.** `updateVRPanel()` (belly events) still calls `update_uis`; vorepanel.dm is not in `ui_push_converted`.
+* **KU-4: window range is not a stat.** The status re-check is triggered by the location keys of the user and the host and decided by the window's state (`tgui_status`); a distance stat is not modelled.
+
 ## K. Relations conversion (rewrite/relations, prefix KR)
 
 Counts on origin/master eac3bc655d: `om_link(` 51 lines in 26 files, of which 30 production calls in 22 files (the rest are the OM core and tests); `om_attach(` 51 lines in 10 files, all the OM core (`entity.dm`, `relation.dm`, `ui.dm`, `tgui.dm`), benchmarks and tests (no non-AI production caller; looping sounds are the om-leftovers lane). The 17 `/datum/om/relation/*` types outside the slot ledger were the work.

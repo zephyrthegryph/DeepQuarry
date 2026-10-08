@@ -62,10 +62,6 @@
 	var/list/named_verbs
 	/// Entities whose hold_log names this entity as a target.
 	var/list/hook_holders
-	/// UI sessions: time (ds) of the last push (ui.dm).
-	var/ui_last_push = 0
-	/// As ui_last_push, for the window's status re-check (ui_status).
-	var/ui_status_last = 0
 	/// Stride 5: derived idx, value, dirty, computed at, aggregate aux.
 	var/list/dv
 	/// Stride 4: clock idx, rate, local time (ds), settled at (ds).

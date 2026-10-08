@@ -48,7 +48,6 @@ CAPABILITIES(/datum/private_notes_panel)
 	if(!ui_gate(A))
 		return FALSE
 	host.set_metainfo_private_notes(host)
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/private_notes_panel/proc/ui_act_save(datum/act/op/A)
@@ -145,7 +144,6 @@ CAPABILITIES(/datum/ooc_notes_panel)
 		return FALSE
 	if(user == host)
 		host.set_metainfo_ooc_style(host)
-		SStgui.update_uis(src)
 	return TRUE
 
 /datum/ooc_notes_panel/proc/ui_act_edit_notes(datum/act/op/A)
@@ -154,7 +152,6 @@ CAPABILITIES(/datum/ooc_notes_panel)
 		return FALSE
 	if(user == host)
 		host.set_metainfo_panel(host)
-		SStgui.update_uis(src)
 	return TRUE
 
 /datum/ooc_notes_panel/proc/ui_act_edit_favs(datum/act/op/A)
@@ -163,7 +160,6 @@ CAPABILITIES(/datum/ooc_notes_panel)
 		return FALSE
 	if(user == host)
 		host.set_metainfo_favs(host)
-		SStgui.update_uis(src)
 	return TRUE
 
 /datum/ooc_notes_panel/proc/ui_act_edit_likes(datum/act/op/A)
@@ -172,7 +168,6 @@ CAPABILITIES(/datum/ooc_notes_panel)
 		return FALSE
 	if(user == host)
 		host.set_metainfo_likes(host)
-		SStgui.update_uis(src)
 	return TRUE
 
 /datum/ooc_notes_panel/proc/ui_act_edit_maybes(datum/act/op/A)
@@ -181,7 +176,6 @@ CAPABILITIES(/datum/ooc_notes_panel)
 		return FALSE
 	if(user == host)
 		host.set_metainfo_maybes(host)
-		SStgui.update_uis(src)
 	return TRUE
 
 /datum/ooc_notes_panel/proc/ui_act_edit_dislikes(datum/act/op/A)
@@ -190,7 +184,6 @@ CAPABILITIES(/datum/ooc_notes_panel)
 		return FALSE
 	if(user == host)
 		host.set_metainfo_dislikes(host)
-		SStgui.update_uis(src)
 	return TRUE
 
 /mob/living/proc/ooc_notes_window(mob/user)

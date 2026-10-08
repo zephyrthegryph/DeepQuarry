@@ -183,6 +183,16 @@ pub fn parts() -> Vec<Part> {
         )
         .flt(vec![Flt::KeepPaths("legacy_fields_converted")])
         .allow(Allow::None),
+        // The hand window pushes: a window updates because its ui_data(A) re-runs when something it reads changes (code/modules/tgui/ui_push.dm). A file
+        // is listed under `ui_push_converted` when its last SStgui.update_uis() and hand changed() mark is gone; a hard ban there. Files are only ever added.
+        Part::new(
+            "hand_window_pushes_banned_in_converted_files",
+            "hand window pushes: update_uis() and changed() banned in the converted files",
+            "SStgui.update_uis() or a hand changed() mark in a file listed under ui_push_converted. Track what the window shows (TRACKED / a setter / a relation) and let ui_data(A) re-run: the framework pushes the window once per frame, and an op handler that returns TRUE updates the acting window.",
+            Files::Code,
+            line(r"\bupdate_uis\(|\bchanged\("),
+        )
+        .flt(vec![Flt::KeepPaths("ui_push_converted")]),
         Part::new(
             "bump_ratchet_on_bumped_overrides",
             "bump: ratchet on Bumped() overrides",

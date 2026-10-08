@@ -1720,8 +1720,7 @@ CAPABILITIES(/datum/vore_look)
 	var/list/answers = A.request.captured.Copy()
 	answers[A.request.step_name] = A.answer.value
 	var/datum/vore_look/panel = src_object()
-	if(panel.vore_save_preferences_step(src, answers))
-		SStgui.update_uis(panel)
+	panel.vore_save_preferences_step(src, answers)
 
 /datum/vore_look/proc/vore_save_preferences_step(datum/tgui/ui, list/answers)
 	if(isnewplayer(host()))

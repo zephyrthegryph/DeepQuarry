@@ -84,6 +84,3 @@
 
 /datum/definition_registry/standard_effects()
 	return definition_standard_effects()
-
-/datum/definition_registry/presentation_behaviour()
-	return behaviour_by_type[/datum/om/behaviour/internal/ui_push]

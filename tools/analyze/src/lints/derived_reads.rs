@@ -40,6 +40,7 @@ const H_UNDECLARED: &str = "declare it in derived() (`--fix` adds it), or keep w
 const H_UNTRACKED: &str = "make it TRACKED / SETTER, a derive() value or a declared relation (OWN / REL)";
 const H_HOP: &str = "declare the link var REL / REL_LIST / OWN; a hop only follows a declared relation";
 const H_REACTION: &str = "make the var TRACKED / SETTER / an OM field or a relation, or name the key its producer publishes with PUBLISHED_BY(T, var, KEY)";
+const H_UI_UNTRACKED: &str = "make the var TRACKED / SETTER (and write it through its setter), a derive() value or a declared relation (REL / OWN): a window host must track what its ui_data() shows, or the window never hears it change";
 const H_EXACT: &str = "use push_to_rust() with rust_push(...): an exact type is not woken for on_state_changed";
 
 static META: Meta = Meta {
@@ -62,10 +63,11 @@ static META: Meta = Meta {
         RuleMeta { name: "declared_untracked", hint: H_UNTRACKED },
         RuleMeta { name: "hop_not_relation", hint: H_HOP },
         RuleMeta { name: "reaction_read_untracked", hint: H_REACTION },
+        RuleMeta { name: "untracked_ui_read", hint: H_UI_UNTRACKED },
         RuleMeta { name: "exact_on_state_changed", hint: H_EXACT },
     ],
     allow: &["derived_reads"],
-    lists: &[],
+    lists: &["ui_hosts"],
 };
 
 // ---- small mappings ---------------------------------------------------------------------------
@@ -74,7 +76,7 @@ fn proc_kind(name: &str) -> Option<&'static str> {
     match name {
         "should_run" => Some("runs"),
         "draw" | "hidden_verbs" => Some("drawn"),
-        "tgui_data" => Some("ui"),
+        "tgui_data" | "ui_data" => Some("ui"),
         "push_to_rust" => Some("push"),
         _ => None,
     }
@@ -497,9 +499,20 @@ fn parse_file(f: &SourceFile) -> Parts {
     let mut tracked = VarTable::new();
     let mut relations = VarTable::new();
     let mut published = Vec::new();
+    let mut caps_owner: Option<String> = None;
     for line in &lines {
         if line.starts_with('#') {
             continue;
+        }
+        // A CAPABILITIES(/type) block declares relations with ref_one / ref_many / rel_one / rel_many / own_one / own_many (nameof(var), ...).
+        if let Some(m) = pat_match!(r"^CAPABILITIES\(\s*(/[\w/]+)").captures(line) {
+            caps_owner = Some(m.s(1).to_string());
+        } else if !line.starts_with('\t') && !line.starts_with(' ') && !line.is_empty() {
+            caps_owner = None;
+        } else if let Some(owner) = &caps_owner {
+            if let Some(m) = pat_match!(r"^\s+(?:ref|rel|own)_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)").captures(line) {
+                relations.entry(owner.clone()).or_default().insert(m.s(1).to_string());
+            }
         }
         if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_BRIDGED|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(line) {
             tracked.entry(m.s(1).to_string()).or_default().insert(m.s(2).to_string());
@@ -796,7 +809,7 @@ fn derive_value(name: &str) -> Option<&str> {
     name.strip_prefix("derive_").filter(|v| !v.is_empty())
 }
 
-fn analyze(model: &Model, tree: &Tree, sink: &mut Sink, generated_covers: bool) -> Vec<Finding> {
+fn analyze(model: &Model, tree: &Tree, sink: &mut Sink, generated_covers: bool, ui_hosts: &[String]) -> Vec<Finding> {
     let mut findings: Vec<Finding> = Vec::new();
     for proc in &model.procs {
         if proc.owner == "/" || starts_any(&proc.rel, SKIP_SITE_DIRS) || proc.owner.starts_with("/datum/capability") {
@@ -807,10 +820,35 @@ fn analyze(model: &Model, tree: &Tree, sink: &mut Sink, generated_covers: bool) 
         if kind.is_none() && value.is_none() {
             continue;
         }
+        let known = model.union(&model.vars, &proc.owner);
+        if proc.name == "ui_data" {
+            // A window host's ui_data(A) is an output: every var of the host it reads must publish its writes, or nothing
+            // re-runs it. Enforced for the hosts lint_scopes.toml lists (`ui_hosts`, the converted ones); the list grows as hosts
+            // convert and goes away, the rule global, when the last one has.
+            if !ui_hosts.iter().any(|h| *h == proc.owner) {
+                continue;
+            }
+            let tracked = model.union(&model.tracked, &proc.owner);
+            let relations = model.union(&model.relations, &proc.owner);
+            let derived: HashSet<String> = model.declared_derive(&proc.owner).into_keys().collect();
+            for (name, line) in body_reads(proc, &known) {
+                if EXEMPT_VARS.contains(&name.as_str()) || tracked.contains(&name) || relations.contains(&name) || derived.contains(&name) || raw_allowed(tree, sink, &proc.rel, line) {
+                    continue;
+                }
+                findings.push(Finding {
+                    rel: proc.rel.clone(),
+                    line,
+                    rule: "untracked_ui_read",
+                    owner: proc.owner.clone(),
+                    proc: proc.name.clone(),
+                    var: Some(name),
+                    kind: Some("ui".to_string()),
+                });
+            }
+        }
         if generated_covers && !model.exact(&proc.owner) {
             continue;
         }
-        let known = model.union(&model.vars, &proc.owner);
         let (allowed_reads, label, wanted_kind): (HashSet<String>, String, &str) = if let Some(value) = value {
             let Some(reads_of) = model.declared_derive(&proc.owner).remove(value) else { continue };
             (reads_of, format!("derive_{}", value), "derive")
@@ -1062,6 +1100,10 @@ fn generated_text(model: &Model) -> String {
         {
             continue;
         }
+        // A system's window (SSair's) reads the system's own vars: the system boundary lint owns that, not the generated reads.
+        if proc.name == "ui_data" && proc.owner.starts_with("/datum/system") {
+            continue;
+        }
         let mut kind = proc_kind(&proc.name).map(|k| k.to_string());
         let value = derive_value(&proc.name);
         if kind.is_none() && value.is_none() {
@@ -1267,7 +1309,8 @@ impl Lint for DerivedReads {
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let files = cx.files();
         let model = Model::get(cx.tree, &files);
-        for f in analyze(&model, cx.tree, out, true) {
+        let ui_hosts = cx.list("ui_hosts").to_vec();
+        for f in analyze(&model, cx.tree, out, true, &ui_hosts) {
             out.site_in(f.rule, &f.rel, f.line);
         }
     }
@@ -1397,7 +1440,7 @@ fn model_of(texts: &[(&str, String)]) -> (Tree, Model) {
 fn run_analyze(texts: &[(&str, String)]) -> (Tree, Model, Vec<Finding>) {
     let (tree, model) = model_of(texts);
     let mut sink = Sink::new();
-    let found = analyze(&model, &tree, &mut sink, false);
+    let found = analyze(&model, &tree, &mut sink, false, &["/obj/panel".to_string()]);
     (tree, model, found)
 }
 
@@ -1489,6 +1532,24 @@ fn selftest() -> Result<String, String> {
     );
     let (_, model2) = model_of(&[("code/a.dm", declared.clone())]);
     check("generated is stable", generated_text(&model2) == text, String::new());
+    // 11: a window host's ui_data() reads must be tracked
+    let ui_fixture = tabs("
+/obj/panel
+»var/screen = 1
+»var/label = \"x\"
+»var/obj/thing/target
+»var/note = \"\"
+
+TRACKED(/obj/panel, screen)
+REL(/obj/panel, target)
+
+/obj/panel/ui_data(datum/act/eval/A)
+»var/note = 3
+»return list(\"screen\" = screen, \"label\" = label, \"t\" = target, \"n\" = note)
+");
+    let (_, _, found) = run_analyze(&[("code/a.dm", ui_fixture)]);
+    let ui_got: Vec<_> = found.iter().filter(|f| f.rule == "untracked_ui_read").map(|f| f.var.clone()).collect();
+    check("ui_data untracked read is flagged", ui_got == vec![Some("label".to_string())], format!("{:?}", ui_got));
     // 10
     let fixture = "/obj/pump/reactions()\n\t. = ..()\n\t. += every(1 SECONDS, PROC_REF(step), members = /datum/capability/pumped)\n\t. += on_notice(/datum/notice/x, PROC_REF(h))\n".to_string();
     let (_, model) = model_of(&[("code/a.dm", fixture)]);

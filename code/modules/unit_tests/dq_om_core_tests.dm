@@ -20,16 +20,12 @@
 	var/enabled = TRUE
 	var/crash_on_tick = FALSE
 	var/native = 0
-	var/ui_pushes = 0
 	/// Set by on_destroy(): how many om edges were still present then.
 	var/edges_at_destroy = -1
 
 /datum/om_test_entity/on_destroy(force)
 	edges_at_destroy = length(om_rec?.edges)
 	..()
-
-/datum/om_test_entity/om_ui_push()
-	ui_pushes++
 
 /datum/om_test_entity/proc/inline_tick(dt)
 	ticks++
@@ -967,26 +963,7 @@
 // ---------------------------------------------------------------- I: tasks
 
 // ---------------------------------------------------------------- J: UI
-
-/datum/unit_test/om/ui_bind_coalesces_and_throttles
-
-/datum/unit_test/om/ui_bind_coalesces_and_throttles/run_om(list/made)
-	var/datum/om_test_entity/session = entity(made)
-	var/datum/om_test_entity/target = entity(made)
-	om_ui_bind(session, target, CHANGE_DATUM_A)
-	TEST_ASSERT_EQUAL(stat_value(target, STAT_RELEVANCE), RELEVANCE_WATCHED, "binding raises relevance to WATCHED")
-	changed(target, CHANGE_DATUM_A)
-	changed(target, CHANGE_DATUM_A)
-	changed(target, CHANGE_DATUM_A)
-	scheduler_advance(0.1)
-	TEST_ASSERT_EQUAL(session.ui_pushes, 1, "changes coalesce into one push")
-	changed(target, CHANGE_DATUM_A)
-	scheduler_advance(0.1)
-	TEST_ASSERT_EQUAL(session.ui_pushes, 1, "throttled")
-	scheduler_advance(0.3)
-	TEST_ASSERT_EQUAL(session.ui_pushes, 2, "the throttled change is pushed later")
-	om_ui_unbind(session, target)
-	TEST_ASSERT_EQUAL(stat_value(target, STAT_RELEVANCE), RELEVANCE_NONE, "unbinding drops relevance")
+// The window push and status wakes are the UI push system's (dq_ui_outputs_tests.dm).
 
 // ---------------------------------------------------------------- K: helpers
 

@@ -36,6 +36,10 @@
 #define MOB_KEY_VIEW "mob_view"
 /// HUD-list bits were marked stale (flag_hud_update()).
 #define MOB_KEY_HUD_FLAGS "mob_hud_flags"
+/// A mob picked up, dropped or swapped what it holds in its hands (a window that needs a held tool re-checks its status).
+#define MOB_KEY_HANDS "mob_hands"
+/// A movable moved (its turf or container changed): published only while someone observes it (a window watching its host).
+#define ATOM_KEY_LOC "atom_loc"
 
 // --- Life sets (/mob/living/var/life_set) ---------------------------------------------------
 // Which family of Life steps a mob runs (life_steps.dm checks it). The legacy silicon Life() procs never called
