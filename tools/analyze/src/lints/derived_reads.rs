@@ -1084,10 +1084,10 @@ fn boot_text(model: &Model) -> Vec<String> {
 
 /// The text of `code/_generated/reads.dm` for these files (the `derived_reads` generator, `analyze gen derived_reads`, writes it).
 pub(crate) fn generated_for(tree: &Tree, files: &[&SourceFile]) -> String {
-    generated_text(&Model::get(tree, files))
+    generated_text(&Model::get(tree, files), &crate::sem::gen::test_only_types(tree))
 }
 
-fn generated_text(model: &Model) -> String {
+fn generated_text(model: &Model, test_types: &BTreeSet<String>) -> String {
     // owner -> (kind, derive name or "") -> vars
     let mut per_owner: BTreeMap<String, BTreeMap<(String, String), Vec<String>>> = BTreeMap::new();
     let mut order: Vec<&Proc> = model.procs.iter().collect();
@@ -1149,7 +1149,10 @@ fn generated_text(model: &Model) -> String {
         String::new(),
     ];
     let owners: BTreeSet<&String> = per_owner.keys().chain(reaction_slots.keys()).collect();
+    // Types that only the test fixtures define are compiled in test builds only: their reads go in a UNIT_TESTS block.
+    let mut test_out: Vec<String> = Vec::new();
     for owner in owners {
+        let test_owner = test_types.contains(owner.as_str());
         let mut lines: Vec<String> = Vec::new();
         if let Some(slots) = per_owner.get(owner) {
             for ((kind, value), names) in slots {
@@ -1176,11 +1179,18 @@ fn generated_text(model: &Model) -> String {
             }
         }
         if !lines.is_empty() {
-            out.push(format!("{}/generated_reads()", owner));
-            out.push("\t. = ..()".to_string());
-            out.extend(lines);
-            out.push(String::new());
+            let dest = if test_owner { &mut test_out } else { &mut out };
+            dest.push(format!("{}/generated_reads()", owner));
+            dest.push("\t. = ..()".to_string());
+            dest.extend(lines);
+            dest.push(String::new());
         }
+    }
+    if !test_out.is_empty() {
+        out.push("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)".to_string());
+        out.extend(test_out);
+        out.push("#endif".to_string());
+        out.push(String::new());
     }
     out.extend(boot_text(model));
     out.join("\n")
@@ -1318,7 +1328,7 @@ impl Lint for DerivedReads {
     fn post_judge(&self, cx: &Cx, _run: &Run, text: &mut String) -> bool {
         let files = cx.files();
         let model = Model::get(cx.tree, &files);
-        let want = generated_text(&model);
+        let want = generated_text(&model, &crate::sem::gen::test_only_types(cx.tree));
         let current = cx.tree.read_extra(GENERATED_REL);
         if current.as_deref().map(|s| s.as_str()) != Some(want.as_str()) {
             let _ = writeln!(
@@ -1522,7 +1532,7 @@ fn selftest() -> Result<String, String> {
     check("legacy type reports", found.iter().any(|f| f.rule == "undeclared_read"), String::new());
     // 9
     let (_, model) = model_of(&[("code/a.dm", declared.clone())]);
-    let text = generated_text(&model);
+    let text = generated_text(&model, &BTreeSet::new());
     check(
         "generated reads",
         text.contains("/obj/pointer/generated_reads()")
@@ -1531,7 +1541,7 @@ fn selftest() -> Result<String, String> {
         text.clone(),
     );
     let (_, model2) = model_of(&[("code/a.dm", declared.clone())]);
-    check("generated is stable", generated_text(&model2) == text, String::new());
+    check("generated is stable", generated_text(&model2, &BTreeSet::new()) == text, String::new());
     // 11: a window host's ui_data() reads must be tracked
     let ui_fixture = tabs("
 /obj/panel
@@ -1553,7 +1563,7 @@ REL(/obj/panel, target)
     // 10
     let fixture = "/obj/pump/reactions()\n\t. = ..()\n\t. += every(1 SECONDS, PROC_REF(step), members = /datum/capability/pumped)\n\t. += on_notice(/datum/notice/x, PROC_REF(h))\n".to_string();
     let (_, model) = model_of(&[("code/a.dm", fixture)]);
-    let boot = generated_text(&model);
+    let boot = generated_text(&model, &BTreeSet::new());
     check("boot types", boot.contains("/obj/pump = RXB_EVERY | RXB_NOTICE,") && boot.contains("/datum/capability/pumped,"), boot);
     if bad.is_empty() {
         Ok("derived_reads_lint selftest passed".to_string())
