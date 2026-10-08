@@ -59,19 +59,18 @@
 /datum/say_list/turkey
 	speak = list("Gobble!", "Gobble gobble!", "Gobble gobble gobble!", "Give me something to be thankful for~", "Could use something to gobble~", "Why don't you make a pilgrimage over here and give me something good to eat?", "I want a treat... I could bite you too if you like~", "What's your favorite time of year?", "Autumn is the best time of year~", "You just gonna let a girl go hungry?")
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/turkeygirl, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/turkeygirl/appearance_overlays()
-	. = list()
-	. += ..()
+/mob/living/simple_mob/vore/turkeygirl/draw(datum/look/look)
+	..()
 	if(stat == DEAD)
-		return .
+		return
+	var/state = look.state_so_far(src)
 	if(vore_fullness == 2 || nutrition >= 5000)
-		icon_state = "[icon_living]-2"
-
+		state = "[icon_living]-2"
 	else if(vore_fullness == 1 || nutrition >= 2500)
-		icon_state = "[icon_living]-1"
+		state = "[icon_living]-1"
 	if(resting)
-		icon_state = "[icon_state]-resting"
+		state = "[state]-resting"
+	look.state(state)
 
 CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
 	op("turkeygirl_item", item(/obj/item), then(PROC_REF(turkeygirl_interaction_item)))
@@ -105,4 +104,3 @@ CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
 		if(user != src)
 			to_chat(src, span_notice("\The [user] feeds \the [O] to you."))
 	play_sfx(src, SFX_ITEMS_EATFOOD)
-	update_icon()

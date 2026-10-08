@@ -39,7 +39,6 @@
 /mob/living/simple_mob/animal/passive/raccoon/Initialize(mapload)
 	. = ..()
 	set_ghostjoin(1)
-	ghostjoin_icon()
 
 /datum/say_list/raccoon
 	speak = list("HSSSSS")

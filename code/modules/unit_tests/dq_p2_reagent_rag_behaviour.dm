@@ -127,7 +127,7 @@
 /datum/unit_test/dq_p2_reagents/rag_smothers_a_person/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/mob/living/carbon/human/patient = rc_actor()
-	H.zone_sel.selecting = O_MOUTH
+	H.zone_sel.set_selecting(O_MOUTH)
 	var/obj/item/reagent_containers/glass/rag/R = rc_rag(10)
 	var/before = rc_blood_units(patient)
 	rc_click(H, patient, R, I_HELP, FALSE)
@@ -141,7 +141,7 @@
 	if(patient.equip_to_slot_if_possible(helmet, SLOT_ID_HEAD) && (helmet.body_parts_covered & FACE))
 		rc_click(H, patient, R, I_HELP, FALSE)
 		TEST_ASSERT_EQUAL(rc_units(R), 5, "a covered face is refused")
-	H.zone_sel.selecting = BP_TORSO
+	H.zone_sel.set_selecting(BP_TORSO)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Fire

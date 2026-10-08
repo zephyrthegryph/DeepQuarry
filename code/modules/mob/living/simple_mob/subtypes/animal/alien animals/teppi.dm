@@ -100,7 +100,6 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	var/item_color
 	var/marking_type
 	var/horn_type
-	var/static/list/overlays_cache = list() // ALLOW(cache): multi-key overlay table filled inline from mob state
 	var/inherit_allergen = FALSE
 	var/inherit_colors = FALSE
 	var/teppi_wool = FALSE
@@ -362,15 +361,15 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 		affection_factor = rand(1,3)
 	if(!inherit_colors)
 		color = pickweight(possiblebody)
-		marking_color = pickweight(possiblemarking)
-		horn_color = pickweight(possiblehorns)
-		eye_color = pickweight(possibleeyes)
-		skin_color = pickweight(possibleskin)
+		set_marking_color(pickweight(possiblemarking))
+		set_horn_color(pickweight(possiblehorns))
+		set_eye_color(pickweight(possibleeyes))
+		set_skin_color(pickweight(possibleskin))
 	if(!marking_type)
-		marking_type = "[rand(0,13)]" //the babies don't have this set up by default, but they might pick it from their parents
+		set_marking_type("[rand(0,13)]") //the babies don't have this set up by default, but they might pick it from their parents
 	if(teppi_adult)
 		if(!horn_type)
-			horn_type = "[rand(0,1)]"
+			set_horn_type("[rand(0,1)]")
 	else if(teppi_mutate)
 		var/list/possiblecolorlists = list(possiblebody, possiblemarking, possiblehorns, possibleeyes, possibleskin)
 		var/pick_a = rand(0,5)
@@ -379,101 +378,47 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 			if(0)
 				color = pickweight(pick_b)
 			if(1)
-				marking_color = pickweight(pick_b)
+				set_marking_color(pickweight(pick_b))
 			if(2)
-				horn_color = pickweight(pick_b)
+				set_horn_color(pickweight(pick_b))
 			if(3)
-				eye_color = pickweight(pick_b)
+				set_eye_color(pickweight(pick_b))
 			if(4)
-				skin_color = pickweight(pick_b)
+				set_skin_color(pickweight(pick_b))
 			if(5)
 				color = pickweight(pick_b)
-				marking_color = pickweight(pick_b)
-				horn_color = pickweight(pick_b)
-				eye_color = pickweight(pick_b)
-				skin_color = pickweight(pick_b)
+				set_marking_color(pickweight(pick_b))
+				set_horn_color(pickweight(pick_b))
+				set_eye_color(pickweight(pick_b))
+				set_skin_color(pickweight(pick_b))
 		teppi_mutate = FALSE
 
-	update_icon()
 
-//This builds, caches, and recalls parts of the teppi as it needs them, and shares them across all teppi,
-//so ideally they only have to make it once as they need it since most of them will be using many of the same colored parts
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_icon()
-	var/marking_key = "marking-[marking_color]"
-	var/horn_key = "horn-[horn_color]"
-	var/eye_key = "eye-[eye_color]"
-	var/skin_key = "skin-[skin_color]"
-	var/wool_key = "wool-[marking_color]"
-
+//The parts of the teppi are layered from the lowest up: markings, collar, wool, horns, eyes, skin.
+/mob/living/simple_mob/vore/alienanimals/teppi/draw(datum/look/look)
+	..()
+	var/base_state = look.state_so_far(src)
 	var/our_state = "base"	//For helping the images know what icon state they should be grabbing
-	if(icon_state == icon_living)
+	if(base_state == icon_living)
 		our_state = "base"
-	if(icon_state == icon_rest)
+	if(base_state == icon_rest)
 		our_state = "rest"
-	if(icon_state == icon_dead)
+	if(base_state == icon_dead)
 		our_state = "dead"
-	var/life_stage = "adult"
-	if(!teppi_adult)
-		life_stage = "baby"
+	var/flags = (RESET_COLOR|KEEP_APART|PIXEL_SCALE)
 	/////LOWEST LAYER/////
 	if(teppi_adult)		//Only adults get markings or wool. The marking color is a secret until they grow bigger!
-		var/combine_key = marking_key+our_state+marking_type		//Markings first, the lowest layer, down with the base color
-		var/image/marking_image = overlays_cache[combine_key]
-		if(!marking_image)
-			marking_image = image(icon,null,"marking_[our_state][marking_type]")
-			marking_image.color = marking_color
-			marking_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-			overlays_cache[combine_key] = marking_image
-		add_overlay(marking_image)
-
+		look.overlay(look_overlay_image(icon, "marking_[our_state][marking_type]", color = marking_color, appearance_flags = flags))	//Markings first, the lowest layer, down with the base color
 		if(item_type)
-			var/item_key = "[item_type]-[item_color]"
-			var/image/item_image = overlays_cache[item_key+our_state]	//Items! Like collar. Goes under everything but markings because I'll go crazy otherwise
-			if(!item_image)
-				item_image = image(icon,null,"[item_type]_[our_state]")
-				item_image.color = item_color
-				item_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-				overlays_cache[item_key+our_state] = item_image
-			add_overlay(item_image)
-
+			look.overlay(look_overlay_image(icon, "[item_type]_[our_state]", color = item_color, appearance_flags = flags))	//Items! Like collar. Goes under everything but markings because I'll go crazy otherwise
 		if(teppi_wool)
-			var/image/wool_image = overlays_cache[wool_key+our_state+life_stage]	//Wool comes next, goes over top of the markings, is the same color too
-			if(!wool_image)
-				wool_image = image(icon,null,"wool_[our_state]")
-				wool_image.color = marking_color
-				wool_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-				overlays_cache[wool_key+our_state+life_stage] = wool_image
-			add_overlay(wool_image)
-
-	var/image/horn_image = overlays_cache[horn_key+our_state+life_stage+horn_type]		//Horns MUST come after marking and wool for layering purposes.
-	if(!horn_image)
-		if(!teppi_adult)
-			horn_image = image(icon,null,"horn_[our_state]")	//Babies only have one kind of horns
-		else
-			horn_image = image(icon,null,"horn_[our_state][horn_type]")
-		horn_image.color = horn_color
-		horn_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-		overlays_cache[horn_key+our_state+life_stage+horn_type] = horn_image
-	add_overlay(horn_image)
-
-	var/image/eye_image = overlays_cache[eye_key+our_state+life_stage]			//Eyes and skin should be above markings too, but their order doesn't matter
-	if(!eye_image)																//they won't intersect with eachother or the horns, but might intersect with some markings.
-		eye_image = image(icon,null,"eye_[our_state]")							//If we ever add horns or wool fluff that might cover them, remember to move these down as appropriate.
-		eye_image.color = eye_color												//Otherwise they will just always be on top of them.
-		eye_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-		overlays_cache[eye_key+our_state+life_stage] = eye_image
-	add_overlay(eye_image)
-
-	var/image/skin_image = overlays_cache[skin_key+our_state+life_stage]
-	if(!skin_image)
-		skin_image = image(icon,null,"skin_[our_state]")
-		skin_image.color = skin_color
-		skin_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-		overlays_cache[skin_key+our_state+life_stage] = skin_image
-	add_overlay(skin_image)
+			look.overlay(look_overlay_image(icon, "wool_[our_state]", color = marking_color, appearance_flags = flags))	//Wool comes next, goes over top of the markings, is the same color too
+	//Horns MUST come after marking and wool for layering purposes. Babies only have one kind of horns.
+	look.overlay(look_overlay_image(icon, teppi_adult ? "horn_[our_state][horn_type]" : "horn_[our_state]", color = horn_color, appearance_flags = flags))
+	//Eyes and skin should be above markings too, but their order doesn't matter: they won't intersect with each other or the horns.
+	look.overlay(look_overlay_image(icon, "eye_[our_state]", color = eye_color, appearance_flags = flags))
+	look.overlay(look_overlay_image(icon, "skin_[our_state]", color = skin_color, appearance_flags = flags))
 	/////HIGHEST LAYER/////
-
-TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_wool)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 	op("teppi_item_help", item(/obj/item), stance(I_HELP), label("Tend"), then(PROC_REF(teppi_interaction_item_help)))
@@ -607,11 +552,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 		if(!C.given_name)
 			to_chat(user, span_notice("You didn't put a name on the collar. You can use it in your hand to do that!"))
 			return
-		item_type = "collar"
-		item_color = C.color
+		set_item_type("collar")
+		set_item_color(C.color)
 		name = C.given_name
 		real_name = C.given_name
-		update_icon()
 		consume(C, user)
 		fully_replace_character_name(real_name,C.given_name)
 		log_admin("[key_name_admin(user)] renamed a teppi to [name] - [COORD(src)]")
@@ -637,8 +581,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 	if(stance == I_GRAB && item_type)
 		if(LAZYACCESS(affinity, M.real_name) >= 30)
 			act_message(M, src, MSG_SELF(span_notice("You remove %T%'s [item_type].")), MSG_OTHERS(span_notice("\The [M.name] removes %T%'s [item_type].")))
-			item_type = null
-			update_icon()
+			set_item_type(null)
 			return
 	if(stance != I_HELP) //be gentle
 		handle_affinity(M, -5)
@@ -694,13 +637,16 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 	if(vitality() <= 0.75)
 		. += span_notice("They look beat up.")
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/alienanimals/teppi/appearance_overlays()
-	. = list()
-	. += ..()
-	teppi_icon()
-	if(ghostjoin)
-		ghostjoin_icon()
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, marking_color)
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, horn_color)
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, eye_color)
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, skin_color)
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, item_type)
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, item_color)
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, marking_type)
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, horn_type)
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_wool)
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 
 /mob/living/simple_mob/vore/alienanimals/teppi/life_type_post_due()
 	return TRUE
@@ -721,7 +667,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 				src.set_teppi_wool(TRUE)
 				src.breedable = TRUE
 				src.meat_amount += rand(0,2)
-				src.update_icon()
 		else if (not_hungy)
 			var/nutrition_cost = 500 + (src.nutrition / 2)
 			src.adjust_nutrition(-nutrition_cost)
@@ -802,7 +747,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	var/obj/item/stack/material/fur/F = new(get_turf(user), rand(10,15))
 	F.color = marking_color
 	set_teppi_wool(FALSE)
-	update_icon()
 	handle_affinity(user, 5)
 	teppi_sound()
 	return TRUE
@@ -1017,25 +961,24 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	allergen_preference = teppi_data["allergen_preference"]
 	allergen_unpreference = teppi_data["allergen_unpreference"]
 	color = teppi_data["color"]
-	marking_color = teppi_data["marking_color"]
-	horn_color = teppi_data["horn_color"]
-	eye_color = teppi_data["eye_color"]
-	skin_color = teppi_data["skin_color"]
+	set_marking_color(teppi_data["marking_color"])
+	set_horn_color(teppi_data["horn_color"])
+	set_eye_color(teppi_data["eye_color"])
+	set_skin_color(teppi_data["skin_color"])
 	set_ghostjoin(1)
 	registry_join(REGISTRY_GHOST_PODS, src)
-	update_icon()
 
 //This sets all the things on baby teppi when they are bred from adult teppi
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/inherit_from_parents(mob/living/simple_mob/vore/alienanimals/teppi/mom, mob/living/simple_mob/vore/alienanimals/teppi/dad)
 	inherit_colors = TRUE
 	faction = mom.faction
 	color = pick(list(mom.color, dad.color, BlendRGB(mom.color, dad.color, 0.5)))
-	marking_color = pick(list(mom.marking_color, dad.marking_color, BlendRGB(mom.marking_color, dad.marking_color, 0.5)))
-	horn_color = pick(list(mom.horn_color, dad.horn_color, BlendRGB(mom.horn_color, dad.horn_color, 0.5)))
-	eye_color =  pick(list(mom.eye_color, dad.eye_color, BlendRGB(mom.eye_color, dad.eye_color, 0.5)))
-	skin_color =  pick(list(mom.skin_color, dad.skin_color, BlendRGB(mom.skin_color, dad.skin_color, 0.5)))
-	marking_type =  pick(list(mom.marking_type, dad.marking_type, null))
-	horn_type =  pick(list(mom.horn_type, dad.horn_type, null))
+	set_marking_color(pick(list(mom.marking_color, dad.marking_color, BlendRGB(mom.marking_color, dad.marking_color, 0.5))))
+	set_horn_color(pick(list(mom.horn_color, dad.horn_color, BlendRGB(mom.horn_color, dad.horn_color, 0.5))))
+	set_eye_color(pick(list(mom.eye_color, dad.eye_color, BlendRGB(mom.eye_color, dad.eye_color, 0.5))))
+	set_skin_color(pick(list(mom.skin_color, dad.skin_color, BlendRGB(mom.skin_color, dad.skin_color, 0.5))))
+	set_marking_type(pick(list(mom.marking_type, dad.marking_type, null)))
+	set_horn_type(pick(list(mom.horn_type, dad.horn_type, null)))
 
 	if(mom.teppi_mutate || dad.teppi_mutate)
 		teppi_mutate = TRUE

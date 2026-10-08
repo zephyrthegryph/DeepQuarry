@@ -1,7 +1,6 @@
 # sys_lint baseline for tools/ci/sys_rules/dx_look_side_effects.py (doc/rewrite/systems.md); shrink-only, target 0
 dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibility = INVISIBILITY_NONE
 dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibility = INVISIBILITY_ABSTRACT
-dx_appearance_side_effect	code/_onclick/hud/screen_objects.dm	selecting_appearance = mutable_appearance('icons/mob/zone_sel.dmi', "[selecting]")
 dx_appearance_side_effect	code/_onclick/hud/screen_objects.dm	handcuff_overlay = image("icon"='icons/mob/screen_gen.dmi', "icon_state"=state)
 dx_appearance_side_effect	code/game/gamemodes/technomancer/spells/illusion.dm	temp_image.transform = M
 dx_appearance_side_effect	code/game/machinery/doors/brigdoors.dm	set_picture("ai_bsod")
@@ -319,75 +318,6 @@ dx_appearance_side_effect	code/modules/mining/mine_turfs.dm	name = floor_name
 dx_appearance_side_effect	code/modules/mob/living/silicon/ai/ai.dm	set_light(3, 1, selected_sprite.dead_light)
 dx_appearance_side_effect	code/modules/mob/living/silicon/ai/ai.dm	set_light(1, 1, selected_sprite.nopower_light)
 dx_appearance_side_effect	code/modules/mob/living/silicon/ai/ai.dm	set_light(1, 1, selected_sprite.alive_light)
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	item_display.pixel_x = 0
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	item_display.pixel_y = 0
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	item_display.plane = plane
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	item_display.layer = layer + 0.01
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	underlays.Cut()
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.color = tank_module.base_color
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.color = tank_module.armor_color
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.color = tank_module.decals[decal]
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.color = tank_module.eye_color
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.color = tank_module.pupil_color
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.plane = PLANE_LIGHTING_ABOVE
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/appearance.dm	icon_living = initial(icon_state)
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_cache = icon
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_cache = null
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_cache = null
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_x_old = pixel_x
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_x_old = null
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_x_old = null
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_y_old = pixel_y
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_y_old = null
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	icon_pounce_y_old = null
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	I.plane = MOB_PLANE
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	I.layer = MOB_LAYER
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	I.pixel_y = -7
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	I.color = hat.color
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	I.appearance_flags = RESET_COLOR | KEEP_APART
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	I.blend_mode = BLEND_OVERLAY
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spacewhale.dm	child_om_marker.icon_state = "space_whale_restless"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spacewhale.dm	child_om_marker.icon_state = "space_whale"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	dorsal_image = image(icon, "[icon_state]_mask-body")
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	belly_image = image(icon, "[icon_state]_mask-belly")
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	dorsal_image.icon_state = "[icon_state]_mask-body"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	belly_image.icon_state = "[icon_state]_mask-belly"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	dorsal_image.color = dorsal_color
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	belly_image.color = belly_color
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	head_image = image(icon, "[icon_state]_mask")
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	head_image.icon_state = "[icon_state]_mask"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	head_image.color = head_color
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	set_dir(get_dir(previous,src))
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	set_dir(get_dir(src,next))
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	extra_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	overlays_cache[combine_key] = extra_image
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/mechanical/ward/monitor_ward.dm	icon_living = "[initial(icon_state)]_spotted"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/mechanical/ward/monitor_ward.dm	set_glow_color("#FF0000")
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/mechanical/ward/monitor_ward.dm	icon_living = "[initial(icon_state)]"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/mechanical/ward/monitor_ward.dm	set_glow_color("#00FF00")
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.appearance_flags = RESET_COLOR
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.pixel_y = -7 // Slimes are small.
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.color = hat.color
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.appearance_flags = RESET_COLOR | KEEP_APART
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	I.blend_mode = BLEND_OVERLAY
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	icon_living = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"][victim ? " eating" : ""]"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	icon_dead = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"] dead"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	icon_rest = icon_dead
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	vore_capacity = 3
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/vore/raptor.dm	icon_living = "[initial_icon]_fat"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/vore/raptor.dm	icon_living = "[initial_icon]"
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/vore/seagull.dm	movement_cooldown = 10
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/vore/seagull.dm	movement_cooldown = initial(movement_cooldown)
-dx_appearance_side_effect	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	tailimage.icon_state = icon_state
 dx_appearance_side_effect	code/modules/modular_computers/computers/modular_computer/core.dm	set_light(0)
 dx_appearance_side_effect	code/modules/modular_computers/computers/modular_computer/core.dm	set_light(light_strength)
 dx_appearance_side_effect	code/modules/modular_computers/computers/subtypes/dev_laptop.dm	set_light(0) // No glow from closed laptops
@@ -433,8 +363,6 @@ dx_appearance_side_effect	code/modules/projectiles/guns/energy/cyborg.dm	blade_o
 dx_appearance_side_effect	code/modules/projectiles/guns/energy/protector.dm	charge_overlay.pixel_x = ammo_x_offset * (i - 1)
 dx_appearance_side_effect	code/modules/projectiles/guns/energy/protector.dm	flashlight_overlay.pixel_x = flight_x_offset
 dx_appearance_side_effect	code/modules/projectiles/guns/energy/protector.dm	flashlight_overlay.pixel_y = flight_y_offset
-dx_appearance_side_effect	code/modules/projectiles/guns/launcher/syringe_gun.dm	underlays.Cut()
-dx_appearance_side_effect	code/modules/projectiles/guns/launcher/syringe_gun.dm	if(length(syringe().filling)) underlays += syringe().filling
 dx_appearance_side_effect	code/modules/projectiles/guns/projectile/automatic.dm	item_state = icon_state
 dx_appearance_side_effect	code/modules/projectiles/guns/projectile/automatic.dm	item_state = "l6[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"]"
 dx_appearance_side_effect	code/modules/projectiles/guns/projectile/automatic.dm	item_state = "mg42"
@@ -442,9 +370,6 @@ dx_appearance_side_effect	code/modules/reagents/machinery/dispenser/chem_synthes
 dx_appearance_side_effect	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	cat_filling.color = catalyst.reagents.get_color()
 dx_appearance_side_effect	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	ves_filling.color = src.reagents.get_color()
 dx_appearance_side_effect	code/modules/reagents/machinery/pump.dm	I.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/reagents/reagent_containers/syringes.dm	filling = image(icon, src, "filler[rounded_vol]")
-dx_appearance_side_effect	code/modules/reagents/reagent_containers/syringes.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/reagents/reagent_containers/syringes.dm	item_state = "syringe_[rounded_vol]"
 dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_filter.dm	filling.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_mixer.dm	filling.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_pump.dm	filling.color = reagents.get_color()

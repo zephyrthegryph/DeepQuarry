@@ -49,69 +49,31 @@
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
 	var/has_mane = TRUE
-	var/mutable_appearance/mane_overlay
 	var/mane_living = "mane"
 	var/mane_dead = "mane-dead"
 	var/mane_rest = "mane_rest"
 	var/mane_color = "#FFFFFF"
 
-/// Cached immutable mane appearances; player recolours have a bounded shared store.
-DECLARE_SHARED_CACHE_EX(lion_mane, GLOBAL_PROC_REF(build_lion_mane), SC_NEVER, 1024, 0)
-
-/proc/cached_lion_mane(mane_icon, state, tint, flags)
-	if(!isfile(mane_icon))
-		return build_lion_mane(mane_icon, state, tint, flags)
-	var/key = json_encode(list("[mane_icon]", state, tint, flags))
-	return CACHED_KEY(lion_mane, key, mane_icon, state, tint, flags)
-
-/proc/build_lion_mane(mane_icon, state, tint, flags)
-	var/static/image/scratch = image(null)
-	scratch.icon = mane_icon
-	scratch.icon_state = state
-	scratch.color = tint
-	scratch.plane = PLANE_LIGHTING_ABOVE
-	scratch.appearance_flags = flags
-	return scratch.appearance
-
-/mob/living/simple_mob/vore/retaliate/lion/proc/add_mane()
-	var/mane_icon = icon
-	var/mane_state
+/// The lion's mane, tinted, over the body: the mane state of the body's current life state and fullness.
+/mob/living/simple_mob/vore/retaliate/lion/draw(datum/look/look)
+	..()
+	if(!has_mane)
+		return
+	var/mane_state = mane_living
 	if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)))
-		if(!vore_fullness || !(vore_icons & SA_ICON_LIVING))
-			mane_state = "[mane_living]"
-		else
+		if(vore_fullness && (vore_icons & SA_ICON_LIVING))
 			mane_state = "[mane_living]-[vore_fullness]"
 	else if(stat >= DEAD)
-		if(!vore_fullness || !(vore_icons & SA_ICON_DEAD))
-			mane_state = "[mane_dead]"
-		else
+		if(vore_fullness && (vore_icons & SA_ICON_DEAD))
 			mane_state = "[mane_dead]-[vore_fullness]"
-	else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED) ) && icon_rest)
-		if(!vore_fullness || !(vore_icons & SA_ICON_REST))
-			mane_state = "[mane_rest]"
 		else
+			mane_state = mane_dead
+	else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED)) && icon_rest)
+		if(vore_fullness && (vore_icons & SA_ICON_REST))
 			mane_state = "[mane_rest]-[vore_fullness]"
-	else
-		// No state branch selected: retain the previous visual, then apply the current tint and flags.
-		mane_icon = mane_overlay.icon
-		mane_state = mane_overlay.icon_state
-	mane_overlay = cached_lion_mane(mane_icon, mane_state, mane_color, appearance_flags | RESET_COLOR)
-	add_overlay(mane_overlay)
-
-/mob/living/simple_mob/vore/retaliate/lion/proc/remove_mane()
-	if(mane_overlay)
-		cut_overlay(mane_overlay)
-		mane_overlay = null
-
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/retaliate/lion/appearance_overlays()
-	. = list()
-	. += ..()
-	if(has_mane)
-		add_mane()
-	else
-		remove_mane()
-
+		else
+			mane_state = mane_rest
+	look.overlay(look_overlay_image(icon, mane_state, plane = PLANE_LIGHTING_ABOVE, color = mane_color, appearance_flags = (appearance_flags | RESET_COLOR)))
 
 /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex()
 	set name = "Set Sex"
@@ -124,19 +86,17 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, TYPE_PROC_RE
 		return
 	var/newsex = A.answer.value
 	if(newsex == FEMALE)
-		icon_living = "lioness"
-		icon_dead = "lioness-dead"
-		icon_rest = "lioness_rest"
-		has_mane = FALSE
-		update_icon()
+		set_icon_living("lioness")
+		set_icon_dead("lioness-dead")
+		set_icon_rest("lioness_rest")
+		set_has_mane(FALSE)
 	else if(newsex == MALE)
-		icon_living = "lion"
-		icon_dead = "lion-dead"
-		icon_rest = "lion_rest"
-		has_mane = TRUE
-		update_icon()
+		set_icon_living("lion")
+		set_icon_dead("lion-dead")
+		set_icon_rest("lion_rest")
+		set_has_mane(TRUE)
 
-/mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color()
+/mob/living/simple_mob/vore/retaliate/lion/proc/pick_mane_color()
 	set name = "Set Mane Color"
 	set desc = "Set the color of your mane"
 	set category = VERB_CAT_ABILITIES_SETTINGS
@@ -146,11 +106,13 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, TYPE_PROC_RE
 	if(!A.answer)
 		return
 	if(A.answer.value)
-		mane_color = A.answer.value
-		update_icon()
+		set_mane_color(A.answer.value)
+
+TRACKED(/mob/living/simple_mob/vore/retaliate/lion, has_mane)
+TRACKED(/mob/living/simple_mob/vore/retaliate/lion, mane_color)
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/lion)
 	verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_sex, login = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)
-	verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color, login = TRUE)
+	verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/pick_mane_color, login = TRUE)
 

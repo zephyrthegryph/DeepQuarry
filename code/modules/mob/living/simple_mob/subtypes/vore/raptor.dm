@@ -68,11 +68,10 @@
 /mob/living/simple_mob/vore/raptor/Initialize(mapload)
 	. = ..()
 	if(random_skin)
-		icon_living = pick(skins)
+		set_icon_living(pick(skins))
 		initial_icon = icon_living
-		icon_rest = "[icon_living]"
-		icon_dead = "[icon_living]_dead"
-		update_icon()
+		set_icon_rest("[icon_living]")
+		set_icon_dead("[icon_living]_dead")
 
 CAPABILITIES(/mob/living/simple_mob/vore/raptor)
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
@@ -117,43 +116,15 @@ CAPABILITIES(/mob/living/simple_mob/vore/raptor)
 	..()
 	consider_wg()
 
+/// A heavy raptor wears its fat sprite: the living state follows the weight state, then the tracked weight state redraws it.
 /mob/living/simple_mob/vore/raptor/proc/consider_wg()
-	var/past_state = wg_state
-	if(nutrition >= 900)
-		wg_state = 1
-	else
-		wg_state = 0
-	if(past_state != wg_state)
-		update_icon()
+	var/new_state = (nutrition >= 900) ? 1 : 0
+	if(new_state == wg_state)
+		return
+	set_icon_living(new_state ? "[initial_icon]_fat" : "[initial_icon]")
+	set_wg_state(new_state)
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/raptor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/raptor/appearance_overlays()
-	. = list()
-	if(wg_state == 1)
-		icon_living = "[initial_icon]_fat"
-		icon_state = icon_living
-	else
-		icon_living = "[initial_icon]"
-		icon_state = icon_living
-	. += ..()
-	if(vore_active)
-		var/voremob_awake = FALSE
-		if(icon_state == icon_living)
-			voremob_awake = TRUE
-		update_fullness()
-		if(!vore_fullness)
-			update_transform()
-			return .
-		else if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)) && (vore_icons & SA_ICON_LIVING))
-			icon_state = "[icon_living]-[vore_fullness]"
-		else if(stat >= DEAD && (vore_icons & SA_ICON_DEAD))
-			icon_state = "[icon_dead]-[vore_fullness]"
-		else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED) ) && icon_rest && (vore_icons & SA_ICON_REST))
-			icon_state = "[icon_rest]-[vore_fullness]"
-		if(vore_eyes && voremob_awake) //Update eye layer if applicable.
-			remove_eyes()
-			add_eyes()
-	update_transform()
+TRACKED(/mob/living/simple_mob/vore/raptor, wg_state)
 
 /mob/living/simple_mob/vore/raptor/yellow
 	name = "raptor"

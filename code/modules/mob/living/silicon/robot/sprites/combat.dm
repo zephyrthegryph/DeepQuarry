@@ -117,12 +117,12 @@
 	rest_sprite_options = list("Default", "Sit")
 	sprite_flags = ROBOT_HAS_GUN_SPRITE | ROBOT_HAS_SHIELD_SPRITE
 
-/datum/robot_sprite/dogborg/tall/combat/derg/handle_extra_icon_updates(mob/living/silicon/robot/ourborg)
+/datum/robot_sprite/dogborg/tall/combat/derg/look_extras(datum/look/look, mob/living/silicon/robot/ourborg)
 	..()
 	if(ourborg.resting)
 		return
 	if(ourborg.has_active_type(/obj/item/borg/combat/mobility))
-		ourborg.add_overlay("[sprite_icon_state]-roll")
+		look.overlay("[sprite_icon_state]-roll")
 
 /datum/robot_sprite/dogborg/tall/combat/derg/get_eyes_overlay(mob/living/silicon/robot/ourborg)
 	if(ourborg.has_active_type(/obj/item/borg/combat/mobility))

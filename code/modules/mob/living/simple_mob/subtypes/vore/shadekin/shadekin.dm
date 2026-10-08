@@ -64,7 +64,6 @@
 	var/shy_approach = FALSE //Do we creep up slowly on humans to boop them
 
 	//Icon handling
-	var/image/tailimage //Cached tail image
 
 	//Darknesssss
 	var/shadekin_type = /datum/shadekin //Type of the shadekin datum (held in /mob/living/var/shadekin) that holds all the shadekin vars.
@@ -100,7 +99,7 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 	if(icon_state == "map_example")
 		icon_state = pick("white","dark","brown") // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 
-	icon_living = icon_state
+	set_icon_living(icon_state)
 
 	switch(eye_state)
 		if(BLUE_EYES)
@@ -118,14 +117,8 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 		else
 			eye_icon_state = "e_red"
 
-	tailimage = image('icons/mob/vore_shadekin64.dmi',null,icon_state)
-	tailimage.pixel_x = -16
-
 	if(eye_desc)
 		desc += " This one has [eye_desc]!"
-
-	update_icon()
-
 
 	return ..()
 
@@ -215,16 +208,11 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 	if(F.alive())
 		src.shadekin.handle_comp()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/shadekin/appearance_overlays()
-	. = list()
-	. += ..()
-
-
-	tailimage.icon_state = icon_state
-
-	. += tailimage
-	. += eye_icon_state
+/// The tail (its own sheet, shifted left to line up) in the body's state, and the eyes.
+/mob/living/simple_mob/shadekin/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/mob/vore_shadekin64.dmi', look.state_so_far(src), pixel_x = -16))
+	look.overlay(eye_icon_state)
 
 /mob/living/simple_mob/shadekin
 	death_message = "phases to somewhere far away!"
@@ -268,7 +256,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, ap
 		flick("tp_in",src)
 		shadekin.respite_activating = FALSE
 		shadekin.in_dark_respite = TRUE
-		belly.owner.handle_belly_update()
+		PUBLISH(belly.owner, belly_change)
 		clear_fullscreen("belly")
 		belly_overlay_tgui?.hide() // hide TGUI belly overlay
 		if(hud_used)
@@ -295,7 +283,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, ap
 	shadekin.in_dark_respite = TRUE
 
 	forceMove(pick(GLOB.latejoin_thedark))
-	update_icon()
 	flick("tp_in",src)
 	invisibility = initial(invisibility)
 	shadekin.respite_activating = FALSE

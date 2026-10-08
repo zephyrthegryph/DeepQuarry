@@ -1,7 +1,6 @@
 // Hand procs for player-controlled SA's
 /mob/living/simple_mob/swap_hand()
-	changed(src, CHANGE_MOB_HANDS)
-	src.hand = !( src.hand )
+	set_hand(!hand)
 	op_keep_poke(src, OP_KEEP_HAND)
 	if(hud_used.l_hand_hud_object && hud_used.r_hand_hud_object)
 		if(hand)	//This being 1 means the left hand is in use
@@ -55,12 +54,11 @@
 		var/image/standing = image(icon = t_icon, icon_state = t_state)
 		standing.color = get_equipped_item(SLOT_ID_HAND_R).color
 
-		r_hand_sprite = standing
+		set_r_hand_sprite(standing)
 
 	else
-		r_hand_sprite = null
+		set_r_hand_sprite(null)
 
-	update_icon()
 
 /mob/living/simple_mob/update_inv_l_hand()
 	if(QDESTROYING(src))
@@ -92,12 +90,11 @@
 		var/image/standing = image(icon = t_icon, icon_state = t_state)
 		standing.color = get_equipped_item(SLOT_ID_HAND_L).color
 
-		l_hand_sprite = standing
+		set_l_hand_sprite(standing)
 
 	else
-		l_hand_sprite = null
+		set_l_hand_sprite(null)
 
-	update_icon()
 
 //Can insert extra huds into the hud holder here.
 /mob/living/simple_mob/proc/extra_huds(datum/hud/hud,icon/ui_style,list/hud_elements)

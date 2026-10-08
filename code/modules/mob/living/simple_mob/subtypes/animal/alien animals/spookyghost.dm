@@ -150,9 +150,8 @@
 // ALLOW(init/INSTANCE_STATE): rolls which ghost sprite it wears
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/Initialize(mapload)
 	. = ..()
-	icon_living = "spookyghost-[rand(1,2)]"
+	set_icon_living("spookyghost-[rand(1,2)]")
 	icon_state = icon_living // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-	update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost
 	delete_on_death = TRUE

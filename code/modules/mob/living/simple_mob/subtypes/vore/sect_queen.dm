@@ -85,6 +85,8 @@
 
 	allow_mind_transfer = TRUE
 
+TRACKED(/mob/living/simple_mob/vore/sect_queen, custom_eye_color)
+
 CAPABILITIES(/mob/living/simple_mob/vore/sect_queen)
 	verb_entry(/mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color, login = TRUE)
 
@@ -99,9 +101,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/sect_queen)
 	if(!A.answer)
 		return
 	if(A.answer.value)
-		custom_eye_color = A.answer.value
-		remove_eyes()
-		add_eyes()
+		set_custom_eye_color(A.answer.value)
 
 /datum/say_list/sect_queen
 	say_got_target = list("chitters angrily!")

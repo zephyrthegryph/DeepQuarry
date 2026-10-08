@@ -72,9 +72,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 		rank = pick( list("operative","pyro", "ammo", "stealth") )
 	icon_state = "mouse_[rank]" // ALLOW(decl): Initialize picks the mouse's icon from a random rank; a declaration has no random form
 	item_state = "mouse_[rank]"
-	icon_living = "mouse_[rank]"
-	icon_dead = "mouse_[rank]_dead"
-	icon_rest = "mouse_[rank]_sleep"
+	set_icon_living("mouse_[rank]")
+	set_icon_dead("mouse_[rank]_dead")
+	set_icon_rest("mouse_[rank]_sleep")
 
 /mob/living/simple_mob/animal/space/mouse_army/Crossed(AM as mob|obj)
 	var/mob/SK = AM
@@ -99,7 +99,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 
 /mob/living/simple_mob/animal/space/mouse_army/proc/splat()
 	src.set_stat(DEAD)
-	src.icon_dead = "mouse_[rank]_splat"
+	src.set_icon_dead("mouse_[rank]_splat")
 	src.icon_state = "mouse_[rank]_splat"
 	layer = MOB_LAYER
 	if(client)

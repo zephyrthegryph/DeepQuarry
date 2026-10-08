@@ -85,10 +85,6 @@ MAP_RESOLVER_VARS(/obj/item/animal_spawner, "critter_type")
 		if(category == INJURY_CATEGORY_PHYSICAL || category == INJURY_CATEGORY_THERMAL)
 			respond_to_damage()
 
-/mob/living/simple_mob/animal/passive/opossum/lay_down()
-	. = ..()
-	update_icon()
-
 //respond_to_damage and update_icon for opossum live in
 // code/modules/combat_ai/ports/possum.dm where they read the modern mob-side
 // is_angry / play_dead_until vars instead of the deleted ai_holder.

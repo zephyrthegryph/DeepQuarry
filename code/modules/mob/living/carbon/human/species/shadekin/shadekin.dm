@@ -168,7 +168,7 @@
 				phaseanim.dir = H.dir
 			H.invisibility = initial(H.invisibility)
 			SK.respite_activating = FALSE
-			belly.owner.handle_belly_update()
+			PUBLISH(belly.owner, belly_change)
 			H.clear_fullscreen("belly")
 			H.belly_overlay_tgui?.hide() // hide TGUI belly overlay
 			if(H.hud_used)

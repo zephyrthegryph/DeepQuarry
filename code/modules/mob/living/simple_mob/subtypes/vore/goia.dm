@@ -141,9 +141,8 @@
 	if(!ask.value)
 		return
 	if(ask.style_key)
-		goia_overlays[ask.style_key] = ask.style
-	goia_overlays[ask.overlay] = ask.value
-	update_icon()
+		goia_set(ask.style_key, ask.style)
+	goia_set(ask.overlay, ask.value)
 
 /mob/living/simple_mob/vore/zorgoia/proc/appearance_switch() //This is just copypastas of the radial menu code, each block of code is the options for each bit of customisation... all 9 of them
 	set name = "Adjust Mob Markings"
@@ -226,6 +225,8 @@
 		if("Belly")
 			open_request(src, /datum/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick belly color:", title = "Belly Color", default = goia_overlays["zorgoia_belly"], overlay = "zorgoia_belly", style_key = "belly", style = choice)
 
+TRACKED(/mob/living/simple_mob/vore/zorgoia, goia_overlays)
+
 CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
 	verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/appearance_switch)
 	verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/recolor)
@@ -263,78 +264,50 @@ CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
 	var/list/goia_colors = list("#1a00ff", "#6c5bff", "#ff00fe", "#ff0000", "#00d3ff", "#00ff7c", "#00ff35", "#e1ff00", "#ff9f00", "#393939")
 	var/bodycolor = pick(goia_colors)
 	var/spines = pick(goia_colors)
-	goia_overlays["main"]= "zorgoia_main"
-	goia_overlays["zorgoia_main"] = bodycolor
-	goia_overlays["ears"] = pick(ear_styles)
-	goia_overlays["zorgoia_ears"] = bodycolor
-	goia_overlays["spots"] = pick(spots_styles)
-	goia_overlays["zorgoia_spots"] = pick(goia_colors)
-	goia_overlays["claws"] = pick(claws_styles)
-	goia_overlays["zorgoia_claws"] = spines
-	goia_overlays["spines"] = pick(spines_styles)
-	goia_overlays["zorgoia_spines"] = spines
-	goia_overlays["fluff"] = pick(fluff_styles)
-	goia_overlays["zorgoia_fluff"] = bodycolor
-	goia_overlays["underbelly"] = pick(underbelly_styles)
-	goia_overlays["zorgoia_underbelly"] = bodycolor
-	goia_overlays["eyes"] = pick(eyes_styles)
-	goia_overlays["zorgoia_eyes"] = "#[get_random_colour(1)]"
-	goia_overlays["spike"] = pick(spiky_styles)
-	goia_overlays["zorgoia_spike"] = "#[get_random_colour(0,0,255)]"
-	goia_overlays["belly"] = pick(belly_styles)
-	goia_overlays["zorgoia_belly"] = bodycolor
-	update_icon()
+	goia_set("main", "zorgoia_main")
+	goia_set("zorgoia_main", bodycolor)
+	goia_set("ears", pick(ear_styles))
+	goia_set("zorgoia_ears", bodycolor)
+	goia_set("spots", pick(spots_styles))
+	goia_set("zorgoia_spots", pick(goia_colors))
+	goia_set("claws", pick(claws_styles))
+	goia_set("zorgoia_claws", spines)
+	goia_set("spines", pick(spines_styles))
+	goia_set("zorgoia_spines", spines)
+	goia_set("fluff", pick(fluff_styles))
+	goia_set("zorgoia_fluff", bodycolor)
+	goia_set("underbelly", pick(underbelly_styles))
+	goia_set("zorgoia_underbelly", bodycolor)
+	goia_set("eyes", pick(eyes_styles))
+	goia_set("zorgoia_eyes", "#[get_random_colour(1)]")
+	goia_set("spike", pick(spiky_styles))
+	goia_set("zorgoia_spike", "#[get_random_colour(0,0,255)]")
+	goia_set("belly", pick(belly_styles))
+	goia_set("zorgoia_belly", bodycolor)
 
-/// Immutable visual snapshots, bounded so arbitrary player colours cannot grow a world-long cache.
-DECLARE_SHARED_CACHE_EX(zorgoia_overlay, GLOBAL_PROC_REF(build_zorgoia_overlay), SC_NEVER, 1024, 0)
-
-/proc/cached_zorgoia_overlay(state, tint, overlay_plane, overlay_layer)
-	var/key = json_encode(list(state, tint, overlay_plane, overlay_layer))
-	return CACHED_KEY(zorgoia_overlay, key, state, tint, overlay_plane, overlay_layer)
-
-/proc/build_zorgoia_overlay(state, tint, overlay_plane, overlay_layer)
-	// Like iconstate2appearance(), retain one private scratch image and cache only its immutable snapshot.
-	var/static/image/scratch = image('icons/mob/zorgoia64x32.dmi', pixel_x = -16)
-	scratch.icon_state = state
-	scratch.color = tint
-	scratch.appearance_flags = RESET_COLOR|PIXEL_SCALE
-	scratch.plane = overlay_plane
-	scratch.layer = overlay_layer
-	return scratch.appearance
-
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/zorgoia, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/zorgoia/appearance_overlays()
-	. = list()
-	. += ..()
+/// The zorgoia is all overlays: one tinted layer per body part, stacked in this order (the belly last, on top).
+/mob/living/simple_mob/vore/zorgoia/draw(datum/look/look)
+	..()
 	if(stat == DEAD)
-		plane = MOB_LAYER
-		return .
-	else
-		plane = ABOVE_MOB_PLANE
-	icon = 'icons/mob/zorgoia64x32.dmi'
-	vore_capacity = 3
-	//Heads up, the order of these overlays stacking on top of each other is different from the array order. So goia_overlay[1] is the belly, but rendering on top of everything at the end instead
+		look.set_plane(MOB_LAYER)
+		return
+	look.set_plane(ABOVE_MOB_PLANE)
+	look.overlay(look_overlay_image(icon, "[goia_overlays["main"]][resting ? "-rest" : null]", MOB_LAYER, MOB_PLANE, pixel_x = -16, color = goia_overlays["zorgoia_main"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "[goia_overlays["ears"]][resting ? "-rest" : null]", MOB_LAYER, MOB_PLANE, pixel_x = -16, color = goia_overlays["zorgoia_ears"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "[goia_overlays["spots"]][resting ? "-rest" : null]", MOB_LAYER, MOB_PLANE, pixel_x = -16, color = goia_overlays["zorgoia_spots"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "[goia_overlays["claws"]][resting ? "-rest" : null]", MOB_LAYER, MOB_PLANE, pixel_x = -16, color = goia_overlays["zorgoia_claws"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "[goia_overlays["spines"]][resting ? "-rest" : null]", MOB_LAYER, MOB_PLANE, pixel_x = -16, color = goia_overlays["zorgoia_spines"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "[goia_overlays["fluff"]][resting ? "-rest" : null]", MOB_LAYER, MOB_PLANE, pixel_x = -16, color = goia_overlays["zorgoia_fluff"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "[goia_overlays["eyes"]][resting ? "-rest" : null]", FLOAT_LAYER, PLANE_LIGHTING_ABOVE, pixel_x = -16, color = goia_overlays["zorgoia_eyes"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "[goia_overlays["spike"]][resting ? "-rest" : null]", MOB_LAYER, MOB_PLANE, pixel_x = -16, color = goia_overlays["zorgoia_spike"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "[goia_overlays["belly"]][resting ? "-rest" : (vore_fullness ? "-[vore_fullness]" : null)]", MOB_LAYER, MOB_PLANE, pixel_x = -16, color = goia_overlays["zorgoia_belly"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "[goia_overlays["underbelly"]][resting ? "-rest" : (vore_fullness ? "-[vore_fullness]" : null)]", MOB_LAYER, MOB_PLANE, pixel_x = -16, color = goia_overlays["zorgoia_underbelly"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
 
-	. += cached_zorgoia_overlay("[goia_overlays["main"]][resting? "-rest" : null]", goia_overlays["zorgoia_main"], MOB_PLANE, MOB_LAYER)
-
-	. += cached_zorgoia_overlay("[goia_overlays["ears"]][resting? "-rest" : null]", goia_overlays["zorgoia_ears"], MOB_PLANE, MOB_LAYER)
-
-	. += cached_zorgoia_overlay("[goia_overlays["spots"]][resting? "-rest" : null]", goia_overlays["zorgoia_spots"], MOB_PLANE, MOB_LAYER)
-
-	. += cached_zorgoia_overlay("[goia_overlays["claws"]][resting? "-rest" : null]", goia_overlays["zorgoia_claws"], MOB_PLANE, MOB_LAYER)
-
-	. += cached_zorgoia_overlay("[goia_overlays["spines"]][resting? "-rest" : null]", goia_overlays["zorgoia_spines"], MOB_PLANE, MOB_LAYER)
-
-
-	. += cached_zorgoia_overlay("[goia_overlays["fluff"]][resting? "-rest" : null]", goia_overlays["zorgoia_fluff"], MOB_PLANE, MOB_LAYER)
-
-	. += cached_zorgoia_overlay("[goia_overlays["eyes"]][resting? "-rest" : null]", goia_overlays["zorgoia_eyes"], PLANE_LIGHTING_ABOVE, FLOAT_LAYER)
-
-	. += cached_zorgoia_overlay("[goia_overlays["spike"]][resting? "-rest" : null]", goia_overlays["zorgoia_spike"], MOB_PLANE, MOB_LAYER)
-
-	. += cached_zorgoia_overlay("[goia_overlays["belly"]][resting? "-rest" : (vore_fullness? "-[vore_fullness]" : null)]", goia_overlays["zorgoia_belly"], MOB_PLANE, MOB_LAYER)
-
-	. += cached_zorgoia_overlay("[goia_overlays["underbelly"]][resting? "-rest" : (vore_fullness? "-[vore_fullness]" : null)]", goia_overlays["zorgoia_underbelly"], MOB_PLANE, MOB_LAYER)
+/// Sets one entry of the overlay table; the table is replaced whole so the tracked write is seen.
+/mob/living/simple_mob/vore/zorgoia/proc/goia_set(key, value)
+	var/list/table = goia_overlays.Copy()
+	table[key] = value
+	set_goia_overlays(table)
 
 /// Old attack_hand (ran before the gate): help pets/tames, grab is refused while alive and AI-run. FALSE = default touch.
 /mob/living/simple_mob/vore/zorgoia/proc/zorgoia_interaction_hand(datum/act/op/A, stance)
@@ -430,53 +403,52 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/zorgoia, TYPE_PROC_REF(/atom
 					&& (input_style_list[16] in eyes_styles) && (input_style_list[18] in spiky_styles) &&  (input_style_list[20] in belly_styles))
 			try
 				if(rgb2num(input_style_list[1]))
-					goia_overlays["zorgoia_main"] = input_style_list[1]
+					goia_set("zorgoia_main", input_style_list[1])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			// goia_overlays["main"] = input_style_list[2] // We only have one yet
 			try
 				if(rgb2num(input_style_list[3]))
-					goia_overlays["zorgoia_ears"] = input_style_list[3]
+					goia_set("zorgoia_ears", input_style_list[3])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			goia_overlays["ears"] = input_style_list[4]
+			goia_set("ears", input_style_list[4])
 			try
 				if(rgb2num(input_style_list[5]))
-					goia_overlays["zorgoia_spots"] = input_style_list[5]
+					goia_set("zorgoia_spots", input_style_list[5])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			goia_overlays["spots"] = input_style_list[6]
+			goia_set("spots", input_style_list[6])
 			try
 				if(rgb2num(input_style_list[7]))
-					goia_overlays["zorgoia_claws"] = input_style_list[7]
+					goia_set("zorgoia_claws", input_style_list[7])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			goia_overlays["claws"] = input_style_list[8]
+			goia_set("claws", input_style_list[8])
 			try
 				if(rgb2num(input_style_list[9]))
-					goia_overlays["zorgoia_spines"] = input_style_list[9]
+					goia_set("zorgoia_spines", input_style_list[9])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			goia_overlays["spines"] = input_style_list[10]
+			goia_set("spines", input_style_list[10])
 			try
 				if(rgb2num(input_style_list[11]))
-					goia_overlays["zorgoia_fluff"] = input_style_list[11]
+					goia_set("zorgoia_fluff", input_style_list[11])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			goia_overlays["fluff"] = input_style_list[12]
+			goia_set("fluff", input_style_list[12])
 			try
 				if(rgb2num(input_style_list[13]))
-					goia_overlays["zorgoia_underbelly"] = input_style_list[13]
+					goia_set("zorgoia_underbelly", input_style_list[13])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			goia_overlays["underbelly"] = input_style_list[14]
+			goia_set("underbelly", input_style_list[14])
 			try
 				if(rgb2num(input_style_list[15]))
-					goia_overlays["zorgoia_eyes"] = input_style_list[15]
+					goia_set("zorgoia_eyes", input_style_list[15])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			goia_overlays["eyes"] = input_style_list[16]
+			goia_set("eyes", input_style_list[16])
 			try
 				if(rgb2num(input_style_list[17]))
-					goia_overlays["zorgoia_spike"] = input_style_list[17]
+					goia_set("zorgoia_spike", input_style_list[17])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			input_style_list["spike"] = input_style_list[18]
 			try
 				if(rgb2num(input_style_list[19]))
-					goia_overlays["zorgoia_belly"] = input_style_list[19]
+					goia_set("zorgoia_belly", input_style_list[19])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			goia_overlays["belly"] = input_style_list[20]
-			update_icon()
-
+			goia_set("belly", input_style_list[20])
+		

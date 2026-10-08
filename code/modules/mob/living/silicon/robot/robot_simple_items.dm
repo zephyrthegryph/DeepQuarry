@@ -27,6 +27,16 @@
 
 	var/list/integrated_tool_images
 
+/// The built-in welder's flame shows on the belt that carries it.
+/obj/item/robotic_multibelt/draw(datum/look/look)
+	..()
+	for(var/key in cyborg_integrated_tools)
+		var/obj/item/weldingtool/electric/mounted/cyborg/welder = integrated_tool_at(key)
+		if(!istype(welder))
+			continue
+		look.watch(welder)
+		look.overlay("indwelder_cyborg-on", welder.welding)
+
 MSG_DEF_SELF(multibelt/cyborg_integrated_tools, "Your multibelt is empty.")
 
 CAPABILITIES(/obj/item/robotic_multibelt)
@@ -172,16 +182,6 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 	toolspeed = 0.5
 	welding = FALSE
 	no_passive_burn = TRUE
-
-DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/electric/mounted/cyborg, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/weldingtool/electric/mounted/cyborg/appearance_overlays()
-	. = list()
-	. += ..()
-	if(isrobotmultibelt(loc))
-		var/obj/item/robotic_multibelt/our_belt = loc
-		our_belt.cut_overlays()
-		if(welding)
-			our_belt.add_overlay("indwelder_cyborg-on")
 
 /obj/item/tool/wirecutters/cyborg
 	name = "wirecutters"

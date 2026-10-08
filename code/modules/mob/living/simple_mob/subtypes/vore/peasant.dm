@@ -33,10 +33,9 @@
 /mob/living/simple_mob/vore/peasant/Initialize(mapload)
 	. = ..()
 	if(random_skin)
-		icon_living = pick(skins)
-		icon_rest = "[icon_living]asleep"
-		icon_dead = "[icon_living]-dead"
-		update_icon()
+		set_icon_living(pick(skins))
+		set_icon_rest("[icon_living]asleep")
+		set_icon_dead("[icon_living]-dead")
 
 // Activate Noms!
 /mob/living/simple_mob/vore/peasant

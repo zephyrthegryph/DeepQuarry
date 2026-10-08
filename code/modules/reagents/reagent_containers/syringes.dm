@@ -21,7 +21,6 @@
 	injury_kind = INJURY_PIERCE
 	unacidable = TRUE //glass
 	var/mode = NEEDLE_CAPPED
-	var/image/filling //holds a reference to the current filling overlay
 	var/visible_name = "a syringe"
 	var/time = 30
 	var/dirtiness = 0
@@ -34,6 +33,7 @@
 /// Set once it has been injected into someone: from then on it gets dirtier over time, until it is as dirty as it gets.
 /obj/item/reagent_containers/syringe/var/used = FALSE
 TRACKED(/obj/item/reagent_containers/syringe, used)
+TRACKED(/obj/item/reagent_containers/syringe, mode)
 
 /obj/item/reagent_containers/syringe/Initialize(mapload)
 	. = ..()
@@ -184,7 +184,7 @@ CAPABILITIES(/datum/syringe_contamination)
 
 /obj/item/reagent_containers/syringe/proc/break_syringe(mob/living/carbon/target, mob/living/carbon/user)
 	desc += " It is broken."
-	mode = NEEDLE_BROKEN
+	set_mode(NEEDLE_BROKEN)
 	if(target)
 		add_blood(target)
 	if(user)
@@ -247,8 +247,7 @@ CAPABILITIES(/obj/item/reagent_containers/syringe/ld50_syringe/choral)
 
 /obj/item/reagent_containers/syringe/ld50_syringe/choral/Initialize(mapload)
 	. = ..()
-	mode = NEEDLE_INJECT
-	update_icon()
+	set_mode(NEEDLE_INJECT)
 
 /obj/item/reagent_containers/syringe/steroid
 	name = "Syringe (anabolic steroids)"
@@ -299,41 +298,35 @@ CAPABILITIES(/obj/item/reagent_containers/syringe/steroid)
 //Allow for capped syringe mode
 
 //Allow for capped syringes
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/syringe, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/syringe/appearance_overlays()
-	. = list()
-
+/obj/item/reagent_containers/syringe/draw(datum/look/look)
+	..()
 	var/matrix/tf = matrix()
 	if(isstorage(loc))
 		tf.Turn(-90) //Vertical for storing compact-ly
-		tf.Translate(-3,0) //Could do this with pixel_x but let's just update the appearance once.
-	transform = tf
+		tf.Translate(-3,0)
+	look.set_transform(tf)
 
 	if(mode == NEEDLE_BROKEN)
-		icon_state = "broken"
-		return .
+		look.state("broken")
+		return
 
 	if(mode == NEEDLE_CAPPED)
-		icon_state = "capped"
-		return .
+		look.state("capped")
+		return
 
 	var/rounded_vol = round(reagents.total_volume, round(reagents.maximum_volume / 3))
 	if(reagents.total_volume)
-		filling = image(icon, src, "filler[rounded_vol]")
-		filling.color = reagents.get_color()
-		. += filling
+		look.overlay(look_overlay_image(icon, "filler[rounded_vol]", color = reagents.get_color()))
 
 	if(ismob(loc))
-		var/injoverlay
 		switch(mode)
-			if (NEEDLE_DRAW)
-				injoverlay = "draw"
-			if (NEEDLE_INJECT)
-				injoverlay = "inject"
-		. += injoverlay
+			if(NEEDLE_DRAW)
+				look.overlay("draw")
+			if(NEEDLE_INJECT)
+				look.overlay("inject")
 
-	icon_state = "[rounded_vol]"
-	item_state = "syringe_[rounded_vol]"
+	look.state("[rounded_vol]")
+	look.held_state("syringe_[rounded_vol]")
 
 /obj/item/reagent_containers/syringe/old
 	name = "old syringe"

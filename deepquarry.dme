@@ -3572,6 +3572,7 @@
 #include "code\modules\mob\living\silicon\robot\robot_abilities.dm"
 #include "code\modules\mob\living\silicon\robot\robot_animation.dm"
 #include "code\modules\mob\living\silicon\robot\robot_bellies.dm"
+#include "code\modules\mob\living\silicon\robot\robot_look.dm"
 #include "code\modules\mob\living\silicon\robot\robot_damage.dm"
 #include "code\modules\mob\living\silicon\robot\robot_gripper_handling.dm"
 #include "code\modules\mob\living\silicon\robot\robot_items.dm"

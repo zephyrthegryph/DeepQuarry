@@ -36,8 +36,8 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	if(!body_color)
 		body_color = pick( list("brown","black","white") )
 	icon_state = "chicken_[body_color]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
-	icon_living = "chicken_[body_color]"
-	icon_dead = "chicken_[body_color]_dead"
+	set_icon_living("chicken_[body_color]")
+	set_icon_dead("chicken_[body_color]_dead")
 	pixel_x = rand(-6, 6)
 	pixel_y = rand(0, 10)
 	GLOB.chicken_count += 1
@@ -146,7 +146,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/chick)
 		if(src.amount_grown >= 100)
 			var/mob/living/simple_mob/animal/passive/chicken/C = new (src.loc)
 			C.set_ghostjoin(1)
-			C.ghostjoin_icon()
 			registry_join(REGISTRY_GHOST_PODS, C)
 			spent(src)
 

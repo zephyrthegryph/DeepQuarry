@@ -106,27 +106,28 @@
 
 /mob/living/simple_mob/vore/overmap/spacewhale/proc/handle_restless()
 	if(restless)
-		restless = FALSE
+		set_restless(FALSE)
 		hazard_pickup_chance = initial(hazard_pickup_chance)
 		hazard_drop_chance = initial(hazard_drop_chance)
 		movement_cooldown = initial(movement_cooldown)
 		if(ai_brain)
 			ai_brain.wander = FALSE
 		post_restless_tired = 250
-		update_icon()
 	else
-		restless = TRUE
+		set_restless(TRUE)
 		hazard_pickup_chance *= 1.5
 		hazard_drop_chance *= 1.5
 		movement_cooldown = -1
 		if(ai_brain)
 			ai_brain.wander = TRUE
-		update_icon()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/overmap/spacewhale, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/overmap/spacewhale/appearance_overlays()
-	. = list()
-	. += ..()
+TRACKED(/mob/living/simple_mob/vore/overmap/spacewhale, restless)
+
+CAPABILITIES(/mob/living/simple_mob/vore/overmap/spacewhale)
+	on_change(nameof(restless), ANY, then(PROC_REF(restless_changed)))
+
+/// Its overmap marker shows whether it is restless (once the marker is known).
+/mob/living/simple_mob/vore/overmap/spacewhale/proc/restless_changed(datum/act/A)
 	if(child_om_marker?.known == TRUE)
 		if(restless)
 			child_om_marker.icon_state = "space_whale_restless"

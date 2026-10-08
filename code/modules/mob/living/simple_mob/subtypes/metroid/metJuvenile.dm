@@ -8,9 +8,12 @@
 	var/endurance_adult = 200
 	var/power_charge = 0 // Disarm attacks can shock someone if high/lucky enough.
 	var/mob/living/victim = null // the person the metroid is currently feeding on
+	var/consuming = FALSE // whether it is latched on and feeding (tracked, so a change redraws)
 	var/amount_grown = 0 // controls how long the metroid has been overfed, if 10, grows or reproduces
 	var/number = 0 // This is used to make the metroid semi-unique for indentification.
 	var/harmless = FALSE // Set to true when pacified. Makes the metroid harmless, not get hungry, and not be able to grow/reproduce.
+
+TRACKED(/mob/living/simple_mob/metroid/juvenile, consuming)
 
 // it lets go of its victim.
 /mob/living/simple_mob/metroid/juvenile/on_destroy(force)

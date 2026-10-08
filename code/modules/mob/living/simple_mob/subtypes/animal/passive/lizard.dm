@@ -36,8 +36,8 @@
 			body_color = pick(list("green","red","orange","yellow","cyan"))
 	icon_state = "lizard_[body_color]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
 	item_state = "lizard_[body_color]"
-	icon_living = "lizard_[body_color]"
-	icon_dead = "lizard_[body_color]_dead"
+	set_icon_living("lizard_[body_color]")
+	set_icon_dead("lizard_[body_color]_dead")
 	if(body_color == "redblue")
 		desc = "A cute, tiny, red lizard with distinctive blueish markings on its tiny limbs. Seems rare!"
 	else

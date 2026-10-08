@@ -15,6 +15,7 @@
 	min_co2 = 0
 	max_co2 = 0
 	min_n2 = 0
+	draws_life_state = FALSE
 	max_n2 = 0
 	minbodytemp = 0
 
@@ -25,7 +26,6 @@
 	consume(src)
 	return TRUE
 
-APPEARANCE_NONE(/mob/living/simple_mob/homunculus)
 
 /mob/living/simple_mob/homunculus/update_icons()
 	return

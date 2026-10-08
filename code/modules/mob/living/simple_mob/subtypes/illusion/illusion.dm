@@ -18,6 +18,7 @@
 	response_harm   = "tried to punch"
 
 	mob_class = MOB_CLASS_ILLUSION
+	draws_life_state = FALSE
 	biology = BIOLOGY_SYNTHETIC // Holographic: nothing to poison or suffocate, nothing to medicate.
 
 
@@ -26,7 +27,6 @@
 
 	can_pain_emote = FALSE
 
-APPEARANCE_NONE(/mob/living/simple_mob/illusion)
 /mob/living/simple_mob/illusion/proc/copy_appearance(atom/movable/thing_to_copy)
 	if(!thing_to_copy)
 		return FALSE

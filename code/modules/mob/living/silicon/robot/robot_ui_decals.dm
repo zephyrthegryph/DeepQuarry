@@ -43,11 +43,12 @@ CAPABILITIES(/datum/tgui_module/robot_ui_decals)
 	var/decal_to_toggle = lowertext(value)
 	if(!(decal_to_toggle in R.sprite_datum.sprite_decals))
 		return FALSE
-	if(decal_to_toggle in R.robotdecal_on)
-		LAZYREMOVE(R.robotdecal_on, decal_to_toggle)
+	var/list/decals = R.robotdecal_on?.Copy()
+	if(decal_to_toggle in decals)
+		decals -= decal_to_toggle
 	else
-		LAZYADD(R.robotdecal_on, decal_to_toggle)
-	R.update_icon()
+		LAZYADD(decals, decal_to_toggle)
+	R.set_robotdecal_on(decals)
 	. = TRUE
 
 /datum/tgui_module/robot_ui_decals/proc/ui_act_flick_animation(datum/act/op/A, value)
@@ -57,8 +58,5 @@ CAPABILITIES(/datum/tgui_module/robot_ui_decals)
 	var/animation_to_flick = lowertext(value)
 	if(!(animation_to_flick in R.sprite_datum.sprite_animations))
 		return FALSE
-	R.cut_overlays()
-	R.ImmediateOverlayUpdate()
 	flick("[R.sprite_datum.sprite_icon_state]-[animation_to_flick]", R)
-	R.update_icon()
 	. = TRUE

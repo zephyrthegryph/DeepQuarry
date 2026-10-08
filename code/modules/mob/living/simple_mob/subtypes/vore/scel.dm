@@ -61,10 +61,9 @@
 /mob/living/simple_mob/vore/scel/Initialize(mapload)
 	. = ..()
 	if(random_skin)
-		icon_living = pick(skins)
-		icon_rest = "[icon_living]-rest"
-		icon_dead = "[icon_living]-dead"
-		update_icon()
+		set_icon_living(pick(skins))
+		set_icon_rest("[icon_living]-rest")
+		set_icon_dead("[icon_living]-dead")
 
 /mob/living/simple_mob/vore/scel
 

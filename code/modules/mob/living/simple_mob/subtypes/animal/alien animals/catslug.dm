@@ -213,19 +213,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 	else
 		return OP_DECLINE
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/alienanimals/catslug/appearance_overlays()
-	. = list()
-	. += ..()
-
-	if(hat)
-		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
-		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
-		I.pixel_y = -7
-		I.color = hat.color
-		I.appearance_flags = RESET_COLOR | KEEP_APART
-		I.blend_mode = BLEND_OVERLAY
-		. += I
+/// The hat it wears.
+/mob/living/simple_mob/vore/alienanimals/catslug/draw(datum/look/look)
+	..()
+	look.hat(hat, -7)
 
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/give_hat(obj/item/clothing/head/new_hat, mob/living/user)
 	if(!istype(new_hat))
@@ -240,7 +231,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 		if(!move_into(src, nameof(src.hat), new_hat, user))
 			return
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src]. How adorable!"))
-		update_icon()
 		return
 
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/remove_hat(mob/living/user)
@@ -251,14 +241,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 		old_hat.forceMove(get_turf(src))
 		user.put_in_hands(old_hat)
 		to_chat(user, span_warning("You take away \the [src]'s [old_hat.name]. How mean."))
-		update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/drop_hat()
 	if(!hat)
 		return
 	var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 	old_hat.forceMove(get_turf(src))
-	update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/catslug/Login()	//If someone plays as us let's just be a passive mob in case accidents happen if the player D/Cs
 	. = ..()
@@ -279,7 +267,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 	if(A.answer.value && !picked_color)
 		color = A.answer.value
 		picked_color = TRUE
-	update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/catslug/horrible
 
@@ -1011,7 +998,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	icon_living = "suslug"
 	icon_rest = "suslug_rest"
 	icon_dead = "suslug_dead"
-	var/image/eye_image
 	var/is_impostor = FALSE
 	EXPIRY_DECLARE(kill_cooldown)
 	can_wear_hat = FALSE
@@ -1022,19 +1008,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/suslug)
 	verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/assussinate)
 
-/mob/living/simple_mob/vore/alienanimals/catslug/suslug/Initialize(mapload)
-	. = ..()
-	update_icon()
-
-/mob/living/simple_mob/vore/alienanimals/catslug/suslug/update_icon()
+/// Its glowing-free eyes, untinted by the body colour.
+/mob/living/simple_mob/vore/alienanimals/catslug/suslug/draw(datum/look/look)
 	..()
-	update_suslug_eyes()
-
-/mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/update_suslug_eyes()
-	cut_overlay(eye_image)
-	eye_image = image(icon,null,"[icon_state]-eyes")
-	eye_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-	add_overlay(eye_image)
+	look.overlay(look_overlay_image(icon, "[look.state_so_far(src)]-eyes", appearance_flags = (RESET_COLOR|KEEP_APART|PIXEL_SCALE)))
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/can_ventcrawl()
 	if(!is_impostor)

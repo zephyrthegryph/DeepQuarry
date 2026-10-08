@@ -69,6 +69,7 @@
 			for(var/line in (ispath(type, /turf) ? dq_look_capture_turf(type, get_step(T, EAST)) : dq_look_capture(type, T)))
 				rows += "[type] [line]"
 		actual_by_type[root] = rows
+	dq_look_drain_turf(T) // after the last capture: a capture sees what the ones before it left, so the sweep drains only at its end
 	var/report = dq_snapshot_compare(DQ_LOOK_TREE_DIR, "look_trees", actual_by_type, expected_by_type, bad)
 	TEST_ASSERT(isnull(report), report)
 
@@ -91,6 +92,21 @@
 		var/static/regex/where = regex(@"^\S+\.dm:\d+:")
 		. = list("runtime: [where.Replace(e.name, "")]") // without the file and line, which move with unrelated edits
 	own_turf_contents(T)
+
+/// Deletes what the captures left on `T` until nothing is left. Deleting a thing can make more of them (a space worm's destroyed
+/// segment severs the back half into a new dead head, which severs its own back half when it is deleted in turn), so one pass,
+/// or leaving them for the block's release, ends with the last of them on the block as a leak.
+/datum/unit_test/proc/dq_look_drain_turf(turf/T)
+	for(var/pass in 1 to 30)
+		var/list/left = list()
+		for(var/atom/movable/AM as anything in contents_of(T))
+			if(!QDELETED(AM) && !istype(AM, /obj/effect/landmark))
+				left += AM
+		if(!length(left))
+			return
+		for(var/atom/movable/AM as anything in left)
+			if(!QDELETED(AM))
+				qdel(AM)
 
 /// dq_look_capture() for a turf type: `spot` is turned into it, drawn and turned back. The made turf is the look; the RNG is reseeded from the path.
 /datum/unit_test/proc/dq_look_capture_turf(type, turf/spot)

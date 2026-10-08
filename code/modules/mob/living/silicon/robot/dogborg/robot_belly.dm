@@ -51,14 +51,8 @@
 		rel_set(src, nameof(robot_belly), new /datum/robot_belly(src))
 	return robot_belly
 
-/// The sleeper sets this; the sprite only redraws when it actually changes.
-/datum/robot_belly/proc/set_sleeper_state(new_state)
-	if(sleeper_state == new_state)
-		return FALSE
-	sleeper_state = new_state
-	var/mob/living/silicon/robot/R = owner
-	R.update_icon()
-	return TRUE
+/// The sleeper sets this; the robot's look watches it, so the sprite redraws when it changes.
+TRACKED(/datum/robot_belly, sleeper_state)
 
 /datum/robot_belly/proc/get_sleepers()
 	var/mob/living/silicon/robot/R = owner

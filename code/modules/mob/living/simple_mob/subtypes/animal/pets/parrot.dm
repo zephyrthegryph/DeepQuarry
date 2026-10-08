@@ -144,6 +144,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/parrot)
 CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/parrot/eclectus)
 	rolls(nameof(gender), pick_one(list(MALE, FEMALE)))
 	rolls(nameof(icon_state), PROC_REF(roll_gendered_look), from = list(nameof(gender)))
+	rolls(nameof(icon_living), PROC_REF(roll_gendered_look), from = list(nameof(gender)))
 	rolls(nameof(icon_rest), PROC_REF(roll_gendered_rest), from = list(nameof(gender)))
 	rolls(nameof(icon_dead), PROC_REF(roll_gendered_dead), from = list(nameof(gender)))
 

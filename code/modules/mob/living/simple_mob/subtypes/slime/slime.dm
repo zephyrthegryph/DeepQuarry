@@ -103,7 +103,6 @@ CAPABILITIES(/mob/living/simple_mob/slime)
 	update_mood()
 	set_glow_color(color)
 	refresh_glow()
-	update_icon()
 	return ..()
 
 // Slime unique items
@@ -125,41 +124,30 @@ TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
 	set_glow_toggle(initial(glow_toggle))
 	refresh_glow()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/slime/appearance_overlays()
-	. = list()
-	. += ..()
+TRACKED(/mob/living/simple_mob/slime, mood)
 
+/mob/living/simple_mob/slime/draw(datum/look/look)
+	..()
 	if(stat != DEAD)
 		// General slime shine.
-		var/image/I = image(icon, src, "slime light")
-		I.appearance_flags = RESET_COLOR
-		. += I
+		look.overlay(look_overlay_image(icon, "slime light", appearance_flags = RESET_COLOR))
 
 		// 'Shiny' overlay, for gemstone-slimes.
 		if(shiny)
-			I = image(icon, src, "slime shiny")
-			I.appearance_flags = RESET_COLOR
-			. += I
+			look.overlay(look_overlay_image(icon, "slime shiny", appearance_flags = RESET_COLOR))
 
 		// Mood overlay.
-		I = image(icon, src, "aslime-[mood]")
-		I.appearance_flags = RESET_COLOR
-		. += I
+		look.overlay(look_overlay_image(icon, "aslime-[mood]", appearance_flags = RESET_COLOR))
 
 	// Hat simulator.
 	if(hat)
+		look.watch(hat)
 		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
-		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
-		I.pixel_y = -7 // Slimes are small.
-		I.color = hat.color
-		I.appearance_flags = RESET_COLOR | KEEP_APART
-		I.blend_mode = BLEND_OVERLAY
-		. += I
+		look.overlay(look_overlay_image('icons/inventory/head/mob.dmi', hat_state, pixel_y = -7, color = hat.color, appearance_flags = (RESET_COLOR|KEEP_APART))) // Slimes are small.
 
 // Controls the 'mood' overlay. Overrided in subtypes for specific behaviour.
 /mob/living/simple_mob/slime/proc/update_mood()
-	mood = "feral" // This is to avoid another override in the /feral subtype.
+	set_mood("feral") // This is to avoid another override in the /feral subtype.
 
 /mob/living/simple_mob/slime/proc/unify()
 	unity = TRUE
@@ -244,7 +232,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime, TYPE_PROC_REF(/atom, appea
 		if(!move_into(src, nameof(src.hat), new_hat, user))
 			return
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src].  How adorable!"))
-		update_icon()
 		return
 
 /mob/living/simple_mob/slime/proc/remove_hat(mob/living/user)
@@ -255,14 +242,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime, TYPE_PROC_REF(/atom, appea
 		old_hat.forceMove(get_turf(src))
 		user.put_in_hands(old_hat)
 		to_chat(user, span_warning("You take away \the [src]'s [old_hat.name].  How mean."))
-		update_icon()
 
 /mob/living/simple_mob/slime/proc/drop_hat()
 	if(!hat)
 		return
 	var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 	old_hat.forceMove(get_turf(src))
-	update_icon()
 
 /mob/living/simple_mob/slime/speech_bubble_appearance()
 	return "slime"

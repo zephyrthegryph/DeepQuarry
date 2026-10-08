@@ -6,6 +6,8 @@
 	last_actor_ref = user ? REF(user) : null
 	return ..()
 
+/datum/unit_test/om/interim_target_zone_hud_actor
+
 /datum/unit_test/om/interim_target_zone_hud_actor/proc/targeting_raises(datum/entity)
 	var/count = 0
 	for(var/list/entry as anything in sched.test_raises)
@@ -38,9 +40,10 @@
 	TEST_ASSERT_EQUAL(button.selecting, O_EYES, "the actual eye coordinates select the eye zone")
 	TEST_ASSERT_EQUAL(targeting_raises(actor), 1, "the real selection notifies the exact initiating actor once")
 	TEST_ASSERT_EQUAL(targeting_raises(bystander), 0, "the actual first selection does not notify the unrelated mob")
-	var/list/actual_overlays = button.appearance_overlays()
+	refresh_flush()
+	var/list/actual_overlays = dq_overlay_states(button)
 	TEST_ASSERT_EQUAL(length(actual_overlays), 1, "the actual selector appearance contains its single zone overlay")
-	TEST_ASSERT_EQUAL(button.selecting_appearance.icon_state, "[O_EYES]", "the real selected-zone appearance depicts eyes")
+	TEST_ASSERT_EQUAL(actual_overlays[1], "[O_EYES]", "the selected zone redraws by itself and depicts eyes")
 	button.click_with_actor(actor, null, null, "icon-x=16;icon-y=26")
 	TEST_ASSERT_EQUAL(targeting_raises(actor), 1, "the same actual zone does not emit a redundant notification")
 	button.click_with_actor(bystander, null, null, "icon-x=18;icon-y=2")
@@ -57,7 +60,8 @@
 	button.click_with_actor(actor, null, null, "icon-x=16;icon-y=18")
 	TEST_ASSERT_EQUAL(button.selecting, BP_TORSO, "actual torso coordinates restore the starting zone")
 	TEST_ASSERT_EQUAL(targeting_raises(actor), 2, "the real return to torso notifies the actor exactly once more")
-	actual_overlays = button.appearance_overlays()
+	refresh_flush()
+	actual_overlays = dq_overlay_states(button)
 	TEST_ASSERT_EQUAL(length(actual_overlays), 1, "the actual restored appearance retains exactly one selected-zone overlay")
-	TEST_ASSERT_EQUAL(button.selecting_appearance.icon_state, "[BP_TORSO]", "the actual restored appearance depicts the torso")
+	TEST_ASSERT_EQUAL(actual_overlays[1], "[BP_TORSO]", "the restored zone is drawn: the torso")
 	sched.test_raises = null

@@ -57,9 +57,9 @@
 		body_color = pick( list("brown","black","white") )
 	icon_state = "rabbit_[body_color]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
 	item_state = "rabbit_[body_color]"
-	icon_living = "rabbit_[body_color]"
-	icon_dead = "rabbit_[body_color]_dead"
-	icon_rest = "rabbit_[body_color]_rest"
+	set_icon_living("rabbit_[body_color]")
+	set_icon_dead("rabbit_[body_color]_dead")
+	set_icon_rest("rabbit_[body_color]_rest")
 
 /mob/living/simple_mob/vore/rabbit/life_type_post_due()
 	return TRUE

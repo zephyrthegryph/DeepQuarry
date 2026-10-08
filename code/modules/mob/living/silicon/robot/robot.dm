@@ -46,7 +46,6 @@
 	var/notransform
 	does_spin = FALSE
 
-	var/mutable_appearance/hat_overlay
 	var/obj/item/clothing/head/hat // THE hat!
 
 //Hud stuff
@@ -158,6 +157,7 @@
 	var/vtec_active = FALSE
 
 	var/list/vore_light_states	//Robot exclusive. Lazy.
+	var/list/active_module_types // The types of the active modules (module_slots_changed()). Lazy.
 	vore_capacity_ex = list()
 	vore_fullness_ex = list()
 	vore_icon_bellies = list()
@@ -286,7 +286,6 @@
 	heat_debt = 0
 	..()
 	update_power_state()
-	update_icon()
 
 /// A borg has no nutrition, body temperature or radiation dose to reset (audit P2-D11);
 /// its parts and cell were rebuilt above.
@@ -338,7 +337,6 @@
 	if(stat != CONSCIOUS)
 		uneq_all()
 	update_senses()
-	update_icon()
 
 // --- Power ledger ----------------------------------------------------------------------------
 // draw_power() and add_power() are the only writers of the cell's charge in
@@ -518,10 +516,9 @@
 /mob/living/silicon/robot/proc/set_lights(new_state)
 	if(lights_on == new_state)
 		return
-	lights_on = new_state
+	set_lights_on(new_state)
 	refresh_glow()
 	recompute_power_demand()
-	update_icon()
 
 /mob/living/silicon/robot/life_light_due()
 	return TRUE
@@ -605,7 +602,6 @@
 				return
 			proto_set(src, nameof(sprite_datum), module_sprites[1])
 			sprite_datum.do_equipment_glamour(module)
-			update_worn_icons()
 			return
 	if(mind)
 		sprite_name = mind.name
@@ -853,7 +849,6 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		return FALSE
 	locked = !locked
 	to_chat(user, span_filter_notice("You [ locked ? "lock" : "unlock"] [src]'s interface."))
-	update_icon()
 	return TRUE
 
 /mob/living/silicon/robot/proc/apply_upgrade(obj/item/borg/upgrade/U, mob/user)
@@ -934,14 +929,12 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		to_chat(user, span_filter_notice("The cover is locked and cannot be opened."))
 		return FALSE
 	to_chat(user, span_filter_notice("You open the cover."))
-	opened = TRUE
-	update_icon()
+	set_opened(TRUE)
 	return TRUE
 
 /mob/living/silicon/robot/proc/close_cover(mob/user)
 	to_chat(user, span_filter_notice("You close the cover."))
-	opened = FALSE
-	update_icon()
+	set_opened(FALSE)
 	return TRUE
 
 /// Cell out, wires exposed and all cut: lever out the MMI, leaving a damaged chassis.
@@ -1065,16 +1058,14 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	if(!opened)
 		return ITEM_INTERACT_BLOCKING
 	if(!cell)
-		wiresexposed = !wiresexposed
+		set_wiresexposed(!wiresexposed)
 		to_chat(user, span_filter_notice("The wires have been [wiresexposed ? "exposed" : "unexposed"]."))
 		playsound(src, tool.usesound, 50, TRUE)
-		update_icon()
 		return ITEM_INTERACT_SUCCESS
 	if(radio)
 		radio.attackby(tool, user)
 	else
 		to_chat(user, span_filter_notice("Unable to locate a radio."))
-	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
 /mob/living/silicon/robot/wrench_act(mob/user, obj/item/tool)
@@ -1145,8 +1136,8 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	has_recoloured = FALSE
 	robotact?.update_static_data_for_all_viewers()
 	vore_capacity_ex = list()
-	vore_fullness_ex = list()
-	vore_light_states = list()
+	set_vore_fullness_ex(list())
+	set_vore_light_states(list())
 
 /// Old attack_hand (never reached the gate or the default touch): dismounts, petting and punching. The cell is the take_power_part op.
 /mob/living/silicon/robot/proc/robot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -1168,7 +1159,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 
 /// The take_power_part op's condition: the chassis is open, its wiring tucked away, and there is a cell or the fried remains of its mount to take.
 /mob/living/silicon/robot/proc/power_part_exposed(datum/act/A)
-	if(!opened || wiresexposed) // ALLOW(reads): the chassis cover and wiring are legacy robot state, tracked in the mob conversion; read when a click resolves
+	if(!opened || wiresexposed)
 		return FALSE
 	if(cell)
 		return TRUE
@@ -1181,7 +1172,6 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	var/obj/item/removed = null
 	if(cell)
 		removed = remove_cell()
-		removed.update_icon()
 		removed.add_fingerprint(user)
 	else
 		var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
@@ -1190,7 +1180,6 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		removed = mount.uninstall()
 	op_deliver(A, removed)
 	to_chat(user, span_filter_notice("You remove \the [removed]."))
-	update_icon()
 	return OP_OK
 
 /// Petting, punching, tapping and vore on a closed chassis, in `stance` (the touch interaction's).
@@ -1278,119 +1267,6 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 			return 1
 	return 0
 
-// --- Appearance: overlay providers --------------------------------------------------------------
-// update_icon() composes the sprite from providers: base, accents, status,
-// belly, panel and hat.
-
-DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/silicon/robot/appearance_overlays()
-	. = list()
-	if(!sprite_datum)
-		return .
-	apply_base_appearance()
-	if(stat == DEAD && sprite_datum.has_dead_sprite)
-		. += add_dead_overlays()
-	else
-		. += active_thinking_indicator
-		. += active_typing_indicator
-		handle_status_indicators() // needed as we don't have priority overlays anymore
-		. += add_accent_overlays()
-		if(stat == CONSCIOUS)
-			. += add_status_overlays()
-	. += add_panel_overlay()
-	. += add_hat_overlay()
-
-/mob/living/silicon/robot/proc/apply_base_appearance()
-	icon = sprite_datum.sprite_icon
-	icon_state = sprite_datum.sprite_icon_state
-	vis_height = sprite_datum.vis_height
-	if(default_pixel_x != sprite_datum.pixel_x)
-		default_pixel_x	= sprite_datum.pixel_x
-		pixel_x = sprite_datum.pixel_x
-		old_x = sprite_datum.pixel_x
-
-/mob/living/silicon/robot/proc/add_dead_overlays()
-	. = list()
-	icon_state = sprite_datum.get_dead_sprite(src)
-	if(sprite_datum.has_dead_sprite_overlay)
-		. += sprite_datum.get_dead_sprite_overlay(src)
-
-/// Glow accents and decals. Emissive overlays go on first so everything
-/// else layers over them.
-/mob/living/silicon/robot/proc/add_accent_overlays()
-	. = list()
-	if(sprite_datum.has_glow_sprites && glowy_enabled)
-		. += mutable_appearance(sprite_datum.sprite_icon, sprite_datum.get_glow_overlay(src))
-		. += emissive_appearance(sprite_datum.sprite_icon, sprite_datum.get_glow_overlay(src))
-	if(LAZYLEN(robotdecal_on) && LAZYLEN(sprite_datum.sprite_decals) && has_eyes())
-		for(var/enabled_decal in robotdecal_on)
-			var/robotdecal_overlay = sprite_datum.get_robotdecal_overlay(src, enabled_decal)
-			if(robotdecal_overlay)
-				. += robotdecal_overlay
-
-/// Shell borgs that are not deployed have no eyes.
-/mob/living/silicon/robot/has_eyes()
-	return !shell || deployed
-
-/// Eyes, bellies, equipment, rest pose and eye lights.
-/mob/living/silicon/robot/proc/add_status_overlays()
-	. = list()
-	update_fullness()
-	if(sprite_datum.has_eye_sprites && has_eyes())
-		var/eyes_overlay = sprite_datum.get_eyes_overlay(src)
-		if(eyes_overlay)
-			. += eyes_overlay
-	add_belly_overlays()
-	sprite_datum.handle_extra_icon_updates(src) // Various equipment-based sprites go here.
-	if(resting && sprite_datum.has_rest_sprites)
-		icon_state = sprite_datum.get_rest_sprite(src)
-	if(lights_on && sprite_datum.has_eye_light_sprites && has_eyes())
-		var/eyes_overlay = sprite_datum.get_eye_light_overlay(src)
-		if(eyes_overlay)
-			. += eyes_overlay
-
-/// Fullness a belly class shows. Components (the sleeper belly) may adjust it.
-/mob/living/silicon/robot/proc/belly_display_fullness(belly_class)
-	var/list/fullness_ref = list(vore_fullness_ex[belly_class] || 0)
-	PUBLISH_LEGACY(src, /datum/notice/robot_belly_fullness, belly_class, fullness_ref)
-	return fullness_ref[1]
-
-/mob/living/silicon/robot/proc/add_belly_overlays()
-	. = list()
-	for(var/belly_class in vore_fullness_ex)
-		reset_belly_lights(belly_class)
-		var/vs_fullness = belly_display_fullness(belly_class)
-		if(vs_fullness <= 0)
-			continue
-		var/belly_state
-		if(resting)
-			if(!sprite_datum.has_vore_belly_resting_sprites)
-				continue
-			belly_state = sprite_datum.get_belly_resting_overlay(src, vs_fullness, belly_class)
-		else
-			update_belly_lights(belly_class)
-			belly_state = sprite_datum.get_belly_overlay(src, vs_fullness, belly_class)
-		if(glowy_enabled)
-			var/mutable_appearance/MA = mutable_appearance(sprite_datum.sprite_icon, belly_state)
-			MA.appearance_flags = KEEP_APART
-			. += MA
-			. += emissive_appearance(sprite_datum.sprite_icon, belly_state)
-		else
-			. += belly_state
-
-/// The sleeper indicator shows red while the belly is busy (see the belly component).
-/mob/living/silicon/robot/proc/sleeper_red_light()
-	var/datum/robot_belly/belly = robot_belly
-	return belly?.sleeper_state == SLEEPER_STATE_BUSY
-
-/mob/living/silicon/robot/proc/add_panel_overlay()
-	. = list()
-	if(!opened)
-		return .
-	var/open_overlay = sprite_datum.get_open_sprite(src)
-	if(open_overlay)
-		. += open_overlay
-
 // --- Hats (robots and drones) -----------------------------------------------------------------
 
 /mob/living/silicon/robot/proc/place_on_head(obj/item/new_hat)
@@ -1398,7 +1274,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearan
 		remove_hat(get_turf(src))
 	rel_set(src, nameof(hat), new_hat)
 	new_hat.forceMove(src)
-	update_icon()
 
 /// Take the hat off, dropping it at `drop_loc`. Returns the hat.
 /mob/living/silicon/robot/proc/remove_hat(atom/drop_loc)
@@ -1407,37 +1282,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearan
 		return null
 	rel_take(src, nameof(hat))
 	old_hat.forceMove(drop_loc)
-	update_icon()
 	return old_hat
-
-/mob/living/silicon/robot/proc/add_hat_overlay()
-	. = list()
-	if(!hat)
-		if(hat_overlay)
-			QDEL_NULL(hat_overlay)
-		return .
-	hat_overlay = hat.make_worn_icon(SPECIES_HUMAN, slot_head_str, default_icon = 'icons/inventory/head/mob.dmi', default_layer = 0)
-	update_worn_icons()
-
-/mob/living/silicon/robot/proc/update_worn_icons()
-	if(!hat_overlay)
-		return
-	cut_overlay(hat_overlay)
-
-	var/list/offset_list = resting ? sprite_datum.hat_offset[SPRITE_HAT_REST_OFFSET] : sprite_datum.hat_offset[SPRITE_HAT_OFFSET]
-	if(islist(offset_list))
-		var/list/offset = offset_list[isDiagonal(dir) ? dir2text(dir & (WEST|EAST)) : dir2text(dir)]
-		if(offset)
-			hat_overlay.pixel_w = offset[1]
-			hat_overlay.pixel_z = offset[2]
-
-	add_overlay(hat_overlay)
-
-/mob/living/silicon/robot/set_dir(newdir)
-	var/old_dir = dir
-	. = ..()
-	if(. != old_dir)
-		update_worn_icons()
 
 /// Old attack_robot: a cyborg clicking itself with an empty hand drops its hat (the "drop_hat" op).
 /mob/living/silicon/robot/proc/hat_droppable(datum/act/op/A)
@@ -1512,7 +1357,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearan
 /mob/living/silicon/robot/proc/set_default_module_icon()
 	proto_set(src, nameof(sprite_datum), null)
 	resolve_sprite_datum()
-	update_icon()
 
 /mob/living/silicon/robot/proc/repick_laws()
 	return
@@ -1690,7 +1534,6 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 	if(step > length(lines))
 		to_chat(src, span_infoplain(span_bold("Obey these laws:\n") + laws.get_formatted_laws()))
 		to_chat(src, span_danger("ALERT: [operator_name] is your new master. Obey your new laws and [operator_their] commands."))
-		update_icon()
 		hud_used?.update_robot_modules_display()
 		return
 	var/list/line = lines[step]
@@ -1735,7 +1578,6 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 
 /mob/living/silicon/robot/lay_down()
 	. = ..()
-	update_icon()
 
 /mob/living/silicon/robot/verb/rest_style()
 	set name = "Switch Rest Style"
@@ -1744,20 +1586,19 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 
 	if(!sprite_datum || !sprite_datum.has_rest_sprites || sprite_datum.rest_sprite_options.len < 1)
 		to_chat(src, span_notice("Your current appearance doesn't have any resting styles!"))
-		rest_style = "Default"
+		set_rest_style("Default")
 		return
 
 	if(sprite_datum.rest_sprite_options.len == 1)
 		to_chat(src, span_notice("Your current appearance only has a single resting style!"))
-		rest_style = "Default"
+		set_rest_style("Default")
 		return
 
 	// A cancel picks "Default".
 	open_request(src, /datum/prompt/choice, PROC_REF(rest_style_chosen), answerer = src, title = "Resting Pose", question = "Select resting pose", choices = sprite_datum.rest_sprite_options, buttons = TRUE, timeout = 0)
 
 /mob/living/silicon/robot/proc/rest_style_chosen(datum/act/request/A)
-	rest_style = A.answer ? A.answer.value : "Default"
-	update_icon()
+	set_rest_style(A.answer ? A.answer.value : "Default")
 
 /// Riding is provided by the belly component; without it the chassis can't be mounted.
 /mob/living/silicon/robot/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)

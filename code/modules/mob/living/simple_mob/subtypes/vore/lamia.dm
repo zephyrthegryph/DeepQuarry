@@ -55,10 +55,8 @@
 
 	can_be_drop_prey = FALSE
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/lamia, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/lamia/appearance_overlays()
-	. = list()
-	. += ..()
+/mob/living/simple_mob/vore/lamia/draw(datum/look/look)
+	..()
 
 	if(vore_active)
 		// Icon_state for fullness is as such if they are CONSCIOUS:
@@ -72,11 +70,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/lamia, TYPE_PROC_REF(/atom, 
 
 		if(upper_shows || tail_shows)
 			if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)))
-				icon_state = "[icon_living]_vore_[upper_shows]_[tail_shows]"
+				look.state("[icon_living]_vore_[upper_shows]_[tail_shows]")
 			else if(stat >= DEAD)
-				icon_state = icon_dead
+				look.state(icon_dead)
 			else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED) ) && icon_rest)
-				icon_state = "[icon_rest]_vore_[upper_shows]_[tail_shows]"
+				look.state("[icon_rest]_vore_[upper_shows]_[tail_shows]")
 
 /mob/living/simple_mob/vore/lamia/load_default_bellies()
 	. = ..()
@@ -354,9 +352,9 @@ GLOBAL_LIST_INIT(valid_random_lamias, list(
 	desc = initial(new_attrs.desc)
 
 	icon_state = initial(new_attrs.icon_state) // ALLOW(decl): Initialize picks a random lamia look per instance; a declaration has no random form
-	icon_living = initial(new_attrs.icon_living)
-	icon_rest = initial(new_attrs.icon_rest)
-	icon_dead = initial(new_attrs.icon_dead)
+	set_icon_living(initial(new_attrs.icon_living))
+	set_icon_rest(initial(new_attrs.icon_rest))
+	set_icon_dead(initial(new_attrs.icon_dead))
 
 	vore_default_mode = initial(new_attrs.vore_default_mode)
 	vore_digest_chance = initial(new_attrs.vore_digest_chance)

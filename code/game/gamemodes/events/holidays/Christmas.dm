@@ -9,8 +9,8 @@
 	for(var/obj/structure/flora/tree/pine/xmas in world)
 		var/mob/living/simple_mob/animal/space/tree/evil_tree = new /mob/living/simple_mob/animal/space/tree(xmas.loc)
 		evil_tree.icon_state = xmas.icon_state
-		evil_tree.icon_living = evil_tree.icon_state
-		evil_tree.icon_dead = evil_tree.icon_state
+		evil_tree.set_icon_living(evil_tree.icon_state)
+		evil_tree.set_icon_dead(evil_tree.icon_state)
 		evil_tree.icon_gib = evil_tree.icon_state
 		spent(xmas)
 

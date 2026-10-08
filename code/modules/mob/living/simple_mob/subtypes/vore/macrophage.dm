@@ -153,7 +153,7 @@ TRACKED_BRIDGED(/mob/living/simple_mob/vore/aggressive/macrophage, deathwatch, C
 		var/obj/effect/decal/cleanable/blood/sick = new(loc)
 		sick.name = "plasma"
 		sick.basecolor = "#47cbcf"
-		sick.update_icon()
+		sick.color = sick.basecolor
 		sick.pixel_x = rand(-24, 24)
 		sick.pixel_y = rand(-24, 24)
 		rel_add(sick, nameof(sick.viruses), base_disease.Copy())
