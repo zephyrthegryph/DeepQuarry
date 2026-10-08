@@ -202,7 +202,7 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 		"dirt8" = 3,
 		"dirt9" = 1
 	)
-	flooring_override = pickweight(possibledirts)
+	set_flooring_override(pickweight(possibledirts))
 	return ..()
 
 /turf/simulated/floor/outdoors/newdirt_nograss
@@ -222,7 +222,7 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 		"dirt8" = 3,
 		"dirt9" = 1
 	)
-	flooring_override = pickweight(possibledirts)
+	set_flooring_override(pickweight(possibledirts))
 	return ..()
 
 /turf/simulated/floor/outdoors/sidewalk
@@ -274,7 +274,7 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 		"[initial(icon_state)]9" = 2,
 		"[initial(icon_state)]10" = 2
 	)
-	flooring_override = pickweight(possibledirts)
+	set_flooring_override(pickweight(possibledirts))
 	return ..()
 
 /turf/simulated/floor/outdoors/sidewalk/side

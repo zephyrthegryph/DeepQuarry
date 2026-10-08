@@ -13,6 +13,7 @@
 		broken = rand(0,flooring.has_damage_range)
 	else
 		broken = 0
+	set_plating_damage_state(rand(1, 4))
 	update_icon()
 
 // promoted from /turf/simulated/floor to /turf/simulated so LINDA's
@@ -28,4 +29,5 @@
 		burnt = rand(0,flooring.has_burn_range)
 	else
 		burnt = 0
+	set_plating_damage_state(rand(1, 4))
 	update_icon()

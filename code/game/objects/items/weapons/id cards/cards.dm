@@ -29,28 +29,34 @@
 	. = ..()
 	reset_icon()
 
+/// The sprite stack is tracked: the card redraws when it is set (the setter compares the list, so a new list is a new look).
+TRACKED(/obj/item/card, sprite_stack)
+
 /obj/item/card/proc/reset_icon()
-	sprite_stack = initial_sprite_stack
-	update_icon()
+	set_sprite_stack(initial_sprite_stack)
 
 /// The sprite stack as layers: the first state is the base, the rest overlays on it (was a
 /// blended /icon per card; the layers draw the same without generating an icon).
-DECLARE_APPEARANCE_PROC(/obj/item/card, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/card/appearance_overlays()
-	. = list()
-	icon = base_icon
+/obj/item/card/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/item/card/proc/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
+	look.set_icon(base_icon)
 	if(!sprite_stack || !istype(sprite_stack) || sprite_stack == list(""))
-		icon_state = initial(icon_state)
-		return .
+		drawn_state = look.state(initial(icon_state))
+		return
 	var/first = TRUE
 	for(var/iconstate in sprite_stack)
 		if(!iconstate)
-			iconstate = icon_state
+			iconstate = drawn_state
 		if(first)
-			icon_state = iconstate
+			drawn_state = look.state(iconstate)
 			first = FALSE
 		else
-			. += image(base_icon, iconstate)
+			look.overlay(image(base_icon, iconstate))
 
 /obj/item/card/data
 	name = "data card"

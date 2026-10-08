@@ -304,3 +304,36 @@ TRACKED(/obj/dq_draw_watched, shown)
 	A.set_connections(string_list(list("1", "0", "0", "0")))
 	refresh_flush()
 	TEST_ASSERT(A.rx?.look_key != before, "the table redraws when its connections change")
+
+// ---- floors: the variant is rolled once into tracked state, not in the draw ----
+
+/datum/unit_test/dq_draw_floor_variant_is_rolled_once
+
+/datum/unit_test/dq_draw_floor_variant_is_rolled_once/Run()
+	var/turf/T = test_floor()
+	var/turf/spot = get_step(T, EAST)
+	var/turf/simulated/floor/F = spot.ChangeTurf(/turf/simulated/floor/grass)
+	TEST_ASSERT(F.flooring?.has_base_range, "a grass floor has a range of variants")
+	TEST_ASSERT(F.flooring_override, "its variant was rolled when the flooring was laid: [F.flooring_override]")
+	var/rolled = F.flooring_override
+	for(var/i in 1 to 5)
+		F.update_icon()
+		appearance_flush()
+		TEST_ASSERT_EQUAL(F.icon_state, rolled, "a redraw keeps the rolled variant")
+	F.set_flooring_override(null)
+	TEST_ASSERT_EQUAL(F.flooring_override, null, "the override is set through its tracked setter")
+	spot.ChangeTurf(T.type)
+
+// ---- cards: the sprite stack is tracked ----
+
+/datum/unit_test/dq_draw_card_redraws_on_sprite_stack
+
+/datum/unit_test/dq_draw_card_redraws_on_sprite_stack/Run()
+	var/turf/T = test_floor()
+	var/obj/item/card/id/C = allocate(/obj/item/card/id, T)
+	refresh_flush()
+	var/before = C.rx?.look_key
+	C.set_sprite_stack(list("base-stamp", "top-red"))
+	refresh_flush()
+	TEST_ASSERT(C.rx?.look_key != before, "setting the sprite stack redraws the card without an update_icon() call")
+	TEST_ASSERT_EQUAL(C.icon_state, "base-stamp", "its first layer is the base")

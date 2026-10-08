@@ -396,11 +396,13 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	held_state = state
 	touched = TRUE
 
-/// What the thing is called and how it is described. Null leaves either as it is; a draw that does not call it changes
+/// What the thing is called and how it is described. Null leaves either as it is (so a name call and a desc call compose); a draw that does not call it changes
 /// neither (a player's rename stays).
 /datum/look/proc/identity(name = null, desc = null)
-	identity_name = name
-	identity_desc = desc
+	if(!isnull(name))
+		identity_name = name
+	if(!isnull(desc))
+		identity_desc = desc
 	touched = TRUE
 
 /datum/look/proc/play_flick(name)

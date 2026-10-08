@@ -186,8 +186,7 @@
 		icon_state = "[initial(icon_state)]_digested"
 	else
 		if(!sprite_stack.Find("digested"))
-			sprite_stack += "digested"
-	update_icon()
+			set_sprite_stack(sprite_stack + "digested") // a new list: the card's own stack is never the shared initial one
 	return FALSE
 
 /obj/item/holder/digest_act(atom/movable/item_storage = null)

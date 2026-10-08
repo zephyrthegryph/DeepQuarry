@@ -86,8 +86,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	if(choice)
 		S.icon_state = choice.icon_state
 		S.item_state = choice.item_state
-		S.sprite_stack = choice.sprite_stack
-		S.update_icon()
+		S.set_sprite_stack(choice.sprite_stack)
 		to_chat(user, span_notice("Appearance changed to [choice]."))
 		. = TRUE
 	SStgui.update_uis(src)
@@ -247,14 +246,13 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		S.fingerprint_hash = initial(S.fingerprint_hash)
 		S.icon_state = initial(S.icon_state)
 		S.item_state = initial(S.item_state)
-		S.sprite_stack = S.initial_sprite_stack
+		S.set_sprite_stack(S.initial_sprite_stack)
 		S.front = null
 		S.name = initial(S.name)
 		S.registered_name = initial(S.registered_name)
 		S.unset_registered_user()
 		S.sex = initial(S.sex)
 		S.species = initial(S.species)
-		S.update_icon()
 		to_chat(user, span_notice("All information has been deleted from \the [src]."))
 		. = TRUE
 	SStgui.update_uis(src)
