@@ -217,7 +217,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	return FALSE
 
 /obj/structure/blob/core/proc/get_random_blob_type()
-	if(!difficulty_threshold)
+	if(isnull(difficulty_threshold)) // BLOB_DIFFICULTY_EASY is 0: a truthiness test returned no type for the easy core
 		return
 	var/list/valid_types = list()
 	for(var/datum/blob_type/BT as anything in subtypesof(/datum/blob_type))

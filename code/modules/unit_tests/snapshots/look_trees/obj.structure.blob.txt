@@ -18,7 +18,7 @@
 /obj/structure/blob/core/random_easy state: blank_blob
 /obj/structure/blob/core/random_easy dir: 2
 /obj/structure/blob/core/random_easy overlay: icons/mob/blob.dmi:blank_blob:8:#000000
-/obj/structure/blob/core/random_easy overlay: icons/mob/blob.dmi:blob:-32767:#aaaaaa
+/obj/structure/blob/core/random_easy overlay: icons/mob/blob.dmi:blob:-32767:#9acd32
 /obj/structure/blob/core/random_easy overlay: icons/mob/blob.dmi:blob_core_overlay:-32767
 /obj/structure/blob/core/random_medium icon: icons/mob/blob.dmi
 /obj/structure/blob/core/random_medium state: blank_blob
