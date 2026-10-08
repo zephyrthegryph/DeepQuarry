@@ -1,4 +1,6 @@
 TRACKED(/obj/structure/AIcore, state)
+MSG_DEF(ai_core/unbolt_start, null, "<span class='bold'>%U%</span> starts to unbolt %T% from the plating...")
+MSG_DEF(ai_core/bolt_start, null, "<span class='bold'>%U%</span> starts to bolt %T% to the plating...")
 MSG_DEF_SELF(ai_core/board_unfastened, "the circuit board must be fastened before wiring")
 MSG_DEF_SELF(ai_core/not_wired, "the core must be wired before installing its panel")
 MSG_DEF_SELF(ai_core/reinforced_glass, "needs reinforced glass")
@@ -17,6 +19,11 @@ MSG_DEF_SELF(ai_core/glass_start, "You start to put in the glass panel.")
 	var/obj/item/mmi/brain = null
 
 CAPABILITIES(/obj/structure/AIcore)
+	op("anchor", tool(TOOL_WRENCH), label("Anchor frame"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(state), 0)), wait(PROC_REF(frame_wrench_duration)), then(PROC_REF(wrench_act_tool_done)))
+	op("unanchor", tool(TOOL_WRENCH), label("Unfasten frame"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(state), 1)), wait(PROC_REF(frame_wrench_duration)), then(PROC_REF(wrench_act_tool_done2)))
+	op("dismantle", lit_welder(fuel = 0), label("Dismantle frame"), starts(PROC_REF(construction_welder_started)), when(req_is(nameof(state), 0)), wait(PROC_REF(frame_weld_duration)), then(PROC_REF(welder_act_tool_done)))
+	op("wrench_wrong_stage", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), when(req_not(any_of(req_is(nameof(state), 0), req_is(nameof(state), 1)))), needs(req(PROC_REF(construction_tool_blocked), silent = TRUE)), wait(0))
+	op("welder_wrong_stage", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), when(req_not(req_is(nameof(state), 0))), needs(req(PROC_REF(construction_tool_blocked), silent = TRUE)), wait(0))
 	op("add_cables", stack(/obj/item/stack/cable_coil, 5), when(req_is(nameof(state), 2)), needs(req_is(nameof(state), 2, because = MSG(ai_core/board_unfastened))), begins(MSG(ai_core/wiring_start)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(attackby_timed_done)))
 	op("add_panel", stack(/obj/item/stack/material, 2), when(req_is(nameof(state), 3)), when(PROC_REF(reinforced_panel)), needs(req_is(nameof(state), 3, because = MSG(ai_core/not_wired)), req(PROC_REF(reinforced_panel), because = MSG(ai_core/reinforced_glass))), begins(MSG(ai_core/glass_start)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(attackby_timed_done2)))
 	op("ai_core_install", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
@@ -104,31 +111,42 @@ CAPABILITIES(/obj/structure/AIcore)
 	icon_state = "4"
 	return OP_OK
 
-/obj/structure/AIcore/wrench_act(mob/user, obj/item/tool)
-	if(state != 0 && state != 1)
-		return ITEM_INTERACT_BLOCKING
-	if(state == 0)
-		use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	else
-		use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(wrench_act_tool_done2), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+/obj/structure/AIcore/proc/frame_wrench_duration(datum/act/op/A)
+	var/obj/item/tool = A.held_provider()
+	return 2 SECONDS * tool.toolspeed * tool_skill_factor(A.actor, TOOL_WRENCH)
 
-/obj/structure/AIcore/proc/wrench_act_tool_done(mob/user)
+/obj/structure/AIcore/proc/frame_weld_duration(datum/act/op/A)
+	var/obj/item/tool = A.held_provider()
+	return 2 SECONDS * tool.toolspeed * tool_skill_factor(A.actor, TOOL_WELDER)
+
+/obj/structure/AIcore/deactivated/proc/core_wrench_duration(datum/act/op/A)
+	var/obj/item/tool = A.held_provider()
+	return 4 SECONDS * tool.toolspeed * tool_skill_factor(A.actor, TOOL_WRENCH)
+/obj/structure/AIcore/proc/construction_welder_started(datum/act/op/A)
+	var/obj/item/tool = A.held_provider()
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	welder.eyecheck(A.actor)
+	construction_tool_started(A)
+/obj/structure/AIcore/proc/construction_tool_started(datum/act/op/A)
+	var/obj/item/tool = A.held_provider()
+	if(tool.usesound)
+		play_sfx(src, tool.usesound, volume = 50, vary = TRUE)
+/obj/structure/AIcore/proc/construction_tool_blocked(datum/act/op/A)
+	return FALSE
+
+/obj/structure/AIcore/proc/wrench_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You wrench the frame into place."))
 	set_anchored(TRUE)
 	set_state(1)
-/obj/structure/AIcore/proc/wrench_act_tool_done2(mob/user)
+/obj/structure/AIcore/proc/wrench_act_tool_done2(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You unfasten the frame."))
 	set_anchored(FALSE)
 	set_state(0)
-/obj/structure/AIcore/welder_act(mob/user, obj/item/tool)
-	if(state != 0)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
 REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
-/obj/structure/AIcore/proc/welder_act_tool_done(mob/user)
+/obj/structure/AIcore/proc/welder_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You deconstruct the frame."))
 	replace_with(src, /obj/item/stack/material/plasteel, 4)
 
@@ -253,6 +271,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 			return 1
 
 CAPABILITIES(/obj/structure/AIcore/deactivated)
+	without("anchor")
+	without("unanchor")
+	without("wrench_wrong_stage")
+	op("unbolt", tool(TOOL_WRENCH), label("Unbolt core"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(anchored), TRUE)), begins(MSG(ai_core/unbolt_start)), wait(PROC_REF(core_wrench_duration)), then(PROC_REF(unbolted)), on_interrupt(PROC_REF(unbolt_abandoned)))
+	op("bolt", tool(TOOL_WRENCH), label("Bolt core"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(anchored), FALSE)), begins(MSG(ai_core/bolt_start)), wait(PROC_REF(core_wrench_duration)), then(PROC_REF(wrench_act_tool_done3)), on_interrupt(PROC_REF(wrench_act_tool_failed3)))
 	op("latejoin_offer", ai(), asks(/datum/prompt/yes_no, fields = list("title" = "Latejoin", "question" = "Would you like this core to be open for latejoining AIs?", "timeout" = 0), step = "latejoin"), then(PROC_REF(latejoin_answered)))
 	op("deactivated_interaction_item", item(/obj/item), then(PROC_REF(deactivated_interaction_item)))
 
@@ -272,21 +295,14 @@ CAPABILITIES(/obj/structure/AIcore/deactivated)
 
 	return OP_DECLINE
 
-/obj/structure/AIcore/deactivated/wrench_act(mob/user, obj/item/tool)
-	if(anchored)
-		act_message(user, src, others = span_bold("%U%") + " starts to unbolt %T% from the plating...")
-		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(unbolted), done_args = list(user), on_fail = PROC_REF(unbolt_abandoned), fail_args = list(user))
-		return ITEM_INTERACT_SUCCESS
-	act_message(user, src, others = span_bold("%U%") + " starts to bolt %T% to the plating...")
-	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(wrench_act_tool_done3), done_args = list(user), on_fail = PROC_REF(wrench_act_tool_failed3), fail_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/AIcore/deactivated/proc/wrench_act_tool_done3(mob/user)
+/obj/structure/AIcore/deactivated/proc/wrench_act_tool_done3(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_bold("%U%") + " finishes fastening down %T%!")
 	set_anchored(TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/structure/AIcore/deactivated/proc/wrench_act_tool_failed3(mob/user)
+/obj/structure/AIcore/deactivated/proc/wrench_act_tool_failed3(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_bold("%U%") + " decides not to bolt %T%.")
 	return ITEM_INTERACT_SUCCESS
 
@@ -319,11 +335,13 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 		registry_join(REGISTRY_EMPTY_AI_CORES, ai_struct)
 		to_chat(user, span_infoplain("\The [id] is now [span_green("available")] for latejoining AIs."))
 
-/obj/structure/AIcore/deactivated/proc/unbolted(mob/user)
+/obj/structure/AIcore/deactivated/proc/unbolted(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_bold("%U%") + " finishes unfastening %T%!")
 	set_anchored(FALSE)
 
-/obj/structure/AIcore/deactivated/proc/unbolt_abandoned(mob/user)
+/obj/structure/AIcore/deactivated/proc/unbolt_abandoned(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_bold("%U%") + " decides not to unbolt %T%.")
 
 // The core owns its laws until it builds an AI, which adopts them (own_take() in the build step).

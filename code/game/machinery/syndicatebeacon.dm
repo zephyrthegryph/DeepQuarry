@@ -22,7 +22,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 	extend(TAG_UI, needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate))))
 	op("beacon_talk", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate))), asks(/datum/prompt/choice/syndicate_beacon, fields = list("title" = "Ominous Beacon", "buttons" = TRUE, "timeout" = 0)), then(PROC_REF(beacon_offer_answered)))
 
-/datum/prompt/choice/syndicate_beacon/prepare(datum/act/A)
+/datum/prompt/choice/syndicate_beacon/prepare(datum/act/op/A)
 	..()
 	var/obj/machinery/syndicate_beacon/B = A.holder
 	var/mob/user = answerer
