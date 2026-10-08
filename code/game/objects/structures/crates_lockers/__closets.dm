@@ -448,7 +448,7 @@ DECLARE_APPEARANCE(/obj/structure/closet, "opened", list("1" = list(APPEARANCE_I
 	user.do_attack_animation(src)
 	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 	dump_contents()
-	after(src, 0.1 SECONDS, TYPE_PROC_REF(/datum, om_qdel_self))
+	expire(0.1 SECONDS)
 	return 1
 
 /obj/structure/closet/proc/req_breakout()

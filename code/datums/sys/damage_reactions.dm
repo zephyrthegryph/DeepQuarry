@@ -51,7 +51,7 @@
 			continue // ran already, ahead of the entry's own effects
 		if(trigger != entry && (trigger > DAMAGE_KIND_COUNT || amounts[trigger] <= 0))
 			continue
-		var/answer = holder_call(src, row[2], packet)
+		var/answer = holder_call(src, row[2], list(packet))
 		if(phase == DAMAGE_REACTION_PHASE_BEFORE && (isnum(answer) ? (answer & DAMAGE_REACTION_BLOCK) : !isnull(answer)))
 			packet.flags |= DAMAGE_PACKET_BLOCKED
 			return DAMAGE_REACTION_BLOCK

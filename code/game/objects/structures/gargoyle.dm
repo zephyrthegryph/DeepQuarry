@@ -26,9 +26,10 @@
 	var/was_rayed = FALSE
 
 /// The petrified mob (a relation view); the statue watches it every second while it holds one.
-OM_FIELD_VIEW(/obj/structure/gargoyle, mob/living/carbon/human, WR_gargoyle, CHANGE_EXPLICIT)
+/obj/structure/gargoyle/var/mob/living/carbon/human/WR_gargoyle
 
 CAPABILITIES(/obj/structure/gargoyle)
+	ref_one(nameof(WR_gargoyle))
 	every(1 SECOND, then(PROC_REF(gargoyle_step)), when = nameof(WR_gargoyle))
 	param(nameof(petrified), pos = 1, keep = FALSE)
 	param(nameof(ident_ovr), pos = 2)

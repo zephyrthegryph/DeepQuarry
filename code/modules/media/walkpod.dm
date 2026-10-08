@@ -27,6 +27,7 @@
 	slot_flags = SLOT_BELT
 
 CAPABILITIES(/obj/item/walkpod)
+	ref_one(nameof(listener))
 	every(2 SECONDS, then(PROC_REF(walkpod_step)), when = nameof(listener))
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
@@ -42,7 +43,7 @@ CAPABILITIES(/obj/item/walkpod)
 	op("volume", ui_act("volume", arg("val", num())), then(PROC_REF(ui_act_volume)))
 
 /// Person whomst is listening to us. walkpod_step() checks on them and plays music while set (its every(), gated on it).
-OM_FIELD_VIEW(/obj/item/walkpod, mob/living, listener, CHANGE_EXPLICIT)
+/obj/item/walkpod/var/mob/living/listener
 MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 
 // stops listening.

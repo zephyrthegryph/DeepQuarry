@@ -955,37 +955,26 @@ CAPABILITIES(/obj/machinery/computer/ship/navigation/telescreen/dog_eye)
 	..()
 	look.state("screen_eye")
 
-/obj/machinery/computer/ship/navigation/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_verb/emote_beyond,
-	)
-	..()
+MSG_DEF_SELF(ship_emote/too_far, "too far away")
+MSG_DEF_SELF(ship_emote/incapable, "you can't do that right now")
 
-/// The old Emote Beyond verb: a subtle emote to those outside the ship, from within sight of its helm.
-/datum/interaction/machine_verb/emote_beyond
-	id = "ship_emote_beyond"
-	name = "Emote Beyond"
-	category = INTERACTION_CAT_CONFIGURE
-	requires = list(REQ_PROC(/proc/dq_emote_beyond_in_view, "too far away"), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
-	effect = /obj/machinery/computer/ship/navigation/proc/interaction_emote_beyond
-	also_requires = list(REQ_PROC(/proc/dq_actor_not_ic_muted, "you cannot speak in IC (muted)"))
+/obj/machinery/computer/ship/navigation/proc/ship_emote_in_view(datum/act/op/A)
+	// The host's current seven-tile view has no published visibility dependency; sample the real view at admission and resumption.
+	return A.actor && read_once(get_dist(A.actor, src)) <= 7 && (src in read_once(view(7, A.actor)))
+
+/obj/machinery/computer/ship/navigation/proc/ship_emoter_capable(datum/act/op/A)
+	return dq_actor_can_act(A.actor, src, A.held)
+
+/obj/machinery/computer/ship/navigation/proc/ship_emoter_not_muted(datum/act/op/A)
+	return dq_actor_not_ic_muted(A.actor)
 
 /// The old verb's `set src in oview(7)`.
 /proc/dq_emote_beyond_in_view(mob/actor, atom/target, obj/item/held)
 	return actor && target && get_dist(actor, target) <= 7 && (target in view(7, actor))
 
-/obj/machinery/computer/ship/navigation/proc/interaction_emote_beyond(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!isliving(user))
-		return TRUE
-	var/mob/living/L = user
-	open_request(src, /datum/prompt/text, PROC_REF(emote_beyond_entered), answerer = L, title = "Emote Beyond", question = "Type a message to emote.", encode = FALSE, timeout = 0)
-	return TRUE
-
-/obj/machinery/computer/ship/navigation/proc/emote_beyond_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/L = A.request.answerer
-	var/message = sanitize_or_reflect(A.answer.value, L)
+/obj/machinery/computer/ship/navigation/proc/emote_beyond_entered(datum/act/op/A)
+	var/mob/living/L = A.actor
+	var/message = sanitize_or_reflect(A.step_value("message"), L)
 	if (!message)
 		return
 	if (L.stat == DEAD)

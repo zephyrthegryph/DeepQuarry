@@ -182,30 +182,22 @@
 
 /// Can this strain shed into the air from its host right now?
 /datum/affliction/contagion/proc/can_shed_airborne()
-	return host && is_spreadable() && (spread_flags & DISEASE_SPREAD_AIRBORNE) && infectivity > 0 && !global_flag_check(virus_modifiers, DORMANT)
+	return host && is_spreadable() && (spread_flags & DISEASE_SPREAD_AIRBORNE) && infectivity > 0 && !(virus_modifiers & DORMANT)
 
 /// Does this strain keep its course in a dead host (the body stops ticking
 /// the dead, so the lane carries it)?
 /datum/affliction/contagion/proc/acts_in_dead_host()
-	return host?.stat == DEAD && global_flag_check(virus_modifiers, SPREAD_DEAD) && !global_flag_check(virus_modifiers, DORMANT)
+	return host?.stat == DEAD && (virus_modifiers & SPREAD_DEAD) && !(virus_modifiers & DORMANT)
 
-/// The spread lane runs while the strain is in a body and either sheds airborne or keeps its
-/// course in a dead host. Every input's setter re-evaluates it: joining or leaving a body
-/// (set_body/set_host), the host dying or reviving ("host.stat"), a strain refresh
-/// (set_spread_flags/set_virus_modifiers/set_infectivity).
-OM_DERIVE_FIELD(/datum/affliction/contagion, spread_lane_wanted, list("host", "body", "spread_flags", "infectivity", "virus_modifiers", "host.stat"))
-
-/datum/affliction/contagion/reactions()
-	. = ..()
-	. += every(2 SECONDS, PROC_REF(contagion_step), when = PROC_REF(spread_lane_wanted))
-
-/datum/affliction/contagion/proc/spread_lane_wanted()
-	return !QDELETED(src) && host && body && (can_shed_airborne() || acts_in_dead_host())
+/// The spread lane runs while the strain is in a body and either sheds airborne or keeps its course in a dead host. The gate reads this strain's
+/// tracked state and the host's stat through the host relation, so the every() in CAPABILITIES parks and wakes on all of it (every_hop_watch).
+/datum/affliction/contagion/proc/spread_lane_wanted(datum/act/eval/A)
+	return host && body && (can_shed_airborne() || acts_in_dead_host())
 
 /// One lane step (every 2 s): a SPREAD_DEAD strain in a corpse keeps its
 /// course, and an airborne strain rolls infectivity and sheds (the declaration
 /// parks it once neither applies).
-/datum/affliction/contagion/proc/contagion_step(dt)
+/datum/affliction/contagion/proc/contagion_step(datum/act/timer/A)
 	var/dead_course = acts_in_dead_host()
 	var/airborne = can_shed_airborne()
 	if(dead_course)

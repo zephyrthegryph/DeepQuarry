@@ -121,6 +121,6 @@
 	if(!C || O.attached_assembly != A)
 		return FALSE
 	if(C.on_pulse)
-		holder_call(O, C.on_pulse, A)
+		holder_call(O, C.on_pulse, list(A))
 	changed(O, CHANGE_CAPABILITY)
 	return TRUE

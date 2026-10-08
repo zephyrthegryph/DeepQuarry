@@ -68,7 +68,7 @@ CAPABILITIES(/obj/effect/dq_batch_probe)
 	var/total = MATERIALIZE_CHUNK_SIZE * 2 + 10
 	main_batch = uninitialized_probes(total)
 	SSatoms.batch_trace = list()
-	SSatoms.batch_yield_probe = om_callable(src, PROC_REF(on_yield))
+	SSatoms.batch_yield_probe = list(src, PROC_REF(on_yield))
 	SSatoms.InitializeAtoms(main_batch.Copy())
 	var/datum/materialize_batch/batch = SSatoms.batch_trace[1]
 	reset_hooks()

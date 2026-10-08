@@ -14,11 +14,12 @@ TRACKED(/obj/machinery/beehive, honeycombs)
 TRACKED(/obj/machinery/beehive, closed)
 
 /// Percent.
-OM_FIELD(/obj/machinery/beehive, bee_count, 0, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/beehive/var/bee_count = 0
+TRACKED(/obj/machinery/beehive, bee_count)
 /// Timer (machine steps).
-OM_FIELD(/obj/machinery/beehive, smoked, 0, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/beehive/var/smoked = 0
+TRACKED(/obj/machinery/beehive, smoked)
 /// Bees inside or smoke still clearing: the hive has something to tick.
-OM_DERIVE_FIELD(/obj/machinery/beehive, hive_active, list("bee_count", "smoked"))
 /obj/machinery/beehive/proc/hive_active()
 	return bee_count || smoked
 

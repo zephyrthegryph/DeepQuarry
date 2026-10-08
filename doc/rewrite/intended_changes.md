@@ -3268,6 +3268,40 @@ Pinned by `code/modules/unit_tests/dq_rel_lifecycle_pins.dm` and the `dq_om_rela
   Every pin row that changes is that class: a `blocker x2` becoming the one blocker, or a probe row that only gained and lost the blocker.
 * The lightpost is a plain draw over tracked `lit` and `festive`; its light follows the look (`look.light()`, `look.light_off()`).
 
+## Batch 7b merge (fixes-small + links-hit + draw-framework on the machinery master)
+
+Pins were taken from the machinery side on every conflict and regenerated with `--bless` after the last merge; the classes below are every change that bless made.
+
+* **links-hit rows on the machinery pins** (360 `pins/` files): the `melee_hit` classes of the relations section above (`menu: Hit`, `keys:` gains `melee_hit`, `Move To Top` / `Toggle Digestable` / own-op rows on formerly empty menus, `Strike` becomes `Hit`). Where a swallow op is gone, a tool's `click: Click: Use` becomes `Click: Use item`, `Click: Toggle` (another listed op is now the best answer) or `nothing`.
+* **`hit_pins/` thermal glasses, sechailer, kinetic crusher**: the `refresh_bits: 2 -> 0` rows are gone. A draw mark no longer stays pending after the hit: the `add_overlay()` single-blocker fix (draw framework) means the emissive redraw these items queued is settled inside the hit. `refresh_queued` rows remain.
+* **Line numbers**: two `runtime while making it` rows (stardog, nikki rig) carry the line of `lifecycle_links.dm` in the stack; the link teardown call added two lines.
+* **Not blessed**: the `look_trees` row of `electronic_assembly` (it would record the pre-existing `op_clash` runtime in place of its overlay) stays as before.
+
+## Requests and bridges round 3 (2026-10-07)
+
+The effective status sources for stun, weakness/knockdown, paralysis and sleep independently veto `STAT_CAN_ACT`. Consciousness is an additional contribution driven by the existing published `set_stat` setter. Immunity masks the effective status before its contribution is evaluated. Ending one dose does not undo a different source; removing the last effective source restores admission immediately. This fixes previously admitted machine operations during impairment.
+
+The native requests preserve the same action names, prompt types, choice/default values, cancellation behavior and resulting state. Medical/security/skills notes use a conditional deletion confirmation after an empty text answer. Newscaster and message-monitor steps retain captured drafts, record identity and current-key checks. Painter only samples whether an item is inserted when opening its colour request; removing it while the question is open retains the old completion behavior. Jukebox's unused manual request helpers are removed; its native cancel continuation remains.
+
+Atmos-control Add captures the actual buffered device when naming opens; Remove captures the original name/tag map; Set reads the held tool's live buffer when the answer commits. Camera preview/retry and third-party consent remain unchanged pending their recorded framework gaps. Wall/floor frame selection, board configuration and cutout painting keep stale-target checks and actual timed effects. Empty petrification catalogues now refuse at request opening with the existing no-target message rather than entering a message-and-return effect.
+
+Magnetic-controller and traffic-controller configuration questions now use native steps. Their access checks are requirements; successful fingerprint/window effects execute at commit. Pandemic release forms carry the selected strain and reason between steps: answered No prints an unsigned form, while cancellation still prints nothing. Missing archived strains refuse at request opening with the existing error text. Alien wire splitting retains inactive-hand selection and its pickup fallback.
+
+VR transform/logout verbs dispatch native operations guarded by their actual granted verb, sampled with `read_once` so revocation cannot leave cached admission. Logout deliberately remains available while impaired. AI status retains the existing wireless-control verb gate and uses a private native continuation; core latejoin offers start on the newly completed core, and admin core selection runs on the existing admin holder with current owner/rights requirements. These are existing native continuation forms, not renamed request wrappers.
+
+Delayed atmosphere alert sounds use the existing major/minor sound sets (70/50 volume, varying pitch) directly. Delayed pod destruction uses the native `spent` primitive, while delayed singularity motion keeps its legacy callback: BYOND’s builtin step is not a callable /proc path, and no native callback replacement exists. World deferred callbacks and deadline diagnostics call their engine-owned implementations; Doppler's distinct world notice bus is preserved.
+
+No appearance bridges or snapshot pins are re-blessed in this wave.
+
+
+The frame construction graph now expresses all seventeen former transitions as native stages. It explicitly seeds loose, placed and partly built frames from their actual physical state. Anchor, board, cover, wire, glass and finish effects retain the old FRAME_* mirrors and appearance updates. Reverse edges retain their fixed material refunds; automatic ledger refunds are suppressed to prevent duplicate material return. Completing a machine transfers its actual fitted board and parts before disposing of the frame. This removes the legacy frame interaction keys in favour of native stage op keys without intending to change the construction actions.
+
+The ship helm's Emote Beyond action now uses its existing native capability block, retaining actual seven-tile reach and visibility, capability/mute checks, and all emote/admin tracing. Its old `ship_emote_beyond` interaction identifier becomes the native op key. The six otherwise unused abstract machinery interaction bases are removed after their last concrete consumer is converted.
+
+Record and message-server selections now declare their existing reference slots, matching the relation setters already used for writes. Native guards can follow those slots rather than relying on undeclared raw pointers. Frame glass admission remains material-based: generic stacks whose actual material is plain glass are accepted, preserving the old construction matcher.
+
+The existing consciousness setter now notifies the native stat layer of the actual stat variable key, so unconsciousness/death and recovery settle STAT_CAN_ACT immediately. The original publication remains. Status holds are admitted before immunity is enabled in regression fixtures: immunity rejects new holds and masks already running holds; its policy is unchanged. Native frame tool steps that were instant explicitly use wait(0), while anchor, cable, glass and cutting retain their original real delays.
+
 ## Draw sweep 3, worker B (structures)
 
 * **Catwalk: a bare write of `smooth_mask` no longer redraws different connections.** The legacy appearance proc called `update_connections()` while drawing,
@@ -3309,7 +3343,7 @@ Pinned by `code/modules/unit_tests/dq_rel_lifecycle_pins.dm` and the `dq_om_rela
 * **A wall disposal bin's offset is `look.offset()`** from its dir; turning a bin through `set_dir()` moves it (the hand `changed()` after `dir =` is gone).
 ## Batch 7b merge (fixes-small + links-hit + draw-framework on the machinery master)
 
-Pins were taken from the machinery side on every conflict and regenerated with `--bless` after the last merge; the classes below are every change that bless made.
+## Batch 8 merge (requests-and-bridges + om-fields + draw-sweep-3 on the batch 7b master)
 
 * **links-hit rows on the machinery pins** (360 `pins/` files): the `melee_hit` classes of the relations section above (`menu: Hit`, `keys:` gains `melee_hit`, `Move To Top` / `Toggle Digestable` / own-op rows on formerly empty menus, `Strike` becomes `Hit`). Where a swallow op is gone, a tool's `click: Click: Use` becomes `Click: Use item`, `Click: Toggle` (another listed op is now the best answer) or `nothing`.
 * **`hit_pins/` thermal glasses, sechailer, kinetic crusher**: the `refresh_bits: 2 -> 0` rows are gone. A draw mark no longer stays pending after the hit: the `add_overlay()` single-blocker fix (draw framework) means the emissive redraw these items queued is settled inside the hit. `refresh_queued` rows remain.
@@ -3323,3 +3357,10 @@ Pins were taken from the machinery side on every conflict and regenerated with `
 * **`connections` / `other_connections` on `/obj/structure` are `TRACKED`**: the smoothing code writes them through `set_connections()` / `set_other_connections()`, and the hand `changed(src)` after them (sandbag, `smooth_changed()`) is gone. A smoothing structure whose draw reads them redraws by itself. The two unanchored-window providers (`bay`, `eris`) no longer write all-zero connections themselves: `update_connections()` already answers all zeros for an unanchored structure.
 * **A bare `dir` write on an atom is a `tracked` lint error** (`SETTER(/atom, dir)`); 19 sites went through `set_dir()` (look apply, phase-shift animations, smite, toilet crafting, stairs, hydroponics, wall frames, disposal holders, telesci pads, mech prosfab, mob facing in `mob_movement.dm`). `Moved()` publishes a dir BYOND turned natively, only when it changed. Nothing in `code/game/machinery` or `code/modules/power` was touched (the lint found no site there).
 * **Not blessed, unchanged from the base:** the `electronic_assembly` look-tree rows, the `baton/arm` and `baton/slime` rows and the `ntnet_relay dos_failure` rows differ on the base commit too.
+Pins were regenerated with `--bless` after the last merge; only rows that change are committed (empty look-state files, the baton file's line endings and the `electronic_assembly` look tree were not rewritten: the last would record the pre-existing `op_clash` runtime in place of its tree). The classes:
+
+* **`hit_pins/` shield generator, suspension generator, blob** (draw sweep 3): a type that now draws over tracked state has its first draw queued when it is made, so the hit probe flushes it. The rows `refresh_bits: N -> 0` and `refresh_queued: 131071 -> 0` are that first flush; the old `emp 2 | nothing` row of the shield generator and the blob is replaced by them. The blob draw has no overmind in the probe, so it takes its inert look (`name: 'blob' -> 'inert blob'`, `light_range: 2 -> 0`), exactly as `base_blob.dm` draws a blob with no overmind.
+* **`look_states/` NTNet relay** (draw sweep 3 C): a hand write of `dos_failure` now redraws the relay. The rows are the sprite change `ntnet -> ntnet_off` with its emissive blocker overlay following it.
+* **`pins/` frame** (requests and bridges, native frame construction): the seventeen legacy frame transitions are native stages, so the menu rows carry the stage labels (`Wrench into place`, `Cut frame apart`), the refusals of the legacy entries are gone, and the held circuit board and material stack show the inherited item menu defaults and the `construction.build:*` keys.
+* **`pins/` ship navigation console and its dog-eye screen** (requests and bridges): the helm's Emote Beyond action is native, so a ghost far away is refused with `too far away`.
+* **`pins/` claw machine** (requests and bridges): the card PIN request is a native request, so its key `clawmachine_card_pin` is listed.

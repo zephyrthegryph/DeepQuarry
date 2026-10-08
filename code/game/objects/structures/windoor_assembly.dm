@@ -196,6 +196,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 
 /// The name follows the step: anchored, wired, near finished.
 /obj/structure/windoor_assembly/proc/update_state()
+	update_icon()
 	name = ""
 	if(built(src, STAGE_WINDOOR_ASSEMBLY_BOARDED))
 		name = "near finished "
@@ -205,9 +206,11 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 		name = "anchored "
 	name += "[secure ? "secure " : ""]windoor assembly[created_name ? " ([created_name])" : ""]"
 
-/obj/structure/windoor_assembly/draw(datum/look/look)
-	..()
-	look.state("[facing]_[secure]windoor_assembly[sprite_state()]")
+DECLARE_APPEARANCE_PROC(/obj/structure/windoor_assembly, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/windoor_assembly/appearance_overlays()
+	. = list()
+	icon_state = "[facing]_[secure]windoor_assembly[sprite_state()]"
+	. += ..()
 
 /obj/structure/windoor_assembly/handle_rotation_verbs(angle, mob/user)
 	var/wired = sprite_state() == "02"
@@ -217,6 +220,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 	if(.)
 		if(wired)
 			update_nearby_tiles(need_rebuild=1)
+		update_icon()
 
 /// Flips the windoor assembly: whether the door opens to the left or the right.
 /obj/structure/windoor_assembly/proc/flipped(datum/act/op/A)
@@ -226,5 +230,5 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 	else
 		facing = "l"
 		to_chat(A.actor, "The windoor will now slide to the left.")
-	changed(src)
+	update_icon()
 	return OP_OK

@@ -145,6 +145,8 @@ DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_dat
 	consume(src)
 	return
 
+TRACKED(/obj/structure/barricade/sandbag, connections)
+
 /obj/structure/barricade/sandbag/draw(datum/look/look)
 	..()
 	if(!material)

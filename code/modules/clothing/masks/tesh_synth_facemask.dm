@@ -12,9 +12,10 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF | INDESTRUCTIBLE | BOMB_PROOF |FREEZE_PROOF
 
 /// The wearer it is installed on (a relation view); the visor follows their state while set.
-OM_FIELD_VIEW(/obj/item/clothing/mask/synthfacemask, mob/living/carbon, maskmaster, CHANGE_EXPLICIT)
+/obj/item/clothing/mask/synthfacemask/var/mob/living/carbon/maskmaster
 
 CAPABILITIES(/obj/item/clothing/mask/synthfacemask)
+	ref_one(nameof(maskmaster))
 	every(1 SECOND, then(PROC_REF(synthfacemask_step)), when = nameof(maskmaster))
 
 /obj/item/clothing/mask/synthfacemask/equipped()

@@ -188,7 +188,7 @@
 			CI = new('icons/obj/assemblies.dmi',target,"plastic-explosive2",OBJ_LAYER+0.01)
 	halimage = CI
 	CI.append_client(our_human.client)
-	om_qdel_after(CI, rand(1,5) SECONDS) //Only seen for a brief moment.
+	after(null, rand(1,5) SECONDS, GLOBAL_PROC_REF(qdel), with = list(CI)) //Only seen for a brief moment.
 
 /datum/hallucinations/proc/event_flash_monsters()
 	PROTECTED_PROC(TRUE)
@@ -215,7 +215,7 @@
 			CI = new('icons/mob/alien.dmi',target,"alienother",TURF_LAYER)
 	halbody = CI
 	CI.append_client(our_human.client)
-	om_qdel_after(CI, rand(5,8) SECONDS) //Only seen for a brief moment.
+	after(null, rand(5,8) SECONDS, GLOBAL_PROC_REF(qdel), with = list(CI)) //Only seen for a brief moment.
 
 /datum/hallucinations/proc/event_sleeping()
 	PROTECTED_PROC(TRUE)
@@ -240,9 +240,9 @@
 /datum/hallucinations/proc/event_attacker()
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	var/attacker = our_human.create_hallucination_attacker(forced_type = /obj/effect/fake_attacker/human/attacker) // Currently just uses the attacker type for now, remove argument to use any other subtype
+	var/obj/effect/fake_attacker/attacker = our_human.create_hallucination_attacker(forced_type = /obj/effect/fake_attacker/human/attacker) // Currently just uses the attacker type for now, remove argument to use any other subtype
 	if(attacker)
-		om_qdel_after(attacker, rand(25,30) SECONDS)
+		attacker.expire(rand(25,30) SECONDS)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Xenochimera feral events
@@ -286,7 +286,7 @@
 
 	halbody = CI
 	CI.append_client(our_human.client)
-	om_qdel_after(CI, rand(5,8) SECONDS) //Only seen for a brief moment.
+	after(null, rand(5,8) SECONDS, GLOBAL_PROC_REF(qdel), with = list(CI)) //Only seen for a brief moment.
 
 /datum/hallucinations/proc/event_hear_voices()
 	PROTECTED_PROC(TRUE)

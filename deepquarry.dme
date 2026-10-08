@@ -1389,7 +1389,6 @@
 #include "code\game\machinery\machinery.dm"
 #include "code\game\machinery\machinery_fields.dm"
 #include "code\game\machinery\machinery_maintenance.dm"
-#include "code\game\machinery\machinery_interactions.dm"
 #include "code\game\machinery\machinery_power.dm"
 #include "code\game\machinery\magnet.dm"
 #include "code\game\machinery\mass_driver.dm"

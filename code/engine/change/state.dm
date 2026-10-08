@@ -422,6 +422,8 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		ctx.cancel_deleted()
 	for(var/datum/task/T as anything in S.tasks_on?.Copy())
 		T.datum_gone(D)
+	if(S.every_hop_on)
+		every_hop_forget(D)
 	for(var/datum/rx_listener/L as anything in S.listeners?.Copy())
 		rx_listener_remove(L)
 	for(var/datum/rx_listener/L as anything in S.listening?.Copy())

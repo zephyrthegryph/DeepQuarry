@@ -585,7 +585,7 @@ SETTER(/atom/movable, anchored)
 		var/turf/T = hit_atom
 		T.hitby(src, throwingdatum)
 
-/atom/movable/proc/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, list/callback) //If this returns FALSE then callback will not be called.
+/atom/movable/proc/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, then = null, datum/then_owner = null, list/then_with = null) //If this returns FALSE then then_owner.then() will not be called.
 	. = TRUE
 	if (!target || speed <= 0 || QDELETED(src) || (target.z != src.z))
 		return FALSE
@@ -599,7 +599,7 @@ SETTER(/atom/movable, anchored)
 		var/obj/item/thrown_item = src
 		real_force = thrown_item.throwforce
 
-	var/datum/thrownthing/TT = new(src, target, dir, range, speed, thrower, FALSE, real_force, FALSE, callback)
+	var/datum/thrownthing/TT = new(src, target, dir, range, speed, thrower, FALSE, real_force, FALSE, then, then_owner, then_with)
 	rel_set(src, nameof(throwing), TT)
 
 	pixel_z = 0

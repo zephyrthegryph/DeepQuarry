@@ -95,16 +95,22 @@
 	TEST_ASSERT(E.ticks >= 2, "running from creation (ran [E.ticks])")
 	TEST_ASSERT(!length(E.rx?.every_parked), "never parked")
 
-/// A proc gate cannot be trusted to announce every change, so the every() polls (never parks) and still follows the condition.
-/datum/unit_test/dq_gap/every_with_a_proc_gate_polls
-/datum/unit_test/dq_gap/every_with_a_proc_gate_polls/run_gap()
+/// A proc gate parks on the generated reads of its body (tracked vars of the holder): no timer while it is false, it wakes when a read publishes.
+/datum/unit_test/dq_gap/every_with_a_proc_gate_parks
+/datum/unit_test/dq_gap/every_with_a_proc_gate_parks/run_gap()
 	var/obj/gap_every_proc/E = allocate(/obj/gap_every_proc, run_loc_floor_bottom_left)
 	test_time(5 SECONDS)
 	TEST_ASSERT_EQUAL(E.ticks, 0, "false: it did not run")
-	TEST_ASSERT(!length(E.rx?.every_parked), "and it is polling, not parked")
+	TEST_ASSERT(length(E.rx?.every_parked), "and it is parked, holding no timer")
 	E.set_on(TRUE)
 	test_time(3 SECONDS)
 	TEST_ASSERT(E.ticks >= 2, "true: it runs (ran [E.ticks])")
+	TEST_ASSERT(!length(E.rx?.every_parked), "no longer parked")
+	E.set_on(FALSE)
+	var/seen = E.ticks
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks <= seen + 1, "false again: it stopped")
+	TEST_ASSERT(length(E.rx?.every_parked), "and parked again")
 
 /// Converted periodic (a tracked var plus every()): a pinpointer steps (and shows what it found) only while active.
 /datum/unit_test/dq_gap/periodic_pinpointer_steps_while_active
@@ -856,3 +862,58 @@
 	test_time(5 SECONDS)
 	TEST_ASSERT_NULL(test_answer(H, tank)?.key, "worn: nothing was asked")
 	TEST_ASSERT_EQUAL(suit.tank, tank, "and the tank stays in")
+
+/// A type-level every() gated on a relation var parks while unlinked (no timer), runs while linked, and parks again on unlink or on the target's death.
+/datum/unit_test/dq_gap/every_parks_on_a_relation
+/datum/unit_test/dq_gap/every_parks_on_a_relation/run_gap()
+	var/obj/gap_every_rel/E = allocate(/obj/gap_every_rel, run_loc_floor_bottom_left)
+	var/obj/item/pen/other = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(E.ticks, 0, "unlinked: it never ran")
+	TEST_ASSERT(length(E.rx?.every_parked), "and it is parked, holding no timer")
+	rel_set(E, nameof(E.target), other)
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks >= 2, "linked: it ran (ran [E.ticks])")
+	TEST_ASSERT(!length(E.rx?.every_parked), "no longer parked")
+	rel_clear(E, nameof(E.target))
+	var/seen = E.ticks
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks <= seen + 1, "unlinked again: it stopped")
+	TEST_ASSERT(length(E.rx?.every_parked), "and parked")
+	rel_set(E, nameof(E.target), other)
+	test_time(2 SECONDS)
+	qdel(other)
+	test_time(1 SECONDS)
+	seen = E.ticks
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks <= seen + 1, "the target died: the every() stopped")
+	TEST_ASSERT(length(E.rx?.every_parked), "and parked")
+
+/// A gate that reads through a relation hop (target.active) parks, wakes on the remote write, and follows the relation when it retargets.
+/datum/unit_test/dq_gap/every_parks_on_a_hop_gate
+/datum/unit_test/dq_gap/every_parks_on_a_hop_gate/run_gap()
+	var/obj/gap_every_hop/E = allocate(/obj/gap_every_hop, run_loc_floor_bottom_left)
+	var/obj/gap_every/first = allocate(/obj/gap_every, run_loc_floor_bottom_left)
+	var/obj/gap_every/second = allocate(/obj/gap_every, run_loc_floor_bottom_left)
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(E.ticks, 0, "unlinked: it never ran")
+	TEST_ASSERT(length(E.rx?.every_parked), "and it is parked, holding no timer")
+	rel_set(E, nameof(E.target), first)
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(E.ticks, 0, "linked to a target whose active is false: still parked")
+	first.set_active(TRUE)
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks >= 2, "the remote write woke it (ran [E.ticks])")
+	rel_set(E, nameof(E.target), second)
+	var/seen = E.ticks
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks <= seen + 1, "retargeted to a target that is not active: it stopped")
+	TEST_ASSERT(length(E.rx?.every_parked), "and parked")
+	first.set_active(FALSE)
+	first.set_active(TRUE)
+	seen = E.ticks
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(E.ticks, seen, "the old target is no longer followed")
+	second.set_active(TRUE)
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks > seen, "the new target is followed: its write woke it")

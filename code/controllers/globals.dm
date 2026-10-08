@@ -24,7 +24,7 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 	Initialize()
 
 	// Disposal arms the scheduler, so finish global initialization before it can build the registry.
-	om_qdel_after(exclude_these, 0)
+	after(exclude_these, 0, TYPE_PROC_REF(/datum, om_qdel_batch_self)) //signal logging isn't ready
 
 // Protected GLOB holder; never runs the parent chain (admin var-edit exploit).
 /datum/controller/global_vars/Destroy(force)

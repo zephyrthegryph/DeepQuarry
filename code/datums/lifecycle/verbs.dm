@@ -109,14 +109,14 @@
 /// deleting it first cancels the timer instead of leaving a queued strong
 /// reference behind -- the hard-delete trap QDEL_IN() works around with a
 /// handle. expire(null) only disarms (a ghost whose player came back).
-/atom/movable/proc/expire(after)
+/datum/proc/expire(after)
 	if(after_pending(src, "lifecycle_lifetime_timer"))
 		cancel_after(src, "lifecycle_lifetime_timer")
 	if(isnull(after) || QDELETED(src))
 		return
 	after(src, max(after, 0), PROC_REF(lifecycle_expire_now), key = "lifecycle_lifetime_timer")
 
-/atom/movable/proc/lifecycle_expire_now()
+/datum/proc/lifecycle_expire_now()
 	PRIVATE_PROC(TRUE)
 	ending_cause(src, END_EXPIRED)
 	qdel(src)

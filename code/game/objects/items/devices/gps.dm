@@ -29,7 +29,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 /obj/item/gps/var/tracking = FALSE
 TRACKED(/obj/item/gps, tracking)
 /// The mob carrying it (a relation view).
-OM_FIELD_VIEW(/obj/item/gps, mob, holder, CHANGE_EXPLICIT)
+/obj/item/gps/var/mob/holder
 
 /obj/item/gps/Initialize(mapload)
 	. = ..()
@@ -86,6 +86,7 @@ OM_FIELD_VIEW(/obj/item/gps, mob, holder, CHANGE_EXPLICIT)
 STAT(/obj/item/gps, operable, ALL, virtual = TRUE)
 
 CAPABILITIES(/obj/item/gps)
+	ref_one(nameof(holder))
 	// The compass refreshes while a carried GPS is tracking.
 	every(2 SECONDS, then(PROC_REF(gps_step)), when = cond_all(nameof(tracking), nameof(holder)))
 	op("power", ui_act(), then(PROC_REF(ui_act_power)))

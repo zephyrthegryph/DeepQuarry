@@ -352,7 +352,7 @@
 /mob/living/bot/proc/startPatrol()
 	var/turf/T = getPatrolTurf()
 	if(T)
-		patrol_path = om_pathfinder().default_bot_pathfinding(src, T, 1)
+		patrol_path = path_for_bot(src, T, 1)
 		if(!patrol_path)
 			patrol_path = list()
 		rel_clear(src, nameof(obstacle))
@@ -384,7 +384,7 @@
 	return
 
 /mob/living/bot/proc/calcTargetPath()
-	target_path = om_pathfinder().default_bot_pathfinding(src, get_turf(target), 0)
+	target_path = path_for_bot(src, get_turf(target), 0)
 	if(!target_path)
 		if(target && target.loc)
 			rel_add(src, nameof(ignore_list), target)

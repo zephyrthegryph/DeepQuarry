@@ -4,7 +4,7 @@ SYSTEM_DEF(runechat)
 	name = "Runechat"
 	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 
-	VAR_PRIVATE/list/message_queue = list() // om_callable() specs, oldest first
+	VAR_PRIVATE/list/message_queue = list() // rows list(owner, PROC_REF, with), oldest first
 	/// The next message to deliver while a pass runs (dequeue() keeps it pointing at the same message).
 	VAR_PRIVATE/deliver_cursor = 1
 
@@ -22,7 +22,7 @@ SYSTEM_DEF(runechat)
 	while(deliver_cursor <= length(message_queue))
 		var/list/queued_message = message_queue[deliver_cursor]
 		deliver_cursor++
-		om_run(queued_message)
+		holder_call(queued_message[1], queued_message[2], queued_message[3])
 		if(KERNEL_OVER_BUDGET)
 			step_result = STEP_YIELD
 			break

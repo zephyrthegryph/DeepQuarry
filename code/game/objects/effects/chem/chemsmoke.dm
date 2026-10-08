@@ -204,7 +204,7 @@ CAPABILITIES(/datum/effect/effect/system/smoke_spread/chem)
 	if(frames == 0)
 		frames = 1 //We will just assume that by 0 frames, the coder meant "during one frame".
 	animate(A, alpha = 0, time = frames)
-	om_qdel_after(A, frames)
+	A.expire(frames)
 
 /datum/effect/effect/system/smoke_spread/chem/proc/smokeFlow() // Smoke pathfinder. Uses a flood fill method based on zones to quickly check what turfs the smoke (airflow) can actually reach.
 

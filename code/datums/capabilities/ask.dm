@@ -148,7 +148,7 @@ GLOBAL_LIST_EMPTY(asks_open)
 	var/choices
 
 /datum/form_field/choice/ask(datum/dispatch_context/ctx)
-	var/list/L = istext(choices) ? holder_call(ctx.target, choices, ctx.user) : choices
+	var/list/L = istext(choices) ? holder_call(ctx.target, choices, list(ctx.user)) : choices
 	return ask_list(ctx.user, message || "Choose [name]:", L, title, context = ctx)
 
 /datum/form_field/text

@@ -75,7 +75,11 @@
 	var/datum/notice/turf_change/event = A
 	var/list/post_change_callbacks = event.post_change_callbacks
 
-	post_change_callbacks += list(om_callable(null, GLOBAL_PROC_REF(qdel), src))
+	post_change_callbacks += list(list(src, PROC_REF(turf_changed)))
+
+/// The parent tile has changed (post_change_callbacks): this search is stale and goes.
+/datum/search_object/proc/turf_changed(turf/new_turf)
+	spent(src)
 
 /// The item this refers to (a relation view: null once that is deleted).
 /datum/search_object/proc/item() as /atom

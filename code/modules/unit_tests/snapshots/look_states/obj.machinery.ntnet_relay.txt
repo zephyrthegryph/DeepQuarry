@@ -2,4 +2,12 @@
 /obj/machinery/ntnet_relay enabled=0 +overlay: icons/obj/stationobjs.dmi:ntnet_off:8:#000000
 /obj/machinery/ntnet_relay enabled=0 -state: ntnet
 /obj/machinery/ntnet_relay enabled=0 -overlay: icons/obj/stationobjs.dmi:ntnet:8:#000000
+/obj/machinery/ntnet_relay dos_failure=1 +state: ntnet_off
+/obj/machinery/ntnet_relay dos_failure=1 +overlay: icons/obj/stationobjs.dmi:ntnet_off:8:#000000
+/obj/machinery/ntnet_relay dos_failure=1 -state: ntnet
+/obj/machinery/ntnet_relay dos_failure=1 -overlay: icons/obj/stationobjs.dmi:ntnet:8:#000000
+/obj/machinery/ntnet_relay dos_failure=2 +state: ntnet_off
+/obj/machinery/ntnet_relay dos_failure=2 +overlay: icons/obj/stationobjs.dmi:ntnet_off:8:#000000
+/obj/machinery/ntnet_relay dos_failure=2 -state: ntnet
+/obj/machinery/ntnet_relay dos_failure=2 -overlay: icons/obj/stationobjs.dmi:ntnet:8:#000000
 

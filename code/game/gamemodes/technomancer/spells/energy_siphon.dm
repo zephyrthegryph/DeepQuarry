@@ -20,7 +20,7 @@
 	var/flow_rate = 1000 // Limits how much electricity can be drained per second.  Measured by default in god knows what.
 
 /// What the spell is currently draining (a relation view). A field: it drains every 2 s while linked.
-OM_FIELD_VIEW(/obj/item/spell/energy_siphon, atom/movable, siphoning, CHANGE_EXPLICIT)
+/obj/item/spell/energy_siphon/var/atom/movable/siphoning
 
 // the siphon stops draining its target.
 /obj/item/spell/energy_siphon/on_destroy(force)
@@ -200,5 +200,6 @@ APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon{siphoning?_dra
 	return siphoning
 
 CAPABILITIES(/obj/item/spell/energy_siphon)
+	ref_one(nameof(siphoning))
 	every(2 SECONDS, then(PROC_REF(energy_siphon_step)), when = nameof(siphoning))
 	ref_many(nameof(things_to_siphon))

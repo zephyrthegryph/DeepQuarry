@@ -157,7 +157,7 @@
 
 	animate(bar, alpha = 0, time = PROGRESSBAR_ANIMATION_TIME)
 
-	om_qdel_after(src, PROGRESSBAR_ANIMATION_TIME)
+	expire(PROGRESSBAR_ANIMATION_TIME)
 
 ///Progress bars are very generic, and what hangs a ref to them depends heavily on the context in which they're used
 ///So let's make hunting harddels easier yeah?

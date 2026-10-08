@@ -1,7 +1,10 @@
 /// Completed construction transfers only the player's installed board and parts.
 /datum/unit_test/interim_machine_frame_finalization/Run()
+	test_driver_begin()
+	defer_cleanup(src, PROC_REF(interim_native_frame_driver_end))
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	actor.enable_godmode()
 	var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)
 	var/obj/item/circuitboard/autolathe/board = allocate(/obj/item/circuitboard/autolathe, T)
 	var/obj/item/stack/cable_coil/cable = allocate(/obj/item/stack/cable_coil, T, 6)
@@ -9,18 +12,14 @@
 	frame.set_bulk_material(MAT_STEEL, 123)
 	frame.pixel_x = 3
 	frame.pixel_y = -4
-	TEST_ASSERT(interim_construction_step(frame, actor, /datum/interaction/construction/frame/anchor), "Fixture anchoring must succeed")
-	TEST_ASSERT(interim_construction_step(frame, actor, /datum/interaction/construction/frame/insert_board, board), "Fixture board insertion must succeed")
-	TEST_ASSERT(interim_construction_step(frame, actor, /datum/interaction/construction/frame/fasten_board), "Fixture board fastening must succeed")
-	TEST_ASSERT(interim_construction_step(frame, actor, /datum/interaction/construction/frame/wire, cable), "Fixture wiring must succeed")
-	var/datum/construction_graph/graph = construction_graph_of(frame)
-	var/datum/interaction/construction/finish
-	for(var/datum/interaction/construction/edge as anything in graph.edges)
-		if(edge.type == /datum/interaction/construction/frame/finish_machine)
-			finish = edge
-	TEST_ASSERT(finish, "The real frame graph must contain machine finalization")
-	TEST_ASSERT_NOTNULL(finish.why_not(actor, frame, tool), "Missing parts must refuse finalization through its requirement")
-	TEST_ASSERT(!finish.perform(actor, frame, tool), "The real interaction boundary rejects missing parts")
+	TEST_ASSERT(interim_native_frame_step(frame, actor, "construction.build:machine_frame_placed.anchor"), "Fixture anchoring must succeed")
+	TEST_ASSERT(interim_native_frame_step(frame, actor, "construction.build:machine_frame_board_in.insert_board", board), "Fixture board insertion must succeed")
+	TEST_ASSERT(interim_native_frame_step(frame, actor, "construction.build:machine_frame_fastened.fasten_board"), "Fixture board fastening must succeed")
+	TEST_ASSERT(interim_native_frame_step(frame, actor, "construction.build:machine_frame_wired.wire", cable), "Fixture wiring must succeed")
+	var/finish = "construction.build:machine_frame_finished.finish_machine"
+	TEST_ASSERT(op_plan_for(frame, finish), "The real frame graph must contain machine finalization")
+	TEST_ASSERT_NOTNULL(interim_native_frame_reason(frame, actor, finish, tool), "Missing parts must refuse finalization through its requirement")
+	TEST_ASSERT(!interim_native_frame_started(frame, actor, finish, tool), "The real interaction boundary rejects missing parts")
 	TEST_ASSERT_EQUAL(frame.state, FRAME_WIRED, "Refused completion must preserve the wired frame")
 	TEST_ASSERT_EQUAL(frame.circuit, board, "Refused completion must preserve board ownership")
 	TEST_ASSERT_EQUAL(board.loc, frame, "Refused completion must preserve physical board containment")
@@ -29,18 +28,19 @@
 	for(var/part_type in board.req_components)
 		for(var/part_number in 1 to board.req_components[part_type])
 			var/obj/item/part = allocate(part_type, T)
+			actor.drop_item()
 			TEST_ASSERT(actor.put_in_active_hand(part), "The actor must hold each real construction part")
 			var/remaining_before = frame.req_components[part_type]
-			frame.interaction_item(actor, part, null)
+			test_op_handler(frame, "interaction_item", actor, part)
 			TEST_ASSERT_EQUAL(part.loc, frame, "Part insertion must physically place the part in the frame")
 			TEST_ASSERT(part in frame.components, "The frame must own each installed part")
 			TEST_ASSERT_NULL(actor.get_active_hand(), "Insertion must release the actor's hand")
 			TEST_ASSERT_EQUAL(frame.req_components[part_type], remaining_before - 1, "Insertion must decrement the corresponding requirement exactly once")
 			installed += part
 	TEST_ASSERT_EQUAL(length(installed), 5, "The real autolathe board must require five stock parts")
-	TEST_ASSERT_NULL(finish.why_not(actor, frame, tool), "Installed parts must satisfy finalization")
+	TEST_ASSERT_NULL(interim_native_frame_reason(frame, actor, finish, tool), "Installed parts must satisfy finalization")
 	var/frame_handle = om_handle(frame)
-	var/completed = finish.traverse(frame, actor, tool)
+	var/completed = interim_native_frame_step(frame, actor, finish, tool)
 	// Register generated successors before any assertion can terminate the test.
 	own_turf_contents(T)
 	TEST_ASSERT(completed, "The complete frame must finish through the real construction edge")

@@ -46,8 +46,10 @@
 	var/gentle = FALSE
 	///How many tiles that need to be moved in order to travel to the target.
 	var/diagonal_error
-	///If a thrown thing has a callback, it can be invoked here within thrownthing. Owned: it goes with the throw.
-	var/list/callback // om_callable() spec run when the throw lands
+	///When the throw lands, then_owner.then(then_with...) runs: a PROC_REF on then_owner. Nothing runs when then_owner is gone.
+	var/then
+	var/datum/then_owner
+	var/list/then_with
 	///Mainly exists for things that would freeze a thrown object in place, like a timestop'd tile. Or a Tractor Beam.
 	var/paused = FALSE
 	///How long an object has been paused for, to be added to the travel time.
@@ -59,12 +61,13 @@
 
 CAPABILITIES(/datum/thrownthing)
 	ref_one(nameof(subject), /atom/movable, on_other_deleted = OTHER_DELETE_ME)
+	ref_one(nameof(then_owner))
 
 /// The movable this throw carries, or null.
 /datum/thrownthing/proc/throw_subject() as /atom/movable
 	return subject
 
-/datum/thrownthing/New(atom/movable/thrownthing, atom/target, init_dir, maxrange, speed, mob/thrower, diagonals_first, force, gentle, callback, target_zone)
+/datum/thrownthing/New(atom/movable/thrownthing, atom/target, init_dir, maxrange, speed, mob/thrower, diagonals_first, force, gentle, then, datum/then_owner, list/then_with, target_zone)
 	. = ..()
 	rel_set(src, nameof(subject), thrownthing)
 	observe(thrownthing, /datum/notice/living_turf_collision, src, then(PROC_REF(hit_atom)))
@@ -81,7 +84,10 @@ CAPABILITIES(/datum/thrownthing)
 	src.diagonals_first = diagonals_first
 	src.force = force
 	src.gentle = gentle
-	src.callback = callback
+	src.then = then
+	if(then_owner)
+		rel_set(src, nameof(then_owner), then_owner)
+	src.then_with = then_with
 	src.target_zone = target_zone
 	if(!QDELETED(thrower) && ismob(thrower))
 		src.target_zone = thrower.zone_sel ? thrower.zone_sel.selecting : null
@@ -212,8 +218,8 @@ CAPABILITIES(/datum/thrownthing)
 	if(t_target && !QDELETED(thrownthing))
 		thrownthing.throw_impact(t_target, src)
 
-	if (callback)
-		om_run(callback)
+	if(then && !QDELETED(then_owner))
+		holder_call(then_owner, then, then_with)
 
 	if (!QDELETED(thrownthing))
 		thrownthing.fall()

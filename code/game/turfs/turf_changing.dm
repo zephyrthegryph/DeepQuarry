@@ -89,8 +89,12 @@
 	replaced_by(src)
 
 	var/turf/W = new N( locate(src.x, src.y, src.z) )
+	// Each row is list(owner, PROC_REF, with): after(owner, 0, PROC_REF, with = with + the new turf) (a handler appends its row, see /datum/notice/turf_change).
 	for(var/list/post_change as anything in post_change_callbacks)
-		om_run_async(post_change, W)
+		var/list/row_with = post_change[3]
+		var/list/post_with = row_with ? row_with.Copy() : list()
+		post_with += W
+		after(post_change[1], 0, post_change[2], with = post_with)
 	var/turf/open/new_open_turf = W
 	if(old_air && istype(new_open_turf) && new_open_turf.air)
 		new_open_turf.air.copy_from(old_air)

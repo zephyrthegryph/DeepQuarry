@@ -346,7 +346,8 @@
 	var/list/state
 
 /// Jobs still outstanding: poll_step() runs once a tick while set.
-OM_FIELD(/datum/dq_preview_poll, polling, FALSE, CHANGE_DATUM_A)
+/datum/dq_preview_poll/var/polling = FALSE
+TRACKED(/datum/dq_preview_poll, polling)
 
 /datum/dq_preview_poll/reactions()
 	. = ..()

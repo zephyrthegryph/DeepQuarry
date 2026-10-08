@@ -32,24 +32,29 @@
 
 	refinery_transfer()
 
-/obj/machinery/reagent_refinery/vat/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/vat, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/reagent_refinery/vat/appearance_overlays()
+	. = list()
 	// GOOBY!
 	if(reagents && reagents.total_volume >= 5)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
 		switch(percent)
-			if(5 to 20) percent = 2
-			if(20 to 40) percent = 4
-			if(40 to 60) percent = 6
-			if(60 to 80) percent = 8
-			if(80 to INFINITY) percent = 10
-		look.overlay(look_overlay_image(icon, "vat_r_[percent]", color = reagents.get_color(), dir = dir))
+			if(5 to 20)			percent = 2
+			if(20 to 40) 		percent = 4
+			if(40 to 60)		percent = 6
+			if(60 to 80)		percent = 8
+			if(80 to INFINITY)	percent = 10
+		var/image/filling = image(icon, loc, "vat_r_[percent]",dir = dir)
+		filling.color = reagents.get_color()
+		. += filling
 	// Get main dir pipe
-	look.overlay(look_overlay_image(icon, "vat_cons", dir = dir))
+	var/image/pipe = image(icon, icon_state = "vat_cons", dir = dir)
+	. += pipe
 	if(anchored)
 		if(operable())
-			look.overlay(look_overlay_image(icon, "vat_dot_[ amount_per_transfer_from_this > 0 ? "on" : "off" ]"))
-		look.overlay(update_input_connection_overlays("vat_intakes"))
+			var/image/dot = image(icon, icon_state = "vat_dot_[ amount_per_transfer_from_this > 0 ? "on" : "off" ]")
+			. += dot
+		. += update_input_connection_overlays("vat_intakes")
 
 /obj/machinery/reagent_refinery/vat/examine(mob/user, infix, suffix)
 	. = ..()
@@ -75,6 +80,7 @@
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% drains %T% into \the [src].")
+	update_icon()
 	return OP_OK
 
 /obj/machinery/reagent_refinery/vat/proc/interaction_drain_container(datum/act/op/A)
@@ -86,6 +92,7 @@
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% dumps %T% into \the [src].")
+	update_icon()
 	return OP_OK
 
 /// Busy while someone is buckled in to soak.

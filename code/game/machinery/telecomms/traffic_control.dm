@@ -96,12 +96,6 @@
 			break
 	updateUsrDialog(user)
 
-/obj/machinery/computer/telecomms/traffic/proc/traffic_set_network(mob/user)
-	if(!traffic_access(user))
-		return
-	open_request(src, /datum/prompt/text, PROC_REF(network_entered), answerer = user, title = "Comm Monitor", question = "Which network do you want to view?", default = network, max_len = 15, ask_flags = ASK_CAPABLE, timeout = 0)
-	updateUsrDialog(user)
-
 /obj/machinery/computer/telecomms/traffic/proc/traffic_operation(mob/user, op)
 	if(!traffic_access(user))
 		return
@@ -157,11 +151,9 @@
 
 	updateUsrDialog(user)
 
-/obj/machinery/computer/telecomms/traffic/proc/network_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/newnet = A.answer.value
+/obj/machinery/computer/telecomms/traffic/proc/network_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/newnet = A.step_value("network")
 	if(newnet && ((user in range(1, src)) || issilicon(user)))
 		if(length(newnet) > 15)
 			set_temp(span_red("- FAILED: NETWORK TAG STRING TOO LENGHTLY -"))
@@ -179,7 +171,7 @@ CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
 	op("clear_temp", ui_act(), then(PROC_REF(ui_act_clear_temp)))
 	interface("TrafficControl", title = "Telecommunications Traffic Control", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
-	op("set_network", ui_act("set_network"), then(PROC_REF(ui_act_set_network)))
+	op("set_network", ui_act("set_network"), needs(req(PROC_REF(network_prompt_access), because = MSG(traffic/access_denied))), asks(/datum/prompt/text, step = "network", fields = list("title" = "Comm Monitor", "question" = "Which network do you want to view?", "default" = computed(PROC_REF(network_prompt_default)), "max_len" = 15, "ask_flags" = ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(ui_act_set_network)))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("flush_buffer", ui_act("flush_buffer"), then(PROC_REF(ui_act_flush_buffer)))
 	op("view_server", ui_act("view_server", arg("id", schema_text(4096))), then(PROC_REF(ui_act_view_server)))
@@ -208,3 +200,11 @@ CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
 /// SelectedServer (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/traffic/proc/SelectedServer() as /obj/machinery/telecomms/server
 	return SelectedServer
+
+MSG_DEF_SELF(traffic/access_denied, "ACCESS DENIED.")
+
+/obj/machinery/computer/telecomms/traffic/proc/network_prompt_access(datum/act/op/A)
+	return allowed(A.actor) || emagged()
+
+/obj/machinery/computer/telecomms/traffic/proc/network_prompt_default(datum/act/op/A)
+	return network

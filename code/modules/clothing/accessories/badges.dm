@@ -306,7 +306,7 @@ CAPABILITIES(/obj/item/clothing/accessory/badge/sheriff)
 	slot_flags = SLOT_TIE
 
 /// The loaded film (set at init by its owns_one starts).
-OM_FIELD_VIEW(/obj/item/clothing/accessory/dosimeter, obj/item/dosimeter_film, current_film, CHANGE_EXPLICIT)
+/obj/item/clothing/accessory/dosimeter/var/obj/item/dosimeter_film/current_film
 
 CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
 	owns_one(nameof(current_film), /obj/item/dosimeter_film, starts = /obj/item/dosimeter_film)
@@ -382,8 +382,9 @@ CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
 	icon_state = "dosimeter_film0"
 
 /// How dark the film is: 0 white, 1 darker, 2 black (same as the icon states). A dosimeter holding it
-/// reads it through its "current_film.state" derived input.
-OM_FIELD(/obj/item/dosimeter_film, state, 0, CHANGE_EXPLICIT)
+/// reads it as current_film.state.
+/obj/item/dosimeter_film/var/state = 0
+TRACKED(/obj/item/dosimeter_film, state)
 
 /obj/item/dosimeter_film/proc/update_state(tostate)
 	icon_state = tostate

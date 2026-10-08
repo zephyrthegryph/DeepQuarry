@@ -401,7 +401,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 		template().add_roof(above_location)
 	template().annihilate_plants(deploy_location)
 	// The template loads as a job; its lighting is built when it has (the capsule is consumed meanwhile).
-	template().load_async(deploy_location, TRUE, om_callable(template(), TYPE_PROC_REF(/datum/map_template/shelter, shelter_loaded), deploy_location.x, deploy_location.y, deploy_location.z))
+	template().load_async(deploy_location, TRUE, TYPE_PROC_REF(/datum/map_template/shelter, shelter_loaded), template(), list(deploy_location.x, deploy_location.y, deploy_location.z))
 	consume(src, user)
 
 /obj/item/survivalcapsule/examine(mob/user)

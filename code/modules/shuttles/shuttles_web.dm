@@ -31,7 +31,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	rel_set(src, nameof(web_master), new web_master_type(src))
 	build_destinations()
 	if(autopilot)
-		shuttle_flags_add(SHUTTLE_FLAGS_PROCESS)
+		set_shuttle_flags(shuttle_flags | SHUTTLE_FLAGS_PROCESS)
 		set_process_state(DO_AUTOPILOT)
 		if(autopilot_first_delay)
 			autopilot_delay = autopilot_first_delay
@@ -130,7 +130,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 		if(autopilot)
 			return
 		autopilot = TRUE
-		shuttle_flags_add(SHUTTLE_FLAGS_PROCESS)
+		set_shuttle_flags(shuttle_flags | SHUTTLE_FLAGS_PROCESS)
 		SSshuttles.process_shuttles |= src
 		autopilot_delay = initial(autopilot_delay)
 		if(process_state == IDLE_STATE)
@@ -139,7 +139,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 		if(!autopilot)
 			return
 		autopilot = FALSE
-		shuttle_flags_remove(SHUTTLE_FLAGS_PROCESS)
+		set_shuttle_flags(shuttle_flags & ~SHUTTLE_FLAGS_PROCESS)
 		SSshuttles.process_shuttles -= src
 		if (process_state == DO_AUTOPILOT)
 			set_process_state(initial(process_state))

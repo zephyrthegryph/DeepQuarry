@@ -243,7 +243,7 @@ GLOBAL_VAR(ert_loaded)
 		if(!istype(MT))
 			log_mapping("ERT Area is not a valid map template!")
 		else
-			MT.load_new_z_async(TRUE, om_callable(null, GLOBAL_PROC_REF(ert_load_finished)))
+			MT.load_new_z_async(TRUE, GLOBAL_PROC_REF(ert_load_finished))
 
 /datum/prompt/choice/admin_response_team_replay
 	timeout = 0

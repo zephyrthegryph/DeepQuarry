@@ -18,7 +18,8 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-OM_FIELD(/obj/item/uv_light, on, FALSE, CHANGE_EXPLICIT)
+/obj/item/uv_light/var/on = FALSE
+TRACKED(/obj/item/uv_light, on)
 
 CAPABILITIES(/obj/item/uv_light)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))

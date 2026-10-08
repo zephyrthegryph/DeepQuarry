@@ -127,13 +127,17 @@
 	var/opened = 0
 	var/datum/shuttle/autodock/overmap/parent_shuttle
 	var/base_tank = /obj/item/tank/phoron
+	/// Whether a tank sits in the port, kept for the look.
+	var/loaded = FALSE
 
 TRACKED(/obj/structure/fuel_port, opened)
+TRACKED(/obj/structure/fuel_port, loaded)
 
 /obj/structure/fuel_port/Initialize(mapload)
 	. = ..()
 	if(base_tank)
 		new base_tank(src)
+	set_loaded(contents_count(src) > 0)
 
 /obj/structure/fuel_port/heavy
 	base_tank = /obj/item/tank/phoron/pressurized
@@ -151,12 +155,12 @@ TRACKED(/obj/structure/fuel_port, opened)
 		return TRUE
 	else if(contents_count(src) > 0)
 		user.put_in_hands(contents[1])
-		changed(src) // the port draws full or empty from what it holds
+		set_loaded(contents_count(src) > 0)
 	return TRUE
 
 /obj/structure/fuel_port/draw(datum/look/look)
 	if(opened)
-		if(contents_count(src) > 0)
+		if(loaded)
 			look.state(icon_full)
 		else
 			look.state(icon_empty)
@@ -175,7 +179,7 @@ TRACKED(/obj/structure/fuel_port, opened)
 		if(contents_count(src) == 0)
 			user.unEquip(W, src)
 			W.forceMove(src)
-			changed(src) // the port draws full or empty from what it holds
+			set_loaded(contents_count(src) > 0)
 	return OP_PASS
 
 /obj/structure/fuel_port/crowbar_act(mob/user, obj/item/tool)

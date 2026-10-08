@@ -27,7 +27,8 @@
 
 	var/burn_time = 20 //if the rag burns for too long it turns to ashes
 
-OM_FIELD(/obj/item/reagent_containers/glass/rag, rag_lit, FALSE, CHANGE_EXPLICIT)
+/obj/item/reagent_containers/glass/rag/var/rag_lit = FALSE
+TRACKED(/obj/item/reagent_containers/glass/rag, rag_lit)
 
 // A rag is not a container that is poured and drunk from: it soaks up from a tank or a bucket, wrings out into an open container (or onto the floor), wipes
 // things and people, smothers somebody whose mouth is aimed at, and is set alight by a flame when it is soaked in spirits or fuel (wiper(), and the ops
@@ -49,6 +50,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/rag)
 	op("light", item(/obj/item/flame), when(cond_not(nameof(rag_lit))), label("Light it"), then(PROC_REF(lit_by_flame)))
 	op("rub", at_target(/mob/living), priority(OP_PRIORITY_PART), label("Use on"), begins(PROC_REF(rub_begins)), wait(PROC_REF(rub_wait)), then(PROC_REF(rubbed)))
 	every(2 SECONDS, then(PROC_REF(rag_step)), when = nameof(rag_lit))
+	on_change(nameof(rag_lit), ANY, then(PROC_REF(lit_changed)))
 
 MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U% begins to wring out %I%.")
 
@@ -102,14 +104,13 @@ MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U
 	else
 		name = "dry [initial(name)]"
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/rag, TYPE_PROC_REF(/atom, appearance_overlays), list("rag_lit"))
-/obj/item/reagent_containers/glass/rag/appearance_overlays()
-	. = list()
-	if(rag_lit)
-		icon_state = "raglit"
-	else
-		icon_state = "rag"
+/// The look: the rag, lit or not.
+/obj/item/reagent_containers/glass/rag/draw(datum/look/look)
+	..()
+	look.state(rag_lit ? "raglit" : "rag")
 
+/// A bottle draws its stuffed rag as an underlay, so it redraws when the rag catches or goes out.
+/obj/item/reagent_containers/glass/rag/proc/lit_changed(datum/act/A)
 	var/obj/item/reagent_containers/food/drinks/bottle/B = loc
 	if(istype(B))
 		B.update_icon()
