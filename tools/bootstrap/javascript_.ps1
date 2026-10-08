@@ -42,6 +42,15 @@ function Get-Bun {
         Remove-Item $BunTargetDir -Recurse -Force
     }
 
+    # Work in a private temp dir and rename into place, so concurrent bootstraps sharing the
+    # cache never see (or race on) a half-downloaded Bun.
+    $FinalDir = $BunTargetDir
+    $TempDir = "$BunTargetDir.tmp-$PID"
+    $script:BunTargetDir = $TempDir
+    $script:BunZip = "$TempDirun.zip"
+    $BunTargetDir = $TempDir
+    $BunZip = $script:BunZip
+
     $BunSource = "https://github.com/oven-sh/bun/releases/download/bun-v$BunVersion/$BunRelease.zip"
 
     Write-Output "Downloading Bun v$BunVersion$BunTag"
@@ -69,6 +78,16 @@ function Get-Bun {
 
     Remove-Item $BunZip -Force
     Remove-Item "$BunTargetDir\$BunRelease" -Recurse -Force
+
+    try {
+        Move-Item $TempDir $FinalDir -ErrorAction Stop
+    } catch {
+        # Another bootstrap won the race; use theirs.
+        Remove-Item $TempDir -Recurse -Force -ErrorAction SilentlyContinue
+        if (-not (Test-Path "$FinalDirun.exe" -PathType Leaf)) { throw }
+    }
+    $script:BunTargetDir = $FinalDir
+    $script:BunZip = "$FinalDirun.zip"
 }
 
 # For CPU detection (Bun needs avx2 instructions)
@@ -143,6 +162,20 @@ $BaseDir = Split-Path $script:MyInvocation.MyCommand.Path
 $Cache = "$BaseDir\.cache"
 if ($Env:TG_BOOTSTRAP_CACHE) {
     $Cache = $Env:TG_BOOTSTRAP_CACHE
+}
+# Bun is shared across worktrees by version: DQ_BUN_CACHE, else E:\dq-cache\bun when E: exists.
+# Falls back to the per-worktree cache if the shared dir cannot be created.
+$SharedBunCache = $Env:DQ_BUN_CACHE
+if (-not $SharedBunCache -and (Test-Path "E:\")) {
+    $SharedBunCache = "E:\dq-cache\bun"
+}
+if ($SharedBunCache -and $SharedBunCache -ne "off") {
+    try {
+        New-Item $SharedBunCache -ItemType Directory -Force -ErrorAction Stop | Out-Null
+        $Cache = $SharedBunCache
+    } catch {
+        Write-Output "Shared Bun cache $SharedBunCache unavailable; using $Cache"
+    }
 }
 $BunVersion = Get-VariableFromFile -Path "$BaseDir\..\..\dependencies.sh" -Key "BUN_VERSION"
 $BunPlatform = "bun-windows-x64"

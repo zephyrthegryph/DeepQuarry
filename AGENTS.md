@@ -230,6 +230,9 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   that still tracks them. `deepquarry.dme` and `_unit_tests.dm` merge by union. `doc/rewrite/agent_workflow.md`.
 - Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
+- **Shared build caches** (`doc/testing.md` "Shared build caches"): the analyzer builds in one shared cargo
+  target (`DQ_ANALYZE_TARGET`), Bun lives in a shared per-version dir (`DQ_BUN_CACHE`), and any step over
+  60 s prints `still running: <step> (<elapsed>)` every minute; a silent long step is not a hang.
 
 ### 4a. Testing (full reference: `doc/testing.md`)
 
