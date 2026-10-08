@@ -23,6 +23,7 @@ TRACKED(/obj/item/gripper, shown_item)
 		rel_set(src, nameof(held_item), new_item)
 	else if(had_item)
 		rel_clear(src, nameof(held_item))
+	set_shown_item(held_item) // the look follows the held item (a relation write redraws nothing by itself)
 	var/holding_item = get_wrapped_item()
 	// Feedback
 
@@ -385,7 +386,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, INTERACT_USE(null, PROC_REF(interaction_
 
 /obj/item/gripper/draw(datum/look/look)
 	..()
-	var/obj/item/wrapped = get_wrapped_item()
+	var/obj/item/wrapped = shown_item
 	if(!wrapped)
 		return
 	look.watch(wrapped)
