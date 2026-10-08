@@ -144,7 +144,7 @@
 	refresh_flush()
 	TEST_ASSERT_EQUAL(T.icon_state, "[T.icon_living]-2", "a full turkeygirl shows the fullest state (was [plain])")
 
-/// Deleting a worm out of the world leaves no severed head behind, and deleting a blob core takes its overmind with it.
+/// Deleting a worm's head takes its body with it (no severed head is left to delete again), and deleting a blob core takes its overmind with it.
 /datum/unit_test/dq_draw_destroy_leaves_nothing_behind
 
 /datum/unit_test/dq_draw_destroy_leaves_nothing_behind/Run()
@@ -157,7 +157,7 @@
 	var/after = 0
 	for(var/mob/living/simple_mob/animal/space/space_worm/head/severed/H in world)
 		after++
-	TEST_ASSERT_EQUAL(after, before, "deleting a worm leaves no severed head")
+	TEST_ASSERT_EQUAL(after, before, "deleting a worm's head leaves no severed head")
 	var/obj/structure/blob/core/core = allocate(/obj/structure/blob/core, T)
 	if(!core.overmind)
 		core.create_overmind(null, TRUE) // an AI core makes its overmind at once
@@ -171,7 +171,8 @@
 
 /datum/unit_test/dq_draw_gripper_redraws_on_held_item/Run()
 	var/turf/T = test_floor()
-	var/obj/item/gripper/G = allocate(/obj/item/gripper, T)
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
+	var/obj/item/gripper/G = allocate(/obj/item/gripper, R)
 	var/obj/item/pen/P = allocate(/obj/item/pen, T)
 	refresh_flush()
 	var/before = length(G.overlays)
