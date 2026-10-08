@@ -148,7 +148,8 @@ CAPABILITIES(/datum/generated_station_materialization_job)
 	var/datum/callback_owner = then_owner
 	var/list/callback_with = then_with
 	spent(src)
-	after_done(callback_owner, callback, callback_with, result)
+	if(callback)
+		after(callback_owner, 0, callback, with = (callback_with || list()) + list(result))
 
 #undef GENERATED_STATION_TICK_BUDGET_NORMAL
 #undef GENERATED_STATION_TICK_BUDGET_FAST

@@ -22,9 +22,7 @@ SYSTEM_DEF(runechat)
 	while(deliver_cursor <= length(message_queue))
 		var/list/queued_message = message_queue[deliver_cursor]
 		deliver_cursor++
-		var/datum/queued_owner = queued_message[1]
-		if(!QDELETED(queued_owner))
-			call(queued_owner, queued_message[2])(arglist(queued_message[3] || list()))
+		holder_call(queued_message[1], queued_message[2], queued_message[3])
 		if(KERNEL_OVER_BUDGET)
 			step_result = STEP_YIELD
 			break

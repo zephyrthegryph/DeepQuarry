@@ -588,7 +588,7 @@ CAPABILITIES(/datum/construction_ladder)
 		return
 	if(state_get)
 		if(state_set)
-			holder_call(target, state_set, state)
+			holder_call(target, state_set, list(state))
 		return
 	if(state_var)
 		target.vars[state_var] = state // ALLOW(api): a ladder names the var holding its stage
@@ -891,7 +891,7 @@ CAPABILITIES(/datum/construction_ladder)
 	if(.)
 		return
 	for(var/list/need as anything in step_needs)
-		var/answer = holder_call(target, need[1], actor, held)
+		var/answer = holder_call(target, need[1], list(actor, held))
 		if(istext(answer))
 			return answer
 		if(!answer)
@@ -909,7 +909,7 @@ CAPABILITIES(/datum/construction_ladder)
 /datum/interaction/capability/construction_step/pay_cost(mob/actor, atom/target, obj/item/held)
 	if(graph.start_proc)
 		// FALSE (not null) stops the step before its cost: a shock, a refusal only known now.
-		var/started = holder_call(target, graph.start_proc, actor, held)
+		var/started = holder_call(target, graph.start_proc, list(actor, held))
 		if(!isnull(started) && !started)
 			return FALSE
 	if(start_sfx)
@@ -970,7 +970,7 @@ CAPABILITIES(/datum/construction_ladder)
 /// The stage this step reaches from `state` on `target`.
 /datum/interaction/capability/construction_step/proc/next_state(atom/target, state)
 	if(next_proc)
-		return holder_call(target, next_proc, state)
+		return holder_call(target, next_proc, list(state))
 	return to_state
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -1001,7 +1001,7 @@ GLOBAL_VAR_INIT(dq_ladder_instant, FALSE)
 	var/datum/ladder_stage/entered = graph.stage_named(after)
 	// on_leave runs while the holder is still in the stage it leaves; FALSE (not null) refuses.
 	if(left?.on_leave && left != entered)
-		var/leaving = holder_call(target, left.on_leave, actor, held, after)
+		var/leaving = holder_call(target, left.on_leave, list(actor, held, after))
 		if(QDELETED(target) || (!isnull(leaving) && !leaving))
 			return FALSE
 	var/was_anchored
@@ -1021,7 +1021,7 @@ GLOBAL_VAR_INIT(dq_ladder_instant, FALSE)
 		if(QDELETED(target))
 			break
 		// FALSE (not null: a plain helper returns null) refuses: the stage and anchoring go back.
-		var/result = holder_call(target, hook, actor, held, before)
+		var/result = holder_call(target, hook, list(actor, held, before))
 		if(!isnull(result) && !result)
 			if(!QDELETED(target))
 				graph.set_state(target, before)
@@ -1041,7 +1041,7 @@ GLOBAL_VAR_INIT(dq_ladder_instant, FALSE)
 		replace_with(arglist(replace_args))
 	// A turf that changed into something else (a cut-open wall) no longer has the graph's procs.
 	if(graph.after_proc && !QDELETED(target) && hascall(target, graph.after_proc))
-		holder_call(target, graph.after_proc, actor, before, after)
+		holder_call(target, graph.after_proc, list(actor, before, after))
 	return TRUE
 
 /// Sets the holder's anchoring for `stage`, when the ladder says it.

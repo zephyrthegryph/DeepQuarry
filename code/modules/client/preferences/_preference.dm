@@ -482,7 +482,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 // coalesce. Pass the owner, a PROC_REF on it and its arguments: update_many(src, PROC_REF(my_proc), list(arg1, arg2, ...)).
 /datum/preferences/proc/update_many(datum/owner, handler, list/with = null)
 	begin_update_batch()
-	call(owner, handler)(arglist(with || list()))
+	holder_call(owner, handler, with)
 	end_update_batch()
 
 /datum/preferences/proc/update_preference_by_type(preference_type, preference_value)

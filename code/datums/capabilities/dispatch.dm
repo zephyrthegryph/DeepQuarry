@@ -172,15 +172,20 @@ GLOBAL_VAR(refuse_capture)
 		log_game(line)
 
 /**
- * Calls a holder proc ref with `...`: a type proc of `holder` (call(holder, proc_ref)(...)), or a global proc that
- * takes the holder as its first argument (call(proc_ref)(holder, ...)). Capability handlers, name procs and
+ * Calls a holder proc ref with the arguments in `with` (the shape of after(owner, delay, PROC_REF, with = ...)): a type proc of
+ * `holder` (call(holder, proc_ref)(with...)), or a global proc that takes the holder as its first argument (call(proc_ref)(holder, with...)).
+ * Nothing is called, and null returned, when `holder` is gone. The proc is a PROC_REF()/TYPE_PROC_REF()/GLOBAL_PROC_REF() (or one stored
+ * from them), never a string literal. Capability handlers, name procs and
  * predicates are global procs of that form rather than procs on /atom: BYOND gives every type a slot for every
  * proc it inherits, so a proc declared on /atom costs each of the ~22k atom types memory (about 0.55 MB a proc),
  * while a global proc costs one entry. dispatch_call() passes a global handler the holder as `holder`.
  */
-/proc/holder_call(datum/holder, proc_ref, ...)
+/proc/holder_call(datum/holder, proc_ref, list/with = null)
+	if(QDELETED(holder))
+		return null
 	if(IS_GLOBAL_PROC_REF(proc_ref))
-		var/list/call_args = args.Copy(2)
-		call_args[1] = holder
+		var/list/call_args = list(holder)
+		if(with)
+			call_args += with
 		return call(proc_ref)(arglist(call_args))
-	return call(holder, proc_ref)(arglist(args.Copy(3)))
+	return call(holder, proc_ref)(arglist(with || list()))

@@ -162,7 +162,8 @@ CAPABILITIES(/datum/generated_station_planner)
 
 /datum/generated_station_planner/proc/plan_async_end(list/state, datum/generated_station_spec/spec)
 	state["spec"] = spec
-	after_done(state["owner"], state["then"], state["with"], spec)
+	if(state["then"])
+		after(state["owner"], 0, state["then"], with = (state["with"] || list()) + list(spec))
 
 /// The plan's array sections, read a page at a time by plan_fetch_slice().
 GLOBAL_LIST_INIT(generated_station_plan_sections, list("departments", "nodes", "rooms", "doors", "edges", "tile_rows", "content_rooms", "fixtures", "networks"))

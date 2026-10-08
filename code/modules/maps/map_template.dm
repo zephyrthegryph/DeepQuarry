@@ -153,7 +153,8 @@ CAPABILITIES(/datum/map_template)
 /// load() as a job: once the template has loaded, after(owner, 0, then, with = with + TRUE or FALSE) runs.
 /datum/map_template/proc/load_async(turf/T, centered = FALSE, then = null, datum/owner = null, list/with = null)
 	if(!T)
-		after_done(owner, then, with, FALSE)
+		if(then)
+			after(owner, 0, then, with = (with || list()) + list(FALSE))
 		return null
 	var/datum/map_load/M = new(src, MAP_LOAD_AT, centered, T, then, owner, with)
 	return M.submit()

@@ -120,7 +120,8 @@ CAPABILITIES(/datum/map_load)
 /datum/map_load/proc/finished(datum/act/timer/A)
 	if(GLOB.map_load_active == src)
 		GLOB.map_load_active = null
-	after_done(then_owner, then, then_with, result)
+	if(then)
+		after(then_owner, 0, then, with = (then_with || list()) + list(result))
 	then = null
 	rel_clear(src, nameof(then_owner))
 	then_with = null

@@ -489,7 +489,7 @@ GLOBAL_VAR(dq_test_select_names)
 	/// Original config values set_config() changed, each boxed in a one-element
 	/// list (so a saved null is still a saved value); restored on destroy.
 	var/tmp/list/saved_configs
-	/// Rows list(target, PROC_REF, args...) defer_cleanup() queued; run last-first on destroy.
+	/// Rows list(target, PROC_REF, with) defer_cleanup() queued; run last-first on destroy.
 	var/tmp/list/deferred_cleanups
 
 /// A stable, deterministic seed for a test's own name: same input, same
@@ -616,7 +616,15 @@ GLOBAL_VAR(dq_test_select_names)
 /// even if a TEST_ASSERT returned from Run() early or Run() runtimed. For cleanup that isn't a
 /// qdel(): releasing a site, unregistering from a global list. A null target calls a global proc.
 /datum/unit_test/proc/defer_cleanup(datum/target, proc_ref, ...)
-	LAZYADD(deferred_cleanups, list(args.Copy()))
+	var/list/with = length(args) > 2 ? args.Copy(3) : null
+	if(target)
+		LAZYADD(deferred_cleanups, list(list(target, proc_ref, with)))
+	else
+		LAZYADD(deferred_cleanups, list(list(src, TYPE_PROC_REF(/datum/unit_test, run_global_cleanup), list(proc_ref) + with)))
+
+/// A deferred cleanup that is a global proc taking no holder: defer_cleanup(null, GLOBAL_PROC_REF(x), args...).
+/datum/unit_test/proc/run_global_cleanup(proc_ref, ...)
+	call(proc_ref)(arglist(args.Copy(2)))
 
 /datum/unit_test/proc/run_deferred_cleanups()
 	var/list/pending = deferred_cleanups
@@ -624,14 +632,7 @@ GLOBAL_VAR(dq_test_select_names)
 	for(var/i in length(pending) to 1 step -1)
 		try
 			var/list/row = pending[i]
-			if(row[1])
-				if(!QDELETED(row[1]))
-					if(IS_GLOBAL_PROC_REF(row[2]))
-						call(row[2])(arglist(list(row[1]) + row.Copy(3)))
-					else
-						call(row[1], row[2])(arglist(row.Copy(3)))
-			else
-				call(row[2])(arglist(row.Copy(3)))
+			holder_call(row[1], row[2], row[3])
 		catch(var/exception/e)
 			// Teardown runs after the test's result is logged: fail the run, not just the test.
 			log_world("::error::UNIT TEST CLEANUP RUNTIME: [type]: [e.name] at [e.file]:[e.line]")

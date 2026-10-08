@@ -124,7 +124,7 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 	for(var/key in def.commands)
 		var/value = data[key]
 		if(!isnull(value))
-			holder_call(holder, def.commands[key], value, key)
+			holder_call(holder, def.commands[key], list(value, key))
 	if(!isnull(data["init"]))
 		holder.name = data["init"]
 		return

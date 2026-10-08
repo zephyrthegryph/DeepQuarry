@@ -312,7 +312,8 @@ CAPABILITIES(/datum/system/expedition)
 /datum/system/expedition/proc/generation_z_ready(datum/expedition_mission/mission, difficulty, datum/shuttle/autodock/overmap/assigned_shuttle, obj/machinery/computer/shuttle_control/explore/origin_console, datum/flight_plan/flight_plan, then, datum/then_owner, list/then_with, gen_started, z, list/needs_wipe = null)
 	if(!isnum(z) || z < 1)
 		log_world("Expedition: failed to acquire a z-level for a new site.")
-		after_done(then_owner, then, then_with, null)
+		if(then)
+			after(then_owner, 0, then, with = (then_with || list()) + list(null))
 		return
 	var/list/generation = list(
 		"mission" = mission,
@@ -382,7 +383,8 @@ CAPABILITIES(/datum/system/expedition)
 
 /datum/system/expedition/proc/generation_publish(list/generation, datum/generated_station_spec/station_spec, datum/generated_station_materialization/station_materialization)
 	var/datum/expedition_site/site = publish_generated_site(generation["mission"], generation["difficulty"], generation["shuttle"], generation["console"], generation["plan"], generation["z"], generation["started"], generation["zalloc"], generation["seed"], station_spec, station_materialization, generation["yields"], generation["elapsed"])
-	after_done(generation["then_owner"], generation["then"], generation["then_with"], site)
+	if(generation["then"])
+		after(generation["then_owner"], 0, generation["then"], with = (generation["then_with"] || list()) + list(site))
 
 /// wipe_z() as lane work: a turf at a time within the scheduler's budget, then src.on_done(on_done_with...).
 /datum/system/expedition/proc/wipe_z_async(z, on_done, list/on_done_with = null)

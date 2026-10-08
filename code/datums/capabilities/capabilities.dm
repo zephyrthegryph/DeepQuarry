@@ -457,7 +457,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive
 
 /datum/interaction/capability/display_name(mob/actor, atom/target)
 	if(name_proc)
-		return holder_call(target, name_proc, actor)
+		return holder_call(target, name_proc, list(actor))
 	return name
 
 /// A plain click reaches an op with a `click_with` rule only holding one of those items (a card swiped across a

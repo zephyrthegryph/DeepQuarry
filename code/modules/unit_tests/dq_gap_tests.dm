@@ -888,3 +888,32 @@
 	test_time(3 SECONDS)
 	TEST_ASSERT(E.ticks <= seen + 1, "the target died: the every() stopped")
 	TEST_ASSERT(length(E.rx?.every_parked), "and parked")
+
+/// A gate that reads through a relation hop (target.active) parks, wakes on the remote write, and follows the relation when it retargets.
+/datum/unit_test/dq_gap/every_parks_on_a_hop_gate
+/datum/unit_test/dq_gap/every_parks_on_a_hop_gate/run_gap()
+	var/obj/gap_every_hop/E = allocate(/obj/gap_every_hop, run_loc_floor_bottom_left)
+	var/obj/gap_every/first = allocate(/obj/gap_every, run_loc_floor_bottom_left)
+	var/obj/gap_every/second = allocate(/obj/gap_every, run_loc_floor_bottom_left)
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(E.ticks, 0, "unlinked: it never ran")
+	TEST_ASSERT(length(E.rx?.every_parked), "and it is parked, holding no timer")
+	rel_set(E, nameof(E.target), first)
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(E.ticks, 0, "linked to a target whose active is false: still parked")
+	first.set_active(TRUE)
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks >= 2, "the remote write woke it (ran [E.ticks])")
+	rel_set(E, nameof(E.target), second)
+	var/seen = E.ticks
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks <= seen + 1, "retargeted to a target that is not active: it stopped")
+	TEST_ASSERT(length(E.rx?.every_parked), "and parked")
+	first.set_active(FALSE)
+	first.set_active(TRUE)
+	seen = E.ticks
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(E.ticks, seen, "the old target is no longer followed")
+	second.set_active(TRUE)
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks > seen, "the new target is followed: its write woke it")

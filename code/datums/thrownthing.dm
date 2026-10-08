@@ -223,7 +223,7 @@ CAPABILITIES(/datum/thrownthing)
 		thrownthing.throw_impact(t_target, src)
 
 	if(then && !QDELETED(then_owner))
-		call(then_owner, then)(arglist(then_with || list()))
+		holder_call(then_owner, then, then_with)
 
 	if (!QDELETED(thrownthing))
 		thrownthing.fall()

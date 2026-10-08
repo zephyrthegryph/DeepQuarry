@@ -44,7 +44,7 @@
 
 /datum/effect_remover/proc/do_remove_effects(obj/effect/target, mob/living/user)
 	if(on_clear && !QDELETED(owner))
-		holder_call(owner, on_clear, target, user)
+		holder_call(owner, on_clear, list(target, user))
 
 	if(!QDELETED(target))
 		spent(target, user)

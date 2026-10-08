@@ -101,7 +101,7 @@
 	active_batch = null
 	clear_tracked_initalize(batch.source)
 	if(probe)
-		holder_call(probe[1], probe[2], batch)
+		holder_call(probe[1], probe[2], list(batch))
 
 /// Resumes a suspended frame.
 /datum/system/atoms/proc/batch_resume(datum/materialize_batch/batch)

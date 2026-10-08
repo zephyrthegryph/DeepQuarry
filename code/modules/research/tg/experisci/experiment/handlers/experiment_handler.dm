@@ -439,7 +439,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 
 /datum/experiment_handler/proc/ui_act_start_experiment_callback(datum/act/op/A)
 	if(start_experiment && !QDELETED(owner))
-		holder_call(owner, start_experiment, selected_experiment())
+		holder_call(owner, start_experiment, list(selected_experiment()))
 
 
 /// the selected_experiment this refers to (a relation view: null once it is deleted).

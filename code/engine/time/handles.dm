@@ -274,7 +274,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// stored call never keeps what it names alive -- the replacement for CALLBACK / /datum/callback,
 /// whose strong references were invisible to ownership. Returns list(callee handle or null for a
 /// global proc, proc ref, captured args, positions), or null when an argument is already gone.
-/// Store it in any var; run it with om_run(). Only the om_watch probes still use it (machinery lane): new code takes then =, owner = and with = (after_done()).
+/// Store it in any var; run it with om_run(). Only the om_watch probes still use it (machinery lane): new code takes then =, owner = and with = and calls after(owner, 0, then, with = ...).
 /proc/om_callable(datum/target, proc_ref, ...)
 	var/list/call_args = length(args) > 2 ? args.Copy(3) : null
 	var/list/capture = call_args ? capture_args(call_args) : list(null, null)

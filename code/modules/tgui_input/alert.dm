@@ -187,7 +187,8 @@ CAPABILITIES(/datum/tgui_alert/async)
 /datum/tgui_alert/async/set_choice(choice)
 	. = ..()
 	if(!isnull(src.choice))
-		after_done(then_owner, then, then_with, src.choice)
+		if(then)
+			after(then_owner, 0, then, with = (then_with || list()) + list(src.choice))
 
 /datum/tgui_alert/async/wait()
 	return

@@ -426,3 +426,19 @@ CAPABILITIES(/obj/gap_every_rel)
 
 /obj/gap_every_rel/proc/tick(datum/act/timer/A)
 	ticks++
+
+/// A type-level every() whose gate reads through a relation hop (target.active): it parks, follows the relation when it retargets, and wakes on the remote write.
+/obj/gap_every_hop
+	name = "gap every hop target"
+	var/obj/gap_every/target
+	var/ticks = 0
+
+CAPABILITIES(/obj/gap_every_hop)
+	ref_one(nameof(target))
+	every(1 SECOND, then(PROC_REF(tick)), when = PROC_REF(target_active))
+
+/obj/gap_every_hop/proc/target_active(datum/act/eval/A)
+	return target && target.active
+
+/obj/gap_every_hop/proc/tick(datum/act/timer/A)
+	ticks++
