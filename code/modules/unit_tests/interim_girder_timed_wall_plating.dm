@@ -22,7 +22,7 @@
 	TEST_ASSERT_EQUAL(girder.girder_material, steel, "the actual support girder has its declared steel material")
 	TEST_ASSERT(user.put_in_active_hand(sheets), "the actor holds the real wall-plating sheets")
 	TEST_ASSERT(!user.incapacitated(), "the actual actor is capable of construction")
-	girder.interaction_item(user, sheets, null)
+	test_op_handler(girder, "interaction_item", user, sheets)
 	TEST_ASSERT(LAZYLEN(user.do_afters), "the real material interaction starts a timed wall-plating action")
 	TEST_ASSERT_EQUAL(sheets.get_amount(), start_amount, "starting actual plating consumes no sheet early")
 	scheduler_advance((2 SECONDS) / (1 SECOND))
