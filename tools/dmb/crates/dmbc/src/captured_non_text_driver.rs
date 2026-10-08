@@ -121,6 +121,73 @@ impl<R> CapturedNonTextOutput<R> {
         Ok(())
     }
 }
+/// Executable handoff with parsed map documents released before lowering/linking.
+pub struct PreparedNonTextOutput<R> {
+    pub resolver: NativeResourceResolver<R>,
+    pub symbols: SymbolTable,
+    pub artifacts: Vec<InitializationArtifact>,
+    pub resource_search_context: u128,
+    stage: crate::non_text_output::PreparedOutputStage,
+    resource_catalog: dm_resources::catalog::ResourceCatalog,
+    resource_archive_order: Vec<usize>,
+    retained_resource_inputs: Option<crate::input_snapshot::InputSnapshot>,
+}
+impl<R> CapturedNonTextOutput<R> {
+    pub fn into_prepared(
+        self,
+        frontend: &ColdFrontend,
+    ) -> Result<PreparedNonTextOutput<R>, String> {
+        let Self {
+            captured,
+            resolver,
+            symbols,
+            resources,
+            map,
+            descriptors,
+            artifacts,
+            resource_search_context,
+            resource_catalog,
+            resource_archive_order,
+            retained_resource_inputs,
+        } = self;
+        let stage = crate::non_text_output::PreparedOutputStage::new(
+            frontend,
+            &captured.maps,
+            map,
+            descriptors,
+            resources,
+            captured.skin,
+        )?;
+        // The remainder of captured (maps, skins, input documents, asset demand)
+        // is dropped here; the writer retains only output plans and provenance.
+        Ok(PreparedNonTextOutput {
+            resolver,
+            symbols,
+            artifacts,
+            resource_search_context,
+            stage,
+            resource_catalog,
+            resource_archive_order,
+            retained_resource_inputs,
+        })
+    }
+}
+impl<R> PreparedNonTextOutput<R> {
+    pub fn stage(&self) -> &crate::non_text_output::PreparedOutputStage {
+        &self.stage
+    }
+    pub fn extend_inventory(&self, inventory: &mut dm_link::LinkInventory) -> Result<(), String> {
+        self.stage.extend_inventory(inventory, &self.symbols)
+    }
+    pub fn into_publication(self) -> PublicationNonText {
+        PublicationNonText {
+            archive: self.stage.into_archive(),
+            resource_catalog: self.resource_catalog,
+            resource_archive_order: self.resource_archive_order,
+            retained_resource_inputs: self.retained_resource_inputs,
+        }
+    }
+}
 /// Defaults come only from the captured engine header and exact authored world
 /// directives supplied by the preceding initializer classification stage.
 fn defaults(

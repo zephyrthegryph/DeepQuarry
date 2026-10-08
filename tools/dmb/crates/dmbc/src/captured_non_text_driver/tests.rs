@@ -532,3 +532,147 @@ fn unsupported_map_type_reports_current_origin_and_query_spellings() {
 
 #[path = "publication.rs"]
 mod publication;
+
+#[test]
+fn prepared_nontext_releases_models_and_preserves_inventory_and_source_binding() {
+    let bytes = include_bytes!("../../../../fixtures/native_template.bin");
+    let engine = crate::engine::EngineSnapshot::from_bytes(bytes, 1).unwrap();
+    let seed = engine.frontend_seed();
+    let frontend = dm_tree::frontend::build_with_config(
+        Path::new("game/project.dme"),
+        &Source,
+        &Default::default(),
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
+    )
+    .unwrap();
+    let roots = [
+        "/",
+        "/datum",
+        "/obj",
+        "/mob",
+        "/turf",
+        "/area",
+        "/client",
+        "/atom",
+        "/image",
+        "/mutable_appearance",
+    ]
+    .into_iter()
+    .map(SymbolId::of)
+    .collect();
+    let decoded = byond_dmb::dmb::Dmb::from_bytes(bytes).unwrap();
+    let directives = vec![
+        Directive::DefaultType {
+            kind: DefaultKind::Turf,
+            path: Some(SymbolId::of("/turf/tile")),
+        },
+        Directive::Dimension { axis: 0, value: 2 },
+        Directive::Dimension { axis: 1, value: 1 },
+        Directive::Dimension { axis: 2, value: 1 },
+    ];
+    let output = capture(
+        &frontend,
+        &Source,
+        &Source,
+        Tree(frontend.snapshot.tree.clone()),
+        &decoded,
+        &roots,
+        &directives,
+    )
+    .unwrap();
+    use crate::composition::NonTextOutputStage;
+    let model = Arc::downgrade(&output.captured.maps[0].model);
+    let mut expected = dm_link::LinkInventory::default();
+    output.extend_inventory(&mut expected).unwrap();
+    let prepared = output.into_prepared(&frontend).unwrap();
+    assert!(
+        model.upgrade().is_none(),
+        "prepared writer must release parsed map model"
+    );
+    let mut actual = dm_link::LinkInventory::default();
+    prepared.extend_inventory(&mut actual).unwrap();
+    assert_eq!(
+        expected
+            .entries
+            .iter()
+            .map(|entry| (entry.key, entry.content.as_ref()))
+            .collect::<Vec<_>>(),
+        actual
+            .entries
+            .iter()
+            .map(|entry| (entry.key, entry.content.as_ref()))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(expected.spellings, actual.spellings);
+    assert_eq!(expected.slots, actual.slots);
+    assert_eq!(expected.fixed, actual.fixed);
+    assert_eq!(expected.orders, actual.orders);
+    assert_eq!(expected.reserved_prefixes, actual.reserved_prefixes);
+    assert_eq!(expected.append_orders, actual.append_orders);
+    prepared.stage().validate_source(&frontend).unwrap();
+    let mut changed = frontend;
+    changed.plan.occurrences[0].semantic_path = Arc::from("different-debug-source.dme");
+    assert!(prepared.stage().validate_source(&changed).is_err());
+    let publication = prepared.into_publication();
+    assert!(publication.archive.captured_bytes().is_some());
+}
+
+#[test]
+fn prepared_nontext_rejects_tampered_descriptor_before_model_release() {
+    let bytes = include_bytes!("../../../../fixtures/native_template.bin");
+    let engine = crate::engine::EngineSnapshot::from_bytes(bytes, 1).unwrap();
+    let seed = engine.frontend_seed();
+    let frontend = dm_tree::frontend::build_with_config(
+        Path::new("game/project.dme"),
+        &Source,
+        &Default::default(),
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
+    )
+    .unwrap();
+    let roots = [
+        "/",
+        "/datum",
+        "/obj",
+        "/mob",
+        "/turf",
+        "/area",
+        "/client",
+        "/atom",
+        "/image",
+        "/mutable_appearance",
+    ]
+    .into_iter()
+    .map(SymbolId::of)
+    .collect();
+    let decoded = byond_dmb::dmb::Dmb::from_bytes(bytes).unwrap();
+    let directives = vec![
+        Directive::DefaultType {
+            kind: DefaultKind::Turf,
+            path: Some(SymbolId::of("/turf/tile")),
+        },
+        Directive::Dimension { axis: 0, value: 2 },
+        Directive::Dimension { axis: 1, value: 1 },
+        Directive::Dimension { axis: 2, value: 1 },
+    ];
+    let mut output = capture(
+        &frontend,
+        &Source,
+        &Source,
+        Tree(frontend.snapshot.tree.clone()),
+        &decoded,
+        &roots,
+        &directives,
+    )
+    .unwrap();
+    output.descriptors.as_mut().unwrap().entries[0].content =
+        Arc::from(b"invalid descriptor".as_slice());
+    assert!(output.into_prepared(&frontend).is_err());
+}

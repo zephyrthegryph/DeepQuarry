@@ -524,15 +524,22 @@ fn normalize(path: &Path) -> PathBuf {
 /// are bracket-delimited by lexical tokens and parsed before their tokens are
 /// visited; arbitrary quoted string text never becomes a resource request.
 pub fn discover_literals(source: &str) -> Result<Vec<LiteralRequest>, CaptureError> {
-    let lexed = dm_syntax::lex_spans(source);
-    if let Some(error) = lexed.diagnostics.first() {
+    let mut relevant = Vec::new();
+    let diagnostics = dm_syntax::visit_tokens(source, |token| {
+        if matches!(token.kind, TokenKind::Resource | TokenKind::String) {
+            relevant.push(token);
+        }
+    });
+    // Complete lexical validation precedes resource/interpolation admission,
+    // including errors occurring after an earlier unsupported resource token.
+    if let Some(error) = diagnostics.first() {
         return Err(CaptureError::Source {
             span: error.span,
             reason: format!("{:?}", error.kind),
         });
     }
     let mut found = Vec::new();
-    collect_tokens(source, &lexed.tokens, 0, &mut found)?;
+    collect_tokens(source, &relevant, 0, &mut found)?;
     Ok(found)
 }
 fn collect_tokens(
@@ -975,4 +982,6 @@ mod tests {
     }
     #[path = "capture_digest_tests.rs"]
     mod digest_reuse;
+    #[path = "capture_literal_visit_tests.rs"]
+    mod literal_visit;
 }

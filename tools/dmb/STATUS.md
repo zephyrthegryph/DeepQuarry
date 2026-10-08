@@ -155,9 +155,28 @@ The single focused replay completed normally on both: BYOND 87.4669 s / 63 per-t
 
 ## Required next work
 
+The resident incremental pipeline is not implemented yet. `--no-daemon` currently
+has no effect; the CLI rebuilds the frontend and returns output bytes without
+retaining semantic, symbolic or linked state. Existing exact memos and disk
+session records do not constitute a daemon. Phase 2 requires a shared typed
+request runner, resident stage ownership, validated region updates and changed
+resolver-domain indexing before its transport can deliver cheap edits. Full
+canonical linking and encoding remain intentional under revision 5.
+
+Commit `f2dde36dd2` adds bounded parallel freezing with ordered inventory replay,
+one shared exact-byte writer string index, and a publication-only capture
+handoff. All 245 targeted compiler library checks and all-target Clippy pass.
+Its frozen release (`f44c55f778dd2430a06afe43d62846d5ae6b8d9cdb86eda82746b46b2dcbee9a`)
+timed out at the 285 s child limit before producing output. The watchdog's
+`taskkill` command then timed out after 10 s; the owned compiler process was
+identified by exact executable path and stopped separately. This run has no
+accepted CPU measurement or fresh oracle, and is not a performance result.
+Partial trace and receipt:
+`E:/dmb-native-v2-phase0/review-power-focus/native-retries/retry-961a498d07e7488e96db10df4e1793ef/`.
+
 1. Root-cause and repair the native-only global initialization/runtime differences from the completed focused pair. The authorized one-pair runtime allowance has been used; no full suite has run.
-2. Resolve remaining BYOND semantic differences, including the recorded area layer gap; deterministic native output does not establish BYOND equivalence.
-3. Obtain the body-edit trace on the same captured project and current-production-map evidence. The three-run cold CPU baseline and memory/link measurements now exist, with the independent crosscheck unchanged.
+2. Resolve remaining BYOND semantic differences. Authored area layer/luminosity handling was repaired in `1062e9d273`; a bounded opcode comparison no longer shows those differences. Debug ordering/count differences remain, and deterministic native output does not establish BYOND equivalence.
+3. Obtain warm body-edit and current-production-map evidence. The captured cold-after-edit trace exists (98.7828 s measured, 120.2571 s fresh oracle); it is not an incremental latency measurement. Three-run cold CPU baseline and memory/link measurements exist, with the independent crosscheck unchanged.
 4. Close normalized frozen runtime baseline evidence, retaining per-test errors, seeds and nondeterministic classifications.
 5. Bring measured stages and memory within Phase 1 budgets, then implement the resident daemon. No-daemon disk-cache features remain frozen until those phases pass.
 

@@ -6,15 +6,23 @@ import concurrent.futures
 from collections import deque
 import io
 import hashlib
+import importlib.util
 import json
 import math
 import os
 from pathlib import Path
 import shutil
-import signal
 import statistics
 import subprocess
 import time
+
+_watchdog_spec = importlib.util.spec_from_file_location(
+    "dmb_bench_owned_watchdog", Path(__file__).with_name("watchdog.py"))
+if _watchdog_spec is None or _watchdog_spec.loader is None:
+    raise ImportError("cannot load benchmark sibling watchdog")
+_watchdog_module = importlib.util.module_from_spec(_watchdog_spec)
+_watchdog_spec.loader.exec_module(_watchdog_module)
+terminate_owned = _watchdog_module.terminate_owned
 
 SCHEMA = 1
 TARGETS = {"cold": (15.0, 40.0, 400_000_000, 600_000_000),
@@ -159,17 +167,11 @@ def run(command, cwd, prefix, deadline, env):
             code = process.wait(timeout=deadline)
             return code, time.monotonic() - start, False
         except subprocess.TimeoutExpired:
-            # Kill only this measurement's process tree. No unrelated process is stopped.
-            if os.name == "nt":
-                subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10, **kwargs)
-            else:
-                os.killpg(process.pid, signal.SIGKILL)
-            try:
-                process.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=10)
+            receipt = terminate_owned(process)
+            prefix.with_suffix(".watchdog.json").write_text(
+                json.dumps(receipt, indent=2, allow_nan=False), encoding="utf-8")
+            if not receipt["reaped"]:
+                raise RuntimeError(f"owned benchmark process did not exit; see {prefix.with_suffix('.watchdog.json')}")
             return process.returncode, time.monotonic() - start, True
 
 

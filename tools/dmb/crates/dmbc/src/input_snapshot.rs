@@ -255,10 +255,18 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
     }
     fn read_recorded(&self, path: &Path) -> io::Result<Vec<u8>> {
         let (stamp, bytes) = self.provider.read(path)?;
-        self.snapshot
+        // The owned payload is stable while hashing. Only fact admission needs
+        // the shared ledger lock; source workers may hash their reads in parallel.
+        let content = xxhash_rust::xxh3::xxh3_128(&bytes);
+        let mut snapshot = self
+            .snapshot
             .lock()
-            .map_err(|_| invalid("input capture mutex poisoned"))?
-            .record_file(path, stamp, &bytes)?;
+            .map_err(|_| invalid("input capture mutex poisoned"))?;
+        // Preserve the original lock/size/conflict error precedence.
+        if stamp.size != bytes.len() as u64 {
+            return Err(invalid("captured stamp size differs from compiled bytes"));
+        }
+        snapshot.record_verified_digest(path, stamp, content)?;
         Ok(bytes)
     }
     pub fn record_search_folder(&self, path: &Path) -> io::Result<()> {
@@ -279,6 +287,10 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .record_folder(&path, listing)
     }
 }
+
+#[cfg(test)]
+#[path = "input_snapshot_recording_tests.rs"]
+mod recording_tests;
 impl<P: SnapshotProvider> dm_preprocess::SourceProvider for RecordingInputs<P> {
     fn read(&self, path: &Path) -> Result<String, String> {
         self.read_recorded(path)

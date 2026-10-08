@@ -16,6 +16,8 @@ use xxhash_rust::xxh3::{xxh3_128, Xxh3};
 
 #[path = "publish_eviction.rs"]
 mod eviction;
+#[path = "publish_install.rs"]
+mod install;
 pub use eviction::EvictionResult;
 
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -515,7 +517,7 @@ impl PairStore {
         let _lock = self.lock()?;
         let source = self.root.join("pairs").join(format!("{id:032x}"));
         let pair = self.verify_locked(id, false)?;
-        replace_copy(
+        install::resource(
             &source.join("deepquarry.rsc"),
             rsc,
             (pair.rsc_bytes, pair.rsc_hash),
@@ -829,7 +831,7 @@ mod tests {
         assert!(windows_store_path(Path::new("//server/share/project.dme"), local).is_err());
     }
 
-    fn store() -> PairStore {
+    pub(super) fn store() -> PairStore {
         let sequence = TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed);
         PairStore::open(
             std::env::temp_dir().join(format!("dmb-pair-test-{}-{sequence}", std::process::id())),
@@ -920,6 +922,27 @@ mod tests {
         assert_eq!(fs::read(&rsc).unwrap(), b"assets-two");
         let actual: OutputPair = serde_json::from_slice(&fs::read(marker).unwrap()).unwrap();
         assert_eq!(actual, second);
+    }
+
+    #[test]
+    fn reused_resource_keeps_marker_last_across_interrupted_dmb_install() {
+        let store = store();
+        let root = store.root.join("worktree");
+        let dmb = root.join("world.dmb");
+        let rsc = root.join("world.rsc");
+        let marker = root.join("world.pair");
+        let old = store.publish(1, b"old-code", b"same-assets").unwrap();
+        let new = store.publish(1, b"new-code", b"same-assets").unwrap();
+        store.install(old.id, &dmb, &rsc, &marker).unwrap();
+        interrupted("install_dmb_replaced", 1, || {
+            store.install(new.id, &dmb, &rsc, &marker)
+        });
+        let marked: OutputPair = serde_json::from_slice(&fs::read(&marker).unwrap()).unwrap();
+        assert_eq!(marked, old);
+        assert_eq!(fs::read(&rsc).unwrap(), b"same-assets");
+        store.install(new.id, &dmb, &rsc, &marker).unwrap();
+        let marked: OutputPair = serde_json::from_slice(&fs::read(marker).unwrap()).unwrap();
+        assert_eq!(marked, new);
     }
 
     #[test]

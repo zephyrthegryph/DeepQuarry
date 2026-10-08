@@ -633,7 +633,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             Some(&capture_observer),
             map_memo.as_ref(),
             Some(&admit_resources),
-        )?;
+        )?
+        .into_prepared(&frontend)?;
         // Nontext capture owns the resolver, captured resources/maps and defaults
         // it needs. These inputs are not borrowed by its returned bundle.
         drop(defaults);
@@ -679,7 +680,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             &values,
             Some(nontext.resource_search_context),
             artifacts,
-            Some(&nontext.stage(&frontend)),
+            Some(nontext.stage()),
             workers,
             progress_enabled.then_some(&cold_observer),
             procedure_memo.as_ref(),

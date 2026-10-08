@@ -162,7 +162,10 @@ impl SnapshotProvider for Inputs {
                         None => return Err(Journal::unknown(&path)),
                     }
                 };
-                let bytes = fs::read(journal.payload(hash))?;
+                let bytes = dm_profile::io_call(
+                    || fs::read(journal.payload(hash)),
+                    |bytes| (bytes.len() as u64, 0),
+                )?;
                 if bytes.len() as u64 != stamp.size || xxhash_rust::xxh3::xxh3_128(&bytes) != hash {
                     return Err(invalid("verification payload checksum mismatch"));
                 }
