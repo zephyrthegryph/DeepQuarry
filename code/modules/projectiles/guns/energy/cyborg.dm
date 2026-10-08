@@ -449,13 +449,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appe
 	var/lightcolor = "#FF6A00"
 	borg_flags = COUNTS_AS_ROBOTIC_MELEE
 
-/obj/item/melee/robotic/baton/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/baton, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/melee/robotic/baton/appearance_overlays()
+	. = list()
 	if(status)
-		look.state("[initial(name)]_active")
+		icon_state = "[initial(name)]_active"
 	else
-		look.state("[initial(name)]")
-	look.effect(PROC_REF(refresh_light))
+		icon_state = "[initial(name)]"
+	refresh_light()
 
 /obj/item/melee/robotic/baton/refresh_light(clear)
 	if(icon_state == "[initial(name)]_active")
