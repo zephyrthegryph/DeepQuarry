@@ -18,9 +18,6 @@
 	center_of_mass_x = 15
 	center_of_mass_y = 13
 
-/obj/item/reagent_containers/food/drinks/britcup/on_reagent_change()
-	..()
-
 /*
  * Text Mug
  */
@@ -46,22 +43,18 @@
 	volume = 30
 	var/fillsource = "coffeecup"
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/coffeemug, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/appearance_overlays()
-	. = list()
-
+/// A mug shows only its filling, by how full it is, in the colour of what is in it.
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/draw_contents(datum/look/look)
 	if(reagents.total_volume)
-		var/image/filling = image('icons/obj/drinks_mugs.dmi', src, null)
+		var/filling
 		var/percent = round((reagents.total_volume / volume) * 100)
 		switch(percent)
 			if(0 to 39)
-				filling.icon_state = null
-				return .
-			if(40 to 79) 	filling.icon_state = "[fillsource]40"
-			if(80 to 99)	filling.icon_state = "[fillsource]80"
-			if(100 to INFINITY)	filling.icon_state = "[fillsource]100"
-		filling.color = reagents.get_color()
-		. += filling
+				return
+			if(40 to 79) 	filling = "[fillsource]40"
+			if(80 to 99)	filling = "[fillsource]80"
+			if(100 to INFINITY)	filling = "[fillsource]100"
+		look.overlay(look_overlay_image('icons/obj/drinks_mugs.dmi', filling, color = reagents.tint))
 
 // Government
 /obj/item/reagent_containers/food/drinks/glass2/coffeemug/sol
@@ -223,22 +216,18 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/coffeemu
 	fillsource = "coffeecup_tall"
 	volume = 60
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/appearance_overlays()
-	. = list()
-
+/// A tall mug shows only its filling, by how full it is, in the colour of what is in it.
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/draw_contents(datum/look/look)
 	if(reagents.total_volume)
-		var/image/filling = image('icons/obj/drinks_mugs_tall.dmi', src, null)
+		var/filling
 		var/percent = round((reagents.total_volume / volume) * 100)
 		switch(percent)
 			if(0 to 69)
-				filling.icon_state = null
-				return .
-			if(70 to 89) 	filling.icon_state = "[fillsource]70"
-			if(90 to 99)	filling.icon_state = "[fillsource]90"
-			if(100 to INFINITY)	filling.icon_state = "[fillsource]100"
-		filling.color = reagents.get_color()
-		. += filling
+				return
+			if(70 to 89) 	filling = "[fillsource]70"
+			if(90 to 99)	filling = "[fillsource]90"
+			if(100 to INFINITY)	filling = "[fillsource]100"
+		look.overlay(look_overlay_image('icons/obj/drinks_mugs_tall.dmi', filling, color = reagents.tint))
 
 /obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/black
 	name = "tall black coffee mug"

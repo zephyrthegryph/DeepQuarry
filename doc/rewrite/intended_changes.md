@@ -3699,3 +3699,33 @@ The single focused capture wrote 23 selected pin types, 15 selected i7 types and
 | /obj/machinery/vr_sleeper/alien | Entry uses native timed operations and keys, with the same occupancy rules. Reused non-harm Hit rows align with master. |
 | /obj/machinery/washing_machine | Grab and resist timing use native operation keys. Reused non-harm Hit rows align with master. |
 | /obj/structure/AIcore | Native add_cables/add_panel keys expose typed material bindings, adding stack-material held rows; actual construction costs and states are regression tested. |
+
+## Reagent, food and hydroponics draws (rewrite/draw-reagents)
+
+Expected pin classes for the merge to bless (no pin is blessed on this branch; the committed snapshots on master are the base). Rows are icon, state, dir, colour, overlays and underlays of every creatable subtype, so only the classes below should move:
+
+| Class | Types | Expected change and cause |
+|---|---|---|
+| Fill colour spelling | glass (beakers, bottles, vials), syringes, drinking glass fillings | The filling reads the holder's tracked `tint` (the same `get_color()` value, kept by `update_total()`), so a colour row can differ only where `get_color()` changed between creation and the first draw (a prefilled container is drawn after its prefill, as before). |
+| Draw after init | glass2 drinking glasses, mugs, shakers | The legacy provider ran on the first `update_icon()`; the draw runs at the first refresh, after the whole init. A glass that is prefilled in init shows its filling at creation. |
+| Glass ice/fizz/underlay | `/obj/item/reagent_containers/food/drinks/glass2` chain | Filling, ice, fizz and fruit-slice layers are `look.underlay()` (new in the builder) instead of raw `underlays +=`; same icon states and layers. The protein and protean shakes draw nothing of the glass (was APPEARANCE_NONE). |
+| Variable food scale | `/obj/item/reagent_containers/food/snacks/variable` | The size follows the reagent volume at all times (empty draws at the minimum scale); the size word in the name and the weight class are applied once by `settle_size()` when a dish is finished, not on every redraw (the old provider multiplied the weight class on each redraw). Pins carry no transform, so only the state pin may move. |
+| Appliance lights and state | `/obj/machinery/appliance` (oven, grill, fryer, mixer, candy, cereal) | Same states and light overlays. Running sounds moved out of the draw into `loop_sync()` handlers on `cooking`, operable and switched-on changes; a machine no longer restarts its loop on a redraw. |
+| Tray alerts | `/obj/machinery/portable_atmospherics/hydroponics` | Alert images are built by the draw (same states, lighting-above plane). Name is the look's identity. |
+| Pizza box | `/obj/item/pizzabox` | Same states; the stack is a `ref_many` relation, so a stacked box redraws when it is stacked or its tag is written. |
+| Rag underlay | `/obj/item/reagent_containers/food/drinks/bottle` | Same underlay and light; drawn from the rag it watches. |
+| Synthesizer | `/obj/machinery/chemical_synthesizer` | Same states; `synth_finished` is a tracked `finishing` flag between the last reaction step and bottling. |
+
+Other changes: `/datum/reagents` tracks `total_volume`, `tint` and `master_id` (kept by `update_total()` for non-mob holders; the sum no longer counts survivors twice when a removal runs inside it). A syringe's mode written by the needle capability publishes a tracked change. Tray, microwave, gibber, alembic and gaia/farmbot/hand-labeler writers use the new setters.
+
+Left on legacy forms, with the cause:
+
+* Syringe pickup/dropped/pick-up `update_icon()` (3): the draw reads `loc` (stored sideways, held shows the mode); `loc` is not a tracked draw input. Needs a design decision.
+* Vines (`/obj/effect/plant`, spreading, 6 sites): the provider discounts `max_growth` and rolls a wall offset on every redraw, so it is not idempotent. Needs a decision on when the fringe discount applies.
+* Pump (9): the low-power overlay reads the cell's charge, untracked in code/modules/power.
+* Distillery (5): the ready/heating/cooling overlay reads the heat body's temperature, not tracked state.
+* Chem master (1): `loaded_pill_bottle.update_icon()` for a pill bottle whose wrapper colour is a plain var in code/game/objects/items/weapons/storage.
+* Smartfridge `changed(src)` (3): the stock count reads `/datum/stored_item.amount`, shared with vending and untracked.
+* Condiments and drinks `on_reagent_change()` handlers still write icon_state, name and desc directly (not a draw).
+* `rag.dm` (detectivework) still calls the bottle's `update_icon()`; redundant now.
+* `lint_scopes.toml` `look_converted` folders: not added (edit refused by the permission layer). Fully clean now: code/library/reagents/, code/modules/food/, code/modules/hydroponics/{trays/,grown*}, code/modules/reagents/{holder,hose,reactions,reagents,machinery/dispenser}/ and Chemistry*.dm.

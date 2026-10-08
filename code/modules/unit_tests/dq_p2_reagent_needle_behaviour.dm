@@ -231,16 +231,19 @@
 
 /datum/unit_test/dq_p2_reagents/syringe_look_follows_mode_and_fill/run_gate()
 	var/obj/item/reagent_containers/syringe/S = rc_syringe(/obj/item/reagent_containers/syringe, 0, "capped")
+	refresh_flush()
 	TEST_ASSERT_EQUAL(S.icon_state, "capped", "a capped syringe looks capped")
 	rc_syringe_set_mode(S, "broken")
+	refresh_flush()
 	TEST_ASSERT_EQUAL(S.icon_state, "broken", "a broken one looks broken")
 	rc_syringe_set_mode(S, "draw")
+	refresh_flush()
 	TEST_ASSERT_EQUAL(S.icon_state, "0", "an empty one reads 0")
 	S.reagents.add_reagent(REAGENT_ID_WATER, 10)
-	S.update_icon()
+	refresh_flush()
 	TEST_ASSERT_EQUAL(S.icon_state, "10", "ten units read 10")
 	S.reagents.add_reagent(REAGENT_ID_WATER, 5)
-	S.update_icon()
+	refresh_flush()
 	TEST_ASSERT_EQUAL(S.icon_state, "15", "a full one reads 15")
 
 // ---------------------------------------------------------------------------------------------------------------------

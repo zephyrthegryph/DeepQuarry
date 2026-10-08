@@ -117,35 +117,28 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 
 	cooking_power *= oil_efficiency
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/cooker/fryer/appearance_overlays() // We add our own version of the proc to use the special fryer double-lights.
-	. = list()
-	if(!has_condition())
-		. += ..()
-		if(cooking == TRUE)
-			icon_state = on_icon
-			if(fry_loop)
-				fry_loop.start(src)
-		else
-			icon_state = off_icon
-			if(fry_loop)
-				fry_loop.stop(src)
-	else
-		icon_state = off_icon
-		if(fry_loop)
-			fry_loop.stop(src)
+/// The fryer shows on while it cooks.
+/obj/machinery/appliance/cooker/fryer/draw(datum/look/look)
+	..()
+	look.state(!has_condition() && cooking == TRUE ? on_icon : off_icon)
 
-	// Special fryer double-lights overlay.
-	var/image/light
+/// The fryer has its own double-lights, and the cooker's light besides while it is on. // We add our own version of the proc to use the special fryer double-lights.
+/obj/machinery/appliance/cooker/fryer/draw_lights(datum/look/look)
+	if(!has_condition())
+		..()
+	var/light = "fryer_light_off"
 	if(use_power == 1 && !has_condition())
-		light = image(icon, "fryer_light_idle")
+		light = "fryer_light_idle"
 	else if(use_power == 2 && !has_condition())
-		light = image(icon, "fryer_light_preheating")
+		light = "fryer_light_preheating"
+	look.overlay(look_overlay_image(icon, light, pixel_x = light_x, pixel_y = light_y))
+
+/// The fryer bubbles while it cooks.
+/obj/machinery/appliance/cooker/fryer/loop_sync(datum/act/A)
+	if(!has_condition() && cooking == TRUE)
+		fry_loop?.start(src)
 	else
-		light = image(icon, "fryer_light_off")
-	light.pixel_x = light_x
-	light.pixel_y = light_y
-	. += light
+		fry_loop?.stop(src)
 
 //Fryer gradually infuses any cooked food with oil. Moar calories
 //This causes a slow drop in oil levels, encouraging refill after extended use

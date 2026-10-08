@@ -278,7 +278,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 			tank.reagents.trans_to(T, 100 - T.waterlevel)
 		if(FARMBOT_UPROOT)
 			act_message(src, T, others = span_notice("%U% uproots the weeds in %T%."))
-			T.weedlevel = 0
+			T.set_weedlevel(0)
 		if(FARMBOT_NUTRIMENT)
 			act_message(src, T, others = span_notice("%U% fertilizes %T%."))
 			T.reagents.add_reagent(REAGENT_ID_AMMONIA, 10)

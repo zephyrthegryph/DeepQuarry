@@ -499,6 +499,19 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		return
 	state_changed(holder, CHANGE_EXPLICIT, var_name)
 
+/// own_mark_changed() for a var some output of the holder's type reads (a draw, a window, a requirement): a relation list written in place
+/// (a member added or removed) redraws what shows it, and a var nothing derives from marks nothing, so a bookkeeping list (a test's
+/// allocated list, an owner's index) stays free to be written from anywhere.
+/proc/own_mark_if_read(datum/holder, var_name)
+	if(!holder || !islist(GLOB?.derived_tables))
+		return
+	var/datum/derived_table/T = GLOB.derived_tables[holder.type]
+	if(isnull(T))
+		T = derived_table_of(holder)
+	if(T ? !T.by_var[var_name] : !isatom(holder))
+		return // no output reads it; an atom without a table marks all, as derived_mask() does, but a plain datum has no look to redraw
+	own_mark_changed(holder, var_name)
+
 /// TRUE when `value` may be written to holder.var_name under `entry`: null, an untyped declaration, or an istype() of
 /// the declared `type` (rel_one/rel_many(type =)). A mismatch is reported (a stack_trace, which fails a test run)
 /// and the caller refuses the write. `entry` may be null (an undeclared view is untyped).

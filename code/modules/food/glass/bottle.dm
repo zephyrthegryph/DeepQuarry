@@ -23,10 +23,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/bottle)
 /obj/item/reagent_containers/glass/bottle/proc/roll_icon_state(datum/roller/R)
 	return "bottle-[R.number(1, 4)]"
 
-/// What it holds changes colour with no change of the amount: the filling is redrawn.
-/obj/item/reagent_containers/glass/bottle/on_reagent_change()
-	changed(src)
-
 /// The filling in the colour of what it holds, the stopper while it is on, and a label.
 /obj/item/reagent_containers/glass/bottle/draw(datum/look/look)
 	. = ..()

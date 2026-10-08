@@ -27,19 +27,13 @@ CAPABILITIES(/obj/machinery/appliance/mixer/candy)
 	rel_set(src, nameof(candymaker_loop), new /datum/looping_sound/candymaker(list(src), FALSE))
 
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/candy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/mixer/candy/appearance_overlays()
-	. = list()
-	. += ..()
-
+/// The candy maker hums while it is on, beside the mixer's own sound.
+/obj/machinery/appliance/mixer/candy/loop_sync(datum/act/A)
+	..()
 	if(!has_condition())
-		icon_state = on_icon
-		if(candymaker_loop)
-			candymaker_loop.start(src)
+		candymaker_loop?.start(src)
 	else
-		icon_state = off_icon
-		if(candymaker_loop)
-			candymaker_loop.stop(src)
+		candymaker_loop?.stop(src)
 
 /obj/machinery/appliance/mixer/candy/change_product_appearance(obj/item/reagent_containers/food/snacks/product)
 	food_color = get_random_colour(1)

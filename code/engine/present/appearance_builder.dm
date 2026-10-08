@@ -14,6 +14,8 @@
 	var/plane
 	var/layer
 	var/list/overlays
+	/// look.underlay(): icon_states (or images) drawn beneath the base sprite.
+	var/list/underlays
 	/// Names from look.variant(): each replaces the base state by "<base>-name" when the icon has it.
 	var/list/variants
 	/// list(name, value or null, glows) per look.part(): resolved against the icon when applied.
@@ -55,6 +57,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	plane = null
 	layer = null
 	overlays = null
+	underlays = null
 	variants = null
 	parts = null
 	filters = null
@@ -90,6 +93,14 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	if(!when || isnull(name))
 		return
 	LAZYADD(overlays, icon ? look_image(icon, name) : name)
+
+/// An underlay icon_state (or an image / mutable_appearance), drawn beneath the base sprite, added only `when` is true. `icon` draws the
+/// state from another icon file than the holder's. Like overlay(), the builder is the only writer of the holder's underlays.
+/datum/look/proc/underlay(name, when = TRUE, icon)
+	touched = TRUE
+	if(!when || isnull(name))
+		return
+	LAZYADD(underlays, icon ? look_image(icon, name) : name)
 
 /// Drops a layer a capability drew (the holder's own draw() knows its sprite has no such state in
 /// this state): every overlay or part named `name` added so far (a part by its name, or by name-value).
@@ -420,6 +431,11 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	for(var/entry in overlays)
 		overlay_keys += look_part_key(entry)
 	parts += jointext(overlay_keys, ",")
+	if(underlays)
+		var/list/underlay_keys = list()
+		for(var/entry in underlays)
+			underlay_keys += look_part_key(entry)
+		parts += "under:[jointext(underlay_keys, ",")]"
 	if(variants)
 		parts += "variants:[jointext(variants, ",")]"
 	for(var/list/entry in src.parts)
@@ -563,6 +579,12 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	if(added)
 		A.add_overlay(added)
 		cache.look_overlays = added
+	if(cache.look_underlays)
+		A.underlays.Cut()
+		cache.look_underlays = FALSE
+	for(var/entry in underlays)
+		A.underlays += entry
+		cache.look_underlays = TRUE
 	for(var/name in cache.look_filters)
 		if(!filters || !(name in filters))
 			A.look_remove_filter(name)

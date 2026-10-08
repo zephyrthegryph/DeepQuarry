@@ -62,10 +62,17 @@ CAPABILITIES(/obj/machinery/appliance)
 	op("appliance_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(appliance_interaction_hand)))
 	op("appliance_toggle_power_effect", menu(), label("Toggle Power"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_toggle_power_verb_holds), because = PROC_REF(can_toggle_power_verb_refusal))), then(PROC_REF(appliance_toggle_power_effect)))
 	default_parts()
+	on_change(nameof(cooking), ANY, then(PROC_REF(loop_sync)))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(loop_sync)))
+	on_change(STAT_SWITCHED_ON, ANY, then(PROC_REF(loop_sync)))
 
 /// Whether or not the machine is currently operating (cooking its contents).
 /obj/machinery/appliance/var/cooking = FALSE
 TRACKED(/obj/machinery/appliance, cooking)
+
+/// The machine's running sound follows what it is doing: a type with a loop of its own syncs it here.
+/obj/machinery/appliance/proc/loop_sync(datum/act/A)
+	return
 
 // cooking food and its containers go with the machine.
 /// A cooker that starts with its switch off is made so at initialization (machinery Initialize()).
@@ -144,12 +151,6 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	else
 		return span_danger("It is burning!")
 
-/// Appearance reader: powered and holding something to cook.
-/obj/machinery/appliance/proc/appearance_cooking()
-	return !has_condition() && length(cooking_objs)
-
-APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off_icon}")
-
 /obj/machinery/appliance/proc/appliance_toggle_power_effect(datum/act/op/A)
 	var/mob/user = A.actor
 
@@ -182,7 +183,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 		set_cooking(FALSE) // Stop cooking here, too, just in case.
 
 	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
-	update_icon()
 
 /obj/machinery/appliance/proc/remote_power(datum/act/op/A)
 	attempt_toggle_power(A.actor)
@@ -306,7 +306,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 				default_part_replacement(user, I)
 				return OP_OK
 			add_content(wrap, user)
-			update_icon()
 			return OP_PASS
 
 		attack_hand(user)
@@ -325,7 +324,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 
 	//From here we can start cooking food
 	add_content(ToCook, user)
-	update_icon()
 	return OP_PASS
 
 //Override for container mechanics
@@ -453,7 +451,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 			all_done_cooking = FALSE
 	if(all_done_cooking)
 		set_cooking(FALSE)
-		update_icon()
 		return PROCESS_KILL
 
 /obj/machinery/appliance/proc/predict_cooking(datum/cooking_item/CI)
@@ -635,7 +632,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 		result.name = "[pop(words)] [result.name]"
 
 	//This proc sets the size of the output result
-	result.update_icon()
+	if(istype(result, /obj/item/reagent_containers/food/snacks/variable))
+		var/obj/item/reagent_containers/food/snacks/variable/sized = result
+		sized.settle_size()
 	return result
 
 //Helper proc for standard modification cooking
@@ -779,7 +778,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 		if (selection)
 			var/datum/cooking_item/CI = menuoptions[selection]
 			eject(CI, user)
-			update_icon()
 		return TRUE
 	return FALSE
 
@@ -826,7 +824,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 			cook_container.set_food_items(cook_container.food_items - 1)
 			if(!LAZYLEN(cook_container.food_items)) //Empty.
 				cook_container.set_food_items(0)
-			changed(cook_container)
 	else
 		src.visible_message(span_infoplain(span_bold("\The [src]") + " pings as it automatically ejects its contents!"))
 		if(cooked_sound)

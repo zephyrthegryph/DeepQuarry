@@ -65,25 +65,24 @@
 	. = ..()
 	icon_state = base_icon
 
-/obj/item/reagent_containers/food/drinks/glass2/on_reagent_change()
-	..()
-	update_icon()
-
 /obj/item/reagent_containers/food/drinks/glass2/proc/can_add_extra(obj/item/glass_extra/GE)
 	if(!icon_exists(icon, "[base_icon]_[GE.glass_addition]left") || !icon_exists(icon, "[base_icon]_[GE.glass_addition]right"))
 		return FALSE
 
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/food/drinks/glass2/appearance_overlays()
-	. = list()
-	underlays.Cut()
+/// The glass shows what is in it (named and described by it, its filling and the ice or fizz of it beneath the glass) and what sits on its rim.
+/obj/item/reagent_containers/food/drinks/glass2/draw(datum/look/look)
+	..()
+	look.watch(reagents)
+	draw_contents(look)
 
-	if (reagents.reagent_list.len > 0)
-		var/datum/reagent/R = reagents.get_master_reagent()
-		name = "[base_name] of [R.glass_name ? R.glass_name : "something"]"
-		desc = R.glass_desc ? R.glass_desc : initial(desc)
+/// The contents of the glass: a type with its own sprite of them (the mugs, the shakers) replaces this.
+/obj/item/reagent_containers/food/drinks/glass2/proc/draw_contents(datum/look/look)
+	var/master = reagents.master_id
+	if(master)
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[master]
+		look.identity("[base_name] of [R.glass_name ? R.glass_name : "something"]", R.glass_desc ? R.glass_desc : initial(desc))
 
 		var/list/under_liquid = list()
 		var/list/over_liquid = list()
@@ -108,43 +107,34 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2, TYPE_PR
 				over_liquid |= "[base_icon][amnt]_[S]"
 
 		for(var/k in under_liquid)
-			underlays += image(icon, src, k, -3)
+			look.underlay(look_overlay_image(icon, k, layer = -3))
 
-		var/image/filling = image(icon, src, "[base_icon][amnt][R.glass_icon]", -2)
-		filling.color = reagents.get_color()
-		underlays += filling
+		look.underlay(look_overlay_image(icon, "[base_icon][amnt][R.glass_icon]", layer = -2, color = reagents.tint))
 
 		for(var/k in over_liquid)
-			underlays += image(icon, src, k, -1)
+			look.underlay(look_overlay_image(icon, k, layer = -1))
 	else
-		name = initial(name)
-		desc = initial(desc)
+		look.identity(initial(name), initial(desc))
 
 	var/side = "left"
 	for(var/item in extras)
 		if(istype(item, /obj/item/glass_extra))
 			var/obj/item/glass_extra/GE = item
-			var/image/I = image(icon, src, "[base_icon]_[GE.glass_addition][side]")
-			if(GE.glass_color)
-				I.color = GE.glass_color
-			underlays += I
+			look.underlay(look_overlay_image(icon, "[base_icon]_[GE.glass_addition][side]", color = GE.glass_color))
 		else if(istype(item, /obj/item/reagent_containers/food/snacks/fruit_slice))
-			var/obj/FS = item
-			var/image/I = image(FS)
-
 			var/fsy = rim_pos[1] - 20
 			var/fsx = rim_pos[side == "left" ? 2 : 3] - 16
 
 			var/matrix/M = matrix()
 			M.Scale(0.5)
 			M.Translate(fsx, fsy)
-			I.transform = M
-			underlays += I
+			look.underlay(look_overlay_image(of = item, transform = M))
 		else continue
 		side = "right"
 
 // A glass is splashed in combat mode, and is not fed to anyone then.
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2)
 	configure(reagent_container(splash = TRUE, ingest_hostile = FALSE))
+	ref_many(nameof(extras), /obj/item)
 	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_hand)))
 	op("glass2_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Glass2 item"), then(PROC_REF(glass2_item)))
