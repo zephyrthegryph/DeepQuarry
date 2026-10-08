@@ -1,0 +1,44 @@
+/obj/machinery/appliance cooking_coeff=1 runtime: Division by zero
+/obj/machinery/appliance cooking_coeff=2 runtime: PURITY: 399 was granted to /obj/machinery/appliance inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/appliance heating_power=0 runtime: PURITY: capkey:212769 of /obj/machinery/appliance was published inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/appliance heating_power=1 runtime: PURITY: /obj/machinery/appliance was written inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/appliance heating_power=2 runtime: Division by zero
+/obj/machinery/appliance max_contents=0 runtime: Division by zero
+/obj/machinery/appliance max_contents=1 runtime: Division by zero
+/obj/machinery/appliance max_contents=2 runtime: Division by zero
+/obj/machinery/appliance mob_injury_kind=0 runtime: Division by zero
+/obj/machinery/appliance mob_injury_kind=1 runtime: Division by zero
+/obj/machinery/appliance mob_injury_kind=2 runtime: Division by zero
+/obj/machinery/appliance can_burn_food=0 runtime: Division by zero
+/obj/machinery/appliance can_burn_food=1 runtime: Division by zero
+/obj/machinery/appliance can_burn_food=2 runtime: Division by zero
+/obj/machinery/appliance burn_chance=0 runtime: Division by zero
+/obj/machinery/appliance burn_chance=1 runtime: Division by zero
+/obj/machinery/appliance burn_chance=2 runtime: Division by zero
+/obj/machinery/appliance combine_first=0 runtime: Division by zero
+/obj/machinery/appliance combine_first=1 runtime: Division by zero
+/obj/machinery/appliance combine_first=2 runtime: Division by zero
+/obj/machinery/appliance food_safety=0 runtime: Division by zero
+/obj/machinery/appliance food_safety=1 runtime: Division by zero
+/obj/machinery/appliance food_safety=2 runtime: Division by zero
+/obj/machinery/appliance power_init_complete=0 runtime: Division by zero
+/obj/machinery/appliance power_init_complete=1 runtime: Division by zero
+/obj/machinery/appliance power_init_complete=2 runtime: Division by zero
+/obj/machinery/appliance power_seen=0 runtime: Division by zero
+/obj/machinery/appliance power_seen=1 runtime: Division by zero
+/obj/machinery/appliance power_seen=2 runtime: Division by zero
+/obj/machinery/appliance power_subscriber=0 runtime: Division by zero
+/obj/machinery/appliance power_subscriber=1 runtime: Division by zero
+/obj/machinery/appliance power_subscriber=2 runtime: Division by zero
+/obj/machinery/appliance gl_uid=0 runtime: Division by zero
+/obj/machinery/appliance gl_uid=1 runtime: Division by zero
+/obj/machinery/appliance gl_uid=2 runtime: Division by zero
+/obj/machinery/appliance/cooker runtime: PURITY: 399 was granted to /obj/machinery/appliance/cooker inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/appliance/cooker/oven runtime: PURITY: 399 was granted to /obj/machinery/appliance/cooker/oven inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/appliance/cooker/oven/yeoldoven runtime: PURITY: 399 was granted to /obj/machinery/appliance/cooker/oven/yeoldoven inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/appliance/cooker/fryer runtime: PURITY: 399 was granted to /obj/machinery/appliance/cooker/fryer inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/appliance/cooker/grill runtime: PURITY: 399 was granted to /obj/machinery/appliance/cooker/grill inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/appliance/mixer runtime: PURITY: 399 was granted to /obj/machinery/appliance/mixer inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/appliance/mixer/candy runtime: PURITY: 399 was granted to /obj/machinery/appliance/mixer/candy inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/appliance/mixer/cereal runtime: PURITY: 399 was granted to /obj/machinery/appliance/mixer/cereal inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+

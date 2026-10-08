@@ -1,0 +1,36 @@
+/obj/machinery/appliance icon: icons/obj/cooking_machines.dmi
+/obj/machinery/appliance state: 
+/obj/machinery/appliance dir: 2
+/obj/machinery/appliance overlay: icons/obj/cooking_machines.dmi::8:#000000
+/obj/machinery/appliance/cooker runtime: Cannot create objects of type null.
+/obj/machinery/appliance/cooker/oven icon: icons/obj/cooking_machines.dmi
+/obj/machinery/appliance/cooker/oven state: ovenclosed_off
+/obj/machinery/appliance/cooker/oven dir: 2
+/obj/machinery/appliance/cooker/oven overlay: icons/obj/cooking_machines.dmi:light_off:-32767
+/obj/machinery/appliance/cooker/oven overlay: icons/obj/cooking_machines.dmi:ovenopen:8:#000000
+/obj/machinery/appliance/cooker/oven/yeoldoven icon: icons/obj/cooking_machines.dmi
+/obj/machinery/appliance/cooker/oven/yeoldoven state: yeoldovenclosed_off
+/obj/machinery/appliance/cooker/oven/yeoldoven dir: 2
+/obj/machinery/appliance/cooker/oven/yeoldoven overlay: icons/obj/cooking_machines.dmi:yeoldovenopen:8:#000000
+/obj/machinery/appliance/cooker/fryer icon: icons/obj/cooking_machines.dmi
+/obj/machinery/appliance/cooker/fryer state: fryer_off
+/obj/machinery/appliance/cooker/fryer dir: 2
+/obj/machinery/appliance/cooker/fryer overlay: icons/obj/cooking_machines.dmi:fryer_light_off:-32767
+/obj/machinery/appliance/cooker/fryer overlay: icons/obj/cooking_machines.dmi:fryer_off:8:#000000
+/obj/machinery/appliance/cooker/grill icon: icons/obj/cooking_machines.dmi
+/obj/machinery/appliance/cooker/grill state: grill_off
+/obj/machinery/appliance/cooker/grill dir: 2
+/obj/machinery/appliance/cooker/grill overlay: icons/obj/cooking_machines.dmi:grill_off:8:#000000
+/obj/machinery/appliance/mixer icon: icons/obj/cooking_machines.dmi
+/obj/machinery/appliance/mixer state: 
+/obj/machinery/appliance/mixer dir: 2
+/obj/machinery/appliance/mixer overlay: icons/obj/cooking_machines.dmi::8:#000000
+/obj/machinery/appliance/mixer/candy icon: icons/obj/cooking_machines.dmi
+/obj/machinery/appliance/mixer/candy state: mixer_off
+/obj/machinery/appliance/mixer/candy dir: 2
+/obj/machinery/appliance/mixer/candy overlay: icons/obj/cooking_machines.dmi:mixer_off:8:#000000
+/obj/machinery/appliance/mixer/cereal icon: icons/obj/cooking_machines.dmi
+/obj/machinery/appliance/mixer/cereal state: cereal_off
+/obj/machinery/appliance/mixer/cereal dir: 2
+/obj/machinery/appliance/mixer/cereal overlay: icons/obj/cooking_machines.dmi:cereal_off:8:#000000
+

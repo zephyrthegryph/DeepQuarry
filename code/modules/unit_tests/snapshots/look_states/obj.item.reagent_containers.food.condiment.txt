@@ -1,0 +1,13 @@
+/obj/item/reagent_containers/food/condiment/carton/flour volume=0 runtime: refresh of /obj/item/reagent_containers/food/condiment/carton/flour: Division by zero (:)%//%["code/engine/change/refresh.dm",332]%//%
+/obj/item/reagent_containers/food/condiment/carton/flour/rustic volume=0 runtime: refresh of /obj/item/reagent_containers/food/condiment/carton/flour/rustic: Division by zero (:)%//%["code/engine/change/refresh.dm",332]%//%
+/obj/item/reagent_containers/food/condiment/carton/sugar volume=0 runtime: refresh of /obj/item/reagent_containers/food/condiment/carton/sugar: Division by zero (:)%//%["code/engine/change/refresh.dm",332]%//%
+/obj/item/reagent_containers/food/condiment/carton/sugar volume=1 +overlay: icons/obj/food.dmi:sugar-100:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar volume=1 -overlay: icons/obj/food.dmi:sugar-75:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar volume=2 +overlay: icons/obj/food.dmi:sugar-100:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar volume=2 -overlay: icons/obj/food.dmi:sugar-75:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar/rustic volume=0 runtime: refresh of /obj/item/reagent_containers/food/condiment/carton/sugar/rustic: Division by zero (:)%//%["code/engine/change/refresh.dm",332]%//%
+/obj/item/reagent_containers/food/condiment/carton/sugar/rustic volume=1 +overlay: icons/obj/food.dmi:sugar_bag-100:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar/rustic volume=1 -overlay: icons/obj/food.dmi:sugar_bag-75:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar/rustic volume=2 +overlay: icons/obj/food.dmi:sugar_bag-100:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar/rustic volume=2 -overlay: icons/obj/food.dmi:sugar_bag-75:-32767
+

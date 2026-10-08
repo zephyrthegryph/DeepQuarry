@@ -1,0 +1,4 @@
+/obj/machinery/portable_atmospherics/hydroponics runtime: PURITY: /obj/machinery/portable_atmospherics/hydroponics.reagents was written inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/portable_atmospherics/hydroponics/soil runtime: PURITY: /obj/machinery/portable_atmospherics/hydroponics/soil.reagents was written inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible runtime: PURITY: /obj/machinery/portable_atmospherics/hydroponics/soil/invisible.reagents was written inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+

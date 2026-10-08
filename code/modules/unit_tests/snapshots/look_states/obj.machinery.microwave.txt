@@ -1,0 +1,4 @@
+/obj/machinery/microwave runtime: PURITY: /obj/machinery/microwave.reagents was written inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/microwave/cookingpot runtime: PURITY: /obj/machinery/microwave/cookingpot.reagents was written inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/microwave/advanced runtime: PURITY: /obj/machinery/microwave/advanced.reagents was written inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+

@@ -1,0 +1,2 @@
+/obj/machinery/chemical_synthesizer runtime: PURITY: /obj/machinery/chemical_synthesizer.reagents was written inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+
