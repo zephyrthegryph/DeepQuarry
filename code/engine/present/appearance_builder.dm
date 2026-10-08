@@ -634,6 +634,15 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		for(var/atom/movable/thing as anything in vis)
 			M.vis_contents |= thing
 			LAZYADD(cache.look_vis, thing)
+	else if(isturf(A)) // a turf shows its shared visuals (an underwater tile's water layer) the same way a movable does
+		var/turf/T = A
+		for(var/atom/movable/thing as anything in cache.look_vis)
+			if(!vis || !(thing in vis))
+				T.vis_contents -= thing
+		cache.look_vis = null
+		for(var/atom/movable/thing as anything in vis)
+			T.vis_contents |= thing
+			LAZYADD(cache.look_vis, thing)
 	if(flick_state)
 		flick(flick_state, A)
 

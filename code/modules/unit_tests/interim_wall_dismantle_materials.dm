@@ -24,7 +24,7 @@
 	var/turf/simulated/wall/wall = T.ChangeTurf(/turf/simulated/wall)
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	var/datum/material/reinforcement = reinforced_case ? get_material_by_name(MAT_PLASTEEL) : null
-	wall.set_material(steel, reinforcement, steel)
+	wall.apply_materials(steel, reinforcement, steel)
 	TEST_ASSERT_EQUAL(wall.material, steel, "the actual wall has steel outer material")
 	TEST_ASSERT_EQUAL(wall.reinf_material, reinforcement, "the actual wall has the configured reinforcement")
 	TEST_ASSERT_EQUAL(length(contents_of(wall, /obj/structure/girder)), 0, "the actual wall fixture starts without a girder")

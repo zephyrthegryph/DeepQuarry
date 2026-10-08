@@ -69,7 +69,7 @@
  * code/__defines/capabilities.dm stays as it is until the migration retires it, so a var with a schema uses this name. `V` must be
  * declared on the type (the var line carries the default). A rejected write leaves the var as it was and returns FALSE.
  */
-#define TRACKED_SCHEMA(T, V, SCHEMA_EXPR, opts...) ##T/proc/set_##V(value) { value = schema_write(src, #V, value); if(value == SCHEMA_REJECT) { return FALSE }; if(V == value) { return FALSE }; V = value; tracked_changed(src, #V); return TRUE };SCHEMA(T, V, SCHEMA_EXPR, opts)
+#define TRACKED_SCHEMA(T, V, SCHEMA_EXPR, opts...) ##T/proc/set_##V(value) { value = schema_write(src, #V, value); if(value == SCHEMA_REJECT) { return FALSE }; if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; tracked_changed(src, #V); return TRUE };SCHEMA(T, V, SCHEMA_EXPR, opts)
 
 /// The same schema for a var that is not tracked and is declared on its own line (a row column, a request field). The schema's source
 /// text is kept for the range text of the generated UI types.

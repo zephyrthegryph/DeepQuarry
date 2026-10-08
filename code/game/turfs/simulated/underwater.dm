@@ -72,12 +72,22 @@
 	name = "deeper waters"
 	desc = "The watery depths seem to go even deeper here."
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/open, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/floor/water/underwater/open/appearance_overlays()
-	. = list()
-	. += ..()
-	icon = 'icons/turf/open_space.dmi'
-	icon_state = "black_open_lighter"
+DECLARE_SHARED_CACHE(underwater_visuals, GLOBAL_PROC_REF(build_underwater_visuals), SC_NEVER)
+
+/// Builder for underwater_visuals: the weather layer an underwater tile shows through its vis_contents, one shared atom per icon and state.
+/proc/build_underwater_visuals(visuals_icon, visuals_state)
+	var/atom/movable/weather_visuals/visuals = new(null)
+	visuals.icon = visuals_icon
+	visuals.icon_state = visuals_state
+	return visuals
+
+/turf/simulated/floor/water/underwater/open/draw(datum/look/look)
+	..()
+	look.set_icon('icons/turf/open_space.dmi')
+	look.state("black_open_lighter")
+
+/turf/simulated/floor/water/underwater/open/edge_look_state()
+	return "black_open_lighter"
 
 /turf/simulated/floor/water/underwater/open/sim_after_init(datum/act/timer/A)
 	..()
@@ -86,13 +96,9 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/open, TYPE_PROC_R
 /turf/simulated/floor/water/underwater/open/CanZPass(atom/A, direction, recursive)
 	return TRUE
 
-/turf/simulated/floor/water/underwater/open/handle_water_icons()
-	// We'll rely on the turfs below for water visuals!
-	SHOULD_CALL_PARENT(FALSE)
-	var/atom/movable/weather_visuals/visuals = new(null)
-	visuals.icon = 'icons/effects/weather.dmi'
-	visuals.icon_state = "underwater"
-	vis_contents += visuals
+/// We'll rely on the turfs below for water visuals!
+/turf/simulated/floor/water/underwater/open/look_water(datum/look/look)
+	look.show(CACHED_KEY(underwater_visuals, "underwater", 'icons/effects/weather.dmi', "underwater"))
 
 // Indoors variants that do not use outdoor lighting, and must re-add water overlay icons since they won't be relying on the weather system to do it!
 
@@ -100,17 +106,14 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/open, TYPE_PROC_R
 	outdoors = OUTDOORS_NO
 	var/overlay_icon = 'icons/effects/weather.dmi'
 	var/overlay_state = "underwater-indoors"
-	var/atom/movable/weather_visuals/visuals
 
-CAPABILITIES(/turf/simulated/floor/water/underwater/indoors)
-	owns_one(nameof(visuals), /atom/movable/weather_visuals)
+/// They must re-add the water visuals, since they won't be relying on the weather system to do it!
+/turf/simulated/floor/water/underwater/indoors/look_water(datum/look/look)
+	look.show(CACHED_KEY(underwater_visuals, "[overlay_icon]:[overlay_state]", overlay_icon, overlay_state))
 
-/turf/simulated/floor/water/underwater/indoors/handle_water_icons()
-	SHOULD_CALL_PARENT(FALSE)
-	rel_set(src, nameof(visuals), new /atom/movable/weather_visuals(null))
-	visuals.icon = overlay_icon
-	visuals.icon_state = overlay_state
-	vis_contents += visuals
+/// It sets no bed state of its own: it shows the state the tile has.
+/turf/simulated/floor/water/underwater/indoors/edge_look_state()
+	return icon_state
 
 /turf/simulated/floor/water/underwater/indoors/open
 	icon = 'icons/effects/weather.dmi'
@@ -122,12 +125,13 @@ CAPABILITIES(/turf/simulated/floor/water/underwater/indoors)
 	..()
 	make_z_transparent(FALSE)
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/indoors/open, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/floor/water/underwater/indoors/open/appearance_overlays()
-	. = list()
-	. += ..()
-	icon = 'icons/turf/open_space.dmi'
-	icon_state = "black_open_lighter"
+/turf/simulated/floor/water/underwater/indoors/open/draw(datum/look/look)
+	..()
+	look.set_icon('icons/turf/open_space.dmi')
+	look.state("black_open_lighter")
+
+/turf/simulated/floor/water/underwater/indoors/open/edge_look_state()
+	return "black_open_lighter"
 
 /turf/simulated/floor/water/underwater/indoors/open/CanZPass(atom/A, direction, recursive)
 	return TRUE

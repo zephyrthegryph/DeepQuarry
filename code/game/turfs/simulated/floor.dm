@@ -4,9 +4,13 @@
 	icon = 'icons/turf/flooring/plating.dmi'
 	icon_state = "plating"
 
-	// Damage to flooring.
+	/// Damage to flooring: null when whole, else the variant of the sprite to show (which may be 0).
 	var/broken
 	var/burnt
+	/// TRUE once the flooring was torn off with no plating to show under it: the tile draws the bare deck (base_icon, base_icon_state).
+	var/plating_exposed = FALSE
+	/// A sprite burnt into the tile that replaces the one its flooring or damage shows (the scorch a melted wall leaves), until it is covered or welded.
+	var/scorch_state
 
 	// Plating data.
 	var/base_name = "plating"
@@ -29,8 +33,14 @@
 	thermal_conductivity = 0.040
 	heat_capacity = FLOOR_HEAT_CAPACITY
 
+TRACKED(/turf/simulated/floor, flooring)
 TRACKED(/turf/simulated/floor, flooring_override)
 TRACKED(/turf/simulated/floor, plating_damage_state)
+TRACKED(/turf/simulated/floor, plating_exposed)
+TRACKED(/turf/simulated/floor, scorch_state)
+
+TRACKED(/turf/simulated/floor, broken)
+TRACKED(/turf/simulated/floor, burnt)
 
 /turf/simulated/floor/is_plating()
 	return (!flooring || flooring.is_plating)
@@ -43,24 +53,19 @@ TRACKED(/turf/simulated/floor, plating_damage_state)
 	. = ..()
 	var/floortype = floortype_at_make || initial_flooring
 	if(floortype)
-		set_flooring(get_flooring_data(floortype), TRUE) // its icons update after init (sim_after_init())
+		install_flooring(get_flooring_data(floortype), TRUE) // the first draw after init shows it
 	if(can_dirty && can_start_dirty)
 		if(prob(dirty_prob))
 			dirt += rand(50,100)
 			update_dirt() //5% chance to start with dirt on a floor tile- give the janitor something to do
 
-/// A floor with flooring updates its icons after init wherever it was made.
+/// A floor with flooring runs the after-init pass (planet sunlight) wherever it was made.
 /turf/simulated/floor/runtime_after_init()
 	return !!flooring
 
-/// Its icons, once its neighbours exist.
-/turf/simulated/floor/sim_after_init(datum/act/timer/A)
-	..()
-	update_icon()
-
 /turf/simulated/floor/proc/swap_decals()
 	var/current_decals = decals
-	decals = old_decals
+	set_decals(old_decals)
 	old_decals = current_decals
 
 /// The sprite a flooring with a range of variants is laid with: its base (and the season's) with one of its variant numbers.
@@ -70,29 +75,27 @@ TRACKED(/turf/simulated/floor, plating_damage_state)
 		state = "[state]-[GLOB.world_time_season]"
 	return "[state][rand(0, flooring.has_base_range)]"
 
-/turf/simulated/floor/proc/set_flooring(datum/decl/flooring/newflooring, initializing)
+/// Lays `newflooring` on the tile (its tracked flooring, the variant it rolls and the decals that go with the surface). The draw follows by itself.
+/turf/simulated/floor/proc/install_flooring(datum/decl/flooring/newflooring, initializing)
 	if(is_plating() && !initializing) // Plating -> Flooring
 		swap_decals()
-	flooring = newflooring
+	set_flooring(newflooring)
+	set_plating_exposed(FALSE)
+	set_scorch_state(null)
 	if(flooring?.has_base_range && !flooring_override)
 		set_flooring_override(rolled_flooring_state()) // rolled once here, not on every draw
 	if(!initializing)
 		restore_floor_integrity()
-		update_icon()
 	levelupdate()
 
-//This proc will set floor_type to null and the update_icon() proc will then change the icon_state of the turf
-//This proc auto corrects the grass tiles' siding.
-/turf/simulated/floor/proc/make_plating(place_product, defer_icon_update)
-	cut_overlays()
-
+//This proc will set the flooring to its plating (or to nothing) and the draw shows the result.
+//The edges of the grass tiles around follow through the adjacency index.
+/turf/simulated/floor/proc/make_plating(place_product)
 	for(var/obj/effect/decal/writing/W in turf_contents_of_type(src, /obj/effect/decal/writing))
 		spent(W)
 
 	name = base_name
 	desc = base_desc
-	icon = base_icon
-	icon_state = base_icon_state
 	color = null
 
 	if(!is_plating()) // Flooring -> Plating
@@ -101,18 +104,16 @@ TRACKED(/turf/simulated/floor, plating_damage_state)
 			new flooring.build_type(src, flooring.build_cost)
 		var/newtype = flooring.get_plating_type()
 		if(newtype) // Has a custom plating type to become
-			set_flooring(get_flooring_data(newtype))
+			install_flooring(get_flooring_data(newtype))
 		else
-			flooring = null
+			set_flooring(null)
+			set_plating_exposed(TRUE)
 
 	set_light(0)
-	broken = null
-	burnt = null
+	set_broken(null)
+	set_burnt(null)
 	set_flooring_override(null)
 	levelupdate()
-
-	if(!defer_icon_update)
-		update_icon()
 
 /turf/simulated/floor/levelupdate()
 	var/floored_over = !is_plating()

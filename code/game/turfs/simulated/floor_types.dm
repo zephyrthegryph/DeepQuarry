@@ -36,7 +36,7 @@
 	new_dest.icon = my_turf().icon
 	new_dest.copy_overlays(my_turf(), TRUE)
 	new_dest.underlays = my_turf().underlays.Copy()
-	new_dest.decals = my_turf().decals
+	new_dest.set_decals(my_turf().decals)
 	//Shuttle specific stuff
 	new_dest.interior_corner = my_turf().interior_corner
 	new_dest.takes_underlays = my_turf().takes_underlays
@@ -66,7 +66,7 @@
 		new_source.icon = icon
 		new_source.copy_overlays(src, TRUE)
 		new_source.underlays = underlays.Copy()
-		new_source.decals = decals
+		new_source.set_decals(decals)
 		new_source.lighting_build_overlay()
 	else
 		new_source = my_turf().ChangeTurf(base_turf ? base_turf : get_base_turf_by_area(my_turf()),,1)

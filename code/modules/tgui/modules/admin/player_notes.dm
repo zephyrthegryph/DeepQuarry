@@ -318,7 +318,7 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 /datum/admins/proc/topic_add_player_info_legacy(datum/act/op/A, href_add_player_info_legacy)
 	var/mob/user = A.actor
 	var/key = href_add_player_info_legacy
-	var/add = topic_ask(user, A.topic_href(), "a1", /datum/prompt/text, question = "Add Player Info (Legacy)", multiline = TRUE)
+	var/add = A.step_value("info")
 	if(isnull(add))
 		return
 	if(!add)

@@ -39,15 +39,18 @@
 	name = "fuel"
 
 /datum/resource/fuel/holder_of(datum/act/op/A)
-	return A.held
+	var/obj/item/tool = A.held_provider()
+	return tool?.get_welder()
 
 /datum/resource/fuel/available(datum/act/op/A)
-	var/obj/item/weldingtool/W = A.held
-	return istype(W) ? W.get_fuel() : 0
+	var/obj/item/tool = A.held_provider()
+	var/obj/item/weldingtool/W = tool?.get_welder()
+	return W ? W.get_fuel() : 0
 
 /datum/resource/fuel/commit(datum/reservation/R)
-	var/obj/item/weldingtool/W = R.held
-	if(!istype(W) || !W.remove_fuel(R.amount))
+	var/obj/item/tool = R.held
+	var/obj/item/weldingtool/W = tool?.get_welder()
+	if(!W || !W.remove_fuel(R.amount))
 		return OP_FAILED
 
 /// RES_STACK: units of the held stack. reserve sets the units aside. Under a stack(T, n) binding with put_in(), the put splits off exactly those

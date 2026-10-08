@@ -118,6 +118,7 @@
 		if(QDELETED(made))
 			. = list("deleted itself on creation")
 		else
+			stat_drain_point() // a tick runs the on_change reactions (a floor's edges follow the flooring it was laid with) before it draws
 			appearance_flush()
 			. = dq_look_pin_lines(made)
 	catch(var/exception/e)
@@ -227,12 +228,13 @@
 		qdel(probe)
 	catch(var/exception/e)
 		. += "[type] runtime: [dq_look_state_error(e)]"
-		own_turf_contents(T)
+		dq_look_drain_turf(T)
 		return
-	own_turf_contents(T)
+	dq_look_drain_turf(T)
 	if(length(names) > DQ_LOOK_STATE_MAX_VARS)
 		names.Cut(DQ_LOOK_STATE_MAX_VARS + 1)
 	var/list/base = dq_look_capture(type, T)
+	dq_look_drain_turf(T)
 	for(var/name in names)
 		for(var/value in list(0, 1, 2))
 			. += dq_look_state_probe(type, T, name, value, base)
@@ -248,7 +250,7 @@
 		appearance_flush()
 		if(target.vars[name] == value)
 			qdel(target)
-			own_turf_contents(T)
+			dq_look_drain_turf(T)
 			return
 		var/setter = "set_[name]"
 		if(hascall(target, setter))
@@ -266,7 +268,10 @@
 		qdel(target)
 	catch(var/exception/e)
 		. += "[type] [name]=[value] runtime: [dq_look_state_error(e)]"
-	own_turf_contents(T)
+	// A probe leaves nothing behind: what its thing spilled when it was deleted (a core's chunk, a cabinet's guns, a worm's dead
+	// heads) would otherwise be there for every later probe, and a closet takes all of it in each time it is made, so a type's
+	// probes got slower with each one and the sweep never finished.
+	dq_look_drain_turf(T)
 
 /proc/dq_look_state_error(exception/e)
 	var/static/regex/where = regex(@"^\S+\.dm:\d+:")
@@ -274,3 +279,21 @@
 
 #undef DQ_LOOK_STATE_DIR
 #undef DQ_LOOK_STATE_MAX_VARS
+
+/// A state-pin probe of a type that spills things when it dies (a blob core drops a chunk, a gun cabinet its guns) leaves the floor
+/// clear, so a closet made after it takes nothing in: the cost of a probe stays the same however many came before it.
+/datum/unit_test/dq_look_state_probe_leaves_floor_clear
+
+/datum/unit_test/dq_look_state_probe_leaves_floor_clear/Run()
+	var/turf/T = test_floor()
+	var/list/base_vars = dq_look_state_base_vars(/obj, T)
+	for(var/type in list(/obj/structure/blob/core, /obj/structure/closet/secure_closet/guncabinet/sidearm))
+		dq_look_state_rows(type, T, base_vars)
+		var/list/left = list()
+		for(var/atom/movable/AM as anything in contents_of(T))
+			if(!QDELETED(AM) && !istype(AM, /obj/effect/landmark))
+				left += AM
+		var/atom/movable/first = length(left) ? left[1] : null
+		TEST_ASSERT(!length(left), "[type]'s probes left [length(left)] things on the floor ([first?.type])")
+	var/obj/structure/closet/C = allocate(/obj/structure/closet/coffin, T)
+	TEST_ASSERT(!length(C.contents), "a closet made after the probes took in [length(C.contents)] things")

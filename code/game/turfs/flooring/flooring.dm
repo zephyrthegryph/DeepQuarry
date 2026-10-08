@@ -123,7 +123,7 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 
 /// The edge and inner-corner overlays for a floor of this flooring with borders on `has_border`
 /// (cardinal bits) and inner corners on `inner_corners` (bit i-1 for GLOB.cornerdirs[i]), in the order
-/// update_icon() always added them: edges, outer corners, inner corners (doc/rewrite/
+/// the draw adds them: edges, outer corners, inner corners (doc/rewrite/
 /// init_and_turfs.md sec 3.5). Built once per (flooring, border, corners) and shared by every
 /// floor in that state. Read-only: callers pass it to add_overlay(), which copies.
 /datum/decl/flooring/proc/get_edge_overlays(has_border, inner_corners)

@@ -4,6 +4,9 @@
 // icon_states when mapping interesting floor designs. Painted at runtime by floor_decal_paint().
 GLOBAL_LIST_EMPTY(floor_decals)
 
+/// The decals of a floor are a tracked list that is replaced, never changed in place: a floor draws them, and writing a new list publishes it.
+TRACKED(/turf, decals)
+
 /obj/effect/floor_decal
 	name = "floor decal"
 	icon = 'icons/turf/flooring/decals_vr.dmi'
@@ -42,8 +45,9 @@ MAP_RESOLVER(/obj/effect/floor_decal, GLOBAL_PROC_REF(resolve_floor_decal))
 		I.color = color
 		I.alpha = alpha
 		GLOB.floor_decals[cache_key] = I
-	LAZYADD(T.decals, I) // Add to its decals list (so it remembers to re-apply after it cuts overlays)
-	T.add_overlay(I) // Add to its current overlays too.
+	T.set_decals(T.decals ? T.decals + I : list(I)) // remembered, so the floor's draw shows it
+	if(!istype(T, /turf/simulated/floor)) // a tile that does not draw its decals gets it as an overlay too
+		T.add_overlay(I) // Add to its current overlays too.
 
 /obj/effect/floor_decal/reset
 	name = "reset marker"
@@ -54,8 +58,7 @@ MAP_RESOLVER(/obj/effect/floor_decal/reset, GLOBAL_PROC_REF(resolve_floor_decal_
 /proc/resolve_floor_decal_reset(atom/loc, path, list/varedits)
 	var/turf/T = get_turf(loc)
 	if(T && length(T.decals))
-		T.decals.Cut()
-		T.update_icon()
+		T.set_decals(null)
 	return TRUE
 
 /obj/effect/floor_decal/corner

@@ -459,8 +459,6 @@ initialize	code/game/turfs/simulated/lava.dm	/turf/simulated/floor/lava/Initiali
 initialize	code/game/turfs/simulated/nanogoop.dm	/turf/simulated/floor/water/digestive_enzymes/nanites/Initialize(mapload)
 initialize	code/game/turfs/simulated/wall_types.dm	/turf/simulated/shuttle/wall/alien/Initialize(mapload)
 initialize	code/game/turfs/simulated/wall_types.dm	/turf/simulated/shuttle/wall/Initialize(mapload)
-initialize	code/game/turfs/simulated/wall_types.dm	/turf/simulated/shuttle/wall/voidcraft/Initialize(mapload)
-initialize	code/game/turfs/simulated/wall_types.dm	/turf/simulated/flesh/Initialize(mapload)
 initialize	code/game/turfs/simulated/wall_types.dm	/turf/simulated/wall/uranium/Initialize(mapload)
 initialize	code/game/turfs/simulated/water.dm	/turf/simulated/floor/water/Initialize(mapload)
 initialize	code/game/turfs/unsimulated/beach.dm	/turf/unsimulated/beach/water/Initialize(mapload)
