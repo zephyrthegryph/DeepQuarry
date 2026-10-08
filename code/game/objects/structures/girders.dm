@@ -251,7 +251,7 @@ MSG_DEF_SELF(girder/slicing, span_notice("Now slicing apart the girder..."))
 	var/turf/Tsrc = get_turf(src)
 	Tsrc.ChangeTurf(wall_type)
 	var/turf/simulated/wall/T = get_turf(src)
-	T.set_material(M, reinf_material, girder_material)
+	T.apply_materials(M, reinf_material, girder_material)
 	if(wall_fake)
 		T.can_open = 1
 	T.add_hiddenprint(user)

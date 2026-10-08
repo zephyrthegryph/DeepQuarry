@@ -1,6 +1,6 @@
 // TOPIC_ACTION registry (doc/rewrite/systems.md §20): the core dispatcher finds rows by href
 // key, validates refs against their declared source and type, converts typed args, checks
-// rights, inherits rows, and hands topic_ask() the raw href_list.
+// rights and inherits rows.
 
 /datum/dq_topic_probe
 	var/last_action
@@ -121,17 +121,6 @@ TOPIC_ACTION(/datum/dq_topic_probe/child, "pick", PROC_REF(topic_child_pick), TO
 
 	qdel(P)
 	qdel(C)
-
-/// topic_ask() handed a handler's args list finds the raw href_list inside it.
-/datum/unit_test/dq_sys_topic_ask_unwraps
-
-/datum/unit_test/dq_sys_topic_ask_unwraps/Run()
-	var/datum/dq_topic_probe/P = new
-	var/list/href = list("set" = "1", "rerun_answer_k1" = "42")
-	var/list/handler_args = list()
-	handler_args[TOPIC_HREF] = href
-	TEST_ASSERT_EQUAL(P.topic_rerun_ask(null, handler_args, "k1", /datum/prompt/number, list()), "42", "a re-run answer is read from the raw href_list")
-	qdel(P)
 
 /// admin_can() is the single rights primitive: a null or holder-less subject holds no rights, check_rights_for()
 /// is its alias, and a denial through admin_require() is refused (and audited) without reading usr.

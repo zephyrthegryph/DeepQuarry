@@ -77,8 +77,8 @@ TYPE_TABLE(/turf/simulated/wall/fancy_shuttle, wall_forced_materials, list(MAT_S
 			material.place_dismantled_product(src)
 
 	clear_plants()
-	material = get_material_by_name("placeholder")
-	reinf_material = null
+	set_material(get_material_by_name("placeholder"))
+	set_reinf_material(null)
 	girder_material = null
 
 	ChangeTurf(/turf/simulated/floor/plating/eris/under)
@@ -111,30 +111,27 @@ TYPE_TABLE(/turf/simulated/wall/fancy_shuttle, wall_forced_materials, list(MAT_S
 	if(under_EM)
 		underlays += under_EM
 
-// Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall/fancy_shuttle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/wall/fancy_shuttle/appearance_overlays()
-	. = list()
-	if(!damage_overlays[1])
-		generate_overlays()
+CAPABILITIES(/turf/simulated/wall/fancy_shuttle)
+	after_init(0, then(PROC_REF(helper_check)))
 
+/// Reports a tagged wall whose helper is not there (the helper is made very early, so every wall of the load can find it).
+/turf/simulated/wall/fancy_shuttle/proc/helper_check(datum/act/timer/A)
+	if(fancy_shuttle_tag && !GLOB.fancy_shuttles[fancy_shuttle_tag])
+		WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
+
+// Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
+/turf/simulated/wall/fancy_shuttle/look_parts(datum/look/look)
 	if(fancy_shuttle_tag) // after a shuttle jump it won't be set anymore, but the shuttle jump proc will set our icon and state
 		var/list/helper = GLOB.fancy_shuttles[fancy_shuttle_tag]
 		if(!helper)
-			WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
-			return .
-		icon = helper[1]
-		icon_state = "walls [x - helper[2]],[y - helper[3]]"
+			return
+		look.set_icon(helper[1])
+		look.state("walls [x - helper[2]],[y - helper[3]]")
 
-	apply_underlay()
+	look.effect(PROC_REF(apply_underlay))
 
-	var/damage_fraction = wall_damage_fraction()
-	if(damage_fraction > 0)
-		var/overlay = round(damage_fraction * damage_overlays.len) + 1
-		if(overlay > damage_overlays.len)
-			overlay = damage_overlays.len
-
-		. += damage_overlays[overlay]
+	if(damage_step)
+		look.overlay(damage_overlays[damage_step])
 
 /turf/simulated/wall/fancy_shuttle/update_connections()
 	return

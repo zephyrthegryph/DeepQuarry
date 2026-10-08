@@ -4,7 +4,7 @@
 // handler.
 //
 // Some procs ask before they act and can't be split into an answer proc yet: a Topic() handler, an admin verb, a proc that asks
-// several things in a row. They ask with a re-run helper: the first call opens a prompt request and returns null (the proc returns);
+// several things in a row. (A Topic() handler is an op with asks() steps.) They ask with a re-run helper: the first call opens a prompt request and returns null (the proc returns);
 // the answer runs the proc again with the same arguments, and this time the same helper call returns the answer (the request's
 // `value`). The re-run re-checks everything the proc checks. Ask everything before doing anything: the proc runs once per answer.
 //
@@ -12,7 +12,6 @@
 //	if(isnull(amount))
 //		return
 //
-//   topic_ask(user, href_list, key, prompt, ...)                     a Topic() handler
 //   verb_ask(user, key, args, prompt, ...)                           an ADMIN_VERB body (the verb's rights are re-checked)
 //   client_ask(key, PROC_REF(this proc), args, rights, prompt, ...)  a /client proc (`rights`: R_* re-checked)
 //   rerun_ask(user, key, PROC_REF(this proc), args, prompt, ...)     any datum proc
@@ -129,32 +128,6 @@
 	for(var/name in record_vars)
 		R.vars[name] = record_vars[name] // ALLOW(api): a re-run record's state set by name from its helper
 	R.ask(user, prompt_type, fields)
-
-// ---------------------------------------------------------------- Topic() handlers
-//
-// The answer re-enters the topic dispatcher (topic_dispatch(), which tries the holder's topic op first) with the same href_list plus the answer; `key` names it. A handler passes its args
-// list (the raw href_list is args[TOPIC_HREF]).
-
-/datum/proc/topic_rerun_ask(mob/user, list/href_list, key, prompt_type, list/fields)
-	// A topic handler passes the raw href list (A.topic_href()); a legacy row's args list carries it under TOPIC_HREF.
-	if(islist(href_list[TOPIC_HREF]))
-		href_list = href_list[TOPIC_HREF]
-	var/answer_key = "rerun_answer_[key]"
-	if(!isnull(href_list[answer_key]))
-		return href_list[answer_key]
-	rerun_begin(/datum/prompt_rerun/topic, user, src, answer_key, prompt_type, fields, list("href_list" = href_list.Copy()))
-	return null
-
-/datum/prompt_rerun/topic
-	var/list/href_list
-
-/datum/prompt_rerun/topic/rerun(answer)
-	var/mob/user = actor()
-	href_list[answer_key] = answer
-	// Topic() handlers read usr; the answer arrives from the user's own tgui action, so this is who it already is, but say so for
-	// answers delivered any other way.
-	usr = user
-	topic_dispatch(target(), user, href_list)
 
 // ---------------------------------------------------------------- re-runs keeping their answers
 //

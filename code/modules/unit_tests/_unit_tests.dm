@@ -319,6 +319,8 @@
 #include "dq_materialize_batch_tests.dm"
 #include "dq_map_load_job_tests.dm"
 #include "dq_turf_damage_tests.dm"
+#include "dq_turf_edges_tests.dm"
+#include "dq_tracked_null_tests.dm"
 #include "dq_integrity_pool_tests.dm"
 #include "dq_mech_body_tests.dm"
 #include "dq_ownership_tests.dm"
@@ -529,6 +531,8 @@
 #include "dq_e3_stats_tests.dm"
 #include "dq_e4_actions_tests.dm"
 #include "dq_lane_a_tests.dm"
+#include "dq_notice_late_deleted_tests.dm"
+#include "dq_asks_repeat_tests.dm"
 #include "dq_engine_forms_tests.dm"
 #include "dq_veto_tests.dm"
 #include "dq_veto_sites_tests.dm"
@@ -1247,6 +1251,11 @@
 #include "dq_machinery_keeps_dead_tests.dm"
 #include "dq_beacon_topic_gate_tests.dm"
 #include "dq_machinery_audit_pins.dm"
+
+#include "dq_machinery_last_kiosk_tests.dm"
+#include "dq_machinery_last_occupant_tests.dm"
+#include "dq_machinery_last_aicore_tests.dm"
+#include "dq_machinery_last_conversion_pin.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

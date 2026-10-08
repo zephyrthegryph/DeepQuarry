@@ -176,7 +176,7 @@
 	own_turf_contents(run_loc_floor_bottom_left)
 	own_turf_contents(run_loc_floor_top_right)
 	if(F.flooring != p2_flooring)
-		F.set_flooring(p2_flooring)
+		F.install_flooring(p2_flooring)
 	p2_area.requires_power = p2_area_requires
 	p2_area.power_light = p2_area_light
 	p2_area.power_equip = p2_area_equip

@@ -12,7 +12,7 @@
 CAPABILITIES(/turf/simulated/floor/holofloor)
 	op("pass_item", item(/obj/item), label("Nothing"), passes())
 
-/turf/simulated/floor/holofloor/set_flooring()
+/turf/simulated/floor/holofloor/install_flooring()
 	return
 
 /turf/simulated/floor/holofloor/carpet
@@ -65,12 +65,14 @@ CAPABILITIES(/turf/simulated/floor/holofloor)
 	name = "\proper space"
 	icon_state = "white"
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/floor/holofloor/space/appearance_overlays()
-	. = list()
-	. += ..()
+/turf/simulated/floor/holofloor/space/draw(datum/look/look)
+	..()
+	look.overlay(space_dust())
+
+/// The dust of the skybox over this tile: one of its cached pieces, picked by where the tile is.
+/turf/simulated/floor/holofloor/space/proc/space_dust()
 	var/datum/system/skybox/sky = SSskybox.ready()
-	. += sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
+	return sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 
 /turf/simulated/floor/holofloor/reinforced
 	icon = 'icons/turf/flooring/tiles.dmi'

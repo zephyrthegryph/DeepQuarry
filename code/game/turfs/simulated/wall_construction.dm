@@ -42,7 +42,7 @@
 /datum/construction_graph/wall/set_state(atom/target, state)
 	var/turf/simulated/wall/wall = target
 	if(istype(wall) && isnum(state))
-		wall.construction_stage = state
+		wall.set_construction_stage(state)
 
 /datum/construction_graph/wall/on_step_started(atom/target, mob/actor, obj/item/held)
 	var/turf/simulated/wall/wall = target
@@ -53,7 +53,6 @@
 /datum/construction_graph/wall/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
 	if(after == CONSTRUCTION_DONE)
 		return
-	target.update_icon()
 	actor.update_examine_panel(target)
 
 /// A worker who can do wall work: dexterous and standing on a turf. TRUE or why not.

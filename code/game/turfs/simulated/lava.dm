@@ -28,7 +28,6 @@ CAPABILITIES(/turf/simulated/floor/lava)
 /turf/simulated/floor/lava/Initialize(mapload)
 	if(!is_outdoors())
 		name = "magma"
-	update_icon()
 	update_light()
 	rel_set(src, nameof(soundloop), new /datum/looping_sound/lava(list(src), FALSE))
 	soundloop.start()
@@ -43,10 +42,10 @@ CAPABILITIES(/turf/simulated/floor/lava)
 	..()
 	name = "magma"
 
-/turf/simulated/floor/lava/make_plating(place_product, defer_icon_update)
+/turf/simulated/floor/lava/make_plating(place_product)
 	return
 
-/turf/simulated/floor/lava/set_flooring(datum/decl/flooring/newflooring, initializing)
+/turf/simulated/floor/lava/install_flooring(datum/decl/flooring/newflooring, initializing)
 	if(newflooring?.type == initial_flooring)
 		return ..()
 	return

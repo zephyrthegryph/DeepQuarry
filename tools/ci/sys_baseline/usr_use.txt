@@ -19,7 +19,6 @@ usr_outside_verb	code/datums/callback.dm	if(!usr)
 usr_outside_verb	code/datums/callback.dm	var/temp = usr
 usr_outside_verb	code/datums/callback.dm	usr = M
 usr_outside_verb	code/datums/callback.dm	usr = temp
-usr_outside_verb	code/datums/prompts/reruns.dm	usr = user
 usr_outside_verb	code/datums/prompts/reruns.dm	usr = actor() // Verbs and panel procs read usr, as they did when first run.
 usr_outside_verb	code/datums/prompts/reruns.dm	var/user_ckey = usr?.ckey
 usr_outside_verb	code/datums/prompts/reruns.dm	usr = user // Flow entries are verbs, panels and topics, and read usr as they did first.

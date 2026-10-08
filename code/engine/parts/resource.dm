@@ -98,7 +98,7 @@ GLOBAL_LIST_EMPTY(resource_adapters)
 /// Total of the open reservations of a resource against a holder.
 /proc/reserved_total(datum/holder, res_id)
 	. = 0
-	for(var/datum/reservation/R as anything in holder.rx?.reservations)
+	for(var/datum/reservation/R as anything in holder?.rx?.reservations)
 		if(R.res_id == res_id && !R.ended)
 			. += R.amount
 

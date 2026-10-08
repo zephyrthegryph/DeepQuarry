@@ -127,8 +127,20 @@
 /turf/simulated/wall/elevator state: blank
 /turf/simulated/wall/elevator dir: 2
 /turf/simulated/wall/elevator overlay: icons/turf/wall_masks.dmi:metal0:-32767:#666666 x4
-/turf/simulated/wall/solidrock runtime: cannot read from list
-/turf/simulated/wall/solidrock/mossyrockpoi runtime: cannot read from list
+/turf/simulated/wall/solidrock icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/solidrock state: blank
+/turf/simulated/wall/solidrock dir: 2
+/turf/simulated/wall/solidrock overlay: :rock_side:-32767 x3
+/turf/simulated/wall/solidrock overlay: icons/turf/wall_masks.dmi:rock0:-32767 x2
+/turf/simulated/wall/solidrock overlay: icons/turf/wall_masks.dmi:rock3:-32767
+/turf/simulated/wall/solidrock overlay: icons/turf/wall_masks.dmi:rock6:-32767
+/turf/simulated/wall/solidrock/mossyrockpoi icon: icons/turf/wall_masks_vr.dmi
+/turf/simulated/wall/solidrock/mossyrockpoi state: blank
+/turf/simulated/wall/solidrock/mossyrockpoi dir: 2
+/turf/simulated/wall/solidrock/mossyrockpoi overlay: :mossyrock_side:-32767 x3
+/turf/simulated/wall/solidrock/mossyrockpoi overlay: icons/turf/wall_masks.dmi:mossyrock0:-32767 x2
+/turf/simulated/wall/solidrock/mossyrockpoi overlay: icons/turf/wall_masks.dmi:mossyrock3:-32767
+/turf/simulated/wall/solidrock/mossyrockpoi overlay: icons/turf/wall_masks.dmi:mossyrock6:-32767
 /turf/simulated/wall/uranium icon: icons/turf/wall_masks_vr.dmi
 /turf/simulated/wall/uranium state: blank
 /turf/simulated/wall/uranium dir: 2
