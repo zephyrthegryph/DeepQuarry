@@ -2255,7 +2255,9 @@ export const DmTestTarget = new Juke.Target({
     // can reuse them via compileDerived()'s content-hash cache instead of
     // recompiling. removeDerivedArtifacts() in compileDerived()'s catch
     // already cleans up fully on a failed compile.
-    await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
+    // DQ_KEEP_DERIVED_DME=1 (tools/dq_focused_test.sh --split-slow): a second dm-test shares this .dmb and re-reads the
+    // derived .dme for its compile-hash check; deleting it under that run would fail its cache hit.
+    if (process.env.DQ_KEEP_DERIVED_DME !== '1') await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
     if (!run.clean) {
       Juke.logger.error('Test run was not clean, exiting');
       throw new Juke.ExitCode(1);

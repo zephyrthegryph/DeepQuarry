@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Faster merge batches: a persistent merge worktree, one pre-test gate script, a known-failures list, slow look pins in a parallel test world, and detachable focused runs with a status poll"
