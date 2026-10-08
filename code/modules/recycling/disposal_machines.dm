@@ -810,22 +810,10 @@ TRACKED(/obj/machinery/disposal, occupied)
 
 	density = FALSE
 
-/// The direction the wall outlet faces, kept as tracked state for the look.
-/obj/machinery/disposal/wall/var/outlet_dir = 0
-
-TRACKED(/obj/machinery/disposal/wall, outlet_dir)
-
-/obj/machinery/disposal/wall/face(new_dir)
-	..()
-	set_outlet_dir(new_dir)
-
-/// A wall bin sits in the wall it faces: the look moves it (an effect, since it writes the pixel offset).
+/// A wall bin sits in the wall it faces: the look offsets it by its dir (a change of dir redraws).
 /obj/machinery/disposal/wall/look_parts(datum/look/look)
 	..()
-	look.effect(PROC_REF(look_effect_wall_offset), outlet_dir)
-
-/obj/machinery/disposal/wall/proc/look_effect_wall_offset(facing)
-	switch(facing)
+	switch(dir)
 		if(NORTH)
 			look.offset(0, -32)
 		if(SOUTH)
