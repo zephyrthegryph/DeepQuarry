@@ -393,8 +393,8 @@ pub fn own_roots_of(proc: &Proc, tree: &Tree, relations: &HashSet<String>) -> (H
     let relation_expr = pat_match!(r"(?:(\w+)\s*\??\.\s*)?(\w+)\s*$");
     let dotted_root = pat_match!(r"(\w+)\s*\??\.");
     // `look.watch(X)` declares the draw's read through X: the last name of X is a relation, like a watched REL.
-    let look_watch = pat!(r"look\s*\.\s*watch\s*\(\s*([^()]*?)\s*\)");
-    let last_name = pat_match!(r"(\w+)\s*$");
+    let look_watch = pat!(r"look\s*\.\s*watch\s*\(\s*([\w.?]+)\s*\)");
+    let last_name = pat_match!(r"(?:\w+\s*\??\.\s*)*(\w+)$");
     for (_n, text) in proc.lines(tree) {
         for w in look_watch.captures_iter(text) {
             if let Some(l) = last_name.captures(w.s(1)) {
