@@ -1,11 +1,16 @@
 blob | survives
-emag | nothing
+emag | refresh_queued: 131071 -> 0
 emp 1 | desc: 'It appears to be a vest of standard armor, except this is embedded with a hidden holographic cloaker, allowing it to change it's appearance, but offering no protection.. It seems to have a small dial inside.' -> 'An armored vest that protects against some damage.'
 emp 1 | refresh_queued: 131071 -> 0
 emp 2 | desc: 'It appears to be a vest of standard armor, except this is embedded with a hidden holographic cloaker, allowing it to change it's appearance, but offering no protection.. It seems to have a small dial inside.' -> 'An armored vest that protects against some damage.'
+emp 2 | refresh_queued: 131071 -> 0
 explosion 1 | deleted
 explosion 2 | atom_integrity: down
+explosion 2 | refresh_queued: 131071 -> 0
 explosion 3 | atom_integrity: down
+explosion 3 | refresh_queued: 131071 -> 0
 projectile | atom_integrity: down
+projectile | refresh_queued: 131071 -> 0
 thrown | atom_integrity: down
+thrown | refresh_queued: 131071 -> 0
 

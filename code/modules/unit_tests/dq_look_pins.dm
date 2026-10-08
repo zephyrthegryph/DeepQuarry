@@ -128,6 +128,8 @@
 	var/list/counts = list()
 	for(var/layer in layers)
 		var/mutable_appearance/MA = new(layer)
+		if(MA.icon == LIGHTING_ICON) // the lighting system's own darkness layer, present or not by boot timing; not part of a look
+			continue
 		var/row = "[kind]: [MA.icon]:[MA.icon_state]:[MA.plane]"
 		if(!isnull(MA.color))
 			row += ":[islist(MA.color) ? jointext(MA.color, ",") : MA.color]"

@@ -1,3 +1,7 @@
+/obj/machinery/pump open=1 +overlay: icons/obj/machines/reagent.dmi:pump-cell:-32767
+/obj/machinery/pump open=1 +overlay: icons/obj/machines/reagent.dmi:pump-open:-32767
+/obj/machinery/pump open=2 +overlay: icons/obj/machines/reagent.dmi:pump-cell:-32767
+/obj/machinery/pump open=2 +overlay: icons/obj/machines/reagent.dmi:pump-open:-32767
 /obj/machinery/pump on=1 +state: pump-running
 /obj/machinery/pump on=1 +overlay: icons/obj/machines/reagent.dmi:pump-running-glass:-32767
 /obj/machinery/pump on=1 +overlay: icons/obj/machines/reagent.dmi:pump-running-tank:-32767
@@ -10,8 +14,4 @@
 /obj/machinery/pump on=2 -state: pump
 /obj/machinery/pump on=2 -overlay: icons/obj/machines/reagent.dmi:pump-glass:-32767
 /obj/machinery/pump on=2 -overlay: icons/obj/machines/reagent.dmi:pump-tank:-32767
-/obj/machinery/pump open=1 +overlay: icons/obj/machines/reagent.dmi:pump-cell:-32767
-/obj/machinery/pump open=1 +overlay: icons/obj/machines/reagent.dmi:pump-open:-32767
-/obj/machinery/pump open=2 +overlay: icons/obj/machines/reagent.dmi:pump-cell:-32767
-/obj/machinery/pump open=2 +overlay: icons/obj/machines/reagent.dmi:pump-open:-32767
 
