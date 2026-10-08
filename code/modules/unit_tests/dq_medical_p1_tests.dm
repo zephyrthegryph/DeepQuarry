@@ -40,7 +40,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/medic = allocate(/mob/living/carbon/human)
 	dq_give_zone_sel(medic)
-	medic.zone_sel.selecting = BP_TORSO
+	medic.zone_sel.set_selecting(BP_TORSO)
 	var/obj/item/stack/medical/advanced/ointment/kit = allocate(/obj/item/stack/medical/advanced/ointment)
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	torso.open = 1

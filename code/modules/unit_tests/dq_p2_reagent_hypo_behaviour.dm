@@ -105,7 +105,7 @@
 	rc_click(H, patient, empty)
 	TEST_ASSERT_EQUAL(rc_blood_units(patient), before, "an empty hypospray gives nothing")
 	var/obj/item/reagent_containers/hypospray/S = rc_hypo(/obj/item/reagent_containers/hypospray, 20)
-	H.zone_sel.selecting = BP_L_ARM
+	H.zone_sel.set_selecting(BP_L_ARM)
 	var/obj/item/organ/external/arm = patient.get_organ(BP_L_ARM)
 	arm.robotize()
 	rc_click(H, patient, S)
@@ -113,7 +113,7 @@
 	arm.droplimb(TRUE, DROPLIMB_EDGE)
 	rc_click(H, patient, S)
 	TEST_ASSERT_EQUAL(rc_units(S), 15, "a missing limb is refused")
-	H.zone_sel.selecting = BP_TORSO
+	H.zone_sel.set_selecting(BP_TORSO)
 
 /// Armour does not stop it: the nozzle finds a port.
 /datum/unit_test/dq_p2_reagents/hypospray_goes_through_armour

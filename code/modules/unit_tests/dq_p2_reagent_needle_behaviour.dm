@@ -558,7 +558,7 @@
 	var/mob/living/carbon/human/H = rc_actor()
 	var/mob/living/carbon/human/patient = rc_actor()
 	var/obj/item/reagent_containers/syringe/S = rc_syringe(/obj/item/reagent_containers/syringe, 15, "inject")
-	H.zone_sel.selecting = BP_L_ARM
+	H.zone_sel.set_selecting(BP_L_ARM)
 	var/obj/item/organ/external/arm = patient.get_organ(BP_L_ARM)
 	arm.robotize()
 	rc_click(H, patient, S)
@@ -566,4 +566,4 @@
 	arm.droplimb(TRUE, DROPLIMB_EDGE)
 	rc_click(H, patient, S)
 	TEST_ASSERT_EQUAL(rc_units(S), 15, "nor one that is missing")
-	H.zone_sel.selecting = BP_TORSO
+	H.zone_sel.set_selecting(BP_TORSO)

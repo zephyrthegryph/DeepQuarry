@@ -183,3 +183,16 @@
 	G.update_ref(null)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(length(G.overlays), before, "and gone when it is let go")
+
+/// The zone-selection screen draws the selected zone: changing the zone redraws it with no call.
+/datum/unit_test/dq_draw_zone_sel_follows_selecting
+
+/datum/unit_test/dq_draw_zone_sel_follows_selecting/Run()
+	var/atom/movable/screen/zone_sel/Z = allocate(/atom/movable/screen/zone_sel, test_floor())
+	refresh_flush()
+	TEST_ASSERT_EQUAL(dq_overlay_states(Z)[1], "[BP_TORSO]", "the starting zone is drawn")
+	Z.set_selecting(BP_HEAD)
+	refresh_flush()
+	var/list/states = dq_overlay_states(Z)
+	TEST_ASSERT_EQUAL(length(states), 1, "one zone overlay")
+	TEST_ASSERT_EQUAL(states[1], "[BP_HEAD]", "the new zone is drawn")

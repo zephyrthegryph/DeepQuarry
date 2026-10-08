@@ -170,14 +170,14 @@
 
 /datum/unit_test/dq_p2_reagents/patch_is_put_on_yourself/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
-	H.zone_sel.selecting = BP_L_ARM
+	H.zone_sel.set_selecting(BP_L_ARM)
 	var/obj/item/reagent_containers/pill/patch/P = rc_pill(/obj/item/reagent_containers/pill/patch)
 	P.reagents.add_reagent(REAGENT_ID_WATER, 20)
 	var/before = rc_touch_units(H)
 	rc_click(H, H, P, I_HELP, FALSE)
 	TEST_ASSERT(QDELETED(P), "the patch is used up at once")
 	TEST_ASSERT(rc_touch_units(H) - before > 10, "what it held is on the skin")
-	H.zone_sel.selecting = BP_TORSO
+	H.zone_sel.set_selecting(BP_TORSO)
 
 /// A patch on somebody else waits three seconds.
 /datum/unit_test/dq_p2_reagents/patch_is_put_on_another_after_a_wait
@@ -204,7 +204,7 @@
 	var/mob/living/carbon/human/patient = rc_actor()
 	var/obj/item/reagent_containers/pill/patch/P = rc_pill(/obj/item/reagent_containers/pill/patch)
 	P.reagents.add_reagent(REAGENT_ID_WATER, 20)
-	H.zone_sel.selecting = BP_L_ARM
+	H.zone_sel.set_selecting(BP_L_ARM)
 	var/obj/item/organ/external/arm = patient.get_organ(BP_L_ARM)
 	arm.robotize()
 	rc_click(H, patient, P)
@@ -212,7 +212,7 @@
 	arm.droplimb(TRUE, DROPLIMB_EDGE)
 	rc_click(H, patient, P)
 	TEST_ASSERT(!QDELETED(P), "a missing limb is refused")
-	H.zone_sel.selecting = BP_TORSO
+	H.zone_sel.set_selecting(BP_TORSO)
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
 	TEST_ASSERT(patient.equip_to_slot_if_possible(vest, SLOT_ID_SUIT), "the patient wears an armoured vest")
 	rc_click(H, patient, P)

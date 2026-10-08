@@ -132,7 +132,6 @@ CAPABILITIES(/atom/movable/screen/storage)
 	var/selecting = BP_TORSO
 	var/static/list/hover_overlays_cache = list() // ALLOW(cache): overlay objects placed in vis_contents (pooled objects)
 	var/hovering_choice
-	var/mutable_appearance/selecting_appearance
 
 CAPABILITIES(/atom/movable/screen/zone_sel)
 	owns_many(nameof(hover_overlays_cache))
@@ -243,16 +242,16 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 	if(isobserver(user))
 		return
 	if(choice != selecting)
-		selecting = choice
-		update_icon()
+		set_selecting(choice)
 		if(user)
 			changed(user, CHANGE_MOB_TARGETING)
 
-DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/atom/movable/screen/zone_sel/appearance_overlays()
-	. = list()
-	selecting_appearance = mutable_appearance('icons/mob/zone_sel.dmi', "[selecting]")
-	. += selecting_appearance
+TRACKED(/atom/movable/screen/zone_sel, selecting)
+
+/// The selected zone is drawn over the doll.
+/atom/movable/screen/zone_sel/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/mob/zone_sel.dmi', "[selecting]"))
 
 CAPABILITIES(/atom/movable/screen)
 	click_on(PROC_REF(screen_click_input))
