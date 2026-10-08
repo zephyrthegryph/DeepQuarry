@@ -44,10 +44,6 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 	else
 		return TRUE
 
-// Added ahead of the sink's own ops (its CAPABILITIES block in watercloset.dm).
-
-TRACKED(/obj/item, gurgled)
-
 MSG_DEF_SELF(sink/washing_gurgled, span_notice("You start washing %I%."))
 MSG_DEF(sink/washed_gurgled, span_notice("You wash %I% using %T%."), span_notice("%U% washes %I% using %T%."))
 
