@@ -286,20 +286,23 @@ CAPABILITIES(/obj/machinery/shield_gen)
 				continue
 			rel_add(src, nameof(field), new /obj/effect/energy_field(O, src))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/shield_gen, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/shield_gen/appearance_overlays()
-	. = list()
+/obj/machinery/shield_gen/draw(datum/look/look)
+	..()
 	if(broken_now())
-		icon_state = "broke"
-		set_light(0)
-		shield_hum.stop()
+		look.state("broke")
+		look.light_off()
+		look.effect(PROC_REF(look_effect_shield_hum_stop))
 	else
 		if (src.active)
-			icon_state = "generator1"
-			set_light(4, 2, "#00CCFF")
+			look.state("generator1")
+			look.light(4, 2, "#00CCFF")
 		else
-			icon_state = "generator0"
-			set_light(0)
+			look.state("generator0")
+			look.light_off()
+
+/// An effect of the look (the draw sweep): run once the look is applied, not while it is drawn.
+/obj/machinery/shield_gen/proc/look_effect_shield_hum_stop()
+	shield_hum?.stop()
 
 //grab the border tiles in a circle around this machine
 /obj/machinery/shield_gen/proc/get_shielded_turfs()

@@ -228,13 +228,11 @@ TYPE_TABLE(/turf/simulated/wall/log_sif, wall_forced_materials, list(MAT_SIFLOG)
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/shuttle/wall/voidcraft, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/shuttle/wall/voidcraft/appearance_overlays()
-	. = list()
+/turf/simulated/shuttle/wall/voidcraft/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(stripe_color)
-		var/image/I = image(icon = src.icon, icon_state = "o_[icon_state]")
-		I.color = stripe_color
-		. += I
+		look.overlay(look_overlay_image(src.icon, "o_[drawn_state]", color = stripe_color))
 
 // Fake corners for making hulls look pretty
 /obj/structure/hull_corner

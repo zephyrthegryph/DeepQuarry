@@ -1,0 +1,13 @@
+/obj/structure/fuel_port icon: icons/turf/shuttle_parts.dmi
+/obj/structure/fuel_port state: fuel_port
+/obj/structure/fuel_port dir: 2
+/obj/structure/fuel_port overlay: icons/turf/shuttle_parts.dmi:fuel_port:8:#000000
+/obj/structure/fuel_port/heavy icon: icons/turf/shuttle_parts.dmi
+/obj/structure/fuel_port/heavy state: fuel_port
+/obj/structure/fuel_port/heavy dir: 2
+/obj/structure/fuel_port/heavy overlay: icons/turf/shuttle_parts.dmi:fuel_port:8:#000000
+/obj/structure/fuel_port/empty icon: icons/turf/shuttle_parts.dmi
+/obj/structure/fuel_port/empty state: fuel_port_empty
+/obj/structure/fuel_port/empty dir: 2
+/obj/structure/fuel_port/empty overlay: icons/turf/shuttle_parts.dmi:fuel_port_empty:8:#000000
+

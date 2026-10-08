@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/automatic/l6_saw cover_open=1 +state: l6open50
+/obj/item/gun/projectile/automatic/l6_saw cover_open=1 -state: l6closed50
+/obj/item/gun/projectile/automatic/l6_saw cover_open=2 +state: l6open50
+/obj/item/gun/projectile/automatic/l6_saw cover_open=2 -state: l6closed50
+

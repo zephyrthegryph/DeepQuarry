@@ -1,0 +1,9 @@
+/obj/effect/plant icon: icons/obj/hydroponics_growing.dmi
+/obj/effect/plant state: mushroom7-0
+/obj/effect/plant dir: 2
+/obj/effect/plant color: #efff8a
+/obj/effect/plant/single icon: icons/obj/hydroponics_growing.dmi
+/obj/effect/plant/single state: mushroom7-0
+/obj/effect/plant/single dir: 2
+/obj/effect/plant/single color: #efff8a
+

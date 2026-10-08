@@ -1,0 +1,6 @@
+/obj/structure/catwalk icon: icons/turf/catwalks.dmi
+/obj/structure/catwalk state: 
+/obj/structure/catwalk dir: 2
+/obj/structure/catwalk overlay: icons/turf/catwalks.dmi::8:#000000
+/obj/structure/catwalk overlay: icons/turf/catwalks.dmi:catwalk0:-32767 x4
+

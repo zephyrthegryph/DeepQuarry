@@ -1,0 +1,13 @@
+/obj/item/shield/energy active=1 +color: #006aff
+/obj/item/shield/energy active=1 +overlay: icons/obj/weapons.dmi:eshield_blade:-32767:#006aff
+/obj/item/shield/energy active=2 +color: #006aff
+/obj/item/shield/energy active=2 +overlay: icons/obj/weapons.dmi:eshield_blade:-32767:#006aff
+/obj/item/shield/energy/imperial active=1 +color: #006aff
+/obj/item/shield/energy/imperial active=1 +overlay: icons/obj/weapons_vr.dmi:impshield_blade:-32767:#006aff
+/obj/item/shield/energy/imperial active=2 +color: #006aff
+/obj/item/shield/energy/imperial active=2 +overlay: icons/obj/weapons_vr.dmi:impshield_blade:-32767:#006aff
+/obj/item/shield/energy/interim_holder_appearance active=1 +color: #006aff
+/obj/item/shield/energy/interim_holder_appearance active=1 +overlay: icons/obj/weapons.dmi:eshield_blade:-32767:#006aff
+/obj/item/shield/energy/interim_holder_appearance active=2 +color: #006aff
+/obj/item/shield/energy/interim_holder_appearance active=2 +overlay: icons/obj/weapons.dmi:eshield_blade:-32767:#006aff
+

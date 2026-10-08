@@ -1,0 +1,4 @@
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye icon: icons/obj/flesh_machines.dmi
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye state: screen_eye
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye dir: 2
+

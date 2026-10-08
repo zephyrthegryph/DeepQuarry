@@ -951,11 +951,9 @@ CAPABILITIES(/obj/structure/control_pod)
 
 CAPABILITIES(/obj/machinery/computer/ship/navigation/telescreen/dog_eye)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_eye, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = "screen_eye"
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye/draw(datum/look/look)
+	..()
+	look.state("screen_eye")
 
 MSG_DEF_SELF(ship_emote/too_far, "too far away")
 MSG_DEF_SELF(ship_emote/incapable, "you can't do that right now")

@@ -49,7 +49,6 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	/// Cost of 'basic' things such as glass or steel. Un-upgraded chargers charge at ~40 charge a second, meaning 15 seconds per sheet. 22.5 for 'advanced' sheets (overcharged). This becomes ~10 seconds and ~15 seconds with a heavily upgraded charger.
 	var/charge_cost_basic = 1000
 	var/charge_cost_random = 3333 //Cost of 'random' things. Used by RMS_RAND. This takes ~85 seconds a sheet on a basic charger and ~33 seconds a sheet on an upgraded charger.
-	var/charge_stage = 0
 	var/overcharge = 0
 	var/overcharge_modifier = 1.5 //Multiplier in price for using the overcharge mode.
 
@@ -60,18 +59,12 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	var/static/image/radial_image_stone = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "sheet-sandstone")
 	var/static/image/radial_image_random = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "sheet-random")
 
-/obj/item/rms/Initialize(mapload)
-	. = ..()
-	update_icon()
+TRACKED(/obj/item/rms, stored_charge)
 
-
-DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/rms/appearance_overlays()
-	. = list()
-	charge_stage = round((stored_charge/max_charge)*4)
-	if(charge_stage >= 4)
-		charge_stage = 4
-	. += "rms_charge[charge_stage]"
+/// The look: the charge meter in quarters.
+/obj/item/rms/draw(datum/look/look)
+	..()
+	look.overlay("rms_charge[max_charge ? min(round((stored_charge / max_charge) * 4), 4) : 0]")
 
 /obj/item/rms/examine(mob/user)
 	. = ..()
@@ -90,8 +83,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 	else
 		play_sfx(get_turf(src), SFX_MACHINES_CLICK)
 		task_start(/datum/task/timed/rms_drain_battery, user, C, receiver = src, charge_needed = charge_needed)
-	stored_charge = CLAMP(stored_charge, 0, max_charge)
-	update_icon()
+	set_stored_charge(CLAMP(stored_charge, 0, max_charge))
 
 /datum/task/timed/rms_drain_battery
 	duration = 2
@@ -102,7 +94,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 	var/user = task.actor
 	var/obj/item/cell/C = task.target
 	var/charge_needed = task.charge_needed
-	stored_charge += C.charge
+	set_stored_charge(stored_charge + C.charge)
 	if(C.charge > charge_needed) //We only drain what we need!
 		C.use(charge_needed)
 	else
@@ -111,8 +103,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 	to_chat(user, span_notice("You drain [C]."))
 
 /obj/item/rms/proc/consume_resources(amount)
-	stored_charge -= amount
-	update_icon()
+	set_stored_charge(stored_charge - amount)
 	return
 
 /obj/item/rms/proc/can_afford(amount)

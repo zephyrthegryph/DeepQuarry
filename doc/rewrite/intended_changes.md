@@ -3301,3 +3301,37 @@ The ship helm's Emote Beyond action now uses its existing native capability bloc
 Record and message-server selections now declare their existing reference slots, matching the relation setters already used for writes. Native guards can follow those slots rather than relying on undeclared raw pointers. Frame glass admission remains material-based: generic stacks whose actual material is plain glass are accepted, preserving the old construction matcher.
 
 The existing consciousness setter now notifies the native stat layer of the actual stat variable key, so unconsciousness/death and recovery settle STAT_CAN_ACT immediately. The original publication remains. Status holds are admitted before immunity is enabled in regression fixtures: immunity rejects new holds and masks already running holds; its policy is unchanged. Native frame tool steps that were instant explicitly use wait(0), while anchor, cable, glass and cutting retain their original real delays.
+
+## Draw sweep 3, worker B (structures)
+
+* **Catwalk: a bare write of `smooth_mask` no longer redraws different connections.** The legacy appearance proc called `update_connections()` while drawing,
+  so a look-state pin that wrote `smooth_mask` by hand saw the connection overlays change. The draw only reads `connections`; they are recomputed where the
+  adjacency index reports a change (`smooth_changed()`, which also requests the redraw) and at init. The eight `smooth_mask=1/2` rows of
+  `look_states/obj.structure.catwalk.txt` are gone for that cause; the made look is unchanged.
+
+## Draw sweep 3, worker A (items and effects)
+
+* **Energy blades, shield and toy sword draw over tracked state.** `/obj/item/melee/energy` (swords, axe, blade, spear), `/obj/item/shield/energy` and `/obj/item/toy/sword` are `draw(look)`
+  over `TRACKED` `active`, `lcolor` (and `rainbow` for the blades); their `update_icon()` calls are gone. `/obj/item/shield/energy` draws the lit blade with `look_appearance(icon, ...)`
+  and its `held_state()`/`light()`/`light_off()` follow `active`. Pin rows that change:
+  * **The blade colour is applied when the thing is made** (look tree rows `color: #rrggbb` on every `/obj/item/melee/energy` subtype that has an `lcolor`): the legacy appearance proc only
+    ran on the first `update_icon()`, so a fresh blade sat uncoloured until it was switched on; the first refresh now draws every atom after its init. The look-state rows `+color:` that
+    came with a first redraw therefore vanish, and a `rainbow` write now shows `-color` (the rainbow blade draws white).
+  * **The altevian cutter's state follows `active`** (look-state rows `active=1/2 +overlay ...altevian-cutter_active`): `active` is tracked now, so writing it redraws the look; the
+    legacy pin harness' `update_icon()` after the write was the only thing that redrew it.
+* **The RMS meter draws over tracked `stored_charge`.** The charge stage is computed in the draw (`charge_stage` is gone). The look-state `max_charge=0` row reads `runtime: Division by zero`
+  without the `refresh of ...` prefix: the same division by zero, now inside the draw.
+
+## Draw sweep 3, codemod roots
+
+* **A write the legacy look ignored now redraws.** Types converted by `look_sweep.py convert` (areas, translocators, gravemarker, suspension generator, refinery machines, chem canister, pump relay, voidcraft wall, dog eye, cyborg baton, sol, pneumatic, consul) draw over the state they read. Look-state rows that appear (`ready`, `recharging`, `status`, `fire`/`eject`/`party`) were absent from the legacy pin because only an explicit `update_icon()` redrew; the calls are now `changed(src)` or deleted.
+* **The sol SMG's duplicate charge overlay is gone.** The legacy provider added `smg_*` after the appearance overlays (`x2` rows); the charge overlay is now an effect that runs once.
+
+## The emissive blocker follows a drawn sprite (draw sweep 3 C)
+
+* A look that changes an atom's sprite re-syncs the atom's generic emissive blocker (`look_resync_emissive_blocker()`); the legacy providers wrote `icon_state` and left the blocker
+  at the sprite the atom was made with. The look-state pins of the NTNet relay (`enabled`), the shield generator family (`active`) and the fuel port (`opened`) gain, beside each `+state` /
+  `-state` row, a `+overlay` / `-overlay` row of the blocker (`icons/...:<state>:8:#000000`): the same sprite change, now shown on the blocker too. No state, colour or other layer row changes.
+* The folder, paper plane, blob family, glass roulette ball and disposal bin family keep their look-tree and look-state rows exactly (the disposal bin's `mode` and `flush` rows, the folder and
+  plane rows, the blob's tree rows); the disposal bin's broken sprite is the one thing not pinned: the legacy provider left `disposal-broken` on the bin after a repair, the look restores the
+  type's own state.

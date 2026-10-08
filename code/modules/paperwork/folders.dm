@@ -28,8 +28,10 @@
 	name = "folder pages"
 	spec = list(REQ_BECAUSE(REQ_TAG(PRED_TARGET, TAG_PAPERWORK), "only paper, photos and bundles fit"))
 
-/obj/item/folder/on_slot_changed(slot_id, atom/movable/thing, inserted)
-	update_icon()
+/// A folder shows its papers once it holds any (the slot publishes its occupancy, so the look redraws by itself).
+/obj/item/folder/draw(datum/look/look)
+	..()
+	look.overlay("folder_paper", when = length(slot_contents(CONTAINER_SLOT_PAGES)) > 0)
 
 /obj/item/folder/blue
 	desc = "A blue folder."
@@ -78,8 +80,6 @@
 /obj/item/folder/red_hos
 	desc = "A red folder with HoS markings."
 	icon_state = "folder_hos"
-
-APPEARANCE_SLOT(/obj/item/folder, CONTAINER_SLOT_PAGES, "folder_paper")
 
 /// Old attackby: file a paperwork item. Anything else is handled, the click going on.
 /obj/item/folder/proc/interaction_item(datum/act/op/A)

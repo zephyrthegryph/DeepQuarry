@@ -53,7 +53,7 @@
 /obj/item/melee/energy/proc/activate(mob/living/user)
 	if(active)
 		return
-	active = 1
+	set_active(1)
 	if(rainbow)
 		item_state = "[icon_state]_blade_rainbow"
 	else
@@ -68,7 +68,6 @@
 	injury_kinds = active_injury_kinds
 	w_class = active_w_class
 	play_sfx(src, SFX_WEAPONS_SABERON)
-	update_icon()
 	set_light(lrange, lpower, lcolor)
 
 /obj/item/melee/energy/proc/deactivate(mob/living/user)
@@ -76,7 +75,7 @@
 		return
 	play_sfx(src, SFX_WEAPONS_SABEROFF)
 	item_state = "[icon_state]"
-	active = 0
+	set_active(0)
 	embed_chance = initial(embed_chance)
 	force = initial(force)
 	throwforce = initial(throwforce)
@@ -86,7 +85,6 @@
 	injury_kind = initial(injury_kind)
 	injury_kinds = null
 	w_class = initial(w_class)
-	update_icon()
 	set_light(0,0)
 
 /obj/item/melee/energy/proc/use_charge(cost)
@@ -109,6 +107,9 @@
 		. += span_notice("Alt-click to recolor it.")
 
 TRACKED(/obj/item/melee/energy, colorable)
+TRACKED(/obj/item/melee/energy, active)
+TRACKED(/obj/item/melee/energy, lcolor)
+TRACKED(/obj/item/melee/energy, rainbow)
 
 CAPABILITIES(/obj/item/melee/energy)
 	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
@@ -165,7 +166,6 @@ CAPABILITIES(/obj/item/melee/energy)
 				if(!move_into(src, nameof(src.bcell), W, user))
 					return OP_DECLINE
 				to_chat(user, span_notice("You install a cell in [src]."))
-				update_icon()
 			else
 				to_chat(user, span_notice("[src] already has a cell."))
 	return OP_DECLINE
@@ -174,9 +174,8 @@ CAPABILITIES(/obj/item/melee/energy)
 	var/mob/user = A.actor
 	if(!colorable || active)
 		return OP_DECLINE
-	rainbow = !rainbow
+	set_rainbow(!rainbow)
 	to_chat(user, span_notice("You manipulate the color controller in [src]."))
-	update_icon()
 	return OP_OK
 
 /obj/item/melee/energy/proc/screwdriver_used(datum/act/op/A)
@@ -188,29 +187,21 @@ CAPABILITIES(/obj/item/melee/energy)
 	rel_take(src, nameof(bcell))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	deactivate()
-	update_icon()
 	return OP_OK
 
 /obj/item/melee/energy/get_cell()
 	return bcell
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/energy/appearance_overlays()
-	. = list()
-	. += ..()
-	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
-	blade_overlay.color = lcolor
-	color = lcolor
+/// The look: the blade over the hilt, in the blade's colour (white for the rainbow blade).
+/obj/item/melee/energy/draw(datum/look/look)
+	..()
+	var/base = look.state_so_far(src)
 	if(rainbow)
-		blade_overlay = mutable_appearance(icon, "[icon_state]_blade_rainbow")
-		blade_overlay.color = "FFFFFF"
-		color = "FFFFFF"
-	if(active)
-		. += blade_overlay
-	if(ishuman(loc))
-		var/mob/living/carbon/human/H = loc
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		look.set_color("FFFFFF")
+		look.overlay(look_appearance(icon, "[base]_blade_rainbow", color = "FFFFFF"), active)
+	else
+		look.set_color(lcolor)
+		look.overlay(look_appearance(icon, "[base]_blade", color = lcolor), active)
 
 /// The recolour was confirmed: the colour picker is next.
 /obj/item/melee/energy/proc/recolor_confirmed(datum/act/op/A)
@@ -223,8 +214,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_
 	if(!R)
 		return OP_OK
 	if(R.value)
-		lcolor = sanitize_hexcolor(R.value)
-	update_icon()
+		set_lcolor(sanitize_hexcolor(R.value))
 	if(active)
 		set_light(lrange, lpower, lcolor)
 	return OP_OK
@@ -576,14 +566,9 @@ CAPABILITIES(/obj/item/melee/energy/blade)
 	colorable = FALSE
 	lcolor = "#FFFFFF"
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/energy/sword/altevian, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/energy/sword/altevian/appearance_overlays()
-	. = list()
-	. += ..()
-	if(active)
-		icon_state = "[initial(icon_state)]_active"
-	else
-		icon_state = initial(icon_state)
+/obj/item/melee/energy/sword/altevian/draw(datum/look/look)
+	..()
+	look.state(active ? "[initial(icon_state)]_active" : initial(icon_state))
 
 /obj/item/melee/energy/blade/dropped(mob/user, equipping, slot)
 	. = ..()

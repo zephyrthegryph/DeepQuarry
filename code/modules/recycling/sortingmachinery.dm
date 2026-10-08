@@ -9,7 +9,9 @@
 /obj/machinery/disposal/deliveryChute/interact()
 	return
 
-APPEARANCE_NONE(/obj/machinery/disposal/deliveryChute)
+/// A delivery chute draws none of a bin's handle and lights.
+/obj/machinery/disposal/deliveryChute/look_parts(datum/look/look)
+	return
 
 CAPABILITIES(/obj/machinery/disposal/deliveryChute)
 	op("swallow", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT), label("Alt-click"), then(TYPE_PROC_REF(/atom, op_swallow)))

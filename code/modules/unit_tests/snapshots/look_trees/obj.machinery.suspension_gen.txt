@@ -1,0 +1,5 @@
+/obj/machinery/suspension_gen icon: icons/obj/xenoarchaeology.dmi
+/obj/machinery/suspension_gen state: suspension
+/obj/machinery/suspension_gen dir: 2
+/obj/machinery/suspension_gen overlay: icons/obj/xenoarchaeology.dmi:suspension:8:#000000
+

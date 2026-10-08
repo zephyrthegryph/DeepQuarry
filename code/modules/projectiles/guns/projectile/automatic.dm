@@ -709,11 +709,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF
 	ratio = round(ratio, 0.25) * 100
 	add_overlay("smg_[ratio]")
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/sol/appearance_overlays()
-	. = list()
-	icon_state = (ammo_magazine)? "SMG-IS" : "SMG-IS-empty"
-	update_charge()
+/obj/item/gun/projectile/automatic/sol/draw(datum/look/look)
+	..()
+	look.state((ammo_magazine)? "SMG-IS" : "SMG-IS-empty")
+	look.effect(PROC_REF(update_charge))
 
 //--------------- StG-60 ----------------
 /obj/item/ammo_magazine/m792

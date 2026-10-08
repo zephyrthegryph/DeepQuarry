@@ -41,16 +41,24 @@ CAPABILITIES(/obj/machinery/ntnet_relay)
 		return 0
 	return 1
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/ntnet_relay/appearance_overlays()
-	. = list()
+TRACKED(/obj/machinery/ntnet_relay, enabled)
+TRACKED(/obj/machinery/ntnet_relay, dos_failure)
+
+/obj/machinery/ntnet_relay/draw(datum/look/look)
+	..()
 	if(operable())
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
+	else
+		look.state("[initial(icon_state)]_off")
+	look.effect(PROC_REF(look_effect_noise), operable())
+
+/// The relay hums while it works: its sound loop follows the look, outside the draw.
+/obj/machinery/ntnet_relay/proc/look_effect_noise(working)
+	if(working)
 		if(!noisy)
 			soundloop.start()
 			noisy = TRUE
 	else
-		icon_state = "[initial(icon_state)]_off"
 		soundloop.stop()
 		noisy = FALSE
 
@@ -65,13 +73,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appeara
 
 	// If DoS traffic exceeded capacity, crash.
 	if((dos_overload > dos_capacity) && !dos_failure)
-		dos_failure = 1
-		update_icon()
+		set_dos_failure(1)
 		GLOB.ntnet_global.add_log("Quantum relay switched from normal operation mode to overload recovery mode.")
 	// If the DoS buffer reaches 0 again, restart.
 	if((dos_overload == 0) && dos_failure)
-		dos_failure = 0
-		update_icon()
+		set_dos_failure(0)
 		GLOB.ntnet_global.add_log("Quantum relay switched from overload recovery mode to normal operation mode.")
 
 /obj/machinery/ntnet_relay/ui_data(datum/act/eval/A)
@@ -84,15 +90,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appeara
 
 /obj/machinery/ntnet_relay/proc/ui_act_restart(datum/act/op/A)
 	dos_overload = 0
-	dos_failure = 0
-	update_icon()
+	set_dos_failure(0)
 	GLOB.ntnet_global.add_log("Quantum relay manually restarted from overload recovery mode to normal operation mode.")
 	. = TRUE
 
 /obj/machinery/ntnet_relay/proc/ui_act_toggle(datum/act/op/A)
-	enabled = !enabled
+	set_enabled(!enabled)
 	GLOB.ntnet_global.add_log("Quantum relay manually [enabled ? "enabled" : "disabled"].")
-	update_icon()
 	. = TRUE
 
 /obj/machinery/ntnet_relay/proc/ui_act_purge(datum/act/op/A)
