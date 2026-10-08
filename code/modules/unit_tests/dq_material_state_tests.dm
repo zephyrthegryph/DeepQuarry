@@ -130,7 +130,7 @@
 	qdel(pen)
 	TEST_ASSERT(QDELETED(engine), "the record goes with its atom")
 
-/// A thermite-treated wall draws its coating through the declared wall appearance.
+/// A thermite-treated wall draws its coating through its look.
 /datum/unit_test/dq_wall_thermite_coating
 
 /datum/unit_test/dq_wall_thermite_coating/Run()
@@ -138,12 +138,25 @@
 	var/turf/wall_turf = get_step(floor, NORTH) || get_step(floor, SOUTH)
 	var/old_type = wall_turf.type
 	wall_turf.ChangeTurf(/turf/simulated/wall)
-	var/turf/simulated/wall/wall = wall_turf
+	var/turf/simulated/wall/wall = locate(wall_turf.x, wall_turf.y, wall_turf.z)
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	wall.apply_materials(steel, steel, steel)
-	TEST_ASSERT(!(wall_thermite_coat() in wall.appearance_overlays()), "a bare wall draws no coating")
+	stat_drain_point()
+	appearance_flush()
+	TEST_ASSERT_EQUAL(thermite_overlays(wall), 0, "a bare wall draws no coating")
 	TEST_ASSERT(wall.set_thermite(TRUE), "set_thermite() reports the change")
-	TEST_ASSERT(wall_thermite_coat() in wall.appearance_overlays(), "a coated wall draws it")
+	appearance_flush()
+	TEST_ASSERT_EQUAL(thermite_overlays(wall), 1, "a coated wall draws it")
 	TEST_ASSERT(!wall.set_thermite(TRUE), "and a second write reports none")
 	TEST_ASSERT(icon_exists('icons/effects/effects.dmi', "thermite"), "the coating is a state the file has")
+	wall_turf = locate(wall.x, wall.y, wall.z)
 	wall_turf.ChangeTurf(old_type)
+
+/// How many overlays of the turf are the thermite coating.
+/datum/unit_test/dq_wall_thermite_coating/proc/thermite_overlays(turf/T)
+	var/count = 0
+	for(var/overlay_entry in T.overlays)
+		var/image/overlay_image = overlay_entry
+		if(overlay_image.icon_state == "thermite")
+			count++
+	return count

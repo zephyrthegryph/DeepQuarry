@@ -40,8 +40,6 @@ GLOBAL_VAR(world_time_day)
 TRACKED(/turf/simulated/floor/outdoors/grass/seasonal, season_overlay)
 
 /turf/simulated/floor/outdoors/grass/seasonal/Initialize(mapload)
-	set_season_overlay(roll_season_overlay())
-
 	switch(GLOB.world_time_season)
 		if("spring")
 			trees = "seasonalspring"
@@ -89,6 +87,7 @@ TRACKED(/turf/simulated/floor/outdoors/grass/seasonal, season_overlay)
 
 
 	. = ..()
+	set_season_overlay(roll_season_overlay()) // after the tile's other rolls, where the draw used to roll it
 
 /// What the tile is described as in this season.
 /turf/simulated/floor/outdoors/grass/seasonal/proc/season_desc()
