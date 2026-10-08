@@ -115,3 +115,137 @@ fn parent_order_handles_forward_ids_and_rejects_cycles() {
     dmb.classes[(first + 1) as usize].initial_ids[1] = first;
     assert!(parent_order(&dmb, &ids).is_err());
 }
+
+#[test]
+fn finalize_preserves_runtime_override_token_instead_of_parent_scalar() {
+    let engine_bytes = include_bytes!("../../../../fixtures/native_template.bin");
+    let mut dmb = image();
+    let mut symbols = dm_ir::SymbolTable::default();
+    let parent_symbol = symbols.intern("/datum/runtime_default_parent").unwrap();
+    let child_symbol = symbols
+        .intern("/datum/runtime_default_parent/child")
+        .unwrap();
+    let plane_symbol = symbols.intern("plane").unwrap();
+    let parent = dmb.classes.len() as u32;
+    let child = parent + 1;
+    let mut pool = crate::composition::StringIndex::build(&dmb).unwrap();
+    let plane = pool.intern(&mut dmb, b"plane").unwrap();
+    let mut parent_record = dmb.classes[0].clone();
+    parent_record.initial_ids[0] = pool
+        .intern(&mut dmb, b"/datum/runtime_default_parent")
+        .unwrap();
+    parent_record.initial_ids[1] = NONE;
+    parent_record.layer_bits = 9.0f32.to_bits();
+    let mut child_record = parent_record.clone();
+    child_record.initial_ids[0] = pool
+        .intern(&mut dmb, b"/datum/runtime_default_parent/child")
+        .unwrap();
+    child_record.initial_ids[1] = parent;
+    child_record.layer_bits = 1.0f32.to_bits();
+    let scalar = byond_dmb::operands::Value {
+        tag_word: 42,
+        data_word: 7.0f32.to_bits() >> 16,
+        extra_word: Some(7.0f32.to_bits() & 0xffff),
+    };
+    let marker = byond_dmb::operands::Value {
+        tag_word: 62,
+        data_word: 123,
+        extra_word: None,
+    };
+    let mut words = vec![plane];
+    words.extend(scalar.encode());
+    parent_record.overrides = crate::composition::append_list(&mut dmb, words).unwrap();
+    let mut words = vec![plane];
+    words.extend(marker.encode());
+    child_record.overrides = crate::composition::append_list(&mut dmb, words).unwrap();
+    dmb.classes.extend([parent_record, child_record]);
+    let mut inventory = dm_link::LinkInventory::default();
+    for (symbol, index) in [(parent_symbol, parent), (child_symbol, child)] {
+        let key = Key::Type(symbol);
+        inventory
+            .spellings
+            .push((symbol, Arc::from(symbols.text(symbol).unwrap().as_bytes())));
+        inventory.entries.push(dm_link::Entry {
+            key,
+            content: Arc::from([]),
+        });
+        inventory.fixed.push((key, index));
+    }
+    let tables = dm_link::LinkTables::build(inventory).unwrap();
+    let projection = ClassProjection {
+        procedure_declarations: Default::default(),
+        shared_slot_order: Arc::from([]),
+        procedure_statics: Arc::from([]),
+        runtime_writes: Arc::from([]),
+        tree_identity: 0,
+        occurrence_count: 0,
+        types: Arc::from([TypeProjection {
+            path: child_symbol,
+            parent: Some(parent_symbol),
+        }]),
+        fields: Arc::from([FieldProjection {
+            owner: child_symbol,
+            declaring_owner: parent_symbol,
+            name: plane_symbol,
+            role: FieldRole::Assignment,
+            wire_flags: None,
+            intrinsic: true,
+            shared: false,
+            value: crate::initializer_policy::DefaultValue::InitializerExpression {
+                token: 123,
+                canonical: Arc::from([]),
+            },
+        }]),
+        chains: Arc::from([]),
+    };
+    finalize_headers(&mut dmb, engine_bytes, &projection, &tables, &symbols).unwrap();
+    let defaults = dmb.class_builtin_overrides(child as usize).unwrap();
+    assert_eq!(defaults.len(), 1);
+    assert_eq!(defaults[0].name_string_id, plane);
+    assert_eq!(defaults[0].value, marker);
+    assert_eq!(dmb.classes[child as usize].layer_bits, 9.0f32.to_bits());
+}
+
+#[test]
+fn equal_selector_bytes_mask_parent_even_with_different_string_ids() {
+    let mut dmb = image();
+    let mut pool = crate::composition::StringIndex::build(&dmb).unwrap();
+    let parent_name = pool.intern(&mut dmb, b"plane").unwrap();
+    let child_name = dmb.strings.len() as u32;
+    dmb.strings.push(dmb.strings[parent_name as usize].clone());
+    assert_ne!(parent_name, child_name);
+    let marker = byond_dmb::operands::Value {
+        tag_word: 62,
+        data_word: 456,
+        extra_word: None,
+    };
+    let scalar = byond_dmb::operands::Value {
+        tag_word: 42,
+        data_word: 3.0f32.to_bits() >> 16,
+        extra_word: Some(3.0f32.to_bits() & 0xffff),
+    };
+    let parent = dmb.classes.len() as u32;
+    let child = parent + 1;
+    let record = dmb.classes[0].clone();
+    dmb.classes.extend([record.clone(), record]);
+    let mut words = vec![parent_name];
+    words.extend(scalar.encode());
+    dmb.classes[parent as usize].overrides =
+        crate::composition::append_list(&mut dmb, words).unwrap();
+    let mut words = vec![child_name];
+    words.extend(marker.encode());
+    dmb.classes[child as usize].overrides =
+        crate::composition::append_list(&mut dmb, words).unwrap();
+    inherit_overrides(
+        &mut dmb,
+        child,
+        parent,
+        &HashSet::from(["plane"]),
+        &HashSet::new(),
+    )
+    .unwrap();
+    let defaults = dmb.class_builtin_overrides(child as usize).unwrap();
+    assert_eq!(defaults.len(), 1);
+    assert_eq!(defaults[0].name_string_id, child_name);
+    assert_eq!(defaults[0].value, marker);
+}

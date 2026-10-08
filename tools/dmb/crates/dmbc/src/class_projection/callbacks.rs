@@ -39,7 +39,7 @@ pub fn materialize_callback_flags(
         .enumerate()
         .filter_map(|(i, c)| {
             dmb.string(c.path_string_id())
-                .map(|p| (SymbolId::of(&String::from_utf8_lossy(p)), i))
+                .map(|p| (SymbolId::of_bytes(p), i))
         })
         .collect();
     let mut direct: Vec<_> = dmb.classes.iter().map(|c| c.flags & CALLBACKS).collect();

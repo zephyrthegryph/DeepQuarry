@@ -27,21 +27,27 @@ pub(crate) fn finalize_headers(
         })
         .collect::<HashMap<_, _>>();
     let mut own: HashMap<u32, HashSet<&str>> = HashMap::new();
-    for field in projection.fields.iter().filter(|field| {
-        field.intrinsic
-            && field.role == FieldRole::Assignment
-            && matches!(
-                field.value,
-                crate::initializer_policy::DefaultValue::Scalar(_)
-            )
-    }) {
+    let mut override_own: HashMap<u32, HashSet<&str>> = HashMap::new();
+    for field in projection
+        .fields
+        .iter()
+        .filter(|field| field.intrinsic && field.role == FieldRole::Assignment)
+    {
         let id = tables
             .index(Key::Type(field.owner))
             .ok_or(ProjectionError::MissingMember)?;
         let name = symbols
             .text(field.name)
             .ok_or(ProjectionError::MissingMember)?;
-        own.entry(id).or_default().insert(name);
+        // Runtime override tokens are authored defaults too. Header slots use
+        // scalar locks only, retaining the initial parent value until runtime.
+        override_own.entry(id).or_default().insert(name);
+        if matches!(
+            field.value,
+            crate::initializer_policy::DefaultValue::Scalar(_)
+        ) {
+            own.entry(id).or_default().insert(name);
+        }
     }
     let ids = projection
         .types
@@ -105,7 +111,13 @@ pub(crate) fn finalize_headers(
                 inherited_name,
                 inherited_text,
             )?;
-            inherit_overrides(dmb, id, parent_id, &authored, &native_override_names)?;
+            inherit_overrides(
+                dmb,
+                id,
+                parent_id,
+                override_own.get(&id).unwrap_or(&HashSet::new()),
+                &native_override_names,
+            )?;
         }
         if authored.contains("name") && dmb.classes[id as usize].name_string_id() == NONE {
             // Native null-name reset restores the type leaf instead of leaving
@@ -263,12 +275,7 @@ fn inherit_record(
 
 /// Preserve differences actually encoded by the supplied engine template.
 /// A retained native subtype is not merely a clone of its parent.
-fn native_header_differences(
-    engine: &Dmb,
-    child: &Class,
-    parent: &Class,
-    own: &mut HashSet<&str>,
-) {
+fn native_header_differences(engine: &Dmb, child: &Class, parent: &Class, own: &mut HashSet<&str>) {
     for (name, slot) in [("desc", 3), ("icon", 4), ("icon_state", 5)] {
         let child_id = child.initial_ids[slot];
         let parent_id = parent.initial_ids[slot];
@@ -349,12 +356,19 @@ fn inherit_overrides(
         .collect::<Vec<_>>();
     let own_names = own_values
         .iter()
-        .map(|value| value.name_string_id)
-        .collect::<HashSet<_>>();
+        .map(|value| {
+            dmb.string(value.name_string_id)
+                .map(<[u8]>::to_vec)
+                .ok_or(ProjectionError::MissingMember)
+        })
+        .collect::<Result<HashSet<_>, _>>()?;
     let mut words = Vec::new();
     for value in parent_values
         .iter()
-        .filter(|value| !own_names.contains(&value.name_string_id))
+        .filter(|value| {
+            !dmb.string(value.name_string_id)
+                .is_some_and(|name| own_names.contains(name))
+        })
         .chain(own_values.iter())
     {
         words.push(value.name_string_id);
