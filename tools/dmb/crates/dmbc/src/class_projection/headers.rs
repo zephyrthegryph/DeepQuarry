@@ -1,6 +1,7 @@
 //! Finalize effective native appearance defaults after source members are written.
 //! Each known property uses its wire accessor; callback flags remain independent.
 use super::*;
+use dm_ir::SymbolTable;
 use byond_dmb::{
     dmb::{Class, Dmb},
     ids::NONE,
@@ -26,6 +27,25 @@ pub(crate) fn finalize_headers(
                 .map(|path| (path, id))
         })
         .collect::<HashMap<_, _>>();
+    let mut class_ids = HashMap::new();
+    for (id, record) in dmb.classes.iter().enumerate() {
+        let bytes = dmb.string(record.path_string_id()).ok_or_else(|| {
+            ProjectionError::Unsupported(format!(
+                "header class {id} missing path string {}",
+                record.path_string_id()
+            ))
+        })?;
+        let path = std::str::from_utf8(bytes).map_err(|_| {
+            ProjectionError::Unsupported(format!("header class {id} path is not UTF-8"))
+        })?;
+        let id = u32::try_from(id)
+            .map_err(|_| ProjectionError::Unsupported("header class count exceeds u32".into()))?;
+        if class_ids.insert(SymbolId::of(path), id).is_some() {
+            return Err(ProjectionError::Unsupported(format!(
+                "header duplicate class path {path}"
+            )));
+        }
+    }
     let mut own: HashMap<u32, HashSet<&str>> = HashMap::new();
     let mut override_own: HashMap<u32, HashSet<&str>> = HashMap::new();
     for field in projection
@@ -33,12 +53,16 @@ pub(crate) fn finalize_headers(
         .iter()
         .filter(|field| field.intrinsic && field.role == FieldRole::Assignment)
     {
-        let id = tables
-            .index(Key::Type(field.owner))
-            .ok_or(ProjectionError::MissingMember)?;
-        let name = symbols
-            .text(field.name)
-            .ok_or(ProjectionError::MissingMember)?;
+        if separate_header_owner(field.owner) {
+            continue;
+        }
+        let id = projected_class_index(field.owner, tables, &class_ids, symbols)?;
+        let name = symbols.text(field.name).ok_or_else(|| {
+            ProjectionError::Unsupported(format!(
+                "header assignment missing field spelling {:?} owner {:?}",
+                field.name, field.owner
+            ))
+        })?;
         // Runtime override tokens are authored defaults too. Header slots use
         // scalar locks only, retaining the initial parent value until runtime.
         override_own.entry(id).or_default().insert(name);
@@ -52,11 +76,8 @@ pub(crate) fn finalize_headers(
     let ids = projection
         .types
         .iter()
-        .map(|ty| {
-            tables
-                .index(Key::Type(ty.path))
-                .ok_or(ProjectionError::MissingMember)
-        })
+        .filter(|ty| !separate_header_owner(ty.path))
+        .map(|ty| projected_class_index(ty.path, tables, &class_ids, symbols))
         .collect::<Result<BTreeSet<_>, _>>()?;
     let order = parent_order(dmb, &ids)?;
     let mut authored_name = HashSet::new();
@@ -169,6 +190,34 @@ pub(crate) fn finalize_headers(
         }
     }
     Ok(())
+}
+
+// These source namespaces have separate world/global output records, never
+// Class records. This matches materialize_types, not an unknown-owner fallback.
+fn separate_header_owner(owner: SymbolId) -> bool {
+    owner == SymbolId::of("/") || owner == SymbolId::of("/world")
+}
+
+fn projected_class_index(
+    owner: SymbolId,
+    tables: &dm_link::LinkTables,
+    class_ids: &HashMap<SymbolId, u32>,
+    symbols: &SymbolTable,
+) -> Result<u32, ProjectionError> {
+    let path = symbols.text(owner).ok_or_else(|| {
+        ProjectionError::Unsupported(format!("header owner missing spelling {owner:?}"))
+    })?;
+    let actual = class_ids.get(&owner).copied().ok_or_else(|| {
+        ProjectionError::Unsupported(format!("header owner {path} has no materialized class"))
+    })?;
+    if let Some(bound) = tables.index(Key::Type(owner)) {
+        if bound != actual {
+            return Err(ProjectionError::Unsupported(format!(
+                "header owner {path} table class {bound} differs from materialized {actual}"
+            )));
+        }
+    }
+    Ok(actual)
 }
 
 fn parent_order(dmb: &Dmb, ids: &BTreeSet<u32>) -> Result<Vec<u32>, ProjectionError> {
@@ -384,3 +433,57 @@ fn inherit_overrides(
 #[cfg(test)]
 #[path = "headers_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod routing_tests {
+    use super::*;
+    #[test]
+    fn world_and_root_projection_use_separate_records_while_retained_classes_finalize() {
+        let bytes = include_bytes!("../../../../fixtures/native_template.bin");
+        let mut dmb = Dmb::from_bytes(bytes).unwrap();
+        let mut symbols = SymbolTable::default();
+        let root = symbols.intern("/").unwrap();
+        let world = symbols.intern("/world").unwrap();
+        let atom = symbols.intern("/atom").unwrap();
+        let name = symbols.intern("name").unwrap();
+        let projection = ClassProjection {
+            shared_slot_order: Arc::from([]),
+            procedure_statics: Arc::from([]),
+            runtime_writes: Arc::from([]),
+            tree_identity: 0,
+            occurrence_count: 0,
+            types: vec![
+                TypeProjection {
+                    path: root,
+                    parent: None,
+                },
+                TypeProjection {
+                    path: world,
+                    parent: None,
+                },
+                TypeProjection {
+                    path: atom,
+                    parent: None,
+                },
+            ]
+            .into(),
+            fields: vec![FieldProjection {
+                owner: world,
+                declaring_owner: world,
+                name,
+                role: FieldRole::Assignment,
+                wire_flags: None,
+                intrinsic: true,
+                shared: false,
+                value: crate::initializer_policy::DefaultValue::Scalar(dm_ir::SemanticValue::Null),
+            }]
+            .into(),
+            chains: Arc::from([]),
+            procedure_declarations: Arc::new(BTreeMap::new()),
+        };
+        let tables = dm_link::LinkTables::build(Default::default()).unwrap();
+        finalize_headers(&mut dmb, bytes, &projection, &tables, &symbols).unwrap();
+        let unknown = symbols.intern("/uncaptured").unwrap();
+        assert!(projected_class_index(unknown, &tables, &HashMap::new(), &symbols).is_err());
+    }
+}
