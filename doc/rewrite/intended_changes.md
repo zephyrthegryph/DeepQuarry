@@ -3741,3 +3741,13 @@ Pinned by `code/modules/unit_tests/dq_notice_late_deleted_tests.dm` and `dq_asks
 * **Fix.** The state pin drains the test floor after the made-look capture and after every probe (`dq_look_drain_turf()`), so every probe starts from an empty floor. Coffin went from 106 s to 0.8 s; the full directory now finishes in about 45 minutes. `dq_look_state_probe_leaves_floor_clear` pins it.
 * **Rows changed:** `look_states/obj.structure.closet.secure_closet.guncabinet.txt`, the rifle cabinet's `opened=1/2` rows: `-overlay: ...:laser x3` becomes `-overlay: ...:projectile x2`. The old rows recorded the laser cabinet's spilled lasers that the rifle cabinet took in; a rifle cabinet holds two rifles (`starts_with`), which is what the new rows show.
 * **Deleted:** the empty `look_states/mob.living.simple_mob.vore.swoopie.txt` and `...xenomorph.txt`: they name no type (the swoopie is `vore/aggressive/corrupthound/swoopie`, the xenomorph root no longer exists) and failed the pin as "names no type".
+
+### Machinery prompt waits (2026-10-08)
+
+Old-code pins for these three classes passed at e03f6c58d6 before conversion, recorded in e6e9a6b5a3. The landed prompt forms now replace their remaining timed tasks.
+
+| Class | Cause of conversion-pin changes |
+|---|---|
+| `/obj/machinery/medical_kiosk` | The Use operation owns a target claim through the service question and five-second scan. Patient state and active power begin after selection; cancelling the question releases the claim without starting scan power. Native requirements expose patient/panel/operability refusals in the menu. Service choices, reports and scan duration are preserved. |
+| `/obj/machinery/cryopod` | Grab and drag loading use native passenger-answerer consent and a two-second wait while retaining the loader as actor. Grab loading also has a menu binding for the same operation. Cancel, decline, movement and deletion end the pending operation without taking custody. The existing Enter Pod operation is unchanged. |
+| `/obj/machinery/suit_cycler` | Grab insertion uses a native two-second wait. Its real electrification shock runs in starts(); a successful shock returns a refusal before begins or a wait. Empty grabs silently refuse before building the insertion message. Occupancy and shock behavior are retained. |

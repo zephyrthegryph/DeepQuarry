@@ -51,21 +51,32 @@
 	if(panel_open == 1)
 		look.state("kiosk_open")
 
+MSG_DEF_SELF(medical_kiosk/patient_only, "Only a living patient can use this kiosk.")
+MSG_DEF_SELF(medical_kiosk/panel_open, "The kiosk's maintenance panel is open.")
+
 CAPABILITIES(/obj/machinery/medical_kiosk)
-	op("medical_kiosk_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(medical_kiosk_interaction_hand)))
+	op("medical_kiosk_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"),
+		needs(req_adjacent(), req_capable(), req_operable(), req(PROC_REF(kiosk_patient), because = MSG(medical_kiosk/patient_only)), req(PROC_REF(kiosk_panel_closed), because = MSG(medical_kiosk/panel_open))),
+		claims(CLAIM_TARGET),
+		asks(/datum/prompt/choice/medical_kiosk_service, fields = list("title" = computed(PROC_REF(kiosk_title)), "question" = "What service would you like?", "choices" = list("Health Scan", "Backup Scan", "Cancel"), "buttons" = TRUE, "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 10 SECONDS), step = "service", ends_on_no = TRUE),
+		starts(PROC_REF(kiosk_scan_started)), wait(5 SECONDS), then(PROC_REF(kiosk_scan_finished)), on_interrupt(PROC_REF(kiosk_scan_interrupted)))
 	op("medical_kiosk_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(medical_kiosk_interaction_item)))
 
-/// Old attack_hand.
-/obj/machinery/medical_kiosk/proc/medical_kiosk_interaction_hand(datum/act/op/A)
-	var/mob/living/user = A.actor
-	if(istype(user) && Adjacent(user))
-		if(!operable() || panel_open)
-			to_chat(user, span_warning("\The [src] seems to be nonfunctional..."))
-		else if(active_user() && active_user() != user)
-			to_chat(user, span_warning("Another patient has begin using this machine. Please wait for them to finish, or their session to time out."))
-		else
-			start_using(user)
-	return OP_OK
+/// Cancel remains a visible third button, and is the native asks() no-answer.
+/datum/prompt/choice/medical_kiosk_service/normalize(given)
+	return given == "Cancel" ? FALSE : ..()
+
+/datum/prompt/choice/medical_kiosk_service/refusal(given)
+	return given == FALSE ? null : ..()
+
+/obj/machinery/medical_kiosk/proc/kiosk_patient(datum/act/op/A)
+	return read_once(istype(A.actor, /mob/living))
+
+/obj/machinery/medical_kiosk/proc/kiosk_panel_closed(datum/act/op/A)
+	return !panel_open
+
+/obj/machinery/medical_kiosk/proc/kiosk_title(datum/act/op/A)
+	return "[src]"
 
 /// Old attackby.
 /obj/machinery/medical_kiosk/proc/medical_kiosk_interaction_item(datum/act/op/A)
@@ -83,46 +94,17 @@ CAPABILITIES(/obj/machinery/medical_kiosk)
 	rel_clear(src, nameof(active_user))
 	set_use_power(USE_POWER_IDLE)
 
-/obj/machinery/medical_kiosk/proc/start_using(mob/living/user)
-	// Out of standby
+/// Claims reserve the kiosk while the question is open; power and patient state start with the actual scan.
+/obj/machinery/medical_kiosk/proc/kiosk_scan_started(datum/act/op/A)
+	var/mob/living/user = A.actor
 	wake_lock(user)
-
-	// User requests service
 	act_message(user, src, MSG_SELF("You wake %T%."), MSG_OTHERS(span_bold("%U%") + " wakes %T%."))
-	open_request(src, /datum/prompt/choice, PROC_REF(service_chosen), valid = PROC_REF(kiosk_ready), answerer = user, title = "[src]", question = "What service would you like?", choices = list("Health Scan", "Backup Scan", "Cancel"), buttons = TRUE, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 10 SECONDS)
-	return TRUE
-
-/// Re-checked on the answer: the kiosk still works and its panel is shut.
-/obj/machinery/medical_kiosk/proc/kiosk_ready(datum/request/R)
-	return operable() && !panel_open
-
-/// A cancel, a timeout or a failed re-check (moved away, kiosk broken or opened) suspends the kiosk.
-/obj/machinery/medical_kiosk/proc/service_chosen(datum/act/request/A)
-	if(!A.answer || A.answer.value == "Cancel")
-		suspend()
-		return
-	var/mob/living/user = A.request.answerer
-	var/choice = A.answer.value
-
-	// Service begins, delay
 	act_message(src, user, others = span_bold("%U%") + " scans %T% thoroughly!")
 	flick("kiosk_active", src)
-	task_start(/datum/task/timed/medical_kiosk_start_using, user, src, receiver = src, choice = choice)
-	return TRUE
 
-/datum/task/timed/medical_kiosk_start_using
-	duration = 5 SECONDS
-	complete_proc = /obj/machinery/medical_kiosk/proc/start_using_timed_done
-	cancel_proc = /obj/machinery/medical_kiosk/proc/start_using_timed_failed
-	var/choice
-
-/obj/machinery/medical_kiosk/proc/start_using_timed_done(datum/task/timed/medical_kiosk_start_using/task)
-	var/mob/living/user = task.actor
-	var/choice = task.choice
-	if(!operable())
-		return
-
-	// Service completes
+/obj/machinery/medical_kiosk/proc/kiosk_scan_finished(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/choice = A.step_value("service")
 	switch(choice)
 		if("Health Scan")
 			var/health_report = medical_scan(user)
@@ -133,13 +115,10 @@ CAPABILITIES(/obj/machinery/medical_kiosk)
 			else
 				var/scan_report = do_backup_scan(user)
 				to_chat(user, span_notice(span_bold("Backup scan results:"))+scan_report)
-
-	// Standby
 	suspend()
 
-/obj/machinery/medical_kiosk/proc/start_using_timed_failed(datum/task/timed/medical_kiosk_start_using/task)
+/obj/machinery/medical_kiosk/proc/kiosk_scan_interrupted(datum/act/op/A)
 	suspend()
-	return
 
 /obj/machinery/medical_kiosk/proc/medical_scan(mob/living/user)
 	var/datum/diagnosis/diag = istype(user) ? user.diagnose(/datum/diagnostic_profile/automation/kiosk) : null

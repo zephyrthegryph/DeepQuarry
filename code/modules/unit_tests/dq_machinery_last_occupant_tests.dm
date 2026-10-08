@@ -1,22 +1,34 @@
-// Headless consent pins bypass only go_in's network-client admission: the real passenger-owned prompt and completion remain unchanged.
+// Headless fixture forces only the consent predicate; the real native op retains passenger answerer and loader ownership.
 /datum/unit_test/dq_timed_pin/last_occupant
 	abstract_type = /datum/unit_test/dq_timed_pin/last_occupant
 
-/datum/unit_test/dq_timed_pin/last_occupant/proc/consent(obj/machinery/cryopod/P, mob/passenger, mob/loader)
-	return open_request(P, /datum/prompt/yes_no/cryo_consent, TYPE_PROC_REF(/obj/machinery/cryopod, storage_consent_answered), answerer = passenger, title = "Cryopod", question = "Would you like to enter long-term storage?", loader = loader, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
+/obj/machinery/cryopod/last_occupant_fixture
 
+/obj/machinery/cryopod/last_occupant_fixture/loading_needs_consent(datum/act/op/A)
+	return TRUE
+
+/datum/unit_test/dq_timed_pin/last_occupant/proc/consent(obj/machinery/cryopod/P, mob/passenger, mob/loader)
+	var/obj/item/grab/G = allocate(/obj/item/grab, loader, passenger)
+	if(loader.get_active_hand() != G)
+		loader.put_in_active_hand(G)
+	TEST_ASSERT_EQUAL(loader.get_active_hand(), G, "the loader holds the actual passenger grab")
+	test_menu(loader, P, "cryopod_insert_grab")
+	var/datum/pending_op/pending = op_pending_of(loader)
+	TEST_ASSERT(pending, "the loader owns the actual native pending op")
+	TEST_ASSERT_EQUAL(pending.actor, loader, "answerer dispatch preserves the loader as actor")
+	return pending.request
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_yes
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_yes/run_pin()
 	var/turf/T = run_loc_floor_bottom_left
-	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod, T)
+	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod/last_occupant_fixture, T)
 	var/mob/living/carbon/human/loader = person(T)
 	var/mob/living/carbon/human/passenger = person(T)
 	interim_keep_awake(loader)
 	interim_keep_awake(passenger)
-	var/datum/prompt/yes_no/cryo_consent/R = consent(P, passenger, loader)
+	var/datum/prompt/yes_no/R = consent(P, passenger, loader)
 	TEST_ASSERT(R?.is_open(), "the real consent question opens")
 	TEST_ASSERT_EQUAL(R.answerer, passenger, "the passenger is the answerer")
-	TEST_ASSERT_EQUAL(R.loader, loader, "the separate loader is preserved")
+	TEST_ASSERT_EQUAL(op_pending_of(loader)?.actor, loader, "the separate loader is preserved")
 	test_answer(passenger, TRUE)
 	TEST_ASSERT(running(loader), "consent starts the loader's actual timed task")
 	TEST_ASSERT_NULL(running(passenger), "consent does not give the passenger the loader's task")
@@ -29,13 +41,13 @@
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_no
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_no/run_pin()
 	var/turf/T = run_loc_floor_bottom_left
-	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod, T)
+	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod/last_occupant_fixture, T)
 	var/mob/living/carbon/human/loader = person(T)
 	var/mob/living/carbon/human/passenger = person(T)
-	var/datum/prompt/yes_no/cryo_consent/R = consent(P, passenger, loader)
+	var/datum/prompt/yes_no/R = consent(P, passenger, loader)
 	TEST_ASSERT(R?.is_open(), "the real consent question opens before refusal")
 	test_answer(passenger, FALSE)
-	TEST_ASSERT_NULL(running(loader), "refusal starts no loader task")
+	TEST_ASSERT_NULL(op_pending_of(loader), "refusal ends the loader op without a timed wait")
 	test_time(3 SECONDS)
 	TEST_ASSERT_NULL(P.slot_item(OCCUPANT_SLOT_CRYOPOD), "refusal leaves the pod empty")
 	TEST_ASSERT_EQUAL(passenger.loc, T, "refusal preserves passenger custody")
@@ -43,13 +55,13 @@
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_cancel
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_cancel/run_pin()
 	var/turf/T = run_loc_floor_bottom_left
-	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod, T)
+	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod/last_occupant_fixture, T)
 	var/mob/living/carbon/human/loader = person(T)
 	var/mob/living/carbon/human/passenger = person(T)
-	var/datum/prompt/yes_no/cryo_consent/R = consent(P, passenger, loader)
+	var/datum/prompt/yes_no/R = consent(P, passenger, loader)
 	TEST_ASSERT(R?.is_open(), "the real consent question opens before cancellation")
 	test_answer(passenger, null, REQ_CANCELLED)
-	TEST_ASSERT_NULL(running(loader), "cancellation starts no loader task")
+	TEST_ASSERT_NULL(op_pending_of(loader), "cancellation ends the loader op without a timed wait")
 	test_time(3 SECONDS)
 	TEST_ASSERT_NULL(P.slot_item(OCCUPANT_SLOT_CRYOPOD), "cancellation leaves the pod empty")
 
@@ -95,12 +107,12 @@
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_loader_moves
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_loader_moves/run_pin()
 	var/turf/T = run_loc_floor_bottom_left
-	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod, T)
+	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod/last_occupant_fixture, T)
 	var/mob/living/carbon/human/loader = person(T)
 	var/mob/living/carbon/human/passenger = person(T)
 	interim_keep_awake(loader)
 	interim_keep_awake(passenger)
-	var/datum/prompt/yes_no/cryo_consent/R = consent(P, passenger, loader)
+	var/datum/prompt/yes_no/R = consent(P, passenger, loader)
 	TEST_ASSERT(R?.is_open(), "the real passenger question opens")
 	test_answer(passenger, TRUE)
 	var/datum/action = running(loader)
@@ -114,10 +126,10 @@
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_passenger_deleted
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_passenger_deleted/run_pin()
 	var/turf/T = run_loc_floor_bottom_left
-	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod, T)
+	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod/last_occupant_fixture, T)
 	var/mob/living/carbon/human/loader = person(T)
 	var/mob/living/carbon/human/passenger = person(T)
-	var/datum/prompt/yes_no/cryo_consent/R = consent(P, passenger, loader)
+	var/datum/prompt/yes_no/R = consent(P, passenger, loader)
 	TEST_ASSERT(R?.is_open(), "the actual passenger consent is open before deletion")
 	qdel(passenger)
 	test_time(3 SECONDS)
