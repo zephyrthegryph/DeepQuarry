@@ -1217,6 +1217,11 @@
 #include "interim_camera_doppler_menu_parity.dm"
 #include "dq_round2_menu_refusal_restore_tests.dm"
 
+#include "dq_machinery_timed_conversion_pin.dm"
+#include "dq_machinery_timed_simple_pin.dm"
+#include "dq_machinery_timed_material_pin.dm"
+#include "dq_machinery_timed_occupant_pin.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

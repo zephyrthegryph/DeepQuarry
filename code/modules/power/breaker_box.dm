@@ -35,8 +35,8 @@ MSG_DEF_SELF(breakerbox/busy, "system is busy. please wait until current operati
 MSG_DEF_SELF(breakerbox/needs_item, "needs an item")
 
 CAPABILITIES(/obj/machinery/power/breakerbox)
-	op("breakerbox_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Toggle"), needs(req(PROC_REF(breakerbox_unlocked), because = MSG(breakerbox/locked)), req(PROC_REF(breakerbox_idle), because = MSG(breakerbox/busy))), then(PROC_REF(interaction_toggle)))
-	op("breakerbox_silicon_toggle", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(breakerbox_silicon_toggle)))
+	op("breakerbox_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Toggle"), needs(req(PROC_REF(breakerbox_unlocked), because = MSG(breakerbox/locked))), claims(), starts(PROC_REF(hand_toggle_started)), wait(5 SECONDS), then(PROC_REF(interaction_toggle)))
+	op("breakerbox_silicon_toggle", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(breakerbox_unlocked), because = MSG(breakerbox/locked))), claims(), starts(PROC_REF(remote_toggle_started)), wait(5 SECONDS), then(PROC_REF(breakerbox_silicon_toggle)))
 	op("breakerbox_use", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(/obj/item, because = MSG(breakerbox/needs_item)), req_adjacent(), req_capable()), asks(/datum/prompt/text, fields = list("question" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "title" = "SMES RCON system", "max_len" = MAX_NAME_LEN, "name_text" = TRUE), when = PROC_REF(breakerbox_multitool)), then(PROC_REF(interaction_use)))
 	default_parts()
 
@@ -58,19 +58,12 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 	else
 		. += span_warning("It seems to be offline.")
 
-/// Old attack_ai: toggle the breaker remotely.
+/obj/machinery/power/breakerbox/proc/remote_toggle_started(datum/act/op/A)
+	to_chat(A.actor, span_green("Updating power settings..."))
+	return OP_OK
+
 /obj/machinery/power/breakerbox/proc/breakerbox_silicon_toggle(datum/act/op/A)
-	var/mob/user = A.actor
-	if(update_locked)
-		to_chat(user, span_red("System locked. Please try again later."))
-		return OP_OK
-
-	if(task_busy(src))
-		to_chat(user, span_red("System is busy. Please wait until current operation is finished before changing power settings."))
-		return OP_OK
-
-	to_chat(user, span_green("Updating power settings..."))
-	task_timed(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, FALSE), claims = TRUE)
+	toggle_done(A.actor, FALSE)
 	return OP_OK
 
 /obj/machinery/power/breakerbox/proc/unlock_updates()
@@ -89,15 +82,13 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 /obj/machinery/power/breakerbox/proc/breakerbox_not_locked(mob/actor, atom/target, obj/item/held)
 	return !update_locked
 
-/obj/machinery/power/breakerbox/proc/breakerbox_not_busy(mob/actor, atom/target, obj/item/held)
-	return !task_busy(src)
+/obj/machinery/power/breakerbox/proc/hand_toggle_started(datum/act/op/A)
+	for(var/mob/O in viewers(A.actor))
+		O.show_message(span_red(text("[A.actor] started reprogramming [src]!")), 1)
+	return OP_OK
 
 /obj/machinery/power/breakerbox/proc/interaction_toggle(datum/act/op/A)
-	var/mob/user = A.actor
-	for(var/mob/O in viewers(user))
-		O.show_message(span_red(text("[user] started reprogramming [src]!")), 1)
-
-	task_timed(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, TRUE), claims = TRUE)
+	toggle_done(A.actor, TRUE)
 	return OP_OK
 
 /**
@@ -157,9 +148,6 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 
 /obj/machinery/power/breakerbox/proc/breakerbox_unlocked(datum/act/op/A)
 	return !update_locked
-
-/obj/machinery/power/breakerbox/proc/breakerbox_idle(datum/act/op/A)
-	return !task_busy(src)
 
 /obj/machinery/power/breakerbox/proc/breakerbox_multitool(datum/act/op/A)
 	return A.held?.has_tool_quality(TOOL_MULTITOOL)

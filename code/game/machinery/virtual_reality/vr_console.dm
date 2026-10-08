@@ -40,9 +40,9 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(vr_sleeper_emp))))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("vr_sleeper_scan", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_scan)))
-	op("vr_sleeper_enter", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), when(req(PROC_REF(drag_meant_holds))), then(PROC_REF(interaction_enter)))
+	op("vr_sleeper_enter", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), when(req(PROC_REF(drag_meant_holds))), needs(req(PROC_REF(vr_entry_ready), because = PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(interaction_enter)))
 	op("vr_sleeper_eject", menu(), label("Eject VR Capsule"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
-	op("vr_sleeper_climb_in", menu(), label("Enter VR Capsule"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_climb_in)))
+	op("vr_sleeper_climb_in", menu(), label("Enter VR Capsule"), needs(req_adjacent(), req_capable(), req(PROC_REF(vr_entry_ready), because = PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_climb_in)))
 
 /obj/machinery/vr_sleeper/perfect
 	perfect_replica = TRUE
@@ -129,13 +129,33 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	return isliving(dropping)
 
 /obj/machinery/vr_sleeper/proc/interaction_enter(datum/act/op/A)
-	var/mob/user = A.actor
-	var/atom/movable/dropping = A.held
-	var/mob/target = dropping
-	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !isliving(target))
-		return OP_OK
-	go_in(target, user)
+	go_in_timed_done(A.held, A.actor)
 	return OP_OK
+
+/obj/machinery/vr_sleeper/proc/vr_entry_target(datum/act/op/A)
+	return A.key == "vr_sleeper_enter" ? A.held : A.actor
+
+/obj/machinery/vr_sleeper/proc/vr_entry_ready(datum/act/op/A)
+	return isnull(vr_entry_reason(A))
+
+/obj/machinery/vr_sleeper/proc/vr_entry_reason(datum/act/op/A)
+	var/mob/M = vr_entry_target(A)
+	if(A.key == "vr_sleeper_enter" && !read_once(!A.actor.stat && !A.actor.lying && Adjacent(A.actor) && M.Adjacent(A.actor) && isliving(M)))
+		return "You cannot put them into the capsule from here."
+	if(!operable())
+		return "The capsule is not operational."
+	if(!ishuman(M))
+		return "\The [src] rejects [M] with a sharp beep."
+	if(slot_item(OCCUPANT_SLOT_VR_POD))
+		return "\The [src] is already occupied."
+	return null
+
+/obj/machinery/vr_sleeper/proc/vr_entry_started(datum/act/op/A)
+	var/mob/M = vr_entry_target(A)
+	if(M == A.actor)
+		act_message(A.actor, src, others = "%U% starts climbing into %T%.")
+	else
+		act_message(A.actor, M, others = "%U% starts putting %T% into \the [src].")
 
 /// An EMP throws the occupant out of VR, maybe frying their brain on the way.
 /obj/machinery/vr_sleeper/proc/vr_sleeper_emp(datum/act/hit/emp/A)
@@ -169,7 +189,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 
 /obj/machinery/vr_sleeper/proc/interaction_climb_in(datum/act/op/A)
 	var/mob/user = A.actor
-	go_in(user, user)
+	go_in_timed_done(user, user)
 	add_fingerprint(user)
 	return TRUE
 
@@ -178,27 +198,6 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	if(user.incapacitated())
 		return 0 //maybe they should be able to get out with cuffs, but whatever
 	perform_exit()
-
-/obj/machinery/vr_sleeper/proc/go_in(mob/M, mob/user)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
-	if(!M)
-		return
-	if(!operable())
-		return
-	if(!ishuman(M))
-		to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))
-		return
-	if(occupant)
-		to_chat(user, span_warning("\The [src] is already occupied."))
-		return
-
-	if(M == user)
-		act_message(user, src, others = "%U% starts climbing into %T%.")
-	else
-		act_message(user, M, others = "%U% starts putting %T% into \the [src].")
-
-	task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
-	return
 
 /obj/machinery/vr_sleeper/proc/go_in_timed_done(mob/M, mob/user)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)

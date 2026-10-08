@@ -115,7 +115,7 @@
 	visible_message(span_warning("[M] [pick("tripped", "stumbled")] into \the [src]!"))
 	if(!move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, M))
 		return ..()
-	isopen = 0
+	set_isopen(0)
 	changed(src)
 	add_fingerprint(M)
 	M.stop_flying()

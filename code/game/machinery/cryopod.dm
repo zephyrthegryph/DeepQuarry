@@ -304,7 +304,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cryopod_occupied))
 	op("cryopod_insert_grab", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT - 1), label("Put grabbed victim in"), needs(req(PROC_REF(can_take_occupant_holds), because = PROC_REF(can_take_occupant_refusal))), then(PROC_REF(interaction_insert_grab)))
 	op("cryopod_eject", menu(), label("Eject Pod"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
-	op("cryopod_enter", menu(), label("Enter Pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_enter_holds), because = PROC_REF(can_enter_refusal))), then(PROC_REF(interaction_enter)))
+	op("cryopod_enter", menu(), label("Enter Pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(self_entry_allowed), silent = TRUE), req(PROC_REF(can_enter_holds), because = PROC_REF(can_enter_refusal))), starts(PROC_REF(self_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_enter)))
 	op("cryopod_drag_in", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put in pod"), then(PROC_REF(interaction_drag_in)))
 
 /obj/machinery/cryopod/proc/work_step(datum/act/timer/A)
@@ -593,15 +593,14 @@ CAPABILITIES(/obj/machinery/cryopod)
 	name = initial(name)
 	return TRUE
 
+/obj/machinery/cryopod/proc/self_entry_allowed(datum/act/op/A)
+	return read_once(check_occupant_allowed(A.actor))
+
+/obj/machinery/cryopod/proc/self_entry_started(datum/act/op/A)
+	act_message(A.actor, src, others = "%U% [on_enter_visible_message] %T%.")
+
 /obj/machinery/cryopod/proc/interaction_enter(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!check_occupant_allowed(user))
-		return TRUE
-
-	act_message(user, src, others = "%U% [on_enter_visible_message] %T%.")
-
-	task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_enter_timed_done), done_args = list(user))
-
+	interaction_enter_timed_done(A.actor)
 	return TRUE
 
 /obj/machinery/cryopod/proc/interaction_enter_timed_done(mob/user)
@@ -641,7 +640,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 	go_in(target, user)
 	return OP_OK
 
-/obj/machinery/cryopod/robot/door/gateway/interaction_enter(datum/act/op/A)
+/obj/machinery/cryopod/robot/door/gateway/self_entry_started(datum/act/op/A)
 	. = ..()
 	for(var/obj/machinery/gateway/G in range(1,src))
 		G.icon_state = "on"

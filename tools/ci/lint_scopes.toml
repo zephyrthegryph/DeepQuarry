@@ -262,6 +262,22 @@ legacy_fields_converted = ["code/game/machinery/", "code/modules/power/"]
 # The folders and files where task_timed(), task_start(), task_busy() and om_task_periodic*() reached zero: a hard ban there (timed_task_forms_banned_in_converted_folders).
 # Entries are only ever added.
 timed_forms_converted = [
+  "code/game/machinery/suit_storage/suit_storage.dm",
+  "code/game/machinery/bioprinter.dm",
+  "code/game/machinery/camera/camera.dm",
+  "code/game/machinery/camera/camera_assembly.dm",
+  "code/game/machinery/cloning.dm",
+  "code/game/machinery/computer/ai_core.dm",
+  "code/game/machinery/deployable.dm",
+  "code/game/machinery/doorbell.dm",
+  "code/game/machinery/feeder.dm",
+  "code/game/machinery/food_replicator.dm",
+  "code/game/machinery/iv_drip.dm",
+  "code/game/machinery/oxygen_pump.dm",
+  "code/game/machinery/supplybeacon.dm",
+  "code/game/machinery/virtual_reality/vr_console.dm",
+  "code/game/machinery/washing_machine.dm",
+  "code/modules/power/breaker_box.dm",
   "code/game/objects/effects/anomalies/_anomalies.dm",
   "code/game/objects/effects/decals/Cleanable/misc.dm",
   "code/game/objects/effects/mines.dm",

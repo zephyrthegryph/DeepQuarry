@@ -1046,7 +1046,7 @@ CAPABILITIES(/obj/machinery/dq_native_emag_storage)
 	TEST_ASSERT(R && (R.outcome & ACT_REFUSED), "a locked breaker refuses the public hand click")
 	TEST_ASSERT_EQUAL(R.reason, MSG(breakerbox/locked), "the actual requirement returns the canonical locked reason")
 	TEST_ASSERT_EQUAL(B.on, old_on, "refusal preserves the breaker state")
-	TEST_ASSERT(!task_busy(B), "refusal starts no breaker work")
+	TEST_ASSERT(!op_claimed(B) && !op_pending_of(H), "refusal starts no breaker work or target claim")
 
 /datum/unit_test/dq_hc_struct/breaker_busy_click_refuses
 /datum/unit_test/dq_hc_struct/breaker_busy_click_refuses/run_gate()
@@ -1055,12 +1055,14 @@ CAPABILITIES(/obj/machinery/dq_native_emag_storage)
 	var/obj/machinery/power/breakerbox/B = mach(/obj/machinery/power/breakerbox, tile(3, 2))
 	var/old_on = B.on
 	test_click(H, B)
-	TEST_ASSERT(task_busy(B), "the first public click starts actual breaker work")
+	TEST_ASSERT(op_claimed(B) && op_pending_of(H), "the first public click starts actual breaker work and claims its target")
 	var/datum/op_result/R = test_click(other, B)
 	TEST_ASSERT(R && (R.outcome & ACT_REFUSED), "another actor is refused while the breaker is working")
-	TEST_ASSERT_EQUAL(R.reason, MSG(breakerbox/busy), "the actual requirement returns the canonical busy reason")
+	TEST_ASSERT_EQUAL(R.reason, /datum/msg/op/claimed, "native target contention returns the canonical claimed reason")
 	TEST_ASSERT_EQUAL(B.on, old_on, "the refused click does not toggle the breaker")
-	task_release_busy(B)
+	var/datum/pending_op/pending = op_pending_of(H)
+	pending.cancel(/datum/msg/op/stopped)
+	TEST_ASSERT(!op_claimed(B) && !op_pending_of(H), "cancellation releases both pending work and the target claim")
 
 /datum/unit_test/dq_hc_struct/heavy_cable_rejects_normal_coil
 /datum/unit_test/dq_hc_struct/heavy_cable_rejects_normal_coil/run_gate()

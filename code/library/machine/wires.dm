@@ -803,8 +803,13 @@ CAPABILITIES(/datum/cap_data/wires)
 
 /// Is every wire of the holder cut?
 /proc/wires_all_cut(datum/holder)
+	READS_FROM(holder)
 	var/datum/cap_data/wires/W = wiring_of(holder)
 	return W && length(W.cut) == length(W.colors)
+
+// Cut/mend publishes this holder's wire-state key; requirements observe that key
+// instead of subscribing to the capability record's implementation lists.
+READS_AS(/proc/wires_all_cut, WIRES_KEY)
 
 /// An EMP pulses up to three wires, each with a one in three chance, in random order (unless the holder said wires(emp = FALSE)).
 /proc/wires_emp(datum/holder)

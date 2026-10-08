@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Moved machinery tool work and occupant loading onto native timed operations, preserving delays and cancellation."

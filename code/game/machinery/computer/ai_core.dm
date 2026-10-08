@@ -1,3 +1,9 @@
+TRACKED(/obj/structure/AIcore, state)
+MSG_DEF_SELF(ai_core/board_unfastened, "the circuit board must be fastened before wiring")
+MSG_DEF_SELF(ai_core/not_wired, "the core must be wired before installing its panel")
+MSG_DEF_SELF(ai_core/reinforced_glass, "needs reinforced glass")
+MSG_DEF_SELF(ai_core/wiring_start, "You start to add cables to the frame.")
+MSG_DEF_SELF(ai_core/glass_start, "You start to put in the glass panel.")
 /obj/structure/AIcore
 	density = TRUE
 	anchored = FALSE
@@ -11,6 +17,8 @@
 	var/obj/item/mmi/brain = null
 
 CAPABILITIES(/obj/structure/AIcore)
+	op("add_cables", stack(/obj/item/stack/cable_coil, 5), when(req_is(nameof(state), 2)), needs(req_is(nameof(state), 2, because = MSG(ai_core/board_unfastened))), begins(MSG(ai_core/wiring_start)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(attackby_timed_done)))
+	op("add_panel", stack(/obj/item/stack/material, 2), when(req_is(nameof(state), 3)), when(PROC_REF(reinforced_panel)), needs(req_is(nameof(state), 3, because = MSG(ai_core/not_wired)), req(PROC_REF(reinforced_panel), because = MSG(ai_core/reinforced_glass))), begins(MSG(ai_core/glass_start)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(attackby_timed_done2)))
 	op("ai_core_install", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	owns_one(nameof(laws), /datum/ai_laws)
 
@@ -34,25 +42,7 @@ CAPABILITIES(/obj/structure/AIcore)
 				to_chat(user, span_notice("You place the circuit board inside the frame."))
 				icon_state = "1"
 				move_into(src, nameof(src.circuit), P, user)
-		if(2)
-			if(istype(P, /obj/item/stack/cable_coil))
-				var/obj/item/stack/cable_coil/C = P
-				if (C.get_amount() < 5)
-					to_chat(user, span_warning("You need five coils of wire to add them to the frame."))
-					return OP_PASS
-				to_chat(user, span_notice("You start to add cables to the frame."))
-				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-				task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, C))
-				return OP_PASS
 		if(3)
-			if(istype(P, /obj/item/stack/material) && P.get_material_name() == MAT_RGLASS)
-				var/obj/item/stack/RG = P
-				if (RG.get_amount() < 2)
-					to_chat(user, span_warning("You need two sheets of glass to put in the glass panel."))
-					return OP_PASS
-				to_chat(user, span_notice("You start to put in the glass panel."))
-				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-				task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, RG))
 
 			if(istype(P, /obj/item/aiModule/asimov))
 				laws.add_inherent_law("You may not injure a human being or, through inaction, allow a human being to come to harm.")
@@ -99,20 +89,20 @@ CAPABILITIES(/obj/structure/AIcore)
 				icon_state = "3b"
 	return OP_PASS
 
-/obj/structure/AIcore/proc/attackby_timed_done(mob/user, obj/item/stack/cable_coil/C)
-	if(!(state == 2))
-		return
-	if (C.use(5))
-		state = 3
-		icon_state = "3"
-		to_chat(user, span_notice("You add cables to the frame."))
-/obj/structure/AIcore/proc/attackby_timed_done2(mob/user, obj/item/stack/RG)
-	if(!(state == 3))
-		return
-	if(RG.use(2))
-		to_chat(user, span_notice("You put in the glass panel."))
-		state = 4
-		icon_state = "4"
+/obj/structure/AIcore/proc/reinforced_panel(datum/act/op/A)
+	return read_once(A.held.get_material_name()) == MAT_RGLASS
+
+/obj/structure/AIcore/proc/attackby_timed_done(datum/act/op/A)
+	set_state(3)
+	icon_state = "3"
+	to_chat(A.actor, span_notice("You add cables to the frame."))
+	return OP_OK
+
+/obj/structure/AIcore/proc/attackby_timed_done2(datum/act/op/A)
+	to_chat(A.actor, span_notice("You put in the glass panel."))
+	set_state(4)
+	icon_state = "4"
+	return OP_OK
 
 /obj/structure/AIcore/wrench_act(mob/user, obj/item/tool)
 	if(state != 0 && state != 1)
@@ -126,12 +116,11 @@ CAPABILITIES(/obj/structure/AIcore)
 /obj/structure/AIcore/proc/wrench_act_tool_done(mob/user)
 	to_chat(user, span_notice("You wrench the frame into place."))
 	set_anchored(TRUE)
-	state = 1
+	set_state(1)
 /obj/structure/AIcore/proc/wrench_act_tool_done2(mob/user)
 	to_chat(user, span_notice("You unfasten the frame."))
 	set_anchored(FALSE)
-	state = 0
-
+	set_state(0)
 /obj/structure/AIcore/welder_act(mob/user, obj/item/tool)
 	if(state != 0)
 		return ITEM_INTERACT_BLOCKING
@@ -149,14 +138,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 			if(circuit)
 				playsound(src, tool.usesound, 50, 1)
 				to_chat(user, span_notice("You screw the circuit board into place."))
-				state = 2
+				set_state(2)
 				icon_state = "2"
 				return ITEM_INTERACT_SUCCESS
 		if(2)
 			if(circuit)
 				playsound(src, tool.usesound, 50, 1)
 				to_chat(user, span_notice("You unfasten the circuit board."))
-				state = 1
+				set_state(1)
 				icon_state = "1"
 				return ITEM_INTERACT_SUCCESS
 		if(4)
@@ -188,7 +177,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 			if(circuit)
 				playsound(src, tool.usesound, 50, 1)
 				to_chat(user, span_notice("You remove the circuit board."))
-				state = 1
+				set_state(1)
 				icon_state = "0"
 				circuit.forceMove(loc)
 				rel_take(src, nameof(circuit))
@@ -204,7 +193,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 		if(4)
 			playsound(src, tool.usesound, 50, 1)
 			to_chat(user, span_notice("You remove the glass panel."))
-			state = 3
+			set_state(3)
 			if (brain)
 				icon_state = "3b"
 			else
@@ -221,7 +210,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 	else
 		playsound(src, tool.usesound, 50, 1)
 		to_chat(user, span_notice("You remove the cables."))
-		state = 2
+		set_state(2)
 		icon_state = "2"
 		new /obj/item/stack/cable_coil(loc, 5)
 	return ITEM_INTERACT_SUCCESS
