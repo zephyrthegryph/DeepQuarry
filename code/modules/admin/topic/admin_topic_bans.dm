@@ -17,13 +17,44 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 /datum/admins/proc/topic_registered_mobs()
 	return REGISTRY_MEMBERS(REGISTRY_MOBS)
 
-/// Whether the actor of `A` holds one of `rights`: an admin-authority call (a forced op, a test) holds them all, as req_rights() does.
-/datum/admins/proc/ban_rights(datum/act/op/A, rights)
-	if(A.authority & AUTH_ADMIN)
+/// Whether `actor` holds one of `rights`. An admin-authority call (a forced op, a test) holds them all, as req_rights() does.
+/proc/actor_admin_can(mob/actor, authority, rights)
+	READS_FROM() // admin rights are an admin record, not round state
+	if(authority & AUTH_ADMIN)
 		return TRUE
-	return admin_can(A.actor?.client, rights)
+	return admin_can(actor?.client, rights)
 
-/// ban_rights() that audits a denial.
+/// Whether `actor` may act on `M`'s admin standing: they hold admin rights and no more rights are held by `M` than by them.
+/proc/actor_outranks(mob/actor, authority, mob/M)
+	READS_FROM() // admin rights are an admin record, not round state
+	if(!M)
+		return FALSE
+	if(authority & AUTH_ADMIN)
+		return TRUE
+	var/datum/admins/mine = admin_holder_of(actor?.client)
+	if(!mine || !admin_can(actor.client, R_HOLDER))
+		return FALSE
+	var/datum/admins/theirs = admin_holder_of(M.client)
+	if(!theirs)
+		return TRUE
+	return mine.check_if_greater_rights_than_holder(theirs)
+
+/// The server's mods-may-jobban setting.
+/proc/ban_mods_may_jobban()
+	READS_FROM() // server configuration, not round state
+	return !!CONFIG_GET(flag/mods_can_job_tempban)
+
+/// Whether the server bans through the legacy savefile system.
+/proc/ban_legacy_system_in_use()
+	READS_FROM() // server configuration, not round state
+	return !!CONFIG_GET(flag/ban_legacy_system)
+
+/// Whether admins may jump and teleport.
+/proc/admin_jumping_allowed()
+	READS_FROM() // server configuration, not round state
+	return !!CONFIG_GET(flag/allow_admin_jump)
+
+/// The rights check of a handler that audits a denial.
 /datum/admins/proc/ban_require(datum/act/op/A, rights, entry)
 	if(A.authority & AUTH_ADMIN)
 		return TRUE
@@ -203,7 +234,7 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 
 /// when: every job is banned already and the legacy system can lift them one by one, so each is confirmed.
 /datum/admins/proc/jobban3_asks_unban(datum/act/op/A)
-	if(length(jobban3_unbanned_jobs(A)) || !CONFIG_GET(flag/ban_legacy_system))
+	if(length(jobban3_unbanned_jobs(A)) || !ban_legacy_system_in_use())
 		return FALSE
 	return length(jobban3_banned_jobs(A)) > 0
 
@@ -221,10 +252,10 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 	return "Job: '[job]' Reason: '[jobban_isbanned(M, job)]' Un-jobban?"
 
 /datum/admins/proc/jobban3_has_rights(datum/act/op/A)
-	return ban_rights(A, R_MOD) || ban_rights(A, R_ADMIN)
+	return actor_admin_can(A.actor, A.authority, R_MOD) || actor_admin_can(A.actor, A.authority, R_ADMIN)
 
 /datum/admins/proc/jobban3_mod_allowed(datum/act/op/A)
-	return !(ban_rights(A, R_MOD) && !ban_rights(A, R_ADMIN) && !CONFIG_GET(flag/mods_can_job_tempban))
+	return !(actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_ADMIN) && !ban_mods_may_jobban())
 
 /datum/admins/proc/jobban3_has_target(datum/act/op/A)
 	return !!A.args["jobban4"]
@@ -300,7 +331,7 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 	if(notbannedlist.len) //at least 1 unbanned job exists in joblist so we have stuff to ban.
 		switch(A.step_value("temp"))
 			if("Yes")
-				if(!ban_rights(A, R_MOD) && !ban_rights(A, R_BAN))
+				if(!actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_BAN))
 					to_chat(user, span_filter_adminlog(span_warning("You cannot issue temporary job-bans!")))
 					return
 				if(CONFIG_GET(flag/ban_legacy_system))
@@ -309,7 +340,7 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 				var/mins = A.step_value("mins")
 				if(!mins)
 					return
-				if(ban_rights(A, R_MOD) && !ban_rights(A, R_BAN) && mins > CONFIG_GET(number/mod_job_tempban_max))
+				if(actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_BAN) && mins > CONFIG_GET(number/mod_job_tempban_max))
 					to_chat(user, span_filter_adminlog(span_warning("Moderators can only job tempban up to [CONFIG_GET(number/mod_job_tempban_max)] minutes!")))
 					return
 				var/reason = A.step_value("reason")
@@ -368,17 +399,7 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 
 /// A kick needs a target who does not hold more rights than the actor.
 /datum/admins/proc/boot_target_ok(datum/act/op/A)
-	var/mob/M = A.args["boot2"]
-	if(!M)
-		return FALSE
-	if(A.authority & AUTH_ADMIN)
-		return TRUE
-	var/client/mine = A.actor?.client
-	if(!mine || !admin_can(mine, R_HOLDER))
-		return FALSE
-	if(!M.client?.holder)
-		return TRUE
-	return mine.holder.check_if_greater_rights_than_holder(M.client.holder)
+	return actor_outranks(A.actor, A.authority, A.args["boot2"])
 
 /datum/admins/proc/topic_boot2(datum/act/op/A, href_boot2)
 	var/mob/user = A.actor
@@ -396,10 +417,10 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 // ---- ban ----
 
 /datum/admins/proc/newban_has_rights(datum/act/op/A)
-	return ban_rights(A, R_MOD) || ban_rights(A, R_BAN)
+	return actor_admin_can(A.actor, A.authority, R_MOD) || actor_admin_can(A.actor, A.authority, R_BAN)
 
 /datum/admins/proc/newban_mod_allowed(datum/act/op/A)
-	return !(ban_rights(A, R_MOD) && !ban_rights(A, R_ADMIN) && !CONFIG_GET(flag/mods_can_job_tempban))
+	return !(actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_ADMIN) && !ban_mods_may_jobban())
 
 /datum/admins/proc/newban_target_ok(datum/act/op/A)
 	var/mob/M = A.args["newban"]
@@ -462,7 +483,7 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 			var/mins = A.step_value("mins")
 			if(!mins)
 				return
-			if(ban_rights(A, R_MOD) && !ban_rights(A, R_BAN) && mins > CONFIG_GET(number/mod_tempban_max))
+			if(actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_BAN) && mins > CONFIG_GET(number/mod_tempban_max))
 				to_chat(user, span_warning("Moderators can only job tempban up to [CONFIG_GET(number/mod_tempban_max)] minutes!"))
 				return
 			if(mins >= 525600)

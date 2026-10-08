@@ -69,13 +69,21 @@
 				log_admin("[key_name(user)] sent the Emergency Shuttle back")
 				message_admins(span_blue("[key_name_admin(user)] sent the Emergency Shuttle back."), 1)
 
+/// What the shuttle is counting down to: "launch", "arrive", or null while it is neither.
+/datum/admins/proc/shuttle_countdown_kind()
+	if(SSemergency_shuttle.wait_for_launch)
+		return "launch"
+	if(SSemergency_shuttle.shuttle.has_arrive_time())
+		return "arrive"
+	return null
+
 /// when: the shuttle is counting down to launch.
 /datum/admins/proc/shuttle_is_launching(datum/act/op/A)
-	return !!SSemergency_shuttle.wait_for_launch
+	return shuttle_countdown_kind() == "launch"
 
 /// when: the shuttle is in transit with an arrival time.
 /datum/admins/proc/shuttle_is_arriving(datum/act/op/A)
-	return !SSemergency_shuttle.wait_for_launch && SSemergency_shuttle.shuttle.has_arrive_time()
+	return shuttle_countdown_kind() == "arrive"
 
 /datum/admins/proc/shuttle_launch_default(datum/act/op/A)
 	return SSemergency_shuttle.estimate_launch_time()
@@ -85,7 +93,8 @@
 
 /datum/admins/proc/topic_edit_shuttle_time(datum/act/op/A)
 	var/mob/user = A.actor
-	if(SSemergency_shuttle.wait_for_launch)
+	var/kind = shuttle_countdown_kind()
+	if(kind == "launch")
 		var/new_time_left = A.step_value("launch")
 		if(isnull(new_time_left))
 			return
@@ -94,7 +103,7 @@
 
 		log_admin("[key_name(user)] edited the Emergency Shuttle's launch time to [new_time_left]")
 		message_admins(span_blue("[key_name_admin(user)] edited the Emergency Shuttle's launch time to [new_time_left SECONDS]"), 1)
-	else if(SSemergency_shuttle.shuttle.has_arrive_time())
+	else if(kind == "arrive")
 		var/new_time_left = A.step_value("arrive")
 		if(isnull(new_time_left))
 			return

@@ -141,7 +141,7 @@ MSG_DEF_SELF(admin_topic/jump_disabled, "Admin jumping disabled")
 	return "Send [key_name(A.args["sendbacktolobby"])] back to Lobby?"
 
 /datum/admins/proc/admin_jump_allowed(datum/act/op/A)
-	return !!CONFIG_GET(flag/allow_admin_jump)
+	return admin_jumping_allowed()
 
 /datum/admins/proc/topic_sendbacktolobby(datum/act/op/A, href_sendbacktolobby)
 	var/mob/user = A.actor

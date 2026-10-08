@@ -9,7 +9,6 @@
 	anchored = TRUE
 	var/list/collected
 	var/ran = 0
-	var/limit = 0
 
 CAPABILITIES(/obj/h4_collector)
 	op("collect", ui_act("collect"), asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(next_question)), "timeout" = 0), step = "item", repeats = PROC_REF(wants_more)), then(PROC_REF(collected)))
@@ -25,7 +24,7 @@ CAPABILITIES(/obj/h4_collector)
 	return A.step_value("mode") == "many"
 
 /obj/h4_collector/proc/under_limit(datum/act/op/A)
-	return length(A.step_values("item")) < limit
+	return length(A.step_values("item")) < 2
 
 /obj/h4_collector/proc/collected(datum/act/op/A)
 	ran++
@@ -87,7 +86,6 @@ CAPABILITIES(/obj/h4_collector)
 /datum/unit_test/dq_h4/repeat_composes_with_when_skips/run_h4()
 	var/mob/living/simple_mob/e0_fixture/M = actor()
 	var/obj/h4_collector/C = allocate(/obj/h4_collector)
-	C.limit = 2
 	test_ui(M, C, "collect_limited", list())
 	test_answer(M, "none")
 	TEST_ASSERT_EQUAL(C.ran, 1, "a skipped repeating step asks nothing and the op goes on")

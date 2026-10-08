@@ -3591,3 +3591,19 @@ Merging master-fails, om-leftovers-2 and draw-framework-2 changed these pins; th
 * **`look_trees/mob.living.simple_mob.txt`.** The two `stardog` `runtime: param(child_om_marker ...)` rows are replaced by the real look rows (the declared-ownership runtime no longer happens), and the test-only simple mobs `dq_rocket_probe` and `e0_fixture/denied_counter` are new rows.
 * **`look_trees/turf.simulated.floor.txt`: the lighting darkness layer is not a look.** The look pin row builder skips an underlay of `LIGHTING_ICON`; whether a floor has it depends on boot timing, and with it the merged tree recorded 222 `underlay: icons/effects/lighting_object.dmi:dark:5` rows the branch did not.
 * **Not blessed** (known): the `electronic_assembly` `op_clash` runtime row and the `blob/core` random colour rows in `look_trees`.
+
+## Notices and asks (D3, H4)
+
+Pinned by `code/modules/unit_tests/dq_notice_late_deleted_tests.dm` and `dq_asks_repeat_tests.dm`.
+
+* **A late notice (published past the depth cap) is no longer dropped when its holder is deleted before the drain.** It is delivered to the holder's observers and legacy
+  reactions as the holder's destroy transaction begins, with the holder in its deleting state; the holder's own hooks do not run (as for any notice from a dying holder). A
+  notice for a holder that is already gone, or an observer deleted before the drain, is dropped and logged. The queue holds a handle and a notice with no target, so it never keeps
+  a deleted datum alive.
+* **Ban panel questions are asked by the op, not by re-running the href.** The same questions in the same order (temporary or permanent, how long, why, the IP ban, one
+  confirmation per banned job), but: (1) the checks that used to run before the first question (a moderator without the right, a target who holds ban rights, a missing job
+  master, a kick of someone with more rights, a ghost-only or client-only target, admin jumping disabled) are refusals of the op with a reason, so the panel says why and
+  asks nothing; (2) a job ban of several jobs asks one reason for all of them, as before, and lifting asks once per banned job; (3) the legacy player note, the shuttle time edit and
+  the thunderdome, prison, lobby, mob-transform, artillery, get-mob and send-mob confirmations read their answer from their step.
+* An admin-authority call (`AUTH_ADMIN`, a forced op or a test) holds every ban right, as `req_rights()` already did.
+* `topic_rerun_ask()`, `topic_ask()`, `ban_topic_ask()` and the topic re-run record are deleted and their names are hard-banned.

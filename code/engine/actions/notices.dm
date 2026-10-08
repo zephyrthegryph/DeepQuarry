@@ -190,13 +190,14 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 /// A holder's destroy transaction has begun (it is QDELETED and still whole): the notices queued for it are delivered now, to every receiver but its own
 /// hooks, with the holder in its deleting state, and their rows go. After this nothing in the queue names it.
 /proc/notice_late_subject_deleting(datum/holder)
-	var/holder_handle = entity_handle_of(holder)
 	for(var/i in length(GLOB.notice_late_queue) to 1 step -1)
 		var/list/row = GLOB.notice_late_queue[i]
-		if(row[1] != holder && (isnull(holder_handle) || row[1] != holder_handle))
+		var/row_holder = row[1]
+		if(row_holder != holder && (isnull(row_holder) || row_holder != entity_handle_of(holder)))
 			continue
 		GLOB.notice_late_queue.Cut(i, i + 1)
-		log_world("ACT: late notice [row[2]?.type] delivered to the observers of [holder.type] as it is deleted (\[[row[4]]\])")
+		var/datum/notice/queued = row[2]
+		log_world("ACT: late notice [queued?.type] delivered to the observers of [holder.type] as it is deleted (\[[row[4]]\])")
 		var/depth = GLOB.act_depth
 		var/chain_len = length(GLOB.act_chain)
 		notice_late_deliver(holder, row)
@@ -218,8 +219,8 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 			if(!holder || QDELETED(holder))
 				// The receiver was deleted before the drain: it gets nothing and its row is dropped (a holder mid-deletion was delivered to when its
 				// transaction began).
-				log_world("ACT: late notice [row[2]?.type] dropped: its holder was deleted before the drain (\[[row[4]]\])")
 				var/datum/notice/dropped = row[2]
+				log_world("ACT: late notice [dropped?.type] dropped: its holder was deleted before the drain (\[[row[4]]\])")
 				dropped?.release()
 				continue
 			notice_late_deliver(holder, row)

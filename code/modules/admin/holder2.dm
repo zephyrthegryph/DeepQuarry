@@ -391,6 +391,7 @@ CAPABILITIES(/datum/admins)
 
 /// The admin holder of a client (null for a player): what the View Variables dispatch hands its VV_ADMIN_TOPIC ops.
 /proc/admin_holder_of(client/subject)
+	READS_FROM() // the admin record of a client, not round state
 	return subject?.holder
 
 /**
