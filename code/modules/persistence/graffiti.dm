@@ -21,6 +21,7 @@ CAPABILITIES(/obj/effect/decal/writing)
 	param(nameof(author), pos = 3)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 	op("engrave_graffiti", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Engrave"), then(PROC_REF(interaction_engrave_graffiti)))
+	op("clear_graffiti", lit_welder(fuel = 0), wait(0.5 SECONDS), then(PROC_REF(clear_done)))
 
 // ALLOW(init/INSTANCE_STATE): graffiti not loaded with the map is tracked for persistence
 /obj/effect/decal/writing/Initialize(mapload)
@@ -80,14 +81,9 @@ CAPABILITIES(/obj/effect/decal/writing)
 	if(lowertext(message) == "elbereth")
 		to_chat(user, span_notice("You feel much safer."))
 
-/obj/effect/decal/writing/welder_act(mob/user, obj/item/tool)
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder.isOn() || !welder.remove_fuel(0, user))
-		return ITEM_INTERACT_BLOCKING
-	task_timed(user, 0.5 SECONDS, src, src, PROC_REF(clear_done), list(user, welder))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/effect/decal/writing/proc/clear_done(mob/user, obj/item/weldingtool/welder)
+/obj/effect/decal/writing/proc/clear_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/weldingtool/welder = A.held.get_welder()
 	playsound(loc, welder.usesound, 50, 1)
 	act_message(user, null, others = span_infoplain(span_bold("%U%") + " clears away some graffiti."))
 	spent(src, user)

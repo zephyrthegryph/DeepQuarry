@@ -195,27 +195,16 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 		if(console.sensors() == src)
 			console.refresh_sensor_light()
 
-/obj/machinery/shipsensors/proc/welder_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	var/damage = max_integrity - get_integrity()
-	if(!damage)
-		return OP_DECLINE
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder?.isOn())
-		return OP_OK
-	if(!welder.remove_fuel(0, user))
-		to_chat(user, span_notice("You need more welding fuel to complete this task."))
-		return OP_OK
-	to_chat(user, span_notice("You start repairing the damage to [src]."))
-	play_sfx(src, SFX_ITEMS_WELDER)
-	task_timed(user, max(5, damage / 5), src, src, PROC_REF(weld_repair_done), list(user, welder))
-	return OP_OK
+/// The sensors are damaged.
+/obj/machinery/shipsensors/proc/damaged(datum/act/A)
+	return get_integrity_damage() > 0
 
-/obj/machinery/shipsensors/proc/weld_repair_done(mob/user, obj/item/weldingtool/welder)
-	if(!welder.isOn())
-		return
-	to_chat(user, span_notice("You finish repairing the damage to [src]."))
+/// The repair takes a fifth of a decisecond per point of damage, half a second at least.
+/obj/machinery/shipsensors/proc/weld_time(datum/act/A)
+	return max(5, get_integrity_damage() / 5)
+
+/obj/machinery/shipsensors/proc/weld_repair_done(datum/act/op/A)
+	to_chat(A.actor, span_notice("You finish repairing the damage to [src]."))
 	repair_damage(max_integrity - get_integrity())
 
 /obj/machinery/shipsensors/proc/in_vacuum()
@@ -252,9 +241,11 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 	work_start(src)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+MSG_DEF_SELF(shipsensors/repairing, span_notice("You start repairing the damage to %T%."))
+
 CAPABILITIES(/obj/machinery/shipsensors)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
-	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(damaged)), begins(MSG(shipsensors/repairing)), plays(SFX_ITEMS_WELDER, at_start = TRUE), wait(PROC_REF(weld_time)), then(PROC_REF(weld_repair_done)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(sensors_emp_shutdown)))
 
 /obj/machinery/shipsensors/proc/work_step(datum/act/timer/A)
