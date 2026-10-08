@@ -442,9 +442,28 @@ Fresh worktrees should not pay cold build costs:
   (`DQ_ANALYZE_TARGET`; default `E:/dq-cache/analyze-target` on Windows when `E:` exists, else
   `~/.cache/dq/analyze-target`; `off` builds in the worktree) and copies the binary to the worktree's
   own `tools/analyze/target/release/` path with its `.key` file. Dependencies compile once; cargo's lock
-  serialises concurrent worktrees (cargo prints `Blocking waiting for file lock`). Editing
-  `tools/analyze/src` still recompiles the analyzer crate itself (about 2.5 minutes). The content-keyed
-  binary cache (`DQ_ANALYZE_CACHE`) still serves unchanged sources instantly.
+  serialises concurrent worktrees (cargo prints `Blocking waiting for file lock`). The content-keyed
+  binary cache (`DQ_ANALYZE_CACHE`) serves unchanged sources instantly; its key includes the cargo
+  profile, so binaries of different profiles never mix.
+- **Analyzer profile.** `DQ_ANALYZE_PROFILE` picks the cargo profile. Locally the default is `dev-fast`
+  (`tools/analyze/Cargo.toml`: opt-level 2, no LTO, 256 codegen units, incremental; binary at
+  `target/dev-fast/analyze`). CI (`CI` set) and `tools/dq_push_master.sh` use `release`. Measured on
+  this machine with 9-16 cargo/rustc/dm processes from other lanes running (noisy), cargo rebuild of
+  `analyze` after an edit under `tools/analyze/src`, and a cold `analyze check --no-cache` of the whole
+  tree (warm runs are 0.4-0.7 s for every profile):
+
+  | Profile | Comment-only edit | Code edit (one constant) | Cold lint |
+  |---|---|---|---|
+  | `release` (thin LTO, 16 units, no incremental) | 128 s, 148 s | 101 s, 109 s | 26.4 s, 26.6 s |
+  | release + incremental, LTO off, 16 units | 63 s, 67 s | 82 s, 69 s | 27 s, 30 s |
+  | `dev-fast` opt-level 1 | 34 s, 17 s | 9 s, 12 s | 31 s, 29 s |
+  | `dev-fast` opt-level 2 (chosen) | 62 s, 15 s | 14 s, 11 s | 33 s, 27 s |
+  | opt-level 3, no LTO, 256 units, incremental | 53 s, 11 s | 11 s, 13 s | 46 s, 30 s |
+
+  The first rebuild after switching profile pays the dependency build (about 3 minutes, once per target
+  dir). Cold lint time is within run-to-run noise of release; the lints are parallel, so codegen quality
+  matters little. Run `DQ_ANALYZE_PROFILE=release tools/build/build.sh analyze-build` to get the release
+  binary locally.
 - **Bun.** `tools/bootstrap/javascript_.ps1` downloads Bun into `DQ_BUN_CACHE` (default
   `E:\dq-cache\bun` when `E:` exists; `off` or an unwritable dir falls back to `tools/bootstrap/.cache`),
   keyed by version. It downloads into a temp dir and renames it into place, so concurrent bootstraps are safe.
