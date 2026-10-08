@@ -1,0 +1,11 @@
+initial | bans: []
+initial | count: 0
+refreshed_empty | bans: []
+refreshed_empty | count: 0
+one_ban | bans: [{"key_id":"pinkeyone1","key":"pinkeyone","id":"1","ip":"10.0.0.1","reason":"Pin reason one","by":"PinAdmin","expiry":"Permaban"}]
+one_ban | count: 1
+two_bans | bans: [{"key_id":"pinkeyone1","key":"pinkeyone","id":"1","ip":"10.0.0.1","reason":"Pin reason one","by":"PinAdmin","expiry":"Permaban"},{"key_id":"pinkeytwo2","key":"pinkeytwo","id":"2","ip":"10.0.0.2","reason":"Pin reason two","by":"PinAdmin","expiry":"2.0 Hours"}]
+two_bans | count: 2
+one_unbanned | bans: [{"key_id":"pinkeytwo2","key":"pinkeytwo","id":"2","ip":"10.0.0.2","reason":"Pin reason two","by":"PinAdmin","expiry":"2.0 Hours"}]
+one_unbanned | count: 1
+
