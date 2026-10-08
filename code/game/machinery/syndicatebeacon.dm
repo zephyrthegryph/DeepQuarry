@@ -19,11 +19,13 @@
 
 
 CAPABILITIES(/obj/machinery/syndicate_beacon)
-	op("beacon_talk", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice/syndicate_beacon, fields = list("title" = "Ominous Beacon", "buttons" = TRUE, "timeout" = 0)), then(PROC_REF(beacon_offer_answered)))
+	extend(TAG_UI, needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate))))
+	op("beacon_talk", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate))), asks(/datum/prompt/choice/syndicate_beacon, fields = list("title" = "Ominous Beacon", "buttons" = TRUE, "timeout" = 0)), then(PROC_REF(beacon_offer_answered)))
 
 /datum/prompt/choice/syndicate_beacon/prepare(datum/act/A)
 	..()
-	var/obj/machinery/syndicate_beacon/B = owner
+	var/datum/act/op/OA = A
+	var/obj/machinery/syndicate_beacon/B = OA.holder
 	var/mob/user = answerer
 	user.set_machine(B)
 	var/message = "Scanning [pick("retina pattern", "voice print", "fingerprints", "dna sequence")]... Identity confirmed.\n"
@@ -58,8 +60,6 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 
 /// Offers `M` (who must be `user`) a traitor role; the beacon's accept path.
 /obj/machinery/syndicate_beacon/proc/betraitor(mob/user, mob/M)
-	if(!topic_allowed(user))
-		return
 	if(charges < 1)
 		updateUsrDialog(user)
 		return
@@ -188,8 +188,6 @@ CAPABILITIES(/obj/machinery/power/singularity_beacon)
 // attack_hand body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI).
 
 /obj/machinery/syndicate_beacon/virgo/betraitor(mob/user, mob/M)
-	if(!topic_allowed(user))
-		return
 	if(charges < 1)
 		updateUsrDialog(user)
 		return

@@ -5,23 +5,26 @@
 	desc = "An inactive, hacked supply beacon stamped with the local system's Rapid Fabrication logo. Good for one (1) ballistic supply pod shipment."
 	icon_state = "beacon"
 	var/deploy_path = /obj/machinery/power/supply_beacon
-	var/deploy_time = 30
+	var/deploy_time = 3 SECONDS
 
 /obj/item/supply_beacon/supermatter
 	name = "inactive supermatter supply beacon"
 	deploy_path = /obj/machinery/power/supply_beacon/supermatter
 
 CAPABILITIES(/obj/item/supply_beacon)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), starts(PROC_REF(interaction_self)), wait(PROC_REF(deployment_duration)), then(PROC_REF(attack_self_timed_done)))
+
+/obj/item/supply_beacon/proc/deployment_duration(datum/act/op/A)
+	return deploy_time
 
 /// Old attack_self.
 /obj/item/supply_beacon/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " begins setting up %T%."))
-	task_timed(user, deploy_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return TRUE
 
-/obj/item/supply_beacon/proc/attack_self_timed_done(mob/user)
+/obj/item/supply_beacon/proc/attack_self_timed_done(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/S = new deploy_path(get_turf(user))
 	act_message(user, S, others = span_infoplain(span_bold("%U%") + " deploys %T%."))
 	consume(src, user)

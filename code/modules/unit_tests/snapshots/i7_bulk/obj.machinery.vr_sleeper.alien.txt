@@ -5,7 +5,7 @@ human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject
 robot|none menu: Eject VR Capsule
-robot|none menu: Enter VR Capsule
+robot|none menu: Enter VR Capsule (refused: The strange pod rejects Default Cyborg-751 with a sharp beep.)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none menu: Eject (refused: You can't reach that.)

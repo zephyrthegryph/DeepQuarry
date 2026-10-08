@@ -1,0 +1,140 @@
+{
+  "tested_base": "059aac8767",
+  "prior_reviewed_commit": "6c7c06f5f2",
+  "current_master": "6cf9e920d75a67149b9fdd17124161104b23e634",
+  "fresh_old_run": false,
+  "prior_old_tests": "43 real-input checks, including repaired four grab fixtures against unchanged old code; prior final55pass",
+  "files": [
+    {
+      "file": "code/game/machinery/bioprinter.dm",
+      "tested_old_sha256": "ac6ebc3b4d3709d7a0508769bfb531ae050f98ea8b310e30e02ae35f7361f150",
+      "current_sha256": "ac6ebc3b4d3709d7a0508769bfb531ae050f98ea8b310e30e02ae35f7361f150",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/machinery/camera/camera.dm",
+      "tested_old_sha256": "6e5716c6e77f65f054129b5f79c03c2dd412880d06706e3b49992bd804225a8b",
+      "current_sha256": "6e5716c6e77f65f054129b5f79c03c2dd412880d06706e3b49992bd804225a8b",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/machinery/camera/camera_assembly.dm",
+      "tested_old_sha256": "bd0ca2fdda428c858abc942ab8f603618f761717e08a69620bc2fa0dc0352bbe",
+      "current_sha256": "bd0ca2fdda428c858abc942ab8f603618f761717e08a69620bc2fa0dc0352bbe",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/machinery/cloning.dm",
+      "tested_old_sha256": "5a7fe9fd81393f67f72ea4bf5d7326c0bd22d5c72a482215555f88b64583b8cf",
+      "current_sha256": "5a7fe9fd81393f67f72ea4bf5d7326c0bd22d5c72a482215555f88b64583b8cf",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/machinery/computer/ai_core.dm",
+      "tested_old_sha256": "c9bcd7246b3e28930862b2e7ba79df96b3f9b44f6d0e38a1fa2dc5f8fc8404e4",
+      "current_sha256": "8030411932eade9eecd37e7c0c2be94c5c99f2bfad89692b6d01a326ab44ed74",
+      "byte_equal_lf": false
+    },
+    {
+      "file": "code/game/machinery/cryopod.dm",
+      "tested_old_sha256": "ce34b1b1d706256a154513c188b789ef77d3b4a3b7fec1b9802afab5d4147610",
+      "current_sha256": "ce34b1b1d706256a154513c188b789ef77d3b4a3b7fec1b9802afab5d4147610",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/machinery/doorbell.dm",
+      "tested_old_sha256": "458431ab6ef8e2a11646fa8f92941606a22608afc3790f38fac6cf57d06e0a4a",
+      "current_sha256": "458431ab6ef8e2a11646fa8f92941606a22608afc3790f38fac6cf57d06e0a4a",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/machinery/feeder.dm",
+      "tested_old_sha256": "45ebe27e55f3bfad347aa25c6c9fe8f6504efe0fc09bc0d0c05231434c0015cd",
+      "current_sha256": "45ebe27e55f3bfad347aa25c6c9fe8f6504efe0fc09bc0d0c05231434c0015cd",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/machinery/food_replicator.dm",
+      "tested_old_sha256": "6e90d3564a8908acf7ae4a9fe0d6b4511ce8e349da152b0e95c4c2191372c79d",
+      "current_sha256": "6e90d3564a8908acf7ae4a9fe0d6b4511ce8e349da152b0e95c4c2191372c79d",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/machinery/iv_drip.dm",
+      "tested_old_sha256": "4eacddcaee5ae100970bb8c0e3f6911b48f3140e83c3d7cc225576f18943628f",
+      "current_sha256": "4eacddcaee5ae100970bb8c0e3f6911b48f3140e83c3d7cc225576f18943628f",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/machinery/oxygen_pump.dm",
+      "tested_old_sha256": "8ede544f6d6ec17df50623b522362f6acbfd7f07197e29cf874fe1c17bfdef08",
+      "current_sha256": "8ede544f6d6ec17df50623b522362f6acbfd7f07197e29cf874fe1c17bfdef08",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/machinery/suit_storage/suit_storage.dm",
+      "tested_old_sha256": "40c3587cd86b8e3387ecad1714c441c931e453d170e4d4cc3f5a6488af1dbc39",
+      "current_sha256": "40c3587cd86b8e3387ecad1714c441c931e453d170e4d4cc3f5a6488af1dbc39",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/machinery/virtual_reality/vr_console.dm",
+      "tested_old_sha256": "9669d7da340e67689fc4871952ce42d22a98623c6770fb6c1d79d8b1987dc1a2",
+      "current_sha256": "9669d7da340e67689fc4871952ce42d22a98623c6770fb6c1d79d8b1987dc1a2",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/machinery/washing_machine.dm",
+      "tested_old_sha256": "357fbed110b2e5fd90cd534c9b5132ab8f29a66c5101118330b74a2bdbd5c85e",
+      "current_sha256": "357fbed110b2e5fd90cd534c9b5132ab8f29a66c5101118330b74a2bdbd5c85e",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/objects/stumble_into.dm",
+      "tested_old_sha256": "8e3e6250bd99a5c8f64f892786942121a94b36224c9d8c853325eed440323e7c",
+      "current_sha256": "8e3e6250bd99a5c8f64f892786942121a94b36224c9d8c853325eed440323e7c",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/library/machine/wires.dm",
+      "tested_old_sha256": "0ebda35531f89e270609d9355bf6d17a741053656075e1f28fabb6b8630ed608",
+      "current_sha256": "0ebda35531f89e270609d9355bf6d17a741053656075e1f28fabb6b8630ed608",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/modules/power/breaker_box.dm",
+      "tested_old_sha256": "169589a3e756286f66ff848ed3158e7ee6b096f3447315955292cb00477c2efc",
+      "current_sha256": "169589a3e756286f66ff848ed3158e7ee6b096f3447315955292cb00477c2efc",
+      "byte_equal_lf": true
+    },
+    {
+      "file": "code/game/machinery/supplybeacon.dm",
+      "tested_old_sha256": "e8d67b667d0f87d9bd469137181733f816504d4313dfe9f463bf866729e968a6",
+      "current_sha256": "e8d67b667d0f87d9bd469137181733f816504d4313dfe9f463bf866729e968a6",
+      "byte_equal_lf": true
+    }
+  ],
+  "aicore_timed_body_proof": [
+    {
+      "method": "/obj/structure/AIcore/proc/interaction_item",
+      "tested_old_sha256": "2d6519349868e30de70e0273625e722021af765e6a8c16e91944da420cecb07a",
+      "current_old_sha256": "2d6519349868e30de70e0273625e722021af765e6a8c16e91944da420cecb07a",
+      "equal": true
+    },
+    {
+      "method": "/obj/structure/AIcore/proc/attackby_timed_done",
+      "tested_old_sha256": "9067dfb829f690b1fd84666d12ce6d409c8512dce38bc178fb1e7e47c501b066",
+      "current_old_sha256": "9067dfb829f690b1fd84666d12ce6d409c8512dce38bc178fb1e7e47c501b066",
+      "equal": true
+    },
+    {
+      "method": "/obj/structure/AIcore/proc/attackby_timed_done2",
+      "tested_old_sha256": "09f0b1847128833b0442079f034737a2741d81f87f3234803253e5bfacdd1da3",
+      "current_old_sha256": "09f0b1847128833b0442079f034737a2741d81f87f3234803253e5bfacdd1da3",
+      "equal": true
+    }
+  ],
+  "already_native_on_master": "deployable cutout; no production replay; prior tests retained",
+  "master_api_preserved": "AIcore latejoin_offer and native admin latejoin ask handlers",
+  "retirement": "current27 explicit task_timed/task_busy/task_start sites ->3; no fresh old runtime claim"
+}

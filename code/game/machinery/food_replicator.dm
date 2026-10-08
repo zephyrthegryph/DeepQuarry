@@ -110,12 +110,11 @@
 
 /obj/machinery/food_replicator/proc/interaction_scan(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/reagent_containers/food/O = A.held
 	balloon_alert(user, "scanning...")
-	task_timed(user, 10, target = src, receiver = src, on_done = PROC_REF(interaction_scan_timed_done), done_args = list(O))
 	return TRUE
 
-/obj/machinery/food_replicator/proc/interaction_scan_timed_done(obj/item/reagent_containers/food/O)
+/obj/machinery/food_replicator/proc/interaction_scan_timed_done(datum/act/op/A)
+	var/obj/item/reagent_containers/food/O = A.held
 	foodcheck(O)
 	return TRUE
 
@@ -171,7 +170,7 @@ MSG_DEF_SELF(food_replicator/container, "There is already a reagent container in
 CAPABILITIES(/obj/machinery/food_replicator)
 	started_work(step = PROC_REF(work_step), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
-	op("scan", item(/obj/item/reagent_containers/food), priority(OP_PRIORITY_DEFAULT - 1), label("Scan food"), then(PROC_REF(interaction_scan)))
+	op("scan", item(/obj/item/reagent_containers/food), priority(OP_PRIORITY_DEFAULT - 1), label("Scan food"), starts(PROC_REF(interaction_scan)), wait(1 SECOND), then(PROC_REF(interaction_scan_timed_done)))
 	op("insert_container", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Insert container"), needs(req_is(nameof(container), FALSE, because = MSG(food_replicator/container))), then(PROC_REF(interaction_insert_container)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("eject_beaker", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_eject_beaker)))

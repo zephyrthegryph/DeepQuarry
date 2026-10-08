@@ -63,7 +63,7 @@ CAPABILITIES(/obj/machinery/camera)
 	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(power_wire_cut))
 	on_wire(WIRE_CAM_LIGHT, cut = PROC_REF(light_wire_cut), pulse = PROC_REF(light_wire_pulsed))
 	on_wire(WIRE_CAM_ALARM, cut = PROC_REF(alarm_wire_cut), pulse = PROC_REF(alarm_wire_pulsed))
-	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(weld_available)), claims(), begins(PROC_REF(weld_start_message)), starts(PROC_REF(weld_started)), wait(PROC_REF(weld_duration)), then(PROC_REF(welder_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(wire_tool_used)))
 
@@ -77,7 +77,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	observe(src, /datum/notice/machinery_power_lost, src, then(PROC_REF(on_power_signal)))
 	observe(src, /datum/notice/machinery_power_restored, src, then(PROC_REF(on_power_signal)))
 	rel_set(src, nameof(assembly), new /obj/item/camera_assembly(src))
-	assembly.state = 4
+	assembly.set_state(4)
 	LAZYOR(client_huds, GLOB.global_hud.whitense)
 
 	if(!src.network || src.network.len < 1)
@@ -272,14 +272,27 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		interact(A.actor)
 	return OP_OK
 
-/obj/machinery/camera/proc/welder_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
+/obj/machinery/camera/proc/weld_available(datum/act/op/A)
+	return broken_now() || wires_all_cut(src)
+
+/obj/machinery/camera/proc/weld_start_message(datum/act/op/A)
+	return msg_text("You start to weld [src]..")
+
+/obj/machinery/camera/proc/weld_started(datum/act/op/A)
 	update_coverage()
-	if(!wires_all_cut(src) && !broken_now())
-		return OP_DECLINE
-	if(!weld(tool, user, PROC_REF(welded_off), list(user, tool)))
-		return OP_OK
+	var/obj/item/W = A.held_provider()
+	var/obj/item/weldingtool/welder = W.get_welder()
+	welder.eyecheck(A.actor)
+	if(W.usesound)
+		play_sfx(src, W.usesound, volume = 50, vary = TRUE)
+	return OP_OK
+
+/obj/machinery/camera/proc/weld_duration(datum/act/op/A)
+	var/obj/item/W = A.held_provider()
+	return 10 SECONDS * W.toolspeed * tool_skill_factor(A.actor, TOOL_WELDER)
+
+/obj/machinery/camera/proc/welder_used(datum/act/op/A)
+	welded_off(A.actor, A.held)
 	return OP_OK
 
 /obj/machinery/camera/proc/welded_off(mob/user, obj/item/tool)
@@ -291,10 +304,10 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		assembly.update_icon()
 		assembly.set_dir(dir)
 		if(broken_now())
-			assembly.state = 2
+			assembly.set_state(2)
 			to_chat(user, span_notice("You repaired \the [src] frame."))
 		else
-			assembly.state = 1
+			assembly.set_state(1)
 			to_chat(user, span_notice("You cut \the [src] free from the wall."))
 			new /obj/item/stack/cable_coil(loc, 2)
 		rel_take(src, nameof(assembly))
@@ -495,17 +508,6 @@ SETTER(/obj/machinery/camera, status)
 			return C
 
 	return null
-
-/// Welds (a timed tool job); `on_done` runs on src with `done_args` when it is done. 0 if busy or refused.
-/obj/machinery/camera/proc/weld(obj/item/tool, mob/user, on_done, list/done_args)
-	if(task_busy(src)) // a weld in progress claims it
-		return 0
-	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
-	return result
-
-/obj/machinery/camera/proc/weld_finished(on_done, list/done_args)
-	if(on_done)
-		call(src, on_done)(arglist(done_args))
 
 /obj/machinery/camera/interact(mob/living/user as mob)
 	if(!panel_open || isAI(user))

@@ -2,4 +2,4 @@
 # Shrink-only: `analyze baseline --update --lint escape_hatches` lowers them; a kind at 0 has no line, so its next site fails (the hard ban).
 init_allow 318
 usr_allow 5
-usr_content 134
+usr_content 133

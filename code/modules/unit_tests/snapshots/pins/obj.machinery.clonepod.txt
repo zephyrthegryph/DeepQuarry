@@ -89,6 +89,17 @@ human|/obj/item menu: Eject Cloner
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Clonepod interaction item
+human|/obj/item/reagent_containers/glass menu: Clonepod interaction hand
+human|/obj/item/reagent_containers/glass menu: Clonepod interaction item
+human|/obj/item/reagent_containers/glass menu: Eject Beakers
+human|/obj/item/reagent_containers/glass menu: Eject Cloner
+human|/obj/item/reagent_containers/glass menu: Load container
+human|/obj/item/reagent_containers/glass menu: Move To Top
+human|/obj/item/reagent_containers/glass menu: Open or close the lid
+human|/obj/item/reagent_containers/glass menu: Set transfer amount
+human|/obj/item/reagent_containers/glass menu: Splash (refused: There is nothing in it to pour.)
+human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/glass click: Click: Load container
 human|/obj/item/card/emag menu: Clonepod interaction hand
 human|/obj/item/card/emag menu: Clonepod interaction item
 human|/obj/item/card/emag menu: Eject Beakers
@@ -97,5 +108,5 @@ human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-keys: clonepod_eject, clonepod_empty_beakers, clonepod_interaction_hand, clonepod_interaction_item, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, use_crowbar, use_multitool, use_screwdriver, use_wrench
+keys: clonepod_eject, clonepod_empty_beakers, clonepod_interaction_hand, clonepod_interaction_item, drag_buckle, emag.subvert, emag.use, load_container, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, use_crowbar, use_multitool, use_screwdriver, use_wrench
 

@@ -317,14 +317,20 @@ CAPABILITIES(/obj/machinery/organ_printer)
 	visible_message(span_info("\The [src] dings, then spits out \a [O]."))
 	return O
 
-/obj/machinery/organ_printer/proc/load_container_done(mob/user, obj/item/reagent_containers/glass/G)
-	if(container)
-		to_chat(user, span_warning("\The [src] already has a container loaded!"))
-		return
-	act_message(user, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = G)
-	move_into(src, nameof(src.container), G, user)
+MSG_DEF_SELF(flesh_printer/container_loaded, "the printer already has a container loaded")
+
+/obj/machinery/organ_printer/proc/load_container_done(datum/act/op/A)
+	var/obj/item/reagent_containers/glass/G = A.held
+	if(!move_into(src, nameof(container), G, A.actor))
+		return OP_FAILED
+	act_message(A.actor, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = G)
+	return OP_OK
+
+/obj/machinery/organ_printer/proc/container_available(datum/act/op/A)
+	return !read_once(container)
 
 CAPABILITIES(/obj/machinery/organ_printer/flesh)
+	op("load_container", item(/obj/item/reagent_containers/glass), needs(req(PROC_REF(container_available), because = MSG(flesh_printer/container_loaded))), wait(1 SECOND), then(PROC_REF(load_container_done)))
 	op("flesh_printer_interaction_item", item(/obj/item), then(PROC_REF(flesh_printer_interaction_item)))
 
 /// Old attackby; anything else falls through to the base printer's.
@@ -339,13 +345,6 @@ CAPABILITIES(/obj/machinery/organ_printer/flesh)
 			loaded_dna = injected.data.Copy()
 			S.reagents.remove_reagent(REAGENT_ID_BLOOD, injected.volume)
 			to_chat(user, span_info("You scan the blood sample into the bioprinter."))
-		return TRUE
-	else if(istype(W,/obj/item/reagent_containers/glass))
-		var/obj/item/reagent_containers/glass/G = W
-		if(container)
-			to_chat(user, span_warning("\The [src] already has a container loaded!"))
-			return TRUE
-		task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, G))
 		return TRUE
 
 	return OP_DECLINE

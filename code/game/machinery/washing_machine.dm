@@ -33,10 +33,11 @@
 MSG_DEF_SELF(washing_machine/not_inside, "you aren't inside it")
 
 CAPABILITIES(/obj/machinery/washing_machine)
+	op("washing_machine_load_grab", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT - 1), label("Put in washer"), when(req(PROC_REF(washer_grab_meant))), starts(PROC_REF(washer_grab_started)), wait(5 SECONDS), then(PROC_REF(washer_grab_finished)))
 	op("washing_machine_use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_washing_machine_use_item)))
 	op("washing_machine_start", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Start"), then(PROC_REF(interaction_washing_machine_start)))
 	op("washing_machine_start_washing", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Start Washing"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_washing_machine_start_washing)))
-	op("washing_machine_climb_out", menu(), reach(REACH_ANY), priority(OP_PRIORITY_DEFAULT - 2), label("Climb out"), needs(req(PROC_REF(actor_inside_holds), because = MSG(washing_machine/not_inside))), then(PROC_REF(interaction_washing_machine_climb_out)))
+	op("washing_machine_climb_out", menu(), reach(REACH_ANY), priority(OP_PRIORITY_DEFAULT - 2), label("Climb out"), needs(req(PROC_REF(actor_inside_holds), because = MSG(washing_machine/not_inside))), captures(nameof(state)), starts(PROC_REF(washer_escape_started)), wait(PROC_REF(washer_escape_duration)), then(PROC_REF(interaction_washing_machine_climb_out)))
 	op("washing_machine_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_washing_machine_use)))
 	owns_many(nameof(washing), on_destroy = ON_DESTROY_SPILL)
 	climb()
@@ -111,20 +112,26 @@ CAPABILITIES(/obj/machinery/washing_machine)
 /obj/machinery/washing_machine/proc/actor_inside(mob/actor, atom/target, obj/item/held)
 	return actor.loc == target
 
-/obj/machinery/washing_machine/proc/interaction_washing_machine_climb_out(datum/act/op/A)
-	var/mob/user = A.actor
-	user_climb_out(user)
-	return TRUE
+/obj/machinery/washing_machine/proc/washer_escape_duration(datum/act/op/A)
+	if(state in list(EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
+		return 2 SECONDS
+	if(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED))
+		return 60 SECONDS
+	return 0
 
-/obj/machinery/washing_machine/proc/user_climb_out(mob/user)
-	if(user.loc != src) //Have to be in it to climb out of it.
-		return
-	if(state in list(EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN)) //Door is open, we can climb out easily.
-		visible_message("[user] begins to climb out of the [src]!")
-		task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(user_climb_out_timed_done), done_args = list(user))
-	else if(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED)) //Door is shut.
+/obj/machinery/washing_machine/proc/washer_escape_started(datum/act/op/A)
+	if(state in list(EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
+		visible_message("[A.actor] begins to climb out of the [src]!")
+	else if(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED))
 		visible_message("[src] begins to rattle and shake!")
-		task_timed(user, 60 SECONDS, target = src, receiver = src, on_done = PROC_REF(user_climb_out_timed_done2), done_args = list(user))
+
+/obj/machinery/washing_machine/proc/interaction_washing_machine_climb_out(datum/act/op/A)
+	var/starting_state = A.captured(nameof(state))
+	if(starting_state in list(EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
+		user_climb_out_timed_done(A.actor)
+	else if(starting_state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED))
+		user_climb_out_timed_done2(A.actor)
+	return TRUE
 
 /obj/machinery/washing_machine/proc/user_climb_out_timed_done(mob/user)
 	if(!(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED))) //Someone shut the door while we were trying to climb out!
@@ -137,7 +144,7 @@ CAPABILITIES(/obj/machinery/washing_machine)
 	toggle_door(user, force = TRUE)
 
 /obj/machinery/washing_machine/container_resist(mob/living/escapee)
-	user_climb_out(escapee)
+	perform_op(escapee, src, "washing_machine_climb_out", origin = ORIGIN_SYSTEM)
 
 /// The look (the draw sweep: from its template and its layers).
 /obj/machinery/washing_machine/draw(datum/look/look)
@@ -163,13 +170,7 @@ CAPABILITIES(/obj/machinery/washing_machine)
 		//else: old fell through to a bare ..() (approximated as a no-op)
 
 	else if(istype(W,/obj/item/grab))
-		if((state == EMPTY_OPEN) && hacked)
-			var/obj/item/grab/G = W
-			if(ishuman(G?.grab_assailant()) && (iscorgi(G?.grab_target()) || ishuman(G?.grab_target())))
-				act_message(user, src, MSG_SELF("You begin stuffing [G?.grab_target()] into %T%!"), \
-					MSG_OTHERS("%U% begins stuffing [G?.grab_target()] into %T%!"))
-				task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_washing_machine_use_item_timed_done), done_args = list(user, G))
-		//else: old fell through to a bare ..() (approximated as a no-op)
+		return TRUE // the valid loading gesture has its own timed op
 
 	else if(is_type_in_list(W, disallowed_types))
 		to_chat(user, span_warning("You can't fit \the [W] inside."))
@@ -187,6 +188,18 @@ CAPABILITIES(/obj/machinery/washing_machine)
 			to_chat(user, span_notice("The washing machine is full."))
 	//else: old fell through to a bare ..() (approximated as a no-op)
 	return TRUE
+
+/obj/machinery/washing_machine/proc/washer_grab_meant(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	return state == EMPTY_OPEN && read_once(hacked && ishuman(G?.grab_assailant()) && (iscorgi(G?.grab_target()) || ishuman(G?.grab_target())))
+
+/obj/machinery/washing_machine/proc/washer_grab_started(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	act_message(A.actor, src, MSG_SELF("You begin stuffing [G?.grab_target()] into %T%!"), MSG_OTHERS("%U% begins stuffing [G?.grab_target()] into %T%!"))
+
+/obj/machinery/washing_machine/proc/washer_grab_finished(datum/act/op/A)
+	interaction_washing_machine_use_item_timed_done(A.actor, A.held)
+	return OP_OK
 
 /obj/machinery/washing_machine/proc/interaction_washing_machine_use_item_timed_done(mob/user, obj/item/grab/G)
 	if(state == EMPTY_OPEN) //Checking to make sure nobody closed it before we shoved em in it.

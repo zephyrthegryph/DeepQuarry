@@ -24,6 +24,7 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
 	owns_one(nameof(contained), starts = nameof(mask_type))
 	interface("Tank")
+	op("oxygen_place", at_target(/mob/living/carbon/human), gesture(GESTURE_DRAG), label("Place mask"), when(req(PROC_REF(placement_actor))), needs(req(PROC_REF(placement_ready), because = PROC_REF(placement_reason))), starts(PROC_REF(placement_started)), wait(2.5 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(placement_finished)))
 	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
 	op("oxygen_pump_hand", hand(), ungated(), needs(req(PROC_REF(can_use_pump), because = MSG(oxygen_pump/no_tank))), then(PROC_REF(oxygen_pump_interaction_hand)))
 	op("oxygen_pump_item", item(/obj/item), then(PROC_REF(oxygen_pump_interaction_item)))
@@ -48,16 +49,26 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 		breather().cozyloop.stop()
 		visible_message(span_notice("\The [contained] rapidly retracts just before /the [src] is destroyed!"))
 
-/obj/machinery/oxygen_pump/MouseDrop(mob/living/carbon/human/target, src_location, over_location)
-	var/mob/living/user = usr
-	if(!istype(user) || !istype(target) || user.is_incorporeal())
-		return ..()
+// A pump dragged onto a person carries that person as the at_target op's target.
+/obj/machinery/oxygen_pump/proc/placement_actor(datum/act/op/A)
+	return read_once(isliving(A.actor) && !A.actor.is_incorporeal())
 
-	if(CanMouseDrop(target, user))
-		if(!can_apply_to_target(target, user)) // There is no point in attempting to apply a mask if it's impossible.
-			return
-		act_message(user, target, others = "%U% begins placing \the [contained] onto %T%.")
-		task_timed(user, 2.5 SECONDS, target = target, receiver = src, on_done = PROC_REF(place_mask_done), done_args = list(user, target))
+/obj/machinery/oxygen_pump/proc/placement_ready(datum/act/op/A)
+	return isnull(placement_reason(A))
+
+/obj/machinery/oxygen_pump/proc/placement_reason(datum/act/op/A)
+	if(!read_once(CanMouseDrop(A.target, A.actor)))
+		return "You cannot reach them to place the mask."
+	// The head, mouth and equipped clothing are sampled actual anatomy/custody.
+	var/mob/living/carbon/human/target = A.target
+	return read_once(mask_application_reason(target))
+
+/obj/machinery/oxygen_pump/proc/placement_started(datum/act/op/A)
+	act_message(A.actor, A.target, others = "%U% begins placing \the [contained] onto %T%.")
+
+/obj/machinery/oxygen_pump/proc/placement_finished(datum/act/op/A)
+	place_mask_done(A.actor, A.target)
+	return OP_OK
 
 /obj/machinery/oxygen_pump/proc/place_mask_done(mob/living/user, mob/living/carbon/human/target)
 	if(!can_apply_to_target(target, user))
@@ -121,39 +132,34 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/oxygen_pump/proc/can_apply_to_target(mob/living/carbon/human/target, mob/user as mob)
-	if(!user)
-		user = target
-	// Check target validity
+	var/reason = mask_application_reason(target)
+	if(reason)
+		to_chat(user || target, span_warning(reason))
+		return
+	return TRUE
+
+/obj/machinery/oxygen_pump/proc/mask_application_reason(mob/living/carbon/human/target)
+	if(!istype(target))
+		return "There is nobody to wear the mask."
 	if(!target.organs_by_name[BP_HEAD])
-		to_chat(user, span_warning("\The [target] doesn't have a head."))
-		return
+		return "\The [target] doesn't have a head."
 	if(!target.check_has_mouth())
-		to_chat(user, span_warning("\The [target] doesn't have a mouth."))
-		return
+		return "\The [target] doesn't have a mouth."
 	if(target.get_equipped_item(SLOT_ID_MASK) && target != breather())
-		to_chat(user, span_warning("\The [target] is already wearing a mask."))
-		return
+		return "\The [target] is already wearing a mask."
 	if(target.get_equipped_item(SLOT_ID_HEAD) && (target.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
-		to_chat(user, span_warning("Remove their [target.get_equipped_item(SLOT_ID_HEAD)] first."))
-		return
+		return "Remove their [target.get_equipped_item(SLOT_ID_HEAD)] first."
 	if(!tank)
-		to_chat(user, span_warning("There is no tank in \the [src]."))
-		return
+		return "There is no tank in \the [src]."
 	if(under_maintenance())
-		to_chat(user, span_warning("Please close the maintenance hatch first."))
-		return
+		return "Please close the maintenance hatch first."
 	if(!Adjacent(target))
-		to_chat(user, span_warning("Please stay close to \the [src]."))
-		return
-	//when there is a breather:
+		return "Please stay close to \the [src]."
 	if(breather() && target != breather())
-		to_chat(user, span_warning("\The [src] is already in use."))
-		return
-	//Checking if breather is still valid
+		return "\The [src] is already in use."
 	if(target == breather() && target.get_equipped_item(SLOT_ID_MASK) != contained)
-		to_chat(user, span_warning("\The [target] is not using the supplied [contained]."))
-		return
-	return 1
+		return "\The [target] is not using the supplied [contained]."
+	return null
 
 /// Old attackby. It never called ..(), so every item stops here.
 /obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_item(datum/act/op/A)

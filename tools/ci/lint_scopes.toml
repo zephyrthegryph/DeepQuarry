@@ -396,6 +396,21 @@ timed_forms_converted = [
   "code/modules/vore/eating/simple_animal.dm",
   "code/modules/xenobio/items/weapons.dm",
   "code/modules/xenobio/machinery/processor.dm",
+  "code/game/machinery/bioprinter.dm",
+  "code/game/machinery/camera/camera.dm",
+  "code/game/machinery/camera/camera_assembly.dm",
+  "code/game/machinery/cloning.dm",
+  "code/game/machinery/computer/ai_core.dm",
+  "code/game/machinery/doorbell.dm",
+  "code/game/machinery/feeder.dm",
+  "code/game/machinery/food_replicator.dm",
+  "code/game/machinery/iv_drip.dm",
+  "code/game/machinery/oxygen_pump.dm",
+  "code/game/machinery/suit_storage/suit_storage.dm",
+  "code/game/machinery/supplybeacon.dm",
+  "code/game/machinery/virtual_reality/vr_console.dm",
+  "code/game/machinery/washing_machine.dm",
+  "code/modules/power/breaker_box.dm",
 ]
 legacy_forms_converted = [
   "code/game/machinery/",
@@ -763,7 +778,7 @@ exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
 [lint.legacy_forms.lists]
 # Names that are gone except under the listed path prefixes (the folders still calling them): `name @ prefix;prefix = hint`.
 banned_outside = [
-  "topic_allowed @ code/game/objects/objs.dm;code/game/machinery/syndicatebeacon.dm = the clicker's right to use a holder's links is a requirement of its ops: needs(req_topic_token()), or extend(TAG_TOPIC, needs(req(PROC_REF(x), because = MSG(op/topic_gate)))); an obj narrows topic_usable(). The two beacon calls and their wrapper in objs.dm go with the machinery lane",
+  "topic_allowed = the clicker's right to use a holder's links is a requirement: use topic_usable() or req_topic_ok() on the operation",
   "om_link @ code/datums/om/;code/modules/unit_tests/;code/tests/ = declare the pair with links() in CAPABILITIES and write it with rel_set() (a base-type end: sparse = TRUE and link_make()); only the OM core and its tests still call it",
   "om_unlink @ code/datums/om/;code/modules/unit_tests/;code/tests/;code/modules/food/kitchen/gibber.dm  = rel_set(holder, nameof(var), null) on the declared link, or link_break() on a sparse one (the gibber's ledger slot is KR5)",
 ]

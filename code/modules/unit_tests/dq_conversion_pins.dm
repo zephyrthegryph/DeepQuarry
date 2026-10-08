@@ -25,6 +25,8 @@
 
 /datum/unit_test/dq_conversion_pin
 	var/list/capture_gravity_before
+	/// Optional subtree selection for focused conversions; the default captures every recorded type.
+	var/list/capture_roots
 
 // Pinning visibility uses the shared lazy dview singleton. Warm it during fixture
 // setup, before the runner snapshots globals; it remains the production cache.
@@ -65,6 +67,16 @@
 	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	var/list/bad = list()
 	var/list/expected_by_type = dq_snapshot_read_dir(snapshot_directory(), bad)
+	if(length(capture_roots))
+		for(var/type in expected_by_type.Copy())
+			var/selected = FALSE
+			for(var/root in capture_roots)
+				if(ispath(type, root))
+					selected = TRUE
+					break
+			if(!selected)
+				expected_by_type -= type
+		TEST_ASSERT(length(expected_by_type), "The focused conversion selection contains recorded types")
 	if(!length(expected_by_type) && !length(bad))
 		return // no pins recorded
 	var/turf/T = test_floor()

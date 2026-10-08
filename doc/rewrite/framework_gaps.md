@@ -164,7 +164,7 @@ What converting every `TOPIC_ACTION` row outside the machinery folder to an op s
 | J3 (DONE for voidsuits, rewrite/gaps-j) | requirements reading the containment ledger | The screwdriver on a void, AutoLok or response suit is an op (`req_not_worn()`, one `asks()`). Ripley (`pilot_of()` with OCCUPANT_KEY) and the print card's self use (`req_actor_slot_empty()`) were already requirements. Left: the print card's `attack()` (a melee override with its own refusals) and `sample_releasable()` (`release_refusal()` of the donor's holder, an ALLOW(reads): custody, not slot occupancy). | None for `slot_occupancy()`; the two left need a custody read and a melee op. |
 | J4 (DONE, rewrite/gaps-j) | codemods | The codemods in `tools/dx/codemods/` wrote on any invocation (even `--help`) and ignored `--dirs` / `--files`. | Done: each script imports `_guard.py`: `--help` prints and exits, a run is a dry run unless `--apply`, and writes are limited to `--files` / `--dirs`. `selftest.py` passes `--apply`; its interact_declare fixtures were regenerated to the script's current output. |
 | J5 **DONE (rewrite/om-leftovers: observe(shadekin, mob_death) frees the target at once, the timer stays as the fallback; test dq_smite_shadekin_death_frees_target)** | smite release | The smite hold is released by a fixed 8 s safety net. It should react to the shadekin's death notice. | `on_notice` of the shadekin's death releases it; keep the timer as the fallback. |
-| J6 **PARTLY DONE (rewrite/om-leftovers-2: first 50 non-machinery sites audited, see "J6 audit" below; 214 sites in all, the machinery and power ones and the rest of the list are open)** | `keeps_dead` opt-outs | About 200 `keeps_dead = TRUE` opt-outs exist (default is to drop a call whose datum argument was deleted, B1/C4). Most only needed the old behaviour. | Audit each: drop the opt-out where the handler never expects a null argument. |
+| J6 **PARTLY DONE (rewrite/om-leftovers-2: first 50 non-machinery sites audited, see "J6 audit" below; initial inventory 214 sites; machinery/power audit is complete below (12 sites: 3 removed, 9 retained with passing cleanup tests); engine and other unaudited sites remain open)** | `keeps_dead` opt-outs | About 200 `keeps_dead = TRUE` opt-outs exist (default is to drop a call whose datum argument was deleted, B1/C4). Most only needed the old behaviour. | Audit each: drop the opt-out where the handler never expects a null argument. |
 | J7 | `/obj/item/rig` EMP | `electrocute_mob(null)` runs on EMP when the rig has no wearer. | Guard the call on a wearer. |
 | J8 | `chem_canister` refill text | The refill strings held a literal tab where `	he` was written ("You fill <tab>he ..."). Fixed in rewrite/integ-6. | DONE. |
 | J9 (DONE, rewrite/gaps-j) | tests | The pin's stardog left its ship in `GLOB.map_sectors` (`unregister_z_levels()` removed numbers from a text-keyed list); fixed, with `dq_gap/overmap_sector_unregisters_its_levels`. `i7_bulk` still fails, alone too, on a gravity generator part's break during its destroy (code/game/machinery). | Fix the gravity generator part (Codex's). |
@@ -516,3 +516,22 @@ A second read found these removals unsafe; `keeps_dead = TRUE` is back on each (
 | _onclick/hud/screen_objects.dm:1087 | `end_empty_flash` | `spent(F)` never runs if the user is gone | yes |
 
 `shuttle_specops.dm:172` `mauraders_close(special_ops)` is confirmed removed: its only datum argument is the area, which both finds the doors and is reset; nothing is left to act on if the area is gone.
+
+### J6 machinery/power audit (codex/machinery-audit-1008)
+
+Twelve opt-outs in machinery and none in power were reviewed. Nine remain because a live owner or continuation must finish after an independent argument dies; three are removed. `machinery_keeps_dead/*` exercises each retained call site (initial and recursive calls separately). Transport destinations are turf-generation handles: `ChangeTurf()` does not delete a turf, so its test invalidates the destination generation while keeping the pod on another level.
+
+| File / handler | Verdict | Work that remains with a dead argument |
+|---|---|---|
+| cloning.dm / clear_eject_wait | KEPT, tested | Clear eject_wait, attempting and the temporary record. |
+| food_replicator.dm / print_done | KEPT, tested | Release printing and restore idle power. |
+| gear_dispenser.dm / dispense_finish | KEPT, tested | Release GD_BUSY after a setting or user disappears. |
+| gear_dispenser.dm / fancy dispense_finish | KEPT, tested | Release GD_BUSY and finish the fancy emag transition. |
+| protean_reconstitutor.dm / initial reconstitute_organ | KEPT, tested | Release processing_revive if the newly created body disappears. |
+| protean_reconstitutor.dm / recursive reconstitute_organ | KEPT, tested | Release processing_revive if the partially assembled body disappears. |
+| robot_fabricator.dm / complete_insertion | KEPT, tested | Release inserting and its overlay; consume a surviving stack even if its actor died. |
+| computer/specops_shuttle.dm / specops_countdown | KEPT, tested | Finish movement-state cleanup and release the temporary announcer. |
+| transportpod.dm / arrive | KEPT, tested | Finish unload/expiry even if the destination handle was invalidated. |
+| computer/arcade.dm / initial blackhole_hurt | REMOVED | The only remaining target is the deleted victim. |
+| computer/arcade.dm / recursive blackhole_hurt | REMOVED | The only remaining target is the deleted victim. |
+| wishgranter.dm / gib_wisher | REMOVED | The only effect gibs the deleted wisher. |

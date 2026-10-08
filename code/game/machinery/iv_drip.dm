@@ -44,7 +44,7 @@ CAPABILITIES(/obj/machinery/iv_drip)
 	ref_one(nameof(attached), /mob/living/carbon/human)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(attached), wakes_on = list(nameof(attached)))
 	drag_onto(PROC_REF(drop_input))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), starts(PROC_REF(screwdriver_used)), wait(1.5 SECONDS), then(PROC_REF(screwdriver_act_timed_done)))
 	op("iv_drip_interaction_item", item(/obj/item/reagent_containers), priority(OP_PRIORITY_DEFAULT - 1), label("Attach container"), needs(req_is(nameof(beaker), FALSE, because = MSG(iv_drip/beaker))), then(PROC_REF(iv_drip_interaction_item)))
 	op("iv_drip_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove container"), then(PROC_REF(iv_drip_interaction_hand)))
 	op("iv_drip_toggle_mode", menu(), label("Toggle Mode"), needs(req_adjacent(), req_capable(), req_actor_kind(/mob/living, because = MSG(iv_drip/actor_type))), then(PROC_REF(iv_drip_toggle_mode)))
@@ -92,10 +92,10 @@ MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_notice("You start to dismantle the IV drip."))
-	task_timed(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
 	return OP_OK
 
-/obj/machinery/iv_drip/proc/screwdriver_act_timed_done(mob/user)
+/obj/machinery/iv_drip/proc/screwdriver_act_timed_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You dismantle the IV drip."))
 	var/obj/item/stack/rods/rods = new(loc, 6)
 	if(beaker)

@@ -3639,3 +3639,63 @@ Merging master-fails-2 and draw-mobs changed these pins; the rows were reviewed 
 * **`dq_e2/explain_click_golden`:** the `simple_mob.dm` capability lines moved by 7 (the simple mob's tracked list grew); the rows are otherwise unchanged.
 * **`interim_target_zone_hud_actor`** had no `/datum/unit_test/om/` declaration, so it never ran; it is declared and runs.
 * **Known, not run:** the full-directory `dq_look_state_pin` (slowdown handled in another lane; the test has no root filter).
+### Machinery audit: card dispatch, topic gates and record arguments (2026-10-08)
+
+- `/obj/machinery/computer/teleporter`: the coordinate-card insert op now outranks the inherited computer `use_item` fallback on a plain click. Its priority is DEFAULT + 1. The sticky-card regression again uses real clicks, asserts the selected insert key, preserves a card on a refused sticky update, and consumes it on an allowed update. Pin click rows changing from the generic computer use to Insert data card are intended.
+- `/obj/machinery/syndicate_beacon` and `/virgo`: topic usability is checked as an operation requirement before opening the offer, before executing an answered offer, and on inherited UI actions. Removing the effect-only wrapper makes refusals visible at admission and keeps a user who loses access from spending a charge. Refusal/menu pin changes for these classes have this cause.
+- `/obj/machinery/computer/med_data`, `/secure_data` and `/skills`: checked modal arguments are supplied with `arg_of("arguments")` to typed record-edit requests. Their native preparation retains the existing field-specific question, choice table and default. This removes computed argument plumbing without changing the edit or cancellation effects.
+- Machinery J6 timers: blackhole damage and delayed wish-granter gib no longer opt into execution with a deleted sole target. Nine cleanup continuations retain their opt-out; the J6 table records the cleanup and focused regression for each.
+
+
+## Machinery timed-action port, 2026-10-08 audit
+
+This port preserves the reviewed `6c7c06f5f2` conversion on current master `6cf9e920d7`. Old-code evidence is historical, not a fresh run: the old pins ran against `059aac8767`; 17 of 18 compared source files are LF-byte-identical, and the three relevant AIcore timed method bodies match exactly despite unrelated master latejoin/admin changes. `doc/machinery_audit_1008_old_pin_provenance.json` records individual SHA-256 hashes. Current-branch focused verification and capture review remain pending; the reused snapshots are expectations, not evidence of a new successful capture.
+
+| Class | Documented native change and preserved behavior |
+|---|---|
+| IV drip, feeder, doorbell | Existing tool operations own the 1.5-second wait and original start feedback; dismantling and buckle consequences remain unchanged. |
+| Food replicator | Existing scanning operation owns its one-second wait, capturing actual food type/name; scanning still updates the registry without consuming food. |
+| Supply beacon | Deployment uses the native wait with `deploy_time`; expiry and reactivation handling are retained. |
+| Flesh organ printer and full variant | Typed `load_container` glass input replaces the delayed generic item branch. One-second delay, real beaker custody and zero biomass cost remain; loaded-container rejection is a requirement. |
+| Clonepod and subtypes | Typed container loading owns the one-second wait and retains capacity, custody and zero biomass expenditure. |
+| AIcore | `add_cables` and `add_panel` own two-second waits at states 2 and 3, consuming exactly five cables or two reinforced-glass sheets. State is tracked and recheck refusals have typed reasons. Wrong materials remain filtered; law/MMI behavior and master's latejoin/admin asks are retained. Five other helper-driven construction waits remain legacy. |
+| Breaker box and activated variant | Existing hand/remote toggle operations wait five seconds with a target claim. Native claimed refusal replaces the old busy wording; switch effects and 60-second lock remain. |
+| Camera and variants | Existing `use_welder` owns the ten-second duration multiplied by the real tool speed and actor skill factor. Start retains eye checking and actual tool sound; completion retains coverage invalidation and the original zero-fuel tool resource commit, including electric welder charge. The published aggregate wire key makes mending during work cancel immediately. |
+| Camera assembly | Native `use_welder` replaces the timed welder helper, retaining two-second tool/skill-scaled duration, target claim, states 1/2, eye checking, sound and zero-fuel resource commit. State is tracked. |
+| Washing machine | Grab loading waits five seconds and consumes the actual grab only on success. Escape snapshots admission door state for the two-/60-second duration, then checks the live door at completion; resist dispatches the same operation. |
+| Oxygen pump | Native human-target drag preserves its 2.5-second wait and actual destination with `at_target`; the explicit actor replaces ambient `usr`. |
+| VR sleeper | Self/grab entry retains two-second waits, occupancy checks and completion custody; later avatar-consent requests remain unchanged. |
+| Cryopod self-entry | Self-entry retains two seconds, occupant-type filtering and neighboring gateway activation at start. Third-party passenger consent remains legacy because native asks currently answer as the operation actor. |
+| Suit storage unit | Existing hide/load keys retain one-second self and two-second grab entry; ordinary suit/helmet/mask insertion remains immediate. Door/power/broken dependencies are tracked, and slot custody, fingerprints, closure and grab consumption remain. Movement or dropping cancels work. |
+| Cutout barricade | Current master already owns the native prompted ten-second operation. This port reuses regression coverage only and does not change its production source. |
+
+Faster-welder, immediate wire-mending cancellation and electric-charge-once/cancellation checks are native-added regressions, not historical old-code verified pins. Electric charge expectations use the cell's public delivery-efficiency contract to account for physical delivery loss, rather than a loose tolerance. Existing breaker tests observe native pending/claimed state instead of legacy task internals. No new pin re-bless is approved merely by this provenance record; any fresh difference still requires class-specific review.
+
+### Reviewed machinery audit pin refresh (2026-10-08)
+
+The single focused capture wrote 23 selected pin types, 15 selected i7 types and 18 historical timed-pin types; 38 files changed. No runtime/op-clash capture rows were accepted. Reused timed pins also shed inherited non-harm `Hit` menu rows to match current master; that is a pre-existing master intent gate, not a new harm-intent change here. Each affected class is listed below.
+
+| Type | Cause of changed rows |
+|---|---|
+| /obj/item/camera_assembly | Native use_welder key replaces the implicit timed tool handler. |
+| /obj/machinery/button/doorbell | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/camera | Native repair is offered only on a damaged camera; a working fixture no longer offers an irrelevant welder repair. Reused non-harm Hit rows align with master. |
+| /obj/machinery/clonepod | Typed glass load_container adds its held-container rows and native key. Reused non-harm Hit rows align with master. |
+| /obj/machinery/clonepod/transhuman | Typed glass load_container adds its held-container rows and native key. Reused non-harm Hit rows align with master. |
+| /obj/machinery/computer/teleporter | Insert data card now outranks inherited Use item on a plain card click. |
+| /obj/machinery/cryopod | Self-entry uses its native operation key. Reused non-harm Hit rows align with master; passenger consent is retained. |
+| /obj/machinery/feeder | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/food_replicator | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/iv_drip | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/organ_printer/flesh | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/oxygen_pump | The human-target drag now has the native oxygen_place key. Reused non-harm Hit rows align with master. |
+| /obj/machinery/oxygen_pump/mobile/stabilizer | The human-target drag now has the native oxygen_place key. Reused non-harm Hit rows align with master. |
+| /obj/machinery/power/breakerbox | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/suit_cycler | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/suit_storage_unit | Closed-door admission now greys Hide in Suit Storage Unit before starting; timed custody and cancellation are unchanged. Reused non-harm Hit rows align with master. |
+| /obj/machinery/syndicate_beacon | Topic usability is an admission/recheck requirement, so denied actors see the refused offer row instead of an effect-only failure. |
+| /obj/machinery/syndicate_beacon/virgo | Topic usability is an admission/recheck requirement, so denied actors see the refused offer row instead of an effect-only failure. |
+| /obj/machinery/vr_sleeper | Entry uses native timed operations and keys, with the same occupancy rules. Reused non-harm Hit rows align with master. |
+| /obj/machinery/vr_sleeper/alien | Entry uses native timed operations and keys, with the same occupancy rules. Reused non-harm Hit rows align with master. |
+| /obj/machinery/washing_machine | Grab and resist timing use native operation keys. Reused non-harm Hit rows align with master. |
+| /obj/structure/AIcore | Native add_cables/add_panel keys expose typed material bindings, adding stack-material held rows; actual construction costs and states are regression tested. |

@@ -276,8 +276,8 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	extend(TAG_UI, then(PROC_REF(ui_records_fresh), early = TRUE))
 	// The record modals (the old ui_modal_opened()/ui_modal_answered()): a field is edited by a pick or by typing, as the field's kind says.
 	op("edit", ui_act("modal:edit", arg("arguments")), needs(req(PROC_REF(edit_field_known), silent = TRUE)),
-		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(edit_question)), "choices" = computed(PROC_REF(edit_choices)), "default" = computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_choice", when = PROC_REF(edit_by_choice)),
-		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(edit_question)), "default" = computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)),
+		asks(/datum/prompt/choice/skills_record_edit, fields = list("arguments" = arg_of("arguments"), "inline" = TRUE, "timeout" = 0), step = "edit_choice", when = PROC_REF(edit_by_choice)),
+		asks(/datum/prompt/text/skills_record_edit, fields = list("arguments" = arg_of("arguments"), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)),
 		then(PROC_REF(modal_edit)))
 	op("add_c", ui_act("modal:add_c", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), then(PROC_REF(modal_add_comment)))
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
@@ -846,16 +846,28 @@ CAPABILITIES(/obj/machinery/computer/skills)
 /obj/machinery/computer/skills/proc/edit_by_text(datum/act/op/A)
 	return !edit_by_choice(A)
 
-/obj/machinery/computer/skills/proc/edit_question(datum/act/op/A)
-	return field_edit_questions[edit_field(A.args["arguments"])]
+/// Argument-derived fields are prepared on the typed request, after arg_of() supplies the checked modal arguments.
+/datum/prompt/choice/skills_record_edit
+	var/list/arguments
 
-/obj/machinery/computer/skills/proc/edit_choices(datum/act/op/A)
-	return field_edit_choices[edit_field(A.args["arguments"])]
+/datum/prompt/choice/skills_record_edit/prepare(datum/act/A)
+	..()
+	var/datum/act/op/OA = A
+	var/obj/machinery/computer/skills/console = OA.holder
+	var/field = console.edit_field(arguments)
+	question = console.field_edit_questions[field]
+	choices = console.field_edit_choices[field]
+	default = islist(arguments) ? arguments["value"] : null
 
-/// The field's current value, as the window passed it.
-/obj/machinery/computer/skills/proc/edit_value(datum/act/op/A)
-	var/list/arguments = A.args["arguments"]
-	return islist(arguments) ? arguments["value"] : null
+/datum/prompt/text/skills_record_edit
+	var/list/arguments
+
+/datum/prompt/text/skills_record_edit/prepare(datum/act/A)
+	..()
+	var/datum/act/op/OA = A
+	var/obj/machinery/computer/skills/console = OA.holder
+	question = console.field_edit_questions[console.edit_field(arguments)]
+	default = islist(arguments) ? arguments["value"] : null
 
 /// The edit modal's answer goes into the record field.
 /obj/machinery/computer/skills/proc/modal_edit(datum/act/op/A, list/arguments)
