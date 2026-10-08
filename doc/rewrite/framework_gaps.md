@@ -545,3 +545,11 @@ Twelve opt-outs in machinery and none in power were reviewed. Nine remain becaus
 | computer/arcade.dm / initial blackhole_hurt | REMOVED | The only remaining target is the deleted victim. |
 | computer/arcade.dm / recursive blackhole_hurt | REMOVED | The only remaining target is the deleted victim. |
 | wishgranter.dm / gib_wisher | REMOVED | The only effect gibs the deleted wisher. |
+
+### Custom requirement callback gap (2026-10-08)
+
+The machinery/power sweep found that master 4375b80682 still evaluates custom req(PROC_REF(...)) as a boolean: generic holds() returns !!op_call(A, what) in code/engine/parts/cond.dm. No constructor accepts a pure callback returning null to allow or a reason to refuse. Changing the remaining callbacks to that protocol would reverse admission. Four former-REQ adapters can use existing declarative parts and were converted; 20 adapters in 15 machinery files remain blocked on the custom requirement form. No engine adapter or effect-stage workaround was added. Exact sites and behavior are listed in ../machinery_requirements_1008_gap.md.
+
+### Starts reentrant cancellation (2026-10-08)
+
+The real suit-cycler shock cancels its operation synchronously by changing actor capability during starts(). The runner previously continued into suspend_act() on the released action (Cannot read null.args). The user-approved guard after each starts callback now returns when the pending operation is inactive or deleted; its completed cancellation remains responsible for releasing claims and feedback. The real powered shock regressions cover this path.

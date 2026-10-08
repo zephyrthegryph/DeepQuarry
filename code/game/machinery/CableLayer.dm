@@ -16,22 +16,14 @@
 	. = ..()
 	layCable(loc,direction)
 
+MSG_DEF_SELF(cablelayer/toggle_no_cable, "doesn't have any cable loaded")
+
 CAPABILITIES(/obj/machinery/cablelayer)
 	op("cablelayer_load", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Load cable"), then(PROC_REF(interaction_load)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Cut cable"), needs(req_full(nameof(cable), because = MSG(cablelayer/no_cable))),
 		asks(/datum/prompt/number/cablelayer_cut, fields = list("default" = computed(PROC_REF(cut_default)))),
 		then(PROC_REF(cable_length_entered)))
-	op("cablelayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(has_cable_or_on_holds), because = PROC_REF(has_cable_or_on_refusal))), then(PROC_REF(interaction_toggle)))
-
-/// Requirement (was REQ_* has_cable_or_on): the legacy check answers TRUE to pass.
-/obj/machinery/cablelayer/proc/has_cable_or_on_holds(datum/act/op/A)
-	var/answer = has_cable_or_on(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why has_cable_or_on_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/cablelayer/proc/has_cable_or_on_refusal(datum/act/op/A)
-	var/answer = has_cable_or_on(A.actor, src, A.held)
-	return istext(answer) ? answer : "doesn't have any cable loaded"
+	op("cablelayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(any_of(req_full(nameof(cable), because = MSG(cablelayer/toggle_no_cable)), req_is(nameof(on), because = MSG(cablelayer/toggle_no_cable)))), then(PROC_REF(interaction_toggle)))
 
 /obj/machinery/cablelayer/proc/interaction_load(datum/act/op/A)
 	var/mob/user = A.actor
@@ -42,9 +34,6 @@ CAPABILITIES(/obj/machinery/cablelayer)
 	else
 		to_chat(user, "You load [result] lengths of cable into [src].")
 	return OP_OK
-
-/obj/machinery/cablelayer/proc/has_cable_or_on(mob/actor, atom/target, obj/item/held)
-	return cable || on
 
 /obj/machinery/cablelayer/proc/interaction_toggle(datum/act/op/A)
 	var/mob/user = A.actor

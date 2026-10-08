@@ -53,6 +53,8 @@
 	if(panel_open == 1)
 		look.state("colormate_open")
 
+MSG_DEF_SELF(gear_painter/loaded, "the machine is already loaded")
+
 CAPABILITIES(/obj/machinery/gear_painter)
 	owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL)
 	interface("ColorMate")
@@ -66,29 +68,8 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	op("set_hue", ui_act("set_hue", arg("buildhue", num(0, 360))), then(PROC_REF(ui_act_set_hue)))
 	op("set_sat", ui_act("set_sat", arg("buildsat", num(-10, 10))), then(PROC_REF(ui_act_set_sat)))
 	op("set_val", ui_act("set_val", arg("buildval", num(-10, 10))), then(PROC_REF(ui_act_set_val)))
-	op("gear_painter_insert", inputs(item(/obj/item/clothing), item(/obj/item/storage/backpack), item(/obj/item/storage/belt), item(/obj/item/toy), item(/obj/item/stack/material)), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), when(req(PROC_REF(gear_painter_operable_holds))), needs(req(PROC_REF(gear_painter_empty_holds), because = PROC_REF(gear_painter_empty_refusal))), then(PROC_REF(interaction_insert)))
+	op("gear_painter_insert", inputs(item(/obj/item/clothing), item(/obj/item/storage/backpack), item(/obj/item/storage/belt), item(/obj/item/toy), item(/obj/item/stack/material)), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), when(req_operable()), needs(req_empty(nameof(inserted), because = MSG(gear_painter/loaded))), then(PROC_REF(interaction_insert)))
 	op("gear_painter_alt_drop", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Remove item"), passes(), then(PROC_REF(interaction_alt_drop)))
-
-/// Requirement (was REQ_* gear_painter_empty): the legacy check answers TRUE to pass.
-/obj/machinery/gear_painter/proc/gear_painter_empty_holds(datum/act/op/A)
-	var/answer = gear_painter_empty(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why gear_painter_empty_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/gear_painter/proc/gear_painter_empty_refusal(datum/act/op/A)
-	var/answer = gear_painter_empty(A.actor, src, A.held)
-	return istext(answer) ? answer : "the machine is already loaded"
-
-/// Requirement (was REQ_* gear_painter_operable): the legacy check answers TRUE to pass.
-/obj/machinery/gear_painter/proc/gear_painter_operable_holds(datum/act/op/A)
-	var/answer = gear_painter_operable(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/obj/machinery/gear_painter/proc/gear_painter_operable(mob/actor, atom/target, obj/item/held)
-	return operable()
-
-/obj/machinery/gear_painter/proc/gear_painter_empty(mob/actor, atom/target, obj/item/held)
-	return !inserted
 
 /obj/machinery/gear_painter/proc/interaction_insert(datum/act/op/A)
 	var/mob/user = A.actor
