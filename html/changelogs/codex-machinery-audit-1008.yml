@@ -1,0 +1,6 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Coordinate data cards now insert into teleporter consoles with a normal click."
+  - bugfix: "Syndicate beacon offers recheck access before accepting an answer."
+  - refactor: "Migrated supported machinery timed actions to native operations."

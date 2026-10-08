@@ -516,3 +516,22 @@ A second read found these removals unsafe; `keeps_dead = TRUE` is back on each (
 | _onclick/hud/screen_objects.dm:1087 | `end_empty_flash` | `spent(F)` never runs if the user is gone | yes |
 
 `shuttle_specops.dm:172` `mauraders_close(special_ops)` is confirmed removed: its only datum argument is the area, which both finds the doors and is reset; nothing is left to act on if the area is gone.
+
+### J6 machinery/power audit (codex/machinery-audit-1008)
+
+Twelve opt-outs in machinery and none in power were reviewed. Nine remain because a live owner or continuation must finish after an independent argument dies; three are removed. `machinery_keeps_dead/*` exercises each retained call site (initial and recursive calls separately). Transport destinations are turf-generation handles: `ChangeTurf()` does not delete a turf, so its test invalidates the destination generation while keeping the pod on another level.
+
+| File / handler | Verdict | Work that remains with a dead argument |
+|---|---|---|
+| cloning.dm / clear_eject_wait | KEPT, tested | Clear eject_wait, attempting and the temporary record. |
+| food_replicator.dm / print_done | KEPT, tested | Release printing and restore idle power. |
+| gear_dispenser.dm / dispense_finish | KEPT, tested | Release GD_BUSY after a setting or user disappears. |
+| gear_dispenser.dm / fancy dispense_finish | KEPT, tested | Release GD_BUSY and finish the fancy emag transition. |
+| protean_reconstitutor.dm / initial reconstitute_organ | KEPT, tested | Release processing_revive if the newly created body disappears. |
+| protean_reconstitutor.dm / recursive reconstitute_organ | KEPT, tested | Release processing_revive if the partially assembled body disappears. |
+| robot_fabricator.dm / complete_insertion | KEPT, tested | Release inserting and its overlay; consume a surviving stack even if its actor died. |
+| computer/specops_shuttle.dm / specops_countdown | KEPT, tested | Finish movement-state cleanup and release the temporary announcer. |
+| transportpod.dm / arrive | KEPT, tested | Finish unload/expiry even if the destination handle was invalidated. |
+| computer/arcade.dm / initial blackhole_hurt | REMOVED | The only remaining target is the deleted victim. |
+| computer/arcade.dm / recursive blackhole_hurt | REMOVED | The only remaining target is the deleted victim. |
+| wishgranter.dm / gib_wisher | REMOVED | The only effect gibs the deleted wisher. |

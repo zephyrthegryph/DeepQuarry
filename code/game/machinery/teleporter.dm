@@ -16,7 +16,7 @@ MSG_DEF_SELF(teleporter/data_card_required, "needs a data card")
 	var/datum/tgui_module/teleport_control/teleport_control
 
 CAPABILITIES(/obj/machinery/computer/teleporter)
-	op("teleporter_computer_insert_card", inputs(item(/obj/item/card/data), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Insert data card"), needs(req(/obj/item/card/data, because = MSG(teleporter/data_card_required)), req_adjacent(), req_capable()), then(PROC_REF(interaction_insert_card)))
+	op("teleporter_computer_insert_card", inputs(item(/obj/item/card/data), menu()), priority(OP_PRIORITY_DEFAULT + 1), label("Insert data card"), needs(req(/obj/item/card/data, because = MSG(teleporter/data_card_required)), req_adjacent(), req_capable()), then(PROC_REF(interaction_insert_card)))
 	op("teleporter_computer_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 	op("teleporter_silicon_use", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(teleporter_computer_silicon_use)))
 	op("teleporter_computer_set_id", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Set teleporter ID"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/text, fields = list("title" = "Set teleporter ID", "question" = "ID Tag:", "timeout" = 0), when = PROC_REF(teleporter_can_set_id)), then(PROC_REF(teleporter_id_entered)))

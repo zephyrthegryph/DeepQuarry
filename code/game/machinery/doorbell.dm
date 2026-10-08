@@ -94,7 +94,7 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 	param(nameof(dir), pos = 1)
 	param(nameof(building), pos = 2)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), starts(PROC_REF(wrench_used)), wait(1.5 SECONDS), then(PROC_REF(wrench_act_timed_done)))
 
 /// A doorbell built on a wall (its constructor param).
 /obj/machinery/button/doorbell/var/building = FALSE
@@ -171,10 +171,10 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 	var/mob/user = A.actor
 	to_chat(user, span_notice("You start to unwrench \the [src]."))
 	play_sfx(src, SFX_ITEMS_RATCHET)
-	task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return OP_OK
 
-/obj/machinery/button/doorbell/proc/wrench_act_timed_done(mob/user)
+/obj/machinery/button/doorbell/proc/wrench_act_timed_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(QDELETED(src))
 		return
 	to_chat(user, span_notice("You unwrench \the [src]."))

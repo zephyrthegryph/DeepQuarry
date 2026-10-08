@@ -122,6 +122,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(growing_record), /datum/transhuman/body_record)
 	op("clonepod_interaction_hand", hand(), then(PROC_REF(clonepod_interaction_hand)))
+	op("load_container", item(/obj/item/reagent_containers/glass), needs(req(PROC_REF(container_space), because = MSG(clonepod/container_full))), wait(1 SECOND), then(PROC_REF(load_container_done)))
 	op("clonepod_interaction_item", item(/obj/item), then(PROC_REF(clonepod_interaction_item)))
 	op("clonepod_eject", menu(), label("Eject Cloner"), then(PROC_REF(clonepod_eject)))
 	op("clonepod_empty_beakers", menu(), label("Eject Beakers"), then(PROC_REF(clonepod_empty_beakers)))
@@ -278,13 +279,16 @@ CAPABILITIES(/obj/machinery/clonepod)
 	return
 
 //Let's unlock this early I guess.  Might be too early, needs tweaking.
-/obj/machinery/clonepod/proc/load_container_done(mob/user, obj/item/W)
-	if(LAZYLEN(containers) >= container_limit)
-		to_chat(user, span_warning("\The [src] has too many containers loaded!"))
-		return
-	if(!move_into(src, nameof(containers), W, user))
-		return
-	act_message(user, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = W)
+MSG_DEF_SELF(clonepod/container_full, "the pod has too many containers loaded")
+
+/obj/machinery/clonepod/proc/container_space(datum/act/op/A)
+	return read_once(LAZYLEN(containers)) < read_once(container_limit)
+
+/obj/machinery/clonepod/proc/load_container_done(datum/act/op/A)
+	if(!move_into(src, nameof(containers), A.held, A.actor))
+		return OP_FAILED
+	act_message(A.actor, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = A.held)
+	return OP_OK
 
 /// Old attackby.
 /obj/machinery/clonepod/proc/clonepod_interaction_item(datum/act/op/A)
@@ -306,12 +310,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 		set_locked(0)
 		to_chat(user, "System unlocked.")
 		return TRUE
-	if(istype(W,/obj/item/reagent_containers/glass))
-		if(LAZYLEN(containers) >= container_limit)
-			to_chat(user, span_warning("\The [src] has too many containers loaded!"))
-		else
-			task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, W))
-		return TRUE
+
 	return OP_DECLINE
 
 /obj/machinery/clonepod/proc/screwdriver_used(datum/act/op/A)

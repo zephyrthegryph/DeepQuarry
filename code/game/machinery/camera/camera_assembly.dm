@@ -1,3 +1,4 @@
+TRACKED(/obj/item/camera_assembly, state)
 MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 /obj/item/camera_assembly
 	name = "camera assembly"
@@ -23,6 +24,7 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 	*/
 
 CAPABILITIES(/obj/item/camera_assembly)
+	op("use_welder", lit_welder(fuel = 0), when(PROC_REF(weld_available)), claims(), begins(PROC_REF(weld_start_message)), starts(PROC_REF(weld_started)), wait(PROC_REF(weld_duration)), then(PROC_REF(welded)))
 	owns_many(nameof(upgrades))
 	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
@@ -38,7 +40,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 				var/obj/item/stack/cable_coil/C = W
 				if(C.use(2))
 					to_chat(user, span_notice("You add wires to the assembly."))
-					state = 3
+					set_state(3)
 				else
 					to_chat(user, span_warning("You need 2 coils of wire to wire the assembly."))
 				return OP_PASS
@@ -58,32 +60,44 @@ CAPABILITIES(/obj/item/camera_assembly)
 		playsound(src, tool.usesound, 50, TRUE)
 		to_chat(user, span_notice("You wrench the assembly into place."))
 		set_anchored(TRUE)
-		state = 1
+		set_state(1)
 		auto_turn()
 		return TRUE
 	if(state == 1)
 		playsound(src, tool.usesound, 50, TRUE)
 		to_chat(user, span_notice("You unattach the assembly from its place."))
 		set_anchored(FALSE)
-		state = 0
+		set_state(0)
 		return TRUE
 	return FALSE
 
-/obj/item/camera_assembly/welder_act(mob/user, obj/item/tool)
-	if(state != 1 && state != 2)
-		return FALSE
-	weld(tool, user, PROC_REF(welded), list(user))
-	return TRUE
+/obj/item/camera_assembly/proc/weld_available(datum/act/op/A)
+	return state == 1 || state == 2
 
-/obj/item/camera_assembly/proc/welded(mob/user)
+/obj/item/camera_assembly/proc/weld_start_message(datum/act/op/A)
+	return msg_text("You start to weld the [src]..")
+
+/obj/item/camera_assembly/proc/weld_started(datum/act/op/A)
+	var/obj/item/W = A.held_provider()
+	var/obj/item/weldingtool/welder = W.get_welder()
+	welder.eyecheck(A.actor)
+	if(W.usesound)
+		play_sfx(src, W.usesound, volume = 50, vary = TRUE)
+	return OP_OK
+
+/obj/item/camera_assembly/proc/weld_duration(datum/act/op/A)
+	var/obj/item/W = A.held_provider()
+	return 2 SECONDS * W.toolspeed * tool_skill_factor(A.actor, TOOL_WELDER)
+
+/obj/item/camera_assembly/proc/welded(datum/act/op/A)
 	if(state == 1)
-		to_chat(user, span_notice("You weld the assembly securely into place."))
-		state = 2
+		to_chat(A.actor, span_notice("You weld the assembly securely into place."))
+		set_state(2)
 	else
-		to_chat(user, span_notice("You unweld the assembly from its place."))
-		state = 1
+		to_chat(A.actor, span_notice("You unweld the assembly from its place."))
+		set_state(1)
 	set_anchored(TRUE)
-	return TRUE
+	return OP_OK
 
 /obj/item/camera_assembly/wirecutter_act(mob/user, obj/item/tool)
 	if(state != 3)
@@ -91,7 +105,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 	new /obj/item/stack/cable_coil(get_turf(src), 2)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_notice("You cut the wires from the circuits."))
-	state = 2
+	set_state(2)
 	return TRUE
 
 /obj/item/camera_assembly/crowbar_act(mob/user, obj/item/tool)
@@ -139,7 +153,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 	if(!A.answer)
 		return
 	var/datum/prompt/text/camera_name/R = A.request
-	state = 4
+	set_state(4)
 	var/obj/machinery/camera/C = new(loc)
 	forceMove(C)
 	rel_set(C, nameof(C.assembly), src)
@@ -196,15 +210,3 @@ CAPABILITIES(/datum/prompt/yes_no/camera_direction_ok)
 	if(!anchored)
 		return OP_DECLINE
 	return TRUE
-
-/// Welds (a timed tool job); `on_done` runs on src with `done_args` when it is done. 0 if busy or refused.
-/obj/item/camera_assembly/proc/weld(obj/item/weldingtool/WT, mob/user, on_done, list/done_args)
-	if(task_busy(src)) // a weld in progress claims it
-		return 0
-	var/result = use_tool(user, WT, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld the [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
-	return result
-
-
-/obj/item/camera_assembly/proc/weld_finished(on_done, list/done_args)
-	if(on_done)
-		call(src, on_done)(arglist(done_args))

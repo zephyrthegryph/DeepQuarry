@@ -98,10 +98,6 @@
 		return FALSE
 	return CanUseTopic(user, topic_state()) == STATUS_INTERACTIVE
 
-/// The old gate's name, kept for the two callers in code/game/machinery/syndicatebeacon.dm until the machinery lane converts them.
-/obj/proc/topic_allowed(mob/user)
-	return user && CanUseTopic(user, topic_state()) == STATUS_INTERACTIVE
-
 /obj/proc/topic_touched(datum/act/op/A)
 	CouldUseTopic(A.actor)
 	return OP_OK

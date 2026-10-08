@@ -24,6 +24,9 @@
 	var/panelopen = 0
 	var/safetieson = 1
 	var/cycletime_left = 0
+TRACKED(/obj/machinery/suit_storage_unit, isopen)
+TRACKED(/obj/machinery/suit_storage_unit, ispowered)
+TRACKED(/obj/machinery/suit_storage_unit, isbroken)
 TRACKED(/obj/machinery/suit_storage_unit, isUV)
 TRACKED(/obj/machinery/suit_storage_unit, islocked)
 TRACKED(/obj/machinery/suit_storage_unit, issuperUV)
@@ -44,8 +47,8 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("get_out", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Suit Storage Unit"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_get_out)))
-	op("move_inside", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Hide in Suit Storage Unit"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_move_inside)))
-	op("use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Load"), then(PROC_REF(interaction_use_item)))
+	op("move_inside", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Hide in Suit Storage Unit"), needs(req_adjacent(), req_capable(), req(PROC_REF(storage_conscious), silent = TRUE), req(PROC_REF(storage_entry_ready), because = PROC_REF(storage_entry_reason))), starts(PROC_REF(storage_entry_started)), wait(1 SECOND), then(PROC_REF(interaction_move_inside)))
+	op("use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Load"), needs(req(PROC_REF(storage_grab_powered), silent = TRUE), req(PROC_REF(storage_grab_ready), because = PROC_REF(storage_grab_reason))), starts(PROC_REF(storage_grab_started)), wait(PROC_REF(storage_load_duration)), then(PROC_REF(interaction_use_item)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 /// Sealed occupant slot (C8a, containment.md §10). Suit, helmet and mask stay
@@ -72,7 +75,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 /obj/machinery/suit_storage_unit/power_change()
 	. = ..()
 	if(!power_lost())
-		ispowered = 1
+		set_ispowered(1)
 	else
 		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
 
@@ -125,7 +128,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 
 /// The window answers while the unit is neither disinfecting nor broken.
 /obj/machinery/suit_storage_unit/proc/ui_gate(datum/act/op/A)
-	return !isUV && !isbroken // ALLOW(reads): the unit's state is read when a button is pressed, never from a cached menu
+	return !isUV && !isbroken
 
 /obj/machinery/suit_storage_unit/proc/ui_act_door(datum/act/op/A)
 	var/mob/user = A.actor
@@ -257,7 +260,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	if(OCCUPANT)
 		eject_occupant(user)
 		return  // eject_occupant opens the door, so we need to return
-	isopen = !isopen
+	set_isopen(!isopen)
 	return
 
 
@@ -325,8 +328,8 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 				destroyed(MASK, src, BURN)
 				rel_take(src, nameof(MASK))
 			visible_message(span_danger("With a loud whining noise, the Suit Storage Unit's door grinds open. Puffs of ashen smoke come out of its chamber."), 3)
-			isbroken = 1
-			isopen = 1
+			set_isbroken(1)
+			set_isopen(1)
 			set_islocked(0)
 			eject_occupant(OCCUPANT) //Mixing up these two lines causes bug. DO NOT DO IT.
 		set_isUV(0) //Cycle ends
@@ -356,7 +359,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 			to_chat(OCCUPANT, span_notice("You leave the not-so-cozy confines of the SSU."))
 	slot_remove(OCCUPANT, get_turf(src))
 	if(!isopen)
-		isopen = 1
+		set_isopen(1)
 	changed(src)
 	return
 
@@ -382,25 +385,55 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		return "it's too cluttered inside for you to fit in"
 	return TRUE
 
+/obj/machinery/suit_storage_unit/proc/storage_conscious(datum/act/op/A)
+	return A.actor.stat == CONSCIOUS
+
+/obj/machinery/suit_storage_unit/proc/storage_entry_reason(datum/act/op/A)
+	var/result = can_move_inside(A.actor, src, A.held)
+	return istext(result) ? result : null
+
+/obj/machinery/suit_storage_unit/proc/storage_entry_ready(datum/act/op/A)
+	return isnull(storage_entry_reason(A))
+
+/obj/machinery/suit_storage_unit/proc/storage_entry_started(datum/act/op/A)
+	act_message(A.actor, null, others = span_info("%U% starts squeezing into the suit storage unit!"))
+
 /obj/machinery/suit_storage_unit/proc/interaction_move_inside(datum/act/op/A)
-	// the legacy check, read when the op runs: its text is the refusal
-	var/allowed = can_move_inside(A.actor, src, A.held)
-	if(allowed != TRUE)
-		if(istext(allowed))
-			to_chat(A.actor, span_warning(allowed))
-		return
-	var/mob/user = A.actor
-	if(user.stat != CONSCIOUS)
-		return TRUE
-	act_message(user, null, others = span_info("%U% starts squeezing into the suit storage unit!"))
-	task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(interaction_move_inside_timed_done), done_args = list(user))
-	return TRUE
+	return interaction_move_inside_timed_done(A.actor)
+
+// Non-grab loads keep their original immediate path and the same public op key.
+/obj/machinery/suit_storage_unit/proc/storage_load_duration(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	return istype(G) && G.grab_target() ? 2 SECONDS : 0
+
+/obj/machinery/suit_storage_unit/proc/storage_grab_powered(datum/act/op/A)
+	return !istype(A.held, /obj/item/grab) || ispowered
+
+/obj/machinery/suit_storage_unit/proc/storage_grab_reason(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	if(!istype(G) || !G.grab_target())
+		return null
+	if(!isopen)
+		return "The unit's doors are shut."
+	if(!ispowered || isbroken)
+		return "The unit is not operational."
+	if(slot_item(OCCUPANT_SLOT_SUIT_STORAGE) || HELMET || SUIT)
+		return "The unit's storage area is too cluttered."
+	return null
+
+/obj/machinery/suit_storage_unit/proc/storage_grab_ready(datum/act/op/A)
+	return isnull(storage_grab_reason(A))
+
+/obj/machinery/suit_storage_unit/proc/storage_grab_started(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	var/mob/grabbed = G.grab_target()
+	act_message(A.actor, null, others = span_notice("%U% starts putting [grabbed.name] into the Suit Storage Unit."))
 
 /obj/machinery/suit_storage_unit/proc/interaction_move_inside_timed_done(mob/user)
 	user.stop_pulling()
 	if(!move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user, user))
 		return TRUE
-	isopen = 0 //Close the thing after the guy gets inside
+	set_isopen(0) //Close the thing after the guy gets inside
 	changed(src)
 
 	add_fingerprint(user)
@@ -409,26 +442,10 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 /obj/machinery/suit_storage_unit/proc/interaction_use_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
-	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
 	if(!ispowered)
 		return TRUE
 	if(istype(I, /obj/item/grab))
-		var/obj/item/grab/G = I
-		var/mob/grabbed = G?.grab_target()
-		if(!(ismob(grabbed)))
-			return TRUE
-		if(!isopen)
-			to_chat(user, span_warning("The unit's doors are shut."))
-			return TRUE
-		if(!ispowered || isbroken)
-			to_chat(user, span_warning("The unit is not operational."))
-			return TRUE
-		if((OCCUPANT) || (HELMET) || (SUIT)) //Unit needs to be absolutely empty
-			to_chat(user, span_warning("The unit's storage area is too cluttered."))
-			return TRUE
-		act_message(user, null, others = span_notice("%U% starts putting [grabbed.name] into the Suit Storage Unit."))
-		task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_use_item_timed_done), done_args = list(user, G))
-		return TRUE
+		return interaction_use_item_timed_done(user, I)
 	if(istype(I,/obj/item/clothing/suit/space))
 		if(!isopen)
 			return TRUE
@@ -473,7 +490,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	var/mob/M = G?.grab_target()
 	if(!move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, M, user))
 		return TRUE
-	isopen = 0 //close ittt
+	set_isopen(0) //close ittt
 
 	add_fingerprint(user)
 	consume(G, user)
@@ -496,9 +513,9 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 //God this entire file is fucking awful //Yes
 
 /obj/machinery/suit_storage_unit/proc/lose_power()
-	ispowered = 0
+	set_ispowered(0)
 	set_islocked(0)
-	isopen = 1
+	set_isopen(1)
 	dump_everything()
 	changed(src)
 
