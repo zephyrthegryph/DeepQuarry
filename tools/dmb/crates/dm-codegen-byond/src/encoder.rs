@@ -317,34 +317,23 @@ fn encode_internal_observed<G>(
     }
     drop(encoding_guard);
     let decode_guard = observe(FreezeStage::DecodeValidation);
-    let decoded = byond_dmb::bytecode::decode(&words)
-        .map_err(|error| LinkError::Decode(format!("{error:?}")))?;
-    for (expected, instruction) in starts.into_iter().zip(decoded.iter()) {
-        if expected != instruction.offset {
-            return Err(LinkError::InstructionBoundary {
-                expected,
-                decoded: instruction.offset,
-            });
+    let mut decoded_offsets = Vec::with_capacity(starts.len());
+    let mut legal_slots = Vec::new();
+    byond_dmb::bytecode::visit_instructions(
+        &words,
+        |instruction| decoded_offsets.push(instruction.offset),
+        |slot| legal_slots.push(slot),
+    )
+    .map_err(|error| LinkError::Decode(format!("{error:?}")))?;
+    for (&expected, &decoded) in starts.iter().zip(&decoded_offsets) {
+        if expected != decoded {
+            return Err(LinkError::InstructionBoundary { expected, decoded });
         }
     }
-    if decoded.len()
-        != proc
-            .items
-            .iter()
-            .filter(|item| matches!(item, Item::Instruction(_)))
-            .count()
-    {
+    if decoded_offsets.len() != starts.len() {
         return Err(LinkError::Decode(
             "decoded instruction count differs".into(),
         ));
-    }
-    let mut legal_slots = Vec::new();
-    for instruction in &decoded {
-        legal_slots.extend(
-            instruction
-                .branch_target_word_offsets()
-                .map_err(|error| LinkError::Decode(format!("{error:?}")))?,
-        );
     }
     // Membership only: sorting does not affect emitted words or error order.
     legal_slots.sort_unstable();
@@ -353,7 +342,7 @@ fn encode_internal_observed<G>(
             return Err(LinkError::BranchOperandIsNotTarget { offset: slot });
         }
     }
-    drop(decoded);
+    drop(decoded_offsets);
     drop(decode_guard);
     sites.extend(debug_sites);
     Ok(EncodedProc {
