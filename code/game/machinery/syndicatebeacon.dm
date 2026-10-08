@@ -24,7 +24,8 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 
 /datum/prompt/choice/syndicate_beacon/prepare(datum/act/A)
 	..()
-	var/obj/machinery/syndicate_beacon/B = owner
+	var/datum/act/op/OA = A
+	var/obj/machinery/syndicate_beacon/B = OA.holder
 	var/mob/user = answerer
 	user.set_machine(B)
 	var/message = "Scanning [pick("retina pattern", "voice print", "fingerprints", "dna sequence")]... Identity confirmed.\n"
