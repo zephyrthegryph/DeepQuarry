@@ -377,6 +377,7 @@
 	initial_flooring = /datum/decl/flooring/snow
 	var/list/crossed_dirs
 
+TRACKED(/turf/simulated/floor/snow, crossed_dirs)
 
 // TODO: Move foortprints to a datum-component signal so they can actually be applied to other turf types, like sand, or mud
 /turf/simulated/floor/snow/Entered(atom/A)
@@ -387,16 +388,16 @@
 				L.adjust_nutrition(-0.5)
 			return ..()
 		var/mdir = "[A.dir]"
-		LAZYSET(crossed_dirs, mdir, 1)
-		update_icon()
+		if(LAZYACCESS(crossed_dirs, mdir) != 1)
+			var/list/footprints = crossed_dirs ? crossed_dirs.Copy() : list()
+			footprints[mdir] = 1
+			set_crossed_dirs(footprints)
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/snow, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/floor/snow/appearance_overlays()
-	. = list()
-	. += ..()
+/turf/simulated/floor/snow/draw(datum/look/look)
+	..()
 	for(var/d in crossed_dirs)
-		. += image(icon = 'icons/turf/outdoors.dmi', icon_state = "snow_footprints", dir = text2num(d))
+		look.overlay(look_overlay_image('icons/turf/outdoors.dmi', "snow_footprints", dir = text2num(d)))
 
 //**** Here ends snow ****
 

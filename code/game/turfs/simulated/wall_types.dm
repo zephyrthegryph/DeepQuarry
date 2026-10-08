@@ -224,10 +224,6 @@ TYPE_TABLE(/turf/simulated/wall/log_sif, wall_forced_materials, list(MAT_SIFLOG)
 /turf/simulated/shuttle/wall/voidcraft/green
 	stripe_color = "#00FF00"
 
-/turf/simulated/shuttle/wall/voidcraft/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /turf/simulated/shuttle/wall/voidcraft/draw(datum/look/look)
 	..()
 	var/drawn_state = look.state_so_far(src)
@@ -339,17 +335,12 @@ CAPABILITIES(/obj/structure/hull_corner)
 /turf/simulated/wall/bay/can_join_with_low_wall(obj/structure/low_wall/WF)
 	return istype(WF, /obj/structure/low_wall/bay)
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/wall/bay/appearance_overlays()
-	. = list()
-	. += ..()
+/turf/simulated/wall/bay/look_parts(datum/look/look)
+	..()
 	if(stripe_color)
-		var/image/I
 		var/list/connections = get_wall_connections()
 		for(var/i = 1 to 4)
-			I = image(wall_masks, "stripe[connections[i]]", dir = 1<<(i-1))
-			I.color = stripe_color
-			. += I
+			look.overlay(look_overlay_image(wall_masks, "stripe[connections[i]]", dir = 1<<(i-1), color = stripe_color))
 
 /turf/simulated/wall/bay/special_wall_connections(list/dirs, list/inrange)
 	..()
@@ -388,25 +379,13 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall/bay, TYPE_PROC_REF(/atom, appearanc
 	var/diagonal_blending = FALSE
 
 // *INHALE
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall/tgmc, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/wall/tgmc/appearance_overlays()
-	. = list()
-	if(!damage_overlays[1]) //list hasn't been populated
-		generate_overlays()
-
-
+/turf/simulated/wall/tgmc/look_parts(datum/look/look)
 	if(force_icon)
-		icon_state = "[wall_base_state][force_icon]"
+		look.state("[wall_base_state][force_icon]")
 	else
-		icon_state = "[wall_base_state][wall_connections]"
-
-	var/damage_fraction = wall_damage_fraction()
-	if(damage_fraction > 0)
-		var/overlay = round(damage_fraction * damage_overlays.len) + 1
-		if(overlay > damage_overlays.len)
-			overlay = damage_overlays.len
-
-		. += damage_overlays[overlay]
+		look.state("[wall_base_state][wall_connections]")
+	if(damage_step)
+		look.overlay(damage_overlays[damage_step])
 
 /turf/simulated/wall/tgmc/update_connections(propagate)
 	if(!material)
@@ -449,12 +428,11 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall/tgmc, TYPE_PROC_REF(/atom, appearan
 				continue
 			if(propagate)
 				W.update_connections()
-				W.update_icon()
 			if(W.wall_blend_category == wall_blend_category)
 				dirs |= direction
 				blend_log += "Blending with [W] at [get_dir(src, W)] because blend category is the same"
 
-	wall_connections = dirs
+	set_wall_connections(dirs)
 
 /turf/simulated/wall/tgmc/can_join_with_low_wall(obj/structure/low_wall/WF)
 	return istype(WF, /obj/structure/low_wall)
@@ -493,10 +471,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall/tgmc, TYPE_PROC_REF(/atom, appearan
 // Old attackby: items do nothing here.
 CAPABILITIES(/turf/simulated/flesh)
 	op("pass_item", item(/obj/item), label("Nothing"), passes())
-
-/turf/simulated/flesh/Initialize(mapload)
-	. = ..()
-	update_icon()
+	on_change(nameof(density), ANY, then(PROC_REF(edge_inputs_changed)))
 
 DECLARE_SHARED_CACHE(flesh_side_overlays, GLOBAL_PROC_REF(build_flesh_side_overlay), SC_NEVER)
 
@@ -504,20 +479,30 @@ DECLARE_SHARED_CACHE(flesh_side_overlays, GLOBAL_PROC_REF(build_flesh_side_overl
 /proc/build_flesh_side_overlay(place_dir)
 	return image('icons/turf/stomach_vr.dmi', "flesh_side", dir = place_dir)
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/flesh, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
-/turf/simulated/flesh/appearance_overlays()
-	. = list()
+/// The cardinal sides of this wall that are open (a neighbour that is not dense), written by the adjacency index (code/game/turfs/turf_edges.dm).
+/turf/simulated/flesh/var/open_mask = 0
+TRACKED(/turf/simulated/flesh, open_mask)
 
+/turf/simulated/flesh/edges_changed(mask)
+	..()
+	var/open_sides = 0
+	for(var/direction in GLOB.cardinal)
+		var/turf/T = get_step(src, direction)
+		if(istype(T) && !T.density)
+			open_sides |= direction
+	set_open_mask(open_sides)
+	log_edge_trace("[type] at [x],[y],[z]: open sides [open_mask]")
+
+/// Flesh draws its sprite and, on each side that is open, the lip of the wall.
+/turf/simulated/flesh/draw(datum/look/look)
+	..()
 	if(density)
-		icon = 'icons/turf/stomach_vr.dmi'
-		icon_state = "flesh"
+		look.set_icon('icons/turf/stomach_vr.dmi')
+		look.state("flesh")
 		for(var/direction in GLOB.cardinal)
-			var/turf/T = get_step(src,direction)
-			if(istype(T) && !T.density)
+			if(open_mask & direction)
 				var/place_dir = turn(direction, 180)
-				. += CACHED_KEY(flesh_side_overlays, "flesh_side_[place_dir]", place_dir)
-
-	appearance_notify_neighbours("[type]", /turf/simulated/flesh)
+				look.overlay(CACHED_KEY(flesh_side_overlays, "flesh_side_[place_dir]", place_dir))
 
 /turf/simulated/gore
 	name = "wall of viscera"

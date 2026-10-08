@@ -70,6 +70,7 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 		return
 	outdoors = OUTDOORS_YES
 	SSplanets.addTurf(src)
+	edges_refresh() // an outdoor tile shows no ceiling gap
 
 /// Makes the turf explicitly indoors.
 /turf/simulated/proc/make_indoors()
@@ -77,6 +78,7 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 		return
 	outdoors = OUTDOORS_NO
 	SSplanets.removeTurf(src)
+	edges_refresh() // an indoor tile shows the open space above it
 
 /turf/simulated/post_change()
 	..()

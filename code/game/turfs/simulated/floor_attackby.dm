@@ -5,7 +5,7 @@
 	if(!is_plating())
 		return
 	if(S.use(use_flooring.build_cost))
-		set_flooring(use_flooring)
+		install_flooring(use_flooring)
 		if(S.color)
 			color = S.color
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.6)

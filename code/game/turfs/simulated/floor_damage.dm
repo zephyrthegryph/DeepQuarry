@@ -9,12 +9,8 @@
 /turf/simulated/floor/proc/break_tile()
 	if(!flooring || !(flooring.flags & TURF_CAN_BREAK) || !isnull(broken))
 		return
-	if(flooring.has_damage_range)
-		broken = rand(0,flooring.has_damage_range)
-	else
-		broken = 0
+	mark_damage(flooring.has_damage_range ? rand(0,flooring.has_damage_range) : 0, burnt)
 	set_plating_damage_state(rand(1, 4))
-	update_icon()
 
 // promoted from /turf/simulated/floor to /turf/simulated so LINDA's
 // turf-level fire spread (LINDA_turf_tile.dm + LINDA_fire.dm) can call it
@@ -25,9 +21,5 @@
 /turf/simulated/floor/burn_tile(exposed_temperature)
 	if(!flooring || !(flooring.flags & TURF_CAN_BURN) || !isnull(burnt))
 		return
-	if(flooring.has_burn_range)
-		burnt = rand(0,flooring.has_burn_range)
-	else
-		burnt = 0
+	mark_damage(broken, flooring.has_burn_range ? rand(0,flooring.has_burn_range) : 0)
 	set_plating_damage_state(rand(1, 4))
-	update_icon()

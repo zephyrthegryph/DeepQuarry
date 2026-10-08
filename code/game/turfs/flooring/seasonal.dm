@@ -34,8 +34,13 @@ GLOBAL_VAR(world_time_day)
 	var/tree_chance = 1
 	var/trees = null
 	var/snow_chance = 10
+	/// The sprite of the season's flowers or leaves lying on this tile (null for none), rolled once when the tile is made.
+	var/season_overlay
+
+TRACKED(/turf/simulated/floor/outdoors/grass/seasonal, season_overlay)
 
 /turf/simulated/floor/outdoors/grass/seasonal/Initialize(mapload)
+	set_season_overlay(roll_season_overlay())
 
 	switch(GLOB.world_time_season)
 		if("spring")
@@ -85,38 +90,34 @@ GLOBAL_VAR(world_time_day)
 
 	. = ..()
 
-/turf/simulated/floor/outdoors/grass/seasonal/proc/update_desc()
-
+/// What the tile is described as in this season.
+/turf/simulated/floor/outdoors/grass/seasonal/proc/season_desc()
 	switch(GLOB.world_time_season)
 		if("spring")
-			desc = "Lush green grass, flourishing! Little flowers peek out from between the blades here and there!"
+			return "Lush green grass, flourishing! Little flowers peek out from between the blades here and there!"
 		if("summer")
-			desc = "Bright green grass, a little dry in the summer heat!"
+			return "Bright green grass, a little dry in the summer heat!"
 		if("autumn")
-			desc = "Golden grass, it's a little crunchy as it prepares for winter!"
+			return "Golden grass, it's a little crunchy as it prepares for winter!"
 		if("winter")
-			desc = "Dry, seemingly dead grass! It's too cold for the grass..."
+			return "Dry, seemingly dead grass! It's too cold for the grass..."
 
-
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/outdoors/grass/seasonal, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/floor/outdoors/grass/seasonal/appearance_overlays()
-	. = list()
-	. += ..()
-	update_desc()
+/// The flowers (spring) or leaves (autumn) this tile has, if any.
+/turf/simulated/floor/outdoors/grass/seasonal/proc/roll_season_overlay()
 	switch(GLOB.world_time_season)
 		if("spring")
 			if(prob(50))
-				var/cache_key = "[GLOB.world_time_season]-overlay[rand(1,19)]"
-				. += CACHED_KEY(seasonal_grass_overlays, cache_key, icon, cache_key)
-		if("summer")
-			return .
+				return "[GLOB.world_time_season]-overlay[rand(1,19)]"
 		if("autumn")
 			if(prob(33))
-				var/cache_key = "[GLOB.world_time_season]-overlay[rand(1,6)]"
-				. += CACHED_KEY(seasonal_grass_overlays, cache_key, icon, cache_key)
+				return "[GLOB.world_time_season]-overlay[rand(1,6)]"
+	return null
 
-		if("winter")
-			return .
+/turf/simulated/floor/outdoors/grass/seasonal/draw(datum/look/look)
+	..()
+	look.identity(desc = season_desc())
+	if(season_overlay)
+		look.overlay(CACHED_KEY(seasonal_grass_overlays, season_overlay, icon, season_overlay))
 
 /turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow
 	tree_chance = 0
