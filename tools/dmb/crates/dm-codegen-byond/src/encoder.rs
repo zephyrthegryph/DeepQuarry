@@ -75,11 +75,32 @@ impl std::error::Error for FreezeError {}
 /// Freeze already-lowered operands. The caller supplies semantic identities for
 /// every existing symbol, including static slots and procedure/verb occurrences;
 /// this boundary does not perform resolution or manufacture those identities.
+/// Natural bounded freeze stages; callers may return a scope guard. The
+/// encoder owns scope boundaries and all paths share the same implementation.
+#[derive(Clone, Copy, Debug)]
+pub enum FreezeStage {
+    Encoding,
+    DecodeValidation,
+    Binding,
+    SymbolicConstruction,
+    SiteValidation,
+}
+
 pub fn freeze_proc(
     proc: &SymbolicProc,
-    mut bind: impl FnMut(&Symbol) -> Result<SymRef, String>,
+    bind: impl FnMut(&Symbol) -> Result<SymRef, String>,
 ) -> Result<FrozenProc, FreezeError> {
-    let encoded = encode_internal(proc, &mut |_| Ok(0), true).map_err(FreezeError::Abi)?;
+    freeze_proc_observed(proc, bind, |_| ())
+}
+
+pub fn freeze_proc_observed<G>(
+    proc: &SymbolicProc,
+    mut bind: impl FnMut(&Symbol) -> Result<SymRef, String>,
+    mut observe: impl FnMut(FreezeStage) -> G,
+) -> Result<FrozenProc, FreezeError> {
+    let encoded = encode_internal_observed(proc, &mut |_| Ok(0), true, &mut observe)
+        .map_err(FreezeError::Abi)?;
+    let binding_guard = observe(FreezeStage::Binding);
     let mut words = encoded.linked.words;
     let mut relocations = encoded.debug_relocations.clone();
     for ((_, symbol), site) in encoded.linked.relocations.iter().zip(&encoded.sites) {
@@ -107,7 +128,12 @@ pub fn freeze_proc(
         });
     }
     relocations.sort_by_key(|site| site.offset);
-    let code = SymbolicCode::new(words, relocations).map_err(FreezeError::Relocation)?;
+    drop(binding_guard);
+    let code = {
+        let _guard = observe(FreezeStage::SymbolicConstruction);
+        SymbolicCode::new(words, relocations).map_err(FreezeError::Relocation)?
+    };
+    let site_guard = observe(FreezeStage::SiteValidation);
     code.validate_encoded_sites(
         &encoded
             .sites
@@ -116,6 +142,7 @@ pub fn freeze_proc(
             .collect::<Vec<_>>(),
     )
     .map_err(FreezeError::Relocation)?;
+    drop(site_guard);
     Ok(FrozenProc {
         code,
         sites: encoded.sites,
@@ -133,6 +160,15 @@ fn encode_internal(
     resolve: &mut impl FnMut(&Symbol) -> Result<u32, LinkError>,
     allow_debug: bool,
 ) -> Result<EncodedProc, LinkError> {
+    encode_internal_observed(proc, resolve, allow_debug, &mut |_| ())
+}
+fn encode_internal_observed<G>(
+    proc: &SymbolicProc,
+    resolve: &mut impl FnMut(&Symbol) -> Result<u32, LinkError>,
+    allow_debug: bool,
+    observe: &mut impl FnMut(FreezeStage) -> G,
+) -> Result<EncodedProc, LinkError> {
+    let encoding_guard = observe(FreezeStage::Encoding);
     let mut labels = BTreeMap::new();
     let mut offset = 0usize;
     for item in &proc.items {
@@ -279,6 +315,8 @@ fn encode_internal(
             }
         }
     }
+    drop(encoding_guard);
+    let decode_guard = observe(FreezeStage::DecodeValidation);
     let decoded = byond_dmb::bytecode::decode(&words)
         .map_err(|error| LinkError::Decode(format!("{error:?}")))?;
     for (expected, instruction) in starts.into_iter().zip(decoded.iter()) {
@@ -315,6 +353,8 @@ fn encode_internal(
             return Err(LinkError::BranchOperandIsNotTarget { offset: slot });
         }
     }
+    drop(decoded);
+    drop(decode_guard);
     sites.extend(debug_sites);
     Ok(EncodedProc {
         linked: LinkedProc {
@@ -581,5 +621,81 @@ mod tests {
                 dm_ir::RelocationError::KindMismatch { .. }
             ))
         ));
+    }
+    #[test]
+    fn freeze_observer_balances_scopes_and_preserves_wire_content_on_decode_failure() {
+        use std::{cell::RefCell, rc::Rc};
+        type Events = Rc<RefCell<Vec<(bool, &'static str)>>>;
+        struct Guard(Events, &'static str);
+        impl Drop for Guard {
+            fn drop(&mut self) {
+                self.0.borrow_mut().push((false, self.1));
+            }
+        }
+        let observer = |events: Events| {
+            move |stage| {
+                let name = match stage {
+                    FreezeStage::Encoding => "encoding",
+                    FreezeStage::DecodeValidation => "decode",
+                    FreezeStage::Binding => "binding",
+                    FreezeStage::SymbolicConstruction => "construction",
+                    FreezeStage::SiteValidation => "sites",
+                };
+                events.borrow_mut().push((true, name));
+                Guard(Rc::clone(&events), name)
+            }
+        };
+        let proc = SymbolicProc {
+            items: vec![
+                Item::Instruction(Instruction {
+                    opcode: 0x60,
+                    operands: vec![Word::Value(ValueWord::String("payload".into()))],
+                }),
+                Item::Instruction(Instruction {
+                    opcode: 0,
+                    operands: vec![],
+                }),
+            ],
+        };
+        let bind = |symbol: &Symbol| Ok(SymRef::String(dm_ir::SymbolId::of(&symbol.key)));
+        let expected = freeze_proc(&proc, bind).unwrap();
+        let events = Events::default();
+        let observed = freeze_proc_observed(&proc, bind, observer(Rc::clone(&events))).unwrap();
+        assert_eq!(
+            observed.code().canonical_bytes(),
+            expected.code().canonical_bytes()
+        );
+        assert_eq!(observed.sites(), expected.sites());
+        assert_eq!(observed.labels(), expected.labels());
+        assert_eq!(
+            *events.borrow(),
+            ["encoding", "decode", "binding", "construction", "sites"]
+                .into_iter()
+                .flat_map(|stage| [(true, stage), (false, stage)])
+                .collect::<Vec<_>>()
+        );
+
+        // PUSH_VAL without its packed operands reaches the independent decoder
+        // and fails there, before binding or symbolic construction can run.
+        let malformed = SymbolicProc {
+            items: vec![Item::Instruction(Instruction {
+                opcode: 0x60,
+                operands: vec![],
+            })],
+        };
+        let events = Events::default();
+        let error = freeze_proc_observed(&malformed, bind, observer(Rc::clone(&events)))
+            .err()
+            .expect("malformed bytecode must fail");
+        assert!(matches!(error, FreezeError::Abi(LinkError::Decode(_))));
+        assert_eq!(
+            *events.borrow(),
+            vec![
+                (true, "encoding"),
+                (false, "encoding"),
+                (true, "decode"),
+                (false, "decode")
+            ]
+        );
     }
 }

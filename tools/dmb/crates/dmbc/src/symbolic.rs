@@ -1,6 +1,7 @@
 //! Real lowering→shared encoder→canonical linker bridge, with explicit externals.
 use crate::lowering::{LoweredUnit, LoweringBatch, Namespace, UnitIdentity};
-use dm_codegen_byond::{freeze_proc, FrozenProc, Symbol, Table};
+use dm_codegen_byond::encoder::{freeze_proc_observed, FreezeStage};
+use dm_codegen_byond::{FrozenProc, Symbol, Table};
 use dm_ir::{SymRef, SymbolId, SymbolTable};
 use dm_link::{Entry, Key, LinkInventory, LinkTables, ProcedureImage, SlotAlias, SourceBindings};
 use std::{collections::BTreeMap, sync::Arc};
@@ -855,25 +856,37 @@ fn freeze_artifact(
         ),
         SymRef::BuiltinGlobalVars,
     )?;
-    let frozen = freeze_proc(&code.procedure.code, |symbol| {
-        let local = bindings.get(symbol).copied();
-        let source = source_bindings.get(symbol).copied();
-        let captured = external.references.get(symbol).copied();
-        let selected = local
-            .or(source)
-            .or(captured)
-            .ok_or_else(|| format!("uncaptured semantic reference {symbol:?}"))?;
-        if [local, source, captured]
-            .into_iter()
-            .flatten()
-            .any(|reference| reference != selected)
-        {
-            return Err(format!(
-                "conflicting captured semantic reference {symbol:?}"
-            ));
-        }
-        Ok(selected)
-    })
+    let frozen = freeze_proc_observed(
+        &code.procedure.code,
+        |symbol| {
+            let local = bindings.get(symbol).copied();
+            let source = source_bindings.get(symbol).copied();
+            let captured = external.references.get(symbol).copied();
+            let selected = local
+                .or(source)
+                .or(captured)
+                .ok_or_else(|| format!("uncaptured semantic reference {symbol:?}"))?;
+            if [local, source, captured]
+                .into_iter()
+                .flatten()
+                .any(|reference| reference != selected)
+            {
+                return Err(format!(
+                    "conflicting captured semantic reference {symbol:?}"
+                ));
+            }
+            Ok(selected)
+        },
+        |stage| {
+            dm_profile::stage(match stage {
+                FreezeStage::Encoding => "freeze.encoding",
+                FreezeStage::DecodeValidation => "freeze.decode_validation",
+                FreezeStage::Binding => "freeze.semantic_binding",
+                FreezeStage::SymbolicConstruction => "freeze.symbolic_construction",
+                FreezeStage::SiteValidation => "freeze.site_validation",
+            })
+        },
+    )
     .map_err(|error| IntegrationError::Freeze {
         unit: identity,
         message: error.to_string(),

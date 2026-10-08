@@ -11,7 +11,7 @@
 - Python profile/oracle regressions passed **35 tests** before the ABI repair. Formatting and diff whitespace checks pass.
 - Every Rust workspace source, test, example and explicit audit target passes the 1,000-line source-size gate. Remaining format/reference/audit splits are applied and passed all-target Clippy plus 462 root-library tests. The proc-constructor classifier passed seven focused tests; asset digest reuse passed all 16 resource tests. Current workspace/all-target Clippy passed with warnings denied in `review-resource-digest-clippy.log`. These later checks use the development profile.
 
-## Latest measured cold build
+## Earlier accepted-clock audit
 
 Frozen compiler f, commit `83c1f30d9f`, SHA256 `0053703bcc91cef14def7ca7d4da657a9aeb9ca937a675c954e4ef86006c599d`, release with LTO disabled, allocation counting, eight workers, no cache:
 
@@ -28,6 +28,24 @@ Frozen compiler f, commit `83c1f30d9f`, SHA256 `0053703bcc91cef14def7ca7d4da657a
 The entire ratio interval passes the independent 5% check; CPU quality reports no errors. Precise scalar conversion remains incomplete. This is usable **single-run uncertainty evidence**, not the required median baseline or Phase 1 acceptance. The fresh-output and diagnostic oracle passed. Evidence: `E:/dmb-native-v2-phase0/review-bounds-clock-audit-20261008-f/receipt.json` and `cold.trace.report.json`.
 
 Largest maximum-thread CPU bounds: resources/maps 9.140625–9.203125 s; symbolic linking 7.640625–7.703125 s; procedure lowering 3.4375–3.5 s; initializers 2.921875–2.984375 s; composition 2.71875–2.78125 s; input scan 2.53125–2.59375 s; tree resolution 1.875–1.9375 s. Speed and memory remain above target. The later memory/ABI changes have not been benchmarked.
+
+## Latest complete-source output and cold audit
+
+Commit `8554b25773` preserves explicit proc/verb declarations versus implicit override paths. All 11 composition tests and targeted all-target Clippy pass. Frozen compiler j cleared the focused project twice in harness wall 44.8504 s and 45.1297 s at two workers; DMB/RSC bytes and normalized diagnostics match. The repaired global-vars table has the same full 1,198 physical paths as BYOND and exactly the same 1,148 `/proc/` namespace entries. The previous extra 50 entries caused unintended lifecycle/override calls during global initialization. The repaired pair has not yet run; a second bounded focused runtime comparison was requested after the one-pair allowance was used.
+
+A separate eight-worker no-cache/no-daemon run of the **historic focused DeepQuarry project** (`ac1af55d1a`, captured `comparison.dme`) passed its fresh byte/diagnostic oracle:
+
+| Measurement | Single run |
+| --- | ---: |
+| Compiler stage timer | 33.898 s |
+| Profiler wall | 36.2511 s |
+| Harness child wall | 36.8076 s |
+| Process CPU | 65.53125 s |
+| Critical CPU bounds | 26.546875–27.859375 s |
+| CPU crosscheck ratio bounds | 0.9585122–0.9980925 |
+| Peak private memory | 2,661,777,408 bytes |
+
+CPU quality reports no errors; the entire ratio passes the independent 5% crosscheck. This is one run, a different frozen source scope from compiler f's earlier audit, and not an acceptance median or a measured before/after speedup. CPU and memory remain above Phase 1 targets. Evidence: `E:/dmb-native-v2-phase0/review-power-focus/native-retries/retry-e0a7ff07c0604b2c91cb0d18e3426063/`. No body-edit measurement on this complete snapshot exists yet.
 
 ## Focused runtime gate
 
