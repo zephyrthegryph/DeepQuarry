@@ -34,12 +34,10 @@
 	set category = VERB_CAT_ABILITIES_VR
 	set desc = "Become a different creature"
 
-	open_request(src, /datum/prompt/choice, PROC_REF(vr_creature_chosen), answerer = src, title = "Mob list", question = "Please select a creature:", choices = GLOB.vr_mob_tf_options, ask_flags = ASK_CONSCIOUS, timeout = 0)
+	perform_op(src, src, "vr_transform", null, ORIGIN_VERB)
 
-/mob/living/carbon/human/proc/vr_creature_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/tf = GLOB.vr_mob_tf_options[A.answer.value]
+/mob/living/carbon/human/proc/vr_creature_chosen(datum/act/op/A)
+	var/tf = GLOB.vr_mob_tf_options[A.step_value("creature")]
 
 	var/mob/living/new_form = transform_into_mob(tf, TRUE, TRUE)
 	if(isliving(new_form)) // Sanity check
@@ -57,10 +55,10 @@
 	set name = "Log Out Of Virtual Reality"
 	set category = VERB_CAT_ABILITIES_VR
 
-	open_request(src, /datum/prompt/yes_no, PROC_REF(fake_exit_vr_answered), answerer = src, title = "Log out?", question = "Would you like to log out of virtual reality?", timeout = 0)
+	perform_op(src, src, "vr_logout", null, ORIGIN_VERB)
 
-/mob/living/carbon/human/proc/fake_exit_vr_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
+/mob/living/carbon/human/proc/fake_exit_vr_answered(datum/act/op/A)
+	if(!A.step_value("logout"))
 		return
 	release_vore_contents(TRUE)
 	for(var/obj/item/I in contents_of(src))
@@ -110,3 +108,12 @@
 	if(A.answer.value)
 		real_name = A.answer.value
 		name = A.answer.value
+
+/mob/living/carbon/human/proc/vr_transform_granted(datum/act/op/A)
+	return /mob/living/carbon/human/proc/vr_transform_into_mob in read_once(verbs)
+
+/mob/living/carbon/human/proc/vr_logout_granted(datum/act/op/A)
+	return /mob/living/carbon/human/proc/fake_exit_vr in read_once(verbs)
+
+/mob/living/carbon/human/proc/vr_creature_options(datum/act/op/A)
+	return GLOB.vr_mob_tf_options

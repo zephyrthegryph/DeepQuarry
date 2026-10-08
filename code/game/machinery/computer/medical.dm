@@ -28,6 +28,7 @@
 	var/static/list/field_edit_choices
 
 CAPABILITIES(/obj/machinery/computer/med_data)
+	ref_one(nameof(active2), /datum/data/record)
 	owns_one(nameof(scan), /obj/item/card/id)
 	interface("MedicalRecords", title = "Medical Records")
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
@@ -40,7 +41,7 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 	op("del_r", ui_act("del_r"), then(PROC_REF(ui_act_del_r)))
 	op("d_rec", ui_act("d_rec", arg("d_rec")), then(PROC_REF(ui_act_d_rec)))
 	op("sync_r", ui_act("sync_r"), then(PROC_REF(ui_act_sync_r)))
-	op("edit_notes", ui_act("edit_notes"), needs(req(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default)))), then(PROC_REF(ui_act_edit_notes)))
+	op("edit_notes", ui_act("edit_notes"), needs(req_adjacent(), req(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default))), step = "notes"), asks(/datum/prompt/yes_no/record_notes_delete, fields = list("record" = computed(PROC_REF(notes_record)), "timeout" = 0), step = "delete_notes", when = PROC_REF(notes_empty)), then(PROC_REF(ui_act_edit_notes)))
 	op("new", ui_act("new"), then(PROC_REF(ui_act_new)))
 	op("del_c", ui_act("del_c", arg("del_c", num())), then(PROC_REF(ui_act_del_c)))
 	op("search", ui_act("search", arg("t1", schema_text(4096))), then(PROC_REF(ui_act_search)))
@@ -318,18 +319,22 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 		set_temp(client_update_record(src,A.actor))
 
 /obj/machinery/computer/med_data/proc/ui_act_edit_notes(datum/act/op/A)
-	var/datum/data/record/target = active2()
-	var/datum/prompt/R = A.answer
-	if(!target || !R)
+	if(!active2())
 		return OP_OK
-	var/new_notes = strip_html_simple(R.value, MAX_RECORD_LENGTH)
+	var/new_notes = strip_html_simple(A.step_value("notes"), MAX_RECORD_LENGTH)
 	if(new_notes != "")
-		set_record_notes(target, new_notes)
-		return OP_OK
-	open_request(src, /datum/prompt/yes_no/record_notes_delete, PROC_REF(record_notes_confirmed), valid = PROC_REF(record_notes_valid), answerer = A.actor, record = target, timeout = 0)
+		set_record_notes(active2(), new_notes)
+	else if(A.step_value("delete_notes"))
+		var/datum/prompt/yes_no/record_notes_delete/R = A.answer
+		set_record_notes(R.record, "")
 	return OP_OK
 
-/// The notes the editor starts with.
+/obj/machinery/computer/med_data/proc/notes_empty(datum/act/op/A)
+	return !!active2() && strip_html_simple(A.step_value("notes"), MAX_RECORD_LENGTH) == ""
+
+/obj/machinery/computer/med_data/proc/notes_record(datum/act/op/A)
+	return active2()
+
 /obj/machinery/computer/med_data/proc/notes_default(datum/act/A)
 	return html_decode(active2()?.fields["notes"])
 
@@ -411,17 +416,6 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 		printing = TRUE
 		SStgui.update_uis(src)
 		after(src, 5 SECONDS, PROC_REF(print_finish))
-
-/obj/machinery/computer/med_data/proc/record_notes_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/datum/prompt/yes_no/record_notes_delete/R = A.request
-	set_record_notes(R.record, "")
-
-/// The operator is still next to the console when the answer arrives.
-/obj/machinery/computer/med_data/proc/record_notes_valid(datum/request/R)
-	var/mob/M = R.answerer
-	return istype(M) && in_range(src, M)
 
 /obj/machinery/computer/med_data/proc/set_record_notes(datum/data/record/R, notes)
 	if(R == active2())

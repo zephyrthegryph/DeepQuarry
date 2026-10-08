@@ -22,7 +22,10 @@
 CAPABILITIES(/obj/machinery/petrification)
 	owns_many(nameof(remotes))
 	interface("PetrificationInterface")
-	op("set_option", ui_act("set_option", arg("option", schema_text(4096))), then(PROC_REF(ui_act_set_option)))
+	op("set_option", ui_act("set_option", arg("option", schema_text(4096))),
+		asks(/datum/prompt/color/statue_tint, step = "tint", fields = list("title" = "Statue color", "question" = computed(PROC_REF(tint_question)), "default" = computed(PROC_REF(tint_default))), when = PROC_REF(choosing_tint)),
+		asks(/datum/prompt/text/statue_option, step = "text", fields = list("title" = computed(PROC_REF(option_title)), "question" = computed(PROC_REF(option_question)), "default" = computed(PROC_REF(option_default)), "option" = computed(PROC_REF(option_name))), when = PROC_REF(choosing_text)),
+		then(PROC_REF(ui_act_set_option)))
 	op("petrify", ui_act("petrify"), then(PROC_REF(ui_act_petrify)))
 	op("remote", ui_act("remote"), then(PROC_REF(ui_act_remote)))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
@@ -174,10 +177,6 @@ CAPABILITIES(/obj/machinery/petrification)
 	if (!(option in only_these))
 		return
 	switch(option)
-		if("tint")
-			open_request(src, /datum/prompt/color/statue_tint, PROC_REF(tint_chosen), answerer = user, title = "Statue color", question = "Choose the color for the [identifier] to be:", default = tint)
-		if("material","identifier","adjective")
-			open_request(src, /datum/prompt/text/statue_option, PROC_REF(statue_text_entered), answerer = user, title = "Statue [option]", question = "What should the [option] be?", default = vars[option], option = option)
 		if("able_to_unpetrify", "discard_clothes")
 			vars[option] = !vars[option] // ALLOW(api): TGUI settings keyed by option name
 		if("target")
@@ -187,9 +186,41 @@ CAPABILITIES(/obj/machinery/petrification)
 				return
 			open_request(src, /datum/prompt/choice/statue_target, PROC_REF(petrify_target_chosen), answerer = user, title = "Petrification Target", question = "Choose the target.", choices = targets)
 
-/obj/machinery/petrification/proc/tint_chosen(datum/act/request/A)
-	if(A.answer?.value)
-		tint = A.answer.value
+
+/obj/machinery/petrification/proc/choosing_tint(datum/act/op/A)
+	return A.args["option"] == "tint"
+
+/obj/machinery/petrification/proc/choosing_text(datum/act/op/A)
+	return A.args["option"] in list("material", "identifier", "adjective")
+
+/obj/machinery/petrification/proc/tint_question(datum/act/op/A)
+	return "Choose the color for the [identifier] to be:"
+
+/obj/machinery/petrification/proc/tint_default(datum/act/op/A)
+	return tint
+
+/obj/machinery/petrification/proc/option_name(datum/act/op/A)
+	return A.args["option"]
+
+/obj/machinery/petrification/proc/option_title(datum/act/op/A)
+	return "Statue [A.args["option"]]"
+
+/obj/machinery/petrification/proc/option_question(datum/act/op/A)
+	return "What should the [A.args["option"]] be?"
+
+/obj/machinery/petrification/proc/option_default(datum/act/op/A)
+	switch(A.args["option"])
+		if("material")
+			return material
+		if("identifier")
+			return identifier
+		if("adjective")
+			return adjective
+
+/obj/machinery/petrification/proc/tint_chosen(datum/act/op/A)
+	var/value = A.step_value("tint")
+	if(value)
+		tint = value
 
 /datum/prompt/text/statue_option
 	max_len = MAX_NAME_LEN
@@ -199,10 +230,10 @@ CAPABILITIES(/obj/machinery/petrification)
 	/// "material", "identifier" or "adjective".
 	var/option
 
-/obj/machinery/petrification/proc/statue_text_entered(datum/act/request/A)
-	if(!A.answer)
+/obj/machinery/petrification/proc/statue_text_entered(datum/act/op/A)
+	var/datum/prompt/text/statue_option/ask = A.step_answer("text")
+	if(!ask)
 		return
-	var/datum/prompt/text/statue_option/ask = A.answer
 	var/option = ask.option
 	var/input = sanitizeSafe(ask.value, 25)
 	if (length(input) <= 0)
@@ -280,7 +311,13 @@ CAPABILITIES(/datum/prompt/choice/petrify_consent)
 /obj/machinery/petrification/proc/ui_act_set_option(datum/act/op/A, option)
 	var/mob/user = A.actor
 	if (option)
-		set_input(option, user)
+		switch(option)
+			if("tint")
+				tint_chosen(A)
+			if("material", "identifier", "adjective")
+				statue_text_entered(A)
+			else
+				set_input(option, user)
 		SStgui.update_uis(src)
 	return TRUE
 

@@ -244,7 +244,7 @@ SYSTEM_DEF(machines)
 	while(pending_dirty_gas_index <= length(observations))
 		var/record = pending_dirty_gas_index
 		pending_dirty_gas_index += GAS_DEPENDENCY_OBSERVATION_STRIDE
-		var/datum/native_watch/gas/W = om_native_watch_of(observations[record])
+		var/datum/native_watch/gas/W = kernel_native_native_watch_of(observations[record])
 		if(!W)
 			gas_dead_last++
 			continue

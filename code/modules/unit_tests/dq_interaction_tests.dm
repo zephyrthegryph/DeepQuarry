@@ -468,14 +468,31 @@
 /datum/unit_test/dq_interaction_ship_emote_beyond
 
 /datum/unit_test/dq_interaction_ship_emote_beyond/Run()
+	set_global(nameof(GLOB.test_prompts), list())
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/obj/machinery/computer/ship/navigation/helm = allocate(/obj/machinery/computer/ship/navigation, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	TEST_ASSERT(findtext(dq_resolution_text(interactions_for(H, helm, null)), "ship_emote_beyond"), "Emote Beyond is offered within sight of the helm")
+	H.enable_godmode()
+	var/list/emote_row
+	for(var/list/row as anything in op_menu(H, helm, null))
+		if(row["key"] == "ship_emote_beyond")
+			emote_row = row
+	TEST_ASSERT(emote_row, "the real native menu offers Emote Beyond within sight of the helm")
+	TEST_ASSERT(emote_row["enabled"], "the in-view conscious actor may use the actual menu operation")
+	var/datum/op_result/asked = test_menu(H, helm, "ship_emote_beyond")
+	TEST_ASSERT_EQUAL(asked?.key, "ship_emote_beyond", "actual menu dispatch reaches the native emote operation")
+	TEST_ASSERT(SSrequests.open_for(H), "the real actor receives the emote message question")
+	test_answer(H, null, outcome = REQ_CANCELLED)
+	TEST_ASSERT_EQUAL(asked?.outcome, ACT_REFUSED, "canceling ends the original native operation without an emote")
 	var/turf/far = locate(T.x + 8, T.y, T.z)
-	if(far)
-		H.forceMove(far)
-		TEST_ASSERT(findtext(dq_resolution_text(interactions_for(H, helm, null)), "ship_emote_beyond:too far away"), "past seven tiles Emote Beyond is blocked as too far away")
+	TEST_ASSERT(far, "the test map supplies a real position beyond the seven-tile view")
+	H.forceMove(far)
+	var/datum/op_result/denied = test_menu(H, helm, "ship_emote_beyond")
+	TEST_ASSERT_EQUAL(denied?.outcome, ACT_REFUSED, "past seven tiles the actual native menu operation refuses")
+	TEST_ASSERT_EQUAL(reason_text(denied?.reason), "too far away", "the original view refusal remains explicit")
+	TEST_ASSERT_NULL(SSrequests.open_for(H), "the far actor is never asked for an emote")
+	test_driver_end()
 
 /// i6b: a robot's crowbar and welder answer per stance outside combat mode, and strike in it.
 /datum/unit_test/dq_interaction_robot_tool_stances

@@ -66,7 +66,7 @@ CAPABILITIES(/obj/machinery/transportpod)
 
 /obj/machinery/transportpod/proc/arrive_unload()
 	occupant_eject(src)
-	after(src, 0.2 SECONDS, TYPE_PROC_REF(/datum, om_qdel_self))
+	after(src, 0.2 SECONDS, GLOBAL_PROC_REF(spent), with = list(src))
 
 /// Someone walked into the pod: they climb in (aint no sleepy people getting in here).
 /obj/machinery/transportpod/proc/walked_into(datum/act/A)

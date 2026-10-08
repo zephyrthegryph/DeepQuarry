@@ -1207,6 +1207,14 @@
 #include "interim_camera_doppler_menu_parity.dm"
 #include "dq_round2_menu_refusal_restore_tests.dm"
 
+#include "dq_round3_living_action_status_tests.dm"
+#include "dq_round3_frame_construction_tests.dm"
+#include "dq_round3_requests_root.dm"
+#include "dq_round3_requests_a.dm"
+#include "dq_round3_requests_b.dm"
+#include "dq_round3_requests_c.dm"
+#include "dq_round3_requests_d.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

@@ -67,6 +67,8 @@
 /datum/unit_test/dq_ai_pack_formation_and_hysteresis
 
 /datum/unit_test/dq_ai_pack_formation_and_hysteresis/Run()
+	set_global(nameof(GLOB.ai_pack_merges), GLOB.ai_pack_merges)
+	set_global(nameof(GLOB.ai_pack_splits), GLOB.ai_pack_splits)
 	var/mob/living/simple_mob/A = pack_mob(0)
 	var/mob/living/simple_mob/B = pack_mob(1)
 	TEST_ASSERT_EQUAL(B.ai_brain.pack, A.ai_brain.pack, "a mob within the join radius of a leader did not join its pack")

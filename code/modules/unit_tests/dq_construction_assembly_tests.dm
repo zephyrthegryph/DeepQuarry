@@ -117,8 +117,8 @@
 	TEST_ASSERT_EQUAL(trailer.build_stage, 0, "starts at stage 0")
 
 	var/obj/item/vehicle_assembly/quadbike/spare = allocate(/obj/item/vehicle_assembly/quadbike, T)
-	var/datum/interaction/construction/frame = dq_edge(trailer, "0>1")
-	TEST_ASSERT(dq_walk(H, trailer, frame, spare), "framing from a spare quadbike succeeds")
+	var/datum/interaction/construction/framing_edge = dq_edge(trailer, "0>1")
+	TEST_ASSERT(dq_walk(H, trailer, framing_edge, spare), "framing from a spare quadbike succeeds")
 	TEST_ASSERT_EQUAL(trailer.build_stage, 1, "stage 0 -> 1")
 	TEST_ASSERT(QDELETED(spare), "the spare quadbike frame is consumed")
 
@@ -143,8 +143,8 @@
 	var/obj/item/vehicle_assembly/quadtrailer/trailer = allocate(/obj/item/vehicle_assembly/quadtrailer, T)
 	var/obj/item/vehicle_assembly/quadbike/advanced = allocate(/obj/item/vehicle_assembly/quadbike, T)
 	advanced.build_stage = 3
-	var/datum/interaction/construction/frame = dq_edge(trailer, "0>1")
-	TEST_ASSERT(!dq_walk(H, trailer, frame, advanced), "an advanced quadbike is rejected")
+	var/datum/interaction/construction/framing_edge = dq_edge(trailer, "0>1")
+	TEST_ASSERT(!dq_walk(H, trailer, framing_edge, advanced), "an advanced quadbike is rejected")
 	TEST_ASSERT_EQUAL(trailer.build_stage, 0, "the trailer stays at stage 0")
 	TEST_ASSERT(!QDELETED(advanced), "the advanced quadbike is not consumed")
 

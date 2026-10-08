@@ -265,19 +265,15 @@ TRACKED(/obj/machinery/magnetic_controller, path_stopped)
 			speed --
 			if(speed <= 0)
 				speed = 1
-		if("setpath")
-			open_request(src, /datum/prompt/text, PROC_REF(magnet_path_entered), answerer = user, question = "Please define a new path!", default = path, max_len = MAX_MESSAGE_LEN, ask_flags = ASK_CAPABLE, timeout = 0)
 
 		if("togglemoving")
 			set_path_moving(!path_moving)
 
 	updateUsrDialog(user)
 
-/obj/machinery/magnetic_controller/proc/magnet_path_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/newpath = A.answer.value
+/obj/machinery/magnetic_controller/proc/magnet_path_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/newpath = A.step_value("path")
 	updateUsrDialog(user)
 	if(newpath && newpath != "")
 		set_path_moving(FALSE) // stop moving
@@ -346,3 +342,11 @@ TRACKED(/obj/machinery/magnetic_controller, path_stopped)
 /// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/magnetic_controller/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
+
+MSG_DEF_SELF(magnet/path_unavailable, "The magnetic controller is not working.")
+
+/obj/machinery/magnetic_controller/proc/path_prompt_ready(datum/act/op/A)
+	return A.actor && operable()
+
+/obj/machinery/magnetic_controller/proc/path_prompt_default(datum/act/op/A)
+	return path

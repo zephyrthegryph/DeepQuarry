@@ -42,7 +42,8 @@
 
 /obj/machinery/computer/telecomms/traffic/proc/ui_act_set_network(datum/act/op/A)
 	var/mob/user = A.actor
-	traffic_set_network(user)
+	traffic_access(user)
+	network_entered(A)
 	SStgui.update_uis(src)
 	return TRUE
 

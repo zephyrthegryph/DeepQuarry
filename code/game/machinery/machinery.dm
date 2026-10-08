@@ -631,6 +631,7 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	else
 		A.state = FRAME_WIRED
 
+	A.seed_native_frame_graph()
 	A.set_dir(dir)
 	A.pixel_x = pixel_x
 	A.pixel_y = pixel_y
@@ -681,36 +682,6 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	var/flipped = set_broken_condition(FALSE) // raises CHANGE_MACHINE_BROKEN
 	..()
 	return flipped ? TRUE : FALSE
-
-// ---------------------------------------------------------------- configuration prompts (om_ask)
-
-/// Asks for a new radio frequency; frequency_entered() applies it through the machine's set_frequency().
-/obj/machinery/proc/ask_frequency(mob/user, current)
-	open_request(src, /datum/prompt/number, PROC_REF(frequency_entered), answerer = user, title = "[src] frequency", question = "[src] has a frequency of [current]. What would you like it to be?", default = current, max_value = RADIO_HIGH_FREQ, min_value = RADIO_LOW_FREQ, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-
-/obj/machinery/proc/frequency_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/new_frequency = A.answer.value
-	if(!new_frequency || !hascall(src, "set_frequency"))
-		return
-	call(src, "set_frequency")(sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
-
-/// Asks for a new value of a text var (a tag, a command); an empty answer keeps the old one.
-/obj/machinery/proc/ask_text_var(mob/user, var_name, message, title, max_length = MAX_NAME_LEN)
-	open_request(src, /datum/prompt/text/machine_var, PROC_REF(text_var_entered), answerer = user, title = title, question = message, default = vars[var_name], max_len = max_length, name_text = (max_length <= MAX_NAME_LEN), var_name = var_name, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-
-/// A question about one text var of a machine: the var's name is kept on it.
-/datum/prompt/text/machine_var
-	/// The machine var the answer is written to.
-	var/var_name
-
-/obj/machinery/proc/text_var_entered(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/datum/prompt/text/machine_var/R = A.request
-	vars[R.var_name] = A.answer.value // ALLOW(api): the asked var is named by the question, so the write is by name; ask_text_var() callers pass their own var
-
 
 /// The maintenance panel is open. Written only by the panel's ops (set_panel_open() from each machine's screwdriver op).
 /obj/machinery/var/panel_open = FALSE // ALLOW(base_vars): the machine maintenance panel's tracked state, read by the panel ops and the maintenance requirements
