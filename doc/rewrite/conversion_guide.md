@@ -394,6 +394,20 @@ A thing that is busy but is not an actor is `hold_busy()` / `work_busy()` / `rel
 an accessor with `READS_AS`. A value that is effectively fixed while a click is being decided (where an item lies, a player's key, the config, what stands on a
 tile) is wrapped in `read_once(x)`. Do not move a read into a global proc with a blanket `READS_FROM()`, and do not rename a var to get past the lint.
 
+**Two entry shapes that blocked about two hundred sites.**
+
+* *A verb, an ability or a prompt answer starts the work* (`*_chosen`, `*_agreed(datum/act/request/A)`, a `/mob/living/proc/verb` that asks and then waits). The actor's own
+  op is a `menu(button =, bind =)` binding (origin `ORIGIN_VERB` for the Abilities entry and the action button, `ORIGIN_HOTKEY` for a keybind), on the mob's `CAPABILITIES`
+  (or a capability it is granted, `grant(E, capability, source)`). The question is an `asks(/datum/prompt/choice, fields = list(...), ends_on_no = TRUE)` step of the same
+  op, the work is the `wait()` after it, the effect is the `then()` reading `A.answer` and `A.captured(nameof(v))`:
+  `op("shapeshift", menu(button = "Shapeshift"), asks(/datum/prompt/choice/form), begins(MSG(x)), wait(3 SECONDS), then(PROC_REF(changed)))`. The old `open_request(..,
+  PROC_REF(x_chosen))` and the `x_chosen` handler go; the verb stub is deleted. The handler that was reached by a prompt for another reason (an admin window) keeps its
+  own op and calls `perform_op(actor, holder, "key", null, ORIGIN_VERB, AUTH_PHYSICAL)`.
+* *A held item's `attack()` / `afterattack()` / `*_act()` override does the timed work on another thing.* The timed part is an op of the item's `CAPABILITIES` with an
+  `at_target(T)` binding (the item used on a target of type T; `answers(INTENT_USE, ...)` for the intent), or an op of the target's `CAPABILITIES` with `item(T)` / `tool(Q)`
+  when the target is the one type that cares. The override keeps only what is instant, or is deleted; a refusal the override ended the click with is a `needs(req(.., silent =
+  TRUE))` or a blocked op (see above). Prefer the item side when the item acts on many targets (a lick, a scanner), the target side when many items act on one target (a door).
+
 **Recipe, per file.** (1) Read the type's `CAPABILITIES`, every proc named in it, and every caller of the legacy proc. (2) Write the pin first if `dq_timed_pin`
 has no assertion for the shape: drive `test_click(user, target, held)`, `test_time()`, read `test_chat_of(user)`; run it on the legacy form. (3) Convert; delete the
 old proc and the done proc it names; keep behaviour. (4) `bash tools/dq_focused_test.sh 'dq_timed_pin/*'` (distinct run dir per agent), then
