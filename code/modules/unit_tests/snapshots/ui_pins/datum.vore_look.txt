@@ -1,0 +1,150 @@
+belly tab | abilities: null
+belly tab | active_tab: 0
+belly tab | active_vore_tab: 0
+belly tab | general_pref_data: null
+belly tab | host_mobtype: {"is_cyborg":0,"is_vore_simple_mob":0}
+belly tab | icon_overflow: 0
+belly tab | inside: []
+belly tab | intent_data: null
+belly tab | our_bellies: [{"name":"Stomach","display_name":"","ref":"[ref]","selected":1,"digest_mode":"Hold","contents":0,"prevent_saving":0}]
+belly tab | persist_edit_mode: 0
+belly tab | prefs: null
+belly tab | presets: null
+belly tab | prey_abilities: null
+belly tab | selected: {"belly_name":"Stomach","display_name":"","belly_mode_data":{"mode":"Hold","item_mode":"Digest (Food Only)","addons":[{"label":"Numbing","selection":0},{"label":"Stripping","selection":0},{"label":"Leave Remains","selection":0},{"label":"Muffles","selection":0},{"label":"Affect Worn Items","selection":0},{"label":"Jams Sensors","selection":0},{"label":"Complete Absorb","selection":0},{"label":"Spare Prosthetics","selection":0},{"label":"Slow Body Digestion","selection":0},{"label":"Muffle Items","selection":0},{"label":"TURBO MODE","selection":0},{"label":"Absorbed Prey Can Devour","selection":0},{"label":"Makes Prey Wet","selection":0}],"name_length":40,"name_min":2,"mode_options":["Hold","Digest","Absorb","Drain","Selective","Unabsorb","Heal","Shrink","Grow","Size Steal","Encase In Egg"],"item_mode_options":["Hold","Digest (Food Only)","Digest","Digest (Dispersed Damage)"]},"content_length":0}
+belly tab | show_pictures: 1
+belly tab | soulcatcher: null
+belly tab | unsaved_changes: 0
+pictures off | abilities: null
+pictures off | active_tab: 0
+pictures off | active_vore_tab: 0
+pictures off | general_pref_data: null
+pictures off | host_mobtype: {"is_cyborg":0,"is_vore_simple_mob":0}
+pictures off | icon_overflow: 0
+pictures off | inside: []
+pictures off | intent_data: null
+pictures off | our_bellies: [{"name":"Stomach","display_name":"","ref":"[ref]","selected":1,"digest_mode":"Hold","contents":0,"prevent_saving":0}]
+pictures off | persist_edit_mode: 0
+pictures off | prefs: null
+pictures off | presets: null
+pictures off | prey_abilities: null
+pictures off | selected: {"belly_name":"Stomach","display_name":"","belly_mode_data":{"mode":"Hold","item_mode":"Digest (Food Only)","addons":[{"label":"Numbing","selection":0},{"label":"Stripping","selection":0},{"label":"Leave Remains","selection":0},{"label":"Muffles","selection":0},{"label":"Affect Worn Items","selection":0},{"label":"Jams Sensors","selection":0},{"label":"Complete Absorb","selection":0},{"label":"Spare Prosthetics","selection":0},{"label":"Slow Body Digestion","selection":0},{"label":"Muffle Items","selection":0},{"label":"TURBO MODE","selection":0},{"label":"Absorbed Prey Can Devour","selection":0},{"label":"Makes Prey Wet","selection":0}],"name_length":40,"name_min":2,"mode_options":["Hold","Digest","Absorb","Drain","Selective","Unabsorb","Heal","Shrink","Grow","Size Steal","Encase In Egg"],"item_mode_options":["Hold","Digest (Food Only)","Digest","Digest (Dispersed Damage)"]},"content_length":0}
+pictures off | show_pictures: 0
+pictures off | soulcatcher: null
+pictures off | unsaved_changes: 0
+belly renamed | abilities: null
+belly renamed | active_tab: 0
+belly renamed | active_vore_tab: 0
+belly renamed | general_pref_data: null
+belly renamed | host_mobtype: {"is_cyborg":0,"is_vore_simple_mob":0}
+belly renamed | icon_overflow: 0
+belly renamed | inside: []
+belly renamed | intent_data: null
+belly renamed | our_bellies: [{"name":"Gullet","display_name":"","ref":"[ref]","selected":1,"digest_mode":"Hold","contents":0,"prevent_saving":0}]
+belly renamed | persist_edit_mode: 0
+belly renamed | prefs: null
+belly renamed | presets: null
+belly renamed | prey_abilities: null
+belly renamed | selected: {"belly_name":"Gullet","display_name":"","belly_mode_data":{"mode":"Hold","item_mode":"Digest (Food Only)","addons":[{"label":"Numbing","selection":0},{"label":"Stripping","selection":0},{"label":"Leave Remains","selection":0},{"label":"Muffles","selection":0},{"label":"Affect Worn Items","selection":0},{"label":"Jams Sensors","selection":0},{"label":"Complete Absorb","selection":0},{"label":"Spare Prosthetics","selection":0},{"label":"Slow Body Digestion","selection":0},{"label":"Muffle Items","selection":0},{"label":"TURBO MODE","selection":0},{"label":"Absorbed Prey Can Devour","selection":0},{"label":"Makes Prey Wet","selection":0}],"name_length":40,"name_min":2,"mode_options":["Hold","Digest","Absorb","Drain","Selective","Unabsorb","Heal","Shrink","Grow","Size Steal","Encase In Egg"],"item_mode_options":["Hold","Digest (Food Only)","Digest","Digest (Dispersed Damage)"]},"content_length":0}
+belly renamed | show_pictures: 0
+belly renamed | soulcatcher: null
+belly renamed | unsaved_changes: 1
+belly sub tab | abilities: null
+belly sub tab | active_tab: 0
+belly sub tab | active_vore_tab: 2
+belly sub tab | general_pref_data: null
+belly sub tab | host_mobtype: {"is_cyborg":0,"is_vore_simple_mob":0}
+belly sub tab | icon_overflow: 0
+belly sub tab | inside: []
+belly sub tab | intent_data: null
+belly sub tab | our_bellies: [{"name":"Gullet","display_name":"","ref":"[ref]","selected":1,"digest_mode":"Hold","contents":0,"prevent_saving":0}]
+belly sub tab | persist_edit_mode: 0
+belly sub tab | prefs: null
+belly sub tab | presets: null
+belly sub tab | prey_abilities: null
+belly sub tab | selected: {"belly_name":"Gullet","display_name":"","belly_option_data":{"can_taste":0,"is_feedable":1,"nutrition_percent":100,"digest_brute":0.5,"digest_burn":0.5,"digest_oxy":0,"digest_tox":0,"digest_clone":0,"digest_max":36,"digest_free":35,"bellytemperature":293.15,"temperature_damage":0,"bulge_size":0.25,"shrink_grow_size":1,"contaminates":1,"egg_type":"Egg","egg_types":["Unathi","Tajara","Akula","Skrell","Sergal","Nevrean","Human","Slime","Egg","Xenochimera","Xenomorph","Chocolate","Boney","Slime Glob","Chicken","Synthetic","Bluespace Floppy","Bluespace Compressed File","Bluespace CD","Escape Pod","Cooking Error","Web Cocoon","Honeycomb","Bug Cocoon","Rock","Yellow","Blue","Green","Orange","Purple","Red","Rainbow","Spotted Pink"],"egg_name":null,"egg_name_length":40,"egg_size":0,"recycling":0,"storing_nutrition":0,"selective_preference":"Digest","save_digest_mode":1,"eating_privacy_local":"default","vorespawn_blacklist":0,"vorespawn_whitelist":[],"vorespawn_absorbed":0,"private_struggle":0,"absorbedrename_enabled":0,"absorbedrename_name":"%pred's %belly","absorbedrename_name_max":40,"absorbedrename_name_min":2,"drainmode":"Normal","drainmode_options":["Normal","Sleep","False Sleep","Weight Drain"],"contaminate_flavor":"Generic","contaminate_options":{"Generic":null,"Acrid":null,"Dirty":null,"Musky":null,"Smelly":null,"Slimy":null,"Wet":null},"contaminate_color":"green","contaminate_colors":["green","white","black","grey","yellow","red","blue","orange","purple","lime","brown","darkred","cyan","beige","pink"]},"content_length":0}
+belly sub tab | show_pictures: 0
+belly sub tab | soulcatcher: null
+belly sub tab | unsaved_changes: 1
+inside tab | abilities: null
+inside tab | active_tab: 1
+inside tab | general_pref_data: null
+inside tab | host_mobtype: null
+inside tab | icon_overflow: 0
+inside tab | inside: []
+inside tab | intent_data: null
+inside tab | our_bellies: null
+inside tab | persist_edit_mode: 0
+inside tab | prefs: null
+inside tab | presets: null
+inside tab | prey_abilities: null
+inside tab | selected: null
+inside tab | show_pictures: 0
+inside tab | soulcatcher: null
+inside tab | unsaved_changes: 1
+soulcatcher tab | abilities: {"nutrition":344,"size_change":{"current_size":1,"minimum_size":0.25,"maximum_size":2,"resize_cost":125}}
+soulcatcher tab | active_tab: 2
+soulcatcher tab | general_pref_data: null
+soulcatcher tab | host_mobtype: null
+soulcatcher tab | icon_overflow: null
+soulcatcher tab | inside: []
+soulcatcher tab | intent_data: null
+soulcatcher tab | our_bellies: [{"name":"Gullet","display_name":"","ref":"[ref]"}]
+soulcatcher tab | persist_edit_mode: 0
+soulcatcher tab | prefs: null
+soulcatcher tab | presets: null
+soulcatcher tab | prey_abilities: null
+soulcatcher tab | selected: null
+soulcatcher tab | show_pictures: null
+soulcatcher tab | soulcatcher: null
+soulcatcher tab | unsaved_changes: 1
+general tab | abilities: null
+general tab | active_tab: 3
+general tab | general_pref_data: {"active_belly":"Gullet","belly_rub_target":null,"aestethic_messages":{"possible_messages":["Set Taste","Set Smell","Set Nutrition Examine","Set Weight Examine"],"aest_subtab":"Set Taste","max_length":400,"active_message":null,"set_action":"setflavor","tooltip":"What your character tastes like. This text will be printed to the pred after 'X tastes of...' so just put something like 'strawberries and cream'"},"vore_sprite_color":{"stomach":"#000","taur belly":"#000"},"vore_sprite_multiply":{"stomach":0,"taur belly":0},"vore_icon_options":["stomach","taur belly"],"spont_rear":null,"spont_front":null,"spont_left":null,"spont_right":null}
+general tab | host_mobtype: null
+general tab | icon_overflow: null
+general tab | inside: []
+general tab | intent_data: null
+general tab | our_bellies: [{"name":"Gullet","display_name":"","ref":"[ref]"}]
+general tab | persist_edit_mode: 0
+general tab | prefs: null
+general tab | presets: null
+general tab | prey_abilities: null
+general tab | selected: null
+general tab | show_pictures: null
+general tab | soulcatcher: null
+general tab | unsaved_changes: 1
+preference tab | abilities: null
+preference tab | active_tab: 4
+preference tab | general_pref_data: null
+preference tab | host_mobtype: null
+preference tab | icon_overflow: 0
+preference tab | inside: []
+preference tab | intent_data: null
+preference tab | our_bellies: null
+preference tab | persist_edit_mode: 0
+preference tab | prefs: {"digestable":1,"devourable":1,"resizable":1,"feeding":1,"absorbable":1,"digest_leave_remains":0,"allowmobvore":1,"allowtemp":1,"permit_healbelly":1,"show_vore_fx":1,"can_be_drop_prey":0,"can_be_drop_pred":0,"can_be_afk_prey":1,"can_be_afk_pred":1,"latejoin_vore":0,"latejoin_prey":0,"no_spawnpred_warning":0,"no_spawnprey_warning":0,"no_spawnpred_warning_time":15,"no_spawnprey_warning_time":15,"no_spawnpred_warning_save":0,"no_spawnprey_warning_save":0,"allow_spontaneous_tf":0,"step_mechanics_active":1,"pickup_mechanics_active":1,"strip_mechanics_active":1,"contaminate_worn_items":1,"noisy":0,"liq_rec":0,"liq_giv":0,"liq_apply":1,"autotransferable":1,"noisy_full":0,"allow_mind_transfer":0,"drop_vore":1,"slip_vore":1,"stumble_vore":1,"throw_vore":1,"phase_vore":1,"food_vore":1,"spont_belly_rear":null,"spont_belly_left":null,"spont_belly_front":null,"spont_belly_right":null,"consume_liquid_belly":0,"digest_pain":1,"eating_privacy_global":0,"vore_death_privacy":0,"allow_mimicry":1,"soulcatcher_allow_capture":0,"soulcatcher_allow_transfer":0,"soulcatcher_allow_takeover":0,"soulcatcher_allow_deletion":0,"max_voreoverlay_alpha":255,"dropdown_preferences":{"strip_active":0,"selective_active":"Default"}}
+preference tab | presets: null
+preference tab | prey_abilities: null
+preference tab | selected: null
+preference tab | show_pictures: 0
+preference tab | soulcatcher: null
+preference tab | unsaved_changes: 1
+back to belly tab | abilities: null
+back to belly tab | active_tab: 0
+back to belly tab | active_vore_tab: 2
+back to belly tab | general_pref_data: null
+back to belly tab | host_mobtype: {"is_cyborg":0,"is_vore_simple_mob":0}
+back to belly tab | icon_overflow: 0
+back to belly tab | inside: []
+back to belly tab | intent_data: null
+back to belly tab | our_bellies: [{"name":"Gullet","display_name":"","ref":"[ref]","selected":1,"digest_mode":"Hold","contents":0,"prevent_saving":0}]
+back to belly tab | persist_edit_mode: 0
+back to belly tab | prefs: null
+back to belly tab | presets: null
+back to belly tab | prey_abilities: null
+back to belly tab | selected: {"belly_name":"Gullet","display_name":"","belly_option_data":{"can_taste":0,"is_feedable":1,"nutrition_percent":100,"digest_brute":0.5,"digest_burn":0.5,"digest_oxy":0,"digest_tox":0,"digest_clone":0,"digest_max":36,"digest_free":35,"bellytemperature":293.15,"temperature_damage":0,"bulge_size":0.25,"shrink_grow_size":1,"contaminates":1,"egg_type":"Egg","egg_types":["Unathi","Tajara","Akula","Skrell","Sergal","Nevrean","Human","Slime","Egg","Xenochimera","Xenomorph","Chocolate","Boney","Slime Glob","Chicken","Synthetic","Bluespace Floppy","Bluespace Compressed File","Bluespace CD","Escape Pod","Cooking Error","Web Cocoon","Honeycomb","Bug Cocoon","Rock","Yellow","Blue","Green","Orange","Purple","Red","Rainbow","Spotted Pink"],"egg_name":null,"egg_name_length":40,"egg_size":0,"recycling":0,"storing_nutrition":0,"selective_preference":"Digest","save_digest_mode":1,"eating_privacy_local":"default","vorespawn_blacklist":0,"vorespawn_whitelist":[],"vorespawn_absorbed":0,"private_struggle":0,"absorbedrename_enabled":0,"absorbedrename_name":"%pred's %belly","absorbedrename_name_max":40,"absorbedrename_name_min":2,"drainmode":"Normal","drainmode_options":["Normal","Sleep","False Sleep","Weight Drain"],"contaminate_flavor":"Generic","contaminate_options":{"Generic":null,"Acrid":null,"Dirty":null,"Musky":null,"Smelly":null,"Slimy":null,"Wet":null},"contaminate_color":"green","contaminate_colors":["green","white","black","grey","yellow","red","blue","orange","purple","lime","brown","darkred","cyan","beige","pink"]},"content_length":0}
+back to belly tab | show_pictures: 0
+back to belly tab | soulcatcher: null
+back to belly tab | unsaved_changes: 1
+
