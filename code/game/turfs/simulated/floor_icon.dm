@@ -14,7 +14,7 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 
 /// Whether the tile shows the damaged-plating sprite (bare plating that is broken or burnt).
 /turf/simulated/floor/proc/shows_damaged_plating()
-	return is_plating() && (broken_look >= 0 || burnt_look >= 0)
+	return is_plating() && (!isnull(broken) || !isnull(burnt))
 
 /// The icon_state the floor draws, as a function of the state it draws from (the neighbours compare against it for the edges that spill).
 /turf/simulated/floor/edge_look_state()
@@ -76,13 +76,13 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 
 /// The broken and burnt overlays of a flooring that can break or burn.
 /turf/simulated/floor/proc/look_flooring_damage(datum/look/look)
-	if(broken_look >= 0 && (flooring.flags & TURF_CAN_BREAK))
+	if(!isnull(broken) && (flooring.flags & TURF_CAN_BREAK))
 		if(istype(src, /turf/simulated/floor/wood))
-			look.overlay(flooring.get_flooring_overlay("[flooring.icon_base]-broken-[broken_look]","[flooring.icon_base]-broken[broken_look]"))
+			look.overlay(flooring.get_flooring_overlay("[flooring.icon_base]-broken-[broken]","[flooring.icon_base]-broken[broken]"))
 		else
-			look.overlay(flooring.get_flooring_overlay("[flooring.icon_base]-broken-[broken_look]","broken[broken_look]"))
-	if(burnt_look >= 0 && (flooring.flags & TURF_CAN_BURN))
-		look.overlay(flooring.get_flooring_overlay("[flooring.icon_base]-burned-[burnt_look]","burned[burnt_look]"))
+			look.overlay(flooring.get_flooring_overlay("[flooring.icon_base]-broken-[broken]","broken[broken]"))
+	if(!isnull(burnt) && (flooring.flags & TURF_CAN_BURN))
+		look.overlay(flooring.get_flooring_overlay("[flooring.icon_base]-burned-[burnt]","burned[burnt]"))
 
 /// The cardinal borders and inner corners of this tile's flooring (packed as the draw reads them), the edges that spill onto it, and whether the
 /// open space above shows through: written by the adjacency index when this tile or a neighbour changed (code/game/turfs/turf_edges.dm).

@@ -35,14 +35,18 @@
 /// global proc the holder as an argument instead of calling it on the holder.
 #define IS_GLOBAL_PROC_REF(P) (copytext("[P]", 1, 7) == "/proc/")
 
-#define TRACKED(T, V) ##T/proc/set_##V(value) { if(V == value) { return FALSE }; V = value; tracked_changed(src, #V); return TRUE };SETTER(T, V)
+/// TRUE when writing NEW over OLD changes nothing. DM reads null == 0, null == "" and null == FALSE as true, so a plain `==`
+/// never published a change between null and a falsy value; null is a different state from 0, "" and FALSE.
+#define TRACKED_UNCHANGED(OLD, NEW) (((OLD) == (NEW)) && (isnull(OLD) == isnull(NEW)))
+
+#define TRACKED(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; tracked_changed(src, #V); return TRUE };SETTER(T, V)
 
 /**
  * BRIDGE (removed with S4): TRACKED() that also raises the OM channel CHANNEL, for a var an OM stage `wake_on` or an
  * om_watch() still listens to by channel (the machine pipeline wakes on CHANGE_MACHINE_SETTINGS). Everything else
  * uses TRACKED(T, V). When the last channel consumer of V is gone, drop the third argument.
  */
-#define TRACKED_BRIDGED(T, V, CHANNEL) ##T/proc/set_##V(value) { if(V == value) { return FALSE }; V = value; changed(src, CHANNEL, #V); return TRUE };SETTER(T, V)
+#define TRACKED_BRIDGED(T, V, CHANNEL) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; changed(src, CHANNEL, #V); return TRUE };SETTER(T, V)
 
 /**
  * Registers a hand-written `T/proc/set_<V>(value)` as V's setter (a setter with side effects):

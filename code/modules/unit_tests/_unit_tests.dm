@@ -320,6 +320,7 @@
 #include "dq_map_load_job_tests.dm"
 #include "dq_turf_damage_tests.dm"
 #include "dq_turf_edges_tests.dm"
+#include "dq_tracked_null_tests.dm"
 #include "dq_integrity_pool_tests.dm"
 #include "dq_mech_body_tests.dm"
 #include "dq_ownership_tests.dm"

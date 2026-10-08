@@ -56,8 +56,8 @@ CAPABILITIES(/turf/simulated/floor)
 	on_change(nameof(plating_exposed), ANY, then(PROC_REF(edge_inputs_changed)))
 	on_change(nameof(scorch_state), ANY, then(PROC_REF(edge_inputs_changed)))
 	on_change(nameof(plating_damage_state), ANY, then(PROC_REF(edge_inputs_changed)))
-	on_change(nameof(broken_look), ANY, then(PROC_REF(edge_inputs_changed)))
-	on_change(nameof(burnt_look), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(broken), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(burnt), ANY, then(PROC_REF(edge_inputs_changed)))
 
 /// The tile breaks as its condition crosses the failure fraction.
 /turf/simulated/floor/on_update_integrity(old_value, new_value)

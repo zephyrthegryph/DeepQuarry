@@ -9,7 +9,7 @@
 /turf/simulated/floor/proc/break_tile()
 	if(!flooring || !(flooring.flags & TURF_CAN_BREAK) || !isnull(broken))
 		return
-	mark_damage(flooring.has_damage_range ? rand(0,flooring.has_damage_range) : 0, burnt)
+	set_broken(flooring.has_damage_range ? rand(0,flooring.has_damage_range) : 0)
 	set_plating_damage_state(rand(1, 4))
 
 // promoted from /turf/simulated/floor to /turf/simulated so LINDA's
@@ -21,5 +21,5 @@
 /turf/simulated/floor/burn_tile(exposed_temperature)
 	if(!flooring || !(flooring.flags & TURF_CAN_BURN) || !isnull(burnt))
 		return
-	mark_damage(broken, flooring.has_burn_range ? rand(0,flooring.has_burn_range) : 0)
+	set_burnt(flooring.has_burn_range ? rand(0,flooring.has_burn_range) : 0)
 	set_plating_damage_state(rand(1, 4))

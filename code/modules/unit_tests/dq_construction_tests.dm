@@ -279,7 +279,7 @@
 	TEST_ASSERT(locate_on(floor, /obj/item/stack/tile/carpet), "the carpet comes back as a tile")
 	H.drop_from_inventory(crowbar)
 
-	floor.mark_damage(TRUE, floor.burnt)
+	floor.set_broken(TRUE)
 	TEST_ASSERT_EQUAL(graph.state_of(floor), "damaged", "broken plating")
 	H.put_in_active_hand(welder)
 	floor.tool_interaction(H, welder)

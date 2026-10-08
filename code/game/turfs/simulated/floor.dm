@@ -4,7 +4,7 @@
 	icon = 'icons/turf/flooring/plating.dmi'
 	icon_state = "plating"
 
-	// Damage to flooring.
+	/// Damage to flooring: null when whole, else the variant of the sprite to show (which may be 0).
 	var/broken
 	var/burnt
 	/// TRUE once the flooring was torn off with no plating to show under it: the tile draws the bare deck (base_icon, base_icon_state).
@@ -39,19 +39,8 @@ TRACKED(/turf/simulated/floor, plating_damage_state)
 TRACKED(/turf/simulated/floor, plating_exposed)
 TRACKED(/turf/simulated/floor, scorch_state)
 
-/// What the look reads of the damage: -1 for whole, else the variant number. `broken` and `burnt` are null (whole) or a variant that may be 0, and DM reads
-/// null == 0 as true, so they cannot publish a change themselves; mark_damage() is their only writer and it moves these with them.
-/turf/simulated/floor/var/broken_look = -1
-/turf/simulated/floor/var/burnt_look = -1
-TRACKED(/turf/simulated/floor, broken_look)
-TRACKED(/turf/simulated/floor, burnt_look)
-
-/// Sets the damage of the tile: `new_broken` and `new_burnt` are null (whole) or the variant of the sprite to show.
-/turf/simulated/floor/proc/mark_damage(new_broken, new_burnt)
-	broken = new_broken
-	burnt = new_burnt
-	set_broken_look(isnull(new_broken) ? -1 : new_broken)
-	set_burnt_look(isnull(new_burnt) ? -1 : new_burnt)
+TRACKED(/turf/simulated/floor, broken)
+TRACKED(/turf/simulated/floor, burnt)
 
 /turf/simulated/floor/is_plating()
 	return (!flooring || flooring.is_plating)
@@ -121,7 +110,8 @@ TRACKED(/turf/simulated/floor, burnt_look)
 			set_plating_exposed(TRUE)
 
 	set_light(0)
-	mark_damage(null, null)
+	set_broken(null)
+	set_burnt(null)
 	set_flooring_override(null)
 	levelupdate()
 
