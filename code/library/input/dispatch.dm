@@ -20,3 +20,20 @@
 	log_admin(attempt)
 	log_href("TOPIC rights refused: [attempt]")
 	message_admins("[key_name_admin(actor)] tried href action '[key]' on [type] without sufficient rights.")
+
+/// The admin token of the link's clicker: their own holder's, or the world's (the token a server-side caller without a holder carries).
+/datum/op_topic_token_ok(mob/actor, token)
+	if(!istext(token) || !length(token))
+		return FALSE
+	var/datum/admins/holder = actor?.client?.holder
+	return token == (holder ? holder.href_token : GLOB.href_token)
+
+/datum/op_topic_refused(mob/actor, key, reason, list/href_list)
+	if(reason != /datum/msg/op/topic_token)
+		return
+	var/token = href_list?["admin_token"]
+	var/kind = token ? "a bad" : "no"
+	var/attempt = "[key_name(actor)] clicked href action '[key]' on [type] with [kind] authorization key"
+	log_admin(attempt)
+	log_href("TOPIC token refused: [attempt]")
+	message_admins("[key_name_admin(actor)] clicked an href with [kind] authorization key!")

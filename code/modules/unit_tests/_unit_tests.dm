@@ -593,6 +593,7 @@
 #include "dq_atmos_pipes_behaviour.dm"
 #include "dq_fwg3_modals.dm"
 #include "dq_fwg3_asks.dm"
+#include "dq_keeps_dead_cleanup_tests.dm"
 #include "dq_eg2_wait_tests.dm"
 #include "dq_prompt_interrupt_tests.dm"
 #include "dq_multi_pending_tests.dm"

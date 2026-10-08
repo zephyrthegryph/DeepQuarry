@@ -6,7 +6,7 @@
 //	TOPIC_ACTION(/datum/admins, "adminplayeropts", PROC_REF(topic_player_opts), TOPIC_REF("adminplayeropts", /mob), TOPIC_RIGHTS(R_ADMIN))
 //
 // The dispatcher finds the row by href key (a key "action=foo" matches href action=foo, and is
-// tried before a bare "action" row), checks the target's topic_allowed() gate, each
+// tried before a bare "action" row), checks the op's needs() (req_topic_token() and the like), each
 // TOPIC_RIGHTS, resolves each TOPIC_REF with `locate(ref) in <source>` plus an istype check,
 // converts TOPIC_NUM / TOPIC_TEXT, then calls the handler as
 //	proc(mob/user, list/args)

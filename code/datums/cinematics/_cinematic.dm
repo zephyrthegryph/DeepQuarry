@@ -88,7 +88,7 @@ CAPABILITIES(/datum/cinematic)
 	play_cinematic()
 
 	// Cleans up after it's done playing.
-	after(src, intro_time + cleanup_time, PROC_REF(clean_up_cinematic), with = list(ooc_toggled), keeps_dead = TRUE)
+	after(src, intro_time + cleanup_time, PROC_REF(clean_up_cinematic), with = list(ooc_toggled))
 
 /// Cleans up the cinematic after a set timer of it sticking on the end screen.
 /datum/cinematic/proc/clean_up_cinematic(was_ooc_toggled = FALSE)

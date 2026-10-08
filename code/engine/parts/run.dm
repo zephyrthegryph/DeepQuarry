@@ -709,6 +709,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		var/value = declared[field]
 		if(islist(value) && length(value) == 2 && value[1] == "computed")
 			value = op_call(A, value[2])
+		else if(islist(value) && length(value) == 2 && value[1] == "arg_of")
+			value = LAZYACCESS(A.args, value[2])
 		else if(istext(value) && A.holder && (value in A.holder.vars))
 			value = A.captured_values?[value]
 		out[field] = value

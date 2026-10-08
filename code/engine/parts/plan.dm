@@ -290,7 +290,7 @@
 	P.tags = P.tags || list()
 	if(P.ui_action || length(P.ui_args) || op_plan_has_binding(P, BIND_UI))
 		P.tags |= TAG_UI
-	if(op_plan_has_binding(P, BIND_TOPIC))
+	if(op_plan_has_plain_topic(P))
 		P.tags |= TAG_TOPIC
 	// levels 2 and 3: extends
 	var/list/group_hits = list()
@@ -328,6 +328,13 @@
 /proc/op_plan_has_binding(datum/op_plan/P, bind_kind)
 	for(var/datum/entry/part/bind/B as anything in P.bindings)
 		if(B.bind_kind == bind_kind)
+			return TRUE
+	return FALSE
+
+/// A plain Topic link (topic(), not topic_in()): a namespace brings its own gate, so extend(TAG_TOPIC, needs(...)) never reaches it.
+/proc/op_plan_has_plain_topic(datum/op_plan/P)
+	for(var/datum/entry/part/bind/B as anything in P.bindings)
+		if(B.bind_kind == BIND_TOPIC && isnull(B.args["namespace"]))
 			return TRUE
 	return FALSE
 

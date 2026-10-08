@@ -64,6 +64,7 @@
 	return TRUE
 
 CAPABILITIES(/datum/data/pda/app/messenger)
+	extend(TAG_TOPIC, needs(req_topic_ok()))
 	op("Toggle Messenger", ui_act(), then(PROC_REF(ui_act_toggle_messenger)))
 	op("Toggle Ringer", ui_act(), then(PROC_REF(ui_act_toggle_ringer)))
 	op("Back", ui_act(), then(PROC_REF(ui_act_back)))
@@ -145,8 +146,8 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 
 // Specifically here for the chat message.
 
-/datum/data/pda/app/messenger/topic_allowed(mob/user, list/href_list)
-	return pda()?.can_use(user)
+/datum/data/pda/app/messenger/op_topic_actor_ok(mob/actor)
+	return pda()?.can_use(actor)
 
 /datum/data/pda/app/messenger/proc/topic_message(datum/act/op/A, href_target)
 	var/mob/user = A.actor

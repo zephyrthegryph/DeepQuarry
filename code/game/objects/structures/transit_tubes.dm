@@ -118,7 +118,7 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 /obj/structure/transit_tube/station/proc/launch_pod()
 	for(var/obj/structure/transit_tube_pod/pod in turf_contents_of_type(loc, /obj/structure/transit_tube_pod))
 		if(!pod.moving && (pod.dir in directions()))
-			after(src, 0.5 SECONDS, PROC_REF(launch_close), with = list(pod), keeps_dead = TRUE)
+			after(src, 0.5 SECONDS, PROC_REF(launch_close), with = list(pod))
 			return
 
 /// Launching, step 1: close the station around the pod.

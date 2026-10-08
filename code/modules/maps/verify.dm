@@ -23,8 +23,6 @@ REGISTRY_MEMBERSHIP(/datum/map_report, REGISTRY_MAP_REPORTS)
 	return  // body provided by modular override
 
 
-/datum/map_report/topic_allowed(mob/user, list/href_list)
-	return user?.client?.holder?.CheckAdminHref(null, href_list, user)
 
 /datum/map_report/proc/topic_show(datum/act/op/A)
 	var/mob/user = A.actor

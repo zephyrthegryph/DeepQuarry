@@ -313,16 +313,6 @@
 	check_languages()
 	return TRUE
 
-/mob/living/proc/language_key_language(datum/act/op/A)
-	return A.args["set_lang_key"]
-
-/mob/living/proc/language_key_question(datum/act/op/A)
-	var/datum/language/L = A.args["set_lang_key"]
-	return "Input a new key for [L.name]"
-
-/mob/living/proc/language_key_default(datum/act/op/A)
-	return get_custom_prefix_by_lang(src, A.args["set_lang_key"])
-
 /// The key a language is spoken with: asked when the link is clicked, set here (the answerer is still checked to know the language, by the prompt).
 /mob/living/proc/topic_set_lang_key(datum/act/op/A, href_set_lang_key)
 	var/datum/language/L = href_set_lang_key
@@ -353,6 +343,9 @@ CAPABILITIES(/datum/prompt/text/language_key)
 	var/datum/language/captured_language = language
 	rel_clear(src, nameof(language))
 	rel_set(src, nameof(language), captured_language)
+	if(captured_language)
+		question = "Input a new key for [captured_language.name]"
+		default = get_custom_prefix_by_lang(A?.holder, captured_language)
 
 /datum/prompt/text/language_key/recheck_extra()
 	var/reason = ..()

@@ -99,8 +99,8 @@ Replacements that **exist** and only need caller conversion: `wait()`/`silent_wa
 | G2 | `code/engine/kernel/inbox.dm:97,159`, `lifeforms/input.dm:134` | `var/obj/item/held` in the engine. | Type it `/obj` or `/atom/movable`. |
 | G3 | tools/analyze | No layering lint covering `code/engine/**` → library/content. | Add one. |
 | G4 | Near-zero legacy forms with no ban: `DECLARE_VERB` (4), `EVENT_HANDLER` (1), `DECLARE_UI`/`UI_ACT` comment residue, `om_after` (~7–38) | Cheap wins. | Convert the last callers, then hard-ban (per AGENTS §3b). |
-| G5 | `final_api.html` §19 (still "0b, clean base (now)"); AGENTS §3a (`wait`, `asks`, `open_request`, `granted_verb` marked new); `completion_plan.md` (09-27, links a missing migration_plan.md) | Agents plan from wrong state. | Update §19 and the AGENTS table; archive completion_plan.md (done: doc/rewrite/archive/completion_plan.md). |
-| G6 | `om_retirement.md` §7 counts disagree with fresh greps (`OM_EMIT` 110 vs 13 files; `om_attach` 44 vs 12) | Unclear progress. | Recount with a script and record the command. |
+| G5 **DONE (rewrite/om-leftovers-2: §19 "Where master stands" table; AGENTS.md §3a is the machinery lane's to keep current)** | `final_api.html` §19 (was "0b, clean base (now)"); AGENTS §3a (`wait`, `asks`, `open_request`, `granted_verb` marked new); `completion_plan.md` (09-27, links a missing migration_plan.md) | Agents plan from wrong state. | Update §19 and the AGENTS table; archive completion_plan.md (done: doc/rewrite/archive/completion_plan.md). |
+| G6 **DONE (rewrite/om-leftovers-2: `tools/ci/legacy_form_counts.sh` is the recount; its output is the §19 census)** | `om_retirement.md` §7 counts disagree with fresh greps (`OM_EMIT` 110 vs 13 files; `om_attach` 44 vs 12) | Unclear progress. | Recount with a script and record the command. |
 | G7 | `rel_remove` doc comment ("disposed of by on_destroy") vs `rel_take` ("keeps it") | Misleading. | Fix wording. |
 
 ## Suggested order
@@ -139,10 +139,10 @@ What converting every `TOPIC_ACTION` row outside the machinery folder to an op s
 | ID | Where | Problem | Change |
 |---|---|---|---|
 | H1 **DONE (rewrite/gap-decisions: tracked mirrors for the guards already moved; `read_once(x)` is the read-once form, muted in `sem/reads`)** | `sem/reads` on `req()`, `when()` | A requirement may read only tracked state, relations and stats. The guards the old handlers ran before asking read plain vars of the holder (`client`, `teleop`, `languages`, a mecha's `state` and `cable`, a draft channel's name), so they ran after the answer instead (a mech's tank valve asks and then checks the bolts, "Give AI" on a player's mob warns in its first question and refuses after the last). | Track those vars, or give a requirement an "evaluated once when the question opens" read that does not subscribe. |
-| H2 | `op_topic_run()` | The holder's `topic_allowed(user, href_list)` still gates every link before the op runs, because a gate says why itself (to_chat) and a requirement may not. It should be `needs(req(...))` per type with the reason as a `MSG`; the admin token check (`CheckAdminHref`) needs a requirement that may consume the token once. | `req_topic_token()` and per-type `needs()`; then `topic_allowed()` goes. |
+| H2 **DONE (rewrite/om-leftovers-2: `req_topic_token()` and per-type `extend(TAG_TOPIC, needs(...))`; `topic_allowed()` and the dispatch gate are deleted and `topic_allowed` is a hard-banned name; the admin token is checked, not consumed; tests `dq_e2/topic_token_requirement`, `topic_ref_among_and_gate`. Leftover: `/obj/proc/topic_allowed(user)` survives as a wrapper only for the two callers in `code/game/machinery/syndicatebeacon.dm`, which are outside this lane; the lint exempts those two files by path and the wrapper goes with them. The obj gate still calls `CanUseTopic()`, whose machinery overrides print their own Access Denied)** | `op_topic_run()` | The holder's `topic_allowed(user, href_list)` still gates every link before the op runs, because a gate says why itself (to_chat) and a requirement may not. It should be `needs(req(...))` per type with the reason as a `MSG`; the admin token check (`CheckAdminHref`) needs a requirement that may consume the token once. | `req_topic_token()` and per-type `needs()`; then `topic_allowed()` goes. |
 | H3 | `CAPABILITIES(T)` is one block per type | The ops of a type go in its one block, so a link's op is declared apart from its handler, and a type whose block another worker owns (`/mob/living`, `/mob/living/carbon/human`, `/mob/living/silicon/robot`) cannot take its links: they are declared on `/mob`, guarded by the holder's type, with `TYPE_PROC_REF`. | Move them into the types' own blocks when `code/library/mob` and `code/modules/combat_ai` are free. |
 | H4 | `topic_ask()` and `rerun_ask` | The ban panel (`ban_topic_ask`), the player panel buttons, the shuttle time edit and the legacy player notes still ask by re-running the href. Their questions branch (temporary or permanent, how long, the reason, an IP ban, one question per banned job), so they want `asks(..., when = ...)` steps and a per-job loop, not a one-for-one conversion. | Convert the ban flows to asks steps; delete `topic_rerun_ask()` and the `rerun` of `/datum/prompt_rerun/topic`. |
-| H5 | `asks(fields = ...)` | A field cannot name an op arg: a prompt that is about the link's target (a language key, the sleevemate's victim, a communicator reply's recipient) gets it through `computed(PROC_REF(x))` reading `A.args["name"]`. | `fields = list("victim" = arg_of("target"))`, resolved and captured like a field arg. |
+| H5 **DONE (rewrite/om-leftovers-2: `arg_of("name", PROC_REF(shape))` in an `asks()` field; converted the language key, the sleevemate mindsteal victim and the communicator reply recipient; test `dq_e2/asks_field_reads_an_op_arg`. The machinery computers that read `A.args` in a `computed()` handler are the machinery lane's)** | `asks(fields = ...)` | A field cannot name an op arg: a prompt that is about the link's target (a language key, the sleevemate's victim, a communicator reply's recipient) gets it through `computed(PROC_REF(x))` reading `A.args["name"]`. | `fields = list("victim" = arg_of("target"))`, resolved and captured like a field arg. |
 | H6 | `/client` is not a datum | The client's own hrefs (private messages, the command bar, the stat browser) are ops of its `/datum/client_session`, and View Variables' actions on the admin's own client are ops of the admin holder whose handlers call the `/client` procs by the same name. | When the client procs are `/datum/admins` or session procs, drop the wrappers. |
 
 ## I. Found while integrating batch 5
@@ -150,8 +150,8 @@ What converting every `TOPIC_ACTION` row outside the machinery folder to an op s
 | ID | Where | Problem | Change |
 |---|---|---|---|
 | I1 **DONE (rewrite/gap-decisions: `slot_occupancy(slot)` with READS_AS(SLOT_OCCUPANCY_KEY), published by the ledger's enter/exit/reslot; a mech's tracked `passenger_count` backs `has_passengers`)** | requirements (`needs`, `req()`), `code/game/mecha/mecha.dm` passenger removal | A requirement may read only tracked state, relations and stats; there is no sanctioned read of containment or slot occupancy. The mech's "no passengers" guard cannot be a requirement, so it stays in the handler. | Track an occupancy count per slot (written by `move_into()` and the slot's release), and let requirements read it. |
-| I2 **FRAMEWORK DONE (every() validates phase = and lane =; periodic_dispatch.dm routes a type-level every() to them; consumers not converted)** | `every()` | `every()` takes no `lane =` or `phase =`, so an item cannot choose where in the tick it runs. | Add both to `every()`. |
-| I3 **FRAMEWORK DONE (a system every(members =) iterates with the cursor and STEP_YIELD in every.dm; plant vines, events and planets not converted)** | system `every(members =)` | Plant vines, events and planets walk their own lists by hand. | Let a system's `every()` take `members =` and iterate them with the cursor and `STEP_YIELD` handled by the framework. |
+| I2 **DONE (every() validates phase = and lane =; periodic_dispatch.dm routes a type-level every() to them; the one system that wanted a lane, planets, declares `lane = LANE_BACKGROUND`)** | `every()` | `every()` takes no `lane =` or `phase =`, so an item cannot choose where in the tick it runs. | Add both to `every()`. |
+| I3 **DONE (a system every(members =) iterates with the cursor and STEP_YIELD in every.dm; the row's three consumers turned out not to walk lists: plants have no periodic work, each event steps itself with `every(2 SECONDS, event_step, when = event_active)`, and planets drain two pending queues with STEP_YIELD, which is a queue and not a member set)** | system `every(members =)` | Was: plant vines, events and planets walk their own lists by hand. They do not (see the status): there is no consumer to convert, so `members =` waits for a system that sweeps a member set. | Let a system's `every()` take `members =` and iterate them with the cursor and `STEP_YIELD` handled by the framework. |
 | I4 **DONE (the looping-sound wake assertion in dq_om_wake_looping_sound_dormancy is in place and passes; looping sounds as a capability stays a content migration)** | tests weakened to get green | `dq_om_wake_looping_sound_dormancy` lost its looping-sound wake assertion, and `kernel_stage_adapter_graph` had its threshold loosened. | Restore both once looping sounds are a capability with `every()` and the stage graph is back at its measured size. |
 | I5 **DONE (rewrite/gas-flakes: test-only fix)** | `dq_gas_level_*` tests | Timing-dependent; flaky (`dq_gas_level_material_service_hears_heat`, `dq_gas_level_disposal_wakes_when_air_returns`). | Drive them with `test_time()` rather than world time, or wait on the gas watch's own notice. |
 
@@ -164,7 +164,7 @@ What converting every `TOPIC_ACTION` row outside the machinery folder to an op s
 | J3 (DONE for voidsuits, rewrite/gaps-j) | requirements reading the containment ledger | The screwdriver on a void, AutoLok or response suit is an op (`req_not_worn()`, one `asks()`). Ripley (`pilot_of()` with OCCUPANT_KEY) and the print card's self use (`req_actor_slot_empty()`) were already requirements. Left: the print card's `attack()` (a melee override with its own refusals) and `sample_releasable()` (`release_refusal()` of the donor's holder, an ALLOW(reads): custody, not slot occupancy). | None for `slot_occupancy()`; the two left need a custody read and a melee op. |
 | J4 (DONE, rewrite/gaps-j) | codemods | The codemods in `tools/dx/codemods/` wrote on any invocation (even `--help`) and ignored `--dirs` / `--files`. | Done: each script imports `_guard.py`: `--help` prints and exits, a run is a dry run unless `--apply`, and writes are limited to `--files` / `--dirs`. `selftest.py` passes `--apply`; its interact_declare fixtures were regenerated to the script's current output. |
 | J5 **DONE (rewrite/om-leftovers: observe(shadekin, mob_death) frees the target at once, the timer stays as the fallback; test dq_smite_shadekin_death_frees_target)** | smite release | The smite hold is released by a fixed 8 s safety net. It should react to the shadekin's death notice. | `on_notice` of the shadekin's death releases it; keep the timer as the fallback. |
-| J6 | `keeps_dead` opt-outs | About 200 `keeps_dead = TRUE` opt-outs exist (default is to drop a call whose datum argument was deleted, B1/C4). Most only needed the old behaviour. | Audit each: drop the opt-out where the handler never expects a null argument. |
+| J6 **PARTLY DONE (rewrite/om-leftovers-2: first 50 non-machinery sites audited, see "J6 audit" below; 214 sites in all, the machinery and power ones and the rest of the list are open)** | `keeps_dead` opt-outs | About 200 `keeps_dead = TRUE` opt-outs exist (default is to drop a call whose datum argument was deleted, B1/C4). Most only needed the old behaviour. | Audit each: drop the opt-out where the handler never expects a null argument. |
 | J7 | `/obj/item/rig` EMP | `electrocute_mob(null)` runs on EMP when the rig has no wearer. | Guard the call on a wearer. |
 | J8 | `chem_canister` refill text | The refill strings held a literal tab where `	he` was written ("You fill <tab>he ..."). Fixed in rewrite/integ-6. | DONE. |
 | J9 (DONE, rewrite/gaps-j) | tests | The pin's stardog left its ship in `GLOB.map_sectors` (`unregister_z_levels()` removed numbers from a text-keyed list); fixed, with `dq_gap/overmap_sector_unregisters_its_levels`. `i7_bulk` still fails, alone too, on a gravity generator part's break during its destroy (code/game/machinery). | Fix the gravity generator part (Codex's). |
@@ -274,3 +274,48 @@ step again (the field computation re-runs, so the question can name the next job
 Order of work once the repeat part exists: (1) the unban/edit pair, (2) the add-ban flow including the IP ban branch (`when =` on the IP step), (3) the per-job loop, (4) the player-panel
 buttons and shuttle time edit (single-question flows; they need only `asks()`), (5) delete `topic_rerun_ask()`, `ban_topic_ask()` and the `rerun` of `/datum/prompt_rerun/topic`, and ban the names.
 Tests: one per flow, driving `test_ui()` with `test_answer()` for each step including a cancel mid-flow (no ban written) and a "No" at the temporary step (permanent ban).
+
+
+### J6 audit: the first 50 `keeps_dead = TRUE` sites outside `code/game/machinery`, `code/modules/power` and the engine
+
+Verdicts come from reading each handler. REMOVED: the opt-out is gone (the handler only null-checks, takes no datum from `with`, or would runtime on null). KEPT: the handler tail is cleanup that must run with the argument gone. A behaviour test (`code/modules/unit_tests/dq_keeps_dead_cleanup_tests.dm`) exists for the three marked T; the other KEPT sites have no test yet. The audit read the handlers only; no site was run with its argument deleted except the T ones.
+
+| Site | Handler | Verdict | Why |
+|---|---|---|---|
+| ticker.dm:481 | `reboot_callback` | REMOVED | strings only |
+| bluespace_connection.dm:67 | `bluespace_exit` | KEPT | a deleted exit still severs the connection and revokes the capability (moderate confidence) |
+| _cinematic.dm:91 | `clean_up_cinematic` | REMOVED | a bool only |
+| riding.dm:114 | `unbuckle_mob` | REMOVED | a null mob makes it unbuckle a different rider; the deleted mob is unbuckled by its deletion |
+| highlander.dm:88 | `only_one` | KEPT, UNSURE | the user only appears in log lines; whether the event must still fire if the admin's mob is gone is a design question |
+| runes.dm:183 | `convert_tick` | REMOVED | `target.loc` runtimes on null |
+| runes.dm:397 | `raise_finish` | REMOVED | begins with a QDELETED guard |
+| runes.dm:658, 664 | `cult_mend_rune_wait` | KEPT, T | a deleted caster still releases `GLOB.runedec` |
+| HARDWARE.dm:104, 116 | `malf_station_bomb_tick` | REMOVED | `user.bombing_station` runtimes on null |
+| tree_interdiction.dm:122 | `malf_unlock_cyborg_done` | KEPT | a deleted target must still clear `user.hacking` |
+| apportation.dm:54 | `finish_apportation_grab` | KEPT | a deleted target must still consume the spell item |
+| passwall.dm:59 | `passwall_found` | REMOVED | returns on a deleted user |
+| resurrect.dm:50 | `resurrect_finish` | REMOVED | only a message and instability on the holder |
+| anomalies_flux.dm:79, 86 | `tesla_zap` | REMOVED | begins with `if(!source) return` |
+| effect_system.dm:378 | `expire_smoke` | KEPT, T | the emitter's `total_smoke` is still decremented |
+| effect_system.dm:654 | `expire_confetti` | KEPT, T | the emitter's `total_confetti` is still decremented |
+| spiders.dm:239, 250 | `vent_crawl_midway`, `vent_crawl_exit` | KEPT | the spiderling is still moved out of the vent and its relation cleared |
+| step_triggers.dm:55 | `throw_step` | REMOVED | touches only the deleted mover (relation cleanup on its deletion not verified) |
+| antag_spawners.dm:81, 133 | `finish_technomancer_spawn`, `finish_drone_spawn` | KEPT | the one-shot item must still be consumed |
+| aicard.dm:191 | `wipe_ai_tick` | KEPT | a deleted AI must still clear the card's `flush` |
+| phone.dm:102, 109, 112, 115 | `dial_ghost` | KEPT | the last stage removes the blackness screen |
+| headset.dm:187 | `handle_finalize_recalculatechannels` | NULL-SAFE, left | no datum in `with`, but the removal turns the line into a new `sys/periodic om_after_rearm` site against its baseline fingerprint; the legacy rearm goes with that lint |
+| vacpack.dm:233, 266, 292, 309 | `prepare_sucking`, `handle_consumption` | REMOVED | both start with a QDELETED guard (the 309 call also passes `target_turf` in the `auto_setting` slot: separate bug) |
+| falling_object.dm:45 | `end_fall` | REMOVED | a bool only |
+| sahoc.dm:101 | `capsule_result` | REMOVED | null-checks; the tail is cosmetic |
+| mech_toys.dm:249, 255, 352 | `brawl_round`, `brawl_exchange` | KEPT | a deleted fighter still ends the brawl on the toy (`in_combat`, health) |
+| extinguisher.dm:89 | `extinguisher_propel_step` | KEPT, low confidence | the chair's `propelled` countdown must still reach 0 |
+| secure.dm:170 | `emag_spark_done` | KEPT | the safe must stop sparking and unlock |
+| cliff.dm:237, 264 | `fall_land`, `fall_off_cliff` | REMOVED | return on a deleted or non-living argument |
+| __closets.dm:541 | `end_door_animation` | REMOVED | a bool only |
+| droppod.dm:72, 102 | `on_impact`, `open_pod` | REMOVED | a turf and a bool |
+| props/machines.dm:681 | `delayed_flick` | KEPT, UNSURE | the handler runtimes on a null door before it clears `changing_state`, so the opt-out does nothing; a null guard first would make it real cleanup |
+| alien_nests.dm:31 | `struggle_free` | REMOVED | a deleted user fails its own check |
+| transit_tubes.dm:121 | `launch_close` | REMOVED | it sets `pod_moving` itself, so nothing is left stuck when dropped |
+| transit_tubes.dm:128 | `launch_go` | KEPT | a deleted pod must still clear `pod_moving` |
+
+Open: the 164 sites after these (including every `code/game/machinery` and `code/modules/power` site, which this lane may not touch), a test for each remaining KEPT site, and the three UNSURE rows.

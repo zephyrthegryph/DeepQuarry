@@ -112,6 +112,7 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 	dq_admin_report_html(my_client().mob, "[author]'s Feedback", dat, src)
 
 CAPABILITIES(/datum/managed_browser/feedback_viewer)
+	extend(TAG_TOPIC, needs(req_topic_ok()))
 	op("close", topic("close"), then(PROC_REF(topic_close)))
 	op("show_full_feedback", topic("show_full_feedback", arg("feedback_author", schema_text(), optional = TRUE), arg("feedback_content", schema_text(), optional = TRUE)), then(PROC_REF(topic_show_full_feedback)))
 	op("filter_id", topic("filter_id"), asks(/datum/prompt/number/feedback_filter, fields = list("question" = "Write feedback ID here.", "title" = "Filter by ID"), step = "value"), then(PROC_REF(topic_filter_id)))
@@ -121,9 +122,9 @@ CAPABILITIES(/datum/managed_browser/feedback_viewer)
 	op("filter_datetime", topic("filter_datetime"), asks(/datum/prompt/text/feedback_filter, fields = list("question" = "Write desired datetime. Partial matches are allowed.\nFormat is 'YYYY-MM-DD HH:MM:SS'.", "title" = "Filter by Datetime"), step = "value"), then(PROC_REF(topic_filter_datetime)))
 
 // Only the viewer's own client drives it.
-/datum/managed_browser/feedback_viewer/topic_allowed(mob/user, list/href_list)
+/datum/managed_browser/feedback_viewer/op_topic_actor_ok(mob/actor)
 	var/client/C = my_client()
-	return C && user?.client == C
+	return C && actor.client == C
 
 /datum/managed_browser/feedback_viewer/proc/topic_close(datum/act/op/A)
 	return TRUE // To avoid refreshing.

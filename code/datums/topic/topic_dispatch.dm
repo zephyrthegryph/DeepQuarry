@@ -69,11 +69,11 @@ GLOBAL_LIST_EMPTY(topic_tables)
 		return null
 	return topic_run(target, user, href_list, row)
 
-/// Runs one row: gate (unless `gate` is FALSE: a namespace with its own gate), rights, typed
+/// Runs one row: rights, typed
 /// args, handler.
-/proc/topic_run(target, mob/user, list/href_list, list/row, gate = TRUE)
+/proc/topic_run(target, mob/user, list/href_list, list/row)
 	var/datum/D = target
-	if(QDELETED(D) || (gate && !D.topic_allowed(user, href_list)))
+	if(QDELETED(D))
 		return null
 	var/list/handler_args = list()
 	handler_args[TOPIC_HREF] = href_list

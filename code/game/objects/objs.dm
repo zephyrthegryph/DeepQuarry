@@ -86,24 +86,43 @@
 	material_records_teardown(src)
 	..()
 
-/// The tgui state an href action on this obj is checked against (topic_allowed()).
+/// The tgui state an href action on this obj is checked against (topic_usable()).
 /obj/proc/topic_state()
 	return GLOB.tgui_default_state
 
-// Every href action on an obj needs the user able to interact with it (CanUseTopic()).
-/obj/topic_allowed(mob/user, list/href_list)
+// Every href action on an obj needs the user able to interact with it (CanUseTopic()): topic_usable(), a requirement of every topic op (extend(TAG_TOPIC) in CAPABILITIES(/obj), code/datums/behaviours/burning.dm). A type narrows or
+// replaces it by overriding topic_usable(); the fingerprint a successful link leaves is an early effect.
+/obj/proc/topic_usable(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user)
 		return FALSE
-	if(CanUseTopic(user, topic_state(), href_list) == STATUS_INTERACTIVE)
-		CouldUseTopic(user)
-		return TRUE
-	CouldNotUseTopic(user)
-	return FALSE
+	return CanUseTopic(user, topic_state()) == STATUS_INTERACTIVE
+
+/// The old gate's name, kept for the two callers in code/game/machinery/syndicatebeacon.dm until the machinery lane converts them.
+/obj/proc/topic_allowed(mob/user)
+	return user && CanUseTopic(user, topic_state()) == STATUS_INTERACTIVE
+
+/obj/proc/topic_touched(datum/act/op/A)
+	CouldUseTopic(A.actor)
+	return OP_OK
+
+/obj/op_topic_refused(mob/actor, key, reason, list/href_list)
+	..()
+	if(reason == /datum/msg/op/topic_gate)
+		if(!actor.CanUseObjTopic(src))
+			to_chat(actor, span_danger("[icon2html(src, actor.client)]Access Denied!"))
+		CouldNotUseTopic(actor)
+
+/obj/proc/CouldUseTopic(mob/user)
+	var/atom/host = tgui_host()
+	host.add_hiddenprint(user)
+
+/obj/proc/CouldNotUseTopic(mob/user)
+	// Nada
 
 /obj/CanUseTopic(mob/user, datum/tgui_state/state = GLOB.tgui_default_state)
 	if(user.CanUseObjTopic(src))
 		return ..()
-	to_chat(user, span_danger("[icon2html(src, user.client)]Access Denied!"))
 	return STATUS_CLOSE
 
 /mob/living/silicon/CanUseObjTopic(obj/O)
@@ -112,13 +131,6 @@
 
 /mob/proc/CanUseObjTopic()
 	return 1
-
-/obj/proc/CouldUseTopic(mob/user)
-	var/atom/host = tgui_host()
-	host.add_hiddenprint(user)
-
-/obj/proc/CouldNotUseTopic(mob/user)
-	// Nada
 
 /obj/item/proc/is_used_on(obj/O, mob/user)
 

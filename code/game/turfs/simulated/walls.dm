@@ -832,11 +832,11 @@ TRACKED(/turf/simulated/wall, thermite)
 	dq_admin_report_html(user, "Access Control", t1, src)
 
 
-/obj/item/rcd/topic_allowed(mob/user, list/href_list)
+/obj/item/rcd/topic_usable(datum/act/op/A)
 	. = ..()
 	if(!.)
 		return
-	if(user.stat || user.restrained())
+	if(A.actor.stat || A.actor.restrained())
 		return FALSE
 
 /obj/item/rcd/proc/topic_close(datum/act/op/A)

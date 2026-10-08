@@ -39,6 +39,8 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	var/burn_ended_by
 
 CAPABILITIES(/obj)
+	extend(TAG_TOPIC, needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate), id = "topic_usable")))
+	extend(TAG_TOPIC, then(PROC_REF(topic_touched), early = TRUE))
 	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
 	owns_one(nameof(burn_cool_watch), /datum/native_watch/heat)
 	owns_one(nameof(disposal_connection), /datum/disposal_system_connection)
