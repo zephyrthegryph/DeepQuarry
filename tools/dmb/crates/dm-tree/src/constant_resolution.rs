@@ -189,6 +189,31 @@ impl Pass<'_> {
         let result = evaluate_with_resources_and_calls(
             &text,
             |name| {
+                // The intrinsic is lexical, but authored fields/globals retain
+                // ordinary identifier shadowing precedence.
+                if name == "__TYPE__" {
+                    let lexical_owner = self.tree.type_node(scope)?.path;
+                    let symbol = SymbolId::of(name);
+                    if self.member(lexical_owner, symbol).is_none()
+                        && self.member(SymbolId::of("/"), symbol).is_none()
+                    {
+                        if lexical_owner == SymbolId::of("/") {
+                            return Some(Constant::Null);
+                        }
+                        if !matches!(Resolver::resolve(self.tree, ResolveQuery::Type(lexical_owner)),
+                            ResolvedMeaning::Symbol(found) if found == lexical_owner)
+                        {
+                            *failure.borrow_mut() =
+                                Some(ScalarOutcome::Unsupported(UnsupportedReason::UnknownType));
+                            return None;
+                        }
+                        return self
+                            .tree
+                            .symbols()
+                            .text(lexical_owner)
+                            .map(|path| Constant::TypePath(path.into()));
+                    }
+                }
                 let dependency = if let Some((path, name)) = name.rsplit_once("::") {
                     ScalarQuery::Const {
                         owner: SymbolId::of(path),
@@ -866,6 +891,49 @@ mod tests {
         assert_eq!(
             Resolver::resolve(&result, query),
             ResolvedMeaning::Unsupported(query)
+        );
+    }
+    #[test]
+    fn lexical_type_constants_preserve_declaring_owner_and_root_null() {
+        let source = snapshot("/var/const/root_type = __TYPE__\n/datum/base\n    var/value = __TYPE__\n    var/const/type_constant = __TYPE__\n/datum/base/child\n    value = __TYPE__\n");
+        let owner = SymbolId::of("/datum/base/child");
+        let declared = ScalarQuery::DeclaredDefault {
+            owner,
+            name: SymbolId::of("value"),
+        };
+        let effective = ScalarQuery::EffectiveDefault {
+            owner,
+            name: SymbolId::of("value"),
+        };
+        let inherited = query("/datum/base/child", "type_constant");
+        let root = query("/", "root_type");
+        let result = resolve(
+            &source,
+            &[declared, effective, inherited, root],
+            &backend_disabled(),
+        );
+        let base = ScalarOutcome::Value(SemanticValue::Type(SymbolId::of("/datum/base")));
+        let child = ScalarOutcome::Value(SemanticValue::Type(owner));
+        assert_eq!(result.outcome(declared), Some(&base));
+        assert_eq!(result.outcome(effective), Some(&child));
+        assert_eq!(result.outcome(inherited), Some(&base));
+        assert_eq!(
+            result.outcome(root),
+            Some(&ScalarOutcome::Value(SemanticValue::Null))
+        );
+    }
+    #[test]
+    fn authored_type_identifier_shadows_intrinsic_without_fabricated_constant() {
+        let source = snapshot("/var/const/__TYPE__ = 7\n/datum/global_shadow\n    var/const/value = __TYPE__\n/datum/local_shadow\n    var/const/__TYPE__ = 9\n    var/const/value = __TYPE__\n/datum/runtime_shadow\n    var/__TYPE__ = 11\n    var/const/value = __TYPE__\n");
+        let global = query("/datum/global_shadow", "value");
+        let local = query("/datum/local_shadow", "value");
+        let runtime = query("/datum/runtime_shadow", "value");
+        let result = resolve(&source, &[global, local, runtime], &backend_disabled());
+        assert_eq!(result.outcome(global), Some(&number(7.0)));
+        assert_eq!(result.outcome(local), Some(&number(9.0)));
+        assert_eq!(
+            result.outcome(runtime),
+            Some(&ScalarOutcome::Unsupported(UnsupportedReason::NotConst))
         );
     }
 }

@@ -584,3 +584,232 @@ fn procedure_scalar_literals_preserve_exact_identity_and_constant_aliases() {
         }
     }
 }
+
+#[test]
+fn lexical_type_intrinsic_keeps_declaring_context_and_records_type_dependency() {
+    struct Types {
+        reads: std::sync::Mutex<Vec<ResolveQuery>>,
+    }
+    impl Resolver for Types {
+        fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+            self.reads.lock().unwrap().push(query);
+            match query {
+                ResolveQuery::Type(id)
+                    if ["/obj/base", "/obj/child"]
+                        .iter()
+                        .any(|path| id == SymbolId::of(path)) =>
+                {
+                    ResolvedMeaning::Symbol(id)
+                }
+                ResolveQuery::Constant { .. }
+                | ResolveQuery::Var { .. }
+                | ResolveQuery::GlobalVar(_)
+                | ResolveQuery::ProcedureStatic { .. } => ResolvedMeaning::Missing,
+                _ => ResolvedMeaning::Unsupported(query),
+            }
+        }
+    }
+    let mut symbols = dm_ir::SymbolTable::default();
+    for name in [
+        "/",
+        "/obj/base",
+        "/obj/child",
+        "/obj/missing",
+        "__TYPE__",
+        "value",
+        "work",
+    ] {
+        symbols.intern(name).unwrap();
+    }
+    let expression = SymbolicExpression {
+        tokens: vec![dm_ir::ExpressionToken {
+            kind: dm_syntax::TokenKind::Ident,
+            text: SymbolId::of("__TYPE__"),
+            relative_span: dm_syntax::Span::new(0, 8),
+        }]
+        .into(),
+    };
+    let host = Types {
+        reads: Default::default(),
+    };
+    let evaluator = DriverEvaluator {
+        pure_calls: None,
+        resource_search_context: None,
+        resolver: &host,
+        symbols: &symbols,
+    };
+    assert_eq!(
+        evaluator.scalar(SymbolId::of("/"), &expression).unwrap(),
+        Some(SemanticValue::Null)
+    );
+    let intrinsic = SymbolId::of("__TYPE__");
+    let root = SymbolId::of("/");
+    assert_eq!(
+        *host.reads.lock().unwrap(),
+        vec![
+            ResolveQuery::Constant {
+                owner: root,
+                name: intrinsic
+            },
+            ResolveQuery::Var {
+                owner: root,
+                name: intrinsic
+            },
+            ResolveQuery::GlobalVar(intrinsic),
+        ]
+    );
+    host.reads.lock().unwrap().clear();
+    let owner = SymbolId::of("/obj/base");
+    let procedure = dm_ir::ProcedureIdentity {
+        owner,
+        name: SymbolId::of("work"),
+        verb: false,
+        occurrence: 0,
+    };
+    for target in [
+        dm_ir::InitializerTarget::Instance {
+            declaring_owner: owner,
+            receiver_owner: SymbolId::of("/obj/child"),
+            name: SymbolId::of("value"),
+        },
+        dm_ir::InitializerTarget::ProcedureStatic(dm_ir::ProcedureStaticIdentity {
+            procedure,
+            name: SymbolId::of("value"),
+        }),
+    ] {
+        let write = dm_ir::InitializerWrite {
+            target,
+            lexical_owner: owner,
+            lexical_procedure: Some(procedure),
+            value: dm_ir::InitializerValue::Expression(expression.clone()),
+            declared_array: None,
+            declaration_flags: Some(0),
+        };
+        assert!(
+            matches!(evaluator.evaluate_write(&write, &expression).unwrap(), Evaluation::Scalar(SemanticValue::Type(id)) if id == owner)
+        );
+        let ast = dm_syntax::parse_expression("__TYPE__").expr.unwrap();
+        assert!(
+            matches!(evaluator.evaluate_ast_write(&write, &ast, "__TYPE__", &symbols).unwrap(), Evaluation::Scalar(SemanticValue::Type(id)) if id == owner)
+        );
+    }
+    let one = [
+        ResolveQuery::ProcedureStatic {
+            procedure,
+            name: intrinsic,
+        },
+        ResolveQuery::Constant {
+            owner,
+            name: intrinsic,
+        },
+        ResolveQuery::Var {
+            owner,
+            name: intrinsic,
+        },
+        ResolveQuery::GlobalVar(intrinsic),
+        ResolveQuery::Type(owner),
+    ];
+    assert_eq!(*host.reads.lock().unwrap(), one.repeat(4));
+    assert!(evaluator
+        .scalar(SymbolId::of("/obj/missing"), &expression)
+        .is_err());
+    assert_eq!(
+        host.reads.lock().unwrap().last(),
+        Some(&ResolveQuery::Type(SymbolId::of("/obj/missing")))
+    );
+}
+
+#[test]
+fn authored_static_lexical_and_global_type_names_shadow_intrinsic() {
+    struct Shadow {
+        global: bool,
+        unknown: bool,
+        reads: std::sync::Mutex<Vec<ResolveQuery>>,
+    }
+    impl Resolver for Shadow {
+        fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+            self.reads.lock().unwrap().push(query);
+            match query {
+                ResolveQuery::Constant { .. } if !self.global && !self.unknown => {
+                    ResolvedMeaning::Value(SemanticValue::NumberBits(7f32.to_bits()))
+                }
+                ResolveQuery::GlobalVar(_) if self.global => {
+                    ResolvedMeaning::Value(SemanticValue::NumberBits(9f32.to_bits()))
+                }
+                ResolveQuery::Var { .. } if self.unknown => ResolvedMeaning::Unsupported(query),
+                ResolveQuery::Constant { .. }
+                | ResolveQuery::Var { .. }
+                | ResolveQuery::GlobalVar(_)
+                | ResolveQuery::ProcedureStatic { .. } => ResolvedMeaning::Missing,
+                _ => ResolvedMeaning::Unsupported(query),
+            }
+        }
+    }
+    let procedure = dm_ir::ProcedureIdentity {
+        owner: SymbolId::of("/obj/base"),
+        name: SymbolId::of("work"),
+        verb: false,
+        occurrence: 0,
+    };
+    let body = dm_syntax::parse("/obj/base/proc/work()\n    var/static/const/__TYPE__ = 17\n    var/static/value = __TYPE__\n    return value\n");
+    let captured = dm_tree::procedure_statics::capture(procedure, &body.items[0].children).unwrap();
+    let value = captured
+        .declarations
+        .iter()
+        .find(|value| value.identity.name == SymbolId::of("value"))
+        .unwrap();
+    let dm_ir::InitializerValue::Expression(expression) = &value.initializer else {
+        panic!("expression")
+    };
+    let write = dm_ir::InitializerWrite {
+        target: dm_ir::InitializerTarget::ProcedureStatic(value.identity),
+        lexical_owner: procedure.owner,
+        lexical_procedure: Some(procedure),
+        value: value.initializer.clone(),
+        declared_array: None,
+        declaration_flags: Some(value.modifiers),
+    };
+    for (global, unknown, number) in [
+        (false, false, Some(7f32)),
+        (true, false, Some(9f32)),
+        (false, true, None),
+    ] {
+        let host = Shadow {
+            global,
+            unknown,
+            reads: Default::default(),
+        };
+        let evaluator = DriverEvaluator {
+            pure_calls: None,
+            resource_search_context: None,
+            resolver: &host,
+            symbols: &captured.symbols,
+        };
+        let answer = evaluator.scalar(procedure.owner, expression);
+        match number {
+            Some(number) => assert_eq!(
+                answer.unwrap(),
+                Some(SemanticValue::NumberBits(number.to_bits()))
+            ),
+            None => assert!(answer.is_err()),
+        }
+        assert!(!host
+            .reads
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|query| matches!(query, ResolveQuery::Type(_))));
+        let resolver =
+            dm_tree::procedure_statics::StaticResolver::from_plans(&host, [(procedure, &captured)])
+                .unwrap();
+        let evaluator = DriverEvaluator {
+            pure_calls: None,
+            resource_search_context: None,
+            resolver: &resolver,
+            symbols: &captured.symbols,
+        };
+        assert!(
+            matches!(evaluator.evaluate_write(&write, expression).unwrap(), Evaluation::Scalar(SemanticValue::NumberBits(bits)) if f32::from_bits(bits) == 17.0)
+        );
+    }
+}

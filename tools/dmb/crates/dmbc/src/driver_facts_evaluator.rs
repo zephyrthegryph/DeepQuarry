@@ -289,6 +289,24 @@ impl DriverEvaluator<'_> {
                                 };
                             }
                             ResolvedMeaning::Value(value) => value,
+                            ResolvedMeaning::Missing if unqualified && name == "__TYPE__" => {
+                                // Only certified absence in static, lexical and global
+                                // namespaces permits the lexical intrinsic fallback.
+                                // Final TypePath admission records a positive Type query.
+                                if owner == SymbolId::of("/") {
+                                    return Some(Constant::Null);
+                                }
+                                return match self.symbols.text(owner) {
+                                    Some(path) => Some(Constant::TypePath(path.into())),
+                                    None => {
+                                        *failure.borrow_mut() = Some(
+                                            "__TYPE__ lexical owner spelling is not captured"
+                                                .into(),
+                                        );
+                                        None
+                                    }
+                                };
+                            }
                             ResolvedMeaning::Missing if unqualified => match self
                                 .resolver
                                 .resolve(ResolveQuery::PredefinedConstant(SymbolId::of(name)))
