@@ -1520,7 +1520,6 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 	set_density(FALSE)
 	set_opacity(0)
 	state = 1
-	changed(src)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 	countdown = rand(10,20)
@@ -1538,7 +1537,6 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 	set_density(TRUE)
 	set_opacity(1)
 	state = 0
-	changed(src)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 	countdown = rand(50,250)

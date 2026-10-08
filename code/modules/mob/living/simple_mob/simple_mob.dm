@@ -21,6 +21,7 @@
 
 	//Settings for played mobs
 	var/show_stat_health = 1		// Does the percentage health show in the stat panel for the mob
+	var/draws_life_state = TRUE		// FALSE: the type keeps its mapped icon_state and its base draw adds no life state, hands, fullness, pounce or eyes
 	var/has_hands = 0				// Set to 1 to enable the use of hands and the hands hud
 	var/humanoid_hands = 0			// Can a player in this mob use things like guns or AI cards?
 	var/hand_form = "hands"			// Used in IsHumanoidToolUser. 'Your X are not fit-'.

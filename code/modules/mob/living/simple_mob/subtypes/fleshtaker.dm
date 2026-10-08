@@ -17,12 +17,21 @@ Only physical attributes are copied.
 	var/list/base_values = list() // ALLOW(instance_list): d: per-mob base_values, sized at creation and filled in place; mobs are few
 
 	var/flesh_mimic = FALSE //are we currently posing as something else?
+	var/mimic_icon = null //the icon file of what we pose as (null while we look like ourselves)
+
+TRACKED(/mob/living/simple_mob/fleshtaker, flesh_mimic)
+TRACKED(/mob/living/simple_mob/fleshtaker, mimic_icon)
+
+/// Our own look, or the icon file of what we are posing as (its living, dead and rest states are our tracked icon_living/icon_dead).
+/mob/living/simple_mob/fleshtaker/draw(datum/look/look)
+	..()
+	if(flesh_mimic && mimic_icon)
+		look.set_icon(mimic_icon)
 
 /mob/living/simple_mob/fleshtaker/Initialize(mapload)
 	. = ..()
 	base_values["name"] = name
 	base_values["desc"] = desc
-	base_values["icon"] = icon
 	base_values["icon_living"] = icon_living
 	base_values["icon_dead"] = icon_dead
 	base_values["pixel_x"] = pixel_x
@@ -31,15 +40,14 @@ Only physical attributes are copied.
 	base_values["melee_damage_upper"] = melee_damage_upper
 	base_values["endurance"] = endurance
 	base_values["armor"] = get_armor()
-	icon_state = icon_living // ALLOW(decl): copied from icon_living
 
 
 	//copy stats from our engulfed target
 /mob/living/simple_mob/fleshtaker/proc/flesh_mimic(mob/living/simple_mob/target)
-	flesh_mimic = TRUE
+	set_flesh_mimic(TRUE)
 	name = target.name
 	desc = target.desc
-	icon = target.icon
+	set_mimic_icon(target.icon)
 	set_icon_living(target.icon_living)
 	set_icon_dead(target.icon_dead)
 	pixel_x = target.pixel_x
@@ -48,17 +56,16 @@ Only physical attributes are copied.
 	melee_damage_upper = target.melee_damage_upper
 	endurance = target.endurance
 	fully_heal()
-	icon_state = target.icon_state
 	set_armor(target.get_armor())
 	//steal base stats
 	//possibly steal vorgans
 
 //reset to original values
 /mob/living/simple_mob/fleshtaker/proc/revert_mimic()
-	flesh_mimic = FALSE
+	set_flesh_mimic(FALSE)
 	name = base_values["name"]
 	desc = base_values["desc"]
-	icon = base_values["icon"]
+	set_mimic_icon(null)
 	set_icon_living(base_values["icon_living"])
 	set_icon_dead(base_values["icon_dead"])
 	pixel_x = base_values["pixel_x"]
@@ -67,7 +74,6 @@ Only physical attributes are copied.
 	melee_damage_upper = base_values["melee_damage_upper"]
 	endurance = base_values["endurance"]
 	fully_heal()
-	icon_state = icon_living
 	set_armor(base_values["armor"])
 
 /mob/living/simple_mob/fleshtaker/apply_melee_effects(atom/A)

@@ -242,15 +242,10 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	mimic_chance = 30
 	mimic_active = TRUE
 
-/// Draws itself entirely: drop the parent's keyed declarations.
-APPEARANCE_NONE(/obj/structure/closet/crate/mimic/closet)
-DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/closet/crate/mimic/closet/appearance_overlays()
-	. = list()
-	if(opened)
-		icon_state = "copen"
-	else
-		icon_state = "cmimic"
+/// Draws itself entirely: the open or closed sprite of the mimic closet, with none of the closet's usual overlays.
+/obj/structure/closet/crate/mimic/closet/draw(datum/look/look)
+	..()
+	look.state(opened ? "copen" : "cmimic")
 
 /obj/structure/closet/crate/mimic/closet/open()
 	if(src.opened)
