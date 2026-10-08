@@ -217,18 +217,19 @@ CAPABILITIES(/obj/structure/smoletrack)
 	deconstruct(FALSE)
 
 //checks for items and does the same as dismaintle but spawns material instead.
-/// Old attackby: any hit with an item flattens it.
+/// Old attackby: a harm-intent hit with an item flattens it; any other click with an item does nothing destructive.
 /obj/structure/smolebuilding/proc/smolebuilding_item(datum/act/op/A)
 	dismantle()
 	return OP_OK
 //checks for projectile damage and does the same as dismaintle but spawns material instead.
 CAPABILITIES(/obj/structure/smolebuilding)
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(smolebuilding_shot))))
+	// Declared before the hand ops: a held item answers first, and a click not on harm intent is refused (never the bare-hand op).
+	op("smolebuilding_item", item(/obj/item), answers(INTENT_ATTACK, INTENT_USE), needs(req(TYPE_PROC_REF(/atom, harm_click_only), because = MSG(harm_click_only))), priority(OP_PRIORITY_DEFAULT - 1), label("Smash"), then(PROC_REF(smolebuilding_item)))
 	op("smolebuilding_knock_help", hand(), ungated(), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 1), label("Knock on"), then(PROC_REF(smolebuilding_knock)))
 	op("smolebuilding_dismantle", hand(), ungated(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 1), label("Take apart"), then(PROC_REF(smolebuilding_dismantle_hand)))
 	op("smolebuilding_knock_grab", hand(), ungated(), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 1), label("Knock on"), then(PROC_REF(smolebuilding_knock)))
 	op("smolebuilding_bang", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Bang on"), then(PROC_REF(smolebuilding_bang_hand)))
-	op("smolebuilding_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Smolebuilding item"), then(PROC_REF(smolebuilding_item)))
 	op("smolebuilding_verb_color", menu(), label("Use Color Pieces"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/color/smole_paint, fields = list("default" = nameof(color)), step = "colour"), then(PROC_REF(smolebuilding_verb_color)))
 	op("smolebuilding_verb_dismantle", menu(), label("Take Building Apart"), needs(req_adjacent(), req_capable()), then(PROC_REF(smolebuilding_verb_dismantle)))
 
@@ -259,15 +260,15 @@ CAPABILITIES(/obj/structure/smolebuilding)
 	return OP_OK
 
 //Ruins go asplode same as buildings if attacked
-/// Old attackby: any hit with an item blows the ruins apart.
+/// Old attackby: a harm-intent hit with an item blows the ruins apart.
 /obj/structure/smoleruins/proc/smoleruins_item(datum/act/op/A)
 	displode()
 	return OP_OK
 
 CAPABILITIES(/obj/structure/smoleruins)
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(smoleruins_shot))))
+	op("smoleruins_item", item(/obj/item), answers(INTENT_ATTACK, INTENT_USE), needs(req(TYPE_PROC_REF(/atom, harm_click_only), because = MSG(harm_click_only))), priority(OP_PRIORITY_DEFAULT - 1), label("Smash"), then(PROC_REF(smoleruins_item)))
 	op("smoleruins_dismantle_hand", hand(), ungated(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 1), label("Take apart"), then(PROC_REF(smoleruins_dismantle_hand)))
-	op("smoleruins_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Smoleruins item"), then(PROC_REF(smoleruins_item)))
 
 /// Ruins blow apart when shot, same as buildings.
 /obj/structure/smoleruins/proc/smoleruins_shot(datum/act/hit/projectile/A)

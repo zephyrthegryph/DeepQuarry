@@ -75,15 +75,15 @@
 	TEST_ASSERT(READERS(H, MOB_KEY_STATUS), "a mob reads its status key")
 	TEST_ASSERT(READERS(H, nameof(H.stat)), "and its tracked stat")
 
-/// grant(): a verb path goes to the verb store, hidden_verb() hides one, a plain name is a ledger grant.
+/// grant(): a granted_verb() goes to the verb store, a plain name is a ledger grant.
 /datum/unit_test/dq_a1_grant_verbs/Run()
 	var/obj/structure/S = allocate(/obj/structure)
 	var/datum/a1_fx/source = allocate(/datum/a1_fx)
 	TEST_ASSERT(!(/atom/movable/proc/turn_around in S.verbs), "no verb yet")
-	grant(S, /atom/movable/proc/turn_around, source)
-	TEST_ASSERT(/atom/movable/proc/turn_around in S.verbs, "grant() of a verb path gives the verb")
-	TEST_ASSERT(granted(S, /atom/movable/proc/turn_around), "and granted() says so")
-	revoke(S, /atom/movable/proc/turn_around, source)
+	grant(S, granted_verb(/atom/movable/proc/turn_around), source)
+	TEST_ASSERT(/atom/movable/proc/turn_around in S.verbs, "grant() of a granted_verb gives the verb")
+	TEST_ASSERT(granted(S, granted_verb(/atom/movable/proc/turn_around)), "and granted() says so")
+	revoke(S, granted_verb(/atom/movable/proc/turn_around), source)
 	TEST_ASSERT(!(/atom/movable/proc/turn_around in S.verbs), "revoke() takes it away")
 	grant(S, "a1_permission", "a1")
 	TEST_ASSERT(granted(S, "a1_permission"), "a plain grant is a ledger relation")

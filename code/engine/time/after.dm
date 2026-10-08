@@ -23,14 +23,21 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 		cancel_after(holder, key)
 	var/token = ++GLOB.rx_timer_seq
 	var/id
+	// A keyed timer is a ledger entry too, so a call dropped for a deleted datum argument must still clear the key: the outer capture keeps the
+	// gone argument as null (keeps_dead) and rx_timer_fire() drops the call itself, after the ledger is cleared, for the positions watched here.
+	var/list/watched
+	if(!keeps_dead)
+		for(var/i in 1 to length(handler_args))
+			if(isdatum(handler_args[i]))
+				LAZYADD(watched, i)
 	if(clock == CLOCK_WORLD)
 		var/holder_handle = entity_handle(holder)
 		if(isnull(holder_handle))
 			return 0 // the owner is already gone
-		id = timer_schedule_list(null, delay, GLOBAL_PROC_REF(rx_timer_fire_ref), list(holder_handle, handler, key, token, handler_args), keeps_dead)
+		id = timer_schedule_list(null, delay, GLOBAL_PROC_REF(rx_timer_fire_ref), list(holder_handle, handler, key, token, handler_args, watched), TRUE)
 	else
 		// The holder is the timer's owner: passed first when it fires (OM_TIMER_OWNER_FIRST), not captured as an argument.
-		id = timer_schedule_list(holder, delay, GLOBAL_PROC_REF(rx_timer_fire), list(handler, key, token, handler_args), keeps_dead, owner_first = TRUE)
+		id = timer_schedule_list(holder, delay, GLOBAL_PROC_REF(rx_timer_fire), list(handler, key, token, handler_args, watched), TRUE, owner_first = TRUE)
 	if(id && !isnull(key))
 		rx_ledger_add(holder, RELK_TIMER, key, token)
 		var/list/ids = rx_of(holder).timer_ids
@@ -58,16 +65,16 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 	return !!holder.rx?.timer_ids?[key]
 
 /// A world-clock timer went off: its owner is resolved from its handle, so a datum that was deleted (or whose ref was reused) never receives it.
-/proc/rx_timer_fire_ref(holder_handle, handler, key, token, list/handler_args)
+/proc/rx_timer_fire_ref(holder_handle, handler, key, token, list/handler_args, list/watched)
 	var/datum/holder = resolve_handle(holder_handle)
 	if(!isdatum(holder))
 		log_qdel("OM: world timer [handler] dropped: its owner [holder_handle] no longer exists")
 		return
-	rx_timer_fire(holder, handler, key, token, handler_args)
+	rx_timer_fire(holder, handler, key, token, handler_args, watched)
 
 /// A keyed timer went off: it is dropped from the owner's ledger first (so the handler may re-arm it),
 /// unless it was replaced or cancelled since (the token no longer matches).
-/proc/rx_timer_fire(datum/holder, handler, key, token, list/handler_args)
+/proc/rx_timer_fire(datum/holder, handler, key, token, list/handler_args, list/watched)
 	if(!holder || QDELETED(holder))
 		return
 	if(!isnull(key))
@@ -78,6 +85,10 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 		if(!length(holder.rx.timer_ids))
 			holder.rx.timer_ids = null
 		rx_ledger_remove(holder, RELK_TIMER, key, token)
+	for(var/position in watched)
+		if(isnull(handler_args[position]))
+			log_qdel("OM: timer [handler] dropped: argument [position] no longer exists")
+			return
 	if(deferred_proc_is_global(handler))
 		call(handler)(arglist(handler_args || list()))
 	else

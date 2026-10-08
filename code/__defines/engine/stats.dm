@@ -28,6 +28,8 @@
 #define STAT_RULE_MASK_AND "MASK_AND"
 #define STAT_RULE_MASK_OR "MASK_OR"
 #define STAT_RULE_FORMULA "FORMULA"
+/// A map key -> sum: each hold names a key (hold(..., key =)) and adds its number to that key's total.
+#define STAT_RULE_SUM_PER_KEY "SUM_PER_KEY"
 
 /// reapply =: holding again from the same source.
 #define REAPPLY_MAX 1

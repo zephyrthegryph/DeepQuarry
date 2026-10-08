@@ -49,13 +49,13 @@
 	var/datum/scheduler_record/record = scheduler_record_of(probe)
 	var/datum/clock_definition/clock = definition_registry().clock_by_id[CLOCK_BIO]
 	TEST_ASSERT_NOTNULL(clock, "The real biological clock is registered")
-	TEST_ASSERT_EQUAL(contribution_clock_compute(record, clock.idx), 1, "An absent biological override retains the ordinary rate")
+	TEST_ASSERT_EQUAL(clock_compute(record, clock.idx), 1, "An absent biological override retains the ordinary rate")
 	probe.rate = 0
-	TEST_ASSERT_EQUAL(contribution_clock_compute(record, clock.idx), 0, "An explicit zero preserves complete stasis")
+	TEST_ASSERT_EQUAL(clock_compute(record, clock.idx), 0, "An explicit zero preserves complete stasis")
 	probe.rate = 0.5
-	TEST_ASSERT_EQUAL(contribution_clock_compute(record, clock.idx), 0.5, "A fractional biological rate survives the adapter")
+	TEST_ASSERT_EQUAL(clock_compute(record, clock.idx), 0.5, "A fractional biological rate survives the adapter")
 	probe.rate = -1
-	TEST_ASSERT_EQUAL(contribution_clock_compute(record, clock.idx), clock.min_rate, "The clock still clamps invalid rates to its declared minimum")
+	TEST_ASSERT_EQUAL(clock_compute(record, clock.idx), clock.min_rate, "The clock still clamps invalid rates to its declared minimum")
 
 /datum/unit_test/dq_engine_policy_insert_transport/Run()
 	var/obj/engine_layering_bay/bay = allocate(/obj/engine_layering_bay)

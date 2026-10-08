@@ -28,8 +28,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 
 	var/list/behaviours
 	var/list/behaviour_by_type
-	var/list/effects
-	var/list/effect_by_id
 	var/list/clocks
 	var/list/clock_by_id
 	var/list/relations
@@ -63,8 +61,7 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 	var/list/expansions
 	/// entity type -> /datum/scheduler_type_table (lazy).
 	var/list/type_tables
-	/// Internal behaviours (expiry, tasks, edge refresh).
-	var/datum/scheduled_behaviour/expiry_behaviour
+	/// Internal behaviours (timers, edge refresh).
 	var/datum/scheduled_behaviour/timer_behaviour
 	var/datum/scheduled_behaviour/edge_behaviour
 
@@ -84,7 +81,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 	engine_prepare_interfaces()
 	build_bundles()
 	build_clocks()
-	build_effects()
 	build_named_checks()
 	build_relations()
 	build_slot_holders()
@@ -165,7 +161,7 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 	expansions[path] = out
 	return out
 
-// ---------------------------------------------------------------- clocks and effects
+// ---------------------------------------------------------------- clocks
 
 /datum/definition_registry/proc/build_clocks()
 	var/list/rows = list(
@@ -189,123 +185,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 		clocks += C
 		C.idx = length(clocks)
 		clock_by_id[id] = C
-
-/datum/definition_registry/proc/build_effects()
-	var/list/rows = standard_effects()
-	for(var/datum/clock_definition/C as anything in clocks)
-		if(C.id == CLOCK_BIO)
-			continue // its rate is the clock_rate_bio stat (contribution_clock_compute())
-		rows["clock:[C.id]:mult"] = list("combine" = COMBINE_MULTIPLY, "channel" = CHANGE_CLOCK, "default" = 1, "kind" = OM_EFFECT_CLOCK_MULT, "clock" = C.id)
-		rows["clock:[C.id]:inhibit"] = list("combine" = COMBINE_MAX, "channel" = CHANGE_CLOCK, "default" = 0, "kind" = OM_EFFECT_CLOCK_INHIBIT, "clock" = C.id)
-	for(var/datum/definition_bundle/B as anything in bundles)
-		for(var/id in B.effects)
-			if(rows[id])
-				error("effect [id] defined twice (second in [B.type])")
-			rows[id] = B.effects[id]
-	var/static/list/allowed
-	if(!allowed)
-		allowed = list("combine", "stacking", "channel", "publishes", "default", "expr", "type", "kind", "clock", "implies")
-	for(var/id in rows)
-		var/list/row = rows[id]
-		if(!islist(row))
-			error("effect [id]: row must be a list")
-			continue
-		var/path = row["type"] || /datum/effect_definition
-		if(!ispath(path, /datum/effect_definition))
-			error("effect [id]: type [path] is not a /datum/effect_definition")
-			path = /datum/effect_definition
-		var/datum/effect_definition/E = new path
-		E.id = id
-		for(var/key in row)
-			if(!(key in allowed))
-				error("effect [id]: unknown key [key]")
-		E.implies = row["implies"]
-		if(!isnull(row["combine"]))
-			E.combine = row["combine"]
-		if(!(E.combine in list(COMBINE_ANY, COMBINE_SUM, COMBINE_MAX, COMBINE_MIN, COMBINE_MULTIPLY, COMBINE_SUM_PER_KEY)))
-			error("effect [id]: bad combine [E.combine]")
-			E.combine = COMBINE_ANY
-		if(!isnull(row["stacking"]))
-			E.stacking = row["stacking"]
-		if(!(E.stacking in list(STACKING_REPLACE, STACKING_EXTEND, STACKING_MAX)))
-			error("effect [id]: bad stacking [E.stacking]")
-			E.stacking = STACKING_REPLACE
-		E.channel = row["channel"] || 0
-		E.publishes = row["publishes"]
-		E.kind = row["kind"] || OM_EFFECT_PLAIN
-		E.expr = row["expr"]
-		if("default" in row)
-			E.default_value = row["default"]
-		else
-			switch(E.combine)
-				if(COMBINE_ANY)
-					E.default_value = FALSE
-				if(COMBINE_MULTIPLY)
-					E.default_value = 1
-				if(COMBINE_SUM_PER_KEY)
-					E.default_value = null
-				else
-					E.default_value = 0
-		if(row["clock"])
-			var/datum/clock_definition/C = clock_by_id[row["clock"]]
-			E.clock_idx = C?.idx
-			if(E.kind == OM_EFFECT_CLOCK_MULT)
-				C.mult_idx = length(effects) + 1
-			else if(E.kind == OM_EFFECT_CLOCK_INHIBIT)
-				C.inhibit_idx = length(effects) + 1
-		effects += E
-		E.idx = length(effects)
-		effect_by_id[id] = E
-	// Implied effects.
-	for(var/datum/effect_definition/E as anything in effects)
-		for(var/implied in E.implies)
-			var/datum/effect_definition/other = effect_by_id[implied]
-			if(!other || other.expr || other == E)
-				error("effect [E.id]: implies unknown or composite effect [implied]")
-				continue
-			LAZYADD(E.implies_idx, other.idx)
-	// Composite dependencies.
-	for(var/datum/effect_definition/E as anything in effects)
-		if(!E.expr)
-			continue
-		var/list/refs = list()
-		if(!definition_effect_expr_refs(E.expr, refs))
-			error("effect [E.id]: malformed expr")
-			E.expr = null
-			continue
-		for(var/ref in refs)
-			var/datum/effect_definition/part = effect_by_id[ref]
-			if(!part)
-				error("effect [E.id]: expr names unknown effect [ref]")
-				continue
-			if(part.expr)
-				error("effect [E.id]: composites of composites are not supported ([ref])")
-				continue
-			LAZYADD(part.dependents, E.idx)
-
-/// Collects effect ids named in a composite expression. FALSE if malformed.
-/proc/definition_effect_expr_refs(expr, list/out)
-	if(istext(expr))
-		out |= expr
-		return TRUE
-	if(!islist(expr))
-		return FALSE
-	var/list/L = expr
-	if(!length(L) || !(L[1] in list("all", "any", "not", "sum")))
-		return FALSE
-	if(L[1] == "not" && length(L) != 2)
-		return FALSE
-	for(var/i in 2 to length(L))
-		if(!definition_effect_expr_refs(L[i], out))
-			return FALSE
-	return TRUE
-
-/datum/definition_registry/proc/effect(id)
-	RETURN_TYPE(/datum/effect_definition)
-	var/datum/effect_definition/E = effect_by_id[id]
-	if(!E)
-		CRASH("om: unknown effect [id]")
-	return E
 
 // ---------------------------------------------------------------- checks
 
@@ -343,21 +222,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 			error("relation [path]: source_view needs a single-target shape")
 		if(R.target_view && !R.target_single)
 			error("relation [path]: target_view needs a single-source shape")
-		for(var/inc in R.include)
-			for(var/datum/definition_bundle/B as anything in expand(inc, list()))
-				R.contributes = definition_merge_assoc(R.contributes, B.contributes)
-				R.source_contributes = definition_merge_assoc(R.source_contributes, B.source_contributes)
-				R.grants_target = definition_merge_assoc(R.grants_target, B.grants_target)
-				R.grants_occupant = definition_merge_assoc(R.grants_occupant, B.grants_occupant)
-		// Two loops, not `a | b`: in DM `list | null` appends null as an element.
-		for(var/list/table in list(R.contributes, R.source_contributes))
-			for(var/id in table)
-				if(!effect_by_id[id])
-					error("relation [path]: contributes unknown effect [id]")
-		for(var/list/table in list(R.grants_target, R.grants_occupant))
-			for(var/kind in table)
-				if(!effect_by_id[kind])
-					error("relation [path]: unknown grant kind [kind]")
 		if(R.active_if)
 			R.compiled_active_if = definition_check_get(R.active_if, src)
 			if(!R.compiled_active_if)
@@ -469,7 +333,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 		B.wake_on |= field_reads_mask(B.reads_of, B.reads)
 		pending += B
 		behaviour_by_type[path] = B
-	expiry_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/expiry]
 	timer_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/timers]
 	edge_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/edge_refresh]
 	// Inline behaviours from table rows.
@@ -1113,12 +976,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 				error("derived [D.name]: reader derived [src_d.name] has no channel")
 			else
 				D.member_inputs |= src_d.channel
-		else if(islist(D.reader) && D.reader[1] == "effect")
-			var/datum/effect_definition/eff = effect_by_id[D.reader[2]]
-			if(!eff)
-				error("derived [D.name]: reader names unknown effect [D.reader[2]]")
-			else
-				D.member_inputs |= eff.channel | CHANGE_EFFECTS
 	for(var/name in D.derived_inputs)
 		var/datum/derived_definition/src_d = derived_by_name[name]
 		if(!src_d)
@@ -1231,12 +1088,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 				T.stages |= stage_path
 			for(var/row in B.ui)
 				T.ui += list(row)
-			for(var/id in B.self_effects)
-				T.self_effects += list(id, B.self_effects[id])
-			for(var/kind in B.self_grants)
-				var/ids = B.self_grants[kind]
-				for(var/id in (islist(ids) ? ids : list(ids)))
-					T.self_grants += list(kind, id)
 	T.behaviours = sortTim(behaviour_set, GLOBAL_PROC_REF(cmp_om_behaviour_id))
 	for(var/datum/service_definition/S as anything in services)
 		var/mine = 0
@@ -1283,9 +1134,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 /datum/definition_registry/proc/make_inline_behaviour()
 	return new /datum/scheduled_behaviour/inline
 
-/// The application supplies its own effect definitions through this registry hook.
-/datum/definition_registry/proc/standard_effects()
-	return list()
 
 /datum/definition_registry/New()
 	if(!errors)
@@ -1294,10 +1142,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 		behaviours = list()
 	if(!behaviour_by_type)
 		behaviour_by_type = list()
-	if(!effects)
-		effects = list()
-	if(!effect_by_id)
-		effect_by_id = list()
 	if(!clocks)
 		clocks = list()
 	if(!clock_by_id)

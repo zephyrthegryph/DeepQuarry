@@ -83,7 +83,11 @@
 	// test's mobs drift (dq_p2_closet/drag_stuffs_a_person_into_an_open_closet).
 	var/area/sweep_room = get_area(T)
 	var/sweep_gravity = sweep_room.has_gravity
-	defer_cleanup(src, PROC_REF(cleanup_pin_sweep), T, sweep_room, sweep_gravity)
+	// Whether the test floor is a player level depends on what an earlier test or type of the sweep registered (an overmap sector adds its levels), so the
+	// recorded rows ("refund only at your base") would depend on order. The sweep says it is, and puts the list back afterwards.
+	var/list/sweep_levels = using_map.player_levels.Copy()
+	using_map.player_levels |= T.z
+	defer_cleanup(src, PROC_REF(cleanup_pin_sweep), T, sweep_room, sweep_gravity, sweep_levels)
 	var/list/actual_by_type = list()
 	// a turf is pinned in place of the tile beside the actors and turned back afterwards (a turf is never qdel'd)
 	var/turf/beside = get_step(T, EAST)
@@ -126,7 +130,9 @@
 	TEST_ASSERT(isnull(report), report)
 
 /// Preserve cleanup even when a declaration error aborts the sweep; the runner still reports the original runtime.
-/datum/unit_test/dq_conversion_pin/proc/cleanup_pin_sweep(turf/T, area/sweep_room, sweep_gravity)
+/datum/unit_test/dq_conversion_pin/proc/cleanup_pin_sweep(turf/T, area/sweep_room, sweep_gravity, list/sweep_levels)
+	using_map.player_levels.Cut()
+	using_map.player_levels += sweep_levels
 	own_turf_contents(T)
 	// Dispose fixture-owned atoms before restoring gravity: a surviving generator's
 	// destruction can switch its area's gravity off. The runner skips these deleted entries.

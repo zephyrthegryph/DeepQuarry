@@ -21,8 +21,8 @@
 	var/local_target = null
 	var/due = t + max(delay, 0)
 	if(def.clock_idx)
-		var/rate = contribution_clock_rate(rec, def.clock_idx)
-		local_target = contribution_clock_local(rec, def.clock_idx) + max(delay, 0)
+		var/rate = clock_rate(rec, def.clock_idx)
+		local_target = clock_local(rec, def.clock_idx) + max(delay, 0)
 		due = rate > 0 ? t + max(delay, 0) / rate : null
 	var/list/D = rec.deadlines
 	var/k = 0
@@ -97,7 +97,7 @@
 			continue
 		var/gen = ++sched.gen
 		D[i + 1] = gen
-		var/rate = contribution_clock_rate(rec, cidx)
+		var/rate = clock_rate(rec, cidx)
 		if(rate > 0)
-			var/remaining = max(local_target - contribution_clock_local(rec, cidx), 0)
+			var/remaining = max(local_target - clock_local(rec, cidx), 0)
 			sched.insert_deadline(rec, D[i], gen, t + remaining / rate)

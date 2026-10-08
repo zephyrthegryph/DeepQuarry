@@ -1,4 +1,4 @@
-// GRANT_CAPABILITY and /datum/capability/condition (code/datums/capabilities/condition.dm).
+// held_condition() and /datum/capability/condition (code/datums/capabilities/condition.dm).
 
 /datum/capability/condition/dx_jam
 	layer_name = "dx_jam_layer"
@@ -26,7 +26,7 @@
 	TEST_ASSERT_NULL(cap_gate_reason(F, user, null, entry), "not gated before the grant")
 	TEST_ASSERT(!findtext(F.rx?.look_key, "dx_jam_layer"), "no condition layer yet")
 
-	TEST_ASSERT(om_grant_for(F, GRANT_CAPABILITY, /datum/capability/condition/dx_jam, src_a, 2 SECONDS), "granted")
+	TEST_ASSERT(grant(F, held_condition(/datum/capability/condition/dx_jam), src_a, 2 SECONDS), "granted")
 	refresh_flush()
 	TEST_ASSERT(cap_of_all(F, /datum/capability/condition/dx_jam), "the capability is attached")
 	TEST_ASSERT_EQUAL(cap_gate_reason(F, user, null, entry), "it isn't responding", "entries refused with its else_say")
@@ -51,10 +51,10 @@
 	made += src_a
 	refresh_flush()
 	var/datum/interaction/capability/entry = dx_condition_entry(F)
-	om_grant(F, GRANT_CAPABILITY, /datum/capability/condition/dx_jam, src_a)
-	om_grant(F, GRANT_CAPABILITY, /datum/capability/condition/dx_jam, src_b)
+	grant(F, held_condition(/datum/capability/condition/dx_jam), src_a)
+	grant(F, held_condition(/datum/capability/condition/dx_jam), src_b)
 	TEST_ASSERT(cap_of_all(F, /datum/capability/condition/dx_jam), "held")
-	om_revoke(F, GRANT_CAPABILITY, /datum/capability/condition/dx_jam, src_a)
+	revoke(F, held_condition(/datum/capability/condition/dx_jam), src_a)
 	TEST_ASSERT(cap_of_all(F, /datum/capability/condition/dx_jam), "still held by the second source")
 	TEST_ASSERT(cap_gate_reason(F, user, null, entry), "still refusing")
 	qdel(src_b)
@@ -64,8 +64,8 @@
 
 	var/obj/cap_fixture/dx_core/G = new
 	made += G
-	om_grant(F, GRANT_CAPABILITY, /datum/capability/condition/dx_jam, src_a)
-	om_grant(G, GRANT_CAPABILITY, /datum/capability/condition/dx_jam, src_a)
+	grant(F, held_condition(/datum/capability/condition/dx_jam), src_a)
+	grant(G, held_condition(/datum/capability/condition/dx_jam), src_a)
 	TEST_ASSERT(cap_of_all(F, /datum/capability/condition/dx_jam) == cap_of_all(G, /datum/capability/condition/dx_jam), "one shared instance per path")
 
 /datum/unit_test/om/dx_condition_blocks
@@ -77,5 +77,5 @@
 	var/datum/src_a = new
 	made += src_a
 	var/datum/interaction/capability/entry = dx_condition_entry(F)
-	om_grant(F, GRANT_CAPABILITY, /datum/capability/condition/dx_jam_soft, src_a)
+	grant(F, held_condition(/datum/capability/condition/dx_jam_soft), src_a)
 	TEST_ASSERT_NULL(cap_gate_reason(F, user, null, entry), "a condition that blocks other capabilities lets this entry through")

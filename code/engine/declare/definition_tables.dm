@@ -19,8 +19,6 @@
 	abstract_type = /datum/definition_bundle
 	/// Bundles merged into this one (nesting allowed; cycles are boot errors).
 	var/list/include
-	/// Global effect definitions: id -> list(combine=, stacking=, channel=, default=, expr=, type=).
-	var/list/effects
 	/// Global clock domains: id -> list(min=, max=).
 	var/list/clocks
 	/// Named checks: name -> check spec (usable anywhere a spec is).
@@ -40,18 +38,6 @@
 	var/list/stages
 	/// UI binding rows: list(list(target = /type/proc/x, watch = mask)).
 	var/list/ui
-	/// effect id -> value (number or FROM_VAR) the entity holds on itself while started.
-	var/list/self_effects
-	/// grant kind -> id or list of ids the entity holds on itself.
-	var/list/self_grants
-	/// For relations and slots: effect id -> value held on the target (the holder).
-	var/list/contributes
-	/// For relations and slots: effect id -> value held on the source (the occupant).
-	var/list/source_contributes
-	/// For relations and slots: grant kind -> id(s) held on the target.
-	var/list/grants_target
-	/// For relations and slots: grant kind -> id(s) held on the source (the occupant).
-	var/list/grants_occupant
 
 	/// Compiled by the registry: inline behaviours synthesised from this bundle's own rows.
 	var/list/compiled_behaviours
@@ -71,10 +57,6 @@
 	var/list/stages
 	/// UI rows.
 	var/list/ui
-	/// Stride 2: effect id, value spec.
-	var/list/self_effects
-	/// Stride 2: grant kind, id.
-	var/list/self_grants
 	/// Global observer mask for this type (services).
 	var/service_mask = 0
 	/// Channels of this type's declared periodic fields: a raise re-evaluates its declarations at once
@@ -100,11 +82,11 @@
 	var/list/cache_events
 	var/list/cache_relations
 
-// ---- Combinators (plain lists; used by checks, effects and derived rows). ----
+// ---- Combinators (plain lists; used by checks and derived rows). ----
 
 
 /// Resolves a table value against its holder: FROM_VAR("x") reads holder.x,
-/// FROM_DERIVED("n") reads a derived value, FROM_EFFECT(id) an effect value.
+/// FROM_DERIVED("n") reads a derived value.
 /// Anything else is returned as is.
 /proc/definition_read(datum/holder, spec)
 	if(!islist(spec))
@@ -119,8 +101,6 @@
 			return holder.vars[L[2]]
 		if("derived")
 			return holder && derived_derived(holder, L[2])
-		if("effect")
-			return holder && contribution_value_of(holder, L[2])
 	return spec
 
 /datum/scheduler_type_table/New()
@@ -130,8 +110,4 @@
 		stages = list()
 	if(!ui)
 		ui = list()
-	if(!self_effects)
-		self_effects = list()
-	if(!self_grants)
-		self_grants = list()
 	..()

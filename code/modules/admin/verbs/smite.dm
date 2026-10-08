@@ -386,6 +386,8 @@ GLOBAL_VAR(redspace_abduction_z)
 	if(step == 1 && target)
 		// The target's release does not ride on the shadekin's timers: if it dies mid-show they are dropped, and this one still frees the target.
 		after(target, SHADEKIN_SMITE_RELEASE, GLOBAL_PROC_REF(shadekin_smite_release), key = "shadekin_smite_release", with = list(target))
+		// The shadekin dying frees the target at once; the timer is the fallback for any other way the show ends.
+		observe(shadekin, /datum/notice/mob_death, target, then(TYPE_PROC_REF(/mob/living, shadekin_smite_died)))
 	switch(step)
 		if(2)
 			shadekin.dir = WEST
@@ -414,6 +416,11 @@ GLOBAL_VAR(redspace_abduction_z)
 /// The shadekin smite's safety net: whatever became of the shadekin, the target moves again.
 /proc/shadekin_smite_release(mob/living/target)
 	target.set_transforming(FALSE)
+
+/// The shadekin the smite made died mid-show: the target it was carrying moves again now, and the fallback timer is spent.
+/mob/living/proc/shadekin_smite_died(datum/act/notice/A)
+	set_transforming(FALSE)
+	cancel_after(src, "shadekin_smite_release")
 
 /// The hot dog smite: a whistle, then two seconds later the costume, gone again after five.
 /proc/hotdog_smite(mob/living/target)

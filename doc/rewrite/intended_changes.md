@@ -2734,6 +2734,19 @@ Pinned by `code/modules/unit_tests/dq_timed_pin_w6_behaviour.dm` (40 pins writte
 * **Class: a refusal the old handler left silent now says why (a welder that is off).** The sensors suite and graffiti welds answered `ITEM_INTERACT_BLOCKING` / `OP_OK` with no word for an unlit welder; `lit_welder(fuel = 0)` says "Turn on the welding tool first!". Pins: `sensors_weld_undamaged`, `graffiti_clear_welder_off` (start nothing). The sensors weld waits `max(5, damage / 5)` as before, scaled by the tool speed (the W2 tool-wait class).
 
 The `dq_conversion_pin` rows that changed for the Y conversions (not blessed; the classes of "the menu and key rows" above): `/obj/structure/meteorite` (the all-items "Use" entry is "Use" for a pickaxe only; items that do nothing show "click: nothing"), `/obj/effect/decal/writing` ("Clear graffiti" for a lit welder; the generic "Engrave" row for the welder is gone), `/obj/item/book` ("Carve cutters" and "carve_cutters_blocked" for wirecutters; keys), `/obj/item/material/fishing_rod` and its subtypes (`fishing_rod_string` key).
+## Destructive held-item and hand ops need harm intent (rewrite/om-leftovers)
+
+A held-item op answers a click (a generic "Pick up" only with an empty hand), but an op that destroys, crumbles, dismantles
+or consumes its target must not fire on a casual click. Gate it individually with `stance(I_HURT)` or an `asks()` confirm.
+Changed: smole buildings and smole ruins no longer flatten when clicked with any item on help intent (harm intent still
+does; disarm still takes a building apart by hand); remains crumble only on harm intent. Tool-specific ops (a welder cutting
+a closet, a knife slicing food) are deliberate and stay ungated. The supermatter wall's "Touch with", smole buildings and smole ruins are gated by one requirement,
+`harm_click_only` (code/datums/operations/req.dm): the item op is declared before the bare-hand op so a held item answers first, and a click not on
+harm intent is **refused** with "That would destroy it. Use harm intent if you mean it." rather than falling through to the hand touch (on the wall
+that touch dusts the player). Empty hand still touches. The gate is click-path only: a menu pick is deliberate and stays ungated. Remains keep their
+hand-op `stance(I_HURT)` (there is no item op, so an item click does nothing destructive). Reviewed and left as is: the stardog/tank "swallow" item ops
+(they take the item, not the target).
+
 ## Machinery final admission and gravity teardown (2026-10-07)
 
 - Camera attack admission, AI upload level admission, robot remote admission, floor-light custody, suit cycler custom-item admission, and Santa actor identity explicitly sample their current input state with `read_once()`. These samples do not claim a subscription. Menus that sample are rebuilt, including enclosing menus, so mutable instantaneous admission never uses an old generation cache. Tracked-only menus retain their cache. Waiting requirements still require real tracked dependencies for mutable conditions.
@@ -3503,3 +3516,13 @@ Merging machinery-click-intent with ui-outputs and timed-tasks changed these pin
 * **`pins/` machinery files (334 files, 3629 removed `menu: Hit` rows, 8 `click:` rows `Click: Hit` -> `nothing`).** The class of "Machinery non-harm item clicks" above: the same intent correction applies to the `dq_conversion_pin` copies of the machinery types, not only to `i7_bulk`. Only removals of `menu: Hit` and the `Click: Hit` -> `nothing` change; no other row moved.
 * **`look_states/obj.item.melee.robotic.baton.txt` (20 rows).** The sampled variable set for the arm and slime batons shifted (`gurgled` is sampled, `randpixel` no longer is) because the merged branches changed the variable list the look-state sampler walks on `/obj/item`; the arm and slime looks themselves (`electrified arm`/`shock`, `slimebaton`/`slimebaton_active`) are unchanged.
 * **Stale interim tests.** `interim_confetti_cleanup` and `interim_snow_shovel_cleanup` asserted the old handler/commit shape; the ops are now `wait()` ops (timed-tasks), so they assert the actor has a pending op.
+
+## Grants, timers and the c4 boundary tests (rewrite/om-leftovers)
+
+- Grants are capabilities and keyed stats, not a grant store: abilities are `granted_ability(id)` activations, verbs and hides are `granted_verb()` activations
+  (the verb store reads the live activations), conditions are `held_condition(path)`, traits are holds on `STAT_TRAIT_HOLDS` and cadences holds on
+  `STAT_CADENCE_HOLDS`. The step cadence hears its holds through an on_change reaction, delivered at the next drain point rather than inline.
+  The OM `self_grants`, `grants_target` and `grants_occupant` rows, the legacy verb-path form of `grant()` and `hidden_verb()` are gone.
+- A keyed timer whose datum argument is deleted drops the call and clears its key (`after_pending()` is false afterwards); `keeps_dead = TRUE` still runs it
+  with the argument null. The fulton chain, the cryptdrake landing and the transit-tube station completions opt in, because their tail must run.
+- The smole building and ruins "Smash" ops answer harm intent as well as use, so a harm-intent click with a held item smashes rather than landing a melee hit.

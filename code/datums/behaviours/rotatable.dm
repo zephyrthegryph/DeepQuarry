@@ -1,9 +1,9 @@
 /// Rotation verbs (was /datum/element/rotatable). The atom grants the verbs to itself.
 /atom/movable/proc/make_rotatable(only_flip = FALSE)
 	if(!only_flip)
-		grant(src, /atom/movable/proc/rotate_clockwise, src)
-		grant(src, /atom/movable/proc/rotate_counterclockwise, src)
-	grant(src, /atom/movable/proc/turn_around, src)
+		grant(src, granted_verb(/atom/movable/proc/rotate_clockwise), src)
+		grant(src, granted_verb(/atom/movable/proc/rotate_counterclockwise), src)
+	grant(src, granted_verb(/atom/movable/proc/turn_around), src)
 
 /atom/movable/proc/unmake_rotatable()
 	revoke(src, /atom/movable/proc/rotate_clockwise, src)

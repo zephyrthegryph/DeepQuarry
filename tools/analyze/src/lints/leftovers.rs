@@ -1,4 +1,4 @@
-//! Port of `tools/ci/leftovers_lints.py`: finished sweeps stay finished (doc/rewrite/completion_plan.md:
+//! Port of `tools/ci/leftovers_lints.py`: finished sweeps stay finished (doc/rewrite/archive/completion_plan.md:
 //! I-menu, G-traits, MED-4). Three kinds in one script, each at 0 with no ceiling:
 //!
 //! * `radial`: `show_radial_menu(` / `show_radial_menu_persistent(` / `new /datum/radial_menu` outside

@@ -22,6 +22,8 @@
 	var/stat_key
 	var/name
 	var/rule
+	/// TRUE for the SUM_PER_KEY rule: the value is a key -> sum list and every hold names a key.
+	var/keyed = FALSE
 	/// TRUE for a boolean (ALL, ANY) stat.
 	var/boolean = FALSE
 	/// TRUE for a FORMULA stat.
@@ -113,10 +115,13 @@ GLOBAL_LIST_EMPTY(stat_type_index) // type -> /datum/stat_type_info
 	def.rule = rule
 	def.boolean = stat_rule_is_boolean(rule)
 	def.is_formula = (rule == STAT_RULE_FORMULA)
+	def.keyed = (rule == STAT_RULE_SUM_PER_KEY)
 	def.fast = (rule == STAT_RULE_ALL || rule == STAT_RULE_ANY || rule == STAT_RULE_SUM)
 	def.base = base
 	if(!isnull(opts["reapply"]))
 		def.reapply = opts["reapply"]
+	if(def.keyed)
+		def.reapply = REAPPLY_REPLACE // a key's hold is its latest count, not the stronger of two
 	def.units = opts["units"]
 	def.formula = opts["formula"]
 	def.formula_reads = opts["reads"]
