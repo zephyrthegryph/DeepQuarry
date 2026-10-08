@@ -450,8 +450,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     let modified_defaults =
         crate::modified_initializers::default_seeds(frontend, plan, &initialization.classified)
             .map_err(ColdError::Initializer)?;
-    // Projection and modified default capture now own their output. The
-    // classification ledger (including runtime AST groups) is no longer read.
+    // Projection/default capture own their results; release the runtime AST ledger.
     drop(initialization.classified);
     let modified = crate::modified_initializers::collect_with_defaults(
         seeds,
@@ -461,8 +460,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         declarations.initializers.pure_calls(),
     )
     .map_err(ColdError::Initializer)?;
-    // collect_with_defaults copies descriptor/debug facts into its owned result;
-    // release duplicated seed descriptions before freezing all procedure images.
+    // Descriptor/debug facts are owned by modified; release their seed copies.
     drop(modified_defaults);
     crate::modified_output::contribute(&modified.descriptors, &mut inventory)
         .map_err(ColdError::Initializer)?;
