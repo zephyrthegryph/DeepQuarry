@@ -6,6 +6,8 @@
 	last_actor_ref = user ? REF(user) : null
 	return ..()
 
+/datum/unit_test/om/interim_target_zone_hud_actor
+
 /datum/unit_test/om/interim_target_zone_hud_actor/proc/targeting_raises(datum/entity)
 	var/count = 0
 	for(var/list/entry as anything in sched.test_raises)
