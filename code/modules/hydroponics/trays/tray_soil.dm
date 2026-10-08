@@ -15,8 +15,8 @@ MSG_DEF_SELF(soil/growing, "There is something growing here.")
 CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics/soil)
 	without(CAP_TANK_BAY) // a plot takes no tank: the tank does nothing here
 	op("tank_block", item(/obj/item/tank), label("Use"), then(PROC_REF(nothing_happens)))
-	op("fill_in", item(/obj/item/shovel), stance(I_HURT), label("Fill in"), begins(MSG(soil/fill_begin)), wait(3 SECONDS), then(PROC_REF(fill_in_done)))
-	op("dig", item(/obj/item/shovel), label("Dig"), stance(I_HELP, I_DISARM, I_GRAB), needs(req(PROC_REF(nothing_growing), because = MSG(soil/growing))),
+	op("fill_in", item(/obj/item/shovel), stance(I_HURT), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), label("Fill in"), begins(MSG(soil/fill_begin)), wait(3 SECONDS), then(PROC_REF(fill_in_done)))
+	op("dig", item(/obj/item/shovel), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), label("Dig"), stance(I_HELP, I_DISARM, I_GRAB), needs(req(PROC_REF(nothing_growing), because = MSG(soil/growing))),
 		soil_destroy_confirms(), begins(MSG(soil/disperse_begin)), wait(5 SECONDS), then(PROC_REF(dispersed)))
 
 /// "Do you want to destroy the growplot?": a yes/no whose "no" ends the op before the work starts.
