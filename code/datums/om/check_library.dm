@@ -65,13 +65,6 @@
 	if(!target || QDELETED(target))
 		return "it's gone"
 
-/datum/om/check/has_effect
-	depends_on = CHANGE_EFFECTS
-
-/datum/om/check/has_effect/why_not(datum/actor, datum/target)
-	if(!om_has(subject(actor, target), param(actor)))
-		return "not [param(actor)]"
-
 /datum/om/check/var_below
 /datum/om/check/var_below/why_not(datum/actor, datum/target)
 	var/list/A = param(actor)

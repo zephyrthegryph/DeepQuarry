@@ -229,7 +229,7 @@
 	hold(M, STAT_E3_DRAW, 3, A, lasts = 50, clock = HOLD_CLOCK_WORLD)
 	TEST_ASSERT_EQUAL(M.e3_draw, 7, "REAPPLY_MAX keeps the stronger value")
 	TEST_ASSERT(hold_left(M, STAT_E3_DRAW, A) > 50, "and never shortens")
-	hold_until(M, STAT_E3_DRAW, 1, A, until = om_time_of(M) + 10, clock = HOLD_CLOCK_WORLD)
+	hold_until(M, STAT_E3_DRAW, 1, A, until = scheduler_time_of(M) + 10, clock = HOLD_CLOCK_WORLD)
 	TEST_ASSERT_EQUAL(M.e3_draw, 3, "hold_until replaces the value")
 	TEST_ASSERT(hold_left(M, STAT_E3_DRAW, A) <= 10, "and may shorten")
 	TEST_ASSERT_EQUAL(release_all(M, A), 1, "release_all counts what it released")

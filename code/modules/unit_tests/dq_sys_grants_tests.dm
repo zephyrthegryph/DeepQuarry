@@ -110,7 +110,6 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 	var/obj/item/dq_grants_declared/D = allocate(/obj/item/dq_grants_declared, test_floor())
 	TEST_ASSERT(/obj/proc/dq_sys_grants_test_obj_verb in D.verbs, "verb_entry() puts the verb on at init")
 	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_flag_verb in D.verbs), "conditional verb_entry() stays off while the var is false")
-	TEST_ASSERT(!D.om_rec?.contribs, "declared verbs keep no per-instance store entry")
 
 	D.set_dq_flag(TRUE)
 	test_time(0.2 SECONDS)
@@ -167,7 +166,6 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 	TEST_ASSERT_EQUAL(!!(/turf/simulated/proc/climb_wall in T.verbs), !!T.climbable, "climb_wall follows climbable after a toggle")
 	T.toggle_climbability()
 	TEST_ASSERT_EQUAL(!!(/turf/simulated/proc/climb_wall in T.verbs), !!was, "and back")
-	TEST_ASSERT(!T.om_rec?.contribs, "a turf holds no verb grant")
 
 /// Exercise the production form hooks before replacing their grant/revoke calls.
 /datum/form/dq_grant_test

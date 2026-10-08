@@ -308,7 +308,7 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 	if(!clock_id)
 		return 1
 	var/datum/clock_definition/C = definition_registry().clock_by_id[clock_id]
-	return C ? contribution_clock_rate(rec, C.idx) : 1
+	return C ? clock_rate(rec, C.idx) : 1
 
 /proc/timer_local(datum/scheduler_record/rec)
 	var/list/K = rec.tclock

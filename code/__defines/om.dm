@@ -95,24 +95,6 @@
 /// is for hot setters that want the listen-mask test inlined.
 #define OM_CHANGED(E, bits) if((E).om_listen & (bits)) { om_dispatch_change(E, bits) }
 
-// ---- Effects (section E). combine / stacking values for effect table rows. ----
-#define COMBINE_ANY 1
-#define COMBINE_SUM 2
-#define COMBINE_MAX 3
-#define COMBINE_MIN 4
-#define COMBINE_MULTIPLY 5
-#define COMBINE_SUM_PER_KEY 6
-
-#define STACKING_REPLACE 1
-#define STACKING_EXTEND 2
-#define STACKING_MAX 3
-
-// Effect kinds the framework itself reacts to.
-#define OM_EFFECT_PLAIN 0
-#define OM_EFFECT_CLOCK_MULT 1
-#define OM_EFFECT_CLOCK_INHIBIT 2
-
-// Built-in effect ids (library.dm defines the rest).
 
 /// The key of verb PATH shown under its own NAME and DESC (a renamed verb instance, `new PATH(target, NAME, DESC)`): what
 /// verb_entry(path, name =, desc =) and has_verb() use.
@@ -180,7 +162,6 @@
 // One-line derived declarations (plain lists; see decl.dm).
 #define FROM_VAR(name) list("var", name)
 #define FROM_DERIVED(name) list("derived", name)
-#define FROM_EFFECT(id) list("effect", id)
 #define OVER_SLOT(id) list("slot", id)
 #define DERIVE(name, expr, channel) list("derive" = "check", "name" = name, "expr" = expr, "channel" = channel)
 #define DERIVE_SUM(name, over, reader, channel) list("derive" = "sum", "name" = name, "over" = over, "reader" = reader, "channel" = channel)

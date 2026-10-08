@@ -1,9 +1,5 @@
 // Object-model core: the standard library of table rows
-// (doc/rewrite/object_model_core.md, "Library"). Mob Life uses the clocks and suspension;
-// statuses are stats (code/library/mob/statuses.dm).
-
-/proc/definition_standard_effects()
-	return list() // no standard effect rows are left: statuses, body effects, grants and buckling are stats
+// (doc/rewrite/object_model_core.md, "Library"). Statuses, body effects and grants are stats; clocks are code/engine/time/clocks.dm.
 
 // ---------------------------------------------------------------- relations
 
@@ -14,7 +10,3 @@
 // code/engine/declare/link_state.dm), not relations declared here.
 
 // ---------------------------------------------------------------- bundles
-
-
-/proc/om_library_effects()
-	return definition_standard_effects()

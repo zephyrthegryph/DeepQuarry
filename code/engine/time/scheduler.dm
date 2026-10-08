@@ -97,12 +97,6 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	var/emit_depth = 0
 	var/list/event_queue
 
-	/// Hook context for holds reconciliation (contribution.dm).
-	var/hook_epoch = 0
-	var/cur_epoch = 0
-	var/datum/scheduler_record/ctx_rec
-	var/ctx_bid = 0
-
 	/// Budget shares per lane (fractions of the run's budget).
 	var/list/lane_share = list(0.3, 0.3, 0.15, 0.15, 0.05, 0.05) // ALLOW(instance_list): the scheduler is a singleton (one per live kernel, one per test)
 	/// Tests: max hook calls per lane per run (one per lane), and for deadlines.
@@ -562,7 +556,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 ///
 /// Three loops: plain cadence (tick), fixed-step (the accumulator at the
 /// behaviour's step_idx, on_step called directly; hooks go through call_hook
-/// only when the behaviour holds), and everything else (tick_slow()).
+/// only when the behaviour has a fixed step), and everything else (tick_slow()).
 /datum/time_scheduler/proc/run_slot(datum/cadence_ring/R, list/L)
 	var/datum/scheduled_behaviour/B = R.behaviour()
 	var/dt = R.cur_dt
@@ -570,7 +564,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	if(!(B.clock_idx || B.max_dt))
 		if(B.step_interval)
 			mode = OM_SLOT_STEP
-		else if(!B.holds)
+		else
 			mode = OM_SLOT_FAST
 	// Pipelines are called straight into their runner (one dispatch per entity).
 	var/datum/work_pipeline/pipe = istype(B, /datum/work_pipeline) ? B : null
@@ -615,7 +609,6 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 					var/si = B.step_idx
 					var/step = B.step_interval
 					var/catchup = B.max_catchup
-					var/holds = B.holds
 					while(i <= length(L))
 						var/datum/E = L[i++]
 						if(!E)
@@ -639,8 +632,6 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 						while(n-- > 0)
 							if(pipe)
 								pipe.run_frame(E, step)
-							else if(holds)
-								call_hook(rec, B, OM_HOOK_STEP)
 							else
 								B.on_step(E)
 							if(rec.torn_down)
@@ -697,7 +688,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	if(!rec)
 		return
 	if(B.clock_idx)
-		dt *= contribution_clock_rate(rec, B.clock_idx)
+		dt *= clock_rate(rec, B.clock_idx)
 	if(B.step_interval)
 		var/si = B.step_idx
 		var/list/A = rec.steps
@@ -727,19 +718,11 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	call_hook(rec, B, OM_HOOK_TICK, dt)
 
 /// Every hook except the fast cadence path goes through here: runtimes are
-/// caught (no flag or depth can stick), return values are ignored, and
-/// holds made by `holds` behaviours are reconciled.
+/// caught (no flag or depth can stick) and return values are ignored.
 /datum/time_scheduler/proc/call_hook(datum/scheduler_record/rec, datum/scheduled_behaviour/B, kind, arg)
 	var/datum/E = rec.owner
 	if(!E)
 		return
-	var/prev_rec = ctx_rec
-	var/prev_bid = ctx_bid
-	var/prev_epoch = cur_epoch
-	if(B.holds)
-		ctx_rec = rec
-		ctx_bid = B.id
-		cur_epoch = ++hook_epoch
 	var/failed = FALSE
 	try
 		switch(kind)
@@ -770,12 +753,6 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 		failed = TRUE
 		report_caught(e, "[B.name] hook [kind]: [e] ([e.file]:[e.line])")
 		stat_inc(B.id, OM_STAT_ERRORS)
-	if(B.holds)
-		if(!failed && kind != OM_HOOK_STOP && kind != OM_HOOK_DESTROY && !rec.torn_down)
-			contribution_reconcile_holds(rec, B.id, cur_epoch)
-		ctx_rec = prev_rec
-		ctx_bid = prev_bid
-		cur_epoch = prev_epoch
 
 /// Runs `B`'s tick on `E` now, outside its ring (Life's run-this-system-now
 /// path). dt is the caller's; the ring's own schedule is unchanged.
@@ -1006,9 +983,9 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	var/datum/scheduled_behaviour/B = reg.behaviours[bid]
 	var/local_target = D[k + 2]
 	if(!isnull(local_target))
-		var/local_now = contribution_clock_local(rec, B.clock_idx)
+		var/local_now = clock_local(rec, B.clock_idx)
 		if(local_now < local_target - 0.001)
-			var/rate = contribution_clock_rate(rec, B.clock_idx)
+			var/rate = clock_rate(rec, B.clock_idx)
 			if(rate > 0)
 				insert_deadline(rec, key, gen_i, t + (local_target - local_now) / rate)
 			return

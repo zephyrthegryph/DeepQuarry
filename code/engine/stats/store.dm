@@ -13,9 +13,8 @@
 //
 // The recompute is inline (recompute.dm): when hold() returns, the stat, and the stats that read it on the entity, hold their settled values.
 //
-// The hold store here is the stat layer's own rows, of the contribution store's shape (stat, source, value, expiry, key). The legacy store
-// (code/datums/om/contribution.dm) stays authoritative for its own EFFECT_* ids until the callers of contribution_apply and contribution_hold migrate (phase 3 and
-// after); a status or stat declared with STAT lives here.
+// The hold store here is the stat layer's own rows (stat, source, value, expiry, key); every runtime contribution to a number, a flag or a clock
+// rate is a hold on a stat declared with STAT.
 
 /// Everything the stat layer keeps for one entity, in its reaction state (allocated on the first hold or the first init).
 /datum/stat_record

@@ -2,7 +2,7 @@
 // sequences a thing plays out over a few ticks. Each is a real behaviour, not a generic write:
 // state that changes later changes through its own setter (after(E, d, PROC_REF(setter)))
 // so its channel is raised, and a "temporary X that undoes itself" is a timed status or
-// contribution (om_apply(), status_at_least()), never a var written back by name.
+// hold on a stat (hold(), status_at_least()), never a var written back by name.
 
 /// after() target: deletes the owner as one batched destroy
 /// (code/datums/lifecycle/batch.dm), with `extra` in the same set.

@@ -129,29 +129,6 @@
 /datum/om/behaviour/test/derived_watcher
 	wake_on = CHANGE_DATUM_D
 
-// Effect rows of the OM store's own tests (the library keeps only what game code uses).
-#define EFFECT_TEST_FLAG "test_flag"
-#define EFFECT_TEST_SUM "test_sum"
-#define EFFECT_TEST_PRODUCT "test_product"
-#define EFFECT_TEST_ARMOR "test_armor"
-
-/datum/om/bundle/test_effects
-	effects = list(
-		EFFECT_TEST_FLAG = list("combine" = COMBINE_ANY),
-		EFFECT_TEST_SUM = list("combine" = COMBINE_SUM),
-		EFFECT_TEST_PRODUCT = list("combine" = COMBINE_MULTIPLY),
-		EFFECT_TEST_ARMOR = list("combine" = COMBINE_SUM),
-	)
-
-/datum/om/behaviour/test/holder
-	every = 1 SECONDS
-	holds = TRUE
-
-/datum/om/behaviour/test/holder/tick(datum/om_test_entity/E, dt)
-	E.ticks++
-	if(E.enabled)
-		om_hold(E, EFFECT_TEST_FLAG, E)
-
 /datum/om/behaviour/test/handler
 	handles = list(/datum/om/event/test)
 
@@ -184,7 +161,6 @@
 
 /datum/om/relation/test_contributing
 	name = "test armour"
-	contributes = list(EFFECT_TEST_ARMOR = FROM_VAR("weight"))
 	active_if = /datum/om/check/test_enabled
 
 /datum/om/relation/test_hooked
@@ -302,7 +278,6 @@
 	include = list(/datum/om/bundle/test_bad_cycle_a)
 	ticks = list(/datum/om_test_entity/proc/inline_tick = list("evry" = 1 SECONDS))
 	reacts = list(/datum/om_test_entity/proc/inline_react = 0)
-	effects = list("test_bad_effect" = list("combine" = 99, "colour" = "red"))
 	derived = list(list("derive" = "median", "name" = "test_bad_derived"))
 
 /datum/om/bundle/test_bad_cycle_a
@@ -801,73 +776,6 @@
 	TEST_ASSERT_EQUAL(length(A.om_rec?.edges), 0, "the deleted end has no edges left")
 	TEST_ASSERT_EQUAL(length(linked(B, /datum/om/relation/test_hooked)), 0, "other end cleaned")
 
-/datum/unit_test/om/relation_contributions_active_if
-
-/datum/unit_test/om/relation_contributions_active_if/run_om(list/made)
-	var/datum/om_test_entity/armour = entity(made)
-	var/datum/om_test_entity/wearer = entity(made)
-	armour.weight = 4
-	om_link(armour, wearer, /datum/om/relation/test_contributing)
-	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 4, "contributes a FROM_VAR value to the target")
-	armour.enabled = FALSE
-	changed(armour, CHANGE_DATUM_B)
-	scheduler_advance(0.1)
-	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 0, "active_if failing releases")
-	armour.enabled = TRUE
-	changed(armour, CHANGE_DATUM_B)
-	scheduler_advance(0.1)
-	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 4, "active_if passing re-applies")
-	om_unlink(armour, wearer, /datum/om/relation/test_contributing)
-	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 0, "unlinking releases")
-
-// ---------------------------------------------------------------- E: contributions
-
-/datum/unit_test/om/effects_timed_stacking_composites
-
-/datum/unit_test/om/effects_timed_stacking_composites/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
-	var/datum/om_test_entity/src_a = entity(made)
-	var/datum/om_test_entity/src_b = entity(made)
-	om_apply(E, EFFECT_TEST_FLAG, src_a, 1 SECONDS)
-	TEST_ASSERT(om_has(E, EFFECT_TEST_FLAG), "applied")
-	om_apply(E, EFFECT_TEST_FLAG, src_a, 3 SECONDS)
-	scheduler_advance(2)
-	TEST_ASSERT(om_has(E, EFFECT_TEST_FLAG), "a re-apply keeps the longer expiry")
-	scheduler_advance(1.5)
-	TEST_ASSERT(!om_has(E, EFFECT_TEST_FLAG), "expired through the deadline wheel")
-	om_hold(E, EFFECT_TEST_SUM, src_a, 2)
-	om_hold(E, EFFECT_TEST_SUM, src_b, 3)
-	TEST_ASSERT_EQUAL(om_value_of(E, EFFECT_TEST_SUM), 5, "COMBINE_SUM")
-	om_release(E, EFFECT_TEST_SUM, src_a)
-	TEST_ASSERT_EQUAL(om_value_of(E, EFFECT_TEST_SUM), 3, "release")
-	om_hold(E, EFFECT_TEST_PRODUCT, src_a, 0.5)
-	om_hold(E, EFFECT_TEST_PRODUCT, src_b, 0.5)
-	TEST_ASSERT_EQUAL(om_value_of(E, EFFECT_TEST_PRODUCT), 0.25, "COMBINE_MULTIPLY")
-
-/// Regression: overrides never outlive their source.
-/datum/unit_test/om/regression_no_stuck_overrides
-
-/datum/unit_test/om/regression_no_stuck_overrides/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
-	var/datum/om_test_entity/source = entity(made)
-	om_hold(E, EFFECT_TEST_FLAG, source)
-	TEST_ASSERT(om_has(E, EFFECT_TEST_FLAG), "held")
-	qdel(source)
-	TEST_ASSERT(!om_has(E, EFFECT_TEST_FLAG), "a hold dies with its source")
-	// Holds made from a hook last only while the hook keeps making them.
-	var/datum/om_test_entity/H = entity(made)
-	om_attach(H, /datum/om/behaviour/test/holder)
-	scheduler_advance(1.5)
-	TEST_ASSERT(om_has(H, EFFECT_TEST_FLAG), "hook hold made")
-	H.enabled = FALSE
-	scheduler_advance(1.5)
-	TEST_ASSERT(!om_has(H, EFFECT_TEST_FLAG), "not re-held: released on return")
-	H.enabled = TRUE
-	scheduler_advance(1.5)
-	TEST_ASSERT(om_has(H, EFFECT_TEST_FLAG), "held again")
-	om_detach(H, /datum/om/behaviour/test/holder)
-	TEST_ASSERT(!om_has(H, EFFECT_TEST_FLAG), "stopping the behaviour releases its holds")
-
 // ---------------------------------------------------------------- G: events
 
 /// Regression: subtype events reach handlers of the parent type.
@@ -920,7 +828,6 @@
 	om_attach(E, /datum/om/behaviour/test/every_second)
 	scheduler_advance(1.5)
 	TEST_ASSERT(!sched.dl_processing, "deadline flag reset")
-	TEST_ASSERT_NULL(sched.ctx_rec, "hook context reset")
 	TEST_ASSERT_EQUAL(sched.bulk_depth, 0, "bulk depth untouched")
 
 // ---------------------------------------------------------------- H: checks
@@ -932,9 +839,9 @@
 	var/datum/om/check/b = om_check_get(list(/datum/om/check/in_range = 3))
 	TEST_ASSERT(a && a == b, "parameterised checks are cached by value")
 	TEST_ASSERT(a != om_check_get(CHECK(/datum/om/check/in_range, 4)), "different parameter, different instance")
-	var/datum/om/check/combo = om_check_get(ALL_OF(/datum/om/check/test_enabled, NOT_OF(/datum/om/check/has_effect)))
+	var/datum/om/check/combo = om_check_get(ALL_OF(/datum/om/check/test_enabled, NOT_OF(/datum/om/check/alive)))
 	TEST_ASSERT(combo.depends_on & CHANGE_DATUM_B, "depends_on is the union of parts")
-	TEST_ASSERT(combo.depends_on & CHANGE_EFFECTS, "including nested parts")
+	TEST_ASSERT(combo.depends_on & CHANGE_MOB_STAT, "including nested parts")
 	var/datum/om_test_entity/E = entity(made)
 	TEST_ASSERT(om_can(ANY_OF(/datum/om/check/test_enabled, /datum/om/check/target_exists), E, null), "ANY_OF")
 	E.enabled = FALSE
@@ -1004,7 +911,7 @@
 	reg.include_skipped = TRUE
 	reg.only_bundles = list(/datum/om/decl/test_bad)
 	reg.build()
-	var/list/wanted = list("include cycle", "unknown key evry", "non-zero channel mask", "bad combine", "unknown key colour", "unknown kind median")
+	var/list/wanted = list("include cycle", "unknown key evry", "non-zero channel mask", "unknown kind median")
 	for(var/needle in wanted)
 		var/found = FALSE
 		for(var/msg in reg.errors)

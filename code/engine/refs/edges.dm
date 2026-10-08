@@ -244,7 +244,7 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 		entity_teardown_rest(edge)
 	edge.active = FALSE
 
-/// Applies or releases the relation's contributions as active_if says.
+/// Marks the edge active or not as active_if says (a relation contributes through the stat layer: contributes_to).
 /proc/relation_edge_refresh(datum/relation_edge/edge)
 	var/datum/relation_definition/R = edge.rel
 	var/datum/source = edge.source
@@ -257,15 +257,9 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 		return
 	var/want = !R.compiled_active_if || isnull(R.compiled_active_if.why_not(source, target))
 	if(!want)
-		if(edge.active)
-			edge.active = FALSE
-			contribution_release_all_from(edge)
+		edge.active = FALSE
 		return
 	edge.active = TRUE
-	for(var/id in R.contributes)
-		contribution_hold(target, id, edge, definition_read(source, R.contributes[id]))
-	for(var/id in R.source_contributes)
-		contribution_hold(source, id, edge, definition_read(target, R.source_contributes[id]))
 
 // ---------------------------------------------------------------- forwarding
 

@@ -10,9 +10,6 @@
 /proc/om_is_abstract(datum/om/D)
 	return definition_is_abstract(arglist(args))
 
-/proc/om_effect_expr_refs(expr, list/out)
-	return definition_effect_expr_refs(arglist(args))
-
 /proc/om_merge_assoc(list/a, list/b)
 	return definition_merge_assoc(arglist(args))
 
@@ -59,7 +56,6 @@
 			/datum/om/edge = /datum/relation_edge,
 			/datum/om/check = /datum/requirement_definition,
 			/datum/om/derived = /datum/derived_definition,
-			/datum/om/effect = /datum/effect_definition,
 			/datum/om/clock_def = /datum/clock_definition,
 			/datum/om/service = /datum/service_definition,
 			/datum/om/bundle = /datum/definition_bundle,
@@ -81,9 +77,6 @@
 
 /datum/definition_registry/make_inline_behaviour()
 	return new /datum/om/behaviour/inline
-
-/datum/definition_registry/standard_effects()
-	return definition_standard_effects()
 
 /datum/definition_registry/presentation_behaviour()
 	return behaviour_by_type[/datum/om/behaviour/internal/ui_push]
