@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Blob cores pick their blob type when they are made, so their colour no longer varies"
+  - bugfix: "A prebuilt voltaic combat cyberheart no longer errors when it is created"
+  - bugfix: "The device electronic assembly no longer declares two clashing item ops"
+  - bugfix: "Chem smoke systems are released right after use instead of living on for their clouds' timers"

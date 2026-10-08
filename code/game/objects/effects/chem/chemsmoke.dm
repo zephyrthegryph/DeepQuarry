@@ -119,6 +119,8 @@ CAPABILITIES(/datum/effect/effect/system/smoke_spread/chem)
 // Also calculates target locations to spawn the visual smoke effect on, so the whole area
 // is covered fairly evenly.
 /datum/effect/effect/system/smoke_spread/chem/start()
+	// A one-shot: it is thrown away after the call, nothing else holds it, and the owned reagent holder ends with it.
+	expire(0)
 	if(!get_location())
 		return
 
@@ -189,22 +191,23 @@ CAPABILITIES(/datum/effect/effect/system/smoke_spread/chem)
 	if(initial(smoke.opacity))
 		smoke.set_opacity(1)		//switching opacity on after the smoke has spawned, and then
 	var/lifespan = 150 + rand(0, 20)
-	after(src, lifespan, PROC_REF(fadeOut), with = list(smoke))
+	// the smoke fades on its own timer: the system that made it is done once start() returns and is not kept for its clouds
+	after(smoke, lifespan, TYPE_PROC_REF(/obj/effect/effect/smoke/chem, fade_out))
 
 /datum/effect/effect/system/smoke_spread/chem/spores/spawnSmoke(turf/T, icon/I, dist = 1)
 	var/obj/effect/effect/smoke/chem/spores = new /obj/effect/effect/smoke/chem(get_location())
 	spores.name = "cloud of [seed().seed_name] [seed().seed_noun]"
 	..(T, I, dist, spores)
 
-/datum/effect/effect/system/smoke_spread/chem/proc/fadeOut(atom/A, frames = 16) // Fades out the smoke smoothly using it's alpha variable.
-	A.set_opacity(0)		// lighting and view range updates
-	if(A.alpha == 0) //Handle already transparent case
-		spent(A)
+/obj/effect/effect/smoke/chem/proc/fade_out(frames = 16) // Fades out the smoke smoothly using it's alpha variable.
+	set_opacity(0)		// lighting and view range updates
+	if(alpha == 0) //Handle already transparent case
+		spent(src)
 		return
 	if(frames == 0)
 		frames = 1 //We will just assume that by 0 frames, the coder meant "during one frame".
-	animate(A, alpha = 0, time = frames)
-	A.expire(frames)
+	animate(src, alpha = 0, time = frames)
+	expire(frames)
 
 /datum/effect/effect/system/smoke_spread/chem/proc/smokeFlow() // Smoke pathfinder. Uses a flood fill method based on zones to quickly check what turfs the smoke (airflow) can actually reach.
 

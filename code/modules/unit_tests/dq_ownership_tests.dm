@@ -561,3 +561,24 @@ TRACKED_BRIDGED(/datum/own_test_watch_target, power_level, CHANGE_EFFECTS)
 	TEST_ASSERT_NOTNULL(entry, "the slot capability's owned() declares its var in the holder's table")
 	TEST_ASSERT_EQUAL(entry[OWNE_KIND], OWNK_OWN, "the slot var is owned")
 	TEST_ASSERT_EQUAL(entry[OWNE_ARG], OWN_CONTAINED, "the slot var is owned CONTAINED")
+
+/// A chem smoke system is thrown away after start(): no timer of its clouds keeps it alive as an unreferenced datum (the audit's
+/// "dropped with a rec" finding), and its reagent holder ends with it.
+/datum/unit_test/ownership_chem_smoke_not_dropped
+
+/datum/unit_test/ownership_chem_smoke_not_dropped/Run()
+	test_driver_begin()
+	var/obj/item/reagent_containers/glass/beaker/B = allocate(/obj/item/reagent_containers/glass/beaker)
+	B.reagents.add_reagent(REAGENT_ID_WATER, 10)
+	var/datum/effect/effect/system/smoke_spread/chem/S = new
+	var/obj/holder = S.chemholder
+	S.set_up(B.reagents, 5, 0, run_loc_floor_bottom_left)
+	S.start()
+	S = null
+	test_time(1)
+	var/list/lines = own_audit(quiet = TRUE)
+	for(var/line in lines)
+		TEST_ASSERT(!findtext(line, "smoke_spread"), "the finished smoke system is not left behind: [line]")
+	TEST_ASSERT(QDELETED(holder), "the reagent holder ended with the system")
+	test_time(400) // the clouds fade and expire
+	test_driver_end()

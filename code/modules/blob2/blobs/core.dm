@@ -119,6 +119,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 
 	if(placed_at_make || overmind)
 		make_overmind = FALSE
+	// The blob type is rolled here, in the init that made the core, not later when its overmind is made after init: a roll
+	// that late draws from whatever the RNG has moved to by then, so the same seed gave a different colour.
+	if(make_overmind && ai_controlled && !desired_blob_type)
+		desired_blob_type = isnull(difficulty_threshold) ? pick(subtypesof(/datum/blob_type)) : get_random_blob_type()
 
 /// A core spawned without an overmind (not placed by one) makes its own.
 /obj/structure/blob/core/proc/make_overmind_after_init(datum/act/timer/A)

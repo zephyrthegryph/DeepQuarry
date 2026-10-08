@@ -90,7 +90,23 @@
 	catch(var/exception/e)
 		var/static/regex/where = regex(@"^\S+\.dm:\d+:")
 		. = list("runtime: [where.Replace(e.name, "")]") // without the file and line, which move with unrelated edits
+	dq_look_drain_turf(T)
 	own_turf_contents(T)
+
+/// Deletes what the made thing left on `T` until nothing is left. Deleting a thing can make more of them (a space worm's destroyed
+/// segment severs the back half into a new dead head, which severs its own back half when it is deleted in turn), so one pass,
+/// or leaving them for the block's release, ends with the last of them on the block as a leak.
+/datum/unit_test/proc/dq_look_drain_turf(turf/T)
+	for(var/pass in 1 to 30)
+		var/list/left = list()
+		for(var/atom/movable/AM as anything in contents_of(T))
+			if(!QDELETED(AM) && !istype(AM, /obj/effect/landmark))
+				left += AM
+		if(!length(left))
+			return
+		for(var/atom/movable/AM as anything in left)
+			if(!QDELETED(AM))
+				qdel(AM)
 
 /// dq_look_capture() for a turf type: `spot` is turned into it, drawn and turned back. The made turf is the look; the RNG is reseeded from the path.
 /datum/unit_test/proc/dq_look_capture_turf(type, turf/spot)
