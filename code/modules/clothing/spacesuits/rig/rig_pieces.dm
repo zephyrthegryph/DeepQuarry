@@ -95,7 +95,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig)
 			to_chat(M, span_notice("You slide \the [tacknife()] out of [src]."))
 			play_sfx(src, SFX_WEAPONS_FLIPBLADE, 0.8)
 			rel_clear(src, nameof(tacknife))
-			update_icon()
 		return TRUE
 	return OP_DECLINE
 
@@ -111,7 +110,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig)
 		I.forceMove(src)
 		to_chat(M, span_notice("You slide the [I] into [src]."))
 		play_sfx(src, SFX_WEAPONS_FLIPBLADE, 0.8)
-		update_icon()
 	return OP_DECLINE
 
 //TODO: move this to modules

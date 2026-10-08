@@ -372,7 +372,6 @@ CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
 		current_film.icon_state = "dosimeter_film[tostate]"
 	else
 		icon_state = "[initial(icon_state)]-empty"
-	update_icon()
 
 /obj/item/dosimeter_film
 	name = "dosimeter film"

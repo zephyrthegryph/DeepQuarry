@@ -337,3 +337,66 @@ TRACKED(/obj/dq_draw_watched, shown)
 	refresh_flush()
 	TEST_ASSERT(C.rx?.look_key != before, "setting the sprite stack redraws the card without an update_icon() call")
 	TEST_ASSERT_EQUAL(C.icon_state, "base-stamp", "its first layer is the base")
+
+// ---- furniture: the chair's armrests follow who is buckled; the cached image helper shares one image per key ----
+
+/datum/unit_test/dq_draw_chair_follows_buckling
+
+/datum/unit_test/dq_draw_chair_follows_buckling/Run()
+	var/turf/T = test_floor()
+	var/obj/structure/bed/chair/bay/chair/C = allocate(/obj/structure/bed/chair/bay/chair, T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	refresh_flush()
+	var/before = C.rx?.look_key
+	C.buckle_mob(H, TRUE, FALSE)
+	refresh_flush()
+	TEST_ASSERT(C.has_buckled_mobs(), "the mob is buckled")
+	TEST_ASSERT(C.rx?.look_key != before, "buckling a mob redraws the chair (its armrests) without an update_icon() call")
+	C.unbuckle_mob(H, TRUE)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(C.rx?.look_key, before, "and unbuckling takes them off again")
+
+/datum/unit_test/dq_draw_cached_image_is_shared
+
+/datum/unit_test/dq_draw_cached_image_is_shared/Run()
+	var/image/A = look_cached_image("test-key", 'icons/obj/furniture.dmi', "bed", "#ff0000", MOB_PLANE, ABOVE_MOB_LAYER)
+	var/image/B = look_cached_image("test-key", 'icons/obj/furniture.dmi', "bed", "#ff0000", MOB_PLANE, ABOVE_MOB_LAYER)
+	TEST_ASSERT(A == B, "one key is one shared image")
+	TEST_ASSERT_EQUAL(A.plane, MOB_PLANE, "built with its plane")
+	TEST_ASSERT_EQUAL(A.color, "#ff0000", "and its tint")
+
+// ---- clothing: a lit helmet shows its lamp on the item and on every species' worn sprite ----
+
+/datum/unit_test/dq_draw_helmet_lamp_worn_by_sprite_sheet_species
+
+/datum/unit_test/dq_draw_helmet_lamp_worn_by_sprite_sheet_species/Run()
+	var/turf/T = test_floor()
+	var/obj/item/clothing/head/helmet/H = allocate(/obj/item/clothing/head/helmet, T)
+	H.sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi')
+	refresh_flush()
+	var/before = H.rx?.look_key
+	H.set_light_on(TRUE)
+	refresh_flush()
+	TEST_ASSERT(H.rx?.look_key != before, "lighting the lamp redraws the helmet (the lit lamp is a layer of its look)")
+	var/image/worn = H.make_worn_icon(SPECIES_TESHARI, slot_head_str, FALSE, 'icons/inventory/head/mob.dmi', 0)
+	TEST_ASSERT(!isnull(worn), "a worn sprite is made for a species with its own sheet")
+	var/found = FALSE
+	for(var/layer in worn.overlays)
+		var/mutable_appearance/MA = new(layer)
+		if(MA.icon_state == H.light_overlay)
+			found = TRUE
+	TEST_ASSERT(found, "and it carries the helmet lamp (the cache key used to differ between the writer and the reader, so this species never had one)")
+
+/datum/unit_test/dq_draw_clothing_shows_its_blood
+
+/datum/unit_test/dq_draw_clothing_shows_its_blood/Run()
+	var/turf/T = test_floor()
+	var/obj/item/clothing/under/color/blue/C = allocate(/obj/item/clothing/under/color/blue, T)
+	refresh_flush()
+	var/before = C.rx?.look_key
+	C.init_forensic_data().add_blooddna(null, null)
+	TEST_ASSERT(C.forensic_data?.has_blooddna(), "the garment carries blood DNA")
+	dq_set_was_bloodied(C, TRUE)
+	dq_set_blood_color(C, "#aa0000")
+	refresh_flush()
+	TEST_ASSERT(C.rx?.look_key != before, "a bloodied garment draws its stain from the tracked blood colour, without add_blood() adding an overlay")

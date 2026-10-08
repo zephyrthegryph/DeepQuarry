@@ -145,6 +145,9 @@
 	var/cleandesc
 	var/gurgled_color
 
+TRACKED(/obj/item, gurgled)
+TRACKED(/obj/item, gurgled_color)
+
 /obj/item/Initialize(mapload)
 	. = ..()
 	// Read-only per-type tables: share identical ones (writers assign a new list).
@@ -651,8 +654,14 @@
 	if(dq_get_was_bloodied(src) && !dq_get_fluorescent(src))
 		dq_set_fluorescent(src, 1)
 		dq_set_blood_color(src, COLOR_LUMINOL)
-		blood_overlay.color = COLOR_LUMINOL
+		if(blood_overlay)
+			blood_overlay.color = COLOR_LUMINOL
 		update_icon()
+
+/// TRUE for an item whose look draws its own stains (blood from the tracked blood colour and the forensics record, a vore gurgle from the tracked
+/// gurgled colour), so add_blood() and the gurgle code add no overlay of their own.
+/obj/item/proc/stains_in_look()
+	return FALSE
 
 /obj/item/add_blood(mob/living/carbon/human/M as mob)
 	if (!..())
@@ -661,15 +670,16 @@
 	if(istype(src, /obj/item/melee/energy))
 		return
 
-	//if we haven't made our blood_overlay already
-	if(!blood_overlay)
-		generate_blood_overlay()
-	else
-		overlays.Remove(blood_overlay)
+	if(!stains_in_look())
+		//if we haven't made our blood_overlay already
+		if(!blood_overlay)
+			generate_blood_overlay()
+		else
+			overlays.Remove(blood_overlay)
 
-	//Make the blood_overlay have the proper color then apply it.
-	blood_overlay.color = dq_get_blood_color(src)
-	add_overlay(blood_overlay)
+		//Make the blood_overlay have the proper color then apply it.
+		blood_overlay.color = dq_get_blood_color(src)
+		add_overlay(blood_overlay)
 	if(istype(M))
 		add_blooddna(M.dna,M)
 

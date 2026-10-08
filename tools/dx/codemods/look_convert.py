@@ -1047,7 +1047,7 @@ def verdict(ix, comp, plans):
         reads, calls, hops = body_reads(ix, t, plans[t]["lines"] + plans[t].get("parts", []))
         calls.discard("look_parts")
         for h in hops:
-            if not ix.tracked_on(t, h) or True:
+            if h != "reagents" and not ix.tracked_on(t, h):  # reagents is a watched relation of every holder; # a hop through a tracked var is covered: the draw watches the other end (look.watch)
                 untracked.add(h + ".*")
         for v in reads:
             if v in hops:

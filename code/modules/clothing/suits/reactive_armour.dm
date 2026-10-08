@@ -58,7 +58,10 @@ CAPABILITIES(/obj/item/clothing/suit/armor/reactive_armor_shell)
 
 	special_handling = TRUE
 
-APPEARANCE_TEMPLATE(/obj/item/clothing/suit/armor/reactive, "reactive{active?:off}")
+/// The armour shows its state: "reactive" while active, "reactiveoff" when not.
+/obj/item/clothing/suit/armor/reactive/draw(datum/look/look)
+	..()
+	look.state("reactive[active ? "" : "off"]")
 
 TRACKED(/obj/item/clothing/suit/armor/reactive, active)
 
@@ -70,7 +73,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/reactive)
 	var/mob/user = A.actor
 	set_active(!active)
 	to_chat(user, span_notice("[src] is now [active ? "active" : "inactive"]."))
-	update_icon()
 	add_fingerprint(user)
 
 /obj/item/clothing/suit/armor/reactive/handle_shield(mob/user, damage, atom/damage_source, mob/attacker, def_zone, attack_text)

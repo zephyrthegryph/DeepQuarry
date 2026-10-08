@@ -116,7 +116,7 @@
 			suit.name = "[new_name] suit"
 			suit.desc = new_desc
 			suit.icon_state = "[new_icon]_suit"
-			suit.toggleicon = "[new_icon]_suit"
+			suit.set_toggleicon("[new_icon]_suit")
 			var/obj/item/clothing/head/hood/S = suit.hood
 			S.icon_state = "[new_icon]_helmet"
 			if(new_icon_file)

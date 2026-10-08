@@ -9,7 +9,9 @@
 	unacidable = TRUE
 	flippable = FALSE
 
-APPEARANCE_NONE(/obj/structure/bed/nest)
+/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/obj/structure/bed/nest/look_parts(datum/look/look)
+	return
 
 /obj/structure/bed/nest/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	if(buckled_mob)

@@ -1,0 +1,9 @@
+/obj/item/clothing/glasses/sunglasses/sechud/aviator on=0 +state: aviator
+/obj/item/clothing/glasses/sunglasses/sechud/aviator on=0 +overlay: icons/inventory/eyes/item.dmi:aviator:8:#000000
+/obj/item/clothing/glasses/sunglasses/sechud/aviator on=0 -state: aviator_sec
+/obj/item/clothing/glasses/sunglasses/sechud/aviator on=0 -overlay: icons/inventory/eyes/item.dmi:aviator_sec:8:#000000
+/obj/item/clothing/glasses/sunglasses/sechud/aviator/prescription on=0 +state: aviator
+/obj/item/clothing/glasses/sunglasses/sechud/aviator/prescription on=0 +overlay: icons/inventory/eyes/item.dmi:aviator:8:#000000
+/obj/item/clothing/glasses/sunglasses/sechud/aviator/prescription on=0 -state: aviator_sec
+/obj/item/clothing/glasses/sunglasses/sechud/aviator/prescription on=0 -overlay: icons/inventory/eyes/item.dmi:aviator_sec:8:#000000
+

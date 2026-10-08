@@ -42,10 +42,9 @@
 
 		//Deal with protecting our wearer now.
 		if(ready)
-			ready = 0
+			set_ready(FALSE)
 			after(src, cooldown_to_charge, PROC_REF(recharge_ready), key = "recharge_timer", with = list(user))
 			act_message(user, null, others = span_danger("%U%'s [src.name] blocks [attack_text]!"))
-			update_icon()
 			return 1
 	return 0
 
@@ -55,33 +54,34 @@ CAPABILITIES(/obj/item/clothing/suit/armor/tesla)
 /// Old attack_self.
 /obj/item/clothing/suit/armor/tesla/proc/tesla_armor_toggle_self(datum/act/op/A)
 	var/mob/user = A.actor
-	active = !active
+	set_active(!active)
 	to_chat(user, span_notice("You [active ? "" : "de"]activate \the [src]."))
-	update_icon()
 	user.update_inv_wear_suit()
 	user.update_mob_action_buttons()
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/armor/tesla, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/suit/armor/tesla/appearance_overlays()
-	. = list()
-	if(active && ready)
-		icon_state = ready_icon_state
-		item_state = ready_icon_state
-		set_light(2, 1, l_color = "#006AFF")
-	else
-		icon_state = normal_icon_state
-		item_state = normal_icon_state
-		set_light(0, 0, l_color = "#000000")
+TRACKED(/obj/item/clothing/suit/armor/tesla, active)
+TRACKED(/obj/item/clothing/suit/armor/tesla, ready)
 
-	if(ishuman(loc))
-		var/mob/living/carbon/human/H = loc
+/// Lit while it is active and ready to block; the worn suit and the wearer's action buttons follow (effects of the look).
+/obj/item/clothing/suit/armor/tesla/draw(datum/look/look)
+	..()
+	var/lit = active && ready
+	look.state(lit ? ready_icon_state : normal_icon_state)
+	look.held_state(lit ? ready_icon_state : normal_icon_state)
+	if(lit)
+		look.light(2, 1, "#006AFF")
+	else
+		look.light_off()
+	look.effect(PROC_REF(look_effect_wearer_buttons))
+
+/obj/item/clothing/suit/armor/tesla/proc/look_effect_wearer_buttons()
+	var/mob/living/carbon/human/H = loc
+	if(istype(H))
 		H.update_inv_wear_suit(0)
 		H.update_mob_action_buttons()
-	. += ..()
 
 /obj/item/clothing/suit/armor/tesla/proc/recharge_ready(mob/user)
-	ready = 1
-	update_icon()
+	set_ready(TRUE)
 	to_chat(user, span_notice("\The [src] is ready to protect you once more."))
 
 /obj/item/clothing/suit/armor/tesla/proc/shoot_lightning(mob/target, power)

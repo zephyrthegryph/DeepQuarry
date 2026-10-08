@@ -8,6 +8,8 @@
 	buckle_dir = 0
 	buckle_lying = 0 //force people to sit up in chairs when src?.buckled_to()
 	var/propelled = 0 // Check for fire-extinguisher-driven chairs
+	/// Whether anyone is buckled to it (the armrests are drawn over the rider).
+	var/occupied = FALSE
 
 /obj/structure/bed/chair/Initialize(mapload, new_material, new_padding_material)
 	. = ..()
@@ -49,23 +51,16 @@ CAPABILITIES(/obj/structure/bed/chair)
 	rotate_clockwise()
 	return TRUE
 
-/obj/structure/bed/chair/post_buckle_mob()
-	update_icon()
+/// Tracked, set from post_buckle_mob() on every buckle and unbuckle: the armrests are drawn over the rider.
+TRACKED(/obj/structure/bed/chair, occupied)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bed/chair/appearance_overlays()
-	. = list()
-	. += ..()
-	if(has_buckled_mobs())
-		var/cache_key = "[base_icon]-armrest-[padding_material ? padding_material.name : "no_material"]"
-		if(isnull(GLOB.stool_cache[cache_key]))
-			var/image/I = image(icon, "[base_icon]_armrest")
-			I.plane = MOB_PLANE
-			I.layer = ABOVE_MOB_LAYER
-			if(padding_material)
-				I.color = padding_material.icon_colour
-			GLOB.stool_cache[cache_key] = I
-		. += GLOB.stool_cache[cache_key]
+/obj/structure/bed/chair/post_buckle_mob()
+	set_occupied(has_buckled_mobs())
+
+/obj/structure/bed/chair/look_parts(datum/look/look)
+	..()
+	if(occupied)
+		look.overlay(look_cached_image("[initial(icon)]-[base_icon]-armrest-[padding_material_name() || "no_material"]", initial(icon), "[base_icon]_armrest", padding_icon_colour(), MOB_PLANE, ABOVE_MOB_LAYER))
 
 /obj/structure/bed/chair/proc/update_layer()
 	if(src.dir == NORTH)
@@ -100,21 +95,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair, TYPE_PROC_REF(/atom, appearanc
 	icon_state = "comfychair"
 	base_icon = "comfychair"
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/comfy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bed/chair/comfy/appearance_overlays()
-	. = list()
-	. += ..()
-	var/image/I = image(icon, "[base_icon]_over")
-	I.layer = ABOVE_MOB_LAYER
-	I.plane = MOB_PLANE
-	I.color = material.icon_colour
-	. += I
+/obj/structure/bed/chair/comfy/look_parts(datum/look/look)
+	..()
+	look.overlay(look_cached_image("[initial(icon)]-[base_icon]-over-[material_name()]", initial(icon), "[base_icon]_over", material_icon_colour(), MOB_PLANE, ABOVE_MOB_LAYER))
 	if(padding_material)
-		I = image(icon, "[base_icon]_padding_over")
-		I.layer = ABOVE_MOB_LAYER
-		I.plane = MOB_PLANE
-		I.color = padding_material.icon_colour
-		. += I
+		look.overlay(look_cached_image("[initial(icon)]-[base_icon]-padding-over-[padding_material_name()]", initial(icon), "[base_icon]_padding_over", padding_icon_colour(), MOB_PLANE, ABOVE_MOB_LAYER))
 
 /obj/structure/bed/chair/comfy/brown
 	material_key = MAT_STEEL
@@ -217,7 +202,9 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/comfy, TYPE_PROC_REF(/atom, app
 	can_pad = FALSE
 	can_unpad = FALSE
 
-APPEARANCE_NONE(/obj/structure/bed/chair/office)
+/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/obj/structure/bed/chair/office/look_parts(datum/look/look)
+	return
 
 /obj/structure/bed/chair/office/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -278,7 +265,9 @@ APPEARANCE_NONE(/obj/structure/bed/chair/office)
 	can_pad = FALSE
 	can_unpad = FALSE
 
-APPEARANCE_NONE(/obj/structure/bed/chair/wood)
+/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/obj/structure/bed/chair/wood/look_parts(datum/look/look)
+	return
 
 /obj/structure/bed/chair/wood
 	material_key = MAT_WOOD
@@ -298,17 +287,18 @@ APPEARANCE_NONE(/obj/structure/bed/chair/wood)
 	var/corner_piece = FALSE
 	resistance_flags = FLAMMABLE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/sofa, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bed/chair/sofa/appearance_overlays()
-	. = list()
+/// The tint of the sofa's material (a shared definition that never changes).
+/obj/structure/bed/chair/sofa/proc/sofa_colour()
+	return get_material_by_name(sofa_material)?.icon_colour
+
+/obj/structure/bed/chair/sofa/look_parts(datum/look/look)
 	if(applies_material_colour && sofa_material)
-		var/datum/material/color_material = get_material_by_name(sofa_material)
-		color = color_material.icon_colour
+		look.set_color(sofa_colour())
 
 		if(sofa_material == MAT_CARPET)
-			name = "red [initial(name)]"
+			look.identity(name = "red [initial(name)]")
 		else
-			name = "[sofa_material] [initial(name)]"
+			look.identity(name = "[sofa_material] [initial(name)]")
 
 /obj/structure/bed/chair/sofa/update_layer()
 	// Corner east/west should be on top of mobs, any other state's north should be.
@@ -331,19 +321,9 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/sofa, TYPE_PROC_REF(/atom, appe
 	base_icon = "sofacorner"
 	corner_piece = TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/sofa/corner, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bed/chair/sofa/corner/appearance_overlays()
-	. = list()
-	. += ..()
-	var/cache_key = "[base_icon]-armrest-[padding_material ? padding_material.name : "no_material"]-permanent"
-	if(isnull(GLOB.stool_cache[cache_key]))
-		var/image/I = image(icon, "[base_icon]_armrest")
-		I.plane = MOB_PLANE
-		I.layer = ABOVE_MOB_LAYER
-		if(padding_material)
-			I.color = padding_material.icon_colour
-		GLOB.stool_cache[cache_key] = I
-	. += GLOB.stool_cache[cache_key]
+/obj/structure/bed/chair/sofa/corner/look_parts(datum/look/look)
+	..()
+	look.overlay(look_cached_image("[initial(icon)]-[base_icon]-armrest-[padding_material_name() || "no_material"]-permanent", initial(icon), "[base_icon]_armrest", padding_icon_colour(), MOB_PLANE, ABOVE_MOB_LAYER))
 
 // Wooden nonsofa - no corners
 /obj/structure/bed/chair/sofa/pew
@@ -663,83 +643,39 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/sofa/corner, TYPE_PROC_REF(/ato
 	applies_material_colour = 0
 
 // Baystation12 chairs with their larger update_icons proc
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bed/chair/bay/appearance_overlays()
-	. = list()
+/obj/structure/bed/chair/bay/look_parts(datum/look/look)
 	// Strings.
-	desc = initial(desc)
 	if(padding_material)
-		name = "[padding_material.display_name] [initial(name)]" //this is not perfect but it will do for now.
-		desc += " It's made of [material.use_name] and covered with [padding_material.use_name]."
+		look.identity(name = "[padding_display_name()] [initial(name)]") //this is not perfect but it will do for now.
+		look.identity(desc = "[initial(desc)] It's made of [material_use_name()] and covered with [padding_use_name()].")
 	else
-		name = "[material.display_name] [initial(name)]"
-		desc += " It's made of [material.use_name]."
+		look.identity(name = "[material_display_name()] [initial(name)]")
+		look.identity(desc = "[initial(desc)] It's made of [material_use_name()].")
 
 	// Prep icon.
-	icon_state = ""
+	look.state("")
+	var/base_colour = applies_material_colour ? material_icon_colour() : null
 
 	// Base icon (base material color)
-	var/cache_key = "[base_icon]-[material.name]"
-	if(isnull(GLOB.stool_cache[cache_key]))
-		var/image/I = image(icon, base_icon)
-		if(applies_material_colour)
-			I.color = material.icon_colour
-		GLOB.stool_cache[cache_key] = I
-	. += GLOB.stool_cache[cache_key]
+	look.overlay(look_cached_image("[initial(icon)]-[base_icon]-[material_name()]-[applies_material_colour]", initial(icon), base_icon, base_colour))
 
 	// Padding ('_padding') (padding material color)
 	if(padding_material)
-		var/padding_cache_key = "[base_icon]-padding-[padding_material.name]"
-		if(isnull(GLOB.stool_cache[padding_cache_key]))
-			var/image/I =  image(icon, "[base_icon]_padding")
-			I.color = padding_material.icon_colour
-			GLOB.stool_cache[padding_cache_key] = I
-		. += GLOB.stool_cache[padding_cache_key]
+		look.overlay(look_cached_image("[initial(icon)]-[base_icon]-padding-[padding_material_name()]", initial(icon), "[base_icon]_padding", padding_icon_colour()))
 
 	// Over ('_over') (base material color)
-	cache_key = "[base_icon]-[material.name]-over"
-	if(isnull(GLOB.stool_cache[cache_key]))
-		var/image/I = image(icon, "[base_icon]_over")
-		I.plane = MOB_PLANE
-		I.layer = ABOVE_MOB_LAYER
-		if(applies_material_colour)
-			I.color = material.icon_colour
-		GLOB.stool_cache[cache_key] = I
-	. += GLOB.stool_cache[cache_key]
+	look.overlay(look_cached_image("[initial(icon)]-[base_icon]-[material_name()]-[applies_material_colour]-over", initial(icon), "[base_icon]_over", base_colour, MOB_PLANE, ABOVE_MOB_LAYER))
 
 	// Padding Over ('_padding_over') (padding material color)
 	if(padding_material)
-		var/padding_cache_key = "[base_icon]-padding-[padding_material.name]-over"
-		if(isnull(GLOB.stool_cache[padding_cache_key]))
-			var/image/I =  image(icon, "[base_icon]_padding_over")
-			I.color = padding_material.icon_colour
-			I.plane = MOB_PLANE
-			I.layer = ABOVE_MOB_LAYER
-			GLOB.stool_cache[padding_cache_key] = I
-		. += GLOB.stool_cache[padding_cache_key]
+		look.overlay(look_cached_image("[initial(icon)]-[base_icon]-padding-[padding_material_name()]-over", initial(icon), "[base_icon]_padding_over", padding_icon_colour(), MOB_PLANE, ABOVE_MOB_LAYER))
 
-	if(has_buckled_mobs())
-		if(padding_material)
-			cache_key = "[base_icon]-armrest-[padding_material.name]"
+	if(occupied)
 		// Armrest ('_armrest') (base material color)
-		if(isnull(GLOB.stool_cache[cache_key]))
-			var/image/I = image(icon, "[base_icon]_armrest")
-			I.plane = MOB_PLANE
-			I.layer = ABOVE_MOB_LAYER
-			if(applies_material_colour)
-				I.color = material.icon_colour
-			GLOB.stool_cache[cache_key] = I
-		. += GLOB.stool_cache[cache_key]
+		look.overlay(look_cached_image("[initial(icon)]-[base_icon]-[material_name()]-[applies_material_colour]-armrest", initial(icon), "[base_icon]_armrest", base_colour, MOB_PLANE, ABOVE_MOB_LAYER))
 		if(padding_material)
-			cache_key = "[base_icon]-padding-armrest-[padding_material.name]"
 			// Padding Armrest ('_padding_armrest') (padding material color)
-			if(isnull(GLOB.stool_cache[cache_key]))
-				var/image/I = image(icon, "[base_icon]_padding_armrest")
-				I.plane = MOB_PLANE
-				I.layer = ABOVE_MOB_LAYER
-				I.color = padding_material.icon_colour
-				GLOB.stool_cache[cache_key] = I
-			. += GLOB.stool_cache[cache_key]
+			look.overlay(look_cached_image("[initial(icon)]-[base_icon]-padding-[padding_material_name()]-armrest", initial(icon), "[base_icon]_padding_armrest", padding_icon_colour(), MOB_PLANE, ABOVE_MOB_LAYER))
 
 /obj/structure/bed/chair/bay/chair
 	name = "mounted chair"
@@ -820,14 +756,9 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay, TYPE_PROC_REF(/atom, appea
 	icon_state = "capchair_preview"
 	base_icon = "capchair"
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay/comfy/captain, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bed/chair/bay/comfy/captain/appearance_overlays()
-	. = list()
-	. += ..()
-	var/image/I = image(icon, "[base_icon]_special")
-	I.plane = MOB_PLANE
-	I.layer = ABOVE_MOB_LAYER
-	. += I
+/obj/structure/bed/chair/bay/comfy/captain/look_parts(datum/look/look)
+	..()
+	look.overlay(look_cached_image("[initial(icon)]-[base_icon]-special", initial(icon), "[base_icon]_special", null, MOB_PLANE, ABOVE_MOB_LAYER))
 
 /obj/structure/bed/chair/bay/comfy/captain
 	material_key = MAT_STEEL
@@ -848,22 +779,15 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay/comfy/captain, TYPE_PROC_RE
 /obj/structure/bed/chair/bay/shuttle/post_buckle_mob()
 	playsound(src,buckling_sound,75,1)
 	if(has_buckled_mobs())
-		base_icon = "shuttle_chair-b"
+		set_base_icon("shuttle_chair-b")
 	else
-		base_icon = "shuttle_chair"
+		set_base_icon("shuttle_chair")
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay/shuttle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bed/chair/bay/shuttle/appearance_overlays()
-	. = list()
-	. += ..()
-	if(!has_buckled_mobs())
-		var/image/I = image(icon, "[base_icon]_special")
-		I.plane = MOB_PLANE
-		I.layer = ABOVE_MOB_LAYER
-		if(applies_material_colour)
-			I.color = material.icon_colour
-		. += I
+/obj/structure/bed/chair/bay/shuttle/look_parts(datum/look/look)
+	..()
+	if(!occupied)
+		look.overlay(look_cached_image("[initial(icon)]-[base_icon]-special-[applies_material_colour ? material_name() : "plain"]", initial(icon), "[base_icon]_special", applies_material_colour ? material_icon_colour() : null, MOB_PLANE, ABOVE_MOB_LAYER))
 
 /obj/structure/bed/chair/bay/chair/padded/red/smallnest
 	name = "teshari nest"

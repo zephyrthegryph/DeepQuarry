@@ -23,13 +23,18 @@ GLOBAL_LIST_INIT(dq_blood_color_by_type, list(
 	var/forensic_blood_color
 	var/forensic_fluorescent
 
+/// Tracked: a drawn thing that shows its blood (a clothing item's stain) redraws when these change; the dq_set_* helpers below are the writers.
+TRACKED(/atom, forensic_was_bloodied)
+TRACKED(/atom, forensic_blood_color)
+TRACKED(/atom, forensic_fluorescent)
+
 // ---- Helpers (global procs to avoid /atom proc-table bloat) ----
 
 /proc/dq_get_was_bloodied(atom/a)
 	return a.forensic_was_bloodied
 
 /proc/dq_set_was_bloodied(atom/a, v)
-	a.forensic_was_bloodied = v
+	a.set_forensic_was_bloodied(v)
 
 GLOBAL_LIST_EMPTY(_dq_blood_color_resolved)
 
@@ -39,7 +44,7 @@ GLOBAL_LIST_EMPTY(_dq_blood_color_resolved)
 	return _dq_resolve_typed_default(a.type, GLOB.dq_blood_color_by_type, GLOB._dq_blood_color_resolved, null)
 
 /proc/dq_set_blood_color(atom/a, color)
-	a.forensic_blood_color = color
+	a.set_forensic_blood_color(color)
 
 /proc/dq_get_forensic_data(atom/a)
 	return a.forensic_data
@@ -51,4 +56,4 @@ GLOBAL_LIST_EMPTY(_dq_blood_color_resolved)
 	return a.forensic_fluorescent
 
 /proc/dq_set_fluorescent(atom/a, v)
-	a.forensic_fluorescent = v
+	a.set_forensic_fluorescent(v)

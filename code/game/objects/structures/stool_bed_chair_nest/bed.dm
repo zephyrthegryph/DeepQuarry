@@ -27,6 +27,36 @@
 	var/can_unpad = TRUE
 	var/can_dismantle = TRUE
 
+TRACKED(/obj/structure/bed, material)
+TRACKED(/obj/structure/bed, padding_material)
+TRACKED(/obj/structure/bed, base_icon)
+
+/// What a draw reads of the frame and the padding: shared material definitions, which never change, so the look reads them through these and does
+/// not watch them (the redraw comes from the tracked material / padding_material vars).
+/obj/structure/bed/proc/material_icon_colour()
+	return material?.icon_colour
+
+/obj/structure/bed/proc/material_name()
+	return material?.name
+
+/obj/structure/bed/proc/material_display_name()
+	return material?.display_name
+
+/obj/structure/bed/proc/material_use_name()
+	return material?.use_name
+
+/obj/structure/bed/proc/padding_icon_colour()
+	return padding_material?.icon_colour
+
+/obj/structure/bed/proc/padding_material_name()
+	return padding_material?.name
+
+/obj/structure/bed/proc/padding_display_name()
+	return padding_material?.display_name
+
+/obj/structure/bed/proc/padding_use_name()
+	return padding_material?.use_name
+
 /// The frame's material and the padding's (its constructor params; a subtype's defaults).
 /obj/structure/bed/var/material_key = MAT_STEEL
 /obj/structure/bed/var/padding_key
@@ -34,18 +64,17 @@
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A bed of no known material is not made.
 /obj/structure/bed/proc/make_of(padding)
 	color = null
-	material = get_material_by_name(material_key || MAT_STEEL)
+	set_material(get_material_by_name(material_key || MAT_STEEL))
 	if(!istype(material))
 		stack_trace("Material of type: [material_key] does not exist.")
 		spent(src)
 		return
 	if(padding)
-		padding_material = get_material_by_name(padding)
+		set_padding_material(get_material_by_name(padding))
 
 // ALLOW(init/INSTANCE_STATE): a bed draws its frame and padding, and turns like a chair (or only flips)
 /obj/structure/bed/Initialize(mapload)
 	. = ..()
-	update_icon()
 	if(flippable) // If we can't change directions, don't bother.
 		// Ugly check for chairs, beds can only be flipped north and south...
 		if(istype(src,/obj/structure/bed/chair))
@@ -57,35 +86,26 @@
 	return material
 
 // Reuse the cache/code from stools, todo maybe unify.
-DECLARE_APPEARANCE_PROC(/obj/structure/bed, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bed/appearance_overlays()
-	. = list()
+/obj/structure/bed/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/structure/bed/proc/look_parts(datum/look/look)
 	// Prep icon.
-	icon_state = ""
+	look.state("")
 	// Base icon.
-	var/cache_key = "[base_icon]-[material.name]"
-	if(isnull(GLOB.stool_cache[cache_key]))
-		var/image/I = image(icon, base_icon)
-		if(applies_material_colour) // Goes with added var
-			I.color = material.icon_colour
-		GLOB.stool_cache[cache_key] = I
-	. += GLOB.stool_cache[cache_key]
+	look.overlay(look_cached_image("[initial(icon)]-[base_icon]-[material_name()]-[applies_material_colour]", initial(icon), base_icon, applies_material_colour ? material_icon_colour() : null))
 	// Padding overlay.
 	if(padding_material)
-		var/padding_cache_key = "[base_icon]-padding-[padding_material.name]"
-		if(isnull(GLOB.stool_cache[padding_cache_key]))
-			var/image/I =  image(icon, "[base_icon]_padding")
-			I.color = padding_material.icon_colour
-			GLOB.stool_cache[padding_cache_key] = I
-		. += GLOB.stool_cache[padding_cache_key]
+		look.overlay(look_cached_image("[initial(icon)]-[base_icon]-padding-[padding_material_name()]", initial(icon), "[base_icon]_padding", padding_icon_colour()))
 	// Strings.
-	desc = initial(desc)
 	if(padding_material)
-		name = "[padding_material.display_name] [initial(name)]" //this is not perfect but it will do for now.
-		desc += " It's made of [material.use_name] and covered with [padding_material.use_name]."
+		look.identity(name = "[padding_display_name()] [initial(name)]") //this is not perfect but it will do for now.
+		look.identity(desc = "[initial(desc)] It's made of [material_use_name()] and covered with [padding_use_name()].")
 	else
-		name = "[material.display_name] [initial(name)]"
-		desc += " It's made of [material.use_name]."
+		look.identity(name = "[material_display_name()] [initial(name)]")
+		look.identity(desc = "[initial(desc)] It's made of [material_use_name()].")
 
 /obj/structure/bed/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSTABLE))
@@ -183,12 +203,10 @@ CAPABILITIES(/obj/structure/bed)
 /obj/structure/bed/proc/remove_padding()
 	if(padding_material)
 		padding_material.place_sheet(get_turf(src), 1)
-		padding_material = null
-	update_icon()
+		set_padding_material(null)
 
 /obj/structure/bed/proc/add_padding(padding_type)
-	padding_material = get_material_by_name(padding_type)
-	update_icon()
+	set_padding_material(get_material_by_name(padding_type))
 
 /obj/structure/bed/proc/dismantle()
 	material.place_sheet(get_turf(src), 1)
@@ -256,7 +274,9 @@ CAPABILITIES(/obj/structure/bed)
 	bedtype = /obj/structure/bed/roller/adv
 	rollertype = /obj/item/roller/adv
 
-APPEARANCE_NONE(/obj/structure/bed/roller)
+/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/obj/structure/bed/roller/look_parts(datum/look/look)
+	return
 
 CAPABILITIES(/obj/structure/bed/roller)
 	op("collapse", item(/obj/item/roller_holder), label("Collapse"), then(PROC_REF(collapse_with_rack)))
@@ -356,7 +376,6 @@ CAPABILITIES(/obj/item/roller_holder)
 		M.old_y = 0
 		set_density(FALSE)
 		icon_state = "[initial(icon_state)]"
-	update_icon()
 	return ..()
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). Dragged onto its user, the bed
@@ -401,7 +420,9 @@ CAPABILITIES(/obj/item/roller_holder)
 	can_unpad = FALSE
 	can_dismantle = FALSE
 
-APPEARANCE_NONE(/obj/structure/bed/alien)
+/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/obj/structure/bed/alien/look_parts(datum/look/look)
+	return
 
 /*
  * Dirty Mattress

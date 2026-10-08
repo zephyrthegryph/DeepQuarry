@@ -43,12 +43,37 @@
 	set_clothing_index()
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/appearance_overlays()
-	. = list()
+/// A clothing item shows its own blood as a layer of its look: drawn from the tracked blood colour and the forensics record, not added by add_blood().
+/obj/item/clothing/draw(datum/look/look)
+	..()
+	look.watch(forensic_data)
 	if(forensic_data?.has_blooddna())
-		add_blood()
-	. += ..()
+		look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
+	if(gurgled)
+		look.overlay(GLOB.gurgled_overlays[gurgled_color || "green"])
+
+DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_image), SC_NEVER, 2048, 0)
+
+/// The blood stain of an item: the blood sprite cut to the item's own silhouette, tinted `colour`; one shared image per (type, sprite, colour).
+/proc/item_stain_image(item_type, icon, icon_state, colour)
+	READS_FROM()
+	if(!isfile(icon))
+		return build_item_stain_image(item_type, icon, icon_state, colour)
+	return CACHED_KEY(item_stain_images, "[item_type]|[icon]|[icon_state]|[colour]", item_type, icon, icon_state, colour)
+
+/proc/build_item_stain_image(item_type, icon, icon_state, colour)
+	var/image/blood = image(icon = 'icons/effects/blood.dmi', icon_state = "itemblood")
+	blood.filters += filter(type = "alpha", icon = icon(icon, icon_state))
+	blood.color = colour
+	return blood
+
+/// An effect of a clothing look: whoever holds or wears it redraws that slot (the worn overlay stays the mob's own path).
+/obj/item/clothing/proc/look_effect_redraw_worn()
+	look_redraw_worn(src)
+
+/// add_blood() and the gurgle code leave the stains to the look.
+/obj/item/clothing/stains_in_look()
+	return TRUE
 
 /obj/item/clothing/equipped(mob/user,slot)
 	..()
@@ -192,7 +217,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_over
 		return
 	if(A.answer.value && (A.answer.value != color))
 		color = A.answer.value
-	update_icon()
 	update_clothing_icon()
 // end
 
@@ -352,7 +376,6 @@ CAPABILITIES(/obj/item/clothing/gloves)
 /obj/item/clothing/gloves/wash()
 	. = ..()
 	transfer_blood = 0
-	update_icon()
 
 /obj/item/clothing/gloves/equipped(mob/user, slot)
 	rel_set(src, nameof(wearer), user)
@@ -440,7 +463,6 @@ TYPE_TABLE(/obj/item/clothing/gloves/ring, fit_spec, list(REQ_FITS_BODYTYPES(lis
 	light_cone_y_offset = 11
 
 	var/light_overlay = "helmet_light"
-	var/tmp/image/helmet_light
 
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',
@@ -475,7 +497,6 @@ CAPABILITIES(/obj/item/clothing/head)
 	if(light_system == STATIC_LIGHT)
 		update_light()
 
-	update_icon()
 	user.update_mob_action_buttons()
 
 /// Old attack_ai: a silicon wears the hat; otherwise the default.
@@ -514,31 +535,14 @@ CAPABILITIES(/obj/item/clothing/head)
 		to_chat(user, span_notice("You crawl under \the [src]."))
 	return 1
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/head, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/head/appearance_overlays()
-	. = list()
-	var/mob/living/carbon/human/H
-	if(ishuman(loc))
-		H = loc
-
+/// The helmet's lit lamp on the item; the worn lamp is built by make_worn_icon() (clothing_icons.dm). A change of the lamp redraws the head slot
+/// of whoever wears it (an effect of the look: the worn overlay stays the mob's own path).
+/obj/item/clothing/head/draw(datum/look/look)
+	..()
 	if(light_on)
-		// Generate object icon.
-		if(!GLOB.light_overlay_cache["[light_overlay]_icon"])
-			GLOB.light_overlay_cache["[light_overlay]_icon"] = image(icon = 'icons/obj/light_overlays.dmi', icon_state = "[light_overlay]")
-		helmet_light = GLOB.light_overlay_cache["[light_overlay]_icon"]
-		. += helmet_light
+		look.overlay(look_cached_image("[light_overlay]-item", 'icons/obj/light_overlays.dmi', light_overlay))
+	look.effect(PROC_REF(look_effect_redraw_worn))
 
-		// Generate and cache the on-mob icon, which is used in update_inv_head().
-		var/body_type = (H && H.species.get_bodytype(H))
-		var/cache_key = "[light_overlay][body_type && LAZYACCESS(sprite_sheets, body_type) ? body_type : ""]"
-		if(!GLOB.light_overlay_cache[cache_key])
-			var/use_icon = LAZYACCESS(sprite_sheets, body_type) || 'icons/mob/light_overlays.dmi'
-			GLOB.light_overlay_cache[cache_key] = image(icon = use_icon, icon_state = "[light_overlay]")
-
-	else if(helmet_light)
-		helmet_light = null
-
-	H?.update_inv_head() //Will redraw the helmet with the light on the mob
 
 /obj/item/clothing/head/update_clothing_icon()
 	if (ismob(src.loc))
@@ -707,7 +711,6 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 		to_chat(user, span_warning("Your need an empty, unbroken hand to do that."))
 		holding.forceMove(src)
 
-	update_icon()
 	return
 
 /// Old attack_hand: draw the knife held in worn shoes.
@@ -721,28 +724,18 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 /// Old verb "Switch Shoe Layer".
 /obj/item/clothing/shoes/proc/shoes_toggle_layer_verb(datum/act/op/A)
 	shoes_under_pants = !shoes_under_pants
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/shoes/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/clothing/shoes/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(holding)
-		. += "[icon_state]_knife"
-	// .contaminated + GLOB.contamination_overlay branch removed;
-	// see /obj/item/wash for the matching cleanup.
-	if(gurgled)
-		wash(CLEAN_ALL)
-		gurgle_contaminate()
-	var/mob/holder = loc
-	if(istype(holder))
-		holder.update_inv_shoes()
+		look.overlay("[drawn_state]_knife")
+	look.effect(PROC_REF(look_effect_redraw_worn))
 
 /obj/item/clothing/shoes/wash()
 	. = ..()
 	dq_set_blood_color(src, null)
 	track_blood = 0
-	update_icon()
 
 /obj/item/clothing/shoes/proc/handle_movement(turf/walking, running, mob/living/carbon/human/pred)
 	if(COOLDOWN_FINISHED(src, recent_squish) && istype(pred))
@@ -958,6 +951,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 
 	update_icon_define_digi = "icons/inventory/suit/mob_digi.dmi"
 
+TRACKED(/obj/item/clothing/suit, hood_up)
+TRACKED(/obj/item/clothing/suit, toggleicon)
+
 CAPABILITIES(/obj/item/clothing/suit)
 	owns_one(nameof(hood), /obj/item/clothing/head)
 
@@ -965,16 +961,18 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 
 /obj/item/clothing/suit/Initialize(mapload)
 	MakeHood()
-	toggleicon = "[initial(icon_state)]"
+	set_toggleicon("[initial(icon_state)]")
 	. = ..()
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/suit/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/clothing/suit/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/item/clothing/suit/proc/look_parts(datum/look/look)
 	if(has_hood_sprite) //If we have a special hood_sprite, great, let's use it! Only used by /obj/item/clothing/suit/storage/hooded atm.
-		icon_state = "[toggleicon][hood_up ? "_t" : ""]"
+		look.state("[toggleicon][hood_up ? "_t" : ""]")
 
 /obj/item/clothing/suit/dropped(mob/user, equipping, slot)
 	RemoveHood()
@@ -995,8 +993,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, TYPE_PROC_REF(/atom, appearance
 		actions_types |= /datum/action/item_action/toggle_hood
 
 /obj/item/clothing/suit/proc/RemoveHood()
-	hood_up = FALSE
-	update_icon()
+	set_hood_up(FALSE)
 	if(hood)
 		hood.canremove = TRUE // This shouldn't matter anyways but just incase.
 		if(ishuman(hood.loc))
@@ -1023,9 +1020,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, TYPE_PROC_REF(/atom, appearance
 			if(color != hood.color)
 				hood.color = color
 			H.equip_to_slot_if_possible(hood,SLOT_ID_HEAD,0,0,1)
-			hood_up = TRUE
+			set_hood_up(TRUE)
 			hood.canremove = FALSE
-			update_icon()
 			H.update_inv_wear_suit()
 ///Hood stuff end.
 
@@ -1599,7 +1595,6 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 		if(!move_into(src, nameof(src.holding), I, user))
 			return OP_PASS
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " shoves %I% into %T%."), item = I)
-		update_icon()
 		return OP_PASS
 	return OP_DECLINE
 

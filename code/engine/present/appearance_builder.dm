@@ -657,3 +657,29 @@ GLOBAL_VAR_INIT(look_flash_seq, 0)
 /proc/look_replace_priority_overlay(atom/target, mutable_appearance/old, mutable_appearance/replacement)
 	target.cut_overlay(list(old), TRUE)
 	target.add_overlay(list(replacement), TRUE)
+
+// ---- keyed appearance cache: one shared image per (key), built on first use ----
+
+DECLARE_SHARED_CACHE_EX(look_cached_images, GLOBAL_PROC_REF(build_look_cached_image), SC_NEVER, 4096, 0)
+
+/**
+ * The shared image of `state` in `icon`, tinted `color` and put on `plane` / `layer` when given, built once per `key` and reused by every holder that
+ * asks for the same key (a stool's seat, a chair's armrest). The key must name everything that varies the image (icon, state, tint, plane); a
+ * draw hands the result to look.overlay(). Replaces the hand-rolled "if(isnull(GLOB.x[key])) build and store" idiom, which a draw may not hold.
+ *	. += look_cached_image("[icon]-[base_icon]-[material.name]", icon, base_icon, material.icon_colour)
+ */
+/proc/look_cached_image(key, icon, state, color, plane, layer)
+	READS_FROM()
+	if(!isfile(icon))
+		return build_look_cached_image(icon, state, color, plane, layer) // a runtime /icon has no stable identity: built uncached
+	return CACHED_KEY(look_cached_images, key, icon, state, color, plane, layer)
+
+/proc/build_look_cached_image(icon, state, color, plane, layer)
+	var/image/I = image(icon = icon, icon_state = state)
+	if(!isnull(color))
+		I.color = color
+	if(!isnull(plane))
+		I.plane = plane
+	if(!isnull(layer))
+		I.layer = layer
+	return I

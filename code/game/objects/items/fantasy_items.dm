@@ -56,18 +56,15 @@
 	flags = OPENCONTAINER
 	var/amount_per_transfer_from_this = 5
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/bath, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bed/bath/appearance_overlays()
-	. = list()
+/obj/structure/bed/bath/look_parts(datum/look/look)
 	if(reagents.total_volume < 1)
-		icon_state = "bath"
+		look.state("bath")
 	else if(reagents.total_volume < 50)
-		icon_state = "bath1"
+		look.state("bath1")
 	else if(reagents.total_volume < 150)
-		icon_state = "bath2"
+		look.state("bath2")
 	else if(reagents.total_volume < 301)
-		icon_state = "bath3"
-	return .
+		look.state("bath3")
 
 CAPABILITIES(/obj/structure/bed/bath)
 	reagents(300)

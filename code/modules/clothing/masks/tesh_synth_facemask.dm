@@ -11,6 +11,8 @@
 	var/visor_state = "Neutral" //Separating this from lstat so that it could potentially be used for an override system or something
 	resistance_flags = FIRE_PROOF | ACID_PROOF | INDESTRUCTIBLE | BOMB_PROOF |FREEZE_PROOF
 
+TRACKED(/obj/item/clothing/mask/synthfacemask, visor_state)
+
 /// The wearer it is installed on (a relation view); the visor follows their state while set.
 /obj/item/clothing/mask/synthfacemask/var/mob/living/carbon/maskmaster
 
@@ -38,25 +40,22 @@ TYPE_TABLE(/obj/item/clothing/mask/synthfacemask, equip_spec, dq_spec_join(..(),
 	var/obj/item/organ/external/E = H.organs_by_name[BP_HEAD]
 	return istype(E) && (E.is_robotic())
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/synthfacemask, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/mask/synthfacemask/appearance_overlays()
-	. = list()
-	var/mob/living/carbon/human/H = loc
+/obj/item/clothing/mask/synthfacemask/draw(datum/look/look)
+	..()
 	switch(visor_state)
 		if (DEAD)
-			icon_state = "synth_facemask_dead"
+			look.state("synth_facemask_dead")
 		else
-			icon_state = "synth_facemask"
-	if(istype(H)) H.update_inv_wear_mask()
+			look.state("synth_facemask")
+	look.effect(PROC_REF(look_effect_redraw_worn)) // the wearer's mask slot follows the visor
 
 /obj/item/clothing/mask/synthfacemask/proc/synthfacemask_step(datum/act/timer/A)
 	if(maskmaster() && lstat != maskmaster().stat)
 		lstat = maskmaster().stat
-		visor_state = "Neutral" //This does nothing at the moment, but it's there incase anyone wants to add more states.
+		set_visor_state("Neutral") //This does nothing at the moment, but it's there incase anyone wants to add more states.
 		//Maybe a verb that sets an emote override here
 		if(lstat == DEAD)
-			visor_state = DEAD
-		update_icon()
+			set_visor_state(DEAD)
 
 //LOADOUT ITEM
 /datum/gear/mask/synthface/

@@ -563,9 +563,9 @@
 /obj/item/clothing/suit/armor dir: 2
 /obj/item/clothing/suit/armor overlay: icons/inventory/suit/item.dmi::8:#000000
 /obj/item/clothing/suit/armor/shield icon: icons/inventory/suit/item.dmi
-/obj/item/clothing/suit/armor/shield state: reactive
+/obj/item/clothing/suit/armor/shield state: shield_armor_0
 /obj/item/clothing/suit/armor/shield dir: 2
-/obj/item/clothing/suit/armor/shield overlay: icons/inventory/suit/item.dmi:reactive:8:#000000
+/obj/item/clothing/suit/armor/shield overlay: icons/inventory/suit/item.dmi:shield_armor_0:8:#000000
 /obj/item/clothing/suit/armor/tesla icon: icons/inventory/suit/item.dmi
 /obj/item/clothing/suit/armor/tesla state: tesla_armor_1
 /obj/item/clothing/suit/armor/tesla dir: 2
@@ -4930,6 +4930,7 @@
 /obj/item/clothing/head/hood/winter/ratvar state: winterhood_ratvar
 /obj/item/clothing/head/hood/winter/ratvar dir: 2
 /obj/item/clothing/head/hood/winter/ratvar overlay: icons/inventory/head/item.dmi:winterhood_ratvar:8:#000000
+/obj/item/clothing/head/hood/winter/ratvar overlay: icons/obj/light_overlays.dmi:helmet_light:-32767
 /obj/item/clothing/head/hood/winter/narsie icon: icons/inventory/head/item.dmi
 /obj/item/clothing/head/hood/winter/narsie state: winterhood_narsie
 /obj/item/clothing/head/hood/winter/narsie dir: 2

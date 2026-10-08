@@ -2,10 +2,10 @@
 	Global associative list for caching humanoid icons.
 	Index format m or f, followed by a string of 0 and 1 to represent bodyparts followed by husk fat hulk skeleton 1 or 0.
 */
+GLOBAL_LIST_EMPTY(light_overlay_cache) //see make_worn_icon() on helmets // ALLOW(cache): written with mixed keys from clothing.dm and read-only-if-present in clothing_icons.dm
 GLOBAL_LIST_EMPTY(human_icon_cache) //key is incredibly complex, see update_icons_body() // ALLOW(cache): mutable /icon values built from mob state; risky
 GLOBAL_LIST_EMPTY(tail_icon_cache) //key is [species.race_key][r_skin][g_skin][b_skin] // ALLOW(cache): mutable /icon values built from mob state; risky
 GLOBAL_LIST_EMPTY(wing_icon_cache) // See tail. // ALLOW(cache): mutable /icon values built from mob state; risky
-GLOBAL_LIST_EMPTY(light_overlay_cache) //see make_worn_icon() on helmets // ALLOW(cache): written with mixed keys from clothing.dm and read-only-if-present in clothing_icons.dm
 GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
