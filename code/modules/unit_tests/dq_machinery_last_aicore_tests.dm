@@ -5,7 +5,6 @@
 /datum/unit_test/dq_machinery_last_aicore
 	parent_type = /datum/unit_test/dq_machinery_timed_material_pin
 	abstract_type = /datum/unit_test/dq_machinery_last_aicore
-	var/legacy_driver = TRUE // Set FALSE only after these old-handler pins pass and the native ops replace them.
 	var/core_type = /obj/structure/AIcore
 	var/initial_state = 0
 	var/initial_anchor = FALSE
@@ -16,16 +15,11 @@
 	var/interruption = null
 
 /datum/unit_test/dq_machinery_last_aicore/proc/begin_core_pin(mob/H, obj/structure/AIcore/C, obj/item/T)
-	if(legacy_driver)
-		// At the old source, the existing native catch-all shadows the handwritten *_act hooks.
-		// Pin the actual pre-conversion tool dispatcher, never a completion callback.
-		TEST_ASSERT_EQUAL(C.tool_act(H, T, dismantling ? TOOL_WELDER : TOOL_WRENCH), ITEM_INTERACT_SUCCESS, "The original tool dispatcher accepts the actual construction tool")
-	else
-		// Conversion also repairs the formerly intercepted real click.
-		test_click(H, C, T)
+	// The old-handler pins passed before conversion. Native ops now recover the intercepted click.
+	test_click(H, C, T)
 	var/datum/work = running(H)
-	TEST_ASSERT_NOTNULL(work, "The actual tool entry starts real timed construction work")
-	TEST_ASSERT(isnull(declared_duration(work)) || declared_duration(work) == duration, "The real legacy tool job declares the pinned duration")
+	TEST_ASSERT_NOTNULL(work, "The real tool click starts timed construction work")
+	TEST_ASSERT(isnull(declared_duration(work)) || declared_duration(work) == duration, "The timed work preserves the pinned duration")
 	return work
 /datum/unit_test/dq_machinery_last_aicore/run_pin()
 	var/mob/living/carbon/human/H = person()

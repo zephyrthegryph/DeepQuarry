@@ -3652,3 +3652,12 @@ The single focused capture wrote 23 selected pin types, 15 selected i7 types and
 | /obj/machinery/vr_sleeper/alien | Entry uses native timed operations and keys, with the same occupancy rules. Reused non-harm Hit rows align with master. |
 | /obj/machinery/washing_machine | Grab and resist timing use native operation keys. Reused non-harm Hit rows align with master. |
 | /obj/structure/AIcore | Native add_cables/add_panel keys expose typed material bindings, adding stack-material held rows; actual construction costs and states are regression tested. |
+
+### AIcore tool waits (2026-10-08)
+
+Old-code behavior pins passed for all five paths before conversion (completion, dropped tool and moved actor per path). On that code, native item dispatch intercepted real clicks before handwritten wrench_act/welder_act; the old pins therefore exercised the actual tool_act dispatcher. Converted pins drive real clicks and keep the same state, custody, cancellation and cost assertions.
+
+| Class | Cause of interaction changes |
+|---|---|
+| `/obj/structure/AIcore` | Native `anchor`, `unanchor` and `dismantle` tool ops expose the previously intercepted construction actions. Two-second waits preserve anchoring/state transitions, zero welder fuel cost and the exact four-plasteel refund. Invalid-stage tool inputs retain silent refusal rather than falling through to a hit. New tool menu labels and keys reflect these native bindings; these are the only intended changes to the scoped conversion pin. |
+| `/obj/structure/AIcore/deactivated` | Native `bolt`/`unbolt` replace the wrench override, retain four-second waits, start/completion/cancellation messages and tool sounds at volume 50. Inherited base anchor/unanchor/blocked-wrench ops are removed to preserve the subtype override. Existing cable/glass, latejoin, admin and appearance behavior is unchanged. |
