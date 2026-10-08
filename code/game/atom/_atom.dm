@@ -307,7 +307,11 @@
 /atom/proc/set_dir(new_dir)
 	SHOULD_CALL_PARENT(TRUE)
 	PUBLISH_LEGACY(src, /datum/notice/atom_dir_change, dir, new_dir)
+	var/old_dir = dir
 	dir = new_dir
+	// A drawn type that reads dir redraws (dir is a tracked read of every look); an atom with no look pays one var read.
+	if(look_key && old_dir != new_dir)
+		tracked_changed(src, nameof(dir))
 
 /// Density is a tracked base var (G8): this is its only writer. A change publishes nameof(density) to its readers
 /// and, as a bridge, raises the channel the type's declared field names (machinery_fields.dm).

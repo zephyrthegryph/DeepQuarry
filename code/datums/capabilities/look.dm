@@ -30,6 +30,9 @@
 	/// look.identity(): the name and description shown, or null (unchanged).
 	var/identity_name
 	var/identity_desc
+	/// look.offset(): the pixel offset the holder shows, or null for none asked (x and y together).
+	var/offset_x
+	var/offset_y
 	/// look.effect(): list(proc_ref, args...) entries run on the holder, after the look is applied, outside the output.
 	var/list/effects
 	/// look.watch(): own keys of the other entities this draw read (a hat's sprite, a container's contents): a change on any of them redraws the holder.
@@ -56,6 +59,8 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	vis = null
 	flick_state = null
 	held_state = null
+	offset_x = null
+	offset_y = null
 	identity_name = null
 	identity_desc = null
 	effects = null
@@ -348,6 +353,13 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	layer = value
 	touched = TRUE
 
+/// The holder's pixel offset (a wall bin sits in the wall it faces, a mob stands a little low): x and y together, part of the key. A draw that stops
+/// naming it gives the holder its mapped offset back.
+/datum/look/proc/offset(x = 0, y = 0)
+	offset_x = x
+	offset_y = y
+	touched = TRUE
+
 /// A named filter (filter(type = ..., ...) params), only `when` is true.
 /datum/look/proc/add_look_filter(name, list/params, when = TRUE)
 	touched = TRUE
@@ -395,7 +407,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 
 /// The change key: equal keys draw equally (the flick is part of it, so a new flick re-applies).
 /datum/look/proc/change_key()
-	var/list/parts = list(icon_state, "[icon]", color, alpha, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, flick_state, light_spec ? jointext(light_spec, ",") : null, held_state, identity_name, identity_desc)
+	var/list/parts = list(icon_state, "[icon]", color, alpha, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, isnull(offset_x) ? null : "[offset_x],[offset_y]", flick_state, light_spec ? jointext(light_spec, ",") : null, held_state, identity_name, identity_desc)
 	var/list/overlay_keys = list()
 	for(var/entry in overlays)
 		overlay_keys += look_part_key(entry)
@@ -437,6 +449,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 #define LOOK_SET_PLANE (1<<6)
 #define LOOK_SET_LAYER (1<<7)
 #define LOOK_SET_LIGHT (1<<8)
+#define LOOK_SET_OFFSET (1<<9)
 
 /atom
 	/// LOOK_SET_* for the base properties the last applied look set (taken back when a look stops
@@ -508,6 +521,13 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		now |= LOOK_SET_LAYER
 	else if(was & LOOK_SET_LAYER)
 		A.layer = initial(A.layer)
+	if(!isnull(offset_x))
+		A.pixel_x = offset_x
+		A.pixel_y = offset_y
+		now |= LOOK_SET_OFFSET
+	else if(was & LOOK_SET_OFFSET)
+		A.pixel_x = initial(A.pixel_x)
+		A.pixel_y = initial(A.pixel_y)
 	if(light_spec)
 		if(!light_spec[1])
 			A.set_light(0) // light_off(): the range only, so the power and colour stay for the next light
@@ -576,6 +596,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 #undef LOOK_SET_PLANE
 #undef LOOK_SET_LAYER
 #undef LOOK_SET_LIGHT
+#undef LOOK_SET_OFFSET
 
 
 // ---- transient visuals: look_flash() ----

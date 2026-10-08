@@ -111,7 +111,7 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 
 // === /tg/ smoothing junction stubs ===
 /atom/proc/setDir(new_dir)
-	dir = new_dir
+	set_dir(new_dir)
 
 /atom
 	var/tmp/smoothing_junction = 0

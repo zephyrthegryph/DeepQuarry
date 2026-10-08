@@ -90,6 +90,7 @@ dx_timed_write	code/modules/reactive/writes.dm	42
 dx_timed_write	code/modules/reactive/writes.dm	54
 dx_timed_write	code/selftest.dm	97
 dx_timed_write	code/selftest.dm	103
+dx_untracked_read	code/modules/reactive/look_watch.dm	9
 dx_untracked_read	code/modules/reactive/reads.dm	23
 dx_untracked_read	code/modules/reactive/reads.dm	28
 dx_untracked_read	code/modules/reactive/reads.dm	33

@@ -369,8 +369,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	new_bin.set_broken_condition(broken_now())
 	new_bin.set_maintenance(under_maintenance())
 	new_bin.set_mode(mode)
-	new_bin.dir = new_dir
-	changed(new_bin) // the new dir: sets up wall outlets
+	new_bin.set_dir(new_dir) // a drawn dir: a wall bin moves into the wall it now faces
 	new_bin.visible_message("\The [src] reconfigures into \a [new_bin]!")
 	// Effects
 	play_sfx(new_bin, SFX_ITEMS_JAWS_CUT)
@@ -799,25 +798,18 @@ TRACKED(/obj/machinery/disposal, flush)
 
 	density = FALSE
 
-/// A wall bin sits in the wall it faces: the look moves it (an effect, since it writes the pixel offset).
+/// A wall bin sits in the wall it faces: the look offsets it by its dir (a change of dir redraws).
 /obj/machinery/disposal/wall/look_parts(datum/look/look)
 	..()
-	look.effect(PROC_REF(look_effect_wall_offset), dir)
-
-/obj/machinery/disposal/wall/proc/look_effect_wall_offset(facing)
-	switch(facing)
+	switch(dir)
 		if(NORTH)
-			pixel_x = 0
-			pixel_y = -32
+			look.offset(0, -32)
 		if(SOUTH)
-			pixel_x = 0
-			pixel_y = 32
+			look.offset(0, 32)
 		if(EAST)
-			pixel_x = -32
-			pixel_y = 0
+			look.offset(-32, 0)
 		if(WEST)
-			pixel_x = 32
-			pixel_y = 0
+			look.offset(32, 0)
 
 #undef DISPOSALMODE_EJECTONLY
 #undef DISPOSALMODE_OFF

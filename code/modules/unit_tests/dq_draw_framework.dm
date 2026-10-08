@@ -151,3 +151,97 @@ TRACKED(/obj/dq_draw_watched, shown)
 	H.stat = DEAD
 	TEST_ASSERT_EQUAL(look.life_state(H, "live", "rest", "dead"), "dead", "a dead one shows the dead state")
 	H.stat = CONSCIOUS
+
+// ---- dir: a draw that reads dir redraws when set_dir() changes it; look.offset() ----
+
+/obj/dq_draw_facing
+	name = "draw facing"
+	icon = 'icons/obj/stock_parts.dmi'
+	icon_state = "fix"
+
+/obj/dq_draw_facing/draw(datum/look/look)
+	..()
+	look.overlay("facing-[dir]")
+	if(dir == NORTH)
+		look.offset(0, -32)
+
+/datum/unit_test/dq_draw_dir_read_redraws_on_set_dir
+
+/datum/unit_test/dq_draw_dir_read_redraws_on_set_dir/Run()
+	var/turf/T = test_floor()
+	var/obj/dq_draw_facing/A = allocate(/obj/dq_draw_facing, T)
+	refresh_flush()
+	A.set_dir(SOUTH)
+	refresh_flush()
+	TEST_ASSERT(("facing-[SOUTH]" in A.look_overlays), "the draw read the dir: [json_encode(A.look_overlays)]")
+	A.set_dir(EAST)
+	refresh_flush()
+	TEST_ASSERT(("facing-[EAST]" in A.look_overlays), "a change of dir through set_dir() redraws: [json_encode(A.look_overlays)]")
+	TEST_ASSERT(!("facing-[SOUTH]" in A.look_overlays), "and the old facing is gone")
+	A.setDir(WEST)
+	refresh_flush()
+	TEST_ASSERT(("facing-[WEST]" in A.look_overlays), "setDir() is the same path: [json_encode(A.look_overlays)]")
+
+/datum/unit_test/dq_draw_offset_follows_the_look
+
+/datum/unit_test/dq_draw_offset_follows_the_look/Run()
+	var/turf/T = test_floor()
+	var/obj/dq_draw_facing/A = allocate(/obj/dq_draw_facing, T)
+	refresh_flush()
+	A.set_dir(NORTH)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(A.pixel_y, -32, "look.offset() moves the holder")
+	A.set_dir(SOUTH)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(A.pixel_y, initial(A.pixel_y), "a draw that stops naming the offset gives the mapped one back")
+
+/datum/unit_test/dq_draw_wall_bin_sits_in_its_wall
+
+/datum/unit_test/dq_draw_wall_bin_sits_in_its_wall/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/disposal/wall/A = allocate(/obj/machinery/disposal/wall, T)
+	refresh_flush()
+	A.set_dir(NORTH)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(A.pixel_y, -32, "a wall bin facing north is offset into the wall")
+	A.set_dir(EAST)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(A.pixel_x, -32, "turning it moves it to the wall it faces now")
+	TEST_ASSERT_EQUAL(A.pixel_y, 0, "and out of the first one")
+
+// ---- look.watch() and the proof types: the medical stand, the furnace ----
+
+/datum/unit_test/dq_draw_medical_stand_follows_its_beaker
+
+/datum/unit_test/dq_draw_medical_stand_follows_its_beaker/Run()
+	var/turf/T = test_floor()
+	var/obj/structure/medical_stand/S = allocate(/obj/structure/medical_stand, T)
+	var/obj/item/reagent_containers/glass/beaker/B = allocate(/obj/item/reagent_containers/glass/beaker, T)
+	refresh_flush()
+	rel_set(S, nameof(beaker), B)
+	refresh_flush()
+	TEST_ASSERT(("beaker" in S.look_overlays), "the beaker is drawn: [json_encode(S.look_overlays)]")
+	TEST_ASSERT(("line" in S.look_overlays), "with the line not attached")
+	var/before = S.look_key
+	B.reagents.add_reagent(REAGENT_ID_WATER, 30)
+	refresh_flush()
+	TEST_ASSERT(S.look_key != before, "filling the beaker redraws the stand through the watch")
+	rel_take(S, nameof(beaker))
+	refresh_flush()
+	TEST_ASSERT(!("beaker" in S.look_overlays), "and it goes when the beaker is taken")
+
+/datum/unit_test/dq_draw_furnace_flip_and_turn_redraw
+
+/datum/unit_test/dq_draw_furnace_flip_and_turn_redraw/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/reagent_refinery/furnace/F = allocate(/obj/machinery/reagent_refinery/furnace, T)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(F.icon_state, "furnace_l", "a furnace sinters to its left")
+	F.set_filter_side(1)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(F.icon_state, "furnace_r", "the tracked side redraws it")
+	var/before = F.look_key
+	F.set_dir(EAST)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(F.dir, EAST, "it turned")
+	TEST_ASSERT(F.look_key != before || !F.reagents.total_volume, "a turn redraws a furnace that shows a filling")

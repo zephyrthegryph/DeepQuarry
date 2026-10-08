@@ -2703,3 +2703,9 @@ Each changed pin row is one of these classes; nothing else was blessed. `dq_inte
 * The folder, paper plane, blob family, glass roulette ball and disposal bin family keep their look-tree and look-state rows exactly (the disposal bin's `mode` and `flush` rows, the folder and
   plane rows, the blob's tree rows); the disposal bin's broken sprite is the one thing not pinned: the legacy provider left `disposal-broken` on the bin after a repair, the look restores the
   type's own state.
+
+## Draw framework round 2 (medical stand, furnace, wall bin)
+
+* **The medical stand's reagent bag is tinted with `color`, not blended into the icon** (`icon += colour` before): the stand draws `look_overlay_image(..., color =)`. It also redraws when the beaker or tank it holds changes (watched).
+* **The refinery furnace's side is a tracked var** (`set_filter_side()`); flipping redraws without `update_icon()`. A turn of the furnace (`set_dir()`) redraws it.
+* **A wall disposal bin's offset is `look.offset()`** from its dir; turning a bin through `set_dir()` moves it (the hand `changed()` after `dir =` is gone).
