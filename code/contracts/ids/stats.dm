@@ -14,15 +14,10 @@ STAT(/obj/machinery, switched_on, ALL, base = TRUE, virtual = TRUE)
 STAT(/obj/machinery, intact, ALL, base = TRUE, virtual = TRUE)
 /// Body effect type -> its stack count: one hold per applied effect (hold(L, STAT_BODY_EFFECT_COUNTS, stacks, L, key = path)); read with body_effects().
 STAT(/mob/living, body_effect_counts, SUM_PER_KEY, virtual = TRUE)
-/// The grant kinds: a key -> count list per kind, each key held by the sources that grant it (code/engine/stats/grants.dm; GRANT_* name them).
-STAT(/datum, grant_ability, SUM_PER_KEY, virtual = TRUE)
-STAT(/datum, grant_language, SUM_PER_KEY, virtual = TRUE)
-STAT(/datum, grant_verb, SUM_PER_KEY, virtual = TRUE)
-STAT(/datum, grant_verb_hide, SUM_PER_KEY, virtual = TRUE)
-STAT(/datum, grant_capability, SUM_PER_KEY, virtual = TRUE)
-STAT(/datum, grant_access, SUM_PER_KEY, virtual = TRUE)
-STAT(/datum, grant_trait, SUM_PER_KEY, virtual = TRUE)
-STAT(/datum, grant_cadence, SUM_PER_KEY, virtual = TRUE)
+/// Trait -> the number of sources holding it: hold(E, STAT_TRAIT_HOLDS, 1, source, key = trait) (code/_helpers/traits.dm).
+STAT(/datum, trait_holds, SUM_PER_KEY, virtual = TRUE)
+/// Cadence id -> holds on a publication step cadence (code/datums/om/cadence.dm).
+STAT(/datum, cadence_holds, SUM_PER_KEY, virtual = TRUE)
 STAT(/mob/living, can_act, ALL)
 STAT(/mob/living, can_move, ALL)
 STAT(/mob/living, acts_via, MASK_AND, base = ORIGIN_ALL)

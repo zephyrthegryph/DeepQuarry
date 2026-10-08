@@ -330,6 +330,17 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 		if(def && row[H_STAT] == def.id && !isnull(row[H_SOURCE]))
 			. |= list(row[H_SOURCE])
 
+/// The sources holding `key` of a SUM_PER_KEY stat: a new list, empty when none does.
+/proc/hold_sources(datum/E, stat, key)
+	READS_FROM(E)
+	. = list()
+	var/datum/stat_def/def = stat_def_of(stat)
+	if(!def)
+		return
+	for(var/list/row as anything in E?.rx?.stats?.holds)
+		if(row[H_STAT] == def.id && row[H_KEY] == key && !isnull(row[H_SOURCE]))
+			. |= list(row[H_SOURCE])
+
 /// TRUE if `source` holds the stat. Allocates nothing.
 /proc/held_by_source(datum/E, stat, source)
 	READS_FROM(E)

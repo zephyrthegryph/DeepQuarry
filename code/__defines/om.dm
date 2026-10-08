@@ -114,29 +114,13 @@
 
 // Built-in effect ids (library.dm defines the rest).
 
-// Grant kinds (effects with COMBINE_SUM_PER_KEY).
-#define GRANT_ABILITY "grant_ability"
-#define GRANT_LANGUAGE "grant_language"
-/// A verb on an atom or client while any source grants it (code/datums/om/grant_verbs.dm).
-#define GRANT_VERB "grant_verb"
-/// A verb off an atom or client while any source hides it; beats every grant and the type's own verbs.
-#define GRANT_VERB_HIDE "grant_verb_hide"
-/// A GRANT_VERB / GRANT_VERB_HIDE key for verb PATH shown under its own NAME and DESC (a renamed
-/// verb instance, `new PATH(target, NAME, DESC)`). Grant, revoke and hide it by this same key.
+/// The key of verb PATH shown under its own NAME and DESC (a renamed verb instance, `new PATH(target, NAME, DESC)`): what
+/// verb_entry(path, name =, desc =) and has_verb() use.
 #define VERB_NAMED(PATH, NAME, DESC) verb_named_key(PATH, NAME, DESC)
 /// verb_source() names: shared sources for verb grants nothing else owns.
 #define VERB_SOURCE_CONFIG "config"
 #define VERB_SOURCE_ADMIN "admin"
-/// A capability on an atom while any source grants it (code/datums/capabilities/condition.dm): a temporary
-/// condition with behaviour, `grant_hold(A, GRANT_CAPABILITY, /datum/capability/condition/x, source, time)`.
-#define GRANT_CAPABILITY "grant_capability"
-#define GRANT_ACCESS "grant_access"
-#define GRANT_TRAIT "grant_trait"
-/// A system's publication cadence: the id names a step length (cadence.dm), and the
-/// system runs at the shortest one any live grant names.
-#define GRANT_CADENCE "grant_cadence"
-
-// Cadence ids for GRANT_CADENCE. Shortest step wins; the system's own step (CADENCE_BASE_DT) applies with none held.
+// Cadence ids (STAT_CADENCE_HOLDS keys). Shortest step wins; the system's own step (CADENCE_BASE_DT) applies with none held.
 /// A canister rupture, hull breach or pressure-jump storm: gas publishes every 0.1 s.
 #define CADENCE_GAS_FAST "gas_fast"
 /// Something visibly moving but not violent: gas publishes every 0.25 s.

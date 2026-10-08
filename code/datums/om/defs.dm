@@ -212,10 +212,6 @@
 	var/list/contributes
 	/// effect id -> value (number or FROM_VAR("x") read from the target) held on the source (the occupant).
 	var/list/source_contributes
-	/// grant kind -> id (or list of ids) held on the target.
-	var/list/grants_target
-	/// grant kind -> id (or list of ids) held on the source (the occupant).
-	var/list/grants_occupant
 	/// Check spec (actor = source, target = target); contributions apply only while it passes.
 	var/active_if
 	/// Check spec (actor = source, target = target): the edge holds only while it passes and is

@@ -1,13 +1,13 @@
 // Publication cadence as timed grants (doc/rewrite/unified_plan.md, live simulation).
 //
 // A system whose results are published in steps (gas) can publish faster for a while when
-// something visible is happening. That is a GRANT_CADENCE grant held on the system's cadence
+// something visible is happening. That is a hold on STAT_CADENCE_HOLDS of the system's cadence
 // datum: a canister rupture, hull breach or pressure-jump storm asks for fast gas, and the
 // system runs at the shortest step any live grant names. Grants stack and lapse on their own,
 // so the last one to expire drops the system back to its base step, and a grant dies with
 // its source.
 //
-//   grant_hold(SSvg.get_step_cadence(), GRANT_CADENCE, CADENCE_GAS_FAST, src, 5 SECONDS)
+//   hold(SSvg.get_step_cadence(), STAT_CADENCE_HOLDS, 1, src, lasts = 5 SECONDS, key = CADENCE_GAS_FAST)
 //
 // Rust only ever sees the resulting step length (vg_world_set_dt): the law step, the
 // publication drain and SSvg's own wait all follow it.
@@ -28,8 +28,8 @@
 /// The shortest step any live grant names, else the base step, in seconds.
 /datum/step_cadence/proc/dt_seconds()
 	. = base_dt
-	var/list/held = grant_values(src, GRANT_CADENCE)
-	if(!islist(held))
+	var/list/held = stat_value(src, STAT_CADENCE_HOLDS)
+	if(!length(held))
 		return
 	for(var/id in held)
 		if(held[id] <= 0)
@@ -38,9 +38,15 @@
 		if(dt && dt < .)
 			. = dt
 
-/// The step length changed (a grant began or lapsed). Owners override it.
+/// The step length changed (a hold began or lapsed). Owners override it.
 /datum/step_cadence/proc/cadence_changed()
 	return
+
+CAPABILITIES(/datum/step_cadence)
+	on_change(STAT_CADENCE_HOLDS, ANY, then(PROC_REF(cadence_stat_changed)))
+
+/datum/step_cadence/proc/cadence_stat_changed(datum/act/A)
+	cadence_changed()
 
 // ---- the native system's step: the system's own procs are in code/datums/native/system.dm ----
 

@@ -185,7 +185,6 @@
 /datum/om/relation/test_contributing
 	name = "test armour"
 	contributes = list(EFFECT_TEST_ARMOR = FROM_VAR("weight"))
-	grants_occupant = list(GRANT_ABILITY = "test_ability")
 	active_if = /datum/om/check/test_enabled
 
 /datum/om/relation/test_hooked
@@ -296,7 +295,6 @@
 /datum/om/decl/test_host
 	of = /datum/om_test_entity/decl_host
 	include = list(/datum/om/bundle/test_outer)
-	self_grants = list(GRANT_TRAIT = "test_trait")
 
 /datum/om/decl/test_bad
 	registry_skip = TRUE
@@ -811,7 +809,6 @@
 	armour.weight = 4
 	om_link(armour, wearer, /datum/om/relation/test_contributing)
 	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 4, "contributes a FROM_VAR value to the target")
-	TEST_ASSERT(grant_held(armour, GRANT_ABILITY, "test_ability"), "grants_occupant go to the source")
 	armour.enabled = FALSE
 	changed(armour, CHANGE_DATUM_B)
 	scheduler_advance(0.1)
@@ -822,7 +819,6 @@
 	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 4, "active_if passing re-applies")
 	om_unlink(armour, wearer, /datum/om/relation/test_contributing)
 	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 0, "unlinking releases")
-	TEST_ASSERT(!grant_held(armour, GRANT_ABILITY, "test_ability"), "and revokes")
 
 // ---------------------------------------------------------------- E: contributions
 
@@ -855,11 +851,9 @@
 	var/datum/om_test_entity/E = entity(made)
 	var/datum/om_test_entity/source = entity(made)
 	om_hold(E, EFFECT_TEST_FLAG, source)
-	grant_hold(E, GRANT_LANGUAGE, "test_language", source)
 	TEST_ASSERT(om_has(E, EFFECT_TEST_FLAG), "held")
 	qdel(source)
 	TEST_ASSERT(!om_has(E, EFFECT_TEST_FLAG), "a hold dies with its source")
-	TEST_ASSERT(!grant_held(E, GRANT_LANGUAGE, "test_language"), "so does a grant")
 	// Holds made from a hook last only while the hook keeps making them.
 	var/datum/om_test_entity/H = entity(made)
 	om_attach(H, /datum/om/behaviour/test/holder)
@@ -873,21 +867,6 @@
 	TEST_ASSERT(om_has(H, EFFECT_TEST_FLAG), "held again")
 	om_detach(H, /datum/om/behaviour/test/holder)
 	TEST_ASSERT(!om_has(H, EFFECT_TEST_FLAG), "stopping the behaviour releases its holds")
-
-/datum/unit_test/om/grants_vocabulary
-
-/datum/unit_test/om/grants_vocabulary/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
-	var/datum/om_test_entity/source = entity(made)
-	grant_hold(E, GRANT_ABILITY, "jump", source)
-	grant_hold(E, GRANT_VERB, "wave", source)
-	TEST_ASSERT(grant_held(E, GRANT_ABILITY, "jump"), "granted")
-	TEST_ASSERT_EQUAL(length(grants_given_by(E, source)), 2, "grants_from lists a source's grants")
-	grant_release(E, GRANT_ABILITY, "jump", source)
-	TEST_ASSERT(!grant_held(E, GRANT_ABILITY, "jump"), "revoked")
-	var/datum/om_test_entity/host = entity(made, /datum/om_test_entity/decl_host)
-	om_start(host)
-	TEST_ASSERT(grant_held(host, GRANT_TRAIT, "test_trait"), "decl self_grants")
 
 // ---------------------------------------------------------------- G: events
 

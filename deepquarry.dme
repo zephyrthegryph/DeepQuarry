@@ -5753,7 +5753,6 @@
 #include "code\engine\stats\rules.dm"
 #include "code\engine\stats\contributes.dm"
 #include "code\engine\stats\store.dm"
-#include "code\engine\stats\grants.dm"
 #include "code\engine\stats\recompute.dm"
 #include "code\engine\stats\status.dm"
 #include "code\engine\stats\vars_write.dm"

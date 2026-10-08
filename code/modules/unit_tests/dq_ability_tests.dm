@@ -111,7 +111,7 @@
 	TEST_ASSERT(!H.has_ability(ABILITY_ID_SHADEKIN_PHASE_SHIFT), "an ordinary human has no grant")
 	TEST_ASSERT_EQUAL(A.why_not(H, H, null), "you don't have that ability", "refused before any requirement runs")
 
-/// Ability grants are OM grants: deleting the source revokes what it granted, with no
+/// An ability is a capability held by its source: deleting the source ends the activation and takes the ability away, with no
 /// Destroy() bookkeeping of its own.
 /datum/unit_test/dq_ability_grant_dies_with_source
 
@@ -120,7 +120,7 @@
 	var/datum/source = new /datum()
 	H.grant_ability("dq_test_ability", source)
 	TEST_ASSERT(H.has_ability("dq_test_ability"), "granted")
-	TEST_ASSERT(list(GRANT_ABILITY, "dq_test_ability") ~= grants_given_by(H, source)[1], "the grant is in the contribution store")
+	TEST_ASSERT(source in H.ability_sources("dq_test_ability"), "the source is listed as the one granting it")
 	qdel(source)
 	TEST_ASSERT(!H.has_ability("dq_test_ability"), "deleting the source revokes its grant")
 

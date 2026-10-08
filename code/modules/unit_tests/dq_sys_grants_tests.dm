@@ -42,35 +42,30 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 	var/verb_path = /mob/living/proc/dq_sys_grants_test_verb
 	TEST_ASSERT(!(verb_path in H.verbs), "the verb starts absent")
 
-	grant_hold(H, GRANT_VERB, verb_path, first)
+	grant(H, granted_verb(verb_path), first)
 	TEST_ASSERT(verb_path in H.verbs, "the first source's grant adds the verb")
-	grant_hold(H, GRANT_VERB, verb_path, second)
-	grant_release(H, GRANT_VERB, verb_path, first)
+	grant(H, granted_verb(verb_path), second)
+	revoke(H, granted_verb(verb_path), first)
 	TEST_ASSERT(verb_path in H.verbs, "the verb stays while another source grants it")
 
 	qdel(second)
 	TEST_ASSERT(!(verb_path in H.verbs), "deleting the last source removes the verb")
-	TEST_ASSERT(!grant_held(H, GRANT_VERB, verb_path), "and the grant")
+	TEST_ASSERT(!granted(H, granted_verb(verb_path)), "and the grant")
 
-/datum/unit_test/dq_sys_grants_list_helpers
+/datum/unit_test/dq_sys_grants_objects_and_sources
 
-/datum/unit_test/dq_sys_grants_list_helpers/Run()
+/datum/unit_test/dq_sys_grants_objects_and_sources/Run()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/obj/item/source = allocate(/obj/item, test_floor())
 	var/obj/item/target = allocate(/obj/item, test_floor())
-	var/verb_path = /mob/living/proc/dq_sys_grants_test_verb
 	var/obj_verb = /obj/proc/dq_sys_grants_test_obj_verb
-
-	grant_hold_each(H, GRANT_VERB, list(verb_path), source)
-	TEST_ASSERT(verb_path in H.verbs, "grant_hold_each grants each id")
-	grant_release_all_of(H, GRANT_VERB, source)
-	TEST_ASSERT(!(verb_path in H.verbs), "grant_release_all_of revokes everything the source granted")
-
-	grant_hold(target, GRANT_VERB, obj_verb, source)
+	grant(target, granted_verb(obj_verb), source)
 	TEST_ASSERT(obj_verb in target.verbs, "objects take verb grants too")
-	grant_release_each(target, GRANT_VERB, list(obj_verb), source)
-	TEST_ASSERT(!(obj_verb in target.verbs), "grant_release_each revokes each id")
+	TEST_ASSERT(revoke(target, granted_verb(obj_verb), source), "revoke reports it ended the grant")
+	TEST_ASSERT(!(obj_verb in target.verbs), "revoking takes the verb off")
+	grant(target, granted_verb(obj_verb), source)
+	qdel(source)
+	TEST_ASSERT(!(obj_verb in target.verbs), "the source's deletion takes it off")
 
 /// A type verb that a grant also covers survives the grant's revoke; a hide beats both and lifting
 /// it brings the type verb back (the old add/remove pairs desynced here).
@@ -84,24 +79,24 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 	var/type_verb = /mob/verb/observe
 	TEST_ASSERT(type_verb in H.verbs, "a human has /mob/verb/observe from its type")
 
-	grant_hold(H, GRANT_VERB, type_verb, granter)
-	grant_release(H, GRANT_VERB, type_verb, granter)
+	grant(H, granted_verb(type_verb), granter)
+	revoke(H, granted_verb(type_verb), granter)
 	TEST_ASSERT(type_verb in H.verbs, "revoking a grant keeps a verb the type gives")
 
-	grant_hold(H, GRANT_VERB, type_verb, granter)
-	grant_hold(H, GRANT_VERB_HIDE, type_verb, hider)
+	grant(H, granted_verb(type_verb), granter)
+	grant(H, granted_verb(type_verb, hidden = TRUE), hider)
 	TEST_ASSERT(!(type_verb in H.verbs), "a hide beats the type and a grant")
 	qdel(hider)
 	TEST_ASSERT(type_verb in H.verbs, "the hider's deletion brings the verb back")
-	grant_release(H, GRANT_VERB, type_verb, granter)
+	revoke(H, granted_verb(type_verb), granter)
 	TEST_ASSERT(type_verb in H.verbs, "and it stays with the type once the grant is gone")
 
 	var/verb_path = /mob/living/proc/dq_sys_grants_test_verb
 	hider = allocate(/obj/item, test_floor())
-	grant_hold(H, GRANT_VERB_HIDE, verb_path, hider)
-	grant_hold(H, GRANT_VERB, verb_path, granter)
+	grant(H, granted_verb(verb_path, hidden = TRUE), hider)
+	grant(H, granted_verb(verb_path), granter)
 	TEST_ASSERT(!(verb_path in H.verbs), "a grant made while hidden stays off")
-	grant_release(H, GRANT_VERB_HIDE, verb_path, hider)
+	revoke(H, granted_verb(verb_path, hidden = TRUE), hider)
 	TEST_ASSERT(verb_path in H.verbs, "lifting the hide shows the granted verb")
 
 /// verb_entry(), conditional verb_entry() and hidden verb_entry() apply at init and keep no store entry.
@@ -125,13 +120,13 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_flag_verb in D.verbs), "and removes it when the var turns false")
 
 	var/obj/item/source = allocate(/obj/item, test_floor())
-	grant_hold(D, GRANT_VERB, /obj/proc/dq_sys_grants_test_obj_verb, source)
-	grant_release(D, GRANT_VERB, /obj/proc/dq_sys_grants_test_obj_verb, source)
+	grant(D, granted_verb(/obj/proc/dq_sys_grants_test_obj_verb), source)
+	revoke(D, granted_verb(/obj/proc/dq_sys_grants_test_obj_verb), source)
 	TEST_ASSERT(/obj/proc/dq_sys_grants_test_obj_verb in D.verbs, "a revoke keeps a declared verb")
 
 	var/obj/item/dq_grants_declared/hiding/H = allocate(/obj/item/dq_grants_declared/hiding, test_floor())
 	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_obj_verb in H.verbs), "a subtype's hidden verb_entry() overrides the parent's verb_entry()")
-	grant_hold(H, GRANT_VERB, /obj/proc/dq_sys_grants_test_obj_verb, source)
+	grant(H, granted_verb(/obj/proc/dq_sys_grants_test_obj_verb), source)
 	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_obj_verb in H.verbs), "a declared hide beats a runtime grant")
 
 	var/mob/living/carbon/human/dq_grants_hiding/M = allocate(/mob/living/carbon/human/dq_grants_hiding, test_floor())
@@ -145,7 +140,7 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 	var/obj/item/target = allocate(/obj/item, test_floor())
 	var/obj/item/source = allocate(/obj/item, test_floor())
 	var/key = VERB_NAMED(/obj/proc/dq_sys_grants_test_obj_verb, "DQ Renamed Verb", "A renamed test verb")
-	grant_hold(target, GRANT_VERB, key, source)
+	grant(target, granted_verb(/obj/proc/dq_sys_grants_test_obj_verb, verb_name = "DQ Renamed Verb", verb_desc = "A renamed test verb"), source)
 	TEST_ASSERT(has_verb(target, key), "the named verb is on after the grant")
 	var/found = FALSE
 	for(var/procpath/P as anything in target.verbs)

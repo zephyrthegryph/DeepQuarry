@@ -82,8 +82,6 @@
 /// The holder is alt-clicked (before/click_alt): actor = the user.
 #define GUARD_CLICK_ALT "guard:click_alt"
 
-/// hidden_verb(path): the text a hidden-verb grant is keyed by.
-#define GRANT_HIDDEN_PREFIX "hide:"
 
 /// Passes rx_drain() runs when change handlers keep changing state, before it reports a loop.
 #define RX_DRAIN_PASSES 20

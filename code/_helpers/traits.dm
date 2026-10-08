@@ -1,5 +1,4 @@
-// Traits are grants (doc/rewrite/completion_plan.md, G-traits): a trait on a datum is a
-// GRANT_TRAIT contribution keyed by the trait, held by its source. There is no per-datum
+// Traits are a keyed stat: a trait on a datum is a hold on STAT_TRAIT_HOLDS keyed by the trait, held by its source. There is no per-datum
 // trait list and no ADD_TRAIT/REMOVE_TRAIT/HAS_TRAIT macro any more (tools/ci/traits_lint.py).
 //
 //	add_trait(mob, TRAIT_UNLUCKY, src)       // src (a datum) or a text source key (JOB_TRAIT, ...)
@@ -36,18 +35,18 @@ GLOBAL_LIST_EMPTY(trait_source_singletons)
 
 /// TRUE when `target` holds `trait` from any source.
 /proc/has_trait(datum/target, trait)
-	READS_FROM() // a trait is asked when a choice is made, never cached
-	if(!target?.om_rec)
+	READS_FROM(target)
+	if(!isdatum(target))
 		return FALSE
-	return grant_held(target, GRANT_TRAIT, trait)
+	var/list/held = stat_value(target, STAT_TRAIT_HOLDS)
+	return !!held && held[trait] > 0
 
 /// TRUE when `target` holds `trait` from `source`.
 /proc/has_trait_from(datum/target, trait, source)
-	if(!target?.om_rec)
+	if(!isdatum(target))
 		return FALSE
 	var/datum/holder = trait_source(source)
-	var/list/sources = grant_sources(target, GRANT_TRAIT, trait)
-	return holder && (holder in sources)
+	return holder && (holder in hold_sources(target, STAT_TRAIT_HOLDS, trait))
 
 /// TRUE when `target` or its mind holds `trait`.
 /proc/has_mind_trait(mob/target, trait)
@@ -55,13 +54,14 @@ GLOBAL_LIST_EMPTY(trait_source_singletons)
 
 /// The source datums granting `target` `trait` (a new list, empty when none).
 /proc/trait_sources(datum/target, trait)
-	var/list/sources = grant_sources(target, GRANT_TRAIT, trait)
-	return sources ? sources.Copy() : list()
+	return isdatum(target) ? hold_sources(target, STAT_TRAIT_HOLDS, trait) : list()
 
 /// Every trait `target` holds (a new list).
 /proc/trait_list(datum/target)
 	. = list()
-	var/list/per_key = grant_values(target, GRANT_TRAIT)
+	if(!isdatum(target))
+		return
+	var/list/per_key = stat_value(target, STAT_TRAIT_HOLDS)
 	if(!islist(per_key))
 		return
 	for(var/trait in per_key)
@@ -76,7 +76,7 @@ GLOBAL_LIST_EMPTY(trait_source_singletons)
 	if(!holder)
 		CRASH("add_trait([target], [trait]) without a source")
 	var/had = has_trait(target, trait)
-	if(!grant_hold(target, GRANT_TRAIT, trait, holder))
+	if(QDELETED(holder) || !hold(target, STAT_TRAIT_HOLDS, 1, holder, key = trait))
 		return FALSE
 	if(!had)
 		PUBLISH_LEGACY(target, /datum/notice/trait_gained, trait)
@@ -98,7 +98,7 @@ GLOBAL_LIST_EMPTY(trait_source_singletons)
 		for(var/source in wanted)
 			holders |= trait_source(source)
 	for(var/datum/holder as anything in holders)
-		grant_release(target, GRANT_TRAIT, trait, holder)
+		release(target, STAT_TRAIT_HOLDS, holder, trait)
 	if(!has_trait(target, trait))
 		PUBLISH_LEGACY(target, /datum/notice/trait_lost, trait)
 

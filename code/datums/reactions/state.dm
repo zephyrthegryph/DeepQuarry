@@ -255,20 +255,13 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 // ---------------------------------------------------------------- grants
 
 /**
- * `source` grants `what` (a capability type, a bit name, a permission) to `target`, for `duration`
+ * `source` grants `what` (a bit name, a permission) to `target`, for `duration`
  * deciseconds of target's clock when given, else until revoke(). The grant is present while any source
  * holds it. Returns TRUE when it was not present before.
  */
 /proc/legacy_grant(datum/target, what, source = "grant", duration)
 	if(!target || (isdatum(target) && QDELING(target)))
 		return FALSE
-	var/kind = grant_kind(what)
-	if(kind)
-		// An effect grant (a verb, a hidden verb, a capability) goes to the store that applies it; its source's
-		// deletion drops the hold there (a text source is a shared verb_source()).
-		var/datum/held_by = isdatum(source) ? source : verb_source("[source]")
-		var/id = grant_id(what)
-		return grant_hold(target, kind, id, held_by, duration)
 	. = rx_ledger_add(target, RELK_GRANT, what, source)
 	if(duration)
 		after(target, duration, GLOBAL_PROC_REF(rx_grant_expire), key = "grant:[what]:[source]", with = list(target, what, source), keeps_dead = TRUE)
@@ -277,35 +270,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /proc/legacy_revoke(datum/target, what, source = "grant")
 	if(!target)
 		return FALSE
-	var/kind = grant_kind(what)
-	if(kind)
-		return grant_release(target, kind, grant_id(what), isdatum(source) ? source : verb_source("[source]"))
 	return rx_ledger_remove(target, RELK_GRANT, what, source)
-
-/// grant(M, hidden_verb(/mob/verb/observe), source): hides the verb while the source holds it (GRANT_VERB_HIDE).
-/proc/hidden_verb(verb_path)
-	return "[GRANT_HIDDEN_PREFIX][verb_path]"
-
-/// The om grant kind that applies `what` (a verb path -> GRANT_VERB, hidden_verb() -> GRANT_VERB_HIDE, a capability
-/// type -> GRANT_CAPABILITY), or null for a plain ledger grant (a bit name, a permission).
-/proc/grant_kind(what)
-	if(ispath(what, /datum/capability))
-		return GRANT_CAPABILITY
-	var/text = "[what]"
-	if(copytext(text, 1, length(GRANT_HIDDEN_PREFIX) + 1) == GRANT_HIDDEN_PREFIX)
-		return GRANT_VERB_HIDE
-	if(!istext(what) && (findtext(text, "/proc/") || findtext(text, "/verb/")) && copytext(text, 1, 7) != "/proc/")
-		return GRANT_VERB
-	if(istext(what) && findtext(text, "\n")) // VERB_NAMED(path, name, desc)
-		return GRANT_VERB
-	return null
-
-/// The id the om store keys `what` by.
-/proc/grant_id(what)
-	var/text = "[what]"
-	if(copytext(text, 1, length(GRANT_HIDDEN_PREFIX) + 1) == GRANT_HIDDEN_PREFIX)
-		return text2path(copytext(text, length(GRANT_HIDDEN_PREFIX) + 1))
-	return what
 
 /proc/rx_grant_expire(datum/target, what, source)
 	if(target && !QDELETED(target))
@@ -313,9 +278,6 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 
 /// TRUE while `what` is granted to `target` by any source.
 /proc/legacy_granted(datum/target, what)
-	var/kind = grant_kind(what)
-	if(kind)
-		return grant_held(target, kind, grant_id(what))
 	return rx_ledger_has(target, RELK_GRANT, what)
 
 // ---------------------------------------------------------------- membership
