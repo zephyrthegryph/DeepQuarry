@@ -131,7 +131,7 @@ MSG_DEF_SELF(h4/not_now, "Not now.")
 CAPABILITIES(/obj/h4_kiosk)
 	op("held_ask", ui_act("held_ask"), claims(CLAIM_TARGET), asks(/datum/prompt/text, fields = list("question" = "Name?", "timeout" = 0), step = "name"), then(PROC_REF(scanned)))
 	op("hands_ask", ui_act("hands_ask"), claims(CLAIM_HANDS), asks(/datum/prompt/text, fields = list("question" = "Name?", "timeout" = 0), step = "name"), then(PROC_REF(scanned)))
-	op("hands_other", ai(), claims(CLAIM_HANDS), then(PROC_REF(scanned)))
+	op("hands_other", hand(), claims(CLAIM_HANDS), then(PROC_REF(scanned)))
 	op("scan", ui_act("scan"), asks(/datum/prompt/yes_no, fields = list("question" = "Consent to a scan?", "timeout" = 0), step = "consent", answerer = PROC_REF(consenter), ends_on_no = TRUE), then(PROC_REF(scanned)))
 	op("refused_start", ui_act("refused_start"), wait(2 SECONDS), starts(PROC_REF(refuse_start)), then(PROC_REF(scanned)))
 
@@ -165,11 +165,11 @@ CAPABILITIES(/obj/h4_kiosk)
 	// hands: the actor's own claim holds against an input that cannot stop it
 	var/datum/op_result/open_hands = test_ui(first, K, "hands_ask", list())
 	TEST_ASSERT_NULL(open_hands?.outcome, "the hands claim is taken when the question opens")
-	var/datum/op_result/busy = op_perform_by_key(first, K, null, "hands_other", ORIGIN_AI, AUTH_PHYSICAL, FALSE)
+	var/datum/op_result/busy = perform_op(first, K, "hands_other", origin = ORIGIN_AI)
 	TEST_ASSERT_EQUAL(busy?.outcome, ACT_REFUSED, "an AI input needing the same hands is refused")
 	TEST_ASSERT_EQUAL(busy?.reason, /datum/msg/op/busy, "as busy")
 	test_answer(first, null, REQ_CANCELLED)
-	var/datum/op_result/free = op_perform_by_key(first, K, null, "hands_other", ORIGIN_AI, AUTH_PHYSICAL, FALSE)
+	var/datum/op_result/free = perform_op(first, K, "hands_other", origin = ORIGIN_AI)
 	TEST_ASSERT_EQUAL(free?.outcome, ACT_COMMITTED, "the claim is released when the op is cancelled")
 
 /datum/unit_test/dq_h4/a_third_party_answers_the_question
