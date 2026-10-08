@@ -3732,3 +3732,12 @@ Pinned by `code/modules/unit_tests/dq_notice_late_deleted_tests.dm` and `dq_asks
   other physical input stops the op, an AI's is refused as busy. Ops with no wait and no `claims()` derive no claim and are unchanged. The test that pinned the old behaviour is
   renamed `work_then_question_holds_hands_through_the_question`.
 * `asks(answerer =)` and `starts()` returning a reason are additions (no existing op uses them).
+
+## Look state pin slowdown (rewrite/pin-slowdown)
+
+`dq_look_state_pin` over the whole directory could not finish: after the blob roots each closet type took minutes, while the same root run alone took seconds.
+
+* **Cause.** A probe of a type that spills things when it dies (a blob core drops a chunk, a gun cabinet its guns) handed the spill to the test with `own_turf_contents()`, which only deletes it when the whole test ends. Every later probe was made among it. A closet takes every loose item on its floor in when it is made (about 1 ms an item, linear: measured 0.04 s for 50 items, 0.38 s for 400), so with 887 blob chunks on the floor each closet probe cost seconds and a type has up to 72 of them (a coffin took 106 s, a rifle cabinet 600 s). Nothing leaked in a registry: object counts, GLOB list sizes and the kernel lists stayed flat across the sweep; the growth was the litter on the one floor tile.
+* **Fix.** The state pin drains the test floor after the made-look capture and after every probe (`dq_look_drain_turf()`), so every probe starts from an empty floor. Coffin went from 106 s to 0.8 s; the full directory now finishes in about 45 minutes. `dq_look_state_probe_leaves_floor_clear` pins it.
+* **Rows changed:** `look_states/obj.structure.closet.secure_closet.guncabinet.txt`, the rifle cabinet's `opened=1/2` rows: `-overlay: ...:laser x3` becomes `-overlay: ...:projectile x2`. The old rows recorded the laser cabinet's spilled lasers that the rifle cabinet took in; a rifle cabinet holds two rifles (`starts_with`), which is what the new rows show.
+* **Deleted:** the empty `look_states/mob.living.simple_mob.vore.swoopie.txt` and `...xenomorph.txt`: they name no type (the swoopie is `vore/aggressive/corrupthound/swoopie`, the xenomorph root no longer exists) and failed the pin as "names no type".
