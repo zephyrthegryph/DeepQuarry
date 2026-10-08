@@ -174,3 +174,7 @@ GLOBAL_VAR_INIT(projectile_pre_reacted, null)
 /atom/proc/damage_reaction_qdel(datum/damage_packet/packet)
 	destroyed(src)
 	return DAMAGE_REACTION_BLOCK
+
+/// Damage keeps its key interpretation and cached rows outside the engine.
+/datum/rx_table/add_domain_reaction(datum/reaction/R)
+	rx_table_add_damage(src, R)

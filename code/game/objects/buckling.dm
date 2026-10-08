@@ -74,21 +74,49 @@ TRACKED(/atom/movable, drag_buckle)
 		stack_trace("Recursive buckle warning: [M] being buckled to self.")
 		return
 
-	// The relation's on_link() hook (code/datums/om/library.dm,
-	// /datum/om/relation/buckled_to) does the actual buckling: sets BUCKLED(M),
-	// direction, canmove/floating/water, riding offsets, the buckled alert and
-	// buckled_mobs membership. It also owns unbuckling on Destroy() or when M
-	// ends up off our tile, so there's no hand-rolled cleanup here any more.
-	// `forced` doesn't fit the fixed on_link(source, target, edge) signature,
-	// so it's handed across via the singleton relation instance -- link() runs
-	// on_link() synchronously before returning, so there's no re-entrancy risk.
-	var/datum/om/relation/buckled_to/R = om_registry().relation(/datum/om/relation/buckled_to)
-	R.pending_forced = forced
-	var/link_result = om_link(M, src, /datum/om/relation/buckled_to)
-	R.pending_forced = FALSE
-	if(!istype(link_result, /datum/om/edge))
+	return buckle_link(M)
+
+/// Writes the buckle link (the sparse pair LK_BUCKLED_TO / LK_BUCKLED_MOBS) and does what buckling someone does to them and to the seat. The link itself
+/// frees the rider when the seat or the rider goes or the rider ends up off the seat's tile (holds_while), and buckle_released() / buckle_vacated() do the
+/// cleanup. FALSE when the link was refused.
+/atom/movable/proc/buckle_link(mob/living/M)
+	if(!link_make(M, LK_BUCKLED_TO, src))
 		return FALSE
+	M.facing_dir = null
+	M.set_dir(buckle_dir ? buckle_dir : dir)
+	M.update_canmove()
+	M.update_floating(M.Check_Dense_Object())
+	if(riding_datum)
+		rel_set(riding_datum, nameof(/datum/riding::ridden), src)
+		riding_datum.handle_vehicle_offsets()
+	M.update_water()
+	post_buckle_mob(M)
+	M.throw_alert("buckled", /atom/movable/screen/alert/restrained/buckled, new_master = src)
+	PUBLISH_CHANGE(M, MOB_KEY_STATUS)
 	return TRUE
+
+STAT(/mob/living, buckled, ANY, virtual = TRUE)
+
+/// links(holds_while) of the buckle pair: a rider stays buckled while it is on the seat's tile.
+/atom/movable/proc/link_stays_seated(atom/movable/seat)
+	return link_in_range(seat, 0)
+
+/// The buckle link broke: the rider is no longer held where it was.
+/mob/living/proc/buckle_released(atom/movable/seat)
+	set_anchored(initial(anchored))
+	update_canmove()
+	update_floating(Check_Dense_Object())
+	clear_alert("buckled")
+	update_water()
+	PUBLISH_CHANGE(src, MOB_KEY_STATUS)
+
+/// The seat's side of it: its riding offsets are restored and it hears who left.
+/atom/movable/proc/buckle_vacated(mob/living/rider)
+	if(riding_datum)
+		if(istype(rider))
+			riding_datum.restore_position(rider)
+		riding_datum.handle_vehicle_offsets()
+	post_buckle_mob(istype(rider) ? rider : null)
 
 /atom/movable/proc/unbuckle_mob(mob/living/buckled_mob, force = FALSE)
 	if(!buckled_mob) // If we didn't get told which mob needs to get unbuckled, just assume its the first one on the list.
@@ -99,8 +127,8 @@ TRACKED(/atom/movable, drag_buckle)
 
 	if(buckled_mob && buckled_mob?.buckled_to() == src)
 		. = buckled_mob
-		// on_unlink() (code/datums/om/library.dm) does the actual unbuckling.
-		om_unlink(buckled_mob, src, /datum/om/relation/buckled_to)
+		// buckle_released() / buckle_vacated() do the actual unbuckling.
+		link_break(buckled_mob, LK_BUCKLED_TO, src)
 
 /atom/movable/proc/unbuckle_all_mobs(force = FALSE)
 	if(!has_buckled_mobs())

@@ -31,7 +31,7 @@ MSG_DEF(fieldgen/activated, "You turn on %T%.", "%U% turns on %T%.")
 	active = 0
 	/// The store the fields are paid from, J.
 	var/power = 30000
-	state = 0
+	var/state = 0
 	/// The containment fields this generator powers (shared with the generator at the far end; each field is a map object, rooted by its turf).
 	var/list/obj/machinery/containment_field/fields
 	/// Generators linked to this one (a symmetric link).
@@ -279,3 +279,11 @@ CAPABILITIES(/obj/machinery/field_generator)
 
 #undef FIELD_GEN_MAX_POWER
 #undef FIELD_GEN_WARMUP_STAGE
+
+TRACKED_BRIDGED(/obj/machinery/field_generator, state, CHANGE_MACHINE_SETTINGS)
+
+/obj/machinery/field_generator/floor_weld_state()
+	return state
+
+/obj/machinery/field_generator/floor_weld_set_state(rung)
+	return set_state(rung)

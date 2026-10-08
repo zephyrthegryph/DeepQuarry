@@ -399,4 +399,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/reagent_dis
 	. = ..()
 	if(reagents)
 		.[THERMAL_CAPACITY] += reagents.heat_capacity()
-

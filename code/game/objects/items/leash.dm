@@ -19,57 +19,74 @@
 		owner.struggle_leash()
 
 ///// RELATIONS /////
-// A leash is two edges, and they are its whole state: pet -> leash
-// (leashed_to) and leash -> the mob holding it (leash_held_by). LEASH_PET(),
-// LEASH_MASTER() and LEASH_OF() (om.dm) read them. Deleting any of the three
-// ends the leash, and dropping either edge drops the other; the hooks below
-// do the alerts, the slowdown and the movement listeners.
+// A leash is two references, and they are its whole state: the pet (`pet`) and the mob holding it (`holder`). leash_pet(), leash_master() and
+// leash_item() read them. Deleting any of the three ends the leash, and dropping either reference drops the other; the hooks below (declared in
+// CAPABILITIES(/obj/item/leash)) do the alerts, the slowdown and the movement listeners.
 
-/datum/om/relation/leashed_to
-	name = "leash"
-	source_single = TRUE
-	target_single = TRUE
-	conflict = OM_REL_REFUSE
+/// The name of the leash's pet var (the reverse-index key leash_item() reads).
+#define LEASH_PET_VAR "pet"
 
-/datum/om/relation/leashed_to/on_link(mob/living/source, obj/item/leash/target, datum/om/edge/edge)
-	if(!istype(source) || !istype(target))
+/obj/item/leash
+	/// The mob on the end of this leash. Read with leash_pet().
+	var/mob/living/pet
+	/// The mob holding this leash. Read with leash_master().
+	var/mob/living/holder
+
+/// Was LEASH_PET().
+/obj/item/leash/proc/leash_pet() as /mob/living
+	return pet
+
+/// Was LEASH_MASTER().
+/obj/item/leash/proc/leash_master() as /mob/living
+	return holder
+
+/// The leash this mob is on, or null (the leash names the pet, so this reads the reverse index).
+/mob/living/proc/leash_item() as /obj/item/leash
+	var/list/leashes = rel_sources_via(src, LEASH_PET_VAR)
+	return length(leashes) ? leashes[1] : null
+
+/// The pet is free: the alert, the slowdown and the movement listener go.
+/obj/item/leash/proc/release_pet(mob/living/old_pet)
+	unobserve(old_pet, /datum/notice/moved, src)
+	if(QDELETED(old_pet))
 		return
-	source.apply_body_effect(/datum/body_effect/leash)
-	source.throw_alert("leashed", /atom/movable/screen/alert/leash_pet, new_master = target)
-	observe(source, /datum/notice/moved, target, then(TYPE_PROC_REF(/obj/item/leash, on_pet_move)))
-	om_task_periodic(target, PERIODIC_SLOW)
+	old_pet.clear_alert("leashed")
+	old_pet.remove_body_effect(/datum/body_effect/leash)
 
-/datum/om/relation/leashed_to/on_unlink(mob/living/source, obj/item/leash/target, datum/om/edge/edge)
-	if(istype(source) && !QDELETED(source))
-		source.clear_alert("leashed")
-		source.remove_body_effect(/datum/body_effect/leash)
-	if(istype(target))
-		unobserve(source, /datum/notice/moved, target)
-		om_task_periodic_stop(target)
-		// No pet, no leash: let go of the holder too.
-		var/mob/living/master = target?.leash_master()
-		if(master)
-			om_unlink(target, master, /datum/om/relation/leash_held_by)
+/// The holder lets go: the alert and the movement listener go.
+/obj/item/leash/proc/release_holder(mob/living/old_holder)
+	unobserve(old_holder, /datum/notice/moved, src)
+	if(!QDELETED(old_holder))
+		old_holder.clear_alert("leash")
 
-/datum/om/relation/leash_held_by
-	name = "leash holder"
-	source_single = TRUE
+/// The pet reference went: no pet, no leash, so the holder lets go too.
+/obj/item/leash/proc/pet_ended(mob/living/old_pet)
+	release_pet(old_pet)
+	if(holder)
+		rel_set(src, nameof(holder), null)
 
-/datum/om/relation/leash_held_by/on_link(obj/item/leash/source, mob/living/target, datum/om/edge/edge)
-	if(!istype(source) || !istype(target))
-		return
-	target.throw_alert("leash", /atom/movable/screen/alert/leash_dom, new_master = source)
-	observe(target, /datum/notice/moved, source, then(TYPE_PROC_REF(/obj/item/leash, on_master_move)))
+/// The holder reference went: no holder, no leash, so the pet is free.
+/obj/item/leash/proc/holder_ended(mob/living/old_holder)
+	release_holder(old_holder)
+	if(pet)
+		rel_set(src, nameof(pet), null)
 
-/datum/om/relation/leash_held_by/on_unlink(obj/item/leash/source, mob/living/target, datum/om/edge/edge)
-	if(istype(target) && !QDELETED(target))
-		target.clear_alert("leash")
-	if(istype(source))
-		unobserve(target, /datum/notice/moved, source)
-		// No holder, no leash: the pet is free.
-		var/mob/living/pet = source?.leash_pet()
-		if(pet)
-			om_unlink(pet, source, /datum/om/relation/leashed_to)
+/// The leash is deleted: whoever is on it or holding it is let go (the hooks are not told when their own holder is destroyed).
+/obj/item/leash/on_destroy(force)
+	if(pet)
+		release_pet(pet)
+	if(holder)
+		release_holder(holder)
+	..()
+
+/// The leash is on `new_pet`, held by `new_holder`: the alerts, the slowdown and the movement listeners.
+/obj/item/leash/proc/leash_linked(mob/living/new_pet, mob/living/new_holder)
+	new_pet.apply_body_effect(/datum/body_effect/leash)
+	new_pet.throw_alert("leashed", /atom/movable/screen/alert/leash_pet, new_master = src)
+	observe(new_pet, /datum/notice/moved, src, then(TYPE_PROC_REF(/obj/item/leash, on_pet_move)))
+	om_task_periodic(src, PERIODIC_SLOW)
+	new_holder.throw_alert("leash", /atom/movable/screen/alert/leash_dom, new_master = src)
+	observe(new_holder, /datum/notice/moved, src, then(TYPE_PROC_REF(/obj/item/leash, on_master_move)))
 
 ///// OBJECT /////
 //The leash object itself
@@ -90,20 +107,20 @@
 	var/mob/living/leash_master = src?.leash_master()
 	if(!leash_pet || !leash_master) //If there is no pet, there is no dom. Loop breaks.
 		clear_leash()
-		return
+		return PROCESS_KILL
 
 	if(!leash_pet.mind) //in the extremely niche case a sentient simplemob is leashed, and then ghosts, use this
 		clear_leash()
-		return
+		return PROCESS_KILL
 
 	if(leash_pet.absorbed) //Glrk'd
 		clear_leash()
-		return
+		return PROCESS_KILL
 	if(!is_wearing_collar(leash_pet) && istype(leash_pet, /mob/living/carbon/human)) //The pet has slipped their collar and is not the pet anymore.
 		act_message(leash_pet, null, MSG_SELF(span_warning("You have slipped out of your collar!")), \
 			MSG_OTHERS(span_warning("%U% has slipped out of %THEIR% collar!")))
 		clear_leash()
-		return
+		return PROCESS_KILL
 
 //Called when someone is clicked with the leash
 /obj/item/leash/attack(mob/living/C, mob/living/user, target_zone, attack_modifier) //C is the target, user is the one with the leash
@@ -179,19 +196,23 @@
 	attach(pet, holder)
 
 /// Links the leash between `pet` and `holder`. This leash may still be on someone else: that one ends here.
-/obj/item/leash/proc/attach(mob/living/pet, mob/living/holder)
+/obj/item/leash/proc/attach(mob/living/new_pet, mob/living/new_holder)
 	clear_leash()
-	if(!istype(om_link(pet, src, /datum/om/relation/leashed_to), /datum/om/edge))
+	if(new_pet.leash_item()) // already on another leash: refused
 		return FALSE
-	om_link(src, holder, /datum/om/relation/leash_held_by)
-	act_message(pet, holder, MSG_SELF(span_danger("The leash clicks onto your collar!")), MSG_OTHERS(span_danger("%T% puts a leash on %U%!")))
-	to_chat(pet, span_userdanger("You have been leashed!"))
-	to_chat(pet, span_danger("(You can use OOC escape to detach the leash)"))
+	rel_set(src, nameof(pet), new_pet)
+	rel_set(src, nameof(holder), new_holder)
+	leash_linked(new_pet, new_holder)
+	act_message(new_pet, new_holder, MSG_SELF(span_danger("The leash clicks onto your collar!")), MSG_OTHERS(span_danger("%T% puts a leash on %U%!")))
+	to_chat(new_pet, span_userdanger("You have been leashed!"))
+	to_chat(new_pet, span_danger("(You can use OOC escape to detach the leash)"))
 	return TRUE
 
 //Called when the leash is used in hand
 //Tugs the pet closer
 CAPABILITIES(/obj/item/leash)
+	ref_one(nameof(pet), /mob/living, on_unlink = PROC_REF(pet_ended))
+	ref_one(nameof(holder), /mob/living, on_unlink = PROC_REF(holder_ended))
 	op("tug", in_hand(), label("Tug leash"), then(PROC_REF(leash_tug_requested)))
 
 /obj/item/leash/proc/leash_tug_requested(datum/act/op/A)
@@ -295,12 +316,8 @@ CAPABILITIES(/obj/item/leash)
 
 /// Ends the leash. Unlinking either edge unlinks the other (see above).
 /obj/item/leash/proc/clear_leash()
-	var/mob/living/leash_pet = src?.leash_pet()
-	if(leash_pet)
-		om_unlink(leash_pet, src, /datum/om/relation/leashed_to)
-	var/mob/living/leash_master = src?.leash_master()
-	if(leash_master)
-		om_unlink(src, leash_master, /datum/om/relation/leash_held_by)
+	rel_set(src, nameof(pet), null)
+	rel_set(src, nameof(holder), null)
 
 /obj/item/leash/proc/struggle_leash()
 	var/mob/living/leash_pet = src?.leash_pet()

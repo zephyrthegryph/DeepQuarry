@@ -92,14 +92,14 @@ Whatever you did that made the last camera window disappear-- don't do that agai
 		return
 	if(ai)
 		rel_remove(ai, nameof(ai.multicam_screens), src)
-		om_unlink(aiEye, ai, /datum/om/relation/eye_of)
+		rel_set(aiEye, nameof(aiEye.eye_looker), null)
 		rel_remove(ai, nameof(ai.master_multicam), src)
 		if(ai.multicam_on)
 			unshow_to(ai.client)
 	rel_set(src, nameof(ai), new_ai)
 	if(new_ai)
 		rel_add(new_ai, nameof(new_ai.multicam_screens), src)
-		om_link(aiEye, ai, /datum/om/relation/eye_of)
+		rel_set(aiEye, nameof(aiEye.eye_looker), ai)
 		if(new_ai.multicam_on)
 			show_to(new_ai.client)
 

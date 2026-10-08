@@ -354,7 +354,13 @@ fn entry_text(raw: &str, caps: &[Cap], globals: &BTreeSet<String>) -> String {
     // `link` (the legacy spelling) and `links` (the block form: `link` is a BYOND reserved word): both become entry_link() with the ends as text.
     for call in ["link", "links"] {
         t = rewrite_calls(&t, call, &|a| {
-            let mut parts = vec![quote(a.first().map(|s| s.as_str()).unwrap_or("")), quote(a.get(1).map(|s| s.as_str()).unwrap_or(""))];
+            // An end is the text of `/type::var`. A sparse end names no var (links(LINK_END(/mob/living, LK_X), ..., sparse = TRUE)): it is already an
+            // expression that gives that text, so it is copied as it is.
+            let end = |i: usize| {
+                let s = a.get(i).map(|s| s.as_str()).unwrap_or("");
+                if s.is_empty() || s.contains("::") { quote(s) } else { s.to_string() }
+            };
+            let mut parts = vec![end(0), end(1)];
             parts.extend(a.iter().skip(2).cloned());
             format!("entry_link({})", parts.join(", "))
         });
@@ -852,6 +858,16 @@ CAPABILITIES(/obj/thing, \
         assert!(decl.contains("when(nameof(armed), contributes(STAT_OPERABLE, FALSE))"));
         assert!(decl.contains("into += entry_line(13)
 	into += list(entry_link("), "every entry keeps its own line: {}", decl);
+    }
+
+    #[test]
+    fn a_sparse_link_end_is_an_expression_not_text() {
+        let block = "CAPABILITIES(/obj/thing)
+	links(LINK_END(/obj/thing, LK_ONE), LINK_END(/obj/thing, LK_TWO), sparse = TRUE, holds_while = PROC_REF(x))
+";
+        let (_, decl, diags) = gen(vec![("code/a.dm", block)]);
+        assert!(diags.is_empty(), "{:?}", diags);
+        assert!(decl.contains("entry_link(LINK_END(/obj/thing, LK_ONE), LINK_END(/obj/thing, LK_TWO), sparse = TRUE"), "{}", decl);
     }
 
     #[test]

@@ -292,23 +292,26 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 //   - Multitool : get the power currently passing through the cable
 //
 
-DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/cable)
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/cable/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/cable/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/turf/T = src.loc
 	if(!T.is_plating())
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/coil = W
 		if(coil.get_amount() < 1)
 			to_chat(user, "Not enough cable")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		coil.cable_join(src, user)
 	else if(!(W.flags & NOCONDUCT))
 		shock(user, 50, 0.7)
 	add_fingerprint(user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/cable/wirecutter_act(mob/user, obj/item/W)
 	var/turf/T = src.loc

@@ -126,7 +126,7 @@ CAPABILITIES(/obj/machinery/sparker)
 	desc = "A remote control switch for a mounted igniter."
 
 CAPABILITIES(/obj/machinery/button/ignition)
-	op("trigger", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Trigger"), then(PROC_REF(interaction_trigger)))
+	op("trigger", hand(), priority(OP_PRIORITY_DEFAULT), label("Trigger"), then(PROC_REF(interaction_trigger)))
 
 /// Sparkers and igniters sharing our id (keyed).
 /obj/machinery/button/ignition/var/list/obj/machinery/sparker/controlled_sparkers

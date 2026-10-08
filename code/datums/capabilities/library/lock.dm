@@ -44,7 +44,7 @@
 /datum/capability/lock/draw(atom/holder, datum/look/look)
 	if(!lamp)
 		look.part(LOOK_LOCKED, is_locked(holder))
-	else if(is_lit(holder) && !(blocked_by & holder.cap_state))
+	else if(is_lit(holder) && !(blocked_by & capability_bits(holder)))
 		look.glow(is_locked(holder) ? LOOK_LOCKED : LOOK_UNLOCKED)
 
 /datum/capability/lock/look_parts()

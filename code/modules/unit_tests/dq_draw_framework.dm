@@ -41,7 +41,7 @@ TRACKED(/obj/dq_draw_effect, mirror)
 	TEST_ASSERT_EQUAL(A.effects_seen, 2, "a changed look runs it again")
 	TEST_ASSERT_EQUAL(A.last_effect_value, 2, "with the new value")
 	TEST_ASSERT_EQUAL(A.mirror, 2, "and the write it made stands")
-	TEST_ASSERT(("mode-2" in A.look_overlays), "the draw's own layer is applied: [json_encode(A.look_overlays)]")
+	TEST_ASSERT(("mode-2" in A.rx?.look_overlays), "the draw's own layer is applied: [json_encode(A.rx?.look_overlays)]")
 
 // ---- look.watch(): a draw that reads another entity ----
 
@@ -75,10 +75,10 @@ TRACKED(/obj/dq_draw_watched, shown)
 	A.other = B
 	changed(A)
 	refresh_flush()
-	TEST_ASSERT(("other-0" in A.look_overlays), "the draw read the other end: [json_encode(A.look_overlays)]")
+	TEST_ASSERT(("other-0" in A.rx?.look_overlays), "the draw read the other end: [json_encode(A.rx?.look_overlays)]")
 	B.set_shown(3)
 	refresh_flush()
-	TEST_ASSERT(("other-3" in A.look_overlays), "a change on the other end redraws this one: [json_encode(A.look_overlays)]")
+	TEST_ASSERT(("other-3" in A.rx?.look_overlays), "a change on the other end redraws this one: [json_encode(A.rx?.look_overlays)]")
 	A.other = null
 	changed(A)
 	refresh_flush()

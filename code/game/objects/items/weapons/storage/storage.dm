@@ -29,7 +29,6 @@
 	w_class = ITEMSIZE_NORMAL
 	show_messages = 1
 	MATERIAL_BULK(MAT_FIBERS, 50)
-	latent_contents = TRUE
 
 	/// Mobs looking into this storage.
 	var/list/is_seeing
@@ -180,7 +179,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	var/total_storage_space = 0
 	for(var/obj/item/I in contents) // ALLOW(latent): declared contents counted below
 		total_storage_space += I.get_storage_cost()
-	var/list/generator = latent_declared ? starts_with : null
+	var/list/generator = latent_is_declared() ? starts_with : null
 	for(var/path in generator)
 		if(dq_latent_eligible(path) && latent_spawn_ok(path, generator[path]))
 			total_storage_space += dq_type_storage_cost(path) * dq_latent_spawn_count(generator[path])

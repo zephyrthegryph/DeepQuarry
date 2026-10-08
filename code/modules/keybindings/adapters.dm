@@ -28,20 +28,8 @@
 	/// SILICON_USE_* / ROBOT_USE_*: what the AI's and cyborgs' plain Use does when
 	/// the type doesn't override attack_ai or attack_robot. A type var: no per-instance cost.
 	var/silicon_use = NONE
-/datum/input_adapter
-	var/name = "abstract"
-
-/// Adapters are singletons; GLOB.input_adapters maps type -> instance.
-GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
-
-/proc/init_input_adapters()
-	var/list/adapters = list()
-	for(var/datum/input_adapter/adapter_type as anything in subtypesof(/datum/input_adapter))
-		adapters[adapter_type] = new adapter_type
-	return adapters
-
 /// This mob's capability adapter.
-/mob/proc/input_adapter()
+/mob/input_adapter()
 	return INPUT_ADAPTER(hands)
 
 /mob/observer/dead/input_adapter()
@@ -151,7 +139,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 	input_submit(new /datum/input_event/drag(user, dragged, over, list(src_location, over_location, src_control, over_control, params)))
 
 /// The drag no op took: the gesture entries, then MouseDrop_T of the target.
-/datum/input_adapter/proc/drag_legacy(mob/user, atom/dragged, atom/over, list/legacy)
+/datum/input_adapter/drag_legacy(mob/user, atom/dragged, atom/over, list/legacy)
 	if(try_gesture_drag(user, dragged, over))
 		return
 	INVOKE_ASYNC(over, TYPE_PROC_REF(/atom, MouseDrop_T), dragged, user, legacy?[1], legacy?[2], legacy?[3], legacy?[4], legacy?[5]) // ALLOW(scheduler): MouseDrop_T overrides may prompt/do_after

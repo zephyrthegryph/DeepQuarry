@@ -54,14 +54,30 @@ static META: Meta = Meta {
 
 struct SiliconEntry;
 
-/// Does a top-level line start a proc whose parameters include a /datum/act (an op handler, a requirement, a condition)?
+/// Classifies the callback contract, rather than treating every context as player input.
+/// Timer contexts describe simulation work (their body selections need not be actor gates).
+/// Prompt prepare builds eligibility and presentation for an already admitted request.
+/// Generic act callbacks remain input handlers: then()/req() can intentionally use that base.
 fn act_proc_header(line: &str) -> bool {
     if !line.starts_with('/') {
         return false;
     }
     let Some(open) = line.find('(') else { return false };
+    let path = &line[..open];
     let params = &line[open..];
-    params.contains("datum/act")
+    if !params.contains("datum/act") {
+        return false;
+    }
+    let timer_context = crate::pat!(r"(?:^|[,(\s])/?datum/act/timer(?:/[^,\s)]*)?(?:[ /,)]|$)");
+    if timer_context.is_match(params) {
+        return false;
+    }
+    if (path.starts_with("/datum/prompt/") || path.starts_with("/datum/prompt/proc/"))
+        && path.rsplit('/').next() == Some("prepare")
+    {
+        return false;
+    }
+    true
 }
 
 impl Lint for SiliconEntry {
@@ -105,4 +121,27 @@ impl Lint for SiliconEntry {
 
 pub fn register(reg: &mut Registry) {
     reg.add(SiliconEntry);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::act_proc_header;
+
+    #[test]
+    fn identity_checks_are_input_rules_only_for_input_callbacks() {
+        let actor_check = crate::pat!(r"(?<![\w.])(?:isAI|issilicon|isrobot|ispAI)\(");
+        let cases = [
+            ("/obj/machinery/proc/use(datum/act/op/A)", "return isrobot(A.actor)", true),
+            ("/obj/machinery/proc/use(datum/act/A)", "return isAI(A.actor)", true),
+            ("/obj/machinery/proc/allowed(datum/act/eval/A)", "return issilicon(A.actor)", true),
+            ("/obj/machinery/magnet/proc/pull(datum/act/timer/A)", "if(isAI(S)) continue", false),
+            ("/obj/machinery/traffic/proc/refresh(datum/act/timer/A)", "if(issilicon(editor))", false),
+            ("/datum/prompt/choice/beacon/prepare(datum/act/A)", "if(ishuman(user) || isAI(user))", false),
+            ("/datum/prompt/choice/beacon/proc/prepare(datum/act/A)", "if(isAI(user))", false),
+            ("/datum/prompt/choice/beacon/proc/confirm(datum/act/op/A)", "return isAI(A.actor)", true),
+        ];
+        for (header, body, expected) in cases {
+            assert_eq!(act_proc_header(header) && actor_check.is_match(body), expected, "{header}");
+        }
+    }
 }

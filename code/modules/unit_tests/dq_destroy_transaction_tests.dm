@@ -68,7 +68,6 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 /obj/item/dq_destroy_transaction_content_probe
 	name = "content probe"
 	w_class = ITEMSIZE_SMALL
-	has_slot_hooks = TRUE
 	var/saw_destroying_flag = FALSE
 	var/loc_when_unslotted
 
@@ -206,7 +205,6 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 /obj/item/dq_destroy_transaction_mind_probe
 	name = "mind probe"
 	w_class = ITEMSIZE_TINY
-	has_slot_hooks = TRUE
 	var/still_registered
 
 /obj/item/dq_destroy_transaction_mind_probe/on_unslotted(atom/holder, slot_id, flags = 0)
@@ -492,3 +490,97 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 		TEST_ASSERT(thing.gc_destroyed != GC_BATCH_DOOMED, "every transaction ran")
 		TEST_ASSERT_NULL(thing.loc, "and every thing left its turf")
 	TEST_ASSERT_EQUAL(GLOB.dq_destroy_collect_depth, 0, "the scope is closed")
+
+// Observe the actual nested-ledger cleanup position without replacing disposal.
+/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_order
+
+/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_order/ownership_field_disposed(var_name)
+	if(var_name == nameof(forensic_data))
+		dq_destroy_transaction_log(containment_ledger() ? "ledger-before-forensic-hook" : "ledger-missing-before-forensic-hook")
+	. = ..()
+	if(var_name == nameof(light))
+		dq_destroy_transaction_log(containment_ledger() ? "ledger-survives-light-hook" : "ledger-cleared-before-light-hook")
+
+/datum/unit_test/dq_destroy_transaction_runtime_ledger_order
+
+/datum/unit_test/dq_destroy_transaction_runtime_ledger_order/Run()
+	var/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_order/probe = allocate(/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_order, dq_containment_floor())
+	var/datum/ledger/before = probe.containment_ledger()
+	var/datum/rx_state/before_state = probe.rx
+	TEST_ASSERT_EQUAL(dq_ledger_peek(probe), before, "ledger peek preserves the initialized ledger identity")
+	TEST_ASSERT_EQUAL(probe.rx, before_state, "ledger peek does not allocate a new runtime record")
+	var/datum/ledger/L = dq_ledger(probe)
+	TEST_ASSERT(L, "the real inherited slot builds a ledger")
+	var/datum/rx_state/S = probe.rx
+	TEST_ASSERT_EQUAL(owner_of(L), S, "runtime record is the declared ledger owner")
+	var/list/saved_log = GLOB.dq_destroy_transaction_log
+	dq_destroy_transaction_log_reset()
+	qdel(probe)
+	var/list/ledger_log = GLOB.dq_destroy_transaction_log
+	GLOB.dq_destroy_transaction_log = saved_log
+	TEST_ASSERT(QDELETED(L), "holder disposal deletes the nested owned ledger")
+	TEST_ASSERT_NULL(S.containment_ledger, "runtime ownership releases the disposed ledger")
+	TEST_ASSERT_NULL(probe.rx, "holder disposal detaches runtime state")
+	TEST_ASSERT("ledger-before-forensic-hook" in ledger_log, "ledger remains live through preceding forensic cleanup")
+	TEST_ASSERT("ledger-cleared-before-light-hook" in ledger_log, "ledger is cleared before following light cleanup")
+
+/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_abort
+
+/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_abort/on_destroy(force)
+	..()
+	CRASH("runtime ledger abort fixture")
+
+/datum/unit_test/dq_destroy_transaction_runtime_ledger_abort
+
+/datum/unit_test/dq_destroy_transaction_runtime_ledger_abort/Run()
+	var/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_abort/probe = allocate(/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_abort, dq_containment_floor())
+	var/datum/ledger/L = dq_ledger(probe)
+	TEST_ASSERT(L, "real slot initializes ledger before aborted disposal")
+	var/datum/rx_state/S = probe.rx
+	var/list/saved_log = GLOB.dq_destroy_transaction_log
+	var/list/saved_capture = GLOB.dq_caught_capture
+	GLOB.dq_destroy_transaction_log = list()
+	GLOB.dq_caught_capture = list()
+	qdel(probe)
+	var/list/capture = GLOB.dq_caught_capture
+	GLOB.dq_caught_capture = saved_capture
+	GLOB.dq_destroy_transaction_log = saved_log
+	TEST_ASSERT(dq_diag_capture_has(capture, "destroy transaction of /obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_abort"), "real on_destroy fault exercises aborted lifecycle")
+	TEST_ASSERT(QDELETED(probe), "aborted holder still reaches deletion")
+	TEST_ASSERT(QDELETED(L), "abort disposes declared runtime-owned ledger")
+	TEST_ASSERT_NULL(S.containment_ledger, "abort clears ledger ownership field")
+	TEST_ASSERT_NULL(probe.rx, "abort detaches native runtime record")
+
+// Reuse e1_solo's real declared holder-destroy hook as the observation.
+/obj/e1_fixture/late_destroy_abort
+
+/obj/e1_fixture/late_destroy_abort/destroy_effects()
+	var/static/datum/destroy_effects_data/dq_late_destroy_abort/data = new
+	return data
+
+/datum/destroy_effects_data/dq_late_destroy_abort
+
+/datum/destroy_effects_data/dq_late_destroy_abort/apply(datum/D)
+	CRASH("late destroy effects abort fixture")
+
+/datum/unit_test/dq_destroy_transaction_late_abort_hook_once
+
+/datum/unit_test/dq_destroy_transaction_late_abort_hook_once/Run()
+	var/obj/e1_fixture/late_destroy_abort/probe = allocate(/obj/e1_fixture/late_destroy_abort, dq_containment_floor())
+	var/list/saved_log = GLOB.e1_log
+	var/list/saved_capture = GLOB.dq_caught_capture
+	GLOB.e1_log = list()
+	GLOB.dq_caught_capture = list()
+	qdel(probe)
+	var/list/capture = GLOB.dq_caught_capture
+	var/list/hook_log = GLOB.e1_log
+	GLOB.dq_caught_capture = saved_capture
+	GLOB.e1_log = saved_log
+	var/hook_count = 0
+	for(var/entry in hook_log)
+		if(entry == "holder_destroy:/obj/e1_fixture/late_destroy_abort")
+			hook_count++
+	TEST_ASSERT(dq_diag_capture_has(capture, "destroy transaction of /obj/e1_fixture/late_destroy_abort"), "actual effects fault exercises late aborted cleanup")
+	TEST_ASSERT(QDELETED(probe), "late-aborted holder reaches deletion")
+	TEST_ASSERT_EQUAL(hook_count, 1, "completed declared destroy hook is not repeated after a later phase faults")
+	TEST_ASSERT_NULL(probe.rx, "late abort retains completed runtime teardown")

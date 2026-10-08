@@ -946,13 +946,8 @@ CAPABILITIES(/obj/item/paiparts)
 	icon_state = "radio"
 	loudspeaker = FALSE
 
-/// Old attackby was an empty stub, replacing radio/borg's own (no ..() chain): always swallowed, no action.
 CAPABILITIES(/obj/item/radio/borg/pai)
 	without("insert_key")
-	op("swallow", item(/obj/item), then(PROC_REF(item_swallowed)))
-
-/obj/item/radio/borg/pai/proc/item_swallowed(datum/act/op/A)
-	return OP_OK
 
 /obj/item/radio/borg/pai/recalculateChannels()
 	if(!istype(loc,/obj/item/paicard))

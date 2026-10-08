@@ -27,7 +27,7 @@
 	var/max_dist = 20 // absolute value of center_x,y cannot exceed this integer
 
 /// Pulls things toward its center every magnet_delay() while switched on.
-DECLARE_REPEAT(/obj/machinery/magnetic_module, "magnet_delay", magnetic_process, "on")
+
 
 /obj/machinery/magnetic_module/Initialize(mapload)
 	. = ..()
@@ -112,6 +112,7 @@ DECLARE_REPEAT(/obj/machinery/magnetic_module, "magnet_delay", magnetic_process,
 /// every power or break change.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/magnetic_module)
+	every(PROC_REF(magnet_delay), then(PROC_REF(magnetic_process)), when = nameof(on))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 
 /obj/machinery/magnetic_module/proc/work_step(datum/act/timer/A)
@@ -144,10 +145,10 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 	return PROCESS_KILL
 
 /// The pull's period: stronger fields pull faster.
-/obj/machinery/magnetic_module/proc/magnet_delay()
+/obj/machinery/magnetic_module/proc/magnet_delay(datum/act/timer/A)
 	return (13 - electricity_level) DECISECONDS
 
-/obj/machinery/magnetic_module/proc/magnetic_process() // proc that actually does the pulling
+/obj/machinery/magnetic_module/proc/magnetic_process(datum/act/timer/A) // proc that actually does the pulling
 	rel_set(src, nameof(center), locate(x+center_x, y+center_y, z))
 	if(get_center())
 		for(var/obj/M in orange(magnetic_field, get_center()))
@@ -181,9 +182,13 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 	var/datum/radio_frequency/radio_connection
 
 /// TRUE while the magnets are walked along the path.
-OM_FIELD(/obj/machinery/magnetic_controller, path_moving, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/magnetic_controller/var/path_moving = FALSE
+TRACKED_BRIDGED(/obj/machinery/magnetic_controller, path_moving, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/magnetic_controller/var/path_stopped = FALSE
+TRACKED(/obj/machinery/magnetic_controller, path_stopped)
 /// Walks the magnets one path step every magnet_delay() while moving.
-DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_step, "path_moving")
+/obj/machinery/magnetic_controller/proc/reset_path_repeat(datum/act/A)
+	set_path_stopped(FALSE)
 
 /obj/machinery/magnetic_controller/Initialize(mapload)
 	. = ..()
@@ -281,13 +286,14 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 		filter_path() // renders rpath
 
 /// The wait between path steps, by `speed`.
-/obj/machinery/magnetic_controller/proc/magnet_delay()
+/obj/machinery/magnetic_controller/proc/magnet_delay(datum/act/timer/A)
 	return (speed == 10 ? 1 : 12 - speed) DECISECONDS
 
 /// One step of the magnet path: signal the next move.
-/obj/machinery/magnetic_controller/proc/magnet_move_step()
+/obj/machinery/magnetic_controller/proc/magnet_move_step(datum/act/timer/A)
 	if(length(rpath) < 1 || (!operable()))
-		return REPEAT_STOP
+		set_path_stopped(TRUE)
+		return
 
 	if(pathpos > length(rpath)) // if the position is greater than the length, we just loop through the list!
 		pathpos = 1
@@ -298,7 +304,8 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 		// N, S, E, W are directional
 		// C is center
 		// R is random (in magnetic field's bounds)
-		return REPEAT_STOP // stop if the character located is invalid
+		set_path_stopped(TRUE)
+		return // stop if the character located is invalid
 
 	// Prepare the radio signal
 	var/datum/signal/signal = new

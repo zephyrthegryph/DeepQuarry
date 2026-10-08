@@ -1,5 +1,6 @@
 blob | survives
 emag | emagged: 0 -> 1
+emag | is_emagged: 0 -> 1
 emag | req_access: list(1) -> list(0)
 emp 1 | refresh_queued: 131071 -> 0
 emp 2 | nothing

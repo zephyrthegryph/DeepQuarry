@@ -235,13 +235,30 @@
 	EXPIRY_SET(G, expiration_time, 1 HOURS, CLOCK_WORLD)
 	G.expired = 0
 	G.icon_state = "guest"
+	H.set_combat_mode(TRUE)
 	hc_hold(H, G)
-	G.interaction_guest_pass_deactivate(H, G, null)
-	TEST_ASSERT(p2cl_has_question(H), "deactivating asks first")
+	TEST_ASSERT_EQUAL(H.get_active_hand(), G, "the real pass is carried before self input")
+	TEST_ASSERT_EQUAL(H.input_stance(), I_HURT, "deactivation self input uses the actual harm stance")
+	var/datum/op_result/first = own(test_click(H, G, G, GESTURE_SELF))
+	TEST_ASSERT(p2cl_has_question(H), "deactivating asks first (key=[first?.key], outcome=[first?.outcome], reason=[first?.reason])")
 	p2cl_answer(H, FALSE)
 	test_time(1 SECONDS)
 	TEST_ASSERT(!G.expired, "a no leaves the pass alone")
-	G.interaction_guest_pass_deactivate(H, G, null)
+	var/datum/op_result/second = own(test_click(H, G, G, GESTURE_SELF))
+	TEST_ASSERT(p2cl_has_question(H), "repeat self input opens confirmation (key=[second?.key], outcome=[second?.outcome], reason=[second?.reason])")
 	p2cl_answer(H, TRUE)
 	test_time(1 SECONDS)
 	TEST_ASSERT(G.expired, "a yes deactivates it")
+
+/datum/unit_test/dq_hc_computers/guest_pass_expired_state_gates_deactivation
+/datum/unit_test/dq_hc_computers/guest_pass_expired_state_gates_deactivation/run_gate()
+	var/mob/living/carbon/human/H = hc_actor()
+	var/obj/item/card/id/guest/G = allocate(/obj/item/card/id/guest, hc_side())
+	EXPIRY_SET(G, expiration_time, 1 HOURS, CLOCK_WORLD)
+	G.set_expired(TRUE)
+	G.icon_state = "guest" // a stale rendering must not reactivate the real expired pass
+	H.set_combat_mode(TRUE)
+	hc_hold(H, G)
+	test_click(H, G, G, GESTURE_SELF)
+	TEST_ASSERT(!p2cl_has_question(H), "the gameplay expiry flag refuses deactivation even with a stale sprite")
+	TEST_ASSERT(G.expired, "refusal preserves the real expired state")

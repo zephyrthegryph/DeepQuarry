@@ -93,7 +93,7 @@ Thus, the two variables affect pump operation are set in New():
 	. = native_write(src, NATIVE_PUMP_POWER_RATING, value)
 	rust_device_dirty()
 
-/obj/machinery/atmospherics/binary/pump/set_on(value)
+/obj/machinery/atmospherics/binary/pump/proc/set_on(value)
 	. = native_write(src, NATIVE_PUMP_ON, value)
 	rust_device_dirty()
 

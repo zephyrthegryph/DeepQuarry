@@ -29,6 +29,7 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 	rolls(nameof(rolled_board), PROC_REF(roll_board), when = cond_not(nameof(circuit)))
 	after_init(0, then(PROC_REF(become_rolled_board)))
 	op("redeem_tickets", stack(/obj/item/stack/arcadeticket, ARCADE_TICKETS_PER_PRIZE), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem tickets"), then(PROC_REF(interaction_redeem_tickets)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(arcade_emp)))
 
 /// A generic cabinet (no circuit) rolls which arcade it is, then becomes that machine once its init is over.
 /obj/machinery/computer/arcade/var/rolled_board
@@ -66,9 +67,10 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 	to_chat(user, span_notice("You turn in 2 tickets to the [src] and claim a prize!"))
 	return TRUE
 
-DAMAGE_REACTION(/obj/machinery/computer/arcade, DAMAGE_EMP, PROC_REF(arcade_emp))
 /// An EMP makes a working arcade machine spit out prizes.
-/obj/machinery/computer/arcade/proc/arcade_emp(datum/damage_packet/packet)
+/obj/machinery/computer/arcade/proc/arcade_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(!operable())
 		return
 	var/empprize = null
@@ -131,6 +133,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	op("attack", ui_act("attack"), then(PROC_REF(ui_act_attack)))
 	op(XENO_CHEM_HEAL, ui_act(XENO_CHEM_HEAL), then(PROC_REF(ui_act_heal)))
 	op("charge", ui_act("charge"), then(PROC_REF(ui_act_charge)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/machinery/computer/arcade/battle/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -191,7 +194,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	gameover = 0
 	turtle = 0
 
-	if(emagged)
+	if(emagged())
 		randomize_characters()
 		set_emagged(0)
 	add_fingerprint(A.actor)
@@ -211,7 +214,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 			temp = "[enemy_name] has fallen! Rejoice!"
 			play_sfx(src, SFX_ARCADE_WIN, ignore_walls = FALSE)
 
-			if(emagged)
+			if(emagged())
 				feedback_inc("arcade_win_emagged")
 				new /obj/effect/spawner/newbomb/timer/syndicate(src.loc)
 				new /obj/item/clothing/head/collectable/petehat(src.loc)
@@ -227,7 +230,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 				feedback_inc("arcade_win_normal")
 				prizevend(user)
 
-	else if (emagged && (turtle >= 4))
+	else if (emagged() && (turtle >= 4))
 		var/boomamt = rand(5,10)
 		enemy_action = "[enemy_name] throws a bomb, exploding you for [boomamt] damage!"
 		play_sfx(src, SFX_ARCADE_BOOM, ignore_walls = FALSE)
@@ -242,7 +245,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 		if (player_mp <= 0)
 			gameover = 1
 			temp = "You have been drained! GAME OVER"
-			if(emagged)
+			if(emagged())
 				feedback_inc("arcade_loss_mana_emagged")
 				user.gib()
 			else
@@ -264,7 +267,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 		gameover = 1
 		temp = "You have been crushed! GAME OVER"
 		play_sfx(src, SFX_ARCADE_LOSE, ignore_walls = FALSE)
-		if(emagged)
+		if(emagged())
 			feedback_inc("arcade_loss_hp_emagged")
 			user.gib()
 		else
@@ -273,8 +276,8 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	blocked = 0
 	return
 
-DECLARE_EMAG(/obj/machinery/computer/arcade/battle, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/arcade/battle/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/arcade/battle/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You override the cheat code menu and skip to Cheat #[rand(1, 50)]: Hyper-Lethal Mode."))
 
 	temp = "If you die in the game, you die for real!"
@@ -289,7 +292,7 @@ DECLARE_EMAG(/obj/machinery/computer/arcade/battle, PROC_REF(on_emag), null, nul
 	enemy_name = "Cuban Pete"
 	name = "Outbomb Cuban Pete"
 
-	return 1
+	return OP_OK
 
 //////////////////////////
 //   ORION TRAIL HERE   //
@@ -408,22 +411,6 @@ DECLARE_EMAG(/obj/machinery/computer/arcade/battle, PROC_REF(on_emag), null, nul
 		after(src, 1 SECOND, PROC_REF(blackhole_hurt), with = list(L, hits + 1), keeps_dead = TRUE)
 
 // Event screens embed href links (event()); the tgui buttons call the orion_* procs directly.
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "close", PROC_REF(orion_close))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "slow", PROC_REF(orion_slow))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "useengine", PROC_REF(orion_useengine))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "useelec", PROC_REF(orion_useelec))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "usehull", PROC_REF(orion_usehull))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "wait", PROC_REF(orion_wait))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "keepspeed", PROC_REF(orion_keepspeed))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "holedeath", PROC_REF(orion_holedeath))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "eventclose", PROC_REF(orion_eventclose))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "killcrew", PROC_REF(orion_killcrew))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "buycrew", PROC_REF(orion_buycrew))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "sellcrew", PROC_REF(orion_sellcrew))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "leave_spaceport", PROC_REF(orion_leave_spaceport))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "raid_spaceport", PROC_REF(orion_raid_spaceport))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "buyparts", PROC_REF(orion_buyparts), TOPIC_NUM("buyparts"))
-TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion_trade), TOPIC_NUM("trade"))
 
 /// Work done after every game action.
 /obj/machinery/computer/arcade/orion_trail/proc/orion_refresh(mob/user)
@@ -453,7 +440,7 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 						event = ORION_TRAIL_MUTINY_ATTACK
 				event()
 			turns += 1
-		if(emagged)
+		if(emagged())
 			var/mob/living/carbon/M = user //for some vars
 			switch(event)
 				if(ORION_TRAIL_RAIDERS)
@@ -566,7 +553,7 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 		if(prob(75))
 			event = ORION_TRAIL_BLACKHOLE
 			event()
-			if(emagged) //has to be here because otherwise it doesn't work
+			if(emagged()) //has to be here because otherwise it doesn't work
 				src.show_message("\The [src] states, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRIFIED.","You hear something say, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRFIED'")
 				to_chat(user, span_warning("Something draws you closer and closer to the machine."))
 				//spawning a literal blackhole would be fun, but a bit disruptive.
@@ -596,13 +583,13 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 			return
 		if(settlers.len == 0 || alive == 0)
 			src.visible_message("\The [src] states, 'EVERYONE HAS DIED, GAMEOVER.'", "You hear something state, 'EVERYONE HAS DIED, GAMEOVER.'")
-			if(emagged)
+			if(emagged())
 				src.visible_message("\The [src] produces a loud, gunlike sound.")
 				L.injure(INJURY_PIERCE, 30, null, src)
 				set_emagged(0)
 			gameStatus = ORION_STATUS_GAMEOVER
 			event = null
-		else if(emagged)
+		else if(emagged())
 			if(user.name == sheriff)
 				act_message(src, user, others = "%U% states, 'THE CREW HAS CHOSEN TO KILL %T%'. A gunshot can be heard coming from %U%", \
 					blind = "You hear 'THE CREW HAS CHOSEN TO KILL %T%' followed by a gunshot")
@@ -665,7 +652,7 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 				if(prob(success*5))
 					var/lost_crew = remove_crewmember()
 					last_spaceport_action = "You failed to raid the spaceport! You lost [FU*-1] Fuel and [FO*-1] Food, AND [lost_crew] in your scramble to escape! ([FU]FI,[FO]FO,-Crew)"
-					if(emagged)
+					if(emagged())
 						act_message(user, src, others = "The machine states, 'YOU ARE UNDER ARREST, RAIDER!' and shoots handcuffs onto %U%!", \
 							blind = "You hear something say 'YOU ARE UNDER ARREST, RAIDER!' and a clinking sound")
 						var/obj/item/handcuffs/C = new(src.loc)
@@ -986,7 +973,7 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 	gameStatus = ORION_STATUS_START
 	src.visible_message("\The [src] plays a triumpant tune, stating 'CONGRATULATIONS, YOU HAVE MADE IT TO ORION.'")
 	play_sfx(src, SFX_ARCADE_ORI_WIN, ignore_walls = FALSE)
-	if(emagged)
+	if(emagged())
 		new /obj/item/orion_ship(src.loc)
 		message_admins("[key_name_admin(user)] made it to Orion on an emagged machine and got an explosive toy ship.")
 		log_game("[key_name(user)] made it to Orion on an emagged machine and got an explosive toy ship.")
@@ -996,14 +983,14 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 	name = "The Orion Trail"
 	desc = "Learn how our ancestors got to Orion, and have fun in the process!"
 
-DECLARE_EMAG(/obj/machinery/computer/arcade/orion_trail, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/arcade/orion_trail/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/arcade/orion_trail/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You override the cheat code menu and skip to Cheat #[rand(1, 50)]: Realism Mode."))
 	name = "The Orion Trail: Realism Edition"
 	desc = "Learn how our ancestors got to Orion, and try not to die in the process!"
 	newgame(user)
 	set_emagged(1)
-	return 1
+	return OP_OK
 
 /obj/item/orion_ship
 	name = "model settler ship"
@@ -1126,7 +1113,7 @@ TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 
 ////// Cash
 /obj/machinery/computer/arcade/clawmachine/proc/pay_with_cash(obj/item/spacecash/cashmoney, mob/user)
-	if(!emagged)
+	if(!emagged())
 		if(gameprice > cashmoney.worth)
 
 			// This is not a status display message, since it's something the character
@@ -1147,13 +1134,13 @@ TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 		// Machine has no idea who paid with cash
 		credit_purchase("(cash)")
 		return 1
-	if(emagged)
+	if(emagged())
 		play_sfx(src, SFX_ARCADE_STEAL, ignore_walls = FALSE)
 		to_chat(user, span_info("It doesn't seem to accept that! Seem you'll need to swipe a valid ID."))
 
 ///// Ewallet
 /obj/machinery/computer/arcade/clawmachine/proc/pay_with_ewallet(obj/item/spacecash/ewallet/wallet, mob/user)
-	if(!emagged)
+	if(!emagged())
 		act_message(user, src, others = span_info("%U% swipes %I% through %T%."), item = wallet)
 		play_sfx(src, SFX_MACHINES_ID_SWIPE)
 		if(gameprice > wallet.worth)
@@ -1163,7 +1150,7 @@ TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 			wallet.worth -= gameprice
 			credit_purchase("[wallet.owner_name] (chargecard)")
 			return 1
-	if(emagged)
+	if(emagged())
 		play_sfx(src, SFX_ARCADE_STEAL, ignore_walls = FALSE)
 		to_chat(user, span_info("It doesn't seem to accept that! Seem you'll need to swipe a valid ID."))
 
@@ -1215,7 +1202,7 @@ TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 		return 0
 	else
 		// Okay to move the money at this point
-		if(emagged)
+		if(emagged())
 			gameprice = customer_account.money
 		return transfer_account_funds(customer_account, GLOB.vendor_account, gameprice, "Arcade play", name)
 
@@ -1241,6 +1228,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 	op("return", ui_act("return"), then(PROC_REF(ui_act_return)))
 	op("pointless", ui_act("pointless"), then(PROC_REF(ui_act_pointless)))
 	op("clawmachine_pay", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Pay"), when(req(PROC_REF(wants_payment_holds))), then(PROC_REF(interaction_pay)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/machinery/computer/arcade/clawmachine/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -1279,10 +1267,10 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 	winprob += 1 /// Yeah.
 
 	if(prob(winprob)) /// YEAH.
-		if(!emagged)
+		if(!emagged())
 			prizevend(user)
 			winscreen = "You won!"
-		else if(emagged)
+		else if(emagged())
 			gameprice = 1
 			set_emagged(0)
 			winscreen = "You won...?"
@@ -1301,8 +1289,8 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 	icon_state = "clawmachine_new"
 	gameStatus = "CLAWMACHINE_END"
 
-DECLARE_EMAG(/obj/machinery/computer/arcade/clawmachine, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/arcade/clawmachine/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/arcade/clawmachine/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_info("You modify the claw of the machine. The next one is sure to win! You just have to pay..."))
 	name = "AlliCo Snag-A-Prize"
 	desc = "Get some goodies, all for you!"
@@ -1312,7 +1300,7 @@ DECLARE_EMAG(/obj/machinery/computer/arcade/clawmachine, PROC_REF(on_emag), null
 	wintick = 0
 	gameStatus = "CLAWMACHINE_NEW"
 	set_emagged(1)
-	return 1
+	return OP_OK
 
 // === merged from arcade_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/computer/arcade
@@ -1351,3 +1339,60 @@ DECLARE_EMAG(/obj/machinery/computer/arcade/clawmachine, PROC_REF(on_emag), null
 							/obj/random/miniature									= 1,
 							/obj/item/toy/snake_popper								= 1
 							)
+
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_slow(datum/act/op/A)
+	orion_slow(A.actor, A.args)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_useengine(datum/act/op/A)
+	orion_useengine(A.actor, A.args)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_useelec(datum/act/op/A)
+	orion_useelec(A.actor, A.args)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_usehull(datum/act/op/A)
+	orion_usehull(A.actor, A.args)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_wait(datum/act/op/A)
+	orion_wait(A.actor, A.args)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_keepspeed(datum/act/op/A)
+	orion_keepspeed(A.actor, A.args)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_holedeath(datum/act/op/A)
+	orion_holedeath(A.actor, A.args)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_eventclose(datum/act/op/A)
+	orion_eventclose(A.actor, A.args)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_buycrew(datum/act/op/A)
+	orion_buycrew(A.actor, A.args)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_sellcrew(datum/act/op/A)
+	orion_sellcrew(A.actor, A.args)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_leave_spaceport(datum/act/op/A)
+	orion_leave_spaceport(A.actor, A.args)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_raid_spaceport(datum/act/op/A)
+	orion_raid_spaceport(A.actor, A.args)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_buyparts(datum/act/op/A, buyparts)
+	orion_buyparts(A.actor, A.args)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_trade(datum/act/op/A, trade)
+	orion_trade(A.actor, A.args)
+	return OP_OK

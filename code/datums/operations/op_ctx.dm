@@ -26,35 +26,10 @@
 GLOBAL_VAR_INIT(op_ctx_seq, 0)
 
 /datum/op_ctx
-	parent_type = /datum/pooled
-	pool_max_free = 32
-	/// The mob acting.
-	var/mob/actor
-	var/datum/target
-	var/obj/item/held
+	parent_type = /datum/operation_context
 	var/datum/op_def/op
-	/// The interaction entry running this op, when it came through the resolver.
 	var/datum/interaction/capability/entry
-	/// The slot decl that provides the affordance (a hand), and the ledger id of the actor's slot.
 	var/datum/om/relation/slot/provider
-	/// ROUTE_*: how this attempt reaches the target.
-	var/route = ROUTE_PHYSICAL
-	/// Who authorizes it when route is ROUTE_AUTHORITY (an admin mob, a console); else null.
-	var/datum/authority
-	/// Unique per take: the handle a pending wait carries instead of the context itself.
-	var/id = 0
-	/// Text detail for a reason that has a %DETAIL% slot.
-	var/detail
-	/// The reason (a /datum/msg type) the last check() failed with, and the stage it failed at.
-	var/reason
-	var/failed_stage = 0
-	/// (datum, key) pairs a pending wait watches: list(list(datum, key), ...).
-	var/list/watch
-	/// The datums this pending wait is registered on for teardown and for watching: actor, target, held, the
-	/// provider's item, every watched datum (op_pending_add / op_pending_forget).
-	var/list/ends
-	/// Set once release() ran; touching a released context is a bug (CRASH in test builds).
-	var/released = FALSE
 
 /// A pooled context for one attempt (a /datum/pooled: released fields return to their initial values).
 /proc/op_ctx_take(mob/actor, datum/target, obj/item/held, datum/op_def/op, route = ROUTE_PHYSICAL, datum/authority)
@@ -62,16 +37,16 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 	var/datum/op_ctx/ctx = take(/datum/op_ctx)
 	ctx.released = FALSE
 	ctx.id = ++GLOB.op_ctx_seq
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+	// flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.actor = actor
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+	// flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.target = target
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+	// flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.held = held
 	// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.op = op
 	ctx.route = route
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+	// flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.authority = authority
 	return ctx
 
@@ -79,30 +54,6 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 /proc/op_ctx_live_count()
 	var/datum/object_pool/pool = GLOB.object_pools[/datum/op_ctx]
 	return pool ? pool.out : 0
-
-/// Gives the context back: a pending wait is dropped, every field returns to its initial value
-/// (the pool does it), and the context waits in the pool (poisoned in test builds).
-/datum/op_ctx/release()
-	if(released)
-#ifdef UNIT_TESTS
-		CRASH("op_ctx released twice")
-#else
-		return
-#endif
-	op_pending_forget(src)
-	..()
-
-/// Runs after the pool reset every field: marks the context released.
-/datum/op_ctx/reset()
-	..()
-	released = TRUE
-
-/// The test-build poison: reading a released context stops the test that did.
-/datum/op_ctx/proc/assert_live()
-#ifdef UNIT_TESTS
-	if(released)
-		CRASH("use of a released op_ctx")
-#endif
 
 /// The atom the provider stands for: the item held in it, else the actor.
 /datum/op_ctx/proc/provider_atom()
@@ -373,31 +324,6 @@ GLOBAL_LIST_EMPTY(op_watchers)
 	ctx.ends = null
 	ctx.watch = null
 
-/// A read (E, key) was published: every pending operation watching it re-checks now and cancels
-/// if a requirement no longer holds. Cheap when nothing is pending. W1's publish_change() calls
-/// this; cap_set() calls it for OP_KEY_CAP_STATE.
-/proc/op_reads_changed(datum/E, key)
-	if(!length(GLOB.op_watchers))
-		return
-	var/list/on = GLOB.op_watchers["[REF(E)]|[key]"]
-	if(!length(on))
-		return
-	for(var/datum/ctx as anything in on.Copy())
-		if(istype(ctx, /datum/pending_op))
-			var/datum/pending_op/pending = ctx // a wait of the part engine (code/engine/parts/run.dm)
-			pending.reads_changed()
-			continue
-		if(istype(ctx, /datum/task))
-			var/datum/task/task = ctx // a running task (code/engine/kernel/tasks.dm)
-			task.reads_changed()
-			continue
-		var/datum/op_ctx/legacy = ctx
-		if(legacy.released)
-			continue
-		var/why = legacy.check()
-		if(why)
-			op_cancel(legacy, why)
-
 /// Stops a waiting operation: the timer is cancelled, the actor told why, the context released.
 /proc/op_cancel(datum/op_ctx/ctx, reason_type)
 	var/mob/actor = ctx.actor
@@ -459,3 +385,14 @@ GLOBAL_LIST_EMPTY(op_cancelled_log)
 	var/text = ispath(reason) ? req_reason_text(reason, ctx) : "[reason]"
 	if(text && ctx.actor)
 		to_chat(ctx.actor, span_warning(text))
+
+/datum/op_ctx/forget_wait()
+	op_pending_forget(src)
+
+/datum/op_ctx/reads_changed()
+	var/why = check()
+	if(why)
+		op_cancel(src, why)
+
+/datum/op_ctx/cancel_deleted()
+	op_cancel(src, /datum/msg/req_cancelled)

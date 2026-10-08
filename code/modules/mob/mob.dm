@@ -612,10 +612,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			act_message(src, H, MSG_SELF(span_notice("You let go of %T%.")), MSG_OTHERS(span_warning("%U% lets go of %T%.")), exclude = list(H))
 			if(!H.stat)
 				to_chat(H, span_warning("\The [src] lets go of you."))
-		// The pulling relation's on_unlink() (code/datums/om/library.dm)
-		// clears the pull HUD icon; PULLING()/PULLED_BY() (om.dm) are pure
-		// graph reads, with no stored field left to clear.
-		om_unlink(src, pulling, /datum/om/relation/pulling)
+		// pull_released() clears the pull HUD icon.
+		link_break(src, LK_PULLING, pulling)
 
 /mob/proc/start_pulling(atom/movable/AM)
 
@@ -682,11 +680,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		if(pulling_old == AM)
 			return
 
-	// The pulling relation (code/datums/om/library.dm) raises the pull HUD
-	// icon and the status channel as its on_link() side effects; PULLING()/
-	// PULLED_BY() (om.dm) are pure graph reads, nothing to set here.
-	// target_single means it also drops AM's previous puller, if any.
-	if(!istype(om_link(src, AM, /datum/om/relation/pulling), /datum/om/edge))
+	// pull_link() raises the pull HUD icon and the status channel. The pair takes one puller per pulled, so it also drops AM's previous puller, if any.
+	if(!pull_link(AM))
 		return
 
 	if(ishuman(AM))
@@ -705,6 +700,34 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			to_chat(src, span_danger(span_large("Pulling \the [H] in their current condition could easily worsen their injuries.")))
 
 // We have pulled something before, so we should be able to safely continue pulling it. This proc is only for portals!
+/// src pulls AM (a mob, or a wheelchair pulling its pusher): the pull link (LK_PULLING / LK_PULLED_BY) and what pulling does to the puller's HUD and the pulled's
+/// momentum. FALSE when the link was refused.
+/atom/movable/proc/pull_link(atom/movable/AM)
+	if(!link_make(src, LK_PULLING, AM))
+		return FALSE
+	if(ismob(src))
+		var/mob/M = src
+		PUBLISH_CHANGE(M, MOB_KEY_STATUS)
+		if(M.pullin)
+			M.pullin.icon_state = "pull1"
+	if(ismob(AM))
+		var/mob/pulled = AM
+		pulled.inertia_dir = 0
+	return TRUE
+
+/// links(holds_while) of the pull pair: it stands while the two are within a tile of each other.
+/atom/movable/proc/link_stays_in_pull_range(atom/movable/pulled)
+	return link_in_range(pulled, 1)
+
+/// The pull link broke: the puller's HUD icon drops.
+/atom/movable/proc/pull_released(atom/movable/was_pulled)
+	if(!ismob(src))
+		return
+	var/mob/M = src
+	PUBLISH_CHANGE(M, MOB_KEY_STATUS)
+	if(M.pullin)
+		M.pullin.icon_state = "pull0"
+
 /mob/proc/continue_pulling(atom/movable/AM)
 
 	if ( !AM || src==AM || !isturf(loc) )	//if there's no person pulling OR the person is pulling themself OR the object being pulled is inside something: abort!
@@ -713,12 +736,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if (AM.anchored)
 		return
 
-	// The pulling relation (code/datums/om/library.dm) raises the pull HUD
-	// icon as its on_link() side effect, but only the first
-	// time this source/target pair links -- re-affirm the inertia reset
+	// pull_link() raises the pull HUD icon only the first time this pair links -- re-affirm the inertia reset
 	// unconditionally here since continue_pulling() exists specifically for
 	// discontinuous jumps (portals, multi-z, redgates) where it matters every time.
-	om_link(src, AM, /datum/om/relation/pulling)
+	pull_link(AM)
 	if(ismob(AM))
 		var/mob/pulled = AM
 		pulled.inertia_dir = 0

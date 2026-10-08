@@ -45,7 +45,6 @@ CAPABILITIES(/obj/machinery/power/solar)
 	climb()
 	ref_one(nameof(control), /obj/machinery/power/solar_control)
 	op("remove_glass", tool(TOOL_CROWBAR), label("Take the glass off"), wait(2 SECONDS), says(MSG(solar/glass_off)), then(PROC_REF(glass_removed)))
-	op("strike", item(/obj/item), label("Strike"), hostile(), wait(0), then(PROC_REF(struck)))
 	param(nameof(glass_type), pos = 1)
 
 // ALLOW(init/INSTANCE_STATE): a panel in reinforced glass is twice as tough
@@ -80,15 +79,6 @@ CAPABILITIES(/obj/machinery/power/solar)
 	if(control())
 		control().remove_panel(src)
 	rel_clear(src, nameof(control))
-
-/obj/machinery/power/solar/proc/struck(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/held = A.held
-	act_message(user, null, others = span_warning("%U% strikes the solar panel with [held]."))
-	user.setClickCooldown(user.get_attack_speed(held))
-	add_fingerprint(user)
-	receive_weapon_hit(held, user)
-	return OP_OK
 
 /// The glass is off: an anchored assembly and the sheets are left.
 /obj/machinery/power/solar/proc/glass_removed(datum/act/op/A)

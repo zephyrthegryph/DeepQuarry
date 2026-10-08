@@ -35,5 +35,5 @@
 		return TRUE
 	E.vars[name] = written // ALLOW(api): vars_write is the one by-name writer
 	TEST_REC_DELTA(E, "vars_write:[name]", old, written)
-	changed(E, 0, name)
+	state_changed(E, 0, name)
 	return TRUE

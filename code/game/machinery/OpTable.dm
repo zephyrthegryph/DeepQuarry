@@ -15,7 +15,7 @@
 	var/obj/machinery/computer/operating/computer = null
 
 /// The patient lying on it; the table checks on them every machine frame while there is one.
-OM_FIELD_VIEW(/obj/machinery/optable, mob/living/carbon/human, victim, CHANGE_MACHINE_OCCUPANT)
+/obj/machinery/optable/var/mob/living/carbon/human/victim
 /obj/machinery/optable/Initialize(mapload)
 	. = ..()
 	for(var/direction in list(NORTH,EAST,SOUTH,WEST))

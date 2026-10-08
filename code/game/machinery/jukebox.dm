@@ -163,7 +163,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 /obj/machinery/media/jukebox/proc/appearance_running()
 	if(!appearance_live() || !playing)
 		return ""
-	return emagged ? "emagged" : "running"
+	return emagged() ? "emagged" : "running"
 
 /obj/machinery/media/jukebox/proc/appearance_panel()
 	return (appearance_live() && panel_open) ? 1 : 0
@@ -242,7 +242,7 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 
 /obj/machinery/media/jukebox/proc/ui_act_play(datum/act/op/A)
 	var/mob/user = A.actor
-	if(emagged)
+	if(emagged())
 		play_sfx(src, SFX_ITEMS_AIRHORN)
 		for(var/mob/living/carbon/M in ohearers(6, src))
 			if(M.get_ear_protection() >= 2)
@@ -355,6 +355,9 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 	var/list/custom_tracks
 
 CAPABILITIES(/obj/machinery/media/jukebox/ghost)
+	op("vv_add_track", topic_in(VV_TOPIC, "add_track"), needs(req_rights(R_FUN|R_ADMIN)), asks(/datum/prompt/text, fields = list("title" = "Track URL", "question" = "REQUIRED: Provide URL for track", "timeout" = 0), step = "url"), asks(/datum/prompt/text, fields = list("title" = "Track Title", "question" = "REQUIRED: Provide title for track", "timeout" = 0), step = "title", when = PROC_REF(track_url_entered)), asks(/datum/prompt/number, fields = list("title" = "Track Duration", "question" = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", "timeout" = 0), step = "duration", when = PROC_REF(track_title_entered)), asks(/datum/prompt/text, fields = list("title" = "Track Artist", "question" = "Optional: Provide artist for track", "timeout" = 0), step = "artist", when = PROC_REF(track_duration_entered)), then(PROC_REF(vv_topic_add_track)), on_interrupt(PROC_REF(vv_track_interrupted)))
+	op("vv_remove_track", topic_in(VV_TOPIC, "remove_track"), needs(req_rights(R_FUN|R_ADMIN)), asks(/datum/prompt/text, fields = list("title" = "Remove Track", "question" = "Input track title or URL to remove (must be exact)", "timeout" = 0)), then(PROC_REF(vv_topic_remove_track)))
+	op("ghost_use", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(ghost_jukebox_observer_use)))
 	owns_many(nameof(custom_tracks))
 	// its legacy interactions replaced the jukebox's (no ..()): a ghost jukebox takes no touch or item
 	without("fingerprint")
@@ -368,8 +371,7 @@ CAPABILITIES(/obj/machinery/media/jukebox/ghost)
 /obj/machinery/media/jukebox/ghost/visible_message(message, blind_message, list/exclude_mobs, range, runemessage)
 	return
 /// Untouchable: no interactions at all (the old attackby/attack_hand returned); only ghosts use it.
-/obj/machinery/media/jukebox/ghost/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("Use", PROC_REF(ghost_jukebox_observer_use)))
+
 /obj/machinery/media/jukebox/ghost/set_use_power(new_use_power)
 	return
 /obj/machinery/media/jukebox/ghost/power_change()
@@ -390,7 +392,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 // End junk
 
 /// Old attack_ghost: staff get the controls, other ghosts hear what's playing.
-/obj/machinery/media/jukebox/ghost/proc/ghost_jukebox_observer_use(mob/observer/dead/M, obj/item/held, datum/interaction/interaction)
+/obj/machinery/media/jukebox/ghost/proc/ghost_jukebox_observer_use(datum/act/op/A)
+	var/mob/observer/dead/M = A.actor
 	if(!istype(M))
 		return TRUE
 
@@ -456,7 +459,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 		return
 	var/mob/user = A.request.answerer
 	var/track = A.answer.value
-	var/client/C = user.client
+	remove_custom_track(user, track)
+
+/obj/machinery/media/jukebox/ghost/proc/remove_custom_track(mob/user, track)
+	var/client/C = user?.client
 	if(!track)
 		return
 
@@ -473,18 +479,34 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 	VV_DROPDOWN_OPTION("add_track", "Add New Track")
 	VV_DROPDOWN_OPTION("remove_track", "Remove Track")
 
-VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "add_track", PROC_REF(vv_topic_add_track))
-VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "remove_track", PROC_REF(vv_topic_remove_track))
 
-/obj/machinery/media/jukebox/ghost/proc/vv_topic_add_track(mob/user, list/args)
-	manual_track_add(user)
-	user.client?.debug_variables(src)
-	return TRUE
+/obj/machinery/media/jukebox/ghost/proc/vv_topic_add_track(datum/act/op/A)
+	if(track_duration_entered(A))
+		rel_add(src, nameof(custom_tracks), new /datum/track(A.step_value("url"), A.step_value("title"), A.step_value("duration"), A.step_value("artist") || "", "! Admin Loaded !"))
+	A.actor.client?.debug_variables(src)
+	return OP_OK
 
-/obj/machinery/media/jukebox/ghost/proc/vv_topic_remove_track(mob/user, list/args)
-	manual_track_remove(user)
-	user.client?.debug_variables(src)
-	return TRUE
+/obj/machinery/media/jukebox/ghost/proc/vv_topic_remove_track(datum/act/op/A)
+	remove_custom_track(A.actor, A.answer?.value)
+	A.actor.client?.debug_variables(src)
+	return OP_OK
+
+/obj/machinery/media/jukebox/ghost/proc/vv_track_interrupted(datum/act/op/A)
+	if(A.reason != /datum/msg/op/answer_no || !track_duration_entered(A))
+		return OP_OK
+	var/datum/entry/part/req/rights/needed = req_rights(R_FUN|R_ADMIN)
+	if(!needed.holds(A))
+		return OP_OK
+	return vv_topic_add_track(A)
+
+/obj/machinery/media/jukebox/ghost/proc/track_url_entered(datum/act/op/A)
+	return !!A.step_value("url")
+
+/obj/machinery/media/jukebox/ghost/proc/track_title_entered(datum/act/op/A)
+	return track_url_entered(A) && !!A.step_value("title")
+
+/obj/machinery/media/jukebox/ghost/proc/track_duration_entered(datum/act/op/A)
+	return track_title_entered(A) && !!A.step_value("duration")
 
 /obj/machinery/media/jukebox/casinojukebox
 	name = "space casino jukebox"

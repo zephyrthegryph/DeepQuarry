@@ -118,7 +118,6 @@ Class Procs:
 	/// them out of the CONTAINER_SLOT_INTERNALS latent entries (roadmap C6):
 	/// null until then. The circuit board is not in this list; see `circuit`.
 	var/list/component_parts = null
-	latent_contents = TRUE
 	var/tmp/uid
 	var/global/gl_uid = 1
 	var/clicksound			// sound played on succesful interface. Just put it in the list of vars at the start.
@@ -146,7 +145,12 @@ TRACKED(/obj/machinery, power_channel)
 TRACKED(/obj/machinery, power_forced)
 SETTER(/obj/machinery, use_power)
 
+MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")
+
 CAPABILITIES(/obj/machinery)
+	op("robot_remote_blocked", inputs(hand(), item(/obj/item), remote(), menu()), ungated(), priority(OP_PRIORITY_SUBVERT + 1), label("Blocked"),
+		when(cond_all(req(/mob/living/silicon/robot, of = ON_ACTOR), cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(robot_remote_blocked))))),
+		needs(req_on_origin(ORIGIN_MENU, req(PROC_REF(robot_remote_blocked), because = MSG(machine/robot_remote_unavailable)))), then(TYPE_PROC_REF(/atom, op_swallow)))
 	contributes(STAT_OPERABLE, STAT_INTACT, key = "intact_operable", reason = MSG(machine/inoperable))
 	contributes(STAT_OPERABLE, cond_not(STAT_IN_MAINTENANCE), key = "maint_operable", reason = MSG(machine/inoperable))
 	// The grid's reading: the machine has power while its area's channel is energized (the area's tracked channel vars, one hop through power_area).
@@ -218,7 +222,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 // the base machine: board and parts deleted, occupants put out.
 /obj/machinery/on_destroy(force)
-	om_watch_disarm_all(src)
 	// The installed board is DECLARE_REF(..., OWNED) (phase 4 deletes it); every other leftover in the
 	// internals slot (SLOT_DROP_HOLDER) is deleted by the core /atom/movable Destroy().
 	// Only a human stuck in the internals slot is put out by hand: it needs its view
@@ -381,10 +384,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// through a camera can't remotely control them (old /obj/machinery/attack_ai). Offered
 /// only while that holds, so it doesn't compete with a machine's own silicon interactions.
 /// machinery_maintenance.dm declares the machine's other interactions.
-EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/atom, interaction_swallow), REQ_TARGET_STATE(/obj/machinery/proc/machinery_robot_remote_locked)))
 
-/obj/machinery/proc/machinery_robot_remote_locked(mob/actor, atom/target, obj/item/held)
-	return isrobot(actor) && actor.is_remote_viewing()
+/obj/machinery/proc/robot_remote_blocked(datum/act/op/A)
+	// Sample the current input actor; menu samples are rebuilt rather than cached.
+	return read_once(A.actor.is_remote_viewing())
 
 /// The checks every machine's hand interactions pass behind (see machine_use_blocker() for the Menu's version).
 /obj/machinery/hand_gate(mob/user as mob)

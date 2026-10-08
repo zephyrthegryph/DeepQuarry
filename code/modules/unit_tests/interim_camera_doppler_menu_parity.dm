@@ -1,0 +1,20 @@
+/datum/unit_test/dq_hc_struct/camera_missing_item_menu_parity
+/datum/unit_test/dq_hc_struct/camera_missing_item_menu_parity/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/camera/C = mach(/obj/machinery/camera, tile(3, 2))
+	missing_item_row(H, C, "camera_update_coverage", "needs an item")
+	missing_item_row(H, C, "camera_bug_toggle", "needs a camera bug")
+	missing_item_row(H, C, "camera_bash", "needs an item")
+	missing_item_row(H, C, "camera_shred", "not possible right now")
+	TEST_ASSERT_NULL(SSrequests.open_for(H), "camera menu admission opens no request")
+
+/datum/unit_test/dq_hc_struct/doppler_missing_item_menu_parity
+/datum/unit_test/dq_hc_struct/doppler_missing_item_menu_parity/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/doppler_array/D = mach(/obj/machinery/doppler_array, tile(3, 2))
+	missing_item_row(H, D, "part_replacement_impl", "needs a rapid part exchange device")
+	var/obj/item/storage/part_replacer/R = allocate(/obj/item/storage/part_replacer, tile(2, 2))
+	TEST_ASSERT(H.put_in_active_hand(R), "the actor holds the exact real part replacer")
+	var/list/row = item_menu_row(H, D, R, "part_replacement_impl")
+	TEST_ASSERT(row?["enabled"], "the real RPED passes its original admission")
+	TEST_ASSERT_EQUAL(H.get_active_hand(), R, "menu inspection preserves the held tool")

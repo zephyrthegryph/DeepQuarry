@@ -48,7 +48,7 @@
 			why_door = req_access().test(ctx)
 		else if(isnum(door))
 			var/atom/A = ctx.target
-			if(!istype(A) || (A.cap_state & door) != door)
+			if(!istype(A) || (capability_bits(A) & door) != door)
 				why_door = /datum/msg/req_sealed
 		else if(istype(door, /datum/req))
 			var/datum/req/R = door

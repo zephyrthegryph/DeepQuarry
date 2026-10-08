@@ -57,7 +57,7 @@ GLOBAL_LIST_INIT(cap_examine_cover_open, list("Its cover is open."))
 	data["removed"] = legacy_cover_removed(holder)
 
 /proc/legacy_cover_removed(atom/A)
-	return !!(A.cap_state & CAP_COVER_REMOVED)
+	return !!(capability_bits(A) & CAP_COVER_REMOVED)
 
 /proc/cap_cover_name(atom/holder, mob/user)
 	return cover_is_open(holder) ? "Close cover" : "Open cover"

@@ -1,29 +1,17 @@
 blob | survives
-emag | emagged: 0 -> 1
+emag | is_emagged: 0 -> 1
 emag | locked: 0 -> -1
-emag | look_key: null -> 'smartfridge|||||||||||||smartfridge-0'
-emag | look_overlays: null -> list(1)
-emag | look_set_bits: 0 -> 2
 emag | refresh_bits: 1 -> 0
 emag | refresh_queued: 131071 -> 0
-emag | refresh_swept: 0 -> 1
 emp 1 | electrified: 0 -> 1
-emp 1 | look_key: null -> 'smartfridge|||||||||||||smartfridge-0'
-emp 1 | look_overlays: null -> list(1)
-emp 1 | look_set_bits: 0 -> 2
 emp 1 | refresh_bits: 1 -> 0
 emp 1 | refresh_queued: 131071 -> 0
-emp 1 | refresh_swept: 0 -> 1
 emp 1 | scan_id: 1 -> 0
 emp 1 | shoot_inventory: 0 -> 1
 emp 1 | turf: +/obj/effect/overlay x1
 emp 2 | electrified: 0 -> 1
-emp 2 | look_key: null -> 'smartfridge|||||||||||||smartfridge-0'
-emp 2 | look_overlays: null -> list(1)
-emp 2 | look_set_bits: 0 -> 2
 emp 2 | refresh_bits: 1 -> 0
 emp 2 | refresh_queued: 131071 -> 0
-emp 2 | refresh_swept: 0 -> 1
 emp 2 | scan_id: 1 -> 0
 emp 2 | shoot_inventory: 0 -> 1
 emp 2 | turf: +/obj/effect/overlay x1
@@ -32,32 +20,15 @@ explosion 1 | turf: +/obj/item/circuitboard/smartfridge x1
 explosion 1 | turf: +/obj/item/stock_parts/gear x2
 explosion 1 | turf: +/obj/item/stock_parts/motor x1
 explosion 2 | atom_integrity: down
-explosion 2 | cap_data: null -> list(1)
-explosion 2 | look_key: null -> 'smartfridge|||||||||||||smartfridge-0'
-explosion 2 | look_overlays: null -> list(1)
-explosion 2 | look_set_bits: 0 -> 2
 explosion 2 | refresh_bits: 1 -> 0
 explosion 2 | refresh_queued: 131071 -> 0
-explosion 2 | refresh_swept: 0 -> 1
 explosion 3 | atom_integrity: down
-explosion 3 | look_key: null -> 'smartfridge|||||||||||||smartfridge-0'
-explosion 3 | look_overlays: null -> list(1)
-explosion 3 | look_set_bits: 0 -> 2
 explosion 3 | refresh_bits: 1 -> 0
 explosion 3 | refresh_queued: 131071 -> 0
-explosion 3 | refresh_swept: 0 -> 1
 projectile | atom_integrity: down
-projectile | look_key: null -> 'smartfridge|||||||||||||smartfridge-0'
-projectile | look_overlays: null -> list(1)
-projectile | look_set_bits: 0 -> 2
 projectile | refresh_bits: 1 -> 0
 projectile | refresh_queued: 131071 -> 0
-projectile | refresh_swept: 0 -> 1
 thrown | atom_integrity: down
-thrown | look_key: null -> 'smartfridge|||||||||||||smartfridge-0'
-thrown | look_overlays: null -> list(1)
-thrown | look_set_bits: 0 -> 2
 thrown | refresh_bits: 1 -> 0
 thrown | refresh_queued: 131071 -> 0
-thrown | refresh_swept: 0 -> 1
 

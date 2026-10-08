@@ -24,7 +24,7 @@ MATERIAL_MIX(/obj/item/debugger, list(MAT_STEEL = 50,MAT_GLASS = 20))
 /obj/item/debugger/is_used_on(obj/O, mob/user)
 	if(istype(O, /obj/machinery/power/apc))
 		var/obj/machinery/power/apc/A = O
-		if(A.emagged || A.hacker)
+		if(is_emagged(A) || A.hacker)
 			to_chat(user, span_warning("There is a software error with the device."))
 		else
 			to_chat(user, span_notice("The device's software appears to be fine."))
@@ -38,7 +38,7 @@ MATERIAL_MIX(/obj/item/debugger, list(MAT_STEEL = 50,MAT_GLASS = 20))
 		return 1
 	else if(istype(O, /obj/machinery))
 		var/obj/machinery/A = O
-		if(A.emagged)
+		if(is_emagged(A))
 			to_chat(user, span_warning("There is a software error with the device."))
 		else
 			to_chat(user, span_notice("The device's software appears to be fine."))

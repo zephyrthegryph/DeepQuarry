@@ -144,6 +144,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	id_scan(stat = STAT_AIDISABLEDIDSCANNER, pulse_lasts = 0)
 	safety_wire(stat = STAT_SAFE)
 	shock_wire(stat = STAT_ELECTRIFIED)
+	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(electrify_wire_cut), pulse = PROC_REF(electrify_wire_pulsed))
 	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
 	on_notice(/datum/notice/wire_cut, then(PROC_REF(wire_changed_look)))
 	on_notice(/datum/notice/wire_pulsed, then(PROC_REF(wire_changed_look)))
@@ -317,12 +318,22 @@ CAPABILITIES(/obj/machinery/door/airlock)
 		LAZYADD(shockedby, "\[[time_stamp()]\] - EMP)")
 	return hold(src, STAT_ELECTRIFIED, TRUE, source, duration > 0 ? duration SECONDS : null)
 
-/// Who electrified the door, for the admins.
-/obj/machinery/door/airlock/proc/electrified_by(datum/act/op/A)
-	var/mob/actor = A.actor
+/// Wire holds keep their own sources; the supplied operator still belongs in the admin history.
+/obj/machinery/door/airlock/proc/electrify_wire_cut(datum/notice/wire_cut/N)
+	if(!N.mended)
+		record_electrifier(N.user)
+
+/obj/machinery/door/airlock/proc/electrify_wire_pulsed(datum/notice/wire_pulsed/N)
+	record_electrifier(N.user)
+
+/obj/machinery/door/airlock/proc/record_electrifier(mob/actor)
 	if(actor)
 		LAZYADD(shockedby, "\[[time_stamp()]\] - [actor](ckey:[actor.ckey])")
 		add_attack_logs(actor, src, "Electrified a door")
+
+/// Who electrified the door, for the admins.
+/obj/machinery/door/airlock/proc/electrified_by(datum/act/op/A)
+	record_electrifier(A.actor)
 	return OP_OK
 
 /// A silicon's alt-click toggled its own current: the one who did it sees a mark on the door.

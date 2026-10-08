@@ -39,6 +39,7 @@
 */
 
 /datum/callback
+	parent_type = /datum/actor_callback
 	/// What to call: GLOBAL_PROC, or the datum (a relation view, so a deleted target reads null
 	/// and nothing is called). Read with target_object().
 	var/datum/object = GLOBAL_PROC
@@ -125,3 +126,6 @@
 	if(object == GLOBAL_PROC)
 		return GLOBAL_PROC
 	return object
+
+/datum/callback/invoke_actor(...)
+	return Invoke(arglist(args))

@@ -13,7 +13,7 @@ const RULES: &[RuleMeta] = &[RuleMeta {
 }];
 
 const EXEMPT: &[&str] = &[
-    "code/datums/capabilities/look.dm",
+    "code/engine/present/appearance_builder.dm",
     "code/controllers/subsystems/overlays.dm",
     "code/datums/sys/appearance.dm",
     "code/__defines/sys_appearance.dm",
@@ -58,7 +58,7 @@ fn selftest() -> Result<String, String> {
     if got != vec![1, 2, 3, 4, 5] {
         return Err(format!("dx_raw_overlays selftest: got {:?}", got));
     }
-    let ex = SourceFile::from_text("code/datums/capabilities/look.dm", "A.add_overlay(added)");
+    let ex = SourceFile::from_text("code/engine/present/appearance_builder.dm", "A.add_overlay(added)");
     let mut v2 = Vec::new();
     scan_file(&ex, &mut v2);
     if !v2.is_empty() {

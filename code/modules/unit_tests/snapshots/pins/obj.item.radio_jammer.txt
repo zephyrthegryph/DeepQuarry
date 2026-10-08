@@ -62,6 +62,8 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage menu: Use
 human|/obj/item/storage click: Click: Use
+human|/obj/item/cell/device/weapon menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell/device/weapon menu: Drain its charge (refused: not in your hand)
 human|/obj/item/cell/device/weapon menu: Insert cell
 human|/obj/item/cell/device/weapon menu: Move To Top
 human|/obj/item/cell/device/weapon menu: Toggle Digestable (refused: You can't do that.)

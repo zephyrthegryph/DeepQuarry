@@ -950,7 +950,6 @@ CAPABILITIES(/obj/structure/control_pod)
 	clicksound = SFX_VORE_SQUISH1
 
 CAPABILITIES(/obj/machinery/computer/ship/navigation/telescreen/dog_eye)
-	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/draw(datum/look/look)
 	..()

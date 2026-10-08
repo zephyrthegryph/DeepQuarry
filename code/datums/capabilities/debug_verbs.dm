@@ -14,14 +14,14 @@ ADMIN_VERB_AND_CONTEXT_MENU(dx_why_refused, R_DEBUG, "Why Refused", "Every inter
 		lines += "[I.name] ([I.id]): [reason ? "refused: [reason]" : "allowed"]"
 		if(istype(I, /datum/interaction/capability))
 			var/datum/interaction/capability/E = I
-			lines += "&nbsp;&nbsp;gating: behind=[E.behind] locked_by=[E.locked_by] needs=[json_encode(E.needs)] works_broken=[E.works_broken] works_unpowered=[E.works_unpowered] cap_state=[target.cap_state] powered=[target.cap_powered()]"
+			lines += "&nbsp;&nbsp;gating: behind=[E.behind] locked_by=[E.locked_by] needs=[json_encode(E.needs)] works_broken=[E.works_broken] works_unpowered=[E.works_unpowered] cap_state=[capability_bits(target)] powered=[target.cap_powered()]"
 	to_chat(user, jointext(lines, "<br>"))
 
 ADMIN_VERB_AND_CONTEXT_MENU(dx_why_redrawn, R_DEBUG, "Why Redrawn", "Traces the next marks of an atom (who called changed()), or shows the trace so far.", ADMIN_CATEGORY_DEBUG, atom/target in world)
 	var/ref_text = REF(target)
 	if(ref_text in GLOB.refresh_traced)
 		var/list/lines = GLOB.refresh_traced[ref_text]
-		to_chat(user, "<b>Marks of [target] ([target.type]):</b><br>[islist(lines) && length(lines) ? jointext(lines, "<br>") : "none yet"]<br>look key: [target.look_key]")
+		to_chat(user, "<b>Marks of [target] ([target.type]):</b><br>[islist(lines) && length(lines) ? jointext(lines, "<br>") : "none yet"]<br>look key: [target.rx?.look_key]")
 		GLOB.refresh_traced -= ref_text
 		to_chat(user, "Tracing stopped.")
 		return

@@ -37,7 +37,6 @@ GLOBAL_VAR_INIT(dq_part_trace, FALSE)
 GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 
 /obj/item/organ
-	has_slot_hooks = TRUE
 
 /obj/item/organ/slot_key()
 	return organ_tag
@@ -54,7 +53,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 /proc/dq_part_attaching_slot(atom/holder, slot_id)
 	if(IS_PART_TREE_SLOT(slot_id))
 		return TRUE
-	return slot_id == SLOT_ID_BODY && isliving(holder) && !holder.ledger?.def_by_id(SLOT_ID_PART_ROOT)
+	return slot_id == SLOT_ID_BODY && isliving(holder) && !holder.containment_ledger()?.def_by_id(SLOT_ID_PART_ROOT)
 
 /obj/item/organ/on_slotted(atom/holder, slot_id)
 	if(slot_id == SLOT_ID_PART_CHILD || slot_id == SLOT_ID_PART_ORGANS)
@@ -112,7 +111,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	// A limb tree is a few levels deep; the bound only stops a corrupt loop.
 	for(var/depth in 1 to 16)
 		var/atom/holder = part.loc
-		var/list/entry = holder?.ledger?.entries[part]
+		var/list/entry = holder?.containment_ledger()?.entries[part]
 		if(!entry)
 			return null
 		var/slot_id = entry[LEDGER_E_SLOT]

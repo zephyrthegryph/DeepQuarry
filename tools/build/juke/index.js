@@ -4406,6 +4406,14 @@ var exec = (executable, args = [], options = {}) => {
     }
     const child = (0, import_child_process.spawn)(executable, args, spawnOptions);
     children.add(child);
+    // Heartbeat: a step that runs over 60 s prints `still running` every 60 s so a long cargo
+    // build or compile is not mistaken for a hang.
+    const startedAt = Date.now();
+    const heartbeat = silent ? null : setInterval(() => {
+      const secs = Math.round((Date.now() - startedAt) / 1e3);
+      process.stderr.write(`still running: ${executable} ${args.slice(0, 3).join(" ")} (${Math.floor(secs / 60)}m${String(secs % 60).padStart(2, "0")}s)\n`);
+    }, 60 * 1e3);
+    if (heartbeat) heartbeat.unref();
     let stdout = "";
     let stderr = "";
     let combined = "";
@@ -4423,8 +4431,12 @@ var exec = (executable, args = [], options = {}) => {
       stderr += data;
       combined += data;
     });
-    child.on("error", (err) => reject(err));
+    child.on("error", (err) => {
+      if (heartbeat) clearInterval(heartbeat);
+      reject(err);
+    });
     child.on("exit", (code, signal) => {
+      if (heartbeat) clearInterval(heartbeat);
       children.delete(child);
       if (code !== 0 && canThrow) {
         const error = new ExitCode(code);

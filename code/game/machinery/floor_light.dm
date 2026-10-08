@@ -14,17 +14,21 @@ MATERIAL_MIX(/obj/item/floor_light, list(MAT_STEEL = 2500, MAT_GLASS = 2750))
 	icon = 'icons/obj/machines/floor_light.dmi'
 	icon_state = "item"
 
-DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interaction_self), REQ_ON_TURF, REQ_TARGET_STATE(/obj/item/floor_light/proc/can_install)))
+CAPABILITIES(/obj/item/floor_light)
+	op("install", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_install_holds), because = PROC_REF(can_install_refusal))), then(PROC_REF(interaction_self)))
 
 /// Installation must be able to consume the kit from its current holder.
 /obj/item/floor_light/proc/can_install(mob/user, atom/target, obj/item/held)
-	var/reason = loc?.release_refusal(src, user)
+	// Sample the real custodian's policy; the atomic consume rechecks it too.
+	var/obj/item/floor_light/kit = read_once(src)
+	var/reason = read_once(kit.loc?.release_refusal(kit, user))
 	if(reason)
 		return reason
 	return TRUE
 
 /// Old attack_self.
-/obj/item/floor_light/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/floor_light/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!consume(src, user))
 		return FALSE
 	new /obj/machinery/floor_light(get_turf(user))
@@ -181,3 +185,12 @@ CAPABILITIES(/obj/machinery/floor_light)
 /obj/machinery/floor_light/cultify()
 	default_light_colour = "#FF0000"
 	update_brightness()
+
+/obj/item/floor_light/proc/can_install_holds(datum/act/op/A)
+	return (A.actor && (A.actor in turf_contents_of_type(get_turf(A.actor), /mob))) && can_install(A.actor, src, A.held) == TRUE
+
+/obj/item/floor_light/proc/can_install_refusal(datum/act/op/A)
+	if(!(A.actor && (A.actor in turf_contents_of_type(get_turf(A.actor), /mob))))
+		return "you can't use that here"
+	var/result = can_install(A.actor, src, A.held)
+	return istext(result) ? result : "the kit cannot be installed"

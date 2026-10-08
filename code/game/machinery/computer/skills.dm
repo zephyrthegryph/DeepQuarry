@@ -240,6 +240,7 @@
 
 CAPABILITIES(/obj/machinery/computer/skills)
 	interface("GeneralRecords", title = "Department Management")
+	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 2), needs(req(PROC_REF(within_contact_range_holds), because = PROC_REF(within_contact_range_refusal))))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("login", ui_act("login", arg("login_type", num())), then(PROC_REF(ui_act_login)))
@@ -278,8 +279,8 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(edit_question)), "default" = computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)),
 		then(PROC_REF(modal_edit)))
 	op("add_c", ui_act("modal:add_c", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), then(PROC_REF(modal_add_comment)))
-	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
-	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(within_contact_range_holds), because = PROC_REF(within_contact_range_refusal))), then(PROC_REF(interaction_open_ui_impl)))
+	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(skills_emp)))
 
 /obj/machinery/computer/skills/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -936,9 +937,10 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(update_now)
 		SStgui.update_uis(src)
 
-DAMAGE_REACTION(/obj/machinery/computer/skills, DAMAGE_EMP, PROC_REF(skills_emp))
 /// An EMP scrambles or wipes some of the records.
-/obj/machinery/computer/skills/proc/skills_emp(datum/damage_packet/packet)
+/obj/machinery/computer/skills/proc/skills_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(!operable())
 		return
 

@@ -41,23 +41,23 @@
 	if(E.driven)
 		return op_resolve_click_with_params(actor, target, E.held, E.gesture, E.origin || ORIGIN_CLICK, E.params)
 	// The click event (hooks on the target see it), then the new resolver when something of the click has an op, else the mob's click handling.
-	PUBLISH_LEGACY(E.target, /datum/notice/click, E.location, E.control, E.params, E.actor)
+	E.publish_compatibility_click()
 	var/gesture = op_gesture_of_params(E.params)
-	var/obj/item/held = actor?.held_for_ops()
+	var/obj/held = actor?.held_for_ops()
 	if(!isnull(gesture) && target && (op_has_ops(target) || op_has_ops(held) || op_has_click_ops(actor)))
 		var/datum/op_result/result = op_resolve_click_with_params(actor, target, held, gesture, ORIGIN_CLICK, E.params, TRUE, TRUE)
 		if(result)
 			return result
-	E.actor.ClickOn(E.target, E.params)
+	E.actor.op_compatibility_click(E.target, E.params)
 	return null
 
 /// op_resolve_click() with the click's parameters readable by the effects it runs, through dq_interaction_click_params(actor): an item put on a table
 /// aligns to where it was clicked. The previous parameters come back when the resolution is done.
-/proc/op_resolve_click_with_params(mob/actor, atom/target, obj/item/held, gesture, origin, params, quiet = FALSE, defer_legacy = FALSE)
+/proc/op_resolve_click_with_params(mob/actor, atom/target, obj/held, gesture, origin, params, quiet = FALSE, defer_legacy = FALSE)
 	RETURN_TYPE(/datum/op_result)
-	var/saved_params = dq_interaction_set_click_params(actor, params)
+	var/saved_params = actor?.op_click_params(params)
 	. = op_resolve_click(actor, target, held, gesture, origin, quiet, defer_legacy)
-	dq_interaction_set_click_params(actor, saved_params)
+	actor?.op_click_params(saved_params)
 
 /// Does the actor have an op of its own that its clicks reach (a clicks() binding: a natural weapon)? A plain read of the compiled index, so a click of a
 /// mob with none costs two lookups.
@@ -93,7 +93,7 @@
 /// Resolves a click among the candidates and runs the winner. Returns its /datum/op_result, or null when nothing resolved (and `quiet`: nothing was said).
 /// `defer_legacy`: when a legacy interaction entry wins, nothing runs here and the result is null: the mob's own click handling runs the legacy chain
 /// (the tool's own act first, then the entries) exactly as it did before the type declared an op. A player's click takes it; a driver-built one does not.
-/proc/op_resolve_click(mob/actor, atom/target, obj/item/held, gesture, origin, quiet = FALSE, defer_legacy = FALSE)
+/proc/op_resolve_click(mob/actor, atom/target, obj/held, gesture, origin, quiet = FALSE, defer_legacy = FALSE)
 	RETURN_TYPE(/datum/op_result)
 	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, actor_authority(actor), gesture, null, TRUE)
 	var/datum/op_cand/winner = op_resolution_winner(R)
@@ -204,7 +204,7 @@
 	return fallback
 
 /// A window button: the op with that ui_act() binding runs with origin ORIGIN_UI, its arguments validated by their schemas first.
-/proc/op_ui_act(mob/actor, datum/holder, action, list/payload, forward_depth = 0, datum/forwarded_by = null, datum/tgui/pressed_in = null)
+/proc/op_ui_act(mob/actor, datum/holder, action, list/payload, forward_depth = 0, datum/forwarded_by = null, datum/pressed_in = null)
 	RETURN_TYPE(/datum/op_result)
 	if(!forward_depth)
 		var/datum/entry/window_decl = present_interface(holder)
@@ -235,7 +235,7 @@
 
 /// A window action the holder has no op for goes to the datums its interface(forwards = nameof(var)) names (a var holding one datum or a list): the first with
 /// an op for it answers, as if its own window had sent the button (the old UI_ACT_FORWARD). A forward goes at most OP_UI_FORWARD_DEPTH windows deep.
-/proc/op_ui_forward(mob/actor, datum/holder, action, list/payload, forward_depth = 0, datum/tgui/pressed_in = null)
+/proc/op_ui_forward(mob/actor, datum/holder, action, list/payload, forward_depth = 0, datum/pressed_in = null)
 	RETURN_TYPE(/datum/op_result)
 	if(forward_depth >= OP_UI_FORWARD_DEPTH)
 		return null
@@ -283,7 +283,7 @@
 			continue
 		var/among = arg_part.args["among"]
 		if(!isnull(among) && istext(value) && S)
-			var/found = topic_resolve_ref(holder, value, S.type_of, among) // arg(among =): the ref is looked up in its source, never anywhere locate() reaches
+			var/found = holder.op_topic_resolve_ref(value, S.type_of, among) // arg(among =): the ref is looked up in its source, never anywhere locate() reaches
 			if(isnull(found))
 				schema_log(holder, name, "[name] names nothing among [among]: input refused")
 				return /datum/msg/op/bad_args
@@ -353,11 +353,7 @@
 		var/wanted = 0
 		for(var/datum/entry/part/req/rights/needed in P.needs)
 			wanted |= needed.args["rights"]
-		admin_log_denial(actor.client, "topic:[P.topic_key]", wanted)
-		var/attempt = "[key_name(actor)] tried href action '[P.topic_key]' on [holder.type] without sufficient rights"
-		log_admin(attempt)
-		log_href("TOPIC rights refused: [attempt]")
-		message_admins("[key_name_admin(actor)] tried href action '[P.topic_key]' on [holder.type] without sufficient rights.")
+		holder.op_topic_rights_denied(actor, P.topic_key, wanted)
 	return result
 
 /// The topic ops of a type, by topic key, in one namespace (null: plain hrefs); a subtype's own op for a key beats its parent's, as everywhere. Built once per type.
@@ -415,93 +411,29 @@
 		return op_topic_href(actor, forward, href_list, forward_depth + 1)
 	return null
 
-// ---- legacy interaction entries as candidates ----
+/datum/input_event/click/proc/publish_compatibility_click()
+	return
 
-/// The plan stand-in of a legacy interaction: no parts, the interaction's id as its key.
-GLOBAL_LIST_EMPTY(op_legacy_plans) // interaction type -> /datum/op_plan
+/mob/proc/op_compatibility_click(atom/target, params)
+	return
 
-/proc/op_legacy_plan(datum/interaction/I)
-	RETURN_TYPE(/datum/op_plan)
-	var/datum/op_plan/P = GLOB.op_legacy_plans["[I.type]"]
-	if(P)
-		return P
-	P = new
-	P.key = "legacy:[I.id || I.type]"
-	P.base_key = P.key
-	P.origin = "legacy [I.type]"
-	P.label = I.name
-	P.tier = I.priority
-	P.bindings = list()
-	GLOB.op_legacy_plans["[I.type]"] = P
-	return P
-
-/// The intent a legacy interaction answers: what its macro's default_action means.
-/proc/op_legacy_intent(datum/interaction/I)
-	switch(I.default_action)
-		if(INPUT_ACTION_USE)
-			return INTENT_USE
-		if(INPUT_ACTION_ALTERNATE, INPUT_ACTION_ALTERNATE_SECONDARY)
-			return INTENT_TOGGLE
-		if(INPUT_ACTION_DRAG)
-			return INTENT_DROP_ONTO
-		if(INPUT_ACTION_INSPECT)
-			return INTENT_EXAMINE
-		if(INPUT_ACTION_SELF_USE)
-			return INTENT_USE
+/mob/proc/op_click_params(params)
 	return null
 
-/// Adds the legacy interaction entries that apply to the target to a click's candidates. They sit beside the new ops in one pass: each carries the
-/// tier and the intent of its macro, and after a new op at equal tier and rank (declared later).
-/proc/op_legacy_candidates(datum/op_resolution/R)
-	if(isnull(R.gesture) || !R.target || !R.actor)
-		return
-	var/datum/interaction_resolution/L = interactions_for(R.actor, R.target, R.held, null, null, null, null, FALSE, FALSE)
-	var/seq = 1000
-	for(var/datum/interaction/I as anything in L.available)
-		if(!op_legacy_fits(I, R))
-			continue
-		var/intent = op_legacy_intent(I)
-		if(isnull(intent))
-			continue
-		var/datum/op_cand/C = new
-		C.oplan = op_legacy_plan(I) // ALLOW(ownership): a transient record of one resolution: dropped with it
-		C.legacy = I // ALLOW(ownership): a transient record of one resolution: dropped with it
-		C.holder = R.target // ALLOW(ownership): a transient record of one resolution: dropped with it
-		C.side = CAND_TARGET
-		C.tier = I.priority
-		C.seq = ++seq
-		R.all += C // ALLOW(ownership): a transient record of one resolution: dropped with it
-		var/rank = R.intents.Find(intent)
-		if(!rank && (INTERACTION_TAG_HOSTILE in I.tags))
-			rank = R.intents.Find(INTENT_ATTACK)
-		if(!rank)
-			C.dropped_by = GATE_MATCH
-			continue
-		C.rank = rank
-		C.intent = intent
-		R.ordered += C // ALLOW(ownership): a transient record of one resolution: dropped with it
 
-/// Does a legacy entry interaction fit the shape of this input? The legacy handlers it came from ran only for such an input: attack_hand for an empty
-/// hand, attackby for a held item used on something else, attack_self for the held item itself. (The resolver of the interactions does not ask: the
-/// caller is what chose the entry, and here nobody has.) Without it a held item is offered the hand's touches of its target, and a punch is thrown with it.
-/proc/op_legacy_fits(datum/interaction/I, datum/op_resolution/R)
-	switch(I.entry)
-		if(INTERACTION_ENTRY_HAND)
-			return isnull(R.held)
-		if(INTERACTION_ENTRY_ITEM)
-			return !isnull(R.held) && R.held != R.target
-		if(INTERACTION_ENTRY_SELF)
-			return !isnull(R.held) && R.held == R.target
+/// Whether `user` may use this datum's href actions at all (checked before any row).
+/datum/proc/topic_allowed(mob/user, list/href_list)
 	return TRUE
 
-/// Runs a legacy interaction that won a resolution: its own attempt() decides, the result is the outcome.
-/proc/op_run_legacy(datum/op_cand/C, datum/op_resolution/R, datum/op_result/result)
-	var/datum/interaction/I = C.legacy
-	var/ran = I.attempt(R.actor, R.target, R.held)
-	if(ran == INTERACTION_TRY_RAN || ran == INTERACTION_TRY_PENDING || ran == INTERACTION_TRY_PASS)
-		result.outcome = ACT_COMMITTED
-	else
-		result.outcome = ACT_REFUSED
-		result.reason = /datum/msg/op/not_available
-	TEST_REC_OUTCOME(result.key, result.outcome, result.reason, R.actor)
-	return result
+/// A datum whose href actions this one's links also reach (a page forwarding to its book):
+/// hrefs matching none of this type's rows are dispatched to it instead.
+/datum/proc/topic_forward()
+	return null
+
+/// Resolve a typed href argument through the world-facing topic transport.
+/datum/proc/op_topic_resolve_ref(raw, wanted, source)
+	return null
+
+/// Report a refused href to the administration transport.
+/datum/proc/op_topic_rights_denied(mob/actor, key, wanted)
+	return

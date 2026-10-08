@@ -5,8 +5,12 @@
 	anchored = FALSE
 	density = FALSE
 
-OM_FIELD_VIEW(/obj/machinery/feeder, mob/living/carbon/human, attached, CHANGE_MACHINE_OCCUPANT)
-OM_FIELD_VIEW(/obj/machinery/feeder, obj/item/reagent_containers, beaker, CHANGE_MACHINE_OCCUPANT)
+/obj/machinery/feeder/var/mob/living/carbon/human/attached
+/datum/scheduler_field_definition/obj/machinery/feeder/attached
+	of = /obj/machinery/feeder
+	field = "attached"
+	channel = CHANGE_MACHINE_OCCUPANT
+/obj/machinery/feeder/var/obj/item/reagent_containers/beaker
 /// Feeds while a patient and a container are attached.
 DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/feeder/appearance_overlays()
@@ -37,6 +41,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 			. += filling
 
 CAPABILITIES(/obj/machinery/feeder)
+	ref_one(nameof(attached), /mob/living/carbon/human)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(attached), nameof(beaker)), wakes_on = list(nameof(attached), nameof(beaker)))
 	drag_onto(PROC_REF(drop_input))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))

@@ -38,21 +38,35 @@
 /// The mob a grab is made on (its constructor param, dropped once linked).
 /obj/item/grab/var/tmp/mob/victim_at_make
 
+/// The grab link broke: the victim's shift and layer go back.
+/mob/living/proc/grab_released(obj/item/grab/G)
+	animate(src, pixel_x = initial(pixel_x), pixel_y = initial(pixel_y), 4, 1, LINEAR_EASING)
+	reset_plane_and_layer()
+
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The grab links its holder to the victim, or is spent.
-/obj/item/grab/proc/grab_made(mob/victim)
+/obj/item/grab/proc/grab_made(mob/living/victim)
 	var/mob/living/carbon/human/assailant = loc
 
 	if(!istype(assailant) || !istype(victim) || victim.anchored || !assailant.Adjacent(victim))
 		spent(src)
 		return
 
-	// The grabbing relation (code/datums/om/library.dm) is the sole writer of
-	// `affecting`/the victim's `grabbed_by`, and does the reveal messages,
-	// the dancing check and stopping any pull on the victim as its on_link()
-	// side effects.
-	if(!istype(om_link(src, victim, /datum/om/relation/grabbing), /datum/om/edge))
+	// The grab link (LK_GRABBING / LK_GRABBED_BY) is the sole store of the victim; its effects are the reveal messages, the dancing check and stopping
+	// any pull on the victim.
+	if(!link_make(src, LK_GRABBING, victim))
 		spent(src)
 		return
+	victim.reveal(span_warning("You are revealed as [assailant] grabs you."))
+	assailant.reveal(span_warning("You reveal yourself as you grab [victim]."))
+	// If the assailant is also currently grabbed by their new victim, both
+	// grabs enter "dancing" (facing each other, e.g. a wrestling clinch).
+	for(var/obj/item/grab/G in assailant.grabbed_by_list())
+		if(G.grab_assailant() == victim && G.grab_target() == assailant)
+			G.dancing = TRUE
+			G.adjust_position()
+			dancing = TRUE
+	if(assailant.pulling_target() == victim)
+		assailant.stop_pulling()
 
 	hud.icon_state = "reinforce"
 	icon_state = "grabbed"

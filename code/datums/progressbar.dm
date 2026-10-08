@@ -2,6 +2,7 @@
 #define PROGRESSBAR_ANIMATION_TIME 5
 
 /datum/progressbar
+	parent_type = /datum/progress_view
 	///The progress bar visual element.
 	var/image/bar
 	///The target where this progress bar is applied and where it is shown.
@@ -136,7 +137,7 @@
 	bar.icon_state = "prog_bar_[round(((progress / goal) * 100), 5)]"
 
 /// Fills the bar over `duration` deciseconds as a client-side animation: no server updates.
-/datum/progressbar/proc/animate_fill(duration)
+/datum/progressbar/animate_fill(duration)
 	EXPIRY_STAMP(src, fill_started, CLOCK_WORLD)
 	fill_duration = max(duration, 1)
 	var/step_time = fill_duration / 20
@@ -146,7 +147,7 @@
 
 ///Called on progress end, be it successful or a failure. Wraps up things to delete the datum and bar.
 /// `success` null: judged by the last update().
-/datum/progressbar/proc/end_progress(success = null)
+/datum/progressbar/end_progress(success = null)
 	if(fill_duration)
 		var/pct = round(clamp((world.time - fill_started) / fill_duration, 0, 1) * 100, 5)
 		last_progress = success ? goal : goal * pct / 100

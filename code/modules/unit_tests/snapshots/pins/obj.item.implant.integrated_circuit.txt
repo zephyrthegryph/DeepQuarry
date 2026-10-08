@@ -66,8 +66,11 @@ human|/obj/item/integrated_circuit menu: Rename Circuit (refused: You can't do t
 human|/obj/item/integrated_circuit menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/integrated_circuit click: Click: Add
 human|/obj/item/cell/device menu: Add
+human|/obj/item/cell/device menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell/device menu: Drain its charge (refused: not in your hand)
 human|/obj/item/cell/device menu: Move To Top
 human|/obj/item/cell/device menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell/device menu: Use
 human|/obj/item/cell/device click: Click: Add
 keys: add_cell, add_circuit, add_electronics, assembly_tool, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, load_implanter, move_to_top, pick_up_item, toggle_digestable, use
 

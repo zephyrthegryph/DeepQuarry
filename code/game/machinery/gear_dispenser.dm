@@ -157,7 +157,11 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	var/needs_power = 0
 	//req_one_access = list(whatever) // Note that each gear datum can have access, too.
 
+TRACKED(/obj/machinery/gear_dispenser, dispenser_flags)
+
 CAPABILITIES(/obj/machinery/gear_dispenser)
+	op("vv_admin_add", topic_in(VV_TOPIC, "admin_add"), needs(req_rights(R_DEBUG|R_FUN)), asks(/datum/prompt/text, fields = list("title" = "Admin-load Dispenser", "question" = "Paste new gear pack JSON below. See example/code comments.", "default" = computed(PROC_REF(gear_pack_example)), "multiline" = TRUE, "timeout" = 0)), then(PROC_REF(vv_topic_admin_add)))
+	op("gear_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice/gear_dispenser, fields = list("title" = "Equipment Dispenser", "question" = "Select equipment to dispense.", "timeout" = 0), when = PROC_REF(gear_has_selection)), then(PROC_REF(interaction_use)))
 	owns_one(nameof(one_setting), /datum/gear_disp)
 	emag(then(PROC_REF(on_emag)))
 
@@ -177,37 +181,24 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 		rel_set(src, nameof(one_setting), new one_setting)
 	dispenses = real_gear_list
 
-EXTEND_INTERACTIONS(/obj/machinery/gear_dispenser, \
-	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_use)), \
-)
 
-/obj/machinery/gear_dispenser/proc/interaction_use(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
-	if(!can_use(user))
-		return TRUE
-	dispenser_flags |= GD_BUSY
-	if(!(dispenser_flags & GD_ONEITEM))
-		var/list/gear_list = get_gear_list(user)
 
-		if(!LAZYLEN(gear_list))
-			to_chat(user, span_warning("\The [src] doesn't have anything to dispense for you!"))
-			dispenser_flags &= ~GD_BUSY
-			return TRUE
-
-		open_request(src, /datum/prompt/choice, PROC_REF(gear_chosen), answerer = user, title = "Equipment Dispenser", question = "Select equipment to dispense.", choices = gear_list, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	else
-		dispense(one_setting,user)
-	return TRUE
+/obj/machinery/gear_dispenser/proc/interaction_use(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
+	if(dispenser_flags & GD_ONEITEM)
+		if(can_use(user))
+			set_dispenser_flags(dispenser_flags | GD_BUSY)
+			dispense(one_setting, user)
+	else if(A.answer)
+		var/datum/prompt/choice/gear_dispenser/R = A.answer
+		set_dispenser_flags(dispenser_flags | GD_BUSY)
+		dispense(R.choices[R.value], user)
+	return OP_OK
 
 /// The dispenser is busy while the list is open; a cancel or a failed re-check frees it.
 /obj/machinery/gear_dispenser/proc/dispense_cancelled()
-	dispenser_flags &= ~GD_BUSY
+	set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 
-/obj/machinery/gear_dispenser/proc/gear_chosen(datum/act/request/A)
-	if(!A.answer)
-		dispense_cancelled()
-		return
-	var/datum/prompt/choice/R = A.request
-	dispense(R.choices[A.answer.value], R.answerer)
 
 /obj/machinery/gear_dispenser/proc/can_use(mob/living/carbon/human/user)
 	var/list/used_by = GLOB.gear_distributed_to["[type]"]
@@ -223,7 +214,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gear_dispenser, \
 	if((dispenser_flags & GD_ONEITEM) && !(dispenser_flags & GD_UNLIMITED) && !one_setting.amount)
 		to_chat(user,span_warning("There's nothing in here!"))
 		return 0
-	if (!emagged)
+	if (!emagged())
 		if ((dispenser_flags & GD_NOGREED) && (user.ckey in used_by))
 			to_chat(user,span_warning("You've already picked up your gear!"))
 			play_sfx(src, SFX_MACHINES_BUZZ_SIGH)
@@ -245,7 +236,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gear_dispenser, \
 		return 0
 
 /obj/machinery/gear_dispenser/proc/get_gear_list(mob/living/carbon/human/user)
-	if(emagged)
+	if(emagged())
 		return dispenses
 
 	var/list/choices = list()
@@ -258,13 +249,13 @@ EXTEND_INTERACTIONS(/obj/machinery/gear_dispenser, \
 /obj/machinery/gear_dispenser/proc/dispense(datum/gear_disp/S,mob/living/carbon/human/user,greet=TRUE)
 	if(!S.amount && !(dispenser_flags & GD_UNLIMITED))
 		to_chat(user,span_warning("There are no more [S.name]s left!"))
-		dispenser_flags &= ~GD_BUSY
+		set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 		return 1
 	else if(!(dispenser_flags & GD_UNLIMITED))
 		S.amount--
-	if((dispenser_flags & GD_NOGREED) && !emagged)
+	if((dispenser_flags & GD_NOGREED) && !emagged())
 		GLOB.gear_distributed_to["[type]"] |= user.ckey
-	if((dispenser_flags & GD_UNIQUE) && !emagged)
+	if((dispenser_flags & GD_UNIQUE) && !emagged())
 		LAZYOR(unique_dispense_list, user.ckey)
 
 	animate_dispensing()
@@ -272,14 +263,14 @@ EXTEND_INTERACTIONS(/obj/machinery/gear_dispenser, \
 
 /// The dispensing animation is over: hand the gear out.
 /obj/machinery/gear_dispenser/proc/dispense_finish(datum/gear_disp/S, mob/living/carbon/human/user, greet)
-	dispenser_flags &= ~GD_BUSY
+	set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 	var/turf/T = get_turf(src)
 	if(!(S && T)) // in case we got destroyed while we slept
 		return 1
 
 	S.spawn_gear(T, user)
 
-	if(emagged)
+	if(emagged())
 		set_emagged(FALSE)
 	if(greet && user && !user.stat) // in case we got destroyed while we slept
 		to_chat(user,span_notice("[S.name] dispensing processed. Have a good day."))
@@ -294,7 +285,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gear_dispenser, \
 
 /obj/machinery/gear_dispenser/proc/animate_dispensing_flick()
 	flick("[icon_state]-dispense",src)
-	dispenser_flags |= GD_BUSY
+	set_dispenser_flags(dispenser_flags | GD_BUSY)
 
 /obj/machinery/gear_dispenser/proc/on_emag(datum/act/op/A)
 	set_emagged(TRUE)
@@ -344,7 +335,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gear_dispenser, \
 			look.overlay("light2")
 
 CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
-	op("take", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Take"), then(PROC_REF(interaction_take)))
+	op("take", hand(), priority(OP_PRIORITY_DEFAULT), ungated(), label("Take"), then(PROC_REF(interaction_take)))
 
 /obj/machinery/gear_dispenser/suit_fancy/proc/interaction_take(datum/act/op/A)
 	var/mob/living/carbon/human/user = A.actor
@@ -362,13 +353,13 @@ CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
 /obj/machinery/gear_dispenser/suit_fancy/dispense(datum/gear_disp/S,mob/living/carbon/human/user,greet=TRUE)
 	if(!S.amount && !(dispenser_flags & GD_UNLIMITED))
 		to_chat(user,span_warning("There are no more [S.name]s left!"))
-		dispenser_flags &= ~GD_BUSY
+		set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 		return 1
 	else if(!(dispenser_flags & GD_UNLIMITED))
 		S.amount--
-	if((dispenser_flags & GD_NOGREED) && !emagged)
+	if((dispenser_flags & GD_NOGREED) && !emagged())
 		GLOB.gear_distributed_to["[type]"] |= user.ckey
-	if((dispenser_flags & GD_UNIQUE) && !emagged)
+	if((dispenser_flags & GD_UNIQUE) && !emagged())
 		LAZYOR(unique_dispense_list, user.ckey)
 
 	rel_set(src, nameof(held_gear_disp), S)
@@ -377,9 +368,9 @@ CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
 	after(src, dispense_anim_time, PROC_REF(dispense_finish), with = list(S, user, greet), keeps_dead = TRUE)
 
 /obj/machinery/gear_dispenser/suit_fancy/dispense_finish(datum/gear_disp/S, mob/living/carbon/human/user, greet)
-	dispenser_flags &= ~GD_BUSY
+	set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 
-	if(emagged)
+	if(emagged())
 		set_emagged(FALSE)
 	if(greet && S && user && !user.stat) // in case we got destroyed while we slept
 		to_chat(user,span_notice("[S.name] dispensing processed. Have a good day."))
@@ -662,42 +653,15 @@ CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
 	VV_DROPDOWN_OPTION("", "---")
 	VV_DROPDOWN_OPTION("admin_add", "Add New Gear")
 
-VV_TOPIC_ACTION(/obj/machinery/gear_dispenser, "admin_add", PROC_REF(vv_topic_admin_add))
 
-/obj/machinery/gear_dispenser/proc/vv_topic_admin_add(mob/user, list/args)
-	admin_add(user)
-	user.client?.debug_variables(src)
-	return TRUE
+/obj/machinery/gear_dispenser/proc/vv_topic_admin_add(datum/act/op/A)
+	gear_pack_load(A.actor, A.answer?.value)
+	A.actor.client?.debug_variables(src)
+	return OP_OK
 
-/obj/machinery/gear_dispenser/proc/admin_add(mob/user)
-	if(!admin_require(user?.client, R_DEBUG|R_FUN, "check_rights in [callee?.proc]"))
+/obj/machinery/gear_dispenser/proc/gear_pack_load(mob/user, input)
+	if(isnull(input))
 		return
-
-	var/example = @{"[
-	{
-		"menuoption": "Cool suit one",
-		"gearlist": ["/obj/item/clothing/suit/space", "/obj/item/clothing/head/helmet/space"],
-		"req_one_access": [5,63]
-	},
-	{
-		"menuoption": "Selection two",
-		"gearlist": ["/obj/random/trash"]
-	}
-]"}
-
-	/**
-	 * Needs to be valid json with keys of:
-	 * "menuoption" = string for the name
-	 * "gearlist" = array of types (yes the types are not valid json, byond parses them into real types.)
-	 * "req_one_access" = array of numbers (accesses)
-	 */
-	open_request(src, /datum/prompt/text, PROC_REF(gear_pack_entered), answerer = user, title = "Admin-load Dispenser", question = "Paste new gear pack JSON below. See example/code comments.", default = example, multiline = TRUE, rights = R_DEBUG|R_FUN, timeout = 0)
-
-/obj/machinery/gear_dispenser/proc/gear_pack_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/input = A.answer.value
 
 	var/list/parsed = json_decode(input)
 
@@ -958,6 +922,42 @@ CAPABILITIES(/obj/machinery/gear_dispenser/adventure_box)
 		/datum/gear_disp/adventure_box/weapon
 		)
 
+/obj/machinery/gear_dispenser/proc/gear_has_selection(datum/act/op/A)
+	return !(dispenser_flags & GD_ONEITEM)
+
+/// The prompt owns the dispenser's temporary busy state; every end path dismisses it.
+/datum/prompt/choice/gear_dispenser
+	var/selection_ready = FALSE
+	var/obj/machinery/gear_dispenser/dispenser
+	recheck_on_open = TRUE
+
+CAPABILITIES(/datum/prompt/choice/gear_dispenser)
+	ref_one(nameof(dispenser), /obj/machinery/gear_dispenser)
+
+/datum/prompt/choice/gear_dispenser/prepare(datum/act/A)
+	..()
+	var/obj/machinery/gear_dispenser/D = A?.holder
+	if(!istype(D) || !D.can_use(answerer))
+		return
+	rel_set(src, nameof(dispenser), D)
+	choices = D.get_gear_list(answerer)
+	if(!length(choices))
+		to_chat(answerer, span_warning("\The [D] doesn't have anything to dispense for you!"))
+		return
+	D.set_dispenser_flags(D.dispenser_flags | GD_BUSY)
+	selection_ready = TRUE
+
+/datum/prompt/choice/gear_dispenser/recheck_extra()
+	if(!selection_ready)
+		return "no equipment selection is available"
+	return null
+
+/datum/prompt/choice/gear_dispenser/dismiss()
+	var/obj/machinery/gear_dispenser/D = dispenser
+	if(selection_ready && istype(D))
+		D.dispense_cancelled()
+	..()
+
 #undef GD_BUSY
 #undef GD_ONEITEM
 #undef GD_NOGREED
@@ -968,3 +968,16 @@ CAPABILITIES(/obj/machinery/gear_dispenser/adventure_box)
 /// held gear disp (a relation view: it reads null once the target is deleted).
 /obj/machinery/gear_dispenser/suit_fancy/proc/held_gear_disp() as /datum/gear_disp
 	return held_gear_disp
+
+/obj/machinery/gear_dispenser/proc/gear_pack_example(datum/act/op/A)
+	return @{"[
+	{
+		"menuoption": "Cool suit one",
+		"gearlist": ["/obj/item/clothing/suit/space", "/obj/item/clothing/head/helmet/space"],
+		"req_one_access": [5,63]
+	},
+	{
+		"menuoption": "Selection two",
+		"gearlist": ["/obj/random/trash"]
+	}
+]"}

@@ -18,11 +18,16 @@
 REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGISTRY_BODYCAMERA_SCREENS)
 
 /// What it shows (the wearer, or whatever holds them) and the bodycam feeding it; it follows them while both are set.
-OM_FIELD_VIEW(/obj/machinery/computer/security/telescreen/bodycamera, atom, showing, CHANGE_MACHINE_SETTINGS)
-OM_FIELD_VIEW(/obj/machinery/computer/security/telescreen/bodycamera, obj/item/clothing/accessory/bodycam, the_camera, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/computer/security/telescreen/bodycamera/var/atom/showing
+/datum/scheduler_field_definition/obj/machinery/computer/security/telescreen/bodycamera/showing
+	of = /obj/machinery/computer/security/telescreen/bodycamera
+	field = "showing"
+	channel = CHANGE_MACHINE_SETTINGS
+/obj/machinery/computer/security/telescreen/bodycamera/var/obj/item/clothing/accessory/bodycam/the_camera
 /// Runs while it shows something. The camera view clearing alone (its bodycam destroyed) is handled
 /// in the step, which then stops showing, so the pinboard and `showing` are cleaned up too.
 CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
+	ref_one(nameof(showing), /atom)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(showing), wakes_on = list(nameof(showing)))
 	owns_one(nameof(bradio), starts = /obj/item/radio)
 	click_on(PROC_REF(click_input))

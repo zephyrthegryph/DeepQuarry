@@ -1,83 +1,101 @@
 human|none menu: Ui open
 human|none menu: Use
-human|none click: Click: Ui open
+human|none click: Click: Use
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Ui open
 robot|none menu: Use
-robot|none click: Click: Ui open
+robot|none click: Click: Use
 ai|none menu: Ui open
 ai|none click: Click: Ui open
 ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Ui open
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver menu: Use screwdriver
-human|/obj/item/tool/screwdriver click: Click: Ui open
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Ui open
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: Click: Ui open
+human|/obj/item/tool/crowbar click: Click: Use
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Ui open
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench menu: Use wrench
-human|/obj/item/tool/wrench click: Click: Ui open
+human|/obj/item/tool/wrench click: Click: Use wrench
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Ui open
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters menu: Wires (refused: )
-human|/obj/item/tool/wirecutters click: Click: Ui open
+human|/obj/item/tool/wirecutters click: Click: Wires
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Ui open
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool menu: Wires (refused: )
-human|/obj/item/multitool click: Click: Ui open
+human|/obj/item/multitool click: Click: Wires
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Ui open
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: Click: Ui open
+human|/obj/item/weldingtool click: Click: Use
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Ui open
 human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: Click: Ui open
+human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Ui open
 human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: Click: Ui open
+human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+human|/obj/item/seeds menu: Hit
 human|/obj/item/seeds menu: Insert seeds
 human|/obj/item/seeds menu: Move To Top
 human|/obj/item/seeds menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/seeds menu: Ui open
 human|/obj/item/seeds menu: Use
-human|/obj/item/seeds click: Click: Ui open
+human|/obj/item/seeds click: Click: Insert seeds
 human|/obj/item/storage/bag/plants menu: Empty contents
 human|/obj/item/storage/bag/plants menu: Empty seed bag
+human|/obj/item/storage/bag/plants menu: Hit
 human|/obj/item/storage/bag/plants menu: Move To Top
 human|/obj/item/storage/bag/plants menu: Switch gathering method (refused: You can't do that.)
 human|/obj/item/storage/bag/plants menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage/bag/plants menu: Ui open
 human|/obj/item/storage/bag/plants menu: Use
-human|/obj/item/storage/bag/plants click: Click: Ui open
+human|/obj/item/storage/bag/plants click: Click: Empty seed bag
+human|/obj/item/card/emag menu: Hit
 human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
 wires: Contraband, Electrification, Lockdown, Smart
-keys: drag_buckle, emag.subvert, emag.use, gen_robot_interaction_swallow, insert_bag, insert_seeds, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, purge, ui_open, use, use_screwdriver, use_wire_tools, use_wrench, vend
+keys: drag_buckle, emag.subvert, emag.use, insert_bag, insert_seeds, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, purge, robot_remote_blocked, ui_open, use, use_screwdriver, use_wire_tools, use_wrench, vend
 

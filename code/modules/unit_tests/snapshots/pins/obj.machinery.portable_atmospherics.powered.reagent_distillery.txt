@@ -9,6 +9,7 @@ robot|none menu: Use
 robot|none click: Click: Use
 ai|none click: nothing
 ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Remove power cell (refused: There is no power cell installed.)
 human|/obj/item/tool/screwdriver menu: Start Distillery Mixing
@@ -16,6 +17,7 @@ human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do 
 human|/obj/item/tool/screwdriver menu: Toggle Distillery Heating
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Remove power cell
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Start Distillery Mixing
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
@@ -23,30 +25,35 @@ human|/obj/item/tool/crowbar menu: Toggle Distillery Heating
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Connect to the port (refused: Nothing happens.)
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Start Distillery Mixing
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Distillery Heating
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Connect to the port
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Start Distillery Mixing
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Toggle Distillery Heating
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Start Distillery Mixing
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle Distillery Heating
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Use
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Start Distillery Mixing
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle Distillery Heating
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Use
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Start Distillery Mixing
@@ -54,12 +61,14 @@ human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do 
 human|/obj/item/stack/cable_coil menu: Toggle Distillery Heating
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Start Distillery Mixing
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Toggle Distillery Heating
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Start Distillery Mixing
@@ -67,6 +76,14 @@ human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Distillery Heating
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Start Distillery Mixing
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Toggle Distillery Heating
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+human|/obj/item/tank menu: Hit
 human|/obj/item/tank menu: Insert tank
 human|/obj/item/tank menu: Move To Top
 human|/obj/item/tank menu: Start Distillery Mixing
@@ -74,6 +91,9 @@ human|/obj/item/tank menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tank menu: Toggle Distillery Heating
 human|/obj/item/tank menu: Use
 human|/obj/item/tank click: Click: Insert tank
+human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell menu: Drain its charge (refused: not in your hand)
+human|/obj/item/cell menu: Hit
 human|/obj/item/cell menu: Insert power cell
 human|/obj/item/cell menu: Move To Top
 human|/obj/item/cell menu: Start Distillery Mixing
@@ -81,6 +101,7 @@ human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/cell menu: Toggle Distillery Heating
 human|/obj/item/cell menu: Use
 human|/obj/item/cell click: Click: Insert power cell
+human|/obj/item/reagent_containers/glass menu: Hit
 human|/obj/item/reagent_containers/glass menu: Install beaker
 human|/obj/item/reagent_containers/glass menu: Move To Top
 human|/obj/item/reagent_containers/glass menu: Open or close the lid
@@ -90,5 +111,5 @@ human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You c
 human|/obj/item/reagent_containers/glass menu: Toggle Distillery Heating
 human|/obj/item/reagent_containers/glass menu: Use
 human|/obj/item/reagent_containers/glass click: Click: Install beaker
-keys: cell_in, cell_out, distillery_install_beaker, distillery_radial, distillery_toggle_mixing, distillery_toggle_power, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, port, tank_bay.holding.insert
+keys: cell_in, cell_out, distillery_install_beaker, distillery_radial, distillery_toggle_mixing, distillery_toggle_power, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, port, robot_remote_blocked, tank_bay.holding.insert
 

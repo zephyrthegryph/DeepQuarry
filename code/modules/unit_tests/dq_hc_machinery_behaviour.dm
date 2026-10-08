@@ -451,7 +451,7 @@
 	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, tile(2, 2))
 	hci_click(H, S, E)
 	settle()
-	TEST_ASSERT(S.emagged, "an emag subverts it")
+	TEST_ASSERT(S.emagged(), "an emag subverts it")
 	TEST_ASSERT(!S.safeties, "and takes the safeties off")
 	press(H, S, "radlevel", list("radlevel" = 5))
 	TEST_ASSERT_EQUAL(S.radiation_level, 5, "an emagged one goes to 5")
@@ -527,10 +527,10 @@
 	E.uses = 10
 	hci_click(H, G, E)
 	settle()
-	TEST_ASSERT(G.emagged, "an emag subverts the dispenser")
+	TEST_ASSERT(G.emagged(), "an emag subverts the dispenser")
 	hci_click(H, C, E)
 	settle()
-	TEST_ASSERT(!C.emagged, "the custom one will not be emagged")
+	TEST_ASSERT(!C.emagged(), "the custom one will not be emagged")
 
 /datum/unit_test/dq_hc_struct/thermoregulator_is_switched_on_by_an_emp
 /datum/unit_test/dq_hc_struct/thermoregulator_is_switched_on_by_an_emp/run_gate()
@@ -786,3 +786,428 @@
 	hci_click(H, P, T)
 	settle()
 	TEST_ASSERT_EQUAL(P.tank, T, "the same tank goes back in")
+
+/datum/unit_test/dq_hc_struct/ai_slipper_repeat_parks
+/datum/unit_test/dq_hc_struct/ai_slipper_repeat_parks/run_gate()
+	var/obj/machinery/ai_slipper/S = mach(/obj/machinery/ai_slipper, tile(3, 2))
+	S.uses = 0
+	S.cooldown_time = world.timeofday
+	S.set_cooldown_on(TRUE)
+	test_phase(KERNEL_PHASE_R) // drain the gate wake before measuring its interval
+	test_time(0.5 SECONDS)
+	TEST_ASSERT(S.cooldown_on, "exhaustion retains the original gameplay cooldown flag")
+	TEST_ASSERT(S.cooldown_stopped, "the exhausted repeat is stopped")
+	S.uses = 1
+	test_time(1 SECOND)
+	TEST_ASSERT(S.cooldown_on, "adding uses alone does not restart a stopped repeat")
+	S.set_cooldown_on(FALSE)
+	test_phase(KERNEL_PHASE_R) // make the separate off transition observable
+	S.set_cooldown_on(TRUE)
+	test_phase(KERNEL_PHASE_R) // drain the gate wake before measuring its interval
+	test_time(0.5 SECONDS)
+	TEST_ASSERT(!S.cooldown_on, "a new gate transition restarts and finishes the cooldown")
+
+/datum/unit_test/dq_hc_struct/magnet_repeat_stops_until_gate_changes
+/datum/unit_test/dq_hc_struct/magnet_repeat_stops_until_gate_changes/New()
+	..()
+	// The controller uses the persistent lazy view cache; initialize it before
+	// the runner snapshots globals rather than deleting or resetting the cache.
+	dview(0, test_floor())
+
+/datum/unit_test/dq_hc_struct/magnet_repeat_stops_until_gate_changes/run_gate()
+	var/obj/machinery/magnetic_controller/C = mach(/obj/machinery/magnetic_controller, tile(3, 2))
+	C.rpath = list("invalid")
+	C.speed = 10
+	C.set_path_moving(TRUE)
+	test_phase(KERNEL_PHASE_R) // drain the gate wake before measuring its interval
+	test_time(0.1 SECONDS)
+	TEST_ASSERT(C.path_stopped, "an invalid path stops the actual controller step")
+	TEST_ASSERT(C.path_moving, "stopping retains the player's movement setting")
+	C.pathpos = 55
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(C.pathpos, 55, "stopped work cannot keep revisiting and resetting the path")
+	C.set_path_moving(FALSE)
+	test_phase(KERNEL_PHASE_R) // make the separate off transition observable
+	C.set_path_moving(TRUE)
+	test_phase(KERNEL_PHASE_R) // drain the gate wake before measuring its interval
+	test_time(0.1 SECONDS)
+	TEST_ASSERT_EQUAL(C.pathpos, 1, "a fresh gate transition runs the invalid path once again")
+	TEST_ASSERT(C.path_stopped, "that new invalid step stops again")
+
+/datum/unit_test/dq_hc_struct/camera_bug_click_round_trip
+/datum/unit_test/dq_hc_struct/camera_bug_click_round_trip/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/camera/C = mach(/obj/machinery/camera, tile(3, 2))
+	var/obj/item/camera_bug/B = allocate(/obj/item/camera_bug, H.loc)
+	TEST_ASSERT(H.put_in_active_hand(B), "the operator holds the bug")
+	TEST_ASSERT(C.can_use(), "the test starts with a usable camera")
+	test_click(H, C, B)
+	TEST_ASSERT(C.bugged, "the actual item click bugs the camera")
+	test_click(H, C, B)
+	TEST_ASSERT(!C.bugged, "a second item click removes its bug")
+	C.set_status(FALSE)
+	test_click(H, C, B)
+	TEST_ASSERT(!C.bugged, "a nonfunctional camera refuses bug insertion")
+
+/datum/unit_test/dq_hc_struct/power_hit_declarations
+/datum/unit_test/dq_hc_struct/power_hit_declarations/run_gate()
+	set_global("act_last_reply", GLOB.act_last_reply) // scoped restoration of hit dispatch scratch state
+	var/obj/item/cell/C = allocate(/obj/item/cell, tile(3, 2))
+	C.material_emp_resistance = 0
+	C.charge = 1000
+	C.emp_act(2)
+	TEST_ASSERT_EQUAL(C.charge, 500, "the real EMP entry drains half an unprotected cell")
+	var/obj/item/am_containment/J = allocate(/obj/item/am_containment, tile(4, 2))
+	J.ex_act(3)
+	TEST_ASSERT(!QDELETED(J), "a minor blast preserves the containment jar")
+	TEST_ASSERT_EQUAL(J.stability, 80, "the hit replacement destabilizes the jar by its severity")
+
+/datum/unit_test/dq_hc_struct/repeat_restarts_on_shared_settings
+/datum/unit_test/dq_hc_struct/repeat_restarts_on_shared_settings/run_gate()
+	var/obj/machinery/ai_slipper/S = mach(/obj/machinery/ai_slipper, tile(3, 2))
+	S.uses = 0
+	S.cooldown_time = world.timeofday
+	S.set_cooldown_on(TRUE)
+	test_phase(KERNEL_PHASE_R) // drain the gate wake before measuring its interval
+	test_time(0.5 SECONDS)
+	TEST_ASSERT(S.cooldown_stopped, "the exhausted repeat first stops")
+	S.uses = 1
+	S.set_density(!S.density)
+	test_phase(KERNEL_PHASE_R) // the shared setting resets the stopped gate at this clock
+	test_time(0.5 SECONDS)
+	TEST_ASSERT(!S.cooldown_on, "a real density change restarts stopped legacy work")
+
+/datum/unit_test/dq_hc_struct/doorbell_cancel_keeps_fingerprint
+/datum/unit_test/dq_hc_struct/doorbell_cancel_keeps_fingerprint/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/button/doorbell/B = mach(/obj/machinery/button/doorbell, tile(3, 2))
+	B.set_panel_open(TRUE)
+	var/obj/item/pen/P = allocate(/obj/item/pen, H.loc)
+	TEST_ASSERT(H.put_in_active_hand(P), "the operator holds the naming pen")
+	var/original_name = B.name
+	var/datum/forensics_crime/evidence = B.init_forensic_data()
+	TEST_ASSERT(evidence.add_prints(H), "the actual human supplies genuine existing fingerprint evidence")
+	var/list/original_prints = evidence.get_prints().Copy()
+	var/datum/op_result/touch = test_click(H, B, P)
+	TEST_ASSERT_EQUAL(touch?.key, "doorbell_rename", "the public item click selects the doorbell rename operation")
+	TEST_ASSERT(asked(H), "the actual touch opens its rename question")
+	TEST_ASSERT(length(B.forensic_data?.get_prints()), "opening the question preserves real fingerprint evidence")
+	request_answer(H, null, REQ_CANCELLED)
+	TEST_ASSERT(!asked(H), "cancelling closes the actual question")
+	TEST_ASSERT_EQUAL(B.name, original_name, "cancellation keeps the original name")
+	var/list/remaining_prints = B.forensic_data?.get_prints()
+	for(var/print in original_prints)
+		TEST_ASSERT_EQUAL(remaining_prints?[print], original_prints[print], "cancellation preserves each genuine fingerprint")
+
+/datum/unit_test/dq_hc_struct/gear_prompt_cancel_releases_busy
+/datum/unit_test/dq_hc_struct/gear_prompt_cancel_releases_busy/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/gear_dispenser/D = mach(/obj/machinery/gear_dispenser, tile(3, 2))
+	D.set_emagged(TRUE)
+	for(var/key in D.dispenses)
+		own(D.dispenses[key])
+	TEST_ASSERT(length(D.dispenses), "the actual constructor supplies a nonempty gear catalog")
+	var/flags_before = D.dispenser_flags
+	test_click(H, D)
+	TEST_ASSERT(asked(H), "the real dispenser opens its gear question")
+	TEST_ASSERT(D.dispenser_flags != flags_before, "the open question acquires its busy flag")
+	request_answer(H, null, REQ_CANCELLED)
+	TEST_ASSERT(!asked(H), "cancellation closes the question")
+	TEST_ASSERT_EQUAL(D.dispenser_flags, flags_before, "cancellation releases exactly the temporary busy flag")
+	test_click(H, D)
+	TEST_ASSERT(asked(H), "the dispenser can be opened again after cancellation")
+	request_answer(H, null, REQ_CANCELLED)
+
+/datum/unit_test/dq_hc_struct/gear_answer_stays_busy_through_animation
+/datum/unit_test/dq_hc_struct/gear_answer_stays_busy_through_animation/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/gear_dispenser/D = mach(/obj/machinery/gear_dispenser, tile(3, 2))
+	D.set_emagged(TRUE)
+	for(var/key in D.dispenses)
+		own(D.dispenses[key])
+	var/flags_before = D.dispenser_flags
+	test_click(H, D)
+	var/datum/prompt/choice/R = SSrequests.open_for(H)
+	TEST_ASSERT(istype(R) && length(R.choices), "the actual dispenser offers a real gear choice")
+	request_answer(H, R.choices[1])
+	TEST_ASSERT(!asked(H), "the successful answer closes the question")
+	TEST_ASSERT(D.dispenser_flags != flags_before, "answering retains the busy flag throughout dispensing")
+	test_time(1 SECOND)
+	TEST_ASSERT(D.dispenser_flags != flags_before, "the machine is still busy during the scan animation")
+	test_time(4 SECONDS)
+	TEST_ASSERT_EQUAL(D.dispenser_flags, flags_before, "the native completion timer releases busy only when the gear emerges")
+
+/// Trusted AUTH_ADMIN exercises the canonical framework requirement, not a simulated native client.
+/datum/unit_test/dq_hc_struct/jukebox_topic_artist_cancel_and_early_cancel
+/datum/unit_test/dq_hc_struct/jukebox_topic_artist_cancel_and_early_cancel/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/media/jukebox/ghost/J = mach(/obj/machinery/media/jukebox/ghost, tile(3, 2))
+	var/start = length(J.custom_tracks)
+	var/datum/op_result/denied = own(op_topic_href(H, J, list("add_track" = "1"), namespace = VV_TOPIC, gated = FALSE))
+	TEST_ASSERT_EQUAL(denied?.outcome, ACT_REFUSED, "a public VV link with no rights refuses before asking")
+	TEST_ASSERT(!asked(H), "the actual refused dispatch opens no question")
+	var/datum/op_result/early = own(op_perform_by_key(H, J, null, "vv_add_track", ORIGIN_UI, AUTH_ADMIN, FALSE))
+	TEST_ASSERT_NULL(early?.outcome, "the actual URL question keeps the operation pending")
+	TEST_ASSERT(asked(H), "the trusted framework op asks its URL step")
+	request_answer(H, null, REQ_CANCELLED)
+	TEST_ASSERT_EQUAL(length(J.custom_tracks), start, "cancelling the first question cannot create a track")
+	var/datum/op_result/full = own(op_perform_by_key(H, J, null, "vv_add_track", ORIGIN_UI, AUTH_ADMIN, FALSE))
+	TEST_ASSERT_NULL(full?.outcome, "the actual second workflow starts pending its answers")
+	TEST_ASSERT(asked(H), "the second actual workflow opens")
+	request_answer(H, "https://example.invalid/track")
+	TEST_ASSERT(asked(H), "a real URL advances to the title question")
+	request_answer(H, "Topic cancellation track")
+	TEST_ASSERT(asked(H), "a real title advances to the duration question")
+	request_answer(H, 10 SECONDS)
+	TEST_ASSERT(asked(H), "a real duration advances to the optional artist question")
+	TEST_ASSERT_EQUAL(length(J.custom_tracks), start, "the track is not created before the optional last answer")
+	request_answer(H, null, REQ_CANCELLED)
+	TEST_ASSERT(!asked(H), "voluntary cancellation closes the final question")
+	TEST_ASSERT_EQUAL(length(J.custom_tracks), start + 1, "only final artist cancellation creates the complete track once")
+	var/datum/track/T = J.custom_tracks[length(J.custom_tracks)]
+	TEST_ASSERT_EQUAL(T.title, "Topic cancellation track", "the completed track retains the actual title answer")
+	TEST_ASSERT_EQUAL(T.url, "https://example.invalid/track", "the completed track retains the actual URL answer")
+
+/datum/unit_test/dq_hc_struct/readylight_state_preserves_colour
+/datum/unit_test/dq_hc_struct/readylight_state_preserves_colour/run_gate()
+	var/obj/machinery/light/small/readylight/L = mach(/obj/machinery/light/small/readylight, tile(3, 2))
+	TEST_ASSERT(L.set_state(1), "the concrete setter changes the saved rung")
+	TEST_ASSERT_EQUAL(L.state, 1, "the light keeps its actual ready state")
+	TEST_ASSERT_EQUAL(L.brightness_color, "00FF00", "the original light update runs after setting ready")
+	TEST_ASSERT(L.set_state(0), "the concrete setter clears the ready state")
+	TEST_ASSERT_EQUAL(L.state, 0, "the light returns to its actual idle state")
+	TEST_ASSERT_EQUAL(L.brightness_color, initial(L.brightness_color), "clearing restores the original light colour")
+
+/// The real common setter owns notification; the fixture contributes only a native emag capability.
+/obj/machinery/dq_native_emag_storage
+CAPABILITIES(/obj/machinery/dq_native_emag_storage)
+	emag(powered = FALSE)
+	on_change(PROC_REF(emagged), ANY, then(PROC_REF(emag_storage_changed)))
+/obj/machinery/dq_native_emag_storage/var/emag_notifications = 0
+/obj/machinery/dq_native_emag_storage/proc/emag_storage_changed(datum/act/A)
+	emag_notifications++
+
+/datum/unit_test/dq_hc_struct/emag_storage_round_trip
+/datum/unit_test/dq_hc_struct/emag_storage_round_trip/run_gate()
+	var/obj/machinery/plain = mach(/obj/machinery, tile(3, 2))
+	TEST_ASSERT_NULL(cap_of(plain, CAP_EMAG), "the generic fixture actually has no native emag key")
+	TEST_ASSERT(!plain.emagged(), "generic storage starts clean")
+	TEST_ASSERT(plain.set_emagged(TRUE), "generic setter records a genuine legacy bit")
+	TEST_ASSERT(capability_bits(plain) & CAP_EMAGGED, "generic storage owns the actual legacy capability bit")
+	TEST_ASSERT(plain.emagged(), "generic getter observes the stored bit")
+	TEST_ASSERT(!plain.set_emagged(TRUE), "unchanged generic writes do not republish")
+	TEST_ASSERT(plain.set_emagged(FALSE), "generic setter clears actual storage")
+	TEST_ASSERT(!plain.emagged(), "generic round trip returns clean")
+	var/obj/machinery/dq_native_emag_storage/native = mach(/obj/machinery/dq_native_emag_storage, tile(4, 2))
+	TEST_ASSERT(cap_of(native, CAP_EMAG), "native fixture actually declares its emag key")
+	TEST_ASSERT(islist(GLOB.generated_reads_table) && length(GLOB.generated_reads_table), "the real generated dependency initializer populated its table at boot")
+	TEST_ASSERT(islist(GLOB.generated_read_names) && length(GLOB.generated_read_names), "the generated dependency names were initialized at boot")
+	var/list/emag_reads = change_read_keys(native, TYPE_PROC_REF(/obj/machinery, emagged))
+	TEST_ASSERT("capkey:[EMAG_EMAGGED]" in emag_reads, "the getter subscribes to its actual local native capability key; actual=[json_encode(emag_reads)] expected=capkey:[EMAG_EMAGGED]")
+	TEST_ASSERT(OP_KEY_CAP_STATE in emag_reads, "the getter also subscribes to its legacy capability-state key")
+	native.set_emagged(TRUE)
+	settle()
+	TEST_ASSERT(emag_emagged(native), "native setter writes the actual key")
+	TEST_ASSERT_EQUAL(native.emag_notifications, 1, "custom setter publishes its real state key once")
+	cap_set(native, CAP_EMAGGED, TRUE)
+	native.set_emagged(FALSE)
+	settle()
+	TEST_ASSERT(!emag_emagged(native), "clearing resets the native key")
+	TEST_ASSERT(!(capability_bits(native) & CAP_EMAGGED), "clearing also resets a surviving legacy bit")
+	TEST_ASSERT(!native.emagged(), "the unified getter stays cleared with both stores originally set")
+	TEST_ASSERT_EQUAL(native.emag_notifications, 2, "clearing publishes the state key once")
+	key_set(native, EMAG_EMAGGED, TRUE)
+	settle()
+	TEST_ASSERT_EQUAL(native.emag_notifications, 3, "a direct native key write notifies the unified getter")
+	key_set(native, EMAG_EMAGGED, FALSE)
+	settle()
+	TEST_ASSERT_EQUAL(native.emag_notifications, 4, "a direct native key clear notifies the unified getter")
+	cap_set(native, CAP_EMAGGED, TRUE)
+	settle()
+	TEST_ASSERT_EQUAL(native.emag_notifications, 5, "a direct legacy bit write notifies the same getter")
+	cap_set(native, CAP_EMAGGED, FALSE)
+	settle()
+	TEST_ASSERT_EQUAL(native.emag_notifications, 6, "a direct legacy bit clear notifies the same getter")
+	var/obj/machinery/deployable/barrier/barrier = mach(/obj/machinery/deployable/barrier, tile(5, 2))
+	barrier.set_emagged(1)
+	TEST_ASSERT_EQUAL(barrier.emagged, 1, "concrete barrier retains its first numeric damage stage")
+	barrier.set_emagged(2)
+	TEST_ASSERT_EQUAL(barrier.emagged, 2, "concrete barrier retains its distinct second numeric stage")
+
+// Canonical power refusals through the public click resolver. Fixture conditions are
+// established with existing setters; the busy branch starts real breaker work.
+/datum/unit_test/dq_hc_struct/breaker_locked_click_refuses
+/datum/unit_test/dq_hc_struct/breaker_locked_click_refuses/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/power/breakerbox/B = mach(/obj/machinery/power/breakerbox, tile(3, 2))
+	B.set_update_locked(TRUE)
+	var/old_on = B.on
+	var/datum/op_result/R = test_click(H, B)
+	TEST_ASSERT(R && (R.outcome & ACT_REFUSED), "a locked breaker refuses the public hand click")
+	TEST_ASSERT_EQUAL(R.reason, MSG(breakerbox/locked), "the actual requirement returns the canonical locked reason")
+	TEST_ASSERT_EQUAL(B.on, old_on, "refusal preserves the breaker state")
+	TEST_ASSERT(!task_busy(B), "refusal starts no breaker work")
+
+/datum/unit_test/dq_hc_struct/breaker_busy_click_refuses
+/datum/unit_test/dq_hc_struct/breaker_busy_click_refuses/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/mob/living/carbon/human/other = person(tile(3, 3))
+	var/obj/machinery/power/breakerbox/B = mach(/obj/machinery/power/breakerbox, tile(3, 2))
+	var/old_on = B.on
+	test_click(H, B)
+	TEST_ASSERT(task_busy(B), "the first public click starts actual breaker work")
+	var/datum/op_result/R = test_click(other, B)
+	TEST_ASSERT(R && (R.outcome & ACT_REFUSED), "another actor is refused while the breaker is working")
+	TEST_ASSERT_EQUAL(R.reason, MSG(breakerbox/busy), "the actual requirement returns the canonical busy reason")
+	TEST_ASSERT_EQUAL(B.on, old_on, "the refused click does not toggle the breaker")
+	task_release_busy(B)
+
+/datum/unit_test/dq_hc_struct/heavy_cable_rejects_normal_coil
+/datum/unit_test/dq_hc_struct/heavy_cable_rejects_normal_coil/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/cable/heavyduty/C = allocate(/obj/structure/cable/heavyduty, tile(3, 2))
+	var/obj/item/stack/cable_coil/W = allocate(/obj/item/stack/cable_coil, tile(2, 2))
+	TEST_ASSERT(H.put_in_active_hand(W), "the actor holds the actual normal coil")
+	var/old_amount = W.amount
+	var/old_d1 = C.d1
+	var/old_d2 = C.d2
+	var/datum/op_result/R = test_click(H, C, W)
+	TEST_ASSERT(R && (R.outcome & ACT_REFUSED), "a normal coil cannot connect to heavy cable")
+	TEST_ASSERT_EQUAL(R.reason, MSG(heavy_cable/needs_heavier), "the actual requirement names the needed heavier cable")
+	TEST_ASSERT_EQUAL(W.amount, old_amount, "refusal spends no coil")
+	TEST_ASSERT_EQUAL(C.d1, old_d1, "refusal preserves the first endpoint")
+	TEST_ASSERT_EQUAL(C.d2, old_d2, "refusal preserves the second endpoint")
+
+/datum/unit_test/dq_hc_struct/privacy_cooldown_click_refuses
+/datum/unit_test/dq_hc_struct/privacy_cooldown_click_refuses/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/privacyswitch/S = allocate(/obj/structure/privacyswitch, tile(3, 2))
+	S.set_use_cooldown(world.time + 5 MINUTES)
+	var/area/here = get_area(S)
+	var/old_flags = here.flags
+	var/old_icon = S.icon_state
+	var/datum/op_result/R = test_click(H, S)
+	TEST_ASSERT(R && (R.outcome & ACT_REFUSED), "a cooling privacy switch refuses the public click")
+	TEST_ASSERT_EQUAL(R.reason, MSG(privacy_switch/cooling_down), "the actual requirement returns the canonical cooldown reason")
+	TEST_ASSERT_EQUAL(here.flags, old_flags, "refusal preserves the area's privacy")
+	TEST_ASSERT_EQUAL(S.icon_state, old_icon, "refusal preserves the displayed state")
+	TEST_ASSERT(!asked(H), "refusal opens no privacy question")
+
+/datum/unit_test/dq_hc_struct/library_scanner_held_book_inserts
+/datum/unit_test/dq_hc_struct/library_scanner_held_book_inserts/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/libraryscanner/S = mach(/obj/machinery/libraryscanner, tile(3, 2))
+	var/obj/item/book/B = allocate(/obj/item/book, H.loc)
+	TEST_ASSERT(H.put_in_active_hand(B), "the reader holds an actual book")
+	var/datum/op_result/R = test_click(H, S, B)
+	TEST_ASSERT_EQUAL(R?.key, "insert_book", "the held book selects insertion ahead of window opening")
+	TEST_ASSERT_EQUAL(B.loc, S, "the actual book moves into the scanner")
+	TEST_ASSERT(H.get_active_hand() != B, "the reader's actual hand releases the inserted book")
+
+/datum/unit_test/dq_hc_struct/fire_alarm_held_item_triggers
+/datum/unit_test/dq_hc_struct/fire_alarm_held_item_triggers/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/firealarm/F = mach(/obj/machinery/firealarm, tile(3, 2))
+	var/obj/item/pen/P = allocate(/obj/item/pen, H.loc)
+	TEST_ASSERT(H.put_in_active_hand(P), "the actor holds an ordinary non-tool item")
+	TEST_ASSERT(!F.firewarn, "the real alarm starts quiet")
+	var/datum/op_result/R = test_click(H, F, P)
+	TEST_ASSERT_EQUAL(R?.key, "firealarm_trigger", "the held-item route precedes the empty-hand window route")
+	TEST_ASSERT(F.firewarn, "the actual item touch raises the fire alarm")
+	F.reset()
+
+/datum/unit_test/dq_hc_struct/breaker_multitool_opens_tag_question
+/datum/unit_test/dq_hc_struct/breaker_multitool_opens_tag_question/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/power/breakerbox/B = mach(/obj/machinery/power/breakerbox, tile(3, 2))
+	var/obj/item/multitool/M = allocate(/obj/item/multitool, H.loc)
+	TEST_ASSERT(H.put_in_active_hand(M), "the operator holds a real multitool")
+	var/old_tag = B.RCon_tag
+	var/old_on = B.on
+	var/datum/op_result/R = test_click(H, B, M)
+	TEST_ASSERT_EQUAL(R?.key, "breakerbox_use", "the multitool selects use rather than hand toggling")
+	TEST_ASSERT(asked(H), "the actual use route opens the RCON naming question")
+	test_answer(H, null, REQ_CANCELLED)
+	TEST_ASSERT_EQUAL(B.RCon_tag, old_tag, "cancel keeps the tag")
+	TEST_ASSERT_EQUAL(B.on, old_on, "the multitool never toggles power")
+	TEST_ASSERT(!task_busy(B), "it starts no hand reprogramming task")
+
+/datum/unit_test/dq_hc_struct/single_item_menus_preserve_disabled_rows
+/datum/unit_test/dq_hc_struct/single_item_menus_preserve_disabled_rows/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/list/cases = list(
+		/obj/machinery/button = list("button_press_item", "needs an item"),
+		/obj/machinery/button/doorbell = list("doorbell_rename", "needs an item"),
+		/obj/machinery/power/breakerbox = list("breakerbox_use", "needs an item"),
+		/obj/machinery/computer/aiupload = list("install_module", "needs an item"),
+		/obj/machinery/computer/borgupload = list("install_module", "needs a AI module"),
+		/obj/machinery/computer/teleporter = list("teleporter_computer_insert_card", "needs a data card"),
+	)
+	for(var/path in cases)
+		var/list/expected = cases[path]
+		var/obj/machinery/M = mach(path, tile(3, 2))
+		var/list/found
+		for(var/list/row as anything in op_menu(H, M, null))
+			if(row["key"] == expected[1])
+				found = row
+		TEST_ASSERT_NOTNULL(found, "[path] retains its single-item menu row with an empty hand")
+		TEST_ASSERT(!found?["enabled"], "that row is disabled without a held item")
+		TEST_ASSERT_EQUAL(found?["reason"], expected[2], "the original refusal stays visible")
+		qdel(M)
+
+/datum/unit_test/dq_hc_struct/emag_menus_follow_integrator_policy
+/datum/unit_test/dq_hc_struct/emag_menus_follow_integrator_policy/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/card/emag/card = allocate(/obj/item/card/emag, H.loc)
+	card.uses = 0
+	TEST_ASSERT(!card.can_emag(H), "the actual card is exhausted")
+	var/list/types = list(/obj/machinery/computer/arcade/battle, /obj/machinery/computer/arcade/clawmachine, /obj/machinery/computer/arcade/orion_trail, /obj/machinery/computer/message_monitor, /obj/machinery/computer/prison_shuttle, /obj/machinery/computer/specops_shuttle, /obj/machinery/computer/supplycomp)
+	for(var/path in types)
+		var/obj/machinery/M = mach(path, tile(3, 2))
+		for(var/obj/item/held as anything in list(null, card))
+			if(held)
+				TEST_ASSERT(H.put_in_active_hand(held), "the exhausted card is really held")
+			var/list/found
+			for(var/list/row as anything in op_menu(H, M, held))
+				if(row["key"] == "emag.use")
+					found = row
+			if(held)
+				TEST_ASSERT_NOTNULL(found, "the actual held sequencer reaches its item-bound op")
+				TEST_ASSERT(!found?["enabled"], "an exhausted card cannot subvert the machine")
+				TEST_ASSERT_EQUAL(found?["reason"], "That has no uses left.", "the real exhausted-card refusal is preserved")
+			else
+				TEST_ASSERT_NULL(found, "the integrator policy removes the legacy Emag row without a sequencer")
+			if(held)
+				H.drop_item()
+		TEST_ASSERT(!M.emagged(), "menu inspection cannot subvert the machine")
+		qdel(M)
+
+/datum/unit_test/dq_hc_struct/robot_blocked_menu_preserves_physical_selection
+/datum/unit_test/dq_hc_struct/robot_blocked_menu_preserves_physical_selection/run_gate()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, tile(2, 2))
+	var/obj/machinery/button/B = mach(/obj/machinery/button, tile(3, 2))
+	TEST_ASSERT(!R.is_remote_viewing(), "the actual keyless robot is not viewing through a camera")
+	var/list/found
+	for(var/list/row as anything in op_menu(R, B, null))
+		if(row["key"] == "robot_remote_blocked")
+			found = row
+	TEST_ASSERT_NOTNULL(found, "the robot still sees the Blocked menu row")
+	TEST_ASSERT(!found?["enabled"], "that row is disabled outside remote viewing")
+	TEST_ASSERT_EQUAL(found?["reason"], "not possible right now", "the original disabled reason is preserved")
+	var/datum/op_result/click = test_click(R, B)
+	TEST_ASSERT(click?.key != "robot_remote_blocked", "offering the disabled menu row cannot swallow an ordinary physical click")
+	var/mob/living/carbon/human/H = person()
+	for(var/list/row as anything in op_menu(H, B, null))
+		TEST_ASSERT(row["key"] != "robot_remote_blocked", "the robot-only row is never offered to a human")
+
+/datum/unit_test/dq_hc_struct/cell_item_menu_preserves_disabled_row
+/datum/unit_test/dq_hc_struct/cell_item_menu_preserves_disabled_row/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/cell/C = allocate(/obj/item/cell, tile(3, 2))
+	var/list/found
+	for(var/list/row as anything in op_menu(H, C, null))
+		if(row["key"] == "inject_cell")
+			found = row
+	TEST_ASSERT_NOTNULL(found, "the single-item Use row remains visible with an empty hand")
+	TEST_ASSERT(!found?["enabled"], "the item-use row cannot run without an item")
+	TEST_ASSERT_EQUAL(found?["reason"], "needs an item", "the old item-use refusal is preserved")

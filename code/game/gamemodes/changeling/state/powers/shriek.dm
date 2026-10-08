@@ -79,7 +79,7 @@
 			affected += M
 
 	for(var/obj/machinery/light/L in range(range, src))
-		L.on = TRUE
+		L.set_on(TRUE)
 		L.broken()
 
 	changeling.set_cooldown(CHANGELING_SCREECH, 10 SECONDS)

@@ -144,7 +144,7 @@ CAPABILITIES(/datum/guard_test_holder)
 		if(inside)
 			GLOB.destroy_transaction_depth++
 		thing.forceMove(holder)
-		var/adopted = holder.ledger?.entries[thing] ? TRUE : FALSE
+		var/adopted = holder.containment_ledger()?.entries[thing] ? TRUE : FALSE
 		if(inside)
 			GLOB.destroy_transaction_depth--
 		dying.destroy_phase = 0
@@ -165,7 +165,7 @@ CAPABILITIES(/datum/guard_test_holder)
 	holder.destroy_phase = LIFECYCLE_PHASE_CONTENTS
 	GLOB.destroy_transaction_depth++
 	thing.forceMove(holder)
-	var/adopted = holder.ledger?.entries[thing] ? TRUE : FALSE
+	var/adopted = holder.containment_ledger()?.entries[thing] ? TRUE : FALSE
 	GLOB.destroy_transaction_depth--
 	holder.destroy_phase = 0
 	thing.forceMove(run_loc_floor_bottom_left)

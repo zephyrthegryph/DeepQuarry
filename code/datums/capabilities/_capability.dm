@@ -13,27 +13,6 @@
 // or in a lazily created datum from cap_data(holder, capability). List order is the order of the
 // menu, of examine lines and of appearance layers.
 
-/datum/capability
-	/// Identity for without(): defaults to the type. Two entries with one key cannot coexist.
-	var/key
-	/// This capability's entries need these CAP_* bits SET (behind = COVER|PANEL: reachable only with
-	/// the cover / panel open). Merged onto its entries by cap_apply_gating().
-	var/behind = NONE
-	/// Entries refused while this lock bit is set (LOCK).
-	var/locked_by = NONE
-	/// PROC_REF on the holder, (mob/user, obj/item/held): TRUE, FALSE (else_say) or a reason text.
-	var/needs
-	var/else_say
-	/// Capability-level: FALSE makes every entry this capability builds refuse while the holder is
-	/// broken / unpowered (merged onto the entries by cap_apply_gating()). TRUE (the default) leaves
-	/// each entry's own works_broken / works_unpowered in charge.
-	var/works_broken = TRUE
-	var/works_unpowered = TRUE
-	/// LOG_GAME, LOG_ADMIN or null: the dispatcher logs each successful entry at this level.
-	var/log
-	/// The compartment (BAY_*) the capability's entries are used at, or null (see op_at_reason()).
-	var/bay_at
-
 /// The interactions this capability offers on holder: /datum/interaction flyweights, built once
 /// per (type, capability) and cached. Each carries its gating (behind/locked_by/needs/works_*).
 /datum/capability/proc/interactions(atom/holder)
@@ -45,8 +24,6 @@
 
 /// Adds this capability's layers to look (look.state/overlay/gauge/glow). Called before the
 /// holder's own draw() body runs past ..() (DM reserves the name appearance).
-/datum/capability/proc/draw(atom/holder, datum/look/look)
-	return
 
 /// A capability owns UI actions by defining `/datum/capability/<x>/proc/act_<action>(mob/user, atom/holder, ...args)`:
 /// the dispatcher finds it on the holder's capabilities when the holder has no act_<action> itself. The
@@ -71,21 +48,13 @@
 	return null
 
 /// Verbs to hide on holder right now (re-evaluated on change).
-/datum/capability/proc/hidden_verbs(atom/holder)
-	return null
 
 /// Native verbs this capability gives its holder: the holder has them while it has the capability
 /// (atom/granted_verbs() collects them; hidden_verbs() still wins).
-/datum/capability/proc/verbs()
-	return null
 
 /// Ownership entries (owns(...)) this capability contributes to its holder type's ownership table
 /// (doc/rewrite/ownership.md §1.2): a slot owns its var, so the type declares nothing for it. Per
 /// type and pure, like capabilities(): read only the capability's own settings.
-/datum/capability/proc/owned()
-	RETURN_TYPE(/list)
-	return list()
-
 /// An entry of holder (this capability's or another's) is about to run its handler for user:
 /// TRUE stops it there (this capability already told the user why, e.g. an electrified door
 /// zapped them). Side effects are allowed: it runs once per dispatch, never while resolving.
@@ -94,10 +63,6 @@
 
 /// refine(key, ...) on this capability (not an op): a new capability with `overrides` (refine()'s named fields,
 /// field -> value) applied, or null when it has nothing refinable. The default refuses (a stack_trace names the key).
-/datum/capability/proc/refined(list/overrides)
-	stack_trace("refine('[key]'): [type] has nothing refine() can change")
-	return null
-
 /// Init / teardown hooks for per-instance state (default children, lazily created data).
 /datum/capability/proc/legacy_holder_init(atom/holder, mapload)
 	return

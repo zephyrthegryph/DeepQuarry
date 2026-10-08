@@ -1,5 +1,75 @@
-/obj/machinery/atmospherics/valve/shutoff|human|none => |
-/obj/machinery/atmospherics/valve/shutoff|robot|none => |gen_robot_interaction_swallow:not possible right now
-/obj/machinery/atmospherics/valve/shutoff|ai|none => |
-/obj/machinery/atmospherics/valve/shutoff|ghost|none => |
+human|none menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|none menu: Toggle automatic control
+human|none click: Click: Toggle automatic control
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+robot|none menu: Toggle automatic control
+robot|none click: Click: Toggle automatic control
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle automatic control
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Toggle automatic control
+human|/obj/item/tool/crowbar menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle automatic control
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Toggle automatic control
+human|/obj/item/tool/wrench menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle automatic control
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Unwrench
+human|/obj/item/tool/wrench click: Click: Unwrench
+human|/obj/item/tool/wirecutters menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle automatic control
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Toggle automatic control
+human|/obj/item/multitool menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle automatic control
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Toggle automatic control
+human|/obj/item/weldingtool menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle automatic control
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Toggle automatic control
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle automatic control
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Toggle automatic control
+human|/obj/item/stack/material/steel menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle automatic control
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Toggle automatic control
+human|/obj/item/card/id menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle automatic control
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Toggle automatic control
+human|/obj/item menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle automatic control
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Toggle automatic control
+human|/obj/item/stack/material menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Toggle automatic control
+human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material click: Click: Toggle automatic control
+human|/obj/item/pipe_painter menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|/obj/item/pipe_painter menu: Move To Top
+human|/obj/item/pipe_painter menu: Painter
+human|/obj/item/pipe_painter menu: Toggle automatic control
+human|/obj/item/pipe_painter menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pipe_painter click: Click: Painter
+keys: circuit, drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, manual, painter, robot_remote_blocked, unwrench
 

@@ -49,28 +49,25 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom
 
 /obj/structure/bed/chair/wheelchair/relaymove(mob/user, direction)
 	// Redundant check?
-	// The pulling relation's own on_link()/on_unlink() (code/datums/om/library.dm)
-	// no longer store pulling/pulledby at all (OM relations step 6) -- PULLING()
-	// is a live graph read, so this re-fetches it after every om_unlink() rather
-	// than trusting a cached local, matching the old field's always-live reads.
+	// pulling_target() is a live read of the link, so this re-fetches it after every link_break() rather than trusting a cached local.
 	var/mob/living/pulling = src?.pulling_target()
 	if(user.stat || user.has_status(STAT_STUNNED) || user.has_status(STAT_WEAKENED) || user.has_status(STAT_PARALYZED) || user.lying || user.restrained())
 		if(user==pulling)
-			om_unlink(src, pulling, /datum/om/relation/pulling)
+			link_break(src, LK_PULLING, pulling)
 			to_chat(user, span_warning("You lost your grip!"))
 		return
 	if(has_buckled_mobs() && pulling && (user in src?.buckled_mob_list()))
 		if(pulling.stat || pulling.has_status(STAT_STUNNED) || pulling.has_status(STAT_WEAKENED) || pulling.has_status(STAT_PARALYZED) || pulling.lying || pulling.restrained())
-			om_unlink(src, pulling, /datum/om/relation/pulling)
+			link_break(src, LK_PULLING, pulling)
 			pulling = src?.pulling_target()
 	if(user?.pulling_target() && (user == pulling))
-		om_unlink(src, pulling, /datum/om/relation/pulling)
+		link_break(src, LK_PULLING, pulling)
 		return
 	if(propelled)
 		return
 	if(pulling && (get_dist(src, pulling) > 1))
 		var/mob/living/was_pulling = pulling
-		om_unlink(src, pulling, /datum/om/relation/pulling)
+		link_break(src, LK_PULLING, pulling)
 		pulling = src?.pulling_target()
 		if(user==was_pulling)
 			return
@@ -131,7 +128,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom
 				var/mob/living/pulling = src?.pulling_target()
 				if (pulling && (get_dist(src, pulling) > 1))
 					var/mob/living/was_pulling = pulling
-					om_unlink(src, pulling, /datum/om/relation/pulling)
+					link_break(src, LK_PULLING, pulling)
 					to_chat(was_pulling, span_warning("You lost your grip!"))
 			else
 				if (occupant && (src.loc != occupant.loc))
@@ -162,12 +159,12 @@ CAPABILITIES(/obj/structure/bed/chair/wheelchair)
 		if(!pulling)
 			if(user?.pulling_target())
 				user.stop_pulling()
-			om_link(src, user, /datum/om/relation/pulling)
+			pull_link(user)
 			user.set_dir(get_dir(user, src))
 			to_chat(user, "You grip \the [name]'s handles.")
 		else
 			to_chat(user, "You let go of \the [name]'s handles.")
-			om_unlink(src, pulling, /datum/om/relation/pulling)
+			link_break(src, LK_PULLING, pulling)
 		return
 
 /obj/structure/bed/chair/wheelchair/Bump(atom/A)
@@ -240,7 +237,7 @@ CAPABILITIES(/obj/structure/bed/chair/wheelchair)
 	if(!pulling)
 		return
 	if(get_dist(src, pulling) > 1) // We are too far away? Losing control.
-		om_unlink(src, pulling, /datum/om/relation/pulling)
+		link_break(src, LK_PULLING, pulling)
 	pulling = src?.pulling_target()
 	if(pulling)
 		pulling.set_dir(get_dir(pulling, src)) // When everything is right, face the wheelchair

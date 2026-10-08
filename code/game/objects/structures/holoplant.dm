@@ -36,7 +36,7 @@
 	if(!anchored || !operable())
 		return
 
-	plant = prepare_icon(emagged ? "emagged" : null)
+	plant = prepare_icon(emagged() ? "emagged" : null)
 	cut_overlays()
 	add_overlay(plant)
 	set_light(2)

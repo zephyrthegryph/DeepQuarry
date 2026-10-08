@@ -10,7 +10,6 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "whetstone"
 	w_class = ITEMSIZE_SMALL
-	latent_safe = TRUE
 	MATERIAL_BULK(MAT_STEEL, 500)
 
 /// A box with one internal, latent-contents slot (like a closet's interior,
@@ -20,8 +19,6 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "toolbox"
 	w_class = ITEMSIZE_NORMAL
-	latent_contents = TRUE
-	latent_idle_delay = 1 SECONDS
 
 /datum/om/relation/slot/dq_latency_test_interior
 	holder = /obj/item/dq_latency_test_box
@@ -40,8 +37,6 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "toolbox"
 	w_class = ITEMSIZE_NORMAL
-	latent_contents = TRUE
-	latent_idle_delay = 1 SECONDS
 
 // The real internals and stock slots (stock.dm), held by this test machine: the sweep's stock
 // exclusion keys on CONTAINER_SLOT_STOCK, so the subtypes keep the production semantics.
@@ -57,7 +52,7 @@
 	if(!A || QDELETED(A) || !A.loc)
 		return "gone or loc-less"
 	var/list/why = list()
-	if(!A.loc.latent_contents)
+	if(!A.loc?.latent_contents_enabled())
 		why += "holder has no latent_contents"
 	if(!dq_latent_eligible(A.type))
 		why += "type not latent-eligible"
@@ -72,7 +67,7 @@
 	state_collect_subtree(A, nodes)
 	var/list/counts = state_internal_ref_counts(nodes, nodes.Copy())
 	why += "internal refs one-pass [counts[1]] vs per-node [state_internal_refs(A, nodes.Copy())]"
-	why += "idle [ELAPSED(A, latent_touched_at, CLOCK_WORLD)] of [A.loc.latent_idle_delay]"
+	why += "idle [ELAPSED(A, latent_touched_at, CLOCK_WORLD)] of [A.loc?.latent_idle_delay_value()]"
 	return jointext(why, ", ")
 
 /// can_be_latent() asked from a test's Run(), which holds `A` in one local variable. Calling this
@@ -96,18 +91,24 @@
 			return T
 	return null
 
+/// Eligibility diagnostics are shared scratch; every test restores the values present at entry.
+/datum/unit_test/proc/dq_latency_isolate_diagnostics()
+	set_global("latency_last_ineligible", GLOB.latency_last_ineligible)
+	set_global("latency_last_pin_reason", GLOB.latency_last_pin_reason)
+
 // ---- Per-condition unit tests ----
 
 /datum/unit_test/dq_latency_kill_switch
 
 /datum/unit_test/dq_latency_kill_switch/Run()
+	dq_latency_isolate_diagnostics()
 	var/turf/floor = dq_latency_floor()
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
 	var/obj/item/dq_latency_test_box/box = new(floor)
 	var/obj/item/dq_latency_test_item/item = new(box)
 	dq_ledger(box) // build the ledger, register with the sweep
 	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the eligibility check would see
-	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
+	item.latent_touched_at = world.time - (box?.latent_idle_delay_value() * 2)
 
 	set_config(/datum/config_entry/flag/latency_policy_enabled, FALSE)
 	TEST_ASSERT(!latent_ok(item), "the kill switch must refuse collapse when off")
@@ -118,25 +119,27 @@
 /datum/unit_test/dq_latency_idle_delay
 
 /datum/unit_test/dq_latency_idle_delay/Run()
+	dq_latency_isolate_diagnostics()
 	var/turf/floor = dq_latency_floor()
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
 	var/obj/item/dq_latency_test_box/box = new(floor)
 	var/obj/item/dq_latency_test_item/item = new(box)
 	dq_ledger(box)
 	TEST_ASSERT(!latent_ok(item), "a freshly touched item must not be latent-eligible yet")
-	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
+	item.latent_touched_at = world.time - (box?.latent_idle_delay_value() * 2)
 	TEST_ASSERT(latent_ok(item), "an item idle past the delay should be latent-eligible: [GLOB.latency_last_ineligible]")
 	qdel(box)
 
 /datum/unit_test/dq_latency_pin_blocks
 
 /datum/unit_test/dq_latency_pin_blocks/Run()
+	dq_latency_isolate_diagnostics()
 	var/turf/floor = dq_latency_floor()
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
 	var/obj/item/dq_latency_test_box/box = new(floor)
 	var/obj/item/dq_latency_test_item/item = new(box)
 	dq_ledger(box)
-	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
+	item.latent_touched_at = world.time - (box?.latent_idle_delay_value() * 2)
 	TEST_ASSERT(latent_ok(item), "should be eligible before any pin: [GLOB.latency_last_ineligible]")
 	item.latent_pin("test")
 	TEST_ASSERT(!latent_ok(item), "an explicit pin must block collapse")
@@ -155,6 +158,7 @@
 /datum/unit_test/dq_latency_turf_pins
 
 /datum/unit_test/dq_latency_turf_pins/Run()
+	dq_latency_isolate_diagnostics()
 	var/turf/floor = dq_latency_floor()
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
 	var/obj/item/dq_latency_test_item/item = new(floor)
@@ -164,12 +168,13 @@
 /datum/unit_test/dq_latency_viewer_blocks
 
 /datum/unit_test/dq_latency_viewer_blocks/Run()
+	dq_latency_isolate_diagnostics()
 	var/turf/floor = dq_latency_floor()
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
 	var/obj/item/dq_latency_test_box/box = new(floor)
 	var/obj/item/dq_latency_test_item/item = new(box)
 	dq_ledger(box)
-	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
+	item.latent_touched_at = world.time - (box?.latent_idle_delay_value() * 2)
 	TEST_ASSERT(latent_ok(item), "should be eligible with no viewers: [GLOB.latency_last_ineligible]")
 	LAZYADD(box.open_tguis, new /datum) // stand in for an open tgui/browse window
 	TEST_ASSERT(!latent_ok(item), "an open window on the holder must block collapse")
@@ -184,6 +189,7 @@
 /datum/unit_test/dq_latency_stock_slot_excluded
 
 /datum/unit_test/dq_latency_stock_slot_excluded/Run()
+	dq_latency_isolate_diagnostics()
 	var/turf/floor = dq_latency_floor()
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
 	var/obj/item/dq_latency_test_machine/machine = new(floor)
@@ -191,8 +197,8 @@
 	var/obj/item/dq_latency_test_item/product = new(floor)
 	TEST_ASSERT(move_into(machine, CONTAINER_SLOT_STOCK, product), "the product should move into the stock slot")
 	dq_ledger(machine)
-	part.latent_touched_at = world.time - (machine.latent_idle_delay * 2)
-	product.latent_touched_at = world.time - (machine.latent_idle_delay * 2)
+	part.latent_touched_at = world.time - (machine?.latent_idle_delay_value() * 2)
+	product.latent_touched_at = world.time - (machine?.latent_idle_delay_value() * 2)
 	TEST_ASSERT(latent_ok(part), "an idle item in the internals slot should be latent-eligible: [GLOB.latency_last_ineligible]")
 	TEST_ASSERT(!latent_ok(product), "an idle item in the stock slot must not be latent-eligible (C9 owns it)")
 	qdel(machine)
@@ -205,6 +211,7 @@
 /datum/unit_test/dq_latency_worn_held_pins
 
 /datum/unit_test/dq_latency_worn_held_pins/Run()
+	dq_latency_isolate_diagnostics()
 	var/obj/holder = new()
 	var/mob/living/carbon/human/H = new(holder)
 	H.set_species(SPECIES_HUMAN)
@@ -221,12 +228,13 @@
 /datum/unit_test/dq_latency_round_trip
 
 /datum/unit_test/dq_latency_round_trip/Run()
+	dq_latency_isolate_diagnostics()
 	var/turf/floor = dq_latency_floor()
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
 	var/obj/item/dq_latency_test_box/box = new(floor)
 	var/obj/item/dq_latency_test_item/item = new(box)
 	var/datum/ledger/L = dq_ledger(box)
-	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
+	item.latent_touched_at = world.time - (box?.latent_idle_delay_value() * 2)
 	TEST_ASSERT(latent_ok(item), "should be eligible: [GLOB.latency_last_ineligible]")
 	var/before_type = item.type
 	TEST_ASSERT(collapse_now(item), "the item should collapse under the policy")
@@ -246,12 +254,13 @@
 /datum/unit_test/dq_latency_no_thrash
 
 /datum/unit_test/dq_latency_no_thrash/Run()
+	dq_latency_isolate_diagnostics()
 	var/turf/floor = dq_latency_floor()
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
 	var/obj/item/dq_latency_test_box/box = new(floor)
 	var/obj/item/dq_latency_test_item/item = new(box)
 	var/datum/ledger/L = dq_ledger(box)
-	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
+	item.latent_touched_at = world.time - (box?.latent_idle_delay_value() * 2)
 	collapse_now(item)
 	var/list/things = L.latent_materialize_all()
 	TEST_ASSERT_EQUAL(length(things), 1, "expected one materialized atom")
@@ -273,6 +282,7 @@ CAPABILITIES(/datum/unit_test/dq_latency_fuzz)
 	owns_many(nameof(made))
 
 /datum/unit_test/dq_latency_fuzz/Run()
+	dq_latency_isolate_diagnostics()
 	own_take_all(src, nameof(made))
 	rel_set(src, nameof(floor), dq_latency_floor())
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
@@ -361,6 +371,7 @@ CAPABILITIES(/datum/unit_test/dq_latency_fuzz)
 /datum/unit_test/dq_latency_sweep_collapses
 
 /datum/unit_test/dq_latency_sweep_collapses/Run()
+	dq_latency_isolate_diagnostics()
 	var/turf/floor = dq_latency_floor()
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
 	// Built in a helper: a frame that creates the item (new() calls its procs) keeps a reference.
@@ -382,7 +393,7 @@ CAPABILITIES(/datum/unit_test/dq_latency_fuzz)
 /// Ages every real item in `box` past its idle delay without the caller holding one.
 /proc/dq_latency_age_contents(atom/box)
 	for(var/atom/movable/A as anything in contents_of(box))
-		A.latent_touched_at = world.time - (box.latent_idle_delay * 2)
+		A.latent_touched_at = world.time - (box?.latent_idle_delay_value() * 2)
 
 
 
@@ -398,6 +409,7 @@ CAPABILITIES(/datum/unit_test/dq_latency_fuzz)
 	var/list/outside_holder
 
 /datum/unit_test/dq_latency_sweep_outside_ref_blocks/Run()
+	dq_latency_isolate_diagnostics()
 	var/turf/floor = dq_latency_floor()
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
 	var/obj/item/dq_latency_test_box/box = dq_latency_new_box_with_item(floor)
@@ -414,3 +426,40 @@ CAPABILITIES(/datum/unit_test/dq_latency_fuzz)
 	TEST_ASSERT_EQUAL(length(box.contents), 1, "the held item is still in the box")
 	outside_holder = null
 	qdel(box)
+
+/datum/type_metadata_registry/register_test_defaults()
+	register(/obj/item/dq_containment_test/hooked, TYPE_META_SLOT_HOOKS, TRUE)
+	register(/obj/item/dq_destroy_transaction_content_probe, TYPE_META_SLOT_HOOKS, TRUE)
+	register(/obj/item/dq_destroy_transaction_mind_probe, TYPE_META_SLOT_HOOKS, TRUE)
+	register(/obj/item/dq_latency_test_item, TYPE_META_LATENT_SAFE, TRUE)
+	register(/obj/item/dq_latency_test_box, TYPE_META_LATENT_CONTENTS, TRUE)
+	register(/obj/item/dq_latency_test_box, TYPE_META_LATENT_IDLE_DELAY, 1 SECONDS)
+	register(/obj/item/dq_latency_test_machine, TYPE_META_LATENT_CONTENTS, TRUE)
+	register(/obj/item/dq_latency_test_machine, TYPE_META_LATENT_IDLE_DELAY, 1 SECONDS)
+	register(/obj/item/dq_diag_init_refuser, TYPE_META_LATENT_SAFE, FALSE)
+
+GLOBAL_VAR_INIT(dq_type_metadata_constructed, 0)
+
+/obj/dq_type_metadata_probe
+/obj/dq_type_metadata_probe/Initialize(mapload)
+	. = ..()
+	GLOB.dq_type_metadata_constructed++
+/obj/dq_type_metadata_probe/sub
+/obj/dq_type_metadata_probe/sub/leaf
+/obj/dq_type_metadata_redirect
+	parent_type = /obj/dq_type_metadata_probe
+
+/datum/unit_test/dq_type_metadata_inheritance/Run()
+	set_global("dq_type_metadata_constructed", 0)
+	var/datum/type_metadata_registry/R = allocate(/datum/type_metadata_registry)
+	R.register(/obj/dq_type_metadata_probe, TYPE_META_LATENT_SAFE, TRUE)
+	R.register(/obj/dq_type_metadata_probe, TYPE_META_LATENT_IDLE_DELAY, 3 SECONDS)
+	R.register(/obj/dq_type_metadata_probe/sub, TYPE_META_LATENT_SAFE, FALSE)
+	TEST_ASSERT_EQUAL(R.value(/obj/dq_type_metadata_probe, TYPE_META_LATENT_SAFE, FALSE), TRUE, "An explicit type declaration is readable without an instance")
+	TEST_ASSERT_EQUAL(R.value(/obj/dq_type_metadata_probe/sub/leaf, TYPE_META_LATENT_SAFE, TRUE), FALSE, "An explicit false subtype declaration overrides its true ancestor")
+	TEST_ASSERT_EQUAL(R.value(/obj/dq_type_metadata_probe/sub/leaf, TYPE_META_LATENT_IDLE_DELAY, 2 MINUTES), 3 SECONDS, "Other keys continue to inherit through the false override")
+	TEST_ASSERT_EQUAL(R.value(/obj/dq_type_metadata_redirect, TYPE_META_LATENT_SAFE, FALSE), TRUE, "Inheritance follows actual parent_type rather than path prefixes")
+	TEST_ASSERT_EQUAL(R.value(/obj, TYPE_META_SLOT_HOOKS, FALSE), FALSE, "An undeclared type uses the supplied default")
+	TEST_ASSERT_EQUAL(GLOB.dq_type_metadata_constructed, 0, "Dry type queries never allocate or initialize a content prototype")
+	TEST_ASSERT(latent_type_safe(/obj/item/paper), "Production registrations preserve a latent-safe parent")
+	TEST_ASSERT(!latent_type_safe(/obj/item/paper/sticky), "Production registrations preserve its explicit unsafe subtype")

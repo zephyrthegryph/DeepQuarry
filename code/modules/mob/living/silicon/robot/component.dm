@@ -373,6 +373,8 @@ CAPABILITIES(/datum/carried_afflictions)
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 
 CAPABILITIES(/obj/item)
+	// an item on a floor or in a hand is picked up, put down or used, not struck by another; its own ops answer before any blow
+	without("melee_hit")
 	owns_one(nameof(carried_afflictions), /datum/carried_afflictions)
 	owns_one(nameof(economic_adoption), /datum/economic_adoption)
 	owns_one(nameof(identity), /datum/identification)

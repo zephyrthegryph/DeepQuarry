@@ -72,7 +72,7 @@
 			// Type-table fast path (atom_type_table.dm): turfs have no on_materialize() of their
 			// own (tools/ci/init_lint.py keeps it so), so a turf whose type needs no registries,
 			// rules or OM is live once flagged. Most of the ~390 k map turfs take this path.
-			if(isturf(A) && !A.ledger && !(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK))
+			if(isturf(A) && !A.containment_ledger() && !(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK))
 				A.flags |= ATOM_MATERIALIZED
 			else
 				A.materialize()
@@ -82,7 +82,7 @@
 			PUBLISH_LEGACY(location, /datum/notice/atom_after_successful_initialized_on, A, arguments[1])
 			RANGE_WATCH(location, RANGE_INITIALIZED, A, arguments[1])
 			// Created straight into a holder with a ledger: record it now (containment C1).
-			location.ledger?.note_enter(A)
+			location.containment_ledger()?.note_enter(A)
 		if(created_atoms && from_template && ispath(the_type, /atom/movable))//we only want to populate the list with movables
 			created_atoms += A.get_all_contents()
 
