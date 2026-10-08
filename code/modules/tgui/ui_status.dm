@@ -11,21 +11,20 @@
 // The window also holds the host at RELEVANCE_WATCHED while it is open, so a host that parks its work by relevance keeps running for
 // a window that shows it. Either end being deleted queues a check too (participant_gone()), and the check closes the window.
 
-/// The keys of a mob that decide the status of a window it is using.
+/// The keys of a mob that decide the status of a window it is using (filled on first use: the stat defs exist by then).
+GLOBAL_LIST_EMPTY(ui_status_user_keys)
+
 /proc/ui_status_user_keys()
-	var/static/list/keys
-	if(!keys)
-		keys = list(ATOM_KEY_LOC, MOB_KEY_LOC, MOB_KEY_STATUS, MOB_KEY_HANDS, MOB_KEY_EQUIPMENT, MOB_KEY_CONDITIONS, MOB_KEY_CLIENT, nameof(/mob::stat), nameof(/atom/movable::anchored))
+	if(!length(GLOB.ui_status_user_keys))
+		GLOB.ui_status_user_keys = list(ATOM_KEY_LOC, MOB_KEY_LOC, MOB_KEY_STATUS, MOB_KEY_HANDS, MOB_KEY_EQUIPMENT, MOB_KEY_CONDITIONS, MOB_KEY_CLIENT, nameof(/mob::stat), nameof(/atom/movable::anchored))
 		var/datum/stat_def/can_act = stat_def_of(STAT_CAN_ACT)
 		if(can_act)
-			keys += can_act.stat_key
-			keys += can_act.name // a stat with a var publishes under the var's name (stat recompute: changed(E, 0, name))
-	return keys
+			GLOB.ui_status_user_keys += can_act.stat_key
+			GLOB.ui_status_user_keys += can_act.name // a stat with a var publishes under the var's name (stat recompute: changed(E, 0, name))
+	return GLOB.ui_status_user_keys
 
 /// The keys of a window's host that decide its status: it moved.
-/proc/ui_status_host_keys()
-	var/static/list/keys = list(ATOM_KEY_LOC, MOB_KEY_LOC)
-	return keys
+GLOBAL_LIST_INIT(ui_status_host_keys, list(ATOM_KEY_LOC, MOB_KEY_LOC))
 
 /// The reaction the window observes its user and host with (one per window, so it can be taken back).
 /datum/tgui/proc/status_trigger_for(list/keys)
@@ -41,7 +40,7 @@
 	var/datum/owner_obj = src_object()
 	var/datum/host = QDELETED(owner_obj) ? null : owner_obj.tgui_host(watched_user)
 	if(host && host != watched_user && ismovable(host))
-		observe(host, status_trigger_for(ui_status_host_keys()), src, TYPE_PROC_REF(/datum/tgui, status_changed))
+		observe(host, status_trigger_for(GLOB.ui_status_host_keys), src, TYPE_PROC_REF(/datum/tgui, status_changed))
 	if(!QDELETED(owner_obj))
 		hold(owner_obj, STAT_RELEVANCE, RELEVANCE_WATCHED, src)
 	log_tgui(watched_user, "status watching user[host ? " and host [host]" : ""]", context = "ui_status/status_watch")

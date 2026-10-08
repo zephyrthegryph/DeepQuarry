@@ -110,7 +110,6 @@ CAPABILITIES(/datum/tag_menu_panel)
 /datum/tag_menu_panel/proc/ui_act_refresh(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/tag_menu_panel/proc/ui_act_untag(datum/act/op/A, ref_arg)
@@ -119,7 +118,6 @@ CAPABILITIES(/datum/tag_menu_panel)
 		return FALSE
 	var/ref = "[ref_arg]"
 	holder().topic_internal(user, list("_src_" = "holder", "del_tag" = ref))
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/tag_menu_panel/proc/ui_act_mark(datum/act/op/A, ref_arg)
@@ -128,7 +126,6 @@ CAPABILITIES(/datum/tag_menu_panel)
 		return FALSE
 	var/ref = "[ref_arg]"
 	holder().topic_internal(user, list("_src_" = "holder", "mark_datum" = ref))
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/tag_menu_panel/proc/ui_act_vv(datum/act/op/A, ref_arg)
@@ -209,6 +206,8 @@ CAPABILITIES(/datum/dq_investigate_panel)
 	var/tmp/datum/admins/holder
 	var/list/shown_rows
 
+TRACKED(/datum/unban_panel, shown_rows)
+
 /datum/unban_panel/New(datum/admins/owner_holder)
 	..()
 	rel_set(src, nameof(holder), owner_holder)
@@ -223,8 +222,9 @@ CAPABILITIES(/datum/unban_panel)
 	snapshot_bans()
 
 /datum/unban_panel/proc/snapshot_bans()
-	shown_rows = list()
+	var/list/rows = list()
 	if(!GLOB.banlist)
+		set_shown_rows(rows)
 		return
 	// GLOB.banlist is a shared savefile cursor — record the prior cd
 	// and restore it after the snapshot so concurrent ban operations
@@ -249,7 +249,7 @@ CAPABILITIES(/datum/unban_panel)
 				expiry = "[raw_min] Minutes"
 		else
 			expiry = "Permaban"
-		shown_rows += list(list(
+		rows += list(list(
 			"key_id" = "[key][id]",
 			"key" = "[key]",
 			"id" = "[id]",
@@ -259,6 +259,7 @@ CAPABILITIES(/datum/unban_panel)
 			"expiry" = "[expiry]",
 		))
 	GLOB.banlist.cd = prior_cd
+	set_shown_rows(rows)
 
 /// /datum/unban_panel's window data.
 /datum/unban_panel/ui_data(datum/act/eval/A)
@@ -278,7 +279,6 @@ CAPABILITIES(/datum/unban_panel)
 	if(!ui_gate(A))
 		return FALSE
 	snapshot_bans()
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/unban_panel/proc/ui_act_unban(datum/act/op/A, key_id_arg)
@@ -288,7 +288,6 @@ CAPABILITIES(/datum/unban_panel)
 	var/key_id = "[key_id_arg]"
 	holder().topic_internal(user, list("unbanf" = key_id))
 	snapshot_bans()
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/unban_panel/proc/ui_act_edit(datum/act/op/A, key_id_arg)
@@ -298,7 +297,6 @@ CAPABILITIES(/datum/unban_panel)
 	var/key_id = "[key_id_arg]"
 	holder().topic_internal(user, list("unbane" = key_id))
 	snapshot_bans()
-	SStgui.update_uis(src)
 	return TRUE
 
 // (newbanjob unjobbanpanel was dead code — file not in DME; no panel here.)
@@ -490,7 +488,6 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	var/title = "[title_arg]"
 	// use REF() macro (canonical form) instead of legacy \ref[target] interpolation.
 	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target())))
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/jobban_panel/proc/ui_act_toggle_dept(datum/act/op/A, bantype_arg)
@@ -499,13 +496,11 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 		return FALSE
 	var/bantype = "[bantype_arg]"
 	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target())))
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/jobban_panel/proc/ui_act_refresh(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	SStgui.update_uis(src)
 	return TRUE
 
 // ---- Vending log viewer --------------------------------------------------
@@ -548,11 +543,14 @@ CAPABILITIES(/datum/dq_vending_log_panel)
 	var/list/books
 	var/error_msg = ""
 
+TRACKED(/datum/dq_delete_book_panel, books)
+TRACKED(/datum/dq_delete_book_panel, error_msg)
+
 /datum/dq_delete_book_panel/New(obj/machinery/librarycomp/comp, list/book_rows, error)
 	..()
 	rel_set(src, nameof(our_comp), comp)
-	books = book_rows || list()
-	error_msg = error || ""
+	set_books(book_rows || list())
+	set_error_msg(error || "")
 
 CAPABILITIES(/datum/dq_delete_book_panel)
 	interface("DeleteBookPanel", title = "Delete Book", rights = R_ADMIN)
@@ -580,7 +578,6 @@ CAPABILITIES(/datum/dq_delete_book_panel)
 		return FALSE
 	var/by = "[by_arg]"
 	our_comp().tgui_act("sort", list("field" = by), ui, ui.state())
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/dq_delete_book_panel/proc/ui_act_order_by_id(datum/act/op/A)
@@ -589,7 +586,6 @@ CAPABILITIES(/datum/dq_delete_book_panel)
 	if(!ui_gate(A))
 		return FALSE
 	our_comp().tgui_act("orderbyid", list(), ui, ui.state())
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/dq_delete_book_panel/proc/ui_act_delete(datum/act/op/A, id_arg)
@@ -599,7 +595,6 @@ CAPABILITIES(/datum/dq_delete_book_panel)
 		return FALSE
 	var/id = "[id_arg]"
 	our_comp().tgui_act("delid", list("id" = id), ui, ui.state())
-	SStgui.update_uis(src)
 	return TRUE
 
 // ---- Syndicate beacon (Virgo) --------------------------------------------
@@ -649,7 +644,6 @@ CAPABILITIES(/obj/machinery/syndicate_beacon/virgo)
 		return FALSE
 	var/mob/M = mob_ref
 	betraitor(user, M)
-	SStgui.update_uis(src)
 	return TRUE
 
 /// The list the UI_ARG_REF rows resolve refs in.

@@ -146,13 +146,11 @@ CAPABILITIES(/datum/newscaster_panel)
 	var/mob/user = A.actor
 	var/screen = "[screen_arg]"
 	forward_topic(user, "ac_setScreen=[screen]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_refresh(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_refresh=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_close(datum/act/op/A)
@@ -164,49 +162,41 @@ CAPABILITIES(/datum/newscaster_panel)
 /datum/newscaster_panel/proc/ui_act_view_wanted(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_view_wanted=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_create_channel(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_create_channel=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_view_channels(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_view=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_create_story(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_create_feed_story=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_menu_wanted(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_menu_wanted=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_menu_censor_story(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_menu_censor_story=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_menu_censor_channel(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_menu_censor_channel=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_set_signature(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_set_signature=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 // Channel selection.
@@ -215,40 +205,34 @@ CAPABILITIES(/datum/newscaster_panel)
 	var/mob/user = A.actor
 	var/ref = "[ref_arg]"
 	forward_topic(user, "ac_show_channel=[ref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_pick_censor_channel(datum/act/op/A, ref_arg)
 	var/mob/user = A.actor
 	var/ref = "[ref_arg]"
 	forward_topic(user, "ac_pick_censor_channel=[ref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_pick_d_notice(datum/act/op/A, ref_arg)
 	var/mob/user = A.actor
 	var/ref = "[ref_arg]"
 	forward_topic(user, "ac_pick_d_notice=[ref]")
-	SStgui.update_uis(src)
 	return TRUE
 // Channel create form.
 
 /datum/newscaster_panel/proc/ui_act_set_channel_name(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_set_channel_name=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_set_channel_lock(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_set_channel_lock=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_submit_new_channel(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_submit_new_channel=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 // Story create form.
@@ -256,19 +240,16 @@ CAPABILITIES(/datum/newscaster_panel)
 /datum/newscaster_panel/proc/ui_act_set_channel_receiving(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_set_channel_receiving=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_set_new_message(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_set_new_message=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_submit_new_message(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_submit_new_message=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 // Censorship.
@@ -277,52 +258,44 @@ CAPABILITIES(/datum/newscaster_panel)
 	var/mob/user = A.actor
 	var/ref = "[ref_arg]"
 	forward_topic(user, "ac_censor_channel_author=[ref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_censor_story_body(datum/act/op/A, ref_arg)
 	var/mob/user = A.actor
 	var/ref = "[ref_arg]"
 	forward_topic(user, "ac_censor_channel_story_body=[ref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_censor_story_author(datum/act/op/A, ref_arg)
 	var/mob/user = A.actor
 	var/ref = "[ref_arg]"
 	forward_topic(user, "ac_censor_channel_story_author=[ref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_toggle_d_notice(datum/act/op/A, ref_arg)
 	var/mob/user = A.actor
 	var/ref = "[ref_arg]"
 	forward_topic(user, "ac_toggle_d_notice=[ref]")
-	SStgui.update_uis(src)
 	return TRUE
 // Wanted issue.
 
 /datum/newscaster_panel/proc/ui_act_set_wanted_name(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_set_wanted_name=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_set_wanted_desc(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_set_wanted_desc=1")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_submit_wanted(datum/act/op/A, end_param)
 	var/mob/user = A.actor
 	var/end = "[end_param]"
 	forward_topic(user, "ac_submit_wanted=[end]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/newscaster_panel/proc/ui_act_cancel_wanted(datum/act/op/A)
 	var/mob/user = A.actor
 	forward_topic(user, "ac_cancel_wanted=1")
-	SStgui.update_uis(src)
 	return TRUE

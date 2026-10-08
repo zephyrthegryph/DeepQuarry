@@ -39,6 +39,13 @@ SYSTEM_DEF(ui_push)
 	. = !(ui in S.pending)
 	LAZYSET(S.pending, ui, (S.pending?[ui] || 0) | owed) // ALLOW(ownership): the UI push system's pending set, written and drained only by this system
 
+/// The datum whose windows an answer to a question this datum asked can change: itself, and for a window its host (a handler on /datum/tgui).
+/datum/proc/ui_push_host()
+	return src
+
+/datum/tgui/ui_push_host()
+	return src_object()
+
 /// Queues a coalesced push of every open window of `host` (delivered in phase R). Returns how many were queued.
 /proc/ui_push_mark(datum/host)
 	. = 0

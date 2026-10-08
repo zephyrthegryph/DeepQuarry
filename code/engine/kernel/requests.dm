@@ -431,6 +431,9 @@ SYSTEM_DEF(requests)
 		catch(var/exception/fault) // ALLOW(silent_catch): the request kernel's isolation point: one handler's runtime must not leak the act or the request
 			kernel().report_fault(fault, "request [R.type] handler [R.handler] on [R.owner.type]: [fault] ([fault.file]:[fault.line])")
 		A.release()
+		// An answer that was applied can change what the owner's windows show: they are pushed once, in phase R (code/modules/tgui/ui_push.dm).
+		if(outcome == REQ_ANSWERED)
+			ui_push_mark(R.owner.ui_push_host())
 		if(R.reservations)
 			request_costs_settle(R, handled != OP_REFUSED && handled != OP_FAILED)
 	if(R.reservations) // the owner went before the handler could run: nothing is spent

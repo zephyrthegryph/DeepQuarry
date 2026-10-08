@@ -188,3 +188,23 @@ TRACKED(/datum/dq_ui_out_host, other)
 	ui.status_unwatch()
 	TEST_ASSERT_NOTEQUAL(stat_value(host, STAT_RELEVANCE), RELEVANCE_WATCHED, "closed again: released")
 	qdel(ui)
+
+/// A window never goes stale for a change that comes from outside it: the magnetic console's path-moving flag is written by the
+/// controller's own repeat (magnet.dm), not by a button of the window, and an open window on it is still pushed once.
+/datum/unit_test/dq_ui_outputs_external_change_pushes_window
+
+/datum/unit_test/dq_ui_outputs_external_change_pushes_window/Run()
+	var/obj/machinery/magnetic_controller/ctrl = allocate(/obj/machinery/magnetic_controller, dq_containment_floor())
+	var/datum/tgui/dq_ui_probe/probe = new
+	LAZYADD(ctrl.open_tguis, probe)
+	dq_ui_frame() // the machine's own init marks settle
+	var/base = probe.pushes
+	dq_ui_frame()
+	TEST_ASSERT_EQUAL(probe.pushes, base, "nothing changed: nothing is pushed")
+	ctrl.set_path_moving(TRUE)
+	ctrl.set_path_moving(FALSE)
+	ctrl.set_path_moving(TRUE)
+	dq_ui_frame()
+	TEST_ASSERT_EQUAL(probe.pushes, base + 1, "the controller moving along its path from its own repeat pushes the open window once")
+	TEST_ASSERT(ctrl.path_moving, "and the state the window shows is the new one")
+	LAZYREMOVE(ctrl.open_tguis, probe)

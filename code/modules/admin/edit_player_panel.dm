@@ -206,13 +206,11 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 /datum/edit_player_panel/proc/ui_act_editrights(datum/act/op/A, mode_arg)
 	var/mode = "[mode_arg]"
 	forward_topic("editrights=[mode];key=[target().key]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_player_panel/proc/ui_act_revive(datum/act/op/A)
 	var/tref = "[REF(target())]"
 	forward_topic("revive=[tref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_player_panel/proc/ui_act_vv(datum/act/op/A)
@@ -224,7 +222,6 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 /datum/edit_player_panel/proc/ui_act_traitor(datum/act/op/A)
 	var/tref = "[REF(target())]"
 	forward_topic("traitor=[tref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_player_panel/proc/ui_act_priv_msg(datum/act/op/A)
@@ -260,7 +257,6 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 /datum/edit_player_panel/proc/ui_act_boot2(datum/act/op/A)
 	var/tref = "[REF(target())]"
 	forward_topic("boot2=[tref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_player_panel/proc/ui_act_warn(datum/act/op/A)
@@ -270,7 +266,6 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 /datum/edit_player_panel/proc/ui_act_newban(datum/act/op/A)
 	var/tref = "[REF(target())]"
 	forward_topic("newban=[tref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_player_panel/proc/ui_act_jobban2(datum/act/op/A)
@@ -286,13 +281,11 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 /datum/edit_player_panel/proc/ui_act_sendtoprison(datum/act/op/A)
 	var/tref = "[REF(target())]"
 	forward_topic("sendtoprison=[tref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_player_panel/proc/ui_act_sendbacktolobby(datum/act/op/A)
 	var/tref = "[REF(target())]"
 	forward_topic("sendbacktolobby=[tref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_player_panel/proc/ui_act_forcespeech(datum/act/op/A)
@@ -306,51 +299,43 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 	var/tref = "[REF(target())]"
 	var/mute_type = "[mute_type_arg]"
 	forward_topic("mute=[tref];mute_type=[mute_type]")
-	SStgui.update_uis(src)
 	return TRUE
 // Transformation
 
 /datum/edit_player_panel/proc/ui_act_turn_monkey(datum/act/op/A)
 	var/tref = "[REF(target())]"
 	forward_topic("turn_monkey=[tref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_player_panel/proc/ui_act_corgione(datum/act/op/A)
 	var/tref = "[REF(target())]"
 	forward_topic("corgione=[tref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_player_panel/proc/ui_act_turn_ai(datum/act/op/A)
 	var/tref = "[REF(target())]"
 	forward_topic("turn_ai=[tref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_player_panel/proc/ui_act_turn_robot(datum/act/op/A)
 	var/tref = "[REF(target())]"
 	forward_topic("turn_robot=[tref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_player_panel/proc/ui_act_turn_alien(datum/act/op/A)
 	var/tref = "[REF(target())]"
 	forward_topic("turn_alien=[tref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_player_panel/proc/ui_act_makeanimal(datum/act/op/A)
 	var/tref = "[REF(target())]"
 	forward_topic("makeanimal=[tref]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_player_panel/proc/ui_act_respawn(datum/act/op/A)
 	var/cref = target().client ? "[REF(target().client)]" : null
 	if(cref)
 		forward_topic("respawn=[cref]")
-		SStgui.update_uis(src)
 	return TRUE
 
 // DNA gene toggle
@@ -359,7 +344,6 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 	var/tref = "[REF(target())]"
 	var/block = "[block_arg]"
 	forward_topic("togmutate=[tref];block=[block]")
-	SStgui.update_uis(src)
 	return TRUE
 // simplemake
 
@@ -371,7 +355,6 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 	if(length(species))
 		qs += ";species=[species]"
 	forward_topic(qs)
-	SStgui.update_uis(src)
 	return TRUE
 // Thunderdome
 
@@ -401,7 +384,6 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 	var/tref = "[REF(target())]"
 	var/lang = "[lang_arg]"
 	forward_topic("toglang=[tref];lang=[lang]")
-	SStgui.update_uis(src)
 	return TRUE
 
 /// The holder this refers to (a relation view: null once that is deleted).

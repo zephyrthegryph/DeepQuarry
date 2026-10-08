@@ -499,9 +499,20 @@ fn parse_file(f: &SourceFile) -> Parts {
     let mut tracked = VarTable::new();
     let mut relations = VarTable::new();
     let mut published = Vec::new();
+    let mut caps_owner: Option<String> = None;
     for line in &lines {
         if line.starts_with('#') {
             continue;
+        }
+        // A CAPABILITIES(/type) block declares relations with ref_one / ref_many / rel_one / rel_many / own_one / own_many (nameof(var), ...).
+        if let Some(m) = pat_match!(r"^CAPABILITIES\(\s*(/[\w/]+)").captures(line) {
+            caps_owner = Some(m.s(1).to_string());
+        } else if !line.starts_with('\t') && !line.starts_with(' ') && !line.is_empty() {
+            caps_owner = None;
+        } else if let Some(owner) = &caps_owner {
+            if let Some(m) = pat_match!(r"^\s+(?:ref|rel|own)_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)").captures(line) {
+                relations.entry(owner.clone()).or_default().insert(m.s(1).to_string());
+            }
         }
         if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_BRIDGED|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(line) {
             tracked.entry(m.s(1).to_string()).or_default().insert(m.s(2).to_string());
@@ -1087,6 +1098,10 @@ fn generated_text(model: &Model) -> String {
             || proc.rel == GENERATED_REL
             || proc.owner.starts_with("/datum/capability")
         {
+            continue;
+        }
+        // A system's window (SSair's) reads the system's own vars: the system boundary lint owns that, not the generated reads.
+        if proc.name == "ui_data" && proc.owner.starts_with("/datum/system") {
             continue;
         }
         let mut kind = proc_kind(&proc.name).map(|k| k.to_string());

@@ -101,7 +101,15 @@ exempt_files = ["code/__defines/tgs.dm"]
 # The window hosts whose ui_data(A) is held to "read only what is tracked" (untracked_ui_read, and undeclared_read for an exact type): the hosts
 # that have been converted (no SStgui.update_uis() or hand changed() mark left). A host joins here in the commit that converts it; when the last
 # window host is in, the list goes and the rule is global. Exact owner types.
-ui_hosts = []
+ui_hosts = [
+  "/datum/tgui_module/agentcard",
+  "/datum/newscaster_panel",
+  "/datum/edit_player_panel",
+  "/datum/tag_menu_panel",
+  "/datum/unban_panel",
+  "/datum/jobban_panel",
+  "/datum/dq_delete_book_panel",
+]
 
 [lint.tracked]
 # tracked_lint.py exempt_path(): the TRACKED/SETTER/derive() index still reads these files; writes in them
@@ -263,7 +271,18 @@ core = [
 # DAMAGE_REACTION, DECLARE_EMAG, DECLARE_PERIODIC, DECLARE_REPEAT) reached zero: a hard ban there. Folders are only ever added.
 # The files (a directory ends in `/`, else an exact file) with no SStgui.update_uis() and no hand changed() mark left: a window there updates because its
 # ui_data(A) re-runs when something it reads changes. A hard ban there. Files are only ever added.
-ui_push_converted = []
+ui_push_converted = [
+  "code/modules/tgui/modules/agentcard.dm",
+  "code/modules/tgui/modules/appearance_changer.dm",
+  "code/modules/vore/eating/panel_databackend/vorepanel_set_attribute.dm",
+  "code/modules/mob/living/notes_panels.dm",
+  "code/modules/admin/admin_newscaster_panel.dm",
+  "code/modules/admin/edit_player_panel.dm",
+  "code/modules/admin/misc_admin_panels.dm",
+  "code/modules/admin/magnetic_console_panel.dm",
+  "code/modules/admin/edit_memory_panel.dm",
+  "code/modules/admin/traffic_control_panel.dm",
+]
 legacy_forms_converted = [
   "code/ATMOSPHERICS/",
   "code/_global_vars/",

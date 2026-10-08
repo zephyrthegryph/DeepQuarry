@@ -108,7 +108,6 @@ CAPABILITIES(/datum/edit_memory_panel)
 	var/new_role = A.step_value("a1")
 	if(new_role)
 		target_mind.assigned_role = new_role
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_edit_memory_a2_default(datum/act/op/A)
@@ -120,7 +119,6 @@ CAPABILITIES(/datum/edit_memory_panel)
 	var/new_memo = A.step_value("a2")
 	if(!isnull(new_memo))
 		target_mind.memory = new_memo
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_edit_ambitions_a3_default(datum/act/op/A)
@@ -136,7 +134,6 @@ CAPABILITIES(/datum/edit_memory_panel)
 	if(target_mind.current)
 		to_chat(target_mind.current, span_warning("Your ambitions have been changed by higher powers, they are now: [target_mind.ambitions]"))
 	log_and_message_admins("made [key_name(target_mind.current)]'s ambitions be '[target_mind.ambitions]'.")
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_obj_toggle_complete(datum/act/op/A, ref)
@@ -147,7 +144,6 @@ CAPABILITIES(/datum/edit_memory_panel)
 	var/datum/objective/O = ref
 	if(istype(O))
 		O.completed = !O.completed
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_obj_delete(datum/act/op/A, ref)
@@ -158,7 +154,6 @@ CAPABILITIES(/datum/edit_memory_panel)
 	var/datum/objective/O = ref
 	if(istype(O))
 		rel_remove(target_mind, nameof(target_mind.objectives), O)
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_obj_announce(datum/act/op/A)
@@ -177,14 +172,12 @@ CAPABILITIES(/datum/edit_memory_panel)
 	if(!ui_gate(A))
 		return FALSE
 	target_mind.begin_objective_add(user)
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_refresh_antags(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
 	snapshot_antag_blocks()
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_antag_add(datum/act/op/A, id)
@@ -195,7 +188,6 @@ CAPABILITIES(/datum/edit_memory_panel)
 	if(A2 && A2.add_antagonist(target_mind, 1, 1, 0, 1, 1))
 		log_admin("[key_name_admin(user)] made [key_name(target_mind)] into a [A2.role_text].")
 	snapshot_antag_blocks()
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_antag_remove(datum/act/op/A, id)
@@ -205,7 +197,6 @@ CAPABILITIES(/datum/edit_memory_panel)
 	if(A2)
 		A2.remove_antagonist(target_mind)
 	snapshot_antag_blocks()
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_antag_equip(datum/act/op/A, id)
@@ -214,7 +205,6 @@ CAPABILITIES(/datum/edit_memory_panel)
 	var/datum/antagonist/A2 = SSantag.all_antag_types[id]
 	if(A2 && target_mind.current)
 		A2.equip(target_mind.current)
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_antag_unequip(datum/act/op/A, id)
@@ -223,7 +213,6 @@ CAPABILITIES(/datum/edit_memory_panel)
 	var/datum/antagonist/A2 = SSantag.all_antag_types[id]
 	if(A2 && target_mind.current)
 		A2.unequip(target_mind.current)
-	SStgui.update_uis(src)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_antag_move_to_spawn(datum/act/op/A, id)
@@ -232,7 +221,6 @@ CAPABILITIES(/datum/edit_memory_panel)
 	var/datum/antagonist/A2 = SSantag.all_antag_types[id]
 	if(A2 && target_mind.current)
 		A2.place_mob(target_mind.current)
-	SStgui.update_uis(src)
 	return TRUE
 
 /// The list the UI_ARG_REF rows resolve refs in.

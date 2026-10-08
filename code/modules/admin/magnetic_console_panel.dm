@@ -74,7 +74,6 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	if(!ui_gate(A))
 		return FALSE
 	magnet_operation(user, "setfreq")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/magnetic_controller/proc/ui_act_set_code(datum/act/op/A)
@@ -83,7 +82,6 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 		return FALSE
 	// Legacy panel used the same "setfreq" handler for both.
 	magnet_operation(user, "setfreq")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/magnetic_controller/proc/ui_act_probe(datum/act/op/A)
@@ -91,7 +89,6 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	if(!ui_gate(A))
 		return FALSE
 	magnet_operation(user, "probe")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/magnetic_controller/proc/ui_act_toggle_power(datum/act/op/A)
@@ -99,7 +96,6 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	if(!ui_gate(A))
 		return FALSE
 	magnet_radio_op(user, "togglepower")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/magnetic_controller/proc/ui_act_elec_minus(datum/act/op/A)
@@ -107,7 +103,6 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	if(!ui_gate(A))
 		return FALSE
 	magnet_radio_op(user, "minuselec")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/magnetic_controller/proc/ui_act_elec_plus(datum/act/op/A)
@@ -115,7 +110,6 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	if(!ui_gate(A))
 		return FALSE
 	magnet_radio_op(user, "pluselec")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/magnetic_controller/proc/ui_act_mag_minus(datum/act/op/A)
@@ -123,7 +117,6 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	if(!ui_gate(A))
 		return FALSE
 	magnet_radio_op(user, "minusmag")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/magnetic_controller/proc/ui_act_mag_plus(datum/act/op/A)
@@ -131,7 +124,6 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	if(!ui_gate(A))
 		return FALSE
 	magnet_radio_op(user, "plusmag")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/magnetic_controller/proc/ui_act_speed_minus(datum/act/op/A)
@@ -139,7 +131,6 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	if(!ui_gate(A))
 		return FALSE
 	magnet_operation(user, "minusspeed")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/magnetic_controller/proc/ui_act_speed_plus(datum/act/op/A)
@@ -147,7 +138,6 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	if(!ui_gate(A))
 		return FALSE
 	magnet_operation(user, "plusspeed")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/magnetic_controller/proc/ui_act_set_path(datum/act/op/A)
@@ -155,7 +145,6 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	if(!ui_gate(A))
 		return FALSE
 	magnet_operation(user, "setpath")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/magnetic_controller/proc/ui_act_toggle_moving(datum/act/op/A)
@@ -163,5 +152,4 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	if(!ui_gate(A))
 		return FALSE
 	magnet_operation(user, "togglemoving")
-	SStgui.update_uis(src)
 	return TRUE
