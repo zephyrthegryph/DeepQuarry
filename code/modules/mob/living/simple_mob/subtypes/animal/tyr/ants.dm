@@ -298,17 +298,12 @@
 	return TRUE
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/life_special(datum/seq_frame/life/F)
-	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !task_busy(src) && isturf(src.loc))
+	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !is_working() && isturf(src.loc))
 		src.build_tile(src.loc)
 
-/// Starts building on `T`: a 5 s task (stays in place, conscious, one builder per turf).
+/// Starts building on `T`: a 5 s op (within one tile, conscious, one builder per turf). TRUE when it started.
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/proc/build_tile(turf/T)
-	if(nutrition < 75 || !istype(T) || (locate_within(T, /obj/effect/ant_structure)))
-		return FALSE
-	if(istext(task_start(/datum/task/mob_work/ant_build, src, T)))
-		return FALSE
-	act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to secrete a sticky substance.")))
-	return TRUE
+	return start_building(T)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/silver //transparent
 	name = "silver ant"
@@ -368,17 +363,12 @@
 	return TRUE
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/life_special(datum/seq_frame/life/F)
-	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !task_busy(src) && isturf(src.loc))
+	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !is_working() && isturf(src.loc))
 		src.build_tile(src.loc)
 
-/// Starts building on `T`: a 5 s task (stays in place, conscious, one builder per turf).
+/// Starts building on `T`: a 5 s op (within one tile, conscious, one builder per turf). TRUE when it started.
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/proc/build_tile(turf/T)
-	if(nutrition < 75 || !istype(T) || (locate_within(T, /obj/effect/ant_structure)))
-		return FALSE
-	if(istext(task_start(/datum/task/mob_work/ant_build, src, T)))
-		return FALSE
-	act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to secrete a sticky substance.")))
-	return TRUE
+	return start_building(T)
 
 /*
 ANT STRUCTURES
@@ -573,13 +563,25 @@ TYPE_TABLE(/obj/effect/spider/spiderling/antling, spiderling_grow_as, list(/mob/
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/build_product()
 	return build_type
 
-/mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_done(datum/task/task)
-	var/turf/T = task.target
+MSG_DEF(ant/building, null, span_notice("%U% begins to secrete a sticky substance."))
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants)
+	op("build", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(ant/building)), wait(5 SECONDS, keeps = WAIT_KEEPS_DEFAULT & ~STAY), then(PROC_REF(build_done)), on_interrupt(PROC_REF(build_interrupted)))
+
+/// The build op, started on `T` when the ant is hungry enough, the turf is free of ant work and the ant is idle.
+/mob/living/simple_mob/animal/tyr/mineral_ants/proc/start_building(turf/T)
+	if(nutrition < 75 || !istype(T) || (locate_within(T, /obj/effect/ant_structure)) || is_working())
+		return FALSE
+	var/datum/op_result/R = perform_op(src, T, "build", null, ORIGIN_AI, AUTH_AI)
+	return !!R && R.outcome != ACT_REFUSED
+
+/mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_done(datum/act/op/A)
+	var/turf/T = A.target
 	var/product = build_product()
 	if(!product || (locate_within(T, /obj/effect/ant_structure)))
 		return
 	adjust_nutrition(-30)
 	new product(T)
 
-/mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_interrupted(datum/task/task)
-	to_chat(src, span_warning("You need to stay still to build on \the [task.target]."))
+/mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_interrupted(datum/act/op/A)
+	to_chat(src, span_warning("You need to stay still to build on \the [A.target]."))
