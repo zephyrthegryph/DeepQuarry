@@ -84,6 +84,18 @@
 	probe.forceMove(far_turf)
 	TEST_ASSERT_EQUAL(relevance(probe), RELEVANCE_NONE, "put down far away: not")
 
+/// A tracked thing initialised inside a container before the proximity system's init stage (a mouse nest in a trash pile at map load) is carried at
+/// once: the source of its hold must exist from New(), not from initialize(). A fresh system instance has only had New().
+/datum/unit_test/dq_proximity/carried_before_init
+/datum/unit_test/dq_proximity/carried_before_init/run_proximity()
+	var/datum/system/proximity/fresh = new
+	TEST_ASSERT(fresh.carried, "a new proximity system already has its carried source")
+	var/obj/item/storage/box/carrier = allocate(/obj/item/storage/box, far_turf)
+	var/obj/prox_probe/probe = allocate(/obj/prox_probe, carrier)
+	fresh.member_update(probe)
+	TEST_ASSERT_EQUAL(relevance(probe), RELEVANCE_NEAR, "carried: held under the new system's source")
+	fresh.member_leave(probe)
+
 /// An every() parks while nobody is near, runs while somebody is, and parks again.
 /datum/unit_test/dq_proximity/every_parks_and_wakes
 /datum/unit_test/dq_proximity/every_parks_and_wakes/run_proximity()

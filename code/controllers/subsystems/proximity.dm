@@ -42,9 +42,10 @@ SYSTEM_DEF(proximity)
 	var/client/client
 	var/cell_id
 
-/datum/system/proximity/initialize()
+/// Made at New(), not at initialize(): the atoms boot before this system's init stage, and a tracked thing initialised inside a container (a mouse
+/// nest in a trash pile) is filed as carried at once, so its hold needs this source to exist then.
+/datum/system/proximity/preinit()
 	carried = new
-	return ..()
 
 /datum/system/proximity/reactions()
 	. = ..()
