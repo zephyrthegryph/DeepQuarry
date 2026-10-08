@@ -48,7 +48,6 @@ fn shared_cpu_boundaries_partition_nested_intervals_exactly() {
         },
         entries: Mutex::new(BTreeMap::new()),
         folded: Mutex::new(BTreeMap::new()),
-        thread_envelopes: Mutex::new(BTreeMap::new()),
         wall_folded: Mutex::new(BTreeMap::new()),
     };
     let wall = Instant::now();
@@ -111,4 +110,41 @@ fn coverage_union_does_not_multiply_nested_quantization() {
     let mut inconsistent = interval(0, 1_000_000_000);
     inconsistent.coarse_end += 1;
     assert!(union_interval_bounds(vec![outer, inconsistent]).is_none());
+}
+
+#[test]
+fn exclusive_parent_selector_does_not_add_child_cpu_twice() {
+    let stages = vec![
+        StageReport {
+            name: "parent".into(),
+            max_thread_cpu_s: Some(10.0),
+            max_thread_exclusive_cpu_s: Some(3.0),
+            ..Default::default()
+        },
+        StageReport {
+            name: "child".into(),
+            max_thread_cpu_s: Some(7.0),
+            ..Default::default()
+        },
+    ];
+    let selected = ["exclusive:parent", "child"]
+        .iter()
+        .map(|selector| {
+            let (stage, exclusive) = critical_stage(&stages, selector)?;
+            if exclusive {
+                stage.max_thread_exclusive_cpu_s
+            } else {
+                stage.max_thread_cpu_s
+            }
+        })
+        .sum::<Option<f64>>();
+    assert_eq!(selected, Some(10.0));
+    assert!(critical_stage(&stages, "exclusive:missing").is_none());
+    assert_eq!(
+        critical_stage(&stages, "exclusive:child")
+            .unwrap()
+            .0
+            .max_thread_exclusive_cpu_s,
+        None
+    );
 }

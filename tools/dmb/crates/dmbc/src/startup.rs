@@ -8,9 +8,53 @@ use dm_tree::{
 
 pub struct CapturedStartup<'a> {
     frontend: &'a ColdFrontend,
+    revision: Option<&'a dm_tree::frontend::FrontendRevision>,
+    facts: std::sync::Arc<StartupFacts>,
+}
+/// Owned startup declarations and static plans, issued by one immutable frontend
+/// revision. No resolver or reference into a movable frontend is retained.
+pub struct StartupFacts {
+    issuance: Option<dm_tree::frontend::FrontendIssuance>,
     plan: InitializerPlan,
     procedures: Vec<(OccurrenceId, StaticPlan)>,
     procedure_index: std::collections::HashMap<OccurrenceId, usize>,
+}
+impl std::ops::Deref for CapturedStartup<'_> {
+    type Target = StartupFacts;
+    fn deref(&self) -> &Self::Target {
+        &self.facts
+    }
+}
+impl StartupFacts {
+    /// Raw compatibility models require full current declaration/body recapture.
+    pub fn view<'a>(
+        self: &std::sync::Arc<Self>,
+        frontend: &'a ColdFrontend,
+    ) -> Result<CapturedStartup<'a>, String> {
+        validate(frontend, &self.plan)?;
+        Ok(CapturedStartup {
+            frontend,
+            revision: None,
+            facts: std::sync::Arc::clone(self),
+        })
+    }
+    pub fn view_revision<'a>(
+        self: &std::sync::Arc<Self>,
+        revision: &'a dm_tree::frontend::FrontendRevision,
+    ) -> Result<CapturedStartup<'a>, String> {
+        match &self.issuance {
+            Some(issuance) if !issuance.matches(revision) => {
+                return Err("startup capture belongs to a different frontend".into())
+            }
+            Some(_) => (),
+            None => validate(revision, &self.plan)?,
+        }
+        Ok(CapturedStartup {
+            frontend: revision,
+            revision: Some(revision),
+            facts: std::sync::Arc::clone(self),
+        })
+    }
 }
 pub fn capture(frontend: &ColdFrontend) -> Result<CapturedStartup<'_>, String> {
     capture_with_workers(frontend, 1)
@@ -19,13 +63,17 @@ pub fn capture_with_workers(
     frontend: &ColdFrontend,
     workers: usize,
 ) -> Result<CapturedStartup<'_>, String> {
-    capture_impl(frontend, workers, true)
+    Ok(CapturedStartup {
+        frontend,
+        revision: None,
+        facts: std::sync::Arc::new(capture_impl(frontend, workers, true)?),
+    })
 }
 fn capture_impl(
     frontend: &ColdFrontend,
     workers: usize,
     prefilter: bool,
-) -> Result<CapturedStartup<'_>, String> {
+) -> Result<StartupFacts, String> {
     let units = crate::driver_facts::unit_members(frontend).map_err(|e| e.to_string())?;
     let identities = units
         .into_iter()
@@ -107,8 +155,8 @@ fn capture_impl(
         .enumerate()
         .map(|(index, (occurrence, _))| (*occurrence, index))
         .collect();
-    Ok(CapturedStartup {
-        frontend,
+    Ok(StartupFacts {
+        issuance: None,
         plan,
         procedures,
         procedure_index,
@@ -127,7 +175,29 @@ pub fn capture_with_spellings_and_workers<'a>(
     spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
     workers: usize,
 ) -> Result<CapturedStartup<'a>, String> {
-    let mut startup = capture_with_workers(frontend, workers)?;
+    Ok(CapturedStartup {
+        frontend,
+        revision: None,
+        facts: capture_facts_with_spellings_and_workers(frontend, spellings, workers)?,
+    })
+}
+pub fn capture_revision_facts_with_spellings_and_workers(
+    revision: &dm_tree::frontend::FrontendRevision,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    workers: usize,
+) -> Result<std::sync::Arc<StartupFacts>, String> {
+    let mut facts = capture_facts_with_spellings_and_workers(revision, spellings, workers)?;
+    std::sync::Arc::get_mut(&mut facts)
+        .expect("new startup facts are exclusively owned")
+        .issuance = Some(revision.issuance());
+    Ok(facts)
+}
+pub fn capture_facts_with_spellings_and_workers(
+    frontend: &ColdFrontend,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    workers: usize,
+) -> Result<std::sync::Arc<StartupFacts>, String> {
+    let mut startup = capture_impl(frontend, workers, true)?;
     let mut symbols = dm_ir::SymbolTable::overlay(startup.plan.symbols.clone());
     for (expected, bytes) in spellings {
         let text =
@@ -140,7 +210,7 @@ pub fn capture_with_spellings_and_workers<'a>(
         }
     }
     startup.plan.symbols = std::sync::Arc::new(symbols);
-    Ok(startup)
+    Ok(std::sync::Arc::new(startup))
 }
 /// Re-capture all current body facts before accepting an escaping generic plan.
 /// This rejects stale same-tree plans after an executable static declaration edit.
@@ -258,6 +328,9 @@ impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluato
     }
 }
 impl CapturedStartup<'_> {
+    pub fn facts(&self) -> std::sync::Arc<StartupFacts> {
+        std::sync::Arc::clone(&self.facts)
+    }
     pub fn plan(&self) -> &InitializerPlan {
         &self.plan
     }
@@ -272,7 +345,14 @@ impl CapturedStartup<'_> {
     /// Issued facts are immutable and borrow the exact frontend throughout use.
     /// Independently supplied generic plans still use the strict recapture API.
     pub fn validate_for(&self, frontend: &ColdFrontend) -> Result<(), String> {
-        if !std::ptr::eq(self.frontend, frontend) {
+        if !std::ptr::eq(self.frontend, frontend)
+            || self
+                .facts
+                .issuance
+                .as_ref()
+                .zip(self.revision)
+                .is_some_and(|(issuance, revision)| !issuance.matches(revision))
+        {
             return Err("startup capture belongs to a different frontend".into());
         }
         Ok(())
@@ -298,6 +378,9 @@ impl CapturedStartup<'_> {
     }
 }
 
+#[cfg(test)]
+#[path = "startup_owned_tests.rs"]
+mod owned_tests;
 #[cfg(test)]
 mod spelling_tests {
     use super::*;

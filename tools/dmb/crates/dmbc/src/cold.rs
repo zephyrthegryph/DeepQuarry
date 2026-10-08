@@ -55,6 +55,9 @@ pub struct ColdTimings {
 pub struct ColdOutput {
     pub dmb: Vec<u8>,
     pub timings: ColdTimings,
+    /// Owned exact startup stage output, available to resident hosts. The global
+    /// fixture path has no captured declaration/static startup stage.
+    pub startup: Option<std::sync::Arc<crate::startup::StartupFacts>>,
 }
 #[derive(Debug)]
 pub enum ColdError {
@@ -141,6 +144,7 @@ pub fn compile_captured_program<R: Resolver, P: AbiPolicy>(
         .map_err(ColdError::Composition)?;
     Ok(ColdOutput {
         dmb,
+        startup: None,
         timings: ColdTimings {
             abi_preparation: Duration::ZERO,
             lowering,
@@ -235,13 +239,48 @@ pub fn compile_captured_classified_with_pinned_abi_memo<R: Resolver>(
     observer: Option<&ColdObserver<'_>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
 ) -> Result<ColdOutput, ColdError> {
+    compile_captured_classified_with_pinned_abi_memo_revision(
+        frontend,
+        resolver,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+        observer,
+        memo,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn compile_captured_classified_with_pinned_abi_memo_revision<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    observer: Option<&ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    revision: Option<&dm_tree::frontend::FrontendRevision>,
+) -> Result<ColdOutput, ColdError> {
     let total = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::StartupCapture);
-    let startup = crate::startup::capture_with_spellings_and_workers(
-        frontend,
-        &links.inventory.spellings,
-        config.workers,
-    )
+    let startup = match revision {
+        Some(revision) => crate::startup::capture_revision_facts_with_spellings_and_workers(
+            revision,
+            &links.inventory.spellings,
+            config.workers,
+        )
+        .and_then(|facts| facts.view_revision(revision)),
+        None => crate::startup::capture_with_spellings_and_workers(
+            frontend,
+            &links.inventory.spellings,
+            config.workers,
+        ),
+    }
     .map_err(ColdError::Initializer)?;
     measurement.complete();
     let measurement = StageMeasurement::new(observer, ColdStage::AbiPreparation);
@@ -535,6 +574,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     measurement.complete();
     Ok(ColdOutput {
         dmb,
+        startup: Some(startup.facts()),
         timings: ColdTimings {
             abi_preparation: Duration::ZERO,
             lowering,

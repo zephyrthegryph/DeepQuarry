@@ -1,4 +1,5 @@
 //! Ordered directive interval receipts. Includes remain fresh recursion barriers.
+use super::region_memo::retained_size::{macro_heap, record, shared_macro, slice, vector};
 use super::{prepared_source::PreparedLine, MacroEnvironment};
 use crate::{Conditional, DiagnosticKind, Macro, MacroLookup};
 use serde::{Deserialize, Serialize};
@@ -48,6 +49,35 @@ pub struct DirectiveRecord {
     inputs: usize,
 }
 impl DirectiveRecord {
+    /// Includes record Arc, owned capacities and every nested shared allocation;
+    /// duplicate Arc identities are conservatively charged per occurrence.
+    pub fn retained_size_bytes(&self) -> usize {
+        record::<Self>()
+            .saturating_add(slice::<u8>(self.source.len()))
+            .saturating_add(slice::<u8>(self.control.len()))
+            .saturating_add(vector(&self.incoming, |_| 0))
+            .saturating_add(vector(&self.outgoing, |_| 0))
+            .saturating_add(vector(&self.reads, |read| {
+                read.name.capacity().saturating_add(
+                    read.definition
+                        .as_ref()
+                        .map_or(0, |value| shared_macro(value)),
+                )
+            }))
+            .saturating_add(self.file_dirs.as_ref().map_or(0, |(paths, values)| {
+                vector(paths, std::path::PathBuf::capacity)
+                    .saturating_add(vector(values, macro_heap))
+            }))
+            .saturating_add(vector(&self.actions, |action| match action {
+                Action::Define {
+                    name, definition, ..
+                } => name.capacity().saturating_add(macro_heap(definition)),
+                Action::Undef { name, .. } => name.capacity(),
+                Action::Error { message, .. } => message.capacity(),
+                Action::Text(_) | Action::Freeze => 0,
+            }))
+    }
+
     pub fn key(&self) -> u128 {
         self.key
     }
@@ -244,6 +274,41 @@ mod tests {
         ExpansionRecord, SourceProvider,
     };
     use super::*;
+    #[test]
+    fn retained_directive_records_charge_reserved_nested_capacities() {
+        let mut value = DirectiveRecord {
+            key: 0,
+            source: Arc::from(""),
+            control: Arc::from([]),
+            incoming: Vec::new(),
+            outgoing: Vec::new(),
+            reads: Vec::new(),
+            file_dirs: None,
+            actions: Vec::new(),
+            inputs: 0,
+        };
+        let before = value.retained_size_bytes();
+        value.actions.reserve_exact(3);
+        assert_eq!(
+            value.retained_size_bytes() - before,
+            value.actions.capacity() * std::mem::size_of::<Action>()
+        );
+        let name = String::with_capacity(101);
+        let definition = Macro {
+            parameters: Some(Vec::with_capacity(11)),
+            replacement: String::with_capacity(201),
+            variadic: false,
+        };
+        let extra = name.capacity() + macro_heap(&definition);
+        let before = value.retained_size_bytes();
+        value.actions.push(Action::Define {
+            input: 0,
+            name,
+            definition,
+        });
+        assert_eq!(value.retained_size_bytes() - before, extra);
+    }
+
     #[test]
     fn streamed_directive_memo_key_preserves_exact_previous_framing() {
         for length in [0, 1, 16, 127, 128, 239, 240, 241, 1024, 32768] {

@@ -202,6 +202,7 @@ impl FrozenInitializer {
 }
 #[derive(Debug)]
 pub enum IntegrationError {
+    WireDomain(dm_link::WireDomainError),
     InvalidInitializer(String),
     LoweringFailed(usize),
     MissingSpelling(SymbolId),

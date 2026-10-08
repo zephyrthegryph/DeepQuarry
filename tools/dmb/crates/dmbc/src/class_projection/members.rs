@@ -26,30 +26,28 @@ pub(crate) fn materialize_members_with_strings(
     value_types: &dyn TypeValuePolicy,
     pool: &mut crate::composition::StringIndex,
 ) -> Result<(), ProjectionError> {
-    use byond_dmb::{dmb::Variable, ids::NONE};
-    let mut mob_order = Vec::new();
-    for ty in projection.types.iter() {
-        let Some(mut class) = tables.index(Key::Type(ty.path)) else {
-            continue;
-        };
-        let mut visited = HashSet::new();
-        while visited.insert(class) {
-            let Some(record) = dmb.classes.get(class as usize) else {
-                break;
-            };
-            if dmb.string(record.path_string_id()) == Some(b"/mob".as_slice()) {
-                mob_order.push(ty.path);
-                break;
-            }
-            class = record.parent_class_id();
-            if class == NONE {
-                break;
-            }
-        }
-    }
-    mob_order.sort_by_key(|path| tables.index(Key::Type(*path)));
-    let mobs = crate::mob_writer::materialize(dmb, tables, &mob_order)
+    let mobs = crate::mob_writer::materialize_projection(dmb, tables, projection)
         .map_err(ProjectionError::Unsupported)?;
+    materialize_members_with_mob_bindings(
+        dmb,
+        projection,
+        (tables, mobs),
+        symbols,
+        value_types,
+        pool,
+    )
+}
+
+pub(crate) fn materialize_members_with_mob_bindings(
+    dmb: &mut byond_dmb::dmb::Dmb,
+    projection: &ClassProjection,
+    domains: (&dm_link::LinkTables, dm_link::MobBindings),
+    symbols: &dm_ir::SymbolTable,
+    value_types: &dyn TypeValuePolicy,
+    pool: &mut crate::composition::StringIndex,
+) -> Result<(), ProjectionError> {
+    let (tables, mobs) = domains;
+    use byond_dmb::{dmb::Variable, ids::NONE};
     struct Values<'a> {
         underlying: &'a dyn TypeValuePolicy,
         mobs: HashMap<SymbolId, u32>,

@@ -448,12 +448,19 @@ def cpu_quality(row):
 
 def medians(rows):
     result = {}
-    for key in ("wall_s", "critical_path_cpu_s", "total_cpu_s", "read_bytes", "write_bytes", "peak_private_bytes"):
+    for key in ("wall_s", "child_wall_s", "profile_wall_s", "critical_path_cpu_s", "total_cpu_s", "read_bytes", "write_bytes", "peak_private_bytes"):
         values = [row.get(key) for row in rows]
         valid = all(metric(v) for v in values)
         if key in ("read_bytes", "write_bytes", "peak_private_bytes"):
             valid = valid and all(type(v) is int for v in values)
         result[key] = statistics.median(values) if valid else None
+    scopes = {row.get("wall_scope") for row in rows}
+    result["wall_scope"] = next(iter(scopes)) if len(scopes) == 1 else "mixed_or_unspecified"
+    result["child_wall_scope"] = "harness_child_launch_to_reap" if result["child_wall_s"] is not None else "unavailable_legacy_or_missing_measurement"
+    profile_scopes = {row.get("profile_wall_scope") for row in rows}
+    result["profile_wall_scope"] = next(iter(profile_scopes)) if len(profile_scopes) == 1 else "mixed_or_unspecified"
+    # Existing rows keep their recorded wall metric/scope. Missing child wall
+    # cannot be reconstructed from profiler wall and must remain unavailable.
     upper = [cpu_upper(row, "critical_path_cpu_s", "critical_path_cpu_bounds_s") for row in rows]
     result["critical_path_cpu_budget_upper_s"] = statistics.median(upper) if all(metric(v) for v in upper) else None
     result["cpu_acceptance_basis"] = ("uncertainty_upper_bound" if any(

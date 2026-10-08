@@ -80,7 +80,7 @@ pub(super) fn parse_declarations(
                             let text = &source[offset..offset + len];
                             let lookup_start = Instant::now();
                             let profile_lookup =
-                                dm_profile::stage("frontend.fragment_lookup_decode_parse");
+                                dm_profile::item("frontend.fragment_lookup_decode_parse");
                             let receipt_index = expanded
                                 .receipts
                                 .partition_point(|receipt| receipt.output_span().end <= offset);
@@ -175,7 +175,7 @@ pub(super) fn parse_declarations(
                             }
                             let facts_start = Instant::now();
                             let profile_facts =
-                                dm_profile::stage("frontend.fresh_declaration_facts");
+                                dm_profile::item("frontend.fresh_declaration_facts");
                             let mut facts = if let Some(facts) = admitted_facts {
                                 Ok(facts)
                             } else if errors.is_empty() {

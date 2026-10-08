@@ -1,5 +1,5 @@
 //! Counting is enabled only by the executable installing this allocator.
-use std::alloc::{GlobalAlloc, Layout, System};
+use std::alloc::{GlobalAlloc, Layout};
 use std::cell::Cell;
 use std::sync::atomic::{AtomicU64, Ordering};
 static LIVE: AtomicU64 = AtomicU64::new(0);
@@ -10,6 +10,8 @@ thread_local! {
     static LOCAL_PEAK: Cell<u64> = const {Cell::new(0)};
 }
 pub struct CountingAllocator;
+// Diagnostic counting wraps the same allocator as the acceptance executable.
+static BACKEND: mimalloc::MiMalloc = mimalloc::MiMalloc;
 fn allocated(size: usize) {
     let live = LIVE
         .fetch_add(size as u64, Ordering::Relaxed)
@@ -17,10 +19,17 @@ fn allocated(size: usize) {
     allocation_event(size, live);
 }
 fn allocation_event(size: usize, live: u64) {
-    PEAK.fetch_max(live, Ordering::Relaxed);
+    observe_peak(&PEAK, live);
     let _ = ALLOCATIONS.try_with(|value| value.set(value.get().saturating_add(1)));
     let _ = BYTES.try_with(|value| value.set(value.get().saturating_add(size as u64)));
     let _ = LOCAL_PEAK.try_with(|value| value.set(value.get().max(live)));
+}
+// Monotonic peak: a concurrent increase cannot invalidate fast rejection.
+// fetch_max still resolves races between load and publication exactly.
+fn observe_peak(peak: &AtomicU64, live: u64) {
+    if live > peak.load(Ordering::Relaxed) {
+        peak.fetch_max(live, Ordering::Relaxed);
+    }
 }
 /// A successful realloc replaces one live allocation. Applying the size delta
 /// in one atomic operation avoids exposing an artificial deallocated interval
@@ -38,17 +47,17 @@ fn replace_live(counter: &AtomicU64, old_size: usize, new_size: usize) -> u64 {
             .saturating_sub(shrink)
     }
 }
-// Delegates all allocation behavior unchanged to System; counters never allocate.
+// Delegates allocation behavior to mimalloc; counters never allocate.
 unsafe impl GlobalAlloc for CountingAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        let pointer = unsafe { System.alloc(layout) };
+        let pointer = unsafe { BACKEND.alloc(layout) };
         if !pointer.is_null() {
             allocated(layout.size());
         }
         pointer
     }
     unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
-        let pointer = unsafe { System.alloc_zeroed(layout) };
+        let pointer = unsafe { BACKEND.alloc_zeroed(layout) };
         if !pointer.is_null() {
             allocated(layout.size());
         }
@@ -56,10 +65,10 @@ unsafe impl GlobalAlloc for CountingAllocator {
     }
     unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
         LIVE.fetch_sub(layout.size() as u64, Ordering::Relaxed);
-        unsafe { System.dealloc(pointer, layout) };
+        unsafe { BACKEND.dealloc(pointer, layout) };
     }
     unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, size: usize) -> *mut u8 {
-        let result = unsafe { System.realloc(pointer, layout, size) };
+        let result = unsafe { BACKEND.realloc(pointer, layout, size) };
         if !result.is_null() {
             let live = replace_live(&LIVE, layout.size(), size);
             allocation_event(size, live);
@@ -92,6 +101,31 @@ pub(crate) fn peak() -> u64 {
 mod tests {
     use super::*;
     use std::sync::{atomic::AtomicBool, Arc, Barrier};
+
+    #[test]
+    fn concurrent_peak_observations_preserve_maximum_and_never_regress() {
+        let peak = AtomicU64::new(100);
+        let barrier = Barrier::new(8);
+        std::thread::scope(|scope| {
+            for worker in 0..8 {
+                let peak = &peak;
+                let barrier = &barrier;
+                scope.spawn(move || {
+                    barrier.wait();
+                    let mut previous = 0;
+                    for index in 0..10_000 {
+                        let value = 100 + worker * 10_000 + index;
+                        observe_peak(peak, value);
+                        observe_peak(peak, 1);
+                        let current = peak.load(Ordering::Relaxed);
+                        assert!(current >= value && current >= previous);
+                        previous = current;
+                    }
+                });
+            }
+        });
+        assert_eq!(peak.load(Ordering::Relaxed), 80_099);
+    }
 
     #[test]
     fn concurrent_realloc_observers_never_see_an_artificial_freed_allocation() {

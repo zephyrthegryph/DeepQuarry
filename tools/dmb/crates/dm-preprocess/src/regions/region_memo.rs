@@ -1,9 +1,13 @@
 //! Expansion reuse after a fresh, ordered directive plan. Conditional/include
 //! interpretation and effects remain authoritative in that plan; this memo never
 //! speculates a different directive state or parses a region as a standalone AST.
+pub(super) mod retained_size;
+#[cfg(test)]
+mod retained_size_tests;
 use super::{DirectivePlan, MacroEnvironment, MacroExpansion};
 use crate::{Diagnostic, DiagnosticKind, Macro, MacroLookup};
 use dm_syntax::Span;
+use retained_size::{record, shared_macro, slice, vector};
 use serde::{Deserialize, Serialize};
 use std::{
     cell::RefCell,
@@ -41,6 +45,14 @@ pub struct FragmentRecord {
     payload: Arc<[u8]>,
 }
 impl FragmentRecord {
+    /// Conservative retained allocation bytes including this record's Arc;
+    /// shared backing storage is charged for each occurrence, never deduplicated.
+    pub fn retained_size_bytes(&self) -> usize {
+        record::<Self>()
+            .saturating_add(slice::<u8>(self.source.len()))
+            .saturating_add(slice::<u8>(self.payload.len()))
+    }
+
     pub fn lookup_key(schema: u32, source: &str) -> u128 {
         let mut hash = Xxh3::new();
         hash.update(b"root-grammar-fragment-v1\0");
@@ -166,6 +178,35 @@ pub struct ExpansionRecord {
     fragments: Vec<ParseFragment>,
 }
 impl ExpansionRecord {
+    /// Includes record Arc, owned capacities and all nested Arc backing storage.
+    /// Duplicate shared allocations are conservatively charged per occurrence.
+    pub fn retained_size_bytes(&self) -> usize {
+        record::<Self>()
+            .saturating_add(slice::<u8>(self.source.len()))
+            .saturating_add(slice::<u8>(self.control.len()))
+            .saturating_add(slice::<u8>(self.text.len()))
+            .saturating_add(vector(&self.reads, |read| {
+                slice::<u8>(read.name.len()).saturating_add(
+                    read.definition
+                        .as_ref()
+                        .map_or(0, |value| shared_macro(value)),
+                )
+            }))
+            .saturating_add(vector(&self.locations, |(_, _, name)| name.capacity()))
+            .saturating_add(vector(&self.lines, |line| {
+                vector(&line.traces, |trace| {
+                    trace
+                        .name
+                        .capacity()
+                        .saturating_add(vector(&trace.replacement_chain, String::capacity))
+                })
+            }))
+            .saturating_add(vector(&self.diagnostics, |error| error.message.capacity()))
+            .saturating_add(vector(&self.fragments, |fragment| {
+                slice::<u8>(fragment.payload.len())
+            }))
+    }
+
     /// Same expansion authority; parser enrichment is not another macro variant.
     pub fn same_expansion(&self, other: &Self) -> bool {
         self.key == other.key

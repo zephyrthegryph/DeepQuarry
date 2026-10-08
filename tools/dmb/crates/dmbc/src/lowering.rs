@@ -328,7 +328,7 @@ fn lower_one_memo<R: Resolver, P: AbiPolicy>(
     let tree = &frontend.snapshot.tree;
     let recording = crate::lowering_memo::RecordingResolver::new(host);
     let ready = (|| {
-        let _profile = dm_profile::stage("lowering.abi_key_prepare");
+        let _profile = dm_profile::item("lowering.abi_key_prepare");
         let node = tree.member(body.member)?;
         let owner = tree.type_node(node.owner)?.path;
         let occurrence = tree
@@ -411,14 +411,14 @@ fn lower_one_memo<R: Resolver, P: AbiPolicy>(
     };
     use crate::lowering_memo::{MemoMissReason, MemoOutcome};
     let (value, changed_query) = {
-        let _profile = dm_profile::stage("lowering.resident_validate");
+        let _profile = dm_profile::item("lowering.resident_validate");
         memo.values.lookup_explained(&key, host)
     };
     let mut miss = changed_query.map_or(MemoMissReason::NoExactVariant, |_| {
         MemoMissReason::ReadMeaningChanged
     });
     if let Some(value) = value {
-        let _profile = dm_profile::stage("lowering.resident_replay");
+        let _profile = dm_profile::item("lowering.resident_replay");
         // AST-bearing private sidecars still contain expanded spans. Ordinary
         // code contains only symbolic operands/debug ordinals and can move.
         let previous = &value.unit;
@@ -495,7 +495,7 @@ fn lower_one_memo<R: Resolver, P: AbiPolicy>(
     // receipt). Issue mandatory reads only when producing a new executable.
     let occurrence_start = std::time::Instant::now();
     {
-        let _profile = dm_profile::stage("lowering.occurrence_reads");
+        let _profile = dm_profile::item("lowering.occurrence_reads");
         recording.record_occurrence(identity);
     }
     memo.counts.occurrence_reads_ns.fetch_add(
@@ -732,7 +732,7 @@ fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         capture,
     };
     let code = {
-        let _profile = dm_profile::stage("lowering.fresh_codegen");
+        let _profile = dm_profile::item("lowering.fresh_codegen");
         compile_simple_proc_with_resolver_and_debug(
             &executable_body,
             &inputs,

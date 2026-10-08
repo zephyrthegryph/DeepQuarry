@@ -75,6 +75,36 @@ pub fn materialize(
     }
     Ok(result)
 }
+
+/// Shared encounter-order mob domain allocation for code and scalar defaults.
+pub(crate) fn materialize_projection(
+    dmb: &mut Dmb,
+    tables: &LinkTables,
+    projection: &crate::class_projection::ClassProjection,
+) -> Result<HashMap<SymbolId, u32>, String> {
+    let mut mob_order = Vec::new();
+    for ty in projection.types.iter() {
+        let Some(mut class) = tables.index(Key::Type(ty.path)) else {
+            continue;
+        };
+        let mut visited = HashSet::new();
+        while visited.insert(class) {
+            let Some(record) = dmb.classes.get(class as usize) else {
+                break;
+            };
+            if dmb.string(record.path_string_id()) == Some(b"/mob".as_slice()) {
+                mob_order.push(ty.path);
+                break;
+            }
+            class = record.parent_class_id();
+            if class == NONE {
+                break;
+            }
+        }
+    }
+    mob_order.sort_by_key(|path| tables.index(Key::Type(*path)));
+    materialize(dmb, tables, &mob_order)
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -105,6 +135,23 @@ mod tests {
         let count = dmb.mobs.len();
         assert_eq!(materialize(&mut dmb, &tables, &order).unwrap(), expected);
         assert_eq!(dmb.mobs.len(), count);
+        for (&path, &mob_index) in &expected {
+            let class = tables.index(Key::Type(path)).unwrap();
+            let code = dm_ir::SymbolicCode::new(
+                vec![0, 0],
+                vec![dm_ir::Relocation {
+                    offset: 0,
+                    reference: dm_ir::SymRef::Type(path),
+                    encoding: dm_ir::RelocationEncoding::PackedValue24 { tag: 8 },
+                }],
+            )
+            .unwrap();
+            let mut words = code.link(|_| Some(class)).unwrap();
+            dm_link::admit_type_path_words(&mut words, &code, &tables, &expected).unwrap();
+            let emitted = ((words[0] >> 8) << 16) | words[1];
+            assert_eq!(emitted, mob_index);
+            assert_eq!(dmb.mobs[emitted as usize].class, class);
+        }
         if let Some(&first) = order.first() {
             assert!(materialize(&mut dmb, &tables, &[first, first]).is_err());
         }

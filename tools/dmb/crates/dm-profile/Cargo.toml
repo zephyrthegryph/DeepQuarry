@@ -8,6 +8,7 @@ default = []
 allocation-counting = []
 
 [dependencies]
+mimalloc = "0.1.52"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["registry"] }
 tracing-chrome = "0.7"

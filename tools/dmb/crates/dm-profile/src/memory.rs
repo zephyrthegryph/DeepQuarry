@@ -56,25 +56,31 @@ impl Sampler {
             let (stop, receiver) = std::sync::mpsc::channel();
             let worker = std::thread::Builder::new()
                 .name("dm-profile-memory".into())
-                .spawn(move || loop {
-                    // Holding the registry lock across this one OS query keeps
-                    // stage entry/exit from changing ownership mid-sample. No
-                    // payload allocation, file access or per-stage OS query.
-                    {
-                        let mut entries = state
-                            .entries
-                            .lock()
-                            .unwrap_or_else(|error| error.into_inner());
-                        if entries.values().any(|entry| entry.active > 0) {
-                            let bytes = crate::clock::current_private_bytes();
-                            for entry in entries.values_mut() {
-                                observe(entry, bytes);
+                .spawn(move || {
+                    let _lifetime = crate::internal_observer::InternalThreadObserver::new(
+                        Arc::clone(&state),
+                        "profiler.memory_sampler",
+                    );
+                    loop {
+                        // Holding the registry lock across this one OS query keeps
+                        // stage entry/exit from changing ownership mid-sample. No
+                        // payload allocation, file access or per-stage OS query.
+                        {
+                            let mut entries = state
+                                .entries
+                                .lock()
+                                .unwrap_or_else(|error| error.into_inner());
+                            if entries.values().any(|entry| entry.active > 0) {
+                                let bytes = crate::clock::current_private_bytes();
+                                for entry in entries.values_mut() {
+                                    observe(entry, bytes);
+                                }
                             }
                         }
-                    }
-                    match receiver.recv_timeout(std::time::Duration::from_millis(INTERVAL_MS)) {
-                        Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
-                        _ => break,
+                        match receiver.recv_timeout(std::time::Duration::from_millis(INTERVAL_MS)) {
+                            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+                            _ => break,
+                        }
                     }
                 })
                 .map_err(|error| format!("start private-memory sampler: {error}"))?;

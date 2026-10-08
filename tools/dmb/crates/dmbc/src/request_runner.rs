@@ -43,6 +43,8 @@ fn inspect(project: PathBuf, target: Option<&str>) -> Result<(), Box<dyn std::er
 }
 
 pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    let _build_profile = dm_profile::stage("build");
+    let request_profile = dm_profile::stage("request.prepare");
     let BuildRequest {
         command,
         project,
@@ -73,7 +75,6 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         None => project.clone(),
     };
     let total = Instant::now();
-    let _build_profile = dm_profile::stage("build");
     let mut build_lock = if command == BuildCommand::Compile {
         Some(dmbc::compile_driver::acquire_build_lock(&project)?)
     } else {
@@ -90,6 +91,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         );
         bootstrap_catalog = true;
     }
+    drop(request_profile);
     let engine_input_profile = dm_profile::stage("engine_input");
     let engine_bytes = engine_template
         .as_ref()
@@ -102,6 +104,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         .as_ref()
         .map_or(0, |bytes| xxhash_rust::xxh3::xxh3_128(bytes));
     drop(engine_input_profile);
+    let input_context_profile = dm_profile::stage("request.input_context");
     if command == BuildCommand::Compile {
         if engine_bytes.as_deref()
             != Some(include_bytes!("../../../fixtures/native_template.bin").as_slice())
@@ -136,6 +139,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
     let mut pair_store = None;
     let mut resource_prior = None;
     let mut memo_policy = 0;
+    drop(input_context_profile);
     let session_profile = dm_profile::stage("session_validation");
     if command == BuildCommand::Compile && !no_cache {
         let compiler = file_hash(&std::env::current_exe()?)?;
@@ -321,6 +325,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
     });
     let seed = engine.map(dmbc::engine::EngineSnapshot::frontend_seed);
     drop(engine_profile);
+    let frontend_context_profile = dm_profile::stage("request.frontend_context");
     let progress = |event: dm_tree::frontend::FrontendProgress| {
         eprintln!(
             "frontend {:?} {:?}: {:.3}s {}/{}",
@@ -334,6 +339,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
     let input_preparation_seconds;
     let frontend_result = {
         let preparation_start = Instant::now();
+        drop(frontend_context_profile);
         let input_profile = dm_profile::stage("input_scan");
         let inputs =
             match dmbc::native_inputs::NativeInputs::prepare(&project, &inputs_capture, workers) {
@@ -345,6 +351,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             };
         input_preparation_seconds = preparation_start.elapsed().as_secs_f64();
         drop(input_profile);
+        let source_context_profile = dm_profile::stage("request.source_context");
         if progress_enabled {
             eprintln!(
                 "native input preparation: {:.3}s {:?}",
@@ -362,6 +369,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         };
         // Only requested captures enter the semantic model. Release unused
         // speculative preparations before maps, resources and lowering begin.
+        drop(source_context_profile);
         let _frontend_profile = dm_profile::stage("frontend");
         dm_tree::frontend::build_with_expansion_memo(
             &project,
@@ -377,13 +385,14 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
                 .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
         )
     };
-    let frontend = match frontend_result {
+    let frontend_handoff_profile = dm_profile::stage("request.frontend_handoff");
+    let frontend = dm_tree::frontend::FrontendRevision::new(match frontend_result {
         Ok(frontend) => frontend,
         Err(diagnostics) => {
             dmbc::diagnostics::write_diagnostics(&mut io::stderr().lock(), &diagnostics)?;
             return Err("source analysis did not produce a complete declaration model".into());
         }
-    };
+    });
     if command == BuildCommand::Compile {
         let (bytes, engine) = engine_capture
             .as_ref()
@@ -397,6 +406,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             );
         }
         let facts_started = Instant::now();
+        drop(frontend_handoff_profile);
         let facts_profile = dm_profile::stage("captured_facts");
         let mut symbols = dm_ir::SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
         let constants = dmbc::engine_host::ConstantCatalog::native_516_1687(&mut symbols)
@@ -435,7 +445,9 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             .with_pinned_variables(engine, &frontend)?;
         let facts_seconds = facts_started.elapsed().as_secs_f64();
         drop(facts_profile);
+        let nontext_context_profile = dm_profile::stage("request.nontext_context");
         let nontext_started = Instant::now();
+        drop(nontext_context_profile);
         let nontext_profile = dm_profile::stage("resources_maps");
         if progress_enabled {
             eprintln!("native resources and maps started");
@@ -529,6 +541,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         let artifacts = std::mem::take(&mut nontext.artifacts);
         let linking_inputs_seconds = linking_inputs_started.elapsed().as_secs_f64();
         drop(linking_inputs_profile);
+        let compilation_profile = dm_profile::stage("request.compilation");
         let compilation_started = Instant::now();
         if progress_enabled {
             eprintln!("native compilation started");
@@ -544,7 +557,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         // One immutable captured host for this compile. Consumer read recording
         // remains outside this optimization, including on memo hits.
         let compilation_resolver = dm_ir::MemoResolver::new(&nontext.resolver, 65_536);
-        let compile_result = dmbc::compile_driver::compile_observed_with_memo(
+        let compile_result = dmbc::compile_driver::compile_revision_observed_with_memo(
             &frontend,
             &compilation_resolver,
             engine,
@@ -589,6 +602,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         // borrows before consuming source captures into exact publication facts.
         drop(compilation_resolver);
         let publication = nontext.into_publication();
+        drop(compilation_profile);
         let cache_flush_profile = dm_profile::stage("cache_flush");
         if let (Some(cache), Some(memo)) = (&memo_cache, &procedure_memo) {
             let records = memo.take_pending();
@@ -718,6 +732,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         }
         let publication_seconds = publication_started.elapsed().as_secs_f64();
         drop(publication_profile);
+        let _finalization_profile = dm_profile::stage("request.finalization");
         let explanations: Vec<_> = procedure_memo.as_ref().map(|memo| memo.explain()).unwrap_or_default().into_iter().map(|entry| {
             let symbols = frontend.snapshot.tree.symbols();
             let owner = symbols.text(entry.identity.owner).unwrap_or("<unknown>");

@@ -9,6 +9,7 @@ description = "Native compiler client and immutable output pair publication"
 allocation-counting = ["dm-profile/allocation-counting"]
 
 [dependencies]
+mimalloc = "0.1.52"
 rayon = "1.12"
 dm-profile = { path = "../dm-profile" }
 serde = { version = "1", features = ["derive"] }

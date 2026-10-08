@@ -6,8 +6,6 @@
 
 pub mod cache_maintenance;
 pub mod cli;
-pub mod request;
-pub mod request_runner;
 pub mod debug_sources;
 pub mod diagnostics;
 pub mod expansion_memo;
@@ -16,6 +14,8 @@ pub mod frozen_inputs;
 pub mod input_snapshot;
 pub mod map_memo;
 pub mod publish;
+pub mod request;
+pub mod request_runner;
 pub mod resource_manifest;
 pub mod session;
 pub mod telemetry;

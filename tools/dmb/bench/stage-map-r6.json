@@ -1,5 +1,6 @@
 {
   "input": [
+    "profile.setup",
     "cli.parse",
     "exclusive:request.prepare",
     "exclusive:request.input_context",
@@ -49,6 +50,7 @@
     "cold.composition",
     "cache_flush",
     "publication",
-    "exclusive:request.finalization"
+    "exclusive:request.finalization",
+    "profile.finalization"
   ]
 }

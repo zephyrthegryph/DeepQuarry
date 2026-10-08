@@ -356,6 +356,34 @@ impl ColdFrontend {
     }
 }
 
+/// Immutable owned frontend revision. Hosts may share/move it but cannot mutate
+/// the enclosed public compatibility model or expose its Arc for replacement.
+#[derive(Clone, Debug)]
+pub struct FrontendRevision(Arc<ColdFrontend>);
+impl FrontendRevision {
+    pub fn new(frontend: ColdFrontend) -> Self {
+        Self(Arc::new(frontend))
+    }
+    pub fn issuance(&self) -> FrontendIssuance {
+        FrontendIssuance(Arc::downgrade(&self.0))
+    }
+}
+impl std::ops::Deref for FrontendRevision {
+    type Target = ColdFrontend;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+/// A weak identity retains only the fixed frontend control block after payload
+/// destruction, never a strong source arena or copied provenance ledger.
+#[derive(Clone, Debug)]
+pub struct FrontendIssuance(std::sync::Weak<ColdFrontend>);
+impl FrontendIssuance {
+    pub fn matches(&self, revision: &FrontendRevision) -> bool {
+        std::sync::Weak::ptr_eq(&self.0, &Arc::downgrade(&revision.0))
+    }
+}
+
 /// A bounded executable parse tied to an immutable source capture. Callers may
 /// inspect its AST, but cannot replace it or manufacture its source authority.
 pub struct IssuedBodyInput<'a> {

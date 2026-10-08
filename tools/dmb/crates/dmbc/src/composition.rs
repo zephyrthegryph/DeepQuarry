@@ -486,6 +486,14 @@ fn compose_records_access(
         )
         .map_err(|e| unsupported(format!("class skeleton {e:?}")))?;
     }
+    // VM MobPath values use the mob table, not the class table. Allocate the
+    // shared domain before admitting any compiler-owned procedure words.
+    let mob_bindings = if let Some((plan, _)) = projection {
+        crate::mob_writer::materialize_projection(&mut dmb, &batch.tables, plan)
+            .map_err(unsupported)?
+    } else {
+        dm_link::MobBindings::new()
+    };
     let linked_records_profile = dm_profile::stage("composition.linked_records");
     if let Some(index) = builtin_global_vars {
         if index as usize != dmb.variables.len() {
@@ -545,7 +553,7 @@ fn compose_records_access(
             .get(&identity)
             .ok_or_else(|| unsupported("missing global procedure artifact"))?;
         let linked_words = batch
-            .unit_words(unit_index)
+            .unit_words(unit_index, &mob_bindings)
             .map_err(CompositionError::Link)?;
         let unit = &batch.units[unit_index];
         let abi = unit
@@ -683,7 +691,7 @@ fn compose_records_access(
             .get(&key)
             .ok_or_else(|| unsupported("missing helper artifact"))?;
         let words = batch
-            .helper_words(helper_index)
+            .helper_words(helper_index, &mob_bindings)
             .map_err(CompositionError::Link)?;
         emit_anonymous(
             &mut dmb,
@@ -715,7 +723,7 @@ fn compose_records_access(
             .get(&identity)
             .ok_or_else(|| unsupported("initializer artifact absent"))?;
         let words = batch
-            .initializer_words(unit_index)
+            .initializer_words(unit_index, &mob_bindings)
             .map_err(CompositionError::Link)?;
         emit_anonymous(
             &mut dmb,
@@ -755,10 +763,10 @@ fn compose_records_access(
     drop(linked_records_profile);
     if let Some((plan, values)) = projection {
         let members_profile = dm_profile::stage("composition.member_records");
-        crate::class_projection::materialize_members_with_strings(
+        crate::class_projection::materialize_members_with_mob_bindings(
             &mut dmb,
             plan,
-            &batch.tables,
+            (&batch.tables, mob_bindings),
             symbols,
             values,
             &mut string_index,

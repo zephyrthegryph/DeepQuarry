@@ -537,15 +537,20 @@ mod tests {
         assert_eq!(proc["procedure"]["settings"][0]["name"], "waitfor");
     }
     #[test]
-    fn guarded_setting_rows_export_structure_and_current_source_separately() {
+    fn guarded_setting_rows_export_proc_wide_order_and_current_source_separately() {
         let rows = source_rows("/proc/p()\n    if (1)\n        set waitfor = 0\n    else\n        set waitfor = 1\n    while (runtime_value)\n        set background = 1\n    return 2\n");
         let procedure = rows.iter().find(|row| row["kind"] == "proc").unwrap();
         let settings = &procedure["procedure"]["settings"];
-        assert_eq!(settings[0]["kind"], "conditional");
-        assert_eq!(settings[0]["then_branch"][0]["name"], "waitfor");
-        assert_eq!(settings[0]["else_branch"][0]["name"], "waitfor");
-        assert_eq!(settings[1]["kind"], "unsupported_context");
-        assert_eq!(settings[1]["children"][0]["name"], "background");
+        // Runtime guards do not condition ABI metadata. Both branches and the
+        // loop contribute settings in lexical encounter order (DESIGN §4.4).
+        assert_eq!(settings.as_array().unwrap().len(), 3);
+        for setting in settings.as_array().unwrap() {
+            assert_eq!(setting["kind"], "setting");
+        }
+        assert_eq!(settings[0]["name"], "waitfor");
+        assert_eq!(settings[1]["name"], "waitfor");
+        assert_eq!(settings[2]["name"], "background");
+        assert_ne!(settings[0]["value"], settings[1]["value"]);
         let body = rows.iter().find(|row| row["row"] == "body").unwrap();
         assert_eq!(body["setting_context_origins"].as_array().unwrap().len(), 6);
         assert_eq!(body["setting_context_origins"][1]["line"], 3);

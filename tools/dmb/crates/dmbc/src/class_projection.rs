@@ -586,6 +586,8 @@ pub(crate) fn materialize_types_with_strings(
 #[path = "class_projection/members.rs"]
 mod members;
 pub use members::materialize_members;
+pub(crate) use members::materialize_members_with_mob_bindings;
+#[cfg(test)]
 pub(crate) use members::materialize_members_with_strings;
 
 fn encoded_constant(kind: u8, value: u32) -> Result<Vec<u32>, ProjectionError> {

@@ -138,9 +138,7 @@ fn classified_cold_path_emits_real_class_field_and_procedure() {
     let class = image
         .classes
         .iter()
-        .position(|class| {
-            image.string(class.path_string_id()) == Some(b"/datum/demo".as_slice())
-        })
+        .position(|class| image.string(class.path_string_id()) == Some(b"/datum/demo".as_slice()))
         .unwrap();
     let declarations = image.class_variable_declarations(class).unwrap();
     assert!(declarations.iter().any(|(id, _)| {
@@ -166,13 +164,10 @@ fn classified_cold_path_emits_real_class_field_and_procedure() {
         u32::from(u16::MAX),
         "stored modified defaults must not add a class runtime assignment"
     );
-    assert!(
-        image
-            .procs
-            .iter()
-            .any(|proc| image.string(proc.strings[0])
-                == Some(b"/datum/demo/proc/read".as_slice()))
-    );
+    assert!(image
+        .procs
+        .iter()
+        .any(|proc| image.string(proc.strings[0]) == Some(b"/datum/demo/proc/read".as_slice())));
 }
 #[test]
 fn pinned_cold_startup_interleaves_globals_class_and_distinct_procedure_statics() {
@@ -184,10 +179,7 @@ fn pinned_cold_startup_interleaves_globals_class_and_distinct_procedure_statics(
     }
     struct NoTypeDefaults;
     impl crate::class_projection::TypeValuePolicy for NoTypeDefaults {
-        fn tag(
-            &self,
-            _: dm_ir::SymbolId,
-        ) -> Result<u8, crate::class_projection::ProjectionError> {
+        fn tag(&self, _: dm_ir::SymbolId) -> Result<u8, crate::class_projection::ProjectionError> {
             Err(crate::class_projection::ProjectionError::Unsupported(
                 "no type defaults".into(),
             ))
@@ -374,9 +366,9 @@ fn pinned_cold_startup_interleaves_globals_class_and_distinct_procedure_statics(
         .filter(|instruction| instruction.name == "SetVar")
         .flat_map(|instruction| instruction.typed_operands().unwrap())
         .filter_map(|operand| match operand {
-            byond_dmb::bytecode::Operand::Variable(byond_dmb::operands::Variable::Global(
-                slot,
-            )) => Some(slot),
+            byond_dmb::bytecode::Operand::Variable(byond_dmb::operands::Variable::Global(slot)) => {
+                Some(slot)
+            }
             _ => None,
         })
         .collect::<Vec<_>>();

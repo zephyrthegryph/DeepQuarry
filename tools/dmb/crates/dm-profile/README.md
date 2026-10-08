@@ -53,68 +53,41 @@ which does not run destructors. Artifact write errors are reported.
 
 ## CPU accounting
 
-Primary `cpu_s`, `max_thread_cpu_s`, `exclusive_cpu_s`, folded CPU stacks and
-`critical_path_cpu_s` retain calibrated `QueryThreadCycleTime` measurements as
-required by DESIGN. An independent process crosscheck disagreement leaves these
-estimates uncertified; `cpu_precision_scope` states that limitation.
+Revision6 samples each stage thread once at entry and once at exit using
+`GetThreadTimes` on Windows or `CLOCK_THREAD_CPUTIME_ID` on Linux. The same
+observed nanoseconds feed primary and compatibility coarse fields. There are no
+cycle queries, calibration windows or converted rates; serialized calibration
+metadata remains descriptive and `thread_calibrations` is empty. Chrome
+`cpu_raw_units` is `thread_cpu_nanoseconds` on both platforms.
 
-Separately named `coarse_thread_cpu_s`, `coarse_max_thread_cpu_s`, and
-`coarse_exclusive_thread_cpu_s` use independent `GetThreadTimes` kernel plus user
-CPU at the same logical boundaries. `coarse_covered_thread_cpu_s` and
-`coarse_cpu_crosscheck_ratio` aggregate only this audit clock. Approximately
-15.625 ms accounting ticks limit precision: short spans can report zero, which
-is not evidence of no work. Coarse audit fields **must not substitute** for
-primary CPU in DESIGN acceptance or the benchmark harness. No metric is scaled
-to another clock or to process totals. Failed samples invalidate only their
-own clock's measurements.
+`stage(name)` records thread CPU, wall, allocations and process I/O windows.
+`item(name)` records wall and allocations only: it takes no CPU or process I/O
+samples and does not split the parent's CPU interval. Each row identifies
+`cpu_measurement` as `stage_thread_cpu` or `wall_allocations_only`. Item CPU
+fields remain null and item rows are excluded from CPU coverage sums.
 
-Cycle intervals remain raw and retain their thread identity until finalization.
-Each thread's naturally observed paired cycle/coarse envelope supplies its own
-rate: no startup busy loop, worker busy loop, global fallback, or process-total
-normalization. Stability requires at least two disjoint observed intervals with
-500 ms coarse CPU each, therefore at least 1 s in the envelope. A single window
-cannot certify itself. `thread_calibrations` retains status, observed CPU,
-checked-window count, rate drift and quantization uncertainty. Insufficient,
-failed, backwards or unstable threads leave affected stage CPU null.
+Windows successfully paired monotonic stage endpoints retain duration bounds
+plus/minus31.25ms; missing/backward samples remain unknown. Linux bounds use its
+native CPU clock. CPU is never replaced by wall time or scaled to process totals.
+Acceptance requires each relevant upper bound to meet its budget and the entire
+covered-thread/process ratio interval to satisfy the independent5% audit.
 
-Subinterval drift greater than 5% **plus** conservative coarse uncertainty
-invalidates the rate. Two nominal 15.625 ms ticks bound each observed interval's
-duration uncertainty; the subinterval/envelope ratio propagates both errors.
-At 1 s the envelope duration uncertainty is 3.125%; a 500 ms window is 6.25%,
-and the combined comparison uncertainty is larger. This is not a claim of 5%
-measurement accuracy. Sub-500ms frequency changes may remain unobserved. The
-independent process CPU crosscheck retains its own acceptance threshold.
+Exclusive CPU segments partition nested stage intervals. Same-named nested
+scopes aggregate only their outermost interval; individual Chrome calls remain.
+Covered CPU bounds union overlapping or exactly contiguous observed stage
+intervals separately per thread, never filling unobserved gaps. Correlated
+exclusive bound sums need not equal these union endpoints.
 
-`cpu_conversion_complete` is false when any observed thread cannot be converted.
-`cpu_folded_omitted_threads` identifies threads excluded from the CPU folded
-artifact; that artifact is partial when this list is nonempty. Chrome interval
-arguments use `cpu_raw` and `cpu_raw_units` (Windows cycles or Linux native ns),
-not falsely labelled converted nanoseconds. Older frozen reports used one
-startup rate across all threads: their CPU metrics remain estimates requiring
-their original crosscheck and must not be relabelled as per-thread measurements.
-Linux uses `CLOCK_THREAD_CPUTIME_ID`.
-Unavailable or backwards samples invalidate the affected stage's CPU metrics;
-wall time is never substituted.
+`finish` sums stage thread maxima only for the caller's explicit sequential
+chain. Missing/duplicate chain names produce null. Overlapping parent/child
+stages must not both appear in that chain. All main-thread pipeline work needs
+named stage coverage. Profiler setup/finalization and external process totals
+retain separate boundaries; the independent process audit remains authoritative.
 
-Entering or leaving a stage takes one CPU boundary sample shared by its frame,
-inclusive interval, and parent transition. Exclusive segments therefore partition
-nested CPU intervals. Each stage reports CPU summed across participating threads,
-maximum accumulated CPU on one thread, and exclusive CPU. Nested inclusive
-totals must not be added together.
-
-`finish` sums per-stage thread maxima only for the caller's explicit sequential
-stage list, stored in `critical_path_stages`. Missing stages or duplicate names
-produce a null critical-path result. The caller must exclude overlapping parents
-and children; this is a stage approximation, not automatic dependency-chain
-reconstruction. Same-named worker spans contribute to the same stage maximum.
-
-Process CPU is measured independently. `cpu_crosscheck_ratio` compares covered
-exclusive thread CPU with process CPU; inspect it with the calibration and
-uninstrumented-work coverage before accepting measurements. Initialization and
-calibration precede the report interval, while an external process timer includes
-them. Their setup time is reported separately. Profiling bookkeeping is included
-in entered intervals; uninstrumented threads, including trace writers, are not
-covered by the folded CPU stacks.
+Historic frozen cycle-based reports retain their original interpretation and
+must not be relabelled as revision6 direct-clock evidence. Counting-build CPU
+is diagnostic only; acceptance binaries use mimalloc with allocation counting
+disabled, as required by DESIGN revision6.
 
 ## Allocations, memory, and I/O
 
@@ -214,3 +187,13 @@ This limitation is not resolved by renaming elapsed time or by using its
 difference from thread CPU.
 
 Process coverage bounds use `covered_cpu_bounds_method = participating_thread_interval_union`: observed inclusive intervals are unioned independently per thread, merging overlap and exact contiguity only. Missing or inconsistent paired clocks invalidate coverage. Exclusive stage bounds remain conservative per-segment bounds; their sum is correlated and can be much wider than the coverage union. No process scaling or gap filling is performed.
+
+Profiler-owned CPU receipts are non-tracing direct thread endpoints. `profile.setup`
+and `profile.finalization` are sequential main-thread overhead; the memory sampler
+and `profile.chrome_writer` are concurrent participants in process coverage, not
+sequential compiler critical-chain stages. Chrome's receipt starts on its first
+underlying writer call and ends at writer drop after the final buffer flush.
+The third-party buffer's initial serialization before that call remains unobserved.
+All workers are joined before the independent process endpoint and report snapshot.
+Internal receipts measure CPU and wall only; allocation fields are not separately
+observed. Report serialization after the snapshot is outside the measured window.

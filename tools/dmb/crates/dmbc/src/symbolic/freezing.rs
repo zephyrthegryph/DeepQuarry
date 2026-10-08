@@ -120,7 +120,7 @@ pub(super) fn freeze_artifact_to_sink(
         },
         |stage| {
             freeze_detail.then(|| {
-                dm_profile::stage(match stage {
+                dm_profile::item(match stage {
                     FreezeStage::Encoding => "freeze.encoding",
                     FreezeStage::DecodeValidation => "freeze.decode_validation",
                     FreezeStage::Binding => "freeze.semantic_binding",

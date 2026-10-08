@@ -4,6 +4,8 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     sync::Arc,
 };
+mod wire_domains;
+pub use wire_domains::{admit_type_path_words, MobBindings, WireDomainError};
 
 /// String slots sharing the native variable-modifier/sentinel word space.
 pub fn is_reserved_string_index(index: u32) -> bool {

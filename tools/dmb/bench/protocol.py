@@ -15,6 +15,12 @@ if _config_spec is None or _config_spec.loader is None:
 configuration_gate = importlib.util.module_from_spec(_config_spec)
 _config_spec.loader.exec_module(configuration_gate)
 
+_evidence_spec = importlib.util.spec_from_file_location("dmb_structural_evidence", Path(__file__).with_name("structural_evidence.py"))
+if _evidence_spec is None or _evidence_spec.loader is None:
+    raise ImportError("cannot load structural evidence")
+structural_evidence = importlib.util.module_from_spec(_evidence_spec)
+_evidence_spec.loader.exec_module(structural_evidence)
+
 MARKER = ".dmb-benchmark-owned.json"
 MIN_FREE = 25 * 1024**3
 STRUCTURAL_CATEGORIES = frozenset(("type_set", "type_headers", "variable_defaults", "procedure_table", "procedure_flags", "globals", "strings_by_use", "bytecode", "other"))
@@ -270,14 +276,17 @@ def structural(h, args, scenario, manifest, run_dir, snapshot_id, env):
     value["no_regression"] = "not_evaluable"
     previous = None
     if baseline_path:
-        previous = json.loads(Path(baseline_path).read_text(encoding="utf-8"))
+        previous = structural_evidence.load(json.loads(Path(baseline_path).read_text(encoding="utf-8")), snapshot_id, value["semantic_configuration_sha256"])
     elif args.establish_structural_baseline:
         baselines = getattr(args, "established_baselines", None)
         if baselines is None:
             baselines = args.established_baselines = {}
-        previous = baselines.get(snapshot_id)
+        baseline_key = (snapshot_id, value["semantic_configuration_sha256"])
+        descriptor = baselines.get(baseline_key)
+        previous = structural_evidence.load(descriptor, *baseline_key) if descriptor else None
         if previous is None and exact_structural_evidence(value):
-            baselines[snapshot_id] = json.loads(json.dumps(value))
+            descriptor = dict(value, report=str(report), report_sha256=h.sha(report))
+            baselines[baseline_key] = structural_evidence.compact(descriptor)
             value["no_regression"] = "baseline_established"
     if previous is not None:
         value["no_regression"] = structural_no_regression(previous, value)
@@ -293,10 +302,11 @@ def structural(h, args, scenario, manifest, run_dir, snapshot_id, env):
     value["report"] = str(report)
     value["report_sha256"] = h.sha(report)
     admission = run_dir / "structural-admission.json"
-    write(admission, value)
-    value["admission_report"] = str(admission)
-    value["admission_report_sha256"] = h.sha(admission)
-    return value
+    summary = structural_evidence.compact(value)
+    write(admission, summary)
+    summary["admission_report"] = str(admission)
+    summary["admission_report_sha256"] = h.sha(admission)
+    return summary
 
 
 def retain_small_evidence(h, run_dir, row):
@@ -334,6 +344,16 @@ def cleanup_verified_outputs(h, run, row, protected):
     return cleanup
 
 
+def cleanup_completed_round(round_cache, cache, rows, expected_count, protected):
+    """Only a complete native-fresh verified round admits its owned cache."""
+    if (len(rows) != expected_count or expected_count <= 0
+            or any(row.get("oracle") != "passed" or row.get("structural_invocation_finished") is not True for row in rows)):
+        return None
+    preparation = prepare_output_cleanup([round_cache], cache, protected)
+    cleanup = remove_owned(round_cache, cache, protected)
+    return {**cleanup, "closed_link_cleanup": preparation}
+
+
 def trim_complete_evidence(h, output, protected):
     """Keep three complete oracle-valid trace runs, independent of semantic coverage."""
     output = require_e(output)
@@ -352,7 +372,7 @@ def trim_complete_evidence(h, output, protected):
         for run in cohort.iterdir():
             receipt = run / "receipt.json"
             trace = run / "cold.trace.json"
-            if not receipt.is_file() or not trace.is_file():
+            if not receipt.is_file():
                 continue
             try:
                 run = require_e(run)
@@ -364,22 +384,32 @@ def trim_complete_evidence(h, output, protected):
                 continue
             if (row.get("measurement_revision") == 6 and row.get("oracle") == "passed"
                     and row.get("structural_invocation_finished") is True):
-                candidates.append((trace.stat().st_mtime_ns, run, trace, row))
+                candidates.append((trace.stat().st_mtime_ns if trace.is_file() else 0, run, trace, row))
     limitations = []
-    for _, run, trace, row in sorted(candidates, key=lambda entry: entry[0])[:-3]:
+    traced = sorted((entry for entry in candidates if entry[2].is_file()), key=lambda entry: entry[0])
+    retained = {entry[1] for entry in traced[-3:]}
+    for _, run, trace, row in candidates:
+        if run in retained:
+            continue
         # Validate every deletion target BEFORE preserving/copying or deleting
         # anything. A pinned descendant protects its entire ancestor artifact.
         bulky = [run / name for name in ("pair-store", "oracle-store", "artifacts", "oracle-artifacts")]
-        targets = [trace, *[path for path in bulky if path.exists()]]
+        if not trace.exists() and not any(path.exists() for path in bulky):
+            continue
+        targets = [path for path in (trace, *bulky) if path.exists()]
         for target in targets:
             target = require_e(target)
             if any(target == pin or target in pin.parents or pin in target.parents for pin in protected):
                 raise ValueError("retention intersects protected input/reference: " + str(target))
         retain_small_evidence(h, run, row)
         row["closed_link_cleanup"] = prepare_output_cleanup(bulky, run, protected)
-        cleanup = list(row.get("cleanup", []))
-        cleanup.extend(remove_owned(path, run, protected) for path in bulky if path.exists())
-        if os.name == "nt" and not trace.stat().st_mode & stat.S_IWRITE:
+        previous_cleanup = row.get("cleanup", [])
+        if previous_cleanup:
+            row.setdefault("cleanup_history", []).append(previous_cleanup)
+        cleanup = [remove_owned(path, run, protected) for path in bulky if path.exists()]
+        if not trace.exists():
+            pass
+        elif os.name == "nt" and not trace.stat().st_mode & stat.S_IWRITE:
             cleanup.append({"status": "preserved", "path": str(trace),
                             "reason": "read-only link; shared attributes unchanged"})
         else:
@@ -394,6 +424,16 @@ def trim_complete_evidence(h, output, protected):
             limitations.append({"directory": str(run), "cleanup": cleanup})
         write(run / "receipt.json", row)
     return {"complete_run_limit": 3, "cleanup_limitations": limitations}
+
+
+def profile_measurement(report, child_wall):
+    """Keep the measured child lifetime distinct from the profiler's cutoff."""
+    value = {key: item for key, item in report.items() if key != "schema"}
+    value.update(profile_wall_s=report.get("wall_s"),
+                 profile_wall_scope=report.get("wall_scope"),
+                 child_wall_s=child_wall, wall_s=child_wall,
+                 wall_scope="harness_child_launch_to_reap")
+    return value
 
 
 def protocol_quality(h, row, stage_map):
@@ -466,7 +506,7 @@ def execute(h, args):
     warmup = warm_inputs(h, root, expected, Path(initial_journal) if initial_journal else None)
     methodology = {Path(__file__).with_name(name).resolve(): h.sha(Path(__file__).with_name(name))
                    for name in ("dmb-bench.py", "protocol.py", "semantic_configuration.py",
-                                "edited_snapshot.py", "closed_links.py", "watchdog.py")}
+                                "edited_snapshot.py", "closed_links.py", "structural_evidence.py", "watchdog.py")}
     cohort = {"schema": 2, "measurement_revision": 6, "schedule": "ABABAB",
               "comparison": "self_noise_floor" if args.self_comparison else "previous_vs_new",
               "benchmark_methodology_sha256": {str(path): digest for path, digest in methodology.items()},
@@ -617,7 +657,7 @@ def execute(h, args):
                                "watchdog_seconds": args.watchdog, "artifact_directory": str(directory),
                                "unmeasured_warmup": run_warmup,
                                "source_edit_provenance": scenario.get("_edited_snapshot", {}).get("provenance"),
-                               **{key: value for key, value in report.items() if key != "schema"}}
+                               **profile_measurement(report, wall)}
                         row["allocation_counting"] = report.get("allocation_counting", False)
                         if row["allocation_counting"] != (args.binary_mode == "counting"):
                             row["profile_error"] = "binary allocation mode disagrees with pinned profile metadata"
@@ -634,13 +674,13 @@ def execute(h, args):
                             cleanup_verified_outputs(h, directory, row, protected)
                             retention = trim_complete_evidence(h, output, protected)
                             write(output / "retention.json", retention)
-                            free_space(output, args.min_free_bytes)
                     round_rows = [rows[-1] for (key_label, key_workers, _), rows in collected.items()
                                   if key_label == label and key_workers == workers and rows]
-                    if len(round_rows) == len(scenarios) and all(row["oracle"] == "passed" and row.get("structural_invocation_finished") is True for row in round_rows):
-                        cleanup = remove_owned(round_cache, cache, protected)
+                    cleanup = cleanup_completed_round(round_cache, cache, round_rows, len(scenarios), protected)
+                    if cleanup is not None:
                         cohort.setdefault("round_cache_cleanup", []).append(cleanup)
                         write(output / "receipt.json", cohort)
+                    free_space(output, args.min_free_bytes)
         summaries = []
         for (label, workers, name), rows in collected.items():
             if name == "cold-body-edit":

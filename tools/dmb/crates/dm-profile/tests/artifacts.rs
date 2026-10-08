@@ -44,12 +44,13 @@ fn trace_cpu_flame_and_summary_artifacts_are_written() {
     assert!(report.total_cpu_s.is_some());
     #[cfg(windows)]
     {
-        // This tiny fixture cannot supply two natural 500 ms calibration windows.
-        assert!(!report.cpu_conversion_complete);
-        assert!(report.covered_thread_cpu_s.is_none());
-        assert!(report.critical_path_cpu_s.is_none());
-        assert!(!report.cpu_folded_omitted_threads.is_empty());
-        assert!(leaf.cpu_s.is_none());
+        // Direct thread counters remain available for short spans; uncertainty
+        // bounds account for their coarse granularity without calibration work.
+        assert!(report.cpu_conversion_complete);
+        assert!(report.covered_thread_cpu_s.is_some());
+        assert!(report.critical_path_cpu_s.is_some());
+        assert!(report.cpu_folded_omitted_threads.is_empty());
+        assert!(leaf.cpu_s.is_some());
     }
     for stage in &report.stages {
         if let (Some(exclusive), Some(inclusive)) = (stage.exclusive_cpu_s, stage.cpu_s) {
@@ -81,10 +82,15 @@ fn trace_cpu_flame_and_summary_artifacts_are_written() {
         );
     }
     let cpu_folded = std::fs::metadata(path.with_extension("cpu.folded")).unwrap();
-    if report.cpu_conversion_complete {
+    if report.cpu_conversion_complete
+        && report
+            .stages
+            .iter()
+            .any(|stage| stage.cpu_s.is_some_and(|cpu| cpu > 0.0))
+    {
         assert!(cpu_folded.len() > 0);
     } else {
-        // An empty measurement is valid evidence of unavailable calibration;
+        // An empty measurement is valid evidence of unavailable thread clocks;
         // the SVG must explain absence rather than invent a measured sample.
         assert!(std::fs::read_to_string(path.with_extension("cpu.svg"))
             .unwrap()

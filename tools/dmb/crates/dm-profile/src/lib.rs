@@ -1,8 +1,12 @@
 //! Span profiler with platform CPU clocks. No sampling agent or elevation.
+mod item;
+pub use item::{item, ItemGuard};
 mod allocator;
 mod clock;
+mod internal_observer;
 mod memory;
 mod names;
+mod writer;
 pub use allocator::CountingAllocator;
 use serde::Serialize;
 use std::{
@@ -23,15 +27,19 @@ use tracing_subscriber::prelude::*;
 pub struct StageReport {
     pub name: String,
     pub calls: u64,
+    /// Item-only spans have wall/allocation evidence and no CPU acceptance data.
+    pub cpu_measurement: &'static str,
     pub wall_s: f64,
     /// Sum of outermost same-name intervals per thread, including concurrency.
     pub wall_scope: &'static str,
     pub cpu_s: Option<f64>,
     pub max_thread_cpu_s: Option<f64>,
     pub exclusive_cpu_s: Option<f64>,
+    pub max_thread_exclusive_cpu_s: Option<f64>,
     pub cpu_bounds_s: Option<clock::CpuBounds>,
     pub max_thread_cpu_bounds_s: Option<clock::CpuBounds>,
     pub exclusive_cpu_bounds_s: Option<clock::CpuBounds>,
+    pub max_thread_exclusive_cpu_bounds_s: Option<clock::CpuBounds>,
     pub coarse_thread_cpu_s: Option<f64>,
     pub coarse_max_thread_cpu_s: Option<f64>,
     pub coarse_exclusive_thread_cpu_s: Option<f64>,
@@ -56,6 +64,16 @@ pub struct StageReport {
     pub io_scope: &'static str,
     pub attributed_read_bytes: u64,
     pub attributed_write_bytes: u64,
+}
+
+fn critical_stage<'a>(
+    stages: &'a [StageReport],
+    selector: &str,
+) -> Option<(&'a StageReport, bool)> {
+    let (name, exclusive) = selector
+        .strip_prefix("exclusive:")
+        .map_or((selector, false), |n| (n, true));
+    Some((stages.iter().find(|stage| stage.name == name)?, exclusive))
 }
 #[derive(Clone, Debug, Serialize)]
 pub struct Report {
@@ -100,6 +118,7 @@ struct Entry {
     interval_missing: bool,
     exclusive: u64,
     exclusive_threads: BTreeMap<String, u64>,
+    cpu_stage: bool,
     cpu_valid: bool,
     cpu_missing: bool,
     coarse_threads: BTreeMap<String, u64>,
@@ -112,7 +131,6 @@ struct State {
     calibration: clock::Calibration,
     entries: Mutex<BTreeMap<&'static str, Entry>>,
     folded: Mutex<BTreeMap<(String, String), Vec<clock::CpuInterval>>>,
-    thread_envelopes: Mutex<BTreeMap<String, clock::ThreadEnvelope>>,
     wall_folded: Mutex<BTreeMap<String, u64>>,
 }
 static ACTIVE: OnceLock<Arc<State>> = OnceLock::new();
@@ -200,17 +218,9 @@ fn cpu_interval(start: Option<u64>, end: Option<u64>) -> Option<u64> {
     end.zip(start)
         .and_then(|(end, start)| end.checked_sub(start))
 }
-fn cpu_boundary(state: &State) -> (Option<u64>, Option<u64>) {
-    let raw = clock::thread_raw();
-    let coarse = clock::thread_coarse_ns();
-    state
-        .thread_envelopes
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .entry(format!("{:?}", std::thread::current().id()))
-        .or_default()
-        .observe(raw, coarse);
-    (raw, coarse)
+fn cpu_boundary(_state: &State) -> (Option<u64>, Option<u64>) {
+    let sample = clock::thread_coarse_ns();
+    (sample, sample)
 }
 fn outermost_name(stack: &[Frame], name: &str) -> bool {
     !stack.iter().any(|frame| frame.name == name)
@@ -299,7 +309,7 @@ pub struct StageGuard {
     start: Instant,
     cpu: Option<u64>,
     coarse_cpu: Option<u64>,
-    process: clock::Process,
+    process: clock::ProcessIo,
     allocations: u64,
     bytes: u64,
     prior_peak: u64,
@@ -317,7 +327,7 @@ pub fn stage(name: &'static str) -> StageGuard {
             start: Instant::now(),
             cpu: None,
             coarse_cpu: None,
-            process: clock::Process::default(),
+            process: clock::ProcessIo::default(),
             allocations: 0,
             bytes: 0,
             prior_peak: 0,
@@ -353,7 +363,7 @@ pub fn stage(name: &'static str) -> StageGuard {
         state,
         name,
         start: start_wall,
-        process: clock::process(),
+        process: clock::process_io(),
         allocations,
         bytes,
         prior_peak,
@@ -363,11 +373,7 @@ pub fn stage(name: &'static str) -> StageGuard {
                 "compiler_stage",
                 stage = name,
                 cpu_raw = tracing::field::Empty,
-                cpu_raw_units = if cfg!(windows) {
-                    "thread_cycles"
-                } else {
-                    "thread_cpu_nanoseconds"
-                },
+                cpu_raw_units = "thread_cpu_nanoseconds",
                 allocated_bytes = tracing::field::Empty,
                 allocations = tracing::field::Empty,
                 peak_live_bytes = tracing::field::Empty
@@ -454,9 +460,10 @@ impl Drop for StageGuard {
         });
         let (allocations, bytes, _) = allocator::snapshot();
         let peak = allocator::restore_peak(self.prior_peak);
-        let process = clock::process();
+        let process = clock::process_io();
         let mut entries = state.entries.lock().unwrap_or_else(|e| e.into_inner());
         let entry = entries.entry(self.name).or_default();
+        entry.cpu_stage = true;
         entry.active = entry.active.saturating_sub(1);
         entry.report.name = self.name.into();
         entry.report.calls += 1;
@@ -555,6 +562,8 @@ pub fn artifact_path(path: &Path, suffix: &str) -> PathBuf {
     path.with_extension(suffix.trim_start_matches('.'))
 }
 pub fn initialize(path: &Path) -> Result<ProfileGuard, String> {
+    let start = Instant::now();
+    let process = clock::process();
     if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
@@ -562,10 +571,13 @@ pub fn initialize(path: &Path) -> Result<ProfileGuard, String> {
         calibration: clock::calibrate(),
         entries: Mutex::new(BTreeMap::new()),
         folded: Mutex::new(BTreeMap::new()),
-        thread_envelopes: Mutex::new(BTreeMap::new()),
         wall_folded: Mutex::new(BTreeMap::new()),
     });
-    let writer = File::create(path).map_err(|e| e.to_string())?;
+    let setup = internal_observer::InternalThreadObserver::new(Arc::clone(&state), "profile.setup");
+    let writer = writer::ObservedWriter::new(
+        File::create(path).map_err(|e| e.to_string())?,
+        Arc::clone(&state),
+    );
     let (chrome, chrome_guard) = tracing_chrome::ChromeLayerBuilder::new()
         .writer(writer)
         .include_args(true)
@@ -591,10 +603,11 @@ pub fn initialize(path: &Path) -> Result<ProfileGuard, String> {
         .set(Arc::clone(&state))
         .map_err(|_| "profiler already initialized".to_string())?;
     let memory_sampler = memory::Sampler::start(Arc::clone(&state))?;
+    drop(setup);
     Ok(ProfileGuard {
         state,
-        start: Instant::now(),
-        process: clock::process(),
+        start,
+        process,
         path: path.into(),
         chrome: Some(chrome_guard),
         flame: Some(flame_guard),
@@ -613,43 +626,41 @@ impl ProfileGuard {
             .get(name)
             .is_some_and(|entry| entry.report.calls > 0)
     }
-    /// Supply only sequential top-level names. Nested/overlapping stage maxima
-    /// cannot be summed into a critical path without an explicit pipeline proof.
+    /// Supply sequential inclusive names plus `exclusive:name` residual parents.
+    /// Residuals exclude nested CPU stages; the caller must cover omitted children
+    /// and prove that selected inclusive stages do not overlap.
     pub fn finish(mut self, sequential_stages: &[&str]) -> Result<Report, String> {
         self.finish_inner(sequential_stages)
     }
     fn finish_inner(&mut self, sequential_stages: &[&str]) -> Result<Report, String> {
+        let shutdown = internal_observer::InternalThreadObserver::new(
+            Arc::clone(&self.state),
+            "profile.finalization",
+        );
         if let Some(sampler) = self.memory_sampler.take() {
             sampler.stop()?;
         }
+        // Drop sends the termination message and joins the Chrome writer. Its
+        // direct lifetime CPU receipt must exist before the report snapshot.
+        self.chrome.take();
+        self.flame.take();
+        drop(shutdown);
         let process = clock::process();
+        let measured_wall = self.start.elapsed().as_secs_f64();
         let delta = |a: Option<u64>, b: Option<u64>| a.zip(b).map(|(a, b)| a.saturating_sub(b));
         let total = delta(process.cpu_ns, self.process.cpu_ns).map(|v| v as f64 / 1e9);
-        let thread_calibrations = self
-            .state
-            .thread_envelopes
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .iter()
-            .map(|(thread, envelope)| envelope.finish(thread.clone(), cfg!(windows)))
-            .collect::<Vec<_>>();
-        let rates = thread_calibrations
-            .iter()
-            .map(|rate| (rate.thread.clone(), rate))
-            .collect::<BTreeMap<_, _>>();
-        // A valid thread can still have a short tail outside its windows.
-        // Report actual omitted intervals, not merely calibration status.
+        let thread_calibrations: Vec<clock::ThreadCalibration> = Vec::new();
+        // Only failed/backward direct stage clock samples can omit CPU data.
         let omitted_threads = self
             .state
             .folded
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .iter()
-            .filter(|((thread, _), intervals)| {
-                intervals.iter().any(|interval| {
-                    clock::convert_interval(*interval, rates.get(thread).copied(), cfg!(windows))
-                        .is_none()
-                })
+            .filter(|((_thread, _), intervals)| {
+                intervals
+                    .iter()
+                    .any(|interval| clock::convert_interval(*interval).is_none())
             })
             .map(|((thread, _), _)| thread.clone())
             .collect::<std::collections::BTreeSet<_>>()
@@ -660,27 +671,36 @@ impl ProfileGuard {
             .values()
             .map(|entry| {
                 let mut report = entry.report.clone();
+                report.cpu_measurement = if entry.cpu_stage {
+                    "stage_thread_cpu"
+                } else {
+                    "wall_allocations_only"
+                };
                 report.wall_scope = "sum_thread_intervals_not_phase_elapsed";
                 report.allocation_scope =
                     "sum_thread_local_inclusive_interval_deltas_not_process_total";
                 report.peak_live_scope =
                     "process_requested_live_bytes_observed_on_stage_thread_allocations";
+                if matches!(
+                    report.name.as_str(),
+                    "profile.setup"
+                        | "profile.finalization"
+                        | "profile.chrome_writer"
+                        | "profiler.memory_sampler"
+                ) {
+                    report.allocation_scope = "unmeasured_internal_observer";
+                    report.peak_live_scope = "unmeasured_internal_observer";
+                }
                 report.sampled_private_scope =
                     "process_current_private_bytes_sampled_while_stage_active_not_attributable";
                 if entry.cpu_valid && !entry.cpu_missing && !entry.interval_missing {
                     let converted = entry
                         .intervals
-                        .iter()
-                        .map(|(thread, intervals)| {
+                        .values()
+                        .map(|intervals| {
                             intervals
                                 .iter()
-                                .map(|interval| {
-                                    clock::convert_interval(
-                                        *interval,
-                                        rates.get(thread).copied(),
-                                        cfg!(windows),
-                                    )
-                                })
+                                .map(|interval| clock::convert_interval(*interval))
                                 .sum::<Option<f64>>()
                         })
                         .collect::<Option<Vec<_>>>();
@@ -690,20 +710,25 @@ impl ProfileGuard {
                     }
                     report.exclusive_cpu_s = entry
                         .exclusive_intervals
-                        .iter()
-                        .map(|(thread, intervals)| {
+                        .values()
+                        .map(|intervals| {
                             intervals
                                 .iter()
-                                .map(|interval| {
-                                    clock::convert_interval(
-                                        *interval,
-                                        rates.get(thread).copied(),
-                                        cfg!(windows),
-                                    )
-                                })
+                                .map(|interval| clock::convert_interval(*interval))
                                 .sum::<Option<f64>>()
                         })
                         .sum::<Option<f64>>();
+                    report.max_thread_exclusive_cpu_s = entry
+                        .exclusive_intervals
+                        .values()
+                        .map(|intervals| {
+                            intervals
+                                .iter()
+                                .map(|v| clock::convert_interval(*v))
+                                .sum::<Option<f64>>()
+                        })
+                        .collect::<Option<Vec<_>>>()
+                        .and_then(|values| values.into_iter().reduce(f64::max));
                     let bounds = entry
                         .intervals
                         .values()
@@ -721,6 +746,14 @@ impl ProfileGuard {
                             .values()
                             .map(|intervals| interval_bounds(intervals)),
                     ));
+                    report.max_thread_exclusive_cpu_bounds_s = entry
+                        .exclusive_intervals
+                        .values()
+                        .map(|intervals| interval_bounds(intervals))
+                        .reduce(|a, b| clock::CpuBounds {
+                            lower: a.lower.max(b.lower),
+                            upper: a.upper.max(b.upper),
+                        });
                 }
                 if entry.coarse_valid && !entry.coarse_missing {
                     report.coarse_thread_cpu_s =
@@ -735,6 +768,7 @@ impl ProfileGuard {
             .collect::<Vec<_>>();
         let covered_bounds = if entries
             .values()
+            .filter(|entry| entry.cpu_stage)
             .any(|entry| !entry.cpu_valid || entry.cpu_missing || entry.interval_missing)
         {
             None
@@ -757,10 +791,12 @@ impl ProfileGuard {
         drop(entries);
         let covered = stages
             .iter()
+            .filter(|stage| stage.cpu_measurement == "stage_thread_cpu")
             .map(|stage| stage.exclusive_cpu_s)
             .sum::<Option<f64>>();
         let coarse_covered = stages
             .iter()
+            .filter(|stage| stage.cpu_measurement == "stage_thread_cpu")
             .map(|stage| stage.coarse_exclusive_thread_cpu_s)
             .sum::<Option<f64>>();
         let unique = sequential_stages
@@ -772,7 +808,14 @@ impl ProfileGuard {
         } else {
             sequential_stages
                 .iter()
-                .map(|name| stages.iter().find(|s| s.name == *name)?.max_thread_cpu_s)
+                .map(|name| {
+                    let (stage, exclusive) = critical_stage(&stages, name)?;
+                    if exclusive {
+                        stage.max_thread_exclusive_cpu_s
+                    } else {
+                        stage.max_thread_cpu_s
+                    }
+                })
                 .sum::<Option<f64>>()
         };
         let critical_bounds =
@@ -782,17 +825,19 @@ impl ProfileGuard {
                 sequential_stages
                     .iter()
                     .map(|name| {
-                        stages
-                            .iter()
-                            .find(|s| s.name == *name)?
-                            .max_thread_cpu_bounds_s
+                        let (stage, exclusive) = critical_stage(&stages, name)?;
+                        if exclusive {
+                            stage.max_thread_exclusive_cpu_bounds_s
+                        } else {
+                            stage.max_thread_cpu_bounds_s
+                        }
                     })
                     .collect::<Option<Vec<_>>>()
                     .map(|values| sum_bounds(values.into_iter()))
             };
         let report = Report {
             schema: 1,
-            wall_s: self.start.elapsed().as_secs_f64(),
+            wall_s: measured_wall,
             wall_scope: "profile_elapsed_wall_interval",
             critical_path_cpu_s: critical,
             critical_path_stages: sequential_stages.iter().map(|name| (*name).to_string()).collect(),
@@ -814,7 +859,7 @@ impl ProfileGuard {
             calibration: self.state.calibration.clone(),
             cpu_crosscheck_ratio: covered.zip(total.filter(|v| *v > 0.0)).map(|(covered, total)| covered / total),
             cpu_precision_scope: if cfg!(windows) {
-                "per_thread_piecewise_cycles_precise_unknown_outside_windows_paired_quantization_bounds"
+                "direct_GetThreadTimes_stage_boundaries_with_quantization_bounds"
             } else {
                 "native_thread_cpu_clock_platform_resolution"
             },
@@ -825,7 +870,8 @@ impl ProfileGuard {
             cpu_folded_omitted_threads: omitted_threads,
             stages,
             coverage_notes: vec![
-                "Windows primary CPU preserves absolute cycle intervals and integrates overlapping local paired-clock windows of at least 500 ms CPU, requiring two natural windows. No global envelope rate, tail extrapolation or process scaling. Short tails remain unknown even on otherwise calibrated threads; omitted folded threads derive from actual interval conversion. Successful paired coarse boundaries provide duration bounds plus/minus 31.25 ms; missing/backwards clocks have no bound. Stage bounds add across disjoint exclusive segments and may be wide. Independent process coverage bounds union overlapping or exactly contiguous observed inclusive intervals per thread, charging shared endpoint uncertainty once; missing or inconsistent clock observations invalidate that union. Stage bound sums are correlated and need not equal union bounds. Bounds may be too wide to pass, and require upper-budget checks plus the entire independent process ratio within 5%. Frequency changes inside a window remain a precision limit. Chrome cpu_raw is cycles on Windows and native ns on Linux.".into(),
+                "Profiler setup/finalization and memory-worker CPU use direct non-tracing endpoint receipts. Chrome writer CPU covers its first underlying write/flush through drop after final flush; tracing-chrome buffers its initial output, so worker startup/initial buffered serialization before that boundary is unobserved. Worker joins precede the independent process endpoint and report snapshot. These internal receipts record CPU/wall only; allocation fields are not separately observed. Report serialization after the snapshot is outside this measurement window.".into(),
+                "Stage CPU uses GetThreadTimes on Windows or CLOCK_THREAD_CPUTIME_ID on Linux, directly as nanoseconds; no cycles or calibration. Item-only spans record wall and allocations and do not split parent CPU intervals. Successful monotonic Windows stage endpoints provide bounds plus/minus31.25ms. Missing clocks stay unknown. Independent process coverage and entire ratio bounds retain5% tolerance. Chrome cpu_raw units are thread CPU nanoseconds.".into(),
                 "CPU folded stacks use exclusive entered stage segments; uninstrumented threads/work are excluded. Chrome/flame wall traces come from tracing spans.".into(),
                 "Same-named nested spans on one thread contribute only their outermost inclusive CPU, wall and allocation interval to the named stage aggregate; call counts and individual Chrome spans retain every call.".into(),
                 "Allocator numbers include profiler overhead and nested scopes; peak_live is observed process allocator live bytes on current-thread allocations, not OS private memory attribution. Allocation counting requires the executable to install CountingAllocator.".into(),
@@ -834,12 +880,10 @@ impl ProfileGuard {
             ],
             private_memory_sample_interval_ms: memory::interval_ms(),
         };
-        self.chrome.take();
-        self.flame.take();
         let mut file =
             File::create(artifact_path(&self.path, ".cpu.folded")).map_err(|e| e.to_string())?;
         let mut converted_stacks = BTreeMap::<String, f64>::new();
-        for ((thread, stack), intervals) in self
+        for ((_thread, stack), intervals) in self
             .state
             .folded
             .lock()
@@ -848,9 +892,7 @@ impl ProfileGuard {
         {
             if let Some(seconds) = intervals
                 .iter()
-                .map(|interval| {
-                    clock::convert_interval(*interval, rates.get(thread).copied(), cfg!(windows))
-                })
+                .map(|interval| clock::convert_interval(*interval))
                 .sum::<Option<f64>>()
             {
                 *converted_stacks.entry(stack.clone()).or_default() += seconds;

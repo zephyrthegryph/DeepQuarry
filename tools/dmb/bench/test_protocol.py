@@ -51,6 +51,42 @@ class RetentionChecks(unittest.TestCase):
         (run / "artifacts" / "raw.log").write_text("full diagnostics")
         return run
 
+    def test_complete_round_prepares_readonly_cache_and_partial_round_preserves(self):
+        cache = self.root / "cache"
+        cache.mkdir()
+        round_cache = protocol.owned_directory(cache / "round", cache)
+        first = round_cache / "archive.rsc"
+        second = round_cache / "linked.rsc"
+        first.write_bytes(b"tiny cache fixture")
+        os.link(first, second)
+        if os.name == "nt":
+            first.chmod(stat.S_IREAD)
+        passing = {"oracle": "passed", "structural_invocation_finished": True}
+        self.assertIsNone(protocol.cleanup_completed_round(round_cache, cache, [passing], 2, set()))
+        self.assertTrue(first.exists())
+        failed = {"oracle": "not_passed", "structural_invocation_finished": True}
+        self.assertIsNone(protocol.cleanup_completed_round(round_cache, cache, [failed], 1, set()))
+        self.assertTrue(first.exists())
+        result = protocol.cleanup_completed_round(round_cache, cache, [passing], 1, set())
+        self.assertEqual(result["status"], "removed", result)
+        self.assertFalse(round_cache.exists())
+
+    def test_receipt_without_chrome_retries_completed_bulky_cleanup(self):
+        cohort = self.cohort("retry")
+        run = self.run_record(cohort, "old", 1)
+        (run / "cold.trace.json").unlink()
+        row = json.loads((run / "receipt.json").read_text())
+        row["structural_diff"] = {"evidence_format": "structural-report-reference-v1", "report_sha256": "fixture"}
+        row["cleanup"] = [{"status": "preserved", "reason": "earlier outside link"}]
+        protocol.write(run / "receipt.json", row)
+        report = protocol.trim_complete_evidence(self.helper, cohort, set())
+        self.assertFalse(report["cleanup_limitations"])
+        self.assertFalse((run / "pair-store").exists())
+        final = json.loads((run / "receipt.json").read_text())
+        self.assertEqual(final["retention"], "small_evidence_only")
+        self.assertEqual(final["structural_diff"], row["structural_diff"])
+        self.assertTrue(final["cleanup_history"])
+
     def test_joint_cleanup_validates_all_markers_before_loading_helper(self):
         cohort = self.cohort("joint")
         run = self.run_record(cohort, "run", 1)
@@ -253,6 +289,20 @@ class SignatureChecks(unittest.TestCase):
         self.assertFalse(protocol.valid_case_signatures({"proc": [["bad"]]}))
         self.assertFalse(protocol.valid_case_signatures({"proc": ["0" * 32, "0" * 32]}))
         self.assertTrue(protocol.valid_case_signatures({"proc": []}))
+
+
+class MeasurementCompositionChecks(unittest.TestCase):
+    def test_profile_wall_does_not_replace_measured_child_lifetime(self):
+        source = {"schema": 1, "wall_s": 2.0, "wall_scope": "profile_elapsed_wall_interval", "total_cpu_s": 3.0}
+        merged = protocol.profile_measurement(source, 5.0)
+        self.assertEqual(merged["wall_s"], 5.0)
+        self.assertEqual(merged["child_wall_s"], 5.0)
+        self.assertEqual(merged["profile_wall_s"], 2.0)
+        self.assertEqual(merged["wall_scope"], "harness_child_launch_to_reap")
+        self.assertEqual(merged["profile_wall_scope"], "profile_elapsed_wall_interval")
+        self.assertEqual(merged["total_cpu_s"], 3.0)
+        self.assertEqual(source["wall_s"], 2.0)
+        self.assertNotIn("schema", merged)
 
 
 class ReplayClosureChecks(unittest.TestCase):

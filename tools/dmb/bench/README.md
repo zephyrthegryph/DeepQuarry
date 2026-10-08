@@ -52,11 +52,15 @@ Scenario JSON uses `name`, `project`, and `arguments`; harness-owned options can
 
 ## Retention and safety
 
+Completed rounds remove their owned compiler cache before the post-round free-space check. Incomplete rounds stay available for diagnosis. Retention retries leftover artifacts and records each cleanup attempt.
+
 Only marker-authenticated E: artifact directories created by this harness are eligible for recursive cleanup. All protected paths are checked first; reparse points are refused. Bulky output stores and compiler artifacts are disposed immediately after the native-fresh output/diagnostic oracle passes and the structural invocation finishes. Structural coverage or parity may still fail; their small reports and output hashes remain, and cleanup does not upgrade those gates. Receipts, profiler reports, folded stacks, raw diagnostic logs and output hashes remain. Failed runs remain intact. Across sibling owned revision 6 cohorts, at most the three newest completed oracle-valid runs retain full Chrome traces. Older eligible traces are removed while their small evidence remains. This retention eligibility does not mean semantic coverage is complete. Outputs with a failed/missing native-fresh oracle remain intact. Cleanup failures are explicitly reported rather than counted as successful pruning.
 
 Read-only Windows output links are preserved rather than changing shared inode attributes, which could affect pinned or global RSC hardlinks. Cleanup limitations are written to the receipt, and the free-space gate still applies. Pinned sources, BYOND output, compiler references and unrelated directories are never pruned.
 
 ## Captured source body-edit trace
+
+wall_s and child_wall_s measure process launch through process reap. profile_wall_s covers only the profiler window, ending before report serialization. Older receipts without child_wall_s cannot recover end-to-end time; summaries leave it unavailable.
 
 The `cold-body-edit` scenario runs an authenticated, separately pinned captured
 journal with one exact same-length procedure-body literal replacement. This is
