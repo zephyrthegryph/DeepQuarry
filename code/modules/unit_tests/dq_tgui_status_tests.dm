@@ -35,6 +35,11 @@
 	closing = TRUE
 	probe_closed++
 
+/// What the kernel does between a change and the next frame: the observers run at the drain, the queued checks in phase R.
+/proc/dq_status_settle()
+	rx_drain()
+	ui_push_flush()
+
 /datum/unit_test/om/tgui_status_user_leaving_range_closes
 /datum/unit_test/om/tgui_status_user_leaving_range_closes/run_om(list/made)
 	var/turf/start = run_loc_floor_bottom_left
@@ -42,11 +47,11 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, start)
 	var/obj/item/host = allocate(/obj/item, start)
 	var/datum/tgui/dq_status_probe/ui = new(user, host, "Probe")
-	om_ui_status_bind(ui)
-	scheduler_advance(1)
+	ui.status_watch()
+	dq_status_settle()
 	TEST_ASSERT_EQUAL(ui.probe_closed, 0, "a user next to the host keeps the window")
 	user.forceMove(far)
-	scheduler_advance(1)
+	dq_status_settle()
 	TEST_ASSERT_EQUAL(ui.probe_closed, 1, "walking out of range closes the window without any poll")
 	qdel(ui)
 
@@ -57,9 +62,9 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, start)
 	var/obj/item/host = allocate(/obj/item, start)
 	var/datum/tgui/dq_status_probe/ui = new(user, host, "Probe")
-	om_ui_status_bind(ui)
+	ui.status_watch()
 	host.forceMove(far)
-	scheduler_advance(1)
+	dq_status_settle()
 	TEST_ASSERT_EQUAL(ui.probe_closed, 1, "the host being carried away closes the window")
 	qdel(ui)
 
@@ -69,14 +74,14 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, start)
 	var/obj/item/host = allocate(/obj/item, start)
 	var/datum/tgui/dq_status_probe/ui = new(user, host, "Probe")
-	om_ui_status_bind(ui)
-	scheduler_advance(1)
+	ui.status_watch()
+	dq_status_settle()
 	TEST_ASSERT_EQUAL(ui.probe_sent, 0, "nothing changed: nothing is sent")
 	user.set_stat(UNCONSCIOUS)
-	scheduler_advance(1)
+	dq_status_settle()
 	TEST_ASSERT_EQUAL(ui.status, STATUS_DISABLED, "knocked out: the window is disabled")
 	TEST_ASSERT_EQUAL(ui.probe_sent, 1, "the new status is sent once")
-	scheduler_advance(1)
+	dq_status_settle()
 	TEST_ASSERT_EQUAL(ui.probe_sent, 1, "and not again while it holds")
 	qdel(ui)
 
@@ -86,9 +91,9 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, start)
 	var/obj/item/host = allocate(/obj/item, start)
 	var/datum/tgui/dq_status_probe/ui = new(user, host, "Probe")
-	om_ui_status_bind(ui)
+	ui.status_watch()
 	qdel(user)
-	scheduler_advance(1)
+	dq_status_settle()
 	TEST_ASSERT_EQUAL(ui.probe_closed, 1, "deleting the user closes the window")
 	qdel(ui)
 

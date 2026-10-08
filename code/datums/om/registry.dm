@@ -62,10 +62,9 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	var/list/expansions = list()
 	/// entity type -> /datum/om/type_table (lazy).
 	var/list/type_tables = list()
-	/// Internal behaviours (expiry, tasks, ui, edge refresh).
+	/// Internal behaviours (expiry, tasks, edge refresh).
 	var/datum/om/behaviour/expiry_behaviour
 	var/datum/om/behaviour/timer_behaviour
-	var/datum/om/behaviour/ui_behaviour
 	var/datum/om/behaviour/edge_behaviour
 
 /datum/om/registry/proc/error(msg)
@@ -465,7 +464,6 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		behaviour_by_type[path] = B
 	expiry_behaviour = behaviour_by_type[/datum/om/behaviour/internal/expiry]
 	timer_behaviour = behaviour_by_type[/datum/om/behaviour/internal/timers]
-	ui_behaviour = behaviour_by_type[/datum/om/behaviour/internal/ui_push]
 	edge_behaviour = behaviour_by_type[/datum/om/behaviour/internal/edge_refresh]
 	// Inline behaviours from table rows.
 	for(var/datum/om/bundle/bundle as anything in bundles)
