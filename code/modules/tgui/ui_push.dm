@@ -43,6 +43,10 @@ SYSTEM_DEF(ui_push)
 /datum/proc/ui_push_host()
 	return src
 
+/// An answered question can change what the asker's windows show: they are pushed once, in phase R.
+/datum/request_answered(datum/request/R)
+	ui_push_mark(ui_push_host())
+
 /datum/tgui/ui_push_host()
 	return src_object()
 
