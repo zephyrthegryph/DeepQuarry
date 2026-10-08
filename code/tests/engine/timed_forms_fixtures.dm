@@ -18,8 +18,25 @@ CAPABILITIES(/obj/tf_site)
 	op("claimer", menu(), claims(), wait(3 SECONDS), then(PROC_REF(finished)))
 	op("free", menu(), claims(NONE), wait(3 SECONDS), then(PROC_REF(finished)))
 	op("ask", menu(), asks(/datum/prompt/yes_no, fields = list("question" = "Go on?"), ends_on_no = TRUE), then(PROC_REF(finished)))
+	op("ask_check", menu(), asks(/datum/prompt/yes_no/tf_check, fields = list("question" = "Sure?")), then(PROC_REF(finished)))
+	op("range", ai(), reach(REACH_RANGE(1)), wait(3 SECONDS, keeps = WAIT_KEEPS_DEFAULT & ~STAY), then(PROC_REF(finished)))
+	op("worn", menu(), needs(req(PROC_REF(mask_off))), wait(3 SECONDS), then(PROC_REF(finished)))
 	op("cap", menu(), captures(nameof(amount), resume = CANCEL_IF_CHANGED), wait(3 SECONDS), then(PROC_REF(finished)))
 	op("sys", ai(), reach(REACH_ANY), wait(3 SECONDS), then(PROC_REF(finished)))
+
+/// A question that is only valid while its machine is not broken: it reads owner_holder().
+/datum/prompt/yes_no/tf_check
+
+/datum/prompt/yes_no/tf_check/recheck_extra()
+	var/obj/tf_site/S = owner_holder()
+	if(!istype(S) || S.amount < 0)
+		return "broken"
+	return null
+
+/// Requirement: the actor wears no mask (a slot read: the ledger publishes every change of a slot).
+/obj/tf_site/proc/mask_off(datum/act/op/A)
+	var/mob/M = A.actor
+	return !M.get_equipped_item(SLOT_ID_MASK)
 
 /obj/tf_site/proc/on_start(datum/act/op/A)
 	started++
@@ -33,5 +50,14 @@ CAPABILITIES(/obj/tf_site)
 
 /obj/tf_site/proc/hold_ended()
 	ended++
+
+/// Periodic work on a cadence: counts its steps.
+/obj/tf_periodic
+	name = "timed forms periodic"
+	var/steps = 0
+
+/obj/tf_periodic/periodic_step(delta)
+	steps++
+	return null
 
 #endif

@@ -55,6 +55,10 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	var/list/things = L?.slots[id]
 	return length(things) ? things[1] : null
 
+/// What is worn or held in a slot is the ledger's, which publishes SLOT_OCCUPANCY_KEY on every change of any slot: a requirement that asks what a mob
+/// wears is re-asked when it changes.
+READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
+
 /// Items on body zone `zone` (BP_*): every body-slot item whose slot hangs on
 /// that part, plus worn items whose coverage includes it.
 /mob/proc/items_on(zone)

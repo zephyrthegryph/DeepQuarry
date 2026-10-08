@@ -505,6 +505,11 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	P.advance()
 	return P.result
 
+/// The reach policy an op works under: its reach() when it declares one, else its binding's.
+/proc/op_reach_policy(datum/op_plan/P, datum/entry/part/bind/B)
+	var/declared = P ? LAZYACCESS(P.selects, "reach") : null
+	return isnull(declared) ? B?.reach_policy() : declared
+
 /// The keeps an op's waits run under by default: all four where they apply (no HELD without a held item, no ADJACENT without a spatial reach).
 /proc/op_default_keeps(datum/act/op/A, datum/entry/part/bind/B)
 	. = WAIT_KEEPS_DEFAULT
@@ -512,7 +517,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		. &= ~STAY
 	if(isnull(A.held_provider()))
 		. &= ~HELD
-	if(!B || B.reach_policy() != REACH_ADJACENT || !A.actor)
+	var/policy = op_reach_policy(A.oplan, B)
+	if(!B || !(policy == REACH_ADJACENT || policy >= REACH_RANGE_BASE) || !A.actor)
 		. &= ~ADJACENT
 
 /// The act's entity references move to the relations: the act holds nothing strongly while the op waits.
@@ -737,8 +743,13 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/mob/M = A.actor
 	if((keeps & HELD) && M && REF(M.held_for_ops()) != start_hand_ref)
 		return /datum/msg/op/stopped
-	if((keeps & ADJACENT) && M && A.target_atom && !M.Adjacent(A.target_atom))
-		return /datum/msg/op/stopped
+	if((keeps & ADJACENT) && M && A.target_atom)
+		var/policy = op_reach_policy(oplan, binding)
+		if(policy >= REACH_RANGE_BASE)
+			if(get_dist(M, A.target_atom) > policy - REACH_RANGE_BASE)
+				return /datum/msg/op/stopped // an ai() op with reach(REACH_RANGE(n)): the worker stays within n tiles of its job
+		else if(!M.Adjacent(A.target_atom))
+			return /datum/msg/op/stopped
 	if((keeps & TARGET_PRESENT) && A.target_atom && target_turf && get_turf(A.target_atom) != target_turf)
 		return /datum/msg/op/stopped
 	if((keeps & ALIVE) && M && M.stat != CONSCIOUS)

@@ -130,3 +130,44 @@
 	E.set_active(FALSE)
 	test_time(2 SECONDS)
 	TEST_ASSERT(!every_running(E), "and parks again")
+
+/datum/unit_test/dq_timed_forms/an_ai_op_with_a_range_reach_keeps_its_worker_in_range
+/datum/unit_test/dq_timed_forms/an_ai_op_with_a_range_reach_keeps_its_worker_in_range/run_forms()
+	var/mob/living/carbon/human/H = person()
+	var/obj/tf_site/S = site()
+	perform_op(H, S, "range", null, ORIGIN_AI, AUTH_AI)
+	H.forceMove(get_step(run_loc_floor_bottom_left, NORTH))
+	test_time(4 SECONDS)
+	TEST_ASSERT_EQUAL(S.done, 1, "a worker that steps one tile away still finishes")
+	perform_op(H, S, "range", null, ORIGIN_AI, AUTH_AI)
+	H.forceMove(locate(run_loc_floor_bottom_left.x, run_loc_floor_bottom_left.y + 3, run_loc_floor_bottom_left.z))
+	test_time(4 SECONDS)
+	TEST_ASSERT_EQUAL(S.done, 1, "a worker three tiles away is stopped")
+	TEST_ASSERT_EQUAL(length(op_pendings_of(H)), 0, "and nothing is pending")
+
+/datum/unit_test/dq_timed_forms/a_prompt_an_op_asked_reads_its_holder_through_owner_holder
+/datum/unit_test/dq_timed_forms/a_prompt_an_op_asked_reads_its_holder_through_owner_holder/run_forms()
+	var/mob/living/carbon/human/H = person()
+	var/obj/tf_site/S = site()
+	test_menu(H, S, "ask_check")
+	test_answer(H, TRUE)
+	TEST_ASSERT_EQUAL(S.done, 1, "the question stayed open and its answer went through")
+
+/datum/unit_test/dq_timed_forms/a_requirement_on_what_the_actor_wears_is_asked_again
+/datum/unit_test/dq_timed_forms/a_requirement_on_what_the_actor_wears_is_asked_again/run_forms()
+	var/mob/living/carbon/human/H = person()
+	var/obj/tf_site/S = site()
+	test_menu(H, S, "worn")
+	TEST_ASSERT_EQUAL(length(op_pendings_of(H)), 1, "the wait is pending")
+	var/obj/item/clothing/mask/surgical/mask = allocate(/obj/item/clothing/mask/surgical, run_loc_floor_bottom_left)
+	H.equip_to_slot_or_del(mask, SLOT_ID_MASK)
+	test_time(4 SECONDS)
+	TEST_ASSERT_EQUAL(S.done, 0, "putting a mask on during the wait ended it")
+
+/datum/unit_test/dq_timed_forms/periodic_work_ticks_under_test_time
+/datum/unit_test/dq_timed_forms/periodic_work_ticks_under_test_time/run_forms()
+	var/obj/tf_periodic/P = allocate(/obj/tf_periodic, run_loc_floor_bottom_left)
+	om_task_periodic(P, PERIODIC_SLOW)
+	test_time(30 SECONDS)
+	TEST_ASSERT(P.steps >= 1, "a member of PERIODIC_SLOW stepped (stepped [P.steps] times)")
+	om_task_periodic_stop(P)
