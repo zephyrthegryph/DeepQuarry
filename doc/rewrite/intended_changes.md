@@ -3335,3 +3335,13 @@ The existing consciousness setter now notifies the native stat layer of the actu
 * The folder, paper plane, blob family, glass roulette ball and disposal bin family keep their look-tree and look-state rows exactly (the disposal bin's `mode` and `flush` rows, the folder and
   plane rows, the blob's tree rows); the disposal bin's broken sprite is the one thing not pinned: the legacy provider left `disposal-broken` on the bin after a repair, the look restores the
   type's own state.
+
+## Batch 8 merge (requests-and-bridges + om-fields + draw-sweep-3 on the batch 7b master)
+
+Pins were regenerated with `--bless` after the last merge; only rows that change are committed (empty look-state files, the baton file's line endings and the `electronic_assembly` look tree were not rewritten: the last would record the pre-existing `op_clash` runtime in place of its tree). The classes:
+
+* **`hit_pins/` shield generator, suspension generator, blob** (draw sweep 3): a type that now draws over tracked state has its first draw queued when it is made, so the hit probe flushes it. The rows `refresh_bits: N -> 0` and `refresh_queued: 131071 -> 0` are that first flush; the old `emp 2 | nothing` row of the shield generator and the blob is replaced by them. The blob draw has no overmind in the probe, so it takes its inert look (`name: 'blob' -> 'inert blob'`, `light_range: 2 -> 0`), exactly as `base_blob.dm` draws a blob with no overmind.
+* **`look_states/` NTNet relay** (draw sweep 3 C): a hand write of `dos_failure` now redraws the relay. The rows are the sprite change `ntnet -> ntnet_off` with its emissive blocker overlay following it.
+* **`pins/` frame** (requests and bridges, native frame construction): the seventeen legacy frame transitions are native stages, so the menu rows carry the stage labels (`Wrench into place`, `Cut frame apart`), the refusals of the legacy entries are gone, and the held circuit board and material stack show the inherited item menu defaults and the `construction.build:*` keys.
+* **`pins/` ship navigation console and its dog-eye screen** (requests and bridges): the helm's Emote Beyond action is native, so a ghost far away is refused with `too far away`.
+* **`pins/` claw machine** (requests and bridges): the card PIN request is a native request, so its key `clawmachine_card_pin` is listed.

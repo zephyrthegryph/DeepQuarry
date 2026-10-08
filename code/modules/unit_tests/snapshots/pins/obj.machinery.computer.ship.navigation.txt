@@ -10,6 +10,7 @@ robot|none click: Click: Use
 ai|none menu: Use
 ai|none click: Click: Use
 ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none menu: Emote Beyond (refused: too far away)
 ghost|none menu: View
 ghost|none click: Click: View
 human|/obj/item/tool/screwdriver menu: Climb
