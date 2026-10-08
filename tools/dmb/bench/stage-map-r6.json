@@ -1,0 +1,54 @@
+{
+  "input": [
+    "cli.parse",
+    "exclusive:request.prepare",
+    "exclusive:request.input_context",
+    "engine_input",
+    "session_validation",
+    "exclusive:request.frontend_context",
+    "input_scan",
+    "exclusive:request.source_context"
+  ],
+  "frontend": [
+    "exclusive:frontend",
+    "frontend.directive_planning",
+    "frontend.expansion",
+    "frontend.source_indexing",
+    "frontend.grammar_scan",
+    "exclusive:frontend.declaration_parsing",
+    "frontend.ordered_declaration_merge",
+    "frontend.declaration_origins",
+    "frontend.body_indexing",
+    "exclusive:request.frontend_handoff"
+  ],
+  "tree": [
+    "frontend.tree_resolution",
+    "captured_facts"
+  ],
+  "resources_maps": [
+    "exclusive:request.nontext_context",
+    "resources_maps"
+  ],
+  "abi_initializers": [
+    "engine_capture",
+    "cold.startup_capture",
+    "cold.abi_preparation",
+    "cold.initializers"
+  ],
+  "lowering": [
+    "cold.procedure_lowering",
+    "cold.required_type_admission"
+  ],
+  "link": [
+    "linking_inputs",
+    "cold.symbolic_linking"
+  ],
+  "composition_publication": [
+    "exclusive:build",
+    "exclusive:request.compilation",
+    "cold.composition",
+    "cache_flush",
+    "publication",
+    "exclusive:request.finalization"
+  ]
+}

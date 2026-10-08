@@ -182,6 +182,7 @@ pub(super) fn compare_maps_mode(
     let mut out = Collector {
         output: Vec::new(),
         limit: max_discrepancies,
+        report: None,
     };
     out.check("/map", "dimensions", expected.dimensions, actual.dimensions);
     let expand = |dmb: &Dmb| {

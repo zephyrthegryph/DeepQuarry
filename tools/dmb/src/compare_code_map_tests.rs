@@ -59,6 +59,7 @@ fn branch_targets_normalize_across_instruction_widths() {
     let mut collector = Collector {
         output: Vec::new(),
         limit: 10,
+        report: None,
     };
     compare_code(&expected, 0, &actual, 0, "/test", &mut collector);
     assert!(collector.output.is_empty(), "{:?}", collector.output);
@@ -109,6 +110,7 @@ fn try_catch_targets_normalize_across_instruction_widths() {
     let mut collector = Collector {
         output: Vec::new(),
         limit: 10,
+        report: None,
     };
     compare_code(&expected, 0, &actual, 0, "/test", &mut collector);
     assert!(collector.output.is_empty(), "{:?}", collector.output);
@@ -125,6 +127,7 @@ fn safe_reference_jump_targets_normalize_across_instruction_widths() {
     let mut collector = Collector {
         output: Vec::new(),
         limit: 10,
+        report: None,
     };
     compare_code(&expected, 0, &actual, 0, "/test", &mut collector);
     assert!(collector.output.is_empty(), "{:?}", collector.output);
@@ -143,6 +146,7 @@ fn weighted_pick_targets_normalize_across_instruction_widths() {
     let mut collector = Collector {
         output: Vec::new(),
         limit: 10,
+        report: None,
     };
     compare_code(&expected, 0, &actual, 0, "/test", &mut collector);
     assert!(collector.output.is_empty(), "{:?}", collector.output);

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Revision-5 benchmark driver. Runs only its compiler children, never a world."""
+"""Revision-6 alternating benchmark driver. Runs only its compiler children, never a world."""
 import argparse
 import csv
 import concurrent.futures
@@ -234,10 +234,10 @@ def bounded_cpu_quality(row):
         errors.append("missing/invalid total_cpu_s")
     calibration = row.get("calibration")
     calibration = calibration if isinstance(calibration, dict) else {}
-    if calibration.get("method") not in ("QueryThreadCycleTime", "CLOCK_THREAD_CPUTIME_ID"):
+    if calibration.get("method") not in ("QueryThreadCycleTime", "GetThreadTimes", "CLOCK_THREAD_CPUTIME_ID"):
         errors.append("unknown/missing thread CPU clock calibration")
     quantum = row.get("cpu_bounds_quantum_s")
-    expected = 0.03125 if calibration.get("method") == "QueryThreadCycleTime" else 0.0
+    expected = 0.03125 if calibration.get("method") in ("QueryThreadCycleTime", "GetThreadTimes") else 0.0
     if not metric(quantum) or quantum != expected:
         errors.append("invalid CPU quantization bound")
     fields = ("critical_path_cpu_bounds_s", "covered_thread_cpu_bounds_s", "cpu_crosscheck_ratio_bounds")
@@ -254,6 +254,9 @@ def bounded_cpu_quality(row):
     stages = row.get("stages")
     if not isinstance(stages, list) or not stages or any(not isinstance(s, dict) for s in stages):
         return errors + ["missing/invalid profile stages"]
+    stages = [stage for stage in stages if stage.get("cpu_measurement") != "wall_allocations_only"]
+    if not stages:
+        return errors + ["missing CPU-measured profile stages"]
     names = [s.get("name") for s in stages]
     if any(not isinstance(n, str) or not n for n in names) or len(names) != len(set(names)):
         return errors + ["missing/duplicate profile stages"]
@@ -273,7 +276,7 @@ def bounded_cpu_quality(row):
         for field in ("allocations", "allocated_bytes", "peak_live_bytes", "calls"):
             if type(stage.get(field)) is not int or stage[field] < (1 if field == "calls" else 0):
                 errors.append("missing/invalid stage count: " + field)
-    by_name = dict(zip(names, stages))
+    by_name = selected_stages(row)
     sequence = row.get("critical_path_stages")
     if (not isinstance(sequence, list) or not sequence or any(not isinstance(n, str) for n in sequence)
             or len(sequence) != len(set(sequence)) or any(n not in by_name for n in sequence)):
@@ -308,6 +311,20 @@ def bounded_cpu_quality(row):
     return errors
 
 
+def selected_stages(row):
+    stages = {stage.get("name"): stage for stage in row.get("stages", [])}
+    for name in row.get("critical_path_stages", []):
+        if isinstance(name, str) and name.startswith("exclusive:"):
+            original = stages.get(name[len("exclusive:"):])
+            if original is not None:
+                stages[name] = {**original, "name": name,
+                                "max_thread_cpu_s": original.get("max_thread_exclusive_cpu_s"),
+                                "max_thread_cpu_bounds_s": original.get("max_thread_exclusive_cpu_bounds_s"),
+                                "cpu_s": original.get("exclusive_cpu_s"),
+                                "cpu_bounds_s": original.get("exclusive_cpu_bounds_s")}
+    return stages
+
+
 def cpu_quality(row):
     if row.get("cpu_bounds_method") == "paired_thread_cpu_quantization":
         return bounded_cpu_quality(row)
@@ -322,7 +339,10 @@ def cpu_quality(row):
         calibration = {}
     method = calibration.get("method")
     thread_calibrations = row.get("thread_calibrations")
-    if thread_calibrations is not None:
+    if method == "GetThreadTimes":
+        if thread_calibrations not in (None, []):
+            errors.append("direct thread CPU report unexpectedly contains cycle calibrations")
+    elif thread_calibrations is not None:
         if row.get("cpu_conversion_complete") is not True:
             errors.append("per-thread CPU conversion is incomplete")
         if not isinstance(thread_calibrations, list) or not thread_calibrations:
@@ -361,7 +381,7 @@ def cpu_quality(row):
             errors.append("invalid/duplicate calibration thread identity")
         elif len(set(thread_ids)) != len(thread_ids):
             errors.append("invalid/duplicate calibration thread identity")
-        if method not in ("QueryThreadCycleTime", "CLOCK_THREAD_CPUTIME_ID"):
+        if method not in ("QueryThreadCycleTime", "GetThreadTimes", "CLOCK_THREAD_CPUTIME_ID"):
             errors.append("unknown/missing thread CPU clock calibration")
     elif method == "QueryThreadCycleTime":
         for name in ("cycles_per_cpu_second", "calibration_cpu_s", "calibration_wall_s"):
@@ -371,7 +391,7 @@ def cpu_quality(row):
             errors.append("Windows calibration has less than 500 ms thread CPU")
     elif method != "CLOCK_THREAD_CPUTIME_ID":
         errors.append("unknown/missing thread CPU clock calibration")
-    if not metric(calibration.get("calibration_wall_s")):
+    if method != "GetThreadTimes" and not metric(calibration.get("calibration_wall_s")):
         errors.append("invalid calibration wall duration")
     ratio = row.get("cpu_crosscheck_ratio")
     if not metric(ratio, positive=True):
@@ -385,12 +405,13 @@ def cpu_quality(row):
         critical = row.get("critical_path_cpu_s")
         if metric(critical) and critical > total * (1 + CPU_CROSSCHECK_TOLERANCE):
             errors.append("critical-path CPU exceeds total process CPU")
-    stages = row.get("stages", [])
+    stages = [stage for stage in row.get("stages", [])
+              if stage.get("cpu_measurement") != "wall_allocations_only"]
     if any(not isinstance(stage.get("name"), str) or not stage["name"] for stage in stages):
         return errors + ["invalid profile stage name"]
     if not stages or len({stage.get("name") for stage in stages}) != len(stages):
         errors.append("missing/duplicate profile stages")
-    by_name = {stage.get("name"): stage for stage in stages}
+    by_name = selected_stages(row)
     exclusive = []
     for stage in stages:
         for key in ("cpu_s", "max_thread_cpu_s", "exclusive_cpu_s", "wall_s"):
@@ -449,7 +470,10 @@ def gate(scenario, rows, history, stage_map):
     summary = medians(rows)
     required = ("critical_path_cpu_budget_upper_s", "total_cpu_s", "peak_private_bytes")
     missing = [name for name in required if summary[name] is None]
-    if not all(row.get("allocation_counting") is True for row in rows):
+    if all(row.get("measurement_revision") == 6 for row in rows):
+        if any(row.get("binary_mode") != "acceptance" or row.get("allocation_counting") is not False for row in rows):
+            missing.append("non-counting revision6 acceptance binary")
+    elif not all(row.get("allocation_counting") is True for row in rows):
         missing.append("allocation counting")
     if missing:
         return "not_evaluable", missing
@@ -488,7 +512,7 @@ def gate(scenario, rows, history, stage_map):
     for domain, names in active_map.items():
         costs = []
         for row in rows:
-            by_name = {s["name"]: s for s in row.get("stages", [])}
+            by_name = selected_stages(row)
             if any(name not in by_name for name in names):
                 return "not_evaluable", ["missing mapped profile stage: " + domain]
             bounded = row.get("cpu_bounds_method") == "paired_thread_cpu_quantization"
@@ -537,191 +561,47 @@ def io_gate(scenario, rows):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compiler", type=Path, required=True)
+    parser.add_argument("--previous-compiler", type=Path)
+    parser.add_argument("--self-comparison", action="store_true", help="ABABAB current binary noise floor")
+    parser.add_argument("--profile-metadata", type=Path, required=True)
+    parser.add_argument("--previous-profile-metadata", type=Path)
+    parser.add_argument("--binary-mode", choices=("acceptance", "counting"), default="acceptance")
     parser.add_argument("--project-root", type=Path, required=True)
     parser.add_argument("--snapshot", type=Path, required=True, help="JSON {commit,files:{relative:sha256}}")
-    parser.add_argument("--scenarios", type=Path, required=True, help="ordered scenario JSON; edits must be private copies")
+    parser.add_argument("--input-journal", type=Path, help="Pinned captured replay journal; never copied per repetition")
+    parser.add_argument("--scenarios", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--results", type=Path, default=Path(__file__).with_name("results.jsonl"))
     parser.add_argument("--cache", type=Path, default=Path(os.environ.get("DMB_CACHE_DIR", "E:/dq-cache/dmb/bench")))
-    parser.add_argument("--watchdog", type=int, default=285)
-    parser.add_argument("--min-free-bytes", type=int, default=4 * 1024**3)
+    parser.add_argument("--watchdog", type=int, default=600)
+    parser.add_argument("--min-free-bytes", type=int, default=25 * 1024**3)
+    parser.add_argument("--worker-counts", type=int, nargs="+", default=[8])
     parser.add_argument("--stage-map", type=Path)
+    parser.add_argument("--inspector", type=Path, required=True)
+    parser.add_argument("--byond-dmb", type=Path, required=True)
+    parser.add_argument("--byond-snapshot", type=Path, required=True,
+                        help="JSON {snapshot_id,dmb_sha256} pins BYOND to this exact input snapshot")
+    parser.add_argument("--native-baseline", type=Path, help="JSON {snapshot_id,pair_sha256:{.dmb:sha256,.rsc:sha256}} pins byte-identical native reference")
+    parser.add_argument("--structural-baseline", type=Path, help="Pinned complete structural report with exact category case signatures")
+    parser.add_argument("--establish-structural-baseline", action="store_true", help="Record complete existing divergences, without claiming zero parity")
     args = parser.parse_args()
-    if not 1 <= args.watchdog <= 285:
-        parser.error("watchdog must be 1..285 seconds")
-    root, compiler = args.project_root.resolve(), args.compiler.resolve()
-    compiler_identity = sha(compiler)
-    snapshot = json.loads(args.snapshot.read_text(encoding="utf-8"))
-    scenarios = json.loads(args.scenarios.read_text(encoding="utf-8"))
-    if not scenarios or len({s["name"] for s in scenarios}) != len(scenarios):
-        parser.error("scenario names must be unique and nonempty")
-    for scenario in scenarios:
-        if scenario["name"] not in TARGETS:
-            parser.error("scenario must be cold, body-edit or unchanged")
-        forbidden = {"--workers", "--trace", "--verify", "--record-inputs", "--replay-inputs", "--artifact-directory", "--no-cache"}
-        if any(arg in forbidden for arg in scenario["arguments"]):
-            parser.error("scenario arguments may not override harness-owned options")
-    stage_map = json.loads(args.stage_map.read_text()) if args.stage_map else {}
-    policy_path = Path(__file__).resolve().parent.parent / "diagnostic-measurements.json"
-    diagnostic_policy = json.loads(policy_path.read_text(encoding="utf-8"))
-    if diagnostic_policy.get("schema") != 1:
-        parser.error("unsupported diagnostic measurement policy")
-    policy_identity = sha(policy_path)
-    expected = dict(snapshot["files"])
-    check_snapshot(root, expected)
-    args.cache.mkdir(parents=True, exist_ok=True)
-    if shutil.disk_usage(args.cache).free < args.min_free_bytes:
-        parser.error("cache drive free space below requested population floor")
-    args.output.mkdir(parents=True, exist_ok=False)
-    env = dict(os.environ, DMBD_VERIFY="1")
-    history = [json.loads(line) for line in args.results.read_text().splitlines()] if args.results.exists() else []
-    original = {}
-    for scenario in scenarios:
-        for edit in scenario.get("edits", []):
-            path = source_path(root, edit["path"])
-            if path.is_symlink() or path.stat().st_nlink > 1:
-                parser.error("edited source must be a private file, not a link: " + edit["path"])
-            if edit["path"] not in expected:
-                parser.error("edit omitted from frozen snapshot")
-            original[path] = path.read_bytes()
-    failed = False
-    try:
-        for workers in (8, 2):
-            collected = {s["name"]: [] for s in scenarios}
-            for repeat in range(3):
-                # A previous repetition's edited variant must not turn the next
-                # body-edit measurement into a hit for code already compiled.
-                # Cold's separate oracle populates the unedited project in this
-                # repetition's new cache before body-edit is measured.
-                run_cache = args.cache / args.output.name / (str(workers) + "-" + str(repeat + 1))
-                run_cache.mkdir(parents=True, exist_ok=False)
-                if shutil.disk_usage(run_cache).free < args.min_free_bytes:
-                    raise ValueError("cache drive free space below requested population floor")
-                env["DMB_CACHE_DIR"] = str(run_cache.resolve())
-                # Authenticated session records live beside the manifest rather
-                # than beneath DMB_CACHE_DIR. Preserve prior repetitions' records
-                # outside the active project so an old edited session cannot
-                # bypass the body-edit pipeline in a later repetition.
-                session_directories = sorted({source_path(root, scenario["project"]).parent
-                                              / ".dmbc" / "input-sessions"
-                                              for scenario in scenarios})
-                for index, directory in enumerate(session_directories):
-                    if directory.is_symlink() or not directory.resolve().is_relative_to(root):
-                        raise ValueError("benchmark session directory must remain inside private project")
-                    if directory.exists():
-                        archive = run_cache / ("prior-input-sessions-" + str(index))
-                        shutil.move(str(directory), str(archive))
-                for path, value in original.items():
-                    path.write_bytes(value)
-                current = dict(expected)
-                for scenario in scenarios:
-                    for edit in scenario.get("edits", []):
-                        path = source_path(root, edit["path"])
-                        before, after = edit["before"].encode(), edit["after"].encode()
-                        data = path.read_bytes()
-                        if data.count(before) != 1:
-                            raise ValueError("edit must match exactly once: " + edit["path"])
-                        path.write_bytes(data.replace(before, after))
-                        current[edit["path"]] = sha(path)
-                    check_snapshot(root, current)
-                    name = scenario["name"]
-                    prefix = args.output / (str(workers) + "-" + str(repeat + 1) + "-" + name)
-                    trace = prefix.with_suffix(".trace.json")
-                    command = [str(compiler), "compile", scenario["project"], *scenario["arguments"], "--workers", str(workers)]
-                    if sha(compiler) != compiler_identity:
-                        raise ValueError("frozen compiler changed")
-                    measured_command = command + ["--trace", str(trace.resolve())]
-                    if scenario.get("no_cache"):
-                        measured_command.append("--no-cache")
-                    competing_start = process_context()
-                    code, wall, timeout = run(measured_command, root, prefix, args.watchdog, env)
-                    competing_end = process_context()
-                    check_snapshot(root, current)
-                    if sha(compiler) != compiler_identity:
-                        raise ValueError("frozen compiler changed")
-                    report_path = trace.with_suffix(".report.json")
-                    report = profile(report_path)
-                    manifest = source_path(root, scenario["project"])
-                    pair_hashes = {ext: sha(manifest.with_suffix(ext)) for ext in (".dmb", ".rsc")} if code == 0 and not timeout else {}
-                    # Verification is deliberately outside the measured build and uses
-                    # a fresh captured snapshot. Source hashes must still match both sides.
-                    verified = False
-                    diagnostic_comparison = None
-                    diagnostic_error = None
-                    if code == 0 and not timeout:
-                        vcode, _, vtimeout = run(command + ["--verify"], root,
-                                                Path(str(prefix) + "-oracle"), args.watchdog, env)
-                        check_snapshot(root, current)
-                        verified = vcode == 0 and not vtimeout
-                        if verified:
-                            verified = all(sha(manifest.with_suffix(ext)) == digest for ext, digest in pair_hashes.items())
-                        if verified:
-                            try:
-                                if sha(policy_path) != policy_identity:
-                                    raise ValueError("diagnostic measurement policy changed")
-                                diagnostic_comparison = compare_measured_diagnostics(
-                                    prefix.with_suffix(".stderr.log"),
-                                    Path(str(prefix) + "-oracle").with_suffix(".stderr.log"),
-                                    root, diagnostic_policy)
-                                verified = diagnostic_comparison["matched"]
-                                if not verified:
-                                    diagnostic_error = "measured diagnostics differ from verified children"
-                            except (OSError, ValueError) as error:
-                                diagnostic_error = str(error)
-                                verified = False
-                    row = {"schema": SCHEMA, "kind": "run", "commit": snapshot["commit"],
-                           "compiler_sha256": compiler_identity, "scenario": name, "workers": workers,
-                           "repeat": repeat + 1, "wall_s": wall, "status": "watchdog" if timeout else ("verified" if verified else "failed"),
-                           "exit_code": code, "oracle": "passed" if verified else "not_passed",
-                           "trace": str(trace), "profile_report": str(report_path),
-                           "profile_report_sha256": sha(report_path) if report_path.exists() else None,
-                           "profile_error": report.get("profile_error"),
-                           "command": measured_command, "cache": str(run_cache),
-                           "pair_sha256": pair_hashes, "competing_processes_start": competing_start, "competing_processes_end": competing_end,
-                           "diagnostic_policy_sha256": policy_identity,
-                           "diagnostic_comparison": diagnostic_comparison, "diagnostic_error": diagnostic_error,
-                           "stages": report.get("stages", []), "critical_path_cpu_s": report.get("critical_path_cpu_s"),
-                           "total_cpu_s": report.get("total_cpu_s"), "covered_thread_cpu_s": report.get("covered_thread_cpu_s"),
-                           "critical_path_stages": report.get("critical_path_stages"), "calibration": report.get("calibration"),
-                           "cpu_crosscheck_ratio": report.get("cpu_crosscheck_ratio"), "coverage_notes": report.get("coverage_notes"),
-                           "cpu_precision_scope": report.get("cpu_precision_scope"),
-                           "coarse_covered_thread_cpu_s": report.get("coarse_covered_thread_cpu_s"),
-                           "coarse_cpu_crosscheck_ratio": report.get("coarse_cpu_crosscheck_ratio"),
-                           "thread_calibrations": report.get("thread_calibrations"),
-                           "cpu_conversion_complete": report.get("cpu_conversion_complete"),
-                           "cpu_bounds_method": report.get("cpu_bounds_method"),
-                           "covered_cpu_bounds_method": report.get("covered_cpu_bounds_method"),
-                           "cpu_bounds_quantum_s": report.get("cpu_bounds_quantum_s"),
-                           "critical_path_cpu_bounds_s": report.get("critical_path_cpu_bounds_s"),
-                           "covered_thread_cpu_bounds_s": report.get("covered_thread_cpu_bounds_s"),
-                           "cpu_crosscheck_ratio_bounds": report.get("cpu_crosscheck_ratio_bounds"),
-                           "io_coverage": report.get("io_coverage"), "process_io_scope": "whole_measured_process",
-                           "attributed_io": [{"stage": stage.get("name"), "read_bytes": stage.get("attributed_read_bytes"),
-                                              "write_bytes": stage.get("attributed_write_bytes"), "blocked_s": stage.get("io_blocked_s"),
-                                              "call_elapsed_s": stage.get("io_call_elapsed_s"),
-                                              "calls": stage.get("io_calls"), "failed_calls": stage.get("io_failed_calls"),
-                                              "coverage": "explicit_operations_only"} for stage in report.get("stages", [])],
-                           "read_bytes": report.get("read_bytes"),
-                           "write_bytes": report.get("write_bytes"), "peak_private_bytes": report.get("peak_private_bytes"),
-                           "allocation_counting": report.get("allocation_counting", False)}
-                    append(args.results, row)
-                    collected[name].append(row)
-                    if not verified:
-                        failed = True
-            for name, rows in collected.items():
-                acceptance, reasons = gate(name, rows, history, stage_map) if workers == 8 else ("regression_only", [])
-                io_acceptance, io_reasons = io_gate(name, rows)
-                row = {"schema": SCHEMA, "kind": "median", "commit": snapshot["commit"], "scenario": name,
-                       "workers": workers, "runs": len(rows), "acceptance": acceptance, "cpu_acceptance": acceptance,
-                       "reasons": reasons, "io_acceptance": io_acceptance, "io_reasons": io_reasons, **medians(rows)}
-                append(args.results, row)
-                if workers == 8 and acceptance != "passed":
-                    failed = True
-    finally:
-        for path, value in original.items():
-            path.write_bytes(value)
-        check_snapshot(root, expected)
-    return 1 if failed else 0
+    if args.establish_structural_baseline and not args.self_comparison:
+        parser.error("establish a structural baseline with --self-comparison")
+    if not 1 <= args.watchdog <= 600:
+        parser.error("watchdog must be 1..600 seconds")
+    if args.min_free_bytes < 25 * 1024**3:
+        parser.error("free-space floor must be at least 25 GiB")
+    if any(workers not in (1, 2, 8) for workers in args.worker_counts):
+        parser.error("worker counts must be 1, 2, or 8")
+    if len(set(args.worker_counts)) != len(args.worker_counts):
+        parser.error("worker counts must be unique")
+    spec = importlib.util.spec_from_file_location("dmb_bench_protocol", Path(__file__).with_name("protocol.py"))
+    if spec is None or spec.loader is None:
+        raise ImportError("cannot load revision6 benchmark protocol")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    from types import SimpleNamespace
+    return module.execute(SimpleNamespace(**globals()), args)
 
 
 if __name__ == "__main__":

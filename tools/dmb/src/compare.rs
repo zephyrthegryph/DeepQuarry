@@ -28,7 +28,7 @@ impl Default for CompareOptions {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct Discrepancy {
     pub path: String,
     pub field: String,
@@ -39,6 +39,7 @@ pub struct Discrepancy {
 struct Collector {
     output: Vec<Discrepancy>,
     limit: usize,
+    report: Option<structural::StructuralReport>,
 }
 
 impl Collector {
@@ -49,6 +50,10 @@ impl Collector {
         expected: impl std::fmt::Debug,
         actual: impl std::fmt::Debug,
     ) {
+        if let Some(report) = &mut self.report {
+            report.record(path, field, format!("{expected:?}"), format!("{actual:?}"));
+            return;
+        }
         if self.output.len() < self.limit {
             self.output.push(Discrepancy {
                 path: path.into(),
@@ -64,7 +69,7 @@ impl Collector {
         }
     }
     fn full(&self) -> bool {
-        self.output.len() >= self.limit
+        self.report.is_none() && self.output.len() >= self.limit
     }
 }
 
@@ -534,7 +539,13 @@ pub fn compare_dmbs(expected: &Dmb, actual: &Dmb, options: &CompareOptions) -> V
     let mut out = Collector {
         output: Vec::new(),
         limit: options.max_discrepancies,
+        report: None,
     };
+    collect_dmbs(expected, actual, options, &mut out);
+    out.output
+}
+
+fn collect_dmbs(expected: &Dmb, actual: &Dmb, options: &CompareOptions, out: &mut Collector) {
     let ac = class_index(expected, options);
     let bc = class_index(actual, options);
     let keys: BTreeSet<_> = ac.keys().chain(bc.keys()).cloned().collect();
@@ -555,7 +566,7 @@ pub fn compare_dmbs(expected: &Dmb, actual: &Dmb, options: &CompareOptions) -> V
                 path(expected, left.parent_class_id()),
                 path(actual, right.parent_class_id()),
             );
-            compare_class_header(expected, actual, (ai, bi), &name, &mut out);
+            compare_class_header(expected, actual, (ai, bi), &name, out);
             match (declaration(expected, ai), declaration(actual, bi)) {
                 (Some(left), Some(right)) => {
                     for field in left.keys().chain(right.keys()).collect::<BTreeSet<_>>() {
@@ -577,7 +588,7 @@ pub fn compare_dmbs(expected: &Dmb, actual: &Dmb, options: &CompareOptions) -> V
                             (
                                 Some(NormalValue::String(Some(a))),
                                 Some(NormalValue::String(Some(b))),
-                            ) if a != b => {
+                            ) if a != b && out.report.is_none() => {
                                 let at = a
                                     .iter()
                                     .zip(b)
@@ -606,7 +617,7 @@ pub fn compare_dmbs(expected: &Dmb, actual: &Dmb, options: &CompareOptions) -> V
                 right.initializer_proc_id(),
                 &format!("{name}::<init>"),
                 options,
-                &mut out,
+                out,
             );
         }
     }
@@ -618,7 +629,7 @@ pub fn compare_dmbs(expected: &Dmb, actual: &Dmb, options: &CompareOptions) -> V
             actual.world.global_initializer_proc_id(),
             "/world::<global-init>",
             options,
-            &mut out,
+            out,
         );
     }
     let ap = proc_index(expected, options);
@@ -632,8 +643,13 @@ pub fn compare_dmbs(expected: &Dmb, actual: &Dmb, options: &CompareOptions) -> V
         let a = ap.get(&key).map(Vec::as_slice).unwrap_or_default();
         let b = bp.get(&key).map(Vec::as_slice).unwrap_or_default();
         out.check(&name, "proc.count", a.len(), b.len());
-        for (&ai, &bi) in a.iter().zip(b) {
-            compare_proc(expected, actual, (ai, bi), &name, options, true, &mut out);
+        for (rank, (&ai, &bi)) in a.iter().zip(b).enumerate() {
+            let paired_name = if out.report.is_some() {
+                format!("{name}#{rank}")
+            } else {
+                name.clone()
+            };
+            compare_proc(expected, actual, (ai, bi), &paired_name, options, true, out);
         }
     }
     if options.authored_prefixes.is_empty() {
@@ -653,9 +669,9 @@ pub fn compare_dmbs(expected: &Dmb, actual: &Dmb, options: &CompareOptions) -> V
             expected.header.extended_flags.unwrap_or(0) & 0xf,
             actual.header.extended_flags.unwrap_or(0) & 0xf,
         );
-        compare_world(expected, actual, &mut out);
-        compare_mob_types(expected, actual, &mut out);
-        compare_global_declarations(expected, actual, &mut out);
+        compare_world(expected, actual, out);
+        compare_mob_types(expected, actual, out);
+        compare_global_declarations(expected, actual, out);
         out.check(
             "/markers",
             "hidden_initializer_identity",
@@ -663,7 +679,6 @@ pub fn compare_dmbs(expected: &Dmb, actual: &Dmb, options: &CompareOptions) -> V
             marker_integrity(actual),
         );
     }
-    out.output
 }
 
 /// Compare class tables before all procedures can be lowered. This includes
@@ -676,6 +691,7 @@ pub fn compare_class_tables(
     let mut out = Collector {
         output: Vec::new(),
         limit: max_discrepancies,
+        report: None,
     };
     let options = CompareOptions::default();
     let ac = class_index(expected, &options);
@@ -768,6 +784,7 @@ pub fn compare_proc_tables(
     let mut out = Collector {
         output: Vec::new(),
         limit: max_discrepancies,
+        report: None,
     };
     let options = CompareOptions {
         compare_bytecode: false,
@@ -869,6 +886,17 @@ fn marker_integrity(dmb: &Dmb) -> (usize, usize) {
 pub fn selected_path_count(dmb: &Dmb, options: &CompareOptions) -> usize {
     class_index(dmb, options).len() + proc_index(dmb, options).len()
 }
+
+#[path = "compare_structural.rs"]
+mod structural;
+pub use structural::{structural_report, StructuralReport};
+
+#[path = "compare_anonymous.rs"]
+mod anonymous;
+#[path = "compare_missing.rs"]
+mod missing;
+#[path = "compare_operand_roles.rs"]
+mod operand_roles;
 
 #[cfg(test)]
 #[path = "compare_tests.rs"]

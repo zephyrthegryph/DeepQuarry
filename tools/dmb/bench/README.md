@@ -1,81 +1,89 @@
-# dmb-bench — revision 5 protocol
+# dmb-bench � revision 6 protocol
 
-The harness has run all nine eight-worker cold/body-edit/unchanged samples on the frozen DeepQuarry inputs; their output and diagnostic oracles passed. CPU acceptance is not evaluable because cycle-derived CPU fails its independent process crosscheck, and I/O byte budgets fail. All nine two-worker regression runs also oracle-passed; their medians are recorded. The harness exits 1 because acceptance fails, not because compilation or its output oracle failed. See [../STATUS.md](../STATUS.md) for measured medians and evidence. Historical rows imported from A–K remain context only.
+This harness does not build compilers or launch DreamDaemon. Historical revision 5 receipts retain their original interpretation; they are not upgraded to revision 6 acceptance evidence.
 
-## Protocol
+## Frozen cold cohorts
 
-`dmb-bench.py` runs three repetitions at **8 workers**, then three at **2 workers** as a regression series. It appends individual runs and medians to `results.jsonl`. Each measured compilation runs with `--trace`. A separate, unmeasured `--verify` invocation compares a captured snapshot against its fresh cold oracle, including diagnostics. The harness also checks that its measured DMB/RSC hashes equal the verified installed pair and that measured stderr diagnostics match both verifier child logs. Rust embeds and Python loads the same `diagnostic-measurements.json` exact whitelist. Only declared observational prefixes and stage names are removed; unknown errors and warnings remain. The ledger preserves policy, raw child-log and normalized diagnostic hashes. Missing evidence or different diagnostics fail the run. A failed oracle, moved frozen input or watchdog expiry cannot count as a performance result.
+The initial revision 6 implementation accepts `cold` scenarios only. Cached body-edit and unchanged cohorts are rejected until their authenticated warm-up/session-isolation protocol is implemented. This avoids presenting a cold recomputation as an incremental measurement.
 
-Every compiler invocation has a **285-second maximum watchdog**, including the oracle. A timeout stops only that invocation's process tree. Competing processes are observed, never stopped. The harness records visible process count and Cargo/rustc/DreamDaemon counts before and after compilation. The process-list scope excludes the harness; it is context, not a measure of runnable CPU contention.
+Each configured worker count runs **ABABAB**: three previous-binary and three new-binary invocations in alternating order. `--self-comparison` uses the same frozen binary for both labels to measure the current noise floor. Eight workers supply acceptance rows; one and two workers are diagnostic series. Every invocation has a maximum **600-second** watchdog and owned-process cleanup. At least **25 GiB** free on E: is required before measured runs. Competing processes are recorded and never stopped.
 
-Acceptance uses CPU, never wall time. `cpu_acceptance` checks critical-path CPU, total process CPU, stage CPU budgets, private memory and allocation measurement; median CPU must meet the scenario target and not regress more than 20% against the last three acceptance medians. Three repeats also cover the revision-5 rerun requirement for results within 10% of a budget. Two-worker rows cannot be acceptance rows.
+Before measurement, the harness reads every captured input. With `--input-journal`, it reads the pinned journal index, index hash, and every unique captured payload, without copying the source tree per repetition. Warm-up time is recorded separately. Compiler, metadata, inspector, diagnostic policy, source manifest and BYOND comparison receipts are pinned. Compiler flags and input journals remain identical between A and B.
 
-`io_acceptance` is separate. Process-wide byte totals are compared to scenario budgets; overlapping per-stage process windows are never added. Missing blocked-I/O measurements remain `not_evaluable`, even when byte budgets pass. Missing critical-path CPU, stage CPU or allocation data likewise blocks CPU acceptance. No time or byte count is invented from another metric.
+Measured cold invocations bypass disk memos and session hits with `--no-cache`. An unmeasured fresh invocation must produce identical DMB/RSC hashes and identical normalized diagnostics. Unknown diagnostic-shaped messages are not discarded by the shared normalization policy.
 
-## Prepare isolated inputs
+## Structural gate
 
-Use a **private frozen source mirror** prepared by the root coordinator. Files to edit must be private copies: the harness rejects symlinks and hardlinks for edited files. It never edits the main source tree by discovery. The supplied snapshot JSON names the captured inputs and their SHA256 hashes:
-
-```json
-{"commit":"ACTUAL_COMMIT","files":{"deepquarry.dme":"ACTUAL_SHA256","code/bench_probe.dm":"ACTUAL_SHA256"}}
-```
-
-Include every captured positive source/asset input, not just these example files. This manifest supplements the compiler's snapshot oracle; it does not replace its negative searches, directory facts or moved-input checks. Input hashes are checked before and after measured and oracle compilations, outside measured compilation time.
-
-An ordered scenario file supplies compiler flags and exact edit replacements. `project` is inserted separately; `arguments` must not contain `--workers`, `--trace`, `--verify`, `--no-cache` or internal capture/replay flags. For example, use a dedicated isolated probe whose body is an exact unique replacement:
-
-```json
-[
-  {"name":"cold","project":"deepquarry.dme","no_cache":true,
-   "arguments":["--no-daemon","--engine-template","PINNED_TEMPLATE","--bootstrap-catalog"]},
-  {"name":"body-edit","project":"deepquarry.dme",
-   "arguments":["--no-daemon","--engine-template","PINNED_TEMPLATE","--bootstrap-catalog"],
-   "edits":[{"path":"code/bench_probe.dm","before":"return 101","after":"return 102"}]},
-  {"name":"unchanged","project":"deepquarry.dme",
-   "arguments":["--no-daemon","--engine-template","PINNED_TEMPLATE","--bootstrap-catalog"]}
-]
-```
-
-Each repetition uses a new cache under `--cache/<evidence-directory-name>/<workers>-<repeat>`. Before cold begins, prior `project/.dmbc/input-sessions` records are moved into that repetition cache as preserved archives, preventing an old edited session from bypassing compilation. The cold oracle populates the unedited cache before the first edited body is compiled. Source edits are restored between repetitions, then the ordered scenarios run. Derived outputs and archived sessions remain evidence; they are not deleted or rolled back. Edits require exactly one byte match. Original bytes are restored on exit, including failure. Output logs and traces are retained in a new evidence directory; it must not already exist.
-
-## Run after profiler integration
+The inspector interface is:
 
 ```text
-python tools/dmb/bench/dmb-bench.py --compiler FROZEN_DMBC_EXE --project-root PRIVATE_MIRROR --snapshot captured.json --scenarios scenarios.json --output NEW_EVIDENCE_DIRECTORY --stage-map stage-map.json
+dmb-inspect structural-diff EXPECTED.dmb ACTUAL.dmb REPORT.json SNAPSHOT_ID
 ```
 
-Replace the example compiler token with the actual frozen executable path. `--cache` defaults to `DMB_CACHE_DIR`, otherwise `E:/dq-cache/dmb/bench`. The harness checks at least 4 GiB free before each repetition; `--min-free-bytes` is explicit. Compiler publication independently checks space. The harness does not evict files or stop processes to obtain space.
+The BYOND sidecar must pin `snapshot_id`, `dmb_sha256`, and `semantic_configuration`:
 
-The profiler contract is schema 1. For trace `run.trace.json`, it reads `run.trace.report.json`, retaining `critical_path_cpu_s`, `total_cpu_s`, stages, I/O bytes, allocation availability and private memory. Chrome trace and sibling CPU/wall folded stacks and SVGs remain raw evidence.
+```json
+{"project":"comparison.dme","defines":{"CIBUILDING":"1","CITESTING":"1","DM_VERSION":"516","DM_BUILD":"1687"},"byond_version":{"version":516,"build":1687},"native_engine_template_sha256":"EXACT_SHA","bootstrap_catalog":true}
+```
 
-New Windows reports retain `thread_calibrations` with local paired-clock windows. High-resolution conversion uses only covered intervals on that same thread; short tails remain unknown. The human approved explicit uncertainty bounds for short workers. Reports identify this separate acceptance path with `cpu_bounds_method: "paired_thread_cpu_quantization"`: budgets use upper endpoints, and the entire covered/process CPU ratio interval must fit within 5%. No midpoint or process-total scaling is used. Older startup-calibrated receipts retain their original interpretation and are never relabelled.
+`configuration_evidence` lists `{path,sha256}` receipts containing the successful BYOND command/output hash and native explicit engine/bootstrap command. `byond_version_evidence` pins a metadata JSON `{compiler_sha256,file_version:"5.0.516.1687"}` tied to the successful BYOND receipt. Both definition forms follow the compiler's exact validation and last-write-wins order. Unknown semantic flags and implicit engine paths fail closed. File-only `snapshot_id` remains compatible, but rows/cohort receipts separately record `semantic_configuration_sha256`; neither identity silently substitutes for the other. Structural traversal and tool ownership/decoding coverage must be complete for measurement admission. Semantic interpretation coverage is reported separately and may remain incomplete when every unknown site has an exact wire fingerprint. Full semantic coverage plus zero unexplained differences is reported separately as strict parity; it is not inferred from a successful compiler exit or a deterministic fresh oracle.
 
-`stage-map.json` must explicitly map nonoverlapping, sequential trace stage names to every revision-5 budget domain: `input`, `frontend`, `tree`, `resources_maps`, `abi_initializers`, `lowering`, `link`, `composition_publication`. Names must come from actual trace output. Do not map nested spans twice or guess names before instrumentation is wired. Critical-path totals must be issued by the profiler's explicit sequential top-stage configuration. Missing domains or metrics block acceptance.
+`--self-comparison --establish-structural-baseline` records complete existing divergence counts without claiming zero parity. Later `--structural-baseline structural-admission.json` admission requires sorted exact case fingerprints from the inspector (`signature_algorithm: md5-length-framed-v1`, `category_signatures: {category: [case_hash, ...]}`). Every current case must exist in the baseline and category counts may not grow; removing old differences is allowed. Bounded examples and counts alone cannot prove that the same cases differ. Unknown cases have separate `uncovered_signatures` and occurrence counts; their current cases must also be a subset with no count growth. Missing exact unknown evidence blocks structural no-regression, while explicitly incomplete semantic interpretation alone does not block valid measurements. A same-snapshot pinned native pair sidecar (`--native-baseline`) can alternatively prove DMB/RSC byte identity when it also pins the same semantic configuration digest. Missing tool ownership/decoding, invalid branches or a mismatched source snapshot block measurement admission.
 
-The current harness supports cold, body-edit and unchanged scenarios. The broader edit corpus, history replay, daemon and six-worktree benchmark remain open. The ten-heaviest-span write-up is provisional until clock accounting passes; an accepted eight-worker cold CPU baseline is still required. Independent `coarse_*` CPU counters are retained for clock auditing and never replace the high-resolution acceptance fields.
+## Binary metadata
 
-## Historical import
+`--profile-metadata` and `--previous-profile-metadata` pin the exact executable SHA256 and these build facts:
+
+```json
+{"compiler_sha256":"EXACT_BINARY_HASH","measurement_revision":6,"profile":"release","lto":"thin","debug":"line-tables-only","codegen_units":16,"allocator":"mimalloc","allocation_counting":false,"compiler_commit":"EXACT_COMMIT","source_archive_sha256":"EXACT_SOURCE_HASH"}
+```
+
+`--binary-mode acceptance` requires counting disabled. A separately frozen `--binary-mode counting` executable records allocation diagnostics; its CPU is never accepted as the performance baseline. The build coordinator supplies trusted metadata; the harness verifies identity, not executable build flags by inspection.
+
+Windows CPU comes directly from GetThreadTimes at natural stage boundaries, with quantization bounds and an independent process-CPU crosscheck within 5%. Item rows report wall/allocation data only and are excluded from CPU sums. Budget mapping must cover exactly the declared critical chain without nested double counting. Measurement admission and Phase0 structural baseline admission are separate from performance target acceptance and full semantic parity. Missing CPU/tool coverage blocks admission. Unavailable I/O blocking measurements or missed throughput/memory targets remain explicit failures/not-evaluable budget results; an unmet optimization target does not discard otherwise valid baseline measurements.
+
+## Invocation
 
 ```text
-python tools/dmb/bench/import-receipts.py E:/dmb-native-v2-phase0
+python tools/dmb/bench/dmb-bench.py --compiler FROZEN_DMBC --profile-metadata FROZEN_METADATA --self-comparison --establish-structural-baseline --project-root PINNED_ROOT --snapshot SOURCE_MANIFEST --input-journal PINNED_JOURNAL --scenarios COLD_SCENARIOS --output NEW_EVIDENCE_DIR --inspector FROZEN_INSPECTOR --byond-dmb PINNED_BYOND_DMB --byond-snapshot PINNED_BYOND_RECEIPT --stage-map STAGE_MAP
 ```
 
-The importer preserves raw small receipts byte-for-byte in `receipts/`, records their SHA256, and extracts available CPU/wall/memory fields plus scalar stage wall timings from hash-bound stats. It preserves later benchmark rows. Full stats files remain at their original evidence paths; their hashes are recorded. Existing historical output equality statements are in the archived narrative, not upgraded to a diagnostic oracle pass by the importer.
+Scenario JSON uses `name`, `project`, and `arguments`; harness-owned options cannot be overridden. Per-scenario `input_journal`, `byond_dmb`, `byond_snapshot` and `structural_baseline` can pin an alternate exact fixture.
 
-## Measurement-quality gate
+## Retention and safety
 
-CPU acceptance requires finite, nonnegative measurements, an identified thread clock and complete evidence for calibrated scalars or explicit uncertainty bounds. Legacy Windows startup reports retain their original positive rate and calibration durations. Native Linux uses its thread nanosecond clock. Bounded rows preserve unknown precise scalar fields. Median rows separately record `critical_path_cpu_budget_upper_s` and `cpu_acceptance_basis`; that upper bound is used for budgets and regression history, never presented as a precise CPU measurement.
+Only marker-authenticated E: artifact directories created by this harness are eligible for recursive cleanup. All protected paths are checked first; reparse points are refused. Bulky output stores and compiler artifacts are disposed immediately after the native-fresh output/diagnostic oracle passes and the structural invocation finishes. Structural coverage or parity may still fail; their small reports and output hashes remain, and cleanup does not upgrade those gates. Receipts, profiler reports, folded stacks, raw diagnostic logs and output hashes remain. Failed runs remain intact. Across sibling owned revision 6 cohorts, at most the three newest completed oracle-valid runs retain full Chrome traces. Older eligible traces are removed while their small evidence remains. This retention eligibility does not mean semantic coverage is complete. Outputs with a failed/missing native-fresh oracle remain intact. Cleanup failures are explicitly reported rather than counted as successful pruning.
 
-Covered exclusive thread CPU must agree with process CPU within **5%**. This is a measurement-quality tolerance, not permission to exceed an acceptance budget. The reported crosscheck must match its recorded totals; exclusive stage sums must match covered CPU. Missing clock samples, invalid stage names/counts, duplicate stages or inconsistent CPU sums decline acceptance. Allocation counting must be explicitly enabled and show observed allocations, not just a build-feature flag.
+Read-only Windows output links are preserved rather than changing shared inode attributes, which could affect pinned or global RSC hardlinks. Cleanup limitations are written to the receipt, and the free-space gate still applies. Pinned sources, BYOND output, compiler references and unrelated directories are never pruned.
 
-The report must include the exact unique `critical_path_stages` supplied to profiler completion. The harness checks their measured maxima against the reported critical-path total; the budget mapping must cover exactly those names. Missing coverage or calibration is `not_evaluable`, never a zero-cost stage.
+## Captured source body-edit trace
 
-Raw profiler reports are hash-bound in run rows. Nonfinite JSON measurements are retained in that raw report; ledger values become unknown with an explicit `profile_error`. The results ledger uses strict JSON (no NaN/Infinity).
+The `cold-body-edit` scenario runs an authenticated, separately pinned captured
+journal with one exact same-length procedure-body literal replacement. This is
+an edited-source cold trace; it makes no claim about daemon or warm incremental
+latency and receives `diagnostic_only` performance admission. CPU quality,
+complete structural traversal/no-regression, and fresh-output equality remain
+mandatory for Phase0 measurement admission. Both measured and fresh compiles use
+`--no-cache`, distinct output stores and artifact directories, and the same
+edited journal. Both normalized stdout and stderr must agree.
 
-Stage `read_bytes`/`write_bytes` remain **overlapping process windows**. Separate `attributed_io` rows retain explicit operation bytes, `call_elapsed_s`, `calls`, `failed_calls` and blocked durations. Call elapsed is observed wall time around annotated I/O calls, including scheduling, copying and filesystem processing; it is not blocked time. Failed operations may have unknown partial byte counts. These are partial measurements, not complete stage coverage. I/O acceptance requires an explicit `io_coverage: "complete"` report plus measured blocked time. The current profiler does not issue that completeness claim, so I/O acceptance remains open even if process byte budgets pass. No stage-window or partial-operation sum is represented as full-process I/O.
+Keep `--input-journal` pinned to the immutable parent journal. In the scenario,
+provide `name: cold-body-edit`, `input_journal` for the derivative, and
+`variant_receipt` plus its explicit `variant_receipt_sha256`. The receipt uses the
+existing schema1 derivative format: original/edited journal index and checksum
+SHA256 pins, `original_snapshot`, `snapshot`, `physical_source_changed: false`,
+and `overlay_sha256` for sibling `overlay.json`. The overlay pins its canonical
+source path, old/new xxh3_128 payload identities and SHA256s, equal byte length,
+and one uniquely matching before/after text. Capture closure paths, directory
+entries and negative inputs must be identical. Rust replay independently checks
+its native index checksum and every requested payload. No frozen source is edited.
 
-### Authenticated unchanged shortcut
-
-Unchanged acceptance requires the exact declared critical sequence `engine_input`, then `session_validation`. Both names must occur exactly once in the global eight-domain mapping. Only domains executed by that short sequence receive stage-budget checks. This exception does not apply to cold or body-edit traces: they still require every mapped stage and the complete eight-domain sequence. CPU quality, calibration, coverage, allocation and oracle checks remain mandatory.
-
-Scenario total-CPU limits are 2.0 seconds for a body edit and 0.2 seconds unchanged, alongside critical-path limits of 1.5 and 0.25 seconds respectively.
+An edited scenario must also supply `byond_dmb`, `byond_snapshot` and (when
+comparing a previous baseline) `structural_baseline` for that derivative. The
+BYOND pin must contain the edited index SHA256 as `snapshot_id`, the exact
+`variant_receipt_sha256` as `source_variant_sha256`, the BYOND DMB hash, and the
+normal authenticated semantic configuration/defines and BYOND tool evidence.
+An original-source BYOND pin is rejected. Preparing that reference requires a
+private BYOND source derivative containing the identical single edit, compiled
+with the same semantic configuration; preserve its source/provenance receipt.
+The original journal, source closure, and BYOND pair remain immutable.

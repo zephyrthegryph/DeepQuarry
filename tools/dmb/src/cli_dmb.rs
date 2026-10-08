@@ -4,6 +4,7 @@ use std::io;
 
 pub(crate) fn execute(name: &str, args: &[String]) -> io::Result<()> {
     match name {
+        "structural-diff" => structural_diff(args),
         "dmb-compare" => dmb_compare(args),
         "dmb-map-compare" => dmb_map_compare(args),
         "dmb-info" => dmb_info(args),
@@ -46,6 +47,21 @@ pub(crate) fn execute(name: &str, args: &[String]) -> io::Result<()> {
             format!("unknown command: {name}"),
         )),
     }
+}
+
+fn structural_diff(args: &[String]) -> io::Result<()> {
+    if args[5].is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "snapshot identity is required",
+        ));
+    }
+    let expected = load_dmb(&args[2])?;
+    let actual = load_dmb(&args[3])?;
+    let report = byond_dmb::compare::structural_report(&expected, &actual, &args[5]);
+    let file = std::fs::File::create(&args[4])?;
+    serde_json::to_writer_pretty(file, &report).map_err(io::Error::other)?;
+    Ok(())
 }
 
 fn dmb_compare(args: &[String]) -> io::Result<()> {

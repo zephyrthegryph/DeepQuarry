@@ -162,7 +162,8 @@ pub(super) fn compare_code(
     name: &str,
     out: &mut Collector,
 ) {
-    compare_code_options(a, ai, b, bi, name, out, false);
+    let ignore_debug = out.report.is_some();
+    compare_code_options(a, ai, b, bi, name, out, ignore_debug);
 }
 
 pub(super) fn compare_code_options(
@@ -205,6 +206,9 @@ pub(super) fn compare_code_options(
         .into_iter()
         .filter(|item| !ignore_debug || !matches!(item.opcode, 0x84 | 0x85))
         .collect::<Vec<_>>();
+    if let Some(report) = &mut out.report {
+        report.observe_bytecode(name, left.len(), right.len());
+    }
     out.check(name, "bytecode.instruction_count", left.len(), right.len());
     for (index, (a_instruction, b_instruction)) in left.iter().zip(right.iter()).enumerate() {
         if out.full() {
@@ -225,50 +229,7 @@ pub(super) fn compare_code_options(
             (&mut a_instruction, &left_offsets),
             (&mut b_instruction, &right_offsets),
         ] {
-            for operand in &mut normalized.operands {
-                match operand {
-                    NormalOperand::Switch(cases, default) => {
-                        for (_, target) in cases {
-                            normalize_target(target, targets);
-                        }
-                        normalize_target(default, targets);
-                    }
-                    NormalOperand::PickSwitch(cases, default) => {
-                        for (_, target) in cases {
-                            normalize_target(target, targets);
-                        }
-                        normalize_target(default, targets);
-                    }
-                    NormalOperand::RangeSwitch(ranges, exact, default) => {
-                        for (_, _, target) in ranges {
-                            normalize_target(target, targets);
-                        }
-                        for (_, target) in exact {
-                            normalize_target(target, targets);
-                        }
-                        normalize_target(default, targets);
-                    }
-                    _ => {}
-                }
-            }
-            if normalized.opcode == 0xb1 {
-                if let Some(NormalOperand::Offsets(offsets)) = normalized.operands.first() {
-                    if let Some(branches) = offsets
-                        .iter()
-                        .map(|offset| targets.get(&(*offset as usize)).copied())
-                        .collect::<Option<Vec<_>>>()
-                    {
-                        normalized.operands[0] = NormalOperand::Branches(branches);
-                    }
-                }
-            }
-            if crate::bytecode::is_branch_opcode(normalized.opcode) {
-                if let Some(NormalOperand::Word(offset)) = normalized.operands.first() {
-                    if let Some(&target) = targets.get(&(*offset as usize)) {
-                        normalized.operands[0] = NormalOperand::Branch(target);
-                    }
-                }
-            }
+            normalize_instruction_targets(normalized, targets);
         }
         out.check(
             name,
@@ -298,6 +259,7 @@ pub fn compare_proc_code(
     let mut out = Collector {
         output: Vec::new(),
         limit,
+        report: None,
     };
     compare_code_options(
         expected,
@@ -450,4 +412,81 @@ pub(super) fn compare_initializer(
         ),
         _ => out.add(name, "proc.presence", a.is_some(), b.is_some()),
     }
+}
+
+fn normalize_instruction_targets(
+    normalized: &mut NormalInstruction,
+    targets: &BTreeMap<usize, usize>,
+) {
+    for operand in &mut normalized.operands {
+        match operand {
+            NormalOperand::Switch(cases, default) => {
+                for (_, target) in cases {
+                    normalize_target(target, targets);
+                }
+                normalize_target(default, targets);
+            }
+            NormalOperand::PickSwitch(cases, default) => {
+                for (_, target) in cases {
+                    normalize_target(target, targets);
+                }
+                normalize_target(default, targets);
+            }
+            NormalOperand::RangeSwitch(ranges, exact, default) => {
+                for (_, _, target) in ranges {
+                    normalize_target(target, targets);
+                }
+                for (_, target) in exact {
+                    normalize_target(target, targets);
+                }
+                normalize_target(default, targets);
+            }
+            _ => {}
+        }
+    }
+    if normalized.opcode == 0xb1 {
+        if let Some(NormalOperand::Offsets(offsets)) = normalized.operands.first() {
+            if let Some(branches) = offsets
+                .iter()
+                .map(|offset| targets.get(&(*offset as usize)).copied())
+                .collect::<Option<Vec<_>>>()
+            {
+                normalized.operands[0] = NormalOperand::Branches(branches);
+            }
+        }
+    }
+    if crate::bytecode::is_branch_opcode(normalized.opcode) {
+        if let Some(NormalOperand::Word(offset)) = normalized.operands.first() {
+            if let Some(&target) = targets.get(&(*offset as usize)) {
+                normalized.operands[0] = NormalOperand::Branch(target);
+            }
+        }
+    }
+}
+
+/// Shared grammar/resolution and branch normalization for complete payload receipts.
+pub(super) fn normalized_code(
+    dmb: &Dmb,
+    id: usize,
+) -> Result<Vec<NormalInstruction>, bytecode::DecodeError> {
+    let words = dmb.proc_code_words(id).unwrap_or_default();
+    let input = bytecode::decode(words)?;
+    let mut offsets = BTreeMap::new();
+    let mut index = 0;
+    for item in &input {
+        offsets.insert(item.offset, index);
+        if !matches!(item.opcode, 0x84 | 0x85) {
+            index += 1;
+        }
+    }
+    offsets.insert(words.len(), index);
+    input
+        .iter()
+        .filter(|item| !matches!(item.opcode, 0x84 | 0x85))
+        .map(|item| {
+            let mut normal = instruction(dmb, item)?;
+            normalize_instruction_targets(&mut normal, &offsets);
+            Ok(normal)
+        })
+        .collect()
 }
