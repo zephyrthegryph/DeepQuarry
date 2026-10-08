@@ -18,6 +18,8 @@
 	filter_side = 1 // R
 	icon_state = "filter_r"
 
+TRACKED(/obj/machinery/reagent_refinery/filter, filter_side)
+
 CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 	climb()
 	op("reagent_filter_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_reagent_filter_use)))
@@ -73,6 +75,11 @@ CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 
 /obj/machinery/reagent_refinery/filter/proc/get_filter_side()
 	return filter_side
+
+/// A filter feeds a hub from its main line and from its filtered side.
+/obj/machinery/reagent_refinery/filter/hub_intake(back)
+	var/side_dir = turn(dir, filter_side == 1 ? 270 : 90)
+	return side_dir == back || dir == back
 
 /// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
 /obj/machinery/reagent_refinery/filter/proc/dq_actor_can_act_holds(datum/act/op/A)
@@ -145,8 +152,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 	if (user.stat || user.restrained() || anchored)
 		return
 
-	filter_side *= -1
-	changed(src)
+	set_filter_side(filter_side * -1)
 
 /obj/machinery/reagent_refinery/filter/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// pumps, furnaces, splitters and filters can only be FED in a straight line

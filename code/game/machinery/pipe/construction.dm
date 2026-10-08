@@ -201,7 +201,7 @@ CAPABILITIES(/obj/item/pipe)
 			return /datum/msg/pipe_item/hogged
 		if((M.piping_layer != piping_layer) && !((M.pipe_flags | flags) & PIPING_ALL_LAYER)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 			continue
-		if(M.get_init_dirs() & SSmachines.get_init_dirs(pipe_type, dir)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+		if(M.get_init_dirs() & SSmachines.get_init_dirs(pipe_type, dir))
 			return /datum/msg/pipe_item/occupied
 	return null
 

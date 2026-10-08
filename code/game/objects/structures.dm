@@ -14,6 +14,10 @@
 	// Structures shrug off a plain telekinetic grab or poke; ones that react declare an INTERACT_TK.
 	tk_reach = FALSE
 
+/// The smoothing code writes these through their setters (interned lists, so an unchanged shape publishes nothing); a draw reads them.
+TRACKED(/obj/structure, connections)
+TRACKED(/obj/structure, other_connections)
+
 // the base structure: leaves its parts behind.
 /obj/structure/on_destroy(force)
 	if(parts)
@@ -86,7 +90,6 @@
 	smooth_mask = mask
 	update_connections()
 	update_icon()
-	changed(src)
 
 /obj/structure/proc/update_connections(propagate = 0)
 	if(propagate)
@@ -95,8 +98,8 @@
 	var/list/other_dirs = list()
 
 	if(!can_visually_connect())
-		connections = string_list(list("0", "0", "0", "0"))
-		other_connections = string_list(list("0", "0", "0", "0"))
+		set_connections(string_list(list("0", "0", "0", "0")))
+		set_other_connections(string_list(list("0", "0", "0", "0")))
 		return FALSE
 
 	for(var/direction in GLOB.cardinal)
@@ -129,8 +132,8 @@
 	refresh_neighbors()
 
 	// Interned: structures with the same shape share one read-only list.
-	connections = string_list(dirs_to_corner_states(dirs))
-	other_connections = string_list(dirs_to_corner_states(other_dirs))
+	set_connections(string_list(dirs_to_corner_states(dirs)))
+	set_other_connections(string_list(dirs_to_corner_states(other_dirs)))
 	return TRUE
 
 /obj/structure/proc/refresh_neighbors()

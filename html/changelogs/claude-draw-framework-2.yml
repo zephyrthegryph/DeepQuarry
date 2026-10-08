@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - refactor: "Atom turns go through set_dir() (a lint now enforces it), so anything drawn from a facing redraws when it turns"
+  - refactor: "Smoothing structures publish their connections; the refinery hub and flipped tables redraw when a neighbour changes"
+  - bugfix: "A flipped table's emissive outline now matches its flipped sprite"

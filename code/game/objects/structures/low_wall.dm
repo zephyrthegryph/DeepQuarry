@@ -390,11 +390,7 @@ CAPABILITIES(/obj/structure/window/bay)
 DECLARE_APPEARANCE_PROC(/obj/structure/window/bay, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
 /obj/structure/window/bay/appearance_overlays()
 	. = list()
-	if(!anchored)
-		connections = string_list(list("0","0","0","0"))
-		other_connections = string_list(list("0","0","0","0"))
-	else
-		update_connections()
+	update_connections() // an unanchored one answers all zeros itself (can_visually_connect())
 
 	var/percent_damage = 0 // Used for icon state of damage layer
 	var/damage_alpha = 0 // Used for alpha blending of damage layer
@@ -480,11 +476,7 @@ CAPABILITIES(/obj/structure/window/eris)
 DECLARE_APPEARANCE_PROC(/obj/structure/window/eris, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/window/eris/appearance_overlays()
 	. = list()
-	if(!anchored)
-		connections = string_list(list("0","0","0","0"))
-		other_connections = string_list(list("0","0","0","0"))
-	else
-		update_connections()
+	update_connections() // an unanchored one answers all zeros itself (can_visually_connect())
 
 	var/img_dir
 	var/image/I

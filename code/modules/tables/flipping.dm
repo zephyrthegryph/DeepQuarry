@@ -88,7 +88,7 @@
 	if(direction)
 		L.Add(direction)
 	else
-		L.Add(turn(src.dir,-90)) // ALLOW(reads): the way a flipped table faces is read when a put back is tried; the click asks again
+		L.Add(turn(src.dir,-90))
 		L.Add(turn(src.dir,90))
 	for(var/new_dir in L)
 		var/obj/structure/table/T = locate_within(get_step(src,new_dir), /obj/structure/table)
@@ -119,7 +119,6 @@
 			T.flip(direction)
 	take_damage(rand(5, 10), BRUTE, MELEE)
 	update_connections(1)
-	update_icon()
 
 	return 1
 
@@ -133,6 +132,5 @@
 			T.unflip()
 
 	update_connections(1)
-	update_icon()
 
 	return 1

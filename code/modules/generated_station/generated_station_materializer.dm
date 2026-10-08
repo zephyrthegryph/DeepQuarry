@@ -1017,7 +1017,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			placement.feature.atom_type = atom_type
 			placement.x = fixture.x
 			placement.y = fixture.y
-			placement.set_dir(fixture.direction)
+			placement.dir = fixture.direction
 			rel_add(solution, nameof(solution.placements), placement)
 	synthesis_rooms = null
 	synthesis_solutions = null

@@ -167,9 +167,7 @@ DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_dat
 		if(can_join_with(S))
 			dirs += get_dir(src, S)
 
-	connections = string_list(dirs_to_corner_states(dirs))
-
-	changed(src)
+	set_connections(string_list(dirs_to_corner_states(dirs)))
 
 /obj/structure/barricade/sandbag/proc/can_join_with(obj/structure/barricade/sandbag/S)
 	if(material == S.material)

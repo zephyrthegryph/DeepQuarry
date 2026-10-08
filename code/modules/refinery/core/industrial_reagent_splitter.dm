@@ -70,3 +70,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/splitter)
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u."
 	tutorial(REFINERY_TUTORIAL_SPLITTEROUTPUT|REFINERY_TUTORIAL_INPUT, .)
 
+/// A splitter feeds a hub from either side.
+/obj/machinery/reagent_refinery/splitter/hub_intake(back)
+	return back in list(turn(dir, 90), turn(dir, -90))

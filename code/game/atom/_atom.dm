@@ -309,10 +309,14 @@
 	PUBLISH_LEGACY(src, /datum/notice/atom_dir_change, dir, new_dir)
 	var/old_dir = dir
 	dir = new_dir
-	// A drawn type that reads dir redraws (dir is a tracked read of every look); an atom with no look pays one var read.
-	if(look_key && old_dir != new_dir)
+	// A drawn type that reads dir redraws, and so does a look that watches this atom (dir is a tracked read of every look); an atom nothing draws or watches pays one var read.
+	if((rx?.look_key || rel_watchers) && old_dir != new_dir)
 		tracked_changed(src, nameof(dir))
 SETTER(/atom, dir)
+
+/// The engine's look applies a dir through this (the engine does not reach the atom layer): set_dir() on every atom.
+/atom/look_set_dir(new_dir)
+	set_dir(new_dir)
 
 /// Density is a tracked base var (G8): this is its only writer. A change publishes nameof(density) to its readers
 /// and, as a bridge, raises the channel the type's declared field names (machinery_fields.dm).
@@ -553,6 +557,8 @@ SETTER(/atom, density)
 	op_moved(AM, src)
 	PUBLISH_LEGACY(AM, /datum/notice/movable_attempted_move, old_loc, AM.loc)
 	PUBLISH_LEGACY(src, /datum/notice/atom_entered, AM, old_loc)
+	if(rel_watchers)
+		look_neighbour_moved(src, AM)
 	PUBLISH_LEGACY(AM, /datum/notice/atom_entering, src, old_loc)
 	RANGE_WATCH(src, RANGE_ENTERED, AM, old_loc)
 
@@ -563,6 +569,8 @@ SETTER(/atom, density)
 	. = ..()
 	op_moved(AM, src)
 	PUBLISH_LEGACY(src, /datum/notice/atom_exited, AM, new_loc)
+	if(rel_watchers)
+		look_neighbour_moved(src, AM)
 	RANGE_WATCH(src, RANGE_EXITED, AM, new_loc)
 
 /atom/proc/interact(mob/user)

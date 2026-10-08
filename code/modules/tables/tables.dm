@@ -155,9 +155,6 @@ CAPABILITIES(/obj/structure/table)
 /// Redraws and renames the table and its neighbours, and sets its strength for what it is made of now.
 /obj/structure/table/proc/refresh_layers()
 	update_connections(TRUE)
-	update_icon()
-	for(var/obj/structure/table/T in oview(src, 1))
-		T.update_icon()
 	update_desc()
 	update_material()
 
@@ -211,7 +208,7 @@ CAPABILITIES(/obj/structure/table)
 
 /obj/structure/table/proc/update_desc()
 	if(material())
-		name = "[material().display_name] table"
+		name = "[plating_display()] table"
 	else
 		name = "table frame"
 
@@ -230,13 +227,11 @@ CAPABILITIES(/obj/structure/table)
 	var/obj/item/stack/tile/carpet/C = A.held
 	carpeted_type = C.type
 	set_carpeted(TRUE)
-	update_icon()
 	return OP_OK
 
 /obj/structure/table/proc/carpet_lifted(datum/act/op/A)
 	new carpeted_type(loc)
 	set_carpeted(FALSE)
-	update_icon()
 	return OP_OK
 
 /obj/structure/table/proc/is_damaged(datum/act/A)
@@ -286,7 +281,6 @@ CAPABILITIES(/obj/structure/table)
 	color = "#ffffff"
 	alpha = 255
 	update_connections()
-	update_icon()
 	update_desc()
 	update_material()
 
@@ -382,73 +376,86 @@ CAPABILITIES(/obj/structure/table)
 		I.alpha = talpha
 	return I
 
-DECLARE_APPEARANCE_PROC(/obj/structure/table, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/table/appearance_overlays()
-	. = list()
+/// Whether the table draws the frame, plating, reinforcement and carpet layers (a rack and a survival pod table draw their own sprite).
+/obj/structure/table/proc/draws_layers()
+	return TRUE
+
+/// The frame, plating, reinforcement and carpet of a standing table by its connections; a flipped one by the flipped tables beside it (watched: one
+/// appearing, leaving, turning or changing material redraws this table). The plating and reinforcement are shared definitions that never change, so
+/// they are read in the layer procs below, not watched: a layer going on or off is the table's own state.
+/obj/structure/table/draw(datum/look/look)
+	..()
+	if(!draws_layers())
+		return
 	if(flipped != 1)
-		icon_state = "blank"
-
-		// Base frame shape. Mostly done for glass/diamond tables, where this is visible.
-		for(var/i = 1 to 4)
-			var/image/I = get_table_image(icon, connections?[i] || 0, 1<<(i-1))
-			. += I
-
-		// Standard table image
-		if(material())
-			for(var/i = 1 to 4)
-				var/connect = connections?[i] || 0
-				var/image/I = get_table_image(icon, "[material().table_icon_base]_[connect]", 1<<(i-1), material().icon_colour, 255 * material().opacity)
-				. += I
-
-		// Reinforcements
-		if(reinforced())
-			for(var/i = 1 to 4)
-				var/connect = connections?[i] || 0
-				var/image/I = get_table_image(icon, "[reinforced().icon_reinf]_[connect]", 1<<(i-1), reinforced().icon_colour, 255 * reinforced().opacity)
-				. += I
-
-		if(carpeted)
-			for(var/i = 1 to 4)
-				var/connect = connections?[i] || 0
-				var/image/I = get_table_image(icon, "carpet_[connect]", 1<<(i-1))
-				. += I
+		look.state("blank")
+		for(var/image/layer_image as anything in standing_layers())
+			look.overlay(layer_image)
 	else
 		var/type = 0
 		var/tabledirs = 0
-		for(var/direction in list(turn(dir,90), turn(dir,-90)) )
-			var/obj/structure/table/T = locate(/obj/structure/table ,get_step(src,direction))
-			if (T && T.flipped == 1 && T.dir == src.dir && material() && T.material() && T.material().name == material().name)
+		var/plated_with = plating_name()
+		for(var/direction in list(turn(dir,90), turn(dir,-90)))
+			var/obj/structure/table/T = look.neighbour(src, direction, /obj/structure/table)
+			if(T && T.flipped == 1 && T.dir == dir && plated_with && T.plating_name() == plated_with)
 				type++
 				tabledirs |= direction
 
 		type = "[type]"
-		if (type=="1")
-			if (tabledirs & turn(dir,90))
+		if(type == "1")
+			if(tabledirs & turn(dir,90))
 				type += "-"
-			if (tabledirs & turn(dir,-90))
+			if(tabledirs & turn(dir,-90))
 				type += "+"
 
-		icon_state = "flip[type]"
-		if(material())
-			var/image/I = image(icon, "[material().table_icon_base]_flip[type]")
-			I.color = material().icon_colour
-			I.alpha = 255 * material().opacity
-			. += I
-			name = "[material().display_name] table"
-		else
-			name = "table frame"
+		look.state("flip[type]")
+		look.identity(name = plated_with ? "[plating_display()] table" : "table frame")
+		for(var/layer_image in flipped_layers(type))
+			look.overlay(layer_image)
 
-		if(reinforced())
-			var/image/I = image(icon, "[reinforced().icon_reinf]_flip[type]")
-			I.color = reinforced().icon_colour
-			I.alpha = 255 * reinforced().opacity
-			. += I
+/// The name of what the table is plated with (its display name), or null for a bare frame.
+/obj/structure/table/proc/plating_name()
+	return material()?.name
 
-		if(carpeted)
-			. += "carpet_flip[type]"
+/// What the plating is called on the table (a flipped one is named after it).
+/obj/structure/table/proc/plating_display()
+	return material()?.display_name
 
+/// The tint of the plating, or null for a bare frame.
+/obj/structure/table/proc/plating_colour()
+	return material()?.icon_colour
 
-/// Flood-fills the connected tables into `found` (a transient working list) and returns it.
+/// The layers of a standing table, bottom first: the frame shape by connection, then plating, reinforcement and carpet.
+/obj/structure/table/proc/standing_layers()
+	var/list/layers = list()
+	var/datum/material/plating = material()
+	var/datum/material/reinforcement = reinforced()
+	for(var/i = 1 to 4)
+		layers += get_table_image(icon, connections?[i] || 0, 1<<(i-1))
+	if(plating)
+		for(var/i = 1 to 4)
+			layers += get_table_image(icon, "[plating.table_icon_base]_[connections?[i] || 0]", 1<<(i-1), plating.icon_colour, 255 * plating.opacity)
+	if(reinforcement)
+		for(var/i = 1 to 4)
+			layers += get_table_image(icon, "[reinforcement.icon_reinf]_[connections?[i] || 0]", 1<<(i-1), reinforcement.icon_colour, 255 * reinforcement.opacity)
+	if(carpeted)
+		for(var/i = 1 to 4)
+			layers += get_table_image(icon, "carpet_[connections?[i] || 0]", 1<<(i-1))
+	return layers
+
+/// The layers of a flipped table of the given kind ("0", "1-", "1+", "2"): plating, reinforcement, carpet.
+/obj/structure/table/proc/flipped_layers(kind)
+	var/list/layers = list()
+	var/datum/material/plating = material()
+	var/datum/material/reinforcement = reinforced()
+	if(plating)
+		layers += look_overlay_image(icon, "[plating.table_icon_base]_flip[kind]", color = plating.icon_colour, alpha = 255 * plating.opacity)
+	if(reinforcement)
+		layers += look_overlay_image(icon, "[reinforcement.icon_reinf]_flip[kind]", color = reinforcement.icon_colour, alpha = 255 * reinforcement.opacity)
+	if(carpeted)
+		layers += "carpet_flip[kind]"
+	return layers
+
 /obj/structure/table/proc/get_all_connected_tables(list/found)
 	if(!found)
 		found = list()

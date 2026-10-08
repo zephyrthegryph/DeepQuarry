@@ -173,14 +173,14 @@ TRACKED(/obj/dq_draw_watched, shown)
 	refresh_flush()
 	A.set_dir(SOUTH)
 	refresh_flush()
-	TEST_ASSERT(("facing-[SOUTH]" in A.look_overlays), "the draw read the dir: [json_encode(A.look_overlays)]")
+	TEST_ASSERT(("facing-[SOUTH]" in A.rx?.look_overlays), "the draw read the dir: [json_encode(A.rx?.look_overlays)]")
 	A.set_dir(EAST)
 	refresh_flush()
-	TEST_ASSERT(("facing-[EAST]" in A.look_overlays), "a change of dir through set_dir() redraws: [json_encode(A.look_overlays)]")
-	TEST_ASSERT(!("facing-[SOUTH]" in A.look_overlays), "and the old facing is gone")
+	TEST_ASSERT(("facing-[EAST]" in A.rx?.look_overlays), "a change of dir through set_dir() redraws: [json_encode(A.rx?.look_overlays)]")
+	TEST_ASSERT(!("facing-[SOUTH]" in A.rx?.look_overlays), "and the old facing is gone")
 	A.setDir(WEST)
 	refresh_flush()
-	TEST_ASSERT(("facing-[WEST]" in A.look_overlays), "setDir() is the same path: [json_encode(A.look_overlays)]")
+	TEST_ASSERT(("facing-[WEST]" in A.rx?.look_overlays), "setDir() is the same path: [json_encode(A.rx?.look_overlays)]")
 
 /datum/unit_test/dq_draw_offset_follows_the_look
 
@@ -220,15 +220,15 @@ TRACKED(/obj/dq_draw_watched, shown)
 	refresh_flush()
 	rel_set(S, nameof(S.beaker), B)
 	refresh_flush()
-	TEST_ASSERT(("beaker" in S.look_overlays), "the beaker is drawn: [json_encode(S.look_overlays)]")
-	TEST_ASSERT(("line" in S.look_overlays), "with the line not attached")
-	var/before = S.look_key
+	TEST_ASSERT(("beaker" in S.rx?.look_overlays), "the beaker is drawn: [json_encode(S.rx?.look_overlays)]")
+	TEST_ASSERT(("line" in S.rx?.look_overlays), "with the line not attached")
+	var/before = S.rx?.look_key
 	B.reagents.add_reagent(REAGENT_ID_WATER, 30)
 	refresh_flush()
-	TEST_ASSERT(S.look_key != before, "filling the beaker redraws the stand through the watch")
+	TEST_ASSERT(S.rx?.look_key != before, "filling the beaker redraws the stand through the watch")
 	rel_take(S, nameof(S.beaker))
 	refresh_flush()
-	TEST_ASSERT(!("beaker" in S.look_overlays), "and it goes when the beaker is taken")
+	TEST_ASSERT(!("beaker" in S.rx?.look_overlays), "and it goes when the beaker is taken")
 
 /datum/unit_test/dq_draw_furnace_flip_and_turn_redraw
 
@@ -240,8 +240,67 @@ TRACKED(/obj/dq_draw_watched, shown)
 	F.set_filter_side(1)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.icon_state, "furnace_r", "the tracked side redraws it")
-	var/before = F.look_key
+	var/before = F.rx?.look_key
 	F.set_dir(EAST)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.dir, EAST, "it turned")
-	TEST_ASSERT(F.look_key != before || !F.reagents.total_volume, "a turn redraws a furnace that shows a filling")
+	TEST_ASSERT(F.rx?.look_key != before || !F.reagents.total_volume, "a turn redraws a furnace that shows a filling")
+
+// ---- look.neighbours() and the proof types: the refinery hub, the table; dir published by a native turn ----
+
+/datum/unit_test/dq_draw_hub_hears_its_neighbour
+
+/datum/unit_test/dq_draw_hub_hears_its_neighbour/Run()
+	var/turf/T = test_floor()
+	var/turf/ahead = get_step(T, SOUTH)
+	var/obj/machinery/reagent_refinery/hub/H = allocate(/obj/machinery/reagent_refinery/hub, T)
+	H.set_dir(SOUTH)
+	refresh_flush()
+	TEST_ASSERT(H.rx?.look_key, "the hub drew")
+	TEST_ASSERT(ahead.rel_watchers, "and watches the turf it faces")
+	var/before = H.rx?.look_key
+	// The pump is made and turned elsewhere first, so its arrival is the only change the hub is told about.
+	var/obj/machinery/reagent_refinery/pump/P = allocate(/obj/machinery/reagent_refinery/pump, get_step(T, NORTH))
+	P.set_dir(NORTH)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(H.rx?.look_key, before, "a machine elsewhere changes nothing")
+	P.forceMove(ahead)
+	refresh_flush()
+	TEST_ASSERT(H.rx?.look_key != before, "a machine arriving on the turf it faces redraws the hub")
+	before = H.rx?.look_key
+	P.set_dir(SOUTH)
+	refresh_flush()
+	TEST_ASSERT(H.rx?.look_key != before, "and its turning away redraws it again (the neighbour's dir is watched)")
+	P.set_dir(NORTH)
+	refresh_flush()
+	before = H.rx?.look_key
+	qdel(P)
+	refresh_flush()
+	TEST_ASSERT(H.rx?.look_key != before, "and so does its leaving")
+
+/datum/unit_test/dq_draw_dir_published_by_a_native_turn
+
+/datum/unit_test/dq_draw_dir_published_by_a_native_turn/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/reagent_refinery/furnace/F = allocate(/obj/machinery/reagent_refinery/furnace, T)
+	refresh_flush()
+	var/before = F.rx?.look_key
+	F.dir = EAST // BYOND turns a mover on Move() without calling set_dir(); this is what that leaves behind
+	F.Moved(T, EAST)
+	refresh_flush()
+	TEST_ASSERT(F.rx?.look_key != before || !F.reagents.total_volume, "Moved() publishes a dir that changed")
+	before = F.rx?.look_key
+	F.Moved(T, EAST)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(F.rx?.look_key, before, "and nothing when it did not")
+
+/datum/unit_test/dq_draw_table_connections_are_tracked
+
+/datum/unit_test/dq_draw_table_connections_are_tracked/Run()
+	var/turf/T = test_floor()
+	var/obj/structure/table/A = allocate(/obj/structure/table, T)
+	refresh_flush()
+	var/before = A.rx?.look_key
+	A.set_connections(string_list(list("1", "0", "0", "0")))
+	refresh_flush()
+	TEST_ASSERT(A.rx?.look_key != before, "the table redraws when its connections change")

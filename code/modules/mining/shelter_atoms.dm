@@ -766,10 +766,12 @@ DECLARE_APPEARANCE_PROC(/obj/structure/window/reinforced/survival_pod, TYPE_PROC
 	can_flip_verb = FALSE
 	can_dismantle = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/table/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/table/survival_pod/appearance_overlays()
-	. = list()
-	icon_state = "table"
+/obj/structure/table/survival_pod/draws_layers()
+	return FALSE
+
+/obj/structure/table/survival_pod/draw(datum/look/look)
+	..()
+	look.state("table")
 
 //Sleeper
 /obj/machinery/sleeper/survival_pod

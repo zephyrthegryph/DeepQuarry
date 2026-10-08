@@ -80,3 +80,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/waste_processor)
 
 CAPABILITIES(/obj/machinery/reagent_refinery/waste)
 	without("reagent_refinery_set_transfer_amount")
+
+/// A waste processor does not feed anything.
+/obj/machinery/reagent_refinery/waste_processor/hub_intake(back)
+	return FALSE

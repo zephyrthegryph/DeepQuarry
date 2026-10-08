@@ -22,6 +22,8 @@
 	var/list/look_flash_tokens
 	/// Own keys of the entities the atom's draw reads (look.watch()): state_changed() on any of them marks the atom. Lazy.
 	var/list/look_watching
+	/// The types look.neighbours() asked for: a turf the atom watches tells it only of a mover of one of these (null: every change). Lazy.
+	var/list/look_neighbour_types
 
 /// A's engine record, or null when the engine has kept nothing for it.
 /proc/cap_engine_state_of(atom/A)

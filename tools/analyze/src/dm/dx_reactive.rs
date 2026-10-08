@@ -396,11 +396,16 @@ pub fn own_roots_of(proc: &Proc, tree: &Tree, relations: &HashSet<String>) -> (H
     // `look.watch(X)` declares the draw's read through X: the last name of X is a relation, like a watched REL.
     let look_watch = pat!(r"look\s*\.\s*watch\s*\(\s*([\w.?]+)\s*\)");
     let last_name = pat_match!(r"(?:\w+\s*\??\.\s*)*(\w+)$");
+    // `look.neighbours(...)` is a watched read too: a local it fills (`var/x = look.neighbours(..)[1]`, `for(var/x in look.neighbours(..))`) is a relation.
+    let look_neighbours = pat!(r"\bvar/(?:[\w/]+/)?(\w+)\s*(?:=|in)\s*look\s*\.\s*neighbours?\s*\(");
     for (_n, text) in proc.lines(tree) {
         for w in look_watch.captures_iter(text) {
             if let Some(l) = last_name.captures(w.s(1)) {
                 rels.insert(l.s(1).to_string());
             }
+        }
+        for w in look_neighbours.captures_iter(text) {
+            rels.insert(w.s(1).to_string());
         }
         for m in cap_typed.captures_iter(text) {
             context.insert(m.s(1).to_string());

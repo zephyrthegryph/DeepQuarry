@@ -59,7 +59,7 @@ DECL_KINDS = ("APPEARANCE_TEMPLATE", "APPEARANCE_LEVEL", "APPEARANCE_EMISSIVE", 
 DECL_START = re.compile(r"^(" + "|".join(DECL_KINDS) + r")\((/[\w/]+)")
 NO_EDIT = ("code/modules/unit_tests/", "code/tests/", "code/engine/", "code/__defines/", "code/_generated/", "code/modules/benchmarks/")
 LOOK_SETTERS = {"color": "set_color", "alpha": "set_alpha", "layer": "set_layer", "plane": "set_plane", "dir": "set_dir", "icon": "set_icon", "transform": "set_transform"}
-COVERED_BUILTINS = {"density", "opacity", "anchored"}
+COVERED_BUILTINS = {"density", "opacity", "anchored", "dir"}  # dir: /atom/set_dir() publishes it (a tracked read of every drawn atom)
 KEYWORDS = {
     "if", "else", "for", "while", "do", "switch", "return", "var", "in", "to", "step", "as", "new", "del", "null", "src", "usr", "TRUE", "FALSE",
     "list", "world", "GLOB", "look", "break", "continue", "set", "global", "proc", "verb", "tmp", "static", "const", "drawn_state", "INFINITY",
@@ -501,6 +501,7 @@ def provider_lines(ix, t, rel, start, end, has_parent_provider):
     if has_parent_provider and not saw_super:
         raise Residue("replaces_parent")
     out = fold_images(out)
+    out = fold_offsets(out)
     # trailing blank lines, and a bare return that ends the body, go
     while out and (not out[-1].strip() or (strip_code(out[-1]).strip() == "return" and re.match(r"^\t\S", out[-1]))):
         out.pop()
@@ -508,6 +509,29 @@ def provider_lines(ix, t, rel, start, end, has_parent_provider):
         ind = next((re.match(r"^[ \t]*", x).group(0) for x in out if x.strip()), "\t")
         out.insert(0, ind + "var/drawn_state = look.state_so_far(src)")
     return out
+
+
+def fold_offsets(lines):
+    """`pixel_x = X` and `pixel_y = Y` (both, at one indent) become one `look.offset(x = X, y = Y)` at the later of the two (the holder's pixel
+    offset is part of the look). One of the pair alone stays residue: look.offset() sets both."""
+    out = list(lines)
+    marks = {}
+    for i, line in enumerate(out):
+        m = re.match(r"^([ 	]*)__offset_([xy])__ (.*)$", line)
+        if m:
+            marks.setdefault((m.group(1), m.group(2)), []).append((i, m.group(3)))
+    done = set()
+    for ind in {k[0] for k in marks}:
+        xs, ys = marks.get((ind, "x"), []), marks.get((ind, "y"), [])
+        if len(xs) != 1 or len(ys) != 1:
+            raise Residue("writes_state:pixel_offset")
+        (xi, xv), (yi, yv) = xs[0], ys[0]
+        out[max(xi, yi)] = "%slook.offset(x = %s, y = %s)" % (ind, xv, yv)
+        done.add(min(xi, yi))
+    kept = [l for i, l in enumerate(out) if i not in done]
+    if any("__offset_" in l for l in kept):
+        raise Residue("writes_state:pixel_offset")
+    return kept
 
 
 def fold_images(lines):
@@ -665,6 +689,8 @@ def translate_stmt(ix, t, stmt, locals_, state_reads):
             return "look.state(%s)" % fix_expr(rhs, False)
         if lhs in LOOK_SETTERS and op == "=":
             return "look.%s(%s)" % (LOOK_SETTERS[lhs], fix_expr(rhs, state_reads))
+        if lhs in ("pixel_x", "pixel_y") and op == "=":
+            return "__offset_%s__ %s" % (lhs[-1], fix_expr(rhs, state_reads))  # fold_offsets() pairs the two into look.offset()
         if lhs == "item_state" and op == "=":
             return "look.held_state(%s)" % fix_expr(rhs, state_reads)
         if lhs in ("name", "desc") and op == "=":
