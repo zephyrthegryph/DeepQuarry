@@ -1248,6 +1248,11 @@
 #include "dq_beacon_topic_gate_tests.dm"
 #include "dq_machinery_audit_pins.dm"
 
+#include "dq_machinery_last_kiosk_tests.dm"
+#include "dq_machinery_last_occupant_tests.dm"
+#include "dq_machinery_last_aicore_tests.dm"
+#include "dq_machinery_last_conversion_pin.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
