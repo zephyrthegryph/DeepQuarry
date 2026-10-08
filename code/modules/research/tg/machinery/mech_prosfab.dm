@@ -164,7 +164,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
 		H.allow_spontaneous_tf = TRUE // Allows vore customization of synthmorphs
 		H.real_name = "Synthmorph #[rand(100,999)]"
 		H.name = H.real_name
-		H.dir = 2
+		H.set_dir(2)
 		H.add_language(LANGUAGE_EAL)
 		return H
 	else if(istype(dispensed_design, /datum/design_techweb/prosfab/pros))

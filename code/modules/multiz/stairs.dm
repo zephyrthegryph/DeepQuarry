@@ -171,7 +171,7 @@ CAPABILITIES(/obj/structure/stairs/bottom)
 
 	// If the stairs aren't broken, go up.
 	if(check_integrity())
-		AM.dir = src.dir
+		AM.set_dir(src.dir)
 
 		// Bring the pulled/grabbed object(s) along behind us
 		for(var/atom/movable/P in pulling)
@@ -425,7 +425,7 @@ CAPABILITIES(/obj/structure/stairs/middle)
 
 	// If the stairs aren't broken, go up.
 	if(check_integrity())
-		AM.dir = turn(src.dir, 180)
+		AM.set_dir(turn(src.dir, 180))
 		// Bring the pulled/grabbed object(s) along behind us
 		for(var/atom/movable/P in pulling)
 			P.forceMove(get_turf(src)) // They will move onto the turf but won't get past the check earlier in crossed. Aligns animation more cleanly

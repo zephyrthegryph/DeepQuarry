@@ -127,7 +127,7 @@ CAPABILITIES(/obj/structure/cliff/automatic)
 	// Now make the bottom cliff have mostly the same variables.
 	var/obj/structure/cliff/bottom/bottom = new(T)
 	is_double_cliff = TRUE
-	bottom.dir = dir
+	bottom.set_dir(dir)
 	bottom.is_double_cliff = TRUE
 	bottom.icon_variant = icon_variant
 	bottom.corner = corner

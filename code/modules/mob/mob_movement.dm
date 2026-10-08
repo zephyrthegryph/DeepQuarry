@@ -466,7 +466,7 @@
 						D.return_to_spawn()
 					return
 			mob.forceMove(get_step(mob, direct))
-			mob.dir = direct
+			mob.set_dir(direct)
 			//RS Port #658 End
 		if(2)
 			if(prob(50))
@@ -504,7 +504,7 @@
 			else
 				anim(mobloc,mob,'icons/mob/mob.dmi',,"shadow",,mob.dir)
 				mob.forceMove(get_step(mob, direct))
-			mob.dir = direct
+			mob.set_dir(direct)
 
 	mob.Post_Incorpmove()
 	return 1

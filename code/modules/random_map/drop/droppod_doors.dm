@@ -93,5 +93,5 @@ CAPABILITIES(/obj/structure/droppod_door)
 	door_bottom.deployed = TRUE
 	door_bottom.set_density(FALSE)
 	door_bottom.set_opacity(0)
-	door_bottom.dir = src.dir
+	door_bottom.set_dir(src.dir)
 	door_bottom.icon_state = "rampbottom"

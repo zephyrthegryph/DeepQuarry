@@ -219,6 +219,10 @@ fn scan_one(tracked: &Tracked, pats: &Pats, f: &SourceFile, sink: &mut Sink) -> 
                 typed.insert(m.s(2).to_string(), normalize_type(m.s(1)));
             }
             for m in pats.bare.captures_iter(line) {
+                // `f(a, dir = X)` names an argument; it writes nothing.
+                if matches!(line[..m.range().start].trim_end().chars().last(), Some('(') | Some(',')) {
+                    continue;
+                }
                 let var = if m.s(1).is_empty() { m.s(2) } else { m.s(1) };
                 if is_setter_of.as_deref() == Some(var) {
                     continue;

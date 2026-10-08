@@ -507,10 +507,10 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	else if(was & LOOK_SET_TRANSFORM)
 		A.transform = null
 	if(!isnull(dir))
-		A.dir = dir
+		A.set_dir(dir)
 		now |= LOOK_SET_DIR
 	else if(was & LOOK_SET_DIR)
-		A.dir = initial(A.dir)
+		A.set_dir(initial(A.dir))
 	if(!isnull(plane))
 		A.plane = plane
 		now |= LOOK_SET_PLANE

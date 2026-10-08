@@ -145,7 +145,7 @@
 			shadekin.real_name = shadekin.name
 			shadekin.init_vore(TRUE)
 			shadekin.can_be_drop_pred = TRUE
-			shadekin.dir = SOUTH
+			shadekin.set_dir(SOUTH)
 			shadekin.ability_flags |= 0x1
 			shadekin.phase_out(get_turf(shadekin)) //Homf
 			var/datum/shadekin/smite_SK = shadekin.get_shadekin_state()
@@ -388,11 +388,11 @@ GLOBAL_VAR(redspace_abduction_z)
 		after(target, SHADEKIN_SMITE_RELEASE, GLOBAL_PROC_REF(shadekin_smite_release), key = "shadekin_smite_release", with = list(target))
 	switch(step)
 		if(2)
-			shadekin.dir = WEST
+			shadekin.set_dir(WEST)
 		if(3)
-			shadekin.dir = EAST
+			shadekin.set_dir(EAST)
 		if(4)
-			shadekin.dir = SOUTH
+			shadekin.set_dir(SOUTH)
 		if(5)
 			shadekin.audible_message(span_vwarning(span_bold("[shadekin]") + " belches loudly!"), runemessage = "URRRRRP")
 		if(6)

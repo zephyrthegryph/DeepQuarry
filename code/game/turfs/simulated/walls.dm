@@ -1164,13 +1164,13 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 		frame = new/obj/structure/frame/computer(src)
 	switch(selected_frame_dir)
 		if("NORTH")
-			frame.dir = NORTH
+			frame.set_dir(NORTH)
 		if("SOUTH")
-			frame.dir = SOUTH
+			frame.set_dir(SOUTH)
 		if("EAST")
-			frame.dir = EAST
+			frame.set_dir(EAST)
 		if("WEST")
-			frame.dir = WEST
+			frame.set_dir(WEST)
 	frame.set_anchored(1)
 	to_chat(user, span_notice("You build a frame"))
 	ask.rcd.finish_deferred_build(src, user, RCD_FRAME)
@@ -1424,7 +1424,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 					window_to_spawn = (temp_dir==10?"/obj/structure/window/plastitanium/full":"/obj/structure/window/plastitanium")
 			var/obj/structure/window/WD = new window_to_spawn(loc)
 			WD.set_anchored(TRUE)
-			WD.dir = temp_dir
+			WD.set_dir(temp_dir)
 			return TRUE
 	return FALSE
 

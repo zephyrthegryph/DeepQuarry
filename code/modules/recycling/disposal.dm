@@ -353,7 +353,7 @@
 
 /obj/structure/disposalpipe/down/transfer(obj/structure/disposalholder/H)
 	var/nextdir = nextdir(H.dir)
-	H.dir = nextdir
+	H.set_dir(nextdir)
 
 	var/turf/T
 	var/obj/structure/disposalpipe/P

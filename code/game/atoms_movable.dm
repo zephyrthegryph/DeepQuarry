@@ -4,6 +4,8 @@
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|KEEP_TOGETHER|LONG_GLIDE
 
 	var/tmp/last_move = null //The direction the atom last moved
+	/// The dir last published to a drawn atom's look (Moved() compares it, because Move() turns a mover natively).
+	var/tmp/look_seen_dir
 	var/anchored = FALSE
 	var/tmp/moving_diagonally
 	var/tmp/move_speed = 10
@@ -322,6 +324,10 @@
 
 ///Called after a successful Move(). By this point, we've already moved
 /atom/movable/proc/Moved(atom/old_loc, direction, forced = FALSE, movetime)
+	// BYOND turns a mover natively on Move(), bypassing set_dir(): publish the dir a drawn atom now shows, only when it changed.
+	if(look_key && dir != look_seen_dir)
+		look_seen_dir = dir
+		tracked_changed(src, nameof(dir))
 	if(blocks_light)
 		light_blocking_moved(old_loc)
 	om_emit_moved(src, old_loc, direction, forced)
@@ -362,6 +368,8 @@
 
 /atom/movable/set_dir(newdir)
 	. = ..(newdir)
+	if(look_key)
+		look_seen_dir = dir
 	if(riding_datum)
 		riding_datum.handle_vehicle_offsets()
 

@@ -1609,7 +1609,7 @@ CAPABILITIES(/obj/item/sign)
 		var/obj/structure/sign/flag/P2 = new(user.loc)
 		rel_set(P, nameof(P.linked_flag), P2)
 		P2.icon_state = "[flag_path]_r"
-		P2.dir = P.dir
+		P2.set_dir(P.dir)
 		switch(P2.dir)
 			if(NORTH)
 				P2.pixel_y = P.pixel_y
