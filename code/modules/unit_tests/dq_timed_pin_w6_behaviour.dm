@@ -1002,3 +1002,135 @@
 	test_time(2 SECONDS)
 	TEST_ASSERT(M.plane != CLOAKED_PLANE, "a mouse that dies never reaches the cloaked plane")
 	TEST_ASSERT(!M.is_cloaked(), "and is not cloaked")
+
+// ---- Round four: a welder on the sensors suite, a welder on graffiti, a wrench on a water cooler's jug ----
+
+/// A lit welder with fuel, in the user's hand.
+/datum/unit_test/dq_timed_pin_w6/proc/lit_welder(mob/living/carbon/human/user)
+	var/obj/item/weldingtool/W = allocate(/obj/item/weldingtool, run_loc_floor_bottom_left)
+	W.reagents.add_reagent(REAGENT_ID_FUEL, W.max_fuel)
+	W.setWelding(TRUE)
+	hold(user, W)
+	return W
+
+/// Clicks `target` with `tool` as a player does. A legacy *_act() override is not reached by the driver's click: it is called directly while the
+/// op named `op_key` does not exist yet.
+/datum/unit_test/dq_timed_pin_w6/proc/click_tool(mob/living/carbon/human/user, atom/target, obj/item/tool, op_key, act_proc)
+	test_chat_clear()
+	if(op_known_anywhere(user, target, tool, op_key))
+		test_click(user, target, tool)
+	else
+		call(target, act_proc)(user, tool)
+
+/datum/unit_test/dq_timed_pin_w6/sensors_weld
+
+/datum/unit_test/dq_timed_pin_w6/sensors_weld/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/machinery/shipsensors/S = allocate(/obj/machinery/shipsensors, run_loc_floor_bottom_left)
+	S.update_integrity(S.max_integrity - 100)
+	var/obj/item/weldingtool/W = lit_welder(user)
+	begin(user, S, W, 2 SECONDS, "You start repairing")
+	test_time(1 SECOND)
+	TEST_ASSERT(S.get_integrity() < S.max_integrity, "the sensors are still damaged before the end")
+	test_time(1.5 SECONDS)
+	TEST_ASSERT_EQUAL(S.get_integrity(), S.max_integrity, "the sensors are whole at the end")
+	TEST_ASSERT(said(user, "You finish repairing"), "it says it finished")
+
+/datum/unit_test/dq_timed_pin_w6/sensors_weld_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w6/sensors_weld_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/machinery/shipsensors/S = allocate(/obj/machinery/shipsensors, run_loc_floor_bottom_left)
+	S.update_integrity(S.max_integrity - 100)
+	var/obj/item/weldingtool/W = lit_welder(user)
+	var/datum/T = begin(user, S, W, 2 SECONDS)
+	user.forceMove(get_step(user, EAST))
+	test_time(4 SECONDS)
+	TEST_ASSERT(S.get_integrity() < S.max_integrity, "moving cancels: the sensors stay damaged")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+/datum/unit_test/dq_timed_pin_w6/sensors_weld_undamaged
+
+/datum/unit_test/dq_timed_pin_w6/sensors_weld_undamaged/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/machinery/shipsensors/S = allocate(/obj/machinery/shipsensors, run_loc_floor_bottom_left)
+	var/obj/item/weldingtool/W = lit_welder(user)
+	test_click(user, S, W)
+	TEST_ASSERT_NULL(running(user), "undamaged sensors start nothing")
+
+/datum/unit_test/dq_timed_pin_w6/graffiti_clear
+
+/datum/unit_test/dq_timed_pin_w6/graffiti_clear/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/effect/decal/writing/G = allocate(/obj/effect/decal/writing, run_loc_floor_bottom_left)
+	var/obj/item/weldingtool/W = lit_welder(user)
+	click_tool(user, G, W, "clear_graffiti", "welder_act")
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "the welder starts a timed action")
+	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == 0.5 SECONDS, "it lasts half a second")
+	TEST_ASSERT(!QDELETED(G), "the graffiti stands before the end")
+	test_time(1 SECOND)
+	TEST_ASSERT(QDELETED(G), "the graffiti is cleared at the end")
+
+/datum/unit_test/dq_timed_pin_w6/graffiti_clear_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w6/graffiti_clear_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/effect/decal/writing/G = allocate(/obj/effect/decal/writing, run_loc_floor_bottom_left)
+	var/obj/item/weldingtool/W = lit_welder(user)
+	click_tool(user, G, W, "clear_graffiti", "welder_act")
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "the welder starts a timed action")
+	user.forceMove(get_step(user, EAST))
+	test_time(2 SECONDS)
+	TEST_ASSERT(!QDELETED(G), "moving cancels: the graffiti stays")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+/datum/unit_test/dq_timed_pin_w6/graffiti_clear_welder_off
+
+/datum/unit_test/dq_timed_pin_w6/graffiti_clear_welder_off/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/effect/decal/writing/G = allocate(/obj/effect/decal/writing, run_loc_floor_bottom_left)
+	var/obj/item/weldingtool/W = allocate(/obj/item/weldingtool, run_loc_floor_bottom_left)
+	hold(user, W)
+	click_tool(user, G, W, "clear_graffiti", "welder_act")
+	TEST_ASSERT_NULL(running(user), "a welder that is off starts nothing")
+	TEST_ASSERT(!QDELETED(G), "and the graffiti stays")
+
+/datum/unit_test/dq_timed_pin_w6/cooler_unfasten_jug
+
+/datum/unit_test/dq_timed_pin_w6/cooler_unfasten_jug/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/structure/reagent_dispensers/water_cooler/C = allocate(/obj/structure/reagent_dispensers/water_cooler, run_loc_floor_bottom_left)
+	C.set_bottle(TRUE)
+	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, run_loc_floor_bottom_left)
+	hold(user, W)
+	click_tool(user, C, W, "unfasten_jug", "wrench_act")
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "the wrench starts a timed action")
+	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == 2 SECONDS, "it lasts two seconds")
+	test_time(1 SECOND)
+	TEST_ASSERT(C.bottle, "the jug is on before the end")
+	test_time(1.5 SECONDS)
+	TEST_ASSERT(!C.bottle, "the jug is off at the end")
+	TEST_ASSERT(said(user, "You unfasten the jug"), "it says it finished")
+	var/obj/item/reagent_containers/glass/cooler_bottle/J = locate(/obj/item/reagent_containers/glass/cooler_bottle) in run_loc_floor_bottom_left
+	TEST_ASSERT(!isnull(J), "a jug is left on the floor")
+	if(J)
+		qdel(J)
+
+/datum/unit_test/dq_timed_pin_w6/cooler_unfasten_jug_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w6/cooler_unfasten_jug_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/structure/reagent_dispensers/water_cooler/C = allocate(/obj/structure/reagent_dispensers/water_cooler, run_loc_floor_bottom_left)
+	C.set_bottle(TRUE)
+	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, run_loc_floor_bottom_left)
+	hold(user, W)
+	click_tool(user, C, W, "unfasten_jug", "wrench_act")
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "the wrench starts a timed action")
+	user.forceMove(get_step(user, EAST))
+	test_time(4 SECONDS)
+	TEST_ASSERT(C.bottle, "moving cancels: the jug stays on")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
