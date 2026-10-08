@@ -4,7 +4,7 @@ Audited `origin/master` / branch base `4375b8068230378f8abaf8920c7a62158d458337`
 
 ## Actual remaining inventory
 
-There are **zero executable uppercase `REQ_*` macros** in `code/game/machinery` and `code/modules/power`. The uppercase names survive only in comments. The initial inventory had **24 former-REQ boolean adapters in 18 machinery files**, and **zero in power**. Four adapters have now been replaced by existing declarative requirements in CableLayer (1), bomb tester (1), and painter (2), leaving **20 custom boolean adapters in 15 machinery files**. These adapters call old `(actor, target, held)` helpers, convert TRUE to pass, and often pair that with a separate refusal proc. Merely deleting comments or renaming helpers would not implement the requested null-or-reason protocol.
+There are **zero executable uppercase `REQ_*` macros** in `code/game/machinery` and `code/modules/power`. The uppercase names survive only in comments. The initial inventory had **24 former-REQ boolean adapters in 18 machinery files**, and **zero in power**. Four adapters have now been replaced by existing declarative requirements in CableLayer (1), bomb tester (1), and painter (2), leaving **20 comment-tagged adapters in 15 machinery files** (a historical subset, not the complete inventory). These adapters call old `(actor, target, held)` helpers, convert TRUE to pass, and often pair that with a separate refusal proc. Merely deleting comments or renaming helpers would not implement the requested null-or-reason protocol.
 
 | File | Adapters | Legacy helper names |
 |---|---:|---|
@@ -64,4 +64,31 @@ Do not alter the draw-items lane's charge/shot writes. No changes to framework c
 
 Three focused behavior tests were appended to the existing `dq_hc_machinery_behaviour.dm`: `dq_hc_struct/cablelayer_declarative_requirement`, `dq_hc_struct/painter_declarative_requirement`, and `dq_hc_struct/bomb_tester_declarative_requirement`. They exercise actual operation input, state changes and exact refusals/selection fallthrough. Their results must be reported after the root's focused batch, not assumed.
 
-These four conversions do not provide the missing custom null-or-reason callback protocol. The remaining 20 adapters stay blocked on that form. No engine, ceiling, baseline or ALLOW change was made in these conversions.
+These four conversions do not provide the missing custom null-or-reason callback protocol. The remaining 20 comment-tagged adapters are part of the broader inventory below; they are not the complete callback count. No engine, ceiling, baseline or ALLOW change was made in these conversions.
+## Expanded adapter inventory (completeness correction)
+
+The initial 24-to-20 count counted only the explicit `was REQ_*` comments. A complete scan of operation callbacks delegating to old `(actor, target, held)` checks identifies **39 remaining logical adapters across 23 machinery files and one power file**. A holds/refusal pair is counted once; callbacks used only for selection still appear because they retain the old check interface. The pre-conversion comparable total was **43**, reduced by the four declarative conversions. The 20 comment-tagged adapters listed above are a subset of these 39.
+
+Additional 19 adapters, beyond that tagged subset:
+
+| File | Count | Callback / old helper |
+|---|---:|---|
+| `code/game/machinery/bioprinter.dm` | 1 | `printer_menu_allowed` / `can_open_menu` (held-provider argument, paired refusal) |
+| `code/game/machinery/camera/camera.dm` | 4 | `actor_can_shred_holds`, `paper_show_meant_holds`, `camera_can_use_holds`, `held_is_bashing_holds` |
+| `code/game/machinery/computer/law.dm` | 3 | AI `can_select_ai_holds`, `can_connect_holds`; borg `can_select_borg_holds` (paired refusal callbacks) |
+| `code/game/machinery/computer/pod.dm` | 1 | syndicate `lets_in_holds` |
+| `code/game/machinery/floor_light.dm` | 1 | item `can_install_holds` (paired refusal; also checks actor turf membership) |
+| `code/game/machinery/frame_construction.dm` | 2 | `native_board_fits` / `accepts_board`; `native_has_components` / `has_all_components` (`read_once`, paired board refusal) |
+| `code/game/machinery/pandemic.dm` | 1 | `beaker_item_holds` / `is_beaker_or_syringe` |
+| `code/game/machinery/suit_storage/suit_cycler.dm` | 4 | `can_insert_grabbed_holds`, `can_insert_helmet_holds`, `can_insert_suit_holds` (paired refusal); `cycler_actor_can_act` / `dq_actor_can_act` |
+| `code/game/machinery/suit_storage/suit_storage.dm` | 1 | `storage_entry_ready` / `storage_entry_reason` / `can_move_inside` |
+| `code/modules/power/singularity/particle_accelerator/particle_smasher.dm` | 1 | `actor_can_act` / `dq_actor_can_act` |
+
+This count is deliberately **logical legacy adapters**, not grep occurrences: refusal pairs duplicate calls; direct return adapters omit `var/answer`; VR uses `typed_held`; bioprinter uses `held_provider()`. Conversely `_holds` names such as heavy-coil type selection, privacy-switch cooldown, computer gripper-content selection and washer actor-containment are direct native predicates rather than wrappers around old three-argument helpers.
+
+`cloning.dm:284` has `container_space(datum/act/op/A)`, a direct boolean predicate comparing `read_once(LAZYLEN(containers))` with `read_once(container_limit)`. It is not an old three-argument adapter, but it **also cannot be changed to a null-or-reason custom requirement on this engine**. The same applies to other direct native boolean custom predicates in these folders: the 39 adapter inventory does not claim they all disappear if those legacy delegates are converted. They require the final custom-requirement callback protocol whenever the user's null-or-reason migration encompasses them.
+
+No additional production code was edited during this expanded audit. The engine gap remains exactly the same: generic `req(PROC_REF(...))` booleanizes its callback result. The machinery/power-only restriction prevents implementing that missing engine protocol here.
+## Separate existing click-ranking defect
+
+The first requirement verification found that a plain item click on painter or bomb tester opens the interface instead of loading. `interface()` creates `ui_open` at OP_PRIORITY_DEFAULT (`code/engine/parts/part.dm:793`); their typed insertion/loading actions use DEFAULT - 1. `hand()` matches the target even with an item held (`resolve.dm:183`), and tier sorting precedes binding specificity. These tiers predate this branch and were not changed by the requirement conversion. The focused requirement regressions now select the public loading menu operations (test_menu), exercising native requirements, held items, real effects and custody. Click priority is reported separately, not blessed as an intended requirement change.

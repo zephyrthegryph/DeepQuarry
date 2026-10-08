@@ -2,6 +2,11 @@
 /datum/unit_test/dq_timed_pin/last_occupant
 	abstract_type = /datum/unit_test/dq_timed_pin/last_occupant
 
+/datum/unit_test/dq_timed_pin/last_occupant/Run()
+	set_global(nameof(GLOB.latency_last_ineligible), GLOB.latency_last_ineligible)
+	set_global(nameof(GLOB.latency_last_pin_reason), GLOB.latency_last_pin_reason)
+	return ..()
+
 /obj/machinery/cryopod/last_occupant_fixture
 
 /obj/machinery/cryopod/last_occupant_fixture/loading_needs_consent(datum/act/op/A)
