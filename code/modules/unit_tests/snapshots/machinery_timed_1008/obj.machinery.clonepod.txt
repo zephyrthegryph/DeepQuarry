@@ -15,7 +15,6 @@ human|/obj/item/tool/screwdriver menu: Clonepod interaction hand
 human|/obj/item/tool/screwdriver menu: Clonepod interaction item
 human|/obj/item/tool/screwdriver menu: Eject Beakers
 human|/obj/item/tool/screwdriver menu: Eject Cloner
-human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
@@ -26,7 +25,6 @@ human|/obj/item/tool/crowbar menu: Clonepod interaction item
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
 human|/obj/item/tool/crowbar menu: Eject Beakers
 human|/obj/item/tool/crowbar menu: Eject Cloner
-human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use crowbar
@@ -35,7 +33,6 @@ human|/obj/item/tool/wrench menu: Clonepod interaction hand
 human|/obj/item/tool/wrench menu: Clonepod interaction item
 human|/obj/item/tool/wrench menu: Eject Beakers
 human|/obj/item/tool/wrench menu: Eject Cloner
-human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use wrench
@@ -44,7 +41,6 @@ human|/obj/item/tool/wirecutters menu: Clonepod interaction hand
 human|/obj/item/tool/wirecutters menu: Clonepod interaction item
 human|/obj/item/tool/wirecutters menu: Eject Beakers
 human|/obj/item/tool/wirecutters menu: Eject Cloner
-human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: Click: Clonepod interaction item
@@ -52,7 +48,6 @@ human|/obj/item/multitool menu: Clonepod interaction hand
 human|/obj/item/multitool menu: Clonepod interaction item
 human|/obj/item/multitool menu: Eject Beakers
 human|/obj/item/multitool menu: Eject Cloner
-human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use multitool
@@ -61,7 +56,6 @@ human|/obj/item/weldingtool menu: Clonepod interaction hand
 human|/obj/item/weldingtool menu: Clonepod interaction item
 human|/obj/item/weldingtool menu: Eject Beakers
 human|/obj/item/weldingtool menu: Eject Cloner
-human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Clonepod interaction item
@@ -69,7 +63,6 @@ human|/obj/item/stack/cable_coil menu: Clonepod interaction hand
 human|/obj/item/stack/cable_coil menu: Clonepod interaction item
 human|/obj/item/stack/cable_coil menu: Eject Beakers
 human|/obj/item/stack/cable_coil menu: Eject Cloner
-human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
@@ -78,7 +71,6 @@ human|/obj/item/stack/material/steel menu: Clonepod interaction hand
 human|/obj/item/stack/material/steel menu: Clonepod interaction item
 human|/obj/item/stack/material/steel menu: Eject Beakers
 human|/obj/item/stack/material/steel menu: Eject Cloner
-human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Clonepod interaction item
@@ -86,7 +78,6 @@ human|/obj/item/card/id menu: Clonepod interaction hand
 human|/obj/item/card/id menu: Clonepod interaction item
 human|/obj/item/card/id menu: Eject Beakers
 human|/obj/item/card/id menu: Eject Cloner
-human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
@@ -95,7 +86,6 @@ human|/obj/item menu: Clonepod interaction hand
 human|/obj/item menu: Clonepod interaction item
 human|/obj/item menu: Eject Beakers
 human|/obj/item menu: Eject Cloner
-human|/obj/item menu: Hit
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Clonepod interaction item
@@ -103,7 +93,6 @@ human|/obj/item/reagent_containers/glass menu: Clonepod interaction hand
 human|/obj/item/reagent_containers/glass menu: Clonepod interaction item
 human|/obj/item/reagent_containers/glass menu: Eject Beakers
 human|/obj/item/reagent_containers/glass menu: Eject Cloner
-human|/obj/item/reagent_containers/glass menu: Hit
 human|/obj/item/reagent_containers/glass menu: Load container
 human|/obj/item/reagent_containers/glass menu: Move To Top
 human|/obj/item/reagent_containers/glass menu: Open or close the lid
@@ -115,7 +104,6 @@ human|/obj/item/card/emag menu: Clonepod interaction hand
 human|/obj/item/card/emag menu: Clonepod interaction item
 human|/obj/item/card/emag menu: Eject Beakers
 human|/obj/item/card/emag menu: Eject Cloner
-human|/obj/item/card/emag menu: Hit
 human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use

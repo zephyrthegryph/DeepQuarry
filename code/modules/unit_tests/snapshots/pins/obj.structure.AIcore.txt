@@ -54,5 +54,10 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: ai_core_install, drag_buckle, melee_hit
+human|/obj/item/stack/material menu: Hit
+human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material menu: Use
+human|/obj/item/stack/material click: Click: Use
+keys: add_cables, add_panel, ai_core_install, drag_buckle, melee_hit
 

@@ -3,7 +3,7 @@ human|none menu: Enter Pod
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject Pod
-robot|none menu: Enter Pod
+robot|none menu: Enter Pod (refused: )
 robot|none click: nothing
 ai|none click: nothing
 ghost|none menu: Eject Pod (refused: You can't reach that.)

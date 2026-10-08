@@ -29,7 +29,6 @@ usr_outside_verb	code/defines/procs/announce.dm	message_admins("[key_name_admin(
 usr_outside_verb	code/game/antagonist/station/renegade.dm	to_chat(usr, span_infoplain(span_bold("You summoned guns!")))
 usr_outside_verb	code/game/antagonist/station/renegade.dm	message_admins("[key_name_admin(usr, 1)] summoned guns!")
 usr_outside_verb	code/game/machinery/doors/airlock_angled_bay.dm	usr << ftp(icon, "[name].dmi")
-usr_outside_verb	code/game/machinery/oxygen_pump.dm	var/mob/living/user = usr
 usr_outside_verb	code/game/memory_profiler.dm	if(usr?.client)
 usr_outside_verb	code/game/memory_profiler.dm	open_request(usr, /datum/prompt/yes_no/profile_memory, TYPE_PROC_REF(/mob, profile_memory_confirmed), answerer = usr)
 usr_outside_verb	code/game/objects/effects/info.dm	to_chat(usr, info_text)

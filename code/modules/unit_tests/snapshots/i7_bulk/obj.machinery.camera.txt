@@ -61,8 +61,7 @@ human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Slash (refused: not possible right now)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool menu: Use welder
-human|/obj/item/weldingtool click: Click: Use welder
+human|/obj/item/weldingtool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Attack
 human|/obj/item/stack/cable_coil menu: Bug camera (refused: needs a camera bug)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)

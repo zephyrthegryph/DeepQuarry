@@ -1239,6 +1239,15 @@
 
 #include "dq_machine_click_intent_tests.dm"
 
+#include "dq_machinery_timed_conversion_pin.dm"
+#include "dq_machinery_timed_simple_pin.dm"
+#include "dq_machinery_timed_material_pin.dm"
+#include "dq_machinery_timed_occupant_pin.dm"
+#include "dq_machinery_arg_fields_tests.dm"
+#include "dq_machinery_keeps_dead_tests.dm"
+#include "dq_beacon_topic_gate_tests.dm"
+#include "dq_machinery_audit_pins.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

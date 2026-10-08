@@ -3623,3 +3623,32 @@ This port preserves the reviewed `6c7c06f5f2` conversion on current master `6cf9
 | Cutout barricade | Current master already owns the native prompted ten-second operation. This port reuses regression coverage only and does not change its production source. |
 
 Faster-welder, immediate wire-mending cancellation and electric-charge-once/cancellation checks are native-added regressions, not historical old-code verified pins. Electric charge expectations use the cell's public delivery-efficiency contract to account for physical delivery loss, rather than a loose tolerance. Existing breaker tests observe native pending/claimed state instead of legacy task internals. No new pin re-bless is approved merely by this provenance record; any fresh difference still requires class-specific review.
+
+### Reviewed machinery audit pin refresh (2026-10-08)
+
+The single focused capture wrote 23 selected pin types, 15 selected i7 types and 18 historical timed-pin types; 38 files changed. No runtime/op-clash capture rows were accepted. Reused timed pins also shed inherited non-harm `Hit` menu rows to match current master; that is a pre-existing master intent gate, not a new harm-intent change here. Each affected class is listed below.
+
+| Type | Cause of changed rows |
+|---|---|
+| /obj/item/camera_assembly | Native use_welder key replaces the implicit timed tool handler. |
+| /obj/machinery/button/doorbell | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/camera | Native repair is offered only on a damaged camera; a working fixture no longer offers an irrelevant welder repair. Reused non-harm Hit rows align with master. |
+| /obj/machinery/clonepod | Typed glass load_container adds its held-container rows and native key. Reused non-harm Hit rows align with master. |
+| /obj/machinery/clonepod/transhuman | Typed glass load_container adds its held-container rows and native key. Reused non-harm Hit rows align with master. |
+| /obj/machinery/computer/teleporter | Insert data card now outranks inherited Use item on a plain card click. |
+| /obj/machinery/cryopod | Self-entry uses its native operation key. Reused non-harm Hit rows align with master; passenger consent is retained. |
+| /obj/machinery/feeder | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/food_replicator | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/iv_drip | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/organ_printer/flesh | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/oxygen_pump | The human-target drag now has the native oxygen_place key. Reused non-harm Hit rows align with master. |
+| /obj/machinery/oxygen_pump/mobile/stabilizer | The human-target drag now has the native oxygen_place key. Reused non-harm Hit rows align with master. |
+| /obj/machinery/power/breakerbox | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/suit_cycler | The reused timed snapshot drops inherited non-harm Hit menu rows to match existing master intent gates; the class-specific timed behavior is documented above. |
+| /obj/machinery/suit_storage_unit | Closed-door admission now greys Hide in Suit Storage Unit before starting; timed custody and cancellation are unchanged. Reused non-harm Hit rows align with master. |
+| /obj/machinery/syndicate_beacon | Topic usability is an admission/recheck requirement, so denied actors see the refused offer row instead of an effect-only failure. |
+| /obj/machinery/syndicate_beacon/virgo | Topic usability is an admission/recheck requirement, so denied actors see the refused offer row instead of an effect-only failure. |
+| /obj/machinery/vr_sleeper | Entry uses native timed operations and keys, with the same occupancy rules. Reused non-harm Hit rows align with master. |
+| /obj/machinery/vr_sleeper/alien | Entry uses native timed operations and keys, with the same occupancy rules. Reused non-harm Hit rows align with master. |
+| /obj/machinery/washing_machine | Grab and resist timing use native operation keys. Reused non-harm Hit rows align with master. |
+| /obj/structure/AIcore | Native add_cables/add_panel keys expose typed material bindings, adding stack-material held rows; actual construction costs and states are regression tested. |
