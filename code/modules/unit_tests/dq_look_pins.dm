@@ -292,6 +292,7 @@
 		for(var/atom/movable/AM as anything in contents_of(T))
 			if(!QDELETED(AM) && !istype(AM, /obj/effect/landmark))
 				left += AM
-		TEST_ASSERT(!length(left), "[type]'s probes left [length(left)] things on the floor ([left[1]?.type])")
+		var/atom/movable/first = length(left) ? left[1] : null
+		TEST_ASSERT(!length(left), "[type]'s probes left [length(left)] things on the floor ([first?.type])")
 	var/obj/structure/closet/C = allocate(/obj/structure/closet/coffin, T)
 	TEST_ASSERT(!length(C.contents), "a closet made after the probes took in [length(C.contents)] things")
