@@ -10,6 +10,8 @@ heuristic; original messages and test objects remain available in the report.
 """
 import argparse
 from collections import Counter, defaultdict
+from bisect import bisect_right
+from datetime import datetime, timedelta
 import json
 from pathlib import Path
 import re
@@ -39,10 +41,91 @@ def identity(message, source=None, line=None, proc=None):
             line if line is not None else (int(location.group(2)) if location else None))
 
 
-def read_runtime(directory, raw_only=False):
+
+TEST_BOUNDARY = re.compile(r"^\[(.+?)\] Running \d+/\d+: (/datum/unit_test/[^\s]+)$")
+LOG_TIME = re.compile(r"^\[(.+?)\]")
+RAW_TIME = re.compile(r"^(\d{2}:\d{2}:\d{2})(?:\s|$)")
+TEST_OWNER = re.compile(r"/datum/unit_test/[A-Za-z0-9_/]+")
+
+
+def read_test_intervals(directory):
+    """Closed log intervals are timing evidence, never event ownership."""
+    file = directory / "tests.log"
+    intervals, pending = [], None
+    if file.exists():
+        with file.open(encoding="utf-8-sig", errors="replace") as stream:
+            for line in stream:
+                boundary = TEST_BOUNDARY.match(line.rstrip())
+                closing = LOG_TIME.match(line) if "Unit-test suite finished:" in line else None
+                if not boundary and not closing:
+                    continue
+                try:
+                    at = datetime.fromisoformat((boundary or closing).group(1))
+                except ValueError:
+                    continue
+                if at.tzinfo is not None:
+                    continue
+                if pending and at > pending[0]:
+                    intervals.append((pending[0], at, pending[1]))
+                pending = (at, boundary.group(2)) if boundary else None
+    intervals.sort()
+    return intervals, pending
+
+
+def temporal_candidates(timestamp, intervals):
+    """Conservative clock overlap; dates/timezones are never guessed or shifted."""
+    starts, entries, dates = intervals
+    try:
+        if re.fullmatch(r"\d{2}:\d{2}:\d{2}", timestamp):
+            clock = datetime.strptime(timestamp, "%H:%M:%S").time()
+            windows = [(datetime.combine(day, clock), timedelta(seconds=1)) for day in dates]
+        else:
+            at = datetime.fromisoformat(timestamp)
+            # Logs without a validated timezone conversion cannot be aligned.
+            if at.tzinfo is not None:
+                return ()
+            windows = [(at, timedelta(milliseconds=1))]
+    except (ValueError, TypeError):
+        return ()
+    candidates = set()
+    for at, width in windows:
+        index = max(0, bisect_right(starts, at) - 1)
+        while index < len(entries) and entries[index][0] < at + width:
+            start, end, name = entries[index]
+            if end > at:
+                candidates.add(name)
+            index += 1
+    return tuple(sorted(candidates))
+
+
+def event_rows(counts, examples=None):
+    return [{"message": key[0], "procedure": key[1], "source": key[2],
+             "line": key[3], "count": count,
+             "raw_message_examples_first16": sorted((examples or {}).get(key, ()))}
+            for key, count in sorted(counts.items(), key=lambda item: str(item[0]))]
+
+
+def explicit_owner(record):
+    supplied = [record[field] for field in ("test", "test_path")
+                if record.get(field) is not None]
+    if not supplied:
+        return None, "no-explicit-owner"
+    if any(not isinstance(owner, str) for owner in supplied):
+        return None, "invalid-explicit-owner"
+    if len(set(supplied)) != 1:
+        return None, "conflicting-explicit-owners"
+    owner = supplied[0]
+    return (owner, None) if TEST_OWNER.fullmatch(owner) else (None, "non-test-explicit-owner")
+
+def read_runtime(directory, raw_only=False, attribution=None):
     structured = directory / "runtime.log.json"
     raw = next((directory/name for name in ("runtime-errors.log", "stderr.log", "stderr", "stdout.log", "stdout") if (directory/name).exists()), directory/"runtime-errors.log")
     counts, variants = Counter(), defaultdict(set)
+    owned, unassigned, temporal = defaultdict(Counter), defaultdict(Counter), defaultdict(Counter)
+    owned_examples, unassigned_examples = defaultdict(dict), defaultdict(dict)
+    closed, pending = read_test_intervals(directory) if attribution is not None else ([], None)
+    interval_index = ([row[0] for row in closed], closed,
+                      sorted({day for start, end, _ in closed for day in (start.date(), end.date())}))
     coverage = {"structured_events": 0, "raw_events": 0, "unlocated_procedure": 0,
                 "unlocated_source": 0, "ownership_unavailable": 0,
                 "non_test_owned": 0, "test_owned": 0, "parse_errors": 0,
@@ -69,13 +152,14 @@ def read_runtime(directory, raw_only=False):
                 coverage["structured_events"] += 1
                 # Existing recorder has no reliable per-event current-test field.
                 # Never infer ownership from a procedure in the call stack.
-                owner = record.get("test") or record.get("test_path")
-                if owner is None:
-                    coverage["ownership_unavailable"] += 1
-                elif str(owner).startswith("/datum/unit_test/"):
+                owner, reason = explicit_owner(record)
+                if owner is not None:
                     coverage["test_owned"] += 1
-                else:
+                elif reason == "non-test-explicit-owner":
                     coverage["non_test_owned"] += 1
+                else:
+                    coverage["ownership_unavailable"] += 1
+                timestamp = record.get("ts")
             else:
                 match = RAW.match(line.rstrip())
                 unlocated = RAW_UNLOCATED.match(line.rstrip()) if not match else None
@@ -92,6 +176,21 @@ def read_runtime(directory, raw_only=False):
                     key = identity(message)
                 coverage["raw_events"] += 1
                 coverage["ownership_unavailable"] += 1
+                owner, reason = None, "raw-channel-has-no-explicit-owner"
+                stamp = RAW_TIME.match(line)
+                timestamp = stamp.group(1) if stamp else None
+            if attribution is not None:
+                if owner is not None:
+                    owned[owner][key] += 1
+                    examples = owned_examples[owner].setdefault(key, set())
+                else:
+                    unassigned[reason][key] += 1
+                    examples = unassigned_examples[reason].setdefault(key, set())
+                if len(examples) < 16:
+                    examples.add(message.split("\n", 1)[0][:4096])
+                candidates = temporal_candidates(timestamp, interval_index) if isinstance(timestamp, str) else ()
+                if candidates:
+                    temporal[candidates][key] += 1
             counts[key] += 1
             # Keep bounded diagnostic examples; full original event text stays
             # in the immutable source log identified in coverage.
@@ -102,6 +201,20 @@ def read_runtime(directory, raw_only=False):
     coverage.update(mode=mode, source=str(chosen), raw_channel_not_added=mode == "structured",
                     complete=mode == "structured" and not coverage["parse_errors"]
                     and not coverage["unlocated_procedure"] and not coverage["unlocated_source"])
+    if attribution is not None:
+        attribution.update(
+            source_file=str(chosen),
+            attributed_tests={test: event_rows(events, owned_examples[test]) for test, events in sorted(owned.items())},
+            unassigned={reason: event_rows(events, unassigned_examples[reason]) for reason, events in sorted(unassigned.items())},
+            temporal_interval_associations=[{"candidate_tests": list(names), "events": event_rows(events)}
+                                           for names, events in sorted(temporal.items())],
+            closed_test_intervals=[{"test": name, "start": start.isoformat(), "end": end.isoformat()}
+                                   for start, end, name in closed],
+            open_interval_test=pending[1] if pending else None,
+            temporal_policy="clock overlap only, never ownership; second-resolution raw times may overlap adjacent tests; raw date is unknown; no timezone conversion",
+            event_total=sum(counts.values()),
+            attributed_total=sum(sum(events.values()) for events in owned.values()),
+            unassigned_total=sum(sum(events.values()) for events in unassigned.values()))
     return counts, variants, coverage
 
 
@@ -114,8 +227,9 @@ def load_run(label, directory):
     for name, result in tests.items():
         if not isinstance(result, dict) or type(result.get("status")) is not int or result.get("status") not in (0, 1, 2):
             raise ValueError(f"Invalid test result: {file}: {name}")
-    counts, variants, coverage = read_runtime(directory)
-    raw_counts, _, raw_coverage = read_runtime(directory, raw_only=True)
+    attribution, raw_attribution = {}, {}
+    counts, variants, coverage = read_runtime(directory, attribution=attribution)
+    raw_counts, _, raw_coverage = read_runtime(directory, raw_only=True, attribution=raw_attribution)
     # Independent channels are never summed. Historical raw files contain many
     # events missing from structured JSONL, so structured preference is NOT a
     # completeness assertion or evidence that every raw line is a mirror.
@@ -131,11 +245,13 @@ def load_run(label, directory):
     coverage["raw_normalized_multiset_matches"] = structured_located == raw_located if comparable else None
     coverage["complete"] = False  # no proven cross-channel event identity/complete recorder inventory
     raw_audit = {"coverage":raw_coverage,"event_total":sum(raw_counts.values()),
+                 "event_attribution": raw_attribution,
                  "identities":[{"message":key[0],"source":key[2],"line":key[3],"count":count}
                                for key,count in sorted(raw_counts.items(),key=lambda item:str(item[0]))],
                  "unmatched_raw_normalized_count":sum((raw_located-structured_located).values()) if comparable else None,
                  "unmatched_structured_normalized_count":sum((structured_located-raw_located).values()) if comparable else None}
     return {"label": label, "directory": str(directory), "tests": tests,"raw_audit":raw_audit,
+            "event_attribution": attribution,
             "test_file_present": file.exists(), "test_runtime_total": sum(
                 result.get("runtimes", 0) or 0 for result in tests.values()),
             "coverage": coverage, "counts": counts, "variants": variants}
@@ -180,7 +296,7 @@ def compare(runs):
     return {"comparison_coverage_complete":complete,
             "equality_claim":False, # finite observations/heuristic normalization do not establish equivalence
             "normalization_policy":"first runtime message line; references/timestamps/numbers replaced; procedure and source/line retained; bounded original first-line examples; complete raw events preserved in source logs",
-            "ownership_policy":"event ownership unknown unless explicit test/test_path; recorder per-test runtime totals are separate and not added to event totals",
+            "ownership_policy":"only consistent explicit test/test_path attributes ownership; unassigned events retained; temporal interval overlap is separate and never ownership; recorder totals are not added to event totals",
             "repeat_policy":"exactly :1,:2,:3 per compiler; count/presence variability tracked; 3 observations do not prove statistical distribution equivalence",
             "runs":[{k:v for k,v in run.items() if k not in ("counts","variants")} for run in runs],
             "identities":identities,"test_distributions":test_distributions}
