@@ -154,8 +154,8 @@ SETTER(/mob/living/silicon/robot, vore_light_states)
 	if(islist(offset_list))
 		var/list/offset = offset_list[isDiagonal(dir) ? dir2text(dir & (WEST|EAST)) : dir2text(dir)]
 		if(offset)
-			worn.pixel_x = offset[1]
-			worn.pixel_y = offset[2]
+			worn.pixel_w = offset[1]
+			worn.pixel_z = offset[2]
 	return worn
 
 /// The module slots changed: the active types the look reads, and the melee modules' lights.

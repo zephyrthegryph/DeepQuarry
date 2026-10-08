@@ -121,3 +121,46 @@
 	TEST_ASSERT(!R.set_vore_light_states(list("sleeper" = 1)), "an equal one is not")
 	TEST_ASSERT_EQUAL(R.belly_light("sleeper"), R.resting ? 0 : 1, "the draw reads it through belly_light()")
 	R.set_vore_light_states(null)
+
+/// A look overlay's key names pixel_w and pixel_z: a robot's hat at another offset is a different look.
+/datum/unit_test/dq_draw_overlay_key_names_pixel_w_z
+
+/datum/unit_test/dq_draw_overlay_key_names_pixel_w_z/Run()
+	var/image/a = look_overlay_image('icons/obj/stock_parts.dmi', "fix", pixel_w = 1, pixel_z = 2)
+	var/image/b = look_overlay_image('icons/obj/stock_parts.dmi', "fix", pixel_w = 3, pixel_z = 2)
+	TEST_ASSERT(look_part_key(a) != look_part_key(b), "pixel_w differs in the key")
+	TEST_ASSERT_EQUAL(a.pixel_z, 2, "pixel_z is applied")
+
+/// Nutrition is tracked, so a turkeygirl redraws as it fills.
+/datum/unit_test/dq_draw_turkeygirl_follows_nutrition
+
+/datum/unit_test/dq_draw_turkeygirl_follows_nutrition/Run()
+	var/mob/living/simple_mob/vore/turkeygirl/T = allocate(/mob/living/simple_mob/vore/turkeygirl, test_floor())
+	refresh_flush()
+	T.set_nutrition(0)
+	refresh_flush()
+	var/plain = T.icon_state
+	T.set_nutrition(5000)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(T.icon_state, "[T.icon_living]-2", "a full turkeygirl shows the fullest state (was [plain])")
+
+/// Deleting a worm out of the world leaves no severed head behind, and deleting a blob core takes its overmind with it.
+/datum/unit_test/dq_draw_destroy_leaves_nothing_behind
+
+/datum/unit_test/dq_draw_destroy_leaves_nothing_behind/Run()
+	var/turf/T = test_floor()
+	var/mob/living/simple_mob/animal/space/space_worm/head/worm = allocate(/mob/living/simple_mob/animal/space/space_worm/head, T)
+	var/before = 0
+	for(var/mob/living/simple_mob/animal/space/space_worm/head/severed/H in world)
+		before++
+	qdel(worm)
+	var/after = 0
+	for(var/mob/living/simple_mob/animal/space/space_worm/head/severed/H in world)
+		after++
+	TEST_ASSERT_EQUAL(after, before, "deleting a worm leaves no severed head")
+	var/obj/structure/blob/core/core = allocate(/obj/structure/blob/core, T)
+	refresh_flush()
+	var/mob/observer/blob/overmind = core.overmind
+	if(overmind)
+		qdel(core)
+		TEST_ASSERT(QDELETED(overmind), "the overmind goes with its core")

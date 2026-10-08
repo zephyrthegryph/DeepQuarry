@@ -204,7 +204,10 @@ TRACKED(/mob/living/simple_mob/animal/space/space_worm, segment_dir)
 /mob/living/simple_mob/animal/space/space_worm/on_destroy(force) // If a chunk is destroyed, kill the back half.
 	DumpStomach()
 	if(previous)
-		previous.Detach(1)
+		if(loc) // a chunk deleted out of the world has nowhere to leave a severed head: the back half goes with it
+			previous.Detach(1)
+		else
+			qdel(previous)
 	..()
 
 /mob/living/simple_mob/animal/space/space_worm/Moved(atom/old_loc, direction, forced = FALSE)

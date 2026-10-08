@@ -131,7 +131,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	..()
 	new /obj/item/blobcore_chunk(get_turf(src), overmind?.blob_type)
 	if(overmind)
-		ended_with(overmind, src)
+		var/mob/observer/blob/dying = overmind
+		ended_with(dying, src)
+		qdel(dying)
 
 /// A core draws no colour of its own: the blob body under it is tinted by its overmind, and the core overlay sits on top.
 /obj/structure/blob/core/look_parts(datum/look/look)
