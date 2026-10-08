@@ -50,5 +50,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: cycle, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, multitool_settings.configure, multitool_settings.set_command, multitool_settings.set_frequency, multitool_settings.set_id_tag, multitool_settings.set_master_tag, robot_remote_blocked
+keys: cycle, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, multitool_settings.configure, multitool_settings.set_command, multitool_settings.set_frequency, multitool_settings.set_id_tag, multitool_settings.set_master_tag, robot_remote_blocked
 

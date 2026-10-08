@@ -78,5 +78,5 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use (refused: It has no lock to subvert.)
 human|/obj/item/card/emag click: Click: Use
-keys: button_press, button_press_item, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, pod_use, press_item, press_silicon, robot_remote_blocked, silicon_pressed
+keys: button_press, button_press_item, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, pod_use, press_item, press_silicon, robot_remote_blocked, silicon_pressed
 

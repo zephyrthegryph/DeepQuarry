@@ -3446,3 +3446,52 @@ Pinned by `code/modules/unit_tests/dq_timed_pin_w7_behaviour.dm` (107 pins writt
 * **Class: nutrition heal re-clamps at the end of the wait.** A nutrition drop during the wait heals slightly less. Pins: `v_nutrition_heal*`.
 
 Sites left: species- and trait-granted abilities (lleill, shapeshifter, protean powers, succubus/bloodsuck/shred/cocoon/devour, shadekin interactions, ddraig polymorph, regenerate, lick wounds, dominated-brain review chains) have no master mechanism for a species to grant a `menu()` op; `/mob/living` item-click chains (beacon feed, body writing, eat minerals, vertical nom, butchering) need ops in `CAPABILITIES(/mob/living)`; the spell cast delay and the dormancy repair steps have no op host (a datum / an affliction). Framework gaps: a `menu()` op whose answered target is the wait's target; a repeat-until-done op with a per-iteration cost (`self_repair`, `grab_drain`, `spin`, `lick_step`); an op that carries a computed list (melee swing); `wait(INFINITY)` (apply_pressure).
+
+## Machinery non-harm item clicks (2026-10-08)
+
+The inherited `/obj` melee hit is now offered on machinery only for harm stance,
+including in non-harm menus. The restriction is scoped to player click/menu origins;
+explicit AI/system attack requests retain their existing behavior. Specific item strikes on doors, portable turrets and
+light fixtures use the same harm condition. Deployable barriers previously
+labelled an ordinary-use item op "Hit"; it now explicitly answers attack and
+requires harm. Help, disarm and grab therefore reach the machine's existing tool,
+insertion or Use operation rather than striking it. No substitute no-op Use was
+added; machines without a matching interaction still have no interaction. Harm
+still uses the existing damage handlers and canister item exclusions remain.
+
+The `i7_bulk` re-record covers these inherited machinery classes and their door,
+light, portable-turret and deployable-barrier subtypes. Removed non-harm Hit menu
+rows and any Click: Hit -> the machine's real interaction/nothing rows are caused
+by these intent corrections, not by removing damageability. The re-record changes
+282 files: 261 have only key-list changes and 21 also have behavior rows changed.
+
+Key-list changes record the inherited `melee_hit` introduced on master in
+`82357da35c`, and the obsolete no-op `use`/`swallow` keys removed on master in
+`f857c445a3`/`82357da35c`. They do not imply a new non-harm attack. Every class
+with changed behavior rows is accounted for below; native master pins independently
+confirm the cablelayer, shower, turbine and photocopier interactions.
+
+| Snapshot class(es) | Cause |
+|---|---|
+| `obj.machinery.atmospherics.pipe.tank` | Master `f857c445a3` removed no-op Swallow; unmatched held items now do nothing. |
+| `obj.machinery.cablelayer` | Master removed generic no-op Use; actual Toggle now answers held-item clicks. |
+| `obj.machinery.computer.turbine_computer` | Master removed generic no-op Use; existing Use item/UI operations remain. |
+| `obj.machinery.photocopier` | Master removed generic no-op Use; real toner insertion and other concrete interactions remain. |
+| `obj.machinery.seed_extractor` | Master removed generic no-op Use; unmatched items have no interaction. |
+| `obj.machinery.shower` | Master removed generic no-op Use; actual shower Toggle answers held-item clicks. |
+| `obj.machinery.deployable.barrier` | This fix makes its damaging Hit harm-only; wrench repair, ID swipe and emag retain precedence on non-harm clicks. |
+| `obj.machinery.door`, `.unpowered`, `.airlock`, `.airlock.phoron`, `.window`, `.window.holowindoor` | This fix hides Strike from non-harm menus; real door open/close and tool operations remain. |
+| `obj.machinery.door.blast` | Harm-only Strike plus master `82357da35c` removing no-op Swallow; forcing/prying and actual denial behavior remain. |
+| `obj.machinery.light`, `.flamp` | This fix hides damaging Hit from non-harm menus; bulb/socket interactions remain. |
+| `obj.machinery.light.small.torch` | Master removed no-op Swallow; its explicit `without("melee_hit")` remains respected, so this torch stays nonhittable. |
+| `obj.machinery.porta_turret` | This fix makes Strike harm-only, preserving concrete controls/maintenance. |
+| `obj.machinery.portable_atmospherics.canister`, `obj.machinery.power.solar` | Master replaced their specific Strike with inherited melee hit; this fix hides that hit outside harm. Canister item exclusions remain. |
+| `obj.machinery.computer.ship.navigation.telescreen.dog_eye` | Existing master `c624e243d3` native Emote Beyond now exposes its truthful `too far away` ghost refusal; same cause as the already blessed native navigation pins above. |
+
+Verification: `dq_interaction_domain_snapshot/i7_bulk` successfully re-recorded
+283 type files (282 changed). The focused `machine_click_intent` regression
+passed after its preliminary-candidate assertion was corrected to inspect the
+actual winner. It checks real Use execution, harm integrity loss and an explicit
+AI attack without harm click stance, with clean boot and no state leak. Final
+compilation had 0 errors; DreamChecker had 0 diagnostics; lint and ratchets passed.
+No full suite ran, and no baseline, ceiling or ALLOW annotation was changed.

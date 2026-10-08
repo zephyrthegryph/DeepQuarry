@@ -57,5 +57,5 @@ human|/obj/item/barcodescanner menu: Move To Top
 human|/obj/item/barcodescanner menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/barcodescanner menu: Use
 human|/obj/item/barcodescanner click: Click: Link scanner
-keys: arccheckout, checkin, checkout, decreasetime, delbook, delid, drag_buckle, editbook, editmob, emag.subvert, emag.use, hardprint, increasetime, librarycomp_ghost_admin_view, librarycomp_link_scanner, librarycomp_open_ui, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, orderbyid, print_bible, robot_remote_blocked, setauthor, setcategory, sort, switchscreen, targetid, upload
+keys: arccheckout, checkin, checkout, decreasetime, delbook, delid, drag_buckle, editbook, editmob, emag.subvert, emag.use, hardprint, increasetime, librarycomp_ghost_admin_view, librarycomp_link_scanner, librarycomp_open_ui, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, orderbyid, print_bible, robot_remote_blocked, setauthor, setcategory, sort, switchscreen, targetid, upload
 

@@ -45,5 +45,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Pay
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Pay
-keys: clean_order, confirm_order, drag_buckle, hw_battery, hw_card, hw_cpu, hw_disk, hw_nanoprint, hw_netcard, hw_tesla, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, pay, pick_device, robot_remote_blocked
+keys: clean_order, confirm_order, drag_buckle, hw_battery, hw_card, hw_cpu, hw_disk, hw_nanoprint, hw_netcard, hw_tesla, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, pay, pick_device, robot_remote_blocked
 

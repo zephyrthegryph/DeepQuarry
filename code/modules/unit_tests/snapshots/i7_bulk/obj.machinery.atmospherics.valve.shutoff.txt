@@ -71,5 +71,5 @@ human|/obj/item/pipe_painter menu: Painter
 human|/obj/item/pipe_painter menu: Toggle automatic control
 human|/obj/item/pipe_painter menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pipe_painter click: Click: Painter
-keys: circuit, drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, manual, painter, robot_remote_blocked, unwrench
+keys: circuit, drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, manual, melee_hit, painter, robot_remote_blocked, unwrench
 

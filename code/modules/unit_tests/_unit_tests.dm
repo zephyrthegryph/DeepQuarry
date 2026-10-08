@@ -1230,6 +1230,8 @@
 #include "dq_round3_requests_c.dm"
 #include "dq_round3_requests_d.dm"
 
+#include "dq_machine_click_intent_tests.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

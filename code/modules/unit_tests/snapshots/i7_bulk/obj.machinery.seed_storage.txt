@@ -84,5 +84,5 @@ human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
 wires: Contraband, Electrification, Lockdown, Smart
-keys: drag_buckle, emag.subvert, emag.use, insert_bag, insert_seeds, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, purge, robot_remote_blocked, ui_open, use, use_screwdriver, use_wire_tools, use_wrench, vend
+keys: drag_buckle, emag.subvert, emag.use, insert_bag, insert_seeds, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, purge, robot_remote_blocked, ui_open, use, use_screwdriver, use_wire_tools, use_wrench, vend
 

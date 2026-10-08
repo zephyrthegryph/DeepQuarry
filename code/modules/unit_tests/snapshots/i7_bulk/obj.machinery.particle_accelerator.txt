@@ -88,5 +88,5 @@ human|/obj/item menu: Rotate Counter Clockwise
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Turn Around
 human|/obj/item click: nothing
-keys: climb.climb, climb.climb_menu, construction.build:pa_bolted, construction.build:pa_closed, construction.build:pa_wired, construction.undo:pa_bolted, construction.undo:pa_closed, construction.undo:pa_wired, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around
+keys: climb.climb, climb.climb_menu, construction.build:pa_bolted, construction.build:pa_closed, construction.build:pa_wired, construction.undo:pa_bolted, construction.undo:pa_closed, construction.undo:pa_wired, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around
 

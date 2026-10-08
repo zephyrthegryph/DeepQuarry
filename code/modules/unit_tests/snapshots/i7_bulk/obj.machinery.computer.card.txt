@@ -87,5 +87,5 @@ human|/obj/item menu: Ui open
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
 human|/obj/item/gripper deleted itself on creation
-keys: access, account, assign, assign_custom, climb.climb, climb.climb_menu, disconnect, drag_buckle, eject, insert_id, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, mode, modify, print, reg, robot_remote_blocked, scan, terminate, ui_open, use_gripper, use_item
+keys: access, account, assign, assign_custom, climb.climb, climb.climb_menu, disconnect, drag_buckle, eject, insert_id, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, mode, modify, print, reg, robot_remote_blocked, scan, terminate, ui_open, use_gripper, use_item
 

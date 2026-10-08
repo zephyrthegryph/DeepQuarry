@@ -76,5 +76,5 @@ human|/obj/item/tank menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tank menu: Ui open
 human|/obj/item/tank menu: Use
 human|/obj/item/tank click: Click: Ui open
-keys: add_tank, canister_scan, drag_buckle, load_tank, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open, part_replacement, remove_tank, robot_remote_blocked, set_can_pressure, set_mode, start_sim, ui_open
+keys: add_tank, canister_scan, drag_buckle, load_tank, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open, part_replacement, remove_tank, robot_remote_blocked, set_can_pressure, set_mode, start_sim, ui_open
 

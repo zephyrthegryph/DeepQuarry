@@ -77,5 +77,5 @@ human|/obj/item/firework_star menu: Launch (refused: there is no firework star l
 human|/obj/item/firework_star menu: Move To Top
 human|/obj/item/firework_star menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/firework_star click: Click: Insert firework star
-keys: drag_buckle, eject, launch, load_star, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, part_replacement, robot_remote_blocked
+keys: drag_buckle, eject, launch, load_star, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, robot_remote_blocked
 

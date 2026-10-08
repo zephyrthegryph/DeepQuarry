@@ -67,5 +67,5 @@ human|/obj/item/pda menu: Reset PDA (refused: You can't do that.)
 human|/obj/item/pda menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pda menu: Use (refused: the SPASM is disabled)
 human|/obj/item/pda click: Click: Use
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, spasm_cash, spasm_collar, spasm_id, spasm_use
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, spasm_cash, spasm_collar, spasm_id, spasm_use
 

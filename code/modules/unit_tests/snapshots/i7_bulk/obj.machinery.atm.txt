@@ -80,5 +80,5 @@ human|/obj/item/spacecash menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/spacecash menu: Ui open
 human|/obj/item/spacecash menu: Use
 human|/obj/item/spacecash click: Click: Ui open
-keys: atm_deposit_cash, atm_insert_card, atm_use, attempt_auth, balance_statement, change_security_level, disconnect_display, drag_buckle, emag.subvert, emag.use, e_withdrawal, insert_card, logout, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, print_transaction, robot_remote_blocked, transfer, ui_open, withdrawal
+keys: atm_deposit_cash, atm_insert_card, atm_use, attempt_auth, balance_statement, change_security_level, disconnect_display, drag_buckle, emag.subvert, emag.use, e_withdrawal, insert_card, logout, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, print_transaction, robot_remote_blocked, transfer, ui_open, withdrawal
 

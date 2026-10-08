@@ -82,5 +82,5 @@ human|/obj/item/storage/part_replacer menu: Toggle Digestable (refused: You can'
 human|/obj/item/storage/part_replacer menu: Ui open
 human|/obj/item/storage/part_replacer menu: Use
 human|/obj/item/storage/part_replacer click: Click: Ui open
-keys: activate, detach, drag_buckle, insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, part_replacement, purchase, robot_remote_blocked, ui_open, use
+keys: activate, detach, drag_buckle, insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, purchase, robot_remote_blocked, ui_open, use
 

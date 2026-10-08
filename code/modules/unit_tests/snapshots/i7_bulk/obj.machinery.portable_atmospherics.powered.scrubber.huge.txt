@@ -48,5 +48,5 @@ human|/obj/item/tank menu: Move To Top
 human|/obj/item/tank menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tank menu: Use
 human|/obj/item/tank click: Click: Use
-keys: anchor, console_only, drag_buckle, eject, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, power, robot_remote_blocked, swallow_cell, swallow_tank, volume_adj
+keys: anchor, console_only, drag_buckle, eject, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, power, robot_remote_blocked, swallow_cell, swallow_tank, volume_adj
 
