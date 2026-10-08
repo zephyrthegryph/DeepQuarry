@@ -554,6 +554,8 @@ pub fn freeze_artifact_tables(
         });
     }
     drop(freeze_profile);
+    drop(source_bindings);
+    drop(string_inventory);
     let tables = {
         let _profile = dm_profile::stage("linking.table_assignment");
         LinkTables::build(inventory).map_err(IntegrationError::Link)?

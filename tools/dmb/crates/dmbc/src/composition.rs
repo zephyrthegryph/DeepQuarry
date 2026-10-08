@@ -843,7 +843,10 @@ fn compose_records(
                 continue;
             }
         }
-        let instructions = byond_dmb::bytecode::decode(words)
+        byond_dmb::bytecode::visit_instructions(words, |instruction| {
+            external |= matches!(instruction.name, "LoadExt" | "CallExt");
+            debug |= matches!(instruction.name, "DbgFile" | "DbgLine");
+        }, |_| {})
             .map_err(|e| {
                 let proc_record=&dmb.procs[index];
                 let path=dmb.string(proc_record.strings[0]).map(String::from_utf8_lossy);
@@ -852,10 +855,6 @@ fn compose_records(
                 let end=e.offset.saturating_add(8).min(words.len());
                 unsupported(format!("invalid composed bytecode: proc={index}, path={path:?}, name={name:?}, error={e:?}, words[{start}..{end}]={:?}",&words[start..end]))
             })?;
-        for instruction in instructions {
-            external |= matches!(instruction.name, "LoadExt" | "CallExt");
-            debug |= matches!(instruction.name, "DbgFile" | "DbgLine");
-        }
     }
     if external {
         dmb.header.flags |= 0x2000_0000;
@@ -869,6 +868,9 @@ fn compose_records(
     dmb.validate_references()
         .map_err(CompositionError::Decode)?;
     let bytes = dmb.to_bytes().map_err(CompositionError::Decode)?;
+    // The encoded image owns its bytes; release the source graph before
+    // constructing the independent round-trip validation graph.
+    drop(dmb);
     Dmb::from_bytes(&bytes)
         .and_then(|decoded| decoded.validate_references())
         .map_err(CompositionError::Decode)?;

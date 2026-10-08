@@ -634,6 +634,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             map_memo.as_ref(),
             Some(&admit_resources),
         )?;
+        // Nontext capture owns the resolver, captured resources/maps and defaults
+        // it needs. These inputs are not borrowed by its returned bundle.
+        drop(defaults);
+        drop(roots);
+        drop(captured_engine);
         let nontext_seconds = nontext_started.elapsed().as_secs_f64();
         drop(nontext_profile);
         let linking_inputs_started = Instant::now();
