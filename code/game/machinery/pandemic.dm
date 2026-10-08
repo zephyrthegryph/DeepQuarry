@@ -168,7 +168,7 @@ MSG_DEF_SELF(pandemic/not_working, "It isn't working.")
 /obj/machinery/computer/pandemic/proc/sign_usable(datum/request/R)
 	return !printing && request_usable(R)
 
-/obj/machinery/computer/pandemic/proc/release_form_written(datum/act/op/A)
+/obj/machinery/computer/pandemic/proc/release_form_written(datum/act/op/A, index)
 	if(!A.answer)
 		return
 	var/datum/prompt/yes_no/pandemic_release_sign/R = A.step_answer("signature")
