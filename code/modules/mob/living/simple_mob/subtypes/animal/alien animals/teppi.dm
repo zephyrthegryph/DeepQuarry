@@ -420,8 +420,6 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 	look.overlay(look_overlay_image(icon, "skin_[our_state]", color = skin_color, appearance_flags = flags))
 	/////HIGHEST LAYER/////
 
-TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_wool)
-
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 	op("teppi_item_help", item(/obj/item), stance(I_HELP), label("Tend"), then(PROC_REF(teppi_interaction_item_help)))
 	op("teppi_item_hurt", item(/obj/item), stance(I_HURT), label("Hit"), then(PROC_REF(teppi_interaction_item_hurt)))
