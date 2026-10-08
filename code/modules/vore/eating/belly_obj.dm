@@ -284,6 +284,11 @@ CAPABILITIES(/obj/belly)
 	// a belly is an organ of its owner, never a thing on the floor to hit
 	without("melee_hit")
 	reagents(300) // So we can have some liquids in bellies
+	// The prey works its way out, started by start_escape() from relay_resist() / relay_absorbed_resist(). A prey that is out cold goes on with the
+	// default escape (STAY only); the rolled and the absorbed escapes also end if the prey is not conscious, as the old timed actions did.
+	op("belly_escape", ai(), wait(PROC_REF(escape_time), keeps = STAY), on_interrupt(PROC_REF(escape_interrupted)), then(PROC_REF(default_escape_done)))
+	op("belly_escape_rolled", ai(), wait(PROC_REF(escape_time), keeps = STAY | ALIVE), then(PROC_REF(chance_escape_done)))
+	op("belly_escape_absorbed", ai(), wait(PROC_REF(escape_time), keeps = STAY | ALIVE), then(PROC_REF(absorbed_escape_done)))
 
 // ALLOW(init/INSTANCE_STATE): binds to the mob it is made inside
 /obj/belly/Initialize(mapload)

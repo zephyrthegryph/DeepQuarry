@@ -191,6 +191,7 @@
 	// hold hands or body while they wait (CLAIM_*) against what this op needs. The actor's policy decides: a player's input stops the older op
 	// (and tells them), an AI's is refused as busy. The game acting for itself (ORIGIN_SYSTEM) neither waits on the actor's pending ops nor ends
 	// them: it is not the actor deciding something else.
+	var/list/to_stop // the older waits this input stops, once it is known to go ahead (a refused input stops nothing)
 	if(actor && R.origin != ORIGIN_SYSTEM)
 		var/list/mine = op_pendings_of(actor)
 		// the same op on the same target whose question is open: its window is shown again, nothing starts
@@ -212,8 +213,7 @@
 					result.reason = /datum/msg/op/busy
 					TEST_REC_OUTCOME(C.oplan.key, ACT_REFUSED, result.reason, actor)
 					return result
-				for(var/datum/pending_op/stopped as anything in blocking)
-					stopped.cancel(/datum/msg/op/stopped)
+				to_stop = blocking
 	var/datum/act/op/A = op_act_for(C, actor, R.target, R.held, R.origin, R.authority)
 	A.oplan = C.oplan // ALLOW(ownership): a pooled transient: reset on release
 	A.binding = C.binding // ALLOW(ownership): a pooled transient: reset on release
@@ -237,6 +237,8 @@
 	if(actor && R.origin != ORIGIN_SYSTEM && length(C.oplan.steps) && length(op_pendings_of(actor)) >= OP_PENDING_CAP)
 		log_game("op: [C.oplan.key] by [key_name(actor)] refused: [OP_PENDING_CAP] pending ops are open already")
 		return op_end(A, ACT_REFUSED, /datum/msg/op/too_many_pending)
+	for(var/datum/pending_op/stopped as anything in to_stop)
+		stopped.cancel(/datum/msg/op/stopped)
 	A.started = TRUE
 	if(length(C.oplan.steps))
 		return op_wait_begin(A, C)
@@ -572,13 +574,14 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 				return cancel(/datum/msg/op/target_gone)
 			var/delay = W.wait_time(A)
 			take_capture(A)
+			// The keeps first: a start handler may write state that republishes and re-checks this op before the wait is set up.
+			keeps = W.args["keeps"] & op_default_keeps(A, binding)
 			if(!began && delay > 0)
 				began = TRUE
 				oplan.begins?.feedback(A)
 				oplan.start_plays?.feedback(A)
 				for(var/start_handler in oplan.starts)
 					op_call(A, start_handler)
-			keeps = W.args["keeps"] & op_default_keeps(A, binding)
 			suspend_act()
 			if(delay > 0)
 				timed_wait = TRUE

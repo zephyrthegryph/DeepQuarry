@@ -90,7 +90,7 @@
 	test_time(4 SECONDS)
 	TEST_ASSERT_EQUAL(S.done, 1, "an unchanged field lets the op finish")
 	test_menu(H, S, "cap")
-	S.amount = 2
+	S.set_amount(2)
 	test_time(4 SECONDS)
 	TEST_ASSERT_EQUAL(S.done, 1, "a captured field that changed during the wait ended the op")
 
@@ -171,3 +171,23 @@
 	test_time(30 SECONDS)
 	TEST_ASSERT(P.steps >= 1, "a member of PERIODIC_SLOW stepped (stepped [P.steps] times)")
 	om_task_periodic_stop(P)
+
+/datum/unit_test/dq_timed_forms/a_refused_input_stops_nothing
+/datum/unit_test/dq_timed_forms/a_refused_input_stops_nothing/run_forms()
+	var/mob/living/carbon/human/H = person()
+	var/obj/tf_site/S = site()
+	test_menu(H, S, "claimer")
+	test_menu(H, S, "blocked_body")
+	TEST_ASSERT_NOTNULL(op_pending_for(H, "claimer"), "the older wait is still pending: the refused input did not stop it")
+	test_time(4 SECONDS)
+	TEST_ASSERT_EQUAL(S.done, 1, "and it finished")
+
+/datum/unit_test/dq_timed_forms/a_start_handler_that_writes_tracked_state_leaves_the_keeps_alone
+/datum/unit_test/dq_timed_forms/a_start_handler_that_writes_tracked_state_leaves_the_keeps_alone/run_forms()
+	var/mob/living/carbon/human/H = person()
+	var/obj/tf_site/S = site()
+	test_menu(H, S, "startw")
+	TEST_ASSERT_EQUAL(S.amount, 2, "the start handler wrote the tracked var")
+	H.forceMove(get_step(H, EAST))
+	test_time(4 SECONDS)
+	TEST_ASSERT_EQUAL(S.done, 0, "moving still ended the wait (the keeps were set before the start handler ran)")

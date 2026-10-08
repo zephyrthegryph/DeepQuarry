@@ -100,6 +100,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 	immune_to_incapacitation()
+	op("infest", ai(), reach(REACH_RANGE(1)), wait(0.2 SECONDS), then(PROC_REF(do_infest_leech_done)), on_interrupt(PROC_REF(do_infest_leech_failed)))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 
@@ -275,19 +276,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 			to_chat(user, span_notice("We cannot get through that host's protective gear."))
 			return
 
-	task_start(/datum/task/timed/leech_do_infest_leech, src, M, user = user, M = M)
+	perform_op(src, M, "infest", null, ORIGIN_AI, AUTH_AI)
 	return TRUE
 
-/datum/task/timed/leech_do_infest_leech
-	duration = 2
-	complete_proc = /mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_done
-	cancel_proc = /mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_failed
-	var/mob/living/user
-	var/mob/living/carbon/M
-
-/mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_done(datum/task/timed/leech_do_infest_leech/task)
-	var/mob/living/user = task.user
-	var/mob/living/carbon/M = task.M
+/// The end of the leech's "infest" op: it burrows into its target.
+/mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_done(datum/act/op/A)
+	var/mob/living/user = src
+	var/mob/living/carbon/M = A.target
 
 	if(!M || !src)
 		return
@@ -317,10 +312,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 		to_chat(user, span_notice("They are no longer in range."))
 		return
 
-/mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_failed(datum/task/timed/leech_do_infest_leech/task)
-	var/mob/living/user = task.user
-	var/mob/living/carbon/M = task.M
-	to_chat(user, span_notice("As [M] moves away, we are dislodged and fall to the ground."))
+/// The "infest" op was interrupted: the target or the leech moved.
+/mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_failed(datum/act/op/A)
+	to_chat(src, span_notice("As [A.target] moves away, we are dislodged and fall to the ground."))
 	return
 
 /mob/living/simple_mob/animal/sif/leech/verb/uninfest()

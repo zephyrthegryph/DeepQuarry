@@ -2,8 +2,11 @@ CAPABILITIES(/mob/living/silicon/robot/platform)
 	op("platform_item", item(/obj/item), then(PROC_REF(platform_interaction_item)))
 	op("platform_hand", hand(), ungated(), then(PROC_REF(platform_interaction_hand)))
 	op("platform_take_control", observer(), label("Take control"), when(req(PROC_REF(ghost_control_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Platform Control", "question" = computed(PROC_REF(ghost_control_question)), "timeout" = 0), step = "take", keeps = TARGET_PRESENT), then(PROC_REF(ghost_control_answered)))
-	op("platform_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Load into cargo"), then(PROC_REF(platform_interaction_drag)))
-	op("platform_silicon_unload", remote(), when(req_actor_kind(/mob/living/silicon/robot)), label("Unload cargo"), then(PROC_REF(platform_silicon_unload)))
+	// a drop that is refused falls through to the cyborg's drag block
+	op("platform_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Load into cargo"), when(PROC_REF(cargo_loadable)), begins(PROC_REF(cargo_loading_text)), wait(3 SECONDS), then(PROC_REF(platform_loaded)))
+	// an empty hand on a closed platform that has no cell in its port takes the last stored thing out
+	op("platform_unload", hand(), label("Unload cargo"), priority(OP_PRIORITY_ATTACK), when(PROC_REF(cargo_unloadable)), begins(PROC_REF(cargo_unloading_text)), wait(3 SECONDS), then(PROC_REF(platform_unloaded)))
+	op("platform_silicon_unload", remote(), label("Unload cargo"), when(PROC_REF(cargo_unloadable_by_silicon)), begins(PROC_REF(cargo_unloading_text)), wait(3 SECONDS), then(PROC_REF(platform_unloaded)))
 
 /// Old attack_ghost: an unoccupied platform offers itself to the ghost; otherwise the default. The question is the op's asks() step; the requirement is read
 /// again when the answer arrives (still a ghost, the platform still empty and alive, the round running).
@@ -24,9 +27,6 @@ CAPABILITIES(/mob/living/silicon/robot/platform)
 				recharging_atom.dropInto(loc)
 				user.put_in_hands(recharging_atom)
 				act_message(user, src, others = span_infoplain(span_bold("%U%") + " pops %I% out of %T%'s recharging port."), item = recharging_atom)
-			return OP_OK
-
-		if(try_remove_cargo(user))
 			return OP_OK
 
 	return OP_DECLINE

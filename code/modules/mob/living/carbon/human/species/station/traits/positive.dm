@@ -256,7 +256,7 @@
 	..()
 	var/datum/trait_state/weaver/W = H.get_trait_state(added_component_path)
 	if(S.get_bodytype() == SPECIES_VASILISSAN)
-		W.silk_reserve = 500
+		W.set_silk_reserve(500)
 		W.silk_max_reserve = 1000
 	if(trait_prefs)
 		W.silk_production = trait_prefs["silk_production"]

@@ -120,29 +120,30 @@
 	// The timer skips a deleted L: prey_excludes is a relation list, so it already left.
 	rel_remove(src, nameof(prey_excludes), L)
 
-/mob/living/simple_mob/proc/nutrition_heal()
-	set name = "Nutrition Heal"
-	set category = VERB_CAT_ABILITIES_MOB
-	set desc = "Slowly regenerate health using nutrition."
+/// Requirement: enough nutrition to regenerate on.
+/mob/living/simple_mob/proc/hungry_enough_to_heal(datum/act/op/A)
+	return read_once(nutrition) >= 10
 
-	return nutrition_heal_stage(null)
+/mob/living/simple_mob/proc/too_hungry_to_heal_text(datum/act/op/A)
+	return span_warning("You are too hungry to regenerate health.")
 
-/mob/living/simple_mob/proc/nutrition_heal_stage(heal_amount)
-	if(nutrition < 10)
-		to_chat(src, span_warning("You are too hungry to regenerate health."))
-		return
+/mob/living/simple_mob/proc/nutrition_heal_question(datum/act/op/A)
 	var/endurance_now = get_endurance()
-	if(isnull(heal_amount))
-		open_request(src, /datum/prompt/number/animal_nutrition_heal, PROC_REF(animal_nutrition_heal_answered), answerer = src, question = "Input the amount of health to regenerate at the rate of 10 nutrition per second per hitpoint. Current health: [round(vitality() * endurance_now)] / [endurance_now]")
-		return
-	if(!heal_amount)
-		return
-	var/missing = round((1 - vitality()) * get_endurance()) // re-read after the input prompt
-	heal_amount = CLAMP(heal_amount, 1, max(1, missing))
-	heal_amount = CLAMP(heal_amount, 1, nutrition / 10)
-	task_timed(src, 10 * heal_amount, null, src, PROC_REF(nutrition_heal_done), list(heal_amount))
+	return "Input the amount of health to regenerate at the rate of 10 nutrition per second per hitpoint. Current health: [round(vitality() * endurance_now)] / [endurance_now]"
 
-/mob/living/simple_mob/proc/nutrition_heal_done(heal_amount)
+/// The hitpoints one heal restores: the answer, at most what is missing (read after the question was answered) and at most what the nutrition pays for.
+/mob/living/simple_mob/proc/nutrition_heal_amount(datum/act/op/A)
+	var/heal_amount = A.step_value("amount")
+	var/missing = round((1 - vitality()) * get_endurance())
+	heal_amount = CLAMP(heal_amount, 1, max(1, missing))
+	return CLAMP(heal_amount, 1, nutrition / 10)
+
+/// A second per hitpoint.
+/mob/living/simple_mob/proc/nutrition_heal_time(datum/act/op/A)
+	return 10 * nutrition_heal_amount(A)
+
+/mob/living/simple_mob/proc/nutrition_heal_done(datum/act/op/A)
+	var/heal_amount = nutrition_heal_amount(A)
 	adjust_nutrition(-(10 * heal_amount))
 	// Spend the budget mechanism by mechanism, in the old brute > burn > oxy > tox > clone order.
 	// Plating/wiring cover synthetic bodies; the body ignores tags that don't match its biology.
@@ -150,6 +151,7 @@
 		if(heal_amount <= 0)
 			break
 		heal_amount -= mend(treat_tag, heal_amount)
+	return OP_OK
 
 /mob/living/simple_mob/relations()
 	. = ..()
@@ -193,10 +195,3 @@
 	default = 1
 	min_value = 1
 	max_value = INFINITY
-
-/mob/living/simple_mob/proc/animal_nutrition_heal_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = nutrition_heal_stage(A.answer.value)
-	SStgui.update_uis(src)
-	return .

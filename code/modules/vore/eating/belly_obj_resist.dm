@@ -72,21 +72,26 @@
 	to_chat(living_prey, escape_attempt_prey_message)
 	to_chat(owner, escape_attempt_owner_message)
 
-	task_start(/datum/task/timed/belly_escape, living_prey, src, duration = escapetime, receiver = src, prey_item = prey_item)
+	start_escape(living_prey, "belly_escape", prey_item)
 
-/// Prey (the actor) working its way out of a belly, with `prey_item` if it is one.
-/datum/task/timed/belly_escape
-	flags = IGNORE_INCAPACITATED
-	complete_proc = /obj/belly/proc/default_escape_done
-	cancel_proc = /obj/belly/proc/escape_interrupted
-	var/obj/item/prey_item
+/// The prey (the actor) works its way out of the belly with the op `key`, with `prey_item` (the held thing) if it is one. The wait only keeps the
+/// prey where it started: a prey that is out cold or whose belly walks off goes on, as the old escape did.
+/obj/belly/proc/start_escape(mob/living/living_prey, key, obj/item/prey_item = null)
+	var/datum/op_result/started = perform_op(living_prey, src, key, prey_item, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+	if(started?.outcome == ACT_REFUSED)
+		log_game("belly: [key_name(living_prey)] could not start [key] in [src]: [started.reason]")
 
-/obj/belly/proc/escape_interrupted(datum/task/timed/belly_escape/task)
-	escape_failed(task.actor)
+/// How long the escape takes.
+/obj/belly/proc/escape_time(datum/act/op/A)
+	return escapetime
 
-/obj/belly/proc/default_escape_done(datum/task/timed/belly_escape/task)
-	var/mob/living/living_prey = task.actor
-	var/obj/item/prey_item = task.prey_item
+/// Prey (the actor) working its way out of a belly, with `prey_item` (the held thing) if it is one.
+/obj/belly/proc/escape_interrupted(datum/act/op/A)
+	escape_failed(A.actor)
+
+/obj/belly/proc/default_escape_done(datum/act/op/A)
+	var/mob/living/living_prey = A.actor
+	var/obj/item/prey_item = A.held
 	if((owner.stat || escapable)) //Can still escape?
 		if(prey_item)
 			release_specific_contents(prey_item)
@@ -136,10 +141,12 @@
 	var/escape_attempt_prey_message = span_vwarning(belly_format_string(escape_attempt_messages_prey, living_prey))
 	to_chat(living_prey, escape_attempt_prey_message)
 	to_chat(owner, escape_attempt_owner_message)
-	task_timed(living_prey, escapetime, src, src, PROC_REF(chance_escape_done), list(living_prey, prey_item))
+	start_escape(living_prey, "belly_escape_rolled", prey_item)
 	return TRUE
 
-/obj/belly/proc/chance_escape_done(mob/living/living_prey, obj/item/prey_item)
+/obj/belly/proc/chance_escape_done(datum/act/op/A)
+	var/mob/living/living_prey = A.actor
+	var/obj/item/prey_item = A.held
 	if(escapable && prey_item)
 		var/escape_item_owner_message = span_vwarning(belly_format_string(escape_item_messages_owner, living_prey, item = prey_item))
 		var/escape_item_prey_message = span_vwarning(belly_format_string(escape_item_messages_prey, living_prey, item = prey_item))
@@ -300,10 +307,11 @@
 
 	to_chat(living_prey, escape_attempt_absorbed_prey_message)
 	to_chat(owner, escape_attempt_absorbed_owner_message)
-	task_timed(living_prey, escapetime, src, src, PROC_REF(absorbed_escape_done), list(living_prey))
+	start_escape(living_prey, "belly_escape_absorbed")
 	return TRUE
 
-/obj/belly/proc/absorbed_escape_done(mob/living/living_prey)
+/obj/belly/proc/absorbed_escape_done(datum/act/op/A)
+	var/mob/living/living_prey = A.actor
 	if((escapable || owner.stat) && (living_prey.loc == src) && prob(escapechance_absorbed)) //Does the escape attempt succeed?
 		var/escape_absorbed_owner_message = span_vwarning(belly_format_string(escape_absorbed_messages_owner, living_prey))
 		var/escape_absorbed_prey_message = span_vwarning(belly_format_string(escape_absorbed_messages_prey, living_prey))

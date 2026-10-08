@@ -31,8 +31,7 @@
 	var/mob/living/carbon/human/breaker = owner
 	if(other_breaker)
 		breaker = allocate(/mob/living/carbon/human, T)
-	first.ring_left_alone(breaker)
-	TEST_ASSERT(!QDELETED(first), "The real leave-alone callback preserves its original ring")
+	TEST_ASSERT(!QDELETED(first), "A ring nobody broke keeps its original ring")
 	TEST_ASSERT_EQUAL(length(owner.teleporters), 2, "Leaving the ring alone preserves both original registrations")
 	first.ring_broken(breaker)
 	TEST_ASSERT(QDELETED(first), "The real break completion consumes the exact selected ring")

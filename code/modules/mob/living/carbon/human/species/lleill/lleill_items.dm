@@ -252,8 +252,7 @@ CAPABILITIES(/obj/item/glamour_face)
 	area_name = A.name
 	name = "[area_name] glamour ring"
 
-/obj/structure/glamour_ring/proc/ring_left_alone(mob/living/M)
-	to_chat(M, span_warning("You leave the glamour ring alone."))
+MSG_DEF_SELF(glamour_ring/breaking, span_warning("You begin to break the lines of the glamour ring."))
 
 /obj/structure/glamour_ring/proc/ring_broken(mob/living/M)
 	if(loc?.release_refusal(src, M))
@@ -269,7 +268,7 @@ CAPABILITIES(/obj/item/glamour_face)
 
 /// Old attack_hand: the ring's connected lleill (or anyone) is asked whether to break it, and its owner whether to restore energy instead.
 CAPABILITIES(/obj/structure/glamour_ring)
-	op("ring_hand", hand(), ungated(), label("Use"), needs(req(PROC_REF(ring_connected), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Destroy ring", "question" = computed(PROC_REF(ring_question)), "choices" = computed(PROC_REF(ring_choices)), "buttons" = TRUE, "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "action"), then(PROC_REF(ring_action_chosen)))
+	op("ring_hand", hand(), ungated(), label("Use"), needs(req(PROC_REF(ring_connected), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Destroy ring", "question" = computed(PROC_REF(ring_question)), "choices" = computed(PROC_REF(ring_choices)), "buttons" = TRUE, "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "action"), begins(PROC_REF(ring_begins)), wait(PROC_REF(ring_wait)), on_interrupt(PROC_REF(ring_interrupted)), then(PROC_REF(ring_action_chosen)))
 
 /obj/structure/glamour_ring/proc/ring_connected(datum/act/op/A)
 	return read_once(istype(connected_mob, /mob/living/carbon/human))
@@ -287,6 +286,35 @@ TYPE_TABLE_DECLARE(/obj/structure/glamour_ring, other_choices, list("Yes", "No")
 		return TYPE_TABLE_GET(src, owner_choices)
 	return TYPE_TABLE_GET(src, other_choices)
 
+/// How long the chosen action lasts: the break and the draw take 10 seconds; No, no answer, and a draw inside the cooldown take no time (the effect tells why).
+/obj/structure/glamour_ring/proc/ring_wait(datum/act/op/A)
+	var/mob/living/carbon/human/L = connected_mob
+	if(!istype(L))
+		return 0
+	switch(A.step_value("action"))
+		if("Yes")
+			return 10 SECONDS
+		if("Restore Energy")
+			var/datum/species/lleill/LL = L.species
+			if(istype(LL) && COOLDOWN_FINISHED(LL, ring_cooldown))
+				return 10 SECONDS
+	return 0
+
+/// The line told when the break starts; drawing energy says nothing at the start.
+/obj/structure/glamour_ring/proc/ring_begins(datum/act/op/A)
+	if(A.step_value("action") == "Yes")
+		return /datum/msg/glamour_ring/breaking
+	return null
+
+/// The break or the draw was broken off (the actor moved away); a cancelled question says nothing.
+/obj/structure/glamour_ring/proc/ring_interrupted(datum/act/op/A)
+	var/mob/living/M = A.actor
+	switch(A.step_value("action"))
+		if("Yes")
+			to_chat(M, span_warning("You leave the glamour ring alone."))
+		if("Restore Energy")
+			to_chat(M, span_warning("You stop drawing energy."))
+
 /obj/structure/glamour_ring/proc/ring_action_chosen(datum/act/op/A)
 	var/mob/living/M = A.actor
 	var/m_action = A.step_value("action")
@@ -296,37 +324,19 @@ TYPE_TABLE_DECLARE(/obj/structure/glamour_ring, other_choices, list("Yes", "No")
 	var/datum/species/lleill/LL = L.species
 
 	if(m_action == "Yes")
-		to_chat(M, span_warning("You begin to break the lines of the glamour ring."))
-		task_timed(M, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(ring_broken), done_args = list(M), on_fail = PROC_REF(ring_left_alone), fail_args = list(M))
+		ring_broken(M)
 		return OP_OK
 
 	if(m_action == "Restore Energy")
-		if(!COOLDOWN_FINISHED(LL, ring_cooldown))
+		if(!istype(LL) || !COOLDOWN_FINISHED(LL, ring_cooldown))
 			to_chat(M, span_warning("You must wait a while before drawing energy from the glamour again."))
 			return OP_OK
-		task_start(/datum/task/timed/glamour_ring_attack_hand_glamour_ring, M, src, receiver = src, lleill_mob = L)
+		var/datum/species/lleill/own = rel_private(L, nameof(/datum/dna::species)) // per-mob change: never mutate the shared species
+		if(!istype(own))
+			return OP_OK
+		COOLDOWN_START(own, ring_cooldown, 10 MINUTES)
+		own.lleill_energy = min((own.lleill_energy + 75), own.lleill_energy_max)
 	return OP_OK
-
-/datum/task/timed/glamour_ring_attack_hand_glamour_ring
-	duration = 10 SECONDS
-	complete_proc = /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done
-	cancel_proc = /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_failed
-	/// The lleill drawing energy (their species is made private before it is changed).
-	var/mob/living/carbon/human/lleill_mob
-
-/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done(datum/task/timed/glamour_ring_attack_hand_glamour_ring/task)
-	if(!task.lleill_mob)
-		return
-	var/datum/species/lleill/LL = rel_private(task.lleill_mob, nameof(/datum/dna::species)) // per-mob change: never mutate the shared species
-	if(!istype(LL))
-		return
-	COOLDOWN_START(LL, ring_cooldown, 10 MINUTES)
-	LL.lleill_energy = min((LL.lleill_energy + 75),LL.lleill_energy_max)
-
-/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_failed(datum/task/timed/glamour_ring_attack_hand_glamour_ring/task)
-	var/mob/living/M = task.actor
-	to_chat(M, span_warning("You stop drawing energy."))
-	return
 
 //Glamour Helm
 

@@ -60,6 +60,8 @@ CAPABILITIES(/obj/item/backup_implanter)
 	owns_many(nameof(imps), /obj/item/implant/backup)
 	op("backup_implanter_interaction_eject", in_hand(), label("Eject implant"), then(PROC_REF(backup_implanter_interaction_eject)))
 	op("backup_implanter_interaction_load", item(/obj/item/implant/backup), label("Load implant"), then(PROC_REF(backup_implanter_interaction_load)))
+	op("implant", at_target(/mob/living/carbon), when(PROC_REF(implanter_loaded)), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Implant"),
+		needs(req_adjacent()), begins(MSG(backup_implanter/implanting)), starts(PROC_REF(implanter_swing)), wait(PROC_REF(implant_time)), then(PROC_REF(backup_implant_done)))
 
 /obj/item/backup_implanter/Initialize(mapload)
 	. = ..()
@@ -105,38 +107,39 @@ CAPABILITIES(/obj/item/backup_implanter)
 		to_chat(user, span_warning("\The [src] is already full!"))
 	return OP_PASS
 
-/datum/task/timed/backup_implanter_backup_implant
-	complete_proc = /obj/item/backup_implanter/proc/backup_implant_done
-	var/turf/T1
+MSG_DEF(backup_implanter/implanting, null, "%U% is injecting a backup implant into %T%.")
 
-/obj/item/backup_implanter/proc/backup_implant_done(datum/task/timed/backup_implanter_backup_implant/task)
-	var/mob/living/M = task.target
-	var/mob/living/user = task.actor
-	var/turf/T1 = task.T1
-	if((get_turf(M) == T1) && LAZYLEN(imps))
-		act_message(M, user, others = span_notice("%U% has been backup implanted by %T%."))
+/// The op's `when()`: a loaded implanter used on a carbon (an empty one is an ordinary hit).
+/obj/item/backup_implanter/proc/implanter_loaded(datum/act/op/A)
+	return LAZYLEN(imps) > 0
 
-		var/obj/item/implant/backup/imp = imps[LAZYLEN(imps)]
-		if(imp.handle_implant(M,user.zone_sel.selecting))
-			imp.post_implant(M, user)
-			own_take_member(src, nameof(imps), imp)
-			add_attack_logs(user,M,"Implanted backup implant")
+/// Five seconds on someone else, at once on yourself.
+/obj/item/backup_implanter/proc/implant_time(datum/act/op/A)
+	return A.target == A.actor ? 0 : 5 SECONDS
 
-		update()
+/// The swing: the click cooldown and the attack animation of the legacy attack.
+/obj/item/backup_implanter/proc/implanter_swing(datum/act/op/A)
+	var/mob/living/user = A.actor
+	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
+	user.do_attack_animation(A.target)
 
-/obj/item/backup_implanter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if (!istype(M, /mob/living/carbon))
-		return ITEM_INTERACT_FAILURE
-	if(user && LAZYLEN(imps))
-		act_message(user, M, others = span_notice("%U% is injecting a backup implant into %T%."))
+/obj/item/backup_implanter/proc/backup_implant_done(datum/act/op/A)
+	var/mob/living/M = A.target
+	var/mob/living/user = A.actor
+	if(!LAZYLEN(imps))
+		return OP_FAILED
+	if(M == user)
+		implanter_swing(A) // no wait to start it in: the swing is made as it goes in
+	act_message(M, user, others = span_notice("%U% has been backup implanted by %T%."))
 
-		user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
-		user.do_attack_animation(M)
+	var/obj/item/implant/backup/imp = imps[LAZYLEN(imps)]
+	if(imp.handle_implant(M,user.zone_sel.selecting))
+		imp.post_implant(M, user)
+		own_take_member(src, nameof(imps), imp)
+		add_attack_logs(user,M,"Implanted backup implant")
 
-		var/turf/T1 = get_turf(M)
-		if(T1)
-			task_start(/datum/task/timed/backup_implanter_backup_implant, user, M, receiver = src, duration = (M == user ? 0 : 5 SECONDS), T1 = T1)
-		return ITEM_INTERACT_SUCCESS
+	update()
+	return OP_OK
 
 //The glass case for the implant
 /obj/item/implantcase/backup

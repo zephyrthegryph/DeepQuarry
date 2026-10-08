@@ -739,7 +739,6 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take hold", PROC_REF(robot_interaction_hand)), \
 	INTERACT_HAND_UNGATED_AS(I_HURT, "Punch", PROC_REF(robot_interaction_hand)), \
 	INTERACT_DRAG("Block drag", TYPE_PROC_REF(/atom, interaction_swallow)), \
-	INTERACT_ROBOT("Drop hat", PROC_REF(robot_drop_own_hat)), \
 	INTERACT_SILICON("Deploy to shell", PROC_REF(robot_ai_deploy_shell)))
 
 /// Old attackby: parts, laws, repairs, IDs and upgrades. Anything else sparks and reaches the attack.
@@ -1109,17 +1108,21 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	return FALSE
 
 /mob/living/silicon/robot/resist_restraints()
-	if(bolt)
-		if(!bolt.malfunction)
-			act_message(src, null, MSG_SELF(span_warning("You attempt to break your [bolt]. (This will take around 90 seconds and you need to stand still)")), \
-				MSG_OTHERS(span_danger("%U% is trying to break their [bolt]!")))
-			task_timed(src, 1.5 MINUTES, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(resist_restraints_robot_done), done_args = list())
+	perform_op(src, src, "break_bolt", null, ORIGIN_VERB, AUTH_PHYSICAL)
 
-	return
+/// A bolt that still holds can be broken (the "break_bolt" op).
+/mob/living/silicon/robot/proc/bolt_breakable(datum/act/op/A)
+	return read_once(!isnull(bolt) && !bolt.malfunction)
 
-/mob/living/silicon/robot/proc/resist_restraints_robot_done()
-	act_message(src, null, MSG_SELF(span_warning("You successfully break your [bolt].")), MSG_OTHERS(span_danger("%U% manages to break \the [bolt]!")))
+/mob/living/silicon/robot/proc/bolt_break_text(datum/act/op/A)
+	return msg_text(span_warning("You attempt to break your [bolt]. (This will take around 90 seconds and you need to stand still)"), span_danger("%U% is trying to break their [bolt]!"))
+
+/mob/living/silicon/robot/proc/bolt_broken(datum/act/op/A)
+	if(isnull(bolt))
+		return OP_FAILED
+	act_message(src, null, MSG_SELF(span_warning("You successfully break your [bolt].")), MSG_OTHERS(span_danger("%U% manages to break the [bolt]!")))
 	bolt.malfunction = MALFUNCTION_PERMANENT
+	return OP_OK
 
 /mob/living/silicon/robot/proc/module_reset(notify = TRUE)
 	transform_with_anim() //sprite animation
@@ -1436,22 +1439,21 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearan
 	if(. != old_dir)
 		update_worn_icons()
 
-/// Old attack_robot: a cyborg clicking itself drops its hat. The old body ran ..() (attack_ai) first,
-/// so that runs first here too, as the AI-style Use (silicon interactions, then the default).
-/mob/living/silicon/robot/proc/robot_drop_own_hat(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user != src || isnull(hat))
-		return FALSE
+/// Old attack_robot: a cyborg clicking itself with an empty hand drops its hat (the "drop_hat" op).
+/mob/living/silicon/robot/proc/hat_droppable(datum/act/op/A)
+	return A.actor == src && !isnull(hat)
 
-	actor_use(/datum/input_adapter/ai, user, src)
-	balloon_alert(user, "dropping hat...")
-	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_robot_robot_done), done_args = list(user))
-	return TRUE
+/// The old body ran ..() (attack_ai) first, so that runs first here too, as the AI-style Use (silicon interactions, then the default).
+/mob/living/silicon/robot/proc/hat_drop_started(datum/act/op/A)
+	actor_use(/datum/input_adapter/ai, A.actor, src)
+	balloon_alert(A.actor, "dropping hat...")
 
-/mob/living/silicon/robot/proc/attack_robot_robot_done(mob/user)
-	if(QDELETED(src) || !Adjacent(user) || user.incapacitated() || isnull(hat))
-		return
+/mob/living/silicon/robot/proc/hat_dropped(datum/act/op/A)
+	if(isnull(hat))
+		return OP_FAILED
 	remove_hat(get_turf(src))
-	balloon_alert(user, "dropped hat")
+	balloon_alert(A.actor, "dropped hat")
+	return OP_OK
 
 /mob/living/silicon/robot/proc/installed_modules()
 	robotact.tgui_interact(src)

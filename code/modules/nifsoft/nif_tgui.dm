@@ -39,6 +39,10 @@ CAPABILITIES(/obj/item/nif)
 	op("screwdriver_blocked", tool(TOOL_SCREWDRIVER), when(PROC_REF(screwdriver_blocked)), priority(OP_PRIORITY_PART + 2), needs(req(PROC_REF(never), silent = TRUE)))
 	op("multitool_blocked", tool(TOOL_MULTITOOL), when(PROC_REF(multitool_blocked)), priority(OP_PRIORITY_PART + 1), needs(req(PROC_REF(never), silent = TRUE)))
 	op("reset_circuits", tool(TOOL_MULTITOOL), label("Reset the circuits"), when(req_is(nameof(open), 2)), wait(8 SECONDS), then(PROC_REF(reset_circuits_done)), says(MSG(nif/reset)))
+	// Special Promethean surgery: a NIF stuffed into another slime body's chest.
+	op("stuff_in", at_target(/mob/living/carbon/human), when(PROC_REF(stuffable)), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Stuff it in"),
+		needs(req_adjacent(), req(PROC_REF(stuff_in_unclothed), because = PROC_REF(stuff_in_clothed_text)), req(PROC_REF(stuff_in_torso), because = PROC_REF(stuff_in_torso_text))),
+		begins(PROC_REF(stuffing_text)), wait(20 SECONDS), then(PROC_REF(stuff_in_done)))
 
 /**
  * Small helper datum to manage the HUD icon.

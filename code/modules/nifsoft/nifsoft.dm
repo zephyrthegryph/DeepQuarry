@@ -196,42 +196,45 @@
 	var/datum/nifsoft/stored_organic = null
 	var/datum/nifsoft/stored_synthetic = null
 
-/obj/item/disk/nifsoft/afterattack(A, mob/user, flag, params)
-	if(!in_range(user, A))
-		return
+MSG_DEF(nifsoft/uploading_other, span_notice("You begin uploading %I% into %T%."), span_warning("%U% begins uploading %I% into %T%!"))
+MSG_DEF_SELF(nifsoft/uploading_self, span_notice("You upload %I% into your NIF."))
 
-	if(!ishuman(user) || !ishuman(A))
-		return
+CAPABILITIES(/obj/item/disk/nifsoft)
+	op("upload", at_target(/mob/living/carbon/human), when(req_actor_kind(/mob/living/carbon/human)), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Upload"),
+		needs(req_adjacent(), req(PROC_REF(upload_ready), because = PROC_REF(upload_refusal))),
+		begins(PROC_REF(upload_begins)), starts(PROC_REF(upload_started)), wait(PROC_REF(upload_time)), on_interrupt(PROC_REF(upload_failed)), then(PROC_REF(upload_done)))
 
-	var/mob/living/carbon/human/Ht = A
-	var/mob/living/carbon/human/Hu = user
+/// Requirement: the target has a NIF that is up and running (what a click decides on).
+/obj/item/disk/nifsoft/proc/upload_ready(datum/act/op/A)
+	var/mob/living/carbon/human/Ht = A.target
+	return read_once(Ht.nif?.stat) == NIF_WORKING
 
-	if(!Ht.nif || Ht.nif.stat != NIF_WORKING)
-		to_chat(user,span_warning("Either they don't have a NIF, or the uploader can't connect."))
-		return
+/obj/item/disk/nifsoft/proc/upload_refusal(datum/act/op/A)
+	return span_warning("Either they don't have a NIF, or the uploader can't connect.")
 
-	var/extra = extra_params()
-	if(A == user)
-		to_chat(user,span_notice("You upload [src] into your NIF."))
-	else
-		act_message(Ht, Hu, MSG_SELF(span_danger("%T% is uploading [src] into you!")), MSG_OTHERS(span_warning("%T% begins uploading [src] into %U%!")))
+/obj/item/disk/nifsoft/proc/upload_begins(datum/act/op/A)
+	return A.actor == A.target ? MSG(nifsoft/uploading_self) : MSG(nifsoft/uploading_other)
 
-	icon_state = "[initial(icon_state)]-animate"	//makes it play the item animation upon using on a valid target
+/// A second into your own NIF, ten into someone else's.
+/obj/item/disk/nifsoft/proc/upload_time(datum/act/op/A)
+	return A.actor == A.target ? 1 SECONDS : 10 SECONDS
 
-	task_timed(Hu, A == user ? 1 SECONDS : 10 SECONDS, Ht, src, PROC_REF(upload_done), list(Ht, extra), on_fail = PROC_REF(upload_failed))
+/// Plays the item animation upon using on a valid target.
+/obj/item/disk/nifsoft/proc/upload_started(datum/act/op/A)
+	icon_state = "[initial(icon_state)]-animate"
 
-/obj/item/disk/nifsoft/proc/upload_failed()
+/obj/item/disk/nifsoft/proc/upload_failed(datum/act/op/A)
 	icon_state = "[initial(icon_state)]"	//If it fails to apply to a valid target and doesn't get deleted, reset its icon state
 
-/obj/item/disk/nifsoft/proc/upload_done(mob/living/carbon/human/Ht, extra)
-	if(!Ht.nif || Ht.nif.stat != NIF_WORKING)
-		upload_failed()
-		return
+/obj/item/disk/nifsoft/proc/upload_done(datum/act/op/A)
+	var/mob/living/carbon/human/Ht = A.target
+	var/extra = extra_params()
 	if(HAS_SYNTHETIC_BIOLOGY(Ht))
 		new stored_synthetic(Ht.nif,extra)
 	else
 		new stored_organic(Ht.nif,extra)
 	spent(src)
+	return OP_OK
 
 //So disks can pass fancier stuff.
 /obj/item/disk/nifsoft/proc/extra_params()
@@ -251,13 +254,16 @@
 	stored_synthetic = /datum/nifsoft/compliance
 	var/laws
 
-/obj/item/disk/nifsoft/compliance/afterattack(A, mob/user, flag, params)
-	if(!ishuman(A))
-		return
+TRACKED(/obj/item/disk/nifsoft/compliance, laws)
+
+/// A compliance disk with no laws set uploads nothing.
+/obj/item/disk/nifsoft/compliance/upload_ready(datum/act/op/A)
+	return !!laws && ..()
+
+/obj/item/disk/nifsoft/compliance/upload_refusal(datum/act/op/A)
 	if(!laws)
-		to_chat(user,span_warning("You haven't set any laws yet. Use the disk in-hand first."))
-		return
-	..(A,user,flag,params)
+		return span_warning("You haven't set any laws yet. Use the disk in-hand first.")
+	return ..()
 
 CAPABILITIES(/obj/item/disk/nifsoft/compliance)
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/text, fields = list("question" = "Please Input Laws", "title" = "Compliance Laws", "default" = computed(PROC_REF(laws_default)), "max_len" = 2048, "multiline" = TRUE), step = "laws"), then(PROC_REF(interaction_self)))
@@ -270,7 +276,7 @@ CAPABILITIES(/obj/item/disk/nifsoft/compliance)
 	var/newlaws = A.step_value("laws")
 	if(newlaws)
 		to_chat(A.actor,span_filter_notice("You set the laws to: <br>" + span_notice("[newlaws]")))
-		laws = newlaws
+		set_laws(newlaws)
 	return OP_OK
 
 /obj/item/disk/nifsoft/compliance/extra_params()

@@ -473,6 +473,8 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 	add_overlay(skin_image)
 	/////HIGHEST LAYER/////
 
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_wool)
+
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 	op("teppi_item_help", item(/obj/item), stance(I_HELP), label("Tend"), then(PROC_REF(teppi_interaction_item_help)))
 	op("teppi_item_hurt", item(/obj/item), stance(I_HURT), label("Hit"), then(PROC_REF(teppi_interaction_item_hurt)))
@@ -482,6 +484,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 	op("teppi_hand_grab", hand(), ungated(), stance(I_GRAB), label("Remove accessory"), then(PROC_REF(teppi_interaction_hand_grab)))
 	op("teppi_hand_hurt", hand(), ungated(), stance(I_HURT), label("Handle roughly"), then(PROC_REF(teppi_interaction_hand_hurt)))
 	op("teppi_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Handle roughly"), then(PROC_REF(teppi_interaction_hand_disarm)))
+	op("teppi_shear_knife", item(/obj/item/material/knife), stance(I_HELP), priority(OP_PRIORITY_TAKE_OUT), label("Shear"), when(nameof(teppi_wool)), wait(PROC_REF(teppi_shear_time)), then(PROC_REF(teppi_shear_done)))
+	op("teppi_shear_cutter", tool(TOOL_WIRECUTTER), stance(I_HELP), priority(OP_PRIORITY_TAKE_OUT), label("Shear"), when(nameof(teppi_wool)), wait(PROC_REF(teppi_shear_time)), then(PROC_REF(teppi_shear_done)))
 	param(nameof(parent_one), pos = 1, keep = FALSE)
 	param(nameof(parent_two), pos = 2, apply = PROC_REF(inherit_made), keep = FALSE)
 
@@ -536,9 +540,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 		act_message(user, src, MSG_SELF(span_notice("You hit %T% with %I%. %T% grumbles at you.")), MSG_OTHERS(span_notice("%U% hits %T% with %I%. %T% grumbles at %U%.")), item = O)
 		play_sfx(src, SFX_WEAPONS_TAP, extrarange = -1)
 		return OP_DECLINE
-	if(teppi_wool)
-		if(teppi_shear(user, O))
-			return
 	/////FOOD/////
 	if(istype(O, /obj/item/reagent_containers/food))
 		if(resting)
@@ -717,7 +718,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 		if(src.teppi_adult)
 			if(not_hungy && !src.teppi_wool)
 				src.adjust_nutrition(-rand(250,500))
-				src.teppi_wool = TRUE
+				src.set_teppi_wool(TRUE)
 				src.breedable = TRUE
 				src.meat_amount += rand(0,2)
 				src.update_icon()
@@ -772,7 +773,9 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 		return
 	playsound(src, SFX_VOICE_TEPPI, 75, 1)
 
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear(mob/user as mob, obj/item/tool)
+/// How long the held knife or wirecutters take to shear.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear_time(datum/act/op/A)
+	var/obj/item/tool = A.held
 	var/sheartime = 3 SECONDS
 	if(istype(tool, /obj/item/material/knife))
 		var/obj/item/material/knife/K = tool
@@ -784,19 +787,21 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 			sheartime *= 2
 		if(K.edge)
 			sheartime *= 0.5
-	else if(tool.has_tool_quality(TOOL_WIRECUTTER))
-		sheartime *= 2
 	else
-		return FALSE
-	task_timed(user, sheartime, target = src, receiver = src, on_done = PROC_REF(teppi_shear_teppi_done), done_args = list(user, tool))
-	return TRUE
+		sheartime *= 2
+	return sheartime
 
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear_teppi_done(mob/user, obj/item/tool)
+/// The end of the shear ops.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	if(!teppi_wool)
+		return
 	act_message(user, src, MSG_SELF(span_notice("You shear %T% with %I%.")), MSG_OTHERS(span_notice("%U% shears %T% with %I%.")), item = tool)
 	amount_grown = rand(0,250)
 	var/obj/item/stack/material/fur/F = new(get_turf(user), rand(10,15))
 	F.color = marking_color
-	teppi_wool = FALSE
+	set_teppi_wool(FALSE)
 	update_icon()
 	handle_affinity(user, 5)
 	teppi_sound()

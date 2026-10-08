@@ -252,9 +252,7 @@
 				act_message(M, src, MSG_SELF(span_warning("You try to pat out %T%'s flames, but to no avail! Put yourself out first!")), \
 					MSG_OTHERS(span_warning("%U% tries to pat out %T%'s flames, but to no avail!")))
 			else
-				act_message(M, src, MSG_SELF(span_warning("You try to pat out %T%'s flames! Hot!")), \
-					MSG_OTHERS(span_warning("%U% tries to pat out %T%'s flames!")))
-				task_timed(M, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(help_shake_act_carbon_done), done_args = list(M))
+				perform_op(M, src, "pat_out_flames", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 		else
 			if (ishuman(src))
 				var/mob/living/carbon/human/H = src
@@ -301,7 +299,10 @@
 
 			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 
-/mob/living/carbon/proc/help_shake_act_carbon_done(mob/living/carbon/M)
+MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), span_warning("%U% tries to pat out %T%'s flames!"))
+
+/mob/living/carbon/proc/help_shake_act_carbon_done(datum/act/op/A)
+	var/mob/living/carbon/M = A.actor
 	src.adjust_fire_stacks(-0.5)
 	if (prob(10) && (M.fire_stacks <= 0))
 		M.adjust_fire_stacks(1)
