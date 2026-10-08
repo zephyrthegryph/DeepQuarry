@@ -422,7 +422,7 @@ TRACKED(/turf/simulated/wall, thermite)
 		if(can_store <= 0)
 			to_chat(user, span_warning("There's either no space or \the [cartridge] is empty!"))
 			return OP_PASS
-		stored_matter += can_store
+		set_stored_matter(stored_matter + can_store)
 		cartridge.remaining -= can_store
 		if(!cartridge.remaining)
 			to_chat(user, span_warning("\The [cartridge] dissolves as it empties of compressed matter."))
@@ -448,7 +448,6 @@ TRACKED(/turf/simulated/wall, thermite)
 			loaded = loadwithsheets(S, RCD_SHEETS_PER_MATTER_UNIT*1.33, user)
 	if(loaded)
 		play_sfx(src, SFX_MACHINES_CLICK)
-		update_icon()
 		to_chat(user, span_notice("The RCD now holds [stored_matter]/[max_stored_matter] matter-units."))
 	return OP_DECLINE
 
@@ -457,7 +456,7 @@ TRACKED(/turf/simulated/wall, thermite)
 	if(maxsheets > 0)
 		var/amount_to_use = min(S.amount, maxsheets)
 		S.use(amount_to_use)
-		stored_matter += value*amount_to_use
+		set_stored_matter(stored_matter + value*amount_to_use)
 		to_chat(user, span_notice("You insert [amount_to_use] [S.name] sheets into [src]. "))
 		return 1
 	to_chat(user, span_warning("You can't insert any more [S.name] sheets into [src]!"))

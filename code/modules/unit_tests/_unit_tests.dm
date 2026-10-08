@@ -1235,6 +1235,7 @@
 #include "dq_round3_requests_c.dm"
 #include "dq_round3_requests_d.dm"
 #include "dq_draw_mobs.dm"
+#include "dq_draw_items.dm"
 
 #include "dq_machine_click_intent_tests.dm"
 

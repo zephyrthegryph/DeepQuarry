@@ -22,8 +22,6 @@
 	allowed_magazines = list(/obj/item/ammo_magazine/cell_mag)
 	handle_casings = HOLD_CASINGS //Don't eject batteries!
 	recoil = 0
-	var/charge_left = 0
-	var/max_charge = 0
 	charge_sections = 5
 
 	special_handling = TRUE
@@ -42,20 +40,18 @@
 
 	return null
 
-/obj/item/gun/projectile/cell_loaded/proc/update_charge()
-	charge_left = 0
-	max_charge = 0
-
-	if(!chambered)
-		return
-
+/// The charge of the chambered kind of microbattery across the magazine, as a fraction of what those batteries hold full (0 with nothing chambered).
+/obj/item/gun/projectile/cell_loaded/proc/charge_fraction()
+	if(!chambered || !ammo_magazine)
+		return 0
 	var/obj/item/ammo_casing/microbattery/batt = chambered
-
-	if(ammo_magazine) //Crawl to find more
-		for(var/obj/item/ammo_casing/microbattery/bullet as anything in ammo_magazine.stored_ammo)
-			if(istype(bullet,batt.type))
-				charge_left += bullet.shots_left
-				max_charge += initial(bullet.shots_left)
+	var/charge_left = 0
+	var/max_charge = 0
+	for(var/obj/item/ammo_casing/microbattery/bullet as anything in ammo_magazine.stored_ammo)
+		if(istype(bullet,batt.type))
+			charge_left += bullet.shots_left
+			max_charge += initial(bullet.shots_left)
+	return max_charge ? charge_left / max_charge : 0
 
 /obj/item/gun/projectile/cell_loaded/proc/switch_to(obj/item/ammo_casing/microbattery/new_batt)
 	if(ishuman(loc))
@@ -65,8 +61,6 @@
 			to_chat(loc,span_warning("\The [src] is now firing [new_batt.type_name]."))
 
 	rel_set(src, nameof(chambered), new_batt)
-	update_charge()
-	update_icon()
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used?.update_ammo_hud(M, src)
@@ -102,35 +96,18 @@
 	rel_clear(src, nameof(chambered))
 	return ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/cell_loaded, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/cell_loaded/appearance_overlays()
-	. = list()
-	update_charge()
-
+/// The look: the chambered battery's mode bar, barrel tint and charge bar, all in its colour.
+/obj/item/gun/projectile/cell_loaded/draw(datum/look/look)
+	..()
 	if(!chambered)
-		return .
-
+		return
 	var/obj/item/ammo_casing/microbattery/batt = chambered
 	var/batt_color = batt.type_color //Used many times
-
-	//Mode bar
-	var/image/mode_bar = image(icon, icon_state = "[initial(icon_state)]_type")
-	mode_bar.color = batt_color
-	. += mode_bar
-
-	//Barrel color
-	var/image/barrel_color = image(icon, icon_state = "[initial(icon_state)]_barrel")
-	barrel_color.alpha = 150
-	barrel_color.color = batt_color
-	. += barrel_color
-
-	//Charge bar
-	var/ratio = CEILING(((charge_left / max_charge) * charge_sections), 1)
+	look.overlay(look_overlay_image(icon, "[initial(icon_state)]_type", color = batt_color))
+	look.overlay(look_overlay_image(icon, "[initial(icon_state)]_barrel", alpha = 150, color = batt_color))
+	var/ratio = CEILING(charge_fraction() * charge_sections, 1)
 	for(var/i = 0, i < ratio, i++)
-		var/image/charge_bar = image(icon, icon_state = "[initial(icon_state)]_charge")
-		charge_bar.pixel_x = i
-		charge_bar.color = batt_color
-		. += charge_bar
+		look.overlay(look_overlay_image(icon, "[initial(icon_state)]_charge", pixel_x = i, color = batt_color))
 
 // The Magazine //
 /obj/item/ammo_magazine/cell_mag
@@ -142,7 +119,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/cell_loaded, TYPE_PROC_REF(/ato
 	ammo_type = /obj/item/ammo_casing/microbattery
 	initial_ammo = 0
 	max_ammo = 3
-	var/x_offset = 5  //for update_icon() shenanigans- moved here so it can be adjusted for bigger mags
+	var/x_offset = 5  //for the magazine look- moved here so it can be adjusted for bigger mags
 	var/capname = "nsfw_mag" //as above
 	var/chargename = "nsfw_mag" //as above
 	mag_type = MAGAZINE
@@ -168,35 +145,22 @@ CAPABILITIES(/obj/item/ammo_magazine/cell_mag)
 			return
 		if(!move_into(src, nameof(src.stored_ammo), B, user))
 			return
-		update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-	update_icon()
 	if(istype(loc, /obj/item/gun/projectile/cell_loaded)) // Update the HUD if we're in a gun + have a user. Not that one should be able to reload the mag while it's in a gun, but just in caaaaase.
 		var/obj/item/gun/projectile/cell_loaded/cell_load = loc
 		var/mob/living/M = cell_load.loc
 		if(istype(M))
 			M?.hud_used?.update_ammo_hud(M, cell_load)
 
-DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/cell_mag, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/ammo_magazine/cell_mag/appearance_overlays()
-	. = list()
-	if(!length(stored_ammo))
-		return .
-
+/// The look: a cap and a charge light per battery, in the battery's colour.
+/obj/item/ammo_magazine/cell_mag/draw(datum/look/look)
+	..()
 	var/current = 0
 	for(var/obj/item/ammo_casing/microbattery/batt as anything in stored_ammo)
-		var/image/cap = image(icon, icon_state = "[capname]_cap")
-		cap.color = batt.type_color
-		cap.pixel_x = current * x_offset //Caps don't need a pixel_y offset
-		. += cap
-
+		look.overlay(look_overlay_image(icon, "[capname]_cap", pixel_x = current * x_offset, color = batt.type_color)) //Caps don't need a pixel_y offset
 		if(batt.shots_left)
 			var/ratio = CEILING(((batt.shots_left / initial(batt.shots_left)) * 4), 1) //4 is how many lights we have a sprite for
-			var/image/charge = image(icon, icon_state = "[chargename]_charge-[ratio]")
-			charge.color = "#29EAF4" //Could use battery color but eh.
-			charge.pixel_x = current * x_offset
-			. += charge
-
+			look.overlay(look_overlay_image(icon, "[chargename]_charge-[ratio]", pixel_x = current * x_offset, color = "#29EAF4")) //Could use battery color but eh.
 		current++ //Increment for offsets
 
 /obj/item/ammo_magazine/cell_mag/advanced
@@ -223,6 +187,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/cell_mag, TYPE_PROC_REF(/atom, a
 	var/type_name = null
 	projectile_type = /obj/item/projectile/beam
 
+TRACKED(/obj/item/ammo_casing/microbattery, shots_left)
+
 CAPABILITIES(/obj/item/ammo_casing/microbattery)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(10))
 
@@ -231,7 +197,7 @@ CAPABILITIES(/obj/item/ammo_casing/microbattery)
 	look.overlay(look_appearance(icon, "[initial(icon_state)]_ends", color = type_color))
 
 /obj/item/ammo_casing/microbattery/expend()
-	shots_left--
+	set_shots_left(shots_left - 1)
 
 // The Pack //
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid

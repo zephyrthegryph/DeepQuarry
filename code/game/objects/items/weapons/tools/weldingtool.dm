@@ -58,7 +58,6 @@ TRACKED(/obj/item/weldingtool, always_process)
 	rel_set(src, nameof(reagents), R)
 	rel_set(R, nameof(R.my_atom), src)
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
-	update_icon()
 
 /obj/item/weldingtool/get_welder()
 	return src
@@ -204,47 +203,41 @@ CAPABILITIES(/obj/item/weldingtool)
 		reagents.remove_reagent(REAGENT_ID_FUEL, amount)
 		if(M)
 			eyecheck(M)
-		update_icon()
 		return 1
 	else
 		if(M)
 			to_chat(M, span_notice("You need more welding fuel to complete this task."))
-		update_icon()
 		return 0
 
 //Returns whether or not the welding tool is currently on.
 /obj/item/weldingtool/proc/isOn()
 	return welding
 
-DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/weldingtool/appearance_overlays()
-	. = list()
-	. += ..()
-	// Welding overlay.
-	if(welding)
-		. += "[icon_state]-on"
-		item_state = "[initial(item_state)]1"
+/// The look: the flame and the fuel counter over the body, the flame's light, and the in-hand state while it burns.
+/obj/item/weldingtool/draw(datum/look/look)
+	..()
+	welder_overlays(look)
+	if(welding && flame_intensity)
+		look.light(flame_intensity, flame_intensity, flame_color)
 	else
-		item_state = initial(item_state)
+		look.light_off()
 
-	// Fuel counter overlay.
+/// The flame overlay, the fuel counter and the in-hand state (a subtype with a body of its own draws none of them).
+/obj/item/weldingtool/proc/welder_overlays(datum/look/look)
+	if(welding)
+		look.overlay("[initial(icon_state)]-on")
+		look.held_state("[initial(item_state)]1")
+	else
+		look.held_state(initial(item_state))
+
 	if(change_icons && get_max_fuel())
 		var/ratio = get_fuel() / get_max_fuel()
 		ratio = CEILING(ratio * 4, 1) * 25
-		. += "[icon_state][ratio]"
+		look.overlay("[initial(icon_state)][ratio]")
 
-	// Lights
-	if(welding && flame_intensity)
-		set_light(flame_intensity, flame_intensity, flame_color)
-	else
-		set_light(0)
-
-
-//	icon_state = welding ? "[icon_state]1" : "[initial(icon_state)]"
-	var/mob/M = loc
-	if(istype(M))
-		M.update_inv_l_hand()
-		M.update_inv_r_hand()
+/// Fuel in the tank redraws the counter.
+/obj/item/weldingtool/on_reagent_change()
+	changed(src)
 
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/item/weldingtool/proc/mousedrop_input(datum/act/input/A)
@@ -301,7 +294,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 			src.w_class = ITEMSIZE_LARGE
 			src.hitsound = 'sound/items/Welder.ogg'
 			set_welding(1)
-			update_icon()
 		else
 			if(M)
 				var/msg = max_fuel ? "welding fuel" : "charge"
@@ -319,7 +311,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 		src.w_class = initial(src.w_class)
 		set_welding(0)
 		src.hitsound = initial(src.hitsound)
-		update_icon()
 
 //Decides whether or not to damage a player's eyes based on what they're wearing as protection
 //Note: This should probably be moved to mob
@@ -596,12 +587,10 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 				power_supply.give(charge_cost)	//Give it back to the cell.
 		if(M)
 			eyecheck(M)
-		update_icon()
 		return 1
 	else
 		if(M)
 			to_chat(M, span_notice("You need more energy to complete this task."))
-		update_icon()
 		return 0
 
 CAPABILITIES(/obj/item/weldingtool/electric)
@@ -613,12 +602,10 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(power_supply)
-			power_supply.update_icon()
 			user.put_in_hands(power_supply)
 			rel_take(src, nameof(power_supply))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			setWelding(0)
-			update_icon()
 			return OP_OK
 		return OP_DECLINE
 	else
@@ -634,7 +621,6 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 				if(!move_into(src, nameof(src.power_supply), W, user))
 					return OP_DECLINE
 				to_chat(user, span_notice("You install a cell in \the [src]."))
-				update_icon()
 			else
 				to_chat(user, span_notice("\The [src] already has a cell."))
 		else

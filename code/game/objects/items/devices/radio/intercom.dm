@@ -17,6 +17,9 @@
 	var/number = 0
 	var/wiresexposed = FALSE
 
+TRACKED(/obj/item/radio/intercom, on)
+TRACKED(/obj/item/radio/intercom, wiresexposed)
+
 TYPE_TABLE_DECLARE(/obj/item/radio/intercom, intercom_channel_setup, null)
 
 /obj/item/radio/intercom/Initialize(mapload)
@@ -24,7 +27,7 @@ TYPE_TABLE_DECLARE(/obj/item/radio/intercom, intercom_channel_setup, null)
 	var/area/A = get_area(src)
 	if(A)
 		observe(A, /datum/notice/observer_apc, src, then(PROC_REF(on_observer_apc)))
-	update_icon()
+	set_on(A?.powered(EQUIP))
 	switch(TYPE_TABLE_GET(src, intercom_channel_setup))
 		if(/obj/item/radio/intercom/department/medbay)
 			internal_channels = GLOB.default_medbay_channels.Copy()
@@ -45,7 +48,8 @@ TYPE_TABLE_DECLARE(/obj/item/radio/intercom, intercom_channel_setup, null)
 
 /obj/item/radio/intercom/proc/on_observer_apc(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
-	update_icon()
+	var/area/A = get_area(src)
+	set_on(A?.powered(EQUIP))
 
 CAPABILITIES(/obj/item/radio/intercom)
 	owns_one(nameof(circuit), starts = nameof(circuit))
@@ -147,10 +151,9 @@ TYPE_TABLE(/obj/item/radio/intercom/raider, intercom_channel_setup, /obj/item/ra
 /obj/item/radio/intercom/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	wiresexposed = !wiresexposed
+	set_wiresexposed(!wiresexposed)
 	to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"]")
 	playsound(src, tool.usesound, 50, TRUE)
-	update_icon()
 	return OP_OK
 
 /obj/item/radio/intercom/proc/wirecutter_used(datum/act/op/A)
@@ -190,31 +193,19 @@ TYPE_TABLE(/obj/item/radio/intercom/raider, intercom_channel_setup, /obj/item/ra
 
 	return canhear_range
 
-DECLARE_APPEARANCE_PROC(/obj/item/radio/intercom, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/radio/intercom/appearance_overlays()
-	. = list()
-	var/area/A = get_area(src)
-	on = A?.powered(EQUIP)
-
-
+/obj/item/radio/intercom/draw(datum/look/look)
+	..()
+	var/stem = initial(icon_state)
 	if(!on)
-		set_light(0)
-		set_light_on(FALSE)
-		if(wiresexposed)
-			icon_state = "intercom-p_open"
-		else
-			icon_state = "intercom-p"
+		look.light_off()
+		look.state(wiresexposed ? "intercom-p_open" : "intercom-p")
+	else if(wiresexposed)
+		look.state("intercom_open")
+		look.light_off()
 	else
-		if(wiresexposed)
-			icon_state = "intercom_open"
-			set_light(0)
-			set_light_on(FALSE)
-		else
-			icon_state = initial(icon_state)
-			. += mutable_appearance(icon, "[icon_state]_ov")
-			. += emissive_appearance(icon, "[icon_state]_ov")
-			set_light(2)
-			set_light_on(TRUE)
+		look.overlay(mutable_appearance(icon, "[stem]_ov"))
+		look.overlay(emissive_appearance(icon, "[stem]_ov"))
+		look.light(2, initial(light_power), initial(light_color))
 
 /obj/item/radio/intercom/proc/remote_microphone(datum/act/op/A)
 	var/mob/user = A.actor

@@ -25,7 +25,11 @@
 
 /datum/firemode/proc/apply_to(obj/item/gun/gun)
 	for(var/propname in settings)
-		gun.vars[propname] = LAZYACCESS(settings, propname) // ALLOW(api): firemode settings table applied to the gun
+		var/propvalue = LAZYACCESS(settings, propname)
+		if(gun.vars[propname] == propvalue)
+			continue
+		gun.vars[propname] = propvalue // ALLOW(api): firemode settings table applied to the gun
+		tracked_changed(gun, propname) // a setting the gun tracks (modifystate, charge_cost) redraws what reads it
 
 //Parent gun type. Guns are weapons that can be aimed at mobs and act over a distance
 /obj/item/gun
@@ -113,6 +117,8 @@
 	var/datum/gun_firemode_selector/firemode_selector = null
 
 TRACKED(/obj/item/gun, dna_lock)
+TRACKED(/obj/item/gun, silenced)
+TRACKED(/obj/item/gun, mode_name)
 CAPABILITIES(/obj/item/gun)
 	owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes))
 	owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector)
@@ -148,7 +154,6 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 		gun_light = TRUE
 
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 25, vary = FALSE)
-	update_icon()
 
 /obj/item/gun/Initialize(mapload)
 	. = ..()
@@ -175,7 +180,6 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 				name = initial(name)
 		else
 			name = initial(name)
-		update_icon() // In case item_state is set somewhere else.
 	..()
 
 /obj/item/gun/update_held_icon()
@@ -455,7 +459,6 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 			if(process_projectile(projectile, user, target, user.zone_sel.selecting, clickparams))
 				handle_post_fire(user, target, pointblank, reflex)
-				update_icon()
 
 			// We do this down here, so we don't get the message if we fire an empty gun.
 			if(user.item_is_in_hands(src) && user.hands_are_full())
@@ -551,7 +554,6 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 			if(muzzle_flash)
 				set_light(muzzle_flash)
-			update_icon()
 
 			if(!(target && target.loc))
 				target = targloc
@@ -643,7 +645,6 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 	if(recoil)
 		shake_camera(user, recoil+1, recoil)
-	update_icon()
 
 /obj/item/gun/proc/process_point_blank(obj/projectile, mob/user, atom/target)
 	var/obj/item/projectile/P = projectile

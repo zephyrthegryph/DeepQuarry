@@ -506,7 +506,6 @@ CAPABILITIES(/obj/item/clothing/accessory/chameleon)
 	name = "desert eagle"
 	desc = "It's a desert eagle."
 	icon_state = "deagle"
-	update_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
 		M.update_inv_r_hand()

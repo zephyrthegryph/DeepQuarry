@@ -73,11 +73,12 @@ TRACKED(/obj/item/flashlight, power_use)
 			set_on(0)
 			update_brightness()
 
-/obj/item/flashlight/proc/update_brightness()
+/obj/item/flashlight/draw(datum/look/look)
+	..()
 	if(on)
-		icon_state = "[initial(icon_state)]-on"
-	else
-		icon_state = initial(icon_state)
+		look.state("[initial(icon_state)]-on")
+
+/obj/item/flashlight/proc/update_brightness()
 	set_light_on(on)
 	if(light_system == STATIC_LIGHT)
 		update_light()
@@ -190,7 +191,6 @@ TRACKED(/obj/item/flashlight, power_use)
 /obj/item/flashlight/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src && cell)
-		cell.update_icon()
 		user.put_in_hands(cell)
 		rel_take(src, nameof(cell))
 		to_chat(user, span_notice("You remove the cell from the [src]."))
@@ -442,6 +442,13 @@ CAPABILITIES(/obj/item/flashlight/flare)
 	rolls(nameof(fuel), PROC_REF(roll_fuel))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+TRACKED(/obj/item/flashlight/flare, fuel)
+
+/obj/item/flashlight/flare/draw(datum/look/look)
+	..()
+	if(!fuel)
+		look.state("[initial(icon_state)]-empty")
+
 /obj/item/flashlight/flare/proc/roll_fuel(datum/roller/R)
 	return fuel + (R.number(0, 200))
 
@@ -449,10 +456,9 @@ CAPABILITIES(/obj/item/flashlight/flare)
 	var/turf/pos = get_turf(src)
 	if(pos)
 		pos.hotspot_expose(produce_heat, 5)
-	fuel = max(fuel - 1, 0)
+	set_fuel(max(fuel - 1, 0))
 	if(!fuel)
 		turn_off()
-		src.icon_state = "[initial(icon_state)]-empty"
 
 /obj/item/flashlight/flare/proc/turn_off()
 	set_on(0)
@@ -505,14 +511,20 @@ CAPABILITIES(/obj/item/flashlight/glowstick)
 	rolls(nameof(fuel), PROC_REF(roll_fuel))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+TRACKED(/obj/item/flashlight/glowstick, fuel)
+
+/obj/item/flashlight/glowstick/draw(datum/look/look)
+	..()
+	if(!fuel)
+		look.state("[initial(icon_state)]-empty")
+
 /obj/item/flashlight/glowstick/proc/roll_fuel(datum/roller/R)
 	return fuel + (R.number(0, 400))
 
 /obj/item/flashlight/glowstick/proc/glowstick_step(datum/act/timer/A)
-	fuel = max(fuel - 1, 0)
+	set_fuel(max(fuel - 1, 0))
 	if(!fuel)
 		turn_off()
-		src.icon_state = "[initial(icon_state)]-empty"
 
 /obj/item/flashlight/glowstick/proc/turn_off()
 	set_on(FALSE)

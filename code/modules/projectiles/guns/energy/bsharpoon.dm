@@ -14,7 +14,6 @@
 
 	var/mode = 1  // 1 mode - teleport you to turf  0 mode teleport turf to you
 	COOLDOWN_DECLARE(firable)
-	var/transforming = 0
 	var/failure_chance = 15 // This can become negative with part tiers above 3, which helps offset penalties
 	var/obj/item/stock_parts/scanning_module/scanmod
 	var/dropnoms_active = TRUE
@@ -86,9 +85,6 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 		return
 	if(!scanmod)
 		to_chat(user,span_warning("The scanning module has been removed from [src]!"))
-		return
-	if(transforming)
-		to_chat(user,span_warning("You can't fire while \the [src] transforming!"))
 		return
 	if(!COOLDOWN_FINISHED(src, firable))
 		to_chat(user,span_warning("\The [src] is recharging..."))
@@ -220,11 +216,8 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 
 /// Old Change Fire Mode verb.
 /obj/item/bluespace_harpoon/proc/harpoon_verb_fire_mode(mob/user, obj/item/held, datum/interaction/interaction)
-	if(transforming) return
-	mode = !mode
-	transforming = 1
+	set_mode(!mode)
 	to_chat(user,span_info("You change \the [src]'s mode to [mode ? "transmiting" : "receiving"]."))
-	update_icon()
 
 /// Old Toggle Spatial Rearrangement verb.
 /obj/item/bluespace_harpoon/proc/harpoon_verb_dropnom_mode(datum/act/op/A)
@@ -232,18 +225,13 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 	dropnoms_active = !dropnoms_active
 	to_chat(user,span_info("You switch \the [src]'s spatial rearrangement [dropnoms_active ? "on" : "off"]. (Telenoms [dropnoms_active ? "enabled" : "disabled"])"))
 
-DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/bluespace_harpoon/appearance_overlays()
-	. = list()
-	if(transforming)
-		switch(mode)
-			if(0)
-				flick("harpoon-2-change", src)
-				icon_state = "harpoon-1"
-			if(1)
-				flick("harpoon-1-change",src)
-				icon_state = "harpoon-2"
-		transforming = 0
+TRACKED(/obj/item/bluespace_harpoon, mode)
+
+/// The look: the mode's sprite, and the change animation of the mode it switched to.
+/obj/item/bluespace_harpoon/draw(datum/look/look)
+	..()
+	look.state(mode ? "harpoon-2" : "harpoon-1")
+	look.play_flick(mode ? "harpoon-1-change" : "harpoon-2-change")
 
 /obj/item/bluespace_harpoon/ownership()
 	. = ..()

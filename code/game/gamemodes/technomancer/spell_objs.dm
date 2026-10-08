@@ -128,7 +128,6 @@ CAPABILITIES(/obj/item/spell)
 		if(!core)
 			to_chat(owner_ref(), span_warning("You need a Core to do that."))
 			return INITIALIZE_HINT_QDEL
-	update_icon()
 
 // Proc: Destroy()
 // Parameters: 0
@@ -144,16 +143,14 @@ CAPABILITIES(/obj/item/spell)
 /mob/proc/unref_spell(obj/item/spell/the_spell)
 	return
 
-// Proc: update_icon()
-// Parameters: 0
+TRACKED(/obj/item/spell, toggled)
+
+// Proc: draw()
+// Parameters: 1
 // Description: Applys an overlay if it is a passive spell.
-DECLARE_APPEARANCE_PROC(/obj/item/spell, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/spell/appearance_overlays()
-	. = list()
-	if(toggled)
-		var/image/new_overlay = image('icons/obj/spells.dmi',"toggled")
-		. += new_overlay
-	. += ..()
+/obj/item/spell/draw(datum/look/look)
+	..()
+	look.overlay("toggled", when = toggled, icon = 'icons/obj/spells.dmi')
 
 // Proc: run_checks()
 // Parameters: 0

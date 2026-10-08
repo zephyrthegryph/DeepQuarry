@@ -173,4 +173,4 @@ TYPE_TABLE(/obj/mecha/combat/phazon/janus, phazon_damage_absorption, list("brute
 	. = ..()
 	max_integrity = 150	//Just slightly worse.
 	update_integrity(25)
-	cell.charge = rand(0, (cell.charge/2))
+	cell.set_charge(rand(0, (cell.charge/2)))

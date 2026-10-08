@@ -33,7 +33,6 @@ CAPABILITIES(/obj/item/defib_kit)
 /obj/item/defib_kit/Initialize(mapload) //starts without a cell for rnd
 	make_tethered(paddle_path)
 	. = ..()
-	update_icon()
 
 /obj/item/defib_kit/loaded //starts with a cell
 	bcell = /obj/item/cell/apc
@@ -41,26 +40,25 @@ CAPABILITIES(/obj/item/defib_kit)
 /obj/item/defib_kit/proc/get_paddles()
 	return tethered_handheld()
 
-DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/defib_kit/appearance_overlays()
-	. = list()
-
+/obj/item/defib_kit/draw(datum/look/look)
+	..()
+	var/stem = initial(icon_state)
 	var/obj/item/shockpaddles/linked/paddles = get_paddles()
 	if(paddles && paddles.loc == src)
-		. += "[initial(icon_state)]-paddles"
+		look.overlay("[stem]-paddles")
 	if(bcell && paddles)
 		if(bcell.check_charge(paddles.chargecost))
 			if(paddles.combat)
-				. += "[initial(icon_state)]-combat"
+				look.overlay("[stem]-combat")
 			else if(!paddles.safety)
-				. += "[initial(icon_state)]-emagged"
+				look.overlay("[stem]-emagged")
 			else
-				. += "[initial(icon_state)]-powered"
+				look.overlay("[stem]-powered")
 
 		var/ratio = CEILING(bcell.percent()/25, 1) * 25
-		. += "[initial(icon_state)]-charge[ratio]"
+		look.overlay("[stem]-charge[ratio]")
 	else
-		. += "[initial(icon_state)]-nocell"
+		look.overlay("[stem]-nocell")
 
 /// Old attack_hand: let the tether swap the paddles into hand before falling through to pickup.
 /obj/item/defib_kit/proc/interaction_hand(datum/act/op/A)
@@ -96,7 +94,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_ove
 			if(!move_into(src, nameof(src.bcell), W, user))
 				return TRUE
 			to_chat(user, span_notice("You install a cell in \the [src]."))
-			update_icon()
 		return TRUE
 	return OP_DECLINE
 
@@ -104,12 +101,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_ove
 	var/mob/user = A.actor
 	if(!bcell)
 		return OP_OK
-	bcell.update_icon()
 	bcell.forceMove(get_turf(loc))
 	user.put_in_any_hand_if_possible(bcell)
 	rel_take(src, nameof(bcell))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
-	update_icon()
 	return OP_OK
 
 /// A sequencer on the kit works its paddles (their own emag, by key); the kit pays the card when they took it.
@@ -118,7 +113,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_ove
 	if(!paddles)
 		return OP_DECLINE
 	var/used = emag_target(paddles, 1, A.actor, A.held)
-	update_icon()
 	return (used != EMAG_DECLINED && used > 0) ? OP_OK : OP_DECLINE
 
 //checks that the base unit is in the correct slot to be used
@@ -191,23 +185,25 @@ DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_ove
 	var/wielded = 0
 	var/cooldown = 0
 
-/obj/item/shockpaddles/proc/set_cooldown(delay)
-	cooldown = 1
-	changed(src)
-	changed(src)
+TRACKED(/obj/item/shockpaddles, safety)
+TRACKED(/obj/item/shockpaddles, cooldown)
+TRACKED(/obj/item/shockpaddles, wielded)
+TRACKED(/obj/item/shockpaddles, combat)
+TRACKED(/obj/item/shockpaddles, chargecost)
+
+/obj/item/shockpaddles/proc/start_cooldown(delay)
+	set_cooldown(1)
 
 	after(src, delay, PROC_REF(recharged))
 
 /obj/item/shockpaddles/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && M.item_is_in_hands(src) && !M.hands_are_full())
-		wielded = 1
+		set_wielded(1)
 		name = "[initial(name)] (wielded)"
 	else
-		wielded = 0
+		set_wielded(0)
 		name = initial(name)
-	changed(src)
-	changed(src)
 	..()
 
 /obj/item/shockpaddles/draw(datum/look/look)
@@ -412,7 +408,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_ove
 	act_message(H, null, others = span_warning("%U%'s body convulses a bit."))
 	play_sfx(src, SFX_BODYFALL)
 	play_sfx(src, SFX_MACHINES_DEFIB_ZAP)
-	set_cooldown(cooldowntime)
+	start_cooldown(cooldowntime)
 
 	// A living patient in a shockable rhythm: cardiovert, no resurrection involved.
 	if(H.stat != DEAD)
@@ -500,7 +496,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_ove
 	act_message(user, src, MSG_SELF(span_warning("You shock [H] with %T%!")), MSG_OTHERS(span_danger(span_italics("%U% shocks [H] with %T%!"))))
 	play_sfx(src, SFX_MACHINES_DEFIB_ZAP, 2)
 	play_sfx(src, SFX_WEAPONS_EGLOVES, 2)
-	set_cooldown(cooldowntime)
+	start_cooldown(cooldowntime)
 
 	H.stun_effect_act(2, 120, target_zone, electric = TRUE)
 	var/burn_damage = H.electrocute_act(burn_damage_amt*2, src, def_zone = target_zone)
@@ -549,11 +545,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_ove
 /obj/item/shockpaddles/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor
 	if(safety)
-		safety = 0
+		set_safety(0)
 		to_chat(user, span_warning("You silently disable \the [src]'s safety protocols with the cryptographic sequencer."))
 		return OP_OK
 	else
-		safety = 1
+		set_safety(1)
 		to_chat(user, span_notice("You silently enable \the [src]'s safety protocols with the cryptographic sequencer."))
 		return OP_OK
 
@@ -565,7 +561,7 @@ CAPABILITIES(/obj/item/shockpaddles)
 /obj/item/shockpaddles/proc/paddles_emp(datum/act/A)
 	var/new_safety = rand(0, 1)
 	if(safety != new_safety)
-		safety = new_safety
+		set_safety(new_safety)
 		if(safety)
 			make_announcement("beeps, \"Safety protocols enabled!\"", "notice")
 			play_sfx(src, SFX_MACHINES_DEFIB_SAFETYON)
@@ -718,9 +714,7 @@ CAPABILITIES(/obj/item/shockpaddles/standalone)
 
 /obj/item/shockpaddles/proc/recharged()
 	if(cooldown)
-		cooldown = 0
-		changed(src)
-		changed(src)
+		set_cooldown(0)
 
 		make_announcement("beeps, \"Unit is re-energized.\"", "notice")
 		play_sfx(src, SFX_MACHINES_DEFIB_READY)

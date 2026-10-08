@@ -57,8 +57,6 @@ CAPABILITIES(/obj/item/ammo_casing/macrobattery)
 		set_charge_short(charge < max_charge)
 		if(!BB)
 			rel_set(src, nameof(BB), new projectile_type)
-	if(istype(loc,/obj/item/gun/projectile/multi_cannon))
-		loc.update_icon()
 
 	// TGMC Ammo HUD - Update the HUD every time we're called to recharge.
 	if(istype(loc, /obj/item/gun/projectile/multi_cannon))

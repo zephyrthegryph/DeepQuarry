@@ -59,6 +59,9 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 			look.state("[icon_base]_dir_[crumpled]")
 			look.set_dir(tape_dir)
 
+TRACKED(/obj/item/tape, tape_dir)
+TRACKED(/obj/item/tape, crumpled)
+
 /obj/item/taperoll/medical
 	name = "medical tape"
 	desc = "A roll of medical tape used to block off patients from the public."
@@ -137,12 +140,10 @@ CAPABILITIES(/obj/item/taperoll)
 	if(!get_start())
 		rel_set(src, nameof(start), get_turf(src))
 		to_chat(user, span_notice("You place the first end of \the [src]."))
-		changed(src)
 	else
 		rel_set(src, nameof(end), get_turf(src))
 		if(get_start().y != get_end().y && get_start().x != get_end().x || get_start().z != get_end().z)
 			rel_clear(src, nameof(start))
-			changed(src)
 			to_chat(user, span_notice("\The [src] can only be laid horizontally or vertically."))
 			return OP_OK
 
@@ -163,23 +164,19 @@ CAPABILITIES(/obj/item/taperoll)
 					possible_dirs |= window.dir
 			if(!possible_dirs)
 				rel_clear(src, nameof(start))
-				changed(src)
 				to_chat(user, span_notice("You can't place \the [src] here."))
 				return OP_OK
 			if(possible_dirs & (NORTH|SOUTH))
 				var/obj/item/tape/TP = new tape_type(get_start())
 				for(var/dir in list(NORTH, SOUTH))
 					if (possible_dirs & dir)
-						TP.tape_dir += dir
-				changed(TP)
+						TP.set_tape_dir(TP.tape_dir + dir)
 			if(possible_dirs & (EAST|WEST))
 				var/obj/item/tape/TP = new tape_type(get_start())
 				for(var/dir in list(EAST, WEST))
 					if (possible_dirs & dir)
-						TP.tape_dir += dir
-				changed(TP)
+						TP.set_tape_dir(TP.tape_dir + dir)
 			rel_clear(src, nameof(start))
-			changed(src)
 			to_chat(user, span_notice("You finish placing \the [src]."))
 			return OP_OK
 
@@ -228,7 +225,6 @@ CAPABILITIES(/obj/item/taperoll)
 			cur = get_step_towards(cur,get_end())
 		if (!can_place)
 			rel_clear(src, nameof(start))
-			changed(src)
 			to_chat(user, span_warning("You can't run \the [src] through that!"))
 			return OP_OK
 
@@ -264,15 +260,13 @@ CAPABILITIES(/obj/item/taperoll)
 					break
 			if(!tapetest)
 				var/obj/item/tape/T = new tape_type(cur)
-				T.tape_dir = tape_dir
-				changed(T)
+				T.set_tape_dir(tape_dir)
 				if(tape_dir & SOUTH)
 					T.layer += 0.1 // Must always show above other tapes
 			if(cur == get_end())
 				break
 			cur = get_step_towards(cur,get_end())
 		rel_clear(src, nameof(start))
-		changed(src)
 		to_chat(user, span_notice("You finish placing \the [src]."))
 		return OP_OK
 	return OP_OK
@@ -287,7 +281,6 @@ CAPABILITIES(/obj/item/taperoll)
 			to_chat(user, "There's already tape over that door!")
 		else
 			var/obj/item/tape/P = new tape_type(T)
-			changed(P)
 			P.layer = WINDOW_LAYER
 			to_chat(user, span_notice("You finish placing \the [src]."))
 
@@ -310,8 +303,7 @@ CAPABILITIES(/obj/item/taperoll)
 
 /obj/item/tape/proc/crumple()
 	if(!crumpled)
-		crumpled = 1
-		changed(src)
+		set_crumpled(1)
 		name = "crumpled [name]"
 
 /obj/item/tape/CanPass(atom/movable/mover, turf/target)

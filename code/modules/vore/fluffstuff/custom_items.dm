@@ -993,6 +993,8 @@ TYPE_TABLE(/obj/item/material/twohanded/fluff, weapon_forced_material, " ") //Se
 	var/base_name = "stunstaff"
 	special_handling = TRUE
 
+TRACKED(/obj/item/melee/baton/fluff/stunstaff, wielded)
+
 CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 	owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device/weapon)
 	op("stunstaff_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(stunstaff_toggle_self)))
@@ -1000,15 +1002,13 @@ CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 /obj/item/melee/baton/fluff/stunstaff/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
-		wielded = 1
+		set_wielded(1)
 		force = 15
 		name = "[base_name] (wielded)"
-		changed(src)
 	else
-		wielded = 0
+		set_wielded(0)
 		force = 8
 		name = "[base_name]"
-	changed(src)
 	..()
 
 /obj/item/melee/baton/fluff/stunstaff/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -1030,7 +1030,7 @@ CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 /obj/item/melee/baton/fluff/stunstaff/dropped(mob/user, equipping, slot)
 	..()
 	if(wielded)
-		wielded = FALSE
+		set_wielded(FALSE)
 		update_held_icon()
 
 // special_handling: the inherited baton "Toggle" steps aside for this.
@@ -1039,14 +1039,14 @@ CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 /obj/item/melee/baton/fluff/stunstaff/proc/stunstaff_toggle_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(bcell && bcell.charge > hitcost)
-		status = !status
+		set_status(!status)
 		to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
 		if(status == 0)
 			play_sfx(src, SFX_WEAPONS_SABEROFF)
 		else
 			play_sfx(src, SFX_WEAPONS_SABERON)
 	else
-		status = 0
+		set_status(0)
 		to_chat(user, span_warning("[src] is out of charge."))
 	update_held_icon()
 	add_fingerprint(user)

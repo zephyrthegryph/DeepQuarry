@@ -415,5 +415,5 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 /datum/mech_affliction/short_circuit/tick(obj/mecha/host)
 	if(host.get_charge())
 		fx_sparks(host, 2, FALSE)
-		host.cell.charge -= min(20, host.cell.charge)
-		host.cell.maxcharge -= min(20, host.cell.maxcharge)
+		host.cell.set_charge(host.cell.charge - min(20, host.cell.charge))
+		host.cell.set_maxcharge(host.cell.maxcharge - min(20, host.cell.maxcharge))

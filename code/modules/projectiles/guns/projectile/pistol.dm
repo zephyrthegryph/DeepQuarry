@@ -223,9 +223,8 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 				return ..()
 			to_chat(user, span_notice("You unscrew [silenced] from [src]."))
 			user.put_in_hands(silenced)
-			silenced = 0
+			set_silenced(0)
 			w_class = ITEMSIZE_SMALL
-			changed(src)
 			return OP_OK
 	return ..()
 
@@ -239,10 +238,9 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 			return OP_PASS
 		user.drop_item()
 		to_chat(user, span_notice("You screw [I] onto [src]."))
-		silenced = I	//dodgy?
+		set_silenced(I) //dodgy?
 		w_class = ITEMSIZE_NORMAL
 		I.forceMove(src) //put the silencer into the gun
-		changed(src)
 		return OP_PASS
 	return ..()
 
@@ -275,8 +273,7 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 				return ..()
 			to_chat(user, span_notice("You unscrew [silenced] from [src]."))
 			user.put_in_hands(silenced)
-			silenced = 0
-			changed(src)
+			set_silenced(0)
 			return OP_OK
 	return ..()
 
@@ -290,9 +287,8 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 			return OP_PASS
 		user.drop_item()
 		to_chat(user, span_notice("You screw [I] onto [src]."))
-		silenced = I	//dodgy?
+		set_silenced(I) //dodgy?
 		I.forceMove(src) //put the silencer into the gun
-		changed(src)
 		return OP_PASS
 	return ..()
 

@@ -44,7 +44,7 @@
 /obj/item/melee/shock_maul/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && M.can_wield_item(src) && is_held_twohanded(M))
-		wielded = 1
+		set_wielded(1)
 		if(status)
 			force = initial(force)*charge_force_mult
 			armor_penetration *= charge_force_mult
@@ -54,10 +54,8 @@
 		launch_force = initial(launch_force)
 		weaken_force = initial(weaken_force)
 		name = "[initial(name)] (wielded)"
-		changed(src)
-		changed(src)
 	else
-		wielded = 0
+		set_wielded(0)
 		if(status)
 			force = force_unwielded*charge_force_mult
 			armor_penetration *= charge_force_mult
@@ -67,8 +65,6 @@
 		launch_force = launch_force_unwielded
 		weaken_force = weaken_force_unwielded
 		name = "[initial(name)]"
-	changed(src)
-	changed(src)
 	..()
 
 /obj/item/melee/shock_maul/Initialize(mapload)
@@ -118,7 +114,6 @@
 	. = ..()
 	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon)
 
-	changed(src)
 /obj/item/melee/shock_maul/proc/deductcharge()
 	if(status == 1)		//Only deducts charge when it's on
 		if(bcell)
@@ -131,7 +126,7 @@
 /obj/item/melee/shock_maul/proc/powercheck()
 	if(bcell)
 		if(bcell.charge < hitcost)
-			status = 0
+			set_status(0)
 			update_held_icon()
 
 /obj/item/melee/shock_maul/draw(datum/look/look)
@@ -155,7 +150,7 @@
 /obj/item/melee/shock_maul/dropped(mob/user, equipping, slot)
 	..()
 	if(status)
-		status = 0
+		set_status(0)
 		visible_message(span_warning("\The [src]'s grip safety engages!"))
 	update_held_icon()
 
@@ -187,6 +182,9 @@
 			to_chat(user, span_notice("This cell is not fitted for [src]."))
 	return OP_PASS
 
+TRACKED(/obj/item/melee/shock_maul, status)
+TRACKED(/obj/item/melee/shock_maul, wielded)
+
 CAPABILITIES(/obj/item/melee/shock_maul)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
@@ -201,11 +199,10 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 		if(!user.IsAdvancedToolUser())
 			return TRUE
 		else if(bcell)
-			bcell.update_icon()
 			user.put_in_hands(bcell)
 			rel_take(src, nameof(bcell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
-			status = 0
+			set_status(0)
 			update_held_icon()
 			return TRUE
 		return OP_DECLINE
@@ -220,7 +217,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 	if(!status && bcell && bcell.charge >= hitcost)
 		task_timed(user, charge_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	else if(status)
-		status = 0
+		set_status(0)
 		act_message(user, src, MSG_SELF(span_notice("%T% is now off.")), MSG_OTHERS(span_notice("%U% safely disengages %T%'s power field.")))
 		update_held_icon()
 		play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
@@ -232,7 +229,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 	return TRUE
 
 /obj/item/melee/shock_maul/proc/attack_self_timed_done(mob/user)
-	status = 1
+	set_status(1)
 	act_message(user, src, MSG_SELF(span_warning("You charge %T%. <b>It's hammer time!</b>")), MSG_OTHERS(span_warning("%U% charges %T%!")))
 	play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
 	update_held_icon()
@@ -263,7 +260,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 		else
 			return ..()	//Don't do anything if we don't resolve anything on our target
 		deductcharge()
-		status = 0
+		set_status(0)
 		user.visible_message(span_warning("\The [src] discharges with a thunderous, hair-raising crackle!"))
 		play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST)
 		update_held_icon()
@@ -284,7 +281,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 		target.status_at_least(STAT_WEAKENED, weaken_force)
 
 		deductcharge()
-		status = 0
+		set_status(0)
 		user.visible_message(span_warning("\The [src] discharges with a thunderous, hair-raising crackle!"))
 		play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST)
 		update_held_icon()
@@ -294,7 +291,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 /obj/item/melee/shock_maul/proc/shock_maul_emp(datum/act/A)
 	if(!status)
 		return
-	status = FALSE
+	set_status(FALSE)
 	visible_message(span_warning("\The [src]'s power field hisses and sputters out."))
 	update_held_icon()
 

@@ -82,16 +82,6 @@
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/sts35/appearance_overlays()
-	. = list()
-	. += ..()
-	if(istype(ammo_magazine,/obj/item/ammo_magazine/m545/small))
-		icon_state = "arifle-small" // If using the small magazines, use the small magazine sprite.
-	else
-		icon_state = (ammo_magazine)? "arifle" : "arifle-empty"
-	update_held_icon()
-
 /*
  * X-9mm (PDW)
  */
@@ -215,17 +205,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
 	else
 		..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/z8/appearance_overlays()
-	. = list()
-	. += ..()
-	if(ammo_magazine)
-		icon_state = "carbine-[round(length(ammo_magazine.stored_ammo),2)]"
-	else
-		icon_state = "carbine"
-	update_held_icon()
-	return .
-
 /obj/item/gun/projectile/automatic/z8/examine(mob/user)
 	. = ..()
 	if(launcher.chambered())
@@ -272,6 +251,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 
 	special_weapon_handling = TRUE
 
+TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
+
 /obj/item/gun/projectile/automatic/l6_saw/special_check(mob/user)
 	if(cover_open)
 		to_chat(user, span_warning("[src]'s cover is open! Close it before firing!"))
@@ -279,10 +260,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 	return ..()
 
 /obj/item/gun/projectile/automatic/l6_saw/proc/toggle_cover(mob/user)
-	cover_open = !cover_open
+	set_cover_open(!cover_open)
 	to_chat(user, span_notice("You [cover_open ? "open" : "close"] [src]'s cover."))
-	update_icon()
-	update_held_icon()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
 /obj/item/gun/projectile/automatic/l6_saw/gun_operate(datum/act/op/A, callback)
@@ -303,16 +282,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 		return OP_OK
 	return ..() //once open, behave like normal
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/l6_saw/appearance_overlays()
-	. = list()
+/obj/item/gun/projectile/automatic/l6_saw/draw(datum/look/look)
+	..()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m762))
-		icon_state = "l6[cover_open ? "open" : "closed"]mag"
-		item_state = icon_state
+		look.state("l6[cover_open ? "open" : "closed"]mag")
+		look.held_state("l6[cover_open ? "open" : "closed"]mag")
 	else
-		icon_state = "l6[cover_open ? "open" : "closed"][ammo_magazine ? round(length(ammo_magazine.stored_ammo), 25) : "-empty"]"
-		item_state = "l6[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"]"
-	update_held_icon()
+		look.state("l6[cover_open ? "open" : "closed"][ammo_magazine ? round(length(ammo_magazine.stored_ammo), 25) : "-empty"]")
+		look.held_state("l6[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"]")
 
 /obj/item/gun/projectile/automatic/l6_saw/load_ammo(obj/item/A, mob/user)
 	if(!cover_open)
@@ -700,19 +677,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-15,-15),       dispersion=list(0.0, 0.6, 1.0)),
 		)
 
-/obj/item/gun/projectile/automatic/sol/proc/update_charge()
+/obj/item/gun/projectile/automatic/sol/draw(datum/look/look)
+	..()
+	look.state((ammo_magazine)? "SMG-IS" : "SMG-IS-empty")
 	if(!ammo_magazine)
 		return
 	var/ratio = length(ammo_magazine.stored_ammo) / ammo_magazine.max_ammo
 	if(ratio < 0.25 && ratio != 0)
 		ratio = 0.25
 	ratio = round(ratio, 0.25) * 100
-	add_overlay("smg_[ratio]")
-
-/obj/item/gun/projectile/automatic/sol/draw(datum/look/look)
-	..()
-	look.state((ammo_magazine)? "SMG-IS" : "SMG-IS-empty")
-	look.effect(PROC_REF(update_charge))
+	look.overlay("smg_[ratio]")
 
 //--------------- StG-60 ----------------
 /obj/item/ammo_magazine/m792
@@ -808,6 +782,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF
 
 	var/cover_open = 0
 
+TRACKED(/obj/item/gun/projectile/automatic/mg42, cover_open)
+
 /obj/item/gun/projectile/automatic/mg42/special_check(mob/user)
 	if(cover_open)
 		to_chat(user, span_warning("[src]'s cover is open! Close it before firing!"))
@@ -815,10 +791,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF
 	return ..()
 
 /obj/item/gun/projectile/automatic/mg42/proc/toggle_cover(mob/user)
-	cover_open = !cover_open
+	set_cover_open(!cover_open)
 	to_chat(user, span_notice("You [cover_open ? "open" : "close"] [src]'s cover."))
-	update_icon()
-	update_held_icon()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
 /obj/item/gun/projectile/automatic/mg42/gun_operate(datum/act/op/A, callback)
@@ -837,12 +811,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF
 		return OP_OK
 	return ..() //once open, behave like normal
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/mg42, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/mg42/appearance_overlays()
-	. = list()
-	icon_state = "mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && length(ammo_magazine.stored_ammo) == 0 ? "0" : ""]"
-	item_state = "mg42"
-	update_held_icon()
+/obj/item/gun/projectile/automatic/mg42/draw(datum/look/look)
+	..()
+	look.state("mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && length(ammo_magazine.stored_ammo) == 0 ? "0" : ""]")
+	look.held_state("mg42")
 
 /obj/item/gun/projectile/automatic/mg42/load_ammo(obj/item/A, mob/user)
 	if(!cover_open)

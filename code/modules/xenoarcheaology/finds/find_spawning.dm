@@ -364,11 +364,11 @@ CAPABILITIES(/obj/item/archaeological_find)
 			//10% chance to have an unchargeable cell
 			//15% chance to gain a random amount of starting energy, otherwise start with an empty cell
 			if(prob(10))
-				new_gun.power_supply.maxcharge = 0
+				new_gun.power_supply.set_maxcharge(0)
 			if(prob(15))
-				new_gun.power_supply.charge = rand(0, new_gun.power_supply.maxcharge)
+				new_gun.power_supply.set_charge(rand(0, new_gun.power_supply.maxcharge))
 			else
-				new_gun.power_supply.charge = 0
+				new_gun.power_supply.set_charge(0)
 			item_type = "Relic Laser Gun"
 
 		/// Artifact type gun that requires a random caliber and selects a random bullet type it shoots out!.

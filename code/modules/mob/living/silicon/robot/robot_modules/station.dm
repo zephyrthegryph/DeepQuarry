@@ -555,9 +555,8 @@ CAPABILITIES(/obj/item/robot_module)
 	..()
 	var/obj/item/flash/F = locate_in_list(src.modules, /obj/item/flash)
 	if(F && F.broken)
-		F.broken = 0
+		F.set_broken(0)
 		F.times_used = 0
-		F.icon_state = "flash"
 	else if(F.times_used)
 		F.times_used--
 	var/obj/item/gun/energy/robotic/taser/T = locate_in_list(src.modules, /obj/item/gun/energy/robotic/taser)

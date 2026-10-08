@@ -187,8 +187,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PRO
 				var/obj/item/cell/potato/pocell = new /obj/item/cell/potato(get_turf(user))
 				if(src.loc == user && ishuman(user))
 					user.put_in_hands(pocell)
-				pocell.maxcharge = src.potency * 200
-				pocell.charge = pocell.maxcharge
+				pocell.set_maxcharge(src.potency * 200)
+				pocell.set_charge(pocell.maxcharge)
 				consume(src, user)
 				return OP_PASS
 

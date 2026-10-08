@@ -324,7 +324,6 @@ CAPABILITIES(/obj/item/ammo_casing/a12g/stunshell)
 	var/datum/damage_packet/packet = N.packet
 	if(prob(100/packet.severity))
 		rel_clear(src, nameof(BB))
-	changed(src)
 
 MATERIAL_MIX(/obj/item/ammo_casing/a12g/flash, list(MAT_STEEL = 90, MAT_GLASS = 90))
 //Does not stun, only blinds, but has area of effect.

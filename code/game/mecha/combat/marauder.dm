@@ -133,7 +133,7 @@ TYPE_TABLE(/obj/mecha/combat/marauder, mecha_starting_components, list( \
 	. = ..()
 	max_integrity = 300	//Just slightly worse.
 	update_integrity(25)
-	cell.charge = rand(0, (cell.charge/2))
+	cell.set_charge(rand(0, (cell.charge/2)))
 
 TYPE_TABLE(/obj/mecha/combat/marauder, mecha_starting_equipment, list( \
 		/obj/item/mecha_parts/mecha_equipment/weapon/energy/pulse, \
