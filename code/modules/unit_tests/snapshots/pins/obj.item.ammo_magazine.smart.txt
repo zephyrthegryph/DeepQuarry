@@ -1,18 +1,16 @@
 human|none menu: Clear Ammo Data (refused: You can't do that.)
 human|none menu: Move To Top
 human|none menu: Pick up
-human|none menu: Smart hand
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none menu: Use
-human|none click: Click: Smart hand
+human|none click: Click: Use
 robot|none menu: Clear Ammo Data (refused: You can't do that.)
 robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
-robot|none menu: Smart hand
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use
-robot|none click: Click: Smart hand
+robot|none click: Click: Use
 ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Clear Ammo Data (refused: You can't do that.)
@@ -22,7 +20,6 @@ ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Load
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Smart hand
 human|/obj/item/tool/screwdriver menu: Smart item
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
@@ -30,7 +27,6 @@ human|/obj/item/tool/screwdriver click: Click: Load
 human|/obj/item/tool/crowbar menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Load
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Smart hand
 human|/obj/item/tool/crowbar menu: Smart item
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
@@ -38,7 +34,6 @@ human|/obj/item/tool/crowbar click: Click: Load
 human|/obj/item/tool/wrench menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Load
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Smart hand
 human|/obj/item/tool/wrench menu: Smart item
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
@@ -46,7 +41,6 @@ human|/obj/item/tool/wrench click: Click: Load
 human|/obj/item/tool/wirecutters menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Load
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Smart hand
 human|/obj/item/tool/wirecutters menu: Smart item
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
@@ -54,7 +48,6 @@ human|/obj/item/tool/wirecutters click: Click: Load
 human|/obj/item/multitool menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item/multitool menu: Load
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Smart hand
 human|/obj/item/multitool menu: Smart item
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
@@ -62,7 +55,6 @@ human|/obj/item/multitool click: Click: Load
 human|/obj/item/weldingtool menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Load
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Smart hand
 human|/obj/item/weldingtool menu: Smart item
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
@@ -71,7 +63,6 @@ human|/obj/item/stack/cable_coil menu: Clear Ammo Data (refused: You can't do th
 human|/obj/item/stack/cable_coil menu: Load
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Smart hand
 human|/obj/item/stack/cable_coil menu: Smart item
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use
@@ -79,7 +70,6 @@ human|/obj/item/stack/cable_coil click: Click: Load
 human|/obj/item/stack/material/steel menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Load
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Smart hand
 human|/obj/item/stack/material/steel menu: Smart item
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use
@@ -88,7 +78,6 @@ human|/obj/item/card/id menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item/card/id menu: Load
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Smart hand
 human|/obj/item/card/id menu: Smart item
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
@@ -97,7 +86,6 @@ human|/obj/item/kit menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Load
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Smart hand
 human|/obj/item/kit menu: Smart item
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/kit menu: Use
@@ -106,7 +94,6 @@ human|/obj/item/storage menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Load
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Smart hand
 human|/obj/item/storage menu: Smart item
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage menu: Use
@@ -114,7 +101,6 @@ human|/obj/item/storage click: Click: Load
 human|/obj/item menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item menu: Load
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Smart hand
 human|/obj/item menu: Smart item
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
@@ -122,10 +108,19 @@ human|/obj/item click: Click: Load
 human|/obj/item/card/emag menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item/card/emag menu: Load
 human|/obj/item/card/emag menu: Move To Top
-human|/obj/item/card/emag menu: Smart hand
 human|/obj/item/card/emag menu: Smart item
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-keys: clear_data, collect_item, drag_buckle, emag.subvert, emag.use, empty, gen_silicon_item_silicon_equip_module, hand, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, smart_hand, smart_item, toggle_digestable
+human|/obj/item/cell/device menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell/device menu: Clear Ammo Data (refused: You can't do that.)
+human|/obj/item/cell/device menu: Drain its charge (refused: not in your hand)
+human|/obj/item/cell/device menu: Install the cell
+human|/obj/item/cell/device menu: Load
+human|/obj/item/cell/device menu: Move To Top
+human|/obj/item/cell/device menu: Smart item
+human|/obj/item/cell/device menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell/device menu: Use
+human|/obj/item/cell/device click: Click: Load
+keys: clear_data, collect_item, drag_buckle, emag.subvert, emag.use, empty, gen_silicon_item_silicon_equip_module, hand, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, smart_cell_in, smart_cell_out, smart_item, toggle_digestable
 

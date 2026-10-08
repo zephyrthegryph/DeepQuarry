@@ -8,6 +8,7 @@ human|none menu: Grab
 human|none menu: Help
 human|none menu: Hit (refused: combat mode is off)
 human|none menu: Hold with (refused: hold Grab)
+human|none menu: Nutrition heal
 human|none menu: Punch (refused: combat mode is off)
 human|none menu: Regenerate other (refused: you don't have that ability)
 human|none menu: Robot mount/dismount (refused: you don't have that ability)
@@ -28,6 +29,7 @@ robot|none menu: Grab
 robot|none menu: Help
 robot|none menu: Hit (refused: combat mode is off)
 robot|none menu: Hold with (refused: hold Grab)
+robot|none menu: Nutrition heal
 robot|none menu: Punch (refused: combat mode is off)
 robot|none menu: Regenerate other (refused: you don't have that ability)
 robot|none menu: Robot mount/dismount (refused: you can't carry riders)
@@ -39,6 +41,7 @@ robot|none menu: Take hold (refused: hold Grab)
 robot|none menu: Use on
 robot|none click: nothing
 ai|none click: nothing
+ghost|none menu: Nutrition heal
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Create shade (refused: you don't have that ability)
 human|/obj/item/tool/screwdriver menu: Dark maw (refused: you don't have that ability)
@@ -51,6 +54,7 @@ human|/obj/item/tool/screwdriver menu: Help
 human|/obj/item/tool/screwdriver menu: Hit (refused: combat mode is off)
 human|/obj/item/tool/screwdriver menu: Hold with (refused: hold Grab)
 human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Nutrition heal
 human|/obj/item/tool/screwdriver menu: Parrot item
 human|/obj/item/tool/screwdriver menu: Punch (refused: combat mode is off)
 human|/obj/item/tool/screwdriver menu: Regenerate other (refused: you don't have that ability)
@@ -74,6 +78,7 @@ human|/obj/item/tool/crowbar menu: Help
 human|/obj/item/tool/crowbar menu: Hit (refused: combat mode is off)
 human|/obj/item/tool/crowbar menu: Hold with (refused: hold Grab)
 human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Nutrition heal
 human|/obj/item/tool/crowbar menu: Parrot item
 human|/obj/item/tool/crowbar menu: Punch (refused: combat mode is off)
 human|/obj/item/tool/crowbar menu: Regenerate other (refused: you don't have that ability)
@@ -97,6 +102,7 @@ human|/obj/item/tool/wrench menu: Help
 human|/obj/item/tool/wrench menu: Hit (refused: combat mode is off)
 human|/obj/item/tool/wrench menu: Hold with (refused: hold Grab)
 human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Nutrition heal
 human|/obj/item/tool/wrench menu: Parrot item
 human|/obj/item/tool/wrench menu: Punch (refused: combat mode is off)
 human|/obj/item/tool/wrench menu: Regenerate other (refused: you don't have that ability)
@@ -120,6 +126,7 @@ human|/obj/item/tool/wirecutters menu: Help
 human|/obj/item/tool/wirecutters menu: Hit (refused: combat mode is off)
 human|/obj/item/tool/wirecutters menu: Hold with (refused: hold Grab)
 human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Nutrition heal
 human|/obj/item/tool/wirecutters menu: Parrot item
 human|/obj/item/tool/wirecutters menu: Punch (refused: combat mode is off)
 human|/obj/item/tool/wirecutters menu: Regenerate other (refused: you don't have that ability)
@@ -143,6 +150,7 @@ human|/obj/item/multitool menu: Help
 human|/obj/item/multitool menu: Hit (refused: combat mode is off)
 human|/obj/item/multitool menu: Hold with (refused: hold Grab)
 human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Nutrition heal
 human|/obj/item/multitool menu: Parrot item
 human|/obj/item/multitool menu: Punch (refused: combat mode is off)
 human|/obj/item/multitool menu: Regenerate other (refused: you don't have that ability)
@@ -166,6 +174,7 @@ human|/obj/item/weldingtool menu: Help
 human|/obj/item/weldingtool menu: Hit (refused: combat mode is off)
 human|/obj/item/weldingtool menu: Hold with (refused: hold Grab)
 human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Nutrition heal
 human|/obj/item/weldingtool menu: Parrot item
 human|/obj/item/weldingtool menu: Punch (refused: combat mode is off)
 human|/obj/item/weldingtool menu: Regenerate other (refused: you don't have that ability)
@@ -190,6 +199,7 @@ human|/obj/item/stack/cable_coil menu: Hit (refused: combat mode is off)
 human|/obj/item/stack/cable_coil menu: Hold with (refused: hold Grab)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Nutrition heal
 human|/obj/item/stack/cable_coil menu: Parrot item
 human|/obj/item/stack/cable_coil menu: Punch (refused: combat mode is off)
 human|/obj/item/stack/cable_coil menu: Regenerate other (refused: you don't have that ability)
@@ -213,6 +223,7 @@ human|/obj/item/stack/material/steel menu: Help
 human|/obj/item/stack/material/steel menu: Hit (refused: combat mode is off)
 human|/obj/item/stack/material/steel menu: Hold with (refused: hold Grab)
 human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Nutrition heal
 human|/obj/item/stack/material/steel menu: Parrot item
 human|/obj/item/stack/material/steel menu: Punch (refused: combat mode is off)
 human|/obj/item/stack/material/steel menu: Regenerate other (refused: you don't have that ability)
@@ -236,6 +247,7 @@ human|/obj/item/card/id menu: Help
 human|/obj/item/card/id menu: Hit (refused: combat mode is off)
 human|/obj/item/card/id menu: Hold with (refused: hold Grab)
 human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Nutrition heal
 human|/obj/item/card/id menu: Parrot item
 human|/obj/item/card/id menu: Punch (refused: combat mode is off)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
@@ -260,6 +272,7 @@ human|/obj/item menu: Help
 human|/obj/item menu: Hit (refused: combat mode is off)
 human|/obj/item menu: Hold with (refused: hold Grab)
 human|/obj/item menu: Move To Top
+human|/obj/item menu: Nutrition heal
 human|/obj/item menu: Parrot item
 human|/obj/item menu: Punch (refused: combat mode is off)
 human|/obj/item menu: Regenerate other (refused: you don't have that ability)
@@ -272,5 +285,5 @@ human|/obj/item menu: Take hold (refused: hold Grab)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use on
 human|/obj/item click: Click: Parrot item
-keys: disarm, drag_buckle, gen_hand_interaction_touch, gen_item_interaction_hit, ghost_join, grab, mob_attacks.alarm, mob_attacks.charge, mob_attacks.fire, mob_attacks.melee, mob_attacks.pickup, mob_attacks.shoot, mob_attacks.slam, mob_attacks.special, mob_attacks.step, mob_attacks.throw, parrot_hand_grab, parrot_item, reload, robot_customize_appearance, robot_eject_cargo, robot_mount, robot_nom, robot_pick_name, robot_pick_shell, robot_purge_nutrition, robot_recolour, robot_sensor_mode, robot_set_mail_tag, robot_spark_plug, robot_toggle_decals, robot_toggle_glowy_stomach, robot_toggle_grabbability, robot_toggle_lights, robot_toggle_module_1, robot_toggle_module_2, robot_toggle_module_3, robot_toggle_vtec, shadekin_clear_dark_maws, shadekin_create_shade, shadekin_dark_maw, shadekin_dark_respite, shadekin_dark_tunneling, shadekin_phase_shift, shadekin_regenerate_other
+keys: disarm, drag_buckle, gen_hand_interaction_touch, gen_item_interaction_hit, ghost_join, grab, mob_attacks.alarm, mob_attacks.charge, mob_attacks.fire, mob_attacks.melee, mob_attacks.pickup, mob_attacks.shoot, mob_attacks.slam, mob_attacks.special, mob_attacks.step, mob_attacks.throw, nutrition_heal, parrot_hand_grab, parrot_item, reload, robot_customize_appearance, robot_eject_cargo, robot_mount, robot_nom, robot_pick_name, robot_pick_shell, robot_purge_nutrition, robot_recolour, robot_sensor_mode, robot_set_mail_tag, robot_spark_plug, robot_toggle_decals, robot_toggle_glowy_stomach, robot_toggle_grabbability, robot_toggle_lights, robot_toggle_module_1, robot_toggle_module_2, robot_toggle_module_3, robot_toggle_vtec, shadekin_clear_dark_maws, shadekin_create_shade, shadekin_dark_maw, shadekin_dark_respite, shadekin_dark_tunneling, shadekin_phase_shift, shadekin_regenerate_other
 

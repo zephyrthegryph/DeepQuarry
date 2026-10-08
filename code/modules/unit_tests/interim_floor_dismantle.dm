@@ -35,7 +35,7 @@
 	var/obj/item/stack/tile/floor/tiles
 	if(plate)
 		tiles = allocate(/obj/item/stack/tile/floor, T, 2)
-		catwalk.plate_done(user, tiles)
+		test_op_handler(catwalk, "plate_done", user, tiles)
 		TEST_ASSERT_EQUAL(tiles.get_amount(), 1, "actual plating consumes exactly one original tile")
 		TEST_ASSERT_EQUAL(catwalk.plated_tile, /obj/item/stack/tile/floor, "actual plating records the installed tile type")
 	else

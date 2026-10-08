@@ -51,5 +51,5 @@ human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage click: Click: Collect
-keys: collect_item, dismissNotification, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, multitool_blocked, pick_up_item, pry_open, reseal, reset_circuits, rewire, rewire_intact, screwdriver_blocked, setTheme, toggle_digestable, toggle_module, uninstall
+keys: collect_item, dismissNotification, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, multitool_blocked, pick_up_item, pry_open, reseal, reset_circuits, rewire, rewire_intact, screwdriver_blocked, setTheme, stuff_in, toggle_digestable, toggle_module, uninstall
 
