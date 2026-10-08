@@ -3661,3 +3661,6 @@ Old-code behavior pins passed for all five paths before conversion (completion, 
 |---|---|
 | `/obj/structure/AIcore` | Native `anchor`, `unanchor` and `dismantle` tool ops expose the previously intercepted construction actions. Two-second waits preserve anchoring/state transitions, zero welder fuel cost and the exact four-plasteel refund. Invalid-stage tool inputs retain silent refusal rather than falling through to a hit. New tool menu labels and keys reflect these native bindings; these are the only intended changes to the scoped conversion pin. |
 | `/obj/structure/AIcore/deactivated` | Native `bolt`/`unbolt` replace the wrench override, retain four-second waits, start/completion/cancellation messages and tool sounds at volume 50. Inherited base anchor/unanchor/blocked-wrench ops are removed to preserve the subtype override. Existing cable/glass, latejoin, admin and appearance behavior is unchanged. |
+
+AIcore waits explicitly preserve legacy toolspeed and tool_skill_factor, with five fast-tool regression variants. The shared library fuel adapter resolves get_welder() for availability, reservation ownership and commit, matching the lit-welder requirement and supporting real transforming tools. This also fixes zero-cost wrapper commits after native dismantling; engine source is unchanged.
+

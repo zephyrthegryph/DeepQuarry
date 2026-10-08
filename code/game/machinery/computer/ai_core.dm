@@ -19,9 +19,9 @@ MSG_DEF_SELF(ai_core/glass_start, "You start to put in the glass panel.")
 	var/obj/item/mmi/brain = null
 
 CAPABILITIES(/obj/structure/AIcore)
-	op("anchor", tool(TOOL_WRENCH), label("Anchor frame"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(state), 0)), wait(2 SECONDS), then(PROC_REF(wrench_act_tool_done)))
-	op("unanchor", tool(TOOL_WRENCH), label("Unfasten frame"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(state), 1)), wait(2 SECONDS), then(PROC_REF(wrench_act_tool_done2)))
-	op("dismantle", lit_welder(fuel = 0), label("Dismantle frame"), starts(PROC_REF(construction_welder_started)), when(req_is(nameof(state), 0)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)))
+	op("anchor", tool(TOOL_WRENCH), label("Anchor frame"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(state), 0)), wait(PROC_REF(frame_wrench_duration)), then(PROC_REF(wrench_act_tool_done)))
+	op("unanchor", tool(TOOL_WRENCH), label("Unfasten frame"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(state), 1)), wait(PROC_REF(frame_wrench_duration)), then(PROC_REF(wrench_act_tool_done2)))
+	op("dismantle", lit_welder(fuel = 0), label("Dismantle frame"), starts(PROC_REF(construction_welder_started)), when(req_is(nameof(state), 0)), wait(PROC_REF(frame_weld_duration)), then(PROC_REF(welder_act_tool_done)))
 	op("wrench_wrong_stage", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), when(req_not(any_of(req_is(nameof(state), 0), req_is(nameof(state), 1)))), needs(req(PROC_REF(construction_tool_blocked), silent = TRUE)), wait(0))
 	op("welder_wrong_stage", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), when(req_not(req_is(nameof(state), 0))), needs(req(PROC_REF(construction_tool_blocked), silent = TRUE)), wait(0))
 	op("add_cables", stack(/obj/item/stack/cable_coil, 5), when(req_is(nameof(state), 2)), needs(req_is(nameof(state), 2, because = MSG(ai_core/board_unfastened))), begins(MSG(ai_core/wiring_start)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(attackby_timed_done)))
@@ -111,6 +111,17 @@ CAPABILITIES(/obj/structure/AIcore)
 	icon_state = "4"
 	return OP_OK
 
+/obj/structure/AIcore/proc/frame_wrench_duration(datum/act/op/A)
+	var/obj/item/tool = A.held_provider()
+	return 2 SECONDS * tool.toolspeed * tool_skill_factor(A.actor, TOOL_WRENCH)
+
+/obj/structure/AIcore/proc/frame_weld_duration(datum/act/op/A)
+	var/obj/item/tool = A.held_provider()
+	return 2 SECONDS * tool.toolspeed * tool_skill_factor(A.actor, TOOL_WELDER)
+
+/obj/structure/AIcore/deactivated/proc/core_wrench_duration(datum/act/op/A)
+	var/obj/item/tool = A.held_provider()
+	return 4 SECONDS * tool.toolspeed * tool_skill_factor(A.actor, TOOL_WRENCH)
 /obj/structure/AIcore/proc/construction_welder_started(datum/act/op/A)
 	var/obj/item/tool = A.held_provider()
 	var/obj/item/weldingtool/welder = tool.get_welder()
@@ -263,8 +274,8 @@ CAPABILITIES(/obj/structure/AIcore/deactivated)
 	without("anchor")
 	without("unanchor")
 	without("wrench_wrong_stage")
-	op("unbolt", tool(TOOL_WRENCH), label("Unbolt core"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(anchored), TRUE)), begins(MSG(ai_core/unbolt_start)), wait(4 SECONDS), then(PROC_REF(unbolted)), on_interrupt(PROC_REF(unbolt_abandoned)))
-	op("bolt", tool(TOOL_WRENCH), label("Bolt core"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(anchored), FALSE)), begins(MSG(ai_core/bolt_start)), wait(4 SECONDS), then(PROC_REF(wrench_act_tool_done3)), on_interrupt(PROC_REF(wrench_act_tool_failed3)))
+	op("unbolt", tool(TOOL_WRENCH), label("Unbolt core"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(anchored), TRUE)), begins(MSG(ai_core/unbolt_start)), wait(PROC_REF(core_wrench_duration)), then(PROC_REF(unbolted)), on_interrupt(PROC_REF(unbolt_abandoned)))
+	op("bolt", tool(TOOL_WRENCH), label("Bolt core"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(anchored), FALSE)), begins(MSG(ai_core/bolt_start)), wait(PROC_REF(core_wrench_duration)), then(PROC_REF(wrench_act_tool_done3)), on_interrupt(PROC_REF(wrench_act_tool_failed3)))
 	op("latejoin_offer", ai(), asks(/datum/prompt/yes_no, fields = list("title" = "Latejoin", "question" = "Would you like this core to be open for latejoining AIs?", "timeout" = 0), step = "latejoin"), then(PROC_REF(latejoin_answered)))
 	op("deactivated_interaction_item", item(/obj/item), then(PROC_REF(deactivated_interaction_item)))
 

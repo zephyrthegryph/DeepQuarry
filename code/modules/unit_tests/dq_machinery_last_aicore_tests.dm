@@ -11,6 +11,7 @@
 	var/final_state = 1
 	var/final_anchor = TRUE
 	var/duration = 2 SECONDS
+	var/tool_speed = 1
 	var/dismantling = FALSE
 	var/interruption = null
 
@@ -36,6 +37,7 @@
 	else
 		T = allocate(/obj/item/tool/wrench, floor)
 		equip(H, T)
+	T.toolspeed = tool_speed
 	var/list/old_outputs = contents_of(floor, /obj/item/stack/material/plasteel)
 	var/datum/work = begin_core_pin(H, C, T)
 	TEST_ASSERT_EQUAL(C.state, initial_state, "The real click cannot advance the core immediately")
@@ -122,4 +124,76 @@
 /datum/unit_test/dq_machinery_last_aicore/deactivated_bolt/move
 	interruption = "move"
 
+/datum/unit_test/dq_machinery_last_aicore/anchor/fast
+	tool_speed = 0.5
+	duration = 1 SECOND
+/datum/unit_test/dq_machinery_last_aicore/unanchor/fast
+	tool_speed = 0.5
+	duration = 1 SECOND
+/datum/unit_test/dq_machinery_last_aicore/dismantle/fast
+	tool_speed = 0.5
+	duration = 1 SECOND
+/datum/unit_test/dq_machinery_last_aicore/deactivated_unbolt/fast
+	tool_speed = 0.5
+	duration = 2 SECONDS
+/datum/unit_test/dq_machinery_last_aicore/deactivated_bolt/fast
+	tool_speed = 0.5
+	duration = 2 SECONDS
 
+/// A real transforming tool pays through its actual internal welder, including zero-cost AIcore dismantling.
+/datum/unit_test/dq_machinery_last_aicore/dismantle/wrapped
+
+/datum/unit_test/dq_machinery_last_aicore/dismantle/wrapped/run_pin()
+	var/mob/living/carbon/human/H = person()
+	var/turf/T = get_turf(H)
+	var/obj/item/tool/transforming/altevian/tool = allocate(/obj/item/tool/transforming/altevian, T)
+	equip(H, tool)
+	for(var/index = 2, index <= length(tool.possible_tooltypes), index++)
+		test_click(H, tool, tool)
+	TEST_ASSERT(tool.has_tool_quality(TOOL_WELDER), "Real mode cycling exposes the wrapper's welding quality")
+	var/obj/item/weldingtool/W = tool.get_welder()
+	TEST_ASSERT(W?.isOn(), "The original internal welder is genuinely lit")
+	var/fuel_before = W.get_fuel()
+	var/obj/structure/AIcore/C = allocate(/obj/structure/AIcore, T)
+	var/list/before = contents_of(T, /obj/item/stack/material/plasteel)
+	var/datum/op_result/result = test_click(H, C, tool)
+	TEST_ASSERT_NOTNULL(running(H), "A real wrapper tool click starts dismantling")
+	test_time(0.4 SECONDS)
+	TEST_ASSERT(!QDELETED(C), "The wrapper preserves its real quarter-speed wait")
+	test_time(0.2 SECONDS)
+	TEST_ASSERT(QDELETED(C), "The wrapper completes actual frame dismantling")
+	TEST_ASSERT_EQUAL(result.outcome, ACT_COMMITTED, "The zero fuel reservation successfully commits after dismantling")
+	TEST_ASSERT_EQUAL(W.get_fuel(), fuel_before, "Zero-cost work leaves the internal welder's fuel unchanged")
+	TEST_ASSERT_EQUAL(H.get_active_hand(), tool, "The wrapper remains in the original hand")
+	var/refund = 0
+	for(var/obj/item/stack/material/plasteel/S in contents_of(T, /obj/item/stack/material/plasteel))
+		if(!(S in before))
+			own(S)
+			refund += S.get_amount()
+	TEST_ASSERT_EQUAL(refund, 4, "Wrapper dismantling returns exactly four plasteel sheets")
+
+/datum/unit_test/dq_machinery_fuel_provider
+	parent_type = /datum/unit_test/dq_timed_pin
+
+/datum/unit_test/dq_machinery_fuel_provider/run_pin()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/tool/transforming/altevian/tool = allocate(/obj/item/tool/transforming/altevian, H.loc)
+	own(tool.welder)
+	var/obj/item/weldingtool/W = allocate(/obj/item/weldingtool, tool)
+	rel_set(tool, nameof(tool.welder), W)
+	W.reagents.add_reagent(REAGENT_ID_FUEL, 10)
+	var/fuel_before = W.get_fuel()
+	TEST_ASSERT(fuel_before >= 1, "The actual internal welder has spendable fuel")
+	var/datum/act/op/A = take(/datum/act/op)
+	defer_cleanup(A, TYPE_PROC_REF(/datum/act/op, release))
+	A.set_held_provider(tool)
+	A.actor = H
+	A.key = "fuel_provider_pin"
+	var/datum/resource/RS = resource_of(RES_FUEL)
+	TEST_ASSERT_EQUAL(RS.holder_of(A), W, "Reservations belong to the actual underlying fuel store")
+	TEST_ASSERT_EQUAL(RS.available(A), fuel_before, "Available fuel comes from the real wrapped welder")
+	var/datum/reservation/R = RS.reserve(A, 1)
+	TEST_ASSERT_NOTNULL(R, "The shared adapter reserves a real fuel unit through the wrapper")
+	own(R)
+	TEST_ASSERT_EQUAL(reservation_commit(R), OP_OK, "The shared adapter commits the wrapped fuel reservation")
+	TEST_ASSERT_EQUAL(W.get_fuel(), fuel_before - 1, "Commit consumes exactly one unit from the actual internal welder")
