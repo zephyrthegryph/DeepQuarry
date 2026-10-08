@@ -51,6 +51,17 @@ class RetentionChecks(unittest.TestCase):
         (run / "artifacts" / "raw.log").write_text("full diagnostics")
         return run
 
+    def test_joint_cleanup_validates_all_markers_before_loading_helper(self):
+        cohort = self.cohort("joint")
+        run = self.run_record(cohort, "run", 1)
+        first = run / "pair-store"
+        invalid = run / "oracle-store"
+        protocol.write(invalid / protocol.MARKER, {"owner": "foreign"})
+        with self.assertRaisesRegex(ValueError, "ownership marker"):
+            protocol.prepare_output_cleanup([first, invalid], run, set())
+        self.assertTrue((first / "world.dmb").exists())
+        self.assertTrue((invalid / "world.dmb").exists())
+
     def test_three_complete_runs_across_cohorts_and_small_evidence_retained(self):
         first, second = self.cohort("first"), self.cohort("second")
         runs = [self.run_record(first if i < 2 else second, str(i), i + 1) for i in range(5)]
@@ -242,6 +253,41 @@ class SignatureChecks(unittest.TestCase):
         self.assertFalse(protocol.valid_case_signatures({"proc": [["bad"]]}))
         self.assertFalse(protocol.valid_case_signatures({"proc": ["0" * 32, "0" * 32]}))
         self.assertTrue(protocol.valid_case_signatures({"proc": []}))
+
+
+class ReplayClosureChecks(unittest.TestCase):
+    setUp = RetentionChecks.setUp
+    tearDown = RetentionChecks.tearDown
+
+    def test_live_mode_keeps_physical_validation_and_non_cold_replay_refused(self):
+        helper = SimpleNamespace()
+        self.assertEqual(protocol.authenticate_replay_closure(helper, self.root, {"name": "cold"}, None, {})["mode"], "full_physical_source_sha256")
+        with self.assertRaisesRegex(ValueError, "no-cache cold replay"):
+            protocol.authenticate_replay_closure(helper, self.root, {"name": "body-edit"}, self.root, {})
+        with self.assertRaisesRegex(ValueError, "no-cache cold replay"):
+            protocol.authenticate_replay_closure(helper, self.root, {"name": "cold", "edits": [{}]}, self.root, {})
+
+    def test_journal_identity_and_topology_pinned_before_compile(self):
+        journal = self.root / "journal"
+        journal.mkdir()
+        manifest = self.root / "comparison.dme"
+        manifest.write_text("live bytes are not replay input")
+        protocol.write(journal / "index.json", {"files": {str(manifest): [{"size": 10}, 1]}})
+        (journal / "index.hash").write_text("captured checksum")
+        helper = SimpleNamespace(sha=lambda path: hashlib.sha256(Path(path).read_bytes()).hexdigest(),
+                                 source_path=lambda root, relative: (root / relative).resolve(),
+                                 normal_windows_path=lambda path: Path(path).resolve())
+        scenario = {"name": "cold", "project": manifest.name}
+        with self.assertRaisesRegex(ValueError, "BYOND snapshot"):
+            protocol.authenticate_replay_closure(helper, self.root, scenario, journal, {"snapshot_id": "wrong"})
+        closure = protocol.authenticate_replay_closure(helper, self.root, scenario, journal,
+                                                      {"snapshot_id": helper.sha(journal / "index.json")})
+        self.assertEqual(set(closure["pinned"]), {journal / "index.json", journal / "index.hash"})
+        scenario["_closure_validation"] = closure
+        protocol.check_source_closure(helper, self.root, {}, [scenario])
+        (journal / "index.hash").write_text("changed")
+        with self.assertRaisesRegex(ValueError, "journal identity"):
+            protocol.check_source_closure(helper, self.root, {}, [scenario])
 
 
 class SemanticConfigurationChecks(unittest.TestCase):

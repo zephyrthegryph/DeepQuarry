@@ -87,3 +87,5 @@ An original-source BYOND pin is rejected. Preparing that reference requires a
 private BYOND source derivative containing the identical single edit, compiled
 with the same semantic configuration; preserve its source/provenance receipt.
 The original journal, source closure, and BYOND pair remain immutable.
+
+Captured no-cache replay authenticates the journal index and checksum before/after each run, and pins its exact BYOND snapshot/configuration. It does not hash unrelated live physical source files; replay verifies every requested payload and refuses uncaptured reads. Live scenarios retain full physical SHA256 validation. This change affects unmeasured preparation only. Receipts name the closure-validation mode and pin benchmark methodology files. Oracle-valid private output bundles may clear readonly attributes only after all NTFS links are proved internal to the jointly owned output roots; outside or pinned links remain untouched.

@@ -3,6 +3,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import ntpath
 from pathlib import Path
 import shutil
 import stat
@@ -52,6 +53,29 @@ def owned_directory(path, owner):
     return path
 
 
+def validate_owned(path, owner, protected):
+    path = require_e(path)
+    owner = owner.resolve()
+    if not path.is_relative_to(owner) or path == owner:
+        raise ValueError("cleanup escaped its owning directory: " + str(path))
+    if any(path == pin or path in pin.parents or pin in path.parents for pin in protected):
+        raise ValueError("cleanup intersects protected input/reference: " + str(path))
+    marker = json.loads((path / MARKER).read_text(encoding="utf-8"))
+    if marker != {"schema": 1, "owner": str(owner), "path": str(path)}:
+        raise ValueError("cleanup ownership marker mismatch")
+    return path
+
+
+def prepare_output_cleanup(paths, owner, protected):
+    roots = [validate_owned(path, owner, protected) for path in paths if path.exists()]
+    spec = importlib.util.spec_from_file_location("dmb_bench_closed_links", Path(__file__).with_name("closed_links.py"))
+    if spec is None or spec.loader is None:
+        raise ImportError("cannot load closed owned link validation")
+    helper = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(helper)
+    return helper.prepare_owned_readonly(roots, protected)
+
+
 def remove_owned(path, owner, protected):
     path = require_e(path)
     owner = owner.resolve()
@@ -84,6 +108,53 @@ def remove_owned(path, owner, protected):
         return {"status": "incomplete", "reason": str(error), "path": str(path)}
     return {"status": "removed", "path": str(path)}
 
+
+
+def authenticate_replay_closure(h, root, scenario, journal, byond_pin):
+    """Admit only harness-enforced cold replay; payload verification stays in Rust."""
+    if journal is None:
+        return {"mode": "full_physical_source_sha256", "pinned": {}}
+    if scenario["name"] not in ("cold", "cold-body-edit") or scenario.get("edits"):
+        raise ValueError("journal-only closure requires no-cache cold replay without live edits")
+    journal = Path(journal).resolve()
+    index_path, checksum_path = journal / "index.json", journal / "index.hash"
+    digest = h.sha(index_path)
+    if byond_pin.get("snapshot_id") != digest:
+        raise ValueError("BYOND snapshot does not match captured journal before compilation")
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    manifest = h.source_path(root, scenario["project"])
+    normal = h.normal_windows_path
+    def lexical_identity(path):
+        value = str(path)
+        if value.startswith("\\\\?\\UNC\\"):
+            value = "\\\\" + value[8:]
+        elif value.startswith("\\\\?\\"):
+            value = value[4:]
+        return ntpath.normcase(ntpath.normpath(value))
+    matching = [path for path in index["files"] if lexical_identity(path) == lexical_identity(manifest)]
+    if len(matching) != 1 or normal(matching[0]) != normal(manifest):
+        raise ValueError("captured journal must contain exact canonical project manifest")
+    if normal(root) != normal(manifest.parent):
+        # Nested project manifests are allowed only within this same canonical root.
+        if not normal(manifest).is_relative_to(normal(root)):
+            raise ValueError("captured project topology escaped logical root")
+    return {"mode": "authenticated_captured_journal_no_live_fallback",
+            "logical_root": str(root), "canonical_manifest": str(manifest),
+            "captured_manifest": matching[0], "snapshot_id": digest,
+            "pinned": {index_path: digest, checksum_path: h.sha(checksum_path)},
+            "timing_scope": "unmeasured_validation_not_compiler_speedup"}
+
+
+def check_source_closure(h, root, expected, scenarios):
+    if any(scenario["_closure_validation"]["mode"] == "full_physical_source_sha256" for scenario in scenarios):
+        h.check_snapshot(root, expected)
+    for scenario in scenarios:
+        closure = scenario["_closure_validation"]
+        if closure["mode"] != "full_physical_source_sha256":
+            if str(h.source_path(root, scenario["project"])) != closure["canonical_manifest"]:
+                raise ValueError("captured canonical project topology changed")
+            if any(h.sha(path) != digest for path, digest in closure["pinned"].items()):
+                raise ValueError("captured journal identity changed")
 
 
 def warm_inputs(h, root, expected, journal):
@@ -255,6 +326,7 @@ def cleanup_verified_outputs(h, run, row, protected):
             if any(target == pin or target in pin.parents or pin in target.parents for pin in protected):
                 raise ValueError("cleanup intersects protected input/reference: " + str(target))
     retain_small_evidence(h, run, row)
+    row["closed_link_cleanup"] = prepare_output_cleanup(bulky, run, protected)
     cleanup = [remove_owned(path, run, protected) for path in bulky if path.exists()]
     row["cleanup"] = cleanup
     row["output_retention"] = "small_evidence_only" if all(item["status"] == "removed" for item in cleanup) else "cleanup_incomplete"
@@ -304,6 +376,7 @@ def trim_complete_evidence(h, output, protected):
             if any(target == pin or target in pin.parents or pin in target.parents for pin in protected):
                 raise ValueError("retention intersects protected input/reference: " + str(target))
         retain_small_evidence(h, run, row)
+        row["closed_link_cleanup"] = prepare_output_cleanup(bulky, run, protected)
         cleanup = list(row.get("cleanup", []))
         cleanup.extend(remove_owned(path, run, protected) for path in bulky if path.exists())
         if os.name == "nt" and not trace.stat().st_mode & stat.S_IWRITE:
@@ -377,6 +450,8 @@ def execute(h, args):
                 raise ValueError("edited BYOND output hash mismatch")
         elif scenario["name"] != "cold":
             raise ValueError("revision6 initial cohort supports cold only; authenticated resident/edit warm-up protocol is not yet implemented")
+        journal = scenario.get("input_journal", args.input_journal)
+        scenario["_closure_validation"] = authenticate_replay_closure(h, root, scenario, journal, byond_pin)
         if args.input_journal and scenario.get("edits"):
             raise ValueError("captured replay edits require a separately pinned scenario journal")
     free = free_space(output, args.min_free_bytes)
@@ -386,14 +461,20 @@ def execute(h, args):
     policy_path = Path(h.__file__).resolve().parent.parent / "diagnostic-measurements.json"
     policy = json.loads(policy_path.read_text(encoding="utf-8"))
     policy_hash = h.sha(policy_path)
-    h.check_snapshot(root, expected)
-    warmup = warm_inputs(h, root, expected, args.input_journal)
+    check_source_closure(h, root, expected, scenarios)
+    initial_journal = scenarios[0].get("input_journal", args.input_journal)
+    warmup = warm_inputs(h, root, expected, Path(initial_journal) if initial_journal else None)
+    methodology = {Path(__file__).with_name(name).resolve(): h.sha(Path(__file__).with_name(name))
+                   for name in ("dmb-bench.py", "protocol.py", "semantic_configuration.py",
+                                "edited_snapshot.py", "closed_links.py", "watchdog.py")}
     cohort = {"schema": 2, "measurement_revision": 6, "schedule": "ABABAB",
               "comparison": "self_noise_floor" if args.self_comparison else "previous_vs_new",
+              "benchmark_methodology_sha256": {str(path): digest for path, digest in methodology.items()},
               "binary_mode": args.binary_mode, "free_bytes_before": free, "warmup": warmup,
               "compilers": {name: {key: str(value) if isinstance(value, Path) else value
                                      for key, value in tool.items()} for name, tool in tools.items()},
               "source_commit": snapshot["commit"], "snapshot_manifest_sha256": h.sha(args.snapshot),
+              "source_closure_validation": {scenario["name"]: {key: value for key, value in scenario["_closure_validation"].items() if key != "pinned"} for scenario in scenarios},
               "semantic_configurations": {scenario["name"]: {
                   "configuration": scenario["_semantic_configuration"],
                   "sha256": configuration_gate.digest(scenario["_semantic_configuration"])} for scenario in scenarios}}
@@ -412,16 +493,20 @@ def execute(h, args):
     for scenario in scenarios:
         if scenario.get("_edited_snapshot"):
             protected.update(scenario["_edited_snapshot"]["pinned"])
+        protected.update(scenario["_closure_validation"]["pinned"])
         protected.add(scenario["_engine_path"])
         protected.update(scenario["_configuration_evidence"])
         for field in ("input_journal", "byond_dmb", "byond_snapshot", "structural_baseline", "native_baseline"):
             if scenario.get(field):
                 protected.add(Path(scenario[field]).resolve())
+    protected.update(methodology)
     protected.update(tool["metadata_path"] for tool in tools.values())
     inspector_digest = h.sha(args.inspector)
     pinned_files = {path: h.sha(path) for path in protected if path.is_file()}
+    pinned_files.update(methodology)
     for scenario in scenarios:
         pinned_files.update(scenario.get("_edited_snapshot", {}).get("pinned", {}))
+        pinned_files.update(scenario["_closure_validation"]["pinned"])
 
     originals = {}
     for scenario in scenarios:
@@ -520,6 +605,7 @@ def execute(h, args):
                                "scenario": scenario["name"], "workers": workers, "repeat": repeat+1,
                                "wall_s": wall, "exit_code": code, "status": "watchdog" if timeout else "verified" if verified else "failed",
                                "oracle": "passed" if verified else "not_passed", "snapshot_id": snapshot_id,
+                               "source_closure_validation": {key: value for key, value in scenario["_closure_validation"].items() if key != "pinned"},
                                "snapshot_identity_scope": "captured_file_identity_only",
                                "semantic_configuration": scenario["_semantic_configuration"],
                                "semantic_configuration_sha256": configuration_gate.digest(scenario["_semantic_configuration"]),
@@ -592,5 +678,5 @@ def execute(h, args):
     finally:
         for path, value in originals.items():
             path.write_bytes(value)
-        h.check_snapshot(root, expected)
+        check_source_closure(h, root, expected, scenarios)
     return 1 if failed else 0

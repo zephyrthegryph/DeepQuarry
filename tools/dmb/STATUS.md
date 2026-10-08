@@ -66,17 +66,19 @@ are not the current performance task. Resident/cache work is paused. Whole
 canonical linking and encoding remain intentional; text-keyed codegen and its
 translation pass must be removed in Phase 1.
 
-The last verified committed batch passed 259 compiler library checks, 91
+The earlier shared-runner batch passed 259 compiler library checks, 91
 preprocessor unit checks, two integration checks, and all-target Clippy with
 warnings denied. Current uncommitted changes passed 263 compiler library checks,
 14 linker checks, 10 profiler unit checks and its artifact integration check,
-plus all-target Clippy for those crates. Seventeen benchmark protocol/provenance checks pass.
+plus all-target Clippy for those crates. Twenty-four benchmark protocol/provenance/NTFS retention checks pass.
 The thin-LTO acceptance and separate counting binaries are frozen. The comparator
 passed 478 library checks, including unmatched-procedure evidence, renumbering,
-unknown-case multiplicity and malformed-reference regressions. The r6 self-comparison stopped at the free-space preflight before compiling; it produced
-no timing rows. Verified old output copies and traces freed 10.45 GiB, but
-concurrent disk growth put E: below the 25 GiB floor again. Verified disposable
-artifact cleanup is exhausted; additional disk space is requested.
+unknown-case multiplicity and malformed-reference regressions; all-target Clippy
+passes. The release comparator is frozen. The r6 self-comparison stopped at the
+free-space preflight before compiling; it produced
+no timing rows. Verified old output retention recovered 16.76 GiB. Closed owned
+hardlink cleanup is implemented in the cohort so immutable private outputs can
+be disposed after their oracle passes. External/pinned links remain protected.
 
 ## Next three actions
 
