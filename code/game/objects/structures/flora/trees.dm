@@ -14,6 +14,8 @@
 	var/is_stump = FALSE // If true, suspends damage tracking and most other effects.
 	var/indestructable = FALSE // If true, the tree cannot die.
 
+TRACKED(/obj/structure/flora/tree, is_stump)
+
 TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
 
 /obj/structure/flora/tree/Initialize(mapload)
@@ -42,8 +44,10 @@ TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
 // Trees harvest through flora's own interaction_item() when the item qualifies; otherwise the tree replaces it with its own hit and dig.
 CAPABILITIES(/obj/structure/flora/tree)
 	without("item")
+	without("uproot")
+	op("dig_stump", item(/obj/item/shovel), label("Dig up the stump"), when(nameof(is_stump)), priority(OP_PRIORITY_PART), wait(5 SECONDS), then(PROC_REF(chop_done)))
 	op("tree_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_hit)))
-	op("search_sticks", hand(), ungated(), label("Search for sticks"), then(PROC_REF(interaction_search_sticks)))
+	op("search_sticks", hand(), ungated(), label("Search for sticks"), needs(req(PROC_REF(has_sticks), because = MSG(tree/no_sticks))), begins(MSG(tree/searching_sticks)), wait(5 SECONDS), then(PROC_REF(sticks_found)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tree_blast))))
 
 /// Old attackby: harvest (flora's own harvest), dig up a stump, or take a hit.
@@ -54,8 +58,6 @@ CAPABILITIES(/obj/structure/flora/tree)
 		return interaction_item(A)
 
 	if(is_stump)
-		if(istype(W,/obj/item/shovel))
-			task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(chop_done), done_args = list(W, user))
 		return OP_OK
 
 	act_message(user, src, others = span_danger("%U% hits %T% with %I%!"), item = W)
@@ -78,9 +80,9 @@ CAPABILITIES(/obj/structure/flora/tree)
 	user.do_attack_animation(src)
 	return OP_OK
 
-/obj/structure/flora/tree/proc/chop_done(obj/item/W, mob/living/user)
-	act_message(user, src, others = span_infoplain(span_bold("%U%") + " digs up %T% stump with %I%."), item = W)
-	consume(src, user)
+/obj/structure/flora/tree/proc/chop_done(datum/act/op/A)
+	act_message(A.actor, src, others = span_infoplain(span_bold("%U%") + " digs up %T% stump with %I%."), item = A.held)
+	consume(src, A.actor)
 
 // Shakes the tree slightly, more or less stolen from lockers.
 /obj/structure/flora/tree/proc/hit_animation()
@@ -128,7 +130,7 @@ CAPABILITIES(/obj/structure/flora/tree)
 	if(is_stump)
 		return
 
-	is_stump = TRUE
+	set_is_stump(TRUE)
 	set_density(FALSE)
 	icon_state = "[base_state]_stump"
 	cut_overlays() // For the Sif tree and other future glowy trees.
@@ -198,12 +200,11 @@ CAPABILITIES(/obj/structure/flora/tree/pine/xmas/presents)
 
 /// Requirement: one present per player.
 /obj/structure/flora/tree/pine/xmas/presents/proc/can_take_present(datum/act/op/A)
-	return !present_taken(ckeys_that_took, A.actor)
+	return !read_once(present_taken(A.actor)) // a player's key is fixed while it plays
 
-/// Has `user`'s player already taken a present from the tree whose takers are `takers`?
-/proc/present_taken(list/takers, mob/user)
-	READS_FROM() // the actor's key is fixed while it plays; the takers come in as the argument
-	return user.ckey && LAZYACCESS(takers, user.ckey)
+/// Has `user`'s player already taken a present from this tree?
+/obj/structure/flora/tree/pine/xmas/presents/proc/present_taken(mob/user)
+	return user.ckey && LAZYACCESS(ckeys_that_took, user.ckey)
 
 MSG_DEF_SELF(xmas_presents/none_left, "There are no presents with your name on.")
 

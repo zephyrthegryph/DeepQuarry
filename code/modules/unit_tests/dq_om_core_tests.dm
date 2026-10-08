@@ -20,16 +20,12 @@
 	var/enabled = TRUE
 	var/crash_on_tick = FALSE
 	var/native = 0
-	var/ui_pushes = 0
 	/// Set by on_destroy(): how many om edges were still present then.
 	var/edges_at_destroy = -1
 
 /datum/om_test_entity/on_destroy(force)
 	edges_at_destroy = length(om_rec?.edges)
 	..()
-
-/datum/om_test_entity/om_ui_push()
-	ui_pushes++
 
 /datum/om_test_entity/proc/inline_tick(dt)
 	ticks++
@@ -129,29 +125,6 @@
 /datum/om/behaviour/test/derived_watcher
 	wake_on = CHANGE_DATUM_D
 
-// Effect rows of the OM store's own tests (the library keeps only what game code uses).
-#define EFFECT_TEST_FLAG "test_flag"
-#define EFFECT_TEST_SUM "test_sum"
-#define EFFECT_TEST_PRODUCT "test_product"
-#define EFFECT_TEST_ARMOR "test_armor"
-
-/datum/om/bundle/test_effects
-	effects = list(
-		EFFECT_TEST_FLAG = list("combine" = COMBINE_ANY),
-		EFFECT_TEST_SUM = list("combine" = COMBINE_SUM),
-		EFFECT_TEST_PRODUCT = list("combine" = COMBINE_MULTIPLY),
-		EFFECT_TEST_ARMOR = list("combine" = COMBINE_SUM),
-	)
-
-/datum/om/behaviour/test/holder
-	every = 1 SECONDS
-	holds = TRUE
-
-/datum/om/behaviour/test/holder/tick(datum/om_test_entity/E, dt)
-	E.ticks++
-	if(E.enabled)
-		om_hold(E, EFFECT_TEST_FLAG, E)
-
 /datum/om/behaviour/test/handler
 	handles = list(/datum/om/event/test)
 
@@ -184,8 +157,6 @@
 
 /datum/om/relation/test_contributing
 	name = "test armour"
-	contributes = list(EFFECT_TEST_ARMOR = FROM_VAR("weight"))
-	grants_occupant = list(GRANT_ABILITY = "test_ability")
 	active_if = /datum/om/check/test_enabled
 
 /datum/om/relation/test_hooked
@@ -296,7 +267,6 @@
 /datum/om/decl/test_host
 	of = /datum/om_test_entity/decl_host
 	include = list(/datum/om/bundle/test_outer)
-	self_grants = list(GRANT_TRAIT = "test_trait")
 
 /datum/om/decl/test_bad
 	registry_skip = TRUE
@@ -304,7 +274,6 @@
 	include = list(/datum/om/bundle/test_bad_cycle_a)
 	ticks = list(/datum/om_test_entity/proc/inline_tick = list("evry" = 1 SECONDS))
 	reacts = list(/datum/om_test_entity/proc/inline_react = 0)
-	effects = list("test_bad_effect" = list("combine" = 99, "colour" = "red"))
 	derived = list(list("derive" = "median", "name" = "test_bad_derived"))
 
 /datum/om/bundle/test_bad_cycle_a
@@ -803,92 +772,6 @@
 	TEST_ASSERT_EQUAL(length(A.om_rec?.edges), 0, "the deleted end has no edges left")
 	TEST_ASSERT_EQUAL(length(linked(B, /datum/om/relation/test_hooked)), 0, "other end cleaned")
 
-/datum/unit_test/om/relation_contributions_active_if
-
-/datum/unit_test/om/relation_contributions_active_if/run_om(list/made)
-	var/datum/om_test_entity/armour = entity(made)
-	var/datum/om_test_entity/wearer = entity(made)
-	armour.weight = 4
-	om_link(armour, wearer, /datum/om/relation/test_contributing)
-	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 4, "contributes a FROM_VAR value to the target")
-	TEST_ASSERT(om_has_grant(armour, GRANT_ABILITY, "test_ability"), "grants_occupant go to the source")
-	armour.enabled = FALSE
-	changed(armour, CHANGE_DATUM_B)
-	scheduler_advance(0.1)
-	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 0, "active_if failing releases")
-	armour.enabled = TRUE
-	changed(armour, CHANGE_DATUM_B)
-	scheduler_advance(0.1)
-	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 4, "active_if passing re-applies")
-	om_unlink(armour, wearer, /datum/om/relation/test_contributing)
-	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 0, "unlinking releases")
-	TEST_ASSERT(!om_has_grant(armour, GRANT_ABILITY, "test_ability"), "and revokes")
-
-// ---------------------------------------------------------------- E: contributions
-
-/datum/unit_test/om/effects_timed_stacking_composites
-
-/datum/unit_test/om/effects_timed_stacking_composites/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
-	var/datum/om_test_entity/src_a = entity(made)
-	var/datum/om_test_entity/src_b = entity(made)
-	om_apply(E, EFFECT_TEST_FLAG, src_a, 1 SECONDS)
-	TEST_ASSERT(om_has(E, EFFECT_TEST_FLAG), "applied")
-	om_apply(E, EFFECT_TEST_FLAG, src_a, 3 SECONDS)
-	scheduler_advance(2)
-	TEST_ASSERT(om_has(E, EFFECT_TEST_FLAG), "a re-apply keeps the longer expiry")
-	scheduler_advance(1.5)
-	TEST_ASSERT(!om_has(E, EFFECT_TEST_FLAG), "expired through the deadline wheel")
-	om_hold(E, EFFECT_TEST_SUM, src_a, 2)
-	om_hold(E, EFFECT_TEST_SUM, src_b, 3)
-	TEST_ASSERT_EQUAL(om_value_of(E, EFFECT_TEST_SUM), 5, "COMBINE_SUM")
-	om_release(E, EFFECT_TEST_SUM, src_a)
-	TEST_ASSERT_EQUAL(om_value_of(E, EFFECT_TEST_SUM), 3, "release")
-	om_hold(E, EFFECT_TEST_PRODUCT, src_a, 0.5)
-	om_hold(E, EFFECT_TEST_PRODUCT, src_b, 0.5)
-	TEST_ASSERT_EQUAL(om_value_of(E, EFFECT_TEST_PRODUCT), 0.25, "COMBINE_MULTIPLY")
-
-/// Regression: overrides never outlive their source.
-/datum/unit_test/om/regression_no_stuck_overrides
-
-/datum/unit_test/om/regression_no_stuck_overrides/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
-	var/datum/om_test_entity/source = entity(made)
-	om_hold(E, EFFECT_TEST_FLAG, source)
-	om_grant(E, GRANT_LANGUAGE, "test_language", source)
-	TEST_ASSERT(om_has(E, EFFECT_TEST_FLAG), "held")
-	qdel(source)
-	TEST_ASSERT(!om_has(E, EFFECT_TEST_FLAG), "a hold dies with its source")
-	TEST_ASSERT(!om_has_grant(E, GRANT_LANGUAGE, "test_language"), "so does a grant")
-	// Holds made from a hook last only while the hook keeps making them.
-	var/datum/om_test_entity/H = entity(made)
-	om_attach(H, /datum/om/behaviour/test/holder)
-	scheduler_advance(1.5)
-	TEST_ASSERT(om_has(H, EFFECT_TEST_FLAG), "hook hold made")
-	H.enabled = FALSE
-	scheduler_advance(1.5)
-	TEST_ASSERT(!om_has(H, EFFECT_TEST_FLAG), "not re-held: released on return")
-	H.enabled = TRUE
-	scheduler_advance(1.5)
-	TEST_ASSERT(om_has(H, EFFECT_TEST_FLAG), "held again")
-	om_detach(H, /datum/om/behaviour/test/holder)
-	TEST_ASSERT(!om_has(H, EFFECT_TEST_FLAG), "stopping the behaviour releases its holds")
-
-/datum/unit_test/om/grants_vocabulary
-
-/datum/unit_test/om/grants_vocabulary/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
-	var/datum/om_test_entity/source = entity(made)
-	om_grant(E, GRANT_ABILITY, "jump", source)
-	om_grant(E, GRANT_VERB, "wave", source)
-	TEST_ASSERT(om_has_grant(E, GRANT_ABILITY, "jump"), "granted")
-	TEST_ASSERT_EQUAL(length(om_grants_from(E, source)), 2, "grants_from lists a source's grants")
-	om_revoke(E, GRANT_ABILITY, "jump", source)
-	TEST_ASSERT(!om_has_grant(E, GRANT_ABILITY, "jump"), "revoked")
-	var/datum/om_test_entity/host = entity(made, /datum/om_test_entity/decl_host)
-	om_start(host)
-	TEST_ASSERT(om_has_grant(host, GRANT_TRAIT, "test_trait"), "decl self_grants")
-
 // ---------------------------------------------------------------- G: events
 
 /// Regression: subtype events reach handlers of the parent type.
@@ -941,7 +824,6 @@
 	om_attach(E, /datum/om/behaviour/test/every_second)
 	scheduler_advance(1.5)
 	TEST_ASSERT(!sched.dl_processing, "deadline flag reset")
-	TEST_ASSERT_NULL(sched.ctx_rec, "hook context reset")
 	TEST_ASSERT_EQUAL(sched.bulk_depth, 0, "bulk depth untouched")
 
 // ---------------------------------------------------------------- H: checks
@@ -953,9 +835,9 @@
 	var/datum/om/check/b = om_check_get(list(/datum/om/check/in_range = 3))
 	TEST_ASSERT(a && a == b, "parameterised checks are cached by value")
 	TEST_ASSERT(a != om_check_get(CHECK(/datum/om/check/in_range, 4)), "different parameter, different instance")
-	var/datum/om/check/combo = om_check_get(ALL_OF(/datum/om/check/test_enabled, NOT_OF(/datum/om/check/has_effect)))
+	var/datum/om/check/combo = om_check_get(ALL_OF(/datum/om/check/test_enabled, NOT_OF(/datum/om/check/alive)))
 	TEST_ASSERT(combo.depends_on & CHANGE_DATUM_B, "depends_on is the union of parts")
-	TEST_ASSERT(combo.depends_on & CHANGE_EFFECTS, "including nested parts")
+	TEST_ASSERT(combo.depends_on & CHANGE_MOB_STAT, "including nested parts")
 	var/datum/om_test_entity/E = entity(made)
 	TEST_ASSERT(om_can(ANY_OF(/datum/om/check/test_enabled, /datum/om/check/target_exists), E, null), "ANY_OF")
 	E.enabled = FALSE
@@ -967,26 +849,7 @@
 // ---------------------------------------------------------------- I: tasks
 
 // ---------------------------------------------------------------- J: UI
-
-/datum/unit_test/om/ui_bind_coalesces_and_throttles
-
-/datum/unit_test/om/ui_bind_coalesces_and_throttles/run_om(list/made)
-	var/datum/om_test_entity/session = entity(made)
-	var/datum/om_test_entity/target = entity(made)
-	om_ui_bind(session, target, CHANGE_DATUM_A)
-	TEST_ASSERT_EQUAL(stat_value(target, STAT_RELEVANCE), RELEVANCE_WATCHED, "binding raises relevance to WATCHED")
-	changed(target, CHANGE_DATUM_A)
-	changed(target, CHANGE_DATUM_A)
-	changed(target, CHANGE_DATUM_A)
-	scheduler_advance(0.1)
-	TEST_ASSERT_EQUAL(session.ui_pushes, 1, "changes coalesce into one push")
-	changed(target, CHANGE_DATUM_A)
-	scheduler_advance(0.1)
-	TEST_ASSERT_EQUAL(session.ui_pushes, 1, "throttled")
-	scheduler_advance(0.3)
-	TEST_ASSERT_EQUAL(session.ui_pushes, 2, "the throttled change is pushed later")
-	om_ui_unbind(session, target)
-	TEST_ASSERT_EQUAL(stat_value(target, STAT_RELEVANCE), RELEVANCE_NONE, "unbinding drops relevance")
+// The window push and status wakes are the UI push system's (dq_ui_outputs_tests.dm).
 
 // ---------------------------------------------------------------- K: helpers
 
@@ -1025,7 +888,7 @@
 	reg.include_skipped = TRUE
 	reg.only_bundles = list(/datum/om/decl/test_bad)
 	reg.build()
-	var/list/wanted = list("include cycle", "unknown key evry", "non-zero channel mask", "bad combine", "unknown key colour", "unknown kind median")
+	var/list/wanted = list("include cycle", "unknown key evry", "non-zero channel mask", "unknown kind median")
 	for(var/needle in wanted)
 		var/found = FALSE
 		for(var/msg in reg.errors)

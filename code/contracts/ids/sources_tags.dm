@@ -7,6 +7,7 @@
 SOURCE_DEF(status)
 SOURCE_DEF(vv)
 SOURCE_DEF(ai_control)
+SOURCE_DEF(busy_work)
 SOURCE_DEF(held_item)
 SOURCE_DEF(all)
 /// A round event that holds a machine's state for good (an AI locked out of a door by a runtime): released by no one but an admin.
@@ -29,7 +30,7 @@ SOURCE_DEF(ai_admin)
 #define TAG_BASE 1000
 /// Every ui_act() op gets TAG_UI automatically.
 #define TAG_UI 1001
-/// Every topic() op gets TAG_TOPIC automatically.
+/// Every topic() op gets TAG_TOPIC automatically (a topic_in() op in a namespace does not: its dispatch brings its own gate).
 #define TAG_TOPIC 1002
 /// Ops that operate the thing (gated by a lock and by operability): extend(TAG_CONTROL, needs(...)).
 #define TAG_CONTROL 1003

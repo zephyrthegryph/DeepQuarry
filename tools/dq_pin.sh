@@ -12,6 +12,8 @@
 #                                                                       # emag change on a fresh one (snapshots/hit_pins/, test dq_hit_pin)
 #   bash tools/dq_pin.sh --look-tree /obj/item/gun [...]                # the look pin of every subtype, one file per root
 #                                                                       # (snapshots/look_trees/, test dq_look_tree_pin)
+#   bash tools/dq_pin.sh --ui /datum/foo_panel [...]                    # a window-data pin: what a window host shows after scripted state
+#                                                                       # changes (snapshots/ui_pins/, test dq_ui_data_pin, a /datum/ui_pin driver)
 #   bash tools/dq_pin.sh --look-state /obj/item/gun [...]               # the look of every subtype after each numeric var it declares is
 #                                                                       # written (snapshots/look_states/, test dq_look_state_pin)
 #
@@ -31,7 +33,8 @@ for arg in "$@"; do
 		--hit) dir="code/modules/unit_tests/snapshots/hit_pins"; test="dq_hit_pin" ;;
 		--look-state) dir="code/modules/unit_tests/snapshots/look_states"; test="dq_look_state_pin" ;;
 		--look-tree) dir="code/modules/unit_tests/snapshots/look_trees"; test="dq_look_tree_pin" ;;
-		-h|--help) sed -n '2,17p' "$0"; exit 0 ;;
+		--ui) dir="code/modules/unit_tests/snapshots/ui_pins"; test="dq_ui_data_pin" ;;
+		-h|--help) sed -n '2,19p' "$0"; exit 0 ;;
 		/*) types+=("$arg") ;;
 		*) echo "not a type path (it starts with /): $arg" >&2; exit 2 ;;
 	esac

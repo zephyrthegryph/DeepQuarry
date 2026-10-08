@@ -14,49 +14,53 @@
 		break_straight_jacket()
 		return
 
-	var/breakouttime
+	perform_op(src, src, "jacket_escape", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+
+/// How the wearer works at the jacket: RESIST_ATTACK_DEFAULT, or the claws / sharp teeth their species has (a rig gauntlet counts as none).
+/mob/living/carbon/human/proc/jacket_attack_type()
 	var/mob/living/carbon/human/H = src
-	if(istype(get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/straight_jacket))
-		var/obj/item/clothing/suit/straight_jacket/S = H.get_equipped_item(SLOT_ID_SUIT)
-		breakouttime = S.resist_time
-	if(istype(get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/shibari))
-		var/obj/item/clothing/suit/shibari/S = H.get_equipped_item(SLOT_ID_SUIT)
-		breakouttime = S.resist_time
-
-	var/obj/item/clothing/suit/SJ = get_equipped_item(SLOT_ID_SUIT)
-
-	var/attack_type = RESIST_ATTACK_DEFAULT
-
 	if(H.get_equipped_item(SLOT_ID_GLOVES) && istype(H.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/gauntlets/rig))
-		breakouttime /= 2	// Pneumatic force goes a long way.
-	else if(H.species.unarmed_types)
+		return RESIST_ATTACK_DEFAULT
+	if(H.species.unarmed_types)
 		for(var/datum/unarmed_attack/U in H.species.unarmed_types)
 			if(istype(U, /datum/unarmed_attack/claws))
-				breakouttime /= 1.5
-				attack_type = RESIST_ATTACK_CLAWS
-				break
+				return RESIST_ATTACK_CLAWS
 			else if(istype(U, /datum/unarmed_attack/bite/sharp))
+				return RESIST_ATTACK_BITE
+	return RESIST_ATTACK_DEFAULT
+
+/// Deciseconds the jacket (or shibari) takes to slip.
+/mob/living/carbon/human/proc/jacket_breakout_time(datum/act/op/A)
+	var/breakouttime
+	if(istype(get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/straight_jacket))
+		var/obj/item/clothing/suit/straight_jacket/S = get_equipped_item(SLOT_ID_SUIT)
+		breakouttime = S.resist_time
+	if(istype(get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/shibari))
+		var/obj/item/clothing/suit/shibari/S = get_equipped_item(SLOT_ID_SUIT)
+		breakouttime = S.resist_time
+
+	var/mob/living/carbon/human/H = src
+	if(H.get_equipped_item(SLOT_ID_GLOVES) && istype(H.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/gauntlets/rig))
+		breakouttime /= 2	// Pneumatic force goes a long way.
+	else
+		switch(jacket_attack_type())
+			if(RESIST_ATTACK_CLAWS)
+				breakouttime /= 1.5
+			if(RESIST_ATTACK_BITE)
 				breakouttime /= 1.25
-				attack_type = RESIST_ATTACK_BITE
-				break
+	return breakouttime
 
-	switch(attack_type)
-		if(RESIST_ATTACK_DEFAULT)
-			act_message(src, null, MSG_SELF(span_warning("You struggle to remove %I%. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)")), \
-				MSG_OTHERS(span_danger("%U% struggles to remove %I%!")), \
-				item = SJ)
+/mob/living/carbon/human/proc/jacket_escape_text(datum/act/op/A)
+	var/breakouttime = jacket_breakout_time(A)
+	var/obj/item/clothing/suit/SJ = get_equipped_item(SLOT_ID_SUIT)
+	switch(jacket_attack_type())
 		if(RESIST_ATTACK_CLAWS)
-			act_message(src, null, MSG_SELF(span_warning("You claw at %I%. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)")), \
-				MSG_OTHERS(span_danger("%U% starts clawing at %I%!")), \
-				item = SJ)
+			return msg_text(span_warning("You claw at [SJ]. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)"), span_danger("%U% starts clawing at [SJ]!"))
 		if(RESIST_ATTACK_BITE)
-			act_message(src, null, MSG_SELF(span_warning("You gnaw on %I%. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)")), \
-				MSG_OTHERS(span_danger("%U% starts gnawing on %I%!")), \
-				item = SJ)
+			return msg_text(span_warning("You gnaw on [SJ]. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)"), span_danger("%U% starts gnawing on [SJ]!"))
+	return msg_text(span_warning("You struggle to remove [SJ]. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)"), span_danger("%U% struggles to remove [SJ]!"))
 
-	task_timed(src, breakouttime, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(escape_straight_jacket_human_done), done_args = list())
-
-/mob/living/carbon/human/proc/escape_straight_jacket_human_done()
+/mob/living/carbon/human/proc/jacket_escape_done(datum/act/op/A)
 	if(!get_equipped_item(SLOT_ID_SUIT))
 		return
 	act_message(src, null, MSG_SELF(span_notice("You successfully remove \the [get_equipped_item(SLOT_ID_SUIT)].")), \
@@ -72,12 +76,12 @@
 		return 1
 
 /mob/living/carbon/human/proc/break_straight_jacket()
-	act_message(src, null, MSG_SELF(span_warning("You attempt to rip your [get_equipped_item(SLOT_ID_SUIT).name] apart. (This will take around 5 seconds and you need to stand still)")), \
-		MSG_OTHERS(span_danger("%U% is trying to rip \the [get_equipped_item(SLOT_ID_SUIT)]!")))
+	perform_op(src, src, "jacket_rip", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-	task_timed(src, 20 SECONDS, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(break_straight_jacket_human_done), done_args = list())
+/mob/living/carbon/human/proc/jacket_rip_text(datum/act/op/A)
+	return msg_text(span_warning("You attempt to rip your [get_equipped_item(SLOT_ID_SUIT).name] apart. (This will take around 5 seconds and you need to stand still)"), span_danger("%U% is trying to rip \the [get_equipped_item(SLOT_ID_SUIT)]!"))
 
-/mob/living/carbon/human/proc/break_straight_jacket_human_done()
+/mob/living/carbon/human/proc/jacket_rip_done(datum/act/op/A)
 	if(!get_equipped_item(SLOT_ID_SUIT) || src?.buckled_to())
 		return
 

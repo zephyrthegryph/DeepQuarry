@@ -72,7 +72,6 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 			S.age = new_age
 		to_chat(user, span_notice("Age has been set to '[S.age]'."))
 		. = TRUE
-	SStgui.update_uis(src)
 
 /datum/tgui_module/agentcard/proc/ui_act_appearance(datum/act/op/A)
 	open_request(src, /datum/prompt/choice, PROC_REF(appearance_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Select the appearance for this card.", title = "Agent Card Appearance", choices = id_card_states(), timeout = 0)
@@ -89,7 +88,6 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		S.set_sprite_stack(choice.sprite_stack)
 		to_chat(user, span_notice("Appearance changed to [choice]."))
 		. = TRUE
-	SStgui.update_uis(src)
 
 /datum/tgui_module/agentcard/proc/ui_act_assignment(datum/act/op/A)
 	var/obj/item/card/id/syndicate/S = tgui_host()
@@ -106,7 +104,6 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		to_chat(user, span_notice("Occupation changed to '[new_job]'."))
 		S.update_name()
 		. = TRUE
-	SStgui.update_uis(src)
 
 /datum/tgui_module/agentcard/proc/ui_act_bloodtype(datum/act/op/A)
 	var/mob/user = A.actor
@@ -128,7 +125,6 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		S.blood_type = new_blood_type
 		to_chat(user, span_notice("Blood type changed to '[new_blood_type]'."))
 		. = TRUE
-	SStgui.update_uis(src)
 /datum/tgui_module/agentcard/proc/ui_act_dnahash(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
@@ -149,7 +145,6 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		S.dna_hash = new_dna_hash
 		to_chat(user, span_notice("DNA hash changed to '[new_dna_hash]'."))
 		. = TRUE
-	SStgui.update_uis(src)
 /datum/tgui_module/agentcard/proc/ui_act_fingerprinthash(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
@@ -170,7 +165,6 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		S.fingerprint_hash = new_fingerprint_hash
 		to_chat(user, span_notice("Fingerprint hash changed to '[new_fingerprint_hash]'."))
 		. = TRUE
-	SStgui.update_uis(src)
 /datum/tgui_module/agentcard/proc/ui_act_name(datum/act/op/A)
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	open_request(src, /datum/prompt/text, PROC_REF(name_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "What name would you like to put on this card?", title = "Agent Card Name", default = S.registered_name, timeout = 0)
@@ -187,7 +181,6 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		S.update_name()
 		to_chat(user, span_notice("Name changed to '[new_name]'."))
 		. = TRUE
-	SStgui.update_uis(src)
 
 /datum/tgui_module/agentcard/proc/ui_act_photo(datum/act/op/A)
 	var/obj/item/card/id/syndicate/S = tgui_host()
@@ -209,7 +202,6 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		S.sex = new_sex
 		to_chat(user, span_notice("Sex changed to '[new_sex]'."))
 		. = TRUE
-	SStgui.update_uis(src)
 
 /datum/tgui_module/agentcard/proc/ui_act_species(datum/act/op/A)
 	var/obj/item/card/id/syndicate/S = tgui_host()
@@ -225,7 +217,6 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		S.species = new_species
 		to_chat(user, span_notice("Species changed to '[new_species]'."))
 		. = TRUE
-	SStgui.update_uis(src)
 
 /datum/tgui_module/agentcard/proc/ui_act_factoryreset(datum/act/op/A)
 	open_request(src, /datum/prompt/yes_no, PROC_REF(factoryreset_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "This will factory reset the card, including access and owner. Continue?", title = "Factory Reset", timeout = 0)
@@ -255,4 +246,3 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		S.species = initial(S.species)
 		to_chat(user, span_notice("All information has been deleted from \the [src]."))
 		. = TRUE
-	SStgui.update_uis(src)

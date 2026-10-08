@@ -1172,7 +1172,7 @@ DECLARE_REPEAT(/datum/system/mobs, 2 MINUTES, dump_profile, "profiling")
 // Death reporting: the mobs service stops reaching into the round's game mode.
 /mob/living/proc/death(gibbed)
 	...
-	OM_EMIT_WORLD(/datum/om/event/world_mob_death, src, gibbed)   // exists today (mob/death.dm:125)
+	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_death, src, gibbed)   // exists today (mob/death.dm:125)
 
 /datum/system/round/events()
 	return list(/datum/om/event/world_mob_death = PROC_REF(on_mob_death))   // check_win() lives here

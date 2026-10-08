@@ -207,7 +207,7 @@
 	if(BEFORE(src, cooldown_until, CLOCK_WORLD))
 		recheck_delay = recheck_delay ? min(recheck_delay, cooldown_until - world.time) : cooldown_until - world.time
 	if(recheck_delay)
-		after(src, recheck_delay, PROC_REF(reconcile_offer_board), with = list("Candidate timer"), keeps_dead = TRUE)
+		after(src, recheck_delay, PROC_REF(reconcile_offer_board), with = list("Candidate timer"))
 	return null
 
 /datum/system/contracts/proc/try_materialize_candidate(datum/contract_offer_candidate/candidate) as /datum/contract

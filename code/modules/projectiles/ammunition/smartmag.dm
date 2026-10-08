@@ -32,10 +32,33 @@ CAPABILITIES(/obj/item/ammo_magazine/smart)
 	every(2 SECONDS, then(PROC_REF(smart_step)))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	op("smart_item", item(/obj/item), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(smart_interaction_item)))
-	op("smart_hand", hand(), ungated(), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(smart_interaction_hand)))
+	op("smart_cell_in", item(/obj/item/cell/device), priority(OP_PRIORITY_NORMAL + 2), label("Install the cell"),
+		needs(req(PROC_REF(no_cell_yet), because = PROC_REF(cell_present_text))), starts(PROC_REF(realize_rounds)), begins(MSG(smartmag/inserting)), wait(2.5 SECONDS), then(PROC_REF(cell_installed)))
+	// You can remove the power cell from the magazine by hand, but it's way slower than using a screwdriver
+	op("smart_cell_out", hand(), ungated(), priority(OP_PRIORITY_NORMAL + 1), label("Remove the cell"), when(req(PROC_REF(cell_removable))),
+		starts(PROC_REF(realize_rounds)), begins(PROC_REF(struggle_text)), wait(4 SECONDS), then(PROC_REF(cell_removed)))
 	op("clear_data", menu(), label("Clear Ammo Data"), needs(carried(), req_empty(nameof(stored_ammo), because = MSG(smartmag/not_empty))), then(PROC_REF(smartmag_verb_clear_data)))
 
 MSG_DEF_SELF(smartmag/not_empty, "you can't reset it unless it's empty")
+MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")
+
+/// Requirement: no cell is attached yet (what is attached is fixed while the click is decided).
+/obj/item/ammo_magazine/smart/proc/no_cell_yet(datum/act/op/A)
+	return !read_once(attached_cell())
+
+/obj/item/ammo_magazine/smart/proc/cell_present_text(datum/act/op/A)
+	return span_notice("\The [src] already has a [attached_cell()?.name] attached.")
+
+/// The cell comes out by hand only from the magazine held in the other hand.
+/obj/item/ammo_magazine/smart/proc/cell_removable(datum/act/op/A)
+	return read_once(A.actor.get_inactive_hand()) == src && !!read_once(attached_cell())
+
+/obj/item/ammo_magazine/smart/proc/realize_rounds(datum/act/op/A)
+	make_rounds_real()
+	return OP_OK
+
+/obj/item/ammo_magazine/smart/proc/struggle_text(datum/act/op/A)
+	return msg_text("You struggle to remove [attached_cell()] from %T%.")
 
 /obj/item/ammo_magazine/smart/proc/smart_step(datum/act/timer/A)
 	if(!holding_gun())	// Yes, this is awful, sorry. Don't know a better way to figure out if we've been moved into or out of a gun.
@@ -82,16 +105,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/smart, TYPE_PROC_REF(/atom, appe
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
 	make_rounds_real()
-	if(istype(I, /obj/item/cell/device))
-		if(attached_cell())
-			to_chat(user, span_notice("\The [src] already has a [attached_cell().name] attached."))
-			return OP_PASS
-		else
-			to_chat(user, "You begin inserting \the [I] into \the [src].")
-			task_timed(user, 2.5 SECONDS, src, src, PROC_REF(cell_installed), list(user, I))
-			return OP_PASS
-
-	else if(istype(I, /obj/item/ammo_magazine) || istype(I, /obj/item/ammo_casing))
+	if(istype(I, /obj/item/ammo_magazine) || istype(I, /obj/item/ammo_casing))
 		scan_ammo(I, user)
 
 	return OP_DECLINE
@@ -117,35 +131,28 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/smart, TYPE_PROC_REF(/atom, appe
 		scan_ammo(target, user)
 	..()
 
-// You can remove the power cell from the magazine by hand, but it's way slower than using a screwdriver
-/// Old attack_hand. FALSE goes on to the magazine's, as its ..() did.
-/obj/item/ammo_magazine/smart/proc/smart_interaction_hand(datum/act/op/A)
+/obj/item/ammo_magazine/smart/proc/cell_installed(datum/act/op/A)
 	var/mob/user = A.actor
-	make_rounds_real()
-	if(user.get_inactive_hand() == src)
-		if(attached_cell())
-			to_chat(user, "You struggle to remove \the [attached_cell()] from \the [src].")
-			task_timed(user, 4 SECONDS, src, src, PROC_REF(cell_removed), list(user))
-			return OP_OK
-	return OP_DECLINE
-
-/obj/item/ammo_magazine/smart/proc/cell_installed(mob/user, obj/item/cell/device/I)
+	var/obj/item/cell/device/I = A.held
 	if(attached_cell())
-		return
+		return OP_FAILED
 	user.drop_item()
 	I.forceMove(src)
 	rel_set(src, nameof(attached_cell), I)
 	act_message(user, src, MSG_SELF("You install %I% into %T%."), MSG_OTHERS("%U% installs a cell in %T%."), item = I)
 	update_icon()
+	return OP_OK
 
-/obj/item/ammo_magazine/smart/proc/cell_removed(mob/user)
+/obj/item/ammo_magazine/smart/proc/cell_removed(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!attached_cell())
-		return
+		return OP_FAILED
 	attached_cell().update_icon()
 	user.put_in_hands(attached_cell())
 	act_message(user, src, MSG_SELF("You remove \the [attached_cell()] from %T%."), MSG_OTHERS("%U% removes a cell from %T%."))
 	rel_clear(src, nameof(attached_cell))
 	update_icon()
+	return OP_OK
 
 // Finds the cell for the magazine, used by rechargers
 /obj/item/ammo_magazine/smart/get_cell()

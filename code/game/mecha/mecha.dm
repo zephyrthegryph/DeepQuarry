@@ -2475,10 +2475,10 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 // ones are for someone standing next to the exosuit.
 
 // A conscious clicker; the pilot always reaches the controls, anyone else needs the usual obj reach.
-/obj/mecha/topic_allowed(mob/user, list/href_list)
-	if(!user || user.stat)
+/obj/mecha/topic_usable(datum/act/op/A)
+	if(!A.actor || A.actor.stat)
 		return FALSE
-	if(topic_is_pilot(user))
+	if(topic_is_pilot(A.actor))
 		return TRUE
 	return ..()
 

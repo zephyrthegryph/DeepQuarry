@@ -1,11 +1,16 @@
 blob | survives
 emag | emagged: null -> 1
 emag | is_emagged: 0 -> 1
+emag | refresh_queued: 131071 -> 0
 emp 1 | refresh_queued: 131071 -> 0
-emp 2 | nothing
+emp 2 | refresh_queued: 131071 -> 0
 explosion 1 | deleted
 explosion 2 | atom_integrity: down
+explosion 2 | refresh_queued: 131071 -> 0
 explosion 3 | atom_integrity: down
+explosion 3 | refresh_queued: 131071 -> 0
 projectile | atom_integrity: down
+projectile | refresh_queued: 131071 -> 0
 thrown | atom_integrity: down
+thrown | refresh_queued: 131071 -> 0
 

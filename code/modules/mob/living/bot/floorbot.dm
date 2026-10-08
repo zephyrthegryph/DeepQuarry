@@ -23,7 +23,7 @@
 	var/floor_build_type = /datum/decl/flooring/tiling // Basic steel floor.
 
 /mob/living/bot/floorbot/update_icons()
-	if(task_busy(src))
+	if(bot_busy())
 		icon_state = "floorbot-c"
 	else if(amount > 0)
 		icon_state = "floorbot[on]"
@@ -199,7 +199,7 @@ CAPABILITIES(/mob/living/bot/floorbot)
 	if(!..())
 		return
 
-	if(task_busy(src))
+	if(bot_busy())
 		return
 
 	if(get_turf(A) != loc)
@@ -209,10 +209,10 @@ CAPABILITIES(/mob/living/bot/floorbot)
 		var/turf/simulated/floor/F = A
 		if(F.flooring)
 			act_message(src, null, others = span_warning("%U% begins to tear the floor tile from the floor!"))
-			bot_work(5 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done), list(F))
+			bot_work(5 SECONDS, A, PROC_REF(tore_up_tile))
 		else
 			act_message(src, null, others = span_danger("%U% begins to tear through the floor!"))
-			bot_work(15 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done2), list(F))
+			bot_work(15 SECONDS, A, PROC_REF(tore_through_floor))
 		rel_clear(src, nameof(target))
 	else if(isopenturf(A) || istype(A, /turf/simulated/mineral/floor))
 		var/building = 2
@@ -221,56 +221,64 @@ CAPABILITIES(/mob/living/bot/floorbot)
 		if(amount < building)
 			return
 		act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to repair the hole."))
-		bot_work(5 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done3), list(A, building))
+		bot_work(5 SECONDS, A, PROC_REF(repaired_hole), building)
 		rel_clear(src, nameof(target))
 	else if(istype(A, /turf/simulated/floor))
 		var/turf/simulated/floor/F = A
 		if(F.broken || F.burnt)
 			act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to remove the broken floor."))
-			bot_work(5 SECONDS, F, PROC_REF(UnarmedAttack_floorbot_done4), list(F))
+			bot_work(5 SECONDS, F, PROC_REF(removed_broken_floor))
 			rel_clear(src, nameof(target))
 		else if(!F.flooring && amount)
 			act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to improve the floor."))
-			bot_work(5 SECONDS, F, PROC_REF(UnarmedAttack_floorbot_done5), list(F))
+			bot_work(5 SECONDS, F, PROC_REF(improved_floor))
 			rel_clear(src, nameof(target))
 	else if(istype(A, /obj/item/stack/tile/floor) && amount < maxAmount)
 		var/obj/item/stack/tile/floor/T = A
 		act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to collect tiles."))
-		bot_work(2 SECONDS, T, PROC_REF(UnarmedAttack_floorbot_done6), list(T))
+		bot_work(2 SECONDS, T, PROC_REF(collected_tiles))
 		rel_clear(src, nameof(target))
 	else if(istype(A, /obj/item/stack/material) && amount + 4 <= maxAmount)
 		var/obj/item/stack/material/M = A
 		if(M.get_material_name() == MAT_STEEL)
 			act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to make tiles."))
-			bot_work(5 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done7), list(M))
+			bot_work(5 SECONDS, A, PROC_REF(made_tiles))
 
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done(turf/simulated/floor/F)
+/mob/living/bot/floorbot/proc/tore_up_tile(datum/act/op/A)
+	var/turf/simulated/floor/F = A.target
 	F.break_tile_to_plating()
 	addTiles(1)
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done2(turf/simulated/floor/F)
+/mob/living/bot/floorbot/proc/tore_through_floor(datum/act/op/A)
+	var/turf/simulated/floor/F = A.target
 	F.ReplaceWithLattice()
 	addTiles(1)
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done3(atom/A, building)
-	if(A && (locate(/obj/structure/lattice, A) && building == 1 || !locate(/obj/structure/lattice, A) && building == 2)) // Make sure that it still needs repairs
+/mob/living/bot/floorbot/proc/repaired_hole(datum/act/op/A)
+	var/atom/hole = A.target
+	var/building = work_arg
+	if(hole && (locate(/obj/structure/lattice, hole) && building == 1 || !locate(/obj/structure/lattice, hole) && building == 2)) // Make sure that it still needs repairs
 		var/obj/item/I
 		if(building == 1)
 			I = new /obj/item/stack/tile/floor(src)
 		else
 			I = new /obj/item/stack/rods(src)
-		A.attackby(I, src)
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done4(turf/simulated/floor/F)
+		hole.attackby(I, src)
+/mob/living/bot/floorbot/proc/removed_broken_floor(datum/act/op/A)
+	var/turf/simulated/floor/F = A.target
 	if(F.broken || F.burnt)
 		F.make_plating()
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done5(turf/simulated/floor/F)
+/mob/living/bot/floorbot/proc/improved_floor(datum/act/op/A)
+	var/turf/simulated/floor/F = A.target
 	if(!F.flooring)
 		F.set_flooring(get_flooring_data(floor_build_type))
 		addTiles(-1)
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done6(obj/item/stack/tile/floor/T)
+/mob/living/bot/floorbot/proc/collected_tiles(datum/act/op/A)
+	var/obj/item/stack/tile/floor/T = A.target
 	if(T)
 		var/eaten = min(maxAmount - amount, T.get_amount())
 		T.use(eaten)
 		addTiles(eaten)
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done7(obj/item/stack/material/M)
+/mob/living/bot/floorbot/proc/made_tiles(datum/act/op/A)
+	var/obj/item/stack/material/M = A.target
 	if(M)
 		M.use(1)
 		addTiles(4)

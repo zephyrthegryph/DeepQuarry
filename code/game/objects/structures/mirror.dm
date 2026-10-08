@@ -12,12 +12,15 @@
 	var/glass = 1
 	var/datum/tgui_module/appearance_changer/mirror/M
 
+TRACKED(/obj/structure/mirror, glass)
+
 CAPABILITIES(/obj/structure/mirror)
 	owns_one(nameof(M), /datum/tgui_module/appearance_changer/mirror)
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	op("use", hand(), label("Use"), then(PROC_REF(mirror_open_ui)))
 	op("silicon_use", remote(), label("Use"), needs(req_adjacent()), then(PROC_REF(mirror_open_ui)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("add_glass", stack(/obj/item/stack/material/glass, 2), label("Add glass"), when(req(PROC_REF(frame_empty))), begins(MSG(mirror/adding_glass)), wait(2 SECONDS), then(PROC_REF(glass_added)))
 	param(nameof(dir), pos = 1)
 	param(nameof(building), pos = 2)
 
@@ -29,7 +32,7 @@ CAPABILITIES(/obj/structure/mirror)
 	. = ..()
 	rel_set(src, nameof(M), new /datum/tgui_module/appearance_changer/mirror(src, null))
 	if(building)
-		glass = 0
+		set_glass(0)
 		icon_state = "mirror_frame"
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -28 : 28)
 		pixel_y = (dir & 3)? (dir == 1 ? -30 : 30) : 0
@@ -62,15 +65,8 @@ CAPABILITIES(/obj/structure/mirror)
 /obj/structure/mirror/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
-	if(istype(I, /obj/item/stack/material/glass))
-		if(!glass)
-			var/obj/item/stack/material/glass/G = I
-			if (G.get_amount() < 2)
-				to_chat(user, span_warning("You need two sheets of glass to add them to the frame."))
-				return OP_OK
-			to_chat(user, span_notice("You start to add the glass to the frame."))
-			task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, G))
-			return OP_OK
+	if(istype(I, /obj/item/stack/material/glass) && !glass)
+		return OP_OK // too few sheets to add the glass (add_glass takes two)
 
 	if(shattered && glass)
 		play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS)
@@ -85,12 +81,17 @@ CAPABILITIES(/obj/structure/mirror)
 		play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 70)
 	return OP_OK
 
-/obj/structure/mirror/proc/attackby_timed_done(mob/user, obj/item/stack/material/glass/G)
-	if (G.use(2))
-		shattered = 0
-		glass = 1
-		icon_state = "mirror"
-		to_chat(user, span_notice("You add the glass to the frame."))
+MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the frame."))
+
+/// A frame without glass takes it.
+/obj/structure/mirror/proc/frame_empty(datum/act/op/A)
+	return !glass
+
+/obj/structure/mirror/proc/glass_added(datum/act/op/A)
+	shattered = 0
+	set_glass(1)
+	icon_state = "mirror"
+	to_chat(A.actor, span_notice("You add the glass to the frame."))
 
 /obj/structure/mirror/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -101,12 +102,12 @@ CAPABILITIES(/obj/structure/mirror)
 	if(shattered)
 		to_chat(user, span_notice("The broken glass falls out."))
 		icon_state = "mirror_frame"
-		glass = FALSE
+		set_glass(FALSE)
 		new /obj/item/material/shard(loc)
 		return OP_OK
 	playsound(src, I.usesound, 50, 1)
 	to_chat(user, span_notice("You remove the glass."))
-	glass = FALSE
+	set_glass(FALSE)
 	icon_state = "mirror_frame"
 	new /obj/item/stack/material/glass(loc, 2)
 	return OP_OK

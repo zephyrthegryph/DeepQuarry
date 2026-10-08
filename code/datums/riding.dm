@@ -111,7 +111,7 @@
 /datum/riding/proc/Unbuckle(atom/movable/M)
 //	after(ridden, 0, TYPE_PROC_REF(/atom/movable, unbuckle_mob), with = list(M), keeps_dead = TRUE)
 	// Deferred to the next scheduler slot, as /tg/ does with a zero-length timer.
-	after(ridden(), 0, TYPE_PROC_REF(/atom/movable, unbuckle_mob), with = list(M), keeps_dead = TRUE)
+	after(ridden(), 0, TYPE_PROC_REF(/atom/movable, unbuckle_mob), with = list(M))
 
 /datum/riding/proc/Process_Spacemove(direction)
 	if(ridden().get_gravity())

@@ -63,8 +63,6 @@
 	var/list/handles
 	/// Output channel. Behaviours waking on it are ordered after this one.
 	var/produces = 0
-	/// Set if hooks call contribution_hold(): holds not repeated on the next call are released.
-	var/holds = FALSE
 	/// Deciseconds. on_wake runs at most this often per entity: wakes in between are
 	/// coalesced (their bits unioned) and delivered by a deadline when the interval ends.
 	var/min_interval = 0
@@ -211,15 +209,7 @@
 	/// OM_END_UNLINK or OM_END_DELETE_OTHER when that end is deleted.
 	var/on_source_delete = OM_END_UNLINK
 	var/on_target_delete = OM_END_UNLINK
-	/// effect id -> value (number or FROM_VAR("x") read from the source) held on the target.
-	var/list/contributes
-	/// effect id -> value (number or FROM_VAR("x") read from the target) held on the source (the occupant).
-	var/list/source_contributes
-	/// grant kind -> id (or list of ids) held on the target.
-	var/list/grants_target
-	/// grant kind -> id (or list of ids) held on the source (the occupant).
-	var/list/grants_occupant
-	/// Check spec (actor = source, target = target); contributions apply only while it passes.
+	/// Check spec (actor = source, target = target); the edge counts as active only while it passes.
 	var/active_if
 	/// Check spec (actor = source, target = target): the edge holds only while it passes and is
 	/// unlinked outright the moment it fails (range, same-z, visibility), rather than just losing
@@ -316,7 +306,7 @@
 	var/aggregate = AGG_NONE
 	/// Relation type (members are the sources of edges whose target is the entity), or OVER_SLOT(id).
 	var/over
-	/// FROM_VAR/FROM_DERIVED/FROM_EFFECT reader for a member's contribution.
+	/// FROM_VAR/FROM_DERIVED reader for a member's contribution.
 	var/reader
 	/// Channels on members that change their contribution.
 	var/member_inputs = 0
@@ -353,38 +343,7 @@
 /datum/derived_definition/proc/on_member_changed(datum/E, datum/member, old_value, old_contribution, new_contribution)
 	return old_value
 
-// ===================================================================== effects and clocks
-
-/// One generic effect type configured by a table row; subclass only for custom logic.
-/datum/effect_definition
-	parent_type = /datum/core_definition
-	abstract_type = /datum/effect_definition
-	var/id
-	var/idx = 0
-	var/combine = COMBINE_ANY
-	var/stacking = STACKING_REPLACE
-	var/channel = 0
-	/// The change key (PUBLISH_CHANGE) a change of this effect publishes on its entity, or null (row "publishes").
-	var/publishes
-	/// Value when nothing contributes.
-	var/default_value
-	/// Composite: an expression over other effect ids (ALL_OF/ANY_OF/NOT_OF/SUM_OF). No contributions of its own.
-	var/list/expr
-	var/kind = OM_EFFECT_PLAIN
-	var/clock_idx = 0
-	/// Composite effects that read this one (idx list).
-	var/list/dependents
-	/// Effect ids the entity holds on itself while this effect is in effect (godmode holds the
-	/// incapacitation immunities). Compiled to `implies_idx`.
-	var/list/implies
-	var/list/implies_idx
-	/// Status effects (idx) naming this effect as their immunity: gaining it ends them.
-	var/list/blocks
-
-/// Called after the value on `E` changed. Subclasses add custom logic.
-/datum/effect_definition/proc/on_changed(datum/E, old_value, new_value)
-	SHOULD_NOT_SLEEP(TRUE)
-	return
+// ===================================================================== clocks
 
 /datum/clock_definition
 	parent_type = /datum/core_definition
@@ -393,9 +352,6 @@
 	var/idx = 0
 	var/min_rate = 0
 	var/max_rate = 10
-	/// Registry indices (definition_registry().effects) of the effects that multiply and inhibit this clock.
-	var/mult_idx
-	var/inhibit_idx
 
 // ===================================================================== services
 

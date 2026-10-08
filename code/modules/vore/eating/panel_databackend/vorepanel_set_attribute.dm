@@ -1358,7 +1358,6 @@
 			panel.host().vore_selected.belly_overall_mult = CLAMP(request.value, 0, 5)
 	panel.host().update_icon()
 	panel.unsaved_changes = TRUE
-	SStgui.update_uis(panel)
 
 #undef VORE_SIZE_MULT_MOB
 #undef VORE_SIZE_MULT_ITEM
@@ -1435,7 +1434,6 @@
 		panel.host().vore_selected.liquid_fullness4_messages = panel.host().vore_selected.belly_shared_list("fullness4_messages")
 		panel.host().vore_selected.liquid_fullness5_messages = panel.host().vore_selected.belly_shared_list("fullness5_messages")
 		panel.unsaved_changes = TRUE
-	SStgui.update_uis(panel)
 
 /datum/prompt/choice/vore_delete_belly
 	parent_type = /datum/prompt/choice/vore_reset_messages
@@ -1478,12 +1476,10 @@
 	if(!A.answer)
 		if(!isnull(A.request.value) && A.request.last_error && A.request.last_error != "gone")
 			tgui_alert_async(A.request.answerer, A.request.last_error, "Error!")
-			SStgui.update_uis(panel)
 		return
 	if(A.answer.value == "Delete")
 		panel.vore_delete_belly_apply()
 		panel.unsaved_changes = TRUE
-	SStgui.update_uis(panel)
 
 /datum/vore_look/proc/vore_delete_belly_apply()
 	if(host().soulgem?.linked_belly() == host().vore_selected)

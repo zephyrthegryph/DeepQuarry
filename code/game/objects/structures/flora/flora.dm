@@ -58,11 +58,18 @@ TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
 
 CAPABILITIES(/obj/structure/flora)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("uproot", item(/obj/item/shovel), label("Uproot"), when(PROC_REF(removable)), priority(OP_PRIORITY_PART), begins(MSG(flora/uprooting)), wait(3 SECONDS), then(PROC_REF(uprooted)))
+
+MSG_DEF(flora/uprooting, span_warning("You start uprooting %T%..."), null)
+
+/// A shovel uproots it when its type can be removed that way (a fixed property of the type; the shovel is no harvest tool).
+/obj/structure/flora/proc/removable(datum/act/op/A)
+	return !!read_once(removal_tool)
 
 /obj/structure/flora/proc/get_harvestable_desc()
 	return span_notice("\The [src] seems to have something hanging from it.")
 
-/// Old attackby: harvest with the harvest tool, or uproot with the removal tool.
+/// Old attackby: harvest with the harvest tool.
 /obj/structure/flora/proc/interaction_item(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/W = A.held
@@ -76,16 +83,11 @@ CAPABILITIES(/obj/structure/flora)
 			to_chat(user, span_notice("You fail to harvest anything from \the [src]."))
 		return OP_OK
 
-	if(removal_tool && istype(W, removal_tool))
-		to_chat(user, span_warning("You start uprooting \the [src]..."))
-		task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return OP_OK
-
 	return OP_OK
 
-/obj/structure/flora/proc/attackby_timed_done(mob/living/user)
-	act_message(user, src, others = span_notice("%U% uproots and discards %T%!"))
-	consume(src, user)
+/obj/structure/flora/proc/uprooted(datum/act/op/A)
+	act_message(A.actor, src, others = span_notice("%U% uproots and discards %T%!"))
+	consume(src, A.actor)
 
 /obj/structure/flora/proc/can_harvest(obj/item/I)
 	. = FALSE
@@ -292,9 +294,10 @@ TYPE_TABLE(/obj/structure/flora/ausbushes/fullgrass, ausbush_icon_choice, list("
 CAPABILITIES(/obj/structure/flora/pottedplant)
 	owns_one(nameof(stored_item), /obj/item)
 	without("item")
+	without("uproot")
 	op("hide", item(/obj/item), label("Hide item"), when(req_actor_kind(/mob/living/silicon, not = TRUE)),
-		needs(req(PROC_REF(pot_empty), because = MSG(pottedplant/full)), size_is(0, ITEMSIZE_TINY)), then(PROC_REF(interaction_hide_item)))
-	op("search", hand(), label("Search"), then(PROC_REF(interaction_hand)))
+		needs(req(PROC_REF(pot_empty), because = MSG(pottedplant/full)), size_is(0, ITEMSIZE_TINY)), wait(1 SECOND), on_interrupt(PROC_REF(hide_interrupted)), then(PROC_REF(item_hidden)))
+	op("search", hand(), label("Search"), needs(req(PROC_REF(pot_full), because = MSG(pottedplant/nothing))), wait(1 SECOND), then(PROC_REF(item_found)))
 
 /obj/structure/flora/pottedplant/examine(mob/user)
 	. = ..()
@@ -307,40 +310,26 @@ CAPABILITIES(/obj/structure/flora/pottedplant)
 
 MSG_DEF_SELF(pottedplant/full, "It won't fit in, there already appears to be something in here.")
 
-/// Old attackby: hide a tiny item in the pot (never a cyborg's module).
-/obj/structure/flora/pottedplant/proc/interaction_hide_item(datum/act/op/A)
-	var/mob/user = A.actor
+/// Hiding a tiny item in the pot (never a cyborg's module) takes a moment.
+/obj/structure/flora/pottedplant/proc/item_hidden(datum/act/op/A)
 	var/obj/item/I = A.held
-	task_start(/datum/task/timed/pottedplant_attackby, user, src, I = I)
-	return OP_OK
-
-/datum/task/timed/pottedplant_attackby
-	duration = 1 SECOND
-	complete_proc = /obj/structure/flora/pottedplant/proc/attackby_timed_done2
-	cancel_proc = /obj/structure/flora/pottedplant/proc/attackby_timed_failed2
-	var/obj/item/I
-
-/obj/structure/flora/pottedplant/proc/attackby_timed_done2(datum/task/timed/pottedplant_attackby/task)
-	var/obj/item/I = task.I
-	var/mob/user = task.actor
+	var/mob/user = A.actor
 	if(!move_into(src, nameof(src.stored_item), I, user))
 		return
 	act_message(user, src, others = "[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] %U% places [I] into %T%.")
 
-/obj/structure/flora/pottedplant/proc/attackby_timed_failed2(datum/task/timed/pottedplant_attackby/task)
-	var/mob/user = task.actor
-	to_chat(user, span_notice("You refrain from putting things into the plant pot."))
+/obj/structure/flora/pottedplant/proc/hide_interrupted(datum/act/op/A)
+	to_chat(A.actor, span_notice("You refrain from putting things into the plant pot."))
 
-/// Old attack_hand: find whatever is hidden in the pot.
-/obj/structure/flora/pottedplant/proc/interaction_hand(datum/act/op/A)
+MSG_DEF_SELF(pottedplant/nothing, span_filter_notice(span_bold("You see nothing of interest in %T%...")))
+
+/// Requirement: something is hidden in the pot.
+/obj/structure/flora/pottedplant/proc/pot_full(datum/act/op/A)
+	return !!stored_item
+
+/// Finding whatever is hidden in the pot.
+/obj/structure/flora/pottedplant/proc/item_found(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!stored_item)
-		to_chat(user, span_filter_notice(span_bold("You see nothing of interest in [src]...")))
-	else
-		task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
-	return OP_OK
-
-/obj/structure/flora/pottedplant/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, span_filter_notice("You find [icon2html(stored_item, user.client)] [stored_item] in [src]!"))
 	stored_item.forceMove(get_turf(src))
 	rel_take(src, nameof(stored_item))

@@ -191,28 +191,35 @@
 	return A.attempt(actor, actor, actor.get_active_hand()) == INTERACTION_TRY_RAN
 
 // ---------------------------------------------------------------------------
-// Grants: source-tracked, so an ability stays available while any source remains. They are OM
-// grants (object_model_core.md §8, GRANT_ABILITY with the ability id as key): one store for
-// every grant, released when the source is deleted, readable with om_grants_from(). (The
-// rewrite/grants branch's own grant store is superseded by this.)
+// Grants: source-tracked, so an ability stays available while any source remains. An ability is a capability (granted_ability(id)): an
+// activation held by its source and torn down with it, so deleting the source takes the ability away with no bookkeeping of its own.
+
+CAPABILITY_DEF(granted_ability, CAP_GRANTED_ABILITY, key = ability_id, ability_id = null)
+
+/// grant(M, granted_ability(id), source): the ability is on M while `source` holds it. No entries: the activation is the grant.
+/datum/capability/def/granted_ability/entries()
+	return list()
 
 /// `source` now grants `id`. Idempotent: granting the same (id, source) twice is a no-op.
 /mob/living/proc/grant_ability(id, datum/source)
 	if(!id || !source)
 		CRASH("grant_ability() needs both an id and a source")
-	om_grant(src, GRANT_ABILITY, id, source)
+	grant(src, granted_ability(id), source)
 
 /// `source` no longer grants `id`. The ability stays available if another source still does.
 /mob/living/proc/revoke_ability(id, datum/source)
-	om_revoke(src, GRANT_ABILITY, id, source)
+	revoke(src, granted_ability(id), source)
 
 /// TRUE if any source currently grants `id`.
 /mob/living/proc/has_ability(id)
-	return om_has_grant(src, GRANT_ABILITY, id)
+	return granted(src, granted_ability(id))
 
 /// The sources currently granting `id` (for UI/debugging), or null.
 /mob/living/proc/ability_sources(id)
-	return om_grant_sources(src, GRANT_ABILITY, id)
+	for(var/datum/activation/A as anything in activations_of_cap(src, CAP_GRANTED_ABILITY))
+		var/datum/capability/def/granted_ability/def = A.def
+		if(def.ability_id == id)
+			LAZYOR(., A.source)
 
 // ---------------------------------------------------------------------------
 // Shared requirement helpers (code/__defines/abilities.dm's REQ_CONSCIOUS, REQ_ON_TURF).

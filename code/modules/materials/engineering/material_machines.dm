@@ -75,7 +75,7 @@ CAPABILITIES(/obj/machinery/material_furnace)
 	op("load_carbon", item(/obj/item/ore/coal), priority(OP_PRIORITY_DEFAULT - 1), label("Add carbon"), then(PROC_REF(interaction_load_carbon)))
 	op("transfer_gas", item(/obj/item/tank), priority(OP_PRIORITY_DEFAULT - 1), label("Transfer gas"), then(PROC_REF(interaction_transfer_gas)))
 	op("transfer_reagents", item(/obj/item/reagent_containers), priority(OP_PRIORITY_DEFAULT - 1), label("Pour"), then(PROC_REF(interaction_transfer_reagents)))
-	op("eject_contents", menu(), label("Eject contents"), needs(req_adjacent(), req_capable(), req_is(nameof(firing), FALSE, because = MSG(material_furnace/firing)), req(PROC_REF(can_eject_contents_holds), because = PROC_REF(can_eject_contents_refusal))), then(PROC_REF(interaction_eject_contents)))
+	op("eject_contents", menu(), label("Eject contents"), needs(req_adjacent(), req_capable(), req_is(nameof(firing), FALSE, because = MSG(material_furnace/firing)), req(PROC_REF(can_eject_contents_holds), because = PROC_REF(can_eject_contents_refusal))), begins(MSG(material_furnace/opening)), wait(1 SECOND), then(PROC_REF(eject_contents_done)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_use_furnace_holds), because = PROC_REF(can_use_furnace_refusal))), then(PROC_REF(interaction_use)))
 
 DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
@@ -110,6 +110,7 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 	var/answer = can_load_stock(A.actor, src, typed_held)
 	return istext(answer) ? answer : /datum/msg/req_failed
 
+MSG_DEF(material_furnace/opening, span_notice("You begin opening %T%."), span_notice("%U% begins opening %T%."))
 MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while firing")
 
 /// Requirement (was REQ_* can_eject_contents): the legacy check answers TRUE to pass.
@@ -222,13 +223,8 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 		return "the furnace is empty"
 	return TRUE
 
-/obj/machinery/material_furnace/proc/interaction_eject_contents(datum/act/op/A)
+/obj/machinery/material_furnace/proc/eject_contents_done(datum/act/op/A)
 	var/mob/user = A.actor
-	act_message(user, src, MSG_SELF(span_notice("You begin opening %T%.")), MSG_OTHERS(span_notice("%U% begins opening %T%.")))
-	task_timed(user, 1 SECOND, src, src, PROC_REF(eject_contents_done), list(user))
-	return TRUE
-
-/obj/machinery/material_furnace/proc/eject_contents_done(mob/user)
 	if(firing)
 		return
 	if(output_stock())

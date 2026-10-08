@@ -183,6 +183,27 @@ pub fn parts() -> Vec<Part> {
         )
         .flt(vec![Flt::KeepPaths("legacy_fields_converted")])
         .allow(Allow::None),
+        // The hand window pushes: a window updates because its ui_data(A) re-runs when something it reads changes (code/modules/tgui/ui_push.dm). A file
+        // is listed under `ui_push_converted` when its last SStgui.update_uis() and hand changed() mark is gone; a hard ban there. Files are only ever added.
+        Part::new(
+            "hand_window_pushes_banned_in_converted_files",
+            "hand window pushes: update_uis() and changed() banned in the converted files",
+            "SStgui.update_uis() or a hand changed() mark in a file listed under ui_push_converted. Track what the window shows (TRACKED / a setter / a relation) and let ui_data(A) re-run: the framework pushes the window once per frame, and an op handler that returns TRUE updates the acting window.",
+            Files::Code,
+            line(r"\bupdate_uis\(|\bchanged\("),
+        )
+        .flt(vec![Flt::KeepPaths("ui_push_converted")]),
+        // The timed-action forms (task_timed, task_start, task_busy and the om_task_periodic family): a hard ban in the folders and files that reached
+        // zero (`timed_forms_converted` in tools/ci/lint_scopes.toml). A timed action a player does is an op with wait(); a periodic is every().
+        Part::new(
+            "timed_task_forms_banned_in_converted_folders",
+            "timed-action forms: banned in the converted folders",
+            "task_timed(), task_start(), task_busy() or om_task_periodic*() in a folder or file listed under timed_forms_converted. A timed action is an op with wait(t) (begins(MSG(x)) for the start message, claims() for exclusivity, stack(T, n) for a cost; doc/rewrite/conversion_guide.md section 12), a periodic is every(interval, then(PROC_REF(x)), when =).",
+            Files::Code,
+            line(r"^[^/]*\b(task_timed|task_start|task_busy|om_task_periodic|om_task_periodic_stop|om_task_periodic_running)\("),
+        )
+        .flt(vec![Flt::KeepPaths("timed_forms_converted")])
+        .allow(Allow::None),
         Part::new(
             "bump_ratchet_on_bumped_overrides",
             "bump: ratchet on Bumped() overrides",

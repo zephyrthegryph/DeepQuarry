@@ -1,7 +1,7 @@
 blob | survives
 emag | is_emagged: 0 -> 1
 emag | use_power: 1 -> 0
-emp 1 | refresh_bits: 9 -> 0
+emp 1 | refresh_bits: 1 -> 0
 emp 1 | refresh_queued: 131071 -> 0
 emp 1 | turf: +/obj/effect/overlay x1
 emp 2 | turf: +/obj/effect/overlay x1

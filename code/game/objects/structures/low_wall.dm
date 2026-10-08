@@ -31,11 +31,15 @@ DECLARE_APPEARANCE(/obj/structure/low_wall, null, list(APPEARANCE_ANY = list(APP
 CAPABILITIES(/obj/structure/low_wall)
 	smoothing()
 	climb()
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), needs(req(PROC_REF(nothing_on_the_wall), because = PROC_REF(fixture_refusal))), begins(MSG(low_wall/disassembling)),
+		plays(SFX_ITEMS_RATCHET, at_start = TRUE, volume = 2), wait(4 SECONDS), then(PROC_REF(wrench_act_done)))
 	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
-	op("build_grille", item(/obj/item/stack/rods), label("Use"), then(PROC_REF(interaction_rods)))
-	op("build_window", item(/obj/item/stack/material/glass), label("Use"), then(PROC_REF(interaction_glass)))
-	op("build_window_cyborg", item(/obj/item/stack/material/cyborg/glass), label("Use"), then(PROC_REF(interaction_glass)))
+	op("build_grille", stack(/obj/item/stack/rods, 2), label("Use"), needs(req(PROC_REF(grille_supported), because = MSG(low_wall/no_grille)), req(PROC_REF(grille_clear), because = MSG(low_wall/window_in_the_way))),
+		starts(PROC_REF(fingerprinted)), begins(MSG(low_wall/assembling_grille)), wait(1 SECOND), then(PROC_REF(grille_built)))
+	op("build_window", stack(/obj/item/stack/material/glass, 4), label("Use"), needs(req(PROC_REF(window_supported), because = MSG(low_wall/no_window)), req(PROC_REF(window_clear), because = MSG(low_wall/window_here))),
+		starts(PROC_REF(fingerprinted)), begins(MSG(low_wall/assembling_window)), wait(4 SECONDS), then(PROC_REF(window_built)))
+	op("build_window_cyborg", stack(/obj/item/stack/material/cyborg/glass, 4), label("Use"), needs(req(PROC_REF(window_supported), because = MSG(low_wall/no_window)), req(PROC_REF(window_clear), because = MSG(low_wall/window_here))),
+		starts(PROC_REF(fingerprinted)), begins(MSG(low_wall/assembling_window)), wait(4 SECONDS), then(PROC_REF(window_built)))
 	op("place", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
 	op("place_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Place on wall"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_drag)))
 
@@ -53,17 +57,17 @@ CAPABILITIES(/obj/structure/low_wall)
 
 DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbor_type = /obj/structure/low_wall))
 
-/// Old attackby: build a grille from rods.
-/obj/structure/low_wall/proc/interaction_rods(datum/act/op/A)
-	add_fingerprint(A.actor)
-	handle_rod_use(A.actor, A.held)
-	return OP_OK
+MSG_DEF_SELF(low_wall/disassembling, span_notice("Now disassembling the low wall..."))
+MSG_DEF_SELF(low_wall/no_grille, span_notice("This type of wall frame doesn't support grilles."))
+MSG_DEF_SELF(low_wall/window_in_the_way, span_notice("There is a window in the way."))
+MSG_DEF_SELF(low_wall/assembling_grille, span_notice("Assembling grille..."))
+MSG_DEF_SELF(low_wall/no_window, span_notice("You can't build that type of window on this type of low wall."))
+MSG_DEF_SELF(low_wall/window_here, span_notice("There is already a window here."))
+MSG_DEF_SELF(low_wall/assembling_window, span_notice("Assembling window..."))
 
-/// Old attackby: build a window from glass (different per subtype).
-/obj/structure/low_wall/proc/interaction_glass(datum/act/op/A)
+/// The start of a build: the builder leaves a print.
+/obj/structure/low_wall/proc/fingerprinted(datum/act/op/A)
 	add_fingerprint(A.actor)
-	handle_glass_use(A.actor, A.held)
-	return OP_OK
 
 /// Old attackby: drop an item on the wall (a cyborg's module stays with it: the op is not a cyborg's).
 /obj/structure/low_wall/proc/interaction_item(datum/act/op/A)
@@ -76,22 +80,23 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 		auto_align(W, dq_interaction_click_params(user))
 	return OP_OK
 
-/obj/structure/low_wall/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	for(var/obj/structure/S in turf_contents_of_type(loc, /obj/structure))
-		if(istype(S, /obj/structure/window))
-			to_chat(user, span_notice("There is still a window on the low wall!"))
-			return OP_OK
-		if(istype(S, /obj/structure/grille))
-			to_chat(user, span_notice("There is still a grille on the low wall!"))
-			return OP_OK
-	play_sfx(loc, SFX_ITEMS_RATCHET, 2)
-	to_chat(user, span_notice("Now disassembling the low wall..."))
-	task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
-	return OP_OK
+/// The first structure fixed to the wall (a window or a grille), or null; what stands on a tile does not change while a click is decided.
+/obj/structure/low_wall/proc/fixture_on_the_wall()
+	for(var/obj/structure/S in read_once(turf_contents_of_type(loc, /obj/structure)))
+		if(istype(S, /obj/structure/window) || istype(S, /obj/structure/grille))
+			return S
+	return null
 
-/obj/structure/low_wall/proc/wrench_act_timed_done(mob/user)
-	to_chat(user, span_notice("You disassembled the low wall!"))
+/obj/structure/low_wall/proc/nothing_on_the_wall(datum/act/op/A)
+	return isnull(fixture_on_the_wall())
+
+/obj/structure/low_wall/proc/fixture_refusal(datum/act/op/A)
+	if(istype(fixture_on_the_wall(), /obj/structure/window))
+		return span_notice("There is still a window on the low wall!")
+	return span_notice("There is still a grille on the low wall!")
+
+/obj/structure/low_wall/proc/wrench_act_done(datum/act/op/A)
+	to_chat(A.actor, span_notice("You disassembled the low wall!"))
 	dismantle()
 
 /obj/structure/low_wall/proc/can_place_items()
@@ -140,48 +145,32 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 				return OP_PASS
 	return OP_PASS
 
-/obj/structure/low_wall/proc/handle_rod_use(mob/user, obj/item/stack/rods/R)
-	if(!grille_type)
-		to_chat(user, span_notice("This type of wall frame doesn't support grilles."))
-		return
-	for(var/obj/structure/window/WINDOW in turf_contents_of_type(loc, /obj/structure/window))
-		if(WINDOW.dir == get_dir(src, user))
-			to_chat(user, span_notice("There is a window in the way."))
-			return
-	if(R.get_amount() < 2)
-		to_chat(user, span_warning("You need at least two rods to do this."))
-		return
-	to_chat(user, span_notice("Assembling grille..."))
-	task_timed(user, 1 SECONDS, target = R, receiver = src, on_done = PROC_REF(handle_rod_use_timed_done), done_args = list(R))
-	return TRUE
+/obj/structure/low_wall/proc/grille_supported(datum/act/op/A)
+	return !!read_once(grille_type)
 
-/obj/structure/low_wall/proc/handle_rod_use_timed_done(obj/item/stack/rods/R)
-	if(!R.use(2))
-		return
+/// A window facing the builder is in the way of a grille.
+/obj/structure/low_wall/proc/grille_clear(datum/act/op/A)
+	return !window_facing(A.actor)
+
+/obj/structure/low_wall/proc/window_facing(mob/user)
+	for(var/obj/structure/window/WINDOW in read_once(turf_contents_of_type(loc, /obj/structure/window)))
+		if(read_once(WINDOW.dir) == read_once(get_dir(src, user)))
+			return WINDOW
+	return null
+
+/obj/structure/low_wall/proc/grille_built(datum/act/op/A)
 	new grille_type(loc)
-	return
 
-/obj/structure/low_wall/proc/handle_glass_use(mob/user, obj/item/stack/material/glass/G)
-	var/window_type = get_window_build_type(user, G)
-	if(!window_type)
-		to_chat(user, span_notice("You can't build that type of window on this type of low wall."))
-		return
-	for(var/obj/structure/window/WINDOW in turf_contents_of_type(loc, /obj/structure/window))
-		if(WINDOW.dir == get_dir(src, user))
-			to_chat(user, span_notice("There is already a window here."))
-			return
-	if(G.get_amount() < 4)
-		to_chat(user, span_warning("You need at least four sheets of glass to do this."))
-		return
-	to_chat(user, span_notice("Assembling window..."))
-	task_timed(user, 4 SECONDS, target = G, receiver = src, on_done = PROC_REF(handle_glass_use_timed_done), done_args = list(G, window_type))
-	return TRUE
+/obj/structure/low_wall/proc/window_supported(datum/act/op/A)
+	return !!read_once(get_window_build_type(A.actor, A.held))
 
-/obj/structure/low_wall/proc/handle_glass_use_timed_done(obj/item/stack/material/glass/G, window_type)
-	if(!G.use(4))
-		return
-	new window_type(loc, null, TRUE)
-	return
+/obj/structure/low_wall/proc/window_clear(datum/act/op/A)
+	return !window_facing(A.actor)
+
+/obj/structure/low_wall/proc/window_built(datum/act/op/A)
+	var/window_type = get_window_build_type(A.actor, A.held)
+	if(window_type)
+		new window_type(loc, null, TRUE)
 
 /obj/structure/low_wall/proc/get_window_build_type(mob/user, obj/item/stack/material/glass/G)
 	return null

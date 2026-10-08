@@ -44,22 +44,17 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 	else
 		return TRUE
 
-// Added ahead of the sink's own ops (its CAPABILITIES block in watercloset.dm).
+MSG_DEF_SELF(sink/washing_gurgled, span_notice("You start washing %I%."))
+MSG_DEF(sink/washed_gurgled, span_notice("You wash %I% using %T%."), span_notice("%U% washes %I% using %T%."))
 
-/// Old attackby: wash the soggy item before it can interact with the sink.
-/obj/structure/sink/proc/sink_wash_gurgled_item(datum/act/op/A)
-	var/mob/user = A.actor
+/// The held thing is soggy: the wash op takes it before the sink's other item ops.
+/obj/structure/sink/proc/holding_gurgled(datum/act/op/A)
 	var/obj/item/I = A.held
-	if(istype(I) && I.gurgled)
-		to_chat(user, span_notice("You start washing [I]."))
+	return istype(I) && I.gurgled
 
-		task_timed(user, 4 SECONDS, src, src, PROC_REF(wash_gurgled_done), list(user, I), claims = TRUE) // the wash claims the sink
-		return TRUE
-	return OP_DECLINE
-
-/obj/structure/sink/proc/wash_gurgled_done(mob/user, obj/item/I)
+/obj/structure/sink/proc/wash_gurgled_done(datum/act/op/A)
+	var/obj/item/I = A.held
 	I.wash(CLEAN_SCRUB)
-	act_message(user, src, MSG_SELF(span_notice("You wash [I] using %T%.")), MSG_OTHERS(span_notice("%U% washes [I] using %T%.")))
 
 //////////////
 // Special handling of gurgle_contaminate

@@ -63,7 +63,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/xeno_ch)
-	verb_entry(/mob/living/simple_mob/xeno_ch/proc/xeno_build, login = TRUE) // TGPanel
+	op("xeno_build", menu(button = "Build Resin Structure"), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(xeno_build_choices)), "radial" = TRUE, "radius" = 60, "autopick_single_option" = TRUE, "timeout" = 0), step = "choice"), wait(PROC_REF(xeno_build_wait)), then(PROC_REF(xeno_build_done)))
 	verb_entry(/mob/living/simple_mob/verb/toggle_speech_sounds, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/xeno_ch/Login()

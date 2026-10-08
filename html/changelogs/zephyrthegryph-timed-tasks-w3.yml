@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: True
+changes:
+  - refactor: "Timed actions of mobs, bots, NIFs, the backup implanter, the sink wash and the goo trap are ops with a wait; the dogborg sleeper steps with every()."

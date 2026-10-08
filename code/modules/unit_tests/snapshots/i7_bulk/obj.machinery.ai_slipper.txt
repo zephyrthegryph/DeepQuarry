@@ -70,5 +70,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item click: Click: Swipe ID
-keys: ai_slipper_toggle_lock, ai_slipper_use, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, toggle_on, toggle_use, ui_open
+keys: ai_slipper_toggle_lock, ai_slipper_use, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, toggle_on, toggle_use, ui_open
 

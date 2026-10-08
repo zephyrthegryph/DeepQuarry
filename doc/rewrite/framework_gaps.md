@@ -21,7 +21,7 @@ Confidence: **V** verified by reading code, **L** likely, **S** speculative. Lin
 
 | ID | Where | Problem and reasoning | Change | Conf |
 |---|---|---|---|---|
-| B1 **DONE (rewrite/gap-decisions: a hold is released when its datum source dies; `outlives_source = TRUE` opts out; tests `dq_e3/hold_dies_with_its_source_unless_it_outlives`; the OM store already did; converting om_hold callers is a later lane)** | `code/engine/stats/store.dm` vs `code/datums/om/contribution.dm` | Two hold stores with separate `held_on` and override logic. On source death the stats store keeps timed unbound holds running; the OM store releases everything. The same effect can sit in both with different expiry. | Convert `om_hold`/`om_apply` callers to `hold()`; delete contribution.dm. Until then, a test that destroys a source holding both and asserts the intended rule. | V (stats), L (OM) |
+| B1 **DONE (rewrite/om-leftovers: the OM effect store, its fixtures and contribution.dm are deleted; clock rate is code/engine/time/clocks.dm over the clock_rate_bio stat)** | `code/engine/stats/store.dm` vs `code/datums/om/contribution.dm` | Two hold stores with separate `held_on` and override logic. On source death the stats store keeps timed unbound holds running; the OM store releases everything. The same effect can sit in both with different expiry. | Convert `om_hold`/`om_apply` callers to `hold()`; delete contribution.dm. Until then, a test that destroys a source holding both and asserts the intended rule. | V (stats), L (OM) |
 | B2 (DONE, lane-a: stat_hold_place replaces the existing row when the override flag differs) | `store.dm:130` `stat_hold_place` | Lookup keys on (stat, source, key), not the override flag, so hold then override-hold for the same source appends a second row; `release` may drop only one. | Replace the existing row's value/flags, or key on the flag and release all rows for the source. Add a hold → override → release test. | V (dup), L (leak) |
 
 ## C. Timers and `every()`
@@ -52,8 +52,8 @@ Confidence: **V** verified by reading code, **L** likely, **S** speculative. Lin
 | E2 (DONE, lane-a: request_open gives a request with no timeout REQUEST_DEFAULT_TIMEOUT (10 minutes), logged once per kind; REQUEST_NO_TIMEOUT opts out) | `request_open` | A request with no timeout pins its owner until the owner dies; the sweep is the only backstop. | Require a timeout (assert or lint). | V |
 | E3 (DONE, lane-a: runechat delivers oldest first through an index cursor) | `runechat_service.dm:16-19` | Pops from the end of an append-ordered queue, so chat bubbles are delivered newest-first. | Index cursor. | V |
 | E4 (DONE, lane-a: null guard in the vis overlay sweep) | `vis_overlay_service.dm:30` | The snapshot walk reads `overlay.unused` without a null guard; an entry removed since the snapshot runtimes. | Null guard. | L |
-| E5 | `turf_cascade_service.dm` | `remaining -= next` is O(n) per step. | Index cursor. | V (perf) |
-| E6 | SSair, machine_service, explosion_service | Not audited for yield and cursor correctness. | Audit. | — |
+| E5 **DONE (rewrite/om-leftovers: an index cursor and index removal; test dq_system_turf_cascade_steps)** | `turf_cascade_service.dm` | `remaining -= next` is O(n) per step. | Index cursor. | V (perf) |
+| E6 **AUDITED (rewrite/om-leftovers read-through: explosion_service keeps an index cursor with phase resume; SSair resumes by pipenet tail-pop with a resuming flag; no defect found, no behaviour test added)** | SSair, machine_service, explosion_service | Not audited for yield and cursor correctness. | Audit. | — |
 
 ## F. Missing forms (block finishing the migration)
 
@@ -99,8 +99,8 @@ Replacements that **exist** and only need caller conversion: `wait()`/`silent_wa
 | G2 | `code/engine/kernel/inbox.dm:97,159`, `lifeforms/input.dm:134` | `var/obj/item/held` in the engine. | Type it `/obj` or `/atom/movable`. |
 | G3 | tools/analyze | No layering lint covering `code/engine/**` → library/content. | Add one. |
 | G4 | Near-zero legacy forms with no ban: `DECLARE_VERB` (4), `EVENT_HANDLER` (1), `DECLARE_UI`/`UI_ACT` comment residue, `om_after` (~7–38) | Cheap wins. | Convert the last callers, then hard-ban (per AGENTS §3b). |
-| G5 | `final_api.html` §19 (still "0b, clean base (now)"); AGENTS §3a (`wait`, `asks`, `open_request`, `granted_verb` marked new); `completion_plan.md` (09-27, links a missing migration_plan.md) | Agents plan from wrong state. | Update §19 and the AGENTS table; archive completion_plan.md. |
-| G6 | `om_retirement.md` §7 counts disagree with fresh greps (`OM_EMIT` 110 vs 13 files; `om_attach` 44 vs 12) | Unclear progress. | Recount with a script and record the command. |
+| G5 **DONE (rewrite/om-leftovers-2: §19 "Where master stands" table; AGENTS.md §3a is the machinery lane's to keep current)** | `final_api.html` §19 (was "0b, clean base (now)"); AGENTS §3a (`wait`, `asks`, `open_request`, `granted_verb` marked new); `completion_plan.md` (09-27, links a missing migration_plan.md) | Agents plan from wrong state. | Update §19 and the AGENTS table; archive completion_plan.md (done: doc/rewrite/archive/completion_plan.md). |
+| G6 **DONE (rewrite/om-leftovers-2: `tools/ci/legacy_form_counts.sh` is the recount; its output is the §19 census)** | `om_retirement.md` §7 counts disagree with fresh greps (`OM_EMIT` 110 vs 13 files; `om_attach` 44 vs 12) | Unclear progress. | Recount with a script and record the command. |
 | G7 | `rel_remove` doc comment ("disposed of by on_destroy") vs `rel_take` ("keeps it") | Misleading. | Fix wording. |
 
 ## Suggested order
@@ -139,10 +139,10 @@ What converting every `TOPIC_ACTION` row outside the machinery folder to an op s
 | ID | Where | Problem | Change |
 |---|---|---|---|
 | H1 **DONE (rewrite/gap-decisions: tracked mirrors for the guards already moved; `read_once(x)` is the read-once form, muted in `sem/reads`)** | `sem/reads` on `req()`, `when()` | A requirement may read only tracked state, relations and stats. The guards the old handlers ran before asking read plain vars of the holder (`client`, `teleop`, `languages`, a mecha's `state` and `cable`, a draft channel's name), so they ran after the answer instead (a mech's tank valve asks and then checks the bolts, "Give AI" on a player's mob warns in its first question and refuses after the last). | Track those vars, or give a requirement an "evaluated once when the question opens" read that does not subscribe. |
-| H2 | `op_topic_run()` | The holder's `topic_allowed(user, href_list)` still gates every link before the op runs, because a gate says why itself (to_chat) and a requirement may not. It should be `needs(req(...))` per type with the reason as a `MSG`; the admin token check (`CheckAdminHref`) needs a requirement that may consume the token once. | `req_topic_token()` and per-type `needs()`; then `topic_allowed()` goes. |
+| H2 **DONE (rewrite/om-leftovers-2: `req_topic_token()` and per-type `extend(TAG_TOPIC, needs(...))`; `topic_allowed()` and the dispatch gate are deleted and `topic_allowed` is a hard-banned name; the admin token is checked, not consumed; tests `dq_e2/topic_token_requirement`, `topic_ref_among_and_gate`. Leftover: `/obj/proc/topic_allowed(user)` survives as a wrapper only for the two callers in `code/game/machinery/syndicatebeacon.dm`, which are outside this lane; the lint exempts those two files by path and the wrapper goes with them. The obj gate still calls `CanUseTopic()`, whose machinery overrides print their own Access Denied)** | `op_topic_run()` | The holder's `topic_allowed(user, href_list)` still gates every link before the op runs, because a gate says why itself (to_chat) and a requirement may not. It should be `needs(req(...))` per type with the reason as a `MSG`; the admin token check (`CheckAdminHref`) needs a requirement that may consume the token once. | `req_topic_token()` and per-type `needs()`; then `topic_allowed()` goes. |
 | H3 | `CAPABILITIES(T)` is one block per type | The ops of a type go in its one block, so a link's op is declared apart from its handler, and a type whose block another worker owns (`/mob/living`, `/mob/living/carbon/human`, `/mob/living/silicon/robot`) cannot take its links: they are declared on `/mob`, guarded by the holder's type, with `TYPE_PROC_REF`. | Move them into the types' own blocks when `code/library/mob` and `code/modules/combat_ai` are free. |
 | H4 | `topic_ask()` and `rerun_ask` | The ban panel (`ban_topic_ask`), the player panel buttons, the shuttle time edit and the legacy player notes still ask by re-running the href. Their questions branch (temporary or permanent, how long, the reason, an IP ban, one question per banned job), so they want `asks(..., when = ...)` steps and a per-job loop, not a one-for-one conversion. | Convert the ban flows to asks steps; delete `topic_rerun_ask()` and the `rerun` of `/datum/prompt_rerun/topic`. |
-| H5 | `asks(fields = ...)` | A field cannot name an op arg: a prompt that is about the link's target (a language key, the sleevemate's victim, a communicator reply's recipient) gets it through `computed(PROC_REF(x))` reading `A.args["name"]`. | `fields = list("victim" = arg_of("target"))`, resolved and captured like a field arg. |
+| H5 **DONE (rewrite/om-leftovers-2: `arg_of("name", PROC_REF(shape))` in an `asks()` field; converted the language key, the sleevemate mindsteal victim and the communicator reply recipient; test `dq_e2/asks_field_reads_an_op_arg`. The machinery computers that read `A.args` in a `computed()` handler are the machinery lane's)** | `asks(fields = ...)` | A field cannot name an op arg: a prompt that is about the link's target (a language key, the sleevemate's victim, a communicator reply's recipient) gets it through `computed(PROC_REF(x))` reading `A.args["name"]`. | `fields = list("victim" = arg_of("target"))`, resolved and captured like a field arg. |
 | H6 | `/client` is not a datum | The client's own hrefs (private messages, the command bar, the stat browser) are ops of its `/datum/client_session`, and View Variables' actions on the admin's own client are ops of the admin holder whose handlers call the `/client` procs by the same name. | When the client procs are `/datum/admins` or session procs, drop the wrappers. |
 
 ## I. Found while integrating batch 5
@@ -150,9 +150,9 @@ What converting every `TOPIC_ACTION` row outside the machinery folder to an op s
 | ID | Where | Problem | Change |
 |---|---|---|---|
 | I1 **DONE (rewrite/gap-decisions: `slot_occupancy(slot)` with READS_AS(SLOT_OCCUPANCY_KEY), published by the ledger's enter/exit/reslot; a mech's tracked `passenger_count` backs `has_passengers`)** | requirements (`needs`, `req()`), `code/game/mecha/mecha.dm` passenger removal | A requirement may read only tracked state, relations and stats; there is no sanctioned read of containment or slot occupancy. The mech's "no passengers" guard cannot be a requirement, so it stays in the handler. | Track an occupancy count per slot (written by `move_into()` and the slot's release), and let requirements read it. |
-| I2 | `every()` | `every()` takes no `lane =` or `phase =`, so an item cannot choose where in the tick it runs. | Add both to `every()`. |
-| I3 | system `every(members =)` | Plant vines, events and planets walk their own lists by hand. | Let a system's `every()` take `members =` and iterate them with the cursor and `STEP_YIELD` handled by the framework. |
-| I4 | tests weakened to get green | `dq_om_wake_looping_sound_dormancy` lost its looping-sound wake assertion, and `kernel_stage_adapter_graph` had its threshold loosened. | Restore both once looping sounds are a capability with `every()` and the stage graph is back at its measured size. |
+| I2 **DONE (every() validates phase = and lane =; periodic_dispatch.dm routes a type-level every() to them; the one system that wanted a lane, planets, declares `lane = LANE_BACKGROUND`)** | `every()` | `every()` takes no `lane =` or `phase =`, so an item cannot choose where in the tick it runs. | Add both to `every()`. |
+| I3 **DONE (a system every(members =) iterates with the cursor and STEP_YIELD in every.dm; the row's three consumers turned out not to walk lists: plants have no periodic work, each event steps itself with `every(2 SECONDS, event_step, when = event_active)`, and planets drain two pending queues with STEP_YIELD, which is a queue and not a member set)** | system `every(members =)` | Was: plant vines, events and planets walk their own lists by hand. They do not (see the status): there is no consumer to convert, so `members =` waits for a system that sweeps a member set. | Let a system's `every()` take `members =` and iterate them with the cursor and `STEP_YIELD` handled by the framework. |
+| I4 **DONE (the looping-sound wake assertion in dq_om_wake_looping_sound_dormancy is in place and passes; looping sounds as a capability stays a content migration)** | tests weakened to get green | `dq_om_wake_looping_sound_dormancy` lost its looping-sound wake assertion, and `kernel_stage_adapter_graph` had its threshold loosened. | Restore both once looping sounds are a capability with `every()` and the stage graph is back at its measured size. |
 | I5 **DONE (rewrite/gas-flakes: test-only fix)** | `dq_gas_level_*` tests | Timing-dependent; flaky (`dq_gas_level_material_service_hears_heat`, `dq_gas_level_disposal_wakes_when_air_returns`). | Drive them with `test_time()` rather than world time, or wait on the gas watch's own notice. |
 
 ## J. Found while integrating batch 6 (legacy sweeps)
@@ -163,12 +163,42 @@ What converting every `TOPIC_ACTION` row outside the machinery folder to an op s
 | J2 (DONE for what the existing form covers, rewrite/gaps-j) | `open_request()` inside handlers | A handler that asks has an op form already: an `asks()` step, chained with `when =`, guards as `when(req(...))`. Converted: cat, sticky pad, multibelt and cyborg coil, stardog and its fur, nanite goop, pAI, think-tank ghost, face of glamour, glamour ring. **Real gaps left:** (a) an ask whose answerer is not the op's actor (the replicator's consent: `op_request_fields()` sets `answerer = A.actor`), (b) an optional ask whose cancel carries on (the gripper's radial falls through to the wrapped item) and a hook for state that holds while the question is open (`in_radial_menu`), (c) construction ladders (the mecha pry-component step) wait for `construction()`. | Add `answerer =` and `optional = TRUE` to `asks()`, or leave those three on `open_request()` until their forms land. |
 | J3 (DONE for voidsuits, rewrite/gaps-j) | requirements reading the containment ledger | The screwdriver on a void, AutoLok or response suit is an op (`req_not_worn()`, one `asks()`). Ripley (`pilot_of()` with OCCUPANT_KEY) and the print card's self use (`req_actor_slot_empty()`) were already requirements. Left: the print card's `attack()` (a melee override with its own refusals) and `sample_releasable()` (`release_refusal()` of the donor's holder, an ALLOW(reads): custody, not slot occupancy). | None for `slot_occupancy()`; the two left need a custody read and a melee op. |
 | J4 (DONE, rewrite/gaps-j) | codemods | The codemods in `tools/dx/codemods/` wrote on any invocation (even `--help`) and ignored `--dirs` / `--files`. | Done: each script imports `_guard.py`: `--help` prints and exits, a run is a dry run unless `--apply`, and writes are limited to `--files` / `--dirs`. `selftest.py` passes `--apply`; its interact_declare fixtures were regenerated to the script's current output. |
-| J5 | smite release | The smite hold is released by a fixed 8 s safety net. It should react to the shadekin's death notice. | `on_notice` of the shadekin's death releases it; keep the timer as the fallback. |
-| J6 | `keeps_dead` opt-outs | About 200 `keeps_dead = TRUE` opt-outs exist (default is to drop a call whose datum argument was deleted, B1/C4). Most only needed the old behaviour. | Audit each: drop the opt-out where the handler never expects a null argument. |
+| J5 **DONE (rewrite/om-leftovers: observe(shadekin, mob_death) frees the target at once, the timer stays as the fallback; test dq_smite_shadekin_death_frees_target)** | smite release | The smite hold is released by a fixed 8 s safety net. It should react to the shadekin's death notice. | `on_notice` of the shadekin's death releases it; keep the timer as the fallback. |
+| J6 **PARTLY DONE (rewrite/om-leftovers-2: first 50 non-machinery sites audited, see "J6 audit" below; 214 sites in all, the machinery and power ones and the rest of the list are open)** | `keeps_dead` opt-outs | About 200 `keeps_dead = TRUE` opt-outs exist (default is to drop a call whose datum argument was deleted, B1/C4). Most only needed the old behaviour. | Audit each: drop the opt-out where the handler never expects a null argument. |
 | J7 | `/obj/item/rig` EMP | `electrocute_mob(null)` runs on EMP when the rig has no wearer. | Guard the call on a wearer. |
 | J8 | `chem_canister` refill text | The refill strings held a literal tab where `	he` was written ("You fill <tab>he ..."). Fixed in rewrite/integ-6. | DONE. |
 | J9 (DONE, rewrite/gaps-j) | tests | The pin's stardog left its ship in `GLOB.map_sectors` (`unregister_z_levels()` removed numbers from a text-keyed list); fixed, with `dq_gap/overmap_sector_unregisters_its_levels`. `i7_bulk` still fails, alone too, on a gravity generator part's break during its destroy (code/game/machinery). | Fix the gravity generator part (Codex's). |
 
+## K. UI outputs (rewrite/ui-outputs, prefix KU)
+
+* **KU-1: per-window dynamic read recording.** A window's reads are the static ones (generated from `ui_data` bodies, or a declared `ui_from()`): a non-exact host is marked by any tracked write, an exact one by its declared reads. Reads through a relation or a global (`holder.screen`, `GLOB.news_network`) are not seen by the generated reads, and `untracked_ui_read` checks own vars only. Recording what `ui_data` reads per open window, and subscribing to exactly that, is open.
+* **KU-2: hosts that show state they cannot track.** The admin panels (edit_player_panel, edit_memory_panel, newscaster, magnetic and traffic consoles), the vore panel (dozens of writers of `unsaved_changes`/`active_tab`), the appearance changer and the notes panels read mob, client, machine or relation state written all over the tree. They update because an op handler that returns TRUE refreshes the acting window (`on_act_message`) and an answered question refreshes its owner's windows (`request_end`). They are not in `ui_hosts`; each joins when its vars are tracked. Known stale case: the magnetic console lists `magnetic_module` fields (`on`, `electricity_level`) that change on other objects (code/game/machinery, not tracked from the controller).
+* **KU-3: `/datum/vore_look` external updates.** `updateVRPanel()` (belly events) still calls `update_uis`; vorepanel.dm is not in `ui_push_converted`.
+* **KU-4: window range is not a stat.** The status re-check is triggered by the location keys of the user and the host and decided by the window's state (`tgui_status`); a distance stat is not modelled.
+
+## KT. Found converting timed actions (rewrite/timed-tasks; rows K1 to K17)
+
+Status: **DONE** = built in code/engine (or code/library) and documented in final_api.html section 9; the framework tests are `dq_timed_forms/*`.
+
+| ID | Where | Problem | Change |
+|---|---|---|---|
+| K1 **DONE** | `begins()` / `says()` | Took a `/datum/msg` type or a constant: a line that names a runtime value (a drill verb, the victims, a material) could not be said. | A handler returns `msg_text(self, others, blind)`; `begins(PROC_REF(x))` / `says(PROC_REF(x))` tell it. The constant `others =` / `blind =` of the part are honoured for a `/datum/msg` too (they were ignored). Still open: a drill-verb site needs its call converted (the mass sweep). |
+| K2 **DONE** | start of a wait | No start-stage part. | `starts(PROC_REF(x))` and `plays(SFX, at_start = TRUE)` run when the first wait that lasts begins, with `begins()`. |
+| K3 **DONE (policy)** | `when()` / `req()` reads | Neither can read untracked vars. | Track the var and write it through its setter (done for about 15 vars), or wrap a value that is effectively fixed while a click is decided in `read_once(x)`. The global procs with a blanket `READS_FROM()` that the first pass used were removed. Open: no tracked "integrity below max", position or in-line adjacency key; a held-item read in `when()` (`when(req(...))` is the form). |
+| K4 | `stack(T, n)` | A short stack is no candidate: no refusal text ("You need 5"). | A `stack(T, n, because =)`. Kept as a documented change. |
+| K5 **DONE** | `asks()` | A "no" did not end the op (only `confirms()`). | `asks(..., ends_on_no = TRUE)`. An op that must ask after its wait (candy bowl repeat, shower temperature) still has no form (a post-wait `asks()` step after `wait()` is allowed: declare the `asks()` after the `wait()`; the sites are in the sweep). |
+| K6 **DONE** | carrying values across a wait | `captures()` was taken at an `asks()` only. | The snapshot is taken at the first `wait()` too and `LATEST` / `CANCEL_IF_CHANGED` apply after a timed wait. |
+| K7 **DONE** | `ORIGIN_SYSTEM` waits | Registered no pending op by actor, ignored the keeps. | A wait with an actor registers a pending op for `ORIGIN_AI` and `ORIGIN_SYSTEM`, with the default keeps. An `ai()` binding still needs `AUTH_AI` and `reach(...)` to aim at the target. |
+| K8 | `on_interrupt` | Does not run when the target is deleted. | Open: run it (with `A.reason`) for a deleted target. |
+| K9 **DONE** | holds | `task_hold_busy` / `task_release_busy` had no form. | `hold_busy()` / `release_busy()` / `work_busy()` (code/library/jobs/busy.dm, `STAT_BUSY_WORK`); the casino, cataloguer, keycard authentication, passwall and the combat brain use them. |
+| K10 | entry points | An action started from a prompt answer (`*_chosen`, `*_agreed(datum/act/request/A)`, about 40 mob sites), a mob `MouseDrop`, `afterattack` on a foreign target, or a legacy `*_act` override has no op entry point. | Reshape those flows as ops (`asks()` / verbs). The sweep. |
+| K11 **DONE** | `om_task_periodic_running` | No replacement query. | `every_running(E)`. The periodic lanes `PERIODIC_REFLECTORS` / `PERIODIC_THROWING` remain (asserted by `dq_world_lanes_f3_tests`). |
+| K12 | refusal text | A claiming op's target-busy refusal is the fixed `/datum/msg/op/claimed`. | Open: `claims(because =)`. |
+| K13 | requirements with effects | `can_store_atom()` (thinktank) says things while it checks. | Open: split the check from the message. |
+| K14 | `req()` / `when(req())` reading what a mob wears | `get_equipped_item()` calls `dq_ledger()` (no `READS_FROM`, no tracked key, only `slot_occupancy()` has a `READS_AS`), so a requirement that asks "does a mask cover the face" fails `sem/reads`. Blocks the bag-valve mask and the airway kit (code/modules/medical/instruments/resuscitation.dm). | An accessor for the item in a slot with a `READS_AS` key, or a `req_worn_covers(slot, flags)`. |
+| K15 | `ai()` ops: a range keep | The mob work tasks (ants, spiders, the cloak) ended when the worker was more than a tile from the turf; an `ai()` op drops the `ADJACENT` keep (`op_default_keeps()` keeps it only for `REACH_ADJACENT` bindings), so a worker that strays further still finishes. Pins: `ant_builder_steps_aside` records one step. | A `keeps` bit for "within N of the target", or `ADJACENT` for `reach(REACH_RANGE(n))`. |
+| K16 | `asks()` from an op: the prompt's `owner` | `request_open()` is handed the pending op as the owner; a prompt whose `recheck_extra()` reads `owner` as the holder (`candybowl_repeat`) closed at once ("gone"). `subject` is the holder. | Documented: read `subject` in `recheck_extra()` of a prompt an op asks. |
+| K17 | pins on the legacy forms | `PERIODIC_SLOW` work does not tick under the test driver (a blob core chunk pin saw no tick in 7 s), and the legacy `rerun_ask` of the graffiti engraving cannot be answered by `test_answer()` (HANDLE TARGET COLLECTED WITHOUT QDEL). The `om_task_periodic` callers and the engraving have no legacy pin to convert against. | Drive the periodic lanes from `test_time()`; or convert these callers with a converted-form pin. |
 ## K. Relations conversion (rewrite/relations, prefix KR)
 
 Counts on origin/master eac3bc655d: `om_link(` 51 lines in 26 files, of which 30 production calls in 22 files (the rest are the OM core and tests); `om_attach(` 51 lines in 10 files, all the OM core (`entity.dm`, `relation.dm`, `ui.dm`, `tgui.dm`), benchmarks and tests (no non-AI production caller; looping sounds are the om-leftovers lane). The 17 `/datum/om/relation/*` types outside the slot ledger were the work.
@@ -257,3 +287,232 @@ Counts on origin/master eac3bc655d: `om_link(` 51 lines in 26 files, of which 30
 2. **Untracked reads in `tgui_data()` bodies**: the generated `ui_from()` reads come only from tracked vars and stats.
 3. **Hand change marks**: about 70 `changed(src, CHANNEL)` sites outside the OM folder (injury.dm, areas.dm, signaler.dm, mutations.dm, life_om.dm, species traits, heat_mobs, body_effects, asset_list, items.dm, meteors, capability library files).
 4. **User status** (window closes when the user moves or is stunned) needs `lives_while` / `on_change` on tracked stats instead of mob channels.
+
+### H4 design: branching ban flows as asks() steps (not implemented)
+
+Written for review (rewrite/om-leftovers). Today `topic_unbane`, `topic_unbanf`, the ban panel, the player-panel buttons, the shuttle time edit and the legacy player notes
+re-run the href with an answer slot ("a4", "a5", "a6", ...) through `ban_topic_ask()` / `topic_rerun_ask()` (115 sites). The branching is plain DM between the asks.
+
+What already exists: an op's `asks()` steps run in order, each can carry `when = PROC_REF(x)` (x(datum/act/op/A) reads the step is reached; a false `when` skips the step with no prompt
+and leaves `A.answer` as it was), and the answers are read with `A.step_value("step")`. That covers the two-level branch of the unban-edit flow:
+
+- step "temp" `asks(/datum/prompt/choice/admin_ban_topic, fields = list("question" = "Temporary Ban?", "choices" = list("Yes", "No")), step = "temp")`
+- step "minutes" `asks(/datum/prompt/number/admin_ban_topic, ..., step = "minutes", when = PROC_REF(ban_is_temporary))`, where `ban_is_temporary` is `A.step_value("temp") == "Yes"`
+- step "reason" `asks(/datum/prompt/text/..., step = "reason")`, and the handler (`then()`) does the write once, with every answer read from the steps.
+
+What is missing, and is the one framework addition H4 needs: a step that repeats. The per-job ban asks one question per banned job until the admin stops, and the
+answers are a list. Proposed part: `asks(..., step = "job", repeats = PROC_REF(more_jobs))`: after each answer the engine calls `more_jobs(datum/act/op/A)`; TRUE asks the
+step again (the field computation re-runs, so the question can name the next job), FALSE moves on. The answers are kept in order, `A.step_values("job")` returns the list, and
+`keeps = WAIT_KEEPS_DEFAULT` governs the abandoned flow as for any step. A cancel at any step ends the op with nothing written, as today.
+
+Order of work once the repeat part exists: (1) the unban/edit pair, (2) the add-ban flow including the IP ban branch (`when =` on the IP step), (3) the per-job loop, (4) the player-panel
+buttons and shuttle time edit (single-question flows; they need only `asks()`), (5) delete `topic_rerun_ask()`, `ban_topic_ask()` and the `rerun` of `/datum/prompt_rerun/topic`, and ban the names.
+Tests: one per flow, driving `test_ui()` with `test_answer()` for each step including a cancel mid-flow (no ban written) and a "No" at the temporary step (permanent ban).
+
+
+### J6 audit: the first 50 `keeps_dead = TRUE` sites outside `code/game/machinery`, `code/modules/power` and the engine
+
+Verdicts come from reading each handler. REMOVED: the opt-out is gone (the handler only null-checks, takes no datum from `with`, or would runtime on null). KEPT: the handler tail is cleanup that must run with the argument gone. Behaviour tests (`dq_keeps_dead_cleanup_tests.dm`, `dq_keeps_dead_cleanup_more_tests.dm`) schedule the real handler with `keeps_dead`, delete the argument and assert the cleanup; sites marked T have one. The tests call the handler through `after()` as the site does, not the site's own code. Untested: highlander (needs a client) and bluespace_connection (the relation and capability setup is not exercised).
+
+| Site | Handler | Verdict | Why |
+|---|---|---|---|
+| ticker.dm:481 | `reboot_callback` | REMOVED | strings only |
+| bluespace_connection.dm:67 | `bluespace_exit` | KEPT | a deleted exit still severs the connection and revokes the capability (moderate confidence) |
+| _cinematic.dm:91 | `clean_up_cinematic` | REMOVED | a bool only |
+| riding.dm:114 | `unbuckle_mob` | REMOVED | a null mob makes it unbuckle a different rider; the deleted mob is unbuckled by its deletion |
+| highlander.dm:88 | `only_one` | KEPT (resolved by reading) | `user` appears only in the two log lines and a not-started alert; the antag grants run over every player regardless of `user`, and the admin asked for the event, so a deleted admin mob must not cancel it. Not tested: it needs a client and a started round |
+| runes.dm:183 | `convert_tick` | REMOVED | `target.loc` runtimes on null |
+| runes.dm:397 | `raise_finish` | REMOVED | begins with a QDELETED guard |
+| runes.dm:658, 664 | `cult_mend_rune_wait` | KEPT, T | a deleted caster still releases `GLOB.runedec` |
+| HARDWARE.dm:104, 116 | `malf_station_bomb_tick` | REMOVED | `user.bombing_station` runtimes on null |
+| tree_interdiction.dm:122 | `malf_unlock_cyborg_done` | KEPT | a deleted target must still clear `user.hacking` |
+| apportation.dm:54 | `finish_apportation_grab` | KEPT | a deleted target must still consume the spell item |
+| passwall.dm:59 | `passwall_found` | REMOVED | returns on a deleted user |
+| resurrect.dm:50 | `resurrect_finish` | REMOVED | only a message and instability on the holder |
+| anomalies_flux.dm:79, 86 | `tesla_zap` | REMOVED | begins with `if(!source) return` |
+| effect_system.dm:378 | `expire_smoke` | KEPT, T | the emitter's `total_smoke` is still decremented |
+| effect_system.dm:654 | `expire_confetti` | KEPT, T | the emitter's `total_confetti` is still decremented |
+| spiders.dm:239, 250 | `vent_crawl_midway`, `vent_crawl_exit` | KEPT | the spiderling is still moved out of the vent and its relation cleared |
+| step_triggers.dm:55 | `throw_step` | REMOVED | touches only the deleted mover (relation cleanup on its deletion not verified) |
+| antag_spawners.dm:81, 133 | `finish_technomancer_spawn`, `finish_drone_spawn` | KEPT | the one-shot item must still be consumed |
+| aicard.dm:191 | `wipe_ai_tick` | KEPT | a deleted AI must still clear the card's `flush` |
+| phone.dm:102, 109, 112, 115 | `dial_ghost` | KEPT | the last stage removes the blackness screen |
+| headset.dm:187 | `handle_finalize_recalculatechannels` | REMOVED | no datum in `with`. The retry itself was dead: `Initialize()` calls with `register = FALSE` and `on_materialize()` registers, and the radio service needs the atoms service, so a registering call without `SSradio` cannot be a boot race. The retry and its `initial_run` parameter are deleted; a registering call without the service marks the headset broken at once |
+| vacpack.dm:233, 266, 292, 309 | `prepare_sucking`, `handle_consumption` | REMOVED | both start with a QDELETED guard (the 309 call also passes `target_turf` in the `auto_setting` slot: separate bug) |
+| falling_object.dm:45 | `end_fall` | REMOVED | a bool only |
+| sahoc.dm:101 | `capsule_result` | REMOVED | null-checks; the tail is cosmetic |
+| mech_toys.dm:249, 255, 352 | `brawl_round`, `brawl_exchange` | KEPT | a deleted fighter still ends the brawl on the toy (`in_combat`, health) |
+| extinguisher.dm:89 | `extinguisher_propel_step` | KEPT, T | the chair's `propelled` is set before the `if(!user)` return; dropping the later steps leaves it above 0, and Bump then throws the rider (test starts it at 5, deletes the user, expects 0) |
+| secure.dm:170 | `emag_spark_done` | KEPT | the safe must stop sparking and unlock |
+| cliff.dm:237, 264 | `fall_land`, `fall_off_cliff` | REMOVED | return on a deleted or non-living argument |
+| __closets.dm:541 | `end_door_animation` | REMOVED | a bool only |
+| droppod.dm:72, 102 | `on_impact`, `open_pod` | REMOVED | a turf and a bool |
+| props/machines.dm:681 | `delayed_flick` | KEPT, T (fixed) | the handler runtimed on a null door before `get_out()` cleared `changing_state`; it now guards the overlay and still schedules `get_out`; test `keeps_dead_nt_pod_finishes_state_change` |
+| alien_nests.dm:31 | `struggle_free` | REMOVED | a deleted user fails its own check |
+| transit_tubes.dm:121 | `launch_close` | REMOVED | it sets `pod_moving` itself, so nothing is left stuck when dropped |
+| transit_tubes.dm:128 | `launch_go` | KEPT | a deleted pod must still clear `pod_moving` |
+
+Second pass below covers every remaining site outside `code/game/machinery`, `code/modules/power` and the engine.
+
+
+### J6 audit, second pass: the remaining sites outside machinery, power and the engine
+
+88 opt-outs removed, 47 sites kept. Verdicts from reading each handler (four readers, then spot-checked: `phase_shift.dm:313` was reverted to KEPT because the handler restores the owner mob). A kept CLEANUP site has a test in `dq_keeps_dead_cleanup_batch2_tests.dm` unless it says UNTESTED. Where several sites are a chain of one handler (fulton, jaunt, vent crawl) one test covers the chain. Removed sites with no datum in `with` were never affected by the opt-out.
+
+| Site | Handler | Verdict | Why |
+|---|---|---|---|
+| transit_tubes.dm:163 | `arrival_open` | KEPT, CLEANUP | opens station, chains arrival_opened (pod_moving reset) with pod |
+| transit_tubes.dm:168 | `arrival_opened` | KEPT, CLEANUP | pod_moving = 0 regardless of pod |
+| watercloset.dm:335 | `refill_done` | REMOVED | no datum arg |
+| watercloset.dm:357 | `tertiary_flush` | KEPT, CLEANUP | completed tail schedules refill_done(FALSE) clearing refilling |
+| watercloset.dm:359 | `tertiary_flush` | REMOVED | non-final branch only touches flushed |
+| watercloset.dm:372 | `refill_done` | REMOVED | no datum arg |
+| walls.dm:322 | `thermitemelt_cleanup` | REMOVED | if(O) only |
+| lock.dm:52 | `lock_wire_relocks` | REMOVED | holder is only subject |
+| needle.dm:380 | `needle_inject_cycle` | KEPT, CLEANUP | deleted user/target goes to needle_inject_finish resetting holder mode to draw |
+| debug.dm:574 | `admin_boost_supermatter` | REMOVED | if(SM) |
+| telecube.dm:200 | `fade_back_in` | REMOVED | QDELETED(AM) return |
+| telecube.dm:233 | `clear_blur` | REMOVED | if(AM) visual |
+| balloon_alert.dm:97 | `remove_image_from_client` | REMOVED | only touches deleted things |
+| heart_anomalock.dm:57 | `clear_lightning_overlay` | KEPT, CLEANUP | nulls src.lightning_overlay, cancels timer |
+| heart_anomalock.dm:61 | `clear_lightning_overlay` | KEPT, CLEANUP | same handler |
+| body_backup.dm:30 | `_dq_body_backup_after_spawn` | REMOVED | QDELETED return |
+| reactive_armour.dm:383 | `end_stealth` | KEPT, CLEANUP | in_stealth = FALSE on src |
+| slime_state.dm:173 | `/mob/say` | REMOVED | string arg |
+| voice_commands.dm:14 | `/mob/say` | REMOVED | string arg |
+| contract_evidence.dm:193 | `prune_contract_evidence` | REMOVED | scalar |
+| contract_offer.dm:210 | `reconcile_offer_board` | REMOVED | scalar |
+| contract_requirement.dm:394 | `complete_duration` | REMOVED | scalars |
+| contract_requirement.dm:494 | `complete_stage` | REMOVED | scalars |
+| faction_agent_contracts.dm:362 | `queue_agent_vetting` | REMOVED | scalars |
+| faction_agent_contracts.dm:369 | `queue_agent_offers` | REMOVED | scalars |
+| scanner.dm:44 | `detective_scanner_blood_report` | REMOVED | cosmetic |
+| vending.dm:563 | `finish_vend` | KEPT, CLEANUP | R null branch set_vend_ready(TRUE)+rel_clear |
+| vending.dm:596 | `bonus_vend` | REMOVED | if(R) |
+| snacks.dm:337 | `food_finished_emote` | REMOVED | emote on user |
+| generated_station_defenders.dm:366 | `complete_logistics_delivery` | KEPT, CLEANUP-UNTESTED | sleep_squad(squad_id) tail; needs full runtime/agents |
+| generated_station_director.dm:155 | `expire_report` | REMOVED | scalars |
+| HolodeckControl.dm:354 | `atmos_test_ignite` | REMOVED | cosmetic, guarded |
+| seed_mobs.dm:12 | `living_product_unclaimed` | REMOVED | QDELETED return |
+| spreading_growth.dm:133 | `spread_child_settles` | REMOVED | QDELETED return |
+| hydroponics/spreading/spreading_response.dm:21 | `entangle` | REMOVED | `!victim` returns first; only touches victim |
+| integrated_electronics/subtypes/reagents.dm:153 | `inject_mob` | KEPT, UNSURE | null L runs activate_pin(3) (failure pulse to next circuit), a signal not a hold release |
+| maint_recycler/code/maint_recycler.dm:285 | `door_finished_moving` | REMOVED | no deletable datum arg |
+| maint_recycler/code/maint_recycler.dm:292 | `door_finished_moving` | REMOVED | no deletable datum arg |
+| medical/contagion/engineered/traits/hair.dm:48 | `change_hair` | REMOVED | `!H` returns; only edits H |
+| medical/contagion/engineered/traits/hair.dm:52 | `change_hair` | REMOVED | `!H` returns; only edits H |
+| mining/fulton.dm:107 | `fulton_inflate` | KEPT, CLEANUP | chain link: schedules fulton_launch..fulton_release which consume(holder); dropping strands the holder (existing test c4_fulton_deleted_payload covers whole chain) |
+| mining/fulton.dm:118 | `fulton_launch` | KEPT, CLEANUP | chain link to fulton_arrive/release; ishuman(null) safe (covered by c4_fulton_deleted_payload) |
+| mining/fulton.dm:127 | `fulton_arrive` | KEPT, CLEANUP | chain link, moves holder to landing and schedules retract (covered by c4_fulton_deleted_payload) |
+| mining/fulton.dm:134 | `fulton_retract` | KEPT, CLEANUP | chain link to fulton_land/release (covered by c4_fulton_deleted_payload) |
+| mining/fulton.dm:139 | `fulton_land` | KEPT, CLEANUP | cut_overlays, schedules fulton_release; `if(A)` guards (covered by c4_fulton_deleted_payload, interim_fulton_landing_release) |
+| mining/fulton.dm:147 | `fulton_release` | KEPT, CLEANUP | `if(A)` guard then consume(src) disposes the holder (covered by c4_fulton_deleted_payload) |
+| mining/shelter_atoms.dm:339 | `delete_preview_render` | REMOVED | `user?.client` only touches the deleted user |
+| mob/living/bot/secbot.dm:56 | `say` | REMOVED | no datum arg, cosmetic |
+| mob/living/carbon/human/emote.dm:539 | `flip_end` | REMOVED | args are density/flag values, no deletable datum |
+| mob/living/carbon/human/examine.dm:281 | `pulse_check_result` | REMOVED | `user &&` guard, only messages user |
+| mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm:157 | `do_trigger` | KEPT, CLEANUP-UNTESTED | null L takes the "fail to catch" branch and spent(src, L) consumes the maw; maw Initialize self-deletes on the lit test map |
+| mob/living/carbon/human/species/shadekin/state/powers/phase_shift.dm:313 | `complete_phase_out` | KEPT, CLEANUP | the handler applies the phase-out to the owner mob and only the shadekin datum is the deleted argument; dropping skips the whole phase-out (found in review, the audit said NULL_SAFE) |
+| mob/living/carbon/human/species/station/protean/protean_rig.dm:103 | `AssimilateBag` | REMOVED | `spawned && !P` returns; QDELETED(B) returns |
+| mob/living/carbon/human/species/station/protean/protean_species.dm:181 | `finish_survival_gear` | REMOVED | QDELETED(H) returns first |
+| mob/living/carbon/human/species/station/station_special_abilities.dm:1295 | `target_lunge_land` | KEPT, CLEANUP | clears LEAPING on src even when target gone |
+| mob/living/carbon/human/species/xenomorphs/alien_powers.dm:354 | `leap_land` | KEPT, CLEANUP | clears LEAPING on src before the `!T` miss branch |
+| mob/living/living.dm:407 | `clear_fullscreen` | REMOVED | no deletable datum arg |
+| mob/living/living.dm:487 | `do_vomit` | REMOVED | args are values/flags, no deletable datum |
+| mob/living/silicon/robot/cloak.dm:174 | `robot_cloak_remove_wibble` | REMOVED | `L?.` guard; only touches L (the owner itself) |
+| mob/living/silicon/robot/dogborg/dog_modules.dm:444 | `leap_land` | KEPT, CLEANUP | clears LEAPING on src before the `!T` miss branch |
+| mob/living/simple_mob/combat.dm:257 | `rocket_volley_end` | REMOVED | retract message cosmetic; then_proc only a follow-up shot at the gone target |
+| mob/living/simple_mob/combat.dm:280 | `attack_delay_done` | KEPT, CLEANUP | ai_busy_end() runs before the QDELETED(A) return; dropping leaves AI hold |
+| mob/living/simple_mob/simple_mob.dm:943 | `leap_land` | KEPT, CLEANUP | clears LEAPING on src before the `!T` miss branch |
+| mob/living/simple_mob/subtypes/animal/giant_spider/tunneler.dm:88 | `tunnel_dig` | KEPT, CLEANUP (UNTESTED: the test leaked the dig effects on its block) | A only used in a message; tail submerges and runs the dig chain ending in ai_busy_end/emerge |
+| mob/living/simple_mob/subtypes/animal/giant_spider/tunneler.dm:189 | `tunnel_step_check` | REMOVED | args are turfs and a list, no deletable datum; handler null-checks |
+| mob/living/simple_mob/subtypes/animal/passive/fish.dm:60 | `say` | REMOVED | no datum arg, cosmetic |
+| mob/living/simple_mob/subtypes/glamour/ddraig.dm:163 | `lunge_1` | KEPT, CLEANUP | `!L` branch calls ai_busy_end(); dropping leaves AI hold |
+| mob/living/simple_mob/subtypes/glamour/ddraig.dm:178 | `lunge_2` | KEPT, CLEANUP | clears LEAPING and ai_busy_end() before the `if(L ...)` check |
+| ddraig.dm:196 | `firebreathend` | KEPT, CLEANUP | QDELETED(A) branch calls ai_busy_end() to release the owner busy hold |
+| cultist.dm:102 | `do_special_attack_1` | KEPT, CLEANUP | A is null-checked and every path ends in ai_busy_end() on the owner |
+| cyber_horror.dm:142 | `do_special_attack_1` | KEPT, UNSURE | no null guard on A; sets LEAPING then chains do_special_attack_2 without keeps_dead (dropped when A gone), so LEAPING/busy leak anyway; needs inner keeps_dead |
+| eventsubtype.dm:175 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:222 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:231 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:240 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:265 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:295 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:304 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:313 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:413 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:417 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| eventsubtype.dm:421 | `teleport_attack` | REMOVED | null target returns FALSE with only a to_chat |
+| wraith.dm:60 | `do_special_attack_1` | KEPT, CLEANUP | A is null-checked and every path ends in ai_busy_end() on the owner |
+| bigdragon.dm:682 | `/mob/living/say` | REMOVED | no deletable datum argument |
+| bigdragon.dm:753 | `chargeend` | KEPT, CLEANUP | QDELETED(A) branch calls ai_busy_end() |
+| bigdragon.dm:794 | `firebreathend` | KEPT, CLEANUP | QDELETED(A) branch calls ai_busy_end() |
+| blackholemobs.dm:79 | `doLeap` | KEPT, CLEANUP | !L branch calls ai_busy_end() |
+| cryptdrake.dm:114 | `do_special_attack_1` | KEPT, CLEANUP | !L branch calls ai_busy_end() |
+| cryptdrake.dm:129 | `do_special_attack_2` | KEPT, CLEANUP | clears LEAPING and ai_busy_end() regardless of L |
+| demon_abilities.dm:55 | `demon_phased_in` | REMOVED | no deletable datum argument |
+| demon_abilities.dm:143 | `demon_phased_in` | REMOVED | no deletable datum argument |
+| frog.dm:70 | `chargeend` | KEPT, UNSURE | no null guard on A (old_style_target/launch at null may runtime before ai_busy_end); busy hold only self-expires by cap |
+| candy.dm:363 | `chargeend` | KEPT, UNSURE | same as frog: no null guard on A before ai_busy_end |
+| candy.dm:513 | `barrage_shot` | REMOVED | attack volley only, launch at null target is not cleanup |
+| candy.dm:524 | `barrage_shot` | REMOVED | attack volley only, launch at null target is not cleanup |
+| candy.dm:542 | `/obj/item/projectile/launch_projectile` | REMOVED | fires extra projectile at target; would runtime/no-op on null |
+| gryphon.dm:116 | `do_special_attack_1` | KEPT, CLEANUP | !L branch calls ai_busy_end() |
+| scel.dm:172 | `lunge_1` | KEPT, CLEANUP | !L branch calls ai_busy_end() |
+| scel.dm:187 | `lunge_2` | KEPT, CLEANUP | clears LEAPING and ai_busy_end() regardless of L |
+| solargrub_larva.dm:149 | `ventcrawl_arrive` | KEPT, CLEANUP | null end_vent forceMoves the larva out of the vent it is inside (unsticks owner) |
+| syndimobs.dm:85 | `do_special_attack_1` | REMOVED | only throws at A and schedules _2 itself; null A is a no-op leap |
+| vore_hostile.dm:199 | `do_special_attack_1` | KEPT, CLEANUP | !L branch calls ai_busy_end() releasing the AI busy hold set by do_special_attack |
+| weather.dm:197 | `astral_sea_warp` | REMOVED | null target just to_chat and returns FALSE |
+| weather.dm:203 | `astral_sea_warp` | REMOVED | same |
+| weather.dm:211 | `astral_sea_warp` | REMOVED | same |
+| weather.dm:216 | `dash_attack` | REMOVED | null A does ai_busy_begin then ai_busy_end, net no-op |
+| remote_view.dm:529 | `remote_view_decouple` | REMOVED | cache_mob is owner and would runtime on null .client |
+| game.dm:34 | `game_evaluate` | REMOVED | next is a proc ref, not a datum |
+| nif.dm:120 | `persist_on_death` | REMOVED | QDELETED(source) check then nothing |
+| faxmachine.dm:505 | `visible_message` | REMOVED | no datum args |
+| paper.dm:522 | `burn_through` | REMOVED | null user/P falls to to_chat message only |
+| paper_bundle.dm:94 | `burn_through` | REMOVED | same |
+| gun.dm:488 | `handle_gunfire` | REMOVED | QDELETED(user) returns first; target null cached to turf |
+| gun.dm:562 | `handle_userless_gunfire` | REMOVED | only continues the burst; no cleanup tail |
+| chem_synthesizer.dm:798 | `bottle_product` | REMOVED | string arg only |
+| disposal_outlet.dm:127 | `expel_contents` | KEPT, UNSURE | gas is holder-owned and dies with the holder; items loop may need to run to free items, could not confirm items are stranded |
+| v_garbosystem.dm:183 | `crunch_item` | REMOVED | A null-checked, only touches A |
+| v_garbosystem.dm:187 | `crunch_thing` | REMOVED | A null-checked, only touches A |
+| autoresleever.dm:284 | `install_nif_software` | REMOVED | only touches the deleted nif (owner too) |
+| computers.dm:530 | `dispense_injector` | KEPT, CLEANUP | null I branch clears gene_sequencing busy flag |
+| crashes.dm:47 | `after_crash` | REMOVED | null target returns early; nothing to restore |
+| shuttle_specops.dm:172 | `mauraders_close` | REMOVED | only touches the area (the deleted arg) |
+| ethereal_jaunt.dm:41 | `jaunt_resurface` | KEPT, CLEANUP | any missing arg calls jaunt_finish which frees the jaunter and spends holder/animation |
+| ethereal_jaunt.dm:53 | `jaunt_reform` | KEPT, CLEANUP | same jaunt_finish path |
+| ethereal_jaunt.dm:60 | `jaunt_finish` | KEPT, CLEANUP | restores canmove, moves jaunter out, spends holder/animation |
+| hyper_pad.dm:130 | `animate_discharge` | REMOVED | cosmetic overlay clear on P |
+| hyper_pad.dm:191 | `animate_charge` | REMOVED | cosmetic overlay add on P |
+| vorepanel.dm:1178 | `help_out_done` | REMOVED | M?.loc check returns; only messages and release of M |
+| vorepanel.dm:1196 | `inner_devour_done` | REMOVED | guarded by TB/host/M presence, only acts on them |
+| resurrect.dm:93 | `artifact_revive_wakes` | REMOVED | null H returns; holder only messaged |
+| talking.dm:59 | `SaySomething` | REMOVED | no datum args |
+| extracts.dm:1058 | `slime_extract_explode` | REMOVED | would explode at null turf; only acts on the extract |
+| game.dm:353 | `flick_overlay_end` | REMOVED | only removes image I from clients; I is the deleted thing |
+| alert.dm:55 | `alert_timeout` | REMOVED | null-checks alert; deleted alert already cleared |
+| screen_objects.dm:1087 | `end_empty_flash` | REMOVED | cosmetic flash cleanup of F/user client |
+
+Remaining open: the `code/game/machinery` and `code/modules/power` sites, untouched by this lane.
+
+#### Second-pass override: nine removals restored after review
+
+A second read found these removals unsafe; `keeps_dead = TRUE` is back on each (with `weather.dm:232`, the `dash_attack_1` continuation, which had none). Tested = a `keeps_dead_*` test in `dq_keeps_dead_cleanup_batch2_tests.dm`.
+
+| Site | Handler | Why it is kept | Test |
+|---|---|---|---|
+| shuttles/crashes.dm:47 | `after_crash(victims list, target)` | one deleted victim would drop the shuttle move and the surviving victims | none: needs a shuttle, landmark and victims |
+| vore/syndimobs.dm:85 | `do_special_attack_1` | it schedules `_2`, which ends the leap; dropped, the leap never lands | yes |
+| vore/weather.dm:197, 203, 211 | `astral_sea_warp` | restored on review; by reading, the null path only messages and returns, and the chain runs from `every(when = chain_number)`, so a test cannot tell the two apart | none |
+| vore/weather.dm:216, 232 | `dash_attack`, `dash_attack_1` | the continuation clears LEAPING | yes (`dash_attack_1`) |
+| xenoarcheaology/effects/resurrect.dm:93 | `artifact_revive_wakes(H, holder)` | a deleted artifact must not cancel the revive | none: needs a client on the body |
+| simple_mob/combat.dm:257 | `rocket_volley_end` | the `then_proc` follow-up (imperion microsingularity) would be lost | yes |
+| projectiles/gun.dm:488, 562 | `handle_gunfire`, `handle_userless_gunfire` | the burst caches the target turf and keeps firing after the target dies | none: needs a loaded gun |
+| vore/gateway/candy.dm:513, 524 | `barrage_shot` | the critter shot and the chain continue at a dead target's last place | none: spawns random mobs |
+| _onclick/hud/screen_objects.dm:1087 | `end_empty_flash` | `spent(F)` never runs if the user is gone | yes |
+
+`shuttle_specops.dm:172` `mauraders_close(special_ops)` is confirmed removed: its only datum argument is the area, which both finds the doors and is reset; nothing is left to act on if the area is gone.

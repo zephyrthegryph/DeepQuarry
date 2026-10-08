@@ -118,7 +118,7 @@
 		cleantime = istype(D, /obj/effect/decal/cleanable/dirt) ? 10 : 50
 		if(prob(20))
 			automatic_custom_emote(AUDIBLE_MESSAGE, "begins to clean up \the [D]")
-		bot_work(cleantime * cTimeMult, D, PROC_REF(UnarmedAttack_cleanbot_done), list(D))
+		bot_work(cleantime * cTimeMult, D, PROC_REF(cleaned_target))
 	else if(D == src)
 		for(var/obj/effect/O in contents_of(loc))
 			if(istype(O, /obj/effect/decal/cleanable/dirt))
@@ -128,11 +128,12 @@
 		if(cleantime != 0)
 			if(prob(20))
 				automatic_custom_emote(AUDIBLE_MESSAGE, "begins to clean up \the [loc]")
-			bot_work(cleantime * cTimeMult, loc, PROC_REF(UnarmedAttack_cleanbot_done2))
+			bot_work(cleantime * cTimeMult, loc, PROC_REF(cleaned_floor))
 		else
 			handleIdle()
 
-/mob/living/bot/cleanbot/proc/UnarmedAttack_cleanbot_done(atom/D)
+/mob/living/bot/cleanbot/proc/cleaned_target(datum/act/op/A)
+	var/atom/D = A.target
 	var/cleaned_target_id = REF(D)
 	if(istype(loc, /turf/simulated))
 		var/turf/simulated/f = loc
@@ -160,7 +161,7 @@
 	if(D == target)
 		registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
 		rel_clear(src, nameof(target))
-/mob/living/bot/cleanbot/proc/UnarmedAttack_cleanbot_done2()
+/mob/living/bot/cleanbot/proc/cleaned_floor(datum/act/op/A)
 	var/cleaned_turf_id = REF(loc)
 	if(blood)
 		wash(CLEAN_TYPE_BLOOD)
@@ -202,7 +203,7 @@
 	return ..()
 
 /mob/living/bot/cleanbot/update_icons()
-	if(task_busy(src))
+	if(bot_busy())
 		icon_state = "cleanbot-c"
 	else
 		icon_state = "cleanbot[on]"

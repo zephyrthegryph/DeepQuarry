@@ -133,13 +133,13 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 	var/mob/living/carbon/human/H = owner
 	if(!istype(H))
 		return
-	after(H, max(0, wound_fade_due() - om_time_of(H)), TYPE_PROC_REF(/mob/living/carbon/human, fade_wound), clock = CLOCK_WORLD, with = list(src))
+	after(H, max(0, wound_fade_due() - scheduler_time_of(H)), TYPE_PROC_REF(/mob/living/carbon/human, fade_wound), clock = CLOCK_WORLD, with = list(src))
 
 /// A healed wound's fade is due: it leaves the limb unless it reopened.
 /mob/living/carbon/human/proc/fade_wound(datum/affliction/wound/W)
 	if(QDELETED(W) || W.damage > 0 || W.owner != src)
 		return
-	if(om_time_of(src) < W.wound_fade_due())
+	if(scheduler_time_of(src) < W.wound_fade_due())
 		W.schedule_fade() // made again by a merge since: wait for the new time
 		return
 	var/obj/item/organ/external/E = W.location

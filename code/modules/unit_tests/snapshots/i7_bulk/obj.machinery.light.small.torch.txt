@@ -9,47 +9,37 @@ ai|none menu: Toggle emergency lights
 ai|none click: Click: Toggle emergency lights
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Swallow
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: Click: Swallow
+human|/obj/item/tool/screwdriver click: nothing
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Swallow
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: Click: Swallow
+human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Swallow
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench click: Click: Swallow
+human|/obj/item/tool/wrench click: nothing
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Swallow
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: Click: Swallow
+human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Swallow
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Tune
 human|/obj/item/multitool click: Click: Tune
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Swallow
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: Click: Swallow
+human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Swallow
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: Click: Swallow
+human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Swallow
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: Click: Swallow
+human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Swallow
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id click: Click: Swallow
+human|/obj/item/card/id click: nothing
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Swallow
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item click: Click: Swallow
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open_casing, remote_flicker, remove, robot_remote_blocked, swallow, toggle_emergency, tune
+human|/obj/item click: nothing
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open_casing, remote_flicker, remove, robot_remote_blocked, toggle_emergency, tune
 

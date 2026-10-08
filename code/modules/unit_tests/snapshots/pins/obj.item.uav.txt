@@ -18,7 +18,7 @@ human|/obj/item/tool/screwdriver menu: Handle
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver menu: Use screwdriver (refused: )
 human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Handle
 human|/obj/item/tool/crowbar menu: Move To Top
@@ -79,6 +79,14 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
+human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell menu: Drain its charge (refused: not in your hand)
+human|/obj/item/cell menu: Handle
+human|/obj/item/cell menu: Insert the cell
+human|/obj/item/cell menu: Move To Top
+human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell menu: Use
+human|/obj/item/cell click: Click: Insert the cell
 human|/obj/item/pen menu: Handle
 human|/obj/item/pen menu: Move To Top
 human|/obj/item/pen menu: Nickname
@@ -91,5 +99,5 @@ human|/obj/item/flashlight/pen menu: Nickname
 human|/obj/item/flashlight/pen menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/flashlight/pen menu: Use
 human|/obj/item/flashlight/pen click: Click: Nickname
-keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, handle, item, kit_customize, kit_customize_last, move_to_top, nickname, pick_up_item, toggle_digestable, use_screwdriver
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, handle, insert_cell, item, kit_customize, kit_customize_last, move_to_top, nickname, pick_up_item, toggle_digestable, use_screwdriver
 

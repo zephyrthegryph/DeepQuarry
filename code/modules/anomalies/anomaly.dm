@@ -51,6 +51,7 @@ CAPABILITIES(/obj/item/anomaly_neutralizer)
 	var/will_anchor = TRUE
 	// If it will apply stats to it
 	var/gives_stats = TRUE
+TRACKED(/obj/item/anomaly_releaser, used)
 
 /obj/item/anomaly_releaser/science
 	icon = 'icons/obj/devices/tool.dmi'

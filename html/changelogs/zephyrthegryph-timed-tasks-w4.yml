@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Dumbbells, anomaly cores, survey beacons, logs, The One Pizza, candy bowls, spirit boards, medical instruments, fuel tanks, water coolers, outcrops, shredded paper and rig modules run their timed actions as ops with wait()"

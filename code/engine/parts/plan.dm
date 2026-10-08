@@ -59,14 +59,20 @@
 	var/datum/entry/part/says/says
 	var/datum/entry/part/begins/begins
 	var/datum/entry/part/plays/plays
+	/// plays(SFX, at_start = TRUE): played when the first wait starts.
+	var/datum/entry/part/plays/start_plays
+	/// starts(): the handlers that run when the first wait starts.
+	var/list/starts
 	var/datum/entry/part/verbs/verb_pair
 	var/datum/entry/part/flash/flash
 	var/log_type
 	var/list/delayed
 	var/quiet = FALSE
-	/// claims(mask): what the op holds while it waits (CLAIM_*); null when it declares none (a timed wait then holds the actor's hands and body,
-	/// a question holds nothing). claims() alone is CLAIM_ALL, claims(0) opts out.
+	/// claims(mask): what the op holds while it waits (CLAIM_*); null when it declares none (op_derive_claims fills it from the parts at table build:
+	/// hands for a wait with an item/tool/stack binding, body for a wait that keeps STAY). claims() alone is CLAIM_ALL; claims(NONE) holds nothing.
 	var/claim_mask
+	/// TRUE when claim_mask was derived from the parts (op_derive_claims), not written with claims().
+	var/claims_derived = FALSE
 	var/passes = FALSE
 	/// silent_wait(): the wait draws no progress bar.
 	var/silent_wait = FALSE
@@ -290,7 +296,7 @@
 	P.tags = P.tags || list()
 	if(P.ui_action || length(P.ui_args) || op_plan_has_binding(P, BIND_UI))
 		P.tags |= TAG_UI
-	if(op_plan_has_binding(P, BIND_TOPIC))
+	if(op_plan_has_plain_topic(P))
 		P.tags |= TAG_TOPIC
 	// levels 2 and 3: extends
 	var/list/group_hits = list()
@@ -328,6 +334,13 @@
 /proc/op_plan_has_binding(datum/op_plan/P, bind_kind)
 	for(var/datum/entry/part/bind/B as anything in P.bindings)
 		if(B.bind_kind == bind_kind)
+			return TRUE
+	return FALSE
+
+/// A plain Topic link (topic(), not topic_in()): a namespace brings its own gate, so extend(TAG_TOPIC, needs(...)) never reaches it.
+/proc/op_plan_has_plain_topic(datum/op_plan/P)
+	for(var/datum/entry/part/bind/B as anything in P.bindings)
+		if(B.bind_kind == BIND_TOPIC && isnull(B.args["namespace"]))
 			return TRUE
 	return FALSE
 
@@ -401,8 +414,9 @@
 		for(var/datum/entry/part/effect/F as anything in P.effects)
 			tier = max(tier, F.yielded_tier())
 		P.tier = tier
+	op_derive_claims(P)
 	if(length(P.captured) && !length(P.steps))
-		op_problem(T, P, report, RULE_OP_PART, "captures() on an op with no asks() or confirms()", "captures() snapshots fields when the op first suspends at a workflow step: an op without one has nothing to capture")
+		op_problem(T, P, report, RULE_OP_PART, "captures() on an op with no wait(), asks() or confirms()", "captures() snapshots fields when the op first suspends at a workflow step: an op without one has nothing to capture")
 	for(var/requirement in P.needs)
 		var/datum/entry/part/req/R = requirement
 		if(istype(R))
@@ -516,7 +530,13 @@
 	P.begins = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 
 /datum/entry/part/plays/compile(datum/op_plan/P, level)
+	if(src.args["at_start"])
+		P.start_plays = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+		return
 	P.plays = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+
+/datum/entry/part/starts/compile(datum/op_plan/P, level)
+	LAZYADD(P.starts, src.args["handler"])
 
 /datum/entry/part/verbs/compile(datum/op_plan/P, level)
 	P.verb_pair = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
@@ -694,3 +714,19 @@
 	var/list/la = islist(a) ? a : list()
 	var/list/lb = islist(b) ? b : list()
 	return length(la) == length(lb) && !length(la ^ lb)
+
+/// The claims of an op that writes no claims(), derived once when the table is built: CLAIM_HANDS when it has a wait() and works with a held item or tool
+/// (an item(), tool() or stack() binding), CLAIM_BODY when a wait() keeps the actor in place (STAY), nothing for an op without a wait. An explicit
+/// claims() (claims(NONE) included) is never touched.
+/proc/op_derive_claims(datum/op_plan/P)
+	if(!isnull(P.claim_mask))
+		return
+	var/mask = NONE
+	for(var/datum/entry/part/wait/W in P.steps)
+		if(W.args["keeps"] & STAY)
+			mask |= CLAIM_BODY
+		for(var/datum/entry/part/bind/B as anything in P.bindings)
+			if(B.bind_kind in list(BIND_ITEM, BIND_TOOL, BIND_STACK))
+				mask |= CLAIM_HANDS
+	P.claim_mask = mask
+	P.claims_derived = TRUE

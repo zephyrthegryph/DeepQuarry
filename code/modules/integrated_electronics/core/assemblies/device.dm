@@ -9,6 +9,8 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/assembly/electronic_assembly)
+	// the device answers an item itself (circuits when opened, the assembly attach when closed): the parent's attach op would clash at the same tier
+	without("attach")
 	owns_one(nameof(EA), starts = /obj/item/electronic_assembly/device)
 	op("electronic_assembly_interaction_item", item(/obj/item), then(PROC_REF(electronic_assembly_interaction_item)))
 	op("device_assembly_verb_toggle", menu(), label("Open/Close Device Assembly"), needs(carried()), then(PROC_REF(device_assembly_verb_toggle)))
@@ -25,7 +27,7 @@ CAPABILITIES(/obj/item/assembly/electronic_assembly)
 	if(opened)
 		EA.attackby(I, user)
 	else
-		return OP_DECLINE
+		return interaction_item(A)
 	return OP_PASS
 
 /obj/item/assembly/electronic_assembly/crowbar_act(mob/user, obj/item/tool)

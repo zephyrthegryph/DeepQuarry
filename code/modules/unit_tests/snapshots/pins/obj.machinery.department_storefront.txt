@@ -3,55 +3,45 @@ robot|none menu: Blocked (refused: not possible right now)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Stock (refused: only Civilian staff may stock this storefront)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: Click: Stock
-human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Stock (refused: only Civilian staff may stock this storefront)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Stock
-human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Stock (refused: only Civilian staff may stock this storefront)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: Click: Stock
-human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Stock (refused: only Civilian staff may stock this storefront)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: Click: Stock
-human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Stock (refused: only Civilian staff may stock this storefront)
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Stock
-human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Stock (refused: only Civilian staff may stock this storefront)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Stock
-human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Stock (refused: only Civilian staff may stock this storefront)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: Click: Stock
-human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Stock (refused: only Civilian staff may stock this storefront)
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Stock
-human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Stock (refused: only Civilian staff may stock this storefront)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
-human|/obj/item menu: Hit
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Stock (refused: only Civilian staff may stock this storefront)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)

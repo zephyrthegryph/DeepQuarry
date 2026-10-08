@@ -50,22 +50,8 @@
 	/// Stride 4: origin entity, mask, behaviour id (negative: derived idx), structural (1 when an intermediate hop).
 	var/list/fwd_in
 	var/list/fwd_out
-	/// Stride 6: effect idx, source, value, expires (0 = held), key, epoch.
-	var/list/contribs
-	/// Stride 2: effect idx, cached value.
-	var/list/cval
-	/// Targets we hold contributions on.
-	var/list/held_on
-	/// Stride 5: behaviour id, target, effect idx, source, key (holds made in hooks).
-	var/list/hold_log
 	/// Verb store: VERB_NAMED key -> the renamed verb instance on this entity (grant_verbs.dm).
 	var/list/named_verbs
-	/// Entities whose hold_log names this entity as a target.
-	var/list/hook_holders
-	/// UI sessions: time (ds) of the last push (ui.dm).
-	var/ui_last_push = 0
-	/// As ui_last_push, for the window's status re-check (ui_status).
-	var/ui_status_last = 0
 	/// Stride 5: derived idx, value, dirty, computed at, aggregate aux.
 	var/list/dv
 	/// Stride 4: clock idx, rate, local time (ds), settled at (ds).
@@ -160,10 +146,6 @@
 	var/datum/scheduler_type_table/T = rec.table
 	for(var/datum/scheduled_behaviour/B as anything in T.behaviours)
 		entity_attach(E, B)
-	for(var/i in 1 to length(T.self_effects) step 2)
-		contribution_hold(E, T.self_effects[i], E, definition_read(E, T.self_effects[i + 1]))
-	for(var/i in 1 to length(T.self_grants) step 2)
-		contribution_grant(E, T.self_grants[i], T.self_grants[i + 1], E)
 	return rec
 
 /// Attaches behaviour `B` (type or def) to `E`. Idempotent.
@@ -267,7 +249,7 @@
 	var/datum/cadence_ring/desired = null
 	if(eligible && !(state & OM_ATT_PARKED))
 		var/interval = B.compiled_intervals[rec.relevance + 1]
-		if(interval > 0 && (!B.clock_idx || contribution_clock_rate(rec, B.clock_idx) > 0))
+		if(interval > 0 && (!B.clock_idx || clock_rate(rec, B.clock_idx) > 0))
 			desired = rec.sched.ring_for(B, interval)
 	var/datum/cadence_ring/current = rec.att_ring[i]
 	if(desired == current)
@@ -291,7 +273,6 @@
 	if(!(rec.att_state[i] & OM_ATT_STARTED))
 		return
 	rec.att_state[i] &= ~OM_ATT_STARTED
-	contribution_release_hook_holds(rec, B.id)
 	rec.sched.call_hook(rec, B, OM_HOOK_STOP)
 
 /proc/entity_requires_pass(datum/E, datum/scheduled_behaviour/B)
@@ -580,8 +561,6 @@
 	if(!rec)
 		return
 	entity_teardown_links(E)
-	contribution_release_all_from(E)
-	contribution_clear_target(E)
 	for(var/i in length(rec.att) to 1 step -1)
 		entity_stop_behaviour(rec, i)
 	rec.torn_down = TRUE

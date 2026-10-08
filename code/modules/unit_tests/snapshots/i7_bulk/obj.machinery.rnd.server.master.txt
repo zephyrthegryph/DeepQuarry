@@ -55,5 +55,5 @@ human|/obj/item/storage/part_replacer menu: Toggle Digestable (refused: You can'
 human|/obj/item/storage/part_replacer menu: Use
 human|/obj/item/storage/part_replacer click: Click: Replace parts
 wires: Disable, Hack, High Voltage Ground
-keys: anchor.toggle, block, construction.dismantle, drag_buckle, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, panel.open, part_replacement.replace, robot_remote_blocked, wires.cut, wires.open, wires.pulse
+keys: anchor.toggle, block, construction.dismantle, drag_buckle, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, panel.open, part_replacement.replace, robot_remote_blocked, wires.cut, wires.open, wires.pulse
 

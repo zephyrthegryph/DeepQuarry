@@ -21,25 +21,19 @@
 	var/icon_on = 0
 	var/icon_off = 0
 
-/// The use after its delay: attack_hand() again, past the delay.
-/obj/structure/generic_structure/proc/delayed_use(mob/user)
-	delay_passed = TRUE
-	attack_hand(user)
-	delay_passed = FALSE
-
-/obj/structure/generic_structure/var/delay_passed = FALSE
-
 CAPABILITIES(/obj/structure/generic_structure)
-	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	op("interaction_hand", hand(), wait(PROC_REF(use_delay)), then(PROC_REF(interaction_hand)))
+
+/// How long using it takes: its delay_time while using it would change something, else nothing.
+/obj/structure/generic_structure/proc/use_delay(datum/act/A)
+	if(!activatable_hand || (on && !togglable))
+		return 0
+	return delay_time
 
 /// Old attack_hand.
 /obj/structure/generic_structure/proc/interaction_hand(datum/act/op/A)
-	var/mob/user = A.actor
 	if(activatable_hand)
 		if(!on)
-			if(delay_time && !delay_passed)
-				task_timed(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
-				return TRUE
 			on = 1
 			icon_state = icon_state_on
 			if(icon_on)
@@ -97,9 +91,6 @@ CAPABILITIES(/obj/structure/generic_structure)
 			if(sound_activated)
 				playsound(src, sound_activated, 50, 1)
 		else if(togglable)
-			if(delay_time && !delay_passed)
-				task_timed(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
-				return TRUE
 			on = 0
 			icon_state = icon_state_off
 			if(icon_off)

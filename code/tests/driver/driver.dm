@@ -40,6 +40,8 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 	var/list/recorded_entities
 	/// Rows the record refused past TEST_RECORD_MAX since test_record() started it.
 	var/recording_dropped = 0
+	/// Chat sent through to_chat() since test_chat_reset(): mob ref text -> the plain texts, in order.
+	var/list/chat
 
 /// One log line, as test_logs() returns it: the op key chain, how it ended, where it came from, who and what, and the text.
 /datum/test_log
@@ -91,7 +93,33 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 	D.recording = null
 	D.recording_dropped = 0
 	D.recorded_entities = null
+	D.chat = null
 	SSinput.reset_for_test()
+
+/// to_chat() calls this in a test build: the message, markup stripped, is kept for `target` (a mob, or a client's mob).
+/proc/test_chat_note(target, html)
+	var/mob/M = target
+	if(istype(target, /client))
+		var/client/C = target
+		M = C.mob
+	if(!istype(M) || !html)
+		return
+	var/static/regex/markup = regex("<\[^>\]*>", "g")
+	var/key = REF(M)
+	var/list/mine = LAZYACCESS(GLOB.test_driver.chat, key)
+	if(!mine)
+		mine = list()
+		LAZYSET(GLOB.test_driver.chat, key, mine)
+	mine += markup.Replace("[html]", "")
+
+/// The plain texts to_chat() sent to `M` since the last reset or test_chat_clear(), in order.
+/proc/test_chat_of(mob/M)
+	RETURN_TYPE(/list)
+	return LAZYACCESS(GLOB.test_driver.chat, REF(M)) || list()
+
+/// Forgets the chat kept so far.
+/proc/test_chat_clear()
+	GLOB.test_driver.chat = null
 
 /// Zeroes the notice and spill counters (and nothing else): "since the last reset".
 /proc/test_counters_reset()

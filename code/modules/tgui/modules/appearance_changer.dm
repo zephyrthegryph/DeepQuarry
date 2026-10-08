@@ -224,8 +224,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		return
 	if(!can_change(owner(), APPEARANCE_RACE) || !("Custom Species" in valid_species))
 		return
-	if(change_race(A.request.answerer, "Custom Species", A.answer.value))
-		SStgui.update_uis(src)
+	change_race(A.request.answerer, "Custom Species", A.answer.value)
 
 /datum/tgui_module/appearance_changer/proc/change_race(mob/user, race, custom_name)
 	if(owner().change_species(race))
@@ -562,7 +561,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 /datum/tgui_module/appearance_changer/proc/race_name_answered(datum/act/request/A)
 	race_name_answered_apply(A)
-	SStgui.update_uis(src)
 
 /datum/tgui_module/appearance_changer/proc/race_name_answered_apply(datum/act/request/A)
 	if(!A.answer)
@@ -640,7 +638,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 /datum/tgui_module/appearance_changer/proc/size_scale_answered(datum/act/request/A)
 	size_scale_answered_apply(A)
-	SStgui.update_uis(src)
 
 /datum/tgui_module/appearance_changer/proc/size_scale_answered_apply(datum/act/request/A)
 	if(!A.answer)
@@ -689,7 +686,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 /datum/tgui_module/appearance_changer/proc/species_sound_answered(datum/act/request/A)
 	species_sound_answered_apply(A)
-	SStgui.update_uis(src)
 
 /datum/tgui_module/appearance_changer/proc/species_sound_answered_apply(datum/act/request/A)
 	if(!A.answer)
@@ -715,7 +711,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 /datum/tgui_module/appearance_changer/proc/flavor_text_written(datum/act/request/A)
 	flavor_text_written_apply(A)
-	SStgui.update_uis(src)
 
 /datum/tgui_module/appearance_changer/proc/flavor_text_written_apply(datum/act/request/A)
 	var/select_key = pending_flavor_key
@@ -737,7 +732,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		return
 	if(owner() && owner().client) //sanity
 		owner().client.prefs.vanity_copy_to(owner(), FALSE, TRUE, FALSE, FALSE, FALSE)
-	SStgui.update_uis(src)
 
 /datum/tgui_module/appearance_changer/proc/ui_act_view_brec(datum/act/op/A, view_brec)
 	var/mob/user = A.actor
@@ -807,7 +801,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 /datum/tgui_module/appearance_changer/proc/record_permission_answered(datum/act/request/A)
 	record_permission_answered_apply(A)
-	SStgui.update_uis(src)
 
 /datum/tgui_module/appearance_changer/proc/record_permission_answered_apply(datum/act/request/A)
 	var/mob/user = A.request.answerer
@@ -1402,8 +1395,6 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 	if(!A.answer || !ask.value || !owner())
 		return
 	. = apply_color(ask)
-	if(.)
-		SStgui.update_uis(src)
 
 /datum/tgui_module/appearance_changer/proc/apply_color(datum/prompt/color/appearance/ask)
 	var/channel = ask.channel

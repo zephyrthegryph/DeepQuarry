@@ -2663,6 +2663,90 @@ Each changed pin row is one of these classes; nothing else was blessed. `dq_inte
   `i7_bulk` still fails alone and combined on master for another reason (a gravity generator part's break during its own destroy, `hold(...): the holder is deleted`), which is in
   `code/game/machinery`.
 
+## Window outputs (rewrite/ui-outputs)
+
+Pinned by `dq_ui_data_pin` (`snapshots/ui_pins/`, recorded on the code before the conversion; no row changes) and `dq_ui_outputs_*`.
+
+* **Pushes are once per frame.** The OM push throttle (2 ds per window) is gone: a window gets at most one delivery per tick, in phase R, however many requests and tracked writes reached it. `update_uis()` and `request_push()` queue the same delivery.
+* **Status class.** A window's status is re-checked when the user's or host's location, the user's stat, status, hands, equipment, conditions, client or can-act stat publish a key. Hands (`MOB_KEY_HANDS`) and a movable host's move (`ATOM_KEY_LOC`) are new keys; nothing else changed what decides a status.
+* **Hand `update_uis()` class.** In the converted hosts (agentcard, appearance_changer, vorepanel_set_attribute, notes panels, the admin panels in `ui_push_converted`) a deleted `update_uis(src)` is replaced by the framework: an op handler that returns TRUE refreshes its window (as before), and an answered question (`open_request` handler) now pushes its owner's windows (and, for a handler on a window, that window's host). Handlers that refused to answer no longer push (the old calls ran on a cancelled answer too).
+* **Unban and delete-book panels** track their data (`shown_rows`, `books`, `error_msg`).
+
+## Timed actions as ops (rewrite/timed-tasks)
+
+Pinned by `code/modules/unit_tests/dq_timed_pin_behaviour.dm` (written and green on the legacy `task_timed` / `task_start` forms first; 17 of 18 passed, the 18th leaked the teleport's sparks, now cleaned up; the adapters `running()`, `declared_duration()` and `was_cancelled()` read a pending op as well as a task, every other assertion is unchanged). Each class below is one cause, not one site.
+
+* **Class: the same player starts the action a second time.** The task refused the second action on the same target and the first went on. A bare-hand wait derives `CLAIM_BODY` (it keeps the actor in place), so the second click stops the first wait ("You stop what you were doing.") and starts its own; an item or tool wait also holds the hands. One wait is pending afterwards either way. An op that should run beside another says `claims(NONE)`. Pin: `same_actor_twice` (its refused-second-click lines are legacy-only).
+* **Class: the refusal only the old handler wrote.** `whetstone` with fewer than five sheets said "You need 5 [whetstone] to refine it ..."; the binding is `stack(/obj/item/stack/material, 5)` now, so a short stack is not a candidate and the click falls through unanswered. Pin: `whetstone_short_of_sheets` keeps "starts nothing" and "spends nothing" and drops the message line.
+
+## Timed actions as ops, W1 additions
+
+* **Class: the grave marker's fingerprint is added when the placement completes, not at the click.** A refused or cancelled placement leaves no print. Its start and finish lines name the item by template (the legacy text had a tab in "place <tab>he"). Pins: `gravemarker_*` (the prints are not asserted).
+* A silent refusal (`req(.., silent = TRUE)`) stops the click, as the legacy handler's `OP_OK` did: not a change (permanent beacon, a UAV with no cell, a grave marker off a turf).
+
+## Timed actions as ops, W3 additions
+
+Pinned by `code/modules/unit_tests/dq_timed_pin_w3_behaviour.dm` (written on the legacy forms; the NIF tool pins call `screwdriver_act()` / `multitool_act()` there and `test_click()` after, because the driver's click does not reach a legacy `*_act` override: the assertions are the same). The goo trap pin `gootrap_free` stops before the end on the legacy form: the legacy end raises a runtime (`act_message` is handed the victims' names as its user), so completion is pinned on the converted form only.
+
+* **Class: a click cooldown set at the start is gone.** The implanter console's `setClickCooldown(DEFAULT_QUICK_COOLDOWN)` at the start of the self-implant; an op's wait holds the actor instead. Pin: `backup_implanter_self_implant`.
+* **Class: a legacy runtime that the conversion removes.** `backup_implanter_ch/wrench_done` wrapped a ternary in `span_notice()` (`"<span>" + anchoring ? ...`), a runtime at the end of every wrench; the pins record the start and the cancel only, and the converted form finishes. Pins: `backup_implanter_wrench_off`, `backup_implanter_wrench_on`.
+## Timed actions as ops, W4 additions
+
+* **Class: the start message of a few ops names the actor and the item by template.** The fuel tank's detach line says "the device" where it named the rigged assembly, and the outcrop's line reads "%U% begins to hack away at %T%." (the legacy text named `[user]` and was sent to the actor only). The start sounds of the survey beacon and the cup dispenser play at the start (`plays(.., at_start = TRUE, volume = 0.6)`). Pins: `fueltank_rig_and_detach`, `outcrop_dig` check the verb phrase only.
+## Timed actions as ops, W2 additions
+
+* **Class: a tool wait is scaled by the tool speed.** The railing wrench and screwdriver, the low wall, drop pod and toilet wrenches and the toilet crowbar waited a fixed time; `tool(Q)` scales `wait()` by the held tool's speed. Pins: `railing_wrench`, `railing_screwdriver`, `droppod_wrench`, `toilet_wrench`, `toilet_crowbar` (run at the default speed, so unchanged).
+* **Class: a refusal says the claim message.** A second searcher of a loot or trash pile, and a second lifter on a weight machine, used to get "already being searched" / "already in use"; a claimed target says the engine's claimed message. Pins: `loot_pile_search`, `trash_pile_search`, `weightlifter_lift` (they assert the refusal and that something is said, not the text).
+* **Class: a direction read at the end.** A pushed desert rock moves the way its pusher faces when the push ends, not when it began (a turn in place is not a move). Pin: `desert_rock_push`.
+* **Class: a refusal the old handler left silent now says why, and a fur tree says it has no sticks.** A fur tree used to swallow "search for sticks" without a word; its `sticks` is now false and the tree's refusal says "You don't see any loose sticks...". Pin: `tree_sticks` (the empty-tree refusal).
+
+## Timed actions as ops: the menu and key rows of dq_conversion_pin (rewrite/timed-tasks)
+
+The snapshot pins were re-blessed once, for these classes (one cause each; the rows are `human|<held> menu/click` and `keys:`):
+
+* **Class: `keys:` rows.** Every converted type gains its ops' keys and loses the legacy handler ids (`item`, `hand`, `attackby`...); `reload` is new on every simple mob (the reload op of a ranged mob). Changes by design (doc/rewrite/snapshot_pins.md).
+* **Class: a generic "Use" / "Collect" / "Wash" entry is replaced by the op that does the work.** The converted type offers "Refine", "Burn", "Dig", "Pry open", "Scan anomaly", "Free the victim", "Deploy trap" and so on for the held item that fits; the all-items "Use" entry (a handler that checked the item inside) is gone, and an item that does nothing falls through to the next candidate (pick up, collect) as the handler's `OP_PASS` / `OP_DECLINE` did. A bare hand on an undeployed trap or wire is "Pick up". The sink offers "Wash" for an item only when it is gurgled (the entry used to appear for every item and do nothing).
+* **Class: an entry whose op is gated by `needs()` is shown greyed, with its refusal.** "Use screwdriver (refused: )" on a mine, a UAV, a railing or a toilet (a silent refusal has no text); "Search (refused: You see nothing...)" on a potted plant; "Refine (refused: You don't have enough for that.)" on a whetstone with a short stack.
+* **Class: the legacy blocks are ops.** "Eject pai blocked" (a crowbar on a bot with a closed panel or no pAI), "Multitool blocked" and "Screwdriver blocked" (a NIF in the wrong state) are the refusals `crowbar_act`, `screwdriver_act` and `multitool_act` ended the click with; they show as refused entries and the tool never falls through to a hit.
+* **Class: the medbot's help-intent entry.** "Right or open controls" is "Open controls" (righting a tipped bot is its own op, "Right", beside "Tip over").
+
+## Timed actions as ops, X additions
+
+Pinned by `code/modules/unit_tests/dq_timed_pin_w5_behaviour.dm` (written on the legacy forms) and the earlier pins of the same sites (`e_beacon_*`, `low_wall_*`, `railing_welder`, `barricade_repair`, `flora_uproot`, `grille_window`).
+
+* **Class: a welder that is not lit does not weld.** The railing repair and the reflector weld / cut used to take any welding tool (the reflector only asked for fuel); `lit_welder()` refuses an unlit one with "Turn on the welding tool first!", as every other converted welder op does.
+* **Class: a short stack falls through.** The low wall's rods (two) and glass (four) and the grille's window sheet are `stack(T, n)` bindings: a stack that is too small is not this op's, and the click goes on to the wall's "place" op (it used to say "You need at least two rods"). Same shape as the whetstone's short stack.
+* **Class: the cost of a stack is taken when the work ends.** The low wall's rods and glass, the grille's sheet and the barricade's sheet are reserved at the end of the wait and spent with the effect (the old handler used them in the done proc, or not at all when the stack was gone).
+* **Class: a held item that no longer fits is checked when the click is decided.** The reflector's wrench needs a loose reflector ("Unweld the reflector from the floor first!" is its refusal), the UAV's cell needs a drone with no cell, a shovel uproots only a type that can be removed. Nothing changes for a click that worked.
+* **Class: the fingerprint of a low wall build is added at the start.** `starts()`; before it was added at the click, as it is now.
+* **Class: the sniper rifle's take-down checks the carrier and the chambered round as requirements.** The legacy verb returned silently for a dead user; the op's `carried()` and `rifle_empty` refuse before the wait.
+## Timed actions as ops, Y additions
+
+Pinned by `code/modules/unit_tests/dq_timed_pin_w6_behaviour.dm` (40 pins written and green on the legacy `task_timed` forms before the conversion; `candybowl_repeat_asks` is recorded on the converted form only, because the legacy repeat question was opened by a callback the driver cannot answer in the same way). The existing `candybowl_*` pins (dq_timed_pin_w4) cover the first search.
+
+* **Class: a legacy re-entry that never reached the op is gone.** The event kit structure's delay called `attack_hand()` again past the delay, which never reached its op, so a delayed structure stayed off; the item's `attack_self()` re-entry did work. The converted structure turns on (or off) when the wait ends, like the item. Pin: `generic_structure_delayed` asserts the result on the converted form only.
+* **Class: a refusal the old handler wrote is the claim message, and a short stack falls through unanswered.** A second searcher of a candy bowl or a box pile is told the engine's claimed message ("Someone is already working on that.") where the bowl said "someone is already looking through"; a fishing rod with less than five lengths of cable is a `stack(coil, 5)` that does not match, so the click falls through without "You do not have enough length". Pins: `candybowl_one_searcher` (asserts that something is said), `boxpile_one_rummager`, `fishing_rod_string_short_of_cable` (starts nothing, spends nothing).
+* **Class: a tool wait is scaled by the tool speed.** The hive's screwdriver waits 3 seconds at the default speed (the legacy wait was fixed). Pin: `beehive_dismantle` (default speed). The legacy start sound is `plays(.., at_start = TRUE)`.
+* **Class: the wirecutters on a carved book are a refusal that does not fall through.** `book/carve_cutters_blocked` stands for the `wirecutter_act()` that answered `ITEM_INTERACT_BLOCKING` (the menu-row class above).
+* **Class: a click cooldown set at the start is gone (logs).** Cutting a log with an edged item set the user's click cooldown to the cutting time; the wait holds the actor instead (the W3 class). The item is judged by `when(req(...))` with `read_once()` (edge, force), the time by `wait(PROC_REF(cut_time))`. Pins: `log_cut_planks`, `log_cut_cancel_on_move`, `log_blunt_item` (dq_timed_pin_w4).
+* The decompression needle names itself by template (`%I%`) where its legacy line named the needle as the target; `used` is tracked and written through its setter. Pins: `decompression_needle*`.
+* **Class: a mob worker that strays far from its job finishes it.** The ants' build task ended ("You need to stay still to build") when the worker was more than a tile from the turf; the `ai()` op has no range keep (framework_gaps.md K15), as the spiders' ops. One step aside still builds, as before. Pin: `ant_builder_steps_aside`. The ants' and the mouse's idle checks read `is_working()` (their pending op) where they read `task_busy()`; the bear, savik, goose and mining drone idle checks the same.
+* **Class: a refusal the old handler left silent now says why (a welder that is off).** The sensors suite and graffiti welds answered `ITEM_INTERACT_BLOCKING` / `OP_OK` with no word for an unlit welder; `lit_welder(fuel = 0)` says "Turn on the welding tool first!". Pins: `sensors_weld_undamaged`, `graffiti_clear_welder_off` (start nothing). The sensors weld waits `max(5, damage / 5)` as before, scaled by the tool speed (the W2 tool-wait class).
+
+The `dq_conversion_pin` rows that changed for the Y conversions (not blessed; the classes of "the menu and key rows" above): `/obj/structure/meteorite` (the all-items "Use" entry is "Use" for a pickaxe only; items that do nothing show "click: nothing"), `/obj/effect/decal/writing` ("Clear graffiti" for a lit welder; the generic "Engrave" row for the welder is gone), `/obj/item/book` ("Carve cutters" and "carve_cutters_blocked" for wirecutters; keys), `/obj/item/material/fishing_rod` and its subtypes (`fishing_rod_string` key).
+## Destructive held-item and hand ops need harm intent (rewrite/om-leftovers)
+
+A held-item op answers a click (a generic "Pick up" only with an empty hand), but an op that destroys, crumbles, dismantles
+or consumes its target must not fire on a casual click. Gate it individually with `stance(I_HURT)` or an `asks()` confirm.
+Changed: smole buildings and smole ruins no longer flatten when clicked with any item on help intent (harm intent still
+does; disarm still takes a building apart by hand); remains crumble only on harm intent. Tool-specific ops (a welder cutting
+a closet, a knife slicing food) are deliberate and stay ungated. The supermatter wall's "Touch with", smole buildings and smole ruins are gated by one requirement,
+`harm_click_only` (code/datums/operations/req.dm): the item op is declared before the bare-hand op so a held item answers first, and a click not on
+harm intent is **refused** with "That would destroy it. Use harm intent if you mean it." rather than falling through to the hand touch (on the wall
+that touch dusts the player). Empty hand still touches. The gate is click-path only: a menu pick is deliberate and stays ungated. Remains keep their
+hand-op `stance(I_HURT)` (there is no item op, so an item click does nothing destructive). Reviewed and left as is: the stardog/tank "swallow" item ops
+(they take the item, not the target).
+
 ## Machinery final admission and gravity teardown (2026-10-07)
 
 - Camera attack admission, AI upload level admission, robot remote admission, floor-light custody, suit cycler custom-item admission, and Santa actor identity explicitly sample their current input state with `read_once()`. These samples do not claim a subscription. Menus that sample are rebuilt, including enclosing menus, so mutable instantaneous admission never uses an old generation cache. Tracked-only menus retain their cache. Waiting requirements still require real tracked dependencies for mutable conditions.
@@ -3364,6 +3448,119 @@ Pins were regenerated with `--bless` after the last merge; only rows that change
 * **`pins/` frame** (requests and bridges, native frame construction): the seventeen legacy frame transitions are native stages, so the menu rows carry the stage labels (`Wrench into place`, `Cut frame apart`), the refusals of the legacy entries are gone, and the held circuit board and material stack show the inherited item menu defaults and the `construction.build:*` keys.
 * **`pins/` ship navigation console and its dog-eye screen** (requests and bridges): the helm's Emote Beyond action is native, so a ghost far away is refused with `too far away`.
 * **`pins/` claw machine** (requests and bridges): the card PIN request is a native request, so its key `clawmachine_card_pin` is listed.
+## Timed actions as ops, B additions
+
+Pinned by `code/modules/unit_tests/dq_timed_pin_w8_behaviour.dm` (nine pins green on the legacy forms; the mop, plastique, ladder weld, maintenance panel weld, hardsuit cable mend and blank-envelope open could not be driven on the legacy form, because the driver's click does not reach a legacy `afterattack()` / `*_act()` override, and were dropped).
+
+* **Class: the target of the task is the real target.** The DNA injector, tape roll and mail used to name the item as the task's target, so a patient who left or was deleted did not stop the work. The op's target is the patient; a lost patient ends the work. Pins: `dna_injector` (no loss line), `tape_*`.
+* **Class: a refusal the old handler wrote is a requirement with the same words.** The grip, head, eyes, mouth, worn face cover, the smart magazine's attached cell, and the bag-valve mask's seal; a roll used in the help stance falls through (`stance(I_DISARM, I_GRAB, I_HURT)`) instead of answering a failure.
+* **Class: the grip on a taped patient is checked when the work ends too**, as the old done procs did.
+* **Class: a latent legacy bug is fixed.** Cable mended a hardsuit module only when `damage != 1`, yet the handler let only `damage == 1` through, so cable never mended anything. Now an almost destroyed module (2) is mended to 1 and 0 and 1 are refused ("no damage" / "crude tools").
+* **Class: a refusal that was a balloon alert is a chat line** (someone else's mail; the pins do not assert it).
+* A bonfire that is empty (or a permanent one) is taken apart by its own `dismantle` op; the fuel is taken out by `hand`. A blank envelope has `seal` (unsealed) and `open` (sealed) in hand; opening a blank envelope still hands nothing out (`special_handling`), as before.
+## Timed actions as ops, A additions
+
+Pinned by `code/modules/unit_tests/dq_timed_pin_w7_behaviour.dm` (107 pins written and green on the legacy `task_timed` / `task_start` forms before the conversion; 19 more were dropped because the legacy form could not be driven or leaked in the test world: modular limb verbs, the pitcher fish-out, the teppi slaughter, the stardog, the space worm, cyborg wrench/extract, the sleeper patient/compactor completion, the tongue drink/dry/food/lick). Each class is one cause.
+
+* **Class: a worker with no retained argument re-derives it at the end.** The strip slot's item, the first accessory, the grab and the airway obstruction, the grabbed limb and the platform's last stored thing are read when the wait ends, not captured at the start (`perform_op` carries no arguments). Pins: `h_strip_slot_remove`, `h_strip_tie`, `h_heimlich`, `h_grab_throat`, `h_grab_inspect`, `r_platform_unload`.
+* **Class: the grab-inspect chain hangs off the grab.** The target is the grab item, so a victim who steps away breaks the grab and ends the work. The appendicitis line names the user. Pins: `h_grab_inspect`, `h_grab_inspect_interrupted`.
+* **Class: throat and shank use any grab the user holds on the target.** Pins: `h_grab_throat`, `h_grab_shank`.
+* **Class: a start or refusal message goes to the op's actor and onlookers.** The NIF disk's "is uploading" line to the target is the others-line; the implanter's self-use no longer prints "is injecting" (a wait of 0 has no start); the Nikki hat user sees no start line; tongue and sleeper refusals are `needs` messages, the tongue's drink line reaches the user (the old line went to the tongue item). Pins: `v_nifsoft_upload_other`, `v_backup_implanter_self`, `v_nikki_hat_equip`, `r_tongue_*`.
+* **Class: a second input from the same player replaces the first wait.** A second tongue click (the "already licking" refusal is the actor's single pending op). Pin: `r_tongue_one_lick_at_a_time`.
+* **Class: a click the old override ended with a failure falls through to a hit.** The grinder on a living thing that is neither a monkey nor a slime, the implanter on a non-carbon (and the grinder's "cannot process" buzz is gone). No pin.
+* **Class: an already-empty dead slime waits one grind step before it is consumed.** Pin: `v_grinder_slime`.
+* **Class: repeated resists in a belly start parallel escapes.** The belly escapes are `ORIGIN_SYSTEM` ops (a human prey is not an `ORIGIN_AI` actor) with no claim. Pins: `v_belly_escape_*`.
+* **Class: the decompiler fires when the click lands on the drone.** The old code also fired for the turf that held it. Pin: `r_decompile_drone_cancel_on_move`.
+* **Class: a weaver is cancelled when it falls unconscious during the wait.** The silk, tile and consciousness are requirements re-checked after the wait; the "state" refusal is the default not-capable text. Pins: `s_weaver_floor`, `s_weaver_cancel_on_move`.
+* **Class: the glamour ring's cooldown refusal is told from the completion with no wait.** The wait is `wait(PROC_REF)` returning 0 for a "No" and for a draw inside the cooldown. Pin: `s_glamour_ring_restore`.
+* **Class: the xeno build tile, the teppi shear and the dominated brain.** The structure's tile is read when the wait ends; shearing needs wool at offer and again at the end (a dead teppi with wool is not refused at offer time); the dominated brain's resist waits on the brain itself and no longer prints the "already dominated" / "cannot return" refusals (the button is not offered). The Resist Control, Return to Body and Nutrition Heal abilities are always declared menu ops gated by `when` instead of verbs granted and revoked at run time. Pins: `m_xeno_build`, `m_teppi_shear`, `m_dominated_*`, `v_nutrition_heal*`.
+* **Class: a player-driven worker is an `ai()` op started by `perform_op`.** The borer and leech infest (a menu() op cannot take the answered target as the wait's target; framework gap below). Pins: `m_borer_infest`, `m_leech_infest`.
+* **Class: nutrition heal re-clamps at the end of the wait.** A nutrition drop during the wait heals slightly less. Pins: `v_nutrition_heal*`.
+
+Sites left: species- and trait-granted abilities (lleill, shapeshifter, protean powers, succubus/bloodsuck/shred/cocoon/devour, shadekin interactions, ddraig polymorph, regenerate, lick wounds, dominated-brain review chains) have no master mechanism for a species to grant a `menu()` op; `/mob/living` item-click chains (beacon feed, body writing, eat minerals, vertical nom, butchering) need ops in `CAPABILITIES(/mob/living)`; the spell cast delay and the dormancy repair steps have no op host (a datum / an affliction). Framework gaps: a `menu()` op whose answered target is the wait's target; a repeat-until-done op with a per-iteration cost (`self_repair`, `grab_drain`, `spin`, `lick_step`); an op that carries a computed list (melee swing); `wait(INFINITY)` (apply_pressure).
+
+## Machinery non-harm item clicks (2026-10-08)
+
+The inherited `/obj` melee hit is now offered on machinery only for harm stance,
+including in non-harm menus. The restriction is scoped to player click/menu origins;
+explicit AI/system attack requests retain their existing behavior. Specific item strikes on doors, portable turrets and
+light fixtures use the same harm condition. Deployable barriers previously
+labelled an ordinary-use item op "Hit"; it now explicitly answers attack and
+requires harm. Help, disarm and grab therefore reach the machine's existing tool,
+insertion or Use operation rather than striking it. No substitute no-op Use was
+added; machines without a matching interaction still have no interaction. Harm
+still uses the existing damage handlers and canister item exclusions remain.
+
+The `i7_bulk` re-record covers these inherited machinery classes and their door,
+light, portable-turret and deployable-barrier subtypes. Removed non-harm Hit menu
+rows and any Click: Hit -> the machine's real interaction/nothing rows are caused
+by these intent corrections, not by removing damageability. The re-record changes
+282 files: 261 have only key-list changes and 21 also have behavior rows changed.
+
+Key-list changes record the inherited `melee_hit` introduced on master in
+`82357da35c`, and the obsolete no-op `use`/`swallow` keys removed on master in
+`f857c445a3`/`82357da35c`. They do not imply a new non-harm attack. Every class
+with changed behavior rows is accounted for below; native master pins independently
+confirm the cablelayer, shower, turbine and photocopier interactions.
+
+| Snapshot class(es) | Cause |
+|---|---|
+| `obj.machinery.atmospherics.pipe.tank` | Master `f857c445a3` removed no-op Swallow; unmatched held items now do nothing. |
+| `obj.machinery.cablelayer` | Master removed generic no-op Use; actual Toggle now answers held-item clicks. |
+| `obj.machinery.computer.turbine_computer` | Master removed generic no-op Use; existing Use item/UI operations remain. |
+| `obj.machinery.photocopier` | Master removed generic no-op Use; real toner insertion and other concrete interactions remain. |
+| `obj.machinery.seed_extractor` | Master removed generic no-op Use; unmatched items have no interaction. |
+| `obj.machinery.shower` | Master removed generic no-op Use; actual shower Toggle answers held-item clicks. |
+| `obj.machinery.deployable.barrier` | This fix makes its damaging Hit harm-only; wrench repair, ID swipe and emag retain precedence on non-harm clicks. |
+| `obj.machinery.door`, `.unpowered`, `.airlock`, `.airlock.phoron`, `.window`, `.window.holowindoor` | This fix hides Strike from non-harm menus; real door open/close and tool operations remain. |
+| `obj.machinery.door.blast` | Harm-only Strike plus master `82357da35c` removing no-op Swallow; forcing/prying and actual denial behavior remain. |
+| `obj.machinery.light`, `.flamp` | This fix hides damaging Hit from non-harm menus; bulb/socket interactions remain. |
+| `obj.machinery.light.small.torch` | Master removed no-op Swallow; its explicit `without("melee_hit")` remains respected, so this torch stays nonhittable. |
+| `obj.machinery.porta_turret` | This fix makes Strike harm-only, preserving concrete controls/maintenance. |
+| `obj.machinery.portable_atmospherics.canister`, `obj.machinery.power.solar` | Master replaced their specific Strike with inherited melee hit; this fix hides that hit outside harm. Canister item exclusions remain. |
+| `obj.machinery.computer.ship.navigation.telescreen.dog_eye` | Existing master `c624e243d3` native Emote Beyond now exposes its truthful `too far away` ghost refusal; same cause as the already blessed native navigation pins above. |
+
+Verification: `dq_interaction_domain_snapshot/i7_bulk` successfully re-recorded
+283 type files (282 changed). The focused `machine_click_intent` regression
+passed after its preliminary-candidate assertion was corrected to inspect the
+actual winner. It checks real Use execution, harm integrity loss and an explicit
+AI attack without harm click stance, with clean boot and no state leak. Final
+compilation had 0 errors; DreamChecker had 0 diagnostics; lint and ratchets passed.
+No full suite ran, and no baseline, ceiling or ALLOW annotation was changed.
+
+## Batch 9 merge pins (rewrite/integ-9)
+
+Merging machinery-click-intent with ui-outputs and timed-tasks changed these pins; the rows were reviewed and blessed by class.
+
+* **`pins/` machinery files (334 files, 3629 removed `menu: Hit` rows, 8 `click:` rows `Click: Hit` -> `nothing`).** The class of "Machinery non-harm item clicks" above: the same intent correction applies to the `dq_conversion_pin` copies of the machinery types, not only to `i7_bulk`. Only removals of `menu: Hit` and the `Click: Hit` -> `nothing` change; no other row moved.
+* **`look_states/obj.item.melee.robotic.baton.txt` (20 rows).** The sampled variable set for the arm and slime batons shifted (`gurgled` is sampled, `randpixel` no longer is) because the merged branches changed the variable list the look-state sampler walks on `/obj/item`; the arm and slime looks themselves (`electrified arm`/`shock`, `slimebaton`/`slimebaton_active`) are unchanged.
+* **Stale interim tests.** `interim_confetti_cleanup` and `interim_snow_shovel_cleanup` asserted the old handler/commit shape; the ops are now `wait()` ops (timed-tasks), so they assert the actor has a pending op.
+
+## Grants, timers and the c4 boundary tests (rewrite/om-leftovers)
+
+- Grants are capabilities and keyed stats, not a grant store: abilities are `granted_ability(id)` activations, verbs and hides are `granted_verb()` activations
+  (the verb store reads the live activations), conditions are `held_condition(path)`, traits are holds on `STAT_TRAIT_HOLDS` and cadences holds on
+  `STAT_CADENCE_HOLDS`. The step cadence hears its holds through an on_change reaction, delivered at the next drain point rather than inline.
+  The OM `self_grants`, `grants_target` and `grants_occupant` rows, the legacy verb-path form of `grant()` and `hidden_verb()` are gone.
+- A keyed timer whose datum argument is deleted drops the call and clears its key (`after_pending()` is false afterwards); `keeps_dead = TRUE` still runs it
+  with the argument null. The fulton chain, the cryptdrake landing and the transit-tube station completions opt in, because their tail must run.
+- The smole building and ruins "Smash" ops answer harm intent as well as use, so a harm-intent click with a held item smashes rather than landing a melee hit.
+
+## Batch 10 merge pins (rewrite/integ-10)
+
+Merging om-leftovers into master changed these pins; the rows were reviewed and blessed by class.
+
+* **`hit_pins/` machinery, computers and shield generators (`refresh_bits: 9 -> 0` becomes `1 -> 0`, `73 -> 0` becomes `65 -> 0`, `8 -> 0` row gone).** Bit 8 is `CHANGE_EFFECTS`: the OM effect store marked a machine's first draw with it when the machine's self-effect hold was made at init. The effect store is deleted, so only the explicit bit stays. Same cause as the draw-sweep class above.
+* **`hit_pins/obj.structure.reagent_dispensers.coolanttank` (four `om_rec: null -> /datum/scheduler_record` rows).** The tank no longer gets a scheduler record from an init-time effect hold; the record is created lazily by the first explosion or projectile hit that needs one.
+* **`hit_pins/obj.structure.smoleruins` (`emag`: deleted and two bricks -> nothing).** An emag swipe is a non-harm item click; the smole "Smash" op is gated by `harm_click_only` (see the destructive held-item class above).
+* **`pins/mob.living.simple_mob.vore.overmap.stardog` (`Nutrition heal` menu rows, keys `nutrition_heal` and `reload`).** The branch re-recorded this file before master's timed-tasks gave every simple mob the `nutrition_heal` op; the merge needs both.
+
+## Topic gates as requirements (rewrite/om-leftovers-2)
+
+- **Sleevemate:** its scan links spend the click cooldown (`DEFAULT_ATTACK_COOLDOWN`) only after the gate passes (the held-in-active-hand check). The old gate spent it first, so a link clicked while the sleevemate was not held also paid the cooldown. Now a refused link costs nothing.
+- **Topic refusals say `You cannot use that link right now.`** (`MSG(op/topic_gate)`) where the old gates returned silently; the Access Denied line of an obj the clicker's ID cannot use is unchanged, printed once per check.
+- **VV namespaced ops (`topic_in`) carry no `TAG_TOPIC`**, so the per-type topic requirements never reach them; the VV dispatch keeps its own gate.
+
 
 ## Draw framework round 2c: cards, floors, look pins for turfs
 
@@ -3408,3 +3605,26 @@ Pins were regenerated with `--bless` after the last merge; only rows that change
 * **Behaviour changes:** a syringe cartridge shows its loaded syringe and filling as overlays (the look has no underlays); macrophage's decal no longer has its name reset to "blood" by a redraw; the zone-selection HUD overlay is no longer redrawn by the simple mob HUD set-up (the screen is still a legacy provider outside this folder); a mimicking fleshtaker shows its living state rather than the target's state at the moment it copied.
 * **Teardown:** deleting a worm from the front, or out of the world, takes its back half with it (it used to leave a severed head that deleted again into another: the cause of the `space_worm/head/severed` leak); a blob core takes its overmind with it (the pins leaked one overmind per core, ~850 in the state pin).
 * **Pins:** the committed tree and state pin rows are unchanged by this round. `look_trees/obj.structure.blob.txt` differs on the base (random colour) and was not committed. **Known, not fixed:** the full-directory `dq_look_state_pin` slows to minutes per type after its blob roots (one root alone runs in seconds), so it does not finish inside a 90 minute watchdog; and `dq_look_tree_pin` still reports the anomalock heart runtime (`emp_protection_flags` of null) and `ownership_framework_checks` the chem smoke leak, both present on the base.
+## Batch 11 merge pins (rewrite/integ-11)
+
+Merging master-fails, om-leftovers-2 and draw-framework-2 changed these pins; the rows were reviewed and blessed by class.
+
+* **`hit_pins/` clothing (chameleon, holo badge, omnihud, thermal, bluespace gloves, sechailer, reactive, lasertag; `emag`/`emp 2` `nothing` rows become `refresh_queued: 131071 -> 0`, plus `explosion 2`, `explosion 3`, `projectile`, `thrown`).** Same class as the draw sweep above: clothing now draws over tracked state (forensics blood, gurgled), so its first draw is queued when it is made and the first hit flushes it. `reactive` also shows `refresh_bits: 1 -> 0`.
+* **`look_states/` clothing `gurgled=1/2` rows (aviator, toggleable hood, reactive, shield, tesla).** `gurgled` is tracked and the clothing look reads it, so a soggy garment gains `+overlay: icons/effects/sludgeoverlay_vr.dmi:green` instead of the old per-type overlay write.
+* **`look_states/obj.machinery.pump.txt`, `obj.vehicle.txt`: rows reordered only.** The same rows in a different order, because the sampled variable set shifted (same cause as the baton class above).
+* **`look_trees/mob.living.simple_mob.txt`.** The two `stardog` `runtime: param(child_om_marker ...)` rows are replaced by the real look rows (the declared-ownership runtime no longer happens), and the test-only simple mobs `dq_rocket_probe` and `e0_fixture/denied_counter` are new rows.
+* **`look_trees/turf.simulated.floor.txt`: the lighting darkness layer is not a look.** The look pin row builder skips an underlay of `LIGHTING_ICON`; whether a floor has it depends on boot timing, and with it the merged tree recorded 222 `underlay: icons/effects/lighting_object.dmi:dark:5` rows the branch did not.
+* **Not blessed** (known): the `electronic_assembly` `op_clash` runtime row and the `blob/core` random colour rows in `look_trees`.
+
+## Master fails round 2 (rewrite/master-fails-2)
+
+Fixes for the failures carried as "known" across the merge batches. Every pin row below changed for a stated cause; nothing else was blessed.
+
+* **`dq_e2/explain_click_golden`: the golden is regenerated (35 lines, was 32).** Three candidates are new correct behaviour, not regressions: `melee_hit` (`item(/obj/item)`, `hostile()`, tier -2009, from the `/obj` capability block: every obj is hittable), `reload` (a `/mob/living/simple_mob` `ai()` op) and `nutrition_heal` (its `menu(button = "Nutrition Heal")`). Every candidate line also gained `claims=... (derived)` and the declaring line numbers moved; the golden had not been refreshed for either. All three new candidates are dropped by match or origin and the winner is still `pry (tier part)`.
+* **`look_trees/obj.item.organ.internal.heart.machine.anomalock.txt`: the `prebuilt` runtime row (`Cannot execute null.add overlay()`) is replaced by its look rows.** A prebuilt heart's core makes `handle_organ_mod_special()` run at creation, before the heart has an owner; it drew the lightning overlay on a null owner. It now does nothing without an owner (the same call on removal had the same null owner when the heart's holder was deleted). The look is `anomalock_heart-core`.
+* **`look_trees/obj.item.assembly.electronic_assembly.txt`: no row changes, the recorded rows now hold.** The device assembly declared `electronic_assembly_interaction_item` (`item(/obj/item)`) beside the parent `/obj/item/assembly` `attach` op (the same input and tier: `op_clash`, a declaration runtime that replaced the whole look). The device now drops the parent's `attach` (`without("attach")`) and its own op falls through to the parent's attach handler when the case is closed, so attaching two assemblies behaves as before.
+* **`look_trees/obj.structure.blob.txt`: the `blob/core` colours are deterministic.** A core made its overmind (and so rolled its blob type, `pick()`) in an `after_init(0)` timer, long after the pin reseeded the RNG from the path, so the colour depended on what had drawn from the RNG in between and changed from run to run. The core now rolls its blob type in `Initialize()` (the random cores through `get_random_blob_type()`, a plain core from all types), which runs inside the seeded `new`. `get_random_blob_type()` also returned no type for `random_easy` (`BLOB_DIFFICULTY_EASY` is 0 and it tested `!difficulty_threshold`), so the easy core got any type at all (a hard one among them); it now tests `isnull()`. The four rows (`core`, `random_easy`, `random_medium`, `random_hard`) are the new seeded values (`fulminant_organism`, `reactive_spines`, `explosive_lattice`, `fabrication_swarm`); a core that is given a type or an overmind is unchanged.
+* **`ownership_framework_checks` (`OWN AUDIT: dropped with a rec: .../smoke_spread/chem`).** A chem smoke system is a fire-and-forget datum (`new`, `set_up`, `start`, dropped), and each cloud's fade timer was scheduled on the system, so the system lived on as a datum referenced only by its own timers (and its owned reagent holder with it). The fade timer is now the cloud's own (`fade_out()` on `/obj/effect/effect/smoke/chem`) and the system expires right after `start()`. New test `ownership_chem_smoke_not_dropped`.
+* **`dq_lifecycle_sandbox`.** The 7 entries were two snapshot counters that are not registrations: `GLOB.capability_runtime_records` (a holder's own record, made when it first has data: a scrap's rolled materials, a belt's welding tool; removed in that holder's final cleanup, proved by `dq_time_foundation_compatibility_tests`) and `GLOB.caps_interned` (signature -> shared capability definition, filled the first time a type is seen: an MRE's random meal). Neither is world state an Initialize() leaks, so both join the sandbox's ignored first-use caches with the reason beside them.
+* **`dq_look_tree_pin` leak.** The pin ended with `UNIT TEST LEAK: ... space_worm/head/severed x7`: deleting a worm's segment severs the back half into a new dead head, and the block's own cleanup then repeated that down the chain. The sweep now drains the test floor (deleting until nothing is left) after its last capture, before the block is released. It is not drained per capture: later captures see what earlier ones left (a closet or fridge takes the items on its tile), and the recorded rows include that.
+* **Hit pins and look-state pins:** `baton/arm`, `baton/slime` and `ntnet_relay dos_failure` no longer differ on master; no rows changed.

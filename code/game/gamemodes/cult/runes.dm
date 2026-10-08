@@ -180,7 +180,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			open_request(src, /datum/prompt/choice/cult_convert, PROC_REF(convert_answered), answerer = target, waiting_list = waiting_for_input)
 
 	if(target in converting)
-		after(src, 10 SECONDS, PROC_REF(convert_tick), with = list(attacker, target, waiting_for_input, 1), keeps_dead = TRUE) //proc once every 10 seconds
+		after(src, 10 SECONDS, PROC_REF(convert_tick), with = list(attacker, target, waiting_for_input, 1)) //proc once every 10 seconds
 
 /// The convert rune's offer. Closing it is resisting; `waiting_list` is the rune's asked-already list.
 /datum/prompt/choice/cult_convert
@@ -394,7 +394,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 				(Verbs -> Ghost -> Re-enter corpse)")))
 				break
 
-	after(src, 10 SECONDS, PROC_REF(raise_finish), with = list(user, corpse_to_raise, body_to_sacrifice), keeps_dead = TRUE)
+	after(src, 10 SECONDS, PROC_REF(raise_finish), with = list(user, corpse_to_raise, body_to_sacrifice))
 
 /obj/effect/rune/proc/raise_finish(mob/living/user, mob/living/carbon/human/corpse_to_raise, mob/living/carbon/human/body_to_sacrifice)
 	if(QDELETED(user) || QDELETED(corpse_to_raise) || QDELETED(body_to_sacrifice))

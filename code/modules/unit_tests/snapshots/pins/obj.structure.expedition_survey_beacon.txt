@@ -56,5 +56,15 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, hand, item, melee_hit
+human|/obj/item/survey_scanner menu: Hit
+human|/obj/item/survey_scanner menu: Move To Top
+human|/obj/item/survey_scanner menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/survey_scanner menu: Use
+human|/obj/item/survey_scanner click: Click: Use
+human|/obj/item/analyzer menu: Hit
+human|/obj/item/analyzer menu: Move To Top
+human|/obj/item/analyzer menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/analyzer menu: Use
+human|/obj/item/analyzer click: Click: Use
+keys: analyzer, drag_buckle, hand, melee_hit, survey_scanner
 

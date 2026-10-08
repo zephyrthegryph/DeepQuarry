@@ -84,6 +84,7 @@ human|/obj/item/stack/rods menu: Move To Top
 human|/obj/item/stack/rods menu: Place on wall
 human|/obj/item/stack/rods menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/rods menu: Use
+human|/obj/item/stack/rods menu: Use (refused: <span class='notice'>This type of wall frame doesn't support grilles.</span>)
 human|/obj/item/stack/rods click: Click: Use
 human|/obj/item/stack/material/glass menu: Climb
 human|/obj/item/stack/material/glass menu: Hit
@@ -91,6 +92,7 @@ human|/obj/item/stack/material/glass menu: Move To Top
 human|/obj/item/stack/material/glass menu: Place on wall
 human|/obj/item/stack/material/glass menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/glass menu: Use
+human|/obj/item/stack/material/glass menu: Use (refused: <span class='notice'>You can't build that type of window on this type of low wall.</span>)
 human|/obj/item/stack/material/glass click: Click: Use
 human|/obj/item/stack/material/cyborg/glass menu: Climb
 human|/obj/item/stack/material/cyborg/glass menu: Hit
@@ -98,6 +100,7 @@ human|/obj/item/stack/material/cyborg/glass menu: Move To Top
 human|/obj/item/stack/material/cyborg/glass menu: Place on wall
 human|/obj/item/stack/material/cyborg/glass menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/cyborg/glass menu: Use
+human|/obj/item/stack/material/cyborg/glass menu: Use (refused: <span class='notice'>You can't build that type of window on this type of low wall.</span>)
 human|/obj/item/stack/material/cyborg/glass click: Click: Use
 keys: build_grille, build_window, build_window_cyborg, climb.climb, climb.climb_menu, drag_buckle, melee_hit, place, place_drag, use_wrench
 

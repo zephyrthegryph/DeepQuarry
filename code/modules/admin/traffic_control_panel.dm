@@ -44,48 +44,40 @@
 	var/mob/user = A.actor
 	traffic_access(user)
 	network_entered(A)
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/computer/telecomms/traffic/proc/ui_act_scan(datum/act/op/A)
 	var/mob/user = A.actor
 	traffic_operation(user, "scan")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/computer/telecomms/traffic/proc/ui_act_flush_buffer(datum/act/op/A)
 	var/mob/user = A.actor
 	traffic_operation(user, "release")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/computer/telecomms/traffic/proc/ui_act_view_server(datum/act/op/A, id_arg)
 	var/mob/user = A.actor
 	var/id = "[id_arg]"
 	traffic_view_server(user, id)
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/computer/telecomms/traffic/proc/ui_act_main_menu(datum/act/op/A)
 	var/mob/user = A.actor
 	traffic_operation(user, "mainmenu")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/computer/telecomms/traffic/proc/ui_act_refresh(datum/act/op/A)
 	var/mob/user = A.actor
 	traffic_operation(user, "refresh")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/computer/telecomms/traffic/proc/ui_act_edit_code(datum/act/op/A)
 	var/mob/user = A.actor
 	traffic_operation(user, "editcode")
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/computer/telecomms/traffic/proc/ui_act_toggle_run(datum/act/op/A)
 	var/mob/user = A.actor
 	traffic_operation(user, "togglerun")
-	SStgui.update_uis(src)
 	return TRUE

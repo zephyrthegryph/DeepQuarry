@@ -25,9 +25,6 @@
 	/// Normal interfaces are event-driven through SStgui.update_uis(); continuous
 	/// monitors must opt in with set_autoupdate(TRUE).
 	var/autoupdate = FALSE
-	/// Set by request_push(): the next coalesced push re-runs tgui_interact (update_uis semantics)
-	/// instead of only re-sending data.
-	var/push_reinteract = FALSE
 	/// If the UI has been initialized yet.
 	var/initialized = FALSE
 	/// Time of opening the window.
@@ -54,8 +51,6 @@
 	var/partial_packets
 	/// If the window should be closed with other windows when requested
 	var/closeable = TRUE
-	/// Relation view: the host this window is bound to with om_ui_bind() (declared UI model).
-	var/tmp/datum/om_bound
 
 /**
  * public
@@ -163,8 +158,7 @@
 		send_open_payload()
 		#endif
 	SStgui.on_open(src)
-	bind_changes()
-	om_ui_status_bind(src)
+	status_watch()
 	// A shell that never answers is a zombie: one timer, cancelled when it does (or when the window closes).
 	arm_ping_timeout()
 
@@ -268,8 +262,7 @@
 		if(!QDELETED(src_object()))
 			src_object().tgui_close(user)
 		SStgui.on_close(src)
-		unbind_changes()
-		om_ui_status_unbind(src)
+		status_unwatch()
 		cancel_after(src, "ping")
 
 		if(user?.client)
@@ -280,10 +273,6 @@
 		user.unset_machine()
 
 	state_static = null
-	var/datum/bound = om_bound
-	if(bound)
-		om_ui_unbind(src, bound)
-	rel_clear(src, nameof(om_bound))
 	if(parent_ui())
 		parent_ui().children -= src
 	rel_clear(src, nameof(parent_ui))
@@ -466,8 +455,8 @@
 /**
  * public
  *
- * Asks for a coalesced push. Every request inside one throttle window (OM_UI_THROTTLE)
- * becomes one push, so 50 update_uis() calls in a tick cost one tgui_data() per UI.
+ * Asks for a coalesced push, delivered in phase R (code/modules/tgui/ui_push.dm). Every request in one
+ * tick becomes one push, so 50 update_uis() calls in a tick cost one tgui_data() per UI.
  *
  * optional reinteract bool Re-run tgui_interact on the push (update_uis semantics),
  * rather than only re-sending data.
@@ -475,29 +464,7 @@
 /datum/tgui/proc/request_push(reinteract = TRUE)
 	if(closing || QDELETED(src))
 		return
-	if(reinteract)
-		push_reinteract = TRUE
-	var/datum/om/behaviour/B = om_registry().ui_behaviour
-	om_attach(src, B)
-	om_wake(src, B)
-
-/**
- * private
- *
- * Watches src_object for changes: a change raises one coalesced push, and the object
- * is at RELEVANCE_WATCHED while the UI is open. Polling is not needed for these.
- */
-/datum/tgui/proc/bind_changes()
-	var/datum/host = src_object()
-	if(QDELETED(host))
-		return
-	om_ui_bind(src, host, host.tgui_change_mask())
-	om_ui_bind_table(src, host)
-
-/datum/tgui/proc/unbind_changes()
-	var/datum/host = src_object()
-	if(!QDELETED(host))
-		om_ui_unbind(src, host)
+	ui_push_queue(src, reinteract ? UI_PUSH_INTERACT : UI_PUSH_DATA)
 
 /**
  * private
@@ -560,7 +527,7 @@
 /datum/tgui/proc/participant_gone(datum/other)
 	if(closing || QDELETED(src))
 		return
-	om_wake(src, om_registry().behaviour(/datum/om/behaviour/internal/ui_status))
+	ui_push_queue(src, UI_PUSH_STATUS)
 
 /// The ping timer fired: a window that never reported ready is a zombie.
 /datum/tgui/proc/ping_timeout()

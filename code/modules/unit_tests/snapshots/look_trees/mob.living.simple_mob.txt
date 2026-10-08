@@ -89,6 +89,13 @@
 /mob/living/simple_mob/dq_projectile_immune overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/dq_projectile_immune overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/dq_projectile_immune overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/dq_rocket_probe icon: icons/mob/animal.dmi
+/mob/living/simple_mob/dq_rocket_probe state: 
+/mob/living/simple_mob/dq_rocket_probe dir: 2
+/mob/living/simple_mob/dq_rocket_probe overlay: ::8:#000000
+/mob/living/simple_mob/dq_rocket_probe overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/dq_rocket_probe overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/dq_rocket_probe overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/interim_digest_actor icon: icons/mob/animal.dmi
 /mob/living/simple_mob/interim_digest_actor state: 
 /mob/living/simple_mob/interim_digest_actor dir: 2
@@ -4214,8 +4221,20 @@
 /mob/living/simple_mob/vore/overmap/spacewhale overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/vore/overmap/spacewhale overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/vore/overmap/spacewhale overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/vore/overmap/stardog runtime: param(child_om_marker, apply = link_marker) on /mob/living/simple_mob/vore/overmap/stardog: OWN: /mob/living/simple_mob/vore/overmap/stardog.child_om_marker is declared /obj/effect/overmap/visitable/simplemob, refused a /obj/effect/overmap/visitable/ship/simplemob/stardog%//%["code/engine/refs/lifecycle_links.dm",54]%//% (:)%//%["code/engine/lifeforms/params.dm",234]%//%
-/mob/living/simple_mob/vore/overmap/stardog/test_fur runtime: param(child_om_marker, apply = link_marker) on /mob/living/simple_mob/vore/overmap/stardog/test_fur: OWN: /mob/living/simple_mob/vore/overmap/stardog/test_fur.child_om_marker is declared /obj/effect/overmap/visitable/simplemob, refused a /obj/effect/overmap/visitable/ship/simplemob/stardog%//%["code/engine/refs/lifecycle_links.dm",54]%//% (:)%//%["code/engine/lifeforms/params.dm",234]%//%
+/mob/living/simple_mob/vore/overmap/stardog icon: icons/mob/vore.dmi
+/mob/living/simple_mob/vore/overmap/stardog state: woof
+/mob/living/simple_mob/vore/overmap/stardog dir: 2
+/mob/living/simple_mob/vore/overmap/stardog overlay: ::8:#000000
+/mob/living/simple_mob/vore/overmap/stardog overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/vore/overmap/stardog overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/vore/overmap/stardog overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/vore/overmap/stardog/test_fur icon: icons/mob/vore.dmi
+/mob/living/simple_mob/vore/overmap/stardog/test_fur state: woof
+/mob/living/simple_mob/vore/overmap/stardog/test_fur dir: 2
+/mob/living/simple_mob/vore/overmap/stardog/test_fur overlay: ::8:#000000
+/mob/living/simple_mob/vore/overmap/stardog/test_fur overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/vore/overmap/stardog/test_fur overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/vore/overmap/stardog/test_fur overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/vore/fennec icon: icons/mob/vore.dmi
 /mob/living/simple_mob/vore/fennec state: fennec
 /mob/living/simple_mob/vore/fennec dir: 2
@@ -8658,6 +8677,13 @@
 /mob/living/simple_mob/e0_fixture/lib_cuffed overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/e0_fixture/lib_cuffed overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/e0_fixture/lib_cuffed overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/e0_fixture/denied_counter icon: icons/mob/animal.dmi
+/mob/living/simple_mob/e0_fixture/denied_counter state: 
+/mob/living/simple_mob/e0_fixture/denied_counter dir: 2
+/mob/living/simple_mob/e0_fixture/denied_counter overlay: ::8:#000000
+/mob/living/simple_mob/e0_fixture/denied_counter overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/e0_fixture/denied_counter overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/e0_fixture/denied_counter overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/combat_ai_test_subject icon: icons/mob/animal.dmi
 /mob/living/simple_mob/combat_ai_test_subject state: tiger
 /mob/living/simple_mob/combat_ai_test_subject dir: 2

@@ -42,7 +42,7 @@ MAP_RESOLVER_VARS(/obj/effect/falling_effect, "admin_spawned;crushing;falling_ty
 	if(admin_spawned)
 		dropped.flags |= ADMIN_SPAWNED
 	animate(dropped, pixel_y = initial_y, pixel_x = initial_x , time = 7)
-	after(dropped, 0.7 SECONDS, TYPE_PROC_REF(/atom/movable,end_fall), with = list(crushing), keeps_dead = TRUE)
+	after(dropped, 0.7 SECONDS, TYPE_PROC_REF(/atom/movable,end_fall), with = list(crushing))
 
 /atom/movable/proc/end_fall(crushing = FALSE)
 	if(isliving(src))

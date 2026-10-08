@@ -27,7 +27,7 @@
 CAPABILITIES(/obj/item/assembly/signaler/anomaly)
 	op("anomaly_analyze", item(/obj/item/analyzer), label("Analyze"), then(PROC_REF(anomaly_analyze)))
 	op("anomaly_scan", item(/obj/item/anomaly_scanner), label("Scan"), then(PROC_REF(anomaly_scan)))
-	op("anomaly_interaction_item", item(/obj/item/anomaly_releaser), label("Release"), then(PROC_REF(anomaly_interaction_item)))
+	op("anomaly_interaction_item", item(/obj/item/anomaly_releaser), label("Release"), needs(req(PROC_REF(releaser_fresh), silent = TRUE)), wait(3 SECONDS), then(PROC_REF(release_done)))
 
 /// Old attackby's analyzer branch: read the field's frequency and code.
 /obj/item/assembly/signaler/anomaly/proc/anomaly_analyze(datum/act/op/A)
@@ -41,17 +41,15 @@ CAPABILITIES(/obj/item/assembly/signaler/anomaly)
 	to_chat(user, span_notice("Sealed anomalous energies detected. Use of a releaser will unleash these energies."))
 	return TRUE
 
-/// Old attackby's releaser branch: unleash the sealed anomaly.
-/obj/item/assembly/signaler/anomaly/proc/anomaly_interaction_item(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	var/obj/item/anomaly_releaser/releaser = W
-	if(releaser.used)
-		return OP_PASS
-	task_timed(user, 3 SECONDS, src, src, PROC_REF(release_done), list(user, releaser))
-	return TRUE
+/// The releaser in hand has not been used up.
+/obj/item/assembly/signaler/anomaly/proc/releaser_fresh(datum/act/op/A)
+	var/obj/item/anomaly_releaser/releaser = A.held
+	return istype(releaser) && !releaser.used
 
-/obj/item/assembly/signaler/anomaly/proc/release_done(mob/user, obj/item/anomaly_releaser/releaser)
+/// Unleash the sealed anomaly.
+/obj/item/assembly/signaler/anomaly/proc/release_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/anomaly_releaser/releaser = A.held
 	if(!anomaly_type || releaser.used)
 		return
 
@@ -62,7 +60,7 @@ CAPABILITIES(/obj/item/assembly/signaler/anomaly)
 
 	if(!releaser.infinite)
 		releaser.icon_state = releaser.used_icon_state
-		releaser.used = TRUE
+		releaser.set_used(TRUE)
 		releaser.name = "used " + releaser.name
 		consume(src, user)
 

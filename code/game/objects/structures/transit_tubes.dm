@@ -160,7 +160,7 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 
 /obj/structure/transit_tube/station/pod_stopped(obj/structure/transit_tube_pod/pod, from_dir)
 	pod_moving = 1
-	after(src, 0.5 SECONDS, PROC_REF(arrival_open), with = list(pod))
+	after(src, 0.5 SECONDS, PROC_REF(arrival_open), with = list(pod), keeps_dead = TRUE)
 
 /// A pod arrived: open the station.
 /obj/structure/transit_tube/station/proc/arrival_open(obj/structure/transit_tube_pod/pod)

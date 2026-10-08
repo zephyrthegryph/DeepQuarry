@@ -251,6 +251,29 @@
 	TEST_ASSERT_EQUAL(SSturf_cascade.grow_cascade(0), STEP_PARK, "a stopped cascade must park")
 	W.parked = FALSE
 
+/// The cascade walks its lists by index: a step converts the turf it started on, takes its neighbours into the waiting list, and leaves the cursor at rest.
+/datum/unit_test/dq_system_turf_cascade_steps
+
+/datum/unit_test/dq_system_turf_cascade_steps/Run()
+	var/turf/start = test_floor()
+	var/original = start.type
+	SSturf_cascade.vars["next_group_time"] = 0
+	SSturf_cascade.start_cascade(start, /turf/simulated/floor/plating)
+	TEST_ASSERT(SSturf_cascade.has_work(), "a started cascade has work")
+	var/steps = 0
+	while(SSturf_cascade.grow_cascade(0) == STEP_YIELD && steps++ < 50)
+		continue
+	var/turf/after_step = locate(start.x, start.y, start.z)
+	var/converted = after_step.type == /turf/simulated/floor/plating
+	var/waiting = length(SSturf_cascade.vars["remaining_turf"])
+	var/cursor = SSturf_cascade.vars["run_at"]
+	SSturf_cascade.stop_cascade()
+	after_step.ChangeTurf(original)
+	TEST_ASSERT(converted, "the first step converted the turf the cascade started on")
+	TEST_ASSERT(waiting > 0, "and queued its neighbours to convert next")
+	TEST_ASSERT_EQUAL(cursor, 0, "a finished step leaves the index cursor at rest")
+	TEST_ASSERT_EQUAL(SSturf_cascade.vars["run_at"], 0, "stopping resets it too")
+
 /// Radio: boots after atoms, owns the frequencies; devices join and leave through the api and an emptied frequency goes.
 /datum/unit_test/dq_system_radio
 

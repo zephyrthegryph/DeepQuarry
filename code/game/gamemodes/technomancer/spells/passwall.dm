@@ -16,7 +16,7 @@
 	var/maximum_distance = 20 //Measured in tiles.
 
 /obj/item/spell/passwall/on_melee_cast(atom/hit_atom, mob/user)
-	if(task_busy(src))	//Prevent someone from trying to get two uses of the spell from one instance.
+	if(work_busy(src))	//Prevent someone from trying to get two uses of the spell from one instance.
 		return 0
 	if(!allowed_to_teleport())
 		to_chat(user, span_warning("You can't teleport here!"))
@@ -55,8 +55,8 @@
 
 	// The search takes a second per tile checked; the spell is busy (a hold claims it) meanwhile.
 	var/search_time = (maximum_distance - i) SECONDS
-	task_hold_busy(src, search_time)
-	after(src, search_time, PROC_REF(passwall_found), with = list(user, hit_atom, our_turf, found_turf, total_cost), keeps_dead = TRUE)
+	hold_busy(src, search_time)
+	after(src, search_time, PROC_REF(passwall_found), with = list(user, hit_atom, our_turf, found_turf, total_cost))
 	return 1
 
 /obj/item/spell/passwall/proc/passwall_found(mob/living/user, atom/hit_atom, turf/our_turf, turf/found_turf, total_cost)

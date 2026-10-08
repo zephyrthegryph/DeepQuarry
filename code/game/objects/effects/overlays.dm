@@ -74,17 +74,13 @@ CAPABILITIES(/obj/effect/overlay/wallrot)
 	plane = TURF_PLANE
 
 // Todo: Add a version that gradually reaccumulates over time by means of alpha transparency. -Spades
+MSG_DEF(snow/shovel_snow_begins, null, span_notice("%U% begins to shovel away %T%."))
+
 CAPABILITIES(/obj/effect/overlay/snow)
-	op("shovel_snow", item(/obj/item/shovel), label("Shovel"), then(PROC_REF(interaction_shovel_snow)))
+	op("shovel_snow", item(/obj/item/shovel), label("Shovel"), begins(MSG(snow/shovel_snow_begins)), wait(4 SECONDS), then(PROC_REF(attackby_timed_done)))
 
-/// Old attackby: shovel the snow away.
-/obj/effect/overlay/snow/proc/interaction_shovel_snow(datum/act/op/A)
+/obj/effect/overlay/snow/proc/attackby_timed_done(datum/act/op/A)
 	var/mob/user = A.actor
-	act_message(user, src, others = span_notice("%U% begins to shovel away %T%."))
-	task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-	return OP_PASS
-
-/obj/effect/overlay/snow/proc/attackby_timed_done(mob/user)
 	to_chat(user, span_notice("You have finished shoveling!"))
 	consume(src, user)
 

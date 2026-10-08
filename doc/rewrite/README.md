@@ -174,3 +174,7 @@ All figures come from what is on disk today. Phase 0 re-measures them with the b
 - There is no `call_ext` outside the generated bindings, and DM keeps no copies of Rust state.
 - The conservation, parity and rule tests pass for every type they apply to.
 - The benchmarks meet the targets set after phase 0.
+
+## Legacy form census
+
+`bash tools/ci/legacy_form_counts.sh` counts the call sites of each legacy form of AGENTS.md section 3b (comments, unit tests and the defining files excluded). The table it fed on 2026-10-08 is in `final_api.html` section 19, "Where master stands". Re-run it when a form is retired and update both.

@@ -52,7 +52,7 @@
 		//Cosmetics mostly
 		flick("phasein",src)
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
-		after(src, 3 SECONDS, PROC_REF(demon_phased_in), with = list(original_canmove, FALSE), keeps_dead = TRUE) //The duration of the TP animation
+		after(src, 3 SECONDS, PROC_REF(demon_phased_in), with = list(original_canmove, FALSE)) //The duration of the TP animation
 
 
 	//Shifting out
@@ -140,7 +140,7 @@
 	//Cosmetics mostly
 	flick("phasein",src)
 	automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
-	after(src, 3 SECONDS, PROC_REF(demon_phased_in), with = list(original_canmove, TRUE), keeps_dead = TRUE) //The duration of the TP animation
+	after(src, 3 SECONDS, PROC_REF(demon_phased_in), with = list(original_canmove, TRUE)) //The duration of the TP animation
 
 /mob/living/simple_mob/vore/demon/proc/demon_phased_out(original_canmove)
 	invisibility = INVISIBILITY_LEVEL_TWO

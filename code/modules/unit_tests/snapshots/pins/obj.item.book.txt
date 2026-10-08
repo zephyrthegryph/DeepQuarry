@@ -21,9 +21,10 @@ human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Carve cutters
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters click: Click: Carve cutters
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: nothing
@@ -64,5 +65,5 @@ human|/obj/item/material/knife menu: Carve
 human|/obj/item/material/knife menu: Move To Top
 human|/obj/item/material/knife menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/material/knife click: Click: Carve
-keys: carve, collect_item, drag_buckle, edit, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, read, scan, store, toggle_digestable
+keys: carve, carve_cutters, carve_cutters_blocked, collect_item, drag_buckle, edit, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, read, scan, store, toggle_digestable
 

@@ -85,5 +85,5 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use item
 human|/obj/item/card/emag click: Click: Use
-keys: blackhole_around, blackhole_continue, climb.climb, climb.climb_menu, continue, disconnect, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, menu, new_game, redeem_tickets, robot_remote_blocked, use, use_gripper, use_item
+keys: blackhole_around, blackhole_continue, climb.climb, climb.climb_menu, continue, disconnect, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, menu, new_game, redeem_tickets, robot_remote_blocked, use, use_gripper, use_item
 

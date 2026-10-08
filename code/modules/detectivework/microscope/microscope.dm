@@ -39,29 +39,15 @@ MSG_DEF_SELF(microscope/no_sample, "the microscope has no sample to examine")
 	remove_sample(user)
 	return OP_OK
 
-/obj/machinery/microscope/proc/interaction_examine(datum/act/op/A)
+/// The lines of the start name the sample.
+/obj/machinery/microscope/proc/examine_text(datum/act/op/A)
+	return msg_text(span_notice("The microscope whirrs as you examine \the [sample()]."))
+
+/obj/machinery/microscope/proc/examine_stopped(datum/act/op/A)
+	to_chat(A.actor, span_notice("You stop examining \the [sample()]."))
+
+/obj/machinery/microscope/proc/examine_done(datum/act/op/A)
 	var/mob/user = A.actor
-
-	to_chat(user, span_notice("The microscope whirrs as you examine \the [sample()]."))
-
-	task_start(/datum/task/timed/microscope_examine, user, sample())
-	return OP_OK
-
-/obj/machinery/microscope/proc/examine_stopped(datum/task/timed/microscope_examine/task)
-	var/mob/user = task.actor
-	var/obj/item/examined = task.target
-	to_chat(user, span_notice("You stop examining \the [examined]."))
-
-/datum/task/timed/microscope_examine
-	duration = 2 SECONDS
-	complete_proc = /obj/machinery/microscope/proc/examine_done
-	cancel_proc = /obj/machinery/microscope/proc/examine_stopped
-
-/obj/machinery/microscope/proc/examine_done(datum/task/timed/microscope_examine/task)
-	var/mob/user = task.actor
-	var/obj/item/examined = task.target
-	if(sample() != examined)
-		return
 	to_chat(user, span_notice("Printing findings now..."))
 	var/obj/item/paper/report = new(get_turf(src))
 	report.stamped = list(/obj/item/stamp)
@@ -124,7 +110,7 @@ MSG_DEF_SELF(microscope/no_sample, "the microscope has no sample to examine")
 CAPABILITIES(/obj/machinery/microscope)
 	drag_onto(PROC_REF(mousedrop_input))
 	op("microscope_insert_sample", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert sample"), needs(req_is(nameof(sample), FALSE, because = MSG(microscope/sample)), req_held_releasable()), then(PROC_REF(interaction_attackby)))
-	op("microscope_examine", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Examine sample"), needs(req_is(nameof(sample), TRUE, because = MSG(microscope/no_sample))), then(PROC_REF(interaction_examine)))
+	op("microscope_examine", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Examine sample"), needs(req_is(nameof(sample), TRUE, because = MSG(microscope/no_sample))), captures(nameof(sample), resume = CANCEL_IF_CHANGED), begins(PROC_REF(examine_text)), wait(2 SECONDS), on_interrupt(PROC_REF(examine_stopped)), then(PROC_REF(examine_done)))
 	op("microscope_remove_sample", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Remove sample"), passes(), then(PROC_REF(interaction_remove_sample)))
 
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).

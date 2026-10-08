@@ -1175,7 +1175,7 @@ CAPABILITIES(/datum/vore_look)
 			to_chat(user,span_vnotice("[span_green("You begin to push [M] to freedom!")]"))
 			to_chat(M,span_vnotice("[host()] begins to push you to freedom!"))
 			to_chat(OB.owner,span_vwarning("Someone is trying to escape from inside you!"))
-			after(OB, 5 SECONDS, TYPE_PROC_REF(/obj/belly, help_out_done), with = list(user, M, host()), keeps_dead = TRUE)
+			after(OB, 5 SECONDS, TYPE_PROC_REF(/obj/belly, help_out_done), with = list(user, M, host()))
 			return TRUE
 
 		if("Devour") //Eat the inside mob
@@ -1193,7 +1193,7 @@ CAPABILITIES(/datum/vore_look)
 			to_chat(OB.owner,span_vwarning("Someone inside you is eating someone else!"))
 
 			//Not a timed action: in a stomach, weird things abound.
-			after(OB, TB.nonhuman_prey_swallow_time, TYPE_PROC_REF(/obj/belly, inner_devour_done), with = list(user, M, host(), TB), keeps_dead = TRUE)
+			after(OB, TB.nonhuman_prey_swallow_time, TYPE_PROC_REF(/obj/belly, inner_devour_done), with = list(user, M, host(), TB))
 
 /// A mob inside this belly helped `M` out (vore panel), after the wait.
 /obj/belly/proc/help_out_done(mob/user, mob/living/M, mob/living/host)
@@ -1720,8 +1720,7 @@ CAPABILITIES(/datum/vore_look)
 	var/list/answers = A.request.captured.Copy()
 	answers[A.request.step_name] = A.answer.value
 	var/datum/vore_look/panel = src_object()
-	if(panel.vore_save_preferences_step(src, answers))
-		SStgui.update_uis(panel)
+	panel.vore_save_preferences_step(src, answers)
 
 /datum/vore_look/proc/vore_save_preferences_step(datum/tgui/ui, list/answers)
 	if(isnewplayer(host()))

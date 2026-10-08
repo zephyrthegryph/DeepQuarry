@@ -62,5 +62,5 @@ human|/obj/item/paper_bundle menu: Move To Top
 human|/obj/item/paper_bundle menu: Rename bundle (refused: You can't do that.)
 human|/obj/item/paper_bundle menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/paper_bundle click: Click: Bind
-keys: bind, climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked
+keys: bind, climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked
 

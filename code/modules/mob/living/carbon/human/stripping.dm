@@ -11,6 +11,11 @@
 	update_underwear(1)
 	act_message(user, src, others = span_danger("%U% [hide_underwear[UWC.name] ? "takes off" : "puts on"] %T%'s [UWC.display_name]."))
 
+MSG_DEF(strip/pockets, null, span_danger("%U% is trying to empty %T%'s pockets!"))
+MSG_DEF(strip/splints, null, span_danger("%U% is trying to remove %T%'s splints!"))
+MSG_DEF(strip/sensors, null, span_danger("%U% is trying to set %T%'s sensors!"))
+MSG_DEF(strip/internals, null, span_danger("%U% is trying to set %T%'s internals!"))
+
 /mob/living/carbon/human/proc/handle_strip(slot_to_strip,mob/living/user)
 
 	if(!slot_to_strip || !istype(user))
@@ -26,31 +31,21 @@
 	switch(slot_to_strip)
 		// Handle things that are part of this interface but not removing/replacing a given item.
 		if("pockets")
-			act_message(user, src, others = span_danger("%U% is trying to empty %T%'s pockets!"))
-			task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done), done_args = list(user))
+			perform_op(user, src, "strip_pockets", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 			return
 		if("splints")
-			act_message(user, src, others = span_danger("%U% is trying to remove %T%'s splints!"))
-			task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done2), done_args = list(user))
+			perform_op(user, src, "strip_splints", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 			return
 		if("sensors")
-			act_message(user, src, others = span_danger("%U% is trying to set %T%'s sensors!"))
-			task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done3), done_args = list(user))
+			perform_op(user, src, "strip_sensors", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 			return
 		if("internals")
-			act_message(user, src, others = span_danger("%U% is trying to set %T%'s internals!"))
-			task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done4), done_args = list(user))
+			perform_op(user, src, "strip_internals", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 			return
 		if("tie")
-			var/obj/item/clothing/under/suit = get_equipped_item(SLOT_ID_UNIFORM)
-			if(!istype(suit) || !LAZYLEN(suit.accessories))
+			if(!strip_tie_target())
 				return
-			var/obj/item/clothing/accessory/A = suit.accessories[1]
-			if(!istype(A))
-				return
-			act_message(user, src, others = span_danger("%U% is trying to remove %T%'s [A.name]!"))
-
-			task_start(/datum/task/timed/human_handle_strip_human, user, src, receiver = src, duration = HUMAN_STRIP_DELAY, suit = suit, A = A)
+			perform_op(user, src, "strip_tie", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 			return
 		if("underwear")
 			open_request(src, /datum/prompt/choice, PROC_REF(strip_underwear_chosen), answerer = user, title = "Show/hide underwear", question = "Choose underwear. (Do not do this without OOC permission from the other player)", choices = GLOB.global_underwear.categories, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
@@ -81,77 +76,59 @@
 		if(!target_slot.canremove || (target_slot.item_flags & NOSTRIP))
 			to_chat(user, span_warning("You cannot remove \the [src]'s [target_slot.name]."))
 			return
-		act_message(user, src, others = span_danger("%U% is trying to remove %T%'s [target_slot.name]!"))
-	else if(!istype(held, /obj/item/gripper))
-		if(slot_to_strip == SLOT_ID_MASK && istype(held, /obj/item/grenade))
-			act_message(user, src, others = span_danger("%U% is trying to put \a [held] in %T%'s mouth!"))
-		else
-			act_message(user, src, others = span_danger("%U% is trying to put \a [held] on %T%!"))
-	else
-		var/obj/item/gripper/G = held
-		var/obj/item/wrapped = G.get_wrapped_item()
-		if(slot_to_strip == SLOT_ID_MASK && istype(wrapped, /obj/item/grenade))
-			act_message(user, src, others = span_danger("%U% is trying to put \a [wrapped] in %T%'s mouth!"))
-		else
-			act_message(user, src, others = span_danger("%U% is trying to put \a [wrapped] on %T%!"))
 
-	task_start(/datum/task/timed/human_handle_strip_human2, user, src, receiver = src, duration = HUMAN_STRIP_DELAY, slot_to_strip = slot_to_strip, target_slot = target_slot, stripping = stripping, held_arg = held, max_interact_count = 15)
+	// One op per slot ("strip_<slot id>"); whether something is being put on is the held item the op is given.
+	if(!(slot_to_strip in strip_slot_ids()))
+		return
+	perform_op(user, src, "strip_[slot_to_strip]", stripping ? null : held, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 
-/mob/living/carbon/human/proc/handle_strip_human_done(mob/living/user)
-	empty_pockets(user)
-/mob/living/carbon/human/proc/handle_strip_human_done2(mob/living/user)
-	remove_splints(user)
-/mob/living/carbon/human/proc/handle_strip_human_done3(mob/living/user)
-	toggle_sensors(user)
-/mob/living/carbon/human/proc/handle_strip_human_done4(mob/living/user)
-	toggle_internals(user)
-/datum/task/timed/human_handle_strip_human
-	complete_proc = /mob/living/carbon/human/proc/handle_strip_human_done5
-	var/obj/item/clothing/under/suit
-	var/obj/item/clothing/accessory/A
+/// The slots the strip menu can work on: each has a "strip_<id>" op in the human's capabilities.
+TYPE_TABLE_DECLARE(/mob/living/carbon/human, strip_slots, list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_BACK, SLOT_ID_BELT, SLOT_ID_POCKET_L, SLOT_ID_POCKET_R, SLOT_ID_UNIFORM, SLOT_ID_SUIT, SLOT_ID_SUIT_STORAGE, SLOT_ID_HEAD, SLOT_ID_MASK, SLOT_ID_EYES, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_GLOVES, SLOT_ID_SHOES, SLOT_ID_ID, SLOT_ID_HANDCUFFED, SLOT_ID_LEGCUFFED))
 
-/mob/living/carbon/human/proc/handle_strip_human_done5(datum/task/timed/human_handle_strip_human/task)
-	var/mob/living/user = task.actor
-	var/obj/item/clothing/under/suit = task.suit
-	var/obj/item/clothing/accessory/A = task.A
+/mob/living/carbon/human/proc/strip_slot_ids()
+	return TYPE_TABLE_GET(src, strip_slots)
 
-	if(!A || suit.loc != src || !(A in suit.accessories))
-		return
+/// The slot a "strip_<slot id>" op works on.
+/mob/living/carbon/human/proc/strip_op_slot(datum/act/op/A)
+	return copytext(A.oplan.key, 7)
 
-	if(istype(A, /obj/item/clothing/accessory/badge) || istype(A, /obj/item/clothing/accessory/medal))
-		act_message(user, src, others = span_danger("%U% tears off %I% from %T%'s [suit.name]!"), item = A)
-	add_attack_logs(user,src,"Stripped [A.name] off [suit.name]")
-	A.on_removed(user)
-	own_take_member(suit, nameof(suit.accessories), A)
-	update_inv_w_uniform()
-	return
-/datum/task/timed/human_handle_strip_human2
-	complete_proc = /mob/living/carbon/human/proc/handle_strip_human_done6
-	var/slot_to_strip
-	var/obj/item/target_slot
-	var/stripping
-	var/obj/item/held_arg
+/// What the others are shown when the slot job starts.
+/mob/living/carbon/human/proc/strip_slot_text(datum/act/op/A)
+	var/obj/item/held = A.held
+	var/mob/living/user = A.actor
+	if(isnull(held))
+		var/obj/item/target_slot = get_equipped_item(strip_op_slot(A))
+		return msg_text(null, span_danger("%U% is trying to remove %T%'s [target_slot?.name]!"))
+	var/obj/item/put = held
+	if(istype(held, /obj/item/gripper))
+		var/obj/item/gripper/G = held
+		put = G.get_wrapped_item()
+	if(strip_op_slot(A) == SLOT_ID_MASK && istype(put, /obj/item/grenade))
+		return msg_text(null, span_danger("%U% is trying to put \a [put] in %T%'s mouth!"))
+	return msg_text(null, span_danger("%U% is trying to put \a [put] on %T%!"))
 
-/mob/living/carbon/human/proc/handle_strip_human_done6(datum/task/timed/human_handle_strip_human2/task)
-	var/slot_to_strip = task.slot_to_strip
-	var/mob/living/user = task.actor
-	var/obj/item/target_slot = task.target_slot
-	var/stripping = task.stripping
-	var/obj/item/held = task.held_arg
+/mob/living/carbon/human/proc/strip_slot_done(datum/act/op/A)
+	var/slot_to_strip = strip_op_slot(A)
+	var/mob/living/user = A.actor
+	var/obj/item/held = A.held
 
-	if(!stripping)
-		if(user.get_active_hand() != held)
+	if(isnull(held))
+		var/obj/item/target_slot = get_equipped_item(slot_to_strip)
+		if(!istype(target_slot))
 			return
-		var/obj/item/holder/mobheld = held
-		if(istype(mobheld)&&mobheld.held_mob==src)
-			to_chat(user, span_warning("You can't put someone on themselves! Stop trying to break reality!"))
-			return
-
-	if(stripping)
 		add_attack_logs(user,src,"Removed equipment from slot [target_slot]")
 		unEquip(target_slot)
-	else if(is_robot_module(held) && istype(held, /obj/item/gripper))
+		return
+
+	if(user.get_active_hand() != held)
+		return
+	var/obj/item/holder/mobheld = held
+	if(istype(mobheld)&&mobheld.held_mob==src)
+		to_chat(user, span_warning("You can't put someone on themselves! Stop trying to break reality!"))
+		return
+
+	if(is_robot_module(held) && istype(held, /obj/item/gripper))
 		var/obj/item/gripper/G = held
 		var/obj/item/wrapped = G.get_wrapped_item()
 		if(istype(wrapped))
@@ -163,6 +140,44 @@
 		equip_to_slot_if_possible(held, slot_to_strip, 0, 1, 1)
 		if(held.loc != src)
 			user.put_in_hands(held)
+
+/mob/living/carbon/human/proc/strip_pockets_done(datum/act/op/A)
+	empty_pockets(A.actor)
+
+/mob/living/carbon/human/proc/strip_splints_done(datum/act/op/A)
+	remove_splints(A.actor)
+
+/mob/living/carbon/human/proc/strip_sensors_done(datum/act/op/A)
+	toggle_sensors(A.actor)
+
+/mob/living/carbon/human/proc/strip_internals_done(datum/act/op/A)
+	toggle_internals(A.actor)
+
+/// The accessory the tie job takes: the first one on the uniform, or null.
+/mob/living/carbon/human/proc/strip_tie_target()
+	var/obj/item/clothing/under/suit = get_equipped_item(SLOT_ID_UNIFORM)
+	if(!istype(suit) || !LAZYLEN(suit.accessories))
+		return null
+	var/obj/item/clothing/accessory/A = suit.accessories[1]
+	return istype(A) ? A : null
+
+/mob/living/carbon/human/proc/strip_tie_text(datum/act/op/A)
+	var/obj/item/clothing/accessory/tie = strip_tie_target()
+	return msg_text(null, span_danger("%U% is trying to remove %T%'s [tie?.name]!"))
+
+/mob/living/carbon/human/proc/strip_tie_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/clothing/under/suit = get_equipped_item(SLOT_ID_UNIFORM)
+	var/obj/item/clothing/accessory/tie = strip_tie_target()
+	if(!istype(suit) || !tie)
+		return
+
+	if(istype(tie, /obj/item/clothing/accessory/badge) || istype(tie, /obj/item/clothing/accessory/medal))
+		act_message(user, src, others = span_danger("%U% tears off %I% from %T%'s [suit.name]!"), item = tie)
+	add_attack_logs(user,src,"Stripped [tie.name] off [suit.name]")
+	tie.on_removed(user)
+	own_take_member(suit, nameof(suit.accessories), tie)
+	update_inv_w_uniform()
 
 // Empty out everything in the target's pockets.
 /mob/living/carbon/human/proc/empty_pockets(mob/living/user)

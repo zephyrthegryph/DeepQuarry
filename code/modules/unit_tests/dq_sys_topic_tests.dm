@@ -55,11 +55,6 @@ TOPIC_ACTION(/datum/dq_topic_probe/child, "pick", PROC_REF(topic_child_pick), TO
 	last_action = "child_pick"
 	return TRUE
 
-/datum/dq_topic_probe/gated
-
-/datum/dq_topic_probe/gated/topic_allowed(mob/user, list/href_list)
-	return FALSE
-
 /datum/unit_test/dq_sys_topic_dispatch
 
 /datum/unit_test/dq_sys_topic_dispatch/Run()
@@ -119,11 +114,6 @@ TOPIC_ACTION(/datum/dq_topic_probe/child, "pick", PROC_REF(topic_child_pick), TO
 	topic_dispatch(C, null, list("pick" = REF(I)))
 	TEST_ASSERT_EQUAL(C.last_action, "child_pick", "a subtype row replaces its parent's for the same key")
 
-	// The gate.
-	var/datum/dq_topic_probe/gated/G = new
-	TEST_ASSERT_NULL(topic_dispatch(G, null, list("action" = "x")), "topic_allowed() gates every row")
-	TEST_ASSERT_NULL(G.last_action, "gated handler did not run")
-
 	// Topic() is the dispatcher.
 	P.last_action = null
 	P.Topic(null, list("action" = "special"))
@@ -131,7 +121,6 @@ TOPIC_ACTION(/datum/dq_topic_probe/child, "pick", PROC_REF(topic_child_pick), TO
 
 	qdel(P)
 	qdel(C)
-	qdel(G)
 
 /// topic_ask() handed a handler's args list finds the raw href_list inside it.
 /datum/unit_test/dq_sys_topic_ask_unwraps

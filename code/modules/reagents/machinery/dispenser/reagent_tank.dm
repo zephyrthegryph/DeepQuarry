@@ -57,6 +57,7 @@
 CAPABILITIES(/obj/structure/reagent_dispensers)
 	reagents(5000)
 	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_item)))
+	extend("melee_hit", when(cond_not(req(/obj/item/reagent_containers)))) // a container click on a tank taps it, hostile or not, instead of hitting it
 	op("interaction_alt", hand(), ungated(), gesture(GESTURE_ALT), then(PROC_REF(interaction_alt)))
 	op("reagent_dispenser_set_aptft", menu(), label("Set transfer amount"), when(PROC_REF(has_transfer_amounts)), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(reagent_dispenser_set_aptft_a1_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "a1"), then(PROC_REF(reagent_dispenser_set_aptft)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(dispenser_blob_burst))))
@@ -127,8 +128,9 @@ CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
 	configure(reagents(add = list(REAGENT_ID_FUEL = 1000)))
 	climb()
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
-	op("hand", hand(), label("Use"), ungated(), then(PROC_REF(interaction_hand)))
-	op("fueltank_interaction_item", item(/obj/item), then(PROC_REF(fueltank_interaction_item)))
+	op("hand", hand(), label("Use"), ungated(), when(PROC_REF(has_rig)), begins(MSG(fueltank/detaching)), wait(2 SECONDS), then(PROC_REF(detach_rig_done)))
+	op("fueltank_interaction_item", item(/obj/item/assembly_holder), needs(req(PROC_REF(no_rig), because = MSG(fueltank/in_the_way))),
+		begins(MSG(fueltank/rigging)), wait(2 SECONDS), then(PROC_REF(rig_assembly_done)))
 
 /obj/structure/reagent_dispensers/fueltank/high
 	name = "high-capacity fuel tank"
@@ -198,15 +200,20 @@ CAPABILITIES(/obj/structure/reagent_dispensers/he3)
 		if(rig)
 			. += span_notice("There is some kind of device rigged to the tank.")
 
-/// Old attack_hand.
-/obj/structure/reagent_dispensers/fueltank/proc/interaction_hand(datum/act/op/A)
-	var/mob/user = A.actor
-	if (rig)
-		act_message(user, src, MSG_SELF("You begin to detach [rig] from %T%"), MSG_OTHERS("%U% begins to detach [rig] from %T%."))
-		task_timed(user, 2 SECONDS, src, src, PROC_REF(detach_rig_done), list(user))
-	return TRUE
+MSG_DEF(fueltank/detaching, "You begin to detach the device from %T%.", "%U% begins to detach the device from %T%.")
+MSG_DEF(fueltank/rigging, "You begin rigging %I% to %T%.", "%U% begins rigging %I% to %T%.")
+MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the way."))
 
-/obj/structure/reagent_dispensers/fueltank/proc/detach_rig_done(mob/user)
+/// Something is rigged to the tank.
+/obj/structure/reagent_dispensers/fueltank/proc/has_rig(datum/act/op/A)
+	return !!rig
+
+/// Requirement: nothing is rigged to the tank yet.
+/obj/structure/reagent_dispensers/fueltank/proc/no_rig(datum/act/op/A)
+	return !rig
+
+/obj/structure/reagent_dispensers/fueltank/proc/detach_rig_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!rig)
 		return
 	act_message(user, src, MSG_SELF(span_notice("You detach [rig] from %T%")), MSG_OTHERS(span_notice("%U% detaches [rig] from %T%.")))
@@ -214,21 +221,10 @@ CAPABILITIES(/obj/structure/reagent_dispensers/he3)
 	rel_take(src, nameof(rig))
 	overlays = new/list()
 
-/// Old attackby.
-/obj/structure/reagent_dispensers/fueltank/proc/fueltank_interaction_item(datum/act/op/A)
+/obj/structure/reagent_dispensers/fueltank/proc/rig_assembly_done(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	src.add_fingerprint(user)
-	if (istype(W,/obj/item/assembly_holder))
-		if (rig)
-			to_chat(user, span_warning("There is another device in the way."))
-			return OP_DECLINE
-		act_message(user, src, MSG_SELF("You begin rigging [W] to %T%"), MSG_OTHERS("%U% begins rigging [W] to %T%."))
-		task_timed(user, 2 SECONDS, src, src, PROC_REF(rig_assembly_done), list(user, W))
-
-	return OP_DECLINE
-
-/obj/structure/reagent_dispensers/fueltank/proc/rig_assembly_done(mob/user, obj/item/assembly_holder/H)
+	var/obj/item/assembly_holder/H = A.held
+	add_fingerprint(user)
 	if(rig)
 		return
 	act_message(user, src, MSG_SELF(span_notice("You rig [H] to %T%")), MSG_OTHERS(span_notice("%U% rigs [H] to %T%.")))
@@ -355,6 +351,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/acid)
 	var/bottle = 0
 	var/cups = 0
 	var/cupholder = 0
+TRACKED(/obj/structure/reagent_dispensers/water_cooler, cupholder)
 TRACKED(/obj/structure/reagent_dispensers/water_cooler, bottle)
 
 /obj/structure/reagent_dispensers/water_cooler/full
@@ -365,8 +362,11 @@ TRACKED(/obj/structure/reagent_dispensers/water_cooler, bottle)
 CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	climb()
 	op("interaction_hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
-	// the cooler's own item use replaces the tank's pass-through (the old most specific entry won)
-	op("interaction_item", item(/obj/item), then(PROC_REF(water_cooler_interaction_item)))
+	op("unfasten_jug", tool(TOOL_WRENCH), when(nameof(bottle)), starts(PROC_REF(jug_started)), wait(2 SECONDS), then(PROC_REF(unfasten_jug_done)))
+	op("bottle", item(/obj/item/reagent_containers/glass/cooler_bottle), needs(req(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req(PROC_REF(cooler_no_bottle), because = MSG(water_cooler/has_bottle))),
+		begins(MSG(water_cooler/screwing)), wait(2 SECONDS), then(PROC_REF(bottle_done)))
+	op("cupholder", stack(/obj/item/stack/material/plastic, 1), needs(req(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req(PROC_REF(cooler_no_cupholder), because = MSG(water_cooler/has_cupholder))),
+		begins(MSG(water_cooler/attaching)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(cupholder_done)))
 
 /obj/structure/reagent_dispensers/water_cooler/Initialize(mapload)
 	. = ..()
@@ -379,39 +379,28 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	if(cupholder)
 		. += span_notice("There are [cups] cups in the cup dispenser.")
 
-/// Old attackby.
-/obj/structure/reagent_dispensers/water_cooler/proc/water_cooler_interaction_item(datum/act/op/A)
+MSG_DEF(water_cooler/screwing, "You start to screw the bottle onto the water-cooler.", "%U% starts to screw a bottle onto %T%.")
+MSG_DEF(water_cooler/attaching, "You start to attach a cup dispenser onto the water-cooler.", "%U% starts to attach a cup dispenser onto %T%.")
+MSG_DEF_SELF(water_cooler/unbolted, span_warning("You need to wrench down the cooler first."))
+MSG_DEF_SELF(water_cooler/has_bottle, span_warning("There is already a bottle there!"))
+MSG_DEF_SELF(water_cooler/has_cupholder, span_warning("There is already a cup dispenser there!"))
+
+/// Requirement: the cooler is bolted down.
+/obj/structure/reagent_dispensers/water_cooler/proc/cooler_bolted(datum/act/op/A)
+	return anchored
+
+/// Requirement: no bottle is on it yet.
+/obj/structure/reagent_dispensers/water_cooler/proc/cooler_no_bottle(datum/act/op/A)
+	return !bottle
+
+/// Requirement: no cup dispenser is on it yet.
+/obj/structure/reagent_dispensers/water_cooler/proc/cooler_no_cupholder(datum/act/op/A)
+	return !cupholder
+
+/obj/structure/reagent_dispensers/water_cooler/proc/bottle_done(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/I = A.held
-	if(istype(I, /obj/item/reagent_containers/glass/cooler_bottle))
-		src.add_fingerprint(user)
-		if(!bottle)
-			if(anchored)
-				var/obj/item/reagent_containers/glass/cooler_bottle/G = I
-				to_chat(user, span_notice("You start to screw the bottle onto the water-cooler."))
-				task_timed(user, 2 SECONDS, src, src, PROC_REF(bottle_done), list(user, G))
-			else
-				to_chat(user, span_warning("You need to wrench down the cooler first."))
-		else
-			to_chat(user, span_warning("There is already a bottle there!"))
-		return 1
-
-	if(istype(I, /obj/item/stack/material/plastic))
-		if(!cupholder)
-			if(anchored)
-				var/obj/item/stack/material/plastic/P = I
-				src.add_fingerprint(user)
-				to_chat(user, span_notice("You start to attach a cup dispenser onto the water-cooler."))
-				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-				task_timed(user, 2 SECONDS, src, src, PROC_REF(cupholder_done), list(user, P))
-			else
-				to_chat(user, span_warning("You need to wrench down the cooler first."))
-		else
-			to_chat(user, span_warning("There is already a cup dispenser there!"))
-		return OP_PASS
-	return OP_PASS
-
-/obj/structure/reagent_dispensers/water_cooler/proc/bottle_done(mob/user, obj/item/reagent_containers/glass/cooler_bottle/G)
+	var/obj/item/reagent_containers/glass/cooler_bottle/G = A.held
+	add_fingerprint(user)
 	if(bottle || !anchored)
 		return
 	set_bottle(1)
@@ -421,14 +410,21 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 		reagents.add_reagent(R.id, total_reagent)
 	consume(G, user)
 
-/obj/structure/reagent_dispensers/water_cooler/proc/cupholder_done(mob/user, obj/item/stack/material/plastic/P)
+/obj/structure/reagent_dispensers/water_cooler/proc/cupholder_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(cupholder || !anchored)
 		return
-	if (P.use(1))
-		to_chat(user, span_notice("You attach a cup dispenser onto the water-cooler."))
-		cupholder = 1
+	add_fingerprint(user)
+	to_chat(user, span_notice("You attach a cup dispenser onto the water-cooler."))
+	set_cupholder(1)
 
-/obj/structure/reagent_dispensers/water_cooler/proc/unfasten_jug_done(mob/user)
+/// The wrench is at the jug: the cooler takes a print and the tool its sound, as the wait starts.
+/obj/structure/reagent_dispensers/water_cooler/proc/jug_started(datum/act/op/A)
+	add_fingerprint(A.actor)
+	playsound(src, A.held.usesound, 50, TRUE)
+
+/obj/structure/reagent_dispensers/water_cooler/proc/unfasten_jug_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!bottle)
 		return
 	to_chat(user, span_notice("You unfasten the jug."))
@@ -440,10 +436,6 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 
 /obj/structure/reagent_dispensers/water_cooler/wrench_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
-	if(bottle)
-		playsound(src, tool.usesound, 50, TRUE)
-		task_timed(user, 2 SECONDS, src, src, PROC_REF(unfasten_jug_done), list(user))
-		return ITEM_INTERACT_SUCCESS
 	use_tool(user, tool, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool))
 	return ITEM_INTERACT_SUCCESS
 
@@ -461,7 +453,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 		for(var/i = 1 to cups)
 			new /obj/item/reagent_containers/food/drinks/sillycup(loc)
 		cups = 0
-		cupholder = FALSE
+		set_cupholder(FALSE)
 		return ITEM_INTERACT_SUCCESS
 	if(bottle)
 		return ITEM_INTERACT_BLOCKING

@@ -81,46 +81,32 @@ TYPE_TABLE_DECLARE(/obj/structure/candybowl, candy_choices, list( \
 		/obj/item/reagent_containers/food/snacks/oort \
 	))
 
+TRACKED(/obj/structure/candybowl, has_candy)
+
+MSG_DEF_SELF(candybowl/empty, span_warning("there is no candy, someone took too many"))
+
 CAPABILITIES(/obj/structure/candybowl)
-	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), ungated(), label("Use"), needs(req_is(nameof(has_candy), TRUE, because = MSG(candybowl/empty))), claims(), wait(5 SECONDS), asks(/datum/prompt/choice/candybowl_repeat, step = "repeat", when = PROC_REF(has_taken_before)), then(PROC_REF(search_done)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Requirement: TRUE, or why the bowl can't be searched.
 /obj/structure/candybowl/proc/can_search(mob/user, atom/target, obj/item/held)
 	if(!has_candy)
 		return "there is no candy, someone took too many"
-	if(task_busy(src))
-		return "someone is already looking through \the [src]"
 	return TRUE
 
-/// Old attack_hand.
+/// The repeat question is asked of someone who has taken a sweet from this bowl before.
+/obj/structure/candybowl/proc/has_taken_before(datum/act/op/A)
+	return read_once(LAZYACCESS(treated, A.actor.ckey))
 
-/obj/structure/candybowl/proc/interaction_hand(datum/act/op/A)
-	var/refusal = can_search(A.actor, src, A.held)
-	if(refusal != TRUE)
-		if(istext(refusal))
-			to_chat(A.actor, span_warning(refusal))
-		return OP_DECLINE
+/obj/structure/candybowl/proc/search_done(datum/act/op/A)
 	var/mob/user = A.actor
-
-	task_timed(user, 5 SECONDS, src, src, PROC_REF(search_done), list(user), claims = TRUE)
-	return TRUE
-
-/obj/structure/candybowl/proc/search_done(mob/user)
 	if(!has_candy)
 		return
-	if(LAZYACCESS(treated, user.ckey))
-		open_request(src, /datum/prompt/choice/candybowl_repeat, PROC_REF(candybowl_repeat_answered), answerer = user)
-		return
-	finish_candy_search(user, null)
-
-/obj/structure/candybowl/proc/candybowl_repeat_answered(datum/act/request/context)
-	if(!context.answer)
-		if(!isnull(context.request.value) && context.request.last_error == CANDYBOWL_EMPTY)
-			SStgui.update_uis(src)
-		return
-	finish_candy_search(context.request.answerer, context.answer.value)
-	SStgui.update_uis(src)
+	var/choice = A.step_value("repeat")
+	finish_candy_search(user, choice)
+	if(!isnull(choice))
+		SStgui.update_uis(src)
 
 /obj/structure/candybowl/proc/finish_candy_search(mob/user, choice)
 	var/thegoods
@@ -158,14 +144,14 @@ CAPABILITIES(/obj/structure/candybowl)
 	name = newname
 	desc = "An empty bowl! Someone took too many candies..."
 	icon_state = "nocandy"
-	has_candy = FALSE
+	set_has_candy(FALSE)
 
 
 /obj/structure/candybowl/proc/fill()
 	name = initial(name)
 	desc = initial(desc)
 	icon_state = "fullcandy"
-	has_candy = TRUE
+	set_has_candy(TRUE)
 
 
 /obj/structure/candybowl/medical
@@ -231,15 +217,10 @@ TYPE_TABLE(/obj/structure/candybowl/security, candy_choices, ..() + list( \
 	costumes = typesof(/obj/item/storage/box/halloween/)
 
 CAPABILITIES(/obj/structure/boxpile)
-	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), ungated(), label("Use"), claims(), wait(5 SECONDS), then(PROC_REF(rummage_done)))
 
-/// Old attack_hand.
-/obj/structure/boxpile/proc/interaction_hand(datum/act/op/A)
+/obj/structure/boxpile/proc/rummage_done(datum/act/op/A)
 	var/mob/living/user = A.actor
-	task_timed(user, 5 SECONDS, src, src, PROC_REF(rummage_done), list(user), claims = TRUE)
-	return TRUE
-
-/obj/structure/boxpile/proc/rummage_done(mob/living/user)
 	if(!user.ckey)
 		return
 	if(LAZYACCESS(ckeys_that_took, user.ckey))
@@ -260,7 +241,7 @@ CAPABILITIES(/obj/structure/boxpile)
 
 /datum/prompt/choice/candybowl_repeat/recheck_extra()
 	var/mob/user = answerer
-	var/obj/structure/candybowl/bowl = owner
+	var/obj/structure/candybowl/bowl = subject // the op the question belongs to: its holder
 	if(!istype(user) || QDELETED(user) || !istype(bowl) || QDELETED(bowl))
 		return "gone"
 	return bowl.has_candy ? null : CANDYBOWL_EMPTY

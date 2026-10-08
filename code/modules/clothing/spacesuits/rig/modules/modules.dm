@@ -56,7 +56,23 @@ MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, 
 
 CAPABILITIES(/obj/item/rig_module)
 	owns_many(nameof(stat_modules))
-	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("mend_paste", item(/obj/item/stack/nanopaste), label("Mend with nanopaste"), needs(req(PROC_REF(damaged), because = MSG(rig_module/undamaged))),
+		begins(MSG(rig_module/mending)), wait(3 SECONDS), then(PROC_REF(mend_with_paste)))
+	op("mend_cable", item(/obj/item/stack/cable_coil), label("Mend with cable"),
+		needs(req(PROC_REF(damaged), because = MSG(rig_module/undamaged)), req(PROC_REF(mendable_with_cable), because = MSG(rig_module/crude))),
+		begins(MSG(rig_module/mending)), wait(3 SECONDS), then(PROC_REF(mend_with_cable)))
+
+MSG_DEF_SELF(rig_module/undamaged, "There is no damage to mend.")
+MSG_DEF_SELF(rig_module/crude, "There is no damage that you are capable of mending with such crude tools.")
+MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%...")
+
+/// Requirement: the module is damaged (its damage is fixed while the click is decided).
+/obj/item/rig_module/proc/damaged(datum/act/op/A)
+	return read_once(damage) != 0
+
+/// Requirement: it is not past what cable can mend (almost destroyed is the only state cable improves).
+/obj/item/rig_module/proc/mendable_with_cable(datum/act/op/A)
+	return read_once(damage) == 2
 
 /obj/item/rig_module/examine()
 	. = ..()
@@ -68,50 +84,19 @@ CAPABILITIES(/obj/item/rig_module)
 		if(2)
 			. += "It is almost completely destroyed."
 
-/// Old attackby.
-/obj/item/rig_module/proc/interaction_item(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
-
-	if(istype(W,/obj/item/stack/nanopaste))
-
-		if(damage == 0)
-			to_chat(user, "There is no damage to mend.")
-			return OP_PASS
-
-		to_chat(user, "You start mending the damaged portions of \the [src]...")
-		task_timed(user, 3 SECONDS, src, src, PROC_REF(mend_with_paste), list(user, W))
-		return OP_PASS
-
-	else if(istype(W,/obj/item/stack/cable_coil))
-
-		switch(damage)
-			if(0)
-				to_chat(user, "There is no damage to mend.")
-				return OP_PASS
-			if(2)
-				to_chat(user, "There is no damage that you are capable of mending with such crude tools.")
-				return OP_PASS
-
-		var/obj/item/stack/cable_coil/cable = W
-		if(cable.get_amount() < 5)
-			to_chat(user, "You need five units of cable to repair \the [src].")
-			return OP_PASS
-
-		to_chat(user, "You start mending the damaged portions of \the [src]...")
-		task_timed(user, 3 SECONDS, src, src, PROC_REF(mend_with_cable), list(user, cable))
-		return OP_PASS
-	return OP_DECLINE
-
-/obj/item/rig_module/proc/mend_with_paste(mob/user, obj/item/stack/nanopaste/paste)
+/obj/item/rig_module/proc/mend_with_paste(datum/act/op/A)
 	damage = 0
-	to_chat(user, "You mend the damage to [src] with [paste].")
+	to_chat(A.actor, "You mend the damage to [src] with [A.held].")
+	var/obj/item/stack/nanopaste/paste = A.held
 	paste.use(1)
+	return OP_OK
 
-/obj/item/rig_module/proc/mend_with_cable(mob/user, obj/item/stack/cable_coil/cable)
+/obj/item/rig_module/proc/mend_with_cable(datum/act/op/A)
+	var/obj/item/stack/cable_coil/cable = A.held
 	if(damage != 1 && cable.use(5))
 		damage = 1
-		to_chat(user, "You mend some of damage to [src] with [cable], but you will need more advanced tools to fix it completely.")
+		to_chat(A.actor, "You mend some of damage to [src] with [cable], but you will need more advanced tools to fix it completely.")
+	return OP_OK
 
 /obj/item/rig_module/Initialize(mapload)
 	. = ..()

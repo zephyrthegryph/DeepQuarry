@@ -702,8 +702,9 @@ CAPABILITIES(/obj/structure/prop/machine/nt_pod)
 // Old Virology stuff
 
 /obj/structure/prop/machine/nt_pod/proc/delayed_flick(obj/effect/overlay/ovrl, icon_state, flicked, get_out_time)
-	ovrl.icon_state = icon_state
-	flick(flicked, ovrl)
+	if(ovrl) // the overlay may be gone; the pod still has to finish changing state
+		ovrl.icon_state = icon_state
+		flick(flicked, ovrl)
 	// GET OUT
 	if(get_out_time)
 		after(src, get_out_time, PROC_REF(get_out))

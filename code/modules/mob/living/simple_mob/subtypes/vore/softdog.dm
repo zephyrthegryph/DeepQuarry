@@ -205,6 +205,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/woof)
 	projectilesound = SFX_VOICE_LONG_AWOO
 
 CAPABILITIES(/mob/living/simple_mob/vore/woof/cass)
+	op("cass_revive", hand(), ungated(), stance(I_HELP), label("Pet"), when(PROC_REF(playing_dead)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(cass/petting)), wait(30 SECONDS), then(PROC_REF(stops_playing_dead)), on_interrupt(PROC_REF(petting_interrupted)))
 	op("cass_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(cass_interaction_hand_help)))
 	op("cass_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Shove"), then(PROC_REF(cass_interaction_hand_disarm)))
 	op("cass_hand_grab", hand(), ungated(), stance(I_GRAB), label("Grab"), then(PROC_REF(cass_interaction_hand_grab)))
@@ -226,17 +227,19 @@ CAPABILITIES(/mob/living/simple_mob/vore/woof/cass)
 /mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand_hurt(datum/act/op/A)
 	return cass_interaction_hand(A, I_HURT)
 
-/// Old attack_hand: while playing dead, only a long help-pet revives her; alive, the normal touch.
+/// Old attack_hand: while playing dead, only a long help-pet revives her (the cass_revive op); any other touch is swallowed. Alive, the normal touch.
 /mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand(datum/act/op/A, stance)
-	var/mob/living/carbon/human/M = A.actor
 	if(stat != DEAD)
 		return OP_DECLINE
-	if(stance == I_HELP)
-		act_message(M, src, null, MSG_OTHERS("%U% pets %T%."), runemessage = "pets %T%")
-		task_timed(M, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_cass_done), done_args = list(M), on_fail = PROC_REF(attack_hand_cass_failed), fail_args = list(M))
 	return OP_OK
 
-/mob/living/simple_mob/vore/woof/cass/proc/attack_hand_cass_done(mob/living/carbon/human/M)
+MSG_DEF(cass/petting, null, "%U% pets %T%.")
+
+/mob/living/simple_mob/vore/woof/cass/proc/playing_dead(datum/act/op/A)
+	return stat == DEAD
+
+/mob/living/simple_mob/vore/woof/cass/proc/stops_playing_dead(datum/act/op/A)
+	var/mob/living/carbon/human/M = A.actor
 	faction = M.faction
 	revive()
 	sight = initial(sight)
@@ -244,8 +247,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/woof/cass)
 	see_invisible = initial(see_invisible)
 	act_message(src, null, null, MSG_OTHERS("%U% stops playing dead."), runemessage = "%U% stops playing dead")
 
-/mob/living/simple_mob/vore/woof/cass/proc/attack_hand_cass_failed(mob/living/carbon/human/M)
-	act_message(M, null, null, MSG_OTHERS("The petting was interrupted!!!"), runemessage = "The petting was interrupted")
+/mob/living/simple_mob/vore/woof/cass/proc/petting_interrupted(datum/act/op/A)
+	act_message(A.actor, null, null, MSG_OTHERS("The petting was interrupted!!!"), runemessage = "The petting was interrupted")
 
 GLOBAL_VAR_INIT(woof_maximum, 0)
 GLOBAL_VAR_INIT(woof_current, 0)

@@ -104,7 +104,7 @@ CAPABILITIES(/obj/item/extraction_pack)
 
 /obj/effect/extraction_holder/proc/fulton_expand(atom/movable/A, turf/landing)
 	add_overlay(fulton_balloon("fulton_expand"))
-	after(src, 0.4 SECONDS, PROC_REF(fulton_inflate), with = list(A, landing))
+	after(src, 0.4 SECONDS, PROC_REF(fulton_inflate), with = list(A, landing), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_inflate(atom/movable/A, turf/landing)
 	cut_overlays()
@@ -115,7 +115,7 @@ CAPABILITIES(/obj/item/extraction_pack)
 	animate(pixel_z = 10, time = 10)
 	animate(pixel_z = 15, time = 10)
 	animate(pixel_z = 10, time = 10)
-	after(src, 6 SECONDS, PROC_REF(fulton_launch), with = list(A, landing))
+	after(src, 6 SECONDS, PROC_REF(fulton_launch), with = list(A, landing), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_launch(atom/movable/A, turf/landing)
 	play_sfx(src, SFX_ITEMS_FULTEXT_LAUNCH)
@@ -124,14 +124,14 @@ CAPABILITIES(/obj/item/extraction_pack)
 		var/mob/living/carbon/human/L = A
 		L.status_adjust(STAT_STUNNED, 20)
 		L.status_set(STAT_DROWSY, 0)
-	after(src, 3 SECONDS, PROC_REF(fulton_arrive), with = list(A, landing))
+	after(src, 3 SECONDS, PROC_REF(fulton_arrive), with = list(A, landing), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_arrive(atom/movable/A, turf/landing)
 	forceMove(landing)
 	animate(src, pixel_z = 10, time = 50)
 	animate(pixel_z = 15, time = 10)
 	animate(pixel_z = 10, time = 10)
-	after(src, 7 SECONDS, PROC_REF(fulton_retract), with = list(A))
+	after(src, 7 SECONDS, PROC_REF(fulton_retract), with = list(A), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_retract(atom/movable/A)
 	cut_overlays()
@@ -162,19 +162,13 @@ CAPABILITIES(/obj/item/extraction_pack)
 MSG_DEF_SELF(fulton/needs_ground, "you must be standing on solid ground to deploy an extraction beacon")
 
 CAPABILITIES(/obj/item/fulton_core)
-	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(actor_on_turf_holds), because = MSG(fulton/needs_ground))), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(actor_on_turf_holds), because = MSG(fulton/needs_ground))), wait(1.5 SECONDS), then(PROC_REF(deploy_done)))
 
 /// Requirement: the actor stands on a real turf.
 /obj/item/fulton_core/proc/actor_on_turf_holds(datum/act/op/A)
 	return !!get_turf(A.actor)
 
-/// Old attack_self.
-/obj/item/fulton_core/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	task_timed(user, 1.5 SECONDS, user, src, PROC_REF(deploy_done), list(user))
-	return OP_OK
-
-/obj/item/fulton_core/proc/deploy_done(mob/user)
+/obj/item/fulton_core/proc/deploy_done(datum/act/op/A)
 	replace_with(src, /obj/structure/extraction_point)
 
 /obj/structure/extraction_point

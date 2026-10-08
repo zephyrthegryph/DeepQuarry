@@ -23,7 +23,6 @@ ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Eject Cycler
 human|/obj/item/tool/screwdriver menu: Fit helmet (refused: needs a void helmet)
 human|/obj/item/tool/screwdriver menu: Fit voidsuit (refused: needs a voidsuit)
-human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Put in cycler (refused: needs a grab)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
@@ -34,7 +33,6 @@ human|/obj/item/tool/screwdriver click: Click: Ui open
 human|/obj/item/tool/crowbar menu: Eject Cycler
 human|/obj/item/tool/crowbar menu: Fit helmet (refused: needs a void helmet)
 human|/obj/item/tool/crowbar menu: Fit voidsuit (refused: needs a voidsuit)
-human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Put in cycler (refused: needs a grab)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
@@ -44,7 +42,6 @@ human|/obj/item/tool/crowbar click: Click: Ui open
 human|/obj/item/tool/wrench menu: Eject Cycler
 human|/obj/item/tool/wrench menu: Fit helmet (refused: needs a void helmet)
 human|/obj/item/tool/wrench menu: Fit voidsuit (refused: needs a voidsuit)
-human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Put in cycler (refused: needs a grab)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
@@ -54,7 +51,6 @@ human|/obj/item/tool/wrench click: Click: Ui open
 human|/obj/item/tool/wirecutters menu: Eject Cycler
 human|/obj/item/tool/wirecutters menu: Fit helmet (refused: needs a void helmet)
 human|/obj/item/tool/wirecutters menu: Fit voidsuit (refused: needs a voidsuit)
-human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Put in cycler (refused: needs a grab)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
@@ -65,7 +61,6 @@ human|/obj/item/tool/wirecutters click: Click: Ui open
 human|/obj/item/multitool menu: Eject Cycler
 human|/obj/item/multitool menu: Fit helmet (refused: needs a void helmet)
 human|/obj/item/multitool menu: Fit voidsuit (refused: needs a voidsuit)
-human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Put in cycler (refused: needs a grab)
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
@@ -76,7 +71,6 @@ human|/obj/item/multitool click: Click: Ui open
 human|/obj/item/weldingtool menu: Eject Cycler
 human|/obj/item/weldingtool menu: Fit helmet (refused: needs a void helmet)
 human|/obj/item/weldingtool menu: Fit voidsuit (refused: needs a voidsuit)
-human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Put in cycler (refused: needs a grab)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
@@ -86,7 +80,6 @@ human|/obj/item/weldingtool click: Click: Ui open
 human|/obj/item/stack/cable_coil menu: Eject Cycler
 human|/obj/item/stack/cable_coil menu: Fit helmet (refused: needs a void helmet)
 human|/obj/item/stack/cable_coil menu: Fit voidsuit (refused: needs a voidsuit)
-human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Put in cycler (refused: needs a grab)
@@ -97,7 +90,6 @@ human|/obj/item/stack/cable_coil click: Click: Ui open
 human|/obj/item/stack/material/steel menu: Eject Cycler
 human|/obj/item/stack/material/steel menu: Fit helmet (refused: needs a void helmet)
 human|/obj/item/stack/material/steel menu: Fit voidsuit (refused: needs a voidsuit)
-human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Put in cycler (refused: needs a grab)
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
@@ -107,7 +99,6 @@ human|/obj/item/stack/material/steel click: Click: Ui open
 human|/obj/item/card/id menu: Eject Cycler
 human|/obj/item/card/id menu: Fit helmet (refused: needs a void helmet)
 human|/obj/item/card/id menu: Fit voidsuit (refused: needs a voidsuit)
-human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Put in cycler (refused: needs a grab)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
@@ -118,7 +109,6 @@ human|/obj/item/card/id click: Click: Ui open
 human|/obj/item menu: Eject Cycler
 human|/obj/item menu: Fit helmet (refused: needs a void helmet)
 human|/obj/item menu: Fit voidsuit (refused: needs a voidsuit)
-human|/obj/item menu: Hit
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Put in cycler (refused: needs a grab)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
@@ -128,7 +118,6 @@ human|/obj/item click: Click: Ui open
 human|/obj/item/clothing/head/helmet/space/void menu: Eject Cycler
 human|/obj/item/clothing/head/helmet/space/void menu: Fit helmet (refused: the suit cycler is locked)
 human|/obj/item/clothing/head/helmet/space/void menu: Fit voidsuit (refused: needs a voidsuit)
-human|/obj/item/clothing/head/helmet/space/void menu: Hit
 human|/obj/item/clothing/head/helmet/space/void menu: Move To Top
 human|/obj/item/clothing/head/helmet/space/void menu: Put in cycler (refused: needs a grab)
 human|/obj/item/clothing/head/helmet/space/void menu: Toggle Digestable (refused: You can't do that.)
@@ -139,7 +128,6 @@ human|/obj/item/clothing/suit/space/void menu: Eject Cycler
 human|/obj/item/clothing/suit/space/void menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/clothing/suit/space/void menu: Fit helmet (refused: needs a void helmet)
 human|/obj/item/clothing/suit/space/void menu: Fit voidsuit (refused: the suit cycler is locked)
-human|/obj/item/clothing/suit/space/void menu: Hit
 human|/obj/item/clothing/suit/space/void menu: Move To Top
 human|/obj/item/clothing/suit/space/void menu: Put in cycler (refused: needs a grab)
 human|/obj/item/clothing/suit/space/void menu: Toggle Digestable (refused: You can't do that.)
@@ -150,7 +138,6 @@ human|/obj/item/clothing/suit/space/void click: Click: Ui open
 human|/obj/item/card/emag menu: Eject Cycler
 human|/obj/item/card/emag menu: Fit helmet (refused: needs a void helmet)
 human|/obj/item/card/emag menu: Fit voidsuit (refused: needs a voidsuit)
-human|/obj/item/card/emag menu: Hit
 human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Put in cycler (refused: needs a grab)
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)

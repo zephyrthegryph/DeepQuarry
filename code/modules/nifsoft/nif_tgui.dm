@@ -31,7 +31,18 @@ CAPABILITIES(/obj/item/nif)
 	op("dismissNotification", ui_act("dismissNotification"), then(PROC_REF(ui_act_dismissnotification)))
 	param(nameof(wear_at_make), pos = 1)
 	param(nameof(load_data_at_make), pos = 2)
-	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("rewire", stack(/obj/item/stack/cable_coil, 3), label("Replace the wiring"), when(PROC_REF(needs_rewiring)), wait(6 SECONDS), then(PROC_REF(rewire_done)), says(MSG(nif/rewired)))
+	op("rewire_intact", stack(/obj/item/stack/cable_coil, 3), when(PROC_REF(wiring_intact)), priority(OP_PRIORITY_PART + 1), wait(0), then(PROC_REF(wiring_checked)), says(MSG(nif/wiring_intact)))
+	op("pry_open", tool(TOOL_SCREWDRIVER), label("Pry open"), when(req_is(nameof(open), 0)), wait(4 SECONDS), then(PROC_REF(pry_open_done)), says(MSG(nif/pried_open)))
+	op("reseal", tool(TOOL_SCREWDRIVER), label("Re-seal"), when(req_is(nameof(open), 3)), priority(OP_PRIORITY_PART + 1), wait(3 SECONDS), then(PROC_REF(reseal_done)), says(MSG(nif/resealed)))
+	// the legacy screwdriver_act / multitool_act refused every other state and ended the click: so do these (a screwdriver does not fall through to a hit)
+	op("screwdriver_blocked", tool(TOOL_SCREWDRIVER), when(PROC_REF(screwdriver_blocked)), priority(OP_PRIORITY_PART + 2), needs(req(PROC_REF(never), silent = TRUE)))
+	op("multitool_blocked", tool(TOOL_MULTITOOL), when(PROC_REF(multitool_blocked)), priority(OP_PRIORITY_PART + 1), needs(req(PROC_REF(never), silent = TRUE)))
+	op("reset_circuits", tool(TOOL_MULTITOOL), label("Reset the circuits"), when(req_is(nameof(open), 2)), wait(8 SECONDS), then(PROC_REF(reset_circuits_done)), says(MSG(nif/reset)))
+	// Special Promethean surgery: a NIF stuffed into another slime body's chest.
+	op("stuff_in", at_target(/mob/living/carbon/human), when(PROC_REF(stuffable)), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Stuff it in"),
+		needs(req_adjacent(), req(PROC_REF(stuff_in_unclothed), because = PROC_REF(stuff_in_clothed_text)), req(PROC_REF(stuff_in_torso), because = PROC_REF(stuff_in_torso_text))),
+		begins(PROC_REF(stuffing_text)), wait(20 SECONDS), then(PROC_REF(stuff_in_done)))
 
 /**
  * Small helper datum to manage the HUD icon.
@@ -216,3 +227,15 @@ CAPABILITIES(/obj/item/nif)
 /// The NIF's HUD menu helper, owned by the NIF (created on implant, deleted on unimplant or with the NIF).
 /obj/item/nif/proc/menu() as /datum/nif_menu
 	return QDELETED(menu_ref) ? null : menu_ref
+
+/// The NIF's case is neither sealed nor sealed-and-repaired: the screwdriver has nothing to do (and does nothing else).
+/obj/item/nif/proc/screwdriver_blocked(datum/act/op/A)
+	return open != 0 && open != 3
+
+/// The circuits are not open for a reset: the multitool has nothing to do.
+/obj/item/nif/proc/multitool_blocked(datum/act/op/A)
+	return open != 2
+
+/// A requirement that never holds: the blocked click is refused without a word, as the legacy tool act ended it.
+/obj/item/nif/proc/never(datum/act/op/A)
+	return FALSE

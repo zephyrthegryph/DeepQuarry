@@ -22,13 +22,17 @@
 	var/datum/om_test_entity/rupture = entity(made)
 	var/datum/om_test_entity/breach = entity(made)
 	TEST_ASSERT_EQUAL(C.dt_seconds(), CADENCE_BASE_DT, "no grant: the base step")
-	om_grant_for(C, GRANT_CADENCE, CADENCE_GAS_BRISK, rupture, 3 SECONDS)
+	hold(C, STAT_CADENCE_HOLDS, 1, rupture, lasts = 3 SECONDS, key = CADENCE_GAS_BRISK)
+	act_drain_point() // the holder's on_change reaction runs at the next drain point
 	TEST_ASSERT_EQUAL(C.dt_seconds(), 0.25, "a brisk grant shortens the step")
-	om_grant_for(C, GRANT_CADENCE, CADENCE_GAS_FAST, breach, 1 SECONDS)
+	hold(C, STAT_CADENCE_HOLDS, 1, breach, lasts = 1 SECONDS, key = CADENCE_GAS_FAST)
+	act_drain_point()
 	TEST_ASSERT_EQUAL(C.dt_seconds(), 0.1, "the shortest step any live grant names wins")
 	scheduler_advance(2)
+	act_drain_point()
 	TEST_ASSERT_EQUAL(C.dt_seconds(), 0.25, "the fast grant lapsed; the brisk one still holds")
 	scheduler_advance(2)
+	act_drain_point()
 	TEST_ASSERT_EQUAL(C.dt_seconds(), CADENCE_BASE_DT, "the last grant to lapse restores the base step")
 	TEST_ASSERT_EQUAL(C.changes, 4, "the holder heard each change (grant, grant, lapse, lapse)")
 	TEST_ASSERT_EQUAL(jointext(C.seen, ","), "0.25,0.1,0.25,0.5", "and read the new step from the store when told")
@@ -39,7 +43,7 @@
 	var/datum/step_cadence/test/C = new
 	made += C
 	var/datum/om_test_entity/source = entity(made)
-	om_grant_for(C, GRANT_CADENCE, CADENCE_GAS_FAST, source, 60 SECONDS)
+	hold(C, STAT_CADENCE_HOLDS, 1, source, lasts = 60 SECONDS, key = CADENCE_GAS_FAST)
 	TEST_ASSERT_EQUAL(C.dt_seconds(), 0.1, "granted")
 	qdel(source)
 	TEST_ASSERT_EQUAL(C.dt_seconds(), CADENCE_BASE_DT, "a grant never outlives its source")

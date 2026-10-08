@@ -22,10 +22,11 @@ human|/obj/item/multitool menu: Engrave
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Engrave
+human|/obj/item/weldingtool menu: Clear graffiti
 human|/obj/item/weldingtool menu: Engrave
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: Click: Engrave
+human|/obj/item/weldingtool click: Click: Clear graffiti
 human|/obj/item/stack/cable_coil menu: Engrave
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
@@ -54,5 +55,5 @@ human|/obj/item menu: Engrave
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Engrave
-keys: drag_buckle, engrave_graffiti, pass_insert, pass_insert_2
+keys: clear_graffiti, drag_buckle, engrave_graffiti, pass_insert, pass_insert_2
 

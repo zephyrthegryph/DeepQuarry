@@ -10,24 +10,14 @@
 	var/repair_amount = 5
 	var/repair_time = 40
 
+MSG_DEF_SELF(whetstone/refining, "You begin to refine %T% with %I%...")
+
 CAPABILITIES(/obj/item/whetstone)
-	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("refine", stack(/obj/item/stack/material, 5), label("Refine"), begins(MSG(whetstone/refining)), wait(7 SECONDS), then(PROC_REF(refined)))
 
-/// Old attackby.
-/obj/item/whetstone/proc/interaction_item(datum/act/op/A)
+/obj/item/whetstone/proc/refined(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/I = A.held
-	if(istype(I, /obj/item/stack/material))
-		var/obj/item/stack/material/M = I
-		if(M.get_amount() >= 5)
-			to_chat(user, "You begin to refine the [src] with [M]...")
-			task_timed(user, 7 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, M))
-		else
-			to_chat(user, "You need 5 [src] to refine it into a sharpening kit.")
-	return OP_PASS
-
-/obj/item/whetstone/proc/attackby_timed_done(mob/user, obj/item/stack/material/M)
-	M.use(5)
+	var/obj/item/stack/material/M = A.held
 	var/obj/item/SK
 	SK = new /obj/item/material/sharpeningkit(get_turf(user), M.material.name)
 	to_chat(user, "You sharpen and refine the [src] into \a [SK].")

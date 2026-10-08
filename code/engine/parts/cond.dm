@@ -26,6 +26,7 @@ MSG_DEF_SELF(op/failed, "That didn't work.")
 MSG_DEF_SELF(op/unknown, "There is no such thing to do.")
 MSG_DEF_SELF(op/bad_args, "That isn't something you can enter.")
 MSG_DEF_SELF(op/topic_gate, "You cannot use that link right now.")
+MSG_DEF_SELF(op/topic_token, "That link has expired.")
 MSG_DEF_SELF(op/too_deep, "That is nested too deeply.")
 MSG_DEF_SELF(op/no_resource, "You don't have enough for that.")
 MSG_DEF_SELF(op/cooling_down, "It isn't ready yet.")
@@ -464,6 +465,34 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	if(A.authority & AUTH_ADMIN)
 		return TRUE
 	return !!A.actor?.client?.operation_rights(src.args["rights"])
+
+/// req_topic_token(): the href that reached the op carries the actor's current admin token (`admin_token`). A forged, missing or stale token refuses
+/// the op with MSG(op/topic_token); the refusal is also reported to the admins (op_topic_refused()), as an exploit attempt. The token is checked by the
+/// holder's op_topic_token_ok(), so the engine knows nothing of who owns one. Not consumed: a panel's links stay valid until its holder rotates the token.
+/proc/req_topic_token()
+	return part_make(/datum/entry/part/req/topic_token, list())
+
+/datum/entry/part/req/topic_token
+	part_name = "req_topic_token"
+	default_reason = /datum/msg/op/topic_token
+
+/datum/entry/part/req/topic_token/holds(datum/act/op/A)
+	var/list/href = A.topic_href()
+	if(!length(href) || !A.holder || !A.actor)
+		return FALSE
+	return !!A.holder.op_topic_token_ok(A.actor, href["admin_token"])
+
+/// req_topic_ok(): the holder says the clicking mob may use its links at all (op_topic_actor_ok(): the viewer's own client, the carrier of a PDA).
+/// Closed unless the holder's type overrides it. Refused with MSG(op/topic_gate), or the reason the entry names.
+/proc/req_topic_ok(because = null)
+	return part_make(/datum/entry/part/req/topic_ok, list("because" = because))
+
+/datum/entry/part/req/topic_ok
+	part_name = "req_topic_ok"
+	default_reason = /datum/msg/op/topic_gate
+
+/datum/entry/part/req/topic_ok/holds(datum/act/op/A)
+	return !!(A.holder && A.actor && A.holder.op_topic_actor_ok(A.actor))
 
 /// req_full(nameof(rel)) / req_empty(nameof(rel)): a relation or list var is full (non-empty) or empty.
 /proc/req_full(var_name, because = null)

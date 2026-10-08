@@ -67,5 +67,5 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-keys: authaccess, authall, autharrest, authdown, authnorecord, authsynth, authweapon, authxeno, drag_buckle, emag.subvert, emag.use, lethal, lock.toggle, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, power, remote_lethal, remote_power, robot_remote_blocked, ui_open
+keys: authaccess, authall, autharrest, authdown, authnorecord, authsynth, authweapon, authxeno, drag_buckle, emag.subvert, emag.use, lethal, lock.toggle, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, power, remote_lethal, remote_power, robot_remote_blocked, ui_open
 

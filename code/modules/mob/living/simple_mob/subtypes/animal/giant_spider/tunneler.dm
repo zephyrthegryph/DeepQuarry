@@ -186,7 +186,7 @@
 	// Visuals and sound.
 	dig_under_floor(get_turf(src))
 	play_sfx(src, SFX_EFFECTS_BREAK_STONE)
-	after(src, tunnel_tile_speed, PROC_REF(tunnel_step_check), with = list(destination, steps_left - 1, last_loc, then_proc, extra), keeps_dead = TRUE)
+	after(src, tunnel_tile_speed, PROC_REF(tunnel_step_check), with = list(destination, steps_left - 1, last_loc, then_proc, extra))
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_step_check(turf/destination, steps_left, last_loc, then_proc, list/extra)
 	if(!destination)

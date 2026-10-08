@@ -239,16 +239,11 @@ CAPABILITIES(/obj/effect/decal/cleanable/dirt)
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "confetti"
 
+MSG_DEF_SELF(confetti/pick_confetti_begins, span_notice("You start to meticulously pick up the confetti."))
+
 CAPABILITIES(/obj/effect/decal/cleanable/confetti)
-	op("pick_confetti", hand(), label("Pick up"), then(PROC_REF(interaction_pick_confetti)))
+	op("pick_confetti", hand(), label("Pick up"), begins(MSG(confetti/pick_confetti_begins)), wait(6 SECONDS), then(PROC_REF(attack_hand_timed_done)))
 
-/// Old attack_hand: slowly pick the confetti up.
-/obj/effect/decal/cleanable/confetti/proc/interaction_pick_confetti(datum/act/op/A)
-	var/mob/user = A.actor
-	to_chat(user, span_notice("You start to meticulously pick up the confetti."))
-	task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list())
-	return TRUE
-
-/obj/effect/decal/cleanable/confetti/proc/attack_hand_timed_done()
+/obj/effect/decal/cleanable/confetti/proc/attack_hand_timed_done(datum/act/op/A)
 	consume(src)
 

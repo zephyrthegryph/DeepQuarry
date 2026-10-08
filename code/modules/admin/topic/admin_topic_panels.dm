@@ -1,5 +1,5 @@
 // Admin panel href actions: tickets, permissions, round control, notes and misc panels.
-// The owner + href-token gate is /datum/admins/topic_allowed() (code/modules/admin/topic.dm).
+// The owner + href-token gate is extend(TAG_TOPIC, needs(...)) in CAPABILITIES(/datum/admins) (topic_owner_only(), code/modules/admin/topic.dm).
 
 
 /datum/admins/proc/topic_ticket(datum/act/op/A, href_ticket, href_ticket_action)

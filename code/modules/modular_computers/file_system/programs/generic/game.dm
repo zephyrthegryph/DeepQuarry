@@ -31,7 +31,7 @@
 /// Checks for a win or loss half a second from now, then runs `next` (a proc on src): at
 /// once, or a second later when the game just ended.
 /datum/computer_file/program/game/proc/game_check(next)
-	after(src, 0.5 SECONDS, PROC_REF(game_evaluate), with = list(next), keeps_dead = TRUE)
+	after(src, 0.5 SECONDS, PROC_REF(game_evaluate), with = list(next))
 
 /datum/computer_file/program/game/proc/game_evaluate(next)
 	var/ended = TRUE

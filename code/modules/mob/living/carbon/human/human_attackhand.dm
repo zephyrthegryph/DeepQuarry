@@ -104,7 +104,10 @@
 /// This condenses them and makes it less of a cluster.
 
 ///Help Intent
-/mob/living/carbon/human/proc/cpr_done(mob/living/carbon/human/H)
+MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
+
+/mob/living/carbon/human/proc/cpr_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
 	act_message(H, src, others = span_danger("%U% performs CPR on %T%!"))
 	to_chat(H, span_warning("Repeat at least every 7 seconds."))
 	perform_cpr(H)
@@ -146,9 +149,7 @@
 
 		COOLDOWN_START(src, cpr_time, 3 SECONDS)
 
-		act_message(H, src, others = span_danger("%U% is trying to perform CPR on %T%!"))
-
-		task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(cpr_done), done_args = list(H))
+		perform_op(H, src, "cpr", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
 	else if(!(M == src && apply_pressure(M, M.zone_sel.selecting)))
 		help_shake_act(M)
@@ -450,13 +451,13 @@
 
 //Used to attack a joint through grabbing
 /mob/living/carbon/human/proc/grab_joint(mob/living/user, def_zone)
-	var/has_grab = 0
+	var/obj/item/grab/neck_grab = null
 	for(var/obj/item/grab/G in list(user.get_equipped_item(SLOT_ID_HAND_L), user.get_equipped_item(SLOT_ID_HAND_R)))
 		if(G?.grab_target() == src && G.state == GRAB_NECK)
-			has_grab = 1
+			neck_grab = G
 			break
 
-	if(!has_grab)
+	if(!neck_grab)
 		return FALSE
 
 	if(!def_zone) def_zone = user.zone_sel.selecting
@@ -467,11 +468,20 @@
 	if(!organ || organ.dislocated > 0 || organ.dislocated == -1) //don't use is_dislocated() here, that checks parent
 		return FALSE
 
-	act_message(user, src, others = span_warning("%U% begins to dislocate %T%'s [organ.joint]!"))
-	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_joint_human_done), done_args = list(organ))
+	neck_grab.set_inspect_zone(organ.organ_tag) // the grab carries the limb to the op
+	perform_op(user, src, "joint_dislocate", neck_grab, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 
-/mob/living/carbon/human/proc/grab_joint_human_done(obj/item/organ/external/organ)
+/mob/living/carbon/human/proc/joint_dislocate_text(datum/act/op/A)
+	var/obj/item/grab/neck_grab = A.held
+	var/obj/item/organ/external/organ = get_organ(neck_grab?.inspect_zone)
+	return msg_text(null, span_warning("%U% begins to dislocate %T%'s [organ?.joint]!"))
+
+/mob/living/carbon/human/proc/grab_joint_human_done(datum/act/op/A)
+	var/obj/item/grab/neck_grab = A.held
+	var/obj/item/organ/external/organ = get_organ(neck_grab?.inspect_zone)
+	if(!organ)
+		return FALSE
 	organ.dislocate(1)
 	act_message(src, null, others = span_danger("%U%'s [organ.joint] [pick("gives way","caves in","crumbles","collapses")]!"))
 	return TRUE
@@ -643,12 +653,14 @@
 
 /// Abdominal thrusts to dislodge an airway obstruction.
 /mob/living/carbon/human/proc/perform_heimlich(mob/living/carbon/human/rescuer, datum/affliction/airway_obstruction/choke)
-	act_message(rescuer, src, others = span_danger("%U% wraps %THEIR% arms around %T% and thrusts hard under the ribs!"))
-	task_timed(rescuer, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(perform_heimlich_human_done), done_args = list(choke))
+	perform_op(rescuer, src, "heimlich", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 
-/mob/living/carbon/human/proc/perform_heimlich_human_done(datum/affliction/airway_obstruction/choke)
-	if(QDELETED(choke) || choke.body != body)
+MSG_DEF(heimlich/begin, null, span_danger("%U% wraps %THEIR% arms around %T% and thrusts hard under the ribs!"))
+
+/mob/living/carbon/human/proc/perform_heimlich_human_done(datum/act/op/A)
+	var/datum/affliction/airway_obstruction/choke = body?.find_affliction(/datum/affliction/airway_obstruction)
+	if(QDELETED(choke))
 		return FALSE
 	choke.receive_tagged_treatment(TREAT_AIRWAY, rand(20, 45))
 	if(QDELETED(choke))

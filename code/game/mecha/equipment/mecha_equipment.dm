@@ -256,10 +256,10 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment)
 	op("detach", topic("detach"), then(PROC_REF(topic_detach)))
 
 // Equipment hrefs come from the exosuit's control panel: only its conscious pilot uses them.
-/obj/item/mecha_parts/mecha_equipment/topic_allowed(mob/user, list/href_list)
-	if(!chassis || !user || user.stat)
+/obj/item/mecha_parts/mecha_equipment/topic_usable(datum/act/op/A)
+	if(!chassis || !A.actor || A.actor.stat)
 		return FALSE
-	return user == chassis.slot_item(MECHA_SLOT_PILOT)
+	return A.actor == chassis.slot_item(MECHA_SLOT_PILOT)
 
 /obj/item/mecha_parts/mecha_equipment/proc/topic_detach(datum/act/op/A)
 	detach()

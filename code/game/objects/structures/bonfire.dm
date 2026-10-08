@@ -28,6 +28,11 @@ CAPABILITIES(/obj/structure/bonfire)
 		then(PROC_REF(construction_chosen)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("dismantle", hand(), label("Dismantle"), priority(OP_PRIORITY_TAKE_OUT), when(req(PROC_REF(ready_to_dismantle))),
+		needs(req(PROC_REF(not_burning), because = MSG(bonfire/still_burning))), begins(MSG(bonfire/dismantling)), wait(5 SECONDS), then(PROC_REF(dismantle_done)))
+
+MSG_DEF(bonfire/dismantling, "You start dismantling %T%.", "%U% starts dismantling %T%.")
+MSG_DEF_SELF(bonfire/still_burning, span_warning("%T% is still burning. Extinguish it first if you want to dismantle it."))
 
 TYPE_TABLE_DECLARE(/obj/structure/bonfire, forced_bonfire_material, null)
 
@@ -102,27 +107,28 @@ TRACKED(/obj/structure/bonfire, grill)
 			to_chat(user, span_notice("You add a grill to \the [src]."))
 	return OP_OK
 
-/// Old attack_hand: take out fuel, or dismantle it when it is empty.
+/// Old attack_hand: take the fuel out (an empty bonfire is taken apart by the dismantle op).
 /obj/structure/bonfire/proc/interaction_hand(datum/act/op/A)
-	var/mob/user = A.actor
-	if(get_fuel_amount())
-		remove_fuel(user)
-	else
-		dismantle(user)
+	remove_fuel(A.actor)
 	return OP_OK
 
-/obj/structure/bonfire/proc/dismantle(mob/user)
-	if(!burning)
-		act_message(user, src, MSG_SELF("You start dismantling %T%."), MSG_OTHERS("%U% starts dismantling %T%."))
-		task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(dismantle_timed_done), done_args = list(user))
-	else
-		to_chat(user, span_warning("\The [src] is still burning. Extinguish it first if you want to dismantle it."))
+/// An empty bonfire can be taken apart (what lies in it is fixed while the click is decided).
+/obj/structure/bonfire/proc/ready_to_dismantle(datum/act/op/A)
+	return !read_once(get_fuel_amount())
 
-/obj/structure/bonfire/proc/dismantle_timed_done(mob/user)
+/obj/structure/bonfire/permanent/ready_to_dismantle(datum/act/op/A)
+	return TRUE
+
+/obj/structure/bonfire/proc/not_burning(datum/act/op/A)
+	return !burning
+
+/obj/structure/bonfire/proc/dismantle_done(datum/act/op/A)
+	var/mob/user = A.actor
 	for(var/i = 1 to 5)
 		material.place_dismantled_product(get_turf(src))
 	act_message(user, src, MSG_SELF("You dismantle %T%."), MSG_OTHERS("%U% dismantles down %T%."))
 	consume(src, user)
+	return OP_OK
 
 /obj/structure/bonfire/proc/get_fuel_amount()
 	var/F = 0
@@ -142,9 +148,6 @@ TRACKED(/obj/structure/bonfire, grill)
 		AM.forceMove(get_turf(src))
 		to_chat(user, span_notice("You take \the [AM] out of \the [src] before it has a chance to burn away."))
 		changed(src)
-
-/obj/structure/bonfire/permanent/remove_fuel(mob/user)
-	dismantle(user)
 
 /obj/structure/bonfire/proc/add_fuel(atom/movable/new_fuel, mob/user)
 	if(get_fuel_amount() >= 10)

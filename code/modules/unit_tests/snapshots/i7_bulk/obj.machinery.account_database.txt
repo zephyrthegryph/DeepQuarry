@@ -62,5 +62,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: add_funds, climb.climb, climb.climb_menu, create_account, disconnect_display, drag_buckle, finalise_create_account, insert_card, interaction_insert_card, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open_ui_impl, print, remove_funds, revoke_payroll, robot_remote_blocked, toggle_suspension, view_accounts_list, view_account_detail
+keys: add_funds, climb.climb, climb.climb_menu, create_account, disconnect_display, drag_buckle, finalise_create_account, insert_card, interaction_insert_card, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, print, remove_funds, revoke_payroll, robot_remote_blocked, toggle_suspension, view_accounts_list, view_account_detail
 

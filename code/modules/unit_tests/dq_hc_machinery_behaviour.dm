@@ -943,7 +943,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/media/jukebox/ghost/J = mach(/obj/machinery/media/jukebox/ghost, tile(3, 2))
 	var/start = length(J.custom_tracks)
-	var/datum/op_result/denied = own(op_topic_href(H, J, list("add_track" = "1"), namespace = VV_TOPIC, gated = FALSE))
+	var/datum/op_result/denied = own(op_topic_href(H, J, list("add_track" = "1"), namespace = VV_TOPIC))
 	TEST_ASSERT_EQUAL(denied?.outcome, ACT_REFUSED, "a public VV link with no rights refuses before asking")
 	TEST_ASSERT(!asked(H), "the actual refused dispatch opens no question")
 	var/datum/op_result/early = own(op_perform_by_key(H, J, null, "vv_add_track", ORIGIN_UI, AUTH_ADMIN, FALSE))

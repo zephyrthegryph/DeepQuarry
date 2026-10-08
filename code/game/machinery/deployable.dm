@@ -84,7 +84,7 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 	extend("emag.subvert", needs(req(PROC_REF(emag_stage_left), because = MSG(emag/already))))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("swipe_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_swipe_id)))
-	op("hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
+	op("hit", item(/obj/item), hostile(), when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
 
 /// Is there an emag stage left to break (emagged 0: the access lock, 1: the anchoring)?
 /obj/machinery/deployable/barrier/proc/emag_stage_left(datum/act/A)

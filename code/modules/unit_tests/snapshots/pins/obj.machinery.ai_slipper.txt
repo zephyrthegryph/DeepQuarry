@@ -8,49 +8,42 @@ robot|none click: Click: Use
 ai|none menu: Ui open
 ai|none click: Click: Ui open
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Swipe ID
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Ui open
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Swipe ID
-human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Swipe ID
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Ui open
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Swipe ID
-human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Swipe ID
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Ui open
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Swipe ID
-human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Swipe ID
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Ui open
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Swipe ID
-human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Swipe ID
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Ui open
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Swipe ID
-human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Swipe ID
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Ui open
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Swipe ID
-human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Swipe ID
@@ -58,14 +51,12 @@ human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do 
 human|/obj/item/stack/cable_coil menu: Ui open
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Swipe ID
-human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Swipe ID
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Ui open
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Swipe ID
-human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Swipe ID
@@ -73,7 +64,6 @@ human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Swipe ID
-human|/obj/item menu: Hit
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Swipe ID
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)

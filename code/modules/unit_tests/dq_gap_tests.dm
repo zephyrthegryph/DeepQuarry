@@ -176,9 +176,9 @@
 	qdel(other)
 	TEST_ASSERT(!(path in M.verbs), "the source died: the verb went with it")
 	var/datum/second = new
-	grant(M, hidden_verb(/mob/gap_verb_mob/proc/gv_always), second)
+	grant(M, granted_verb(/mob/gap_verb_mob/proc/gv_always, hidden = TRUE), second)
 	TEST_ASSERT(!(/mob/gap_verb_mob/proc/gv_always in M.verbs), "a hidden verb is off while its source holds the hide")
-	revoke(M, hidden_verb(/mob/gap_verb_mob/proc/gv_always), second)
+	revoke(M, granted_verb(/mob/gap_verb_mob/proc/gv_always, hidden = TRUE), second)
 	TEST_ASSERT(/mob/gap_verb_mob/proc/gv_always in M.verbs, "and back when it lets go")
 	qdel(second)
 

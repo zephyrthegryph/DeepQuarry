@@ -31,10 +31,6 @@
 	parent_type = /datum/derived_definition
 	abstract_type = /datum/om/derived
 
-/datum/om/effect
-	parent_type = /datum/effect_definition
-	abstract_type = /datum/om/effect
-
 /datum/om/clock_def
 	parent_type = /datum/clock_definition
 	abstract_type = /datum/om/clock_def

@@ -44,6 +44,8 @@
 	var/visible_action = "turns on"
 	var/audible_action = null
 
+MSG_DEF(microwave/ejecting, span_notice("You try to open %T% and remove its contents."), span_notice("%U% tries to open %T% and remove its contents."))
+
 CAPABILITIES(/obj/machinery/microwave)
 	owns_one(nameof(soundloop), /datum/looping_sound/microwave)
 	every(PROC_REF(loop_delay), then(PROC_REF(cook_loop_step)), when = nameof(loop_running))
@@ -57,7 +59,7 @@ CAPABILITIES(/obj/machinery/microwave)
 	op("microwave_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(microwave_interaction_item)))
 	op("microwave_interaction_eject_pai", hand(), ungated(), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 1), label("Eject pAI"), then(PROC_REF(microwave_interaction_eject_pai)))
 	op("microwave_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(microwave_interaction_hand)))
-	op("microwave_verb_eject", menu(), label("Eject content"), needs(req_adjacent(), req_capable()), then(PROC_REF(microwave_verb_eject)))
+	op("microwave_verb_eject", menu(), label("Eject content"), needs(req_adjacent(), req_capable()), begins(MSG(microwave/ejecting)), wait(1 SECOND), then(PROC_REF(eject_done)))
 
 /obj/machinery/microwave/advanced
 	name = "deluxe microwave"
@@ -614,16 +616,8 @@ TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 	ffuu.reagents.add_reagent(REAGENT_ID_TOXIN, amount/10)
 	return ffuu
 
-/// Old Eject content verb.
-/obj/machinery/microwave/proc/microwave_verb_eject(datum/act/op/A)
+/obj/machinery/microwave/proc/eject_done(datum/act/op/A)
 	var/mob/user = A.actor
-	act_message(user, src, MSG_SELF(span_notice("You try to open %T% and remove its contents.")), \
-		MSG_OTHERS(span_notice("%U% tries to open %T% and remove its contents.")))
-
-	task_timed(user, 1 SECOND, src, src, PROC_REF(eject_done), list(user))
-	return TRUE
-
-/obj/machinery/microwave/proc/eject_done(mob/user)
 	if(operating)
 		to_chat(user, span_warning("You can't do that, [src] door is locked!"))
 		return

@@ -148,6 +148,8 @@ SETTER(/obj/machinery, use_power)
 MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")
 
 CAPABILITIES(/obj/machinery)
+	// Non-harm clicks reach matching machine interactions, never the inherited item strike.
+	extend("melee_hit", when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))))
 	op("robot_remote_blocked", inputs(hand(), item(/obj/item), remote(), menu()), ungated(), priority(OP_PRIORITY_SUBVERT + 1), label("Blocked"),
 		when(cond_all(req(/mob/living/silicon/robot, of = ON_ACTOR), cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(robot_remote_blocked))))),
 		needs(req_on_origin(ORIGIN_MENU, req(PROC_REF(robot_remote_blocked), because = MSG(machine/robot_remote_unavailable)))), then(TYPE_PROC_REF(/atom, op_swallow)))

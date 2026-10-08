@@ -82,6 +82,14 @@
 /datum/request/proc/recheck_extra()
 	return null
 
+/// The thing the question is about: when an op asked it (asks()), `owner` is the op's pending record and this is the op's holder; else the owner itself.
+/// A prompt's recheck_extra() reads this, never `owner`, to ask about the machine it was opened for.
+/datum/request/proc/owner_holder()
+	var/datum/pending_op/pending = owner
+	if(istype(pending))
+		return pending.holder
+	return owner
+
 /// A request that has ended can not be answered again.
 /datum/request/proc/is_open()
 	return isnull(outcome) && !QDELETED(src)
@@ -333,6 +341,11 @@ SYSTEM_DEF(requests)
 /datum/request/proc/check_context()
 	return recheck_extra()
 
+/// Called on the owner of a question once its answer was applied and its handler ran. Presentation overrides it: the owner's windows may show
+/// what the answer changed (code/modules/tgui/ui_push.dm).
+/datum/proc/request_answered(datum/request/R)
+	return
+
 /// Ends `R` with `outcome` and runs its handler. Returns TRUE when this call ended it, FALSE when it had already ended.
 /// An answer that no longer passes its valid() check ends as REQ_CANCELLED.
 /proc/request_end(datum/request/R, outcome, value)
@@ -385,6 +398,8 @@ SYSTEM_DEF(requests)
 		catch(var/exception/fault) // ALLOW(silent_catch): the request kernel's isolation point: one handler's runtime must not leak the act or the request
 			kernel().report_fault(fault, "request [R.type] handler [R.handler] on [R.owner.type]: [fault] ([fault.file]:[fault.line])")
 		A.release()
+		if(outcome == REQ_ANSWERED)
+			R.owner.request_answered(R)
 		if(R.reservations)
 			request_costs_settle(R, handled != OP_REFUSED && handled != OP_FAILED)
 	if(R.reservations) // the owner went before the handler could run: nothing is spent

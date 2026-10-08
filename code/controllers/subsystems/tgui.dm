@@ -237,7 +237,7 @@ SYSTEM_DEF(tgui)
 	return ..()
 
 /// The autoupdate pass (phase K): the refresh of the windows that opted into one. A window's status, range and
-/// liveness are event-driven (om_ui_status_bind(), the ping timer): this is the only recurring work, and it parks
+/// liveness are event-driven (status_watch(), the ping timer): this is the only recurring work, and it parks
 /// when no window is autoupdating (set_autoupdate(TRUE) wakes it).
 /datum/system/tgui/reactions()
 	. = ..()
@@ -692,7 +692,7 @@ SYSTEM_DEF(tgui)
 	if(!islist(target.tgui_open_uis))
 		target.tgui_open_uis = list()
 	target.tgui_open_uis |= ui
-	om_ui_status_bind(ui)
+	ui.status_watch()
 	return TRUE
 
 /**

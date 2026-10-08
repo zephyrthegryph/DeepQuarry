@@ -81,5 +81,5 @@ human|/obj/item/reagent_containers/glass/beaker menu: Splash (refused: There is 
 human|/obj/item/reagent_containers/glass/beaker menu: Store
 human|/obj/item/reagent_containers/glass/beaker menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/glass/beaker click: Click: Attach container
-keys: analyzer_block, attach_beaker, drag_buckle, eject_contents, fill_target, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, secure, store, swipe_id
+keys: analyzer_block, attach_beaker, drag_buckle, eject_contents, fill_target, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, secure, store, swipe_id
 

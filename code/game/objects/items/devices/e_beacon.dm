@@ -28,8 +28,9 @@ CAPABILITIES(/obj/item/emergency_beacon)
 	owns_one(nameof(gps), /obj/item/gps, starts = /obj/item/gps/emergency_beacon)
 	// the old attack_self: on solid ground, after a yes, the beacon is spiked in a moment later
 	op("activate", in_hand(), label("Activate"), needs(req_is(nameof(beacon_active), FALSE, because = MSG(emergency_beacon/active)), req(PROC_REF(on_solid_ground), because = PROC_REF(ground_refusal))),
-		asks(/datum/prompt/yes_no, fields = list("title" = "name", "question" = "Would you like to activate this personal emergency beacon?", "timeout" = 0)),
-		then(PROC_REF(activation_answered)))
+		asks(/datum/prompt/yes_no, fields = list("title" = "name", "question" = "Would you like to activate this personal emergency beacon?", "timeout" = 0), ends_on_no = TRUE),
+		wait(3 SECONDS), // short, so they can still abort if they want to
+		then(PROC_REF(activate_done)))
 	// an active beacon is spiked in: it can't be picked up, and a wrench takes it apart
 	op("spiked", hand(), when(nameof(beacon_active)), then(PROC_REF(interaction_hand)))
 	op("disassemble", tool(TOOL_WRENCH), wait(0), label("Disassemble"), when(nameof(beacon_active)), then(PROC_REF(interaction_item)))
@@ -52,17 +53,8 @@ MSG_DEF_SELF(emergency_beacon/active, "It is already active, or is otherwise mal
 		return "You cannot activate the beacon when you are not on sufficiently solid ground!"
 	return null
 
-/// The yes: a short delay, so they can still abort if they want to.
-/obj/item/emergency_beacon/proc/activation_answered(datum/act/op/A)
-	var/datum/prompt/R = A.answer
-	if(!R?.value)
-		return OP_OK
+/obj/item/emergency_beacon/proc/activate_done(datum/act/op/A)
 	var/mob/user = A.actor
-	//short delay, so they can still abort if they want to
-	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(activate_done), done_args = list(user))
-	return OP_OK
-
-/obj/item/emergency_beacon/proc/activate_done(mob/user)
 	if(beacon_active)
 		return
 	act_message(user, src, MSG_SELF(span_warning("You activate %T%, spiking it into the ground!")), MSG_OTHERS(span_warning("%U% activates %T%!")))

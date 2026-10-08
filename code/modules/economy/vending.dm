@@ -593,7 +593,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 	if(has_logs)
 		do_logging(R, user, 1)
 	if(prob(1))
-		after(src, 0.3 SECONDS, PROC_REF(bonus_vend), with = list(R), keeps_dead = TRUE)
+		after(src, 0.3 SECONDS, PROC_REF(bonus_vend), with = list(R))
 	playsound(src, "sound/[vending_sound]", 100, 1, 1)
 
 	GLOB.items_sold_shift_roundstat++

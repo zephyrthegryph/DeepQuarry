@@ -1,5 +1,5 @@
 // Verb entries and granted verbs (doc/rewrite/final_api.html, section 13 "Verbs and abilities"): the one declaration of a verb a type or a capability has,
-// kept in the verb store (code/datums/om/grant_verbs.dm), which stays the only writer of a verbs list.
+// kept in the verb store (code/engine/present/verb_store.dm), which stays the only writer of a verbs list.
 //
 //   CAPABILITIES(/mob/living/simple_mob/vore/wolf)
 //       verb_entry(/mob/living/proc/set_size, login = TRUE)           on a mob once a player has had it (the old DECLARE_LOGIN_VERB)
@@ -8,7 +8,7 @@
 //       verb_entry(/mob/verb/toggle_gun_mode, hidden = TRUE)           never on an instance: hides what the type inherits (DECLARE_VERB_HIDE)
 //
 //   grant(M, granted_verb(/mob/living/proc/ventcrawl), source)         a runtime verb: on M while `source` holds it
-//   grant(M, hidden_verb(/mob/verb/observe), source)                   a runtime hide (hidden_verb() is the legacy store form, code/datums/reactions/state.dm)
+//   grant(M, granted_verb(/mob/verb/observe, hidden = TRUE), source)   a runtime hide
 //   revoke(M, granted_verb(/mob/living/proc/ventcrawl), source)
 //
 // A type-level entry is part of the type: applied when an instance initializes (and at Login for login = TRUE), with no per-instance store entry. A `when =`
@@ -141,29 +141,23 @@ GLOBAL_LIST_EMPTY(verb_entry_sets) // type -> /datum/verb_entry_set, or FALSE fo
 		return "verb_entry() inside a capability is a grant that ends with it: login and when are for a type's own entries (use an enclosing when() block)"
 	return null
 
-/// Where a granted verb lands and who holds it: on = ON_SOURCE puts it on the activation's source (an item's own verb) held by the activation's holder, else on the
-/// holder held by the activation's source (a shared verb_source() for a source that is a SOURCE_DEF id): remove() lets go of exactly this hold.
-/proc/verb_grant_sides(datum/activation/A, datum/entry/E)
-	if(E.args["on"] == ON_SOURCE)
-		return list(A.source, A.holder)
-	return list(A.holder, isdatum(A.source) ? A.source : verb_source("granted_verb"))
+/// Where a granted verb lands: on = ON_SOURCE puts it on the activation's source (an item's own verb) while the holder has the activation, else on the
+/// holder. The verb store reads the live activations (verb_activations_want()), so an activation ending takes the verb away with it.
+/proc/verb_entry_target(datum/activation/A, datum/entry/E)
+	return (E.args["on"] == ON_SOURCE) ? A.source : A.holder
 
 /datum/entry_engine/verb_entry_grant/apply(datum/activation/A, datum/entry/E, datum/centry/C)
-	var/list/sides = verb_grant_sides(A, E)
-	var/datum/target = sides[1]
-	var/datum/store_source = sides[2]
-	if(!isdatum(target) || QDELETED(target) || !isdatum(store_source) || QDELETED(store_source))
+	var/datum/target = verb_entry_target(A, E)
+	if(!isdatum(target) || QDELETED(target))
 		return FALSE
-	contribution_grant(target, E.args["hidden"] ? GRANT_VERB_HIDE : GRANT_VERB, verb_entry_key(E), store_source)
+	verb_store_sync(target, list(verb_entry_key(E)))
 	return TRUE
 
 /datum/entry_engine/verb_entry_grant/remove(datum/activation/A, datum/entry/E)
-	var/list/sides = verb_grant_sides(A, E)
-	var/datum/target = sides[1]
-	var/datum/store_source = sides[2]
-	if(!isdatum(target) || QDELETED(target) || !isdatum(store_source))
+	var/datum/target = verb_entry_target(A, E)
+	if(!isdatum(target) || QDELETED(target))
 		return
-	contribution_revoke(target, E.args["hidden"] ? GRANT_VERB_HIDE : GRANT_VERB, verb_entry_key(E), store_source)
+	verb_store_sync(target, list(verb_entry_key(E))) // the activation is already dead: the store reads the live ones
 
 // ---- granted_verb(): a verb as a capability ----
 

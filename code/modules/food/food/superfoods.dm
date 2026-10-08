@@ -557,25 +557,22 @@ CAPABILITIES(/obj/structure/chaoscake)
 							/obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza/bigslice,
 							/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza/bigslice)
 
-/obj/structure/theonepizza/proc/slice_done(mob/living/user)
+/obj/structure/theonepizza/proc/slice_done(datum/act/op/A)
+	var/mob/living/user = A.actor
 	act_message(user, null, MSG_SELF(span_notice("You successfully cut The One Pizza.")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " successfully cuts The One Pizza.")))
 	for(var/slicetype in slicelist)
 		new slicetype(src.loc)
 	consume(src, user)
 
-CAPABILITIES(/obj/structure/theonepizza)
-	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+MSG_DEF(theonepizza/slicing, span_notice("You start to slowly cut through The One Pizza."), span_bold("%U%") + " starts to slowly cut through The One Pizza.")
 
-/// Old attackby.
-/obj/structure/theonepizza/proc/interaction_item(datum/act/op/A)
-	var/mob/living/user = A.actor
-	var/obj/item/W = A.held
-	if(istype(W,/obj/item/material/knife))
-		act_message(user, null, MSG_SELF(span_notice("You start to slowly cut through The One Pizza.")), \
-			MSG_OTHERS(span_bold("%U%") + " starts to slowly cut through The One Pizza."))
-		task_timed(user, slicetime, src, src, PROC_REF(slice_done), list(user))
-	return OP_PASS
+CAPABILITIES(/obj/structure/theonepizza)
+	op("item", item(/obj/item/material/knife), label("Use"), begins(MSG(theonepizza/slicing)), wait(PROC_REF(slice_time)), then(PROC_REF(slice_done)))
+
+/// How long the knife takes through it.
+/obj/structure/theonepizza/proc/slice_time(datum/act/op/A)
+	return slicetime
 
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita/bigslice
 	name = "Giant Margherita slice"

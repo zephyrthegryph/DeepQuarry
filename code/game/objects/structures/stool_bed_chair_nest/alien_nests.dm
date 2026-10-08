@@ -30,7 +30,7 @@
 				act_message(buckled_mob, null, MSG_SELF(span_warning("You struggle to break free from the gelatinous resin...")), \
 					MSG_OTHERS(span_warning("[buckled_mob.name] struggles to break free of the gelatinous resin...")), \
 					MSG_BLIND(span_notice("You hear squelching...")))
-				after(src, NEST_RESIST_TIME, PROC_REF(struggle_free), with = list(user, buckled_mob), keeps_dead = TRUE)
+				after(src, NEST_RESIST_TIME, PROC_REF(struggle_free), with = list(user, buckled_mob))
 			src.add_fingerprint(user)
 	return
 

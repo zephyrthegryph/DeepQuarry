@@ -47,7 +47,7 @@ CAPABILITIES(/obj/item/communicator)
 	op("Light", ui_act("Light"), then(PROC_REF(ui_act_light)))
 	op("newsfeed", ui_act("newsfeed", arg("newsfeed", num())), then(PROC_REF(ui_act_newsfeed)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(communicator_emp)))
-	op("action_Reply", topic("action=Reply", arg("target", schema_ref(/obj/item/communicator), optional = TRUE)), asks(/datum/prompt/text/communicator_reply, fields = list("subject" = computed(PROC_REF(reply_subject)), "comm" = computed(PROC_REF(reply_target))), step = "message"), then(PROC_REF(topic_reply)))
+	op("action_Reply", topic("action=Reply", arg("target", schema_ref(/obj/item/communicator), optional = TRUE)), asks(/datum/prompt/text/communicator_reply, fields = list("subject" = computed(PROC_REF(reply_subject)), "comm" = arg_of("target")), step = "message"), then(PROC_REF(topic_reply)))
 
 
 // Proc: setup_tgui_camera()

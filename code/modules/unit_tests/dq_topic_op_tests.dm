@@ -10,21 +10,36 @@
 	var/obj/item/last_item
 	var/list/pool
 	var/gate_open = TRUE
+	/// The token this probe's links must carry (req_topic_token()).
+	var/token = "tok-1"
 
 MSG_DEF_SELF(dq_topic_probe/closed, "The probe is closed.")
+
+/datum/prompt/text/dq_arg_of_probe
+	timeout = 0
+
+/datum/dq_topic_op_probe/proc/do_ask_arg(datum/act/op/A, n)
+	bumped++
+	return TRUE
+
+/datum/dq_topic_op_probe/op_topic_actor_ok(mob/actor)
+	return gate_open
+
+/datum/dq_topic_op_probe/op_topic_token_ok(mob/actor, supplied)
+	return !isnull(supplied) && supplied == token
 
 TRACKED(/datum/dq_topic_op_probe, usable)
 
 CAPABILITIES(/datum/dq_topic_op_probe)
+	extend(TAG_TOPIC, needs(req_topic_ok()))
+	op("ask_arg", topic("ask_arg", arg("n", int(0, 9))), asks(/datum/prompt/text/dq_arg_of_probe, fields = list("default" = arg_of("n"), "max_len" = arg_of("n")), step = "v"), then(PROC_REF(do_ask_arg)))
+	op("tokened", topic("tokened"), needs(req_topic_token()), then(PROC_REF(do_plain)))
 	op("bump", topic("action=bump", arg("n", int(0, 9), optional = TRUE), arg("who", schema_text(8), optional = TRUE)), needs(req_is(nameof(usable), TRUE, because = MSG(dq_topic_probe/closed))), then(PROC_REF(do_bump)))
 	op("plain", topic("plain"), then(PROC_REF(do_plain)))
 	op("secret", topic("secret"), needs(req_rights(R_ADMIN)), then(PROC_REF(do_secret)))
 	op("vv_key", topic_in(VV_TOPIC, "vv_key"), then(PROC_REF(do_plain)))
 	op("pick_item", topic("pick_item", arg("item", schema_ref(/obj/item))), then(PROC_REF(do_pick_item)))
 	op("pick_pooled", topic("pick_pooled", arg("item", schema_ref(/obj/item), among = PROC_REF(item_pool))), then(PROC_REF(do_pick_item)))
-
-/datum/dq_topic_op_probe/topic_allowed(mob/user, list/href_list)
-	return gate_open
 
 /datum/dq_topic_op_probe/proc/item_pool()
 	return pool
@@ -138,10 +153,11 @@ TOPIC_ACTION(/datum/dq_topic_op_probe, "legacy", PROC_REF(topic_legacy_row))
 	var/datum/op_result/stranger = inbox_topic(M, P, list("pick_pooled" = 1, "item" = "[REF(outside)]"))
 	TEST_ASSERT_EQUAL(stranger?.outcome, ACT_REFUSED, "a real item that is not in the pool is refused")
 	TEST_ASSERT_NULL(P.last_item, "and the handler never saw it")
-	// the holder's topic_allowed() gate comes before the op
+	// a requirement of the op gates it
 	P.gate_open = FALSE
 	var/datum/op_result/gated = inbox_topic(M, P, list("plain" = 1))
-	TEST_ASSERT_EQUAL(gated?.outcome, ACT_REFUSED, "a holder whose topic_allowed() says no refuses the link")
+	TEST_ASSERT_EQUAL(gated?.outcome, ACT_REFUSED, "an op whose gate requirement says no refuses the link")
+	TEST_ASSERT_EQUAL(gated?.reason, /datum/msg/op/topic_gate, "and says why")
 	TEST_ASSERT_EQUAL(P.bumped, 0, "and no op ran")
 
 /datum/unit_test/dq_e2/topic_namespace_is_closed_to_plain_links
@@ -151,8 +167,39 @@ TOPIC_ACTION(/datum/dq_topic_op_probe, "legacy", PROC_REF(topic_legacy_row))
 	var/datum/dq_topic_op_probe/P = new
 	TEST_ASSERT_NULL(inbox_topic(M, P, list("vv_key" = 1)), "a plain link never reaches an op of the VV namespace")
 	TEST_ASSERT_EQUAL(P.bumped, 0, "and nothing ran")
-	var/datum/op_result/vv = op_topic_href(M, P, list("vv_key" = 1), namespace = VV_TOPIC, gated = FALSE)
+	var/datum/op_result/vv = op_topic_href(M, P, list("vv_key" = 1), namespace = VV_TOPIC)
 	TEST_ASSERT_EQUAL(vv?.key, "vv_key", "the dispatch that names the namespace reaches it")
 	TEST_ASSERT_EQUAL(P.bumped, 1, "and it ran")
-	P.gate_open = FALSE
-	TEST_ASSERT_EQUAL(op_topic_href(M, P, list("vv_key" = 1), namespace = VV_TOPIC, gated = FALSE)?.outcome, ACT_COMMITTED, "a namespace with its own gate skips the holder's topic_allowed()")
+
+/datum/unit_test/dq_e2/topic_token_requirement
+
+/datum/unit_test/dq_e2/topic_token_requirement/run_gate()
+	var/mob/living/simple_mob/e0_fixture/M = actor()
+	var/datum/dq_topic_op_probe/P = new
+	var/datum/op_result/valid = inbox_topic(M, P, list("tokened" = 1, "admin_token" = "tok-1"))
+	TEST_ASSERT_EQUAL(valid?.outcome, ACT_COMMITTED, "a link carrying the current token runs")
+	TEST_ASSERT_EQUAL(P.bumped, 1, "and its op ran")
+	var/datum/op_result/forged = inbox_topic(M, P, list("tokened" = 1, "admin_token" = "forged"))
+	TEST_ASSERT_EQUAL(forged?.outcome, ACT_REFUSED, "a forged token is refused")
+	TEST_ASSERT_EQUAL(forged?.reason, /datum/msg/op/topic_token, "with the token reason")
+	var/datum/op_result/missing = inbox_topic(M, P, list("tokened" = 1))
+	TEST_ASSERT_EQUAL(missing?.reason, /datum/msg/op/topic_token, "a link with no token is refused the same way")
+	P.token = "tok-2" // the holder rotated its token
+	var/datum/op_result/stale = inbox_topic(M, P, list("tokened" = 1, "admin_token" = "tok-1"))
+	TEST_ASSERT_EQUAL(stale?.reason, /datum/msg/op/topic_token, "a stale token is refused after the holder rotates it")
+	TEST_ASSERT_EQUAL(inbox_topic(M, P, list("tokened" = 1, "admin_token" = "tok-2"))?.outcome, ACT_COMMITTED, "and the new one passes")
+	TEST_ASSERT_EQUAL(P.bumped, 2, "only the two valid links ran")
+
+/datum/unit_test/dq_e2/asks_field_reads_an_op_arg
+
+/datum/unit_test/dq_e2/asks_field_reads_an_op_arg/run_gate()
+	var/mob/living/simple_mob/e0_fixture/M = actor()
+	var/datum/dq_topic_op_probe/P = new
+	inbox_topic(M, P, list("ask_arg" = 1, "n" = "7"))
+	var/datum/pending_op/pending = op_pending_of(M)
+	TEST_ASSERT_NOTNULL(pending, "the link waits at its question")
+	var/datum/prompt/text/dq_arg_of_probe/asked = pending?.request
+	TEST_ASSERT_NOTNULL(asked, "and the question is open")
+	TEST_ASSERT_EQUAL(asked?.max_len, 7, "arg_of(name) is the op argument's checked value")
+	TEST_ASSERT_EQUAL(asked?.default, 7, "and so is any other field named the same way")
+	test_answer(M, "done")

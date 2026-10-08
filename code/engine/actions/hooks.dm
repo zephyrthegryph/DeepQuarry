@@ -545,3 +545,11 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /datum/rx_state
 	/// The /datum/hook records the live activations of this datum brought (the type's own are in its compiled table).
 	var/list/hooks
+
+/// Ends every reaction observation the listener made (observe(source, on_change(...), listener, handler), a notice reaction), on anything.
+/// The count ended. unobserve_all() ends the hook activations of the other form.
+/proc/unobserve_reactions(datum/listener)
+	. = 0
+	for(var/datum/rx_listener/L as anything in listener?.rx?.listening?.Copy())
+		rx_listener_remove(L)
+		.++

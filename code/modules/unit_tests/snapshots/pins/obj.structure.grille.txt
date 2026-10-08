@@ -52,9 +52,10 @@ human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Kick
 human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Place a window (refused: )
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/stack/material/steel click: Click: Place a window
 human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Kick
 human|/obj/item/card/id menu: Move To Top
@@ -68,5 +69,12 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, hand, item, melee_hit, use_screwdriver, use_wirecutter
+human|/obj/item/stack/material menu: Hit
+human|/obj/item/stack/material menu: Kick
+human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Place a window (refused: )
+human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material menu: Use
+human|/obj/item/stack/material click: Click: Place a window
+keys: drag_buckle, hand, item, melee_hit, place_window, use_screwdriver, use_wirecutter
 

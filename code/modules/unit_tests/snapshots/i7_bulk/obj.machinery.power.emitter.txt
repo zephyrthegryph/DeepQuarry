@@ -122,5 +122,5 @@ human|/obj/item/anomaly_scanner menu: Toggle anomalous mode
 human|/obj/item/anomaly_scanner menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/anomaly_scanner menu: Turn Around
 human|/obj/item/anomaly_scanner click: Click: Toggle anomalous mode
-keys: anomalous, cable_place, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, floor_weld.bolt, floor_weld.weld, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, particle, repair, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, toggle
+keys: anomalous, cable_place, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, floor_weld.bolt, floor_weld.weld, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, particle, repair, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, toggle
 

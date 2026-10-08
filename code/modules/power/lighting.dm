@@ -111,7 +111,7 @@ CAPABILITIES(/obj/machinery/light)
 	op("insert", item(/obj/item/light), label("Insert bulb"), wait(0),
 		needs(req(PROC_REF(can_take_bulb), because = PROC_REF(bulb_refusal))), then(PROC_REF(insert_held)))
 	op("remove", hand(), when(req_empty_hand()), label("Remove bulb"), wait(0), then(PROC_REF(take_bulb)))
-	op("hit", item(/obj/item), hostile(), wait(0), then(PROC_REF(hit_by)))
+	op("hit", item(/obj/item), hostile(), when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))), wait(0), then(PROC_REF(hit_by)))
 	op("toggle_emergency", remote(), label("Toggle emergency lights"), wait(0), then(PROC_REF(toggle_emergency_lights)))
 	op("remote_flicker", remote(), gesture(GESTURE_ALT), when(req_actor_kind(/mob/living/silicon/ai)), label("Flicker"), wait(0),
 		then(PROC_REF(remote_flicker)))

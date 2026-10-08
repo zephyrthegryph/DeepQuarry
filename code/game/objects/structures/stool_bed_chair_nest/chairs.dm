@@ -289,7 +289,8 @@ TRACKED(/obj/structure/bed/chair, occupied)
 
 /// The tint of the sofa's material (a shared definition that never changes).
 /obj/structure/bed/chair/sofa/proc/sofa_colour()
-	return get_material_by_name(sofa_material)?.icon_colour
+	var/datum/material/material = get_material_by_name(sofa_material)
+	return material?.icon_colour
 
 /obj/structure/bed/chair/sofa/look_parts(datum/look/look)
 	if(applies_material_colour && sofa_material)
