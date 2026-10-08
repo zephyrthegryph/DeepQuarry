@@ -17,7 +17,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/syringe_cartridge, TYPE_PROC_REF(/atom, appear
 	underlays.Cut()
 	if(syringe())
 		underlays += image(syringe().icon, src, syringe().icon_state)
-		if(length(syringe().filling)) underlays += syringe().filling
+		var/obj/item/reagent_containers/syringe/loaded = syringe()
+		if(loaded.reagents.total_volume && loaded.mode != NEEDLE_BROKEN && loaded.mode != NEEDLE_CAPPED)
+			var/image/filling = image(loaded.icon, src, "filler[round(loaded.reagents.total_volume, round(loaded.reagents.maximum_volume / 3))]")
+			filling.color = loaded.reagents.get_color()
+			underlays += filling
 
 /// Old attackby.
 /obj/item/syringe_cartridge/proc/interaction_item(datum/act/op/A)

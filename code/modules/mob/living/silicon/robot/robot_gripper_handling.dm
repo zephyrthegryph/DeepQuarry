@@ -21,7 +21,6 @@
 		rel_clear(src, nameof(held_item))
 	var/holding_item = get_wrapped_item()
 	// Feedback
-	update_icon()
 
 	if(had_item && !holding_item) // Dropped
 		our_robot.playsound_local(get_turf(our_robot), 'sound/machines/click.ogg', 50)
@@ -380,21 +379,14 @@ DECLARE_INTERACTIONS(/obj/item/gripper, INTERACT_USE(null, PROC_REF(interaction_
 
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_APPEARANCE_PROC(/obj/item/gripper, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gripper/appearance_overlays()
-	. = list()
+/obj/item/gripper/draw(datum/look/look)
+	..()
 	var/obj/item/wrapped = get_wrapped_item()
 	if(!wrapped)
-		return .
-
-	// Draw the held item as a mini-image in the gripper itself
-	var/mutable_appearance/item_display = new(wrapped)
-	item_display.SetTransform(0.75, offset_y = -8)
-	item_display.pixel_x = 0
-	item_display.pixel_y = 0
-	item_display.plane = plane
-	item_display.layer = layer + 0.01
-	. += item_display
+		return
+	look.watch(wrapped)
+	// the held item as a mini-image in the gripper itself
+	look.overlay(look_overlay_image(of = wrapped, plane = plane, layer = layer + 0.01, transform = matrix(0.75, 0, 0, 0, 0.75, -8)))
 
 //HELPER PROCS
 ///Use this to get what the current pocket is. Returns NULL if no
@@ -445,7 +437,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gripper, TYPE_PROC_REF(/atom, appearance_overl
 		return FALSE
 	thing.add_fingerprint(actor)
 	thing.forceMove(P)
-	thing.update_icon()
 	rel_set(src, nameof(current_pocket), P)
 	update_ref(thing)
 	return TRUE

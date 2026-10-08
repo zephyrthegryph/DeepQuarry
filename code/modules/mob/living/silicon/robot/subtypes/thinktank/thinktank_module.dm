@@ -86,7 +86,6 @@ TRACKED(/obj/item/robot_module/robot/platform, decals)
 	for(var/obj/item/gun/energy/pew in modules)
 		if(pew.power_supply && pew.power_supply.charge < pew.power_supply.maxcharge)
 			pew.power_supply.give(pew.charge_cost * rate)
-			pew.update_icon()
 		else
 			pew.charge_tick = 0
 
