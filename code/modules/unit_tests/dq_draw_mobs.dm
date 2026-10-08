@@ -165,6 +165,7 @@
 	TEST_ASSERT(overmind, "the core has an overmind")
 	qdel(core)
 	TEST_ASSERT(QDELETED(overmind), "the overmind goes with its core")
+	own_turf_contents(T) // the chunk the core leaves
 
 /// The gripper draws the item it holds: taking one or letting it go redraws the gripper with no call.
 /datum/unit_test/dq_draw_gripper_redraws_on_held_item

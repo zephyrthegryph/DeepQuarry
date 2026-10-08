@@ -204,7 +204,7 @@ TRACKED(/mob/living/simple_mob/animal/space/space_worm, segment_dir)
 /mob/living/simple_mob/animal/space/space_worm/on_destroy(force) // If a chunk is destroyed, kill the back half.
 	DumpStomach()
 	if(previous)
-		if(loc && !istype(src, /mob/living/simple_mob/animal/space/space_worm/head)) // a deleted head, or a chunk out of the world, leaves no severed head: the back half goes with it
+		if(loc && next && !QDELETED(next)) // only a chunk cut out of a live worm leaves a severed head; a worm deleted from the front, or out of the world, takes its back half with it
 			previous.Detach(1)
 		else
 			consume(previous)
