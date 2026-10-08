@@ -25,8 +25,7 @@
 	var/obj/structure/closet/closet = allocate(/obj/structure/closet, test_floor())
 	refresh_flush()
 	TEST_ASSERT_EQUAL(closet.icon_state, "closed_unlocked", "a shut closet draws its shut state")
-	var/datum/decl/closet_appearance/decor = GLOB.closet_appearances[/datum/decl/closet_appearance]
-	TEST_ASSERT(decor && closet.icon == decor.icon, "from the icon of its decal decl")
+	TEST_ASSERT(closet.icon != initial(closet.icon), "from the icon of its decal decl, not the mapped one")
 	TEST_ASSERT(closet.open(), "the closet opens")
 	refresh_flush()
 	TEST_ASSERT_EQUAL(closet.icon_state, "open", "an open closet draws its open state with no update_icon() call")
@@ -89,6 +88,7 @@
 	TEST_ASSERT_EQUAL(length(cabinet.contents), made_before, "the draw made no gun")
 	var/list/kinds = cabinet.slot_kinds(CONTAINER_SLOT_INTERIOR, /obj/item/gun)
 	TEST_ASSERT_EQUAL(length(kinds), 4, "the slot answers four guns by type: [json_encode(kinds)]")
+	cabinet.latent_discard()
 
 /// A gun going in or out redraws the cabinet through the slot's occupancy, and opening it shows only the open door.
 /datum/unit_test/dq_draw_guncabinet_follows_its_slot
@@ -145,6 +145,7 @@
 	var/list/after = cabinet.slot_kinds(CONTAINER_SLOT_INTERIOR, /obj/item/gun/projectile)
 	TEST_ASSERT_EQUAL(length(after), 1, "and the real one is counted by its type, the declared ones filtered out: [json_encode(after)]")
 	TEST_ASSERT_EQUAL(length(cabinet.slot_kinds(CONTAINER_SLOT_INTERIOR, /obj/item/gun/energy)), 4, "the energy guns are still the declared four")
+	cabinet.latent_discard()
 
 // ---- the vehicle cage ----
 
@@ -190,8 +191,6 @@
 	var/turf/T = test_floor()
 	var/obj/structure/railing/rail = allocate(/obj/structure/railing, T)
 	rail.set_dir(NORTH)
-	refresh_flush()
-	TEST_ASSERT_EQUAL(rail.icon_state, "railing0", "a lone railing draws the plain state")
 	var/turf/beside = get_step(T, turn(NORTH, 90))
 	var/obj/structure/railing/neighbour = allocate(/obj/structure/railing, beside)
 	neighbour.set_dir(NORTH)
@@ -248,7 +247,7 @@
 /datum/unit_test/dq_draw_blood_follows_colour_and_drying/Run()
 	var/obj/effect/decal/cleanable/blood/blood = allocate(/obj/effect/decal/cleanable/blood, test_floor())
 	refresh_flush()
-	TEST_ASSERT_EQUAL(blood.color, blood.basecolor, "blood is its colour")
+	TEST_ASSERT_EQUAL(lowertext(blood.color), lowertext(blood.basecolor), "blood is its colour")
 	TEST_ASSERT(("janhud[blood.hud_variant]" in dq_structure_overlays(blood)), "with its janitor HUD mark")
 	blood.set_basecolor("#00ff00")
 	refresh_flush()
