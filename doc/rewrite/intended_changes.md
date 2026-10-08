@@ -3629,3 +3629,13 @@ Fixes for the failures carried as "known" across the merge batches. Every pin ro
 * **Behaviour changes:** a syringe cartridge shows its loaded syringe and filling as overlays (the look has no underlays); macrophage's decal no longer has its name reset to "blood" by a redraw; the zone-selection HUD overlay is no longer redrawn by the simple mob HUD set-up (the screen is still a legacy provider outside this folder); a mimicking fleshtaker shows its living state rather than the target's state at the moment it copied.
 * **Teardown:** deleting a worm from the front, or out of the world, takes its back half with it (it used to leave a severed head that deleted again into another: the cause of the `space_worm/head/severed` leak); a blob core takes its overmind with it (the pins leaked one overmind per core, ~850 in the state pin).
 * **Pins:** the committed tree and state pin rows are unchanged by this round. `look_trees/obj.structure.blob.txt` differs on the base (random colour) and was not committed. **Known, not fixed:** the full-directory `dq_look_state_pin` slows to minutes per type after its blob roots (one root alone runs in seconds), so it does not finish inside a 90 minute watchdog; and `dq_look_tree_pin` still reports the anomalock heart runtime (`emp_protection_flags` of null) and `ownership_framework_checks` the chem smoke leak, both present on the base.
+
+## Batch 12 merge pins (rewrite/integ-12)
+
+Merging master-fails-2 and draw-mobs changed these pins; the rows were reviewed and blessed by class.
+
+* **`look_trees/obj.item.assembly.electronic_assembly.txt`: the `op_clash` runtime row is replaced by the real look rows** (`new_assemblies.dmi:setup_device`, its dir and emissive blocker). master-fails-2 removed the clash (the device drops the parent's `attach`) but did not commit the pin; the look is now recorded.
+* **`look_trees/obj.structure.blob.txt`: the four `blob/core` colours are the seeded values of the merged tree.** The core rolls its blob type in `Initialize()` (master-fails-2) and a core now takes its overmind with it (draw-mobs), which moves where the seeded RNG lands; the values are deterministic per run (rerun checked).
+* **`dq_e2/explain_click_golden`:** the `simple_mob.dm` capability lines moved by 7 (the simple mob's tracked list grew); the rows are otherwise unchanged.
+* **`interim_target_zone_hud_actor`** had no `/datum/unit_test/om/` declaration, so it never ran; it is declared and runs.
+* **Known, not run:** the full-directory `dq_look_state_pin` (slowdown handled in another lane; the test has no root filter).
