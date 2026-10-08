@@ -19,6 +19,7 @@
 	active_power_usage = 120 // No idea what the realistic amount would be.
 
 CAPABILITIES(/obj/machinery/oxygen_pump)
+	ref_one(nameof(breather), /mob/living/carbon)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(breather), wakes_on = list(nameof(breather)))
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
 	owns_one(nameof(contained), starts = nameof(mask_type))
@@ -30,7 +31,11 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// Who wears the mask (a relation view), or null.
-OM_FIELD_VIEW(/obj/machinery/oxygen_pump, mob/living/carbon, breather, CHANGE_MACHINE_OCCUPANT)
+/obj/machinery/oxygen_pump/var/mob/living/carbon/breather
+/datum/scheduler_field_definition/obj/machinery/oxygen_pump/breather
+	of = /obj/machinery/oxygen_pump
+	field = "breather"
+	channel = CHANGE_MACHINE_OCCUPANT
 /// Keeps the mask and internals right while a mask is on someone.
 // the mask retracts from its breather.
 /obj/machinery/oxygen_pump/lifecycle_prerelease()

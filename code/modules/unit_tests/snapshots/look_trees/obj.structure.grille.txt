@@ -26,6 +26,6 @@
 /obj/structure/grille/bay state: 
 /obj/structure/grille/bay dir: 2
 /obj/structure/grille/bay color: #666666
-/obj/structure/grille/bay overlay: icons/obj/bay_grille.dmi::8:#000000 x2
+/obj/structure/grille/bay overlay: icons/obj/bay_grille.dmi::8:#000000
 /obj/structure/grille/bay overlay: icons/obj/bay_grille.dmi:grille0:-32767 x4
 

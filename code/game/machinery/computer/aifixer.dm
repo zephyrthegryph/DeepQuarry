@@ -14,7 +14,8 @@
 
 
 /// Variable dictating if we are in the process of restoring the occupier AI
-OM_FIELD(/obj/machinery/computer/aifixer, restoring, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/computer/aifixer/var/restoring = FALSE
+TRACKED_BRIDGED(/obj/machinery/computer/aifixer, restoring, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/computer/aifixer/proc/can_use_card(mob/actor, atom/target, obj/item/held)
 	if(!operable())

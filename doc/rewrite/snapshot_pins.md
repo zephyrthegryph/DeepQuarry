@@ -85,6 +85,11 @@ overlay and underlay (`icon:state:plane[:colour]`, `xN` when repeated), taken af
 reseeded from its path, and a runtime while it is made is a row of its own (without its file and line). The rows do not see a look a later state
 change draws: the refresh-drift sweep and hand-written tests cover those.
 
+A look state pin (`bash tools/dq_pin.sh --look-state /T`, `snapshots/look_states/`, test `dq_look_state_pin`, exhaustive tier) moves state and
+records the look again: for each numeric var a subtype declares below `/obj` or `/mob` (24 at most), a fresh instance has it written to 0, 1 and 2,
+a redraw is requested (`update_icon()` then `changed()`), and the rows are what the look gained (`+`) or lost (`-`) against the made look. A var the look
+ignores writes no row. Record it before an appearance conversion and expect the same file after.
+
 ## Hit pins
 
 A pin of what a thing does when it is hit or emagged, for the hit-reaction and emag conversions (`DAMAGE_REACTION`, `DAMAGE_REACTION_AFTER`,

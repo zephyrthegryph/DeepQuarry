@@ -114,7 +114,7 @@ GLOBAL_LIST_EMPTY(adjacency_free)
 		var/atom/member = GLOB.adjacency_members[h]
 		if(!member || QDELETED(member))
 			continue
-		if(SSatoms?.batch_defer(BATCH_WORK_ADJACENCY, member))
+		if(materialization_host().batch_defer(BATCH_WORK_ADJACENCY, member))
 			continue // a load batch runs: recomputed once when it closes
 		var/datum/lifeform_plan/MP = lifeform_plan_of(member)
 		for(var/datum/centry/MC as anything in MP.adjacencies)

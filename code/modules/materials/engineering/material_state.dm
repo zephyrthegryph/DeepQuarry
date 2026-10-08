@@ -145,61 +145,61 @@ CAPABILITIES(/datum/material_build)
 /// O's assembly record, or null when it has none.
 /proc/material_assembly_of(obj/O)
 	RETURN_TYPE(/datum/material_assembly)
-	return O?.cap_data?[/datum/material_assembly]
+	return capability_data(O)?[/datum/material_assembly]
 
 /// O's assembly record to read: the shared pristine record when it has none (never write through it).
 /proc/material_assembly_view(obj/O)
 	RETURN_TYPE(/datum/material_assembly)
 	var/static/datum/material_assembly/pristine = new
-	return O?.cap_data?[/datum/material_assembly] || pristine
+	return capability_data(O)?[/datum/material_assembly] || pristine
 
 /// O's assembly record, made when it has none: the one way to write assembly state.
 /proc/material_assembly(obj/O)
 	RETURN_TYPE(/datum/material_assembly)
-	var/datum/material_assembly/assembly = O.cap_data?[/datum/material_assembly]
+	var/datum/material_assembly/assembly = capability_data(O)?[/datum/material_assembly]
 	if(!assembly)
 		assembly = new
-		LAZYSET(O.cap_data, /datum/material_assembly, assembly)
+		LAZYSET(capability_runtime(O).data, /datum/material_assembly, assembly)
 	return assembly
 
 /// O's material service, or null when it has not been admitted to continuous exposure.
 /proc/material_service_of(obj/O)
 	RETURN_TYPE(/datum/material_service)
-	var/datum/material_assembly/assembly = O?.cap_data?[/datum/material_assembly]
+	var/datum/material_assembly/assembly = capability_data(O)?[/datum/material_assembly]
 	return assembly?.service
 
 /// O's build record, or null when it has none.
 /proc/material_build_of(obj/O)
 	RETURN_TYPE(/datum/material_build)
-	return O?.cap_data?[/datum/material_build]
+	return capability_data(O)?[/datum/material_build]
 
 /// O's build record to read: the shared pristine record when it has none (never write through it).
 /proc/material_build_view(obj/O)
 	READS_FROM() // an item's build record is asked when it is used, never cached
 	RETURN_TYPE(/datum/material_build)
 	var/static/datum/material_build/pristine = new
-	return O?.cap_data?[/datum/material_build] || pristine
+	return capability_data(O)?[/datum/material_build] || pristine
 
 /// O's build record, made when it has none: the one way to write build state.
 /proc/material_build(obj/O)
 	RETURN_TYPE(/datum/material_build)
-	var/datum/material_build/build = O.cap_data?[/datum/material_build]
+	var/datum/material_build/build = capability_data(O)?[/datum/material_build]
 	if(!build)
 		build = new
-		LAZYSET(O.cap_data, /datum/material_build, build)
+		LAZYSET(capability_runtime(O).data, /datum/material_build, build)
 	return build
 
 /// Deletes O's material records in the destroy transaction's links step (/obj/on_destroy), while the object's links
 /// still read: the service and the response are owned children that tear down against a live owner, as they did
 /// when the object owned them. caps_destroy() deletes whatever is left in cap_data afterwards.
 /proc/material_records_teardown(obj/O)
-	if(!O.cap_data)
+	if(!capability_data(O))
 		return
 	for(var/key in list(/datum/material_assembly, /datum/material_build))
-		var/datum/record = O.cap_data?[key]
+		var/datum/record = capability_data(O)?[key]
 		if(!record)
 			continue
-		LAZYREMOVE(O.cap_data, key)
+		LAZYREMOVE(capability_runtime(O).data, key)
 		spent(record)
 
 /// The material an item was engineered from (the /obj/item compatibility field), or null.

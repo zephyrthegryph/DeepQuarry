@@ -55,7 +55,7 @@
 	TEST_ASSERT(!("Its cover is open." in caps_examine(A, H)), "no open line while closed")
 	TEST_ASSERT(toggle.perform(H, A, null), "opening the cover runs")
 	TEST_ASSERT(cover_is_open(A), "the cover is open")
-	TEST_ASSERT(A.cap_state & CAP_COVER_OPEN, "the state bit is set")
+	TEST_ASSERT(capability_bits(A) & CAP_COVER_OPEN, "the state bit is set")
 	TEST_ASSERT_EQUAL(toggle.display_name(H, A), "Close cover", "named for closing while open")
 	TEST_ASSERT_NULL(cap_gate_reason(A, H, null, panel_entry), "the panel is reachable with the cover open")
 	TEST_ASSERT("Its cover is open." in caps_examine(A, H), "the examine line shows while open")

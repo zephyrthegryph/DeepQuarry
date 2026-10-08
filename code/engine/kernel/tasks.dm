@@ -240,9 +240,7 @@ GLOBAL_VAR_INIT(task_serial, 0)
 /// complete_proc, cancel_proc, check_proc or a step proc. Otherwise the starter (the caller asked for the work), else the actor.
 /datum/task/proc/pick_receiver(datum/starter)
 	var/list/procs = list(complete_proc, cancel_proc)
-	if(istype(src, /datum/task/timed))
-		var/datum/task/timed/timed = src
-		procs += timed.check_proc
+	procs += additional_receiver_procs()
 	for(var/i in 1 to length(steps) step 2)
 		procs += steps[i]
 	for(var/proc_ref in procs)
@@ -454,11 +452,11 @@ GLOBAL_VAR_INIT(task_serial, 0)
 		var/step_proc = S[i]
 		// A step that sleeps is cut loose and fails its task (it must not stall the kernel).
 		if(task_own_proc(T, step_proc))
-			result = om_guarded_call(T, step_proc, null)
+			result = deferred_guarded_call(T, step_proc, null)
 		else if(QDELETED(T.receiver))
 			result = STEP_FAIL("gone")
 		else
-			result = om_guarded_call(T.receiver, step_proc, list(T))
+			result = deferred_guarded_call(T.receiver, step_proc, list(T))
 		if(result == OM_CALLEE_SLEPT)
 			result = STEP_FAIL("slept")
 	catch(var/exception/e)
@@ -560,3 +558,7 @@ GLOBAL_VAR_INIT(task_serial, 0)
 	rechecking = FALSE
 	if(!isnull(why))
 		task_cancel(src, why)
+
+/// Policy-specific checks participate in automatic receiver selection.
+/datum/task/proc/additional_receiver_procs()
+	return null

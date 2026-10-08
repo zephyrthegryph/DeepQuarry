@@ -68,3 +68,13 @@ fn every_lint_declares_consistent_metadata() {
         }
     }
 }
+
+#[test]
+fn runtime_capability_payload_keeps_holder_identity() {
+    let root = repo_root();
+    let dir = fixture_dir(&root, "sys/dx_reactive");
+    let findings = engine_on_fixture(&dir, Some(&root), "sys/dx_reactive").expect("fixture engine");
+    let runtime: Vec<_> = findings.iter().filter(|finding| finding.rel.ends_with("runtime_data.dm")).collect();
+    assert_eq!(runtime.len(), 1, "only the foreign holder's payload is an untracked read");
+    assert_eq!(runtime[0].line, 9);
+}

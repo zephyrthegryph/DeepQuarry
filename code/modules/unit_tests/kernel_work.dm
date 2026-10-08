@@ -331,30 +331,48 @@
 	TEST_ASSERT_EQUAL(S.member_count(), 0, "leaving removes it")
 	TEST_ASSERT(SSmachines in kernel_systems(), "kernel_systems() is derived from the registry")
 
+/datum/test_work_stage_member
+	var/ready = FALSE
+	var/steps = 0
+
+/datum/work_stage/kernel_adapter_fixture
+	registry_skip = TRUE
+	of = /datum/test_work_stage_member
+	reads = list("ready")
+
+/datum/work_stage/kernel_adapter_fixture/idle(datum/test_work_stage_member/member)
+	return !member.ready
+
+/datum/work_stage/kernel_adapter_fixture/perform(datum/test_work_stage_member/member, datum/work_frame/F)
+	member.steps++
+	return STEP_DONE
+
 /datum/unit_test/kernel_work_stage_adapter
 
 /datum/unit_test/kernel_work_stage_adapter/Run()
-	var/datum/om/registry/reg = om_registry()
-	var/stage_type
-	for(var/path in reg.stage_by_type)
-		var/datum/om/stage/candidate = reg.stage_by_type[path]
-		if(length(candidate.reads))
-			stage_type = path
-			break
-	TEST_ASSERT(stage_type, "there is a registered stage with declared reads")
-	var/datum/om/stage/T = reg.stage_by_type[stage_type]
-	var/datum/work_item/stage/W = stage_work_item(stage_type, /datum/test_work_member, 5)
-	TEST_ASSERT(istype(W), "the adapter is a work item")
-	TEST_ASSERT_EQUAL(W.interval, 5, "it carries the cadence")
-	TEST_ASSERT_EQUAL(length(W.reads), length(T.reads), "and the stage's declared reads")
-	var/datum/controller/kernel/K = new
-	K.register_work(/datum/test_work_member, W)
-	TEST_ASSERT(findtext(W.key, "stage"), "registered under a stage key")
-	TEST_ASSERT(W.runnable(null, null), "with no member the adapter asks nothing of the stage")
-	TEST_ASSERT_EQUAL(W.owner(), W, "and owns itself")
-	// The stage vocabulary is inverted idle().
-	var/datum/om/stage/base = new
-	TEST_ASSERT(base.should_step(null), "a stage that is never idle should always run")
+	var/datum/definition_registry/reg = definition_registry()
+	var/list/original_stages = reg.stage_by_type
+	set_var(reg, nameof(reg.stage_by_type), original_stages.Copy())
+	var/datum/work_stage/kernel_adapter_fixture/T = allocate(/datum/work_stage/kernel_adapter_fixture)
+	reg.stage_by_type[T.type] = T
+	TEST_ASSERT(!(T.type in original_stages), "the skipped fixture never entered the boot registry")
+	var/datum/work_item/stage/W = stage_work_item(T.type, /datum/test_work_stage_member, 2 SECONDS)
+	own(W)
+	TEST_ASSERT(istype(W), "a canonical engine stage adapts to an actual work item")
+	TEST_ASSERT_EQUAL(W.interval, 2 SECONDS, "it carries the requested cadence")
+	TEST_ASSERT_EQUAL(length(W.reads), 1, "the adapter carries the fixture's genuine ready dependency")
+	TEST_ASSERT_EQUAL(W.reads[1], "ready", "the declared dependency survives unchanged")
+	TEST_ASSERT(W.reads != T.reads, "the adapter owns a separate dependency list")
+	var/datum/test_work_stage_member/member = allocate(/datum/test_work_stage_member)
+	TEST_ASSERT(!W.runnable(null, member), "an unready member idles through the actual adapter")
+	member.ready = TRUE
+	TEST_ASSERT(W.runnable(null, member), "the actual adapter wakes for a ready member")
+	T.perform(member, null)
+	TEST_ASSERT_EQUAL(member.steps, 1, "the actual stage effect changes real member state")
+	member.ready = FALSE
+	TEST_ASSERT(!W.runnable(null, member), "the actual adapter parks after readiness is removed")
+	TEST_ASSERT(W.runnable(null, null), "without a member the adapter asks nothing of the stage")
+	TEST_ASSERT_EQUAL(W.owner(), W, "the adapter owns itself")
 
 /datum/test_work_owner/phases
 	var/list/phase_log = list()

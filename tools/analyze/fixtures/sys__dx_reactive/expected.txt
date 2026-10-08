@@ -114,6 +114,7 @@ dx_untracked_read	code/modules/reactive/reads.dm	117
 dx_untracked_read	code/modules/reactive/reads.dm	120
 dx_untracked_read	code/modules/reactive/reads.dm	123
 dx_untracked_read	code/modules/reactive/reads.dm	127
+dx_untracked_read	code/modules/reactive/runtime_data.dm	9
 dx_untracked_read	code/modules/reactive/writes.dm	20
 dx_untracked_read	code/modules/reactive/writes.dm	21
 dx_untracked_read	code/modules/reactive/writes.dm	22

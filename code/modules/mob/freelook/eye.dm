@@ -31,38 +31,58 @@
 
 // ---------------------------------------------------------------- relations
 //
-// An eye's link to the mob looking through it is state held only as edges:
-// eye_of (eye -> owner; EYE_OWNER()/EYES_OF()) and active_eye (owner -> the
-// eye it moves and sees with; ACTIVE_EYE()). Deleting either end drops both.
+// An eye's link to the mob looking through it is state held only as links:
+// eye_looker / own_eyes (eye -> the mob looking through it; eye_owner()/eyes_list()) and active_eye_obj / active_looker (the eye a mob
+// moves and sees with; active_eye()). Deleting either end drops both.
 
-/// eye -> the mob looking through it.
-/datum/om/relation/eye_of
-	name = "eye"
-	source_single = TRUE
+/// The names of the eye's looker vars (the reverse-index keys eyes_list() and active_eye() read).
+#define EYE_LOOKER_VAR "eye_looker"
+#define EYE_ACTIVE_LOOKER_VAR "active_looker"
 
-/datum/om/relation/eye_of/on_unlink(mob/observer/eye/source, mob/target, datum/om/edge/edge)
-	if(target?.active_eye() == source)
-		om_unlink(target, source, /datum/om/relation/active_eye)
+/mob/observer/eye
+	/// The mob looking through this eye (a reference, cleared when the mob is deleted). Read with eye_owner(); the mob's eyes_list() is the reverse.
+	var/mob/eye_looker
+	/// The mob this eye is the active eye of. Read with active_eye() on the mob.
+	var/mob/active_looker
 
-/// mob -> the eye it currently moves and sees with. Implies eye_of.
-/datum/om/relation/active_eye
-	name = "active eye"
-	source_single = TRUE
-	target_single = TRUE
+CAPABILITIES(/mob/observer/eye)
+	ref_one(nameof(eye_looker), /mob, on_unlink = PROC_REF(looker_lost))
+	ref_one(nameof(active_looker), /mob)
+
+/// The mob looking through this eye.
+/mob/observer/eye/proc/eye_owner() as /mob
+	return eye_looker
+
+/// The eyes this mob looks through.
+/mob/living/proc/eyes_list() as /list
+	return rel_sources_via(src, EYE_LOOKER_VAR)
+
+/// The eye this mob moves and sees with, or null.
+/mob/proc/active_eye() as /mob/observer/eye
+	var/list/active = rel_sources_via(src, EYE_ACTIVE_LOOKER_VAR)
+	return length(active) ? active[1] : null
+
+/// The looker went (or let the eye go): the eye stops being its active eye too.
+/mob/observer/eye/proc/looker_lost(mob/old_looker)
+	if(active_looker == old_looker)
+		rel_set(src, nameof(active_looker), null)
 
 /// Look through `E` as this mob's active eye (replacing any other).
 /mob/proc/take_eye(mob/observer/eye/E)
 	if(!istype(E) || QDELETED(E))
 		return FALSE
-	if(!istype(om_link(E, src, /datum/om/relation/eye_of), /datum/om/edge))
-		return FALSE
-	return istype(om_link(src, E, /datum/om/relation/active_eye), /datum/om/edge)
+	rel_set(E, nameof(E.eye_looker), src)
+	var/mob/observer/eye/previous = active_eye()
+	if(previous && previous != E)
+		rel_set(previous, nameof(previous.active_looker), null)
+	rel_set(E, nameof(E.active_looker), src)
+	return E.eye_looker == src && E.active_looker == src
 
 /// Stop looking through the active eye (it stays alive; the caller deletes it if needed).
 /mob/proc/drop_eye()
 	var/mob/observer/eye/E = src?.active_eye()
 	if(E)
-		om_unlink(E, src, /datum/om/relation/eye_of)
+		rel_set(E, nameof(E.eye_looker), null)
 	return E
 
 /mob/observer/eye/Move(n, direct)

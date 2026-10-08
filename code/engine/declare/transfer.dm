@@ -17,7 +17,7 @@
 //      shape (owns_one: set; owns_many: add; with `key`, put under the key of an associative owns_many).
 //      The var is the holder's one-item slot (op_var_slot()); any other `slot_id` is a ledger slot id and
 //      the item is only placed there (null: the holder's default slot);
-//   4. the record: changed(holder), the fingerprint and, with `log`, the log line (dispatch_record()),
+//   4. the record: state_changed(holder), the fingerprint and, with `log`, the log line (dispatch_record()),
 //      when an `actor` did it; the insert action's notice goes out.
 //
 // `force` (an admin undress, a worn item swallowing the one under it) skips the checks and the hooks; the
@@ -94,7 +94,7 @@
 		if(!is_var && from == holder) // already in the holder: the ledger slot changes, nothing is released
 			landed = dq_ledger_commit(thing, holder, into_slot)
 			if(!landed)
-				refuse(actor, "\The [thing] won't go into \the [holder].")
+				transfer_feedback_provider().send(actor, holder, thing, "\The [thing] won't go into \the [holder].", raw = TRUE)
 		else
 			landed = own_transfer_land(holder, slot_id, thing, into_slot, actor, force)
 		if(!landed)
@@ -138,8 +138,5 @@
 	var/refusal = "MOVE_INTO: [item] into [holder] ([slot_id || "default"]) refused: [reason]"
 	boot_noise_note(refusal)
 	log_world(refusal)
-	if(ispath(reason, /datum/msg))
-		act_message_t(actor, holder, reason, isitem(item) ? item : null)
-	else if(istext(reason))
-		refuse(actor, "[capitalize(reason)].")
+	transfer_feedback_provider().send(actor, holder, item, reason)
 	return FALSE

@@ -39,7 +39,8 @@
 	S.ordered = R.all.Copy()
 	op_resolution_sort(S)
 	var/all = dx_menu_order_keys(S.ordered)
-	var/click = dx_menu_order_keys(R.ordered)
+	// op_resolve() sorts pass-one candidates; only pass two evaluates when().
+	var/click = dx_menu_order_keys(op_resolution_matches(R))
 	var/list/menu = list()
 	for(var/list/row as anything in op_menu(H, target, held))
 		menu += row["key"]

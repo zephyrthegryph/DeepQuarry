@@ -2943,15 +2943,22 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	T.air_update_turf(TRUE, FALSE)
 	var/obj/machinery/airlock_sensor/S = new(T)
 	S.sample_pressure()
-	TEST_ASSERT(om_watch_armed(S), "a settled airlock sensor did not arm a gas watch")
+	TEST_ASSERT(gas_watch_data(S)?.watch, "a settled airlock sensor did not arm a gas watch")
 	var/before = S.previousPressure
+	var/wakes_before = S.gas_dependency_wake_count
+	T.return_air().adjust_moles(/datum/gas/oxygen, 0.000001)
+	TEST_ASSERT_EQUAL(round(T.return_air().return_pressure(), 0.1), before, "tiny real gas change preserves the displayed pressure")
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
+	TEST_ASSERT_EQUAL(S.gas_dependency_wake_count, wakes_before, "unchanged rounded pressure does not wake sensor")
+	TEST_ASSERT_EQUAL(S.previousPressure, before, "unchanged pressure preserves sampled state")
 	T.return_air().adjust_moles(/datum/gas/oxygen, 10)
 	for(var/i in 1 to 4096)
 		SSmachines.wake_dirty_gas_subscribers()
 		if(S.previousPressure != before)
 			break
 	TEST_ASSERT(S.previousPressure != before, "pressure mutation did not make the airlock sensor read again")
-	TEST_ASSERT(om_watch_armed(S), "the sensor did not go back to waiting on its gas")
+	TEST_ASSERT(gas_watch_data(S)?.watch, "the sensor did not go back to waiting on its gas")
 	qdel(S)
 
 
@@ -4248,6 +4255,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_closed_firedoor_is_event_driven
 
 /datum/unit_test/dq_closed_firedoor_is_event_driven/Run()
+	run_firedoor_case()
+
+/datum/unit_test/dq_closed_firedoor_is_event_driven/proc/run_firedoor_case()
 	dq_atmos_test_drain_dependency_queue()
 	var/list/pair = dq_atmos_test_find_clear_pipe_run(2)
 	TEST_ASSERT_NOTNULL(pair, "no adjacent floors for firedoor dependency test")
@@ -4265,22 +4275,23 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/door/firedoor/F = new(T)
 	F.set_density(TRUE)
 	TEST_ASSERT(test_machine_idle(F), "stable closed firedoor retained timed polling")
-	TEST_ASSERT(om_watch_armed(F), "closed firedoor did not register gas dependencies")
+	TEST_ASSERT(length(F.air_watches), "closed firedoor did not register gas dependencies")
 	var/firedoor_wakes_before = F.gas_dependency_wake_count
+	// Temperature levels need the native gas frame and world crossings, as other gas-level tests do.
 	heat_set(T.air, T.air.return_temperature() + 10, HEAT_SOURCE_OTHER)
-	while(!SSmachines.wake_dirty_gas_subscribers())
-		stoplag()
+	dq_gas_level_test_deliver()
 	TEST_ASSERT_EQUAL(F.gas_dependency_wake_count, firedoor_wakes_before, "harmless in-band temperature drift woke a closed firedoor")
 	heat_set(T.air, convert_c2k(60), HEAT_SOURCE_OTHER)
-	for(var/firedoor_i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(F.gas_dependency_wake_count > firedoor_wakes_before)
-			break
-		if(!(firedoor_i % 256))
-			stoplag()
-	TEST_ASSERT(F.gas_dependency_wake_count > firedoor_wakes_before, "temperature change did not wake closed firedoor")
+	dq_gas_level_test_deliver()
+	TEST_ASSERT(F.gas_dependency_wake_count > firedoor_wakes_before, "temperature change did not wake closed firedoor (temperature=[T.air.return_temperature()], dependency=[F.dependency_air_0?.return_temperature()], hot=[F.air_hot_0], cold=[F.air_cold_0], turf id=[T.air.arena_id()], dependency id=[F.dependency_air_0?.arena_id()])")
 	TEST_ASSERT(test_machine_idle(F), "dependency wake left a firedoor polling after evaluating its state")
-	TEST_ASSERT(om_watch_armed(F), "early-woken firedoor did not return to dependency sleep")
+	TEST_ASSERT(length(F.air_watches), "early-woken firedoor did not return to dependency sleep")
+	F.set_density(FALSE)
+	TEST_ASSERT(!length(F.air_watches), "open firedoor releases gas dependencies")
+	for(var/datum/capability/lib/gas_level/def as anything in table_cap_defs(table_of(F), CAP_GAS_LEVEL))
+		TEST_ASSERT_NULL(gas_level_data(F, def)?.watch, "open firedoor releases every temperature threshold watch")
+	F.set_density(TRUE)
+	TEST_ASSERT(length(F.air_watches), "closing firedoor rearms its current gas dependencies")
 	qdel(F)
 
 /datum/unit_test/dq_emergency_light_discharge_is_timer_driven
@@ -4722,8 +4733,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/cryopod/cryo = new(T)
 	TEST_ASSERT(!test_work_allowed(cryo), "empty cryopod remained scheduled")
 	var/obj/machinery/atmospherics/unary/cryo_cell/cryo_cell = new(T)
-	cryo_cell.set_on(FALSE)
-	TEST_ASSERT(!condition_holds(cryo_cell, cond_all(nameof(cryo_cell.on), STAT_OPERABLE, OCCUPANT_POD_OCCUPIED)), "a switched-off cryo cell's cooling frame (every(when = ...)) has no work")
+	cryo_cell.set_cooling(FALSE)
+	TEST_ASSERT(!condition_holds(cryo_cell, cond_all(nameof(cryo_cell.cooling), STAT_OPERABLE, OCCUPANT_POD_OCCUPIED)), "a switched-off cryo cell's cooling frame (every(when = ...)) has no work")
 	var/obj/machinery/telecomms/telecomms_node = new(T)
 	TEST_ASSERT(test_machine_idle(telecomms_node), "idle telecomms node retained a two-second machinery poll")
 	var/obj/machinery/optable/operating_table = new(T)
@@ -7454,7 +7465,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(readings[GAS_READ_STRIDE + GAS_READ_TOTAL_MOLES], 0, "a null mixture reads as zero")
 	qdel(mix)
 
-/// A sleeping device's gas watch is its own eligibility rule (om_watch_arm_condition()): a gas
+/// A sleeping device's gas watch is its own current eligibility rule: a gas
 /// change that leaves the device with nothing to do must not wake it, and the first change that
 /// gives it work must wake it once. Counted on a thermoregulator (temperature deadband) and an
 /// outlet injector (minimum moles to pump).

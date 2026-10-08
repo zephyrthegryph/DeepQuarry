@@ -12,6 +12,7 @@ ai|none click: nothing
 ghost|none menu: Toggle Engine (refused: You can't reach that.)
 ghost|none menu: Toggle Kickstand (refused: You can't reach that.)
 ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Interaction bike hand
 human|/obj/item/tool/screwdriver menu: Load
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -21,6 +22,7 @@ human|/obj/item/tool/screwdriver menu: Toggle Kickstand
 human|/obj/item/tool/screwdriver menu: Toggle kickstand
 human|/obj/item/tool/screwdriver menu: Vehicle item
 human|/obj/item/tool/screwdriver click: Click: Vehicle item
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Interaction bike hand
 human|/obj/item/tool/crowbar menu: Load
 human|/obj/item/tool/crowbar menu: Move To Top
@@ -30,6 +32,7 @@ human|/obj/item/tool/crowbar menu: Toggle Kickstand
 human|/obj/item/tool/crowbar menu: Toggle kickstand
 human|/obj/item/tool/crowbar menu: Vehicle item
 human|/obj/item/tool/crowbar click: Click: Vehicle item
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Interaction bike hand
 human|/obj/item/tool/wrench menu: Load
 human|/obj/item/tool/wrench menu: Move To Top
@@ -39,6 +42,7 @@ human|/obj/item/tool/wrench menu: Toggle Kickstand
 human|/obj/item/tool/wrench menu: Toggle kickstand
 human|/obj/item/tool/wrench menu: Vehicle item
 human|/obj/item/tool/wrench click: Click: Vehicle item
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Interaction bike hand
 human|/obj/item/tool/wirecutters menu: Load
 human|/obj/item/tool/wirecutters menu: Move To Top
@@ -48,6 +52,7 @@ human|/obj/item/tool/wirecutters menu: Toggle Kickstand
 human|/obj/item/tool/wirecutters menu: Toggle kickstand
 human|/obj/item/tool/wirecutters menu: Vehicle item
 human|/obj/item/tool/wirecutters click: Click: Vehicle item
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Interaction bike hand
 human|/obj/item/multitool menu: Load
 human|/obj/item/multitool menu: Move To Top
@@ -57,6 +62,7 @@ human|/obj/item/multitool menu: Toggle Kickstand
 human|/obj/item/multitool menu: Toggle kickstand
 human|/obj/item/multitool menu: Vehicle item
 human|/obj/item/multitool click: Click: Vehicle item
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Interaction bike hand
 human|/obj/item/weldingtool menu: Load
 human|/obj/item/weldingtool menu: Move To Top
@@ -66,6 +72,7 @@ human|/obj/item/weldingtool menu: Toggle Kickstand
 human|/obj/item/weldingtool menu: Toggle kickstand
 human|/obj/item/weldingtool menu: Vehicle item
 human|/obj/item/weldingtool click: Click: Vehicle item
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Interaction bike hand
 human|/obj/item/stack/cable_coil menu: Load
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
@@ -76,6 +83,7 @@ human|/obj/item/stack/cable_coil menu: Toggle Kickstand
 human|/obj/item/stack/cable_coil menu: Toggle kickstand
 human|/obj/item/stack/cable_coil menu: Vehicle item
 human|/obj/item/stack/cable_coil click: Click: Vehicle item
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Interaction bike hand
 human|/obj/item/stack/material/steel menu: Load
 human|/obj/item/stack/material/steel menu: Move To Top
@@ -85,6 +93,7 @@ human|/obj/item/stack/material/steel menu: Toggle Kickstand
 human|/obj/item/stack/material/steel menu: Toggle kickstand
 human|/obj/item/stack/material/steel menu: Vehicle item
 human|/obj/item/stack/material/steel click: Click: Vehicle item
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Interaction bike hand
 human|/obj/item/card/id menu: Load
 human|/obj/item/card/id menu: Move To Top
@@ -95,6 +104,7 @@ human|/obj/item/card/id menu: Toggle Kickstand
 human|/obj/item/card/id menu: Toggle kickstand
 human|/obj/item/card/id menu: Vehicle item
 human|/obj/item/card/id click: Click: Vehicle item
+human|/obj/item menu: Hit
 human|/obj/item menu: Interaction bike hand
 human|/obj/item menu: Load
 human|/obj/item menu: Move To Top
@@ -104,6 +114,7 @@ human|/obj/item menu: Toggle Kickstand
 human|/obj/item menu: Toggle kickstand
 human|/obj/item menu: Vehicle item
 human|/obj/item click: Click: Vehicle item
+human|/obj/item/card/emag menu: Hit
 human|/obj/item/card/emag menu: Interaction bike hand
 human|/obj/item/card/emag menu: Load
 human|/obj/item/card/emag menu: Move To Top
@@ -114,5 +125,5 @@ human|/obj/item/card/emag menu: Toggle kickstand
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Vehicle item
 human|/obj/item/card/emag click: Click: Use
-keys: bike_drag, bike_hand, bike_kickstand, bike_kickstand_alt, bike_toggle_engine, drag_buckle, emag.subvert, emag.use, vehicle_item, vehicle_paint
+keys: bike_drag, bike_hand, bike_kickstand, bike_kickstand_alt, bike_toggle_engine, drag_buckle, emag.subvert, emag.use, melee_hit, vehicle_item, vehicle_paint
 

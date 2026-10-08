@@ -74,7 +74,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 						return TRUE
 				return FALSE
 		return FALSE
-	if(istype(cond, /datum/entry/part/req) || istype(cond, /datum/req))
+	if(istype(cond, /datum/entry/part/req) || istype(cond, /datum/requirement))
 		return op_req_holds(A, cond)
 	if(isnum(cond))
 		return condition_id_holds(A.holder, cond)
@@ -153,7 +153,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 		if(ON_ACTOR)
 			return A.actor
 		if(ON_HELD)
-			return A.held
+			return A.held_provider()
 	return A.target
 
 /proc/req_make(req_type, list/named)
@@ -236,7 +236,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	// A capability key's declared reason, for the test the capability usually makes.
 	var/key = src.args["key"]
 	if(isnum(key) && key > 255 && src.args["value"] == TRUE)
-		return GLOB.cap_key_reasons["[key]"] || /datum/msg/req_wrong_state
+		return cap_key_reason(key) || /datum/msg/req_wrong_state
 	return /datum/msg/req_wrong_state
 
 /// req_at_least(KEY, n, because =): the key's number is at least n.
@@ -306,10 +306,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 			. += list(list(A.actor, key))
 
 /datum/entry/part/req/capable/holds(datum/act/op/A)
-	var/mob/living/L = A.actor
-	if(!istype(L))
-		return TRUE
-	return !!stat_value(L, STAT_CAN_ACT) || src.args["ignoring"]
+	return !A.actor || A.actor.operation_actor_capable(src.args["ignoring"])
 
 /proc/req_conscious()
 	return part_make(/datum/entry/part/req/conscious)
@@ -391,9 +388,6 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	var/datum/D = op_subject(A, src.args["of"])
 	return D ? list(list(D, MOB_KEY_CONDITIONS)) : list()
 
-/datum/entry/part/req/mutation/holds(datum/act/op/A)
-	var/mob/M = op_subject(A, src.args["of"])
-	return istype(M) && M.has_mutation(src.args["mutation"])
 
 /// req_adjacent(): the actor is next to the target.
 /proc/req_adjacent()
@@ -469,7 +463,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 /datum/entry/part/req/rights/holds(datum/act/op/A)
 	if(A.authority & AUTH_ADMIN)
 		return TRUE
-	return !!check_rights_for(A.actor?.client, src.args["rights"])
+	return !!A.actor?.client?.operation_rights(src.args["rights"])
 
 /// req_full(nameof(rel)) / req_empty(nameof(rel)): a relation or list var is full (non-empty) or empty.
 /proc/req_full(var_name, because = null)
@@ -506,12 +500,12 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	var/datum/entry/part/req/R = children[1]
 	return !R.holds(A)
 
-/// all_of(r...): every requirement holds; the first failing one's reason is reported. A legacy /datum/req list stays the legacy form.
+/// all_of(r...): every requirement holds; the first failing one's reason is reported. A legacy /datum/requirement list stays the legacy form.
 /proc/all_of(...)
 	for(var/value in args)
 		if(istype(value, /datum/entry) || (islist(value) && length(value) && istype(value[1], /datum/entry)))
 			return part_make(/datum/entry/part/req/all, null, entry_flatten(args))
-	return legacy_all_of(arglist(args))
+	return requirement_composer().all(args)
 
 /datum/entry/part/req/all
 	part_name = "all_of"
@@ -538,7 +532,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	for(var/value in args)
 		if(istype(value, /datum/entry) || (islist(value) && length(value) && istype(value[1], /datum/entry)))
 			return part_make(/datum/entry/part/req/any, null, entry_flatten(args))
-	return legacy_any_of(arglist(args))
+	return requirement_composer().any(args)
 
 /datum/entry/part/req/any
 	part_name = "any_of"
@@ -573,7 +567,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 /proc/op_notice_wanted(datum/D, notice_type)
 	return notice_wanted(D, notice_type)
 
-/// A requirement (new, or a legacy /datum/req that has a new-engine form) as a boolean in an op's context.
+/// A requirement (new, or a legacy /datum/requirement that has a new-engine form) as a boolean in an op's context.
 /proc/op_req_holds(datum/act/op/A, requirement)
 	op_pure_begin()
 	. = op_req_holds_eval(A, requirement)
@@ -583,8 +577,8 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	if(istype(requirement, /datum/entry/part/req))
 		var/datum/entry/part/req/R = requirement
 		return R.holds(A)
-	if(istype(requirement, /datum/req))
-		var/datum/req/L = requirement
+	if(istype(requirement, /datum/requirement))
+		var/datum/requirement/L = requirement
 		return L.holds(A)
 	return !!requirement
 
@@ -598,9 +592,9 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	if(istype(requirement, /datum/entry/part/req))
 		var/datum/entry/part/req/R = requirement
 		return R.refusal(A)
-	if(istype(requirement, /datum/req))
-		var/datum/req/L = requirement
-		return L.reason
+	if(istype(requirement, /datum/requirement))
+		var/datum/requirement/L = requirement
+		return L.refusal(A)
 	return /datum/msg/req_failed
 
 /// The id a requirement may be relaxed by (extend(key, drop = "id")).
@@ -610,55 +604,22 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 		return R.req_id()
 	return null
 
-// ---- legacy requirements read by the new engine ----
-// The requirement constructors req_empty_hand(), req_self_held(), req_access(), req_stance() and req_heard() keep their legacy datums (hundreds
-// of legacy ops hold them); the new engine reads those datums through holds(A), which the legacy classes below implement. A legacy
-// requirement with no form here is refused at build time (op_part_report), never silently passed.
-
-/datum/req/proc/holds(datum/act/op/A)
-	stack_trace("legacy requirement [type] has no form in the new engine: write its req_* of code/engine/parts/cond.dm")
+/mob/proc/op_has_mutation(mutation)
 	return FALSE
+/datum/entry/part/req/mutation/holds(datum/act/op/A)
+	var/mob/M = op_subject(A, src.args["of"])
+	return istype(M) && M.op_has_mutation(src.args["mutation"])
 
-/datum/req/empty_hand/holds(datum/act/op/A)
-	return isnull(A.held)
-
-/datum/req/self_held/holds(datum/act/op/A)
-	return !isnull(A.held) && A.held == A.target
-
-/datum/req/access/holds(datum/act/op/A)
-	var/obj/O = A.target
-	if(!istype(O) || !A.actor)
-		return TRUE
-	if(A.authority & AUTH_ADMIN)
-		return TRUE
-	return O.allowed(A.actor)
-
-/datum/req/stance/holds(datum/act/op/A)
-	var/mob/M = A.actor
-	return istype(M) && (M.input_stance() in stances)
-
-/datum/req/heard/holds(datum/act/op/A)
-	return op_notice_wanted(A.target, notice_type)
-
-/datum/req/of_type/holds(datum/act/op/A)
-	var/datum/D = null
-	switch(of)
-		if(OP_ACTOR)
-			D = A.actor
-		if(OP_HELD)
-			D = A.held
-		else
-			D = A.target
-	if(!D)
-		return FALSE
-	for(var/path in (islist(types) ? types : list(types)))
-		if(istype(D, path))
-			return TRUE
-	return FALSE
-
-/// A value a requirement reads once, when the question opens, for state that is effectively fixed while a question is open (a mob's client,
-/// its teleop, its languages, a channel's name). The analysis (tools/analyze, sem/reads) does not subscribe to what is read inside the call, so
-/// the requirement is not re-run when it changes; use a TRACKED var, or an accessor with READS_AS, for state that changes in play.
+/// Sample admission state without subscribing to it. Immediate requirements sample on each
+/// input, and menus containing a sample are rebuilt on each read. For a question which
+/// waits, only sample state effectively fixed while it is open; mutable waiting conditions
+/// need TRACKED state or an accessor with READS_AS so they can be rechecked when changed.
 /proc/read_once(value)
 	READS_FROM() // by design: nothing inside the call subscribes (sem/reads mutes its argument)
+	// The menu is an admission read too. A non-subscribing input cannot use its generation cache.
+	// Mark enclosing menu reads: a requirement may inspect another menu transitively.
+	var/list/frame = GLOB.op_menu_read_frame
+	while(frame)
+		frame[2] = TRUE
+		frame = frame[1]
 	return value

@@ -503,7 +503,7 @@ ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singu
 			E.anchored = TRUE
 			E.state = 2
 			E.connect_to_network()
-			E.active = TRUE
+			E.set_active(TRUE)
 	for(var/obj/machinery/field_generator/F in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(istype(get_area(F), /area/space))
 			F.set_Varedit_start(TRUE)

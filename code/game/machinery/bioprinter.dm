@@ -81,15 +81,11 @@
 		)
 	// end
 
-EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
-	INTERACT_ITEM(null, PROC_REF(organ_printer_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(organ_printer_interaction_hand), REQ_TARGET_STATE(/obj/machinery/organ_printer/proc/can_open_menu)), \
-	INTERACT_VERB("Eject Beaker", PROC_REF(organ_printer_eject_beaker)), \
-)
+
 
 /// Old attackby.
-/obj/machinery/organ_printer/proc/organ_printer_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	return default_part_replacement(user, O) ? TRUE : FALSE
+/obj/machinery/organ_printer/proc/organ_printer_interaction_item(datum/act/op/A)
+	return default_part_replacement(A.actor, A.held_provider()) ? OP_OK : OP_DECLINE
 
 /// The look (the draw sweep: from its layers).
 /obj/machinery/organ_printer/draw(datum/look/look)
@@ -99,7 +95,15 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 	if(printing == 1)
 		look.overlay("bioprinter_working")
 
+TRACKED(/obj/machinery/organ_printer, printing)
+TRACKED(/obj/machinery/organ_printer, complex_organs)
+TRACKED(/obj/machinery/organ_printer, anomalous_organs)
+TRACKED(/obj/machinery/organ_printer, engineered_organs)
+
 CAPABILITIES(/obj/machinery/organ_printer)
+	op("printer_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(organ_printer_interaction_item)))
+	op("printer_menu", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(printer_menu_allowed), because = PROC_REF(printer_menu_refusal))), asks(/datum/prompt/choice, fields = list("title" = "Bioprinter Menu", "question" = "What do you want to do?", "choices" = list("Print Limbs", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "menu", when = PROC_REF(printer_has_reservoir)), asks(/datum/prompt/choice, fields = list("title" = "Print Choice", "question" = "What would you like to print?", "choices" = computed(PROC_REF(printer_product_choices)), "timeout" = 0), step = "product", when = PROC_REF(printer_choosing_product)), then(PROC_REF(print_choice_made)))
+	op("printer_eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable()), then(PROC_REF(organ_printer_eject_beaker)))
 	climb()
 	default_parts()
 
@@ -126,14 +130,14 @@ CAPABILITIES(/obj/machinery/organ_printer)
 		malfunctioning = initial(malfunctioning)
 
 	if(manip_rating >= 3)
-		complex_organs = TRUE
+		set_complex_organs(TRUE)
 		if(manip_rating >= 4)
-			anomalous_organs = TRUE
+			set_anomalous_organs(TRUE)
 			if(manip_rating >= 5)
 				malfunctioning = TRUE
 	else
-		complex_organs = initial(complex_organs)
-		anomalous_organs = initial(anomalous_organs)
+		set_complex_organs(initial(complex_organs))
+		set_anomalous_organs(initial(anomalous_organs))
 		malfunctioning = initial(malfunctioning)
 
 	. = ..()
@@ -148,24 +152,7 @@ CAPABILITIES(/obj/machinery/organ_printer)
 		return "it's busy"
 	return TRUE
 
-/// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/organ_printer/proc/organ_printer_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-
-	if(!operable())
-		return TRUE
-
-	if(container)
-		open_request(src, /datum/prompt/choice, PROC_REF(bioprinter_menu_answered), answerer = user, title = "Bioprinter Menu", question = "What do you want to do?", choices = list("Print Limbs", "Cancel"), buttons = TRUE, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	else
-		to_chat(user, span_warning("\The [src] can't operate without a reagent reservoir!"))
-	return TRUE
-
-/obj/machinery/organ_printer/proc/bioprinter_menu_answered(datum/act/request/A)
-	if(!A.answer || A.answer.value != "Print Limbs")
-		return
-	printing_menu(A.request.answerer)
-
-/obj/machinery/organ_printer/proc/printing_menu(mob/user)
+/obj/machinery/organ_printer/proc/printer_product_choices(datum/act/op/A)
 	var/list/possible_list = list()
 
 	possible_list |= products
@@ -181,18 +168,23 @@ CAPABILITIES(/obj/machinery/organ_printer)
 		possible_list |= engineered_products
 	// end
 
-	open_request(src, /datum/prompt/choice, PROC_REF(print_choice_made), valid = PROC_REF(printer_ready), answerer = user, title = "Print Choice", question = "What would you like to print?", choices = possible_list, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
+	return possible_list
 
 /// Re-checked on the answer: the printer is idle and works.
 /obj/machinery/organ_printer/proc/printer_ready(datum/request/R)
 	return !printing && operable()
 
-/obj/machinery/organ_printer/proc/print_choice_made(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/R = A.request
-	var/list/possible_list = R.choices
-	var/choice = A.answer.value
+/obj/machinery/organ_printer/proc/print_choice_made(datum/act/op/A)
+	if(!printer_has_reservoir(A))
+		if(operable())
+			to_chat(A.actor, span_warning("\The [src] can't operate without a reagent reservoir!"))
+		return OP_OK
+	if(!printer_choosing_product(A) || !A.step_value("product") || printing || !operable())
+		return OP_OK
+	var/list/possible_list = printer_product_choices(A)
+	var/choice = A.step_value("product")
+	if(!possible_list[choice])
+		return OP_OK
 
 	if(!can_print(choice, possible_list[choice][2]))
 		return
@@ -200,7 +192,7 @@ CAPABILITIES(/obj/machinery/organ_printer)
 	container.reagents.remove_reagent(REAGENT_ID_BIOMASS, possible_list[choice][2])
 
 	set_use_power(USE_POWER_ACTIVE)
-	printing = 1
+	set_printing(1)
 
 	visible_message(span_infoplain(span_bold("\The [src]") + " begins churning."))
 
@@ -209,7 +201,7 @@ CAPABILITIES(/obj/machinery/organ_printer)
 /// The print delay is over: the organ comes out unless the printer lost power.
 /obj/machinery/organ_printer/proc/printing_done(organ_path)
 	set_use_power(USE_POWER_IDLE)
-	printing = 0
+	set_printing(0)
 	changed(src)
 
 	if(!operable())
@@ -218,7 +210,8 @@ CAPABILITIES(/obj/machinery/organ_printer)
 	print_organ(organ_path)
 
 /// Old verb "Eject Beaker".
-/obj/machinery/organ_printer/proc/organ_printer_eject_beaker(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/organ_printer/proc/organ_printer_eject_beaker(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != 0)
 		return
 	add_fingerprint(user)
@@ -361,3 +354,15 @@ CAPABILITIES(/obj/machinery/organ_printer/flesh)
 /obj/machinery/organ_printer/ownership()
 	. = ..()
 	. += owns(nameof(container), policy = OWN_CONTAINED)
+
+/obj/machinery/organ_printer/proc/printer_menu_allowed(datum/act/op/A)
+	return can_open_menu(A.actor, src, A.held_provider()) == TRUE
+
+/obj/machinery/organ_printer/proc/printer_menu_refusal(datum/act/op/A)
+	return can_open_menu(A.actor, src, A.held_provider())
+
+/obj/machinery/organ_printer/proc/printer_has_reservoir(datum/act/op/A)
+	return operable() && !!container
+
+/obj/machinery/organ_printer/proc/printer_choosing_product(datum/act/op/A)
+	return A.step_value("menu") == "Print Limbs" && printer_has_reservoir(A)

@@ -72,7 +72,7 @@
 	var/obj/item/radio/R = allocate(/obj/item/radio)
 	var/obj/item/radio/stranger = allocate(/obj/item/radio)
 	var/obj/machinery/telecomms/receiver/RX = allocate(/obj/machinery/telecomms/receiver)
-	TEST_ASSERT(istype(om_link(R, RX, /datum/om/relation/bluespace_tx_to), /datum/om/edge), "linking the radio should succeed")
+	rel_set(R, nameof(R.bs_tx_receiver), RX)
 	TEST_ASSERT_EQUAL(R?.bs_tx_target(), RX, "radio?.bs_tx_target() is the receiver")
 	TEST_ASSERT(R in RX?.bs_tx_radios(), "the radio is in receiver?.bs_tx_radios()")
 
@@ -95,7 +95,7 @@
 /datum/unit_test/dq_refs_bluespace_rx_link/Run()
 	var/obj/item/radio/R = allocate(/obj/item/radio)
 	var/obj/machinery/telecomms/broadcaster/TX = allocate(/obj/machinery/telecomms/broadcaster)
-	om_link(R, TX, /datum/om/relation/bluespace_rx_from)
+	rel_set(R, nameof(R.bs_rx_broadcaster), TX)
 	TEST_ASSERT_EQUAL(R?.bs_rx_source(), TX, "radio?.bs_rx_source() is the broadcaster")
 	TEST_ASSERT(R in TX?.bs_rx_radios(), "the radio is in broadcaster?.bs_rx_radios()")
 	qdel(R)

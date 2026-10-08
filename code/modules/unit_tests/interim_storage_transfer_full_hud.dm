@@ -32,6 +32,6 @@
 	TEST_ASSERT_EQUAL(sample.plane, sample_plane, "destination refusal preserves the actual grouped sample's display plane")
 	TEST_ASSERT_EQUAL(sample.layer, sample_layer, "destination refusal preserves the actual grouped sample's display layer")
 	TEST_ASSERT_EQUAL(sample.maptext, sample_maptext, "destination refusal preserves the actual grouped count text")
-	TEST_ASSERT(sample.latent_pins?[hud], "destination refusal preserves the actual HUD's sample lifetime pin")
+	TEST_ASSERT(sample.latent_pin_count(hud), "destination refusal preserves the actual HUD's sample lifetime pin")
 	source.close(user)
 	TEST_ASSERT(QDELETED(hud), "closing the actual source view tears down its HUD after the refused transfer")

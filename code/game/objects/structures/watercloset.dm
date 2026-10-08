@@ -539,7 +539,6 @@ CAPABILITIES(/obj/machinery/shower)
 	owns_one(nameof(soundloop), /datum/looping_sound/showering)
 	op("toggle", hand(), ungated(), label("Toggle"), then(PROC_REF(interaction_toggle)))
 	op("analyze", item(/obj/item/analyzer), label("Check water temperature"), then(PROC_REF(interaction_analyze)))
-	op("swallow", item(/obj/item), label("Use"), then(PROC_REF(item_swallowed)))
 	op("set_temperature", hand(), ungated(), gesture(GESTURE_ALT), label("Set temperature"), passes(),
 		asks(/datum/prompt/choice, fields = list("title" = "Water Temperature Valve", "question" = "What setting would you like to set the temperature valve to?", "choices" = list("normal", "boiling", "freezing"), "timeout" = 0)),
 		then(PROC_REF(temperature_chosen)))
@@ -603,10 +602,6 @@ CAPABILITIES(/obj/machinery/shower)
 /obj/machinery/shower/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
-/// The old attackby never chained to ..() for a non-analyzer item: it silently swallowed the hit.
-/obj/machinery/shower/proc/item_swallowed(datum/act/op/A)
-	return OP_OK
-
 /// Old click_alt: the valve is set to the chosen temperature after a while (the alt-click then goes on: the loot panel still opens).
 /obj/machinery/shower/proc/temperature_chosen(datum/act/op/A)
 	var/mob/user = A.actor
@@ -629,16 +624,11 @@ CAPABILITIES(/obj/machinery/shower)
 	. = ..()
 	. += span_notice("You can <b>alt-click</b> to change the temperature.")
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/shower, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/shower/appearance_overlays()
-	. = list()
+/obj/machinery/shower/draw(datum/look/look)
+	..()
 	if(on)
-		if(reagent_id == REAGENT_ID_WATER)
-			. += image('icons/obj/watercloset.dmi', src, "water", MOB_LAYER + 1, dir)
-		else
-			var/mutable_appearance/colorful_shower = image('icons/obj/watercloset.dmi', src, "water", MOB_LAYER + 1, dir)
-			colorful_shower.color = reagents.get_color() //Whatever the fuck happens to be spewing out of here.
-			. += colorful_shower
+		var/spray_color = reagent_id == REAGENT_ID_WATER ? null : reagents.get_color()
+		look.overlay(look_overlay_image('icons/obj/watercloset.dmi', "water", layer = MOB_LAYER + 1, dir = dir, color = spray_color))
 
 /obj/machinery/shower/proc/handle_mist()
 	// If there is no mist, and the shower was turned on (on a non-freezing temp): make mist in 5 seconds

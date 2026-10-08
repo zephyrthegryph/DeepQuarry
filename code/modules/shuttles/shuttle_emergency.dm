@@ -127,7 +127,7 @@
 	var/list/authorized = list() // ALLOW(instance_list): d: per-console authorisation state; one emergency console
 
 /obj/machinery/computer/shuttle_control/emergency/proc/has_authorization()
-	return (authorized.len >= req_authorizations || emagged)
+	return (authorized.len >= req_authorizations || emagged())
 
 /obj/machinery/computer/shuttle_control/emergency/proc/reset_authorization()
 	//No need to reset emagged status. If they really want to go back to the station they can.
@@ -179,7 +179,7 @@
 	return 1
 
 /obj/machinery/computer/shuttle_control/emergency/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if (!emagged)
+	if (!emagged())
 		to_chat(user, span_notice("You short out \the [src]'s authorization protocols."))
 		set_emagged(1)
 		return 1

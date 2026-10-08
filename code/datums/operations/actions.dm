@@ -514,13 +514,13 @@ GLOBAL_LIST_EMPTY(op_action_indexes)
  * list(id = op key, name = its display name, action = the ACT_* it answers (ACT_NONE: no gesture reaches it), icon,
  * category, enabled, reason).
  */
-/proc/legacy_action_options(mob/user, atom/target, route = ROUTE_PHYSICAL)
+/proc/legacy_action_options(mob/user, atom/target, route = ROUTE_PHYSICAL, operations_only = FALSE)
 	. = list()
 	var/obj/item/held = user?.get_active_hand()
 	var/list/seen = list()
 	for(var/datum/interaction/capability/E as anything in cap_interactions(target))
 		var/datum/op_def/op = E.op
-		if(!op || seen[op.key] || !E.applies_to(target))
+		if(!op || (operations_only && op.legacy) || seen[op.key] || !E.applies_to(target))
 			continue
 		seen[op.key] = TRUE
 		var/datum/action_def/def = action_def_of(op.action)

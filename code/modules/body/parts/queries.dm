@@ -50,7 +50,7 @@
 	var/obj/item/organ/external/E = loc
 	if(!istype(E))
 		return null
-	var/list/entry = E.ledger?.entries[src]
+	var/list/entry = E.containment_ledger()?.entries[src]
 	if(!entry || !(entry[LEDGER_E_SLOT] == SLOT_ID_PART_CHILD || entry[LEDGER_E_SLOT] == SLOT_ID_PART_ORGANS))
 		return null
 	return E
@@ -82,12 +82,12 @@
 	var/hint = limb_hint[tag]
 	if(hint)
 		var/obj/item/organ/external/E = organs_by_name?[hint]
-		var/datum/ledger/EL = E?.ledger
+		var/datum/ledger/EL = E?.containment_ledger()
 		var/obj/item/organ/found = EL?.slot_lookup(SLOT_ID_PART_ORGANS, tag)
 		if(found?.owner == src)
 			return found
 	for(var/obj/item/organ/external/E as anything in organs)
-		var/datum/ledger/EL = E.ledger
+		var/datum/ledger/EL = E.containment_ledger()
 		var/obj/item/organ/found = EL?.slot_lookup(SLOT_ID_PART_ORGANS, tag)
 		// owner: a subtree being released lets its organs go before its limbs.
 		if(found?.owner == src)
@@ -96,7 +96,7 @@
 	if(has_part_tree())
 		return null
 	// No tree: loose organs in the interior slot.
-	var/datum/ledger/L = ledger
+	var/datum/ledger/L = containment_ledger()
 	for(var/obj/item/organ/O in L?.slots[SLOT_ID_BODY])
 		if(O.organ_tag == tag && O.owner == src && !istype(O, /obj/item/organ/external))
 			return O
@@ -109,13 +109,13 @@
 	RETURN_TYPE(/list)
 	. = list()
 	for(var/obj/item/organ/external/E as anything in organs)
-		var/datum/ledger/EL = E.ledger
+		var/datum/ledger/EL = E.containment_ledger()
 		for(var/obj/item/organ/O as anything in EL?.slots[SLOT_ID_PART_ORGANS])
 			if(O.owner == src)
 				. += O
 	if(has_part_tree())
 		return
-	var/datum/ledger/L = ledger
+	var/datum/ledger/L = containment_ledger()
 	for(var/obj/item/organ/O in L?.slots[SLOT_ID_BODY])
 		if(O.owner == src && !istype(O, /obj/item/organ/external))
 			. += O

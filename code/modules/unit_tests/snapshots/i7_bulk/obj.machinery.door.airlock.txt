@@ -1,5 +1,148 @@
-/obj/machinery/door/airlock|human|none => |
-/obj/machinery/door/airlock|robot|none => |gen_robot_interaction_swallow:not possible right now
-/obj/machinery/door/airlock|ai|none => |
-/obj/machinery/door/airlock|ghost|none => |
+human|none menu: Hammer on the door
+human|none menu: Hold the door open
+human|none menu: Open
+human|none menu: Ring the bell
+human|none click: Click: Open
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Bolt toggle
+robot|none menu: Open close
+robot|none menu: Toggle electrification
+robot|none menu: Ui open
+robot|none click: Click: Ui open
+ai|none menu: Bolt toggle
+ai|none menu: Open close
+ai|none menu: Toggle electrification
+ai|none menu: Toggle the bolt lights
+ai|none menu: Ui open
+ai|none click: Click: Ui open
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Hammer on the door
+human|/obj/item/tool/screwdriver menu: Hold the door open
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Open
+human|/obj/item/tool/screwdriver menu: Ring the bell
+human|/obj/item/tool/screwdriver menu: Strike
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Open
+human|/obj/item/tool/crowbar menu: Hammer on the door
+human|/obj/item/tool/crowbar menu: Hold the door open
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Open
+human|/obj/item/tool/crowbar menu: Pry (refused: The airlock's motors resist your efforts to force it.)
+human|/obj/item/tool/crowbar menu: Ring the bell
+human|/obj/item/tool/crowbar menu: Strike
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Pry
+human|/obj/item/tool/wrench menu: Hammer on the door
+human|/obj/item/tool/wrench menu: Hold the door open
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Open
+human|/obj/item/tool/wrench menu: Ring the bell
+human|/obj/item/tool/wrench menu: Strike
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Open
+human|/obj/item/tool/wirecutters menu: Hammer on the door
+human|/obj/item/tool/wirecutters menu: Hold the door open
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Open
+human|/obj/item/tool/wirecutters menu: Ring the bell
+human|/obj/item/tool/wirecutters menu: Strike
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Cut wires
+human|/obj/item/multitool menu: Hammer on the door
+human|/obj/item/multitool menu: Hold the door open
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Open
+human|/obj/item/multitool menu: Ring the bell
+human|/obj/item/multitool menu: Strike
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Pulse wires
+human|/obj/item/weldingtool menu: Hammer on the door
+human|/obj/item/weldingtool menu: Hold the door open
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Open
+human|/obj/item/weldingtool menu: Ring the bell
+human|/obj/item/weldingtool menu: Strike
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Weld shut
+human|/obj/item/weldingtool click: Click: Weld shut
+human|/obj/item/stack/cable_coil menu: Hammer on the door
+human|/obj/item/stack/cable_coil menu: Hold the door open
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Open
+human|/obj/item/stack/cable_coil menu: Ring the bell
+human|/obj/item/stack/cable_coil menu: Strike
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Open
+human|/obj/item/stack/material/steel menu: Hammer on the door
+human|/obj/item/stack/material/steel menu: Hold the door open
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Open
+human|/obj/item/stack/material/steel menu: Ring the bell
+human|/obj/item/stack/material/steel menu: Strike
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Open
+human|/obj/item/card/id menu: Hammer on the door
+human|/obj/item/card/id menu: Hold the door open
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Open
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Ring the bell
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Open
+human|/obj/item menu: Hammer on the door
+human|/obj/item menu: Hold the door open
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Open
+human|/obj/item menu: Ring the bell
+human|/obj/item menu: Strike
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Open
+human|/obj/item/card/emag menu: Hammer on the door
+human|/obj/item/card/emag menu: Hold the door open
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Open
+human|/obj/item/card/emag menu: Ring the bell
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/stack/material/plasteel menu: Hammer on the door
+human|/obj/item/stack/material/plasteel menu: Hold the door open
+human|/obj/item/stack/material/plasteel menu: Move To Top
+human|/obj/item/stack/material/plasteel menu: Open
+human|/obj/item/stack/material/plasteel menu: Reinforce
+human|/obj/item/stack/material/plasteel menu: Ring the bell
+human|/obj/item/stack/material/plasteel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/plasteel click: Click: Reinforce
+human|/obj/item/taperoll menu: Hammer on the door
+human|/obj/item/taperoll menu: Hold the door open
+human|/obj/item/taperoll menu: Move To Top
+human|/obj/item/taperoll menu: Open
+human|/obj/item/taperoll menu: Ring the bell
+human|/obj/item/taperoll menu: Strike
+human|/obj/item/taperoll menu: Tape
+human|/obj/item/taperoll menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/taperoll click: Click: Tape
+human|/obj/item/assembly/signaler menu: Hammer on the door
+human|/obj/item/assembly/signaler menu: Hold the door open
+human|/obj/item/assembly/signaler menu: Move To Top
+human|/obj/item/assembly/signaler menu: Open
+human|/obj/item/assembly/signaler menu: Ring the bell
+human|/obj/item/assembly/signaler menu: Signaler
+human|/obj/item/assembly/signaler menu: Strike
+human|/obj/item/assembly/signaler menu: Threaten to push the button! (refused: You can't do that.)
+human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly/signaler click: Click: Signaler
+human|/obj/item/pai_cable menu: Hammer on the door
+human|/obj/item/pai_cable menu: Hold the door open
+human|/obj/item/pai_cable menu: Move To Top
+human|/obj/item/pai_cable menu: Open
+human|/obj/item/pai_cable menu: Pai cable
+human|/obj/item/pai_cable menu: Ring the bell
+human|/obj/item/pai_cable menu: Strike
+human|/obj/item/pai_cable menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pai_cable click: Click: Pai cable
+wires: AI Control, Bolt Lights, Door Bolts, Door State, Door Timing, Electrification, ID Scan, Primary Backup Power, Primary Power, Safety, Secondary Backup Power, Secondary Power
+keys: bolt_toggle, break_in, deice, deice_tool, disrupt_backup, disrupt_main, doorbell, doors.close, doors.open, drag_buckle, emag.subvert, emag.use, emergency_toggle, hammer, hold_open, idscan_toggle, light_toggle, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open_close, pai_cable, panel.open, pry, pry_weapon, reinforce, remote_lights, remote_shock, remove_electronics, repair, robot_remote_blocked, safe_toggle, shock_perm, shock_restore, shock_temp, signaler, speed_toggle, strike, tape, tear, ui_open, unreinforce, weld_plasteel, weld_shut.toggle, wires.cut, wires.pulse, wires_window
 

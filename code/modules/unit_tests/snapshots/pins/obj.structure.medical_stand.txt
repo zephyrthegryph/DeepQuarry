@@ -10,6 +10,7 @@ ai|none click: nothing
 ghost|none menu: Set IV transfer amount
 ghost|none menu: Toggle IV Mode (refused: You can't do that.)
 ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Medical stand interaction hand
 human|/obj/item/tool/screwdriver menu: Medical stand interaction item
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -17,6 +18,7 @@ human|/obj/item/tool/screwdriver menu: Set IV transfer amount
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle IV Mode
 human|/obj/item/tool/screwdriver click: Click: Medical stand interaction item
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Medical stand interaction hand
 human|/obj/item/tool/crowbar menu: Medical stand interaction item
 human|/obj/item/tool/crowbar menu: Move To Top
@@ -24,6 +26,7 @@ human|/obj/item/tool/crowbar menu: Set IV transfer amount
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Toggle IV Mode
 human|/obj/item/tool/crowbar click: Click: Medical stand interaction item
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Medical stand interaction hand
 human|/obj/item/tool/wrench menu: Medical stand interaction item
 human|/obj/item/tool/wrench menu: Move To Top
@@ -32,6 +35,7 @@ human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.
 human|/obj/item/tool/wrench menu: Toggle IV Mode
 human|/obj/item/tool/wrench menu: Use wrench
 human|/obj/item/tool/wrench click: Click: Use wrench
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Medical stand interaction hand
 human|/obj/item/tool/wirecutters menu: Medical stand interaction item
 human|/obj/item/tool/wirecutters menu: Move To Top
@@ -39,6 +43,7 @@ human|/obj/item/tool/wirecutters menu: Set IV transfer amount
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Toggle IV Mode
 human|/obj/item/tool/wirecutters click: Click: Medical stand interaction item
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Medical stand interaction hand
 human|/obj/item/multitool menu: Medical stand interaction item
 human|/obj/item/multitool menu: Move To Top
@@ -46,6 +51,7 @@ human|/obj/item/multitool menu: Set IV transfer amount
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle IV Mode
 human|/obj/item/multitool click: Click: Medical stand interaction item
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Medical stand interaction hand
 human|/obj/item/weldingtool menu: Medical stand interaction item
 human|/obj/item/weldingtool menu: Move To Top
@@ -53,6 +59,7 @@ human|/obj/item/weldingtool menu: Set IV transfer amount
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle IV Mode
 human|/obj/item/weldingtool click: Click: Medical stand interaction item
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Medical stand interaction hand
 human|/obj/item/stack/cable_coil menu: Medical stand interaction item
@@ -61,6 +68,7 @@ human|/obj/item/stack/cable_coil menu: Set IV transfer amount
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Toggle IV Mode
 human|/obj/item/stack/cable_coil click: Click: Medical stand interaction item
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Medical stand interaction hand
 human|/obj/item/stack/material/steel menu: Medical stand interaction item
 human|/obj/item/stack/material/steel menu: Move To Top
@@ -68,6 +76,7 @@ human|/obj/item/stack/material/steel menu: Set IV transfer amount
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Toggle IV Mode
 human|/obj/item/stack/material/steel click: Click: Medical stand interaction item
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Medical stand interaction hand
 human|/obj/item/card/id menu: Medical stand interaction item
 human|/obj/item/card/id menu: Move To Top
@@ -76,6 +85,7 @@ human|/obj/item/card/id menu: Set IV transfer amount
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle IV Mode
 human|/obj/item/card/id click: Click: Medical stand interaction item
+human|/obj/item menu: Hit
 human|/obj/item menu: Medical stand interaction hand
 human|/obj/item menu: Medical stand interaction item
 human|/obj/item menu: Move To Top
@@ -83,5 +93,5 @@ human|/obj/item menu: Set IV transfer amount
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Toggle IV Mode
 human|/obj/item click: Click: Medical stand interaction item
-keys: drag_buckle, medical_stand_interaction_hand, medical_stand_interaction_item, set_iv_transfer, toggle_iv_mode, use_wrench
+keys: drag_buckle, medical_stand_interaction_hand, medical_stand_interaction_item, melee_hit, set_iv_transfer, toggle_iv_mode, use_wrench
 

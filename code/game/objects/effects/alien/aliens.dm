@@ -165,26 +165,17 @@
 		if(prob(max(10, 60 - (5 * nearby_weeds.len))))
 			W.weed_spread()
 
-/// Old attackby: any item hits the weeds (afterattack still follows, as before).
-/obj/effect/alien/weeds/proc/interaction_hit_weeds(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	user.setClickCooldown(user.get_attack_speed(W))
-	if(LAZYLEN(W.attack_verb))
-		act_message(src, user, others = span_danger("%U% have been [pick(W.attack_verb)] with %I%[user ? " by %T%." : "."]"), item = W)
-	else
-		act_message(src, user, others = span_danger("%U% have been attacked with %I%[user ? " by %T%." : "."]"), item = W)
+/obj/effect/alien/weeds/melee_scale()
+	return 0.25
 
-	var/damage = W.force / 4.0
-
-	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
-	return OP_PASS
+/obj/effect/alien/weeds/melee_passes()
+	return TRUE
 
 CAPABILITIES(/obj/effect/alien/weeds)
+	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
 	ref_one(nameof(linked_node), /obj/effect/alien/weeds/node)
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	param(nameof(linked_node), pos = 1)
-	op("hit_weeds", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hit_weeds)))
 	op("tear_up", hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 2), label("Tear up"), then(PROC_REF(interaction_tear_weeds)))
 	op("touch_weeds", hand(), priority(OP_PRIORITY_DEFAULT - 3), then(PROC_REF(interaction_touch_weeds)))
 

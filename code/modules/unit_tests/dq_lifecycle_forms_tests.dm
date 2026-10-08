@@ -232,7 +232,7 @@ CAPABILITIES(/obj/item/dq_forms_timer)
 	// Memory: one shared capability per declaration, nothing per instance but the holder itself.
 	var/obj/item/dq_forms_flask/F2 = allocate(/obj/item/dq_forms_flask, T)
 	TEST_ASSERT(table_cap_defs(table_of(F), CAP_REAGENTS, null)[1] == table_cap_defs(table_of(F2), CAP_REAGENTS, null)[1], "the capability is one flyweight per declaration")
-	TEST_ASSERT_NULL(F.cap_data, "no per-instance capability data")
+	TEST_ASSERT_NULL(capability_data(F), "no per-instance capability data")
 	var/obj/item/dq_forms_part/plain_part = allocate(/obj/item/dq_forms_part, T)
 	TEST_ASSERT_NULL(plain_part.reagents, "a type without the capability allocates nothing")
 	// The worked conversion: the reagent tanks.

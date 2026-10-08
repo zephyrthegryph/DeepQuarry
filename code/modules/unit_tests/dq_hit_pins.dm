@@ -19,8 +19,18 @@
  * timer that runs seconds on: a hand-written test covers those.
  */
 #define DQ_HIT_PIN_DIR "code/modules/unit_tests/snapshots/hit_pins/"
+/// The trigger every type meets first (the head of the triggers list in Run()).
+#define DQ_HIT_FIRST_TRIGGER "emp 1"
 
 /datum/unit_test/dq_hit_pin
+
+// Warm the production disguise caches before the runner records globals. Their
+// lazy initialization is persistent framework setup, not a hit's state change.
+/datum/unit_test/dq_hit_pin/New()
+	..()
+	for(var/item_type in list(/obj/item/clothing/under/chameleon, /obj/item/clothing/head/chameleon, /obj/item/clothing/suit/chameleon, /obj/item/clothing/shoes/chameleon, /obj/item/storage/backpack/chameleon, /obj/item/clothing/gloves/chameleon, /obj/item/clothing/mask/chameleon, /obj/item/storage/belt/chameleon, /obj/item/clothing/accessory/chameleon))
+		var/obj/item/warm = allocate(item_type, test_floor())
+		qdel(warm)
 
 /// Vars that carry no behaviour (identity, engine bookkeeping) or change on their own.
 /proc/dq_hit_skip_vars()
@@ -29,7 +39,7 @@
 		"tag", "x", "y", "z", "loc", "locs", "bound_x", "bound_y", "bound_width", "bound_height", "step_x", "step_y", "weak_reference",
 		"datum_flags", "gc_destroyed", "comp_lookup", "signal_procs", "status_traits", "_listen_lookup", "active_timers", "cooldowns",
 		"light", "light_sources", "x_pos", "y_pos", "z_pos", "ckey", "key", "mind", "client", "last_move", "last_move_time", "pixloc",
-		"om_hid", "own_key_text", "last_damage_flag", "rx",
+		"om_hid", "own_key_text", "shared_cache_uid", "last_damage_flag", "rx",
 	)
 	return skip
 
@@ -63,6 +73,9 @@
 			continue
 		var/value = target.vars[name]
 		.[name] = dq_hit_value(value, name)
+	// Native subversion lives in capability keys, outside target.vars. Observe
+	// the public state so a missing emag effect cannot become a passing "nothing".
+	.["is_emagged"] = dq_hit_value(is_emagged(target), "is_emagged")
 
 /// The things standing on a tile besides `target`: type -> count.
 /proc/dq_hit_turf_rows(turf/T, atom/target)
@@ -117,6 +130,12 @@
 /// The rows one trigger produced on a fresh `type`.
 /datum/unit_test/proc/dq_hit_capture(type, trigger, turf/T, mob/living/carbon/human/actor)
 	rand_seed(dq_test_seed_for("[type][trigger]"))
+	if(trigger == DQ_HIT_FIRST_TRIGGER)
+		// The first instance of a type is made before the world knows what the type derives: its init queues a refresh (refresh_queued,
+		// refresh_bits) that every later instance skips. Whether a type had a first instance already depended on which tests ran before this
+		// one in the world, so the pin forgets the verdict: the first trigger always meets a type seen for the first time, and the rest meet
+		// it after that trigger's own drain.
+		GLOB.type_derives_cache -= type
 	var/atom/target = dq_snapshot_allocate(type, T)
 	if(QDELETED(target))
 		return list("[trigger] | deleted itself on creation")
@@ -180,7 +199,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	actor.enable_godmode()
-	var/list/triggers = list("emp 1", "emp 2", "explosion 1", "explosion 2", "explosion 3", "projectile", "blob", "thrown", "emag")
+	var/list/triggers = list(DQ_HIT_FIRST_TRIGGER, "emp 2", "explosion 1", "explosion 2", "explosion 3", "projectile", "blob", "thrown", "emag")
 	var/area/room = get_area(T)
 	var/room_gravity = room.has_gravity
 	var/list/actual_by_type = list()
@@ -202,4 +221,5 @@
 	var/report = dq_snapshot_compare(DQ_HIT_PIN_DIR, "hit_pins", actual_by_type, expected_by_type, bad)
 	TEST_ASSERT(isnull(report), report)
 
+#undef DQ_HIT_FIRST_TRIGGER
 #undef DQ_HIT_PIN_DIR

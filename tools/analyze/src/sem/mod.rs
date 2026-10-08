@@ -18,6 +18,7 @@ pub mod hooks;
 pub mod cli;
 pub mod decls;
 pub mod graph;
+pub mod layering;
 pub mod keys;
 pub mod gen;
 pub mod incremental;
@@ -90,6 +91,8 @@ pub struct Sem {
     /// [`Sem::rel`] or the def index, which record here.
     /// type path -> repo-relative file of the type's location.
     type_loc: HashMap<String, String>,
+    pub(crate) layering_type_defs: HashMap<String, Vec<String>>,
+    pub(crate) layering_owner_defs: HashMap<String, Vec<String>>,
     touched: std::sync::Mutex<std::collections::HashSet<dreammaker::FileId>>,
     touched_rel: std::sync::Mutex<std::collections::HashSet<String>>,
 }
@@ -190,7 +193,68 @@ impl Sem {
         if let Some(dir) = _keep {
             let _ = std::fs::remove_dir_all(dir);
         }
-        Ok(Sem { objtree, files, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default() })
+        let mut layering_type_defs: HashMap<String, Vec<String>> = HashMap::new();
+        let mut layering_owner_defs: HashMap<String, Vec<String>> = HashMap::new();
+        let capability_type = regex::Regex::new(r"^CAPABILITY_TYPE\s*\(\s*[^,]+,\s*[^,]+,\s*(/[A-Za-z_][\w/]*)").unwrap();
+        let capability_def = regex::Regex::new(r"^CAPABILITY_DEF\s*\(\s*([A-Za-z_]\w*)\s*,").unwrap();
+        for file in tree.select(&CODE_DM) {
+            let mut parents: Vec<(usize, String)> = Vec::new();
+            for raw in file.code().text.lines() {
+                let text = raw.trim();
+                if text.is_empty() { continue; }
+                // An uninitialized absolute field declaration can carry no
+                // useful value/declaration location in ObjectTree. Its explicit
+                // owner is still an actual definition, not a typed reference.
+                let declaration = text.split_whitespace().next().unwrap_or("");
+                if declaration.starts_with('/') {
+                    if let Some((owner, member)) = declaration.split_once("/var/") {
+                        if !member.is_empty() && objtree.find(owner).is_some() {
+                            layering_owner_defs.entry(owner.to_string()).or_default().push(file.rel.clone());
+                        }
+                    }
+                }
+                if let Some(cap) = capability_type.captures(text) {
+                    layering_type_defs.entry(cap[1].to_string()).or_default().push(file.rel.clone());
+                }
+                if let Some(cap) = capability_def.captures(text) {
+                    layering_type_defs.entry(format!("/datum/capability/def/{}", &cap[1])).or_default().push(file.rel.clone());
+                }
+                let indent = raw.len() - raw.trim_start().len();
+                while parents.last().is_some_and(|(n, _)| *n >= indent) { parents.pop(); }
+                // A bare type header is a definition. Typed arguments, locals,
+                // member declarations and proc definitions are only references.
+                let header = text.trim_end_matches('{').trim();
+                if !header.is_empty() && header.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '/') {
+                    let path = if header.starts_with('/') { header.to_string() }
+                        else if let Some((_, parent)) = parents.last() { format!("{}/{}", parent, header) }
+                        else { continue; };
+                    if path.split('/').any(|part| matches!(part, "var" | "proc" | "verb")) { continue; }
+                    if objtree.find(&path).is_some() {
+                        layering_type_defs.entry(path.clone()).or_default().push(file.rel.clone());
+                        parents.push((indent, path));
+                    }
+                }
+            }
+        }
+        for ty in objtree.iter_types() {
+            for var in ty.get().vars.values() {
+                let locations = std::iter::once(var.value.location)
+                    .chain(var.declaration.as_ref().map(|declaration| declaration.location));
+                for location in locations {
+                    if let Some(file) = rel_of(location, &mut files).filter(|file| tree.get(file).is_some()) {
+                        layering_owner_defs.entry(ty.get().path.clone()).or_default().push(file);
+                    }
+                }
+            }
+        }
+        // Synthetic DME locations are parser scaffolding, never type definitions.
+        for (file, definitions) in &def_index {
+            if tree.get(file).is_none() { continue; }
+            for (_, owner, _) in definitions {
+                layering_owner_defs.entry(owner.clone()).or_default().push(file.clone());
+            }
+        }
+        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default() })
     }
 
     pub fn rel(&self, loc: Location) -> &str {

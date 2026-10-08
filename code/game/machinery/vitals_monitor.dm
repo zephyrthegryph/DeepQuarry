@@ -20,7 +20,7 @@
 	var/beep = TRUE
 
 /// The patient on the monitor (a relation view), or null.
-OM_FIELD_VIEW(/obj/machinery/vitals_monitor, mob/living/carbon/human, victim, CHANGE_MACHINE_OCCUPANT)
+/obj/machinery/vitals_monitor/var/mob/living/carbon/human/victim
 /// Tracks its patient while connected to someone.
 
 /obj/machinery/vitals_monitor/examine(mob/user)

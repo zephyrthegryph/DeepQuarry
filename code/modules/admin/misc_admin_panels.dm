@@ -603,7 +603,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon/virgo)
 	interface("SyndicateBeacon", title = "Ominous Beacon", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
 	op("transfer_supplies", ui_act("transfer_supplies", arg("mob_ref", schema_ref(/mob))), then(PROC_REF(ui_act_transfer_supplies)))
-	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/syndicate_beacon/virgo/ui_data(datum/act/eval/A)
 	var/list/data = list()

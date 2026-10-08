@@ -37,7 +37,7 @@
 
 /datum/capability/emag/draw(atom/holder, datum/look/look)
 	if(as_op)
-		look.part(LOOK_EMAGGED, is_emagged(holder) && !(blocked_by & holder.cap_state))
+		look.part(LOOK_EMAGGED, is_emagged(holder) && !(blocked_by & capability_bits(holder)))
 
 /datum/capability/emag/look_parts()
 	return as_op ? list(LOOK_EMAGGED) : null

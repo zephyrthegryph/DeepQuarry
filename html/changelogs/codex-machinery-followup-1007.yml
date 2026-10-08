@@ -1,0 +1,9 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Airlock electrification wire actions retain the responsible actor in administrative history."
+  - bugfix: "Using steel on a robotic fabricator starts material insertion instead of opening its interface."
+  - bugfix: "Expired guest passes remain inactive even if their displayed icon is stale."
+  - bugfix: "Operation menus retain named actions on equipment using both legacy and native declarations."
+  - bugfix: "Machines handle held items before opening their hand-use windows, including console IDs and library scanner books."
+  - code_imp: "Migrated machinery and power interactions, reactions, timers and state declarations to the current framework."

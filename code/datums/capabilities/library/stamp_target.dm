@@ -40,7 +40,7 @@
 	return list(stamp)
 
 /datum/capability/stamp_target/examine(atom/holder, mob/user)
-	var/datum/cap_stamp_data/D = holder.cap_data?[key]
+	var/datum/cap_stamp_data/D = capability_data(holder)?[key]
 	if(!LAZYLEN(D?.lines))
 		return null
 	. = list()
@@ -50,18 +50,18 @@
 /datum/capability/stamp_target/draw(atom/holder, datum/look/look)
 	if(!draws_marks)
 		return
-	var/datum/cap_stamp_data/D = holder.cap_data?[key]
+	var/datum/cap_stamp_data/D = capability_data(holder)?[key]
 	for(var/mark in D?.marks)
 		look.overlay(mark)
 
 /datum/capability/stamp_target/legacy_ui_data(atom/holder, mob/user, list/data)
-	var/datum/cap_stamp_data/D = holder.cap_data?[key]
+	var/datum/cap_stamp_data/D = capability_data(holder)?[key]
 	data["stamps"] = D?.lines ? D.lines.Copy() : list()
 
 /// A's stamp lines (a copy), or an empty list.
 /proc/cap_stamps_of(atom/A)
 	var/datum/capability/stamp_target/C = cap_of(A, /datum/capability/stamp_target)
-	var/datum/cap_stamp_data/D = A.cap_data?[C?.key]
+	var/datum/cap_stamp_data/D = capability_data(A)?[C?.key]
 	return D?.lines ? D.lines.Copy() : list()
 
 /// Adds stamp S's line and mark to A. TRUE when it went on.
@@ -79,7 +79,7 @@
 
 /proc/cap_stamp_has_room(mob/user, atom/holder, obj/item/held)
 	var/datum/capability/stamp_target/C = cap_of(holder, /datum/capability/stamp_target)
-	var/datum/cap_stamp_data/D = holder.cap_data?[C.key]
+	var/datum/cap_stamp_data/D = capability_data(holder)?[C.key]
 	return isnull(C.max_stamps) || LAZYLEN(D?.lines) < C.max_stamps
 
 /proc/cap_stamp_apply(atom/holder, mob/user, obj/item/held)

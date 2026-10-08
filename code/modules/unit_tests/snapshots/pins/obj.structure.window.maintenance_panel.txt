@@ -10,6 +10,7 @@ ai|none click: nothing
 ghost|none menu: Nothing
 ghost|none click: Click: Nothing
 human|/obj/item/tool/screwdriver menu: Bang on
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Knock
 human|/obj/item/tool/screwdriver menu: Maintenance panel interaction item
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -18,6 +19,7 @@ human|/obj/item/tool/screwdriver menu: Unscrew it from the floor
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/crowbar menu: Bang on
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Knock
 human|/obj/item/tool/crowbar menu: Maintenance panel interaction item
 human|/obj/item/tool/crowbar menu: Move To Top
@@ -26,6 +28,7 @@ human|/obj/item/tool/crowbar menu: Unscrew it from the floor (refused: needs a s
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Bang on
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Knock
 human|/obj/item/tool/wrench menu: Maintenance panel interaction item
 human|/obj/item/tool/wrench menu: Move To Top
@@ -34,6 +37,7 @@ human|/obj/item/tool/wrench menu: Unscrew it from the floor (refused: needs a sc
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Use
 human|/obj/item/tool/wirecutters menu: Bang on
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Knock
 human|/obj/item/tool/wirecutters menu: Maintenance panel interaction item
 human|/obj/item/tool/wirecutters menu: Move To Top
@@ -42,6 +46,7 @@ human|/obj/item/tool/wirecutters menu: Unscrew it from the floor (refused: needs
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Bang on
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Knock
 human|/obj/item/multitool menu: Maintenance panel interaction item
 human|/obj/item/multitool menu: Move To Top
@@ -50,6 +55,7 @@ human|/obj/item/multitool menu: Unscrew it from the floor (refused: needs a scre
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Bang on
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Knock
 human|/obj/item/weldingtool menu: Maintenance panel interaction item
 human|/obj/item/weldingtool menu: Move To Top
@@ -59,6 +65,7 @@ human|/obj/item/weldingtool menu: Unscrew it from the floor (refused: needs a sc
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Repair the window
 human|/obj/item/stack/cable_coil menu: Bang on
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Knock
 human|/obj/item/stack/cable_coil menu: Maintenance panel interaction item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
@@ -68,6 +75,7 @@ human|/obj/item/stack/cable_coil menu: Unscrew it from the floor (refused: needs
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Bang on
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Knock
 human|/obj/item/stack/material/steel menu: Maintenance panel interaction item
 human|/obj/item/stack/material/steel menu: Move To Top
@@ -76,6 +84,7 @@ human|/obj/item/stack/material/steel menu: Unscrew it from the floor (refused: n
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Bang on
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Knock
 human|/obj/item/card/id menu: Maintenance panel interaction item
 human|/obj/item/card/id menu: Move To Top
@@ -85,6 +94,7 @@ human|/obj/item/card/id menu: Unscrew it from the floor (refused: needs a screwd
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
 human|/obj/item menu: Bang on
+human|/obj/item menu: Hit
 human|/obj/item menu: Knock
 human|/obj/item menu: Maintenance panel interaction item
 human|/obj/item menu: Move To Top
@@ -92,5 +102,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Unscrew it from the floor (refused: needs a screwdriver)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: bang, drag_buckle, item, knock, maintenance_panel_interaction_item, swallow, tk_knock, weld_repair
+keys: bang, drag_buckle, item, knock, maintenance_panel_interaction_item, melee_hit, swallow, tk_knock, weld_repair
 

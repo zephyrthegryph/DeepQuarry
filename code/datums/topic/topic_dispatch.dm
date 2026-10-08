@@ -7,15 +7,6 @@ GLOBAL_LIST_EMPTY(topic_tables)
 /datum/proc/topic_actions()
 	return null
 
-/// Whether `user` may use this datum's href actions at all (checked before any row).
-/datum/proc/topic_allowed(mob/user, list/href_list)
-	return TRUE
-
-/// A datum whose href actions this one's links also reach (a page forwarding to its book):
-/// hrefs matching none of this type's rows are dispatched to it instead.
-/datum/proc/topic_forward()
-	return null
-
 /// Appends one row (list(key, proc, specs, namespace)) to `rows`; used by TOPIC_ACTION and
 /// TOPIC_NS_ACTION. A row with a namespace is only reachable through a dispatch naming it.
 /proc/topic_register(list/rows, key, proc_name, list/specs, namespace = null)

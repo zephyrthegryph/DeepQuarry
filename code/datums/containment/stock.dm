@@ -101,13 +101,6 @@
  * its state must serialize (state_can_serialize), it has no contents, and it
  * runs nothing (timers, processing).
  */
-/proc/dq_stock_blob(atom/movable/thing)
-	if(!istype(thing) || QDELETED(thing) || length(thing.contents))
-		return null
-	if(length(state_running_blockers(thing)))
-		return null
-	return state_serialize(thing, STATE_FULL)
-
 /// The canonical delta hash of a freshly made `path` with `variant`. Cached.
 /proc/dq_stock_pristine_hash(path, variant)
 	return CACHED2(stock_pristine_hash, path, variant)

@@ -42,7 +42,7 @@
 	TEST_ASSERT_EQUAL(A.effects, 1, "the effect did not run again")
 	TEST_ASSERT_EQUAL(card.uses, uses - 1, "and no use was spent")
 	refresh_flush()
-	TEST_ASSERT(!length(A.look_overlays), "the emag draws nothing")
+	TEST_ASSERT(!length(A.rx?.look_overlays), "the emag draws nothing")
 
 /// A spent card is refused; EMAG_REPEATABLE runs every time.
 /datum/unit_test/dx_cap_emag_repeatable/Run()

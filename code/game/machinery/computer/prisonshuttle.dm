@@ -56,17 +56,18 @@ TRACKED_BRIDGED(/obj/machinery/computer/prison_shuttle, in_flight, CHANGE_MACHIN
 
 /obj/machinery/computer/prison_shuttle/proc/interaction_open_ui_impl(datum/act/op/A)
 	var/mob/user = A.actor
-	user.set_machine(src)
-	post_signal("prison")
+	record_window_open(A)
 	tgui_interact(user)
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 	interface("PrisonShuttleConsole", title = "Prison Shuttle")
+	extend("ui_open", needs(req(PROC_REF(can_open_console_holds), because = PROC_REF(can_open_console_refusal))), then(PROC_REF(record_window_open)))
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
 	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
 	every(0.5 SECONDS, then(PROC_REF(prison_process)), when = nameof(in_flight))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_open_console_holds), because = PROC_REF(can_open_console_refusal))), then(PROC_REF(interaction_open_ui_impl)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /obj/machinery/computer/prison_shuttle/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -211,13 +212,19 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 			start_location.move_contents_to(end_location)
 	return
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/prison_shuttle, PROC_REF(on_emag), null)
-/obj/machinery/computer/prison_shuttle/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/prison_shuttle/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!hacked)
 		hacked = 1
 		to_chat(user, span_notice("You disable the lock."))
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 #undef PRISON_MOVETIME
 #undef PRISON_STATION_AREATYPE
 #undef PRISON_DOCK_AREATYPE
+
+/obj/machinery/computer/prison_shuttle/proc/record_window_open(datum/act/op/A)
+	A.actor.set_machine(src)
+	post_signal("prison")
+	return OP_OK

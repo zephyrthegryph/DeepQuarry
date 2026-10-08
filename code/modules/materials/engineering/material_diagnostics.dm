@@ -231,7 +231,7 @@ CAPABILITIES(/datum/material_service)
 	var/obj/machinery/power/emitter/emitter = owner()
 	if(!istype(emitter))
 		return FALSE
-	if(!emitter.allowed(user) || emitter.locked)
+	if(!emitter.allowed(user) || lock_locked(emitter))
 		return TRUE
 	var/value = value_arg
 	if(!isnum(value))

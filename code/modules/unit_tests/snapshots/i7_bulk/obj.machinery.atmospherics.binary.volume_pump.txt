@@ -1,5 +1,91 @@
-/obj/machinery/atmospherics/binary/volume_pump|human|none => |
-/obj/machinery/atmospherics/binary/volume_pump|robot|none => |gen_robot_interaction_swallow:not possible right now
-/obj/machinery/atmospherics/binary/volume_pump|ai|none => |
-/obj/machinery/atmospherics/binary/volume_pump|ghost|none => |
+human|none menu: Set to max output
+human|none menu: Toggle power
+human|none menu: Ui open
+human|none click: Click: Ui open
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Set to max output
+robot|none menu: Toggle power
+robot|none menu: Ui open
+robot|none click: Click: Ui open
+ai|none menu: Ui open
+ai|none click: Click: Ui open
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Set to max output
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle power
+human|/obj/item/tool/screwdriver menu: Ui open
+human|/obj/item/tool/screwdriver click: Click: Ui open
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Set to max output
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle power
+human|/obj/item/tool/crowbar menu: Ui open
+human|/obj/item/tool/crowbar click: Click: Ui open
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Set to max output
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle power
+human|/obj/item/tool/wrench menu: Ui open
+human|/obj/item/tool/wrench menu: Unwrench
+human|/obj/item/tool/wrench click: Click: Unwrench
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Set to max output
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle power
+human|/obj/item/tool/wirecutters menu: Ui open
+human|/obj/item/tool/wirecutters click: Click: Ui open
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Set to max output
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle power
+human|/obj/item/multitool menu: Toggle pressure limiter
+human|/obj/item/multitool menu: Ui open
+human|/obj/item/multitool click: Click: Toggle pressure limiter
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Set to max output
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle power
+human|/obj/item/weldingtool menu: Ui open
+human|/obj/item/weldingtool click: Click: Ui open
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Set to max output
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle power
+human|/obj/item/stack/cable_coil menu: Ui open
+human|/obj/item/stack/cable_coil click: Click: Ui open
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Set to max output
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle power
+human|/obj/item/stack/material/steel menu: Ui open
+human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Set to max output
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle power
+human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Set to max output
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Toggle power
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Ui open
+human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Set to max output
+human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material menu: Toggle power
+human|/obj/item/stack/material menu: Ui open
+human|/obj/item/stack/material click: Click: Ui open
+human|/obj/item/pipe_painter menu: Move To Top
+human|/obj/item/pipe_painter menu: Painter
+human|/obj/item/pipe_painter menu: Set to max output
+human|/obj/item/pipe_painter menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pipe_painter menu: Toggle power
+human|/obj/item/pipe_painter menu: Ui open
+human|/obj/item/pipe_painter click: Click: Painter
+keys: drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, max_output, overclock, painter, power, power_toggle, robot_remote_blocked, set_press, ui_open, unwrench
 

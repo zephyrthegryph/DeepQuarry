@@ -78,6 +78,8 @@ human|/obj/item menu: Take cell
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
+human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell menu: Drain its charge (refused: not in your hand)
 human|/obj/item/cell menu: Insert cell
 human|/obj/item/cell menu: Move To Top
 human|/obj/item/cell menu: Take cell

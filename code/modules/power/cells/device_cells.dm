@@ -141,10 +141,13 @@ APPEARANCE_NONE(/obj/item/cell/device/crap)
 	standard_overlays = FALSE
 
 APPEARANCE_NONE(/obj/item/cell/device/weapon/recharge/alien)
-EXTEND_INTERACTIONS(/obj/item/cell/device/weapon/recharge/alien, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/cell/device/weapon/recharge/alien)
+	// The old subtype EXTEND_INTERACTIONS ran this before the inherited charge/drain entries.
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/cell/device/weapon/recharge/alien/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cell/device/weapon/recharge/alien/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!swaps_to)
 		return TRUE
 	var/cell_name = "[src]"

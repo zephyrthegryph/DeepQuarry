@@ -5,7 +5,11 @@
 	anchored = FALSE
 	density = FALSE
 
-OM_FIELD_VIEW(/obj/machinery/iv_drip, mob/living/carbon/human, attached, CHANGE_MACHINE_OCCUPANT)
+/obj/machinery/iv_drip/var/mob/living/carbon/human/attached
+/datum/scheduler_field_definition/obj/machinery/iv_drip/attached
+	of = /obj/machinery/iv_drip
+	field = "attached"
+	channel = CHANGE_MACHINE_OCCUPANT
 /// Drips (or draws) while hooked up to a patient.
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
@@ -37,6 +41,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_
 			. += filling
 
 CAPABILITIES(/obj/machinery/iv_drip)
+	ref_one(nameof(attached), /mob/living/carbon/human)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(attached), wakes_on = list(nameof(attached)))
 	drag_onto(PROC_REF(drop_input))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))

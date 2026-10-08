@@ -198,7 +198,7 @@ CAPABILITIES(/obj/item/ammo_magazine)
 	if(initial_ammo)
 		// Lying on a turf or in a latent holder, the rounds are a count until
 		// something handles the magazine (C5). Forged rounds are always real.
-		if(!forge_material && (isturf(loc) || loc?.latent_contents) && dq_latent_eligible(ammo_type))
+		if(!forge_material && (isturf(loc) || loc?.latent_contents_enabled()) && dq_latent_eligible(ammo_type))
 			latent_rounds = initial_ammo
 		else
 			for(var/i in 1 to initial_ammo)
@@ -316,7 +316,7 @@ CAPABILITIES(/obj/item/ammo_magazine)
 /// Anywhere but a turf or a latent holder, legacy gun code reads stored_ammo.
 /obj/item/ammo_magazine/Moved(atom/old_loc, direction, forced = FALSE, movetime)
 	. = ..()
-	if(latent_rounds && loc && !isturf(loc) && !loc.latent_contents)
+	if(latent_rounds && loc && !isturf(loc) && !loc?.latent_contents_enabled())
 		make_rounds_real()
 
 DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine, TYPE_PROC_REF(/atom, appearance_overlays), list())

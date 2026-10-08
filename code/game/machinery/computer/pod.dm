@@ -15,7 +15,12 @@
 /obj/machinery/computer/pod/var/list/obj/machinery/door/blast/pod_doors
 /obj/machinery/computer/pod/var/list/obj/machinery/mass_driver/pod_drivers
 
-OM_FIELD(/obj/machinery/computer/pod, timing, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/computer/pod/var/timing = FALSE
+TRACKED_BRIDGED(/obj/machinery/computer/pod, timing, CHANGE_MACHINE_SETTINGS)
+/datum/scheduler_field_definition/obj/machinery/computer/pod/timing
+	of = /obj/machinery/computer/pod
+	field = "timing"
+	channel = CHANGE_MACHINE_SETTINGS
 // Keyed by id: linked when either end materializes (replaces the LateInitialize and per-use scans).
 /obj/machinery/computer/pod/relations()
 	. = ..()
@@ -53,6 +58,8 @@ OM_FIELD(/obj/machinery/computer/pod, timing, FALSE, CHANGE_MACHINE_SETTINGS)
 		return TRUE
 	tgui_interact(user)
 	return TRUE
+
+MSG_DEF_SELF(pod/access_denied, "access denied")
 
 CAPABILITIES(/obj/machinery/computer/pod)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
@@ -130,9 +137,9 @@ CAPABILITIES(/obj/machinery/computer/pod)
 	title = "External Airlock Controls"
 	req_access = list(ACCESS_SYNDICATE)
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/pod/old/syndicate, \
-	INTERACT_HAND("Use", PROC_REF(interaction_open_ui_impl), REQ_ON(PRED_ACTOR, /obj/machinery/computer/pod/old/syndicate/proc/lets_in, "access denied")), \
-)
+CAPABILITIES(/obj/machinery/computer/pod/old/syndicate)
+	extend("ui_open", needs(req(PROC_REF(lets_in_holds), because = MSG(pod/access_denied))))
+	extend("open_ui_impl", needs(req(PROC_REF(lets_in_holds), because = MSG(pod/access_denied))))
 
 /obj/machinery/computer/pod/old/syndicate/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
@@ -144,3 +151,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/pod/old/syndicate, \
 /// connected (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/pod/proc/connected() as /obj/machinery/mass_driver
 	return connected
+
+/obj/machinery/computer/pod/old/syndicate/proc/lets_in_holds(datum/act/op/A)
+	return lets_in(A.actor, src, A.held)

@@ -89,7 +89,7 @@
 	var/obj/item/card/emag/emag = allocate(/obj/item/card/emag, surface)
 	TEST_ASSERT(actor.put_in_active_hand(emag), "Actual inventory holds the real emag")
 	var/datum/op_result/result = test_click(actor, dispenser, emag)
-	TEST_ASSERT(result && !(result.outcome & ACT_REFUSED) && dispenser.emagged, "Actual click emags the fancy dispenser before dispensing")
+	TEST_ASSERT(result && !(result.outcome & ACT_REFUSED) && dispenser.emagged(), "Actual click emags the fancy dispenser before dispensing")
 	var/initial_flags = dispenser.dispenser_flags
 	var/initial_amount = setting.amount
 	dispenser.dispense(setting, actor, TRUE)
@@ -100,10 +100,10 @@
 	test_time(5.1 SECONDS)
 	TEST_ASSERT_EQUAL(dispenser.held_gear_disp(), delete_setting ? null : setting, "The actual pending animation retains only its live catalog setting")
 	TEST_ASSERT_EQUAL(dispenser.dispenser_flags, initial_flags, "The actual fancy animation preserves its existing flags")
-	TEST_ASSERT(dispenser.emagged, "Emag state remains pending until the completion handler")
+	TEST_ASSERT(dispenser.emagged(), "Emag state remains pending until the completion handler")
 	test_time(1 SECOND)
 	TEST_ASSERT_EQUAL(dispenser.dispenser_flags, initial_flags, "Completion preserves the original nonbusy flags")
-	TEST_ASSERT(!dispenser.emagged, "Completion clears the real emag state even when its setting vanished")
+	TEST_ASSERT(!dispenser.emagged(), "Completion clears the real emag state even when its setting vanished")
 	TEST_ASSERT_EQUAL(dispenser.held_gear_disp(), delete_setting ? null : setting, "Deleted catalog references clear while a live setting remains available")
 
 /datum/unit_test/retire_fancy_gear_setting_timer/deleted

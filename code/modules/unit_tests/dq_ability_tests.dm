@@ -358,7 +358,7 @@
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	var/mob/living/carbon/human/rider = allocate(/mob/living/carbon/human, T)
 	var/datum/interaction/ability/picker/robot_mount/A = ABILITY_BY_ID(ABILITY_ID_ROBOT_MOUNT)
-	TEST_ASSERT(istype(om_link(rider, R, /datum/om/relation/buckled_to), /datum/om/edge), "the rider should buckle to the robot")
+	TEST_ASSERT(R.buckle_link(rider), "the rider should buckle to the robot")
 	// With a rider already buckled, pick_target() dismounts directly - no tgui
 	// prompt, so this is safe to call from a headless test.
 	TEST_ASSERT_NULL(A.pick_target(R), "dismounting doesn't pick a new rider")

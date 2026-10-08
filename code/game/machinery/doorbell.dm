@@ -33,6 +33,8 @@
 	if(panel_open == 1)
 		look.overlay("dbchime-open")
 
+MSG_DEF_SELF(doorbell/needs_item, "needs an item")
+
 CAPABILITIES(/obj/machinery/doorbell_chime)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("fingerprint", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_fingerprint)))
@@ -83,6 +85,12 @@ CAPABILITIES(/obj/machinery/doorbell_chime)
 	flags = WALL_ITEM
 
 CAPABILITIES(/obj/machinery/button/doorbell)
+	// The subtype handles item touches; multitool and wrench actions keep their higher priority.
+	extend("button_press_item", priority(OP_PRIORITY_DEFAULT - 2))
+	extend("button_press", priority(OP_PRIORITY_DEFAULT - 3))
+	op("doorbell_press", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Press"), then(PROC_REF(interaction_press_impl)))
+	op("doorbell_rename", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), needs(req(/obj/item, because = MSG(doorbell/needs_item)), req_adjacent(), req_capable()),
+		asks(/datum/prompt/text/doorbell_label, fields = list("question" = computed(PROC_REF(rename_question)), "title" = computed(PROC_REF(rename_title)), "default" = computed(PROC_REF(rename_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), when = PROC_REF(rename_possible)), then(PROC_REF(rename_fingerprint)), then(PROC_REF(doorbell_named)))
 	param(nameof(dir), pos = 1)
 	param(nameof(building), pos = 2)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
@@ -106,10 +114,6 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 	..()
 	look.state("doorbell-[operable() ? "standby" : "off"]")
 
-EXTEND_INTERACTIONS(/obj/machinery/button/doorbell, \
-	INTERACT_HAND("Press", PROC_REF(interaction_press_impl)), \
-	INTERACT_INSERT(/obj/item, PROC_REF(interaction_rename), "Touch"), \
-)
 
 /// Chimes whose id_tag matches our id (keyed).
 /obj/machinery/button/doorbell/var/list/obj/machinery/doorbell_chime/chimes
@@ -120,7 +124,8 @@ EXTEND_INTERACTIONS(/obj/machinery/button/doorbell, \
 	. = ..()
 	. += rel_key(nameof(id_tag))
 
-/obj/machinery/button/doorbell/proc/interaction_press_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/doorbell/proc/interaction_press_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	use_power(5)
 	flick("doorbell-active", src)
@@ -129,19 +134,28 @@ EXTEND_INTERACTIONS(/obj/machinery/button/doorbell, \
 		M.chime()
 	return TRUE
 
-/obj/machinery/button/doorbell/proc/interaction_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	if(panel_open && istype(held, /obj/item/pen))
-		open_request(src, /datum/prompt/text, PROC_REF(doorbell_named), answerer = user, question = "Enter the name for \the [src].", title = name, default = initial(name), max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return TRUE
+/obj/machinery/button/doorbell/proc/rename_fingerprint(datum/act/op/A)
+	if(istype(A.answer, /datum/prompt/text/doorbell_label))
+		return OP_OK
+	add_fingerprint(A.actor)
+	return OP_OK
 
-/obj/machinery/button/doorbell/proc/doorbell_named(datum/act/request/A)
+/obj/machinery/button/doorbell/proc/rename_possible(datum/act/op/A)
+	return panel_open && istype(A.held, /obj/item/pen)
+
+/obj/machinery/button/doorbell/proc/rename_question(datum/act/op/A)
+	return "Enter the name for \the [src]."
+
+/obj/machinery/button/doorbell/proc/rename_default(datum/act/op/A)
+	return initial(name)
+
+/obj/machinery/button/doorbell/proc/doorbell_named(datum/act/op/A)
 	if(!A.answer)
-		return
-	var/t = A.answer.value
-	t = sanitizeSafe(t, MAX_NAME_LEN)
+		return OP_OK
+	var/t = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
 	if(t && panel_open)
 		name = t
+	return OP_OK
 
 /obj/machinery/button/doorbell/proc/multitool_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -178,3 +192,13 @@ EXTEND_INTERACTIONS(/obj/machinery/button/doorbell, \
 	refund_amt = 4
 	refund_type = /obj/item/stack/material/wood
 	build_machine_type = /obj/machinery/button/doorbell
+
+/obj/machinery/button/doorbell/proc/rename_title(datum/act/op/A)
+	return name
+
+/// Opening the rename records the touch even when the visitor cancels the question.
+/datum/prompt/text/doorbell_label/prepare(datum/act/A)
+	..()
+	var/obj/machinery/button/doorbell/bell = A?.holder
+	if(istype(bell))
+		bell.add_fingerprint(answerer)

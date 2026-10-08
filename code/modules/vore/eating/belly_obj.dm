@@ -281,6 +281,8 @@
 			. += var_name
 
 CAPABILITIES(/obj/belly)
+	// a belly is an organ of its owner, never a thing on the floor to hit
+	without("melee_hit")
 	reagents(300) // So we can have some liquids in bellies
 
 // ALLOW(init/INSTANCE_STATE): binds to the mob it is made inside

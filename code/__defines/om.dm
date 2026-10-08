@@ -145,7 +145,6 @@
 #define CADENCE_BASE_DT 0.5
 
 // Stat presets (statuses and godmode are stats: code/library/mob/statuses.dm).
-#define EFFECT_BUCKLED "buckled"
 /// Body effects on a mob (code/modules/body/body_effects.dm): keyed by /datum/body_effect type,
 /// value = stacks. Timed ones expire on the mob's body clock.
 #define EFFECT_BODY_EFFECTS "body_effects"

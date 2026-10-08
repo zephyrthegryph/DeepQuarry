@@ -32,8 +32,8 @@ MSG_DEF_SELF(message_monitor/too_hot, "It is too hot to mess with!")
 /obj/machinery/computer/message_monitor/proc/cool_enough(datum/act/op/A)
 	return !emag || !operable()
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/message_monitor, PROC_REF(on_emag), null)
-/obj/machinery/computer/message_monitor/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/message_monitor/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	// Will create sparks and print out the console's password. You will then have to wait a while for the console to be back online.
 	// It'll take more time if there's more characters in the password..
 	if(!emag && operable())
@@ -47,9 +47,10 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/message_monitor, PROC_REF(on_ema
 			after(src, 100*length(linkedServer().decryptkey), PROC_REF(UnmagConsole))
 			temp = rebootmsg
 			changed(src)
-			return 1
+			return OP_OK
 		else
 			to_chat(user, span_notice("A no server error appears on the screen."))
+	return OP_DECLINE
 
 /// An emagged or hacked monitor shows the hack screen.
 /obj/machinery/computer/message_monitor/screen_state()
@@ -86,6 +87,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	op("addtoken", ui_act("addtoken"), then(PROC_REF(ui_act_addtoken)))
 	op("deltoken", ui_act("deltoken", arg("deltoken", num())), then(PROC_REF(ui_act_deltoken)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /obj/machinery/computer/message_monitor/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -225,7 +227,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
-	linkedServer().active = !linkedServer().active
+	linkedServer().set_active(!linkedServer().active)
 	. = TRUE
 //Clears the logs - KEY REQUIRED
 

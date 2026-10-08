@@ -39,7 +39,7 @@ MSG_DEF(emitter/shorted, "You short out the lock.", "%U% emags %T%.")
 	var/burst_shots = 3
 	COOLDOWN_DECLARE(shot_cooldown)
 	var/shot_number = 0
-	state = 0
+	var/state = 0
 
 	// Anomaly harvesting stuff
 	var/anomalous = FALSE
@@ -314,3 +314,11 @@ CAPABILITIES(/obj/machinery/power/emitter)
 /obj/machinery/power/emitter/antique/pre_mapped
 	anchored = TRUE
 	state = FLOOR_WELD_WELDED
+
+TRACKED_BRIDGED(/obj/machinery/power/emitter, state, CHANGE_MACHINE_SETTINGS)
+
+/obj/machinery/power/emitter/floor_weld_state()
+	return state
+
+/obj/machinery/power/emitter/floor_weld_set_state(rung)
+	return set_state(rung)

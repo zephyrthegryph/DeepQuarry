@@ -33,7 +33,10 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 
 	// Bluespace radios talk directly to telecomms equipment
 	var/bluespace_radio = FALSE
-	// The device a bluespace radio TRANSMITS TO is BS_TX_TARGET(src) (a relation).
+	/// The telecomms receiver (or all-in-one) a bluespace radio TRANSMITS TO: one end of a link, the receiver's bs_tx_senders the other. Read with bs_tx_target().
+	var/obj/machinery/telecomms/bs_tx_receiver
+	/// The telecomms broadcaster (or all-in-one) a bluespace radio RECEIVES FROM: one end of a link, the broadcaster's bs_rx_listeners the other. Read with bs_rx_source().
+	var/obj/machinery/telecomms/bs_rx_broadcaster
 	// For mappers or subtypes, to start them prelinked to these devices
 	var/bs_tx_preload_id
 	var/bs_rx_preload_id
@@ -92,13 +95,13 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 		//Try to find a receiver
 		for(var/obj/machinery/telecomms/receiver/RX in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			if(RX.id == bs_tx_preload_id) //Again, bs_tx is the thing to TRANSMIT TO, so a receiver.
-				om_link(src, RX, /datum/om/relation/bluespace_tx_to)
+				rel_set(src, nameof(bs_tx_receiver), RX)
 				break
 		//Hmm, howabout an AIO machine
 		if(!src?.bs_tx_target())
 			for(var/obj/machinery/telecomms/allinone/AIO in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				if(AIO.id == bs_tx_preload_id)
-					om_link(src, AIO, /datum/om/relation/bluespace_tx_to)
+					rel_set(src, nameof(bs_tx_receiver), AIO)
 					break
 		if(!src?.bs_tx_target())
 			log_mapping("A radio [src] at [x],[y],[z] specified bluespace prelink IDs, but the machines with corresponding IDs ([bs_tx_preload_id], [bs_rx_preload_id]) couldn't be found.")
@@ -108,23 +111,46 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 		//Try to find a transmitter
 		for(var/obj/machinery/telecomms/broadcaster/TX in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			if(TX.id == bs_rx_preload_id) //Again, bs_rx is the thing to RECEIVE FROM, so a transmitter.
-				om_link(src, TX, /datum/om/relation/bluespace_rx_from)
+				rel_set(src, nameof(bs_rx_broadcaster), TX)
 				found = 1
 				break
 		//Hmm, howabout an AIO machine
 		if(!found)
 			for(var/obj/machinery/telecomms/allinone/AIO in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				if(AIO.id == bs_rx_preload_id)
-					om_link(src, AIO, /datum/om/relation/bluespace_rx_from)
+					rel_set(src, nameof(bs_rx_broadcaster), AIO)
 					found = 1
 					break
 		if(!found)
 			log_mapping("A radio [src] at [x],[y],[z] specified bluespace prelink IDs, but the machines with corresponding IDs ([bs_tx_preload_id], [bs_rx_preload_id]) couldn't be found.")
 
+/// The receiver this bluespace radio transmits to, or null.
+/obj/item/radio/proc/bs_tx_target() as /obj/machinery/telecomms
+	return bs_tx_receiver
+
+/// The broadcaster this bluespace radio receives from, or null.
+/obj/item/radio/proc/bs_rx_source() as /obj/machinery/telecomms
+	return bs_rx_broadcaster
+
+/// The bluespace radios transmitting to this machine.
+/obj/machinery/telecomms/proc/bs_tx_radios() as /list
+	return bs_tx_senders
+
+/// The bluespace radios this machine forces its broadcasts onto.
+/obj/machinery/telecomms/proc/bs_rx_radios() as /list
+	return bs_rx_listeners
+
 /obj/item/radio/proc/recalculateChannels()
 	return
 
+/// The radios a telecomms receiver (or all-in-one) is the bluespace transmit target of; bs_tx_receiver is the other end.
+/obj/machinery/telecomms/var/list/obj/item/radio/bs_tx_senders
+/// The radios a telecomms broadcaster (or all-in-one) forces its broadcasts onto; bs_rx_broadcaster is the other end.
+/obj/machinery/telecomms/var/list/obj/item/radio/bs_rx_listeners
+
 CAPABILITIES(/obj/item/radio)
+	links(/obj/item/radio::bs_tx_receiver, /obj/machinery/telecomms::bs_tx_senders, b_many = TRUE)
+	links(/obj/item/radio::bs_rx_broadcaster, /obj/machinery/telecomms::bs_rx_listeners, b_many = TRUE)
 	after_init(0, then(PROC_REF(radio_after_init)))
 	op("controls", in_hand(), label("Open radio controls"), then(PROC_REF(radio_controls_opened)))
 	space(SPACE_PANEL, door = nameof(b_stat))

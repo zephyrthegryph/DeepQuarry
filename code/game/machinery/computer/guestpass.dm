@@ -1,3 +1,5 @@
+TRACKED(/obj/item/card/id/guest, expired)
+
 /////////////////////////////////////////////
 //Guest pass ////////////////////////////////
 /////////////////////////////////////////////
@@ -45,35 +47,38 @@ APPEARANCE_NONE(/obj/item/card/id/guest)
 	return
 
 // Replaces the card's own flash: the old override ran both and flashed the pass twice.
-EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PROC_REF(interaction_guest_pass_show)), INTERACT_USE_AS(I_DISARM, "Show", PROC_REF(interaction_guest_pass_show)), INTERACT_USE_AS(I_GRAB, "Show", PROC_REF(interaction_guest_pass_show)), INTERACT_USE_AS(I_HURT, "Deactivate", PROC_REF(interaction_guest_pass_deactivate), REQ_BECAUSE(REQ_NOT(REQ_FIELD_EQ("icon_state", "guest-invalid")), "this guest pass is already deactivated")))
+MSG_DEF_SELF(guest_pass/deactivation_unavailable, "this guest pass is already deactivated or no longer carried")
+
+CAPABILITIES(/obj/item/card/id/guest)
+	without("show")
+	op("show_pass", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HELP, I_DISARM, I_GRAB), label("Show"), then(PROC_REF(interaction_guest_pass_show)))
+	op("deactivate_pass", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HURT), label("Deactivate"), needs(req(PROC_REF(deactivation_allowed), because = MSG(guest_pass/deactivation_unavailable))),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Confirm Deactivation", "question" = "Do you really want to deactivate this guest pass? (you can't reactivate it)", "timeout" = 0)), then(PROC_REF(interaction_guest_pass_deactivate)))
 
 /// Old attack_self outside combat mode: flash the pass.
-/obj/item/card/id/guest/proc/interaction_guest_pass_show(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/card/id/guest/proc/interaction_guest_pass_show(datum/act/op/A)
+	var/mob/living/user = A.actor
 	act_message(user, null, MSG_SELF("You flash your ID card: [icon2html(src, user.client)] [src.name]. The assignment on the card: [src.assignment]"), \
 		MSG_OTHERS("%U% shows you: [icon2html(src,viewers(src))] [src.name]. The assignment on the card: [src.assignment]"))
 
 	src.add_fingerprint(user)
 
 /// Old attack_self in combat mode: deactivate the pass.
-/obj/item/card/id/guest/proc/interaction_guest_pass_deactivate(mob/living/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/yes_no, PROC_REF(deactivation_confirmed), valid = PROC_REF(deactivation_valid), answerer = user, title = "Confirm Deactivation", question = "Do you really want to deactivate this guest pass? (you can't reactivate it)", timeout = 0)
+/obj/item/card/id/guest/proc/deactivation_allowed(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return istype(user) && (src in contents_of(user)) && !user.incapacitated() && !expired
 
-/// The pass is still carried by whoever was asked, who can still act.
-/obj/item/card/id/guest/proc/deactivation_valid(datum/request/R)
-	var/mob/living/user = R.answerer
-	return istype(user) && loc == user && !user.incapacitated()
-
-/obj/item/card/id/guest/proc/deactivation_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/mob/living/user = A.request.answerer
-	if(icon_state != "guest-invalid")
+/obj/item/card/id/guest/proc/interaction_guest_pass_deactivate(datum/act/op/A)
+	if(!A.answer?.value)
+		return OP_OK
+	var/mob/living/user = A.actor
+	if(!expired)
 		//rip guest pass </3
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + "deactivates %T%."))
 		icon_state = "guest-invalid"
 		update_icon()
 		EXPIRY_STAMP(src, expiration_time, CLOCK_WORLD)
-		expired = 1
+		set_expired(TRUE)
 
 /obj/item/card/id/guest/Initialize(mapload)
 	. = ..()
@@ -88,7 +93,7 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 	visible_message(span_warning("\The [src] flashes a few times before turning red."))
 	icon_state = "guest-invalid"
 	update_icon()
-	expired = 1
+	set_expired(TRUE)
 
 /////////////////////////////////////////////
 //Guest pass terminal////////////////////////

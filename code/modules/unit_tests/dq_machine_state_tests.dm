@@ -173,3 +173,35 @@
 	M.set_switched_on(TRUE)
 
 #endif
+
+/datum/unit_test/dq_machinery_ai_status_native_choice
+
+/datum/unit_test/dq_machinery_ai_status_native_choice/Run()
+	test_driver_begin()
+	run_choice_case()
+	test_driver_end()
+
+/datum/unit_test/dq_machinery_ai_status_native_choice/proc/run_choice_case()
+	var/turf/T = dq_containment_floor()
+	var/mob/living/silicon/robot/actor = allocate(/mob/living/silicon/robot, T)
+	var/obj/machinery/ai_status_display/display = allocate(/obj/machinery/ai_status_display, T)
+	dq_machine_clear(display)
+	TEST_ASSERT(display.operable(), "actual display is powered and operational")
+	TEST_ASSERT(actor.remote_link_up(), "real robot has its ordinary operational remote interface")
+	var/list/options = get_ai_emotions(actor.ckey)
+	var/selected
+	for(var/option in options)
+		if(option != display.emotion)
+			selected = option
+			break
+	TEST_ASSERT(selected, "real emotion registry offers a changed selection")
+	var/original = display.emotion
+	var/datum/op_result/opened = test_click(actor, display, null)
+	TEST_ASSERT(opened && isnull(opened.outcome), "real robot click opens the native status question")
+	test_answer(actor, null, REQ_CANCELLED)
+	TEST_ASSERT_EQUAL(display.emotion, original, "cancel preserves actual displayed emotion")
+	opened = test_click(actor, display, null)
+	TEST_ASSERT(opened && isnull(opened.outcome), "second real click opens a fresh status question")
+	var/datum/op_result/answered = test_answer(actor, selected)
+	TEST_ASSERT_EQUAL(answered?.outcome, ACT_COMMITTED, "real answer commits the status operation")
+	TEST_ASSERT_EQUAL(display.emotion, selected, "actual display stores the chosen registered emotion")

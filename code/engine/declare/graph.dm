@@ -69,7 +69,7 @@ GLOBAL_VAR_INIT(stage_defs_built, FALSE)
 		for(var/option in given)
 			if(!isnull(given[option]))
 				legacy[option] = given[option]
-		return legacy_stage(arglist(legacy))
+		return construction_stage_provider().build_legacy(legacy)
 	var/list/named = list("stage" = name, "key" = key, "from" = from)
 	if(undo != UNDO_DERIVED)
 		named["has_undo"] = TRUE
@@ -445,7 +445,9 @@ CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT, /datum/capability/construction
 	S.history.len--
 	if(!length(S.history))
 		S.history = null
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	var/was = S.current
+#endif
 	S.current = top[2]
 	TEST_REC_DELTA(E, "stage:[cap_id]", was, S.current)
 	engine_key_changed(E, "graph:[cap_id]")
