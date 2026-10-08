@@ -59,6 +59,8 @@
 #define OP_UI_TGUI "window_tgui"
 /// The raw href a topic op was reached by (A.topic_href()): its params are the op's args, and a re-run of an ask reads it.
 #define OP_TOPIC_HREF "topic_href"
+/// args key holding step name -> the list of every answer of a repeating asks() step.
+#define OP_STEP_VALUES "step_values"
 /// How many windows deep a window action is forwarded (interface(forwards = ...)).
 #define OP_UI_FORWARD_DEPTH 3
 

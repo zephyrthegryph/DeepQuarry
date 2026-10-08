@@ -392,8 +392,12 @@
 /// prompt, while it does not hold (a PIN is asked only of a card that has one). A skipped step leaves A.answer as it was.
 /// `ends_on_no`: a falsy answer (a yes_no prompt answered "no") ends the op and nothing is spent, as confirms() does, for a prompt that has its own
 /// title, timeout or fields.
-/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null, ends_on_no = FALSE)
-	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when, "ends_on_no" = ends_on_no))
+/// `repeats` (PROC_REF(x), x(datum/act/op/A) reads and returns a boolean): after the step is answered and the op's checks pass, x runs; while it
+/// returns TRUE the same question is asked again (its fields are computed again, so it can name the next thing) and the answers accumulate in
+/// order: A.step_values("name") is the list, A.step_value("name") the latest. When x returns FALSE the workflow goes on to the next step.
+/// A cancel at any round ends the op as for any step.
+/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null, ends_on_no = FALSE, repeats = null)
+	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when, "ends_on_no" = ends_on_no, "repeats" = repeats))
 
 /datum/entry/part/asks
 	part_name = "asks"

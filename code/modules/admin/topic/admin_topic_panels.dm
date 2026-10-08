@@ -69,10 +69,24 @@
 				log_admin("[key_name(user)] sent the Emergency Shuttle back")
 				message_admins(span_blue("[key_name_admin(user)] sent the Emergency Shuttle back."), 1)
 
+/// when: the shuttle is counting down to launch.
+/datum/admins/proc/shuttle_is_launching(datum/act/op/A)
+	return !!SSemergency_shuttle.wait_for_launch
+
+/// when: the shuttle is in transit with an arrival time.
+/datum/admins/proc/shuttle_is_arriving(datum/act/op/A)
+	return !SSemergency_shuttle.wait_for_launch && SSemergency_shuttle.shuttle.has_arrive_time()
+
+/datum/admins/proc/shuttle_launch_default(datum/act/op/A)
+	return SSemergency_shuttle.estimate_launch_time()
+
+/datum/admins/proc/shuttle_arrival_default(datum/act/op/A)
+	return SSemergency_shuttle.estimate_arrival_time()
+
 /datum/admins/proc/topic_edit_shuttle_time(datum/act/op/A)
 	var/mob/user = A.actor
 	if(SSemergency_shuttle.wait_for_launch)
-		var/new_time_left = topic_ask(user, A.topic_href(), "a1", /datum/prompt/number, question = "Enter new shuttle launch countdown (seconds):", title = "Edit Shuttle Launch Time", default = SSemergency_shuttle.estimate_launch_time())
+		var/new_time_left = A.step_value("launch")
 		if(isnull(new_time_left))
 			return
 
@@ -81,7 +95,7 @@
 		log_admin("[key_name(user)] edited the Emergency Shuttle's launch time to [new_time_left]")
 		message_admins(span_blue("[key_name_admin(user)] edited the Emergency Shuttle's launch time to [new_time_left SECONDS]"), 1)
 	else if(SSemergency_shuttle.shuttle.has_arrive_time())
-		var/new_time_left = topic_ask(user, A.topic_href(), "a2", /datum/prompt/number, question = "Enter new shuttle arrival time (seconds):", title = "Edit Shuttle Arrival Time", default = SSemergency_shuttle.estimate_arrival_time())
+		var/new_time_left = A.step_value("arrive")
 		if(isnull(new_time_left))
 			return
 		EXPIRY_SET(SSemergency_shuttle.shuttle, arrive_time, (new_time_left SECONDS), CLOCK_WORLD)

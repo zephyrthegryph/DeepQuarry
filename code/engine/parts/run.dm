@@ -70,6 +70,17 @@
 	var/datum/prompt/P = LAZYACCESS(step_answers, name)
 	return P?.value
 
+/// Every answer of the step called `name`, in the order given: the rounds of a repeating asks(), or the one answer of a plain step (empty when not asked).
+/datum/act/op/proc/step_values(name)
+	var/list/all = LAZYACCESS(src.args, OP_STEP_VALUES)
+	var/list/rounds = all?[name]
+	if(rounds)
+		return rounds.Copy()
+	. = list()
+	var/datum/prompt/P = LAZYACCESS(step_answers, name)
+	if(P)
+		. += list(P.value)
+
 /datum/act/op
 	/// step name -> the answered request (a handler reads it as A.step("name")).
 	var/list/step_answers
@@ -664,6 +675,21 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	A.request = R // ALLOW(ownership): a pooled transient: reset on release
 	A.answer = R // ALLOW(ownership): a pooled transient: reset on release
 	LAZYSET(A.step_answers, R.step_name || "answer", R) // ALLOW(ownership): a pooled transient: reset on release
+	var/repeat_handler = Q.args["repeats"]
+	if(repeat_handler)
+		// a repeating step keeps every round's answer, in order, in the op's args (they travel with the pending op)
+		var/step_key = R.step_name || "answer"
+		if(!A.args)
+			A.args = list()
+		var/list/all_rounds = A.args[OP_STEP_VALUES]
+		if(!all_rounds)
+			all_rounds = list()
+			A.args[OP_STEP_VALUES] = all_rounds
+		var/list/rounds = all_rounds[step_key]
+		if(!rounds)
+			rounds = list()
+			all_rounds[step_key] = rounds
+		rounds += list(R.value)
 	// the resume rule: restore the captured fields, then re-check when and Require
 	var/why = op_resume_captured(A)
 	if(!why)
@@ -671,6 +697,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(why)
 		suspend_act()
 		return cancel(why)
+	if(repeat_handler && op_cond(A, repeat_handler))
+		cursor-- // asked again: advance() opens the same step's next round
+		log_game("op [key]: step [R.step_name || "answer"] repeats (round [length(A.step_values(R.step_name || "answer")) + 1])")
 	suspend_act()
 	advance()
 

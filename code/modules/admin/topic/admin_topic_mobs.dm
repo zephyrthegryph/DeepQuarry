@@ -32,8 +32,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 		return
 
 	var/delmob = 0
-	var/answer = topic_ask(user, A.topic_href(), "a3", /datum/prompt/choice, question = "Delete old mob?", title = "Message", choices = list("Yes","No","Cancel"), buttons = TRUE)
-	switch(answer)
+	switch(A.step_value("delmob"))
 		if("Yes")
 			delmob = 1
 		if("No")
@@ -94,8 +93,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 
 /datum/admins/proc/topic_sendtoprison(datum/act/op/A, href_sendtoprison)
 	var/mob/user = A.actor
-	var/answer = topic_ask(user, A.topic_href(), "a24", /datum/prompt/choice, question = "Send to admin prison for the round?", title = "Message", choices = list("Yes", "No"), buttons = TRUE)
-	if(answer != "Yes")
+	if(A.step_value("confirm") != "Yes")
 		return
 
 	var/mob/M = href_sendtoprison
@@ -128,19 +126,27 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 	log_admin("[key_name(user)] sent [key_name(M)] to the prison station.")
 	message_admins(span_blue("[key_name_admin(user)] sent [key_name_admin(M)] to the prison station."))
 
+MSG_DEF_SELF(admin_topic/lobby_not_ghost, "You can only send ghost players back to the Lobby.")
+MSG_DEF_SELF(admin_topic/lobby_no_client, "That player doesn't seem to have an active client.")
+MSG_DEF_SELF(admin_topic/jump_disabled, "Admin jumping disabled")
+
+/datum/admins/proc/lobby_target_observer(datum/act/op/A)
+	return isobserver(A.args["sendbacktolobby"])
+
+/datum/admins/proc/lobby_target_client(datum/act/op/A)
+	var/mob/M = A.args["sendbacktolobby"]
+	return !!M?.client
+
+/datum/admins/proc/lobby_question(datum/act/op/A)
+	return "Send [key_name(A.args["sendbacktolobby"])] back to Lobby?"
+
+/datum/admins/proc/admin_jump_allowed(datum/act/op/A)
+	return !!CONFIG_GET(flag/allow_admin_jump)
+
 /datum/admins/proc/topic_sendbacktolobby(datum/act/op/A, href_sendbacktolobby)
 	var/mob/user = A.actor
 	var/mob/M = href_sendbacktolobby
-	if(!isobserver(M))
-		to_chat(user, span_filter_adminlog(span_notice("You can only send ghost players back to the Lobby.")))
-		return
-
-	if(!M.client)
-		to_chat(user, span_filter_adminlog(span_warning("[M] doesn't seem to have an active client.")))
-		return
-
-	var/answer = topic_ask(user, A.topic_href(), "a25", /datum/prompt/choice, question = "Send [key_name(M)] back to Lobby?", title = "Message", choices = list("Yes", "No"), buttons = TRUE)
-	if(answer != "Yes" || QDELETED(M))
+	if(A.step_value("confirm") != "Yes" || QDELETED(M))
 		return
 
 	log_admin("[key_name(user)] has sent [key_name(M)] back to the Lobby.")
@@ -151,9 +157,9 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 	spent(M, user)
 
 /// Sends `M` to one of the thunderdome landmark lists; `strip` drops their gear first.
-/datum/admins/proc/topic_send_to_thunderdome(mob/user, list/href, mob/M, answer_key, strip)
-	var/answer = topic_ask(user, href, answer_key, /datum/prompt/choice, question = "Confirm?", title = "Message", choices = list("Yes", "No"), buttons = TRUE)
-	if(answer != "Yes")
+/datum/admins/proc/topic_send_to_thunderdome(datum/act/op/A, mob/M, strip)
+	var/mob/user = A.actor
+	if(A.step_value("confirm") != "Yes")
 		return FALSE
 
 	if(!topic_movable_player(user, M))
@@ -176,22 +182,22 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 
 /datum/admins/proc/topic_tdome1(datum/act/op/A, href_tdome1)
 	var/mob/user = A.actor
-	if(topic_send_to_thunderdome(user, A.topic_href(), href_tdome1, "a26", TRUE))
+	if(topic_send_to_thunderdome(A, href_tdome1, TRUE))
 		topic_finish_thunderdome(user, href_tdome1, GLOB.tdome1, "Team 1")
 
 /datum/admins/proc/topic_tdome2(datum/act/op/A, href_tdome2)
 	var/mob/user = A.actor
-	if(topic_send_to_thunderdome(user, A.topic_href(), href_tdome2, "a27", TRUE))
+	if(topic_send_to_thunderdome(A, href_tdome2, TRUE))
 		topic_finish_thunderdome(user, href_tdome2, GLOB.tdome2, "Team 2")
 
 /datum/admins/proc/topic_tdomeadmin(datum/act/op/A, href_tdomeadmin)
 	var/mob/user = A.actor
-	if(topic_send_to_thunderdome(user, A.topic_href(), href_tdomeadmin, "a28", FALSE))
+	if(topic_send_to_thunderdome(A, href_tdomeadmin, FALSE))
 		topic_finish_thunderdome(user, href_tdomeadmin, GLOB.tdomeadmin, "Admin.")
 
 /datum/admins/proc/topic_tdomeobserve(datum/act/op/A, href_tdomeobserve)
 	var/mob/user = A.actor
-	if(!topic_send_to_thunderdome(user, A.topic_href(), href_tdomeobserve, "a29", TRUE))
+	if(!topic_send_to_thunderdome(A, href_tdomeobserve, TRUE))
 		return
 	var/mob/M = href_tdomeobserve
 	if(ishuman(M))
@@ -359,11 +365,13 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 /datum/admins/proc/topic_adminsmite(datum/act/op/A, href_adminsmite)
 	owner().smite(href_adminsmite)
 
+/datum/admins/proc/artillery_question(datum/act/op/A)
+	return "Are you sure you wish to hit [key_name(A.args["BlueSpaceArtillery"])] with Blue Space Artillery?"
+
 /datum/admins/proc/topic_bluespaceartillery(datum/act/op/A, href_bluespaceartillery)
 	var/mob/user = A.actor
 	var/mob/living/M = href_bluespaceartillery
-	var/answer = topic_ask(user, A.topic_href(), "a30", /datum/prompt/choice, question = "Are you sure you wish to hit [key_name(M)] with Blue Space Artillery?", title = "Confirm Firing?", choices = list("Yes", "No"), buttons = TRUE)
-	if(answer != "Yes" || QDELETED(M))
+	if(A.step_value("confirm") != "Yes" || QDELETED(M))
 		return
 	bluespace_artillery(M, user)
 
@@ -385,11 +393,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 
 /datum/admins/proc/topic_getmob(datum/act/op/A, href_getmob)
 	var/mob/user = A.actor
-	if(!CONFIG_GET(flag/allow_admin_jump))
-		tgui_alert_async(user, "Admin jumping disabled")
-		return
-	var/answer = topic_ask(user, A.topic_href(), "a33", /datum/prompt/choice, question = "Confirm?", title = "Message", choices = list("Yes", "No"), buttons = TRUE)
-	if(answer != "Yes")
+	if(A.step_value("confirm") != "Yes")
 		return
 
 	var/mob/M = href_getmob
@@ -402,15 +406,14 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 	admin_ticket_log(M, msg)
 	feedback_add_details("admin_verb","GM") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
+/datum/admins/proc/area_choices(datum/act/op/A)
+	return return_sorted_areas()
+
 /datum/admins/proc/topic_sendmob(datum/act/op/op_act, href_sendmob)
 	var/mob/user = op_act.actor
-	if(!CONFIG_GET(flag/allow_admin_jump))
-		tgui_alert_async(user, "Admin jumping disabled")
-		return
-
 	var/mob/M = href_sendmob
 	var/list/areachoices = return_sorted_areas()
-	var/choice = topic_ask(user, op_act.topic_href(), "a34", /datum/prompt/choice, question = "Pick an area:", title = "Send Mob", choices = areachoices)
+	var/choice = op_act.step_value("area")
 	if(!choice || QDELETED(M))
 		return
 
