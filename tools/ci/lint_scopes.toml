@@ -763,6 +763,7 @@ exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
 [lint.legacy_forms.lists]
 # Names that are gone except under the listed path prefixes (the folders still calling them): `name @ prefix;prefix = hint`.
 banned_outside = [
+  "topic_allowed @ code/game/objects/objs.dm;code/game/machinery/syndicatebeacon.dm = the clicker's right to use a holder's links is a requirement of its ops: needs(req_topic_token()), or extend(TAG_TOPIC, needs(req(PROC_REF(x), because = MSG(op/topic_gate)))); an obj narrows topic_usable(). The two beacon calls and their wrapper in objs.dm go with the machinery lane",
   "om_link @ code/datums/om/;code/modules/unit_tests/;code/tests/ = declare the pair with links() in CAPABILITIES and write it with rel_set() (a base-type end: sparse = TRUE and link_make()); only the OM core and its tests still call it",
   "om_unlink @ code/datums/om/;code/modules/unit_tests/;code/tests/;code/modules/food/kitchen/gibber.dm  = rel_set(holder, nameof(var), null) on the declared link, or link_break() on a sparse one (the gibber's ledger slot is KR5)",
 ]

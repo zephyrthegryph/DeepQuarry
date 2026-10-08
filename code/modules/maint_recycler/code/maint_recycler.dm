@@ -282,14 +282,14 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 	door_moving = TRUE
 	flick("door closing",hatch)
 	play_sfx(src, SFX_RECYCLER_HATCHCLOSE)
-	after(src, 1 SECOND, PROC_REF(door_finished_moving), with = list(FALSE), keeps_dead = TRUE)
+	after(src, 1 SECOND, PROC_REF(door_finished_moving), with = list(FALSE))
 
 /obj/machinery/maint_recycler/proc/open_door(mob/user)
 	if(door_open || door_locked) return
 	door_moving = TRUE
 	flick("door opening",hatch)
 	play_sfx(src, SFX_RECYCLER_HATCHOPEN)
-	after(src, 1 SECOND, PROC_REF(door_finished_moving), with = list(TRUE), keeps_dead = TRUE)
+	after(src, 1 SECOND, PROC_REF(door_finished_moving), with = list(TRUE))
 
 /obj/machinery/maint_recycler/proc/door_finished_moving(open)
 	door_moving = FALSE

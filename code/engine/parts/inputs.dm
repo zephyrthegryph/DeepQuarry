@@ -323,18 +323,9 @@
 	return null
 
 /// Runs the plan a topic link named: its arg() schemas check the href's values, then the op runs as a click would (Match, Require, Wait, Do).
-/proc/op_topic_run(mob/actor, datum/holder, datum/op_plan/P, list/params, gated = TRUE)
+/proc/op_topic_run(mob/actor, datum/holder, datum/op_plan/P, list/params)
 	RETURN_TYPE(/datum/op_result)
-	// The holder's own gate for its links (topic_allowed(): the clicker may use this thing at all; it says why itself) comes first, as it did for a row.
-	// A namespace with a gate of its own (View Variables) passes gated = FALSE.
-	if(gated && !holder.topic_allowed(actor, params))
-		var/datum/op_result/blocked = new
-		blocked.key = P.key
-		blocked.origin = ORIGIN_UI
-		blocked.outcome = ACT_REFUSED
-		blocked.reason = /datum/msg/op/topic_gate
-		TEST_REC_OUTCOME(P.key, ACT_REFUSED, blocked.reason, actor)
-		return blocked
+	// Who may use the holder's links at all is a requirement of its ops (needs(req_topic_token()), or extend(TAG_TOPIC, needs(...))), checked with the rest.
 	var/list/values = list()
 	var/why = op_validate_args(P.topic_args, holder, params, values)
 	if(why)
@@ -354,6 +345,8 @@
 		for(var/datum/entry/part/req/rights/needed in P.needs)
 			wanted |= needed.args["rights"]
 		holder.op_topic_rights_denied(actor, P.topic_key, wanted)
+	else if(result?.outcome == ACT_REFUSED && (result.reason == /datum/msg/op/topic_token || result.reason == /datum/msg/op/topic_gate))
+		holder.op_topic_refused(actor, P.topic_key, result.reason, params)
 	return result
 
 /// The topic ops of a type, by topic key, in one namespace (null: plain hrefs); a subtype's own op for a key beats its parent's, as everywhere. Built once per type.
@@ -397,13 +390,13 @@
 
 /// A Topic href as an op: the holder's topic op that names it (or the holder its topic_forward() hands the href to) runs for `actor`, through the same
 /// path and the same refusals as a click. Returns its /datum/op_result, or null when no op names the href (the TOPIC_ACTION table still answers it).
-/proc/op_topic_href(mob/actor, datum/holder, list/href_list, forward_depth = 0, namespace = null, gated = TRUE)
+/proc/op_topic_href(mob/actor, datum/holder, list/href_list, forward_depth = 0, namespace = null)
 	RETURN_TYPE(/datum/op_result)
 	if(!actor || !isdatum(holder) || QDELETED(holder))
 		return null
 	var/datum/op_plan/P = op_topic_plan(holder, href_list, namespace)
 	if(P)
-		return op_topic_run(actor, holder, P, href_list, gated)
+		return op_topic_run(actor, holder, P, href_list)
 	if(!isnull(namespace)) // a namespace has no forwards: its dispatch names the one holder
 		return null
 	var/datum/forward = holder.topic_forward()
@@ -421,9 +414,18 @@
 	return null
 
 
-/// Whether `user` may use this datum's href actions at all (checked before any row).
-/datum/proc/topic_allowed(mob/user, list/href_list)
-	return TRUE
+/// Whether `token` is the admin token `actor` currently holds for this datum's links (req_topic_token()). Closed by default: a datum whose links carry a token
+/// says how it is checked.
+/datum/proc/op_topic_token_ok(mob/actor, token)
+	return FALSE
+
+/// Whether `actor` may use this datum's links at all (req_topic_ok()). Closed by default: a datum that gates its links says how.
+/datum/proc/op_topic_actor_ok(mob/actor)
+	return FALSE
+
+/// A link refused by its holder's gate (MSG(op/topic_token) or MSG(op/topic_gate)), for the holder to report: a forged token is how exploit attempts show up.
+/datum/proc/op_topic_refused(mob/actor, key, reason, list/href_list)
+	return
 
 /// A datum whose href actions this one's links also reach (a page forwarding to its book):
 /// hrefs matching none of this type's rows are dispatched to it instead.

@@ -351,7 +351,7 @@ CAPABILITIES(/obj/machinery/computer/HolodeckControl)
 	for(var/obj/effect/landmark/L in linkedholodeck())
 		L.delete_me = TRUE
 		if(L.name=="Atmospheric Test Start")
-			after(src, 2 SECONDS, PROC_REF(atmos_test_ignite), with = list(get_turf(L)), keeps_dead = TRUE)
+			after(src, 2 SECONDS, PROC_REF(atmos_test_ignite), with = list(get_turf(L)))
 		if(L.name=="Holocarp Spawn")
 			rel_add(src, nameof(holographic_mobs), new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
 

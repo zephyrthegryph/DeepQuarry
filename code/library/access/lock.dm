@@ -49,7 +49,7 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 /// The ID scan wire pulsed (WIRE_DEF in code/library/machine/wires.dm): the lock lets go, and locks again 30 seconds later.
 /datum/capability/lib/lock/proc/id_wire_pulsed(datum/holder, pulsed_wire, mob/user)
 	cap_key_set(holder, LOCK_LOCKED, FALSE, null)
-	after(holder, 30 SECONDS, GLOBAL_PROC_REF(lock_wire_relocks), key = "id_scan_relock", with = list(holder), keeps_dead = TRUE)
+	after(holder, 30 SECONDS, GLOBAL_PROC_REF(lock_wire_relocks), key = "id_scan_relock", with = list(holder))
 
 /proc/lock_wire_relocks(datum/holder)
 	if(holder && !QDELETED(holder))

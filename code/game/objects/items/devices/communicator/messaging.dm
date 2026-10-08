@@ -126,14 +126,11 @@ CAPABILITIES(/datum/prompt/text/communicator_reply)
 
 
 // Reply links arrive in chat for whoever carries the communicator (in hand, a pocket, or a NIF).
-/obj/item/communicator/topic_allowed(mob/user, list/href_list)
-	return user && get(src, /mob) == user
+/obj/item/communicator/topic_usable(datum/act/op/A)
+	return A.actor && get(src, /mob) == A.actor
 
 /obj/item/communicator/proc/reply_subject(datum/act/op/A)
 	return src
-
-/obj/item/communicator/proc/reply_target(datum/act/op/A)
-	return A.args["target"]
 
 /obj/item/communicator/proc/topic_reply(datum/act/op/A, href_target)
 	var/mob/user = A.actor

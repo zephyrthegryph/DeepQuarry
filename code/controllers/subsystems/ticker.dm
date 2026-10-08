@@ -478,7 +478,7 @@ SYSTEM_DEF(ticker)
 
 	var/start_wait = world.time
 	UNTIL(round_end_sound_sent || ELAPSED_SINCE(src, start_wait, CLOCK_WORLD) > (delay * 2)) //don't wait forever
-	after(src, delay - (world.time - start_wait), PROC_REF(reboot_callback), key = "reboot_timer", with = list(reason, end_string), keeps_dead = TRUE)
+	after(src, delay - (world.time - start_wait), PROC_REF(reboot_callback), key = "reboot_timer", with = list(reason, end_string))
 
 /// The wait before the next countdown step: a minute, or what is left of the last one.
 /datum/system/ticker/proc/reboot_countdown_delay()

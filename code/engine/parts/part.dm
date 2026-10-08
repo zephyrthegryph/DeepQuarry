@@ -404,6 +404,12 @@
 /proc/computed(handler)
 	return list("computed", handler)
 
+/// arg_of("name"): a field value of an asks() that is an argument of the op, read when the question is opened (the target of a topic link, the language a key
+/// is set for): the argument's checked value, as the handler receives it. A field shaped from the argument (a question that names it, a default that
+/// depends on it) is built by the request type's prepare(), which has the field.
+/proc/arg_of(arg_name)
+	return list("arg_of", arg_name)
+
 /// confirms("text"): asks(/datum/prompt/yes_no, question = "text"); a "no" ends the op and nothing is spent.
 /proc/confirms(text, keeps = WAIT_KEEPS_DEFAULT)
 	return part_make(/datum/entry/part/asks, list("type" = /datum/prompt/yes_no, "fields" = list("question" = text), "step" = "confirm", "resume" = CAPTURE, "keeps" = keeps, "confirms" = TRUE))

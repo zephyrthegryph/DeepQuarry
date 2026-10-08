@@ -3535,3 +3535,9 @@ Merging om-leftovers into master changed these pins; the rows were reviewed and 
 * **`hit_pins/obj.structure.reagent_dispensers.coolanttank` (four `om_rec: null -> /datum/scheduler_record` rows).** The tank no longer gets a scheduler record from an init-time effect hold; the record is created lazily by the first explosion or projectile hit that needs one.
 * **`hit_pins/obj.structure.smoleruins` (`emag`: deleted and two bricks -> nothing).** An emag swipe is a non-harm item click; the smole "Smash" op is gated by `harm_click_only` (see the destructive held-item class above).
 * **`pins/mob.living.simple_mob.vore.overmap.stardog` (`Nutrition heal` menu rows, keys `nutrition_heal` and `reload`).** The branch re-recorded this file before master's timed-tasks gave every simple mob the `nutrition_heal` op; the merge needs both.
+
+## Topic gates as requirements (rewrite/om-leftovers-2)
+
+- **Sleevemate:** its scan links spend the click cooldown (`DEFAULT_ATTACK_COOLDOWN`) only after the gate passes (the held-in-active-hand check). The old gate spent it first, so a link clicked while the sleevemate was not held also paid the cooldown. Now a refused link costs nothing.
+- **Topic refusals say `You cannot use that link right now.`** (`MSG(op/topic_gate)`) where the old gates returned silently; the Access Denied line of an obj the clicker's ID cannot use is unchanged, printed once per check.
+- **VV namespaced ops (`topic_in`) carry no `TAG_TOPIC`**, so the per-type topic requirements never reach them; the VV dispatch keeps its own gate.

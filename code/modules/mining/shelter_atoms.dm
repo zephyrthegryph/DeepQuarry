@@ -336,7 +336,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(fade_time > 0)
 		for(var/image/I in preview_render)
 			animate(I, alpha = 0, fade_time)
-		after(src, fade_time, PROC_REF(delete_preview_render), with = list(user, preview_render), keeps_dead = TRUE)
+		after(src, fade_time, PROC_REF(delete_preview_render), with = list(user, preview_render))
 	else
 		delete_preview_render(user, preview_render)
 

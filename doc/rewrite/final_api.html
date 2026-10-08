@@ -4155,7 +4155,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
     <thead><tr><th>Phase</th><th>Worker split</th><th>Inputs</th><th>Outputs</th><th>Gate to land (numbers in <a href="#gates">Gates</a>)</th></tr></thead>
     <tbody>
       <tr><td><strong>0 · Settle and salvage</strong> (done)</td><td>One lead agent with the user</td><td>The design review</td><td>This document and the rewritten AGENTS.md on master; the hygiene branches</td><td>Met</td></tr>
-      <tr><td><strong>0b · Clean base</strong> (now)</td><td>One Opus lead; one Opus worker for the analysis engine; Sonnet workers for branch merges and lint ports</td><td>Phase 0</td><td>Green ratchets; branch table closed; the analysis engine (<code>tools/analyze/</code>): its core, reason codes and ceilings, and the slowest lints at parity before phase 1, the remaining ports alongside it; pinned baseline with noise floors; new bench scenarios running on the old paths; fix-now items; interim AGENTS.md</td><td><code>check_ratchets.sh</code> exits 0; normal-tier suite green; the engine core and the slowest lints at parity; engine run times recorded; noise floors recorded. The remaining lint ports finish alongside phase 1</td></tr>
+      <tr><td><strong>0b · Clean base</strong> (done)</td><td>One Opus lead; one Opus worker for the analysis engine; Sonnet workers for branch merges and lint ports</td><td>Phase 0</td><td>Green ratchets; branch table closed; the analysis engine (<code>tools/analyze/</code>): its core, reason codes and ceilings, and the slowest lints at parity before phase 1, the remaining ports alongside it; pinned baseline with noise floors; new bench scenarios running on the old paths; fix-now items; interim AGENTS.md</td><td><code>check_ratchets.sh</code> exits 0; normal-tier suite green; the engine core and the slowest lints at parity; engine run times recorded; noise floors recorded. The remaining lint ports finish alongside phase 1</td></tr>
       <tr><td><strong>1 · Engines</strong></td><td>One Opus worker for the name spike, the analysis readiness gate and E0, then seven parallel Opus workers: E1 to E6 (E5 adds the semantic queries to the analysis engine) and layout tooling (L)</td><td>Phase 0b gate (engine core and slowest lints)</td><td><code>code/engine</code>; the semantic queries and generators on the analysis engine; layout tooling and its lints; the ten E0 proofs</td><td>Name spike clean; analysis readiness (or E5 stays on <code>dreammaker</code>); E5 spike passes; each engine's fixture green; the ten E0 proofs green; E6 host checks; legacy-mode <code>.dme</code> reproduces today's build</td></tr>
       <tr><td><strong>1S · Service ports</strong></td><td>Four to six Sonnet workers, one Opus reviewer; runs beside phase 2</td><td>Phase 1</td><td>The 44 world services as systems</td><td>Focused test per service; zero <code>/datum/world_service</code> subtypes; boot graph valid</td></tr>
       <tr><td><strong>2 · Library</strong></td><td>Eight Opus workers, one per library area; Sonnet workers write snapshot-harness fixtures</td><td>Phase 1</td><td><code>code/library</code>; the behaviour snapshot harness; the full AGENTS.md rewrite; doc examples as tests</td><td>APC, turret, airlock, beaker exactly as shown; zero unexplained snapshot diffs; <code>DOC_SNIPPETS</code> green</td></tr>
@@ -4165,6 +4165,46 @@ CAPABILITIES(/obj/machinery/librarycomp)
       <tr><td><strong>5 · Life track</strong></td><td>One Opus lead, four Sonnet workers</td><td>Phase 3 complete</td><td>208 Life stages as sequence steps</td><td>Life tick within 5%; 0 missed wakes; medical and body tests; soak window</td></tr>
       <tr><td><strong>6 · Content waves</strong></td><td>Four to six Sonnet workers; Opus reviews and lands each wave</td><td>Phase 3; phase 4 for machine waves; phase 5 for mob waves</td><td>Residue at zero; files moved into the new tree</td><td>Per wave: old-forms lint zero in its files; table diff empty; full suite</td></tr>
       <tr><td><strong>7 · Delete and lock</strong></td><td>One Opus worker</td><td>Phases 4 to 6</td><td>Legacy layer deleted; every retirement lint a hard ban</td><td>Exhaustive suite; bench against the phase-0 pin; completion test</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="status">Where master stands (2026-10-08)</h3>
+  <div class="prose"><p>Counts come from <code>tools/ci/legacy_form_counts.sh</code> (a grep census of call sites in <code>code/</code>, outside unit tests and the files that define each form; comment lines are skipped) and from the status column of <code>doc/rewrite/framework_gaps.md</code>. Re-run the script and update this table in the commit that retires a form.</p></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Phase</th><th>Status</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td>0 · Settle and salvage</td><td>Done</td><td>This document and AGENTS.md on master</td></tr>
+      <tr><td>0b · Clean base</td><td>Done</td><td><code>tools/analyze</code> runs the lints in one process (<code>tools/ci/check_ratchets.sh</code>); ratchets and hard bans are in <code>tools/ci/lint_scopes.toml</code></td></tr>
+      <tr><td>1 · Engines</td><td>Done for the forms of sections 1 to 16 that the gaps table lists as done; open rows are F-, G-, H- and J-rows</td><td><code>code/engine/{actions,change,declare,hooks,io,kernel,lifeforms,parts,present,refs,state,stats,time}</code>; the A to F and I rows of <code>framework_gaps.md</code> are done but for the few it marks open</td></tr>
+      <tr><td>1S · Service ports</td><td>Done</td><td>0 <code>world_service</code> call sites; the kernel hosts <code>SYSTEM_DEF</code> systems</td></tr>
+      <tr><td>2 · Library</td><td>Partly: 20 areas have a folder in <code>code/library/</code>, the files outside it are the remaining work</td><td><code>access, construction, containers, input, items, jobs, lifeforms, machine, materialization, mob, operations, present, prompts, providers, reactions, reagents, requests, stats, structures, tasks</code></td></tr>
+      <tr><td>2.5 · Codemod infrastructure</td><td>Done as far as it was needed; later steps ran by hand with focused tests</td><td><code>tools/analyze/codemods</code></td></tr>
+      <tr><td>3 · Codemods</td><td>Mostly done for interactions, UI, timers, grants, damage reactions, emag, verbs; open for table procs, <code>REQ_*</code>, <code>CHANGE_*</code>, <code>rerun_ask</code></td><td>Census below</td></tr>
+      <tr><td>4 · Machine track</td><td>In progress (machinery conversion waves)</td><td>Recent commits on master</td></tr>
+      <tr><td>5 · Life track</td><td>In progress (every <code>/mob/living</code> has a <code>/datum/body</code>)</td><td><code>doc/body_architecture.md</code></td></tr>
+      <tr><td>6 · Content waves</td><td>Not started as a move: <code>code/domains</code> holds atmos, heat and power only, <code>code/content</code> holds jobs only</td><td>The old directories are the remaining-work list</td></tr>
+      <tr><td>7 · Delete and lock</td><td>Not started; <code>topic_allowed</code> is the newest hard-banned name</td><td><code>[lint.legacy_forms.lists]</code></td></tr>
+    </tbody>
+  </table></div>
+  <h4>Legacy forms still in the tree</h4>
+  <div class="tbl"><table>
+    <thead><tr><th>Form</th><th class="n">Sites</th><th class="n">Files</th><th>Replacement</th></tr></thead>
+    <tbody>
+      <tr><td><code>capabilities()</code>/<code>reactions()</code>/<code>relations()</code> table procs</td><td class="n">136</td><td class="n">-</td><td><code>CAPABILITIES(T)</code> (new)</td></tr>
+      <tr><td><code>REQ_*</code></td><td class="n">386</td><td class="n">137</td><td><code>needs(req...)</code> (new)</td></tr>
+      <tr><td><code>CHANGE_*</code> channels</td><td class="n">328</td><td class="n">108</td><td>tracked setters, <code>on_change</code></td></tr>
+      <tr><td><code>DECLARE_LOOT</code></td><td class="n">306</td><td class="n">39</td><td>capability entries (slated)</td></tr>
+      <tr><td><code>APPEARANCE_*</code></td><td class="n">155</td><td class="n">50</td><td>look parts (new)</td></tr>
+      <tr><td><code>rerun_ask</code></td><td class="n">80</td><td class="n">45</td><td><code>asks()</code> steps</td></tr>
+      <tr><td><code>MAP_RESOLVER</code></td><td class="n">34</td><td class="n">30</td><td>capability entries (slated)</td></tr>
+      <tr><td><code>PERIODIC_*</code></td><td class="n">23</td><td class="n">18</td><td><code>every()</code></td></tr>
+      <tr><td><code>OM_FIELD</code></td><td class="n">14</td><td class="n">5</td><td><code>TRACKED</code> and generated reads</td></tr>
+      <tr><td><code>topic_ask</code></td><td class="n">10</td><td class="n">3</td><td><code>asks()</code> steps (H4)</td></tr>
+      <tr><td><code>EXTEND_INTERACTIONS</code></td><td class="n">6</td><td class="n">6</td><td><code>extend()</code></td></tr>
+      <tr><td><code>DECLARE_INTERACTIONS</code>, <code>om_after</code></td><td class="n">2 each</td><td class="n">2 each</td><td><code>op()</code>, <code>after()</code></td></tr>
+      <tr><td><code>DECLARE_PERIODIC_WHILE</code>, <code>om_raise_change</code></td><td class="n">1 each</td><td class="n">1 each</td><td><code>every(when =)</code>, tracked setters</td></tr>
+      <tr><td><code>om_hook</code>, <code>om_ask</code>, <code>om_grant</code>, <code>OM_EMIT</code>, <code>TOPIC_ACTION</code>, <code>DECLARE_REPEAT</code>, <code>DECLARE_EMAG</code>, <code>DAMAGE_REACTION</code>, <code>INTERACT_HAND</code>, <code>act_ask</code>, <code>world_service</code>, <code>OWN</code>, <code>REL</code>, <code>om_changed</code>, <code>DECLARE_UI</code>, <code>DECLARE_VERB</code></td><td class="n">0</td><td class="n">0</td><td>gone from call sites</td></tr>
+      <tr><td><code>topic_allowed</code> (hard ban)</td><td class="n">3</td><td class="n">-</td><td><code>needs(req_topic_token())</code>, <code>extend(TAG_TOPIC, needs(...))</code>; the 3 sites are the obj wrapper and its two machinery callers, exempt by path</td></tr>
     </tbody>
   </table></div>
 
@@ -4183,7 +4223,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
   </table></div>
   <div class="note"><p><strong>Moved out of phase 0.</strong> The decision that DM timers are kernel-only (no <code>om_world_at</code>, no DM-owned keys published into Rust, no reactor) is E6 work now, not phase 0. "Delete the unused OM machinery first" became a zero-caller sweep in phase 0b, because master still has callers for <code>bundle.dm</code>, <code>check_library.dm</code> and <code>derived.dm</code>.</p></div>
 
-  <h3 id="phase0b">Phase 0b · a clean base (now)</h3>
+  <h3 id="phase0b">Phase 0b · a clean base (done)</h3>
   <div class="prose"><p>Nothing in phase 1 should start on a red, slow or noisy base. Order of work: land the safe branches, run the ratchets, clear the fix-now items, build the analysis engine and port the lints to it, then pin and measure.</p></div>
   <h4>Branch triage</h4>
   <div class="prose"><p>278 <code>rewrite/*</code> branch names exist. 257 are fully merged into master: delete them. 21 have commits master lacks, in 15 rows below. Counts are against <code>origin/master</code> <code>1694838291</code> (<code>git rev-list --count master..branch</code>, <code>git diff --name-only master...branch</code>). Abandoned branches are tagged <code>archive/&lt;name&gt;</code> and then deleted; a worktree with uncommitted work is checked before its branch goes.</p></div>

@@ -15,17 +15,17 @@
 	return topic_dispatch_vv(src, href_list)
 
 /// Dispatches a VV href for admin client `C`: the VV_TOPIC ops of the `target` datum first, then the admin holder's VV_ADMIN_TOPIC ops. Neither runs the
-/// target's topic_allowed(): VV is gated by vv_topic() (R_VAREDIT + href token) and each op's req_rights().
+/// target's own gate: VV is gated by vv_topic() (R_VAREDIT + href token) and each op's req_rights().
 /proc/topic_dispatch_vv(client/C, list/href_list)
 	var/mob/user = C.mob
 	var/raw_target = href_list[VV_HK_TARGET]
 	if(!isnull(raw_target))
 		var/datum/target = topic_resolve_ref(C, raw_target, /datum, TOPIC_ANY)
 		if(target?.vv_topic_allowed(user))
-			var/datum/op_result/on_target = op_topic_href(user, target, href_list, namespace = VV_TOPIC, gated = FALSE)
+			var/datum/op_result/on_target = op_topic_href(user, target, href_list, namespace = VV_TOPIC)
 			if(on_target)
 				return on_target
-	return op_topic_href(user, admin_holder_of(C), href_list, namespace = VV_ADMIN_TOPIC, gated = FALSE)
+	return op_topic_href(user, admin_holder_of(C), href_list, namespace = VV_ADMIN_TOPIC)
 
 /// The handlers of the VV_ADMIN_TOPIC ops: the admin's own client does the work, in the /client proc of the same name (topic.dm, topic_basic.dm,
 /// topic_list.dm), with the link's values as parameters.

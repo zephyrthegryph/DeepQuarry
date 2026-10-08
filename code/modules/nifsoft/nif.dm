@@ -117,7 +117,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 /obj/item/nif/proc/on_human_death(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/source = A.target
-	after(src, 0, PROC_REF(persist_on_death), with = list(source), keeps_dead = TRUE)
+	after(src, 0, PROC_REF(persist_on_death), with = list(source))
 
 /obj/item/nif/proc/persist_on_death(mob/living/carbon/human/source)
 	if(!QDELETED(source))

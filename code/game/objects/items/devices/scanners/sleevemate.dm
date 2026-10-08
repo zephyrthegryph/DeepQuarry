@@ -100,6 +100,7 @@ CAPABILITIES(/datum/prompt/choice/sleevemate_target)
 		return ITEM_INTERACT_FAILURE
 
 CAPABILITIES(/obj/item/sleevemate)
+	extend(TAG_TOPIC, then(PROC_REF(topic_click_spent), early = TRUE))
 	ref_one(nameof(stored_mind), /datum/mind)
 	// the old attack_self: what to do with the stored mind
 	op("manage_mind", in_hand(), needs(req(PROC_REF(can_manage_mind), because = MSG(sleevemate/empty))),
@@ -108,7 +109,7 @@ CAPABILITIES(/obj/item/sleevemate)
 	emag(list(asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(hack_question)), "choices" = list("Body Snatcher", "Mind Binder"), "timeout" = 0)), then(PROC_REF(hack_chosen))), repeatable = TRUE, powered = FALSE)
 	op("mindscan", topic("mindscan", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_mindscan)))
 	op("bodyscan", topic("bodyscan", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_bodyscan)))
-	op("mindsteal", topic("mindsteal", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), asks(/datum/prompt/choice/sleevemate_mindsteal, fields = list("victim" = computed(PROC_REF(mindsteal_victim))), step = "confirm"), then(PROC_REF(topic_mindsteal)))
+	op("mindsteal", topic("mindsteal", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), asks(/datum/prompt/choice/sleevemate_mindsteal, fields = list("victim" = arg_of("target")), step = "confirm"), then(PROC_REF(topic_mindsteal)))
 	op("mindput", topic("mindput", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_mindput)))
 	op("mindupload", topic("mindupload", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_mindupload)))
 	op("mindrelease", topic("mindrelease", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS), arg("mindrelease", schema_text(MAX_NAME_LEN), optional = TRUE)), then(PROC_REF(topic_mindrelease)))
@@ -217,14 +218,16 @@ MSG_DEF_SELF(sleevemate/empty, "There is no stored mind in it.")
 
 
 // Every scan link works only from the active hand.
-/obj/item/sleevemate/topic_allowed(mob/user, list/href_list)
+/obj/item/sleevemate/topic_usable(datum/act/op/A)
 	. = ..()
 	if(!.)
 		return
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(user.get_active_hand() != src)
-		to_chat(user,span_warning("You're not holding \the [src]."))
-		return FALSE
+	return A.actor.get_active_hand() == src
+
+/// Every scan link spends a click, held or not (it was the gate's first act).
+/obj/item/sleevemate/proc/topic_click_spent(datum/act/op/A)
+	A.actor.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	return OP_OK
 
 /// The link's target, if it is there and next to `user` (says why not otherwise).
 /obj/item/sleevemate/proc/topic_target(mob/user, mob/living/target)
@@ -267,9 +270,6 @@ MSG_DEF_SELF(sleevemate/empty, "There is no stored mind in it.")
 
 	act_message(user, target, MSG_SELF(span_notice("You begin scanning %T%'s body.")), MSG_OTHERS("%U% begins scanning %T%'s body."))
 	task_start(/datum/task/timed/sleevemate_topic2, user, target, receiver = src, H = H)
-
-/obj/item/sleevemate/proc/mindsteal_victim(datum/act/op/A)
-	return A.args["target"]
 
 /// The mind steal link, after "Continue": the target is looked at again, as the scan buttons do.
 /obj/item/sleevemate/proc/topic_mindsteal(datum/act/op/A, href_target)

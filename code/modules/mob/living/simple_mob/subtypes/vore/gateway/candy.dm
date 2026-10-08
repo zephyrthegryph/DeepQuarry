@@ -539,7 +539,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
 	else
 		var/obj/item/projectile/P = new /obj/item/projectile/bullet/cmblast(get_turf(src))
 		P.launch_projectile(target, BP_TORSO, src)
-		after(P, 0.05 SECONDS, TYPE_PROC_REF(/obj/item/projectile, launch_projectile), with = list(target, BP_TORSO, src), keeps_dead = TRUE)
+		after(P, 0.05 SECONDS, TYPE_PROC_REF(/obj/item/projectile, launch_projectile), with = list(target, BP_TORSO, src))
 
 
 /obj/random/mob/candycritter

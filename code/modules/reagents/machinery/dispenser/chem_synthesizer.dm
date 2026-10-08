@@ -795,7 +795,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 		var/delay = reagents.total_volume
 		update_icon() // Update the icon first to remove underlays, then switch to the new icon_state.
 		icon_state = "synth_finished"
-		after(src, delay, PROC_REF(bottle_product), with = list(r_id), keeps_dead = TRUE)
+		after(src, delay, PROC_REF(bottle_product), with = list(r_id))
 
 	else
 		follow_recipe(r_id, step)

@@ -278,7 +278,7 @@
 			. += span_warning("[p_They()] [user.p_do()] not appear to be breathing.")
 		if(ishuman(user) && !user.stat && Adjacent(user))
 			act_message(user, src, MSG_SELF(span_infoplain("You check %T%'s pulse.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " checks %T%'s pulse.")))
-		after(src, 1.5 SECONDS, PROC_REF(pulse_check_result), with = list(user), keeps_dead = TRUE)
+		after(src, 1.5 SECONDS, PROC_REF(pulse_check_result), with = list(user))
 
 	if(fire_stacks)
 		. += "[p_Theyre()] covered in some liquid."
