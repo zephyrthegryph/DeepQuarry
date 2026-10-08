@@ -175,18 +175,16 @@ CAPABILITIES(/obj/item/radio/headset)
 		if(keyslot2.syndie)
 			src.syndie = TRUE
 
-	handle_finalize_recalculatechannels(setDescription, TRUE, register)
+	handle_finalize_recalculatechannels(setDescription, register)
 
 /// register is FALSE only from Initialize() (C5): on_materialize() (inherited
 /// from /obj/item/radio) registers the channels computed here, exactly once.
-/obj/item/radio/headset/proc/handle_finalize_recalculatechannels(setDescription = FALSE, initial_run = FALSE, register = TRUE)
+/obj/item/radio/headset/proc/handle_finalize_recalculatechannels(setDescription = FALSE, register = TRUE)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(register)
-		if(!SSradio && initial_run)
-			after(src, 3 SECONDS, PROC_REF(retry_finalize_recalculatechannels), with = list(setDescription))
-			return
-		if(!SSradio && !initial_run)
+		// No retry: a headset is built before the radio service only with register = FALSE (on_materialize() registers it), so a registering call without the service is broken.
+		if(!SSradio)
 			name = "broken radio headset"
 			return
 
@@ -195,10 +193,6 @@ CAPABILITIES(/obj/item/radio/headset)
 
 	if(setDescription)
 		setupRadioDescription()
-
-/// The one retry of a headset that was built before the radio service: it either connects now or is broken.
-/obj/item/radio/headset/proc/retry_finalize_recalculatechannels(setDescription)
-	handle_finalize_recalculatechannels(setDescription, FALSE)
 
 /obj/item/radio/headset/proc/setupRadioDescription()
 	var/radio_text = ""

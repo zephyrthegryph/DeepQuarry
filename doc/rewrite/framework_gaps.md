@@ -303,7 +303,7 @@ Verdicts come from reading each handler. REMOVED: the opt-out is gone (the handl
 | antag_spawners.dm:81, 133 | `finish_technomancer_spawn`, `finish_drone_spawn` | KEPT | the one-shot item must still be consumed |
 | aicard.dm:191 | `wipe_ai_tick` | KEPT | a deleted AI must still clear the card's `flush` |
 | phone.dm:102, 109, 112, 115 | `dial_ghost` | KEPT | the last stage removes the blackness screen |
-| headset.dm:187 | `handle_finalize_recalculatechannels` | REMOVED | no datum in `with`; the one retry now goes through `retry_finalize_recalculatechannels`, so it is not a self-re-arming `after()` |
+| headset.dm:187 | `handle_finalize_recalculatechannels` | REMOVED | no datum in `with`. The retry itself was dead: `Initialize()` calls with `register = FALSE` and `on_materialize()` registers, and the radio service needs the atoms service, so a registering call without `SSradio` cannot be a boot race. The retry and its `initial_run` parameter are deleted; a registering call without the service marks the headset broken at once |
 | vacpack.dm:233, 266, 292, 309 | `prepare_sucking`, `handle_consumption` | REMOVED | both start with a QDELETED guard (the 309 call also passes `target_turf` in the `auto_setting` slot: separate bug) |
 | falling_object.dm:45 | `end_fall` | REMOVED | a bool only |
 | sahoc.dm:101 | `capsule_result` | REMOVED | null-checks; the tail is cosmetic |
