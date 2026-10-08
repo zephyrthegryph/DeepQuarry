@@ -497,7 +497,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 	if(MR.nif_path)
 		var/obj/item/nif/nif = new MR.nif_path(occupant,null,MR.nif_savedata)
 		after(nif, 0, GLOBAL_PROC_REF(install_nif_software), with = list(nif, MR.nif_software)) //Delay to not install software before NIF is fully installed
-		nif.durability = MR.nif_durability //Restore backed up durability after restoring the softs.
+		nif.set_durability(MR.nif_durability) //Restore backed up durability after restoring the softs.
 
 	// If it was a custom sleeve (not owned by anyone), update namification sequences
 	if(!occupant.original_player)

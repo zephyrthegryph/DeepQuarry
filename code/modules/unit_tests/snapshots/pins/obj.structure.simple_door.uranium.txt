@@ -59,10 +59,10 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
 human|/obj/item/pickaxe menu: Dig
+human|/obj/item/pickaxe menu: Hit
 human|/obj/item/pickaxe menu: Move To Top
 human|/obj/item/pickaxe menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pickaxe menu: Use
 human|/obj/item/pickaxe click: Click: Dig
-keys: dig, drag_buckle, item, silicon_open, use, use_welder
-keys: drag_buckle, item, melee_hit, silicon_open, use, use_welder
+keys: dig, drag_buckle, item, melee_hit, silicon_open, use, use_welder
 

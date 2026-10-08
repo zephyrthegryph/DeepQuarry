@@ -66,5 +66,11 @@ human|/obj/item menu: Search for sticks
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, melee_hit, search_sticks, tree_hit
+human|/obj/item/shovel menu: Hit
+human|/obj/item/shovel menu: Move To Top
+human|/obj/item/shovel menu: Search for sticks
+human|/obj/item/shovel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/shovel menu: Use
+human|/obj/item/shovel click: Click: Use
+keys: dig_stump, drag_buckle, melee_hit, search_sticks, tree_hit
 

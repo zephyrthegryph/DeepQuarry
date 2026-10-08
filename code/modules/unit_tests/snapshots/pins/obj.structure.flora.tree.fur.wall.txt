@@ -76,5 +76,12 @@ human|/obj/item menu: Search for sticks (refused: <span class='notice'>You don't
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Fur wall item
-keys: drag_buckle, fur_wall_item, melee_hit, search_sticks, tree_hit
+human|/obj/item/shovel menu: Fur wall item
+human|/obj/item/shovel menu: Hit
+human|/obj/item/shovel menu: Move To Top
+human|/obj/item/shovel menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
+human|/obj/item/shovel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/shovel menu: Use
+human|/obj/item/shovel click: Click: Fur wall item
+keys: dig_stump, drag_buckle, fur_wall_item, melee_hit, search_sticks, tree_hit
 

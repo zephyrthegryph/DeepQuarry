@@ -35,14 +35,16 @@ human|/obj/item/weldingtool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Repair (refused: )
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/cable_coil click: Click: Repair
 human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Repair (refused: )
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/stack/material/steel click: Click: Repair
 human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
@@ -54,5 +56,11 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, melee_hit, repair_or_hit
+human|/obj/item/stack menu: Hit
+human|/obj/item/stack menu: Move To Top
+human|/obj/item/stack menu: Repair (refused: )
+human|/obj/item/stack menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack menu: Use
+human|/obj/item/stack click: Click: Repair
+keys: drag_buckle, melee_hit, repair, repair_or_hit
 
