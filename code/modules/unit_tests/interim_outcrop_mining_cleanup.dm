@@ -23,7 +23,6 @@
 	TEST_ASSERT_EQUAL(outcrop.upperdrop, maximum, "The actual existing outcrop retains its original maximum yield")
 	var/list/before = turf_contents_of_type(T, /obj/item/ore)
 	test_op_handler(outcrop, "interaction_item", actor, tool)
-	TEST_ASSERT(TRUE, "The actual public pickaxe mining interaction starts its original timed work")
 	scheduler_advance((3.9 SECONDS) / (1 SECOND))
 	TEST_ASSERT(!QDELETED(outcrop) && outcrop.loc == T, "The actual outcrop survives until its original four-second mining deadline")
 	TEST_ASSERT_EQUAL(length(turf_contents_of_type(T, /obj/item/ore)), length(before), "The actual timed mining produces no ore before its original deadline")
@@ -51,7 +50,6 @@
 	TEST_ASSERT(!tool.status, "The actual loaded maul starts powered off")
 	var/list/before = turf_contents_of_type(T, /obj/item/ore)
 	test_op_handler(outcrop, "interaction_item", actor, tool)
-	TEST_ASSERT(TRUE, "The actual unpowered maul mining interaction handles its original refusal")
 	TEST_ASSERT(!QDELETED(outcrop), "The actual unpowered refusal preserves the original outcrop")
 	TEST_ASSERT_EQUAL(length(turf_contents_of_type(T, /obj/item/ore)), length(before), "The actual unpowered refusal creates no ore product")
 	TEST_ASSERT_EQUAL(cell.charge, charge, "The actual unpowered refusal spends no original battery charge")
@@ -67,7 +65,6 @@
 	var/efficiency_before_hit = cell.material_delivery_efficiency(tool.hitcost)
 	TEST_ASSERT(credit_before_hit >= tool.hitcost && efficiency_before_hit > 0 && efficiency_before_hit <= 1, "the actual original battery has positive valid delivery capacity and efficiency")
 	test_op_handler(outcrop, "interaction_item", actor, tool)
-	TEST_ASSERT(TRUE, "The actual powered and wielded maul mines the original outcrop")
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(outcrop), "The real maul pulverization consumes the original outcrop")
 	var/list/ore = turf_contents_of_type(T, /obj/item/ore) - before

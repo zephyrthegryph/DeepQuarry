@@ -109,8 +109,6 @@
 /obj/op_topic_refused(mob/actor, key, reason, list/href_list)
 	..()
 	if(reason == /datum/msg/op/topic_gate)
-		if(!actor.CanUseObjTopic(src))
-			to_chat(actor, span_danger("[icon2html(src, actor.client)]Access Denied!"))
 		CouldNotUseTopic(actor)
 
 /obj/proc/CouldUseTopic(mob/user)
@@ -123,7 +121,16 @@
 /obj/CanUseTopic(mob/user, datum/tgui_state/state = GLOB.tgui_default_state)
 	if(user.CanUseObjTopic(src))
 		return ..()
+	obj_access_denied(user, src)
 	return STATUS_CLOSE
+
+/// The refusal both a direct CanUseTopic() and a topic link's topic_usable() print, once per check (a message, no state).
+/proc/obj_access_denied(mob/user, obj/O)
+	READS_FROM()
+	user.access_denied_feedback(O)
+
+/mob/proc/access_denied_feedback(obj/O)
+	to_chat(src, span_danger("[icon2html(O, client)]Access Denied!"))
 
 /mob/living/silicon/CanUseObjTopic(obj/O)
 	var/id = src.GetIdCard()

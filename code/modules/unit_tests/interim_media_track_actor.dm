@@ -41,7 +41,7 @@
 /obj/interim_jukebox_actor_click/Click(location, control, params)
 	var/list/href = list()
 	href[action] = "1"
-	result = op_topic_href(actor, jukebox, href, namespace = VV_TOPIC, gated = FALSE)
+	result = op_topic_href(actor, jukebox, href, namespace = VV_TOPIC)
 
 /datum/unit_test/om/interim_media_track_actor_refusal/run_om(list/made)
 	set_global(nameof(GLOB.test_prompts), GLOB.test_prompts)
@@ -114,7 +114,7 @@
 	for(var/action in list("add_track", "remove_track"))
 		var/list/href = list()
 		href[action] = "1"
-		var/datum/op_result/missing_actor = op_topic_href(null, jukebox, href, namespace = VV_TOPIC, gated = FALSE)
+		var/datum/op_result/missing_actor = op_topic_href(null, jukebox, href, namespace = VV_TOPIC)
 		TEST_ASSERT_NULL(missing_actor, "native VV transport rejects an absent actor before opening a question")
 	TEST_ASSERT_EQUAL(jukebox.add_calls, 0, "an absent actor runs no native add effect")
 	TEST_ASSERT_EQUAL(jukebox.remove_calls, 0, "an absent actor runs no native remove effect")

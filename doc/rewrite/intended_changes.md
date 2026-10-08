@@ -3368,3 +3368,9 @@ Pins were regenerated with `--bless` after the last merge; only rows that change
 - A keyed timer whose datum argument is deleted drops the call and clears its key (`after_pending()` is false afterwards); `keeps_dead = TRUE` still runs it
   with the argument null. The fulton chain, the cryptdrake landing and the transit-tube station completions opt in, because their tail must run.
 - The smole building and ruins "Smash" ops answer harm intent as well as use, so a harm-intent click with a held item smashes rather than landing a melee hit.
+
+## Topic gates as requirements (rewrite/om-leftovers-2)
+
+- **Sleevemate:** its scan links spend the click cooldown (`DEFAULT_ATTACK_COOLDOWN`) only after the gate passes (the held-in-active-hand check). The old gate spent it first, so a link clicked while the sleevemate was not held also paid the cooldown. Now a refused link costs nothing.
+- **Topic refusals say `You cannot use that link right now.`** (`MSG(op/topic_gate)`) where the old gates returned silently; the Access Denied line of an obj the clicker's ID cannot use is unchanged, printed once per check.
+- **VV namespaced ops (`topic_in`) carry no `TAG_TOPIC`**, so the per-type topic requirements never reach them; the VV dispatch keeps its own gate.

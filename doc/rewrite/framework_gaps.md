@@ -278,7 +278,7 @@ Tests: one per flow, driving `test_ui()` with `test_answer()` for each step incl
 
 ### J6 audit: the first 50 `keeps_dead = TRUE` sites outside `code/game/machinery`, `code/modules/power` and the engine
 
-Verdicts come from reading each handler. REMOVED: the opt-out is gone (the handler only null-checks, takes no datum from `with`, or would runtime on null). KEPT: the handler tail is cleanup that must run with the argument gone. A behaviour test (`code/modules/unit_tests/dq_keeps_dead_cleanup_tests.dm`) exists for the three marked T; the other KEPT sites have no test yet. The audit read the handlers only; no site was run with its argument deleted except the T ones.
+Verdicts come from reading each handler. REMOVED: the opt-out is gone (the handler only null-checks, takes no datum from `with`, or would runtime on null). KEPT: the handler tail is cleanup that must run with the argument gone. Behaviour tests (`dq_keeps_dead_cleanup_tests.dm`, `dq_keeps_dead_cleanup_more_tests.dm`) schedule the real handler with `keeps_dead`, delete the argument and assert the cleanup; sites marked T have one. The tests call the handler through `after()` as the site does, not the site's own code. Untested: highlander (needs a client) and bluespace_connection (the relation and capability setup is not exercised).
 
 | Site | Handler | Verdict | Why |
 |---|---|---|---|
@@ -286,7 +286,7 @@ Verdicts come from reading each handler. REMOVED: the opt-out is gone (the handl
 | bluespace_connection.dm:67 | `bluespace_exit` | KEPT | a deleted exit still severs the connection and revokes the capability (moderate confidence) |
 | _cinematic.dm:91 | `clean_up_cinematic` | REMOVED | a bool only |
 | riding.dm:114 | `unbuckle_mob` | REMOVED | a null mob makes it unbuckle a different rider; the deleted mob is unbuckled by its deletion |
-| highlander.dm:88 | `only_one` | KEPT, UNSURE | the user only appears in log lines; whether the event must still fire if the admin's mob is gone is a design question |
+| highlander.dm:88 | `only_one` | KEPT (resolved by reading) | `user` appears only in the two log lines and a not-started alert; the antag grants run over every player regardless of `user`, and the admin asked for the event, so a deleted admin mob must not cancel it. Not tested: it needs a client and a started round |
 | runes.dm:183 | `convert_tick` | REMOVED | `target.loc` runtimes on null |
 | runes.dm:397 | `raise_finish` | REMOVED | begins with a QDELETED guard |
 | runes.dm:658, 664 | `cult_mend_rune_wait` | KEPT, T | a deleted caster still releases `GLOB.runedec` |
@@ -303,19 +303,19 @@ Verdicts come from reading each handler. REMOVED: the opt-out is gone (the handl
 | antag_spawners.dm:81, 133 | `finish_technomancer_spawn`, `finish_drone_spawn` | KEPT | the one-shot item must still be consumed |
 | aicard.dm:191 | `wipe_ai_tick` | KEPT | a deleted AI must still clear the card's `flush` |
 | phone.dm:102, 109, 112, 115 | `dial_ghost` | KEPT | the last stage removes the blackness screen |
-| headset.dm:187 | `handle_finalize_recalculatechannels` | NULL-SAFE, left | no datum in `with`, but the removal turns the line into a new `sys/periodic om_after_rearm` site against its baseline fingerprint; the legacy rearm goes with that lint |
+| headset.dm:187 | `handle_finalize_recalculatechannels` | REMOVED | no datum in `with`; the one retry now goes through `retry_finalize_recalculatechannels`, so it is not a self-re-arming `after()` |
 | vacpack.dm:233, 266, 292, 309 | `prepare_sucking`, `handle_consumption` | REMOVED | both start with a QDELETED guard (the 309 call also passes `target_turf` in the `auto_setting` slot: separate bug) |
 | falling_object.dm:45 | `end_fall` | REMOVED | a bool only |
 | sahoc.dm:101 | `capsule_result` | REMOVED | null-checks; the tail is cosmetic |
 | mech_toys.dm:249, 255, 352 | `brawl_round`, `brawl_exchange` | KEPT | a deleted fighter still ends the brawl on the toy (`in_combat`, health) |
-| extinguisher.dm:89 | `extinguisher_propel_step` | KEPT, low confidence | the chair's `propelled` countdown must still reach 0 |
+| extinguisher.dm:89 | `extinguisher_propel_step` | KEPT, T | the chair's `propelled` is set before the `if(!user)` return; dropping the later steps leaves it above 0, and Bump then throws the rider (test starts it at 5, deletes the user, expects 0) |
 | secure.dm:170 | `emag_spark_done` | KEPT | the safe must stop sparking and unlock |
 | cliff.dm:237, 264 | `fall_land`, `fall_off_cliff` | REMOVED | return on a deleted or non-living argument |
 | __closets.dm:541 | `end_door_animation` | REMOVED | a bool only |
 | droppod.dm:72, 102 | `on_impact`, `open_pod` | REMOVED | a turf and a bool |
-| props/machines.dm:681 | `delayed_flick` | KEPT, UNSURE | the handler runtimes on a null door before it clears `changing_state`, so the opt-out does nothing; a null guard first would make it real cleanup |
+| props/machines.dm:681 | `delayed_flick` | KEPT, T (fixed) | the handler runtimed on a null door before `get_out()` cleared `changing_state`; it now guards the overlay and still schedules `get_out`; test `keeps_dead_nt_pod_finishes_state_change` |
 | alien_nests.dm:31 | `struggle_free` | REMOVED | a deleted user fails its own check |
 | transit_tubes.dm:121 | `launch_close` | REMOVED | it sets `pod_moving` itself, so nothing is left stuck when dropped |
 | transit_tubes.dm:128 | `launch_go` | KEPT | a deleted pod must still clear `pod_moving` |
 
-Open: the 164 sites after these (including every `code/game/machinery` and `code/modules/power` site, which this lane may not touch), a test for each remaining KEPT site, and the three UNSURE rows.
+Open: the 164 sites after these (including every `code/game/machinery` and `code/modules/power` site, which this lane may not touch).

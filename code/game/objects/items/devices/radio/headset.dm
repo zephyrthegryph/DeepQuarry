@@ -184,7 +184,7 @@ CAPABILITIES(/obj/item/radio/headset)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(register)
 		if(!SSradio && initial_run)
-			after(src, 3 SECONDS, PROC_REF(handle_finalize_recalculatechannels), with = list(setDescription, FALSE), keeps_dead = TRUE)
+			after(src, 3 SECONDS, PROC_REF(retry_finalize_recalculatechannels), with = list(setDescription))
 			return
 		if(!SSradio && !initial_run)
 			name = "broken radio headset"
@@ -195,6 +195,10 @@ CAPABILITIES(/obj/item/radio/headset)
 
 	if(setDescription)
 		setupRadioDescription()
+
+/// The one retry of a headset that was built before the radio service: it either connects now or is broken.
+/obj/item/radio/headset/proc/retry_finalize_recalculatechannels(setDescription)
+	handle_finalize_recalculatechannels(setDescription, FALSE)
 
 /obj/item/radio/headset/proc/setupRadioDescription()
 	var/radio_text = ""

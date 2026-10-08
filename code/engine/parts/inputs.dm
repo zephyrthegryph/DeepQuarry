@@ -390,9 +390,8 @@
 
 /// A Topic href as an op: the holder's topic op that names it (or the holder its topic_forward() hands the href to) runs for `actor`, through the same
 /// path and the same refusals as a click. Returns its /datum/op_result, or null when no op names the href (the TOPIC_ACTION table still answers it).
-/proc/op_topic_href(mob/actor, datum/holder, list/href_list, forward_depth = 0, namespace = null, gated = TRUE)
+/proc/op_topic_href(mob/actor, datum/holder, list/href_list, forward_depth = 0, namespace = null)
 	RETURN_TYPE(/datum/op_result)
-	// `gated` is ignored: no holder gate runs here any more (the op's own needs() do). Callers that still pass it are the interim_* tests.
 	if(!actor || !isdatum(holder) || QDELETED(holder))
 		return null
 	var/datum/op_plan/P = op_topic_plan(holder, href_list, namespace)
