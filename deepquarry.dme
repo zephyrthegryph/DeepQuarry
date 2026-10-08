@@ -5590,6 +5590,7 @@
 #include "code\modules\tgui\modules\shutoff_monitor.dm"
 #include "code\modules\tgui\modules\supermatter_monitor.dm"
 #include "code\modules\tgui\ui_push.dm"
+#include "code\modules\tgui\ui_status.dm"
 #include "code\modules\ventcrawl\ventcrawl_atmospherics.dm"
 #include "code\game\machinery\airconditioner.dm"
 #include "code\modules\combat_ai\_defines.dm"
