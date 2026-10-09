@@ -146,13 +146,7 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 		return MSG(req_no_provider)
 	if(!read_once(user.Adjacent(src)))
 		return "too far away"
-	var/has_hand = FALSE
-	var/list/hand_providers = read_once(providers_for(user, null))
-	for(var/datum/prov/provider as anything in hand_providers)
-		if((provider.aff() & AFF_MANIPULATE) && (provider.authority_mask() & AUTH_PHYSICAL))
-			has_hand = TRUE
-			break
-	if(!has_hand)
+	if(!read_once(user.can_provide_hands(A)))
 		return MSG(req_no_provider)
 	if(!read_once(user.operation_actor_capable()))
 		return MSG(req_not_capable)
