@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Refinery machines, modular computers, device assemblies, the hand and ability HUD, AI and pAI draw from tracked state"

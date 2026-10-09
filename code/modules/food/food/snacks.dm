@@ -3848,15 +3848,17 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza)
 	var/obj/item/reagent_containers/food/snacks/sliceable/pizza/pizza // Content pizza
 	/// The pizza a box starts with (a subtype or a map edit sets it); made into `pizza` at init.
 	var/pizza_type
-	// ALLOW(instance_list): d: stacked pizza boxes, edited in place
-	var/list/boxes = list() // If the boxes are stacked, they come here
+	var/list/boxes // If the boxes are stacked, they come here
 	var/boxtag = ""
 TRACKED(/obj/item/pizzabox, ismessy)
+TRACKED(/obj/item/pizzabox, open)
+TRACKED(/obj/item/pizzabox, boxtag)
 
 // A pizza box: using it opens and shuts it (a stack stays shut); an empty hand takes the pizza out of an open one, or the top box off a stack held in the
 // other hand; a box goes on a shut box up to five high, a pizza into an open one, and a pen writes on the tag of a shut one.
 CAPABILITIES(/obj/item/pizzabox)
 	owns_one(nameof(pizza), /obj/item/reagent_containers/food/snacks/sliceable/pizza, starts = nameof(pizza_type))
+	ref_many(nameof(boxes), /obj/item/pizzabox)
 	op("toggle", in_hand(), label("Open or close it"), needs(req_bool(PROC_REF(not_stacked), because = MSG(pizzabox/stacked))), then(PROC_REF(toggled)))
 	op("take_pizza", hand(), priority(OP_PRIORITY_PART + 1), when(req_bool(PROC_REF(open_with_pizza))), label("Take the pizza"), then(PROC_REF(pizza_taken)))
 	op("take_box", hand(), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(stack_in_off_hand))), label("Take the top box"), then(PROC_REF(box_taken)))
@@ -3872,99 +3874,78 @@ MSG_DEF_SELF(pizzabox/close_first, "Close the box first!")
 MSG_DEF_SELF(pizzabox/too_high, "The stack is too high!")
 MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn't work!")
 
-DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/pizzabox/appearance_overlays()
-	. = list()
-
+/// The box shows shut (a tag on the top box of a stack, its height) or open (the pizza in it, messy once it held one), and says what it holds.
+/obj/item/pizzabox/draw(datum/look/look)
+	..()
+	var/stacked = length(boxes)
+	var/obj/item/pizzabox/topbox = stacked ? boxes[stacked] : null
+	look.watch(pizza)
+	look.watch(topbox)
 
 	// Set appropriate description
-	if( open && pizza )
-		desc = "A box suited for pizzas. It appears to have a [pizza.name] inside."
-	else if( boxes.len > 0 )
-		desc = "A pile of boxes suited for pizzas. There appears to be [boxes.len + 1] boxes in the pile."
-
-		var/obj/item/pizzabox/topbox = boxes[boxes.len]
+	if(open && pizza)
+		look.identity(desc = "A box suited for pizzas. It appears to have a [pizza.name] inside.")
+	else if(stacked > 0)
+		var/stack_desc = "A pile of boxes suited for pizzas. There appears to be [stacked + 1] boxes in the pile."
 		var/toptag = topbox.boxtag
-		if( toptag != "" )
-			desc = "[desc] The box on top has a tag, it reads: '[toptag]'."
+		if(toptag != "")
+			stack_desc = "[stack_desc] The box on top has a tag, it reads: '[toptag]'."
+		look.identity(desc = stack_desc)
 	else
-		desc = "A box suited for pizzas."
-
-		if( boxtag != "" )
-			desc = "[desc] The box has a tag, it reads: '[boxtag]'."
+		var/box_desc = "A box suited for pizzas."
+		if(boxtag != "")
+			box_desc = "[box_desc] The box has a tag, it reads: '[boxtag]'."
+		look.identity(desc = box_desc)
 
 	// Icon states and overlays
-	if( open )
-		if( ismessy )
-			icon_state = "pizzabox_messy"
-		else
-			icon_state = "pizzabox_open"
+	if(open)
+		look.state(ismessy ? "pizzabox_messy" : "pizzabox_open")
+		if(pizza)
+			look.overlay(look_overlay_image(pizza.icon, pizza.icon_state, pixel_y = -3))
+		return
 
-		if( pizza )
-			var/image/pizzaimg = image(icon = pizza.icon, icon_state = pizza.icon_state) // Icons for bad pizza
-			pizzaimg.pixel_y = -3
-			. += pizzaimg
-
-		return .
-	else
-		// Stupid code because byondcode sucks
-		var/doimgtag = 0
-		if( boxes.len > 0 )
-			var/obj/item/pizzabox/topbox = boxes[boxes.len]
-			if( topbox.boxtag != "" )
-				doimgtag = 1
-		else
-			if( boxtag != "" )
-				doimgtag = 1
-
-		if( doimgtag )
-			var/image/tagimg = image('icons/obj/food.dmi', icon_state = "pizzabox_tag")
-			tagimg.pixel_y = boxes.len * 3
-			. += tagimg
-
-	icon_state = "pizzabox[boxes.len+1]"
+	var/tagged = stacked ? topbox.boxtag != "" : boxtag != ""
+	if(tagged)
+		look.overlay(look_overlay_image('icons/obj/food.dmi', "pizzabox_tag", pixel_y = stacked * 3))
+	look.state("pizzabox[stacked + 1]")
 
 /// A stack stays shut.
 /obj/item/pizzabox/proc/not_stacked(datum/act/op/A)
-	return length(boxes) == 0 // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return length(boxes) == 0
 
 /obj/item/pizzabox/proc/toggled(datum/act/op/A)
-	open = !open
+	set_open(!open)
 	if( open && pizza )
 		set_ismessy(1)
-	update_icon()
 	return OP_OK
 
 /obj/item/pizzabox/proc/open_with_pizza(datum/act/op/A)
-	return open && !isnull(pizza) && isnull(A.held) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return open && !isnull(pizza) && isnull(A.held)
 
 /obj/item/pizzabox/proc/is_open(datum/act/op/A)
-	return !!open // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return !!open
 
 /obj/item/pizzabox/proc/is_shut(datum/act/op/A)
-	return !open // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return !open
 
 /obj/item/pizzabox/proc/pizza_taken(datum/act/op/A)
 	var/mob/user = A.actor
 	user.put_in_hands( pizza )
 	to_chat(user, span_warning("You take \the [src.pizza] out of \the [src]."))
 	rel_take(src, nameof(pizza))
-	update_icon()
 	return OP_OK
 
 /// A stack of boxes, with the one it is in held in the other hand.
 /obj/item/pizzabox/proc/stack_in_off_hand(datum/act/op/A)
 	var/mob/user = A.actor
-	return length(boxes) > 0 && isnull(A.held) && user.get_inactive_hand() == src // ALLOW(reads): which hand holds the stack is read when the top box is taken; the click asks again
+	return length(boxes) > 0 && isnull(A.held) && user.get_inactive_hand() == src
 
 /obj/item/pizzabox/proc/box_taken(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/pizzabox/box = boxes[boxes.len]
-	boxes -= box
+	var/obj/item/pizzabox/box = boxes[length(boxes)]
+	rel_remove(src, nameof(boxes), box)
 	user.put_in_hands( box )
 	to_chat(user, span_warning("You remove the topmost [src] from your hand."))
-	box.update_icon()
-	update_icon()
 	return OP_OK
 
 /// The held box is another one, not this one used in hand.
@@ -3973,12 +3954,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 
 /obj/item/pizzabox/proc/both_shut(datum/act/op/A)
 	var/obj/item/pizzabox/box = A.held
-	return !box.open && !open // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return !box.open && !open
 
 /// The boxes to add, with the ones already in the pile, are no more than five.
 /obj/item/pizzabox/proc/stack_has_room(datum/act/op/A)
 	var/obj/item/pizzabox/box = A.held
-	return (boxes.len + 1) + (1 + box.boxes.len) <= 5 // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return (length(boxes) + 1) + (1 + length(box.boxes)) <= 5
 
 /obj/item/pizzabox/proc/box_stacked(datum/act/op/A)
 	var/mob/user = A.actor
@@ -3990,10 +3971,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 		boxestoadd += i
 	user.drop_item()
 	box.forceMove(src)
-	box.boxes = list() // Clear the box boxes so we don't have boxes inside boxes. - Xzibit
-	src.boxes.Add( boxestoadd )
-	box.update_icon()
-	update_icon()
+	rel_clear(box, nameof(box.boxes)) // Clear the box boxes so we don't have boxes inside boxes. - Xzibit
+	for(var/obj/item/pizzabox/stacked_box in boxestoadd)
+		rel_add(src, nameof(boxes), stacked_box)
 	to_chat(user, span_warning("You put \the [box] ontop of \the [src]!"))
 	return OP_OK
 
@@ -4002,18 +3982,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	var/obj/item/I = A.held
 	if(!move_into(src, nameof(src.pizza), I, user))
 		return OP_REFUSED
-	update_icon()
 	to_chat(user, span_warning("You put \the [I] in \the [src]!"))
 	return OP_OK
 
 /obj/item/pizzabox/proc/tag_written(datum/act/op/A)
 	var/datum/prompt/R = A.answer
 	var/obj/item/pizzabox/boxtotagto = src
-	if( boxes.len > 0 )
-		boxtotagto = boxes[boxes.len]
-	boxtotagto.boxtag = copytext("[boxtotagto.boxtag][R?.value]", 1, 30)
-	boxtotagto.update_icon()
-	update_icon()
+	if(length(boxes) > 0)
+		boxtotagto = boxes[length(boxes)]
+	boxtotagto.set_boxtag(copytext("[boxtotagto.boxtag][R?.value]", 1, 30))
 	return OP_OK
 
 /obj/item/pizzabox/margherita

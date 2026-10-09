@@ -11,7 +11,6 @@
 			user.remove_from_mob(GE)
 			GE.forceMove(src)
 			to_chat(user, span_notice("You add \the [GE] to \the [src]."))
-			update_icon()
 		else
 			to_chat(user, span_warning("There's no space to put \the [GE] on \the [src]!"))
 	else if(istype(I, /obj/item/reagent_containers/food/snacks/fruit_slice))
@@ -25,7 +24,6 @@
 		FS.pixel_y = 0
 		FS.forceMove(src)
 		to_chat(user, span_notice("You add \the [FS] to \the [src]."))
-		update_icon()
 	else
 		return OP_DECLINE
 	return OP_PASS
@@ -61,7 +59,6 @@
 	else
 		to_chat(user, span_warning("Something went wrong, please try again."))
 
-	update_icon()
 	return OP_OK
 
 /obj/item/glass_extra

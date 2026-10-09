@@ -96,7 +96,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 
 /// The held injector is empty.
 /obj/machinery/injector_maker/proc/injector_empty(datum/act/op/A)
-	return !(A.held?.reagents?.total_volume > 0) // ALLOW(reads): the held injector's contents are read when it is offered, never from a cached menu
+	return !(A.held?.reagents?.total_volume > 0)
 
 /// An empty small injector goes on its rack.
 /obj/machinery/injector_maker/proc/small_injector_added(datum/act/op/A)
@@ -359,7 +359,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 							set_count_small_injector(src.count_small_injector - 1)
 				var/obj/item/reagent_containers/hypospray/autoinjector/empty/P = new(loc)
 				beaker.reagents.trans_to_obj(P, amount_per_injector)
-				changed(P)
 				if(new_name)
 					P.name = new_name
 
@@ -378,7 +377,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 							set_count_large_injector(src.count_large_injector - 1)
 				var/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty/P = new(loc)
 				beaker.reagents.trans_to_obj(P, amount_per_injector)
-				changed(P)
 				if(new_name)
 					P.name = new_name
 

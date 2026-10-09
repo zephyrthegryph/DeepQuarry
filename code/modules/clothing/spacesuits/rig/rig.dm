@@ -655,16 +655,16 @@ TRACKED(/obj/item/rig, carried_by_mob)
 		return FALSE
 	var/units = joules * CELLRATE
 	if(partial)
-		return cell.use(units, FALSE) > 0
+		return cell.use(units) > 0
 	if(!cell.check_charge(units + max(reserve, 0) * CELLRATE))
 		return FALSE
-	return cell.use(units, FALSE) >= units
+	return cell.use(units) >= units
 
 /// Put up to `joules` into the cell. Returns the joules actually stored.
 /obj/item/rig/proc/add_power(joules, datum/source)
 	if(joules <= 0 || !cell)
 		return 0
-	return cell.give(joules * CELLRATE, FALSE) / CELLRATE
+	return cell.give(joules * CELLRATE) / CELLRATE
 
 DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/rig/appearance_overlays()

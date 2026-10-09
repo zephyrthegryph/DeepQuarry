@@ -35,19 +35,11 @@
 TRACKED(/obj/item/reagent_containers/syringe, used)
 TRACKED(/obj/item/reagent_containers/syringe, mode)
 
-/obj/item/reagent_containers/syringe/Initialize(mapload)
-	. = ..()
-	update_icon()
-
-
 /// Every 2 seconds while used: dirtier by one per person it went into, up to 75, where it stops (as dirty as it gets).
 /obj/item/reagent_containers/syringe/proc/syringe_step(datum/act/timer/A)
 	dirtiness = min(dirtiness + targets.len, 75)
 	if(dirtiness >= 75)
 		set_used(FALSE)
-
-/obj/item/reagent_containers/syringe/on_reagent_change()
-	update_icon()
 
 /obj/item/reagent_containers/syringe/pickup(mob/user)
 	..()
@@ -189,7 +181,6 @@ CAPABILITIES(/datum/syringe_contamination)
 		add_blood(target)
 	if(user)
 		add_fingerprint(user)
-	update_icon()
 
 /obj/item/reagent_containers/syringe/ld50_syringe
 	name = "Lethal Injection Syringe"
@@ -314,9 +305,10 @@ CAPABILITIES(/obj/item/reagent_containers/syringe/steroid)
 		look.state("capped")
 		return
 
+	look.watch(reagents)
 	var/rounded_vol = round(reagents.total_volume, round(reagents.maximum_volume / 3))
 	if(reagents.total_volume)
-		look.overlay(look_overlay_image(icon, "filler[rounded_vol]", color = reagents.get_color()))
+		look.overlay(look_overlay_image(icon, "filler[rounded_vol]", color = reagents.tint))
 
 	if(ismob(loc))
 		switch(mode)

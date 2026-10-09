@@ -10,10 +10,17 @@ MATERIAL_MIX(/obj/item/syringe_cartridge, list(MAT_STEEL = 125, MAT_GLASS = 375)
 	force = 3
 	w_class = ITEMSIZE_TINY
 	var/tmp/obj/item/reagent_containers/syringe/syringe
+	/// Flying after being fired from a syringe gun: shows the flight sprite and no syringe, until it lands.
+	var/in_flight = FALSE
+
+TRACKED(/obj/item/syringe_cartridge, in_flight)
 
 /// The loaded syringe and its filling, drawn with the cartridge (the legacy look put them under the cartridge sprite; the look has no underlays).
 /obj/item/syringe_cartridge/draw(datum/look/look)
 	..()
+	if(in_flight)
+		look.state(icon_flight)
+		return
 	var/obj/item/reagent_containers/syringe/loaded = syringe()
 	if(!loaded)
 		return
@@ -36,7 +43,6 @@ MATERIAL_MIX(/obj/item/syringe_cartridge, list(MAT_STEEL = 125, MAT_GLASS = 375)
 		syringe().forceMove(src)
 		sharp = TRUE
 		name = "syringe dart"
-		update_icon()
 	return OP_PASS
 
 CAPABILITIES(/obj/item/syringe_cartridge)
@@ -53,13 +59,11 @@ CAPABILITIES(/obj/item/syringe_cartridge)
 		rel_clear(src, nameof(syringe))
 		sharp = initial(sharp)
 		name = initial(name)
-		update_icon()
 	return TRUE
 
 /obj/item/syringe_cartridge/proc/prime()
-	//the icon state will revert back when update_icon() is called from throw_impact()
-	icon_state = icon_flight
-	underlays.Cut()
+	//the flight sprite reverts when throw_impact() lands it
+	set_in_flight(TRUE)
 
 /obj/item/syringe_cartridge/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
 	..() //handles embedding for us. Should have a decent chance if thrown fast enough
@@ -79,8 +83,7 @@ CAPABILITIES(/obj/item/syringe_cartridge)
 		syringe().break_syringe(iscarbon(hit_atom)? hit_atom : null)
 		syringe().update_icon()
 
-	icon_state = initial(icon_state) //reset icon state
-	update_icon()
+	set_in_flight(FALSE) //back to the resting sprite
 
 /obj/item/gun/launcher/syringe
 	name = "syringe gun"

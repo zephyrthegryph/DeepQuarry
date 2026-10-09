@@ -2694,15 +2694,16 @@ CAPABILITIES(/obj/item/storage/box/timecap)
 	var/on = FALSE
 	var/activation_sound = SFX_MACHINES_CLICK
 
+TRACKED(/obj/item/toy/desk, on)
+
 /// The look (the draw sweep: from its template).
 /obj/item/toy/desk/draw(datum/look/look)
 	..()
 	look.state("[initial(icon_state)][on ? "-on" : ""]")
 
 /obj/item/toy/desk/proc/activate(mob/user as mob)
-	on = !on
+	set_on(!on)
 	playsound(src.loc, activation_sound, 75, 1)
-	changed(src)
 	return 1
 
 CAPABILITIES(/obj/item/toy/desk)

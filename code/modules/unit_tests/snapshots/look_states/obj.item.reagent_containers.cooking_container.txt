@@ -1,0 +1,9 @@
+/obj/item/reagent_containers/cooking_container food_items=1 +overlay: icons/obj/cooking_machines.dmi:1:-32767
+/obj/item/reagent_containers/cooking_container food_items=2 +overlay: icons/obj/cooking_machines.dmi:1:-32767
+/obj/item/reagent_containers/cooking_container/oven food_items=1 +overlay: icons/obj/cooking_machines.dmi:ovendish1:-32767
+/obj/item/reagent_containers/cooking_container/oven food_items=2 +overlay: icons/obj/cooking_machines.dmi:ovendish1:-32767
+/obj/item/reagent_containers/cooking_container/fryer food_items=1 +overlay: icons/obj/cooking_machines.dmi:basket1:-32767
+/obj/item/reagent_containers/cooking_container/fryer food_items=2 +overlay: icons/obj/cooking_machines.dmi:basket1:-32767
+/obj/item/reagent_containers/cooking_container/grill food_items=1 +overlay: icons/obj/cooking_machines.dmi:grillrack1:-32767
+/obj/item/reagent_containers/cooking_container/grill food_items=2 +overlay: icons/obj/cooking_machines.dmi:grillrack1:-32767
+

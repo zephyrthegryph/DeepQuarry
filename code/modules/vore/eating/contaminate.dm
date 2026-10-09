@@ -85,7 +85,7 @@ MSG_DEF(sink/washed_gurgled, span_notice("You wash %I% using %T%."), span_notice
 	if(!gurgled)
 	//Don't make them wet, just drain
 		var/obj/item/cell/C = src
-		C.charge = 0
+		C.set_charge(0)
 	return TRUE
 
 /obj/item/storage/box/gurgle_contaminate(atom/movable/item_storage = null)

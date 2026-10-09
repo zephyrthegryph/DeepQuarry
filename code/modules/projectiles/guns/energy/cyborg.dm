@@ -329,19 +329,21 @@ CAPABILITIES(/obj/item/melee/robotic/blade)
 	else //turning on
 		play_sfx(src, SFX_WEAPONS_SABERON)
 		force = active_force
-	active = !active
+	set_active(!active)
 	to_chat(user, span_notice("[src] is now [active ? "on" : "off"]."))
-	update_icon()
 	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/robotic/blade/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/melee/robotic/blade, active)
+TRACKED(/obj/item/melee/robotic/blade, lcolor)
+
+/// The look: the blade in its colour, and its glow.
+/obj/item/melee/robotic/blade/draw(datum/look/look)
+	..()
+	look.overlay(look_appearance(icon, "[initial(icon_state)]_blade", color = lcolor), active)
 	if(active)
-		var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
-		blade_overlay.color = lcolor
-		. += blade_overlay
-	refresh_light()
+		look.light(2, 2, lcolor)
+	else
+		look.light_off()
 
 /obj/item/melee/robotic/blade/refresh_light(clear)
 	if(active)
@@ -360,8 +362,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appe
 	if(A.step_value("confirm") == "Yes")
 		var/picked = A.step_value("color")
 		if(picked)
-			lcolor = sanitize_hexcolor(picked)
-		update_icon()
+			set_lcolor(sanitize_hexcolor(picked))
 	return OP_OK
 
 /// The recolor was confirmed: the colour is asked.
@@ -449,17 +450,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appe
 	var/lightcolor = "#FF6A00"
 	borg_flags = COUNTS_AS_ROBOTIC_MELEE
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/baton, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/robotic/baton/appearance_overlays()
-	. = list()
+/// The look: the active state and its glow.
+/obj/item/melee/robotic/baton/draw(datum/look/look)
+	..()
+	look.state(status ? "[initial(name)]_active" : initial(name))
 	if(status)
-		icon_state = "[initial(name)]_active"
+		look.light(2, 1, lightcolor)
 	else
-		icon_state = "[initial(name)]"
-	refresh_light()
+		look.light_off()
 
 /obj/item/melee/robotic/baton/refresh_light(clear)
-	if(icon_state == "[initial(name)]_active")
+	if(status)
 		if(clear)
 			set_light(0)
 		set_light(2, 1, lightcolor)
@@ -481,7 +482,6 @@ CAPABILITIES(/obj/item/melee/robotic/baton)
 	set_status(!status)
 	to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
 	play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
-	update_icon()
 	return OP_OK
 
 /obj/item/melee/robotic/baton/proc/baton_used_by_other_item(datum/act/op/A)

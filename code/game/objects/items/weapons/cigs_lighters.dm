@@ -226,7 +226,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 			return
 		var/turf/T = get_turf(src)
 		T.visible_message(flavor_text)
-		update_icon()
 		set_light(2, 0.25, "#E38F46")
 
 /// Lighting source: phoron or fuel in it explodes (source is deleted, returns TRUE); otherwise its
@@ -285,7 +284,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 
 /obj/item/clothing/mask/smokable/proc/quench()
 	set_lit(0)
-	update_icon()
 
 /obj/item/clothing/mask/smokable/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(lit && M == user && ishuman(M))

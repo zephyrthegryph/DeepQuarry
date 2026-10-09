@@ -429,7 +429,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 		var/charge = latent_cell_charge
 		latent_cell_charge = null
 		rel_set(src, nameof(cell), new /obj/item/cell/emergency_light(src))
-		cell.charge = charge
+		cell.set_charge(charge)
 	return cell
 
 /// A pristine emergency cell as data: what /obj/item/cell/emergency_light's Initialize() would give here (no charge in a naturally depowered area).

@@ -235,7 +235,6 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 	to_chat(user, span_notice("You remove [mytape] from [src]."))
 	user.put_in_hands(mytape)
 	rel_take(src, nameof(mytape))
-	changed(src)
 
 /obj/item/taperecorder/hear_talk(mob/M, list/message_pieces, verb)
 	var/msg = multilingual_to_message(message_pieces, requires_machine_understands = TRUE, with_capitalization = TRUE)
@@ -299,7 +298,6 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 	if(mytape.used_capacity < mytape.max_capacity)
 		to_chat(user, span_notice("Recording started."))
 		set_recording(1)
-		changed(src)
 
 		mytape.record_speech("Recording started.")
 		return
@@ -310,7 +308,6 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 /obj/item/taperecorder/proc/record_tick(datum/act/timer/A)
 	if(!mytape || mytape.used_capacity >= mytape.max_capacity)
 		set_recording(0) // the every() is gated on recording: this ends it
-		changed(src)
 		return
 	mytape.used_capacity++
 	if(mytape.used_capacity >= mytape.max_capacity)
@@ -318,12 +315,10 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 			var/mob/M = loc
 			to_chat(M, span_notice("The tape is full."))
 		stop_recording()
-		changed(src)
 
 /obj/item/taperecorder/proc/stop_recording()
 	//Sanity checks skipped, should not be called unless actually recording
 	set_recording(0)
-	changed(src)
 	mytape.record_speech("Recording stopped.")
 	if(ismob(loc))
 		var/mob/M = loc

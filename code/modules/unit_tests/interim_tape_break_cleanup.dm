@@ -16,10 +16,10 @@
 	var/obj/item/tape/left = allocate(/obj/item/tape, west)
 	var/obj/item/tape/right = allocate(/obj/item/tape, east)
 	var/obj/item/tape/unconnected = allocate(/obj/item/tape, east)
-	source.tape_dir = EAST | WEST
-	left.tape_dir = EAST
-	right.tape_dir = WEST
-	unconnected.tape_dir = NORTH
+	source.set_tape_dir(EAST | WEST)
+	left.set_tape_dir(EAST)
+	right.set_tape_dir(WEST)
+	unconnected.set_tape_dir(NORTH)
 	var/list/line = source.gettapeline()
 	TEST_ASSERT(left in line, "The actual tape line discovers its original western segment")
 	TEST_ASSERT(right in line, "The actual tape line discovers its original eastern segment")

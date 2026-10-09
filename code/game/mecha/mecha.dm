@@ -467,7 +467,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 		// the cell and tank are handed to `wreck` by their declared policy (CAPABILITIES): the cell comes out part spent.
 		if(cell)
-			cell.charge = rand(0, cell.charge)
+			cell.set_charge(rand(0, cell.charge))
 	else
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			E.detach(loc)

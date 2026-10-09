@@ -99,7 +99,6 @@ TRACKED(/obj/item/rms, stored_charge)
 		C.use(charge_needed)
 	else
 		C.use(C.charge)
-	C.update_icon()
 	to_chat(user, span_notice("You drain [C]."))
 
 /obj/item/rms/proc/consume_resources(amount)

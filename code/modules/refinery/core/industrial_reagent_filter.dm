@@ -29,9 +29,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 /obj/machinery/reagent_refinery/filter/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	// Update neighbours and self for state
-	update_neighbours()
-	update_icon()
 
 /obj/machinery/reagent_refinery/filter/refinery_step()
 	if(!anchored)
@@ -61,15 +58,13 @@ CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 		if(target && reagents.total_volume > 0)
 			transfer_tank( reagents, target, dir)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/filter, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/filter/appearance_overlays()
-	. = list()
-	icon_state = "filter_[filter_side == 1 ? "r" : "l"]"
-
-	if(reagents && reagents.total_volume > 0)
-		var/image/filling = image(icon, loc, "[icon_state]_r",dir = dir)
-		filling.color = reagents.get_color()
-		. += filling
+/obj/machinery/reagent_refinery/filter/draw(datum/look/look)
+	..()
+	var/datum/reagents/R = reagents
+	look.watch(R) // its level and colour are tracked on the holder
+	var/drawn_state = look.state("filter_[filter_side == 1 ? "r" : "l"]")
+	if(R?.total_volume > 0)
+		look.overlay(look_overlay_image(icon, "[drawn_state]_r", color = R.tint, dir = dir))
 
 /obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_use(datum/act/op/A)
 	var/mob/user = A.actor

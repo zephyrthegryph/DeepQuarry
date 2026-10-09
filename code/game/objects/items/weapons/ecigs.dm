@@ -105,7 +105,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
 			if (!ec_cartridge || !ec_cartridge.reagents.total_volume)//no cartridge
 				to_chat(C, span_notice("[src] turns off."))
 				set_active(0)//autodisable the cigarette
-				update_icon()
 				return
 			ec_cartridge.reagents.trans_to_mob(C, REM, CHEM_INGEST, 0.4) // Most of it is not inhaled... balance reasons.
 
@@ -152,7 +151,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
 		else//fits in new one
 			if(!move_into(src, nameof(src.ec_cartridge), I, user))
 				return OP_OK
-			update_icon()
 			to_chat(user, span_notice("You insert [I] into [src]."))
 	return OP_OK
 
@@ -162,14 +160,12 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
 	if(active)
 		set_active(FALSE)
 		to_chat(user, span_notice("You turn off \the [src]. "))
-		update_icon()
 	else
 		if(!ec_cartridge)
 			to_chat(user, span_notice("You can't use it with no cartridge installed!."))
 			return OP_DECLINE
 		set_active(TRUE)
 		to_chat(user, span_notice("You turn on \the [src]. "))
-		update_icon()
 	return OP_OK
 
 /// An empty hand on the held e-cig ejects the cartridge.
@@ -182,7 +178,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
 		user.put_in_hands(ec_cartridge)
 		to_chat(user, span_notice("You eject [ec_cartridge] from \the [src]."))
 		rel_take(src, nameof(ec_cartridge))
-		update_icon()
 	return OP_OK
 
 MATERIAL_MIX(/obj/item/reagent_containers/ecig_cartridge, list(MAT_STEEL = 50, MAT_GLASS = 10))

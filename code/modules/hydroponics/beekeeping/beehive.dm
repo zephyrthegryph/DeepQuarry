@@ -106,7 +106,6 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 	var/mob/user = A.actor
 	var/obj/item/honey_frame/held = A.held
 	act_message(user, src, MSG_SELF(span_notice("You load %I% into %T%.")), MSG_OTHERS(span_notice("%U% loads %I% into %T%.")), item = held)
-	changed(src)
 	user.drop_from_inventory(held)
 	held.forceMove(src)
 	rel_add(src, nameof(frames), held)
@@ -199,11 +198,11 @@ MSG_DEF(beehive/dismantling, span_notice("You start dismantling %T%..."), span_n
 /obj/machinery/beehive/proc/harvest_frame(mob/user)
 	if(honeycombs < 100 || !length(frames))
 		return
-	var/obj/item/honey_frame/H = pop(frames)
+	var/obj/item/honey_frame/H = frames[length(frames)]
+	rel_remove(src, nameof(frames), H)
 	H.set_honey(20)
 	set_honeycombs(honeycombs - (100))
 	H.forceMove(get_turf(src))
-	changed(src)
 	harvest_next(user)
 
 /obj/machinery/beehive/proc/interaction_beehive_harvest(datum/act/op/A)
@@ -233,7 +232,7 @@ MSG_DEF(beehive/dismantling, span_notice("You start dismantling %T%..."), span_n
 	var/trays = 0
 	for(var/obj/machinery/portable_atmospherics/hydroponics/H in view(7, src))
 		if(H.seed && !H.dead)
-			H.health += 0.05 * coef
+			H.set_health(H.health + 0.05 * coef)
 			++trays
 	set_honeycombs(min(honeycombs + 0.1 * coef * min(trays, 5), length(frames) * 100))
 
@@ -480,4 +479,3 @@ CAPABILITIES(/obj/machinery/honey_extractor)
 	new /obj/item/stack/material/wax(loc)
 	set_honey(honey + processing)
 	set_processing(0)
-	changed(src)

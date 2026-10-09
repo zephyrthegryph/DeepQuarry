@@ -112,36 +112,11 @@
 	several TSCs have been trying to get a hold of the blueprints for half a decade."
 	var/unique_reskin
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/stunrevolver/detective, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/stunrevolver/detective/appearance_overlays()
-	. = list()
-	if(power_supply == null)
-		if(unique_reskin)
-			icon_state = "[unique_reskin]_open"
-		else
-			icon_state = "[initial(icon_state)]_open"
-		return .
-	else if(charge_meter)
-		var/ratio = power_supply.charge / power_supply.maxcharge
+TRACKED(/obj/item/gun/energy/stunrevolver/detective, unique_reskin)
 
-		//make sure that rounding down will not give us the empty state even if we have charge for a shot left.
-		if(power_supply.charge < charge_cost)
-			ratio = 0
-		else
-			ratio = max(round(ratio, 0.25) * 100, 25)
-
-		if(unique_reskin)
-			icon_state = "[unique_reskin][ratio]"
-		else
-			icon_state = "[initial(icon_state)][ratio]"
-
-	else if(power_supply)
-		if(unique_reskin)
-			icon_state = "[unique_reskin]"
-		else
-			icon_state = "[initial(icon_state)]"
-
-	update_held_icon()
+/// The detective's revolver is drawn from the sprite it was reskinned to.
+/obj/item/gun/energy/stunrevolver/detective/charge_state_name()
+	return unique_reskin ? unique_reskin : initial(icon_state)
 
 CAPABILITIES(/obj/item/gun/energy/stunrevolver/detective)
 	op("rename", menu(), label("Name Gun"), needs(carried()),
@@ -184,8 +159,7 @@ CAPABILITIES(/obj/item/gun/energy/stunrevolver/detective)
 	var/choice = A.step_value("sprite")
 	var/list/options = reskin_options()
 	if(src && choice && !M.stat && in_range(M,src))
-		icon_state = options[choice]
-		unique_reskin = options[choice]
+		set_unique_reskin(options[choice])
 		to_chat(M, "Your gun is now sprited as [choice]. Say hello to your new friend.")
 		return OP_OK
 	return OP_DECLINE

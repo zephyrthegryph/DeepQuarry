@@ -271,8 +271,8 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/potato)
 	var/obj/item/cell/potato/pocell = new /obj/item/cell/potato(get_turf(user))
 	if(src.loc == user && ishuman(user))
 		user.put_in_hands(pocell)
-	pocell.maxcharge = 2000 // same as potato
-	pocell.charge = pocell.maxcharge
+	pocell.set_maxcharge(2000) // same as potato
+	pocell.set_charge(pocell.maxcharge)
 	consume(src, user)
 
 

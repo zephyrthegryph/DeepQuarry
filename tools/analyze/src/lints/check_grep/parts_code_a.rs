@@ -102,7 +102,7 @@ pub fn parts() -> Vec<Part> {
             line(r"\bcell\.(use|give)\("),
         )
         .allow(Allow::Strict)
-        .flt(vec![drop(r"cell\.use\(units, FALSE\)|cell\.give\(joules \* CELLRATE, FALSE\)")]),
+        .flt(vec![drop(r"cell\.use\(units\)|cell\.give\(joules \* CELLRATE\)")]),
         Part::new(
             "one_revive_path_return_from_death",
             "one revive path: return_from_death()",

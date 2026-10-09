@@ -282,7 +282,6 @@ CAPABILITIES(/obj/machinery/lapvend)
 				fabricated_laptop.forceMove(src.loc)
 				fabricated_laptop.screen_on = 0
 				fabricated_laptop.set_anchored(FALSE)
-				fabricated_laptop.update_icon()
 				rel_take(src, nameof(fabricated_laptop))
 			else if((devtype == 2) && fabricated_tablet)
 				if(fabricated_tablet.battery_module)

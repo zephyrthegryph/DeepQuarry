@@ -265,8 +265,6 @@ CAPABILITIES(/obj/machinery/shield_gen)
 
 		for(var/mob/M in view(5,src))
 			to_chat(M, "[icon2html(src, M.client)] You hear heavy droning start up.")
-		for(var/obj/effect/energy_field/E in field) // Update the icons here to ensure all the shields have been made already.
-			E.update_icon()
 		shield_hum.start()
 	else
 		rel_clear(src, nameof(field))

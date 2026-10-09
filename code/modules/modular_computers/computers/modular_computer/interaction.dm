@@ -17,8 +17,7 @@
 /obj/item/modular_computer/proc/computer_emergency_shutdown(datum/act/op/A)
 	var/mob/user = A.actor
 	if(enabled)
-		bsod = 1
-		update_icon()
+		set_bsod(TRUE)
 		shutdown_computer()
 		to_chat(user, "You press a hard-reset button on \the [src]. It displays a brief debug screen before shutting down.")
 		after(src, 2 SECONDS, PROC_REF(clear_bsod))
@@ -187,5 +186,4 @@
 	return proximity_flag
 
 /obj/item/modular_computer/proc/clear_bsod()
-	bsod = 0
-	update_icon()
+	set_bsod(FALSE)

@@ -100,7 +100,7 @@
 
 	var/mob/living/silicon/ai/O = new (newloc, FALSE, using_map.default_law_type, null, 1)//No MMI but safety is in effect.
 	O.invisibility = INVISIBILITY_NONE
-	O.aiRestorePowerRoutine = 0
+	O.set_aiRestorePowerRoutine(0)
 
 	if(isliving(src))
 		if(move_player(src, O, "AIized"))

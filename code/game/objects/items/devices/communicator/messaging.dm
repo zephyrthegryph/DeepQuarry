@@ -86,8 +86,7 @@
 		for (var/mob/O in hearers(2, loc))
 			O.show_message(text("[icon2html(src,O.client)] *[ttone]*"))
 
-	alert_called = 1
-	changed(src)
+	set_alert_called(1)
 
 	//Search for holder of the device.
 	var/mob/living/L = null

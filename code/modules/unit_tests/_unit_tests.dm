@@ -396,6 +396,7 @@
 #include "dq_conversion_pins.dm"
 #include "dq_draw_framework.dm"
 #include "dq_draw_sweep_3c.dm"
+#include "dq_draw_reagents.dm"
 #include "dq_look_pins.dm"
 #include "dq_hit_pins.dm"
 #include "dq_ui_pins.dm"
@@ -1239,6 +1240,8 @@
 #include "dq_round3_requests_c.dm"
 #include "dq_round3_requests_d.dm"
 #include "dq_draw_mobs.dm"
+#include "dq_draw_items.dm"
+#include "dq_draw_pockets.dm"
 
 #include "dq_machine_click_intent_tests.dm"
 

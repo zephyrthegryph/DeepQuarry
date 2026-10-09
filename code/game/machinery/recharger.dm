@@ -315,9 +315,9 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 ///Charges microbatteries. One projectile at a time.
 /obj/machinery/recharger/proc/charge_microbattery(obj/item/ammo_casing/microbattery/batt)
 	if(batt.shots_left >= initial(batt.shots_left))
-		batt.shots_left = initial(batt.shots_left)
+		batt.set_shots_left(initial(batt.shots_left))
 	else
-		batt.shots_left++
+		batt.set_shots_left(batt.shots_left + 1)
 
 ///Charges cell magazines, one projectile at a time.
 /obj/machinery/recharger/proc/charge_cell_magazine(obj/item/ammo_magazine/cell_mag/magazine)
@@ -325,7 +325,7 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 		for(var/obj/item/ammo_casing/microbattery/shot_to_charge in magazine)
 			if(shot_to_charge.shots_left >= initial(shot_to_charge.shots_left))
 				continue
-			shot_to_charge.shots_left++
+			shot_to_charge.set_shots_left(shot_to_charge.shots_left + 1)
 			return
 
 ///Charges cell guns. First charges the currently chambered battery, then the batteries in the magazine.
@@ -335,14 +335,14 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 
 	//First, we charge the currently chambered battery if there is one.
 	if(batt && !(batt.shots_left >= initial(batt.shots_left)))
-		batt.shots_left++
+		batt.set_shots_left(batt.shots_left + 1)
 		return
 	//Second, we charge the batteries in the magazine.
 	else if(magazine && LAZYLEN(magazine.stored_ammo))
 		for(var/obj/item/ammo_casing/microbattery/shot_to_charge in magazine)
 			if(shot_to_charge.shots_left >= initial(shot_to_charge.shots_left))
 				continue
-			shot_to_charge.shots_left++
+			shot_to_charge.set_shots_left(shot_to_charge.shots_left + 1)
 			return //only heal one at a time.
 
 // ---- what it shows ----

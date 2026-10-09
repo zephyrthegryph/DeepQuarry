@@ -62,6 +62,9 @@ CAPABILITIES(/obj/machinery/gibber/autogibber)
 			M.forceMove(src)
 			M.gib()
 
+TRACKED(/obj/machinery/gibber, operating)
+TRACKED(/obj/machinery/gibber, dirty)
+
 /// Appearance reader: which status light the gibber shows.
 /obj/machinery/gibber/proc/appearance_gibber_light()
 	if(!operable())
@@ -96,7 +99,7 @@ CAPABILITIES(/obj/machinery/gibber)
 
 /// Requirement: the gibber isn't already running (an inoperable one is ignored silently by the effect).
 /obj/machinery/gibber/proc/can_start_gibbing(mob/user, atom/target, obj/item/held)
-	if(operable() && operating) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+	if(operable() && operating)
 		return "the gibber is locked and running, wait for it to finish"
 	return TRUE
 
@@ -202,7 +205,6 @@ CAPABILITIES(/obj/machinery/gibber)
 	if(!move_into(src, OCCUPANT_SLOT_GIBBER, victim, user))
 		return
 	act_message(user, victim, others = span_danger("%U% stuffs %T% into the gibber!"))
-	changed(src)
 
 /// Old Empty Gibber verb.
 /obj/machinery/gibber/proc/gibber_verb_eject(datum/act/op/A)
@@ -221,7 +223,6 @@ CAPABILITIES(/obj/machinery/gibber)
 	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		O.forceMove(src.loc)
 	slot_remove(occupant, get_turf(src))
-	changed(src)
 	return
 
 /obj/machinery/gibber/proc/startgibbing(mob/user as mob)
@@ -234,8 +235,7 @@ CAPABILITIES(/obj/machinery/gibber)
 
 	use_power(1000)
 	visible_message(span_danger("You hear a loud [HAS_SYNTHETIC_BIOLOGY(occupant) ? "metallic" : "squelchy"] grinding sound."))
-	src.operating = 1
-	changed(src)
+	set_operating(1)
 
 	var/slab_name = occupant.name
 	var/slab_count = 2 + occupant.meat_amount
@@ -278,7 +278,7 @@ CAPABILITIES(/obj/machinery/gibber)
 		// unlink without a ledger move (the remains stay physically where they are).
 		om_unlink(occupant, src, /datum/om/relation/slot/occupant/gibber)
 	play_sfx(src, SFX_EFFECTS_SPLAT)
-	operating = 0
+	set_operating(0)
 	if(LAZYLEN(byproducts))
 		for(var/path in byproducts)
 			while(byproducts[path])
@@ -299,8 +299,6 @@ CAPABILITIES(/obj/machinery/gibber)
 			continue
 		thing.forceMove(get_turf(thing)) // Drop it onto the turf for throwing.
 		thing.throw_at(get_edge_target_turf(src,gib_throw_dir),rand(0,3),emagged() ? 100 : 50) // Being pelted with bits of meat and bone would hurt.
-
-	changed(src)
 
 /// the input_plate this refers to (a relation view: null once it is deleted).
 /obj/machinery/gibber/autogibber/proc/input_plate() as /turf

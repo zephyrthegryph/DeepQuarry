@@ -9,11 +9,14 @@
 	var/icon
 	var/color
 	var/alpha
+	var/invisibility
 	var/matrix/transform
 	var/dir
 	var/plane
 	var/layer
 	var/list/overlays
+	/// look.underlay(): icon_states (or images) drawn beneath the base sprite.
+	var/list/underlays
 	/// Names from look.variant(): each replaces the base state by "<base>-name" when the icon has it.
 	var/list/variants
 	/// list(name, value or null, glows) per look.part(): resolved against the icon when applied.
@@ -50,11 +53,13 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	icon = null
 	color = null
 	alpha = null
+	invisibility = null
 	transform = null
 	dir = null
 	plane = null
 	layer = null
 	overlays = null
+	underlays = null
 	variants = null
 	parts = null
 	filters = null
@@ -90,6 +95,14 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	if(!when || isnull(name))
 		return
 	LAZYADD(overlays, icon ? look_image(icon, name) : name)
+
+/// An underlay icon_state (or an image / mutable_appearance), drawn beneath the base sprite, added only `when` is true. `icon` draws the
+/// state from another icon file than the holder's. Like overlay(), the builder is the only writer of the holder's underlays.
+/datum/look/proc/underlay(name, when = TRUE, icon)
+	touched = TRUE
+	if(!when || isnull(name))
+		return
+	LAZYADD(underlays, icon ? look_image(icon, name) : name)
 
 /// Drops a layer a capability drew (the holder's own draw() knows its sprite has no such state in
 /// this state): every overlay or part named `name` added so far (a part by its name, or by name-value).
@@ -343,6 +356,11 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	alpha = value
 	touched = TRUE
 
+/// The holder's invisibility level (a hidden HUD button): part of the key. A draw that stops naming it gives the holder its type default back.
+/datum/look/proc/set_invisibility(value)
+	invisibility = value
+	touched = TRUE
+
 /datum/look/proc/set_transform(matrix/M)
 	transform = M
 	touched = TRUE
@@ -415,11 +433,16 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 
 /// The change key: equal keys draw equally (the flick is part of it, so a new flick re-applies).
 /datum/look/proc/change_key()
-	var/list/parts = list(icon_state, "[icon]", color, alpha, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, isnull(offset_x) ? null : "[offset_x],[offset_y]", flick_state, light_spec ? jointext(light_spec, ",") : null, held_state, identity_name, identity_desc)
+	var/list/parts = list(icon_state, "[icon]", color, alpha, invisibility, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, isnull(offset_x) ? null : "[offset_x],[offset_y]", flick_state, light_spec ? jointext(light_spec, ",") : null, held_state, identity_name, identity_desc)
 	var/list/overlay_keys = list()
 	for(var/entry in overlays)
 		overlay_keys += look_part_key(entry)
 	parts += jointext(overlay_keys, ",")
+	if(underlays)
+		var/list/underlay_keys = list()
+		for(var/entry in underlays)
+			underlay_keys += look_part_key(entry)
+		parts += "under:[jointext(underlay_keys, ",")]"
 	if(variants)
 		parts += "variants:[jointext(variants, ",")]"
 	for(var/list/entry in src.parts)
@@ -458,6 +481,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 #define LOOK_SET_LAYER (1<<7)
 #define LOOK_SET_LIGHT (1<<8)
 #define LOOK_SET_OFFSET (1<<9)
+#define LOOK_SET_INVISIBILITY (1<<10)
 
 /// Applies the look to A. Only what the look set is touched; what it set last time and not now is
 /// taken back: overlays, filters and vis_contents are removed, and a base property (icon, color,
@@ -499,6 +523,11 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		now |= LOOK_SET_ALPHA
 	else if(was & LOOK_SET_ALPHA)
 		A.alpha = initial(A.alpha)
+	if(!isnull(invisibility))
+		A.invisibility = invisibility
+		now |= LOOK_SET_INVISIBILITY
+	else if(was & LOOK_SET_INVISIBILITY)
+		A.invisibility = initial(A.invisibility)
 	if(transform)
 		A.transform = transform
 		now |= LOOK_SET_TRANSFORM
@@ -563,6 +592,12 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	if(added)
 		A.add_overlay(added)
 		cache.look_overlays = added
+	if(cache.look_underlays)
+		A.underlays.Cut()
+		cache.look_underlays = FALSE
+	for(var/entry in underlays)
+		A.underlays += entry
+		cache.look_underlays = TRUE
 	for(var/name in cache.look_filters)
 		if(!filters || !(name in filters))
 			A.look_remove_filter(name)
@@ -595,6 +630,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 #undef LOOK_SET_ICON_STATE
 #undef LOOK_SET_COLOR
 #undef LOOK_SET_ALPHA
+#undef LOOK_SET_INVISIBILITY
 #undef LOOK_SET_TRANSFORM
 #undef LOOK_SET_DIR
 #undef LOOK_SET_PLANE

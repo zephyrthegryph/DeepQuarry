@@ -83,13 +83,9 @@ MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")
 	else
 		. += span_warning("\The [src] does not appear to have a power source installed.")
 
-DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/smart, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/ammo_magazine/smart/appearance_overlays()
-	. = list()
-	if(attached_cell())
-		icon_state = "smartmag-filled"
-	else
-		icon_state = "smartmag-empty"
+/obj/item/ammo_magazine/smart/draw(datum/look/look)
+	..()
+	look.state(attached_cell() ? "smartmag-filled" : "smartmag-empty")
 
 // Emagging lets you remove bullets from your bullet-making magazine
 
@@ -119,11 +115,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/smart, TYPE_PROC_REF(/atom, appe
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/ammo_magazine/smart/proc/screwdriver_act_tool_done(mob/user, obj/item/cell/device/removed_cell)
-	removed_cell.update_icon()
 	removed_cell.forceMove(get_turf(src))
 	rel_clear(src, nameof(attached_cell))
 	act_message(user, src, MSG_SELF("You remove %I% from %T%."), MSG_OTHERS("%U% removes a cell from %T%."), item = removed_cell)
-	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/ammo_magazine/smart/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
@@ -140,18 +134,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/smart, TYPE_PROC_REF(/atom, appe
 	I.forceMove(src)
 	rel_set(src, nameof(attached_cell), I)
 	act_message(user, src, MSG_SELF("You install %I% into %T%."), MSG_OTHERS("%U% installs a cell in %T%."), item = I)
-	update_icon()
 	return OP_OK
 
 /obj/item/ammo_magazine/smart/proc/cell_removed(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!attached_cell())
 		return OP_FAILED
-	attached_cell().update_icon()
 	user.put_in_hands(attached_cell())
 	act_message(user, src, MSG_SELF("You remove \the [attached_cell()] from %T%."), MSG_OTHERS("%U% removes a cell from %T%."))
 	rel_clear(src, nameof(attached_cell))
-	update_icon()
 	return OP_OK
 
 // Finds the cell for the magazine, used by rechargers

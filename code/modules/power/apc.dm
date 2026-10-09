@@ -561,7 +561,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(!cell)
 		return
 	var/before = cell.charge
-	cell.charge = clamp(amount, 0, cell.maxcharge)
+	cell.set_charge(clamp(amount, 0, cell.maxcharge))
 	if(vg_entity && pushed_cell_ref == REF(cell))
 		adjust_charge(cell.charge - before)
 
@@ -574,7 +574,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(cell)
 		var/new_charge = get_charge()
 		charge_changed = new_charge != cell.charge
-		cell.charge = new_charge
+		cell.set_charge(new_charge)
 	var/new_equipment = get_channels(0)
 	var/new_lighting = get_channels(1)
 	var/new_environ = get_channels(2)
@@ -649,7 +649,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 /obj/machinery/power/apc/proc/init()
 	if(cell) // made at init by its relation (starts = nameof(cell_type))
-		cell.charge = start_charge * cell.maxcharge / 100.0
+		cell.set_charge(start_charge * cell.maxcharge / 100.0)
 
 	var/area/A = loc.loc
 	rel_set(src, nameof(area), (isarea(A) && !areastring) ? A : get_area_name(areastring)) // paired: the area's apc is this APC
