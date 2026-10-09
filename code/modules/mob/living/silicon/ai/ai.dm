@@ -989,6 +989,7 @@ TRACKED(/mob/living/silicon/ai, aiRestorePowerRoutine)
 	..()
 	if(!selected_sprite)
 		return
+	look.watch(selected_sprite)
 	if(stat == DEAD)
 		look.state(selected_sprite.dead_icon)
 		look.light(3, 1, selected_sprite.dead_light)

@@ -749,6 +749,7 @@ CAPABILITIES(/atom/movable/screen/inventory)
 	if(!hud)
 		return
 	var/mob/M = hud.mymob()
+	look.watch(hud)
 	look.watch(M)
 	if(!iscarbon(M))
 		return

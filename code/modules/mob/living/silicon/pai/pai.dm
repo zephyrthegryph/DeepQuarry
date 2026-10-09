@@ -578,6 +578,7 @@ TRACKED(/mob/living/silicon/pai, holo_icon_south)
 /mob/living/silicon/pai/draw(datum/look/look)
 	..()
 	var/datum/pai_sprite/chassis_data = SSpai.chassis_data(chassis_name)
+	look.watch(chassis_data)
 	if(chassis_data.holo_projector)
 		// The projection has no state of its own; the eyes come from the file that fits its size.
 		look.set_icon(holo_icon_south)

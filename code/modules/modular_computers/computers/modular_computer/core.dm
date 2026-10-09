@@ -230,7 +230,7 @@
 	if(active_program())
 		minimize_program(user)
 
-	if(P.run_program(user))
+	P.run_program(user)
 	return 1
 
 /obj/item/modular_computer/proc/update_uis()

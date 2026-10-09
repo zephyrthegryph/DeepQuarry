@@ -44,11 +44,11 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 		for(var/atom/movable/screen/ability/O in ability_objects)
 			if(my_mob() && my_mob().client)
 				my_mob().client.screen -= O
-		showing = 0
+		set_showing(0)
 	else if(forced_state != 1) // We're opening it, show the icons. OR, if forced_state == 2, we're forcing it to open it.
 		open_ability_master()
 		update_abilities(1)
-		showing = 1
+		set_showing(1)
 
 /atom/movable/screen/movable/ability_master/proc/open_ability_master()
 	var/list/screen_loc_xy = splittext(screen_loc,",")
@@ -99,7 +99,7 @@ TRACKED(/atom/movable/screen/movable/ability_master, showing)
 
 
 	new_button.name = name_given
-	new_button.ability_icon_state = name_given
+	new_button.set_ability_icon_state(name_given)
 	rel_add(src, nameof(ability_objects), new_button)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
@@ -233,7 +233,7 @@ CAPABILITIES(/atom/movable/screen/ability)
 	rel_set(A, nameof(A.ability_master), src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
-	A.ability_icon_state = ability_icon_given
+	A.set_ability_icon_state(ability_icon_given)
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
@@ -257,7 +257,7 @@ CAPABILITIES(/atom/movable/screen/ability)
 	rel_set(A, nameof(A.ability_master), src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
-	A.ability_icon_state = ability_icon_given
+	A.set_ability_icon_state(ability_icon_given)
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
@@ -296,7 +296,7 @@ CAPABILITIES(/atom/movable/screen/ability)
 	var/atom/movable/screen/ability/obj_based/technomancer/A = new /atom/movable/screen/ability/obj_based/technomancer()
 	rel_set(A, nameof(A.ability_master), src)
 	rel_set(A, nameof(A.object), object_given)
-	A.ability_icon_state = ability_icon_given
+	A.set_ability_icon_state(ability_icon_given)
 	A.name = object_given.name
 	rel_add(src, nameof(ability_objects), A)
 	if(my_mob().client)
