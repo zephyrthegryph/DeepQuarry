@@ -49,6 +49,8 @@
 	if(!value && !rx)
 		return
 	var/datum/rx_state/S = rx_of(src)
+	if(S.containment_declared != value)
+		PUBLISH_CHANGE(src, SLOT_OCCUPANCY_KEY) // what slot_kinds() answers moves from the generator to the ledger
 	S.containment_declared = value
 
 /atom/proc/latent_policy_disabled()

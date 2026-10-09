@@ -14,14 +14,12 @@
 	sealable = FALSE //Don't touch this.
 	max_integrity = 100
 
-/obj/structure/closet/secure_closet/egg/proc/appearance_egg_state()
+/// The egg shows its own states, open or sealed or shut.
+/obj/structure/closet/secure_closet/egg/closet_look(datum/look/look)
 	if(opened)
-		return icon_opened
-	return is_welded(src) ? icon_locked : icon_closed
-
-APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet/egg, "{appearance_egg_state}")
-// Replaces the inherited "opened" -> "open" layer: the egg's open state is icon_opened.
-DECLARE_APPEARANCE(/obj/structure/closet/secure_closet/egg, "opened", list())
+		look.state(icon_opened)
+		return
+	look.state(is_welded(src) ? icon_locked : icon_closed)
 
 // An egg is cut open by a welder (lit or not: what is in it is let out, and the shell goes), and has no bolts.
 CAPABILITIES(/obj/structure/closet/secure_closet/egg)

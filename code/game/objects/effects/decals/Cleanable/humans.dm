@@ -20,12 +20,27 @@
 	generic_filth = TRUE
 	persistent = FALSE
 	var/delete_me = FALSE
+	/// Dried up (dry()): drawn darker, under its dried name.
+	var/dried = FALSE
+
+TRACKED(/obj/effect/decal/cleanable/blood, synthblood)
+TRACKED(/obj/effect/decal/cleanable/blood, dried)
+
+/// The colour of the blood when wet ("rainbow" is a random one, chosen here). A change is drawn.
+/obj/effect/decal/cleanable/blood/proc/set_basecolor(value)
+	if(value == "rainbow")
+		value = get_random_colour(1)
+	if(basecolor == value)
+		return FALSE
+	basecolor = value
+	tracked_changed(src, nameof(basecolor))
+	return TRUE
+SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 
 /obj/effect/decal/cleanable/blood/reveal_blood()
 	if(!dq_get_fluorescent(src))
 		dq_set_fluorescent(src, 1)
-		basecolor = COLOR_LUMINOL
-		update_icon()
+		set_basecolor(COLOR_LUMINOL)
 
 /obj/effect/decal/cleanable/blood/wash(clean_types)
 	. = ..()
@@ -38,7 +53,6 @@
 	. = ..()
 	if(delete_me)
 		return INITIALIZE_HINT_QDEL
-	update_icon()
 	if(!mapload)
 		after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
 	if(istype(src, /obj/effect/decal/cleanable/blood/gibs))
@@ -53,22 +67,28 @@
 					else
 						consume(B)
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/decal/cleanable/blood/appearance_overlays()
-	if(basecolor == "rainbow") basecolor = get_random_colour(1)
-	. = list()
-	color = basecolor
+/// The colour it is drawn with: its blood, or white for a decal whose picture carries its own colours; darker once it has dried.
+/obj/effect/decal/cleanable/blood/proc/shown_color()
+	return dried ? adjust_brightness(wet_color(), -50) : wet_color()
 
-	if(basecolor == SYNTH_BLOOD_COLOUR)
-		name = "oil"
-		desc = "It's quite oily."
+/// The colour of the decal while it is wet.
+/obj/effect/decal/cleanable/blood/proc/wet_color()
+	return basecolor
+
+/// A dried decal goes by its dried name, whatever it was.
+/obj/effect/decal/cleanable/blood/proc/dried_look(datum/look/look)
+	if(dried)
+		look.identity(name = dryname, desc = drydesc)
+
+/obj/effect/decal/cleanable/blood/cleanable_look(datum/look/look)
+	look.set_color(shown_color())
+	if(dried)
+		dried_look(look)
+	else if(basecolor == SYNTH_BLOOD_COLOUR)
+		look.identity(name = "oil", desc = "It's quite oily.")
 	else if(synthblood)
-		name = "synthetic blood"
-		desc = "It's quite greasy."
-	else
-		name = initial(name)
-		desc = initial(desc)
-	. += add_janitor_hud_overlay()
+		look.identity(name = "synthetic blood", desc = "It's quite greasy.")
+	janitor_hud(look)
 
 /obj/effect/decal/cleanable/blood/Crossed(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())
@@ -90,7 +110,6 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood, TYPE_PROC_REF(/atom, 
 		if(istype(S))
 			dq_set_blood_color(S, basecolor)
 			S.track_blood = max(amount,S.track_blood)
-			S.update_icon() // Cut previous overlays
 			if(!S.blood_overlay)
 				S.generate_blood_overlay()
 			if(!forensic_data?.has_blooddna())
@@ -120,9 +139,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood, TYPE_PROC_REF(/atom, 
 	amount--
 
 /obj/effect/decal/cleanable/blood/proc/dry()
-	name = dryname
-	desc = drydesc
-	color = adjust_brightness(color, -50)
+	set_dried(TRUE)
 	amount = 0
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood)
@@ -201,22 +218,23 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood)
 	random_icon_states = list("gib1", "gib2", "gib3", "gib5", "gib6")
 	var/fleshcolor = "#FFFFFF"
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/decal/cleanable/blood/gibs/appearance_overlays()
-	. = list()
+/// The colour of the flesh in the gibs (an empty or "rainbow" one is a random colour, chosen here). A change is drawn.
+/obj/effect/decal/cleanable/blood/gibs/proc/set_fleshcolor(value)
+	if(!value || value == "rainbow")
+		value = get_random_colour(1)
+	if(fleshcolor == value)
+		return FALSE
+	fleshcolor = value
+	tracked_changed(src, nameof(fleshcolor))
+	return TRUE
+SETTER(/obj/effect/decal/cleanable/blood/gibs, fleshcolor)
 
-	var/image/giblets = new(base_icon, "[icon_state]_flesh", dir)
-	if(!fleshcolor || fleshcolor == "rainbow")
-		fleshcolor = get_random_colour(1)
-	giblets.color = fleshcolor
-
-	var/icon/blood = new(base_icon,"[icon_state]",dir)
-	if(basecolor == "rainbow") basecolor = get_random_colour(1)
-	blood.Blend(basecolor,ICON_MULTIPLY)
-
-	icon = blood
-	. += giblets
-	. += add_janitor_hud_overlay()
+/// The gibs are the blood's own picture (tinted by the blood) with the flesh over it in its own colour.
+/obj/effect/decal/cleanable/blood/gibs/cleanable_look(datum/look/look)
+	look.set_color(shown_color())
+	dried_look(look)
+	look.overlay(look_overlay_image(base_icon, "[look.state_so_far(src)]_flesh", dir = dir, color = fleshcolor, appearance_flags = RESET_COLOR))
+	janitor_hud(look)
 
 /obj/effect/decal/cleanable/blood/gibs/up
 	random_icon_states = list("gib1", "gib2", "gib3", "gib5", "gib6","gibup1","gibup1","gibup1")
@@ -250,8 +268,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, TYPE_PROC_REF(/a
 
 /obj/effect/decal/cleanable/blood/gibs/proc/streak_splat()
 	var/obj/effect/decal/cleanable/blood/b = new /obj/effect/decal/cleanable/blood/splatter(src.loc)
-	b.basecolor = src.basecolor
-	b.update_icon()
+	b.set_basecolor(basecolor)
 
 /obj/effect/decal/cleanable/mucus
 	name = "mucus"

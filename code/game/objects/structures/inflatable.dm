@@ -148,6 +148,8 @@ CAPABILITIES(/obj/structure/inflatable)
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
 
+TRACKED(/obj/structure/inflatable/door, state)
+
 /// Old attack_ai: those aren't machinery, they're just big slabs of a mineral. A cyborg next to it opens it; the AI can't (the op is a cyborg's).
 /obj/structure/inflatable/door/proc/inflatable_door_silicon_use(datum/act/op/A)
 	TryToSwitchState(A.actor)
@@ -198,8 +200,7 @@ CAPABILITIES(/obj/structure/inflatable/door)
 /obj/structure/inflatable/door/proc/open_finish()
 	set_density(FALSE)
 	set_opacity(0)
-	state = 1
-	changed(src)
+	set_state(1)
 	isSwitchingStates = 0
 
 /obj/structure/inflatable/door/proc/Close()
@@ -210,8 +211,7 @@ CAPABILITIES(/obj/structure/inflatable/door)
 /obj/structure/inflatable/door/proc/close_finish()
 	set_density(TRUE)
 	set_opacity(0)
-	state = 0
-	changed(src)
+	set_state(0)
 	isSwitchingStates = 0
 
 /// The look (the draw sweep: from its template).

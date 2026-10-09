@@ -91,18 +91,19 @@
 		publish_change(E, var_name)
 	refresh_trace_note(E, channel)
 	// Sources watching E through a relation view (rel_one/rel_many(watch = ...)) re-derive too. Only on
-	// E's first mark this frame, so two entities watching each other stop after one round.
-	if(E.rel_watchers && !E.refresh_queued)
-		rel_notify_watchers(E)
+	// E's first mark this frame, and after E is marked itself (the mark is what makes the second mark a "not first"),
+	// so two entities watching each other (two railings that draw each other) stop after one round.
+	var/first_mark = E.rel_watchers && !E.refresh_queued
 	var/mask = DEP_ALL
 	if(var_name)
 		mask = derived_mask(E, var_name)
-		if(!mask)
-			return
-	if(!refresh_wanted(E))
-		refresh_mark_owner(E, mask, channel)
-		return
-	refresh_mark(E, mask, channel)
+	if(mask)
+		if(!refresh_wanted(E))
+			refresh_mark_owner(E, mask, channel)
+		else
+			refresh_mark(E, mask, channel)
+	if(first_mark)
+		rel_notify_watchers(E)
 
 /// A legacy declared field (OM_FIELD, OM_FLAG_FIELD: a machine's `stat` bits, `on`, `locked`) was written through its generated setter, which
 /// raises its channel without naming the var: the stat layer still hears it, so a contribution that reads the field (STAT_OPERABLE's

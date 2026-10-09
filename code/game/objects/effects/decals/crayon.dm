@@ -29,18 +29,19 @@ CAPABILITIES(/obj/effect/decal/cleanable/crayon)
 			kind = pick("amyjon","face","matt","revolution","engie","guy","end","dwarf","uboa")
 	art_type = kind
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/crayon, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/decal/cleanable/crayon/appearance_overlays()
-	. = list()
+DECLARE_SHARED_CACHE(crayon_art, GLOBAL_PROC_REF(build_crayon_art), SC_NEVER)
+
+/// Builder for crayon_art: the design `art_type` in `art_color`, and its shading in `art_shade`, as the two layers a decal shows.
+/proc/build_crayon_art(art_type, art_color, art_shade)
 	var/icon/mainOverlay = new/icon('icons/effects/crayondecal.dmi',"[art_type]",2.1)
 	var/icon/shadeOverlay = new/icon('icons/effects/crayondecal.dmi',"[art_type]s",2.1)
+	mainOverlay.Blend(art_color,ICON_ADD)
+	shadeOverlay.Blend(art_shade,ICON_ADD)
+	return list(image(mainOverlay), image(shadeOverlay))
 
-	if(mainOverlay && shadeOverlay)
-		mainOverlay.Blend(art_color,ICON_ADD)
-		shadeOverlay.Blend(art_shade,ICON_ADD)
-
-		. += mainOverlay
-		. += shadeOverlay
-
-	. += add_janitor_hud_overlay()
-	return .
+/// The drawing in its colour and its shade, then the janitor HUD's mark.
+/obj/effect/decal/cleanable/crayon/cleanable_look(datum/look/look)
+	var/list/art = CACHED_KEY(crayon_art, "[art_type]|[art_color]|[art_shade]", art_type, art_color, art_shade)
+	look.overlay(art[1])
+	look.overlay(art[2])
+	janitor_hud(look)

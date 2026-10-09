@@ -867,8 +867,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 			to_chat(src, span_warning("You ran out of blood to write with!"))
 
 		var/obj/effect/decal/cleanable/blood/writing/W = new(T)
-		W.basecolor = doodle_color
-		W.update_icon()
+		W.set_basecolor(doodle_color)
 		W.message = message
 		W.add_hiddenprint(src)
 		W.visible_message(span_filter_notice(span_red("Invisible fingers crudely paint something in blood on [T]...")))

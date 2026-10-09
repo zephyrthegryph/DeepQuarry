@@ -443,8 +443,7 @@ CAPABILITIES(/datum/secrets_menu)
 		var/datum/species/S = GLOB.all_species[species]
 		dq_set_blood_color(S, "rainbow")
 	for(var/obj/effect/decal/cleanable/blood/B in world)
-		B.basecolor = "rainbow"
-		B.update_icon()
+		B.set_basecolor("rainbow")
 	if(holder())
 		log_admin("[key_name(holder())] used secret: [action].")
 

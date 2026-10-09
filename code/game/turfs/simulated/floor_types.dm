@@ -149,7 +149,10 @@ CAPABILITIES(/turf/simulated/shuttle)
 		after(src, 0, PROC_REF(update_breaklights)) // A turf changed meanwhile took the timer with it.
 		return
 
-	if(!under)
+	if(!under && !join_flags)
+		// Not joined at an angle: there is no diagonal to look opposite, and turn(0, ...) would pick a random direction.
+		under = get_base_turf_by_area(src)
+	else if(!under)
 		var/turf/T1
 		var/turf/T2
 		var/turf/T3

@@ -171,7 +171,6 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	var/wtype = ST.material.created_window
 	var/obj/structure/window/WD = new wtype(loc, dir_to_set, 1)
 	to_chat(user, span_notice("You place the [WD] on [src]."))
-	WD.update_icon()
 
 // Crossing the integrity_failure threshold turns the grille into a passable broken stub.
 /obj/structure/grille/atom_break(damage_flag)
@@ -179,7 +178,7 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	if(!destroyed)
 		set_density(FALSE)
 		destroyed = TRUE
-		changed(src)
+		changed(src) // the RCD repair in turfs/simulated/walls.dm writes `destroyed` by hand, so it cannot be a tracked var until that file goes through a setter
 		new /obj/item/stack/rods(get_turf(src))
 
 // Reaching 0 integrity clears the grille entirely, dropping its last rod.

@@ -1646,8 +1646,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 			to_chat(src, span_warning("You ran out of blood to write with!"))
 
 		var/obj/effect/decal/cleanable/blood/writing/W = new(T)
-		W.basecolor = (hand_blood_color) ? hand_blood_color : "#A10808"
-		W.update_icon()
+		W.set_basecolor((hand_blood_color) ? hand_blood_color : "#A10808")
 		W.message = message
 		W.add_fingerprint(src)
 

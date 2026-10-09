@@ -7,20 +7,19 @@
 	var/direction=0
 	var/basecolor="#A10808"
 	var/wet=0
-	var/fresh=1
-	var/crusty=0
-	var/image/overlay
+
+TRACKED(/datum/fluidtrack, basecolor)
 
 /datum/fluidtrack/New(_direction,_color,_wet)
 	src.direction=_direction
-	src.basecolor=_color
+	set_basecolor(_color)
 	src.wet=_wet
 
 /obj/effect/decal/cleanable/blood/tracks/reveal_blood()
 	if(!dq_get_fluorescent(src))
 		if(stack && length(stack))
 			for(var/datum/fluidtrack/track in stack)
-				track.basecolor = COLOR_LUMINOL
+				track.set_basecolor(COLOR_LUMINOL)
 		..()
 
 // Footprints, tire trails...
@@ -32,7 +31,6 @@
 	icon_state = ""
 	var/coming_state="blood1"
 	var/going_state="blood2"
-	var/updatedtracks=0
 	persistent = TRUE
 	generic_filth = FALSE
 
@@ -63,7 +61,6 @@
 CAPABILITIES(/obj/effect/decal/cleanable/blood/tracks)
 	owns_many(nameof(stack), /datum/fluidtrack)
 /obj/effect/decal/cleanable/blood/tracks/proc/AddTracks(list/DNA, comingdir, goingdir, bloodcolor="#A10808")
-	var/updated=0
 	// Shift our goingdir 4 spaces to the left so it's in the GOING bitblock.
 	var/realgoing=goingdir<<4
 
@@ -93,8 +90,6 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood/tracks)
 			rel_add(src, nameof(stack), track)
 			var/track_idx = LAZYFIND(stack, track)
 			setdirs["[b]"] = track_idx
-			updatedtracks |= b
-			updated=1
 
 		// GOING BIT (shift up 4)
 		b=b<<4
@@ -111,40 +106,27 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood/tracks)
 			rel_add(src, nameof(stack), track)
 			var/track_idx = LAZYFIND(stack, track)
 			setdirs["[b]"] = track_idx
-			updatedtracks |= b
-			updated=1
 
 	dirs |= comingdir|realgoing
 	init_forensic_data().merge_blooddna(null,DNA)
-	if(updated)
-		update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/tracks, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/decal/cleanable/blood/tracks/appearance_overlays()
-	. = list()
-	color = "#FFFFFF"
-	var/truedir=0
+/// Drawn in the tracks' own colours.
+/obj/effect/decal/cleanable/blood/tracks/wet_color()
+	return "#FFFFFF"
 
-	// Update ONLY the overlays that have changed.
+/// Each track on the stack is a footprint pointing the way it came or went, in the colour it was laid in.
+/obj/effect/decal/cleanable/blood/tracks/cleanable_look(datum/look/look)
+	look.set_color(shown_color())
+	dried_look(look)
 	for(var/datum/fluidtrack/track in stack)
-		var/stack_idx=setdirs["[track.direction]"]
-		var/state=coming_state
-		truedir=track.direction
+		look.watch(track)
+		var/state = coming_state
+		var/truedir = track.direction
 		if(truedir&240) // Check if we're in the GOING block
-			state=going_state
-			truedir=truedir>>4
-
-		if(track.overlay)
-			track.overlay=null
-		var/image/I = image(icon, icon_state=state, dir=num2dir(truedir))
-		I.color = track.basecolor
-
-		track.fresh=0
-		track.overlay=I
-		rel_add(src, nameof(stack), track, stack_idx)
-		. += I
-	updatedtracks=0 // Clear our memory of updated tracks.
-	. += add_janitor_hud_overlay()
+			state = going_state
+			truedir = truedir>>4
+		look.overlay(look_overlay_image(icon, state, dir = num2dir(truedir), color = track.basecolor))
+	janitor_hud(look)
 
 /obj/effect/decal/cleanable/blood/tracks/footprints
 	name = "wet footprints"

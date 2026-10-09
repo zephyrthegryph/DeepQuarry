@@ -55,6 +55,10 @@ impl Generator for Reads {
         "reads"
     }
 
+    fn stage(&self) -> u8 {
+        1
+    }
+
     fn output(&self) -> &'static str {
         "reads.dm"
     }

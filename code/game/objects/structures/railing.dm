@@ -17,7 +17,6 @@
 	var/broken = FALSE
 	max_integrity = 70
 	var/interactable = FALSE
-	var/check = 0
 	var/icon_modifier = ""
 
 /obj/structure/railing/grey
@@ -36,8 +35,6 @@
 	if (constructed) // player-constructed railings
 		set_anchored(FALSE)
 	make_rotatable()
-	if(src.anchored)
-		update_icon()
 
 CAPABILITIES(/obj/structure/railing)
 	climb(delay = 3.4 SECONDS, vaulting = TRUE, climbed = PROC_REF(climbed_over))
@@ -76,77 +73,59 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 		play_sfx(src, SFX_EFFECTS_GRILLEHIT)
 	return ..()
 
-/obj/structure/railing/proc/NeighborsCheck(UpdateNeighbors = 1)
-	check = 0
-	var/Rturn = turn(src.dir, -90)
-	var/Lturn = turn(src.dir, 90)
+/// The sides of this railing that join a neighbour (a bitmask of 1, 2, 4, 16, 32 and 64): anchored railings on its tile turned along it, beside it and diagonally ahead.
+/// The draw hears of each of them (a railing arriving, leaving, turning or being fastened) and of the tiles they stand on.
+/obj/structure/railing/proc/joined_sides(datum/look/look)
+	. = 0
+	var/Rturn = turn(dir, -90)
+	var/Lturn = turn(dir, 90)
 
-	for(var/obj/structure/railing/R in src.loc)
-		if ((R.dir == Lturn) && R.anchored)
-			check |= 32
-			if (UpdateNeighbors)
-				R.update_icon()
-		if ((R.dir == Rturn) && R.anchored)
-			check |= 2
-			if (UpdateNeighbors)
-				R.update_icon()
+	for(var/obj/structure/railing/R as anything in look.neighbours(src, 0, /obj/structure/railing))
+		if(R.anchored && R.dir == Lturn)
+			. |= 32
+		if(R.anchored && R.dir == Rturn)
+			. |= 2
+	for(var/obj/structure/railing/R as anything in look.neighbours(src, Lturn, /obj/structure/railing))
+		if(R.anchored && R.dir == dir)
+			. |= 16
+	for(var/obj/structure/railing/R as anything in look.neighbours(src, Rturn, /obj/structure/railing))
+		if(R.anchored && R.dir == dir)
+			. |= 1
+	for(var/obj/structure/railing/R as anything in look.neighbours(src, Lturn + dir, /obj/structure/railing))
+		if(R.anchored && R.dir == Rturn)
+			. |= 64
+	for(var/obj/structure/railing/R as anything in look.neighbours(src, Rturn + dir, /obj/structure/railing))
+		if(R.anchored && R.dir == Lturn)
+			. |= 4
 
-	for (var/obj/structure/railing/R in get_step(src, Lturn))
-		if ((R.dir == src.dir) && R.anchored)
-			check |= 16
-			if (UpdateNeighbors)
-				R.update_icon()
-	for (var/obj/structure/railing/R in get_step(src, Rturn))
-		if ((R.dir == src.dir) && R.anchored)
-			check |= 1
-			if (UpdateNeighbors)
-				R.update_icon()
-
-	for (var/obj/structure/railing/R in get_step(src, (Lturn + src.dir)))
-		if ((R.dir == Rturn) && R.anchored)
-			check |= 64
-			if (UpdateNeighbors)
-				R.update_icon()
-	for (var/obj/structure/railing/R in get_step(src, (Rturn + src.dir)))
-		if ((R.dir == Lturn) && R.anchored)
-			check |= 4
-			if (UpdateNeighbors)
-				R.update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
-/obj/structure/railing/appearance_overlays()
-	. = list()
-	NeighborsCheck(FALSE)
-	// Railings beside and across from us join with ours: tell them when we move, turn or anchor.
-	appearance_notify_neighbours("[anchored]|[dir]|[x],[y],[z]", /obj/structure/railing)
-	//layer = (dir == SOUTH) ? FLY_LAYER : initial(layer) // wtf does this even do
-	if (!check || !anchored)//|| !anchored
-		icon_state = "[icon_modifier]railing0"
-	else
-		icon_state = "[icon_modifier]railing1"
-		if (check & 32)
-			. += image(icon, src, "[icon_modifier]corneroverlay")
-		if ((check & 16) || !(check & 32) || (check & 64))
-			. += image(icon, src, "[icon_modifier]frontoverlay_l")
-		if (!(check & 2) || (check & 1) || (check & 4))
-			. += image(icon, src, "[icon_modifier]frontoverlay_r")
-			if(check & 4)
-				switch (src.dir)
-					if (NORTH)
-						. += image(icon, src, "[icon_modifier]mcorneroverlay", pixel_x = 32)
-					if (SOUTH)
-						. += image(icon, src, "[icon_modifier]mcorneroverlay", pixel_x = -32)
-					if (EAST)
-						. += image(icon, src, "[icon_modifier]mcorneroverlay", pixel_y = -32)
-					if (WEST)
-						. += image(icon, src, "[icon_modifier]mcorneroverlay", pixel_y = 32)
+/obj/structure/railing/draw(datum/look/look)
+	..()
+	var/check = joined_sides(look)
+	if (!check || !anchored)
+		look.state("[icon_modifier]railing0")
+		return
+	look.state("[icon_modifier]railing1")
+	if (check & 32)
+		look.overlay(look_overlay_image(icon, "[icon_modifier]corneroverlay"))
+	if ((check & 16) || !(check & 32) || (check & 64))
+		look.overlay(look_overlay_image(icon, "[icon_modifier]frontoverlay_l"))
+	if (!(check & 2) || (check & 1) || (check & 4))
+		look.overlay(look_overlay_image(icon, "[icon_modifier]frontoverlay_r"))
+		if(check & 4)
+			switch (dir)
+				if (NORTH)
+					look.overlay(look_overlay_image(icon, "[icon_modifier]mcorneroverlay", pixel_x = 32))
+				if (SOUTH)
+					look.overlay(look_overlay_image(icon, "[icon_modifier]mcorneroverlay", pixel_x = -32))
+				if (EAST)
+					look.overlay(look_overlay_image(icon, "[icon_modifier]mcorneroverlay", pixel_y = -32))
+				if (WEST)
+					look.overlay(look_overlay_image(icon, "[icon_modifier]mcorneroverlay", pixel_y = 32))
 
 /obj/structure/railing/handle_rotation_verbs(angle, mob/user)
 	if(!can_touch(user))
 		return FALSE
-	. = ..()
-	if(.)
-		update_icon()
+	return ..()
 
 /// The old Flip Railing verb: this will help push railing to remote places, such as open space turfs.
 /obj/structure/railing/proc/railing_flip_effect(datum/act/op/A)
@@ -168,7 +147,6 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 
 	src.forceMove(get_step(src, src.dir))
 	set_dir(turn(dir, 180))
-	update_icon()
 	return OP_OK
 
 /// Combat mode: a weak grab slams the victim's face against the railing.
@@ -248,7 +226,6 @@ MSG_DEF(railing/fastening, null, span_info(span_bold("%U%") + " begins fastening
 	var/mob/user = A.actor
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You have [anchored ? "fastened \the [src] to" : "unfastened \the [src] from"] the floor."))
-	update_icon()
 
 /obj/structure/railing/overhang/hazard
 	name = "hazardous ledge"

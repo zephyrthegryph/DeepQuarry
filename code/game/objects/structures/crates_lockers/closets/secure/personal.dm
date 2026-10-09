@@ -53,7 +53,6 @@ CAPABILITIES(/obj/structure/closet/secure_closet/personal)
 		if(!registered_name)
 			registered_name = I.registered_name
 			desc = "Owned by [I.registered_name]."
-		update_icon()
 		return OP_OK
 	A.reason = /datum/msg/lock/denied
 	return OP_REFUSED
@@ -63,7 +62,6 @@ CAPABILITIES(/obj/structure/closet/secure_closet/personal)
 		set_broken(TRUE)
 		force_lock(FALSE)
 		desc = "It appears to be broken."
-		update_icon()
 		if(visual_feedback)
 			visible_message(span_warning("[visual_feedback]"), span_warning("[audible_feedback]"))
 		return 1
@@ -84,7 +82,6 @@ CAPABILITIES(/obj/structure/closet/secure_closet/personal)
 		if(!close())
 			return OP_REFUSED
 	force_lock(TRUE)
-	update_icon()
 	registered_name = null
 	desc = "It's a secure locker for personnel. The first card swiped gains control."
 	return OP_OK
