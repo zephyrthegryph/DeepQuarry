@@ -21,6 +21,11 @@ struct Entry {
     metadata_dependencies: Option<crate::metadata_update::MetadataDependencies>,
 }
 impl RetainedSemanticTree {
+    /// Immutable semantic authority only; no source occurrence or body issuance is retained.
+    pub fn snapshot_tree(&self) -> Option<&Arc<SemanticTree>> {
+        self.entry.as_ref().map(|entry| &entry.tree)
+    }
+
     /// Exposed immutable payloads; private HashMap bucket backing remains unknown.
     pub fn visit_occurrence_index_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
         if let Some(entry) = &self.entry {

@@ -69,7 +69,7 @@ fn key(
     resource: Option<u128>,
     lexical: bool,
 ) -> Vec<u8> {
-    let mut out = b"dm-process-abi-artifact-v1\0".to_vec();
+    let mut out = b"dm-process-abi-artifact-v2\0".to_vec();
     out.extend_from_slice(&engine.identity().to_le_bytes());
     out.extend_from_slice(&identity.owner.bits().to_le_bytes());
     out.extend_from_slice(&identity.name.bits().to_le_bytes());
@@ -136,14 +136,8 @@ pub(super) fn prepare(
         .unit_members
         .get(&context.identity)
         .ok_or_else(|| AbiError::unsupported("body identity missing"))?;
-    let node = inherited
-        .frontend
-        .snapshot
-        .tree
-        .member(*member)
-        .ok_or_else(|| AbiError::unsupported("body member missing"))?;
-    let predecessor = node
-        .previous
+    let predecessor = inherited
+        .source_predecessor(*member)?
         .and_then(|previous| inherited.source_layouts.get(&previous));
     let mut encoded_key = key(
         context.identity,

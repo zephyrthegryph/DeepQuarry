@@ -128,6 +128,10 @@ impl Class {
         self.flags & 0x4 != 0
     }
 
+    pub fn set_normally_visible(&mut self, visible: bool) {
+        self.flags = (self.flags & !0x4) | (u64::from(visible) << 2);
+    }
+
     /// The three low luminosity bits stored with the initial appearance.
     pub fn luminosity(&self) -> u8 {
         ((self.flags >> 3) & 0x7) as u8

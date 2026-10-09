@@ -198,7 +198,8 @@ pub(super) fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Exp
                 at = cursor + 1;
                 continue;
             }
-            let expression = parse_expression(value[start..cursor].trim());
+            let source = dm_syntax::splice_expression_continuations(value[start..cursor].trim());
+            let expression = parse_expression(&source);
             if !expression.diagnostics.is_empty() {
                 return Err("invalid string interpolation expression".into());
             }

@@ -5,7 +5,6 @@ use crate::lowering_memo::{CachePublisher, RecordingResolver, ResolverRead};
 use crate::map_projection::{Projection, WorldDefaults};
 use dm_ir::Resolver;
 use dm_tree::maps::{CapturedMap, MapDiagnostic, MapPlan};
-use std::collections::BTreeMap;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc, Mutex,
@@ -55,9 +54,8 @@ struct GeometryEntry {
 struct Resident {
     parse: Vec<ParseEntry>,
     geometry: Vec<GeometryEntry>,
-    pending: BTreeMap<dm_cache::RecordKey, dm_cache::Record>,
+    pending: dm_cache::PendingRecords,
     charged: usize,
-    pending_bytes: usize,
 }
 pub struct MapMemo {
     retained: Option<Arc<RetainedMaps>>,
@@ -158,15 +156,16 @@ impl MapMemo {
         admit: impl Fn(&[u8]) -> Result<Option<T>, String>,
     ) -> Option<(T, usize)> {
         let issued = std::cell::RefCell::new(None);
-        let view =
-            self.disk
-                .as_ref()?
-                .snapshot()?
-                .get(Self::record_key(key, geometry), |bytes, _| {
-                    *issued.borrow_mut() = None;
-                    *issued.borrow_mut() = admit(bytes)?;
-                    Ok(())
-                })?;
+        let view = self.disk.as_ref()?.snapshot()?.get_candidate(
+            Self::record_key(key, geometry),
+            |bytes, _| {
+                *issued.borrow_mut() = None;
+                let candidate = admit(bytes)?;
+                let accepted = candidate.is_some();
+                *issued.borrow_mut() = candidate;
+                Ok(accepted)
+            },
+        )?;
         issued.into_inner().map(|value| (value, view.payload.len()))
     }
     /// Charge an intentionally conservative multiple of serialized bytes for
@@ -230,49 +229,41 @@ impl MapMemo {
             }
             return;
         }
-        let mut state = self.resident.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(disk) = &self.disk {
-            let record_key = Self::record_key(key, geometry);
-            let previous = state
+            let ready = self
+                .resident
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
                 .pending
-                .get(&record_key)
-                .map_or(0, |record| record.payload.len());
-            let retained = state.pending_bytes.saturating_sub(previous);
-            state.pending_bytes = retained + bytes.len();
-            state.pending.insert(
-                record_key,
-                dm_cache::Record {
-                    key: record_key,
-                    symbols: Vec::new(),
-                    payload: bytes.into(),
-                },
-            );
+                .push(
+                    dm_cache::Record {
+                        key: Self::record_key(key, geometry),
+                        symbols: Vec::new(),
+                        payload: bytes.into(),
+                    },
+                    8 * 1024 * 1024,
+                );
             self.counts.disk_admitted.fetch_add(1, Ordering::Relaxed);
-            if state.pending_bytes >= 8 * 1024 * 1024 {
-                state.pending_bytes = 0;
-                let records: Vec<_> = std::mem::take(&mut state.pending).into_values().collect();
-                drop(state);
-                let count = records.len() as u64;
-                let result = disk.publish(&records);
-                match result {
-                    Ok(_) => {
-                        self.counts
-                            .published_records
-                            .fetch_add(count, Ordering::Relaxed);
-                    }
-                    Err(error) => {
-                        self.counts
-                            .publication_failed
-                            .fetch_add(count, Ordering::Relaxed);
-                        let mut errors = self
-                            .publication_errors
-                            .lock()
-                            .unwrap_or_else(|e| e.into_inner());
-                        if errors.len() < 8 {
-                            errors.push(error.to_string());
+            match ready {
+                Ok(batches) => {
+                    for records in batches {
+                        let count = records.len() as u64;
+                        match disk.publish(&records) {
+                            Ok(_) => {
+                                self.counts
+                                    .published_records
+                                    .fetch_add(count, Ordering::Relaxed);
+                            }
+                            Err(error) => {
+                                self.counts
+                                    .publication_failed
+                                    .fetch_add(count.saturating_sub(1), Ordering::Relaxed);
+                                self.record_error(error.to_string());
+                            }
                         }
                     }
                 }
+                Err(error) => self.record_error(error.to_string()),
             }
         }
     }
@@ -455,8 +446,7 @@ impl MapMemo {
             .resident
             .lock()
             .unwrap_or_else(|error| error.into_inner());
-        state.pending_bytes = 0;
-        std::mem::take(&mut state.pending).into_values().collect()
+        state.pending.take()
     }
 }
 fn frame(key: &mut Vec<u8>, bytes: &[u8]) {
@@ -779,7 +769,7 @@ mod tests {
         {
             let resident = memo.resident.lock().unwrap();
             assert!(resident.parse.is_empty() && resident.geometry.is_empty());
-            assert!(resident.pending_bytes <= budget);
+            assert!(resident.pending.bytes() <= 8 * 1024 * 1024);
         }
         let pending = memo.take_pending();
         assert_eq!(pending.len(), 2);
@@ -796,3 +786,7 @@ mod tests {
         drop(loaded);
     }
 }
+
+#[cfg(test)]
+#[path = "map_memo_candidate_tests.rs"]
+mod candidate_tests;

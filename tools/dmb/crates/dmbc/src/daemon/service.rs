@@ -121,6 +121,8 @@ impl Slot {
     }
 }
 struct Shared {
+    engines: Arc<crate::runner_host::EnginePayloads>,
+    executors: Arc<crate::runner_host::ExecutorPools>,
     compiler: u128,
     retiring: AtomicBool,
     slots: Mutex<BTreeMap<SessionKey, Arc<Slot>>>,
@@ -146,7 +148,10 @@ impl Shared {
             })
             .or_insert_with(|| {
                 Arc::new(Slot {
-                    host: Mutex::new(crate::runner_host::BuildHost::default()),
+                    host: Mutex::new(crate::runner_host::BuildHost::with_daemon_owners(
+                        Arc::clone(&self.engines),
+                        Arc::clone(&self.executors),
+                    )),
                     newest: Mutex::new(BTreeMap::new()),
                     last: Mutex::new(Instant::now()),
                     idle_tier: AtomicUsize::new(0),
@@ -184,6 +189,9 @@ impl Shared {
     fn trim(&self) {
         let pressured = transport::private_bytes().is_some_and(|bytes| bytes > 4_000_000_000);
         self.housekeep(Instant::now(), pressured);
+        // Host releases above have finished; no slot/host lock is held here.
+        self.engines.prune_idle();
+        self.executors.trim(Instant::now(), pressured);
     }
 }
 struct Permit(Arc<Shared>, usize);
@@ -210,6 +218,8 @@ pub(super) fn serve() -> io::Result<()> {
     let endpoint = transport::Endpoint::current()?;
     let listener: transport::Listener = transport::listener(&endpoint)?;
     let shared = Arc::new(Shared {
+        engines: Arc::new(Default::default()),
+        executors: Arc::new(Default::default()),
         compiler: super::compiler_identity()?,
         retiring: AtomicBool::new(false),
         slots: Mutex::new(BTreeMap::new()),
@@ -294,6 +304,57 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
             shared.retiring.store(true, Ordering::Release);
             shared.capacity.notify_all();
             protocol::send(&mut stream, &Reply::Retiring)
+        }
+        Request::Query(request) => {
+            if version != protocol::VERSION
+                || compiler != shared.compiler
+                || shared.retiring.load(Ordering::Acquire)
+            {
+                return protocol::send(
+                    &mut stream,
+                    &Reply::Rejected(crate::request_failure::RequestFailure::infrastructure(
+                        "daemon query generation differs or is retiring",
+                    )),
+                );
+            }
+            let result = (|| -> io::Result<super::query::QueryReply> {
+                request.validate()?;
+                let key = SessionKey {
+                    manifest: std::fs::canonicalize(&request.project)?,
+                    defines: request.defines.clone(),
+                    engine: request.engine_template.clone(),
+                    bootstrap: request.bootstrap_catalog,
+                };
+                let slot = shared
+                    .slots
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner())
+                    .get(&key)
+                    .cloned()
+                    .ok_or_else(|| {
+                        io::Error::new(io::ErrorKind::NotFound, "query session has not been built")
+                    })?;
+                let host = slot.host.try_lock().map_err(|_| {
+                    io::Error::new(
+                        io::ErrorKind::WouldBlock,
+                        "query session is building; retry after completion",
+                    )
+                })?;
+                let tree = host.query_tree().ok_or_else(|| {
+                    io::Error::new(
+                        io::ErrorKind::NotFound,
+                        "query semantic snapshot unavailable or evicted",
+                    )
+                })?;
+                super::query::evaluate(&request, tree)
+            })();
+            match result {
+                Ok(reply) => protocol::send(&mut stream, &Reply::Query(reply)),
+                Err(error) => protocol::send(
+                    &mut stream,
+                    &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)),
+                ),
+            }
         }
         Request::Build(request) => {
             if version != protocol::VERSION
@@ -382,6 +443,8 @@ mod tests {
     use super::*;
     fn shared() -> Arc<Shared> {
         Arc::new(Shared {
+            engines: Arc::new(Default::default()),
+            executors: Arc::new(Default::default()),
             compiler: 1,
             retiring: AtomicBool::new(false),
             slots: Mutex::new(BTreeMap::new()),

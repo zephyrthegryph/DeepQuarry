@@ -162,3 +162,6 @@ fn authored_setting_error_and_blocked_override_preserve_source_diagnostics() {
     assert!(diagnostics[0].message.contains("invisibility exceeds 127"));
     assert_eq!(diagnostics[0].origin.line, 1);
 }
+
+#[path = "formal_abi_tests.rs"]
+mod formal_abi_tests;

@@ -256,5 +256,91 @@
       "six-worktree real memory/concurrency admission",
       "BYOND whole-program structural and Phase5 runtime parity"
     ]
+  },
+  "atomic_cache_and_engine_wave": {
+    "cache_commit": "ebd4eb84a9",
+    "workspace_all_targets_seconds": 28.89,
+    "cache_fixtures_passed": 22,
+    "cache_fixture_seconds": 0.08,
+    "expansion_fixtures_passed": 4,
+    "expansion_fixture_seconds": 0.04,
+    "engine_sharing_fixtures_passed": 3,
+    "dmbc_fixture_build_seconds": 198,
+    "initial_failure": "test-only Mutex import absent after moving unused production import; fixed before four expansion and three engine fixtures passed",
+    "compaction": "authenticated group marker publishes only complete leaf set; preserves all exact-distinct candidates",
+    "limits": [
+      "engine inventory bounded by count, not decoded heap bytes",
+      "physically deleted old files cannot be recovered after later corruption",
+      "expansion candidate leasing remains conservative before semantic admission",
+      "six-worktree real workload and BYOND whole-program baseline remain open"
+    ],
+    "end_to_end_timings": null
+  },
+  "optimized_build_5f70007e94": {
+    "status": "passed",
+    "bounded_resume_seconds": 297.7439415,
+    "previous_attempt_seconds": 300.796946,
+    "executable": "E:/dq-cache/dmb-native-v2/frozen-build/20261009-180519-72d38c3e.exe",
+    "sha256": "631027b8e19aa53f746c6e9a9f2e25e578cc747a8c05ea35410e2aed73adbedc",
+    "acceptance_profile": false,
+    "lto": false,
+    "benchmark": "E:/dq-cache/dmb-native-iterations/20261009-181025-122ab6ad/receipt.json",
+    "benchmark_status": "failed: initial retained lowering rejected three continued interpolation expressions; no complete cohort",
+    "failed_initial_client_seconds": 37.4519541,
+    "daemon_cleanup": {
+      "pid": 53320,
+      "reaped": true
+    }
+  },
+  "continuation_interpolation_repair": {
+    "shared_syntax_fixture_passed": 1,
+    "syntax_build_seconds": 2.88,
+    "codegen_fixture": "passed",
+    "scope": "splice expression continuations outside nested literals; preserve literal decoder authority",
+    "codegen_build_seconds": 62
+  },
+  "shared_pipeline_wave": {
+    "workspace_all_targets": "passed",
+    "workspace_all_targets_seconds": 86,
+    "dmbc_fixture_build_seconds": 250,
+    "map_candidate_fixtures_passed": 2,
+    "focused_dmbc_fixtures_passed": 20,
+    "query_fixture_initial_failure": "fixture assumed absence known without engine ancestry; existing resolver correctly returns unsupported; fixing fixture, not weakening uncertainty",
+    "byond_word_owner_fixtures": 2,
+    "analysis_opaque_export_fixture": 1,
+    "independent_reference_fixtures": [
+      "formal_abi_inheritance",
+      "type_visibility",
+      "matrix_transform"
+    ],
+    "implementation": [
+      "daemon-wide engine payload sharing",
+      "eight-worker physical executor inventory including idle/retiring pools",
+      "prepared source lexical reuse after current file proof validation",
+      "resource-only pinned admission",
+      "shared copy-on-write DMB word ownership",
+      "formal declaration ABI inheritance and matching artifact keys",
+      "visibility bit inheritance and zero reset",
+      "bounded read-only revision-pinned query CLI/protocol"
+    ],
+    "new_benchmarks": "initial cohort failed on continued interpolation lowering, repaired focused syntax/codegen tests pass; rerun pending",
+    "remaining": [
+      "matrix transform producer draft unhooked",
+      "shared initializer syntax draft unhooked",
+      "canonical generation owner draft unhooked",
+      "six-worktree real memory/concurrency workload",
+      "fresh native replay and BYOND whole-program structural baseline",
+      "Phase5 runtime gate"
+    ],
+    "runtime_gate": "deferred to Phase5",
+    "byond_word_owner_build_seconds": 17.52,
+    "analysis_export_build_seconds": 31.26,
+    "legacy_byond_unit_build": {
+      "status": "300s watchdog timeout; owned child tree terminated",
+      "pid": 39172,
+      "reaped": true,
+      "replacement": "two newly added word-owner fixtures moved to focused integration target, both passed"
+    },
+    "query_fixture_correction": "source corrected: opaque absence unsupported, authored Type known; focused rerun pending next compiler gate"
   }
 }

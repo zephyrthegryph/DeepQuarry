@@ -138,3 +138,28 @@ fn existing_archive_reuse_does_not_open_a_staged_writer() {
         0
     );
 }
+
+#[test]
+fn resource_only_admission_ignores_unrelated_pair_and_rejects_archive_tamper() {
+    let store = super::super::tests::store();
+    let entry = archive();
+    let identity = store
+        .publish_resource_views(&[entry.as_view()], false)
+        .unwrap();
+    let pair = store
+        .publish_with_resource(1, b"old executable", identity)
+        .unwrap();
+    let old_dmb = store
+        .root
+        .join("pairs")
+        .join(format!("{:032x}", pair.id))
+        .join("deepquarry.dmb");
+    // A previous executable is not part of resource-only authority.
+    eviction::unlink_immutable(&old_dmb).unwrap();
+    let pin = store.verify_resource_pinned(identity, true).unwrap();
+    drop(pin);
+    let path = resource_path(&store, identity);
+    eviction::unlink_immutable(&path).unwrap();
+    fs::write(&path, vec![0; identity.bytes as usize]).unwrap();
+    assert!(store.verify_resource_pinned(identity, true).is_err());
+}

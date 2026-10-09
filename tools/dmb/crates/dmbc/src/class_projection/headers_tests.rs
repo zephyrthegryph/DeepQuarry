@@ -323,3 +323,28 @@ fn authored_ancestor_assignment_overrides_native_subtype_default_even_when_uncha
     finalize_headers(&mut dmb, bytes, &projection, &tables, &symbols).unwrap();
     assert_eq!(dmb.classes[area_id].layer_bits, native_area);
 }
+
+#[test]
+fn invisibility_header_inherits_and_explicit_zero_reset_stays_visible() {
+    let dmb = image();
+    let mut parent = dmb.classes[0].clone();
+    parent.set_normally_visible(false);
+    let mut child = parent.clone();
+    child.set_normally_visible(true);
+    inherit_record(&parent, &mut child, &HashSet::new(), false, false).unwrap();
+    assert!(!child.is_normally_visible());
+    child.set_normally_visible(true);
+    inherit_record(
+        &parent,
+        &mut child,
+        &HashSet::from(["invisibility"]),
+        false,
+        false,
+    )
+    .unwrap();
+    assert!(child.is_normally_visible());
+    let mut own = HashSet::new();
+    native_header_differences(&dmb, &child, &parent, &mut own);
+    assert!(own.contains("invisibility"));
+    assert_eq!(child.flags ^ parent.flags, 4);
+}

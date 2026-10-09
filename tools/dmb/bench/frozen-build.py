@@ -32,6 +32,8 @@ def main():
     parser.add_argument("--commit", required=True)
     parser.add_argument("--cache", default="E:/dq-cache/dmb-native-v2/frozen-build")
     parser.add_argument("--seconds", type=int, default=300)
+    parser.add_argument("--dmbc-codegen-units", type=int, choices=(16, 64, 256), default=16,
+                        help="prototype-only dmbc LLVM partitioning; dependencies remain unchanged")
     args = parser.parse_args()
     if not 1 <= args.seconds <= 300:
         raise ValueError("build watchdog must be between 1 and 300 seconds")
@@ -106,7 +108,8 @@ def main():
                    CARGO_TARGET_DIR="E:/dq-cache/dmb-native-v2/cargo-target",
                    CARGO_PROFILE_RELEASE_LTO="false")
         command = ["E:/cargo/bin/cargo.exe", "build", "--release", "--locked",
-                   "--offline", "-j1", "-p", "dmbc", "--bin", "dmbc"]
+                   "--offline", "-j1", "-p", "dmbc", "--bin", "dmbc",
+                   "--config", f"profile.release.package.dmbc.codegen-units={args.dmbc_codegen_units}"]
         started = time.monotonic()
         cleanup = None
         with receipt_path.with_suffix(".log").open("wb") as log:
@@ -121,6 +124,7 @@ def main():
                        changed_files=changed, removed_files=removed, exit_code=code,
                        build_seconds=time.monotonic() - started, watchdog_seconds=args.seconds,
                        command=command, acceptance_profile=False, lto=False,
+                       dmbc_codegen_units=args.dmbc_codegen_units,
                        owned_child_cleanup=cleanup)
         if code == 0:
             binary = Path(env["CARGO_TARGET_DIR"]) / "release/dmbc.exe"

@@ -478,13 +478,13 @@ pub(super) fn write(
     let list_spans = table(
         &mut w,
         &mut hash,
-        &dmb.lists,
+        dmb.lists.storage(),
         executor,
         Some(&list_sizes),
         true,
         |w, list, _| {
             w.u16(list.len() as u16);
-            for &value in list {
+            for &value in list.iter() {
                 w.object(value);
             }
             Ok(())

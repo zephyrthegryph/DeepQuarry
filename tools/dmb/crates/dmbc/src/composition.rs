@@ -158,13 +158,16 @@ fn retained_named_procedure(
             || actual == Some(qualified.as_bytes())
             || actual == Some(implicit_path.as_bytes())))
 }
-pub(crate) fn append_list(dmb: &mut Dmb, words: Vec<u32>) -> Result<u32, CompositionError> {
+pub(crate) fn append_list(
+    dmb: &mut Dmb,
+    words: impl Into<std::sync::Arc<Vec<u32>>>,
+) -> Result<u32, CompositionError> {
     let next = u32::try_from(dmb.lists.len()).map_err(|_| unsupported("list count overflow"))?;
     if dm_link::is_reserved_table_index(dm_link::Table::List, next) {
         dmb.lists.push(Vec::new());
     }
     let id = u32::try_from(dmb.lists.len()).map_err(|_| unsupported("list count overflow"))?;
-    dmb.lists.push(words);
+    dmb.lists.push_shared(words.into());
     Ok(id)
 }
 mod strings;
@@ -860,7 +863,7 @@ fn reserve_procedure_sentinel(dmb: &mut Dmb) {
 fn emit_anonymous(
     dmb: &mut Dmb,
     strings: &mut StringIndex,
-    words: Vec<u32>,
+    words: impl Into<std::sync::Arc<Vec<u32>>>,
     names: &[String],
 ) -> Result<(), CompositionError> {
     let code = append_list(dmb, words)?;

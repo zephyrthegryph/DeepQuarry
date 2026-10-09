@@ -33,6 +33,19 @@ fn main_inner() {
         }
         return;
     }
+    if arguments.first().map(String::as_str) == Some("query") {
+        let result = dmbc::cli::parse(&arguments).and_then(|command| match command {
+            dmbc::request::Command::Query { request, jsonl } => {
+                dmbc::daemon::query::run_file(&request, jsonl)
+            }
+            _ => Err("invalid query command".into()),
+        });
+        if let Err(error) = result {
+            eprintln!("{error}");
+            std::process::exit(dmbc::request_failure::exit_code(error.as_ref()));
+        }
+        return;
+    }
     if arguments == ["--serve-daemon"] {
         if let Err(error) = dmbc::daemon::serve() {
             eprintln!("native daemon: {error}");

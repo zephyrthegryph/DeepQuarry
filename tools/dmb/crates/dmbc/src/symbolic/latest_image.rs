@@ -39,6 +39,7 @@ impl LatestImage {
         });
         Ok(image)
     }
+    #[cfg(test)]
     pub(crate) fn wire_words(
         owner: &Arc<Self>,
         image: ProcedureImage,
@@ -46,13 +47,24 @@ impl LatestImage {
         tables: &LinkTables,
         mobs: &dm_link::MobBindings,
     ) -> Result<Vec<u32>, IntegrationError> {
+        Self::wire_image(owner, image, code, tables, mobs).map(ProcedureImage::into_words)
+    }
+    pub(crate) fn wire_image(
+        owner: &Arc<Self>,
+        image: ProcedureImage,
+        code: &dm_ir::SymbolicCode,
+        tables: &LinkTables,
+        mobs: &dm_link::MobBindings,
+    ) -> Result<ProcedureImage, IntegrationError> {
         if Arc::strong_count(owner) > 1 {
-            owner.wire.words(image, code, tables, mobs)
+            owner.wire.image(image, code, tables, mobs)
         } else {
             let mut words = image.into_words();
             dm_link::admit_type_path_words(&mut words, code, tables, mobs)
                 .map_err(IntegrationError::WireDomain)?;
-            Ok(words)
+            Ok(ProcedureImage {
+                words: Arc::new(words),
+            })
         }
     }
     pub(crate) fn visit_retained_wire(

@@ -42,9 +42,9 @@ class Pipe:
         self.file = os.fdopen(msvcrt.open_osfhandle(handle, os.O_BINARY), "r+b", buffering=0)
         endpoint.kernel.PeekNamedPipe.argtypes = [ctypes.wintypes.HANDLE, ctypes.c_void_p,
             ctypes.wintypes.DWORD, ctypes.c_void_p, ctypes.POINTER(ctypes.wintypes.DWORD), ctypes.c_void_p]
-        self.send({"Hello": {"version": 2, "compiler": 0}})
+        self.send({"Hello": {"version": 3, "compiler": 0}})
         hello = self.receive()["Hello"]
-        if hello["version"] != 2 or hello["retiring"]:
+        if hello["version"] != 3 or hello["retiring"]:
             self.close()
             raise RuntimeError("unexpected daemon generation state")
         self.compiler = hello["compiler"]
@@ -67,8 +67,8 @@ class Pipe:
             raise RuntimeError("foreign daemon refused")
         self.handle = handle
         self.file = os.fdopen(msvcrt.open_osfhandle(handle, os.O_BINARY), "r+b", buffering=0)
-        self.send({"Hello": {"version": 2, "compiler": self.compiler}})
-        if self.receive()["Hello"] != {"version": 2, "compiler": self.compiler, "retiring": False}:
+        self.send({"Hello": {"version": 3, "compiler": self.compiler}})
+        if self.receive()["Hello"] != {"version": 3, "compiler": self.compiler, "retiring": False}:
             raise RuntimeError("generation changed during handshake")
 
     def close(self):

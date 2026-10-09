@@ -4,7 +4,7 @@
 //! Unknown fields retain their exact numeric values. Procedure bytecode is
 //! stored as list words; semantic opcode decoding is a separate layer.
 use crate::hash::nqcrc;
-use crate::ids::{NONE, ResourceId};
+use crate::ids::{ResourceId, NONE};
 use std::collections::{HashMap, HashSet};
 use std::io::{self, ErrorKind};
 
@@ -17,13 +17,16 @@ use records::crypt_string;
 #[path = "dmb_write.rs"]
 mod writing;
 pub use records::{
-    Class, ClassInterface, DmString, GridRun, Header, Instance, MapObject, MobType, Proc,
-    ProcSource, ResourceRef, Variable, World, WorldViewEncoding, mob_sight,
+    mob_sight, Class, ClassInterface, DmString, GridRun, Header, Instance, MapObject, MobType,
+    Proc, ProcSource, ResourceRef, Variable, World, WorldViewEncoding,
 };
 pub use writing::EncodedDmb;
+#[path = "dmb_lists.rs"]
+mod word_lists;
+pub use word_lists::WordLists;
 #[path = "dmb_resources.rs"]
 mod resource_attachment;
-pub use resource_attachment::{ResourceAttachment, ResourceLookup, attach_resource_refs};
+pub use resource_attachment::{attach_resource_refs, ResourceAttachment, ResourceLookup};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dmb {
@@ -33,7 +36,7 @@ pub struct Dmb {
     pub classes: Vec<Class>,
     pub mobs: Vec<MobType>,
     pub strings: Vec<DmString>,
-    pub lists: Vec<Vec<u32>>,
+    pub lists: WordLists,
     pub procs: Vec<Proc>,
     pub variables: Vec<Variable>,
     /// List ID of (variable ID, declaration flags) pairs for globals.
@@ -137,7 +140,7 @@ impl Dmb {
         let mut remap = vec![NONE; old_count];
         use std::hash::{Hash, Hasher};
         let mut intern = std::collections::HashMap::<u64, Vec<u32>>::new();
-        let mut lists = Vec::new();
+        let mut lists = WordLists::default();
         for (old, words) in self.lists.iter().enumerate() {
             if !live[old] {
                 continue;
@@ -154,7 +157,7 @@ impl Dmb {
                 }
                 let id =
                     u32::try_from(lists.len()).map_err(|_| invalid("list table exceeds u32"))?;
-                lists.push(words.clone());
+                lists.push_shared(std::sync::Arc::clone(self.lists.shared(old).unwrap()));
                 bucket.push(id);
                 id
             };
@@ -786,7 +789,7 @@ impl Dmb {
                 classes,
                 mobs,
                 strings,
-                lists,
+                lists: lists.into(),
                 procs,
                 variables,
                 variable_footer,

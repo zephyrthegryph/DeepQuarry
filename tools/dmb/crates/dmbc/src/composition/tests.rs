@@ -629,3 +629,23 @@ fn map_and_modified_initializer_words_transfer_without_changing_bytes() {
         assert_eq!(consumed.initializer_words(index, &mobs).unwrap(), expected);
     }
 }
+
+#[test]
+fn composition_transfers_retained_word_owner_without_copy_and_mutation_detaches() {
+    use std::sync::Arc;
+    let (batch, _) = ownership_fixture();
+    let retained = batch.units[0].latest_image().clone();
+    let linked = batch.link_unit(0, &Default::default()).unwrap();
+    let mut access = owned::BatchAccess::Owned(batch);
+    let words = access.unit_words(0, &dm_link::MobBindings::new()).unwrap();
+    assert!(Arc::ptr_eq(&words, &linked.words));
+    let mut dmb =
+        Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap();
+    let id = append_list(&mut dmb, Arc::clone(&words)).unwrap();
+    assert!(Arc::ptr_eq(dmb.lists.shared(id as usize).unwrap(), &words));
+    let original = words.clone();
+    dmb.lists[id as usize].push(99);
+    assert_eq!(original.as_slice(), linked.words.as_slice());
+    assert!(!Arc::ptr_eq(dmb.lists.shared(id as usize).unwrap(), &words));
+    drop(retained);
+}

@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
 const MAX_FRAME: usize = 4 * 1024 * 1024;
-pub(super) const VERSION: u32 = 2;
+pub(super) const VERSION: u32 = 3;
 #[derive(Serialize, Deserialize)]
 pub(super) enum Request {
     Hello { version: u32, compiler: u128 },
     Retire,
+    Query(super::query::QueryRequest),
     Build(crate::request::BuildRequest),
 }
 #[derive(Serialize, Deserialize)]
@@ -23,6 +24,7 @@ pub(super) enum Reply {
     },
     Rejected(crate::request_failure::RequestFailure),
     Retiring,
+    Query(super::query::QueryReply),
 }
 pub(super) fn send(stream: &mut impl Write, value: &impl Serialize) -> io::Result<()> {
     let bytes = serde_json::to_vec(value)?;
@@ -37,10 +39,16 @@ pub(super) fn send(stream: &mut impl Write, value: &impl Serialize) -> io::Resul
     stream.flush()
 }
 pub(super) fn receive<T: serde::de::DeserializeOwned>(stream: &mut impl Read) -> io::Result<T> {
+    receive_bounded(stream, MAX_FRAME)
+}
+pub(super) fn receive_bounded<T: serde::de::DeserializeOwned>(
+    stream: &mut impl Read,
+    limit: usize,
+) -> io::Result<T> {
     let mut length = [0; 4];
     stream.read_exact(&mut length)?;
     let length = u32::from_le_bytes(length) as usize;
-    if length > MAX_FRAME {
+    if length > MAX_FRAME.min(limit) {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             "daemon frame too large",
@@ -53,6 +61,10 @@ pub(super) fn receive<T: serde::de::DeserializeOwned>(stream: &mut impl Read) ->
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn caller_specific_frame_limit_rejects_before_payload_read() {
+        assert!(receive_bounded::<Request>(&mut &(64_u32.to_le_bytes())[..], 32).is_err());
+    }
     #[test]
     fn oversize_refused_before_allocation() {
         assert!(receive::<Request>(&mut &((MAX_FRAME + 1) as u32).to_le_bytes()[..]).is_err());

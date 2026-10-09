@@ -22,6 +22,23 @@ impl PairStore {
                     .join(format!("{:032x}-{}.lock", identity.hash, identity.bytes)),
             )
     }
+    /// Authenticate an existing immutable archive without reading an unrelated
+    /// output pair. The shared pin remains held through the caller's publication.
+    /// Exact mode still hashes the complete archive; ordinary mode uses the same
+    /// boot/inode receipt policy as every other resource admission.
+    pub fn verify_resource_pinned(
+        &self,
+        identity: ResourceIdentity,
+        exact: bool,
+    ) -> io::Result<ResourcePin> {
+        let _lock = self.lock()?;
+        let path = self
+            .root
+            .join("resources")
+            .join(format!("{:032x}-{}.rsc", identity.hash, identity.bytes));
+        self.authenticate_resource(&path, identity, exact)?;
+        self.pin_resource(identity)
+    }
     fn pin_resource(&self, identity: ResourceIdentity) -> io::Result<ResourcePin> {
         let file = self.resource_pin_file(identity)?;
         FileExt::lock_shared(&file)?;

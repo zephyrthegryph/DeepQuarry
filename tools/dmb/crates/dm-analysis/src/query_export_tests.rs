@@ -97,3 +97,51 @@ fn canonical_member_ids_follow_normalized_occurrences_and_queries_use_same_subje
     assert_eq!(storage["answer"]["name"]["text"], "value");
     assert_eq!(storage["domain_version"].as_str().unwrap().len(), 32);
 }
+
+#[test]
+fn opaque_member_export_keeps_uncertified_flags_distinct_from_authored_zero() {
+    use dm_ir::{DeclarationMeaning, DeclaredTypeKnowledge, OpaqueFieldBase};
+    use std::sync::Arc;
+    let owner = SymbolId::of("/datum/example");
+    let name = SymbolId::of("field");
+    let mut data = DeclarationMeaning {
+        inherited_opaque: Some(OpaqueFieldBase {
+            owner,
+            name,
+            declared_type: DeclaredTypeKnowledge::Unsupported,
+        }),
+        list_element_type: Some(SymbolId::of("/datum/placeholder")),
+        ..Default::default()
+    };
+    let opaque = answer(
+        &SymbolTable::default(),
+        &ResolvedMeaning::Member {
+            owner,
+            name,
+            fingerprint: 1,
+            data: Arc::new(data.clone()),
+        },
+    )
+    .unwrap();
+    assert!(opaque["flags"].is_null());
+    assert_eq!(opaque["flags_status"], "unknown");
+    assert!(opaque["declared_type"].is_null());
+    assert_eq!(opaque["declared_type_status"], "unsupported");
+    assert!(opaque["list_element_type"].is_null());
+    assert_eq!(opaque["list_element_type_status"], "unknown");
+    data.inherited_opaque = None;
+    let authored = answer(
+        &SymbolTable::default(),
+        &ResolvedMeaning::Member {
+            owner,
+            name,
+            fingerprint: 2,
+            data: Arc::new(data),
+        },
+    )
+    .unwrap();
+    assert_eq!(authored["flags"], 0);
+    assert_eq!(authored["flags_status"], "known");
+    assert_eq!(authored["declared_type_status"], "known_untyped");
+    assert_eq!(authored["list_element_type_status"], "known");
+}

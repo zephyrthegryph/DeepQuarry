@@ -428,3 +428,15 @@ fn binary_templates_are_interned_by_exact_bytes_once() {
     assert_eq!(payloads.len(), 1);
     assert_eq!(payloads[0].id, SymbolId::of_bytes(template));
 }
+
+#[test]
+fn continued_interpolation_expressions_keep_literal_decoder_authority() {
+    for value in [
+        "[pick(\"first\",\\\n    \"second\")].",
+        "[isRepeating ? \\\r\n    \"repeat\" : \"deleted\"]",
+        "[pick(\"left\\\n    right\",\\\n    \"second\")]",
+    ] {
+        let (_, expressions) = parse_interpolated_string(value).unwrap();
+        assert_eq!(expressions.len(), 1);
+    }
+}

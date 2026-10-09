@@ -48,6 +48,7 @@ pub struct BuildRequest {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Command {
+    Query { request: PathBuf, jsonl: bool },
     Help,
     Gc { project: PathBuf },
     Stats { project: PathBuf },

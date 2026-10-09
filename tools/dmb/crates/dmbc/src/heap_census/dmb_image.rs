@@ -22,7 +22,7 @@ impl HeapCensus {
                 self.vec_payload("dmb_string_payloads", &string.data);
             }
         }
-        if self.vec_payload("dmb_list_descriptors", &dmb.lists) {
+        if self.vec_payload("dmb_list_descriptors", dmb.lists.storage()) {
             for procedure in &dmb.procs {
                 for (id, role) in procedure.code_locals_args.iter().zip([
                     "dmb_procedure_code_and_debug_words",
@@ -59,8 +59,10 @@ impl HeapCensus {
             }
             // Include every list, including lists not reachable through the
             // consumer roles above. The buffer ledger prevents double counting.
-            for list in &dmb.lists {
-                self.vec_payload("dmb_other_list_words", list);
+            for list in dmb.lists.storage() {
+                if self.arc_object("dmb_list_word_owners", list) {
+                    self.vec_payload("dmb_other_list_words", list);
+                }
             }
         }
         self.vec_payload("dmb_world", &dmb.world.client_script_files);
@@ -69,12 +71,14 @@ impl HeapCensus {
         if let Some(bytes) = &dmb.header.executor_line {
             self.vec_payload("dmb_header", bytes);
         }
-        self.unknown("dmb_image", "allocator rounding/metadata are unavailable; inline record fields are included in table Vec storage; resource archive payloads belong to separate resource owners");
+        self.unknown("dmb_image", "allocator rounding/metadata are unavailable; inline record fields are included in table Vec storage; resource archive payloads belong to separate resource owners; shared list Arc control blocks are unknown structural overhead");
     }
 
     fn dmb_list(&mut self, dmb: &Dmb, id: u32, role: &str) {
-        if let Some(list) = dmb.lists.get(id as usize) {
-            self.vec_payload(role, list);
+        if let Some(list) = dmb.lists.shared(id as usize) {
+            if self.arc_object("dmb_list_word_owners", list) {
+                self.vec_payload(role, list);
+            }
         }
     }
 }
@@ -110,7 +114,8 @@ mod tests {
                 .iter()
                 .map(|value| capacity(&value.data))
                 .sum::<usize>()
-            + capacity(&dmb.lists)
+            + capacity(dmb.lists.storage())
+            + dmb.lists.len() * size_of::<Vec<u32>>()
             + dmb.lists.iter().map(capacity).sum::<usize>()
             + capacity(&dmb.world.client_script_files)
             + capacity(&dmb.header.version_line)

@@ -161,11 +161,16 @@ pub(crate) use handle::{isolated_output_stamp, stamp_handle};
 /// only actual reads; it retains no payload cache. Drop it after taking snapshot.
 #[path = "input_snapshot_nontext.rs"]
 mod nontext;
+#[path = "input_prepared.rs"]
+mod prepared;
+pub use prepared::PreparedInputArtifacts;
 
 pub struct RecordingInputs<P = FileSystemInputs> {
     provider: P,
     snapshot: Mutex<InputSnapshot>,
     exact_reuse: bool,
+    prepared: Option<std::sync::Arc<PreparedInputArtifacts>>,
+    prepared_keys: Mutex<Vec<std::sync::Arc<[u8]>>>,
 }
 impl<P: SnapshotProvider> RecordingInputs<P> {
     pub fn new(provider: P, scanned_ns: u128) -> Self {
@@ -173,6 +178,8 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             provider,
             snapshot: Mutex::new(InputSnapshot::new(scanned_ns)),
             exact_reuse: false,
+            prepared: None,
+            prepared_keys: Mutex::new(Vec::new()),
         }
     }
     pub fn with_exact_reuse(mut self, exact: bool) -> Self {
@@ -251,6 +258,12 @@ fn decode_owned_source(bytes: Vec<u8>) -> String {
     }
 }
 impl<P: SnapshotProvider> dm_preprocess::SourceProvider for RecordingInputs<P> {
+    fn prepared_source(
+        &self,
+        path: &Path,
+    ) -> Option<std::sync::Arc<dm_preprocess::regions::prepared_source::PreparedSource>> {
+        self.prepared_impl(path).ok().flatten()
+    }
     fn read(&self, path: &Path) -> Result<String, String> {
         self.read_recorded(path)
             .map(decode_owned_source)

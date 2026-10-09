@@ -21,7 +21,7 @@ impl BatchAccess<'_> {
         &mut self,
         index: usize,
         mobs: &dm_link::MobBindings,
-    ) -> Result<Vec<u32>, IntegrationError> {
+    ) -> Result<std::sync::Arc<Vec<u32>>, IntegrationError> {
         let image = match self {
             Self::Borrowed(batch) => Ok::<dm_link::ProcedureImage, IntegrationError>(
                 batch.link_unit(index, &Default::default())?,
@@ -30,19 +30,20 @@ impl BatchAccess<'_> {
                 batch.take_unit_image(index, &Default::default())?,
             ),
         }?;
-        crate::symbolic::latest_image::LatestImage::wire_words(
+        crate::symbolic::latest_image::LatestImage::wire_image(
             self.units[index].latest_image(),
             image,
             self.units[index].frozen.code(),
             &self.tables,
             mobs,
         )
+        .map(|image| image.words)
     }
     pub(super) fn helper_words(
         &mut self,
         index: usize,
         mobs: &dm_link::MobBindings,
-    ) -> Result<Vec<u32>, IntegrationError> {
+    ) -> Result<std::sync::Arc<Vec<u32>>, IntegrationError> {
         let image = match self {
             Self::Borrowed(batch) => Ok::<dm_link::ProcedureImage, IntegrationError>(
                 batch.link_helper(&batch.helpers[index])?,
@@ -51,19 +52,20 @@ impl BatchAccess<'_> {
                 Ok::<dm_link::ProcedureImage, IntegrationError>(batch.take_helper_image(index)?)
             }
         }?;
-        crate::symbolic::latest_image::LatestImage::wire_words(
+        crate::symbolic::latest_image::LatestImage::wire_image(
             self.helpers[index].latest_image(),
             image,
             self.helpers[index].frozen.code(),
             &self.tables,
             mobs,
         )
+        .map(|image| image.words)
     }
     pub(super) fn initializer_words(
         &mut self,
         index: usize,
         mobs: &dm_link::MobBindings,
-    ) -> Result<Vec<u32>, IntegrationError> {
+    ) -> Result<std::sync::Arc<Vec<u32>>, IntegrationError> {
         let image = match self {
             Self::Borrowed(batch) => Ok::<dm_link::ProcedureImage, IntegrationError>(
                 batch.link_initializer(&batch.initializers[index])?,
@@ -72,13 +74,14 @@ impl BatchAccess<'_> {
                 batch.take_initializer_image(index)?,
             ),
         }?;
-        crate::symbolic::latest_image::LatestImage::wire_words(
+        crate::symbolic::latest_image::LatestImage::wire_image(
             self.initializers[index].latest_image(),
             image,
             self.initializers[index].frozen.code(),
             &self.tables,
             mobs,
         )
+        .map(|image| image.words)
     }
     pub(super) fn certified_features(&self) -> HashMap<u32, (&[u32], BytecodeFeatures)> {
         match self {

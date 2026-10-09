@@ -41,10 +41,13 @@ impl dmbc::assets::ResourceArchiveSink for OutputResourceSink<'_> {
 
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
+        Command::Query { request, jsonl } => {
+            dmbc::daemon::query::run_file(&request, jsonl).map(|()| CommandOutcome::Completed)
+        }
         Command::Help => {
             dmbc::daemon_println!("dmbc analyze|compile [--bodies|--resolved (analyze only)] [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
             dmbc::daemon_println!(
-                "dmbc stats [PROJECT] | explain PROCEDURE [PROJECT] | gc [PROJECT]"
+                "dmbc stats [PROJECT] | explain PROCEDURE [PROJECT] | gc [PROJECT] | query REQUEST.json [--jsonl]"
             );
             dmbc::daemon_println!("compile publishes a new immutable output pair and installs PROJECT.dmb/.rsc; unsupported semantics fail before publication.");
             Ok(CommandOutcome::Completed)
@@ -185,7 +188,8 @@ pub fn run_build_with_host(
         _ => dmbc::frozen_inputs::Inputs::Live,
     };
     let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&input_provider, now_ns())
-        .with_exact_reuse(exact_inputs);
+        .with_exact_reuse(exact_inputs)
+        .with_prepared_sources(host.prepared_sources());
     let mut session = None;
     let mut pair_store = None;
     // Request-owned leases outlive the borrowed capture sink and cold compiler.
@@ -536,7 +540,7 @@ pub fn run_build_with_host(
             }
         };
         let admit_resources = |demand: &dm_resources::capture::ResourceDemand| {
-            let Some((prior_pair, manifest)) = resource_prior.as_ref() else {
+            let Some((_prior_pair, manifest)) = resource_prior.as_ref() else {
                 return Ok(None);
             };
             let Some(store) = pair_store.as_ref() else {
@@ -566,9 +570,17 @@ pub fn run_build_with_host(
                         now: now_ns(),
                     },
                     |identity| {
-                        Ok(store.verify(*prior_pair, exact_inputs).is_ok_and(|pair| {
-                            pair.rsc_bytes == identity.bytes && pair.rsc_hash == identity.hash
-                        }))
+                        match store.verify_resource_pinned(identity, exact_inputs) {
+                            Ok(pin) => {
+                                resource_outputs
+                                    .lock()
+                                    .unwrap_or_else(|error| error.into_inner())
+                                    .pins
+                                    .push(pin);
+                                Ok(true)
+                            }
+                            Err(_) => Ok(false),
+                        }
                     },
                     Some(&observer),
                 )
@@ -810,6 +822,7 @@ pub fn run_build_with_host(
             },
         )?;
         input_provider.finish()?;
+        inputs_capture.finish_prepared()?;
         if let (Some(cache), Some(snapshot), Some(session)) =
             (&memo_cache, &cache_snapshot, &session)
         {

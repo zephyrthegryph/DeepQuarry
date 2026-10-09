@@ -97,6 +97,31 @@ pub struct DriverInheritedFacts<'a> {
     pub boundaries: &'a BTreeMap<UnitIdentity, BoundaryAbi>,
     pub unit_members: &'a BTreeMap<UnitIdentity, MemberId>,
 }
+impl DriverInheritedFacts<'_> {
+    /// Implicit implementations do not redefine the inherited declaration ABI.
+    /// BYOND 516.1687 inherits settings from the original formal declaration,
+    /// even when a nearer implementation has authored different flags.
+    fn source_predecessor(&self, member: MemberId) -> Result<Option<MemberId>, AbiError> {
+        let tree = &self.frontend.snapshot.tree;
+        let first = tree
+            .member(member)
+            .ok_or_else(|| AbiError::unsupported("indexed procedure member missing"))?
+            .previous;
+        let mut cursor = first;
+        while let Some(id) = cursor {
+            let node = tree
+                .member(id)
+                .ok_or_else(|| AbiError::unsupported("inherited procedure member missing"))?;
+            if node.definition == dm_tree::DefinitionMode::Declare {
+                return Ok(Some(id));
+            }
+            cursor = node.previous;
+        }
+        // Engine-boundary chains have no authored formal source declaration.
+        // Their existing certified receipt path remains unchanged.
+        Ok(first)
+    }
+}
 impl CapturedInheritedFacts for DriverInheritedFacts<'_> {
     fn inherited(&self, context: &AbiContext<'_>) -> Result<InheritedLayout, AbiError> {
         let tree = &self.frontend.snapshot.tree;
@@ -107,7 +132,7 @@ impl CapturedInheritedFacts for DriverInheritedFacts<'_> {
         let node = tree
             .member(*id)
             .ok_or_else(|| AbiError::unsupported("indexed procedure member missing"))?;
-        if let Some(previous) = node.previous {
+        if let Some(previous) = self.source_predecessor(*id)? {
             return self
                 .source_layouts
                 .get(&previous)

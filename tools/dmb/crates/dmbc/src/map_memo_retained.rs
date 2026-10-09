@@ -1,6 +1,7 @@
 //! Current-revision map artifacts. Locators select buckets; exact immutable
 //! source/model owners and the shared read ledger authorize every admission.
 use super::*;
+use std::collections::BTreeMap;
 use dm_preprocess::{RetainedText, SourceProvider};
 use std::path::{Path, PathBuf};
 

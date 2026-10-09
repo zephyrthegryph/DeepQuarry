@@ -1,0 +1,25 @@
+{
+  "compiler_version": "516.1687",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "source_sha256": "8b427a6b10c0144ceea58a51961fdec6a76050a74a277703a9339fda13cfbbc5",
+  "dmb_sha256": "a058753e3c728cfb10826e6b28f7479d2fbdc4b3bbb5fc2cb34e1e09c0286461",
+  "inspector_sha256": "48d4ad88d8ab55608beb3ce8c97ba5a838c0fbc5764e354805b7a186e45c848b",
+  "proc_records": [
+    {
+      "index": 0,
+      "exit": 0,
+      "output": "Proc { strings: [437, 438, 65535, 65535], source_parameter: 255, source_kind: 0, flags: 5, extended_flags: None, code_locals_args: [0, 2, 1] } path=/datum/base/proc/check\n"
+    },
+    {
+      "index": 1,
+      "exit": 0,
+      "output": "Proc { strings: [439, 438, 65535, 65535], source_parameter: 255, source_kind: 0, flags: 128, extended_flags: Some((385, 0)), code_locals_args: [3, 2, 1] } path=/datum/base/check\n"
+    },
+    {
+      "index": 2,
+      "exit": 0,
+      "output": "Proc { strings: [440, 438, 65535, 65535], source_parameter: 255, source_kind: 0, flags: 5, extended_flags: None, code_locals_args: [4, 2, 2] } path=/datum/child/check\n"
+    }
+  ],
+  "scope": "compile-only; no runtime"
+}

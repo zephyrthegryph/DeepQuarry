@@ -11,35 +11,35 @@ struct Wired {
     final_image: ProcedureImage,
 }
 impl WireImage {
-    pub(super) fn words(
+    pub(super) fn image(
         &self,
         base: ProcedureImage,
         code: &dm_ir::SymbolicCode,
         tables: &LinkTables,
         mobs: &dm_link::MobBindings,
-    ) -> Result<Vec<u32>, IntegrationError> {
+    ) -> Result<ProcedureImage, IntegrationError> {
         let bound = dm_link::bind_type_path_words(&base.words, code, tables, mobs)
             .map_err(IntegrationError::WireDomain)?;
         let mut current = self.current.lock().unwrap_or_else(|e| e.into_inner());
         if bound.is_empty() {
             drop(bound);
             *current = None;
-            return Ok(base.into_words());
+            return Ok(base);
         }
         if let Some(hit) = current
             .as_ref()
             .filter(|hit| Arc::ptr_eq(&hit.base.words, &base.words) && bound.matches(&hit.answers))
         {
-            return Ok(hit.final_image.clone().into_words());
+            return Ok(hit.final_image.clone());
         }
         let (final_image, answers) = bound.encode_with_answers();
-        let words = final_image.clone().into_words();
+        let image = final_image.clone();
         *current = Some(Wired {
             base,
             answers,
             final_image,
         });
-        Ok(words)
+        Ok(image)
     }
     pub(super) fn visit_retained(
         &self,

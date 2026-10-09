@@ -9,6 +9,21 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
     }
     let mut args = arguments.iter().cloned();
     let command = args.next().unwrap_or_else(|| "--help".into());
+    if command == "query" {
+        let request = args
+            .next()
+            .ok_or("query requires a request JSON file")?
+            .into();
+        let jsonl = match args.next().as_deref() {
+            None => false,
+            Some("--jsonl") => true,
+            Some(_) => return Err("query accepts only REQUEST.json and optional --jsonl".into()),
+        };
+        if args.next().is_some() {
+            return Err("unexpected query argument".into());
+        }
+        return Ok(Command::Query { request, jsonl });
+    }
     if command == "gc" {
         return Ok(Command::Gc {
             project: args

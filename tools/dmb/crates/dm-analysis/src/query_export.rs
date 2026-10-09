@@ -50,7 +50,26 @@ fn answer(symbols: &SymbolTable, meaning: &ResolvedMeaning) -> Result<Value, Exp
             fingerprint,
             data,
         } => {
-            json!({"status":"known","kind":"member","owner":symbol(symbols,*owner),"name":symbol(symbols,*name),"fingerprint":format!("{fingerprint:032x}"),"flags":data.flags,"initializer":expression(data.initializer.as_ref(),symbols)?,"opaque":data.inherited_opaque.is_some()})
+            let opaque = data.inherited_opaque.as_ref();
+            let (declared_type, type_status) = match opaque.map(|base| base.declared_type) {
+                Some(dm_ir::DeclaredTypeKnowledge::Known(path)) => (Some(path), "known"),
+                Some(dm_ir::DeclaredTypeKnowledge::KnownUntyped) => (None, "known_untyped"),
+                Some(dm_ir::DeclaredTypeKnowledge::Unsupported) => (None, "unsupported"),
+                None => (
+                    data.declared_type,
+                    if data.declared_type.is_some() {
+                        "known"
+                    } else {
+                        "known_untyped"
+                    },
+                ),
+            };
+            json!({"status":"known","kind":"member","owner":symbol(symbols,*owner),"name":symbol(symbols,*name),"fingerprint":format!("{fingerprint:032x}"),
+                "flags":opaque.is_none().then_some(data.flags),"flags_status":if opaque.is_some() {"unknown"} else {"known"},
+                "declared_type":declared_type.map(|path|symbol(symbols,path)),"declared_type_status":type_status,
+                "list_element_type":opaque.is_none().then_some(data.list_element_type).flatten().map(|path|symbol(symbols,path)),
+                "list_element_type_status":if opaque.is_some() {"unknown"} else {"known"},
+                "initializer":expression(data.initializer.as_ref(),symbols)?,"opaque":opaque.is_some()})
         }
         M::Resource { path, content } => {
             json!({"status":"known","kind":"resource","path":symbol(symbols,*path),"content":format!("{content:032x}")})

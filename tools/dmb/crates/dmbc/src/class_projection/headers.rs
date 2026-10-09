@@ -363,6 +363,9 @@ fn inherit_record(
             child.maptext_geometry[slot] = parent.maptext_geometry[slot];
         }
     }
+    if !own.contains("invisibility") {
+        child.set_normally_visible(parent.is_normally_visible());
+    }
     if !own.contains("density") {
         child.set_dense(parent.is_dense());
     }
@@ -411,6 +414,10 @@ fn native_header_differences(engine: &Dmb, child: &Class, parent: &Class, own: &
         ("dir", child.direction != parent.direction),
         ("maptext", child.maptext != parent.maptext),
         ("suffix", child.suffix != parent.suffix),
+        (
+            "invisibility",
+            child.is_normally_visible() != parent.is_normally_visible(),
+        ),
         ("density", child.is_dense() != parent.is_dense()),
         ("opacity", child.is_opaque() != parent.is_opaque()),
         (

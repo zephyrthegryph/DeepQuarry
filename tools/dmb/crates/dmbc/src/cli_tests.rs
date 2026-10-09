@@ -232,3 +232,20 @@ fn resolved_analysis_is_explicit_and_disjoint_from_lexical_mode() {
         assert!(crate::cli::parse(&arguments.map(str::to_owned)).is_err());
     }
 }
+
+#[test]
+fn query_command_is_read_only_and_rejects_build_options() {
+    let args = ["query", "request.json", "--jsonl"].map(str::to_string);
+    assert!(matches!(
+        parse(&args).unwrap(),
+        Command::Query { jsonl: true, .. }
+    ));
+    assert!(parse(&["query".into()]).is_err());
+    assert!(parse(&[
+        "query".into(),
+        "request.json".into(),
+        "--workers".into(),
+        "8".into()
+    ])
+    .is_err());
+}

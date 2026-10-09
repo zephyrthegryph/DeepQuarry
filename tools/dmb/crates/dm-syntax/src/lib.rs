@@ -222,6 +222,8 @@ pub struct ParsedExpr {
 
 mod expression_parser;
 pub use expression_parser::parse_expression;
+mod expression_continuation;
+pub use expression_continuation::splice_expression_continuations;
 
 mod declaration_parser;
 use declaration_parser::*;

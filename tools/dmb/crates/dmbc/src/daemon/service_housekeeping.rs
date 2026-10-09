@@ -121,6 +121,8 @@ mod tests {
     #[test]
     fn bounded_eviction_is_deterministic_and_preserves_request_owned_slots() {
         let shared = Shared {
+            engines: Arc::new(Default::default()),
+            executors: Arc::new(Default::default()),
             compiler: 1,
             retiring: AtomicBool::new(false),
             slots: Mutex::new(BTreeMap::new()),

@@ -1,19 +1,20 @@
 //! Process-local artifact ownership for the shared request pipeline.
 //! Immutable source contributions and observed artifacts survive across requests;
 //! current source issuance, dense table projections and publication stay request-local.
-use crate::{engine::EngineSnapshot, engine_link::EngineLinkFacts};
-use std::{
-    collections::BTreeMap,
-    path::PathBuf,
-    sync::{Arc, Mutex, OnceLock},
-};
+use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 
 #[path = "runner_disk.rs"]
 pub mod disk;
+#[path = "runner_engine_payload.rs"]
+mod engine_payload;
 #[path = "runner_host_idle.rs"]
 mod idle;
 #[path = "runner_host_memo.rs"]
 mod memo;
+pub(crate) use engine_payload::EnginePayloads;
+#[path = "runner_executor_pool.rs"]
+mod executor_pool;
+pub(crate) use executor_pool::ExecutorPools;
 
 type ProcedureValues =
     Arc<crate::lowering_memo::LoweringMemo<crate::lowering_memo::CachedProcedure>>;
@@ -26,6 +27,9 @@ type HostParts<'a> = (
 /// One semantic session's retained artifacts and bounded executor. A long-lived
 /// caller reuses this owner across requests without retaining a publication lease.
 pub struct BuildHost {
+    prepared_sources: Option<Arc<crate::input_snapshot::PreparedInputArtifacts>>,
+    shared_engines: Option<Arc<EnginePayloads>>,
+    shared_executors: Option<Arc<ExecutorPools>>,
     engine: Option<Arc<RetainedEngine>>,
     memo: Option<memo::ResidentMemo>,
     executor: Option<dm_exec::BuildExecutor>,
@@ -58,15 +62,23 @@ struct EngineConfiguration {
 
 pub(crate) struct RetainedEngine {
     configuration: EngineConfiguration,
-    pub(crate) bytes: Arc<[u8]>,
-    pub(crate) snapshot: EngineSnapshot,
-    links: Mutex<Option<EngineLinkFacts>>,
-    seed: OnceLock<dm_tree::frontend::EngineSeed>,
+    payload: Arc<engine_payload::EnginePayload>,
+}
+impl std::ops::Deref for RetainedEngine {
+    type Target = engine_payload::EnginePayload;
+    fn deref(&self) -> &Self::Target {
+        &self.payload
+    }
 }
 
 impl Default for BuildHost {
     fn default() -> Self {
         Self {
+            prepared_sources: Some(Arc::new(
+                crate::input_snapshot::PreparedInputArtifacts::default(),
+            )),
+            shared_engines: None,
+            shared_executors: None,
             engine: None,
             executor: None,
             procedures: None,
@@ -85,9 +97,37 @@ impl Default for BuildHost {
     }
 }
 impl BuildHost {
+    pub(crate) fn prepared_sources(
+        &self,
+    ) -> Option<Arc<crate::input_snapshot::PreparedInputArtifacts>> {
+        self.prepared_sources.clone()
+    }
+    pub(crate) fn query_tree(&self) -> Option<&Arc<dm_tree::SemanticTree>> {
+        self.semantic
+            .as_ref()
+            .and_then(|semantic| semantic.snapshot_tree())
+    }
+
+    pub(crate) fn with_daemon_owners(
+        engines: Arc<EnginePayloads>,
+        executors: Arc<ExecutorPools>,
+    ) -> Self {
+        let mut host = Self::with_shared_engines(engines);
+        host.shared_executors = Some(executors);
+        host
+    }
+    pub(crate) fn with_shared_engines(shared_engines: Arc<EnginePayloads>) -> Self {
+        Self {
+            shared_engines: Some(shared_engines),
+            ..Self::default()
+        }
+    }
     /// CLI adapter: no resident candidates or memo-record construction without disk.
     pub fn one_shot() -> Self {
         Self {
+            prepared_sources: None,
+            shared_engines: None,
+            shared_executors: None,
             engine: None,
             executor: None,
             procedures: None,
@@ -306,8 +346,10 @@ impl BuildHost {
         &'a mut self,
         workers: usize,
         disk: Option<&'a dyn dm_preprocess::regions::ExpansionMemo>,
-    ) -> Result<HostParts<'a>, dm_exec::ExecutorError> {
-        let execution = if self.memo.is_some() {
+    ) -> Result<HostParts<'a>, Box<dyn std::error::Error>> {
+        let execution = if let Some(shared) = &self.shared_executors {
+            HostExecution::Leased(shared.checkout(workers)?)
+        } else if self.memo.is_some() {
             if self
                 .executor
                 .as_ref()
@@ -348,21 +390,24 @@ impl BuildHost {
                 return Ok(Arc::clone(retained));
             }
         }
-        let snapshot = EngineSnapshot::from_bytes(&bytes, configuration.schema)
-            .map_err(|error| format!("engine template: {error:?}"))?;
-        let snapshot = if bootstrap_catalog {
-            snapshot
-                .with_bootstrap_catalog()
-                .map_err(|error| format!("engine catalog: {error:?}"))?
+        let payload = if let Some(shared) = &self.shared_engines {
+            shared.capture(
+                bytes,
+                configuration.schema,
+                bootstrap_catalog,
+                crate::daemon::compiler_identity().map_err(|error| error.to_string())?,
+            )?
         } else {
-            snapshot
+            engine_payload::EnginePayload::capture(
+                bytes,
+                configuration.schema,
+                bootstrap_catalog,
+                0,
+            )?
         };
         let retained = Arc::new(RetainedEngine {
             configuration,
-            bytes: bytes.into(),
-            snapshot,
-            links: Mutex::new(None),
-            seed: OnceLock::new(),
+            payload,
         });
         if self.memo.is_some() {
             self.memo = Some(memo::ResidentMemo::default());
@@ -386,6 +431,7 @@ impl BuildHost {
 }
 
 pub(crate) enum HostExecution<'a> {
+    Leased(executor_pool::ExecutorLease),
     OneShot(dm_exec::BuildExecutor),
     Retained(&'a mut dm_exec::BuildExecutor),
 }
@@ -395,6 +441,10 @@ impl HostExecution<'_> {
         operation: impl FnOnce(&dm_exec::BuildExecutor) -> R,
     ) -> Result<R, dm_exec::RequestError> {
         match self {
+            Self::Leased(mut lease) => {
+                let request = dm_profile::RequestContext::capture();
+                lease.executor().with_request(request.as_ref(), operation)
+            }
             Self::OneShot(executor) => Ok(operation(&executor)),
             Self::Retained(executor) => {
                 let request = dm_profile::RequestContext::capture();
@@ -404,32 +454,10 @@ impl HostExecution<'_> {
     }
 }
 
-impl RetainedEngine {
-    pub(crate) fn frontend_seed(&self) -> &dm_tree::frontend::EngineSeed {
-        self.seed.get_or_init(|| self.snapshot.frontend_seed())
-    }
-
-    /// Return a mutable request overlay without altering the pinned baseline.
-    /// First capture stays at the ordinary pipeline's linking-input boundary.
-    pub(crate) fn link_overlay(&self) -> Result<EngineLinkFacts, String> {
-        let mut retained = self
-            .links
-            .lock()
-            .map_err(|_| "retained engine links poisoned")?;
-        if retained.is_none() {
-            *retained = Some(crate::engine_link::capture(&self.bytes, &self.snapshot)?);
-        }
-        let baseline = retained.as_ref().expect("captured engine links");
-        Ok(EngineLinkFacts {
-            inventory: baseline.inventory.clone(),
-            references: baseline.references.clone(),
-        })
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
     fn capture(host: &mut BuildHost, defines: BTreeMap<String, String>) -> Arc<RetainedEngine> {
         host.engine(
             PathBuf::from("E:/fixture/world.dme"),
@@ -438,6 +466,27 @@ mod tests {
             include_bytes!("../../../fixtures/native_template.bin").to_vec(),
         )
         .unwrap()
+    }
+    #[test]
+    fn daemon_hosts_share_engine_payload_but_keep_configuration_and_state_separate() {
+        let shared = Arc::new(EnginePayloads::default());
+        let mut a = BuildHost::with_shared_engines(Arc::clone(&shared));
+        let mut b = BuildHost::with_shared_engines(shared);
+        let first = capture(&mut a, BTreeMap::new());
+        let second = b
+            .engine(
+                PathBuf::from("E:/fixture/other-worktree/world.dme"),
+                BTreeMap::from([("LOCAL_DEFINE".into(), "1".into())]),
+                true,
+                include_bytes!("../../../fixtures/native_template.bin").to_vec(),
+            )
+            .unwrap();
+        assert!(!Arc::ptr_eq(&first, &second));
+        assert!(Arc::ptr_eq(&first.payload, &second.payload));
+        assert_ne!(first.configuration.project, second.configuration.project);
+        let a_memo = a.procedure_memo(1, None).unwrap();
+        let b_memo = b.procedure_memo(1, None).unwrap();
+        assert!(!Arc::ptr_eq(&a_memo.values, &b_memo.values));
     }
     fn worker_ids(
         executor: &dm_exec::BuildExecutor,
@@ -455,6 +504,27 @@ mod tests {
             }
         });
         ids.into_inner().unwrap()
+    }
+    #[test]
+    fn six_daemon_hosts_share_one_returned_pool_without_retaining_host_pools() {
+        let engines = Arc::new(EnginePayloads::default());
+        let pools = Arc::new(ExecutorPools::default());
+        let mut hosts = (0..6)
+            .map(|_| BuildHost::with_daemon_owners(Arc::clone(&engines), Arc::clone(&pools)))
+            .collect::<Vec<_>>();
+        let mut prior = None;
+        for host in &mut hosts {
+            let (_, execution, _) = host.execution(2, None).unwrap();
+            let ids = execution.run(worker_ids).unwrap();
+            if let Some(prior) = &prior {
+                assert_eq!(prior, &ids);
+            }
+            prior = Some(ids);
+            assert!(host.executor.is_none());
+            assert_eq!(pools.physical_workers(), 2);
+        }
+        pools.trim(std::time::Instant::now(), true);
+        assert_eq!(pools.physical_workers(), 0);
     }
     #[test]
     fn procedure_facades_share_only_values_and_policy_change_replaces_store() {

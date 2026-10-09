@@ -143,7 +143,7 @@ fn minimal() -> Dmb {
             data: b"hello".to_vec(),
             long_chunks: 0,
         }],
-        lists: vec![vec![0, 42]],
+        lists: vec![vec![0, 42]].into(),
         procs: vec![],
         variables: vec![],
         variable_footer: 0xffff,

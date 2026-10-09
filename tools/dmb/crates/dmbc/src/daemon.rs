@@ -7,6 +7,7 @@ use std::{
 pub mod control;
 mod lifecycle_deadline;
 mod protocol;
+pub mod query;
 mod service;
 mod transport;
 

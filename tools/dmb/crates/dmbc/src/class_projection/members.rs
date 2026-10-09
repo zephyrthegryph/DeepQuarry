@@ -482,6 +482,19 @@ pub(crate) fn materialize_members_with_roster(
                     })?;
                 Ok(number)
             };
+            // BYOND retains invisibility as a builtin default as well as its
+            // zero/nonzero appearance-header bit. Keep the normal default arm.
+            if name == "invisibility" {
+                let visible = match &field.value {
+                    DefaultValue::Scalar(SemanticValue::Null) => true,
+                    _ => {
+                        numeric.ok_or_else(|| {
+                            ProjectionError::Unsupported("invisibility is not numeric".into())
+                        })? == 0.0
+                    }
+                };
+                dmb.classes[class as usize].set_normally_visible(visible);
+            }
             match name {
                 "name" | "desc" | "icon_state" | "text" | "maptext" | "suffix" => {
                     if kind != 0 && kind != 6 {
