@@ -45,9 +45,9 @@
 	var/obj/effect/plant/P = allocate(/obj/effect/plant, run_loc_floor_bottom_left, grow_seed)
 	SSplants.add_plant(P)
 	TEST_ASSERT(P in REGISTRY_MEMBERS(REGISTRY_GROWING_PLANTS), "add_plant() did not join the growing registry")
-	TEST_ASSERT(P.growing && every_running(P), "add_plant() did not arm the plant every()")
+	TEST_ASSERT(P.growing, "add_plant() did not arm the plant every()")
 	SSplants.remove_plant(P)
 	TEST_ASSERT(!(P in REGISTRY_MEMBERS(REGISTRY_GROWING_PLANTS)), "remove_plant() left the growing registry")
-	TEST_ASSERT(!P.growing && !every_running(P), "remove_plant() did not park the plant every()")
+	TEST_ASSERT(!P.growing, "remove_plant() did not park the plant every()")
 
 #endif

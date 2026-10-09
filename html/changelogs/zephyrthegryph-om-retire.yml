@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Leashes, reflectors, blob core chunks, poltergeist masks, talking artifacts, spreading plants, game modes, event containers, planets, the latency sweep and cult pylons run on type-level every() instead of the om_task_periodic cadences"
+  - code_imp: "Deleted about 190 dead om_* forwards and five empty code/datums/om files; their names are banned"

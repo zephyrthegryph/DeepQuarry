@@ -35,7 +35,7 @@
 	TEST_ASSERT(SSevents.initialized, "the event service never initialized (SSatoms)")
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
 		var/datum/event_container/EC = SSevents.event_containers[i]
-		TEST_ASSERT(EC.periodic_pipe == PERIODIC_SLOW, "event container [i] is not on the slow lane")
+		TEST_ASSERT(EC.clock_running, "event container [i] is not keeping its clock")
 
 /// The radiation lane drains its queue, and a disabled service queues nothing.
 /datum/unit_test/dq_world_lanes_f3_radiation
@@ -82,10 +82,10 @@
 
 /datum/unit_test/dq_world_lanes_f3_reflector/Run()
 	var/obj/structure/reflector/box/B = allocate(/obj/structure/reflector/box, run_loc_floor_bottom_left)
-	TEST_ASSERT(!B.refiring && !every_running(B), "an idle reflector is running")
+	TEST_ASSERT(!B.refiring, "an idle reflector is running")
 	var/obj/item/projectile/beam/beam = allocate(/obj/item/projectile/beam, run_loc_floor_bottom_left)
 	B.redirect_projectile(beam, 0)
-	TEST_ASSERT(B.refiring && every_running(B), "catching a beam did not arm the reflector every()")
+	TEST_ASSERT(B.refiring, "catching a beam did not arm the reflector every()")
 	B.reflector_step(null)
 	TEST_ASSERT(!B.refiring, "a reflector that fired did not park")
 	TEST_ASSERT(!LAZYLEN(B.has_projectiles), "the reflector kept the beams it fired")
