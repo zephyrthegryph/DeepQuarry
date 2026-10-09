@@ -11,7 +11,7 @@ pub struct ExpandedRegions {
     /// Lex the joined stream once: declarations and expressions may cross
     /// include boundaries and cannot be parsed as independent file programs.
     pub tokens: Vec<SpanToken>,
-    pub origins: Vec<ExpandedOrigin>,
+    pub origins: ExpandedOriginArena,
     /// Declaration ordering projection; grammar is always parsed in encounter order.
     pub emission_regions: Vec<usize>,
     pub diagnostics: Vec<Diagnostic>,
@@ -141,7 +141,7 @@ fn expand_regions_inner(
     let origin_capacity = outputs.iter().map(|output| output.lines.len()).sum();
     let mut text = String::with_capacity(text_capacity);
     let mut result = ExpandedRegions {
-        origins: Vec::with_capacity(origin_capacity),
+        origins: ExpandedOriginArena::default(),
         diagnostics: diagnostics
             .into_iter()
             .map(|(_, _, diagnostic)| diagnostic)
@@ -149,6 +149,7 @@ fn expand_regions_inner(
         emission_regions: plan.emission_regions().collect(),
         ..ExpandedRegions::default()
     };
+    let mut origins = super::origin_arena::OriginArenaBuilder::with_capacity(origin_capacity);
     let mut outputs: Vec<_> = outputs.into_iter().map(Some).collect();
     // Grammar context crosses include boundaries, including DME type headers.
     // Deferred declaration ordering is a separate tree/link projection.
@@ -171,9 +172,9 @@ fn expand_regions_inner(
             });
         }
         for (relative_span, source_line, source_span, macro_expansions) in output.lines {
-            result.origins.push(ExpandedOrigin {
+            origins.push(ExpandedOrigin {
                 origin: Origin {
-                    output_line: result.origins.len() + 1,
+                    output_line: origins.len() + 1,
                     path: path.clone(),
                     source_line,
                 },
@@ -187,6 +188,7 @@ fn expand_regions_inner(
             });
         }
     }
+    result.origins = origins.finish();
     result.text = text.into();
     if retain_tokens {
         let lexed = lex_spans(&result.text);
@@ -404,13 +406,18 @@ mod tests {
             offset = origin.output_span.end;
         }
         assert_eq!(offset, serial.text.len());
-        assert_eq!(serial.origins[0].macro_expansions[0].name.as_ref(), "VALUE");
+        assert_eq!(
+            serial.origins.get(0).unwrap().macro_expansions[0]
+                .name
+                .as_ref(),
+            "VALUE"
+        );
         assert!(Arc::ptr_eq(
-            &serial.origins[1].macro_expansions,
-            &serial.origins[2].macro_expansions,
+            serial.origins.get(1).unwrap().macro_expansions,
+            serial.origins.get(2).unwrap().macro_expansions,
         ));
         assert_eq!(
-            serial.origins[4].macro_expansions[0]
+            serial.origins.get(4).unwrap().macro_expansions[0]
                 .definition
                 .as_ref()
                 .unwrap()
@@ -425,7 +432,7 @@ mod tests {
                 .origins
                 .iter()
                 .map(|origin| (
-                    &origin.origin,
+                    origin.origin,
                     origin.output_span,
                     origin.source_span,
                     origin.region
@@ -435,7 +442,7 @@ mod tests {
                 .origins
                 .iter()
                 .map(|origin| (
-                    &origin.origin,
+                    origin.origin,
                     origin.output_span,
                     origin.source_span,
                     origin.region
@@ -463,15 +470,15 @@ mod tests {
             );
             assert_eq!(expanded.origins.len(), 6);
             assert_eq!(
-                &expanded.text[expanded.origins[1].output_span.range()],
+                &expanded.text[expanded.origins.get(1).unwrap().output_span.range()],
                 "\n"
             );
             assert_eq!(
-                expanded.origins[0].source_span,
-                expanded.origins[2].source_span
+                expanded.origins.get(0).unwrap().source_span,
+                expanded.origins.get(2).unwrap().source_span
             );
-            assert_eq!(expanded.origins[3].origin.source_line, 4);
-            assert_eq!(expanded.origins[5].origin.source_line, 6);
+            assert_eq!(expanded.origins.get(3).unwrap().origin.source_line, 4);
+            assert_eq!(expanded.origins.get(5).unwrap().origin.source_line, 6);
         }
     }
 }

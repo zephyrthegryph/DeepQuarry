@@ -138,7 +138,7 @@ mod tests {
         )
         .unwrap();
         let mut offsets = vec![0, frontend.expanded.text.len(), usize::MAX];
-        for origin in &frontend.expanded.origins {
+        for origin in frontend.expanded.origins.iter() {
             offsets.push(origin.output_span.start);
             offsets.push(origin.output_span.end);
             offsets.push(origin.output_span.end.saturating_sub(1));

@@ -680,6 +680,12 @@ def execute(h, args):
                     tool = tools[label]
                     round_cache = owned_directory(cache / (output.name + f"-{workers}-{repeat+1}-{label}"), cache)
                     env = dict(os.environ, DMBD_VERIFY="1", DMB_CACHE_DIR=str(round_cache))
+                    # The compiler exports additive proved bounds for this exact
+                    # authenticated map; acceptance still uses existing metrics.
+                    env.pop("DMB_PROFILE_STAGE_MAP_JSON", None)
+                    if map_paths[label]:
+                        env["DMB_PROFILE_STAGE_MAP_JSON"] = json.dumps(
+                            stage_maps[label], sort_keys=True, separators=(",", ":"))
                     for path, value in originals.items():
                         path.write_bytes(value)
                     current = dict(expected)

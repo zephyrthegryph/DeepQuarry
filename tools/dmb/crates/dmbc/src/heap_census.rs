@@ -250,11 +250,17 @@ impl HeapCensus {
         }
         self.arc_text("frontend.expanded_text", &frontend.expanded.text);
         self.vec_payload("frontend.expanded_tokens", &frontend.expanded.tokens);
-        self.vec_payload("frontend.expanded_provenance", &frontend.expanded.origins);
+        frontend
+            .expanded
+            .origins
+            .visit_storage(|pointer, items, bytes| {
+                self.owner("frontend.expanded_provenance").observed_items += items as u64;
+                self.buffer("frontend.expanded_provenance", pointer, bytes, bytes);
+            });
         for origin in &frontend.expanded.origins {
-            self.arc_path("frontend.expanded_provenance", &origin.origin.path);
-            if self.arc_object("frontend.macro_expansions", &origin.macro_expansions)
-                && self.vec_payload("frontend.macro_expansions", &origin.macro_expansions)
+            self.arc_path("frontend.expanded_provenance", origin.origin.path);
+            if self.arc_object("frontend.macro_expansions", origin.macro_expansions)
+                && self.vec_payload("frontend.macro_expansions", origin.macro_expansions)
             {
                 for expansion in origin.macro_expansions.iter() {
                     self.macro_trace("frontend.macro_expansions", expansion);

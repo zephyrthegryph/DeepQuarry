@@ -54,7 +54,7 @@ pub fn map_captured_lower_errors(
     let mut projections: HashMap<ProjectionKey<'_>, (_, Vec<_>)> = HashMap::new();
     let mut definition_files = HashMap::new();
     if !errors.is_empty() {
-        for expanded in &frontend.expanded.origins {
+        for expanded in frontend.expanded.origins.iter() {
             let key = (
                 expanded.origin.path.as_path(),
                 frontend.plan.regions[expanded.region].occurrence,

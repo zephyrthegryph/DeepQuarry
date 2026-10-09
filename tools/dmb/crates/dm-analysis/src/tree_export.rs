@@ -349,7 +349,7 @@ pub fn write_jsonl(
             .ok_or(ExportError::InvalidModel("unknown occurrence member")),
     };
     let mut expanded_locations = HashMap::new();
-    for origin in &frontend.expanded.origins {
+    for origin in frontend.expanded.origins.iter() {
         let include = frontend.plan.regions[origin.region].occurrence;
         expanded_locations
             .entry((include, origin.source_span.start))

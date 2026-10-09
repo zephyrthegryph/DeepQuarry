@@ -318,12 +318,12 @@ mod tests {
                 output
                     .origins
                     .iter()
-                    .map(|entry| (&entry.origin, entry.source_span, entry.region))
+                    .map(|entry| (entry.origin, entry.source_span, entry.region))
                     .collect::<Vec<_>>(),
                 reference_output
                     .origins
                     .iter()
-                    .map(|entry| (&entry.origin, entry.source_span, entry.region))
+                    .map(|entry| (entry.origin, entry.source_span, entry.region))
                     .collect::<Vec<_>>()
             );
             assert_eq!(

@@ -51,82 +51,110 @@ pub struct InitializerUnit {
     pub scope: InitializerScope,
     pub writes: Arc<[InitializerWrite]>,
 }
-fn symbol(bytes: &mut Vec<u8>, value: SymbolId) {
-    bytes.extend_from_slice(&value.bits().to_le_bytes());
+fn symbol(write: &mut impl FnMut(&[u8]), value: SymbolId) {
+    write(&value.bits().to_le_bytes());
 }
-fn framed(bytes: &mut Vec<u8>, value: &[u8]) {
-    bytes.extend_from_slice(&(value.len() as u64).to_le_bytes());
-    bytes.extend_from_slice(value);
+fn byte(write: &mut impl FnMut(&[u8]), value: u8) {
+    write(&[value]);
 }
 impl InitializerWrite {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        let mut bytes = b"dm-initializer-write-v2\0".to_vec();
+        let mut bytes = Vec::new();
+        self.write_canonical(|chunk| bytes.extend_from_slice(chunk));
+        bytes
+    }
+    pub fn canonical_len(&self) -> usize {
+        let mut length = 0;
+        self.write_canonical(|chunk| length += chunk.len());
+        length
+    }
+    pub fn write_canonical(&self, mut write: impl FnMut(&[u8])) {
+        write(b"dm-initializer-write-v2\0");
         match self.target {
             InitializerTarget::ProcedureStatic(identity) => {
-                bytes.push(2);
-                framed(&mut bytes, &identity.canonical_bytes());
+                byte(&mut write, 2);
+                let mut length = 0;
+                identity.write_canonical(|chunk| length += chunk.len());
+                write(&(length as u64).to_le_bytes());
+                identity.write_canonical(&mut write);
             }
             InitializerTarget::Shared { slot, owner, name } => {
-                bytes.push(0);
-                symbol(&mut bytes, slot);
-                symbol(&mut bytes, owner);
-                symbol(&mut bytes, name);
+                byte(&mut write, 0);
+                symbol(&mut write, slot);
+                symbol(&mut write, owner);
+                symbol(&mut write, name);
             }
             InitializerTarget::Instance {
                 declaring_owner,
                 receiver_owner,
                 name,
             } => {
-                bytes.push(1);
-                symbol(&mut bytes, declaring_owner);
-                symbol(&mut bytes, receiver_owner);
-                symbol(&mut bytes, name);
+                byte(&mut write, 1);
+                symbol(&mut write, declaring_owner);
+                symbol(&mut write, receiver_owner);
+                symbol(&mut write, name);
             }
         }
-        symbol(&mut bytes, self.lexical_owner);
-        bytes.push(u8::from(self.lexical_procedure.is_some()));
+        symbol(&mut write, self.lexical_owner);
+        byte(&mut write, u8::from(self.lexical_procedure.is_some()));
         if let Some(procedure) = self.lexical_procedure {
-            symbol(&mut bytes, procedure.owner);
-            symbol(&mut bytes, procedure.name);
-            bytes.push(u8::from(procedure.verb));
-            bytes.extend_from_slice(&procedure.occurrence.to_le_bytes());
+            symbol(&mut write, procedure.owner);
+            symbol(&mut write, procedure.name);
+            byte(&mut write, u8::from(procedure.verb));
+            write(&procedure.occurrence.to_le_bytes());
         }
-        bytes.push(u8::from(self.declaration_flags.is_some()));
+        byte(&mut write, u8::from(self.declaration_flags.is_some()));
         if let Some(flags) = self.declaration_flags {
-            bytes.extend_from_slice(&flags.to_le_bytes());
+            write(&flags.to_le_bytes());
         }
-        bytes.push(u8::from(self.declared_array.is_some()));
+        byte(&mut write, u8::from(self.declared_array.is_some()));
         if let Some(array) = &self.declared_array {
-            framed(&mut bytes, &array.canonical_bytes());
+            write(&(array.canonical_len() as u64).to_le_bytes());
+            array.write_canonical(&mut write);
         }
         match &self.value {
-            InitializerValue::NoAuthoredValue => bytes.push(0),
+            InitializerValue::NoAuthoredValue => byte(&mut write, 0),
             InitializerValue::Expression(expression) => {
-                bytes.push(1);
-                framed(&mut bytes, &expression.canonical_bytes());
+                byte(&mut write, 1);
+                write(&(expression.canonical_len() as u64).to_le_bytes());
+                expression.write_canonical(&mut write);
             }
             InitializerValue::ArrayAllocation(array) => {
-                bytes.push(2);
-                framed(&mut bytes, &array.canonical_bytes());
+                byte(&mut write, 2);
+                write(&(array.canonical_len() as u64).to_le_bytes());
+                array.write_canonical(&mut write);
             }
         }
-        bytes
     }
 }
 impl InitializerUnit {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        let mut bytes = b"dm-initializer-unit-v1\0".to_vec();
-        match self.scope {
-            InitializerScope::Global => bytes.push(0),
-            InitializerScope::Instance(owner) => {
-                bytes.push(1);
-                symbol(&mut bytes, owner);
-            }
-        }
-        bytes.extend_from_slice(&(self.writes.len() as u64).to_le_bytes());
-        for write in self.writes.iter() {
-            framed(&mut bytes, &write.canonical_bytes());
-        }
+        let mut bytes = Vec::new();
+        self.write_canonical(|chunk| bytes.extend_from_slice(chunk));
         bytes
     }
+    pub fn canonical_len(&self) -> usize {
+        let mut length = 0;
+        self.write_canonical(|chunk| length += chunk.len());
+        length
+    }
+    pub fn write_canonical(&self, mut write: impl FnMut(&[u8])) {
+        write(b"dm-initializer-unit-v1\0");
+        match self.scope {
+            InitializerScope::Global => byte(&mut write, 0),
+            InitializerScope::Instance(owner) => {
+                byte(&mut write, 1);
+                symbol(&mut write, owner);
+            }
+        }
+        write(&(self.writes.len() as u64).to_le_bytes());
+        for item in self.writes.iter() {
+            write(&(item.canonical_len() as u64).to_le_bytes());
+            item.write_canonical(&mut write);
+        }
+    }
 }
+
+#[cfg(test)]
+#[path = "initializer_codec_tests.rs"]
+mod codec_tests;

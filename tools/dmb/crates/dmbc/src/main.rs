@@ -104,7 +104,14 @@ fn main() {
                     || profile.has_stage(name.strip_prefix("exclusive:").unwrap_or(name))
             })
             .collect();
-        if let Err(error) = profile.finish(&present) {
+        let finished = match std::env::var("DMB_PROFILE_STAGE_MAP_JSON") {
+            Ok(json) => serde_json::from_str::<dm_profile::StageMap>(&json)
+                .map_err(|error| format!("invalid profile stage map JSON: {error}"))
+                .and_then(|map| profile.finish_with_stage_map(&present, &map)),
+            Err(std::env::VarError::NotPresent) => profile.finish(&present),
+            Err(error) => Err(format!("invalid profile stage map environment: {error}")),
+        };
+        if let Err(error) = finished {
             eprintln!("native profile finalization failed: {error}");
             std::process::exit(1);
         }

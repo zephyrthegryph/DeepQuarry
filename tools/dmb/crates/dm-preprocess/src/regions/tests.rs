@@ -132,9 +132,9 @@ fn child_effects_split_parent_and_parallel_schedule_preserves_output() {
     );
     assert_eq!(serial.text.as_ref(), parallel.text.as_ref());
     assert_eq!(serial.tokens, parallel.tokens);
-    assert_eq!(serial.origins[2].origin.source_line, 4);
+    assert_eq!(serial.origins.get(2).unwrap().origin.source_line, 4);
     assert_eq!(
-        serial.origins[1].origin.path.as_path(),
+        serial.origins.get(1).unwrap().origin.path.as_path(),
         Path::new("child.dm")
     );
 }
@@ -213,7 +213,7 @@ fn actual_macro_expansions_retain_definition_and_replacement_ancestry() {
         ),
     ]);
     let output = expand_regions(&plan, 2);
-    let trace = &output.origins[0].macro_expansions;
+    let trace = output.origins.get(0).unwrap().macro_expansions;
     assert_eq!(trace.len(), 2);
     assert_eq!(trace[0].name.as_ref(), "OUTER");
     assert_eq!(trace[0].definition.as_ref().unwrap().source_line, 2);
@@ -240,7 +240,7 @@ fn continued_macro_definition_preserves_definition_and_use_provenance() {
     ]);
     let output = expand_regions(&plan, 2);
     assert!(output.diagnostics.is_empty(), "{:?}", output.diagnostics);
-    let origin = &output.origins[0];
+    let origin = output.origins.get(0).unwrap();
     assert_eq!(origin.origin.source_line, 4);
     assert_eq!(origin.macro_expansions.len(), 2);
     assert_eq!(origin.macro_expansions[0].name.as_ref(), "OUTER");

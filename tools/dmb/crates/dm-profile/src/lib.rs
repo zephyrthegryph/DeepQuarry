@@ -2,7 +2,9 @@
 mod cpu_bounds;
 use cpu_bounds::{interval_bounds, sum_bounds, union_interval_bounds};
 mod domain_bounds;
+mod stage_domains;
 pub use domain_bounds::{CpuDomain, CpuSelector, DomainCpuBounds};
+pub use stage_domains::StageMap;
 mod item;
 pub use item::{item, ItemGuard};
 mod allocator;
@@ -119,6 +121,8 @@ pub struct Report {
     pub trace_output: trace_output::Metadata,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub domain_cpu_bounds: BTreeMap<String, DomainCpuBounds>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub domain_cpu_selectors: BTreeMap<String, Vec<String>>,
 }
 #[derive(Default)]
 struct Entry {
@@ -827,6 +831,7 @@ impl ProfileGuard {
             };
         let report = Report {
             domain_cpu_bounds,
+            domain_cpu_selectors: stage_domains::selectors(domains),
             trace_output,
             schema: 1,
             wall_s: measured_wall,

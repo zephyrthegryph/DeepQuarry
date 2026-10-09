@@ -3,6 +3,9 @@
 use crate::{SymbolId, SymbolTable};
 use dm_syntax::{Span, TokenKind};
 use std::sync::Arc;
+fn write_byte(write: &mut impl FnMut(&[u8]), byte: u8) {
+    write(&[byte]);
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ExpressionToken {
@@ -18,27 +21,37 @@ pub struct SymbolicExpression {
 impl SymbolicExpression {
     pub fn canonical_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
-        bytes.extend_from_slice(b"dm-symbolic-expression-v1\0");
+        self.write_canonical(|chunk| bytes.extend_from_slice(chunk));
+        bytes
+    }
+    pub fn canonical_len(&self) -> usize {
+        // Each canonical token has adjacency/kind bytes and one u64 SymbolId.
+        b"dm-symbolic-expression-v1\0".len() + self.tokens.len() * 10
+    }
+    pub fn write_canonical(&self, mut write: impl FnMut(&[u8])) {
+        write(b"dm-symbolic-expression-v1\0");
         let mut previous = None;
         for token in self.tokens.iter() {
             let sensitive =
                 previous.is_some_and(|(kind, _)| {
                     matches!(kind, TokenKind::Operator | TokenKind::Punctuation)
                 }) && matches!(token.kind, TokenKind::Operator | TokenKind::Punctuation);
-            bytes.push(if sensitive {
-                if previous.is_some_and(|(_, end)| end == token.relative_span.start) {
-                    1
+            write_byte(
+                &mut write,
+                if sensitive {
+                    if previous.is_some_and(|(_, end)| end == token.relative_span.start) {
+                        1
+                    } else {
+                        2
+                    }
                 } else {
-                    2
-                }
-            } else {
-                0
-            });
+                    0
+                },
+            );
             previous = Some((token.kind, token.relative_span.end));
-            bytes.push(token.kind as u8);
-            bytes.extend_from_slice(&token.text.bits().to_le_bytes());
+            write_byte(&mut write, token.kind as u8);
+            write(&token.text.bits().to_le_bytes());
         }
-        bytes
     }
     /// Reconstruct token spelling with equivalent adjacency. Whitespace/comments
     /// need not be retained, but joining operator characters changes DM meaning.
@@ -229,20 +242,42 @@ pub struct ArrayDeclaration {
 impl ArrayDeclaration {
     pub fn canonical_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
-        bytes.extend_from_slice(b"dm-array-declaration-v1\0");
-        bytes.push(u8::from(self.element_type.is_some()));
-        bytes.extend_from_slice(
+        self.write_canonical(|chunk| bytes.extend_from_slice(chunk));
+        bytes
+    }
+    pub fn canonical_len(&self) -> usize {
+        b"dm-array-declaration-v1\0".len()
+            + 1
+            + 8
+            + 8
+            + self
+                .dimensions
+                .iter()
+                .map(|dimension| {
+                    1 + dimension
+                        .as_ref()
+                        .map_or(0, |expression| 8 + expression.canonical_len())
+                })
+                .sum::<usize>()
+    }
+    pub fn write_canonical(&self, mut write: impl FnMut(&[u8])) {
+        write(b"dm-array-declaration-v1\0");
+        write_byte(&mut write, u8::from(self.element_type.is_some()));
+        write(
             &self
                 .element_type
                 .map(SymbolId::bits)
                 .unwrap_or(0)
                 .to_le_bytes(),
         );
-        bytes.extend_from_slice(&(self.dimensions.len() as u64).to_le_bytes());
+        write(&(self.dimensions.len() as u64).to_le_bytes());
         for dimension in self.dimensions.iter() {
-            append_expression(&mut bytes, dimension.as_ref())
+            write_byte(&mut write, u8::from(dimension.is_some()));
+            if let Some(expression) = dimension {
+                write(&(expression.canonical_len() as u64).to_le_bytes());
+                expression.write_canonical(&mut write);
+            }
         }
-        bytes
     }
 }
 

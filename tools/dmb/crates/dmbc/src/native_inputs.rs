@@ -40,9 +40,12 @@ fn prepare_source<P: SourceProvider>(
     if let Some(prepared) = provider.prepared_source(path) {
         return Ok(prepared);
     }
-    provider
-        .read(path)
-        .map(|text| Arc::new(PreparedSource::new(Arc::from(text))))
+    let text = {
+        let _profile = dm_profile::stage("input_scan.source_read");
+        provider.read(path)?
+    };
+    let _profile = dm_profile::stage("input_scan.lexical_prepare");
+    Ok(Arc::new(PreparedSource::new(Arc::from(text))))
 }
 
 impl NativeInputs {
@@ -251,12 +254,12 @@ mod tests {
                 actual
                     .origins
                     .iter()
-                    .map(|o| (&o.origin, o.source_span, o.region))
+                    .map(|o| (o.origin, o.source_span, o.region))
                     .collect::<Vec<_>>(),
                 expected
                     .origins
                     .iter()
-                    .map(|o| (&o.origin, o.source_span, o.region))
+                    .map(|o| (o.origin, o.source_span, o.region))
                     .collect::<Vec<_>>()
             );
             let frontend =

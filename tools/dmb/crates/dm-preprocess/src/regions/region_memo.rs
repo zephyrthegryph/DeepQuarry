@@ -643,13 +643,10 @@ mod tests {
         );
         for output in [&fresh, &hydrated] {
             assert_eq!(output.origins.len(), 2);
-            let first = &output.origins[0];
-            let second = &output.origins[1];
+            let first = output.origins.get(0).unwrap();
+            let second = output.origins.get(1).unwrap();
             assert!(first.macro_expansions.is_empty());
-            assert!(Arc::ptr_eq(
-                &first.macro_expansions,
-                &second.macro_expansions
-            ));
+            assert!(Arc::ptr_eq(first.macro_expansions, second.macro_expansions));
             assert_ne!(first.source_span, second.source_span);
             assert_ne!(first.output_span, second.output_span);
             assert_ne!(first.origin.source_line, second.origin.source_line);
@@ -674,7 +671,7 @@ mod tests {
             format!("{:?}", hydrated.origins)
         );
         for output in [&fresh, &hydrated] {
-            let traces = &output.origins[0].macro_expansions;
+            let traces = output.origins.get(0).unwrap().macro_expansions;
             assert_eq!(traces.len(), 4);
             assert!(Arc::ptr_eq(&traces[0].name, &traces[2].name));
             assert!(Arc::ptr_eq(
@@ -684,7 +681,7 @@ mod tests {
             assert_ne!(traces[0].invocation_span, traces[2].invocation_span);
             assert!(Arc::ptr_eq(
                 &traces[0].name,
-                &output.origins[1].macro_expansions[0].name
+                &output.origins.get(1).unwrap().macro_expansions[0].name
             ));
         }
     }

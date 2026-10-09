@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import time
+import tomllib
 import zipfile
 from pathlib import Path, PurePosixPath
 
@@ -32,6 +33,59 @@ def snapshot_overlay(root):
     return result
 
 
+def profiler_closure(lock_bytes, manifest_bytes):
+    """Resolve Cargo's exact lock graph; reject ambiguous or absent edges."""
+    lock = tomllib.loads(lock_bytes.decode("utf-8"))
+    manifest = tomllib.loads(manifest_bytes.decode("utf-8"))
+    packages = lock.get("package", [])
+    roots = [p for p in packages if p["name"] == "dm-profile"]
+    if len(roots) != 1 or roots[0]["version"] != manifest["package"]["version"]:
+        raise ValueError("profiler lock root does not match overlay manifest")
+    def resolve(edge):
+        parts = edge.split(" ", 2)
+        matches = [p for p in packages if p["name"] == parts[0]
+                   and (len(parts) < 2 or p["version"] == parts[1])
+                   and (len(parts) < 3 or p.get("source") == parts[2].strip("()"))]
+        if len(matches) != 1:
+            raise ValueError("ambiguous or missing profiler lock dependency: " + edge)
+        return matches[0]
+    declared = {}
+    sections = [manifest]
+    sections.extend(manifest.get("target", {}).values())
+    for section in sections:
+        for kind in ("dependencies", "build-dependencies", "dev-dependencies"):
+            for name, spec in section.get(kind, {}).items():
+                if isinstance(spec, dict) and spec.get("workspace"):
+                    raise ValueError("workspace profiler dependencies require explicit resolution")
+                declared[name] = spec.get("package", name) if isinstance(spec, dict) else name
+    root_names = {resolve(edge)["name"] for edge in roots[0].get("dependencies", [])}
+    if root_names != set(declared.values()):
+        raise ValueError("profiler manifest dependencies differ from lock root")
+    pending = [roots[0]]
+    visited = {}
+    while pending:
+        package = pending.pop()
+        key = (package["name"], package["version"], package.get("source", ""))
+        if key in visited:
+            continue
+        dependencies = [resolve(edge) for edge in package.get("dependencies", [])]
+        visited[key] = {"name": key[0], "version": key[1], "source": key[2],
+                        "checksum": package.get("checksum"),
+                        "dependencies": sorted((p["name"], p["version"], p.get("source", ""))
+                                               for p in dependencies)}
+        pending.extend(dependencies)
+    return [visited[key] for key in sorted(visited)]
+
+
+def compatible_parent_lock(parent, overlay_lock, manifest):
+    expected = profiler_closure(overlay_lock, manifest)
+    actual = profiler_closure(parent, manifest)
+    if actual != expected:
+        raise ValueError("parent lock profiler transitive resolution differs from overlay lock")
+    encoded = json.dumps(actual, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def replaced_by_overlay(name):
     return name == LOCK or name.startswith(PROFILE)
 
@@ -58,7 +112,7 @@ def write(path, value):
         stream.write("\n")
 
 
-def prepare(control, candidate, overlay_root, output, timeout):
+def prepare(control, candidate, overlay_root, output, timeout, retain_parent_lock=False):
     started = time.monotonic()
     def deadline():
         if time.monotonic() - started > timeout:
@@ -72,7 +126,7 @@ def prepare(control, candidate, overlay_root, output, timeout):
     write(output / "overlay.manifest.json", overlay_rows)
     result = {"schema": 1, "purpose": "same-profiler-gzip-comparison-source-only",
               "required_environment": {"DMB_TRACE_COMPRESSION": "gzip"},
-              "required_report_mode": "gzip-level1-v1", "overlay_scope": "complete-dm-profile-crate-rust-and-lock", "overlay": overlay_rows, "snapshots": []}
+              "required_report_mode": "gzip-level1-v1", "overlay_scope": "complete-dm-profile-crate-rust-and-lock", "overlay": overlay_rows, "lock_policy": "authenticated-parent" if retain_parent_lock else "overlay", "snapshots": []}
     for label, record_path in (("control", control), ("candidate", candidate)):
         deadline()
         record_path = e_path(record_path)
@@ -88,6 +142,8 @@ def prepare(control, candidate, overlay_root, output, timeout):
         destination = output / label
         destination.mkdir()
         rows = []
+        parent_lock = None
+        parent_profile_manifest = None
         with zipfile.ZipFile(archive) as source:
             names = [entry.filename for entry in source.infolist() if not entry.is_dir()]
             if (len(names) != len(set(name.casefold() for name in names))
@@ -101,6 +157,10 @@ def prepare(control, candidate, overlay_root, output, timeout):
                 data = source.read(name)
                 if len(data) != expected[name]["bytes"] or hashlib.sha256(data).hexdigest() != expected[name]["sha256"]:
                     raise ValueError("parent source file differs from manifest: " + name)
+                if name == LOCK:
+                    parent_lock = data
+                if name == PROFILE + "Cargo.toml":
+                    parent_profile_manifest = data
                 if replaced_by_overlay(name):
                     continue
                 path = destination / name
@@ -108,7 +168,17 @@ def prepare(control, candidate, overlay_root, output, timeout):
                 with path.open("xb") as stream:
                     stream.write(data)
                 rows.append({"path": name, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()})
-        for name, data in overlays.items():
+        selected = dict(overlays)
+        closure_hash = None
+        if retain_parent_lock:
+            if parent_lock is None:
+                raise ValueError("authenticated parent archive is missing Cargo.lock")
+            if parent_profile_manifest != overlays[PROFILE + "Cargo.toml"]:
+                raise ValueError("parent profiler Cargo.toml differs from overlay manifest")
+            closure_hash = compatible_parent_lock(parent_lock, overlays[LOCK],
+                                                  overlays[PROFILE + "Cargo.toml"])
+            selected[LOCK] = parent_lock
+        for name, data in selected.items():
             path = destination / name
             path.parent.mkdir(parents=True, exist_ok=True)
             with path.open("xb") as stream:
@@ -127,7 +197,12 @@ def prepare(control, candidate, overlay_root, output, timeout):
             "parent_manifest_sha256": record["manifest_sha256"], "parent_source_commit": record.get("source_commit"),
             "source_archive": str(derived_archive), "source_archive_sha256": sha(derived_archive),
             "manifest": str(derived_manifest), "manifest_sha256": sha(derived_manifest),
-            "build_source": str(destination), "files": len(rows), "build_status": "not_built"})
+            "build_source": str(destination), "files": len(rows), "build_status": "not_built",
+            "lock_policy": result["lock_policy"],
+            "lock_sha256": hashlib.sha256(selected[LOCK]).hexdigest(),
+            "profiler_closure_sha256": closure_hash,
+            "profiler_closure_proof": "resolved-package-version-source-checksum-graph-only"
+                if retain_parent_lock else None})
     if snapshot_overlay(overlay_root) != overlays:
         raise ValueError("overlay source changed during preparation; snapshots not admitted")
     write(output / "comparison-source.json", result)
@@ -141,9 +216,11 @@ if __name__ == "__main__":
     parser.add_argument("--overlay-root", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--timeout", type=int, default=180)
+    parser.add_argument("--retain-parent-lock", action="store_true",
+                        help="retain authenticated parent locks only after exact profiler closure proof")
     args = parser.parse_args()
     if not 1 <= args.timeout <= 300:
         parser.error("timeout must be between 1 and 300 seconds")
     result = prepare(args.control_build_record, args.candidate_build_record,
-                     args.overlay_root, args.output, args.timeout)
+                     args.overlay_root, args.output, args.timeout, args.retain_parent_lock)
     print(json.dumps({"output": args.output, "snapshots": result["snapshots"]}, indent=2))

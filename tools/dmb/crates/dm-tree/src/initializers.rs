@@ -355,9 +355,8 @@ fn plan_identity(header: &[u8], include_count: bool, writes: &[InitializerWrite]
         hash.update(&(writes.len() as u64).to_le_bytes());
     }
     for write in writes {
-        let bytes = write.canonical_bytes();
-        hash.update(&(bytes.len() as u64).to_le_bytes());
-        hash.update(&bytes);
+        hash.update(&(write.canonical_len() as u64).to_le_bytes());
+        write.write_canonical(|chunk| hash.update(chunk));
     }
     hash.digest128()
 }

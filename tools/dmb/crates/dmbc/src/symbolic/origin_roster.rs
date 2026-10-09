@@ -1,7 +1,7 @@
 //! Compact request-local source certificates; wide indices remain exact.
 pub(super) enum OriginRoster {
-    Compact(Vec<(u32, u32)>),
-    Wide(Vec<(usize, u32)>),
+    Compact(Box<[(u32, u32)]>),
+    Wide(Box<[(usize, u32)]>),
 }
 
 impl OriginRoster {
@@ -18,11 +18,11 @@ impl OriginRoster {
                         .collect();
                     wide.push((path, line));
                     wide.extend(entries);
-                    return Self::Wide(wide);
+                    return Self::Wide(wide.into_boxed_slice());
                 }
             }
         }
-        Self::Compact(compact)
+        Self::Compact(compact.into_boxed_slice())
     }
 
     pub(super) fn len(&self) -> usize {
@@ -45,10 +45,10 @@ impl OriginRoster {
     fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         match self {
             Self::Compact(entries) => {
-                census.vec_payload("current_image.origins.compact", entries);
+                census.slice("current_image.origins.compact", entries, true);
             }
             Self::Wide(entries) => {
-                census.vec_payload("current_image.origins.wide", entries);
+                census.slice("current_image.origins.wide", entries, true);
             }
         }
     }
@@ -93,6 +93,9 @@ mod tests {
         let roster = OriginRoster::from_entries(input);
         assert!(matches!(&roster, OriginRoster::Compact(_)));
         assert_eq!(roster.iter().collect::<Vec<_>>(), input);
+        if let OriginRoster::Compact(entries) = &roster {
+            assert_eq!(std::mem::size_of_val(entries.as_ref()), input.len() * 8);
+        }
         assert_eq!(std::mem::size_of::<(u32, u32)>(), 8);
     }
 

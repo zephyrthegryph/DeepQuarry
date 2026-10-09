@@ -2,6 +2,32 @@
 
 Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 
+## Compact provenance and single-codec candidate
+
+Expanded origin storage now uses 32-byte indexed records instead of 72-byte
+records, with exact shared path/trace owners and a full usize fallback. Frontend,
+analysis, diagnostics and census consumers use borrowed views rather than a
+reconstructed Vec. At the older census cardinality this is about 42 MB of record
+backing saved before index overhead; private-memory savings are not measured yet.
+Immutable current-image origin certificates also use exact-size boxed backing.
+
+Initializer bytes and streamed hashing now share one emission codec, including
+nested expressions and arrays. Constant-time expression lengths avoid repeated
+token walks. Independent legacy-byte fixtures cover optional fields, targets and
+array framing. Optional profiler domain evidence receives the exact authenticated
+benchmark stage map and exports its selectors; original acceptance metrics are
+unchanged. Input preparation now reports read and lexical preparation separately
+under the existing input stage, to identify its remaining CPU cost.
+
+Ordinary workspace library checks passed **1,584 tests across 15 targets**, zero
+failures/ignored, in 224.867 s including compilation. Final release workspace
+all-target Clippy passed in 26.452 s. The parent-lock comparison preparation's five
+Python fixtures passed, including rejection of mismatched profiler dependency
+graphs. These checks do not close the full release test or runtime gates.
+Receipts: `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-052236-267743a5.json`
+and `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-052643-55197219.json`.
+The new source batch has not yet been benchmarked.
+
 ## Pending scanner/initializer candidate
 
 The next source batch uses SIMD candidate searches in the shared selective

@@ -10,7 +10,7 @@ mod parserwire;
 use crate::{MemberId, MemberKind, OccurrenceId, Skeleton, SnapshotError, Target, TreeSnapshot};
 use dm_ir::{FileId, Span, SymbolTable};
 use dm_preprocess::regions::{
-    plan_regions, DirectivePlan, ExpandedOrigin, ExpandedRegions, MacroExpansion, NonTextKind,
+    plan_regions, DirectivePlan, ExpandedOriginView, ExpandedRegions, MacroExpansion, NonTextKind,
 };
 use dm_preprocess::SourceProvider;
 use dm_syntax::{AstFile, Item, ItemKind};
@@ -616,7 +616,7 @@ struct Mapping<'a> {
 }
 
 impl Mapping<'_> {
-    fn origin(&self, offset: usize) -> Option<&ExpandedOrigin> {
+    fn origin(&self, offset: usize) -> Option<ExpandedOriginView<'_>> {
         let index = self
             .expanded
             .origins
@@ -649,7 +649,7 @@ impl Mapping<'_> {
             encounter_ordinal: self.plan.regions[origin.region].encounter_ordinal,
             include_occurrence: occurrence,
             include_chain: self.chain(occurrence).into(),
-            macro_expansions: origin.macro_expansions.clone(),
+            macro_expansions: Arc::clone(origin.macro_expansions),
         })
     }
     fn line(&self, path: &Path, line: usize) -> Option<SourceLocation> {

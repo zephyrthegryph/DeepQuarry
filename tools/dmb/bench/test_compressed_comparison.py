@@ -77,5 +77,46 @@ class OverlayTests(unittest.TestCase):
             self.assertFalse(h.replaced_by_overlay("tools/dmb/crates/dm-exec/src/lib.rs"))
 
 
+class ParentLockTests(unittest.TestCase):
+    manifest = b'[package]\nname="dm-profile"\nversion="0.1.0"\n[dependencies]\nflate2="1"\n'
+    lock = b'''version=4
+[[package]]
+name="dm-profile"
+version="0.1.0"
+dependencies=["flate2"]
+[[package]]
+name="flate2"
+version="1.1.0"
+source="registry+https://example.test/index"
+checksum="abc"
+dependencies=["crc32fast"]
+[[package]]
+name="crc32fast"
+version="1.0.0"
+source="registry+https://example.test/index"
+checksum="def"
+'''
+
+    def test_unrelated_parent_lock_edges_are_retained_with_identical_profiler_closure(self):
+        unrelated = b'\n[[package]]\nname="dm-syntax"\nversion="0.1.0"\ndependencies=["memchr"]\n[[package]]\nname="memchr"\nversion="2.8.3"\n'
+        digest = h.compatible_parent_lock(self.lock, self.lock + unrelated, self.manifest)
+        self.assertEqual(digest, h.compatible_parent_lock(self.lock, self.lock, self.manifest))
+        self.assertEqual(len(digest), 64)
+
+    def test_checksum_version_and_missing_dependency_changes_fail_closed(self):
+        for changed in (self.lock.replace(b'checksum="def"', b'checksum="other"'),
+                        self.lock.replace(b'version="1.0.0"', b'version="2.0.0"'),
+                        self.lock.replace(b'dependencies=["crc32fast"]', b'dependencies=[]')):
+            with self.assertRaises(ValueError):
+                h.compatible_parent_lock(changed, self.lock, self.manifest)
+
+    def test_manifest_and_ambiguous_lock_dependency_are_rejected(self):
+        with self.assertRaises(ValueError):
+            h.profiler_closure(self.lock, self.manifest.replace(b'flate2="1"', b'other="1"'))
+        duplicate = b'\n[[package]]\nname="flate2"\nversion="2.0.0"\n'
+        with self.assertRaises(ValueError):
+            h.profiler_closure(self.lock + duplicate, self.manifest)
+
+
 if __name__ == "__main__":
     unittest.main()
