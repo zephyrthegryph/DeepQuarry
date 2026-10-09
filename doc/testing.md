@@ -78,6 +78,8 @@ bash tools/dq_focused_test.sh --list 'dq_e0_proof/*'                    # print 
 bash tools/dq_focused_test.sh --dm-version=516.1682 belly_damage        # any other --flag is forwarded to dm-test
 DQ_WIP_TREE=1 bash tools/dq_focused_test.sh /datum/unit_test/<name>   # tree with someone else's unfinished includes
 bash tools/dq_focused_test.sh --boot                                   # boot only (the boot gate below)
+bash tools/dq_focused_test.sh --split-slow dq_look_tree_pin dq_boot_gate   # slow pins in a second world at the same time (default when mixed)
+bash tools/dq_focused_test.sh --detach <names>; bash tools/dq_focused_test.sh --status <runid>   # background run + poll (agent_workflow.md section 9)
 ```
 
 **The boot gate.** Every run, focused or full, fails when the world logged a runtime or a `WARNING()` (or a refused
