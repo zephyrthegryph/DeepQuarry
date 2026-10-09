@@ -161,7 +161,7 @@
 	var/datum/op_result/lit = dq_use(H, wall, welder)
 	TEST_ASSERT(test_op_committed(lit), "thermite is lit ahead of the cutting steps")
 	H.set_combat_mode(FALSE)
-	wall.set_thermite(FALSE)
+	// lighting it melted the wall: the turf is plating now and carries no coating
 	wall_turf.ChangeTurf(old_type)
 	test_driver_end()
 

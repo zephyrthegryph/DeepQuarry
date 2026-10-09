@@ -140,7 +140,7 @@ GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, ST
 			// The tool that undoes the step before also builds this one: building goes first (the old ladder's forward edge outranked the way back).
 			var/list/before = rows[steps - step + 2]
 			if(istext(key) && before["backkey"] == key)
-				parts += priority(OP_PRIORITY_PART)
+				parts += priority(OP_PRIORITY_PART + 1)
 		if(step < steps)
 			parts += undone(TYPE_PROC_REF(/obj/item/mecha_parts, mecha_step_undone))
 			entries += stage(stage_ids[step + 1], parts, undo = list(tool(row["backkey"]), wait(0)))
