@@ -140,24 +140,22 @@
 	replace_with(src, /obj/item/stack/material/steel, steel_sheet_cost)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/modular_computer/welder_act(mob/user, obj/item/tool)
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder.isOn())
-		to_chat(user, "\The [tool] is off.")
-		return ITEM_INTERACT_BLOCKING
-	var/missing = get_integrity_damage()
-	if(!missing)
-		to_chat(user, "\The [src] does not require repairs.")
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, "You begin repairing damage to \the [src]...")
-	if(!welder.remove_fuel(round(missing / 75)))
-		return ITEM_INTERACT_BLOCKING
-	task_timed(user, missing / 10, src, src, PROC_REF(weld_repair_done), list(user))
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF_SELF(modular_computer/no_repairs, "%T% does not require repairs.")
+MSG_DEF_SELF(modular_computer/welding, "You begin repairing damage to %T%...")
+MSG_DEF_SELF(modular_computer/welded, "You repair %T%.")
 
-/obj/item/modular_computer/proc/weld_repair_done(mob/user)
+/obj/item/modular_computer/proc/needs_repair(datum/act/op/A)
+	return get_integrity_damage() > 0
+
+/// A weld takes a second for every ten points of damage, and a unit of fuel for every 75, both read when it starts.
+/obj/item/modular_computer/proc/weld_time(datum/act/op/A)
+	return get_integrity_damage() / 10
+
+/obj/item/modular_computer/proc/weld_fuel(datum/act/op/A)
+	return round(get_integrity_damage() / 75)
+
+/obj/item/modular_computer/proc/weld_repair_done(datum/act/op/A)
 	repair_damage(max_integrity)
-	to_chat(user, "You repair \the [src].")
 
 /obj/item/modular_computer/screwdriver_act(mob/user, obj/item/tool)
 	var/list/all_components = get_all_components()

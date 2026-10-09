@@ -72,7 +72,7 @@
 /mob/living/silicon/robot/platform/Initialize(mapload)
 	. = ..()
 	SetName("inactive [initial(name)]")
-	grant_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
+	grant(src, platform_cargo(), src)
 
 /// Platforms carry heavier armour plating (the ROBOT_SLOT_ARMOUR entry).
 TYPE_TABLE(/mob/living/silicon/robot/platform, robot_component_types, list( \
@@ -89,7 +89,7 @@ TYPE_TABLE(/mob/living/silicon/robot/platform, robot_component_types, list( \
 
 // Stored atoms and the recharging cell drop out.
 /mob/living/silicon/robot/platform/on_destroy(force)
-	revoke_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
+	revoke(src, platform_cargo(), src)
 	for(var/atom/movable/drop_atom as anything in stored_atoms?.Copy())
 		if(!QDELETED(drop_atom) && drop_atom.loc == src)
 			drop_atom.dropInto(loc)

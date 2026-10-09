@@ -96,10 +96,10 @@ CAPABILITIES(/datum/ttv_bomb_review)
 /// The admin "Instant TTV" bomb: signaler, gas amounts given by the admin (spawn_ttv_bomb()).
 /obj/effect/spawner/newbomb/radio/custom
 
-MAP_RESOLVER(/obj/effect/spawner/newbomb, GLOBAL_PROC_REF(resolve_newbomb))
-MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt")
+CAPABILITIES(/obj/effect/spawner/newbomb)
+	map_resolver(GLOBAL_PROC_REF(resolve_newbomb), vars = list("carbon_amt", "oxygen_amt", "phoron_amt"))
 
-/// MAP_RESOLVER for mapped TTV bombs. The bomb goes where the spawner was: a
+/// The map resolver of mapped TTV bombs. The bomb goes where the spawner was: a
 /// spawner created inside a container (the syndicate "screwed" kit box) fills
 /// that container, not the floor under it.
 /proc/resolve_newbomb(atom/loc, path, list/varedits)
@@ -121,7 +121,7 @@ MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt
 	rel_set(PT, nameof(PT.master), V)
 	rel_set(OT, nameof(OT.master), V)
 
-	PT.valve_welded = 1
+	PT.set_valve_welded(1)
 	// XGM exposed total_moles as a writable var; LINDA exposes it only
 	// as a computed proc. The total is implied by the adjust_gas calls above —
 	// dropping the assignment is correct, and update_values() is a no-op under
@@ -130,7 +130,7 @@ MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt
 	PT.air_contents.adjust_gas(GAS_CO2, (carbon) - LINDA_GAS_AMT(PT.air_contents, GAS_CO2))
 	heat_set(PT.air_contents, PLASMA_MINIMUM_BURN_TEMPERATURE+1)
 
-	OT.valve_welded = 1
+	OT.set_valve_welded(1)
 	OT.air_contents.adjust_gas(GAS_O2, (oxygen) - LINDA_GAS_AMT(OT.air_contents, GAS_O2))
 	heat_set(OT.air_contents, PLASMA_MINIMUM_BURN_TEMPERATURE+1)
 
@@ -157,8 +157,9 @@ MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt
 	var/phoron_amt = 0
 	var/oxygen_amt = 0
 
-MAP_RESOLVER(/obj/effect/spawner/onetankbomb, GLOBAL_PROC_REF(resolve_loot))
-DECLARE_LOOT(/obj/effect/spawner/onetankbomb, LOOT_TABLE(/obj/item/tank/phoron/onetankbomb, /obj/item/tank/oxygen/onetankbomb))
+CAPABILITIES(/obj/effect/spawner/onetankbomb)
+	map_resolver(GLOBAL_PROC_REF(resolve_loot))
+	loot(table = list(/obj/item/tank/phoron/onetankbomb, /obj/item/tank/oxygen/onetankbomb))
 
 
 /obj/effect/spawner/onetankbomb/full
@@ -168,7 +169,8 @@ DECLARE_LOOT(/obj/effect/spawner/onetankbomb, LOOT_TABLE(/obj/item/tank/phoron/o
 
 
 	//Note that the maximum amount of gas you can put in a 70L air tank at 1013.25 kPa and 519K is 16.44 mol.
-DECLARE_LOOT(/obj/effect/spawner/onetankbomb/full, LOOT_TABLE(/obj/item/tank/phoron/onetankbomb/full, /obj/item/tank/oxygen/onetankbomb/full))
+CAPABILITIES(/obj/effect/spawner/onetankbomb/full)
+	configure(loot(table = list(/obj/item/tank/phoron/onetankbomb/full, /obj/item/tank/oxygen/onetankbomb/full)))
 
 
 /obj/effect/spawner/onetankbomb/frag

@@ -58,7 +58,7 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 
 /// The harpoon_verb_fire_mode op: the verb's effect, as the old resolver ran it.
 /obj/item/bluespace_harpoon/proc/harpoon_verb_fire_mode_op(datum/act/op/A)
-	harpoon_verb_fire_mode(A.actor, A.held, null)
+	harpoon_verb_fire_mode(A.actor, A.held)
 	return OP_OK
 
 /// Old attackby.
@@ -215,7 +215,7 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 	return TRUE
 
 /// Old Change Fire Mode verb.
-/obj/item/bluespace_harpoon/proc/harpoon_verb_fire_mode(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bluespace_harpoon/proc/harpoon_verb_fire_mode(mob/user, obj/item/held)
 	set_mode(!mode)
 	to_chat(user,span_info("You change \the [src]'s mode to [mode ? "transmiting" : "receiving"]."))
 

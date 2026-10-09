@@ -90,7 +90,7 @@ CAPABILITIES(/obj/item/integrated_circuit/memory/constant)
 /// Old attack_self.
 /obj/item/integrated_circuit/memory/constant/proc/interaction_self(datum/act/op/A)
 	var/datum/circuit_memory_review/review = new
-	review.start(A.actor, src, A.held, null, TRUE)
+	review.start(A.actor, src, A.held, TRUE)
 	return OP_OK
 
 /obj/item/integrated_circuit/memory/constant/proc/memory_type_selected(datum/circuit_memory_review/review)

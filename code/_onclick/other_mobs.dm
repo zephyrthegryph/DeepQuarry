@@ -45,17 +45,13 @@
 	A.attack_hand(src)
 
 /**
- * Touched with an empty hand, or a silicon's Use through silicon_use. The
- * type's gates run first (hand_gate()); then the converted handlers (I7):
- * interactions with `entry = INTERACTION_ENTRY_HAND`, most specific type first.
- * Returns TRUE when a gate stopped the touch or an interaction answered it.
+ * Touched with an empty hand, or a silicon's Use through silicon_use: the ops answered it first; what is left is the type's gate (hand_gate()).
+ * Returns TRUE when the gate stopped the touch.
  */
 /atom/proc/attack_hand(mob/user as mob)
 	if(!user)
 		return FALSE
-	if(run_interaction_entry(user, src, null, INTERACTION_ENTRY_HAND, null, TRUE))
-		return TRUE
-	return FALSE
+	return hand_gate(user) ? TRUE : FALSE
 
 /**
  * What a touch passes through before the type's own hand interactions: signal

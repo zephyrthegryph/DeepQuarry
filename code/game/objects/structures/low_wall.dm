@@ -503,10 +503,10 @@ CAPABILITIES(/obj/structure/window/eris)
 
 	icon = null
 
-MAP_RESOLVER(/obj/effect/low_wall_spawner, GLOBAL_PROC_REF(resolve_low_wall_spawner))
-MAP_RESOLVER_VARS(/obj/effect/low_wall_spawner, "grille_type;low_wall_type;window_type")
+CAPABILITIES(/obj/effect/low_wall_spawner)
+	map_resolver(GLOBAL_PROC_REF(resolve_low_wall_spawner), vars = list("grille_type", "low_wall_type", "window_type"))
 
-/// MAP_RESOLVER for low wall spawners: the low wall, grille and window (once per tile).
+/// The map resolver of low wall spawners: the low wall, grille and window (once per tile).
 /proc/resolve_low_wall_spawner(atom/loc, path, list/varedits)
 	var/obj/effect/low_wall_spawner/P = path
 	var/turf/T = get_turf(loc)

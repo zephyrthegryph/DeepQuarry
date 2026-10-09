@@ -1,17 +1,12 @@
-// One declared loot system (doc/rewrite/systems.md §8). Macros: code/__defines/loot.dm.
+// One declared loot system (doc/rewrite/systems.md §8). Declarations: code/library/loot/loot_entries.dm.
 //
-// DECLARE_LOOT(PATH, ...) makes /datum/loot_decl<PATH> whose specs() returns the merged spec
-// list; loot_decl_for(path) builds it once and caches it. loot_spawn() rolls and creates, with a
-// seeded /datum/loot_rng so map loot is reproducible per round seed. /obj/random is resolved at
-// map time through resolve_loot() (MAP_RESOLVER) and never becomes a live atom. loot_search()
-// is the tiered roll used by searchable piles.
+// A type's loot(...) entry makes the shared /datum/loot_decl that loot_decl_for(path) answers. loot_spawn() rolls and creates, with a seeded /datum/loot_rng so map loot is reproducible per round seed. /obj/random is resolved at
+// map time through resolve_loot() (its map_resolver entry) and never becomes a live atom. loot_search_roll() is the tiered roll of a search of a pile (code/library/loot/loot_search.dm).
 
 /// The round's loot seed: every map-time roll is seeded from it and the roll's position and type.
 GLOBAL_VAR_INIT(loot_seed, rand(0, LOOT_HASH_MOD - 1))
 /// Runtime rolls mix this serial in, so two runtime rolls on one tile differ.
 GLOBAL_VAR_INIT(loot_roll_serial, 0)
-/// How many times each depleting loot source has been searched, by REF.
-GLOBAL_LIST_EMPTY(loot_times_searched)
 
 // ---- declarations ----
 
@@ -48,83 +43,54 @@ CAPABILITIES(/datum/loot_decl)
 	owns_one(nameof(unlucky), /datum/loot_entry/sub)
 
 
-/// The merged spec list (DECLARE_LOOT overrides this, merging over ..()).
-/datum/loot_decl/proc/specs()
-	return null
-
-/datum/loot_decl/proc/build()
+/// Builds the declaration from its loot() entry (loot_entries.dm): the rows the entry names.
+/datum/loot_decl/proc/build_entry(datum/entry/E)
 	built = TRUE
-	var/list/S = specs()
-	if(!length(S))
+	var/list/rows = E.args
+	var/any = FALSE
+	for(var/name in rows)
+		if(!isnull(rows[name]))
+			any = TRUE
+			break
+	if(!any)
 		return FALSE
-	if(S["table"])
-		rel_set(src, nameof(main_table), new /datum/loot_entry/sub(1, S["table"]))
-	if(!isnull(S["count"]))
-		count = S["count"]
-	if(!isnull(S["chance"]))
-		chance = S["chance"]
-	all = S["all"]
-	hook = S["hook"]
-	per_round = !!S["per_round"]
-	if(S["unlucky"])
-		rel_set(src, nameof(unlucky), new /datum/loot_entry/sub(1, S["unlucky"]))
-	if(S["uncommon"])
-		rel_set(src, nameof(uncommon), new /datum/loot_entry/sub(1, S["uncommon"]))
-	if(S["rare"])
-		rel_set(src, nameof(rare), new /datum/loot_entry/sub(1, S["rare"]))
-	uncommon_chance = S["uncommon_chance"] || 0
-	rare_chance = S["rare_chance"] || 0
-	gamma_chance = S["gamma_chance"] || 0
-	loot_left = S["loot_left"] || 0
-	delete_on_depletion = !!S["delete_on_depletion"]
-	repeat_search = !!S["repeat_search"]
+	if(rows["table"])
+		rel_set(src, nameof(main_table), new /datum/loot_entry/sub(1, rows["table"]))
+	if(!isnull(rows["count"]))
+		count = rows["count"]
+	if(!isnull(rows["chance"]))
+		chance = rows["chance"]
+	all = rows["all"]
+	hook = rows["hook"]
+	per_round = !!rows["per_round"]
+	if(rows["unlucky"])
+		rel_set(src, nameof(unlucky), new /datum/loot_entry/sub(1, rows["unlucky"]))
+	var/list/tier = rows["uncommon"]
+	if(tier)
+		uncommon_chance = tier[1] || 0
+		rel_set(src, nameof(uncommon), new /datum/loot_entry/sub(1, tier[2]))
+	tier = rows["rare"]
+	if(tier)
+		rare_chance = tier[1] || 0
+		rel_set(src, nameof(rare), new /datum/loot_entry/sub(1, tier[2]))
+	gamma_chance = rows["gamma_chance"] || 0
+	var/list/depletion = rows["depletion"]
+	if(depletion)
+		loot_left = depletion[1] || 0
+		delete_on_depletion = !!depletion[2]
+	repeat_search = !!rows["repeat_search"]
 	return TRUE
 
-/// DECLARE_LOOT plumbing: `mine` replaces the keys it names in the parent's specs. What spawns
-/// (table, all, per_round) is one unit: a declaration naming any of it replaces all of it.
-/proc/loot_merge_specs(list/parent, list/mine)
-	if(!length(parent))
-		return mine
-	var/list/merged = parent.Copy()
-	if(("table" in mine) || ("all" in mine) || ("per_round" in mine))
-		merged -= list("table", "all", "per_round")
-	for(var/key in mine)
-		merged[key] = mine[key]
-	return merged
+/// type => its /datum/loot_decl, for every type under one that declares loot(...): built at world setup (loot_entries.dm), never after.
+GLOBAL_LIST_EMPTY(loot_decls)
 
-/// The loot declaration for `path`: a /datum/loot_decl path, or any type with a DECLARE_LOOT on it
-/// or an ancestor. Null when there is none.
+/// The loot declaration for `path`: a type with a loot() entry or under one that has it. Null when there is none.
 /proc/loot_decl_for(path)
 	RETURN_TYPE(/datum/loot_decl)
 	if(isnull(path))
 		return null
-	return CACHED(loot_decls, path) || null
-
-DECLARE_SHARED_CACHE(loot_decls, GLOBAL_PROC_REF(build_loot_decl), SC_NEVER)
-
-/// Builds the loot declaration for `path` (loot_decl_for()'s cache builder), or null.
-/proc/build_loot_decl(path)
-	var/datum/loot_decl/decl
-	var/decl_type
-	if(ispath(path, /datum/loot_decl))
-		decl_type = path
-	else
-		// The declaration types mirror the target paths, so DM inheritance already resolves
-		// undeclared intermediates; walk up only past types that have no declaration node at all.
-		var/text = "[path]"
-		while(length(text) > 1)
-			decl_type = text2path("/datum/loot_decl[text]")
-			if(decl_type)
-				break
-			var/cut = findlasttext(text, "/")
-			if(cut <= 1)
-				break
-			text = copytext(text, 1, cut)
-	if(decl_type)
-		decl = new decl_type
-		if(!decl.build())
-			decl = null
-	return decl
+	static_entries_ensure("loot_decl_for([path])")
+	return GLOB.loot_decls[path]
 
 // ---- table entries ----
 
@@ -244,9 +210,12 @@ DECLARE_SHARED_CACHE(loot_decls, GLOBAL_PROC_REF(build_loot_decl), SC_NEVER)
 
 DECLARE_SHARED_CACHE(loot_type_hashes, GLOBAL_PROC_REF(build_loot_type_hash), SC_NEVER)
 
-/// Computes loot_type_hash()'s value for `path` (its cache builder).
+/// Computes loot_type_hash()'s value for `path` (its cache builder). A pure table (/loot/...) keeps the text its declaration type had before the tables
+/// became types of their own (/datum/loot_decl/loot/...), so the rolls a round's seed gives are the same as they were.
 /proc/build_loot_type_hash(path)
 	var/text = "[path]"
+	if(ispath(path, /loot))
+		text = "/datum/loot_decl[text]"
 	var/h = 5381 % LOOT_HASH_MOD
 	for(var/i in 1 to length(text))
 		h = (h * 31 + text2ascii(text, i)) % LOOT_HASH_MOD
@@ -317,7 +286,7 @@ DECLARE_SHARED_CACHE(loot_type_hashes, GLOBAL_PROC_REF(build_loot_type_hash), SC
 		return
 	if(!ispath(entry))
 		CRASH("loot_emit: bad loot entry [entry]")
-	if(ispath(entry, /datum/loot_decl))
+	if(ispath(entry, /loot))
 		nested += loot_spawn(entry, loc, null, rng)
 		return
 	if(ispath(entry, /turf))
@@ -325,8 +294,7 @@ DECLARE_SHARED_CACHE(loot_type_hashes, GLOBAL_PROC_REF(build_loot_type_hash), SC
 		if(T)
 			direct += T.ChangeTurf(entry, 1, 1, FALSE)
 		return
-	var/atom/P = entry
-	var/resolver = initial(P.map_resolver)
+	var/resolver = map_resolver_proc(entry)
 	if(resolver == GLOBAL_PROC_REF(resolve_loot))
 		nested += resolve_loot(loc, entry, null, rng)
 		return
@@ -337,10 +305,10 @@ DECLARE_SHARED_CACHE(loot_type_hashes, GLOBAL_PROC_REF(build_loot_type_hash), SC
 
 // ---- /obj/random ----
 
-MAP_RESOLVER(/obj/random, GLOBAL_PROC_REF(resolve_loot))
-MAP_RESOLVER_VARS(/obj/random, "drop_get_turf")
+CAPABILITIES(/obj/random)
+	map_resolver(GLOBAL_PROC_REF(resolve_loot), vars = list("drop_get_turf"))
 
-/// MAP_RESOLVER for /obj/random: rolls its declaration where the spawner stands and applies the
+/// The map resolver of /obj/random: rolls its declaration where the spawner stands and applies the
 /// spawner's mapped offset and direction to what it made. Returns what it created (TRUE-ish for
 /// the map loader even when the roll made nothing: the spawner is resolved either way).
 /proc/resolve_loot(atom/loc, path, list/varedits, datum/loot_rng/rng)
@@ -368,34 +336,24 @@ MAP_RESOLVER_VARS(/obj/random, "drop_get_turf")
 
 // ---- searchable loot ----
 
-/obj/structure
-	/// The loot declaration searching this drops from (LOOT_REF(/loot/...)), or null.
-	var/loot_decl
-
-/// Searches `source` (a pile with `loot_decl`) for `L`: the tiered roll of loot piles. `searched_by`
-/// is the source's list of ckeys that searched it. `wake_chance`: percent chance a raccoon jumps out.
-/proc/loot_search(obj/structure/source, mob/living/L, list/searched_by, wake_chance = 0)
-	var/datum/loot_decl/decl = loot_decl_for(source.loot_decl)
+/// The tiered roll of a search of `source` (a pile with a loot_search() entry) by `L`, when the search is allowed (loot_rolls(), after the requirements
+/// of loot_search.dm): the chance the table gives, then the searcher is marked, the tier is drawn (unlucky, uncommon, rare, the gamma pool, else the main
+/// table), and what it made is put on the pile's turf. The table and the percent chance a raccoon jumps out are the pile's loot_search() entry.
+/proc/loot_search_roll(obj/structure/source, mob/living/L)
+	var/table = loot_search_table(source.type)
+	var/wake_chance = loot_search_wake_chance(source.type)
+	var/datum/loot_decl/decl = loot_decl_for(table)
 	if(!decl)
 		return
-	var/source_ref = REF(source)
-	if(decl.loot_left)
-		var/looted_count = GLOB.loot_times_searched[source_ref]
-		if(looted_count >= decl.loot_left)
-			to_chat(L, span_warning("\The [source] has been picked clean."))
-			return
-
 	if(decl.chance < 100 && !prob(decl.chance))
 		to_chat(L, span_warning("Nothing in \the [source] really catches your eye..."))
 		return
 
-	if(L && islist(searched_by))
-		if((L.ckey in searched_by) && !decl.repeat_search)
-			to_chat(L, span_warning("You can't find anything else vaguely useful in \the [source].  Another set of eyes might, however."))
-			return
-		searched_by |= L.ckey
+	var/found_key = L?.ckey || LOOT_SEARCH_NO_KEY
+	if(L?.ckey)
+		hold(source, STAT_LOOT_SEARCHED, 1, source, key = L.ckey)
 
-	var/datum/loot_rng/rng = loot_rng_at(source, source.loot_decl)
+	var/datum/loot_rng/rng = loot_rng_at(source, table)
 	var/datum/loot_entry/sub/tier = decl.main_table
 	var/span = "notice"
 	var/obj/item/gamma
@@ -443,8 +401,8 @@ MAP_RESOLVER_VARS(/obj/random, "drop_get_turf")
 
 	if(!decl.loot_left)
 		return
-	GLOB.loot_times_searched[source_ref] = GLOB.loot_times_searched[source_ref] + 1
-	if(GLOB.loot_times_searched[source_ref] < decl.loot_left)
+	hold(source, STAT_LOOT_FOUND, (loot_search_keys(source, STAT_LOOT_FOUND)[found_key] || 0) + 1, source, key = found_key)
+	if(loot_search_found(source) < decl.loot_left)
 		return
 	to_chat(L, span_warning("You seem to have gotten the last of the spoils in \the [source]."))
 	if(decl.delete_on_depletion)

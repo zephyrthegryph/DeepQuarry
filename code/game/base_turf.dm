@@ -1,12 +1,14 @@
 // Returns the lowest turf available on a given Z-level, defaults to asteroid for Polaris.
 
 /proc/get_base_turf(z)
+	READS_FROM() // the map's per-level setting, not an entity's state
 	if(!using_map.base_turf_by_z["[z]"])
 		using_map.base_turf_by_z["[z]"] = /turf/space
 	return using_map.base_turf_by_z["[z]"]
 
 //An area can override the z-level base turf, so our solar array areas etc. can be space-based.
 /proc/get_base_turf_by_area(turf/T)
+	READS_FROM(T)
 	var/area/A = T.loc
 	if(A.base_turf)
 		return A.base_turf

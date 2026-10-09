@@ -253,6 +253,14 @@ types and says which closure procs changed their text and which types were assig
 (`tests/look_keys.rs`) compare the incremental rows with a full computation after each kind of edit; `DQ_LOOK_TRACE=1` says why an edit was
 refused and prints the phase timings.
 
+A key covers the type's chain (var values, declarations), the procs of its draw closure, its icon sources and the look builder
+(`SALT_FILES`: `appearance.dm`, `appearance_builder.dm`). The closure never enters a *sink* (`SINK_DIRS`, `SINK_NAMES`,
+`SINK_PREFIXES` in `look_keys.rs`): movement, lifecycle, messaging, logging, `code/engine/`, controllers, admin and test code cannot
+change a drawn look, and the pin rows are made by writing vars and calling the draw, so an edit there moves no key. Hashing the
+whole file of `/atom/update_icon` (`_atom.dm`) and the absolute checkout path inside `__FILE__`-style macro expansions were what
+once moved all 21,000 keys on nearly every merge; neither is hashed now. A proc that really is plumbing every draw goes through
+belongs in `SALT_FILES`, not in a closure.
+
 ### Declarations the analysis reads
 
 Markers expand to nothing in DM (`code/__defines/engine/markers.dm`), so they are read from comment-stripped text with

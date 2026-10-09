@@ -11,7 +11,7 @@
 
 	// Map-time resolver (map_resolvers.dm): the atom's work happens here and it is detached,
 	// never initialized nor qdel'd.
-	if(A.map_resolver && map_resolve_instance(A))
+	if(GLOB.map_resolvers[the_type] && map_resolve_instance(A))
 		return TRUE
 
 	// This is handled and battle tested by dreamchecker. Limit to UNIT_TESTS just in case that ever fails.

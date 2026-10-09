@@ -8,7 +8,7 @@
 //                                        and writes the LEDGER entry of the transition: what the edge's reservations took in (stack units with
 //                                        their material, a consumed item, what went into a slot).
 //   construction.undo:<stage>[.<key>]    the way back: the same input reversed (a tool edge undoes with the same tool and the same wait, any
-//                                        other with a hand), or the edge's own `undo = list(parts)`; none for `undo = null`. It is available only
+//                                        other with a hand), or the edge's own `undo = list(parts)`; none for `undo = NO_UNDO`. It is available only
 //                                        while the transition on top of the instance's HISTORY is this edge, so a stage with two ways in undoes to
 //                                        the one actually taken. Its effect pops the history and REFUNDS that transition's ledger entry.
 //   construction.dismantle               dismantle(parts..., ruined(cond, parts...)): everything the instance took in is refunded, newest first, then its effects run
@@ -103,7 +103,7 @@
 	return entry_make(ENTRY_OP, graph_edge_base_key(edge, "build"), null, parts)
 
 /// The input parts of an edge's way back: an explicit undo = list(parts) as written, else (derived) the edge's tool and its wait again, or a hand
-/// for any other input. Empty when the edge declared undo = null.
+/// for any other input. Empty when the edge declared undo = NO_UNDO.
 /proc/graph_undo_parts(datum/graph_edge/edge)
 	if(edge.has_undo)
 		return entry_flatten(edge.undo_parts)

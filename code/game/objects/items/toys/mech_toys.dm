@@ -476,7 +476,8 @@ CAPABILITIES(/obj/item/toy/mecha)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "ripleytoy"
 
-DECLARE_LOOT(/obj/random/mech_toy, LOOT_TABLE(LOOT_TYPES(1, typesof(/obj/item/toy/mecha))))
+CAPABILITIES(/obj/random/mech_toy)
+	loot(table = list(loot_types(1, typesof(/obj/item/toy/mecha))))
 
 /obj/item/toy/mecha/ripley
 	name = "toy ripley"

@@ -28,13 +28,8 @@ doc_unknown_name	doc/rewrite/migration_guide.md	if(do_after(user, 6, target = sr
 doc_unknown_name	doc/rewrite/migration_guide.md	var/why_not = shuttle_api_why_cant_call()
 doc_unknown_name	doc/rewrite/migration_guide.md	shuttle_api_call_evac(caller = user)
 doc_unknown_name	doc/rewrite/migration_guide.md	release_or_move_site(site, new_name = descriptor_name) // emits site_moved
-doc_unknown_name	doc/rewrite/migration_guide.md	set_recharging(TRUE)
-doc_unknown_name	doc/rewrite/migration_guide.md	set_recharging(FALSE)
 doc_unknown_name	doc/rewrite/migration_guide.md	set_energy(energy - 1)
 doc_unknown_name	doc/rewrite/migration_guide.md	set_energy(min(energy + 1, max_energy))
-doc_unknown_name	doc/rewrite/rules.md	REQ_COMPONENT(/datum/component/shadekin),
-doc_unknown_name	doc/rewrite/rules.md	REQ_AREA_ALLOWS(AREA_BLOCK_PHASE_SHIFT) /* admins bypass */,
-doc_unknown_name	doc/rewrite/rules.md	var/watchers = PERCEPTION_OBSERVERS(user, 7) // one shared query, computed once
 doc_legacy_block	doc/rewrite/caching.md	(_scs_n[k] || _sc_n.miss(k))
 doc_legacy_block	doc/rewrite/caching.md	/proc/build_window_overlays(icon_file, basestate, connections)
 doc_legacy_block	doc/rewrite/lifecycle.md	POOL_DECLARE(/datum/damage_packet)
@@ -50,9 +45,7 @@ doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: geiger.dm:131 (a repl
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:16, 81, 206
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:209, 214-215 (set a state, then a timer to put it back)
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:230
-doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:51-61
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:63-69
-doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: megaphone.dm:48-58
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: throw_of in three storages (thrownthing.dm:10-19, :73; atoms_movable.dm:572)
 doc_legacy_block	doc/rewrite/migration_guide.md	/obj/item/laser_pointer
 doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing
@@ -61,7 +54,6 @@ doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing/draw(datum/
 doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing/proc/rename(mob/user)
 doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing/tgui_data(mob/user)
 doc_legacy_block	doc/rewrite/migration_guide.md	cap_hand(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE,
-doc_legacy_block	doc/rewrite/rules.md	/datum/ability/shadekin_phase_shift
 doc_legacy_block	doc/rewrite/rust_bindings.md	// Which component this type holds (type-level, no per-instance memory).
 doc_legacy_block	doc/rewrite/rust_bindings.md	/obj/machinery/atmospherics/binary/pump/high_power
 doc_legacy_block	doc/rewrite/rust_core.md	/proc/vg_gas_read(handle)

@@ -139,7 +139,7 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 	shattered = 1
 
 /// Overrides mirror's mirror_open_ui(): raiders may become Vox here, then the mirror opens as usual.
-/obj/structure/mirror/raider/mirror_open_ui(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/mirror/raider/mirror_open_ui(mob/living/carbon/human/user, obj/item/held)
 	if(istype(get_area(src),/area/syndicate_mothership))
 		if(istype(user) && user.mind && user.mind.special_role == "Raider" && user.species.name != SPECIES_VOX && is_alien_whitelisted(user.client, SPECIES_VOX))
 			open_request(src, /datum/prompt/yes_no, PROC_REF(become_vox_answered), answerer = user, title = "Become Vox?", question = "Do you wish to become a true Vox of the Shoal? This is not reversible.", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)

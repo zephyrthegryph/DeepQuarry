@@ -68,16 +68,16 @@ CAPABILITIES(/obj/item/hand_labeler)
 
 /// Old attack_self.
 /obj/item/hand_labeler/proc/interaction_self(datum/act/op/A)
-	label_configuration_begin(A.actor, A.held, null)
+	label_configuration_begin(A.actor, A.held)
 	return OP_OK
 
-/obj/item/hand_labeler/proc/label_configuration_begin(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/hand_labeler/proc/label_configuration_begin(mob/user, obj/item/held)
 	mode = !mode
 	icon_state = "labeler[mode]"
 	if(mode)
 		to_chat(user, span_notice("You turn on \the [src]."))
 		//Now let them chose the text.
-		open_request(src, /datum/prompt/text/hand_labeler_label, PROC_REF(label_configuration_answered), answerer = user, label_operator = user, label_held = held, label_interaction = interaction, question = "Label text?", title = "Set label", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+		open_request(src, /datum/prompt/text/hand_labeler_label, PROC_REF(label_configuration_answered), answerer = user, label_operator = user, label_held = held, question = "Label text?", title = "Set label", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
 	else
 		to_chat(user, span_notice("You turn off \the [src]."))
 	return TRUE
@@ -102,36 +102,28 @@ CAPABILITIES(/obj/item/hand_labeler)
 	timeout = 0
 	var/mob/label_operator
 	var/obj/item/label_held
-	var/datum/interaction/label_interaction
 	var/label_operator_expected = FALSE
 	var/label_held_expected = FALSE
-	var/label_interaction_expected = FALSE
 
 CAPABILITIES(/datum/prompt/text/hand_labeler_label)
 	ref_one(nameof(label_operator), /mob)
 	ref_one(nameof(label_held), /obj/item)
-	ref_one(nameof(label_interaction), /datum/interaction)
 
 /datum/prompt/text/hand_labeler_label/prepare(datum/act/A)
 	. = ..()
 	var/mob/captured_operator = label_operator
 	var/obj/item/captured_held = label_held
-	var/datum/interaction/captured_interaction = label_interaction
 	label_operator_expected = !isnull(captured_operator)
 	label_held_expected = !isnull(captured_held)
-	label_interaction_expected = !isnull(captured_interaction)
 	rel_clear(src, nameof(label_operator))
 	rel_clear(src, nameof(label_held))
-	rel_clear(src, nameof(label_interaction))
 	if(captured_operator && !QDELETED(captured_operator))
 		rel_set(src, nameof(label_operator), captured_operator)
 	if(captured_held && !QDELETED(captured_held))
 		rel_set(src, nameof(label_held), captured_held)
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(label_interaction), captured_interaction)
 
 /datum/prompt/text/hand_labeler_label/recheck_extra()
-	if((label_operator_expected && QDELETED(label_operator)) || (label_held_expected && QDELETED(label_held)) || (label_interaction_expected && QDELETED(label_interaction)))
+	if((label_operator_expected && QDELETED(label_operator)) || (label_held_expected && QDELETED(label_held)))
 		return "gone"
 	var/obj/item/hand_labeler/labeler = owner
 	if(!istype(labeler) || !labeler.mode)

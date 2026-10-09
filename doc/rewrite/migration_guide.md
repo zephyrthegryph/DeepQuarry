@@ -605,7 +605,7 @@ Each entry below gives the rule, a real before/after, and the traps.
 
 ## B1. Interactions → `capabilities()`
 
-```dm
+```dm before
 // BEFORE: laserpointer.dm:51-61
 DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_parts/micro_laser, PROC_REF(interaction_item), "Install"))
 /obj/item/laser_pointer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -726,7 +726,7 @@ the megaphone, the medical records console and the desk bell, is [operations_and
 
 ## B4. Requirements → `needs`
 
-```dm
+```dm before
 // BEFORE: megaphone.dm:48-58
 DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interaction_self)))
 /obj/item/megaphone/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -1295,7 +1295,7 @@ List the files converted, the old-form counts before and after, the [planned] AP
 
 **Before:** `code/game/objects/items/devices/laserpointer.dm`, 260 lines. The pieces that change:
 
-```dm
+```dm before
 /obj/item/laser_pointer
 	...
 	var/cooldown = 10

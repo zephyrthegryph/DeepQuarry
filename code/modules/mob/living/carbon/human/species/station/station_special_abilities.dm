@@ -926,8 +926,15 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 		to_chat(src, "You must be underwater to do this!!")
 		return
 
-	var/list/targets = list() //Shameless copy and paste. If it ain't broke don't fix it!
+	if(!length(underwater_devour_targets()))
+		to_chat(src, span_notice("No eligible targets found."))
+		return
 
+	perform_op(src, src, "underwater_devour", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
+
+/// Whoever is in the water next to us and can be dragged under.
+/mob/living/carbon/human/proc/underwater_devour_targets()
+	var/list/targets = list() //Shameless copy and paste. If it ain't broke don't fix it!
 	for(var/turf/T in range(1, src))
 		if(istype(T, /turf/simulated/floor/water))
 			for(var/mob/living/L in contents_of(T))
@@ -935,12 +942,10 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 					continue
 				if(L.devourable && L.can_be_drop_prey)
 					targets += L
+	return targets
 
-	if(!(targets.len))
-		to_chat(src, span_notice("No eligible targets found."))
-		return
-
-	open_request(src, /datum/prompt/choice/victim/underwater, PROC_REF(underwater_devour_target_chosen), answerer = src, choices = targets)
+/mob/living/carbon/human/proc/underwater_devour_choices(datum/act/op/A)
+	return underwater_devour_targets()
 
 /// Picking a victim for a vore ability. Re-checked on the answer: conscious.
 /datum/prompt/choice/victim
@@ -970,21 +975,22 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 		return "lost the chance"
 	return null
 
-/mob/living/carbon/human/proc/underwater_devour_target_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/target = A.answer.value
-	if(target && QDELETED(target))
-		return
+/// The victim is chosen: they are told, and where they stood is noted. The wait keeps them: it ends if they get away.
+/mob/living/carbon/human/proc/underwater_devour_started(datum/act/op/A)
+	var/mob/living/target = A.answer_target()
 	to_chat(target, span_critical("Something begins to circle around you in the water!")) //Dun dun...
-	var/starting_loc = target.loc
+	LAZYSET(A.args, "from", target.loc)
 
-	task_timed(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(underwater_devour_human_done), done_args = list(target, starting_loc))
+/mob/living/carbon/human/proc/underwater_devour_escaped(datum/act/op/A)
+	var/mob/living/target = A.answer_target()
+	if(QDELETED(target) || target.loc == A.arg("from"))
+		return // the hunter was stopped, not outrun
+	to_chat(target, span_warning("You got away from whatever that was..."))
+	to_chat(src, span_notice("They got away."))
 
-/mob/living/carbon/human/proc/underwater_devour_human_done(mob/living/target, starting_loc)
-	if(target.loc != starting_loc)
-		to_chat(target, span_warning("You got away from whatever that was..."))
-		to_chat(src, span_notice("They got away."))
+/mob/living/carbon/human/proc/underwater_devour_human_done(datum/act/op/A)
+	var/mob/living/target = A.answer_target()
+	if(QDELETED(target))
 		return
 	if(target?.buckled_to()) //how are you src?.buckled_to() in the water?!
 		var/atom/movable/_tmp_buck_19 = target?.buckled_to()

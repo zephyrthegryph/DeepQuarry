@@ -129,14 +129,16 @@ MSG_DEF(outcrop/hacking, span_notice("%U% begins to hack away at %T%."), span_no
 	icon = 'icons/obj/outcrop.dmi'
 	icon_state = "outcrop-random"
 
-DECLARE_LOOT(/obj/random/outcrop, LOOT_TABLE(\
-	/obj/structure/outcrop = 100, \
-	/obj/structure/outcrop/iron = 100, \
-	/obj/structure/outcrop/coal = 100, \
-	/obj/structure/outcrop/silver = 65, \
-	/obj/structure/outcrop/gold = 50, \
-	/obj/structure/outcrop/uranium = 30, \
-	/obj/structure/outcrop/phoron = 30, \
-	/obj/structure/outcrop/diamond = 7, \
-	/obj/structure/outcrop/platinum = 15, \
-	/obj/structure/outcrop/lead = 15))
+CAPABILITIES(/obj/random/outcrop)
+	loot(
+		table = list(
+			/obj/structure/outcrop = 100,
+			/obj/structure/outcrop/iron = 100,
+			/obj/structure/outcrop/coal = 100,
+			/obj/structure/outcrop/silver = 65,
+			/obj/structure/outcrop/gold = 50,
+			/obj/structure/outcrop/uranium = 30,
+			/obj/structure/outcrop/phoron = 30,
+			/obj/structure/outcrop/diamond = 7,
+			/obj/structure/outcrop/platinum = 15,
+			/obj/structure/outcrop/lead = 15))

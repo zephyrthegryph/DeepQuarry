@@ -6,7 +6,6 @@ human|none menu: Rename paper (refused: You can't do that.)
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none click: Click: Pick up
 robot|none menu: Create Area (refused: You can't do that.)
-robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Fold into a plane
 robot|none menu: Move To Top
 robot|none menu: Pick up
@@ -14,7 +13,6 @@ robot|none menu: Read
 robot|none menu: Rename paper (refused: You can't do that.)
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none click: Click: Read
-ai|none menu: Equip (refused: not possible right now)
 ai|none menu: Read
 ai|none click: Click: Read
 ghost|none menu: Create Area (refused: You can't do that.)
@@ -25,7 +23,6 @@ ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Create Area (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Fold into a plane
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up
 human|/obj/item/tool/screwdriver menu: Rename paper (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
@@ -33,7 +30,6 @@ human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/crowbar menu: Create Area (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Fold into a plane
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up
 human|/obj/item/tool/crowbar menu: Rename paper (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
@@ -41,7 +37,6 @@ human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Create Area (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Fold into a plane
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up
 human|/obj/item/tool/wrench menu: Rename paper (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
@@ -49,7 +44,6 @@ human|/obj/item/tool/wrench click: Click: Use
 human|/obj/item/tool/wirecutters menu: Create Area (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Fold into a plane
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up
 human|/obj/item/tool/wirecutters menu: Rename paper (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
@@ -57,7 +51,6 @@ human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Create Area (refused: You can't do that.)
 human|/obj/item/multitool menu: Fold into a plane
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up
 human|/obj/item/multitool menu: Rename paper (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
@@ -65,7 +58,6 @@ human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Create Area (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Fold into a plane
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up
 human|/obj/item/weldingtool menu: Rename paper (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
@@ -74,7 +66,6 @@ human|/obj/item/stack/cable_coil menu: Create Area (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Fold into a plane
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up
 human|/obj/item/stack/cable_coil menu: Rename paper (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use
@@ -82,7 +73,6 @@ human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Create Area (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Fold into a plane
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up
 human|/obj/item/stack/material/steel menu: Rename paper (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use
@@ -90,7 +80,6 @@ human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Create Area (refused: You can't do that.)
 human|/obj/item/card/id menu: Fold into a plane
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Rename paper (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
@@ -100,7 +89,6 @@ human|/obj/item/kit menu: Create Area (refused: You can't do that.)
 human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Fold into a plane
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up
 human|/obj/item/kit menu: Rename paper (refused: You can't do that.)
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/kit menu: Use
@@ -109,7 +97,6 @@ human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Create Area (refused: You can't do that.)
 human|/obj/item/storage menu: Fold into a plane
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Rename paper (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage menu: Use
@@ -117,10 +104,9 @@ human|/obj/item/storage click: Click: Collect
 human|/obj/item menu: Create Area (refused: You can't do that.)
 human|/obj/item menu: Fold into a plane
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Pick up
 human|/obj/item menu: Rename paper (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: collect_item, create_area, drag_buckle, gen_hand_sticky_pick_up, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, paper_crumple, paper_fold_plane, paper_item, paper_read, paper_rename, paper_silicon_read, pick_up_item, toggle_digestable, wipe_lipstick, write_end, write_field
+keys: collect_item, create_area, drag_buckle, equip_module, kit_customize, kit_customize_last, move_to_top, paper_crumple, paper_fold_plane, paper_item, paper_read, paper_rename, paper_silicon_read, pick_up_item, toggle_digestable, wipe_lipstick, write_end, write_field
 

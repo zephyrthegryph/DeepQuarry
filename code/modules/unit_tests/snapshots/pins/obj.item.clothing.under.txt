@@ -10,7 +10,6 @@ human|none menu: Under worn hand
 human|none menu: Use
 human|none click: Click: Under worn hand
 robot|none menu: Alternate use
-robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Holster (refused: You can't do that.)
 robot|none menu: Move To Top
 robot|none menu: Pick up
@@ -21,7 +20,6 @@ robot|none menu: Toggle Suit Sensors (refused: You can't do that.)
 robot|none menu: Under worn hand
 robot|none menu: Use
 robot|none click: Click: Under worn hand
-ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Holster (refused: You can't do that.)
 ghost|none menu: Move To Top (refused: You can't reach that.)
@@ -154,5 +152,5 @@ human|/obj/item menu: Toggle Suit Sensors (refused: You can't do that.)
 human|/obj/item menu: Under worn hand
 human|/obj/item menu: Use
 human|/obj/item click: Click: Under worn hand
-keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable, under_holster_verb, under_rollsleeves_verb, under_rollsuit_verb, under_toggle_verb, under_worn_hand
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable, under_holster_verb, under_rollsleeves_verb, under_rollsuit_verb, under_toggle_verb, under_worn_hand
 

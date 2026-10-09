@@ -1,0 +1,84 @@
+human|none menu: Move To Top
+human|none menu: Pick up
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none click: Click: Pick up
+robot|none menu: Move To Top
+robot|none menu: Pick up
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none click: Click: Pick up
+ai|none click: nothing
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: nothing
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit click: Click: Customise
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage click: Click: Collect
+human|/obj/item/pen menu: Move To Top
+human|/obj/item/pen menu: Rename
+human|/obj/item/pen menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pen click: Click: Rename
+human|/obj/item/robot_parts/l_leg menu: Build frame one leg
+human|/obj/item/robot_parts/l_leg menu: Move To Top
+human|/obj/item/robot_parts/l_leg menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/robot_parts/l_leg click: Click: Build frame one leg
+human|/obj/item/robot_parts/r_leg menu: Build frame one leg
+human|/obj/item/robot_parts/r_leg menu: Move To Top
+human|/obj/item/robot_parts/r_leg menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/robot_parts/r_leg click: Click: Build frame one leg
+human|/obj/item/organ/external/leg menu: Move To Top
+human|/obj/item/organ/external/leg menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/organ/external/leg click: nothing
+human|/obj/item/reagent_containers/glass/bucket menu: Move To Top
+human|/obj/item/reagent_containers/glass/bucket menu: Open or close the lid
+human|/obj/item/reagent_containers/glass/bucket menu: Set transfer amount
+human|/obj/item/reagent_containers/glass/bucket menu: Splash (refused: There is nothing in it to pour.)
+human|/obj/item/reagent_containers/glass/bucket menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/glass/bucket click: nothing
+human|/obj/item/assembly/prox_sensor menu: Move To Top
+human|/obj/item/assembly/prox_sensor menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly/prox_sensor click: nothing
+human|/obj/item/mop menu: Move To Top
+human|/obj/item/mop menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mop click: nothing
+human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell menu: Drain its charge (refused: not in your hand)
+human|/obj/item/cell menu: Move To Top
+human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell menu: Use
+human|/obj/item/cell click: nothing
+keys: collect_item, construction.build:bot_frame_one_leg, construction.build:bot_frame_two_legs, construction.build:edcln_attached, construction.build:edcln_bucketed, construction.build:edcln_finished, construction.build:edcln_moped, construction.build:edcln_sensing, construction.build:edcln_welded, construction.build:edcln_wired, drag_buckle, equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, secbot_assembly_rename, toggle_digestable
+

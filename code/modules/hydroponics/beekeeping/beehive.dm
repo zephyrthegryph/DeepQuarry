@@ -35,7 +35,9 @@ CAPABILITIES(/obj/machinery/beehive)
 	op("beehive_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req_bool(PROC_REF(can_load_frame_holds), because = PROC_REF(can_load_frame_refusal))), then(PROC_REF(interaction_beehive_load_frame)))
 	op("beehive_bee_pack", item(/obj/item/bee_pack), priority(OP_PRIORITY_DEFAULT - 1), label("Move bees"), needs(req_bool(PROC_REF(can_move_bees_holds), because = PROC_REF(can_move_bees_refusal))), then(PROC_REF(interaction_beehive_bee_pack)))
 	op("beehive_scan", item(/obj/item/analyzer/plant_analyzer), priority(OP_PRIORITY_DEFAULT - 1), label("Scan"), then(PROC_REF(interaction_beehive_scan)))
-	op("beehive_harvest", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Harvest honeycombs"), then(PROC_REF(interaction_beehive_harvest)))
+	// A closed hive is not harvested (the click goes on); an open one gives a frame every 3 seconds while it holds a filled one.
+	op("beehive_harvest", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Harvest honeycombs"), when(req(PROC_REF(hive_open))), starts(PROC_REF(harvest_started)),
+		begins(MSG(beehive/harvesting)), wait(3 SECONDS, repeats = PROC_REF(harvest_more), after_step = PROC_REF(harvest_frame)), then(PROC_REF(harvest_finished)))
 
 /obj/machinery/beehive/draw(datum/look/look)
 	..()
@@ -188,14 +190,26 @@ MSG_DEF(beehive/dismantling, span_notice("You start dismantling %T%..."), span_n
 	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%.")), MSG_OTHERS(span_notice("%U% dismantles %T%.")))
 	replace_with(src, /obj/item/beehive_assembly)
 
-/// One frame every 3 seconds (a timed action each) while there are filled honeycombs.
-/obj/machinery/beehive/proc/harvest_next(mob/user)
-	if(honeycombs >= 100 && length(frames))
-		task_timed(user, 3 SECONDS, src, src, PROC_REF(harvest_frame), list(user))
-	else if(honeycombs < 100)
-		to_chat(user, span_notice("You take all filled honeycombs out."))
+MSG_DEF(beehive/harvesting, span_notice("You start taking the honeycombs out of %T%..."), span_notice("%U% starts taking the honeycombs out of %T%."))
+MSG_DEF_SELF(beehive/no_combs, span_notice("There are no filled honeycombs."))
+MSG_DEF_SELF(beehive/bees_angry, span_notice("The bees won't let you take the honeycombs out like this, smoke them first."))
 
-/obj/machinery/beehive/proc/harvest_frame(mob/user)
+/obj/machinery/beehive/proc/hive_open(datum/act/op/A)
+	return !closed
+
+/// Only an open hive with a filled frame in it, and bees that are smoked or absent, is harvested.
+/obj/machinery/beehive/proc/harvest_started(datum/act/op/A)
+	if(honeycombs < 100)
+		return MSG(beehive/no_combs)
+	if(!smoked && bee_count)
+		return MSG(beehive/bees_angry)
+
+/// Another frame follows while there are filled honeycombs.
+/obj/machinery/beehive/proc/harvest_more(datum/act/op/A)
+	return honeycombs >= 100 && length(frames)
+
+/// One frame taken out.
+/obj/machinery/beehive/proc/harvest_frame(datum/act/op/A)
 	if(honeycombs < 100 || !length(frames))
 		return
 	var/obj/item/honey_frame/H = frames[length(frames)]
@@ -203,22 +217,10 @@ MSG_DEF(beehive/dismantling, span_notice("You start dismantling %T%..."), span_n
 	H.set_honey(20)
 	set_honeycombs(honeycombs - (100))
 	H.forceMove(get_turf(src))
-	harvest_next(user)
 
-/obj/machinery/beehive/proc/interaction_beehive_harvest(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!closed)
-		if(honeycombs < 100)
-			to_chat(user, span_notice("There are no filled honeycombs."))
-			return OP_OK
-		if(!smoked && bee_count)
-			to_chat(user, span_notice("The bees won't let you take the honeycombs out like this, smoke them first."))
-			return OP_OK
-		act_message(user, src, MSG_SELF(span_notice("You start taking the honeycombs out of %T%...")), \
-			MSG_OTHERS(span_notice("%U% starts taking the honeycombs out of %T%.")))
-		harvest_next(user)
-		return OP_OK
-	return OP_DECLINE
+/obj/machinery/beehive/proc/harvest_finished(datum/act/op/A)
+	if(honeycombs < 100)
+		to_chat(A.actor, span_notice("You take all filled honeycombs out."))
 
 /obj/machinery/beehive/proc/work_step(datum/act/timer/A)
 	if(closed && !smoked && bee_count)

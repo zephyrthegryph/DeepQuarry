@@ -5,7 +5,6 @@ human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none menu: Use
 human|none click: Click: Use
 robot|none menu: Alternate use
-robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Pick up hat
@@ -13,7 +12,6 @@ robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use
 robot|none menu: Wear hat
 robot|none click: Click: Pick up hat
-ai|none menu: Equip (refused: not possible right now)
 ai|none menu: Wear hat
 ai|none click: Click: Wear hat
 ghost|none menu: Move To Top (refused: You can't reach that.)
@@ -90,5 +88,5 @@ human|/obj/item/assembly/signaler menu: Threaten to push the button! (refused: Y
 human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/assembly/signaler menu: Use
 human|/obj/item/assembly/signaler click: Click: Add signaler
-keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, head_light_self, head_robot_pick_up, head_silicon_wear, helmet_secbot_signaler, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, equip_module, head_light_self, head_robot_pick_up, head_silicon_wear, helmet_secbot_signaler, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable
 

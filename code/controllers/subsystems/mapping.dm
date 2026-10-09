@@ -10,6 +10,7 @@ SYSTEM_DEF(mapping)
 	needs = list(
 		/datum/system/garbage, // was transitive through chemistry
 		/datum/system/early_assets, // early assets declared mapping as a dependent when it was a subsystem
+		/datum/system/static_entries, // the map reader asks the map-time resolver table before it places anything
 		// Chemistry and vis_overlays were dependencies; both are world services now that need no boot.
 	)
 

@@ -33,7 +33,7 @@ MSG_DEF_SELF(light_frame/no_cells, "This casing can't support a power cell!")
 CAPABILITIES(/obj/machinery/light_construct)
 	construction(start(STAGE_LIGHT_FRAME_BARE),
 		stage(STAGE_LIGHT_FRAME_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(0), then(PROC_REF(wired)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(0))),
-		stage(STAGE_LIGHT_FRAME_CLOSED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(closed_into_fixture)), undo = null),
+		stage(STAGE_LIGHT_FRAME_CLOSED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(closed_into_fixture)), undo = NO_UNDO),
 		dismantle(tool(TOOL_WRENCH), wait(3 SECONDS), then(PROC_REF(taken_apart))))
 	extend("construction.dismantle", needs(req_not(req_built(STAGE_LIGHT_FRAME_WIRED, because = MSG(light_frame/unwire_first)), because = MSG(light_frame/unwire_first))))
 	owns_one(nameof(cell), /obj/item/cell/emergency_light)

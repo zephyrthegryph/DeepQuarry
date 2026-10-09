@@ -1,4 +1,4 @@
-MAP_RESOLVER(/obj/res, PROC_REF(r))
+// the resolver is declared in the block at the end
 /obj/a/Initialize(mapload)
 	. = ..()
 	return INITIALIZE_HINT_QDEL
@@ -37,3 +37,5 @@ var/x
 	return INITIALIZE_HINT_QDEL
 /obj/f/Initialize(a, b)
   return INITIALIZE_HINT_QDEL
+CAPABILITIES(/obj/res)
+	map_resolver(PROC_REF(r))

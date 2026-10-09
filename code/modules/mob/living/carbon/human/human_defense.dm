@@ -24,6 +24,9 @@ emp_act
 		else // Otherwise we blocked normally and stopped all the damage.
 			return 0
 
+	if(projectile_hit_begin(P)) // a hit hook took the round over: no autopsy, embed or effects
+		return 0
+
 	if(!P.nodamage)
 		organ.add_autopsy_data("[P.name]", P.damage)
 
@@ -310,18 +313,19 @@ emp_act
 		return 1
 	return 0
 
-DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
-/mob/living/carbon/human/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	var/obj/item/organ/external/affecting = get_organ(user.zone_sel.selecting)
+/// A sequencer on a robotic limb sabotages it (the emag capability in CAPABILITIES(/mob/living/carbon/human), code/library/mob/hands.dm).
+/mob/living/carbon/human/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/organ/external/affecting = get_organ(user?.zone_sel?.selecting)
 	if(!affecting || !(affecting.is_robotic()))
 		to_chat(user, span_warning("That limb isn't robotic."))
-		return EMAG_DECLINED
+		return OP_DECLINE
 	if(affecting.sabotaged)
 		to_chat(user, span_warning("[src]'s [affecting.name] is already sabotaged!"))
-		return EMAG_DECLINED
-	to_chat(user, span_notice("You sneakily slide [emag_source] into the dataport on [src]'s [affecting.name] and short out the safeties."))
+		return OP_DECLINE
+	to_chat(user, span_notice("You sneakily slide [A.held] into the dataport on [src]'s [affecting.name] and short out the safeties."))
 	affecting.sabotaged = 1
-	return 1
+	return OP_OK
 
 //this proc handles being hit by a thrown atom
 /mob/living/carbon/human/hitby(atom/movable/source, datum/thrownthing/throwingdatum)

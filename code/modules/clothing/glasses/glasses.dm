@@ -414,7 +414,7 @@ CAPABILITIES(/obj/item/clothing/glasses/welding)
 
 /// The welding_toggle_verb op: the verb's effect, as the old resolver ran it.
 /obj/item/clothing/glasses/welding/proc/welding_toggle_verb_op(datum/act/op/A)
-	welding_toggle_verb(A.actor, A.held, null)
+	welding_toggle_verb(A.actor, A.held)
 	return OP_OK
 
 /// Old attack_self.
@@ -423,7 +423,7 @@ CAPABILITIES(/obj/item/clothing/glasses/welding)
 	welding_toggle_verb(user)
 
 /// Old verb "Adjust welding goggles".
-/obj/item/clothing/glasses/welding/proc/welding_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/welding/proc/welding_toggle_verb(mob/user, obj/item/held)
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
@@ -651,7 +651,7 @@ CAPABILITIES(/obj/item/clothing/glasses/aerogelgoggles)
 
 /// The aerogelgoggles_toggle_verb op: the verb's effect, as the old resolver ran it.
 /obj/item/clothing/glasses/aerogelgoggles/proc/aerogelgoggles_toggle_verb_op(datum/act/op/A)
-	aerogelgoggles_toggle_verb(A.actor, A.held, null)
+	aerogelgoggles_toggle_verb(A.actor, A.held)
 	return OP_OK
 
 /// Old attack_self.
@@ -660,7 +660,7 @@ CAPABILITIES(/obj/item/clothing/glasses/aerogelgoggles)
 	aerogelgoggles_toggle_verb(user)
 
 /// Old verb "Adjust Orange Goggles".
-/obj/item/clothing/glasses/aerogelgoggles/proc/aerogelgoggles_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/aerogelgoggles/proc/aerogelgoggles_toggle_verb(mob/user, obj/item/held)
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up

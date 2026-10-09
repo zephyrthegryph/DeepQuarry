@@ -57,43 +57,47 @@ CAPABILITIES(/obj/machinery/paradoxrift)
 	desc = "This is a random goodie from the void."
 	icon_state = "medicalkit"
 
-DECLARE_LOOT(/obj/random/portalloot, LOOT_TABLE(\
-	/obj/item/stock_parts/capacitor, \
-	/obj/item/stock_parts/manipulator, \
-	/obj/item/stock_parts/scanning_module, \
-	/obj/item/stock_parts/matter_bin, \
-	/obj/item/stock_parts/micro_laser, \
-	/obj/item/stack/material/phoron, \
-	/obj/item/stack/material/deuterium, \
-	/obj/item/stack/material/tritium, \
-	/obj/item/stack/material/uranium))
+CAPABILITIES(/obj/random/portalloot)
+	loot(
+		table = list(
+			/obj/item/stock_parts/capacitor,
+			/obj/item/stock_parts/manipulator,
+			/obj/item/stock_parts/scanning_module,
+			/obj/item/stock_parts/matter_bin,
+			/obj/item/stock_parts/micro_laser,
+			/obj/item/stack/material/phoron,
+			/obj/item/stack/material/deuterium,
+			/obj/item/stack/material/tritium,
+			/obj/item/stack/material/uranium))
 
 /obj/random/greaterportalloot
 	name = "Random Greater Portal Loot"
 	desc = "This is a random goodie from the void."
 	icon_state = "medicalkit"
 
-DECLARE_LOOT(/obj/random/greaterportalloot, LOOT_TABLE(\
-	/obj/item/stock_parts/capacitor = 6, \
-	/obj/item/stock_parts/manipulator = 6, \
-	/obj/item/stock_parts/scanning_module = 6, \
-	/obj/item/stock_parts/matter_bin = 6, \
-	/obj/item/stock_parts/micro_laser = 6, \
-	/obj/random/smes_coil = 4, \
-	/obj/random/bomb_supply = 4, \
-	/obj/random/powercell = 4, \
-	/obj/random/tool/powermaint = 4, \
-	/obj/item/rcd = 1, \
-	/obj/item/rcd/advanced = 4, \
-	/obj/vehicle/bike/random = 1, \
-	/obj/vehicle/train/engine/quadbike/random = 1, \
-	/obj/random/material = 4, \
-	/obj/random/material/refined = 4, \
-	/obj/random/material/precious = 4, \
-	/obj/random/bluespace = 1, \
-	/obj/random/tool/alien = 4, \
-	/obj/item/circuitboard/paradoxrift = 1, \
-	/obj/item/prop/alien/junk = 4))
+CAPABILITIES(/obj/random/greaterportalloot)
+	loot(
+		table = list(
+			/obj/item/stock_parts/capacitor = 6,
+			/obj/item/stock_parts/manipulator = 6,
+			/obj/item/stock_parts/scanning_module = 6,
+			/obj/item/stock_parts/matter_bin = 6,
+			/obj/item/stock_parts/micro_laser = 6,
+			/obj/random/smes_coil = 4,
+			/obj/random/bomb_supply = 4,
+			/obj/random/powercell = 4,
+			/obj/random/tool/powermaint = 4,
+			/obj/item/rcd = 1,
+			/obj/item/rcd/advanced = 4,
+			/obj/vehicle/bike/random = 1,
+			/obj/vehicle/train/engine/quadbike/random = 1,
+			/obj/random/material = 4,
+			/obj/random/material/refined = 4,
+			/obj/random/material/precious = 4,
+			/obj/random/bluespace = 1,
+			/obj/random/tool/alien = 4,
+			/obj/item/circuitboard/paradoxrift = 1,
+			/obj/item/prop/alien/junk = 4))
 
 /obj/random/mob/interspace
 	name = "Random Interspace"
@@ -104,29 +108,31 @@ DECLARE_LOOT(/obj/random/greaterportalloot, LOOT_TABLE(\
 	mob_returns_home = 1
 	mob_wander_distance = 7
 
-DECLARE_LOOT(/obj/random/mob/interspace, LOOT_TABLE(\
-	/mob/living/simple_mob/vore/sonadile = 5, \
-	/mob/living/simple_mob/vore/solargrub = 30, \
-	/mob/living/simple_mob/vore/stalker = 5, \
-	/mob/living/simple_mob/vore/bigdragon = 1, \
-	/mob/living/simple_mob/humanoid/cultist/magus/rift = 1, \
-	/mob/living/simple_mob/vore/cryptdrake = 1, \
-	/mob/living/simple_mob/vore/demonAI = 15, \
-	/mob/living/simple_mob/shadekin = 25, \
-	/mob/living/simple_mob/vore/sect_queen = 15, \
-	/mob/living/simple_mob/vore/sect_drone = 25, \
-	/mob/living/simple_mob/vore/aggressive/deathclaw = 25, \
-	/mob/living/simple_mob/vore/aggressive/corrupthound = 25, \
-	/mob/living/simple_mob/metroid/juvenile/super = 15, \
-	/mob/living/simple_mob/animal/space/carp = 25, \
-	/mob/living/simple_mob/animal/space/carp/large = 15, \
-	/mob/living/simple_mob/animal/space/carp/large/huge = 15, \
-	/mob/living/simple_mob/animal/space/carp/puffer = 25, \
-	/mob/living/simple_mob/animal/space/alien = 25, \
-	/mob/living/simple_mob/animal/space/alien/sentinel = 15, \
-	/mob/living/simple_mob/vore/pakkun = 25, \
-	/mob/living/simple_mob/vore/scel = 25, \
-	/mob/living/simple_mob/vore/vore_hostile/abyss_lurker = 5))
+CAPABILITIES(/obj/random/mob/interspace)
+	configure(loot(
+		table = list(
+			/mob/living/simple_mob/vore/sonadile = 5,
+			/mob/living/simple_mob/vore/solargrub = 30,
+			/mob/living/simple_mob/vore/stalker = 5,
+			/mob/living/simple_mob/vore/bigdragon = 1,
+			/mob/living/simple_mob/humanoid/cultist/magus/rift = 1,
+			/mob/living/simple_mob/vore/cryptdrake = 1,
+			/mob/living/simple_mob/vore/demonAI = 15,
+			/mob/living/simple_mob/shadekin = 25,
+			/mob/living/simple_mob/vore/sect_queen = 15,
+			/mob/living/simple_mob/vore/sect_drone = 25,
+			/mob/living/simple_mob/vore/aggressive/deathclaw = 25,
+			/mob/living/simple_mob/vore/aggressive/corrupthound = 25,
+			/mob/living/simple_mob/metroid/juvenile/super = 15,
+			/mob/living/simple_mob/animal/space/carp = 25,
+			/mob/living/simple_mob/animal/space/carp/large = 15,
+			/mob/living/simple_mob/animal/space/carp/large/huge = 15,
+			/mob/living/simple_mob/animal/space/carp/puffer = 25,
+			/mob/living/simple_mob/animal/space/alien = 25,
+			/mob/living/simple_mob/animal/space/alien/sentinel = 15,
+			/mob/living/simple_mob/vore/pakkun = 25,
+			/mob/living/simple_mob/vore/scel = 25,
+			/mob/living/simple_mob/vore/vore_hostile/abyss_lurker = 5)))
 
 
 /// Whether its work starts at initialization (started_work(starts =)).

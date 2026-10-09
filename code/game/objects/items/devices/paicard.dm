@@ -47,6 +47,9 @@ TRACKED(/obj/item/paicard, cell)
 TRACKED(/obj/item/paicard, processor)
 TRACKED(/obj/item/paicard, board)
 TRACKED(/obj/item/paicard, capacitor)
+TRACKED(/obj/item/paicard, projector)
+TRACKED(/obj/item/paicard, emitter)
+TRACKED(/obj/item/paicard, speech_synthesizer)
 
 CAPABILITIES(/obj/item/paicard)
 	ref_one(nameof(pai), /mob/living/silicon/pai)
@@ -67,6 +70,16 @@ CAPABILITIES(/obj/item/paicard)
 	op("select_pai", ui_act("select_pai", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_select_pai)))
 	op("select_tool", ui_act("select_tool", arg("tool")), then(PROC_REF(ui_act_select_tool)))
 	op("activate_tool", ui_act("activate_tool"), then(PROC_REF(ui_act_activate_tool)))
+	// screwdriver on a closed card with a pAI in it opens the panel after a moment
+	op("open_panel", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), label("Open panel"), when(req(PROC_REF(can_open_panel))), wait(3 SECONDS), then(PROC_REF(panel_opened)))
+	// the parts go in after a moment, one op for each socket
+	op("install_cell", item(/obj/item/paiparts/cell), priority(OP_PRIORITY_PART + 2), label("Install part"), needs(req(PROC_REF(cell_missing), because = MSG(paicard/remove_first))), wait(3 SECONDS), then(PROC_REF(install_cell)))
+	op("install_processor", item(/obj/item/paiparts/processor), priority(OP_PRIORITY_PART + 2), label("Install part"), needs(req(PROC_REF(processor_missing), because = MSG(paicard/remove_first))), wait(3 SECONDS), then(PROC_REF(install_processor)))
+	op("install_board", item(/obj/item/paiparts/board), priority(OP_PRIORITY_PART + 2), label("Install part"), needs(req(PROC_REF(board_missing), because = MSG(paicard/remove_first))), wait(3 SECONDS), then(PROC_REF(install_board)))
+	op("install_capacitor", item(/obj/item/paiparts/capacitor), priority(OP_PRIORITY_PART + 2), label("Install part"), needs(req(PROC_REF(capacitor_missing), because = MSG(paicard/remove_first))), wait(3 SECONDS), then(PROC_REF(install_capacitor)))
+	op("install_projector", item(/obj/item/paiparts/projector), priority(OP_PRIORITY_PART + 2), label("Install part"), needs(req(PROC_REF(projector_missing), because = MSG(paicard/remove_first))), wait(3 SECONDS), then(PROC_REF(install_projector)))
+	op("install_emitter", item(/obj/item/paiparts/emitter), priority(OP_PRIORITY_PART + 2), label("Install part"), needs(req(PROC_REF(emitter_missing), because = MSG(paicard/remove_first))), wait(3 SECONDS), then(PROC_REF(install_emitter)))
+	op("install_synthesizer", item(/obj/item/paiparts/speech_synthesizer), priority(OP_PRIORITY_PART + 2), label("Install part"), needs(req(PROC_REF(synthesizer_missing), because = MSG(paicard/remove_first))), wait(3 SECONDS), then(PROC_REF(install_synthesizer)))
 	// the old attackby: tools, analyzers, parts and IDs (each branch does its own thing; any item is taken)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	// a multitool on an open panel checks the part chosen
@@ -80,7 +93,7 @@ CAPABILITIES(/obj/item/paicard)
 	// the old attack_self: the card's window, or (panel open) pick a part to take out
 	op("use", in_hand(), label("Use"),
 		asks(/datum/prompt/choice, fields = list("title" = "Remove part", "question" = "Which part would you like to remove?", "choices" = computed(PROC_REF(removable_parts)), "timeout" = 0), when = PROC_REF(panel_is_open)),
-		then(PROC_REF(interaction_self)))
+		starts(PROC_REF(remove_started)), wait(PROC_REF(remove_time)), then(PROC_REF(interaction_self)))
 	// the old attack_ghost: a ghost loads itself into an empty card, after a yes (an occupied card falls to the ghost's default)
 	op("inhabit", observer(), label("Inhabit"), needs(req_bool(PROC_REF(can_inhabit), because = PROC_REF(inhabit_refusal))),
 		asks(/datum/prompt/choice/pai_inhabit, fields = list("question" = computed(PROC_REF(inhabit_question))), when = PROC_REF(card_is_empty)),
@@ -470,8 +483,6 @@ CAPABILITIES(/obj/item/paicard)
 			set_panel_open(FALSE)
 			act_message(user, src, others = span_notice("%U% secured %T%'s maintenance panel."))
 			play_sfx(src, SFX_ITEMS_SCREWDRIVER)
-		else if(pai)
-			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	if(istype(I,/obj/item/robotanalyzer))
 		if(!panel_open)
 			to_chat(user, span_warning("The panel isn't open. You will need to unscrew it to open it."))
@@ -525,41 +536,6 @@ CAPABILITIES(/obj/item/paicard)
 			else
 				to_chat(user,"Speech Synthesizer: " + span_warning("missing"))
 
-	if(istype(I,/obj/item/paiparts/cell))
-		if(cell == PP_MISSING)
-			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user))
-		else
-			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
-	if(istype(I,/obj/item/paiparts/processor))
-		if(processor == PP_MISSING)
-			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(I, user))
-		else
-			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
-	if(istype(I,/obj/item/paiparts/board))
-		if(board == PP_MISSING)
-			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done4), done_args = list(I, user))
-		else
-			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
-	if(istype(I,/obj/item/paiparts/capacitor))
-		if(capacitor == PP_MISSING)
-			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done5), done_args = list(I, user))
-		else
-			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
-	if(istype(I,/obj/item/paiparts/projector))
-		if(projector == PP_MISSING)
-			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done6), done_args = list(I, user))
-		else
-			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
-	if(istype(I,/obj/item/paiparts/emitter))
-		if(emitter == PP_MISSING)
-			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done7), done_args = list(I, user))
-		else
-			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
-	if(istype(I,/obj/item/paiparts/speech_synthesizer))
-		if(speech_synthesizer == PP_MISSING)
-			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done8), done_args = list(I, user))
-		else
-			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 
 	return OP_OK
 
@@ -631,52 +607,73 @@ CAPABILITIES(/obj/item/paicard)
 				to_chat(user,"Speech Synthesizer: " + span_warning("missing"))
 	return OP_OK
 
-/obj/item/paicard/proc/attackby_timed_done(mob/user)
+MSG_DEF_SELF(paicard/remove_first, span_warning("You would need to remove the installed %I% first!"))
+
+/obj/item/paicard/proc/can_open_panel(datum/act/op/A)
+	return !panel_open && pai
+
+/obj/item/paicard/proc/panel_opened(datum/act/op/A)
 	set_panel_open(TRUE)
-	act_message(user, src, others = span_warning("%U% opened %T%'s maintenance panel."))
+	act_message(A.actor, src, others = span_warning("%U% opened %T%'s maintenance panel."))
 	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
-/obj/item/paicard/proc/attackby_timed_done2(obj/item/I, mob/user)
+
+/obj/item/paicard/proc/cell_missing(datum/act/op/A)
+	return cell == PP_MISSING
+
+/obj/item/paicard/proc/processor_missing(datum/act/op/A)
+	return processor == PP_MISSING
+
+/obj/item/paicard/proc/board_missing(datum/act/op/A)
+	return board == PP_MISSING
+
+/obj/item/paicard/proc/capacitor_missing(datum/act/op/A)
+	return capacitor == PP_MISSING
+
+/obj/item/paicard/proc/projector_missing(datum/act/op/A)
+	return projector == PP_MISSING
+
+/obj/item/paicard/proc/emitter_missing(datum/act/op/A)
+	return emitter == PP_MISSING
+
+/obj/item/paicard/proc/synthesizer_missing(datum/act/op/A)
+	return speech_synthesizer == PP_MISSING
+
+/// The part goes into the card: false when the held part could not be taken.
+/obj/item/paicard/proc/part_installed(datum/act/op/A)
+	var/obj/item/I = A.held
 	var/part_name = "\the [I]"
-	if(!consume(I, user))
-		return
-	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
-	set_cell(PP_FUNCTIONAL)
-/obj/item/paicard/proc/attackby_timed_done3(obj/item/I, mob/user)
-	var/part_name = "\the [I]"
-	if(!consume(I, user))
-		return
-	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
-	set_processor(PP_FUNCTIONAL)
-/obj/item/paicard/proc/attackby_timed_done4(obj/item/I, mob/user)
-	var/part_name = "\the [I]"
-	if(!consume(I, user))
-		return
-	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
-	set_board(PP_FUNCTIONAL)
-/obj/item/paicard/proc/attackby_timed_done5(obj/item/I, mob/user)
-	var/part_name = "\the [I]"
-	if(!consume(I, user))
-		return
-	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
-	set_capacitor(PP_FUNCTIONAL)
-/obj/item/paicard/proc/attackby_timed_done6(obj/item/I, mob/user)
-	var/part_name = "\the [I]"
-	if(!consume(I, user))
-		return
-	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
-	projector = PP_FUNCTIONAL
-/obj/item/paicard/proc/attackby_timed_done7(obj/item/I, mob/user)
-	var/part_name = "\the [I]"
-	if(!consume(I, user))
-		return
-	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
-	emitter = PP_FUNCTIONAL
-/obj/item/paicard/proc/attackby_timed_done8(obj/item/I, mob/user)
-	var/part_name = "\the [I]"
-	if(!consume(I, user))
-		return
-	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
-	speech_synthesizer = PP_FUNCTIONAL
+	if(!consume(I, A.actor))
+		return FALSE
+	act_message(A.actor, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
+	return TRUE
+
+/obj/item/paicard/proc/install_cell(datum/act/op/A)
+	if(part_installed(A))
+		set_cell(PP_FUNCTIONAL)
+
+/obj/item/paicard/proc/install_processor(datum/act/op/A)
+	if(part_installed(A))
+		set_processor(PP_FUNCTIONAL)
+
+/obj/item/paicard/proc/install_board(datum/act/op/A)
+	if(part_installed(A))
+		set_board(PP_FUNCTIONAL)
+
+/obj/item/paicard/proc/install_capacitor(datum/act/op/A)
+	if(part_installed(A))
+		set_capacitor(PP_FUNCTIONAL)
+
+/obj/item/paicard/proc/install_projector(datum/act/op/A)
+	if(part_installed(A))
+		set_projector(PP_FUNCTIONAL)
+
+/obj/item/paicard/proc/install_emitter(datum/act/op/A)
+	if(part_installed(A))
+		set_emitter(PP_FUNCTIONAL)
+
+/obj/item/paicard/proc/install_synthesizer(datum/act/op/A)
+	if(part_installed(A))
+		set_speech_synthesizer(PP_FUNCTIONAL)
 
 /// Old attack_self: the card's window, or (panel open) take out the part chosen, after a moment.
 /obj/item/paicard/proc/interaction_self(datum/act/op/A)
@@ -687,9 +684,15 @@ CAPABILITIES(/obj/item/paicard)
 	var/datum/prompt/R = A.answer
 	if(!R?.value)
 		return OP_OK
-	play_sfx(src, SFX_ITEMS_PICKUP_COMPONENT, volume = 0)
-	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, A.answer.value))
+	attack_self_timed_done(user, R.value)
 	return OP_OK
+
+/// Taking a part out takes a moment once one is chosen.
+/obj/item/paicard/proc/remove_time(datum/act/op/A)
+	return panel_open && A.answer?.value ? 3 SECONDS : 0
+
+/obj/item/paicard/proc/remove_started(datum/act/op/A)
+	play_sfx(src, SFX_ITEMS_PICKUP_COMPONENT, volume = 0)
 
 /obj/item/paicard/proc/panel_is_open(datum/act/op/A)
 	return panel_open
@@ -777,21 +780,21 @@ CAPABILITIES(/obj/item/paicard)
 			else
 				new /obj/item/paiparts(get_turf(user))
 			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
-			projector = PP_MISSING
+			set_projector(PP_MISSING)
 		if("emitter")
 			if(emitter == PP_FUNCTIONAL)
 				new /obj/item/paiparts/emitter(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
 			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
-			emitter = PP_MISSING
+			set_emitter(PP_MISSING)
 		if("speech synthesizer")
 			if(speech_synthesizer == PP_FUNCTIONAL)
 				new /obj/item/paiparts/speech_synthesizer(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
 			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
-			speech_synthesizer = PP_MISSING
+			set_speech_synthesizer(PP_MISSING)
 
 /obj/item/paicard/proc/death_damage()
 	var/number = rand(1,4)
@@ -812,11 +815,11 @@ CAPABILITIES(/obj/item/paicard)
 	if(prob(80) || nonfatal)	//Way more likely to be non-fatal part damage
 		switch(rand(1,3))
 			if(1)
-				projector = PP_BROKEN
+				set_projector(PP_BROKEN)
 			if(2)
-				emitter = PP_BROKEN
+				set_emitter(PP_BROKEN)
 			if(3)
-				speech_synthesizer = PP_BROKEN
+				set_speech_synthesizer(PP_BROKEN)
 	else
 		switch(rand(1,4))
 			if(1)
@@ -972,7 +975,8 @@ CAPABILITIES(/obj/item/radio/borg/pai)
 	icon = 'icons/obj/paicard.dmi'
 	icon_state = "pai"
 
-DECLARE_LOOT(/obj/random/paicard, LOOT_TABLE(/obj/item/paicard, /obj/item/paicard/typeb))
+CAPABILITIES(/obj/random/paicard)
+	loot(table = list(/obj/item/paicard, /obj/item/paicard/typeb))
 
 /obj/item/paicard/digest_act(atom/movable/item_storage = null)
 	if(pai?.digestable)

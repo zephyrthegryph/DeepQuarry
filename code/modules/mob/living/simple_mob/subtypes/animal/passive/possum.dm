@@ -12,10 +12,10 @@
 /obj/item/animal_spawner
 	var/critter_type = /mob/living/simple_mob/animal/passive/mouse
 
-MAP_RESOLVER(/obj/item/animal_spawner, GLOBAL_PROC_REF(resolve_animal_spawner))
-MAP_RESOLVER_VARS(/obj/item/animal_spawner, "critter_type")
+CAPABILITIES(/obj/item/animal_spawner)
+	map_resolver(GLOBAL_PROC_REF(resolve_animal_spawner), vars = list("critter_type"))
 
-/// MAP_RESOLVER for animal spawners: the critter in its holder, where the spawner would have been
+/// The map resolver of animal spawners: the critter in its holder, where the spawner would have been
 /// (in the hands of the mob holding it, if any).
 /proc/resolve_animal_spawner(atom/loc, path, list/varedits)
 	var/obj/item/animal_spawner/P = path

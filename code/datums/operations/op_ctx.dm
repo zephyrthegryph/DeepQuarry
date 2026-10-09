@@ -122,11 +122,6 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 		return null
 	if(route == ROUTE_AUTHORITY || route == ROUTE_MIND || !ismob(actor))
 		return null
-	// Inside a legacy entry proc (an op with cap_op(entry =) run from attack_hand / attackby / attack_self / click_alt)
-	// the proc's caller already decided this actor reaches it (the AI's hand use through silicon_use, telekinesis), as the
-	// route stage takes its reach.
-	if(GLOB.interaction_entry_actors[actor])
-		return null
 	// A silicon works a control through its interface (its empty-handed click, a window): the interface is the provider
 	// of manipulating and working controls (AFF_INTERFACE_PROVIDES); it holds nothing.
 	if((route & (ROUTE_INTERFACE | ROUTE_UI)) && issilicon(actor))
@@ -138,7 +133,7 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 /datum/op_ctx/proc/stage_route()
 	if(!(op.via & route))
 		return /datum/msg/req_no_route
-	if(route == ROUTE_PHYSICAL && isatom(target) && !GLOB.interaction_entry_actors[actor] && !dq_interaction_reach(actor, target, held))
+	if(route == ROUTE_PHYSICAL && isatom(target) && !dq_interaction_reach(actor, target, held))
 		return /datum/msg/req_out_of_reach
 	if(route == ROUTE_TK && isatom(target) && !op_tk_reach(actor, target))
 		return /datum/msg/req_out_of_reach

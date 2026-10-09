@@ -48,8 +48,15 @@
 		var/datum/op_result/result = op_resolve_click_with_params(actor, target, held, gesture, ORIGIN_CLICK, E.params, TRUE, TRUE)
 		if(result)
 			return result
+	// The ops had their say: the mob's click handling below must not resolve them a second time (route_click()).
+	GLOB.op_click_resolved[actor] = TRUE
 	E.actor.op_compatibility_click(E.target, E.params)
+	GLOB.op_click_resolved -= actor
 	return null
+
+/// Actors whose click the inbox already resolved among the ops (it is in the mob's own click handling now). A click that reaches the router any other
+/// way (the router entry of an AI hotkey, a pAI card, a test) resolves the ops first itself (route_click()).
+GLOBAL_LIST_EMPTY(op_click_resolved)
 
 /// op_resolve_click() with the click's parameters readable by the effects it runs, through dq_interaction_click_params(actor): an item put on a table
 /// aligns to where it was clicked. The previous parameters come back when the resolution is done.
@@ -93,10 +100,17 @@
 /// Resolves a click among the candidates and runs the winner. Returns its /datum/op_result, or null when nothing resolved (and `quiet`: nothing was said).
 /// `defer_legacy`: when a legacy interaction entry wins, nothing runs here and the result is null: the mob's own click handling runs the legacy chain
 /// (the tool's own act first, then the entries) exactly as it did before the type declared an op. A player's click takes it; a driver-built one does not.
-/proc/op_resolve_click(mob/actor, atom/target, obj/held, gesture, origin, quiet = FALSE, defer_legacy = FALSE)
+/proc/op_resolve_click(mob/actor, atom/target, obj/held, gesture, origin, quiet = FALSE, defer_legacy = FALSE, quality = null, no_tool = FALSE)
 	RETURN_TYPE(/datum/op_result)
 	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, actor_authority(actor), gesture, null, TRUE)
 	var/datum/op_cand/winner = op_resolution_winner(R)
+	// `quality` / `no_tool`: a tool's own act (crowbar_act) or an item's plain use (item_interaction) asks for the winner of that kind only; any other winner is
+	// not this call's to run.
+	if(winner && !winner.legacy)
+		if(quality && !(winner.binding?.bind_kind == BIND_TOOL && (quality in winner.binding.args["quality"])))
+			return null
+		if(no_tool && winner.binding?.bind_kind == BIND_TOOL)
+			return null
 	if(!winner)
 		if(!quiet && length(R.all))
 			// nothing survived: show the best near-miss's reason (rate limited), so a click never just does nothing
@@ -364,7 +378,7 @@
 	return made
 
 /// The plan of `holder` whose topic("key") names this href: a key "action=foo" matches href action=foo and is tried before a bare "action" key, as a
-/// TOPIC_ACTION row's did, so an op names its href by the same text and no link changes. The args are every other value of the href.
+/// retired table row's did, so an op names its href by the same text and no link changes. The args are every other value of the href.
 /proc/op_topic_plan(datum/holder, list/href_list, namespace = null)
 	RETURN_TYPE(/datum/op_plan)
 	if(!isdatum(holder) || QDELETED(holder) || !length(href_list))
@@ -389,7 +403,7 @@
 	return null
 
 /// A Topic href as an op: the holder's topic op that names it (or the holder its topic_forward() hands the href to) runs for `actor`, through the same
-/// path and the same refusals as a click. Returns its /datum/op_result, or null when no op names the href (the TOPIC_ACTION table still answers it).
+/// path and the same refusals as a click. Returns its /datum/op_result, or null when no op names the href.
 /proc/op_topic_href(mob/actor, datum/holder, list/href_list, forward_depth = 0, namespace = null)
 	RETURN_TYPE(/datum/op_result)
 	if(!actor || !isdatum(holder) || QDELETED(holder))

@@ -1062,16 +1062,16 @@
 		var/mob/living/carbon/human/H = new(T)
 		mobs += H
 		var/datum/shadekin/SK = H.add_shadekin(variants[((i - 1) % length(variants)) + 1])
-		var/list/ids = SK.granted_ability_ids()
+		var/list/ids = SK.ability_capabilities()
 		var/table_seen = FALSE
 		for(var/list/table as anything in tables)
-			if(table == ids)
+			if(table ~= ids)
 				table_seen = TRUE
 		if(!table_seen)
 			tables += list(ids)
-		for(var/id in ids)
+		for(var/datum/capability/ability_capability as anything in ids)
 			granted_entries++
-			if(!H.has_ability(id))
+			if(!granted(H, ability_capability))
 				grant_errors++
 	metric("shadekin_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
 	end_window("shadekin_allocation")

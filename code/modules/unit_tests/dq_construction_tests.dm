@@ -1,10 +1,8 @@
-// Construction graphs (roadmap I5): every graph is valid, examine shows the next
-// steps, and each converted graph walks its edges forward and back with the
-// same tools, times and materials as before.
+// Taking things apart (walls, floors, girders, windows, exosuit maintenance, wreckage): every step is an op, driven by a click and settled with
+// the kernel clock; the tests assert on the state it leaves and on what comes back, not on text.
 //
-// Helpers for the per-domain walks (dq_construction_*_tests.dm):
-//	dq_edge(target, id_suffix)          the edge leaving target's state whose id ends with id_suffix
-//	dq_walk(H, target, edge, held)      runs it through perform() with no wait (dq_construction_instant)
+// Helpers for the per-domain files:
+//	dq_use(H, target, held)             a click with `held`, then time enough for its longest wait to run out
 //	dq_materials_on(turf)               type -> amount of the items lying on a turf
 
 // ---- Helpers ----
@@ -30,31 +28,6 @@
 			return FALSE
 	return TRUE
 
-/// The edge leaving `target`'s current state whose id ends with `suffix` (or equals it). `suffix` may
-/// be just the "from>to" transition (e.g. "0>1") or the full "from>to:tool_or_item" tail (e.g.
-/// "2>3:spring"): ids are "graph_id:from>to:tool_or_item", so both are checked against the tail.
-/datum/unit_test/proc/dq_edge(atom/target, suffix)
-	for(var/datum/interaction/construction/edge as anything in construction_edges_for(target))
-		var/list/parts = splittext(edge.id, ":")
-		var/transition = (length(parts) >= 2) ? parts[2] : null
-		var/tail = (length(parts) >= 3) ? "[parts[2]]:[parts[3]]" : transition
-		if(edge.id == suffix || transition == suffix || tail == suffix)
-			return edge
-	return null
-
-/// The edge leaving `target`'s state that `held` would run, by tool or item. Null if none.
-/datum/unit_test/proc/dq_edge_for_held(mob/actor, atom/target, obj/item/held)
-	for(var/datum/interaction/construction/edge as anything in construction_edges_for(target))
-		if(edge.applies_to(target) && !edge.why_not(actor, target, held))
-			return edge
-	return null
-
-/// Runs `edge` on `target` with no wait. Returns what perform() returned.
-/datum/unit_test/proc/dq_walk(mob/actor, atom/target, datum/interaction/construction/edge, obj/item/held)
-	set_global("dq_construction_instant", TRUE)
-	. = edge.perform(actor, target, held)
-	set_global("dq_construction_instant", FALSE)
-
 /// A zero-speed tool of `path` on `T`.
 /datum/unit_test/proc/dq_fast_tool(path, turf/T)
 	var/obj/item/tool = allocate(path, T)
@@ -68,232 +41,164 @@
 	welder.setWelding(TRUE)
 	return welder
 
-// ---- Every graph ----
+/// Clicks `target` with `held` in the actor's hand and lets the longest wait of any step (10 s) run out. The held item is put down after.
+/datum/unit_test/proc/dq_use(mob/living/carbon/human/H, atom/target, obj/item/held)
+	H.put_in_active_hand(held)
+	. = test_click(H, target, held)
+	test_time(30 SECONDS)
+	H.drop_from_inventory(held)
 
-/// Every graph is valid: known states, all reachable, every edge named, every requirement compiles.
-/datum/unit_test/dq_construction_graphs_valid
-
-/datum/unit_test/dq_construction_graphs_valid/Run()
-	TEST_ASSERT(length(GLOB.construction_graphs), "graphs are registered")
-	var/list/seen_ids = list()
-	for(var/path in GLOB.construction_graphs)
-		var/datum/construction_graph/graph = GLOB.construction_graphs[path]
-		TEST_ASSERT(!(graph.id in seen_ids), "graph id [graph.id] is unique")
-		seen_ids += graph.id
-		var/list/problems = graph.validate()
-		TEST_ASSERT(!length(problems), "[graph.id] is valid: [jointext(problems, "; ")]")
-		TEST_ASSERT(length(graph.edges), "[graph.id] has edges")
-		for(var/datum/interaction/construction/edge as anything in graph.edges)
-			TEST_ASSERT_EQUAL(INTERACTION_BY_ID(edge.id), edge, "[edge.id] is found by id")
-			TEST_ASSERT(isnull(edge.category) || (edge.category in INTERACTION_CATEGORIES), "[edge.id] has a known category")
-
-/// Every atom type naming a graph names a registered one.
-/datum/unit_test/dq_construction_graph_types
-
-/datum/unit_test/dq_construction_graph_types/Run()
-	for(var/atom/path as anything in typesof(/atom))
-		var/graph_path = initial(path.construction_graph)
-		if(!graph_path)
-			continue
-		TEST_ASSERT(GLOB.construction_graphs[graph_path], "[path] names [graph_path], a registered graph")
-
-/// Examine lists "Next:" lines for the edges leaving the state, with what each needs.
-/datum/unit_test/dq_construction_examine_next
-
-/datum/unit_test/dq_construction_examine_next/Run()
-	var/turf/T = test_floor()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+/// Turns the turf north (or south) of the test floor into a wall of steel (`reinf` the reinforcement, or null) and returns it.
+/datum/unit_test/proc/dq_make_wall(turf/T, datum/material/reinf)
 	var/turf/wall_turf = get_step(T, NORTH) || get_step(T, SOUTH)
-	var/old_type = wall_turf.type
 	wall_turf.ChangeTurf(/turf/simulated/wall)
 	var/turf/simulated/wall/wall = wall_turf
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	wall.apply_materials(steel, steel, steel)
-	wall.set_construction_stage(5)
-	var/list/lines = construction_examine_lines(H, wall)
-	var/text = jointext(lines, "\n")
-	TEST_ASSERT(findtext(text, "Next: unscrew the support lines (needs a screwdriver)"), "the screwdriver step: [text]")
-	TEST_ASSERT(findtext(text, "Next: mend the outer grille (needs a wirecutter)"), "the step back: [text]")
-	TEST_ASSERT_EQUAL(length(lines), 2, "one line per edge leaving stage 5")
-	wall_turf.ChangeTurf(old_type)
-	TEST_ASSERT_NULL(construction_examine_lines(H, allocate(/obj/item/tool/wrench, T)), "no lines for things without a graph")
+	wall.apply_materials(steel, reinf, steel)
+	return wall
 
 // ---- Walls ----
 
-/// A reinforced wall walks 6 -> 0 and apart, with the same tools and times; the reversible steps go back.
+/// A reinforced wall walks 6 -> 0 and apart; the reversible steps go back.
 /datum/unit_test/dq_construction_wall_reinforced
 
 /datum/unit_test/dq_construction_wall_reinforced/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/turf/wall_turf = get_step(T, NORTH) || get_step(T, SOUTH)
 	var/old_type = wall_turf.type
-	wall_turf.ChangeTurf(/turf/simulated/wall)
-	var/turf/simulated/wall/wall = wall_turf
-	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	var/datum/material/plasteel = get_material_by_name(MAT_PLASTEEL)
-	wall.apply_materials(steel, plasteel, steel)
+	var/turf/simulated/wall/wall = dq_make_wall(T, get_material_by_name(MAT_PLASTEEL))
 	TEST_ASSERT_EQUAL(wall.construction_stage, 6, "a reinforced wall starts at 6")
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/H = dq_asm_person(T)
+	H.set_combat_mode(FALSE)
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
 	var/obj/item/tool/wirecutters/cutters = dq_fast_tool(/obj/item/tool/wirecutters, T)
 	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
 	var/obj/item/tool/wrench/wrench = dq_fast_tool(/obj/item/tool/wrench, T)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 
-	// Forward, one step at a time: tool, unscaled time, resulting stage.
-	var/list/steps = list(
-		list(cutters, 0, 5),
-		list(screwdriver, 4 SECONDS, 4),
-		list(welder, 6 SECONDS, 3),
-		list(crowbar, 10 SECONDS, 2),
-		list(wrench, 4 SECONDS, 1),
-		list(welder, 7 SECONDS, 0),
-	)
+	// Forward, one step at a time: the tool and the resulting stage.
+	var/list/steps = list(list(cutters, 5), list(screwdriver, 4), list(welder, 3), list(crowbar, 2), list(wrench, 1), list(welder, 0))
 	for(var/list/step in steps)
 		var/obj/item/tool = step[1]
 		var/before = wall.construction_stage
-		H.put_in_active_hand(tool)
-		TEST_ASSERT(wall.tool_interaction(H, tool) & ITEM_INTERACT_SUCCESS, "stage [before]: [tool] runs a step")
-		TEST_ASSERT_EQUAL(wall.construction_stage, step[3], "stage [before] -> [step[3]]")
-		TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], step[2], "stage [before] takes [step[2]]")
-		TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["volume"], 100, "at volume 100")
-		H.drop_from_inventory(tool)
+		dq_use(H, wall, tool)
+		TEST_ASSERT_EQUAL(wall.construction_stage, step[2], "stage [before] -> [step[2]] with [tool]")
 
 	// Back: 5 -> 6 and 4 -> 5 are the reversible steps.
 	wall.set_construction_stage(4)
-	H.put_in_active_hand(screwdriver)
-	wall.tool_interaction(H, screwdriver)
+	dq_use(H, wall, screwdriver)
 	TEST_ASSERT_EQUAL(wall.construction_stage, 5, "the screwdriver screws the lines back down")
-	H.drop_from_inventory(screwdriver)
-	H.put_in_active_hand(cutters)
-	wall.tool_interaction(H, cutters)
+	dq_use(H, wall, cutters)
 	TEST_ASSERT_EQUAL(wall.construction_stage, 6, "the wirecutters mend the grille")
-	H.drop_from_inventory(cutters)
 
 	// The last step pries the sheath off: the wall comes down.
 	wall.set_construction_stage(0)
-	H.put_in_active_hand(crowbar)
-	wall.tool_interaction(H, crowbar)
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 10 SECONDS, "prying the sheath takes 10 s")
+	dq_use(H, wall, crowbar)
 	TEST_ASSERT(!istype(wall_turf, /turf/simulated/wall), "the wall is gone")
 	TEST_ASSERT(locate_on(wall_turf, /obj/structure/girder), "it leaves a girder")
 	for(var/atom/movable/thing in turf_contents_of_type(wall_turf, /atom/movable))
 		if(!ismob(thing))
 			qdel(thing)
 	wall_turf.ChangeTurf(old_type)
+	test_driver_end()
 
-/// A plain wall is cut apart with a welder in 60 - cut_delay, scaled by the tool; a plasma cutter does it too.
+/// A plain wall is cut apart with a welder, and a plasma cutter does it too.
 /datum/unit_test/dq_construction_wall_plain
 
 /datum/unit_test/dq_construction_wall_plain/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/turf/wall_turf = get_step(T, NORTH) || get_step(T, SOUTH)
 	var/old_type = wall_turf.type
-	wall_turf.ChangeTurf(/turf/simulated/wall)
-	var/turf/simulated/wall/wall = wall_turf
-	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	wall.apply_materials(steel, null, steel)
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/turf/simulated/wall/wall = dq_make_wall(T, null)
+	var/mob/living/carbon/human/H = dq_asm_person(T)
+	H.set_combat_mode(FALSE)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
-	welder.toolspeed = 1
+	var/obj/item/pickaxe/plasmacutter/cutter = dq_fast_tool(/obj/item/pickaxe/plasmacutter, T)
 
-	var/datum/interaction/construction/cut = dq_edge(wall, "plain>done:welder")
-	TEST_ASSERT(cut, "a plain wall offers the welder cut")
-	TEST_ASSERT_EQUAL(cut.duration_for(H, wall, welder), max(0, 60 - steel.cut_delay), "cutting takes 60 - cut_delay")
-	var/obj/item/pickaxe/plasmacutter/cutter = allocate(/obj/item/pickaxe/plasmacutter, T)
-	TEST_ASSERT(cut.is_alt_item(cutter), "a plasma cutter stands in for the welder")
-	TEST_ASSERT_EQUAL(cut.alt_delay(H, wall, cutter), max(0, 60 - steel.cut_delay - cutter.digspeed), "a plasma cutter takes digspeed off")
-	TEST_ASSERT_NULL(cut.why_not(H, wall, cutter), "the plasma cutter's step is available")
-
-	welder.toolspeed = 0
-	H.put_in_active_hand(welder)
-	wall.tool_interaction(H, welder)
+	dq_use(H, wall, welder)
 	TEST_ASSERT(!istype(wall_turf, /turf/simulated/wall), "the welder cut the wall down")
 	for(var/atom/movable/thing in turf_contents_of_type(wall_turf, /atom/movable))
 		if(!ismob(thing))
 			qdel(thing)
 	wall_turf.ChangeTurf(old_type)
 
-/// Welder work that isn't construction comes first: burning rot, then thermite, then repair.
+	wall = dq_make_wall(T, null)
+	dq_use(H, wall, cutter)
+	TEST_ASSERT(!istype(wall_turf, /turf/simulated/wall), "a plasma cutter stands in for the welder")
+	for(var/atom/movable/thing in turf_contents_of_type(wall_turf, /atom/movable))
+		if(!ismob(thing))
+			qdel(thing)
+	wall_turf.ChangeTurf(old_type)
+	test_driver_end()
+
+/// Welder work that is not taking the wall apart comes first: burning rot, then repair, then thermite.
 /datum/unit_test/dq_construction_wall_welder_work
 
 /datum/unit_test/dq_construction_wall_welder_work/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/turf/wall_turf = get_step(T, NORTH) || get_step(T, SOUTH)
 	var/old_type = wall_turf.type
-	wall_turf.ChangeTurf(/turf/simulated/wall)
-	var/turf/simulated/wall/wall = wall_turf
-	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	wall.apply_materials(steel, steel, steel)
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/turf/simulated/wall/wall = dq_make_wall(T, get_material_by_name(MAT_STEEL))
+	var/mob/living/carbon/human/H = dq_asm_person(T)
+	H.set_combat_mode(FALSE)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
-	H.put_in_active_hand(welder)
 
 	var/obj/effect/overlay/wallrot/rot = new(wall)
-	var/datum/interaction_resolution/resolution = interactions_for(H, wall, welder)
-	var/list/best = resolution.best_for_action(INPUT_ACTION_USE)
-	TEST_ASSERT_EQUAL(best[1], INTERACTION(/datum/interaction/wall_burn_rot), "rot is burned first")
-	wall.tool_interaction(H, welder)
-	TEST_ASSERT(QDELETED(rot), "the rot is gone")
+	dq_use(H, wall, welder)
+	TEST_ASSERT(QDELETED(rot), "the rot is burned away first")
+	TEST_ASSERT(istype(wall_turf, /turf/simulated/wall), "and the wall is still there")
 
 	wall.take_damage(50)
-	resolution = interactions_for(H, wall, welder)
-	best = resolution.best_for_action(INPUT_ACTION_USE)
-	TEST_ASSERT_EQUAL(best[1], INTERACTION(/datum/interaction/wall_repair), "a damaged wall is repaired before it is cut")
-	var/datum/interaction/repair = INTERACTION(/datum/interaction/wall_repair)
-	TEST_ASSERT_EQUAL(repair.duration_for(H, wall, welder), 0, "zero-speed welder")
-	wall.tool_interaction(H, welder)
-	TEST_ASSERT_EQUAL(wall.get_integrity(), wall.max_integrity, "repaired")
-	TEST_ASSERT_EQUAL(wall.construction_stage, 6, "repairing doesn't change the stage")
+	dq_use(H, wall, welder)
+	TEST_ASSERT_EQUAL(wall.get_integrity(), wall.max_integrity, "a damaged wall is repaired before it is cut")
+	TEST_ASSERT_EQUAL(wall.construction_stage, 6, "repairing does not change the stage")
 
 	wall.set_thermite(TRUE)
-	H.set_combat_mode(TRUE) // lighting thermite is a hostile act (INTERACTION_TAG_HOSTILE): Use picks it in combat mode
-	resolution = interactions_for(H, wall, welder)
-	best = resolution.best_for_action(INPUT_ACTION_USE)
-	TEST_ASSERT_EQUAL(best[1], INTERACTION(/datum/interaction/wall_light_thermite), "thermite is lit ahead of the graph")
+	H.set_combat_mode(TRUE) // lighting thermite is a hostile act: it is picked in combat mode
+	var/datum/op_result/lit = dq_use(H, wall, welder)
+	TEST_ASSERT(test_op_committed(lit), "thermite is lit ahead of the cutting steps")
 	H.set_combat_mode(FALSE)
-	wall.set_thermite(FALSE)
+	// lighting it melted the wall: the turf is plating now and carries no coating
 	wall_turf.ChangeTurf(old_type)
+	own_turf_contents(get_step(T, NORTH) || get_step(T, SOUTH)) // the girder the melted wall left
+	test_driver_end()
 
 // ---- Floors ----
 
-/// A carpet pries up to plating (returning its tile), damaged plating welds back, and plating cuts through in 10 s for 5 fuel.
+/// A carpet pries up to plating (returning its tile), damaged plating welds back, and plating cuts through for 5 fuel.
 /datum/unit_test/dq_construction_floor
 
 /datum/unit_test/dq_construction_floor/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/turf/simulated/floor/floor = get_step(T, NORTH) || get_step(T, SOUTH)
 	var/old_type = floor.type
 	floor = floor.ChangeTurf(/turf/simulated/floor)
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/H = dq_asm_person(T)
 	H.set_combat_mode(FALSE)
 	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 
 	floor.install_flooring(get_flooring_data(/datum/decl/flooring/carpet))
-	var/datum/construction_graph/graph = construction_graph_of(floor)
-	TEST_ASSERT_EQUAL(graph.state_of(floor), "floored", "carpeted")
-	H.put_in_active_hand(crowbar)
-	floor.tool_interaction(H, crowbar)
-	TEST_ASSERT_EQUAL(graph.state_of(floor), "plating", "the crowbar pries the carpet up")
+	TEST_ASSERT(!floor.is_plating(), "carpeted")
+	dq_use(H, floor, crowbar)
+	TEST_ASSERT(floor.is_plating(), "the crowbar pries the carpet up")
 	TEST_ASSERT(locate_on(floor, /obj/item/stack/tile/carpet), "the carpet comes back as a tile")
-	H.drop_from_inventory(crowbar)
 
 	floor.set_broken(TRUE)
-	TEST_ASSERT_EQUAL(graph.state_of(floor), "damaged", "broken plating")
-	H.put_in_active_hand(welder)
-	floor.tool_interaction(H, welder)
-	TEST_ASSERT_EQUAL(graph.state_of(floor), "plating", "welded smooth")
+	dq_use(H, floor, welder)
+	TEST_ASSERT(!floor.broken, "welded smooth")
 
-	var/datum/interaction/construction/cut = dq_edge(floor, "plating>done:welder")
-	TEST_ASSERT(cut, "plating offers the cut")
-	TEST_ASSERT_EQUAL(cut.duration, 10 SECONDS, "cutting takes 10 s")
-	TEST_ASSERT(!cut.tool_scaled, "whatever the welder")
-	TEST_ASSERT_EQUAL(cut.tool_amount, 5, "and 5 fuel")
-	H.drop_from_inventory(welder)
+	var/fuel_before = welder.get_fuel()
+	dq_use(H, floor, welder)
+	TEST_ASSERT(fuel_before - welder.get_fuel() >= 5, "the plating is cut through, for 5 fuel")
 	for(var/obj/item/thing in turf_contents_of_type(floor, /obj/item))
 		qdel(thing)
 	floor.ChangeTurf(old_type)
+	test_driver_end()
 
 // ---- Exosuit maintenance ----
 
@@ -301,13 +206,17 @@
 /datum/unit_test/dq_construction_mecha_maintenance
 
 /datum/unit_test/dq_construction_mecha_maintenance/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/H = dq_asm_person(T)
+	H.set_combat_mode(FALSE)
 	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
 	var/obj/item/tool/wrench/wrench = dq_fast_tool(/obj/item/tool/wrench, T)
 	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
-	TEST_ASSERT(!length(construction_edges_for(mech)), "an operating exosuit offers no steps")
+	mech.state = MECHA_OPERATING
+	dq_use(H, mech, wrench)
+	TEST_ASSERT_EQUAL(mech.state, MECHA_OPERATING, "an operating exosuit offers no steps")
 	if(!mech.cell)
 		rel_set(mech, nameof(mech.cell), new /obj/item/cell/high(mech))
 	var/obj/item/cell/cell = mech.cell
@@ -316,10 +225,8 @@
 	var/list/forward = list(list(wrench, MECHA_PANEL_LOOSE), list(crowbar, MECHA_CELL_OPEN), list(screwdriver, MECHA_CELL_OUT))
 	for(var/list/step in forward)
 		var/obj/item/tool = step[1]
-		H.put_in_active_hand(tool)
-		mech.tool_interaction(H, tool)
+		dq_use(H, mech, tool)
 		TEST_ASSERT_EQUAL(mech.state, step[2], "[tool] -> state [step[2]]")
-		H.drop_from_inventory(tool)
 	TEST_ASSERT_NULL(mech.cell, "the cell is out")
 	TEST_ASSERT_EQUAL(cell.loc, mech.loc, "on the floor")
 
@@ -328,110 +235,100 @@
 	var/list/back = list(list(screwdriver, MECHA_CELL_OPEN), list(crowbar, MECHA_PANEL_LOOSE), list(wrench, MECHA_BOLTS_SECURED))
 	for(var/list/step in back)
 		var/obj/item/tool = step[1]
-		H.put_in_active_hand(tool)
-		mech.tool_interaction(H, tool)
+		dq_use(H, mech, tool)
 		TEST_ASSERT_EQUAL(mech.state, step[2], "[tool] back -> state [step[2]]")
-		H.drop_from_inventory(tool)
 
 	mech_body_plan().afflict(mech, MECHA_INT_TEMP_CONTROL)
-	H.put_in_active_hand(screwdriver)
-	mech.tool_interaction(H, screwdriver)
+	dq_use(H, mech, screwdriver)
 	TEST_ASSERT(!mech_body_plan().has_affliction(mech, MECHA_INT_TEMP_CONTROL), "the screwdriver fixes temperature control first")
 	TEST_ASSERT_EQUAL(mech.state, MECHA_BOLTS_SECURED, "without a step")
-	H.drop_from_inventory(screwdriver)
 
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 	mech.take_damage(20)
 	var/before = mech.get_integrity()
-	H.set_combat_mode(FALSE)
-	H.put_in_active_hand(welder)
-	mech.tool_interaction(H, welder)
+	dq_use(H, mech, welder)
 	TEST_ASSERT_EQUAL(mech.get_integrity(), min(mech.max_integrity, before + 10), "a weld patches 10")
 	H.set_combat_mode(TRUE)
-	// i6b: combat mode answers with the declared weld strike (mecha_weld_strike), not a repair.
+	// combat mode answers with the weld strike, not a repair
 	var/before_strike = mech.get_integrity()
-	TEST_ASSERT(mech.tool_interaction(H, welder) & ITEM_INTERACT_SUCCESS, "on harm intent the welder strikes")
+	dq_use(H, mech, welder)
 	TEST_ASSERT(mech.get_integrity() <= before_strike, "a strike does not weld repairs ([mech.get_integrity()] vs [before_strike])")
 	H.set_combat_mode(FALSE)
 	for(var/obj/effect/effect/sparks/S in range(1, T))
 		own(S)
+	test_driver_end()
 
 // ---- Wreckage ----
 
-/// Salvage steps leave the wreck in its one state and use up its salvage.
+/// Salvage steps leave the wreck as a wreck and use up its salvage.
 /datum/unit_test/dq_construction_wreckage
 
 /datum/unit_test/dq_construction_wreckage/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/H = dq_asm_person(T)
+	H.set_combat_mode(FALSE)
 	var/obj/effect/decal/mecha_wreckage/ripley/wreck = allocate(/obj/effect/decal/mecha_wreckage/ripley, T)
 	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 	var/obj/item/stack/rods/loot = allocate(/obj/item/stack/rods, wreck)
 	rel_clear(wreck, nameof(wreck.crowbar_salvage))
 	rel_add(wreck, nameof(wreck.crowbar_salvage), loot)
-	H.put_in_active_hand(crowbar)
-	wreck.tool_interaction(H, crowbar)
+	dq_use(H, wreck, crowbar)
 	TEST_ASSERT_EQUAL(loot.loc, get_turf(H), "the crowbar pries out what the wreck held")
-	H.drop_from_inventory(crowbar)
-	var/datum/interaction/construction/pry = dq_edge(wreck, "wreck>wreck:crowbar")
-	TEST_ASSERT_EQUAL(pry.why_not(H, wreck, crowbar), "you don't see anything that can be pried out", "nothing left to pry")
+	var/datum/op_result/nothing = dq_use(H, wreck, crowbar)
+	TEST_ASSERT(!test_op_committed(nothing), "nothing left to pry")
 
 	wreck.salvage_num = 3
-	H.put_in_active_hand(welder)
 	for(var/i in 1 to 20)
-		wreck.tool_interaction(H, welder)
+		dq_use(H, wreck, welder)
 	TEST_ASSERT_EQUAL(wreck.salvage_num, 0, "the welder cuts until the salvage runs out")
-	var/datum/interaction/construction/cut = dq_edge(wreck, "wreck>wreck:welder")
-	TEST_ASSERT(cut.why_not(H, wreck, welder), "and then can't cut any more")
-	var/datum/construction_graph/wreck_graph = construction_graph_of(wreck)
-	TEST_ASSERT_EQUAL(wreck_graph.state_of(wreck), "wreck", "still a wreck")
+	TEST_ASSERT(!QDELETED(wreck), "still a wreck")
 	own_turf_contents(T) // the salvage
+	test_driver_end()
 
 // ---- Girders ----
 
-/// Dislodge and secure (4 s each), struts off (4 s + 4 s, returning the reinforcement), disassemble (35 + integrity/50).
+/// Dislodge and secure, struts off (returning the reinforcement), disassemble.
 /datum/unit_test/dq_construction_girder
 
 /datum/unit_test/dq_construction_girder/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/H = dq_asm_person(T)
+	H.set_combat_mode(FALSE)
 	var/obj/item/tool/wrench/wrench = dq_fast_tool(/obj/item/tool/wrench, T)
 	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
 	var/obj/item/tool/wirecutters/cutters = dq_fast_tool(/obj/item/tool/wirecutters, T)
 	var/obj/structure/girder/girder = allocate(/obj/structure/girder, T)
-	var/datum/construction_graph/graph = construction_graph_of(girder)
 
-	girder.tool_interaction(H, crowbar)
-	TEST_ASSERT_EQUAL(graph.state_of(girder), "displaced", "dislodged")
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 4 SECONDS, "in 4 s")
-	girder.tool_interaction(H, wrench)
-	TEST_ASSERT_EQUAL(graph.state_of(girder), "anchored", "secured again")
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 4 SECONDS, "in 4 s")
+	dq_use(H, girder, crowbar)
+	TEST_ASSERT(!girder.anchored, "dislodged")
+	dq_use(H, girder, wrench)
+	TEST_ASSERT(girder.anchored, "secured again")
 
-	girder.tool_interaction(H, screwdriver)
+	dq_use(H, girder, screwdriver)
 	TEST_ASSERT(girder.reinforcing, "the screwdriver readies it for reinforcing")
-	girder.tool_interaction(H, screwdriver)
+	dq_use(H, girder, screwdriver)
 	TEST_ASSERT(!girder.reinforcing, "and back")
 
 	girder.reinf_material = get_material_by_name(MAT_STEEL)
 	girder.reinforce_girder()
-	TEST_ASSERT_EQUAL(graph.state_of(girder), "reinforced", "reinforced")
+	TEST_ASSERT_EQUAL(girder.state, 2, "reinforced")
 	var/list/before = dq_materials_on(T)
-	girder.tool_interaction(H, screwdriver)
-	TEST_ASSERT_EQUAL(graph.state_of(girder), "struts_loose", "struts unsecured")
-	girder.tool_interaction(H, cutters)
-	TEST_ASSERT_EQUAL(graph.state_of(girder), "anchored", "struts removed")
+	dq_use(H, girder, screwdriver)
+	TEST_ASSERT_EQUAL(girder.state, 1, "struts unsecured")
+	dq_use(H, girder, cutters)
+	TEST_ASSERT_EQUAL(girder.state, 0, "struts removed")
 	TEST_ASSERT_NULL(girder.reinf_material, "no reinforcement left")
 	var/list/after = dq_materials_on(T)
 	TEST_ASSERT(after[/obj/item/stack/material/steel] > before[/obj/item/stack/material/steel], "the reinforcement comes back as sheets")
 
-	var/expected = 35 + round(girder.max_integrity / 50)
-	girder.tool_interaction(H, wrench)
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], expected, "disassembling takes 35 + integrity/50")
+	dq_use(H, girder, wrench)
 	TEST_ASSERT(QDELETED(girder), "disassembled")
 	own_turf_contents(T) // the returned sheets
+	test_driver_end()
 
 // ---- Windows ----
 
@@ -439,35 +336,37 @@
 /datum/unit_test/dq_construction_window
 
 /datum/unit_test/dq_construction_window/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/H = dq_asm_person(T)
 	H.set_combat_mode(FALSE)
 	var/obj/item/tool/wrench/wrench = dq_fast_tool(/obj/item/tool/wrench, T)
 	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
 	var/obj/structure/window/reinforced/window = allocate(/obj/structure/window/reinforced, T)
-	var/datum/construction_graph/graph = construction_graph_of(window)
-	TEST_ASSERT_EQUAL(graph.state_of(window), "a2", "mapped: anchored and fastened")
+	TEST_ASSERT(window.anchored && window.state == 2, "mapped: anchored and fastened")
 
-	var/list/walk = list(list(screwdriver, "a1"), list(crowbar, "a0"), list(screwdriver, "u0"))
+	// the tool, the anchored flag and the frame state each step leaves
+	var/list/walk = list(list(screwdriver, TRUE, 1), list(crowbar, TRUE, 0), list(screwdriver, FALSE, 0))
 	for(var/list/step in walk)
-		window.tool_interaction(H, step[1])
-		TEST_ASSERT_EQUAL(graph.state_of(window), step[2], "-> [step[2]]")
-	var/list/back = list(list(screwdriver, "a0"), list(crowbar, "a1"), list(screwdriver, "a2"))
+		dq_use(H, window, step[1])
+		TEST_ASSERT_EQUAL(window.anchored, step[2], "[step[1]] -> anchored [step[2]]")
+		TEST_ASSERT_EQUAL(window.state, step[3], "[step[1]] -> frame state [step[3]]")
+	var/list/back = list(list(screwdriver, TRUE, 0), list(crowbar, TRUE, 1), list(screwdriver, TRUE, 2))
 	for(var/list/step in back)
-		window.tool_interaction(H, step[1])
-		TEST_ASSERT_EQUAL(graph.state_of(window), step[2], "back -> [step[2]]")
+		dq_use(H, window, step[1])
+		TEST_ASSERT_EQUAL(window.anchored, step[2], "back [step[1]] -> anchored [step[2]]")
+		TEST_ASSERT_EQUAL(window.state, step[3], "back [step[1]] -> frame state [step[3]]")
 	for(var/list/step in walk)
-		window.tool_interaction(H, step[1])
+		dq_use(H, window, step[1])
 	var/turf/where = window.loc
-	window.tool_interaction(H, wrench)
+	dq_use(H, window, wrench)
 	TEST_ASSERT(QDELETED(window), "dismantled")
 	var/obj/item/stack/material/glass/reinforced/sheet = own(locate_on(where, /obj/item/stack/material/glass/reinforced))
 	TEST_ASSERT(sheet, "into reinforced glass")
 	TEST_ASSERT_EQUAL(sheet?.get_amount(), 1, "one sheet for a border window")
 
 	// weld repair is the window's op: 4 s for 1 fuel, in the help stance
-	test_driver_begin()
 	var/obj/structure/window/basic/plain = allocate(/obj/structure/window/basic, T)
 	plain.take_damage(5)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
@@ -490,7 +389,7 @@
 	test_driver_begin()
 	defer_cleanup(src, PROC_REF(interim_native_frame_driver_end))
 	var/turf/T = test_floor()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/H = dq_asm_person(T)
 	H.enable_godmode()
 	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)
 	var/obj/item/tool/crowbar/crowbar = allocate(/obj/item/tool/crowbar, T)

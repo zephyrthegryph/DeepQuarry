@@ -17,7 +17,7 @@
  *		requires = list(REQ_REACH_ADJACENT)
  *		effect = /obj/machinery/proc/toggle_maintenance_panel
  *
- * Offering one: atom types add interaction paths in declare_interactions().
+ * Offering one: a capability builds its entries (cap_interactions()).
  * applies_to() then filters per target (a behaviour flag, for example); an
  * interaction that doesn't apply is never shown. One that applies but whose
  * `requires` fails is shown as blocked, with the reason.
@@ -263,7 +263,7 @@
 
 /**
  * Calls `effect` and returns whether it ran (TRUE) or declined (FALSE), so an
- * entry moves on to the next candidate. Overridden by /datum/interaction/generic
+ * entry moves on to the next candidate. Overridden by subtypes
  * for shapes that are always meant once reached (self-use, hand, alt-click):
  * their effect proc need not return TRUE itself, so a plain existing proc can
  * be pointed at directly with no wrapper.
@@ -283,8 +283,7 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 /proc/init_interactions_by_type()
 	var/list/by_type = list()
 	for(var/datum/interaction/path as anything in subtypesof(/datum/interaction))
-		// Construction edges belong to their graphs (construction.dm), not this registry.
-		if(!initial(path.id) || ispath(path, /datum/interaction/construction))
+		if(!initial(path.id))
 			continue
 		by_type[path] = new path
 	return by_type
@@ -300,56 +299,7 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 				stack_trace("Duplicate interaction id [interaction.id] ([path])")
 				continue
 			by_id[interaction.id] = interaction
-	return by_id[id] || construction_edge_by_id(id)
-
-/**
- * Compact interaction specs (doc/rewrite/interactions.md §5a): built with the
- * INTERACT_* macros (code/__defines/interactions.dm), returned from an
- * override of get_interactions(), e.g.
- *
- *   /obj/item/binoculars/get_interactions()
- *       var/static/list/L = list(
- *           INTERACT_USE("Zoom", PROC_REF(zoom)),
- *       )
- *       return L
- *
- * A proc-local `var/static/list`, not a plain var default: a type-level list
- * *default* (`var/list/foo = list(...)`) is reallocated per instance in DM
- * (AGENTS.md §3a's list-allocation anti-pattern), but a `var/static/list`
- * inside a proc is allocated once, ever, shared by every instance of every
- * type that inherits the proc - the idiom AGENTS.md already prescribes for
- * per-subtype constant tables. Turned into interned /datum/interaction/generic
- * singletons by declare_interactions() below (dq_interaction_from_spec(),
- * compact.dm) - one singleton per distinct spec, shared further across types
- * whose get_interactions() names the same inherited proc.
- *
- * A subtype's override REPLACES its parent's, like any other proc override -
- * it does not merge. A subtype that wants both its own specs and its parent's
- * uses declare_interactions() instead (its ..() chain is the proven one every
- * full-form interaction already relies on) and builds its own entry directly
- * with dq_interaction_from_spec():
- *
- *   /obj/item/assembly/signaler/declare_interactions(list/into)
- *       into += dq_interaction_from_spec(type, INTERACT_ITEM("Transfer", PROC_REF(interaction_transfer)))
- *       ..()
- */
-/atom/proc/get_interactions()
-	return null
-
-/**
- * Adds the interaction types this atom offers to `into`. Types add theirs and
- * call ..() to inherit. Called once per type (the result is cached), so it
- * must not depend on instance state: use applies_to() for that.
- *
- * `into` takes either a /datum/interaction type path (the full datum form,
- * looked up in GLOB.interactions_by_type) or a live /datum/interaction
- * instance (what the compact form and dq_interaction_from_spec() add).
- */
-/atom/proc/declare_interactions(list/into)
-	var/list/specs = get_interactions()
-	if(specs)
-		for(var/i in 1 to length(specs))
-			into += dq_interaction_from_spec(type, specs[i])
+	return by_id[id]
 
 /// The interactions this atom's type offers, as shared singletons. Cached per type.
 /proc/interaction_candidates(atom/target)
@@ -358,22 +308,10 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 DECLARE_SHARED_CACHE(interaction_candidates, GLOBAL_PROC_REF(build_interaction_candidates), SC_NEVER)
 
 /proc/build_interaction_candidates(atom/target)
-	var/list/candidates
-	var/list/entries = list()
-	target.declare_interactions(entries)
 	// Capability entries, in capabilities() order (code/datums/capabilities/).
-	entries += cap_interactions(target)
-	candidates = list()
-	for(var/entry in entries)
-		var/datum/interaction/interaction = istype(entry, /datum/interaction) ? entry : GLOB.interactions_by_type[entry]
-		if(!interaction)
-			stack_trace("[target.type] declares [entry], which is not a registered interaction")
-			continue
+	var/list/candidates = list()
+	for(var/datum/interaction/interaction as anything in cap_interactions(target))
 		candidates |= interaction
-	// A declared emag (DECLARE_EMAG, code/datums/sys/emag.dm) is an interaction of the type.
-	var/datum/interaction/emag = emag_interaction_for(target)
-	if(emag)
-		candidates |= emag
 	return candidates
 
 /// Called on the target after an interaction's effect ran: a player (or program) changed it. Types

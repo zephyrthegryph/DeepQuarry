@@ -1,7 +1,6 @@
-// Ability keybinds (doc/rewrite/rules.md §5, doc/rewrite/interactions.md §3).
-// One row per ability is generated into keybinding_definitions()
-// (keybinding_defaults.dm); every row's command names this one verb with the
-// ability's id, mirroring the ".input-category" pattern in hover.dm.
+// Ability keybinds. One row per ability op is generated into keybinding_definitions() (keybinding_defaults.dm); every row's command names this
+// one verb with the op's key (the ABILITY_ID_* defines), mirroring the ".input-category" pattern in hover.dm. The verb only starts the op: the
+// grant, the requirements and the cost are the op's.
 
 /client/verb/use_ability(id as text)
 	set name = ".use-ability"
@@ -10,4 +9,4 @@
 
 	if(!isliving(mob))
 		return
-	dq_use_ability(mob, id)
+	perform_op(mob, mob, id, null, ORIGIN_HOTKEY)

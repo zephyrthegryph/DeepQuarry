@@ -3959,3 +3959,107 @@ recycling panels, space vines and the maintenance vendor glow now draw through `
 
 * **Lockpick on a simple door.** The legacy pick worked from the lockpick's `afterattack()` after the door's item handler ran. The door's handler hit the door with the pick first (`breakable`); it now returns `OP_PASS` for a lockpick so the pick's own `pick` op works the lock and the door is no longer struck.
 * **Sink items.** The sink's item and hand washes refuse a second wash through `claims()` ("in use") instead of the sink's own "Someone's already washing here." text.
+
+## Timed actions round 2: menu pins (rewrite/timed)
+
+Re-blessed rows of `obj.item.ghost_trap`, `obj.item.paicard`, `obj.item.tank` (and `.phoron`, `.jetpack`), `obj.item.toy.minigibber`. Nothing is lost from the base item ops: every key list still holds `pick_up_item`, `move_to_top` and `toggle_digestable`. The classes:
+* **A catch-all item or hand op narrowed.** The minigibber's `feed` took any held item and declined all but figures; it is now `item(/obj/item/toy/figure)` and `item(/obj/item/toy/character)` with a `when()`, so a screwdriver or any other item shows `nothing` instead of `Feed`. The ghost trap's `hand` op ("Use", it declined for every click that was not a release or a deactivation) is gone; a bare-hand click on a trap now reads `Pick up`, the base item's op the old op declined to. The tank's `tank_item` still takes every item; `attach_assembly` is new for an assembly holder (its refusal "You need to wire the device up first" is the op's `because`).
+* **New ops.** `deploy`, `deactivate`, `free_occupant` (ghost trap), `attach_assembly` (tank), `open_panel` and the seven `install_*` ops (pAI card), with `Install part` rows for each part type and its refusal when the socket is filled.
+
+## Re-land of leftovers and proj-hooks (rewrite/reland)
+
+* **Conversion pins, emag key rename** (`snapshots/pins/mob.living.silicon.robot.txt`, `mob.living.silicon.robot.platform.txt`; 33 rows). The leftovers lane's emag conversion replaced the single `emag`
+  interaction key with the ops `emag.subvert` and `emag.use`. Consequences, all one change: the `keys:` row changes; the "Emag" menu rows (the greyed "needs a cryptographic sequencer" entries for each
+  hand, and the sequencer's own "Emag" entry) are gone because the ops are not offered in the menu; a human clicking with a sequencer on the platform reads `Click: Use` where it read
+  `nothing` / `Click: Platform item`.
+* **Hit pins** (`snapshots/hit_pins/`, 174 rows, seven types: energy_field, plant, ammo_magazine.smart, assembly.mousetrap, gun.energy, gun.energy.chameleon, modular_computer). Every class has one cause or the next:
+  * `refresh_queued: 131071 -> 0` and `refresh_bits: N -> 0`: a thing made for the pin still has its first refresh pending when the trigger runs; the pin's drain after the hit flushes it (engine refresh, `code/engine/change/refresh.dm`),
+    so every trigger of those types now shows the flush, and the former `nothing` rows (emag, emp 2, explosion 3, projectile, thrown) became these rows.
+  * `icon_state`, `light_*`, `color`, `disguise_state` rows on `energy_field` (`shield` -> `shield_broken`), `plant` (`bush4-1` -> `mushroom7-0`), `gun.energy` (`energy` -> `energy50/75/100`) and `gun.energy.chameleon`
+    (`null` -> `deagle`): the same first flush draws the type's look for the first time; the old rows were recorded after a draw that had already landed (`energy100` -> `energy50`), now the base is the undrawn `energy`.
+    The values drawn are the type's initial look, unchanged.
+  * `plant` emag: `periodic_pipe: null -> /datum/cadence/plants` is now `growing: 0 -> 1` and `om_rec` (the growth `every()` is keyed on the tracked `growing`, the periodic pipe being retired).
+  * Nothing in these rows is a change in what a hit does. `dq_hit_pin` leaves `tools/ci/known_failures.txt`.
+* **Projectile hit action.** A projectile's hit action (the `/datum/act/hit/projectile` hooks) now starts in `bullet_act()` before the round's effects (stun, embed, autopsy, reagents), so an `instead()` hook
+  stops all of them, a zero-damage round (a taser dart) reaches the hook, and the hook runs once per hit (the damage packet reuses the open action: `projectile_hit_begin()` / `projectile_hit_end()`).
+
+## Loot piles: the search op (rewrite/loot, Option B of `proposals/loot_and_map_resolvers.md`)
+
+The search of a loot pile or trash pile is `op("search", hand(), ..., needs(req_loot_unsearched(), req_loot_not_picked_clean()), ..., wait(...), loot_rolls())`
+(`code/library/loot/loot_search.dm`); the roll is the same draw as before (`loot_search_roll()`, the proc `loot_pile_search()` became), with the same seeds, tiers and
+messages. The search pin's rows are byte-identical (its driver runs the requirement's refusal and then the roll); the classes below are what the op path changes.
+
+* **The two refusals come first.** "The X has been picked clean." and "You can't find anything else vaguely useful in the X.  Another set of eyes might, however." were said
+  after the 4 to 6 second wait; they are requirements now, refused at the click (nothing is spent, no wait), and the menu greys the search out with the same reason.
+* **A searcher who already searched cannot flush out a trash pile's hider.** The hider's 50 percent chance to leap out used to run before the pile's refusals; it is the
+  effect's `unless = PROC_REF(hider_leaps_out)` now, after the requirements.
+* **State.** The per-pile `searchedby` lists (an `ALLOW(instance_list)` each) and the global `GLOB.loot_times_searched` (by `REF()` text, never freed) are two keyed
+  stats on the pile: `STAT_LOOT_SEARCHED` (searcher key -> marked) and `STAT_LOOT_FOUND` (key -> searches that yielded something; the sum is what depletion counts). They go
+  with the pile. A searcher without a ckey (a test mob, an NPC) is never marked, so is never refused as "already searched"; its yields count under `(no key)`.
+
+## Interactions to ops (rewrite/interactions)
+
+Every site that declared `DECLARE_INTERACTIONS`, `EXTEND_INTERACTIONS` or a `/datum/interaction` subtype in production code is an op now. The forms are deleted and hard-banned
+(`[lint.legacy_forms.lists] banned` in `tools/ci/lint_scopes.toml`): `DECLARE_INTERACTIONS`, `EXTEND_INTERACTIONS`, every `INTERACT_*` spec, `get_interactions()` /
+`declare_interactions()`, `dq_interaction_from_spec()`, `run_interaction_entry()`, `DECLARE_EMAG*`, `/datum/interaction/{construction,ability,emag,generic}`, `/datum/construction_graph`,
+`grant_ability()` / `revoke_ability()`. What is still there is the `/datum/interaction` base and the `cap_op()` / `cap_slot()` bridge, because `/obj/machinery/computer/med_data` (Codex's
+`code/game/machinery`) still declares its ID slot and records window through `capabilities()`.
+
+* **Living mobs:** the eight defaults (help, shove, take hold, punch with a hand; use on, shove with, hold with, hit with an item) are `touch_*` / `hit_*` ops in `CAPABILITIES(/mob/living)` at
+  `OP_PRIORITY_DEFAULT`. A swing's click parameters and modifier (a cleave's 0.5, an off-hand swing) are set around the whole swing in `resolve_attackby()`, not inside `attackby()`.
+  `attackby()` is the gate (`attackby_stopped()`) and `attack_hand()` is `hand_gate()`: code that calls `M.attackby(W, user)` directly no longer reaches the hit; use `item_used_on(W, user)`
+  (the holder's forward to the creatures inside, the cyborg's radio forwards).
+* **Cyborgs:** crowbar, welder, wirecutter / multitool, screwdriver and wrench on a chassis, the item and touch handlers and the AI's shell deploy are `robot_interactions()` ops (the `*_act`
+  overrides are deleted). The crowbar and welder answer outside harm intent only, as before. The wrench takes `wait(2 SECONDS)` with a start message. The old "Block drag" entry is gone: it
+  swallowed a drag nothing else took, and `MouseDrop_T` now does nothing by default.
+* **Gripper:** the pocket ring is the `pocket_menu` op (`asks()` radial, `claims(CLAIM_TARGET)`); closing it without a choice uses the wrapped item (`on_interrupt`), as before. The gripper is
+  "in use" while the op holds it (`op_claimed()`), so the `in_radial_menu` var is gone and a second click gets the engine's "claimed" refusal. An answer dropped for being out of reach also
+  falls through to the wrapped item (before: nothing).
+* **Abilities (robot, drone, platform, shadekin, attack variants):** each ability is an op with `menu(button =, bind =)` in a capability, granted with `grant()`. The keybind ids and `.use-ability`
+  keys are kept (`ability_<old id>`; the op key is `<capability>.<op>`). Targeted abilities (regenerate other, robot nom, robot mount) ask for a choice among adjacent candidates instead of
+  taking the hovered target. Dark maw and dark tunnelling are `wait()` channels. Shadekin energy is a requirement plus a spend in the effect (no `RES_DARK_ENERGY` adapter reads the shadekin
+  state yet); the phase shift's watcher cost is recomputed in the effect, not cached in a mob var. Disarm and Grab on a living target are ops (`attack_variants.disarm` / `.grab`), not ranked by combat mode.
+* **Construction:** vehicle and bot assemblies and the mecha chassis are `construction()` ladders. Wall, floor, window, girder and mech-maintenance steps are ops with `when()` conditions on
+  their existing state vars (`construction_stage`, `anchored`, `state`, ...), not ladders: other code writes those vars, and a ladder would be a second copy of the stage. Tool sounds, volumes
+  and waits follow the tool profile, not the old per-edge values (wall cut by an energy blade or pickaxe scales by the tool speed; the floor plating cut is now scaled). A chassis undo
+  refunds exactly what the step took in (the micro mechs' steel and plasteel refunds become the 5 that went in). The old "Next: ..." step lines in examine and menus are gone.
+* **Emag:** the legacy `DECLARE_EMAG` path had no users left; `emag_target()` runs the target's `emag.subvert` op only, and the card's overrides in `cards.dm` are deleted.
+* **Replicator, sticky notes, slimes, holders:** insert is an op with a `req()` that keeps `can_insert()`'s reason; a sticky note's pick-up extends the item's `pick_up_item` op; a xenobio slime's
+  wrestle-off is an op that only answers while it eats someone; the holder's item op passes the input on (`passes()`), as the old handler did.
+* **Conditions of the state-machine ops (wall, floor, window, girder, mech, wreckage, secbot arm and leg, slime, cyborg shell and dents, gripper, replicator):** they read plain vars
+  (`state`, `construction_stage`, `salvage_num`, `loc`, `flooring.flags`...) and are wrapped in `read_once()`: they are asked when the click is made and not re-asked while the op waits.
+  An op with a `wait()` whose state changes underneath it (a second person finishing the same step) is no longer cancelled by that change; it commits on its own check. Making those vars
+  `TRACKED` is the follow-up that gives them the re-check back; it needs every writer behind the generated setters.
+* **Op order:** ops of one type that answer the same tool in different states (mech maintenance, window, girder, wall) are ordered by tier (`OP_PRIORITY_PART - n`, `OP_PRIORITY_NORMAL - n`) instead of
+  `priority(above(...))`, which the `op_order` ceiling forbids adding. Their `when()` conditions are disjoint, so the tiers change no click.
+* **Questions of abilities:** the robot name, drone mail tag and drone shell are `asks()` steps now. A cancel does what the old cancel-answer did through `on_interrupt()` (the default name, a cleared
+  tag); a cancel at the drone's eye question applies the shell with what was answered so far (it used to go on to the plating question). The megaphone's shout and settings are `asks()`; the
+  robot recolour opens its window through `asks()` and applies in place.
+* **Replicator insert:** the requirement is `canremove` only (what is in a hand needs no accessibility check); the "something is in the way" warning of `canUnEquip()` is gone from the menu.
+* **Chassis pictures:** the mecha chassis shows the "+o" overlay of each part from its tracked `parts_mask` (`draw()`), and a secbot assembly shows the hole, eye and arm of the stages built
+  (`built()`); the raw `add_overlay()` writes are gone.
+* **Emag:** a human's sabotage of a robotic limb and a cyborg's cover, interface and operator-seat emag are the `emag()` capability (repeatable, unpowered). The card spends one use on every
+  committed try (a failed hack, assigning the operator), a try that did nothing (cover already open, panel exposed) declines and the card goes on as an ordinary item, and the holder's
+  `EMAG_EMAGGED` key is set. The cardless `emag_target()` reaches the same effect through the `emag.subvert` op.
+* **Clicks that skip the inbox:** the legacy entry procs (`attack_hand`, `attackby`, `attack_self`, `click_alt`, `MouseDrop_T`) no longer run ops; a player's click reaches them in the inbox
+  (`input_resolve_click()`). A click that reaches the router another way (`route_click()`: an AI hotkey, a card machine, a test) now resolves the ops of the target, the held item and the
+  actor first, as the inbox does, and a tool's own act or an item's plain use called by code (`try_interaction()`) falls back to the same resolution (`try_engine()`), narrowed to the tool
+  quality it asked for. `GLOB.op_click_resolved` keeps a click from resolving twice. A right click is a gesture only for that fallback (the secondary use of a tool).
+* **Empty-hand ops:** the hand ops that were `EMPTY_HAND` / `INTERACT_HAND` entries answer an empty hand only again (`when(req_empty_hand())`): the living touch defaults, the cyborg's pet, tap,
+  hold and punch, the desk bell, the slime wrestle-off and a chassis giving up its cell. An item in hand reaches the item ops instead.
+* **Mecha ladders:** a welder step of the chassis ladder burns no fuel again (`costs(RES_FUEL, 0)`, the old `remove_fuel(0)`). Where the tool that undoes a step also builds the next, a click builds;
+  the way back is the menu entry `construction.undo:<stage>`.
+* **Cyborg tools in harm intent:** the crowbar and welder acts answer `NONE` (not `SKIP_TO_ATTACK`) when no op takes them; the swing follows all the same.
+* **Pins blessed with this conversion (`dq_conversion_pin`, `dq_hit_pin`, the i7 snapshots):** by class, none of them a click that stopped answering.
+  - A holder's abilities (`when(req_self())`) are in its own menu only. The legacy pins listed every ability on every living mob as "(refused: you don't have that ability)".
+  - The eight living defaults and the attack variants are listed with their label for every stance (`Help`, `Shove`, `Take hold`, `Punch`, `Use on`, `Shove with`, `Hold with`, `Hit`) and
+    no longer carry "(refused: combat mode is off)" / "(refused: hold Grab)": a stance narrows a click, not a menu pick. A plain click still picks by stance (`click:` rows read `Click: Help`
+    where the legacy pins read `nothing`, because the defaults were not visible to the resolver).
+  - A tool or item op is listed only for a held item that fits its input; the rows "(refused: needs a welder)" / "(refused: needs a Ripley Torso)" are gone.
+  - Construction ladders, ability, mecha, girder, window, floor, wall, cyborg and replicator rows carry the op labels (`Build frame one leg`, `Cut through the plating`, `Insert`) in place of
+    the legacy edge names; the `keys:` rows list op keys, not interaction ids.
+  - The hit pin's rows are what current `origin/master` records already (its recorded rows were stale: `emag` on an energy field, plants, chameleon guns); the branch adds only the
+    `refresh_queued` rows of `mecha_parts/component` and `mecha_tracking`, which the chassis `draw()` brings.
+  - The i7 snapshots record the legacy resolver's ids and blocked reasons: the construction edges, the silicon equip-module spec and the disposal ids are ops now.
+  - The look state pin gains the cyborg `shell` rows (`shell=1`/`2` drops the eyes, `shell=0` brings them back; `robot_look.dm` draws `!shell || deployed`): the robot's analyzer key moved with
+    this branch, so the type was probed again and its recorded rows, never extended since the shell state was tracked, were completed.

@@ -1,7 +1,7 @@
 // The gate fixtures of E2 (doc/rewrite/final_api.html, section 19 "The seven workers", "E2, parts": "One op through each input kind (hand, item,
 // in-hand, menu, drag, UI, topic, inside) resolves to its intended winner; a refusal shows its reason; asks() cancel leaves costs unspent, and an effect
 // written above an asks() is a build error; wait() is cancelled with feedback when the target is deleted; two ops with the same input, intent and
-// tier are a build error; explain_click matches a golden; a legacy DECLARE_INTERACTIONS entry resolves beside a new op").
+// tier are a build error; explain_click matches a golden").
 // Test-only types, compiled under UNIT_TESTS only (code/modules/unit_tests/dq_e2_parts_tests.dm drives them).
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -127,27 +127,5 @@ TRACKED(/obj/e2_lever, pulled)
 
 CAPABILITIES(/obj/e2_lever)
 	op("pull_slow", hand(), wait(2 SECONDS), toggles(nameof(pulled)), logs(LOG_GAME))
-
-/// A new op and a legacy DECLARE_INTERACTIONS entry on one type: a plain click is the new op's, an alt-click the legacy entry's.
-/obj/e2_mixed
-	name = "e2 mixed"
-	var/waved = 0
-	var/legacy_alt_by
-	var/legacy_used = 0
-
-CAPABILITIES(/obj/e2_mixed)
-	op("wave", hand(), then(PROC_REF(note_wave)))
-
-DECLARE_INTERACTIONS(/obj/e2_mixed, \
-	INTERACT_ALT(null, PROC_REF(legacy_alt)))
-
-/obj/e2_mixed/proc/note_wave(datum/act/op/A)
-	waved++
-	return OP_OK
-
-/obj/e2_mixed/proc/legacy_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	legacy_used++
-	legacy_alt_by = "[user.type]"
-	return TRUE
 
 #endif

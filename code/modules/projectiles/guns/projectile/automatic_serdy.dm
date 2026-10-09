@@ -226,11 +226,11 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hunter)
 		if(istext(refusal))
 			to_chat(A.actor, span_warning(refusal))
 		return OP_DECLINE
-	serdy_hunter_verb_scope(A.actor, A.held, null)
+	serdy_hunter_verb_scope(A.actor, A.held)
 	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope(mob/user, obj/item/held)
 	toggle_scope(2.0, user)
 
 // AR Variants
@@ -481,11 +481,11 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/mosin/scoped)
 		if(istext(refusal))
 			to_chat(A.actor, span_warning(refusal))
 		return OP_DECLINE
-	serdy_mosin_verb_scope(A.actor, A.held, null)
+	serdy_mosin_verb_scope(A.actor, A.held)
 	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope(mob/user, obj/item/held)
 	toggle_scope(2.0, user)
 
 /obj/item/gun/projectile/automatic/serdy/type901
@@ -558,11 +558,11 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/awp)
 		if(istext(refusal))
 			to_chat(A.actor, span_warning(refusal))
 		return OP_DECLINE
-	serdy_awp_verb_scope(A.actor, A.held, null)
+	serdy_awp_verb_scope(A.actor, A.held)
 	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope(mob/user, obj/item/held)
 	toggle_scope(2.0, user)
 
 /obj/item/gun/projectile/automatic/serdy/hectate
@@ -605,11 +605,11 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
 		if(istext(refusal))
 			to_chat(A.actor, span_warning(refusal))
 		return OP_DECLINE
-	serdy_hectate_verb_scope(A.actor, A.held, null)
+	serdy_hectate_verb_scope(A.actor, A.held)
 	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope(mob/user, obj/item/held)
 	toggle_scope(2.0, user)
 
 /obj/item/gun/projectile/automatic/serdy/memegun

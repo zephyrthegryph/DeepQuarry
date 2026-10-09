@@ -269,6 +269,21 @@
 /proc/arg(name, datum/schema/schema = null, from = null, optional = FALSE, among = null)
 	return part_make(/datum/entry/part/ui_arg, list("name" = name, "schema" = schema, "from" = from, "optional" = optional, "among" = among))
 
+/// takes("name", ...): the values a caller outside the op's own input may pass it: perform_op(actor, target, key, held, origin, authority, with = list("name" = v)).
+/// The op reads one with A.arg("name") in a wait(PROC_REF(x)), a requirement, a handler or then(); a value the op does not name is dropped (and logged).
+/// Not for a window or topic op, whose arg(name, schema) are validated for what a player sent; this is for the game's own hooks (an unbuckle, a resist, a
+/// retried move), which already hold the values.
+/proc/takes(...)
+	var/list/names = list()
+	for(var/name in args)
+		if(istext(name))
+			names += name
+	return part_make(/datum/entry/part/takes, list("names" = names))
+
+/datum/entry/part/takes
+	part_name = "takes"
+	stages = PART_STAGE_MATCH
+
 // ---- select parts (each replaces one column of what the binding implies) ----
 
 /datum/entry/part/select
@@ -371,12 +386,29 @@
 // ---- Wait: wait(t), asks(), confirms(), captures() ----
 
 /// wait(t, keeps = WAIT_KEEPS_DEFAULT): a timed wait, scaled by the held tool's speed. `t` is a number of deciseconds, or a PROC_REF(x) that returns one.
-/proc/wait(t, keeps = WAIT_KEEPS_DEFAULT)
-	return part_make(/datum/entry/part/wait, list("t" = t, "keeps" = keeps))
+/// `repeats` (PROC_REF(x), x(datum/act/op/A) reads and returns a boolean, the shape of asks(repeats =)): after each lap, once the keeps and the
+/// requirements hold, x runs; while it returns TRUE the same wait starts again (t is read again, so a lap may be shorter than the last). The whole series is
+/// ONE op: the claims, the keeps, the progress and the begins() message belong to it, the costs are reserved once after the last lap, and then() runs once at
+/// the end. `after_step` (PROC_REF(y), y(datum/act/op/A)) runs the effect of each finished lap (a bag filled, a notch drawn), before `repeats` is asked;
+/// A.laps() is the number of laps finished including the one that just ended. An interruption ends the series with the laps done so far (the effects of
+/// after_step stay done) and on_interrupt() reads A.laps().
+/proc/wait(t, keeps = WAIT_KEEPS_DEFAULT, repeats = null, after_step = null)
+	return part_make(/datum/entry/part/wait, list("t" = t, "keeps" = keeps, "repeats" = repeats, "after_step" = after_step))
+
+/// wait_until(until = cond, keeps = WAIT_KEEPS_DEFAULT): an unbounded wait, a hold the actor keeps up (pressure on a wound, a grip). It has no length: it ends when
+/// `until` (a condition: a var, a stat, a tree or a PROC_REF x(datum/act/op/A) reads and returns a boolean) holds, re-read whenever something it reads is
+/// published, when release_op(actor, key) lets it go (the op then goes on to its later steps and Do, as after a timed wait), or when a keep breaks or a
+/// requirement now refuses (the op ends with its message and on_interrupt() runs). With no `until` only release_op() or a broken keep ends it. A hold draws
+/// no progress bar. If `until` already holds when the step is reached, the step is skipped. Named `wait_until` because hold() is the stat verb (section 5).
+/proc/wait_until(until = null, keeps = WAIT_KEEPS_DEFAULT)
+	return part_make(/datum/entry/part/wait/open, list("t" = 0, "keeps" = keeps, "until" = until, "open" = TRUE))
 
 /datum/entry/part/wait
 	part_name = "wait"
 	stages = PART_STAGE_WAIT
+
+/datum/entry/part/wait/open
+	part_name = "wait_until"
 
 /// How long the wait lasts (the held tool's speed scales the profile's base: tool_quality(Q, speed = 1.5) makes it shorter).
 /datum/entry/part/wait/wait_time(datum/act/op/A)
@@ -399,8 +431,13 @@
 /// `answerer` (PROC_REF(x), x(datum/act/op/A) returns a mob): this question goes to that mob, not to the actor (a kiosk asks the patient, a cryopod asks the
 /// sleeper). The answer lands in the op like any other. The op ends with the usual feedback to the actor if that mob declines, closes the prompt, is deleted,
 /// cannot act any more or moves out of reach of the actor while the question is open; the same holds if the actor goes. x returning no mob ends the op as failed.
-/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null, ends_on_no = FALSE, repeats = null, answerer = null)
-	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when, "ends_on_no" = ends_on_no, "repeats" = repeats, "answerer" = answerer))
+/// `keeps_answer`: the answer is a thing (an atom: the person a healing is aimed at) and the op keeps it from then on, as it keeps its target: the
+/// later waits end when it is deleted, when it moves away from where it was answered (TARGET_PRESENT) or out of the actor's reach (ADJACENT), and
+/// A.answer_target() is that thing in needs() and then(). Written keeps_answer = PROC_REF(x), x(datum/act/op/A) returns the atom the answer names (a
+/// prompt that lists texts: the limb whose name was picked); TRUE means the answer itself. An answer that names no atom ends the op as failed. Only the
+/// keeps the wait names apply.
+/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null, ends_on_no = FALSE, repeats = null, answerer = null, keeps_answer = FALSE)
+	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when, "ends_on_no" = ends_on_no, "repeats" = repeats, "answerer" = answerer, "keeps_answer" = keeps_answer))
 
 /datum/entry/part/asks
 	part_name = "asks"
@@ -437,8 +474,11 @@
 // ---- costs, cooldown, consumes ----
 
 /// costs(RES_X, n): reserves n of a resource after the last answer, commits after the effects. costs(RES_X, +n) is written costs(RES_X, n, add = TRUE).
-/proc/costs(resource, n = 1, add = FALSE)
-	return part_make(/datum/entry/part/costs, list("resource" = resource, "n" = n, "add" = add))
+/// `n` may be a handler (PROC_REF(x) or CAP_PROC(x), x(datum/act/op/A) returns a number: the charge to drain, the fuel proportional to the damage), asked when
+/// the amount is needed. `locked = TRUE`: for an op that waits, the handler is asked once, when the wait starts, and that amount is what the end of the wait
+/// reserves and commits, whatever the target became meanwhile (the length of a wait and the cost of it come from the same moment).
+/proc/costs(resource, n = 1, add = FALSE, locked = FALSE)
+	return part_make(/datum/entry/part/costs, list("resource" = resource, "n" = n, "add" = add, "locked" = locked))
 
 /datum/entry/part/costs
 	part_name = "costs"

@@ -89,6 +89,10 @@ pub const HOOK_FORMS: &[HookForm] = &[
     HookForm { kw: "remote_because", ctx: Ctx::Op, role: Role::Reason },
     // `asks(..., repeats = PROC_REF(x))`: asked with the op's context after each answer (pending_op request_done)
     HookForm { kw: "repeats", ctx: Ctx::Op, role: Role::Condition },
+    // `wait_until(until = PROC_REF(x))`: the hold's end condition, asked with the op's context whenever something it reads is published
+    HookForm { kw: "until", ctx: Ctx::Op, role: Role::Condition },
+    // `wait(t, repeats = PROC_REF(x), after_step = PROC_REF(y))`: x is asked after each lap (a condition), y runs each finished lap's effect (pending_op step_done)
+    HookForm { kw: "after_step", ctx: Ctx::Op, role: Role::Effect },
     // `asks(..., answerer = PROC_REF(x))`: the mob the question goes to, asked with the op's context when the question opens
     HookForm { kw: "answerer", ctx: Ctx::Op, role: Role::Work },
     HookForm { kw: "every", ctx: Ctx::Timer, role: Role::Work },
@@ -158,7 +162,7 @@ fn hook_ranges(body: &str) -> Vec<(usize, usize, usize)> {
         let prev_ok = start == 0 || !(is_word(b[start - 1]) || b[start - 1] == b'.');
         if prev_ok {
             // `because = PROC_REF(x)` is a named argument, not a call.
-            if matches!(word, "because" | "when" | "repeats" | "answerer" | "remote" | "remote_because") {
+            if matches!(word, "because" | "when" | "repeats" | "answerer" | "remote" | "remote_because" | "until" | "after_step") {
                 let rest = body[i..].trim_start();
                 if rest.starts_with('=') && !rest.starts_with("==") {
                     out.push((HOOK_FORMS.iter().position(|f| f.kw == word).unwrap(), i, i));
@@ -246,7 +250,7 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
             let kw = HOOK_FORMS[idx].kw;
             // A named `when = PROC_REF(x)` / `because = PROC_REF(x)` covers only the reference written right after its `=`, not the next named
             // argument of the same entry (`adjacency(..., when = nameof(v), changed = PROC_REF(y))`).
-            let covers = if matches!(kw, "because" | "when" | "repeats" | "answerer" | "remote" | "remote_because") && s == e { start >= s && start <= s + 64 && body.get(s..start).is_some_and(|t| t.trim() == "=") } else { start >= s && start < e };
+            let covers = if matches!(kw, "because" | "when" | "repeats" | "answerer" | "remote" | "remote_because" | "until" | "after_step") && s == e { start >= s && start <= s + 64 && body.get(s..start).is_some_and(|t| t.trim() == "=") } else { start >= s && start < e };
             if covers && best.map(|b| s >= b.1).unwrap_or(true) {
                 best = Some(r);
             }

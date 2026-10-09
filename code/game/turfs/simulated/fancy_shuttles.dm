@@ -44,7 +44,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 	alpha = 90
 
 // A mapping preview only: discarded at map time.
-MAP_RESOLVER(/obj/effect/fancy_shuttle_floor_preview, GLOBAL_PROC_REF(map_resolve_discard))
+CAPABILITIES(/obj/effect/fancy_shuttle_floor_preview)
+	map_resolver(GLOBAL_PROC_REF(map_resolve_discard))
 
 // Only icon changes are damage
 /turf/simulated/wall/fancy_shuttle
@@ -145,10 +146,10 @@ CAPABILITIES(/turf/simulated/wall/fancy_shuttle)
 	layer = DECAL_LAYER-1
 	var/fancy_shuttle_tag
 
-MAP_RESOLVER(/obj/effect/floor_decal/fancy_shuttle, GLOBAL_PROC_REF(resolve_fancy_shuttle_decal))
-MAP_RESOLVER_VARS(/obj/effect/floor_decal/fancy_shuttle, "fancy_shuttle_tag")
+CAPABILITIES(/obj/effect/floor_decal/fancy_shuttle)
+	configure(map_resolver(GLOBAL_PROC_REF(resolve_fancy_shuttle_decal), vars = list("fancy_shuttle_tag")))
 
-/// MAP_RESOLVER for fancy shuttle floors: cuts this tile's piece out of the helper's split icon,
+/// The map resolver of fancy shuttle floors: cuts this tile's piece out of the helper's split icon,
 /// once the load is in place (the helper may be loaded after the decal).
 /proc/resolve_fancy_shuttle_decal(atom/loc, path, list/varedits)
 	map_resolve_later(GLOBAL_PROC_REF(fancy_shuttle_decal_resolve), get_turf(loc), path, varedits)

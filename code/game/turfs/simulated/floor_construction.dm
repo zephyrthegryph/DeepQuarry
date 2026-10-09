@@ -1,161 +1,72 @@
-/**
- * Floor construction graph (doc/rewrite/interactions.md §10).
- *
- * "floored" (a floor covering) -> "plating" by prying, unscrewing or
- * unwrenching the covering (which one depends on its flooring flags);
- * "damaged" plating -> "plating" by welding the dents out; "plating" -> gone
- * by cutting through it to the base turf. The state is worked out from the
- * floor itself (is_plating(), broken, burnt): nothing extra is stored.
- * Laying a covering on plating stays with the stack (attackby).
- */
-/turf/simulated/floor
-	construction_graph = /datum/construction_graph/floor
+// ---- taking a floor apart, declared ----
+//
+// A floor covering comes up by prying, unscrewing or unwrenching it (which one depends on its flooring flags); damaged plating is welded back
+// to plating; plating is cut through to the base turf. The floor's own vars hold the state (is_plating(), broken, burnt): nothing extra is stored,
+// and the steps are ops that read them. floor_construction() is listed in the floor's CAPABILITIES block (floor_acts.dm). Floor tool work is the
+// help stance's; in any other stance the tool is an item used on the tile (floor_item_*). Laying a covering on plating stays with the stack.
 
-/datum/construction_graph/floor
-	id = "floor"
-	states = list("floored", "damaged", "plating")
-	initial_states = list("floored", "damaged", "plating")
-	state_var = null
-	edge_types = list(
-		/datum/interaction/construction/floor/pry_covering,
-		/datum/interaction/construction/floor/unscrew_covering,
-		/datum/interaction/construction/floor/unwrench_covering,
-		/datum/interaction/construction/floor/weld_dents,
-		/datum/interaction/construction/floor/cut_plating,
-	)
+MSG_DEF_SELF(floor/dents_fixed, "You fix some dents on the broken plating.")
+MSG_DEF(floor/cut_begins, "You begin cutting through %T%.", "%U% begins cutting through %T%.")
+MSG_DEF_SELF(floor/nothing_under, "There is nothing under it to expose by cutting.")
+MSG_DEF_SELF(floor/structures_on, "It has structures that must be removed before cutting.")
 
-/datum/construction_graph/floor/state_of(atom/target)
-	var/turf/simulated/floor/floor = target
-	if(!istype(floor))
-		return null
-	if(!floor.is_plating())
-		return "floored"
-	if(floor.broken || floor.burnt)
-		return "damaged"
-	return "plating"
+/// The ops that take a floor apart.
+/turf/simulated/floor/proc/floor_construction()
+	return list(
+		op("pry_covering", tool(TOOL_CROWBAR), stance(I_HELP), when(TYPE_PROC_REF(/turf/simulated/floor, can_pry_covering)), label("Pry off the floor covering"), wait(0), then(TYPE_PROC_REF(/turf/simulated/floor, covering_pried))),
+		op("unscrew_covering", tool(TOOL_SCREWDRIVER), stance(I_HELP), when(TYPE_PROC_REF(/turf/simulated/floor, can_unscrew_covering)), label("Unscrew the floor covering"), wait(0), then(TYPE_PROC_REF(/turf/simulated/floor, covering_unscrewed))),
+		op("unwrench_covering", tool(TOOL_WRENCH), stance(I_HELP), when(TYPE_PROC_REF(/turf/simulated/floor, can_unwrench_covering)), label("Unwrench the floor covering"), wait(0), then(TYPE_PROC_REF(/turf/simulated/floor, covering_unwrenched))),
+		op("weld_dents", lit_welder(fuel = 0), stance(I_HELP), priority(OP_PRIORITY_PART + 1), when(TYPE_PROC_REF(/turf/simulated/floor, plating_bare)), when(any_of(req_is(nameof(broken)), req_is(nameof(burnt)))), label("Weld the dents out of the plating"), wait(0), says(MSG(floor/dents_fixed)), then(TYPE_PROC_REF(/turf/simulated/floor, dents_welded))),
+		// slow because cutting into space in the middle of the bar is a hostile act; the tool's speed doesn't help
+		op("cut_plating", lit_welder(fuel = 5), stance(I_HELP), when(TYPE_PROC_REF(/turf/simulated/floor, plating_bare)), when(req_is(nameof(broken), FALSE)), when(req_is(nameof(burnt), FALSE)), needs(req(TYPE_PROC_REF(/turf/simulated/floor, plating_has_base), because = MSG(floor/nothing_under)), req(TYPE_PROC_REF(/turf/simulated/floor, plating_clear), because = MSG(floor/structures_on))), label("Cut through the plating"), wait(10 SECONDS), begins(MSG(floor/cut_begins)), then(TYPE_PROC_REF(/turf/simulated/floor, plating_cut))))
 
-// The floor's own vars hold the state; the edges' effects change them.
-/datum/construction_graph/floor/set_state(atom/target, state)
-	return
+/// Bare plating (broken and burnt are tracked and tested by req_is).
+/turf/simulated/floor/proc/plating_bare(datum/act/A)
+	return read_once(is_plating())
 
-/datum/construction_graph/floor/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
-	return
+/turf/simulated/floor/proc/can_pry_covering(datum/act/A)
+	return read_once(!is_plating() && (broken || burnt || (flooring.flags & (TURF_IS_FRAGILE | TURF_REMOVE_CROWBAR))))
 
-/// Floor tool work is declared for I_HELP (the edges' stance). When this quality's edge isn't meant
-/// in the actor's stance, the tool attacks the tile instead (attackby).
-/turf/simulated/floor/interaction_tool_act(mob/user, obj/item/tool, quality, secondary = FALSE)
-	if(isliving(user))
-		for(var/datum/interaction/construction/edge as anything in construction_edges_for(src))
-			if(edge.tool == quality && !edge.is_meant(user, src, tool))
-				return NONE
-	return ..()
+/turf/simulated/floor/proc/can_unscrew_covering(datum/act/A)
+	return read_once(!is_plating() && !broken && !burnt && (flooring.flags & TURF_REMOVE_SCREWDRIVER))
 
-/datum/interaction/construction/floor
-	stance = I_HELP
-	tool_volume = 80
+/turf/simulated/floor/proc/can_unwrench_covering(datum/act/A)
+	return read_once(!is_plating() && (flooring.flags & TURF_REMOVE_WRENCH))
 
-/datum/interaction/construction/floor/pry_covering
-	from_state = "floored"
-	to_state = "plating"
-	step_text = "pry off the floor covering"
-	tool = TOOL_CROWBAR
+/turf/simulated/floor/proc/covering_pried(datum/act/op/A)
+	pry_covering(A.actor)
+	return OP_OK
 
-/datum/interaction/construction/floor/pry_covering/available_on(atom/target)
-	var/turf/simulated/floor/floor = target
-	return floor.broken || floor.burnt || (floor.flooring.flags & (TURF_IS_FRAGILE | TURF_REMOVE_CROWBAR))
+/turf/simulated/floor/proc/covering_unscrewed(datum/act/op/A)
+	to_chat(A.actor, span_notice("You unscrew and remove the [flooring.descriptor]."))
+	make_plating(TRUE)
+	return OP_OK
 
-/datum/interaction/construction/floor/pry_covering/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/turf/simulated/floor/floor = target
-	floor.pry_covering(actor)
-	return TRUE
+/turf/simulated/floor/proc/covering_unwrenched(datum/act/op/A)
+	to_chat(A.actor, span_notice("You unwrench and remove the [flooring.descriptor]."))
+	make_plating(TRUE)
+	return OP_OK
 
-/datum/interaction/construction/floor/unscrew_covering
-	from_state = "floored"
-	to_state = "plating"
-	step_text = "unscrew the floor covering"
-	tool = TOOL_SCREWDRIVER
+/turf/simulated/floor/proc/dents_welded(datum/act/op/A)
+	set_broken(null)
+	set_burnt(null)
+	set_scorch_state(null)
+	restore_floor_integrity()
+	return OP_OK
 
-/datum/interaction/construction/floor/unscrew_covering/available_on(atom/target)
-	var/turf/simulated/floor/floor = target
-	return !floor.broken && !floor.burnt && (floor.flooring.flags & TURF_REMOVE_SCREWDRIVER)
+/// There is a base turf under the plating to expose.
+/turf/simulated/floor/proc/plating_has_base(datum/act/A)
+	return read_once(get_base_turf_by_area(src) && type != get_base_turf_by_area(src))
 
-/datum/interaction/construction/floor/unscrew_covering/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/turf/simulated/floor/floor = target
-	to_chat(actor, span_notice("You unscrew and remove the [floor.flooring.descriptor]."))
-	floor.make_plating(TRUE)
-	return TRUE
+/// No structure stands on the plating.
+/turf/simulated/floor/proc/plating_clear(datum/act/A)
+	return !locate_within(src, /obj/structure)
 
-/datum/interaction/construction/floor/unwrench_covering
-	from_state = "floored"
-	to_state = "plating"
-	step_text = "unwrench the floor covering"
-	tool = TOOL_WRENCH
-
-/datum/interaction/construction/floor/unwrench_covering/available_on(atom/target)
-	var/turf/simulated/floor/floor = target
-	return floor.flooring.flags & TURF_REMOVE_WRENCH
-
-/datum/interaction/construction/floor/unwrench_covering/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/turf/simulated/floor/floor = target
-	to_chat(actor, span_notice("You unwrench and remove the [floor.flooring.descriptor]."))
-	floor.make_plating(TRUE)
-	return TRUE
-
-/datum/interaction/construction/floor/weld_dents
-	feedback = /datum/msg/interaction/construction/floor/weld_dents
-	from_state = "damaged"
-	to_state = "plating"
-	step_text = "weld the dents out of the plating"
-	tool = TOOL_WELDER
-	requires = list(REQ_REACH_ADJACENT, REQ_PROC(/proc/dq_held_welder_lit, "the welding tool must be on"))
-
-/datum/msg/interaction/construction/floor/weld_dents
-	self = "You fix some dents on the broken plating."
-
-/datum/interaction/construction/floor/weld_dents/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/turf/simulated/floor/floor = target
-	floor.set_broken(null)
-	floor.set_burnt(null)
-	floor.set_scorch_state(null)
-	floor.restore_floor_integrity()
-	return TRUE
-
-/datum/interaction/construction/floor/cut_plating
-	start_feedback = /datum/msg/start/interaction/construction/floor/cut_plating
-	from_state = "plating"
-	to_state = CONSTRUCTION_DONE
-	step_text = "cut through the plating"
-	tool = TOOL_WELDER
-	tool_amount = 5
-	tool_volume = 0
-	// Slow because cutting into space in the middle of the bar is a hostile act. The tool's speed doesn't help.
-	duration = 10 SECONDS
-	tool_scaled = FALSE
-	requires = list(
-		REQ_REACH_ADJACENT,
-		REQ_PROC(/proc/dq_held_welder_lit, "the welding tool must be on"),
-		REQ_ON(PRED_TARGET, /turf/simulated/floor/proc/plating_cut_blocker, null),
-	)
-	tags = list(INTERACTION_TAG_CONSTRUCTION, INTERACTION_TAG_HOSTILE)
-
-/datum/msg/start/interaction/construction/floor/cut_plating
-	self = "You begin cutting through %T%."
-	others = "%U% begins cutting through %T%."
-
-/datum/interaction/construction/floor/cut_plating/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/turf/simulated/floor/floor = target
-	playsound(floor, held.usesound, 80, 1)
-	floor.do_remove_plating(get_base_turf_by_area(floor))
-	return TRUE
-
-/// TRUE when the plating can be cut through to what's under it, else why not.
-/turf/simulated/floor/proc/plating_cut_blocker(mob/actor, atom/target, obj/item/held)
-	var/base_type = get_base_turf_by_area(src)
-	if(type == base_type || !base_type)
-		return "there's nothing under [src] to expose by cutting"
-	if(locate_within(src, /obj/structure))
-		return "[src] has structures that must be removed before cutting"
-	return TRUE
+/turf/simulated/floor/proc/plating_cut(datum/act/op/A)
+	var/obj/item/held = A.held
+	playsound(src, held.usesound, 80, 1)
+	do_remove_plating(get_base_turf_by_area(src))
+	return OP_OK
 
 /// Pries the covering off: broken or fragile coverings are destroyed, others come up whole.
 /turf/simulated/floor/proc/pry_covering(mob/user)

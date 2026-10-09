@@ -417,13 +417,10 @@ CAPABILITIES(/obj/item/ammo_magazine/ammo_box)
 	var/weapon_operator_expected = FALSE
 	var/obj/item/weapon_held
 	var/weapon_held_expected = FALSE
-	var/datum/interaction/weapon_interaction
-	var/weapon_interaction_expected = FALSE
 
 CAPABILITIES(/datum/prompt/text/weapon_label_review)
 	ref_one(nameof(weapon_operator), /mob)
 	ref_one(nameof(weapon_held), /obj/item)
-	ref_one(nameof(weapon_interaction), /datum/interaction)
 
 /datum/prompt/text/weapon_label_review/prepare(datum/act/A)
 	. = ..()
@@ -437,14 +434,9 @@ CAPABILITIES(/datum/prompt/text/weapon_label_review)
 	rel_clear(src, nameof(weapon_held))
 	if(captured_weapon_held && !QDELETED(captured_weapon_held))
 		rel_set(src, nameof(weapon_held), captured_weapon_held)
-	var/datum/interaction/captured_weapon_interaction = weapon_interaction
-	weapon_interaction_expected = !isnull(captured_weapon_interaction)
-	rel_clear(src, nameof(weapon_interaction))
-	if(captured_weapon_interaction && !QDELETED(captured_weapon_interaction))
-		rel_set(src, nameof(weapon_interaction), captured_weapon_interaction)
 
 /datum/prompt/text/weapon_label_review/recheck_extra()
-	if((weapon_operator_expected && QDELETED(weapon_operator)) || (weapon_held_expected && QDELETED(weapon_held)) || (weapon_interaction_expected && QDELETED(weapon_interaction)))
+	if((weapon_operator_expected && QDELETED(weapon_operator)) || (weapon_held_expected && QDELETED(weapon_held)))
 		return "gone"
 
 /datum/prompt/choice/weapon_label_review
@@ -453,13 +445,10 @@ CAPABILITIES(/datum/prompt/text/weapon_label_review)
 	var/weapon_operator_expected = FALSE
 	var/obj/item/weapon_held
 	var/weapon_held_expected = FALSE
-	var/datum/interaction/weapon_interaction
-	var/weapon_interaction_expected = FALSE
 
 CAPABILITIES(/datum/prompt/choice/weapon_label_review)
 	ref_one(nameof(weapon_operator), /mob)
 	ref_one(nameof(weapon_held), /obj/item)
-	ref_one(nameof(weapon_interaction), /datum/interaction)
 
 /datum/prompt/choice/weapon_label_review/prepare(datum/act/A)
 	. = ..()
@@ -473,12 +462,7 @@ CAPABILITIES(/datum/prompt/choice/weapon_label_review)
 	rel_clear(src, nameof(weapon_held))
 	if(captured_weapon_held && !QDELETED(captured_weapon_held))
 		rel_set(src, nameof(weapon_held), captured_weapon_held)
-	var/datum/interaction/captured_weapon_interaction = weapon_interaction
-	weapon_interaction_expected = !isnull(captured_weapon_interaction)
-	rel_clear(src, nameof(weapon_interaction))
-	if(captured_weapon_interaction && !QDELETED(captured_weapon_interaction))
-		rel_set(src, nameof(weapon_interaction), captured_weapon_interaction)
 
 /datum/prompt/choice/weapon_label_review/recheck_extra()
-	if((weapon_operator_expected && QDELETED(weapon_operator)) || (weapon_held_expected && QDELETED(weapon_held)) || (weapon_interaction_expected && QDELETED(weapon_interaction)))
+	if((weapon_operator_expected && QDELETED(weapon_operator)) || (weapon_held_expected && QDELETED(weapon_held)))
 		return "gone"

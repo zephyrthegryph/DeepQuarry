@@ -2,12 +2,10 @@ human|none menu: Move To Top
 human|none menu: Pick up
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none click: Click: Pick up
-robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none click: Click: Pick up
-ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
@@ -51,5 +49,5 @@ human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage click: Click: Collect
-keys: collect_item, dismissNotification, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, multitool_blocked, pick_up_item, pry_open, reseal, reset_circuits, rewire, rewire_intact, screwdriver_blocked, setTheme, stuff_in, toggle_digestable, toggle_module, uninstall
+keys: collect_item, dismissNotification, drag_buckle, equip_module, kit_customize, kit_customize_last, move_to_top, multitool_blocked, pick_up_item, pry_open, reseal, reset_circuits, rewire, rewire_intact, screwdriver_blocked, setTheme, stuff_in, toggle_digestable, toggle_module, uninstall
 

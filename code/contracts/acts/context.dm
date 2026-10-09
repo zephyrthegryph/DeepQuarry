@@ -75,6 +75,8 @@
 	/// The fields captured when the op first suspended at an asks()/confirms()/captures() (section 13): name -> value.
 	/// Read through A.captured(nameof(v)), never off the live holder.
 	var/list/captured_values
+	/// wait(repeats =): the laps of the repeating wait finished so far. Read it with A.laps().
+	var/laps_done = 0
 	/// Snapshot names, taken when the op starts: later feedback reads these, never a deleted object.
 	var/held_name
 	var/target_name

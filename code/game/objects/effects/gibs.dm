@@ -66,8 +66,8 @@ GLOBAL_LIST_INIT(gib_pattern_robot, list( \
 	icon = 'icons/effects/map_effects.dmi'
 	icon_state = "gibspawn"
 
-MAP_RESOLVER(/obj/effect/gibspawner, GLOBAL_PROC_REF(resolve_gibspawner))
-MAP_RESOLVER_VARS(/obj/effect/gibspawner, "bloodcolor;fleshcolor")
+CAPABILITIES(/obj/effect/gibspawner)
+	map_resolver(GLOBAL_PROC_REF(resolve_gibspawner), vars = list("bloodcolor", "fleshcolor"))
 
 /proc/resolve_gibspawner(atom/loc, path, list/varedits)
 	var/obj/effect/gibspawner/P = path

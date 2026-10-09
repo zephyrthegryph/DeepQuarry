@@ -21,6 +21,8 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 CAPABILITIES(/obj/item/taperecorder)
+	// A recorder hears what is said around it (the listening registry).
+	membership(joins = REGISTRY_LISTENING_OBJECTS)
 	// The tape fills one second at a time while recording.
 	every(1 SECOND, then(PROC_REF(record_tick)), when = nameof(recording))
 	owns_one(nameof(mytape), /obj/item/rectape, starts = nameof(mytape))
@@ -47,12 +49,6 @@ TRACKED(/obj/item/taperecorder, recording)
 TRACKED(/obj/item/taperecorder, emagged)
 TRACKED(/obj/item/taperecorder, playing)
 TRACKED(/obj/item/rectape, ruined)
-/// A recorder hears what is said around it (the listening registry).
-/obj/item/taperecorder/capabilities()
-	. = ..()
-	. += membership(joins = REGISTRY_LISTENING_OBJECTS)
-
-
 // The requirements as op parts: each old check is TRUE or why not.
 
 /obj/item/taperecorder/proc/has_no_tape(datum/act/op/A)

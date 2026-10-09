@@ -221,15 +221,15 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 
 /datum/tgui_module/robot_ui/proc/ui_act_quick_action_flashlight(datum/act/op/A)
 	var/mob/living/silicon/robot/R = host()
-	dq_use_ability(R, ABILITY_ID_ROBOT_TOGGLE_LIGHTS)
+	perform_op(R, R, ABILITY_ID_ROBOT_TOGGLE_LIGHTS, null, ORIGIN_MENU)
 	. = TRUE
 
 /datum/tgui_module/robot_ui/proc/ui_act_quick_action_sensors(datum/act/op/A)
 	var/mob/living/silicon/robot/R = host()
-	dq_use_ability(R, ABILITY_ID_ROBOT_SENSOR_MODE)
+	perform_op(R, R, ABILITY_ID_ROBOT_SENSOR_MODE, null, ORIGIN_MENU)
 	. = TRUE
 
 /datum/tgui_module/robot_ui/proc/ui_act_quick_action_sparks(datum/act/op/A)
 	var/mob/living/silicon/robot/R = host()
-	dq_use_ability(R, ABILITY_ID_ROBOT_SPARK_PLUG)
+	perform_op(R, R, ABILITY_ID_ROBOT_SPARK_PLUG, null, ORIGIN_MENU)
 	. = TRUE

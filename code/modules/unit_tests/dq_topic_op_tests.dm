@@ -1,5 +1,5 @@
 // A Topic href is an op (doc/rewrite/final_api.html, section 13 "Topic links"): the op whose topic("key") names the href runs through the input
-// inbox with the requirements and refusals of a click, its arg() schemas check the href's values, and an href no op names is the TOPIC_ACTION table's.
+// inbox with the requirements and refusals of a click, its arg() schemas check the href's values, and an href no op names is not answered.
 
 /datum/dq_topic_op_probe
 	var/bumped = 0
@@ -62,12 +62,6 @@ CAPABILITIES(/datum/dq_topic_op_probe)
 /datum/dq_topic_op_probe/proc/do_pick_item(datum/act/op/A, item)
 	last_item = item
 	return TRUE
-
-/datum/dq_topic_op_probe/proc/topic_legacy_row(mob/user, list/args)
-	last_note = "legacy"
-	return TRUE
-
-TOPIC_ACTION(/datum/dq_topic_op_probe, "legacy", PROC_REF(topic_legacy_row))
 
 /// A page with no op of its own: it hands every href to its book.
 /datum/dq_topic_op_page
@@ -135,9 +129,8 @@ TOPIC_ACTION(/datum/dq_topic_op_probe, "legacy", PROC_REF(topic_legacy_row))
 	var/datum/op_result/forwarded = inbox_topic(M, pg, list("plain" = 1))
 	TEST_ASSERT_EQUAL(forwarded?.key, "plain", "an href the page names no op for goes to the datum it forwards to")
 	TEST_ASSERT_EQUAL(pg.book.bumped, 1, "and runs there")
-	// an href no op names is left to the TOPIC_ACTION table (the driver reports no op result for it)
-	TEST_ASSERT_NULL(inbox_topic(M, pg.book, list("legacy" = 1)), "an href only a TOPIC_ACTION row names is not an op")
-	TEST_ASSERT_EQUAL(pg.book.last_note, "legacy", "and the row still runs")
+	// an href no op names reports no op result
+	TEST_ASSERT_NULL(inbox_topic(M, pg.book, list("legacy" = 1)), "an href no op names is not answered")
 
 /datum/unit_test/dq_e2/topic_ref_among_and_gate
 

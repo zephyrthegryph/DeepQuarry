@@ -1,50 +1,60 @@
 //////////////////////////
 ///  REGENERATE OTHER  ///
 //////////////////////////
-// Ported to the ability framework (doc/rewrite/rules.md §5). This is a
-// targeted ability, not a self one: the legacy verb picked its target from a
-// tgui_input_list of nearby mobs (a picker built by hand, then re-validated
-// because the pick was async). Here the target IS the click/Menu target - the
-// Menu on a nearby mob already lists this, with its live cost and adjacency
-// requirement, so there's no separate picker to keep in sync.
+// Shadekin powers that spend energy on themselves or a neighbour (create_shade.dm is the other one). Regenerate other is a targeted ability:
+// it asks which creature next to you to mend, the way the legacy verb did, and checks the pick again when the answer lands.
 
-/datum/interaction/ability/shadekin_regenerate_other
-	id = ABILITY_ID_SHADEKIN_REGENERATE_OTHER
-	name = "Regenerate other"
-	category = ABILITY_CAT_UTILITY
-	requires = list(
-		REQ_CONSCIOUS,
-		REQ_NOT_SELF, // the legacy oview(1) target list never included yourself
-		REQ_REACH(1),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_shadekin, "you aren't shadekin"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_shifted, "you can't use that while phase shifted"),
-		REQ_RESOURCE(/mob/living/proc/dq_regenerate_other_afford),
-	)
-	effect = /mob/living/proc/dq_do_regenerate_other
+MSG_DEF_SELF(shadekin_ability/nobody_near, "There's nothing nearby to regenerate other.")
 
-// pay_cost() is deliberately trivial (see phase_shift.dm's comment): spending
-// there would make the framework's post-pay_cost why_not() recheck fail
-// against the now-lower balance. The spend happens in the effect instead.
+CAPABILITY_DEF(shadekin_utility, CAP_SHADEKIN_UTILITY, key = NONE)
 
-/// TRUE if `actor` can afford the flat 50-energy cost, else a reason.
-/mob/living/proc/dq_regenerate_other_afford(mob/living/actor, atom/target, obj/item/held)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
+/datum/capability/def/shadekin_utility/entries()
+	return list(
+		op("regenerate_other", label("Regenerate other"), menu(button = "Regenerate other", bind = "ability_shadekin_regenerate_other"),
+			when(req_self()), needs(req_conscious(),
+				req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin)),
+				req(TYPE_PROC_REF(/mob/living, ability_not_shifted), because = MSG(shadekin_ability/phase_shifted)),
+				req(TYPE_PROC_REF(/mob/living, ability_can_afford_50), because = MSG(shadekin_ability/low_energy)),
+				req(TYPE_PROC_REF(/mob/living, ability_has_regenerate_candidates), because = MSG(shadekin_ability/nobody_near))),
+			asks(/datum/prompt/choice/ability_pick, fields = list("title" = "Regenerate other", "question" = "Mend whom?", "choices" = computed(TYPE_PROC_REF(/mob/living, ability_regenerate_candidate_choices))), step = "target"),
+			then(TYPE_PROC_REF(/mob/living, ability_regenerate_other))),
+		op("create_shade", label("Create shade"), menu(button = "Create shade", bind = "ability_shadekin_create_shade"),
+			when(req_self()), needs(req_conscious(),
+				req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin)),
+				req(TYPE_PROC_REF(/mob/living, ability_not_shifted), because = MSG(shadekin_ability/phase_shifted)),
+				req(TYPE_PROC_REF(/mob/living, ability_can_afford_25), because = MSG(shadekin_ability/low_energy))),
+			then(TYPE_PROC_REF(/mob/living, ability_create_shade))))
+
+/// The creatures next to the actor, never the actor (the legacy oview(1) list).
+/mob/living/proc/regenerate_candidates()
+	. = list()
+	for(var/mob/living/L in oview(1, src))
+		. += L
+
+/mob/living/proc/ability_has_regenerate_candidates(datum/act/op/A)
+	return length(regenerate_candidates()) > 0
+
+/mob/living/proc/ability_regenerate_candidate_choices(datum/act/op/A)
+	return regenerate_candidates()
+
+/mob/living/proc/ability_can_afford_50(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
+	return !!SK && SK.shadekin_get_energy() >= 50
+
+/// Mends the picked creature, announced by the shadekin.
+/mob/living/proc/ability_regenerate_other(datum/act/op/A)
+	var/mob/living/target = A.step_value("target")
+	if(!istype(target) || !(target in regenerate_candidates()))
+		return OP_FAILED
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
-		return "you aren't shadekin"
-	return (SK.shadekin_get_energy() >= 50) || "not enough energy for that ability"
-
-/// Mends `src` (the target), announced by `actor` (the healer).
-/mob/living/proc/dq_do_regenerate_other(mob/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/mob/living/L = actor
-	var/datum/shadekin/SK = L.get_shadekin_state()
-	if(!SK)
-		return FALSE
+		return OP_FAILED
 	SK.shadekin_adjust_energy(-50)
-	play_sfx(L, SFX_EFFECTS_EMPULSE, 0.75)
-	apply_body_effect(/datum/body_effect/shadekin/heal_boop, 1 MINUTE)
-	act_message(actor, src, others = span_notice("%U% gently places a hand on %T%..."))
-	actor.face_atom(src)
-	return TRUE
+	play_sfx(src, SFX_EFFECTS_EMPULSE, 0.75)
+	target.apply_body_effect(/datum/body_effect/shadekin/heal_boop, 1 MINUTE)
+	act_message(src, target, others = span_notice("%U% gently places a hand on %T%..."))
+	face_atom(target)
+	return OP_OK
 
 /datum/body_effect/shadekin/heal_boop
 	tick_interval = 2 SECONDS

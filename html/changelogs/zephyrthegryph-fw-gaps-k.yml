@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Timed actions: repeating waits, unbounded holds, perform_op arguments, kept prompt answers, balloon refusals and locked costs; the crossbow draw, clockwork rifle recharge, coin press, beehive harvest, wound licking, pressure on a wound, pouch removal, underwater devour, tourniquet cinch and computer weld repair are ops"
+  - bugfix: "A tourniquet refusal, a coin press that cannot make coins and a beehive that cannot be harvested now say why through the op"

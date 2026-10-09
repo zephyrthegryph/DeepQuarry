@@ -1,0 +1,557 @@
+//MAP CONVERTED BY dmm2tgm.py THIS HEADER COMMENT PREVENTS RECONVERSION, DO NOT REMOVE
+"aa" = (
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ab" = (
+/obj/effect/catwalk_plated,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ac" = (
+/obj/effect/decal/warning_stripes,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ad" = (
+/obj/effect/falling_effect,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ae" = (
+/obj/effect/fancy_shuttle_floor_preview,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"af" = (
+/obj/effect/floor_decal,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ag" = (
+/obj/effect/floor_decal/asteroid,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ah" = (
+/obj/effect/floor_decal/fancy_shuttle,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ai" = (
+/obj/effect/floor_decal/reset,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"aj" = (
+/obj/effect/floorbreak,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ak" = (
+/obj/effect/gibspawner,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"al" = (
+/obj/effect/graffitispawner,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"am" = (
+/obj/effect/instantboom{devastation = 0; heavyboom = 0; lightboom = 0; flash = 0},
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"an" = (
+/obj/effect/landmark{name = "blobstart"},
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ao" = (
+/obj/effect/landmark/map_data{height = 1},
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ap" = (
+/obj/effect/low_wall_spawner,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"aq" = (
+/obj/effect/map_helper,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ar" = (
+/obj/effect/map_helper/airlock,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"as" = (
+/obj/effect/mouse_hole_spawner,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"at" = (
+/obj/effect/recycler_beacon,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"au" = (
+/obj/effect/spawner/onetankbomb,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"av" = (
+/obj/effect/wingrille_spawn,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"aw" = (
+/obj/effect/wire_deleter,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ax" = (
+/obj/fiftyspawner{type_to_spawn = /obj/item/stack/rods},
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ay" = (
+/obj/fruitspawner,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"az" = (
+/obj/item/animal_spawner,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"ba" = (
+/obj/item/fossil/base,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"bb" = (
+/obj/item/reagent_containers/food/snacks/bageltwo,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"bc" = (
+/obj/random_multi{id = "dq_pin"},
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"bd" = (
+/obj/tcspawner,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"be" = (
+/obj/random_multi/single_item{id = "dq_pin"; item_path = /obj/item/tool/wrench; weight = 2},
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"bf" = (
+/obj/random/tool,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"bg" = (
+/obj/effect/spawner/parts/t2,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"bh" = (
+/obj/random/mob/sif,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"bi" = (
+/obj/effect/floor_decal/corner/white{dir = 1; color = "#123456"},
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"bj" = (
+/obj/effect/gibspawner/human,
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+"bk" = (
+/obj/effect/map_helper/airlock{name = "dq pin helper"; command = "cycle"},
+/turf/simulated/floor/tiled/steel,
+/area/unit_test)
+
+(1,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(2,1,1) = {"
+aa
+bh
+aa
+aa
+az
+aa
+aa
+ar
+aa
+aa
+aj
+aa
+aa
+ab
+aa
+"}
+(3,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(4,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(5,1,1) = {"
+aa
+bi
+aa
+aa
+ba
+aa
+aa
+as
+aa
+aa
+ak
+aa
+aa
+ac
+aa
+"}
+(6,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(7,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(8,1,1) = {"
+aa
+bj
+aa
+aa
+bb
+aa
+aa
+at
+aa
+aa
+al
+aa
+aa
+ad
+aa
+"}
+(9,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(10,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(11,1,1) = {"
+aa
+bk
+aa
+aa
+bc
+aa
+aa
+au
+aa
+aa
+am
+aa
+aa
+ae
+aa
+"}
+(12,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(13,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(14,1,1) = {"
+aa
+aa
+aa
+aa
+bd
+aa
+aa
+av
+aa
+aa
+an
+aa
+aa
+af
+aa
+"}
+(15,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(16,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(17,1,1) = {"
+aa
+aa
+aa
+aa
+be
+aa
+aa
+aw
+aa
+aa
+ao
+aa
+aa
+ag
+aa
+"}
+(18,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(19,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(20,1,1) = {"
+aa
+aa
+aa
+aa
+bf
+aa
+aa
+ax
+aa
+aa
+ap
+aa
+aa
+ah
+aa
+"}
+(21,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(22,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(23,1,1) = {"
+aa
+aa
+aa
+aa
+bg
+aa
+aa
+ay
+aa
+aa
+aq
+aa
+aa
+ai
+aa
+"}
+(24,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}

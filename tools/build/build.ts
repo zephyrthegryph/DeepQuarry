@@ -16,6 +16,7 @@ import path from 'node:path';
 import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
+import { claimFreePort, shouldRetryBoot } from './lib/free_port';
 import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, withSlot } from './lib/machine_slots';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
@@ -1198,20 +1199,6 @@ function saveBenchIterationDiagnostics(runId: string, iteration: number, run: Wo
 // directory, results file and focus file, and a free TCP port picked by the
 // OS. Nothing is written to a shared source file.
 
-/** A free localhost TCP port, picked by the OS. */
-function freePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.unref();
-    server.on('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      const port = typeof address === 'object' && address ? address.port : 0;
-      server.close(() => resolve(port));
-    });
-  });
-}
-
 function pidAlive(pid: number): boolean {
   if (!pid || Number.isNaN(pid)) return false;
   try {
@@ -1334,7 +1321,8 @@ async function runIsolatedTestWorld(
       fs.writeFileSync(focusFile, `${focus.join('\n')}\n`);
       params['test-focus'] = focusFile;
     }
-    const port = await freePort();
+    let portClaim = await claimFreePort();
+    let port = portClaim.port;
     Juke.logger.info(
       `Test world ${slot.tag}${options.label ? ` (${options.label})` : ''}: ${runBase}.dmb on port ${port}, logs in ${logDir}.`,
     );
@@ -1348,6 +1336,10 @@ async function runIsolatedTestWorld(
     // worktree. A sharded run passes the slot it took with the rest of its group (worldSlot), so no shard queues while another holds one.
     const worldSlot = options.worldSlot !== undefined ? options.worldSlot : await acquireSlot('test_world', `test world ${slot.tag}${options.label ? ` (${options.label})` : ''}`, (m) => Juke.logger.info(m));
     try {
+      for (let attempt = 1; ; attempt++) {
+      const attemptStart = Date.now();
+      daemonError = null;
+      try {
       const result = await DreamDaemon(
         {
           dmbFile: `${runBase}.dmb`,
@@ -1369,10 +1361,20 @@ async function runIsolatedTestWorld(
       daemonExitCode = result.code;
       daemonSignal = result.signal;
       daemonReason = result.watchdogReason ?? null;
-    } catch (error) {
-      // DreamDaemon exits non-zero even on clean runs; the files below decide.
-      daemonError = String(error);
+      } catch (error) {
+        // DreamDaemon exits non-zero even on clean runs; the files below decide.
+        daemonError = String(error);
+      }
+      // A world that died within seconds with no results and no clean marker never booted: its port was taken by another
+      // world between the pick and the bind. Claim another port and launch again.
+      if (!shouldRetryBoot(Date.now() - attemptStart, fs.existsSync(resultsFile), fs.existsSync(`${logDir}/clean_run.lk`), attempt)) break;
+      portClaim.release();
+      portClaim = await claimFreePort();
+      Juke.logger.info(`Test world ${slot.tag} died at boot (attempt ${attempt}); retrying on port ${portClaim.port} (was ${port}).`);
+      port = portClaim.port;
+      }
     } finally {
+      portClaim.release();
       worldSlot?.release();
     }
     let cleanText: string | null = null;
