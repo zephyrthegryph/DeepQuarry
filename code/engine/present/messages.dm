@@ -18,6 +18,8 @@ GLOBAL_LIST_EMPTY(msg_defs)
 	var/span_class = "notice"
 	/// Range for the others line.
 	var/range
+	/// MSG_DISPLAY_*: how a refusal is shown to the actor (MSG_BALLOON declares a balloon alert).
+	var/display = MSG_DISPLAY_CHAT
 
 /// The singleton for a template type.
 /proc/msg_def(msg_type)

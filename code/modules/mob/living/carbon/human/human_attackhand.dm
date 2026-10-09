@@ -517,39 +517,37 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 	Changing targeted zones should also stop do_mob(), preventing you from applying pressure to more than one body part at once.
 */
 /mob/living/carbon/human/proc/apply_pressure(mob/living/user, target_zone)
-	var/obj/item/organ/external/organ = get_organ(target_zone)
-	if(!organ || !(organ.status & ORGAN_BLEEDING) || (organ.is_robotic()))
-		return FALSE
+	// apply pressure as long as they stay still and keep grabbing (the "apply_pressure" op holds); false when it could not start
+	var/datum/op_result/started = perform_op(user, src, "apply_pressure", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("zone" = target_zone, "hand" = user.held_for_ops()))
+	return started.outcome != ACT_REFUSED
 
+MSG_DEF_SELF(human/pressure_taken, span_warning("Someone is already applying pressure there."))
+
+/// The pressure starts: a limb that cannot be pressed (not bleeding, robotic) says nothing, one that someone is pressing already says so; otherwise the
+/// limb is marked, and everyone sees it begin.
+/mob/living/carbon/human/proc/pressure_started(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/organ/external/organ = get_organ(A.arg("zone"))
+	if(!organ || !(organ.status & ORGAN_BLEEDING) || organ.is_robotic())
+		return MSG(req_silent)
 	if(organ.applied_pressure)
-		var/message = span_warning("Someone is already applying pressure to [user == src ? "your [organ.name]" : "[src]'s [organ.name]"].")
-		to_chat(user,message)
-		return FALSE
-
+		return MSG(human/pressure_taken)
 	if(user == src)
 		act_message(user, null, MSG_SELF(span_filter_notice("You start applying pressure to your [organ.name]!")), \
 			MSG_OTHERS(span_filter_notice("%U% starts applying pressure to %THEIR% [organ.name]!")))
 	else
 		act_message(user, src, MSG_SELF(span_filter_notice("You start applying pressure to %T%'s [organ.name]!")), 			MSG_OTHERS(span_filter_notice("%U% starts applying pressure to %T%'s [organ.name]!")))
 	rel_set(organ, nameof(organ.applied_pressure), user)
+	log_game("apply_pressure: [key_name(user)] holds pressure on [src]'s [organ.name]")
 
-	//apply pressure as long as they stay still and keep grabbing
-	//This USED to have a 'target_zone' check that never actually worked so whatever.
-	//Let it be said that it's a feature you can apply pressure to all sites on you all at once.
-	//You're already locking yourself down when you do so.
-	task_start(/datum/task/timed/apply_pressure, user, organ, receiver = src)
-	return TRUE
+/// Switching what the user holds lets go (the old do_mob() check on the active hand: pressing yourself and then grabbing someone else, or the other way).
+/mob/living/carbon/human/proc/pressure_hand_changed(datum/act/op/A)
+	return A.actor?.held_for_ops() != A.arg("hand")
 
-/// Pressure on a bleeding organ (the target), held until the user lets go or moves.
-/datum/task/timed/apply_pressure
-	duration = INFINITY
-	hidden = TRUE
-	complete_proc = /mob/living/carbon/human/proc/pressure_released
-	cancel_proc = /mob/living/carbon/human/proc/pressure_released
-
-/mob/living/carbon/human/proc/pressure_released(datum/task/timed/apply_pressure/task)
-	var/mob/living/user = task.actor
-	var/obj/item/organ/external/organ = task.target
+/// The pressure ends: released, the hand changed, or the user moved.
+/mob/living/carbon/human/proc/pressure_released(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/organ/external/organ = get_organ(A.arg("zone"))
 	if(!organ)
 		return
 	rel_clear(organ, nameof(organ.applied_pressure))

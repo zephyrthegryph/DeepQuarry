@@ -61,6 +61,8 @@
 #define OP_TOPIC_HREF "topic_href"
 /// args key holding step name -> the list of every answer of a repeating asks() step.
 #define OP_STEP_VALUES "step_values"
+/// Prefix of the args key holding a costs(..., locked = TRUE) amount read when a wait started: "cost:" + the resource id.
+#define OP_COST_LOCK_PREFIX "cost:"
 /// How many windows deep a window action is forwarded (interface(forwards = ...)).
 #define OP_UI_FORWARD_DEPTH 3
 

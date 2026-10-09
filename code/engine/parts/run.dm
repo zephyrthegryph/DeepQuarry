@@ -43,6 +43,28 @@
 /datum/act/op/proc/captured(name)
 	return LAZYACCESS(captured_values, name)
 
+/// A value a foreign caller passed with perform_op(..., with = list("name" = v)) to an op that says takes("name"), or null.
+/datum/act/op/proc/arg(name)
+	return LAZYACCESS(src.args, name)
+
+/// wait(repeats =): how many laps of the repeating wait have finished (inside after_step: including the one that just ended; in then(): all of them).
+/datum/act/op/proc/laps()
+	return laps_done
+
+/// asks(keeps_answer = TRUE): the thing the question was answered with, which the op keeps like its target; null before the answer or when the answer is no atom.
+/datum/act/op/proc/answer_target()
+	RETURN_TYPE(/atom)
+	var/datum/request/R = answer
+	if(!R || !oplan)
+		return null
+	for(var/datum/entry/part/asks/Q in oplan.steps)
+		var/keeper = Q.args["keeps_answer"]
+		if(!keeper)
+			continue
+		var/found = istext(keeper) ? op_call(src, keeper) : R.value
+		return isatom(found) ? found : null
+	return null
+
 /// The raw href list a topic op was reached by, or null for any other input.
 /datum/act/op/proc/topic_href()
 	return LAZYACCESS(src.args, OP_TOPIC_HREF)
@@ -95,7 +117,8 @@
 /// /datum/op_result. An op that still waits comes back with a null outcome and the same record is filled in later. `authority` is an AUTH_*
 /// (AUTH_ADMIN with an authority datum for an admin call); `trace` prints the resolution. The legacy perform_op(user, target, text, route, held)
 /// keeps its own implementation for the ops that still are legacy cap_op() entries.
-/proc/perform_op(mob/actor, datum/target, key, held_or_route = null, origin = ORIGIN_AI, authority = null, trace = FALSE)
+/// `with`: the values a game hook passes an op that says takes("name", ...) (a destination, an escape time, a strength); the op reads them with A.arg("name").
+/proc/perform_op(mob/actor, datum/target, key, held_or_route = null, origin = ORIGIN_AI, authority = null, trace = FALSE, list/with = null)
 	// The legacy shape names a ROUTE_* text as the fourth argument.
 	if(!isnull(held_or_route) && !isobj(held_or_route))
 		return operation_compatibility().perform(actor, target, key, held_or_route, isobj(origin) ? origin : null)
@@ -114,7 +137,7 @@
 		TEST_REC_OUTCOME(key, ACT_REFUSED, unknown.reason, actor) // an AI behaviour calls ops speculatively: an op nobody here has is a refusal with a reason, not an error
 		log_game("perform_op(): [target?.type] has no op \"[key]\" (refused: no such op here)")
 		return unknown
-	return op_perform_by_key(actor, target, held, key, origin, authority || AUTH_PHYSICAL, trace)
+	return op_perform_by_key(actor, target, held, key, origin, authority || AUTH_PHYSICAL, trace, with = with)
 
 /// Does the target, the held item or the actor have an op of that key?
 /proc/op_known_anywhere(mob/actor, datum/target, obj/held, key)
@@ -128,7 +151,7 @@
 	return FALSE
 
 /// Resolution by key, then the run.
-/proc/op_perform_by_key(mob/actor, atom/target, obj/held, key, origin, authority, trace, list/arg_values = null)
+/proc/op_perform_by_key(mob/actor, atom/target, obj/held, key, origin, authority, trace, list/arg_values = null, list/with = null)
 	RETURN_TYPE(/datum/op_result)
 	OP_PURE_GUARD("perform_op(\"[key]\") on [target?.type] was run")
 	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, authority, null, key, FALSE)
@@ -144,7 +167,19 @@
 		op_tell(actor, refused.reason)
 		TEST_REC_OUTCOME(key, ACT_REFUSED, refused.reason, actor)
 		return refused
+	if(length(with))
+		arg_values = op_take_args(winner.oplan, with, arg_values)
 	return op_begin(winner, R, arg_values, trace)
+
+/// The values perform_op(with =) passes that the op names in takes(): merged into the op's args. A name the op does not take is dropped and logged.
+/proc/op_take_args(datum/op_plan/P, list/with, list/into)
+	var/list/merged = into ? into.Copy() : list()
+	for(var/name in with)
+		if(!(name in P.takes))
+			log_game("perform_op(\"[P.key]\"): argument \"[name]\" is not in the op's takes() and was dropped")
+			continue
+		merged[name] = with[name]
+	return merged
 
 /// The refusal reason of a resolution with no runnable candidate: the best near-miss's, else why a gate dropped them.
 /proc/op_resolution_refusal(datum/op_resolution/R)
@@ -185,7 +220,11 @@
 	OP_PURE_GUARD("the actor was told something")
 	var/text = reason_text(reason)
 	if(text)
-		actor.op_notify(text)
+		var/datum/msg/shown = ispath(reason, /datum/msg) ? msg_def(reason) : null
+		if(shown?.display == MSG_DISPLAY_BALLOON)
+			actor.op_balloon(text) // a balloon refusal (MSG_BALLOON): over the actor, not in chat
+		else
+			actor.op_notify(text)
 
 // ---- starting an op ----
 
@@ -252,6 +291,11 @@
 		stopped.cancel(/datum/msg/op/stopped)
 	A.started = TRUE
 	if(length(C.oplan.steps))
+		for(var/locked_id in C.oplan.cost_locked)
+			// costs(..., locked = TRUE): the amount is read once, now, and the end of the wait reserves exactly that
+			var/locked_amount = op_cost_amount(C.oplan, C.binding, text2num(locked_id), A)
+			LAZYSET(A.args, "[OP_COST_LOCK_PREFIX][locked_id]", locked_amount)
+			log_game("op [C.oplan.key]: cost of resource [locked_id] locked at [locked_amount] for the wait")
 		return op_wait_begin(A, C)
 	return op_do(A)
 
@@ -321,6 +365,10 @@
 /// amount): a handler that returns no number costs 0, which no adapter can reserve.
 /proc/op_cost_amount(datum/op_plan/P, datum/entry/part/bind/B, res_id, datum/act/op/A = null)
 	var/declared = LAZYACCESS(P.costs, "[res_id]")
+	if(A && LAZYACCESS(P.cost_locked, "[res_id]"))
+		var/frozen = LAZYACCESS(A.args, "[OP_COST_LOCK_PREFIX][res_id]")
+		if(isnum(frozen))
+			return frozen
 	if(istext(declared))
 		var/amount = A ? op_call(A, declared) : null
 		return isnum(amount) ? amount : 0
@@ -398,6 +446,13 @@
 	var/list/log_saved
 	var/list/step_answers_saved
 	var/list/captured_saved
+	/// wait(repeats =): the laps of the current series finished so far (the act reads it as A.laps()).
+	var/laps = 0
+	/// TRUE while a wait_until() step is open, and its `until` condition (null: only release_op() or a broken keep ends it).
+	var/holding = FALSE
+	var/hold_until
+	/// asks(keeps_answer = TRUE): the REF text of the turf the kept answer stood on when it was answered (TARGET_PRESENT compares it).
+	var/kept_turf_ref
 
 CAPABILITIES(/datum/pending_op)
 	ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME)
@@ -405,6 +460,7 @@ CAPABILITIES(/datum/pending_op)
 	ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME)
 	ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME)
 	ref_one(nameof(answerer), /mob, on_other_deleted = OTHER_DELETE_ME) // asks(answerer =): the third party an open question was put to
+	ref_one(nameof(kept), /atom, on_other_deleted = OTHER_DELETE_ME) // asks(keeps_answer = TRUE): the thing the question was answered with, held like the target
 	ref_one(nameof(request), /datum/request, on_other_deleted = OTHER_CLEAR) // the open question: it ends first when its owner (this record) is deleted, so it must not hold it back
 	owns_one(nameof(progbar), /datum/progress_view)
 	owns_one(nameof(cog), /datum/cog_view)
@@ -414,6 +470,7 @@ CAPABILITIES(/datum/pending_op)
 	var/datum/target
 	var/mob/actor
 	var/atom/movable/held
+	var/atom/kept
 
 /// actor ref text -> the list of its pending ops, oldest first: an actor has any number at once (OP_PENDING_CAP), exclusive only where their claims overlap.
 GLOBAL_LIST_EMPTY(op_pending_by_actor)
@@ -572,6 +629,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	A.log_lines = log_saved
 	A.step_answers = step_answers_saved
 	A.captured_values = captured_saved
+	A.laps_done = laps
 	return TRUE
 
 /// Runs the workflow from the cursor: starts the next wait or prompt and returns, or finishes the steps and goes on to Do.
@@ -586,11 +644,15 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			cursor++
 			if(!resume_act())
 				return cancel(/datum/msg/op/target_gone)
-			var/delay = W.wait_time(A)
+			var/open_wait = !!W.args["open"]
+			if(open_wait && !isnull(W.args["until"]) && op_cond(A, W.args["until"]))
+				suspend_act()
+				continue // wait_until(): what it waits for already holds
+			var/delay = open_wait ? 0 : W.wait_time(A)
 			take_capture(A)
 			// The keeps first: a start handler may write state that republishes and re-checks this op before the wait is set up.
-			keeps = W.args["keeps"] & op_default_keeps(A, binding)
-			if(!began && delay > 0)
+			keeps = (W.args["keeps"] & op_default_keeps(A, binding)) | (kept ? (W.args["keeps"] & (ADJACENT | TARGET_PRESENT)) : 0)
+			if(!began && (open_wait || delay > 0))
 				// A starts() handler may refuse like a requirement (a /datum/msg type): the op ends before the wait begins and nothing was announced.
 				for(var/start_handler in oplan.starts)
 					var/start_refusal = op_call(A, start_handler)
@@ -602,6 +664,12 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 				oplan.begins?.feedback(A)
 				oplan.start_plays?.feedback(A)
 			suspend_act()
+			if(open_wait)
+				holding = TRUE
+				hold_until = W.args["until"]
+				timed_wait = TRUE
+				log_game("op [key]: holding until [isnull(hold_until) ? "released" : "its condition holds"] (no timer, no progress bar)")
+				return
 			if(delay > 0)
 				timed_wait = TRUE
 				progress_begin(delay)
@@ -617,7 +685,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 				suspend_act()
 				continue // the step's own condition does not hold: no prompt, on to the next step
 			take_capture(A)
-			keeps = Q.args["keeps"] & op_default_keeps(A, binding) & ~STAY // an open question outlives a step the actor takes
+			keeps = (Q.args["keeps"] & op_default_keeps(A, binding) & ~STAY) | (kept ? (Q.args["keeps"] & (ADJACENT | TARGET_PRESENT)) : 0) // an open question outlives a step the actor takes
 			var/list/fields = op_request_fields(A, Q)
 			fields["step_name"] = Q.args["step"]
 			var/mob/third
@@ -662,6 +730,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(!active)
 		return
 	timed_wait = FALSE
+	holding = FALSE
+	hold_until = null
 	progress_end(TRUE)
 	if(!resume_act())
 		return cancel(/datum/msg/op/target_gone)
@@ -673,6 +743,28 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(why_captured)
 		suspend_act()
 		return cancel(why_captured)
+	var/datum/entry/part/wait/W = oplan.steps[cursor - 1]
+	if(W.args["repeats"] || W.args["after_step"])
+		// a repeating wait: this lap is done. Its effect runs, then the handler says whether another lap follows (the same wait, its length read again).
+		laps++
+		var/datum/act/op/A = act
+		A.laps_done = laps
+		// The lap's own effect writes what the op watches (the stock it counts, the tension it needs): that is not a reason to stop, so the
+		// op does not re-check itself while the effect runs; the keeps and requirements are asked once, right after, if another lap follows.
+		rechecking = TRUE
+		if(W.args["after_step"])
+			op_call(A, W.args["after_step"])
+		var/another = active && !QDELETED(src) && W.args["repeats"] && op_cond(A, W.args["repeats"])
+		rechecking = FALSE
+		if(!active || QDELETED(src))
+			return // the lap's effect ended the op (it deleted what the op holds)
+		log_game("op [key]: lap [laps] done[another ? ", another follows" : ", the series ends"]")
+		if(another)
+			var/why_next = recheck_reason()
+			if(why_next)
+				suspend_act()
+				return cancel(why_next)
+			cursor-- // advance() starts the same wait again
 	suspend_act()
 	advance()
 
@@ -695,6 +787,16 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	A.request = R // ALLOW(ownership): a pooled transient: reset on release
 	A.answer = R // ALLOW(ownership): a pooled transient: reset on release
 	LAZYSET(A.step_answers, R.step_name || "answer", R) // ALLOW(ownership): a pooled transient: reset on release
+	if(Q.args["keeps_answer"])
+		var/atom/chosen = A.answer_target()
+		if(QDELETED(chosen))
+			log_game("op [key]: asks(keeps_answer = TRUE) was answered with something that is not an atom in the world")
+			suspend_act()
+			return cancel(/datum/msg/op/failed)
+		rel_set(src, nameof(kept), chosen)
+		kept_turf_ref = REF(get_turf(chosen))
+		watch_kept(chosen)
+		log_game("op [key]: keeps [chosen] (the answer) from now on")
 	var/repeat_handler = Q.args["repeats"]
 	if(repeat_handler)
 		// a repeating step keeps every round's answer, in order, in the op's args (they travel with the pending op)
@@ -812,6 +914,14 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		return /datum/msg/op/stopped
 	if((keeps & STAY) && M && M.loc != start_loc)
 		return /datum/msg/op/stopped
+	var/atom/held_answer = kept
+	if(held_answer)
+		if(QDELETED(held_answer))
+			return /datum/msg/op/stopped
+		if((keeps & ADJACENT) && M && !M.Adjacent(held_answer))
+			return /datum/msg/op/stopped
+		if((keeps & TARGET_PRESENT) && kept_turf_ref != REF(get_turf(held_answer)))
+			return /datum/msg/op/stopped
 	return null
 
 /// While waiting: the keeps and the requirements are checked again; the op is cancelled only if one now refuses.
@@ -821,9 +931,29 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(!resume_act())
 		return cancel(/datum/msg/op/target_gone)
 	var/why = recheck_reason()
+	var/released = !why && holding && !isnull(hold_until) && op_cond(act, hold_until)
 	suspend_act()
 	if(why)
 		return cancel(why)
+	if(released)
+		log_game("op [key]: the hold's condition holds, so the hold ends")
+		release_hold()
+
+/// A wait_until() step ends because it was released (release_op) or its condition holds: the op goes on as after a timed wait.
+/datum/pending_op/proc/release_hold()
+	if(!active || !holding)
+		return
+	step_done()
+
+/// release_op(actor, key): the actor lets go of what its op `key` holds (wait_until() with no condition, or before its condition). The op goes on to
+/// Do. Returns TRUE when a hold was released.
+/proc/release_op(mob/actor, key)
+	var/datum/pending_op/P = op_pending_for(actor, key)
+	if(!P?.holding)
+		return FALSE
+	log_game("op [key]: released by [key_name(actor)]")
+	P.release_hold()
+	return TRUE
 
 // ---- watching: a wait re-checks when something it reads is published ----
 //
@@ -868,6 +998,21 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			GLOB.op_watchers[index] = on
 		on |= src
 
+/// The answer an op keeps (asks(keeps_answer = TRUE)): where it is is watched like the target's, so it moving away ends the op now.
+/datum/pending_op/proc/watch_kept(atom/chosen)
+	if(!watching)
+		watching = list()
+	var/index = "[REF(chosen)]|[OP_KEEP_MOVED]"
+	var/list/on = GLOB.op_watchers[index]
+	if(on && (src in on))
+		return
+	rx_watch_adjust(chosen, OP_KEEP_MOVED, 1)
+	watching += list(list(chosen, OP_KEEP_MOVED))
+	if(!on)
+		on = list()
+		GLOB.op_watchers[index] = on
+	on |= src
+
 /// Drops the subscription.
 /datum/pending_op/proc/watch_end()
 	for(var/list/pair as anything in watching)
@@ -899,6 +1044,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		op_reads_of(A, cond, pairs)
 	for(var/requirement in P.needs)
 		op_reads_of(A, requirement, pairs)
+	for(var/datum/entry/part/wait/W in P.steps)
+		if(W.args["until"])
+			op_reads_of(A, W.args["until"], pairs)
 	for(var/id in P.cost_order)
 		var/datum/resource/RS = resource_of(text2num(id))
 		RS?.watch_reads(A, pairs)
@@ -983,6 +1131,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(A)
 		A.pending = null // ALLOW(ownership): a pooled transient: reset on release
 	timed_wait = FALSE
+	holding = FALSE
+	hold_until = null
 	unregister()
 	GLOB.op_pending_all -= "[REF(src)]"
 	watch_end()
@@ -1003,6 +1153,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	rel_clear(src, nameof(target))
 	rel_clear(src, nameof(actor))
 	rel_clear(src, nameof(held))
+	rel_clear(src, nameof(kept))
 	act = null // ALLOW(ownership): a pooled act the pending op no longer carries
 
 /// Cancels the op with feedback: the actor is told, the result carries the reason, nothing was spent (costs are reserved after the last step).
@@ -1490,6 +1641,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 /atom/proc/op_claim_changed()
 	return
 /mob/proc/op_notify(text)
+	return
+/// A refusal shown as a balloon over the actor (MSG_BALLOON).
+/mob/proc/op_balloon(text)
 	return
 /mob/proc/op_uses_actor_stats()
 	return FALSE
