@@ -8,6 +8,9 @@ mod weighted;
 pub use request_scope::RequestError;
 pub use weighted::weighted_ranges;
 
+/// Bounded virtual stack reservation for deeply nested real DM expressions.
+/// The Windows default worker stack overflows on the full captured codebase.
+pub const COMPILER_STACK_BYTES: usize = 8 * 1024 * 1024;
 use rayon::{Scope, ThreadPool, ThreadPoolBuildError, ThreadPoolBuilder};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
@@ -98,6 +101,7 @@ impl BuildExecutor {
             .flatten();
         let result = ThreadPoolBuilder::new()
             .num_threads(workers)
+            .stack_size(COMPILER_STACK_BYTES)
             .thread_name(|index| format!("dm-build-{index}"))
             .spawn_handler(move |thread| {
                 let request = request.clone();

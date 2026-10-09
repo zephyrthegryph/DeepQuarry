@@ -257,6 +257,7 @@ pub(super) fn serve() -> io::Result<()> {
                 let shared = Arc::clone(&shared);
                 std::thread::Builder::new()
                     .name("dmbd-request".into())
+                    .stack_size(dm_exec::COMPILER_STACK_BYTES)
                     .spawn(move || {
                         let _connection = Connection(Arc::clone(&shared));
                         if let Err(error) = handle(stream, &shared) {

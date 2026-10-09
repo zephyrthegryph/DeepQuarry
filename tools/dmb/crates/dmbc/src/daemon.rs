@@ -96,12 +96,23 @@ pub fn serve() -> io::Result<()> {
     service::serve()
 }
 pub fn compiler_identity() -> io::Result<u128> {
+    // Identity belongs to this running compiler generation. A replacement on disk
+    // must produce a different client identity, not relabel an already-loaded daemon.
+    static LOADED_IDENTITY: std::sync::OnceLock<u128> = std::sync::OnceLock::new();
+    if let Some(identity) = LOADED_IDENTITY.get() {
+        return Ok(*identity);
+    }
+    let identity = hash_compiler_image()?;
+    Ok(*LOADED_IDENTITY.get_or_init(|| identity))
+}
+fn hash_compiler_image() -> io::Result<u128> {
+    let _profile = dm_profile::stage("filesystem.compiler_identity");
     use std::io::Read;
     let mut input = std::fs::File::open(std::env::current_exe()?)?;
     let mut hash = xxhash_rust::xxh3::Xxh3::new();
     let mut bytes = [0; 65536];
     loop {
-        let count = input.read(&mut bytes)?;
+        let count = dm_profile::io_call(|| input.read(&mut bytes), |count| (*count as u64, 0))?;
         if count == 0 {
             break;
         }
@@ -116,6 +127,8 @@ pub fn route(
     if request.no_daemon || request.trace_path.is_some() {
         return crate::request_runner::run_build(request);
     }
+    // Supervisors may require an already-owned server and prohibit lifecycle changes.
+    let allow_lifecycle = std::env::var_os("DMB_DAEMON_AUTOSTART").is_none_or(|value| value != "0");
     let mut request = request;
     let cwd = std::env::current_dir()?;
     if !request.project.is_absolute() {
@@ -178,12 +191,20 @@ pub fn route(
                         }
                     }
                 }
+                protocol::Reply::Hello { .. } if !allow_lifecycle => {
+                    return Err(
+                        "existing daemon is incompatible or retiring; lifecycle changes disabled"
+                            .into(),
+                    );
+                }
                 protocol::Reply::Hello { .. } => {
                     protocol::send(&mut stream, &protocol::Request::Retire)?;
                     let _ = protocol::receive::<protocol::Reply>(&mut stream);
                 }
                 _ => return Err("invalid daemon handshake".into()),
             }
+        } else if !allow_lifecycle {
+            return Err("required existing daemon is unavailable; autostart disabled".into());
         } else if !started {
             start()?;
             started = true;
