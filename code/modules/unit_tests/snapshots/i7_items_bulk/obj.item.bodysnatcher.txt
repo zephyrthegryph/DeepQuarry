@@ -1,5 +1,5 @@
 /obj/item/bodysnatcher|human|none => |
-/obj/item/bodysnatcher|robot|none => |gen_silicon_item_silicon_equip_module:not possible right now
-/obj/item/bodysnatcher|ai|none => |gen_silicon_item_silicon_equip_module:not possible right now
+/obj/item/bodysnatcher|robot|none => |
+/obj/item/bodysnatcher|ai|none => |
 /obj/item/bodysnatcher|ghost|none => |
 

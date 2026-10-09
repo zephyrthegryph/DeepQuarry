@@ -1,6 +1,6 @@
 /**
  * Hit pins: a generated snapshot of what a thing does when it is hit or emagged, recorded before a hit-reaction or emag
- * conversion (DAMAGE_REACTION, DAMAGE_REACTION_AFTER, DECLARE_EMAG -> hit hooks, emag ops) and checked after it.
+ * conversion (DAMAGE_REACTION, DAMAGE_REACTION_AFTER, the old emag declaration -> hit hooks, emag ops) and checked after it.
  *
  *   bash tools/dq_pin.sh --hit /obj/item/foo [...]                   # before converting: record the pins
  *   ...convert...

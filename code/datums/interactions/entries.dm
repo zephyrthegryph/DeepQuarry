@@ -1,8 +1,7 @@
 /**
  * Abstract parents for converted legacy handlers (I7, doc/rewrite/interactions.md §13).
  *
- * Each old override became an interaction that runs from the old proc, now
- * the entry point (see run_interaction_entry()):
+ * Each old override became an interaction that is offered to the op engine for the old proc's input:
  * - entry_item: attackby. Runs from /atom/proc/attackby, before the signal.
  * - entry_hand: attack_hand. Runs from /atom/proc/attack_hand, behind the
  *   type's hand_gate() unless `behind_gate` is FALSE.

@@ -18,7 +18,7 @@
 	var/show_all_ores = FALSE
 
 /// Settings changed from the console (ore modes, power): the processing unit re-evaluates.
-/obj/machinery/mineral/processing_unit_console/interaction_ran(mob/actor, datum/interaction/interaction)
+/obj/machinery/mineral/processing_unit_console/interaction_ran(mob/actor)
 	. = ..()
 	machine()?.wake_mining()
 

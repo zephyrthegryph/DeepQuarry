@@ -231,7 +231,7 @@
 	use(1, user)
 
 /// Old /obj/mecha/attackby override: a paint kit customises the mech. Declared in mecha.dm.
-/obj/mecha/proc/interaction_mecha_paint_kit(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/mecha/proc/interaction_mecha_paint_kit(mob/user, obj/item/W)
 	if(!istype(W, /obj/item/kit/paint))
 		return FALSE
 	var/obj/item/kit/paint/P = W

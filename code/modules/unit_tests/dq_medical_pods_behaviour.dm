@@ -82,7 +82,7 @@
 
 /// `grabber` takes hold of `victim`: the grab in hand, or null.
 /datum/unit_test/dq_medpod/proc/grab(mob/living/carbon/human/grabber, mob/living/victim)
-	run_chosen_interaction(grabber, victim, "grab")
+	dq_attack_variant_op(grabber, victim, ATTACK_VARIANT_GRAB)
 	var/obj/item/grab/G = grabber.get_active_hand()
 	return istype(G) ? G : null
 

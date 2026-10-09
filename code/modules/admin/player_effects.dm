@@ -710,7 +710,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 		grant(Tar, granted_verb(/mob/living/simple_mob/proc/ColorMate), Tar)
 	if(istype(target(),/mob/living/silicon/robot))
 		var/mob/living/silicon/robot/Tar = target()
-		Tar.grant_ability(ABILITY_ID_ROBOT_RECOLOUR, Tar)
+		grant(Tar, robot_recolour(), Tar)
 
 /datum/eventkit/player_effects/proc/ui_act_be_event_invis(datum/act/op/A)
 	var/mob/living/Tar = target()

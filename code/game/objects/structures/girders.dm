@@ -140,6 +140,7 @@ CAPABILITIES(/obj/structure/girder)
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(girder_blob))))
 	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	girder_construction()
 	op("slice", item(/obj/item/pickaxe/plasmacutter), label("Slice apart"), begins(MSG(girder/slicing)), wait(PROC_REF(slice_time)), then(PROC_REF(sliced)))
 	op("hulk_smash", hand(), label("Smash"), when(req_mutation(HULK)), then(PROC_REF(interaction_hulk_smash)))
 

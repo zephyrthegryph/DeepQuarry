@@ -11,13 +11,6 @@
 	//Used to enable or disable drone fabrication.
 	var/obj/machinery/drone_fabricator/dronefab
 
-/// An empty hand (or a silicon's interface, through attack_hand) opens the console; cap_access() makes the op need a
-/// credential for its req_access (the held card, a worn ID, a silicon's own access), so a refused click says why.
-/obj/machinery/computer/drone_control/capabilities()
-	. = ..()
-	. += cap_op("Open console", TYPE_PROC_REF(/atom, interaction_open_ui_fingerprint), using = EMPTY_HAND, key = "open_console", entry = INTERACTION_ENTRY_HAND)
-	. += cap_access(ops = "open_console")
-
 /// An open window closes when its user loses the credential (the same providers as the op).
 /obj/machinery/computer/drone_control/tgui_status(mob/user)
 	if(!access_allowed(src, user, user?.get_active_hand()))
@@ -26,13 +19,18 @@
 
 CAPABILITIES(/obj/machinery/computer/drone_control)
 	interface("DroneConsole")
-	without("ui_open")
+	// An empty hand (or a silicon's interface) opens the console for a credential that fits its req_access, so a refused click says why.
+	extend("ui_open", needs(req_access()), then(PROC_REF(console_fingerprinted)))
 	op("set_dcall_area", ui_act("set_dcall_area", arg("area")), then(PROC_REF(ui_act_set_dcall_area)))
 	op("ping", ui_act("ping"), then(PROC_REF(ui_act_ping)))
 	op("resync", ui_act("resync", arg("ref", schema_ref(/mob/living/silicon/robot/drone))), then(PROC_REF(ui_act_resync)))
 	op("shutdown", ui_act("shutdown", arg("ref", schema_ref(/mob/living/silicon/robot/drone))), then(PROC_REF(ui_act_shutdown)))
 	op("search_fab", ui_act("search_fab"), then(PROC_REF(ui_act_search_fab)))
 	op("toggle_fab", ui_act("toggle_fab"), then(PROC_REF(ui_act_toggle_fab)))
+
+/obj/machinery/computer/drone_control/proc/console_fingerprinted(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /obj/machinery/computer/drone_control/ui_data(datum/act/eval/A)
 	var/list/data = list()

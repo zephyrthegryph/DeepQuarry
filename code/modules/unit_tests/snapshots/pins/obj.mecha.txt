@@ -5,8 +5,6 @@ human|none menu: Disconnect from port (refused: Only the pilot can do that.)
 human|none menu: Eject (refused: Only the pilot can do that.)
 human|none menu: Enter Exosuit
 human|none menu: Enter Passenger Compartment
-human|none menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|none menu: Strike (refused: combat mode is off)
 human|none menu: Toggle cloaking (refused: Only the pilot can do that.)
 human|none menu: Toggle defence mode (refused: Only the pilot can do that.)
 human|none menu: Toggle internal airtank usage (refused: Only the pilot can do that.)
@@ -19,9 +17,6 @@ human|none menu: Toggle thrusters (refused: Only the pilot can do that.)
 human|none menu: Toggle weapons only cycling (refused: Only the pilot can do that.)
 human|none menu: Use
 human|none menu: View Stats (refused: Only the pilot can do that.)
-human|none menu: Weld repairs (refused: hold Disarm)
-human|none menu: Weld repairs (refused: hold Grab)
-human|none menu: Weld repairs (refused: needs a welder)
 human|none menu: Zoom (refused: Only the pilot can do that.)
 human|none click: Click: Use
 robot|none menu: Activate Smoke (refused: Only the pilot can do that.)
@@ -31,8 +26,6 @@ robot|none menu: Disconnect from port (refused: Only the pilot can do that.)
 robot|none menu: Eject (refused: Only the pilot can do that.)
 robot|none menu: Enter Exosuit
 robot|none menu: Enter Passenger Compartment
-robot|none menu: Repair components with nanopaste (refused: needs a nanopaste)
-robot|none menu: Strike (refused: combat mode is off)
 robot|none menu: Toggle cloaking (refused: Only the pilot can do that.)
 robot|none menu: Toggle defence mode (refused: Only the pilot can do that.)
 robot|none menu: Toggle internal airtank usage (refused: Only the pilot can do that.)
@@ -45,9 +38,6 @@ robot|none menu: Toggle thrusters (refused: Only the pilot can do that.)
 robot|none menu: Toggle weapons only cycling (refused: Only the pilot can do that.)
 robot|none menu: Use
 robot|none menu: View Stats (refused: Only the pilot can do that.)
-robot|none menu: Weld repairs (refused: hold Disarm)
-robot|none menu: Weld repairs (refused: hold Grab)
-robot|none menu: Weld repairs (refused: needs a welder)
 robot|none menu: Zoom (refused: Only the pilot can do that.)
 robot|none click: Click: Use
 ai|none click: nothing
@@ -80,8 +70,6 @@ human|/obj/item/tool/screwdriver menu: Enter exosuit
 human|/obj/item/tool/screwdriver menu: Enter Passenger Compartment
 human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|/obj/item/tool/screwdriver menu: Strike (refused: combat mode is off)
 human|/obj/item/tool/screwdriver menu: Toggle cloaking (refused: Only the pilot can do that.)
 human|/obj/item/tool/screwdriver menu: Toggle defence mode (refused: Only the pilot can do that.)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
@@ -96,9 +84,6 @@ human|/obj/item/tool/screwdriver menu: Toggle weapons only cycling (refused: Onl
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver menu: View Stats (refused: Only the pilot can do that.)
 human|/obj/item/tool/screwdriver menu: Weld repairs
-human|/obj/item/tool/screwdriver menu: Weld repairs (refused: hold Disarm)
-human|/obj/item/tool/screwdriver menu: Weld repairs (refused: hold Grab)
-human|/obj/item/tool/screwdriver menu: Weld repairs (refused: needs a welder)
 human|/obj/item/tool/screwdriver menu: Zoom (refused: Only the pilot can do that.)
 human|/obj/item/tool/screwdriver click: Click: Weld repairs
 human|/obj/item/tool/crowbar menu: Activate Smoke (refused: Only the pilot can do that.)
@@ -111,8 +96,6 @@ human|/obj/item/tool/crowbar menu: Enter exosuit
 human|/obj/item/tool/crowbar menu: Enter Passenger Compartment
 human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|/obj/item/tool/crowbar menu: Strike (refused: combat mode is off)
 human|/obj/item/tool/crowbar menu: Toggle cloaking (refused: Only the pilot can do that.)
 human|/obj/item/tool/crowbar menu: Toggle defence mode (refused: Only the pilot can do that.)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
@@ -127,9 +110,6 @@ human|/obj/item/tool/crowbar menu: Toggle weapons only cycling (refused: Only th
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar menu: View Stats (refused: Only the pilot can do that.)
 human|/obj/item/tool/crowbar menu: Weld repairs
-human|/obj/item/tool/crowbar menu: Weld repairs (refused: hold Disarm)
-human|/obj/item/tool/crowbar menu: Weld repairs (refused: hold Grab)
-human|/obj/item/tool/crowbar menu: Weld repairs (refused: needs a welder)
 human|/obj/item/tool/crowbar menu: Zoom (refused: Only the pilot can do that.)
 human|/obj/item/tool/crowbar click: Click: Weld repairs
 human|/obj/item/tool/wrench menu: Activate Smoke (refused: Only the pilot can do that.)
@@ -142,8 +122,6 @@ human|/obj/item/tool/wrench menu: Enter exosuit
 human|/obj/item/tool/wrench menu: Enter Passenger Compartment
 human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|/obj/item/tool/wrench menu: Strike (refused: combat mode is off)
 human|/obj/item/tool/wrench menu: Toggle cloaking (refused: Only the pilot can do that.)
 human|/obj/item/tool/wrench menu: Toggle defence mode (refused: Only the pilot can do that.)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
@@ -158,9 +136,6 @@ human|/obj/item/tool/wrench menu: Toggle weapons only cycling (refused: Only the
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench menu: View Stats (refused: Only the pilot can do that.)
 human|/obj/item/tool/wrench menu: Weld repairs
-human|/obj/item/tool/wrench menu: Weld repairs (refused: hold Disarm)
-human|/obj/item/tool/wrench menu: Weld repairs (refused: hold Grab)
-human|/obj/item/tool/wrench menu: Weld repairs (refused: needs a welder)
 human|/obj/item/tool/wrench menu: Zoom (refused: Only the pilot can do that.)
 human|/obj/item/tool/wrench click: Click: Weld repairs
 human|/obj/item/tool/wirecutters menu: Activate Smoke (refused: Only the pilot can do that.)
@@ -173,8 +148,6 @@ human|/obj/item/tool/wirecutters menu: Enter exosuit
 human|/obj/item/tool/wirecutters menu: Enter Passenger Compartment
 human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|/obj/item/tool/wirecutters menu: Strike (refused: combat mode is off)
 human|/obj/item/tool/wirecutters menu: Toggle cloaking (refused: Only the pilot can do that.)
 human|/obj/item/tool/wirecutters menu: Toggle defence mode (refused: Only the pilot can do that.)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
@@ -189,9 +162,6 @@ human|/obj/item/tool/wirecutters menu: Toggle weapons only cycling (refused: Onl
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters menu: View Stats (refused: Only the pilot can do that.)
 human|/obj/item/tool/wirecutters menu: Weld repairs
-human|/obj/item/tool/wirecutters menu: Weld repairs (refused: hold Disarm)
-human|/obj/item/tool/wirecutters menu: Weld repairs (refused: hold Grab)
-human|/obj/item/tool/wirecutters menu: Weld repairs (refused: needs a welder)
 human|/obj/item/tool/wirecutters menu: Zoom (refused: Only the pilot can do that.)
 human|/obj/item/tool/wirecutters click: Click: Weld repairs
 human|/obj/item/multitool menu: Activate Smoke (refused: Only the pilot can do that.)
@@ -204,8 +174,6 @@ human|/obj/item/multitool menu: Enter exosuit
 human|/obj/item/multitool menu: Enter Passenger Compartment
 human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|/obj/item/multitool menu: Strike (refused: combat mode is off)
 human|/obj/item/multitool menu: Toggle cloaking (refused: Only the pilot can do that.)
 human|/obj/item/multitool menu: Toggle defence mode (refused: Only the pilot can do that.)
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
@@ -220,9 +188,6 @@ human|/obj/item/multitool menu: Toggle weapons only cycling (refused: Only the p
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool menu: View Stats (refused: Only the pilot can do that.)
 human|/obj/item/multitool menu: Weld repairs
-human|/obj/item/multitool menu: Weld repairs (refused: hold Disarm)
-human|/obj/item/multitool menu: Weld repairs (refused: hold Grab)
-human|/obj/item/multitool menu: Weld repairs (refused: needs a welder)
 human|/obj/item/multitool menu: Zoom (refused: Only the pilot can do that.)
 human|/obj/item/multitool click: Click: Weld repairs
 human|/obj/item/weldingtool menu: Activate Smoke (refused: Only the pilot can do that.)
@@ -235,8 +200,7 @@ human|/obj/item/weldingtool menu: Enter exosuit
 human|/obj/item/weldingtool menu: Enter Passenger Compartment
 human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|/obj/item/weldingtool menu: Strike (refused: combat mode is off)
+human|/obj/item/weldingtool menu: Strike
 human|/obj/item/weldingtool menu: Toggle cloaking (refused: Only the pilot can do that.)
 human|/obj/item/weldingtool menu: Toggle defence mode (refused: Only the pilot can do that.)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
@@ -251,8 +215,6 @@ human|/obj/item/weldingtool menu: Toggle weapons only cycling (refused: Only the
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool menu: View Stats (refused: Only the pilot can do that.)
 human|/obj/item/weldingtool menu: Weld repairs
-human|/obj/item/weldingtool menu: Weld repairs (refused: hold Disarm)
-human|/obj/item/weldingtool menu: Weld repairs (refused: hold Grab)
 human|/obj/item/weldingtool menu: Zoom (refused: Only the pilot can do that.)
 human|/obj/item/weldingtool click: Click: Weld repairs
 human|/obj/item/stack/cable_coil menu: Activate Smoke (refused: Only the pilot can do that.)
@@ -266,8 +228,6 @@ human|/obj/item/stack/cable_coil menu: Enter Passenger Compartment
 human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|/obj/item/stack/cable_coil menu: Strike (refused: combat mode is off)
 human|/obj/item/stack/cable_coil menu: Toggle cloaking (refused: Only the pilot can do that.)
 human|/obj/item/stack/cable_coil menu: Toggle defence mode (refused: Only the pilot can do that.)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
@@ -282,9 +242,6 @@ human|/obj/item/stack/cable_coil menu: Toggle weapons only cycling (refused: Onl
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil menu: View Stats (refused: Only the pilot can do that.)
 human|/obj/item/stack/cable_coil menu: Weld repairs
-human|/obj/item/stack/cable_coil menu: Weld repairs (refused: hold Disarm)
-human|/obj/item/stack/cable_coil menu: Weld repairs (refused: hold Grab)
-human|/obj/item/stack/cable_coil menu: Weld repairs (refused: needs a welder)
 human|/obj/item/stack/cable_coil menu: Zoom (refused: Only the pilot can do that.)
 human|/obj/item/stack/cable_coil click: Click: Weld repairs
 human|/obj/item/stack/material/steel menu: Activate Smoke (refused: Only the pilot can do that.)
@@ -297,8 +254,6 @@ human|/obj/item/stack/material/steel menu: Enter exosuit
 human|/obj/item/stack/material/steel menu: Enter Passenger Compartment
 human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|/obj/item/stack/material/steel menu: Strike (refused: combat mode is off)
 human|/obj/item/stack/material/steel menu: Toggle cloaking (refused: Only the pilot can do that.)
 human|/obj/item/stack/material/steel menu: Toggle defence mode (refused: Only the pilot can do that.)
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
@@ -313,9 +268,6 @@ human|/obj/item/stack/material/steel menu: Toggle weapons only cycling (refused:
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel menu: View Stats (refused: Only the pilot can do that.)
 human|/obj/item/stack/material/steel menu: Weld repairs
-human|/obj/item/stack/material/steel menu: Weld repairs (refused: hold Disarm)
-human|/obj/item/stack/material/steel menu: Weld repairs (refused: hold Grab)
-human|/obj/item/stack/material/steel menu: Weld repairs (refused: needs a welder)
 human|/obj/item/stack/material/steel menu: Zoom (refused: Only the pilot can do that.)
 human|/obj/item/stack/material/steel click: Click: Weld repairs
 human|/obj/item/card/id menu: Activate Smoke (refused: Only the pilot can do that.)
@@ -329,8 +281,6 @@ human|/obj/item/card/id menu: Enter Passenger Compartment
 human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|/obj/item/card/id menu: Strike (refused: combat mode is off)
 human|/obj/item/card/id menu: Toggle cloaking (refused: Only the pilot can do that.)
 human|/obj/item/card/id menu: Toggle defence mode (refused: Only the pilot can do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
@@ -345,73 +295,8 @@ human|/obj/item/card/id menu: Toggle weapons only cycling (refused: Only the pil
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: View Stats (refused: Only the pilot can do that.)
 human|/obj/item/card/id menu: Weld repairs
-human|/obj/item/card/id menu: Weld repairs (refused: hold Disarm)
-human|/obj/item/card/id menu: Weld repairs (refused: hold Grab)
-human|/obj/item/card/id menu: Weld repairs (refused: needs a welder)
 human|/obj/item/card/id menu: Zoom (refused: Only the pilot can do that.)
 human|/obj/item/card/id click: Click: Weld repairs
-human|/obj/item/extinguisher menu: Activate Smoke (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Change melee damage type (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Connect to port (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Disconnect from port (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Eject (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Enter Exosuit
-human|/obj/item/extinguisher menu: Enter exosuit
-human|/obj/item/extinguisher menu: Enter Passenger Compartment
-human|/obj/item/extinguisher menu: Hit
-human|/obj/item/extinguisher menu: Move To Top
-human|/obj/item/extinguisher menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|/obj/item/extinguisher menu: Strike (refused: combat mode is off)
-human|/obj/item/extinguisher menu: Toggle cloaking (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Toggle defence mode (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/extinguisher menu: Toggle internal airtank usage (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Toggle leg actuators overload (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Toggle Lights (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Toggle phasing (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Toggle strafing
-human|/obj/item/extinguisher menu: Toggle strafing (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Toggle thrusters (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Toggle weapons only cycling (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Use
-human|/obj/item/extinguisher menu: View Stats (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher menu: Weld repairs
-human|/obj/item/extinguisher menu: Weld repairs (refused: hold Disarm)
-human|/obj/item/extinguisher menu: Weld repairs (refused: hold Grab)
-human|/obj/item/extinguisher menu: Weld repairs (refused: needs a welder)
-human|/obj/item/extinguisher menu: Zoom (refused: Only the pilot can do that.)
-human|/obj/item/extinguisher click: Click: Weld repairs
-human|/obj/item/stack/nanopaste menu: Activate Smoke (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Change melee damage type (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Connect to port (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Disconnect from port (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Eject (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Enter Exosuit
-human|/obj/item/stack/nanopaste menu: Enter exosuit
-human|/obj/item/stack/nanopaste menu: Enter Passenger Compartment
-human|/obj/item/stack/nanopaste menu: Hit
-human|/obj/item/stack/nanopaste menu: Move To Top
-human|/obj/item/stack/nanopaste menu: Repair components with nanopaste (refused: you can't reach the internal components)
-human|/obj/item/stack/nanopaste menu: Strike (refused: combat mode is off)
-human|/obj/item/stack/nanopaste menu: Toggle cloaking (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Toggle defence mode (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/nanopaste menu: Toggle internal airtank usage (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Toggle leg actuators overload (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Toggle Lights (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Toggle phasing (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Toggle strafing
-human|/obj/item/stack/nanopaste menu: Toggle strafing (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Toggle thrusters (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Toggle weapons only cycling (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Use
-human|/obj/item/stack/nanopaste menu: View Stats (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste menu: Weld repairs
-human|/obj/item/stack/nanopaste menu: Weld repairs (refused: hold Disarm)
-human|/obj/item/stack/nanopaste menu: Weld repairs (refused: hold Grab)
-human|/obj/item/stack/nanopaste menu: Weld repairs (refused: needs a welder)
-human|/obj/item/stack/nanopaste menu: Zoom (refused: Only the pilot can do that.)
-human|/obj/item/stack/nanopaste click: Click: Weld repairs
 human|/obj/item menu: Activate Smoke (refused: Only the pilot can do that.)
 human|/obj/item menu: Change melee damage type (refused: Only the pilot can do that.)
 human|/obj/item menu: Connect to port (refused: Only the pilot can do that.)
@@ -422,8 +307,6 @@ human|/obj/item menu: Enter exosuit
 human|/obj/item menu: Enter Passenger Compartment
 human|/obj/item menu: Hit
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|/obj/item menu: Strike (refused: combat mode is off)
 human|/obj/item menu: Toggle cloaking (refused: Only the pilot can do that.)
 human|/obj/item menu: Toggle defence mode (refused: Only the pilot can do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
@@ -438,11 +321,61 @@ human|/obj/item menu: Toggle weapons only cycling (refused: Only the pilot can d
 human|/obj/item menu: Use
 human|/obj/item menu: View Stats (refused: Only the pilot can do that.)
 human|/obj/item menu: Weld repairs
-human|/obj/item menu: Weld repairs (refused: hold Disarm)
-human|/obj/item menu: Weld repairs (refused: hold Grab)
-human|/obj/item menu: Weld repairs (refused: needs a welder)
 human|/obj/item menu: Zoom (refused: Only the pilot can do that.)
 human|/obj/item click: Click: Weld repairs
+human|/obj/item/extinguisher menu: Activate Smoke (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Change melee damage type (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Connect to port (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Disconnect from port (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Eject (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Enter Exosuit
+human|/obj/item/extinguisher menu: Enter exosuit
+human|/obj/item/extinguisher menu: Enter Passenger Compartment
+human|/obj/item/extinguisher menu: Hit
+human|/obj/item/extinguisher menu: Move To Top
+human|/obj/item/extinguisher menu: Toggle cloaking (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Toggle defence mode (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/extinguisher menu: Toggle internal airtank usage (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Toggle leg actuators overload (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Toggle Lights (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Toggle phasing (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Toggle strafing
+human|/obj/item/extinguisher menu: Toggle strafing (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Toggle thrusters (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Toggle weapons only cycling (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Use
+human|/obj/item/extinguisher menu: View Stats (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher menu: Weld repairs
+human|/obj/item/extinguisher menu: Zoom (refused: Only the pilot can do that.)
+human|/obj/item/extinguisher click: Click: Weld repairs
+human|/obj/item/stack/nanopaste menu: Activate Smoke (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Change melee damage type (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Connect to port (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Disconnect from port (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Eject (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Enter Exosuit
+human|/obj/item/stack/nanopaste menu: Enter exosuit
+human|/obj/item/stack/nanopaste menu: Enter Passenger Compartment
+human|/obj/item/stack/nanopaste menu: Hit
+human|/obj/item/stack/nanopaste menu: Move To Top
+human|/obj/item/stack/nanopaste menu: Repair components with nanopaste (refused: You can't reach the internal components.)
+human|/obj/item/stack/nanopaste menu: Toggle cloaking (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Toggle defence mode (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/nanopaste menu: Toggle internal airtank usage (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Toggle leg actuators overload (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Toggle Lights (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Toggle phasing (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Toggle strafing
+human|/obj/item/stack/nanopaste menu: Toggle strafing (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Toggle thrusters (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Toggle weapons only cycling (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Use
+human|/obj/item/stack/nanopaste menu: View Stats (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste menu: Weld repairs
+human|/obj/item/stack/nanopaste menu: Zoom (refused: Only the pilot can do that.)
+human|/obj/item/stack/nanopaste click: Click: Repair components with nanopaste
 human|/obj/item/kit/paint menu: Activate Smoke (refused: Only the pilot can do that.)
 human|/obj/item/kit/paint menu: Change melee damage type (refused: Only the pilot can do that.)
 human|/obj/item/kit/paint menu: Connect to port (refused: Only the pilot can do that.)
@@ -453,8 +386,6 @@ human|/obj/item/kit/paint menu: Enter exosuit
 human|/obj/item/kit/paint menu: Enter Passenger Compartment
 human|/obj/item/kit/paint menu: Hit
 human|/obj/item/kit/paint menu: Move To Top
-human|/obj/item/kit/paint menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|/obj/item/kit/paint menu: Strike (refused: combat mode is off)
 human|/obj/item/kit/paint menu: Toggle cloaking (refused: Only the pilot can do that.)
 human|/obj/item/kit/paint menu: Toggle defence mode (refused: Only the pilot can do that.)
 human|/obj/item/kit/paint menu: Toggle Digestable (refused: You can't do that.)
@@ -469,10 +400,7 @@ human|/obj/item/kit/paint menu: Toggle weapons only cycling (refused: Only the p
 human|/obj/item/kit/paint menu: Use
 human|/obj/item/kit/paint menu: View Stats (refused: Only the pilot can do that.)
 human|/obj/item/kit/paint menu: Weld repairs
-human|/obj/item/kit/paint menu: Weld repairs (refused: hold Disarm)
-human|/obj/item/kit/paint menu: Weld repairs (refused: hold Grab)
-human|/obj/item/kit/paint menu: Weld repairs (refused: needs a welder)
 human|/obj/item/kit/paint menu: Zoom (refused: Only the pilot can do that.)
 human|/obj/item/kit/paint click: Click: Use
-keys: access_add, access_del, access_finish, ai_use_equipment, detach_equipment, drag_buckle, drop_from_cargo, equip_interact, maint_protocol, maint_remove_passenger, maint_req_access, maint_set_air, mecha_airtank, mecha_alt, mecha_cloak, mecha_connect, mecha_damtype, mecha_defence, mecha_disconnect, mecha_drag, mecha_eject, mecha_enter, mecha_enter_passenger, mecha_extinguish, mecha_fix_temperature, mecha_fix_wiring, mecha_hand, mecha_item, mecha_lights, mecha_overload, mecha_paint_kit, mecha_paste_repair, mecha_phasing, mecha_recalibrate, mecha_seal_tank, mecha_smoke, mecha_stats, mecha_strafing, mecha_thrusters, mecha_weapons_cycle, mecha_weld_disarm, mecha_weld_grab, mecha_weld_help, mecha_weld_repair, mecha_weld_repair_disarm, mecha_weld_repair_grab, mecha_weld_strike, mecha_zoom, melee_hit, rfreq, view_main
+keys: access_add, access_del, access_finish, ai_use_equipment, close_hatch, detach_equipment, drag_buckle, drop_from_cargo, equip_interact, extinguish, fix_temperature, fix_wiring, maint_protocol, maint_remove_passenger, maint_req_access, maint_set_air, mecha_airtank, mecha_alt, mecha_cloak, mecha_connect, mecha_damtype, mecha_defence, mecha_disconnect, mecha_drag, mecha_eject, mecha_enter, mecha_enter_passenger, mecha_hand, mecha_item, mecha_lights, mecha_overload, mecha_paint_kit, mecha_phasing, mecha_smoke, mecha_stats, mecha_strafing, mecha_thrusters, mecha_weapons_cycle, mecha_weld_disarm, mecha_weld_grab, mecha_weld_help, mecha_zoom, melee_hit, open_hatch, paste_repair, pry_component, remove_cell, rfreq, seal_tank, secure_cell, tighten_bolts, undo_bolts, view_main, weld_repair, weld_strike
 

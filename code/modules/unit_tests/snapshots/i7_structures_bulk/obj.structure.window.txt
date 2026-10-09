@@ -1,5 +1,5 @@
-/obj/structure/window|human|none => |window:a>u:screwdriver:needs a screwdriver
-/obj/structure/window|robot|none => |window:a>u:screwdriver:needs a screwdriver
+/obj/structure/window|human|none => |
+/obj/structure/window|robot|none => |
 /obj/structure/window|ai|none => |
 /obj/structure/window|ghost|none => |
 

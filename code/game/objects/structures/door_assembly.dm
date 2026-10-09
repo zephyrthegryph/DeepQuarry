@@ -181,7 +181,7 @@ CAPABILITIES(/obj/structure/door_assembly)
 		stage(STAGE_DOOR_ASSEMBLY_SECURED, tool(TOOL_WRENCH), wait(4 SECONDS), then(PROC_REF(secured_down)), undone(PROC_REF(unsecured)), undo = list(tool(TOOL_WRENCH), wait(4 SECONDS))),
 		stage(STAGE_DOOR_ASSEMBLY_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), then(PROC_REF(wired_up)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(4 SECONDS))),
 		stage(STAGE_DOOR_ASSEMBLY_BOARDED, item(/obj/item/airlock_electronics), wait(4 SECONDS), then(PROC_REF(board_seated)), undone(PROC_REF(board_taken)), undo = list(tool(TOOL_CROWBAR), wait(4 SECONDS))),
-		stage(STAGE_DOOR_ASSEMBLY_FINISHED, tool(TOOL_SCREWDRIVER), wait(4 SECONDS), then(PROC_REF(finish_airlock)), undo = null),
+		stage(STAGE_DOOR_ASSEMBLY_FINISHED, tool(TOOL_SCREWDRIVER), wait(4 SECONDS), then(PROC_REF(finish_airlock)), undo = NO_UNDO),
 		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled))))
 	owns_one(nameof(electronics), /obj/item/airlock_electronics)
 	op("rename", item(/obj/item/pen), label("Rename"), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the airlock.")), then(PROC_REF(renamed)))

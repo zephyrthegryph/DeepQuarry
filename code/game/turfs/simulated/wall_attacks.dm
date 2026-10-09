@@ -201,10 +201,6 @@
 			thermitemelt(user)
 			return OP_PASS
 
-	// Plasma cutters, energy blades and pickaxes stand in for the welder on the graph's cutting steps.
-	if(try_construction_alt(user, src, W))
-		return OP_PASS
-
 	if(istype(W,/obj/item/frame))
 		return OP_PASS // its own op, frame.mount, hangs it on the wall
 

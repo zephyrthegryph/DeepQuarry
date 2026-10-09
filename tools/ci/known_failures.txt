@@ -3,3 +3,14 @@
 dq_km_every_behaviour_has_a_system	fails on master: a behaviour has no system	1d164d2693
 dq_lane_a/change_drain_survives_a_throwing_condition	fails on master: throwing condition kills the change drain	1d164d2693
 ownership_framework_checks	fails on master: end-of-run OWN AUDIT names /datum/effect/system/explosion and smoke_spread dropped with a rec (the fw-fixes lane fixes it)	1c57f0b145
+dq_hc_silicon/robot_analyzer_alt_click_flips_mode	fails on master: "an alt-click with the analyzer in hand flips the mode" (pristine origin/master worktree)	79f28a2653
+dq_p2_table/a_weapon_in_combat_mode_is_put_on_the_table	fails on master: "the axe is on the table" (pristine origin/master worktree)	79f28a2653
+dq_p2_table/the_look_follows_the_layers	fails on master: "plating adds a layer" (pristine origin/master worktree)	79f28a2653
+dq_p2_closet/the_picture_follows_the_door	fails on master: "closed looks as it did" (pristine origin/master worktree)	79f28a2653
+dq_p2_closet/the_picture_follows_the_lock	fails on master: "locking brings it back" (pristine origin/master worktree)	79f28a2653
+dq_integrity_pool/blob	fails on master: "a blob at 15 or less looks damaged" (pristine origin/master worktree)	79f28a2653
+om/interim_player_notes_filter_actor	fails on master: "the actual legacy topic handler opens exactly one typed filter prompt" (pristine origin/master worktree)	79f28a2653
+dq_hit_pin	fails on master: refresh_queued/refresh_bits and emp/emag snapshots differ (needs a re-bless)	79f28a2653
+dx_op_wait	fails on master when it runs after dq_hc_mobs/simple_mob_emp_surge in one world (that test leaves a watcher in GLOB.op_watchers; passes alone; pristine origin/master worktree)	60beadfe53
+dx_op_teardown	fails on master when it runs after dq_hc_mobs/simple_mob_emp_surge in one world (that test leaves a watcher in GLOB.op_watchers; passes alone; pristine origin/master worktree)	60beadfe53
+dx_op_publish_cancel	fails on master when it runs after dq_hc_mobs/simple_mob_emp_surge in one world (that test leaves a watcher in GLOB.op_watchers; passes alone; pristine origin/master worktree)	60beadfe53

@@ -2,31 +2,30 @@
 
 // Clicked on by empty hand.
 // Handles trying to wrestle a slime off of someone being eatten.
-EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio, INTERACT_HAND_UNGATED(null, PROC_REF(xenoslime_interaction_hand)))
+/// Declared in CAPABILITIES(/mob/living/simple_mob/slime/xenobio) (combat_ai/ports/slime.dm): it only answers while the slime is eating someone.
+/mob/living/simple_mob/slime/xenobio/proc/eating_someone(datum/act/A)
+	return read_once(!!victim)
 
-/// Old attack_hand: wrestle it off its victim.
-/mob/living/simple_mob/slime/xenobio/proc/xenoslime_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(victim) // Are we eating someone?
-		var/fail_odds = 30
-		if(victim == L) // Harder to get the slime off if it's you that is being eatten.
-			fail_odds = 60
+/// Wrestle it off its victim.
+/mob/living/simple_mob/slime/xenobio/proc/xenoslime_wrestle_off(datum/act/op/A)
+	var/mob/living/L = A.actor
+	var/fail_odds = 30
+	if(victim == L) // Harder to get the slime off if it's you that is being eatten.
+		fail_odds = 60
 
-		if(prob(fail_odds))
-			visible_message(span_warning("\The [L] attempts to wrestle \the [name] off!"))
-			play_sfx(src, SFX_WEAPONS_PUNCHMISS)
-
-		else
-			visible_message(span_warning("\The [L] manages to wrestle \the [name] off!"))
-			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
-
-			if(prob(40))
-				adjust_discipline(1) // Do this here so that it will be justified discipline.
-			stop_consumption()
-			step_away(src, L)
+	if(prob(fail_odds))
+		visible_message(span_warning("\The [L] attempts to wrestle \the [name] off!"))
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 
 	else
-		return FALSE
+		visible_message(span_warning("\The [L] manages to wrestle \the [name] off!"))
+		play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
+
+		if(prob(40))
+			adjust_discipline(1) // Do this here so that it will be justified discipline.
+		stop_consumption()
+		step_away(src, L)
+	return OP_OK
 
 // Handles the actual harming by a melee weapon.
 /mob/living/simple_mob/slime/xenobio/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone)

@@ -267,6 +267,7 @@ CAPABILITIES(/obj/structure/window)
 	op("bang", hand(), stance(I_HURT), label("Bang on"), then(PROC_REF(interaction_bang)))
 	op("knock", hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Knock"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	window_construction()
 	op("tk_knock", tk(), label("Knock"), then(PROC_REF(interaction_tk)))
 	// weld repair: a lit welder in the help stance mends a damaged window
 	op("weld_repair", tool(TOOL_WELDER), stance(I_HELP), label("Repair the window"), priority(OP_PRIORITY_PART + 10), wait(4 SECONDS), costs(RES_FUEL, 1),

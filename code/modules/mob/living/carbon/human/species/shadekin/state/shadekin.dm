@@ -100,11 +100,10 @@
 	observe(owner, /datum/act/name_alt, src, instead(then(PROC_REF(on_get_alt_name))))
 	observe(owner, /datum/act/name_visible, src, instead(then(PROC_REF(on_get_visible_name))))
 
-	// This datum is the source for every ability it grants
-	// (code/datums/abilities/ability.dm); revoked with it in
+	// This datum is the source for every ability it grants (shadekin/state/powers/); revoked with it in
 	// lifecycle_prerelease() below, whatever kind of shadekin this is.
-	for(var/ability_id in granted_ability_ids())
-		owner.grant_ability(ability_id, src)
+	for(var/datum/capability/ability_capability as anything in ability_capabilities())
+		grant(owner, ability_capability, src)
 
 	handle_comp() //First hit is free!
 
@@ -140,8 +139,8 @@
 	..()
 	if(!owner)
 		return
-	for(var/ability_id in granted_ability_ids())
-		owner.revoke_ability(ability_id, src)
+	for(var/datum/capability/ability_capability as anything in ability_capabilities())
+		revoke(owner, ability_capability, src)
 	if(!ishuman(owner))
 		seq_extra_remove(owner, /datum/sequence/life, src)
 	revoke(owner, granted_verb(/mob/living/proc/shadekin_control_panel), src)
@@ -357,10 +356,12 @@ CAPABILITIES(/datum/shadekin)
 	op("toggle_nutrition", ui_act("toggle_nutrition"), then(PROC_REF(ui_act_toggle_nutrition)))
 	op("toggle_voice", ui_act("toggle_voice"), then(PROC_REF(ui_act_toggle_voice)))
 
-/// Constant ability ids shared by every instance of the same concrete type.
-TYPE_TABLE_DECLARE(/datum/shadekin, shadekin_ability_ids, list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE))
-TYPE_TABLE(/datum/shadekin/phase_only, shadekin_ability_ids, list(ABILITY_ID_SHADEKIN_PHASE_SHIFT))
-TYPE_TABLE(/datum/shadekin/full, shadekin_ability_ids, list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE, ABILITY_ID_SHADEKIN_DARK_RESPITE, ABILITY_ID_SHADEKIN_DARK_TUNNELING, ABILITY_ID_SHADEKIN_DARK_MAW, ABILITY_ID_SHADEKIN_CLEAR_DARK_MAWS))
+/// The ability capabilities this kind of shadekin grants its owner: phase shift, then regenerate other and create shade.
+/datum/shadekin/proc/ability_capabilities()
+	return list(shadekin_phase(), shadekin_utility())
 
-/datum/shadekin/proc/granted_ability_ids()
-	return TYPE_TABLE_GET(src, shadekin_ability_ids)
+/datum/shadekin/phase_only/ability_capabilities()
+	return list(shadekin_phase())
+
+/datum/shadekin/full/ability_capabilities()
+	return list(shadekin_phase(), shadekin_utility(), shadekin_dark())

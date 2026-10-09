@@ -63,12 +63,12 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
 
 /// The sechailer_selectphrase_verb op: the verb's effect, as the old resolver ran it.
 /obj/item/clothing/mask/gas/sechailer/proc/sechailer_selectphrase_verb_op(datum/act/op/A)
-	sechailer_selectphrase_verb(A.actor, A.held, null)
+	sechailer_selectphrase_verb(A.actor, A.held)
 	return OP_OK
 
 /// The sechailer_halt_verb op: the verb's effect, as the old resolver ran it.
 /obj/item/clothing/mask/gas/sechailer/proc/sechailer_halt_verb_op(datum/act/op/A)
-	sechailer_halt_verb(A.actor, A.held, null)
+	sechailer_halt_verb(A.actor, A.held)
 	return OP_OK
 
 /// Old click_alt. It never reached the clothing alt-click.
@@ -78,7 +78,7 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
 	return TRUE
 
 /// Old verb "Select gas mask phrase".
-/obj/item/clothing/mask/gas/sechailer/proc/sechailer_selectphrase_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_selectphrase_verb(mob/user, obj/item/held)
 	var/key = phrase_list[phrase]
 	var/message = phrase_list[key]
 
@@ -167,7 +167,7 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
 	return ITEM_INTERACT_SUCCESS
 
 /// Old verb "HALT!".
-/obj/item/clothing/mask/gas/sechailer/proc/sechailer_halt_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_halt_verb(mob/user, obj/item/held)
 	var/key = phrase_list[phrase]
 	var/message = phrase_list[key]
 

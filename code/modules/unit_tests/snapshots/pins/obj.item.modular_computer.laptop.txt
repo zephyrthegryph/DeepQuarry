@@ -6,7 +6,6 @@ human|none menu: Pick up
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none click: Click: Interaction hand
 robot|none menu: Alternate use
-robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Forced Shutdown
 robot|none menu: Interaction hand
 robot|none menu: Move To Top
@@ -14,7 +13,6 @@ robot|none menu: Pick up
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use
 robot|none click: Click: Interaction hand
-ai|none menu: Equip (refused: not possible right now)
 ai|none menu: Use
 ai|none click: Click: Use
 ghost|none menu: Forced Shutdown (refused: You can't reach that.)
@@ -63,8 +61,9 @@ human|/obj/item/weldingtool menu: Forced Shutdown
 human|/obj/item/weldingtool menu: Interaction hand
 human|/obj/item/weldingtool menu: Interaction item
 human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Repair (refused: %T% does not require repairs.)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: Click: Interaction hand
+human|/obj/item/weldingtool click: Click: Repair
 human|/obj/item/stack/cable_coil menu: Alternate use
 human|/obj/item/stack/cable_coil menu: Forced Shutdown
 human|/obj/item/stack/cable_coil menu: Interaction hand
@@ -119,5 +118,5 @@ human|/obj/item menu: Interaction item
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Interaction hand
-keys: alt, collect_item, computer_emergency_shutdown, computer_verb_eject_id, computer_verb_eject_usb, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, interaction_hand, interaction_hand_pai, interaction_item, interaction_self, kit_customize, kit_customize_last, modular_computer_ghost_nothing, modular_computer_ghost_power, modular_computer_ghost_view, modular_computer_silicon_use, move_to_top, PC_Eject_Disk, PC_exit, PC_killprogram, PC_minimize, PC_runprogram, PC_setautorun, PC_shutdown, pick_up_item, toggle_digestable
+keys: alt, collect_item, computer_emergency_shutdown, computer_verb_eject_id, computer_verb_eject_usb, drag_buckle, emag.subvert, emag.use, equip_module, interaction_hand, interaction_hand_pai, interaction_item, interaction_self, kit_customize, kit_customize_last, modular_computer_ghost_nothing, modular_computer_ghost_power, modular_computer_ghost_view, modular_computer_silicon_use, move_to_top, PC_Eject_Disk, PC_exit, PC_killprogram, PC_minimize, PC_runprogram, PC_setautorun, PC_shutdown, pick_up_item, toggle_digestable, weld_repair
 

@@ -200,9 +200,9 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 				non_kin_count ++
 		// Technically can be combined with ||, they call the same function, but readability is poor
 		if(!non_kin_count && (src.shadekin.in_phase))
-			dq_use_self_ability(src, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting back in, nobody present
+			perform_op(src, src, ABILITY_ID_SHADEKIN_PHASE_SHIFT, null, ORIGIN_VERB) // shifting back in, nobody present
 		else if (non_kin_count && !(src.shadekin.in_phase))
-			dq_use_self_ability(src, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting out, scaredy
+			perform_op(src, src, ABILITY_ID_SHADEKIN_PHASE_SHIFT, null, ORIGIN_VERB) // shifting out, scaredy
 
 	//They reach nutritional equilibrium (important for blue-eyes healbelly)
 	if(F.alive())

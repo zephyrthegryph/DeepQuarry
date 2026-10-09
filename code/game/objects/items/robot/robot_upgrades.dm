@@ -145,7 +145,7 @@ CAPABILITIES(/obj/item/borg/upgrade/utility/rename)
 		to_chat(user, span_warning("It'd be unwise to plug another vtec module in!"))
 		return FALSE
 
-	R.grant_ability(ABILITY_ID_ROBOT_TOGGLE_VTEC, R)
+	grant(R, robot_vtec(), R)
 	R.vtec_active = TRUE
 	R.hud_used.toggle_vtec_control()
 	to_chat(R, span_notice("Actuator overdrive enabled!"))
@@ -154,7 +154,7 @@ CAPABILITIES(/obj/item/borg/upgrade/utility/rename)
 /obj/item/borg/upgrade/basic/vtec/remove_upgrade(mob/living/silicon/robot/R)
 	if(!is_installed(R))
 		return
-	R.revoke_ability(ABILITY_ID_ROBOT_TOGGLE_VTEC, R)
+	revoke(R, robot_vtec(), R)
 	R.vtec_active = FALSE
 	if(R.hud_used)
 		R.hud_used.toggle_vtec_control()

@@ -38,6 +38,7 @@ TYPE_TABLE_DECLARE(/turf/simulated/wall, wall_forced_materials, null)
 CAPABILITIES(/turf/simulated/wall)
 	every(2 SECONDS, then(PROC_REF(wall_step)), when = nameof(radioactive))
 	op("wall_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(wall_item)))
+	wall_construction()
 	op("wall_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Touch"), then(PROC_REF(wall_hand)))
 	op("wall_graffiti", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Graffiti"), then(PROC_REF(wall_graffiti_alt)))
 	adjacency(ADJ_KIND_SMOOTH, dirs = ADJ_ALL_AROUND, connects = PROC_REF(smooth_joins), changed = PROC_REF(smooth_changed))
@@ -320,11 +321,12 @@ TRACKED(/turf/simulated/wall, thermite)
 	F.icon_state = "dmg[rand(1,4)]"
 	to_chat(user, span_warning("The thermite starts melting through the wall."))
 
-	after(src, 10 SECONDS, PROC_REF(thermitemelt_cleanup), with = list(O))
+	after(null, 10 SECONDS, GLOBAL_PROC_REF(thermite_cleanup), with = list(O)) // not on the wall: the turf is the plating by then
 //	F.sd_LumReset()		//TODO: ~Carn
 	return
 
-/turf/simulated/wall/proc/thermitemelt_cleanup(obj/effect/overlay/O)
+/// The thermite fire burns out.
+/proc/thermite_cleanup(obj/effect/overlay/O)
 	if(O)
 		dissolved(O)
 

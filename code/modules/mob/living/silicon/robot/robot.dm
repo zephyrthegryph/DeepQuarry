@@ -1,6 +1,3 @@
-/// Interaction entries: a crowbar or welder used on the chassis (crowbar_act()/welder_act()).
-#define ROBOT_ENTRY_CROWBAR "robot_crowbar"
-#define ROBOT_ENTRY_WELDER "robot_welder"
 
 /mob/living/silicon/robot
 	/// Traitor HUD images shown to a syndicate borg's client (see build_traitor_hud()).
@@ -125,21 +122,6 @@
 	var/obj/item/implant/restrainingbolt/bolt	// The restraining bolt installed into the cyborg.
 	var/datum/tgui_module/robot_ui/robotact
 
-	/// Abilities (code/datums/abilities/ability.dm) every robot grants itself on
-	/// Initialize() and revokes in Destroy() - never gated by death, same as
-	/// the `verb/` declarations they replace weren't.
-	var/static/list/robot_granted_abilities = list(
-		ABILITY_ID_ROBOT_TOGGLE_LIGHTS,
-		ABILITY_ID_ROBOT_PICK_NAME,
-		ABILITY_ID_ROBOT_CUSTOMIZE_APPEARANCE,
-		ABILITY_ID_ROBOT_TOGGLE_GLOWY_STOMACH,
-		ABILITY_ID_ROBOT_SPARK_PLUG,
-		ABILITY_ID_ROBOT_TOGGLE_GRABBABILITY,
-		ABILITY_ID_ROBOT_PURGE_NUTRITION,
-		ABILITY_ID_ROBOT_TOGGLE_DECALS,
-		ABILITY_ID_ROBOT_NOM,
-	)
-
 	var/static/list/robot_verbs_default = list(
 		/mob/living/silicon/robot/proc/robot_checklaws,
 		/mob/living/silicon/robot/proc/take_image,
@@ -192,8 +174,9 @@
 	// Destroy(). Unlike robot_verbs_default below, these were never gated by
 	// death (they were plain `verb/` declarations, not in that list), so
 	// they're granted once here rather than in add_robot_verbs()/remove_robot_verbs().
-	for(var/ability_id in robot_granted_abilities)
-		grant_ability(ability_id, src)
+	grant(src, robot_utility(), src)
+	if(may_pick_name())
+		grant(src, robot_naming(), src)
 
 	. = ..()
 
@@ -296,8 +279,8 @@
 //Improved /N
 // the MMI receives the borg's mind on the turf; shells revert; parts and hat drop.
 /mob/living/silicon/robot/on_destroy(force)
-	for(var/ability_id in robot_granted_abilities)
-		revoke_ability(ability_id, src)
+	revoke(src, robot_utility(), src)
+	revoke(src, robot_naming(), src)
 	if(mmi)//Safety for when a cyborg gets dust()ed. Or there is no MMI inside.
 		if(mind)
 			// The MMI lands on the borg's turf (get_turf() sees through any container). The
@@ -728,17 +711,95 @@
 
 // --- Tool and item interactions ---------------------------------------------------------------
 
-EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
-	INTERACT_ITEM(null, PROC_REF(robot_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(robot_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Tap", PROC_REF(robot_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take hold", PROC_REF(robot_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Punch", PROC_REF(robot_interaction_hand)), \
-	INTERACT_DRAG("Block drag", TYPE_PROC_REF(/atom, interaction_swallow)), \
-	INTERACT_SILICON("Deploy to shell", PROC_REF(robot_ai_deploy_shell)))
+MSG_DEF_SELF(robot_tool/no_wiring, "You can't reach the wiring.")
+MSG_DEF_SELF(robot_tool/no_bolt, "There is no restraining bolt installed.")
+MSG_DEF_SELF(robot_tool/self_repair, "You lack the reach to be able to repair yourself.")
+MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
-/// Old attackby: parts, laws, repairs, IDs and upgrades. Anything else sparks and reaches the attack.
-/mob/living/silicon/robot/proc/robot_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// The cyborg's own item, tool and touch ops (called from CAPABILITIES(/mob/living/silicon/robot), library/mob/hands.dm). They sit above the
+/// living-mob defaults (a hit); the crowbar and welder answer outside harm intent, where the old interactions were stance-declared (they strike in combat mode).
+/proc/robot_interactions()
+	return list(
+		op("robot_item", item(/obj/item), label("Use on"), passes(), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_item_used))),
+		op("robot_pet", hand(), ungated(), when(req_empty_hand()), stance(I_HELP), label("Pet"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_help))),
+		op("robot_tap", hand(), ungated(), when(req_empty_hand()), stance(I_DISARM), label("Tap"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_disarm))),
+		op("robot_hold", hand(), ungated(), when(req_empty_hand()), stance(I_GRAB), label("Take hold"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_grab))),
+		op("robot_punch", hand(), ungated(), when(req_empty_hand()), stance(I_HURT), label("Punch"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_hurt))),
+		op("deploy_shell", remote(), label("Deploy to shell"), priority(OP_PRIORITY_NORMAL - 1), when(TYPE_PROC_REF(/mob/living/silicon/robot, shell_open_to_ai)), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_ai_deploy_shell))),
+		op("robot_pry", tool(TOOL_CROWBAR), stance(I_HELP, I_DISARM, I_GRAB), label("Pry the cover or a part"), wait(0), then(TYPE_PROC_REF(/mob/living/silicon/robot, interaction_crowbar))),
+		op("robot_weld_repair", tool(TOOL_WELDER), stance(I_HELP, I_DISARM, I_GRAB), label("Weld the dents"), costs(RES_FUEL, 0), wait(0),
+			needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, repairing_another), because = MSG(robot_tool/self_repair)), req(TYPE_PROC_REF(/mob/living/silicon/robot, has_dents), because = MSG(robot_tool/no_dents))),
+			then(TYPE_PROC_REF(/mob/living/silicon/robot, interaction_weld_repair))),
+		op("robot_wires", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), label("Work the wiring"), wait(0), needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, wiring_reachable), because = MSG(robot_tool/no_wiring))), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_wires_worked))),
+		op("robot_screwdriver", tool(TOOL_SCREWDRIVER), label("Work the panel"), wait(0), needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, panel_open_holds), silent = TRUE)), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_screwdriver_used))),
+		op("robot_bolt_wrench", tool(TOOL_WRENCH), label("Remove the restraining bolt"), wait(2 SECONDS), needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, bolt_wrench_ready), silent = TRUE), req(TYPE_PROC_REF(/mob/living/silicon/robot, has_bolt), because = MSG(robot_tool/no_bolt))),
+			starts(TYPE_PROC_REF(/mob/living/silicon/robot, bolt_wrench_started)), then(TYPE_PROC_REF(/mob/living/silicon/robot, wrench_act_robot_done))))
+
+/// The panel is open and the cell is out: a wrench can reach the restraining bolt.
+/mob/living/silicon/robot/proc/bolt_wrench_ready(datum/act/op/A)
+	return opened && !cell
+
+/mob/living/silicon/robot/proc/has_bolt(datum/act/op/A)
+	return !!bolt
+
+/mob/living/silicon/robot/proc/bolt_wrench_started(datum/act/op/A)
+	to_chat(A.actor, span_filter_notice("You begin removing \the [bolt]."))
+
+/mob/living/silicon/robot/proc/panel_open_holds(datum/act/op/A)
+	return opened
+
+/mob/living/silicon/robot/proc/wiring_reachable(datum/act/op/A)
+	return wiresexposed
+
+/// The welder is for another cyborg's dents, not your own.
+/mob/living/silicon/robot/proc/repairing_another(datum/act/op/A)
+	return A.actor != src
+
+/// Whether the server lets AIs deploy into shells (config).
+/proc/ai_shells_allowed()
+	READS_FROM()
+	return CONFIG_GET(flag/allow_ai_shells)
+
+/// An AI may deploy into a shell that allows it and is not another AI's.
+/mob/living/silicon/robot/proc/shell_open_to_ai(datum/act/op/A)
+	return read_once(shell && ai_shells_allowed() && (!connected_ai || connected_ai == A.actor))
+
+/mob/living/silicon/robot/proc/robot_wires_worked(datum/act/op/A)
+	wires_open(src, A.actor)
+	return OP_OK
+
+/mob/living/silicon/robot/proc/robot_screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	if(!cell)
+		set_wiresexposed(!wiresexposed)
+		to_chat(user, span_filter_notice("The wires have been [wiresexposed ? "exposed" : "unexposed"]."))
+		playsound(src, tool.usesound, 50, TRUE)
+		return OP_OK
+	if(radio)
+		radio.item_used_on(tool, user)
+	else
+		to_chat(user, span_filter_notice("Unable to locate a radio."))
+	return OP_OK
+
+/mob/living/silicon/robot/proc/robot_hand_help(datum/act/op/A)
+	return robot_interaction_hand(A, I_HELP)
+
+/mob/living/silicon/robot/proc/robot_hand_disarm(datum/act/op/A)
+	return robot_interaction_hand(A, I_DISARM)
+
+/mob/living/silicon/robot/proc/robot_hand_grab(datum/act/op/A)
+	return robot_interaction_hand(A, I_GRAB)
+
+/mob/living/silicon/robot/proc/robot_hand_hurt(datum/act/op/A)
+	return robot_interaction_hand(A, I_HURT)
+
+/// The item op: parts, laws, repairs, IDs and upgrades. Anything else sparks and reaches the attack.
+/mob/living/silicon/robot/proc/robot_item_used(datum/act/op/A)
+	return robot_interaction_item(A.actor, A.held) ? OP_OK : OP_PASS
+
+/// Parts, laws, repairs, IDs and upgrades: TRUE when the item was taken.
+/mob/living/silicon/robot/proc/robot_interaction_item(mob/user, obj/item/W)
 	if(istype(W, /obj/item/handcuffs)) // fuck i don't even know why isrobot() in handcuff code isn't working so this will have to do
 		return TRUE
 	if(opened && install_component(W, user))
@@ -757,7 +818,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		return TRUE
 	if(istype(W, /obj/item/encryptionkey) && opened)
 		if(radio)//sanityyyyyy
-			radio.attackby(W,user)//GTFO, you have your own procs
+			radio.item_used_on(W, user)//GTFO, you have your own procs
 		else
 			to_chat(user, span_filter_notice("Unable to locate a radio."))
 		return TRUE
@@ -873,56 +934,20 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	hud_used?.update_robot_modules_display()
 	return TRUE
 
-/mob/living/silicon/robot/wirecutter_act(mob/user, obj/item/tool)
-	if(!wiresexposed)
-		to_chat(user, span_filter_notice("You can't reach the wiring."))
-		return ITEM_INTERACT_BLOCKING
-	wires_open(src, user)
-	return ITEM_INTERACT_SUCCESS
-
-/// Crowbar outside combat mode: the stance-declared pry interactions. In combat mode none is declared, so the crowbar goes on to strike.
-/mob/living/silicon/robot/crowbar_act(mob/user, obj/item/tool)
-	if(run_interaction_entry(user, src, tool, ROBOT_ENTRY_CROWBAR))
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_SKIP_TO_ATTACK
-
-/// Abstract: working the chassis with a crowbar outside combat mode (run from crowbar_act()).
-/datum/interaction/robot_pry
-	entry = ROBOT_ENTRY_CROWBAR
-	default_action = INPUT_ACTION_USE
-	tool = TOOL_CROWBAR
-	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT)
-	effect = /mob/living/silicon/robot/proc/interaction_crowbar
-
-/datum/interaction/robot_pry/help
-	id = "robot_pry_help"
-	name = "Pry the cover or a part"
-	stance = I_HELP
-
-/datum/interaction/robot_pry/disarm
-	id = "robot_pry_disarm"
-	name = "Pry the cover or a part"
-	stance = I_DISARM
-
-/datum/interaction/robot_pry/grab
-	id = "robot_pry_grab"
-	name = "Pry the cover or a part"
-	stance = I_GRAB
-
-/// Crowbar: open or close the cover, lever out the brain, or pry out a part.
-/mob/living/silicon/robot/proc/interaction_crowbar(mob/user, obj/item/tool, datum/interaction/interaction)
+/// Crowbar outside combat mode: open or close the cover, lever out the brain, or pry out a part.
+/mob/living/silicon/robot/proc/interaction_crowbar(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!opened)
 		open_cover(user)
-		return TRUE
+		return OP_OK
 	if(cell)
 		close_cover(user)
-		return TRUE
+		return OP_OK
 	if(wiresexposed && wires_all_cut(src))
 		extract_mmi(user)
-		return TRUE
+		return OP_OK
 	pry_component(user)
-	return TRUE
+	return OP_OK
 
 /mob/living/silicon/robot/proc/open_cover(mob/user)
 	if(locked)
@@ -990,99 +1015,29 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	I.forceMove(loc)
 	return TRUE
 
-/// Welder outside combat mode: the stance-declared repair interactions. In combat mode none is declared, so the welder goes on to strike.
-/mob/living/silicon/robot/welder_act(mob/user, obj/item/tool)
-	if(run_interaction_entry(user, src, tool, ROBOT_ENTRY_WELDER))
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_SKIP_TO_ATTACK
-
-/// Abstract: welding the chassis's dents outside combat mode (run from welder_act()).
-/datum/interaction/robot_weld_repair
-	entry = ROBOT_ENTRY_WELDER
-	default_action = INPUT_ACTION_USE
-	tool = TOOL_WELDER
-	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT)
-	effect = /mob/living/silicon/robot/proc/interaction_weld_repair
-	also_requires = list(
-		REQ_BECAUSE(REQ_NOT_SELF, "you lack the reach to be able to repair yourself"),
-		REQ_TARGET_STATE(/mob/living/silicon/robot/proc/has_dents),
-	)
-
-/// Requirement: TRUE when there is plating damage to weld.
-/mob/living/silicon/robot/proc/has_dents(mob/user, atom/target, obj/item/held)
-	return injury_load(INJURY_CATEGORY_PHYSICAL) ? TRUE : "nothing to fix here"
-
-/datum/interaction/robot_weld_repair/help
-	id = "robot_weld_repair_help"
-	name = "Weld the dents"
-	stance = I_HELP
-
-/datum/interaction/robot_weld_repair/disarm
-	id = "robot_weld_repair_disarm"
-	name = "Weld the dents"
-	stance = I_DISARM
-
-/datum/interaction/robot_weld_repair/grab
-	id = "robot_weld_repair_grab"
-	name = "Weld the dents"
-	stance = I_GRAB
+/// TRUE when there is plating damage to weld.
+/mob/living/silicon/robot/proc/has_dents(datum/act/op/A)
+	return read_once(!!injury_load(INJURY_CATEGORY_PHYSICAL))
 
 /// Welder: fix the chassis's dents (not your own).
-/mob/living/silicon/robot/proc/interaction_weld_repair(mob/user, obj/item/tool, datum/interaction/interaction)
+/mob/living/silicon/robot/proc/interaction_weld_repair(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder?.remove_fuel(0))
 		to_chat(user, span_filter_warning("Need more welding fuel!"))
-		return TRUE
+		return OP_OK
 	user.setClickCooldown(user.get_attack_speed(welder))
 	mend(TREAT_PLATING_REPAIR, 30)
 	add_fingerprint(user)
 	act_message(src, user, others = span_filter_notice("[span_red("%T% has fixed some of the dents on %U%!")]"))
-	return TRUE
+	return OP_OK
 
-/mob/living/silicon/robot/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/robot_pry/help,
-		/datum/interaction/robot_pry/disarm,
-		/datum/interaction/robot_pry/grab,
-		/datum/interaction/robot_weld_repair/help,
-		/datum/interaction/robot_weld_repair/disarm,
-		/datum/interaction/robot_weld_repair/grab,
-	)
-	..()
-
-/mob/living/silicon/robot/multitool_act(mob/user, obj/item/tool)
-	return wirecutter_act(user, tool)
-
-/mob/living/silicon/robot/screwdriver_act(mob/user, obj/item/tool)
-	if(!opened)
-		return ITEM_INTERACT_BLOCKING
-	if(!cell)
-		set_wiresexposed(!wiresexposed)
-		to_chat(user, span_filter_notice("The wires have been [wiresexposed ? "exposed" : "unexposed"]."))
-		playsound(src, tool.usesound, 50, TRUE)
-		return ITEM_INTERACT_SUCCESS
-	if(radio)
-		radio.attackby(tool, user)
-	else
-		to_chat(user, span_filter_notice("Unable to locate a radio."))
-	return ITEM_INTERACT_SUCCESS
-
-/mob/living/silicon/robot/wrench_act(mob/user, obj/item/tool)
-	if(!opened || cell)
-		return ITEM_INTERACT_BLOCKING
-	if(!bolt)
-		to_chat(user, span_filter_notice("There is no restraining bolt installed."))
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_filter_notice("You begin removing \the [bolt]."))
-	task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_robot_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/mob/living/silicon/robot/proc/wrench_act_robot_done(mob/user)
+/mob/living/silicon/robot/proc/wrench_act_robot_done(datum/act/op/A)
 	bolt.forceMove(get_turf(src))
 	rel_take(src, nameof(bolt))
-	to_chat(user, span_filter_notice("You remove the restraining bolt."))
-	return ITEM_INTERACT_SUCCESS
+	to_chat(A.actor, span_filter_notice("You remove the restraining bolt."))
+	return OP_OK
 
 /mob/living/silicon/robot/GetIdCard()
 	if(bolt && !bolt.malfunction)
@@ -1140,7 +1095,8 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	set_vore_light_states(list())
 
 /// Old attack_hand (never reached the gate or the default touch): dismounts, petting and punching. The cell is the take_power_part op.
-/mob/living/silicon/robot/proc/robot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/living/silicon/robot/proc/robot_interaction_hand(datum/act/op/A, stance)
+	var/mob/user = A.actor
 	if(LAZYLEN(src?.buckled_mob_list()))
 		//We're getting off!
 		if(user in src?.buckled_mob_list())
@@ -1149,13 +1105,13 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		if(user == src)
 			for(var/rider in src?.buckled_mob_list())
 				riding_datum?.force_dismount(rider)
-		return TRUE
+		return OP_OK
 
 	add_fingerprint(user)
 
 	if(ishuman(user) && !opened)
-		hand_interact(user, interaction.stance)
-	return TRUE
+		hand_interact(user, stance)
+	return OP_OK
 
 /// The take_power_part op's condition: the chassis is open, its wiring tucked away, and there is a cell or the fried remains of its mount to take.
 /mob/living/silicon/robot/proc/power_part_exposed(datum/act/A)
@@ -1366,26 +1322,18 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		grant(src, granted_verb(granted_path), src)
 	for(var/granted_path in silicon_subsystems)
 		grant(src, granted_verb(granted_path), src)
-	grant_ability(ABILITY_ID_ROBOT_SENSOR_MODE, src)
-	grant_ability(ABILITY_ID_ROBOT_MOUNT, src)
-	grant_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_1, src)
-	grant_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_2, src)
-	grant_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_3, src)
+	grant(src, robot_live(), src)
 	if(CONFIG_GET(flag/allow_robot_recolor))
-		grant_ability(ABILITY_ID_ROBOT_RECOLOUR, src)
+		grant(src, robot_recolour(), src)
 
 /mob/living/silicon/robot/proc/remove_robot_verbs()
 	for(var/granted_path in robot_verbs_default)
 		revoke(src, granted_verb(granted_path), src)
 	for(var/granted_path in silicon_subsystems)
 		revoke(src, granted_verb(granted_path), src)
-	revoke_ability(ABILITY_ID_ROBOT_SENSOR_MODE, src)
-	revoke_ability(ABILITY_ID_ROBOT_MOUNT, src)
-	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_1, src)
-	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_2, src)
-	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_3, src)
+	revoke(src, robot_live(), src)
 	if(CONFIG_GET(flag/allow_robot_recolor))
-		revoke_ability(ABILITY_ID_ROBOT_RECOLOUR, src)
+		revoke(src, robot_recolour(), src)
 
 /mob/living/silicon/robot/binarycheck()
 	if(get_restraining_bolt())

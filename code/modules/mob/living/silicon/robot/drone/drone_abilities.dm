@@ -1,22 +1,27 @@
 // DRONE ABILITIES
 
-/datum/interaction/ability/self/robot_set_mail_tag
-	id = ABILITY_ID_ROBOT_SET_MAIL_TAG
-	name = "Set mail tag"
-	category = ABILITY_CAT_UTILITY
-	effect = /mob/living/silicon/robot/drone/proc/dq_do_set_mail_tag
+CAPABILITY_DEF(drone_mail, CAP_DRONE_MAIL, key = NONE)
 
-/datum/interaction/ability/self/robot_set_mail_tag/applies_to(atom/target)
-	return istype(target, /mob/living/silicon/robot/drone)
+/datum/capability/def/drone_mail/entries()
+	return list(
+		op("set_mail_tag", label("Set mail tag"), menu(button = "Set mail tag", bind = "ability_robot_set_mail_tag"), when(req_self()),
+			asks(/datum/prompt/choice, fields = list("title" = "Set Mail Tag", "question" = "Select the desired destination.", "choices" = computed(TYPE_PROC_REF(/mob/living/silicon/robot/drone, mail_destinations)), "timeout" = 0), step = "tag"),
+			on_interrupt(TYPE_PROC_REF(/mob/living/silicon/robot/drone, ability_mail_tag_cancelled)),
+			then(TYPE_PROC_REF(/mob/living/silicon/robot/drone, ability_set_mail_tag))))
 
-/// Tag yourself for delivery through the disposals system.
-/mob/living/silicon/robot/drone/proc/dq_do_set_mail_tag(mob/actor, obj/item/held, datum/interaction/ability/interaction)
-	// A cancel answers "": the tag is cleared.
-	open_request(src, /datum/prompt/choice, PROC_REF(mail_tag_chosen), answerer = src, title = "Set Mail Tag", question = "Select the desired destination.", choices = GLOB.tagger_locations, timeout = 0)
-	return TRUE
+/// The destinations the disposals sorting knows.
+/mob/living/silicon/robot/drone/proc/mail_destinations(datum/act/A)
+	return GLOB.tagger_locations
 
-/mob/living/silicon/robot/drone/proc/mail_tag_chosen(datum/act/request/A)
-	var/new_tag = A.answer ? A.answer.value : ""
+/// Tag yourself for delivery through the disposals system; a cancel clears the tag (ability_mail_tag_cancelled()).
+/mob/living/silicon/robot/drone/proc/ability_set_mail_tag(datum/act/op/A)
+	mail_tag_chosen(A.answer?.value)
+	return OP_OK
+
+/mob/living/silicon/robot/drone/proc/ability_mail_tag_cancelled(datum/act/op/A)
+	mail_tag_chosen("")
+
+/mob/living/silicon/robot/drone/proc/mail_tag_chosen(new_tag)
 	if(!new_tag)
 		mail_destination = ""
 		return

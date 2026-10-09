@@ -47,7 +47,7 @@
 		if(other)
 			work_start(other)
 
-/obj/machinery/reagent_refinery/interaction_ran(mob/actor, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/interaction_ran(mob/actor)
 	wake_refinery_line()
 
 /// Unanchored refinery machines are disconnected and do nothing.

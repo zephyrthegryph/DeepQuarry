@@ -9,8 +9,6 @@
 /obj/item/mecha_parts/micro/chassis
 	name="Mecha Chassis"
 	icon_state = "backbone"
-	/// "p<bitmask>" during the parts phase, "R<n>" on the reversible ladder. See construction_graph/mecha.
-	var/construction_state = "p0"
 
 CAPABILITIES(/obj/item/mecha_parts/micro/chassis)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
@@ -23,7 +21,10 @@ CAPABILITIES(/obj/item/mecha_parts/micro/chassis)
 /obj/item/mecha_parts/micro/chassis/gopher
 	name = "Gopher Chassis"
 	icon_state = "gopher-chassis"
-	construction_graph = /datum/construction_graph/mecha/micro/gopher
+	blueprint = /datum/mecha_blueprint/micro/gopher
+
+CAPABILITIES(/obj/item/mecha_parts/micro/chassis/gopher)
+	mecha_chassis(/datum/mecha_blueprint/micro/gopher)
 
 /obj/item/mecha_parts/micro/part/gopher_torso
 	name="Gopher Torso"
@@ -54,7 +55,10 @@ CAPABILITIES(/obj/item/mecha_parts/micro/chassis)
 /obj/item/mecha_parts/micro/chassis/polecat
 	name = "Polecat Chassis"
 	icon_state = "polecat-chassis"
-	construction_graph = /datum/construction_graph/mecha/micro/polecat
+	blueprint = /datum/mecha_blueprint/micro/polecat
+
+CAPABILITIES(/obj/item/mecha_parts/micro/chassis/polecat)
+	mecha_chassis(/datum/mecha_blueprint/micro/polecat)
 
 /obj/item/mecha_parts/micro/part/polecat_torso
 	name="Polecat Torso"
@@ -84,7 +88,10 @@ CAPABILITIES(/obj/item/mecha_parts/micro/chassis)
 /obj/item/mecha_parts/micro/chassis/weasel
 	name = "Weasel Chassis"
 	icon_state = "weasel-chassis"
-	construction_graph = /datum/construction_graph/mecha/micro/weasel
+	blueprint = /datum/mecha_blueprint/micro/weasel
+
+CAPABILITIES(/obj/item/mecha_parts/micro/chassis/weasel)
+	mecha_chassis(/datum/mecha_blueprint/micro/weasel)
 
 /obj/item/mecha_parts/micro/part/weasel_torso
 	name="Weasel Torso"

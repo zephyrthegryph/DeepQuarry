@@ -132,8 +132,9 @@
 			return list(INTENT_EXAMINE)
 		if(GESTURE_DRAG)
 			return list(INTENT_DROP_ONTO)
-		if(GESTURE_CTRL, GESTURE_MIDDLE)
-			// No intent of its own: the gesture is its own token, so only an op that pins it (gesture(GESTURE_CTRL)) answers it.
+		if(GESTURE_CTRL, GESTURE_MIDDLE, GESTURE_RIGHT)
+			// No intent of its own: the gesture is its own token, so only an op that pins it (gesture(GESTURE_CTRL)) answers it. A right click is never a player's gesture here (it opens the menu); a call that stands for one, the
+			// secondary use of a tool (try_interaction()), resolves it so.
 			return list(gesture)
 	return list()
 

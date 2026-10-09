@@ -314,17 +314,17 @@
 	var/list/golden = list(
 		"explain: actor /mob/living/simple_mob/e0_fixture target /obj/e2_box held /obj/item/tool/crowbar origin click gesture click",
 		"  intents: use",
-		"  candidates (31):",
+		"  candidates (42):",
 		"    1. drag_buckle item(/mob/living) tier=default claims=none (derived) side=target @ code/modules/lighting/lighting_atom.dm:48 -> dropped by match",
 		"    2. melee_hit item(/obj/item) tier=-2009 claims=none (derived) side=target @ code/datums/behaviours/burning.dm:44 -> dropped by match",
-		"    3. open hand tier=normal claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:57 -> survives, after the winner",
-		"    4. pry tool(crowbar) tier=part claims=hands+body (derived) side=target @ code/tests/engine/e2_fixtures.dm:58 -> WINNER (placed: intent rank 1, tier part, side target, declared N)",
-		"    5. insert_key item(/obj/item/e2_key) tier=part claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:59 -> dropped by match",
-		"    6. slide_in item(/obj/item/e2_cloth) tier=part claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:60 -> dropped by match",
-		"    7. peek menu tier=normal claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:61 -> dropped by origin (You can't do that that way.)",
-		"    8. set_label ui_act(set_label) tier=normal claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:62 -> dropped by origin (You can't do that that way.)",
-		"    9. ping topic(ping) tier=normal claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:63 -> dropped by origin (You can't do that that way.)",
-		"    10. escape inside tier=normal claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:64 -> dropped by reach (You can't reach that.)",
+		"    3. open hand tier=normal claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:59 -> survives, after the winner",
+		"    4. pry tool(crowbar) tier=part claims=hands+body (derived) side=target @ code/tests/engine/e2_fixtures.dm:60 -> WINNER (placed: intent rank 1, tier part, side target, declared N)",
+		"    5. insert_key item(/obj/item/e2_key) tier=part claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:61 -> dropped by match",
+		"    6. slide_in item(/obj/item/e2_cloth) tier=part claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:62 -> dropped by match",
+		"    7. peek menu tier=normal claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:63 -> dropped by origin (You can't do that that way.)",
+		"    8. set_label ui_act(set_label) tier=normal claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:64 -> dropped by origin (You can't do that that way.)",
+		"    9. ping topic(ping) tier=normal claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:65 -> dropped by origin (You can't do that that way.)",
+		"    10. escape inside tier=normal claims=none (derived) side=target @ code/tests/engine/e2_fixtures.dm:66 -> dropped by reach (You can't reach that.)",
 		"    11. drag_buckle item(/mob/living) tier=default claims=none (derived) side=held @ code/modules/lighting/lighting_atom.dm:48 -> dropped by match",
 		"    12. kit_customize item(/obj/item/kit) tier=part claims=none (derived) side=held @ code/modules/mob/living/silicon/robot/component.dm:385 -> dropped by match",
 		"    13. kit_customize_last item(/obj/item/kit) tier=-2001 claims=none (derived) side=held @ code/modules/mob/living/silicon/robot/component.dm:386 -> dropped by match",
@@ -332,42 +332,33 @@
 		"    15. toggle_digestable menu tier=normal claims=none (derived) side=held @ code/modules/mob/living/silicon/robot/component.dm:388 -> dropped by origin (You can't do that that way.)",
 		"    16. pick_up_item hand tier=-2010 claims=none (derived) side=held @ code/modules/mob/living/silicon/robot/component.dm:389 -> dropped by match",
 		"    17. collect_item item(/obj/item/storage) tier=default claims=none (derived) side=held @ code/modules/mob/living/silicon/robot/component.dm:390 -> dropped by match",
-		"    18. drag_buckle item(/mob/living) tier=default claims=none (derived) side=actor @ code/modules/lighting/lighting_atom.dm:48 -> dropped by match",
-		"    19. reload ai tier=normal claims=body (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:183 -> dropped by origin (You can't do that that way.)",
-		"    20. mob_attacks.melee ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
-		"    21. mob_attacks.shoot ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
-		"    22. mob_attacks.step ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
-		"    23. mob_attacks.special ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
-		"    24. mob_attacks.fire ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
-		"    25. mob_attacks.throw ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
-		"    26. mob_attacks.pickup ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
-		"    27. mob_attacks.alarm ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
-		"    28. mob_attacks.charge ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
-		"    29. mob_attacks.slam ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
-		"    30. nutrition_heal menu(Nutrition Heal) tier=normal claims=body (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:193 -> dropped by origin (You can't do that that way.)",
-		"    31. ghost_join observe tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:204 -> dropped by match",
+		"    18. equip_module remote tier=-2050 claims=none (derived) side=held @ code/modules/mob/living/silicon/robot/component.dm:391 -> dropped by origin (You can't do that that way.)",
+		"    19. drag_buckle item(/mob/living) tier=default claims=none (derived) side=actor @ code/modules/lighting/lighting_atom.dm:48 -> dropped by match",
+		"    20. attack_variants.disarm menu tier=normal claims=none (derived) side=actor @ code/modules/combat_ai/integration/mob_living.dm:22 -> dropped by origin (You can't do that that way.)",
+		"    21. attack_variants.grab menu tier=normal claims=none (derived) side=actor @ code/modules/combat_ai/integration/mob_living.dm:22 -> dropped by origin (You can't do that that way.)",
+		"    22. touch_help hand tier=-2010 claims=none (derived) side=actor @ code/modules/combat_ai/integration/mob_living.dm:23 -> dropped by match",
+		"    23. touch_disarm hand tier=-2010 claims=none (derived) side=actor @ code/modules/combat_ai/integration/mob_living.dm:24 -> dropped by match",
+		"    24. touch_grab hand tier=-2010 claims=none (derived) side=actor @ code/modules/combat_ai/integration/mob_living.dm:25 -> dropped by match",
+		"    25. touch_hurt hand tier=-2010 claims=none (derived) side=actor @ code/modules/combat_ai/integration/mob_living.dm:26 -> dropped by match",
+		"    26. hit_help item(/obj/item) tier=-2010 claims=none (derived) side=actor @ code/modules/combat_ai/integration/mob_living.dm:27 -> dropped by match",
+		"    27. hit_disarm item(/obj/item) tier=-2010 claims=none (derived) side=actor @ code/modules/combat_ai/integration/mob_living.dm:28 -> dropped by match",
+		"    28. hit_grab item(/obj/item) tier=-2010 claims=none (derived) side=actor @ code/modules/combat_ai/integration/mob_living.dm:29 -> dropped by match",
+		"    29. hit_hurt item(/obj/item) tier=-2010 claims=none (derived) side=actor @ code/modules/combat_ai/integration/mob_living.dm:30 -> dropped by match",
+		"    30. reload ai tier=normal claims=body (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:183 -> dropped by origin (You can't do that that way.)",
+		"    31. mob_attacks.melee ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
+		"    32. mob_attacks.shoot ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
+		"    33. mob_attacks.step ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
+		"    34. mob_attacks.special ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
+		"    35. mob_attacks.fire ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
+		"    36. mob_attacks.throw ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
+		"    37. mob_attacks.pickup ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
+		"    38. mob_attacks.alarm ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
+		"    39. mob_attacks.charge ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
+		"    40. mob_attacks.slam ai tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:184 -> dropped by origin (You can't do that that way.)",
+		"    41. nutrition_heal menu(Nutrition Heal) tier=normal claims=body (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:193 -> dropped by origin (You can't do that that way.)",
+		"    42. ghost_join observe tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:204 -> dropped by match",
 		"  winner: pry (tier part)")
 	TEST_ASSERT_EQUAL(length(lines), length(golden), "the explanation has the golden's lines (other types' topic links left out):\n[jointext(lines, "\n")]")
 	for(var/i in 1 to min(length(lines), length(golden)))
 		TEST_ASSERT_EQUAL(lines[i], golden[i], "line [i] of the explanation differs from the golden, whole text follows:\n[text]")
 
-// ---------------------------------------------------------------------------------------------------------------------
-// A legacy DECLARE_INTERACTIONS entry resolves beside a new op.
-// ---------------------------------------------------------------------------------------------------------------------
-
-/datum/unit_test/dq_e2/legacy_entry_beside_new_op
-
-/datum/unit_test/dq_e2/legacy_entry_beside_new_op/run_gate()
-	var/mob/living/simple_mob/e0_fixture/M = actor()
-	var/obj/e2_mixed/X = allocate(/obj/e2_mixed)
-	var/datum/op_result/plain = test_click(M, X, null)
-	TEST_ASSERT_EQUAL(plain?.key, "wave", "a plain click is the new op")
-	TEST_ASSERT_EQUAL(X.waved, 1, "which ran")
-	var/datum/op_result/alt = test_click(M, X, null, GESTURE_ALT)
-	TEST_ASSERT_NOTNULL(alt, "an alt-click resolved")
-	TEST_ASSERT(findtext(alt.key, "legacy:"), "to the legacy entry that answers it, in the same pass: [alt?.key]")
-	TEST_ASSERT_EQUAL(alt.outcome, ACT_COMMITTED, "which committed")
-	TEST_ASSERT_EQUAL(X.legacy_used, 1, "the legacy effect ran")
-	TEST_ASSERT(assert_resolves(M, X, null, GESTURE_CLICK, "wave"), "the new op still wins its own input")
-	var/text = explain_click(M, X, null, GESTURE_ALT)
-	TEST_ASSERT(findtext(text, "legacy:"), "explain_click lists the legacy candidate beside the new op:\n[text]")

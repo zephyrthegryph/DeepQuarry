@@ -84,7 +84,7 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 	return
 
 // TGUI Electropack window; no more browse() panel.
-/obj/item/radio/electropack/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/radio/electropack/interaction_self(mob/user, obj/item/held)
 	. = ..()
 	if(!ishuman(user))
 		return

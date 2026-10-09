@@ -8,7 +8,6 @@ human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none menu: Use
 human|none click: Click: Nikki hat unload hand
 robot|none menu: Alternate use
-robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Nikki hat unload hand
 robot|none menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
@@ -19,7 +18,6 @@ robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use
 robot|none menu: Wear hat
 robot|none click: Click: Pick up hat
-ai|none menu: Equip (refused: not possible right now)
 ai|none menu: Wear hat
 ai|none click: Click: Wear hat
 ghost|none menu: Move To Top (refused: You can't reach that.)
@@ -147,5 +145,5 @@ human|/obj/item/perfect_tele menu: Remove translocator
 human|/obj/item/perfect_tele menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/perfect_tele menu: Use
 human|/obj/item/perfect_tele click: Click: Nikki hat item
-keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, head_light_self, head_robot_pick_up, head_silicon_wear, kit_customize, kit_customize_last, move_to_top, nikki_hat_equip, nikki_hat_item, nikki_hat_self, nikki_hat_unequip_alt, nikki_hat_unequip_translocator_verb, nikki_hat_unload_hand, pick_up_item, toggle_digestable
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, equip_module, head_light_self, head_robot_pick_up, head_silicon_wear, kit_customize, kit_customize_last, move_to_top, nikki_hat_equip, nikki_hat_item, nikki_hat_self, nikki_hat_unequip_alt, nikki_hat_unequip_translocator_verb, nikki_hat_unload_hand, pick_up_item, toggle_digestable
 

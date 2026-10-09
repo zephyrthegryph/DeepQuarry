@@ -14,10 +14,10 @@
  *   hold their chosen special attack (set_use_stance()).
  *
  * The two together are the Use's stance (I_HELP, I_DISARM, I_GRAB, I_HURT).
- * Nothing but the input layer reads it (input_stance()): interactions declare
- * the stance they answer (`/datum/interaction/var/stance`), the resolver
- * offers only the ones that match, and the interaction that runs carries the
- * intent to its effect (`interaction.stance`) and on as a `stance` argument.
+ * Nothing but the input layer reads it (input_stance()): ops declare the
+ * stance they answer (stance(I_X)), the resolver offers only the ones that
+ * match, and the effect of the op that runs takes the intent from its own
+ * declaration (or from the `stance` argument its caller passes on).
  */
 
 /// Whether combat mode is on. Write it with set_combat_mode().
@@ -194,39 +194,30 @@ CAPABILITIES(/atom/movable/screen/combat_mode)
 	return button
 
 // ---------------------------------------------------------------------------
-// The Disarm and Grab interactions, listed on living targets (Menu, examine,
-// the attack category key). Running one is one Use as that variant.
+// The Disarm and Grab ops, listed on living targets (Menu, examine, the attack category key). Running one is one Use as that variant.
+// Every living mob brings this capability (CAPABILITIES(/mob/living), combat_ai/integration/mob_living.dm).
 
-/datum/interaction/attack_variant
-	category = INTERACTION_CAT_ATTACK
-	requires = list(REQ_NOT_SELF)
-	effect = /mob/living/proc/receive_attack_variant
-	/// ATTACK_VARIANT_* this runs.
-	var/variant
+MSG_DEF_SELF(attack_variant/self, "You can't do that to yourself.")
 
-/datum/interaction/attack_variant/applies_to(atom/target)
-	return isliving(target)
+CAPABILITY_DEF(attack_variants, CAP_ATTACK_VARIANTS, key = NONE)
 
-/datum/interaction/attack_variant/disarm
-	id = "disarm"
-	name = "Disarm"
-	variant = ATTACK_VARIANT_DISARM
-	tags = list(INTERACTION_TAG_HOSTILE)
+/datum/capability/def/attack_variants/entries()
+	return list(
+		op("disarm", menu(), label("Disarm"),
+			needs(req(TYPE_PROC_REF(/mob/living, attack_variant_not_self), because = MSG(attack_variant/self))),
+			then(TYPE_PROC_REF(/mob/living, attack_variant_disarm))),
+		op("grab", menu(), label("Grab"),
+			needs(req(TYPE_PROC_REF(/mob/living, attack_variant_not_self), because = MSG(attack_variant/self))),
+			then(TYPE_PROC_REF(/mob/living, attack_variant_grab))))
 
-/datum/interaction/attack_variant/grab
-	id = "grab"
-	name = "Grab"
-	variant = ATTACK_VARIANT_GRAB
+/// The actor is somebody else.
+/mob/living/proc/attack_variant_not_self(datum/act/op/A)
+	return A.actor != src
 
-/mob/living/declare_interactions(list/into)
-	. = ..()
-	into += list(/datum/interaction/attack_variant/disarm, /datum/interaction/attack_variant/grab)
-	// Abilities (doc/rewrite/rules.md §5): every ability type is offered to
-	// every living mob; a grant (ability.dm's has_ability()) decides who can
-	// actually use one.
-	into += GLOB.ability_interaction_types
+/mob/living/proc/attack_variant_disarm(datum/act/op/A)
+	A.actor.use_attack_variant(src, ATTACK_VARIANT_DISARM)
+	return OP_OK
 
-/// Effect of the Disarm and Grab interactions.
-/mob/living/proc/receive_attack_variant(mob/actor, obj/item/held, datum/interaction/attack_variant/interaction)
-	actor.use_attack_variant(src, interaction.variant)
-	return TRUE
+/mob/living/proc/attack_variant_grab(datum/act/op/A)
+	A.actor.use_attack_variant(src, ATTACK_VARIANT_GRAB)
+	return OP_OK

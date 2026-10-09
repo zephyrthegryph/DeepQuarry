@@ -243,11 +243,11 @@ CAPABILITIES(/obj/item/gun/energy/sniperrifle)
 		if(istext(refusal))
 			to_chat(A.actor, span_warning(refusal))
 		return OP_DECLINE
-	sniperrifle_verb_scope(A.actor, A.held, null)
+	sniperrifle_verb_scope(A.actor, A.held)
 	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/energy/sniperrifle/proc/sniperrifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/energy/sniperrifle/proc/sniperrifle_verb_scope(mob/user, obj/item/held)
 	toggle_scope(2.0, user)
 
 /*
@@ -353,11 +353,11 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 		if(istext(refusal))
 			to_chat(A.actor, span_warning(refusal))
 		return OP_DECLINE
-	monorifle_verb_sights(A.actor, A.held, null)
+	monorifle_verb_sights(A.actor, A.held)
 	return OP_OK
 
 /// Old Aim Down Sights verb.
-/obj/item/gun/energy/monorifle/proc/monorifle_verb_sights(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/energy/monorifle/proc/monorifle_verb_sights(mob/user, obj/item/held)
 	toggle_scope(scope_multiplier, user)
 
 /obj/item/gun/energy/monorifle/combat

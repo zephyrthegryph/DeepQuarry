@@ -1,15 +1,12 @@
-human|none menu: Cut through the plating (refused: needs a welder)
 human|none menu: Graffiti
 human|none menu: Touch
 human|none click: Click: Touch
-robot|none menu: Cut through the plating (refused: needs a welder)
 robot|none menu: Graffiti
 robot|none menu: Touch
 robot|none click: Click: Touch
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Crawl
-human|/obj/item/tool/screwdriver menu: Cut through the plating (refused: needs a welder)
 human|/obj/item/tool/screwdriver menu: Draw graffiti
 human|/obj/item/tool/screwdriver menu: Floor item help
 human|/obj/item/tool/screwdriver menu: Graffiti
@@ -20,7 +17,6 @@ human|/obj/item/tool/screwdriver menu: Touch
 human|/obj/item/tool/screwdriver menu: Turf item
 human|/obj/item/tool/screwdriver click: Click: Floor item help
 human|/obj/item/tool/crowbar menu: Crawl
-human|/obj/item/tool/crowbar menu: Cut through the plating (refused: needs a welder)
 human|/obj/item/tool/crowbar menu: Draw graffiti
 human|/obj/item/tool/crowbar menu: Floor item help
 human|/obj/item/tool/crowbar menu: Graffiti
@@ -31,7 +27,6 @@ human|/obj/item/tool/crowbar menu: Touch
 human|/obj/item/tool/crowbar menu: Turf item
 human|/obj/item/tool/crowbar click: Click: Floor item help
 human|/obj/item/tool/wrench menu: Crawl
-human|/obj/item/tool/wrench menu: Cut through the plating (refused: needs a welder)
 human|/obj/item/tool/wrench menu: Draw graffiti
 human|/obj/item/tool/wrench menu: Floor item help
 human|/obj/item/tool/wrench menu: Graffiti
@@ -42,7 +37,6 @@ human|/obj/item/tool/wrench menu: Touch
 human|/obj/item/tool/wrench menu: Turf item
 human|/obj/item/tool/wrench click: Click: Floor item help
 human|/obj/item/tool/wirecutters menu: Crawl
-human|/obj/item/tool/wirecutters menu: Cut through the plating (refused: needs a welder)
 human|/obj/item/tool/wirecutters menu: Draw graffiti
 human|/obj/item/tool/wirecutters menu: Floor item help
 human|/obj/item/tool/wirecutters menu: Graffiti
@@ -53,7 +47,6 @@ human|/obj/item/tool/wirecutters menu: Touch
 human|/obj/item/tool/wirecutters menu: Turf item
 human|/obj/item/tool/wirecutters click: Click: Floor item help
 human|/obj/item/multitool menu: Crawl
-human|/obj/item/multitool menu: Cut through the plating (refused: needs a welder)
 human|/obj/item/multitool menu: Draw graffiti
 human|/obj/item/multitool menu: Floor item help
 human|/obj/item/multitool menu: Graffiti
@@ -73,9 +66,8 @@ human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Touch
 human|/obj/item/weldingtool menu: Turf item
-human|/obj/item/weldingtool click: Click: Floor item help
+human|/obj/item/weldingtool click: Click: Cut through the plating
 human|/obj/item/stack/cable_coil menu: Crawl
-human|/obj/item/stack/cable_coil menu: Cut through the plating (refused: needs a welder)
 human|/obj/item/stack/cable_coil menu: Draw graffiti
 human|/obj/item/stack/cable_coil menu: Floor item help
 human|/obj/item/stack/cable_coil menu: Graffiti
@@ -87,7 +79,6 @@ human|/obj/item/stack/cable_coil menu: Touch
 human|/obj/item/stack/cable_coil menu: Turf item
 human|/obj/item/stack/cable_coil click: Click: Floor item help
 human|/obj/item/stack/material/steel menu: Crawl
-human|/obj/item/stack/material/steel menu: Cut through the plating (refused: needs a welder)
 human|/obj/item/stack/material/steel menu: Draw graffiti
 human|/obj/item/stack/material/steel menu: Floor item help
 human|/obj/item/stack/material/steel menu: Graffiti
@@ -98,7 +89,6 @@ human|/obj/item/stack/material/steel menu: Touch
 human|/obj/item/stack/material/steel menu: Turf item
 human|/obj/item/stack/material/steel click: Click: Floor item help
 human|/obj/item/card/id menu: Crawl
-human|/obj/item/card/id menu: Cut through the plating (refused: needs a welder)
 human|/obj/item/card/id menu: Draw graffiti
 human|/obj/item/card/id menu: Floor item help
 human|/obj/item/card/id menu: Graffiti
@@ -110,7 +100,6 @@ human|/obj/item/card/id menu: Touch
 human|/obj/item/card/id menu: Turf item
 human|/obj/item/card/id click: Click: Floor item help
 human|/obj/item menu: Crawl
-human|/obj/item menu: Cut through the plating (refused: needs a welder)
 human|/obj/item menu: Draw graffiti
 human|/obj/item menu: Floor item help
 human|/obj/item menu: Graffiti
@@ -120,5 +109,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Touch
 human|/obj/item menu: Turf item
 human|/obj/item click: Click: Floor item help
-keys: floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, turf_crawl, turf_item, turf_touch
+keys: cut_plating, floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, pry_covering, turf_crawl, turf_item, turf_touch, unscrew_covering, unwrench_covering, weld_dents
 

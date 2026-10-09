@@ -380,7 +380,7 @@ CAPABILITIES(/obj/item)
 	owns_one(nameof(identity), /datum/identification)
 	owns_one(nameof(mind_host), /datum/mind_host)
 	owns_many(nameof(possessed_voice))
-	// Every item's defaults (the old /obj/item declare_interactions): a kit customises it (ahead of the rest, last on a suit that may refuse it), an empty
+	// Every item's defaults: a kit customises it (ahead of the rest, last on a suit that may refuse it), an empty
 	// hand picks it up, a pickup-mode bag collects it, a cyborg equips it from its module, and two menu entries.
 	op("kit_customize", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_PART), when(req(PROC_REF(kit_goes_first))), then(PROC_REF(interaction_kit_customize)))
 	op("kit_customize_last", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_DEFAULT - 1), when(req(PROC_REF(kit_goes_last))), then(PROC_REF(interaction_kit_customize)))
@@ -388,6 +388,7 @@ CAPABILITIES(/obj/item)
 	op("toggle_digestable", menu(), label("Toggle Digestable"), needs(req_adjacent(), req_capable(), carried()), then(PROC_REF(toggle_digestable_effect)))
 	op("pick_up_item", hand(), label("Pick up"), when(req_empty_hand()), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(interaction_pick_up_item)))
 	op("collect_item", item(/obj/item/storage), label("Collect"), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_collected)))
+	op("equip_module", remote(), label("Equip"), priority(OP_PRIORITY_DEFAULT - 50), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), when(PROC_REF(item_in_robot_module)), then(PROC_REF(item_silicon_equip_module)))
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
 /datum/carried_afflictions/proc/take(list/incoming)

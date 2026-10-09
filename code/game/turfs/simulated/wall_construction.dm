@@ -1,67 +1,108 @@
-/**
- * Wall construction graph (doc/rewrite/interactions.md §10).
- *
- * A plain wall ("plain") is cut open with a welder (or a plasma cutter, an
- * energy blade or a pickaxe). A reinforced wall goes 6 -> 0 through its
- * layers, and some steps go back. The state is the wall's `construction_stage`
- * (null on plain walls, which state_of() reports as "plain").
- *
- * Welder work that isn't construction (burning off wallrot, lighting thermite,
- * repairing damage) is ordinary interactions below, ahead of the graph's edges.
- */
-/turf/simulated/wall
-	construction_graph = /datum/construction_graph/wall
+// ---- taking a wall apart, declared ----
+//
+// A plain wall is cut open with a welder (or a plasma cutter, an energy blade or a pickaxe). A reinforced wall goes 6 -> 0 through its layers, and
+// some steps go back. The wall's `construction_stage` var is the state (null on plain walls, which a reinforced wall's stage 6 starts from), so the
+// steps are ops that read that var: wall_construction() is listed in the wall's CAPABILITIES block (walls.dm).
+//
+// Welder work that isn't taking the wall apart (burning off wallrot, lighting thermite, repairing damage) sits above the cutting steps.
 
-/datum/construction_graph/wall
-	id = "wall"
-	states = list("plain", 6, 5, 4, 3, 2, 1, 0)
-	initial_states = list("plain", 6)
-	state_var = null
-	edge_requires = list(REQ_PROC(/proc/dq_wall_worker_ok, "you can't work on walls"))
-	edge_types = list(
-		/datum/interaction/construction/wall/cut_plain,
-		/datum/interaction/construction/wall/cut_grille,
-		/datum/interaction/construction/wall/mend_grille,
-		/datum/interaction/construction/wall/unscrew_lines,
-		/datum/interaction/construction/wall/screw_lines,
-		/datum/interaction/construction/wall/slice_cover,
-		/datum/interaction/construction/wall/pry_cover,
-		/datum/interaction/construction/wall/loosen_bolts,
-		/datum/interaction/construction/wall/slice_rods,
-		/datum/interaction/construction/wall/pry_sheath,
-	)
+MSG_DEF_SELF(wall/clumsy, "You don't have the dexterity to do this.")
+MSG_DEF_SELF(wall/inside, "You can't do this from in here.")
 
-/datum/construction_graph/wall/state_of(atom/target)
-	var/turf/simulated/wall/wall = target
-	if(!istype(wall))
-		return null
-	if(!wall.reinf_material || isnull(wall.construction_stage))
-		return "plain"
-	return wall.construction_stage
+MSG_DEF(wall/cut_plain, "You remove the outer plating.", span_warning("The wall was torn open by %U%!"))
+MSG_DEF_SELF(wall/cut_plain_begins, "You begin cutting through the outer plating.")
+MSG_DEF_SELF(wall/cut_plain_blade_begins, "You begin slicing through the outer plating.")
+MSG_DEF_SELF(wall/cut_grille, "You cut through the outer grille.")
+MSG_DEF_SELF(wall/mend_grille, "You mend the outer grille.")
+MSG_DEF_SELF(wall/unscrew_lines, "You unscrew the support lines.")
+MSG_DEF_SELF(wall/unscrew_lines_begins, "You begin removing the support lines.")
+MSG_DEF_SELF(wall/screw_lines, "You screw down the support lines.")
+MSG_DEF_SELF(wall/screw_lines_begins, "You begin screwing down the support lines.")
+MSG_DEF_SELF(wall/slice_cover, "You press firmly on the cover, dislodging it.")
+MSG_DEF_SELF(wall/slice_cover_begins, "You begin slicing through the metal cover.")
+MSG_DEF_SELF(wall/pry_cover, "You pry off the cover.")
+MSG_DEF_SELF(wall/pry_cover_begins, "You struggle to pry off the cover.")
+MSG_DEF_SELF(wall/loosen_bolts, "You remove the bolts anchoring the support rods.")
+MSG_DEF_SELF(wall/loosen_bolts_begins, "You start loosening the anchoring bolts which secure the support rods to their frame.")
+MSG_DEF_SELF(wall/slice_rods, "You slice through the support rods.")
+MSG_DEF_SELF(wall/slice_rods_begins, "You begin slicing through the support rods.")
+MSG_DEF_SELF(wall/pry_sheath, "You pry off the outer sheath.")
+MSG_DEF_SELF(wall/pry_sheath_begins, "You struggle to pry off the outer sheath.")
+MSG_DEF_SELF(wall/burn_rot, "You burn away the fungi with %I%.")
+MSG_DEF_SELF(wall/repair_begins, "You start repairing the damage to %T%.")
+MSG_DEF_SELF(wall/repaired, "You finish repairing the damage to %T%.")
 
-/datum/construction_graph/wall/set_state(atom/target, state)
-	var/turf/simulated/wall/wall = target
-	if(istype(wall) && isnum(state))
-		wall.set_construction_stage(state)
+/// A worker who can do wall work: dexterous and standing on a turf.
+/proc/wall_worker()
+	return needs(req(TYPE_PROC_REF(/turf/simulated/wall, worker_dexterous), because = MSG(wall/clumsy)), req(TYPE_PROC_REF(/turf/simulated/wall, worker_standing), because = MSG(wall/inside)))
 
-/datum/construction_graph/wall/on_step_started(atom/target, mob/actor, obj/item/held)
-	var/turf/simulated/wall/wall = target
-	actor.setClickCooldown(actor.get_attack_speed(held))
-	if(istype(wall) && held)
-		wall.touched_by_tool(held)
+/// The ops that take a wall apart, and the welder work above them.
+/proc/wall_construction()
+	return list(
+		op("burn_rot", lit_welder(fuel = 0), when(TYPE_PROC_REF(/turf/simulated/wall, has_rot)), wall_worker(), priority(OP_PRIORITY_DEFAULT + 3), label("Burn away the fungi"), wait(0), says(MSG(wall/burn_rot)), then(TYPE_PROC_REF(/turf/simulated/wall, burn_away_rot))),
+		op("light_thermite", lit_welder(fuel = 0), when(TYPE_PROC_REF(/turf/simulated/wall, thermite_ready)), wall_worker(), hostile(), priority(OP_PRIORITY_DEFAULT + 2), label("Ignite the thermite"), wait(0), then(TYPE_PROC_REF(/turf/simulated/wall, light_thermite))),
+		op("weld_repair", lit_welder(fuel = 0), when(TYPE_PROC_REF(/turf/simulated/wall, repairable)), wall_worker(), priority(OP_PRIORITY_DEFAULT + 1), label("Repair the wall"), wait(TYPE_PROC_REF(/turf/simulated/wall, repair_time)), begins(MSG(wall/repair_begins)), says(MSG(wall/repaired)), then(TYPE_PROC_REF(/turf/simulated/wall, finish_weld_repair))),
 
-/datum/construction_graph/wall/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
-	if(after == CONSTRUCTION_DONE)
-		return
-	actor.update_examine_panel(target)
+		// a plain wall: cut through the outer plating with a welder, or with what stands in for one
+		op("cut_plain", lit_welder(fuel = 0), when(TYPE_PROC_REF(/turf/simulated/wall, is_plain)), wall_worker(), label("Cut through the outer plating"), wait(TYPE_PROC_REF(/turf/simulated/wall, plain_cut_time)), begins(MSG(wall/cut_plain_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/cut_plain)), then(TYPE_PROC_REF(/turf/simulated/wall, plain_cut))),
+		op("cut_plain_blade", item(/obj/item/melee/energy/blade), when(TYPE_PROC_REF(/turf/simulated/wall, is_plain)), when(TYPE_PROC_REF(/turf/simulated/wall, no_thermite)), wall_worker(), label("Cut through the outer plating"), wait(TYPE_PROC_REF(/turf/simulated/wall, plain_cut_time_blade)), begins(MSG(wall/cut_plain_blade_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, alt_started)), says(MSG(wall/cut_plain)), then(TYPE_PROC_REF(/turf/simulated/wall, plain_cut))),
+		op("cut_plain_pickaxe", item(/obj/item/pickaxe), when(TYPE_PROC_REF(/turf/simulated/wall, is_plain)), when(TYPE_PROC_REF(/turf/simulated/wall, no_thermite)), wall_worker(), label("Cut through the outer plating"), wait(TYPE_PROC_REF(/turf/simulated/wall, plain_cut_time_pickaxe)), begins(TYPE_PROC_REF(/turf/simulated/wall, pickaxe_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, alt_started)), says(MSG(wall/cut_plain)), then(TYPE_PROC_REF(/turf/simulated/wall, plain_cut))),
 
-/// A worker who can do wall work: dexterous and standing on a turf. TRUE or why not.
-/proc/dq_wall_worker_ok(mob/actor, atom/target, obj/item/held)
-	if(!actor.IsAdvancedToolUser())
-		return "you don't have the dexterity to do this"
-	if(!isturf(actor.loc))
-		return "you can't do this from in here"
-	return TRUE
+		// a reinforced wall, outermost layer first
+		op("cut_grille", tool(TOOL_WIRECUTTER), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_6)), wall_worker(), label("Cut the outer grille"), wait(0), says(MSG(wall/cut_grille)), then(TYPE_PROC_REF(/turf/simulated/wall, cut_grille))),
+		op("mend_grille", tool(TOOL_WIRECUTTER), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_5)), wall_worker(), priority(OP_PRIORITY_NORMAL - 1), label("Mend the outer grille"), wait(0), says(MSG(wall/mend_grille)), then(TYPE_PROC_REF(/turf/simulated/wall, mend_grille))),
+		op("unscrew_lines", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_5)), wall_worker(), label("Unscrew the support lines"), wait(4 SECONDS), begins(MSG(wall/unscrew_lines_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/unscrew_lines)), then(TYPE_PROC_REF(/turf/simulated/wall, unscrew_lines))),
+		op("screw_lines", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_4)), wall_worker(), priority(OP_PRIORITY_NORMAL - 1), label("Screw down the support lines"), wait(4 SECONDS), begins(MSG(wall/screw_lines_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/screw_lines)), then(TYPE_PROC_REF(/turf/simulated/wall, screw_lines))),
+		op("slice_cover", lit_welder(fuel = 0), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_4)), wall_worker(), priority(OP_PRIORITY_NORMAL - 1), label("Slice through the metal cover"), wait(6 SECONDS), begins(MSG(wall/slice_cover_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/slice_cover)), then(TYPE_PROC_REF(/turf/simulated/wall, slice_cover))),
+		op("slice_cover_cutter", item(/obj/item/pickaxe/plasmacutter), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_4)), when(TYPE_PROC_REF(/turf/simulated/wall, no_thermite)), wall_worker(), priority(OP_PRIORITY_NORMAL - 1), label("Slice through the metal cover"), wait(TYPE_PROC_REF(/turf/simulated/wall, cutter_time_cover)), begins(MSG(wall/slice_cover_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, alt_started)), says(MSG(wall/slice_cover)), then(TYPE_PROC_REF(/turf/simulated/wall, slice_cover))),
+		op("pry_cover", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_3)), wall_worker(), label("Pry off the cover"), wait(10 SECONDS), begins(MSG(wall/pry_cover_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/pry_cover)), then(TYPE_PROC_REF(/turf/simulated/wall, pry_cover))),
+		op("loosen_bolts", tool(TOOL_WRENCH), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_2)), wall_worker(), label("Loosen the anchoring bolts"), wait(4 SECONDS), begins(MSG(wall/loosen_bolts_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/loosen_bolts)), then(TYPE_PROC_REF(/turf/simulated/wall, loosen_bolts))),
+		op("slice_rods", lit_welder(fuel = 0), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_1)), wall_worker(), priority(OP_PRIORITY_NORMAL - 2), label("Slice through the support rods"), wait(7 SECONDS), begins(MSG(wall/slice_rods_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/slice_rods)), then(TYPE_PROC_REF(/turf/simulated/wall, slice_rods))),
+		op("slice_rods_cutter", item(/obj/item/pickaxe/plasmacutter), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_1)), when(TYPE_PROC_REF(/turf/simulated/wall, no_thermite)), wall_worker(), priority(OP_PRIORITY_NORMAL - 2), label("Slice through the support rods"), wait(TYPE_PROC_REF(/turf/simulated/wall, cutter_time_rods)), begins(MSG(wall/slice_rods_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, alt_started)), says(MSG(wall/slice_rods)), then(TYPE_PROC_REF(/turf/simulated/wall, slice_rods))),
+		op("pry_sheath", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_0)), wall_worker(), priority(OP_PRIORITY_NORMAL - 1), label("Pry off the outer sheath"), wait(10 SECONDS), begins(MSG(wall/pry_sheath_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/pry_sheath)), then(TYPE_PROC_REF(/turf/simulated/wall, pry_sheath))))
+
+// ---- who may work, and in which state ----
+
+/// A worker who is dexterous.
+/turf/simulated/wall/proc/worker_dexterous(datum/act/op/A)
+	var/mob/actor = A.actor
+	return actor.IsAdvancedToolUser()
+
+/// A worker who stands on a turf, not inside something.
+/turf/simulated/wall/proc/worker_standing(datum/act/op/A)
+	var/mob/actor = A.actor
+	return isturf(actor.loc)
+
+/// No reinforcement layers are left to go through: a plain wall, or a reinforced one with no stage.
+/turf/simulated/wall/proc/is_plain(datum/act/A)
+	return read_once(!reinf_material || isnull(construction_stage))
+
+/// `construction_stage` is null or a step number that may be 0 (null == 0 is true in DM), so each stage asks for a number.
+/turf/simulated/wall/proc/at_stage(stage)
+	return read_once(reinf_material && !isnull(construction_stage) && construction_stage == stage)
+
+/turf/simulated/wall/proc/at_stage_6(datum/act/A)
+	return read_once(at_stage(6))
+
+/turf/simulated/wall/proc/at_stage_5(datum/act/A)
+	return read_once(at_stage(5))
+
+/turf/simulated/wall/proc/at_stage_4(datum/act/A)
+	return read_once(at_stage(4))
+
+/turf/simulated/wall/proc/at_stage_3(datum/act/A)
+	return read_once(at_stage(3))
+
+/turf/simulated/wall/proc/at_stage_2(datum/act/A)
+	return read_once(at_stage(2))
+
+/turf/simulated/wall/proc/at_stage_1(datum/act/A)
+	return read_once(at_stage(1))
+
+/turf/simulated/wall/proc/at_stage_0(datum/act/A)
+	return read_once(at_stage(0))
+
+// ---- a tool touching the wall ----
 
 /// A tool touching the wall: it radiates, and a hot tool heats it.
 /turf/simulated/wall/proc/touched_by_tool(obj/item/tool)
@@ -70,297 +111,167 @@
 	if(heat)
 		burn(heat)
 
-/datum/interaction/construction/wall
-	tool_volume = 100
+/// A step begins: the actor's click cooldown, and the tool touches the wall.
+/turf/simulated/wall/proc/step_began(datum/act/op/A)
+	var/mob/actor = A.actor
+	var/obj/item/held = A.held
+	actor.setClickCooldown(actor.get_attack_speed(held))
+	if(held)
+		touched_by_tool(held)
 
-// ---- Plain wall ----
+/// The first wait of a step starts.
+/turf/simulated/wall/proc/tool_started(datum/act/op/A)
+	step_began(A)
 
-/datum/interaction/construction/wall/cut_plain
-	feedback = /datum/msg/interaction/construction/wall/cut_plain
-	start_feedback = /datum/msg/start/interaction/construction/wall/cut_plain
-	from_state = "plain"
-	to_state = CONSTRUCTION_DONE
-	step_text = "cut through the outer plating"
-	tool = TOOL_WELDER
-	alt_item_types = list(/obj/item/melee/energy/blade, /obj/item/pickaxe)
-
-/datum/msg/interaction/construction/wall/cut_plain
-	self = "You remove the outer plating."
-
-/datum/msg/start/interaction/construction/wall/cut_plain
-	self = "You begin cutting through the outer plating."
-
-/// 60 deciseconds less the material's cut_delay, scaled by the tool.
-/datum/interaction/construction/wall/cut_plain/proc/cut_delay(atom/target)
-	var/turf/simulated/wall/wall = target
-	return max(0, 60 - wall.material.cut_delay)
-
-/datum/interaction/construction/wall/cut_plain/base_duration(mob/actor, atom/target)
-	return cut_delay(target)
-
-/datum/interaction/construction/wall/cut_plain/duration_for(mob/actor, atom/target, obj/item/held)
-	return tool_delay(actor, held, cut_delay(target), tool)
-
-/datum/interaction/construction/wall/cut_plain/alt_delay(mob/actor, atom/target, obj/item/held)
-	var/delay = 60 - target_material_cut(target)
+/// The first wait of a step that something other than the welder does starts: its own sound too.
+/turf/simulated/wall/proc/alt_started(datum/act/op/A)
+	step_began(A)
+	var/obj/item/held = A.held
+	var/sound = held?.usesound
 	if(istype(held, /obj/item/melee/energy/blade))
-		delay *= 0.5
-	else if(istype(held, /obj/item/pickaxe))
+		play_sfx(src, SFX_SPARKS)
+		return
+	if(istype(held, /obj/item/pickaxe) && !istype(held, /obj/item/pickaxe/plasmacutter))
 		var/obj/item/pickaxe/pick = held
-		delay -= pick.digspeed
-	return max(0, delay)
+		sound = pick.drill_sound
+	if(sound)
+		playsound(src, sound, 100, TRUE)
 
-/datum/interaction/construction/wall/cut_plain/proc/target_material_cut(atom/target)
-	var/turf/simulated/wall/wall = target
-	return wall.material.cut_delay
+/// A step that has no wait: begun and done in one go.
+/turf/simulated/wall/proc/step_done(datum/act/op/A)
+	step_began(A)
 
-/datum/interaction/construction/wall/cut_plain/alt_sound(obj/item/held)
-	if(istype(held, /obj/item/melee/energy/blade))
-		return SFX_SPARKS
-	if(istype(held, /obj/item/pickaxe))
-		var/obj/item/pickaxe/pick = held
-		return pick.drill_sound
-	return ..()
+/// A layer has gone: whoever is looking at the wall sees the new state.
+/turf/simulated/wall/proc/layer_done(datum/act/op/A)
+	var/mob/actor = A.actor
+	actor.update_examine_panel(src)
 
-/datum/interaction/construction/wall/cut_plain/start_feedback_for(mob/actor, atom/target, obj/item/held)
-	if(istype(held, /obj/item/melee/energy/blade))
-		return /datum/msg/start/interaction/construction/wall/cut_plain/blade
-	if(istype(held, /obj/item/pickaxe))
-		return /datum/msg/start/interaction/construction/wall/cut_plain/pickaxe
-	return ..()
+// ---- a plain wall ----
 
-MSG_DEF_SELF(start/interaction/construction/wall/cut_plain/blade, "You begin slicing through the outer plating.")
+/// 60 deciseconds less the material's cut_delay.
+/turf/simulated/wall/proc/plain_cut_base()
+	return max(0, 60 - material.cut_delay)
+
+/// The welder's wait (the op scales it by the tool).
+/turf/simulated/wall/proc/plain_cut_time(datum/act/op/A)
+	return plain_cut_base()
+
+/// An energy blade cuts in half the time (and its own toolspeed).
+/turf/simulated/wall/proc/plain_cut_time_blade(datum/act/op/A)
+	var/obj/item/held = A.held
+	return max(0, plain_cut_base() * 0.5 * held.toolspeed)
+
+/// A pickaxe is as slow as the welder less its dig speed (and its own toolspeed).
+/turf/simulated/wall/proc/plain_cut_time_pickaxe(datum/act/op/A)
+	var/obj/item/pickaxe/pick = A.held
+	return max(0, (plain_cut_base() - pick.digspeed) * pick.toolspeed)
 
 /// The pickaxe's own drilling verb.
-/datum/msg/start/interaction/construction/wall/cut_plain/pickaxe/texts(atom/user, atom/target, obj/item/item)
-	var/obj/item/pickaxe/pick = item
-	return list("You begin [istype(pick) ? pick.drill_verb : "digging"] through the outer plating.", null, null)
+/turf/simulated/wall/proc/pickaxe_begins(datum/act/op/A)
+	var/obj/item/pickaxe/pick = A.held
+	return msg_text("You begin [istype(pick) ? pick.drill_verb : "digging"] through the outer plating.")
 
-/datum/interaction/construction/wall/cut_plain/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/turf/simulated/wall/wall = target
-	wall.dismantle_wall()
-	act_message(actor, target, others = MSG_OTHERS(span_warning("The wall was torn open by %U%!")))
-	return TRUE
+/// The wall comes open.
+/turf/simulated/wall/proc/plain_cut(datum/act/op/A)
+	dismantle_wall()
+	return OP_OK
 
-// ---- Reinforced wall ----
+// ---- a reinforced wall ----
 
-/datum/interaction/construction/wall/cut_grille
-	feedback = /datum/msg/interaction/construction/wall/cut_grille
-	from_state = 6
-	to_state = 5
-	step_text = "cut the outer grille"
-	tool = TOOL_WIRECUTTER
+/// A plasma cutter slices the metal cover in the time the step takes.
+/turf/simulated/wall/proc/cutter_time_cover(datum/act/op/A)
+	var/obj/item/held = A.held
+	return 6 SECONDS * held.toolspeed
 
-/datum/msg/interaction/construction/wall/cut_grille
-	self = "You cut through the outer grille."
+/// A plasma cutter slices the support rods in the time the step takes.
+/turf/simulated/wall/proc/cutter_time_rods(datum/act/op/A)
+	var/obj/item/held = A.held
+	return 7 SECONDS * held.toolspeed
 
-/datum/interaction/construction/wall/mend_grille
-	feedback = /datum/msg/interaction/construction/wall/mend_grille
-	from_state = 5
-	to_state = 6
-	step_text = "mend the outer grille"
-	tool = TOOL_WIRECUTTER
+/turf/simulated/wall/proc/cut_grille(datum/act/op/A)
+	step_done(A)
+	set_construction_stage(5)
+	layer_done(A)
+	return OP_OK
 
-/datum/msg/interaction/construction/wall/mend_grille
-	self = "You mend the outer grille."
+/turf/simulated/wall/proc/mend_grille(datum/act/op/A)
+	step_done(A)
+	set_construction_stage(6)
+	layer_done(A)
+	return OP_OK
 
-/datum/interaction/construction/wall/unscrew_lines
-	feedback = /datum/msg/interaction/construction/wall/unscrew_lines
-	start_feedback = /datum/msg/start/interaction/construction/wall/unscrew_lines
-	from_state = 5
-	to_state = 4
-	step_text = "unscrew the support lines"
-	tool = TOOL_SCREWDRIVER
-	duration = 4 SECONDS
+/turf/simulated/wall/proc/unscrew_lines(datum/act/op/A)
+	set_construction_stage(4)
+	layer_done(A)
+	return OP_OK
 
-/datum/msg/interaction/construction/wall/unscrew_lines
-	self = "You unscrew the support lines."
+/turf/simulated/wall/proc/screw_lines(datum/act/op/A)
+	set_construction_stage(5)
+	layer_done(A)
+	return OP_OK
 
-/datum/msg/start/interaction/construction/wall/unscrew_lines
-	self = "You begin removing the support lines."
+/turf/simulated/wall/proc/slice_cover(datum/act/op/A)
+	set_construction_stage(3)
+	layer_done(A)
+	return OP_OK
 
-/datum/interaction/construction/wall/screw_lines
-	feedback = /datum/msg/interaction/construction/wall/screw_lines
-	start_feedback = /datum/msg/start/interaction/construction/wall/screw_lines
-	from_state = 4
-	to_state = 5
-	step_text = "screw down the support lines"
-	tool = TOOL_SCREWDRIVER
-	duration = 4 SECONDS
+/turf/simulated/wall/proc/pry_cover(datum/act/op/A)
+	set_construction_stage(2)
+	layer_done(A)
+	return OP_OK
 
-/datum/msg/interaction/construction/wall/screw_lines
-	self = "You screw down the support lines."
+/turf/simulated/wall/proc/loosen_bolts(datum/act/op/A)
+	set_construction_stage(1)
+	layer_done(A)
+	return OP_OK
 
-/datum/msg/start/interaction/construction/wall/screw_lines
-	self = "You begin screwing down the support lines."
+/turf/simulated/wall/proc/slice_rods(datum/act/op/A)
+	set_construction_stage(0)
+	layer_done(A)
+	return OP_OK
 
-/datum/interaction/construction/wall/slice_cover
-	feedback = /datum/msg/interaction/construction/wall/slice_cover
-	start_feedback = /datum/msg/start/interaction/construction/wall/slice_cover
-	from_state = 4
-	to_state = 3
-	step_text = "slice through the metal cover"
-	tool = TOOL_WELDER
-	alt_item_types = list(/obj/item/pickaxe/plasmacutter)
-	duration = 6 SECONDS
+/turf/simulated/wall/proc/pry_sheath(datum/act/op/A)
+	dismantle_wall()
+	return OP_OK
 
-/datum/msg/interaction/construction/wall/slice_cover
-	self = "You press firmly on the cover, dislodging it."
+// ---- welder work that isn't taking the wall apart ----
 
-/datum/msg/start/interaction/construction/wall/slice_cover
-	self = "You begin slicing through the metal cover."
+/// No thermite on the wall: the cutter and the blade set thermite off instead (wall_item).
+/turf/simulated/wall/proc/no_thermite(datum/act/A)
+	return !thermite
 
-/datum/interaction/construction/wall/pry_cover
-	feedback = /datum/msg/interaction/construction/wall/pry_cover
-	start_feedback = /datum/msg/start/interaction/construction/wall/pry_cover
-	from_state = 3
-	to_state = 2
-	step_text = "pry off the cover"
-	tool = TOOL_CROWBAR
-	duration = 10 SECONDS
+/// Wallrot grows on the wall.
+/turf/simulated/wall/proc/has_rot(datum/act/A)
+	return (locate_within(src, /obj/effect/overlay/wallrot)) ? TRUE : FALSE
 
-/datum/msg/interaction/construction/wall/pry_cover
-	self = "You pry off the cover."
+/// Thermite is on the wall and no wallrot covers it.
+/turf/simulated/wall/proc/thermite_ready(datum/act/A)
+	return thermite && !(locate_within(src, /obj/effect/overlay/wallrot))
 
-/datum/msg/start/interaction/construction/wall/pry_cover
-	self = "You struggle to pry off the cover."
-
-/datum/interaction/construction/wall/loosen_bolts
-	feedback = /datum/msg/interaction/construction/wall/loosen_bolts
-	start_feedback = /datum/msg/start/interaction/construction/wall/loosen_bolts
-	from_state = 2
-	to_state = 1
-	step_text = "loosen the anchoring bolts"
-	tool = TOOL_WRENCH
-	duration = 4 SECONDS
-
-/datum/msg/interaction/construction/wall/loosen_bolts
-	self = "You remove the bolts anchoring the support rods."
-
-/datum/msg/start/interaction/construction/wall/loosen_bolts
-	self = "You start loosening the anchoring bolts which secure the support rods to their frame."
-
-/datum/interaction/construction/wall/slice_rods
-	feedback = /datum/msg/interaction/construction/wall/slice_rods
-	start_feedback = /datum/msg/start/interaction/construction/wall/slice_rods
-	from_state = 1
-	to_state = 0
-	step_text = "slice through the support rods"
-	tool = TOOL_WELDER
-	alt_item_types = list(/obj/item/pickaxe/plasmacutter)
-	duration = 7 SECONDS
-
-/datum/msg/interaction/construction/wall/slice_rods
-	self = "You slice through the support rods."
-
-/datum/msg/start/interaction/construction/wall/slice_rods
-	self = "You begin slicing through the support rods."
-
-/datum/interaction/construction/wall/pry_sheath
-	feedback = /datum/msg/interaction/construction/wall/pry_sheath
-	start_feedback = /datum/msg/start/interaction/construction/wall/pry_sheath
-	from_state = 0
-	to_state = CONSTRUCTION_DONE
-	step_text = "pry off the outer sheath"
-	tool = TOOL_CROWBAR
-	duration = 10 SECONDS
-
-/datum/msg/interaction/construction/wall/pry_sheath
-	self = "You pry off the outer sheath."
-
-/datum/msg/start/interaction/construction/wall/pry_sheath
-	self = "You struggle to pry off the outer sheath."
-
-/datum/interaction/construction/wall/pry_sheath/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/turf/simulated/wall/wall = target
-	wall.dismantle_wall()
-	return TRUE
-
-// ---------------------------------------------------------------------------
-// Welder work that isn't construction. It comes before the graph's edges.
-
-/turf/simulated/wall/declare_interactions(list/into)
-	..()
-	into += list(
-		/datum/interaction/wall_burn_rot,
-		/datum/interaction/wall_light_thermite,
-		/datum/interaction/wall_repair,
-	)
-
-/datum/interaction/wall_burn_rot
-	id = "wall_burn_rot"
-	name = "Burn away the fungi"
-	category = INTERACTION_CAT_REPAIR
-	priority = 30
-	default_action = INPUT_ACTION_USE
-	tool = TOOL_WELDER
-	tool_volume = 10
-	requires = list(REQ_REACH_ADJACENT, REQ_PROC(/proc/dq_wall_worker_ok, "you can't work on walls"))
-	effect = /turf/simulated/wall/proc/burn_away_rot
-	feedback = /datum/msg/interaction/wall_burn_rot
-
-/datum/interaction/wall_burn_rot/applies_to(atom/target)
-	return (locate_within(target, /obj/effect/overlay/wallrot)) ? TRUE : FALSE
-
-MSG_DEF_SELF(interaction/wall_burn_rot, "You burn away the fungi with %I%.")
-
-/turf/simulated/wall/proc/burn_away_rot(mob/actor, obj/item/held, datum/interaction/interaction)
-	touched_by_tool(held)
-	for(var/obj/effect/overlay/wallrot/rot in turf_contents_of_type(src, /obj/effect/overlay/wallrot))
-		dissolved(rot, actor)
-	return TRUE
-
-/datum/interaction/wall_light_thermite
-	id = "wall_light_thermite"
-	name = "Ignite the thermite"
-	category = INTERACTION_CAT_REPAIR
-	priority = 25
-	default_action = INPUT_ACTION_USE
-	tool = TOOL_WELDER
-	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT, REQ_PROC(/proc/dq_wall_worker_ok, "you can't work on walls"))
-	effect = /turf/simulated/wall/proc/light_thermite
-	tags = list(INTERACTION_TAG_HOSTILE)
-
-/datum/interaction/wall_light_thermite/applies_to(atom/target)
-	var/turf/simulated/wall/wall = target
-	return istype(wall) && wall.thermite && !(locate_on(wall, /obj/effect/overlay/wallrot))
-
-/turf/simulated/wall/proc/light_thermite(mob/actor, obj/item/held, datum/interaction/interaction)
-	touched_by_tool(held)
-	thermitemelt(actor)
-	return TRUE
-
-/datum/interaction/wall_repair
-	id = "wall_repair"
-	feedback = /datum/msg/interaction/wall_repair
-	start_feedback = /datum/msg/start/interaction/wall_repair
-	name = "Repair the wall"
-	category = INTERACTION_CAT_REPAIR
-	priority = 20
-	default_action = INPUT_ACTION_USE
-	tool = TOOL_WELDER
-	tool_volume = 100
-	requires = list(REQ_REACH_ADJACENT, REQ_PROC(/proc/dq_wall_worker_ok, "you can't work on walls"))
-	effect = /turf/simulated/wall/proc/finish_weld_repair
-
-/datum/interaction/wall_repair/applies_to(atom/target)
-	var/turf/simulated/wall/wall = target
-	if(!istype(wall) || wall.thermite || (locate_on(wall, /obj/effect/overlay/wallrot)))
+/// Damaged, with no thermite and no wallrot.
+/turf/simulated/wall/proc/repairable(datum/act/A)
+	if(thermite || (locate_within(src, /obj/effect/overlay/wallrot)))
 		return FALSE
-	return wall.get_integrity() < wall.max_integrity
+	return read_once(get_integrity() < max_integrity)
 
 /// At least half a second; longer the more damage there is.
-/datum/interaction/wall_repair/duration_for(mob/actor, atom/target, obj/item/held)
-	var/turf/simulated/wall/wall = target
-	return tool_delay(actor, held, max(5, (wall.max_integrity - wall.get_integrity()) / 5), tool)
+/turf/simulated/wall/proc/repair_time(datum/act/op/A)
+	return max(5, (max_integrity - get_integrity()) / 5)
 
-MSG_DEF_SELF(start/interaction/wall_repair, "You start repairing the damage to %T%.")
+/turf/simulated/wall/proc/burn_away_rot(datum/act/op/A)
+	touched_by_tool(A.held)
+	for(var/obj/effect/overlay/wallrot/rot in turf_contents_of_type(src, /obj/effect/overlay/wallrot))
+		dissolved(rot, A.actor)
+	return OP_OK
 
-MSG_DEF_SELF(interaction/wall_repair, "You finish repairing the damage to %T%.")
+/turf/simulated/wall/proc/light_thermite(datum/act/op/A)
+	touched_by_tool(A.held)
+	thermitemelt(A.actor)
+	return OP_OK
 
-/turf/simulated/wall/proc/finish_weld_repair(mob/actor, obj/item/held, datum/interaction/interaction)
-	touched_by_tool(held)
+/turf/simulated/wall/proc/finish_weld_repair(datum/act/op/A)
+	touched_by_tool(A.held)
 	repair_damage(max_integrity)
+	var/mob/actor = A.actor
 	actor.update_examine_panel(src)
-	return TRUE
+	return OP_OK

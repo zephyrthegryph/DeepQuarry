@@ -328,23 +328,27 @@
 		if(prob(10))
 			L.status_at_least(STAT_STUNNED, 2)
 
-DECLARE_INTERACTIONS(/obj/item/holder, INTERACT_ITEM_AS(I_HURT, "Squeeze", PROC_REF(interaction_item)), INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
-/// Old attackby.
-/obj/item/holder/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// A holder struck with itself in harm intent squeezes what it holds (a stance-declared op ahead of holder_use, which passes the input on).
+/obj/item/holder/proc/holder_squeezed(datum/act/op/A)
+	var/mob/user = A.actor
+	if(A.held != src)
+		return OP_DECLINE
 	// ITION: MicroHandCrush
-	if(W == src && interaction.stance == I_HURT)
-		for(var/mob/living/M in contents_of(src))
-			if(user.size_multiplier > M.size_multiplier)
-				var/dam = (user.size_multiplier - M.size_multiplier)*(rand(2,5))
-				to_chat(user, span_danger("You roughly squeeze [M]!"))
-				to_chat(M, span_danger("You are roughly squeezed by [user]!"))
-				log_and_message_admins("[key_name(M)] has been harmsqueezed by [key_name(user)]")
-				M.injure(INJURY_BLUNT, dam, null, user)
+	for(var/mob/living/M in contents_of(src))
+		if(user.size_multiplier > M.size_multiplier)
+			var/dam = (user.size_multiplier - M.size_multiplier)*(rand(2,5))
+			to_chat(user, span_danger("You roughly squeeze [M]!"))
+			to_chat(M, span_danger("You are roughly squeezed by [user]!"))
+			log_and_message_admins("[key_name(M)] has been harmsqueezed by [key_name(user)]")
+			M.injure(INJURY_BLUNT, dam, null, user)
 	// ITION: MicroHandCrush END
+	return OP_OK
+
+/// An item used on the holder is passed on to the creatures inside. The input is not used up: the item's afterattack still follows.
+/obj/item/holder/proc/holder_item_used(datum/act/op/A)
 	for(var/mob/M in contents_of(src))
-		M.attackby(W,user)
-	return INTERACTION_HANDLED_PASS
+		M.item_used_on(A.held, A.actor)
+	return OP_OK
 
 //Mob procs and vars for scooping up
 /mob/living/var/holder_type

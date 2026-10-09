@@ -636,13 +636,10 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 	var/settings_operator_expected = FALSE
 	var/obj/item/settings_held
 	var/settings_held_expected = FALSE
-	var/datum/interaction/settings_interaction
-	var/settings_interaction_expected = FALSE
 
 CAPABILITIES(/datum/prompt/text/weapon_setting_review)
 	ref_one(nameof(settings_operator), /mob)
 	ref_one(nameof(settings_held), /obj/item)
-	ref_one(nameof(settings_interaction), /datum/interaction)
 
 /datum/prompt/text/weapon_setting_review/prepare(datum/act/context)
 	. = ..()
@@ -656,14 +653,9 @@ CAPABILITIES(/datum/prompt/text/weapon_setting_review)
 	rel_clear(src, nameof(settings_held))
 	if(captured_held && !QDELETED(captured_held))
 		rel_set(src, nameof(settings_held), captured_held)
-	var/datum/interaction/captured_interaction = settings_interaction
-	settings_interaction_expected = !isnull(captured_interaction)
-	rel_clear(src, nameof(settings_interaction))
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(settings_interaction), captured_interaction)
 
 /datum/prompt/text/weapon_setting_review/recheck_extra()
-	if((settings_operator_expected && QDELETED(settings_operator)) || (settings_held_expected && QDELETED(settings_held)) || (settings_interaction_expected && QDELETED(settings_interaction)))
+	if((settings_operator_expected && QDELETED(settings_operator)) || (settings_held_expected && QDELETED(settings_held)))
 		return "gone"
 
 /datum/prompt/choice/weapon_setting_review
@@ -672,13 +664,10 @@ CAPABILITIES(/datum/prompt/text/weapon_setting_review)
 	var/settings_operator_expected = FALSE
 	var/obj/item/settings_held
 	var/settings_held_expected = FALSE
-	var/datum/interaction/settings_interaction
-	var/settings_interaction_expected = FALSE
 
 CAPABILITIES(/datum/prompt/choice/weapon_setting_review)
 	ref_one(nameof(settings_operator), /mob)
 	ref_one(nameof(settings_held), /obj/item)
-	ref_one(nameof(settings_interaction), /datum/interaction)
 
 /datum/prompt/choice/weapon_setting_review/prepare(datum/act/context)
 	. = ..()
@@ -692,14 +681,9 @@ CAPABILITIES(/datum/prompt/choice/weapon_setting_review)
 	rel_clear(src, nameof(settings_held))
 	if(captured_held && !QDELETED(captured_held))
 		rel_set(src, nameof(settings_held), captured_held)
-	var/datum/interaction/captured_interaction = settings_interaction
-	settings_interaction_expected = !isnull(captured_interaction)
-	rel_clear(src, nameof(settings_interaction))
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(settings_interaction), captured_interaction)
 
 /datum/prompt/choice/weapon_setting_review/recheck_extra()
-	if((settings_operator_expected && QDELETED(settings_operator)) || (settings_held_expected && QDELETED(settings_held)) || (settings_interaction_expected && QDELETED(settings_interaction)))
+	if((settings_operator_expected && QDELETED(settings_operator)) || (settings_held_expected && QDELETED(settings_held)))
 		return "gone"
 	if(!isnull(value) && isdatum(value))
 		var/datum/selected = value

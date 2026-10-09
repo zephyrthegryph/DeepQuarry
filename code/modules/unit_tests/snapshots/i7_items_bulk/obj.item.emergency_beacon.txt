@@ -1,5 +1,5 @@
 /obj/item/emergency_beacon|human|none => |
-/obj/item/emergency_beacon|robot|none => |gen_silicon_item_silicon_equip_module:not possible right now
-/obj/item/emergency_beacon|ai|none => |gen_silicon_item_silicon_equip_module:not possible right now
+/obj/item/emergency_beacon|robot|none => |
+/obj/item/emergency_beacon|ai|none => |
 /obj/item/emergency_beacon|ghost|none => |
 

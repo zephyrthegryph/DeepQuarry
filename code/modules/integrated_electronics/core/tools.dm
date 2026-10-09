@@ -123,7 +123,7 @@ CAPABILITIES(/obj/item/integrated_electronics/debugger)
 /// Old attack_self.
 /obj/item/integrated_electronics/debugger/proc/interaction_self(datum/act/op/A)
 	var/datum/circuit_memory_review/review = new
-	review.start(A.actor, src, A.held, null, FALSE)
+	review.start(A.actor, src, A.held, FALSE)
 	return OP_OK
 
 /obj/item/integrated_electronics/debugger/proc/memory_type_selected(datum/circuit_memory_review/review)
@@ -590,9 +590,7 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 	var/mob/actor
 	var/obj/item/source_item
 	var/obj/item/original_held
-	var/datum/interaction/original_interaction
 	var/held_expected = FALSE
-	var/interaction_expected = FALSE
 	var/original_client_ckey
 	var/constant_chip = FALSE
 	var/type_name
@@ -601,7 +599,6 @@ CAPABILITIES(/datum/circuit_memory_review)
 	ref_one(nameof(actor), /mob)
 	ref_one(nameof(source_item), /obj/item)
 	ref_one(nameof(original_held), /obj/item)
-	ref_one(nameof(original_interaction), /datum/interaction)
 
 /datum/prompt/choice/circuit_memory_type
 	timeout = 0
@@ -652,8 +649,6 @@ CAPABILITIES(/datum/circuit_memory_review)
 		return "gone"
 	if(held_expected && QDELETED(original_held))
 		return "gone"
-	if(interaction_expected && QDELETED(original_interaction))
-		return "gone"
 	if(original_client_ckey && !user_value())
 		return "gone"
 
@@ -670,7 +665,7 @@ CAPABILITIES(/datum/circuit_memory_review)
 	if(source_item.tgui_status(user, GLOB.tgui_physical_state) != STATUS_INTERACTIVE)
 		return "can't use it"
 
-/datum/circuit_memory_review/proc/start(mob/user, obj/item/source_item, obj/item/held, datum/interaction/interaction, constant_chip)
+/datum/circuit_memory_review/proc/start(mob/user, obj/item/source_item, obj/item/held, constant_chip)
 	if(istype(user, /client))
 		var/client/C = user
 		original_client_ckey = C.ckey
@@ -681,9 +676,7 @@ CAPABILITIES(/datum/circuit_memory_review)
 	rel_set(src, nameof(actor), user)
 	rel_set(src, nameof(src.source_item), source_item)
 	held_expected = !isnull(held)
-	interaction_expected = !isnull(interaction)
 	rel_set(src, nameof(original_held), held)
-	rel_set(src, nameof(original_interaction), interaction)
 	src.constant_chip = constant_chip
 	if(why_not())
 		retire()

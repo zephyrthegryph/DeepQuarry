@@ -152,7 +152,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/passenger)
 	return TRUE
 
 /// Old verb "Enter Passenger Compartment" (added to the chassis while a compartment was attached).
-/obj/mecha/proc/move_inside_passenger(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/move_inside_passenger(mob/user, obj/item/held)
 
 	//check that user can climb in
 	if (user.stat || !ishuman(user))
