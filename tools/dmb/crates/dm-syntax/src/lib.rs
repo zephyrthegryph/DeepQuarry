@@ -14,7 +14,12 @@ mod scope_map;
 mod statements;
 pub use scope_map::{ScopeCheckpoint, ScopeMap};
 mod lexical_scope;
+mod reference_roles;
 pub use lexical_scope::{local_name, Binding, BindingId, BindingValue, LexicalScopes, ScopeError};
+pub use reference_roles::{
+    arglist_argument, assignment_target_access, call_target, is_global_receiver,
+    is_literal_identifier, named_argument, CallTarget, NamedArgument, ReferenceAccess,
+};
 mod visit;
 pub use audit::{
     audit_source_streaming, for_each_parsed_chunk, for_each_source_chunk,

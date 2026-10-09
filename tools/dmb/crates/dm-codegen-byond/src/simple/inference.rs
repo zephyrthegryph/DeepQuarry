@@ -279,24 +279,26 @@ impl Compiler<'_> {
         statement: &str,
     ) -> Result<(), LowerError> {
         for (index, arg) in args.iter().enumerate() {
-            if let ExprKind::Binary { op, lhs, rhs } = &arg.kind {
-                if op == "=" {
-                    if let ExprKind::Ident(name) = &lhs.kind {
-                        self.intern_string(name);
-                        self.emit(
-                            opcode::PUSH_VAL,
-                            vec![Word::Value(ValueWord::String(SymbolId::of(name)))],
-                        );
-                    } else {
-                        self.expression(lhs, statement)?;
-                    }
-                    if matches!(&rhs.kind, ExprKind::Literal(value) if value == "null") {
-                        self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::Null)]);
-                    } else {
-                        self.expression(rhs, statement)?;
-                    }
-                    continue;
+            if let Some(dm_syntax::NamedArgument {
+                key: lhs,
+                value: rhs,
+            }) = dm_syntax::named_argument(arg)
+            {
+                if let ExprKind::Ident(name) = &lhs.kind {
+                    self.intern_string(name);
+                    self.emit(
+                        opcode::PUSH_VAL,
+                        vec![Word::Value(ValueWord::String(SymbolId::of(name)))],
+                    );
+                } else {
+                    self.expression(lhs, statement)?;
                 }
+                if matches!(&rhs.kind, ExprKind::Literal(value) if value == "null") {
+                    self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::Null)]);
+                } else {
+                    self.expression(rhs, statement)?;
+                }
+                continue;
             }
             self.emit(opcode::PUSH_INT, vec![Word::Immediate(index as u32 + 1)]);
             self.expression(arg, statement)?;

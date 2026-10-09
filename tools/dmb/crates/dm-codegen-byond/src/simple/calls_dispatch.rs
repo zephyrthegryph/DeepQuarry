@@ -11,62 +11,53 @@ impl Compiler<'_> {
     ) -> Result<(), LowerError> {
         let named_arguments = args
             .iter()
-            .any(|arg| matches!(&arg.kind, ExprKind::Binary { op, .. } if op == "="));
-        let arglist_argument = args.first().filter(|_| args.len() == 1).and_then(|arg| {
-            let ExprKind::Call { callee, args } = &arg.kind else {
-                return None;
-            };
-            (matches!(&callee.kind, ExprKind::Ident(name) if name == "arglist") && args.len() == 1)
-                .then(|| &args[0])
-        });
-        if let ExprKind::Call {
-            callee: dispatcher,
-            args: target,
-        } = &callee.kind
+            .any(|arg| dm_syntax::named_argument(arg).is_some());
+        let arglist_argument = dm_syntax::arglist_argument(args);
+        let target_kind = dm_syntax::call_target(callee);
+        if let dm_syntax::CallTarget::Dynamic {
+            dispatcher,
+            targets: target,
+        } = target_kind
         {
-            if let ExprKind::Ident(dispatcher) = &dispatcher.kind {
-                if dispatcher == "call" || dispatcher == "call_ext" {
-                    if !(1..=2).contains(&target.len()) || named_arguments {
-                        return Err(error(
-                            statement,
-                            "dynamic call requires target, name, and positional arguments",
-                        ));
-                    }
-                    for target in target {
-                        self.expression(target, statement)?;
-                    }
-                    if let Some(list) = arglist_argument {
-                        self.expression(list, statement)?;
-                        self.emit(
-                            match (dispatcher.as_str(), target.len()) {
-                                ("call", 1) => 0xcb,
-                                ("call", 2) => 0xcc,
-                                ("call_ext", 1) => 0x17b,
-                                ("call_ext", 2) => 0x117,
-                                _ => unreachable!(),
-                            },
-                            vec![],
-                        );
-                        return Ok(());
-                    }
-                    for arg in args {
-                        self.expression(arg, statement)?;
-                    }
-                    self.emit(
-                        match (dispatcher.as_str(), target.len()) {
-                            ("call", 1) => 0x2b,
-                            ("call", 2) => 0xb5,
-                            ("call_ext", 1) => 0x17a,
-                            ("call_ext", 2) => 0x116,
-                            _ => unreachable!(),
-                        },
-                        vec![Word::Immediate(args.len() as u32)],
-                    );
-                    return Ok(());
-                }
+            if !(1..=2).contains(&target.len()) || named_arguments {
+                return Err(error(
+                    statement,
+                    "dynamic call requires target, name, and positional arguments",
+                ));
             }
+            for target in target {
+                self.expression(target, statement)?;
+            }
+            if let Some(list) = arglist_argument {
+                self.expression(list, statement)?;
+                self.emit(
+                    match (dispatcher, target.len()) {
+                        ("call", 1) => 0xcb,
+                        ("call", 2) => 0xcc,
+                        ("call_ext", 1) => 0x17b,
+                        ("call_ext", 2) => 0x117,
+                        _ => unreachable!(),
+                    },
+                    vec![],
+                );
+                return Ok(());
+            }
+            for arg in args {
+                self.expression(arg, statement)?;
+            }
+            self.emit(
+                match (dispatcher, target.len()) {
+                    ("call", 1) => 0x2b,
+                    ("call", 2) => 0xb5,
+                    ("call_ext", 1) => 0x17a,
+                    ("call_ext", 2) => 0x116,
+                    _ => unreachable!(),
+                },
+                vec![Word::Immediate(args.len() as u32)],
+            );
+            return Ok(());
         }
-        if let ExprKind::SafeMember { object, selector } = &callee.kind {
+        if let dm_syntax::CallTarget::SafeMember { object, selector } = target_kind {
             let proc_selector = self
                 .expression_member_proc(object, selector)?
                 .map(member_proc_selector)
@@ -101,11 +92,8 @@ impl Compiler<'_> {
             self.result.code.items.push(CodeItem::Label(end));
             return Ok(());
         }
-        if let ExprKind::Member {
-            object, selector, ..
-        } = &callee.kind
-        {
-            if matches!(&object.kind, ExprKind::Ident(name) if name == "global") {
+        if let dm_syntax::CallTarget::Member { object, selector } = target_kind {
+            if dm_syntax::is_global_receiver(object) {
                 if !self.has_global_proc(selector)? {
                     return Err(error(
                         statement,
@@ -190,7 +178,7 @@ impl Compiler<'_> {
             self.result.code.items.extend(safe_labels);
             return Ok(());
         }
-        let ExprKind::Ident(name) = &callee.kind else {
+        let dm_syntax::CallTarget::Named(name) = target_kind else {
             return Err(error(statement, "only simple src proc calls are supported"));
         };
         if self.intrinsic_call(name, args, statement, named_arguments, arglist_argument)? {

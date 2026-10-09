@@ -188,3 +188,14 @@ fn runner_keeps_canonicalization_before_conflicting_record_replay_error() {
         expected
     );
 }
+
+#[test]
+fn executable_analysis_is_explicit_and_never_a_compile_option() {
+    let arguments = ["analyze", "project.dme", "--bodies"].map(str::to_owned);
+    let Command::Build(request) = crate::cli::parse(&arguments).unwrap() else {
+        panic!("build request")
+    };
+    assert_eq!(request.command, BuildCommand::AnalyzeBodies);
+    let arguments = ["compile", "project.dme", "--bodies"].map(str::to_owned);
+    assert!(crate::cli::parse(&arguments).is_err());
+}

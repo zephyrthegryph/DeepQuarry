@@ -40,7 +40,7 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
     if command == "--help" || command == "-h" {
         return Ok(Command::Help);
     }
-    let command = match command.as_str() {
+    let mut command = match command.as_str() {
         "analyze" => BuildCommand::Analyze,
         "compile" => BuildCommand::Compile,
         _ => return Err("expected analyze or compile".into()),
@@ -61,6 +61,7 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
     let mut trace_path = None;
     while let Some(arg) = args.next() {
         match arg.as_str() {
+            "--bodies" if command == BuildCommand::Analyze => command = BuildCommand::AnalyzeBodies,
             "--no-daemon" => no_daemon = true,
             "--exact-inputs" => exact_inputs = true,
             "--no-cache" => no_cache = true,

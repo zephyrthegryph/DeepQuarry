@@ -18,10 +18,7 @@ impl DescriptorRecipe {
     ) -> Option<Self> {
         let origin = captured.origin;
         if reference != SymRef::Instance(SymbolId::of(&captured.descriptor.alias()))
-            || captured
-                .field_origins
-                .iter()
-                .any(|field| *field != origin)
+            || captured.field_origins.iter().any(|field| *field != origin)
         {
             return None;
         }

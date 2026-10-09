@@ -19,6 +19,7 @@ use std::{
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 struct RequestKey {
     compile: bool,
+    executable_analysis: bool,
     defines: BTreeMap<String, String>,
     engine: Option<PathBuf>,
     bootstrap: bool,
@@ -30,6 +31,7 @@ impl RequestKey {
     fn of(request: &crate::request::BuildRequest, manifest: &std::path::Path) -> Self {
         Self {
             compile: request.command == crate::request::BuildCommand::Compile,
+            executable_analysis: request.command == crate::request::BuildCommand::AnalyzeBodies,
             defines: request.defines.clone(),
             engine: request.engine_template.clone(),
             bootstrap: request.bootstrap_catalog,
@@ -448,6 +450,7 @@ mod tests {
         );
         let key = RequestKey {
             compile: true,
+            executable_analysis: false,
             defines: BTreeMap::new(),
             engine: None,
             bootstrap: true,
@@ -498,6 +501,18 @@ mod tests {
         changed.artifact_directory = None;
         changed.output_store = Some("E:/fixture/store".into());
         assert_ne!(key, RequestKey::of(&changed, manifest));
+    }
+    #[test]
+    fn executable_and_declaration_exports_do_not_supersede_each_other() {
+        let args = vec!["analyze".into(), "E:/fixture/project.dme".into()];
+        let crate::request::Command::Build(request) = crate::cli::parse(&args).unwrap() else {
+            panic!("build expected")
+        };
+        let manifest = std::path::Path::new("E:/fixture/project.dme");
+        let key = RequestKey::of(&request, manifest);
+        let mut executable = *request;
+        executable.command = crate::request::BuildCommand::AnalyzeBodies;
+        assert_ne!(key, RequestKey::of(&executable, manifest));
     }
     #[test]
     fn define_sets_retain_independent_hosts_and_cancelled_waiter_exits_immediately() {

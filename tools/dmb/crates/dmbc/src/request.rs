@@ -6,6 +6,8 @@ use std::path::PathBuf;
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum BuildCommand {
     Analyze,
+    /// Explicitly emit executable syntax and lexical facts for analysis clients.
+    AnalyzeBodies,
     Compile,
 }
 
@@ -24,7 +26,7 @@ pub struct BuildRequest {
     pub record_inputs: Option<PathBuf>,
     pub replay_inputs: Option<PathBuf>,
     pub artifact_directory: Option<PathBuf>,
-    /// Accepted today; execution remains one-shot until the daemon lands.
+    /// Force the shared request pipeline to use a one-shot host.
     pub no_daemon: bool,
     /// Profiling lifecycle belongs to the host, not reusable build execution.
     pub trace_path: Option<PathBuf>,

@@ -1,6 +1,6 @@
 use super::*;
-use dm_syntax::ExprKind;
 use dm_ir::{ResolveQuery as Q, ResolvedMeaning as M};
+use dm_syntax::ExprKind;
 struct Source(&'static str);
 impl dm_preprocess::SourceProvider for Source {
     fn read(&self, _: &std::path::Path) -> Result<String, String> {

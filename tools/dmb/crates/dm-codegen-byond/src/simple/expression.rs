@@ -271,7 +271,7 @@ impl Compiler<'_> {
                     );
                     return Ok(());
                 }
-                if name == "null" || name == "FALSE" || name == "TRUE" {
+                if dm_syntax::is_literal_identifier(name) {
                     let literal = Expr {
                         kind: ExprKind::Literal(name.clone()),
                         span: expr.span,
@@ -547,7 +547,10 @@ impl Compiler<'_> {
                 };
                 self.emit(opcode, vec![]);
             }
-            ExprKind::Binary { op, lhs, rhs } if op == "=" => {
+            ExprKind::Binary { op, lhs, rhs }
+                if dm_syntax::assignment_target_access(op)
+                    == Some(dm_syntax::ReferenceAccess::Write) =>
+            {
                 if let ExprKind::Index { object, index } = &lhs.kind {
                     self.expression(rhs, statement)?;
                     self.emit(opcode::PUSH_TOP, vec![]);

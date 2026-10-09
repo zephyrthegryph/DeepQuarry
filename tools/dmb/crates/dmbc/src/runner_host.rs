@@ -1,5 +1,6 @@
-//! Optional process-local engine retention for the shared request pipeline.
-//! Source revisions and mutable output inventories remain request-local.
+//! Process-local artifact ownership for the shared request pipeline.
+//! Immutable source contributions and observed artifacts survive across requests;
+//! current source issuance, dense table projections and publication stay request-local.
 use crate::{engine::EngineSnapshot, engine_link::EngineLinkFacts};
 use std::{
     collections::BTreeMap,
@@ -18,8 +19,8 @@ type HostParts<'a> = (
     Option<&'a mut dm_tree::frontend::RetainedSemanticTree>,
 );
 
-/// A single bounded engine slot. The CLI uses a temporary owner; a long-lived
-/// caller may reuse it across requests without retaining a build lease.
+/// One semantic session's retained artifacts and bounded executor. A long-lived
+/// caller reuses this owner across requests without retaining a publication lease.
 pub struct BuildHost {
     engine: Option<Arc<RetainedEngine>>,
     memo: Option<memo::ResidentMemo>,

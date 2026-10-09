@@ -2,6 +2,8 @@
 use dm_syntax::{TypedVisitor, VisitReport};
 use dm_tree::frontend::{BodyOccurrence, ParsedBody};
 use std::fmt;
+#[path = "typed_body_lexical.rs"]
+pub mod lexical;
 #[path = "typed_body_queries.rs"]
 pub mod queries;
 #[cfg(test)]

@@ -360,8 +360,14 @@ fn abi_failures_keep_each_captured_source_and_specific_cause() {
     let prepared = PreparedSourceAbi {
         units: Vec::new(),
         diagnostics: vec![
-            (1, dm_codegen_byond::procedure_abi::AbiError::unsupported("second specific cause")),
-            (0, dm_codegen_byond::procedure_abi::AbiError::unsupported("first specific cause")),
+            (
+                1,
+                dm_codegen_byond::procedure_abi::AbiError::unsupported("second specific cause"),
+            ),
+            (
+                0,
+                dm_codegen_byond::procedure_abi::AbiError::unsupported("first specific cause"),
+            ),
         ],
     };
     let diagnostics = abi_diagnostics(&frontend, &prepared).unwrap();

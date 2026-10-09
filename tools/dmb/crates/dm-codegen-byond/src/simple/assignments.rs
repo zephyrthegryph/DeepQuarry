@@ -286,7 +286,7 @@ impl Compiler<'_> {
                 selector,
                 via_colon,
             } => {
-                if matches!(&object.kind, ExprKind::Ident(name) if name == "global") {
+                if dm_syntax::is_global_receiver(object) {
                     if selector == "vars" {
                         return Ok(VariableWord::Global(SymRef::BuiltinGlobalVars));
                     }

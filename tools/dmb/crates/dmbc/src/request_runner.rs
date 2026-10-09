@@ -40,7 +40,7 @@ impl dmbc::assets::ResourceArchiveSink for OutputResourceSink<'_> {
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
         Command::Help => {
-            dmbc::daemon_println!("dmbc analyze|compile [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
+            dmbc::daemon_println!("dmbc analyze|compile [--bodies (analyze only)] [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
             dmbc::daemon_println!(
                 "dmbc stats [PROJECT] | explain PROCEDURE [PROJECT] | gc [PROJECT]"
             );
@@ -190,7 +190,7 @@ pub fn run_build_with_host(
     drop(input_context_profile);
     let session_profile = dm_profile::stage("session_validation");
     let compiler = if command == BuildCommand::Compile && (!no_cache || host.retains_artifacts()) {
-        let compiler = file_hash(&std::env::current_exe()?)?;
+        let compiler = dmbc::daemon::compiler_identity()?;
         let mut policy_bytes = b"native-lowering-policy-v1\0".to_vec();
         policy_bytes.extend_from_slice(&compiler.to_le_bytes());
         policy_bytes.extend_from_slice(&engine_identity.to_le_bytes());
@@ -941,6 +941,10 @@ pub fn run_build_with_host(
     }
     let mut output = io::BufWriter::new(dmbc::daemon::stdout_writer());
     let counts = dm_analysis::tree_export::write_jsonl(&frontend, &mut output)?;
+    if command == BuildCommand::AnalyzeBodies {
+        let bodies = crate::analysis_export::write_bodies(&frontend, &mut output)?;
+        dmbc::daemon_eprintln!("source executable analysis: {bodies} issued bodies; semantic gaps remain explicit");
+    }
     output.flush()?;
     let timings = &frontend.timings;
     dmbc::daemon_eprintln!(
@@ -962,21 +966,6 @@ pub fn run_build_with_host(
         seconds: total.elapsed().as_secs_f64(),
     })
     })?
-}
-
-fn file_hash(path: &std::path::Path) -> io::Result<u128> {
-    let _profile = dm_profile::stage("filesystem.hash");
-    use std::io::Read;
-    let mut file = std::fs::File::open(path)?;
-    let mut buffer = [0u8; 65536];
-    let mut hash = xxhash_rust::xxh3::Xxh3::new();
-    loop {
-        let count = dm_profile::io_call(|| file.read(&mut buffer), |count| (*count as u64, 0))?;
-        if count == 0 {
-            return Ok(hash.digest128());
-        }
-        hash.update(&buffer[..count]);
-    }
 }
 
 fn capture_output_digest(

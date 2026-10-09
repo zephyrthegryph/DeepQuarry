@@ -13,6 +13,21 @@ python crates/dm-analysis/examples/list_shared_variables.py analysis.jsonl
 Stdout contains only JSON-lines. Diagnostics and frontend timings go to stderr.
 Analysis excludes procedure lowering, linking, resource loading and publication.
 
+For executable syntax and lexical bindings, add `--bodies` to `analyze`:
+
+```powershell
+dmbc analyze project.dme --bodies --workers 2 > bodies.jsonl
+```
+
+This uses the compiler's authenticated body parser and current declaration model.
+Each parsed body is released after export, so the CLI does not retain every AST.
+The additional rows use `dm-typed-body-analysis-v1` and
+`dm-lexical-body-analysis-v1`. Lexical bindings cover arguments, local declarations
+and their scopes. Nonlocal meanings require resolver queries; selectors and
+unsupported call forms remain explicit gaps. Read the binding summary and
+`semantic_resolution_complete` before treating reference coverage as complete.
+`--bodies` is an analysis option, not a compilation option.
+
 ## Versioned contract
 
 The first row is `schema: dm-tree-analysis-v3`. Consumers must reject unsupported
@@ -55,8 +70,8 @@ checks can consume this model today. The streaming example lists resolved shared
 variables without parsing DM or assuming declaration spelling determines storage.
 A consumer may keep its own compact ID/location index when joining rows.
 
-Executable reference edges, full resource discovery, opaque intrinsic metadata,
-and complete constant evaluation are not exported. Lints requiring those facts
+Complete resolved executable reference edges, full resource discovery, opaque
+intrinsic metadata, and complete constant evaluation are not exported. Lints requiring those facts
 must retain their existing implementation until their required domain is supplied.
 Exact source rewriting also needs independent edit-range validation, especially
 for macro-expanded declarations. This export is not a complete replacement for

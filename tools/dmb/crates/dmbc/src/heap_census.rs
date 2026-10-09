@@ -3,6 +3,7 @@
 //! A boundary shares one census, so Arc aliases and nested buffers count once.
 use serde::Serialize;
 mod dmb_image;
+mod effective_metadata;
 mod initializer_ledger;
 mod macro_environments;
 mod metadata_dependencies;
@@ -23,6 +24,7 @@ pub(crate) use resident_maps::{
 pub(crate) use resident_startup::weight as resident_startup_weight;
 pub(crate) mod resident_weight;
 mod retained_declarations;
+mod retained_normalization;
 mod session_symbolic;
 pub(crate) use resident_initializer::{
     modifier_weight as resident_modifier_weight, weight as resident_initializer_weight,
@@ -405,7 +407,21 @@ impl HeapCensus {
             for node in tree.types() {
                 self.slice(owner, &node.members, true);
             }
-            self.slice(owner, tree.members(), true);
+            let chunks = tree.members().chunks();
+            self.owner(owner).observed_items += chunks.len() as u64;
+            self.buffer(
+                owner,
+                chunks.as_ptr() as usize,
+                chunks
+                    .len()
+                    .saturating_mul(size_of::<Arc<[dm_tree::MemberNode]>>()),
+                tree.members()
+                    .chunk_roster_capacity()
+                    .saturating_mul(size_of::<Arc<[dm_tree::MemberNode]>>()),
+            );
+            for chunk in chunks {
+                self.slice(owner, chunk, true);
+            }
             for member in tree.members() {
                 if self.arc_object("semantic_metadata", &member.metadata) {
                     self.declaration(&member.metadata);
