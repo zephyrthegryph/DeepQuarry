@@ -771,13 +771,6 @@ CAPABILITIES(/datum/lleill_contact_review)
 	var/new_mob = new tf_type(src.loc)
 	return new_mob
 
-/// The beast form a Lleill or glamour creature took: the ten seconds it takes to shift back (granted with the revert verb).
-CAPABILITY_TYPE(beast_form, CAP_BEAST_FORM, /datum/capability/beast_form, key = NONE)
-/datum/capability/beast_form
-
-/datum/capability/beast_form/entries()
-	return list(op("revert_beast_form", ai(), wait(10 SECONDS), on_interrupt(TYPE_PROC_REF(/mob/living, revert_beast_form_living_failed)), then(TYPE_PROC_REF(/mob/living, revert_beast_form_living_done))))
-
 /mob/living/proc/revert_beast_form()
 	set name = "Revert Beast Form"
 	set desc = "Return to your humanoid form."
@@ -788,14 +781,14 @@ CAPABILITY_TYPE(beast_form, CAP_BEAST_FORM, /datum/capability/beast_form, key = 
 		return
 
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins significantly shifting their form."))
-	perform_op(src, src, "revert_beast_form", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+	task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(revert_beast_form_living_done), done_args = list(), on_fail = PROC_REF(revert_beast_form_living_failed), fail_args = list())
 	return TRUE
 
-/mob/living/proc/revert_beast_form_living_done(datum/act/op/A)
+/mob/living/proc/revert_beast_form_living_done()
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " has reverted to their original form."))
 	revert_beast_tf()
 
-/mob/living/proc/revert_beast_form_living_failed(datum/act/op/A)
+/mob/living/proc/revert_beast_form_living_failed()
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " ceases shifting their form."))
 	return 0
 
@@ -944,7 +937,6 @@ CAPABILITY_TYPE(beast_form, CAP_BEAST_FORM, /datum/capability/beast_form, key = 
 		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.lleill_energy -= energy_cost
 		grant(new_mob, granted_verb(/mob/living/proc/revert_beast_form), new_mob)
-		grant(new_mob, /datum/capability/beast_form, new_mob)
 		grant(new_mob, granted_verb(/mob/living/proc/set_size), new_mob)
 		grant(new_mob, granted_verb(/mob/living/simple_mob/proc/ColorMate), new_mob)
 		transfer_mob_identity(new_mob)

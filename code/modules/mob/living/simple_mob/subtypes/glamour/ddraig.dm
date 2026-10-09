@@ -394,7 +394,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 	if(new_mob && isliving(new_mob))
 		new_mob.faction = faction
 		grant(new_mob, granted_verb(/mob/living/proc/revert_beast_form), new_mob)
-		grant(new_mob, /datum/capability/beast_form, new_mob)
 		grant(new_mob, granted_verb(/mob/living/proc/set_size), new_mob)
 		transfer_mob_identity(new_mob)
 		new_mob.visible_message("<b>\The [src]</b> has transformed into \the [chosen_beast]!")
