@@ -221,7 +221,7 @@ CAPABILITY_DEF(drone_shell, CAP_DRONE_SHELL, key = NONE)
 /datum/capability/def/drone_shell/entries()
 	return list(
 		op("pick_shell", label("Customize appearance"), menu(button = "Customize appearance", bind = "ability_robot_pick_shell"),
-			needs(req_self(), req(TYPE_PROC_REF(/mob/living/silicon/robot/drone, can_pick_shell_now), because = MSG(drone_ability/shell_picked))),
+			when(req_self()), needs(req(TYPE_PROC_REF(/mob/living/silicon/robot/drone, can_pick_shell_now), because = MSG(drone_ability/shell_picked))),
 			asks(/datum/prompt/choice, fields = list("title" = "Customize Shell", "question" = "Select a shell. NOTE: You can only do this once during this drone-lifetime.", "choices" = computed(TYPE_PROC_REF(/mob/living/silicon/robot/drone, shell_choices))), step = "shell"),
 			asks(/datum/prompt/choice, fields = list("title" = "Eye Color", "question" = "Select eye color:", "choices" = list("blue", "red", "orange", "green", "violet")), step = "eyes", when = TYPE_PROC_REF(/mob/living/silicon/robot/drone, shell_has_eyes)),
 			asks(/datum/prompt/choice, fields = list("title" = "Eye Color", "question" = "Select plating color:", "choices" = list("blue", "red", "orange", "green", "brown")), step = "plating", when = TYPE_PROC_REF(/mob/living/silicon/robot/drone, shell_has_plating)),

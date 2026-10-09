@@ -9,7 +9,7 @@ CAPABILITY_DEF(shadekin_dark, CAP_SHADEKIN_DARK, key = NONE)
 /datum/capability/def/shadekin_dark/entries()
 	return list(
 		op("dark_respite", label("Dark respite"), menu(button = "Dark respite", bind = "ability_shadekin_dark_respite"),
-			needs(req_self(), req_conscious(),
+			when(req_self()), needs(req_conscious(),
 				req(TYPE_PROC_REF(/mob/living, ability_not_in_vr), because = MSG(shadekin_ability/vr)),
 				req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin)),
 				req(TYPE_PROC_REF(/mob/living, ability_not_shifted), because = MSG(shadekin_ability/phase_shifted)),
@@ -18,7 +18,7 @@ CAPABILITY_DEF(shadekin_dark, CAP_SHADEKIN_DARK, key = NONE)
 				req(TYPE_PROC_REF(/mob/living, ability_respite_endable), because = MSG(shadekin_ability/respite_forced))),
 			then(TYPE_PROC_REF(/mob/living, ability_dark_respite))),
 		op("dark_tunneling", label("Dark tunneling"), menu(button = "Dark tunneling", bind = "ability_shadekin_dark_tunneling"),
-			needs(req_self(), req_conscious(),
+			when(req_self()), needs(req_conscious(),
 				req(TYPE_PROC_REF(/mob/living, ability_not_in_vr), because = MSG(shadekin_ability/vr)),
 				req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin)),
 				req(TYPE_PROC_REF(/mob/living, ability_not_shifted), because = MSG(shadekin_ability/phase_shifted)),
@@ -29,7 +29,7 @@ CAPABILITY_DEF(shadekin_dark, CAP_SHADEKIN_DARK, key = NONE)
 			wait(DARK_TUNNEL_CHANNEL_TIME),
 			then(TYPE_PROC_REF(/mob/living, ability_dark_tunneling))),
 		op("dark_maw", label("Dark maw"), menu(button = "Dark maw", bind = "ability_shadekin_dark_maw"),
-			needs(req_self(), req_conscious(),
+			when(req_self()), needs(req_conscious(),
 				req(TYPE_PROC_REF(/mob/living, ability_not_in_vr), because = MSG(shadekin_ability/vr)),
 				req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin)),
 				req(TYPE_PROC_REF(/mob/living, ability_on_turf), because = MSG(shadekin_ability/no_turf)),
@@ -38,7 +38,7 @@ CAPABILITY_DEF(shadekin_dark, CAP_SHADEKIN_DARK, key = NONE)
 			wait(1 SECOND),
 			then(TYPE_PROC_REF(/mob/living, ability_dark_maw))),
 		op("clear_dark_maws", label("Dispel dark maws"), menu(button = "Dispel dark maws", bind = "ability_shadekin_clear_dark_maws"),
-			needs(req_self(), req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin))),
+			when(req_self()), needs(req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin))),
 			then(TYPE_PROC_REF(/mob/living, ability_clear_dark_maws))))
 
 /mob/living/proc/ability_dark_enough_for_maw(datum/act/op/A)

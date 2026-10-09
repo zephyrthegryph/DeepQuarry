@@ -4,7 +4,7 @@ CAPABILITY_DEF(drone_mail, CAP_DRONE_MAIL, key = NONE)
 
 /datum/capability/def/drone_mail/entries()
 	return list(
-		op("set_mail_tag", label("Set mail tag"), menu(button = "Set mail tag", bind = "ability_robot_set_mail_tag"), needs(req_self()),
+		op("set_mail_tag", label("Set mail tag"), menu(button = "Set mail tag", bind = "ability_robot_set_mail_tag"), when(req_self()),
 			asks(/datum/prompt/choice, fields = list("title" = "Set Mail Tag", "question" = "Select the desired destination.", "choices" = computed(TYPE_PROC_REF(/mob/living/silicon/robot/drone, mail_destinations)), "timeout" = 0), step = "tag"),
 			on_interrupt(TYPE_PROC_REF(/mob/living/silicon/robot/drone, ability_mail_tag_cancelled)),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot/drone, ability_set_mail_tag))))
