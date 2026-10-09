@@ -611,7 +611,7 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 CAPABILITIES(/obj/effect/mouse_hole_spawner)
 	map_resolver(GLOBAL_PROC_REF(resolve_mouse_hole_spawner), vars = list("chance_to_spawn"))
 
-/// MAP_RESOLVER for mouse hole spawners: a tunnel, chance_to_spawn percent of the time.
+/// The map resolver of mouse hole spawners: a tunnel, chance_to_spawn percent of the time.
 /proc/resolve_mouse_hole_spawner(atom/loc, path, list/varedits)
 	var/obj/effect/mouse_hole_spawner/P = path
 	if(prob(MAP_VAR(P, varedits, chance_to_spawn)))

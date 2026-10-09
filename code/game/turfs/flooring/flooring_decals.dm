@@ -1,4 +1,4 @@
-// Floor decals: map markers painted onto the floor under them at map time (MAP_RESOLVER,
+// Floor decals: map markers painted onto the floor under them at map time (map_resolver(),
 // code/__defines/map_resolvers.dm). They never become atoms; the turf keeps the image in its
 // decals list (so it re-applies them after cutting overlays). Use them rather than distinct
 // icon_states when mapping interesting floor designs. Painted at runtime by floor_decal_paint().
@@ -16,7 +16,7 @@ TRACKED(/turf, decals)
 CAPABILITIES(/obj/effect/floor_decal)
 	map_resolver(GLOBAL_PROC_REF(resolve_floor_decal))
 
-/// MAP_RESOLVER for floor decals: adds the decal's image (from its type and the map's var edits)
+/// The map resolver of floor decals: adds the decal's image (from its type and the map's var edits)
 /// to the floor's decals.
 /proc/resolve_floor_decal(atom/loc, path, list/varedits)
 	var/obj/effect/floor_decal/P = path
@@ -55,7 +55,7 @@ CAPABILITIES(/obj/effect/floor_decal)
 CAPABILITIES(/obj/effect/floor_decal/reset)
 	configure(map_resolver(GLOBAL_PROC_REF(resolve_floor_decal_reset)))
 
-/// MAP_RESOLVER for the reset marker: clears the floor's decals.
+/// The map resolver of the reset marker: clears the floor's decals.
 /proc/resolve_floor_decal_reset(atom/loc, path, list/varedits)
 	var/turf/T = get_turf(loc)
 	if(T && length(T.decals))
@@ -655,7 +655,7 @@ CAPABILITIES(/obj/effect/floor_decal/reset)
 CAPABILITIES(/obj/effect/floor_decal/asteroid)
 	configure(map_resolver(GLOBAL_PROC_REF(resolve_floor_decal_asteroid)))
 
-/// MAP_RESOLVER for asteroid rubble: one of ten rubble states.
+/// The map resolver of asteroid rubble: one of ten rubble states.
 /proc/resolve_floor_decal_asteroid(atom/loc, path, list/varedits)
 	var/obj/effect/floor_decal/P = path
 	floor_decal_apply(get_turf(loc), MAP_VAR(P, varedits, icon), "asteroid[rand(0,9)]", \

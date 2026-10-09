@@ -1,7 +1,6 @@
 // One declared loot system (doc/rewrite/systems.md §8). Declarations: code/library/loot/loot_entries.dm.
 //
-// A type's loot(...) entry (or, until the declarations are converted, DECLARE_LOOT) makes the shared /datum/loot_decl that loot_decl_for(path)
-// answers. loot_spawn() rolls and creates, with a seeded /datum/loot_rng so map loot is reproducible per round seed. /obj/random is resolved at
+// A type's loot(...) entry makes the shared /datum/loot_decl that loot_decl_for(path) answers. loot_spawn() rolls and creates, with a seeded /datum/loot_rng so map loot is reproducible per round seed. /obj/random is resolved at
 // map time through resolve_loot() (its map_resolver entry) and never becomes a live atom. loot_search() is the tiered roll used by searchable piles.
 
 /// The round's loot seed: every map-time roll is seeded from it and the roll's position and type.
@@ -46,10 +45,6 @@ CAPABILITIES(/datum/loot_decl)
 	owns_one(nameof(unlucky), /datum/loot_entry/sub)
 
 
-/// The merged spec list (a legacy DECLARE_LOOT overrides this, merging over ..()).
-/datum/loot_decl/proc/specs()
-	return null
-
 /// Builds the declaration from its loot() entry (loot_entries.dm): the rows the entry names.
 /datum/loot_decl/proc/build_entry(datum/entry/E)
 	built = TRUE
@@ -88,87 +83,16 @@ CAPABILITIES(/datum/loot_decl)
 	repeat_search = !!rows["repeat_search"]
 	return TRUE
 
-/// Builds the declaration from a legacy DECLARE_LOOT spec list (removed with DECLARE_LOOT).
-/datum/loot_decl/proc/build()
-	built = TRUE
-	var/list/S = specs()
-	if(!length(S))
-		return FALSE
-	if(S["table"])
-		rel_set(src, nameof(main_table), new /datum/loot_entry/sub(1, S["table"]))
-	if(!isnull(S["count"]))
-		count = S["count"]
-	if(!isnull(S["chance"]))
-		chance = S["chance"]
-	all = S["all"]
-	hook = S["hook"]
-	per_round = !!S["per_round"]
-	if(S["unlucky"])
-		rel_set(src, nameof(unlucky), new /datum/loot_entry/sub(1, S["unlucky"]))
-	if(S["uncommon"])
-		rel_set(src, nameof(uncommon), new /datum/loot_entry/sub(1, S["uncommon"]))
-	if(S["rare"])
-		rel_set(src, nameof(rare), new /datum/loot_entry/sub(1, S["rare"]))
-	uncommon_chance = S["uncommon_chance"] || 0
-	rare_chance = S["rare_chance"] || 0
-	gamma_chance = S["gamma_chance"] || 0
-	loot_left = S["loot_left"] || 0
-	delete_on_depletion = !!S["delete_on_depletion"]
-	repeat_search = !!S["repeat_search"]
-	return TRUE
-
-/// DECLARE_LOOT plumbing: `mine` replaces the keys it names in the parent's specs. What spawns
-/// (table, all, per_round) is one unit: a declaration naming any of it replaces all of it.
-/proc/loot_merge_specs(list/parent, list/mine)
-	if(!length(parent))
-		return mine
-	var/list/merged = parent.Copy()
-	if(("table" in mine) || ("all" in mine) || ("per_round" in mine))
-		merged -= list("table", "all", "per_round")
-	for(var/key in mine)
-		merged[key] = mine[key]
-	return merged
-
 /// type => its /datum/loot_decl, for every type under one that declares loot(...): built at world setup (loot_entries.dm), never after.
 GLOBAL_LIST_EMPTY(loot_decls)
 
-/// The loot declaration for `path`: a type with a loot entry or under one, or (until the declarations are converted) a /datum/loot_decl path, or a
-/// type with a DECLARE_LOOT on it or an ancestor. Null when there is none.
+/// The loot declaration for `path`: a type with a loot() entry or under one that has it. Null when there is none.
 /proc/loot_decl_for(path)
 	RETURN_TYPE(/datum/loot_decl)
 	if(isnull(path))
 		return null
 	static_entries_ensure("loot_decl_for([path])")
-	var/datum/loot_decl/decl = GLOB.loot_decls[path]
-	if(decl)
-		return decl
-	return CACHED(legacy_loot_decls, path) || null
-
-DECLARE_SHARED_CACHE(legacy_loot_decls, GLOBAL_PROC_REF(build_loot_decl), SC_NEVER)
-
-/// Builds the legacy DECLARE_LOOT declaration for `path` (the legacy cache's builder), or null.
-/proc/build_loot_decl(path)
-	var/datum/loot_decl/decl
-	var/decl_type
-	if(ispath(path, /datum/loot_decl))
-		decl_type = path
-	else
-		// The declaration types mirror the target paths, so DM inheritance already resolves
-		// undeclared intermediates; walk up only past types that have no declaration node at all.
-		var/text = "[path]"
-		while(length(text) > 1)
-			decl_type = text2path("/datum/loot_decl[text]")
-			if(decl_type)
-				break
-			var/cut = findlasttext(text, "/")
-			if(cut <= 1)
-				break
-			text = copytext(text, 1, cut)
-	if(decl_type)
-		decl = new decl_type
-		if(!decl.build())
-			decl = null
-	return decl
+	return GLOB.loot_decls[path]
 
 // ---- table entries ----
 
@@ -364,7 +288,7 @@ DECLARE_SHARED_CACHE(loot_type_hashes, GLOBAL_PROC_REF(build_loot_type_hash), SC
 		return
 	if(!ispath(entry))
 		CRASH("loot_emit: bad loot entry [entry]")
-	if(ispath(entry, /datum/loot_decl) || ispath(entry, /loot))
+	if(ispath(entry, /loot))
 		nested += loot_spawn(entry, loc, null, rng)
 		return
 	if(ispath(entry, /turf))
@@ -386,7 +310,7 @@ DECLARE_SHARED_CACHE(loot_type_hashes, GLOBAL_PROC_REF(build_loot_type_hash), SC
 CAPABILITIES(/obj/random)
 	map_resolver(GLOBAL_PROC_REF(resolve_loot), vars = list("drop_get_turf"))
 
-/// MAP_RESOLVER for /obj/random: rolls its declaration where the spawner stands and applies the
+/// The map resolver of /obj/random: rolls its declaration where the spawner stands and applies the
 /// spawner's mapped offset and direction to what it made. Returns what it created (TRUE-ish for
 /// the map loader even when the roll made nothing: the spawner is resolved either way).
 /proc/resolve_loot(atom/loc, path, list/varedits, datum/loot_rng/rng)

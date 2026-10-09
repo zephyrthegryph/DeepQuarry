@@ -149,7 +149,7 @@ CAPABILITIES(/turf/simulated/wall/fancy_shuttle)
 CAPABILITIES(/obj/effect/floor_decal/fancy_shuttle)
 	configure(map_resolver(GLOBAL_PROC_REF(resolve_fancy_shuttle_decal), vars = list("fancy_shuttle_tag")))
 
-/// MAP_RESOLVER for fancy shuttle floors: cuts this tile's piece out of the helper's split icon,
+/// The map resolver of fancy shuttle floors: cuts this tile's piece out of the helper's split icon,
 /// once the load is in place (the helper may be loaded after the decal).
 /proc/resolve_fancy_shuttle_decal(atom/loc, path, list/varedits)
 	map_resolve_later(GLOBAL_PROC_REF(fancy_shuttle_decal_resolve), get_turf(loc), path, varedits)

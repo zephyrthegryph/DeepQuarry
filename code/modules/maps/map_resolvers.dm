@@ -1,34 +1,19 @@
 // Map-time resolvers (doc/rewrite/systems.md §9). Macro and contract: code/__defines/map_resolvers.dm.
 
-/atom
-	/// proc(atom/loc, path, list/varedits) that resolves this type at map time instead of making
-	/// it a live atom (a legacy MAP_RESOLVER), or null.
-	var/map_resolver
-	/// Extra vars its resolver reads (a legacy MAP_RESOLVER_VARS), ";"-separated.
-	var/map_resolver_vars
-
 /// type => its /datum/map_resolver_info, for every type under one that declares map_resolver(...): built at world setup, never after.
 GLOBAL_LIST_EMPTY(map_resolvers)
 
-/// The vars (besides the common ones) the resolver of `type` reads, in the order they were written: its map_resolver entry's `vars` (or an ancestor's),
-/// else (until converted) the legacy MAP_RESOLVER_VARS string.
+/// The vars (besides the common ones) the resolver of `type` reads, in the order they were written: its map_resolver entry's `vars` (or an ancestor's).
 /proc/map_resolver_vars_of(type)
 	static_entries_ensure("map_resolver_vars_of([type])")
 	var/datum/map_resolver_info/info = GLOB.map_resolvers[type]
-	if(info)
-		return info.reads
-	var/atom/P = type
-	var/legacy = initial(P.map_resolver_vars)
-	return legacy ? splittext(legacy, ";") : list()
+	return info ? info.reads : list()
 
-/// The resolver proc of `type`, or null: its map_resolver entry (or an ancestor's), else (until converted) the legacy MAP_RESOLVER var.
+/// The resolver proc of `type`, or null: its map_resolver entry (or an ancestor's).
 /proc/map_resolver_proc(type)
 	static_entries_ensure("map_resolver_proc([type])")
 	var/datum/map_resolver_info/info = GLOB.map_resolvers[type]
-	if(info)
-		return info.resolver
-	var/atom/P = type
-	return initial(P.map_resolver)
+	return info?.resolver
 
 /// Per-load scratch state for resolvers (key -> value), cleared when the load's atoms finish.
 GLOBAL_LIST_EMPTY(map_resolve_scratch)
@@ -61,7 +46,7 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 /proc/map_resolve_instance(atom/A)
 	var/list/varedits = map_varedits_of(A)
 	var/datum/map_resolver_info/info = GLOB.map_resolvers[A.type]
-	if(!call(info ? info.resolver : A.map_resolver)(A.loc, A.type, varedits))
+	if(!call(info.resolver)(A.loc, A.type, varedits))
 		return FALSE
 	A.tag = null
 	if(ismovable(A))
@@ -70,7 +55,7 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 	return TRUE
 
 /// The var edits an instance carries over its type's defaults, over the vars its family's
-/// resolver reads (MAP_RESOLVER_COMMON_VARS + MAP_RESOLVER_VARS; the name list is built once per
+/// resolver reads (MAP_RESOLVER_COMMON_VARS + the entry's vars; the name list is built once per
 /// type). A named list var is included whenever set: a type's list default only exists on an
 /// instance, and initial() cannot read it.
 /proc/map_varedits_of(atom/A)
@@ -93,7 +78,7 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 			LAZYSET(out, name, value)
 	return out
 
-/// MAP_RESOLVER for mapping-only markers (previews, editor aids) that leave nothing behind.
+/// The map resolver of mapping-only markers (previews, editor aids) that leave nothing behind.
 /proc/map_resolve_discard(atom/loc, path, list/varedits)
 	return TRUE
 

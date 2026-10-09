@@ -89,7 +89,7 @@
 CAPABILITIES(/obj/tcspawner)
 	map_resolver(GLOBAL_PROC_REF(resolve_tcspawner), vars = list("amount_to_spawn"))
 
-/// MAP_RESOLVER for telecrystal spawners: one stack, inside the closet on the tile if there is one.
+/// The map resolver of telecrystal spawners: one stack, inside the closet on the tile if there is one.
 /proc/resolve_tcspawner(atom/loc, path, list/varedits)
 	var/obj/tcspawner/P = path
 	var/turf/T = get_turf(loc)

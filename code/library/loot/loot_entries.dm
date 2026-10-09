@@ -91,7 +91,7 @@ STATIC_ENTRY(loot_search)
 	static_kind = TRUE
 	singleton = TRUE
 
-/// A subtype's loot rows over the inherited ones. What spawns (table, all, per_round) is replaced as one unit, as DECLARE_LOOT's merge was.
+/// A subtype's loot rows over the inherited ones. What spawns (table, all, per_round) is replaced as one unit, as the old per-type vars inherited.
 /datum/entry_engine/loot/merge(datum/entry/old, datum/entry/changes)
 	return entry_make(ENTRY_LOOT, null, entry_merge_args(old, changes, list(list("table", "all", "per_round"))))
 

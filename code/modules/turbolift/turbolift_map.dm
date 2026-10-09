@@ -21,7 +21,7 @@ CAPABILITIES(/obj/turbolift_map_holder)
 		GLOBAL_PROC_REF(resolve_turbolift_holder),
 		vars = list("depth", "door_type", "firedoor_type", "floor_type", "lift_size_x", "lift_size_y", "wall_type", "areas_to_use"))
 
-/// MAP_RESOLVER for turbolift holders. The per-type area list is a list var, which only an
+/// The map resolver of turbolift holders. The per-type area list is a list var, which only an
 /// instance carries: placed by the map reader (no instance yet) the holder is made and resolved
 /// when it initializes.
 /proc/resolve_turbolift_holder(atom/loc, path, list/varedits)

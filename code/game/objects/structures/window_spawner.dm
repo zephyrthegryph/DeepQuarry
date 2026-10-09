@@ -17,7 +17,7 @@
 CAPABILITIES(/obj/effect/wingrille_spawn)
 	map_resolver(GLOBAL_PROC_REF(resolve_wingrille), vars = list("id", "win_path"))
 
-/// MAP_RESOLVER for window spawners: records the cell, then (once the load is in place, so every
+/// The map resolver of window spawners: records the cell, then (once the load is in place, so every
 /// neighbouring spawner is known) builds a grille and windows on the sides without a neighbour.
 /proc/resolve_wingrille(atom/loc, path, list/varedits)
 	var/obj/effect/wingrille_spawn/P = path

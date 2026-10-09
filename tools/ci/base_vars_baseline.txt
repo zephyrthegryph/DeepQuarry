@@ -368,8 +368,6 @@ base_var	code/modules/lighting/lighting_atom.dm	var/tmp/affecting_dynamic_lumi =
 base_var	code/modules/lighting/lighting_atom.dm	var/blocks_emissive = EMISSIVE_BLOCK_NONE
 base_var	code/modules/lighting/lighting_atom.dm	var/tmp/atom/movable/emissive_blocker/em_block
 base_var	code/modules/lighting/overlay_lighting.dm	var/tmp/datum/overlay_lighting/overlay_light
-base_var	code/modules/maps/map_resolvers.dm	var/map_resolver
-base_var	code/modules/maps/map_resolvers.dm	var/map_resolver_vars
 base_var	code/modules/materials/containers/machine_shim.dm	/mob/var/datum/using_machine_shim/machine_shim
 base_var	code/modules/materials/material_behaviors.dm	var/mat_luminescence = 0
 base_var	code/modules/materials/material_behaviors.dm	var/mat_radioactivity = 0

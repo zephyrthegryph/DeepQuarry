@@ -11,7 +11,7 @@
 CAPABILITIES(/obj/effect/graffitispawner)
 	map_resolver(GLOBAL_PROC_REF(resolve_graffitispawner), vars = list("color_secondary", "graffiti_type"))
 
-/// MAP_RESOLVER for old scrawlings: a crayon drawing, random colour and shape unless set.
+/// The map resolver of old scrawlings: a crayon drawing, random colour and shape unless set.
 /proc/resolve_graffitispawner(atom/loc, path, list/varedits)
 	var/obj/effect/graffitispawner/P = path
 	var/color = MAP_VAR(P, varedits, color)

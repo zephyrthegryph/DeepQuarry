@@ -5,7 +5,7 @@ GLOBAL_LIST_EMPTY(z_levels)// Each bit re... haha just kidding this is a list of
 CAPABILITIES(/obj/effect/landmark/map_data)
 	configure(map_resolver(GLOBAL_PROC_REF(resolve_map_data), vars = list("height")))
 
-/// MAP_RESOLVER for map data: marks the levels below this one (height) as connected.
+/// The map resolver of map data: marks the levels below this one (height) as connected.
 /proc/resolve_map_data(atom/loc, path, list/varedits)
 	var/obj/effect/landmark/map_data/P = path
 	var/turf/T = get_turf(loc)

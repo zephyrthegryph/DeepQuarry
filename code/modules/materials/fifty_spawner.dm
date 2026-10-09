@@ -9,7 +9,7 @@
 CAPABILITIES(/obj/fiftyspawner)
 	map_resolver(GLOBAL_PROC_REF(resolve_fiftyspawner), vars = list("type_to_spawn"))
 
-/// MAP_RESOLVER for 50-stack spawners: a full stack, into the closet on the tile if any (or into
+/// The map resolver of 50-stack spawners: a full stack, into the closet on the tile if any (or into
 /// the crate a supply pack put the spawner in).
 /proc/resolve_fiftyspawner(atom/loc, path, list/varedits)
 	var/obj/fiftyspawner/P = path

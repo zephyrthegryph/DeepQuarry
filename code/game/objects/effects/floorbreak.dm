@@ -6,7 +6,7 @@
 CAPABILITIES(/obj/effect/floorbreak)
 	map_resolver(GLOBAL_PROC_REF(resolve_floorbreak))
 
-/// MAP_RESOLVER for floor breakers: breaks the floor tile, once the load is in place.
+/// The map resolver of floor breakers: breaks the floor tile, once the load is in place.
 /proc/resolve_floorbreak(atom/loc, path, list/varedits)
 	if(!istype(loc, /turf/simulated/floor))
 		log_world("Floor Breaker at X: [loc?.x], Y: [loc?.y] was somehow placed in a non-turf location, or placed on an unsimulated turf, non-floor turf, or other invalid location (e.g. wall, open space, inside a container).")

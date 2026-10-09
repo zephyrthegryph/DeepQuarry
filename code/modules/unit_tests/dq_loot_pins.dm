@@ -27,7 +27,7 @@
 
 /// What loot_spawn() takes for an owner written as text.
 /proc/dq_loot_pin_ref(owner)
-	return text2path(owner) || text2path("/datum/loot_decl[owner]")
+	return text2path(owner)
 
 /// A pin file's rows as key => value.
 /proc/dq_loot_pin_read(name)
@@ -334,6 +334,7 @@
 /datum/unit_test/dq_resolver_reader_pin/Run()
 	var/saved_seed = GLOB.loot_seed
 	GLOB.loot_seed = dq_loot_pin_seed(7) // a map-time roll depends on the round seed, the position and the type: pin the seed
+	rand_seed(dq_test_seed_for("resolver reader pin")) // gibs and the like draw from the world's generator: whatever ran before must not matter
 	var/z = world.increment_max_z()
 	var/datum/map_template/template = new("[DQ_LOOT_PIN_DIR]resolver_fixture.dmm")
 	TEST_ASSERT(template.load(locate(1, 1, z)), "the fixture loads")

@@ -8,7 +8,7 @@
 CAPABILITIES(/obj/fruitspawner)
 	map_resolver(GLOBAL_PROC_REF(resolve_fruitspawner), vars = list("seedtype"))
 
-/// MAP_RESOLVER for fruit spawners: one harvest of the seed, into the closet on the tile if any
+/// The map resolver of fruit spawners: one harvest of the seed, into the closet on the tile if any
 /// (or into what holds the spawner).
 /proc/resolve_fruitspawner(atom/loc, path, list/varedits)
 	var/obj/fruitspawner/P = path
