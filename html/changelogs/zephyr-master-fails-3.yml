@@ -1,6 +1,0 @@
-author: "zephyr"
-delete-after: true
-changes:
-  - bugfix: "Pending ops no longer keep their saved answers (and the prompts in them) alive after being destroyed mid-wait"
-  - bugfix: "Overmap mobs and morph prey nodes made without their parameters now end after their init instead of while it is still writing owned references"
-  - code_imp: "Topic, combat-mode disarm and look-pin tests updated to the current op forms"

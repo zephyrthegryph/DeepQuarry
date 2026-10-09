@@ -121,18 +121,12 @@ CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
 CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 	owns_one(nameof(child_om_marker), /obj/effect/overmap/visitable)
 	param(nameof(child_om_marker), pos = 1, apply = PROC_REF(link_marker))
-	after_init(0, then(PROC_REF(end_if_unconfigured)))
-
-/// A mob with no marker type ends when its init is complete: ending it from the param's apply would delete it while the init above it still writes owned refs.
-/mob/living/simple_mob/vore/overmap/proc/end_if_unconfigured(datum/act/timer/A)
-	if(om_child_type)
-		return
-	log_and_message_admins("An improperly configured OM mob tried to spawn, and was deleted.")
-	spent(src)
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A mob made with no marker makes its own.
 /mob/living/simple_mob/vore/overmap/proc/link_marker(marker)
 	if(!om_child_type)
+		log_and_message_admins("An improperly configured OM mob tried to spawn, and was deleted.")
+		spent(src)
 		return
 	// Maps with no overmap can still spawn overmap mobs (e.g. admin
 	// summon, unit tests). Skip the marker: there's nothing for it

@@ -1040,12 +1040,6 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		if(A && !QDELETED(A))
 			A.pending = null // ALLOW(ownership): a pooled transient: reset on release
 			op_end(A, ACT_REFUSED, /datum/msg/op/target_gone, actor)
-	// what the act carried across the wait goes with the record: a prompt in the answers holds this op back through its owner, a cycle of deleted objects
-	args_saved = null
-	ordered_args_saved = null
-	log_saved = null
-	step_answers_saved = null
-	captured_saved = null
 	..()
 
 // ---- Do ----

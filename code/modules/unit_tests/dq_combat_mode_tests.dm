@@ -215,7 +215,7 @@
 	var/mob/living/carbon/human/attacker = pair[1]
 	var/mob/living/simple_mob/animal/passive/cow/cow = pair[2]
 	attacker.attack_variant_key(ATTACK_VARIANT_DISARM)
-	test_click(attacker, cow) // the inbox, as a player's click arrives: the cow's op answers it (route_click() is the resolver's fallback for what no op takes)
+	GLOB.input_router.route_click(attacker, cow, "left=1")
 	TEST_ASSERT_EQUAL(attacker.attack_variant, ATTACK_VARIANT_DISARM, "the variant holds while the key is down")
 	TEST_ASSERT(cow.status_units(STAT_WEAKENED) > 0, "the click arrived as a disarm (the cow is tipped)")
 	attacker.attack_variant_key_release(ATTACK_VARIANT_GRAB)
@@ -316,7 +316,7 @@
 	attacker = pair[1]
 	var/mob/living/simple_mob/animal/passive/cow/cow = pair[2]
 	attacker.attack_variant_key(ATTACK_VARIANT_DISARM)
-	test_click(attacker, cow) // the inbox, as a player's click arrives: the cow's op answers it
+	GLOB.input_router.route_click(attacker, cow, "left=1")
 	attacker.attack_variant_key_release(ATTACK_VARIANT_DISARM)
 	TEST_ASSERT(cow.status_units(STAT_WEAKENED) > 0, "the Disarm key tips a cow over")
 

@@ -70,12 +70,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	param(nameof(prey_mind), pos = 1)
 	param(nameof(parent_morph), pos = 2)
 	param(nameof(prey_body), pos = 3, apply = PROC_REF(swap_made))
-	after_init(0, then(PROC_REF(end_if_no_prey)))
-
-/// A node made with no prey ends when its init is complete: ending it from the param's apply would delete it while the init above it still writes owned refs.
-/mob/living/simple_mob/vore/morph/dominated_prey/proc/end_if_no_prey(datum/act/timer/A)
-	if(!prey_mind)
-		spent(src)
 
 /mob/living/simple_mob/vore/morph/proc/allowed(atom/movable/A)
 	return !is_type_in_typecache(A, blacklist_typecache) && (isobj(A) || ismob(A))
@@ -390,6 +384,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The morph and its prey swap seats.
 /mob/living/simple_mob/vore/morph/dominated_prey/proc/swap_made(prey)
 	if(!prey_mind)
+		spent(src)
 		return
 	prey_body.forceMove(get_turf(parent_morph))
 	prey_body.muffled = FALSE

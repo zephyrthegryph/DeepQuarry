@@ -4213,7 +4213,7 @@
 /mob/living/simple_mob/vore/spacecritter/gravityshell/cleanse overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/vore/spacecritter/gravityshell/cleanse overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/vore/spacecritter/gravityshell/cleanse overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/vore/overmap deleted itself on creation
+/mob/living/simple_mob/vore/overmap runtime: OWN: refused _own_set(em_block): /mob/living/simple_mob/vore/overmap -> /atom/movable/emissive_blocker; /mob/living/simple_mob/vore/overmap is being destroyed (phase scrub)%//%["code/engine/refs/lifecycle_links.dm",54]%//%
 /mob/living/simple_mob/vore/overmap/spacewhale icon: icons/mob/alienanimals_x32.dmi
 /mob/living/simple_mob/vore/overmap/spacewhale state: space_whale
 /mob/living/simple_mob/vore/overmap/spacewhale dir: 2
@@ -5347,7 +5347,7 @@
 /mob/living/simple_mob/vore/morph overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/vore/morph overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/vore/morph overlay: icons/misc/win32.dmi::-100
-/mob/living/simple_mob/vore/morph/dominated_prey deleted itself on creation
+/mob/living/simple_mob/vore/morph/dominated_prey runtime: OWN: refused _own_set(em_block): /mob/living/simple_mob/vore/morph/dominated_prey -> /atom/movable/emissive_blocker; /mob/living/simple_mob/vore/morph/dominated_prey is being destroyed (phase scrub)%//%["code/engine/refs/lifecycle_links.dm",54]%//%
 /mob/living/simple_mob/vore/mantrap icon: icons/mob/vore.dmi
 /mob/living/simple_mob/vore/mantrap state: flytrap
 /mob/living/simple_mob/vore/mantrap dir: 2
