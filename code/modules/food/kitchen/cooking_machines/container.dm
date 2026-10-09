@@ -68,7 +68,6 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 	thing.forceMove(src)
 	to_chat(user, span_notice("You put the [thing] into the [src]."))
 	set_food_items(food_items + (1))
-	changed(src)
 	return OP_OK
 
 /// There is a solid thing in it to take out.
@@ -117,7 +116,6 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 
 	set_food_items(0)
 	to_chat(user, span_notice("You remove all the solid items from the [src]."))
-	changed(src)
 
 /obj/item/reagent_containers/cooking_container/proc/check_contents()
 	if (contents_count(src) == 0)

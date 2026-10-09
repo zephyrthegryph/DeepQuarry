@@ -100,7 +100,6 @@
 			if(will_eat(user))
 				ai_busy_begin()
 				animal_nom(user)
-				update_icon()
 				ai_busy_end()
 			//legacy give_target call on attack/feed removed; brain handles auto-targeting.
 		else

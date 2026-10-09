@@ -107,7 +107,6 @@ TRACKED_BRIDGED(/obj/machinery/smart_centrifuge, working, CHANGE_MACHINE_SETTING
 		// Transfer if possible
 		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 		reagents.trans_id_to( CD, RL.id, min(RL.volume,CD.reagents.maximum_volume), TRUE)
-		CD.update_icon()
 		CD.forceMove(loc) // Drop it outside
 		CD.pixel_x = rand(-7, 7) // random position
 		CD.pixel_y = rand(-7, 7)

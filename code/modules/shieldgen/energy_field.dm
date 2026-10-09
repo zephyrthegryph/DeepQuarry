@@ -42,16 +42,9 @@
 
 // Leaves its generator's field (a shield generator or a forcefield artifact).
 
-// Neighbouring fields redraw.
 /obj/effect/energy_field/on_destroy(force)
 	update_nearby_tiles()
-	var/turf/current_loc = get_turf(src)
 	..()
-	for(var/direction in GLOB.cardinal)
-		var/turf/T = get_step(current_loc, direction)
-		if(T)
-			for(var/obj/effect/energy_field/F in turf_contents_of_type(T, /obj/effect/energy_field))
-				F.update_icon()
 
 
 /// A blast drains the field instead of damaging it.
@@ -139,7 +132,6 @@ CAPABILITIES(/obj/effect/energy_field)
 		set_density(TRUE)
 
 	if(density != old_density)
-		update_icon()
 		update_nearby_tiles()
 
 /// A drained field stays up for its generator to recharge.
@@ -147,29 +139,21 @@ CAPABILITIES(/obj/effect/energy_field)
 	SHOULD_CALL_PARENT(FALSE)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/effect/energy_field, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
-/obj/effect/energy_field/appearance_overlays()
-	. = list()
-	var/list/adjacent_shields_dir = list()
-	for(var/direction in GLOB.cardinal)
-		var/turf/T = get_step(src, direction)
-		if(T) // Incase we somehow stepped off the map.
-			for(var/obj/effect/energy_field/F in turf_contents_of_type(T, /obj/effect/energy_field))
-				adjacent_shields_dir |= direction
-				break
-	// Adjacent fields draw edges toward us: tell them when we appear, go down or come back.
-	appearance_notify_neighbours("[density]|[x],[y],[z]", /obj/effect/energy_field)
+/// The field's sprite and glow, with an edge toward each field beside it (the neighbours are watched: one appearing, going down or leaving redraws this one).
+/obj/effect/energy_field/draw(datum/look/look)
+	..()
 	// Icon_state and Glow
 	if(density)
-		icon_state = "shield"
-		set_light(3, 3, "#66FFFF")
+		look.state("shield")
+		look.light(3, 3, "#66FFFF")
 	else
-		icon_state = "shield_broken"
-		set_light(3, 5, "#FF9900")
+		look.state("shield_broken")
+		look.light(3, 5, "#FF9900")
 
 	// Edge overlays
-	for(var/found_dir in adjacent_shields_dir)
-		. += image(src.icon, src, icon_state = "shield_edge", dir = found_dir)
+	for(var/direction in GLOB.cardinal)
+		if(length(look.neighbours(src, direction, /obj/effect/energy_field)))
+			look.overlay(look_overlay_image(icon, "shield_edge", dir = direction))
 
 // Small visual effect, makes the shield tiles brighten up by becoming more opaque for a moment, and spreads to nearby shields.
 /obj/effect/energy_field/proc/impact_effect(i, list/affected_shields = list())

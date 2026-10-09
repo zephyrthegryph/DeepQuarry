@@ -8,6 +8,8 @@
 
 	special_handling = TRUE
 
+TRACKED(/obj/item/assembly/electronic_assembly, opened)
+
 CAPABILITIES(/obj/item/assembly/electronic_assembly)
 	// the device answers an item itself (circuits when opened, the assembly attach when closed): the parent's attach op would clash at the same tier
 	without("attach")
@@ -36,11 +38,10 @@ CAPABILITIES(/obj/item/assembly/electronic_assembly)
 
 /obj/item/assembly/electronic_assembly/proc/toggle_open(mob/user)
 	play_sfx(src, SFX_ITEMS_CROWBAR)
-	opened = !opened
-	EA.opened = opened
+	set_opened(!opened)
+	EA.set_opened(opened)
 	to_chat(user, span_notice("You [opened ? "opened" : "closed"] \the [src]."))
 	set_secured(TRUE)
-	changed(src)
 
 /// The look (the draw sweep: from its template).
 /obj/item/assembly/electronic_assembly/draw(datum/look/look)

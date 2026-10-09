@@ -10,19 +10,17 @@
 	max_transfer_amount = 50
 	rim_pos = null // no fruit slices
 	var/lid_color = "black"
-
+TRACKED(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask, lid_color)
 
 // ALLOW(init/INSTANCE_STATE): rolls its lid colour
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/Initialize(mapload)
 	. = ..()
-	lid_color = pick("black", "red", "blue")
-	update_icon()
+	set_lid_color(pick("black", "red", "blue"))
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = "[base_icon]_[lid_color]"
+/// The shaker is drawn with the lid it rolled.
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/draw_contents(datum/look/look)
+	..()
+	look.state("[base_icon]_[lid_color]")
 
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake
 	name = "protein shake"
@@ -34,11 +32,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fitnessf
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake)
 	configure(reagents(add = list(REAGENT_ID_NUTRIMENT = 30, REAGENT_ID_IRON = 10, REAGENT_ID_PROTEIN = 35, REAGENT_ID_WATER = 25)))
 
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake/Initialize(mapload)
-	. = ..()
-	cut_overlays()
-
-APPEARANCE_NONE(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake)
+/// A shake in its carton keeps the carton's sprite: nothing of the glass is drawn on it.
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake/draw_contents(datum/look/look)
+	return
 
 
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake
@@ -51,8 +47,6 @@ APPEARANCE_NONE(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/pro
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake)
 	configure(reagents(add = list(REAGENT_ID_LIQUIDPROTEAN = 50, REAGENT_ID_NUTRIMENT = 50)))
 
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake/Initialize(mapload)
-	. = ..()
-	cut_overlays()
-
-APPEARANCE_NONE(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake)
+/// A shake in its carton keeps the carton's sprite: nothing of the glass is drawn on it.
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake/draw_contents(datum/look/look)
+	return

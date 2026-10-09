@@ -1,0 +1,17 @@
+/obj/item/reagent_containers/cooking_container icon: icons/obj/cooking_machines.dmi
+/obj/item/reagent_containers/cooking_container state: 
+/obj/item/reagent_containers/cooking_container dir: 2
+/obj/item/reagent_containers/cooking_container overlay: icons/obj/cooking_machines.dmi::8:#000000
+/obj/item/reagent_containers/cooking_container/oven icon: icons/obj/cooking_machines.dmi
+/obj/item/reagent_containers/cooking_container/oven state: ovendish
+/obj/item/reagent_containers/cooking_container/oven dir: 2
+/obj/item/reagent_containers/cooking_container/oven overlay: icons/obj/cooking_machines.dmi:ovendish:8:#000000
+/obj/item/reagent_containers/cooking_container/fryer icon: icons/obj/cooking_machines.dmi
+/obj/item/reagent_containers/cooking_container/fryer state: basket
+/obj/item/reagent_containers/cooking_container/fryer dir: 2
+/obj/item/reagent_containers/cooking_container/fryer overlay: icons/obj/cooking_machines.dmi:basket:8:#000000
+/obj/item/reagent_containers/cooking_container/grill icon: icons/obj/cooking_machines.dmi
+/obj/item/reagent_containers/cooking_container/grill state: grillrack
+/obj/item/reagent_containers/cooking_container/grill dir: 2
+/obj/item/reagent_containers/cooking_container/grill overlay: icons/obj/cooking_machines.dmi:grillrack:8:#000000
+

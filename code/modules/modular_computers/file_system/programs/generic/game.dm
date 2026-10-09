@@ -39,17 +39,13 @@
 		heads_up = "You have crushed [boss_name]! Rejoice!"
 		play_sfx(computer().loc, SFX_ARCADE_WIN)
 		game_active = FALSE
-		program_icon_state = "arcade_off"
-		if(istype(computer(), /obj/item/modular_computer))
-			computer().update_icon()
+		set_program_icon_state("arcade_off")
 		ticket_count += 1
 	else if(player_hp <= 0 || player_mp <= 0)
 		heads_up = "You have been defeated... how will the station survive?"
 		play_sfx(computer().loc, SFX_ARCADE_LOSE)
 		game_active = FALSE
-		program_icon_state = "arcade_off"
-		if(istype(computer(), /obj/item/modular_computer))
-			computer().update_icon()
+		set_program_icon_state("arcade_off")
 	else
 		ended = FALSE
 	if(next)
@@ -191,8 +187,6 @@ CAPABILITIES(/datum/computer_file/program/game)
 	player_hp = 30
 	player_mp = 10
 	heads_up = "You stand before [boss_name]! Prepare for battle!"
-	program_icon_state = "arcade"
+	set_program_icon_state("arcade")
 	boss_id = rand(1,6)
 	pause_state = FALSE
-	if(istype(computer(), /obj/item/modular_computer))
-		computer().update_icon()

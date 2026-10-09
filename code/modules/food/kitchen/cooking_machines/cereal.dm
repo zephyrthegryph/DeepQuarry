@@ -24,19 +24,13 @@ CAPABILITIES(/obj/machinery/appliance/mixer/cereal)
 	rel_set(src, nameof(cerealmaker_loop), new /datum/looping_sound/cerealmaker(list(src), FALSE))
 
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/cereal, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/mixer/cereal/appearance_overlays()
-	. = list()
-	. += ..()
-
+/// The cereal maker hums while it is on, beside the mixer's own sound.
+/obj/machinery/appliance/mixer/cereal/loop_sync(datum/act/A)
+	..()
 	if(!has_condition())
-		icon_state = on_icon
-		if(cerealmaker_loop)
-			cerealmaker_loop.start(src)
+		cerealmaker_loop?.start(src)
 	else
-		icon_state = off_icon
-		if(cerealmaker_loop)
-			cerealmaker_loop.stop(src)
+		cerealmaker_loop?.stop(src)
 
 /obj/machinery/appliance/mixer/cereal/combination_cook(datum/cooking_item/CI)
 

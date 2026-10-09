@@ -17,9 +17,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/pump)
 /obj/machinery/reagent_refinery/pump/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	// Update neighbours and self for state
-	update_neighbours()
-	update_icon()
 
 	add_hose_connector(/datum/hose_connector/input)
 	add_hose_connector(/datum/hose_connector/input)
@@ -45,13 +42,12 @@ CAPABILITIES(/obj/machinery/reagent_refinery/pump)
 		return amount_per_transfer_from_this
 	return 0
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/pump/appearance_overlays()
-	. = list()
-	if(reagents && reagents.total_volume >= 5)
-		var/image/filling = image(icon, loc, "pump_r",dir = dir)
-		filling.color = reagents.get_color()
-		. += filling
+/obj/machinery/reagent_refinery/pump/draw(datum/look/look)
+	..()
+	var/datum/reagents/R = reagents
+	look.watch(R) // its level and colour are tracked on the holder
+	if(R?.total_volume >= 5)
+		look.overlay(look_overlay_image(icon, "pump_r", color = R.tint, dir = dir))
 
 /obj/machinery/reagent_refinery/pump/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// pumps, furnaces, splitters and filters can only be FED in a straight line

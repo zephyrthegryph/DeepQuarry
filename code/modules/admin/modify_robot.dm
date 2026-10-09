@@ -276,7 +276,6 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	source.modtype = new_source
 	var/obj/item/robot_module/robot/robot_type = new module_type(source)
 	proto_set(source, nameof(/datum/tgui_module/robot_ui_module::sprite_datum), pick(SSrobot_sprites.get_module_sprites(source.modtype, source)))
-	source.update_icon()
 	source.emag_items = TRUE
 	if(!istype(robot_type, /obj/item/robot_module/robot))
 		rel_clear(src, nameof(/datum/eventkit/modify_robot::source))
@@ -322,7 +321,6 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	// The target's sprite is shared (a registered sprite) or its private copy: copy a private one.
 	var/datum/robot_sprite/target_sprite = target().sprite_datum
 	proto_set(source, nameof(/datum/tgui_module/robot_ui_module::sprite_datum), (!target_sprite || is_registered(target_sprite)) ? target_sprite : target_sprite.proto_copy())
-	source.update_icon()
 	source.emag_items = TRUE
 	// Target
 	target().uneq_all()

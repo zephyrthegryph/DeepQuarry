@@ -16,9 +16,8 @@
 /obj/structure/closet/secure_closet/guncabinet/rifle dir: 2
 /obj/structure/closet/secure_closet/guncabinet/rifle overlay: icons/obj/guncabinet.dmi:base:8:#000000
 /obj/structure/closet/secure_closet/guncabinet/rifle overlay: icons/obj/guncabinet.dmi:door:-32767
-/obj/structure/closet/secure_closet/guncabinet/rifle overlay: icons/obj/guncabinet.dmi:laser:-32767 x2
 /obj/structure/closet/secure_closet/guncabinet/rifle overlay: icons/obj/guncabinet.dmi:locked:-32767
-/obj/structure/closet/secure_closet/guncabinet/rifle overlay: icons/obj/guncabinet.dmi:projectile:-32767
+/obj/structure/closet/secure_closet/guncabinet/rifle overlay: icons/obj/guncabinet.dmi:projectile:-32767 x2
 /obj/structure/closet/secure_closet/guncabinet/phase icon: icons/obj/guncabinet.dmi
 /obj/structure/closet/secure_closet/guncabinet/phase state: base
 /obj/structure/closet/secure_closet/guncabinet/phase dir: 2

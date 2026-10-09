@@ -47,6 +47,8 @@ CAPABILITIES(/obj/item/electronic_assembly)
 /// Entered()/Exited(); null until first computed.
 /obj/item/electronic_assembly/var/tmp/power_relevant = null
 TRACKED(/obj/item/electronic_assembly, power_relevant)
+TRACKED(/obj/item/electronic_assembly, opened)
+TRACKED(/obj/item/electronic_assembly, detail_color)
 
 /// Idle power every 2 s while there is power-relevant work (a battery plus a circuit that makes or draws idle power).
 /obj/item/electronic_assembly/proc/assembly_power_step(datum/act/timer/A)
@@ -343,21 +345,13 @@ CAPABILITIES(/datum/ic_export_view)
 /obj/item/electronic_assembly/proc/can_move()
 	return FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/electronic_assembly/appearance_overlays()
-	. = list()
-	if(opened)
-		icon_state = initial(icon_state) + "-open"
-	// else if(locked)
-		// For when I finish the locked assembly sprites.
-		// icon_state = initial(icon_state) // + "-locked" would be added once sprites are made
-	else
-		icon_state = initial(icon_state)
-	if(detail_color == COLOR_ASSEMBLY_BLACK) //Black colored overlay looks almost but not exactly like the base sprite, so just cut the overlay and avoid it looking kinda off.
-		return .
-	var/mutable_appearance/detail_overlay = mutable_appearance('icons/obj/integrated_electronics/electronic_setups.dmi', "[icon_state]-color")
-	detail_overlay.color = detail_color
-	. += detail_overlay
+/obj/item/electronic_assembly/draw(datum/look/look)
+	..()
+	// Locked-assembly sprites are not made yet; only the open state changes the base sprite.
+	var/shown = look.state("[initial(icon_state)][opened ? "-open" : ""]")
+	if(detail_color == COLOR_ASSEMBLY_BLACK) // Black looks almost but not exactly like the base sprite, so draw no detail overlay.
+		return
+	look.overlay(look_appearance('icons/obj/integrated_electronics/electronic_setups.dmi', "[shown]-color", color = detail_color))
 
 /obj/item/electronic_assembly/examine(mob/user)
 	. = ..()
@@ -458,7 +452,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 				locked = FALSE
 				rel_clear(src, nameof(locked_by))
 				to_chat(user, span_notice("You unlock \the [src]."))
-				update_icon()
 			else
 				to_chat(user, span_warning("Access denied. This assembly was locked by [locked_by() ? locked_by().registered_name : "someone else"]."))
 			return OP_OK
@@ -467,7 +460,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 			locked = TRUE
 			rel_set(src, nameof(locked_by), id_card)
 			to_chat(user, span_notice("You lock \the [src]. Now only your ID card can unlock it."))
-			update_icon()
 			return OP_OK
 
 	else if(istype(I, /obj/item/integrated_electronics/wirer) || istype(I, /obj/item/integrated_electronics/debugger))
@@ -481,8 +473,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 
 	else if(istype(I, /obj/item/integrated_electronics/detailer))
 		var/obj/item/integrated_electronics/detailer/D = I
-		detail_color = D.detail_color
-		update_icon()
+		set_detail_color(D.detail_color)
 
 	else if(istype(I, /obj/item/cell/device))
 		if(!opened)
@@ -520,9 +511,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 		to_chat(user, span_warning("\The [src] is locked! You cannot open it with a crowbar."))
 		return ITEM_INTERACT_BLOCKING
 	playsound(src, tool.usesound, 50, TRUE)
-	opened = !opened
+	set_opened(!opened)
 	to_chat(user, span_notice("You [opened ? "opened" : "closed"] \the [src]."))
-	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/electronic_assembly/screwdriver_act(mob/user, obj/item/tool)

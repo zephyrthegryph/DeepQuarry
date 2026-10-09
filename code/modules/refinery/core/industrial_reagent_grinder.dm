@@ -14,8 +14,6 @@
 /obj/machinery/reagent_refinery/grinder/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	// Update neighbours and self for state
-	update_neighbours()
 
 /obj/machinery/reagent_refinery/grinder/ownership()
 	. = ..()

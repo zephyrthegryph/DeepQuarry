@@ -1,0 +1,18 @@
+/obj/machinery/appliance/cooker runtime: Cannot create objects of type null.
+/obj/machinery/appliance/cooker/oven open=1 +state: ovenopen
+/obj/machinery/appliance/cooker/oven open=1 +overlay: icons/obj/cooking_machines.dmi:ovenopen:8:#000000
+/obj/machinery/appliance/cooker/oven open=1 -state: ovenclosed_off
+/obj/machinery/appliance/cooker/oven open=1 -overlay: icons/obj/cooking_machines.dmi:ovenclosed_off:8:#000000
+/obj/machinery/appliance/cooker/oven open=2 +state: ovenopen
+/obj/machinery/appliance/cooker/oven open=2 +overlay: icons/obj/cooking_machines.dmi:ovenopen:8:#000000
+/obj/machinery/appliance/cooker/oven open=2 -state: ovenclosed_off
+/obj/machinery/appliance/cooker/oven open=2 -overlay: icons/obj/cooking_machines.dmi:ovenclosed_off:8:#000000
+/obj/machinery/appliance/cooker/oven/yeoldoven open=1 +state: yeoldovenopen
+/obj/machinery/appliance/cooker/oven/yeoldoven open=1 +overlay: icons/obj/cooking_machines.dmi:yeoldovenopen:8:#000000
+/obj/machinery/appliance/cooker/oven/yeoldoven open=1 -state: yeoldovenclosed_off
+/obj/machinery/appliance/cooker/oven/yeoldoven open=1 -overlay: icons/obj/cooking_machines.dmi:yeoldovenclosed_off:8:#000000
+/obj/machinery/appliance/cooker/oven/yeoldoven open=2 +state: yeoldovenopen
+/obj/machinery/appliance/cooker/oven/yeoldoven open=2 +overlay: icons/obj/cooking_machines.dmi:yeoldovenopen:8:#000000
+/obj/machinery/appliance/cooker/oven/yeoldoven open=2 -state: yeoldovenclosed_off
+/obj/machinery/appliance/cooker/oven/yeoldoven open=2 -overlay: icons/obj/cooking_machines.dmi:yeoldovenclosed_off:8:#000000
+
