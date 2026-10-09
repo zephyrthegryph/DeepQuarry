@@ -972,7 +972,8 @@ CAPABILITIES(/obj/item/radio/borg/pai)
 	icon = 'icons/obj/paicard.dmi'
 	icon_state = "pai"
 
-DECLARE_LOOT(/obj/random/paicard, LOOT_TABLE(/obj/item/paicard, /obj/item/paicard/typeb))
+CAPABILITIES(/obj/random/paicard)
+	loot(table = list(/obj/item/paicard, /obj/item/paicard/typeb))
 
 /obj/item/paicard/digest_act(atom/movable/item_storage = null)
 	if(pai?.digestable)

@@ -99,7 +99,7 @@ CAPABILITIES(/datum/ttv_bomb_review)
 CAPABILITIES(/obj/effect/spawner/newbomb)
 	map_resolver(GLOBAL_PROC_REF(resolve_newbomb), vars = list("carbon_amt", "oxygen_amt", "phoron_amt"))
 
-/// MAP_RESOLVER for mapped TTV bombs. The bomb goes where the spawner was: a
+/// The map resolver of mapped TTV bombs. The bomb goes where the spawner was: a
 /// spawner created inside a container (the syndicate "screwed" kit box) fills
 /// that container, not the floor under it.
 /proc/resolve_newbomb(atom/loc, path, list/varedits)
@@ -159,7 +159,7 @@ CAPABILITIES(/obj/effect/spawner/newbomb)
 
 CAPABILITIES(/obj/effect/spawner/onetankbomb)
 	map_resolver(GLOBAL_PROC_REF(resolve_loot))
-DECLARE_LOOT(/obj/effect/spawner/onetankbomb, LOOT_TABLE(/obj/item/tank/phoron/onetankbomb, /obj/item/tank/oxygen/onetankbomb))
+	loot(table = list(/obj/item/tank/phoron/onetankbomb, /obj/item/tank/oxygen/onetankbomb))
 
 
 /obj/effect/spawner/onetankbomb/full
@@ -169,7 +169,8 @@ DECLARE_LOOT(/obj/effect/spawner/onetankbomb, LOOT_TABLE(/obj/item/tank/phoron/o
 
 
 	//Note that the maximum amount of gas you can put in a 70L air tank at 1013.25 kPa and 519K is 16.44 mol.
-DECLARE_LOOT(/obj/effect/spawner/onetankbomb/full, LOOT_TABLE(/obj/item/tank/phoron/onetankbomb/full, /obj/item/tank/oxygen/onetankbomb/full))
+CAPABILITIES(/obj/effect/spawner/onetankbomb/full)
+	configure(loot(table = list(/obj/item/tank/phoron/onetankbomb/full, /obj/item/tank/oxygen/onetankbomb/full)))
 
 
 /obj/effect/spawner/onetankbomb/frag

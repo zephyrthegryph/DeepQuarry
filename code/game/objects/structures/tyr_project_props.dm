@@ -174,18 +174,20 @@ CAPABILITIES(/obj/machinery/door/blast/puzzle/tyrdoor/keypad)
 	icon_state = "outcrop-random"
 
 
-DECLARE_LOOT(/obj/random/tyroutcrop, LOOT_TABLE(\
-	/obj/structure/outcrop/verdantium = 3, \
-	/obj/structure/outcrop/iron/tyr = 1, \
-	/obj/structure/outcrop/coal/tyr = 1, \
-	/obj/structure/outcrop/silver/tyr = 1, \
-	/obj/structure/outcrop/gold/tyr = 1, \
-	/obj/structure/outcrop/uranium/tyr = 1, \
-	/obj/structure/outcrop/diamond/tyr = 3, \
-	/obj/structure/outcrop/platinum/tyr = 1, \
-	/obj/structure/outcrop/weathered_gate = 5, \
-	/obj/structure/outcrop/hydrogen = 3, \
-	/obj/structure/outcrop/lead/tyr = 1))
+CAPABILITIES(/obj/random/tyroutcrop)
+	loot(
+		table = list(
+			/obj/structure/outcrop/verdantium = 3,
+			/obj/structure/outcrop/iron/tyr = 1,
+			/obj/structure/outcrop/coal/tyr = 1,
+			/obj/structure/outcrop/silver/tyr = 1,
+			/obj/structure/outcrop/gold/tyr = 1,
+			/obj/structure/outcrop/uranium/tyr = 1,
+			/obj/structure/outcrop/diamond/tyr = 3,
+			/obj/structure/outcrop/platinum/tyr = 1,
+			/obj/structure/outcrop/weathered_gate = 5,
+			/obj/structure/outcrop/hydrogen = 3,
+			/obj/structure/outcrop/lead/tyr = 1))
 
 /obj/item/prop/tyrlore
 	name = "alien disk"

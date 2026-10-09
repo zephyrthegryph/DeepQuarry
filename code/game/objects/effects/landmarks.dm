@@ -15,7 +15,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 CAPABILITIES(/obj/effect/landmark)
 	map_resolver(GLOBAL_PROC_REF(resolve_landmark))
 
-/// MAP_RESOLVER for landmarks: a coordinate-only landmark (spawn points, event starts) becomes a
+/// The map resolver of landmarks: a coordinate-only landmark (spawn points, event starts) becomes a
 /// row in its coordinate registry and never an atom; costume landmarks roll their costume. Any
 /// other landmark (one that stays, or a subtype with work of its own) is made normally.
 /proc/resolve_landmark(atom/loc, path, list/varedits)
@@ -131,54 +131,110 @@ TYPE_TABLE(/obj/effect/landmark/virtual_reality, landmark_tag_setup, /obj/effect
 /obj/effect/landmark/costume
 
 // Costume spawners roll their costume at map time (resolve_landmark()); the base picks one.
-DECLARE_LOOT(/obj/effect/landmark/costume, LOOT_TABLE(LOOT_TYPES(1, subtypesof(/obj/effect/landmark/costume))))
-DECLARE_LOOT(/loot/costume/cueball, LOOT_TABLE(/obj/item/clothing/head/cueball), LOOT_CHANCE(30))
-DECLARE_LOOT(/loot/costume/cyborg_mask, LOOT_TABLE(/obj/item/clothing/mask/gas/cyborg), LOOT_CHANCE(25))
+CAPABILITIES(/obj/effect/landmark/costume)
+	loot(table = list(loot_types(1, subtypesof(/obj/effect/landmark/costume))))
+CAPABILITIES(/loot/costume/cueball)
+	loot(table = list(/obj/item/clothing/head/cueball), chance = 30)
+CAPABILITIES(/loot/costume/cyborg_mask)
+	loot(table = list(/obj/item/clothing/mask/gas/cyborg), chance = 25)
 
 /obj/effect/landmark/costume/chicken
-DECLARE_LOOT(/obj/effect/landmark/costume/chicken, LOOT_ALL(/obj/item/clothing/suit/chickensuit, /obj/item/clothing/head/chicken, /obj/item/reagent_containers/food/snacks/egg))
+CAPABILITIES(/obj/effect/landmark/costume/chicken)
+	configure(loot(all = list(/obj/item/clothing/suit/chickensuit, /obj/item/clothing/head/chicken, /obj/item/reagent_containers/food/snacks/egg)))
 /obj/effect/landmark/costume/gladiator
-DECLARE_LOOT(/obj/effect/landmark/costume/gladiator, LOOT_ALL(/obj/item/clothing/under/gladiator, /obj/item/clothing/head/helmet/gladiator))
+CAPABILITIES(/obj/effect/landmark/costume/gladiator)
+	configure(loot(all = list(/obj/item/clothing/under/gladiator, /obj/item/clothing/head/helmet/gladiator)))
 /obj/effect/landmark/costume/madscientist
-DECLARE_LOOT(/obj/effect/landmark/costume/madscientist, LOOT_ALL(/obj/item/clothing/under/suit_jacket/green, /obj/item/clothing/head/flatcap, /obj/item/clothing/suit/storage/toggle/labcoat/mad, /obj/item/clothing/glasses/gglasses))
+CAPABILITIES(/obj/effect/landmark/costume/madscientist)
+	configure(loot(
+		all = list(
+			/obj/item/clothing/under/suit_jacket/green,
+			/obj/item/clothing/head/flatcap,
+			/obj/item/clothing/suit/storage/toggle/labcoat/mad,
+			/obj/item/clothing/glasses/gglasses)))
 /obj/effect/landmark/costume/elpresidente
-DECLARE_LOOT(/obj/effect/landmark/costume/elpresidente, LOOT_ALL(/obj/item/clothing/under/suit_jacket/green, /obj/item/clothing/head/flatcap, /obj/item/clothing/mask/smokable/cigarette/cigar/havana, /obj/item/clothing/shoes/boots/jackboots))
+CAPABILITIES(/obj/effect/landmark/costume/elpresidente)
+	configure(loot(
+		all = list(
+			/obj/item/clothing/under/suit_jacket/green,
+			/obj/item/clothing/head/flatcap,
+			/obj/item/clothing/mask/smokable/cigarette/cigar/havana,
+			/obj/item/clothing/shoes/boots/jackboots)))
 /obj/effect/landmark/costume/nyangirl
-DECLARE_LOOT(/obj/effect/landmark/costume/nyangirl, LOOT_ALL(/obj/item/clothing/under/schoolgirl, /obj/item/clothing/head/kitty))
+CAPABILITIES(/obj/effect/landmark/costume/nyangirl)
+	configure(loot(all = list(/obj/item/clothing/under/schoolgirl, /obj/item/clothing/head/kitty)))
 /obj/effect/landmark/costume/maid
-DECLARE_LOOT(/obj/effect/landmark/costume/maid, LOOT_ALL(/obj/item/clothing/under/skirt, LOOT_SUB(1, /obj/item/clothing/head/beret, /obj/item/clothing/head/rabbitears), /obj/item/clothing/glasses/sunglasses/blindfold))
+CAPABILITIES(/obj/effect/landmark/costume/maid)
+	configure(loot(
+		all = list(
+			/obj/item/clothing/under/skirt,
+			loot_sub(1, list(/obj/item/clothing/head/beret, /obj/item/clothing/head/rabbitears)),
+			/obj/item/clothing/glasses/sunglasses/blindfold)))
 /obj/effect/landmark/costume/butler
-DECLARE_LOOT(/obj/effect/landmark/costume/butler, LOOT_ALL(/obj/item/clothing/accessory/wcoat, /obj/item/clothing/under/suit_jacket, /obj/item/clothing/head/that))
+CAPABILITIES(/obj/effect/landmark/costume/butler)
+	configure(loot(all = list(/obj/item/clothing/accessory/wcoat, /obj/item/clothing/under/suit_jacket, /obj/item/clothing/head/that)))
 /obj/effect/landmark/costume/scratch
-DECLARE_LOOT(/obj/effect/landmark/costume/scratch, LOOT_ALL(/obj/item/clothing/gloves/white, /obj/item/clothing/shoes/white, /obj/item/clothing/under/scratch, LOOT_REF(/loot/costume/cueball)))
+CAPABILITIES(/obj/effect/landmark/costume/scratch)
+	configure(loot(all = list(/obj/item/clothing/gloves/white, /obj/item/clothing/shoes/white, /obj/item/clothing/under/scratch, /loot/costume/cueball)))
 /obj/effect/landmark/costume/highlander
-DECLARE_LOOT(/obj/effect/landmark/costume/highlander, LOOT_ALL(/obj/item/clothing/under/kilt, /obj/item/clothing/head/beret))
+CAPABILITIES(/obj/effect/landmark/costume/highlander)
+	configure(loot(all = list(/obj/item/clothing/under/kilt, /obj/item/clothing/head/beret)))
 /obj/effect/landmark/costume/prig
-DECLARE_LOOT(/obj/effect/landmark/costume/prig, LOOT_ALL(/obj/item/clothing/accessory/wcoat, /obj/item/clothing/glasses/monocle, LOOT_SUB(1, /obj/item/clothing/head/bowler, /obj/item/clothing/head/that), /obj/item/clothing/shoes/black, /obj/item/cane, /obj/item/clothing/under/sl_suit, /obj/item/clothing/mask/fakemoustache))
+CAPABILITIES(/obj/effect/landmark/costume/prig)
+	configure(loot(
+		all = list(
+			/obj/item/clothing/accessory/wcoat,
+			/obj/item/clothing/glasses/monocle,
+			loot_sub(1, list(/obj/item/clothing/head/bowler, /obj/item/clothing/head/that)),
+			/obj/item/clothing/shoes/black,
+			/obj/item/cane,
+			/obj/item/clothing/under/sl_suit,
+			/obj/item/clothing/mask/fakemoustache)))
 /obj/effect/landmark/costume/plaguedoctor
-DECLARE_LOOT(/obj/effect/landmark/costume/plaguedoctor, LOOT_ALL(/obj/item/clothing/suit/bio_suit/plaguedoctorsuit, /obj/item/clothing/head/plaguedoctorhat))
+CAPABILITIES(/obj/effect/landmark/costume/plaguedoctor)
+	configure(loot(all = list(/obj/item/clothing/suit/bio_suit/plaguedoctorsuit, /obj/item/clothing/head/plaguedoctorhat)))
 /obj/effect/landmark/costume/nightowl
-DECLARE_LOOT(/obj/effect/landmark/costume/nightowl, LOOT_ALL(/obj/item/clothing/under/owl, /obj/item/clothing/mask/gas/owl_mask))
+CAPABILITIES(/obj/effect/landmark/costume/nightowl)
+	configure(loot(all = list(/obj/item/clothing/under/owl, /obj/item/clothing/mask/gas/owl_mask)))
 /obj/effect/landmark/costume/waiter
-DECLARE_LOOT(/obj/effect/landmark/costume/waiter, LOOT_ALL(/obj/item/clothing/under/waiter, LOOT_SUB(1, /obj/item/clothing/head/kitty, /obj/item/clothing/head/rabbitears), /obj/item/clothing/suit/storage/apron))
+CAPABILITIES(/obj/effect/landmark/costume/waiter)
+	configure(loot(
+		all = list(
+			/obj/item/clothing/under/waiter,
+			loot_sub(1, list(/obj/item/clothing/head/kitty, /obj/item/clothing/head/rabbitears)),
+			/obj/item/clothing/suit/storage/apron)))
 /obj/effect/landmark/costume/pirate
-DECLARE_LOOT(/obj/effect/landmark/costume/pirate, LOOT_ALL(/obj/item/clothing/under/pirate, /obj/item/clothing/suit/pirate, LOOT_SUB(1, /obj/item/clothing/head/pirate, /obj/item/clothing/head/bandana), /obj/item/clothing/glasses/eyepatch))
+CAPABILITIES(/obj/effect/landmark/costume/pirate)
+	configure(loot(
+		all = list(
+			/obj/item/clothing/under/pirate,
+			/obj/item/clothing/suit/pirate,
+			loot_sub(1, list(/obj/item/clothing/head/pirate, /obj/item/clothing/head/bandana)),
+			/obj/item/clothing/glasses/eyepatch)))
 /obj/effect/landmark/costume/commie
-DECLARE_LOOT(/obj/effect/landmark/costume/commie, LOOT_ALL(/obj/item/clothing/under/soviet, /obj/item/clothing/head/ushanka))
+CAPABILITIES(/obj/effect/landmark/costume/commie)
+	configure(loot(all = list(/obj/item/clothing/under/soviet, /obj/item/clothing/head/ushanka)))
 /obj/effect/landmark/costume/imperium_monk
-DECLARE_LOOT(/obj/effect/landmark/costume/imperium_monk, LOOT_ALL(/obj/item/clothing/suit/imperium_monk, LOOT_REF(/loot/costume/cyborg_mask)))
+CAPABILITIES(/obj/effect/landmark/costume/imperium_monk)
+	configure(loot(all = list(/obj/item/clothing/suit/imperium_monk, /loot/costume/cyborg_mask)))
 /obj/effect/landmark/costume/holiday_priest
-DECLARE_LOOT(/obj/effect/landmark/costume/holiday_priest, LOOT_ALL(/obj/item/clothing/suit/holidaypriest))
+CAPABILITIES(/obj/effect/landmark/costume/holiday_priest)
+	configure(loot(all = list(/obj/item/clothing/suit/holidaypriest)))
 /obj/effect/landmark/costume/marisawizard/fake
-DECLARE_LOOT(/obj/effect/landmark/costume/marisawizard/fake, LOOT_ALL(/obj/item/clothing/head/wizard/marisa/fake, /obj/item/clothing/suit/wizrobe/marisa/fake))
+CAPABILITIES(/obj/effect/landmark/costume/marisawizard/fake)
+	configure(loot(all = list(/obj/item/clothing/head/wizard/marisa/fake, /obj/item/clothing/suit/wizrobe/marisa/fake)))
 /obj/effect/landmark/costume/cutewitch
-DECLARE_LOOT(/obj/effect/landmark/costume/cutewitch, LOOT_ALL(/obj/item/clothing/under/sundress, /obj/item/clothing/head/witchwig, /obj/item/staff/broom))
+CAPABILITIES(/obj/effect/landmark/costume/cutewitch)
+	configure(loot(all = list(/obj/item/clothing/under/sundress, /obj/item/clothing/head/witchwig, /obj/item/staff/broom)))
 /obj/effect/landmark/costume/fakewizard
-DECLARE_LOOT(/obj/effect/landmark/costume/fakewizard, LOOT_ALL(/obj/item/clothing/suit/wizrobe/fake, /obj/item/clothing/head/wizard/fake, /obj/item/staff))
+CAPABILITIES(/obj/effect/landmark/costume/fakewizard)
+	configure(loot(all = list(/obj/item/clothing/suit/wizrobe/fake, /obj/item/clothing/head/wizard/fake, /obj/item/staff)))
 /obj/effect/landmark/costume/sexyclown
-DECLARE_LOOT(/obj/effect/landmark/costume/sexyclown, LOOT_ALL(/obj/item/clothing/mask/gas/sexyclown, /obj/item/clothing/under/sexyclown))
+CAPABILITIES(/obj/effect/landmark/costume/sexyclown)
+	configure(loot(all = list(/obj/item/clothing/mask/gas/sexyclown, /obj/item/clothing/under/sexyclown)))
 /obj/effect/landmark/costume/sexymime
-DECLARE_LOOT(/obj/effect/landmark/costume/sexymime, LOOT_ALL(/obj/item/clothing/mask/gas/sexymime, /obj/item/clothing/under/sexymime))
+CAPABILITIES(/obj/effect/landmark/costume/sexymime)
+	configure(loot(all = list(/obj/item/clothing/mask/gas/sexymime, /obj/item/clothing/under/sexymime)))
 
 /// Marks the bottom left of the testing zone.
 /// In landmarks.dm and not unit_test.dm so it is always active in the mapping tools.

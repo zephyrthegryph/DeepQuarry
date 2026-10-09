@@ -187,30 +187,32 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "red"
 
-DECLARE_LOOT(/obj/random/fishing_junk, LOOT_TABLE(\
-	/obj/random/toy = 60, \
-	/obj/random/maintenance/engineering = 50, \
-	/obj/random/maintenance/clean = 40, \
-	/obj/random/maintenance/security = 40, \
-	/obj/random/maintenance/research = 40, \
-	/obj/structure/closet/crate/secure/loot = 30, \
-	/obj/random/bomb_supply = 30, \
-	/obj/random/powercell = 30, \
-	/obj/random/tech_supply/component = 30, \
-	/obj/random/unidentified_medicine/old_medicine = 30, \
-	/obj/random/plushie = 30, \
-	/obj/random/contraband = 20, \
-	/obj/random/coin = 20, \
-	/obj/random/medical = 15, \
-	/obj/random/unidentified_medicine/fresh_medicine = 15, \
-	/obj/random/action_figure = 15, \
-	/obj/random/plushielarge = 15, \
-	/obj/random/firstaid = 10, \
-	/obj/random/tool/powermaint = 5, \
-	/obj/random/unidentified_medicine/combat_medicine = 1, \
-	/obj/random/tool/alien = 1, \
-	/obj/random/handgun = 1, \
-	/mob/living/simple_mob/animal/sif/hooligan_crab = 1))
+CAPABILITIES(/obj/random/fishing_junk)
+	loot(
+		table = list(
+			/obj/random/toy = 60,
+			/obj/random/maintenance/engineering = 50,
+			/obj/random/maintenance/clean = 40,
+			/obj/random/maintenance/security = 40,
+			/obj/random/maintenance/research = 40,
+			/obj/structure/closet/crate/secure/loot = 30,
+			/obj/random/bomb_supply = 30,
+			/obj/random/powercell = 30,
+			/obj/random/tech_supply/component = 30,
+			/obj/random/unidentified_medicine/old_medicine = 30,
+			/obj/random/plushie = 30,
+			/obj/random/contraband = 20,
+			/obj/random/coin = 20,
+			/obj/random/medical = 15,
+			/obj/random/unidentified_medicine/fresh_medicine = 15,
+			/obj/random/action_figure = 15,
+			/obj/random/plushielarge = 15,
+			/obj/random/firstaid = 10,
+			/obj/random/tool/powermaint = 5,
+			/obj/random/unidentified_medicine/combat_medicine = 1,
+			/obj/random/tool/alien = 1,
+			/obj/random/handgun = 1,
+			/mob/living/simple_mob/animal/sif/hooligan_crab = 1))
 
 #undef FISHING_RARE
 #undef FISHING_UNCOMMON

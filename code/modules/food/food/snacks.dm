@@ -4659,9 +4659,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageleverything)
 	desc = "Noo! ...Two bagels!"
 	icon_state = "bagelplain"
 
-DECLARE_LOOT(/obj/item/reagent_containers/food/snacks/bageltwo, LOOT_TABLE(/obj/item/reagent_containers/food/snacks/bagelplain), LOOT_COUNT(2))
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 	map_resolver(GLOBAL_PROC_REF(resolve_loot))
+	loot(table = list(/obj/item/reagent_containers/food/snacks/bagelplain), count = 2)
 
 /obj/item/reagent_containers/food/snacks/macncheese
 	name = "macaroni and cheese"

@@ -307,10 +307,8 @@ TYPE_TABLE(/obj/item/research_sample/bluespace, research_sample_resources, list(
 	icon = 'icons/obj/samples.dmi'
 	icon_state = "sample_spawner1"
 
-DECLARE_LOOT(/obj/random/research_sample_type1, LOOT_TABLE(\
-	/obj/item/research_sample/common = 50, \
-	/obj/item/research_sample/uncommon = 35, \
-	/obj/item/research_sample/rare = 15))
+CAPABILITIES(/obj/random/research_sample_type1)
+	loot(table = list(/obj/item/research_sample/common = 50, /obj/item/research_sample/uncommon = 35, /obj/item/research_sample/rare = 15))
 
 /obj/random/research_sample_type2
 	name = "Random Common/Uncommon Research Sample"
@@ -318,7 +316,8 @@ DECLARE_LOOT(/obj/random/research_sample_type1, LOOT_TABLE(\
 	icon = 'icons/obj/samples.dmi'
 	icon_state = "sample_spawner2"
 
-DECLARE_LOOT(/obj/random/research_sample_type2, LOOT_TABLE(/obj/item/research_sample/common = 70, /obj/item/research_sample/uncommon = 30))
+CAPABILITIES(/obj/random/research_sample_type2)
+	loot(table = list(/obj/item/research_sample/common = 70, /obj/item/research_sample/uncommon = 30))
 
 /obj/random/research_sample_type3
 	name = "Random Uncommon/Rare Research Sample"
@@ -326,4 +325,5 @@ DECLARE_LOOT(/obj/random/research_sample_type2, LOOT_TABLE(/obj/item/research_sa
 	icon = 'icons/obj/samples.dmi'
 	icon_state = "sample_spawner3"
 
-DECLARE_LOOT(/obj/random/research_sample_type3, LOOT_TABLE(/obj/item/research_sample/uncommon = 70, /obj/item/research_sample/rare = 30))
+CAPABILITIES(/obj/random/research_sample_type3)
+	loot(table = list(/obj/item/research_sample/uncommon = 70, /obj/item/research_sample/rare = 30))

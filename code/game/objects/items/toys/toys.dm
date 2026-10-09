@@ -659,7 +659,8 @@ CAPABILITIES(/obj/item/toy/figure)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "basecarp"
 
-DECLARE_LOOT(/obj/random/carp_plushie, LOOT_TABLE(LOOT_TYPES(1, typesof(/obj/item/toy/plushie/carp))))
+CAPABILITIES(/obj/random/carp_plushie)
+	loot(table = list(loot_types(1, typesof(/obj/item/toy/plushie/carp))))
 
 /obj/item/toy/plushie/carp/ice
 	name = "ice carp plushie"
@@ -2490,7 +2491,8 @@ CAPABILITIES(/obj/item/toy/chainsaw)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "aliencharacter"
 
-DECLARE_LOOT(/obj/random/miniature, LOOT_TABLE(LOOT_TYPES(1, typesof(/obj/item/toy/character))))
+CAPABILITIES(/obj/random/miniature)
+	loot(table = list(loot_types(1, typesof(/obj/item/toy/character))))
 
 /*
  * Snake popper
