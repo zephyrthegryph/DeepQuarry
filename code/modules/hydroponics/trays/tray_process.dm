@@ -29,7 +29,7 @@
 	// Weeds like water and nutrients, there's a chance the weed population will increase.
 	// Bonus chance if the tray is unoccupied.
 	if(waterlevel > 10 && nutrilevel > 2 && prob(isnull(seed) ? 5 : 1))
-		weedlevel += 1 * HYDRO_SPEED_MULTIPLIER
+		set_weedlevel(weedlevel + (1 * HYDRO_SPEED_MULTIPLIER))
 
 	// There's a chance for a weed explosion to happen if the weeds take over.
 	// Plants that are themselves weeds (weed_tolerance > 10) are unaffected.
@@ -40,7 +40,6 @@
 	// If there is no seed data (and hence nothing planted),
 	// or the plant is dead, process nothing further.
 	if(!seed || dead)
-		if(mechanical) update_icon() //Harvesting would fail to set alert icons properly.
 		if(!nearby_chemical_smoke && (!reagents || reagents.total_volume <= 0))
 			schedule_growth_wake()
 			return PROCESS_KILL
@@ -48,9 +47,9 @@
 
 	// Advance plant age.
 	if(prob(30))
-		age += 1 * HYDRO_SPEED_MULTIPLIER
+		set_age(age + (1 * HYDRO_SPEED_MULTIPLIER))
 		if(age_mod >= 1) //Age reagents double the speed of plant growth in sufficient quantities
-			age += 1 * HYDRO_SPEED_MULTIPLIER
+			set_age(age + (1 * HYDRO_SPEED_MULTIPLIER))
 			age_mod -= 1
 
 	//Highly mutable plants have a chance of mutating every tick.
@@ -66,17 +65,17 @@
 
 	// Maintain tray nutrient and water levels.
 	if(seed.get_trait(TRAIT_NUTRIENT_CONSUMPTION) > 0 && nutrilevel > 0 && prob(25))
-		nutrilevel -= max(0,seed.get_trait(TRAIT_NUTRIENT_CONSUMPTION) * HYDRO_SPEED_MULTIPLIER)
+		set_nutrilevel(nutrilevel - (max(0,seed.get_trait(TRAIT_NUTRIENT_CONSUMPTION) * HYDRO_SPEED_MULTIPLIER)))
 	if(seed.get_trait(TRAIT_WATER_CONSUMPTION) > 0 && waterlevel > 0 && prob(25))
-		waterlevel -= max(0,seed.get_trait(TRAIT_WATER_CONSUMPTION) * HYDRO_SPEED_MULTIPLIER)
+		set_waterlevel(waterlevel - (max(0,seed.get_trait(TRAIT_WATER_CONSUMPTION) * HYDRO_SPEED_MULTIPLIER)))
 
 	// Make sure the plant is not starving or thirsty. Adequate
 	// water and nutrients will cause a plant to become healthier.
 	var/healthmod = rand(1,3) * HYDRO_SPEED_MULTIPLIER
 	if(seed.get_trait(TRAIT_REQUIRES_NUTRIENTS) && prob(35))
-		health += (nutrilevel < 2 ? -healthmod : healthmod)
+		set_health(health + ((nutrilevel < 2 ? -healthmod : healthmod)))
 	if(seed.get_trait(TRAIT_REQUIRES_WATER) && prob(35))
-		health += (waterlevel < 10 ? -healthmod : healthmod)
+		set_health(health + ((waterlevel < 10 ? -healthmod : healthmod)))
 
 	// Check that pressure, heat and light are all within bounds.
 	// First, handle an open system or an unconnected closed system.
@@ -91,9 +90,9 @@
 
 	// Seed datum handles gasses, light and pressure.
 	if(mechanical && closed_system)
-		health -= seed.handle_environment(T,environment,tray_light)
+		set_health(health - (seed.handle_environment(T,environment,tray_light)))
 	else
-		health -= seed.handle_environment(T,environment)
+		set_health(health - (seed.handle_environment(T,environment)))
 
 	// If we're attached to a pipenet, then we should let the pipenet know we might have modified some gasses
 	if (closed_system && connected_port())
@@ -104,25 +103,25 @@
 	if(toxins > 0)
 		var/toxin_uptake = max(1,round(toxins/10))
 		if(toxins > seed.get_trait(TRAIT_TOXINS_TOLERANCE))
-			health -= toxin_uptake
-		toxins -= toxin_uptake
+			set_health(health - (toxin_uptake))
+		set_toxins(toxins - (toxin_uptake))
 
 	// Check for pests and weeds.
 	// Some carnivorous plants happily eat pests.
 	if(pestlevel > 0)
 		if(seed.get_trait(TRAIT_CARNIVOROUS))
-			health += HYDRO_SPEED_MULTIPLIER
-			pestlevel -= HYDRO_SPEED_MULTIPLIER
+			set_health(health + (HYDRO_SPEED_MULTIPLIER))
+			set_pestlevel(pestlevel - (HYDRO_SPEED_MULTIPLIER))
 		else if (pestlevel >= seed.get_trait(TRAIT_PEST_TOLERANCE))
-			health -= HYDRO_SPEED_MULTIPLIER
+			set_health(health - (HYDRO_SPEED_MULTIPLIER))
 
 	// Some plants thrive and live off of weeds.
 	if(weedlevel > 0)
 		if(seed.get_trait(TRAIT_PARASITE))
-			health += HYDRO_SPEED_MULTIPLIER
-			weedlevel -= HYDRO_SPEED_MULTIPLIER
+			set_health(health + (HYDRO_SPEED_MULTIPLIER))
+			set_weedlevel(weedlevel - (HYDRO_SPEED_MULTIPLIER))
 		else if (weedlevel >= seed.get_trait(TRAIT_WEED_TOLERANCE))
-			health -= HYDRO_SPEED_MULTIPLIER
+			set_health(health - (HYDRO_SPEED_MULTIPLIER))
 
 	// Handle life and death.
 	// When the plant dies, weeds thrive and pests die off.
@@ -132,7 +131,7 @@
 	if((age > seed.get_trait(TRAIT_MATURATION)) && \
 		((age - lastproduce) > seed.get_trait(TRAIT_PRODUCTION)) && \
 		(!harvest && !dead))
-		harvest = 1
+		set_harvest(1)
 		lastproduce = age
 
 	// If we're a vine which is not in a closed tray and is at least half mature, and there's no vine currently on our turf: make one (maybe)
@@ -146,7 +145,7 @@
 		SSplants.add_plant(D)
 
 	if(prob(3))  // On each tick, there's a chance the pest population will increase
-		pestlevel += 0.1 * HYDRO_SPEED_MULTIPLIER
+		set_pestlevel(pestlevel + (0.1 * HYDRO_SPEED_MULTIPLIER))
 
 	// Some seeds will self-harvest if you don't keep a lid on them.
 	if(seed && seed.can_self_harvest && harvest && !closed_system && prob(5))

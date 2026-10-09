@@ -74,9 +74,6 @@ MSG_DEF(dropper/begin, null, "%U% is trying to squirt something into %T%'s eyes!
 	act_message(user, target, MSG_SELF(span_notice("You transfer [trans] units of the solution.")), \
 		MSG_OTHERS(span_warning("%U% squirts something into %T%'s eyes!")))
 
-/obj/item/reagent_containers/dropper/on_reagent_change()
-	changed(src)
-
 /// Appearance reader: TRUE while the dropper holds reagents.
 /obj/item/reagent_containers/dropper/proc/appearance_filled()
 	return reagents?.total_volume ? TRUE : FALSE
@@ -84,6 +81,7 @@ MSG_DEF(dropper/begin, null, "%U% is trying to squirt something into %T%'s eyes!
 /// The look (the draw sweep: from its template).
 /obj/item/reagent_containers/dropper/draw(datum/look/look)
 	..()
+	look.watch(reagents)
 	look.state("dropper[appearance_filled() ? "1" : "0"]")
 
 /obj/item/reagent_containers/dropper/industrial

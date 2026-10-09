@@ -86,7 +86,6 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 			var/obj/item/I = menuoptions[selection]
 			if (!user || !user.put_in_hands(I))
 				I.forceMove(get_turf(src))
-			update_icon()
 		return 1
 	return 0
 
@@ -119,7 +118,6 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 		if(user)
 			act_message(user, src, MSG_SELF(span_filter_notice("You turn off %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% off.")))
 	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
-	update_icon()
 
 /obj/machinery/appliance/mixer/can_insert(obj/item/I, mob/user)
 	if(!has_condition())
@@ -134,20 +132,18 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
 	set_use_power(0)
 	CI.reset()
-	update_icon()
 
-APPEARANCE_NONE(/obj/machinery/appliance/mixer)
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/mixer/appearance_overlays()
-	. = list()
-	if (!has_condition())
-		icon_state = on_icon
-		if(mixer_loop)
-			mixer_loop.start(src)
+/// A mixer shows on while it is on.
+/obj/machinery/appliance/mixer/draw(datum/look/look)
+	..()
+	look.state(has_condition() ? off_icon : on_icon)
+
+/// The mixer turns while it is on.
+/obj/machinery/appliance/mixer/loop_sync(datum/act/A)
+	if(!has_condition())
+		mixer_loop?.start(src)
 	else
-		icon_state = off_icon
-		if(mixer_loop)
-			mixer_loop.stop(src)
+		mixer_loop?.stop(src)
 
 /obj/machinery/appliance/mixer/work_step(datum/act/timer/A)
 	if(has_condition() || !cooking || !length(cooking_objs))

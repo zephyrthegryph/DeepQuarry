@@ -1,0 +1,9 @@
+/obj/machinery/chem_master icon: icons/obj/chemical.dmi
+/obj/machinery/chem_master state: mixer0
+/obj/machinery/chem_master dir: 2
+/obj/machinery/chem_master overlay: icons/obj/chemical.dmi:mixer0:8:#000000
+/obj/machinery/chem_master/condimaster icon: icons/obj/chemical.dmi
+/obj/machinery/chem_master/condimaster state: mixer0
+/obj/machinery/chem_master/condimaster dir: 2
+/obj/machinery/chem_master/condimaster overlay: icons/obj/chemical.dmi:mixer0:8:#000000
+

@@ -6,7 +6,14 @@
 	/// Associative lookup: reagent id → /datum/reagent datum. Kept in sync with reagent_list.
 	/// Provides O(1) access for has_reagent, get_reagent_amount, get_reagent, get_data, add_reagent (existing check), del_reagent, remove_reagent.
 	var/tmp/list/datum/reagent/reagent_by_id
+	/// How much it holds; written only by update_total(). Tracked: a look that shows a fill level watches the holder (look.watch(reagents)).
 	var/total_volume = 0
+	/// The colour of the mix (get_color()), kept by update_total() for an object's holder: the colour a fill level is drawn in. A mob's holder
+	/// changes with every metabolism tick and draws nothing from it, so it keeps the default.
+	var/tint = "#ffffffff"
+	/// The id of the reagent there is most of (get_master_reagent_id()), kept by update_total() for an object's holder, as `tint` is: what names and
+	/// dresses a glass of it.
+	var/master_id
 	var/maximum_volume = 100
 	var/tmp/atom/my_atom = null
 	/// Nesting depth of begin_batch()/end_batch(). While positive, removals
@@ -17,6 +24,10 @@
 
 CAPABILITIES(/datum/reagents)
 	owns_many(nameof(reagent_list))
+
+TRACKED(/datum/reagents, total_volume)
+TRACKED(/datum/reagents, tint)
+TRACKED(/datum/reagents, master_id)
 
 /datum/reagents/New(max = 100, atom/A = null)
 	..()
@@ -66,14 +77,18 @@ CAPABILITIES(/datum/reagents)
 
 /datum/reagents/proc/update_total() // Updates volume.
 	var/old_total = total_volume
-	total_volume = 0
+	var/total = 0
 	for(var/datum/reagent/R in reagent_list)
 		if(R.volume < MINIMUM_CHEMICAL_VOLUME)
 			if(isliving(R.holder.my_atom))
 				R.on_mob_end_metabolize(R.holder.my_atom, src)
 			del_reagent(R.id)
 		else
-			total_volume += R.volume
+			total += R.volume
+	set_total_volume(total)
+	if(!ismob(my_atom))
+		set_tint(get_color())
+		set_master_id(get_master_reagent_id())
 	// The holder's heat capacity changed with its contents (H3).
 	if(!isnull(my_atom?.heat_body) && !ismob(my_atom))
 		my_atom.heat_capacity_changed()

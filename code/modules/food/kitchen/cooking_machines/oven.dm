@@ -7,6 +7,8 @@
 	appliancetype = OVEN
 	food_color = "#A34719"
 	can_burn_food = TRUE
+	/// The icon_state family the oven draws: "<prefix>open", "<prefix>closed_off", "<prefix>closed_on", "<prefix>closed_cooking".
+	var/state_prefix = "oven"
 	var/datum/looping_sound/oven/oven_loop
 	circuit = /obj/item/circuitboard/oven
 	active_power_usage = 6 KILOWATTS
@@ -41,6 +43,7 @@
 		)
 
 CAPABILITIES(/obj/machinery/appliance/cooker/oven)
+	on_change(nameof(open), ANY, then(PROC_REF(loop_sync)))
 	owns_one(nameof(oven_loop), /datum/looping_sound/oven)
 	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
 	op("toggle_door_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle door"), then(PROC_REF(oven_interaction_toggle_door)))
@@ -62,29 +65,22 @@ CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 	try_toggle_door(user)
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/cooker/oven/appearance_overlays()
-	. = list()
-	if(!open)
-		if(!has_condition())
-			icon_state = "ovenclosed_on"
-			if(cooking == TRUE)
-				icon_state = "ovenclosed_cooking"
-				if(oven_loop)
-					oven_loop.start(src)
-			else
-				icon_state = "ovenclosed_on"
-				if(oven_loop)
-					oven_loop.stop(src)
-		else
-			icon_state = "ovenclosed_off"
-			if(oven_loop)
-				oven_loop.stop(src)
+/// The door and what the oven is doing: open, shut and off, shut and on, shut and cooking.
+/obj/machinery/appliance/cooker/oven/draw(datum/look/look)
+	..()
+	if(open)
+		look.state("[state_prefix]open")
+	else if(has_condition())
+		look.state("[state_prefix]closed_off")
 	else
-		icon_state = "ovenopen"
-		if(oven_loop)
-			oven_loop.stop(src)
-	. += ..()
+		look.state(cooking == TRUE ? "[state_prefix]closed_cooking" : "[state_prefix]closed_on")
+
+/// The oven roars while it cooks with its door shut.
+/obj/machinery/appliance/cooker/oven/loop_sync(datum/act/A)
+	if(!open && !has_condition() && cooking == TRUE)
+		oven_loop?.start(src)
+	else
+		oven_loop?.stop(src)
 
 /// Old click_alt.
 /obj/machinery/appliance/cooker/oven/proc/oven_interaction_toggle_door(datum/act/op/A)
@@ -127,7 +123,6 @@ TRACKED(/obj/machinery/appliance/cooker/oven, open)
 
 	play_sfx(src, SFX_MACHINES_HATCH_OPEN, volume = 20)
 	to_chat(user, span_notice("You [open? "open":"close"] the oven door"))
-	update_icon()
 
 /obj/machinery/appliance/cooker/oven/proc/manip(obj/item/I)
 	// check if someone's trying to manipulate the machine
