@@ -274,7 +274,6 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		// rel_add() (the only list caller) already found `target` absent: append, don't rescan.
 		L += target
 		own_field_changed(source, var_name) // a member added is a write: what draws or reads the list follows
-		own_mark_if_read(source, var_name)
 	else
 		source.vars[var_name] = target // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(source, var_name)
@@ -301,7 +300,6 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			target.vars[partner_var] = TL // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		TL += source // absent (checked above): a pipeline's thousands of members stay linear
 		own_field_changed(target, partner_var)
-		own_mark_if_read(target, partner_var)
 		_rel_index(source, target, partner_var)
 		if(pentry[OWNE_WATCH])
 			_rel_watch(source, target)
@@ -323,7 +321,6 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		var/list/L = value
 		L -= target
 		own_field_changed(source, var_name)
-		own_mark_if_read(source, var_name)
 	else if(value == target)
 		source.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(source, var_name)
@@ -341,7 +338,6 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		if(source in TL)
 			TL -= source
 			own_field_changed(target, partner_var)
-			own_mark_if_read(target, partner_var)
 			_rel_unindex(source, target, partner_var)
 			unlinked = TRUE
 	else if(theirs == source)

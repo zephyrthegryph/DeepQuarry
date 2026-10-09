@@ -216,11 +216,13 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 		return
 	LAZYOR(neighbour_types, type)
 	for(var/dir_away in (islist(dirs) ? dirs : list(dirs)))
-		var/turf/T = get_step(here, dir_away)
+		var/turf/T = dir_away ? get_step(here, dir_away) : here // direction 0 is the holder's own tile
 		if(!T)
 			continue
 		watch(T)
-		for(var/atom/movable/AM as anything in contents_of(T, type))
+		for(var/atom/movable/AM as anything in global.contents_of(T, type)) // the global proc: the look's own contents_of() reads a slot
+			if(AM == holder)
+				continue // the holder is not its own neighbour (watching itself would redraw it forever)
 			. += AM
 			watch(AM)
 

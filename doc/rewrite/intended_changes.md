@@ -3712,6 +3712,9 @@ Pins were not recorded in this lane (the committed snapshots are the base); the 
 * **No `color = null` on a closet.** The decal swap no longer clears the atom colour; the look sets only the icon. No row changes unless a closet type maps a colour.
 * **Blockers follow the drawn state.** Closets, crates, the cabinet, the vehicle cage and the cliff change their sprite through the look, so the plane-8 emissive blocker row follows the made state, as in the furniture round.
 * **State-probe rows of the draw round.** Cliff corner/bottom rows show the made `cliff-<dir>` state (drawn from creation, as above). Body bags and coffins now show their `open`/`base`/`closed_unlocked` overlay and state rows on every opened toggle, because opening is a tracked write that redraws instead of waiting for `update_icon()`. The morph runtime row names `em_block` before `hud_list` as the refused ownership put, because the draw now runs at creation and makes the blocker first; the refusals themselves are unchanged.
+* **Shuttle carry underlays.** `underlay_update()` turned `join_flags` to find the turf opposite a joined diagonal, and an unjoined turf has `join_flags = 0`, for which `turn(0, ...)` picks a random direction: the carry plating's underlay was whatever neighbour the roll landed on (the recorded `steel` tile). An unjoined turf now lies on the area's base turf every time; the two rows (`/turf/simulated/shuttle/plating/carry` and `.../airless/carry`) read the base turf of the test map, space (`icons/turf/space.dmi:white`, plane -82). Pinned by `dq_shuttle_underlay_is_not_random`.
+* **Relation writes mark through one path.** The list view write (`_rel_attach`/`_rel_detach`) called both `own_field_changed()` and a second mark-if-read proc; the second is gone and `own_field_changed()` marks what reads the var once for a list write and a single ref alike (`dq_draw_relation_writes_redraw_once`).
+* **The gun cabinet's guns are real.** An energy gun is not latent-safe, so a cabinet's starting guns are made when it declares its contents after init; the draw reads the slot's types (`look.contents_of()`) and makes nothing. The tests delete the cabinet and drain the tile, since the guns spill when it goes.
 * **Gun cabinet.** Guns are drawn from the slot by type (`laser`/`projectile`, one per gun, three at most) and nothing is made by the draw; rows are the same states, the guns stay declared.
 * **Body bags.** The label and the stasis indicator are look layers; the label is the tracked `has_label`.
 * **Vehicle cage.** The caged vehicle is an overlay behind the frame (the look has no underlays): an `underlay:` row becomes an `overlay:` row.
@@ -3843,7 +3846,7 @@ Files re-recorded: pizzabox, condiment, drinks, appliance, beehive, bunsen_burne
 | New `open=`, `closed=`, `broken=`, `frozen=`, `busy=`, `heating=`, `bee_count=` rows | These vars now redraw the look (tracked state read by `draw`), which the polluted base could not show. |
 | yeoldoven keeps its own `yeoldoven*` states | Oven draws `[state_prefix]open` etc.; the prefix is a var of the type. |
 | glass2 claraflask `volume=0` | Same Division by zero, reported by the refresh catch spelling. Still a draw bug at zero volume, left as pinned. |
-| Rel list add/remove | `rel_add`/`rel_remove` on a list view now mark outputs that read the var (`own_mark_if_read`), so a beehive's frames and a pizza box's stack redraw. |
+| Rel list add/remove | `rel_add`/`rel_remove` on a list view now mark outputs that read the var (through `own_field_changed()`, the one path every relation write takes; the second mark-if-read proc is gone), so a beehive's frames and a pizza box's stack redraw. |
 
 ### Blessed rows, second pass (rewrite/draw-reagents)
 

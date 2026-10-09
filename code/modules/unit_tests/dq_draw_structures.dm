@@ -72,10 +72,11 @@
 
 // ---- the gun cabinet ----
 
-/// The cabinet draws its contents without making them: declared guns are counted from the slot and none of them is materialized.
-/datum/unit_test/dq_draw_guncabinet_shows_declared_guns_unmade
+/// The cabinet draws its guns by reading the slot's types: the draw makes nothing. (An energy gun is not latent-safe, so the cabinet's four are made when it
+/// declares its starting contents after init, not by the draw; they spill when it is deleted, so the test deletes it and drains the tile.)
+/datum/unit_test/dq_draw_guncabinet_draw_makes_no_gun
 
-/datum/unit_test/dq_draw_guncabinet_shows_declared_guns_unmade/Run()
+/datum/unit_test/dq_draw_guncabinet_draw_makes_no_gun/Run()
 	var/turf/T = test_floor()
 	var/obj/structure/closet/secure_closet/guncabinet/sidearm/cabinet = allocate(/obj/structure/closet/secure_closet/guncabinet/sidearm, T)
 	refresh_flush()
@@ -88,7 +89,9 @@
 	TEST_ASSERT_EQUAL(length(cabinet.contents), made_before, "the draw made no gun")
 	var/list/kinds = cabinet.slot_kinds(CONTAINER_SLOT_INTERIOR, /obj/item/gun)
 	TEST_ASSERT_EQUAL(length(kinds), 4, "the slot answers four guns by type: [json_encode(kinds)]")
-	cabinet.latent_discard()
+	TEST_ASSERT_EQUAL(length(cabinet.contents), made_before, "and asking made none either")
+	qdel(cabinet)
+	dq_look_drain_turf(T) // the cabinet spills its guns when it goes
 
 /// A gun going in or out redraws the cabinet through the slot's occupancy, and opening it shows only the open door.
 /datum/unit_test/dq_draw_guncabinet_follows_its_slot
@@ -132,7 +135,7 @@
 	TEST_ASSERT_EQUAL(dq_count_of(dq_structure_overlays(cabinet), "laser"), 2, "two declared guns are two laser guns on the shelf without making any: [json_encode(dq_structure_overlays(cabinet))]")
 	TEST_ASSERT_EQUAL(cabinet.latent_count(CONTAINER_SLOT_INTERIOR), 2, "and both are still declared")
 
-/// look.contents_of(): the types held, real and declared, filtered by type, with nothing made.
+/// look.contents_of(): the types held, real and declared, filtered by type, with nothing made by asking.
 /datum/unit_test/dq_draw_slot_kinds_count_declared_and_real
 
 /datum/unit_test/dq_draw_slot_kinds_count_declared_and_real/Run()
@@ -144,8 +147,9 @@
 	TEST_ASSERT(move_into(cabinet, null, rifle), "a real gun goes in")
 	var/list/after = cabinet.slot_kinds(CONTAINER_SLOT_INTERIOR, /obj/item/gun/projectile)
 	TEST_ASSERT_EQUAL(length(after), 1, "and the real one is counted by its type, the declared ones filtered out: [json_encode(after)]")
-	TEST_ASSERT_EQUAL(length(cabinet.slot_kinds(CONTAINER_SLOT_INTERIOR, /obj/item/gun/energy)), 4, "the energy guns are still the declared four")
-	cabinet.latent_discard()
+	TEST_ASSERT_EQUAL(length(cabinet.slot_kinds(CONTAINER_SLOT_INTERIOR, /obj/item/gun/energy)), 4, "the energy guns are still the four it starts with")
+	qdel(cabinet)
+	dq_look_drain_turf(T) // the cabinet spills its guns when it goes
 
 // ---- the vehicle cage ----
 
@@ -299,3 +303,62 @@
 	TEST_ASSERT_EQUAL(master.invisibility, INVISIBILITY_NONE, "an ability makes the master visible")
 	refresh_flush()
 	TEST_ASSERT(("ling_revive" in dq_structure_overlays(button)), "and the button draws its ability icon")
+
+// ---- one path for a relation write ----
+
+/// How many times `D` waits in the refresh queue.
+/datum/unit_test/proc/dq_queued_times(datum/D)
+	. = 0
+	for(var/datum/queued as anything in GLOB.refresh_queue)
+		if(queued == D)
+			.++
+
+/// A list relation written in place (a pizza box's stack: a member added or removed) and a single ref (a janitorial cart's mop: set or taken) each queue a reader of
+/// that var exactly once and redraw it: both go through the one engine path, own_field_changed().
+/datum/unit_test/dq_draw_relation_writes_redraw_once
+
+/datum/unit_test/dq_draw_relation_writes_redraw_once/Run()
+	var/turf/T = test_floor()
+	var/obj/item/pizzabox/box = allocate(/obj/item/pizzabox, T)
+	var/obj/item/pizzabox/other = allocate(/obj/item/pizzabox, T)
+	var/obj/structure/janitorialcart/cart = allocate(/obj/structure/janitorialcart, T)
+	var/obj/item/mop/mop = allocate(/obj/item/mop, T)
+	refresh_flush()
+	var/before = box.rx?.look_key
+	rel_add(box, nameof(box.boxes), other)
+	TEST_ASSERT_EQUAL(dq_queued_times(box), 1, "a member added to the list queues its reader once")
+	refresh_flush()
+	TEST_ASSERT(box.rx?.look_key != before, "and redraws it")
+	before = box.rx?.look_key
+	rel_remove(box, nameof(box.boxes), other)
+	TEST_ASSERT_EQUAL(dq_queued_times(box), 1, "a member removed queues it once")
+	refresh_flush()
+	TEST_ASSERT(box.rx?.look_key != before, "and redraws it")
+	before = cart.rx?.look_key
+	rel_set(cart, nameof(cart.mymop), mop)
+	TEST_ASSERT_EQUAL(dq_queued_times(cart), 1, "a single ref set queues its reader once")
+	refresh_flush()
+	TEST_ASSERT(cart.rx?.look_key != before, "and redraws it")
+	before = cart.rx?.look_key
+	rel_take(cart, nameof(cart.mymop))
+	TEST_ASSERT_EQUAL(dq_queued_times(cart), 1, "the ref taken away queues it once")
+	refresh_flush()
+	TEST_ASSERT(cart.rx?.look_key != before, "and redraws it")
+
+// ---- shuttle underlays ----
+
+/// A shuttle turf that is not joined at an angle has no diagonal to look opposite: its underlay is the area's base turf every time, not the one a random
+/// direction (turn(0, ...)) happened to land on.
+/datum/unit_test/dq_shuttle_underlay_is_not_random
+
+/datum/unit_test/dq_shuttle_underlay_is_not_random/Run()
+	var/turf/T = test_floor()
+	var/original = T.type
+	var/turf/simulated/shuttle/plating/carry/carry = T.ChangeTurf(/turf/simulated/shuttle/plating/carry)
+	TEST_ASSERT(istype(carry), "the carry turf is made")
+	carry.join_flags = 0
+	var/first = carry.underlay_update()
+	TEST_ASSERT_EQUAL(first, get_base_turf_by_area(carry), "an unjoined carry turf lies on the area's base turf")
+	for(var/i in 1 to 24)
+		TEST_ASSERT_EQUAL(carry.underlay_update(), first, "and every time it is asked: pass [i]")
+	carry.ChangeTurf(original)
