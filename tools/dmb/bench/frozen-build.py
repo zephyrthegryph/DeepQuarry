@@ -81,6 +81,8 @@ def main():
                     continue
                 expected.add(target)
                 data = entries.read(entry)
+                if target.exists() and (not target.is_file() or target.stat().st_nlink != 1):
+                    raise ValueError(f"refusing a nonregular or linked source file: {target}")
                 if target.exists() and target.read_bytes() == data:
                     continue
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -93,6 +95,8 @@ def main():
             for filename in files:
                 target = safe(Path(current) / filename, source)
                 if target not in expected:
+                    if not target.is_file() or target.stat().st_nlink != 1:
+                        raise ValueError(f"refusing a nonregular or linked stale file: {target}")
                     target.unlink()
                     removed += 1
         receipt_path = cache / (time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8])
