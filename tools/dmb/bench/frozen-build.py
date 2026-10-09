@@ -1,0 +1,134 @@
+"""Build an immutable Git snapshot through a stable, owned source directory.
+
+Unchanged source bytes retain their timestamps so Cargo can reuse artifacts.
+This is build preparation, never compiler benchmark time or an acceptance gate.
+"""
+import argparse
+import hashlib
+import io
+import json
+import os
+from pathlib import Path, PurePosixPath
+import stat
+import subprocess
+import time
+import uuid
+import zipfile
+
+from watchdog import terminate_owned
+
+
+def safe(path, root):
+    path = Path(os.path.abspath(path))
+    path.relative_to(root)
+    for ancestor in (path, *path.parents):
+        if ancestor.exists() and getattr(ancestor.lstat(), "st_file_attributes", 0) & 0x400:
+            raise ValueError(f"reparse path rejected: {ancestor}")
+    return path
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--commit", required=True)
+    parser.add_argument("--cache", default="E:/dq-cache/dmb-native-v2/frozen-build")
+    parser.add_argument("--seconds", type=int, default=300)
+    args = parser.parse_args()
+    if not 1 <= args.seconds <= 300:
+        raise ValueError("build watchdog must be between 1 and 300 seconds")
+    cache = Path(os.path.abspath(args.cache))
+    allowed = Path("E:/dq-cache").resolve()
+    safe(cache, allowed)
+    if cache == allowed:
+        raise ValueError("a dedicated cache subdirectory is required")
+    cache.mkdir(parents=True, exist_ok=True)
+    # Exclusive ownership spans both source mutation and Cargo execution.
+    lock = cache / "owner.lock"
+    with lock.open("x") as owner:
+        owner.write(str(os.getpid()))
+    try:
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "--verify", args.commit + "^{commit}"], timeout=30
+        ).decode().strip()
+        archive = subprocess.check_output(
+            ["git", "archive", "--format=zip", commit, "tools/dmb"], timeout=60
+        )
+        source = cache / "source"
+        marker = cache / "source-owner.json"
+        ownership = {"schema": 1, "tool": "dmb-frozen-build", "source": str(source)}
+        if marker.exists():
+            if json.loads(marker.read_text()) != ownership:
+                raise ValueError("source ownership marker does not match")
+        elif source.exists():
+            raise ValueError("refusing an existing source directory without ownership evidence")
+        else:
+            marker.write_text(json.dumps(ownership))
+        source.mkdir(exist_ok=True)
+        changed = removed = 0
+        expected = set()
+        with zipfile.ZipFile(io.BytesIO(archive)) as entries:
+            for entry in entries.infolist():
+                relative = PurePosixPath(entry.filename)
+                if relative.is_absolute() or ".." in relative.parts or "\\" in entry.filename:
+                    raise ValueError("unsafe archive path")
+                if relative.parts[:2] != ("tools", "dmb"):
+                    raise ValueError("archive entry outside compiler source")
+                mode = entry.external_attr >> 16
+                if stat.S_ISLNK(mode):
+                    raise ValueError("archive symlink rejected")
+                target = safe(source.joinpath(*relative.parts), source)
+                if entry.is_dir():
+                    target.mkdir(parents=True, exist_ok=True)
+                    continue
+                expected.add(target)
+                data = entries.read(entry)
+                if target.exists() and target.read_bytes() == data:
+                    continue
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(data)
+                changed += 1
+        for current, directories, files in os.walk(source, followlinks=False):
+            safe(current, source)
+            for directory in directories:
+                safe(Path(current) / directory, source)
+            for filename in files:
+                target = safe(Path(current) / filename, source)
+                if target not in expected:
+                    target.unlink()
+                    removed += 1
+        receipt_path = cache / (time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8])
+        env = dict(os.environ, CARGO_HOME="E:/cargo",
+                   CARGO_TARGET_DIR="E:/dq-cache/dmb-native-v2/cargo-target",
+                   CARGO_PROFILE_RELEASE_LTO="false")
+        command = ["E:/cargo/bin/cargo.exe", "build", "--release", "--locked",
+                   "--offline", "-j1", "-p", "dmbc", "--bin", "dmbc"]
+        started = time.monotonic()
+        cleanup = None
+        with receipt_path.with_suffix(".log").open("wb") as log:
+            child = subprocess.Popen(command, cwd=source / "tools/dmb", env=env,
+                                     stdout=log, stderr=subprocess.STDOUT)
+            try:
+                code = child.wait(timeout=args.seconds)
+            except subprocess.TimeoutExpired:
+                cleanup = terminate_owned(child)
+                code = 124
+        receipt = dict(commit=commit, archive_sha256=hashlib.sha256(archive).hexdigest(),
+                       changed_files=changed, removed_files=removed, exit_code=code,
+                       build_seconds=time.monotonic() - started, watchdog_seconds=args.seconds,
+                       command=command, acceptance_profile=False, lto=False,
+                       owned_child_cleanup=cleanup)
+        if code == 0:
+            binary = Path(env["CARGO_TARGET_DIR"]) / "release/dmbc.exe"
+            data = binary.read_bytes()
+            output = receipt_path.with_suffix(".exe")
+            output.write_bytes(data)
+            receipt.update(binary=str(output), binary_sha256=hashlib.sha256(data).hexdigest())
+        receipt_path.with_suffix(".json").write_text(json.dumps(receipt, indent=2))
+        print(json.dumps(receipt))
+        return code
+    finally:
+        # This process created the exclusive lock; never remove another owner's lock.
+        lock.unlink()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
