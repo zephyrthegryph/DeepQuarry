@@ -509,8 +509,9 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			// last look set (overlays, filters, vis_contents, base properties).
 			L.apply_to(A)
 			rx_of(A).look_key = null
-		if(apply && capability_data(A)?[/datum/cap_engine_state])
-			look_watch_sync(A, null)
+		// A draw that shows nothing yet may still have read other entities (look.watch()): their changes are what bring its layers in.
+		if(apply && (L.watched || capability_data(A)?[/datum/cap_engine_state]))
+			look_watch_sync(A, L.watched, L.neighbour_types)
 		return null
 	var/key = L.change_key()
 	if(apply)

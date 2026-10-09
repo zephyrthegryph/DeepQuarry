@@ -17,8 +17,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/pipe)
 /obj/machinery/reagent_refinery/pipe/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	// Update neighbours and self for state
-	update_neighbours()
 
 /obj/machinery/reagent_refinery/pipe/refinery_step()
 	if(!anchored)
@@ -32,7 +30,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/pipe)
 /obj/machinery/reagent_refinery/pipe/draw(datum/look/look)
 	..()
 	if(anchored)
-		look.overlay(update_input_connection_overlays("pipe_intakes"))
+		look.overlay(update_input_connection_overlays(look, "pipe_intakes"))
 
 /obj/machinery/reagent_refinery/pipe/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// no back/forth, filters don't use just their forward, they send the side too!

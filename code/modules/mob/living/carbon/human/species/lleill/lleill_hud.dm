@@ -16,12 +16,9 @@
 	screen_loc = ui_spell_master
 
 /atom/movable/screen/movable/ability_master/lleill/update_abilities(forced = 0, mob/user)		//Different proc to prevent indexing
-	update_icon()
 	if(user && user.client)
 		if(!(src in user.client.screen))
 			user.client.screen += src
-	for(var/atom/movable/screen/ability/ability in ability_objects)
-		ability.update_icon()
 
 /atom/movable/screen/ability/verb_based/lleill
 	icon_state = "grey_spell_base"
@@ -38,7 +35,7 @@
 	rel_set(A, nameof(A.ability_master), src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
-	A.ability_icon_state = ability_icon_given
+	A.set_ability_icon_state(ability_icon_given)
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments

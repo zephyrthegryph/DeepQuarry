@@ -249,7 +249,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 
 	if(transfer.deployed_shell)
 		transfer.disconnect_shell("Disconnected from remote shell due to core intelligence transfer.")
-	transfer.aiRestorePowerRoutine = 0
+	transfer.set_aiRestorePowerRoutine(0)
 	transfer.control_disabled = 0
 	transfer.aiRadio.disabledAi = 0
 	transfer.forceMove(get_turf(src))

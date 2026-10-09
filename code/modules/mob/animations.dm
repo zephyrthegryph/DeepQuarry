@@ -205,7 +205,6 @@
 
 	// And animate the attack!
 	animate(I, alpha = 175, pixel_x = 0, pixel_y = 0, pixel_z = 0, time = 3)
-	update_icon()
 	return TRUE //Found an item, doing item attack animation.
 
 /mob/proc/spin(spintime, speed)

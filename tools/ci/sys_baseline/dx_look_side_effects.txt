@@ -1,7 +1,4 @@
 # sys_lint baseline for tools/ci/sys_rules/dx_look_side_effects.py (doc/rewrite/systems.md); shrink-only, target 0
-dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibility = INVISIBILITY_NONE
-dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibility = INVISIBILITY_ABSTRACT
-dx_appearance_side_effect	code/_onclick/hud/screen_objects.dm	handcuff_overlay = image("icon"='icons/mob/screen_gen.dmi', "icon_state"=state)
 dx_appearance_side_effect	code/game/machinery/doors/brigdoors.dm	set_picture("ai_bsod")
 dx_appearance_side_effect	code/game/machinery/doors/brigdoors.dm	maptext = ""
 dx_appearance_side_effect	code/game/machinery/feeder.dm	if(0 to 9) filling.icon_state = "reagent0"
@@ -157,7 +154,6 @@ dx_appearance_side_effect	code/modules/artifice/telecube.dm	charge.color = glow_
 dx_appearance_side_effect	code/modules/assembly/holder.dm	master.update_icon()
 dx_appearance_side_effect	code/modules/assembly/timer.dm	attached_overlays = list()
 dx_appearance_side_effect	code/modules/assembly/timer.dm	attached_overlays += "timer_timing"
-dx_appearance_side_effect	code/modules/body/organs/organ_icon.dm	damage_state = n_is
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(0)
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light_on(FALSE)
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(2)
@@ -190,49 +186,6 @@ dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	name = initial(nam
 dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	desc = initial(desc)
 dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	name = "filled butterfly net"
 dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	desc = "A net with [M] inside."
-dx_appearance_side_effect	code/modules/food/drinkingglass/drinkingglass.dm	underlays.Cut()
-dx_appearance_side_effect	code/modules/food/drinkingglass/drinkingglass.dm	name = "[base_name] of [R.glass_name ? R.glass_name : "something"]"
-dx_appearance_side_effect	code/modules/food/drinkingglass/drinkingglass.dm	desc = R.glass_desc ? R.glass_desc : initial(desc)
-dx_appearance_side_effect	code/modules/food/drinkingglass/drinkingglass.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/food/drinkingglass/drinkingglass.dm	name = initial(name)
-dx_appearance_side_effect	code/modules/food/drinkingglass/drinkingglass.dm	desc = initial(desc)
-dx_appearance_side_effect	code/modules/food/drinkingglass/drinkingglass.dm	I.color = GE.glass_color
-dx_appearance_side_effect	code/modules/food/drinkingglass/drinkingglass.dm	I.transform = M
-dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	filling.icon_state = null
-dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	if(40 to 79) filling.icon_state = "[fillsource]40"
-dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	if(80 to 99) filling.icon_state = "[fillsource]80"
-dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	if(100 to INFINITY) filling.icon_state = "[fillsource]100"
-dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	filling.icon_state = null
-dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	if(70 to 89) filling.icon_state = "[fillsource]70"
-dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	if(90 to 99) filling.icon_state = "[fillsource]90"
-dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	if(100 to INFINITY) filling.icon_state = "[fillsource]100"
-dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/food/food/drinks/bottle.dm	underlays.Cut()
-dx_appearance_side_effect	code/modules/food/food/drinks/bottle.dm	set_light(rag.light_range, rag.light_power, rag.light_color)
-dx_appearance_side_effect	code/modules/food/food/drinks/bottle.dm	set_light(0)
-dx_appearance_side_effect	code/modules/food/food/snacks.dm	desc = "A box suited for pizzas. It appears to have a [pizza.name] inside."
-dx_appearance_side_effect	code/modules/food/food/snacks.dm	desc = "A pile of boxes suited for pizzas. There appears to be [boxes.len + 1] boxes in the pile."
-dx_appearance_side_effect	code/modules/food/food/snacks.dm	desc = "[desc] The box on top has a tag, it reads: '[toptag]'."
-dx_appearance_side_effect	code/modules/food/food/snacks.dm	desc = "A box suited for pizzas."
-dx_appearance_side_effect	code/modules/food/food/snacks.dm	desc = "[desc] The box has a tag, it reads: '[boxtag]'."
-dx_appearance_side_effect	code/modules/food/food/snacks.dm	pizzaimg.pixel_y = -3
-dx_appearance_side_effect	code/modules/food/food/snacks.dm	tagimg.pixel_y = boxes.len * 3
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker.dm	light.pixel_x = light_x
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker.dm	light.pixel_y = light_y
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	scale = ratio**(1/3) //Scaling factor is square root of desired area
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	scale = clamp(scale, min_scale, max_scale)
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	scale = min_scale
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	w_class *= scale
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	prefix = "tiny"
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	prefix = "small"
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	prefix = "large"
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	prefix = "extra large"
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	prefix = "huge"
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	prefix = "massive"
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	name = "[prefix] [name]"
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/fryer.dm	light.pixel_x = light_x
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/fryer.dm	light.pixel_y = light_y
 dx_appearance_side_effect	code/modules/games/cards.dm	name = "hand of cards ([cardNumber])"
 dx_appearance_side_effect	code/modules/games/cards.dm	desc = "Some playing cards."
 dx_appearance_side_effect	code/modules/games/cards.dm	name = "a playing card"
@@ -245,31 +198,8 @@ dx_appearance_side_effect	code/modules/games/cards.dm	I.pixel_y = 8-(offset*i)
 dx_appearance_side_effect	code/modules/games/cards.dm	I.pixel_x = -7+(offset*i)
 dx_appearance_side_effect	code/modules/games/cards.dm	I.transform = M
 dx_appearance_side_effect	code/modules/holodeck/HolodeckObjects.dm	blade_overlay.color = lcolor
-dx_appearance_side_effect	code/modules/holomap/station_holomap.dm	small_station_map = image(SSholomaps.extraMiniMaps["[HOLOMAP_EXTRA_STATIONMAPSMALL]_[original_zLevel]"], dir = src.dir)
-dx_appearance_side_effect	code/modules/holomap/station_holomap.dm	floor_markings.dir = src.dir
-dx_appearance_side_effect	code/modules/holomap/station_holomap.dm	floor_markings.pixel_x = -src.pixel_x
-dx_appearance_side_effect	code/modules/holomap/station_holomap.dm	floor_markings.pixel_y = -src.pixel_y
-dx_appearance_side_effect	code/modules/hydroponics/grown.dm	fruit_base.color = "[seed().get_trait(TRAIT_PRODUCT_COLOUR)]"
-dx_appearance_side_effect	code/modules/hydroponics/grown.dm	fruit_leaves.color = "[seed().get_trait(TRAIT_PLANT_COLOUR)]"
-dx_appearance_side_effect	code/modules/hydroponics/grown.dm	SSplants.plant_icon_cache[icon_key] = plant_icon
 dx_appearance_side_effect	code/modules/hydroponics/spreading/spreading.dm	set_light(blight, 0.5, l_color = clr)
 dx_appearance_side_effect	code/modules/hydroponics/spreading/spreading.dm	set_light(0)
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	name = "[base_name] ([seed.seed_name])"
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	name = "[seed.seed_name]"
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	name = initial(name)
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	name += " ([labelled])"
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	dead_overlay.color = DEAD_PLANT_COLOUR
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	to_chat(world, span_danger("Seed type [seed.get_trait(TRAIT_PLANT_ICON)] cannot find a growth stage value."))
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	plant_overlay.color = FROZEN_PLANT_COLOUR
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	plant_overlay.color = seed.get_trait(TRAIT_PLANT_COLOUR)
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	SSplants.plant_icon_cache["[ikey]-[seed.get_trait(TRAIT_PLANT_COLOUR)]"] = plant_overlay
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	harvest_overlay.color = seed.get_trait(TRAIT_PRODUCT_COLOUR)
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	SSplants.plant_icon_cache["product-[ikey]-[seed.get_trait(TRAIT_PRODUCT_COLOUR)]"] = harvest_overlay
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	set_light(round(seed.get_trait(TRAIT_POTENCY)/10), l_color = clr)
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	set_light(0)
-dx_appearance_side_effect	code/modules/integrated_electronics/core/assemblies.dm	detail_overlay.color = detail_color
-dx_appearance_side_effect	code/modules/integrated_electronics/core/assemblies/clothing.dm	clothing().icon_state = icon_state
-dx_appearance_side_effect	code/modules/integrated_electronics/core/assemblies/implant.dm	implant().icon_state = icon_state
 dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.appearance = inserted_item.appearance;
 dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.icon = src.icon
 dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.icon_state = "hepme" //the creature deserves its horrible end
@@ -299,19 +229,6 @@ dx_appearance_side_effect	code/modules/makeup/nailpolish.dm	color_underlay.color
 dx_appearance_side_effect	code/modules/mining/mine_turfs.dm	name = "[mineral().display_name] deposit"
 dx_appearance_side_effect	code/modules/mining/mine_turfs.dm	name = "rock"
 dx_appearance_side_effect	code/modules/mining/mine_turfs.dm	name = floor_name
-dx_appearance_side_effect	code/modules/mob/living/silicon/ai/ai.dm	set_light(3, 1, selected_sprite.dead_light)
-dx_appearance_side_effect	code/modules/mob/living/silicon/ai/ai.dm	set_light(1, 1, selected_sprite.nopower_light)
-dx_appearance_side_effect	code/modules/mob/living/silicon/ai/ai.dm	set_light(1, 1, selected_sprite.alive_light)
-dx_appearance_side_effect	code/modules/modular_computers/computers/modular_computer/core.dm	set_light(0)
-dx_appearance_side_effect	code/modules/modular_computers/computers/modular_computer/core.dm	set_light(light_strength)
-dx_appearance_side_effect	code/modules/modular_computers/computers/subtypes/dev_laptop.dm	set_light(0) // No glow from closed laptops
-dx_appearance_side_effect	code/modules/overmap/ships/computers/helm.dm	set_light(0)
-dx_appearance_side_effect	code/modules/overmap/ships/computers/helm.dm	set_light(light_range_on, light_power_on)
-dx_appearance_side_effect	code/modules/overmap/ships/ship.dm	dir = angle2dir(round(heading, 90))
-dx_appearance_side_effect	code/modules/overmap/ships/ship.dm	vector_overlay().dir = NORTH
-dx_appearance_side_effect	code/modules/overmap/ships/ship.dm	vector_overlay().transform = matrix().Turn(heading)
-dx_appearance_side_effect	code/modules/overmap/ships/ship.dm	dir = NORTH
-dx_appearance_side_effect	code/modules/overmap/ships/ship.dm	vector_overlay().dir = SOUTH
 dx_appearance_side_effect	code/modules/paperwork/paper_bundle.dm	img.icon_state = O.icon_state
 dx_appearance_side_effect	code/modules/paperwork/paper_bundle.dm	img.pixel_x -= min(1*i, 2)
 dx_appearance_side_effect	code/modules/paperwork/paper_bundle.dm	img.pixel_y -= min(1*i, 2)
@@ -331,17 +248,6 @@ dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/pa
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	light_range = 4
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	set_light(light_range, 2, light_color)
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	set_light(0, 0, "#FFFFFF")
-dx_appearance_side_effect	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	underlays.Cut()
-dx_appearance_side_effect	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	cat_filling.color = catalyst.reagents.get_color()
-dx_appearance_side_effect	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	ves_filling.color = src.reagents.get_color()
 dx_appearance_side_effect	code/modules/reagents/machinery/pump.dm	I.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_filter.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_mixer.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_pump.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_vat.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/refinery/equipment/chemcontainer.dm	chems.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/refinery/equipment/pumprelay.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/shieldgen/energy_field.dm	set_light(3, 3, "#66FFFF")
-dx_appearance_side_effect	code/modules/shieldgen/energy_field.dm	set_light(3, 5, "#FF9900")
 dx_appearance_side_effect	code/modules/vore/fluffstuff/custom_items.dm	name = initial(name)
 dx_appearance_side_effect	code/modules/vore/fluffstuff/custom_items.dm	desc = initial(desc)

@@ -24,7 +24,6 @@
 	target.visible_message(span_notice("\The [target]'s screen brightly flashes and loud electrical buzzing is heard."))
 	target.set_enabled(FALSE)
 	target.last_power_usage = 0
-	target.update_icon()
 	fx_sparks(target.loc, 10)
 
 	if(target.hard_drive)

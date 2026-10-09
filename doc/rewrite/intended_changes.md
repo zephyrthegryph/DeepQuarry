@@ -3719,6 +3719,8 @@ Expected pin classes for the merge to bless (look-tree `/obj/item`, look-state `
 * **Relation writes on a type with no `derived()` table.** `own_field_changed()` did nothing for such a type, so clearing a `ref_one` view (a gun's cell) never redrew the gun. A type that declares nothing keeps the old rule (a change that something reads re-derives everything), and `READERS` knows its generated draw reads, so the write now marks it.
 * **Left legacy, with reasons:** the rig look (cache and slot refresh in its provider), tanks and the tank assembly proxy (no tracked gas pressure), transfer valve (needs underlays), glass jar (impure draw), bodybags (legacy closet parent), ticket printer (legacy paper), capture crystal, tape roll pickup/drop, the welding tool's reagent hook.
 
+
+
 ## Reagent, food and hydroponics draws (rewrite/draw-reagents)
 
 Expected pin classes for the merge to bless (no pin is blessed on this branch; the committed snapshots on master are the base). Rows are icon, state, dir, colour, overlays and underlays of every creatable subtype, so only the classes below should move:
@@ -3748,6 +3750,7 @@ Left on legacy forms, with the cause:
 * Condiments and drinks `on_reagent_change()` handlers still write icon_state, name and desc directly (not a draw).
 * `rag.dm` (detectivework) still calls the bottle's `update_icon()`; redundant now.
 * `lint_scopes.toml` `look_converted` folders: not added (edit refused by the permission layer). Fully clean now: code/library/reagents/, code/modules/food/, code/modules/hydroponics/{trays/,grown*}, code/modules/reagents/{holder,hose,reactions,reagents,machinery/dispenser}/ and Chemistry*.dm.
+
 
 ### AIcore tool waits (2026-10-08)
 
@@ -3833,3 +3836,12 @@ Files re-recorded: pizzabox, condiment, drinks, appliance, beehive, bunsen_burne
 Engine: an output that throws (draw, should_run, hidden_verbs, derive_<var>, push_to_rust, window data) now restores the evaluation depth and logs `OUTPUT RUNTIME: type.output` (`output_failed()` in derived.dm), so one runtime no longer reports every later write as made inside an output. Test: `dq_draw_reagents_a_throwing_draw_leaves_the_next_output_working`.
 
 Rows of other lanes left alone: look_states `mob.living.simple_mob.vore.morph` (4 rows) and look_trees `obj.structure.blob` (386 rows).
+
+## Draw pockets: refinery, computers, electronics, HUD, abilities, AI, pAI (rewrite/draw-pockets)
+
+* **Converted to `draw(look)` over tracked state:** the refinery (vat, mixer, pump, filter, pump relay, chemical canister; they read the holder's tracked `total_volume`/`tint` through `look.watch(reagents)`, and neighbours through `look.neighbour()`; `update_neighbours()` is deleted), modular computers (program, bsod, screensaver), integrated electronics (assemblies, clothing, implant, device: `opened` is tracked), organ icon, the shield generator family, holomap, overmap ships (`speed` is tracked and `adjust_speed()` assigns a new list), admin verbs, HUD (hands, abilities), AI, pAI, vore panel/belly leftovers, and the mob leftovers. Folders that joined `look_converted` are listed in `tools/ci/lint_scopes.toml`.
+* **Engine fix:** a draw that read other entities (`look.watch()`) but drew nothing yet dropped its subscription (`refresh_look()` returned before syncing the watch), so a hand HUD, an empty vat or an empty tank never heard the state that fills them. The untouched path now syncs the watch too. Covered by `dq_draw_pocket_hand_hud_follows_handcuffs`. New builder part: `look.set_invisibility()` (the ability master hides while it holds no abilities; a draw that stops naming it gets the type default back).
+* **Hand HUD:** the handcuff overlay is drawn from the mob's equipped slot (`look.watch(mob)`); `update_hud_handcuffed()` is deleted.
+* **Left unconverted, and why:** blood and gore decals (`B.update_icon()` in organs, admin secrets, human, observer, drippy: legacy decal providers, draw-structures), the newscaster (machinery), the farmbot's hydroponics tray (draw-reagents), the protean rig (item), `nano_printer` paper bundle (legacy provider in paperwork), and the size gun and mouse ray, custom items and crackers (energy guns and items: after draw-items batch 18). `modular_computers/hardware/`, `vore/resizing/`, `vore/fluffstuff/`, `body/organs/` (except `organ_icon.dm`), `admin/topic/`, `admin/verbs/secrets.dm` and the rest of `mob/` stay out of `look_converted`.
+* **Belly overlay preference of a robot:** a panel edit publishes `belly_change` on the host, which recomputes the robot's tracked `vore_light_states`; the preference itself is read only there, so it is not tracked.
+* **Pins:** `dq_look_tree_pin` shows only the eight `obj/structure/blob/core` colour rows (seeded random, the same on the base); no row was blessed. `dq_look_state_pin` was not run here (the merge batch runs it).

@@ -523,7 +523,7 @@ CAPABILITIES(/obj/item/organ/external)
 		spread_overflow(overflow[1], overflow[2], forbidden_limbs)
 	if(QDELETED(src))
 		return
-	return update_icon()
+	return update_damage_state()
 
 /// High brute or a sharp hit may carry into one of the limb's internal organs. Blunt force
 /// bruises it, blades tear it, a narrow penetrating hit holes it. Returns the brute left for

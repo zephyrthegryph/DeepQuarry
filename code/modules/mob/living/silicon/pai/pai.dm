@@ -80,14 +80,11 @@
 
 	var/eye_glow = TRUE
 	var/hide_glow = FALSE
-	var/image/eye_layer = null		// Holds the eye overlay.
 	var/eye_color = "#00ff0d"
 	var/icon/holo_icon_south
 	var/icon/holo_icon_north
 	var/icon/holo_icon_east
 	var/icon/holo_icon_west
-	var/holo_icon_dimension_X = 32
-	var/holo_icon_dimension_Y = 32
 
 	//These vars keep track of whether you have the related software, used for easily updating the UI
 	var/soft_ut = FALSE	//universal translator
@@ -199,11 +196,10 @@ CAPABILITIES(/mob/living/silicon/pai)
 	flavor_text = pref.read_preference(/datum/preference/text/pai_description)
 	change_chassis(pref.read_preference(/datum/preference/text/pai_chassis))
 	gender = pref.read_preference(/datum/preference/choiced/gender/biological) // Cannot use identifying yet due to byond limits
-	eye_color = pref.read_preference(/datum/preference/color/pai_eye_color)
+	set_eye_color(pref.read_preference(/datum/preference/color/pai_eye_color))
 	card.screen_color = eye_color
 	card.setEmotion(GLOB.pai_emotions[pref.read_preference(/datum/preference/text/pai_emotion)])
 
-	update_icon()
 	return TRUE
 
 // `card` is the card we live in and `radio` is the card's radio: both relations (the card owns
@@ -247,7 +243,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 	var/datum/pai_sprite/chassis_data = SSpai.chassis_data(new_chassis)
 	if(chassis_data.emagged && !src.card.emagged)
 		return
-	chassis_name = new_chassis
+	set_chassis_name(new_chassis)
 
 	// Get icon data setup
 	if(chassis_data.holo_projector)
@@ -265,8 +261,9 @@ CAPABILITIES(/mob/living/silicon/pai)
 	resize(1, FALSE, TRUE, TRUE, FALSE)
 	if(!holo_icon_south)
 		get_character_icon()
+	else
+		fit_holo_projection()
 
-	update_icon()
 	resize(oursize, FALSE, TRUE, TRUE, FALSE)	//And then back again now that we're sure the vis_height is correct.
 	post_chassis_change(chassis_data)
 
@@ -279,15 +276,12 @@ CAPABILITIES(/mob/living/silicon/pai)
 	var/oursize = size_multiplier
 	resize(1, FALSE, TRUE, TRUE, FALSE)
 
-	icon = chassis_data.sprite_icon
-	icon_state = chassis_data.sprite_icon_state
 	pixel_x = chassis_data.pixel_x
 	default_pixel_x = pixel_x
 	pixel_y = chassis_data.pixel_y
 	default_pixel_y = pixel_y
 	vis_height = chassis_data.vis_height
 
-	update_icon()
 	resize(oursize, FALSE, TRUE, TRUE, FALSE)	//And then back again now that we're sure the vis_height is correct.
 	post_chassis_change(chassis_data)
 
@@ -554,7 +548,6 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 			return
 	else
 		set_resting(!resting)
-		update_icon()
 	to_chat(src, span_notice("You are now [resting ? "resting" : "getting up"]."))
 
 	canmove = !resting
@@ -576,18 +569,32 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 // Update icons
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/silicon/pai/appearance_overlays()
-	. = list()
-	. += ..()
+TRACKED(/mob/living/silicon/pai, chassis_name)
+TRACKED(/mob/living/silicon/pai, eye_glow)
+TRACKED(/mob/living/silicon/pai, hide_glow)
+TRACKED(/mob/living/silicon/pai, eye_color)
+TRACKED(/mob/living/silicon/pai, holo_icon_south)
 
+/mob/living/silicon/pai/draw(datum/look/look)
+	..()
 	var/datum/pai_sprite/chassis_data = SSpai.chassis_data(chassis_name)
+	look.watch(chassis_data)
 	if(chassis_data.holo_projector)
-		icon_state = null
-		icon = holo_icon_south
-		add_eyes()
-		return .
-
+		// The projection has no state of its own; the eyes come from the file that fits its size.
+		look.set_icon(holo_icon_south)
+		look.state("")
+		if(holo_icon_south)
+			var/holo_eyes_icon = 'icons/mob/pai.dmi'
+			var/wide = holo_icon_south.Width() > 32
+			var/tall = holo_icon_south.Height() > 32
+			if(wide && tall)
+				holo_eyes_icon = 'icons/mob/pai64x64.dmi'
+			else if(wide)
+				holo_eyes_icon = 'icons/mob/pai64x32.dmi'
+			else if(tall)
+				holo_eyes_icon = 'icons/mob/pai32x64.dmi'
+			look.overlay(pai_eyes_image(holo_eyes_icon, chassis_data.holo_eyes_icon_state))
+		return
 
 	// Don't get a vore belly size if we have no belly size set!
 	var/belly_size = CLAMP(vore_fullness, 0, chassis_data.belly_states)
@@ -596,53 +603,25 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 	var/fullness_extension = ""
 	if(belly_size > 1) // Multibelly support
 		fullness_extension = "_[belly_size]"
-	icon_state = "[chassis_data.sprite_icon_state][resting && chassis_data.can_rest ? "_rest" : ""][belly_size ? "_full[fullness_extension]" : ""]"
+	var/chassis_state = "[chassis_data.sprite_icon_state][resting && chassis_data.can_rest ? "_rest" : ""][belly_size ? "_full[fullness_extension]" : ""]"
+	look.set_icon(chassis_data.sprite_icon)
+	look.state(chassis_state)
+	if(chassis_data.has_eye_sprites)
+		look.overlay(pai_eyes_image(chassis_data.sprite_icon, "[chassis_state]-eyes"))
 
-	add_eyes()
+/// The eye overlay: tinted with the eye colour, glowing above the lighting unless hidden or switched off.
+/mob/living/silicon/pai/proc/pai_eyes_image(eyes_icon, eyes_state)
+	return look_overlay_image(eyes_icon, eyes_state, plane = (eye_glow && !hide_glow) ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = eye_color, appearance_flags = appearance_flags)
 
-/// Applies the eye overlay if the chassis has it
-/mob/living/silicon/pai/proc/add_eyes()
-	remove_eyes()
-
-	var/datum/pai_sprite/chassis_data = SSpai.chassis_data(chassis_name)
-	if(chassis_data.holo_projector)
-		// Special eyes that are based on holoprojection of your character's icon size
-		if(holo_icon_south.Width() > 32)
-			holo_icon_dimension_X = 64
-			pixel_x = -16
-			default_pixel_x = -16
-		// Get height too
-		if(holo_icon_south.Height() > 32)
-			holo_icon_dimension_Y = 64
-			vis_height = 64
-		// Set eyes
-		if(holo_icon_dimension_X == 32 && holo_icon_dimension_Y == 32)
-			eye_layer = image('icons/mob/pai.dmi', chassis_data.holo_eyes_icon_state)
-		else if(holo_icon_dimension_X == 32 && holo_icon_dimension_Y == 64)
-			eye_layer = image('icons/mob/pai32x64.dmi', chassis_data.holo_eyes_icon_state)
-		else if(holo_icon_dimension_X == 64 && holo_icon_dimension_Y == 32)
-			eye_layer = image('icons/mob/pai64x32.dmi', chassis_data.holo_eyes_icon_state)
-		else if(holo_icon_dimension_X == 64 && holo_icon_dimension_Y == 64)
-			eye_layer = image('icons/mob/pai64x64.dmi', chassis_data.holo_eyes_icon_state)
-	else if(chassis_data.has_eye_sprites)
-		// Default eye handling
-		eye_layer = image(icon, "[icon_state]-eyes")
-	else
-		// No eyes, so don't bother setting icon stuff
+/// A projection wider or taller than one tile moves the mob and its height to fit it (once, when the projection changes).
+/mob/living/silicon/pai/proc/fit_holo_projection()
+	if(!holo_icon_south || !SSpai.chassis_data(chassis_name).holo_projector)
 		return
-	eye_layer.appearance_flags = appearance_flags
-	eye_layer.color = eye_color
-	if(eye_glow && !hide_glow)
-		eye_layer.plane = PLANE_LIGHTING_ABOVE
-	add_overlay(eye_layer)
-
-/// Removes the eye overlay if it has one
-/mob/living/silicon/pai/proc/remove_eyes()
-	if(!eye_layer)
-		return
-	cut_overlay(eye_layer)
-	spent(eye_layer)
-	eye_layer = null
+	if(holo_icon_south.Width() > 32)
+		pixel_x = -16
+		default_pixel_x = -16
+	if(holo_icon_south.Height() > 32)
+		vis_height = 64
 
 /// Gets icons for all four directions based on the character slot currently loaded
 /mob/living/silicon/pai/proc/get_character_icon()
@@ -670,11 +649,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 	spent(holo_icon_east)
 	spent(holo_icon_west)
 	spent(dummy)
-	holo_icon_south = new_holo
+	set_holo_icon_south(new_holo)
 	holo_icon_north = new_holo_north
 	holo_icon_east = new_holo_east
 	holo_icon_west = new_holo_west
-	update_icon()
+	fit_holo_projection()
 
 /mob/living/silicon/pai/set_dir(new_dir)
 	. = ..()

@@ -42,17 +42,13 @@ CAPABILITIES(/obj/item/modular_computer/laptop)
 		return TRUE
 	set_anchored(!anchored)
 	screen_on = anchored
-	update_icon()
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/modular_computer/laptop, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/modular_computer/laptop/appearance_overlays()
-	. = list()
-	if(anchored)
-		. += ..()
-	else
-		set_light(0)		// No glow from closed laptops
-		icon_state = icon_state_closed
+/obj/item/modular_computer/laptop/draw(datum/look/look)
+	if(!anchored)
+		look.state(icon_state_closed) // closed: no glow, no screen
+		return
+	..()
 
 /obj/item/modular_computer/laptop/preset
 	anchored = FALSE

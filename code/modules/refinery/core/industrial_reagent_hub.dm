@@ -13,8 +13,6 @@
 /obj/machinery/reagent_refinery/hub/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	// Update neighbours and self for state
-	update_neighbours()
 
 /obj/machinery/reagent_refinery/hub/refinery_step()
 	if(!anchored)
