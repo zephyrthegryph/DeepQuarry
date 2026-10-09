@@ -29,8 +29,8 @@
 	TEST_ASSERT_NULL(core.owned_field, "the owned field leaves its owner's var when it is destroyed")
 	TEST_ASSERT(!condition_holds(core, nameof(core.owned_field)), "the auto-clear gated the step off")
 
-/// Magnetic gun: a should_run() cadence on capacitor_unsettled, derived from the owned `cell` and
-/// `capacitor` and the cross-entity input "capacitor.charge".
+/// Magnetic gun: the step has work while capacitor_unsettled(), which follows the owned `cell` and `capacitor` and the capacitor's charge;
+/// a destroyed part is cleared by the ownership framework, so the answer settles with no guard in the step.
 /datum/unit_test/periodic_autoclear_magnetic_parts
 
 /datum/unit_test/periodic_autoclear_magnetic_parts/Run()
@@ -39,15 +39,16 @@
 	TEST_ASSERT_NOTNULL(gun.cell, "the railgun spawns with a cell")
 	TEST_ASSERT_NOTNULL(gun.capacitor, "the railgun spawns with a capacitor")
 	gun.capacitor.set_charge(0)
-	TEST_ASSERT_EQUAL(gun.periodic_pipe, PERIODIC_SLOW, "draining the capacitor (a relayed input) starts charging")
+	TEST_ASSERT(gun.capacitor_unsettled(), "draining the capacitor leaves it something to charge")
+	TEST_ASSERT(gun.steps_now(), "and the step's gate is open")
 	qdel(gun.cell)
 	TEST_ASSERT_NULL(gun.cell, "the owned cell leaves the gun when it is destroyed")
-	TEST_ASSERT_NULL(gun.periodic_pipe, "the cell's auto-clear re-evaluated capacitor_unsettled and stopped the work")
+	TEST_ASSERT(!gun.capacitor_unsettled(), "without its cell a drained capacitor has nothing left to do")
 
 	// The capacitor is destroyed: nothing is left to charge.
 	var/obj/item/gun/magnetic/railgun/gun2 = allocate(/obj/item/gun/magnetic/railgun, test_floor())
 	gun2.capacitor.set_charge(0)
-	TEST_ASSERT_EQUAL(gun2.periodic_pipe, PERIODIC_SLOW, "a drained capacitor with a cell charges")
+	TEST_ASSERT(gun2.capacitor_unsettled(), "a drained capacitor with a cell charges")
 	qdel(gun2.capacitor)
 	TEST_ASSERT_NULL(gun2.capacitor, "the owned capacitor leaves the gun when it is destroyed")
-	TEST_ASSERT_NULL(gun2.periodic_pipe, "the capacitor's auto-clear re-evaluated capacitor_unsettled and stopped the work")
+	TEST_ASSERT(!gun2.capacitor_unsettled(), "with no capacitor nothing is left to charge")
