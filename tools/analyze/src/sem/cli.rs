@@ -110,17 +110,98 @@ pub fn debug_proc(sem: &super::Sem, ty: &str, name: &str) {
     }
 }
 
+/// What `analyze gen` remembers of its last converged run: the analyzer, a digest of every file the generators can read, and the
+/// content digest of every file it wrote or found fresh. While all three still hold, a run has nothing to do.
+#[derive(serde::Serialize, serde::Deserialize, Default)]
+struct GenState {
+    engine: String,
+    key: u128,
+    outputs: Vec<(String, u128)>,
+}
+
+fn gen_state_path() -> Option<std::path::PathBuf> {
+    crate::incr::dir().map(|d| d.join("gen-state.bin"))
+}
+
+/// A digest of everything a generator reads: the content of every file in the tree, and `deepquarry.dme`.
+fn gen_input_key(tree: &crate::tree::Tree, root: &Path) -> u128 {
+    let mut h = blake3::Hasher::new();
+    for f in &tree.files {
+        h.update(f.rel.as_bytes());
+        h.update(&f.hash.to_le_bytes());
+    }
+    h.update(&std::fs::read(root.join("deepquarry.dme")).unwrap_or_default());
+    u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+}
+
+fn file_digest(path: &Path) -> Option<u128> {
+    let bytes = std::fs::read(path).ok()?;
+    Some(u128::from_le_bytes(blake3::hash(&bytes).as_bytes()[..16].try_into().unwrap()))
+}
+
+fn engine_stamp() -> String {
+    format!("gen-v1|{}", crate::cache::ENGINE_HASH)
+}
+
+/// The outputs of the last converged run when nothing they depend on changed (None = run the generators).
+fn gen_memo_hit(tree: &crate::tree::Tree, root: &Path) -> Option<Vec<std::path::PathBuf>> {
+    let st: GenState = crate::incr::de(&std::fs::read(gen_state_path()?).ok()?).ok()?;
+    if st.engine != engine_stamp() || st.outputs.is_empty() || st.key != gen_input_key(tree, root) {
+        return None;
+    }
+    let mut paths = Vec::new();
+    for (p, d) in &st.outputs {
+        let path = std::path::PathBuf::from(p);
+        if file_digest(&path) != Some(*d) {
+            return None;
+        }
+        paths.push(path);
+    }
+    Some(paths)
+}
+
+fn gen_memo_store(tree: &crate::tree::Tree, root: &Path, results: &[super::gen::GenResult]) {
+    let Some(path) = gen_state_path() else { return };
+    let mut outputs = Vec::new();
+    for r in results {
+        // A generator that wrote nothing has no output; every other result must be a fresh file we can digest.
+        if r.path.ends_with("tgui/packages/tgui/interfaces/generated") {
+            continue;
+        }
+        match file_digest(&r.path) {
+            Some(d) => outputs.push((r.path.to_string_lossy().to_string(), d)),
+            None => return,
+        }
+    }
+    let st = GenState { engine: engine_stamp(), key: gen_input_key(tree, root), outputs };
+    if let Ok(bytes) = crate::incr::ser(&st) {
+        if let Some(dir) = path.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        let tmp = path.with_extension(format!("tmp{}", std::process::id()));
+        if std::fs::write(&tmp, bytes).is_ok() {
+            let _ = std::fs::rename(&tmp, &path);
+        }
+    }
+}
+
 /// `analyze gen [--check] [NAME...]`.
+///
+/// Some generators read another's output (`reads` and `derived_reads` read `declare.dm` and the model includes every generated
+/// file), so the generators run in two stages (`Generator::stage`): stage 0, the ones that read only declarations and text, to a
+/// fixed point, then stage 1 on the settled files, so the full model (the 8-15 s parse) is built once against its final inputs. A
+/// stage that wrote something is followed by a pass on the reloaded tree until nothing changes, which also proves the fixed
+/// point. The generated files are not committed: every build runs this first (tools/build/build.ts GenTarget), so it must
+/// converge on its own. A run that converged records a digest of its inputs and outputs (`gen-state.bin`); the next run with the
+/// same inputs and intact outputs returns at once.
 pub fn gen(args: &[String], root: &Path) -> ExitCode {
     let check = args.iter().any(|a| a == "--check");
     let names: Vec<String> = args.iter().filter(|a| !a.starts_with("--")).cloned().collect();
-    // Some generators read another's output (reads and derived_reads read declare.dm), so a write pass
-    // that changed anything runs again on the reloaded tree until nothing changes (two passes from an
-    // empty tree, one when the files are already fresh). The generated files are not committed: every
-    // build runs this first (tools/build/build.ts GenTarget), so it must converge on its own.
+    let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
     let mut written: Vec<std::path::PathBuf> = Vec::new();
     let mut results = Vec::new();
-    for _pass in 0..4 {
+    let mut last_tree: Option<Engine> = None;
+    for pass in 0..5 {
         let o = Options { root: root.to_path_buf(), lints: vec!["sem/keys".to_string()], ..Default::default() };
         let engine = match Engine::new(crate::run::registry(), o) {
             Ok(e) => e,
@@ -129,12 +210,44 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
                 return ExitCode::from(2);
             }
         };
-        results = super::gen::run(root, &engine.tree, &names, check);
-        let wrote: Vec<_> = results.iter().filter(|r| r.state == super::gen::State::Written).map(|r| r.path.clone()).collect();
-        if check || wrote.is_empty() {
+        if pass == 0 && names.is_empty() {
+            if let Some(paths) = gen_memo_hit(&engine.tree, root) {
+                if trace {
+                    eprintln!("analyze: gen: inputs and outputs unchanged since the last run; nothing to do");
+                }
+                for p in paths {
+                    println!("fresh {}", p.display());
+                }
+                return ExitCode::SUCCESS;
+            }
+        }
+        let r0 = super::gen::run_stage(root, &engine.tree, &names, check, Some(0));
+        let wrote0: Vec<_> = r0.iter().filter(|r| r.state == super::gen::State::Written).map(|r| r.path.clone()).collect();
+        if !check && !wrote0.is_empty() {
+            // Stage 1 reads these files: reload the tree and start over.
+            if trace {
+                eprintln!("analyze: gen pass {}: stage 0 wrote {} file(s); reloading before stage 1", pass + 1, wrote0.len());
+            }
+            written.extend(wrote0);
+            results = r0;
+            continue;
+        }
+        let r1 = super::gen::run_stage(root, &engine.tree, &names, check, Some(1));
+        let wrote1: Vec<_> = r1.iter().filter(|r| r.state == super::gen::State::Written).map(|r| r.path.clone()).collect();
+        // Report in registry order, as a single pass always did.
+        let mut all = r0;
+        all.extend(r1);
+        let order: Vec<&'static str> = super::gen::registry().iter().map(|g| g.name()).collect();
+        all.sort_by_key(|r| order.iter().position(|n| *n == r.name).unwrap_or(usize::MAX));
+        results = all;
+        if check || wrote1.is_empty() {
+            last_tree = Some(engine);
             break;
         }
-        written.extend(wrote);
+        if trace {
+            eprintln!("analyze: gen pass {}: stage 1 wrote {} file(s); checking the fixed point", pass + 1, wrote1.len());
+        }
+        written.extend(wrote1);
     }
     if results.is_empty() {
         eprintln!("analyze gen: no generator named {:?}", names);
@@ -148,7 +261,13 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
             r.state = super::gen::State::Written;
         }
     }
-    if super::gen::report(&results) {
+    let clean = super::gen::report(&results);
+    if clean && !check && names.is_empty() {
+        if let Some(e) = &last_tree {
+            gen_memo_store(&e.tree, root, &results);
+        }
+    }
+    if clean {
         ExitCode::SUCCESS
     } else {
         ExitCode::FAILURE
