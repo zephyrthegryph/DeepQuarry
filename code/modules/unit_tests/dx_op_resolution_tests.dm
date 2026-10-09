@@ -274,10 +274,13 @@
 			TEST_ASSERT(E.op.action, "[path]: [E.cap.type] builds [E.id] with no action")
 	TEST_ASSERT(checked > 40, "the sweep covered the library ([checked] entries)")
 
-/// The key of the op a click by user with held (exactly) reaches on A, or null.
+/// The key of the op a click by user with held (exactly) reaches on A, or null: the legacy gesture table's, else the op engine's winner.
 /proc/dx_gesture_key(mob/user, atom/A, obj/item/held)
 	var/datum/interaction/capability/E = gesture_entry_for(user, A, held, GESTURE_CLICK)
-	return E?.op?.key
+	if(E)
+		return E.op?.key
+	var/datum/op_resolution/R = op_resolve(user, A, held, ORIGIN_CLICK, actor_authority(user), GESTURE_CLICK, null, TRUE)
+	return op_resolution_winner(R)?.oplan?.key
 
 /// The three files converted as worked examples of the old interaction-spec mapping (operations_and_actions.md §5): an item's USE
 /// and VERBs (the megaphone), a machine's ITEM, HAND and VERB (the medical records console) and the stance shapes (the
@@ -288,13 +291,15 @@
 	H.set_use_stance(I_HELP)
 
 	var/obj/item/megaphone/super/giga = allocate(/obj/item/megaphone/super, T)
-	var/datum/interaction/capability/shout = op_entry_named(H, giga, "shout")
-	TEST_ASSERT(shout && !shout.op.legacy, "the old self-use entry became a real self-use op")
-	TEST_ASSERT_EQUAL(shout.entry, INTERACTION_ENTRY_SELF, "that attack_self still runs")
-	TEST_ASSERT(!shout.is_meant(H, giga, null), "a click on the megaphone never means it")
-	var/datum/interaction/capability/volume = op_entry_named(H, giga, "Change Volume")
-	TEST_ASSERT_EQUAL(volume?.op?.action, ACT_NONE, "the old verb entry became an ACT_NONE op")
-	TEST_ASSERT_EQUAL(test_op(H, giga, "change_volume"), "you need to be carrying it", "only while carried, as REQ_IN_INVENTORY")
+	var/datum/op_resolution/self_use = op_resolve(H, giga, giga, ORIGIN_CLICK, actor_authority(H), GESTURE_SELF, null, TRUE)
+	TEST_ASSERT_EQUAL(op_resolution_winner(self_use)?.oplan?.key, "shout", "the old self-use entry became a real self-use op")
+	TEST_ASSERT_NOTEQUAL(dx_gesture_key(H, giga, null), "shout", "a click on the megaphone never means it")
+	var/list/volume_row
+	for(var/list/row as anything in op_menu(H, giga, null))
+		if(row["key"] == "change_volume")
+			volume_row = row
+	TEST_ASSERT(volume_row, "the old verb entry is a menu op")
+	TEST_ASSERT(!volume_row["enabled"], "only while carried")
 
 	var/obj/machinery/computer/med_data/records = allocate(/obj/machinery/computer/med_data, T)
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, T)

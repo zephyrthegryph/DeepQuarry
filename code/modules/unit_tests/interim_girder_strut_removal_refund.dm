@@ -3,6 +3,7 @@
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	user.enable_godmode() // the test floor has no air: the waits would put the actor out
 	user.set_combat_mode(FALSE)
 	var/obj/structure/girder/girder = allocate(/obj/structure/girder, T)
 	var/obj/item/tool/wirecutters/cutters = allocate(/obj/item/tool/wirecutters, T)
