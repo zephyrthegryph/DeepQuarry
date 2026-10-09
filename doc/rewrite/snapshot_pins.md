@@ -86,9 +86,13 @@ reseeded from its path, and a runtime while it is made is a row of its own (with
 change draws: the refresh-drift sweep and hand-written tests cover those.
 
 A look state pin (`bash tools/dq_pin.sh --look-state /T`, `snapshots/look_states/`, test `dq_look_state_pin`, exhaustive tier) moves state and
-records the look again: for each numeric var a subtype declares below `/obj` or `/mob` (24 at most), a fresh instance has it written to 0, 1 and 2,
-a redraw is requested (`update_icon()` then `changed()`), and the rows are what the look gained (`+`) or lost (`-`) against the made look. A var the look
-ignores writes no row. Record it before an appearance conversion and expect the same file after.
+records the look again: for each numeric var a subtype declares below `/obj` or `/mob` (24 at most, narrowed to the vars a draw can read), the var is
+written to 0, 1 and 2, a redraw is requested (`update_icon()` then `changed()`), and the rows are what the look gained (`+`) or lost (`-`) against the made
+look. A var the look ignores writes no row. Record it before an appearance conversion and expect the same file after.
+
+The two pins are one sweep (`dq_look_sweep.dm`): each type is made once, from the same empty, settled block (the block emptied and its air and floors
+restored, the RNG reseeded from the path, the kernel's zero-delay work run on a frozen clock), and its probes run on that instance. See
+`agent_workflow.md` section 9 for the shards, the incremental keys and the order-shuffle proof.
 
 ## Hit pins
 
