@@ -33,6 +33,7 @@ pub const MARKERS: &[&str] = &[
     "SOURCE_DEF",
     "READS_AS",
     "READS_FROM",
+    "STATIC_ENTRY",
 ];
 
 /// Markers whose entries may follow as an indented block (doc/rewrite/final_api.html section 1).

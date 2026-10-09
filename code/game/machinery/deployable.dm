@@ -314,7 +314,9 @@ CAPABILITIES(/obj/structure/barricade/cutout)
 	icon = 'icons/obj/cardboard_cutout.dmi'
 	icon_state = "cutout_random"
 
-DECLARE_LOOT(/obj/random/cutout, LOOT_TABLE(LOOT_TYPES(1, subtypesof(/obj/structure/barricade/cutout))), LOOT_CHANCE(20)) // Only spawns 20% of the time to avoid being predictable
+// Only spawns 20% of the time to avoid being predictable
+CAPABILITIES(/obj/random/cutout)
+	loot(table = list(loot_types(1, subtypesof(/obj/structure/barricade/cutout))), chance = 20)
 
 /obj/machinery/deployable/barrier/set_emagged(value)
 	if(emagged == value)

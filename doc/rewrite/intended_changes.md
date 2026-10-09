@@ -3964,3 +3964,17 @@ Re-blessed rows of `obj.item.ghost_trap`, `obj.item.paicard`, `obj.item.tank` (a
   * Nothing in these rows is a change in what a hit does. `dq_hit_pin` leaves `tools/ci/known_failures.txt`.
 * **Projectile hit action.** A projectile's hit action (the `/datum/act/hit/projectile` hooks) now starts in `bullet_act()` before the round's effects (stun, embed, autopsy, reagents), so an `instead()` hook
   stops all of them, a zero-damage round (a taser dart) reaches the hook, and the hook runs once per hit (the damage packet reuses the open action: `projectile_hit_begin()` / `projectile_hit_end()`).
+
+## Loot piles: the search op (rewrite/loot, Option B of `proposals/loot_and_map_resolvers.md`)
+
+The search of a loot pile or trash pile is `op("search", hand(), ..., needs(req_loot_unsearched(), req_loot_not_picked_clean()), ..., wait(...), loot_rolls())`
+(`code/library/loot/loot_search.dm`); the roll is the same draw as before (`loot_search_roll()`, the proc `loot_pile_search()` became), with the same seeds, tiers and
+messages. The search pin's rows are byte-identical (its driver runs the requirement's refusal and then the roll); the classes below are what the op path changes.
+
+* **The two refusals come first.** "The X has been picked clean." and "You can't find anything else vaguely useful in the X.  Another set of eyes might, however." were said
+  after the 4 to 6 second wait; they are requirements now, refused at the click (nothing is spent, no wait), and the menu greys the search out with the same reason.
+* **A searcher who already searched cannot flush out a trash pile's hider.** The hider's 50 percent chance to leap out used to run before the pile's refusals; it is the
+  effect's `unless = PROC_REF(hider_leaps_out)` now, after the requirements.
+* **State.** The per-pile `searchedby` lists (an `ALLOW(instance_list)` each) and the global `GLOB.loot_times_searched` (by `REF()` text, never freed) are two keyed
+  stats on the pile: `STAT_LOOT_SEARCHED` (searcher key -> marked) and `STAT_LOOT_FOUND` (key -> searches that yielded something; the sum is what depletion counts). They go
+  with the pile. A searcher without a ckey (a test mob, an NPC) is never marked, so is never refused as "already searched"; its yields count under `(no key)`.

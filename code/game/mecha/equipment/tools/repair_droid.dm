@@ -28,12 +28,14 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
 	return
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/destroy()
-	chassis.cut_overlay(droid_overlay)
+	if(chassis) // a droid that was never installed has no chassis to draw on
+		chassis.cut_overlay(droid_overlay)
 	..()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/detach()
-	chassis.cut_overlay(droid_overlay)
+	if(chassis)
+		chassis.cut_overlay(droid_overlay)
 	set_repairing(FALSE)
 	..()
 	return

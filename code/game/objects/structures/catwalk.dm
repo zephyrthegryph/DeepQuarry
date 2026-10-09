@@ -141,10 +141,10 @@ CAPABILITIES(/obj/structure/catwalk)
 	var/tile = /obj/item/stack/tile/floor
 	var/platecolor = "#858a8f"
 
-MAP_RESOLVER(/obj/effect/catwalk_plated, GLOBAL_PROC_REF(resolve_catwalk_plated))
-MAP_RESOLVER_VARS(/obj/effect/catwalk_plated, "platecolor;tile")
+CAPABILITIES(/obj/effect/catwalk_plated)
+	map_resolver(GLOBAL_PROC_REF(resolve_catwalk_plated), vars = list("platecolor", "tile"))
 
-/// MAP_RESOLVER for plated catwalk spawners: once the load is in place, a plated catwalk (unless
+/// The map resolver of plated catwalk spawners: once the load is in place, a plated catwalk (unless
 /// the tile already has one).
 /proc/resolve_catwalk_plated(atom/loc, path, list/varedits)
 	map_resolve_later(GLOBAL_PROC_REF(catwalk_plated_build), get_turf(loc), path, varedits)

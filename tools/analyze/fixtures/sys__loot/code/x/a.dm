@@ -1,4 +1,4 @@
-MAP_RESOLVER(/obj/spawn, PROC_REF(r))
+// the resolver is declared in the block at the end
 
 /obj/random
 	spawn_types = list(1)
@@ -49,3 +49,5 @@ item_to_spawn()
 	items = list(o)
 
 	items = list(p)
+CAPABILITIES(/obj/spawn)
+	map_resolver(PROC_REF(r))

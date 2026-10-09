@@ -488,7 +488,8 @@ CAPABILITIES(/obj/structure/stairs/middle)
 	icon = 'icons/obj/structures/stairs_64x64.dmi'
 	icon_state = ""
 
-MAP_RESOLVER(/obj/structure/stairs/spawner, GLOBAL_PROC_REF(resolve_stairs_spawner))
+CAPABILITIES(/obj/structure/stairs/spawner)
+	map_resolver(GLOBAL_PROC_REF(resolve_stairs_spawner))
 
 /proc/resolve_stairs_spawner(atom/loc, path, list/varedits)
 	map_resolve_later(GLOBAL_PROC_REF(stairs_spawner_build), get_turf(loc), path, varedits)

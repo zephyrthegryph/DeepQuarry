@@ -242,7 +242,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/leopardmander/exotic)
 	B.escapechance = 75
 
 /obj/random/mob/leopardmander
-DECLARE_LOOT(/obj/random/mob/leopardmander, LOOT_TABLE(\
-	/mob/living/simple_mob/vore/leopardmander = 89, \
-	/mob/living/simple_mob/vore/leopardmander/blue = 10, \
-	/mob/living/simple_mob/vore/leopardmander/exotic = 1))
+CAPABILITIES(/obj/random/mob/leopardmander)
+	configure(loot(
+		table = list(
+			/mob/living/simple_mob/vore/leopardmander = 89,
+			/mob/living/simple_mob/vore/leopardmander/blue = 10,
+			/mob/living/simple_mob/vore/leopardmander/exotic = 1)))

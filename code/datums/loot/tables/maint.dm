@@ -2,304 +2,267 @@
 // it carries every tier and setting it had, inherited ones included.
 
 // Has large amounts of possible items, most of which may or may not be useful.
-DECLARE_LOOT(/loot/maint/junk, \
-	LOOT_TABLE(\
-		/obj/item/flashlight/flare, \
-		/obj/item/flashlight/glowstick, \
-		/obj/item/flashlight/glowstick/blue, \
-		/obj/item/flashlight/glowstick/orange, \
-		/obj/item/flashlight/glowstick/red, \
-		/obj/item/flashlight/glowstick/yellow, \
-		/obj/item/flashlight/pen, \
-		/obj/item/cell, \
-		/obj/item/cell/device, \
-		/obj/item/clothing/mask/gas, \
-		/obj/item/clothing/mask/gas/clear, \
-		/obj/item/clothing/mask/gas/half, \
-		/obj/item/clothing/mask/breath, \
-		/obj/item/reagent_containers/glass/rag, \
-		/obj/item/reagent_containers/food/snacks/liquidfood, \
-		/obj/item/storage/secure/briefcase, \
-		/obj/item/storage/briefcase, \
-		/obj/item/storage/backpack, \
-		/obj/item/storage/backpack/satchel/norm, \
-		/obj/item/storage/backpack/satchel, \
-		/obj/item/storage/backpack/dufflebag, \
-		/obj/item/storage/box, \
-		/obj/item/storage/wallet, \
-		/obj/item/clothing/shoes/galoshes, \
-		/obj/item/clothing/shoes/black, \
-		/obj/item/clothing/shoes/laceup, \
-		/obj/item/clothing/shoes/laceup/grey, \
-		/obj/item/clothing/shoes/laceup/brown, \
-		/obj/item/clothing/gloves/botanic_leather, \
-		/obj/item/clothing/gloves/sterile/latex, \
-		/obj/item/clothing/gloves/white, \
-		/obj/item/clothing/gloves/rainbow, \
-		/obj/item/clothing/gloves/fyellow, \
-		/obj/item/clothing/glasses/sunglasses, \
-		/obj/item/clothing/glasses/meson, \
-		/obj/item/clothing/glasses/meson/prescription, \
-		/obj/item/clothing/glasses/welding, \
-		/obj/item/clothing/head/bio_hood/general, \
-		/obj/item/clothing/head/hardhat, \
-		/obj/item/clothing/head/hardhat/red, \
-		/obj/item/clothing/head/ushanka, \
-		/obj/item/clothing/head/welding, \
-		/obj/item/clothing/suit/storage/hazardvest, \
-		/obj/item/clothing/suit/space/emergency, \
-		/obj/item/clothing/suit/storage/toggle/bomber, \
-		/obj/item/clothing/suit/bio_suit/general, \
-		/obj/item/clothing/suit/storage/toggle/hoodie/black, \
-		/obj/item/clothing/suit/storage/toggle/hoodie/blue, \
-		/obj/item/clothing/suit/storage/toggle/hoodie/red, \
-		/obj/item/clothing/suit/storage/toggle/hoodie/yellow, \
-		/obj/item/clothing/suit/storage/toggle/brown_jacket, \
-		/obj/item/clothing/suit/storage/toggle/leather_jacket, \
-		/obj/item/clothing/suit/storage/apron, \
-		/obj/item/clothing/under/color/grey, \
-		/obj/item/clothing/under/syndicate/tacticool, \
-		/obj/item/clothing/under/pants/camo, \
-		/obj/item/clothing/under/harness, \
-		/obj/item/clothing/accessory/storage/webbing, \
-		/obj/item/spacecash/c1, \
-		/obj/item/spacecash/c5, \
-		/obj/item/spacecash/c10, \
-		/obj/item/spacecash/c20, \
-		/obj/item/camera_assembly, \
-		/obj/item/clothing/suit/caution, \
-		/obj/item/clothing/head/cone, \
-		/obj/item/card/emag_broken, \
-		/obj/item/camera, \
-		/obj/item/pda, \
-		/obj/item/radio/headset, \
-		/obj/item/paicard, \
-		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/glucose, \
-		/obj/item/reagent_containers/syringe/old), \
-	LOOT_UNCOMMON(10, \
-		/obj/item/clothing/shoes/syndigaloshes, \
-		/obj/item/clothing/gloves/yellow, \
-		/obj/item/clothing/under/tactical, \
-		/obj/item/beartrap, \
-		/obj/item/clothing/suit/storage/vest/press, \
-		/obj/item/material/knife/tacknife, \
-		/obj/item/material/butterfly/switchblade), \
-	LOOT_RARE(1, \
-		/obj/item/clothing/suit/storage/vest/heavy/merc, \
-		/obj/item/clothing/shoes/boots/combat), \
-	LOOT_UNLUCKY(\
-		/obj/item/grenade/flashbang/clusterbang/primed, \
-		/obj/item/storage/box/old_syringes, \
-		/obj/item/storage/box/donut/empty, \
-		/obj/item/grenade/smokebomb/primed, \
-		/obj/item/storage/box, \
-		/obj/item/storage/box/cups, \
-		/obj/item/trash/candle, \
-		/obj/item/trash/candy, \
-		/obj/item/trash/candy/proteinbar, \
-		/obj/item/trash/candy/gums, \
-		/obj/item/trash/cheesie, \
-		/obj/item/trash/chips, \
-		/obj/item/trash/chips/bbq, \
-		/obj/item/trash/liquidfood, \
-		/obj/item/trash/pistachios, \
-		/obj/item/trash/plate, \
-		/obj/item/trash/popcorn, \
-		/obj/item/trash/raisins, \
-		/obj/item/trash/semki, \
-		/obj/item/trash/snack_bowl, \
-		/obj/item/trash/sosjerky, \
-		/obj/item/trash/syndi_cakes, \
-		/obj/item/trash/tastybread, \
-		/obj/item/trash/coffee, \
-		/obj/item/trash/tray, \
-		/obj/item/trash/unajerky, \
-		/obj/item/trash/waffles, \
-		/obj/item/spacecash/c1, \
-		/obj/item/card/emag_broken, \
-		/obj/effect/decal/remains/lizard, \
-		/obj/effect/decal/remains/mouse, \
-		/obj/effect/decal/remains/robot, \
-		/obj/item/pizzabox/old, \
-		/obj/item/paper/crumpled))
+CAPABILITIES(/loot/maint/junk)
+	loot(
+		table = list(
+			/obj/item/flashlight/flare,
+			/obj/item/flashlight/glowstick,
+			/obj/item/flashlight/glowstick/blue,
+			/obj/item/flashlight/glowstick/orange,
+			/obj/item/flashlight/glowstick/red,
+			/obj/item/flashlight/glowstick/yellow,
+			/obj/item/flashlight/pen,
+			/obj/item/cell,
+			/obj/item/cell/device,
+			/obj/item/clothing/mask/gas,
+			/obj/item/clothing/mask/gas/clear,
+			/obj/item/clothing/mask/gas/half,
+			/obj/item/clothing/mask/breath,
+			/obj/item/reagent_containers/glass/rag,
+			/obj/item/reagent_containers/food/snacks/liquidfood,
+			/obj/item/storage/secure/briefcase,
+			/obj/item/storage/briefcase,
+			/obj/item/storage/backpack,
+			/obj/item/storage/backpack/satchel/norm,
+			/obj/item/storage/backpack/satchel,
+			/obj/item/storage/backpack/dufflebag,
+			/obj/item/storage/box,
+			/obj/item/storage/wallet,
+			/obj/item/clothing/shoes/galoshes,
+			/obj/item/clothing/shoes/black,
+			/obj/item/clothing/shoes/laceup,
+			/obj/item/clothing/shoes/laceup/grey,
+			/obj/item/clothing/shoes/laceup/brown,
+			/obj/item/clothing/gloves/botanic_leather,
+			/obj/item/clothing/gloves/sterile/latex,
+			/obj/item/clothing/gloves/white,
+			/obj/item/clothing/gloves/rainbow,
+			/obj/item/clothing/gloves/fyellow,
+			/obj/item/clothing/glasses/sunglasses,
+			/obj/item/clothing/glasses/meson,
+			/obj/item/clothing/glasses/meson/prescription,
+			/obj/item/clothing/glasses/welding,
+			/obj/item/clothing/head/bio_hood/general,
+			/obj/item/clothing/head/hardhat,
+			/obj/item/clothing/head/hardhat/red,
+			/obj/item/clothing/head/ushanka,
+			/obj/item/clothing/head/welding,
+			/obj/item/clothing/suit/storage/hazardvest,
+			/obj/item/clothing/suit/space/emergency,
+			/obj/item/clothing/suit/storage/toggle/bomber,
+			/obj/item/clothing/suit/bio_suit/general,
+			/obj/item/clothing/suit/storage/toggle/hoodie/black,
+			/obj/item/clothing/suit/storage/toggle/hoodie/blue,
+			/obj/item/clothing/suit/storage/toggle/hoodie/red,
+			/obj/item/clothing/suit/storage/toggle/hoodie/yellow,
+			/obj/item/clothing/suit/storage/toggle/brown_jacket,
+			/obj/item/clothing/suit/storage/toggle/leather_jacket,
+			/obj/item/clothing/suit/storage/apron,
+			/obj/item/clothing/under/color/grey,
+			/obj/item/clothing/under/syndicate/tacticool,
+			/obj/item/clothing/under/pants/camo,
+			/obj/item/clothing/under/harness,
+			/obj/item/clothing/accessory/storage/webbing,
+			/obj/item/spacecash/c1,
+			/obj/item/spacecash/c5,
+			/obj/item/spacecash/c10,
+			/obj/item/spacecash/c20,
+			/obj/item/camera_assembly,
+			/obj/item/clothing/suit/caution,
+			/obj/item/clothing/head/cone,
+			/obj/item/card/emag_broken,
+			/obj/item/camera,
+			/obj/item/pda,
+			/obj/item/radio/headset,
+			/obj/item/paicard,
+			/obj/item/reagent_containers/hypospray/autoinjector/biginjector/glucose,
+			/obj/item/reagent_containers/syringe/old),
+		uncommon = loot_tier(
+			10,
+			list(/obj/item/clothing/shoes/syndigaloshes, /obj/item/clothing/gloves/yellow, /obj/item/clothing/under/tactical, /obj/item/beartrap, /obj/item/clothing/suit/storage/vest/press, /obj/item/material/knife/tacknife, /obj/item/material/butterfly/switchblade)),
+		rare = loot_tier(1, list(/obj/item/clothing/suit/storage/vest/heavy/merc, /obj/item/clothing/shoes/boots/combat)),
+		unlucky = list(
+			/obj/item/grenade/flashbang/clusterbang/primed,
+			/obj/item/storage/box/old_syringes,
+			/obj/item/storage/box/donut/empty,
+			/obj/item/grenade/smokebomb/primed,
+			/obj/item/storage/box,
+			/obj/item/storage/box/cups,
+			/obj/item/trash/candle,
+			/obj/item/trash/candy,
+			/obj/item/trash/candy/proteinbar,
+			/obj/item/trash/candy/gums,
+			/obj/item/trash/cheesie,
+			/obj/item/trash/chips,
+			/obj/item/trash/chips/bbq,
+			/obj/item/trash/liquidfood,
+			/obj/item/trash/pistachios,
+			/obj/item/trash/plate,
+			/obj/item/trash/popcorn,
+			/obj/item/trash/raisins,
+			/obj/item/trash/semki,
+			/obj/item/trash/snack_bowl,
+			/obj/item/trash/sosjerky,
+			/obj/item/trash/syndi_cakes,
+			/obj/item/trash/tastybread,
+			/obj/item/trash/coffee,
+			/obj/item/trash/tray,
+			/obj/item/trash/unajerky,
+			/obj/item/trash/waffles,
+			/obj/item/spacecash/c1,
+			/obj/item/card/emag_broken,
+			/obj/effect/decal/remains/lizard,
+			/obj/effect/decal/remains/mouse,
+			/obj/effect/decal/remains/robot,
+			/obj/item/pizzabox/old,
+			/obj/item/paper/crumpled))
 
 // Contains mostly useless garbage.
-DECLARE_LOOT(/loot/maint/trash, \
-	LOOT_TABLE(\
-		/obj/item/trash/candle, \
-		/obj/item/trash/candy, \
-		/obj/item/trash/candy/proteinbar, \
-		/obj/item/trash/candy/gums, \
-		/obj/item/trash/cheesie, \
-		/obj/item/trash/chips, \
-		/obj/item/trash/chips/bbq, \
-		/obj/item/trash/liquidfood, \
-		/obj/item/trash/pistachios, \
-		/obj/item/trash/plate, \
-		/obj/item/trash/popcorn, \
-		/obj/item/trash/raisins, \
-		/obj/item/trash/semki, \
-		/obj/item/trash/snack_bowl, \
-		/obj/item/trash/sosjerky, \
-		/obj/item/trash/syndi_cakes, \
-		/obj/item/trash/tastybread, \
-		/obj/item/trash/coffee, \
-		/obj/item/trash/tray, \
-		/obj/item/trash/unajerky, \
-		/obj/item/trash/waffles, \
-		/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat, \
-		/obj/item/reagent_containers/food/snacks/mysterysoup, \
-		/obj/item/reagent_containers/food/snacks/old/hotdog, \
-		/obj/item/pizzabox/old, \
-		/obj/item/ammo_casing/spent, \
-		LOOT_STACK(1, /obj/item/stack/rods, 5), \
-		LOOT_STACK(1, /obj/item/stack/material/steel, 5), \
-		LOOT_STACK(1, /obj/item/stack/material/cardboard, 5), \
-		/obj/item/poster, \
-		/obj/item/poster/custom, \
-		/obj/item/newspaper, \
-		/obj/item/paper/crumpled, \
-		/obj/item/paper/crumpled/bloody, \
-		/obj/item/reagent_containers/syringe/old), \
-	LOOT_UNCOMMON(10, \
-		/obj/item/reagent_containers/syringe/steroid, \
-		/obj/item/storage/pill_bottle/zoom, \
-		/obj/item/storage/pill_bottle/happy, \
-		/obj/item/storage/pill_bottle/paracetamol), \
-	LOOT_UNLUCKY(\
-		/obj/item/grenade/flashbang/clusterbang/primed, \
-		/obj/item/storage/box/old_syringes, \
-		/obj/item/storage/box/donut/empty, \
-		/obj/item/grenade/smokebomb/primed, \
-		/obj/item/storage/box, \
-		/obj/item/storage/box/cups, \
-		/obj/item/trash/candle, \
-		/obj/item/trash/candy, \
-		/obj/item/trash/candy/proteinbar, \
-		/obj/item/trash/candy/gums, \
-		/obj/item/trash/cheesie, \
-		/obj/item/trash/chips, \
-		/obj/item/trash/chips/bbq, \
-		/obj/item/trash/liquidfood, \
-		/obj/item/trash/pistachios, \
-		/obj/item/trash/plate, \
-		/obj/item/trash/popcorn, \
-		/obj/item/trash/raisins, \
-		/obj/item/trash/semki, \
-		/obj/item/trash/snack_bowl, \
-		/obj/item/trash/sosjerky, \
-		/obj/item/trash/syndi_cakes, \
-		/obj/item/trash/tastybread, \
-		/obj/item/trash/coffee, \
-		/obj/item/trash/tray, \
-		/obj/item/trash/unajerky, \
-		/obj/item/trash/waffles, \
-		/obj/item/spacecash/c1, \
-		/obj/item/card/emag_broken, \
-		/obj/effect/decal/remains/lizard, \
-		/obj/effect/decal/remains/mouse, \
-		/obj/effect/decal/remains/robot, \
-		/obj/item/pizzabox/old, \
-		/obj/item/paper/crumpled))
+CAPABILITIES(/loot/maint/trash)
+	loot(
+		table = list(
+			/obj/item/trash/candle,
+			/obj/item/trash/candy,
+			/obj/item/trash/candy/proteinbar,
+			/obj/item/trash/candy/gums,
+			/obj/item/trash/cheesie,
+			/obj/item/trash/chips,
+			/obj/item/trash/chips/bbq,
+			/obj/item/trash/liquidfood,
+			/obj/item/trash/pistachios,
+			/obj/item/trash/plate,
+			/obj/item/trash/popcorn,
+			/obj/item/trash/raisins,
+			/obj/item/trash/semki,
+			/obj/item/trash/snack_bowl,
+			/obj/item/trash/sosjerky,
+			/obj/item/trash/syndi_cakes,
+			/obj/item/trash/tastybread,
+			/obj/item/trash/coffee,
+			/obj/item/trash/tray,
+			/obj/item/trash/unajerky,
+			/obj/item/trash/waffles,
+			/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat,
+			/obj/item/reagent_containers/food/snacks/mysterysoup,
+			/obj/item/reagent_containers/food/snacks/old/hotdog,
+			/obj/item/pizzabox/old,
+			/obj/item/ammo_casing/spent,
+			loot_stack(1, /obj/item/stack/rods, 5),
+			loot_stack(1, /obj/item/stack/material/steel, 5),
+			loot_stack(1, /obj/item/stack/material/cardboard, 5),
+			/obj/item/poster,
+			/obj/item/poster/custom,
+			/obj/item/newspaper,
+			/obj/item/paper/crumpled,
+			/obj/item/paper/crumpled/bloody,
+			/obj/item/reagent_containers/syringe/old),
+		uncommon = loot_tier(
+			10,
+			list(/obj/item/reagent_containers/syringe/steroid, /obj/item/storage/pill_bottle/zoom, /obj/item/storage/pill_bottle/happy, /obj/item/storage/pill_bottle/paracetamol)),
+		unlucky = list(
+			/obj/item/grenade/flashbang/clusterbang/primed,
+			/obj/item/storage/box/old_syringes,
+			/obj/item/storage/box/donut/empty,
+			/obj/item/grenade/smokebomb/primed,
+			/obj/item/storage/box,
+			/obj/item/storage/box/cups,
+			/obj/item/trash/candle,
+			/obj/item/trash/candy,
+			/obj/item/trash/candy/proteinbar,
+			/obj/item/trash/candy/gums,
+			/obj/item/trash/cheesie,
+			/obj/item/trash/chips,
+			/obj/item/trash/chips/bbq,
+			/obj/item/trash/liquidfood,
+			/obj/item/trash/pistachios,
+			/obj/item/trash/plate,
+			/obj/item/trash/popcorn,
+			/obj/item/trash/raisins,
+			/obj/item/trash/semki,
+			/obj/item/trash/snack_bowl,
+			/obj/item/trash/sosjerky,
+			/obj/item/trash/syndi_cakes,
+			/obj/item/trash/tastybread,
+			/obj/item/trash/coffee,
+			/obj/item/trash/tray,
+			/obj/item/trash/unajerky,
+			/obj/item/trash/waffles,
+			/obj/item/spacecash/c1,
+			/obj/item/card/emag_broken,
+			/obj/effect/decal/remains/lizard,
+			/obj/effect/decal/remains/mouse,
+			/obj/effect/decal/remains/robot,
+			/obj/item/pizzabox/old,
+			/obj/item/paper/crumpled))
 
 // One of the more useful maint piles, contains electrical components.
-DECLARE_LOOT(/loot/maint/technical, \
-	LOOT_TABLE(\
-		/obj/item/stock_parts/gear = 1, \
-		/obj/item/stock_parts/console_screen = 1, \
-		/obj/item/stock_parts/spring = 1, \
-		/obj/item/stock_parts/capacitor = 3, \
-		/obj/item/stock_parts/manipulator = 3, \
-		/obj/item/stock_parts/matter_bin = 3, \
-		/obj/item/stock_parts/scanning_module = 3, \
-		/obj/item/stock_parts/subspace/amplifier = 1, \
-		/obj/item/stock_parts/subspace/analyzer = 1, \
-		/obj/item/stock_parts/subspace/ansible = 1, \
-		/obj/item/stock_parts/subspace/crystal = 1, \
-		/obj/item/stock_parts/subspace/sub_filter = 1, \
-		/obj/item/stock_parts/subspace/transmitter = 1, \
-		/obj/item/stock_parts/subspace/treatment = 1, \
-		/obj/item/frame = 1, \
-		/obj/item/broken_device/random = 1, \
-		/obj/item/borg/upgrade/utility/restart = 1, \
-		/obj/item/cell = 1, \
-		/obj/item/cell/high = 1, \
-		/obj/item/cell/device = 1, \
-		/obj/item/circuitboard/broken = 1, \
-		/obj/item/circuitboard/arcade = 1, \
-		/obj/item/circuitboard/autolathe = 1, \
-		/obj/item/circuitboard/atmos_alert = 1, \
-		/obj/item/circuitboard/airalarm = 1, \
-		/obj/item/circuitboard/fax = 1, \
-		/obj/item/circuitboard/jukebox = 1, \
-		/obj/item/circuitboard/batteryrack = 1, \
-		/obj/item/circuitboard/message_monitor = 1, \
-		/obj/item/circuitboard/rcon_console = 1, \
-		/obj/item/smes_coil = 1, \
-		/obj/item/cartridge/engineering = 1, \
-		/obj/item/analyzer = 1, \
-		/obj/item/healthanalyzer = 1, \
-		/obj/item/extrapolator = 1, \
-		/obj/item/gene_scanner = 1, \
-		/obj/item/robotanalyzer = 1, \
-		/obj/item/lightreplacer = 1, \
-		/obj/item/radio = 1, \
-		/obj/item/hailer = 1, \
-		/obj/item/gps = 1, \
-		/obj/item/geiger = 1, \
-		/obj/item/mass_spectrometer = 1, \
-		/obj/item/tool/wrench = 1, \
-		/obj/item/tool/screwdriver = 1, \
-		/obj/item/tool/wirecutters = 1, \
-		/obj/item/mining_scanner/advanced = 1, \
-		/obj/item/multitool = 1, \
-		/obj/item/mecha_parts/mecha_equipment/generator = 1, \
-		/obj/item/mecha_parts/mecha_equipment/tool/cable_layer = 1, \
-		/obj/item/mecha_parts/mecha_equipment/tool/drill = 1, \
-		/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp = 1, \
-		/obj/item/mecha_parts/mecha_equipment/tool/passenger = 1, \
-		/obj/item/mecha_parts/mecha_equipment/tool/sleeper = 1, \
-		/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun = 1, \
-		/obj/item/robot_parts/robot_component/binary_communication_device = 1, \
-		/obj/item/robot_parts/robot_component/armour = 1, \
-		/obj/item/robot_parts/robot_component/actuator = 1, \
-		/obj/item/robot_parts/robot_component/camera = 1, \
-		/obj/item/robot_parts/robot_component/diagnosis_unit = 1, \
-		/obj/item/robot_parts/robot_component/radio = 1), \
-	LOOT_UNCOMMON(10, \
-		/obj/item/cell/super, \
-		/obj/item/cell/device/weapon, \
-		/obj/item/circuitboard/security, \
-		/obj/item/circuitboard/crew, \
-		/obj/item/aiModule/reset, \
-		/obj/item/smes_coil/super_capacity, \
-		/obj/item/smes_coil/super_io, \
-		/obj/item/cartridge/captain, \
-		/obj/item/disk/integrated_circuit/upgrade/advanced, \
-		/obj/item/tvcamera, \
-		/obj/item/universal_translator, \
-		/obj/item/aicard, \
-		/obj/item/borg/upgrade/advanced/jetpack, \
-		/obj/item/borg/upgrade/advanced/advhealth, \
-		/obj/item/borg/upgrade/basic/vtec, \
-		/obj/item/borg/upgrade/restricted/tasercooler, \
-		/obj/item/mecha_parts/mecha_equipment/weapon/energy/riggedlaser, \
-		/obj/item/mecha_parts/mecha_equipment/tool/drill/diamonddrill, \
-		/obj/item/rig_module/device/drill, \
-		/obj/item/rig_module/device/plasmacutter, \
-		/obj/item/rig_module/device/healthscanner, \
-		/obj/item/rig_module/device/orescanner, \
-		/obj/item/rig_module/device/anomaly_scanner, \
-		/obj/item/rig_module/datajack, \
-		/obj/item/rig_module/vision/medhud, \
-		/obj/item/rig_module/vision/meson, \
-		/obj/item/rig_module/vision/sechud, \
-		/obj/item/rig_module/sprinter), \
-	LOOT_RARE(1, \
-		/obj/item/cell/hyper, \
-		/obj/item/aiModule/freeform, \
-		/obj/item/aiModule/asimov, \
-		/obj/item/aiModule/paladin, \
-		/obj/item/aiModule/safeguard, \
-		/obj/item/disposable_teleporter, \
-		/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay))
+CAPABILITIES(/loot/maint/technical)
+	loot(
+		table = list(
+			/obj/item/stock_parts/gear = 1,
+			/obj/item/stock_parts/console_screen = 1,
+			/obj/item/stock_parts/spring = 1,
+			/obj/item/stock_parts/capacitor = 3,
+			/obj/item/stock_parts/manipulator = 3,
+			/obj/item/stock_parts/matter_bin = 3,
+			/obj/item/stock_parts/scanning_module = 3,
+			/obj/item/stock_parts/subspace/amplifier = 1,
+			/obj/item/stock_parts/subspace/analyzer = 1,
+			/obj/item/stock_parts/subspace/ansible = 1,
+			/obj/item/stock_parts/subspace/crystal = 1,
+			/obj/item/stock_parts/subspace/sub_filter = 1,
+			/obj/item/stock_parts/subspace/transmitter = 1,
+			/obj/item/stock_parts/subspace/treatment = 1,
+			/obj/item/frame = 1,
+			/obj/item/broken_device/random = 1,
+			/obj/item/borg/upgrade/utility/restart = 1,
+			/obj/item/cell = 1,
+			/obj/item/cell/high = 1,
+			/obj/item/cell/device = 1,
+			/obj/item/circuitboard/broken = 1,
+			/obj/item/circuitboard/arcade = 1,
+			/obj/item/circuitboard/autolathe = 1,
+			/obj/item/circuitboard/atmos_alert = 1,
+			/obj/item/circuitboard/airalarm = 1,
+			/obj/item/circuitboard/fax = 1,
+			/obj/item/circuitboard/jukebox = 1,
+			/obj/item/circuitboard/batteryrack = 1,
+			/obj/item/circuitboard/message_monitor = 1,
+			/obj/item/circuitboard/rcon_console = 1,
+			/obj/item/smes_coil = 1,
+			/obj/item/cartridge/engineering = 1,
+			/obj/item/analyzer = 1,
+			/obj/item/healthanalyzer = 1,
+			/obj/item/extrapolator = 1,
+			/obj/item/gene_scanner = 1,
+			/obj/item/robotanalyzer = 1,
+			/obj/item/lightreplacer = 1,
+			/obj/item/radio = 1,
+			/obj/item/hailer = 1,
+			/obj/item/gps = 1,
+			/obj/item/geiger = 1,
+			/obj/item/mass_spectrometer = 1,
+			/obj/item/tool/wrench = 1,
+			/obj/item/tool/screwdriver = 1,
+			/obj/item/tool/wirecutters = 1,
+			/obj/item/mining_scanner/advanced = 1,
+			/obj/item/multitool = 1,
+			/obj/item/mecha_parts/mecha_equipment/generator = 1,
+			/obj/item/mecha_parts/mecha_equipment/tool/cable_layer = 1,
+			/obj/item/mecha_parts/mecha_equipment/tool/drill = 1,
+			/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp = 1,
+			/obj/item/mecha_parts/mecha_equipment/tool/passenger = 1,
+			/obj/item/mecha_parts/mecha_equipment/tool/sleeper = 1,
+			/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun = 1,
+			/obj/item/robot_parts/robot_component/binary_communication_device = 1,
+			/obj/item/robot_parts/robot_component/armour = 1,
+			/obj/item/robot_parts/robot_component/actuator = 1,
+			/obj/item/robot_parts/robot_component/camera = 1,
+			/obj/item/robot_parts/robot_component/diagnosis_unit = 1,
+			/obj/item/robot_parts/robot_component/radio = 1),
+		uncommon = loot_tier(
+			10,
+			list(/obj/item/cell/super, /obj/item/cell/device/weapon, /obj/item/circuitboard/security, /obj/item/circuitboard/crew, /obj/item/aiModule/reset, /obj/item/smes_coil/super_capacity, /obj/item/smes_coil/super_io, /obj/item/cartridge/captain, /obj/item/disk/integrated_circuit/upgrade/advanced, /obj/item/tvcamera, /obj/item/universal_translator, /obj/item/aicard, /obj/item/borg/upgrade/advanced/jetpack, /obj/item/borg/upgrade/advanced/advhealth, /obj/item/borg/upgrade/basic/vtec, /obj/item/borg/upgrade/restricted/tasercooler, /obj/item/mecha_parts/mecha_equipment/weapon/energy/riggedlaser, /obj/item/mecha_parts/mecha_equipment/tool/drill/diamonddrill, /obj/item/rig_module/device/drill, /obj/item/rig_module/device/plasmacutter, /obj/item/rig_module/device/healthscanner, /obj/item/rig_module/device/orescanner, /obj/item/rig_module/device/anomaly_scanner, /obj/item/rig_module/datajack, /obj/item/rig_module/vision/medhud, /obj/item/rig_module/vision/meson, /obj/item/rig_module/vision/sechud, /obj/item/rig_module/sprinter)),
+		rare = loot_tier(
+			1,
+			list(/obj/item/cell/hyper, /obj/item/aiModule/freeform, /obj/item/aiModule/asimov, /obj/item/aiModule/paladin, /obj/item/aiModule/safeguard, /obj/item/disposable_teleporter, /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay)))

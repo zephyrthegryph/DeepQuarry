@@ -1,11 +1,19 @@
 // Map-time resolvers (doc/rewrite/systems.md §9). Macro and contract: code/__defines/map_resolvers.dm.
 
-/atom
-	/// proc(atom/loc, path, list/varedits) that resolves this type at map time instead of making
-	/// it a live atom (MAP_RESOLVER), or null.
-	var/map_resolver
-	/// Extra vars its resolver reads (MAP_RESOLVER_VARS), ";"-separated.
-	var/map_resolver_vars
+/// type => its /datum/map_resolver_info, for every type under one that declares map_resolver(...): built at world setup, never after.
+GLOBAL_LIST_EMPTY(map_resolvers)
+
+/// The vars (besides the common ones) the resolver of `type` reads, in the order they were written: its map_resolver entry's `vars` (or an ancestor's).
+/proc/map_resolver_vars_of(type)
+	static_entries_ensure("map_resolver_vars_of([type])")
+	var/datum/map_resolver_info/info = GLOB.map_resolvers[type]
+	return info ? info.reads : list()
+
+/// The resolver proc of `type`, or null: its map_resolver entry (or an ancestor's).
+/proc/map_resolver_proc(type)
+	static_entries_ensure("map_resolver_proc([type])")
+	var/datum/map_resolver_info/info = GLOB.map_resolvers[type]
+	return info?.resolver
 
 /// Per-load scratch state for resolvers (key -> value), cleared when the load's atoms finish.
 GLOBAL_LIST_EMPTY(map_resolve_scratch)
@@ -25,8 +33,7 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 /// The map reader's hook: resolves `path` at `crds` from the model's var edits. TRUE when it was
 /// resolved (the reader then creates nothing).
 /proc/map_resolve_path(path, turf/crds, list/varedits)
-	var/atom/P = path
-	var/resolver = initial(P.map_resolver)
+	var/resolver = map_resolver_proc(path)
 	if(!resolver)
 		return FALSE
 	if(!call(resolver)(crds, path, varedits))
@@ -38,7 +45,8 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 /// initialized nor qdel'd. TRUE when resolved.
 /proc/map_resolve_instance(atom/A)
 	var/list/varedits = map_varedits_of(A)
-	if(!call(A.map_resolver)(A.loc, A.type, varedits))
+	var/datum/map_resolver_info/info = GLOB.map_resolvers[A.type]
+	if(!call(info.resolver)(A.loc, A.type, varedits))
 		return FALSE
 	A.tag = null
 	if(ismovable(A))
@@ -47,7 +55,7 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 	return TRUE
 
 /// The var edits an instance carries over its type's defaults, over the vars its family's
-/// resolver reads (MAP_RESOLVER_COMMON_VARS + MAP_RESOLVER_VARS; the name list is built once per
+/// resolver reads (MAP_RESOLVER_COMMON_VARS + the entry's vars; the name list is built once per
 /// type). A named list var is included whenever set: a type's list default only exists on an
 /// instance, and initial() cannot read it.
 /proc/map_varedits_of(atom/A)
@@ -55,8 +63,7 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 	var/list/names = names_by_type[A.type]
 	if(!names)
 		names = splittext(MAP_RESOLVER_COMMON_VARS, ";")
-		if(A.map_resolver_vars)
-			names |= splittext(A.map_resolver_vars, ";")
+		names |= map_resolver_vars_of(A.type)
 		for(var/name in names.Copy())
 			if(!(name in A.vars))
 				names -= name
@@ -71,7 +78,7 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 			LAZYSET(out, name, value)
 	return out
 
-/// MAP_RESOLVER for mapping-only markers (previews, editor aids) that leave nothing behind.
+/// The map resolver of mapping-only markers (previews, editor aids) that leave nothing behind.
 /proc/map_resolve_discard(atom/loc, path, list/varedits)
 	return TRUE
 

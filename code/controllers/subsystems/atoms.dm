@@ -2,6 +2,8 @@ SYSTEM_DEF(atoms)
 	name = "Atoms"
 	needs = list(
 		/datum/system/garbage,
+		// The map-time resolver table and the loot declarations (static entries) are read as the atoms initialize.
+		/datum/system/static_entries,
 		// The early assets load before the atoms (they set the tracked init state the atoms then read).
 		/datum/system/early_assets,
 		/datum/system/mapping,

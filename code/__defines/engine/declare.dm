@@ -94,6 +94,7 @@
 #define RULE_RELATION_KIND "relation_kind"
 #define RULE_CONFIGURE "configure"
 #define RULE_WITHOUT "without"
+#define RULE_STATIC "static_entry"
 #define RULE_GRAPH "state_graph"
 
 // The lifecycle hooks a capability definition can have (its `holder_hooks` bits, which is also what ENGINE_HOOK_* asks of the lifecycle):

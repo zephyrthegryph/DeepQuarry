@@ -287,6 +287,7 @@ fn rewrite_calls(text: &str, name: &str, f: &dyn Fn(&[String]) -> String) -> Str
 /// each call as `global.name(...)`, which only the global proc can answer.
 fn global_constructors(cx: &GenCx, caps: &[Cap]) -> BTreeSet<String> {
     let mut set: BTreeSet<String> = caps.iter().map(|c| c.name.clone()).collect();
+    set.extend(static_kinds(cx));
     // `every` keeps its legacy body in code/datums/reactions (the system form) and dispatches a capability's every(interval, then(...)) to the engine.
     set.insert("every".to_string());
     for f in cx.tree.select(&crate::tree::CODE_DM) {
@@ -303,6 +304,39 @@ fn global_constructors(cx: &GenCx, caps: &[Cap]) -> BTreeSet<String> {
         }
     }
     set
+}
+
+/// The entry kinds that are read without an instance: `STATIC_ENTRY(loot)` in DM names a constructor `loot(...)` whose entries a
+/// CAPABILITIES block may carry, but which are not part of the type's instance table (the library reads them at world setup,
+/// before the first map load, from `declared_static_blocks()`).
+fn static_kinds(cx: &GenCx) -> BTreeSet<String> {
+    cx.markers("STATIC_ENTRY").filter_map(|m| m.args.first().map(|a| a.trim().to_string())).filter(|a| !a.is_empty()).collect()
+}
+
+/// The name of the call a text opens with (`loot(...)` is `loot`), or None.
+fn leading_call(t: &str) -> Option<&str> {
+    let t = t.trim_start();
+    let end = t.find(|c: char| !(c.is_alphanumeric() || c == '_'))?;
+    if end == 0 || !t[end..].trim_start().starts_with('(') {
+        return None;
+    }
+    Some(&t[..end])
+}
+
+/// Whether a CAPABILITIES entry is of a static kind: `loot(...)`, or `configure(loot(...))` changing what a supertype declared.
+fn is_static_entry(raw: &str, kinds: &BTreeSet<String>) -> bool {
+    if kinds.is_empty() {
+        return false;
+    }
+    let t = one_line(raw);
+    match leading_call(&t) {
+        Some("configure") => {
+            let open = t.find('(').unwrap_or(0);
+            leading_call(&t[open + 1..]).map(|n| kinds.contains(n)).unwrap_or(false)
+        }
+        Some(name) => kinds.contains(name),
+        None => false,
+    }
 }
 
 /// Writes every call of a global constructor in `text` as `global.name(...)` (not a member call, not a longer name, not inside a string).
@@ -424,10 +458,11 @@ impl Generator for Declare {
     fn generate(&self, cx: &GenCx, out: &mut GenOut) {
         let caps = capabilities(cx, out);
         let globals = global_constructors(cx, &caps);
-        section(cx, out, &caps, &globals, false);
+        let statics = static_kinds(cx);
+        section(cx, out, &caps, &globals, &statics, false);
         // What the test fixtures declare (files under code/tests/ and code/modules/unit_tests/, see `test_only`) is compiled in test builds only.
         let mut tests = GenOut::default();
-        section(cx, &mut tests, &caps, &globals, true);
+        section(cx, &mut tests, &caps, &globals, &statics, true);
         if !tests.text().trim().is_empty() {
             out.line(crate::sem::gen::TEST_GUARD);
             out.blank();
@@ -436,11 +471,50 @@ impl Generator for Declare {
             out.line("#endif");
         }
         keyed_targets(cx, out);
+        static_blocks(cx, out, &caps, &globals, &statics);
         make_procs(cx, out);
         for d in std::mem::take(&mut tests.diags) {
             out.diag(&d.rel, d.line, d.msg);
         }
     }
+}
+
+/// The entries of the static kinds (`STATIC_ENTRY`), by type: the library reads them at world setup without making an instance of the type
+/// (a map-time resolver and a loot table belong to a type that is never made). Each row is the block's file, the line of the block, and its
+/// static entries with their own lines, in order; a type that declares none has no row.
+fn static_blocks(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String>, statics: &BTreeSet<String>) {
+    out.doc("declared_static_blocks(): type -> list(file, line, entries) for the entries of the static kinds (STATIC_ENTRY), read without an instance.");
+    out.line("/proc/declared_static_blocks()");
+    out.line("	. = list()");
+    if !statics.is_empty() {
+        let mut lists: Vec<&Marker> = cx.markers("CAPABILITIES").collect();
+        lists.sort_by(|a, b| (a.args.first(), &a.rel, a.line).cmp(&(b.args.first(), &b.rel, b.line)));
+        for m in lists {
+            let Some(ty) = m.args.first() else { continue };
+            let offsets = arg_offsets(&m.body, &m.args);
+            let mut parts: Vec<String> = Vec::new();
+            for (i, a) in m.args.iter().enumerate().skip(1) {
+                if a.is_empty() || !is_static_entry(a, statics) {
+                    continue;
+                }
+                parts.push(format!("entry_line({})", m.line_at(offsets[i])));
+                parts.push(entry_text(a, caps, globals));
+            }
+            if parts.is_empty() {
+                continue;
+            }
+            let test_only = crate::sem::gen::test_only(&m.rel);
+            if test_only {
+                out.line(crate::sem::gen::TEST_GUARD);
+            }
+            out.line(format!("	// CAPABILITIES({}) at {}:{}", ty, m.rel, m.line));
+            out.line(format!("	.[{}] = list({}, {}, list({}))", ty.trim(), quote(&m.rel), m.line, parts.join(", ")));
+            if test_only {
+                out.line("#endif");
+            }
+        }
+    }
+    out.blank();
 }
 
 /// The keyed relations the CAPABILITIES lists declare (`ref_one(nameof(v), /type, by = nameof(id))`): the type the holder finds and the id var both
@@ -482,7 +556,7 @@ fn keyed_targets(cx: &GenCx, out: &mut GenOut) {
 }
 
 /// The declarations of the files in one half of the tree: the engine and the game (`test_only` false), or the test fixtures.
-fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String>, test_only: bool) {
+fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String>, statics: &BTreeSet<String>, test_only: bool) {
     let in_half = |rel: &str| crate::sem::gen::test_only(&rel) == test_only;
         // Capabilities: the datum's param vars, the constructor, the registration row.
         for cap in caps.iter().filter(|c| in_half(&c.rel)) {
@@ -575,7 +649,7 @@ fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String
                 }
             };
             for (i, a) in m.args.iter().enumerate().skip(1) {
-                if a.is_empty() {
+                if a.is_empty() || is_static_entry(a, &statics) {
                     continue;
                 }
                 let line = m.line_at(offsets[i]);
@@ -959,6 +1033,27 @@ CAPABILITIES(/obj/thing, \
         assert!(all.contains("`section(\"b\")`: a section header is"), "{}", all);
         assert!(all.contains("`section(c, 12)`"), "{}", all);
         assert!(all.contains("section(d) of /obj/thing is declared twice"), "{}", all);
+    }
+
+    #[test]
+    fn static_entries_leave_the_instance_chain_for_a_registry() {
+        let src = "STATIC_ENTRY(loot)
+CAPABILITIES(/obj/random/x)
+	loot(table = list(/obj/a = 2))
+	wall(1, 2)
+CAPABILITIES(/obj/random/x/y)
+	configure(loot(chance = 5))
+";
+        let (_, decl, diags) = gen(vec![("code/a.dm", src)]);
+        assert!(diags.is_empty(), "{:?}", diags);
+        assert!(decl.contains("/proc/declared_static_blocks()
+	. = list()"), "{}", decl);
+        assert!(decl.contains("	.[/obj/random/x] = list(\"code/a.dm\", 2, list(entry_line(3), global.loot(table = list(/obj/a = 2))))"), "{}", decl);
+        assert!(decl.contains("	.[/obj/random/x/y] = list(\"code/a.dm\", 5, list(entry_line(6), configure(global.loot(chance = 5))))"), "{}", decl);
+        assert!(!decl.contains("into += list(global.loot"), "a static entry is not in the instance chain: {}", decl);
+        assert!(!decl.contains("configure(global.loot(chance = 5))
+	into"), "{}", decl);
+        assert!(decl.contains("into += list(wall(1, 2))"), "an ordinary entry stays: {}", decl);
     }
 
     #[test]
