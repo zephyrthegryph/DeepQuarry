@@ -67,19 +67,52 @@ impl<'a> Reader<'a> {
     }
 }
 
-pub(super) struct Writer {
-    pub(super) bytes: Vec<u8>,
+#[path = "dmb_buffer.rs"]
+mod buffer;
+use buffer::Buffer;
+
+pub(super) struct Writer<'a> {
+    pub(super) bytes: Buffer<'a>,
     pub(super) object_size: usize,
     pub(super) object_overflow: bool,
     pub(super) compatibility_version: u16,
 }
-impl Writer {
+impl Writer<'static> {
     pub(super) fn new(object_size: usize, compatibility_version: u16) -> Self {
         Self {
-            bytes: Vec::new(),
+            bytes: Buffer::owned(),
             object_size,
             object_overflow: false,
             compatibility_version,
+        }
+    }
+}
+impl<'a> Writer<'a> {
+    pub(super) fn bounded(
+        bytes: &'a mut [u8],
+        object_size: usize,
+        compatibility_version: u16,
+    ) -> Self {
+        Self {
+            bytes: Buffer::bounded(bytes),
+            object_size,
+            object_overflow: false,
+            compatibility_version,
+        }
+    }
+    pub(super) fn check_storage(&self) -> io::Result<()> {
+        if self.bytes.overflowed() {
+            Err(invalid("bounded serialization exceeded planned size"))
+        } else {
+            Ok(())
+        }
+    }
+    pub(super) fn finish_bounded(&self, expected: usize) -> io::Result<()> {
+        self.check_storage()?;
+        if self.at() != expected {
+            Err(invalid("bounded serialization did not fill planned size"))
+        } else {
+            Ok(())
         }
     }
     pub(super) fn at(&self) -> usize {

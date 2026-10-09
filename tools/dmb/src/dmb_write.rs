@@ -60,17 +60,21 @@ impl CanonicalHash {
         writer.raw(bytes);
         self.through = writer.at();
     }
-    fn finish(mut self, writer: Writer) -> EncodedDmb {
+    fn finish(mut self, writer: Writer<'static>) -> EncodedDmb {
         self.pending(&writer);
         EncodedDmb {
-            bytes: writer.bytes,
+            bytes: writer.bytes.into_owned(),
             content_hash: self.state.digest128(),
         }
     }
 }
 
+#[path = "dmb_write_slices.rs"]
+mod slices;
+use slices::sized_records;
+
 struct Chunk {
-    writer: Writer,
+    writer: Writer<'static>,
     spans: Vec<Range<usize>>,
 }
 
@@ -111,6 +115,9 @@ fn records<T: Sync>(
         return Ok(offsets);
     };
     let ranges = chunk_ranges(items.len(), sizes, executor.workers().saturating_mul(4))?;
+    if let Some(sizes) = sizes {
+        return sized_records(writer, hash, items, executor, sizes, spans, encode, ranges);
+    }
     hash.pending(writer);
     let prefix = writer.at();
     let object_size = writer.object_size;
@@ -276,6 +283,7 @@ fn write_string(
         .and_then(|offset| offset.checked_sub(origin))
         .ok_or_else(|| invalid("string cipher offset overflow"))?;
     writer.raw(&string.data);
+    writer.check_storage()?;
     // Encrypt the just-appended payload in place, eliminating the old clone.
     crypt_string(&mut writer.bytes[start..], offset);
     Ok(())
@@ -589,7 +597,7 @@ mod tests {
             Some(b"#!/usr/bin/env DreamDaemon\n# second authored line\n".to_vec());
         for index in 0..256 {
             dmb.strings.push(DmString {
-                data: vec![0xff, 0x81, 0, index as u8, b'x'],
+                data: [vec![0xff, 0x81, 0, index as u8], vec![b'x'; index % 63]].concat(),
                 long_chunks: 0,
             });
         }
@@ -628,7 +636,7 @@ mod tests {
     fn one_worker_and_many_workers_keep_identical_generation_bytes() {
         let dmb = populated(true);
         let baseline = dmb.to_bytes().unwrap();
-        for workers in [1, 2, 4] {
+        for workers in [1, 2, 8] {
             let executor = BuildExecutor::new(workers).unwrap();
             assert_eq!(dmb.to_bytes_on_executor(&executor).unwrap(), baseline);
         }
@@ -644,7 +652,7 @@ mod tests {
             assert_eq!(owner.content_hash(), xxhash_rust::xxh3::xxh3_128(&baseline));
             assert_eq!(owner.len(), baseline.len());
             assert!(!owner.is_empty());
-            for workers in [1, 2, 4] {
+            for workers in [1, 2, 8] {
                 let executor = BuildExecutor::new(workers).unwrap();
                 let encoded = dmb.encode_on_executor(&executor).unwrap();
                 assert_eq!(encoded.bytes(), owner.bytes());

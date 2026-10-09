@@ -11,8 +11,7 @@ impl HeapCensus {
                 if previous.is_some_and(|prior| environment.shares_storage_with(prior)) {
                     continue;
                 }
-                previous = Some(environment);
-                environment.visit_storage(|name, address, inline_bytes, definition, origin| {
+                let visitor = |name: &Arc<str>, address, inline_bytes, definition: &Arc<dm_preprocess::Macro>, origin: Option<&dm_preprocess::regions::DefinitionOrigin>| {
                     self.arc_text(owner, name);
                     if !self.buffer(owner, address, inline_bytes, inline_bytes) {
                         return;
@@ -26,7 +25,13 @@ impl HeapCensus {
                     if let Some(origin) = origin {
                         self.arc_path(owner, &origin.path);
                     }
-                });
+                };
+                if let Some(prior) = previous {
+                    environment.visit_storage_difference(prior, visitor);
+                } else {
+                    environment.visit_storage(visitor);
+                }
+                previous = Some(environment);
             }
             // Effects retain owned copies, independently of persistent bindings.
             for effect in &region.effects {
@@ -45,7 +50,7 @@ impl HeapCensus {
                 }
             }
         }
-        self.unknown(owner, "persistent im::OrdMap node allocations and Arc control blocks are opaque; unchanged adjacent roots skipped, changed roots traversed with payload-pointer deduplication");
+        self.unknown(owner, "persistent im::OrdMap node allocations and Arc control blocks are opaque; changed snapshots use public structural diff to skip shared nodes, with payload-pointer deduplication");
     }
     fn macro_payload(&mut self, owner: &str, definition: &dm_preprocess::Macro) {
         self.string(owner, &definition.replacement);

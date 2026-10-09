@@ -2,6 +2,8 @@
 //! participates in this path. Directive planning freezes expansion environments;
 //! the combined encounter AST supplies scope before the resolved tree is built.
 
+#[path = "frontend_compile_only.rs"]
+mod compile_only;
 #[path = "parserwire.rs"]
 mod parserwire;
 

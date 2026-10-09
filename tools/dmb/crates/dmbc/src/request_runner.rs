@@ -581,6 +581,9 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
                     .map(|sink| sink as &dyn dmbc::assets::ResourceArchiveSink),
             )?
             .into_prepared(&frontend)?;
+        // Only this one-shot request discards expansion execution inputs. No
+        // revision issuance exists yet; shared revisions retain their full plan.
+        let frontend = frontend.try_into_compile_only().unwrap_or_else(|full| full);
         // Nontext capture owns the resolver, captured resources/maps and defaults
         // it needs. These inputs are not borrowed by its returned bundle.
         drop(defaults);

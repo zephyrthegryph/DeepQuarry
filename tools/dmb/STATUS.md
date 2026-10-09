@@ -117,17 +117,41 @@ parallel inventory work are not included in this frozen measurement.
 
 ## Open correctness and architecture items
 
-The next batch passed release all-target Clippy (160.24 s), receipt
-`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-004411.json`, and 1,516
-ordinary workspace library checks (147.41 s), receipt
-`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-004828.json`.
+The latest source batch passed release all-target Clippy with warnings denied
+(92.186 s), receipt
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-005654-c5ab3554.json`,
+and 1,521 ordinary workspace library checks (265.726 s), receipt
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-005840-375d7192.json`.
 These ordinary-profile tests are not the outstanding release-profile gate.
-Optional file-backed RSC publication is implemented with request-owned resource
-pins held through final pair publication; sink I/O failures retain the memory
-fallback and source diagnostic precedence. Generic callers retain memory output.
-Its focused checks passed in that batch; full captured-project census is running
-and its optimized acceptance comparison has not run. The corrected self-cohort
-above does not measure this newer streamed-resource implementation.
+Optional file-backed RSC publication streams encoding and hashing into immutable
+archives; unchanged archives use a hash-only probe and authenticated reuse.
+Request-owned resource pins survive until final pair publication. Sink I/O failures
+retain the memory fallback and source diagnostic precedence. Generic callers
+retain memory output. The latest batch also releases expansion-only region
+segments/effects in uniquely owned one-shot frontends after nontext capture;
+shared or previously issued revisions retain their complete plans. Source locations,
+body issuance, analysis and incremental frontend APIs remain intact.
+
+The streamed-resource-only frozen commit `7325538b10` completed a captured-project
+**diagnostic** census with exit 0 (593.055 s). Expensive full macro-environment
+census traversal amplified runtime; this is **not a compiler benchmark or acceptance
+measurement**. Peak private memory was 1,986,547,712 bytes, compared with
+2,236,796,928 bytes in the prior diagnostic. Both actual output SHA-256 hashes
+remained identical: DMB
+`7039eba3aea7e86a8124f13dbee8bb5dff55ed69e24e31930dbe394346ef7bc5`, RSC
+`6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437`.
+Evidence directory:
+`E:/dq-cache/dmb-native-v2/census-method-prototype-20261009-005109-stack8388608/`.
+This run excludes the newer compile-only release, bounded writer and structural
+macro census changes. Their captured-project diagnostic subsequently completed
+with exit 0 in 122.027 s, with peak private memory of 1,880,727,552 bytes and the
+same actual DMB/RSC hashes above. This debug/census runtime is **not acceptance
+timing**; the changed census traversal also prevents treating its runtime delta
+as a compiler speedup. It excludes the newer compact-code work.
+Evidence:
+`E:/dq-cache/dmb-native-v2/census-method-prototype-20261009-010310-stack8388608/`.
+An optimized acceptance comparison of these newer changes remains pending;
+the corrected self-cohort above does not measure them.
 
 Whole-program structural diff: **1,853,923 differences**, unchanged in the admitted
 cohort: bytecode 1,636,088; globals 14; other 1,277; proc flags 14; proc table 8,983;
