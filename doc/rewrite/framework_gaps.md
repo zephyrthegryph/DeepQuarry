@@ -555,3 +555,7 @@ Twelve opt-outs in machinery and none in power were reviewed. Nine remain becaus
 | computer/arcade.dm / initial blackhole_hurt | REMOVED | The only remaining target is the deleted victim. |
 | computer/arcade.dm / recursive blackhole_hurt | REMOVED | The only remaining target is the deleted victim. |
 | wishgranter.dm / gib_wisher | REMOVED | The only effect gibs the deleted wisher. |
+
+### K19-K25 follow-up (rewrite/fw-gaps-k)
+
+Sites the new forms unblock that are not converted yet, so the next wave knows where they are: the empty sandbag fill, the bore pull cord and the tourniquet loosen verb (each needs its holder or an existing pinned test reworked: a series over a stack must finish its `use()` in `then()`, see "Repeating and unbounded waits" in final_api.html), the straw sip, butchering cuts, the dog-borg re-arm, nanopaste and the medical stack (balloon refusals with interpolated text need a `MSG_BALLOON` per case), and every `/mob/living` ability (K23, proposal in doc/rewrite/proposals/mob_living_root.md).
