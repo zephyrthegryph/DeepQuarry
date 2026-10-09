@@ -40,14 +40,16 @@ impl dmbc::assets::ResourceArchiveSink for OutputResourceSink<'_> {
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
         Command::Help => {
-            println!("dmbc analyze|compile [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
-            println!("dmbc stats [PROJECT] | explain PROCEDURE [PROJECT] | gc [PROJECT]");
-            println!("compile publishes a new immutable output pair and installs PROJECT.dmb/.rsc; unsupported semantics fail before publication.");
+            dmbc::daemon_println!("dmbc analyze|compile [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
+            dmbc::daemon_println!(
+                "dmbc stats [PROJECT] | explain PROCEDURE [PROJECT] | gc [PROJECT]"
+            );
+            dmbc::daemon_println!("compile publishes a new immutable output pair and installs PROJECT.dmb/.rsc; unsupported semantics fail before publication.");
             Ok(CommandOutcome::Completed)
         }
         Command::Gc { project } => {
             let project = std::fs::canonicalize(project)?;
-            println!(
+            dmbc::daemon_println!(
                 "{}",
                 serde_json::to_string_pretty(&dmbc::cache_maintenance::run(&project)?)?
             );
@@ -66,7 +68,7 @@ pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error
 
 fn inspect(project: PathBuf, target: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
     let project = std::fs::canonicalize(project)?;
-    println!(
+    dmbc::daemon_println!(
         "{}",
         serde_json::to_string_pretty(&dmbc::telemetry::inspect(&project, target)?)?
     );
@@ -242,6 +244,7 @@ pub fn run_build_with_host(
                         exact_inputs,
                         now_ns(),
                     )?;
+                    dmbc::daemon::control::begin_publication()?;
                     if !outputs_match {
                         store.install_exact(
                             pair.id,
@@ -253,7 +256,7 @@ pub fn run_build_with_host(
                     }
                     if progress_enabled {
                         let timing = &validated.timings;
-                        eprintln!("native session validation: record={:.3}s bulk_capture={:.3}s input_validate={:.3}s pair={:.3}s outputs={:.3}s proofs={:?}", timing.record_decode.as_secs_f64(), timing.bulk_capture.as_secs_f64(), timing.input_validate.as_secs_f64(), pair_verification_seconds, output_validation_started.elapsed().as_secs_f64(), timing.proofs);
+                        dmbc::daemon_eprintln!("native session validation: record={:.3}s bulk_capture={:.3}s input_validate={:.3}s pair={:.3}s outputs={:.3}s proofs={:?}", timing.record_decode.as_secs_f64(), timing.bulk_capture.as_secs_f64(), timing.input_validate.as_secs_f64(), pair_verification_seconds, output_validation_started.elapsed().as_secs_f64(), timing.proofs);
                     }
                     let rehashed = validated.validation.rehashed;
                     if validated.validation.rehashed > 0 || output_rehashes > 0 || !outputs_match {
@@ -270,7 +273,7 @@ pub fn run_build_with_host(
                         }
                         configured.store(record)?;
                     }
-                    eprintln!(
+                    dmbc::daemon_eprintln!(
                         "native session hit: total={:.3}s rehashed={} pair={}",
                         total.elapsed().as_secs_f64(),
                         rehashed,
@@ -307,7 +310,7 @@ pub fn run_build_with_host(
         match dm_cache::Cache::user_default(dm_cache::Limits::default()) {
             Ok(cache) => Some(Arc::new(cache)),
             Err(error) => {
-                eprintln!("native cache unavailable: {error}; compiling fresh");
+                dmbc::daemon_eprintln!("native cache unavailable: {error}; compiling fresh");
                 None
             }
         }
@@ -319,7 +322,7 @@ pub fn run_build_with_host(
         .and_then(|cache| match cache.snapshot() {
             Ok(snapshot) => Some(Arc::new(snapshot)),
             Err(error) => {
-                eprintln!("native cache snapshot rejected: {error}; compiling fresh");
+                dmbc::daemon_eprintln!("native cache snapshot rejected: {error}; compiling fresh");
                 None
             }
         });
@@ -372,7 +375,7 @@ pub fn run_build_with_host(
     drop(engine_profile);
     let frontend_context_profile = dm_profile::stage("request.frontend_context");
     let progress = |event: dm_tree::frontend::FrontendProgress| {
-        eprintln!(
+        dmbc::daemon_eprintln!(
             "frontend {:?} {:?}: {:.3}s {}/{}",
             event.stage,
             event.kind,
@@ -383,13 +386,14 @@ pub fn run_build_with_host(
     };
     // One request-local execution boundary spans input capture, parsing, ABI,
     // lowering and linking. Its Drop joins workers before the CLI profiler ends.
-    let (frontend_memo, execution) = host.execution(
+    let (frontend_memo, execution, semantic_state) = host.execution(
         workers,
         expansion_memo
             .as_ref()
             .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
     )?;
     execution.run(|executor| -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    dmbc::daemon::control::checkpoint()?;
     let input_preparation_seconds;
     let frontend_result = {
         let preparation_start = Instant::now();
@@ -403,14 +407,14 @@ pub fn run_build_with_host(
             Ok(inputs) => Some(inputs),
             Err(dmbc::native_inputs::NativeInputError::RequiredSourceRead { .. }) => None,
             Err(dmbc::native_inputs::NativeInputError::InternalPreparation { message }) => {
-                return Err(format!("native internal: {message}").into())
+                return Err(dmbc::request_failure::RequestFailure::internal(format!("native internal: {message}")).into())
             }
         };
         input_preparation_seconds = preparation_start.elapsed().as_secs_f64();
         drop(input_profile);
         let source_context_profile = dm_profile::stage("request.source_context");
         if progress_enabled {
-            eprintln!(
+            dmbc::daemon_eprintln!(
                 "native input preparation: {:.3}s {:?}",
                 input_preparation_seconds,
                 inputs.as_ref().map(|inputs| inputs.stats())
@@ -428,7 +432,7 @@ pub fn run_build_with_host(
         // speculative preparations before maps, resources and lowering begin.
         drop(source_context_profile);
         let _frontend_profile = dm_profile::stage("frontend");
-        dm_tree::frontend::build_with_executor(
+        dm_tree::frontend::build_with_executor_and_semantic_state(
             &project,
             &provider,
             &defines,
@@ -441,14 +445,22 @@ pub fn run_build_with_host(
                 .as_ref()
                 .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
             executor,
+            semantic_state,
         )
     };
     let frontend_handoff_profile = dm_profile::stage("request.frontend_handoff");
+    dmbc::daemon::control::checkpoint()?;
     let frontend = dm_tree::frontend::FrontendRevision::new(match frontend_result {
         Ok(frontend) => frontend,
         Err(diagnostics) => {
-            dmbc::diagnostics::write_diagnostics(&mut io::stderr().lock(), &diagnostics)?;
-            return Err("source analysis did not produce a complete declaration model".into());
+            dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(), &diagnostics)?;
+            let message = "source analysis did not produce a complete declaration model";
+            let failure = if diagnostics.iter().all(|diagnostic| diagnostic.kind == dm_tree::frontend::DiagnosticKind::SourceError) {
+                dmbc::request_failure::RequestFailure::source(message)
+            } else {
+                dmbc::request_failure::RequestFailure::internal(message)
+            };
+            return Err(failure.into());
         }
     });
     if command == BuildCommand::Compile {
@@ -460,7 +472,7 @@ pub fn run_build_with_host(
         let engine = &retained_engine.snapshot;
         dmbc::heap_census::emit_if_enabled("frontend.ready", |census| census.frontend(&frontend))?;
         if progress_enabled {
-            eprintln!(
+            dmbc::daemon_eprintln!(
                 "native captured facts started: {} types, {} members, {} bodies",
                 frontend.snapshot.tree.types().len(),
                 frontend.snapshot.tree.members().len(),
@@ -516,8 +528,9 @@ pub fn run_build_with_host(
         let nontext_started = Instant::now();
         drop(nontext_context_profile);
         let nontext_profile = dm_profile::stage("resources_maps");
+        dmbc::daemon::control::checkpoint()?;
         if progress_enabled {
-            eprintln!("native resources and maps started");
+            dmbc::daemon_eprintln!("native resources and maps started");
         }
         let captured_engine = byond_dmb::dmb::Dmb::from_bytes(bytes)?;
         // Output storage is independent of compiler memo policy. Failure here
@@ -548,7 +561,7 @@ pub fn run_build_with_host(
             .collect();
         let capture_observer = |measurement: dmbc::captured_non_text_driver::CaptureMeasurement| {
             if progress_enabled {
-                eprintln!(
+                dmbc::daemon_eprintln!(
                     "native nontext {:?}: {:.3}s success={}",
                     measurement.stage, measurement.seconds, measurement.succeeded
                 );
@@ -565,12 +578,12 @@ pub fn run_build_with_host(
             let proof_profile = dm_profile::stage("resources.filesystem_proofs");
             let proofs = manifest.filesystem_proofs();
             drop(proof_profile);
-            eprintln!(
+            dmbc::daemon_eprintln!(
                 "native resource FilesystemProofCapture: {:.3}s",
                 proof_started.elapsed().as_secs_f64()
             );
             let observer = |measurement: dmbc::resource_manifest::ResourceValidationMeasurement| {
-                eprintln!(
+                dmbc::daemon_eprintln!(
                     "native resource {:?}: {:.3}s",
                     measurement.stage, measurement.seconds
                 );
@@ -631,10 +644,10 @@ pub fn run_build_with_host(
         let compilation_profile = dm_profile::stage("request.compilation");
         let compilation_started = Instant::now();
         if progress_enabled {
-            eprintln!("native compilation started");
+            dmbc::daemon_eprintln!("native compilation started");
         }
         let cold_observer = |measurement: dmbc::cold::ColdMeasurement| {
-            eprintln!(
+            dmbc::daemon_eprintln!(
                 "native cold {:?}: {:.3}s success={:?}",
                 measurement.stage,
                 measurement.elapsed.as_secs_f64(),
@@ -643,6 +656,7 @@ pub fn run_build_with_host(
         };
         // One immutable captured host for this compile. Consumer read recording
         // remains outside this optimization, including on memo hits.
+        dmbc::daemon::control::checkpoint()?;
         let compile_result = (|| {
             let values = dmbc::type_values::CapturedTypeValues::pinned(&frontend, engine)
                 .map_err(dmbc::cold::ColdError::RuntimeTypeValues)?;
@@ -667,7 +681,7 @@ pub fn run_build_with_host(
                 procedure_memo.as_ref(),
             )?;
             if progress_enabled {
-                eprintln!("native resolver memo: {:?}", compilation_resolver.stats());
+                dmbc::daemon_eprintln!("native resolver memo: {:?}", compilation_resolver.stats());
             }
             let explanations = runner_report::explanations(&frontend, procedure_memo.as_ref());
             let owned_values = Arc::new(dmbc::resource_values::PreparedResourceValues::capture(
@@ -691,7 +705,7 @@ pub fn run_build_with_host(
             Ok::<_, dmbc::cold::ColdError>((output, publication, explanations))
         })();
         if progress_enabled && compile_result.is_err() {
-            eprintln!("native failed stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s total={:.3}s",
+            dmbc::daemon_eprintln!("native failed stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s total={:.3}s",
                 input_preparation_seconds, frontend_report.frontend_seconds, facts_seconds, nontext_seconds,
                 linking_inputs_seconds, compilation_started.elapsed().as_secs_f64(),
                 total.elapsed().as_secs_f64());
@@ -700,21 +714,27 @@ pub fn run_build_with_host(
             Ok(output) => output,
             Err(dmbc::cold::ColdError::Lowering(diagnostics)) => {
                 dmbc::diagnostics::write_lowering_diagnostics(
-                    &mut io::stderr().lock(),
+                    &mut dmbc::daemon::stderr_writer(),
                     &diagnostics,
                 )?;
-                return Err("native lowering did not produce a complete executable".into());
+                let message = "native lowering did not produce a complete executable";
+                let failure = if diagnostics.iter().all(|diagnostic| diagnostic.kind == dm_tree::frontend::DiagnosticKind::SourceError) {
+                    dmbc::request_failure::RequestFailure::source(message)
+                } else {
+                    dmbc::request_failure::RequestFailure::internal(message)
+                };
+                return Err(failure.into());
             }
             Err(dmbc::cold::ColdError::InitializerInvariant(message)) => {
-                return Err(format!("native internal: {message}").into())
+                return Err(dmbc::request_failure::RequestFailure::internal(format!("native internal: {message}")).into())
             }
             Err(dmbc::cold::ColdError::Initializer(message)) => {
-                return Err(format!("native unsupported: {message}").into())
+                return Err(dmbc::request_failure::RequestFailure::internal(format!("native unsupported: {message}")).into())
             }
             Err(dmbc::cold::ColdError::RuntimeTypeValues(error)) => {
-                return Err(format!("runtime type values: {error:?}").into())
+                return Err(dmbc::request_failure::RequestFailure::internal(format!("runtime type values: {error:?}")).into())
             }
-            Err(error) => return Err(format!("native compilation: {error:?}").into()),
+            Err(error) => return Err(dmbc::request_failure::RequestFailure::internal(format!("native compilation: {error:?}")).into()),
         };
         let compilation_seconds = compilation_started.elapsed().as_secs_f64();
         dmbc::heap_census::emit_if_enabled("publication.ready", |census| {
@@ -732,7 +752,7 @@ pub fn run_build_with_host(
                 .unwrap_or_else(|error| error.into_inner())
                 .extend(publish_cache_records(cache, records)?);
             use std::sync::atomic::Ordering::Relaxed;
-            eprintln!("native lowering memo: disk_hits={} resident_hits={} recomputed={} unsupported_disk={}",
+            dmbc::daemon_eprintln!("native lowering memo: disk_hits={} resident_hits={} recomputed={} unsupported_disk={}",
                 memo.counts.disk_hits.load(Relaxed), memo.counts.resident_hits.load(Relaxed),
                 memo.counts.recomputed.load(Relaxed), memo.counts.unsupported_disk.load(Relaxed));
             let errors = memo.publication_errors();
@@ -766,7 +786,7 @@ pub fn run_build_with_host(
         let publication_started = Instant::now();
         let publication_profile = dm_profile::stage("publication");
         if progress_enabled {
-            eprintln!("native publication started");
+            dmbc::daemon_eprintln!("native publication started");
         }
         let store_path = match output_store {
             Some(path) => path,
@@ -780,6 +800,7 @@ pub fn run_build_with_host(
             Some(session) => session.identity()?,
             None => xxhash_rust::xxh3::xxh3_128(project.to_string_lossy().as_bytes()),
         };
+        dmbc::daemon::control::begin_publication()?;
         let pair = match &publication.archive {
             dmbc::assets::ResourceArchive::Captured(bytes) => {
                 store.publish_images_exact(session_id, &output.dmb, bytes, exact_inputs)?
@@ -823,7 +844,7 @@ pub fn run_build_with_host(
             if let Err(error) =
                 cache.record_lease(session.identity()?, std::time::SystemTime::now(), &roots)
             {
-                eprintln!("native cache lease skipped: {error}");
+                dmbc::daemon_eprintln!("native cache lease skipped: {error}");
             }
         }
         if let Some(session) = &session.filter(|_| !verification_capture) {
@@ -859,7 +880,7 @@ pub fn run_build_with_host(
                     resource_manifest: Some(resource_manifest),
                 })?;
             } else {
-                eprintln!("native session not saved: inputs changed during compilation");
+                dmbc::daemon_eprintln!("native session not saved: inputs changed during compilation");
             }
         }
         let publication_seconds = publication_started.elapsed().as_secs_f64();
@@ -878,20 +899,20 @@ pub fn run_build_with_host(
             serde_json::json!({"parse_hits":memo.counts.parse_hits.load(Relaxed),"geometry_hits":memo.counts.geometry_hits.load(Relaxed),"parsed":memo.counts.parsed.load(Relaxed),"projected":memo.counts.projected.load(Relaxed),"disk_admitted":memo.counts.disk_admitted.load(Relaxed),"skipped_disk_budget":memo.counts.skipped_disk_budget.load(Relaxed),"published_records":memo.counts.published_records.load(Relaxed),"publication_failed":memo.counts.publication_failed.load(Relaxed),"errors":memo.publication_errors()})
         });
         let declaration_stats = frontend_report.declaration_reuse;
-        eprintln!("native declaration reuse: {declaration_stats}");
+        dmbc::daemon_eprintln!("native declaration reuse: {declaration_stats}");
         let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend_report.frontend_seconds,"declaration_reuse":declaration_stats,"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"explanations":explanations});
         if let Err(error) = dmbc::telemetry::save(&project, "stats", &stats) {
-            eprintln!("native telemetry skipped: {error}");
+            dmbc::daemon_eprintln!("native telemetry skipped: {error}");
         }
         let _ = dmbc::telemetry::save(
             &project,
             "last-run",
             &serde_json::json!({"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"pair":pair.name()}),
         );
-        eprintln!("native stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s publication={:.3}s",
+        dmbc::daemon_eprintln!("native stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s publication={:.3}s",
             input_preparation_seconds, frontend_report.frontend_seconds, facts_seconds, nontext_seconds,
             linking_inputs_seconds, compilation_seconds, publication_seconds);
-        eprintln!("native compile: total={:.3}s ABI={:.3}s lowering={:.3}s initialization={:.3}s linking={:.3}s composition={:.3}s DMB={} RSC={} pair={}",
+        dmbc::daemon_eprintln!("native compile: total={:.3}s ABI={:.3}s lowering={:.3}s initialization={:.3}s linking={:.3}s composition={:.3}s DMB={} RSC={} pair={}",
             total.elapsed().as_secs_f64(), output.timings.abi_preparation.as_secs_f64(),
             output.timings.lowering.as_secs_f64(), output.timings.initializers.as_secs_f64(),
             output.timings.symbolic_linking.as_secs_f64(), output.timings.composition.as_secs_f64(),
@@ -903,11 +924,11 @@ pub fn run_build_with_host(
             seconds: total.elapsed().as_secs_f64(),
         });
     }
-    let mut output = io::BufWriter::new(io::stdout().lock());
+    let mut output = io::BufWriter::new(dmbc::daemon::stdout_writer());
     let counts = dm_analysis::tree_export::write_jsonl(&frontend, &mut output)?;
     output.flush()?;
     let timings = &frontend.timings;
-    eprintln!(
+    dmbc::daemon_eprintln!(
         "source analysis: {} semantic, {} occurrence, {} body rows; planning={:.3}s expansion={:.3}s declarations={:.3}s tree={:.3}s provenance={:.3}s total={:.3}s",
         counts.semantic_rows,
         counts.occurrence_rows,

@@ -115,7 +115,7 @@ pub enum OrderedItem {
 
 #[derive(Clone, Debug, Default)]
 pub struct DirectivePlan {
-    pub source_texts: BTreeMap<PathBuf, Arc<str>>,
+    pub source_texts: BTreeMap<PathBuf, crate::SourceText>,
     pub occurrences: Vec<IncludeOccurrence>,
     pub regions: Vec<IncludeRegion>,
     pub items: Vec<OrderedItem>,

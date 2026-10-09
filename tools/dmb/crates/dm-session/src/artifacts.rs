@@ -6,6 +6,12 @@ use std::{
     sync::{Arc, Mutex},
 };
 pub const DEFAULT_RESIDENT_BYTES: usize = 8 * 1024 * 1024;
+/// Exact key/read acceptance issued by this store; the ledger shares its backing.
+pub struct AcceptedArtifact<T> {
+    pub value: Arc<T>,
+    pub reads: Arc<[ResolverRead]>,
+    pub versions: Arc<[(ReadDomain, u128)]>,
+}
 #[derive(Clone)]
 struct Variant<T> {
     key: Arc<[u8]>,
@@ -68,6 +74,15 @@ impl<T: Send + Sync> ArtifactStore<T> {
         resolver: &R,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<Arc<T>>, Option<ResolveQuery>) {
+        let (accepted, changed) = self.visit_receipted(key, resolver, accept);
+        (accepted.map(|accepted| accepted.value), changed)
+    }
+    pub fn visit_receipted<R: Resolver>(
+        &self,
+        key: &[u8],
+        resolver: &R,
+        accept: &mut dyn FnMut(&Arc<T>) -> bool,
+    ) -> (Option<AcceptedArtifact<T>>, Option<ResolveQuery>) {
         let hash = xxhash_rust::xxh3::xxh3_128(key);
         // Resolver work takes place outside the store lock, allowing parallel units.
         let candidates = {
@@ -98,7 +113,14 @@ impl<T: Send + Sync> ArtifactStore<T> {
             if let Some(read) = mismatch {
                 changed = Some(read.query);
             } else if accept(&value) {
-                return (Some(value), None);
+                return (
+                    Some(AcceptedArtifact {
+                        value,
+                        reads,
+                        versions,
+                    }),
+                    None,
+                );
             }
         }
         (None, changed)
@@ -234,6 +256,33 @@ mod tests {
         );
         assert_eq!(calls.load(Ordering::SeqCst), 0);
         assert_eq!(store.admitted_bytes(), 0);
+    }
+    #[test]
+    fn accepted_receipt_shares_validated_ledger_and_survives_store_eviction() {
+        let store = ArtifactStore::with_limit(1);
+        let query = ResolveQuery::Ancestry(dm_ir::SymbolId::of("/datum"));
+        let reads = vec![ResolverRead {
+            query,
+            domain: query.domain(),
+            answer: Host.resolve(query),
+        }];
+        store.insert_with(Arc::from(b"a".as_slice()), reads, vec![], 1, || 7u32);
+        let (accepted, changed) = store.visit_receipted(b"a", &Host, &mut |_| true);
+        assert!(changed.is_none());
+        let accepted = accepted.unwrap();
+        let state = store.state.lock().unwrap();
+        let original = &state.buckets[&xxhash_rust::xxh3::xxh3_128(b"a")][0];
+        assert!(Arc::ptr_eq(&accepted.reads, &original.reads));
+        assert!(Arc::ptr_eq(&accepted.versions, &original.versions));
+        drop(state);
+        store.insert_with(Arc::from(b"b".as_slice()), vec![], vec![], 1, || 8u32);
+        assert!(store.lookup(b"a", &Host).is_none());
+        assert_eq!(accepted.reads[0].query, query);
+        assert_eq!(
+            accepted.reads[0].answer.canonical_bytes(),
+            Host.resolve(query).canonical_bytes()
+        );
+        assert_eq!(*accepted.value, 7);
     }
     #[test]
     fn collision_bucket_cannot_authorize_different_exact_key() {

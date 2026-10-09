@@ -61,6 +61,7 @@ import {
 import { renderReport } from './lib/bench_report';
 import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
+import { compilerCacheIdentity, compilerMode } from './lib/compiler_selection';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
@@ -585,6 +586,7 @@ function computeCompileHash(dmeText: string, defines: string[], dmVersion: strin
   }
   hash.update(JSON.stringify([...defines].sort()));
   hash.update(dmVersion ?? '');
+  hash.update(compilerCacheIdentity());
   return hash.digest('hex');
 }
 
@@ -597,7 +599,7 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
   const rscFile = dme.replace(/\.dme$/, '.rsc');
   const cacheFile = `${DMB_CACHE_DIR}/${path.basename(dme)}.hash.json`;
   const hash = computeCompileHash(dmeText, allDefines, dmVersion);
-  if (fs.existsSync(dmbFile) && fs.existsSync(rscFile)) {
+  if (compilerMode() === 'byond' && fs.existsSync(dmbFile) && fs.existsSync(rscFile)) {
     try {
       const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
       if (cached.hash === hash) {

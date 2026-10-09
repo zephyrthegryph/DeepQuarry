@@ -187,22 +187,13 @@ pub fn unit_members(frontend: &ColdFrontend) -> Result<BTreeMap<UnitIdentity, Me
             MemberKind::Var => return Err(AbiError("variable body in procedure index".into())),
         };
         let occurrence = tree
-            .override_chain(body.member)
-            .iter()
-            .filter(|id| {
-                tree.member(**id).is_some_and(|prior| {
-                    prior.owner == node.owner && prior.name == node.name && prior.kind == node.kind
-                })
-            })
-            .count()
-            .checked_sub(1)
+            .member_occurrence(body.member)
             .ok_or_else(|| AbiError("empty procedure chain".into()))?;
         let identity = UnitIdentity {
             owner,
             name: node.name,
             namespace,
-            occurrence: u32::try_from(occurrence)
-                .map_err(|_| AbiError("procedure occurrence overflow".into()))?,
+            occurrence,
         };
         if result.insert(identity, body.member).is_some() {
             return Err(AbiError("ambiguous current procedure occurrence".into()));

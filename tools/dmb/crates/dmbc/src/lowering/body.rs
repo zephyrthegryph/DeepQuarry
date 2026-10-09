@@ -83,6 +83,9 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         }]
     })?;
     let typed_attempted = parsed.statement_attempted();
+    // This receipt can only be issued from this arena's authenticated body.
+    // Keep its shared owner before ABI preparation consumes the parsed wrapper.
+    let static_receipt = parsed.stored_declaration_receipt();
     let (prepared, parsed, statements) = if let Some(ready) = ready {
         let mut header = parsed.into_item();
         header.children = Vec::new();
@@ -118,13 +121,29 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
     let mut typed_removed = None;
     let mut typed_valid = false;
     let executable_mask = if let Some(statements) = statements.as_ref() {
-        let current = if statements.may_contain_stored_declarations() {
-            dm_tree::procedure_statics::capture_issued_statements(procedure_identity, statements)
-                .map_err(unsupported)?
+        let fallback;
+        let current = if let Some(receipt) = static_receipt.as_ref() {
+            receipt.plan()
         } else {
-            dm_tree::procedure_statics::capture_declarations(procedure_identity, &[])
+            // Standalone compatibility callers may not have captured startup
+            // facts through the arena. Preserve their existing capture path.
+            fallback = if statements.may_contain_stored_declarations() {
+                dm_tree::procedure_statics::capture_issued_statements(
+                    procedure_identity,
+                    statements,
+                )
                 .map_err(unsupported)?
+            } else {
+                dm_tree::procedure_statics::capture_declarations(procedure_identity, &[])
+                    .map_err(unsupported)?
+            };
+            &fallback
         };
+        if current.procedure != procedure_identity {
+            return Err(unsupported(
+                "procedure startup inventory differs from current body".into(),
+            ));
+        }
         if let Some(startup) = startup {
             let captured = startup
                 .procedure(body.declaration)

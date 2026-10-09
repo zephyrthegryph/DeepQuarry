@@ -28,7 +28,7 @@ mod tests;
 pub struct SourceFile {
     pub id: FileId,
     pub path: Arc<PathBuf>,
-    pub text: Arc<str>,
+    pub text: dm_preprocess::SourceText,
     /// False for non-text inputs awaiting their consumer or a failed source read.
     pub captured: bool,
     pub line_starts: Arc<[usize]>,
@@ -311,6 +311,7 @@ impl ColdFrontend {
         Ok(ParsedBody {
             statements: None,
             statement_attempted: false,
+            static_receipt: std::sync::OnceLock::new(),
             item,
             issuer: self,
             occurrence: issued,
@@ -422,7 +423,12 @@ impl IssuedBodyInput<'_> {
 mod body_arena;
 pub use body_arena::{BodyArena, BodyArenaStorage};
 
+#[path = "frontend_static_receipt.rs"]
+mod static_receipt;
+pub use static_receipt::IssuedStaticPlan;
+
 pub struct ParsedBody<'a> {
+    static_receipt: std::sync::OnceLock<Result<Arc<IssuedStaticPlan>, String>>,
     item: Item,
     statements: Option<Arc<StatementBody>>,
     statement_attempted: bool,
@@ -517,7 +523,7 @@ impl ParsedBody<'_> {
 
 struct Captured<'a, P> {
     provider: &'a P,
-    sources: RefCell<BTreeMap<PathBuf, Arc<str>>>,
+    sources: RefCell<BTreeMap<PathBuf, dm_preprocess::SourceText>>,
 }
 
 impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
@@ -528,14 +534,15 @@ impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
         let prepared = self.provider.prepared_source(path)?;
         self.sources
             .borrow_mut()
-            .insert(path.to_owned(), Arc::clone(prepared.original()));
+            .insert(path.to_owned(), prepared.original().clone());
         Some(prepared)
     }
     fn read(&self, path: &Path) -> Result<String, String> {
         let source = self.provider.read(path)?;
-        self.sources
-            .borrow_mut()
-            .insert(path.to_owned(), Arc::from(source.as_str()));
+        self.sources.borrow_mut().insert(
+            path.to_owned(),
+            dm_preprocess::SourceText::from(source.as_str()),
+        );
         Ok(source)
     }
 }
@@ -546,7 +553,13 @@ impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
 mod ast_capacity;
 #[path = "frontend_pipeline.rs"]
 mod pipeline;
-pub use pipeline::{build, build_with_config, build_with_executor, build_with_expansion_memo};
+pub use pipeline::{
+    build, build_with_config, build_with_executor, build_with_executor_and_semantic_state,
+    build_with_expansion_memo,
+};
+#[path = "frontend_semantic_state.rs"]
+mod semantic_state;
+pub use semantic_state::RetainedSemanticTree;
 #[path = "frontend_parse.rs"]
 mod declaration_parse;
 #[cfg(test)]

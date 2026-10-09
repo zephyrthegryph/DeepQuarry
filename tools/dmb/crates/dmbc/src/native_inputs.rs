@@ -45,7 +45,7 @@ fn prepare_source<P: SourceProvider>(
         provider.read(path)?
     };
     let _profile = dm_profile::stage("input_scan.lexical_prepare");
-    Ok(Arc::new(PreparedSource::new(Arc::from(text))))
+    Ok(Arc::new(PreparedSource::from_text(text.into())))
 }
 
 impl NativeInputs {

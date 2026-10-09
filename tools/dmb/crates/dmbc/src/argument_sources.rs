@@ -219,6 +219,19 @@ pub(crate) fn rebase_cached_helper(
     {
         return Err("cached helper frame differs from current preparation".into());
     }
+    let debug_origins = current_helper_origin(&context, helper)?;
+    Ok(LoweredHelper { owner: context.owner, argument, code, debug_origins })
+}
+
+/// Validate today's issued header/frame before binding shared frozen helper code.
+pub(crate) fn current_helper_origins(context: &HelperInputs<'_>, argument: u32) -> Result<DebugOrigins, String> {
+    let helper = context.helpers.iter().find(|helper| helper.argument == argument as usize).ok_or("cached helper argument not prepared")?;
+    if helper.frame_parameters != context.inputs.parameters {
+        return Err("cached helper frame differs from current preparation".into());
+    }
+    current_helper_origin(context, helper)
+}
+fn current_helper_origin(context: &HelperInputs<'_>, helper: &ArgumentSourceHelper) -> Result<DebugOrigins, String> {
     let absolute = source_offset(context.parsed, context.metadata, helper.argument)?;
     if context
         .frontend
@@ -233,15 +246,10 @@ pub(crate) fn rebase_cached_helper(
         .frontend
         .location(absolute)
         .ok_or("cached helper origin unavailable")?;
-    Ok(LoweredHelper {
-        owner: context.owner,
-        argument,
-        code,
-        debug_origins: DebugOrigins {
+    Ok(DebugOrigins {
             entries: vec![DebugOrigin {
                 semantic_path: origin.semantic_path.clone(),
                 line: u32::try_from(origin.line).map_err(|_| "helper line exceeds u32")?,
             }],
-        },
     })
 }

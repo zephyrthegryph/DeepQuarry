@@ -169,7 +169,12 @@ fn streamed_preparation_preserves_comments_continuations_and_locations() {
         assert_eq!(actual_lines.len(), expected_lines.len());
         let original: Arc<str> = Arc::from(source);
         let prepared = PreparedSource::new(original.clone());
-        assert!(Arc::ptr_eq(prepared.original(), &original));
+        prepared.original().visit_storage(|_, _, storage| {
+            let crate::SourceTextStorage::Original(text) = storage else {
+                panic!("original source must share its Arc")
+            };
+            assert!(Arc::ptr_eq(text, &original));
+        });
         let mut starts = vec![0];
         starts.extend(
             source

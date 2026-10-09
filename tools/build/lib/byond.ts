@@ -4,6 +4,7 @@ import path from 'node:path';
 import Bun from 'bun';
 import Juke from '../juke/index.js';
 import { regQuery } from './winreg';
+import { selectedCompiler } from './compiler_selection';
 
 /** Cached path to DM compiler */
 let dmPath: string;
@@ -113,7 +114,7 @@ async function getAllNamedDmVersions(
   return namedDmVersionList;
 }
 
-type Option = Partial<{
+export type DreamMakerOptions = Partial<{
   defines: string[];
   warningsAsErrors: boolean;
   namedDmVersion: string | null;
@@ -122,7 +123,14 @@ type Option = Partial<{
 
 export async function DreamMaker(
   dmeFile: string,
-  options: Option = {},
+  options: DreamMakerOptions = {},
+): Promise<void> {
+  return selectedCompiler(dmeFile, options, () => compileByond(dmeFile, options));
+}
+
+async function compileByond(
+  dmeFile: string,
+  options: DreamMakerOptions,
 ): Promise<void> {
   if (options.namedDmVersion !== null) {
     Juke.logger.info('Using named byond version:', options.namedDmVersion);

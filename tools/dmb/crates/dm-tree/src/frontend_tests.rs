@@ -21,7 +21,11 @@ fn prepared_sources_share_capture_and_line_indexes_with_frontend() {
         .find(|file| file.path.as_path() == Path::new("project.dme"))
         .unwrap();
     assert!(file.captured);
-    assert!(Arc::ptr_eq(&file.text, source.original()));
+    file.text.visit_storage(|file_owner, _, _| {
+        source
+            .original()
+            .visit_storage(|source_owner, _, _| assert_eq!(file_owner, source_owner))
+    });
     assert!(Arc::ptr_eq(&file.line_starts, source.line_starts()));
     assert_eq!(
         frontend

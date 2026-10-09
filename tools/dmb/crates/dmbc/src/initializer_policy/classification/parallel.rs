@@ -135,10 +135,9 @@ pub(in crate::initializer_policy) fn classify(
     }
     let mut source_ordinal = 0;
     finish_pending(
-        ordered
-            .into_iter()
-            .map(|pending| pending.expect("all successful initializer buckets cover source roster"))
-            .collect(),
+        ordered.into_iter().map(|pending| {
+            pending.expect("all successful initializer buckets cover source roster")
+        }),
         debug_defined,
         &mut source_ordinal,
     )

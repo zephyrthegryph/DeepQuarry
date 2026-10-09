@@ -1,14 +1,15 @@
 //! Typed host-independent request boundary. Paths are resolved by the runner.
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum BuildCommand {
     Analyze,
     Compile,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BuildRequest {
     pub command: BuildCommand,
     pub project: PathBuf,
@@ -39,7 +40,7 @@ pub enum Command {
     Build(Box<BuildRequest>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum BuildOutcome {
     Published {
         pair: crate::publish::OutputPair,

@@ -31,6 +31,7 @@ struct ProcedureRevisionBinding {
     origin: dm_tree::frontend::BodyOccurrence,
     debug: crate::debug_sources::FrozenDebugOrigins,
     helpers: Vec<crate::debug_sources::FrozenDebugOrigins>,
+    abi: Option<Arc<crate::procedure_policy::PreparedAbi>>,
 }
 pub(super) struct Contribution {
     artifact: Arc<ReusableProcedureArtifact>,
@@ -42,6 +43,21 @@ impl ReusableProcedureArtifact {
     }
     pub fn code(&self) -> &FrozenProc {
         &self.frozen
+    }
+    pub(super) fn can_rebind(
+        &self,
+        abi: &Option<Arc<crate::procedure_policy::PreparedAbi>>,
+    ) -> bool {
+        self.helpers.is_empty()
+            && match (&self.abi, abi) {
+                (Some(old), Some(current)) => {
+                    old.layout == current.layout
+                        && old.argument_sources == current.argument_sources
+                        && current.source_helpers.is_empty()
+                }
+                (None, None) => true,
+                _ => false,
+            }
     }
 }
 fn clone_frame(frame: &FrozenFrame) -> FrozenFrame {
@@ -81,6 +97,25 @@ impl Clone for ReusableProcedureArtifact {
     }
 }
 impl Contribution {
+    pub(super) fn is_reusable(&self) -> bool {
+        self.artifact.helpers.is_empty()
+    }
+    pub(super) fn rebind(
+        artifact: &Arc<ReusableProcedureArtifact>,
+        origin: dm_tree::frontend::BodyOccurrence,
+        debug: crate::debug_sources::DebugOrigins,
+        abi: Option<Arc<crate::procedure_policy::PreparedAbi>>,
+    ) -> Self {
+        Self {
+            artifact: Arc::clone(artifact),
+            binding: ProcedureRevisionBinding {
+                origin,
+                debug: debug.into(),
+                helpers: Vec::new(),
+                abi,
+            },
+        }
+    }
     pub(super) fn from_bound(bound: BoundContribution) -> Self {
         let FrozenUnit {
             lowered,
@@ -124,6 +159,7 @@ impl Contribution {
                 content: entry.content,
             });
         }
+        let artifact_abi = abi.clone();
         Self {
             artifact: Arc::new(ReusableProcedureArtifact {
                 identity,
@@ -137,6 +173,7 @@ impl Contribution {
                 helpers: helper_artifacts,
             }),
             binding: ProcedureRevisionBinding {
+                abi: artifact_abi,
                 origin,
                 debug: debug_origins,
                 helpers: helper_origins,
@@ -155,7 +192,7 @@ impl Contribution {
             lowered: FrozenUnitMetadata {
                 identity,
                 origin: self.binding.origin,
-                abi: artifact.abi,
+                abi: self.binding.abi,
                 debug_origins: self.binding.debug,
                 frame: artifact.frame,
             },

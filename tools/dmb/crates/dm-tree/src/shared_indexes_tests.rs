@@ -1,6 +1,34 @@
 //! Immutable semantic index ownership across retained tree consumers.
 use super::*;
 use dm_ir::{ResolveQuery, Resolver};
+#[test]
+fn member_occurrences_ignore_inherited_ancestors_and_preserve_reopen_order() {
+    let ast = dm_syntax::parse("/datum/base/proc/read()\n    return 1\n/datum/base/read()\n    return 2\n/datum/base/child/read()\n    return 3\n/datum/base/child/read()\n    return 4\n");
+    let adapted = adapter::from_ast(&ast, SymbolTable::default(), dm_ir::FileId(0), 0, 0).unwrap();
+    let tree = build(adapted.symbols, &adapted.skeletons).unwrap();
+    let name = SymbolId::of("read");
+    let base = tree.lookup_type(SymbolId::of("/datum/base")).unwrap();
+    let child = tree.lookup_type(SymbolId::of("/datum/base/child")).unwrap();
+    let base_member = tree.resolve(base, name, MemberKind::Proc).unwrap();
+    let child_member = tree.resolve(child, name, MemberKind::Proc).unwrap();
+    assert_eq!(tree.member_occurrence(base_member), Some(1));
+    assert_eq!(tree.member_occurrence(child_member), Some(1));
+    let chain = tree.override_chain(child_member);
+    assert_eq!(
+        tree.override_chain_iter(child_member).collect::<Vec<_>>(),
+        chain
+    );
+    assert_eq!(chain.len(), 4);
+    assert_eq!(
+        chain
+            .iter()
+            .map(|id| tree.member_occurrence(*id))
+            .collect::<Vec<_>>(),
+        vec![Some(1), Some(0), Some(1), Some(0)]
+    );
+    assert_eq!(tree.member_occurrence(MemberId(u32::MAX)), None);
+    assert_eq!(tree.override_chain_iter(MemberId(u32::MAX)).count(), 0);
+}
 fn tree() -> SemanticTree {
     let ast = dm_syntax::parse("/datum/base\n    var/value = 1\n    proc/read()\n        return value\n/datum/base/child\n");
     let adapted = adapter::from_ast(&ast, SymbolTable::default(), dm_ir::FileId(0), 0, 0).unwrap();
@@ -69,5 +97,8 @@ fn attaching_inventory_detaches_only_changed_owner_and_preserves_previous_snapsh
         owner: SymbolId::of("/datum/base/child"),
         name: SymbolId::of("value"),
     };
-    assert_eq!(Resolver::resolve(&original, query), Resolver::resolve(&changed, query));
+    assert_eq!(
+        Resolver::resolve(&original, query),
+        Resolver::resolve(&changed, query)
+    );
 }

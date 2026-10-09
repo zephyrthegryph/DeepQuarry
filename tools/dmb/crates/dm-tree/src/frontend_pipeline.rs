@@ -56,6 +56,18 @@ pub fn build_with_executor<P: SourceProvider>(
     memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
     executor: &dm_exec::BuildExecutor,
 ) -> Result<ColdFrontend, Vec<Diagnostic>> {
+    build_with_executor_and_semantic_state(project, provider, defines, config, memo, executor, None)
+}
+/// Share only resolved semantic declarations; all source issuance is rebuilt.
+pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    config: FrontendConfig<'_>,
+    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
+    executor: &dm_exec::BuildExecutor,
+    semantic_state: Option<&mut RetainedSemanticTree>,
+) -> Result<ColdFrontend, Vec<Diagnostic>> {
     let total_start = Instant::now();
     let mut timings = FrontendTimings::default();
     let captured = Captured {
@@ -132,7 +144,7 @@ pub fn build_with_executor<P: SourceProvider>(
         let text = sources
             .get(occurrence.path.as_ref())
             .cloned()
-            .unwrap_or_else(|| Arc::from(""));
+            .unwrap_or_else(|| dm_preprocess::SourceText::from(""));
         let starts = plan
             .source_line_starts
             .get(occurrence.path.as_ref())
@@ -329,23 +341,21 @@ pub fn build_with_executor<P: SourceProvider>(
     );
     let profile_stage = dm_profile::stage("frontend.tree_resolution");
     let mut resolution_diagnostic = None;
-    let snapshot = adapted
-        .finish_with_engine_observed_on_executor(
-            config.engine,
-            |error, skeletons, origins| {
-                resolution_diagnostic = Some(resolution_error(
-                    error,
-                    skeletons,
-                    origins,
-                    &mapping,
-                    config.engine.is_some(),
-                ));
-            },
-            executor,
-        )
-        .map_err(|_| {
-            vec![resolution_diagnostic.expect("resolution failure must notify observer")]
-        })?;
+    let on_error =
+        |error: &SnapshotError, skeletons: &[Skeleton], origins: &[crate::Provenance]| {
+            resolution_diagnostic = Some(resolution_error(
+                error,
+                skeletons,
+                origins,
+                &mapping,
+                config.engine.is_some(),
+            ));
+        };
+    let snapshot = match semantic_state {
+        Some(state) => state.resolve(adapted, config.engine, on_error, executor),
+        None => adapted.finish_with_engine_observed_on_executor(config.engine, on_error, executor),
+    }
+    .map_err(|_| vec![resolution_diagnostic.expect("resolution failure must notify observer")])?;
     timings.tree_resolution = resolution_start.elapsed();
     observe(
         config,

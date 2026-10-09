@@ -192,16 +192,33 @@ impl SemanticTree {
             owner = self.parent(owner)?;
         }
     }
-    pub fn override_chain(&self, mut id: MemberId) -> Vec<MemberId> {
-        let mut result = Vec::new();
-        while let Some(member) = self.member(id) {
-            result.push(id);
-            match member.previous {
-                Some(previous) => id = previous,
-                None => break,
-            }
-        }
-        result
+    pub fn override_chain_iter(&self, id: MemberId) -> impl Iterator<Item = MemberId> + '_ {
+        let mut next = Some(id);
+        std::iter::from_fn(move || {
+            let id = next?;
+            let member = self.member(id)?;
+            next = member.previous;
+            Some(id)
+        })
+    }
+    pub fn override_chain(&self, id: MemberId) -> Vec<MemberId> {
+        self.override_chain_iter(id).collect()
+    }
+    /// Owner-local ordinal in the normalized declaration/override chain.
+    /// Inherited ancestors do not consume this owner's occurrence IDs.
+    pub fn member_occurrence(&self, id: MemberId) -> Option<u32> {
+        let member = self.member(id)?;
+        let count = self
+            .override_chain_iter(id)
+            .filter(|prior| {
+                self.member(*prior).is_some_and(|prior| {
+                    prior.owner == member.owner
+                        && prior.name == member.name
+                        && prior.kind == member.kind
+                })
+            })
+            .count();
+        u32::try_from(count.checked_sub(1)?).ok()
     }
     /// Query-only lexical path order. Nonlexical parents may appear after a
     /// child in this view. Source occurrence order remains

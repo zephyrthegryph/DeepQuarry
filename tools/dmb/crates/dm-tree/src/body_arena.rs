@@ -14,7 +14,7 @@ pub struct BodyArena<'frontend> {
 
 enum BodyState<'frontend> {
     Unparsed,
-    Ready(Result<ParsedBody<'frontend>, Diagnostic>),
+    Ready(Box<Result<ParsedBody<'frontend>, Diagnostic>>),
     Consumed,
 }
 
@@ -27,6 +27,9 @@ pub struct BodyArenaStorage {
 }
 
 impl<'frontend> BodyArena<'frontend> {
+    pub fn retained_result_bytes() -> usize {
+        std::mem::size_of::<Result<ParsedBody<'frontend>, Diagnostic>>()
+    }
     /// Borrow only already-retained results, without parsing or consuming slots.
     /// The callback holds one slot lock and must not reenter that same slot.
     /// Call at a quiescent boundary for a consistent whole-arena census.
@@ -37,7 +40,7 @@ impl<'frontend> BodyArena<'frontend> {
         for (ordinal, slot) in self.slots.iter().enumerate() {
             let slot = slot.lock().unwrap_or_else(|error| error.into_inner());
             if let BodyState::Ready(result) = &*slot {
-                visitor(ordinal, result.as_ref());
+                visitor(ordinal, result.as_ref().as_ref());
             }
         }
         BodyArenaStorage {
@@ -79,8 +82,10 @@ impl<'frontend> BodyArena<'frontend> {
         let mut slot = self.slot(occurrence)?;
         self.ensure_parsed(&mut slot, occurrence);
         match &*slot {
-            BodyState::Ready(Ok(parsed)) => Ok(operation(parsed)),
-            BodyState::Ready(Err(error)) => Err(error.clone()),
+            BodyState::Ready(result) => match result.as_ref() {
+                Ok(parsed) => Ok(operation(parsed)),
+                Err(error) => Err(error.clone()),
+            },
             BodyState::Consumed => Err(internal("parsed body was already consumed")),
             BodyState::Unparsed => unreachable!("body parse fills its slot"),
         }
@@ -95,7 +100,7 @@ impl<'frontend> BodyArena<'frontend> {
         let mut slot = self.slot(occurrence)?;
         self.ensure_parsed(&mut slot, occurrence);
         match std::mem::replace(&mut *slot, BodyState::Consumed) {
-            BodyState::Ready(result) => result,
+            BodyState::Ready(result) => *result,
             BodyState::Consumed => Err(internal("parsed body was already consumed")),
             BodyState::Unparsed => unreachable!("body parse fills its slot"),
         }
@@ -106,9 +111,9 @@ impl<'frontend> BodyArena<'frontend> {
     pub fn discard_parsed(&self, occurrence: &BodyOccurrence) -> Result<(), Diagnostic> {
         let mut slot = self.slot(occurrence)?;
         match std::mem::replace(&mut *slot, BodyState::Consumed) {
-            BodyState::Ready(Err(error)) => Err(error),
+            BodyState::Ready(result) => (*result).map(|_| ()),
             BodyState::Consumed => Err(internal("parsed body was already consumed")),
-            BodyState::Unparsed | BodyState::Ready(Ok(_)) => Ok(()),
+            BodyState::Unparsed => Ok(()),
         }
     }
 
@@ -137,12 +142,12 @@ impl<'frontend> BodyArena<'frontend> {
             #[cfg(test)]
             self.parses
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            *slot = BodyState::Ready(self.frontend.parse_body(occurrence).map(|parsed| {
-                match self.statement_support {
+            *slot = BodyState::Ready(Box::new(self.frontend.parse_body(occurrence).map(
+                |parsed| match self.statement_support {
                     Some(supported) => parsed.admit_statements(supported),
                     None => parsed,
-                }
-            }));
+                },
+            )));
         }
     }
 }
@@ -165,6 +170,59 @@ mod tests {
         build(Path::new("project.dme"), &Source("/proc/probe()\n    if(1)\n        set waitfor = 0\n        return 7\n/proc/other()\n    return 2\n"), &BTreeMap::new(), 1).unwrap()
     }
 
+    #[test]
+    fn lazy_slots_do_not_reserve_each_unparsed_body_payload() {
+        let compact = std::mem::size_of::<Mutex<BodyState<'static>>>();
+        let inline = std::mem::size_of::<Mutex<Result<ParsedBody<'static>, Diagnostic>>>();
+        assert!(compact < inline);
+        eprintln!(
+            "body arena compact slot {compact} bytes; former inline payload slot {inline} bytes"
+        );
+    }
+    #[test]
+    fn stored_receipt_is_shared_and_rejects_wrong_identity_before_capture() {
+        let frontend = build(
+            Path::new("project.dme"),
+            &Source("/proc/probe()\n    var/static/cache = 1\n    return cache\n"),
+            &BTreeMap::new(),
+            1,
+        )
+        .unwrap();
+        let arena = BodyArena::new_typed(&frontend, |_| true);
+        let identity = dm_ir::ProcedureIdentity {
+            owner: dm_ir::SymbolId::of("/"),
+            name: dm_ir::SymbolId::of("probe"),
+            verb: false,
+            occurrence: 0,
+        };
+        let receipt = arena
+            .with_parsed(&frontend.bodies[0], |parsed| {
+                let mut wrong = identity;
+                wrong.occurrence = 1;
+                assert!(parsed.capture_stored_declarations(wrong).is_err());
+                assert!(parsed.stored_declaration_receipt().is_none());
+                let receipt = parsed.capture_stored_declarations(identity).unwrap();
+                let again = parsed.capture_stored_declarations(identity).unwrap();
+                assert!(std::sync::Arc::ptr_eq(&receipt, &again));
+                let legacy = crate::procedure_statics::capture_issued_statements(
+                    identity,
+                    parsed.statement_body().unwrap(),
+                )
+                .unwrap();
+                assert_eq!(receipt.plan().declarations, legacy.declarations);
+                assert_eq!(receipt.plan().origins, legacy.origins);
+                receipt
+            })
+            .unwrap();
+        let taken = arena.take_parsed(&frontend.bodies[0]).unwrap();
+        assert!(std::sync::Arc::ptr_eq(
+            &receipt,
+            &taken.stored_declaration_receipt().unwrap()
+        ));
+        drop(taken);
+        assert_eq!(receipt.plan().declarations.len(), 1);
+        assert_eq!(arena.parses.load(Ordering::Relaxed), 1);
+    }
     #[test]
     fn typed_body_is_lazy_shared_with_startup_and_consumed_once() {
         let frontend = frontend();
@@ -391,7 +449,7 @@ mod tests {
         error.kind = DiagnosticKind::SourceError;
         error.stage = super::super::DiagnosticStage::Syntax;
         error.location = Some(body.source.clone());
-        *arena.slots[0].lock().unwrap() = BodyState::Ready(Err(error.clone()));
+        *arena.slots[0].lock().unwrap() = BodyState::Ready(Box::new(Err(error.clone())));
         for _ in 0..2 {
             let observed = arena.with_parsed(body, |_| ()).unwrap_err();
             assert_eq!(observed.message, error.message);

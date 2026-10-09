@@ -16,7 +16,6 @@ use std::{
     path::PathBuf,
     sync::Arc,
 };
-
 #[derive(Default, Serialize)]
 pub struct OwnerReport {
     pub owner: String,
@@ -216,7 +215,6 @@ impl HeapCensus {
             image.capacity(),
         );
     }
-
     pub fn output_resources(&mut self, owner: &str, image: &byond_dmb::rsc::EncodedRsc) {
         self.owner(owner).observed_items += image.len() as u64;
         self.buffer(
@@ -226,16 +224,14 @@ impl HeapCensus {
             image.capacity(),
         );
     }
-
     pub fn output_buffer(&mut self, owner: &str, bytes: &Vec<u8>) {
         self.vec_payload(owner, bytes);
     }
-
     pub fn frontend(&mut self, frontend: &dm_tree::frontend::ColdFrontend) {
         let owner = "frontend.source_text";
         for (path, text) in &frontend.plan.source_texts {
             self.path(owner, path);
-            self.arc_text(owner, text);
+            self.source_text(owner, text);
         }
         for (path, starts) in &frontend.plan.source_line_starts {
             self.path(owner, path);
@@ -247,7 +243,7 @@ impl HeapCensus {
         );
         self.slice(owner, &frontend.files, true);
         for file in frontend.files.iter() {
-            self.arc_text(owner, &file.text);
+            self.source_text(owner, &file.text);
             self.arc_path(owner, &file.path);
             self.slice(owner, &file.line_starts, true);
         }
@@ -371,43 +367,6 @@ impl HeapCensus {
                 pending.extend(item.children.iter());
             }
         }
-    }
-    pub fn body_arena(&mut self, arena: &dm_tree::frontend::BodyArena<'_>) {
-        let owner = "body_arena";
-        let storage = arena.visit_retained(|_, retained| match retained {
-            Ok(parsed) => {
-                // The root Item is inline in the slot. Only its nested backing
-                // is counted here; issuer and occurrence borrow frontend data.
-                self.string(owner, &parsed.item().header);
-                self.items(owner, &parsed.item().children);
-                if let Some(body) = parsed.shared_statement_body() {
-                    if self.arc_object(owner, &body) {
-                        self.typed_body(owner, &body);
-                    }
-                }
-            }
-            Err(error) => {
-                self.string(owner, &error.message);
-                if let Some(location) = &error.location {
-                    self.source_location(owner, location);
-                    if self.arc_object(owner, &location.macro_expansions)
-                        && self.vec_payload(owner, &location.macro_expansions)
-                    {
-                        for expansion in location.macro_expansions.iter() {
-                            self.macro_trace(owner, expansion);
-                        }
-                    }
-                }
-            }
-        });
-        self.owner(owner).observed_items += storage.len as u64;
-        self.buffer(
-            owner,
-            storage.address,
-            storage.len.saturating_mul(storage.slot_bytes),
-            storage.capacity.saturating_mul(storage.slot_bytes),
-        );
-        self.unknown(owner, "worker-local taken ASTs and executable clones are transient and absent at this quiescent boundary");
     }
     fn source_location(&mut self, owner: &str, location: &dm_tree::frontend::SourceLocation) {
         self.arc_path(owner, &location.path);
@@ -641,23 +600,14 @@ impl HeapCensus {
                 self.array("startup", array);
             }
         }
-        self.slice("startup", startup.procedures(), false);
-        for (_, procedure) in startup.procedures() {
-            self.vec_payload("startup", &procedure.declarations);
-            self.vec_payload("startup", &procedure.origins);
-            self.items("startup.executable_bodies", &procedure.executable_body);
-            for declaration in &procedure.declarations {
-                match &declaration.initializer {
-                    dm_ir::InitializerValue::Expression(expression) => {
-                        self.expression("startup", expression)
-                    }
-                    dm_ir::InitializerValue::ArrayAllocation(array) => self.array("startup", array),
-                    dm_ir::InitializerValue::NoAuthoredValue => (),
-                }
-                if let Some(array) = &declaration.declared_array {
-                    self.array("startup", array);
-                }
+        self.slice("startup", startup.procedure_captures(), false);
+        for (_, capture) in startup.procedure_captures() {
+            if let crate::startup::ProcedureCapture::Issued(receipt) = capture {
+                self.arc_object("startup.static_receipts", receipt);
             }
+        }
+        for (_, procedure) in startup.procedures() {
+            self.static_plan(procedure);
         }
         self.unknown(
             "startup",
@@ -998,3 +948,9 @@ mod tests {
         assert_eq!(report.unknown_capacity_payload_bytes, 12);
     }
 }
+
+#[path = "heap_census/static_plan.rs"]
+mod static_plan;
+
+#[path = "heap_census/body_arena.rs"]
+mod body_arena;

@@ -35,13 +35,17 @@ pub struct PreparedLine {
 /// independently. Text is decoded by the capture boundary before preparation.
 #[derive(Clone, Debug)]
 pub struct PreparedSource {
-    original: Arc<str>,
+    original: SourceText,
     line_starts: Arc<[usize]>,
     lines: prepared_lines::LineStorage,
     directives: directive_index::DirectiveIndex,
 }
 impl PreparedSource {
     pub fn new(original: Arc<str>) -> Self {
+        Self::from_text(original.into())
+    }
+    /// Consume the decoded source allocation without copying its payload.
+    pub fn from_text(original: SourceText) -> Self {
         let mut starts = vec![0];
         starts.extend(
             original
@@ -50,7 +54,7 @@ impl PreparedSource {
                 .filter_map(|(offset, byte)| (byte == b'\n').then_some(offset + 1)),
         );
         let uncommented = match strip_source_comments(&original) {
-            std::borrow::Cow::Borrowed(_) => SourceText::from(Arc::clone(&original)),
+            std::borrow::Cow::Borrowed(_) => original.clone(),
             std::borrow::Cow::Owned(text) => SourceText::from(text),
         };
         let logical = crate::logical_arena::plan(&uncommented);
@@ -86,7 +90,7 @@ impl PreparedSource {
             lines,
         }
     }
-    pub fn original(&self) -> &Arc<str> {
+    pub fn original(&self) -> &SourceText {
         &self.original
     }
     pub fn line_starts(&self) -> &Arc<[usize]> {
@@ -420,7 +424,12 @@ mod tests {
     fn logical_offsets_preserve_comments_continuations_and_multiline_literals() {
         let source: Arc<str> = Arc::from("/* comment\ncontinued */\n#define VALUE \\\n  4\nvar/name = {\"first\nsecond\"}\nvar/r = @\"^\\[abc\\]$\"\n");
         let prepared = PreparedSource::new(source.clone());
-        assert!(Arc::ptr_eq(prepared.original(), &source));
+        prepared.original().visit_storage(|_, _, storage| {
+            let crate::SourceTextStorage::Original(text) = storage else {
+                panic!("original source must share its Arc")
+            };
+            assert!(Arc::ptr_eq(text, &source));
+        });
         let direct = logical_lines(&strip_source_comments(&source));
         assert_eq!(
             prepared
@@ -544,3 +553,26 @@ mod directive_syntax;
 #[path = "prepared_lines.rs"]
 mod prepared_lines;
 pub use prepared_lines::{PreparedLineView, PreparedLines};
+#[test]
+fn prepared_source_keeps_owned_utf8_buffer_and_line_views_share_it() {
+    let mut original = String::with_capacity(8192);
+    original.push_str("/proc/p()\n    return \"λ\"\n");
+    let pointer = original.as_ptr();
+    let capacity = original.capacity();
+    let source = PreparedSource::from_text(original.into());
+    let mut owner = None;
+    source.original().visit_storage(|identity, _, storage| {
+        owner = Some(identity);
+        let crate::SourceTextStorage::Transformed(text) = storage else {
+            panic!("owned source must retain its String backing")
+        };
+        assert_eq!(text.as_ptr(), pointer);
+        assert_eq!(text.capacity(), capacity);
+    });
+    for line in source.lines().iter() {
+        line.text
+            .visit_storage(|identity, _, _| assert_eq!(Some(identity), owner));
+    }
+    assert_eq!(source.original().as_str(), "/proc/p()\n    return \"λ\"\n");
+    assert_eq!(source.line_starts().as_ref(), &[0, 10, 26]);
+}

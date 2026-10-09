@@ -611,19 +611,15 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     }
     let freeze_detail =
         std::env::var_os("DMB_PROFILE_FREEZE_DETAIL").is_some_and(|value| value == "1");
-    let complete = |unit: crate::lowering::LoweredUnit| {
-        unit.require_production_abi()
-            .map_err(|_| ColdError::NonAuthoritativeAbi)?;
-        crate::symbolic::prepare_contribution(
-            unit,
+    let complete = |unit: crate::lowering::CompletedInput| {
+        unit.prepare(
             plan.symbols.as_ref(),
             &source_bindings,
             links.references,
             freeze_detail,
         )
-        .map_err(ColdError::Linking)
     };
-    let batch = crate::lowering::lower_frontend_completed_on_execution(
+    let batch = crate::lowering::lower_frontend_completed_input_on_execution(
         frontend,
         resolver,
         policy,
@@ -631,6 +627,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         Some(startup),
         memo,
         crate::lowering::LoweringExecution::new(executor, &bodies),
+        true,
         &complete,
     );
     // Completion has consumed all rich units and its borrowed binding roster.

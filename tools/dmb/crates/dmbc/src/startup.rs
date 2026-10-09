@@ -16,12 +16,25 @@ pub struct CapturedStartup<'a> {
 pub struct StartupFacts {
     issuance: Option<dm_tree::frontend::FrontendIssuance>,
     plan: InitializerPlan,
-    procedures: Vec<(OccurrenceId, StaticPlan)>,
+    procedures: Vec<(OccurrenceId, ProcedureCapture)>,
     procedure_index: std::collections::HashMap<OccurrenceId, usize>,
     static_inventory: std::sync::Arc<dm_tree::procedure_statics::StaticInventory>,
     unit_members: std::sync::Arc<
         std::collections::BTreeMap<crate::lowering::UnitIdentity, dm_tree::MemberId>,
     >,
+}
+pub(crate) enum ProcedureCapture {
+    Empty(StaticPlan),
+    Issued(std::sync::Arc<dm_tree::frontend::IssuedStaticPlan>),
+}
+impl std::ops::Deref for ProcedureCapture {
+    type Target = StaticPlan;
+    fn deref(&self) -> &StaticPlan {
+        match self {
+            Self::Empty(plan) => plan,
+            Self::Issued(receipt) => receipt.plan(),
+        }
+    }
 }
 impl std::ops::Deref for CapturedStartup<'_> {
     type Target = StartupFacts;
@@ -134,21 +147,16 @@ fn capture_impl_with_bodies(
         if prefilter && !dm_tree::procedure_statics::may_contain_stored_declarations(source) {
             return Ok((
                 body.declaration,
-                dm_tree::procedure_statics::capture_declarations(identity, &[])?,
+                ProcedureCapture::Empty(dm_tree::procedure_statics::capture_declarations(
+                    identity,
+                    &[],
+                )?),
             ));
         }
         let plan = bodies
-            .with_parsed(body, |parsed| match parsed.statement_body() {
-                Some(statements) => {
-                    dm_tree::procedure_statics::capture_issued_statements(identity, statements)
-                }
-                None => dm_tree::procedure_statics::capture_declarations(
-                    identity,
-                    &parsed.item().children,
-                ),
-            })
+            .with_parsed(body, |parsed| parsed.capture_stored_declarations(identity))
             .map_err(|e| format!("startup body: {e:?}"))??;
-        Ok::<_, String>((body.declaration, plan))
+        Ok::<_, String>((body.declaration, ProcedureCapture::Issued(plan)))
     };
     let workers = executor.workers().min(frontend.bodies.len().max(1));
     let chunk = frontend.bodies.len().div_ceil(workers).max(1);
@@ -186,12 +194,17 @@ fn capture_impl_with_bodies(
     for result in chunks {
         procedures.extend(result?);
     }
-    let base = dm_tree::initializers::capture_declaration_plan(
+    let base = dm_tree::initializers::capture_declaration_draft(
         &frontend.snapshot,
         &frontend.emission_order,
     )
     .map_err(|e| format!("startup declarations: {e:?}"))?;
-    let plan = dm_tree::initializers::with_captured_procedure_statics(&base, &procedures)?;
+    let plan = dm_tree::initializers::finish_declaration_draft(
+        base,
+        procedures
+            .iter()
+            .map(|(occurrence, plan)| (*occurrence, &**plan)),
+    )?;
     let procedure_index = procedures
         .iter()
         .enumerate()
@@ -199,7 +212,7 @@ fn capture_impl_with_bodies(
         .collect();
     let static_inventory =
         std::sync::Arc::new(dm_tree::procedure_statics::StaticInventory::from_plans(
-            procedures.iter().map(|(_, plan)| (plan.procedure, plan)),
+            procedures.iter().map(|(_, plan)| (plan.procedure, &**plan)),
         )?);
     Ok(StartupFacts {
         issuance: None,
@@ -478,13 +491,18 @@ impl CapturedStartup<'_> {
     ) -> &std::sync::Arc<dm_tree::procedure_statics::StaticInventory> {
         &self.static_inventory
     }
-    pub fn procedures(&self) -> &[(OccurrenceId, StaticPlan)] {
+    pub fn procedures(&self) -> impl ExactSizeIterator<Item = (&OccurrenceId, &StaticPlan)> {
+        self.procedures
+            .iter()
+            .map(|(occurrence, capture)| (occurrence, &**capture))
+    }
+    pub(crate) fn procedure_captures(&self) -> &[(OccurrenceId, ProcedureCapture)] {
         &self.procedures
     }
     pub fn procedure(&self, occurrence: OccurrenceId) -> Option<&StaticPlan> {
         self.procedure_index
             .get(&occurrence)
-            .map(|index| &self.procedures[*index].1)
+            .map(|index| &*self.procedures[*index].1)
     }
     /// Issued facts are immutable and borrow the exact frontend throughout use.
     /// Independently supplied generic plans still use the strict recapture API.

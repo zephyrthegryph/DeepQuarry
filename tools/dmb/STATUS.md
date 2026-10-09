@@ -711,3 +711,65 @@ Allocation and benchmark improvements are unmeasured.
 Daemon transport, cross-revision frontend/startup binding, semantic dependency
 reuse and six-worktree acceptance remain unfinished. Phase 1 gates remain open;
 the daemon and disk-cache activation remain deferred until those gates close.
+
+## Next parse/source ownership migration — unvalidated source
+
+Following committed batch `be11683d0b`, source now shares privately issued
+static-declaration plans between startup and typed lowering. The producer validates
+the exact current body and procedure identity before capture. The consumer retains
+the existing current-startup declaration/origin comparisons and executable masks;
+raw and standalone adapters retain their required fallback behavior. Startup borrows
+shared plans and keeps negative-prefilter captures inline, avoiding a heap allocation
+for every empty procedure. Owner-local occurrence calculation has one shared,
+allocation-free tree implementation.
+
+The body arena boxes only ready parse results, reducing the dense slot representation
+for unparsed/consumed bodies. Census counts those allocations and shared plans. Source
+preparation and frontend capture retain one `SourceText` owner from the decoded read
+buffer, replacing the production `String` to `Arc<str>` payload copy. Retained original
+source bytes are still necessary and are not claimed as a memory saving.
+
+These changes have not been compiled or benchmarked. The file-size gate passed.
+The active frozen cold comparison tests `be11683d0b` versus `1d5006992b` with matched
+profiler/executor sources and excludes this newer source batch. Its control Rust
+release build completed; candidate build and compiler measurements are pending.
+
+## Priority update and completed cold comparison — 2026-10-09
+
+The human directed functionality and correctness ahead of further cold-build
+micro-optimization. This supersedes the previous throughput-before-daemon order;
+the full runtime baseline remains deferred to Phase 5. Current daemon and retained
+semantic/procedure integration are unvalidated source, not completed acceptance.
+
+The frozen be11683d0b versus 1d5006992b comparison completed three cold runs per
+compiler, eight workers, on captured DeepQuarry ac1af55d1a. Median launch-to-reap
+wall time was 13.820 s control and 15.346 s candidate; critical CPU was 10.578 s
+and 11.016 s; total CPU was 32.547 s and 32.391 s; peak private memory was
+1,595,318,272 and 1,554,059,264 bytes. This batch reduced retained memory but
+regressed wall time in this cohort. Measurement admission, numeric I/O budgets
+and structural no-regression passed; overall stage/memory budgets failed.
+Annotated blocking observations remain partial. Newer uncommitted migration
+and daemon code was excluded. These results do not establish BYOND semantic
+parity or incremental edit performance.
+
+Evidence: E:/dmb-native-v2-phase0/r6-cohorts/matched-gzip-20261009-085609-fb0c242d/comparison.json.
+## Integrated session/CLI prototype — compile gate
+
+The current migration passed `cargo check --workspace --all-targets -j1`
+(162 s), followed by a locked all-target recheck (19.93 s). Four focused Bun
+compiler-selection fixtures passed (12 assertions); they launch no DM process.
+This is compile/dispatch validation, not runtime or full compiler acceptance.
+
+Retained hosts now own semantic-tree reuse and full-session compact symbolic
+procedure contributions. Exact resolver receipts admit reuse; current source
+occurrences, ABI bindings and linked-image certificates are regenerated. RichIR
+hints and validated disk hits can promote through the same trusted completion.
+Helper and modified-instance sidecars still take the existing lowering path.
+
+CLI daemon transport, typed source/internal failures, publication cancellation
+latches and diagnostic forwarding are connected. Daemon admission bounds workers
+to eight and builds to three, with idle trimming and transport deadlines.
+`DQ_COMPILER=byond|native|shadow` routes the common build entry; shadow uses an
+isolated disposable store. Source errors and cancellations never trigger fallback.
+No daemon transport smoke run, six-worktree acceptance, edit benchmark, full Rust
+suite, DreamDaemon run or BYOND semantic parity is claimed for this batch.

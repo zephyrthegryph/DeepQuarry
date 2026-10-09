@@ -512,7 +512,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         let prepared = match self.provider.prepared_source(&path) {
             Some(prepared) => prepared,
             None => match self.provider.read(&path) {
-                Ok(source) => Arc::new(prepared_source::PreparedSource::new(Arc::from(source))),
+                Ok(source) => Arc::new(prepared_source::PreparedSource::from_text(source.into())),
                 Err(error) => {
                     self.error(occurrence, 1, DiagnosticKind::Io, error);
                     return;
@@ -524,7 +524,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             .insert(path.as_ref().clone(), prepared.line_starts().clone());
         self.plan
             .source_texts
-            .insert(path.as_ref().clone(), Arc::clone(prepared.original()));
+            .insert(path.as_ref().clone(), prepared.original().clone());
         let mut line_number = 0;
         let mut region = self.begin_region(occurrence, 0);
         let mut pending = Vec::new();

@@ -13,6 +13,43 @@ pub struct PreparedContribution {
     modified_seeds: Vec<PreparedModifiedSeed>,
 }
 impl PreparedContribution {
+    pub(crate) fn is_reusable(&self) -> bool {
+        self.modified_seeds.is_empty() && self.contribution.is_reusable()
+    }
+    pub(crate) fn rebind(
+        artifact: &Arc<ReusableProcedureArtifact>,
+        frontend: &dm_tree::frontend::ColdFrontend,
+        body: &dm_tree::frontend::BodyOccurrence,
+        prepared: &crate::procedure_policy::PreparedUnit,
+        debug: crate::debug_sources::DebugOrigins,
+        required_types: &[SymbolId],
+    ) -> Option<Self> {
+        let identity = crate::lowering::source_unit_identity(frontend, body)
+            .ok()?
+            .identity;
+        prepared.require_production_abi().ok()?;
+        if artifact.identity() != identity || !artifact.can_rebind(&prepared.abi) {
+            return None;
+        }
+        let node = frontend.snapshot.tree.member(body.member)?;
+        let effective = frontend
+            .snapshot
+            .tree
+            .resolve(node.owner, node.name, node.kind)
+            == Some(body.member);
+        Some(Self {
+            identity,
+            effective,
+            contribution: super::procedure_artifact::Contribution::rebind(
+                artifact,
+                body.clone(),
+                debug,
+                prepared.abi.clone(),
+            ),
+            required_types: required_types.to_vec(),
+            modified_seeds: Vec::new(),
+        })
+    }
     pub(crate) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         self.contribution.census(census);
         census.vec_payload("prepared_type_requests", &self.required_types);
@@ -338,10 +375,7 @@ mod tests {
         assert_eq!(legacy.units.len(), early.units.len());
         assert_eq!(retained.len(), legacy.units.len());
         for (index, artifact) in retained.iter().enumerate() {
-            assert_eq!(
-                artifact.identity(),
-                early.units[index].lowered.identity
-            );
+            assert_eq!(artifact.identity(), early.units[index].lowered.identity);
             assert!(Arc::ptr_eq(
                 &artifact.code().shared_code(),
                 &early.units[index].frozen.shared_code()

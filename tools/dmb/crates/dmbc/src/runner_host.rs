@@ -12,7 +12,11 @@ mod memo;
 
 type ProcedureValues =
     Arc<crate::lowering_memo::LoweringMemo<crate::lowering_memo::CachedProcedure>>;
-type HostParts<'a> = (Option<memo::MemoView<'a>>, HostExecution<'a>);
+type HostParts<'a> = (
+    Option<memo::MemoView<'a>>,
+    HostExecution<'a>,
+    Option<&'a mut dm_tree::frontend::RetainedSemanticTree>,
+);
 
 /// A single bounded engine slot. The CLI uses a temporary owner; a long-lived
 /// caller may reuse it across requests without retaining a build lease.
@@ -21,6 +25,11 @@ pub struct BuildHost {
     memo: Option<memo::ResidentMemo>,
     executor: Option<dm_exec::BuildExecutor>,
     procedures: Option<(u128, ProcedureValues)>,
+    semantic: Option<dm_tree::frontend::RetainedSemanticTree>,
+    symbolic: Option<(
+        u128,
+        Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>,
+    )>,
 }
 
 #[derive(Eq, PartialEq)]
@@ -46,6 +55,8 @@ impl Default for BuildHost {
             executor: None,
             procedures: None,
             memo: Some(memo::ResidentMemo::default()),
+            semantic: Some(dm_tree::frontend::RetainedSemanticTree::new()),
+            symbolic: None,
         }
     }
 }
@@ -57,6 +68,8 @@ impl BuildHost {
             executor: None,
             procedures: None,
             memo: None,
+            semantic: None,
+            symbolic: None,
         }
     }
 
@@ -83,16 +96,28 @@ impl BuildHost {
                 Arc::new(crate::lowering_memo::LoweringMemo::default()),
             ));
         }
-        Some(crate::lowering_memo::ProcedureMemo::with_resident(
+        if self
+            .symbolic
+            .as_ref()
+            .is_none_or(|(previous, _)| *previous != policy)
+        {
+            self.symbolic = Some((policy, Arc::new(Default::default())));
+        }
+        let mut memo = crate::lowering_memo::ProcedureMemo::with_resident(
             policy,
             Arc::clone(&self.procedures.as_ref().unwrap().1),
             disk,
-        ))
+        );
+        memo.symbolic = Some(Arc::clone(&self.symbolic.as_ref().unwrap().1));
+        Some(memo)
     }
 
     pub(crate) fn clear_regions(&mut self) {
         if self.memo.is_some() {
             self.memo = Some(memo::ResidentMemo::default());
+        }
+        if self.semantic.is_some() {
+            self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());
         }
     }
 
@@ -131,7 +156,7 @@ impl BuildHost {
             Some(resident) => Some(resident.with_disk(disk)),
             None => disk.map(memo::MemoView::disk_only),
         };
-        Ok((memo, execution))
+        Ok((memo, execution, self.semantic.as_mut()))
     }
 
     pub(crate) fn engine(
@@ -173,6 +198,10 @@ impl BuildHost {
             self.memo = Some(memo::ResidentMemo::default());
         }
         self.procedures = None;
+        self.symbolic = None;
+        if self.semantic.is_some() {
+            self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());
+        }
         self.engine = Some(Arc::clone(&retained));
         Ok(retained)
     }
@@ -274,13 +303,13 @@ mod tests {
     fn retained_requests_reuse_physical_workers_and_count_switch_replaces_them() {
         let mut host = BuildHost::default();
         assert!(host.executor.is_none());
-        let (_, execution) = host.execution(2, None).unwrap();
+        let (_, execution, _) = host.execution(2, None).unwrap();
         let first = execution.run(worker_ids).unwrap();
         assert_eq!(first.len(), 2);
-        let (_, execution) = host.execution(2, None).unwrap();
+        let (_, execution, _) = host.execution(2, None).unwrap();
         let second = execution.run(worker_ids).unwrap();
         assert_eq!(first, second);
-        let (_, execution) = host.execution(1, None).unwrap();
+        let (_, execution, _) = host.execution(1, None).unwrap();
         let changed = execution.run(worker_ids).unwrap();
         assert_eq!(changed.len(), 1);
         assert!(first.is_disjoint(&changed));
@@ -289,13 +318,13 @@ mod tests {
     fn retained_request_panic_unbinds_before_next_request() {
         let mut host = BuildHost::default();
         let failure = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            let (_, execution) = host.execution(1, None).unwrap();
+            let (_, execution, _) = host.execution(1, None).unwrap();
             let _ = execution.run(|executor| {
                 executor.scope(|scope| scope.spawn(|_| panic!("scoped request failure")))
             });
         }));
         assert!(failure.is_err());
-        let (_, execution) = host.execution(1, None).unwrap();
+        let (_, execution, _) = host.execution(1, None).unwrap();
         assert_eq!(execution.run(worker_ids).unwrap().len(), 1);
     }
     #[test]

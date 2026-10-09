@@ -44,7 +44,36 @@ pub fn lower_frontend_completed_on_execution<R: Resolver, P: AbiPolicy, T: Send,
     execution: LoweringExecution<'_, '_>,
     complete: &(impl Fn(LoweredUnit) -> Result<T, E> + Sync),
 ) -> CompletedLoweringBatch<T, E> {
+    lower_frontend_completed_input_on_execution(
+        frontend,
+        host,
+        policy,
+        config,
+        startup,
+        memo,
+        execution,
+        false,
+        &|input| complete(input.into_lowered()),
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T: Send, E: Send>(
+    frontend: &ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    startup: Option<&crate::startup::CapturedStartup>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    execution: LoweringExecution<'_, '_>,
+    symbolic: bool,
+    complete: &(impl Fn(CompletedInput) -> Result<T, E> + Sync),
+) -> CompletedLoweringBatch<T, E> {
     let executor = execution.executor;
+    if symbolic {
+        if let Some(store) = memo.and_then(|memo| memo.symbolic.as_ref()) {
+            store.retain_current(frontend);
+        }
+    }
     let workers = executor.workers();
     let chunk = config.max_chunk.clamp(1, 256);
     let mut bodies: Vec<_> = frontend.bodies.iter().collect();
@@ -80,7 +109,7 @@ pub fn lower_frontend_completed_on_execution<R: Resolver, P: AbiPolicy, T: Send,
                                 slice
                                     .iter()
                                     .map(|body| {
-                                        lower_one_memo(
+                                        memo::lower_one_input(
                                             frontend,
                                             body,
                                             host,
@@ -88,13 +117,14 @@ pub fn lower_frontend_completed_on_execution<R: Resolver, P: AbiPolicy, T: Send,
                                             startup,
                                             memo,
                                             execution.bodies,
+                                            symbolic,
                                         )
                                         .map(|unit| {
                                             // Memo capture/remember already completed. The
                                             // consuming mapper cannot mutate persisted IR.
-                                            let identity = unit.identity;
-                                            let effective = unit.effective;
-                                            let origin = unit.origin.clone();
+                                            let identity = unit.identity();
+                                            let effective = unit.effective();
+                                            let origin = (**body).clone();
                                             complete(unit)
                                                 .map(|value| CompletedUnit {
                                                     identity,

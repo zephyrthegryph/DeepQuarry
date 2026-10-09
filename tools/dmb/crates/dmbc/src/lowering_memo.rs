@@ -65,6 +65,7 @@ pub struct ProcedureMemo {
     pub policy: u128,
     resident_retention: ResidentRetention,
     pub values: Arc<LoweringMemo<CachedProcedure>>,
+    pub(crate) symbolic: Option<Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>>,
     disk: Option<Arc<dm_cache::CacheSnapshot>>,
     pending: Mutex<Pending>,
     pub counts: MemoCounts,
@@ -237,6 +238,7 @@ impl ProcedureMemo {
             policy,
             resident_retention: ResidentRetention::Enabled,
             values: Arc::new(LoweringMemo::default()),
+            symbolic: None,
             disk: None,
             pending: Mutex::new(Pending::default()),
             counts: MemoCounts::default(),
@@ -270,6 +272,7 @@ impl ProcedureMemo {
             policy,
             resident_retention: ResidentRetention::Enabled,
             values: Arc::new(LoweringMemo::with_limit(limits.resident_bytes)),
+            symbolic: None,
             disk: Some(snapshot.into()),
             pending: Mutex::new(Pending::default()),
             counts: MemoCounts::default(),
@@ -348,12 +351,13 @@ impl ProcedureMemo {
             return Default::default();
         };
         let _profile = dm_profile::item("lowering.disk_validate_replay");
-        let mut result = candidates.procedure(key, identity, context, host, prepared);
+        let result = candidates.procedure(key, identity, context, host, prepared);
         if self.resident_retention == ResidentRetention::Enabled {
-            if let (Some(unit), Some(promotion)) = (&result.unit, result.resident.take()) {
+            if let (Some(unit), Some(promotion)) = (&result.unit, result.resident.as_ref()) {
                 let reads = promotion
                     .queries
-                    .into_iter()
+                    .iter()
+                    .copied()
                     .map(|query| ResolverRead {
                         domain: query.domain(),
                         answer: host.resolve(query),
@@ -364,8 +368,8 @@ impl ProcedureMemo {
                     key.to_vec(),
                     reads,
                     unit,
-                    promotion.relative_debug,
-                    promotion.versions,
+                    promotion.relative_debug.clone(),
+                    promotion.versions.clone(),
                 );
             }
         }

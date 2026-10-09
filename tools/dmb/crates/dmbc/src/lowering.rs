@@ -529,9 +529,12 @@ fn lower_frontend_impl_on_execution<R: Resolver, P: AbiPolicy>(
     }
 }
 mod completion;
+pub(crate) mod symbolic_input;
 pub use completion::{
-    lower_frontend_completed_on_execution, CompletedLoweringBatch, CompletedUnit,
+    lower_frontend_completed_input_on_execution, lower_frontend_completed_on_execution,
+    CompletedLoweringBatch, CompletedUnit,
 };
+pub use symbolic_input::CompletedInput;
 fn compact_retained(unit: &mut LoweredUnit) {
     fn compact<T>(values: &mut Vec<T>) {
         if values.capacity() > values.len() {
@@ -552,7 +555,6 @@ fn compact_retained(unit: &mut LoweredUnit) {
 mod body;
 mod memo;
 use body::{lower_one, lower_one_captured, LoweringCapture};
-use memo::lower_one_memo;
 
 /// A deterministic identity index for subsequent linking; duplicate structural
 /// identities are a driver/model error, never silently overwritten.

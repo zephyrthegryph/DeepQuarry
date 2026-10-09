@@ -18,10 +18,7 @@ fn owned_facts_rebind_after_frontend_moves_and_reject_new_issuers() {
     let facts = capture_revision_facts_with_spellings_and_workers(&original, &[], 1).unwrap();
     let view = facts.view_revision(&original).unwrap();
     let identity = view.plan().identity;
-    assert!(view
-        .procedures()
-        .iter()
-        .any(|(_, p)| !p.declarations.is_empty()));
+    assert!(view.procedures().any(|(_, p)| !p.declarations.is_empty()));
     drop(view);
     let moved = Box::new(original);
     let rebound = facts.view_revision(&moved).unwrap();

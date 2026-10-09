@@ -12,7 +12,34 @@ static ALLOCATOR: dm_profile::CountingAllocator = dm_profile::CountingAllocator;
 static ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 fn main() {
+    if std::panic::catch_unwind(main_inner).is_err() {
+        eprintln!("internal compiler panic");
+        std::process::exit(70);
+    }
+}
+fn main_inner() {
     let arguments: Vec<String> = std::env::args().skip(1).collect();
+    if arguments == ["--serve-daemon"] {
+        if let Err(error) = dmbc::daemon::serve() {
+            eprintln!("native daemon: {error}");
+            std::process::exit(1);
+        }
+        return;
+    }
+    // Remote builds precede local profiler setup: process counters belong to the
+    // process doing the compilation, not this waiting client.
+    if !arguments.iter().any(|argument| argument == "--trace") {
+        if let Ok(dmbc::request::Command::Build(request)) = dmbc::cli::parse(&arguments) {
+            if !request.no_daemon {
+                if let Err(error) = dmbc::daemon::route(*request) {
+                    eprintln!("{error}");
+                    std::process::exit(dmbc::request_failure::exit_code(error.as_ref()));
+                }
+                return;
+            }
+        }
+    }
+
     if arguments.iter().any(|arg| arg == "--verify") {
         if let Err(error) = dmbc::verification::run_cli(&arguments) {
             eprintln!("{error}");
@@ -48,6 +75,6 @@ fn main() {
     }
     if let Err(error) = result {
         eprintln!("{error}");
-        std::process::exit(1);
+        std::process::exit(dmbc::request_failure::exit_code(error.as_ref()));
     }
 }

@@ -342,7 +342,13 @@ fn empty_static_inventory_skips_only_actual_body_without_stored_qualifiers() {
         "/proc/p()\n    var/local = 1\n    if(local)\n        local++\n    return local\n",
     );
     let startup = crate::startup::capture(&frontend).unwrap();
-    assert!(startup.procedures()[0].1.declarations.is_empty());
+    assert!(startup
+        .procedures()
+        .next()
+        .unwrap()
+        .1
+        .declarations
+        .is_empty());
     let ordinary = lower_frontend(&frontend, &Host, &NoParameters, LoweringConfig::default());
     let captured = lower_frontend_with_statics(
         &frontend,

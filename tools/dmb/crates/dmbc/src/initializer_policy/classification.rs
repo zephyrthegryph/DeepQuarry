@@ -195,7 +195,7 @@ fn classify_pending<'a>(
     Ok(classified)
 }
 fn finish_pending(
-    pending: Vec<PendingWrite>,
+    pending: impl ExactSizeIterator<Item = PendingWrite>,
     debug_defined: bool,
     source_ordinal: &mut usize,
 ) -> Result<ClassifiedInitializers, String> {
@@ -256,7 +256,7 @@ pub(super) fn classify_from_facts(
     debug_defined: bool,
 ) -> Result<ClassifiedInitializers, String> {
     finish_pending(
-        classify_pending(writes.iter(), symbols, evaluator, facts, source_ordinal)?,
+        classify_pending(writes.iter(), symbols, evaluator, facts, source_ordinal)?.into_iter(),
         debug_defined,
         source_ordinal,
     )

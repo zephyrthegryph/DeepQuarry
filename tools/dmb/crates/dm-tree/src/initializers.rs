@@ -64,6 +64,17 @@ pub fn with_captured_procedure_statics(
     declarations: &DeclarationPlan<'_>,
     captures: &[(OccurrenceId, crate::procedure_statics::StaticPlan)],
 ) -> Result<InitializerPlan, String> {
+    with_captured_procedure_statics_borrowed(
+        declarations,
+        captures
+            .iter()
+            .map(|(occurrence, plan)| (*occurrence, plan)),
+    )
+}
+pub fn with_captured_procedure_statics_borrowed<'a>(
+    declarations: &DeclarationPlan<'_>,
+    captures: impl IntoIterator<Item = (OccurrenceId, &'a crate::procedure_statics::StaticPlan)>,
+) -> Result<InitializerPlan, String> {
     assemble_procedure_statics(&declarations.plan, declarations.order, captures)
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -93,6 +104,29 @@ pub fn plan(
     source: &TreeSnapshot,
     emission_order: &[OccurrenceId],
 ) -> Result<InitializerPlan, Vec<PlanError>> {
+    let draft = capture_declaration_draft(source, emission_order)?;
+    let identity = plan_identity(b"dm-authored-initializer-plan-v1\0", true, &draft.writes);
+    Ok(InitializerPlan {
+        symbols: source.tree.shared_symbols(),
+        source: source.clone(),
+        writes: draft.writes.into(),
+        origins: draft.origins.into(),
+        identity,
+    })
+}
+
+/// Owned rows issued by the same declaration traversal as the analysis plan.
+/// Fields remain private so detached callers cannot forge source authority.
+pub struct DeclarationDraft<'a> {
+    source: &'a TreeSnapshot,
+    order: &'a [OccurrenceId],
+    writes: Vec<InitializerWrite>,
+    origins: Vec<InitializerOrigin>,
+}
+pub fn capture_declaration_draft<'a>(
+    source: &'a TreeSnapshot,
+    emission_order: &'a [OccurrenceId],
+) -> Result<DeclarationDraft<'a>, Vec<PlanError>> {
     if source.tree.identity() != source.occurrences.tree_identity() {
         return Err(vec![PlanError::SnapshotIdentityMismatch]);
     }
@@ -202,14 +236,23 @@ pub fn plan(
     if !errors.is_empty() {
         return Err(errors);
     }
-    let identity = plan_identity(b"dm-authored-initializer-plan-v1\0", true, &writes);
-    Ok(InitializerPlan {
-        symbols: source.tree.shared_symbols(),
-        source: source.clone(),
-        writes: writes.into(),
-        origins: origins.into(),
-        identity,
+    Ok(DeclarationDraft {
+        source,
+        order: emission_order,
+        writes,
+        origins,
     })
+}
+pub fn finish_declaration_draft<'a>(
+    draft: DeclarationDraft<'_>,
+    captures: impl IntoIterator<Item = (OccurrenceId, &'a crate::procedure_statics::StaticPlan)>,
+) -> Result<InitializerPlan, String> {
+    assemble_procedure_rows(
+        draft.source,
+        draft.order,
+        draft.writes.into_iter().zip(draft.origins),
+        captures,
+    )
 }
 
 /// Interleave captured procedure statics at the procedure declaration's actual
@@ -227,17 +270,39 @@ pub fn with_procedure_statics(
     {
         return Err("startup base ledger differs from current declarations".into());
     }
-    assemble_procedure_statics(base, order, captures)
+    assemble_procedure_statics(
+        base,
+        order,
+        captures
+            .iter()
+            .map(|(occurrence, plan)| (*occurrence, plan)),
+    )
 }
-fn assemble_procedure_statics(
+fn assemble_procedure_statics<'a>(
     base: &InitializerPlan,
     order: &[OccurrenceId],
-    captures: &[(OccurrenceId, crate::procedure_statics::StaticPlan)],
+    captures: impl IntoIterator<Item = (OccurrenceId, &'a crate::procedure_statics::StaticPlan)>,
 ) -> Result<InitializerPlan, String> {
-    let mut symbols = dm_ir::SymbolTable::overlay(base.source.tree.shared_symbols());
+    assemble_procedure_rows(
+        &base.source,
+        order,
+        base.writes
+            .iter()
+            .cloned()
+            .zip(base.origins.iter().cloned()),
+        captures,
+    )
+}
+fn assemble_procedure_rows<'a>(
+    source: &TreeSnapshot,
+    order: &[OccurrenceId],
+    rows: impl Iterator<Item = (InitializerWrite, InitializerOrigin)>,
+    captures: impl IntoIterator<Item = (OccurrenceId, &'a crate::procedure_statics::StaticPlan)>,
+) -> Result<InitializerPlan, String> {
+    let mut symbols = dm_ir::SymbolTable::overlay(source.tree.shared_symbols());
     let mut by_occurrence = std::collections::HashMap::new();
     for (occurrence, capture) in captures {
-        if by_occurrence.insert(*occurrence, capture).is_some()
+        if by_occurrence.insert(occurrence, capture).is_some()
             || capture.declarations.len() != capture.origins.len()
         {
             return Err("duplicate or incomplete procedure static capture".into());
@@ -246,35 +311,31 @@ fn assemble_procedure_statics(
             symbols.intern(text).map_err(|e| e.to_string())?;
         }
     }
-    let mut declarations = base
-        .origins
-        .iter()
-        .enumerate()
-        .map(|(index, origin)| (origin.occurrence, index))
-        .collect::<std::collections::HashMap<_, _>>();
+    let mut declarations = rows.peekable();
     let mut writes = Vec::new();
     let mut origins = Vec::new();
     for (emission_ordinal, occurrence_id) in order.iter().enumerate() {
-        if let Some(index) = declarations.remove(occurrence_id) {
-            writes.push(base.writes[index].clone());
-            origins.push(base.origins[index].clone());
+        if declarations
+            .peek()
+            .is_some_and(|(_, origin)| origin.occurrence == *occurrence_id)
+        {
+            let (write, origin) = declarations.next().expect("peeked declaration row");
+            writes.push(write);
+            origins.push(origin);
         }
         if let Some(capture) = by_occurrence.remove(occurrence_id) {
-            let occurrence = base
-                .source
+            let occurrence = source
                 .occurrences
                 .get(*occurrence_id)
                 .ok_or("static procedure occurrence absent")?;
             let Target::Member(member) = occurrence.target else {
                 return Err("static owner occurrence is not a member".into());
             };
-            let node = base
-                .source
+            let node = source
                 .tree
                 .member(member)
                 .ok_or("static procedure member absent")?;
-            let owner = base
-                .source
+            let owner = source
                 .tree
                 .type_node(node.owner)
                 .ok_or("static procedure owner absent")?
@@ -287,13 +348,12 @@ fn assemble_procedure_statics(
             if capture.declarations.is_empty() && node.kind != MemberKind::Var {
                 continue;
             }
-            let procedure_occurrence = base
-                .source
+            let procedure_occurrence = source
                 .tree
                 .override_chain(member)
                 .iter()
                 .filter(|id| {
-                    base.source.tree.member(**id).is_some_and(|entry| {
+                    source.tree.member(**id).is_some_and(|entry| {
                         entry.owner == node.owner
                             && entry.name == node.name
                             && entry.kind == node.kind
@@ -333,12 +393,12 @@ fn assemble_procedure_statics(
             }
         }
     }
-    if !declarations.is_empty() || !by_occurrence.is_empty() {
+    if declarations.peek().is_some() || !by_occurrence.is_empty() {
         return Err("startup captures are outside complete emission order".into());
     }
     let identity = plan_identity(b"dm-authored-startup-plan-v2\0", false, &writes);
     Ok(InitializerPlan {
-        source: base.source.clone(),
+        source: source.clone(),
         symbols: Arc::new(symbols),
         writes: writes.into(),
         origins: origins.into(),
@@ -564,3 +624,7 @@ mod tests {
         assert_eq!(still_captured.origins.as_ref(), captured.origins.as_ref());
     }
 }
+
+#[cfg(test)]
+#[path = "initializer_draft_tests.rs"]
+mod draft_tests;
