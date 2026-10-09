@@ -21,7 +21,7 @@ CAPABILITIES(/obj/machinery/cablelayer)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Cut cable"), needs(req_full(nameof(cable), because = MSG(cablelayer/no_cable))),
 		asks(/datum/prompt/number/cablelayer_cut, fields = list("default" = computed(PROC_REF(cut_default)))),
 		then(PROC_REF(cable_length_entered)))
-	op("cablelayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(any_of(req_full(nameof(cable), because = MSG(cablelayer/toggle_no_cable)), req_is(nameof(on), because = MSG(cablelayer/toggle_no_cable)))), then(PROC_REF(interaction_toggle)))
+	op("cablelayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(toggle_ready))), then(PROC_REF(interaction_toggle)))
 
 /obj/machinery/cablelayer/proc/interaction_load(datum/act/op/A)
 	var/mob/user = A.actor
@@ -32,6 +32,10 @@ CAPABILITIES(/obj/machinery/cablelayer)
 	else
 		to_chat(user, "You load [result] lengths of cable into [src].")
 	return OP_OK
+
+/// The reel is a declared owned item, so test its actual value just as the old adapter did.
+/obj/machinery/cablelayer/proc/toggle_ready(datum/act/op/A)
+	return cable || on ? null : MSG(cablelayer/toggle_no_cable)
 
 /obj/machinery/cablelayer/proc/interaction_toggle(datum/act/op/A)
 	var/mob/user = A.actor
