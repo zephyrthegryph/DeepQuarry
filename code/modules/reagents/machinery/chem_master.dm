@@ -179,16 +179,16 @@ CAPABILITIES(/obj/machinery/chem_master)
 	return !!loaded_pill_bottle
 
 /obj/machinery/chem_master/proc/beaker_has_reagents(datum/act/op/A)
-	return beaker?.reagents?.total_volume > 0 // ALLOW(reads): the beaker's volume is read when the modal opens and again when it is answered, never cached
+	return beaker?.reagents?.total_volume > 0
 
 /obj/machinery/chem_master/proc/buffer_has_reagents(datum/act/op/A)
-	return reagents.total_volume > 0 // ALLOW(reads): the buffer's volume is read when the modal opens and again when it is answered, never cached
+	return reagents.total_volume > 0
 
 /obj/machinery/chem_master/proc/makes_condiments(datum/act/op/A)
-	return condi && reagents.total_volume > 0 // ALLOW(reads): the buffer's volume is read when the modal opens and again when it is answered, never cached
+	return condi && reagents.total_volume > 0
 
 /obj/machinery/chem_master/proc/makes_drugs(datum/act/op/A)
-	return !condi && reagents.total_volume > 0 // ALLOW(reads): the buffer's volume is read when the modal opens and again when it is answered, never cached
+	return !condi && reagents.total_volume > 0
 
 /// The client passed a count (`arguments["num"]`, one by default) and there is something to make it from.
 /obj/machinery/chem_master/proc/makes_drugs_of_passed_count(datum/act/op/A)
@@ -427,7 +427,6 @@ CAPABILITIES(/obj/machinery/chem_master)
 		P.pixel_y = rand(-7, 7)
 		P.icon_state = "bottle-[bottlesprite]" || "bottle-1"
 		reagents.trans_to_obj(P, amount_per_bottle)
-		changed(P)
 	return TRUE
 
 /obj/machinery/chem_master/proc/modal_change_bottle_style(datum/act/op/A, list/arguments)

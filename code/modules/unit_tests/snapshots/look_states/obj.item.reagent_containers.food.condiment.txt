@@ -1,0 +1,13 @@
+/obj/item/reagent_containers/food/condiment/carton/flour volume=0 -overlay: icons/obj/food.dmi:flour-100:-32767
+/obj/item/reagent_containers/food/condiment/carton/flour/rustic volume=0 -overlay: icons/obj/food.dmi:flour_bag-100:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar volume=0 -overlay: icons/obj/food.dmi:sugar-75:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar volume=1 +overlay: icons/obj/food.dmi:sugar-100:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar volume=1 -overlay: icons/obj/food.dmi:sugar-75:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar volume=2 +overlay: icons/obj/food.dmi:sugar-100:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar volume=2 -overlay: icons/obj/food.dmi:sugar-75:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar/rustic volume=0 -overlay: icons/obj/food.dmi:sugar_bag-75:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar/rustic volume=1 +overlay: icons/obj/food.dmi:sugar_bag-100:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar/rustic volume=1 -overlay: icons/obj/food.dmi:sugar_bag-75:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar/rustic volume=2 +overlay: icons/obj/food.dmi:sugar_bag-100:-32767
+/obj/item/reagent_containers/food/condiment/carton/sugar/rustic volume=2 -overlay: icons/obj/food.dmi:sugar_bag-75:-32767
+

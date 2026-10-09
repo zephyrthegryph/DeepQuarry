@@ -145,29 +145,26 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 	if(move_into(src, nameof(src.rag), R, user))
 		to_chat(user, span_notice("You stuff [R] into [src]."))
 		cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, FALSE)
-		update_icon()
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/remove_rag(mob/user)
 	if(!rag) return
 	user.put_in_hands(rag)
 	rel_take(src, nameof(rag))
 	cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, open_at_start)
-	update_icon()
 
 /obj/item/reagent_containers/food/drinks/bottle/open(mob/user)
 	if(rag) return
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/bottle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/food/drinks/bottle/appearance_overlays()
-	. = list()
-	underlays.Cut()
+/// The rag stuffed in the neck shows under the bottle, and burns while it is lit.
+/obj/item/reagent_containers/food/drinks/bottle/draw(datum/look/look)
+	..()
 	if(rag)
-		var/underlay_image = image(icon='icons/obj/drinks.dmi', icon_state=rag.rag_lit? "[rag_underlay]_lit" : rag_underlay)
-		underlays += underlay_image
-		set_light(rag.light_range, rag.light_power, rag.light_color)
+		look.watch(rag)
+		look.underlay(look_image('icons/obj/drinks.dmi', rag.rag_lit ? "[rag_underlay]_lit" : rag_underlay))
+		look.light(rag.light_range, rag.light_power, rag.light_color)
 	else
-		set_light(0)
+		look.light_off()
 
 /obj/item/reagent_containers/food/drinks/bottle/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	var/blocked = ..()

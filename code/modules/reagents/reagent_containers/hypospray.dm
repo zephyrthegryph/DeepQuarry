@@ -107,7 +107,6 @@ MSG_DEF(hypo/loaded, "You load %I% into %T%.", "%U% has loaded %I% into %T%.")
 		return OP_REFUSED
 	reagents.trans_to_holder(loaded_vial.reagents, volume)
 	reagents.maximum_volume = 0
-	loaded_vial.update_icon()
 	user.put_in_hands(loaded_vial)
 	rel_take(src, nameof(loaded_vial))
 	balloon_alert(user, "vial removed from \the [src]")
@@ -149,10 +148,6 @@ MSG_DEF(hypo/loaded, "You load %I% into %T%.", "%U% has loaded %I% into %T%.")
 	preserve_item = 0
 	hyposound = SFX_EFFECTS_HYPOSPRAY
 
-/obj/item/reagent_containers/hypospray/autoinjector/on_reagent_change()
-	..()
-	changed(src)
-
 /obj/item/reagent_containers/hypospray/autoinjector/empty
 	filled = 0
 
@@ -169,7 +164,6 @@ MSG_DEF(hypo/loaded, "You load %I% into %T%.", "%U% has loaded %I% into %T%.")
 	. = ..()
 	if(.) // Will occur if successfully injected.
 		cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, FALSE)
-		changed(src)
 
 /// Appearance reader: TRUE while the autoinjector holds reagents.
 /obj/item/reagent_containers/hypospray/autoinjector/proc/appearance_filled()
@@ -178,6 +172,7 @@ MSG_DEF(hypo/loaded, "You load %I% into %T%.", "%U% has loaded %I% into %T%.")
 /// The look (the draw sweep: from its template).
 /obj/item/reagent_containers/hypospray/autoinjector/draw(datum/look/look)
 	..()
+	look.watch(reagents)
 	look.state("[initial(icon_state)][appearance_filled() ? "1" : "0"]")
 
 /obj/item/reagent_containers/hypospray/autoinjector/examine(mob/user)

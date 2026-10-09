@@ -217,6 +217,8 @@ CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone)
 /obj/item/reagent_containers/spray/chemsprayer/hosed/draw(datum/look/look)
 	. = ..()
 	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
+		look.watch(HC)
+		look.watch(HC.hose())
 		if(HC.get_pairing())
 			look.overlay("[icon_state]+hose")
 			break
@@ -237,8 +239,6 @@ CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed)
 	return OP_OK
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed/reagent_spray_at(atom/target, mob/user, amount)
-	changed(src)
-
 	var/direction = get_dir(src, target)
 	var/turf/T = get_turf(target)
 	var/turf/T1 = get_step(T,turn(direction, 90))
