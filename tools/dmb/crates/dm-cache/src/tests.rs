@@ -181,7 +181,9 @@ fn failed_base_falls_back_to_unsuperseded_originals_without_cross_segment_refere
     let root = Temp::new();
     let cache = Cache::open(&root.0, Limits::default()).unwrap();
     let original = record(1, 1);
-    cache.publish(std::slice::from_ref(&original)).unwrap();
+    // Include an unreachable record so compaction creates an independent leaf,
+    // rather than correctly reusing the identical original singleton by ID.
+    cache.publish(&[original.clone(), record(999, 1)]).unwrap();
     // Preserve originals exactly as a Windows mapped-reader sharing failure does.
     let original_path = fs::read_dir(&root.0)
         .unwrap()

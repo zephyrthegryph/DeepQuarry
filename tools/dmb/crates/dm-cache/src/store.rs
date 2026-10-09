@@ -1,5 +1,13 @@
 #[path = "store_candidates.rs"]
 mod candidates;
+#[path = "store_compaction.rs"]
+mod compaction;
+#[path = "group_activation.rs"]
+mod group_activation;
+#[path = "group_manifest.rs"]
+mod group_manifest;
+#[path = "store_groups.rs"]
+mod groups;
 use crate::segment::{encode, CacheError, Limits, Record, RecordKey, RecordView, Segment};
 use fs2::FileExt;
 use std::{
@@ -25,6 +33,7 @@ pub struct Cache {
 pub struct CacheSnapshot {
     writer: Cache,
     pub(crate) segments: Vec<(PathBuf, Arc<Segment>)>,
+    groups: Vec<(PathBuf, group_manifest::GroupManifest)>,
     rejected: Mutex<Vec<RejectedSegment>>,
     index: BTreeMap<RecordKey, Vec<usize>>,
     superseded: Arc<BTreeSet<u128>>,
@@ -35,6 +44,7 @@ pub struct CacheSnapshot {
 #[derive(Debug)]
 pub struct CompactResult {
     pub segment: Option<u128>,
+    pub group: Option<u128>,
     pub segments: Vec<u128>,
     pub records: usize,
     pub deleted: usize,
@@ -119,16 +129,15 @@ impl Cache {
                 index.entry(key).or_default().push(ordinal);
             }
         }
-        let superseded: BTreeSet<u128> = segments
-            .iter()
-            .flat_map(|(_, segment)| segment.supersedes().iter().copied())
-            .collect();
+        let groups = self.read_groups(&mut rejected)?;
+        let superseded = groups::superseded(&segments, &groups);
         Ok(CacheSnapshot {
             writer: Cache {
                 root: self.root.clone(),
                 limits: self.limits,
             },
             segments,
+            groups,
             rejected: Mutex::new(rejected),
             index,
             superseded: Arc::new(superseded),
@@ -146,7 +155,10 @@ impl Cache {
         supersedes: &[u128],
     ) -> Result<u128, CacheError> {
         let (id, bytes) = encode(records, supersedes, self.limits)?;
-        let destination = self.root.join(format!("{id:032x}.seg"));
+        self.publish_bytes(id, &bytes, "seg")
+    }
+    fn publish_bytes(&self, id: u128, bytes: &[u8], extension: &str) -> Result<u128, CacheError> {
+        let destination = self.root.join(format!("{id:032x}.{extension}"));
         if destination.exists() {
             if fs::read(&destination)? == bytes {
                 return Ok(id);
@@ -170,7 +182,7 @@ impl Cache {
                 .write(true)
                 .create_new(true)
                 .open(&temporary)?;
-            file.write_all(&bytes)?;
+            file.write_all(bytes)?;
             file.flush()?;
             drop(file);
             // On Windows rename never replaces an existing destination. A competing
@@ -223,130 +235,7 @@ impl Cache {
         live: &BTreeSet<RecordKey>,
         validate: &impl Fn(RecordKey, &[u8], &[(u64, &[u8])]) -> Result<(), String>,
     ) -> Result<CompactResult, CacheError> {
-        let snapshot = self.snapshot()?;
-        // Complete admission before publishing any base. All healthy candidates
-        // must be inspected: a later typed rejection excludes its whole segment.
-        // Format 1 permits only one record per key in each base segment, so a
-        // neutral compactor cannot discard distinct semantic-context variants.
-        loop {
-            let before = snapshot.segment_count();
-            let multiple_candidates = std::cell::Cell::new(None);
-            for key in live {
-                let Some(first) =
-                    snapshot.get(*key, |payload, symbols| validate(*key, payload, symbols))
-                else {
-                    continue;
-                };
-                let _ = snapshot.get_candidate(*key, |payload, symbols| {
-                    validate(*key, payload, symbols)?;
-                    if (payload != first.payload || symbols != first.symbols.as_slice())
-                        && multiple_candidates.get().is_none()
-                    {
-                        multiple_candidates.set(Some(*key));
-                    }
-                    Ok(false)
-                });
-            }
-            if snapshot.segment_count() == before {
-                if let Some(key) = multiple_candidates.get() {
-                    return Err(CacheError::Invalid(format!(
-                        "compaction deferred: distinct healthy candidates for {key:?} require lossless multi-candidate storage"
-                    )));
-                }
-                break;
-            }
-        }
-        // Persist whole-segment typed rejection in the new base's supersedes
-        // roster too. Otherwise an undeleted rejected segment becomes healthy
-        // in a later snapshot and can resurrect records excluded above.
-        let supersedes = snapshot
-            .segments
-            .iter()
-            .map(|(_, segment)| segment.id())
-            .collect::<Vec<_>>();
-        if supersedes.is_empty() {
-            return Ok(CompactResult {
-                segment: None,
-                segments: Vec::new(),
-                records: 0,
-                deleted: 0,
-                deferred_deletes: Vec::new(),
-            });
-        }
-        let overhead = 72u64
-            .checked_add(
-                (supersedes.len() as u64)
-                    .checked_mul(16)
-                    .ok_or_else(|| CacheError::Invalid("compaction framing overflow".into()))?,
-            )
-            .ok_or_else(|| CacheError::Invalid("compaction framing overflow".into()))?;
-        let mut chunks = Vec::new();
-        let mut pending = Vec::new();
-        let mut charge = overhead;
-        let mut count = 0;
-        for key in live {
-            let Some(view) =
-                snapshot.get(*key, |payload, symbols| validate(*key, payload, symbols))
-            else {
-                continue;
-            };
-            let record = Record {
-                key: *key,
-                symbols: view
-                    .symbols
-                    .iter()
-                    .map(|(id, text)| crate::SymbolText {
-                        id: *id,
-                        text: Arc::from(*text),
-                    })
-                    .collect(),
-                payload: Arc::from(view.payload),
-            };
-            let bytes = crate::sink::record_charge(&record)?;
-            if !pending.is_empty()
-                && (charge.saturating_add(bytes) > self.limits.segment_bytes
-                    || pending.len() >= self.limits.records as usize)
-            {
-                chunks.push(self.publish_superseding(&pending, &supersedes)?);
-                pending.clear();
-                charge = overhead;
-            }
-            if charge.saturating_add(bytes) > self.limits.segment_bytes {
-                chunks.push(self.publish_superseding(&[record], &supersedes)?);
-                count += 1;
-                continue;
-            }
-            charge += bytes;
-            pending.push(record);
-            count += 1;
-        }
-        if !pending.is_empty() || chunks.is_empty() {
-            chunks.push(self.publish_superseding(&pending, &supersedes)?);
-        }
-        let old = snapshot
-            .segments
-            .iter()
-            .map(|(path, segment)| (path.clone(), segment.id()))
-            .collect::<Vec<_>>();
-        drop(snapshot);
-        let mut deleted = 0;
-        let mut deferred_deletes = Vec::new();
-        for (path, id) in old {
-            if supersedes.contains(&id) && !chunks.contains(&id) {
-                match fs::remove_file(&path) {
-                    Ok(()) => deleted += 1,
-                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => (),
-                    Err(_) => deferred_deletes.push(path),
-                }
-            }
-        }
-        Ok(CompactResult {
-            segment: chunks.first().copied(),
-            segments: chunks,
-            records: count,
-            deleted,
-            deferred_deletes,
-        })
+        self.compact_group(live, validate)
     }
 }
 impl CacheSnapshot {
@@ -368,12 +257,7 @@ impl CacheSnapshot {
     /// Conservative roots for configured-session leases. Superseded or rejected
     /// segments contribute no roots; keys are immutable symbolic record identities.
     pub fn record_keys(&self) -> BTreeSet<RecordKey> {
-        let superseded = self
-            .segments
-            .iter()
-            .filter(|(_, segment)| !segment.is_rejected())
-            .flat_map(|(_, segment)| segment.supersedes().iter().copied())
-            .collect::<BTreeSet<_>>();
+        let superseded = self.current_superseded();
         self.segments
             .iter()
             .filter(|(_, segment)| !segment.is_rejected() && !superseded.contains(&segment.id()))

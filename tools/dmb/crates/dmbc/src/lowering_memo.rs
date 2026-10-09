@@ -47,11 +47,7 @@ impl Default for MemoLimits {
         }
     }
 }
-#[derive(Default)]
-struct Pending {
-    records: BTreeMap<dm_cache::RecordKey, dm_cache::Record>,
-    bytes: usize,
-}
+type Pending = dm_cache::PendingRecords;
 
 /// One-shot CLI requests publish disk records without retaining duplicate rich IR.
 /// Retained sessions may enable bounded resident replay explicitly.
@@ -348,26 +344,6 @@ impl ProcedureMemo {
             content: xxhash_rust::xxh3::xxh3_128(key),
         }
     }
-    fn disk_variants(&self, key: &[u8]) -> Vec<Vec<u8>> {
-        let _profile = dm_profile::item("lowering.population_previous_variants");
-        let Some(snapshot) = self.disk.as_ref().and_then(|disk| disk.snapshot()) else {
-            return Vec::new();
-        };
-        snapshot
-            .get(Self::record_key(key), |bytes, _symbols| {
-                let variants = dm_cache::decode_variants(bytes)?;
-                for variant in variants {
-                    crate::lowering_memo_wire::validate(variant)?;
-                }
-                Ok(())
-            })
-            .and_then(|record| {
-                dm_cache::decode_variants(record.payload)
-                    .ok()
-                    .map(|variants| variants.into_iter().map(<[u8]>::to_vec).collect())
-            })
-            .unwrap_or_default()
-    }
     pub(crate) fn lookup_procedure<R: Resolver>(
         &self,
         key: &[u8],
@@ -560,85 +536,48 @@ impl ProcedureMemo {
     }
     fn queue_payload(&self, key: &[u8], payload: Vec<u8>) {
         let record_key = Self::record_key(key);
-        let previous = self.disk_variants(key);
-        let queue_profile = dm_profile::item("lowering.population_queue");
-        let mut pending = self
-            .pending
-            .lock()
-            .unwrap_or_else(|error| error.into_inner());
-        let mut variants = pending
-            .records
-            .get(&record_key)
-            .and_then(|record| {
-                dm_cache::decode_variants(&record.payload)
-                    .ok()
-                    .map(|variants| variants.into_iter().map(<[u8]>::to_vec).collect())
-            })
-            .unwrap_or(previous);
-        if !variants.contains(&payload) {
-            variants.push(payload);
-        }
-        if variants.len() > 4 {
-            variants.remove(0);
-        }
-        let bytes = match dm_cache::encode_variants(&variants) {
+        let bytes = match dm_cache::encode_variants(&[payload]) {
             Ok(bytes) => bytes,
             Err(error) => {
-                self.counts
-                    .publication_failed
-                    .fetch_add(1, Ordering::Relaxed);
-                let mut errors = self
-                    .publication_errors
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner());
-                if errors.len() < 8 {
-                    errors.push(format!("cache variant encoding failed: {error}"));
-                }
+                self.wire_error(&format!("cache variant encoding failed: {error}"));
                 return;
             }
         };
-        let old = pending
-            .records
-            .get(&record_key)
-            .map_or(0, |record| record.payload.len() + 128);
-        // Include descriptor/framing/alignment headroom so the default 64MiB segment fits.
-        let total = pending.bytes - old + bytes.len() + 128;
-        pending.bytes = total;
-        pending.records.insert(
-            record_key,
-            dm_cache::Record {
-                key: record_key,
-                symbols: Vec::new(),
-                payload: bytes.into(),
-            },
-        );
-        if pending.bytes >= self.limits.pending_bytes.clamp(1, 8 * 1024 * 1024) {
-            let records = std::mem::take(&mut *pending)
-                .records
-                .into_values()
-                .collect();
-            drop(pending);
-            drop(queue_profile);
-            self.publish(records);
+        let ready = {
+            let _profile = dm_profile::item("lowering.population_queue");
+            self.pending
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .push(
+                    dm_cache::Record {
+                        key: record_key,
+                        symbols: Vec::new(),
+                        payload: bytes.into(),
+                    },
+                    self.limits.pending_bytes.clamp(1, 8 * 1024 * 1024) as u64,
+                )
+        };
+        match ready {
+            Ok(batches) => {
+                for records in batches {
+                    self.publish(records);
+                }
+            }
+            Err(error) => self.wire_error(&format!("cache record staging failed: {error}")),
         }
     }
     /// Publish once per build; never create one physical segment per procedure.
     pub fn take_pending(&self) -> Vec<dm_cache::Record> {
-        std::mem::take(
-            &mut *self
-                .pending
-                .lock()
-                .unwrap_or_else(|error| error.into_inner()),
-        )
-        .records
-        .into_values()
-        .collect()
+        self.pending
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .take()
     }
     pub fn pending_bytes(&self) -> usize {
         self.pending
             .lock()
             .unwrap_or_else(|error| error.into_inner())
-            .bytes
+            .bytes() as usize
     }
     pub(crate) fn remember(
         &self,

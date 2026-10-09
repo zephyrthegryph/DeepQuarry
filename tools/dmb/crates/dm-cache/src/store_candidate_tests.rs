@@ -95,7 +95,7 @@ fn malformed_superseding_segment_reactivates_original_and_excludes_its_other_rec
 }
 
 #[test]
-fn compaction_refuses_to_discard_six_context_variants_before_publication() {
+fn compaction_preserves_six_context_variants_without_loss() {
     let root = Temp::new();
     let cache = Cache::open(&root.0, Limits::default()).unwrap();
     let key = record(1, b"").key;
@@ -106,10 +106,11 @@ fn compaction_refuses_to_discard_six_context_variants_before_publication() {
     }
     let before = cache.snapshot().unwrap();
     assert_eq!(before.segment_count(), 6);
-    let error = cache
+    let result = cache
         .compact(&[key].into_iter().collect(), |_, _, _| Ok(()))
-        .unwrap_err();
-    assert!(error.to_string().contains("distinct healthy candidates"));
+        .unwrap();
+    assert_eq!(result.records, 6);
+    assert!(result.group.is_some());
     let after = cache.snapshot().unwrap();
     assert_eq!(after.segment_count(), 6);
     for context in 0..6 {

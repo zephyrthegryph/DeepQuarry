@@ -14,26 +14,7 @@ impl CacheSnapshot {
         validate_and_accept: impl Fn(&[u8], &[(u64, &[u8])]) -> Result<bool, String>,
     ) -> Option<RecordView<'a>> {
         loop {
-            let generation = self.rejection_generation.load(Ordering::Acquire);
-            let superseded = if generation == 0 {
-                Arc::clone(&self.superseded)
-            } else {
-                let mut revised = self
-                    .revised_superseded
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner());
-                if revised.0 != generation {
-                    revised.1 = Arc::new(
-                        self.segments
-                            .iter()
-                            .filter(|(_, segment)| !segment.is_rejected())
-                            .flat_map(|(_, segment)| segment.supersedes().iter().copied())
-                            .collect(),
-                    );
-                    revised.0 = generation;
-                }
-                Arc::clone(&revised.1)
-            };
+            let superseded = self.current_superseded();
             let mut retry = false;
             for &ordinal in self.index.get(&key)? {
                 let (path, segment) = &self.segments[ordinal];

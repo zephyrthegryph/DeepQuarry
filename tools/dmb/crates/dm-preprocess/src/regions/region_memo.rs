@@ -247,6 +247,11 @@ impl ExpansionRecord {
             && self.diagnostics == other.diagnostics
     }
 
+    /// Parser sidecars are optional hints, independently validated by their consumer.
+    pub fn fragment_count(&self) -> usize {
+        self.fragments.len()
+    }
+
     pub fn fragment(&self, schema: u32, span: Span) -> Option<&[u8]> {
         self.fragments
             .iter()

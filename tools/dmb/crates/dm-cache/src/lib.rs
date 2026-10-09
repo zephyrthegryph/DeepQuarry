@@ -15,3 +15,6 @@ mod sink;
 pub use sink::{PublishReport, PublishSink};
 mod leases;
 pub use leases::LeaseCompaction;
+
+mod pending;
+pub use pending::PendingRecords;
