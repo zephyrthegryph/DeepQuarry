@@ -143,7 +143,7 @@ _slots_who() { # class dir -> " [slot N: worktree 'label' held 3m] ..."
 	echo "${out:- nobody}"
 }
 
-slots_acquire() { # class [label]: waits for a slot; sets the SLOTS_* globals
+_slots_acquire() {
 	local cls="${1:?class}" label="${2:-}" max root d top prio now name waited=0 last=0 i pos
 	max="$(slots_capacity "$cls")"
 	[ "$max" -gt 0 ] 2>/dev/null || return 0
@@ -189,6 +189,24 @@ slots_acquire() { # class [label]: waits for a slot; sets the SLOTS_* globals
 	done
 }
 
+# A script that sources this runs under `set -e`; these functions test exit codes freely (grep, kill -0, ls), so they run with it off.
+_slots_errexit_off() {
+	case $- in *e*) SLOTS_ERREXIT=1; set +e ;; *) SLOTS_ERREXIT=0 ;; esac
+}
+_slots_errexit_back() {
+	if [ "${SLOTS_ERREXIT:-0}" = "1" ]; then set -e; fi
+	return 0
+}
+
+slots_acquire() { # class [label]: waits for a slot; sets the SLOTS_* globals
+	local rc
+	_slots_errexit_off
+	_slots_acquire "$@"
+	rc=$?
+	_slots_errexit_back
+	return "$rc"
+}
+
 _slots_heartbeat() { # owner file: touch it every 15 s while this shell lives
 	local owner="$1" parent="$$"
 	(
@@ -202,7 +220,7 @@ _slots_heartbeat() { # owner file: touch it every 15 s while this shell lives
 	disown "$SLOTS_HB_PID" 2>/dev/null || true
 }
 
-slots_release() {
+_slots_release() {
 	local now owner worktree label started
 	now="$(date +%s)"
 	if [ -n "$SLOTS_HB_PID" ]; then kill "$SLOTS_HB_PID" 2>/dev/null; SLOTS_HB_PID=""; fi
@@ -215,6 +233,15 @@ slots_release() {
 		SLOTS_HELD=""
 	fi
 	if [ -n "$SLOTS_QUEUE" ]; then rm -f "$SLOTS_QUEUE"; SLOTS_QUEUE=""; fi
+}
+
+slots_release() {
+	local rc
+	_slots_errexit_off
+	_slots_release
+	rc=$?
+	_slots_errexit_back
+	return "$rc"
 }
 
 slots_run() { # class [--label TEXT] -- command...

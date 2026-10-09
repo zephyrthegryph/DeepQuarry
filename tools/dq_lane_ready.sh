@@ -41,7 +41,7 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-die() { echo "dq_lane_ready: $*" >&2; exit "${2:-1}"; }
+die() { echo "dq_lane_ready: $1" >&2; exit "${2:-1}"; }
 
 branch="$(git symbolic-ref -q --short HEAD)" || die "REFUSED: a detached HEAD; check out the lane's branch" 2
 case "$branch" in master|rewrite/integ-current) die "REFUSED: $branch is not a lane branch" 2 ;; esac
