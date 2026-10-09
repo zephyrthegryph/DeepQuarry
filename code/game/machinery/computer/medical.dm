@@ -27,10 +27,20 @@
 	var/static/list/field_edit_questions
 	var/static/list/field_edit_choices
 
+MSG_DEF_SELF(records/id_required, "needs an identification card")
+MSG_DEF_SELF(records/unknown_field, "Unknown record field.")
+MSG_DEF(records/inserted_id, "You insert %I%.", "")
+MSG_DEF(records/ejected_id, "You remove %I% from %T%.", "")
+
 CAPABILITIES(/obj/machinery/computer/med_data)
 	ref_one(nameof(active2), /datum/data/record)
 	owns_one(nameof(scan), /obj/item/card/id)
 	interface("MedicalRecords", title = "Medical Records")
+	// Keep the existing plain-click ranking: the computer's generic item op wins;
+	// this named insertion is also offered by the context menu.
+	op("insert_scan", inputs(item(/obj/item/card/id), menu()), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID card"), when(cond_not(nameof(scan))), needs(req(/obj/item/card/id, because = MSG(records/id_required)), req_adjacent(), req_capable(), req_held_releasable()), then(PROC_REF(insert_scan)))
+	op("eject_scan_menu", menu(), ungated(), label("Eject ID Card"), when(nameof(scan)), needs(req_adjacent(), req_capable(), req(PROC_REF(scan_removable))), then(PROC_REF(eject_scan)))
+	op("open_records", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Open records"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(records_empty_hand)))), then(PROC_REF(open_records)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("login", ui_act("login", arg("login_type", num())), then(PROC_REF(ui_act_login)))
@@ -41,14 +51,14 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 	op("del_r", ui_act("del_r"), then(PROC_REF(ui_act_del_r)))
 	op("d_rec", ui_act("d_rec", arg("d_rec")), then(PROC_REF(ui_act_d_rec)))
 	op("sync_r", ui_act("sync_r"), then(PROC_REF(ui_act_sync_r)))
-	op("edit_notes", ui_act("edit_notes"), needs(req_adjacent(), req_bool(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default))), step = "notes"), asks(/datum/prompt/yes_no/record_notes_delete, fields = list("record" = computed(PROC_REF(notes_record)), "timeout" = 0), step = "delete_notes", when = PROC_REF(notes_empty)), then(PROC_REF(ui_act_edit_notes)))
+	op("edit_notes", ui_act("edit_notes"), needs(req_adjacent(), req(PROC_REF(records_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default))), step = "notes"), asks(/datum/prompt/yes_no/record_notes_delete, fields = list("record" = computed(PROC_REF(notes_record)), "timeout" = 0), step = "delete_notes", when = PROC_REF(notes_empty)), then(PROC_REF(ui_act_edit_notes)))
 	op("new", ui_act("new"), then(PROC_REF(ui_act_new)))
 	op("del_c", ui_act("del_c", arg("del_c", num())), then(PROC_REF(ui_act_del_c)))
 	op("search", ui_act("search", arg("t1", schema_text(4096))), then(PROC_REF(ui_act_search)))
 	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
 	extend(TAG_UI, then(PROC_REF(ui_records_fresh), early = TRUE))
 	// The record modals (the old ui_modal_opened()/ui_modal_answered()): a field is edited by a pick or by typing, as the field's kind says.
-	op("edit", ui_act("modal:edit", arg("arguments")), needs(req_bool(PROC_REF(edit_field_known), silent = TRUE)),
+	op("edit", ui_act("modal:edit", arg("arguments")), needs(req(PROC_REF(edit_field_known), silent = TRUE)),
 		asks(/datum/prompt/choice/medical_record_edit, fields = list("arguments" = arg_of("arguments"), "inline" = TRUE, "timeout" = 0), step = "edit_choice", when = PROC_REF(edit_by_choice)),
 		asks(/datum/prompt/text/medical_record_edit, fields = list("arguments" = arg_of("arguments"), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)),
 		then(PROC_REF(modal_edit)))
@@ -90,22 +100,36 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 		"blood_type" = list("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"),
 	)
 
-/obj/machinery/computer/med_data/capabilities()
-	. = ..()
-	// Were INTERACT_ITEM (an ID card goes in) and INTERACT_VERB "Eject ID Card": the ID slot. Its insert op answers a
-	// click with a card (a full slot passes the click on, to the computer's item fallback); its eject is the slot's
-	// ACT_NONE op, which the Menu, the radial and the command bar name.
-	. += cap_slot(nameof(scan), /obj/item/card/id, name = "Insert ID card", eject_name = "Eject ID Card", eject_via = SLOT_VIA_VERB, when_full = SLOT_FULL_PASS, insert_msg = "You insert %I%.", eject_msg = "You remove %I% from %T%.", ui_key = null, slot_type = /datum/capability/slot/med_data_scan)
-	// Was INTERACT_HAND: an empty hand opens the records. `entry` keeps attack_hand() reaching it for its other callers
-	// (the AI's hand use through silicon_use, the computer's any-item fallback).
-	. += cap_op("Open records", TYPE_PROC_REF(/atom, interaction_open_ui_fingerprint), using = EMPTY_HAND, key = "open_records", entry = INTERACTION_ENTRY_HAND)
+/// The named insertion uses the same checked transfer as the old ID-card slot.
+/obj/machinery/computer/med_data/proc/insert_scan(datum/act/op/A)
+	if(!move_into(src, nameof(scan), A.held, A.actor))
+		return OP_DECLINE
+	act_message_t(A.actor, src, MSG(records/inserted_id), A.held)
+	tgui_interact(A.actor)
+	return OP_OK
 
-/// A card in the slot opens the records, as the old insert did.
-/datum/capability/slot/med_data_scan
+/// The slot's release policy is checked before an eject effect can run.
+/obj/machinery/computer/med_data/proc/scan_removable(datum/act/op/A)
+	var/obj/item/card/id/card = read_once(scan)
+	return card ? read_once(release_refusal(card, A.actor)) : null
 
-/datum/capability/slot/med_data_scan/inserted(obj/machinery/computer/med_data/holder, obj/item/item, mob/user)
-	if(user)
-		holder.tgui_interact(user)
+/// A card is physically removable even when the records window is unusable.
+/obj/machinery/computer/med_data/proc/eject_scan(datum/act/op/A)
+	var/obj/item/card/id/card = scan
+	rel_take(src, nameof(scan))
+	A.actor.put_in_hands(card)
+	act_message_t(A.actor, src, MSG(records/ejected_id), card)
+	return OP_OK
+
+/// Empty-handed physical selection; a named menu choice can still open while holding an item.
+/obj/machinery/computer/med_data/proc/records_empty_hand(datum/act/op/A)
+	return A.held ? MSG(req_hand_full) : null
+
+/// The explicit records menu entry preserves its fingerprint and window effect.
+/obj/machinery/computer/med_data/proc/open_records(datum/act/op/A)
+	add_fingerprint(A.actor)
+	tgui_interact(A.actor)
+	return OP_OK
 
 /obj/machinery/computer/med_data/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -340,7 +364,7 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 
 /// The operator is logged in (the old handlers each refused without it).
 /obj/machinery/computer/med_data/proc/records_authenticated(datum/act/op/A)
-	return !!authenticated // ALLOW(reads): who is logged in is asked when the button is pressed and again when the answer arrives, never cached
+	return read_once(authenticated) ? null : MSG(records/not_authenticated)
 
 /obj/machinery/computer/med_data/proc/ui_act_new(datum/act/op/A)
 	. = TRUE
@@ -441,7 +465,7 @@ MSG_DEF_SELF(records/not_authenticated, "You must log in first.")
 
 /// Requirement: the edit modal names a field this console edits (silently refused otherwise, as the old modal never opened).
 /obj/machinery/computer/med_data/proc/edit_field_known(datum/act/op/A)
-	return !isnull(edit_field(A.args["arguments"]))
+	return isnull(edit_field(A.args["arguments"])) ? MSG(records/unknown_field) : null
 
 /// The field is edited by picking from its choices.
 /obj/machinery/computer/med_data/proc/edit_by_choice(datum/act/op/A)

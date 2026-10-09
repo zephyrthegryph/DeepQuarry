@@ -3959,3 +3959,13 @@ recycling panels, space vines and the maintenance vendor glow now draw through `
 
 * **Lockpick on a simple door.** The legacy pick worked from the lockpick's `afterattack()` after the door's item handler ran. The door's handler hit the door with the pick first (`breakable`); it now returns `OP_PASS` for a lockpick so the pick's own `pick` op works the lock and the door is no longer struck.
 * **Sink items.** The sink's item and hand washes refuse a second wash through `claims()` ("in use") instead of the sink's own "Someone's already washing here." text.
+
+
+## Medical records capability bridge retirement (2026-10-09)
+
+## /obj/machinery/computer/med_data
+
+Retire the local capabilities()/cap_slot()/cap_op() declarations in favor of a single native CAPABILITIES block. The native owned scan var remains the same one-occupant physical slot, with unchanged checked transfer, physical insertion/ejection while broken or unpowered, records-opening effect, and full-hands floor fallback. Plain clicks retain Ui open for an empty hand and Use item for a held ID; screwdriver still selects Disconnect. The named Open records menu action remains usable while carrying an ID or other item.
+
+The old bridge advertised duplicate menu provider entries. One refused Open records row for every held-item sample disappears when its old empty-hand provider entry is replaced by an origin-aware native hand op, while its usable menu entry is retained. The held-ID sample also loses its duplicate refused Insert ID card provider row; the usable insertion menu entry remains. Keys are renamed from bridge-generated interaction IDs to explicit native operation keys: hand:Open records:interaction_open_ui_fingerprint -> open_records; slot_insert_scan -> insert_scan; slot_eject_scan_8 -> eject_scan_menu. No click ranking or gameplay behavior is intentionally changed.
+
