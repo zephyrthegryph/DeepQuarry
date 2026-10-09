@@ -94,6 +94,12 @@ DeepQuarry, fresh CLI, empty compiler caches, no daemon, and no runtime parity c
 Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/matched-gzip-20261009-041540-1e4173ff/comparison.json`
 and `E:/dq-cache/dmb-native-v2/matched-gzip-result-20261009-041540-1e4173ff.json`.
 
+The parent memory-owner candidate also passed whole captured-project 1/2/8-worker
+byte and diagnostic equality. Single untraced child wall observations were
+30.867/15.557/10.842 s respectively; these are determinism checks, not median CPU
+acceptance benchmarks. Receipt:
+`E:/dq-cache/dmb-native-v2/whole-project-worker-order-20261009-050904-c68596c7/receipt.json`.
+
 ## Previous admitted raw-trace measurement
 
 The memory-owner candidate (`59c1774fdb`) completed ABABAB, three cold runs per
