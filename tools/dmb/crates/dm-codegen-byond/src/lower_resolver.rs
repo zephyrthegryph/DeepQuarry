@@ -42,7 +42,45 @@ pub struct CapturedModifiedInstance {
     /// as frontend positions. Empty blocks retain the parent origin separately.
     pub field_origins: Vec<Option<u32>>,
     pub origin: Option<u32>,
+    /// Exact issued expression coordinates; absent for lossless wire rehydration.
+    pub source_span: Option<dm_syntax::Span>,
 }
+/// Source-revision capture uses the ordinary descriptor producer and exact resolver proofs.
+pub struct ModifiedCaptureContext<'a> {
+    pub resolver: &'a dyn Resolver,
+    pub symbols: &'a SymbolTable,
+    pub resource_search_context: Option<u128>,
+}
+impl ModifiedCaptureContext<'_> {
+    pub fn capture(
+        &self,
+        path: &str,
+        lexical_owner: &str,
+        fields: &[(String, dm_syntax::Expr)],
+        origin: Option<u32>,
+        source_span: dm_syntax::Span,
+    ) -> Result<CapturedModifiedInstance, LowerError> {
+        let lookup = ProjectResolver {
+            modified_instances: RefCell::new(BTreeMap::new()),
+            procedure_values: RefCell::new(BTreeMap::new()),
+            procedure_statics: RefCell::new(BTreeMap::new()),
+            resolver: self.resolver,
+            symbols: self.symbols,
+            slots: RefCell::new(BTreeMap::new()),
+            resources: RefCell::new(BTreeMap::new()),
+            instances: RefCell::new(BTreeMap::new()),
+            runtime_types: RefCell::new(BTreeMap::new()),
+            resource_search_context: self.resource_search_context,
+        };
+        let alias = lookup.modified_instance(path, lexical_owner, fields, origin, source_span)?;
+        Ok(lookup
+            .modified_instances
+            .into_inner()
+            .remove(&SymRef::Instance(alias))
+            .expect("successful descriptor producer issues its exact alias"))
+    }
+}
+
 #[derive(Clone)]
 pub struct ResolverProc {
     pub modified_instances: BTreeMap<SymRef, CapturedModifiedInstance>,
@@ -107,6 +145,7 @@ impl ProjectResolver<'_> {
         lexical_owner: &str,
         fields: &[(String, dm_syntax::Expr)],
         origin: Option<u32>,
+        source_span: dm_syntax::Span,
     ) -> Result<SymbolId, LowerError> {
         let query = Q::RuntimeType(SymbolId::of(path));
         let M::Symbol(runtime_type) = self.answer(query)? else {
@@ -158,6 +197,7 @@ impl ProjectResolver<'_> {
                 descriptor,
                 field_origins: vec![origin; fields.len()],
                 origin,
+                source_span: Some(source_span),
             });
         Ok(alias)
     }

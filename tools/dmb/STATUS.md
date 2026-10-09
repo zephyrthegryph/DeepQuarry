@@ -773,3 +773,31 @@ to eight and builds to three, with idle trimming and transport deadlines.
 isolated disposable store. Source errors and cancellations never trigger fallback.
 No daemon transport smoke run, six-worktree acceptance, edit benchmark, full Rust
 suite, DreamDaemon run or BYOND semantic parity is claimed for this batch.
+## Daemon smoke and analysis contract — 2026-10-09
+
+The first bounded smoke caught a Windows PIPE_NOWAIT false-EOF bug; the connected
+pipe now checks availability before reading. The client also enforces one total
+20-second startup deadline rather than a fresh budget for each retry. Rebuild
+passed in 106 s. A second smoke used an invalid source fixture for tolerant
+analysis and was replaced with explicit `#error`; all evidence is retained.
+
+The final owned smoke passed nine cases in 7.805 s: help, four analysis requests
+across two manifests, source error exit 2, two daemon compilations and a fresh local
+compilation. The 21,950-byte DMB and empty RSC matched byte-for-byte between daemon
+and local compilation. These debug tiny-fixture wall times are not DeepQuarry
+benchmarks or iteration acceptance. Owned daemon and output stores were removed.
+Evidence: E:/dq-cache/dmb-daemon-smoke/20261009-100001-ef381fcb/report.json.
+
+Analysis export schema 3 uses the same normalized member occurrences as compiler
+identity and emits generic Resolver answers, preserving missing versus unsupported
+and wide query keys. Two focused export fixtures passed, zero failures, 15.92 s
+including compilation. This supports declaration lints and documentation; executable
+reference and resource query coverage remains incomplete. Five focused artifact
+store fixtures also passed, zero failures, 102 s including compilation.
+Fresh modified-instance replay now retains body-relative source recipes and
+canonical descriptor evidence, issuing descriptors from the current authenticated
+AST and current resource/type proofs. Unsupported raw/wire/helper modifier cases
+retain the ordinary lowering fallback. Configuration-scoped daemon supersession
+preserves independent define/output requests and removes abandoned registrations.
+The integrated all-target locked workspace check passed in 21.10 s after fixing
+one helper-fixture import. New focused runtime fixtures remain to be executed.

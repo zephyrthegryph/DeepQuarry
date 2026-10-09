@@ -319,6 +319,7 @@ impl DescriptorWire {
         }
         Some(CapturedModifiedInstance {
             descriptor,
+            source_span: None,
             origin: self.origin,
             field_origins: self.field_origins,
         })
@@ -352,6 +353,7 @@ mod tests {
         .unwrap();
         let capture = CapturedModifiedInstance {
             descriptor,
+            source_span: None,
             origin: Some(0),
             field_origins: vec![Some(1)],
         };

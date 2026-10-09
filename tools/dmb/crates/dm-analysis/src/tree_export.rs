@@ -13,7 +13,10 @@ use std::collections::HashMap;
 use std::fmt;
 use std::io::Write;
 
-pub const SCHEMA: &str = "dm-tree-analysis-v2";
+pub const SCHEMA: &str = "dm-tree-analysis-v3";
+#[path = "query_export.rs"]
+mod query_export;
+pub use query_export::{write_queries_jsonl, AnalysisQuery};
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct ExportCounts {
@@ -247,11 +250,11 @@ pub fn write_jsonl(
         json!({"row":"schema","schema":SCHEMA,"source_span_precision":"logical_line",
         "model":if frontend.engine.is_some() { "engine_hierarchy_and_source_declarations" } else { "source_declarations" },
         "engine":engine,"engine_inventory":if frontend.engine.is_some() { "authoritative_hierarchy_partial_intrinsic_catalog" } else { "not_certified_by_export" },
-        "unsupported_domains":["resource_resolution","executable_lowering","opaque_intrinsic_metadata"]}),
+        "unsupported_domains":["resource_resolution","executable_reference_resolution","opaque_intrinsic_metadata"],
+        "query_schema":"dm-resolved-query-v1", "member_occurrence":"normalized_owner_local_override_depth"}),
     )?;
-    let mut identical = HashMap::new();
     let mut member_keys = Vec::with_capacity(tree.members().len());
-    for member in tree.members() {
+    for (index, member) in tree.members().iter().enumerate() {
         let owner = tree
             .type_node(member.owner)
             .ok_or(ExportError::InvalidModel("unknown member owner"))?
@@ -262,9 +265,14 @@ pub fn write_jsonl(
             kind(member.kind),
             member.name.bits()
         );
-        let ordinal = identical.entry(base.clone()).or_insert(0usize);
+        let id = dm_tree::MemberId(
+            u32::try_from(index)
+                .map_err(|_| ExportError::InvalidModel("member index exceeds u32"))?,
+        );
+        let ordinal = tree
+            .member_occurrence(id)
+            .ok_or(ExportError::InvalidModel("member occurrence unavailable"))?;
         member_keys.push(format!("{base}:{ordinal}"));
-        *ordinal += 1;
     }
     for id in tree.lexical_types() {
         let node = tree
@@ -391,6 +399,7 @@ pub fn write_jsonl(
         )?;
         counts.body_rows += 1;
     }
+    counts.semantic_rows += query_export::write_member_queries(tree, &member_keys, writer)?;
     Ok(counts)
 }
 

@@ -12,6 +12,9 @@ use std::{
     sync::Arc,
 };
 
+mod source_recipe;
+pub(crate) use source_recipe::SourceRecipe;
+
 pub struct Collected {
     pub descriptors: Vec<(SymRef, CapturedModifiedInstance)>,
     pub artifacts: Vec<InitializationArtifact>,
@@ -310,6 +313,7 @@ pub fn default_seeds(
                 SymRef::Instance(SymbolId::of(&descriptor.alias())),
                 CapturedModifiedInstance {
                     descriptor: descriptor.as_ref().clone(),
+                    source_span: None,
                     field_origins: vec![Some(0); descriptor.fields().len()],
                     origin: Some(0),
                 },
@@ -609,6 +613,7 @@ mod resource_tests {
         .unwrap();
         let captured = CapturedModifiedInstance {
             descriptor,
+            source_span: None,
             field_origins: vec![Some(0)],
             origin: Some(0),
         };

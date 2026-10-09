@@ -101,7 +101,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     use crate::lowering_memo::{MemoMissReason, MemoOutcome};
     if symbolic {
         if let Some(store) = &memo.symbolic {
-            if let Some(input) = store.lookup(&key, host, frontend, body, &prepared) {
+            if let Some(input) = store.lookup(&key, host, frontend, body, &prepared, bodies) {
                 bodies
                     .discard_parsed(body)
                     .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;

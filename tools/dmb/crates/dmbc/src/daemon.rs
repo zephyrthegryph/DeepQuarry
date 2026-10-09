@@ -137,10 +137,15 @@ pub fn route(
     let endpoint = transport::Endpoint::current()?;
     let identity = compiler_identity()?;
     let mut started = false;
+    let startup_deadline = std::time::Instant::now() + Duration::from_secs(20);
     for attempt in 0..200 {
+        let remaining = startup_deadline
+            .checked_duration_since(std::time::Instant::now())
+            .filter(|duration| !duration.is_zero())
+            .ok_or("daemon failed to start or drain within 20 seconds")?;
         let connection = transport::connect(&endpoint);
         if let Ok(mut stream) = connection {
-            transport::set_timeout(&mut stream, Duration::from_secs(20))?;
+            transport::set_timeout(&mut stream, remaining)?;
             protocol::send(
                 &mut stream,
                 &protocol::Request::Hello {
@@ -186,7 +191,8 @@ pub fn route(
         if attempt == 199 {
             return Err("daemon failed to start or drain within 20 seconds".into());
         }
-        std::thread::sleep(Duration::from_millis(100));
+        let remaining = startup_deadline.saturating_duration_since(std::time::Instant::now());
+        std::thread::sleep(Duration::from_millis(100).min(remaining));
     }
     unreachable!()
 }

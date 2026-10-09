@@ -455,7 +455,7 @@ pub fn run_build_with_host(
         Err(diagnostics) => {
             dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(), &diagnostics)?;
             let message = "source analysis did not produce a complete declaration model";
-            let failure = if diagnostics.iter().all(|diagnostic| diagnostic.kind == dm_tree::frontend::DiagnosticKind::SourceError) {
+            let failure = if !diagnostics.is_empty() && diagnostics.iter().all(|diagnostic| diagnostic.kind == dm_tree::frontend::DiagnosticKind::SourceError) {
                 dmbc::request_failure::RequestFailure::source(message)
             } else {
                 dmbc::request_failure::RequestFailure::internal(message)
@@ -718,7 +718,7 @@ pub fn run_build_with_host(
                     &diagnostics,
                 )?;
                 let message = "native lowering did not produce a complete executable";
-                let failure = if diagnostics.iter().all(|diagnostic| diagnostic.kind == dm_tree::frontend::DiagnosticKind::SourceError) {
+                let failure = if !diagnostics.is_empty() && diagnostics.iter().all(|diagnostic| diagnostic.kind == dm_tree::frontend::DiagnosticKind::SourceError) {
                     dmbc::request_failure::RequestFailure::source(message)
                 } else {
                     dmbc::request_failure::RequestFailure::internal(message)

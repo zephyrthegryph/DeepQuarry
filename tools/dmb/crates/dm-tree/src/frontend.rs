@@ -426,6 +426,8 @@ pub use body_arena::{BodyArena, BodyArenaStorage};
 #[path = "frontend_static_receipt.rs"]
 mod static_receipt;
 pub use static_receipt::IssuedStaticPlan;
+#[path = "frontend_expression_site.rs"]
+mod expression_site;
 
 pub struct ParsedBody<'a> {
     static_receipt: std::sync::OnceLock<Result<Arc<IssuedStaticPlan>, String>>,

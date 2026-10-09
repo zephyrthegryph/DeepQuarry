@@ -649,6 +649,15 @@ fn modified_literal_captures_ordered_assignments_and_emits_instance_reference() 
     let (symbol, captured) = code.modified_instances.iter().next().unwrap();
     assert_eq!(code.modified_instances.len(), 1);
     assert_eq!(captured.descriptor.runtime_type(), owner);
+    let site = captured
+        .source_span
+        .expect("ordinary lowering captures an expression recipe");
+    assert!(site.start < site.end);
+    assert!(captured
+        .descriptor
+        .fields()
+        .iter()
+        .all(|(_, value)| value.span.start >= site.start && value.span.end <= site.end));
     assert_eq!(
         captured
             .descriptor

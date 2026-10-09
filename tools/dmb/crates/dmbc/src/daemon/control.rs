@@ -9,6 +9,9 @@ use std::{
 #[derive(Clone, Default)]
 pub struct Cancellation(Arc<AtomicU8>);
 impl Cancellation {
+    pub(super) fn same_request(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
     pub fn cancel(&self) {
         let _ = self
             .0

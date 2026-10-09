@@ -34,6 +34,7 @@ impl Compiler<'_> {
                     owner,
                     fields,
                     self.debug_current,
+                    expr.span,
                 ))?;
                 if !self.result.instance_paths.contains(&alias) {
                     self.result.instance_paths.push(alias);

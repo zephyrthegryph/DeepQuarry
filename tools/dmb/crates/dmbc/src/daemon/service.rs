@@ -13,9 +13,75 @@ use std::{
     },
     time::{Duration, Instant},
 };
+/// Host retention is manifest-scoped; supersession requires the same semantic
+/// configuration AND logical destination. Different defines targeting one file
+/// serialize through the existing output lease but do not cancel each other.
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+struct RequestKey {
+    compile: bool,
+    defines: BTreeMap<String, String>,
+    engine: Option<PathBuf>,
+    bootstrap: bool,
+    destination: PathBuf,
+    output_store: Option<PathBuf>,
+    replay: Option<PathBuf>,
+}
+impl RequestKey {
+    fn of(request: &crate::request::BuildRequest, manifest: &std::path::Path) -> Self {
+        Self {
+            compile: request.command == crate::request::BuildCommand::Compile,
+            defines: request.defines.clone(),
+            engine: request.engine_template.clone(),
+            bootstrap: request.bootstrap_catalog,
+            destination: request.artifact_directory.as_ref().map_or_else(
+                || manifest.to_path_buf(),
+                |directory| {
+                    manifest
+                        .file_name()
+                        .map_or_else(|| manifest.to_path_buf(), |name| directory.join(name))
+                },
+            ),
+            output_store: request.output_store.clone(),
+            replay: request.replay_inputs.clone(),
+        }
+    }
+}
+struct LatestRequest {
+    slot: Arc<Slot>,
+    key: RequestKey,
+    token: control::Cancellation,
+}
+impl LatestRequest {
+    fn register(slot: &Arc<Slot>, key: RequestKey, token: control::Cancellation) -> Self {
+        if let Some(previous) = slot
+            .newest
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(key.clone(), token.clone())
+        {
+            previous.cancel();
+        }
+        Self {
+            slot: Arc::clone(slot),
+            key,
+            token,
+        }
+    }
+}
+impl Drop for LatestRequest {
+    fn drop(&mut self) {
+        let mut newest = self.slot.newest.lock().unwrap_or_else(|e| e.into_inner());
+        if newest
+            .get(&self.key)
+            .is_some_and(|token| token.same_request(&self.token))
+        {
+            newest.remove(&self.key);
+        }
+    }
+}
 struct Slot {
     host: Mutex<crate::runner_host::BuildHost>,
-    newest: Mutex<Option<control::Cancellation>>,
+    newest: Mutex<BTreeMap<RequestKey, control::Cancellation>>,
     last: Mutex<Instant>,
 }
 struct Shared {
@@ -35,7 +101,7 @@ impl Shared {
             .or_insert_with(|| {
                 Arc::new(Slot {
                     host: Mutex::new(crate::runner_host::BuildHost::default()),
-                    newest: Mutex::new(None),
+                    newest: Mutex::new(BTreeMap::new()),
                     last: Mutex::new(Instant::now()),
                 })
             })
@@ -209,14 +275,10 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
             }
             transport::set_timeout(&mut stream, Duration::from_secs(600))?;
             let path = std::fs::canonicalize(&request.project)?;
+            let key = RequestKey::of(&request, &path);
             let slot = shared.slot(path);
             let token = control::Cancellation::default();
-            {
-                let mut newest = slot.newest.lock().unwrap_or_else(|e| e.into_inner());
-                if let Some(previous) = newest.replace(token.clone()) {
-                    previous.cancel();
-                }
-            }
+            let _latest = LatestRequest::register(&slot, key, token.clone());
             protocol::send(&mut stream, &Reply::Accepted)?;
             let stream = Arc::new(Mutex::new(stream));
             let _output = super::output_binding(Arc::clone(&stream));
@@ -327,5 +389,62 @@ mod tests {
             io::ErrorKind::Interrupted
         );
         drop(permit);
+    }
+    #[test]
+    fn supersession_is_configuration_scoped_and_old_completion_preserves_newest() {
+        let shared = shared();
+        let slot = shared.slot(PathBuf::from("E:/fixture/project.dme"));
+        let key = RequestKey {
+            compile: true,
+            defines: BTreeMap::new(),
+            engine: None,
+            bootstrap: true,
+            destination: PathBuf::from("E:/fixture/project.dme"),
+            output_store: None,
+            replay: None,
+        };
+        let first = control::Cancellation::default();
+        let old = LatestRequest::register(&slot, key.clone(), first.clone());
+        let mut different = key.clone();
+        different.defines.insert("MODE".into(), "1".into());
+        let other = control::Cancellation::default();
+        let independent = LatestRequest::register(&slot, different, other.clone());
+        assert!(!first.is_cancelled());
+        let second = control::Cancellation::default();
+        let latest = LatestRequest::register(&slot, key.clone(), second.clone());
+        assert!(first.is_cancelled());
+        assert!(!other.is_cancelled());
+        drop(old);
+        assert!(slot
+            .newest
+            .lock()
+            .unwrap()
+            .get(&key)
+            .unwrap()
+            .same_request(&second));
+        drop((latest, independent));
+        assert!(slot.newest.lock().unwrap().is_empty());
+    }
+    #[test]
+    fn logical_key_ignores_execution_flags_but_preserves_destinations() {
+        let args = vec!["compile".into(), "E:/fixture/project.dme".into()];
+        let crate::request::Command::Build(request) = crate::cli::parse(&args).unwrap() else {
+            panic!("build expected")
+        };
+        let mut changed = (*request).clone();
+        let manifest = std::path::Path::new("E:/fixture/project.dme");
+        let key = RequestKey::of(&request, manifest);
+        changed.workers = 8;
+        changed.progress_enabled = true;
+        changed.no_cache = true;
+        changed.exact_inputs = true;
+        changed.trace_path = Some("trace.json".into());
+        changed.record_inputs = Some("records".into());
+        assert_eq!(key, RequestKey::of(&changed, manifest));
+        changed.artifact_directory = Some("E:/fixture/other".into());
+        assert_ne!(key, RequestKey::of(&changed, manifest));
+        changed.artifact_directory = None;
+        changed.output_store = Some("E:/fixture/store".into());
+        assert_ne!(key, RequestKey::of(&changed, manifest));
     }
 }

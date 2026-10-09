@@ -11,11 +11,16 @@ pub struct PreparedContribution {
     contribution: super::procedure_artifact::Contribution,
     required_types: Vec<SymbolId>,
     modified_seeds: Vec<PreparedModifiedSeed>,
+    modified_recipes: Option<Vec<crate::modified_initializers::SourceRecipe>>,
 }
 impl PreparedContribution {
     pub(crate) fn is_reusable(&self) -> bool {
-        self.modified_seeds.is_empty() && self.contribution.is_reusable()
+        self.modified_recipes.is_some()
     }
+    pub(crate) fn modified_recipes(&self) -> Option<&[crate::modified_initializers::SourceRecipe]> {
+        self.modified_recipes.as_deref()
+    }
+    #[cfg(test)]
     pub(crate) fn rebind(
         artifact: &Arc<ReusableProcedureArtifact>,
         frontend: &dm_tree::frontend::ColdFrontend,
@@ -24,6 +29,29 @@ impl PreparedContribution {
         debug: crate::debug_sources::DebugOrigins,
         required_types: &[SymbolId],
     ) -> Option<Self> {
+        Self::rebind_with_modified(
+            artifact,
+            frontend,
+            body,
+            prepared,
+            debug,
+            required_types,
+            Vec::new(),
+        )
+    }
+    pub(crate) fn rebind_with_modified(
+        artifact: &Arc<ReusableProcedureArtifact>,
+        frontend: &dm_tree::frontend::ColdFrontend,
+        body: &dm_tree::frontend::BodyOccurrence,
+        prepared: &crate::procedure_policy::PreparedUnit,
+        debug: crate::debug_sources::DebugOrigins,
+        required_types: &[SymbolId],
+        modified_seeds: Vec<PreparedModifiedSeed>,
+    ) -> Option<Self> {
+        let modified_recipes = modified_seeds
+            .iter()
+            .map(|seed| seed.source_recipe(body.expanded_span))
+            .collect();
         let identity = crate::lowering::source_unit_identity(frontend, body)
             .ok()?
             .identity;
@@ -32,6 +60,7 @@ impl PreparedContribution {
             return None;
         }
         let node = frontend.snapshot.tree.member(body.member)?;
+        let helpers = artifact.helper_origins(frontend, body, prepared)?;
         let effective = frontend
             .snapshot
             .tree
@@ -45,9 +74,11 @@ impl PreparedContribution {
                 body.clone(),
                 debug,
                 prepared.abi.clone(),
+                helpers,
             ),
             required_types: required_types.to_vec(),
-            modified_seeds: Vec::new(),
+            modified_seeds,
+            modified_recipes,
         })
     }
     pub(crate) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
@@ -122,6 +153,7 @@ pub fn prepare_contribution(
 ) -> Result<PreparedContribution, IntegrationError> {
     let identity = unit.identity;
     let effective = unit.effective;
+    let body_span = unit.origin.expanded_span;
     let mut required_types = Vec::new();
     let mut modified_seeds = Vec::new();
     sidecars(
@@ -131,6 +163,7 @@ pub fn prepare_contribution(
         &mut required_types,
         &mut modified_seeds,
     )?;
+    let ordinary_seed_count = modified_seeds.len();
     for helper in &unit.source_helpers {
         sidecars(
             &helper.code,
@@ -140,6 +173,16 @@ pub fn prepare_contribution(
             &mut modified_seeds,
         )?;
     }
+    // Helper expression coordinates belong to the signature input, not the body.
+    // Such seeds deliberately decline resident replay until a header recipe exists.
+    let modified_recipes = if modified_seeds.len() == ordinary_seed_count {
+        modified_seeds
+            .iter()
+            .map(|seed| seed.source_recipe(body_span))
+            .collect()
+    } else {
+        None
+    };
     let contribution =
         parallel::freeze_unit(unit, symbols, source_bindings, external, freeze_detail)?;
     if required_types.capacity() > required_types.len() {
@@ -154,6 +197,7 @@ pub fn prepare_contribution(
         contribution,
         required_types,
         modified_seeds,
+        modified_recipes,
     })
 }
 /// Replay pre-frozen contributions in the same source order as ordinary lowering.

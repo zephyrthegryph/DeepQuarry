@@ -14,6 +14,7 @@ struct Record {
     artifact: Arc<crate::symbolic::ReusableProcedureArtifact>,
     relative_debug: Vec<usize>,
     required_types: Vec<dm_ir::SymbolId>,
+    modified_recipes: Vec<crate::modified_initializers::SourceRecipe>,
 }
 pub(crate) struct Admission {
     store: Arc<SessionSymbolicMemo>,
@@ -85,6 +86,10 @@ impl CompletedInput {
                     artifact: value.shared_artifact(),
                     relative_debug: admission.relative_debug,
                     required_types: value.required_types().to_vec(),
+                    modified_recipes: value
+                        .modified_recipes()
+                        .expect("reusable contribution has source recipes")
+                        .to_vec(),
                 };
                 admission
                     .store
@@ -120,6 +125,7 @@ impl SessionSymbolicMemo {
         frontend: &ColdFrontend,
         body: &BodyOccurrence,
         prepared: &PreparedUnit,
+        bodies: &dm_tree::frontend::BodyArena<'_>,
     ) -> Option<CompletedInput> {
         let identity = source_unit_identity(frontend, body).ok()?.identity;
         let record = self
@@ -139,13 +145,29 @@ impl SessionSymbolicMemo {
             return None;
         }
         let debug = crate::lowering_memo::rebase_debug(frontend, body, &record.relative_debug)?;
-        let contribution = crate::symbolic::PreparedContribution::rebind(
+        let modified_seeds = if record.modified_recipes.is_empty() {
+            Vec::new()
+        } else {
+            bodies
+                .with_parsed(body, |parsed| {
+                    record
+                        .modified_recipes
+                        .iter()
+                        .map(|recipe| {
+                            recipe.reissue(parsed, host, frontend.snapshot.tree.symbols(), &debug)
+                        })
+                        .collect::<Option<Vec<_>>>()
+                })
+                .ok()??
+        };
+        let contribution = crate::symbolic::PreparedContribution::rebind_with_modified(
             &record.artifact,
             frontend,
             body,
             prepared,
             debug,
             &record.required_types,
+            modified_seeds,
         )?;
         Some(CompletedInput {
             inner: Input::Reused(contribution),

@@ -72,8 +72,11 @@ pub fn classify(error: &(dyn Error + 'static)) -> FailureKind {
             if error.kind() == std::io::ErrorKind::Interrupted {
                 return FailureKind::Cancelled;
             }
+            // io::Error::source delegates to the inner error's source and can
+            // omit the typed inner error itself. Inspect that owner explicitly.
             if let Some(inner) = error.get_ref() {
-                return classify(inner);
+                current = Some(inner);
+                continue;
             }
         }
         current = error.source();

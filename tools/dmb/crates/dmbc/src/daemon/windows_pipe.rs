@@ -28,6 +28,14 @@ unsafe extern "system" {
         timeout: u32,
         security: *const SecurityAttributes,
     ) -> Handle;
+    fn PeekNamedPipe(
+        pipe: Handle,
+        buffer: Handle,
+        size: u32,
+        read: *mut u32,
+        available: *mut u32,
+        left: *mut u32,
+    ) -> i32;
     fn SetNamedPipeHandleState(
         pipe: Handle,
         mode: *const u32,
@@ -98,7 +106,26 @@ impl io::Read for Stream {
         }
         loop {
             self.remaining()?;
+            let mut available = 0;
+            if unsafe {
+                PeekNamedPipe(
+                    self.file.as_raw_handle(),
+                    ptr::null_mut(),
+                    0,
+                    ptr::null_mut(),
+                    &mut available,
+                    ptr::null_mut(),
+                )
+            } == 0
+            {
+                return Err(io::Error::last_os_error());
+            }
+            if available == 0 {
+                std::thread::sleep(std::time::Duration::from_millis(2));
+                continue;
+            }
             match io::Read::read(&mut self.file, bytes) {
+                Ok(0) => std::thread::sleep(std::time::Duration::from_millis(2)),
                 Err(error) if matches!(error.raw_os_error(), Some(232 | 536)) => {
                     std::thread::sleep(std::time::Duration::from_millis(2))
                 }
@@ -302,5 +329,43 @@ mod acl_tests {
         assert!(endpoint.sid.starts_with("S-1-"));
         let name = String::from_utf16(&endpoint.name[..endpoint.name.len() - 1]).unwrap();
         assert_eq!(name, format!(r"\\.\pipe\dmbd-{}", endpoint.sid));
+    }
+    #[test]
+    fn connected_idle_pipe_waits_for_bytes_instead_of_reporting_eof() {
+        use std::io::{Read, Write};
+        let mut endpoint = Endpoint::current().unwrap();
+        static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        endpoint.name = wide(&format!(
+            r"\\.\pipe\dmbd-test-{}-{}-{}",
+            endpoint.sid,
+            std::process::id(),
+            NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
+        let listener = listener(&endpoint).unwrap();
+        let (ack_send, ack_receive) = std::sync::mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            let mut stream = listener.accept().unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(30));
+            stream.write_all(b"bytes").unwrap();
+            ack_receive
+                .recv_timeout(std::time::Duration::from_secs(2))
+                .unwrap();
+        });
+        let mut stream = (0..200)
+            .find_map(|_| {
+                let result = connect(&endpoint).ok();
+                if result.is_none() {
+                    std::thread::sleep(std::time::Duration::from_millis(5));
+                }
+                result
+            })
+            .expect("private test pipe connects");
+        set_timeout(&mut stream, std::time::Duration::from_secs(2)).unwrap();
+        let mut bytes = [0; 5];
+        stream.read_exact(&mut bytes).unwrap();
+        assert_eq!(&bytes, b"bytes");
+        ack_send.send(()).unwrap();
+        worker.join().unwrap();
+        assert!(stream.read(&mut [0]).is_err());
     }
 }

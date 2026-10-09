@@ -48,16 +48,51 @@ impl ReusableProcedureArtifact {
         &self,
         abi: &Option<Arc<crate::procedure_policy::PreparedAbi>>,
     ) -> bool {
-        self.helpers.is_empty()
-            && match (&self.abi, abi) {
-                (Some(old), Some(current)) => {
-                    old.layout == current.layout
-                        && old.argument_sources == current.argument_sources
-                        && current.source_helpers.is_empty()
-                }
-                (None, None) => true,
-                _ => false,
+        match (&self.abi, abi) {
+            (Some(old), Some(current)) => {
+                old.layout == current.layout
+                    && old.argument_sources == current.argument_sources
+                    && self.helpers.len() == current.source_helpers.len()
+                    && self
+                        .helpers
+                        .iter()
+                        .zip(&current.source_helpers)
+                        .all(|(stored, issued)| stored.argument as usize == issued.argument)
             }
+            (None, None) => self.helpers.is_empty(),
+            _ => false,
+        }
+    }
+    pub(super) fn helper_origins(
+        &self,
+        frontend: &dm_tree::frontend::ColdFrontend,
+        body: &dm_tree::frontend::BodyOccurrence,
+        prepared: &crate::procedure_policy::PreparedUnit,
+    ) -> Option<Vec<crate::debug_sources::FrozenDebugOrigins>> {
+        if self.helpers.is_empty() {
+            return Some(Vec::new());
+        }
+        let parsed = frontend.compact_body(body).ok()?;
+        let member = frontend.snapshot.tree.member(body.member)?;
+        let metadata = member.metadata.procedure.as_ref()?;
+        let abi = prepared.abi.as_ref()?;
+        let context = crate::argument_sources::HelperInputs {
+            frontend,
+            parsed,
+            metadata,
+            owner: self.identity,
+            inputs: &prepared.inputs,
+            helpers: &abi.source_helpers,
+            symbols: frontend.snapshot.tree.symbols(),
+        };
+        self.helpers
+            .iter()
+            .map(|helper| {
+                crate::argument_sources::current_helper_origins(&context, helper.argument)
+                    .ok()
+                    .map(Into::into)
+            })
+            .collect()
     }
 }
 fn clone_frame(frame: &FrozenFrame) -> FrozenFrame {
@@ -97,21 +132,19 @@ impl Clone for ReusableProcedureArtifact {
     }
 }
 impl Contribution {
-    pub(super) fn is_reusable(&self) -> bool {
-        self.artifact.helpers.is_empty()
-    }
     pub(super) fn rebind(
         artifact: &Arc<ReusableProcedureArtifact>,
         origin: dm_tree::frontend::BodyOccurrence,
         debug: crate::debug_sources::DebugOrigins,
         abi: Option<Arc<crate::procedure_policy::PreparedAbi>>,
+        helpers: Vec<crate::debug_sources::FrozenDebugOrigins>,
     ) -> Self {
         Self {
             artifact: Arc::clone(artifact),
             binding: ProcedureRevisionBinding {
                 origin,
                 debug: debug.into(),
-                helpers: Vec::new(),
+                helpers,
                 abi,
             },
         }

@@ -815,6 +815,8 @@ fn freeze_artifact(
 }
 mod current_images;
 mod freezing;
+#[cfg(test)]
+mod helper_reuse_tests;
 pub(crate) mod origin_roster;
 mod parallel;
 mod prepared_contribution;
