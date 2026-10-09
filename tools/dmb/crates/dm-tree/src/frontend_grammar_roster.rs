@@ -124,6 +124,9 @@ impl RetainedGrammar {
             },
         );
     }
+    pub(super) fn clear(&self) {
+        self.values.retain_current_keys(std::iter::empty::<&[u8]>());
+    }
     pub(super) fn hits(&self) -> usize {
         self.hits.load(Ordering::Relaxed)
     }

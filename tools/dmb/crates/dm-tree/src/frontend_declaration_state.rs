@@ -139,6 +139,14 @@ impl RetainedDeclarations {
             .retain_current_keys(keys.iter().map(Vec::as_slice));
         self.keys.store(keys.len(), Ordering::Relaxed);
     }
+    pub(super) fn clear(&self) {
+        self.retain(&[]);
+        self.grammar.clear();
+        *self
+            .symbols
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = ActiveSymbols::default();
+    }
     pub(super) fn get_shared(
         &self,
         key: &[u8],

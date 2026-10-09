@@ -29,6 +29,9 @@ pub(crate) use resident_maps::{
 pub(crate) use resident_startup::weight as resident_startup_weight;
 pub(crate) mod resident_weight;
 mod retained_declarations;
+mod grammar_roster;
+mod initializer_assemblies;
+pub(crate) use initializer_assemblies::inspect as initializer_assembly_census;
 mod retained_normalization;
 mod session_symbolic;
 pub(crate) use resident_initializer::{

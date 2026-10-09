@@ -1,6 +1,29 @@
 //! Explicit executable analysis over the same current issued bodies as lowering.
 use dm_tree::frontend::{BodyArena, ColdFrontend};
 use std::io::Write;
+#[derive(Default)]
+struct CoverageTotals {
+    requested: usize,
+    returned: usize,
+    unbound_selections: usize,
+    unavailable_coordinate_markers: usize,
+}
+#[cfg(test)]
+#[path = "analysis_export_coverage_tests.rs"]
+mod coverage_tests;
+impl CoverageTotals {
+    fn returned(&mut self, unbound: usize, unavailable: usize) -> std::io::Result<()> {
+        let add = |left: usize, right: usize| {
+            left.checked_add(right)
+                .ok_or_else(|| std::io::Error::other("resolved coverage counter overflow"))
+        };
+        self.returned = add(self.returned, 1)?;
+        self.unbound_selections = add(self.unbound_selections, unbound)?;
+        self.unavailable_coordinate_markers =
+            add(self.unavailable_coordinate_markers, unavailable)?;
+        Ok(())
+    }
+}
 /// Query the ordinary compiler producer against current pinned host facts.
 /// This emits selected references, never a whole-program completeness claim.
 pub(crate) fn write_resolved<R: dm_ir::Resolver>(
@@ -12,6 +35,10 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
     memo: &crate::lowering_memo::ProcedureMemo,
     writer: &mut impl Write,
 ) -> Result<usize, Box<dyn std::error::Error>> {
+    let mut totals = CoverageTotals {
+        requested: frontend.bodies.len(),
+        ..Default::default()
+    };
     crate::daemon::control::checkpoint()?;
     let bodies = BodyArena::new_typed(
         frontend,
@@ -40,7 +67,12 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
     if !prepared.prepared.diagnostics.is_empty() {
         let diagnostics = crate::driver_facts::abi_diagnostics(frontend, &prepared.prepared)?;
         write_diagnostics(&diagnostics, writer)?;
-        coverage(writer, 0, diagnostics.len(), "ABI preparation incomplete")?;
+        coverage(
+            writer,
+            &totals,
+            diagnostics.len(),
+            "ABI preparation incomplete",
+        )?;
         reject_errors(&diagnostics, writer)?;
         return Ok(0);
     }
@@ -49,7 +81,6 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
         &prepared.prepared,
         std::sync::Arc::clone(startup.unit_members()),
     )?;
-    let mut procedures = 0;
     let diagnostics = match crate::selected_query::visit(
         frontend,
         resolver,
@@ -65,7 +96,10 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
         |procedure| -> Result<(), Box<dyn std::error::Error>> {
             crate::daemon::control::checkpoint()?;
             procedure.write_jsonl(writer)?;
-            procedures += 1;
+            totals.returned(
+                procedure.unbound_selections(),
+                procedure.unavailable_coordinates(),
+            )?;
             Ok(())
         },
     ) {
@@ -84,12 +118,12 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
     write_diagnostics(&diagnostics, writer)?;
     coverage(
         writer,
-        procedures,
+        &totals,
         diagnostics.len(),
         "compiler-selected reference subset; unsupported and unbound selections remain explicit",
     )?;
     reject_errors(&diagnostics, writer)?;
-    Ok(procedures)
+    Ok(totals.returned)
 }
 fn reject_errors(
     diagnostics: &[crate::lowering::LoweringDiagnostic],
@@ -140,16 +174,27 @@ fn write_diagnostics(
 }
 fn coverage(
     writer: &mut impl Write,
-    procedures: usize,
+    totals: &CoverageTotals,
     diagnostics: usize,
     reason: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let omitted = totals
+        .requested
+        .checked_sub(totals.returned)
+        .ok_or("resolved query returned more procedures than requested")?;
     serde_json::to_writer(
         &mut *writer,
         &serde_json::json!({
             "schema":"dm-selected-reference-analysis-v1", "row":"coverage",
             "semantic_resolution_complete":false,
-            "procedures":procedures,"diagnostics":diagnostics,"reason":reason,
+            "procedures":totals.returned,"diagnostics":diagnostics,"reason":reason,
+            "requested_procedures":totals.requested,
+            "returned_procedures":totals.returned,
+            "omitted_procedures":omitted,
+            "unbound_selections":totals.unbound_selections,
+            // Missing producer facts contribute one marker; this is not a
+            // claim to know the number of selections in an uncaptured body.
+            "unavailable_coordinate_markers":totals.unavailable_coordinate_markers,
         }),
     )?;
     writer.write_all(b"\n")?;

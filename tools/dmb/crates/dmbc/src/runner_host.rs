@@ -32,6 +32,10 @@ pub struct BuildHost {
     startup: Option<(u128, Arc<crate::startup::StartupArtifacts>)>,
     abi: Option<(u128, Arc<crate::driver_facts::AbiArtifacts>)>,
     initializer_fragments: Option<(u128, Arc<crate::initializer_lowering::InitializerFragments>)>,
+    initializer_assemblies: Option<(
+        u128,
+        Arc<crate::initializer_lowering::InitializerAssemblies>,
+    )>,
     symbolic: Option<(
         u128,
         Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>,
@@ -68,6 +72,7 @@ impl Default for BuildHost {
             startup: None,
             abi: None,
             initializer_fragments: None,
+            initializer_assemblies: None,
         }
     }
 }
@@ -86,6 +91,7 @@ impl BuildHost {
             startup: None,
             abi: None,
             initializer_fragments: None,
+            initializer_assemblies: None,
         }
     }
 
@@ -113,6 +119,15 @@ impl BuildHost {
         self.semantic
             .as_ref()
             .map(crate::heap_census::retained_declaration_census)
+    }
+
+    /// Explicit diagnostic traversal; never part of compilation or admission.
+    pub fn initializer_assembly_retention_census(
+        &self,
+    ) -> Option<crate::heap_census::HeapCensusReport> {
+        self.initializer_assemblies
+            .as_ref()
+            .map(|(_, store)| crate::heap_census::initializer_assembly_census(store))
     }
 
     pub(crate) fn retains_artifacts(&self) -> bool {
@@ -211,6 +226,15 @@ impl BuildHost {
         }
         memo.initializer_fragments =
             Some(Arc::clone(&self.initializer_fragments.as_ref().unwrap().1));
+        if self
+            .initializer_assemblies
+            .as_ref()
+            .is_none_or(|(previous, _)| *previous != policy)
+        {
+            self.initializer_assemblies = Some((policy, Arc::new(Default::default())));
+        }
+        memo.initializer_assemblies =
+            Some(Arc::clone(&self.initializer_assemblies.as_ref().unwrap().1));
         Some(memo)
     }
 
@@ -305,6 +329,7 @@ impl BuildHost {
         self.startup = None;
         self.abi = None;
         self.initializer_fragments = None;
+        self.initializer_assemblies = None;
         self.maps = None;
         if self.semantic.is_some() {
             self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());

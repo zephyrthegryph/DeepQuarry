@@ -71,6 +71,8 @@ pub struct ProcedureMemo {
     pub(crate) abi: Option<Arc<crate::driver_facts::AbiArtifacts>>,
     pub(crate) initializer_fragments:
         Option<Arc<crate::initializer_lowering::InitializerFragments>>,
+    pub(crate) initializer_assemblies:
+        Option<Arc<crate::initializer_lowering::InitializerAssemblies>>,
     disk: Option<Arc<dm_cache::CacheSnapshot>>,
     pending: Mutex<Pending>,
     pub counts: MemoCounts,
@@ -144,6 +146,15 @@ pub struct MemoExplanation {
     pub changed_query: Option<ResolveQuery>,
 }
 impl ProcedureMemo {
+    /// Observe the optional retained assembled-code owner without decoding it.
+    pub fn initializer_assembly_retention_census(
+        &self,
+    ) -> Option<crate::heap_census::HeapCensusReport> {
+        self.initializer_assemblies
+            .as_ref()
+            .map(|store| crate::heap_census::initializer_assembly_census(store))
+    }
+
     pub fn with_explanation_limit(mut self, limit: usize) -> Self {
         self.explanation_limit = limit.min(131072);
         self
@@ -248,6 +259,7 @@ impl ProcedureMemo {
             startup: None,
             abi: None,
             initializer_fragments: None,
+            initializer_assemblies: None,
             disk: None,
             pending: Mutex::new(Pending::default()),
             counts: MemoCounts::default(),
@@ -286,6 +298,7 @@ impl ProcedureMemo {
             startup: None,
             abi: None,
             initializer_fragments: None,
+            initializer_assemblies: None,
             disk: Some(snapshot.into()),
             pending: Mutex::new(Pending::default()),
             counts: MemoCounts::default(),

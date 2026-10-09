@@ -13,6 +13,9 @@ use dm_tree::{frontend::ColdFrontend, initializers::InitializerPlan};
 #[path = "initializer_fragments.rs"]
 mod fragments;
 pub use fragments::InitializerFragments;
+#[path = "initializer_assemblies.rs"]
+mod assemblies;
+pub use assemblies::InitializerAssemblies;
 
 #[derive(Clone, Copy, Debug)]
 pub enum InitializerStage {
@@ -307,13 +310,25 @@ fn lower_plan<R: Resolver>(
     measurement.complete();
     let measurement = crate::stage_measurements::Scope::new(observer, InitializerStage::Codegen);
     let fragment_store = memo.and_then(|memo| memo.initializer_fragments.as_deref());
-    let fragment_keys = if let Some((store, memo)) = fragment_store.zip(memo) {
-        let keys = fragments::current_keys(&classified, memo.policy, resource_search_context)?;
-        store.retain_keys(&keys);
-        Some(keys)
-    } else {
-        None
-    };
+    let assembly_store = memo.and_then(|memo| memo.initializer_assemblies.as_deref());
+    let fragment_keys =
+        if let Some(memo) = memo.filter(|_| fragment_store.is_some() || assembly_store.is_some()) {
+            let keys = fragments::current_keys(&classified, memo.policy, resource_search_context)?;
+            if let Some(store) = fragment_store {
+                store.retain_keys(&keys);
+            }
+            Some(keys)
+        } else {
+            None
+        };
+    let assembly_keys = assembly_store
+        .zip(fragment_keys.as_ref())
+        .map(|(store, keys)| {
+            let keys = assemblies::current_keys(&classified, keys)?;
+            store.retain_keys(&keys);
+            Ok::<_, String>(keys)
+        })
+        .transpose()?;
     let lower_one = |index: usize| {
         let _profile = dm_profile::stage("initializer.codegen_group");
         lower_group(
@@ -325,6 +340,9 @@ fn lower_plan<R: Resolver>(
             resource_search_context,
             memo,
             fragment_store.zip(fragment_keys.as_ref()),
+            assembly_store
+                .zip(assembly_keys.as_ref())
+                .map(|(store, keys)| (store, keys[index].as_slice())),
         )
     };
     let units =
@@ -358,6 +376,7 @@ fn lower_group<R: Resolver>(
         &InitializerFragments,
         &std::collections::HashMap<usize, Vec<u8>>,
     )>,
+    assembly: Option<(&InitializerAssemblies, &[u8])>,
 ) -> Result<LoweredInitializerUnit, InitializerLoweringError> {
     let symbols = plan.symbols.as_ref();
     let mut assignments = Vec::with_capacity(group.writes.len());
@@ -489,6 +508,37 @@ fn lower_group<R: Resolver>(
             }
         }
     };
+    if assignment_views.len() != group.writes.len() {
+        return Err("initializer assembly root roster differs from group".into());
+    }
+    if let Some((store, key)) = assembly {
+        if let Some(code) = store.lookup(key, &assignment_views, symbols, host) {
+            return Ok(LoweredInitializerUnit {
+                scope: group
+                    .receiver
+                    .map(InitializerScope::Instance)
+                    .unwrap_or(InitializerScope::Global),
+                write_ordinals,
+                code,
+                debug_origins: debug.origins,
+            });
+        }
+    }
+    let assembly_recorder = assembly.map(|_| crate::lowering_memo::RecordingResolver::new(host));
+    if let Some(recorder) = &assembly_recorder {
+        for &index in &group.writes {
+            let write = &classified.writes[index].write;
+            recorder.resolve(dm_ir::ResolveQuery::Ancestry(write.lexical_owner));
+            if let Some(identity) = write.lexical_procedure {
+                recorder.record_occurrence(identity);
+            }
+        }
+    }
+    let observed_host = assemblies::AssemblyHost {
+        original: host,
+        recorder: assembly_recorder.as_ref(),
+    };
+    let host = &observed_host;
     let code = if let Some((store, keys)) = fragments {
         let prepared = dm_codegen_byond::initializer::prepare_assignment_group(
             &assignment_views,
@@ -642,6 +692,9 @@ fn lower_group<R: Resolver>(
         dm_codegen_byond::initializer::lower_assignment_views(&assignment_views, context(), host)
             .map_err(map_error)?
     };
+    if let (Some((store, key)), Some(recorder)) = (assembly, assembly_recorder.as_ref()) {
+        store.remember(key, &code, &assignment_views, recorder);
+    }
     Ok(LoweredInitializerUnit {
         scope: group
             .receiver

@@ -138,7 +138,7 @@ impl RetainedSemanticTree {
     pub fn clear(&mut self) {
         self.entry = None;
         self.normalization = crate::owner_normalization::RetainedNormalization::default();
-        self.declarations.retain(&[]);
+        self.declarations.clear();
     }
     pub fn hits(&self) -> u64 {
         self.hits

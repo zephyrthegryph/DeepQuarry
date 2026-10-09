@@ -4,6 +4,7 @@ use dm_tree::frontend::{DeclarationStorageView, RetainedSemanticTree};
 
 pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
     let mut census = HeapCensus::new("retained_declarations");
+    super::grammar_roster::inspect(&mut census, state);
     super::metadata_dependencies::inspect(&mut census, state);
     super::retained_normalization::inspect(&mut census, state);
     super::effective_metadata::inspect(&mut census, state);
@@ -58,7 +59,7 @@ pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
                     census.slice(owner, &origin.expansion_stack, true);
                 }
             }
-            contribution.ledger.events.visit_storage(|address, len, bytes| {
+            contribution.visit_allocation_storage(|address, len, bytes| {
                 census.owner(owner).observed_items += len as u64;
                 census.buffer(owner, address, bytes, bytes);
             });
@@ -81,6 +82,10 @@ mod tests {
     fn retained_declaration_census_visits_payloads_without_mutating_or_serializing() {
         let mut state = RetainedSemanticTree::new();
         let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        let host = crate::runner_host::BuildHost::default();
+        let memo = host
+            .expansion_memo(None)
+            .expect("retained host enables expansion receipts");
         let frontend = dm_tree::frontend::build_with_executor_and_semantic_state(
             Path::new("census.dme"),
             &Source,
@@ -90,7 +95,7 @@ mod tests {
                 engine: None,
                 observer: None,
             },
-            None,
+            Some(&memo),
             &executor,
             Some(&mut state),
         )
@@ -99,6 +104,18 @@ mod tests {
         let first = inspect(&state);
         let second = inspect(&state);
         assert!(first.unique_known_capacity_bytes > 0);
+        assert!(first
+            .owners
+            .iter()
+            .any(|owner| owner.owner == "retained_grammar.descriptors"
+                && owner.unique_known_capacity_bytes > 0));
+        assert!(
+            first
+                .owners
+                .iter()
+                .any(|owner| owner.owner == "retained_grammar.expansions"
+                    && !owner.unknown.is_empty())
+        );
         assert!(first.owners.iter().any(|owner| owner.owner
             == "retained_normalization.current_roster"
             && owner.unique_known_capacity_bytes > 0));
