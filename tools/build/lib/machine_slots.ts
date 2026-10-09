@@ -139,7 +139,8 @@ function reap(dir: string, log?: (m: string) => void): void {
         continue;
       }
       if (age > 2000) fs.rmSync(sd, { recursive: true, force: true });
-    } else if (isDead(owner)) {
+    } else if (fs.existsSync(owner) && isDead(owner)) {
+      // (the owner file can vanish between the two tests when its holder releases: that is not a dead holder, and removing the directory could take a slot another waiter just made)
       const f = readFields(owner);
       log?.(`== machine slots: reclaiming a dead slot (${sd}: ${f.worktree} pid ${f.pid} ${f.label})`);
       fs.rmSync(sd, { recursive: true, force: true });
