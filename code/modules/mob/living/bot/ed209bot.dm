@@ -79,206 +79,116 @@
 	item_state = "buildpipe"
 	created_name = "ED-209 Security Robot"
 	var/lasercolor = ""
-	construction_graph = /datum/construction_graph/secbot_assembly/ed209
 
 // Renaming with a pen is inherited from /obj/item/secbot_assembly (secbot_assembly_rename).
 
-/// A robot leg: two robot_parts types, or a robotic external leg organ by name.
-/datum/interaction/construction/secbot/leg
-	item_type = list(/obj/item/robot_parts/l_leg, /obj/item/robot_parts/r_leg, /obj/item/organ/external/leg)
-	item_name = "a robot leg"
-	item_use = CONSTRUCTION_ITEM_DELETE
-	step_text = "add a robot leg"
+STAGE_DEF(ed209, armoured)
+STAGE_DEF(ed209, shielded)
+STAGE_DEF(ed209, helmeted)
+STAGE_DEF(ed209, sensing)
+STAGE_DEF(ed209, wired)
+STAGE_DEF(ed209, tasered)
+STAGE_DEF(ed209, armed)
+STAGE_DEF(ed209, finished)
+STAGE_DEF(ed209, swapped)
 
-/datum/interaction/construction/secbot/leg/item_matches(obj/item/held)
-	if(istype(held, /obj/item/robot_parts/l_leg) || istype(held, /obj/item/robot_parts/r_leg))
-		return TRUE
-	return istype(held, /obj/item/organ/external/leg) && (held.name == "robotic right leg" || held.name == "robotic left leg")
+MSG_DEF_SELF(stage/ed209/armoured, "It has its armor on.")
+MSG_DEF_SELF(stage/ed209/shielded, "Its armor is welded on.")
+MSG_DEF_SELF(stage/ed209/helmeted, "It has its helmet.")
+MSG_DEF_SELF(stage/ed209/sensing, "It has its proximity sensor.")
+MSG_DEF_SELF(stage/ed209/wired, "It is wired.")
+MSG_DEF_SELF(stage/ed209/tasered, "It has its gun.")
+MSG_DEF_SELF(stage/ed209/armed, "Its gun is attached to the frame.")
+MSG_DEF_SELF(stage/ed209/finished, "It is finished.")
+MSG_DEF_SELF(stage/ed209/swapped, "It has been made into an SL-ED-209 assembly.")
+MSG_DEF_SELF(ed209/start_attach_gun, "Now attaching the gun to the frame...")
 
-/datum/interaction/construction/secbot/leg/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/ed209_assembly/assembly = target
-	assembly.name = "legs/frame assembly"
-	assembly.icon_state = (after == 1) ? "ed209_leg" : "ed209_legs"
-	to_chat(actor, span_notice("You add the robot leg to [target]."))
-	return TRUE
+/// The ED-209 ladder from its armor to its wiring, which the SL-ED-209 assembly shares.
+/proc/ed209_body()
+	return list(
+		stage(STAGE_ED209_ARMOURED, item(/obj/item/clothing/suit/storage/vest), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, vest_added)), undo = null),
+		stage(STAGE_ED209_SHIELDED, tool(TOOL_WELDER), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, vest_welded)), undo = null),
+		stage(STAGE_ED209_HELMETED, item(/obj/item/clothing/head/helmet), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, helmet_added)), undo = null),
+		stage(STAGE_ED209_SENSING, item(/obj/item/assembly/prox_sensor), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, sensor_added)), undo = null),
+		stage(STAGE_ED209_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), begins(MSG(bot_frame/start_wire)), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, wired_up)), undo = null))
 
-/datum/construction_graph/secbot_assembly/ed209
-	id = "ed209_assembly"
-	states = list(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
-	initial_states = list(0)
-	state_var = "build_step"
-	edge_types = list(
-		/datum/interaction/construction/secbot/ed209/leg_0,
-		/datum/interaction/construction/secbot/ed209/leg_1,
-		/datum/interaction/construction/secbot/ed209/vest,
-		/datum/interaction/construction/secbot/ed209/weld_vest,
-		/datum/interaction/construction/secbot/ed209/helmet,
-		/datum/interaction/construction/secbot/ed209/prox,
-		/datum/interaction/construction/secbot/ed209/wire,
-		/datum/interaction/construction/secbot/ed209/taser,
-		/datum/interaction/construction/secbot/ed209/taser_xeno,
-		/datum/interaction/construction/secbot/ed209/attach_gun,
-		/datum/interaction/construction/secbot/ed209/finish,
-	)
+/// Fixing the gun to the frame, which the SL-ED-209 assembly shares.
+/proc/ed209_gun_attached()
+	return stage(STAGE_ED209_ARMED, tool(TOOL_SCREWDRIVER), wait(4 SECONDS), begins(MSG(ed209/start_attach_gun)), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, gun_attached)), undo = null)
 
-/datum/interaction/construction/secbot/ed209/leg_0
-	parent_type = /datum/interaction/construction/secbot/leg
-	from_state = 0
-	to_state = 1
+CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
+	without(CAP_CONSTRUCTION)
+	construction(start(STAGE_BOT_FRAME_BARE), bot_frame_legs(), ed209_body(),
+		stage(STAGE_ED209_TASERED, item(/obj/item/gun/energy/taser), when(PROC_REF(plain_taser_held)), consumes(), wait(0), then(PROC_REF(taser_added)), undo = null),
+		ed209_gun_attached(),
+		stage(STAGE_ED209_FINISHED, item(/obj/item/cell), consumes(), wait(0), then(PROC_REF(finished)), undo = null),
+		stage(STAGE_ED209_SWAPPED, item(/obj/item/gun/energy/taser/xeno), consumes(), wait(0), then(PROC_REF(swapped_to_slime)), from = STAGE_ED209_WIRED, undo = null))
 
-/datum/interaction/construction/secbot/ed209/leg_1
-	parent_type = /datum/interaction/construction/secbot/leg
-	from_state = 1
-	to_state = 2
+/obj/item/secbot_assembly/ed209_assembly/proc/vest_added(datum/act/op/A)
+	name = "vest/legs/frame assembly"
+	item_state = "ed209_shell"
+	icon_state = "ed209_shell"
+	to_chat(A.actor, span_notice("You add the armor to [src]."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/ed209/vest
-	from_state = 2
-	to_state = 3
-	step_text = "add the armor"
-	item_type = /obj/item/clothing/suit/storage/vest
-	item_use = CONSTRUCTION_ITEM_DELETE
+/obj/item/secbot_assembly/ed209_assembly/proc/vest_welded(datum/act/op/A)
+	name = "shielded frame assembly"
+	to_chat(A.actor, span_notice("You welded the vest to [src]."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/ed209/vest/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/ed209_assembly/assembly = target
-	assembly.name = "vest/legs/frame assembly"
-	assembly.item_state = "ed209_shell"
-	assembly.icon_state = "ed209_shell"
-	to_chat(actor, span_notice("You add the armor to [target]."))
-	return TRUE
+/obj/item/secbot_assembly/ed209_assembly/proc/helmet_added(datum/act/op/A)
+	name = "covered and shielded frame assembly"
+	item_state = "ed209_hat"
+	icon_state = "ed209_hat"
+	to_chat(A.actor, span_notice("You add the helmet to [src]."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/ed209/weld_vest
-	from_state = 3
-	to_state = 4
-	step_text = "weld the vest on"
-	tool = TOOL_WELDER
+/obj/item/secbot_assembly/ed209_assembly/proc/sensor_added(datum/act/op/A)
+	name = "covered, shielded and sensored frame assembly"
+	item_state = "ed209_prox"
+	icon_state = "ed209_prox"
+	to_chat(A.actor, span_notice("You add the prox sensor to [src]."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/ed209/weld_vest/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/ed209_assembly/assembly = target
-	assembly.name = "shielded frame assembly"
-	to_chat(actor, span_notice("You welded the vest to [target]."))
-	return TRUE
+/obj/item/secbot_assembly/ed209_assembly/proc/wired_up(datum/act/op/A)
+	name = "wired ED-209 assembly"
+	to_chat(A.actor, span_notice("You wire the ED-209 assembly."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/ed209/helmet
-	from_state = 4
-	to_state = 5
-	step_text = "add the helmet"
-	item_type = /obj/item/clothing/head/helmet
-	item_use = CONSTRUCTION_ITEM_DELETE
+/// A xenotaser belongs to the SL-ED-209 assembly: the plain taser step does not take one.
+/obj/item/secbot_assembly/ed209_assembly/proc/plain_taser_held(datum/act/op/A)
+	return istype(A.held, /obj/item/gun/energy/taser) && !istype(A.held, /obj/item/gun/energy/taser/xeno)
 
-/datum/interaction/construction/secbot/ed209/helmet/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/ed209_assembly/assembly = target
-	assembly.name = "covered and shielded frame assembly"
-	assembly.item_state = "ed209_hat"
-	assembly.icon_state = "ed209_hat"
-	to_chat(actor, span_notice("You add the helmet to [target]."))
-	return TRUE
+/obj/item/secbot_assembly/ed209_assembly/proc/taser_added(datum/act/op/A)
+	name = "taser ED-209 assembly"
+	item_state = "ed209_taser"
+	icon_state = "ed209_taser"
+	to_chat(A.actor, span_notice("You add [A.held] to [src]."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/ed209/prox
-	from_state = 5
-	to_state = 6
-	step_text = "add the prox sensor"
-	item_type = /obj/item/assembly/prox_sensor
-	item_use = CONSTRUCTION_ITEM_DELETE
+/obj/item/secbot_assembly/ed209_assembly/proc/gun_attached(datum/act/op/A)
+	name = "armed [name]"
+	to_chat(A.actor, span_notice("Taser gun attached."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/ed209/prox/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/ed209_assembly/assembly = target
-	assembly.name = "covered, shielded and sensored frame assembly"
-	assembly.item_state = "ed209_prox"
-	assembly.icon_state = "ed209_prox"
-	to_chat(actor, span_notice("You add the prox sensor to [target]."))
-	return TRUE
-
-/datum/interaction/construction/secbot/ed209/wire
-	start_feedback = /datum/msg/start/interaction/construction/secbot/ed209/wire
-	from_state = 6
-	to_state = 7
-	step_text = "wire it"
-	item_type = /obj/item/stack/cable_coil
-	item_amount = 1
-	item_use = CONSTRUCTION_ITEM_USE
-	duration = 4 SECONDS
-	tool_scaled = FALSE
-
-/datum/msg/start/interaction/construction/secbot/ed209/wire
-	self = "You start to wire %T%."
-
-/datum/interaction/construction/secbot/ed209/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/ed209_assembly/assembly = target
-	assembly.name = "wired ED-209 assembly"
-	to_chat(actor, span_notice("You wire the ED-209 assembly."))
-	return TRUE
-
-/datum/interaction/construction/secbot/ed209/taser
-	from_state = 7
-	to_state = 8
-	step_text = "add a taser"
-	item_type = /obj/item/gun/energy/taser
-	item_use = CONSTRUCTION_ITEM_DELETE
-
-/datum/interaction/construction/secbot/ed209/taser/item_matches(obj/item/held)
-	return istype(held, /obj/item/gun/energy/taser) && !istype(held, /obj/item/gun/energy/taser/xeno)
-
-/datum/interaction/construction/secbot/ed209/taser/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/ed209_assembly/assembly = target
-	assembly.name = "taser ED-209 assembly"
-	assembly.item_state = "ed209_taser"
-	assembly.icon_state = "ed209_taser"
-	to_chat(actor, span_notice("You add [held] to [target]."))
-	return TRUE
-
-/datum/interaction/construction/secbot/ed209/taser_xeno
-	from_state = 7
-	to_state = CONSTRUCTION_DONE
-	step_text = "add a xenotaser"
-	item_type = /obj/item/gun/energy/taser/xeno
-	item_use = CONSTRUCTION_ITEM_DELETE
-	priority = 5
-
-/datum/interaction/construction/secbot/ed209/taser_xeno/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/ed209_assembly/assembly = target
-	to_chat(actor, span_notice("You add [held] to [assembly]."))
-	var/turf/where = get_turf(assembly)
+/// A xenotaser at the wired stage swaps the assembly for the SL-ED-209 kind, which picks up at its gun stage.
+/obj/item/secbot_assembly/ed209_assembly/proc/swapped_to_slime(datum/act/op/A)
+	to_chat(A.actor, span_notice("You add [A.held] to [src]."))
+	var/turf/where = get_turf(src)
 	var/obj/item/secbot_assembly/ed209_assembly/slime/slime_assembly = new(where)
 	slime_assembly.name = "xenotaser SL-ED-209 assembly"
 	slime_assembly.item_state = "sled209_taser"
 	slime_assembly.icon_state = "sled209_taser"
-	slime_assembly.build_step = 8
-	slime_assembly.created_name = assembly.created_name
-	slime_assembly.lasercolor = assembly.lasercolor
-	consume(assembly, actor)
-	return TRUE
+	graph_place(slime_assembly, STAGE_ED209_TASERED)
+	slime_assembly.created_name = created_name
+	slime_assembly.lasercolor = lasercolor
+	consume(src, A.actor)
+	return OP_OK
 
-/datum/interaction/construction/secbot/ed209/attach_gun
-	start_feedback = /datum/msg/start/interaction/construction/secbot/ed209/attach_gun
-	from_state = 8
-	to_state = 9
-	step_text = "attach the gun to the frame"
-	tool = TOOL_SCREWDRIVER
-	tool_volume = 100
-	duration = 4 SECONDS
-	tool_scaled = FALSE
-
-/datum/msg/start/interaction/construction/secbot/ed209/attach_gun
-	self = "Now attaching the gun to the frame..."
-
-/datum/interaction/construction/secbot/ed209/attach_gun/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/ed209_assembly/assembly = target
-	assembly.name = "armed [assembly.name]"
-	to_chat(actor, span_notice("Taser gun attached."))
-	return TRUE
-
-/datum/interaction/construction/secbot/ed209/finish
-	from_state = 9
-	to_state = CONSTRUCTION_DONE
-	step_text = "install a cell to finish it"
-	item_type = /obj/item/cell
-	item_use = CONSTRUCTION_ITEM_DELETE
-
-/datum/interaction/construction/secbot/ed209/finish/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/ed209_assembly/assembly = target
-	to_chat(actor, span_notice("You complete the ED-209."))
-	var/turf/where = get_turf(assembly)
+/obj/item/secbot_assembly/ed209_assembly/finished(datum/act/op/A)
+	to_chat(A.actor, span_notice("You complete the ED-209."))
+	var/turf/where = get_turf(src)
 	var/mob/living/bot/secbot/ed209/bot = new /mob/living/bot/secbot/ed209(where)
-	bot.name = assembly.created_name
-	consume(assembly, actor)
-	return TRUE
+	bot.name = created_name
+	consume(src, A.actor)
+	return OP_OK

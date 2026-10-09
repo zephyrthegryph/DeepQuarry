@@ -387,7 +387,7 @@ CAPABILITIES(/mob/living/bot/secbot)
 	var/turf/Tsec = get_turf(src)
 
 	var/obj/item/secbot_assembly/Sa = new /obj/item/secbot_assembly(Tsec)
-	Sa.build_step = 1
+	graph_place(Sa, STAGE_SECBOT_HOLED)
 	Sa.add_overlay("hs_hole")
 	Sa.created_name = name
 	new /obj/item/assembly/prox_sensor(Tsec)
@@ -449,13 +449,32 @@ CAPABILITIES(/obj/item/clothing/head/helmet)
 			slot_r_hand_str = 'icons/mob/items/righthand_hats.dmi',
 			)
 	item_state = "helmet"
-	var/build_step = 0
 	var/created_name = "Securitron"
-	construction_graph = /datum/construction_graph/secbot_assembly
 
-// Renaming the finished bot is not construction: keep it a plain interaction.
+/**
+ * The Securitron assembly: a helmet welded open, then a signaler (added by the helmet itself, see above), a prox sensor, a robot arm and a
+ * baton. The baton step branches by type (a slime baton makes a `/mob/living/bot/secbot/slime`) without a stage fork. Renaming the finished
+ * bot is not construction: it is an op of its own, inherited by every kind of bot assembly.
+ */
+STAGE_DEF(secbot, helmet)
+STAGE_DEF(secbot, holed)
+STAGE_DEF(secbot, sensing)
+STAGE_DEF(secbot, armed)
+STAGE_DEF(secbot, finished)
+
+MSG_DEF_SELF(stage/secbot/helmet, "It is a helmet with a signaler.")
+MSG_DEF_SELF(stage/secbot/holed, "It has a hole welded in the helmet.")
+MSG_DEF_SELF(stage/secbot/sensing, "It has a proximity sensor.")
+MSG_DEF_SELF(stage/secbot/armed, "It has a robot arm.")
+MSG_DEF_SELF(stage/secbot/finished, "It is finished.")
+
 CAPABILITIES(/obj/item/secbot_assembly)
 	op("secbot_assembly_rename", item(/obj/item/pen), label("Rename"), then(PROC_REF(secbot_assembly_rename)))
+	construction(start(STAGE_SECBOT_HELMET),
+		stage(STAGE_SECBOT_HOLED, tool(TOOL_WELDER), wait(0), then(PROC_REF(hole_welded)), undo = null),
+		stage(STAGE_SECBOT_SENSING, item(/obj/item/assembly/prox_sensor), consumes(), wait(0), then(PROC_REF(sensor_added)), undo = null),
+		stage(STAGE_SECBOT_ARMED, inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)), when(PROC_REF(robot_arm_held)), consumes(), wait(0), then(PROC_REF(arm_added)), undo = null),
+		stage(STAGE_SECBOT_FINISHED, item(/obj/item/melee/baton), consumes(), wait(0), then(PROC_REF(finished)), undo = null))
 
 /// Old attackby: name the bot with a pen.
 /obj/item/secbot_assembly/proc/secbot_assembly_rename(datum/act/op/A)
@@ -463,86 +482,76 @@ CAPABILITIES(/obj/item/secbot_assembly)
 	ask_name_var(user)
 	return OP_PASS
 
-/**
- * The Securitron assembly: a helmet welded open, then a signaler (added by
- * the helmet itself, see above), a prox sensor, a robot arm and a baton.
- * `build_step` is the graph's state_var. The baton step branches by type
- * (a slime baton makes a `/mob/living/bot/secbot/slime`) without a state fork.
- */
-/datum/construction_graph/secbot_assembly
-	id = "secbot_assembly"
-	states = list(0, 1, 2, 3)
-	initial_states = list(0)
-	state_var = "build_step"
-	edge_types = list(
-		/datum/interaction/construction/secbot/weld_hole,
-		/datum/interaction/construction/secbot/prox,
-		/datum/interaction/construction/secbot/arm,
-		/datum/interaction/construction/secbot/baton,
-	)
-
-/datum/interaction/construction/secbot/weld_hole
-	from_state = 0
-	to_state = 1
-	step_text = "weld a hole in it"
-	tool = TOOL_WELDER
-
-/datum/interaction/construction/secbot/weld_hole/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	target.add_overlay("hs_hole")
-	to_chat(actor, span_notice("You weld a hole in \the [target]."))
-	return TRUE
-
-/datum/interaction/construction/secbot/prox
-	from_state = 1
-	to_state = 2
-	step_text = "add a proximity sensor"
-	item_type = /obj/item/assembly/prox_sensor
-	item_use = CONSTRUCTION_ITEM_DELETE
-
-/datum/interaction/construction/secbot/prox/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	target.add_overlay("hs_eye")
-	target.name = "helmet/signaler/prox sensor assembly"
-	to_chat(actor, span_notice("You add \the [held] to [target]."))
-	return TRUE
-
-/datum/interaction/construction/secbot/arm
-	from_state = 2
-	to_state = 3
-	step_text = "add a robot arm"
-	item_type = list(/obj/item/robot_parts/l_arm, /obj/item/robot_parts/r_arm, /obj/item/organ/external/arm)
-	item_name = "a robot arm"
-	item_use = CONSTRUCTION_ITEM_DELETE
-
-/datum/interaction/construction/secbot/arm/item_matches(obj/item/held)
+/// A robot arm: two robot_parts types, or a robotic external arm organ by name.
+/obj/item/secbot_assembly/proc/robot_arm_held(datum/act/op/A)
+	var/obj/item/held = A.held
 	if(istype(held, /obj/item/robot_parts/l_arm) || istype(held, /obj/item/robot_parts/r_arm))
 		return TRUE
 	return istype(held, /obj/item/organ/external/arm) && (held.name == "robotic right arm" || held.name == "robotic left arm")
 
-/datum/interaction/construction/secbot/arm/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	target.name = "helmet/signaler/prox sensor/robot arm assembly"
-	target.add_overlay("hs_arm")
-	to_chat(actor, span_notice("You add \the [held] to [target]."))
-	return TRUE
+/// A robot leg: two robot_parts types, or a robotic external leg organ by name.
+/obj/item/secbot_assembly/proc/robot_leg_held(datum/act/op/A)
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/robot_parts/l_leg) || istype(held, /obj/item/robot_parts/r_leg))
+		return TRUE
+	return istype(held, /obj/item/organ/external/leg) && (held.name == "robotic right leg" || held.name == "robotic left leg")
 
-/datum/interaction/construction/secbot/baton
-	from_state = 3
-	to_state = CONSTRUCTION_DONE
-	step_text = "attach a stun baton to finish it"
-	item_type = /obj/item/melee/baton
-	item_use = CONSTRUCTION_ITEM_DELETE
+/obj/item/secbot_assembly/proc/hole_welded(datum/act/op/A)
+	add_overlay("hs_hole")
+	to_chat(A.actor, span_notice("You weld a hole in \the [src]."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/baton/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/assembly = target
-	to_chat(actor, span_notice("You complete the Securitron! Beep boop."))
-	var/turf/where = get_turf(assembly)
-	if(istype(held, /obj/item/melee/baton/slime))
+/obj/item/secbot_assembly/proc/sensor_added(datum/act/op/A)
+	add_overlay("hs_eye")
+	name = "helmet/signaler/prox sensor assembly"
+	to_chat(A.actor, span_notice("You add \the [A.held] to [src]."))
+	return OP_OK
+
+/obj/item/secbot_assembly/proc/arm_added(datum/act/op/A)
+	name = "helmet/signaler/prox sensor/robot arm assembly"
+	add_overlay("hs_arm")
+	to_chat(A.actor, span_notice("You add \the [A.held] to [src]."))
+	return OP_OK
+
+/obj/item/secbot_assembly/proc/finished(datum/act/op/A)
+	to_chat(A.actor, span_notice("You complete the Securitron! Beep boop."))
+	var/turf/where = get_turf(src)
+	if(istype(A.held, /obj/item/melee/baton/slime))
 		var/mob/living/bot/secbot/slime/bot = new /mob/living/bot/secbot/slime(where)
-		bot.name = assembly.created_name
+		bot.name = created_name
 	else
 		var/mob/living/bot/secbot/bot = new /mob/living/bot/secbot(where)
-		bot.name = assembly.created_name
-	consume(assembly, actor)
-	return TRUE
+		bot.name = created_name
+	consume(src, A.actor)
+	return OP_OK
+
+// The legs the ED-209, SL-ED-209 and ED-CLN assemblies share: a bare frame takes a robot leg, then a second one.
+STAGE_DEF(bot_frame, bare)
+STAGE_DEF(bot_frame, one_leg)
+STAGE_DEF(bot_frame, two_legs)
+
+MSG_DEF_SELF(stage/bot_frame/bare, "It is a bare frame.")
+MSG_DEF_SELF(stage/bot_frame/one_leg, "It has one robot leg.")
+MSG_DEF_SELF(stage/bot_frame/two_legs, "It has both robot legs.")
+MSG_DEF_SELF(bot_frame/start_wire, "You start to wire %T%.")
+
+/// The two leg stages of a walking bot assembly's ladder.
+/proc/bot_frame_legs()
+	return list(
+		stage(STAGE_BOT_FRAME_ONE_LEG, inputs(item(/obj/item/robot_parts/l_leg), item(/obj/item/robot_parts/r_leg), item(/obj/item/organ/external/leg)), when(TYPE_PROC_REF(/obj/item/secbot_assembly, robot_leg_held)), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly, leg_one_added)), undo = null),
+		stage(STAGE_BOT_FRAME_TWO_LEGS, inputs(item(/obj/item/robot_parts/l_leg), item(/obj/item/robot_parts/r_leg), item(/obj/item/organ/external/leg)), when(TYPE_PROC_REF(/obj/item/secbot_assembly, robot_leg_held)), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly, leg_two_added)), undo = null))
+
+/obj/item/secbot_assembly/proc/leg_one_added(datum/act/op/A)
+	name = "legs/frame assembly"
+	icon_state = "ed209_leg"
+	to_chat(A.actor, span_notice("You add the robot leg to [src]."))
+	return OP_OK
+
+/obj/item/secbot_assembly/proc/leg_two_added(datum/act/op/A)
+	name = "legs/frame assembly"
+	icon_state = "ed209_legs"
+	to_chat(A.actor, span_notice("You add the robot leg to [src]."))
+	return OP_OK
 
 #undef SECBOT_WAIT_TIME
 #undef SECBOT_THREAT_ARREST

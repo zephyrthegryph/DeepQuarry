@@ -1,123 +1,84 @@
-/**
- * Window construction graph (doc/rewrite/interactions.md §10).
- *
- * The state id is worked out from the window: "u" or "a" (unanchored or
- * anchored), followed for reinforced windows by `state`: 0 out of its frame,
- * 1 pried into the frame, 2 fastened to it. So a plain window is "u" or "a",
- * a mapped reinforced window "a2". Welding cracks out is a repair
- * interaction, not a step.
- */
-/obj/structure/window
-	construction_graph = /datum/construction_graph/window
+// ---- fixing a window to its place and taking it apart, declared ----
+//
+// A window is loose or screwed to the floor (`anchored`); a reinforced window also sits out of its frame (`state` 0), pried into it (1) or
+// fastened to it (2). The window's own vars hold the state, and the steps are ops that read them: window_construction() is listed in the window's
+// CAPABILITIES block (window.dm). A loose window, plain or reinforced and out of its frame, is taken apart with a wrench. Welding cracks out is a
+// repair op of the window, not a step.
 
-/datum/construction_graph/window
-	id = "window"
-	state_var = null
-	states = list("u", "a", "u0", "a0", "u1", "a1", "u2", "a2")
-	initial_states = list("u", "a", "u0", "a2")
+MSG_DEF_SELF(window/dismantle_refused, "You're not sure how to dismantle it properly.")
 
-/datum/construction_graph/window/build()
-	// Plain windows: screw to the floor and back; unscrewed, the wrench takes them apart.
-	add_window_edge(/datum/interaction/construction/window/anchor, "u", "a")
-	add_window_edge(/datum/interaction/construction/window/anchor, "a", "u")
-	add_window_edge(/datum/interaction/construction/window/dismantle, "u", CONSTRUCTION_DONE)
-	// Reinforced: the same out of the frame, plus prying in and out of the frame and fastening to it.
-	add_window_edge(/datum/interaction/construction/window/anchor, "u0", "a0")
-	add_window_edge(/datum/interaction/construction/window/anchor, "a0", "u0")
-	add_window_edge(/datum/interaction/construction/window/dismantle, "u0", CONSTRUCTION_DONE)
-	for(var/anchor in list("u", "a"))
-		add_window_edge(/datum/interaction/construction/window/pry, "[anchor]0", "[anchor]1")
-		add_window_edge(/datum/interaction/construction/window/pry, "[anchor]1", "[anchor]0")
-		add_window_edge(/datum/interaction/construction/window/fasten, "[anchor]1", "[anchor]2")
-		add_window_edge(/datum/interaction/construction/window/fasten, "[anchor]2", "[anchor]1")
+/// The ops that fix a window to the floor, into its frame, and take it apart.
+/proc/window_construction()
+	return list(
+		op("anchor", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/obj/structure/window, can_anchor)), priority(OP_PRIORITY_PART), label("Fasten to or free from the floor"), wait(0), then(TYPE_PROC_REF(/obj/structure/window, anchor_toggled))),
+		op("pry_in", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/obj/structure/window, frame_open)), priority(OP_PRIORITY_PART), label("Pry the window into the frame"), wait(0), then(TYPE_PROC_REF(/obj/structure/window, pried_in))),
+		op("pry_out", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/obj/structure/window, frame_seated)), priority(OP_PRIORITY_PART), label("Pry the window out of the frame"), wait(0), then(TYPE_PROC_REF(/obj/structure/window, pried_out))),
+		op("fasten_frame", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/obj/structure/window, frame_seated)), priority(OP_PRIORITY_PART), label("Fasten the window to the frame"), wait(0), then(TYPE_PROC_REF(/obj/structure/window, frame_fastened))),
+		op("unfasten_frame", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/obj/structure/window, frame_fastened_now)), priority(OP_PRIORITY_PART), label("Unfasten the window from the frame"), wait(0), then(TYPE_PROC_REF(/obj/structure/window, frame_unfastened))),
+		op("dismantle", tool(TOOL_WRENCH), when(TYPE_PROC_REF(/obj/structure/window, can_take_apart)), needs(req(TYPE_PROC_REF(/obj/structure/window, can_dismantle), because = MSG(window/dismantle_refused))), priority(OP_PRIORITY_PART), label("Dismantle the window"), wait(0), then(TYPE_PROC_REF(/obj/structure/window, taken_apart))))
 
-/datum/construction_graph/window/proc/add_window_edge(path, from_id, to_id)
-	var/datum/interaction/construction/window/edge = new path
-	edge.from_state = from_id
-	edge.to_state = to_id
-	edge.step_text = edge.step_text_for(from_id, to_id)
-	return add_edge(edge)
+/// A plain window, or a reinforced one out of its frame: the screws take it to the floor or free it.
+/obj/structure/window/proc/can_anchor(datum/act/A)
+	return !reinf || state == 0
 
-/datum/construction_graph/window/state_of(atom/target)
-	var/obj/structure/window/window = target
-	if(!istype(window))
-		return null
-	return "[window.anchored ? "a" : "u"][window.reinf ? window.state : ""]"
+/// A reinforced window out of its frame.
+/obj/structure/window/proc/frame_open(datum/act/A)
+	return reinf && state == 0
 
-/datum/construction_graph/window/set_state(atom/target, state)
-	var/obj/structure/window/window = target
-	if(!istype(window) || state == CONSTRUCTION_DONE)
-		return
-	window.set_anchored(copytext(state, 1, 2) == "a")
-	if(window.reinf)
-		window.state = text2num(copytext(state, 2))
+/// A reinforced window pried into its frame, not yet fastened.
+/obj/structure/window/proc/frame_seated(datum/act/A)
+	return reinf && state == 1
 
-/datum/construction_graph/window/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
-	return
+/// A reinforced window fastened to its frame.
+/obj/structure/window/proc/frame_fastened_now(datum/act/A)
+	return reinf && state == 2
 
-/datum/interaction/construction/window
-	tool_volume = 75
+/// Loose (not on the floor), and, if reinforced, out of its frame.
+/obj/structure/window/proc/can_take_apart(datum/act/A)
+	return !anchored && (!reinf || state == 0)
 
-/datum/interaction/construction/window/proc/step_text_for(from_id, to_id)
-	return step_text
+/// The window can be taken apart into glass.
+/obj/structure/window/proc/can_dismantle(datum/act/A)
+	return glasstype ? TRUE : FALSE
 
-/// Screw the window (or a reinforced window's frame) to the floor, or free it.
-/datum/interaction/construction/window/anchor
-	tool = TOOL_SCREWDRIVER
+/obj/structure/window/proc/anchor_toggled(datum/act/op/A)
+	set_anchored(!anchored)
+	update_nearby_tiles(need_rebuild = TRUE)
+	update_nearby_icons()
+	update_verbs()
+	to_chat(A.actor, span_notice("You have [anchored ? "" : "un"]fastened the [reinf ? "frame" : "window"] [anchored ? "to" : "from"] the floor."))
+	return OP_OK
 
-/datum/interaction/construction/window/anchor/step_text_for(from_id, to_id)
-	return copytext(to_id, 1, 2) == "a" ? "screw it to the floor" : "unscrew it from the floor"
+/obj/structure/window/proc/pried_in(datum/act/op/A)
+	state = 1
+	to_chat(A.actor, span_notice("You have pried the window into the frame."))
+	return OP_OK
 
-/datum/interaction/construction/window/anchor/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/structure/window/window = target
-	window.update_nearby_tiles(need_rebuild = TRUE)
-	window.update_nearby_icons()
-	window.update_verbs()
-	to_chat(actor, span_notice("You have [window.anchored ? "" : "un"]fastened the [window.reinf ? "frame" : "window"] [window.anchored ? "to" : "from"] the floor."))
-	return TRUE
+/obj/structure/window/proc/pried_out(datum/act/op/A)
+	state = 0
+	to_chat(A.actor, span_notice("You have pried the window out of the frame."))
+	return OP_OK
 
-/// Pry a reinforced window into its frame, or out of it.
-/datum/interaction/construction/window/pry
-	tool = TOOL_CROWBAR
+/obj/structure/window/proc/frame_fastened(datum/act/op/A)
+	state = 2
+	update_nearby_icons()
+	to_chat(A.actor, span_notice("You have fastened the window to the frame."))
+	return OP_OK
 
-/datum/interaction/construction/window/pry/step_text_for(from_id, to_id)
-	return copytext(to_id, 2) == "1" ? "pry the window into the frame" : "pry the window out of the frame"
-
-/datum/interaction/construction/window/pry/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/structure/window/window = target
-	to_chat(actor, span_notice("You have pried the window [window.state ? "into" : "out of"] the frame."))
-	return TRUE
-
-/// Fasten a reinforced window to its frame, or unfasten it.
-/datum/interaction/construction/window/fasten
-	tool = TOOL_SCREWDRIVER
-
-/datum/interaction/construction/window/fasten/step_text_for(from_id, to_id)
-	return copytext(to_id, 2) == "2" ? "fasten the window to the frame" : "unfasten the window from the frame"
-
-/datum/interaction/construction/window/fasten/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/structure/window/window = target
-	window.update_nearby_icons()
-	to_chat(actor, span_notice("You have [window.state == 1 ? "un" : ""]fastened the window [window.state ? "from" : "to"] the frame."))
-	return TRUE
+/obj/structure/window/proc/frame_unfastened(datum/act/op/A)
+	state = 1
+	update_nearby_icons()
+	to_chat(A.actor, span_notice("You have unfastened the window from the frame."))
+	return OP_OK
 
 /// Take a loose window apart into its glass: one sheet, four for a full tile.
-/datum/interaction/construction/window/dismantle
-	tool = TOOL_WRENCH
-	step_text = "dismantle the window"
-	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/structure/window/proc/can_dismantle, "you're not sure how to dismantle it properly"))
-
-/datum/interaction/construction/window/dismantle/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/structure/window/window = target
-	window.visible_message(span_notice("[actor] dismantles \the [window]."))
-	var/obj/item/stack/material/mats = new window.glasstype(window.loc)
-	if(window.is_fulltile())
+/obj/structure/window/proc/taken_apart(datum/act/op/A)
+	visible_message(span_notice("[A.actor] dismantles 	he [src]."))
+	var/obj/item/stack/material/mats = new glasstype(loc)
+	if(is_fulltile())
 		mats.set_amount(4)
-	spent(window, actor)
-	return TRUE
-
-/obj/structure/window/proc/can_dismantle(mob/actor, atom/target, obj/item/held)
-	return glasstype ? TRUE : FALSE
+	spent(src, A.actor)
+	return OP_OK
 
 // ---- Repair ----
 

@@ -1,10 +1,8 @@
 /**
- * Vehicle assembly construction graphs (doc/rewrite/interactions.md §10).
+ * Vehicle assembly construction ladders (doc/rewrite/final_api.html section 12).
  *
- * Each `/obj/item/vehicle_assembly` builds up through a sequence of item and
- * tool steps, tracked by `build_stage` (the graph's `state_var`). The last
- * step (a wrench or a screwdriver) turns the assembly into the finished
- * vehicle and moves the installed cell across.
+ * Each `/obj/item/vehicle_assembly` builds up through a sequence of item, stack and tool stages. The last stage (a wrench or a screwdriver)
+ * turns the assembly into the finished vehicle and moves the installed cell across. The assemblies are forward-only: no stage has a way back.
  */
 
 /obj/item/vehicle_assembly
@@ -18,12 +16,11 @@
 	slowdown = 10 //It's a vehicle frame, what do you expect?
 	w_class = ITEMSIZE_HUGE
 
-	var/build_stage = 0
 	var/tmp/obj/item/cell/cell
 
 /obj/item/vehicle_assembly/Initialize(mapload)
 	. = ..()
-	icon_state = "[initial(icon_state)][build_stage]"
+	icon_state = "[initial(icon_state)]0"
 
 /// Sets the numbered icon_state for `stage` and, when given, the display name.
 /obj/item/vehicle_assembly/proc/set_build_visuals(stage, new_name)
@@ -32,280 +29,172 @@
 	if(isnum(stage))
 		icon_state = "[initial(icon_state)][stage]"
 
-/datum/construction_graph/vehicle
-	state_var = "build_stage"
+/// A stage was built: its picture and name, and what the actor is told.
+/obj/item/vehicle_assembly/proc/step_done(datum/act/op/A, stage, new_name, message)
+	set_build_visuals(stage, new_name)
+	if(message)
+		to_chat(A.actor, span_notice(message))
+	return OP_OK
 
-/datum/construction_graph/vehicle/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
-	if(!QDELETED(target))
-		target.update_icon()
-
-/datum/interaction/construction/vehicle
-	tool_volume = 50
+MSG_DEF_SELF(vehicle/start_tires, "You start to add tires to %T%.")
+MSG_DEF_SELF(vehicle/start_treads, "You start to add treads to %T%.")
+MSG_DEF_SELF(vehicle/start_seat, "You start to add a seat to %T%.")
+MSG_DEF_SELF(vehicle/start_wire, "You start to wire %T%.")
+MSG_DEF_SELF(vehicle/start_reinforce, "You start to add reinforcement to %T%.")
+MSG_DEF_SELF(vehicle/start_finish, "You begin your finishing touches on %T%.")
+MSG_DEF_SELF(quadtrailer/too_advanced, "%I% is too advanced to be of use with %T%.")
 
 /*
  * Quadbike and trailer.
  */
+
+STAGE_DEF(quadbike, frame)
+STAGE_DEF(quadbike, wheeled)
+STAGE_DEF(quadbike, lit)
+STAGE_DEF(quadbike, controlled)
+STAGE_DEF(quadbike, wired)
+STAGE_DEF(quadbike, powered)
+STAGE_DEF(quadbike, motored)
+STAGE_DEF(quadbike, reinforced)
+STAGE_DEF(quadbike, finished)
+STAGE_DEF(quadbike, trailered)
+
+MSG_DEF_SELF(stage/quadbike/frame, "It is a bare ATV frame.")
+MSG_DEF_SELF(stage/quadbike/wheeled, "It has its tires.")
+MSG_DEF_SELF(stage/quadbike/lit, "It has its lights.")
+MSG_DEF_SELF(stage/quadbike/controlled, "It has its control system.")
+MSG_DEF_SELF(stage/quadbike/wired, "It is wired.")
+MSG_DEF_SELF(stage/quadbike/powered, "It has its power supply.")
+MSG_DEF_SELF(stage/quadbike/motored, "It has its motor.")
+MSG_DEF_SELF(stage/quadbike/reinforced, "It is reinforced.")
+MSG_DEF_SELF(stage/quadbike/finished, "It is finished.")
+MSG_DEF_SELF(stage/quadbike/trailered, "It has been made into a trailer.")
 
 /obj/item/vehicle_assembly/quadbike
 	name = "all terrain vehicle assembly"
 	desc = "The frame of an ATV."
 	icon_state = "quad-frame"
 	pixel_x = -16
-	construction_graph = /datum/construction_graph/vehicle/quadbike
 
-/datum/construction_graph/vehicle/quadbike
-	id = "quadbike"
-	states = list(0, 1, 2, 3, 4, 5, 6, 7)
-	initial_states = list(0)
-	edge_types = list(
-		/datum/interaction/construction/vehicle/quadbike/tires,
-		/datum/interaction/construction/vehicle/quadbike/lights,
-		/datum/interaction/construction/vehicle/quadbike/controls,
-		/datum/interaction/construction/vehicle/quadbike/to_trailer,
-		/datum/interaction/construction/vehicle/quadbike/wire,
-		/datum/interaction/construction/vehicle/quadbike/power,
-		/datum/interaction/construction/vehicle/quadbike/motor,
-		/datum/interaction/construction/vehicle/quadbike/reinforce,
-		/datum/interaction/construction/vehicle/quadbike/finish_wrench,
-		/datum/interaction/construction/vehicle/quadbike/finish_screwdriver,
-	)
+CAPABILITIES(/obj/item/vehicle_assembly/quadbike)
+	construction(start(STAGE_QUADBIKE_FRAME),
+		stage(STAGE_QUADBIKE_WHEELED, stack(/obj/item/stack/material/plastic, 8), wait(4 SECONDS), begins(MSG(vehicle/start_tires)), then(PROC_REF(tires_added)), undo = null),
+		stage(STAGE_QUADBIKE_LIT, item(/obj/item/stock_parts/console_screen), consumes(), wait(0), then(PROC_REF(lights_added)), undo = null),
+		stage(STAGE_QUADBIKE_CONTROLLED, item(/obj/item/stock_parts/spring), consumes(), wait(0), then(PROC_REF(controls_added)), undo = null),
+		stage(STAGE_QUADBIKE_WIRED, stack(/obj/item/stack/cable_coil, 2), wait(4 SECONDS), begins(MSG(vehicle/start_wire)), then(PROC_REF(wired_up)), undo = null),
+		stage(STAGE_QUADBIKE_POWERED, item(/obj/item/cell), wait(0), then(PROC_REF(power_added)), undo = null),
+		stage(STAGE_QUADBIKE_MOTORED, item(/obj/item/stock_parts/motor), consumes(), wait(0), then(PROC_REF(motor_added)), undo = null),
+		stage(STAGE_QUADBIKE_REINFORCED, stack(/obj/item/stack/material/plasteel, 2), wait(4 SECONDS), begins(MSG(vehicle/start_reinforce)), then(PROC_REF(reinforced)), undo = null),
+		stage(STAGE_QUADBIKE_FINISHED, tool(TOOL_WRENCH), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), undo = null),
+		stage(STAGE_QUADBIKE_FINISHED, tool(TOOL_SCREWDRIVER), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), from = STAGE_QUADBIKE_REINFORCED, key = "screwdriver", undo = null),
+		stage(STAGE_QUADBIKE_TRAILERED, stack(/obj/item/stack/material/steel, 5), wait(8 SECONDS), then(PROC_REF(to_trailer)), from = STAGE_QUADBIKE_LIT, undo = null))
 
-/datum/interaction/construction/vehicle/quadbike
+/obj/item/vehicle_assembly/quadbike/proc/tires_added(datum/act/op/A)
+	return step_done(A, 1, "wheeled [initial(name)]", "You add tires to \the [src].")
 
-/datum/interaction/construction/vehicle/quadbike/tires
-	start_feedback = /datum/msg/start/interaction/construction/vehicle/quadbike/tires
-	from_state = 0
-	to_state = 1
-	step_text = "add tires to it"
-	item_type = /obj/item/stack/material/plastic
-	item_amount = 8
-	item_use = CONSTRUCTION_ITEM_USE
-	duration = 4 SECONDS
-	tool_scaled = FALSE
+/obj/item/vehicle_assembly/quadbike/proc/lights_added(datum/act/op/A)
+	return step_done(A, 2, null, "You add the lights to \the [src].")
 
-/datum/msg/start/interaction/construction/vehicle/quadbike/tires
-	self = "You start to add tires to %T%."
+/obj/item/vehicle_assembly/quadbike/proc/controls_added(datum/act/op/A)
+	return step_done(A, 3, null, "You add the control system to \the [src].")
 
-/datum/interaction/construction/vehicle/quadbike/tires/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/quadbike/assembly = target
-	assembly.set_build_visuals(after, "wheeled [initial(assembly.name)]")
-	to_chat(actor, span_notice("You add tires to \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/quadbike/lights
-	from_state = 1
-	to_state = 2
-	step_text = "add the lights"
-	item_type = /obj/item/stock_parts/console_screen
-	item_use = CONSTRUCTION_ITEM_DELETE
-
-/datum/interaction/construction/vehicle/quadbike/lights/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/quadbike/assembly = target
-	assembly.set_build_visuals(after)
-	to_chat(actor, span_notice("You add the lights to \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/quadbike/controls
-	from_state = 2
-	to_state = 3
-	step_text = "add the control system"
-	item_type = /obj/item/stock_parts/spring
-	item_use = CONSTRUCTION_ITEM_DELETE
-
-/datum/interaction/construction/vehicle/quadbike/controls/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/quadbike/assembly = target
-	assembly.set_build_visuals(after)
-	to_chat(actor, span_notice("You add the control system to \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/quadbike/to_trailer
-	from_state = 2
-	to_state = CONSTRUCTION_DONE
-	step_text = "convert it into a trailer"
-	item_type = /obj/item/stack/material/steel
-	item_amount = 5
-	item_use = CONSTRUCTION_ITEM_USE
-	duration = 8 SECONDS
-	tool_scaled = FALSE
-
-/datum/interaction/construction/vehicle/quadbike/to_trailer/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/quadbike/assembly = target
-	var/obj/item/vehicle_assembly/quadtrailer/trailer = new(assembly)
-	trailer.forceMove(get_turf(assembly))
-	trailer.build_stage = 1
+/// Five sheets of steel turn a quadbike with its lights on straight into a framed trailer.
+/obj/item/vehicle_assembly/quadbike/proc/to_trailer(datum/act/op/A)
+	var/obj/item/vehicle_assembly/quadtrailer/trailer = new(src)
+	trailer.forceMove(get_turf(src))
+	graph_place(trailer, STAGE_QUADTRAILER_FRAMED)
 	trailer.set_build_visuals(1, "framed [initial(trailer.name)]")
-	to_chat(actor, span_notice("You convert \the [assembly] into \the [trailer]."))
-	consume(assembly, actor)
-	return TRUE
+	to_chat(A.actor, span_notice("You convert \the [src] into \the [trailer]."))
+	consume(src, A.actor)
+	return OP_OK
 
-/datum/interaction/construction/vehicle/quadbike/wire
-	start_feedback = /datum/msg/start/interaction/construction/vehicle/quadbike/wire
-	from_state = 3
-	to_state = 4
-	step_text = "wire it"
-	item_type = /obj/item/stack/cable_coil
-	item_amount = 2
-	item_use = CONSTRUCTION_ITEM_USE
-	duration = 4 SECONDS
-	tool_scaled = FALSE
+/obj/item/vehicle_assembly/quadbike/proc/wired_up(datum/act/op/A)
+	return step_done(A, 4, "wired [initial(name)]", "You wire \the [src].")
 
-/datum/msg/start/interaction/construction/vehicle/quadbike/wire
-	self = "You start to wire %T%."
+/obj/item/vehicle_assembly/quadbike/proc/power_added(datum/act/op/A)
+	var/obj/item/cell/power = A.held
+	A.actor.drop_from_inventory(power)
+	power.forceMove(src)
+	rel_set(src, nameof(cell), power)
+	return step_done(A, 5, "powered [initial(name)]", "You add the power supply to \the [src].")
 
-/datum/interaction/construction/vehicle/quadbike/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/quadbike/assembly = target
-	assembly.set_build_visuals(after, "wired [initial(assembly.name)]")
-	to_chat(actor, span_notice("You wire \the [assembly]."))
-	return TRUE
+/obj/item/vehicle_assembly/quadbike/proc/motor_added(datum/act/op/A)
+	return step_done(A, 6, null, "You add the motor to \the [src].")
 
-/datum/interaction/construction/vehicle/quadbike/power
-	from_state = 4
-	to_state = 5
-	step_text = "add the power supply"
-	item_type = /obj/item/cell
-	item_use = CONSTRUCTION_ITEM_INSERT
+/obj/item/vehicle_assembly/quadbike/proc/reinforced(datum/act/op/A)
+	return step_done(A, 7, "reinforced [initial(name)]", "You add reinforcement to \the [src].")
 
-/datum/interaction/construction/vehicle/quadbike/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/quadbike/assembly = target
-	rel_set(assembly, nameof(assembly.cell), held)
-	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
-	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/quadbike/motor
-	from_state = 5
-	to_state = 6
-	step_text = "add the motor"
-	item_type = /obj/item/stock_parts/motor
-	item_use = CONSTRUCTION_ITEM_DELETE
-
-/datum/interaction/construction/vehicle/quadbike/motor/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/quadbike/assembly = target
-	assembly.set_build_visuals(after)
-	to_chat(actor, span_notice("You add the motor to \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/quadbike/reinforce
-	start_feedback = /datum/msg/start/interaction/construction/vehicle/quadbike/reinforce
-	from_state = 6
-	to_state = 7
-	step_text = "add reinforcement"
-	item_type = /obj/item/stack/material/plasteel
-	item_amount = 2
-	item_use = CONSTRUCTION_ITEM_USE
-	duration = 4 SECONDS
-	tool_scaled = FALSE
-
-/datum/msg/start/interaction/construction/vehicle/quadbike/reinforce
-	self = "You start to add reinforcement to %T%."
-
-/datum/interaction/construction/vehicle/quadbike/reinforce/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/quadbike/assembly = target
-	assembly.set_build_visuals(after, "reinforced [initial(assembly.name)]")
-	to_chat(actor, span_notice("You add reinforcement to \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/quadbike/finish
-	start_feedback = /datum/msg/start/interaction/construction/vehicle/quadbike/finish
-	from_state = 7
-	to_state = CONSTRUCTION_DONE
-	step_text = "finish it"
-	duration = 2 SECONDS
-	tool_scaled = FALSE
-
-/datum/msg/start/interaction/construction/vehicle/quadbike/finish
-	self = "You begin your finishing touches on %T%."
-
-/datum/interaction/construction/vehicle/quadbike/finish/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/quadbike/assembly = target
-	playsound(assembly, held.usesound, 30, TRUE)
-	var/obj/vehicle/train/engine/quadbike/built/product = new(assembly)
-	to_chat(actor, span_notice("You finish \the [product]"))
-	product.forceMove(get_turf(assembly))
-	var/obj/item/cell/moved_cell = assembly.cell()
-	rel_clear(assembly, nameof(assembly.cell))
+/obj/item/vehicle_assembly/quadbike/proc/finished(datum/act/op/A)
+	playsound(src, A.held.usesound, 30, TRUE)
+	var/obj/vehicle/train/engine/quadbike/built/product = new(src)
+	to_chat(A.actor, span_notice("You finish \the [product]"))
+	product.forceMove(get_turf(src))
+	var/obj/item/cell/moved_cell = cell()
+	rel_clear(src, nameof(cell))
 	move_into(product, nameof(product.cell), moved_cell)
-	consume(assembly, actor)
-	return TRUE
+	consume(src, A.actor)
+	return OP_OK
 
-/datum/interaction/construction/vehicle/quadbike/finish_wrench
-	parent_type = /datum/interaction/construction/vehicle/quadbike/finish
-	tool = TOOL_WRENCH
+STAGE_DEF(quadtrailer, frame)
+STAGE_DEF(quadtrailer, framed)
+STAGE_DEF(quadtrailer, wired)
+STAGE_DEF(quadtrailer, finished)
 
-/datum/interaction/construction/vehicle/quadbike/finish_screwdriver
-	parent_type = /datum/interaction/construction/vehicle/quadbike/finish
-	tool = TOOL_SCREWDRIVER
+MSG_DEF_SELF(stage/quadtrailer/frame, "It is a bare trailer.")
+MSG_DEF_SELF(stage/quadtrailer/framed, "It is framed.")
+MSG_DEF_SELF(stage/quadtrailer/wired, "It is wired.")
+MSG_DEF_SELF(stage/quadtrailer/finished, "It is finished.")
 
 /obj/item/vehicle_assembly/quadtrailer
 	name = "all terrain trailer"
 	desc = "The frame of a small trailer."
 	icon_state = "quadtrailer-frame"
 	pixel_x = -16
-	construction_graph = /datum/construction_graph/vehicle/quadtrailer
 
-/datum/construction_graph/vehicle/quadtrailer
-	id = "quadtrailer"
-	states = list(0, 1, 2)
-	initial_states = list(0)
-	edge_types = list(
-		/datum/interaction/construction/vehicle/quadtrailer/frame,
-		/datum/interaction/construction/vehicle/quadtrailer/wire,
-		/datum/interaction/construction/vehicle/quadtrailer/finish,
-	)
+CAPABILITIES(/obj/item/vehicle_assembly/quadtrailer)
+	construction(start(STAGE_QUADTRAILER_FRAME),
+		stage(STAGE_QUADTRAILER_FRAMED, item(/obj/item/vehicle_assembly/quadbike), consumes(), wait(0), needs(req(PROC_REF(spare_frame_fits), because = MSG(quadtrailer/too_advanced))), then(PROC_REF(framed)), undo = null),
+		stage(STAGE_QUADTRAILER_WIRED, stack(/obj/item/stack/cable_coil, 2), wait(4 SECONDS), begins(MSG(vehicle/start_wire)), then(PROC_REF(wired_up)), undo = null),
+		stage(STAGE_QUADTRAILER_FINISHED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(finished)), undo = null))
 
-/datum/interaction/construction/vehicle/quadtrailer/frame
-	from_state = 0
-	to_state = 1
-	step_text = "assemble it from a spare quadbike frame"
-	item_type = /obj/item/vehicle_assembly/quadbike
-	item_use = CONSTRUCTION_ITEM_DELETE
+/// A spare quadbike frame helps only until its control system is in.
+/obj/item/vehicle_assembly/quadtrailer/proc/spare_frame_fits(datum/act/op/A)
+	return !built(A.held, STAGE_QUADBIKE_CONTROLLED)
 
-/datum/interaction/construction/vehicle/quadtrailer/frame/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/quadbike/quad = held
-	var/obj/item/vehicle_assembly/quadtrailer/trailer = target
-	if(quad.build_stage > 2)
-		to_chat(actor, span_notice("\The [quad] is too advanced to be of use with \the [trailer]"))
-		return FALSE
-	trailer.set_build_visuals(after, "framed [initial(trailer.name)]")
-	return TRUE
+/obj/item/vehicle_assembly/quadtrailer/proc/framed(datum/act/op/A)
+	return step_done(A, 1, "framed [initial(name)]", null)
 
-/datum/interaction/construction/vehicle/quadtrailer/wire
-	start_feedback = /datum/msg/start/interaction/construction/vehicle/quadtrailer/wire
-	from_state = 1
-	to_state = 2
-	step_text = "wire it"
-	item_type = /obj/item/stack/cable_coil
-	item_amount = 2
-	item_use = CONSTRUCTION_ITEM_USE
-	duration = 4 SECONDS
-	tool_scaled = FALSE
+/obj/item/vehicle_assembly/quadtrailer/proc/wired_up(datum/act/op/A)
+	return step_done(A, 2, "wired [initial(name)]", "You wire \the [src].")
 
-/datum/msg/start/interaction/construction/vehicle/quadtrailer/wire
-	self = "You start to wire %T%."
-
-/datum/interaction/construction/vehicle/quadtrailer/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/quadtrailer/trailer = target
-	trailer.set_build_visuals(after, "wired [initial(trailer.name)]")
-	to_chat(actor, span_notice("You wire \the [trailer]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/quadtrailer/finish
-	from_state = 2
-	to_state = CONSTRUCTION_DONE
-	step_text = "close it up"
-	tool = TOOL_SCREWDRIVER
-
-/datum/interaction/construction/vehicle/quadtrailer/finish/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/quadtrailer/trailer = target
-	to_chat(actor, span_notice("You close up \the [trailer]."))
-	var/obj/vehicle/train/trolley/trailer/product = new(trailer)
-	product.forceMove(get_turf(trailer))
-	consume(trailer, actor)
-	return TRUE
+/obj/item/vehicle_assembly/quadtrailer/proc/finished(datum/act/op/A)
+	to_chat(A.actor, span_notice("You close up \the [src]."))
+	var/obj/vehicle/train/trolley/trailer/product = new(src)
+	product.forceMove(get_turf(src))
+	consume(src, A.actor)
+	return OP_OK
 
 /*
  * Space bike.
  */
+
+STAGE_DEF(spacebike, frame)
+STAGE_DEF(spacebike, jetpacked)
+STAGE_DEF(spacebike, wired)
+STAGE_DEF(spacebike, seated)
+STAGE_DEF(spacebike, lit)
+STAGE_DEF(spacebike, controlled)
+STAGE_DEF(spacebike, powered)
+STAGE_DEF(spacebike, finished)
+
+MSG_DEF_SELF(stage/spacebike/frame, "It is a bare bike frame.")
+MSG_DEF_SELF(stage/spacebike/jetpacked, "It has its jetpack.")
+MSG_DEF_SELF(stage/spacebike/wired, "It is wired.")
+MSG_DEF_SELF(stage/spacebike/seated, "It has its seat.")
+MSG_DEF_SELF(stage/spacebike/lit, "It has its lights.")
+MSG_DEF_SELF(stage/spacebike/controlled, "It has its control system.")
+MSG_DEF_SELF(stage/spacebike/powered, "It has its power supply.")
+MSG_DEF_SELF(stage/spacebike/finished, "It is finished.")
 
 /obj/item/vehicle_assembly/spacebike
 	name = "vehicle assembly"
@@ -314,316 +203,128 @@
 	icon_state = "bike-frame"
 
 	pixel_x = 0
-	construction_graph = /datum/construction_graph/vehicle/spacebike
 
-/datum/construction_graph/vehicle/spacebike
-	id = "spacebike"
-	states = list(0, 1, 2, 3, 4, 5, 6)
-	initial_states = list(0)
-	edge_types = list(
-		/datum/interaction/construction/vehicle/spacebike/jetpack,
-		/datum/interaction/construction/vehicle/spacebike/wire,
-		/datum/interaction/construction/vehicle/spacebike/seat,
-		/datum/interaction/construction/vehicle/spacebike/lights,
-		/datum/interaction/construction/vehicle/spacebike/controls,
-		/datum/interaction/construction/vehicle/spacebike/power,
-		/datum/interaction/construction/vehicle/spacebike/finish_wrench,
-		/datum/interaction/construction/vehicle/spacebike/finish_screwdriver,
-	)
+CAPABILITIES(/obj/item/vehicle_assembly/spacebike)
+	construction(start(STAGE_SPACEBIKE_FRAME),
+		stage(STAGE_SPACEBIKE_JETPACKED, inputs(item(/obj/item/tank/jetpack), item(/obj/item/borg/upgrade/advanced/jetpack)), consumes(), wait(0), then(PROC_REF(jetpack_added)), undo = null),
+		stage(STAGE_SPACEBIKE_WIRED, stack(/obj/item/stack/cable_coil, 2), wait(4 SECONDS), begins(MSG(vehicle/start_wire)), then(PROC_REF(wired_up)), undo = null),
+		stage(STAGE_SPACEBIKE_SEATED, stack(/obj/item/stack/material/plastic, 3), wait(4 SECONDS), begins(MSG(vehicle/start_seat)), then(PROC_REF(seat_added)), undo = null),
+		stage(STAGE_SPACEBIKE_LIT, item(/obj/item/stock_parts/console_screen), consumes(), wait(0), then(PROC_REF(lights_added)), undo = null),
+		stage(STAGE_SPACEBIKE_CONTROLLED, item(/obj/item/stock_parts/spring), consumes(), wait(0), then(PROC_REF(controls_added)), undo = null),
+		stage(STAGE_SPACEBIKE_POWERED, item(/obj/item/cell), wait(0), then(PROC_REF(power_added)), undo = null),
+		stage(STAGE_SPACEBIKE_FINISHED, tool(TOOL_WRENCH), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), undo = null),
+		stage(STAGE_SPACEBIKE_FINISHED, tool(TOOL_SCREWDRIVER), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), from = STAGE_SPACEBIKE_POWERED, key = "screwdriver", undo = null))
 
-/datum/interaction/construction/vehicle/spacebike/jetpack
-	from_state = 0
-	to_state = 1
-	step_text = "add a jetpack"
-	item_type = list(/obj/item/tank/jetpack, /obj/item/borg/upgrade/advanced/jetpack)
-	item_use = CONSTRUCTION_ITEM_DELETE
+/obj/item/vehicle_assembly/spacebike/proc/jetpack_added(datum/act/op/A)
+	return step_done(A, 1, null, null)
 
-/datum/interaction/construction/vehicle/spacebike/jetpack/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/spacebike/assembly = target
-	assembly.set_build_visuals(after)
-	return TRUE
+/obj/item/vehicle_assembly/spacebike/proc/wired_up(datum/act/op/A)
+	return step_done(A, 2, "wired [initial(name)]", "You wire \the [src].")
 
-/datum/interaction/construction/vehicle/spacebike/wire
-	start_feedback = /datum/msg/start/interaction/construction/vehicle/spacebike/wire
-	from_state = 1
-	to_state = 2
-	step_text = "wire it"
-	item_type = /obj/item/stack/cable_coil
-	item_amount = 2
-	item_use = CONSTRUCTION_ITEM_USE
-	duration = 4 SECONDS
-	tool_scaled = FALSE
+/obj/item/vehicle_assembly/spacebike/proc/seat_added(datum/act/op/A)
+	return step_done(A, 3, "seated [initial(name)]", "You add a seat to \the [src].")
 
-/datum/msg/start/interaction/construction/vehicle/spacebike/wire
-	self = "You start to wire %T%."
+/obj/item/vehicle_assembly/spacebike/proc/lights_added(datum/act/op/A)
+	return step_done(A, 4, null, "You add the lights to \the [src].")
 
-/datum/interaction/construction/vehicle/spacebike/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/spacebike/assembly = target
-	assembly.set_build_visuals(after, "wired [initial(assembly.name)]")
-	to_chat(actor, span_notice("You wire \the [assembly]."))
-	return TRUE
+/obj/item/vehicle_assembly/spacebike/proc/controls_added(datum/act/op/A)
+	return step_done(A, 5, null, "You add the control system to \the [src].")
 
-/datum/interaction/construction/vehicle/spacebike/seat
-	start_feedback = /datum/msg/start/interaction/construction/vehicle/spacebike/seat
-	from_state = 2
-	to_state = 3
-	step_text = "add a seat"
-	item_type = /obj/item/stack/material/plastic
-	item_amount = 3
-	item_use = CONSTRUCTION_ITEM_USE
-	duration = 4 SECONDS
-	tool_scaled = FALSE
+/obj/item/vehicle_assembly/spacebike/proc/power_added(datum/act/op/A)
+	var/obj/item/cell/power = A.held
+	A.actor.drop_from_inventory(power)
+	power.forceMove(src)
+	rel_set(src, nameof(cell), power)
+	return step_done(A, 6, "powered [initial(name)]", "You add the power supply to \the [src].")
 
-/datum/msg/start/interaction/construction/vehicle/spacebike/seat
-	self = "You start to add a seat to %T%."
-
-/datum/interaction/construction/vehicle/spacebike/seat/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/spacebike/assembly = target
-	assembly.set_build_visuals(after, "seated [initial(assembly.name)]")
-	to_chat(actor, span_notice("You add a seat to \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/spacebike/lights
-	from_state = 3
-	to_state = 4
-	step_text = "add the lights"
-	item_type = /obj/item/stock_parts/console_screen
-	item_use = CONSTRUCTION_ITEM_DELETE
-
-/datum/interaction/construction/vehicle/spacebike/lights/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/spacebike/assembly = target
-	assembly.set_build_visuals(after)
-	to_chat(actor, span_notice("You add the lights to \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/spacebike/controls
-	from_state = 4
-	to_state = 5
-	step_text = "add the control system"
-	item_type = /obj/item/stock_parts/spring
-	item_use = CONSTRUCTION_ITEM_DELETE
-
-/datum/interaction/construction/vehicle/spacebike/controls/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/spacebike/assembly = target
-	assembly.set_build_visuals(after)
-	to_chat(actor, span_notice("You add the control system to \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/spacebike/power
-	from_state = 5
-	to_state = 6
-	step_text = "add the power supply"
-	item_type = /obj/item/cell
-	item_use = CONSTRUCTION_ITEM_INSERT
-
-/datum/interaction/construction/vehicle/spacebike/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/spacebike/assembly = target
-	rel_set(assembly, nameof(assembly.cell), held)
-	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
-	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/spacebike/finish
-	start_feedback = /datum/msg/start/interaction/construction/vehicle/spacebike/finish
-	from_state = 6
-	to_state = CONSTRUCTION_DONE
-	step_text = "finish it"
-	duration = 2 SECONDS
-	tool_scaled = FALSE
-
-/datum/msg/start/interaction/construction/vehicle/spacebike/finish
-	self = "You begin your finishing touches on %T%."
-
-/datum/interaction/construction/vehicle/spacebike/finish/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/spacebike/assembly = target
-	playsound(assembly, held.usesound, 30, TRUE)
-	var/obj/vehicle/bike/built/product = new(assembly)
-	to_chat(actor, span_notice("You finish \the [product]"))
-	product.forceMove(get_turf(assembly))
-	var/obj/item/cell/moved_cell = assembly.cell()
-	rel_clear(assembly, nameof(assembly.cell))
+/obj/item/vehicle_assembly/spacebike/proc/finished(datum/act/op/A)
+	playsound(src, A.held.usesound, 30, TRUE)
+	var/obj/vehicle/bike/built/product = new(src)
+	to_chat(A.actor, span_notice("You finish \the [product]"))
+	product.forceMove(get_turf(src))
+	var/obj/item/cell/moved_cell = cell()
+	rel_clear(src, nameof(cell))
 	move_into(product, nameof(product.cell), moved_cell)
-	consume(assembly, actor)
-	return TRUE
-
-/datum/interaction/construction/vehicle/spacebike/finish_wrench
-	parent_type = /datum/interaction/construction/vehicle/spacebike/finish
-	tool = TOOL_WRENCH
-
-/datum/interaction/construction/vehicle/spacebike/finish_screwdriver
-	parent_type = /datum/interaction/construction/vehicle/spacebike/finish
-	tool = TOOL_SCREWDRIVER
+	consume(src, A.actor)
+	return OP_OK
 
 /*
  * Snowmobile.
  */
+
+STAGE_DEF(snowmobile, frame)
+STAGE_DEF(snowmobile, tracked)
+STAGE_DEF(snowmobile, lit)
+STAGE_DEF(snowmobile, controlled)
+STAGE_DEF(snowmobile, wired)
+STAGE_DEF(snowmobile, powered)
+STAGE_DEF(snowmobile, motored)
+STAGE_DEF(snowmobile, reinforced)
+STAGE_DEF(snowmobile, finished)
+
+MSG_DEF_SELF(stage/snowmobile/frame, "It is a bare snowmobile frame.")
+MSG_DEF_SELF(stage/snowmobile/tracked, "It has its treads.")
+MSG_DEF_SELF(stage/snowmobile/lit, "It has its lights.")
+MSG_DEF_SELF(stage/snowmobile/controlled, "It has its control system.")
+MSG_DEF_SELF(stage/snowmobile/wired, "It is wired.")
+MSG_DEF_SELF(stage/snowmobile/powered, "It has its power supply.")
+MSG_DEF_SELF(stage/snowmobile/motored, "It has its motor.")
+MSG_DEF_SELF(stage/snowmobile/reinforced, "It is reinforced.")
+MSG_DEF_SELF(stage/snowmobile/finished, "It is finished.")
 
 /obj/item/vehicle_assembly/snowmobile
 	name = "snowmobile assembly"
 	desc = "The frame of a snowmobile."
 	icon = 'icons/obj/vehicles.dmi'
 	icon_state = "snowmobile-frame"
-	construction_graph = /datum/construction_graph/vehicle/snowmobile
 
-/datum/construction_graph/vehicle/snowmobile
-	id = "snowmobile"
-	states = list(0, 1, 2, 3, 4, 5, 6, 7)
-	initial_states = list(0)
-	edge_types = list(
-		/datum/interaction/construction/vehicle/snowmobile/treads,
-		/datum/interaction/construction/vehicle/snowmobile/lights,
-		/datum/interaction/construction/vehicle/snowmobile/controls,
-		/datum/interaction/construction/vehicle/snowmobile/wire,
-		/datum/interaction/construction/vehicle/snowmobile/power,
-		/datum/interaction/construction/vehicle/snowmobile/motor,
-		/datum/interaction/construction/vehicle/snowmobile/reinforce,
-		/datum/interaction/construction/vehicle/snowmobile/finish_wrench,
-		/datum/interaction/construction/vehicle/snowmobile/finish_screwdriver,
-	)
+CAPABILITIES(/obj/item/vehicle_assembly/snowmobile)
+	construction(start(STAGE_SNOWMOBILE_FRAME),
+		stage(STAGE_SNOWMOBILE_TRACKED, stack(/obj/item/stack/material/steel, 6), wait(4 SECONDS), begins(MSG(vehicle/start_treads)), then(PROC_REF(treads_added)), undo = null),
+		stage(STAGE_SNOWMOBILE_LIT, item(/obj/item/stock_parts/console_screen), consumes(), wait(0), then(PROC_REF(lights_added)), undo = null),
+		stage(STAGE_SNOWMOBILE_CONTROLLED, item(/obj/item/stock_parts/spring), consumes(), wait(0), then(PROC_REF(controls_added)), undo = null),
+		stage(STAGE_SNOWMOBILE_WIRED, stack(/obj/item/stack/cable_coil, 2), wait(4 SECONDS), begins(MSG(vehicle/start_wire)), then(PROC_REF(wired_up)), undo = null),
+		stage(STAGE_SNOWMOBILE_POWERED, item(/obj/item/cell), wait(0), then(PROC_REF(power_added)), undo = null),
+		stage(STAGE_SNOWMOBILE_MOTORED, item(/obj/item/stock_parts/motor), consumes(), wait(0), then(PROC_REF(motor_added)), undo = null),
+		stage(STAGE_SNOWMOBILE_REINFORCED, stack(/obj/item/stack/material/plasteel, 2), wait(4 SECONDS), begins(MSG(vehicle/start_reinforce)), then(PROC_REF(reinforced)), undo = null),
+		stage(STAGE_SNOWMOBILE_FINISHED, tool(TOOL_WRENCH), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), undo = null),
+		stage(STAGE_SNOWMOBILE_FINISHED, tool(TOOL_SCREWDRIVER), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), from = STAGE_SNOWMOBILE_REINFORCED, key = "screwdriver", undo = null))
 
-/datum/interaction/construction/vehicle/snowmobile/treads
-	start_feedback = /datum/msg/start/interaction/construction/vehicle/snowmobile/treads
-	from_state = 0
-	to_state = 1
-	step_text = "add treads to it"
-	item_type = /obj/item/stack/material/steel
-	item_amount = 6
-	item_use = CONSTRUCTION_ITEM_USE
-	duration = 4 SECONDS
-	tool_scaled = FALSE
+/obj/item/vehicle_assembly/snowmobile/proc/treads_added(datum/act/op/A)
+	return step_done(A, 1, "tracked [initial(name)]", "You add treads to \the [src].")
 
-/datum/msg/start/interaction/construction/vehicle/snowmobile/treads
-	self = "You start to add treads to %T%."
+/obj/item/vehicle_assembly/snowmobile/proc/lights_added(datum/act/op/A)
+	return step_done(A, 2, null, "You add the lights to \the [src].")
 
-/datum/interaction/construction/vehicle/snowmobile/treads/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/snowmobile/assembly = target
-	assembly.set_build_visuals(after, "tracked [initial(assembly.name)]")
-	to_chat(actor, span_notice("You add treads to \the [assembly]."))
-	return TRUE
+/obj/item/vehicle_assembly/snowmobile/proc/controls_added(datum/act/op/A)
+	return step_done(A, 3, null, "You add the control system to \the [src].")
 
-/datum/interaction/construction/vehicle/snowmobile/lights
-	from_state = 1
-	to_state = 2
-	step_text = "add the lights"
-	item_type = /obj/item/stock_parts/console_screen
-	item_use = CONSTRUCTION_ITEM_DELETE
+/obj/item/vehicle_assembly/snowmobile/proc/wired_up(datum/act/op/A)
+	return step_done(A, 4, "wired [initial(name)]", "You wire \the [src].")
 
-/datum/interaction/construction/vehicle/snowmobile/lights/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/snowmobile/assembly = target
-	assembly.set_build_visuals(after)
-	to_chat(actor, span_notice("You add the lights to \the [assembly]."))
-	return TRUE
+/obj/item/vehicle_assembly/snowmobile/proc/power_added(datum/act/op/A)
+	var/obj/item/cell/power = A.held
+	A.actor.drop_from_inventory(power)
+	power.forceMove(src)
+	rel_set(src, nameof(cell), power)
+	return step_done(A, 5, "powered [initial(name)]", "You add the power supply to \the [src].")
 
-/datum/interaction/construction/vehicle/snowmobile/controls
-	from_state = 2
-	to_state = 3
-	step_text = "add the control system"
-	item_type = /obj/item/stock_parts/spring
-	item_use = CONSTRUCTION_ITEM_DELETE
+/obj/item/vehicle_assembly/snowmobile/proc/motor_added(datum/act/op/A)
+	return step_done(A, 6, null, "You add the motor to \the [src].")
 
-/datum/interaction/construction/vehicle/snowmobile/controls/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/snowmobile/assembly = target
-	assembly.set_build_visuals(after)
-	to_chat(actor, span_notice("You add the control system to \the [assembly]."))
-	return TRUE
+/obj/item/vehicle_assembly/snowmobile/proc/reinforced(datum/act/op/A)
+	return step_done(A, 7, "reinforced [initial(name)]", "You add reinforcement to \the [src].")
 
-/datum/interaction/construction/vehicle/snowmobile/wire
-	start_feedback = /datum/msg/start/interaction/construction/vehicle/snowmobile/wire
-	from_state = 3
-	to_state = 4
-	step_text = "wire it"
-	item_type = /obj/item/stack/cable_coil
-	item_amount = 2
-	item_use = CONSTRUCTION_ITEM_USE
-	duration = 4 SECONDS
-	tool_scaled = FALSE
-
-/datum/msg/start/interaction/construction/vehicle/snowmobile/wire
-	self = "You start to wire %T%."
-
-/datum/interaction/construction/vehicle/snowmobile/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/snowmobile/assembly = target
-	assembly.set_build_visuals(after, "wired [initial(assembly.name)]")
-	to_chat(actor, span_notice("You wire \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/snowmobile/power
-	from_state = 4
-	to_state = 5
-	step_text = "add the power supply"
-	item_type = /obj/item/cell
-	item_use = CONSTRUCTION_ITEM_INSERT
-
-/datum/interaction/construction/vehicle/snowmobile/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/snowmobile/assembly = target
-	rel_set(assembly, nameof(assembly.cell), held)
-	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
-	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/snowmobile/motor
-	from_state = 5
-	to_state = 6
-	step_text = "add the motor"
-	item_type = /obj/item/stock_parts/motor
-	item_use = CONSTRUCTION_ITEM_DELETE
-
-/datum/interaction/construction/vehicle/snowmobile/motor/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/snowmobile/assembly = target
-	assembly.set_build_visuals(after)
-	to_chat(actor, span_notice("You add the motor to \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/snowmobile/reinforce
-	start_feedback = /datum/msg/start/interaction/construction/vehicle/snowmobile/reinforce
-	from_state = 6
-	to_state = 7
-	step_text = "add reinforcement"
-	item_type = /obj/item/stack/material/plasteel
-	item_amount = 2
-	item_use = CONSTRUCTION_ITEM_USE
-	duration = 4 SECONDS
-	tool_scaled = FALSE
-
-/datum/msg/start/interaction/construction/vehicle/snowmobile/reinforce
-	self = "You start to add reinforcement to %T%."
-
-/datum/interaction/construction/vehicle/snowmobile/reinforce/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/snowmobile/assembly = target
-	assembly.set_build_visuals(after, "reinforced [initial(assembly.name)]")
-	to_chat(actor, span_notice("You add reinforcement to \the [assembly]."))
-	return TRUE
-
-/datum/interaction/construction/vehicle/snowmobile/finish
-	start_feedback = /datum/msg/start/interaction/construction/vehicle/snowmobile/finish
-	from_state = 7
-	to_state = CONSTRUCTION_DONE
-	step_text = "finish it"
-	duration = 2 SECONDS
-	tool_scaled = FALSE
-
-/datum/msg/start/interaction/construction/vehicle/snowmobile/finish
-	self = "You begin your finishing touches on %T%."
-
-/datum/interaction/construction/vehicle/snowmobile/finish/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/vehicle_assembly/snowmobile/assembly = target
-	playsound(assembly, held.usesound, 30, TRUE)
-	var/obj/vehicle/train/engine/quadbike/snowmobile/built/product = new(assembly)
-	to_chat(actor, span_notice("You finish \the [product]"))
-	product.forceMove(get_turf(assembly))
-	var/obj/item/cell/moved_cell = assembly.cell()
-	rel_clear(assembly, nameof(assembly.cell))
+/obj/item/vehicle_assembly/snowmobile/proc/finished(datum/act/op/A)
+	playsound(src, A.held.usesound, 30, TRUE)
+	var/obj/vehicle/train/engine/quadbike/snowmobile/built/product = new(src)
+	to_chat(A.actor, span_notice("You finish \the [product]"))
+	product.forceMove(get_turf(src))
+	var/obj/item/cell/moved_cell = cell()
+	rel_clear(src, nameof(cell))
 	move_into(product, nameof(product.cell), moved_cell)
-	consume(assembly, actor)
-	return TRUE
-
-/datum/interaction/construction/vehicle/snowmobile/finish_wrench
-	parent_type = /datum/interaction/construction/vehicle/snowmobile/finish
-	tool = TOOL_WRENCH
-
-/datum/interaction/construction/vehicle/snowmobile/finish_screwdriver
-	parent_type = /datum/interaction/construction/vehicle/snowmobile/finish
-	tool = TOOL_SCREWDRIVER
+	consume(src, A.actor)
+	return OP_OK
 
 /// Accessor for the cell var.
 /obj/item/vehicle_assembly/proc/cell() as /obj/item/cell

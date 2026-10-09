@@ -1,42 +1,85 @@
 ////////////////////////////////////////////////
-///// Mecha/fighter chassis construction graph /////
+///// Mecha/fighter chassis construction /////
 ////////////////////////////////////////////////
 //
-// Roadmap I5: chassis construction (mecha, fighter, and micro-mecha) runs on
-// the construction graph system (code/datums/interactions/construction.dm)
-// instead of the old per-instance /datum/construction. Every chassis type
-// shares this one engine: a leaf graph only sets data (which parts it needs,
-// and its reversible ladder of tool/item steps), and /datum/construction_graph/mecha
-// turns that data into states and edges in build().
+// Chassis construction (mecha, fighter and micro-mecha) is a state-graph ladder shared by every chassis type: a chassis type only names its
+// blueprint (the data below: which parts it needs, its ladder of tool/item steps, what it becomes), and mecha_chassis() turns that data into
+// the entries of its CAPABILITIES block.
 //
-// Two phases, exactly as the old system had:
-//  1. Parts (unordered): each required part can be attached in any order. The
-//     state is "p<bitmask>" (which parts are attached so far). Attaching the
-//     last part finishes the shell: icon/icon_state/density are set and all
-//     overlays are cleared, entering the reversible ladder at its top.
-//  2. Reversible ladder (ordered): state "R<n>" counts down from the ladder's
-//     length to 1; the last forward step finishes construction (spawns
-//     `result` at the chassis's turf, qdels the chassis, logs feedback).
+// Two phases, exactly as before:
+//  1. Parts (unordered): the "attach" op takes any of the blueprint's parts that is not on the chassis yet, in any order. Which parts are on
+//     is the chassis's parts_mask (one bit per part of the blueprint). Attaching the last part finishes the shell: icon/icon_state/density
+//     are set and all overlays are cleared.
+//  2. Ladder (ordered, reversible): STAGE_MECHA_SHELL, then STAGE_MECHA_STEP_1 ..; the first ladder step needs every part on. The last
+//     forward step finishes construction (spawns `result` at the chassis's turf, ends the chassis, logs feedback) and cannot be undone.
 //
-// Tool sounds and fuel/material costs match the old /datum/construction/mecha
-// custom_action exactly: a welder edge burns remove_fuel(0) (tool_amount 0,
-// the use_tool default) and plays Welder2.ogg; wrench/screwdriver/wirecutter
-// edges silence the generic tool sound (tool_volume = 0) and play their own
-// sound at the same volume; crowbar edges play no sound at all (the old code
-// never handled TOOL_CROWBAR in its generic step); cable coil edges use 4 and
-// play Deconstruct.ogg, other stacks use 5 with no sound; single items
-// (circuit boards, mecha parts used mid-ladder) are deleted via
-// CONSTRUCTION_ITEM_DELETE with no sound. Refunded materials going backward
-// are placed via `materials_out`, in the exact amounts the old per-mech
-// custom_action spawned.
+// The blueprint's `ladder` rows are listed last step first (row[length] is the first step from the shell). Each row has a key (a tool
+// quality, or the item type used: stacks use 5 units, cable coil 4, any other item is consumed), a backkey (the tool that undoes it), the
+// lines said going forward and back ({USER}/{HOLDER}/{ITEM} tokens), the icon states, and what the undo hands back (a stack or item step
+// refunds exactly what it took in: the graph's ledger).
 
-/datum/construction_graph/mecha
-	state_var = "construction_state"
+STAGE_DEF(mecha, shell)
+STAGE_DEF(mecha, step_1)
+STAGE_DEF(mecha, step_2)
+STAGE_DEF(mecha, step_3)
+STAGE_DEF(mecha, step_4)
+STAGE_DEF(mecha, step_5)
+STAGE_DEF(mecha, step_6)
+STAGE_DEF(mecha, step_7)
+STAGE_DEF(mecha, step_8)
+STAGE_DEF(mecha, step_9)
+STAGE_DEF(mecha, step_10)
+STAGE_DEF(mecha, step_11)
+STAGE_DEF(mecha, step_12)
+STAGE_DEF(mecha, step_13)
+STAGE_DEF(mecha, step_14)
+STAGE_DEF(mecha, step_15)
+STAGE_DEF(mecha, step_16)
+STAGE_DEF(mecha, step_17)
+STAGE_DEF(mecha, step_18)
+STAGE_DEF(mecha, step_19)
+STAGE_DEF(mecha, step_20)
+STAGE_DEF(mecha, step_21)
+STAGE_DEF(mecha, step_22)
+
+MSG_DEF_SELF(stage/mecha/shell, "The shell is assembled; it wants its systems and armour fitted.")
+MSG_DEF_SELF(stage/mecha/step_1, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_2, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_3, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_4, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_5, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_6, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_7, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_8, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_9, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_10, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_11, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_12, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_13, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_14, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_15, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_16, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_17, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_18, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_19, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_20, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_21, "It is partly built.")
+MSG_DEF_SELF(stage/mecha/step_22, "It is partly built.")
+
+/// The stages of a chassis ladder in order: the shell, then each step. The index of the stage a chassis is at is the number of the step it is
+/// about to take.
+/proc/mecha_stage_ids()
+	var/static/list/ids = list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, STAGE_MECHA_STEP_2, STAGE_MECHA_STEP_3, STAGE_MECHA_STEP_4, STAGE_MECHA_STEP_5, STAGE_MECHA_STEP_6, STAGE_MECHA_STEP_7, STAGE_MECHA_STEP_8, STAGE_MECHA_STEP_9, STAGE_MECHA_STEP_10, STAGE_MECHA_STEP_11, STAGE_MECHA_STEP_12, STAGE_MECHA_STEP_13, STAGE_MECHA_STEP_14, STAGE_MECHA_STEP_15, STAGE_MECHA_STEP_16, STAGE_MECHA_STEP_17, STAGE_MECHA_STEP_18, STAGE_MECHA_STEP_19, STAGE_MECHA_STEP_20, STAGE_MECHA_STEP_21, STAGE_MECHA_STEP_22)
+	return ids
+
+/// What a chassis becomes, as data: one type per chassis.
+/datum/mecha_blueprint
+	var/id
 	/// The item types needed in the parts phase, any order.
 	var/list/mecha_parts
-	/// The reversible ladder, top (just-finished shell) to bottom (last step before completion):
-	/// list(list("key", "backkey", "desc", "fwd_self", "fwd_others", "fwd_icon", "fwd_span",
-	///           "back_self", "back_others", "back_icon", "back_span", "refund_type", "refund_amt"), ...)
+	/// The ladder, last step first: list(list("key", "backkey", "desc", "fwd_self", "fwd_others", "fwd_icon", "fwd_span",
+	///           "back_self", "back_others", "back_icon", "back_span", "refund_type", "refund_amt"), ...). The refund columns are
+	///           kept for the record; the graph's ledger refunds what each step took in.
 	var/list/ladder
 	/// The finished mecha spawned when the ladder reaches its last step.
 	var/result
@@ -47,178 +90,176 @@
 	/// feedback_inc() key logged once the mecha finishes, or null.
 	var/feedback_key
 
-/datum/construction_graph/mecha/build()
-	var/n_parts = length(mecha_parts)
-	var/full_mask = (2 ** n_parts) - 1
-	var/top_state = "R[length(ladder)]"
-	states = list()
-	// "p[full_mask]" is never a live state: attaching the last part jumps straight
-	// to top_state (see mecha_part/next_state), so it's left out here too.
-	for(var/mask in 0 to full_mask - 1)
-		states += "p[mask]"
-	for(var/i in 1 to length(ladder))
-		states += "R[i]"
-	initial_states = list("p0")
-	for(var/i in 1 to n_parts)
-		add_edge(new /datum/interaction/construction/mecha_part(mecha_parts[i], 1 << (i - 1), full_mask, top_state))
-	for(var/i in 1 to length(ladder))
-		var/list/step = ladder[i]
-		var/to_state = (i == 1) ? CONSTRUCTION_DONE : "R[i - 1]"
-		add_edge(new /datum/interaction/construction/mecha_ladder("R[i]", to_state, step["key"], step["desc"], step["fwd_self"], step["fwd_others"], step["fwd_icon"], step["fwd_span"], null, null, TRUE))
-		// The completing step (to_state == CONSTRUCTION_DONE) can never be undone: by the
-		// time the target would be "in" that state, finish_mecha() has already spawned the
-		// real mecha and qdeleted the chassis, so there is nothing left to reverse.
-		if(step["backkey"] && to_state != CONSTRUCTION_DONE)
-			// The backward edge undoes exactly the forward step above: it leaves from
-			// where that step lands (to_state) and returns to "R[i]".
-			add_edge(new /datum/interaction/construction/mecha_ladder(to_state, "R[i]", step["backkey"], step["desc"], step["back_self"], step["back_others"], step["back_icon"], step["back_span"], step["refund_type"], step["refund_amt"], FALSE))
+/// The one blueprint of a type.
+/proc/mecha_blueprint_of(blueprint_type)
+	RETURN_TYPE(/datum/mecha_blueprint)
+	var/static/list/known = list()
+	var/datum/mecha_blueprint/found = known[blueprint_type]
+	if(!found && ispath(blueprint_type, /datum/mecha_blueprint))
+		found = new blueprint_type
+		known[blueprint_type] = found
+	return found
 
-/datum/construction_graph/mecha/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
-	if(after == CONSTRUCTION_DONE)
-		return
-	..()
+/// The entries of a chassis type: the attach op of its parts phase and the construction ladder.
+/proc/mecha_chassis(blueprint_type)
+	return list(mecha_chassis_parts(blueprint_type), mecha_chassis_construction(blueprint_type))
 
-/// Called by the completing part edge. `target` is the chassis (any of the three
-/// chassis hierarchies: mecha, fighter, micro), typed generically since they share
-/// no common typed ancestor below /atom.
-/datum/construction_graph/mecha/proc/finish_parts(atom/target)
-	target.icon = icon_finished
-	target.icon_state = "[icon_prefix]0"
-	target.set_density(TRUE)
-	target.overlays.len = 0
+/// The parts phase: one op that takes any part of the blueprint the chassis does not have yet.
+/proc/mecha_chassis_parts(blueprint_type)
+	var/datum/mecha_blueprint/blueprint = mecha_blueprint_of(blueprint_type)
+	var/list/bindings = list()
+	for(var/part_type in blueprint.mecha_parts)
+		bindings += item(part_type)
+	return op("attach", inputs(bindings), label("Attach part"), when(TYPE_PROC_REF(/obj/item/mecha_parts, mecha_part_wanted)), consumes(), then(TYPE_PROC_REF(/obj/item/mecha_parts, mecha_part_attached)))
 
-/datum/construction_graph/mecha/proc/finish_mecha(atom/target, mob/actor)
-	new result(get_turf(target))
-	if(feedback_key)
-		feedback_inc(feedback_key, 1)
-	spent(target, actor)
-
-// ---------------------------------------------------------------------------
-// Parts-phase edges: one per required part, available from any "p<mask>"
-// state that doesn't already have that part's bit set.
-
-/datum/interaction/construction/mecha_part
-	from_state = CONSTRUCTION_ANY_STATE
-	item_use = CONSTRUCTION_ITEM_DELETE
-	no_item_ok = FALSE
-	/// This part's bit in the mask.
-	var/bit
-	/// The mask with every part's bit set.
-	var/full_mask
-	/// The ladder's top state, entered once every part is attached.
-	var/top_state
-
-/datum/interaction/construction/mecha_part/New(obj/item/part_type, part_bit, mask, top)
-	item_type = part_type
-	bit = part_bit
-	full_mask = mask
-	top_state = top
-	step_text = "attach [dq_pred_article(initial(part_type.name))]"
-	..()
-
-/// The bitmask a "p<mask>" state encodes, or null if `state` isn't one.
-/datum/interaction/construction/mecha_part/proc/mask_of(state)
-	var/text = "[state]"
-	if(copytext(text, 1, 2) != "p")
-		return null
-	return text2num(copytext(text, 2))
-
-/datum/interaction/construction/mecha_part/leaves(state)
-	var/mask = mask_of(state)
-	return !isnull(mask) && !(mask & bit)
-
-/datum/interaction/construction/mecha_part/next_state(state)
-	var/mask = mask_of(state)
-	if(isnull(mask))
-		return null
-	mask |= bit
-	return (mask == full_mask) ? top_state : "p[mask]"
-
-/datum/interaction/construction/mecha_part/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	act_message(actor, target, MSG_SELF(span_infoplain("You connect [held] to %T%")), MSG_OTHERS(span_infoplain("%U% has connected [held] to %T%.")))
-	target.add_overlay(held.icon_state + "+o")
-	if(after == top_state)
-		var/datum/construction_graph/mecha/mecha_graph = graph
-		mecha_graph.finish_parts(target)
-	return TRUE
-
-// ---------------------------------------------------------------------------
-// Reversible-ladder edges: one per forward step and (when it has a backkey)
-// one per backward step.
-
-/datum/interaction/construction/mecha_ladder
-	priority = 10
-	var/step_self
-	var/step_others
-	var/step_icon
-	var/step_span
-
-/datum/interaction/construction/mecha_ladder/New(from_st, to_st, key, desc, self_msg, others_msg, icon, span, refund_type, refund_amt, forward)
-	from_state = from_st
-	to_state = to_st
-	step_self = self_msg
-	step_others = others_msg
-	step_icon = icon
-	step_span = span
-	step_text = desc || "work on it"
-	priority = forward ? 11 : 9
-	if(refund_type)
-		materials_out = list()
-		materials_out[refund_type] = refund_amt || 1
-	switch(key)
-		if(TOOL_WELDER, TOOL_WRENCH, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_CROWBAR)
-			tool = key
-			tool_volume = 0
+/// The ladder: each row of the blueprint is a stage, built by its key and undone by its backkey. The steps run no wait of their own (the old
+/// steps took none); the sound of a step and its lines are the handlers'.
+/proc/mecha_chassis_construction(blueprint_type)
+	var/datum/mecha_blueprint/blueprint = mecha_blueprint_of(blueprint_type)
+	var/list/rows = blueprint.ladder
+	var/steps = length(rows)
+	var/list/stage_ids = mecha_stage_ids()
+	if(steps + 1 > length(stage_ids))
+		stack_trace("[blueprint_type]: its ladder of [steps] steps is longer than the [length(stage_ids) - 1] stages declared for it")
+		steps = length(stage_ids) - 1
+	var/list/entries = list(start(STAGE_MECHA_SHELL))
+	for(var/step in 1 to steps)
+		var/list/row = rows[steps - step + 1]
+		var/list/parts = list()
+		var/key = row["key"]
+		if(istext(key))
+			parts += tool(key)
+		else if(ispath(key, /obj/item/stack))
+			parts += stack(key, ispath(key, /obj/item/stack/cable_coil) ? 4 : 5)
 		else
-			item_type = key
-			if(ispath(key, /obj/item/stack/cable_coil))
-				item_amount = 4
-				item_use = CONSTRUCTION_ITEM_USE
-			else if(ispath(key, /obj/item/stack))
-				item_amount = 5
-				item_use = CONSTRUCTION_ITEM_USE
-			else
-				item_use = CONSTRUCTION_ITEM_DELETE
-	..()
+			parts += item(key)
+			parts += consumes()
+		parts += wait(0)
+		parts += then(TYPE_PROC_REF(/obj/item/mecha_parts, mecha_step_built))
+		if(step == 1)
+			parts += when(TYPE_PROC_REF(/obj/item/mecha_parts, mecha_parts_done))
+		else
+			// The tool that undoes the step before also builds this one: building goes first (the old ladder's forward edge outranked the way back).
+			var/list/before = rows[steps - step + 2]
+			if(istext(key) && before["backkey"] == key)
+				parts += priority(above("construction.undo:[stage_key(stage_ids[step])]"))
+		if(step < steps)
+			parts += undone(TYPE_PROC_REF(/obj/item/mecha_parts, mecha_step_undone))
+			entries += stage(stage_ids[step + 1], parts, undo = list(tool(row["backkey"]), wait(0)))
+		else
+			entries += stage(stage_ids[step + 1], parts, undo = null)
+	return construction(entries)
 
-/// Substitutes the {USER}/{HOLDER} tokens the ladder data uses in place of "[user]"/"[holder]",
-/// which can't appear literally in a static list initializer (DM would try to compile-time
-/// embed them there instead of at runtime).
-/datum/interaction/construction/mecha_ladder/proc/mech_token_text(text, mob/actor, atom/target, obj/item/held)
+// ---------------------------------------------------------------------------
+// What the chassis does at each step. Shared by every chassis type: the blueprint is the chassis's `blueprint`.
+
+/// The blueprint of this chassis.
+/obj/item/mecha_parts/proc/mecha_blueprint()
+	return mecha_blueprint_of(blueprint)
+
+/// The bit of the first part of the blueprint `part` is that is not on yet, or 0.
+/obj/item/mecha_parts/proc/mecha_part_bit(obj/item/part)
+	var/datum/mecha_blueprint/plan = mecha_blueprint()
+	for(var/i in 1 to length(plan.mecha_parts))
+		var/bit = 1 << (i - 1)
+		if(!(parts_mask & bit) && istype(part, plan.mecha_parts[i]))
+			return bit
+	return 0
+
+/// The held item is a part this chassis still needs.
+/obj/item/mecha_parts/proc/mecha_part_wanted(datum/act/op/A)
+	return !!mecha_part_bit(A.held)
+
+/// Every part of the blueprint is on the chassis.
+/obj/item/mecha_parts/proc/mecha_parts_done(datum/act/A)
+	var/datum/mecha_blueprint/plan = mecha_blueprint()
+	return parts_mask == (1 << length(plan.mecha_parts)) - 1
+
+/obj/item/mecha_parts/proc/mecha_part_attached(datum/act/op/A)
+	var/obj/item/part = A.held
+	var/bit = mecha_part_bit(part)
+	if(!bit)
+		return OP_REFUSED
+	parts_mask |= bit
+	act_message(A.actor, src, MSG_SELF(span_infoplain("You connect [part] to %T%")), MSG_OTHERS(span_infoplain("%U% has connected [part] to %T%.")))
+	add_overlay(part.icon_state + "+o")
+	if(mecha_parts_done(A))
+		var/datum/mecha_blueprint/plan = mecha_blueprint()
+		icon = plan.icon_finished
+		icon_state = "[plan.icon_prefix]0"
+		set_density(TRUE)
+		overlays.len = 0
+	log_world("MECHA CONSTRUCTION: [A.actor] attached [part] to [src] ([blueprint]), parts [parts_mask]")
+	return OP_OK
+
+/// The row of the step a chassis at its current stage is about to take (building) or has just taken back (undone): the ladder is listed last step first.
+/obj/item/mecha_parts/proc/mecha_step_row(datum/mecha_blueprint/plan)
+	var/step = mecha_stage_ids().Find(graph_current(src))
+	return plan.ladder[length(plan.ladder) - step + 1]
+
+/// A step's tool sound: the same sounds the old ladder played; a crowbar makes none.
+/obj/item/mecha_parts/proc/mecha_step_sound(key)
+	switch(key)
+		if(TOOL_WELDER)
+			play_sfx(src, SFX_ITEMS_WELDER2)
+		if(TOOL_WRENCH)
+			play_sfx(src, SFX_ITEMS_RATCHET)
+		if(TOOL_SCREWDRIVER)
+			play_sfx(src, SFX_ITEMS_SCREWDRIVER)
+		if(TOOL_WIRECUTTER)
+			play_sfx(src, SFX_ITEMS_WIRECUTTER, 0.5)
+	if(ispath(key, /obj/item/stack/cable_coil))
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
+
+/// The {USER}/{HOLDER}/{ITEM} tokens the ladder data uses in place of "[user]"/"[holder]", which can't appear literally in a static list initializer.
+/obj/item/mecha_parts/proc/mecha_token_text(text, mob/actor, obj/item/held)
 	if(!text)
 		return text
 	text = replacetext(text, "{USER}", "[actor]")
-	text = replacetext(text, "{HOLDER}", "[target]")
+	text = replacetext(text, "{HOLDER}", "[src]")
 	return replacetext(text, "{ITEM}", held ? "[held]" : "")
 
-/datum/interaction/construction/mecha_ladder/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	switch(tool)
-		if(TOOL_WELDER)
-			play_sfx(target, SFX_ITEMS_WELDER2)
-		if(TOOL_WRENCH)
-			play_sfx(target, SFX_ITEMS_RATCHET)
-		if(TOOL_SCREWDRIVER)
-			play_sfx(target, SFX_ITEMS_SCREWDRIVER)
-		if(TOOL_WIRECUTTER)
-			play_sfx(target, SFX_ITEMS_WIRECUTTER, 0.5)
-	if(!tool && ispath(item_type, /obj/item/stack/cable_coil))
-		play_sfx(target, SFX_ITEMS_DECONSTRUCT)
-	var/self_raw = mech_token_text(step_self, actor, target, held)
-	var/others_raw = mech_token_text(step_others, actor, target, held)
-	var/self_text = step_span ? span_infoplain(self_raw) : self_raw
-	var/others_text = step_span ? span_infoplain(others_raw) : others_raw
+/// What a step says to the actor and to onlookers.
+/obj/item/mecha_parts/proc/mecha_step_say(mob/actor, obj/item/held, self_raw, others_raw, spanned)
+	var/self_text = mecha_token_text(self_raw, actor, held)
+	var/others_text = mecha_token_text(others_raw, actor, held)
+	if(spanned)
+		self_text = span_infoplain(self_text)
+		others_text = span_infoplain(others_text)
 	if(others_text)
 		act_message(actor, null, MSG_SELF(self_text), MSG_OTHERS(others_text))
 	else if(self_text)
 		to_chat(actor, self_text)
-	if(to_state == CONSTRUCTION_DONE)
-		var/datum/construction_graph/mecha/mecha_graph = graph
-		mecha_graph.finish_mecha(target, actor)
-		return TRUE
-	if(step_icon)
-		target.icon_state = step_icon
-	return TRUE
-/datum/construction_graph/mecha/ripley
+
+/// A forward step is taken: its sound, its lines, its picture; the last one makes the mecha in the chassis's place.
+/obj/item/mecha_parts/proc/mecha_step_built(datum/act/op/A)
+	var/datum/mecha_blueprint/plan = mecha_blueprint()
+	var/list/row = mecha_step_row(plan)
+	mecha_step_sound(row["key"])
+	mecha_step_say(A.actor, A.held, row["fwd_self"], row["fwd_others"], row["fwd_span"])
+	if(row == plan.ladder[1])
+		var/result_type = plan.result
+		new result_type(get_turf(src))
+		if(plan.feedback_key)
+			feedback_inc(plan.feedback_key, 1)
+		log_world("MECHA CONSTRUCTION: [A.actor] finished [result_type] from [src] ([blueprint])")
+		spent(src, A.actor)
+		return OP_OK
+	if(row["fwd_icon"])
+		icon_state = row["fwd_icon"]
+	return OP_OK
+
+/// A step is taken back (what it took in is handed back by the graph): its sound, its lines, its picture.
+/obj/item/mecha_parts/proc/mecha_step_undone(datum/act/op/A)
+	var/datum/mecha_blueprint/plan = mecha_blueprint()
+	var/list/row = mecha_step_row(plan)
+	mecha_step_sound(row["backkey"])
+	mecha_step_say(A.actor, A.held, row["back_self"], row["back_others"], row["back_span"])
+	if(row["back_icon"])
+		icon_state = row["back_icon"]
+	return OP_OK
+
+/datum/mecha_blueprint/ripley
 	id = "mecha_ripley"
 	result = /obj/mecha/working/ripley
 	icon_finished = 'icons/mecha/mech_construction.dmi'
@@ -242,7 +283,7 @@
 		list("key" = TOOL_WRENCH, "backkey" = TOOL_CROWBAR, "desc" = "The hydraulic systems are disconnected.", "fwd_self" = "You connect {HOLDER} hydraulic systems.", "fwd_others" = "{USER} connects {HOLDER} hydraulic systems", "fwd_icon" = "ripley1", "fwd_span" = TRUE, "back_self" = "You disconnect {HOLDER} hydraulic systems.", "back_others" = "{USER} disconnects {HOLDER} hydraulic systems.", "back_icon" = "ripley0", "back_span" = TRUE, "refund_type" = null, "refund_amt" = null)
 		)
 
-/datum/construction_graph/mecha/gygax
+/datum/mecha_blueprint/gygax
 	id = "mecha_gygax"
 	result = /obj/mecha/combat/gygax
 	icon_finished = 'icons/mecha/mech_construction.dmi'
@@ -272,7 +313,7 @@
 		list("key" = TOOL_WRENCH, "backkey" = TOOL_CROWBAR, "desc" = "The hydraulic systems are disconnected.", "fwd_self" = "You connect {HOLDER} hydraulic systems.", "fwd_others" = "{USER} connects {HOLDER} hydraulic systems", "fwd_icon" = "gygax1", "fwd_span" = TRUE, "back_self" = "You disconnect {HOLDER} hydraulic systems.", "back_others" = "{USER} disconnects {HOLDER} hydraulic systems.", "back_icon" = "gygax0", "back_span" = TRUE, "refund_type" = null, "refund_amt" = null)
 		)
 
-/datum/construction_graph/mecha/serenity
+/datum/mecha_blueprint/serenity
 	id = "mecha_serenity"
 	result = /obj/mecha/combat/gygax/serenity
 	icon_finished = 'icons/mecha/mech_construction.dmi'
@@ -302,7 +343,7 @@
 		list("key" = TOOL_WRENCH, "backkey" = TOOL_CROWBAR, "desc" = "The hydraulic systems are disconnected.", "fwd_self" = "You connect {HOLDER} hydraulic systems.", "fwd_others" = "{USER} connects {HOLDER} hydraulic systems", "fwd_icon" = "gygax1", "fwd_span" = TRUE, "back_self" = "You disconnect {HOLDER} hydraulic systems.", "back_others" = "{USER} disconnects {HOLDER} hydraulic systems.", "back_icon" = "gygax0", "back_span" = TRUE, "refund_type" = null, "refund_amt" = null)
 		)
 
-/datum/construction_graph/mecha/firefighter
+/datum/mecha_blueprint/firefighter
 	id = "mecha_firefighter"
 	result = /obj/mecha/working/ripley/firefighter
 	icon_finished = 'icons/mecha/mech_construction.dmi'
@@ -327,7 +368,7 @@
 		list("key" = TOOL_WRENCH, "backkey" = TOOL_CROWBAR, "desc" = "The hydraulic systems are disconnected.", "fwd_self" = "You connect {HOLDER} hydraulic systems.", "fwd_others" = "{USER} connects {HOLDER} hydraulic systems", "fwd_icon" = "fireripley1", "fwd_span" = TRUE, "back_self" = "You disconnect {HOLDER} hydraulic systems.", "back_others" = "{USER} disconnects {HOLDER} hydraulic systems.", "back_icon" = "fireripley0", "back_span" = TRUE, "refund_type" = null, "refund_amt" = null)
 		)
 
-/datum/construction_graph/mecha/durand
+/datum/mecha_blueprint/durand
 	id = "mecha_durand"
 	result = /obj/mecha/combat/durand
 	icon_finished = 'icons/mecha/mech_construction.dmi'
@@ -357,7 +398,7 @@
 		list("key" = TOOL_WRENCH, "backkey" = TOOL_CROWBAR, "desc" = "The hydraulic systems are disconnected.", "fwd_self" = "You connect {HOLDER} hydraulic systems.", "fwd_others" = "{USER} connects {HOLDER} hydraulic systems", "fwd_icon" = "durand1", "fwd_span" = TRUE, "back_self" = "You disconnect {HOLDER} hydraulic systems.", "back_others" = "{USER} disconnects {HOLDER} hydraulic systems.", "back_icon" = "durand0", "back_span" = TRUE, "refund_type" = null, "refund_amt" = null)
 		)
 
-/datum/construction_graph/mecha/odysseus
+/datum/mecha_blueprint/odysseus
 	id = "mecha_odysseus"
 	result = /obj/mecha/medical/odysseus
 	icon_finished = 'icons/mecha/mech_construction.dmi'
@@ -381,7 +422,7 @@
 		list("key" = TOOL_WRENCH, "backkey" = TOOL_CROWBAR, "desc" = "The hydraulic systems are disconnected.", "fwd_self" = "You connect {HOLDER} hydraulic systems.", "fwd_others" = "{USER} connects {HOLDER} hydraulic systems", "fwd_icon" = "odysseus1", "fwd_span" = TRUE, "back_self" = "You disconnect {HOLDER} hydraulic systems.", "back_others" = "{USER} disconnects {HOLDER} hydraulic systems.", "back_icon" = "odysseus0", "back_span" = TRUE, "refund_type" = null, "refund_amt" = null)
 		)
 
-/datum/construction_graph/mecha/phazon
+/datum/mecha_blueprint/phazon
 	id = "mecha_phazon"
 	result = /obj/mecha/combat/phazon
 	icon_finished = 'icons/mecha/mech_construction.dmi'
@@ -411,7 +452,7 @@
 		list("key" = TOOL_WRENCH, "backkey" = TOOL_CROWBAR, "desc" = "The hydraulic systems are disconnected.", "fwd_self" = "You connect {HOLDER} hydraulic systems.", "fwd_others" = "{USER} connects {HOLDER} hydraulic systems", "fwd_icon" = "phazon1", "fwd_span" = TRUE, "back_self" = "You disconnect {HOLDER} hydraulic systems.", "back_others" = "{USER} disconnects {HOLDER} hydraulic systems.", "back_icon" = "phazon0", "back_span" = TRUE, "refund_type" = null, "refund_amt" = null)
 		)
 
-/datum/construction_graph/mecha/janus
+/datum/mecha_blueprint/janus
 	id = "mecha_janus"
 	result = /obj/mecha/combat/phazon/janus
 	icon_finished = 'icons/mecha/mech_construction.dmi'
@@ -443,7 +484,7 @@
 		list("key" = TOOL_WRENCH, "backkey" = TOOL_CROWBAR, "desc" = "The hydraulic systems are disconnected.", "fwd_self" = "You connect {HOLDER} hydraulic systems.", "fwd_others" = "{USER} connects {HOLDER} hydraulic systems", "fwd_icon" = "janus1", "fwd_span" = TRUE, "back_self" = "You disconnect {HOLDER} hydraulic systems.", "back_others" = "{USER} disconnects {HOLDER} hydraulic systems.", "back_icon" = "janus0", "back_span" = TRUE, "refund_type" = null, "refund_amt" = null)
 		)
 
-/datum/construction_graph/mecha/fighter/pinnace
+/datum/mecha_blueprint/fighter/pinnace
 	id = "mecha_fighter_pinnace"
 	result = /obj/mecha/combat/fighter/pinnace
 	icon_finished = 'icons/mecha/fighters_construction64x64.dmi'
@@ -473,7 +514,7 @@
 		list("key" = TOOL_WRENCH, "backkey" = TOOL_CROWBAR, "desc" = "The hydraulic landing gear are detached.", "fwd_self" = "You attach {HOLDER}'s hydraulic landing gear.", "fwd_others" = "{USER} attaches {HOLDER}'s hydraulic landing gear.", "fwd_icon" = "pinnace1", "fwd_span" = TRUE, "back_self" = "You detach {HOLDER}'s hydraulic landing gear.", "back_others" = "{USER} detaches {HOLDER}'s hydraulic landing gear.", "back_icon" = "pinnace0", "back_span" = TRUE, "refund_type" = null, "refund_amt" = null)
 		)
 
-/datum/construction_graph/mecha/fighter/baron
+/datum/mecha_blueprint/fighter/baron
 	id = "mecha_fighter_baron"
 	result = /obj/mecha/combat/fighter/baron
 	icon_finished = 'icons/mecha/fighters_construction64x64.dmi'
@@ -503,7 +544,7 @@
 		list("key" = TOOL_WRENCH, "backkey" = TOOL_CROWBAR, "desc" = "The hydraulic landing gear are detached.", "fwd_self" = "You attach {HOLDER}'s hydraulic landing gear.", "fwd_others" = "{USER} attaches {HOLDER}'s hydraulic landing gear.", "fwd_icon" = "baron1", "fwd_span" = TRUE, "back_self" = "You detach {HOLDER}'s hydraulic landing gear.", "back_others" = "{USER} detaches {HOLDER}'s hydraulic landing gear.", "back_icon" = "baron0", "back_span" = TRUE, "refund_type" = null, "refund_amt" = null)
 		)
 
-/datum/construction_graph/mecha/scarab
+/datum/mecha_blueprint/scarab
 	id = "mecha_scarab"
 	result = /obj/mecha/combat/scarab
 	icon_finished = 'icons/mecha/mech_construction_ch.dmi'
@@ -533,7 +574,7 @@
 		list("key" = TOOL_WRENCH, "backkey" = TOOL_CROWBAR, "desc" = "The hydraulic systems are disconnected.", "fwd_self" = "You connect {HOLDER} hydraulic systems.", "fwd_others" = "{USER} connects {HOLDER} hydraulic systems", "fwd_icon" = "scarab_chassis_complete", "fwd_span" = FALSE, "back_self" = "You disconnect {HOLDER} hydraulic systems.", "back_others" = "{USER} disconnects {HOLDER} hydraulic systems.", "back_icon" = "scarab_chassis_complete0", "back_span" = FALSE, "refund_type" = null, "refund_amt" = null)
 		)
 
-/datum/construction_graph/mecha/hades
+/datum/mecha_blueprint/hades
 	id = "mecha_hades"
 	result = /obj/mecha/combat/phazon
 	icon_finished = 'icons/mecha/mech_construction.dmi'

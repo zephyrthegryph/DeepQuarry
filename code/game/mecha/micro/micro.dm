@@ -86,7 +86,7 @@
 	else
 		..()
 
-/obj/mecha/micro/move_inside_passenger(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/micro/move_inside_passenger(mob/user, obj/item/held)
 	if(!user)
 		return
 	if (user.get_effective_size(TRUE) >= 0.5)

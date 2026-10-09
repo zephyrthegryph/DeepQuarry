@@ -178,14 +178,14 @@ CAPABILITIES(/turf)
 
 /// The touch op: the old attack_hand.
 /turf/proc/turf_touch_op(datum/act/op/A)
-	return turf_hand(A.actor, null, null) ? OP_OK : OP_DECLINE
+	return turf_hand(A.actor, null) ? OP_OK : OP_DECLINE
 
 /// The item op: the old attackby.
 /turf/proc/turf_item_op(datum/act/op/A)
 	return turf_item(A.actor, A.held) ? OP_OK : OP_DECLINE
 
 /// Old attack_hand: toggle a door on the tile, or pull what you're pulling onto it. FALSE when neither. (Also called by name by what touches a tile for another.)
-/turf/proc/turf_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/turf/proc/turf_hand(mob/user, obj/item/held)
 	//QOL feature, clicking on turf can toggle doors, unless pulling something
 	if(!user?.pulling_target())
 		var/obj/machinery/door/airlock/AL = locate_on(src, /obj/machinery/door/airlock)

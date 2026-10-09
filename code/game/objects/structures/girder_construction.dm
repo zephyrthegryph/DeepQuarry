@@ -1,224 +1,92 @@
-/**
- * Girder construction graph (doc/rewrite/interactions.md §10).
- *
- * The state is worked out from the girder: "displaced" (unanchored),
- * "anchored", "reinforced" (struts secured, `state` 2) and "struts_loose"
- * (`state` 1). Plating it into a wall and adding reinforcement take a stack of
- * material and stay with the stack (attackby); the screwdriver chooses which
- * one a stack does.
- */
-/obj/structure/girder
-	construction_graph = /datum/construction_graph/girder
+// ---- taking a girder apart, declared ----
+//
+// A girder is displaced (not anchored), anchored, or anchored with its support struts loose (`state` 1) or secured (2). The girder's own vars hold
+// the state, and the steps are ops that read them: girder_construction() is listed in the girder's CAPABILITIES block (girders.dm). Plating it into a
+// wall and adding reinforcement take a stack of material and stay with the stack (interaction_item); the screwdriver chooses which one a stack does.
+// A cult column is only taken apart with a wrench.
 
-/datum/construction_graph/girder
-	id = "girder"
-	state_var = null
-	states = list("displaced", "anchored", "reinforced", "struts_loose")
-	initial_states = list("anchored", "displaced", "reinforced")
-	edge_types = list(
-		/datum/interaction/construction/girder/secure,
-		/datum/interaction/construction/girder/dislodge,
-		/datum/interaction/construction/girder/disassemble,
-		/datum/interaction/construction/girder/toggle_reinforcing,
-		/datum/interaction/construction/girder/unsecure_struts,
-		/datum/interaction/construction/girder/remove_struts,
-	)
+MSG_DEF_SELF(girder/secured, "You secured the girder!")
+MSG_DEF_SELF(girder/securing, "Now securing the girder...")
+MSG_DEF_SELF(girder/dislodged, "You dislodged the girder!")
+MSG_DEF_SELF(girder/dislodging, "Now dislodging the girder...")
+MSG_DEF_SELF(girder/disassembled, "You dissasembled the girder!")
+MSG_DEF_SELF(girder/disassembling, "Now disassembling the girder...")
+MSG_DEF_SELF(girder/struts_unsecured, "You unsecured the support struts!")
+MSG_DEF_SELF(girder/struts_unsecuring, "Now unsecuring support struts...")
+MSG_DEF_SELF(girder/struts_removed, "You removed the support struts!")
+MSG_DEF_SELF(girder/struts_removing, "Now removing support struts...")
+MSG_DEF_SELF(girder/column_disassembled, "You disassembled the girder!")
 
-/datum/construction_graph/girder/state_of(atom/target)
-	var/obj/structure/girder/girder = target
-	if(!istype(girder))
-		return null
-	if(!girder.anchored)
-		return "displaced"
-	switch(girder.state)
-		if(2)
-			return "reinforced"
-		if(1)
-			return "struts_loose"
-	return "anchored"
+/// The ops that take a girder apart.
+/proc/girder_construction()
+	return list(
+		op("secure", tool(TOOL_WRENCH), when(TYPE_PROC_REF(/obj/structure/girder, is_displaced)), priority(OP_PRIORITY_PART), label("Secure the girder"), wait(4 SECONDS), begins(MSG(girder/securing)), says(MSG(girder/secured)), then(TYPE_PROC_REF(/obj/structure/girder, secured))),
+		op("dislodge", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/obj/structure/girder, is_anchored)), priority(OP_PRIORITY_PART), label("Dislodge the girder"), wait(4 SECONDS), begins(MSG(girder/dislodging)), says(MSG(girder/dislodged)), then(TYPE_PROC_REF(/obj/structure/girder, dislodged))),
+		op("disassemble", tool(TOOL_WRENCH), when(TYPE_PROC_REF(/obj/structure/girder, is_bare_anchored)), priority(OP_PRIORITY_PART), label("Disassemble the girder"), wait(TYPE_PROC_REF(/obj/structure/girder, disassemble_time)), begins(MSG(girder/disassembling)), says(MSG(girder/disassembled)), then(TYPE_PROC_REF(/obj/structure/girder, disassembled))),
+		// chooses whether a stack of material reinforces the girder or plates it into a wall
+		op("toggle_reinforcing", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/obj/structure/girder, is_bare_anchored)), priority(OP_PRIORITY_PART - 5), label("Switch between reinforcing and plating"), wait(0), then(TYPE_PROC_REF(/obj/structure/girder, reinforcing_toggled))),
+		op("unsecure_struts", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/obj/structure/girder, struts_secured)), priority(OP_PRIORITY_PART), label("Unsecure the support struts"), wait(4 SECONDS), begins(MSG(girder/struts_unsecuring)), says(MSG(girder/struts_unsecured)), then(TYPE_PROC_REF(/obj/structure/girder, struts_unsecured))),
+		op("remove_struts", tool(TOOL_WIRECUTTER), when(TYPE_PROC_REF(/obj/structure/girder, struts_loose)), priority(OP_PRIORITY_PART), label("Remove the support struts"), wait(4 SECONDS), begins(MSG(girder/struts_removing)), says(MSG(girder/struts_removed)), then(TYPE_PROC_REF(/obj/structure/girder, struts_removed))))
 
-// The girder's own vars hold the state; the edges' effects change them.
-/datum/construction_graph/girder/set_state(atom/target, state)
-	return
-
-/datum/construction_graph/girder/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
-	return
-
-/datum/interaction/construction/girder
-	tool_volume = 100
-
-/datum/interaction/construction/girder/secure
-	feedback = /datum/msg/interaction/construction/girder/secure
-	start_feedback = /datum/msg/start/interaction/construction/girder/secure
-	from_state = "displaced"
-	to_state = "anchored"
-	step_text = "secure the girder"
-	tool = TOOL_WRENCH
-	duration = 4 SECONDS
-
-/datum/msg/interaction/construction/girder/secure
-	self = "You secured the girder!"
-
-/datum/msg/start/interaction/construction/girder/secure
-	self = "Now securing the girder..."
-
-/datum/interaction/construction/girder/secure/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/structure/girder/girder = target
-	girder.reset_girder()
+/// Not a cult column, which has steps of its own.
+/obj/structure/girder/proc/regular_girder()
 	return TRUE
 
-/datum/interaction/construction/girder/dislodge
-	feedback = /datum/msg/interaction/construction/girder/dislodge
-	start_feedback = /datum/msg/start/interaction/construction/girder/dislodge
-	from_state = "anchored"
-	to_state = "displaced"
-	step_text = "dislodge the girder"
-	tool = TOOL_CROWBAR
-	duration = 4 SECONDS
+/obj/structure/girder/cult/regular_girder()
+	return FALSE
 
-/datum/msg/interaction/construction/girder/dislodge
-	self = "You dislodged the girder!"
+/obj/structure/girder/proc/is_displaced(datum/act/A)
+	return regular_girder() && !anchored
 
-/datum/msg/start/interaction/construction/girder/dislodge
-	self = "Now dislodging the girder..."
+/obj/structure/girder/proc/is_anchored(datum/act/A)
+	return regular_girder() && anchored && !state
 
-/datum/interaction/construction/girder/dislodge/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/structure/girder/girder = target
-	girder.displace()
-	return TRUE
+/// Anchored, struts neither loose nor secured, and no reinforcement material on it.
+/obj/structure/girder/proc/is_bare_anchored(datum/act/A)
+	return regular_girder() && anchored && !state && !reinf_material
 
-/datum/interaction/construction/girder/disassemble
-	feedback = /datum/msg/interaction/construction/girder/disassemble
-	start_feedback = /datum/msg/start/interaction/construction/girder/disassemble
-	from_state = "anchored"
-	to_state = CONSTRUCTION_DONE
-	step_text = "disassemble the girder"
-	tool = TOOL_WRENCH
+/obj/structure/girder/proc/struts_secured(datum/act/A)
+	return regular_girder() && anchored && state == 2
 
-/datum/msg/interaction/construction/girder/disassemble
-	self = "You dissasembled the girder!"
+/obj/structure/girder/proc/struts_loose(datum/act/A)
+	return regular_girder() && anchored && state == 1
 
-/datum/msg/start/interaction/construction/girder/disassemble
-	self = "Now disassembling the girder..."
+/// 3.5 seconds plus a tick for every 50 integrity (the op scales it by the tool).
+/obj/structure/girder/proc/disassemble_time(datum/act/op/A)
+	return 35 + round(max_integrity / 50)
 
-/datum/interaction/construction/girder/disassemble/available_on(atom/target)
-	var/obj/structure/girder/girder = target
-	return !girder.reinf_material
+/obj/structure/girder/proc/secured(datum/act/op/A)
+	reset_girder()
+	return OP_OK
 
-/// 3.5 seconds plus a tick for every 50 integrity.
-/datum/interaction/construction/girder/disassemble/base_duration(mob/actor, atom/target)
-	var/obj/structure/girder/girder = target
-	return 35 + round(girder.max_integrity / 50)
+/obj/structure/girder/proc/dislodged(datum/act/op/A)
+	displace()
+	return OP_OK
 
-/datum/interaction/construction/girder/disassemble/duration_for(mob/actor, atom/target, obj/item/held)
-	return tool_delay(actor, held, base_duration(actor, target), tool)
+/obj/structure/girder/proc/disassembled(datum/act/op/A)
+	dismantle()
+	return OP_OK
 
-/datum/interaction/construction/girder/disassemble/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/structure/girder/girder = target
-	girder.dismantle()
-	return TRUE
+/obj/structure/girder/proc/reinforcing_toggled(datum/act/op/A)
+	reinforcing = !reinforcing
+	to_chat(A.actor, span_notice("\The [src] can now be [reinforcing ? "reinforced" : "constructed"]!"))
+	return OP_OK
 
-/// Chooses whether a stack of material reinforces the girder or plates it into a wall.
-/datum/interaction/construction/girder/toggle_reinforcing
-	from_state = "anchored"
-	to_state = "anchored"
-	step_text = "switch between reinforcing and plating"
-	tool = TOOL_SCREWDRIVER
-	priority = 5
+/obj/structure/girder/proc/struts_unsecured(datum/act/op/A)
+	state = 1
+	return OP_OK
 
-/datum/interaction/construction/girder/toggle_reinforcing/available_on(atom/target)
-	var/obj/structure/girder/girder = target
-	return !girder.reinf_material
-
-/datum/interaction/construction/girder/toggle_reinforcing/display_name(mob/actor, atom/target)
-	var/obj/structure/girder/girder = target
-	return girder.reinforcing ? "Prepare for plating" : "Prepare for reinforcing"
-
-/datum/interaction/construction/girder/toggle_reinforcing/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/structure/girder/girder = target
-	girder.reinforcing = !girder.reinforcing
-	to_chat(actor, span_notice("\The [girder] can now be [girder.reinforcing ? "reinforced" : "constructed"]!"))
-	return TRUE
-
-/datum/interaction/construction/girder/unsecure_struts
-	feedback = /datum/msg/interaction/construction/girder/unsecure_struts
-	start_feedback = /datum/msg/start/interaction/construction/girder/unsecure_struts
-	from_state = "reinforced"
-	to_state = "struts_loose"
-	step_text = "unsecure the support struts"
-	tool = TOOL_SCREWDRIVER
-	duration = 4 SECONDS
-
-/datum/msg/interaction/construction/girder/unsecure_struts
-	self = "You unsecured the support struts!"
-
-/datum/msg/start/interaction/construction/girder/unsecure_struts
-	self = "Now unsecuring support struts..."
-
-/datum/interaction/construction/girder/unsecure_struts/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/structure/girder/girder = target
-	girder.state = 1
-	return TRUE
-
-/datum/interaction/construction/girder/remove_struts
-	feedback = /datum/msg/interaction/construction/girder/remove_struts
-	start_feedback = /datum/msg/start/interaction/construction/girder/remove_struts
-	from_state = "struts_loose"
-	to_state = "anchored"
-	step_text = "remove the support struts"
-	tool = TOOL_WIRECUTTER
-	duration = 4 SECONDS
-
-/datum/msg/interaction/construction/girder/remove_struts
-	self = "You removed the support struts!"
-
-/datum/msg/start/interaction/construction/girder/remove_struts
-	self = "Now removing support struts..."
-
-/datum/interaction/construction/girder/remove_struts/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/structure/girder/girder = target
-	girder.reinf_material.place_dismantled_product(get_turf(girder))
-	girder.reinf_material = null
-	girder.reset_girder()
-	return TRUE
+/obj/structure/girder/proc/struts_removed(datum/act/op/A)
+	reinf_material.place_dismantled_product(get_turf(src))
+	reinf_material = null
+	reset_girder()
+	return OP_OK
 
 // ---- Cult columns: the wrench takes them apart, nothing else. ----
 
-/obj/structure/girder/cult
-	construction_graph = /datum/construction_graph/girder_cult
+CAPABILITIES(/obj/structure/girder/cult)
+	op("disassemble_column", tool(TOOL_WRENCH), priority(OP_PRIORITY_PART), label("Disassemble the column"), wait(4 SECONDS), begins(MSG(girder/disassembling)), says(MSG(girder/column_disassembled)), then(PROC_REF(column_disassembled)))
 
-/datum/construction_graph/girder_cult
-	id = "girder_cult"
-	state_var = null
-	states = list("column")
-	initial_states = list("column")
-	edge_types = list(/datum/interaction/construction/girder/cult_disassemble)
-
-/datum/construction_graph/girder_cult/state_of(atom/target)
-	return istype(target, /obj/structure/girder/cult) ? "column" : null
-
-/datum/construction_graph/girder_cult/set_state(atom/target, state)
-	return
-
-/datum/construction_graph/girder_cult/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
-	return
-
-/datum/interaction/construction/girder/cult_disassemble
-	feedback = /datum/msg/interaction/construction/girder/cult_disassemble
-	start_feedback = /datum/msg/start/interaction/construction/girder/cult_disassemble
-	from_state = "column"
-	to_state = CONSTRUCTION_DONE
-	step_text = "disassemble the column"
-	tool = TOOL_WRENCH
-	duration = 4 SECONDS
-
-/datum/msg/interaction/construction/girder/cult_disassemble
-	self = "You disassembled the girder!"
-
-/datum/msg/start/interaction/construction/girder/cult_disassemble
-	self = "Now disassembling the girder..."
-
-/datum/interaction/construction/girder/cult_disassemble/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/structure/girder/girder = target
-	girder.dismantle()
-	return TRUE
+/obj/structure/girder/cult/proc/column_disassembled(datum/act/op/A)
+	dismantle()
+	return OP_OK
