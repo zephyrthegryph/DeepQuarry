@@ -35,6 +35,7 @@ lanes=""
 smoke_file="tools/ci/smoke_tests.txt"
 smoke=1
 run_tests=1
+snapshot_output=0
 tgui=0
 serial=0
 while [ $# -gt 0 ]; do
@@ -42,6 +43,7 @@ while [ $# -gt 0 ]; do
 		--tests) shift; read -r -a more <<<"${1:-}"; tests_arg+=("${more[@]}") ;;
 		--lanes) shift; lanes="${1:-}" ;;
 		--smoke) shift; smoke_file="${1:-}" ;;
+		--snapshot-output) snapshot_output=1 ;;
 		--no-smoke) smoke=0 ;;
 		--no-tests|--no-boot) run_tests=0 ;;
 		--tgui) tgui=1 ;;
@@ -203,7 +205,12 @@ if [ ${#failed[@]} -gt 0 ]; then
 fi
 
 git update-index -q --refresh >/dev/null 2>&1
-if [ "$(git rev-parse HEAD)" != "$sha" ] || ! git diff --quiet || ! git diff --cached --quiet; then
+gate_diff_args=()
+if [ "$snapshot_output" -eq 1 ]; then
+	# Lane-ready commits successful pin output itself; every other tracked edit remains forbidden.
+	gate_diff_args=(-- . ":!code/modules/unit_tests/snapshots/")
+fi
+if [ "$(git rev-parse HEAD)" != "$sha" ] || ! git diff --quiet "${gate_diff_args[@]}" || ! git diff --cached --quiet; then
 	echo "dq_merge_gates: the tree changed during the gates; not stamping" >&2
 	exit 1
 fi
