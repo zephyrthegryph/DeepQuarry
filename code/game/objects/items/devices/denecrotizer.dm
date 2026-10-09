@@ -206,7 +206,6 @@ TRACKED(/obj/item/denecrotizer, charges)
 	target.faction = user.faction
 	target.revivedby = user.name
 	target.revive()
-	target.update_icon()
 	act_message(target, user, others = "%U% lifts its head and looks at %T%.", runemessage = "lifts its head and looks at [user]")
 	log_and_message_admins("used a denecrotizer to revive a simple mob: [target]. [ADMIN_FLW(src)]", user)
 	if(!target.mind) //if it doesn't have a mind then no one has been playing as it, and it is safe to offer to ghosts.
@@ -228,7 +227,6 @@ TRACKED(/obj/item/denecrotizer, charges)
 	var/mob/living/simple_mob/target = task.target
 	var/mob/living/user = task.actor
 	target.revive()
-	target.update_icon()
 	act_message(target, user, others = "%U% lifts its head and looks at %T%.", runemessage = "lifts its head and looks at [user]")
 	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
 	set_charges(charges - 1)

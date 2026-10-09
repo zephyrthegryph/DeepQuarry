@@ -1348,12 +1348,10 @@ TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask)
 	configure(reagents(add = list(REAGENT_ID_TEA = 40, REAGENT_ID_MILK = 20)))
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask/appearance_overlays()
-	. = list()
-	. += ..()
-	name = initial(name)
-	desc = initial(desc)
+/// The flask keeps its own name and description whatever it holds.
+/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask/draw(datum/look/look)
+	..()
+	look.identity(name = initial(name), desc = initial(desc))
 
 
 // Astra - // Astra

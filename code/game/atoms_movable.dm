@@ -451,8 +451,11 @@
 		if(!same_loc)
 			if(oldloc?.containment_ledger())
 				oldloc.containment_ledger().note_exit(src)
-			if(destination.containment_ledger())
-				destination.containment_ledger().note_enter(src)
+			// A move into a holder registers in its default slot through the same note_enter() path move_into() lands in, also
+			// when the holder has not built its ledger yet (a net or a jar that was never asked what it holds): the ledger is
+			// made here (its sync adopts the arrival), so the slot's occupancy is published and a draw that reads it hears of it.
+			var/datum/ledger/entered = destination.containment_ledger() || dq_ledger_for_arrival(destination)
+			entered?.note_enter(src)
 
 		// J5: the after-hook, right after note_enter(), before Exited()/
 		// Uncrossed(). Not run for a same-loc "move" (nothing left or entered).

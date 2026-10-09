@@ -131,6 +131,16 @@
 	TEST_ASSERT(look_part_key(a) != look_part_key(b), "pixel_w differs in the key")
 	TEST_ASSERT_EQUAL(a.pixel_z, 2, "pixel_z is applied")
 
+/// A look overlay can be blended (a window's multiplied damage layer) and the blend is part of its key.
+/datum/unit_test/dq_draw_overlay_image_blend_mode
+
+/datum/unit_test/dq_draw_overlay_image_blend_mode/Run()
+	var/image/plain = look_overlay_image('icons/obj/stock_parts.dmi', "fix")
+	var/image/multiplied = look_overlay_image('icons/obj/stock_parts.dmi', "fix", blend_mode = BLEND_MULTIPLY)
+	TEST_ASSERT_EQUAL(multiplied.blend_mode, BLEND_MULTIPLY, "blend_mode is applied")
+	TEST_ASSERT_EQUAL(plain.blend_mode, BLEND_DEFAULT, "an overlay with no blend asked keeps the default")
+	TEST_ASSERT(look_part_key(plain) != look_part_key(multiplied), "the blend differs in the key")
+
 /// Nutrition is tracked, so a turkeygirl redraws as it fills.
 /datum/unit_test/dq_draw_turkeygirl_follows_nutrition
 

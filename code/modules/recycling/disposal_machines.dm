@@ -463,7 +463,6 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	if(broken_now())
 		return
 	flush = !flush
-	update_icon()
 */
 // human interact with machine
 /obj/machinery/disposal/proc/interaction_disposal_use(datum/act/op/A)

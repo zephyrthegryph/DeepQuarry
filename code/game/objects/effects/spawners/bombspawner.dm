@@ -140,7 +140,6 @@ MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt
 	rel_set(S, nameof(S.holder), V)
 	S.toggle_secure()
 
-	V.update_icon()
 
 
 

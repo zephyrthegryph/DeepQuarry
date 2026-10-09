@@ -13,7 +13,7 @@
  * removed by the next waiter, so a crashed run never blocks the queue.
  *
  * Counts (an env var overrides each; 0 turns that class off; DQ_SLOTS=0 turns all of it off): dm_compile DQ_SLOTS_DM_COMPILE=2,
- * test_world DQ_SLOTS_TEST_WORLD=3, cargo DQ_SLOTS_CARGO=1, look_state_pin DQ_SLOTS_LOOK_STATE_PIN=2 (DQ_LOOK_PIN_SLOTS is the old
+ * test_world DQ_SLOTS_TEST_WORLD=cpus/3 (2 to 6), cargo DQ_SLOTS_CARGO=1, look_state_pin DQ_SLOTS_LOOK_STATE_PIN=2 (DQ_LOOK_PIN_SLOTS is the old
  * name). Lock order when a run needs several: look_state_pin, then test_world; dm_compile and cargo are never held while waiting
  * for another class.
  */
@@ -25,7 +25,12 @@ import path from 'node:path';
 
 export type SlotClass = 'dm_compile' | 'test_world' | 'cargo' | 'look_state_pin' | (string & {});
 
-const DEFAULTS: Record<string, number> = { dm_compile: 2, test_world: 3, cargo: 1, look_state_pin: 2 };
+/** One DreamDaemon is mostly single-threaded; leave room for compiles and cargo: a third of the CPUs, 2 to 6 (same rule as slots_default_test_world()). */
+export function defaultTestWorlds(cpus: number = os.cpus().length): number {
+  return Math.min(Math.max(Math.floor(cpus / 3), 2), 6);
+}
+
+const DEFAULTS: Record<string, number> = { dm_compile: 2, test_world: defaultTestWorlds(), cargo: 1, look_state_pin: 2 };
 const HEARTBEAT_MS = Number(process.env.DQ_SLOTS_HEARTBEAT_SEC ?? 15) * 1000;
 const POLL_MS = Number(process.env.DQ_SLOTS_POLL_SEC ?? 3) * 1000;
 
@@ -134,7 +139,8 @@ function reap(dir: string, log?: (m: string) => void): void {
         continue;
       }
       if (age > 2000) fs.rmSync(sd, { recursive: true, force: true });
-    } else if (isDead(owner)) {
+    } else if (fs.existsSync(owner) && isDead(owner)) {
+      // (the owner file can vanish between the two tests when its holder releases: that is not a dead holder, and removing the directory could take a slot another waiter just made)
       const f = readFields(owner);
       log?.(`== machine slots: reclaiming a dead slot (${sd}: ${f.worktree} pid ${f.pid} ${f.label})`);
       fs.rmSync(sd, { recursive: true, force: true });
@@ -169,14 +175,38 @@ let exitHooked = false;
  * limiter must not stop a build.
  */
 export async function acquireSlot(cls: SlotClass, label: string, log: (m: string) => void = (m) => console.log(m)): Promise<HeldSlot | null> {
+  return (await acquireSlotGroup(cls, 1, label, log))[0] ?? null;
+}
+
+/** A parent that took the slots for its worlds as a group sets DQ_SLOTS_PREHELD=<class,...>: those worlds do not queue again. */
+function preheld(cls: SlotClass): boolean {
+  return (process.env.DQ_SLOTS_PREHELD ?? '').split(',').includes(cls);
+}
+
+/** How many slots a group that wants `want` of `cls` gets: the wish, clamped to the class capacity (a group larger than the budget
+ * could never be satisfied). 0 when the class is off or the slots are held by a parent. */
+export function slotGroupSize(cls: SlotClass, want: number): number {
   const max = slotCapacity(cls);
-  if (max <= 0) return null;
+  if (max <= 0 || preheld(cls)) return 0;
+  return Math.min(want, max);
+}
+
+/**
+ * Waits until `want` slots of `cls` can be held together (clamped to the capacity) and returns them. One queue entry for the whole
+ * group: the head of the queue takes slots as they free up and returns nothing until it has all of them, and only the head ever holds
+ * a part, so two groups cannot each hold a part of the budget and wait on each other. Each slot is released on its own, so a sharded
+ * run hands one back as its world finishes. Returns [] when the class is off.
+ */
+export async function acquireSlotGroup(cls: SlotClass, want: number, label: string, log: (m: string) => void = (m) => console.log(m)): Promise<HeldSlot[]> {
+  const max = slotCapacity(cls);
+  if (max <= 0 || preheld(cls)) return [];
+  want = Math.min(Math.max(want, 1), max);
   const dir = path.join(slotsDir(), cls);
   try {
     fs.mkdirSync(path.join(dir, 'queue'), { recursive: true });
   } catch {
     log(`== machine slots: cannot create ${dir}; running without a ${cls} limit`);
-    return null;
+    return [];
   }
   const top = worktree();
   const prio = priorityOf(top);
@@ -187,6 +217,7 @@ export async function acquireSlot(cls: SlotClass, label: string, log: (m: string
   fs.writeFileSync(queueFile, `${identity}queued=${queued}\n`);
   let waited = 0;
   let last = 0;
+  const taken: HeldSlot[] = [];
   for (;;) {
     reap(dir, log);
     let first = '';
@@ -196,7 +227,7 @@ export async function acquireSlot(cls: SlotClass, label: string, log: (m: string
       // queue vanished: recreated below
     }
     if (first === name) {
-      for (let i = 1; i <= max; i++) {
+      for (let i = 1; i <= max && taken.length < want; i++) {
         const sd = path.join(dir, `slot.${i}`);
         try {
           fs.mkdirSync(sd);
@@ -242,8 +273,13 @@ export async function acquireSlot(cls: SlotClass, label: string, log: (m: string
             for (const s of [...held]) s.release();
           });
         }
-        log(waited > 0 ? `== machine slots: ${cls} slot ${i} of ${max} after ${waited}s in the queue` : `== machine slots: ${cls} slot ${i} of ${max}`);
-        return slot;
+        taken.push(slot);
+      }
+      if (taken.length >= want) {
+        fs.rmSync(queueFile, { force: true });
+        const which = taken.map((t) => t.index).join(',');
+        log(waited > 0 ? `== machine slots: ${cls} slot ${which} of ${max} after ${waited}s in the queue` : `== machine slots: ${cls} slot ${which} of ${max}`);
+        return taken;
       }
     }
     if (waited === 0 || waited - last >= 30) {
@@ -257,7 +293,7 @@ export async function acquireSlot(cls: SlotClass, label: string, log: (m: string
       } catch {
         // gone
       }
-      log(`== machine slots: ${cls}: waiting ${waited}s, place ${pos} of ${total} in the queue (at most ${max} at once on this machine; the merge worktree goes first). Held by:${who(dir, max)}`);
+      log(`== machine slots: ${cls}: waiting ${waited}s${want > 1 ? ` for a group of ${want}, holding ${taken.length}` : ''}, place ${pos} of ${total} in the queue (at most ${max} at once on this machine; the merge worktree goes first). Held by:${who(dir, max)}`);
     }
     try {
       const now = new Date();

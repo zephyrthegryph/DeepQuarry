@@ -88,6 +88,15 @@ GLOBAL_VAR_INIT(ledger_adopting, FALSE)
 	L.sync()
 	return L
 
+/// The ledger a thing that just moved into `holder` is entered in: made now when `holder` declares slots and has none yet, so a plain
+/// forceMove into a net or a jar registers in the default slot like move_into() does. Null for a holder without slots (turfs skip the
+/// lookup: they are the hot destination of nearly every move).
+/proc/dq_ledger_for_arrival(atom/holder)
+	RETURN_TYPE(/datum/ledger)
+	if(isturf(holder) || !dq_slot_defs_for(holder))
+		return null
+	return dq_ledger(holder)
+
 /// The existing ledger for `holder`, synced, or null. Unlike dq_ledger(), never
 /// creates one -- for read paths (rolling up a nested holder's contribution,
 /// walking a holder's children) that must not be what makes an empty holder

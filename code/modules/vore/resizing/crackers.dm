@@ -179,7 +179,9 @@
 	name = "joke"
 	icon_state = "joke"
 
-APPEARANCE_NONE(/obj/item/paper/cracker_joke)
+/// The joke keeps its mapped state.
+/obj/item/paper/cracker_joke/look_parts(datum/look/look)
+	return
 
 #undef SHRINKING_CRACKER
 #undef GROWING_CRACKER

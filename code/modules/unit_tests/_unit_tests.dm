@@ -724,6 +724,8 @@
 #include "interim_girder_windoor_recovery.dm"
 #include "interim_emitter_emag_lock.dm"
 #include "interim_crate_cage_recovery.dm"
+#include "dq_force_move_registers.dm"
+#include "dq_effect_systems_audit.dm"
 #include "interim_vote_actor.dm"
 #include "interim_storage_sticky_inventory.dm"
 #include "interim_lowwall_egg_recovery.dm"
@@ -1245,6 +1247,7 @@
 #include "dq_draw_mobs.dm"
 #include "dq_draw_items.dm"
 #include "dq_draw_pockets.dm"
+#include "dq_draw_rest.dm"
 
 #include "dq_machine_click_intent_tests.dm"
 

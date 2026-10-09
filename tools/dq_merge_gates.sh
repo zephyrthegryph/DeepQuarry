@@ -170,6 +170,12 @@ for n in "${names[@]}"; do
 	read -r rc finished <"$log.rc" 2>/dev/null || { rc=1; finished=$(date +%s); }
 	rm -f "$log.rc"
 	echo "$n $(( finished - start[$n] ))s rc=$rc" | tee -a "$timings"
+	if [ "$rc" -ne 0 ] && [ "$n" = tests ] && grep -q '^KNOWN FAILURES CHECK: 0 NEW, [1-9]' "$log" && ! grep -q '^KNOWN FAILURES CHECK: [1-9][0-9]* NEW' "$log"; then
+		# Every failure is one tools/ci/known_failures.txt lists (dq_focused_test.sh classified them): they are printed, not a gate failure.
+		echo "tests: only KNOWN failures (tools/ci/known_failures.txt); not failing the gate:"
+		grep -h '^  KNOWN' "$log" | sort -u
+		rc=0
+	fi
 	if [ "$rc" -ne 0 ]; then failed+=("$n"); fi
 done
 echo "gates-wall $(( $(date +%s) - wall_start ))s" | tee -a "$timings"

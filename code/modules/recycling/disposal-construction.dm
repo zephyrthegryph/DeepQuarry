@@ -299,7 +299,6 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 		P.base_icon_state = base_state
 		P.set_dir(dir)
 		P.dpdir = dpdir
-		P.update_icon()
 		if(ptype == DISPOSAL_PIPE_SORTER || ptype == DISPOSAL_PIPE_SORTER_FLIPPED)
 			var/obj/structure/disposalpipe/sortjunction/SortP = P
 			SortP.sortType = sortType

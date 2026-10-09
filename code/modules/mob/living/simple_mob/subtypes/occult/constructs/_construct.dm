@@ -101,13 +101,6 @@
 	for(var/spell in construct_spells)
 		src.add_spell(new spell, "const_spell_ready")
 
-/*
-/mob/living/simple_mob/construct/update_icon()
-	..()
-	if(do_glow)
-		add_glow()
-*/
-
 /mob/living/simple_mob/construct
 	delete_on_death = TRUE
 	death_message = "collapses in a shattered heap."

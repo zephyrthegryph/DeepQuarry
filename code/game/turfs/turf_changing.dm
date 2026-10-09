@@ -12,10 +12,6 @@
 /turf/proc/post_change()
 	levelupdate()
 
-	var/turf/simulated/open/above = GetAbove(src)
-	if(istype(above))
-		above.update_icon()
-
 	// The edges around this turf, and the 'ceiling-less' gap of the tile below, read the new turf.
 	turf_edges_refresh(src)
 	var/turf/simulated/below = GetBelow(src)

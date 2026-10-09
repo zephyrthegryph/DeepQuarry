@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A forceMove into a holder that declares a slot registers in its default slot like move_into() does; sharded test runs take their world slots as a group; the clash check understands any_of/all_of over req_is conditions; a new entry_slots lint rejects more positional entries than a declaration helper has slots"

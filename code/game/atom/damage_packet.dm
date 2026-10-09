@@ -7,9 +7,11 @@
 /atom/proc/receive_damage(datum/damage_packet/packet)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	// The engine's hit action (the hit bridge): hooks of /datum/act/hit and its entry subtypes run first. A holder nothing hooks pays one act_wanted() check.
-	var/hit = hit_try(src, packet)
-	if(isnull(hit))
-		return 0
+	var/hit = ACT_PASS
+	if(!(packet.entry == DAMAGE_ENTRY_PROJECTILE && GLOB.projectile_pre_reacted == ref(src))) // bullet_act() started the round's hit action
+		hit = hit_try(src, packet)
+		if(isnull(hit))
+			return 0
 	var/list/rows = damage_rows_of(src)
 	if(!rows)
 		. = damage_sink(packet)

@@ -733,10 +733,8 @@ CAPABILITIES(/obj/machinery/light_switch/survival_pod)
 /obj/structure/window/reinforced/survival_pod/is_fulltile()
 	return FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/window/reinforced/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/window/reinforced/survival_pod/appearance_overlays()
-	. = list()
-	icon_state = basestate
+/obj/structure/window/reinforced/survival_pod/look_parts(datum/look/look)
+	look.state(basestate)
 
 //Polarized windows
 /obj/structure/window/reinforced/polarized/survival_pod

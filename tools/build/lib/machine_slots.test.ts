@@ -5,9 +5,9 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { acquireSlot, slotCapacity, slotsDir, slotsStatus } from './machine_slots';
+import { acquireSlot, acquireSlotGroup, defaultTestWorlds, slotCapacity, slotGroupSize, slotsDir, slotsStatus } from './machine_slots';
 
-const ENV_KEYS = ['DQ_SLOTS_DIR', 'DQ_SLOTS', 'DQ_SLOTS_CARGO', 'DQ_SLOTS_DM_COMPILE', 'DQ_SLOTS_TEST_WORLD', 'DQ_SLOTS_LOOK_STATE_PIN', 'DQ_LOOK_PIN_SLOTS', 'DQ_SLOT_PRIORITY', 'DQ_SLOT_WORKTREE', 'DQ_SLOTS_POLL_SEC', 'DQ_MERGE_WT'] as const;
+const ENV_KEYS = ['DQ_SLOTS_DIR', 'DQ_SLOTS', 'DQ_SLOTS_CARGO', 'DQ_SLOTS_DM_COMPILE', 'DQ_SLOTS_TEST_WORLD', 'DQ_SLOTS_LOOK_STATE_PIN', 'DQ_LOOK_PIN_SLOTS', 'DQ_SLOT_PRIORITY', 'DQ_SLOT_WORKTREE', 'DQ_SLOTS_POLL_SEC', 'DQ_MERGE_WT', 'DQ_SLOTS_PREHELD'] as const;
 const saved: Record<string, string | undefined> = {};
 for (const k of ENV_KEYS) saved[k] = process.env[k];
 let tmp = '';
@@ -35,7 +35,7 @@ describe('capacity', () => {
     for (const k of ENV_KEYS) if (k.startsWith('DQ_SLOTS_') && k !== 'DQ_SLOTS_DIR' && k !== 'DQ_SLOTS_POLL_SEC') delete process.env[k];
     delete process.env.DQ_LOOK_PIN_SLOTS;
     expect(slotCapacity('dm_compile')).toBe(2);
-    expect(slotCapacity('test_world')).toBe(3);
+    expect(slotCapacity('test_world')).toBe(defaultTestWorlds());
     expect(slotCapacity('cargo')).toBe(1);
     expect(slotCapacity('look_state_pin')).toBe(2);
     process.env.DQ_SLOTS_DM_COMPILE = '5';
@@ -51,6 +51,60 @@ describe('capacity', () => {
   test('a class that is off returns no slot at once', async () => {
     process.env.DQ_SLOTS_CARGO = '0';
     expect(await acquireSlot('cargo', 'off', quiet)).toBeNull();
+  });
+});
+
+describe('test_world default', () => {
+  test('is a third of the CPUs, 2 to 6', () => {
+    expect(defaultTestWorlds(1)).toBe(2);
+    expect(defaultTestWorlds(8)).toBe(2);
+    expect(defaultTestWorlds(16)).toBe(5);
+    expect(defaultTestWorlds(64)).toBe(6);
+  });
+});
+
+describe('groups', () => {
+  test('a group is clamped to the capacity and a second group waits for all of it, never holding a part', async () => {
+    process.env.DQ_SLOTS_TEST_WORLD = '3';
+    expect(slotGroupSize('test_world', 9)).toBe(3);
+    expect(slotGroupSize('test_world', 2)).toBe(2);
+    const g1 = await acquireSlotGroup('test_world', 2, 'g1', quiet);
+    expect(g1.length).toBe(2);
+    let got: unknown[] | null = null;
+    const g2p = acquireSlotGroup('test_world', 2, 'g2', quiet).then((g) => {
+      got = g;
+      return g;
+    });
+    await new Promise((r) => setTimeout(r, 2500));
+    expect(got).toBeNull();
+    // One slot of g1 back: g2 now holds the free one and the returned one, but only returns when it has both.
+    g1[0].release();
+    const g2 = await g2p;
+    expect(g2.length).toBe(2);
+    expect(g1[1].index).not.toBe(g2[0].index);
+    for (const s of g2) s.release();
+    g1[1].release();
+  }, 20000);
+
+  test('two groups of the whole budget run one after the other', async () => {
+    process.env.DQ_SLOTS_TEST_WORLD = '2';
+    const order: string[] = [];
+    const run = async (name: string) => {
+      const g = await acquireSlotGroup('test_world', 5, name, quiet); // clamped to 2
+      expect(g.length).toBe(2);
+      order.push(`${name}-start`);
+      await new Promise((r) => setTimeout(r, 1200));
+      order.push(`${name}-end`);
+      for (const s of g) s.release();
+    };
+    await Promise.all([run('a'), run('b')]);
+    expect(order).toEqual(['a-start', 'a-end', 'b-start', 'b-end']);
+  }, 30000);
+
+  test('worlds of a run that holds the group do not queue again', async () => {
+    process.env.DQ_SLOTS_TEST_WORLD = '1';
+    process.env.DQ_SLOTS_PREHELD = 'test_world';
+    expect(await acquireSlot('test_world', 'child', quiet)).toBeNull();
   });
 });
 
@@ -82,7 +136,7 @@ describe('the queue', () => {
     expect(order).toEqual(['c', 'b']);
     const events = fs.readFileSync(path.join(slotsDir(), 'events.tsv'), 'utf-8').trim().split('\n');
     expect(events.map((l) => l.split('\t')[4])).toEqual(['a', 'c-merge', 'b']);
-  });
+  }, 30000);
 
   test('a dead holder is reclaimed', async () => {
     process.env.DQ_SLOTS_CARGO = '1';

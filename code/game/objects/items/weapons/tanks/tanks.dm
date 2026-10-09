@@ -629,7 +629,6 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	rel_set(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly), H)
 	rel_set(H, nameof(H.master), src.proxyassembly)
 
-	H.update_icon()
 
 	add_overlay("bomb_assembly")
 
@@ -726,16 +725,6 @@ TYPE_TABLE(/obj/item/tank/oxygen/onetankbomb/small, oxygen_bomb_forced_fill, 0)
 	src.update_gauge()
 
 	heat_add(air_contents, 15000, HEAT_SOURCE_OTHER)
-
-DECLARE_APPEARANCE_PROC(/obj/item/tankassemblyproxy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/tankassemblyproxy/appearance_overlays()
-	. = list()
-	if(assembly)
-		tank.update_icon()
-		tank.add_overlay("bomb_assembly")
-	else
-		tank.update_icon()
-		tank.cut_overlay("bomb_assembly")
 
 /obj/item/tankassemblyproxy/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
