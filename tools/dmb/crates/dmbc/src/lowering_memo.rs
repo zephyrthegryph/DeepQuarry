@@ -75,7 +75,7 @@ pub struct ProcedureMemo {
         Option<Arc<crate::initializer_lowering::InitializerAssemblies>>,
     pub(crate) class_projections: Option<Arc<crate::class_projection::ClassProjections>>,
     pub(crate) link_bindings: Option<Arc<dm_link::RetainedBindings>>,
-    disk: Option<Arc<dm_cache::CacheSnapshot>>,
+    disk: Option<Arc<crate::runner_disk::LazyDisk>>,
     pending: Mutex<Pending>,
     pub counts: MemoCounts,
     limits: MemoLimits,
@@ -285,11 +285,19 @@ impl ProcedureMemo {
     pub fn with_resident(
         policy: u128,
         values: Arc<LoweringMemo<CachedProcedure>>,
-        disk: Option<Arc<dm_cache::CacheSnapshot>>,
+        disk: Option<Arc<crate::runner_disk::LazyDisk>>,
     ) -> Self {
         let mut memo = Self::new(policy);
         memo.values = values;
         memo.disk = disk;
+        memo
+    }
+    pub fn with_lazy_disk(policy: u128, disk: Arc<crate::runner_disk::LazyDisk>) -> Self {
+        Self::with_resident(policy, Arc::new(LoweringMemo::default()), Some(disk))
+    }
+    pub fn with_lazy_disk_only(policy: u128, disk: Arc<crate::runner_disk::LazyDisk>) -> Self {
+        let mut memo = Self::with_lazy_disk(policy, disk);
+        memo.resident_retention = ResidentRetention::DiskOnly;
         memo
     }
     pub fn with_disk(policy: u128, snapshot: impl Into<Arc<dm_cache::CacheSnapshot>>) -> Self {
@@ -312,7 +320,9 @@ impl ProcedureMemo {
             initializer_assemblies: None,
             class_projections: None,
             link_bindings: None,
-            disk: Some(snapshot.into()),
+            disk: Some(Arc::new(crate::runner_disk::LazyDisk::from_snapshot(
+                snapshot.into(),
+            ))),
             pending: Mutex::new(Pending::default()),
             counts: MemoCounts::default(),
             limits,
@@ -340,7 +350,7 @@ impl ProcedureMemo {
     }
     fn disk_variants(&self, key: &[u8]) -> Vec<Vec<u8>> {
         let _profile = dm_profile::item("lowering.population_previous_variants");
-        let Some(snapshot) = &self.disk else {
+        let Some(snapshot) = self.disk.as_ref().and_then(|disk| disk.snapshot()) else {
             return Vec::new();
         };
         snapshot
@@ -366,32 +376,52 @@ impl ProcedureMemo {
         host: &R,
         prepared: &crate::procedure_policy::PreparedUnit,
     ) -> crate::lowering_memo_wire::ProcedureLookup {
-        let Some(snapshot) = &self.disk else {
+        let Some(snapshot) = self.disk.as_ref().and_then(|disk| disk.snapshot()) else {
             return crate::lowering_memo_wire::ProcedureLookup {
                 miss: Some(MemoMissReason::RecordAbsent),
                 ..Default::default()
             };
         };
-        let decoded = std::cell::RefCell::new(None);
-        let view = {
-            let _profile = dm_profile::item("lowering.disk_lookup_decode");
-            snapshot.get(Self::record_key(key), |bytes, _symbols| {
-                let candidates = crate::lowering_memo_wire::candidates(bytes)?;
-                *decoded.borrow_mut() = Some(candidates);
-                Ok(())
-            })
-        };
-        if view.is_none() {
-            return crate::lowering_memo_wire::ProcedureLookup {
-                miss: Some(MemoMissReason::RecordAbsent),
-                ..Default::default()
+        let replay = std::cell::RefCell::new(None);
+        let view = snapshot.get_candidate(Self::record_key(key), |bytes, _symbols| {
+            let candidates = {
+                let _profile = dm_profile::item("lowering.disk_lookup_decode");
+                crate::lowering_memo_wire::candidates(bytes)?
             };
-        }
-        let Some(candidates) = decoded.into_inner() else {
-            return Default::default();
-        };
-        let _profile = dm_profile::item("lowering.disk_validate_replay");
-        let result = candidates.procedure(key, identity, context, host, prepared);
+            // Validate the complete typed envelope before replaying any reads.
+            // Only exact semantic admission makes this mapped record reachable.
+            let result = {
+                let _profile = dm_profile::item("lowering.disk_validate_replay");
+                candidates.procedure(
+                    key,
+                    identity,
+                    crate::lowering_memo_wire::ProcedureReplayContext {
+                        frontend: context.frontend,
+                        body: context.body,
+                        parsed: context.parsed,
+                    },
+                    host,
+                    prepared,
+                )
+            };
+            let admitted = result.unit.is_some() || result.errors.is_some();
+            let mut replay = replay.borrow_mut();
+            if admitted || replay.is_none() {
+                *replay = Some(result);
+            }
+            Ok(admitted)
+        });
+        let result =
+            replay
+                .into_inner()
+                .unwrap_or_else(|| crate::lowering_memo_wire::ProcedureLookup {
+                    miss: Some(MemoMissReason::RecordAbsent),
+                    ..Default::default()
+                });
+        debug_assert_eq!(
+            view.is_some(),
+            result.unit.is_some() || result.errors.is_some()
+        );
         if self.resident_retention == ResidentRetention::Enabled {
             if let (Some(unit), Some(promotion)) = (&result.unit, result.resident.as_ref()) {
                 let reads = promotion
@@ -447,28 +477,30 @@ impl ProcedureMemo {
         host: &R,
         debug_count: usize,
     ) -> crate::lowering_memo_wire::AnonymousLookup {
-        let Some(snapshot) = &self.disk else {
+        let Some(snapshot) = self.disk.as_ref().and_then(|disk| disk.snapshot()) else {
             return Default::default();
         };
-        let decoded = std::cell::RefCell::new(None);
-        let view = {
-            let _profile = dm_profile::item("lowering.disk_lookup_decode");
-            snapshot.get(Self::record_key(key), |bytes, _symbols| {
-                let candidates = crate::lowering_memo_wire::candidates(bytes)?;
-                *decoded.borrow_mut() = Some(candidates);
-                Ok(())
-            })
-        };
-        if view.is_none() {
-            return Default::default();
-        }
-        let Some(candidates) = decoded.into_inner() else {
-            return Default::default();
-        };
-        let outcome = {
-            let _profile = dm_profile::item("lowering.disk_validate_replay");
-            candidates.anonymous(key, host, debug_count)
-        };
+        let replay = std::cell::RefCell::new(None);
+        let view = snapshot.get_candidate(Self::record_key(key), |bytes, _symbols| {
+            let candidates = {
+                let _profile = dm_profile::item("lowering.disk_lookup_decode");
+                crate::lowering_memo_wire::candidates(bytes)?
+            };
+            let outcome = {
+                let _profile = dm_profile::item("lowering.disk_validate_replay");
+                candidates.anonymous(key, host, debug_count)
+            };
+            let admitted = outcome.code.is_some() || outcome.errors.is_some();
+            if admitted {
+                *replay.borrow_mut() = Some(outcome);
+            }
+            Ok(admitted)
+        });
+        let outcome = replay.into_inner().unwrap_or_default();
+        debug_assert_eq!(
+            view.is_some(),
+            outcome.code.is_some() || outcome.errors.is_some()
+        );
         if outcome.code.is_some() || outcome.errors.is_some() {
             self.counts.disk_hits.fetch_add(1, Ordering::Relaxed);
         }

@@ -20,6 +20,7 @@ import uuid
 from watchdog import terminate_owned
 from iteration_structural import Comparison, source_matches, authenticate_source_snapshot
 import semantic_configuration
+from iteration_history import EditHistory
 
 
 DEFAULT = Path("E:/dmb-native-v2-phase0/review-power-focus")
@@ -345,6 +346,7 @@ def main():
                 raise RuntimeError("owned daemon did not become ready within 20 seconds")
             time.sleep(0.05)
         # Initial population, unchanged request, then each real ordered edit.
+        edit_history = EditHistory(len(projects))
         steps = [("initial", None), ("unchanged", None)] + [(edit["kind"], edit) for edit in edits]
         for ordinal, (kind, edit) in enumerate(steps):
             if daemon.poll() is not None or not endpoint.probe(daemon):
@@ -354,6 +356,7 @@ def main():
                 session = {"index": index, "project": str(project / manifest)}
                 if edit is not None:
                     session["edit"] = replace_edit(project, edit)
+                    edit_history.append(index, session["edit"])
                 row["sessions"].append(session)
             row_started = time.monotonic()
             def destination(index, mode):
@@ -387,7 +390,7 @@ def main():
                 source_context = {"snapshot_manifest_sha256": receipt["source_snapshot_sha256"],
                     "manifest_sha256": sha(project / manifest),
                     "native_pair": session["output_hashes"],
-                    "edits": [previous.get("edit") for previous in row["sessions"] if previous["index"] == index] if edit is not None else [],
+                    "edits": edit_history.snapshot(index),
                     "configuration_sha256": structural.configuration_sha}
                 session["BYOND_structural"] = structural.compare(
                     destination(index, "retained") / "artifacts" / manifest.with_suffix(".dmb").name,

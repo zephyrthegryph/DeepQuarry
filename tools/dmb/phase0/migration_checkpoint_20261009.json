@@ -220,5 +220,41 @@
       "six-worktree compaction variant preservation open",
       "BYOND whole-program structural/runtime baseline open"
     ]
+  },
+  "lazy_disk_candidate_and_string_wave": {
+    "source_status": "wired; focused fixtures passed",
+    "workspace_all_targets_seconds": 37.2,
+    "string_reference_fixtures": 2,
+    "preprocess_planner_fixtures": 2,
+    "cache_candidate_fixtures": 4,
+    "borrowed_frame_fixture": 1,
+    "borrowed_failure_compatibility_fixture": 1,
+    "semantic_disk_candidate_fixture": 1,
+    "lazy_disk_fixtures": 2,
+    "resident_map_unopened_disk_fixture": 1,
+    "diagnostic_classification_fixtures": 2,
+    "daemon_deadline_fixtures": 4,
+    "idle_owner_fixtures": 2,
+    "cumulative_edit_history_fixtures": 2,
+    "dmbc_fixture_build_seconds": 171,
+    "initial_failures": [
+      "compaction typed rejection did not persist to a fresh snapshot; supersedes now includes typed-rejected recognized segments",
+      "borrowed frame test numeric literals inferred i32; corrected explicit u8 wire data"
+    ],
+    "optimized_build_b6417c4297": {
+      "status": "watchdog timeout; no new executable",
+      "seconds": 300.6789116,
+      "owned_pid": 11688,
+      "reaped": true
+    },
+    "end_to_end_timings": null,
+    "runtime_gate": "deferred to Phase 5",
+    "remaining": [
+      "lossless multi-candidate and atomic split compaction being implemented next",
+      "executable disk DTOs and read-answer vectors still allocate",
+      "shared immutable engine payload across worktrees next",
+      "six-worktree real memory/concurrency admission",
+      "BYOND whole-program structural and Phase5 runtime parity"
+    ]
   }
 }

@@ -318,13 +318,9 @@ pub fn run_build_with_host(
     if engine_capture.is_none() {
         host.clear_regions();
     }
-    let disk_admission = host.disk_admission(memo_policy);
-    let memo_cache = if executable && !no_cache && disk_admission.allows_reads() {
-        match cache_root.map_or_else(
-            || dm_cache::Cache::user_default(dm_cache::Limits::default()),
-            |root| dm_cache::Cache::open(root, dm_cache::Limits::default()),
-        ) {
-            Ok(cache) => Some(Arc::new(cache)),
+    let memo_cache = if executable && !no_cache {
+        match cache_root.map_or_else(dm_cache::Cache::default_root, Ok) {
+            Ok(root) => Some(Arc::new(dmbc::runner_disk::LazyDisk::new(root))),
             Err(error) => {
                 dmbc::daemon_eprintln!("native cache unavailable: {error}; compiling fresh");
                 None
@@ -333,24 +329,15 @@ pub fn run_build_with_host(
     } else {
         None
     };
-    let cache_snapshot = memo_cache
-        .as_ref()
-        .and_then(|cache| match cache.snapshot() {
-            Ok(snapshot) => Some(Arc::new(snapshot)),
-            Err(error) => {
-                dmbc::daemon_eprintln!("native cache snapshot rejected: {error}; compiling fresh");
-                None
-            }
-        });
-    // Retained hydration reads existing segments only; no disk population or leases.
-    let memo_cache = memo_cache.filter(|_| disk_admission.allows_writes());
+    // The shared handle stays unopened until resident fallback or computed publication.
+    let cache_snapshot = memo_cache.clone();
     let published_keys = Arc::new(std::sync::Mutex::new(std::collections::BTreeSet::new()));
     let cache_publisher: Option<Arc<dmbc::lowering_memo::CachePublisher>> =
         memo_cache.as_ref().map(|cache| {
             let cache = Arc::clone(cache);
             let published_keys = Arc::clone(&published_keys);
             Arc::new(move |records: Vec<dm_cache::Record>| {
-                let mut sink = cache.publish_sink(8 * 1024 * 1024);
+                let mut sink = cache.writer()?.publish_sink(8 * 1024 * 1024);
                 for record in records {
                     sink.push(record).map_err(|error| error.to_string())?;
                 }
@@ -368,15 +355,13 @@ pub fn run_build_with_host(
             let memo = memo.with_explanation_limit(131072);
             match &cache_publisher {
                 Some(publisher) => memo.with_publisher(Arc::clone(publisher)),
-                None if !disk_admission.allows_writes() => memo.with_read_only_disk(),
                 None => memo,
             }
         });
     let expansion_memo = cache_snapshot.clone().map(|snapshot| {
-        let memo = dmbc::expansion_memo::DiskExpansionMemo::new(memo_policy, snapshot);
+        let memo = dmbc::expansion_memo::DiskExpansionMemo::with_lazy_disk(memo_policy, snapshot);
         match &cache_publisher {
             Some(publisher) => memo.with_publisher(Arc::clone(publisher)),
-            None if !disk_admission.allows_writes() => memo.with_read_only_disk(),
             None => memo,
         }
     });
@@ -384,7 +369,6 @@ pub fn run_build_with_host(
         .map_memo(memo_policy, cache_snapshot.clone())
         .map(|memo| match &cache_publisher {
             Some(publisher) => memo.with_publisher(Arc::clone(publisher)),
-            None if !disk_admission.allows_writes() => memo.with_read_only_disk(),
             None => memo,
         });
     let seed = engine_capture
@@ -473,10 +457,9 @@ pub fn run_build_with_host(
         Err(diagnostics) => {
             dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(), &diagnostics)?;
             let message = "source analysis did not produce a complete declaration model";
-            let failure = if !diagnostics.is_empty() && diagnostics.iter().all(|diagnostic| diagnostic.kind == dm_tree::frontend::DiagnosticKind::SourceError) {
-                dmbc::request_failure::RequestFailure::source(message)
-            } else {
-                dmbc::request_failure::RequestFailure::internal(message)
+            let failure = dmbc::request_failure::RequestFailure {
+                kind: dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic| diagnostic.kind)),
+                message: message.into(),
             };
             return Err(failure.into());
         }
@@ -702,10 +685,9 @@ pub fn run_build_with_host(
                     &diagnostics,
                 )?;
                 let message = "native lowering did not produce a complete executable";
-                let failure = if !diagnostics.is_empty() && diagnostics.iter().all(|diagnostic| diagnostic.kind == dm_tree::frontend::DiagnosticKind::SourceError) {
-                    dmbc::request_failure::RequestFailure::source(message)
-                } else {
-                    dmbc::request_failure::RequestFailure::internal(message)
+                let failure = dmbc::request_failure::RequestFailure {
+                    kind: dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic| diagnostic.kind)),
+                    message: message.into(),
                 };
                 return Err(failure.into());
             }
@@ -831,7 +813,7 @@ pub fn run_build_with_host(
         if let (Some(cache), Some(snapshot), Some(session)) =
             (&memo_cache, &cache_snapshot, &session)
         {
-            let mut roots = snapshot.record_used_keys();
+            let mut roots = snapshot.loaded_snapshot().map_or_else(std::collections::BTreeSet::new, |snapshot| snapshot.record_used_keys());
             roots.extend(
                 published_keys
                     .lock()
@@ -839,10 +821,13 @@ pub fn run_build_with_host(
                     .iter()
                     .copied(),
             );
-            if let Err(error) =
-                cache.record_lease(session.identity()?, std::time::SystemTime::now(), &roots)
-            {
-                dmbc::daemon_eprintln!("native cache lease skipped: {error}");
+            if !roots.is_empty() {
+                match cache.writer() {
+                    Ok(cache) => if let Err(error) = cache.record_lease(session.identity()?, std::time::SystemTime::now(), &roots) {
+                        dmbc::daemon_eprintln!("native cache lease skipped: {error}");
+                    },
+                    Err(error) => dmbc::daemon_eprintln!("native cache lease skipped: {error}"),
+                }
             }
         }
         if let Some(session) = &session.filter(|_| !verification_capture) {
@@ -915,7 +900,6 @@ pub fn run_build_with_host(
             output.timings.lowering.as_secs_f64(), output.timings.initializers.as_secs_f64(),
             output.timings.symbolic_linking.as_secs_f64(), output.timings.composition.as_secs_f64(),
             pair.dmb_bytes, pair.rsc_bytes, pair.name());
-        disk_admission.complete();
         return Ok(BuildOutcome::Published {
             pair,
             store: std::fs::canonicalize(store.root_path())?,
@@ -978,10 +962,13 @@ fn capture_output_digest(
 }
 
 fn publish_cache_records(
-    cache: &dm_cache::Cache,
+    cache: &dmbc::runner_disk::LazyDisk,
     records: Vec<dm_cache::Record>,
 ) -> Result<std::collections::BTreeSet<dm_cache::RecordKey>, String> {
-    let mut sink = cache.publish_sink(8 * 1024 * 1024);
+    if records.is_empty() {
+        return Ok(std::collections::BTreeSet::new());
+    }
+    let mut sink = cache.writer()?.publish_sink(8 * 1024 * 1024);
     for record in records {
         sink.push(record)
             .map_err(|error| format!("cache population failed: {error}"))?;

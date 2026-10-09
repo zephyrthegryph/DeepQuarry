@@ -1,0 +1,1 @@
+Captured with DreamMaker 516.1687, without DreamDaemon. `quoted` is `left right`; `adjacent`, `macro` and `block` are `leftright`. The separate raw-newline input fails compilation with an unterminated-text error. The positive binary is an independent reference for the preprocessor/string decoder integration.

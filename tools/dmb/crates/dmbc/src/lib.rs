@@ -13,10 +13,11 @@ pub mod filesystem_proofs;
 pub mod frozen_inputs;
 pub mod heap_census;
 pub mod input_snapshot;
+pub use runner_host::disk as runner_disk;
 pub mod map_memo;
+pub mod output_cli;
 pub mod publish;
 pub mod request;
-pub mod output_cli;
 pub mod request_failure;
 pub mod request_runner;
 pub mod resource_manifest;
@@ -45,7 +46,6 @@ pub mod initializer_policy;
 mod initializer_tokens;
 pub mod intrinsic_initializer_facts;
 pub mod lowering;
-pub mod selected_query;
 pub mod lowering_memo;
 mod lowering_memo_wire;
 pub mod mob_writer;
@@ -54,6 +54,7 @@ pub mod native_inputs;
 pub mod procedure_policy;
 pub mod resource_values;
 pub mod savefile_projection;
+pub mod selected_query;
 pub mod stage_measurements;
 pub mod symbolic;
 pub mod type_creation_order;
@@ -102,3 +103,6 @@ pub mod profile_host;
 pub mod daemon;
 
 mod analysis_export;
+
+#[cfg(test)]
+mod string_continuation_receipts;

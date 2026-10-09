@@ -11,8 +11,7 @@ impl BuildHost {
     pub(crate) fn release_idle_artifacts(&mut self) {
         // Keep authenticated engine and preprocessing/semantic source owners.
         // Cleared consumers recreate their normal current-revision stores through
-        // the same pipeline; the next request may hydrate disk read-only again.
-        self.disk_warmup.clear();
+        // the same pipeline; disk remains a lazy fallback on subsequent misses.
         self.procedures = None;
         self.symbolic = None;
         self.initializers = None;
@@ -30,16 +29,17 @@ impl BuildHost {
 mod tests {
     use super::*;
     #[test]
-    fn executor_release_preserves_warmup_but_artifact_release_resets_it() {
+    fn executor_release_preserves_artifacts_and_rich_release_clears_them() {
         let mut host = BuildHost::default();
         host.executor = Some(dm_exec::BuildExecutor::new_unbound(1).unwrap());
-        host.disk_admission(4).complete();
-        assert!(!host.disk_admission(4).allows_reads());
+        let first = host.procedure_memo(4, None).unwrap();
         host.release_idle_executor();
         assert!(host.executor.is_none());
-        assert!(!host.disk_admission(4).allows_reads());
+        let second = host.procedure_memo(4, None).unwrap();
+        assert!(Arc::ptr_eq(&first.values, &second.values));
         host.release_idle_artifacts();
-        assert!(host.disk_admission(4).allows_reads());
+        let next = host.procedure_memo(4, None).unwrap();
+        assert!(!Arc::ptr_eq(&first.values, &next.values));
         assert!(host.memo.is_some());
         assert!(host.semantic.is_some());
     }
@@ -50,6 +50,5 @@ mod tests {
         host.release_idle_artifacts();
         assert!(host.memo.is_none());
         assert!(host.semantic.is_none());
-        assert!(host.disk_admission(4).allows_writes());
     }
 }

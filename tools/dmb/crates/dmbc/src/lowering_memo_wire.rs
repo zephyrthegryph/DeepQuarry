@@ -6,13 +6,16 @@ use dm_codegen_byond::lower_resolver::{ResolvedInstance, ResolvedSlot, ResolverP
 use dm_codegen_byond::procedure_abi::{ArgumentSource, Category, ProcLayout};
 use dm_ir::{ProcedureIdentity, ProcedureStaticIdentity, ResolveQuery, Resolver, SymRef, SymbolId};
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, sync::Arc};
+use std::{borrow::Cow, collections::BTreeMap, sync::Arc};
 const EXECUTABLE_SCHEMA: u32 = 0x0206_0005;
 const FAILURE_SCHEMA: u32 = 0x0206_0002;
+#[path = "lowering_memo_failure_wire.rs"]
+mod failure_wire;
 #[path = "lowering_memo_private.rs"]
 mod private;
 #[path = "lowering_memo_selected_wire.rs"]
 mod selected_wire;
+use failure_wire::{ErrorWire, FailurePayload};
 #[derive(Serialize, Deserialize)]
 enum ArgumentWire {
     Builtin((u8, u8)),
@@ -283,7 +286,9 @@ fn read_mismatch<R: Resolver>(
     })
 }
 pub(crate) fn validate(bytes: &[u8]) -> Result<(), String> {
-    if let Ok(value) = dm_wire::decode::<FailurePayload>(FAILURE_SCHEMA, bytes, bytes.len()) {
+    if let Ok(value) =
+        dm_wire::decode_borrowed::<FailurePayload>(FAILURE_SCHEMA, bytes, bytes.len())
+    {
         validate_versions(&value.versions)?;
         if value.errors.is_empty()
             || value
@@ -296,39 +301,6 @@ pub(crate) fn validate(bytes: &[u8]) -> Result<(), String> {
         return Ok(());
     }
     payload(bytes).map(|_| ())
-}
-#[derive(Serialize, Deserialize)]
-struct ErrorWire {
-    statement: String,
-    reason: String,
-    span: Option<dm_codegen_byond::LowerSpan>,
-    kind: dm_codegen_byond::LowerErrorKind,
-}
-impl ErrorWire {
-    fn capture(error: &dm_codegen_byond::LowerError) -> Self {
-        Self {
-            statement: error.statement.clone(),
-            reason: error.reason.clone(),
-            span: error.span,
-            kind: error.kind,
-        }
-    }
-    fn rehydrate(self) -> dm_codegen_byond::LowerError {
-        dm_codegen_byond::LowerError {
-            statement: self.statement,
-            reason: self.reason,
-            span: self.span,
-            kind: self.kind,
-        }
-    }
-}
-#[derive(Serialize, Deserialize)]
-struct FailurePayload {
-    key: Vec<u8>,
-    identity: Option<ProcedureIdentity>,
-    reads: Vec<(ResolveQuery, Vec<u8>)>,
-    versions: Vec<(dm_ir::ReadDomain, u128)>,
-    errors: Vec<ErrorWire>,
 }
 pub(crate) fn encode_failure(
     key: &[u8],
@@ -345,7 +317,7 @@ pub(crate) fn encode_failure(
         return None;
     }
     let payload = FailurePayload {
-        key: key.to_vec(),
+        key: Cow::Borrowed(key),
         identity,
         versions: versions.to_vec(),
         reads: reads
@@ -363,7 +335,8 @@ pub(crate) fn decode_failure<R: Resolver>(
     identity: Option<ProcedureIdentity>,
     host: &R,
 ) -> Option<Vec<dm_codegen_byond::LowerError>> {
-    let payload: FailurePayload = dm_wire::decode(FAILURE_SCHEMA, bytes, bytes.len()).ok()?;
+    let payload: FailurePayload =
+        dm_wire::decode_borrowed(FAILURE_SCHEMA, bytes, bytes.len()).ok()?;
     if validate_versions(&payload.versions).is_err()
         || payload.errors.is_empty()
         || payload
@@ -374,7 +347,7 @@ pub(crate) fn decode_failure<R: Resolver>(
         return None;
     }
 
-    (payload.key == key
+    (payload.key.as_ref() == key
         && payload.identity == identity
         && read_mismatch(&payload.reads, &payload.versions, host).is_none())
     .then(|| {
@@ -585,10 +558,10 @@ fn rebind<R: Resolver>(
 }
 
 /// All variants have been typed and checked before any current resolver reads.
-pub(crate) struct Candidates(Vec<Candidate>);
-enum Candidate {
+pub(crate) struct Candidates<'a>(Vec<Candidate<'a>>);
+enum Candidate<'a> {
     Executable(Box<Payload>),
-    Failure(FailurePayload),
+    Failure(FailurePayload<'a>),
 }
 /// Current source occurrence used when rebasing a persisted procedure result.
 pub(crate) struct ProcedureReplayContext<'a> {
@@ -610,10 +583,12 @@ pub(crate) struct ProcedureLookup {
     pub changed_query: Option<ResolveQuery>,
     pub miss: Option<crate::lowering_memo::MemoMissReason>,
 }
-pub(crate) fn candidates(bytes: &[u8]) -> Result<Candidates, String> {
+pub(crate) fn candidates(bytes: &[u8]) -> Result<Candidates<'_>, String> {
     let mut values = Vec::new();
     for bytes in dm_cache::decode_variants(bytes)? {
-        if let Ok(value) = dm_wire::decode::<FailurePayload>(FAILURE_SCHEMA, bytes, bytes.len()) {
+        if let Ok(value) =
+            dm_wire::decode_borrowed::<FailurePayload>(FAILURE_SCHEMA, bytes, bytes.len())
+        {
             validate_versions(&value.versions)?;
             if value.errors.is_empty()
                 || value
@@ -635,7 +610,7 @@ pub(crate) struct AnonymousLookup {
     pub code: Option<ResolverProc>,
     pub errors: Option<Vec<dm_codegen_byond::LowerError>>,
 }
-impl Candidates {
+impl Candidates<'_> {
     pub(crate) fn anonymous<R: Resolver>(
         self,
         key: &[u8],
@@ -649,7 +624,7 @@ impl Candidates {
             match candidate {
                 Candidate::Failure(value) => {
                     if value.identity.is_none()
-                        && value.key == key
+                        && value.key.as_ref() == key
                         && read_mismatch(&value.reads, &value.versions, host).is_none()
                     {
                         return AnonymousLookup {
@@ -696,8 +671,8 @@ impl Candidates {
         };
         for value in self.0.into_iter().rev() {
             let (candidate, owner, reads, versions) = match &value {
-                Candidate::Executable(v) => (&v.key, v.identity, &v.reads, &v.versions),
-                Candidate::Failure(v) => (&v.key, v.identity, &v.reads, &v.versions),
+                Candidate::Executable(v) => (v.key.as_ref(), v.identity, &v.reads, &v.versions),
+                Candidate::Failure(v) => (v.key.as_ref(), v.identity, &v.reads, &v.versions),
             };
             if candidate != key || owner != Some(identity) {
                 continue;
@@ -991,3 +966,7 @@ mod executable_tests {
 #[cfg(test)]
 #[path = "lowering_memo_wire_typed_tests.rs"]
 mod typed_identity_tests;
+
+#[cfg(test)]
+#[path = "lowering_memo_borrowed_wire_tests.rs"]
+mod borrowed_wire_tests;

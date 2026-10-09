@@ -83,3 +83,26 @@ fn same_locator_cannot_authorize_changed_source_or_model() {
         .retained_geometry(&locator, &[changed_model], &Host(false))
         .is_none());
 }
+
+#[test]
+fn accepted_resident_parse_and_geometry_leave_lazy_disk_unopened() {
+    let owner = Arc::new(RetainedMaps::current_revision());
+    let first = MapMemo::with_resident(1, owner.clone(), None);
+    let plan = first.parse(captured(1)).unwrap();
+    let projection = first
+        .project(std::slice::from_ref(&plan), defaults(), &Host(false))
+        .unwrap();
+    first.finish_revision();
+    let disk = Arc::new(crate::runner_disk::LazyDisk::new(PathBuf::from(
+        "E:/dq-cache/unused-resident-map-fixture",
+    )));
+    let second = MapMemo::with_resident(1, owner, Some(disk.clone()));
+    let current = second.parse(captured(9)).unwrap();
+    let hit = second
+        .project(std::slice::from_ref(&current), defaults(), &Host(false))
+        .unwrap();
+    assert!(Arc::ptr_eq(&plan.model, &current.model));
+    assert!(Arc::ptr_eq(&projection.grid, &hit.grid));
+    assert!(!disk.is_opened());
+    assert!(disk.loaded_snapshot().is_none());
+}

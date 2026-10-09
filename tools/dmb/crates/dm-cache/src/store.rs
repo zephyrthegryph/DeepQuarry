@@ -1,3 +1,5 @@
+#[path = "store_candidates.rs"]
+mod candidates;
 use crate::segment::{encode, CacheError, Limits, Record, RecordKey, RecordView, Segment};
 use fs2::FileExt;
 use std::{
@@ -222,21 +224,44 @@ impl Cache {
         validate: &impl Fn(RecordKey, &[u8], &[(u64, &[u8])]) -> Result<(), String>,
     ) -> Result<CompactResult, CacheError> {
         let snapshot = self.snapshot()?;
-        // Complete admission before publishing any base: a late rejection must
-        // exclude every record of that segment, including earlier valid records.
+        // Complete admission before publishing any base. All healthy candidates
+        // must be inspected: a later typed rejection excludes its whole segment.
+        // Format 1 permits only one record per key in each base segment, so a
+        // neutral compactor cannot discard distinct semantic-context variants.
         loop {
             let before = snapshot.segment_count();
+            let multiple_candidates = std::cell::Cell::new(None);
             for key in live {
-                let _ = snapshot.get(*key, |payload, symbols| validate(*key, payload, symbols));
+                let Some(first) =
+                    snapshot.get(*key, |payload, symbols| validate(*key, payload, symbols))
+                else {
+                    continue;
+                };
+                let _ = snapshot.get_candidate(*key, |payload, symbols| {
+                    validate(*key, payload, symbols)?;
+                    if (payload != first.payload || symbols != first.symbols.as_slice())
+                        && multiple_candidates.get().is_none()
+                    {
+                        multiple_candidates.set(Some(*key));
+                    }
+                    Ok(false)
+                });
             }
             if snapshot.segment_count() == before {
+                if let Some(key) = multiple_candidates.get() {
+                    return Err(CacheError::Invalid(format!(
+                        "compaction deferred: distinct healthy candidates for {key:?} require lossless multi-candidate storage"
+                    )));
+                }
                 break;
             }
         }
+        // Persist whole-segment typed rejection in the new base's supersedes
+        // roster too. Otherwise an undeleted rejected segment becomes healthy
+        // in a later snapshot and can resurrect records excluded above.
         let supersedes = snapshot
             .segments
             .iter()
-            .filter(|(_, segment)| !segment.is_rejected())
             .map(|(_, segment)| segment.id())
             .collect::<Vec<_>>();
         if supersedes.is_empty() {
@@ -380,62 +405,9 @@ impl CacheSnapshot {
         key: RecordKey,
         validate: impl Fn(&[u8], &[(u64, &[u8])]) -> Result<(), String>,
     ) -> Option<RecordView<'a>> {
-        loop {
-            let generation = self.rejection_generation.load(Ordering::Acquire);
-            let superseded = if generation == 0 {
-                self.superseded.clone()
-            } else {
-                let mut revised = self
-                    .revised_superseded
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner());
-                if revised.0 != generation {
-                    revised.1 = Arc::new(
-                        self.segments
-                            .iter()
-                            .filter(|(_, segment)| !segment.is_rejected())
-                            .flat_map(|(_, segment)| segment.supersedes().iter().copied())
-                            .collect(),
-                    );
-                    revised.0 = generation;
-                }
-                revised.1.clone()
-            };
-            let mut retry = false;
-            for &ordinal in self.index.get(&key)? {
-                let (path, segment) = &self.segments[ordinal];
-                if segment.is_rejected() || superseded.contains(&segment.id()) {
-                    continue;
-                }
-                match segment.get(key, &validate) {
-                    Ok(Some(view)) => {
-                        // At most index.len() keys: every successful lookup is
-                        // already present in this immutable snapshot's index.
-                        self.used_keys
-                            .lock()
-                            .unwrap_or_else(|e| e.into_inner())
-                            .insert(key);
-                        return Some(view);
-                    }
-                    Ok(None) => (),
-                    Err(error) => {
-                        self.rejection_generation.fetch_add(1, Ordering::AcqRel);
-                        self.rejected
-                            .lock()
-                            .unwrap_or_else(|p| p.into_inner())
-                            .push(RejectedSegment {
-                                path: path.clone(),
-                                reason: error.to_string(),
-                            });
-                        retry = true;
-                        break;
-                    }
-                }
-            }
-            if !retry {
-                return None;
-            }
-        }
+        self.get_candidate(key, |payload, symbols| {
+            validate(payload, symbols).map(|()| true)
+        })
     }
 }
 

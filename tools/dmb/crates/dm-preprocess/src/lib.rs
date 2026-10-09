@@ -321,9 +321,8 @@ mod logical_state_tests {
                 ("#warning marker\n", 1),
                 (")\n", 1),
                 ("#define X a  b\n", 2),
-                // The original joiner tests the incoming state before adding
-                // the block opener, so its opening-line continuation is spliced.
-                ("{\"text #not_directive\n\"}\n", 3)
+                // String decoding owns escaped newlines and indentation.
+                ("{\"text \\\n#not_directive\n\"}\n", 3)
             ]
         );
     }

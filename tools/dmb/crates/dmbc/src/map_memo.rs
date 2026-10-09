@@ -65,7 +65,7 @@ pub struct MapMemo {
     current: Mutex<retained::CurrentRoster>,
     pub policy: u128,
     budget: usize,
-    disk: Option<Arc<dm_cache::CacheSnapshot>>,
+    disk: Option<Arc<crate::runner_disk::LazyDisk>>,
     resident: Mutex<Resident>,
     read_only_disk: bool,
     publisher: Option<Arc<CachePublisher>>,
@@ -101,7 +101,18 @@ impl MapMemo {
         disk: impl Into<Arc<dm_cache::CacheSnapshot>>,
     ) -> Self {
         let mut memo = Self::new(policy, byte_budget);
-        memo.disk = Some(disk.into());
+        memo.disk = Some(Arc::new(crate::runner_disk::LazyDisk::from_snapshot(
+            disk.into(),
+        )));
+        memo
+    }
+    pub fn with_lazy_disk(
+        policy: u128,
+        byte_budget: usize,
+        disk: Arc<crate::runner_disk::LazyDisk>,
+    ) -> Self {
+        let mut memo = Self::new(policy, byte_budget);
+        memo.disk = Some(disk);
         memo
     }
     /// One map record per bounded callback; the host may batch these records in
@@ -147,14 +158,15 @@ impl MapMemo {
         admit: impl Fn(&[u8]) -> Result<Option<T>, String>,
     ) -> Option<(T, usize)> {
         let issued = std::cell::RefCell::new(None);
-        let view = self
-            .disk
-            .as_ref()?
-            .get(Self::record_key(key, geometry), |bytes, _| {
-                *issued.borrow_mut() = None;
-                *issued.borrow_mut() = admit(bytes)?;
-                Ok(())
-            })?;
+        let view =
+            self.disk
+                .as_ref()?
+                .snapshot()?
+                .get(Self::record_key(key, geometry), |bytes, _| {
+                    *issued.borrow_mut() = None;
+                    *issued.borrow_mut() = admit(bytes)?;
+                    Ok(())
+                })?;
         issued.into_inner().map(|value| (value, view.payload.len()))
     }
     /// Charge an intentionally conservative multiple of serialized bytes for

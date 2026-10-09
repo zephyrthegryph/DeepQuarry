@@ -5,6 +5,7 @@ use std::{
     time::Duration,
 };
 pub mod control;
+mod lifecycle_deadline;
 mod protocol;
 mod service;
 mod transport;
@@ -158,12 +159,9 @@ pub fn route(
     let endpoint = transport::Endpoint::current()?;
     let identity = compiler_identity()?;
     let mut started = false;
-    let startup_deadline = std::time::Instant::now() + Duration::from_secs(20);
-    for attempt in 0..200 {
-        let remaining = startup_deadline
-            .checked_duration_since(std::time::Instant::now())
-            .filter(|duration| !duration.is_zero())
-            .ok_or("daemon failed to start or drain within 20 seconds")?;
+    let mut lifecycle = lifecycle_deadline::LifecycleDeadline::new(std::time::Instant::now());
+    loop {
+        let remaining = lifecycle.remaining(std::time::Instant::now())?;
         let connection = transport::connect(&endpoint);
         if let Ok(mut stream) = connection {
             transport::set_timeout(&mut stream, remaining)?;
@@ -206,6 +204,8 @@ pub fn route(
                     );
                 }
                 protocol::Reply::Hello { .. } => {
+                    lifecycle.retiring(std::time::Instant::now())?;
+                    started = false;
                     protocol::send(&mut stream, &protocol::Request::Retire)?;
                     let _ = protocol::receive::<protocol::Reply>(&mut stream);
                 }
@@ -213,18 +213,32 @@ pub fn route(
             }
         } else if !allow_lifecycle {
             return Err("required existing daemon is unavailable; autostart disabled".into());
-        } else if !started {
-            start()?;
-            started = true;
+        } else if let Err(error) = connection {
+            // Busy pipes and transient failures are not evidence that the old
+            // generation has drained. Only an absent listener permits replacement.
+            if listener_absent(&error) {
+                lifecycle.unavailable(std::time::Instant::now())?;
+                if !started {
+                    start()?;
+                    started = true;
+                }
+            }
         }
-        if attempt == 199 {
-            return Err("daemon failed to start or drain within 20 seconds".into());
-        }
-        let remaining = startup_deadline.saturating_duration_since(std::time::Instant::now());
+        let remaining = lifecycle.remaining(std::time::Instant::now())?;
         std::thread::sleep(Duration::from_millis(100).min(remaining));
     }
-    unreachable!()
 }
+fn listener_absent(error: &io::Error) -> bool {
+    if error.kind() == io::ErrorKind::NotFound {
+        return true;
+    }
+    #[cfg(unix)]
+    if error.kind() == io::ErrorKind::ConnectionRefused {
+        return true;
+    }
+    false
+}
+
 fn start() -> io::Result<()> {
     let mut command = std::process::Command::new(std::env::current_exe()?);
     command

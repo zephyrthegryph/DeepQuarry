@@ -4,6 +4,10 @@
 use dm_tree::frontend::{Diagnostic, DiagnosticKind};
 use std::io::{self, Write};
 
+#[path = "diagnostic_failure.rs"]
+mod failure;
+pub use failure::failure_kind;
+
 /// DreamMaker's source diagnostic shape is `file:line:error: message`.
 /// Unsupported native semantics and compiler faults remain visibly distinct
 /// from errors in the user's source, even when they carry a source location.

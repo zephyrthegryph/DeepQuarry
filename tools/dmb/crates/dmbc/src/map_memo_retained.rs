@@ -62,7 +62,7 @@ impl MapMemo {
     pub fn with_resident(
         policy: u128,
         resident: Arc<RetainedMaps>,
-        disk: Option<Arc<dm_cache::CacheSnapshot>>,
+        disk: Option<Arc<crate::runner_disk::LazyDisk>>,
     ) -> Self {
         let mut memo = Self::new(policy, 0);
         memo.retained_revision = resident

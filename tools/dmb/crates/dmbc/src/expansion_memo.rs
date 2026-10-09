@@ -11,7 +11,7 @@ use std::sync::{
 
 pub struct DiskExpansionMemo {
     policy: u128,
-    disk: Arc<dm_cache::CacheSnapshot>,
+    disk: Arc<crate::runner_disk::LazyDisk>,
     pending: Mutex<(usize, BTreeMap<dm_cache::RecordKey, dm_cache::Record>)>,
     insert_guard: Mutex<()>,
     read_only_disk: bool,
@@ -28,9 +28,15 @@ pub struct DiskExpansionMemo {
 
 impl DiskExpansionMemo {
     pub fn new(policy: u128, disk: impl Into<Arc<dm_cache::CacheSnapshot>>) -> Self {
+        Self::with_lazy_disk(
+            policy,
+            Arc::new(crate::runner_disk::LazyDisk::from_snapshot(disk.into())),
+        )
+    }
+    pub fn with_lazy_disk(policy: u128, disk: Arc<crate::runner_disk::LazyDisk>) -> Self {
         Self {
             policy,
-            disk: disk.into(),
+            disk,
             insert_guard: Mutex::new(()),
             read_only_disk: false,
             publisher: None,
@@ -178,8 +184,10 @@ impl DiskExpansionMemo {
             return load(&bytes).unwrap_or_default();
         }
         let result = std::cell::RefCell::new(Vec::new());
-        let accepted = self
-            .disk
+        let Some(disk) = self.disk.snapshot() else {
+            return Vec::new();
+        };
+        let accepted = disk
             .get(key, |bytes, _| {
                 // Validate the entire envelope before accepting any candidate. Keep
                 // its decoded receipts rather than deserialize the accepted row twice.

@@ -9,7 +9,7 @@ use std::{
 };
 
 #[path = "runner_disk.rs"]
-mod disk;
+pub mod disk;
 #[path = "runner_host_idle.rs"]
 mod idle;
 #[path = "runner_host_memo.rs"]
@@ -26,7 +26,6 @@ type HostParts<'a> = (
 /// One semantic session's retained artifacts and bounded executor. A long-lived
 /// caller reuses this owner across requests without retaining a publication lease.
 pub struct BuildHost {
-    disk_warmup: disk::WarmupState,
     engine: Option<Arc<RetainedEngine>>,
     memo: Option<memo::ResidentMemo>,
     executor: Option<dm_exec::BuildExecutor>,
@@ -68,7 +67,6 @@ pub(crate) struct RetainedEngine {
 impl Default for BuildHost {
     fn default() -> Self {
         Self {
-            disk_warmup: Default::default(),
             engine: None,
             executor: None,
             procedures: None,
@@ -90,7 +88,6 @@ impl BuildHost {
     /// CLI adapter: no resident candidates or memo-record construction without disk.
     pub fn one_shot() -> Self {
         Self {
-            disk_warmup: Default::default(),
             engine: None,
             executor: None,
             procedures: None,
@@ -160,9 +157,6 @@ impl BuildHost {
     /// Existing memo policy pins compiler/schema; engine() separately admits
     /// exact project/defines/bootstrap/engine bytes and clears this state on change.
     /// Moving the disk cache does not invalidate resident semantic values.
-    pub(crate) fn disk_admission(&mut self, policy: u128) -> disk::DiskAdmission {
-        self.disk_warmup.admit(self.memo.is_some(), policy)
-    }
 
     pub(crate) fn retains_artifacts(&self) -> bool {
         self.memo.is_some()
@@ -171,11 +165,11 @@ impl BuildHost {
     pub(crate) fn map_memo(
         &mut self,
         policy: u128,
-        disk: Option<Arc<dm_cache::CacheSnapshot>>,
+        disk: Option<Arc<disk::LazyDisk>>,
     ) -> Option<crate::map_memo::MapMemo> {
         if self.memo.is_none() {
             return disk.map(|snapshot| {
-                crate::map_memo::MapMemo::with_disk(policy, 64 * 1024 * 1024, snapshot)
+                crate::map_memo::MapMemo::with_lazy_disk(policy, 64 * 1024 * 1024, snapshot)
             });
         }
         if self
@@ -197,11 +191,11 @@ impl BuildHost {
     pub(crate) fn procedure_memo(
         &mut self,
         policy: u128,
-        disk: Option<Arc<dm_cache::CacheSnapshot>>,
+        disk: Option<Arc<disk::LazyDisk>>,
     ) -> Option<crate::lowering_memo::ProcedureMemo> {
         if self.memo.is_none() {
             return disk.map(|snapshot| {
-                crate::lowering_memo::ProcedureMemo::with_disk_only(policy, snapshot)
+                crate::lowering_memo::ProcedureMemo::with_lazy_disk_only(policy, snapshot)
             });
         }
         if self
@@ -289,7 +283,6 @@ impl BuildHost {
     }
 
     pub(crate) fn clear_regions(&mut self) {
-        self.disk_warmup.clear();
         if self.memo.is_some() {
             self.memo = Some(memo::ResidentMemo::default());
         }
@@ -374,7 +367,6 @@ impl BuildHost {
         if self.memo.is_some() {
             self.memo = Some(memo::ResidentMemo::default());
         }
-        self.disk_warmup.clear();
         self.procedures = None;
         self.symbolic = None;
         self.initializers = None;

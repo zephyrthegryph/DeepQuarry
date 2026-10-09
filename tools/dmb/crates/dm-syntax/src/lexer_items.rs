@@ -21,6 +21,11 @@ pub fn quoted_end(rest: &str, block: bool, raw: bool) -> Option<usize> {
             escaped = false;
             continue;
         }
+        // Raw single-line quotes cannot use a backslash to continue a line.
+        // Raw block strings retain their multiline grammar.
+        if raw && !block && matches!(ch, '\r' | '\n') {
+            return None;
+        }
         if ch == '\\' && (!raw || interpolation_depth > 0) {
             escaped = true;
             continue;

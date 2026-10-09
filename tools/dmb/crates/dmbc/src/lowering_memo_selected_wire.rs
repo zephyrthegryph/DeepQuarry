@@ -54,7 +54,9 @@ impl SelectedWire {
                 reference.path.first().is_some_and(|(tag, _)| *tag == 0)
                     && reference.path.iter().all(|(tag, _)| *tag <= 3)
                     && reference.meaning.structurally_valid()
-                    && reference.relative_span.is_none_or(|(start, end)| start <= end)
+                    && reference
+                        .relative_span
+                        .is_none_or(|(start, end)| start <= end)
             })
     }
     pub(super) fn rehydrate(self) -> Option<SelectedReferences> {

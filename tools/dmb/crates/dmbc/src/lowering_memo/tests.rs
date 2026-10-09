@@ -110,3 +110,6 @@ fn domain_receipts_skip_matching_domains_and_recheck_changed_or_unknown_versions
     let changed = host(Some(4), Some(3), true);
     assert!(memo.lookup(b"domain-key", &changed).is_none());
 }
+
+#[path = "disk_candidate_tests.rs"]
+mod disk_candidates;

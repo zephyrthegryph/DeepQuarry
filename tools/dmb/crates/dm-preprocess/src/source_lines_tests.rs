@@ -91,12 +91,13 @@ fn reference_lines(source: &str) -> Vec<LogicalLine> {
                 source_lines,
             });
             source_lines = 0;
-            state = LogicalState::default();
         }
         source_lines += 1;
         let content = physical.trim_end_matches(['\r', '\n']);
-        if !state.open_block_string {
-            if let Some(prefix) = content.trim_end().strip_suffix('\\') {
+        if let Some(prefix) = content.trim_end().strip_suffix('\\') {
+            let mut candidate = joined.clone();
+            candidate.push_str(content);
+            if !reference_state(&candidate).open_literal {
                 joined.push_str(prefix);
                 state = reference_state(&joined);
                 continue;

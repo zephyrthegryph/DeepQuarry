@@ -66,8 +66,13 @@ pub(crate) fn plan(source: &str) -> LogicalPlan {
         }
         pending.source_lines += 1;
         let content = physical.trim_end_matches(['\r', '\n']);
-        if !pending.state.open_block_string {
-            if let Some(prefix) = content.trim_end().strip_suffix('\\') {
+        if let Some(prefix) = content.trim_end().strip_suffix('\\') {
+            // Literal continuations belong to the shared string decoder. Keeping
+            // the slash/newline lets it discard indentation rather than turn it
+            // into literal tabs; raw literals must retain their own semantics.
+            let mut candidate = pending.text(source, &plan.transformed).to_owned();
+            candidate.push_str(content);
+            if !logical_state(&candidate).open_literal {
                 if pending.transformed_start.is_none() {
                     let start = plan.transformed.len();
                     plan.transformed.push_str(&source[pending.original.clone()]);

@@ -1,7 +1,7 @@
 //! Neutral binary DTO framing. Domain callers validate private issuers and semantics.
 //! DTOs must use explicit tagged enums/fields, not serde flatten, untagged or
 //! conditionally omitted struct fields. No storage or compiler models live here.
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::io::{self, Write};
 const MAGIC: &[u8; 8] = b"DMWIRE01";
 const HEADER: usize = 32;
@@ -77,6 +77,36 @@ pub fn decode<T: DeserializeOwned>(
     bytes: &[u8],
     max_bytes: usize,
 ) -> Result<T, String> {
+    let payload = checked_payload(schema, bytes, max_bytes)?;
+    let (value, consumed) = bincode::serde::decode_from_slice(
+        payload,
+        bincode::config::standard().with_limit::<{ MAX_BYTES }>(),
+    )
+    .map_err(|error| error.to_string())?;
+    if consumed != payload.len() {
+        return Err("wire trailing payload bytes".into());
+    }
+    Ok(value)
+}
+/// Decode borrowed strings/bytes directly from an immutable validated frame.
+/// Sequence containers and domain types may still require owned allocations.
+pub fn decode_borrowed<'a, T: Deserialize<'a>>(
+    schema: u32,
+    bytes: &'a [u8],
+    max_bytes: usize,
+) -> Result<T, String> {
+    let payload = checked_payload(schema, bytes, max_bytes)?;
+    let (value, consumed) = bincode::serde::borrow_decode_from_slice(
+        payload,
+        bincode::config::standard().with_limit::<{ MAX_BYTES }>(),
+    )
+    .map_err(|error| error.to_string())?;
+    if consumed != payload.len() {
+        return Err("wire trailing payload bytes".into());
+    }
+    Ok(value)
+}
+fn checked_payload(schema: u32, bytes: &[u8], max_bytes: usize) -> Result<&[u8], String> {
     if bytes.len() < HEADER || bytes.get(..8) != Some(MAGIC.as_slice()) {
         return Err("invalid wire magic/header".into());
     }
@@ -93,16 +123,9 @@ pub fn decode<T: DeserializeOwned>(
     {
         return Err("wire checksum differs".into());
     }
-    let (value, consumed) = bincode::serde::decode_from_slice(
-        payload,
-        bincode::config::standard().with_limit::<{ MAX_BYTES }>(),
-    )
-    .map_err(|error| error.to_string())?;
-    if consumed != payload.len() {
-        return Err("wire trailing payload bytes".into());
-    }
-    Ok(value)
+    Ok(payload)
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -153,5 +176,32 @@ mod tests {
         assert!(encode_bounded(17, &value, bytes.len() - 1).is_err());
         assert!(encode_bounded(17, &value, HEADER - 1).is_err());
         assert_eq!(decode::<Vec<u8>>(17, &bytes, MAX_BYTES).unwrap(), value);
+    }
+    #[test]
+    fn borrowed_decoder_shares_framing_checks_and_source_storage() {
+        #[derive(Deserialize)]
+        struct Borrowed<'a> {
+            #[serde(borrow)]
+            bytes: std::borrow::Cow<'a, [u8]>,
+            #[serde(borrow)]
+            text: std::borrow::Cow<'a, str>,
+        }
+        let bytes = encode(19, &(vec![0u8, 128, 255], "Ω exact".to_owned())).unwrap();
+        let value: Borrowed = decode_borrowed(19, &bytes, bytes.len()).unwrap();
+        assert!(matches!(value.bytes, std::borrow::Cow::Borrowed(_)));
+        assert!(matches!(value.text, std::borrow::Cow::Borrowed(_)));
+        assert_eq!(value.bytes.as_ref(), [0, 128, 255]);
+        assert_eq!(value.text, "Ω exact");
+        assert!(decode_borrowed::<Borrowed>(20, &bytes, bytes.len()).is_err());
+        assert!(decode_borrowed::<Borrowed>(19, &bytes, 0).is_err());
+        for length in [0, 8, 31, bytes.len() - 1] {
+            assert!(decode_borrowed::<Borrowed>(19, &bytes[..length], bytes.len()).is_err());
+        }
+        let mut corrupt = bytes.clone();
+        *corrupt.last_mut().unwrap() ^= 1;
+        assert!(decode_borrowed::<Borrowed>(19, &corrupt, corrupt.len()).is_err());
+        let mut trailing = bytes;
+        trailing.push(0);
+        assert!(decode_borrowed::<Borrowed>(19, &trailing, trailing.len()).is_err());
     }
 }

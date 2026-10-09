@@ -2,40 +2,42 @@
 //! not allocator metadata, private memory, or a fabricated total heap size.
 //! A boundary shares one census, so Arc aliases and nested buffers count once.
 use serde::Serialize;
-mod dmb_image;
 mod declaration_syntax;
-mod source_text;
+mod dmb_image;
 mod effective_metadata;
-mod local_shape;
-mod lexical_callable;
-mod storage_inventory;
 mod initializer_ledger;
+mod lexical_callable;
+mod local_shape;
 mod macro_environments;
 mod metadata_dependencies;
 mod resident_map_outputs;
+mod source_text;
+mod storage_inventory;
 pub(crate) use resident_map_outputs::weight as resident_map_outputs_weight;
 mod prepared;
 mod relocation_metrics;
 mod resident_abi;
 mod resident_initializer;
 mod resident_owner_projection;
-pub(crate) use resident_owner_projection::{weight as resident_owner_projection_weight, inspect as owner_projection_census};
+pub(crate) use resident_owner_projection::{
+    inspect as owner_projection_census, weight as resident_owner_projection_weight,
+};
 mod resident_initializer_fragment;
 pub(crate) use resident_abi::weight as resident_abi_weight;
 pub(crate) use resident_initializer_fragment::weight as resident_initializer_fragment_weight;
-mod resident_maps;
 mod expansion_inputs;
 mod latest_images;
+mod resident_maps;
 pub(crate) use expansion_inputs::inspect as expansion_input_census;
 mod resident_startup;
 pub(crate) use resident_maps::{
     geometry_weight as resident_map_geometry_weight, plan_weight as resident_map_plan_weight,
 };
 pub(crate) use resident_startup::weight as resident_startup_weight;
-pub(crate) mod resident_weight;
-mod retained_declarations;
 mod grammar_roster;
 mod initializer_assemblies;
+pub(crate) mod resident_weight;
+mod retained_declarations;
 pub(crate) use initializer_assemblies::inspect as initializer_assembly_census;
 mod retained_normalization;
 mod session_symbolic;
@@ -447,10 +449,15 @@ impl HeapCensus {
                     true,
                 );
             }
-            snapshot.occurrences.visit_target_index_storage(|pointer, _, bytes| {
-                self.buffer("semantic_occurrence_index", pointer, bytes, bytes);
-            });
-            self.unknown("semantic_occurrence_index", "private target HashMap bucket backing and shared Arc control blocks excluded");
+            snapshot
+                .occurrences
+                .visit_target_index_storage(|pointer, _, bytes| {
+                    self.buffer("semantic_occurrence_index", pointer, bytes, bytes);
+                });
+            self.unknown(
+                "semantic_occurrence_index",
+                "private target HashMap bucket backing and shared Arc control blocks excluded",
+            );
         }
     }
     fn symbols(&mut self, symbols: &Arc<dm_ir::SymbolTable>) {
@@ -923,74 +930,8 @@ pub fn emit_if_enabled(stage: &str, observe: impl FnOnce(&mut HeapCensus)) -> io
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn shared_arc_payload_is_counted_once_across_owners() {
-        let text: Arc<str> = Arc::from("payload");
-        let alias = Arc::clone(&text);
-        let mut census = HeapCensus::new("test");
-        census.arc_text("source", &text);
-        census.arc_text("expanded", &alias);
-        let report = census.finish();
-        assert_eq!(report.unique_known_capacity_bytes, 7);
-        assert_eq!(
-            report
-                .owners
-                .iter()
-                .find(|owner| owner.owner == "expanded")
-                .unwrap()
-                .shared_encounters,
-            1
-        );
-    }
-    #[test]
-    fn vector_descriptors_and_nested_strings_are_distinct_allocations() {
-        let mut values = Vec::with_capacity(4);
-        let mut string = String::with_capacity(32);
-        string.push_str("abc");
-        values.push(string);
-        let mut census = HeapCensus::new("test");
-        census.strings("strings", &values);
-        census.strings("alias", &values);
-        let report = census.finish();
-        assert_eq!(
-            report.unique_known_capacity_bytes,
-            (values.capacity() * size_of::<String>() + values[0].capacity()) as u64
-        );
-        assert_eq!(
-            report
-                .owners
-                .iter()
-                .map(|owner| owner.unique_allocations)
-                .sum::<u64>(),
-            2
-        );
-    }
-    #[test]
-    fn inaccessible_slice_capacity_and_unknown_owners_are_explicit() {
-        let values = vec![1_u32, 2, 3];
-        let mut census = HeapCensus::new("test");
-        census.slice("private_vec", &values, false);
-        census.unknown("indexes", "private HashMap buckets");
-        let report = census.finish();
-        let bytes = serde_json::to_vec(&report).unwrap();
-        let parsed: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-        assert_eq!(
-            parsed["scope"],
-            "retained_accessible_container_payload_and_capacity_not_total_heap"
-        );
-        assert!(!report
-            .owners
-            .iter()
-            .find(|owner| owner.owner == "private_vec")
-            .unwrap()
-            .unknown
-            .is_empty());
-        assert_eq!(report.unique_known_capacity_bytes, 0);
-        assert_eq!(report.unknown_capacity_payload_bytes, 12);
-    }
-}
+#[path = "heap_census/tests.rs"]
+mod tests;
 
 #[path = "heap_census/static_plan.rs"]
 mod static_plan;
