@@ -187,7 +187,7 @@ MSG_DEF_SELF(tank/needs_wires, span_notice("You need to wire the device up first
 MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T%."))
 
 /obj/item/tank/proc/is_wired(datum/act/op/A)
-	return wired
+	return wired ? null : /datum/msg/tank/needs_wires
 
 /obj/item/tank/proc/assembly_attached(datum/act/op/A)
 	var/obj/item/W = A.held

@@ -20,7 +20,7 @@
 	icon_scale_y = 1.2
 
 CAPABILITIES(/obj/mecha/working/ripley)
-	op("ripley_detect_ore", menu(), label("Detect Ores"), needs(req_bool(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(ripley_detect_ore)))
+	op("ripley_detect_ore", menu(), label("Detect Ores"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(ripley_detect_ore)))
 	owns_one(nameof(orescanner), /obj/item/mining_scanner)
 
 TYPE_TABLE(/obj/mecha/working/ripley, mecha_starting_components, list( \

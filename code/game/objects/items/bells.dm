@@ -119,11 +119,11 @@ CAPABILITIES(/obj/item/deskbell)
 	op("hammer", hand(), when(req_empty_hand()), hostile(), stance(I_HURT), label("Hammer rudely"), then(PROC_REF(hammer_by_hand)))
 	op("ring_with_item", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Ring"), then(PROC_REF(ring_with_item)))
 	op("hammer_with_item", item(/obj/item), hostile(), stance(I_HURT), label("Hammer rudely"), then(PROC_REF(hammer_with_item)))
-	op("use_wrench", tool(TOOL_WRENCH), needs(req_bool(PROC_REF(on_floor), silent = TRUE)), wait(0.5 SECONDS), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), needs(req(PROC_REF(on_floor), silent = TRUE)), wait(0.5 SECONDS), then(PROC_REF(wrench_used)))
 
 /// Requirement: the bell lies on a turf (not in a hand or a bag).
 /obj/item/deskbell/proc/on_floor(datum/act/op/A)
-	return read_once(isturf(loc)) // where the bell lies is asked when the click is made
+	return read_once(isturf(loc)) ? null : /datum/msg/req_silent // where the bell lies is asked when the click is made
 
 /obj/item/deskbell/proc/wrench_used(datum/act/op/A)
 	to_chat(A.actor, span_notice("You disassemble the desk bell."))

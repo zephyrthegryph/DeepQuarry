@@ -1,7 +1,7 @@
 CAPABILITIES(/mob/living/silicon/robot/platform)
 	op("platform_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(platform_interaction_item)))
 	op("platform_hand", hand(), ungated(), priority(OP_PRIORITY_PART + 1), then(PROC_REF(platform_interaction_hand)))
-	op("platform_take_control", observer(), label("Take control"), when(req_bool(PROC_REF(ghost_control_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Platform Control", "question" = computed(PROC_REF(ghost_control_question)), "timeout" = 0), step = "take", keeps = TARGET_PRESENT), then(PROC_REF(ghost_control_answered)))
+	op("platform_take_control", observer(), label("Take control"), when(req(PROC_REF(ghost_control_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Platform Control", "question" = computed(PROC_REF(ghost_control_question)), "timeout" = 0), step = "take", keeps = TARGET_PRESENT), then(PROC_REF(ghost_control_answered)))
 	// a drop that is refused falls through to the cyborg's drag block
 	op("platform_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Load into cargo"), when(PROC_REF(cargo_loadable)), begins(PROC_REF(cargo_loading_text)), wait(3 SECONDS), then(PROC_REF(platform_loaded)))
 	// an empty hand on a closed platform that has no cell in its port takes the last stored thing out
@@ -11,7 +11,7 @@ CAPABILITIES(/mob/living/silicon/robot/platform)
 /// Old attack_ghost: an unoccupied platform offers itself to the ghost; otherwise the default. The question is the op's asks() step; the requirement is read
 /// again when the answer arrives (still a ghost, the platform still empty and alive, the round running).
 /mob/living/silicon/robot/platform/proc/ghost_control_possible(datum/act/op/A)
-	return read_once(!(client || key || stat == DEAD || !SSticker || !SSticker.mode)) // whether anyone is in it is asked when the click is made
+	return read_once(!(client || key || stat == DEAD || !SSticker || !SSticker.mode)) ? null : /datum/msg/req_failed // whether anyone is in it is asked when the click is made
 
 /mob/living/silicon/robot/platform/proc/ghost_control_question(datum/act/A)
 	return "Do you wish to take control of 	he [src]?"

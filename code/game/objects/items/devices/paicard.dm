@@ -610,7 +610,7 @@ CAPABILITIES(/obj/item/paicard)
 MSG_DEF_SELF(paicard/remove_first, span_warning("You would need to remove the installed %I% first!"))
 
 /obj/item/paicard/proc/can_open_panel(datum/act/op/A)
-	return !panel_open && pai
+	return (!panel_open && pai) ? null : /datum/msg/req_failed
 
 /obj/item/paicard/proc/panel_opened(datum/act/op/A)
 	set_panel_open(TRUE)
@@ -618,25 +618,25 @@ MSG_DEF_SELF(paicard/remove_first, span_warning("You would need to remove the in
 	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 
 /obj/item/paicard/proc/cell_missing(datum/act/op/A)
-	return cell == PP_MISSING
+	return cell == PP_MISSING ? null : /datum/msg/paicard/remove_first
 
 /obj/item/paicard/proc/processor_missing(datum/act/op/A)
-	return processor == PP_MISSING
+	return processor == PP_MISSING ? null : /datum/msg/paicard/remove_first
 
 /obj/item/paicard/proc/board_missing(datum/act/op/A)
-	return board == PP_MISSING
+	return board == PP_MISSING ? null : /datum/msg/paicard/remove_first
 
 /obj/item/paicard/proc/capacitor_missing(datum/act/op/A)
-	return capacitor == PP_MISSING
+	return capacitor == PP_MISSING ? null : /datum/msg/paicard/remove_first
 
 /obj/item/paicard/proc/projector_missing(datum/act/op/A)
-	return projector == PP_MISSING
+	return projector == PP_MISSING ? null : /datum/msg/paicard/remove_first
 
 /obj/item/paicard/proc/emitter_missing(datum/act/op/A)
-	return emitter == PP_MISSING
+	return emitter == PP_MISSING ? null : /datum/msg/paicard/remove_first
 
 /obj/item/paicard/proc/synthesizer_missing(datum/act/op/A)
-	return speech_synthesizer == PP_MISSING
+	return speech_synthesizer == PP_MISSING ? null : /datum/msg/paicard/remove_first
 
 /// The part goes into the card: false when the held part could not be taken.
 /obj/item/paicard/proc/part_installed(datum/act/op/A)

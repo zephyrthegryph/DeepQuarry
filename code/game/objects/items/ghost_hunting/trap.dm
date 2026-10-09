@@ -136,7 +136,7 @@ MSG_DEF(ghost_trap/deactivated, span_notice("You have deactivated %T%!"), span_d
 
 /// The trap is empty, not set up and the actor can work it.
 /obj/item/ghost_trap/proc/can_deploy(datum/act/op/A)
-	return !captured_entity && !deployed && read_once(can_use(A.actor))
+	return (!captured_entity && !deployed && read_once(can_use(A.actor))) ? null : /datum/msg/req_failed
 
 /obj/item/ghost_trap/proc/trap_deployed(datum/act/op/A)
 	var/mob/user = A.actor
@@ -163,11 +163,11 @@ MSG_DEF(ghost_trap/deactivated, span_notice("You have deactivated %T%!"), span_d
 
 /// Something is buckled to the trap and the actor can work it.
 /obj/item/ghost_trap/proc/can_free_occupant(datum/act/op/A)
-	return read_once(has_buckled_mobs() && can_use(A.actor))
+	return read_once(has_buckled_mobs() && can_use(A.actor)) ? null : /datum/msg/req_failed
 
 /// The trap is set up, holds nobody and the actor can work it.
 /obj/item/ghost_trap/proc/can_deactivate(datum/act/op/A)
-	return deployed && read_once(can_use(A.actor))
+	return (deployed && read_once(can_use(A.actor))) ? null : /datum/msg/req_failed
 
 /obj/item/ghost_trap/proc/occupant_freed(datum/act/op/A)
 	act_message(A.actor, src, others = span_notice("Something has been freed from %T% by %U%."))

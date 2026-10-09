@@ -195,7 +195,7 @@ MSG_DEF_SELF(beehive/no_combs, span_notice("There are no filled honeycombs."))
 MSG_DEF_SELF(beehive/bees_angry, span_notice("The bees won't let you take the honeycombs out like this, smoke them first."))
 
 /obj/machinery/beehive/proc/hive_open(datum/act/op/A)
-	return !closed
+	return !closed ? null : /datum/msg/req_failed
 
 /// Only an open hive with a filled frame in it, and bees that are smoked or absent, is harvested.
 /obj/machinery/beehive/proc/harvest_started(datum/act/op/A)

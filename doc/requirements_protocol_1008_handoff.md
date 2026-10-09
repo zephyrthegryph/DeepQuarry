@@ -64,3 +64,12 @@ The user approved the opt-in snapshot-output workflow fix and one lane-ready ret
 Approved retry on `a992c9588c02` completed: **85 passed, 0 failed**, all gates passed, and lane-ready wrote and pushed its note. Production compile and DreamChecker remained clean. The snapshot-output stamping blocker is resolved. No appearance rows were blessed by this retry.
 
 A separate workflow performance defect remains: a mixed main/look batch with zero stale look keys launches an unfiltered appearance world instead of skipping it. This retry reported zero of 21,008 keys changed, then swept 8,396 types; it passed but took 2,848 seconds. The minimal runner fix is saved for its owner in `data/codex-machinery/zero-stale-look-runner.patch`, not applied. The broad sweep reported existing global state leaks; no assertions failed.
+
+
+## Re-land against master 1e8a10cbe2 (2026-10-09)
+
+Merged current master and retained the prompts branch by ancestry. Resolutions preserve master's construction undo declarations, bell actions, thinktank priorities and draw work, plus the null-or-reason protocol and prompt claims/consent/starts behavior. Generated look-key metadata was taken from master for regeneration.
+
+The full raw requirement audit now covers same-file, inherited and fully qualified callback references across production. Newly merged Boolean callbacks were converted to null-or-reason without adding transitional fallbacks. This includes object construction, mecha maintenance/pilot checks, robot tools/abilities, shadekin abilities, economy, hydroponics and modular-computer checks. Boolean selectors remain Boolean; the sink's already-converted requirement remains wrapped in req inside when. Direct requirement assertions in tests now inspect null for admission and a reason for refusal.
+
+The requirement_bool baseline shrank **857 -> 836** (21 removed), with no added rows, ceilings or ALLOWs. CableLayer, bomb-tester and cryopod callbacks remain null-or-reason. The requirement protocol snapshots are unchanged; no re-bless is planned. Verification results will be appended after lane-ready.

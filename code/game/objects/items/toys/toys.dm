@@ -2282,7 +2282,7 @@ CAPABILITIES(/obj/item/toy/minigibber)
 /// A figure goes in, a character only from the feeder's own hands.
 /obj/item/toy/minigibber/proc/can_feed(datum/act/op/A)
 	var/obj/item/O = A.held
-	return istype(O, /obj/item/toy/figure) || read_once(O.loc == A.actor)
+	return (istype(O, /obj/item/toy/figure) || read_once(O.loc == A.actor)) ? null : /datum/msg/req_failed
 
 /obj/item/toy/minigibber/proc/feed_begins(datum/act/op/A)
 	return msg_text(span_notice("You start feeding \the [A.held] [icon2html(A.held, A.actor.client)] into \the [src]'s mini-input."))

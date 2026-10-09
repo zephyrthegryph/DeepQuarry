@@ -24,10 +24,10 @@ CAPABILITIES(/obj/dq_req_probe)
 	op("dq_req_toggle", hand(), label("Toggle"), needs(req(PROC_REF(is_operable), because = MSG(dq_req/inoperable)), req(PROC_REF(is_unlocked), because = MSG(dq_req/locked))), then(PROC_REF(dq_req_toggle)))
 
 /obj/dq_req_probe/proc/is_operable(datum/act/A)
-	return read_once(operable())
+	return read_once(operable()) ? null : MSG(dq_req/inoperable)
 
 /obj/dq_req_probe/proc/is_unlocked(datum/act/A)
-	return read_once(!locked)
+	return read_once(!locked) ? null : MSG(dq_req/locked)
 
 /obj/dq_req_probe/proc/dq_req_toggle(datum/act/op/A)
 	uses++

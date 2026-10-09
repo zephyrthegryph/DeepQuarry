@@ -32,14 +32,14 @@ CAPABILITY_DEF(shadekin_utility, CAP_SHADEKIN_UTILITY, key = NONE)
 		. += L
 
 /mob/living/proc/ability_has_regenerate_candidates(datum/act/op/A)
-	return length(regenerate_candidates()) > 0
+	return (length(regenerate_candidates()) > 0) ? null : /datum/msg/req_failed
 
 /mob/living/proc/ability_regenerate_candidate_choices(datum/act/op/A)
 	return regenerate_candidates()
 
 /mob/living/proc/ability_can_afford_50(datum/act/op/A)
 	var/datum/shadekin/SK = get_shadekin_state()
-	return !!SK && SK.shadekin_get_energy() >= 50
+	return (!!SK && SK.shadekin_get_energy() >= 50) ? null : /datum/msg/req_failed
 
 /// Mends the picked creature, announced by the shadekin.
 /mob/living/proc/ability_regenerate_other(datum/act/op/A)
