@@ -1,2 +1,4 @@
 # Tests that fail on master itself (tools/dq_known_failures.sh). Columns, TAB separated: test spec, reason, master sha last seen failing.
 # A spec is a /datum/unit_test/ name without the prefix, or parent/* for every child. Edit with --adopt/--refresh, not by hand.
+dq_km_every_behaviour_has_a_system	fails on master: a behaviour has no system	1d164d2693
+dq_lane_a/change_drain_survives_a_throwing_condition	fails on master: throwing condition kills the change drain	1d164d2693
