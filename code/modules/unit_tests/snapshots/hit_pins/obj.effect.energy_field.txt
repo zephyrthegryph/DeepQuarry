@@ -1,11 +1,55 @@
 blob | survives
+emag | icon_state: 'shield' -> 'shield_broken'
+emag | light_color: '#ffffff' -> '#FF9900'
+emag | light_power: 1 -> 5
+emag | light_range: 0 -> 3
 emag | om_rec: null -> /datum/scheduler_record
+emag | refresh_bits: 8388608 -> 0
+emag | refresh_queued: 131071 -> 0
+emp 1 | icon_state: 'shield' -> 'shield_broken'
+emp 1 | light_color: '#ffffff' -> '#FF9900'
+emp 1 | light_power: 1 -> 5
+emp 1 | light_range: 0 -> 3
 emp 1 | refresh_bits: 8388608 -> 0
 emp 1 | refresh_queued: 131071 -> 0
-emp 2 | nothing
+emp 2 | icon_state: 'shield' -> 'shield_broken'
+emp 2 | light_color: '#ffffff' -> '#FF9900'
+emp 2 | light_power: 1 -> 5
+emp 2 | light_range: 0 -> 3
+emp 2 | refresh_bits: 8388608 -> 0
+emp 2 | refresh_queued: 131071 -> 0
+explosion 1 | icon_state: 'shield' -> 'shield_broken'
+explosion 1 | light_color: '#ffffff' -> '#FF9900'
+explosion 1 | light_power: 1 -> 5
+explosion 1 | light_range: 0 -> 3
 explosion 1 | om_rec: null -> /datum/scheduler_record
+explosion 1 | refresh_bits: 8388608 -> 0
+explosion 1 | refresh_queued: 131071 -> 0
+explosion 2 | icon_state: 'shield' -> 'shield_broken'
+explosion 2 | light_color: '#ffffff' -> '#FF9900'
+explosion 2 | light_power: 1 -> 5
+explosion 2 | light_range: 0 -> 3
 explosion 2 | om_rec: null -> /datum/scheduler_record
+explosion 2 | refresh_bits: 8388608 -> 0
+explosion 2 | refresh_queued: 131071 -> 0
+explosion 3 | icon_state: 'shield' -> 'shield_broken'
+explosion 3 | light_color: '#ffffff' -> '#FF9900'
+explosion 3 | light_power: 1 -> 5
+explosion 3 | light_range: 0 -> 3
 explosion 3 | om_rec: null -> /datum/scheduler_record
+explosion 3 | refresh_bits: 8388608 -> 0
+explosion 3 | refresh_queued: 131071 -> 0
+projectile | icon_state: 'shield' -> 'shield_broken'
+projectile | light_color: '#ffffff' -> '#FF9900'
+projectile | light_power: 1 -> 5
+projectile | light_range: 0 -> 3
 projectile | om_rec: null -> /datum/scheduler_record
-thrown | nothing
+projectile | refresh_bits: 8388608 -> 0
+projectile | refresh_queued: 131071 -> 0
+thrown | icon_state: 'shield' -> 'shield_broken'
+thrown | light_color: '#ffffff' -> '#FF9900'
+thrown | light_power: 1 -> 5
+thrown | light_range: 0 -> 3
+thrown | refresh_bits: 8388608 -> 0
+thrown | refresh_queued: 131071 -> 0
 

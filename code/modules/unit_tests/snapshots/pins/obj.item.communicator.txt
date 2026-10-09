@@ -3,12 +3,10 @@ human|none menu: Pick up
 human|none menu: Remove ID
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none click: Click: Pick up
-robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none click: Click: Pick up
-ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
@@ -63,5 +61,5 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Remove ID
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage click: Click: Collect
-keys: add_hex, collect_item, copy, copy_name, decline, dial, disconnect, drag_buckle, edit, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, Light, message, move_to_top, newsfeed, open, pick_up_item, remove_id, rename, scan_id, set_ringer_tone, startvideo, switch_tab, toggle_digestable, view, write_target_address
+keys: add_hex, collect_item, copy, copy_name, decline, dial, disconnect, drag_buckle, edit, equip_module, kit_customize, kit_customize_last, Light, message, move_to_top, newsfeed, open, pick_up_item, remove_id, rename, scan_id, set_ringer_tone, startvideo, switch_tab, toggle_digestable, view, write_target_address
 

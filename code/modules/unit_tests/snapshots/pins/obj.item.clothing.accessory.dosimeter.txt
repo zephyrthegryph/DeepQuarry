@@ -9,13 +9,11 @@ human|none click: Click: Accessory attached hand
 robot|none menu: Accessory attached hand
 robot|none menu: Alternate use
 robot|none menu: Dosimeter remove film hand
-robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use
 robot|none click: Click: Accessory attached hand
-ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
@@ -116,5 +114,5 @@ human|/obj/item/dosimeter_film menu: Move To Top
 human|/obj/item/dosimeter_film menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/dosimeter_film menu: Use
 human|/obj/item/dosimeter_film click: Click: Accessory attached hand
-keys: accessory_attached_hand, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, dosimeter_insert_film, dosimeter_remove_film_hand, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable
+keys: accessory_attached_hand, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, dosimeter_insert_film, dosimeter_remove_film_hand, drag_buckle, equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable
 

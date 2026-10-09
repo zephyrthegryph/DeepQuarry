@@ -1,5 +1,5 @@
 /obj/item/assembly/shock_kit|human|none => |
-/obj/item/assembly/shock_kit|robot|none => |gen_silicon_item_silicon_equip_module:not possible right now
-/obj/item/assembly/shock_kit|ai|none => |gen_silicon_item_silicon_equip_module:not possible right now
+/obj/item/assembly/shock_kit|robot|none => |
+/obj/item/assembly/shock_kit|ai|none => |
 /obj/item/assembly/shock_kit|ghost|none => |
 

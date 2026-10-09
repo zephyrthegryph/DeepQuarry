@@ -6,7 +6,6 @@ human|none menu: Rename paper (refused: You can't do that.)
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none click: Click: Pick up
 robot|none menu: Create Area (refused: You can't do that.)
-robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Fold into a plane
 robot|none menu: Move To Top
 robot|none menu: Pick up
@@ -14,7 +13,6 @@ robot|none menu: Read
 robot|none menu: Rename paper (refused: You can't do that.)
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none click: Click: Read
-ai|none menu: Equip (refused: not possible right now)
 ai|none menu: Read
 ai|none click: Click: Read
 ghost|none menu: Create Area (refused: You can't do that.)
@@ -110,5 +108,5 @@ human|/obj/item menu: Rename paper (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: collect_item, create_area, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, paper_crumple, paper_fold_plane, paper_item, paper_read, paper_rename, paper_silicon_read, pick_up_item, toggle_digestable, wipe_lipstick, write_end, write_field
+keys: collect_item, create_area, drag_buckle, equip_module, kit_customize, kit_customize_last, move_to_top, paper_crumple, paper_fold_plane, paper_item, paper_read, paper_rename, paper_silicon_read, pick_up_item, toggle_digestable, wipe_lipstick, write_end, write_field
 

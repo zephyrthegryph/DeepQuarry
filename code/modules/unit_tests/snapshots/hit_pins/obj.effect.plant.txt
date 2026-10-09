@@ -1,11 +1,62 @@
 blob | survives
-emag | periodic_pipe: null -> /datum/cadence/plants
+emag | color: null -> '#efff8a'
+emag | growing: 0 -> 1
+emag | icon_state: 'bush4-1' -> 'mushroom7-0'
+emag | light_color: '#ffffff' -> '#006622'
+emag | light_power: 1 -> 0.5
+emag | light_range: 0 -> 2
+emag | om_rec: null -> /datum/scheduler_record
+emag | refresh_bits: 1 -> 0
+emag | refresh_queued: 131071 -> 0
+emp 1 | color: null -> '#efff8a'
+emp 1 | icon_state: 'bush4-1' -> 'mushroom7-0'
+emp 1 | light_color: '#ffffff' -> '#006622'
+emp 1 | light_power: 1 -> 0.5
+emp 1 | light_range: 0 -> 2
 emp 1 | refresh_bits: 1 -> 0
 emp 1 | refresh_queued: 131071 -> 0
-emp 2 | nothing
+emp 2 | color: null -> '#efff8a'
+emp 2 | icon_state: 'bush4-1' -> 'mushroom7-0'
+emp 2 | light_color: '#ffffff' -> '#006622'
+emp 2 | light_power: 1 -> 0.5
+emp 2 | light_range: 0 -> 2
+emp 2 | refresh_bits: 1 -> 0
+emp 2 | refresh_queued: 131071 -> 0
+explosion 1 | color: null -> '#efff8a'
+explosion 1 | icon_state: 'bush4-1' -> 'mushroom7-0'
+explosion 1 | light_color: '#ffffff' -> '#006622'
+explosion 1 | light_power: 1 -> 0.5
+explosion 1 | light_range: 0 -> 2
 explosion 1 | om_rec: null -> /datum/scheduler_record
+explosion 1 | refresh_bits: 1 -> 0
+explosion 1 | refresh_queued: 131071 -> 0
+explosion 2 | color: null -> '#efff8a'
+explosion 2 | icon_state: 'bush4-1' -> 'mushroom7-0'
+explosion 2 | light_color: '#ffffff' -> '#006622'
+explosion 2 | light_power: 1 -> 0.5
+explosion 2 | light_range: 0 -> 2
 explosion 2 | om_rec: null -> /datum/scheduler_record
-explosion 3 | nothing
-projectile | nothing
-thrown | nothing
+explosion 2 | refresh_bits: 1 -> 0
+explosion 2 | refresh_queued: 131071 -> 0
+explosion 3 | color: null -> '#efff8a'
+explosion 3 | icon_state: 'bush4-1' -> 'mushroom7-0'
+explosion 3 | light_color: '#ffffff' -> '#006622'
+explosion 3 | light_power: 1 -> 0.5
+explosion 3 | light_range: 0 -> 2
+explosion 3 | refresh_bits: 1 -> 0
+explosion 3 | refresh_queued: 131071 -> 0
+projectile | color: null -> '#efff8a'
+projectile | icon_state: 'bush4-1' -> 'mushroom7-0'
+projectile | light_color: '#ffffff' -> '#006622'
+projectile | light_power: 1 -> 0.5
+projectile | light_range: 0 -> 2
+projectile | refresh_bits: 1 -> 0
+projectile | refresh_queued: 131071 -> 0
+thrown | color: null -> '#efff8a'
+thrown | icon_state: 'bush4-1' -> 'mushroom7-0'
+thrown | light_color: '#ffffff' -> '#006622'
+thrown | light_power: 1 -> 0.5
+thrown | light_range: 0 -> 2
+thrown | refresh_bits: 1 -> 0
+thrown | refresh_queued: 131071 -> 0
 

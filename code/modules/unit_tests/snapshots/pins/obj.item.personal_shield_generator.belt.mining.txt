@@ -7,7 +7,6 @@ human|none menu: Toggle Shield (refused: You can't do that.)
 human|none menu: Use
 human|none click: Click: Use
 robot|none menu: Alternate use
-robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Toggle Digestable (refused: You can't do that.)
@@ -15,7 +14,6 @@ robot|none menu: Toggle Gun (refused: You can't do that.)
 robot|none menu: Toggle Shield (refused: You can't do that.)
 robot|none menu: Use
 robot|none click: Click: Use
-ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
@@ -120,5 +118,5 @@ human|/obj/item/borg/upgrade/shield_upgrade menu: Toggle Shield (refused: You ca
 human|/obj/item/borg/upgrade/shield_upgrade menu: Upgrade
 human|/obj/item/borg/upgrade/shield_upgrade menu: Use
 human|/obj/item/borg/upgrade/shield_upgrade click: Click: Upgrade
-keys: alt, collect_item, destroy_cell, drag_buckle, gen_silicon_item_silicon_equip_module, hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, recolor, remove_cell, toggle_digestable, toggle_shield_effect, upgrade, weapon_toggle_effect
+keys: alt, collect_item, destroy_cell, drag_buckle, equip_module, hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, recolor, remove_cell, toggle_digestable, toggle_shield_effect, upgrade, weapon_toggle_effect
 

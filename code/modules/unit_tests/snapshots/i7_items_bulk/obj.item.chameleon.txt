@@ -1,5 +1,5 @@
 /obj/item/chameleon|human|none => |
-/obj/item/chameleon|robot|none => |gen_silicon_item_silicon_equip_module:not possible right now
-/obj/item/chameleon|ai|none => |gen_silicon_item_silicon_equip_module:not possible right now
+/obj/item/chameleon|robot|none => |
+/obj/item/chameleon|ai|none => |
 /obj/item/chameleon|ghost|none => |
 

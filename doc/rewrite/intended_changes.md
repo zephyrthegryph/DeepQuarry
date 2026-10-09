@@ -3995,3 +3995,14 @@ Every site that declared `DECLARE_INTERACTIONS`, `EXTEND_INTERACTIONS` or a `/da
 * **Mecha ladders:** a welder step of the chassis ladder burns no fuel again (`costs(RES_FUEL, 0)`, the old `remove_fuel(0)`). Where the tool that undoes a step also builds the next, a click builds;
   the way back is the menu entry `construction.undo:<stage>`.
 * **Cyborg tools in harm intent:** the crowbar and welder acts answer `NONE` (not `SKIP_TO_ATTACK`) when no op takes them; the swing follows all the same.
+* **Pins blessed with this conversion (`dq_conversion_pin`, `dq_hit_pin`, the i7 snapshots):** by class, none of them a click that stopped answering.
+  - A holder's abilities (`when(req_self())`) are in its own menu only. The legacy pins listed every ability on every living mob as "(refused: you don't have that ability)".
+  - The eight living defaults and the attack variants are listed with their label for every stance (`Help`, `Shove`, `Take hold`, `Punch`, `Use on`, `Shove with`, `Hold with`, `Hit`) and
+    no longer carry "(refused: combat mode is off)" / "(refused: hold Grab)": a stance narrows a click, not a menu pick. A plain click still picks by stance (`click:` rows read `Click: Help`
+    where the legacy pins read `nothing`, because the defaults were not visible to the resolver).
+  - A tool or item op is listed only for a held item that fits its input; the rows "(refused: needs a welder)" / "(refused: needs a Ripley Torso)" are gone.
+  - Construction ladders, ability, mecha, girder, window, floor, wall, cyborg and replicator rows carry the op labels (`Build frame one leg`, `Cut through the plating`, `Insert`) in place of
+    the legacy edge names; the `keys:` rows list op keys, not interaction ids.
+  - The hit pin's rows are what current `origin/master` records already (its recorded rows were stale: `emag` on an energy field, plants, chameleon guns); the branch adds only the
+    `refresh_queued` rows of `mecha_parts/component` and `mecha_tracking`, which the chassis `draw()` brings.
+  - The i7 snapshots record the legacy resolver's ids and blocked reasons: the construction edges, the silicon equip-module spec and the disposal ids are ops now.

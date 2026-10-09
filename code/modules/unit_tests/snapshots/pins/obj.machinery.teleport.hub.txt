@@ -3,7 +3,7 @@ robot|none menu: Blocked (refused: not possible right now)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none menu: Follow the link
-ghost|none click: nothing
+ghost|none click: Click: Follow the link
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: nothing
@@ -36,5 +36,5 @@ human|/obj/item/card/id click: nothing
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: nothing
-keys: drag_buckle, gen_observer_hub_ghost_follow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked
+keys: drag_buckle, ghost_follow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked
 

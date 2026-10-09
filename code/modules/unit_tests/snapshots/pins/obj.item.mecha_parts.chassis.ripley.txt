@@ -1,131 +1,101 @@
-human|none menu: Attach a Ripley Left Arm (refused: needs a Ripley Left Arm)
-human|none menu: Attach a Ripley Left Leg (refused: needs a Ripley Left Leg)
-human|none menu: Attach a Ripley Right Arm (refused: needs a Ripley Right Arm)
-human|none menu: Attach a Ripley Right Leg (refused: needs a Ripley Right Leg)
-human|none menu: Attach a Ripley Torso (refused: needs a Ripley Torso)
 human|none menu: Move To Top
 human|none menu: Pick up
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none menu: Use
 human|none click: Click: Use
-robot|none menu: Attach a Ripley Left Arm (refused: needs a Ripley Left Arm)
-robot|none menu: Attach a Ripley Left Leg (refused: needs a Ripley Left Leg)
-robot|none menu: Attach a Ripley Right Arm (refused: needs a Ripley Right Arm)
-robot|none menu: Attach a Ripley Right Leg (refused: needs a Ripley Right Leg)
-robot|none menu: Attach a Ripley Torso (refused: needs a Ripley Torso)
-robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use
 robot|none click: Click: Use
-ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Attach a Ripley Left Arm (refused: needs a Ripley Left Arm)
-human|/obj/item/tool/screwdriver menu: Attach a Ripley Left Leg (refused: needs a Ripley Left Leg)
-human|/obj/item/tool/screwdriver menu: Attach a Ripley Right Arm (refused: needs a Ripley Right Arm)
-human|/obj/item/tool/screwdriver menu: Attach a Ripley Right Leg (refused: needs a Ripley Right Leg)
-human|/obj/item/tool/screwdriver menu: Attach a Ripley Torso (refused: needs a Ripley Torso)
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Use
-human|/obj/item/tool/crowbar menu: Attach a Ripley Left Arm (refused: needs a Ripley Left Arm)
-human|/obj/item/tool/crowbar menu: Attach a Ripley Left Leg (refused: needs a Ripley Left Leg)
-human|/obj/item/tool/crowbar menu: Attach a Ripley Right Arm (refused: needs a Ripley Right Arm)
-human|/obj/item/tool/crowbar menu: Attach a Ripley Right Leg (refused: needs a Ripley Right Leg)
-human|/obj/item/tool/crowbar menu: Attach a Ripley Torso (refused: needs a Ripley Torso)
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Use
-human|/obj/item/tool/wrench menu: Attach a Ripley Left Arm (refused: needs a Ripley Left Arm)
-human|/obj/item/tool/wrench menu: Attach a Ripley Left Leg (refused: needs a Ripley Left Leg)
-human|/obj/item/tool/wrench menu: Attach a Ripley Right Arm (refused: needs a Ripley Right Arm)
-human|/obj/item/tool/wrench menu: Attach a Ripley Right Leg (refused: needs a Ripley Right Leg)
-human|/obj/item/tool/wrench menu: Attach a Ripley Torso (refused: needs a Ripley Torso)
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Use
-human|/obj/item/tool/wirecutters menu: Attach a Ripley Left Arm (refused: needs a Ripley Left Arm)
-human|/obj/item/tool/wirecutters menu: Attach a Ripley Left Leg (refused: needs a Ripley Left Leg)
-human|/obj/item/tool/wirecutters menu: Attach a Ripley Right Arm (refused: needs a Ripley Right Arm)
-human|/obj/item/tool/wirecutters menu: Attach a Ripley Right Leg (refused: needs a Ripley Right Leg)
-human|/obj/item/tool/wirecutters menu: Attach a Ripley Torso (refused: needs a Ripley Torso)
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Use
-human|/obj/item/multitool menu: Attach a Ripley Left Arm (refused: needs a Ripley Left Arm)
-human|/obj/item/multitool menu: Attach a Ripley Left Leg (refused: needs a Ripley Left Leg)
-human|/obj/item/multitool menu: Attach a Ripley Right Arm (refused: needs a Ripley Right Arm)
-human|/obj/item/multitool menu: Attach a Ripley Right Leg (refused: needs a Ripley Right Leg)
-human|/obj/item/multitool menu: Attach a Ripley Torso (refused: needs a Ripley Torso)
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Use
-human|/obj/item/weldingtool menu: Attach a Ripley Left Arm (refused: needs a Ripley Left Arm)
-human|/obj/item/weldingtool menu: Attach a Ripley Left Leg (refused: needs a Ripley Left Leg)
-human|/obj/item/weldingtool menu: Attach a Ripley Right Arm (refused: needs a Ripley Right Arm)
-human|/obj/item/weldingtool menu: Attach a Ripley Right Leg (refused: needs a Ripley Right Leg)
-human|/obj/item/weldingtool menu: Attach a Ripley Torso (refused: needs a Ripley Torso)
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Use
-human|/obj/item/stack/cable_coil menu: Attach a Ripley Left Arm (refused: needs a Ripley Left Arm)
-human|/obj/item/stack/cable_coil menu: Attach a Ripley Left Leg (refused: needs a Ripley Left Leg)
-human|/obj/item/stack/cable_coil menu: Attach a Ripley Right Arm (refused: needs a Ripley Right Arm)
-human|/obj/item/stack/cable_coil menu: Attach a Ripley Right Leg (refused: needs a Ripley Right Leg)
-human|/obj/item/stack/cable_coil menu: Attach a Ripley Torso (refused: needs a Ripley Torso)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Use
-human|/obj/item/stack/material/steel menu: Attach a Ripley Left Arm (refused: needs a Ripley Left Arm)
-human|/obj/item/stack/material/steel menu: Attach a Ripley Left Leg (refused: needs a Ripley Left Leg)
-human|/obj/item/stack/material/steel menu: Attach a Ripley Right Arm (refused: needs a Ripley Right Arm)
-human|/obj/item/stack/material/steel menu: Attach a Ripley Right Leg (refused: needs a Ripley Right Leg)
-human|/obj/item/stack/material/steel menu: Attach a Ripley Torso (refused: needs a Ripley Torso)
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
-human|/obj/item/card/id menu: Attach a Ripley Left Arm (refused: needs a Ripley Left Arm)
-human|/obj/item/card/id menu: Attach a Ripley Left Leg (refused: needs a Ripley Left Leg)
-human|/obj/item/card/id menu: Attach a Ripley Right Arm (refused: needs a Ripley Right Arm)
-human|/obj/item/card/id menu: Attach a Ripley Right Leg (refused: needs a Ripley Right Leg)
-human|/obj/item/card/id menu: Attach a Ripley Torso (refused: needs a Ripley Torso)
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
-human|/obj/item/kit menu: Attach a Ripley Left Arm (refused: needs a Ripley Left Arm)
-human|/obj/item/kit menu: Attach a Ripley Left Leg (refused: needs a Ripley Left Leg)
-human|/obj/item/kit menu: Attach a Ripley Right Arm (refused: needs a Ripley Right Arm)
-human|/obj/item/kit menu: Attach a Ripley Right Leg (refused: needs a Ripley Right Leg)
-human|/obj/item/kit menu: Attach a Ripley Torso (refused: needs a Ripley Torso)
 human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Move To Top
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/kit menu: Use
 human|/obj/item/kit click: Click: Customise
-human|/obj/item/storage menu: Attach a Ripley Left Arm (refused: needs a Ripley Left Arm)
-human|/obj/item/storage menu: Attach a Ripley Left Leg (refused: needs a Ripley Left Leg)
-human|/obj/item/storage menu: Attach a Ripley Right Arm (refused: needs a Ripley Right Arm)
-human|/obj/item/storage menu: Attach a Ripley Right Leg (refused: needs a Ripley Right Leg)
-human|/obj/item/storage menu: Attach a Ripley Torso (refused: needs a Ripley Torso)
 human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage menu: Use
 human|/obj/item/storage click: Click: Use
-keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, hand, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable
+human|/obj/item/mecha_parts/part/ripley_torso menu: Attach part
+human|/obj/item/mecha_parts/part/ripley_torso menu: Move To Top
+human|/obj/item/mecha_parts/part/ripley_torso menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mecha_parts/part/ripley_torso menu: Use
+human|/obj/item/mecha_parts/part/ripley_torso click: Click: Attach part
+human|/obj/item/mecha_parts/part/ripley_left_arm menu: Attach part
+human|/obj/item/mecha_parts/part/ripley_left_arm menu: Move To Top
+human|/obj/item/mecha_parts/part/ripley_left_arm menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mecha_parts/part/ripley_left_arm menu: Use
+human|/obj/item/mecha_parts/part/ripley_left_arm click: Click: Attach part
+human|/obj/item/mecha_parts/part/ripley_right_arm menu: Attach part
+human|/obj/item/mecha_parts/part/ripley_right_arm menu: Move To Top
+human|/obj/item/mecha_parts/part/ripley_right_arm menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mecha_parts/part/ripley_right_arm menu: Use
+human|/obj/item/mecha_parts/part/ripley_right_arm click: Click: Attach part
+human|/obj/item/mecha_parts/part/ripley_left_leg menu: Attach part
+human|/obj/item/mecha_parts/part/ripley_left_leg menu: Move To Top
+human|/obj/item/mecha_parts/part/ripley_left_leg menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mecha_parts/part/ripley_left_leg menu: Use
+human|/obj/item/mecha_parts/part/ripley_left_leg click: Click: Attach part
+human|/obj/item/mecha_parts/part/ripley_right_leg menu: Attach part
+human|/obj/item/mecha_parts/part/ripley_right_leg menu: Move To Top
+human|/obj/item/mecha_parts/part/ripley_right_leg menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mecha_parts/part/ripley_right_leg menu: Use
+human|/obj/item/mecha_parts/part/ripley_right_leg click: Click: Attach part
+human|/obj/item/circuitboard/mecha/ripley/main menu: Move To Top
+human|/obj/item/circuitboard/mecha/ripley/main menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/circuitboard/mecha/ripley/main menu: Use
+human|/obj/item/circuitboard/mecha/ripley/main click: Click: Use
+human|/obj/item/circuitboard/mecha/ripley/peripherals menu: Move To Top
+human|/obj/item/circuitboard/mecha/ripley/peripherals menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/circuitboard/mecha/ripley/peripherals menu: Use
+human|/obj/item/circuitboard/mecha/ripley/peripherals click: Click: Use
+human|/obj/item/stack/material/plasteel menu: Move To Top
+human|/obj/item/stack/material/plasteel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/plasteel menu: Use
+human|/obj/item/stack/material/plasteel click: Click: Use
+keys: attach, collect_item, construction.build:mecha_step_1, construction.build:mecha_step_10, construction.build:mecha_step_11, construction.build:mecha_step_12, construction.build:mecha_step_13, construction.build:mecha_step_14, construction.build:mecha_step_2, construction.build:mecha_step_3, construction.build:mecha_step_4, construction.build:mecha_step_5, construction.build:mecha_step_6, construction.build:mecha_step_7, construction.build:mecha_step_8, construction.build:mecha_step_9, construction.undo:mecha_step_1, construction.undo:mecha_step_10, construction.undo:mecha_step_11, construction.undo:mecha_step_12, construction.undo:mecha_step_13, construction.undo:mecha_step_2, construction.undo:mecha_step_3, construction.undo:mecha_step_4, construction.undo:mecha_step_5, construction.undo:mecha_step_6, construction.undo:mecha_step_7, construction.undo:mecha_step_8, construction.undo:mecha_step_9, drag_buckle, equip_module, hand, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable
 
