@@ -304,7 +304,7 @@
 /datum/unit_test/dq_hc_silicon/robot_name_is_picked_once/run_gate()
 	var/mob/living/silicon/robot/R = make_borg()
 	R.custom_name = ""
-	R.dq_do_pick_name(R, null, null)
+	R.ability_pick_name(null)
 	hci_answer(R, "Bolt-9")
 	settle()
 	TEST_ASSERT_EQUAL(R.custom_name, "Bolt-9", "the answer is the borg's name")
@@ -476,11 +476,11 @@
 	var/list/saved_locations = GLOB.tagger_locations
 	GLOB.tagger_locations = list("Disposals" = 1)
 	var/tag = "Disposals"
-	D.dq_do_set_mail_tag(D, null, null)
+	D.ability_set_mail_tag(null)
 	hci_answer(D, tag)
 	settle()
 	TEST_ASSERT_EQUAL(D.mail_destination, tag, "the picked destination is the drone's tag")
-	D.dq_do_set_mail_tag(D, null, null)
+	D.ability_set_mail_tag(null)
 	hci_answer(D, null, TRUE)
 	settle()
 	GLOB.tagger_locations = saved_locations

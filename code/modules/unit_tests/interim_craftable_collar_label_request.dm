@@ -25,7 +25,6 @@
 	TEST_ASSERT(istype(label_op) && label_op.oplan?.key == "craftable_collar_self", "the collar's own label op owns the label request (the engine's pending op, not the collar)")
 	TEST_ASSERT_EQUAL(label.answerer, user, "the label keeps the original real actor")
 	TEST_ASSERT_EQUAL(label.captured_item, collar, "the inherited relation preserves the original self-entry held argument")
-	TEST_ASSERT(!label.interaction_expected, "the op engine hands no interaction record, so the label request expects none")
 	test_answer(user, "Handmade label")
 	TEST_ASSERT_EQUAL(collar.given_name, "Handmade label", "the real accepted continuation writes the handmade label")
 	TEST_ASSERT_EQUAL(collar.name, "handmade collar (Original tag)", "parent-first replay preserves the existing engraved tag")

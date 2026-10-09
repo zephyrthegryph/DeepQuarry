@@ -388,6 +388,7 @@
 #include "dq_i7_structures_bulk_capture.dm"
 #include "dq_i7_items_bulk_capture.dm"
 #include "dq_interaction_tests.dm"
+#include "dq_domain_snapshot.dm"
 #include "dq_snapshot_files.dm"
 #include "dq_chem_math_pins.dm"
 #include "dq_reagents_start_snapshot.dm"

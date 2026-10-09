@@ -125,7 +125,7 @@ CAPABILITIES(/obj/dq_combat_probe)
 	TEST_ASSERT_EQUAL(on_probe?.outcome, ACT_REFUSED, "Disarm isn't offered on objects")
 
 /// Runs the Disarm or Grab op of `target` for `actor`, as the Menu does. TRUE if it committed.
-/datum/unit_test/proc/dq_attack_variant_op(mob/actor, atom/target, variant)
+/proc/dq_attack_variant_op(mob/actor, atom/target, variant)
 	var/datum/op_result/result = perform_op(actor, target, variant == ATTACK_VARIANT_GRAB ? "attack_variants.grab" : "attack_variants.disarm", null, ORIGIN_MENU)
 	return result?.outcome == ACT_COMMITTED
 

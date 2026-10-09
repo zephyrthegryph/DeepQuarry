@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Interactions are ops: living-mob defaults, cyborg tools, the gripper, abilities, construction steps and the remaining legacy declarations; DECLARE_INTERACTIONS and its relatives are removed"

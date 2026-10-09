@@ -3868,3 +3868,33 @@ look-state probes are narrowed to the vars `analyze look-keys` finds a draw read
   and the sweep's spot is restored by `ChangeTurf(old_type)`, which keeps state of the turf before it. Proposed fix: make each
   turf probe on a fresh tile of the template's floor type (`ChangeTurf` from a canonical turf, then drop `landed_holder`), then bless the one rule.
 * **Harness:** the bless writes CRLF and a lone newline for an empty row set; the committed files are LF and empty files stay empty, so those were normalised back.
+
+## Interactions to ops (rewrite/interactions)
+
+Every site that declared `DECLARE_INTERACTIONS`, `EXTEND_INTERACTIONS` or a `/datum/interaction` subtype in production code is an op now. The forms are deleted and hard-banned
+(`[lint.legacy_forms.lists] banned` in `tools/ci/lint_scopes.toml`): `DECLARE_INTERACTIONS`, `EXTEND_INTERACTIONS`, every `INTERACT_*` spec, `get_interactions()` /
+`declare_interactions()`, `dq_interaction_from_spec()`, `run_interaction_entry()`, `DECLARE_EMAG*`, `/datum/interaction/{construction,ability,emag,generic}`, `/datum/construction_graph`,
+`grant_ability()` / `revoke_ability()`. What is still there is the `/datum/interaction` base and the `cap_op()` / `cap_slot()` bridge, because `/obj/machinery/computer/med_data` (Codex's
+`code/game/machinery`) still declares its ID slot and records window through `capabilities()`.
+
+* **Living mobs:** the eight defaults (help, shove, take hold, punch with a hand; use on, shove with, hold with, hit with an item) are `touch_*` / `hit_*` ops in `CAPABILITIES(/mob/living)` at
+  `OP_PRIORITY_DEFAULT`. A swing's click parameters and modifier (a cleave's 0.5, an off-hand swing) are set around the whole swing in `resolve_attackby()`, not inside `attackby()`.
+  `attackby()` is the gate (`attackby_stopped()`) and `attack_hand()` is `hand_gate()`: code that calls `M.attackby(W, user)` directly no longer reaches the hit; use `item_used_on(W, user)`
+  (the holder's forward to the creatures inside, the cyborg's radio forwards).
+* **Cyborgs:** crowbar, welder, wirecutter / multitool, screwdriver and wrench on a chassis, the item and touch handlers and the AI's shell deploy are `robot_interactions()` ops (the `*_act`
+  overrides are deleted). The crowbar and welder answer outside harm intent only, as before. The wrench takes `wait(2 SECONDS)` with a start message. The old "Block drag" entry is gone: it
+  swallowed a drag nothing else took, and `MouseDrop_T` now does nothing by default.
+* **Gripper:** the pocket ring is the `pocket_menu` op (`asks()` radial, `claims(CLAIM_TARGET)`); closing it without a choice uses the wrapped item (`on_interrupt`), as before. The gripper is
+  "in use" while the op holds it (`op_claimed()`), so the `in_radial_menu` var is gone and a second click gets the engine's "claimed" refusal. An answer dropped for being out of reach also
+  falls through to the wrapped item (before: nothing).
+* **Abilities (robot, drone, platform, shadekin, attack variants):** each ability is an op with `menu(button =, bind =)` in a capability, granted with `grant()`. The keybind ids and `.use-ability`
+  keys are kept (`ability_<old id>`; the op key is `<capability>.<op>`). Targeted abilities (regenerate other, robot nom, robot mount) ask for a choice among adjacent candidates instead of
+  taking the hovered target. Dark maw and dark tunnelling are `wait()` channels. Shadekin energy is a requirement plus a spend in the effect (no `RES_DARK_ENERGY` adapter reads the shadekin
+  state yet); the phase shift's watcher cost is recomputed in the effect, not cached in a mob var. Disarm and Grab on a living target are ops (`attack_variants.disarm` / `.grab`), not ranked by combat mode.
+* **Construction:** vehicle and bot assemblies and the mecha chassis are `construction()` ladders. Wall, floor, window, girder and mech-maintenance steps are ops with `when()` conditions on
+  their existing state vars (`construction_stage`, `anchored`, `state`, ...), not ladders: other code writes those vars, and a ladder would be a second copy of the stage. Tool sounds, volumes
+  and waits follow the tool profile, not the old per-edge values (wall cut by an energy blade or pickaxe scales by the tool speed; the floor plating cut is now scaled). A chassis undo
+  refunds exactly what the step took in (the micro mechs' steel and plasteel refunds become the 5 that went in). The old "Next: ..." step lines in examine and menus are gone.
+* **Emag:** the legacy `DECLARE_EMAG` path had no users left; `emag_target()` runs the target's `emag.subvert` op only, and the card's overrides in `cards.dm` are deleted.
+* **Replicator, sticky notes, slimes, holders:** insert is an op with a `req()` that keeps `can_insert()`'s reason; a sticky note's pick-up extends the item's `pick_up_item` op; a xenobio slime's
+  wrestle-off is an op that only answers while it eats someone; the holder's item op passes the input on (`passes()`), as the old handler did.
