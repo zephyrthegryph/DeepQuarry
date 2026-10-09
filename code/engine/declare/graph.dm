@@ -46,8 +46,8 @@ GLOBAL_VAR_INIT(stage_defs_built, FALSE)
 	return entry_make("graph_at", null, list("space" = space_id))
 
 /// dismantle(parts..., ruined(...)): what taking the whole thing apart does; the op compiler (code/engine/parts/graph_ops.dm) reads its parts.
-/proc/dismantle(ENTRY_SLOTS)
-	return entry_make("graph_dismantle", null, null, entry_flatten(ENTRY_SLOT_LIST))
+/proc/dismantle(...)
+	return entry_make("graph_dismantle", null, null, entry_flatten(args.Copy()))
 
 /// ruined(condition, parts...): inside dismantle(). When the condition holds at the moment of dismantling (a condition of section 9: nameof(var),
 /// a stat or capability key id, cond_not/cond_all/cond_any, or a PROC_REF / TYPE_PROC_REF of x(datum/act/A) answering TRUE or FALSE, evaluated
@@ -248,12 +248,12 @@ CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT, /datum/capability/construction
 
 /// construction(GRAPH_X | start(STAGE_X), stage(...), ..., dismantle(...), at(BAY_X)): a build ladder, a graph with a ledger and an
 /// operability contribution (E3 reads req_built_final from the graph's capability).
-/proc/construction(ENTRY_SLOTS, p7, p8, p9, p10)
-	return graph_capability(CAP_CONSTRUCTION, "construction", list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10))
+/proc/construction(...)
+	return graph_capability(CAP_CONSTRUCTION, "construction", args.Copy())
 
 /// deployment(...): the same graph under its own key CAP_DEPLOYMENT and prefix, with no operability contribution.
-/proc/deployment(ENTRY_SLOTS, p7, p8, p9, p10)
-	return graph_capability(CAP_DEPLOYMENT, "deployment", list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10))
+/proc/deployment(...)
+	return graph_capability(CAP_DEPLOYMENT, "deployment", args.Copy())
 
 /proc/graph_capability(cap_id, prefix, list/call_args)
 	call_args = entry_flatten(call_args)

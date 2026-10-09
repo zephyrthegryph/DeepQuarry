@@ -11,22 +11,18 @@ MSG_DEF_SELF(floor/nothing_under, "There is nothing under it to expose by cuttin
 MSG_DEF_SELF(floor/structures_on, "It has structures that must be removed before cutting.")
 
 /// The ops that take a floor apart.
-/proc/floor_construction()
+/turf/simulated/floor/proc/floor_construction()
 	return list(
 		op("pry_covering", tool(TOOL_CROWBAR), stance(I_HELP), when(TYPE_PROC_REF(/turf/simulated/floor, can_pry_covering)), label("Pry off the floor covering"), wait(0), then(TYPE_PROC_REF(/turf/simulated/floor, covering_pried))),
 		op("unscrew_covering", tool(TOOL_SCREWDRIVER), stance(I_HELP), when(TYPE_PROC_REF(/turf/simulated/floor, can_unscrew_covering)), label("Unscrew the floor covering"), wait(0), then(TYPE_PROC_REF(/turf/simulated/floor, covering_unscrewed))),
 		op("unwrench_covering", tool(TOOL_WRENCH), stance(I_HELP), when(TYPE_PROC_REF(/turf/simulated/floor, can_unwrench_covering)), label("Unwrench the floor covering"), wait(0), then(TYPE_PROC_REF(/turf/simulated/floor, covering_unwrenched))),
-		op("weld_dents", lit_welder(fuel = 0), stance(I_HELP), priority(OP_PRIORITY_PART + 1), when(TYPE_PROC_REF(/turf/simulated/floor, plating_damaged)), label("Weld the dents out of the plating"), wait(0), says(MSG(floor/dents_fixed)), then(TYPE_PROC_REF(/turf/simulated/floor, dents_welded))),
+		op("weld_dents", lit_welder(fuel = 0), stance(I_HELP), priority(OP_PRIORITY_PART + 1), when(TYPE_PROC_REF(/turf/simulated/floor, plating_bare)), when(any_of(req_is(nameof(broken)), req_is(nameof(burnt)))), label("Weld the dents out of the plating"), wait(0), says(MSG(floor/dents_fixed)), then(TYPE_PROC_REF(/turf/simulated/floor, dents_welded))),
 		// slow because cutting into space in the middle of the bar is a hostile act; the tool's speed doesn't help
-		op("cut_plating", lit_welder(fuel = 5), stance(I_HELP), when(TYPE_PROC_REF(/turf/simulated/floor, plating_intact)), needs(req(TYPE_PROC_REF(/turf/simulated/floor, plating_has_base), because = MSG(floor/nothing_under)), req(TYPE_PROC_REF(/turf/simulated/floor, plating_clear), because = MSG(floor/structures_on))), label("Cut through the plating"), wait(10 SECONDS), begins(MSG(floor/cut_begins)), then(TYPE_PROC_REF(/turf/simulated/floor, plating_cut))))
+		op("cut_plating", lit_welder(fuel = 5), stance(I_HELP), when(TYPE_PROC_REF(/turf/simulated/floor, plating_bare)), when(req_is(nameof(broken), FALSE)), when(req_is(nameof(burnt), FALSE)), needs(req(TYPE_PROC_REF(/turf/simulated/floor, plating_has_base), because = MSG(floor/nothing_under)), req(TYPE_PROC_REF(/turf/simulated/floor, plating_clear), because = MSG(floor/structures_on))), label("Cut through the plating"), wait(10 SECONDS), begins(MSG(floor/cut_begins)), then(TYPE_PROC_REF(/turf/simulated/floor, plating_cut))))
 
-/// Bare plating that is neither broken nor burnt.
-/turf/simulated/floor/proc/plating_intact(datum/act/A)
-	return read_once(is_plating() && !broken && !burnt)
-
-/// Bare plating that is broken or burnt.
-/turf/simulated/floor/proc/plating_damaged(datum/act/A)
-	return read_once(is_plating() && (broken || burnt))
+/// Bare plating (broken and burnt are tracked and tested by req_is).
+/turf/simulated/floor/proc/plating_bare(datum/act/A)
+	return read_once(is_plating())
 
 /turf/simulated/floor/proc/can_pry_covering(datum/act/A)
 	return read_once(!is_plating() && (broken || burnt || (flooring.flags & (TURF_IS_FRAGILE | TURF_REMOVE_CROWBAR))))

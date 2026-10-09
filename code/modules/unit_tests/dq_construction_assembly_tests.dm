@@ -40,6 +40,7 @@
 /datum/unit_test/dq_construction_quadbike
 
 /datum/unit_test/dq_construction_quadbike/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/vehicle_assembly/quadbike/assembly = allocate(/obj/item/vehicle_assembly/quadbike, T)
@@ -81,6 +82,7 @@
 /datum/unit_test/dq_construction_quadbike_to_trailer
 
 /datum/unit_test/dq_construction_quadbike_to_trailer/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/vehicle_assembly/quadbike/assembly = allocate(/obj/item/vehicle_assembly/quadbike, T)
@@ -100,6 +102,7 @@
 /datum/unit_test/dq_construction_quadtrailer
 
 /datum/unit_test/dq_construction_quadtrailer/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/vehicle_assembly/quadtrailer/trailer = allocate(/obj/item/vehicle_assembly/quadtrailer, T)
@@ -121,6 +124,7 @@
 /datum/unit_test/dq_construction_quadtrailer_rejects_advanced_quadbike
 
 /datum/unit_test/dq_construction_quadtrailer_rejects_advanced_quadbike/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/vehicle_assembly/quadtrailer/trailer = allocate(/obj/item/vehicle_assembly/quadtrailer, T)
@@ -136,6 +140,7 @@
 /datum/unit_test/dq_construction_spacebike
 
 /datum/unit_test/dq_construction_spacebike/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/vehicle_assembly/spacebike/assembly = allocate(/obj/item/vehicle_assembly/spacebike, T)
@@ -169,6 +174,7 @@
 /datum/unit_test/dq_construction_snowmobile
 
 /datum/unit_test/dq_construction_snowmobile/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/vehicle_assembly/snowmobile/assembly = allocate(/obj/item/vehicle_assembly/snowmobile, T)
@@ -201,6 +207,7 @@
 /datum/unit_test/dq_construction_secbot_assembly
 
 /datum/unit_test/dq_construction_secbot_assembly/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/secbot_assembly/assembly = allocate(/obj/item/secbot_assembly, T)
@@ -226,6 +233,7 @@
 /datum/unit_test/dq_construction_secbot_assembly_slime_baton
 
 /datum/unit_test/dq_construction_secbot_assembly_slime_baton/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/secbot_assembly/assembly = allocate(/obj/item/secbot_assembly, T)
@@ -241,6 +249,7 @@
 /datum/unit_test/dq_construction_ed209_assembly
 
 /datum/unit_test/dq_construction_ed209_assembly/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/secbot_assembly/ed209_assembly/assembly = allocate(/obj/item/secbot_assembly/ed209_assembly, T)
@@ -274,6 +283,7 @@
 /datum/unit_test/dq_construction_ed209_assembly_xeno_taser_swap
 
 /datum/unit_test/dq_construction_ed209_assembly_xeno_taser_swap/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/secbot_assembly/ed209_assembly/assembly = allocate(/obj/item/secbot_assembly/ed209_assembly, T)
@@ -293,6 +303,7 @@
 /datum/unit_test/dq_construction_sled209_assembly
 
 /datum/unit_test/dq_construction_sled209_assembly/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/secbot_assembly/ed209_assembly/slime/assembly = allocate(/obj/item/secbot_assembly/ed209_assembly/slime, T)
@@ -320,6 +331,7 @@
 /datum/unit_test/dq_construction_edCLN_assembly
 
 /datum/unit_test/dq_construction_edCLN_assembly/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/secbot_assembly/edCLN_assembly/assembly = allocate(/obj/item/secbot_assembly/edCLN_assembly, T)
@@ -341,3 +353,46 @@
 	var/mob/living/bot/cleanbot/edCLN/bot = own(locate_on(T, /mob/living/bot/cleanbot/edCLN))
 	TEST_ASSERT(bot, "the finished ED-CLN is on the turf")
 	TEST_ASSERT_EQUAL(bot.name, "Test ED-CLN", "the custom name carried over")
+
+// ---- A ladder is not capped at a fixed number of stages ----
+
+STAGE_DEF(dq_long, s0)
+STAGE_DEF(dq_long, s1)
+STAGE_DEF(dq_long, s2)
+STAGE_DEF(dq_long, s3)
+STAGE_DEF(dq_long, s4)
+STAGE_DEF(dq_long, s5)
+STAGE_DEF(dq_long, s6)
+STAGE_DEF(dq_long, s7)
+STAGE_DEF(dq_long, s8)
+STAGE_DEF(dq_long, s9)
+STAGE_DEF(dq_long, s10)
+STAGE_DEF(dq_long, s11)
+STAGE_DEF(dq_long, s12)
+STAGE_DEF(dq_long, s13)
+STAGE_DEF(dq_long, s14)
+STAGE_DEF(dq_long, s15)
+
+/// construction() takes any number of entries: a start and fifteen stages compile to fifteen edges, none dropped.
+/datum/unit_test/dq_construction_long_ladder
+
+/datum/unit_test/dq_construction_long_ladder/Run()
+	var/datum/capability/construction/def = construction(
+		start(STAGE_DQ_LONG_S0),
+		stage(STAGE_DQ_LONG_S1, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S2, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S3, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S4, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S5, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S6, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S7, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S8, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S9, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S10, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S11, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S12, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S13, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S14, item(/obj/item/p2_scrap), undo = NO_UNDO),
+		stage(STAGE_DQ_LONG_S15, item(/obj/item/p2_scrap), undo = NO_UNDO))
+	TEST_ASSERT_NOTNULL(def?.graph, "the long ladder compiles")
+	TEST_ASSERT_EQUAL(length(def.graph.edges), 15, "all fifteen stages became edges")
