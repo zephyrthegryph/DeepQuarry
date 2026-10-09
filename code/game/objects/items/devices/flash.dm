@@ -66,12 +66,13 @@ CAPABILITIES(/obj/item/flash)
 		return
 	if(prob(30))
 		act_message(user, src, others = span_notice("%U% successfully repairs %T%!"))
-		broken = FALSE
-		changed(src)
+		set_broken(FALSE)
 	playsound(src, tool.usesound, 50, 1)
 
 /obj/item/flash/proc/screwdriver_act_tool_failed(mob/user, obj/item/tool)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " fails to repair %T%."))
+
+TRACKED(/obj/item/flash, broken)
 
 /obj/item/flash/draw(datum/look/look)
 	..()
@@ -129,7 +130,6 @@ CAPABILITIES(/obj/item/flash)
 
 	COOLDOWN_START(src, use_cooldown, 10 SECONDS)
 	times_used = max(0,round(times_used)) //sanity
-	changed(src)
 
 // Returns true if the device can flash.
 /obj/item/flash/proc/check_capacitor(mob/user)
@@ -143,30 +143,25 @@ CAPABILITIES(/obj/item/flash)
 	if(times_used <= max_flashes && battery && battery.charge >= charge_cost)
 		COOLDOWN_START(src, use_cooldown, 10 SECONDS)
 		if(one_use)
-			broken = TRUE
+			set_broken(TRUE)
 			if(user)
 				to_chat(user, span_warning("The bulb has burnt out!"))
-			changed(src)
 			return TRUE
 		if(prob( max(0, times_used - safe_flashes) * 2 + (times_used >= safe_flashes)) && can_break)	//if you use it 10 times in a minute it has a 30% chance to break.
-			broken = TRUE
+			set_broken(TRUE)
 			if(user)
 				to_chat(user, span_warning("The bulb has burnt out!"))
-			changed(src)
 			return FALSE
 		else
 			times_used++
-			changed(src)
 			return TRUE
 	else if(!charge_only)	//can only use it 10 times a minute, unless it runs purely on charge.
 		if(user)
-			changed(src)
 			to_chat(user, span_warning(span_italics("click")))
 			play_sfx(src, SFX_WEAPONS_EMPTY, 1.6)
 		return FALSE
 	else if(battery && battery.checked_use(charge_cost + (round(charge_cost / 4) * max(0, times_used - max_flashes)))) // Using over your maximum flashes starts taking more charge per added flash.
 		times_used++
-		changed(src)
 		return TRUE
 
 //attack_as_weapon

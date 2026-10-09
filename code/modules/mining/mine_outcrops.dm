@@ -117,7 +117,7 @@ MSG_DEF(outcrop/hacking, span_notice("%U% begins to hack away at %T%."), span_no
 		play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST)
 		user.visible_message(span_warning("\The [S] discharges with a thunderous, hair-raising crackle!"))
 		S.deductcharge()
-		S.status = 0
+		S.set_status(0)
 		S.update_held_icon()
 		consume(src, user)
 		return OP_PASS

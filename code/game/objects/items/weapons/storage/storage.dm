@@ -238,7 +238,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 					M.show_message(span_notice("\The [user] puts [W] into [src]."))
 				else if(W.w_class >= 3) //Otherwise they can only see large or normal items from a distance...
 					M.show_message(span_notice("\The [user] puts [W] into [src]."))
-	changed(src)
 	return TRUE
 
 /// insert_item() that tells `user` why when it's refused.
@@ -298,7 +297,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	if(W.maptext)
 		W.maptext = ""
 	W.on_exit_storage(src)
-	changed(src)
 	return TRUE
 
 /// Called before removal completes, allowing you to delay or cancel it. Only

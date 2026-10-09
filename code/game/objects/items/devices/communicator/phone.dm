@@ -6,7 +6,6 @@
 
 	rel_add(src, nameof(communicating), comm)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-	changed(src)
 
 // Proc: del_communicating()
 // Parameters: 1 (comm - the communicator to remove from communicating)
@@ -15,7 +14,6 @@
 	if(!comm || !istype(comm)) return
 
 	rel_remove(src, nameof(communicating), comm)
-	changed(src)
 
 // Proc: open_connection()
 // Parameters: 2 (user - the person who initiated the connecting being opened, candidate - the communicator or observer that will connect to the device)
@@ -93,7 +91,6 @@
 	blackness.mouse_opacity = 2			//Can't see anything!
 	new_voice.client.screen.Add(blackness)
 
-	changed(src)
 
 	//Now for some connection fluff.
 	if(user)
@@ -141,7 +138,6 @@
 		to_chat(voice, span_danger("[icon2html(src,voice.client)] [reason]."))
 		visible_message(span_danger("[icon2html(src,viewers(src))] [reason]."))
 		rel_remove(src, nameof(voice_mobs), voice)
-		changed(src)
 
 	for(var/obj/item/communicator/comm in communicating) //Now we handle real communicators.
 		if(target && comm != target)
@@ -182,8 +178,7 @@
 		for (var/mob/O in hearers(2, loc))
 			O.show_message(text("[icon2html(src,O.client)] *beep*"))
 
-	alert_called = 1
-	changed(src)
+	set_alert_called(1)
 
 	//Search for holder of the device.
 	var/mob/living/L = null
@@ -388,7 +383,6 @@
 	update_active_camera_screen()
 	observe(video_source, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_active_camera_screen)))
 	dq_add_recursive_move(video_source)
-	changed(src)
 
 // Proc: end_video()
 // Parameters: reason - the text reason to print for why it ended
@@ -400,4 +394,3 @@
 
 	if(reason)
 		visible_message(reason)
-	changed(src)

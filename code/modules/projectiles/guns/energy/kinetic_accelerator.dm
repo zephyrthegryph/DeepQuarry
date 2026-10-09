@@ -188,7 +188,6 @@
 /obj/item/gun/energy/kinetic_accelerator/proc/empty()
 	if(power_supply)
 		power_supply.use(power_supply.charge)
-		update_icon()
 
 /obj/item/gun/energy/kinetic_accelerator/proc/attempt_reload(recharge_time)
 	if(!power_supply)
@@ -197,8 +196,7 @@
 		return
 	if(!recharge_time)
 		recharge_time = overheat_time
-	overheat = TRUE
-	update_icon()
+	set_overheat(TRUE)
 
 	var/carried = max(1, loc.ConflictElementCount(CONFLICT_ELEMENT_KA))
 
@@ -208,14 +206,13 @@
 /obj/item/gun/energy/kinetic_accelerator/proc/reload()
 	power_supply.give(power_supply.maxcharge)
 	play_sfx(src, SFX_WEAPONS_KENETIC_RELOAD)
-	overheat = FALSE
-	update_icon()
+	set_overheat(FALSE)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/kinetic_accelerator, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/kinetic_accelerator/appearance_overlays()
-	. = list()
-	if(overheat || !power_supply || (power_supply.charge == 0))
-		. += emptystate
+TRACKED(/obj/item/gun/energy/kinetic_accelerator, overheat)
+
+/// The look: the empty lamp while it cools down or has no charge.
+/obj/item/gun/energy/kinetic_accelerator/draw_charge_state(datum/look/look)
+	look.overlay(emptystate, when = overheat || !power_supply || (power_supply.charge == 0))
 
 #define KA_ENVIRO_TYPE_COLD 0
 #define KA_ENVIRO_TYPE_HOT 1
@@ -532,7 +529,7 @@ CAPABILITIES(/obj/item/borg/upgrade/modkit)
 	if(ismineralturf(target_turf))
 		valid_repeat = TRUE
 	if(valid_repeat)
-		KA.overheat = FALSE
+		KA.set_overheat(FALSE)
 		KA.attempt_reload(KA.overheat_time * 0.25) //If you hit, the cooldown drops to 0.75 seconds.
 
 /*

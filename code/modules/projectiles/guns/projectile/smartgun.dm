@@ -29,8 +29,6 @@ MATERIAL_MIX(/obj/item/gun/projectile/smartgun, list(MAT_STEEL = 6000, MAT_DIAMO
 	var/closed = TRUE
 	var/cycling = FALSE
 
-	var/static/mutable_appearance/mag_underlay
-
 /obj/item/gun/projectile/smartgun/make_worn_icon(body_type, slot_name, inhands, default_icon, default_layer, icon/clip_mask)
 	var/image/I = ..()
 	if(I)
@@ -39,11 +37,6 @@ MATERIAL_MIX(/obj/item/gun/projectile/smartgun, list(MAT_STEEL = 6000, MAT_DIAMO
 
 /obj/item/gun/projectile/smartgun/loaded
 	magazine_type = /obj/item/ammo_magazine/smartgun
-
-/obj/item/gun/projectile/smartgun/Initialize(mapload)
-	. = ..()
-	if(!mag_underlay)
-		mag_underlay = mutable_appearance(icon, icon_state = "smartgun_mag")
 
 /obj/item/gun/projectile/smartgun/consume_next_projectile()
 	if(!closed)
@@ -78,11 +71,9 @@ CAPABILITIES(/obj/item/gun/projectile/smartgun)
 		set_cycling(TRUE)
 
 		if(closed)
-			icon_state = "[initial(icon_state)]_open"
 			play_sfx(src, SFX_WEAPONS_SMARTGUNOPEN)
 			to_chat(user, span_notice("You unready [src] so that it can be reloaded."))
 		else
-			icon_state = "[initial(icon_state)]_closed"
 			play_sfx(src, SFX_WEAPONS_SMARTGUNCLOSE)
 			to_chat(user, span_notice("You ready [src] so that it can be fired."))
 		after(src, 2 SECONDS, PROC_REF(toggle_real_state), key = "smartgun_cycle")
@@ -92,13 +83,14 @@ CAPABILITIES(/obj/item/gun/projectile/smartgun)
 	set_cycling(FALSE)
 	set_closed(!closed)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/smartgun, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/smartgun/appearance_overlays()
-	. = list()
-	. += ..()
-	underlays = null
-	if(ammo_magazine)
-		underlays += mag_underlay
+/// The look: the open or closed receiver (the target state while it cycles), and the magazine.
+/obj/item/gun/projectile/smartgun/draw(datum/look/look)
+	..()
+	if(cycling)
+		look.state("[initial(icon_state)][closed ? "_open" : "_closed"]")
+	else if(!closed)
+		look.state("[initial(icon_state)]_open")
+	look.overlay("smartgun_mag", when = !!ammo_magazine)
 
 /**
  * The bullet that flies through the air

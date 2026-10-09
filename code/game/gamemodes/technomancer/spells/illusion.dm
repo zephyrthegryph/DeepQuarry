@@ -24,7 +24,6 @@ CAPABILITIES(/obj/item/spell/illusion)
 		var/atom/movable/AM = hit_atom
 		if(pay_energy(100))
 			rel_set(src, nameof(copied), AM)
-			update_icon()
 			to_chat(user, span_notice("You've copied \the [AM]'s appearance."))
 			user << 'sound/weapons/flash.ogg'
 			return 1
@@ -71,15 +70,12 @@ CAPABILITIES(/obj/item/spell/illusion)
 
 
 // Makes a tiny overlay of the thing the player has copied, so they can easily tell what they currently have.
-DECLARE_APPEARANCE_PROC(/obj/item/spell/illusion, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/spell/illusion/appearance_overlays()
-	. = list()
+/obj/item/spell/illusion/draw(datum/look/look)
+	..()
 	if(copied())
-		var/image/temp_image = image(copied())
 		var/matrix/M = matrix()
 		M.Scale(0.5, 0.5)
-		temp_image.transform = M
-		. += temp_image
+		look.overlay(look_overlay_image(of = copied(), transform = M))
 
 /// Copied (a relation view).
 /obj/item/spell/illusion/proc/copied() as /atom/movable

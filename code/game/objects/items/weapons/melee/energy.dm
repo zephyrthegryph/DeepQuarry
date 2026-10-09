@@ -182,7 +182,6 @@ CAPABILITIES(/obj/item/melee/energy)
 	var/mob/user = A.actor
 	if(!use_cell || !bcell)
 		return OP_DECLINE
-	bcell.update_icon()
 	bcell.forceMove(get_turf(loc))
 	rel_take(src, nameof(bcell))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))

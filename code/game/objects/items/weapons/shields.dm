@@ -319,6 +319,8 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 	var/on = 0
 	var/light_applied
 
+TRACKED(/obj/item/shield/riot/explorer, on)
+
 //POURPEL WHY U NO COVER
 
 /// Old attack_self.
@@ -328,7 +330,7 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 		if(!isturf(user.loc))
 			to_chat(user, "You cannot turn the light on while in this [user.loc]")
 			return TRUE
-		on = !on
+		set_on(!on)
 		to_chat(user, "You [on ? "enable" : "disable"] the shield light.")
 		update_flashlight(user)
 
@@ -345,7 +347,6 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 	else if(!on && light_applied)
 		set_light(0)
 		light_applied = 0
-	changed(src)
 	user.update_mob_action_buttons()
 	play_sfx(src, SFX_WEAPONS_EMPTY, 0.3, extrarange = -3)
 

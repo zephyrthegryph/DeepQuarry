@@ -199,7 +199,6 @@ CAPABILITIES(/obj/item/bork_medigun/linked)
 	if(treated)
 		checked_use(min(10, treated))
 		ishealing = TRUE
-	changed(medigun_base_unit())
 
 	//Blood regeneration if there is some space
 	if(lastier >= 5)

@@ -57,4 +57,4 @@ TYPE_TABLE(/obj/mecha/combat/durand, mecha_starting_components, list( \
 	. = ..()
 	max_integrity = 250	//Just slightly worse.
 	update_integrity(25)
-	cell.charge = rand(0, (cell.charge/2))
+	cell.set_charge(rand(0, (cell.charge/2)))

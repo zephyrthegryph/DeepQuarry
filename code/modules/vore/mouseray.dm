@@ -63,20 +63,6 @@
 	if(tf_admin_pref_override)
 		G.tf_admin_pref_override = tf_admin_pref_override
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/mouseray, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/mouseray/appearance_overlays()
-	. = list()
-	if(charge_meter)
-		var/ratio = power_supply.charge / power_supply.maxcharge
-
-		//make sure that rounding down will not give us the empty state even if we have charge for a shot left.
-		if(power_supply.charge < charge_cost)
-			ratio = 0
-		else
-			ratio = max(round(ratio, 0.25) * 100, 25)
-
-		icon_state = "[initial(icon_state)][ratio]"
-
 /obj/item/projectile/beam/mouselaser
 	name = "metamorphosis beam"
 	icon_state = "xray"

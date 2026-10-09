@@ -373,16 +373,9 @@ CAPABILITIES(/obj/item/gun/projectile/revolver/lemat)
 	handle_casings = CYCLE_CASINGS
 	ammo_type = /obj/item/ammo_casing/a44/rubber
 
-/obj/item/gun/projectile/revolver/consul/proc/update_charge()
-	cut_overlays()
-	if(length(loaded)==0)
-		add_overlay("inspector_off")
-	else
-		add_overlay("inspector_on")
-
 /obj/item/gun/projectile/revolver/consul/draw(datum/look/look)
 	..()
-	look.effect(PROC_REF(update_charge))
+	look.overlay(length(loaded) ? "inspector_on" : "inspector_off")
 
 
 //Dunno why .380 ammo was in here but Im not touching it. Rest was moved to other files.

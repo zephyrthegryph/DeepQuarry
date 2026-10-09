@@ -82,11 +82,11 @@
 				var/datum/material/reference_electrode = get_material_by_name(MAT_COPPER)
 				var/reference_capacity = 0.65 + reference_electrode.conductivity / 140 + reference_electrode.heat_resistance / 350
 				var/capacity_factor = clamp((0.65 + electrode.conductivity / 140 + electrode.heat_resistance / 350) / reference_capacity, 0.5, 2)
-				cell.maxcharge = round(initial(cell.maxcharge) * capacity_factor)
+				cell.set_maxcharge(round(initial(cell.maxcharge) * capacity_factor))
 				// Beam-conditioned crystalline electrodes retain deposited field
 				// energy as real cell capacity rather than an abstract quality bonus.
-				cell.maxcharge += round(electrode.field_energy_capacity)
-				cell.charge = min(cell.charge, cell.maxcharge)
+				cell.set_maxcharge(cell.maxcharge + round(electrode.field_energy_capacity))
+				cell.set_charge(min(cell.charge, cell.maxcharge))
 				cell.material_emp_resistance = clamp(round((insulation?.dielectric_strength || 0) * 0.5 + conductor.magnetism * 0.2 + casing.heat_resistance * 0.2), 0, 90)
 				cell.robot_durability = clamp(round(casing.integrity / 2), 20, 125)
 				cell.material_discharge_limit = max(1, round(initial(cell.maxcharge) * clamp((conductor.conductivity + thermal.heat_resistance * 0.5 + thermal.conductivity * (1 - thermal.thermal_insulation / 125) * 0.5) / 150, 0.1, 2)))
@@ -143,7 +143,7 @@
 					var/obj/item/gun/energy/energy_gun = gun
 					var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR) || primary
 					var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL) || conductor
-					energy_gun.charge_cost = max(1, round(initial(energy_gun.charge_cost) * clamp(1.35 - conductor.conductivity / 200 - thermal.conductivity * (1 - thermal.thermal_insulation / 125) / 500, 0.55, 1.5)))
+					energy_gun.set_charge_cost(max(1, round(initial(energy_gun.charge_cost) * clamp(1.35 - conductor.conductivity / 200 - thermal.conductivity * (1 - thermal.thermal_insulation / 125) / 500, 0.55, 1.5))))
 		if(MATERIAL_APPLICATION_SOFT_GOODS)
 			if(istype(src, /obj/item/clothing))
 				var/obj/item/clothing/clothing = src

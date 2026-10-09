@@ -22,7 +22,7 @@
 	TEST_ASSERT_NULL(owner_of(butt), "ashtray insertion preserves existing unowned containment policy")
 	var/obj/item/trash/cigbutt/replacement = allocate(/obj/item/trash/cigbutt, T)
 	TEST_ASSERT(user.put_in_active_hand(replacement), "the actor holds a real second original butt")
-	tray.max_butts = 1
+	tray.set_max_butts(1)
 	test_op_handler(tray, "butt_added", user, replacement)
 	TEST_ASSERT_EQUAL(user.get_active_hand(), replacement, "actual full-capacity refusal preserves second original hand")
 	TEST_ASSERT_EQUAL(replacement.loc, user, "actual full-capacity refusal preserves second inventory containment")

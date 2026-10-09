@@ -37,16 +37,11 @@
 		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, fire_sound=SFX_WEAPONS_LASER, charge_cost = 1200),
 		)
 
-/obj/item/gun/energy/gun/martin/proc/update_mode()
-	var/datum/firemode/current_mode = LAZYACCESS(firemodes, sel_mode)
-	switch(current_mode.name)
-		if("lethal") add_overlay("lazer_pdw")
-		if("stun") add_overlay("taser_pdw")
-
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/martin, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/gun/martin/appearance_overlays()
-	. = list()
-	update_mode()
+/// The look: the selected fire mode's lamp.
+/obj/item/gun/energy/gun/martin/draw(datum/look/look)
+	..()
+	look.overlay("lazer_pdw", when = mode_name == "lethal")
+	look.overlay("taser_pdw", when = mode_name == "stun")
 
 //Gun Locking Mechanism
 /obj/item/gun/energy/locked
@@ -115,8 +110,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/martin, TYPE_PROC_REF(/atom, ap
 /obj/item/gun/energy/locked/frontier/unload_ammo(mob/user)
 	if(recharging)
 		return
-	recharging = 1
-	update_icon()
+	set_recharging(1)
 	act_message(user, src, MSG_SELF(span_notice("You open %T% and start pumping the handle.")), \
 		MSG_OTHERS(span_notice("%U% opens %T% and starts pumping the handle.")))
 	task_timed(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
@@ -131,24 +125,29 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/martin, TYPE_PROC_REF(/atom, ap
 	task_timed(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
 
 /obj/item/gun/energy/locked/frontier/proc/pump_end(mob/user)
-	recharging = 0
-	update_icon()
+	set_recharging(0)
 	user?.hud_used?.update_ammo_hud(user, src) // Update one last time once we're finished!
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/locked/frontier, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/locked/frontier/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/gun/energy/locked/frontier, recharging)
+
+/// The look: the pumping state while the handle is being cranked.
+/obj/item/gun/energy/locked/frontier/draw(datum/look/look)
+	..()
 	if(recharging)
-		icon_state = "[initial(icon_state)]_pump"
-		update_held_icon()
-		return .
-	. += ..()
+		look.state("[frontier_pump_base()]_pump")
+
+/// The base state the pump state is named after.
+/obj/item/gun/energy/locked/frontier/proc/frontier_pump_base()
+	return initial(icon_state)
+
+CAPABILITIES(/obj/item/gun/energy/locked/frontier)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(frontier_emp_shield)))
 
 /// Rugged: the pulse reaches the internal cells two steps weaker.
-/obj/item/gun/energy/locked/frontier/energy_gun_emp_refresh(datum/damage_packet/packet)
-	for(var/atom/A as anything in contents)
-		A.emp_act(packet.severity + 2)
-	..()
+/obj/item/gun/energy/locked/frontier/proc/frontier_emp_shield(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	for(var/atom/part as anything in contents)
+		part.emp_act(N.packet.severity + 2)
 
 /obj/item/gun/energy/locked/frontier/unlocked
 	desc = "An extraordinarily rugged laser weapon, built to last and requiring effectively no maintenance. Includes a built-in crank charger for recharging away from civilization."
@@ -177,14 +176,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/locked/frontier, TYPE_PROC_REF(/ato
 		list(mode_name="burst", burst=3, fire_delay=10, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/phaser/light, charge_cost = 90), // Added this
 	)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/locked/frontier/carbine, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/locked/frontier/carbine/appearance_overlays()
-	. = list()
-	if(recharging)
-		icon_state = "[modifystate]_pump"
-		update_held_icon()
-		return .
-	. += ..()
+/obj/item/gun/energy/locked/frontier/carbine/frontier_pump_base()
+	return modifystate
 
 /obj/item/gun/energy/locked/frontier/carbine/unlocked
 	desc = "An ergonomically improved version of the venerable frontier phaser, the carbine is a fairly new weapon, and has only been produced in limited numbers so far. Includes a built-in crank charger for recharging away from civilization."
@@ -261,14 +254,8 @@ CAPABILITIES(/obj/item/gun/energy/locked/frontier/rifle)
 /obj/item/gun/energy/locked/frontier/rifle/proc/frontier_rifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0, user)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/locked/frontier/rifle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/locked/frontier/rifle/appearance_overlays()
-	. = list()
-	if(recharging)
-		icon_state = "[modifystate]_pump"
-		update_held_icon()
-		return .
-	. += ..()
+/obj/item/gun/energy/locked/frontier/rifle/frontier_pump_base()
+	return modifystate
 
 /obj/item/gun/energy/locked/frontier/rifle/unlocked
 	desc = "A much larger, heavier weapon than the typical frontier-type weapons, this DMR can be fired both from the hip, and in scope. Includes a built-in crank charger for recharging away from civilization."

@@ -40,6 +40,7 @@ CAPABILITIES(/obj/item/suit_cooling_unit)
 /// Is it turned on?
 /obj/item/suit_cooling_unit/var/on = 0
 TRACKED(/obj/item/suit_cooling_unit, on)
+TRACKED(/obj/item/suit_cooling_unit, cover_open)
 
 /obj/item/suit_cooling_unit/proc/suit_cooling_unit_step(datum/act/timer/A)
 	if (!cell)
@@ -116,12 +117,10 @@ TRACKED(/obj/item/suit_cooling_unit, on)
 		return
 
 	set_on(1)
-	changed(src)
 
 /obj/item/suit_cooling_unit/proc/turn_off(failed)
 	if(failed) visible_message("\The [src] clicks and whines as it powers down.")
 	set_on(0)
-	changed(src)
 
 /obj/item/suit_cooling_unit/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
@@ -132,7 +131,6 @@ TRACKED(/obj/item/suit_cooling_unit, on)
 			cell.forceMove(get_turf(loc))
 
 		cell.add_fingerprint(user)
-		cell.update_icon()
 
 		to_chat(user, "You remove \the [src.cell].")
 		rel_take(src, nameof(cell))
@@ -162,7 +160,7 @@ TRACKED(/obj/item/suit_cooling_unit, on)
 /obj/item/suit_cooling_unit/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	cover_open = !cover_open
+	set_cover_open(!cover_open)
 	to_chat(user, "You [cover_open ? "unscrew" : "screw"] the panel [cover_open ? "open" : "into place"].")
 	playsound(src, tool.usesound, 50, 1)
 	return OP_OK
