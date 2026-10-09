@@ -12,8 +12,6 @@
 
 	var/mob/my_mob	// The mob that possesses this hud object.
 
-TRACKED(/atom/movable/screen/movable/ability_master, showing)
-
 CAPABILITIES(/atom/movable/screen/movable/ability_master)
 	owns_many(nameof(ability_objects), /atom/movable/screen/ability)
 
@@ -84,14 +82,13 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 		ability.maptext = "[ability.index]" // Slot number
 		i++
 
-/// The button shows open or closed, and is there only while it has abilities to show.
+TRACKED(/atom/movable/screen/movable/ability_master, showing)
+
+/// The master shows the open or closed button, and is hidden while it holds no abilities.
 /atom/movable/screen/movable/ability_master/draw(datum/look/look)
 	..()
 	look.overlay(showing ? open_state : closed_state)
-	look.effect(PROC_REF(set_shown), length(ability_objects) > 0)
-
-/atom/movable/screen/movable/ability_master/proc/set_shown(shown)
-	invisibility = shown ? INVISIBILITY_NONE : INVISIBILITY_ABSTRACT
+	look.set_invisibility(length(ability_objects) ? INVISIBILITY_NONE : INVISIBILITY_ABSTRACT)
 
 /atom/movable/screen/movable/ability_master/proc/add_ability(name_given)
 	if(!name_given) return
@@ -155,14 +152,14 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 
 	var/atom/movable/screen/movable/ability_master/ability_master
 
+
+TRACKED(/atom/movable/screen/ability, background_base_state)
 TRACKED(/atom/movable/screen/ability, ability_icon_state)
 
-
-/// The button's base in its colour, with the ability's own icon on it.
 /atom/movable/screen/ability/draw(datum/look/look)
 	..()
 	look.state("[background_base_state]_spell_base")
-	look.overlay(ability_icon_state, when = !isnull(ability_icon_state))
+	look.overlay(ability_icon_state)
 
 
 CAPABILITIES(/atom/movable/screen/ability)

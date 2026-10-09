@@ -1121,11 +1121,9 @@ CAPABILITIES(/datum/shred_limb_review)
 			var/mob/living/F = firer
 			if(F.appendage_alt_setting == 1)
 				F.throw_at(M, throw_range, firer.throw_speed, F) //Firer thrown at target.
-				F.update_icon()
 				return
 		if(istype(M))
 			M.throw_at(firer, throw_range, M.throw_speed, firer) //Fun fact: living things have a throw_speed of 2.
-			M.update_icon()
 			return
 		else //Anything that isn't a /living
 			return
@@ -1196,11 +1194,9 @@ CAPABILITIES(/datum/shred_limb_review)
 	firemodes = list(
 		list(mode_name="vore", projectile_type=/obj/item/projectile/beam/appendage, modifystate=null, fire_sound=SFX_VORE_SUNESOUND_PRED_SCHLORP, charge_cost = 0),)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/gun/tongue/appearance_overlays() //No updating the icon.
-	. = list()
-	icon_state = "synthtongue"
-	return .
+/// The look: always the tongue, whatever the charge.
+/obj/item/gun/energy/gun/tongue/draw_charge_state(datum/look/look)
+	look.state("synthtongue")
 
 /obj/item/gun/energy/bfgtaser/tongue
 	name = "9000-series Ball Tongue Taser"

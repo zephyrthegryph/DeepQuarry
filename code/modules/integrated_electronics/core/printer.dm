@@ -495,7 +495,6 @@ CAPABILITIES(/obj/item/integrated_circuit_printer)
 
 	// Restore wiring, and appearance
 	restore_component_wiring(assembly_data, created_components)
-	assembly.update_icon()
 
 	// Start the printing process
 	rel_set(src, nameof(queued_assembly), assembly)

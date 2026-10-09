@@ -76,11 +76,7 @@
 	set category = VERB_CAT_ABILITIES_PAI
 
 	hide()
-	if(status_flags & HIDING)
-		hide_glow = TRUE
-	else
-		hide_glow = FALSE
-	update_icon()
+	set_hide_glow(!!(status_flags & HIDING))
 
 /mob/living/silicon/pai/verb/screen_message(message as text|null)
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
@@ -165,11 +161,10 @@
 		return
 
 	if(eye_glow && !hide_glow)
-		eye_glow = FALSE
+		set_eye_glow(FALSE)
 	else
-		eye_glow = TRUE
-		hide_glow = FALSE
-	update_icon()
+		set_eye_glow(TRUE)
+		set_hide_glow(FALSE)
 
 /mob/living/silicon/pai/verb/pick_eye_color()
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
@@ -185,8 +180,7 @@
 	if(!A.answer)
 		return
 	if(A.answer.value)
-		eye_color = A.answer.value
-		update_icon()
+		set_eye_color(A.answer.value)
 		card.setEmotion(card.current_emotion)
 
 /mob/living/silicon/pai/proc/hug(mob/living/silicon/pai/H, mob/living/target)

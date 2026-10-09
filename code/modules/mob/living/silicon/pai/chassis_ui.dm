@@ -58,7 +58,7 @@ CAPABILITIES(/datum/tgui_module/pai_chassis)
 		return FALSE
 	var/mob/living/silicon/pai/pai_host = host()
 	if(selected_color)
-		pai_host.eye_color = selected_color
+		pai_host.set_eye_color(selected_color)
 	pai_host.change_chassis(selected_chassis)
 	return TRUE
 

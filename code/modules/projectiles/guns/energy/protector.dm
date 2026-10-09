@@ -50,10 +50,9 @@
 	return ..()
 
 /obj/item/gun/energy/gun/protector/ui_action_click(mob/user, actiontype)
-	gun_light_on = !gun_light_on
+	set_gun_light_on(!gun_light_on)
 	play_sfx(src, SFX_WEAPONS_EMPTY, 0.8)
 	update_brightness(user)
-	update_icon()
 
 /obj/item/gun/energy/gun/protector/proc/update_brightness(mob/user = null)
 	if(gun_light_on)
@@ -69,39 +68,31 @@
 
 	return TRUE
 
-//Update icons from /tg/, so fancy! Use this more!
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/protector, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/gun/protector/appearance_overlays()
-	. = list()
-	var/ratio = 0
+TRACKED(/obj/item/gun/energy/gun/protector, gun_light_on)
 
-	var/iconState = "[icon_state]_charge"
-	if (modifystate)
-		. += "[icon_state]_[modifystate]"
-		iconState += "_[modifystate]"
-		/* Don't have one for this gun
-		if(itemState)
-			itemState += "[modifystate]"
-		*/
+/// The look: the fire mode lamp, the charge pips (or the empty lamp) and the flashlight.
+/obj/item/gun/energy/gun/protector/draw_charge_state(datum/look/look)
+	var/base = initial(icon_state)
+	var/charge_state = "[base]_charge"
+	if(modifystate)
+		look.overlay("[base]_[modifystate]")
+		charge_state += "_[modifystate]"
 	if(power_supply)
-		ratio = CEILING(((power_supply.charge / power_supply.maxcharge) * charge_sections), 1)
-
+		var/ratio = charge_pips()
 		if(power_supply.charge < charge_cost)
-			. += "[icon_state]_empty"
+			look.overlay("[base]_empty")
+		else if(!shaded_charge)
+			for(var/i = ratio, i >= 1, i--)
+				look.overlay(look_overlay_image(icon, charge_state, pixel_x = ammo_x_offset * (i - 1)))
 		else
-			if(!shaded_charge)
-				var/mutable_appearance/charge_overlay = mutable_appearance(icon, iconState)
-				for(var/i = ratio, i >= 1, i--)
-					charge_overlay.pixel_x = ammo_x_offset * (i - 1)
-					. += charge_overlay
-			else
-				. += "[icon_state]_[modifystate][ratio]"
+			look.overlay("[base]_[modifystate][ratio]")
+	look.overlay(light_state, when = can_flashlight && gun_light_on)
 
-	if(can_flashlight & gun_light_on)
-		var/mutable_appearance/flashlight_overlay = mutable_appearance(icon, light_state)
-		flashlight_overlay.pixel_x = flight_x_offset
-		flashlight_overlay.pixel_y = flight_y_offset
-		. += light_state
+/// The charge pips lit: the cell's fill, rounded up to the gun's sections.
+/obj/item/gun/energy/gun/protector/proc/charge_pips()
+	if(power_supply.maxcharge <= 0)
+		return 0
+	return CEILING(((power_supply.charge / power_supply.maxcharge) * charge_sections), 1)
 
 /obj/item/gun/energy/gun/protector/unlocked
 	emagged = TRUE

@@ -6,7 +6,7 @@
 /obj/structure/blob/core state: blank_blob
 /obj/structure/blob/core dir: 2
 /obj/structure/blob/core overlay: icons/mob/blob.dmi:blank_blob:8:#000000
-/obj/structure/blob/core overlay: icons/mob/blob.dmi:blob:-32767:#8ba6e9
+/obj/structure/blob/core overlay: icons/mob/blob.dmi:blob:-32767:#aaff00
 /obj/structure/blob/core overlay: icons/mob/blob.dmi:blob_core_overlay:-32767
 /obj/structure/blob/core/player icon: icons/mob/blob.dmi
 /obj/structure/blob/core/player state: blank_blob
@@ -24,13 +24,13 @@
 /obj/structure/blob/core/random_medium state: blank_blob
 /obj/structure/blob/core/random_medium dir: 2
 /obj/structure/blob/core/random_medium overlay: icons/mob/blob.dmi:blank_blob:8:#000000
-/obj/structure/blob/core/random_medium overlay: icons/mob/blob.dmi:blob:-32767:#8ba6e9
+/obj/structure/blob/core/random_medium overlay: icons/mob/blob.dmi:blob:-32767:#aaff00
 /obj/structure/blob/core/random_medium overlay: icons/mob/blob.dmi:blob_core_overlay:-32767
 /obj/structure/blob/core/random_hard icon: icons/mob/blob.dmi
 /obj/structure/blob/core/random_hard state: blank_blob
 /obj/structure/blob/core/random_hard dir: 2
 /obj/structure/blob/core/random_hard overlay: icons/mob/blob.dmi:blank_blob:8:#000000
-/obj/structure/blob/core/random_hard overlay: icons/mob/blob.dmi:blob:-32767:#aaaabb
+/obj/structure/blob/core/random_hard overlay: icons/mob/blob.dmi:blob:-32767:#aaff00
 /obj/structure/blob/core/random_hard overlay: icons/mob/blob.dmi:blob_core_overlay:-32767
 /obj/structure/blob/core/blazing_oil icon: icons/mob/blob.dmi
 /obj/structure/blob/core/blazing_oil state: blank_blob

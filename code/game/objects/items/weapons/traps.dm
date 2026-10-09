@@ -60,7 +60,6 @@ CAPABILITIES(/obj/item/beartrap)
 
 	set_deployed(TRUE)
 	user.drop_from_inventory(src)
-	changed(src)
 	set_anchored(TRUE)
 	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
@@ -80,7 +79,6 @@ CAPABILITIES(/obj/item/beartrap)
 /obj/item/beartrap/proc/disarm_trap(datum/act/op/A)
 	set_deployed(FALSE)
 	set_anchored(FALSE)
-	changed(src)
 
 /obj/item/beartrap/proc/attack_mob(mob/living/L)
 
@@ -133,7 +131,6 @@ CAPABILITIES(/obj/item/beartrap)
 			if(!has_buckled_mobs())
 				set_anchored(FALSE)
 			set_deployed(FALSE)
-			changed(src)
 			log_and_message_admins("has sprung a [name] at \the [get_area(loc)], last touched by [forensic_data?.get_lastprint()]", L)
 	..()
 

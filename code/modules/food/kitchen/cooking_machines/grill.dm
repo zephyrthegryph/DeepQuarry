@@ -37,19 +37,18 @@ CAPABILITIES(/obj/machinery/appliance/cooker/grill)
 	rel_set(src, nameof(grill_loop), new /datum/looping_sound/grill(list(src), FALSE))
 
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/grill, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/cooker/grill/appearance_overlays() // TODO: Cooking icon
-	. = list()
-	if(!has_condition())
-		icon_state = on_icon
-		if(cooking == TRUE)
-			if(grill_loop)
-				grill_loop.start(src)
-		else
-			if(grill_loop)
-				grill_loop.stop(src)
+/// A grill shows no status light, only whether it is on. // TODO: Cooking icon
+/obj/machinery/appliance/cooker/grill/draw(datum/look/look)
+	..()
+	look.state(has_condition() ? off_icon : on_icon)
+
+/obj/machinery/appliance/cooker/grill/draw_lights(datum/look/look)
+	return
+
+/// The grill sizzles while it cooks.
+/obj/machinery/appliance/cooker/grill/loop_sync(datum/act/A)
+	if(!has_condition() && cooking == TRUE)
+		grill_loop?.start(src)
 	else
-		icon_state = off_icon
-		if(grill_loop)
-			grill_loop.stop(src)
+		grill_loop?.stop(src)
 

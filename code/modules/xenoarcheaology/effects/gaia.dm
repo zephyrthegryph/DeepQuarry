@@ -12,11 +12,11 @@ CAPABILITIES(/datum/artifact_effect/gaia)
 
 /datum/artifact_effect/gaia/proc/age_plantlife(obj/machinery/portable_atmospherics/hydroponics/Tray = null)
 	if(istype(Tray) && Tray.seed)
-		Tray.health += rand(1,3) * HYDRO_SPEED_MULTIPLIER
-		Tray.age += 1
+		Tray.set_health(Tray.health + rand(1,3) * HYDRO_SPEED_MULTIPLIER)
+		Tray.set_age(Tray.age + 1)
 
 		if(Tray.health > 0 && Tray.dead)
-			Tray.dead = FALSE
+			Tray.set_dead(FALSE)
 
 		Tray.check_health()
 
@@ -24,7 +24,7 @@ CAPABILITIES(/datum/artifact_effect/gaia)
 			if((Tray.age > Tray.seed.get_trait(TRAIT_MATURATION)) && \
 			((Tray.age - Tray.lastproduce) > Tray.seed.get_trait(TRAIT_PRODUCTION)) && \
 			(!Tray.harvest && !Tray.dead))
-				Tray.harvest = 1
+				Tray.set_harvest(1)
 				Tray.lastproduce = Tray.age
 
 	else if(istype(Tray, /obj/effect/plant))

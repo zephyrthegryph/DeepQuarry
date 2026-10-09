@@ -1,0 +1,5 @@
+/obj/machinery/beehive closed=1 +overlay: icons/obj/beekeeping.dmi:lid:-32767
+/obj/machinery/beehive closed=2 +overlay: icons/obj/beekeeping.dmi:lid:-32767
+/obj/machinery/beehive bee_count=1 +overlay: icons/obj/beekeeping.dmi:bees1:-32767
+/obj/machinery/beehive bee_count=2 +overlay: icons/obj/beekeeping.dmi:bees1:-32767
+

@@ -58,8 +58,7 @@
 		if(!tray.mechanical)
 			to_chat(user, span_warning("How are you going to label that?"))
 			return
-		tray.labelled = label
-		after(tray, 0.1 SECONDS, TYPE_PROC_REF(/atom, update_icon))
+		tray.set_labelled(label)
 
 	act_message(user, A, MSG_SELF(span_notice("You label %T% as [label].")), MSG_OTHERS(span_notice("%U% labels %T% as [label].")))
 	A.name = "[A.name] ([label])"

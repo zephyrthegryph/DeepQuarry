@@ -35,13 +35,11 @@
 		// B17: stock packs are human blood; without "species" they matched every species.
 		reagents.add_reagent(reag_id, 200, list("donor"=null,"viruses"=null,"species"=blood_species,"blood_colour"=blood_colour,"blood_DNA"=null,"blood_type"=blood_type,"resistances"=null,"trace_chem"=null,"changeling"=FALSE))
 
-/obj/item/reagent_containers/blood/on_reagent_change()
-	changed(src)
-	changed(src)
-
+/// A pack shows how full it is: it follows the level its holder tracks.
 /obj/item/reagent_containers/blood/draw(datum/look/look)
 	..()
-	var/percent = round((reagents.total_volume / volume) * 100)
+	look.watch(reagents)
+	var/percent = volume ? round((reagents.total_volume / volume) * 100) : 0
 	if(percent >= 0 && percent <= 9)
 		look.state("empty")
 		look.held_state("bloodpack_empty")

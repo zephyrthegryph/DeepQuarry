@@ -178,6 +178,11 @@ CAPABILITIES(/datum/hose_connector)
 	tubing?.use(distancetonode)
 	return TRUE
 
+/// The hose on this connector, if one is attached: a look that draws it watches it.
+/datum/hose_connector/proc/hose()
+	RETURN_TYPE(/datum/hose)
+	return my_hose
+
 /datum/hose_connector/proc/get_pairing()
 	RETURN_TYPE(/datum/hose_connector)
 	if(my_hose)

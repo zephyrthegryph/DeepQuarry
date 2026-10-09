@@ -24,6 +24,8 @@
 	/// Reagents to fill the container with at the start, formatted as "reagentID" = quantity
 	var/list/prefill = null
 
+TRACKED(/obj/item/reagent_containers/glass, label_text)
+
 // What anything made of glass takes from a hand: a pen labels it, a small thing is dipped into it (in a hostile, disarm or grab stance), and a hot
 // thing tests the blood in it.
 CAPABILITY_DEF(glass_handling, CAP_GLASS_HANDLING, key = NONE)
@@ -87,7 +89,7 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 		balloon_alert(user, "label set")
 	else
 		balloon_alert(user, "label set to \"[tmp_label]\"")
-	label_text = tmp_label
+	set_label_text(tmp_label)
 	update_name_label()
 	return OP_OK
 
@@ -100,7 +102,6 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 	else
 		name = "[base_name] ([label_text])"
 	desc = "[base_desc] It is labeled \"[label_text]\"."
-	changed(src)
 
 // ---- dipping and testing ----
 
@@ -149,9 +150,10 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 /// The look of a glass container: the filling (by how full it is, in the colour of what is in it), the lid while it is on, and a label.
 /obj/item/reagent_containers/glass/proc/draw_glass(datum/look/look, base, filled, labelled)
 	var/datum/reagents/R = reagents
+	look.watch(R) // its level and colour are tracked on the holder: the filling follows them
 	if(filled && R?.total_volume)
 		var/image/filling = image('icons/obj/reagentfillings.dmi', src, "[icon_state]10")
-		var/percent = round((R.total_volume / volume) * 100)
+		var/percent = volume ? round((R.total_volume / volume) * 100) : 0
 		switch(percent)
 			if(0.1 to 20)	filling.icon_state = "[icon_state]-10"
 			if(20 to 40) 	filling.icon_state = "[icon_state]-20"
@@ -159,7 +161,7 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 			if(60 to 80)	filling.icon_state = "[icon_state]-60"
 			if(80 to 100)	filling.icon_state = "[icon_state]-80"
 			if(100 to INFINITY)	filling.icon_state = "[icon_state]-100"
-		filling.color = R.get_color()
+		filling.color = R.tint
 		look.overlay(filling)
 	if(!is_open_container())
 		look.overlay("lid_[base]")
@@ -186,10 +188,6 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 /obj/item/reagent_containers/glass/beaker/Initialize(mapload)
 	. = ..()
 	desc += " Can hold up to [volume] units."
-
-/// What it holds changes colour with no change of the amount: the filling is redrawn.
-/obj/item/reagent_containers/glass/beaker/on_reagent_change()
-	changed(src)
 
 /// The filling in the colour of what it holds, the lid while it is on, and a label.
 /obj/item/reagent_containers/glass/beaker/draw(datum/look/look)

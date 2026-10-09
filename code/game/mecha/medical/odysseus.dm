@@ -113,7 +113,7 @@ TYPE_TABLE(/obj/mecha/medical/odysseus/loaded, mecha_starting_equipment, list( \
 	. = ..()
 	max_integrity = 50	//Just slightly worse.
 	update_integrity(25)
-	cell.charge = rand(0, (cell.charge/2))
+	cell.set_charge(rand(0, (cell.charge/2)))
 
 
 // === merged from odysseus_vr.dm during hard-fork de-suffix (verified no override-order change) ===

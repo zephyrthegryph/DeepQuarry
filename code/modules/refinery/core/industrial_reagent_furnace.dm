@@ -31,8 +31,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
 /obj/machinery/reagent_refinery/furnace/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	// Update neighbours and self for state
-	update_neighbours()
 
 
 /obj/machinery/reagent_refinery/furnace/refinery_step()

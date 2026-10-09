@@ -30,18 +30,18 @@
 	drop_sound = SFX_ITEMS_DROP_SWORD
 	pickup_sound = SFX_ITEMS_PICKUP_SWORD
 
+TRACKED(/obj/item/material/twohanded, wielded)
+
 /obj/item/material/twohanded/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && M.can_wield_item(src) && is_held_twohanded(M))
-		wielded = 1
+		set_wielded(1)
 		force = force_wielded
 		name = "[base_name] (wielded)"
-		changed(src)
 	else
-		wielded = 0
+		set_wielded(0)
 		force = force_unwielded
 		name = "[base_name]"
-	changed(src)
 	..()
 
 /obj/item/material/twohanded/update_force()
@@ -55,7 +55,6 @@
 	force = force_unwielded
 	throwforce = round(force*thrown_force_divisor)
 
-	changed(src)
 //Allow a small chance of parrying melee attacks when wielded - maybe generalize this to other weapons someday
 /obj/item/material/twohanded/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(wielded && default_parry_check(user, attacker, damage_source) && prob(15))
@@ -107,17 +106,15 @@
 /obj/item/material/twohanded/fireaxe/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
-		wielded = 1
+		set_wielded(1)
 		pry = 1
 		force = force_wielded
 		name = "[base_name] (wielded)"
-		changed(src)
 	else
-		wielded = 0
+		set_wielded(0)
 		pry = 0
 		force = force_unwielded
 		name = "[base_name]"
-	changed(src)
 	..()
 
 /obj/item/material/twohanded/fireaxe/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
@@ -235,17 +232,15 @@
 /obj/item/material/twohanded/sledgehammer/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
-		wielded = 1
+		set_wielded(1)
 		pry = 1
 		force = force_wielded
 		name = "[base_name] (wielded)"
-		changed(src)
 	else
-		wielded = 0
+		set_wielded(0)
 		pry = 0
 		force = force_unwielded
 		name = "[base_name]"
-	changed(src)
 	..()
 
 /obj/item/material/twohanded/sledgehammer/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)

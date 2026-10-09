@@ -377,12 +377,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/crayon/bro
 /obj/item/reagent_containers/food/condiment/carton
 	looks_like_contents = FALSE
 
-/obj/item/reagent_containers/food/condiment/carton/on_reagent_change()
-	changed(src)
-
 /obj/item/reagent_containers/food/condiment/carton/draw(datum/look/look)
 	. = ..()
-	if(reagents.total_volume)
+	look.watch(reagents)
+	if(reagents.total_volume && volume)
 		look.overlay("[icon_state]-[clamp(round(100 * reagents.total_volume / volume, 25), 0, 100)]")
 
 /obj/item/reagent_containers/food/condiment/carton/flour

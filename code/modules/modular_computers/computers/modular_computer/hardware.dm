@@ -64,7 +64,6 @@
 		if(user)
 			to_chat(user, span_danger("\The [src]'s screen freezes for few seconds and then displays an \"HARDWARE ERROR: Critical component disconnected. Please verify component connection and reboot the device. If the problem persists contact technical support for assistance.\" warning."))
 		shutdown_computer()
-		update_icon()
 
 
 // Checks all installed hardware pieces for a name match and returns the first hit.

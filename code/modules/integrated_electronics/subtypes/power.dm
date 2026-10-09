@@ -62,7 +62,6 @@
 
 				if(transfer_amount && assembly().draw_power(amount_to_move)) // CELLRATE is already handled in draw_power()
 					cell.give(transfer_amount * CELLRATE)
-				AM.update_icon()
 
 				set_pin_data(IC_OUTPUT, 1, cell.charge)
 				set_pin_data(IC_OUTPUT, 2, cell.maxcharge)

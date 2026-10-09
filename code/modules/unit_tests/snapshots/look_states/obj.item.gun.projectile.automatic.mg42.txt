@@ -1,5 +1,9 @@
 /obj/item/gun/projectile/automatic/mg42 cover_open=1 +state: mg42open
+/obj/item/gun/projectile/automatic/mg42 cover_open=1 +overlay: icons/obj/gun_yw.dmi:mg42open:8:#000000
 /obj/item/gun/projectile/automatic/mg42 cover_open=1 -state: mg42closed
+/obj/item/gun/projectile/automatic/mg42 cover_open=1 -overlay: icons/obj/gun_yw.dmi:mg42closed:8:#000000
 /obj/item/gun/projectile/automatic/mg42 cover_open=2 +state: mg42open
+/obj/item/gun/projectile/automatic/mg42 cover_open=2 +overlay: icons/obj/gun_yw.dmi:mg42open:8:#000000
 /obj/item/gun/projectile/automatic/mg42 cover_open=2 -state: mg42closed
+/obj/item/gun/projectile/automatic/mg42 cover_open=2 -overlay: icons/obj/gun_yw.dmi:mg42closed:8:#000000
 

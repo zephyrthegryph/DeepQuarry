@@ -45,9 +45,7 @@ CAPABILITIES(/obj/machinery/shield_diffuser)
 /obj/machinery/shield_diffuser/proc/work_step(datum/act/timer/A)
 	if(alarm)
 		set_alarm(alarm - 1)
-		if(!alarm)
-			update_icon()
-		else
+		if(alarm)
 			return
 
 	if(!enabled)

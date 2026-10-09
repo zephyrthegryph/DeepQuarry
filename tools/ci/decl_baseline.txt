@@ -183,8 +183,6 @@ init_visuals	code/modules/detectivework/tools/sample_kits.dm	icon_state = "finge
 init_visuals	code/modules/economy/EFTPOS.dm	R.add_overlay(stampoverlay)
 init_visuals	code/modules/entrepreneur/entrepreneur_items.dm	icon_state = pick(colour_choice)
 init_visuals	code/modules/food/drinkingglass/drinkingglass.dm	icon_state = base_icon
-init_visuals	code/modules/food/drinkingglass/shaker.dm	cut_overlays()
-init_visuals	code/modules/food/drinkingglass/shaker.dm	cut_overlays()
 init_visuals	code/modules/food/food/snacks.dm	icon_state = "nugget_[shape]"
 init_visuals	code/modules/food/food/superfoods.dm	icon_state = "chaoscake_slice-[i]"
 init_visuals	code/modules/holodeck/HolodeckObjects.dm	add_overlay("asteroid[rand(0,9)]")

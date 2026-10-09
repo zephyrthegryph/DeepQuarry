@@ -114,3 +114,69 @@ DreamMaker, the verdigris bindings check is skipped when its inputs did not chan
 2 test blocks instead of 8, and `tools/build/build.sh dmb-check` (or `DQ_DMB_PRECHECK=1`) is an optional 14 s
 syntax pre-check from the Codex compiler.
 
+
+## 9. Merge batches (October 2026, `rewrite/merge-speed`)
+
+Measured data and reasoning: `doc/rewrite/merge_pipeline_report.md`. The batch recipe, in order:
+
+```sh
+WT="$(bash tools/dq_merge_worktree.sh)"            # 1. the persistent worktree, moved to origin/master
+cd "$WT"
+git merge --no-ff <branch> ...                      #    (bash tools/dq_merge_master.sh settles generated files)
+bash tools/dq_merge_gates.sh                        # 2. gen + test build/boot gate + ratchets, once
+bash tools/dq_focused_test.sh --detach <batch tests>   # 3. one focused batch, in the background
+bash tools/dq_focused_test.sh --status <runid>      #    poll until it prints state=passed or failed
+bash tools/dq_known_failures.sh --check <json>      # 4. NEW vs KNOWN failures (no throwaway worktree)
+bash tools/dq_push_master.sh                        # 5. the fail-closed push
+```
+
+**Persistent worktree (`tools/dq_merge_worktree.sh`).** One worktree, `E:/projects/dq-wt/merge-base`, branch
+`rewrite/integ-current`, is never removed. Each call fetches, checks it is clean, in no merge or rebase, and holds no
+commit that origin/master lacks, then runs `git switch -C rewrite/integ-current origin/master` in it (`switch` is not
+one of the forbidden commands and no discard flag is passed, so git refuses rather than lose work). Creation is a one-time
+checkout (about 3 minutes measured); an update is about 10 seconds. `icons/gen`, the verdigris DLL (also cached in
+`E:/dq-cache`), the analyze binary, `data/dmb-cache` and `node_modules` stay warm. If the last batch never reached
+master it aborts and says so; `--discard-previous` keeps that tip as `rewrite/integ-prev-<stamp>` and moves on. Only one
+batch uses the worktree at a time; the unpushed-commits check is the guard. Do not make a fresh worktree per batch.
+
+**Gates once (`tools/dq_merge_gates.sh`).** `build.sh gen`, the test build plus the boot gate
+(`dq_focused_test.sh --boot`, which leaves the compiled test `.dmb` in the compile-hash cache for the batch that follows),
+and `check_ratchets.sh`; `tgui-lint` only when the batch touches `tgui/`. Do not also run `build.sh dm`, `build.sh lint` or
+`build.sh analyze` before the tests: `lint` is DreamChecker plus analyze plus tgui lint, and `dq_push_master.sh` runs the
+production `dm` (DreamMaker 0 errors, DreamChecker 0 diagnostics) and `analyze` on the final merged HEAD anyway and still
+blocks a bad push. On success the gates stamp the exact HEAD (`data/merge-gates/<sha>.ratchets.ok`); `dq_push_master.sh`
+skips its own ratchets run for that exact HEAD, clean tree, release analyzer (`DQ_PUSH_FULL=1` forces it). A new merge commit
+(master moved) has no stamp, so everything runs.
+
+**Known failures (`tools/ci/known_failures.txt`, `tools/dq_known_failures.sh`).** Tests that fail on master itself: spec, reason,
+master sha last seen. `--check <run.json>` prints NEW and KNOWN failures (a focused run that has failures calls it for you),
+so no throwaway origin/master worktree is needed to prove a failure old. `--refresh` drops entries that pass in a run and bumps
+the sha of those still failing; `--adopt --reason` adds a run's NEW failures (a decision, never automatic). After a push,
+`dq_push_master.sh` refreshes the list from the focused run JSONs for the pushed head if any exist (no tests run there);
+a changed list goes in as its own data-only commit on top (`DQ_KNOWN_FAILURES_REFRESH=0` turns that off).
+
+**Look pins (`dq_look_state_pin`, `dq_look_tree_pin`).** One sweep (`code/modules/unit_tests/dq_look_sweep.dm`) makes each creatable type once and
+writes both snapshot sets: the made look is the tree row and the state pin's base, and every probe writes a var on that same instance, redraws,
+captures, writes the original back and checks the look returned (a type whose look does not return is listed as `look sweep IMPURE` in tests.log and
+probes on fresh instances). The vars probed are narrowed to those a draw can read by `analyze look-keys` (`data/look-plan.tsv`: per type a key and a
+probe list, `*` meaning unknown, scan everything). `dq_focused_test.sh` runs the pins as `DQ_LOOK_SHARDS` (default 4, `--look-shards=N`) worlds from the
+one compiled `.dmb`, each probing every Nth type (`sweep_owns`), beside one world for any other selected tests; the summaries merge into one
+`data/test-runs/<id>_focused.json`. Without `--full` only types whose key differs from `code/modules/unit_tests/snapshots/look_keys.txt` are probed (no
+changed type: no world is booted); a passing run that covered both pins rewrites that file, so commit it with the snapshots. `--full` probes everything
+(merge worktree, nightly); `--bless` and `--repeat` run the pins unsharded and full; `tools/dq_pin.sh --look-state/--look-tree` records new pins with
+`--look-shards=1 --full`. `--look-order=reverse|shuffle:N` reorders the types and `--look-dump=DIR` writes the rows each world produced, merged and
+sorted under `DIR/merged` (two runs compare with `diff -r`): the determinism proof. `--no-split-slow` / `DQ_FOCUS_SPLIT=0` restores one world. Other
+slow tests (`DQ_SLOW_TESTS`) still go to a second world. The slow world's timeout defaults to 45 minutes (`DQ_FOCUS_TIMEOUT_MINUTES` overrides it).
+Worlds share no mutable file: each takes its own run slot (`data/runs/runN`), port, log dir, spritesheet dir and results file, exactly as shards do.
+
+**At most two look-pin runs at once on the machine (`tools/dq_look_lock.sh`).** A run holding a look pin takes one of two slots under
+`E:/dq-cache/look-pin-locks` (`DQ_LOOK_LOCK_DIR`, `DQ_LOOK_PIN_SLOTS`; 0 turns it off) before it starts and gives it back when it ends. A third run prints
+`look-pin lock: waiting` with its place in the queue and who holds the slots, and waits. The merge worktree (`E:/projects/dq-wt/merge-base`) is queued ahead of
+every other worktree; within a priority the order is arrival. A slot or queue entry whose process is gone is reclaimed by the next waiter.
+
+**Do not hand back mid-run.** `dq_focused_test.sh` ends every run with one line,
+`FOCUSED RESULT: N passed, M failed (json: path)`, and its exit status. A long batch is started with `--detach`, which prints
+`FOCUSED RUN STARTED: <runid>` and returns at once; poll `--status <runid>` (exit 0 passed, 1 failed, 3 still running, 2
+unknown; it prints the state, elapsed time and the last log lines). A merge agent keeps polling, with short calls, until the state is
+`passed` or `failed`; it does not hand its report back while a run it started is going, and it does not leave a background
+monitor as the only thing watching one. Status files live in `data/focused-runs/<runid>.{status,log}`.

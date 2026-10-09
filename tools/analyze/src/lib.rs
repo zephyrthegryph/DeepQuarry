@@ -15,6 +15,7 @@ pub mod incr;
 pub mod gens;
 pub mod lint;
 pub mod lints;
+pub mod look_keys;
 pub mod parity;
 pub mod pat;
 pub mod run;

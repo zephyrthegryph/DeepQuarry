@@ -13,11 +13,14 @@
 /obj/item/electronic_assembly/implant/tgui_host()
 	return implant().tgui_host()
 
-DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/implant, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/electronic_assembly/implant/appearance_overlays()
-	. = list()
-	. += ..()
-	implant().icon_state = icon_state
+/obj/item/electronic_assembly/implant/draw(datum/look/look)
+	..()
+	look.effect(PROC_REF(sync_implant_state), look.state_so_far(src))
+
+/// The implant shows the assembly's sprite state.
+/obj/item/electronic_assembly/implant/proc/sync_implant_state(shown)
+	if(implant())
+		implant().icon_state = shown
 
 /// The implant this refers to (a relation view: null once that is deleted).
 /obj/item/electronic_assembly/implant/proc/implant() as /obj/item/implant/integrated_circuit

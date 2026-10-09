@@ -9,6 +9,8 @@
 	var/rating_modifier = 0 // rating of installed capacitor + manipulator
 	var/loading = FALSE
 
+TRACKED(/obj/item/gun/magnetic/matfed, mat_storage)
+
 CAPABILITIES(/obj/item/gun/magnetic/matfed)
 	owns_one(nameof(manipulator), /obj/item/stock_parts/manipulator, starts = nameof(manipulator))
 	op("matfed_interaction_hand", hand(), then(PROC_REF(matfed_interaction_hand)))
@@ -33,26 +35,10 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed)
 	else
 		. += span_notice("The \"manipulator missing\" indicator is lit. [src] consumes [mat_cost] units of [ammo_material] per shot.")
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/magnetic/matfed/appearance_overlays()
-	. = list()
-	var/list/overlays_to_add = list()
-	if(removable_components)
-		if(cell)
-			overlays_to_add += image(icon, "[icon_state]_cell")
-		if(capacitor)
-			overlays_to_add += image(icon, "[icon_state]_capacitor")
-	if(!cell || !capacitor)
-		overlays_to_add += image(icon, "[icon_state]_red")
-	else if(capacitor.charge < power_cost)
-		overlays_to_add += image(icon, "[icon_state]_amber")
-	else
-		overlays_to_add += image(icon, "[icon_state]_green")
-	if(mat_storage)
-		overlays_to_add += image(icon, "[icon_state]_loaded")
-
-	. += overlays_to_add
-	. += ..()
+/// The parts and charge indicators are the magnetic gun's; a matfed one is loaded by its stored material.
+/obj/item/gun/magnetic/matfed/draw(datum/look/look)
+	..()
+	look.overlay("[initial(icon_state)]_loaded", when = mat_storage)
 
 /// Old attack_hand.
 /obj/item/gun/magnetic/matfed/proc/matfed_interaction_hand(datum/act/op/A)
@@ -68,7 +54,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 			user.put_in_hands(removing)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " removes %I% from %T%."), item = removing)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
-			update_icon()
 			return TRUE
 	return OP_DECLINE
 
@@ -78,7 +63,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 	return FALSE
 
 /obj/item/gun/magnetic/matfed/use_ammo()
-	mat_storage -= mat_cost
+	set_mat_storage(mat_storage - mat_cost)
 
 /obj/item/gun/magnetic/matfed/show_ammo()
 	if(mat_storage)
@@ -98,7 +83,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 	playsound(src, tool.usesound, 50, 1)
 	mat_cost = initial(mat_cost)
 	rel_take(src, nameof(manipulator))
-	update_icon()
 	update_rating_mod()
 	return ITEM_INTERACT_SUCCESS
 
@@ -116,7 +100,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 /obj/item/gun/magnetic/matfed/proc/sheet_loaded(datum/task/timed/load_sheets/task)
 	if(!can_load_sheet(task.sheets))
 		return STEP_DONE
-	mat_storage += SHEET_MATERIAL_AMOUNT
+	set_mat_storage(mat_storage + SHEET_MATERIAL_AMOUNT)
 	play_sfx(src, SFX_EFFECTS_PHASEIN, 0.15)
 	task.loaded_any = TRUE
 	task.sheets.use(1)
@@ -128,7 +112,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 	if(task.loaded_any && user)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with \the [task.sheets]."))
 		play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-	update_icon()
 
 /// Old attackby: the parent's first, then its own.
 /obj/item/gun/magnetic/matfed/gun_item(datum/act/op/A)
@@ -146,7 +129,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			mat_cost = initial(mat_cost) / (2*manipulator.rating)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = manipulator)
-			update_icon()
 			update_rating_mod()
 			return
 
@@ -174,12 +156,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 				return
 
 			consume(M, user)
-			mat_storage += (SHEET_MATERIAL_AMOUNT/2*0.8) //two plasma ores needed per sheet, some inefficiency for not using refined product
+			set_mat_storage(mat_storage + (SHEET_MATERIAL_AMOUNT/2*0.8)) //two plasma ores needed per sheet, some inefficiency for not using refined product
 			success = TRUE
 		if(success)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with %I%."), item = M)
 			play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-		update_icon()
 		return
 
 #define GEN_STARTING -1
@@ -226,7 +207,6 @@ TRACKED(/obj/item/gun/magnetic/matfed/phoronbore, generator_state)
 
 	use_ammo()
 	capacitor.use(power_cost)
-	update_icon()
 
 	return new projectile_type(src, rating_modifier)
 
@@ -271,7 +251,6 @@ TRACKED(/obj/item/gun/magnetic/matfed/phoronbore, generator_state)
 		else if(!generator_state)
 			capacitor.use(capacitor.charge * 0.05)
 
-	update_state()
 
 /obj/item/gun/magnetic/matfed/phoronbore/proc/generator_generate()
 	var/fuel_used = generator_state == GEN_IDLE ? 5 : 25
@@ -280,7 +259,7 @@ TRACKED(/obj/item/gun/magnetic/matfed/phoronbore, generator_state)
 		cell.give(power_made)
 	else if(capacitor)
 		capacitor.charge(power_made)
-	mat_storage = max(mat_storage - fuel_used, 0)
+	set_mat_storage(max(mat_storage - fuel_used, 0))
 	var/turf/T = get_turf(src)
 	if(T)
 		T.assume_gas(GAS_CO2, fuel_used * 0.01, T0C+200)

@@ -47,12 +47,6 @@
 	// Seed details/line data.
 	var/datum/seed/seed = null // The currently planted seed
 
-	var/image/ov_lowhealth
-	var/image/ov_lowwater
-	var/image/ov_lownutri
-	var/image/ov_harvest
-	var/image/ov_frozen
-	var/image/ov_alert3
 
 	// Reagent information for process(), consider moving this to a controller along
 	// with cycle information under 'mechanical concerns' at some point.
@@ -214,12 +208,12 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 
 		if(weedlevel > 0)
 			nymph.reagents.add_reagent(REAGENT_ID_GLUCOSE, weedlevel)
-			weedlevel = 0
+			set_weedlevel(0)
 			act_message(nymph, src, MSG_SELF(span_notice("You begin rooting through %T%, ripping out weeds and eating them noisily.")), \
 				MSG_OTHERS(span_notice(span_bold("%U%") + " begins rooting through %T%, ripping out weeds and eating them noisily.")))
 		else if(nymph.nutrition > 100 && nutrilevel < 10)
 			nymph.adjust_nutrition(-(((10-nutrilevel)*5)))
-			nutrilevel = 10
+			set_nutrilevel(10)
 			act_message(nymph, src, MSG_SELF(span_notice("You secrete a trickle of green liquid, refilling %T%.")), \
 				MSG_OTHERS(span_notice(span_bold("%U%") + " secretes a trickle of green liquid, refilling %T%.")))
 		else
@@ -231,6 +225,17 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 /// Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
 /obj/machinery/portable_atmospherics/hydroponics/var/frozen = 0
 TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, waterlevel)
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, nutrilevel)
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, pestlevel)
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, weedlevel)
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, toxins)
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, dead)
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, harvest)
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, age)
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, health)
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, closed_system)
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, labelled)
 
 /// Everything but cryogenically frozen (frozen == 1) grows.
 /obj/machinery/portable_atmospherics/hydroponics/proc/not_frozen()
@@ -242,13 +247,10 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 
 /obj/machinery/portable_atmospherics/hydroponics/Initialize(mapload)
 	. = ..()
-	if(!ov_lowhealth)
-		setup_overlays()
 	rel_set(src, nameof(temp_chem_holder), new /obj())
 	temp_chem_holder.create_reagents(10) // ALLOW(decl): holder on a bare scratch /obj child, not on src
 	if(mechanical)
 		connect()
-	update_icon()
 
 
 /obj/machinery/portable_atmospherics/hydroponics/on_reagent_change()
@@ -273,10 +275,10 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 /obj/machinery/portable_atmospherics/hydroponics/proc/plant_seeds(obj/item/seeds/S)
 	lastproduce = 0
 	seed_hand_over(S, "seed_static", src, "seed") //Grab the seed datum (a packet's private copy moves over).
-	dead = 0
-	age = 1
+	set_dead(0)
+	set_age(1)
 	//Snowflakey, maybe move this to the seed datum
-	health = (istype(S, /obj/item/seeds/cutting) ? round(seed.get_trait(TRAIT_ENDURANCE)/rand(2,5)) : seed.get_trait(TRAIT_ENDURANCE))
+	set_health((istype(S, /obj/item/seeds/cutting) ? round(seed.get_trait(TRAIT_ENDURANCE)/rand(2,5)) : seed.get_trait(TRAIT_ENDURANCE)))
 	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
 	work_start(src)
 
@@ -285,8 +287,6 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 	GLOB.seed_planted_shift_roundstat++
 
 	check_health()
-	update_icon()
-
 /obj/machinery/portable_atmospherics/hydroponics/bullet_act(obj/item/projectile/Proj)
 
 	//Don't act on seeds like dionaea that shouldn't change.
@@ -341,14 +341,12 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 	if(seed && !dead && health <= 0)
 		die()
 	check_level_sanity()
-	update_icon()
-
 /obj/machinery/portable_atmospherics/hydroponics/proc/die()
-	dead = 1
+	set_dead(1)
 	mutation_level = 0
-	harvest = 0
-	weedlevel += 1 * HYDRO_SPEED_MULTIPLIER
-	pestlevel = 0
+	set_harvest(0)
+	set_weedlevel(weedlevel + (1 * HYDRO_SPEED_MULTIPLIER))
+	set_pestlevel(0)
 
 //Process reagents being input into the tray.
 /obj/machinery/portable_atmospherics/hydroponics/proc/process_reagents()
@@ -367,12 +365,12 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 		if(seed && !dead)
 			// Beneficial reagents have a few impacts along with health buffs.
 			if(seed.beneficial_reagents && seed.beneficial_reagents[R.id])
-				health += seed.beneficial_reagents[R.id][1]       * reagent_total
+				set_health(health + (seed.beneficial_reagents[R.id][1]       * reagent_total))
 				yield_mod += seed.beneficial_reagents[R.id][2]    * reagent_total
 				mutation_mod += seed.beneficial_reagents[R.id][3] * reagent_total
 
 			else if(beneficial_reagents[R.id])
-				health += beneficial_reagents[R.id][1]       * reagent_total
+				set_health(health + (beneficial_reagents[R.id][1]       * reagent_total))
 				yield_mod += beneficial_reagents[R.id][2]    * reagent_total
 				mutation_mod += beneficial_reagents[R.id][3] * reagent_total
 
@@ -385,34 +383,34 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 
 			// Toxic reagents can possibly differ between plants.
 			if(seed.toxic_reagents && seed.toxic_reagents[R.id])
-				toxins += seed.toxic_reagents[R.id] * reagent_total
+				set_toxins(toxins + (seed.toxic_reagents[R.id] * reagent_total))
 
 			else if(toxic_reagents[R.id])
-				toxins += toxic_reagents[R.id] * reagent_total
+				set_toxins(toxins + (toxic_reagents[R.id] * reagent_total))
 
 			if(age_reagents[R.id])
 				age_mod += age_reagents[R.id]  * reagent_total
 
 		//Handle some general level adjustments. These values are independent of plants existing.
 		if(weedkiller_reagents[R.id])
-			weedlevel -= weedkiller_reagents[R.id] * reagent_total
+			set_weedlevel(weedlevel - (weedkiller_reagents[R.id] * reagent_total))
 		if(pestkiller_reagents[R.id])
-			pestlevel += pestkiller_reagents[R.id] * reagent_total
+			set_pestlevel(pestlevel + (pestkiller_reagents[R.id] * reagent_total))
 
 		// Handle nutrient refilling.
 		if(nutrient_reagents[R.id])
-			nutrilevel += nutrient_reagents[R.id]  * reagent_total
+			set_nutrilevel(nutrilevel + (nutrient_reagents[R.id]  * reagent_total))
 
 		// Handle water and water refilling.
 		var/water_added = 0
 		if(water_reagents[R.id])
 			var/water_input = water_reagents[R.id] * reagent_total
 			water_added += water_input
-			waterlevel += water_input
+			set_waterlevel(waterlevel + (water_input))
 
 		// Water dilutes toxin level.
 		if(water_added > 0)
-			toxins -= round(water_added/4)
+			set_toxins(toxins - (round(water_added/4)))
 
 	temp_chem_holder.reagents.clear_reagents()
 	check_health()
@@ -434,14 +432,14 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 	else
 		seed.harvest(get_turf(src),yield_mod)
 	// Reset values.
-	harvest = 0
+	set_harvest(0)
 	lastproduce = age
 
 	if(!seed.get_trait(TRAIT_HARVEST_REPEAT))
 		yield_mod = 0
 		proto_set(src, nameof(seed), null)
-		dead = 0
-		age = 0
+		set_dead(0)
+		set_age(0)
 		sampled = 0
 		mutation_mod = 0
 		age_mod = 0
@@ -458,9 +456,9 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 		return
 
 	proto_set(src, nameof(seed), null)
-	dead = 0
+	set_dead(0)
 	sampled = 0
-	age = 0
+	set_age(0)
 	yield_mod = 0
 	mutation_mod = 0
 	age_mod = 0
@@ -481,16 +479,15 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 	proto_set(src, nameof(seed), SSplants.seeds[pick(list(PLANT_REISHI,PLANT_NETTLE,PLANT_AMANITA,PLANT_MUSHROOMS,PLANT_PLUMPHELMET,PLANT_TOWERCAP,PLANT_HAREBELLS,PLANT_WEEDS))])
 	if(!seed) return //Weed does not exist, someone fucked up.
 
-	dead = 0
-	age = 0
+	set_dead(0)
+	set_age(0)
 	age_mod = 0
-	health = seed.get_trait(TRAIT_ENDURANCE)
+	set_health(seed.get_trait(TRAIT_ENDURANCE))
 	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
-	harvest = 0
-	weedlevel = 0
-	pestlevel = 0
+	set_harvest(0)
+	set_weedlevel(0)
+	set_pestlevel(0)
 	sampled = 0
-	update_icon()
 	visible_message(span_notice("\The [previous_plant ? previous_plant : initial(name)] has been overtaken by [seed.display_name]."))
 
 	return
@@ -522,8 +519,7 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 	var/mob/user = A.actor
 	if(labelled)
 		to_chat(user, span_filter_notice("You remove the label."))
-		labelled = null
-		update_icon()
+		set_labelled(null)
 	else
 		to_chat(user, span_filter_notice("There is no label to remove."))
 
@@ -536,17 +532,17 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 /obj/machinery/portable_atmospherics/hydroponics/proc/check_level_sanity()
 	//Make sure various values are sane.
 	if(seed)
-		health =     max(0,min(seed.get_trait(TRAIT_ENDURANCE),health))
+		set_health(max(0,min(seed.get_trait(TRAIT_ENDURANCE),health)))
 	else
-		health = 0
-		dead = 0
+		set_health(0)
+		set_dead(0)
 
 	mutation_level = max(0,min(mutation_level,100))
-	nutrilevel =     max(0,min(nutrilevel,10))
-	waterlevel =     max(0,min(waterlevel,100))
-	pestlevel =      max(0,min(pestlevel,10))
-	weedlevel =      max(0,min(weedlevel,10))
-	toxins =         max(0,min(toxins,10))
+	set_nutrilevel(max(0,min(nutrilevel,10)))
+	set_waterlevel(max(0,min(waterlevel,100)))
+	set_pestlevel(max(0,min(pestlevel,10)))
+	set_weedlevel(max(0,min(weedlevel,10)))
+	set_toxins(max(0,min(toxins,10)))
 	age_mod =        max(0,min(age_mod,AGE_MOD_MAX)) // age_mod sanity check
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/mutate_species()
@@ -558,15 +554,14 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 	else
 		return
 
-	dead = 0
+	set_dead(0)
 	mutate(1)
-	age = 0
-	health = seed.get_trait(TRAIT_ENDURANCE)
+	set_age(0)
+	set_health(seed.get_trait(TRAIT_ENDURANCE))
 	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
-	harvest = 0
-	weedlevel = 0
+	set_harvest(0)
+	set_weedlevel(0)
 
-	update_icon()
 	visible_message(span_danger("The " + span_notice("[previous_plant]") + " has suddenly mutated into " + span_notice("[seed.display_name]") + "!"))
 
 	return
@@ -624,8 +619,7 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 
 		if(weedlevel > 0)
 			act_message(user, src, MSG_SELF(span_danger("You remove the weeds from %T%.")), MSG_OTHERS(span_danger("%U% starts uprooting the weeds.")))
-			weedlevel = 0
-			update_icon()
+			set_weedlevel(0)
 		else
 			to_chat(user, span_danger("This plot is completely devoid of weeds. It doesn't need uprooting."))
 
@@ -645,9 +639,9 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 
 		var/obj/item/plantspray/spray = O
 		user.remove_from_mob(O)
-		toxins += spray.toxicity
-		pestlevel -= spray.pest_kill_str
-		weedlevel -= spray.weed_kill_str
+		set_toxins(toxins + (spray.toxicity))
+		set_pestlevel(pestlevel - (spray.pest_kill_str))
+		set_weedlevel(weedlevel - (spray.weed_kill_str))
 		to_chat(user, span_filter_notice("You spray [src] with [O]."))
 		play_sfx(src, SFX_EFFECTS_SPRAY3, extrarange = -6)
 		consume(O, user)
@@ -657,7 +651,7 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 		user.setClickCooldown(user.get_attack_speed(O))
 		act_message(user, null, others = span_danger("\The [seed.display_name] has been attacked by %U% with %I%!"), item = O)
 		if(!dead)
-			health -= O.force
+			set_health(health - (O.force))
 			check_health()
 
 	return OP_OK
@@ -673,7 +667,7 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 		to_chat(user, span_filter_notice("The plant is dead."))
 		return FALSE
 	seed.harvest(user, yield_mod, TRUE)
-	health -= rand(3, 5) * 10
+	set_health(health - (rand(3, 5) * 10))
 	if(prob(30))
 		sampled = TRUE
 	check_health()
@@ -707,8 +701,6 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 /obj/machinery/portable_atmospherics/hydroponics/proc/freezer_toggled(datum/act/op/A)
 	to_chat(A.actor, span_notice("You [frozen ? "disable" : "enable"] the cryogenic freezing."))
 	set_frozen(!frozen)
-	update_icon()
-
 /// Old attack_tk: clear a dead plant or harvest a ripe one at range.
 /obj/machinery/portable_atmospherics/hydroponics/proc/hydroponics_tk_harvest(datum/act/op/A)
 	if(dead)
@@ -780,9 +772,7 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 	close_lid(A.actor)
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/close_lid(mob/living/user)
-	closed_system = !closed_system
+	set_closed_system(!closed_system)
 	to_chat(user, span_filter_notice("You [closed_system ? "close" : "open"] the tray's lid."))
-	update_icon()
-
 #undef AGE_MOD_MAX
 

@@ -1823,6 +1823,18 @@ function testWorldParams(get: any): Record<string, string> {
     params['snapshot-bless'] = '1';
     Juke.logger.warn('DQ_SNAPSHOT_BLESS=1: snapshot tests rewrite their recorded files; review the diff before committing.');
   }
+  // tools/dq_focused_test.sh: one slice of a sweep per focused world (DQ_FOCUS_SHARD=index/count, 0-based; the sweep tests ask
+  // sweep_owns()), and extra world params (DQ_WORLD_PARAMS=key=value&key=value; the look sweep's look-plan, look-types, look-order,
+  // look-dump). A sharded dm-test run sets its own shard params after this, so they win there.
+  const slice = /^(\d+)\/(\d+)$/.exec(process.env.DQ_FOCUS_SHARD ?? '');
+  if (slice) {
+    params['shard-index'] = slice[1];
+    params['shard-count'] = slice[2];
+  }
+  for (const pair of (process.env.DQ_WORLD_PARAMS ?? '').split('&')) {
+    const eq = pair.indexOf('=');
+    if (eq > 0) params[pair.slice(0, eq)] = pair.slice(eq + 1);
+  }
   return params;
 }
 
@@ -2255,7 +2267,9 @@ export const DmTestTarget = new Juke.Target({
     // can reuse them via compileDerived()'s content-hash cache instead of
     // recompiling. removeDerivedArtifacts() in compileDerived()'s catch
     // already cleans up fully on a failed compile.
-    await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
+    // DQ_KEEP_DERIVED_DME=1 (tools/dq_focused_test.sh --split-slow): a second dm-test shares this .dmb and re-reads the
+    // derived .dme for its compile-hash check; deleting it under that run would fail its cache hit.
+    if (process.env.DQ_KEEP_DERIVED_DME !== '1') await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
     if (!run.clean) {
       Juke.logger.error('Test run was not clean, exiting');
       throw new Juke.ExitCode(1);

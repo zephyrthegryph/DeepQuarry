@@ -61,9 +61,9 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
 	if(isopenturf(loc))
 		return INITIALIZE_HINT_QDEL
 	proto_set(src, nameof(seed), seed_shareable(seed_at_make))
-	dead = 0
-	age = 1
-	health = seed.get_trait(TRAIT_ENDURANCE)
+	set_dead(0)
+	set_age(1)
+	set_health(seed.get_trait(TRAIT_ENDURANCE))
 	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
 	check_health()
 

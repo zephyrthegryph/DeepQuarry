@@ -1193,11 +1193,9 @@ TYPE_TABLE(/obj/item/gun/projectile/automatic/c20r, projectile_initial_transform
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/sts35/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-e"
+/obj/item/gun/projectile/automatic/sts35/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-e"]")
 
 TYPE_TABLE(/obj/item/gun/projectile/automatic/sts35, projectile_initial_transform, TRUE)
 
@@ -1230,15 +1228,12 @@ TYPE_TABLE(/obj/item/gun/projectile/automatic/wt550, projectile_initial_transfor
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/z8/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/gun/projectile/automatic/z8/draw(datum/look/look)
+	..()
 	if(ammo_magazine)
-		icon_state = "carbine-[round(CLAMP(length(ammo_magazine.stored_ammo)/2,0,10),2)]"
+		look.state("carbine-[round(CLAMP(ammo_magazine.ammo_count()/2,0,10),2)]")
 	else
-		icon_state = "carbine-e"
-	return .
+		look.state("carbine-e")
 
 /obj/item/gun/projectile/automatic/z8/Initialize(mapload)
 	. = ..()

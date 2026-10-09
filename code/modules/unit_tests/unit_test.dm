@@ -232,18 +232,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 			catch(var/exception/E)
 				log_world("UNIT TEST LEAK: [test ? test.type : "?"] -- qdel of leaked [AM.type] runtimed during block release: [E]")
 
-		if(istype(T, /turf/open))
-			var/turf/open/OT = T
-			if(OT.active_hotspot)
-				qdel(OT.active_hotspot)
-			if(OT.air)
-				OT.air.copy_from(dq_unit_test_block_default_air())
-				OT.air_update_turf(TRUE, FALSE)
-			heat_set_solid(OT, T20C)
-		else if(istype(T, /turf/simulated/wall))
-			// A test isolated a pair of turfs with real walls (dq_atmos_test_isolate_pair
-			// et al) and never got to restore them because it errored out early.
-			T.ChangeTurf(/turf/simulated/floor/tiled/steel)
+		unit_test_block_reset_turf(T)
 
 	if(leaked)
 		var/list/parts = list()
@@ -253,6 +242,21 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 		log_world(.)
 
 	block.in_use = FALSE
+
+/// Puts one block turf back to its template state: no hotspot, the default air and temperature on an open turf, a floor where a test left a wall.
+/proc/unit_test_block_reset_turf(turf/T)
+	if(istype(T, /turf/open))
+		var/turf/open/OT = T
+		if(OT.active_hotspot)
+			qdel(OT.active_hotspot)
+		if(OT.air)
+			OT.air.copy_from(dq_unit_test_block_default_air())
+			OT.air_update_turf(TRUE, FALSE)
+		heat_set_solid(OT, T20C)
+	else if(istype(T, /turf/simulated/wall))
+		// A test isolated a pair of turfs with real walls (dq_atmos_test_isolate_pair
+		// et al) and never got to restore them because it errored out early.
+		T.ChangeTurf(/turf/simulated/floor/tiled/steel)
 
 /// The default air mix a block's open turfs start with -- standard station air.
 /proc/dq_unit_test_block_default_air()

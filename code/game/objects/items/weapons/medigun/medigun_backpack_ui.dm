@@ -151,5 +151,4 @@
 	if(user)
 		to_chat(user, span_notice("You remove the [ccell] from \the [src]."))
 	rel_take(src, nameof(ccell))
-	changed(src)
 	return TRUE

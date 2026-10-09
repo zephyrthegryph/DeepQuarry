@@ -31,7 +31,7 @@
 	var/position_x						// Pixel coordinates in the world
 	var/position_y						// Pixel coordinates in the world.
 	// ALLOW(instance_list): d: replaced per instance at runtime (13 assignments)
-	var/list/speed = list(0,0)          //speed in x,y direction
+	var/list/speed = list(0,0)          //speed in x,y direction; replaced (never edited in place) through set_speed()
 	COOLDOWN_DECLARE(burn_cooldown)                   //worldtime when ship last acceleated
 	var/burn_delay = 1 SECOND           //how often ship can do burns
 	var/fore_dir = NORTH                //what dir ship flies towards for purpose of moving stars effect procs
@@ -83,10 +83,10 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 /obj/effect/overmap/visitable/ship/proc/is_still()
 	return !MOVING(speed[1]) && !MOVING(speed[2])
 
-/// Mirror of "not still": speed is a list mutated in place, so adjust_speed() (its only writer)
-/// publishes the start/stop transition through this field.
+/// Mirror of "not still": adjust_speed() (the only writer of speed) publishes the start/stop transition through this field.
 /obj/effect/overmap/visitable/ship/var/tmp/under_way = FALSE
 TRACKED(/obj/effect/overmap/visitable/ship, under_way)
+TRACKED(/obj/effect/overmap/visitable/ship, speed)
 
 /// Under way (not still).
 CAPABILITIES(/obj/effect/overmap/visitable/ship)
@@ -149,9 +149,11 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 
 /obj/effect/overmap/visitable/ship/proc/adjust_speed(n_x, n_y)
 	var/old_still = is_still()
-	CHANGE_SPEED_BY(speed[1], n_x)
-	CHANGE_SPEED_BY(speed[2], n_y)
-	update_icon()
+	var/new_x = speed[1]
+	var/new_y = speed[2]
+	CHANGE_SPEED_BY(new_x, n_x)
+	CHANGE_SPEED_BY(new_y, n_y)
+	set_speed(list(new_x, new_y)) // a new list each time: the tracked write redraws the heading
 	var/still = is_still()
 	// If nothing changed
 	if(still == old_still)
@@ -215,18 +217,28 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 	position_y = ((loc.y - 1) * WORLD_ICON_SIZE) + MODULUS(position_y, WORLD_ICON_SIZE)
 	update_screen()
 
-DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/overmap/visitable/ship/appearance_overlays()
-	. = list()
+/// Faces its heading in quarter turns (north while still); the vector overlay follows through its effect.
+/obj/effect/overmap/visitable/ship/draw(datum/look/look)
+	..()
 	if(!is_still())
 		var/heading = get_heading_degrees()
-		dir = angle2dir(round(heading, 90))
-		vector_overlay().dir = NORTH
-		vector_overlay().transform = matrix().Turn(heading)
+		look.set_dir(angle2dir(round(heading, 90)))
+		look.effect(PROC_REF(look_effect_vector), heading)
 	else
-		dir = NORTH
+		look.set_dir(NORTH)
+		look.effect(PROC_REF(look_effect_vector), null)
+
+/// The vector overlay points along the heading while under way, and rests (pointing south) when still.
+/obj/effect/overmap/visitable/ship/proc/look_effect_vector(heading)
+	if(isnull(heading))
 		vector_overlay().dir = SOUTH
-	. += ..()
+		return
+	vector_overlay().dir = NORTH
+	vector_overlay().transform = matrix().Turn(heading)
+
+/// The look is the one writer of the heading: set_dir() keeps every other caller facing north.
+/obj/effect/overmap/visitable/ship/look_set_dir(new_dir)
+	dir = new_dir
 
 /obj/effect/overmap/visitable/ship/set_dir(new_dir)
 	return ..(NORTH) // NO! We always face north.

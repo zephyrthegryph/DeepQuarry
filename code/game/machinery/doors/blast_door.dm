@@ -158,7 +158,7 @@ CAPABILITIES(/obj/machinery/door/blast)
 /// A fireaxe must be held in both hands to pry; anything else does not care.
 /obj/machinery/door/blast/proc/wielded_if_axe(datum/act/op/A)
 	var/obj/item/material/twohanded/fireaxe/F = A.held
-	return !istype(F) || F.wielded // ALLOW(reads): whether an axe is wielded is read when the pry is tried
+	return !istype(F) || F.wielded
 
 /// The motors have given out (no power or broken) and the door is still.
 /obj/machinery/door/blast/proc/pry_free(datum/act/A)

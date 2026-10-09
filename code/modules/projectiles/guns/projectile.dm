@@ -70,7 +70,6 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 				for(var/i in 1 to min(ammo_cut, length(ammo_magazine.stored_ammo)))
 					own_remove(ammo_magazine, nameof(ammo_magazine.stored_ammo), ammo_magazine.stored_ammo[1])
 
-	update_icon()
 	if(TYPE_TABLE_GET(src, projectile_initial_transform))
 		update_transform()
 
@@ -145,7 +144,6 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 		user.put_in_hands(ammo_magazine)
 		act_message(user, src, MSG_SELF(span_notice("You remove [ammo_magazine] from %T%.")), MSG_OTHERS("%U% removes [ammo_magazine] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
-		ammo_magazine.update_icon()
 		rel_take(src, nameof(ammo_magazine))
 		user.hud_used?.update_ammo_hud(user, src)
 	else if(length(loaded))
@@ -168,7 +166,6 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 		user.hud_used?.update_ammo_hud(user, src)
 	else
 		to_chat(user, span_warning("[src] is empty."))
-	update_icon()
 	user.hud_used?.update_ammo_hud(user, src)
 
 /// Old attackby: the parent's first, then loading.
@@ -209,9 +206,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 			MSG_OTHERS("[ammo_magazine] falls out and clatters on the floor!"))
 		if(auto_eject_sound)
 			playsound(src, auto_eject_sound, 40, 1)
-		ammo_magazine.update_icon()
 		rel_take(src, nameof(ammo_magazine))
-		update_icon() //make sure to do this after unsetting ammo_magazine
 		user.hud_used?.update_ammo_hud(user, src)
 
 /obj/item/gun/projectile/examine(mob/user)
@@ -359,7 +354,6 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 
 	if(recoil)
 		shake_camera(user, recoil+1, recoil)
-	update_icon()
 
 	if(chambered)
 		chambered.expend()
@@ -371,7 +365,6 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 /obj/item/gun/projectile/proc/bolt_handle(mob/user, stance)
 	var/previous_chambered = chambered
 	var/result = bolt_toggle(TRUE)
-	update_icon()
 	if(!result)
 		to_chat(user,span_notice("Nothing happens."))
 	else
@@ -557,7 +550,6 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 	rel_move(H, nameof(H.stored_ammo), src, nameof(loaded), rd)
 	moveElement(loaded, length(loaded), 1) //to the head of the list
 	play_sfx(src, SFX_WEAPONS_EMPTY)
-	H.update_icon()
 	var/mob/user = task.actor
 	user.hud_used?.update_ammo_hud(user, src)
 	task.count++
@@ -571,7 +563,6 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 		act_message(user, src, MSG_SELF(span_notice("You load [count] round\s into %T%.")), MSG_OTHERS("%U% feeds [count] round\s into %T%."))
 	if(H && !QDELETED(H) && !length(H.stored_ammo))
 		consume(H, user)
-	update_icon()
 
 // Attempts to load A into src, depending on the type of thing being loaded and the load_method.
 // Handles magazine/speedloader/single-casing/storage bulk loads, including the manual-chamber
@@ -626,7 +617,6 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 					act_message(user, src, MSG_SELF(span_notice("You load [count] round\s into %T%.")), MSG_OTHERS("%U% reloads %T%."))
 					play_sfx(src, SFX_WEAPONS_EMPTY)
 					user.hud_used?.update_ammo_hud(user, src)
-		AM.update_icon()
 	else if(istype(A, /obj/item/ammo_casing))
 		var/obj/item/ammo_casing/C = A
 		if(caliber != C.caliber)
@@ -679,7 +669,6 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 				rounds += ammo
 		after(src, 1 SECOND, PROC_REF(load_from_storage), with = list(user, rounds))
 
-	update_icon()
 
 /// Loads the next matching round from a box, one a second.
 /obj/item/gun/projectile/proc/load_from_storage(mob/user, list/rounds)
@@ -718,7 +707,6 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 	user.hud_used.update_ammo_hud(user, src)
 	user.remove_from_mob(C)
 	C.forceMove(src)
-	update_icon()
 
 /obj/item/gun/projectile/special_check(mob/user)
 	if(..())

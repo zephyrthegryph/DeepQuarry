@@ -420,7 +420,7 @@
 		return FALSE
 	for(var/obj/belly/B in host().vore_organs)
 		B.silicon_belly_overlay_preference = belly_choice
-	host().update_icon()
+	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
@@ -1356,7 +1356,7 @@
 			panel.host().vore_selected.belly_item_mult = CLAMP(request.value, 0, 10)
 		if(VORE_SIZE_MULT_OVERALL)
 			panel.host().vore_selected.belly_overall_mult = CLAMP(request.value, 0, 5)
-	panel.host().update_icon()
+	PUBLISH(panel.host(), belly_change)
 	panel.unsaved_changes = TRUE
 
 #undef VORE_SIZE_MULT_MOB

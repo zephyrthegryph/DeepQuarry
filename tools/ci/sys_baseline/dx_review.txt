@@ -173,6 +173,5 @@ manual_push	code/modules/overmap/overmap_object.dm	changed(src, CHANGE_EXPLICIT)
 manual_push	code/modules/power/apc.dm	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet
 manual_push	code/modules/reagents/holder/holder.dm	changed(my_atom, CHANGE_CONTENTS)
 manual_push	code/modules/recycling/disposal_machines.dm	changed(src, CHANGE_MACHINE_SETTINGS)
-output_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	to_chat(world, span_danger("Seed type [seed.get_trait(TRAIT_PLANT_ICON)] cannot find a growth stage value."))
 output_side_effect	code/modules/mob/living/silicon/robot/robot_ui_module.dm	to_chat(R, span_warning("Robot Sprites have not been initialized yet. How are you choosing a sprite? Harass a coder."))
 output_side_effect	code/modules/mob/living/silicon/robot/robot_ui_module.dm	to_chat(R, span_warning("Your module appears to have no sprite options. Harass a coder."))

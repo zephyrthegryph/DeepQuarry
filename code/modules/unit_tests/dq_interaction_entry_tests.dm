@@ -256,6 +256,15 @@
 	if(ispath(type, /obj/item/reagent_containers/food/snacks/grown))
 		var/list/seeds = SSplants.seeds
 		return allocate(type, T, length(seeds) ? seeds[1] : null) // produce needs a plant name
+	if(ispath(type, /obj/structure/blob/core))
+		// A core rolls its blob type from the RNG (the random_* cores by difficulty, the rest of the plain ones from every type), so its
+		// colour followed whatever the RNG had drawn: the snapshot subject is placed without an overmind and given one of a fixed type
+		// (its own, when the core names one).
+		var/obj/structure/blob/core/core = allocate(type, T, null, 2, TRUE)
+		if(!QDELETED(core))
+			core.desired_blob_type ||= /datum/blob_type/classic
+			core.create_overmind(null, TRUE)
+		return core
 	return allocate(type, T)
 
 /// Abstract: one domain's recorded snapshot. A subtype sets `snapshot_dir` (one rows file per type, dq_snapshot_files.dm),

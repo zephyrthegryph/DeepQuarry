@@ -154,7 +154,6 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		if(isnull(O) || O.is_stump() || O.is_hidden_by_sprite_accessory())
 			continue
 
-		O.update_icon()
 		if(O.damage_state == "00") continue
 		var/icon/DI
 		var/cache_index = "[O.damage_state]/[O.icon_name]/[species.get_blood_colour(src)]/[species.get_bodytype(src)]"
@@ -905,21 +904,11 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		if(hud_used)
 			hud_used.hidden_inventory_update() 	//Updates the screenloc of the items on the 'other' inventory bar
 
-//update whether handcuffs appears on our hud.
-/mob/living/carbon/proc/update_hud_handcuffed()
-	if(QDESTROYING(src))
-		return
-
-	if(hud_used && hud_used.l_hand_hud_object && hud_used.r_hand_hud_object)
-		hud_used.l_hand_hud_object.update_icon()
-		hud_used.r_hand_hud_object.update_icon()
-
 /mob/living/carbon/human/update_inv_handcuffed()
 	if(QDESTROYING(src))
 		return
 
 	remove_layer(HANDCUFF_LAYER)
-	update_hud_handcuffed() //TODO
 
 	if(!get_equipped_item(SLOT_ID_HANDCUFFED))
 		return //Not cuffed, why bother
