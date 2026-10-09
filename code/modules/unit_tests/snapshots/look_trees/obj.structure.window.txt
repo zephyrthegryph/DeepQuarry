@@ -7,53 +7,53 @@
 /obj/structure/window/bay dir: 2
 /obj/structure/window/bay color: #00e1ff
 /obj/structure/window/bay alpha: 180
-/obj/structure/window/bay overlay: icons/obj/bay_window.dmi:preview_glass:8:#000000
+/obj/structure/window/bay overlay: icons/obj/bay_window.dmi::8:#000000
 /obj/structure/window/bay overlay: icons/obj/bay_window.dmi:window_onframe0:-32767:#00e1ff x4
 /obj/structure/window/bay/reinforced icon: icons/obj/bay_window.dmi
 /obj/structure/window/bay/reinforced state: 
 /obj/structure/window/bay/reinforced dir: 2
 /obj/structure/window/bay/reinforced color: #00e1ff
 /obj/structure/window/bay/reinforced alpha: 180
-/obj/structure/window/bay/reinforced overlay: icons/obj/bay_window.dmi:preview_rglass:8:#000000
+/obj/structure/window/bay/reinforced overlay: icons/obj/bay_window.dmi::8:#000000
 /obj/structure/window/bay/reinforced overlay: icons/obj/bay_window.dmi:rwindow_onframe0:-32767:#00e1ff x4
 /obj/structure/window/bay/phoronbasic icon: icons/obj/bay_window.dmi
 /obj/structure/window/bay/phoronbasic state: 
 /obj/structure/window/bay/phoronbasic dir: 2
 /obj/structure/window/bay/phoronbasic color: #fc2bc5
 /obj/structure/window/bay/phoronbasic alpha: 180
-/obj/structure/window/bay/phoronbasic overlay: icons/obj/bay_window.dmi:preview_phoron:8:#000000
+/obj/structure/window/bay/phoronbasic overlay: icons/obj/bay_window.dmi::8:#000000
 /obj/structure/window/bay/phoronbasic overlay: icons/obj/bay_window.dmi:window_onframe0:-32767:#fc2bc5 x4
 /obj/structure/window/bay/phoronreinforced icon: icons/obj/bay_window.dmi
 /obj/structure/window/bay/phoronreinforced state: 
 /obj/structure/window/bay/phoronreinforced dir: 2
 /obj/structure/window/bay/phoronreinforced color: #fc2bc5
 /obj/structure/window/bay/phoronreinforced alpha: 180
-/obj/structure/window/bay/phoronreinforced overlay: icons/obj/bay_window.dmi:preview_rphoron:8:#000000
+/obj/structure/window/bay/phoronreinforced overlay: icons/obj/bay_window.dmi::8:#000000
 /obj/structure/window/bay/phoronreinforced overlay: icons/obj/bay_window.dmi:rwindow_onframe0:-32767:#fc2bc5 x4
 /obj/structure/window/eris icon: icons/obj/eris_window.dmi
 /obj/structure/window/eris state: 
 /obj/structure/window/eris dir: 2
 /obj/structure/window/eris alpha: 150
-/obj/structure/window/eris overlay: icons/obj/eris_window.dmi:preview_glass:8:#000000
+/obj/structure/window/eris overlay: icons/obj/eris_window.dmi::8:#000000
 /obj/structure/window/eris overlay: icons/obj/eris_window.dmi:window0:-32767 x4
 /obj/structure/window/eris/reinforced icon: icons/obj/eris_window.dmi
 /obj/structure/window/eris/reinforced state: 
 /obj/structure/window/eris/reinforced dir: 2
 /obj/structure/window/eris/reinforced alpha: 150
-/obj/structure/window/eris/reinforced overlay: icons/obj/eris_window.dmi:preview_rglass:8:#000000
+/obj/structure/window/eris/reinforced overlay: icons/obj/eris_window.dmi::8:#000000
 /obj/structure/window/eris/reinforced overlay: icons/obj/eris_window.dmi:rwindow0:-32767 x4
 /obj/structure/window/eris/phoronbasic icon: icons/obj/eris_window.dmi
 /obj/structure/window/eris/phoronbasic state: 
 /obj/structure/window/eris/phoronbasic dir: 2
 /obj/structure/window/eris/phoronbasic alpha: 150
+/obj/structure/window/eris/phoronbasic overlay: icons/obj/eris_window.dmi::8:#000000
 /obj/structure/window/eris/phoronbasic overlay: icons/obj/eris_window.dmi:preview_phoron0:-32767 x4
-/obj/structure/window/eris/phoronbasic overlay: icons/obj/eris_window.dmi:pwindow:8:#000000
 /obj/structure/window/eris/phoronreinforced icon: icons/obj/eris_window.dmi
 /obj/structure/window/eris/phoronreinforced state: 
 /obj/structure/window/eris/phoronreinforced dir: 2
 /obj/structure/window/eris/phoronreinforced alpha: 150
+/obj/structure/window/eris/phoronreinforced overlay: icons/obj/eris_window.dmi::8:#000000
 /obj/structure/window/eris/phoronreinforced overlay: icons/obj/eris_window.dmi:preview_rphoron0:-32767 x4
-/obj/structure/window/eris/phoronreinforced overlay: icons/obj/eris_window.dmi:rpwindow:8:#000000
 /obj/structure/window/basic icon: icons/obj/structures_vr.dmi
 /obj/structure/window/basic state: window
 /obj/structure/window/basic dir: 2

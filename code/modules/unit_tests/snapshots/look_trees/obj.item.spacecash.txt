@@ -1,6 +1,7 @@
 /obj/item/spacecash icon: icons/obj/economy.dmi
 /obj/item/spacecash state: spacecash1
 /obj/item/spacecash dir: 2
+/obj/item/spacecash overlay: icons/obj/economy.dmi:spacecash1:-32767
 /obj/item/spacecash overlay: icons/obj/economy.dmi:spacecash1:8:#000000
 /obj/item/spacecash/c1 icon: icons/obj/economy.dmi
 /obj/item/spacecash/c1 state: spacecash1
