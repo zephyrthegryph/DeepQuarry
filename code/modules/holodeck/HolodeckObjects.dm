@@ -220,7 +220,6 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 		hit(W.force)
 		if(get_integrity() <= 7)
 			set_anchored(FALSE)
-			update_nearby_icons()
 			step(src, get_dir(user, src))
 	else
 		play_sfx(src, SFX_EFFECTS_GLASSHIT)

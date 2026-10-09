@@ -27,7 +27,6 @@ TYPE_TABLE_DECLARE(/obj/item/material/fishing_net, fishing_net_accepted_mobs, li
 
 /obj/item/material/fishing_net/Initialize(mapload)
 	. = ..()
-	update_icon()
 
 /obj/item/material/fishing_net/afterattack(atom/A, mob/user, proximity)
 	if(get_dist(get_turf(src), A) > reach)
@@ -56,7 +55,6 @@ TYPE_TABLE_DECLARE(/obj/item/material/fishing_net, fishing_net_accepted_mobs, li
 		var/mob/L = A
 		act_message(user, L, MSG_SELF(span_notice("You snatch %T% with \the [src].")), MSG_OTHERS(span_notice("%U% snatches %T% with \the [src].")))
 		L.forceMove(src)
-		update_icon()
 		update_weight()
 		return
 	return ..()
@@ -76,7 +74,6 @@ CAPABILITIES(/obj/item/material/fishing_net)
 	for(var/obj/item/I in contents_of(src))
 		I.forceMove(get_turf(src))
 		act_message(user, src, MSG_SELF(span_notice("You dump %I% out of %T%.")), MSG_OTHERS(span_notice("%U% dumps %I% out of %T%.")), item = I)
-	update_icon()
 	update_weight()
 	return OP_OK
 
@@ -90,33 +87,28 @@ CAPABILITIES(/obj/item/material/fishing_net)
 				L.attackby(W, user)
 	return OP_DECLINE
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_net, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/fishing_net/appearance_overlays() // Also updates name and desc
-	. = list()
-	underlays.Cut()
+/// The net, empty or with the creatures it holds (named and described by them).
+/obj/item/material/fishing_net/draw(datum/look/look)
+	..()
+	look.identity(name = initial(name), desc = initial(desc))
+	var/list/trapped = look.things_in(src, null, /mob)
+	for(var/mob/M in trapped)
+		look_trapped(look, M)
+	look.state(length(trapped) ? contain_state : empty_state)
 
-	. += ..()
+/// One creature in the net: seen through the mesh, and the net named for it.
+/obj/item/material/fishing_net/proc/look_trapped(datum/look/look, mob/M)
+	look.underlay(look_overlay_image(M.icon, M.icon_state))
+	look.identity(name = "filled net", desc = "A net with [M] inside.")
 
-	name = initial(name)
-	desc = initial(desc)
-	var/contains_mob = FALSE
+/// TRUE while a creature is in the net.
+/obj/item/material/fishing_net/proc/holds_creature()
 	for(var/mob/M in contents_of(src))
-		var/image/victim = image(M.icon, M.icon_state)
-		underlays += victim
-		name = "filled net"
-		desc = "A net with [M] inside."
-		contains_mob = TRUE
-
-	if(contains_mob)
-		icon_state = contain_state
-
-	else
-		icon_state = empty_state
-
-	return .
+		return TRUE
+	return FALSE
 
 /obj/item/material/fishing_net/proc/update_weight()
-	if(icon_state == contain_state)	// Let's not do a for loop just to see if a mob is in here.
+	if(holds_creature())
 		slowdown = initial(slowdown) * 2
 		reach = 1
 	else
@@ -178,7 +170,6 @@ TYPE_TABLE(/obj/item/material/fishing_net/butterfly_net, fishing_net_accepted_mo
 		act_message(user, L, MSG_SELF(span_notice("You snatch %T% with \the [src].")), MSG_OTHERS(span_notice("%U% snatches %T% with \the [src].")))
 		L.forceMove(src)
 		play_sfx(src, SFX_EFFECTS_PLOP, volume = 50, vary = TRUE)
-		update_icon()
 		update_weight()
 		return
 	return ..()
@@ -200,7 +191,6 @@ CAPABILITIES(/obj/item/material/fishing_net/butterfly_net)
 	for(var/obj/item/I in contents_of(src))
 		I.forceMove(get_turf(src))
 		act_message(user, src, MSG_SELF(span_notice("You dump %I% out of %T%.")), MSG_OTHERS(span_notice("%U% dumps %I% out of %T%.")), item = I)
-	update_icon()
 	update_weight()
 	return
 
@@ -211,31 +201,13 @@ CAPABILITIES(/obj/item/material/fishing_net/butterfly_net)
 		else
 			M.forceMove(get_turf(src))
 		to_chat(M, span_warning("You climb out of \the [src]."))
-		update_icon()
 		update_weight()
 	else
 		to_chat(M, span_warning("You fail to escape \the [src]."))
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_net/butterfly_net, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/fishing_net/butterfly_net/appearance_overlays() // Also updates name and desc
-	. = list()
-	underlays.Cut()
-
-	name = initial(name)
-	desc = initial(desc)
-	var/contains_mob = FALSE
-	for(var/mob/M in contents_of(src))
-		name = "filled butterfly net"
-		desc = "A net with [M] inside."
-		contains_mob = TRUE
-
-	if(contains_mob)
-		icon_state = contain_state
-
-	else
-		icon_state = empty_state
-
-	return .
+/// A butterfly net does not show its catch.
+/obj/item/material/fishing_net/butterfly_net/look_trapped(datum/look/look, mob/M)
+	look.identity(name = "filled butterfly net", desc = "A net with [M] inside.")
 
 /datum/crafting_recipe/butterfly_net
 	name = "butterfly net"

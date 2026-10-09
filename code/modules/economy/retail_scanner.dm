@@ -392,7 +392,7 @@ CAPABILITIES(/obj/item/retail_scanner)
 			src.visible_message("[icon2html(src, viewers(src))]" + span_warning("Not enough funds."))
 		else
 			// Transfer the money
-			E.worth -= transaction_amount
+			E.set_worth(E.worth - transaction_amount)
 			linked_account.credit(transaction_amount, E.owner_name, transaction_purpose, machine_id, FALSE)
 
 			SSsupply.create_service_external_invoice(linked_account, machine_id, item_list, price_list, E.owner_name, transaction_amount, "E-Wallet", verified_sale_items)

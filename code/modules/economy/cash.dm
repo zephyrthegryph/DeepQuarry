@@ -26,7 +26,6 @@
 /obj/item/spacecash/Initialize(mapload)
 	. = ..()
 	make_sellable(/datum/sellable/spacecash)
-	note_seed = rand(0, SPACECASH_NOTE_LAYOUTS - 1)
 
 /obj/item/spacecash
 	/// Picked once at init: where this pile starts in the shared note layouts, so a redraw keeps
@@ -47,9 +46,7 @@ GLOBAL_LIST_INIT(spacecash_note_layouts, build_spacecash_note_layouts())
 /// The banknote image for the `index`th note of this pile.
 /obj/item/spacecash/proc/banknote_image(denomination, index)
 	var/list/layouts = GLOB.spacecash_note_layouts
-	var/image/banknote = image('icons/obj/economy.dmi', "spacecash[denomination]")
-	banknote.transform = layouts[((note_seed + index) % SPACECASH_NOTE_LAYOUTS) + 1]
-	return banknote
+	return look_overlay_image('icons/obj/economy.dmi', "spacecash[denomination]", transform = layouts[((note_seed + index) % SPACECASH_NOTE_LAYOUTS) + 1])
 
 /// Old attackby.
 /obj/item/spacecash/proc/cash_combine(datum/act/op/A)
@@ -71,42 +68,41 @@ GLOBAL_LIST_INIT(spacecash_note_layouts, build_spacecash_note_layouts())
 		consume(src, user)
 	return OP_PASS
 
-DECLARE_APPEARANCE_PROC(/obj/item/spacecash, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/spacecash/appearance_overlays()
-	. = list()
-	name = "[worth] [initial_name]\s"
+TRACKED(/obj/item/spacecash, worth)
+TRACKED(/obj/item/spacecash, note_seed)
+
+/obj/item/spacecash/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// The pile's name, state or scattered notes (a charge card draws none of it).
+/obj/item/spacecash/proc/look_parts(datum/look/look)
+	look.identity(name = "[worth] [initial_name]\s")
 	if(worth in list(1000,500,200,100,50,20,10,5,1))
-		icon_state = "spacecash[worth]"
-		desc = "It's worth [worth] [initial_name]s."
-		return .
-	var/sum = src.worth
+		look.state("spacecash[worth]")
+		look.identity(desc = "It's worth [worth] [initial_name]s.")
+		return
+	var/sum = worth
 	var/num = 0
 	for(var/i in list(1000,500,200,100,50,20,10,5,1))
 		while(sum >= i && num < 50)
 			sum -= i
 			num++
-			. += banknote_image(i, num)
+			look.overlay(banknote_image(i, num))
 	if(num == 0) // Less than one thaler, let's just make it look like 1 for ease
-		. += banknote_image(1, 0)
-	src.desc = "They are worth [worth] [initial_name]s."
+		look.overlay(banknote_image(1, 0))
+	look.identity(desc = "They are worth [worth] [initial_name]s.")
 
-/obj/item/spacecash/proc/adjust_worth(adjust_worth = 0, update = 1)
-	worth += adjust_worth
+/obj/item/spacecash/proc/adjust_worth(adjust_worth = 0)
+	set_worth(worth + adjust_worth)
 	if(worth > 0)
-		if(update)
-			update_icon()
 		return worth
 	else
 		spent(src)
 		return 0
 
-/obj/item/spacecash/proc/set_worth(new_worth = 0, update = 1)
-	worth = max(0, new_worth)
-	if(update)
-		update_icon()
-	return worth
-
 CAPABILITIES(/obj/item/spacecash)
+	rolls(nameof(note_seed), range_of(0, 49))
 	op("cash_take", in_hand(), label("Use"),
 		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(cash_take_question)), "title" = "Take Money", "default" = 20, "max_value" = nameof(worth), "timeout" = 0), step = "k92"),
 		then(PROC_REF(cash_take)))
@@ -207,7 +203,9 @@ CAPABILITIES(/obj/item/spacecash)
 CAPABILITIES(/obj/item/spacecash/ewallet)
 	op("pass_item", item(/obj/item), label("Interaction pass"), passes())
 
-APPEARANCE_NONE(/obj/item/spacecash/ewallet)
+/// A charge card keeps its mapped look and name.
+/obj/item/spacecash/ewallet/look_parts(datum/look/look)
+	return
 
 /obj/item/spacecash/ewallet/examine(mob/user)
 	. = ..()

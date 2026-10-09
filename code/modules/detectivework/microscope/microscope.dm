@@ -92,7 +92,6 @@ MSG_DEF_SELF(microscope/no_sample, "the microscope has no sample to examine")
 			report.info += "No information available."
 
 	if(report)
-		report.update_icon()
 		if(report.info)
 			to_chat(user,report.info)
 

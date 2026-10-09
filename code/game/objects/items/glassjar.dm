@@ -23,10 +23,6 @@
 
 TYPE_TABLE_DECLARE(/obj/item/glass_jar, glass_jar_mobs, list(/mob/living/simple_mob/animal/passive/lizard, /mob/living/simple_mob/animal/passive/mouse, /mob/living/simple_mob/animal/sif/leech, /mob/living/simple_mob/animal/sif/frostfly, /mob/living/simple_mob/animal/sif/glitterfly))
 
-/obj/item/glass_jar/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/item/glass_jar/afterattack(atom/A, mob/user, proximity, click_parameters, stance = I_HURT)
 	if(!proximity || contains)
 		return
@@ -37,8 +33,7 @@ TYPE_TABLE_DECLARE(/obj/item/glass_jar, glass_jar_mobs, list(/mob/living/simple_
 				return
 
 			to_chat(user, span_notice("You fill \the [src] with water!"))
-			filled = TRUE
-			update_icon()
+			set_filled(TRUE)
 			return
 	if(istype(A, /mob))
 		var/accept = 0
@@ -51,15 +46,13 @@ TYPE_TABLE_DECLARE(/obj/item/glass_jar, glass_jar_mobs, list(/mob/living/simple_
 		var/mob/L = A
 		act_message(user, src, MSG_SELF(span_notice("You scoop [L] into %T%.")), MSG_OTHERS(span_notice("%U% scoops [L] into %T%.")))
 		L.forceMove(src)
-		contains = JAR_ANIMAL
-		update_icon()
+		set_contains(JAR_ANIMAL)
 		return
 	else if(istype(A, /obj/effect/spider/spiderling))
 		var/obj/effect/spider/spiderling/S = A
 		act_message(user, src, MSG_SELF(span_notice("You scoop [S] into %T%.")), MSG_OTHERS(span_notice("%U% scoops [S] into %T%.")))
 		S.forceMove(src)
-		contains = JAR_SPIDER
-		update_icon()
+		set_contains(JAR_SPIDER)
 		return
 
 CAPABILITIES(/obj/item/glass_jar)
@@ -86,15 +79,13 @@ CAPABILITIES(/obj/item/glass_jar)
 				return OP_OK
 
 			else
-				filled = FALSE
+				set_filled(FALSE)
 				act_message(user, src, others = span_warning("%U% dumps out %T%'s water!"))
-				update_icon()
 				return OP_OK
 
 		else
 			act_message(user, src, others = span_notice("%U% dumps %T%'s water."))
-			filled = FALSE
-			update_icon()
+			set_filled(FALSE)
 			return OP_OK
 
 	switch(contains)
@@ -102,22 +93,19 @@ CAPABILITIES(/obj/item/glass_jar)
 			for(var/obj/O in contents_of(src))
 				O.forceMove(user.loc)
 			to_chat(user, span_notice("You take money out of \the [src]."))
-			contains = JAR_NOTHING
-			update_icon()
+			set_contains(JAR_NOTHING)
 			return OP_OK
 		if(JAR_ANIMAL)
 			for(var/mob/M in contents_of(src))
 				M.forceMove(user.loc)
 				act_message(user, src, MSG_SELF(span_notice("You release [M] from %T%.")), MSG_OTHERS(span_notice("%U% releases [M] from %T%.")))
-			contains = JAR_NOTHING
-			update_icon()
+			set_contains(JAR_NOTHING)
 			return OP_OK
 		if(JAR_SPIDER)
 			for(var/obj/effect/spider/spiderling/S in contents_of(src))
 				S.forceMove(user.loc)
 				act_message(user, src, MSG_SELF(span_notice("You release [S] from %T%.")), MSG_OTHERS(span_notice("%U% releases [S] from %T%.")))
-			contains = JAR_NOTHING
-			update_icon()
+			set_contains(JAR_NOTHING)
 			return OP_OK
 	for(var/mob/M in contents_of(src))
 		if(istype(M,/mob/living/voice)) //Don't knock voices out!
@@ -136,9 +124,8 @@ CAPABILITIES(/obj/item/glass_jar)
 		var/obj/item/spacecash/S = W
 		if(!own_bring_in(src, nameof(contents), S, null, user, TRUE, null, FALSE))
 			return OP_PASS
-		contains = JAR_MONEY
+		set_contains(JAR_MONEY)
 		act_message(user, src, others = span_notice("%U% puts [S.worth] [S.worth > 1 ? "thalers" : "thaler"] into %T%."))
-		update_icon()
 	if(istype(W,/obj/item/holder/micro))
 		var/full = 0
 		for(var/mob/M in contents_of(src))
@@ -156,71 +143,52 @@ CAPABILITIES(/obj/item/glass_jar)
 				M.forceMove(src)
 				to_chat(user, span_notice("You stuff \the [M] into \the [src]!"))
 	return OP_PASS
-DECLARE_APPEARANCE_PROC(/obj/item/glass_jar, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/glass_jar/appearance_overlays() // Also updates name and desc
-	. = list()
-	underlays.Cut()
+TRACKED(/obj/item/glass_jar, contains)
+TRACKED(/obj/item/glass_jar, filled)
 
+/// The jar, its water and what it holds (named and described by it): coins heaped, creatures seen through the glass.
+/obj/item/glass_jar/draw(datum/look/look)
+	..()
+	var/jar_name = initial(name)
+	var/jar_desc = initial(desc)
 	if(filled)
-		underlays += image(icon, "[icon_state]_water")
+		look.underlay(look_overlay_image(icon, "[initial(icon_state)]_water"))
 
 	switch(contains)
-		if(JAR_NOTHING)
-			name = initial(name)
-			desc = initial(desc)
 		if(JAR_MONEY)
-			if(can_fill)
-				name = "tip tank"
-			else
-				name = "tip jar"
-			desc = "A [name] with money inside."
-			for(var/obj/item/spacecash/S in contents_of(src))
-				var/image/money = image(S.icon, S.icon_state)
-				money.pixel_x = rand(-2, 3)
-				money.pixel_y = rand(-6, 6)
-				money.transform *= 0.6
-				underlays += money
+			jar_name = can_fill ? "tip tank" : "tip jar"
+			jar_desc = "A [jar_name] with money inside."
+			var/i = 0
+			for(var/obj/item/spacecash/S in look.things_in(src, null, /obj/item/spacecash))
+				i++
+				var/matrix/small = matrix()
+				small.Scale(0.6)
+				look.underlay(look_overlay_image(of = S, pixel_x = ((i * 5) % 6) - 2, pixel_y = ((i * 7) % 13) - 6, transform = small))
 		if(JAR_ANIMAL)
 			//tank
 			if(can_fill)
-				for(var/mob/M in contents_of(src))
-					var/image/victim = image(M.icon, M.icon_state)
-					var/initial_x_scale = M.icon_scale_x
-					var/initial_y_scale = M.icon_scale_y
-					M.adjust_scale(0.7)
-					victim.appearance = M.appearance
-					M.adjust_scale(initial_x_scale, initial_y_scale)
-					victim.pixel_y = 4
-					underlays += victim
-					name = "[name] with [M]"
-					desc = "A large [name] with [M] inside."
+				for(var/mob/M in look.things_in(src, null, /mob))
+					var/matrix/shrunk = matrix()
+					shrunk.Scale(0.7)
+					look.underlay(look_overlay_image(of = M, pixel_y = 4, transform = shrunk))
+					jar_name = "[initial(name)] with [M]"
+					jar_desc = "A large [jar_name] with [M] inside."
 			else
-				for(var/mob/M in contents_of(src))
-					var/image/victim = image(M.icon, M.icon_state)
-					victim.pixel_y = 6
-					victim.color = M.color
-					if(M.plane == PLANE_LIGHTING_ABOVE)	// This will only show up on the ground sprite, due to the HuD being over it, so we need both images.
-						var/image/victim_glow = image(M.icon, M.icon_state)
-						victim_glow.pixel_y = 6
-						victim_glow.color = M.color
-						underlays += victim_glow
-					underlays += victim
-					name = "glass jar with [M]"
-					desc = "A small jar with [M] inside."
+				for(var/mob/M in look.things_in(src, null, /mob))
+					look.underlay(look_overlay_image(of = M, pixel_y = 6))
+					jar_name = "glass jar with [M]"
+					jar_desc = "A small jar with [M] inside."
 		if(JAR_SPIDER)
-			for(var/obj/effect/spider/spiderling/S in contents_of(src))
-				var/image/victim = image(S.icon, S.icon_state)
-				underlays += victim
+			for(var/obj/effect/spider/spiderling/S in look.things_in(src, null, /obj/effect/spider/spiderling))
+				look.underlay(look_overlay_image(of = S))
 				if(can_fill)
-					name = "[name] with [S]"
-					desc = "A large tank with [S] inside."
+					jar_name = "[initial(name)] with [S]"
+					jar_desc = "A large tank with [S] inside."
 				else
-					name = "glass jar with [S]"
-					desc = "A small jar with [S] inside."
-				underlays += victim
+					jar_name = "glass jar with [S]"
+					jar_desc = "A small jar with [S] inside."
 
-	if(filled)
-		desc = "[desc] It contains water."
+	look.identity(name = jar_name, desc = filled ? "[jar_desc] It contains water." : jar_desc)
 
 /obj/item/glass_jar/fish
 	name = "glass tank"

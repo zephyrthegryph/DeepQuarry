@@ -549,8 +549,7 @@ TRACKED(/obj/machinery/wheel_of_fortune, lottery_sale)
 		return
 
 	to_chat(user,span_notice("You put [lottery_price] credits worth of chips into the Wheel of Fortune and it pings to notify of your lottery ticket registered!"))
-	cashmoney.worth -= lottery_price
-	cashmoney.update_icon()
+	cashmoney.set_worth(cashmoney.worth - lottery_price)
 
 	if(cashmoney.worth <= 0)
 		consume(cashmoney, user)
@@ -1012,8 +1011,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 				declined_tf = TRUE
 
 	// All sleeping dialogs are done and the collar is re-validated — charge now.
-	cashmoney.worth -= charge
-	cashmoney.update_icon()
+	cashmoney.set_worth(cashmoney.worth - charge)
 
 	if(cashmoney.worth <= 0)
 		consume(cashmoney, user)

@@ -29,12 +29,6 @@ TRACKED(/obj/item/assembly/signaler, deadman)
 	signal()
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly/signaler, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/assembly/signaler/appearance_overlays()
-	. = list()
-	if(holder())
-		holder().update_icon()
-
 CAPABILITIES(/obj/item/assembly/signaler)
 	every(2 SECONDS, then(PROC_REF(signaler_step)), when = nameof(deadman))
 	interface("Signaler", state = nameof(GLOB.tgui_deep_inventory_state))
@@ -66,20 +60,17 @@ CAPABILITIES(/obj/item/assembly/signaler)
 /obj/item/assembly/signaler/proc/ui_act_signal(datum/act/op/A)
 	signal()
 	. = TRUE
-	update_icon()
 
 /obj/item/assembly/signaler/proc/ui_act_freq(datum/act/op/A, freq)
 	frequency = unformat_frequency(freq)
 	frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 	set_frequency(frequency)
 	. = TRUE
-	update_icon()
 
 /obj/item/assembly/signaler/proc/ui_act_code(datum/act/op/A, code_arg)
 	code = code_arg
 	code = clamp(round(code), 1, 100)
 	. = TRUE
-	update_icon()
 
 /obj/item/assembly/signaler/proc/ui_act_reset(datum/act/op/A, reset)
 	if(reset == "freq")
@@ -87,7 +78,6 @@ CAPABILITIES(/obj/item/assembly/signaler)
 	else
 		code = initial(code)
 	. = TRUE
-	update_icon()
 
 /// Old attackby: tap two secured signalers together to copy frequency/code.
 /obj/item/assembly/signaler/proc/interaction_transfer(datum/act/op/A)

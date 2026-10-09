@@ -35,8 +35,11 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	var/icon/img	//Big photo image
 	var/scribble	//Scribble on the back.
 	var/icon/tiny
+
 	var/photo_size = 3
 	resistance_flags = FLAMMABLE
+
+TRACKED(/obj/item/photo, tiny)
 
 /obj/item/photo/Initialize(mapload)
 	. = ..()
@@ -378,7 +381,7 @@ CAPABILITIES(/obj/item/camera)
 	var/obj/item/photo/p = new()
 	p.name = "photo"
 	p.icon = ic
-	p.tiny = pc
+	p.set_tiny(pc)
 	p.img = photoimage
 	p.desc = mobs
 	p.pixel_x = rand(-10, 10)
@@ -396,7 +399,7 @@ CAPABILITIES(/obj/item/camera)
 
 	p.name = name
 	p.icon = icon(icon, icon_state)
-	p.tiny = icon(tiny)
+	p.set_tiny(icon(tiny))
 	p.img = icon(img)
 	p.desc = desc
 	p.pixel_x = pixel_x
