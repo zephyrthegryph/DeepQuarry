@@ -1,4 +1,8 @@
-/obj/machinery/portable_atmospherics/hydroponics runtime: PURITY: /obj/machinery/portable_atmospherics/hydroponics.reagents was written inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/portable_atmospherics/hydroponics/soil runtime: PURITY: /obj/machinery/portable_atmospherics/hydroponics/soil.reagents was written inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/portable_atmospherics/hydroponics/soil/invisible runtime: PURITY: /obj/machinery/portable_atmospherics/hydroponics/soil/invisible.reagents was written inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/portable_atmospherics/hydroponics frozen=1 +overlay: icons/obj/hydroponics_machines.dmi:over_frozen3:7
+/obj/machinery/portable_atmospherics/hydroponics frozen=2 +overlay: icons/obj/hydroponics_machines.dmi:over_frozen3:7
+/obj/machinery/portable_atmospherics/hydroponics harvest=1 +overlay: icons/obj/hydroponics_machines.dmi:over_harvest3:7
+/obj/machinery/portable_atmospherics/hydroponics harvest=2 +overlay: icons/obj/hydroponics_machines.dmi:over_harvest3:7
+/obj/machinery/portable_atmospherics/hydroponics/soil mechanical=1 +overlay: icons/obj/hydroponics_machines.dmi:over_frozen3:7
+/obj/machinery/portable_atmospherics/hydroponics/soil mechanical=2 +overlay: icons/obj/hydroponics_machines.dmi:over_frozen3:7
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible runtime: Cannot execute null.get trait().
 

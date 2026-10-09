@@ -1,37 +1,71 @@
-/obj/machinery/smartfridge runtime: PURITY: 399 was granted to /obj/machinery/smartfridge inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/tcrystal runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/tcrystal inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/drying_rack runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/drying_rack inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/sheets runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/sheets inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/sheets/persistent runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/sheets/persistent inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/sheets/persistent_lossy runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/sheets/persistent_lossy inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/sheets/mining runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/sheets/mining inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/sheets/mining/persistent runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/sheets/mining/persistent inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/sheets/mining/persistent_lossy runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/sheets/mining/persistent_lossy inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/medbay runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/medbay inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/secure runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/secure inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/secure/medbay runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/secure/medbay inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/secure/virology runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/secure/virology inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/secure/chemistry runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/secure/chemistry inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/secure/extract runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/secure/extract inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/secure/wbt_probe runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/secure/wbt_probe inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/virology runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/virology inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/chemistry runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/chemistry inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/chemistry/chemvator runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/chemistry/chemvator inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/chemistry/chemvator/down runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/chemistry/chemvator/down inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/chef runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/chef inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/drinks runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/drinks inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/drinks/showcase runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/drinks/showcase inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/produce runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/produce inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/produce/persistent runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/produce/persistent inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/produce/persistent_lossy runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/produce/persistent_lossy inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/seeds runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/seeds inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/wbt_probe runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/wbt_probe inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/survival_pod runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/survival_pod inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/survival_pod/casino runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/survival_pod/casino inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/survival_pod/scifridge runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/survival_pod/scifridge inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/survival_pod/abductor runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/survival_pod/abductor inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/survival_pod/boxes runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/survival_pod/boxes inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/survival_pod/dispenser1 runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/survival_pod/dispenser1 inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/survival_pod/dispenser1/garmentier runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/survival_pod/dispenser1/garmentier inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
-/obj/machinery/smartfridge/survival_pod/empty runtime: PURITY: 399 was granted to /obj/machinery/smartfridge/survival_pod/empty inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/smartfridge panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/tcrystal panel_open=1 +overlay: icons/obj/survival_pod_vend.dmi:donkvendor-panel:-32767
+/obj/machinery/smartfridge/tcrystal panel_open=2 +overlay: icons/obj/survival_pod_vend.dmi:donkvendor-panel:-32767
+/obj/machinery/smartfridge/sheets panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:industrial-panel:-32767
+/obj/machinery/smartfridge/sheets panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:industrial-panel:-32767
+/obj/machinery/smartfridge/sheets/persistent panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:industrial-panel:-32767
+/obj/machinery/smartfridge/sheets/persistent panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:industrial-panel:-32767
+/obj/machinery/smartfridge/sheets/persistent_lossy panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:industrial-panel:-32767
+/obj/machinery/smartfridge/sheets/persistent_lossy panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:industrial-panel:-32767
+/obj/machinery/smartfridge/sheets/mining panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:mining-panel:-32767
+/obj/machinery/smartfridge/sheets/mining panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:mining-panel:-32767
+/obj/machinery/smartfridge/sheets/mining/persistent panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:mining-panel:-32767
+/obj/machinery/smartfridge/sheets/mining/persistent panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:mining-panel:-32767
+/obj/machinery/smartfridge/sheets/mining/persistent_lossy panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:mining-panel:-32767
+/obj/machinery/smartfridge/sheets/mining/persistent_lossy panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:mining-panel:-32767
+/obj/machinery/smartfridge/medbay panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/medbay panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/secure panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/secure panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/secure/medbay panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/secure/medbay panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/secure/virology panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/secure/virology panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/secure/chemistry panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/secure/chemistry panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/secure/extract panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/secure/extract panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/secure/wbt_probe panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/secure/wbt_probe panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/virology panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/virology panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/chemistry panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/chemistry panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/chemistry/chemvator panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/chemistry/chemvator panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/chemistry/chemvator/down panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/chemistry/chemvator/down panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/chef panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/chef panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/drinks panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/drinks panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/drinks/showcase panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:showcase-panel:-32767
+/obj/machinery/smartfridge/drinks/showcase panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:showcase-panel:-32767
+/obj/machinery/smartfridge/produce panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/produce panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/produce/persistent panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/produce/persistent panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/produce/persistent_lossy panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/produce/persistent_lossy panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/seeds panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/seeds panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/wbt_probe panel_open=1 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/wbt_probe panel_open=2 +overlay: icons/obj/vending_smartfridge.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/survival_pod panel_open=1 +overlay: icons/obj/survival_pod_vend.dmi:donkvendor-panel:-32767
+/obj/machinery/smartfridge/survival_pod panel_open=2 +overlay: icons/obj/survival_pod_vend.dmi:donkvendor-panel:-32767
+/obj/machinery/smartfridge/survival_pod/casino panel_open=1 +overlay: icons/obj/vending.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/survival_pod/casino panel_open=2 +overlay: icons/obj/vending.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/survival_pod/scifridge panel_open=1 +overlay: icons/obj/vending.dmi:fridge_sci-panel:-32767
+/obj/machinery/smartfridge/survival_pod/scifridge panel_open=2 +overlay: icons/obj/vending.dmi:fridge_sci-panel:-32767
+/obj/machinery/smartfridge/survival_pod/abductor panel_open=1 +overlay: icons/obj/abductor.dmi:dispenser_2way-panel:-32767
+/obj/machinery/smartfridge/survival_pod/abductor panel_open=2 +overlay: icons/obj/abductor.dmi:dispenser_2way-panel:-32767
+/obj/machinery/smartfridge/survival_pod/boxes panel_open=1 +overlay: icons/obj/vending.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/survival_pod/boxes panel_open=2 +overlay: icons/obj/vending.dmi:smartfridge-panel:-32767
+/obj/machinery/smartfridge/survival_pod/dispenser1 panel_open=1 +overlay: icons/obj/abductor.dmi:donkvendor-panel:-32767
+/obj/machinery/smartfridge/survival_pod/dispenser1 panel_open=2 +overlay: icons/obj/abductor.dmi:donkvendor-panel:-32767
+/obj/machinery/smartfridge/survival_pod/dispenser1/garmentier panel_open=1 +overlay: icons/obj/abductor.dmi:donkvendor-panel:-32767
+/obj/machinery/smartfridge/survival_pod/dispenser1/garmentier panel_open=2 +overlay: icons/obj/abductor.dmi:donkvendor-panel:-32767
+/obj/machinery/smartfridge/survival_pod/empty panel_open=1 +overlay: icons/obj/survival_pod_vend.dmi:donkvendor-panel:-32767
+/obj/machinery/smartfridge/survival_pod/empty panel_open=2 +overlay: icons/obj/survival_pod_vend.dmi:donkvendor-panel:-32767
 

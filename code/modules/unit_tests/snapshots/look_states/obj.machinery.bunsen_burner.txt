@@ -1,2 +1,3 @@
-/obj/machinery/bunsen_burner runtime: PURITY: /obj/machinery/bunsen_burner.reagents was written inside an output: conditions and outputs never write, publish or message (move it to an effect, an after hook or an output of its own)%//%["code/engine/parts/purity.dm",43]%//%
+/obj/machinery/bunsen_burner heating=1 +overlay: icons/obj/device.dmi:bunsen1:-32767
+/obj/machinery/bunsen_burner heating=2 +overlay: icons/obj/device.dmi:bunsen1:-32767
 

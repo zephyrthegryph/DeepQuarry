@@ -3789,3 +3789,15 @@ A turf's draw reads its own tracked state and the masks the adjacency index keep
 * **Test harness:** `dq_look_capture_turf()` drains the `on_change` reactions (`stat_drain_point()`) before it flushes the looks, as a kernel tick does between a flooring being laid and the draw.
 
 * **The generated TRACKED setter is null-aware** (`TRACKED_UNCHANGED()` in `code/__defines/capabilities.dm`, used by `TRACKED`, `TRACKED_BRIDGED` and `TRACKED_SCHEMA`). DM reads `null == 0`, `null == ""` and `null == FALSE` as true, so a write between null and one of them was dropped without publishing; it now publishes, and a repeat of the same value (null to null included) still does not. Source audit of tracked vars that default to null and have a `set_x(0|FALSE|"")` caller (each new publish is a real state change that readers should hear): `/area` `eject`, `fire`, `party`; `/obj/machinery/organ_printer` `printing`; `/obj/item/pipe_painter` `mode`; `/obj/item/clothing/accessory/badge/holo` `emagged`; `/mob` `blinded`, `transforming`; `/mob/living/carbon/human` `block_hud`; `/mob/living/simple_mob/vore/blaidd` `blaidd_invisibility`; `/mob/living/simple_mob/vore/bigdragon` `enraged`, `flames`; `/datum/computer_file/program/wordprocessor` `is_edited`; the telecomms consoles' `temp` ("" to null); and `/turf/simulated/floor` `broken`, `burnt`. The audit is by name and file, so a var declared in a parent type in another file is not covered.
+
+### Blessed look_states rows (rewrite/draw-reagents)
+
+Files re-recorded: pizzabox, condiment, drinks, appliance, beehive, bunsen_burner, chem_master, chemical_synthesizer, gibber, microwave, hydroponics, smartfridge.
+
+| Class | Cause |
+|---|---|
+| Rows `runtime: PURITY ... was written/granted inside an output` and `Division by zero` removed | The base was recorded after a `volume=0` probe divided by zero in a drawn type; the probe's caught exception left the output-evaluation context up, so every later probe of other types in the run reported a purity runtime. The carton draw now guards a zero volume; the rows are replaced by the real look changes. |
+| New `open=`, `closed=`, `broken=`, `frozen=`, `busy=`, `heating=`, `bee_count=` rows | These vars now redraw the look (tracked state read by `draw`), which the polluted base could not show. |
+| yeoldoven keeps its own `yeoldoven*` states | Oven draws `[state_prefix]open` etc.; the prefix is a var of the type. |
+| glass2 claraflask `volume=0` | Same Division by zero, reported by the refresh catch spelling. Still a draw bug at zero volume, left as pinned. |
+| Rel list add/remove | `rel_add`/`rel_remove` on a list view now mark outputs that read the var (`own_mark_if_read`), so a beehive's frames and a pizza box's stack redraw. |
