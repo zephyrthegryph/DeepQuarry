@@ -53,7 +53,9 @@ about 3 minutes unless the binary cache has its source.
 
 **`analyze gen` is memoized and parses the model once** (`tools/analyze/README.md`, "How `analyze gen` stays fast"): a run whose
 inputs and outputs are unchanged returns in about half a second, and a merge that changes declarations parses the full model one
-time instead of once per pass.
+time instead of once per pass. The outputs of a converged run are also kept in a content-addressed store (`E:/dq-cache/gen-store`,
+`DQ_GEN_STORE`), so a fresh worktree of a commit another worktree already generated, or the merge of a lane whose lane-ready run
+generated the same tree, copies the files back in about a second instead of regenerating them.
 
 ## 2. What to do on your next merge
 

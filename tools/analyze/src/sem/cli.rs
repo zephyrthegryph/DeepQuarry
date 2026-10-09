@@ -134,6 +134,127 @@ fn gen_input_key(tree: &crate::tree::Tree, root: &Path) -> u128 {
     u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
 }
 
+/// Like [`gen_input_key`] but blind to the generated files themselves, so it is the same before and after they are written: the key of
+/// the shared store (`DQ_GEN_STORE`).
+fn gen_store_key(tree: &crate::tree::Tree, root: &Path) -> u128 {
+    let mut h = blake3::Hasher::new();
+    h.update(engine_stamp().as_bytes());
+    for f in &tree.files {
+        if f.rel.starts_with("code/engine/_generated/") || f.rel.starts_with("code/_generated/") {
+            continue;
+        }
+        h.update(f.rel.as_bytes());
+        h.update(&f.hash.to_le_bytes());
+    }
+    h.update(&std::fs::read(root.join("deepquarry.dme")).unwrap_or_default());
+    u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+}
+
+/// The shared store of generated outputs, keyed by the content of everything the generators read: a worktree that meets inputs another
+/// worktree already generated (a new worktree of the same commit, a merge of one lane whose lane-ready run generated the same tree)
+/// copies the files instead of generating them. `DQ_GEN_STORE` moves it (default E:/dq-cache/gen-store on Windows when E: exists, else
+/// ~/.cache/dq/gen-store; `off` disables it). An entry is a directory of the generated files by repo-relative path and a `manifest` of
+/// their digests, written under a temporary name and renamed into place; the newest `GEN_STORE_KEEP` entries are kept.
+fn gen_store_dir() -> Option<std::path::PathBuf> {
+    match std::env::var("DQ_GEN_STORE") {
+        Ok(v) if v == "off" || v == "0" => return None,
+        Ok(v) if !v.is_empty() => return Some(std::path::PathBuf::from(v)),
+        _ => {}
+    }
+    if cfg!(windows) && Path::new("E:/").exists() {
+        return Some(std::path::PathBuf::from("E:/dq-cache/gen-store"));
+    }
+    std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(|h| std::path::PathBuf::from(h).join(".cache").join("dq").join("gen-store"))
+}
+
+const GEN_STORE_KEEP: usize = 40;
+
+/// Restores the stored outputs for `key` into the tree; the paths written, or None (no entry, a damaged one, or nothing to restore).
+fn gen_store_restore(key: u128, root: &Path) -> Option<Vec<std::path::PathBuf>> {
+    let dir = gen_store_dir()?.join(format!("{:032x}", key));
+    let manifest = std::fs::read_to_string(dir.join("manifest")).ok()?;
+    let mut rows: Vec<(String, u128)> = Vec::new();
+    for line in manifest.lines() {
+        let (rel, d) = line.split_once('\t')?;
+        rows.push((rel.to_string(), u128::from_str_radix(d, 16).ok()?));
+    }
+    if rows.is_empty() {
+        return None;
+    }
+    // Verify every file before writing any: a damaged entry restores nothing.
+    for (rel, d) in &rows {
+        if file_digest(&dir.join("files").join(rel)) != Some(*d) {
+            return None;
+        }
+    }
+    let mut out = Vec::new();
+    for (rel, d) in &rows {
+        let dest = root.join(rel);
+        if file_digest(&dest) != Some(*d) {
+            if let Some(parent) = dest.parent() {
+                std::fs::create_dir_all(parent).ok()?;
+            }
+            std::fs::copy(dir.join("files").join(rel), &dest).ok()?;
+        }
+        out.push(dest);
+    }
+    // Touch the entry so pruning keeps what is in use.
+    let _ = std::fs::write(dir.join("used"), b"");
+    Some(out)
+}
+
+fn gen_store_put(key: u128, root: &Path, results: &[super::gen::GenResult]) {
+    let Some(base) = gen_store_dir() else { return };
+    let dir = base.join(format!("{:032x}", key));
+    if dir.join("manifest").exists() {
+        return;
+    }
+    let tmp = base.join(format!(".tmp{}-{:032x}", std::process::id(), key));
+    let _ = std::fs::remove_dir_all(&tmp);
+    let mut manifest = String::new();
+    for r in results {
+        if r.path.ends_with("tgui/packages/tgui/interfaces/generated") {
+            continue;
+        }
+        let Ok(rel) = r.path.strip_prefix(root) else { return };
+        let Some(d) = file_digest(&r.path) else { return };
+        let rel_s = rel.to_string_lossy().replace('\\', "/");
+        let dest = tmp.join("files").join(&rel_s);
+        if let Some(parent) = dest.parent() {
+            if std::fs::create_dir_all(parent).is_err() {
+                return;
+            }
+        }
+        if std::fs::copy(&r.path, &dest).is_err() {
+            let _ = std::fs::remove_dir_all(&tmp);
+            return;
+        }
+        manifest.push_str(&format!("{}\t{:032x}\n", rel_s, d));
+    }
+    if manifest.is_empty() || std::fs::write(tmp.join("manifest"), manifest).is_err() || std::fs::rename(&tmp, &dir).is_err() {
+        let _ = std::fs::remove_dir_all(&tmp);
+        return;
+    }
+    // Prune the oldest entries.
+    if let Ok(rd) = std::fs::read_dir(&base) {
+        let mut entries: Vec<(std::time::SystemTime, std::path::PathBuf)> = rd
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name().to_string_lossy().len() == 32)
+            .map(|e| {
+                let used = e.path().join("used");
+                let t = std::fs::metadata(&used).or_else(|_| std::fs::metadata(e.path())).and_then(|m| m.modified()).unwrap_or(std::time::UNIX_EPOCH);
+                (t, e.path())
+            })
+            .collect();
+        if entries.len() > GEN_STORE_KEEP {
+            entries.sort();
+            for (_, p) in entries.iter().take(entries.len() - GEN_STORE_KEEP) {
+                let _ = std::fs::remove_dir_all(p);
+            }
+        }
+    }
+}
+
 fn file_digest(path: &Path) -> Option<u128> {
     let bytes = std::fs::read(path).ok()?;
     Some(u128::from_le_bytes(blake3::hash(&bytes).as_bytes()[..16].try_into().unwrap()))
@@ -224,6 +345,37 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
                 }
                 return ExitCode::SUCCESS;
             }
+            // Another worktree generated these exact inputs: take its files instead of generating them.
+            if !check {
+                if let Some(paths) = gen_store_restore(gen_store_key(&engine.tree, root), root) {
+                    // The restored files are part of the tree now; reload it and record the memo against the full state.
+                    let o2 = Options { root: root.to_path_buf(), lints: vec!["sem/keys".to_string()], ..Default::default() };
+                    if let Ok(e2) = Engine::new(crate::run::registry(), o2) {
+                        let mut outputs = Vec::new();
+                        for p in &paths {
+                            if let Some(d) = file_digest(p) {
+                                outputs.push((p.to_string_lossy().to_string(), d));
+                            }
+                        }
+                        // Also the TypeScript outputs and anything else the store holds are in `paths`; the memo is the same shape.
+                        let st = GenState { engine: engine_stamp(), key: gen_input_key(&e2.tree, root), outputs };
+                        if let (Some(path), Ok(bytes)) = (gen_state_path(), crate::incr::ser(&st)) {
+                            if let Some(dir) = path.parent() {
+                                let _ = std::fs::create_dir_all(dir);
+                            }
+                            let _ = std::fs::write(&path, bytes);
+                        }
+                    }
+                    if trace {
+                        eprintln!("analyze: gen: restored {} file(s) from the shared store", paths.len());
+                    }
+                    println!("restored {} generated file(s) from the shared store", paths.len());
+                    for p in paths {
+                        println!("fresh {}", p.display());
+                    }
+                    return ExitCode::SUCCESS;
+                }
+            }
         }
         let r0 = super::gen::run_stage(root, &engine.tree, &names, check, Some(0));
         let wrote0: Vec<_> = r0.iter().filter(|r| r.state == super::gen::State::Written).map(|r| r.path.clone()).collect();
@@ -283,6 +435,7 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
     if clean && !check && names.is_empty() {
         if let Some(e) = &last_tree {
             gen_memo_store(&e.tree, root, &results);
+            gen_store_put(gen_store_key(&e.tree, root), root, &results);
         }
     }
     if clean {

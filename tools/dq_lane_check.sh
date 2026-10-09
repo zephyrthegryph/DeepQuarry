@@ -17,7 +17,7 @@
 #   2. the stamp's master commit is an ancestor of master and what master changed since touches nothing the stamp's tests can
 #      depend on: the files the branch changed, the directories they sit in, the stamp's `covers` globs, the files that define
 #      its tests, and the global paths of tools/ci/lane_ready_global.txt (the test harness, the kernel, the analyzer, the build).
-# Commits after the stamped one are fine when they touch only html/changelogs/, doc/ or data/.
+# Commits after the stamped one are fine when they touch only html/changelogs/, doc/, data/ or a markdown file at the repo root.
 # Whatever passes this still goes through the combined gates and the cross-branch smoke set (tools/dq_merge_gates.sh --lanes).
 set -uo pipefail
 cd "$(dirname "$0")/.."

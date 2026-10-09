@@ -221,6 +221,12 @@ run with the same inputs and intact outputs prints the fresh files and returns (
 changed (`lint_scopes.toml`, a lint's baseline). `DQ_ANALYZE_TRACE=1` prints the passes, each generator's render time and
 whether the model was built.
 
+**The shared store.** A converged run also copies its outputs into `E:/dq-cache/gen-store/<key>/` (`DQ_GEN_STORE`, `off` disables it; the 40 newest
+entries are kept), keyed by the analyzer build and the content of every file the generators read except the generated files themselves, so the key is
+the same before and after they are written. A run that meets a key the store holds (a new worktree of a commit another worktree generated, a merge
+of one lane whose lane-ready run generated the same tree, a hand-edited output) copies the files back after checking each against the manifest's digest,
+instead of generating them: a fresh worktree's first `gen` goes from 28-80 s to about 1 s. Only clean runs (no diagnostic) are stored.
+
 The whole-tree scans the generators do (the defined types of every file, which files mention a notice type, `#define` names,
 `SYSTEM_DEF`) read the `.dm` tree on all cores first (`Tree::prewarm_dm`); the first two are per-file facts cached by content
 (`gen-defined-types`, `notice-mentions`), so a run after an edit reads only the edited files for them.
