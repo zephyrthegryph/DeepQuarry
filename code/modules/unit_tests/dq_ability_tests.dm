@@ -335,6 +335,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	var/mob/living/carbon/human/rider = allocate(/mob/living/carbon/human, T)
+	R.can_buckle = TRUE // whether a chassis carries riders depends on the sprite it was given at random
 	TEST_ASSERT(R.buckle_link(rider), "the rider should buckle to the robot")
 	// With a rider already buckled the op asks nothing and dismounts directly, so this is safe to run from a headless test.
 	var/datum/op_result/result = dq_use_ability_op(R, ABILITY_ID_ROBOT_MOUNT)

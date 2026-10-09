@@ -34,8 +34,8 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
 /datum/capability/def/shadekin_phase/entries()
 	return list(
-		op("shift", label("Phase shift"), menu(button = "Phase shift", bind = "ability_shadekin_phase_shift"), needs(req_self()),
-			needs(req_conscious(),
+		op("shift", label("Phase shift"), menu(button = "Phase shift", bind = "ability_shadekin_phase_shift"),
+			needs(req_self(), req_conscious(),
 				req(TYPE_PROC_REF(/mob/living, ability_on_turf), because = MSG(shadekin_ability/no_turf)),
 				req(TYPE_PROC_REF(/mob/living, ability_not_in_vr), because = MSG(shadekin_ability/vr)),
 				req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin)),

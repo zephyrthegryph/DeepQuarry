@@ -22,7 +22,7 @@
 	var/list/done = list()
 
 CAPABILITIES(/obj/dq_tool_target)
-	op("dq_tool_weld", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 3), label("Probe weld"), then(PROC_REF(note_weld)))
+	op("dq_tool_weld", lit_welder(fuel = 3), wait(0), label("Probe weld"), then(PROC_REF(note_weld)))
 	op("dq_tool_dig", tool(TOOL_SHOVEL), label("Probe dig"), then(PROC_REF(note_dig)))
 
 /obj/dq_tool_target/proc/note_weld(datum/act/op/A)
@@ -145,28 +145,36 @@ CAPABILITIES(/obj/dq_tool_target)
 
 // ---- Parity: converted sites keep their timings ----
 
-/// Girder: secure 4 s, unsecure struts 4 s, dislodge 4 s, disassemble 35 + integrity/50.
+/// Girder: secure 4 s, unsecure struts 4 s, dislodge 4 s, disassemble 35 + integrity/50 (ops with a wait each, scaled by the tool's speed).
 /datum/unit_test/dq_tool_parity_girder
 
 /datum/unit_test/dq_tool_parity_girder/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/item/tool/wrench/wrench = dq_zero_speed(allocate(/obj/item/tool/wrench, T))
-	var/obj/item/tool/crowbar/crowbar = dq_zero_speed(allocate(/obj/item/tool/crowbar, T))
+	H.enable_godmode() // the test floor has no air
+	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)
+	var/obj/item/tool/crowbar/crowbar = allocate(/obj/item/tool/crowbar, T)
 	var/obj/structure/girder/girder = allocate(/obj/structure/girder, T)
 
 	TEST_ASSERT(girder.crowbar_act(H, crowbar) & ITEM_INTERACT_SUCCESS, "crowbar dislodges")
-	TEST_ASSERT(!girder.anchored, "dislodged")
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 4 SECONDS, "dislodging takes 4 s")
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["volume"], 100, "at volume 100")
+	test_time(3 SECONDS)
+	TEST_ASSERT(girder.anchored, "still anchored after 3 s")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!girder.anchored, "dislodging takes 4 s")
 	TEST_ASSERT(girder.wrench_act(H, wrench) & ITEM_INTERACT_SUCCESS, "wrench secures")
-	TEST_ASSERT(girder.anchored, "secured")
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 4 SECONDS, "securing takes 4 s")
+	test_time(3 SECONDS)
+	TEST_ASSERT(!girder.anchored, "still loose after 3 s")
+	test_time(2 SECONDS)
+	TEST_ASSERT(girder.anchored, "securing takes 4 s")
 	var/expected = 35 + round(girder.max_integrity / 50)
 	girder.wrench_act(H, wrench)
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], expected, "disassembling takes 35 + integrity/50")
-	TEST_ASSERT(QDELETED(girder), "disassembled")
+	test_time(expected - 1)
+	TEST_ASSERT(!QDELETED(girder), "still standing a tick before 35 + integrity/50")
+	test_time(2)
+	TEST_ASSERT(QDELETED(girder), "disassembling takes 35 + integrity/50")
 	own_turf_contents(T) // the salvaged steel
+	test_driver_end()
 
 /// Manual valve: the wrench is an op with a 4 s wait (intended_changes.md, "Pipe devices"; was a use_tool() of 40 ticks).
 /datum/unit_test/dq_tool_parity_valve

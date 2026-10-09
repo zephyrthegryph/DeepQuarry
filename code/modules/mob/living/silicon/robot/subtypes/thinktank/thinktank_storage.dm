@@ -113,8 +113,8 @@ CAPABILITY_DEF(platform_cargo, CAP_PLATFORM_CARGO, key = NONE)
 
 /datum/capability/def/platform_cargo/entries()
 	return list(
-		op("eject_cargo", label("Eject cargo"), menu(button = "Eject cargo", bind = "ability_robot_eject_cargo"), needs(req_self()),
-			needs(req(TYPE_PROC_REF(/mob/living/silicon/robot/platform, can_act_to_eject), because = MSG(platform_ability/not_able)),
+		op("eject_cargo", label("Eject cargo"), menu(button = "Eject cargo", bind = "ability_robot_eject_cargo"),
+			needs(req_self(), req(TYPE_PROC_REF(/mob/living/silicon/robot/platform, can_act_to_eject), because = MSG(platform_ability/not_able)),
 				req(TYPE_PROC_REF(/mob/living/silicon/robot/platform, has_stored_atoms), because = MSG(platform_ability/no_cargo))),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot/platform, ability_eject_cargo))))
 

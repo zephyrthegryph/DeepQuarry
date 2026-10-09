@@ -73,10 +73,15 @@ CAPABILITIES(/obj/dq_actor_probe)
 	GLOB.dq_actor_calls += "tgui_interact"
 
 /// Clicks `target` through the router as `user`; returns what ran, comma-separated.
-/datum/unit_test/proc/dq_actor_click(mob/user, atom/target, params = "left=1")
+/// `ops_first` FALSE: the click's ops have had their say already (as after the inbox), so the adapter's own handling shows (the parity tests of the deleted
+/// forwarding overrides read it).
+/datum/unit_test/proc/dq_actor_click(mob/user, atom/target, params = "left=1", ops_first = TRUE)
 	GLOB.dq_actor_calls.Cut()
 	user.next_click = 0
+	if(!ops_first)
+		GLOB.op_click_resolved[user] = TRUE
 	GLOB.input_router.route_click(user, target, params)
+	GLOB.op_click_resolved -= user
 	return jointext(GLOB.dq_actor_calls, ",")
 
 // ---- Capability filtering ----
@@ -178,19 +183,19 @@ CAPABILITIES(/obj/dq_actor_probe)
 	var/turf/T = test_floor()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	// Was `attack_hand(M)`.
-	TEST_ASSERT_EQUAL(dq_actor_click(R, allocate(/obj/structure/ladder/dq_actor_probe, T)), "attack_hand", "ladder: the cyborg's Use is the hand's")
+	TEST_ASSERT_EQUAL(dq_actor_click(R, allocate(/obj/structure/ladder/dq_actor_probe, T), ops_first = FALSE), "attack_hand", "ladder: the cyborg's Use is the hand's")
 	// Was `if(Adjacent(user)) attack_hand(user)`.
 	var/obj/structure/closet/dq_actor_probe/closet = allocate(/obj/structure/closet/dq_actor_probe, T)
-	TEST_ASSERT_EQUAL(dq_actor_click(R, closet), "attack_hand", "closet, adjacent: the cyborg's Use is the hand's")
+	TEST_ASSERT_EQUAL(dq_actor_click(R, closet, ops_first = FALSE), "attack_hand", "closet, adjacent: the cyborg's Use is the hand's")
 	var/turf/far = locate(T.x + 3, T.y, T.z)
 	if(far)
 		closet.forceMove(far)
-		TEST_ASSERT_EQUAL(dq_actor_click(R, closet), "", "closet, at range: nothing, and no AI-style interfacing")
+		TEST_ASSERT_EQUAL(dq_actor_click(R, closet, ops_first = FALSE), "", "closet, at range: nothing, and no AI-style interfacing")
 		closet.forceMove(T)
 	// The AI-style forwards reach the cyborg through attack_robot -> attack_ai. A cyborg
 	// looking through a camera can't control machines remotely (a cyborg with no client is not blocked: only a player's click or a script reaches it).
-	TEST_ASSERT_EQUAL(dq_actor_click(R, allocate(/obj/structure/privacyswitch/dq_actor_probe, T)), "attack_hand", "privacy switch: the cyborg interfaces like the AI")
-	TEST_ASSERT_EQUAL(dq_actor_click(R, allocate(/obj/machinery/button/dq_actor_probe, T)), "attack_hand", "button: a cyborg not looking through a camera controls a machine like the AI")
+	TEST_ASSERT_EQUAL(dq_actor_click(R, allocate(/obj/structure/privacyswitch/dq_actor_probe, T), ops_first = FALSE), "attack_hand", "privacy switch: the cyborg interfaces like the AI")
+	TEST_ASSERT_EQUAL(dq_actor_click(R, allocate(/obj/machinery/button/dq_actor_probe, T), ops_first = FALSE), "attack_hand", "button: a cyborg not looking through a camera controls a machine like the AI")
 
 /// A ghost's Use on types whose attack_ghost only called tgui_interact.
 /datum/unit_test/dq_actor_parity_ghost
@@ -210,5 +215,7 @@ CAPABILITIES(/obj/dq_actor_probe)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/datum/input_adapter/telekinesis/telekinesis = INPUT_ADAPTER(telekinesis)
 	GLOB.dq_actor_calls.Cut()
+	GLOB.op_click_resolved[H] = TRUE // the adapter's own handling, after the ops
 	telekinesis.use(H, allocate(/obj/machinery/button/dq_actor_probe, T))
+	GLOB.op_click_resolved -= H
 	TEST_ASSERT_EQUAL(jointext(GLOB.dq_actor_calls, ","), "attack_hand", "button: telekinesis presses it with an unarmed attack")
