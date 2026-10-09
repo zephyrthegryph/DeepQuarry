@@ -55,6 +55,7 @@
 	began = "raise the soap to your mouth"
 	drop_cancels = TRUE
 	loss_cancels = FALSE // legacy: the user is the target; nothing else to lose
+	legacy_click = TRUE // soap still does its work in afterattack()
 
 /datum/unit_test/dq_timed_pin_w8/soap_bite/setup_scene()
 	user = person()
@@ -73,6 +74,7 @@
 	duration = 3.5 SECONDS
 	began = "You begin to scrub"
 	drop_cancels = TRUE
+	legacy_click = TRUE // soap still does its work in afterattack()
 
 /datum/unit_test/dq_timed_pin_w8/soap_scrub_decal/setup_scene()
 	user = person()

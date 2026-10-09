@@ -18,14 +18,13 @@ CAPABILITIES(/obj/structure/boulder)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("measure_tape", item(/obj/item/measuring_tape), label("Measure"), begins(MSG(boulder/tape_begins)), wait(1.5 SECONDS), then(PROC_REF(measure_done)))
 	op("measure_multi", item(/obj/item/xenoarch_multi_tool), label("Measure"), begins(MSG(boulder/multi_begins)), wait(PROC_REF(multi_time)), then(PROC_REF(multi_done)))
-	op("dig", item(/obj/item/pickaxe), label("Dig"), needs(req(PROC_REF(dig_ready), silent = TRUE)), begins(PROC_REF(dig_begins)), starts(PROC_REF(dig_started)), wait(PROC_REF(dig_time)), then(PROC_REF(dig_done)))
+	op("dig", item(/obj/item/pickaxe), label("Dig"), begins(PROC_REF(dig_begins)), starts(PROC_REF(dig_started)), wait(PROC_REF(dig_time)), then(PROC_REF(dig_done)))
 
 MSG_DEF(boulder/tape_begins, span_notice("You extend %I% towards %T%."), span_bold("%U%") + " extends %I% towards %T%.")
 MSG_DEF(boulder/multi_begins, span_notice("You extend %I% over %T%, a flurry of red beams scanning %T%'s surface!"), span_bold("%U%") + " extends %I% over %T%, a flurry of red beams scanning %T%'s surface!")
 
-/// Requirement: the previous dig has run its course (it keeps clicks from piling up messages).
-/obj/structure/boulder/proc/dig_ready(datum/act/op/A)
-	return read_once(COOLDOWN_FINISHED(src, dig_cooldown))
+/// Silent: a second dig click while the first is under way ends with nothing said (it keeps clicks from piling up messages).
+MSG_DEF(boulder/dig_pending, null, null)
 
 /// A multi-tool in scanning mode reads the depth at once; extended over the boulder it takes a moment.
 /obj/structure/boulder/proc/multi_time(datum/act/op/A)
@@ -43,7 +42,11 @@ MSG_DEF(boulder/multi_begins, span_notice("You extend %I% over %T%, a flurry of 
 	var/obj/item/pickaxe/P = A.held
 	return msg_text(span_warning("You start [P.drill_verb] [src]."))
 
+/// The start refuses while the previous dig has not run its course. It is not a requirement: those are asked again when the wait ends, and the cooldown
+/// this start begins would refuse the dig it belongs to.
 /obj/structure/boulder/proc/dig_started(datum/act/op/A)
+	if(!COOLDOWN_FINISHED(src, dig_cooldown))
+		return /datum/msg/boulder/dig_pending
 	var/obj/item/pickaxe/P = A.held
 	COOLDOWN_START(src, dig_cooldown, P.digspeed)
 

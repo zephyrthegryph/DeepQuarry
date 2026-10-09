@@ -1527,9 +1527,9 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 	var/mob/user = A.actor
 	if(sawn_off)
 		return
+	icon_state = "sawnshotgun"
 	item_state = "sawnshotgun"
 	desc = "Omar's coming!"
-	saw_off()
 	to_chat(user, span_warning("You shorten the barrel of \the [src]!"))
 
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_off()

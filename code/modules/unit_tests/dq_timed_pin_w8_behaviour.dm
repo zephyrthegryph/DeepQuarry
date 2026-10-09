@@ -24,6 +24,8 @@
 	var/loss_cancels = TRUE
 	/// The key of a context-menu op the scene starts (null: a click).
 	var/menu_key
+	/// TRUE for an item whose click is still the legacy afterattack() (no op answers it): the click goes through the mob's own ClickOn().
+	var/legacy_click = FALSE
 
 /// Builds a fresh actor, target and held item in `user`, `target` and `held`.
 /datum/unit_test/dq_timed_pin_w8/proc/setup_scene()
@@ -56,6 +58,11 @@
 	test_chat_clear()
 	if(menu_key)
 		test_menu(user, target, menu_key)
+		return
+	if(legacy_click)
+		user.next_click = -1
+		user.next_move = -1
+		user.ClickOn(target, list2params(list(LEFT_CLICK = 1, BUTTON = LEFT_CLICK)))
 		return
 	test_click(user, target, held)
 

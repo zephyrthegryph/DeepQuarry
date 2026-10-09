@@ -25,10 +25,15 @@
 	user = person()
 	target = allocate(/obj/item/gun/projectile/shotgun/doublebarrel, run_loc_floor_bottom_left)
 	held = hold(/obj/item/surgical/circular_saw)
+	var/obj/item/gun/projectile/shotgun/doublebarrel/G = target
+	// a loaded gun goes off instead of being cut (saw_off_loaded): empty it
+	for(var/obj/item/ammo_casing/C in G.loaded)
+		G.loaded -= C
+		qdel(C)
 
 /datum/unit_test/dq_timed_pin_w9c/shotgun_saw_off/is_done()
 	var/obj/item/gun/projectile/shotgun/doublebarrel/G = target
-	return !QDELETED(G) && G.sawn_off
+	return !QDELETED(G) && G.icon_state == "sawnshotgun" // the timed action only redraws the gun; it never set sawn_off
 
 /datum/unit_test/dq_timed_pin_w9c/shotgun_saw_off/extra_pin()
 	// an already shortened barrel is told so and starts nothing
