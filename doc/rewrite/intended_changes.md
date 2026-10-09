@@ -3986,3 +3986,12 @@ Every site that declared `DECLARE_INTERACTIONS`, `EXTEND_INTERACTIONS` or a `/da
 * **Emag:** a human's sabotage of a robotic limb and a cyborg's cover, interface and operator-seat emag are the `emag()` capability (repeatable, unpowered). The card spends one use on every
   committed try (a failed hack, assigning the operator), a try that did nothing (cover already open, panel exposed) declines and the card goes on as an ordinary item, and the holder's
   `EMAG_EMAGGED` key is set. The cardless `emag_target()` reaches the same effect through the `emag.subvert` op.
+* **Clicks that skip the inbox:** the legacy entry procs (`attack_hand`, `attackby`, `attack_self`, `click_alt`, `MouseDrop_T`) no longer run ops; a player's click reaches them in the inbox
+  (`input_resolve_click()`). A click that reaches the router another way (`route_click()`: an AI hotkey, a card machine, a test) now resolves the ops of the target, the held item and the
+  actor first, as the inbox does, and a tool's own act or an item's plain use called by code (`try_interaction()`) falls back to the same resolution (`try_engine()`), narrowed to the tool
+  quality it asked for. `GLOB.op_click_resolved` keeps a click from resolving twice. A right click is a gesture only for that fallback (the secondary use of a tool).
+* **Empty-hand ops:** the hand ops that were `EMPTY_HAND` / `INTERACT_HAND` entries answer an empty hand only again (`when(req_empty_hand())`): the living touch defaults, the cyborg's pet, tap,
+  hold and punch, the desk bell, the slime wrestle-off and a chassis giving up its cell. An item in hand reaches the item ops instead.
+* **Mecha ladders:** a welder step of the chassis ladder burns no fuel again (`costs(RES_FUEL, 0)`, the old `remove_fuel(0)`). Where the tool that undoes a step also builds the next, a click builds;
+  the way back is the menu entry `construction.undo:<stage>`.
+* **Cyborg tools in harm intent:** the crowbar and welder acts answer `NONE` (not `SKIP_TO_ATTACK`) when no op takes them; the swing follows all the same.

@@ -10,7 +10,7 @@ CAPABILITY_DEF(shadekin_utility, CAP_SHADEKIN_UTILITY, key = NONE)
 
 /datum/capability/def/shadekin_utility/entries()
 	return list(
-		op("regenerate_other", label("Regenerate other"), menu(button = "Regenerate other", bind = "ability_shadekin_regenerate_other"),
+		op("regenerate_other", label("Regenerate other"), menu(button = "Regenerate other", bind = "ability_shadekin_regenerate_other"), needs(req_self()),
 			needs(req_conscious(),
 				req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin)),
 				req(TYPE_PROC_REF(/mob/living, ability_not_shifted), because = MSG(shadekin_ability/phase_shifted)),
@@ -18,7 +18,7 @@ CAPABILITY_DEF(shadekin_utility, CAP_SHADEKIN_UTILITY, key = NONE)
 				req(TYPE_PROC_REF(/mob/living, ability_has_regenerate_candidates), because = MSG(shadekin_ability/nobody_near))),
 			asks(/datum/prompt/choice/ability_pick, fields = list("title" = "Regenerate other", "question" = "Mend whom?", "choices" = computed(TYPE_PROC_REF(/mob/living, ability_regenerate_candidate_choices))), step = "target"),
 			then(TYPE_PROC_REF(/mob/living, ability_regenerate_other))),
-		op("create_shade", label("Create shade"), menu(button = "Create shade", bind = "ability_shadekin_create_shade"),
+		op("create_shade", label("Create shade"), menu(button = "Create shade", bind = "ability_shadekin_create_shade"), needs(req_self()),
 			needs(req_conscious(),
 				req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin)),
 				req(TYPE_PROC_REF(/mob/living, ability_not_shifted), because = MSG(shadekin_ability/phase_shifted)),

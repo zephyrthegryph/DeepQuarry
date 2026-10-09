@@ -19,25 +19,25 @@ CAPABILITY_DEF(robot_utility, CAP_ROBOT_UTILITY, key = NONE)
 
 /datum/capability/def/robot_utility/entries()
 	return list(
-		op("toggle_lights", label("Toggle lights"), menu(button = "Toggle lights", bind = "ability_robot_toggle_lights"),
+		op("toggle_lights", label("Toggle lights"), menu(button = "Toggle lights", bind = "ability_robot_toggle_lights"), needs(req_self()),
 			needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, lights_have_power), because = MSG(robot_ability/no_light_power))),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_toggle_lights))),
-		op("customize_appearance", label("Customize appearance"), menu(button = "Customize appearance", bind = "ability_robot_customize_appearance"),
+		op("customize_appearance", label("Customize appearance"), menu(button = "Customize appearance", bind = "ability_robot_customize_appearance"), needs(req_self()),
 			needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, sprite_customizable), because = MSG(robot_ability/not_customizable))),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_customize_appearance))),
-		op("toggle_glowy_stomach", label("Toggle glowing stomach & accents"), menu(button = "Toggle glowing stomach & accents", bind = "ability_robot_toggle_glowy_stomach"),
+		op("toggle_glowy_stomach", label("Toggle glowing stomach & accents"), menu(button = "Toggle glowing stomach & accents", bind = "ability_robot_toggle_glowy_stomach"), needs(req_self()),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_toggle_glowy_stomach))),
-		op("spark_plug", label("Emit sparks"), menu(button = "Emit sparks", bind = "ability_robot_spark_plug"),
+		op("spark_plug", label("Emit sparks"), menu(button = "Emit sparks", bind = "ability_robot_spark_plug"), needs(req_self()),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_spark_plug))),
-		op("toggle_grabbability", label("Toggle pickup"), menu(button = "Toggle pickup", bind = "ability_robot_toggle_grabbability"),
+		op("toggle_grabbability", label("Toggle pickup"), menu(button = "Toggle pickup", bind = "ability_robot_toggle_grabbability"), needs(req_self()),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_toggle_grabbability))),
-		op("purge_nutrition", label("Purge nutrition"), menu(button = "Purge nutrition", bind = "ability_robot_purge_nutrition"),
+		op("purge_nutrition", label("Purge nutrition"), menu(button = "Purge nutrition", bind = "ability_robot_purge_nutrition"), needs(req_self()),
 			needs(req_conscious(), req(TYPE_PROC_REF(/mob/living/silicon/robot, has_excess_nutrition), because = MSG(robot_ability/nothing_to_purge))),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_purge_nutrition))),
-		op("toggle_decals", label("Control decals & animations"), menu(button = "Control decals & animations", bind = "ability_robot_toggle_decals"),
+		op("toggle_decals", label("Control decals & animations"), menu(button = "Control decals & animations", bind = "ability_robot_toggle_decals"), needs(req_self()),
 			needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, has_sprite_datum), because = MSG(robot_ability/no_sprite))),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_toggle_decals))),
-		op("nom", label("Robot nom"), menu(button = "Robot nom", bind = "ability_robot_nom"),
+		op("nom", label("Robot nom"), menu(button = "Robot nom", bind = "ability_robot_nom"), needs(req_self()),
 			needs(req_conscious(), req(TYPE_PROC_REF(/mob/living/silicon/robot, has_nom_candidates), because = MSG(robot_ability/nothing_to_eat))),
 			asks(/datum/prompt/choice/ability_pick, fields = list("title" = "Robot Nom", "question" = "Eat whom?", "choices" = computed(TYPE_PROC_REF(/mob/living/silicon/robot, nom_candidate_choices))), step = "target"),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_nom))))
@@ -129,7 +129,7 @@ CAPABILITY_DEF(robot_naming, CAP_ROBOT_NAMING, key = NONE)
 
 /datum/capability/def/robot_naming/entries()
 	return list(
-		op("pick_name", label("Pick name"), menu(button = "Pick name", bind = "ability_robot_pick_name"),
+		op("pick_name", label("Pick name"), menu(button = "Pick name", bind = "ability_robot_pick_name"), needs(req_self()),
 			needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, can_pick_custom_name), because = MSG(robot_ability/name_taken))),
 			asks(/datum/prompt/text, fields = list("title" = "Name change", "question" = "You are a robot. Enter a name, or leave blank for the default name.", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"),
 			on_interrupt(TYPE_PROC_REF(/mob/living/silicon/robot, ability_name_cancelled)),
@@ -166,18 +166,18 @@ CAPABILITY_DEF(robot_live, CAP_ROBOT_LIVE, key = NONE)
 
 /datum/capability/def/robot_live/entries()
 	return list(
-		op("sensor_mode", label("Toggle sensor augmentation"), menu(button = "Toggle sensor augmentation", bind = "ability_robot_sensor_mode"),
+		op("sensor_mode", label("Toggle sensor augmentation"), menu(button = "Toggle sensor augmentation", bind = "ability_robot_sensor_mode"), needs(req_self()),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_sensor_mode))),
-		op("mount", label("Robot mount/dismount"), menu(button = "Robot mount/dismount", bind = "ability_robot_mount"),
+		op("mount", label("Robot mount/dismount"), menu(button = "Robot mount/dismount", bind = "ability_robot_mount"), needs(req_self()),
 			needs(req_conscious(), req(TYPE_PROC_REF(/mob/living/silicon/robot, can_carry_riders), because = MSG(robot_ability/no_riders)),
 				req(TYPE_PROC_REF(/mob/living/silicon/robot, has_riders_or_mount_candidates), because = MSG(robot_ability/nothing_to_mount))),
 			asks(/datum/prompt/choice/ability_pick, fields = list("title" = "Robot Mount", "question" = "Let ride:", "choices" = computed(TYPE_PROC_REF(/mob/living/silicon/robot, mount_candidate_choices))), step = "rider", when = TYPE_PROC_REF(/mob/living/silicon/robot, has_no_riders)),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_mount))),
-		op("toggle_module_1", label("Module 1"), menu(button = "Module 1", bind = "ability_robot_toggle_module_1"),
+		op("toggle_module_1", label("Module 1"), menu(button = "Module 1", bind = "ability_robot_toggle_module_1"), needs(req_self()),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_toggle_module_1))),
-		op("toggle_module_2", label("Module 2"), menu(button = "Module 2", bind = "ability_robot_toggle_module_2"),
+		op("toggle_module_2", label("Module 2"), menu(button = "Module 2", bind = "ability_robot_toggle_module_2"), needs(req_self()),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_toggle_module_2))),
-		op("toggle_module_3", label("Module 3"), menu(button = "Module 3", bind = "ability_robot_toggle_module_3"),
+		op("toggle_module_3", label("Module 3"), menu(button = "Module 3", bind = "ability_robot_toggle_module_3"), needs(req_self()),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_toggle_module_3))))
 
 /// Medical/Security HUD controller for borgs: augments the visual feed with internal sensor overlays.
@@ -243,7 +243,7 @@ CAPABILITY_DEF(robot_recolour, CAP_ROBOT_RECOLOUR, key = NONE)
 
 /datum/capability/def/robot_recolour/entries()
 	return list(
-		op("recolour", label("Recolour module"), menu(button = "Recolour module", bind = "ability_robot_recolour"),
+		op("recolour", label("Recolour module"), menu(button = "Recolour module", bind = "ability_robot_recolour"), needs(req_self()),
 			needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, not_recoloured), because = MSG(robot_ability/already_recoloured))),
 			asks(/datum/prompt/colormatrix, fields = list("title" = "Robot Recolor", "question" = "Allows you to recolor yourself", "preview" = computed(TYPE_PROC_REF(/mob/living/silicon/robot, recolour_preview)), "ui_state" = computed(TYPE_PROC_REF(/mob/living/silicon/robot, recolour_ui_state))), step = "matrix"),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_recolour))))
@@ -268,7 +268,7 @@ CAPABILITY_DEF(robot_vtec, CAP_ROBOT_VTEC, key = NONE)
 
 /datum/capability/def/robot_vtec/entries()
 	return list(
-		op("toggle_vtec", label("Toggle VTEC"), menu(button = "Toggle VTEC", bind = "ability_robot_toggle_vtec"),
+		op("toggle_vtec", label("Toggle VTEC"), menu(button = "Toggle VTEC", bind = "ability_robot_toggle_vtec"), needs(req_self()),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_toggle_vtec))))
 
 /mob/living/silicon/robot/proc/ability_toggle_vtec(datum/act/op/A)
