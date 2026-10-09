@@ -1,20 +1,12 @@
 /////////////////////
 ///  PHASE SHIFT  ///
 /////////////////////
-// Ported to the ability framework (doc/rewrite/rules.md §5). Every shadekin
-// variant (shadekin.dm) grants this ability (shadekin.dm's shadekin_granted_abilities),
-// so every shadekin has it.
+// An ability op (the shadekin_phase capability below); every shadekin variant grants it (shadekin.dm's shadekin_capabilities()), so every
+// shadekin has it.
 //
-// Fixes doc/rewrite/fixes.md B13: the legacy verb (git history) spent energy
-// and played the phase sound before its final CanPass check, so a failed
-// shift could still cost energy, and its watcher count called oviewers() once
-// per watcher rather than once overall. Here the framework itself enforces
-// "commit only after every requirement passes" (interaction.dm's attempt():
-// why_not() must pass in full before pay_cost() runs, and pay_cost() before
-// the effect) so the ordering bug can't recur; the cost proc
-// (dq_phase_shift_afford) computes the watcher count exactly once per attempt
-// and caches the amount to spend, rather than recomputing it (possibly
-// differently) when the cost is actually paid.
+// Fixes doc/rewrite/fixes.md B13: the legacy verb (git history) spent energy and played the phase sound before its final CanPass check, so a
+// failed shift could still cost energy, and its watcher count called oviewers() once per watcher rather than once overall. Here every
+// requirement is checked before the effect runs, and the effect alone spends the energy.
 
 /obj/effect/temp_visual/shadekin
 	randomdir = FALSE
@@ -27,81 +19,80 @@
 /obj/effect/temp_visual/shadekin/phase_out
 	icon_state = "tp_out"
 
-/datum/interaction/ability/self/shadekin_phase_shift
-	id = ABILITY_ID_SHADEKIN_PHASE_SHIFT
-	name = "Phase shift"
-	category = ABILITY_CAT_MOVEMENT
-	requires = list(
-		REQ_CONSCIOUS,
-		REQ_ON_TURF,
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_vr, "the VR systems cannot comprehend this power"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_shadekin, "you aren't shadekin"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_phasing, "you are already trying to phase"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_phase_area_allows, "you can't do that here"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_phase_turf_passable, "you can't use that here"),
-		REQ_RESOURCE(/mob/living/proc/dq_phase_shift_afford),
-	)
-	effect = /mob/living/proc/dq_do_phase_shift
+MSG_DEF_SELF(shadekin_ability/not_shadekin, "you aren't shadekin")
+MSG_DEF_SELF(shadekin_ability/phase_shifted, "you can't use that while phase shifted")
+MSG_DEF_SELF(shadekin_ability/vr, "the VR systems cannot comprehend this power")
+MSG_DEF_SELF(shadekin_ability/no_turf, "you can't use that here")
+MSG_DEF_SELF(shadekin_ability/low_energy, "not enough energy for that ability")
+MSG_DEF_SELF(shadekin_ability/already_phasing, "you are already trying to phase")
+MSG_DEF_SELF(shadekin_ability/phase_area, "you can't do that here")
 
-/datum/interaction/ability/self/shadekin_phase_shift/applies_to(atom/target)
-	if(!..())
-		return FALSE
-	var/mob/living/L = target
-	return L.get_shadekin_state() ? TRUE : FALSE
+// Every shadekin variant grants this (shadekin.dm's shadekin_capabilities()). The energy is the shadekin state's (shadekin_get_energy(), which
+// honours dark_energy_infinite), not a var of the mob, so the cost is checked by a requirement and spent by the effect, once every
+// requirement has passed: a refused shift never costs anything (doc/rewrite/fixes.md B13). The watcher count is computed by phase_shift_cost() alone.
+CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
-// pay_cost() is deliberately trivial: phase shift is instant (no duration, no
-// tool), and the framework re-checks why_not() again right after pay_cost()
-// runs, before the effect. If pay_cost() spent the energy, that second check
-// would re-run dq_phase_shift_afford() against the now-lower balance and
-// almost always fail it - spending on a check that then blocks itself. So the
-// spend happens in the effect (dq_do_phase_shift), which only ever runs once
-// every requirement has passed for good.
+/datum/capability/def/shadekin_phase/entries()
+	return list(
+		op("shift", label("Phase shift"), menu(button = "Phase shift", bind = "ability_shadekin_phase_shift"),
+			needs(req_conscious(),
+				req(TYPE_PROC_REF(/mob/living, ability_on_turf), because = MSG(shadekin_ability/no_turf)),
+				req(TYPE_PROC_REF(/mob/living, ability_not_in_vr), because = MSG(shadekin_ability/vr)),
+				req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin)),
+				req(TYPE_PROC_REF(/mob/living, ability_not_phasing), because = MSG(shadekin_ability/already_phasing)),
+				req(TYPE_PROC_REF(/mob/living, ability_phase_area_allows), because = MSG(shadekin_ability/phase_area)),
+				req(TYPE_PROC_REF(/mob/living, ability_phase_turf_passable), because = MSG(shadekin_ability/no_turf)),
+				req(TYPE_PROC_REF(/mob/living, ability_phase_shift_affordable), because = MSG(shadekin_ability/low_energy))),
+			then(TYPE_PROC_REF(/mob/living, ability_phase_shift))))
 
-// ---- Requirement clauses ----
+// ---- Requirement helpers shared by the shadekin powers ----
 
-/mob/living/var/tmp/dq_phase_shift_pending_cost = 0
+/// TRUE if the actor is standing on a real turf.
+/mob/living/proc/ability_on_turf(datum/act/op/A)
+	return !!get_turf(src)
 
-/// TRUE if `actor` has shadekin state, else a reason.
-/mob/living/proc/dq_pred_shadekin(mob/living/actor, atom/target, obj/item/held)
-	return actor.get_shadekin_state() ? TRUE : "you aren't shadekin"
+/// TRUE unless the actor is in a VR simulation. VR can't run most shadekin abilities (comp_helpers.dm's special_considerations()).
+/mob/living/proc/ability_not_in_vr(datum/act/op/A)
+	return !istype(get_area(src), /area/vr)
 
-/// TRUE if `actor` isn't already mid-phase, else a reason.
-/mob/living/proc/dq_pred_not_phasing(mob/living/actor, atom/target, obj/item/held)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
-	if(!SK)
-		return "you aren't shadekin"
-	return !SK.doing_phase || "you are already trying to phase"
+/// TRUE if the actor has shadekin state.
+/mob/living/proc/ability_is_shadekin(datum/act/op/A)
+	return !!get_shadekin_state()
 
-/// TRUE unless the current area blocks phase shift (admins bypass), else a reason.
-/mob/living/proc/dq_pred_phase_area_allows(mob/living/actor, atom/target, obj/item/held)
-	var/area/A = get_area(actor)
-	if(check_rights_for(actor.client, R_HOLDER))
+/// TRUE if the actor is a shadekin and is not phased out.
+/mob/living/proc/ability_not_shifted(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
+	return !!SK && !SK.in_phase
+
+/// TRUE if the actor isn't already mid-phase.
+/mob/living/proc/ability_not_phasing(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
+	return !!SK && !SK.doing_phase
+
+/// TRUE unless the current area blocks phase shift (admins bypass).
+/mob/living/proc/ability_phase_area_allows(datum/act/op/A)
+	var/area/area_here = get_area(src)
+	if(check_rights_for(client, R_HOLDER))
 		return TRUE
-	return !A?.flag_check(AREA_BLOCK_PHASE_SHIFT) || "you can't do that here"
+	return !area_here?.flag_check(AREA_BLOCK_PHASE_SHIFT)
 
-/// TRUE if `actor`'s current turf will let them through, else a reason.
-/mob/living/proc/dq_pred_phase_turf_passable(mob/living/actor, atom/target, obj/item/held)
-	var/turf/T = get_turf(actor)
+/// TRUE if the actor's current turf will let them through.
+/mob/living/proc/ability_phase_turf_passable(datum/act/op/A)
+	var/turf/T = get_turf(src)
 	if(!T)
-		return "you can't use that here"
-	return (T.CanPass(actor, T) && actor.loc == T) || "you can't use that here"
+		return FALSE
+	return T.CanPass(src, T) && loc == T
 
 /**
- * Whether `actor` can afford to phase shift, and how much: cheaper in
- * darkness, +15 energy per watcher within 7 tiles. Phasing back IN (out of
- * phase-space) is always free. The watcher count is computed exactly once
- * here (not once per candidate, as the legacy loop's nested oviewers() call
- * did - fixes.md B13) and the resulting cost is cached on the actor so
- * pay_cost() spends precisely the amount that was checked.
+ * What a phase shift costs the actor now: cheaper in darkness, +15 energy per watcher within 7 tiles. Phasing back IN (out of
+ * phase-space) is always free. The watcher count is computed exactly once per call (fixes.md B13).
  */
-/mob/living/proc/dq_phase_shift_afford(mob/living/actor, atom/target, obj/item/held)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
-	if(!SK)
-		return "you aren't shadekin"
+/mob/living/proc/phase_shift_cost(datum/shadekin/SK)
 	if(SK.in_phase)
-		actor.dq_phase_shift_pending_cost = 0
-		return TRUE
-	var/turf/T = get_turf(actor)
+		return 0
+	var/turf/T = get_turf(src)
+	if(!T)
+		return 0
 	var/darkness = 1 - T.get_lumcount() // Brightness in 0.0 to 1.0, inverted
 
 	var/watchers = 0
@@ -109,7 +100,7 @@
 	// Neither loop uses `as anything`: orange()/oviewers() return every atom
 	// type in range, and the type filter (mob/living, obj/machinery/camera)
 	// must actually skip the rest, not just cast blindly onto it.
-	for(var/mob/living/watcher in oviewers(7, actor))
+	for(var/mob/living/watcher in oviewers(7, src))
 		if(!ishuman(watcher) && !isrobot(watcher))
 			continue
 		if(watcher.get_shadekin_state() || watcher.stat || isbelly(watcher.loc))
@@ -118,35 +109,36 @@
 			continue
 		watchers++
 	if(SK.camera_counts_as_watcher)
-		for(var/obj/machinery/camera/camera in orange(7, actor))
-			if(camera.can_use() && (actor in camera.can_see()))
+		for(var/obj/machinery/camera/camera in orange(7, src))
+			if(camera.can_use() && (src in camera.can_see()))
 				watchers++
 
-	var/cost = CLAMP(100 / (0.01 + darkness * 2), 50, 80) + 15 * watchers // 1 watcher in full light is free-ish
-	actor.dq_phase_shift_pending_cost = cost
-	if(SK.shadekin_get_energy() < cost)
-		return "not enough energy for that ability"
-	return TRUE
+	return CLAMP(100 / (0.01 + darkness * 2), 50, 80) + 15 * watchers // 1 watcher in full light is free-ish
 
-// ---- Effect: phase in or out. Runs only once every requirement passed and the cost was paid. ----
-
-/mob/living/proc/dq_do_phase_shift(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
+/mob/living/proc/ability_phase_shift_affordable(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
 		return FALSE
-	var/turf/T = get_turf(actor)
+	return SK.shadekin_get_energy() >= phase_shift_cost(SK)
+
+// ---- Effect: phase in or out. Runs only once every requirement passed. ----
+
+/mob/living/proc/ability_phase_shift(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
+	if(!SK)
+		return OP_FAILED
+	var/turf/T = get_turf(src)
 	if(!T)
-		return FALSE
-	var/cost = actor.dq_phase_shift_pending_cost
-	actor.dq_phase_shift_pending_cost = 0
+		return OP_FAILED
+	var/cost = phase_shift_cost(SK)
 	if(cost)
 		SK.shadekin_adjust_energy(-cost)
-	playsound(actor, SK.phase_noise, 75, 1)
+	playsound(src, SK.phase_noise, 75, 1)
 	if(SK.in_phase)
 		phase_in(T, SK)
 	else
 		phase_out(T)
-	return TRUE
+	return OP_OK
 
 /mob/living/proc/phase_in(turf/T, datum/shadekin/SK)
 	//In case we're not passed args, do it ourself.

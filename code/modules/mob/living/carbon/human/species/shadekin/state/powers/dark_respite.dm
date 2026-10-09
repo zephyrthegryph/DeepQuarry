@@ -1,66 +1,43 @@
 //Non-Canon on Virgo. Used downstream.
-// Ported to the ability framework (doc/rewrite/rules.md §5). Fixes a latent
-// bug found while porting: the legacy verb's "you cannot manually end a Dark
-// Respite triggered by an emergency warp" warning never actually blocked
-// anything - it fell through into the same toggle-off code below regardless.
-// Here that's a real requirement (dq_pred_respite_endable), so the message
-// and the behaviour finally agree.
+// Fixes a latent bug found while porting: the legacy verb's "you cannot manually end a Dark Respite triggered by an emergency warp" warning
+// never actually blocked anything - it fell through into the same toggle-off code below regardless. Here that's a real requirement
+// (ability_respite_endable), so the message and the behaviour finally agree. The op is part of the shadekin_dark capability (dark_maw.dm).
 
-/datum/interaction/ability/self/shadekin_dark_respite
-	id = ABILITY_ID_SHADEKIN_DARK_RESPITE
-	name = "Dark respite"
-	category = ABILITY_CAT_UTILITY
-	requires = list(
-		REQ_CONSCIOUS,
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_vr, "the VR systems cannot comprehend this power"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_shadekin, "you aren't shadekin"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_shifted, "you can't use that while phase shifted"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_in_dark_respite_area, "you can only trigger Dark Respite in the Dark"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_respite_not_cooling_down, "you can't use that so soon after an emergency warp"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_respite_endable, "you cannot manually end a Dark Respite triggered by an emergency warp"),
-	)
-	effect = /mob/living/proc/dq_do_dark_respite
+MSG_DEF_SELF(shadekin_ability/not_dark, "you can only trigger Dark Respite in the Dark")
+MSG_DEF_SELF(shadekin_ability/respite_cooldown, "you can't use that so soon after an emergency warp")
+MSG_DEF_SELF(shadekin_ability/respite_forced, "you cannot manually end a Dark Respite triggered by an emergency warp")
 
-/mob/living/proc/dq_pred_not_shifted(mob/living/actor, atom/target, obj/item/held)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
-	if(!SK)
-		return "you aren't shadekin"
-	return !SK.in_phase || "you can't use that while phase shifted"
+/mob/living/proc/ability_in_dark_respite_area(datum/act/op/A)
+	return istype(get_area(src), /area/shadekin)
 
-/mob/living/proc/dq_pred_in_dark_respite_area(mob/living/actor, atom/target, obj/item/held)
-	return istype(get_area(actor), /area/shadekin) || "you can only trigger Dark Respite in the Dark"
+/mob/living/proc/ability_respite_not_cooling_down(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
+	return !!SK && !SK.in_dark_respite
 
-/mob/living/proc/dq_pred_respite_not_cooling_down(mob/living/actor, atom/target, obj/item/held)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
-	if(!SK)
-		return "you aren't shadekin"
-	return !SK.in_dark_respite || "you can't use that so soon after an emergency warp"
-
-/// A Dark Respite that an emergency warp triggered can't be manually ended;
-/// one the player started can. Always TRUE when no respite is running (there's
-/// nothing to end - dq_do_dark_respite then starts a fresh one).
-/mob/living/proc/dq_pred_respite_endable(mob/living/actor, atom/target, obj/item/held)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
-	if(!SK)
-		return "you aren't shadekin"
-	if(!actor.has_body_effect(/datum/body_effect/dark_respite))
-		return TRUE
-	return SK.manual_respite || "you cannot manually end a Dark Respite triggered by an emergency warp"
-
-/// Toggles Dark Respite: ends a running one, or starts one.
-/mob/living/proc/dq_do_dark_respite(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
+/// A Dark Respite that an emergency warp triggered can't be manually ended; one the player started can. Always TRUE when no respite is running
+/// (there's nothing to end - ability_dark_respite then starts a fresh one).
+/mob/living/proc/ability_respite_endable(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
 		return FALSE
-	if(actor.has_body_effect(/datum/body_effect/dark_respite))
-		to_chat(actor, span_notice("You stop focusing the Dark on healing yourself."))
-		SK.manual_respite = FALSE
-		actor.remove_body_effect_stack(/datum/body_effect/dark_respite)
+	if(!has_body_effect(/datum/body_effect/dark_respite))
 		return TRUE
-	to_chat(actor, span_notice("You start focusing the Dark on healing yourself. (Leave the dark or trigger the ability again to end this.)"))
+	return !!SK.manual_respite
+
+/// Toggles Dark Respite: ends a running one, or starts one.
+/mob/living/proc/ability_dark_respite(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
+	if(!SK)
+		return OP_FAILED
+	if(has_body_effect(/datum/body_effect/dark_respite))
+		to_chat(src, span_notice("You stop focusing the Dark on healing yourself."))
+		SK.manual_respite = FALSE
+		remove_body_effect_stack(/datum/body_effect/dark_respite)
+		return OP_OK
+	to_chat(src, span_notice("You start focusing the Dark on healing yourself. (Leave the dark or trigger the ability again to end this.)"))
 	SK.manual_respite = TRUE
-	actor.apply_body_effect(/datum/body_effect/dark_respite)
-	return TRUE
+	apply_body_effect(/datum/body_effect/dark_respite)
+	return OP_OK
 
 /datum/body_effect/dark_respite
 	stacks = MODIFIER_STACK_FORBID

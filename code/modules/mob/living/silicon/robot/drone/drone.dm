@@ -114,9 +114,8 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	add_language(LANGUAGE_DRONE_TALK, 1)
 	serial_number = rand(0,999)
 
-	revoke_ability(ABILITY_ID_ROBOT_PICK_NAME, src)
-	grant_ability(ABILITY_ID_ROBOT_PICK_SHELL, src)
-	grant_ability(ABILITY_ID_ROBOT_SET_MAIL_TAG, src)
+	grant(src, drone_shell(), src)
+	grant(src, drone_mail(), src)
 
 	if(can_pick_shell)
 		var/random = pick(shell_types)
@@ -175,7 +174,7 @@ TRACKED(/mob/living/silicon/robot/drone, shell_accessories)
 	if(hat)
 		return get_hat_icon(hat, hat_x_offset, hat_y_offset)
 
-/mob/living/silicon/robot/drone/proc/dq_do_pick_shell(mob/actor, obj/item/held, datum/interaction/ability/interaction)
+/mob/living/silicon/robot/drone/proc/ability_pick_shell(datum/act/op/A)
 	var/list/choices = shell_types.Copy()
 
 	if(can_blitz)
@@ -238,18 +237,22 @@ TRACKED(/mob/living/silicon/robot/drone, shell_accessories)
 	set_shell_accessories(accessories)
 	can_pick_shell = FALSE
 
-/datum/interaction/ability/self/robot_pick_shell
-	id = ABILITY_ID_ROBOT_PICK_SHELL
-	name = "Customize appearance"
-	category = ABILITY_CAT_UTILITY
-	requires = list(REQ_ON(PRED_ACTOR, /mob/living/silicon/robot/drone/proc/dq_pred_can_pick_shell, "you already selected a shell or this drone type isn't customizable"))
-	effect = /mob/living/silicon/robot/drone/proc/dq_do_pick_shell
+MSG_DEF_SELF(drone_ability/shell_picked, "you already selected a shell or this drone type isn't customizable")
 
-/datum/interaction/ability/self/robot_pick_shell/applies_to(atom/target)
-	return istype(target, /mob/living/silicon/robot/drone)
+CAPABILITY_DEF(drone_shell, CAP_DRONE_SHELL, key = NONE)
 
-/mob/living/silicon/robot/drone/proc/dq_pred_can_pick_shell(mob/living/silicon/robot/drone/actor, atom/target, obj/item/held)
-	return actor.can_pick_shell || "you already selected a shell or this drone type isn't customizable"
+/datum/capability/def/drone_shell/entries()
+	return list(
+		op("pick_shell", label("Customize appearance"), menu(button = "Customize appearance", bind = "ability_robot_pick_shell"),
+			needs(req(TYPE_PROC_REF(/mob/living/silicon/robot/drone, can_pick_shell_now), because = MSG(drone_ability/shell_picked))),
+			then(TYPE_PROC_REF(/mob/living/silicon/robot/drone, ability_pick_shell))))
+
+/mob/living/silicon/robot/drone/proc/can_pick_shell_now(datum/act/op/A)
+	return can_pick_shell
+
+/// A drone is never named by its player.
+/mob/living/silicon/robot/drone/may_pick_name()
+	return FALSE
 
 /mob/living/silicon/robot/drone/pick_module()
 	return

@@ -7,7 +7,7 @@
 			to_chat(user, span_danger("You are currently using the gripper on something!"))
 		return TRUE
 
-	if(in_radial_menu)
+	if(op_claimed(src)) // the pocket ring (op "pocket_menu") holds the gripper while it is open
 		if(visible)
 			to_chat(user, span_danger("You are currently in the radial menu! Close it to use the gripper."))
 		return TRUE
@@ -86,60 +86,58 @@ TRACKED(/obj/item/gripper, shown_item)
 			return pocket_content
 	return null
 
-DECLARE_INTERACTIONS(/obj/item/gripper, INTERACT_USE(null, PROC_REF(interaction_self)))
+/// The pocket ring's requirement: not mid-use of the gripper and not holding a special-handling item (which answers its own self-use). A second ring on the
+/// same gripper is the engine's: the ring claims the gripper (claims(CLAIM_TARGET)), and is_in_use() reads that claim for every other use.
+/obj/item/gripper/proc/pocket_menu_holds(datum/act/op/A)
+	return !special_handling && !gripper_in_use
 
-/// Old attack_self.
-/obj/item/gripper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Why the ring is refused: nothing for special handling (silent, as before), else how the gripper is busy.
+/obj/item/gripper/proc/pocket_menu_refusal(datum/act/op/A)
 	if(special_handling)
-		return TRUE
-	if(is_in_use(user))
-		return TRUE
+		return /datum/msg/req_silent
+	return "You are currently using the gripper on something!"
 
+/// The ring's choices: one icon per pocket, built fresh each time it opens.
+/obj/item/gripper/proc/pocket_choices(datum/act/A)
 	generate_icons()
-
 	var/list/options = list()
-
 	for(var/Iname in photo_images)
 		options[Iname] = photo_images[Iname]
+	return options
 
-	in_radial_menu = TRUE
-	// optional: a cancel still answers (with no choice) and falls through to the wrapped item.
-	// Not shown at all (no client, or the same menu toggled shut): the gripper is free again.
-	var/datum/request/pocket_question = open_request(src, /datum/prompt/choice, PROC_REF(pocket_chosen), answerer = user, radial = TRUE, choices = options, anchor = src, radius = 40, require_near = TRUE, autopick_single_option = FALSE, timeout = 0)
-	if(!pocket_question || !user.client)
-		in_radial_menu = FALSE
-	return TRUE
+/// The ring is drawn around the gripper.
+/obj/item/gripper/proc/pocket_anchor(datum/act/A)
+	return src
 
-/// Pocket radial answer: select the pocket, or use the held item when the ring is closed. A ring that was never shown (the same menu toggled
-/// shut) or an answer dropped out of reach only frees the gripper; a dropped answer is the request's last_error.
-/obj/item/gripper/proc/pocket_chosen(datum/act/request/A)
-	in_radial_menu = FALSE
-	var/mob/user = A.request.answerer
-	if(QDELETED(user))
+/// The ring was closed without a choice (a keep broke or the answer was dropped out of reach count too): the wrapped item is used, as it was before the ring.
+/obj/item/gripper/proc/pocket_menu_closed(datum/act/op/A)
+	if(A.reason != /datum/msg/op/answer_no)
 		return
-	if(!A.answer && A.request.last_error)
-		return
-	var/choice = A.answer ? A.answer.value : null
+	var/mob/user = A.actor
 	var/obj/item/wrapped = get_wrapped_item()
-	if(choice)
-		var/obj/item/storage/internal/gripper/selected_pocket = pocket_choice_target(choice)
-		if(!selected_pocket)
-			return TRUE
-		if(!isgripperpocket(selected_pocket)) //The pocket we're selecting is NOT a gripper storage
-			if(!isgripperpocket(selected_pocket.loc)) //We kept the radial menu opened, used the item, then selected it again.
-				clear_and_select_pocket() //Pick the next open pocket.
-				return TRUE
+	if(wrapped && !QDELETED(user))
+		wrapped.attack_self(user)
 
-			update_ref(selected_pocket)
-			return TRUE
+/// Pocket radial answer: select the pocket. The ring holds the gripper (claims(CLAIM_TARGET)) until it is answered or closed.
+/obj/item/gripper/proc/pocket_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	if(QDELETED(user))
+		return OP_OK
+	var/choice = A.answer ? A.answer.value : null
+	var/obj/item/storage/internal/gripper/selected_pocket = choice ? pocket_choice_target(choice) : null
+	if(!selected_pocket)
+		return OP_OK
+	if(!isgripperpocket(selected_pocket)) //The pocket we're selecting is NOT a gripper storage
+		if(!isgripperpocket(selected_pocket.loc)) //We kept the radial menu opened, used the item, then selected it again.
+			clear_and_select_pocket() //Pick the next open pocket.
+			return OP_OK
 
-		rel_set(src, nameof(current_pocket), selected_pocket)
-		update_ref(null)
-		return TRUE
+		update_ref(selected_pocket)
+		return OP_OK
 
-	if(wrapped)
-		return wrapped.attack_self(user)
-	return TRUE
+	rel_set(src, nameof(current_pocket), selected_pocket)
+	update_ref(null)
+	return OP_OK
 
 /// Old attackby.
 /obj/item/gripper/proc/interaction_item(datum/act/op/A, stance)

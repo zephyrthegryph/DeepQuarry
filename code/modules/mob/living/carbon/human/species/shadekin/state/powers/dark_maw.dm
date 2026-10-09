@@ -1,61 +1,72 @@
-// Ported to the ability framework (doc/rewrite/rules.md §5). The 1-second
-// channel is the time cost (pay_cost()); the trap only spawns and the energy
-// only spends in the effect, together, once the channel finishes and every
-// requirement still holds.
+// The dark powers of a full shadekin (dark respite, dark tunneling, the dark maw and its dispelling). The channel is the op's wait(); the trap
+// only deploys and the energy only spends in the effect, once the channel finishes and every requirement still holds.
 
-/datum/interaction/ability/self/shadekin_dark_maw
-	id = ABILITY_ID_SHADEKIN_DARK_MAW
-	name = "Dark maw"
-	category = ABILITY_CAT_OFFENSE
-	requires = list(
-		REQ_CONSCIOUS,
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_vr, "the VR systems cannot comprehend this power"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_shadekin, "you aren't shadekin"),
-		REQ_ON_TURF,
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_dark_maw_dark_enough, "there is too much light here for your trap to last"),
-		REQ_RESOURCE(/mob/living/proc/dq_dark_maw_afford),
-	)
-	effect = /mob/living/proc/dq_do_dark_maw
+MSG_DEF_SELF(shadekin_ability/too_bright_for_maw, "there is too much light here for your trap to last")
+MSG_DEF_SELF(shadekin_ability/tunnel_made, "you have already made a tunnel to the Dark")
 
-/datum/interaction/ability/self/shadekin_dark_maw/pay_cost(mob/actor, atom/target, obj/item/held)
-	var/started = task_start(/datum/task/timed/interaction_cost, actor, null, duration = 1 SECOND, acted_on = target, held = held)
-	return istext(started) ? FALSE : USE_TOOL_PENDING
+CAPABILITY_DEF(shadekin_dark, CAP_SHADEKIN_DARK, key = NONE)
 
-/mob/living/proc/dq_pred_dark_maw_dark_enough(mob/living/actor, atom/target, obj/item/held)
-	var/turf/T = get_turf(actor)
-	return (T.get_lumcount() < 0.5) || "there is too much light here for your trap to last"
+/datum/capability/def/shadekin_dark/entries()
+	return list(
+		op("dark_respite", label("Dark respite"), menu(button = "Dark respite", bind = "ability_shadekin_dark_respite"),
+			needs(req_conscious(),
+				req(TYPE_PROC_REF(/mob/living, ability_not_in_vr), because = MSG(shadekin_ability/vr)),
+				req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin)),
+				req(TYPE_PROC_REF(/mob/living, ability_not_shifted), because = MSG(shadekin_ability/phase_shifted)),
+				req(TYPE_PROC_REF(/mob/living, ability_in_dark_respite_area), because = MSG(shadekin_ability/not_dark)),
+				req(TYPE_PROC_REF(/mob/living, ability_respite_not_cooling_down), because = MSG(shadekin_ability/respite_cooldown)),
+				req(TYPE_PROC_REF(/mob/living, ability_respite_endable), because = MSG(shadekin_ability/respite_forced))),
+			then(TYPE_PROC_REF(/mob/living, ability_dark_respite))),
+		op("dark_tunneling", label("Dark tunneling"), menu(button = "Dark tunneling", bind = "ability_shadekin_dark_tunneling"),
+			needs(req_conscious(),
+				req(TYPE_PROC_REF(/mob/living, ability_not_in_vr), because = MSG(shadekin_ability/vr)),
+				req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin)),
+				req(TYPE_PROC_REF(/mob/living, ability_not_shifted), because = MSG(shadekin_ability/phase_shifted)),
+				req(TYPE_PROC_REF(/mob/living, ability_no_dark_tunnel_yet), because = MSG(shadekin_ability/tunnel_made)),
+				req(TYPE_PROC_REF(/mob/living, ability_dark_tunnel_site_ready), because = TYPE_PROC_REF(/mob/living, ability_dark_tunnel_site_text)),
+				req(TYPE_PROC_REF(/mob/living, ability_can_afford_dark_tunnel), because = MSG(shadekin_ability/low_energy))),
+			starts(TYPE_PROC_REF(/mob/living, ability_dark_tunnel_begins)),
+			wait(DARK_TUNNEL_CHANNEL_TIME),
+			then(TYPE_PROC_REF(/mob/living, ability_dark_tunneling))),
+		op("dark_maw", label("Dark maw"), menu(button = "Dark maw", bind = "ability_shadekin_dark_maw"),
+			needs(req_conscious(),
+				req(TYPE_PROC_REF(/mob/living, ability_not_in_vr), because = MSG(shadekin_ability/vr)),
+				req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin)),
+				req(TYPE_PROC_REF(/mob/living, ability_on_turf), because = MSG(shadekin_ability/no_turf)),
+				req(TYPE_PROC_REF(/mob/living, ability_dark_enough_for_maw), because = MSG(shadekin_ability/too_bright_for_maw)),
+				req(TYPE_PROC_REF(/mob/living, ability_can_afford_20), because = MSG(shadekin_ability/low_energy))),
+			wait(1 SECOND),
+			then(TYPE_PROC_REF(/mob/living, ability_dark_maw))),
+		op("clear_dark_maws", label("Dispel dark maws"), menu(button = "Dispel dark maws", bind = "ability_shadekin_clear_dark_maws"),
+			needs(req(TYPE_PROC_REF(/mob/living, ability_is_shadekin), because = MSG(shadekin_ability/not_shadekin))),
+			then(TYPE_PROC_REF(/mob/living, ability_clear_dark_maws))))
 
-/mob/living/proc/dq_dark_maw_afford(mob/living/actor, atom/target, obj/item/held)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
+/mob/living/proc/ability_dark_enough_for_maw(datum/act/op/A)
+	var/turf/T = get_turf(src)
+	return !!T && T.get_lumcount() < 0.5
+
+/mob/living/proc/ability_can_afford_20(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
+	return !!SK && SK.shadekin_get_energy() >= 20
+
+/mob/living/proc/ability_dark_maw(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
-		return "you aren't shadekin"
-	return (SK.shadekin_get_energy() >= 20) || "not enough energy for that ability"
-
-/mob/living/proc/dq_do_dark_maw(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
-	if(!SK)
-		return FALSE
+		return OP_FAILED
 	if(SK.in_phase)
-		new /obj/effect/abstract/dark_maw(actor.loc, actor, TRUE)
+		new /obj/effect/abstract/dark_maw(loc, src, TRUE)
 	else
-		new /obj/effect/abstract/dark_maw(actor.loc, actor)
+		new /obj/effect/abstract/dark_maw(loc, src)
 	SK.shadekin_adjust_energy(-20)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/ability/self/shadekin_dark_maw/clear
-	id = ABILITY_ID_SHADEKIN_CLEAR_DARK_MAWS
-	name = "Dispel dark maws"
-	category = ABILITY_CAT_OFFENSE
-	requires = list(REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_shadekin, "you aren't shadekin"))
-	effect = /mob/living/proc/dq_do_clear_dark_maws
-
-/mob/living/proc/dq_do_clear_dark_maws(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
+/mob/living/proc/ability_clear_dark_maws(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
-		return FALSE
+		return OP_FAILED
 	for(var/obj/effect/abstract/dark_maw/dm as anything in SK.active_dark_maws?.Copy())
 		dm.dispel()
-	return TRUE
+	return OP_OK
 
 /obj/effect/abstract/dark_maw
 	var/mob/living/owner

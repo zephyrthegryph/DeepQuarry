@@ -1,38 +1,22 @@
 //////////////////////
 ///  CREATE SHADE  ///
 //////////////////////
-// Ported to the ability framework (doc/rewrite/rules.md §5).
+// Part of the shadekin_utility capability (regenerate_other.dm).
 
-/datum/interaction/ability/self/shadekin_create_shade
-	id = ABILITY_ID_SHADEKIN_CREATE_SHADE
-	name = "Create shade"
-	category = ABILITY_CAT_UTILITY
-	requires = list(
-		REQ_CONSCIOUS,
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_shadekin, "you aren't shadekin"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_shifted, "you can't use that while phase shifted"),
-		REQ_RESOURCE(/mob/living/proc/dq_create_shade_afford),
-	)
-	effect = /mob/living/proc/dq_do_create_shade
+/mob/living/proc/ability_can_afford_25(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
+	return !!SK && SK.shadekin_get_energy() >= 25
 
-// pay_cost() is deliberately trivial (see phase_shift.dm's comment): spending
-// there would make the framework's post-pay_cost why_not() recheck fail
-// against the now-lower balance. The spend happens in the effect instead.
-
-/// TRUE if `actor` can afford the flat 25-energy cost, else a reason.
-/mob/living/proc/dq_create_shade_afford(mob/living/actor, atom/target, obj/item/held)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
+/mob/living/proc/ability_create_shade(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
-		return "you aren't shadekin"
-	return (SK.shadekin_get_energy() >= 25) || "not enough energy for that ability"
-
-/mob/living/proc/dq_do_create_shade(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
-	if(!SK)
-		return FALSE
+		return OP_FAILED
 	SK.shadekin_adjust_energy(-25)
-	play_sfx(actor, SFX_EFFECTS_BAMF)
-	actor.apply_body_effect(/datum/body_effect/shadekin/create_shade, 20 SECONDS)
+	play_sfx(src, SFX_EFFECTS_BAMF)
+	apply_body_effect(/datum/body_effect/shadekin/create_shade, 20 SECONDS)
+	return OP_OK
+
+/datum/body_effect/shadekin/create_shade, 20 SECONDS)
 	return TRUE
 
 /datum/body_effect/shadekin/create_shade

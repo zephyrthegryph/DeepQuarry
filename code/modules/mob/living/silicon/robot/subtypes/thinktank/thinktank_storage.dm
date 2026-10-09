@@ -106,29 +106,28 @@
 	drop_stored_atom(removing, A.actor)
 	return OP_OK
 
-/datum/interaction/ability/self/robot_eject_cargo
-	id = ABILITY_ID_ROBOT_EJECT_CARGO
-	name = "Eject cargo"
-	category = ABILITY_CAT_UTILITY
-	requires = list(
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_incapacitated, "you are not in any state to do that"),
-		REQ_ON(PRED_ACTOR, /mob/living/silicon/robot/platform/proc/dq_pred_has_stored_atoms, "you have nothing in your cargo compartment"),
-	)
-	effect = /mob/living/silicon/robot/platform/proc/dq_do_eject_cargo
+MSG_DEF_SELF(platform_ability/not_able, "you are not in any state to do that")
+MSG_DEF_SELF(platform_ability/no_cargo, "you have nothing in your cargo compartment")
 
-/datum/interaction/ability/self/robot_eject_cargo/applies_to(atom/target)
-	return istype(target, /mob/living/silicon/robot/platform)
+CAPABILITY_DEF(platform_cargo, CAP_PLATFORM_CARGO, key = NONE)
 
-/mob/living/proc/dq_pred_not_incapacitated(mob/living/actor, atom/target, obj/item/held)
-	return !actor.incapacitated() || "you are not in any state to do that"
+/datum/capability/def/platform_cargo/entries()
+	return list(
+		op("eject_cargo", label("Eject cargo"), menu(button = "Eject cargo", bind = "ability_robot_eject_cargo"),
+			needs(req(TYPE_PROC_REF(/mob/living/silicon/robot/platform, can_act_to_eject), because = MSG(platform_ability/not_able)),
+				req(TYPE_PROC_REF(/mob/living/silicon/robot/platform, has_stored_atoms), because = MSG(platform_ability/no_cargo))),
+			then(TYPE_PROC_REF(/mob/living/silicon/robot/platform, ability_eject_cargo))))
 
-/mob/living/silicon/robot/platform/proc/dq_pred_has_stored_atoms(mob/living/silicon/robot/platform/actor, atom/target, obj/item/held)
-	return length(actor.stored_atoms) || "you have nothing in your cargo compartment"
+/mob/living/silicon/robot/platform/proc/can_act_to_eject(datum/act/op/A)
+	return !incapacitated()
+
+/mob/living/silicon/robot/platform/proc/has_stored_atoms(datum/act/op/A)
+	return length(stored_atoms) > 0
 
 /// Drop something from your internal storage.
-/mob/living/silicon/robot/platform/proc/dq_do_eject_cargo(mob/actor, obj/item/held, datum/interaction/ability/interaction)
+/mob/living/silicon/robot/platform/proc/ability_eject_cargo(datum/act/op/A)
 	drop_stored_atom(user = src)
-	return TRUE
+	return OP_OK
 
 /// Old MouseDrop_T: a drop that can be stored starts the loading. A refused drop still falls to the cyborg's drag block, as the old override never reached
 /// the base drag-buckle. This is the silent form of can_store_atom().
