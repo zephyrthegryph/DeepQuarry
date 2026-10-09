@@ -416,7 +416,8 @@ MATERIAL_MIX(/obj/item/stock_parts/motor, list(MAT_STEEL = 60, MAT_GLASS = 10))
 	desc = "this qdels itself lol! if you're reading this you're codediving or Someone fucked up"
 
 // Five of each part: one set rolled five times.
-MAP_RESOLVER(/obj/effect/spawner/parts, GLOBAL_PROC_REF(resolve_loot))
+CAPABILITIES(/obj/effect/spawner/parts)
+	map_resolver(GLOBAL_PROC_REF(resolve_loot))
 
 /obj/effect/spawner/parts/t1
 	name = "basic parts bundle"

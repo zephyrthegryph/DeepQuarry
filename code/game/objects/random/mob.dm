@@ -17,7 +17,11 @@
 	var/mob_retaliate = 0
 	var/mob_ghostjoin = 0 //Should be a number between 0 and 100, dictates the probability of that mob being ghost joinable.
 
-MAP_RESOLVER_VARS(/obj/random/mob, "drop_get_turf;overwrite_hostility;mob_faction;mob_returns_home;mob_wander;mob_wander_distance;mob_hostile;mob_ghostjoin")
+CAPABILITIES(/obj/random/mob)
+	configure(map_resolver(
+		vars = list(
+			"drop_get_turf", "overwrite_hostility", "mob_faction", "mob_returns_home",
+			"mob_wander", "mob_wander_distance", "mob_hostile", "mob_ghostjoin")))
 
 DECLARE_LOOT(/obj/random/mob, LOOT_TABLE(\
 	/mob/living/simple_mob/animal/passive/lizard = 10, \
@@ -532,7 +536,8 @@ DECLARE_LOOT(/obj/random/trash_pile, LOOT_TABLE(/obj/structure/trash_pile), LOOT
 	icon_state = "x"
 	var/faction = FACTION_WILD_ANIMAL
 
-MAP_RESOLVER_VARS(/obj/random/outside_mob, "drop_get_turf;faction")
+CAPABILITIES(/obj/random/outside_mob)
+	configure(map_resolver(vars = list("drop_get_turf", "faction")))
 
 DECLARE_LOOT(/obj/random/outside_mob, LOOT_TABLE(\
 	/mob/living/simple_mob/animal/passive/gaslamp = 50, \
@@ -617,7 +622,12 @@ DECLARE_LOOT(/obj/random/roguemineloot, LOOT_TABLE(\
 	var/newname = null
 	var/newdesc = null
 
-MAP_RESOLVER_VARS(/obj/random/mob/wildscugs, "drop_get_turf;overwrite_hostility;mob_faction;mob_returns_home;mob_wander;mob_wander_distance;mob_hostile;mob_ghostjoin;newname;newdesc")
+CAPABILITIES(/obj/random/mob/wildscugs)
+	configure(map_resolver(
+		vars = list(
+			"drop_get_turf", "overwrite_hostility", "mob_faction", "mob_returns_home",
+			"mob_wander", "mob_wander_distance", "mob_hostile", "mob_ghostjoin",
+			"newname", "newdesc")))
 
 DECLARE_LOOT(/obj/random/mob/wildscugs, LOOT_CHANCE(75), LOOT_HOOK(GLOBAL_PROC_REF(loot_hook_wildscugs)))
 

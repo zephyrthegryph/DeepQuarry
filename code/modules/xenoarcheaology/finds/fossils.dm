@@ -10,7 +10,8 @@
 	var/animal = 1
 
 DECLARE_LOOT(/obj/item/fossil/base, LOOT_TABLE(/obj/item/fossil/bone = 9, /obj/item/fossil/skull = 3, /obj/item/fossil/skull/horned = 2))
-MAP_RESOLVER(/obj/item/fossil/base, GLOBAL_PROC_REF(resolve_loot))
+CAPABILITIES(/obj/item/fossil/base)
+	map_resolver(GLOBAL_PROC_REF(resolve_loot))
 
 /obj/item/fossil/bone
 	name = "Fossilised bone"
