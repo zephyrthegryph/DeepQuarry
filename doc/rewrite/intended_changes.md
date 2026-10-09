@@ -3921,3 +3921,18 @@ Every site that declared `DECLARE_INTERACTIONS`, `EXTEND_INTERACTIONS` or a `/da
 * **Emag:** the legacy `DECLARE_EMAG` path had no users left; `emag_target()` runs the target's `emag.subvert` op only, and the card's overrides in `cards.dm` are deleted.
 * **Replicator, sticky notes, slimes, holders:** insert is an op with a `req()` that keeps `can_insert()`'s reason; a sticky note's pick-up extends the item's `pick_up_item` op; a xenobio slime's
   wrestle-off is an op that only answers while it eats someone; the holder's item op passes the input on (`passes()`), as the old handler did.
+* **Conditions of the state-machine ops (wall, floor, window, girder, mech, wreckage, secbot arm and leg, slime, cyborg shell and dents, gripper, replicator):** they read plain vars
+  (`state`, `construction_stage`, `salvage_num`, `loc`, `flooring.flags`...) and are wrapped in `read_once()`: they are asked when the click is made and not re-asked while the op waits.
+  An op with a `wait()` whose state changes underneath it (a second person finishing the same step) is no longer cancelled by that change; it commits on its own check. Making those vars
+  `TRACKED` is the follow-up that gives them the re-check back; it needs every writer behind the generated setters.
+* **Op order:** ops of one type that answer the same tool in different states (mech maintenance, window, girder, wall) are ordered by tier (`OP_PRIORITY_PART - n`, `OP_PRIORITY_NORMAL - n`) instead of
+  `priority(above(...))`, which the `op_order` ceiling forbids adding. Their `when()` conditions are disjoint, so the tiers change no click.
+* **Questions of abilities:** the robot name, drone mail tag and drone shell are `asks()` steps now. A cancel does what the old cancel-answer did through `on_interrupt()` (the default name, a cleared
+  tag); a cancel at the drone's eye question applies the shell with what was answered so far (it used to go on to the plating question). The megaphone's shout and settings are `asks()`; the
+  robot recolour opens its window through `asks()` and applies in place.
+* **Replicator insert:** the requirement is `canremove` only (what is in a hand needs no accessibility check); the "something is in the way" warning of `canUnEquip()` is gone from the menu.
+* **Chassis pictures:** the mecha chassis shows the "+o" overlay of each part from its tracked `parts_mask` (`draw()`), and a secbot assembly shows the hole, eye and arm of the stages built
+  (`built()`); the raw `add_overlay()` writes are gone.
+* **Emag:** a human's sabotage of a robotic limb and a cyborg's cover, interface and operator-seat emag are the `emag()` capability (repeatable, unpowered). The card spends one use on every
+  committed try (a failed hack, assigning the operator), a try that did nothing (cover already open, panel exposed) declines and the card goes on as an ordinary item, and the holder's
+  `EMAG_EMAGGED` key is set. The cardless `emag_target()` reaches the same effect through the `emag.subvert` op.
