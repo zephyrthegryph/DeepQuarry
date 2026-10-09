@@ -1496,8 +1496,8 @@ MSG_DEF(doublebarrel/saw_misfire, span_danger("The shotgun goes off in your face
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 	// A saw, an energy blade or a plasma cutter shortens the barrel: a loaded gun goes off instead, an empty one takes three seconds (stealthy).
-	op("saw_off", item(/obj/item), priority(OP_PRIORITY_PART), label("Shorten barrel"), when(req(PROC_REF(saw_offered))), needs(req(PROC_REF(saw_possible), because = MSG(doublebarrel/already_short))), begins(MSG(doublebarrel/saw_begins)), wait(3 SECONDS), then(PROC_REF(saw_off_done)))
-	op("saw_off_loaded", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), label("Shorten barrel"), when(req(PROC_REF(saw_misfires))), needs(req(PROC_REF(saw_possible), because = MSG(doublebarrel/already_short))), then(PROC_REF(saw_misfire)))
+	op("saw_off", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), label("Shorten barrel"), when(req(PROC_REF(saw_offered))), needs(req(PROC_REF(saw_possible), because = MSG(doublebarrel/already_short))), begins(MSG(doublebarrel/saw_begins)), wait(3 SECONDS), then(PROC_REF(saw_off_done)))
+	op("saw_off_loaded", item(/obj/item), priority(OP_PRIORITY_CLAW), label("Shorten barrel"), when(req(PROC_REF(saw_misfires))), needs(req(PROC_REF(saw_possible), because = MSG(doublebarrel/already_short))), then(PROC_REF(saw_misfire)))
 
 /// The held item cuts metal.
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_offered(datum/act/op/A)

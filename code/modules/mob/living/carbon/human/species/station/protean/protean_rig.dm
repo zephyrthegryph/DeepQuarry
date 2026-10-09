@@ -149,7 +149,7 @@ MSG_DEF_SELF(protean_rig/installing, "You begin installing %I% into %T%.")
 
 CAPABILITIES(/obj/item/rig/protean)
 	op("protean_rig_hand", hand(), ungated(), then(PROC_REF(protean_rig_hand)))
-	op("protean_rig_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(protean_rig_item)))
+	op("protean_rig_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(protean_rig_item)))
 	op("protean_install_module", item(/obj/item/rig_module), priority(OP_PRIORITY_PART), label("Install module"), when(req(PROC_REF(module_offered))), needs(req(PROC_REF(module_class_free), because = MSG(protean_rig/module_class))), begins(MSG(protean_rig/installing)), wait(4 SECONDS), then(PROC_REF(attackby_protean_done)))
 	op("protean_removebag_verb", menu(), label("Remove Stored Bag"), needs(carried()), then(PROC_REF(protean_removebag_verb)))
 	op("protean_removerig_verb", menu(), label("Remove Assimilated Rig"), needs(carried()), then(PROC_REF(protean_removerig_verb)))
