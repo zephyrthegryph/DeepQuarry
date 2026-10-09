@@ -114,9 +114,8 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	add_language(LANGUAGE_DRONE_TALK, 1)
 	serial_number = rand(0,999)
 
-	revoke_ability(ABILITY_ID_ROBOT_PICK_NAME, src)
-	grant_ability(ABILITY_ID_ROBOT_PICK_SHELL, src)
-	grant_ability(ABILITY_ID_ROBOT_SET_MAIL_TAG, src)
+	grant(src, drone_shell(), src)
+	grant(src, drone_mail(), src)
 
 	if(can_pick_shell)
 		var/random = pick(shell_types)
@@ -175,58 +174,35 @@ TRACKED(/mob/living/silicon/robot/drone, shell_accessories)
 	if(hat)
 		return get_hat_icon(hat, hat_x_offset, hat_y_offset)
 
-/mob/living/silicon/robot/drone/proc/dq_do_pick_shell(mob/actor, obj/item/held, datum/interaction/ability/interaction)
+/// The shells on offer: the drone type's own, and the blitz shell for a drone that can.
+/mob/living/silicon/robot/drone/proc/shell_choices(datum/act/A)
 	var/list/choices = shell_types.Copy()
-
 	if(can_blitz)
 		choices["Blitz"] = "blitzshell"
+	return choices
 
+/// The picture state of the shell the first question was answered with, or null.
+/mob/living/silicon/robot/drone/proc/shell_state_answered(datum/act/op/A)
+	var/choice = A.step_value("shell")
+	return choice ? shell_choices()[choice] : null
+
+/mob/living/silicon/robot/drone/proc/shell_has_eyes(datum/act/op/A)
+	return shell_state_answered(A) in list("repairbot", "maintbot")
+
+/mob/living/silicon/robot/drone/proc/shell_has_plating(datum/act/op/A)
+	return shell_state_answered(A) == "maintbot"
+
+/// Picking a drone shell: the shell, then optional eye and plating colours. A cancel after the shell takes what was answered so far.
+/mob/living/silicon/robot/drone/proc/ability_pick_shell(datum/act/op/A)
 	// If you add more, datumize these. Having 'basically two' is not enough to make me bother though.
-	open_request(src, /datum/prompt/choice/drone_shell, PROC_REF(shell_picked), answerer = src, title = "Customize Shell", question = "Select a shell. NOTE: You can only do this once during this drone-lifetime.", choices = choices)
+	shell_customize_finish(shell_state_answered(A), A.step_value("eyes"), A.step_value("plating"))
+	return OP_OK
 
-/// Picking a drone shell: the shell, then optional eye and plating colours.
-/datum/prompt/choice/drone_shell
-	timeout = 0
-	var/shell_state
-	var/eyes
-	recheck_on_open = TRUE
-
-/datum/prompt/choice/drone_shell/recheck_extra()
-	. = ..()
-	if(.)
+/mob/living/silicon/robot/drone/proc/shell_cancelled(datum/act/op/A)
+	var/shell_state = shell_state_answered(A)
+	if(!shell_state)
 		return
-	var/mob/living/silicon/robot/drone/D = owner
-	return D.can_pick_shell ? null : "already picked"
-
-/mob/living/silicon/robot/drone/proc/shell_picked(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/drone_shell/ask = A.request
-	var/shell_state = ask.choices[ask.value]
-	if(shell_state in list("repairbot", "maintbot"))
-		open_request(src, /datum/prompt/choice/drone_shell, PROC_REF(eyes_picked), answerer = src, title = "Eye Color", question = "Select eye color:", choices = list("blue", "red", "orange", "green", "violet"), shell_state = shell_state)
-		return
-	shell_customize_finish(shell_state)
-
-/mob/living/silicon/robot/drone/proc/eyes_picked(datum/act/request/A)
-	var/datum/prompt/choice/drone_shell/ask = A.request
-	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.value)))
-		return
-	if(!A.answer && request_recheck(ask))
-		return
-	var/eyes = A.answer ? ask.value : ""
-	if(ask.shell_state == "maintbot")
-		open_request(src, /datum/prompt/choice/drone_shell, PROC_REF(plating_picked), answerer = src, title = "Eye Color", question = "Select plating color:", choices = list("blue", "red", "orange", "green", "brown"), shell_state = ask.shell_state, eyes = eyes)
-		return
-	shell_customize_finish(ask.shell_state, eyes)
-
-/mob/living/silicon/robot/drone/proc/plating_picked(datum/act/request/A)
-	var/datum/prompt/choice/drone_shell/ask = A.request
-	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.value)))
-		return
-	if(!A.answer && request_recheck(ask))
-		return
-	shell_customize_finish(ask.shell_state, ask.eyes, A.answer ? ask.value : "")
+	shell_customize_finish(shell_state, A.step_value("eyes") || "", A.step_value("plating") || "")
 
 /mob/living/silicon/robot/drone/proc/shell_customize_finish(shell_state, eyes, plating)
 	icon_state = shell_state
@@ -238,18 +214,26 @@ TRACKED(/mob/living/silicon/robot/drone, shell_accessories)
 	set_shell_accessories(accessories)
 	can_pick_shell = FALSE
 
-/datum/interaction/ability/self/robot_pick_shell
-	id = ABILITY_ID_ROBOT_PICK_SHELL
-	name = "Customize appearance"
-	category = ABILITY_CAT_UTILITY
-	requires = list(REQ_ON(PRED_ACTOR, /mob/living/silicon/robot/drone/proc/dq_pred_can_pick_shell, "you already selected a shell or this drone type isn't customizable"))
-	effect = /mob/living/silicon/robot/drone/proc/dq_do_pick_shell
+MSG_DEF_SELF(drone_ability/shell_picked, "you already selected a shell or this drone type isn't customizable")
 
-/datum/interaction/ability/self/robot_pick_shell/applies_to(atom/target)
-	return istype(target, /mob/living/silicon/robot/drone)
+CAPABILITY_DEF(drone_shell, CAP_DRONE_SHELL, key = NONE)
 
-/mob/living/silicon/robot/drone/proc/dq_pred_can_pick_shell(mob/living/silicon/robot/drone/actor, atom/target, obj/item/held)
-	return actor.can_pick_shell || "you already selected a shell or this drone type isn't customizable"
+/datum/capability/def/drone_shell/entries()
+	return list(
+		op("pick_shell", label("Customize appearance"), menu(button = "Customize appearance", bind = "ability_robot_pick_shell"),
+			when(req_self()), needs(req(TYPE_PROC_REF(/mob/living/silicon/robot/drone, can_pick_shell_now), because = MSG(drone_ability/shell_picked))),
+			asks(/datum/prompt/choice, fields = list("title" = "Customize Shell", "question" = "Select a shell. NOTE: You can only do this once during this drone-lifetime.", "choices" = computed(TYPE_PROC_REF(/mob/living/silicon/robot/drone, shell_choices))), step = "shell"),
+			asks(/datum/prompt/choice, fields = list("title" = "Eye Color", "question" = "Select eye color:", "choices" = list("blue", "red", "orange", "green", "violet")), step = "eyes", when = TYPE_PROC_REF(/mob/living/silicon/robot/drone, shell_has_eyes)),
+			asks(/datum/prompt/choice, fields = list("title" = "Eye Color", "question" = "Select plating color:", "choices" = list("blue", "red", "orange", "green", "brown")), step = "plating", when = TYPE_PROC_REF(/mob/living/silicon/robot/drone, shell_has_plating)),
+			on_interrupt(TYPE_PROC_REF(/mob/living/silicon/robot/drone, shell_cancelled)),
+			then(TYPE_PROC_REF(/mob/living/silicon/robot/drone, ability_pick_shell))))
+
+/mob/living/silicon/robot/drone/proc/can_pick_shell_now(datum/act/op/A)
+	return can_pick_shell
+
+/// A drone is never named by its player.
+/mob/living/silicon/robot/drone/may_pick_name()
+	return FALSE
 
 /mob/living/silicon/robot/drone/pick_module()
 	return

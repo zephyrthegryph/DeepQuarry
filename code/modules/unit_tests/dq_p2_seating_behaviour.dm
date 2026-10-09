@@ -107,7 +107,7 @@
 /datum/unit_test/dq_p2_seat/proc/grab(mob/living/carbon/human/grabber, mob/living/carbon/human/victim, state)
 	dq_give_zone_sel(grabber)
 	dq_give_zone_sel(victim)
-	run_chosen_interaction(grabber, victim, "grab")
+	dq_attack_variant_op(grabber, victim, ATTACK_VARIANT_GRAB)
 	var/obj/item/grab/G = grabber.get_active_hand()
 	if(istype(G))
 		G.state = state

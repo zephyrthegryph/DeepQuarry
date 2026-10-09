@@ -5,52 +5,32 @@
 
 // ---- Fixtures ----
 
-/datum/interaction/dq_combat_test
-	category = INTERACTION_CAT_ATTACK
-	default_action = INPUT_ACTION_USE
-	effect = /obj/dq_combat_probe/proc/note_interaction
-
-/datum/interaction/dq_combat_test/friendly
-	id = "dq_combat_friendly"
-	name = "Pat"
-	priority = 10
-
-/datum/interaction/dq_combat_test/hostile
-	id = "dq_combat_hostile"
-	name = "Kick"
-	priority = 5
-	tags = list(INTERACTION_TAG_HOSTILE)
-
-/datum/interaction/dq_combat_test/needs_combat
-	id = "dq_combat_needs_combat"
-	name = "Smash"
-	priority = 1
-	default_action = null
-	stance = I_HURT
-
-/datum/interaction/dq_combat_test/needs_peace
-	id = "dq_combat_needs_peace"
-	name = "Polish"
-	priority = 1
-	default_action = null
-	stance = I_HELP
-
+/// Ops of a probe, to show combat mode ordering and stance: a neutral hand op, a hostile one, and menu ops declared for one stance each.
 /obj/dq_combat_probe
 	name = "combat probe"
 	var/list/done = list()
 
-/obj/dq_combat_probe/declare_interactions(list/into)
-	..()
-	into += list(
-		/datum/interaction/dq_combat_test/friendly,
-		/datum/interaction/dq_combat_test/hostile,
-		/datum/interaction/dq_combat_test/needs_combat,
-		/datum/interaction/dq_combat_test/needs_peace,
-	)
+CAPABILITIES(/obj/dq_combat_probe)
+	op("dq_combat_friendly", hand(), priority(OP_PRIORITY_DEFAULT + 1), label("Pat"), then(PROC_REF(note_friendly)))
+	op("dq_combat_hostile", hand(), hostile(), label("Kick"), then(PROC_REF(note_hostile)))
+	op("dq_combat_needs_combat", menu(), stance(I_HURT), label("Smash"), then(PROC_REF(note_needs_combat)))
+	op("dq_combat_needs_peace", menu(), stance(I_HELP), label("Polish"), then(PROC_REF(note_needs_peace)))
 
-/obj/dq_combat_probe/proc/note_interaction(mob/actor, obj/item/held, datum/interaction/interaction)
-	LAZYADD(done, interaction.id)
-	return TRUE
+/obj/dq_combat_probe/proc/note_friendly(datum/act/op/A)
+	LAZYADD(done, "dq_combat_friendly")
+	return OP_OK
+
+/obj/dq_combat_probe/proc/note_hostile(datum/act/op/A)
+	LAZYADD(done, "dq_combat_hostile")
+	return OP_OK
+
+/obj/dq_combat_probe/proc/note_needs_combat(datum/act/op/A)
+	LAZYADD(done, "dq_combat_needs_combat")
+	return OP_OK
+
+/obj/dq_combat_probe/proc/note_needs_peace(datum/act/op/A)
+	LAZYADD(done, "dq_combat_needs_peace")
+	return OP_OK
 
 /// Test mobs have no HUD; unarmed attacks read the targeted zone from one.
 /datum/unit_test/proc/dq_give_zone_sel(mob/M)
@@ -118,51 +98,55 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 
 	H.set_combat_mode(FALSE)
-	TEST_ASSERT_EQUAL(try_interaction(H, probe, null, INPUT_ACTION_USE), INTERACTION_TRY_RAN, "Use runs an interaction")
-	TEST_ASSERT_EQUAL(probe.done[length(probe.done)], "dq_combat_friendly", "with combat mode off the neutral interaction wins Use")
+	var/datum/op_result/result = test_click(H, probe, null)
+	TEST_ASSERT_EQUAL(result?.outcome, ACT_COMMITTED, "Use runs an op")
+	TEST_ASSERT_EQUAL(probe.done[length(probe.done)], "dq_combat_friendly", "with combat mode off the neutral op wins Use")
 
 	H.set_combat_mode(TRUE)
-	TEST_ASSERT_EQUAL(try_interaction(H, probe, null, INPUT_ACTION_USE), INTERACTION_TRY_RAN, "Use runs an interaction")
-	TEST_ASSERT_EQUAL(probe.done[length(probe.done)], "dq_combat_hostile", "with combat mode on the hostile interaction wins Use, though its base priority is lower")
+	H.next_click = 0
+	result = test_click(H, probe, null)
+	TEST_ASSERT_EQUAL(result?.outcome, ACT_COMMITTED, "Use runs an op")
+	TEST_ASSERT_EQUAL(probe.done[length(probe.done)], "dq_combat_hostile", "with combat mode on the hostile op wins Use, though the other has the higher priority")
 
-	var/datum/interaction_resolution/resolution = interactions_for(H, probe, null)
-	TEST_ASSERT(INTERACTION(/datum/interaction/dq_combat_test/needs_combat) in resolution.available, "a harm-stance interaction is offered in combat mode")
-	TEST_ASSERT_EQUAL(resolution.blocked[INTERACTION(/datum/interaction/dq_combat_test/needs_peace)], "combat mode is on", "a help-stance interaction is blocked in combat mode, with a reason")
+	TEST_ASSERT(dq_combat_menu_has(H, probe, "dq_combat_needs_combat"), "a harm-stance op is offered in combat mode")
 	H.set_combat_mode(FALSE)
-	resolution = interactions_for(H, probe, null)
-	TEST_ASSERT_EQUAL(resolution.blocked[INTERACTION(/datum/interaction/dq_combat_test/needs_combat)], "combat mode is off", "a harm-stance interaction is blocked out of combat mode, with a reason")
-	TEST_ASSERT(INTERACTION(/datum/interaction/dq_combat_test/needs_peace) in resolution.available, "a help-stance interaction is offered out of combat mode")
-	var/datum/interaction/harm_declared = INTERACTION(/datum/interaction/dq_combat_test/needs_combat)
-	TEST_ASSERT(INTERACTION_TAG_HOSTILE in harm_declared.tags, "a harm-stance interaction is tagged hostile")
+	TEST_ASSERT(dq_combat_menu_has(H, probe, "dq_combat_needs_peace"), "a help-stance op is offered out of combat mode")
 
-	// Disarm and Grab are listed on living targets; combat mode orders them.
+	// Disarm and Grab are ops of a living target (attack_variants, combat_mode.dm); you can't Disarm or Grab yourself, and an object has neither.
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
-	var/datum/interaction/disarm = INTERACTION(/datum/interaction/attack_variant/disarm)
-	var/datum/interaction/grab = INTERACTION(/datum/interaction/attack_variant/grab)
-	resolution = interactions_for(H, other, null)
-	TEST_ASSERT((disarm in resolution.available) && (grab in resolution.available), "Disarm and Grab are offered on a living target")
-	TEST_ASSERT(resolution.available.Find(grab) < resolution.available.Find(disarm), "out of combat mode Grab comes before the hostile Disarm")
-	H.set_combat_mode(TRUE)
-	resolution = interactions_for(H, other, null)
-	TEST_ASSERT(resolution.available.Find(disarm) < resolution.available.Find(grab), "in combat mode the hostile Disarm comes first")
-	resolution = interactions_for(H, H, null)
-	TEST_ASSERT(!(disarm in resolution.available) && !(grab in resolution.available), "you can't Disarm or Grab yourself")
+	var/datum/op_result/on_self = dq_attack_variant_result(H, H, ATTACK_VARIANT_DISARM)
+	TEST_ASSERT_EQUAL(on_self?.outcome, ACT_REFUSED, "you can't Disarm yourself")
+	on_self = dq_attack_variant_result(H, H, ATTACK_VARIANT_GRAB)
+	TEST_ASSERT_EQUAL(on_self?.outcome, ACT_REFUSED, "you can't Grab yourself")
+	TEST_ASSERT_NOTNULL(other, "a second living mob exists")
+	var/datum/op_result/on_probe = dq_attack_variant_result(H, probe, ATTACK_VARIANT_DISARM)
+	TEST_ASSERT_EQUAL(on_probe?.outcome, ACT_REFUSED, "Disarm isn't offered on objects")
 
-	var/datum/interaction_resolution/on_probe = interactions_for(H, probe, null)
-	TEST_ASSERT(!(disarm in on_probe.available) && !(disarm in on_probe.blocked), "Disarm isn't offered on objects")
+/// Runs the Disarm or Grab op of `target` for `actor`, as the Menu does. TRUE if it committed.
+/proc/dq_attack_variant_op(mob/actor, atom/target, variant)
+	var/datum/op_result/result = dq_attack_variant_result(actor, target, variant)
+	return result?.outcome == ACT_COMMITTED
 
-/// The interaction in `resolution` named `name`, available or blocked; null when not listed.
-/datum/unit_test/proc/dq_find_interaction_named(datum/interaction_resolution/resolution, name)
-	for(var/datum/interaction/interaction as anything in resolution.available)
-		if(interaction.name == name)
-			return interaction
-	for(var/datum/interaction/interaction as anything in resolution.blocked)
-		if(interaction.name == name)
-			return interaction
+/// The result of the Disarm or Grab op of `target` for `actor`, from the Menu.
+/proc/dq_attack_variant_result(mob/actor, atom/target, variant)
+	return perform_op(actor, target, variant == ATTACK_VARIANT_GRAB ? "attack_variants.grab" : "attack_variants.disarm", null, ORIGIN_MENU)
+
+/// Is the op `key` in the menu `actor` gets for `target` (holding `held`), enabled? Stance-declared ops are listed only in their stance.
+/datum/unit_test/proc/dq_combat_menu_has(mob/actor, atom/target, key, obj/item/held)
+	for(var/list/row as anything in op_menu(actor, target, held))
+		if(row["key"] == key)
+			return row["enabled"] ? TRUE : FALSE
+	return FALSE
+
+/// The label of the op `key` in the menu `actor` gets for `target`, or null when it is not listed.
+/datum/unit_test/proc/dq_combat_menu_label(mob/actor, atom/target, key, obj/item/held)
+	for(var/list/row as anything in op_menu(actor, target, held))
+		if(row["key"] == key)
+			return row["label"]
 	return null
 
-/// A living target offers its defaults per stance (code/_onclick/item_attack.dm /mob/living/declare_interactions):
-/// only the one matching the actor's stance is available, the rest are blocked.
+/// A living target offers its defaults per stance (CAPABILITIES(/mob/living), combat_ai/integration/mob_living.dm): only the op
+/// declared for the actor's stance is offered, the others are not listed.
 /datum/unit_test/dq_combat_mode_living_stance_defaults
 
 /datum/unit_test/dq_combat_mode_living_stance_defaults/Run()
@@ -171,38 +155,32 @@
 	var/mob/living/target = pair[2]
 	var/list/hand_names = list(I_HELP = "Help", I_DISARM = "Shove", I_GRAB = "Take hold", I_HURT = "Punch")
 	var/list/item_names = list(I_HELP = "Use on", I_DISARM = "Shove with", I_GRAB = "Hold with", I_HURT = "Hit")
+	var/list/hand_keys = list(I_HELP = "touch_help", I_DISARM = "touch_disarm", I_GRAB = "touch_grab", I_HURT = "touch_hurt")
+	var/list/item_keys = list(I_HELP = "hit_help", I_DISARM = "hit_disarm", I_GRAB = "hit_grab", I_HURT = "hit_hurt")
 
 	for(var/pass in 1 to 2)
 		var/obj/item/held = null
 		var/list/names = hand_names
+		var/list/keys = hand_keys
 		if(pass == 2)
 			held = allocate(/obj/item, attacker.loc)
 			TEST_ASSERT(attacker.put_in_active_hand(held), "the attacker holds an item")
 			names = item_names
+			keys = item_keys
 
-		// Out of combat mode: the help default is available, the others are listed but blocked.
+		// Out of combat mode: the help default is offered, the others are not.
 		attacker.set_use_stance(I_HELP)
-		var/datum/interaction_resolution/resolution = interactions_for(attacker, target, held)
 		for(var/stance in names)
-			var/datum/interaction/interaction = dq_find_interaction_named(resolution, names[stance])
-			TEST_ASSERT(interaction, "the living target offers '[names[stance]]'")
-			TEST_ASSERT_EQUAL(interaction?.stance, stance, "'[names[stance]]' is declared for the [stance] stance")
 			if(stance == I_HELP)
-				TEST_ASSERT(interaction in resolution.available, "out of combat mode '[names[stance]]' is available")
-			else
-				TEST_ASSERT(interaction in resolution.blocked, "out of combat mode '[names[stance]]' is blocked")
+				TEST_ASSERT(dq_combat_menu_has(attacker, target, keys[stance], held), "out of combat mode '[names[stance]]' is offered")
+				TEST_ASSERT_EQUAL(dq_combat_menu_label(attacker, target, keys[stance], held), names[stance], "'[names[stance]]' is the label of the help default")
 
-		// In combat mode only the harm default is available.
+		// In combat mode only the harm default is offered.
 		attacker.set_combat_mode(TRUE)
-		resolution = interactions_for(attacker, target, held)
 		for(var/stance in names)
-			var/datum/interaction/interaction = dq_find_interaction_named(resolution, names[stance])
-			TEST_ASSERT(interaction, "in combat mode the living target still lists '[names[stance]]'")
 			if(stance == I_HURT)
-				TEST_ASSERT(interaction in resolution.available, "in combat mode '[names[stance]]' is available")
-			else
-				TEST_ASSERT(interaction in resolution.blocked, "in combat mode '[names[stance]]' is blocked")
-				TEST_ASSERT(!(interaction in resolution.available), "in combat mode '[names[stance]]' is not available")
+				TEST_ASSERT(dq_combat_menu_has(attacker, target, keys[stance], held), "in combat mode '[names[stance]]' is offered")
+				TEST_ASSERT_EQUAL(dq_combat_menu_label(attacker, target, keys[stance], held), names[stance], "'[names[stance]]' is the label of the harm default")
 		attacker.set_use_stance(I_HELP)
 		if(held)
 			qdel(held)
@@ -226,7 +204,7 @@
 	var/list/pair2 = dq_combat_pair(/mob/living/carbon/human)
 	var/mob/living/carbon/human/grabber = pair2[1]
 	var/mob/living/target = pair2[2]
-	TEST_ASSERT(run_chosen_interaction(grabber, target, "grab"), "the Grab interaction runs")
+	TEST_ASSERT(dq_attack_variant_op(grabber, target, ATTACK_VARIANT_GRAB), "the Grab interaction runs")
 	TEST_ASSERT_NULL(grabber.attack_variant, "the interaction is one Use: no variant afterwards")
 	TEST_ASSERT(istype(grabber.get_active_hand(), /obj/item/grab), "and it arrived as a grab")
 	qdel(grabber.get_active_hand())
@@ -286,7 +264,7 @@
 	var/list/pair = dq_combat_pair(/mob/living/carbon/human)
 	var/mob/living/carbon/human/attacker = pair[1]
 	var/mob/living/target = pair[2]
-	TEST_ASSERT(run_chosen_interaction(attacker, target, "grab"), "the Grab interaction runs from the Menu")
+	TEST_ASSERT(dq_attack_variant_op(attacker, target, ATTACK_VARIANT_GRAB), "the Grab interaction runs from the Menu")
 	TEST_ASSERT(istype(attacker.get_active_hand(), /obj/item/grab), "and grabs")
 	qdel(attacker.get_active_hand())
 
@@ -324,7 +302,7 @@
 	pair = dq_combat_pair(/mob/living/simple_mob/animal/passive/cow)
 	attacker = pair[1]
 	cow = pair[2]
-	TEST_ASSERT(run_chosen_interaction(attacker, cow, "disarm"), "the Disarm interaction runs from the Menu")
+	TEST_ASSERT(dq_attack_variant_op(attacker, cow, ATTACK_VARIANT_DISARM), "the Disarm interaction runs from the Menu")
 	TEST_ASSERT(cow.status_units(STAT_WEAKENED) > 0, "and tips the cow over")
 
 /// Simple mobs use the same controls: combat mode on is the harm outcome for their own attacks.

@@ -163,10 +163,10 @@ CAPABILITIES(/obj/item/melee/artifact_blade)
 	if(!COOLDOWN_FINISHED(src, special_cooldown))
 		to_chat(A.actor, span_warning("the blade does not respond to your attempts, having recently performed an action"))
 		return OP_OK
-	blade_action_stage(A.actor, A.held, null, list())
+	blade_action_stage(A.actor, A.held, list())
 	return OP_OK
 
-/obj/item/melee/artifact_blade/proc/blade_action_stage(mob/user, obj/item/held, datum/interaction/interaction, list/answers)
+/obj/item/melee/artifact_blade/proc/blade_action_stage(mob/user, obj/item/held, list/answers)
 	COOLDOWN_START(src, special_cooldown, 12 SECONDS)
 	if(stored_blood < 10)
 		to_chat(user, span_cult("The blade does not respond to your attempts, seeming to have not enough blood to perform any actions!"))
@@ -174,7 +174,7 @@ CAPABILITIES(/obj/item/melee/artifact_blade)
 	if(stored_blood >= 10)
 		var/choice = answers["k176"]
 		if(!("k176" in answers))
-			open_request(src, /datum/prompt/choice/artifact_blade_action, PROC_REF(blade_action_answered), answerer = user, held_item = held, interaction_context = interaction, answers = answers, answer_key = "k176", question = "What action do you wish to have the blade perform?", title = "Download", choices = abilities)
+			open_request(src, /datum/prompt/choice/artifact_blade_action, PROC_REF(blade_action_answered), answerer = user, held_item = held, answers = answers, answer_key = "k176", question = "What action do you wish to have the blade perform?", title = "Download", choices = abilities)
 			return TRUE
 		if(isnull(choice))
 			return TRUE
@@ -183,7 +183,7 @@ CAPABILITIES(/obj/item/melee/artifact_blade)
 				if("Consecrate")
 					var/decision2 = answers["k180"]
 					if(!("k180" in answers))
-						open_request(src, /datum/prompt/choice/artifact_blade_action, PROC_REF(blade_action_answered), answerer = user, held_item = held, interaction_context = interaction, answers = answers, answer_key = "k180", question = "Do you wish to toggle the sword's 'consecrate' mode? If enabled, this will allow the sword to turn floors and walls into a more cult-like appearance! It requires [consecration_cost] per use!", title = "Consecrate!", choices = list("Toggle on", "Toggle off"), buttons = TRUE)
+						open_request(src, /datum/prompt/choice/artifact_blade_action, PROC_REF(blade_action_answered), answerer = user, held_item = held, answers = answers, answer_key = "k180", question = "Do you wish to toggle the sword's 'consecrate' mode? If enabled, this will allow the sword to turn floors and walls into a more cult-like appearance! It requires [consecration_cost] per use!", title = "Consecrate!", choices = list("Toggle on", "Toggle off"), buttons = TRUE)
 						return TRUE
 					if(isnull(decision2))
 						return TRUE
@@ -193,7 +193,7 @@ CAPABILITIES(/obj/item/melee/artifact_blade)
 				if("Summon")
 					var/summoned_item = answers["k185"]
 					if(!("k185" in answers))
-						open_request(src, /datum/prompt/choice/artifact_blade_action, PROC_REF(blade_action_answered), answerer = user, held_item = held, interaction_context = interaction, answers = answers, answer_key = "k185", question = "What do you wish to summon?", title = "Summon", choices = summonables)
+						open_request(src, /datum/prompt/choice/artifact_blade_action, PROC_REF(blade_action_answered), answerer = user, held_item = held, answers = answers, answer_key = "k185", question = "What do you wish to summon?", title = "Summon", choices = summonables)
 						return TRUE
 					if(isnull(summoned_item))
 						return TRUE
@@ -205,31 +205,23 @@ CAPABILITIES(/obj/item/melee/artifact_blade)
 /datum/prompt/choice/artifact_blade_action
 	timeout = 0
 	var/obj/item/held_item
-	var/datum/interaction/interaction_context
 	var/held_expected = FALSE
-	var/interaction_expected = FALSE
 	var/list/answers
 	var/answer_key
 
 CAPABILITIES(/datum/prompt/choice/artifact_blade_action)
 	ref_one(nameof(held_item), /obj/item)
-	ref_one(nameof(interaction_context), /datum/interaction)
 
 /datum/prompt/choice/artifact_blade_action/prepare(datum/act/A)
 	. = ..()
 	var/obj/item/captured_held = held_item
-	var/datum/interaction/captured_interaction = interaction_context
 	held_expected = !isnull(captured_held)
-	interaction_expected = !isnull(captured_interaction)
 	rel_clear(src, nameof(held_item))
-	rel_clear(src, nameof(interaction_context))
 	if(captured_held && !QDELETED(captured_held))
 		rel_set(src, nameof(held_item), captured_held)
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(interaction_context), captured_interaction)
 
 /datum/prompt/choice/artifact_blade_action/recheck_extra()
-	if((held_expected && QDELETED(held_item)) || (interaction_expected && QDELETED(interaction_context)))
+	if((held_expected && QDELETED(held_item)))
 		return "gone"
 
 /obj/item/melee/artifact_blade/proc/blade_action_answered(datum/act/request/A)
@@ -241,7 +233,7 @@ CAPABILITIES(/datum/prompt/choice/artifact_blade_action)
 /obj/item/melee/artifact_blade/proc/blade_action_apply(datum/act/request/A)
 	var/datum/prompt/choice/artifact_blade_action/ask = A.answer
 	ask.answers[ask.answer_key] = ask.value
-	return blade_action_stage(ask.answerer, ask.held_item, ask.interaction_context, ask.answers)
+	return blade_action_stage(ask.answerer, ask.held_item, ask.answers)
 
 /obj/item/melee/artifact_blade/proc/consecrate_toggle(mob/user as mob, toggle)
 	switch(toggle)

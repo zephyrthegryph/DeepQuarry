@@ -44,5 +44,5 @@ human|/obj/item/cell/emergency_light menu: Move To Top
 human|/obj/item/cell/emergency_light menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/cell/emergency_light menu: Use
 human|/obj/item/cell/emergency_light click: Click: Insert
-keys: cell_bay.cell.insert, cell_bay.cell.take, construction.build:light_frame_closed, construction.build:light_frame_wired, construction.dismantle, construction.undo:light_frame_closed, construction.undo:light_frame_wired, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked
+keys: cell_bay.cell.insert, cell_bay.cell.take, construction.build:light_frame_closed, construction.build:light_frame_wired, construction.dismantle, construction.undo:light_frame_wired, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked
 

@@ -8,7 +8,7 @@
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	var/integrity_before = girder.max_integrity
 	TEST_ASSERT(girder.anchored && !girder.reinf_material, "the real girder starts anchored without reinforcement")
-	TEST_ASSERT(interim_construction_step(girder, user, /datum/interaction/construction/girder/toggle_reinforcing), "the real construction edge selects reinforcing mode")
+	TEST_ASSERT(interim_construction_step(girder, user, "reinforcing_toggled"), "the real construction edge selects reinforcing mode")
 	TEST_ASSERT(girder.reinforcing, "the real girder now selects reinforcement rather than wall plating")
 	TEST_ASSERT(user.put_in_active_hand(sheets), "the actual actor holds the real steel sheets")
 	TEST_ASSERT(!user.incapacitated(INCAPACITATION_STUNNED | INCAPACITATION_KNOCKOUT), "the fresh actual actor is capable of reinforcing")

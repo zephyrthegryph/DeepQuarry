@@ -84,57 +84,73 @@
 	clear_debris(T)
 
 
-/// Each mech repair is a declared interaction the resolver picks for the right tool and state,
-/// ahead of the mech's catch-all item handler.
+/// Each mech repair is an op the resolver picks for the right tool and state, ahead of the mech's catch-all item handler.
 /datum/unit_test/dq_integrity_pool/mech_repair_interactions
 
-/// The interaction the resolver picks for Use by `actor` holding `held` on `mech`.
-/datum/unit_test/dq_integrity_pool/mech_repair_interactions/proc/picked(mob/living/carbon/human/actor, obj/mecha/mech, obj/item/held)
-	var/datum/interaction_resolution/resolution = interactions_for(actor, mech, held)
-	var/list/best = resolution.best_for_action(INPUT_ACTION_USE)
-	return length(best) == 1 ? best[1] : null
+/// Clicks `mech` with `held` in the actor's hand and lets the op's wait run out.
+/datum/unit_test/dq_integrity_pool/mech_repair_interactions/proc/use(mob/living/carbon/human/actor, obj/mecha/mech, obj/item/held)
+	actor.put_in_active_hand(held)
+	test_click(actor, mech, held)
+	test_time(30 SECONDS)
+	actor.drop_from_inventory(held)
 
 /datum/unit_test/dq_integrity_pool/mech_repair_interactions/Run()
+	test_driver_begin()
 	var/turf/T = scratch_turf()
 	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.enable_godmode() // the test floor has no air: the half minute each use waits would put the actor out
+	H.set_combat_mode(FALSE)
 	var/datum/mech_body_plan/plan = mech_body_plan()
 	mech.state = MECHA_OPERATING
 
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
 	plan.afflict(mech, MECHA_INT_TEMP_CONTROL)
-	TEST_ASSERT_EQUAL(picked(H, mech, screwdriver), INTERACTION(/datum/interaction/mecha_treat/fix_temperature), "a screwdriver fixes the temperature controller")
-	plan.cure(mech, MECHA_INT_TEMP_CONTROL)
+	use(H, mech, screwdriver)
+	TEST_ASSERT(!plan.has_affliction(mech, MECHA_INT_TEMP_CONTROL), "a screwdriver fixes the temperature controller")
 
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 	plan.afflict(mech, MECHA_INT_TANK_BREACH)
-	TEST_ASSERT_EQUAL(picked(H, mech, welder), INTERACTION(/datum/interaction/mecha_treat/seal_tank), "a welder seals a breached tank first")
-	plan.cure(mech, MECHA_INT_TANK_BREACH)
-	TEST_ASSERT_EQUAL(picked(H, mech, welder), INTERACTION(/datum/interaction/mecha_weld_repair/help), "otherwise a welder patches integrity")
+	// The armour and hull take most of a blow, and whether any reaches the frame is a roll: hit until some does.
+	for(var/blows in 1 to 20)
+		mech.take_damage(20)
+		if(mech.get_integrity() < mech.max_integrity)
+			break
+	var/damaged = mech.get_integrity()
+	TEST_ASSERT(damaged < mech.max_integrity, "the frame is dented")
+	use(H, mech, welder)
+	TEST_ASSERT(!plan.has_affliction(mech, MECHA_INT_TANK_BREACH), "a welder seals a breached tank first")
+	TEST_ASSERT_EQUAL(mech.get_integrity(), damaged, "and patches no integrity that time")
+	use(H, mech, welder)
+	TEST_ASSERT(mech.get_integrity() > damaged, "otherwise a welder patches integrity")
 
 	var/obj/item/extinguisher/extinguisher = allocate(/obj/item/extinguisher, T)
 	plan.afflict(mech, MECHA_INT_FIRE)
-	TEST_ASSERT_EQUAL(picked(H, mech, extinguisher), INTERACTION(/datum/interaction/mecha_treat/extinguish), "an extinguisher puts out an internal fire")
-	plan.cure(mech, MECHA_INT_FIRE)
+	use(H, mech, extinguisher)
+	TEST_ASSERT(!plan.has_affliction(mech, MECHA_INT_FIRE), "an extinguisher puts out an internal fire")
 
 	var/obj/item/stack/cable_coil/coil = allocate(/obj/item/stack/cable_coil, T, 5)
 	plan.afflict(mech, MECHA_INT_SHORT_CIRCUIT)
-	TEST_ASSERT(picked(H, mech, coil) != INTERACTION(/datum/interaction/mecha_treat/fix_wiring), "the wiring is out of reach with the hatch closed")
+	use(H, mech, coil)
+	TEST_ASSERT(plan.has_affliction(mech, MECHA_INT_SHORT_CIRCUIT), "the wiring is out of reach with the hatch closed")
 	mech.state = MECHA_CELL_OPEN
-	TEST_ASSERT_EQUAL(picked(H, mech, coil), INTERACTION(/datum/interaction/mecha_treat/fix_wiring), "cable replaces fused wires behind the open hatch")
-	plan.cure(mech, MECHA_INT_SHORT_CIRCUIT)
+	use(H, mech, coil)
+	TEST_ASSERT(!plan.has_affliction(mech, MECHA_INT_SHORT_CIRCUIT), "cable replaces fused wires behind the open hatch")
 
+	// Nanopaste works with the bolts undone: a damaged component is mended.
 	var/obj/item/stack/nanopaste/paste = allocate(/obj/item/stack/nanopaste, T)
+	mech.state = MECHA_BOLTS_SECURED
+	var/paste_before = paste.get_amount()
+	use(H, mech, paste)
+	TEST_ASSERT_EQUAL(paste.get_amount(), paste_before, "nanopaste does nothing with the bolts done up")
 	mech.state = MECHA_PANEL_LOOSE
-	TEST_ASSERT_EQUAL(picked(H, mech, paste), INTERACTION(/datum/interaction/mecha_paste_repair), "nanopaste repairs components with the bolts undone")
+	TEST_ASSERT(mech.maintenance_panel_loose(null), "the panel is loose")
 
-	// Recalibration is the pilot's, from the cockpit: not a Use action.
+	// Recalibration is the pilot's, from the cockpit: the op needs the pilot and control damage.
 	mech.state = MECHA_OPERATING
 	plan.afflict(mech, MECHA_INT_CONTROL_LOST)
-	var/datum/interaction/recalibrate = INTERACTION(/datum/interaction/mecha_treat/recalibrate)
-	TEST_ASSERT_NOTNULL(recalibrate, "recalibration is a declared interaction")
-	TEST_ASSERT(recalibrate.applies_to(mech), "it applies while the mech has control damage")
-	TEST_ASSERT(recalibrate.why_not(H, mech, null), "only the pilot can recalibrate")
+	TEST_ASSERT(mech.control_lost(null), "it applies while the mech has control damage")
 	plan.cure(mech, MECHA_INT_CONTROL_LOST)
-	TEST_ASSERT(!recalibrate.applies_to(mech), "it doesn't apply without control damage")
+	TEST_ASSERT(!mech.control_lost(null), "it does not apply without control damage")
 	clear_debris(T)
+	test_driver_end()

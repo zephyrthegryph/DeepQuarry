@@ -1,5 +1,5 @@
 /obj/item/nifrepairer|human|none => |
-/obj/item/nifrepairer|robot|none => |gen_silicon_item_silicon_equip_module:not possible right now
-/obj/item/nifrepairer|ai|none => |gen_silicon_item_silicon_equip_module:not possible right now
+/obj/item/nifrepairer|robot|none => |
+/obj/item/nifrepairer|ai|none => |
 /obj/item/nifrepairer|ghost|none => |
 

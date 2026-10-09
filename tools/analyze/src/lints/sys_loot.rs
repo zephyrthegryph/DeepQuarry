@@ -13,22 +13,33 @@ use crate::tree::{SourceFile, Tree};
 use crate::util::before_slashes;
 
 const RULES: &[RuleMeta] = &[
-    RuleMeta { name: "item_to_spawn", hint: "declare the table with DECLARE_LOOT(path, LOOT_TABLE(...)) (systems.md section 8)" },
+    RuleMeta { name: "item_to_spawn", hint: "declare the table with loot(table = list(...)) in the type's CAPABILITIES block (systems.md section 8)" },
     RuleMeta {
         name: "loot_table_datum",
-        hint: "searchable tiers are DECLARE_LOOT(/loot/..., LOOT_UNCOMMON/RARE/...) + loot_search() (systems.md section 8)",
+        hint: "searchable tiers are loot(uncommon = ..., rare = ...) on the /loot/... table + loot_search(table =) on the pile (systems.md section 8)",
     },
     RuleMeta {
         name: "random_spawn_list",
-        hint: "spawn lists and roll logic belong in DECLARE_LOOT (LOOT_TABLE/SET/SUB/HOOK), not procs or list vars (systems.md section 8)",
+        hint: "spawn lists and roll logic belong in the type's loot(table =, hook =) entry, not procs or list vars (systems.md section 8)",
     },
 ];
 
 fn roots_of(f: &SourceFile) -> Vec<String> {
     let mut roots: BTreeSet<String> = BTreeSet::new();
+    let mut cur: Option<String> = None;
     for line in f.raw().lines() {
-        if let Some(c) = pat!(r"^MAP_RESOLVER\((/[\w/]+),").captures(line) {
-            roots.insert(c.s(1).to_string());
+        if let Some(c) = pat!(r"^CAPABILITIES\((/[\w/]+)\)").captures(line) {
+            cur = Some(c.s(1).to_string());
+            continue;
+        }
+        if col0(line) {
+            cur = None;
+            continue;
+        }
+        if let Some(t) = &cur {
+            if pat!(r"^	(configure\()?map_resolver\(").is_match(line) {
+                roots.insert(t.clone());
+            }
         }
     }
     roots.into_iter().collect()

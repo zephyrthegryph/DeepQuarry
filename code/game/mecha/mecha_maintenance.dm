@@ -1,135 +1,119 @@
-/**
- * Exosuit maintenance graph (doc/rewrite/interactions.md §10).
- *
- * Once maintenance protocols are started (the ID card dialog puts `state` at
- * MECHA_BOLTS_SECURED), the securing bolts, the power unit hatch and the cell
- * are construction steps: wrench, crowbar, screwdriver, each reversible. With
- * the cell out, the crowbar pries components out. Welder repair and fixing the
- * temperature controller are ordinary interactions ahead of the graph.
- */
-/obj/mecha
-	construction_graph = /datum/construction_graph/mecha_maintenance
+// ---- maintenance, declared ----
+//
+// Once maintenance protocols are started (the ID card dialog puts `state` at MECHA_BOLTS_SECURED), the securing bolts, the power unit hatch and
+// the cell are steps: wrench, crowbar, screwdriver, each reversible. With the cell out, the crowbar pries components out. The mech's `state` var is
+// the state (MECHA_OPERATING offers no step), so the steps are ops that read it: mecha_maintenance() is listed in the mech's CAPABILITIES block
+// (mecha.dm). Welder repair and fixing the temperature controller are ops above the steps.
 
-/datum/construction_graph/mecha_maintenance
-	id = "mecha_maintenance"
-	state_var = "state"
-	states = list(MECHA_BOLTS_SECURED, MECHA_PANEL_LOOSE, MECHA_CELL_OPEN, MECHA_CELL_OUT)
-	initial_states = list(MECHA_BOLTS_SECURED)
-	edge_types = list(
-		/datum/interaction/construction/mecha/undo_bolts,
-		/datum/interaction/construction/mecha/tighten_bolts,
-		/datum/interaction/construction/mecha/open_hatch,
-		/datum/interaction/construction/mecha/close_hatch,
-		/datum/interaction/construction/mecha/remove_cell,
-		/datum/interaction/construction/mecha/secure_cell,
-		/datum/interaction/construction/mecha/pry_component,
-	)
+MSG_DEF_SELF(mecha/undo_bolts, "You undo the securing bolts.")
+MSG_DEF_SELF(mecha/tighten_bolts, "You tighten the securing bolts.")
+MSG_DEF_SELF(mecha/open_hatch, "You open the hatch to the power unit")
+MSG_DEF_SELF(mecha/close_hatch, "You close the hatch to the power unit")
+MSG_DEF_SELF(mecha/remove_cell, "You unscrew and pry out the powercell.")
+MSG_DEF_SELF(mecha/secure_cell, "You screw the cell in place")
+MSG_DEF_SELF(mecha/no_cell, "There's no power cell.")
+MSG_DEF_SELF(mecha/hatch_closed, "The power unit hatch is closed.")
+MSG_DEF_SELF(mecha/panel_shut, "You can't reach the internal components.")
+MSG_DEF_SELF(mecha/extinguisher_empty, "The extinguisher is empty.")
+MSG_DEF_SELF(mecha/fix_temperature, "You repair the damaged temperature controller.")
+MSG_DEF_SELF(mecha/seal_tank, "You repair the damaged gas tank.")
+MSG_DEF_SELF(mecha/fix_wiring, "You replace the fused wires.")
 
-/datum/construction_graph/mecha_maintenance/state_of(atom/target)
-	var/obj/mecha/mech = target
-	if(!istype(mech) || mech.state == MECHA_OPERATING)
-		return null
-	return mech.state
+/// Foam used per extinguishing.
+#define MECHA_EXTINGUISH_FOAM 10
 
-/// The state is a tracked var: written through its setter so the guards that read it see the change.
-/datum/construction_graph/mecha_maintenance/set_state(atom/target, state)
-	var/obj/mecha/mech = target
-	if(istype(mech) && state != CONSTRUCTION_DONE)
-		mech.set_state(state)
+/// The maintenance steps and the repairs of an exosuit.
+/proc/mecha_maintenance()
+	return list(
+		op("undo_bolts", tool(TOOL_WRENCH), when(TYPE_PROC_REF(/obj/mecha, maint_bolts_secured)), priority(OP_PRIORITY_PART), label("Undo the securing bolts"), wait(0), says(MSG(mecha/undo_bolts)), then(TYPE_PROC_REF(/obj/mecha, bolts_undone))),
+		op("tighten_bolts", tool(TOOL_WRENCH), when(TYPE_PROC_REF(/obj/mecha, maint_panel_loose)), priority(OP_PRIORITY_PART + 1), label("Tighten the securing bolts"), wait(0), says(MSG(mecha/tighten_bolts)), then(TYPE_PROC_REF(/obj/mecha, bolts_tightened))),
+		op("open_hatch", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/obj/mecha, maint_panel_loose)), priority(OP_PRIORITY_PART), label("Open the hatch to the power unit"), wait(0), says(MSG(mecha/open_hatch)), then(TYPE_PROC_REF(/obj/mecha, hatch_opened))),
+		op("close_hatch", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/obj/mecha, maint_cell_open)), priority(OP_PRIORITY_PART + 1), label("Close the hatch to the power unit"), wait(0), says(MSG(mecha/close_hatch)), then(TYPE_PROC_REF(/obj/mecha, hatch_closed))),
+		op("remove_cell", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/obj/mecha, maint_cell_open)), needs(req(TYPE_PROC_REF(/obj/mecha, maintenance_has_cell), because = MSG(mecha/no_cell))), priority(OP_PRIORITY_PART), label("Unscrew and pry out the power cell"), wait(0), says(MSG(mecha/remove_cell)), then(TYPE_PROC_REF(/obj/mecha, cell_removed))),
+		op("secure_cell", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/obj/mecha, maint_cell_out)), needs(req(TYPE_PROC_REF(/obj/mecha, maintenance_has_cell), because = MSG(mecha/no_cell))), priority(OP_PRIORITY_PART + 1), label("Screw the power cell in place"), wait(0), says(MSG(mecha/secure_cell)), then(TYPE_PROC_REF(/obj/mecha, cell_secured))),
+		// with the cell out, the crowbar pries out a component; the state doesn't change
+		op("pry_component", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/obj/mecha, maint_cell_out)), priority(OP_PRIORITY_PART + 2), label("Pry out a component"), wait(0), asks(/datum/prompt/choice/mecha_pry_component, fields = list("subject" = computed(TYPE_PROC_REF(/obj/mecha, pry_subject)), "choices" = computed(TYPE_PROC_REF(/obj/mecha, pry_choices))), step = "component"), then(TYPE_PROC_REF(/obj/mecha, component_pry_chosen))),
 
-/datum/construction_graph/mecha_maintenance/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
-	return
+		// repairs, above the steps: each is offered only while the mech has the affliction it treats
+		op("fix_temperature", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/obj/mecha, temp_control_broken)), priority(OP_PRIORITY_PART + 11), label("Repair the temperature controller"), wait(0), says(MSG(mecha/fix_temperature)), then(TYPE_PROC_REF(/obj/mecha, fix_temperature_control))),
+		op("seal_tank", lit_welder(fuel = 0), when(TYPE_PROC_REF(/obj/mecha, tank_breached)), priority(OP_PRIORITY_PART + 12), label("Seal the gas tank"), wait(0), says(MSG(mecha/seal_tank)), then(TYPE_PROC_REF(/obj/mecha, seal_tank))),
+		// fused wiring behind the power unit hatch takes two lengths of cable
+		op("fix_wiring", stack(/obj/item/stack/cable_coil, 2), when(TYPE_PROC_REF(/obj/mecha, wiring_fused)), needs(req(TYPE_PROC_REF(/obj/mecha, maintenance_hatch_open), because = MSG(mecha/hatch_closed))), priority(OP_PRIORITY_PART + 11), label("Replace the fused wires"), wait(0), says(MSG(mecha/fix_wiring)), then(TYPE_PROC_REF(/obj/mecha, fix_wiring))),
+		op("extinguish", item(/obj/item/extinguisher), when(TYPE_PROC_REF(/obj/mecha, internal_fire)), needs(req(TYPE_PROC_REF(/obj/mecha, extinguisher_has_foam), because = MSG(mecha/extinguisher_empty))), priority(OP_PRIORITY_PART + 11), label("Extinguish the internal fire"), wait(0), then(TYPE_PROC_REF(/obj/mecha, extinguish_internal_fire))),
+		// weld repairs, outside combat mode (one op per stance); in combat mode the welder strikes instead
+		op("weld_repair", lit_welder(fuel = 0), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART + 11), label("Weld repairs"), wait(0), then(TYPE_PROC_REF(/obj/mecha, weld_repair))),
+		// a strike, not a tool job: no lit-welder check, no fuel, no sound
+		op("weld_strike", tool(TOOL_WELDER), stance(I_HURT), priority(OP_PRIORITY_PART + 11), label("Strike"), wait(0), costs(RES_FUEL, 0), then(TYPE_PROC_REF(/obj/mecha, weld_strike))),
+		// nanopaste repairs every damaged component once the securing bolts are undone
+		op("paste_repair", item(/obj/item/stack/nanopaste), needs(req(TYPE_PROC_REF(/obj/mecha, maintenance_panel_loose), because = MSG(mecha/panel_shut))), priority(OP_PRIORITY_PART + 11), label("Repair components with nanopaste"), wait(0), then(TYPE_PROC_REF(/obj/mecha, paste_repair))))
 
-/datum/interaction/construction/mecha
-	tool_volume = 0
+// ---- the state a step leaves from ----
 
-/datum/interaction/construction/mecha/undo_bolts
-	feedback = /datum/msg/interaction/construction/mecha/undo_bolts
-	from_state = MECHA_BOLTS_SECURED
-	to_state = MECHA_PANEL_LOOSE
-	step_text = "undo the securing bolts"
-	tool = TOOL_WRENCH
+/obj/mecha/proc/maint_bolts_secured(datum/act/A)
+	return state == MECHA_BOLTS_SECURED
 
-/datum/msg/interaction/construction/mecha/undo_bolts
-	self = "You undo the securing bolts."
+/obj/mecha/proc/maint_panel_loose(datum/act/A)
+	return state == MECHA_PANEL_LOOSE
 
-/datum/interaction/construction/mecha/tighten_bolts
-	feedback = /datum/msg/interaction/construction/mecha/tighten_bolts
-	from_state = MECHA_PANEL_LOOSE
-	to_state = MECHA_BOLTS_SECURED
-	step_text = "tighten the securing bolts"
-	tool = TOOL_WRENCH
+/obj/mecha/proc/maint_cell_open(datum/act/A)
+	return state == MECHA_CELL_OPEN
 
-/datum/msg/interaction/construction/mecha/tighten_bolts
-	self = "You tighten the securing bolts."
+/obj/mecha/proc/maint_cell_out(datum/act/A)
+	return state == MECHA_CELL_OUT
 
-/datum/interaction/construction/mecha/open_hatch
-	feedback = /datum/msg/interaction/construction/mecha/open_hatch
-	from_state = MECHA_PANEL_LOOSE
-	to_state = MECHA_CELL_OPEN
-	step_text = "open the hatch to the power unit"
-	tool = TOOL_CROWBAR
+/// The mech has a power cell to take out or screw in.
+/obj/mecha/proc/maintenance_has_cell(datum/act/A)
+	return cell ? TRUE : FALSE
 
-/datum/msg/interaction/construction/mecha/open_hatch
-	self = "You open the hatch to the power unit"
+/// The power unit hatch is open (short-circuit wiring is behind it).
+/obj/mecha/proc/maintenance_hatch_open(datum/act/A)
+	return state >= MECHA_CELL_OPEN
 
-/datum/interaction/construction/mecha/close_hatch
-	feedback = /datum/msg/interaction/construction/mecha/close_hatch
-	from_state = MECHA_CELL_OPEN
-	to_state = MECHA_PANEL_LOOSE
-	step_text = "close the hatch to the power unit"
-	tool = TOOL_CROWBAR
+/// The securing bolts are undone (components are reachable).
+/obj/mecha/proc/maintenance_panel_loose(datum/act/A)
+	return state >= MECHA_PANEL_LOOSE
 
-/datum/msg/interaction/construction/mecha/close_hatch
-	self = "You close the hatch to the power unit"
+// ---- the steps ----
 
-/datum/interaction/construction/mecha/remove_cell
-	feedback = /datum/msg/interaction/construction/mecha/remove_cell
-	from_state = MECHA_CELL_OPEN
-	to_state = MECHA_CELL_OUT
-	step_text = "unscrew and pry out the power cell"
-	tool = TOOL_SCREWDRIVER
-	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/mecha/proc/maintenance_has_cell, "there's no power cell"))
+/obj/mecha/proc/bolts_undone(datum/act/op/A)
+	set_state(MECHA_PANEL_LOOSE)
+	return OP_OK
 
-/datum/msg/interaction/construction/mecha/remove_cell
-	self = "You unscrew and pry out the powercell."
+/obj/mecha/proc/bolts_tightened(datum/act/op/A)
+	set_state(MECHA_BOLTS_SECURED)
+	return OP_OK
 
-/datum/interaction/construction/mecha/remove_cell/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/mecha/mech = target
-	mech.cell.forceMove(mech.loc)
-	rel_take(mech, nameof(mech.cell))
-	mech.mecha_log_message("Powercell removed")
-	return TRUE
+/obj/mecha/proc/hatch_opened(datum/act/op/A)
+	set_state(MECHA_CELL_OPEN)
+	return OP_OK
 
-/datum/interaction/construction/mecha/secure_cell
-	feedback = /datum/msg/interaction/construction/mecha/secure_cell
-	from_state = MECHA_CELL_OUT
-	to_state = MECHA_CELL_OPEN
-	step_text = "screw the power cell in place"
-	tool = TOOL_SCREWDRIVER
-	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/mecha/proc/maintenance_has_cell, "there's no power cell"))
+/obj/mecha/proc/hatch_closed(datum/act/op/A)
+	set_state(MECHA_PANEL_LOOSE)
+	return OP_OK
 
-/datum/msg/interaction/construction/mecha/secure_cell
-	self = "You screw the cell in place"
+/obj/mecha/proc/cell_removed(datum/act/op/A)
+	set_state(MECHA_CELL_OUT)
+	cell.forceMove(loc)
+	rel_take(src, nameof(cell))
+	mecha_log_message("Powercell removed")
+	return OP_OK
 
-/// With the cell out, the crowbar pries out a component. The state doesn't change.
-/datum/interaction/construction/mecha/pry_component
-	from_state = MECHA_CELL_OUT
-	to_state = MECHA_CELL_OUT
-	step_text = "pry out a component"
-	tool = TOOL_CROWBAR
+/obj/mecha/proc/cell_secured(datum/act/op/A)
+	set_state(MECHA_CELL_OPEN)
+	return OP_OK
 
-/datum/interaction/construction/mecha/pry_component/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/mecha/mech = target
+/// Which mech the pry question is about.
+/obj/mecha/proc/pry_subject(datum/act/op/A)
+	return src
+
+/// The components that can come out: name -> component.
+/obj/mecha/proc/pry_choices(datum/act/op/A)
 	var/list/removable_components = list()
-	for(var/slot in mech.internal_components)
-		var/obj/item/mecha_parts/component/MC = mech.internal_components[slot]
+	for(var/slot in internal_components)
+		var/obj/item/mecha_parts/component/MC = internal_components[slot]
 		if(istype(MC))
 			removable_components[MC.name] = MC
-		else
-			to_chat(actor, span_notice("\The [mech] appears to be missing \the [slot]."))
-	open_request(mech, /datum/prompt/choice/mecha_pry_component, TYPE_PROC_REF(/obj/mecha, component_pry_chosen), answerer = actor, subject = mech, choices = removable_components)
-	return TRUE
+	return removable_components
 
 /// Re-checked on the answer: still next to the mech, its cell still out.
 /datum/prompt/choice/mecha_pry_component
@@ -142,183 +126,75 @@
 	. = ..()
 	if(.)
 		return
-	var/obj/mecha/mech = subject
+	var/obj/mecha/mech = subject || owner
 	return mech.state == MECHA_CELL_OUT ? null : "cell not out"
 
-/obj/mecha/proc/component_pry_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	return component_pry_apply(A)
-
-/obj/mecha/proc/component_pry_apply(datum/act/request/A)
-	var/datum/prompt/choice/mecha_pry_component/ask = A.answer
-	var/obj/item/mecha_parts/component/RmC = ask.choices[ask.value]
+/obj/mecha/proc/component_pry_chosen(datum/act/op/A)
+	for(var/slot in internal_components)
+		if(!istype(internal_components[slot], /obj/item/mecha_parts/component))
+			to_chat(A.actor, span_notice("\The [src] appears to be missing \the [slot]."))
+	var/obj/item/mecha_parts/component/RmC = pry_choices(A)[A.step_value("component")]
+	if(!RmC)
+		log_world("MECHA: pry_component on [src] by [A.actor]: the chosen component is gone")
+		return OP_FAILED
 	RmC.detach()
-	return TRUE
+	return OP_OK
 
-/obj/mecha/proc/maintenance_has_cell(mob/actor, atom/target, obj/item/held)
-	return cell ? TRUE : FALSE
-// ---------------------------------------------------------------------------
-// Repairs ahead of the graph. Each one treats a body part or an affliction of the
-// mech body plan (code/modules/body/mech_body.dm).
+// ---- repairs ----
 
-/obj/mecha/declare_interactions(list/into)
-	..()
-	into += list(
-		/datum/interaction/mecha_treat/fix_temperature,
-		/datum/interaction/mecha_treat/seal_tank,
-		/datum/interaction/mecha_weld_repair/help,
-		/datum/interaction/mecha_weld_repair/disarm,
-		/datum/interaction/mecha_weld_repair/grab,
-		/datum/interaction/mecha_weld_strike,
-		/datum/interaction/mecha_treat/fix_wiring,
-		/datum/interaction/mecha_treat/extinguish,
-		/datum/interaction/mecha_paste_repair,
-		/datum/interaction/mecha_treat/recalibrate,
-	)
+/// The mech has the affliction `treats`.
+/obj/mecha/proc/afflicted_with(treats)
+	return mech_body_plan().has_affliction(src, treats)
 
-/// The power unit hatch is open (short-circuit wiring is behind it).
-/obj/mecha/proc/maintenance_hatch_open(mob/actor, atom/target, obj/item/held)
-	return state >= MECHA_CELL_OPEN
+/obj/mecha/proc/temp_control_broken(datum/act/A)
+	return afflicted_with(MECHA_INT_TEMP_CONTROL)
 
-/// The securing bolts are undone (components are reachable).
-/obj/mecha/proc/maintenance_panel_loose(mob/actor, atom/target, obj/item/held)
-	return state >= MECHA_PANEL_LOOSE
+/obj/mecha/proc/tank_breached(datum/act/A)
+	return afflicted_with(MECHA_INT_TANK_BREACH)
 
-/// Base for repairs that treat one affliction: offered only while the mech has it.
-/datum/interaction/mecha_treat
-	category = INTERACTION_CAT_REPAIR
-	priority = 20
-	default_action = INPUT_ACTION_USE
-	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT)
-	/// MECHA_INT_* affliction this repair treats.
-	var/treats
+/obj/mecha/proc/wiring_fused(datum/act/A)
+	return afflicted_with(MECHA_INT_SHORT_CIRCUIT)
 
-/datum/interaction/mecha_treat/applies_to(atom/target)
-	var/obj/mecha/mech = target
-	return istype(mech) && mech_body_plan().has_affliction(mech, treats)
+/obj/mecha/proc/internal_fire(datum/act/A)
+	return afflicted_with(MECHA_INT_FIRE)
 
-/datum/interaction/mecha_treat/fix_temperature
-	feedback = /datum/msg/interaction/mecha_treat/fix_temperature
-	id = "mecha_fix_temperature"
-	name = "Repair the temperature controller"
-	tool = TOOL_SCREWDRIVER
-	treats = MECHA_INT_TEMP_CONTROL
-	effect = /obj/mecha/proc/fix_temperature_control
+/obj/mecha/proc/control_lost(datum/act/A)
+	return afflicted_with(MECHA_INT_CONTROL_LOST)
 
-/datum/msg/interaction/mecha_treat/fix_temperature
-	self = "You repair the damaged temperature controller."
+/obj/mecha/proc/fix_temperature_control(datum/act/op/A)
+	mech_body_plan().cure(src, MECHA_INT_TEMP_CONTROL)
+	return OP_OK
 
-/obj/mecha/proc/fix_temperature_control(mob/actor, obj/item/held, datum/interaction/interaction)
-	return mech_body_plan().cure(src, MECHA_INT_TEMP_CONTROL)
+/obj/mecha/proc/seal_tank(datum/act/op/A)
+	mech_body_plan().cure(src, MECHA_INT_TANK_BREACH)
+	return OP_OK
 
-/// A welder seals a breached tank before it patches anything else.
-/datum/interaction/mecha_treat/seal_tank
-	feedback = /datum/msg/interaction/mecha_treat/seal_tank
-	id = "mecha_seal_tank"
-	name = "Seal the gas tank"
-	priority = 25
-	tool = TOOL_WELDER
-	treats = MECHA_INT_TANK_BREACH
-	effect = /obj/mecha/proc/seal_tank
+/obj/mecha/proc/fix_wiring(datum/act/op/A)
+	mech_body_plan().cure(src, MECHA_INT_SHORT_CIRCUIT)
+	return OP_OK
 
-/datum/msg/interaction/mecha_treat/seal_tank
-	self = "You repair the damaged gas tank."
+/// The extinguisher has enough foam left.
+/obj/mecha/proc/extinguisher_has_foam(datum/act/op/A)
+	var/obj/item/extinguisher/held = A.held
+	return istype(held) && held.reagents && held.reagents.total_volume >= MECHA_EXTINGUISH_FOAM
 
-/obj/mecha/proc/seal_tank(mob/actor, obj/item/held, datum/interaction/interaction)
-	return mech_body_plan().cure(src, MECHA_INT_TANK_BREACH)
-
-/// Fused wiring behind the power unit hatch takes two lengths of cable.
-/datum/interaction/mecha_treat/fix_wiring
-	feedback = /datum/msg/interaction/mecha_treat/fix_wiring
-	id = "mecha_fix_wiring"
-	name = "Replace the fused wires"
-	tool = TOOL_CABLE_COIL
-	tool_amount = 2
-	treats = MECHA_INT_SHORT_CIRCUIT
-	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/mecha/proc/maintenance_hatch_open, "the power unit hatch is closed"))
-	effect = /obj/mecha/proc/fix_wiring
-
-/datum/msg/interaction/mecha_treat/fix_wiring
-	self = "You replace the fused wires."
-
-/obj/mecha/proc/fix_wiring(mob/actor, obj/item/held, datum/interaction/interaction)
-	return mech_body_plan().cure(src, MECHA_INT_SHORT_CIRCUIT)
-
-/// An extinguisher puts out an internal fire.
-/datum/interaction/mecha_treat/extinguish
-	id = "mecha_extinguish"
-	name = "Extinguish the internal fire"
-	held_type = /obj/item/extinguisher
-	treats = MECHA_INT_FIRE
-	also_requires = list(REQ_TARGET_STATE(/obj/mecha/proc/can_extinguish_internal_fire))
-	effect = /obj/mecha/proc/extinguish_internal_fire
-
-/// Foam used per extinguishing.
-#define MECHA_EXTINGUISH_FOAM 10
-
-/// Requirement: the extinguisher needs enough foam left.
-/obj/mecha/proc/can_extinguish_internal_fire(mob/actor, atom/target, obj/item/extinguisher/held)
-	if(!istype(held) || !held.reagents || held.reagents.total_volume < MECHA_EXTINGUISH_FOAM)
-		return "[held] is empty"
-	return TRUE
-
-/obj/mecha/proc/extinguish_internal_fire(mob/actor, obj/item/extinguisher/held, datum/interaction/interaction)
+/obj/mecha/proc/extinguish_internal_fire(datum/act/op/A)
+	var/obj/item/extinguisher/held = A.held
 	held.reagents.remove_any(MECHA_EXTINGUISH_FOAM)
 	play_sfx(src, SFX_EFFECTS_EXTINGUISH, volume = 50, extrarange = 0)
-	to_chat(actor, span_notice("You flood \the [src]'s internals with foam."))
+	to_chat(A.actor, span_notice("You flood \the [src]'s internals with foam."))
 	mech_body_plan().cure(src, MECHA_INT_FIRE)
-	return TRUE
+	return OP_OK
 
 #undef MECHA_EXTINGUISH_FOAM
 
-/// Abstract: weld repairs, outside combat mode (one per stance). In combat mode the welder strikes instead.
-/datum/interaction/mecha_weld_repair
-	name = "Weld repairs"
-	category = INTERACTION_CAT_REPAIR
-	priority = 20
-	default_action = INPUT_ACTION_USE
-	tool = TOOL_WELDER
-	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT)
-	effect = /obj/mecha/proc/weld_repair
-
-/datum/interaction/mecha_weld_repair/help
-	id = "mecha_weld_repair"
-	stance = I_HELP
-
-/datum/interaction/mecha_weld_repair/disarm
-	id = "mecha_weld_repair_disarm"
-	stance = I_DISARM
-
-/datum/interaction/mecha_weld_repair/grab
-	id = "mecha_weld_repair_grab"
-	stance = I_GRAB
-
-/// Combat mode: a welder attacks the exosuit instead of repairing it (lit or not).
-/datum/interaction/mecha_weld_strike
-	id = "mecha_weld_strike"
-	name = "Strike"
-	category = INTERACTION_CAT_ATTACK
-	priority = 20
-	default_action = INPUT_ACTION_USE
-	stance = I_HURT
-	tool = TOOL_WELDER
-	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT)
-	effect = /obj/mecha/proc/weld_strike
-
-/// A strike, not a tool job: no lit-welder check, no fuel, no sound.
-/datum/interaction/mecha_weld_strike/pay_cost(mob/actor, atom/target, obj/item/held)
-	return TRUE
-
-/obj/mecha/proc/weld_strike(mob/actor, obj/item/held, datum/interaction/interaction)
-	dynattackby(held, actor)
-	return TRUE
+/obj/mecha/proc/weld_strike(datum/act/op/A)
+	dynattackby(A.held, A.actor)
+	return OP_OK
 
 /// Patches 10 integrity: the frame first, then the hull, then the armour plates.
-/obj/mecha/proc/weld_repair(mob/actor, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/weld_repair(datum/act/op/A)
+	var/mob/actor = A.actor
 	var/datum/mech_body_plan/plan = mech_body_plan()
 	var/obj/item/mecha_parts/component/hull/HC = plan.part(src, MECH_HULL)
 	var/obj/item/mecha_parts/component/armor/AC = plan.part(src, MECH_ARMOR)
@@ -336,20 +212,12 @@
 		update_damage_alerts()
 	else
 		to_chat(actor, "The [name] is at full integrity")
-	return TRUE
+	return OP_OK
 
 /// Nanopaste repairs every damaged component once the securing bolts are undone.
-/datum/interaction/mecha_paste_repair
-	id = "mecha_paste_repair"
-	name = "Repair components with nanopaste"
-	category = INTERACTION_CAT_REPAIR
-	priority = 20
-	default_action = INPUT_ACTION_USE
-	held_type = /obj/item/stack/nanopaste
-	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/mecha/proc/maintenance_panel_loose, "you can't reach the internal components"))
-	effect = /obj/mecha/proc/paste_repair
-
-/obj/mecha/proc/paste_repair(mob/actor, obj/item/stack/nanopaste/held, datum/interaction/interaction)
+/obj/mecha/proc/paste_repair(datum/act/op/A)
+	var/mob/actor = A.actor
+	var/obj/item/stack/nanopaste/held = A.held
 	var/datum/mech_body_plan/plan = mech_body_plan()
 	var/any_part = FALSE
 	for(var/slot in TYPE_TABLE_GET(plan, part_order))
@@ -364,21 +232,12 @@
 		C.paste_repair_step(actor, held, src)
 	if(!any_part)
 		to_chat(actor, span_notice("There are no components installed!"))
-	return TRUE
+	return OP_OK
 
-/// The pilot recalibrates the coordination system (control damage) from the cockpit. The
-/// cockpit panel's "Recalibrate" action runs this interaction; it has no click action.
-/datum/interaction/mecha_treat/recalibrate
-	id = "mecha_recalibrate"
-	name = "Recalibrate the coordination system"
-	default_action = null
-	treats = MECHA_INT_CONTROL_LOST
-	requires = list(REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, "only the pilot can recalibrate"))
-	effect = /obj/mecha/proc/start_recalibration
-
-/// Recalibration takes 10 seconds and fails if the mech moves meanwhile (recalibration_done()).
-/obj/mecha/proc/start_recalibration(mob/actor, obj/item/held, datum/interaction/interaction)
+/// The pilot recalibrates the coordination system (control damage) from the cockpit. Recalibration takes 10 seconds and fails if the mech moves
+/// meanwhile (recalibration_done()).
+/obj/mecha/proc/start_recalibration(datum/act/op/A)
 	occupant_message("Recalibrating coordination system.")
 	mecha_log_message("Recalibration of coordination system started.")
 	after(src, 10 SECONDS, PROC_REF(recalibration_done), with = list(loc))
-	return TRUE
+	return OP_OK

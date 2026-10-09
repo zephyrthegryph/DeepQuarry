@@ -49,7 +49,7 @@ CAPABILITIES(/obj/item/assembly/electronic_assembly)
 	look.state("[initial(icon_state)][EA ? "" : "0"][opened ? "-open" : ""]")
 
 /// Old attack_self (the assembly self-use chain: /obj/item/assembly/proc/interaction_self()): use the circuit inside.
-/obj/item/assembly/electronic_assembly/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/assembly/electronic_assembly/interaction_self(mob/user, obj/item/held)
 	. = ..()
 	if(.)
 		return TRUE

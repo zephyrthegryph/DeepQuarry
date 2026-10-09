@@ -1017,7 +1017,6 @@ initialize	code/modules/vehicles/Securitrain.dm	/obj/vehicle/train/security/engi
 initialize	code/modules/vehicles/bike.dm	/obj/vehicle/bike/Initialize(mapload)
 initialize	code/modules/vehicles/cargo_train.dm	/obj/vehicle/train/engine/Initialize(mapload)
 initialize	code/modules/vehicles/cargo_train.dm	/obj/vehicle/train/trolley_tank/Initialize(mapload)
-initialize	code/modules/vehicles/construction.dm	/obj/item/vehicle_assembly/Initialize(mapload)
 initialize	code/modules/vehicles/janicart.dm	/obj/vehicle/train/engine/janicart/Initialize(mapload)
 initialize	code/modules/vehicles/quad.dm	/obj/vehicle/train/trolley/trailer/Initialize(mapload)
 initialize	code/modules/vehicles/rover.dm	/obj/vehicle/train/rover/engine/Initialize(mapload)

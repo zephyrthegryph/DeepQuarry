@@ -94,37 +94,6 @@
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "size:800x600,ctx:x,ctx via", "a deleted context drops the answer without calling the live owner")
 	TEST_ASSERT(!dx_winget(E, null, "mapwindow", "size", TYPE_PROC_REF(/datum/io_test_entity, dx_done)), "a round trip needs a client")
 
-/// A picker ability whose one candidate is set by the test. No id: it stays out of the
-/// ability and keybind registries.
-/datum/interaction/ability/picker/test_flow
-	name = "Test pick"
-	var/datum/test_candidate
-
-/datum/interaction/ability/picker/test_flow/candidates(mob/living/actor)
-	return test_candidate ? list(test_candidate) : list()
-
-/datum/unit_test/om/ability_picker_asks_without_waiting
-
-/datum/unit_test/om/ability_picker_asks_without_waiting/Run()
-	test_driver_begin()
-	exercise_native_picker()
-	test_driver_end()
-
-/datum/unit_test/om/ability_picker_asks_without_waiting/proc/exercise_native_picker()
-	var/turf/T = test_floor()
-	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
-	actor.enable_godmode()
-	var/mob/living/carbon/human/candidate = allocate(/mob/living/carbon/human, T)
-	candidate.enable_godmode()
-	var/datum/interaction/ability/picker/test_flow/A = allocate(/datum/interaction/ability/picker/test_flow)
-	rel_set(A, nameof(A.test_candidate), candidate)
-	TEST_ASSERT_NULL(A.pick_target(actor), "The real picker asks and returns without waiting")
-	var/datum/prompt/choice/ability_target/P = SSrequests.open_for(actor)
-	TEST_ASSERT(istype(P), "The real picker opened its native choice")
-	TEST_ASSERT(candidate in P.choices, "The actual candidate identity is offered")
-	test_answer(actor, null, REQ_CANCELLED)
-	TEST_ASSERT_NULL(SSrequests.open_for(actor), "Explicit close retires the actual request without attempting the ability")
-
 /datum/unit_test/om/rainbow_crayon_asks_colours
 
 /datum/unit_test/om/rainbow_crayon_asks_colours/Run()

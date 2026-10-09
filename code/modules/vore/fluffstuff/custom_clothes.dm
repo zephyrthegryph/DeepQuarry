@@ -1110,7 +1110,7 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/trench/fluff/octaviouscoat, suit_stor
 	body_parts_covered = HEAD|EYES
 
 /// Overrides the "Adjust welding mask" interaction: it only conceals the eyes - it's a hat, not a mask.
-/obj/item/clothing/head/welding/fluff/vinjj/head_welding_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/welding/fluff/vinjj/head_welding_toggle_verb(mob/user, obj/item/held)
 
 	if(user.canmove && !user.stat && !user.restrained())
 		if(up)

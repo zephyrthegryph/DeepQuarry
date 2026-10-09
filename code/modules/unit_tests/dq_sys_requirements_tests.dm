@@ -17,13 +17,21 @@
 /obj/dq_req_probe/proc/operable()
 	return working
 
-/obj/dq_req_probe/proc/dq_req_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	uses++
-	return TRUE
+MSG_DEF_SELF(dq_req/locked, "it's locked")
+MSG_DEF_SELF(dq_req/inoperable, "it isn't operable")
 
-DECLARE_INTERACTIONS(/obj/dq_req_probe, \
-	INTERACT_HAND("Toggle", PROC_REF(dq_req_toggle), REQ_FIELD("operable"), REQ_FIELD_NOT("locked")), \
-)
+CAPABILITIES(/obj/dq_req_probe)
+	op("dq_req_toggle", hand(), label("Toggle"), needs(req(PROC_REF(is_operable), because = MSG(dq_req/inoperable)), req(PROC_REF(is_unlocked), because = MSG(dq_req/locked))), then(PROC_REF(dq_req_toggle)))
+
+/obj/dq_req_probe/proc/is_operable(datum/act/A)
+	return read_once(operable())
+
+/obj/dq_req_probe/proc/is_unlocked(datum/act/A)
+	return read_once(!locked)
+
+/obj/dq_req_probe/proc/dq_req_toggle(datum/act/op/A)
+	uses++
+	return OP_OK
 
 /// null if the one-clause spec passes on `probe`, else its reason.
 /datum/unit_test/proc/dq_req_reason(key, list/spec, mob/actor, atom/target)
@@ -98,34 +106,29 @@ DECLARE_INTERACTIONS(/obj/dq_req_probe, \
 	probe.req_access = list(ACCESS_CAPTAIN)
 	TEST_ASSERT_EQUAL(dq_req_reason("access", list(REQ_ACCESS), H, probe), "access denied", "an ID-less actor lacks the access")
 
-/// A lifted guard: the Menu lists the interaction as blocked with the reason, and the entry refuses without running the effect.
+/// A lifted guard: the Menu lists the op, and the op refuses with the guard's reason without running the effect.
 /datum/unit_test/dq_sys_requirements_menu
 
 /datum/unit_test/dq_sys_requirements_menu/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/obj/dq_req_probe/probe = allocate(/obj/dq_req_probe, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 
-	var/list/data = interaction_menu_data(H, probe)
 	var/list/names = list()
-	for(var/list/entry as anything in data["available"])
-		names += entry["name"]
+	for(var/list/row as anything in op_menu(H, probe, null))
+		if(row["enabled"])
+			names += row["label"]
 	TEST_ASSERT("Toggle" in names, "offered while unlocked and working: [jointext(names, ",")]")
 
 	probe.locked = TRUE
-	data = interaction_menu_data(H, probe)
-	var/reason
-	for(var/list/entry as anything in data["blocked"])
-		if(entry["name"] == "Toggle")
-			reason = entry["reason"]
-	TEST_ASSERT_EQUAL(reason, "it's locked", "the Menu shows why")
-
-	var/list/result = list()
-	run_interaction_entry(H, probe, null, INTERACTION_ENTRY_HAND, result, FALSE)
-	TEST_ASSERT(INTERACTION_TRY_BLOCKED in result, "the touch is refused")
+	var/datum/op_result/refused = test_click(H, probe, null)
+	TEST_ASSERT_EQUAL(refused?.outcome, ACT_REFUSED, "the touch is refused")
+	TEST_ASSERT_EQUAL(reason_text(refused?.reason), "it's locked", "with the guard's reason")
 	TEST_ASSERT_EQUAL(probe.uses, 0, "the effect didn't run")
 
 	probe.locked = FALSE
-	result = list()
-	run_interaction_entry(H, probe, null, INTERACTION_ENTRY_HAND, result, FALSE)
+	H.next_click = 0
+	test_click(H, probe, null)
 	TEST_ASSERT_EQUAL(probe.uses, 1, "unlocked, the effect runs")
+	test_driver_end()

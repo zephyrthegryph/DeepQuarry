@@ -340,3 +340,24 @@
 /// A held item for tgui data: {name, ref}, or null.
 /proc/slot_ui(obj/item/item)
 	return istype(item) ? list("name" = item.name, "ref" = REF(item)) : null
+
+/// "Insert " plus the article and name of a held-item type, e.g. "Insert a power cell".
+/proc/dq_interaction_insert_name(held_type)
+	if(!held_type)
+		return "Insert"
+	var/list/types = islist(held_type) ? held_type : list(held_type)
+	var/list/names = list()
+	for(var/atom/path as anything in types)
+		names += dq_pred_article(initial(path.name))
+	return "Insert [english_list(names, and_text = " or ")]"
+
+/// A lowercase, alnum-and-underscore-only slug of `text`, for building stable ids.
+/proc/dq_interaction_slug(text)
+	var/result = ""
+	for(var/i in 1 to length(text))
+		var/ch = copytext(text, i, i + 1)
+		if(ch == " " || ch == "/" || ch == "." || ch == "-")
+			result += "_"
+		else if(findtext("abcdefghijklmnopqrstuvwxyz0123456789_", ch, 1, 0) || findtext("ABCDEFGHIJKLMNOPQRSTUVWXYZ", ch, 1, 0))
+			result += lowertext(ch)
+	return result

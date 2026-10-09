@@ -19,6 +19,7 @@
 
 /// The shared machine body plan for mechs.
 /proc/mech_body_plan()
+	READS_FROM()
 	RETURN_TYPE(/datum/mech_body_plan)
 	var/static/datum/mech_body_plan/plan
 	if(!plan)

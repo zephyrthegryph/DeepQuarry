@@ -1,5 +1,5 @@
 /obj/item/assembly|human|none => |
-/obj/item/assembly|robot|none => |gen_silicon_item_silicon_equip_module:not possible right now
-/obj/item/assembly|ai|none => |gen_silicon_item_silicon_equip_module:not possible right now
+/obj/item/assembly|robot|none => |
+/obj/item/assembly|ai|none => |
 /obj/item/assembly|ghost|none => |
 

@@ -449,7 +449,7 @@ MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 /// Old attack_hand: the turf's own touch, then petting.
 /turf/simulated/floor/outdoors/fur/proc/fur_pet(datum/act/op/A)
 	var/mob/user = A.actor
-	turf_hand(user, A.held, null)
+	turf_hand(user, A.held)
 	fur_verb_pet(A)
 	return OP_OK
 

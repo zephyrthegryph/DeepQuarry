@@ -350,9 +350,16 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   deleted; restore from git only if asked.
 - **Variants.** Subtypes that differ only in data are collapsed into one type plus a registry
   (`code/datums/variants/README.md`).
-- **Loot and map resolvers.** Spawn tables are `DECLARE_LOOT` rolled by `loot_spawn()`; load-time
-  map atoms use `MAP_RESOLVER`. Both are slated to move under capability entries; don't add new
-  hand-rolled spawn code in the meantime.
+- **Loot and map resolvers.** A spawn table is a `loot(table = list(...), ...)` entry in the spawner's
+  CAPABILITIES block (a pure table is an abstract `/loot/...` type with its own block; a subtype writes
+  `configure(loot(...))`), rolled by `loot_spawn()`; a searchable pile names its table with
+  `loot_search(table =)` and searches through an op (`code/library/loot/`). A load-time map atom declares
+  `map_resolver(GLOBAL_PROC_REF(x), vars = list(...))`. These are static entries (`STATIC_ENTRY`): read
+  without an instance, compiled once at world setup by the `static_entries` system
+  (`code/engine/declare/static_entries.dm`), looked up with `loot_decl_for()` / `map_resolver_proc()`.
+  `DECLARE_LOOT`, the `LOOT_*` rows, `MAP_RESOLVER` and `MAP_RESOLVER_VARS` are hard-banned. Don't add
+  hand-rolled spawn code. Pins: `dq_loot_roll_pin`, `dq_loot_search_pin`, `dq_resolver_table_pin`,
+  `dq_resolver_reader_pin` (`code/modules/unit_tests/snapshots/loot/`).
 - **Server metrics and the admin viewer.** `GLOB.metrics_service` (`code/modules/metrics/`) samples
   every `/datum/metrics_source` every 10 s and flushes through `om_io` into the `metric_*` tables
   (`SQL/metrics_schema.sql`, `METRICS_ENABLED`). Events come from single framework points through

@@ -558,7 +558,7 @@ TRACKED(/obj/cap_fixture/ops/gauged, unwatched)
 
 // ---- the input router: gesture -> actions -> op, the resolver only for what no op answers ----
 
-/// A probe that has a legacy INTERACT entry (the High one, click) AND cap_op()s for the click, alt and drag gestures.
+/// A probe with cap_op()s for the click, alt and drag gestures.
 /obj/dq_interaction_probe/routed
 	name = "routed probe"
 	var/list/routed
@@ -583,27 +583,23 @@ TRACKED(/obj/cap_fixture/ops/gauged, unwatched)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/dq_interaction_probe/routed/R = allocate(/obj/dq_interaction_probe/routed, T)
-	var/obj/dq_interaction_probe/legacy = allocate(/obj/dq_interaction_probe, T)
 
-	// A plain click on a target with a cap_op runs the op, not the legacy entry that would also answer it.
+	// A plain click on a target with a cap_op runs the op.
 	TEST_ASSERT_NOTNULL(gesture_entry_for(H, R, null, GESTURE_CLICK), "a click reaches the op")
 	TEST_ASSERT_EQUAL(try_interaction(H, R, null, INPUT_ACTION_USE, null, TRUE), INTERACTION_TRY_RAN, "the click ran")
 	TEST_ASSERT_EQUAL(jointext(R.routed, ","), "press", "through the op")
-	TEST_ASSERT_EQUAL(length(R.done), 0, "the legacy entry was not asked")
 
 	// Alt-click is ACT_TOGGLE in the default profile.
 	R.routed = null
 	TEST_ASSERT_EQUAL(try_interaction(H, R, null, INPUT_ACTION_ALTERNATE), INTERACTION_TRY_RAN, "alt-click ran an op")
 	TEST_ASSERT_EQUAL(jointext(R.routed, ","), "press", "the toggle op")
 
-	// An op that would be refused now still takes the click: its refusal is what the player sees, and the
-	// legacy resolver is not asked (it only answers targets with no matching op).
+	// An op that would be refused now still takes the click: its refusal is what the player sees.
 	R.routed = null
-	R.done.Cut()
 	cap_set(R, CAP_LOCKED, TRUE)
 	TEST_ASSERT_NOTNULL(gesture_entry_for(H, R, null, GESTURE_CLICK), "a locked press op still takes the click")
 	TEST_ASSERT_EQUAL(try_interaction(H, R, null, INPUT_ACTION_USE, null, TRUE), INTERACTION_TRY_BLOCKED, "the op's refusal answers")
-	TEST_ASSERT(!length(R.done) && !length(R.routed), "neither the legacy entry nor the op ran")
+	TEST_ASSERT(!length(R.routed), "the op did not run")
 	cap_set(R, CAP_LOCKED, FALSE)
 
 	// The tool-quality narrowing of the tool_act path applies: a crowbar click is not the pen-using drag op's.
@@ -615,10 +611,9 @@ TRACKED(/obj/cap_fixture/ops/gauged, unwatched)
 	adapter.drag(H, pen, R, null, null, null, null, "")
 	TEST_ASSERT_EQUAL(jointext(R.routed, ","), "put:/obj/item/pen", "a drag ran the drop-onto op with the dragged item")
 
-	// A fixture with only legacy INTERACT entries is untouched by the router.
-	TEST_ASSERT_NULL(gesture_entry_for(H, legacy, null, GESTURE_CLICK), "no op on it: the router has nothing")
-	TEST_ASSERT_EQUAL(try_interaction(H, legacy, null, INPUT_ACTION_USE, null, TRUE), INTERACTION_TRY_RAN, "the resolver runs it as before")
-	TEST_ASSERT_EQUAL(jointext(legacy.done, ","), "dq_test_high", "the same entry as before")
+	// A fixture with no op is untouched by the router.
+	var/obj/dq_interaction_probe/bare = allocate(/obj/dq_interaction_probe, T)
+	TEST_ASSERT_NULL(gesture_entry_for(H, bare, null, GESTURE_CLICK), "no op on it: the router has nothing")
 
 // ---- offered, EMPTY_HAND and the structural defaults ----
 

@@ -142,7 +142,7 @@
 	standard_overlays = FALSE
 
 CAPABILITIES(/obj/item/cell/device/weapon/recharge/alien)
-	// The old subtype EXTEND_INTERACTIONS ran this before the inherited charge/drain entries.
+	// This ran before the inherited charge/drain entries.
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

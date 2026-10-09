@@ -330,11 +330,6 @@ TRACKED(/obj/item, gurgled_color)
 	pick_up_by_hand(A.actor)
 	return OP_OK
 
-/// Pick the item up into the active hand. An anchored item is used instead (its self-use).
-/obj/item/proc/interaction_pick_up(mob/living/user, obj/item/held, datum/interaction/interaction)
-	pick_up_by_hand(user)
-	return TRUE
-
 /obj/item/proc/pick_up_by_hand(mob/living/user)
 	if(anchored)
 		if(!attack_self(user))
@@ -385,26 +380,16 @@ TRACKED(/obj/item, gurgled_color)
 	// EDIT END.
 	return
 
-/obj/item/proc/item_in_robot_module(mob/actor, atom/target, obj/item/held)
-	return istype(loc, /obj/item/robot_module)
+/obj/item/proc/item_in_robot_module(datum/act/A)
+	return read_once(istype(loc, /obj/item/robot_module))
 
-/// Old /obj/item/attack_ai. Offered only on a module's items, so it never competes with an item's own. The one legacy spec left on items:
-/// its requirement reads the item's location (the module that holds it), which no op requirement can read yet.
-/obj/item/declare_interactions(list/into)
-	..()
-	var/static/list/module_spec = INTERACT_SILICON("Equip", PROC_REF(item_silicon_equip_module), REQ_TARGET_STATE(/obj/item/proc/item_in_robot_module))
-	into += dq_interaction_from_spec(/obj/item, module_spec)
-
-/// Old attack_ai: a cyborg clicking an item of its module equips it.
-/obj/item/proc/item_silicon_equip_module(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!istype(src.loc, /obj/item/robot_module))
-		return FALSE
-	if(!isrobot(user))
-		return TRUE
-	var/mob/living/silicon/robot/R = user
+/// Old /obj/item/attack_ai: a cyborg clicking an item of its module equips it. Offered only on a module's items (declared with every item's
+/// defaults, robot/component.dm), so it never competes with an item's own.
+/obj/item/proc/item_silicon_equip_module(datum/act/op/A)
+	var/mob/living/silicon/robot/R = A.actor
 	R.activate_module(src)
 	R.hud_used.update_robot_modules_display()
-	return TRUE
+	return OP_OK
 
 /obj/item/proc/talk_into(mob/M as mob, text)
 	return

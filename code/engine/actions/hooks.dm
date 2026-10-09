@@ -62,8 +62,8 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	return entry_make(ENTRY_INSTEAD, null, list("order" = order), entry_flatten(ENTRY_SLOT_LIST))
 
 /// needs(parts...): refuses the action. The requirement language is E2's; its parts reach act_needs_refusal().
-/proc/hook_needs(ENTRY_SLOTS)
-	return entry_make(ENTRY_NEEDS, null, null, entry_flatten(ENTRY_SLOT_LIST))
+/proc/hook_needs(...)
+	return entry_make(ENTRY_NEEDS, null, null, entry_flatten(args.Copy()))
 
 /// adjusts(packet.amount, by =, scale =, when =): modifies one typed field of the action before it reaches its sink. `field` is text (the
 /// generator rewrites the path a declaration writes); scale applies before by.
@@ -99,8 +99,8 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	return entry_make(ENTRY_ON_NOTICE, null, list("notice" = /datum/notice/op_done, "outcome" = outcome, "op" = op_key), entry_flatten(ENTRY_SLOT_LIST))
 
 /// A capability of triggers only: the entries it brings are its hooks. No key of its own beyond what tells two of them apart.
-/proc/hook_capability(ENTRY_SLOTS)
-	return hook_capability_of(entry_flatten(ENTRY_SLOT_LIST), FALSE)
+/proc/hook_capability(...)
+	return hook_capability_of(entry_flatten(args.Copy()), FALSE)
 
 /datum/capability/hook
 	var/list/hook_entries

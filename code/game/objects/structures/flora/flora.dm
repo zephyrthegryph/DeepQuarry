@@ -500,35 +500,37 @@ MSG_DEF_SELF(pottedplant/nothing, span_filter_notice(span_bold("You see nothing 
 	name = "random potted plant"
 	desc = "This is a random potted plant."
 
-DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
-	/obj/structure/flora/pottedplant = 10, \
-	/obj/structure/flora/pottedplant/large = 10, \
-	/obj/structure/flora/pottedplant/fern = 10, \
-	/obj/structure/flora/pottedplant/overgrown = 10, \
-	/obj/structure/flora/pottedplant/bamboo = 10, \
-	/obj/structure/flora/pottedplant/largebush = 10, \
-	/obj/structure/flora/pottedplant/thinbush = 10, \
-	/obj/structure/flora/pottedplant/mysterious = 10, \
-	/obj/structure/flora/pottedplant/smalltree = 10, \
-	/obj/structure/flora/pottedplant/unusual = 10, \
-	/obj/structure/flora/pottedplant/orientaltree = 10, \
-	/obj/structure/flora/pottedplant/smallcactus = 10, \
-	/obj/structure/flora/pottedplant/tall = 10, \
-	/obj/structure/flora/pottedplant/sticky = 10, \
-	/obj/structure/flora/pottedplant/smelly = 10, \
-	/obj/structure/flora/pottedplant/small = 10, \
-	/obj/structure/flora/pottedplant/aquatic = 10, \
-	/obj/structure/flora/pottedplant/shoot = 10, \
-	/obj/structure/flora/pottedplant/flower = 10, \
-	/obj/structure/flora/pottedplant/crystal = 10, \
-	/obj/structure/flora/pottedplant/subterranean = 10, \
-	/obj/structure/flora/pottedplant/minitree = 10, \
-	/obj/structure/flora/pottedplant/stoutbush = 10, \
-	/obj/structure/flora/pottedplant/drooping = 10, \
-	/obj/structure/flora/pottedplant/tropical = 10, \
-	/obj/structure/flora/pottedplant/dead = 10, \
-	/obj/structure/flora/pottedplant/decorative = 10, \
-	/obj/structure/flora/pottedplant/xmas = 1))
+CAPABILITIES(/obj/random/pottedplant)
+	loot(
+		table = list(
+			/obj/structure/flora/pottedplant = 10,
+			/obj/structure/flora/pottedplant/large = 10,
+			/obj/structure/flora/pottedplant/fern = 10,
+			/obj/structure/flora/pottedplant/overgrown = 10,
+			/obj/structure/flora/pottedplant/bamboo = 10,
+			/obj/structure/flora/pottedplant/largebush = 10,
+			/obj/structure/flora/pottedplant/thinbush = 10,
+			/obj/structure/flora/pottedplant/mysterious = 10,
+			/obj/structure/flora/pottedplant/smalltree = 10,
+			/obj/structure/flora/pottedplant/unusual = 10,
+			/obj/structure/flora/pottedplant/orientaltree = 10,
+			/obj/structure/flora/pottedplant/smallcactus = 10,
+			/obj/structure/flora/pottedplant/tall = 10,
+			/obj/structure/flora/pottedplant/sticky = 10,
+			/obj/structure/flora/pottedplant/smelly = 10,
+			/obj/structure/flora/pottedplant/small = 10,
+			/obj/structure/flora/pottedplant/aquatic = 10,
+			/obj/structure/flora/pottedplant/shoot = 10,
+			/obj/structure/flora/pottedplant/flower = 10,
+			/obj/structure/flora/pottedplant/crystal = 10,
+			/obj/structure/flora/pottedplant/subterranean = 10,
+			/obj/structure/flora/pottedplant/minitree = 10,
+			/obj/structure/flora/pottedplant/stoutbush = 10,
+			/obj/structure/flora/pottedplant/drooping = 10,
+			/obj/structure/flora/pottedplant/tropical = 10,
+			/obj/structure/flora/pottedplant/dead = 10,
+			/obj/structure/flora/pottedplant/decorative = 10,
+			/obj/structure/flora/pottedplant/xmas = 1))
 
 /obj/structure/flora/sif
 	icon = 'icons/obj/flora/sifflora.dmi'

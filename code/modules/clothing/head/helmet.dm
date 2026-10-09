@@ -282,7 +282,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere)
 
 /// The bedevere_toggle_verb op: the verb's effect, as the old resolver ran it.
 /obj/item/clothing/head/helmet/combat/bedevere/proc/bedevere_toggle_verb_op(datum/act/op/A)
-	bedevere_toggle_verb(A.actor, A.held, null)
+	bedevere_toggle_verb(A.actor, A.held)
 	return OP_OK
 
 /// Old attack_self.
@@ -291,7 +291,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere)
 	bedevere_toggle_verb(user)
 
 /// Old verb "Adjust helmet visor".
-/obj/item/clothing/head/helmet/combat/bedevere/proc/bedevere_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/helmet/combat/bedevere/proc/bedevere_toggle_verb(mob/user, obj/item/held)
 	if(!base_state)
 		base_state = icon_state
 
@@ -344,7 +344,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere_costume)
 
 /// The bedevere_costume_toggle_verb op: the verb's effect, as the old resolver ran it.
 /obj/item/clothing/head/helmet/combat/bedevere_costume/proc/bedevere_costume_toggle_verb_op(datum/act/op/A)
-	bedevere_costume_toggle_verb(A.actor, A.held, null)
+	bedevere_costume_toggle_verb(A.actor, A.held)
 	return OP_OK
 
 /// Old attack_self.
@@ -353,7 +353,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere_costume)
 	bedevere_costume_toggle_verb(user)
 
 /// Old verb "Adjust helmet visor".
-/obj/item/clothing/head/helmet/combat/bedevere_costume/proc/bedevere_costume_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/helmet/combat/bedevere_costume/proc/bedevere_costume_toggle_verb(mob/user, obj/item/held)
 	if(!base_state)
 		base_state = icon_state
 

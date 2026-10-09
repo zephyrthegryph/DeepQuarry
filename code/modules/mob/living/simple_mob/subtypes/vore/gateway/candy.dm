@@ -551,14 +551,16 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
 
 	mob_faction = "candy"
 
-DECLARE_LOOT(/obj/random/mob/candycritter, LOOT_TABLE(\
-	/mob/living/simple_mob/vore/candy/purplecabold, \
-	/mob/living/simple_mob/vore/candy/bluecabold, \
-	/mob/living/simple_mob/vore/candy/greencabold, \
-	/mob/living/simple_mob/vore/candy/yellowcabold, \
-	/mob/living/simple_mob/vore/candy/orangecabold, \
-	/mob/living/simple_mob/vore/candy/redcabold, \
-	/mob/living/simple_mob/vore/candy/peppermint))
+CAPABILITIES(/obj/random/mob/candycritter)
+	configure(loot(
+		table = list(
+			/mob/living/simple_mob/vore/candy/purplecabold,
+			/mob/living/simple_mob/vore/candy/bluecabold,
+			/mob/living/simple_mob/vore/candy/greencabold,
+			/mob/living/simple_mob/vore/candy/yellowcabold,
+			/mob/living/simple_mob/vore/candy/orangecabold,
+			/mob/living/simple_mob/vore/candy/redcabold,
+			/mob/living/simple_mob/vore/candy/peppermint)))
 
 /obj/item/projectile/bullet/cmblast
 	use_submunitions = 1

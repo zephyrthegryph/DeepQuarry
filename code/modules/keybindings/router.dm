@@ -75,9 +75,22 @@ TYPE_TABLE_DECLARE(/datum/input_router, primary_table, list(list(list(LEFT_CLICK
 	var/datum/input_adapter/adapter = user.input_adapter()
 	if(!adapter.accept_click(user, target, params))
 		return
+	// A click that did not come through the input inbox gets what the inbox gives a player's: the ops of the target, the held item and the actor first
+	// (input_resolve_click()); what no op takes goes on to the actor's adapter, which does not resolve them again (GLOB.op_click_resolved).
+	var/ops_tried = GLOB.op_click_resolved[user]
+	if(!ops_tried)
+		var/gesture = op_gesture_of_params(params)
+		var/obj/held = user.held_for_ops()
+		if(!isnull(gesture) && target && (op_has_ops(target) || op_has_ops(held) || op_has_click_ops(user)))
+			var/datum/op_result/result = op_resolve_click_with_params(user, target, held, gesture, ORIGIN_CLICK, params, TRUE, TRUE)
+			if(result)
+				return TRUE
+		GLOB.op_click_resolved[user] = TRUE
 	var/list/modifiers = params2list(params)
 	var/action = classify(modifiers, TYPE_TABLE_GET(adapter, adapter_click_table), user.client ? user.client.right_click_binding() : INPUT_ACTION_MENU)
-	return adapter.perform(user, target, action, modifiers, params)
+	. = adapter.perform(user, target, action, modifiers, params)
+	if(!ops_tried)
+		GLOB.op_click_resolved -= user
 
 /// Entry point for drag and drop: the Drag action.
 /datum/input_router/proc/route_drag(mob/user, atom/dragged, atom/over, src_location, over_location, src_control, over_control, params)

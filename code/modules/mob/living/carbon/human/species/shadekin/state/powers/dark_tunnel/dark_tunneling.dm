@@ -1,64 +1,47 @@
 //Non-Canon on Virgo. Used downstream.
-// Ported to the ability framework (doc/rewrite/rules.md §5). The 60-second
-// channel is the ability's time cost (pay_cost()); the portal only deploys,
-// the one-time flag only sets and the energy only spends in the effect, all
-// together, after the channel finishes AND every requirement (including
-// "not already built one") still holds - the same "commit only once, all at
-// once" shape do_after() gave the legacy verb, just made structural.
+// The 60-second channel is the op's wait(); the portal only deploys, the one-time flag only sets and the energy only spends in the effect,
+// all together, after the channel finishes AND every requirement (including "not already built one") still holds. The op is part of the
+// shadekin_dark capability (dark_maw.dm).
 
-/datum/interaction/ability/self/shadekin_dark_tunneling
-	id = ABILITY_ID_SHADEKIN_DARK_TUNNELING
-	name = "Dark tunneling"
-	category = ABILITY_CAT_UTILITY
-	requires = list(
-		REQ_CONSCIOUS,
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_vr, "the VR systems cannot comprehend this power"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_shadekin, "you aren't shadekin"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_shifted, "you can't use that while phase shifted"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_no_dark_tunnel_yet, "you have already made a tunnel to the Dark"),
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_dark_tunnel_site_ready, null), // reason varies by what's wrong with the site
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_dark_tunnel_afford, "not enough energy for that ability"),
-	)
-	effect = /mob/living/proc/dq_do_dark_tunneling
-
-/datum/interaction/ability/self/shadekin_dark_tunneling/pay_cost(mob/actor, atom/target, obj/item/held)
-	var/turf/T = get_turf(actor)
+/// The channel begins: the smoke and the announcement the legacy pay step made.
+/mob/living/proc/ability_dark_tunnel_begins(datum/act/op/A)
+	var/turf/T = get_turf(src)
 	if(!T)
-		return FALSE
+		return /datum/msg/shadekin_ability/no_turf
 	var/datum/effect/effect/system/smoke_spread/smoke = new()
 	smoke.attach(T)
 	smoke.set_up(10, 0, T)
 	smoke.start()
-	act_message(actor, null, others = span_notice("%U% begins pulling dark energies around themselves."))
-	var/started = task_start(/datum/task/timed/interaction_cost, actor, null, duration = DARK_TUNNEL_CHANNEL_TIME, acted_on = target, held = held)
-	return istext(started) ? FALSE : USE_TOOL_PENDING
+	act_message(src, null, others = span_notice("%U% begins pulling dark energies around themselves."))
 
-/mob/living/proc/dq_pred_no_dark_tunnel_yet(mob/living/actor, atom/target, obj/item/held)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
-	if(!SK)
-		return "you aren't shadekin"
-	return !SK.created_dark_tunnel || "you have already made a tunnel to the Dark"
+/mob/living/proc/ability_no_dark_tunnel_yet(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
+	return !!SK && !SK.created_dark_tunnel
 
 /// Checks the deploy site (dq_dark_tunnel_template()'s check_deploy()) without side effects.
-/mob/living/proc/dq_pred_dark_tunnel_site_ready(mob/living/actor, atom/target, obj/item/held)
+/mob/living/proc/ability_dark_tunnel_site_ready(datum/act/op/A)
+	var/turf/T = get_turf(src)
+	if(!T)
+		return FALSE
 	var/datum/map_template/shelter/template = dq_dark_tunnel_template()
-	var/turf/T = get_turf(actor)
+	return template.check_deploy(T) == SHELTER_DEPLOY_ALLOWED
+
+/// Why the site is not ready: it varies by what's wrong with it.
+/mob/living/proc/ability_dark_tunnel_site_text(datum/act/op/A)
+	var/turf/T = get_turf(src)
 	if(!T)
 		return "you can't use that here"
+	var/datum/map_template/shelter/template = dq_dark_tunnel_template()
 	switch(template.check_deploy(T))
-		if(SHELTER_DEPLOY_ALLOWED)
-			return TRUE
 		if(SHELTER_DEPLOY_BAD_AREA)
 			return "a tunnel to the Dark will not function in this area"
 		if(SHELTER_DEPLOY_BAD_TURFS, SHELTER_DEPLOY_ANCHORED_OBJECTS)
 			return "there is not enough open area for a tunnel to the Dark to form (needs [template.width]x[template.height])"
 	return "you can't do that here"
 
-/mob/living/proc/dq_pred_dark_tunnel_afford(mob/living/actor, atom/target, obj/item/held)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
-	if(!SK)
-		return "you aren't shadekin"
-	return (SK.shadekin_get_energy() >= DARK_TUNNEL_COST) || "not enough energy for that ability"
+/mob/living/proc/ability_can_afford_dark_tunnel(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
+	return !!SK && SK.shadekin_get_energy() >= DARK_TUNNEL_COST
 
 /// The dark_portal shelter template, loaded once and cached.
 /proc/dq_dark_tunnel_template()
@@ -69,22 +52,22 @@
 			throw EXCEPTION("Shelter template (dark_portal) not found!")
 	return template
 
-/mob/living/proc/dq_do_dark_tunneling(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/datum/shadekin/SK = actor.get_shadekin_state()
+/mob/living/proc/ability_dark_tunneling(datum/act/op/A)
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
-		return FALSE
-	var/turf/T = get_turf(actor)
+		return OP_FAILED
+	var/turf/T = get_turf(src)
 	if(!T)
-		return FALSE
+		return OP_FAILED
 	var/datum/map_template/shelter/template = dq_dark_tunnel_template()
-	play_sfx(actor, SFX_EFFECTS_PHASEIN)
-	act_message(actor, null, others = span_notice("%U% finishes pulling dark energies around themselves, creating a portal."))
-	log_and_message_admins("[key_name_admin(actor)] created a tunnel to the dark at [get_area(T)]!")
+	play_sfx(src, SFX_EFFECTS_PHASEIN)
+	act_message(src, null, others = span_notice("%U% finishes pulling dark energies around themselves, creating a portal."))
+	log_and_message_admins("[key_name_admin(src)] created a tunnel to the dark at [get_area(T)]!")
 	template.annihilate_plants(T)
 	template.load_async(T, TRUE, TYPE_PROC_REF(/datum/map_template/shelter, shelter_loaded), template, list(T.x, T.y, T.z))
 	SK.created_dark_tunnel = TRUE
 	SK.shadekin_adjust_energy(-(DARK_TUNNEL_COST - 10)) //Leaving enough energy to actually activate the portal
-	return TRUE
+	return OP_OK
 
 /datum/map_template/shelter/dark_portal
 	name = "Dark Portal"

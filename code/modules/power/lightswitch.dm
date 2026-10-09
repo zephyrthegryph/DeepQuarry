@@ -77,7 +77,7 @@ CAPABILITIES(/obj/structure/construction/lightswitch)
 	construction(start(STAGE_LIGHTSWITCH_FRAME),
 		stage(STAGE_LIGHTSWITCH_FASTENED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(stage_changed)), undone(PROC_REF(stage_changed))),
 		stage(STAGE_LIGHTSWITCH_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(0), then(PROC_REF(wired)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(0))),
-		stage(STAGE_LIGHTSWITCH_FINISHED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(finished)), undo = null),
+		stage(STAGE_LIGHTSWITCH_FINISHED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(finished)), undo = NO_UNDO),
 		dismantle(tool(TOOL_WELDER), wait(2 SECONDS), then(PROC_REF(deconstructed))))
 	extend("construction.dismantle", needs(req_not(req_built(STAGE_LIGHTSWITCH_FASTENED, because = MSG(lightswitch/fastened_first)), because = MSG(lightswitch/fastened_first))))
 	op("touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(touched_with)), passes())

@@ -13,18 +13,29 @@ use crate::tree::{SourceFile, Tree};
 use crate::util::before_slashes;
 
 const RULES: &[RuleMeta] = &[
-    RuleMeta { name: "init_qdel", hint: "an atom that only works at load then goes: MAP_RESOLVER(path, proc) (systems.md section 9)" },
+    RuleMeta { name: "init_qdel", hint: "an atom that only works at load then goes: map_resolver(GLOBAL_PROC_REF(x)) in its CAPABILITIES block (systems.md section 9)" },
     RuleMeta {
         name: "init_self_delete",
-        hint: "an Initialize that does its work then deletes itself: MAP_RESOLVER(path, proc) (systems.md section 9)",
+        hint: "an Initialize that does its work then deletes itself: map_resolver(GLOBAL_PROC_REF(x)) in its CAPABILITIES block (systems.md section 9)",
     },
 ];
 
 fn roots_of(f: &SourceFile) -> Vec<String> {
     let mut roots: BTreeSet<String> = BTreeSet::new();
+    let mut cur: Option<String> = None;
     for line in f.raw().lines() {
-        if let Some(c) = pat!(r"^MAP_RESOLVER\((/[\w/]+),").captures(line) {
-            roots.insert(c.s(1).to_string());
+        if let Some(c) = pat!(r"^CAPABILITIES\((/[\w/]+)\)").captures(line) {
+            cur = Some(c.s(1).to_string());
+            continue;
+        }
+        if col0(line) {
+            cur = None;
+            continue;
+        }
+        if let Some(t) = &cur {
+            if pat!(r"^	(configure\()?map_resolver\(").is_match(line) {
+                roots.insert(t.clone());
+            }
         }
     }
     roots.into_iter().collect()

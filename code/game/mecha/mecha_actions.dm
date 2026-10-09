@@ -235,7 +235,7 @@
 /////
 
 /// Old verb "Toggle defence mode".
-/obj/mecha/proc/mecha_verb_toggle_defence_mode(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_toggle_defence_mode(mob/user, obj/item/held)
 	defence_mode(user)
 
 // Capability requirements (old moved_inside() removing the verbs a mech can't use).
@@ -270,7 +270,7 @@
 	return
 
 /// Old verb "Toggle leg actuators overload".
-/obj/mecha/proc/mecha_verb_toggle_overload(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_toggle_overload(mob/user, obj/item/held)
 	overload(user)
 
 /obj/mecha/proc/overload(mob/user)
@@ -295,7 +295,7 @@
 	return
 
 /// Old verb "Activate Smoke".
-/obj/mecha/proc/mecha_verb_toggle_smoke(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_toggle_smoke(mob/user, obj/item/held)
 	smoke(user)
 
 /obj/mecha/proc/smoke(mob/user)
@@ -320,7 +320,7 @@
 	return
 
 /// Old verb "Zoom".
-/obj/mecha/proc/mecha_verb_toggle_zoom(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_toggle_zoom(mob/user, obj/item/held)
 	zoom(user)
 
 /obj/mecha/proc/zoom(mob/user)//This could use improvements but maybe later.
@@ -344,7 +344,7 @@
 	return
 
 /// Old verb "Toggle thrusters".
-/obj/mecha/proc/mecha_verb_toggle_thrusters(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_toggle_thrusters(mob/user, obj/item/held)
 	thrusters(user)
 
 /obj/mecha/proc/thrusters(mob/user)
@@ -361,7 +361,7 @@
 	return
 
 /// Old verb "Change melee damage type".
-/obj/mecha/proc/mecha_verb_switch_damtype(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_switch_damtype(mob/user, obj/item/held)
 	query_damtype(user)
 
 /obj/mecha/proc/query_damtype(mob/user)
@@ -387,7 +387,7 @@
 	return
 
 /// Old verb "Toggle phasing".
-/obj/mecha/proc/mecha_verb_toggle_phasing(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_toggle_phasing(mob/user, obj/item/held)
 	phasing(user)
 
 /obj/mecha/proc/phasing(mob/user)
@@ -402,7 +402,7 @@
 	return
 
 /// Old verb "Toggle cloaking".
-/obj/mecha/proc/mecha_verb_toggle_cloak(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_toggle_cloak(mob/user, obj/item/held)
 	toggle_cloaking(user)
 
 /obj/mecha/proc/toggle_cloaking(mob/user)
@@ -421,7 +421,7 @@
 	return
 
 /// Old verb "Toggle weapons only cycling".
-/obj/mecha/proc/mecha_verb_toggle_weapons_only_cycle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_toggle_weapons_only_cycle(mob/user, obj/item/held)
 	set_weapons_only_cycle(user)
 
 /obj/mecha/proc/set_weapons_only_cycle(mob/user)

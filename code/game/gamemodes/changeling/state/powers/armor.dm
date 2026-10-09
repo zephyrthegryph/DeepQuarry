@@ -74,11 +74,11 @@ TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOL
 	if (magpulse)
 		slowdown += 1		//It's already tied to a slowdown suit, 6 slowdown is huge.
 
-EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots/changeling, INTERACT_USE("Toggle", PROC_REF(changeling_magboots_toggle_self)))
-
-/// Old attack_self. Runs the magboots toggle first, as the old ..() did (so it toggles twice; kept as it was).
-/obj/item/clothing/shoes/magboots/changeling/proc/changeling_magboots_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
-	magboots_toggle_self(user, held, interaction)
+/// Old attack_self. Runs the magboots toggle first, as the old ..() did (so it toggles twice; kept as it was). The parent's op ("magboots_toggle_self")
+/// reaches this override.
+/obj/item/clothing/shoes/magboots/changeling/magboots_toggle_self(datum/act/op/A)
+	var/mob/user = A.actor
+	..()
 	if(magpulse)
 		item_flags &= ~NOSLIP
 		magpulse = 0

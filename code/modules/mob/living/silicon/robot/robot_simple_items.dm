@@ -580,8 +580,6 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 
 	/// If we're currently using the gripper on something.
 	var/gripper_in_use = FALSE
-	/// If we're currently in the radial menu. (Blocks pickup attempts)
-	var/in_radial_menu = FALSE
 
 	var/mob/living/silicon/robot/our_robot
 
@@ -604,6 +602,8 @@ CAPABILITIES(/obj/item/gripper)
 	op("item_hurt", item(/obj/item), stance(I_HURT), then(PROC_REF(interaction_item_hurt)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), then(PROC_REF(interaction_alt)))
 	op("gripper_drop", menu(), label("Drop Item"), needs(carried()), then(PROC_REF(gripper_verb_drop)))
+	// Self-use: the ring of pockets (optional: closing it uses the wrapped item). While it is open it holds the gripper, which blocks every other use (is_in_use()).
+	op("pocket_menu", in_hand(), label("Select pocket"), claims(CLAIM_TARGET), needs(req(PROC_REF(pocket_menu_holds), because = PROC_REF(pocket_menu_refusal))), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(pocket_choices)), "radial" = TRUE, "anchor" = computed(PROC_REF(pocket_anchor)), "radius" = 40, "require_near" = TRUE, "autopick_single_option" = FALSE, "timeout" = 0), step = "pocket"), on_interrupt(PROC_REF(pocket_menu_closed)), then(PROC_REF(pocket_chosen)))
 
 /// The help-stance item use of the gripper: the shared handler with its stance.
 /obj/item/gripper/proc/interaction_item_help(datum/act/op/A)

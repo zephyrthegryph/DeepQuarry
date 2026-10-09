@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Loot tables and map-time resolvers are entries in the type's CAPABILITIES block (loot(), loot_search(), map_resolver()), read from a static table built at world setup. DECLARE_LOOT, the LOOT_* rows, MAP_RESOLVER and MAP_RESOLVER_VARS are gone and hard-banned."
+  - refactor: "Searching a loot pile or trash pile is an op with requirements (already searched, picked clean) and a loot_rolls() effect; what a pile remembers about its searchers is a keyed stat."
+  - bugfix: "Deleting a repair droid that is not installed in a mech no longer runtimes."

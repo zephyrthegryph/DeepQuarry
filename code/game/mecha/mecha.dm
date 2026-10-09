@@ -263,7 +263,8 @@ CAPABILITIES(/obj/mecha)
 	op("finish_req_access", topic("finish_req_access"), then(PROC_REF(topic_finish_req_access)))
 	op("dna_lock", topic("dna_lock"), then(PROC_REF(topic_dna_lock)))
 	op("reset_dna", topic("reset_dna"), then(PROC_REF(topic_reset_dna)))
-	op("repair_int_control_lost", topic("repair_int_control_lost"), then(PROC_REF(topic_repair_int_control_lost)))
+	op("repair_int_control_lost", topic("repair_int_control_lost"), when(PROC_REF(control_lost)), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot_recalibrate))), then(PROC_REF(start_recalibration)))
+	mecha_maintenance()
 	op("topic_drop_from_cargo", topic("drop_from_cargo", arg("drop_from_cargo", schema_ref(/obj), optional = TRUE, among = PROC_REF(topic_cargo_pool))), then(PROC_REF(topic_drop_from_cargo)))
 	op("mecha_paint_kit", item(/obj/item/kit/paint), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(mecha_paint_kit_op)))
 	op("mecha_weld_help", item(/obj/item), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 1), label("Weld repairs"), then(PROC_REF(interaction_mecha_welder)))
@@ -1092,6 +1093,7 @@ TRACKED(/obj/mecha, current_processes)
 // Pilot Menu entries (old "Exosuit Interface" verbs): the pilot is inside the mech, which
 // counts as reach (movable/Adjacent: neighbor == loc); pred_mecha_pilot keeps them pilot-only.
 MSG_DEF_SELF(mecha/not_pilot, "Only the pilot can do that.")
+MSG_DEF_SELF(mecha/not_pilot_recalibrate, "Only the pilot can recalibrate.")
 
 /// The mech's pilot, or null: the pilot ledger slot, which publishes OCCUPANT_KEY when someone gets in or out.
 /obj/mecha/proc/pilot_of()
@@ -1105,7 +1107,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 
 /// A paint kit customises the mech (the handler is declared with the kit's code, paintkit.dm).
 /obj/mecha/proc/mecha_paint_kit_op(datum/act/op/A)
-	interaction_mecha_paint_kit(A.actor, A.held, null)
+	interaction_mecha_paint_kit(A.actor, A.held)
 	return OP_OK
 
 /// The Enter Exosuit menu entry (old set src in oview(1)).
@@ -1647,7 +1649,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	return !!connected_port
 
 /// Old verb "Connect to port".
-/obj/mecha/proc/mecha_verb_connect_to_port(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_connect_to_port(mob/user, obj/item/held)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(!occupant)
 		return
@@ -1672,7 +1674,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 			occupant_message("Nothing happens")
 
 /// Old verb "Disconnect from port".
-/obj/mecha/proc/mecha_verb_disconnect_from_port(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_disconnect_from_port(mob/user, obj/item/held)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(!occupant)
 		return
@@ -1686,7 +1688,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		occupant_message(span_danger("[name] is not connected to the port at the moment."))
 
 /// Old verb "Toggle Lights".
-/obj/mecha/proc/mecha_verb_toggle_lights(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_toggle_lights(mob/user, obj/item/held)
 	lights(user)
 
 /obj/mecha/proc/lights(mob/user)
@@ -1702,7 +1704,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 
 /// Old verb "Toggle internal airtank usage". The mech minihud calls it with no user after
 /// checking the clicker is the pilot, so a null user means the pilot.
-/obj/mecha/proc/toggle_internal_tank(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/toggle_internal_tank(mob/user, obj/item/held)
 	internal_tank(user || slot_item(MECHA_SLOT_PILOT))
 
 /obj/mecha/proc/internal_tank(mob/user)
@@ -1726,7 +1728,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	return
 
 /// Old verb "Toggle strafing".
-/obj/mecha/proc/mecha_verb_toggle_strafing(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_toggle_strafing(mob/user, obj/item/held)
 	strafing(user)
 
 /obj/mecha/proc/strafing(mob/user)
@@ -1753,7 +1755,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	return OP_OK
 
 /// Old verb "Enter Exosuit".
-/obj/mecha/proc/mecha_verb_enter(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_enter(mob/user, obj/item/held)
 	move_inside(user)
 
 //returns an equipment object if we have one of that type, useful since is_type_in_list won't return the object
@@ -1884,7 +1886,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	return OP_OK
 
 /// Old verb "View Stats".
-/obj/mecha/proc/view_stats(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/view_stats(mob/user, obj/item/held)
 	if(!user || user != src?.slot_item(MECHA_SLOT_PILOT))
 		return
 	// The structured TGUI interface replaces the old browser window.
@@ -1894,7 +1896,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 
 
 /// Old verb "Eject".
-/obj/mecha/proc/mecha_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_eject(mob/user, obj/item/held)
 	if(!user || user!=src?.slot_item(MECHA_SLOT_PILOT))
 		return
 	src.go_out()
@@ -2712,13 +2714,6 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	var/mob/user = A.actor
 	if(topic_is_pilot(user))
 		dna = null
-
-/obj/mecha/proc/topic_repair_int_control_lost(datum/act/op/A)
-	var/mob/user = A.actor
-	// The declared interaction checks the pilot and that there is control damage.
-	var/datum/interaction/recalibrate = INTERACTION(/datum/interaction/mecha_treat/recalibrate)
-	if(recalibrate?.applies_to(src))
-		recalibrate.attempt(user, src, null)
 
 /obj/mecha/proc/topic_drop_from_cargo(datum/act/op/A, href_drop_from_cargo)
 	var/mob/user = A.actor

@@ -1,15 +1,15 @@
-/// Every mech/fighter/micro-mech construction graph (roadmap I5) has a valid `result`.
+/// Every mech/fighter/micro-mech blueprint has a valid `result`.
 /datum/unit_test/mech_construction/Run()
 	var/failed = FALSE
-	for(var/datum/construction_graph/mecha/path as anything in subtypesof(/datum/construction_graph/mecha))
+	for(var/datum/mecha_blueprint/path as anything in subtypesof(/datum/mecha_blueprint))
 		if(!initial(path.id))
 			continue
-		var/datum/construction_graph/mecha/graph = GLOB.construction_graphs[path]
-		if(!graph || !graph.result || !ispath(graph.result))
-			TEST_NOTICE(src, "[path]: Mech Construction - Had invalid result \"[graph?.result]\", must be a path.")
+		var/datum/mecha_blueprint/blueprint = mecha_blueprint_of(path)
+		if(!blueprint || !blueprint.result || !ispath(blueprint.result))
+			TEST_NOTICE(src, "[path]: Mech Construction - Had invalid result \"[blueprint?.result]\", must be a path.")
 			failed = TRUE
 	if(failed)
-		TEST_FAIL("Mech Construction - A construction graph had incorrect data.")
+		TEST_FAIL("Mech Construction - A mecha blueprint had incorrect data.")
 
 /datum/unit_test/all_machine_circuits_must_be_printable/Run()
 	// get a list of all construction frames that automatically populate their circuitboard, we don't need to test for these

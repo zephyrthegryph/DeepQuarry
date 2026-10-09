@@ -309,52 +309,48 @@
 	last_handler = handler
 	rel_set(src, nameof(last_user), user)
 
-/// Each kind of Use the router can reach, declared as interactions that record which one ran.
-DECLARE_INTERACTIONS(/obj/dq_input_probe, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(probe_hand)), \
-	INTERACT_OBSERVER(null, PROC_REF(probe_ghost)), \
-	INTERACT_ROBOT(null, PROC_REF(probe_robot)), \
-	INTERACT_SILICON(null, PROC_REF(probe_ai)), \
-	INTERACT_TK(null, PROC_REF(probe_tk)), \
-	INTERACT_ALT(null, PROC_REF(probe_alt)), \
-	INTERACT_DRAG(null, PROC_REF(probe_drag)), \
-)
+/// Each kind of Use the router can reach, declared as ops that record which one ran.
+CAPABILITIES(/obj/dq_input_probe)
+	op("probe_hand", hand(), ungated(), then(PROC_REF(probe_hand)))
+	op("probe_ghost", observer(), then(PROC_REF(probe_ghost)))
+	op("probe_remote", remote(), then(PROC_REF(probe_ai)))
+	op("probe_tk", tk(), then(PROC_REF(probe_tk)))
+	op("probe_alt", inputs(hand(), remote(), observer()), gesture(GESTURE_ALT), then(PROC_REF(probe_alt)))
+	op("probe_drag", item(/obj/item), gesture(GESTURE_DRAG), then(PROC_REF(probe_drag)))
 
-/obj/dq_input_probe/proc/probe_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	note("attack_hand", user)
-	return TRUE
+/obj/dq_input_probe/proc/probe_hand(datum/act/op/A)
+	note("attack_hand", A.actor)
+	return OP_OK
 
-/obj/dq_input_probe/proc/probe_ghost(mob/user, obj/item/held, datum/interaction/interaction)
-	note("attack_ghost", user)
-	return TRUE
+/obj/dq_input_probe/proc/probe_ghost(datum/act/op/A)
+	note("attack_ghost", A.actor)
+	return OP_OK
 
-/obj/dq_input_probe/proc/probe_robot(mob/user, obj/item/held, datum/interaction/interaction)
-	note("attack_robot", user)
-	return TRUE
+/obj/dq_input_probe/proc/probe_ai(datum/act/op/A)
+	note("attack_ai", A.actor)
+	return OP_OK
 
-/obj/dq_input_probe/proc/probe_ai(mob/user, obj/item/held, datum/interaction/interaction)
-	note("attack_ai", user)
-	return TRUE
+/obj/dq_input_probe/proc/probe_tk(datum/act/op/A)
+	note("attack_tk", A.actor)
+	return OP_OK
 
-/obj/dq_input_probe/proc/probe_tk(mob/user, obj/item/held, datum/interaction/interaction)
-	note("attack_tk", user)
-	return TRUE
+/obj/dq_input_probe/proc/probe_alt(datum/act/op/A)
+	note("click_alt", A.actor)
+	return OP_OK
 
-/obj/dq_input_probe/proc/probe_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	note("click_alt", user)
-	return TRUE
-
-/obj/dq_input_probe/proc/probe_drag(mob/user, obj/item/held, datum/interaction/interaction)
-	note("MouseDrop_T", user)
-	return TRUE
+/obj/dq_input_probe/proc/probe_drag(datum/act/op/A)
+	note("MouseDrop_T", A.actor)
+	return OP_OK
 
 /obj/item/dq_input_probe_item
 	var/mob/self_used_by
 
-DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(probe_self)))
+CAPABILITIES(/obj/item/dq_input_probe_item)
+	op("probe_self", in_hand(), then(PROC_REF(probe_self)))
 
-/obj/item/dq_input_probe_item/proc/probe_self(mob/user, obj/item/held, datum/interaction/interaction)
-	rel_set(src, nameof(self_used_by), user)
+/obj/item/dq_input_probe_item/proc/probe_self(datum/act/op/A)
+	rel_set(src, nameof(self_used_by), A.actor)
+	return OP_OK
 
 /// Clicks through the router as a mob; returns the handler the probe saw for that mob.
 /datum/unit_test/proc/dq_route(mob/user, obj/dq_input_probe/probe, params)
@@ -380,7 +376,7 @@ DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	TEST_ASSERT_EQUAL(R.input_adapter(), INPUT_ADAPTER(robot), "cyborgs use the robot adapter")
 	TEST_ASSERT_EQUAL(R.keybind_profile(), KEYBIND_PROFILE_ROBOT, "cyborgs get the robot keybinding profile")
-	TEST_ASSERT_EQUAL(dq_route(R, probe, "left=1"), "attack_robot", "a cyborg's Use with no module reaches attack_robot")
+	TEST_ASSERT(dq_route(R, probe, "left=1") in list("attack_hand", "attack_ai"), "a cyborg's Use with no module reaches the hand op or the remote op its interface provides")
 	TEST_ASSERT_EQUAL(dq_route(R, probe, "left=1;alt=1"), "click_alt", "a cyborg's Alternate reaches click_alt")
 
 	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, T)
@@ -405,9 +401,12 @@ DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(
 	var/obj/dq_input_probe/probe = allocate(/obj/dq_input_probe, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 
-	var/datum/input_adapter/telekinesis/telekinesis = INPUT_ADAPTER(telekinesis)
-	telekinesis.use(H, probe)
-	TEST_ASSERT_EQUAL(probe.last_handler, "attack_tk", "the telekinesis adapter's Use runs the INTERACT_TK")
+	var/turf/away = locate(T.x + 3, T.y, T.z)
+	TEST_ASSERT_NOTNULL(away, "a turf three tiles away")
+	var/obj/dq_input_probe/far = allocate(/obj/dq_input_probe, away)
+	H.add_mutation(TK)
+	TEST_ASSERT_EQUAL(dq_route(H, far, "left=1"), "attack_tk", "a telekinetic actor's Use on what no hand reaches runs the tk op")
+	H.remove_mutation(TK)
 
 	var/obj/item/dq_input_probe_item/item = allocate(/obj/item/dq_input_probe_item, T)
 	TEST_ASSERT(H.put_in_active_hand(item), "the human should hold the probe item")

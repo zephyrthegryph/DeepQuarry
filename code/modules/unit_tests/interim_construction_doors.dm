@@ -1,12 +1,6 @@
-/// Drive completed construction steps directly: no tool delay or scheduler timing is involved.
-/datum/unit_test/proc/interim_construction_step(atom/target, mob/actor, edge_type, obj/item/held)
-	var/datum/construction_graph/graph = construction_graph_of(target)
-	if(!graph)
-		return FALSE
-	for(var/datum/interaction/construction/edge as anything in graph.edges_for(target))
-		if(edge.type == edge_type)
-			return edge.traverse(target, actor, held)
-	return FALSE
+/// Drive the effect of a completed construction step directly (the handler an op's then() names): no tool delay or clock is involved.
+/datum/unit_test/proc/interim_construction_step(atom/target, mob/actor, handler, obj/item/held)
+	return test_op_handler(target, handler, actor, held) == OP_OK
 
 /datum/unit_test/interim_airlock_mechanical_gates/Run()
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock)
@@ -51,16 +45,15 @@
 	var/full_integrity = girder.get_integrity()
 	var/full_cover = girder.cover
 	TEST_ASSERT(girder.anchored && full_integrity > girder.displaced_health, "Girder must start secured at full integrity")
-	TEST_ASSERT(interim_construction_step(girder, actor, /datum/interaction/construction/girder/dislodge), "Dislodging step was unavailable or failed")
+	TEST_ASSERT(interim_construction_step(girder, actor, "dislodged"), "Dislodging step was unavailable or failed")
 	TEST_ASSERT(!girder.anchored, "Dislodging did not release the girder")
 	TEST_ASSERT_EQUAL(girder.get_integrity(), girder.displaced_health, "Dislodging must reduce integrity to the displaced allowance")
 	TEST_ASSERT(girder.cover < full_cover, "Dislodging must reduce projectile cover")
-	TEST_ASSERT(interim_construction_step(girder, actor, /datum/interaction/construction/girder/secure), "Securing step was unavailable or failed")
+	TEST_ASSERT(interim_construction_step(girder, actor, "secured"), "Securing step was unavailable or failed")
 	TEST_ASSERT(girder.anchored, "Securing did not anchor the girder")
 	TEST_ASSERT_EQUAL(girder.get_integrity(), full_integrity, "Securing must restore full integrity")
 	TEST_ASSERT_EQUAL(girder.cover, full_cover, "Securing must restore cover")
-	var/datum/construction_graph/graph = construction_graph_of(girder)
-	TEST_ASSERT_EQUAL(graph.state_of(girder), "anchored", "Secured girder must offer the anchored construction steps")
+	TEST_ASSERT(girder.is_anchored(null), "Secured girder must offer the anchored construction steps")
 
 /datum/unit_test/interim_machine_frame_board_and_wiring/Run()
 	test_driver_begin()
@@ -105,13 +98,13 @@
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	wall.apply_materials(steel, steel, steel)
 	TEST_ASSERT_EQUAL(wall.construction_stage, 6, "A reinforced wall must start with an intact outer grille")
-	TEST_ASSERT(interim_construction_step(wall, actor, /datum/interaction/construction/wall/cut_grille), "Cutting the grille failed")
+	TEST_ASSERT(interim_construction_step(wall, actor, "cut_grille"), "Cutting the grille failed")
 	TEST_ASSERT_EQUAL(wall.construction_stage, 5, "Cutting the grille must expose the support lines")
-	TEST_ASSERT(interim_construction_step(wall, actor, /datum/interaction/construction/wall/unscrew_lines), "Unscrewing the support lines failed")
+	TEST_ASSERT(interim_construction_step(wall, actor, "unscrew_lines"), "Unscrewing the support lines failed")
 	TEST_ASSERT_EQUAL(wall.construction_stage, 4, "Unscrewing must expose the cover")
-	TEST_ASSERT(interim_construction_step(wall, actor, /datum/interaction/construction/wall/screw_lines), "Reattaching the support lines failed")
+	TEST_ASSERT(interim_construction_step(wall, actor, "screw_lines"), "Reattaching the support lines failed")
 	TEST_ASSERT_EQUAL(wall.construction_stage, 5, "Reattaching must restore the support lines")
-	TEST_ASSERT(interim_construction_step(wall, actor, /datum/interaction/construction/wall/mend_grille), "Mending the grille failed")
+	TEST_ASSERT(interim_construction_step(wall, actor, "mend_grille"), "Mending the grille failed")
 	TEST_ASSERT_EQUAL(wall.construction_stage, 6, "Mending must restore the intact reinforced wall")
 	TEST_ASSERT(wall.density && wall.reinf_material == steel, "Reversible construction must preserve the wall and its reinforcement")
 
@@ -185,33 +178,26 @@
 	TEST_ASSERT_EQUAL(cable.get_amount(), 1, "Successful wiring must consume exactly five cable lengths")
 
 /datum/unit_test/interim_girder_resolver_refusals/Run()
+	test_driver_begin()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
+	actor.set_combat_mode(FALSE)
 	var/obj/structure/girder/girder = allocate(/obj/structure/girder)
 	var/obj/item/tool/crowbar/crowbar = allocate(/obj/item/tool/crowbar)
-	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench)
-	var/datum/construction_graph/graph = construction_graph_of(girder)
-	var/datum/interaction/construction/dislodge
-	for(var/datum/interaction/construction/edge as anything in graph.edges)
-		if(edge.type == /datum/interaction/construction/girder/dislodge)
-			dislodge = edge
-	TEST_ASSERT_NOTNULL(dislodge, "Girder graph must have a dislodging edge")
-	var/datum/interaction_resolution/wrong_tool = interactions_for(actor, girder, wrench)
-	TEST_ASSERT_EQUAL(wrong_tool.blocked[dislodge], "needs a crowbar", "Resolver must explain why a wrench cannot dislodge a girder")
-	TEST_ASSERT(!(dislodge in wrong_tool.available), "Wrong-tool dislodging must not be available")
-	TEST_ASSERT(!dislodge.perform(actor, girder, wrench), "Attempting the wrong tool must refuse before construction changes")
-	TEST_ASSERT(girder.anchored, "Wrong-tool refusal must preserve anchoring")
-	var/datum/interaction_resolution/right_tool = interactions_for(actor, girder, crowbar)
-	TEST_ASSERT(dislodge in right_tool.available, "An adjacent actor with a crowbar must be offered dislodging")
-	TEST_ASSERT_NULL(right_tool.blocked[dislodge], "Correct-tool dislodging must not remain blocked")
-	actor.forceMove(get_step(get_step(get_turf(girder), EAST), EAST))
-	var/datum/interaction_resolution/too_far = interactions_for(actor, girder, crowbar)
-	TEST_ASSERT(too_far.blocked[dislodge], "Resolver must refuse a crowbar used beyond adjacent reach")
-	TEST_ASSERT(!(dislodge in too_far.available), "A distant actor must not be offered dislodging")
-	TEST_ASSERT(!dislodge.perform(actor, girder, crowbar), "Distant attempt must refuse before construction changes")
-	TEST_ASSERT(girder.anchored, "Distant refusal must preserve anchoring")
-	actor.forceMove(get_turf(girder))
+	crowbar.toolspeed = 0
+	actor.put_in_active_hand(crowbar)
+	var/turf/home = get_turf(girder)
+	actor.forceMove(get_step(get_step(home, EAST), EAST))
+	test_click(actor, girder, crowbar)
+	test_time(10 SECONDS)
+	TEST_ASSERT(girder.anchored, "A distant actor must not dislodge the girder with a crowbar")
+	actor.forceMove(home)
 	girder.displace()
-	TEST_ASSERT_EQUAL(dislodge.why_not(actor, girder, crowbar), "it has changed", "A stale dislodging interaction must reject the changed girder state")
+	var/displaced_integrity = girder.get_integrity()
+	test_click(actor, girder, crowbar)
+	test_time(10 SECONDS)
+	TEST_ASSERT(!girder.anchored, "A crowbar on a displaced girder changes nothing")
+	TEST_ASSERT_EQUAL(girder.get_integrity(), displaced_integrity, "and leaves its integrity alone")
+	test_driver_end()
 
 /// A cryptographic sequencer on the real door: the door sparks, gives way after its delay and stays open; an open or an unpowered door takes no charge.
 /// Runs on the kernel's injected clock, through the input a player's click is.

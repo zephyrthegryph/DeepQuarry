@@ -7,7 +7,6 @@ human|none menu: Toggle DNA Samples Allowance (refused: You can't do that.)
 human|none menu: Unload
 human|none menu: Use Scope (refused: You can't do that.)
 human|none click: Click: Unload
-robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Give DNA (refused: You can't do that.)
 robot|none menu: Move To Top
 robot|none menu: Pick up
@@ -17,7 +16,6 @@ robot|none menu: Toggle DNA Samples Allowance (refused: You can't do that.)
 robot|none menu: Unload
 robot|none menu: Use Scope (refused: You can't do that.)
 robot|none click: Click: Unload
-ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Give DNA (refused: You can't do that.)
 ghost|none menu: Move To Top (refused: You can't reach that.)
@@ -148,5 +146,5 @@ human|/obj/item menu: Toggle DNA Samples Allowance (refused: You can't do that.)
 human|/obj/item menu: Unload
 human|/obj/item menu: Use Scope (refused: You can't do that.)
 human|/obj/item click: Click: Fit
-keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_hand, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, kit_customize, kit_customize_last, move_to_top, pick_up_item, serdy_hunter_verb_scope, toggle_digestable
+keys: collect_item, drag_buckle, emag.subvert, emag.use, equip_module, gun_hand, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, kit_customize, kit_customize_last, move_to_top, pick_up_item, serdy_hunter_verb_scope, toggle_digestable
 

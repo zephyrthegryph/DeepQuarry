@@ -131,7 +131,7 @@
 	var/obj/item/borg/upgrade/proto = robot_upgrade_prototype(/obj/item/borg/upgrade/basic/vtec)
 	TEST_ASSERT_NOTNULL(proto, "upgrade prototypes should resolve by type")
 	TEST_ASSERT(!proto.is_installed(R), "a new cyborg has no VTEC")
-	R.grant_ability(ABILITY_ID_ROBOT_TOGGLE_VTEC, R)
+	grant(R, robot_vtec(), R)
 	TEST_ASSERT(proto.is_installed(R), "VTEC is detected once its ability is granted")
 
 #endif

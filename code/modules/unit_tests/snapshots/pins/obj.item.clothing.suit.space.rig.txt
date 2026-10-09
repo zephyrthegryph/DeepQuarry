@@ -6,14 +6,12 @@ human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none menu: Use
 human|none click: Click: Rig suit draw knife hand
 robot|none menu: Alternate use
-robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Rig suit draw knife hand
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use
 robot|none click: Click: Rig suit draw knife hand
-ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
@@ -115,5 +113,5 @@ human|/obj/item/stack/material menu: Space suit patch item
 human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material menu: Use
 human|/obj/item/stack/material click: Click: Space suit patch item
-keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, rig_suit_draw_knife_hand, rig_suit_sheathe_knife_item, space_suit_patch_item, toggle_digestable
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, rig_suit_draw_knife_hand, rig_suit_sheathe_knife_item, space_suit_patch_item, toggle_digestable
 

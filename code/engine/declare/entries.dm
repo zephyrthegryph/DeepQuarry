@@ -189,9 +189,9 @@
 	return entry_make(ENTRY_EXTEND, null, list("target" = key_or_id, "drop" = drop), entry_flatten(ENTRY_SLOT_LIST))
 
 /// configure(e1_widget("a", power = 9), variant = /datum/capability/x/other): rebuilds the capability of that id and selector with the params
-/// the call names (the ones left out keep their value). DM cannot take a capability's params as named arguments of one generic proc, so the
+/// the call names (the ones left out keep their value). configure(loot(chance = 20)) changes the static entry (static_entries.dm) a supertype declared. DM cannot take a capability's params as named arguments of one generic proc, so the
 /// constructor call itself carries them.
-/proc/configure(datum/capability/changes, variant = null)
+/proc/configure(changes, variant = null)
 	return entry_make(ENTRY_CONFIGURE, null, list("def" = changes, "variant" = variant))
 
 /// without(key): drops an inherited entry by key, or every capability of a CAP id (with a selector, only that one).

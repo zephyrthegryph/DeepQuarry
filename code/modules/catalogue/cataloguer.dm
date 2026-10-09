@@ -321,7 +321,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 		return "\The [src] is currently scanning something"
 	return TRUE
 
-/obj/item/cataloguer/compact/proc/compact_toggle_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cataloguer/compact/proc/compact_toggle_effect(mob/user, obj/item/held)
 	deployed = !(deployed)
 	if(deployed)
 		w_class = ITEMSIZE_NORMAL
@@ -364,7 +364,7 @@ CAPABILITIES(/obj/item/cataloguer/compact)
 
 /// The compact_toggle_effect op: the verb's effect, as the old resolver ran it.
 /obj/item/cataloguer/compact/proc/compact_toggle_effect_op(datum/act/op/A)
-	compact_toggle_effect(A.actor, A.held, null)
+	compact_toggle_effect(A.actor, A.held)
 	return OP_OK
 
 // The shown entry is a round-long catalogue definition.

@@ -342,25 +342,28 @@
 	icon = 'icons/mob/randomlandmarks.dmi'
 	icon_state = "fanc_trejur"
 
-DECLARE_LOOT(/obj/random/mouseray, LOOT_TABLE(\
-	/obj/item/gun/energy/mouseray = 300, \
-	/obj/item/gun/energy/mouseray/corgi = 50, \
-	/obj/item/gun/energy/mouseray/woof = 50, \
-	/obj/item/gun/energy/mouseray/cat = 50, \
-	/obj/item/gun/energy/mouseray/chicken = 50, \
-	/obj/item/gun/energy/mouseray/lizard = 50, \
-	/obj/item/gun/energy/mouseray/rabbit = 50, \
-	/obj/item/gun/energy/mouseray/fennec = 50, \
-	/obj/item/gun/energy/mouseray/monkey = 5, \
-	/obj/item/gun/energy/mouseray/wolpin = 5, \
-	/obj/item/gun/energy/mouseray/otie = 5, \
-	/obj/item/gun/energy/mouseray/direwolf = 5, \
-	/obj/item/gun/energy/mouseray/giantrat = 5, \
-	/obj/item/gun/energy/mouseray/redpanda = 50, \
-	/obj/item/gun/energy/mouseray/catslug = 5, \
-	/obj/item/gun/energy/mouseray/teppi = 5, \
-	/obj/item/gun/energy/mouseray/metamorphosis = 1, \
-	/obj/item/gun/energy/mouseray/metamorphosis/advanced/random = 1), LOOT_CHANCE(100))
+CAPABILITIES(/obj/random/mouseray)
+	loot(
+		table = list(
+			/obj/item/gun/energy/mouseray = 300,
+			/obj/item/gun/energy/mouseray/corgi = 50,
+			/obj/item/gun/energy/mouseray/woof = 50,
+			/obj/item/gun/energy/mouseray/cat = 50,
+			/obj/item/gun/energy/mouseray/chicken = 50,
+			/obj/item/gun/energy/mouseray/lizard = 50,
+			/obj/item/gun/energy/mouseray/rabbit = 50,
+			/obj/item/gun/energy/mouseray/fennec = 50,
+			/obj/item/gun/energy/mouseray/monkey = 5,
+			/obj/item/gun/energy/mouseray/wolpin = 5,
+			/obj/item/gun/energy/mouseray/otie = 5,
+			/obj/item/gun/energy/mouseray/direwolf = 5,
+			/obj/item/gun/energy/mouseray/giantrat = 5,
+			/obj/item/gun/energy/mouseray/redpanda = 50,
+			/obj/item/gun/energy/mouseray/catslug = 5,
+			/obj/item/gun/energy/mouseray/teppi = 5,
+			/obj/item/gun/energy/mouseray/metamorphosis = 1,
+			/obj/item/gun/energy/mouseray/metamorphosis/advanced/random = 1),
+		chance = 100)
 
 /datum/prompt/choice/mouseray_type
 	question = "Select a type to turn things into."
