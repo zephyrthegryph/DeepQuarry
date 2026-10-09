@@ -30,7 +30,6 @@
 	move_into(src, nameof(src.a_left), D, user)
 	move_into(src, nameof(src.a_right), D2, user)
 	name = "[D.name]-[D2.name] assembly"
-	update_icon()
 	user.put_in_hands(src)
 
 	return TRUE
@@ -38,19 +37,19 @@
 /obj/item/assembly_holder/proc/detached()
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/assembly_holder/appearance_overlays()
-	. = list()
+/// Each part's state and layers, left and right.
+/obj/item/assembly_holder/draw(datum/look/look)
+	..()
 	if(a_left)
-		. += "[a_left.icon_state]_left"
-		for(var/O in a_left.attached_overlays)
-			. += "[O]_l"
+		look.watch(a_left)
+		look.overlay("[a_left.holder_state()]_left")
+		for(var/O in a_left.holder_layers())
+			look.overlay("[O]_l")
 	if(a_right)
-		. += "[a_right.icon_state]_right"
-		for(var/O in a_right.attached_overlays)
-			. += "[O]_r"
-	if(master)
-		master.update_icon()
+		look.watch(a_right)
+		look.overlay("[a_right.holder_state()]_right")
+		for(var/O in a_right.holder_layers())
+			look.overlay("[O]_r")
 
 /obj/item/assembly_holder/examine(mob/user)
 	. = ..()
@@ -122,7 +121,6 @@ CAPABILITIES(/obj/item/assembly_holder)
 	a_right.toggle_secure()
 	set_secured(!secured)
 	to_chat(user, span_notice(secured ? "\The [src] is ready!" : "\The [src] can now be taken apart!"))
-	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attack_self: split assembly (unsecured) or use the parts (secured).
@@ -200,7 +198,6 @@ CAPABILITIES(/obj/item/assembly_holder)
 	rel_set(src, nameof(a_left), tmr)
 	rel_set(src, nameof(a_right), ign)
 	set_secured(TRUE)
-	update_icon()
 	name = initial(name) + " ([tmr.time] secs)"
 
 	if(loc)

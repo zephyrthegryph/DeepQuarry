@@ -31,7 +31,6 @@
 			message_admins("[key_name_admin(user)] attached both tanks to a transfer valve. [ADMIN_JMP(location)]")
 			log_game("[key_name_admin(user)] attached both tanks to a transfer valve.")
 
-		update_icon()
 		SStgui.update_uis(src) // update all UIs attached to src
 		return OP_OK
 //TODO: Have this take an assemblyholder
@@ -111,7 +110,6 @@ CAPABILITIES(/obj/item/transfer_valve)
 	. = TRUE
 	remove_tank(tank_one)
 	if(.)
-		update_icon()
 		add_fingerprint(user)
 
 /obj/item/transfer_valve/proc/ui_act_tanktwo(datum/act/op/A)
@@ -119,7 +117,6 @@ CAPABILITIES(/obj/item/transfer_valve)
 	. = TRUE
 	remove_tank(tank_two)
 	if(.)
-		update_icon()
 		add_fingerprint(user)
 
 /obj/item/transfer_valve/proc/ui_act_toggle(datum/act/op/A)
@@ -127,7 +124,6 @@ CAPABILITIES(/obj/item/transfer_valve)
 	. = TRUE
 	toggle_valve()
 	if(.)
-		update_icon()
 		add_fingerprint(user)
 
 /obj/item/transfer_valve/proc/ui_act_device(datum/act/op/A)
@@ -136,7 +132,6 @@ CAPABILITIES(/obj/item/transfer_valve)
 	if(attached_device)
 		attached_device.attack_self(user)
 	if(.)
-		update_icon()
 		add_fingerprint(user)
 
 /obj/item/transfer_valve/proc/ui_act_remove_device(datum/act/op/A)
@@ -146,9 +141,7 @@ CAPABILITIES(/obj/item/transfer_valve)
 		attached_device.forceMove(get_turf(src))
 		rel_clear(attached_device, nameof(/client::holder))
 		rel_take(src, nameof(/obj/item/transfer_valve::attached_device))
-		update_icon()
 	if(.)
-		update_icon()
 		add_fingerprint(user)
 
 /obj/item/transfer_valve/proc/process_activation(obj/item/D)
@@ -156,24 +149,23 @@ CAPABILITIES(/obj/item/transfer_valve)
 		COOLDOWN_START(src, toggle, 5 SECONDS)
 		toggle_valve()
 
-DECLARE_APPEARANCE_PROC(/obj/item/transfer_valve, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/transfer_valve/appearance_overlays()
-	. = list()
-	underlays = null
-
+/// The valve with its tanks and the device attached to it.
+/obj/item/transfer_valve/draw(datum/look/look)
+	..()
+	look.watch(tank_one)
+	look.watch(tank_two)
+	look.watch(attached_device)
 	if(!tank_one && !tank_two && !attached_device)
-		icon_state = "valve_1"
-		return .
-	icon_state = "valve"
+		look.state("valve_1")
+		return
+	look.state("valve")
 
 	if(tank_one)
-		. += "[tank_one.icon_state]"
+		look.overlay("[tank_one.icon_state]")
 	if(tank_two)
-		var/icon/J = new(icon, icon_state = "[tank_two.icon_state]")
-		J.Shift(WEST, 13)
-		underlays += J
+		look.underlay(look_overlay_image(icon, "[tank_two.icon_state]", pixel_x = -13))
 	if(attached_device)
-		. += "device"
+		look.overlay("device")
 
 /obj/item/transfer_valve/proc/remove_tank(obj/item/tank/T)
 	if(tank_one == T)
@@ -189,7 +181,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/transfer_valve, TYPE_PROC_REF(/atom, appearanc
 	var/turf/drop = get_turf(src)
 	if(drop && !QDELETED(T))
 		T.forceMove(drop)
-	update_icon()
 
 /obj/item/transfer_valve/proc/merge_gases()
 	if(valve_open)
@@ -252,7 +243,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/transfer_valve, TYPE_PROC_REF(/atom, appearanc
 	else if(valve_open==1 && (tank_one && tank_two))
 		split_gases()
 
-	src.update_icon()
 
 // this doesn't do anything but the timer etc. expects it to be here
 // eventually maybe have it update icon to show state (timer, prox etc.) like old bombs

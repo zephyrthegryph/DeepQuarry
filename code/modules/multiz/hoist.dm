@@ -133,7 +133,7 @@ CAPABILITIES(/obj/structure/hoist)
 	owns_one(nameof(source_hook), /obj/effect/hoist_hook)
 	param(nameof(dir), pos = 1, apply = PROC_REF(hang_hook))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(hoist_blast_break)))
-	op("hand", hand(), ungated(), label("Use"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), ungated(), label("Use"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), begins(PROC_REF(hoist_begins)), wait(PROC_REF(hoist_time)), then(PROC_REF(interaction_hand)))
 	op("hoist_verb_collapse", menu(), label("Collapse Hoist"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), needs(req_adjacent(), req_capable()), then(PROC_REF(hoist_verb_collapse)))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The hoist hangs its hook on the side it faces.
@@ -213,6 +213,26 @@ CAPABILITIES(/obj/structure/hoist)
 
 /// Old attack_hand.
 
+/// The hoisted thing's size: how heavy the lift is.
+/obj/structure/hoist/proc/hoistee_size()
+	if(ismob(hoistee()))
+		var/mob/M = hoistee()
+		return M.mob_size
+	if(isobj(hoistee()))
+		var/obj/O = hoistee()
+		return O.w_class
+	return 0
+
+/// How long the lift takes: a second per four sizes of the hoisted thing; a refusal, a switch of direction and an empty clamp are answered at once.
+/obj/structure/hoist/proc/hoist_time(datum/act/op/A)
+	if(can_work_hoist(A.actor, src, A.held) != TRUE || !can_move_dir(movedir) || !hoistee())
+		return 0
+	return (1 SECONDS) * hoistee_size() / 4
+
+/obj/structure/hoist/proc/hoist_begins(datum/act/op/A)
+	var/movtext = movedir == UP ? "raise" : "lower"
+	return msg_text(span_notice("You begin to [movtext] \the [hoistee()]!"), span_notice("%U% begins to [movtext] \the [hoistee()]!"), span_notice("You hear the sound of a crank."))
+
 /obj/structure/hoist/proc/interaction_hand(datum/act/op/A)
 	var/refusal = can_work_hoist(A.actor, src, A.held)
 	if(refusal != TRUE)
@@ -226,30 +246,18 @@ CAPABILITIES(/obj/structure/hoist)
 	if (!can) // If you can't...
 		movedir = movedir == UP ? DOWN : UP // switch directions!
 		to_chat(user, span_notice("You switch the direction of the pulley."))
-		return TRUE
+		return OP_OK
 
 	if (!hoistee())
 		act_message(user, null, MSG_SELF(span_notice("You begin to [movtext] the clamp.")), \
 			MSG_OTHERS(span_notice("%U% begins to [movtext] the clamp.")), \
 			MSG_BLIND(span_notice("You hear the sound of a crank.")))
 		move_dir(movedir, 0)
-		return TRUE
+		return OP_OK
 
 	check_consistency()
-
-	var/size
-	if (ismob(hoistee()))
-		var/mob/M = hoistee()
-		size = M.mob_size
-	else if (isobj(hoistee()))
-		var/obj/O = hoistee()
-		size = O.w_class
-
-	act_message(user, null, MSG_SELF(span_notice("You begin to [movtext] \the [hoistee()]!")), \
-		MSG_OTHERS(span_notice("%U% begins to [movtext] \the [hoistee()]!")), \
-		MSG_BLIND(span_notice("You hear the sound of a crank.")))
-	task_timed(user, (1 SECONDS) * size / 4, src, src, PROC_REF(move_dir), list(movedir, 1))
-	return TRUE
+	move_dir(movedir, 1)
+	return OP_OK
 
 /obj/structure/hoist/proc/collapse_kit()
 	replace_with(src, /obj/item/hoist_kit)

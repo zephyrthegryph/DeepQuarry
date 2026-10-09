@@ -55,6 +55,8 @@ CAPABILITIES(/obj/machinery/disposal)
 	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("disposal_insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_disposal_insert)))
+	op("disposal_dunk", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT), label("Put in"), when(req(PROC_REF(grabs_mob))), needs(req(PROC_REF(not_broken), silent = TRUE)), starts(PROC_REF(dunk_started)), begins(PROC_REF(dunk_begins)), wait(2 SECONDS), then(PROC_REF(dunk_done)))
+	op("disposal_stuff_mob", item(/mob/living), gesture(GESTURE_DRAG), priority(OP_PRIORITY_NORMAL), label("Insert"), needs(req(PROC_REF(can_stuff_mob), silent = TRUE)), starts(PROC_REF(stuff_started)), begins(PROC_REF(stuff_begins)), wait(2 SECONDS), then(PROC_REF(stuff_mob_done)))
 	op("disposal_drag_insert", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_disposal_drag_insert)))
 	op("disposal_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_disposal_use)))
 	op("disposal_flush", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle flush"), then(PROC_REF(interaction_disposal_flush)))
@@ -177,22 +179,37 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		atom_deconstruct(TRUE)
 
 // attack by item places it in to disposal
-/datum/task/timed/disposal_dunk
-	duration = 2 SECONDS
-	complete_proc = /obj/machinery/disposal/proc/dunk_done
-	var/mob/GM
-	var/obj/item/grab/G
+/// Requirement: the grab holds a mob.
+/obj/machinery/disposal/proc/grabs_mob(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	return istype(G) && ismob(G.grab_target())
 
-/obj/machinery/disposal/proc/dunk_done(datum/task/timed/disposal_dunk/task)
-	var/mob/user = task.actor
-	var/mob/GM = task.GM
-	var/obj/item/grab/G = task.G
+/// Requirement: the bin is not broken.
+/obj/machinery/disposal/proc/not_broken(datum/act/op/A)
+	return !broken_now()
+
+/obj/machinery/disposal/proc/dunk_started(datum/act/op/A)
+	wake_for_state_change()
+	add_fingerprint(A.actor)
+
+/obj/machinery/disposal/proc/dunk_begins(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	var/mob/GM = G.grab_target()
+	return msg_text(null, "%U% starts putting [GM.name] into the disposal.")
+
+/obj/machinery/disposal/proc/dunk_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/grab/G = A.held
+	var/mob/GM = G.grab_target()
+	if(!GM)
+		return OP_OK
 	GM.forceMove(src)
 	for (var/mob/C in viewers(src))
 		C.show_message(span_red("[GM.name] has been placed in the [src] by [user]."), 3)
 	consume(G, user)
 
 	add_attack_logs(user,GM,"Disposals dunked")
+	return OP_OK
 
 /obj/machinery/disposal/proc/interaction_disposal_insert(datum/act/op/A)
 	disposal_insert(A.actor, A.held)
@@ -224,13 +241,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 			sync_occupied()
 			return
 
-	var/obj/item/grab/G = I
-	if(istype(G))	// handle grabbed mob
-		if(ismob(G?.grab_target()))
-			var/mob/GM = G?.grab_target()
-			for (var/mob/V in viewers(user))
-				act_message(V, user, MSG_SELF(3), MSG_OTHERS("%T% starts putting [GM.name] into the disposal."))
-			task_start(/datum/task/timed/disposal_dunk, user, src, receiver = src, GM = GM, G = G)
+	if(istype(I, /obj/item/grab)) // a grabbed mob is put in by the "disposal_dunk" op
 		return
 
 	if(isrobot(user) && !drag_dropped) //Borgs are allowed to drag-drop items into the disposal unit.
@@ -384,33 +395,39 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 /obj/machinery/disposal/proc/interaction_disposal_drag_insert(datum/act/op/A)
 	var/mob/user = A.actor
 	var/atom/movable/dropping = A.held
-	if(isliving(dropping))
-		stuff_mob_in(dropping, user)
-	else if(Adjacent(user) && Adjacent(dropping) && isobj(dropping) && isturf(dropping.loc))
+	if(!isliving(dropping) && Adjacent(user) && Adjacent(dropping) && isobj(dropping) && isturf(dropping.loc))
 		disposal_insert(user, dropping, drag_dropped = TRUE)
 	return OP_OK
 
-/obj/machinery/disposal/proc/stuff_mob_in(mob/living/target, mob/living/user)
+/// Requirement: the user can put the dragged mob in (animals only put themselves in; nobody buckled, down or out of reach does).
+/obj/machinery/disposal/proc/can_stuff_mob(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/target = A.held
+	if(!istype(user) || !istype(target))
+		return FALSE
 	//animals cannot put mobs other than themselves into disposal
 	if(isanimal(user) && target != user)
-		return
-	if(user.stat || !user.canmove || !istype(target))
-		return
-	if(target?.buckled_to() || get_dist(user, src) > 1 || get_dist(user, target) > 1)
-		return
+		return FALSE
+	if(user.stat || !read_once(user.canmove))
+		return FALSE
+	if(target.buckled_to() || read_once(get_dist(user, src) > 1) || read_once(get_dist(user, target) > 1))
+		return FALSE
+	return TRUE
 
-	add_fingerprint(user)
-	if(user == target)
-		act_message(user, src, others = "%U% starts climbing into %T%")
-	else
-		act_message(target, user, MSG_SELF(span_userdanger("%T% starts stuffing you into [src]!")), \
-			MSG_OTHERS(span_danger("%T% starts stuffing %U% into [src].")))
+/obj/machinery/disposal/proc/stuff_started(datum/act/op/A)
+	add_fingerprint(A.actor)
 
-	task_timed(user, 2 SECONDS, target, src, PROC_REF(stuff_mob_done), list(target, user))
+/obj/machinery/disposal/proc/stuff_begins(datum/act/op/A)
+	var/mob/living/target = A.held
+	if(A.actor == target)
+		return msg_text(null, "%U% starts climbing into %T%")
+	return msg_text(span_userdanger("[A.actor] starts stuffing you into [src]!"), span_danger("[A.actor] starts stuffing [target] into [src]."))
 
-/obj/machinery/disposal/proc/stuff_mob_done(mob/living/target, mob/living/user)
+/obj/machinery/disposal/proc/stuff_mob_done(datum/act/op/A)
+	var/mob/living/target = A.held
+	var/mob/living/user = A.actor
 	if(!loc)
-		return
+		return OP_OK
 	target.forceMove(src)
 	if(user == target)
 		act_message(user, src, MSG_SELF(span_notice("You climb into %T%")), MSG_OTHERS("%U% climbs into %T%."))
@@ -419,6 +436,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		act_message(target, user, MSG_SELF(span_userdanger("%T% stuffs %U% into \the [src].")), MSG_OTHERS(span_danger("%T% stuffs %U% into \the [src].")))
 		add_attack_logs(user,target,"Disposals dunked")
 	sync_occupied()
+	return OP_OK
 
 // attempt to move while inside
 /obj/machinery/disposal/relaymove(mob/user)
@@ -445,7 +463,6 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	if(broken_now())
 		return
 	flush = !flush
-	update_icon()
 */
 // human interact with machine
 /obj/machinery/disposal/proc/interaction_disposal_use(datum/act/op/A)

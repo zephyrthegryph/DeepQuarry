@@ -867,34 +867,35 @@ CAPABILITIES(/obj/structure/flora/tree/fur/wall)
 	. = ..()
 	. += rel_one(nameof(host), back = nameof(/mob/living/simple_mob/vore/overmap/stardog::control_node))
 
-CAPABILITIES(/obj/structure/control_pod)
-	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+MSG_DEF_SELF(control_pod/unresponsive, span_warning("It doesn't respond..."))
+MSG_DEF_SELF(control_pod/resists, span_warning("As you press your hand to %T%, it resists your advance... A sense of longing ripples through your mind..."))
+MSG_DEF(control_pod/reaching, span_notice("You reach out to touch %T%..."), span_notice("%U% reaches out to touch %T%..."))
+MSG_DEF(control_pod/pulls_back, span_warning("You pull back from %T%."), span_warning("%U% pulls back from %T%."))
 
-/// Old attack_hand.
-/obj/structure/control_pod/proc/interaction_hand(datum/act/op/A)
-	var/mob/living/user = A.actor
+CAPABILITIES(/obj/structure/control_pod)
+	op("hand", hand(), label("Use"), needs(req(PROC_REF(pod_free), because = PROC_REF(pod_busy_text))), starts(PROC_REF(control_started)), begins(MSG(control_pod/reaching)), wait(10 SECONDS), on_interrupt(PROC_REF(control_failed)), then(PROC_REF(control_done)))
+
+/// Nobody is in the pod.
+/obj/structure/control_pod/proc/pod_free(datum/act/op/A)
+	return !read_once(controller)
+
+/// Why the pod is taken: names who is inside.
+/obj/structure/control_pod/proc/pod_busy_text(datum/act/op/A)
+	return span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!")
+
+/// Refuses a pod with no dog to answer it, or a dog that does not trust anyone yet (take care of my dog).
+/obj/structure/control_pod/proc/control_started(datum/act/op/A)
 	if(!host)
 		set_up()
 		if(!host)
-			to_chat(user, span_warning("It doesn't respond..."))
-			return TRUE
-	control(user)
-	return TRUE
+			return MSG(control_pod/unresponsive)
+	if(!host.affinity)
+		return MSG(control_pod/resists)
 
-/obj/structure/control_pod/proc/control(mob/living/user)
-	if(!host.affinity)	//take care of my dog
-		to_chat(user, span_warning("As you press your hand to \the [src], it resists your advance... A sense of longing ripples through your mind..."))
-		return
-	if(controller)	//busy
-		to_chat(user, span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!"))
-		return
-	act_message(user, src, MSG_SELF(span_notice("You reach out to touch %T%...")), MSG_OTHERS(span_notice("%U% reaches out to touch %T%...")))
-	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(control_control_pod_done), done_args = list(user), on_fail = PROC_REF(control_control_pod_failed), fail_args = list(user))
-	return TRUE
-
-/obj/structure/control_pod/proc/control_control_pod_done(mob/living/user)
+/obj/structure/control_pod/proc/control_done(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(controller)	//got busy while you were waiting, get rekt
-		to_chat(user, span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!"))
+		to_chat(user, pod_busy_text(A))
 		return
 	rel_set(src, nameof(controller), user)
 	visible_message(span_warning("\The [src] accepts \the [controller], submerging them beneath the surface of the flesh!"))
@@ -906,9 +907,8 @@ CAPABILITIES(/obj/structure/control_pod)
 	plane = ABOVE_MOB_PLANE
 	set_light(5, 0.75, "#f94bff")
 
-/obj/structure/control_pod/proc/control_control_pod_failed(mob/living/user)
-	act_message(user, src, MSG_SELF(span_warning("You pull back from %T%.")), MSG_OTHERS(span_warning("%U% pulls back from %T%.")))
-	return
+/obj/structure/control_pod/proc/control_failed(datum/act/op/A)
+	act_message_t(A.actor, src, /datum/msg/control_pod/pulls_back)
 
 /obj/structure/control_pod/proc/eject()
 	to_chat(host, span_warning("You feel your control over \the [host] slip away from you!"))

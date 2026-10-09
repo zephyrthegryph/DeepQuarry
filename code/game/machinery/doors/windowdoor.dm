@@ -243,9 +243,9 @@ CAPABILITIES(/obj/machinery/door/window)
 	to_chat(A.actor, span_notice("You pried the windoor out of the frame!"))
 	var/obj/structure/windoor_assembly/assembly = new(loc)
 	if(istype(src, /obj/machinery/door/window/brigdoor))
-		assembly.secure = "secure_"
+		assembly.set_secure("secure_")
 	if(base_state == "right" || base_state == "rightsecure")
-		assembly.facing = "r"
+		assembly.set_facing("r")
 	assembly.set_dir(dir)
 	assembly.set_anchored(TRUE)
 	assembly.created_name = name

@@ -143,42 +143,6 @@
 
 /obj/item/gun/projectile/shotgun/doublebarrel/unload_ammo(user, allow_dump)
 	..(user, allow_dump=1)
-//this is largely hacky and bad :(	-Pete //less hacky and bad now :) -Ghost
-/// Old attackby.
-/obj/item/gun/projectile/shotgun/doublebarrel/gun_item(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/held = A.held
-	if(istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter))
-		. = OP_PASS
-		if(sawn_off)
-			to_chat(user, span_warning("The [src] is already shortened!"))
-			return
-		to_chat(user, span_notice("You begin to shorten the barrel of \the [src]."))
-		if(length(loaded))
-			var/burstsetting = burst
-			burst = 2
-			act_message(user, null, MSG_SELF(span_danger("The shotgun goes off in your face!")), MSG_OTHERS(span_danger("The shotgun goes off!")))
-			Fire_userless(user)
-			user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD Port
-			burst = burstsetting
-			return
-		task_timed(user, 3 SECONDS, src, src, PROC_REF(saw_off_done), list(user)) // SHIT IS STEALTHY EYYYYY
-	else
-		return ..()
-
-/obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_off_done(mob/user)
-	if(sawn_off)
-		return
-	item_state = "sawnshotgun"
-	w_class = ITEMSIZE_NORMAL
-	force = 5
-	slot_flags &= ~SLOT_BACK // you can't sling it on your back
-	slot_flags |= (SLOT_BELT|SLOT_HOLSTER) // but you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
-	name = "sawn-off shotgun"
-	desc = "Omar's coming!"
-	to_chat(user, span_warning("You shorten the barrel of \the [src]!"))
-	sawn_off = TRUE
-
 /*
  * Sawn-Off Shotgun
  */

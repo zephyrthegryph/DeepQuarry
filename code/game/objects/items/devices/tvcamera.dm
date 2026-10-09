@@ -166,7 +166,6 @@ DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECT
 	bradio.set_frequency(BDCM_FREQ)
 	bradio.icon = src.icon
 	bradio.icon_state = src.icon_state
-	update_icon()
 
 /obj/item/clothing/accessory/bodycam/hear_talk(mob/M, list/message_pieces, verb)
 	bradio.hear_talk(M, message_pieces, verb)
@@ -357,7 +356,6 @@ CAPABILITIES(/obj/item/TVAssembly)
 		hide_bodycamera_tvs()
 		for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 			ES.stop_showing()
-	update_icon()
 
 /obj/item/clothing/accessory/bodycam/proc/camera_toggle_audio(mob/user)
 	bradio.ToggleBroadcast()

@@ -138,7 +138,6 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 		P.info = span_bold("[src] analysis report #[report_num]") + "<br>"
 		P.info += span_bold("Scanned item:") + "<br>[bloodsamp().name]<br>[bloodsamp().desc]<br><br>" + data
 		P.forceMove(loc)
-		P.update_icon()
 		set_scanning(FALSE)
 	return
 

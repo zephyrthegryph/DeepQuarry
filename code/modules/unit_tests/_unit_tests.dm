@@ -597,6 +597,9 @@
 #include "dq_timed_pin_w5_behaviour.dm"
 #include "dq_timed_pin_w6_behaviour.dm"
 #include "dq_timed_pin_w8_behaviour.dm"
+#include "dq_timed_pin_w9a_behaviour.dm"
+#include "dq_timed_pin_w9b_behaviour.dm"
+#include "dq_timed_pin_w9c_behaviour.dm"
 #include "dq_timed_pin_w7_behaviour.dm"
 #include "dq_timed_pin_w2_behaviour.dm"
 #include "dq_proximity_tests.dm"
@@ -1239,6 +1242,7 @@
 #include "dq_draw_mobs.dm"
 #include "dq_draw_items.dm"
 #include "dq_draw_pockets.dm"
+#include "dq_draw_rest.dm"
 
 #include "dq_machine_click_intent_tests.dm"
 

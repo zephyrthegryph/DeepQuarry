@@ -92,8 +92,8 @@ TRACKED(/obj/machinery/gibber, dirty)
 
 CAPABILITIES(/obj/machinery/gibber)
 	op("gibber_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 2), ungated(), label("Start gibbing"), needs(req(PROC_REF(can_start_gibbing_holds), because = PROC_REF(can_start_gibbing_refusal))), then(PROC_REF(gibber_interaction_hand)))
-	op("gibber_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_feed_grab_holds), because = PROC_REF(can_feed_grab_refusal))), then(PROC_REF(gibber_interaction_item)))
-	op("gibber_interaction_drag", item(/mob), priority(OP_PRIORITY_DEFAULT - 1), gesture(GESTURE_DRAG), label("Put inside"), then(PROC_REF(gibber_interaction_drag)))
+	op("gibber_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_feed_grab_holds), because = PROC_REF(can_feed_grab_refusal))), starts(PROC_REF(stuff_started)), begins(PROC_REF(grab_stuff_begins)), wait(PROC_REF(grab_stuff_time)), then(PROC_REF(gibber_interaction_item)))
+	op("gibber_interaction_drag", item(/mob), priority(OP_PRIORITY_DEFAULT - 1), gesture(GESTURE_DRAG), label("Put inside"), starts(PROC_REF(stuff_started)), begins(PROC_REF(drag_stuff_begins)), wait(PROC_REF(drag_stuff_time)), then(PROC_REF(gibber_interaction_drag)))
 	op("gibber_verb_eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Empty Gibber"), needs(req_adjacent(), req_capable()), then(PROC_REF(gibber_verb_eject)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
@@ -172,35 +172,58 @@ CAPABILITIES(/obj/machinery/gibber)
 	move_into_gibber(user,target)
 	return TRUE
 
-/obj/machinery/gibber/proc/move_into_gibber(mob/user,mob/living/victim)
+/// Why the victim cannot be put in the gibber now, or null.
+/obj/machinery/gibber/proc/stuffing_refusal(mob/living/victim)
 	var/mob/living/occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER)
 
 	if(occupant)
-		to_chat(user, span_danger("The gibber is full, empty it first!"))
-		return
+		return "The gibber is full, empty it first!"
 
 	if(operating)
-		to_chat(user, span_danger("The gibber is locked and running, wait for it to finish."))
-		return
+		return "The gibber is locked and running, wait for it to finish."
 
 	if(!(iscarbon(victim)) && !(isanimal(victim)) )
-		to_chat(user, span_danger("This is not suitable for the gibber!"))
-		return
+		return "This is not suitable for the gibber!"
 
 	if(ishuman(victim) && !emagged())
-		to_chat(user, span_danger("The gibber safety guard is engaged!"))
-		return
+		return "The gibber safety guard is engaged!"
 
 	if(victim.abiotic(1))
-		to_chat(user, span_danger("Subject may not have abiotic items on."))
+		return "Subject may not have abiotic items on."
+	return null
+
+/// The thing a grab in hand holds.
+/obj/machinery/gibber/proc/grab_victim(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	return istype(G) ? G.grab_target() : null
+
+/// Putting someone in takes three seconds; a refusal is answered at once by move_into_gibber().
+/obj/machinery/gibber/proc/grab_stuff_time(datum/act/op/A)
+	var/mob/living/victim = grab_victim(A)
+	return victim && !stuffing_refusal(victim) ? 3 SECONDS : 0
+
+/obj/machinery/gibber/proc/drag_stuff_time(datum/act/op/A)
+	var/mob/living/victim = A.held
+	if(A.actor.stat || A.actor.restrained() || !istype(victim) || stuffing_refusal(victim))
+		return 0
+	return 3 SECONDS
+
+/obj/machinery/gibber/proc/grab_stuff_begins(datum/act/op/A)
+	return msg_text(null, span_danger("%U% starts to put [grab_victim(A)] into the gibber!"))
+
+/obj/machinery/gibber/proc/drag_stuff_begins(datum/act/op/A)
+	return msg_text(null, span_danger("%U% starts to put [A.held] into the gibber!"))
+
+/obj/machinery/gibber/proc/stuff_started(datum/act/op/A)
+	add_fingerprint(A.actor)
+
+/// Puts the victim in: refused at once with the reason, or after the wait if the victim is still within reach.
+/obj/machinery/gibber/proc/move_into_gibber(mob/user,mob/living/victim)
+	var/refusal = stuffing_refusal(victim)
+	if(refusal)
+		to_chat(user, span_danger(refusal))
 		return
-
-	act_message(user, victim, others = span_danger("%U% starts to put %T% into the gibber!"))
-	src.add_fingerprint(user)
-	task_timed(user, 3 SECONDS, src, src, PROC_REF(stuff_done), list(user, victim))
-
-/obj/machinery/gibber/proc/stuff_done(mob/user, mob/living/victim)
-	if(!victim.Adjacent(src) || !user.Adjacent(src) || !victim.Adjacent(user) || src?.slot_item(OCCUPANT_SLOT_GIBBER))
+	if(!victim.Adjacent(src) || !user.Adjacent(src) || !victim.Adjacent(user))
 		return
 	if(!move_into(src, OCCUPANT_SLOT_GIBBER, victim, user))
 		return

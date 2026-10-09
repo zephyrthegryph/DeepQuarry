@@ -733,10 +733,8 @@ CAPABILITIES(/obj/machinery/light_switch/survival_pod)
 /obj/structure/window/reinforced/survival_pod/is_fulltile()
 	return FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/window/reinforced/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/window/reinforced/survival_pod/appearance_overlays()
-	. = list()
-	icon_state = basestate
+/obj/structure/window/reinforced/survival_pod/look_parts(datum/look/look)
+	look.state(basestate)
 
 //Polarized windows
 /obj/structure/window/reinforced/polarized/survival_pod
@@ -794,18 +792,16 @@ DECLARE_APPEARANCE_PROC(/obj/structure/window/reinforced/survival_pod, TYPE_PROC
 	density = TRUE
 	pixel_y = -32
 
-/obj/item/gps/computer/wrench_act(mob/user, obj/item/tool)
-	act_message(user, src, MSG_SELF(span_notice("You start to disassemble %T%...")), \
-		MSG_OTHERS(span_warning("%U% disassembles %T%.")), \
-		MSG_BLIND("You hear clanking and banging noises."))
-	task_timed(user, 4 SECONDS, src, src, PROC_REF(disassemble_done))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/item/gps/computer/proc/disassemble_done()
-	replace_with(src, /obj/item/gps)
-
 CAPABILITIES(/obj/item/gps/computer)
+	op("disassemble", tool(TOOL_WRENCH), label("Disassemble"), begins(PROC_REF(disassemble_begins)), wait(4 SECONDS), then(PROC_REF(disassemble_done)))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+
+/obj/item/gps/computer/proc/disassemble_begins(datum/act/op/A)
+	return msg_text(span_notice("You start to disassemble %T%..."), span_warning("%U% disassembles %T%."), "You hear clanking and banging noises.")
+
+/obj/item/gps/computer/proc/disassemble_done(datum/act/op/A)
+	replace_with(src, /obj/item/gps)
+	return OP_OK
 
 /// Old attack_hand.
 /obj/item/gps/computer/proc/interaction_hand(datum/act/op/A)
@@ -873,12 +869,15 @@ CAPABILITIES(/obj/item/gps/computer)
 /obj/structure/fans/atom_deconstruct()
 	replace_with(src, buildstacktype, buildstackamount)
 
-/obj/structure/fans/wrench_act(mob/user, obj/item/tool)
-	act_message(user, src, MSG_SELF(span_notice("You start to disassemble %T%...")), \
-		MSG_OTHERS(span_warning("%U% disassembles %T%.")), \
-		MSG_BLIND("You hear clanking and banging noises."))
-	task_timed(user, 4 SECONDS, src, src, TYPE_PROC_REF(/obj, atom_deconstruct), list(TRUE))
-	return ITEM_INTERACT_SUCCESS
+CAPABILITIES(/obj/structure/fans)
+	op("disassemble", tool(TOOL_WRENCH), label("Disassemble"), begins(PROC_REF(disassemble_begins)), wait(4 SECONDS), then(PROC_REF(disassemble_done)))
+
+/obj/structure/fans/proc/disassemble_begins(datum/act/op/A)
+	return msg_text(span_notice("You start to disassemble %T%..."), span_warning("%U% disassembles %T%."), "You hear clanking and banging noises.")
+
+/obj/structure/fans/proc/disassemble_done(datum/act/op/A)
+	atom_deconstruct(TRUE)
+	return OP_OK
 
 /obj/structure/fans/tiny
 	name = "tiny fan"

@@ -48,7 +48,6 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 		GLOB.priority_announcement.Announce("The emergency shuttle has returned due to bluespace distortion.")
 		SSemergency_shuttle.recall()
 
-	AreaSet()
 	MiscSet()
 	APCSet()
 	OverlayAndAmbientSet()
@@ -62,13 +61,6 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 		new /obj/singularity/narsie/large/exit(pick(GLOB.endgame_exits))
 
 	after(src, rand(30,60) SECONDS, PROC_REF(announce_cascade))
-
-/datum/universal_state/supermatter_cascade/proc/AreaSet()
-	for(var/area/A in world)
-		if(!istype(A,/area) || istype(A, /area/space) || istype(A,/area/beach))
-			continue
-
-		A.update_icon()
 
 /datum/universal_state/supermatter_cascade/OverlayAndAmbientSet()
 	return

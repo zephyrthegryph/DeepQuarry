@@ -1114,23 +1114,11 @@ CAPABILITIES(/datum/prompt/choice/fax_stamp)
 	if(shouldStamp)
 		P.stamps += "<hr>" + span_italics("This paper has been stamped by the [P.origin] Quantum Relay.")
 
-		var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
-		var/x = rand(-2, 0)
-		var/y = rand(-1, 2)
-		P.offset_x += x
-		P.offset_y += y
-		stampoverlay.pixel_x = x
-		stampoverlay.pixel_y = y
-
-		if(!P.ico)
-			P.ico = new
-		LAZYADD(P.ico, "paper_stamp-cent")
-		stampoverlay.icon_state = "paper_stamp-cent"
+		P.add_stamp_mark("paper_stamp-cent", rand(-2, 0), rand(-1, 2))
 
 		if(!P.stamped)
 			P.stamped = new
 		P.stamped += /obj/item/stamp/centcomm
-		P.add_overlay(stampoverlay)
 
 	var/obj/item/rcvdcopy
 	rcvdcopy = destination.copy(P)

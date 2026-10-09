@@ -36,20 +36,12 @@ In short:
 	GLOB.escape_list = get_area_turfs(locate(/area/hallway/secondary/exit))
 
 	//Separated into separate procs for profiling
-	AreaSet()
 	MiscSet()
 	APCSet()
 	OverlayAndAmbientSet()
 	lightsout(0,0)
 
 	GLOB.runedec += 9000	//basically removing the rune cap
-
-/datum/universal_state/hell/proc/AreaSet()
-	for(var/area/A in world)
-		if(!istype(A,/area) || istype(A, /area/space))
-			continue
-
-		A.update_icon()
 
 /datum/universal_state/hell/OverlayAndAmbientSet()
 	after(src, 0, PROC_REF(relight_world))

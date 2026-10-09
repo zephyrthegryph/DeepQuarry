@@ -105,8 +105,7 @@ READS_AS(/obj/item/storage/wallet/proc/id_overlay, STORAGE_CONTENTS_KEY)
 			continue
 		while(amount >= i)
 			amount -= i
-			SC.adjust_worth(i, 0)
-		SC.update_icon()
+			SC.adjust_worth(i)
 
 /obj/item/storage/wallet/poly
 	name = "polychromic wallet"

@@ -32,14 +32,12 @@ TRACKED(/obj/item/assembly/infra, on)
 	set_on(!on)
 	if(!on)
 		QDEL_LIST_NULL(i_beams)
-	update_icon()
 	return TRUE
 
 /obj/item/assembly/infra/toggle_secure()
 	set_secured(!secured)
 	if(!secured)
 		toggle_state(FALSE)
-	update_icon()
 	return secured
 
 /obj/item/assembly/infra/proc/toggle_state(picked)
@@ -52,16 +50,8 @@ TRACKED(/obj/item/assembly/infra, on)
 		QDEL_LIST_NULL(i_beams)
 	return on
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly/infra, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/assembly/infra/appearance_overlays()
-	. = list()
-	LAZYCLEARLIST(attached_overlays)
-	if(on)
-		. += "infrared_on"
-		LAZYADD(attached_overlays, "infrared_on")
-
-	if(holder())
-		holder().update_icon()
+/obj/item/assembly/infra/holder_layers()
+	return on ? list("infrared_on") : null
 
 /obj/item/assembly/infra/proc/infra_step(datum/act/timer/A)
 	if(!i_beams && (istype(loc, /turf) || (holder() && istype(holder().loc, /turf))))

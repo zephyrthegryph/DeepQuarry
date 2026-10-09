@@ -44,7 +44,6 @@ MSG_DEF_SELF(window/dismantle_refused, "You're not sure how to dismantle it prop
 /obj/structure/window/proc/anchor_toggled(datum/act/op/A)
 	set_anchored(!anchored)
 	update_nearby_tiles(need_rebuild = TRUE)
-	update_nearby_icons()
 	update_verbs()
 	to_chat(A.actor, span_notice("You have [anchored ? "" : "un"]fastened the [reinf ? "frame" : "window"] [anchored ? "to" : "from"] the floor."))
 	return OP_OK
@@ -61,13 +60,11 @@ MSG_DEF_SELF(window/dismantle_refused, "You're not sure how to dismantle it prop
 
 /obj/structure/window/proc/frame_fastened(datum/act/op/A)
 	state = 2
-	update_nearby_icons()
 	to_chat(A.actor, span_notice("You have fastened the window to the frame."))
 	return OP_OK
 
 /obj/structure/window/proc/frame_unfastened(datum/act/op/A)
 	state = 1
-	update_nearby_icons()
 	to_chat(A.actor, span_notice("You have unfastened the window from the frame."))
 	return OP_OK
 
@@ -93,5 +90,4 @@ MSG_DEF_SELF(start/interaction/window_repair, "You begin repairing %T%...")
 
 /obj/structure/window/proc/weld_repair(datum/act/op/A)
 	repair_damage(max_integrity)
-	update_icon()
 	return OP_OK

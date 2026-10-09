@@ -180,7 +180,6 @@ init_visuals	code/modules/clothing/shoes/miscellaneous.dm	icon_state = "[bootcol
 init_visuals	code/modules/clothing/spacesuits/void/void.dm	add_overlay(glass_overlay)
 init_visuals	code/modules/clothing/under/miscellaneous.dm	icon_state = "[unicolor]_ranger_uniform"
 init_visuals	code/modules/detectivework/tools/sample_kits.dm	icon_state = "fingerprint1"
-init_visuals	code/modules/economy/EFTPOS.dm	R.add_overlay(stampoverlay)
 init_visuals	code/modules/entrepreneur/entrepreneur_items.dm	icon_state = pick(colour_choice)
 init_visuals	code/modules/food/drinkingglass/drinkingglass.dm	icon_state = base_icon
 init_visuals	code/modules/food/food/snacks.dm	icon_state = "nugget_[shape]"

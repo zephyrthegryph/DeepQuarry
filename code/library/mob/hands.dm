@@ -8,6 +8,11 @@ CAPABILITIES(/mob/living/carbon/human)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE, say = /datum/msg/req_silent) // a sequencer on a robotic limb; the effect says what it did
 	op("vr_transform", menu(), when(PROC_REF(vr_transform_granted)), label("Transform Into Creature"), needs(req_self(), req_capable()), asks(/datum/prompt/choice, fields = list("title" = "Mob list", "question" = "Please select a creature:", "choices" = computed(PROC_REF(vr_creature_options)), "ask_flags" = ASK_CONSCIOUS, "timeout" = 0), step = "creature"), then(PROC_REF(vr_creature_chosen)))
 	op("vr_logout", menu(), when(PROC_REF(vr_logout_granted)), label("Log Out Of Virtual Reality"), needs(req_self()), asks(/datum/prompt/yes_no, fields = list("title" = "Log out?", "question" = "Would you like to log out of virtual reality?", "timeout" = 0), step = "logout"), then(PROC_REF(fake_exit_vr_answered)))
+	// Species and trait abilities (the verbs stay the player's entry; the work is the op).
+	op("regenerate", ai(), needs(req(PROC_REF(regenerate_fed), because = MSG(human/regen_hungry)), req(PROC_REF(regenerate_idle), because = MSG(human/regen_active))), starts(PROC_REF(regenerate_started)), begins(MSG(human/regen_begins)), wait(PROC_REF(regenerate_time)), on_interrupt(PROC_REF(regenerate_human_failed)), then(PROC_REF(regenerate_human_done)))
+	op("enter_cocoon", ai(), needs(req(PROC_REF(cocoon_has_space), because = MSG(human/cocoon_no_space)), req(PROC_REF(cocoon_fit), because = MSG(human/cocoon_state))), wait(2.5 SECONDS), then(PROC_REF(enter_cocoon_human_done)))
+	op("check_pulse", menu(), label("Check pulse"), needs(req_capable()), starts(PROC_REF(check_pulse_started)), begins(PROC_REF(check_pulse_begins)), wait(6 SECONDS), on_interrupt(PROC_REF(check_pulse_human_failed)), then(PROC_REF(check_pulse_human_done)))
+	op("lleill_ring_spawn", ai(), wait(10 SECONDS), on_interrupt(PROC_REF(lleill_ring_interrupted)), then(PROC_REF(lleill_ring_spawn_done)))
 	hands()
 	body_clock(STAT_BODY_CLOCK_ACTIVE)
 	limb_clock(STAT_LIMB_TROUBLE)
