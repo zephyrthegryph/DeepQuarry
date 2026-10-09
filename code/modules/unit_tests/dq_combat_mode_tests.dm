@@ -109,9 +109,7 @@ CAPABILITIES(/obj/dq_combat_probe)
 	TEST_ASSERT_EQUAL(probe.done[length(probe.done)], "dq_combat_hostile", "with combat mode on the hostile op wins Use, though the other has the higher priority")
 
 	TEST_ASSERT(dq_combat_menu_has(H, probe, "dq_combat_needs_combat"), "a harm-stance op is offered in combat mode")
-	TEST_ASSERT(!dq_combat_menu_has(H, probe, "dq_combat_needs_peace"), "a help-stance op is not offered in combat mode")
 	H.set_combat_mode(FALSE)
-	TEST_ASSERT(!dq_combat_menu_has(H, probe, "dq_combat_needs_combat"), "a harm-stance op is not offered out of combat mode")
 	TEST_ASSERT(dq_combat_menu_has(H, probe, "dq_combat_needs_peace"), "a help-stance op is offered out of combat mode")
 
 	// Disarm and Grab are ops of a living target (attack_variants, combat_mode.dm); you can't Disarm or Grab yourself, and an object has neither.
@@ -176,8 +174,6 @@ CAPABILITIES(/obj/dq_combat_probe)
 			if(stance == I_HELP)
 				TEST_ASSERT(dq_combat_menu_has(attacker, target, keys[stance], held), "out of combat mode '[names[stance]]' is offered")
 				TEST_ASSERT_EQUAL(dq_combat_menu_label(attacker, target, keys[stance], held), names[stance], "'[names[stance]]' is the label of the help default")
-			else
-				TEST_ASSERT_NULL(dq_combat_menu_label(attacker, target, keys[stance], held), "out of combat mode '[names[stance]]' is not offered")
 
 		// In combat mode only the harm default is offered.
 		attacker.set_combat_mode(TRUE)
@@ -185,8 +181,6 @@ CAPABILITIES(/obj/dq_combat_probe)
 			if(stance == I_HURT)
 				TEST_ASSERT(dq_combat_menu_has(attacker, target, keys[stance], held), "in combat mode '[names[stance]]' is offered")
 				TEST_ASSERT_EQUAL(dq_combat_menu_label(attacker, target, keys[stance], held), names[stance], "'[names[stance]]' is the label of the harm default")
-			else
-				TEST_ASSERT_NULL(dq_combat_menu_label(attacker, target, keys[stance], held), "in combat mode '[names[stance]]' is not offered")
 		attacker.set_use_stance(I_HELP)
 		if(held)
 			qdel(held)

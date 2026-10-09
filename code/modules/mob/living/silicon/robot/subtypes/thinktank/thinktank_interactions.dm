@@ -1,6 +1,6 @@
 CAPABILITIES(/mob/living/silicon/robot/platform)
 	op("platform_item", item(/obj/item), then(PROC_REF(platform_interaction_item)))
-	op("platform_hand", hand(), ungated(), then(PROC_REF(platform_interaction_hand)))
+	op("platform_hand", hand(), ungated(), priority(OP_PRIORITY_PART), then(PROC_REF(platform_interaction_hand)))
 	op("platform_take_control", observer(), label("Take control"), when(req(PROC_REF(ghost_control_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Platform Control", "question" = computed(PROC_REF(ghost_control_question)), "timeout" = 0), step = "take", keeps = TARGET_PRESENT), then(PROC_REF(ghost_control_answered)))
 	// a drop that is refused falls through to the cyborg's drag block
 	op("platform_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Load into cargo"), when(PROC_REF(cargo_loadable)), begins(PROC_REF(cargo_loading_text)), wait(3 SECONDS), then(PROC_REF(platform_loaded)))
