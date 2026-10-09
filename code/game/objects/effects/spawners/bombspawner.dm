@@ -96,8 +96,8 @@ CAPABILITIES(/datum/ttv_bomb_review)
 /// The admin "Instant TTV" bomb: signaler, gas amounts given by the admin (spawn_ttv_bomb()).
 /obj/effect/spawner/newbomb/radio/custom
 
-MAP_RESOLVER(/obj/effect/spawner/newbomb, GLOBAL_PROC_REF(resolve_newbomb))
-MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt")
+CAPABILITIES(/obj/effect/spawner/newbomb)
+	map_resolver(GLOBAL_PROC_REF(resolve_newbomb), vars = list("carbon_amt", "oxygen_amt", "phoron_amt"))
 
 /// MAP_RESOLVER for mapped TTV bombs. The bomb goes where the spawner was: a
 /// spawner created inside a container (the syndicate "screwed" kit box) fills
@@ -157,7 +157,8 @@ MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt
 	var/phoron_amt = 0
 	var/oxygen_amt = 0
 
-MAP_RESOLVER(/obj/effect/spawner/onetankbomb, GLOBAL_PROC_REF(resolve_loot))
+CAPABILITIES(/obj/effect/spawner/onetankbomb)
+	map_resolver(GLOBAL_PROC_REF(resolve_loot))
 DECLARE_LOOT(/obj/effect/spawner/onetankbomb, LOOT_TABLE(/obj/item/tank/phoron/onetankbomb, /obj/item/tank/oxygen/onetankbomb))
 
 

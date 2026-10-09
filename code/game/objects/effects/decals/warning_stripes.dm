@@ -1,7 +1,8 @@
 /obj/effect/decal/warning_stripes
 	icon = 'icons/effects/warning_stripes.dmi'
 
-MAP_RESOLVER(/obj/effect/decal/warning_stripes, GLOBAL_PROC_REF(resolve_warning_stripes))
+CAPABILITIES(/obj/effect/decal/warning_stripes)
+	map_resolver(GLOBAL_PROC_REF(resolve_warning_stripes))
 
 /// MAP_RESOLVER for warning stripes: an overlay on the turf.
 /proc/resolve_warning_stripes(atom/loc, path, list/varedits)

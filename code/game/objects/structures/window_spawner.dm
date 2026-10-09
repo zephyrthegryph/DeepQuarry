@@ -14,8 +14,8 @@
 	can_atmos_pass = ATMOS_PASS_NO
 	var/win_path = /obj/structure/window/basic
 
-MAP_RESOLVER(/obj/effect/wingrille_spawn, GLOBAL_PROC_REF(resolve_wingrille))
-MAP_RESOLVER_VARS(/obj/effect/wingrille_spawn, "id;win_path")
+CAPABILITIES(/obj/effect/wingrille_spawn)
+	map_resolver(GLOBAL_PROC_REF(resolve_wingrille), vars = list("id", "win_path"))
 
 /// MAP_RESOLVER for window spawners: records the cell, then (once the load is in place, so every
 /// neighbouring spawner is known) builds a grille and windows on the sides without a neighbour.

@@ -3,7 +3,8 @@
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "floorbreaker"
 
-MAP_RESOLVER(/obj/effect/floorbreak, GLOBAL_PROC_REF(resolve_floorbreak))
+CAPABILITIES(/obj/effect/floorbreak)
+	map_resolver(GLOBAL_PROC_REF(resolve_floorbreak))
 
 /// MAP_RESOLVER for floor breakers: breaks the floor tile, once the load is in place.
 /proc/resolve_floorbreak(atom/loc, path, list/varedits)

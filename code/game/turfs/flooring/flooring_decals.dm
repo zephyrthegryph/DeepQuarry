@@ -13,7 +13,8 @@ TRACKED(/turf, decals)
 	plane = DECAL_PLANE
 	layer = DECAL_LAYER
 
-MAP_RESOLVER(/obj/effect/floor_decal, GLOBAL_PROC_REF(resolve_floor_decal))
+CAPABILITIES(/obj/effect/floor_decal)
+	map_resolver(GLOBAL_PROC_REF(resolve_floor_decal))
 
 /// MAP_RESOLVER for floor decals: adds the decal's image (from its type and the map's var edits)
 /// to the floor's decals.
@@ -51,7 +52,8 @@ MAP_RESOLVER(/obj/effect/floor_decal, GLOBAL_PROC_REF(resolve_floor_decal))
 /obj/effect/floor_decal/reset
 	name = "reset marker"
 
-MAP_RESOLVER(/obj/effect/floor_decal/reset, GLOBAL_PROC_REF(resolve_floor_decal_reset))
+CAPABILITIES(/obj/effect/floor_decal/reset)
+	configure(map_resolver(GLOBAL_PROC_REF(resolve_floor_decal_reset)))
 
 /// MAP_RESOLVER for the reset marker: clears the floor's decals.
 /proc/resolve_floor_decal_reset(atom/loc, path, list/varedits)
@@ -650,7 +652,8 @@ MAP_RESOLVER(/obj/effect/floor_decal/reset, GLOBAL_PROC_REF(resolve_floor_decal_
 	name = "random asteroid rubble"
 	icon_state = "asteroid0"
 
-MAP_RESOLVER(/obj/effect/floor_decal/asteroid, GLOBAL_PROC_REF(resolve_floor_decal_asteroid))
+CAPABILITIES(/obj/effect/floor_decal/asteroid)
+	configure(map_resolver(GLOBAL_PROC_REF(resolve_floor_decal_asteroid)))
 
 /// MAP_RESOLVER for asteroid rubble: one of ten rubble states.
 /proc/resolve_floor_decal_asteroid(atom/loc, path, list/varedits)

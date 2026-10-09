@@ -7,7 +7,8 @@
 	simulated = FALSE
 	invisibility = INVISIBILITY_MAXIMUM
 
-MAP_RESOLVER(/obj/effect/wire_deleter, GLOBAL_PROC_REF(resolve_wire_deleter))
+CAPABILITIES(/obj/effect/wire_deleter)
+	map_resolver(GLOBAL_PROC_REF(resolve_wire_deleter))
 
 /// MAP_RESOLVER for wire deleters: once the load is in place, a third of the tile's cables go.
 /proc/resolve_wire_deleter(atom/loc, path, list/varedits)

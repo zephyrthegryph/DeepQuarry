@@ -12,7 +12,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LANDMARKS)
 
 REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 
-MAP_RESOLVER(/obj/effect/landmark, GLOBAL_PROC_REF(resolve_landmark))
+CAPABILITIES(/obj/effect/landmark)
+	map_resolver(GLOBAL_PROC_REF(resolve_landmark))
 
 /// MAP_RESOLVER for landmarks: a coordinate-only landmark (spawn points, event starts) becomes a
 /// row in its coordinate registry and never an atom; costume landmarks roll their costume. Any
