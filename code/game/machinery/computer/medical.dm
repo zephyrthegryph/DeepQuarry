@@ -28,6 +28,7 @@
 	var/static/list/field_edit_choices
 
 MSG_DEF_SELF(records/id_required, "needs an identification card")
+MSG_DEF_SELF(records/no_provider, "you have nothing to do that with")
 MSG_DEF_SELF(records/unknown_field, "Unknown record field.")
 MSG_DEF(records/inserted_id, "You insert %I%.", "")
 MSG_DEF(records/ejected_id, "You remove %I% from %T%.", "")
@@ -38,9 +39,9 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 	interface("MedicalRecords", title = "Medical Records")
 	// Keep the existing plain-click ranking: the computer's generic item op wins;
 	// this named insertion is also offered by the context menu.
-	op("insert_scan", inputs(item(/obj/item/card/id), menu()), authority(AUTH_PHYSICAL | AUTH_REMOTE_ACCESS | AUTH_AI), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID card"), when(cond_not(nameof(scan))), needs(req(/obj/item/card/id, because = MSG(records/id_required)), req(PROC_REF(records_slot_reachable)), req_capable(), req_held_releasable()), then(PROC_REF(insert_scan)))
-	op("eject_scan_menu", menu(), authority(AUTH_PHYSICAL | AUTH_REMOTE_ACCESS | AUTH_AI), ungated(), label("Eject ID Card"), when(nameof(scan)), needs(req(PROC_REF(records_slot_reachable)), req_capable(), req(PROC_REF(scan_removable))), then(PROC_REF(eject_scan)))
-	op("open_records", inputs(hand(), menu()), by(NONE), reach(REACH_ANY), authority(AUTH_PHYSICAL | AUTH_REMOTE_ACCESS | AUTH_AI), priority(OP_PRIORITY_DEFAULT - 1), label("Open records"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(records_plain_hand)))), needs(req(PROC_REF(records_open_admission))), then(PROC_REF(open_records)))
+	op("insert_scan", inputs(item(/obj/item/card/id), menu()), authority(AUTH_PHYSICAL | AUTH_REMOTE_ACCESS | AUTH_AI), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID card"), when(cond_not(nameof(scan))), needs(req(/obj/item/card/id, because = MSG(records/id_required)), any_of(req(PROC_REF(records_slot_reachable)), all_of(req_actor_kind(/mob/living/silicon), req(PROC_REF(records_remote_slot_allowed)))), req_capable(), req_held_releasable()), then(PROC_REF(insert_scan)))
+	op("eject_scan_menu", menu(), authority(AUTH_PHYSICAL | AUTH_REMOTE_ACCESS | AUTH_AI), ungated(), label("Eject ID Card"), when(nameof(scan)), needs(any_of(req(PROC_REF(records_slot_reachable)), all_of(req_actor_kind(/mob/living/silicon), req(PROC_REF(records_remote_slot_allowed)))), req_capable(), req(PROC_REF(scan_removable))), then(PROC_REF(eject_scan)))
+	op("open_records", inputs(menu(), hand()), by(NONE), reach(REACH_ANY), authority(AUTH_PHYSICAL | AUTH_REMOTE_ACCESS | AUTH_AI), priority(OP_PRIORITY_DEFAULT - 1), label("Open records"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(records_plain_hand)))), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(records/no_provider)), req(PROC_REF(records_open_admission))), then(PROC_REF(open_records)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("login", ui_act("login", arg("login_type", num())), then(PROC_REF(ui_act_login)))
@@ -103,9 +104,11 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 /// Physical slots retain the console's declared silicon reach, independently of window access.
 /obj/machinery/computer/med_data/proc/records_slot_reachable(datum/act/op/A)
 	var/mob/user = A.actor
-	if(user && (read_once(user.Adjacent(src)) || (issilicon(user) && (read_once(silicon_use) & (SILICON_USE_HAND | ROBOT_USE_HAND)))))
-		return null
-	return "you're too far away"
+	return user && read_once(user.Adjacent(src)) ? null : "you're too far away"
+
+/// A declared silicon interface may reach the physical ID slot; actor kinds are selected by requirements.
+/obj/machinery/computer/med_data/proc/records_remote_slot_allowed(datum/act/op/A)
+	return (read_once(silicon_use) & (SILICON_USE_HAND | ROBOT_USE_HAND)) ? null : "you're too far away"
 
 /// The named insertion uses the same checked transfer as the old ID-card slot.
 /obj/machinery/computer/med_data/proc/insert_scan(datum/act/op/A)
@@ -142,12 +145,10 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 	var/mob/user = A.actor
 	if(!user || isobserver(user))
 		return "too far away"
-	if(issilicon(user))
-		return MSG(req_no_provider)
 	if(!read_once(user.Adjacent(src)))
 		return "too far away"
 	if(!read_once(user.can_provide_hands(A)))
-		return MSG(req_no_provider)
+		return MSG(records/no_provider)
 	if(!read_once(user.operation_actor_capable()))
 		return MSG(req_not_capable)
 	return op_hand_refusal(A)
