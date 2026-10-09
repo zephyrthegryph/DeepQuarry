@@ -44,6 +44,7 @@ human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Invoke
 human|/obj/item/mop_deploy menu: Insert a mop
 human|/obj/item/mop_deploy menu: Invoke
+human|/obj/item/mop_deploy menu: Mop
 human|/obj/item/mop_deploy menu: Move To Top
 human|/obj/item/mop_deploy menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/mop_deploy click: Click: Insert a mop

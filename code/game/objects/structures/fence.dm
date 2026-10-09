@@ -222,29 +222,11 @@ CAPABILITIES(/obj/structure/fence/door)
 		return OP_OK
 
 	else if(istype(W,/obj/item/lockpick))
-		var/obj/item/lockpick/L = W
-		if(!locked)
-			to_chat(user, span_notice("\The [src] isn't locked."))
-			return OP_OK
-		else if(lock_type != L.pick_type) //make sure our types match
-			to_chat(user, span_warning("\The [L] can't pick \the [src]. Another tool might work?"))
-			return OP_OK
-		else if(!can_pick)
-			to_chat(user, span_warning("\The [src] can't be [L.pick_verb]ed."))
-			return OP_OK
-		else
-			to_chat(user, span_notice("You start to [L.pick_verb] the lock on \the [src]..."))
-			playsound(src, keysound,100, 1)
-			task_timed(user, L.pick_time * lock_difficulty, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return OP_OK
+		return OP_PASS // the pick's own "pick" op (code/game/objects/items/lockpicks.dm) works the lock
 
 	else
 		door_used(user)
 	return OP_OK
-
-/obj/structure/fence/door/proc/attackby_timed_done(mob/user)
-	to_chat(user, span_notice("Success!"))
-	locked = FALSE
 
 /obj/structure/fence/door/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

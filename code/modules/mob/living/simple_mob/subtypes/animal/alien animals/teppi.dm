@@ -431,8 +431,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 	op("teppi_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Handle roughly"), then(PROC_REF(teppi_interaction_hand_disarm)))
 	op("teppi_shear_knife", item(/obj/item/material/knife), stance(I_HELP), priority(OP_PRIORITY_TAKE_OUT), label("Shear"), when(nameof(teppi_wool)), wait(PROC_REF(teppi_shear_time)), then(PROC_REF(teppi_shear_done)))
 	op("teppi_shear_cutter", tool(TOOL_WIRECUTTER), stance(I_HELP), priority(OP_PRIORITY_TAKE_OUT), label("Shear"), when(nameof(teppi_wool)), wait(PROC_REF(teppi_shear_time)), then(PROC_REF(teppi_shear_done)))
+	op("teppi_slaughter", item(/obj/item/material/knife), stance(I_HELP), priority(OP_PRIORITY_PART), label("Slaughter"), when(req(PROC_REF(can_slaughter))), begins(MSG(teppi/slaughter_begins)), wait(5 SECONDS), then(PROC_REF(teppi_slaughter_done)))
 	param(nameof(parent_one), pos = 1, keep = FALSE)
 	param(nameof(parent_two), pos = 2, apply = PROC_REF(inherit_made), keep = FALSE)
+
+MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%."), span_attack("%U% approaches %T%'s neck with %I%."))
 
 /// The help-stance input of teppi_interaction_item: the shared handler with its stance.
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item_help(datum/act/op/A)
@@ -535,15 +538,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 		if(yum && nutrition >= 500)
 			to_chat(user, span_notice("\The [src] seems satisfied."))
 		return
-	/////WEAPONS/////
-	if(istype(O, /obj/item/material/knife))
-		if(client)
-			return OP_DECLINE
-		if(resting)
-			act_message(user, src, MSG_SELF(span_attack("You approach %T%'s neck with %I%.")), MSG_OTHERS(span_attack("%U% approaches %T%'s neck with %I%.")), item = O)
-			task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_teppi_done), done_args = list(user))
-		else
-			return OP_DECLINE
 	if(istype(O, /obj/item/clothing/accessory/collar/craftable))
 		var/obj/item/clothing/accessory/collar/craftable/C = O
 		if(item_type == "collar")
@@ -563,7 +557,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 	/////EVERYTHING ELSE/////
 	return OP_DECLINE
 
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/attackby_teppi_done(mob/user)
+/// A knife on a napping teppi nobody plays.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/can_slaughter(datum/act/op/A)
+	return stat != DEAD && !read_once(client) && resting
+
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_slaughter_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(resting)
 		death()
 		return

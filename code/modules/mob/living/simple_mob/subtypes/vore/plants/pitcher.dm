@@ -181,7 +181,10 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 
 CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
 	op("pitcher_interaction_hand", hand(), ungated(), stance(I_HELP), label("Pick fruit"), then(PROC_REF(pitcher_interaction_hand)))
-	op("pitcher_interaction_item", item(/obj/item), then(PROC_REF(pitcher_interaction_item)))
+	op("pitcher_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(pitcher_interaction_item)))
+	op("pitcher_fish_out", item(/obj/item/stack/cable_coil), claims(), starts(PROC_REF(fish_out_started)), wait(PROC_REF(fish_out_time)), then(PROC_REF(fish_out_done)))
+
+MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 
 /// Old attack_hand: a help-touch picks the fruit; anything else is the normal touch.
 /mob/living/simple_mob/vore/pitcher_plant/proc/pitcher_interaction_hand(datum/act/op/A)
@@ -200,8 +203,24 @@ CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
 	if(fruit)
 		. += "A plump fruit glistens beneath \the [src]'s cap."
 
-/mob/living/simple_mob/vore/pitcher_plant/proc/fish_out_done(mob/user, mob/living/carbon/human/H)
-	if(H.loc != vore_selected)
+/// The victim a wire loop can snag: the first human in the belly (only carbons, RIP mice).
+/mob/living/simple_mob/vore/pitcher_plant/proc/fish_out_victim()
+	return locate_within(vore_selected, /mob/living/carbon/human)
+
+/// You can just spam click to stack attempts if you feel like abusing it.
+/mob/living/simple_mob/vore/pitcher_plant/proc/fish_out_started(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(!fish_out_victim())
+		return MSG(pitcher/empty)
+	act_message(user, src, MSG_SELF(span_infoplain("You use a loop of wire to try snagging someone trapped in %T%...")), MSG_OTHERS(span_infoplain("%U% uses a loop of wire to try fishing someone out of %T%.")))
+
+/mob/living/simple_mob/vore/pitcher_plant/proc/fish_out_time(datum/act/op/A)
+	return rand(3 SECONDS, 7 SECONDS)
+
+/mob/living/simple_mob/vore/pitcher_plant/proc/fish_out_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/carbon/human/H = fish_out_victim()
+	if(!H)
 		return
 	if(prob(15))
 		act_message(user, H, MSG_SELF(span_infoplain("You heft %T% free from \the [src].")), MSG_OTHERS(span_notice("%U% pulls a sticky %T% free from \the [src].")))
@@ -222,14 +241,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
 		meat += NUTRITION_MEAT
 		consume(O, user)
 		return TRUE
-	if(istype(O, /obj/item/stack/cable_coil)) //How to free people without killing the pitcher. I guess cable is SS13 rope.
-		var/mob/living/carbon/human/H = locate_within(vore_selected, /mob/living/carbon/human) //Only works for carbons, RIP mice. Should pick the first human the code finds.
-		if(!H)
-			to_chat(user, span_infoplain("The pitcher is empty."))
-		else
-			act_message(user, src, MSG_SELF(span_infoplain("You use a loop of wire to try snagging someone trapped in %T%...")), MSG_OTHERS(span_infoplain("%U% uses a loop of wire to try fishing someone out of %T%.")))
-			//You can just spam click to stack attempts if you feel like abusing it.
-			task_timed(user, rand(3 SECONDS, 7 SECONDS), target = src, receiver = src, on_done = PROC_REF(fish_out_done), done_args = list(user, H))
 	if(istype(O, /obj/item/newspaper))
 		act_message(user, src, MSG_SELF(span_notice("You whap %T% with a rolled up newspaper.")), MSG_OTHERS(span_notice("%U% baps %T%, but it doesn't seem to do anything.")))
 		to_chat(user, span_notice("Weird. That usually works. Maybe you can fish out its victim with some string or wire or something? Or maybe kill the thing with some plant-b-gone. Both would probably be safer than hacking it up with a person still inside."))

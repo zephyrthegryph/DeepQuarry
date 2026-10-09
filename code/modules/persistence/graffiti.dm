@@ -20,7 +20,9 @@ CAPABILITIES(/obj/effect/decal/writing)
 	param(nameof(message), pos = 2)
 	param(nameof(author), pos = 3)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
-	op("engrave_graffiti", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Engrave"), then(PROC_REF(interaction_engrave_graffiti)))
+	op("engrave_graffiti", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Engrave"),
+		asks(/datum/prompt/text, fields = list("question" = "Enter an additional message to engrave.", "title" = "Graffiti", "max_len" = MAX_MESSAGE_LEN, "name_text" = ((MAX_MESSAGE_LEN) <= MAX_NAME_LEN)), step = "k49", when = PROC_REF(sharp_held)),
+		begins(PROC_REF(engrave_begins)), wait(PROC_REF(engrave_time)), then(PROC_REF(interaction_engrave_graffiti)))
 	op("clear_graffiti", lit_welder(fuel = 0), wait(0.5 SECONDS), then(PROC_REF(clear_done)))
 
 // ALLOW(init/INSTANCE_STATE): graffiti not loaded with the map is tracked for persistence
@@ -51,6 +53,29 @@ CAPABILITIES(/obj/effect/decal/writing)
 		return "you are banned from leaving persistent information across rounds"
 	return TRUE
 
+/// The engraving question is asked only of a sharp item.
+/obj/effect/decal/writing/proc/sharp_held(datum/act/op/A)
+	var/obj/item/thing = A.held
+	return !!read_once(thing?.sharp)
+
+/// Whether there is a message to carve and the carver is still able to: the wait follows only then.
+/obj/effect/decal/writing/proc/engrave_ready(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/thing = A.held
+	var/_message = A.step_value("k49")
+	if(!sharp_held(A) || !_message || !loc || !user || user.incapacitated() || !user.Adjacent(loc) || thing.loc != user)
+		return FALSE
+	return TRUE
+
+/// Carving takes as many deciseconds as the message has characters, two seconds at least.
+/obj/effect/decal/writing/proc/engrave_time(datum/act/op/A)
+	if(!engrave_ready(A))
+		return 0
+	return max(2 SECONDS, length(A.step_value("k49")))
+
+/obj/effect/decal/writing/proc/engrave_begins(datum/act/op/A)
+	return msg_text(null, span_warning("%U% begins carving something into \the [loc]."))
+
 /// Old attackby: a sharp item carves more into the graffiti.
 /obj/effect/decal/writing/proc/interaction_engrave_graffiti(datum/act/op/A)
 	var/refusal = can_engrave(A.actor, src, A.held)
@@ -59,27 +84,18 @@ CAPABILITIES(/obj/effect/decal/writing)
 			to_chat(A.actor, span_warning(refusal))
 		return OP_DECLINE
 	var/mob/user = A.actor
-	var/obj/item/held = A.held
-	var/obj/item/thing = held
-	if(!thing.sharp)
+	if(!sharp_held(A))
 		return OP_DECLINE
+	if(!engrave_ready(A))
+		return OP_PASS
 
-	var/_message = rerun_ask(user, "k49", PROC_REF(interaction_engrave_graffiti), args, /datum/prompt/text, question = "Enter an additional message to engrave.", title = "Graffiti", max_len = MAX_MESSAGE_LEN, name_text = ((MAX_MESSAGE_LEN) <= MAX_NAME_LEN))
-	if(isnull(_message))
-		return OP_OK
-	if(_message && loc && user && !user.incapacitated() && user.Adjacent(loc) && thing.loc == user)
-		act_message(user, null, others = span_warning("%U% begins carving something into \the [loc]."))
-		task_timed(user, max(2 SECONDS, length(_message)), src, src, PROC_REF(carve_done), list(user, _message))
-	return OP_PASS
-
-/obj/effect/decal/writing/proc/carve_done(mob/user, _message)
-	if(!loc)
-		return
+	var/_message = A.step_value("k49")
 	act_message(user, null, others = span_danger("%U% carves some graffiti into \the [loc]."))
 	message = "[message] [_message]"
 	author = user.ckey
 	if(lowertext(message) == "elbereth")
 		to_chat(user, span_notice("You feel much safer."))
+	return OP_PASS
 
 /obj/effect/decal/writing/proc/clear_done(datum/act/op/A)
 	var/mob/user = A.actor

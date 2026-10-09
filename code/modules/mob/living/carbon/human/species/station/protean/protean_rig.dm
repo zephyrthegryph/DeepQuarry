@@ -144,9 +144,13 @@
 	else
 		to_chat(user, "This Rig does not have a bag installed. Use a bag on it to install one.")
 
+MSG_DEF_SELF(protean_rig/module_class, "The hardsuit already has a module of that class installed.")
+MSG_DEF_SELF(protean_rig/installing, "You begin installing %I% into %T%.")
+
 CAPABILITIES(/obj/item/rig/protean)
 	op("protean_rig_hand", hand(), ungated(), then(PROC_REF(protean_rig_hand)))
-	op("protean_rig_item", item(/obj/item), then(PROC_REF(protean_rig_item)))
+	op("protean_rig_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(protean_rig_item)))
+	op("protean_install_module", item(/obj/item/rig_module), priority(OP_PRIORITY_PART), label("Install module"), when(req(PROC_REF(module_offered))), needs(req(PROC_REF(module_class_free), because = MSG(protean_rig/module_class))), begins(MSG(protean_rig/installing)), wait(4 SECONDS), then(PROC_REF(attackby_protean_done)))
 	op("protean_removebag_verb", menu(), label("Remove Stored Bag"), needs(carried()), then(PROC_REF(protean_removebag_verb)))
 	op("protean_removerig_verb", menu(), label("Remove Assimilated Rig"), needs(carried()), then(PROC_REF(protean_removerig_verb)))
 	interface(null, window_var = nameof(interface_path), state = nameof(GLOB.tgui_always_state))
@@ -330,17 +334,6 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		return OP_PASS
 
 		// Check if this is a hardsuit upgrade or a modification.
-	else if(istype(W,/obj/item/rig_module))
-		if(length(installed_modules))
-			for(var/obj/item/rig_module/installed_mod in installed_modules)
-				if(!installed_mod.redundant && istype(installed_mod,W))
-					to_chat(user, "The hardsuit already has a module of that class installed.")
-					return TRUE
-
-		var/obj/item/rig_module/mod = W
-		to_chat(user, "You begin installing \the [mod] into \the [src].")
-		task_start(/datum/task/timed/protean_attackby_protean, user, src, receiver = src, W = W, mod = mod)
-		return TRUE
 	for(var/obj/item/rig_module/module in installed_modules)
 		if(module.accepts_item(W,user)) //Item is handled in this proc
 			return OP_PASS
@@ -352,17 +345,22 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 			AssimilateBag(user,0,W)
 	return OP_PASS
 
-/datum/task/timed/protean_attackby_protean
-	duration = 4 SECONDS
-	complete_proc = /obj/item/rig/protean/proc/attackby_protean_done
-	var/obj/item/W
-	var/obj/item/rig_module/mod
+/// A module offered to a rig that is not dormant (a dormant core is repaired with it instead).
+/obj/item/rig/protean/proc/module_offered(datum/act/op/A)
+	return read_once(!get_dormancy())
 
-/obj/item/rig/protean/proc/attackby_protean_done(datum/task/timed/protean_attackby_protean/task)
-	var/obj/item/W = task.W
-	var/mob/living/user = task.actor
-	var/obj/item/rig_module/mod = task.mod
-	if(!user || !W)
+/// No installed module of the same class (unless it is redundant).
+/obj/item/rig/protean/proc/module_class_free(datum/act/op/A)
+	var/obj/item/rig_module/W = A.held
+	for(var/obj/item/rig_module/installed_mod in installed_modules)
+		if(!installed_mod.redundant && istype(installed_mod, W))
+			return FALSE
+	return TRUE
+
+/obj/item/rig/protean/proc/attackby_protean_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/rig_module/mod = A.held
+	if(!user || !mod)
 		return
 	if(!user.unEquip(mod))
 		return

@@ -134,18 +134,11 @@
 	rel_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="[burstmode] shot stun", projectile_type=beammode, charge_cost = chargecost, burst = burstmode)))
 	rel_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="[burstmode] shot lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal, burst = burstmode)))
 
-/obj/item/gun/energy/modular/load_ammo(obj/item/C, mob/user)
-	if(istype(C, cell_type))
-		if(self_recharge || battery_lock)
-			to_chat(user, span_notice("[src] does not have a battery port."))
-			return
-		var/obj/item/cell/P = C
-		if(power_supply)
-			to_chat(user, span_notice("[src] already has a power cell."))
-		else
-			act_message(user, src, MSG_SELF(span_notice("You start to insert [P] into %T%.")), MSG_OTHERS("%U% is reloading %T%."))
-			task_timed(user, 1 SECOND, src, src, PROC_REF(cell_inserted), list(user, P))
-		return
+/obj/item/gun/energy/modular/cell_fits(obj/item/cell/P)
+	return istype(P, cell_type)
+
+/obj/item/gun/energy/modular/cell_load_time(datum/act/op/A)
+	return 1 SECOND
 
 /obj/item/gun/energy/modular/pistol
 	name = "modular pistol"
