@@ -3934,3 +3934,5 @@ recycling panels, space vines and the maintenance vendor glow now draw through `
   asks `changed(src)` at its entry and exit sites and the jar redraws through its tracked `contains`; both are temporary until `forceMove()` into a holder registers in the default slot.
 * **Space vine with a growth threshold of 0** (`look_states/obj.effect.plant.txt`, `plant` and `plant/single`, `growth_threshold=0`): the draw no longer divides by it; it shows the full
   stage (`mushroom7-3`, `-0` lost) where the legacy provider raised `Division by zero`. The three rows are written by hand to the rows the sweep produced (`growth_threshold=1` is the same).
+* **Pump state pin** (`look_states/obj.machinery.pump.txt`, `on=1` and `on=2`): the running pump's rows change from the `pump-running-tank` / `pump-running-glass` layers (named from the state the previous redraw left) to the
+  `pump` -> `pump-running` base state, with the tank and glass layers named from the type's own state and so unchanged. Harness: the bless also wrote a lone newline into empty files (six `look_states/` files); restored.
