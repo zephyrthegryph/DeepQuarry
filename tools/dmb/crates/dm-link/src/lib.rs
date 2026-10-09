@@ -1,12 +1,14 @@
 //! Independent deterministic table assignment. No DMB writer or global ledger.
 use dm_ir::{RelocationError, SymRef, SymbolId, SymbolicCode};
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::{BTreeMap, BTreeSet, HashMap},
     sync::Arc,
 };
 mod entry_content;
 mod wire_domains;
 pub use entry_content::{EntryContent, SymbolicContent};
+#[cfg(test)]
+mod link_lookup_tests;
 pub use wire_domains::{admit_type_path_words, MobBindings, WireDomainError};
 
 /// String slots sharing the native variable-modifier/sentinel word space.
@@ -360,13 +362,12 @@ impl LinkTables {
         code: &SymbolicCode,
         source: &SourceBindings,
     ) -> Result<ProcedureImage, LinkError> {
-        let mut resolved = BTreeMap::new();
+        let mut resolved = HashMap::new();
         for relocation in code.relocations() {
             let reference = relocation.reference;
             // Immutable tables/source bindings give repeated references the
             // same answer. Retain first-encounter resolution/error order.
-            let std::collections::btree_map::Entry::Vacant(entry) = resolved.entry(reference)
-            else {
+            let std::collections::hash_map::Entry::Vacant(entry) = resolved.entry(reference) else {
                 continue;
             };
             let index = match reference {

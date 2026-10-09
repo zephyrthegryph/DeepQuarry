@@ -215,6 +215,19 @@ pub trait AbiPolicy: Sync {
     ) -> Result<PreparedUnit, String> {
         self.prepare(metadata, parsed.item(), context)
     }
+    /// Owned production preparation; custom policies retain their borrowed hook.
+    /// The returned header keeps exact source spans but no executable children.
+    fn prepare_owned_captured(
+        &self,
+        metadata: &ProcedureMetadata,
+        parsed: dm_tree::frontend::ParsedBody<'_>,
+        context: &AbiContext<'_>,
+    ) -> Result<(PreparedUnit, dm_syntax::Item), String> {
+        let prepared = self.prepare_captured(metadata, &parsed, context)?;
+        let mut header = parsed.into_item();
+        header.children = Vec::new();
+        Ok((prepared, header))
+    }
     fn inputs(
         &self,
         identity: UnitIdentity,

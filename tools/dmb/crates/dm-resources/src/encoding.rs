@@ -3,7 +3,7 @@
 use crate::capture::{CapturePolicy, EncodedResourceInput};
 use crate::{ResourceInput, ResourceRequest};
 use sha2::{Digest, Sha256};
-use std::io;
+use std::{io, sync::Arc};
 /// These extensions have current-source/native-RSC byte equality controls.
 /// Unsupported formats can still supply an explicit current-source encoder.
 pub fn byond516_raw_policy() -> CapturePolicy {
@@ -23,6 +23,14 @@ pub fn encode_raw(
     source: &[u8],
     policy: &CapturePolicy,
 ) -> io::Result<EncodedResourceInput> {
+    encode_raw_shared(request, Arc::from(source), policy)
+}
+/// Encode a captured immutable source without duplicating its backing allocation.
+pub fn encode_raw_shared(
+    request: ResourceRequest,
+    source: Arc<[u8]>,
+    policy: &CapturePolicy,
+) -> io::Result<EncodedResourceInput> {
     crate::validate_archive_name(&request.archive_name)?;
     let extension = std::path::Path::new(&request.archive_name)
         .extension()
@@ -35,14 +43,14 @@ pub fn encode_raw(
             "asset extension lacks a certified raw encoder",
         ));
     }
-    let digest = Sha256::digest(source).into();
+    let digest = Sha256::digest(&source).into();
     Ok(EncodedResourceInput {
         source_digest: digest,
         input: ResourceInput {
-            named: byond_dmb::rsc::NamedResource::from_data(
+            named: crate::NamedResourceInput::from_shared_data(
                 crate::kind_for_name(&request.archive_name).as_byte(),
                 request.archive_name.as_bytes().to_vec(),
-                source.to_vec(),
+                source,
                 0,
                 0,
             )?,
@@ -55,6 +63,24 @@ pub fn encode_raw(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn shared_raw_encoder_keeps_source_allocation() {
+        let source: Arc<[u8]> = Arc::from(&b"raw shared payload"[..]);
+        let encoded = encode_raw_shared(
+            ResourceRequest {
+                archive_name: "a.txt".into(),
+                disk_path: "a.txt".into(),
+            },
+            Arc::clone(&source),
+            &byond516_raw_policy(),
+        )
+        .unwrap();
+        assert!(Arc::ptr_eq(&source, encoded.input.named.shared_data()));
+        assert!(Arc::ptr_eq(
+            &source,
+            encoded.clone().input.named.shared_data()
+        ));
+    }
     #[test]
     fn additional_current_assets_match_native_payload_kind_and_id() {
         for (control, count) in [

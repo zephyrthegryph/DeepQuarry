@@ -156,23 +156,24 @@ pub fn items_may_contain_stored_declarations(items: &[Item]) -> bool {
     })
 }
 pub fn capture(procedure: ProcedureIdentity, body: &[Item]) -> Result<StaticPlan, String> {
-    let mut plan = capture_declarations(procedure, body)?;
+    capture_owned(procedure, body.to_vec())
+}
+
+/// Capture startup facts and filter executable items by moving their storage.
+pub fn capture_owned(procedure: ProcedureIdentity, body: Vec<Item>) -> Result<StaticPlan, String> {
+    let mut plan = capture_declarations(procedure, &body)?;
     let removed: HashSet<_> = plan
         .origins
         .iter()
         .map(|origin| (origin.header_span.start, origin.header_span.end))
         .collect();
-    fn filter(items: &[Item], removed: &HashSet<(usize, usize)>) -> Vec<Item> {
+    fn filter(items: Vec<Item>, removed: &HashSet<(usize, usize)>) -> Vec<Item> {
         items
-            .iter()
+            .into_iter()
             .filter(|item| !removed.contains(&(item.header_span.start, item.header_span.end)))
-            .map(|item| Item {
-                kind: item.kind,
-                header: item.header.clone(),
-                span: item.span,
-                header_span: item.header_span,
-                indent: item.indent,
-                children: filter(&item.children, removed),
+            .map(|mut item| {
+                item.children = filter(item.children, removed);
+                item
             })
             .collect()
     }
@@ -445,6 +446,25 @@ mod tests {
             plan.declarations[0].initializer,
             InitializerValue::Expression(_)
         ));
+    }
+    #[test]
+    fn owned_capture_matches_borrowed_and_moves_executable_headers() {
+        let mut parsed = dm_syntax::parse(
+            "/proc/p()\n    var/static/cache = 1\n    if(1)\n        return cache\n",
+        );
+        assert!(parsed.diagnostics.is_empty());
+        let body = std::mem::take(&mut parsed.items[0].children);
+        let conditional = body[1].header.as_ptr();
+        let nested = body[1].children[0].header.as_ptr();
+        let borrowed = capture(identity(), &body).unwrap();
+        let owned = capture_owned(identity(), body).unwrap();
+        assert_eq!(owned.procedure, borrowed.procedure);
+        assert_eq!(owned.declarations, borrowed.declarations);
+        assert_eq!(owned.origins, borrowed.origins);
+        assert_eq!(owned.symbols.ordered(), borrowed.symbols.ordered());
+        assert_eq!(owned.executable_body, borrowed.executable_body);
+        assert_eq!(owned.executable_body[0].header.as_ptr(), conditional);
+        assert_eq!(owned.executable_body[0].children[0].header.as_ptr(), nested);
     }
     #[test]
     fn same_name_scoped_statics_fail_closed() {

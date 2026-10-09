@@ -141,6 +141,31 @@ impl NamedResource {
     }
 }
 
+/// Producer view over shared immutable payloads; mutable archive records remain unchanged.
+#[derive(Clone, Copy, Debug)]
+pub struct NamedResourceView<'a> {
+    pub kind: u8,
+    pub id: u32,
+    pub timestamp: u32,
+    pub source_timestamp: u32,
+    pub declared_size: u32,
+    pub name: &'a [u8],
+    pub data: &'a [u8],
+}
+impl NamedResource {
+    pub fn as_view(&self) -> NamedResourceView<'_> {
+        NamedResourceView {
+            kind: self.kind,
+            id: self.id,
+            timestamp: self.timestamp,
+            source_timestamp: self.source_timestamp,
+            declared_size: self.declared_size,
+            name: &self.name,
+            data: &self.data,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Entry {
     Named(NamedResource),
@@ -325,10 +350,20 @@ pub fn named_archive_bytes(resources: &[&NamedResource]) -> io::Result<Vec<u8>> 
 
 /// Serialize and hash borrowed resource framing and payloads in a single pass.
 pub fn named_archive_encoded(resources: &[&NamedResource]) -> io::Result<EncodedRsc> {
+    named_views_encoded(
+        &resources
+            .iter()
+            .map(|record| record.as_view())
+            .collect::<Vec<_>>(),
+    )
+}
+
+/// Encode borrowed payload views without copying their source ownership.
+pub fn named_views_encoded(resources: &[NamedResourceView<'_>]) -> io::Result<EncodedRsc> {
     let mut size = 0usize;
     for resource in resources {
         size = size
-            .checked_add(named_entry_size(resource)?.checked_add(5).ok_or_else(|| {
+            .checked_add(named_view_size(resource)?.checked_add(5).ok_or_else(|| {
                 io::Error::new(io::ErrorKind::InvalidInput, "RSC archive too large")
             })?)
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "RSC archive too large"))?;
@@ -342,7 +377,7 @@ pub fn named_archive_encoded(resources: &[&NamedResource]) -> io::Result<Encoded
         .try_reserve_exact(size)
         .map_err(|error| io::Error::new(io::ErrorKind::OutOfMemory, error))?;
     for resource in resources {
-        write_named(&mut output, resource)?;
+        write_named_view(&mut output, resource)?;
     }
     output.flush()?;
     Ok(EncodedRsc {
@@ -351,7 +386,7 @@ pub fn named_archive_encoded(resources: &[&NamedResource]) -> io::Result<Encoded
     })
 }
 
-fn named_entry_size(resource: &NamedResource) -> io::Result<usize> {
+fn named_view_size(resource: &NamedResourceView<'_>) -> io::Result<usize> {
     if resource.name.contains(&0) {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -374,15 +409,22 @@ fn named_entry_size(resource: &NamedResource) -> io::Result<usize> {
 
 /// Write a named resource by reference, with identical framing to `write_entry`.
 pub fn write_named(writer: &mut impl Write, resource: &NamedResource) -> io::Result<()> {
-    writer.write_all(&(named_entry_size(resource)? as u32).to_le_bytes())?;
+    write_named_view(writer, &resource.as_view())
+}
+
+pub fn write_named_view(
+    writer: &mut impl Write,
+    resource: &NamedResourceView<'_>,
+) -> io::Result<()> {
+    writer.write_all(&(named_view_size(resource)? as u32).to_le_bytes())?;
     writer.write_all(&[1, resource.kind])?;
     writer.write_all(&resource.id.to_le_bytes())?;
     writer.write_all(&resource.timestamp.to_le_bytes())?;
     writer.write_all(&resource.source_timestamp.to_le_bytes())?;
     writer.write_all(&resource.declared_size.to_le_bytes())?;
-    writer.write_all(&resource.name)?;
+    writer.write_all(resource.name)?;
     writer.write_all(&[0])?;
-    writer.write_all(&resource.data)
+    writer.write_all(resource.data)
 }
 
 pub fn write_entry(writer: &mut impl Write, entry: &Entry) -> io::Result<()> {

@@ -304,6 +304,10 @@ fn declaration_and_argument_lists_decode_without_losing_raw_words() {
         code_locals_args: [0xffff, 0xffff, args],
     });
     let decoded = dmb.proc_arguments(0).unwrap();
+    let borrowed = dmb.proc_arguments_iter(0).unwrap();
+    assert_eq!(borrowed.len(), decoded.len());
+    assert_eq!(borrowed.clone().collect::<Vec<_>>(), decoded);
+    assert_eq!(borrowed.collect::<Vec<_>>(), decoded);
     assert_eq!(decoded.len(), 1);
     assert_eq!(decoded[0].value_source_kind(), 1);
     assert_eq!(decoded[0].value_source_parameter(), 125);
@@ -315,6 +319,10 @@ fn declaration_and_argument_lists_decode_without_losing_raw_words() {
     assert_eq!(source.source_expression_index(), Some(1));
     dmb.proc_references = vec![0, 7];
     assert_eq!(dmb.argument_source_proc_id(&source), Some(7));
+    dmb.lists[args as usize].push(0);
+    assert!(dmb.proc_arguments_iter(0).is_none());
+    assert!(dmb.proc_arguments(0).is_none());
+    assert!(dmb.proc_arguments_iter(usize::MAX).is_none());
 }
 
 #[test]

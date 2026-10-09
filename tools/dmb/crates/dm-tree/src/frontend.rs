@@ -430,6 +430,10 @@ impl ParsedBody<'_> {
     pub fn occurrence(&self) -> &BodyOccurrence {
         self.occurrence
     }
+    /// Consume this issued parse without copying its executable items.
+    pub fn into_item(self) -> Item {
+        self.item
+    }
 }
 
 struct Captured<'a, P> {

@@ -526,6 +526,45 @@ fn procedure_memo_frozen_preparation_hits_without_prelookup_body_parse() {
         abi.prepared.diagnostics
     );
     let policy = FrozenPreparedPolicy::new(&frontend, &abi.prepared).unwrap();
+    // Production preparation moves the issued body while preserving exact
+    // settings/ABI and the original authenticated helper/debug header.
+    let body = &frontend.bodies[0];
+    let identity = crate::lowering::source_unit_identity(&frontend, body)
+        .unwrap()
+        .identity;
+    let metadata = frontend
+        .snapshot
+        .tree
+        .member(body.member)
+        .unwrap()
+        .metadata
+        .procedure
+        .as_ref()
+        .unwrap();
+    let context = AbiContext {
+        identity,
+        symbols: startup.plan().symbols.as_ref(),
+        origin: &body.source,
+        resolver: &host,
+    };
+    let parsed = frontend.parse_body(body).unwrap();
+    let header_ptr = parsed.item().header.as_ptr();
+    let local_ptr = parsed.item().children[1].header.as_ptr();
+    let borrowed = policy
+        .prepare_captured(metadata, &parsed, &context)
+        .unwrap();
+    let (owned, header) = policy
+        .prepare_owned_captured(metadata, parsed, &context)
+        .unwrap();
+    assert_eq!(owned.executable_body, borrowed.executable_body);
+    assert_eq!(owned.executable_body[0].header.as_ptr(), local_ptr);
+    assert_eq!(header.header.as_ptr(), header_ptr);
+    assert!(header.children.is_empty());
+    assert!(std::sync::Arc::ptr_eq(
+        owned.abi.as_ref().unwrap(),
+        borrowed.abi.as_ref().unwrap(),
+    ));
+
     let root = std::env::temp_dir().join(format!(
         "dmbc-issued-preparation-{}-{}",
         std::process::id(),

@@ -203,6 +203,7 @@ impl FrozenInitializer {
 #[derive(Debug)]
 pub enum IntegrationError {
     WireDomain(dm_link::WireDomainError),
+    CurrentImageWorker(String),
     InvalidInitializer(String),
     LoweringFailed(usize),
     MissingSpelling(SymbolId),
@@ -508,6 +509,7 @@ pub fn freeze_artifact_tables_with_executor(
         external,
         initialization,
         freeze_detail,
+        Some(executor),
     )
 }
 struct FrozenInventory {
@@ -523,6 +525,7 @@ fn finish_frozen_inventory(
     external: &ReferenceBindings,
     initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
     freeze_detail: bool,
+    executor: Option<&dm_exec::BuildExecutor>,
 ) -> Result<FrozenBatch, IntegrationError> {
     let FrozenInventory {
         mut inventory,
@@ -627,30 +630,13 @@ fn finish_frozen_inventory(
     };
     // Validate once and retain images certified for these exact current inputs.
     let image_profile = dm_profile::stage("linking.current_images");
-    for unit in &mut units {
-        unit.current_image = Some(CurrentImage::issue(
-            &unit.frozen,
-            &unit.lowered.debug_origins,
-            &tables,
-            unit.features,
-        )?);
-    }
-    for helper in &mut helpers {
-        helper.current_image = Some(CurrentImage::issue(
-            &helper.frozen,
-            &helper.debug_origins,
-            &tables,
-            helper.features,
-        )?);
-    }
-    for unit in &mut initializers {
-        unit.current_image = Some(CurrentImage::issue(
-            &unit.frozen,
-            &unit.debug_origins,
-            &tables,
-            unit.features,
-        )?);
-    }
+    current_images::issue(
+        &mut units,
+        &mut helpers,
+        &mut initializers,
+        &tables,
+        executor,
+    )?;
     drop(image_profile);
     Ok(FrozenBatch {
         units,
@@ -852,11 +838,13 @@ fn freeze_artifact(
         freeze_detail,
     )
 }
+mod current_images;
 mod freezing;
 mod parallel;
 mod prepared_contribution;
 pub use prepared_contribution::{
-    link_prepared_artifact_tables, prepare_contribution, PreparedContribution, PreparedModifiedSeed,
+    link_prepared_artifact_tables, link_prepared_artifact_tables_on_executor, prepare_contribution,
+    PreparedContribution, PreparedModifiedSeed,
 };
 
 #[cfg(test)]

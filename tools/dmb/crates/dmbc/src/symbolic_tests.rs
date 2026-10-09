@@ -592,6 +592,53 @@ fn parallel_fixture() -> (ColdFrontend, Vec<LoweredUnit>) {
     }
     (frontend, lowered.units)
 }
+
+#[test]
+fn current_image_workers_return_first_image_error_in_serial_artifact_order() {
+    let (frontend, units) = parallel_fixture();
+    let freeze = || {
+        freeze_artifact_tables_with_workers(
+            LoweringBatch {
+                units: units.clone(),
+                diagnostics: Vec::new(),
+            },
+            frontend.snapshot.tree.symbols(),
+            &ReferenceBindings::default(),
+            LinkInventory::default(),
+            Vec::new(),
+            1,
+        )
+        .unwrap()
+    };
+    for workers in [1, 2, 8] {
+        let mut batch = freeze();
+        for (index, unit) in batch.units.iter_mut().enumerate() {
+            for origin in &mut unit.lowered.debug_origins.entries {
+                origin.semantic_path = format!("code/image_{index}.dm").into();
+            }
+        }
+        let empty_tables = LinkTables::build(LinkInventory::default()).unwrap();
+        let first = &batch.units[0];
+        let expected = CurrentImage::issue(
+            &first.frozen,
+            &first.lowered.debug_origins,
+            &empty_tables,
+            first.features,
+        )
+        .err()
+        .expect("first image must fail");
+        let executor = dm_exec::BuildExecutor::new(workers).unwrap();
+        let actual = current_images::issue(
+            &mut batch.units,
+            &mut batch.helpers,
+            &mut batch.initializers,
+            &empty_tables,
+            Some(&executor),
+        )
+        .unwrap_err();
+        assert_eq!(format!("{actual:?}"), format!("{expected:?}"));
+    }
+}
 #[test]
 fn parallel_freeze_preserves_tables_code_helpers_and_debug_at_one_two_eight_workers() {
     let (frontend, units) = parallel_fixture();

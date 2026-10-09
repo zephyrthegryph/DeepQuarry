@@ -82,8 +82,10 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             message: diagnostic.message,
         }]
     })?;
-    let prepared = if let Some(ready) = ready {
-        ready
+    let (prepared, parsed) = if let Some(ready) = ready {
+        let mut header = parsed.into_item();
+        header.children = Vec::new();
+        (ready, header)
     } else {
         let context = AbiContext {
             identity,
@@ -92,10 +94,10 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             resolver: host,
         };
         policy
-            .prepare_captured(metadata, &parsed, &context)
+            .prepare_owned_captured(metadata, parsed, &context)
             .map_err(unsupported)?
     };
-    let parsed = parsed.item();
+    let parsed = &parsed;
     let procedure_identity = dm_ir::ProcedureIdentity {
         owner: identity.owner,
         name: identity.name,
@@ -129,9 +131,11 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         {
             prepared.executable_body
         } else {
-            let current =
-                dm_tree::procedure_statics::capture(procedure_identity, &prepared.executable_body)
-                    .map_err(unsupported)?;
+            let current = dm_tree::procedure_statics::capture_owned(
+                procedure_identity,
+                prepared.executable_body,
+            )
+            .map_err(unsupported)?;
             if captured.procedure != current.procedure
                 || captured.declarations != current.declarations
                 || captured.origins != current.origins
@@ -146,9 +150,11 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         if dm_tree::procedure_statics::items_may_contain_stored_declarations(
             &prepared.executable_body,
         ) {
-            let static_plan =
-                dm_tree::procedure_statics::capture(procedure_identity, &prepared.executable_body)
-                    .map_err(unsupported)?;
+            let static_plan = dm_tree::procedure_statics::capture_declarations(
+                procedure_identity,
+                &prepared.executable_body,
+            )
+            .map_err(unsupported)?;
             if !static_plan.declarations.is_empty() {
                 return Err(unsupported(
                     "procedure statics require verified shared-slot/default/startup admission"

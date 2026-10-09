@@ -118,8 +118,42 @@ pub fn link_prepared_artifact_tables(
     contributions: Vec<PreparedContribution>,
     symbols: &SymbolTable,
     external: &ReferenceBindings,
+    inventory: LinkInventory,
+    initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
+) -> Result<FrozenBatch, IntegrationError> {
+    link_prepared_execution(
+        contributions,
+        symbols,
+        external,
+        inventory,
+        initialization,
+        None,
+    )
+}
+pub fn link_prepared_artifact_tables_on_executor(
+    contributions: Vec<PreparedContribution>,
+    symbols: &SymbolTable,
+    external: &ReferenceBindings,
+    inventory: LinkInventory,
+    initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<FrozenBatch, IntegrationError> {
+    link_prepared_execution(
+        contributions,
+        symbols,
+        external,
+        inventory,
+        initialization,
+        Some(executor),
+    )
+}
+fn link_prepared_execution(
+    contributions: Vec<PreparedContribution>,
+    symbols: &SymbolTable,
+    external: &ReferenceBindings,
     mut inventory: LinkInventory,
     initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
+    executor: Option<&dm_exec::BuildExecutor>,
 ) -> Result<FrozenBatch, IntegrationError> {
     let mut units = Vec::with_capacity(contributions.len());
     let mut helpers = Vec::new();
@@ -168,6 +202,7 @@ pub fn link_prepared_artifact_tables(
         external,
         initialization,
         freeze_detail,
+        executor,
     )
 }
 

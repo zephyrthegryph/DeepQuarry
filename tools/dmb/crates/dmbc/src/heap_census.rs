@@ -794,7 +794,7 @@ impl HeapCensus {
             self.string("resource_records", &input.archive_name);
             self.path("resource_records", &input.disk_path);
             self.vec_payload("resource_records", &input.named.name);
-            self.vec_payload("resource_payloads", &input.named.data);
+            self.slice("resource_payloads", input.named.shared_data(), true);
         }
     }
     pub fn finish(self) -> HeapCensusReport {

@@ -2,7 +2,7 @@
 //! Admission is deliberately bounded by the production composer. A successful
 //! return means every declaration was admitted, rather than a partial artifact.
 use crate::{
-    composition::{validate_global_program, CompositionError},
+    composition::{CompositionError, validate_global_program},
     lowering::{AbiPolicy, LoweringConfig, LoweringDiagnostic},
     symbolic::{IntegrationError, ReferenceBindings},
 };
@@ -720,12 +720,13 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         .map(Into::into)
         .chain(initialization_artifacts)
         .collect();
-    let frozen = crate::symbolic::link_prepared_artifact_tables(
+    let frozen = crate::symbolic::link_prepared_artifact_tables_on_executor(
         contributions,
         plan.symbols.as_ref(),
         links.references,
         inventory,
         initialization,
+        executor,
     )
     .map_err(ColdError::Linking)?;
     measurement.complete();

@@ -53,3 +53,6 @@ mod completion;
 
 #[path = "lowering_tests/disk_only.rs"]
 mod disk_only;
+
+#[path = "lowering_tests/owned_prepare.rs"]
+mod owned_prepare;

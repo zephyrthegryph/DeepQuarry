@@ -677,6 +677,29 @@ impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
             abi: unit.abi.clone(),
         })
     }
+    fn prepare_owned_captured(
+        &self,
+        metadata: &dm_ir::ProcedureMetadata,
+        parsed: dm_tree::frontend::ParsedBody<'_>,
+        context: &AbiContext<'_>,
+    ) -> Result<(crate::procedure_policy::PreparedUnit, dm_syntax::Item), String> {
+        let body = self.validate(context.identity, metadata, context.symbols, context.origin)?;
+        self.frontend
+            .validate_parsed_body(&parsed, body)
+            .map_err(|error| error.message)?;
+        let unit = self.unit(context.identity)?;
+        let mut header = parsed.into_item();
+        let executable_body =
+            dm_tree::settings::strip_setting_items(std::mem::take(&mut header.children));
+        Ok((
+            crate::procedure_policy::PreparedUnit {
+                inputs: unit.inputs.clone(),
+                executable_body,
+                abi: unit.abi.clone(),
+            },
+            header,
+        ))
+    }
     fn inputs(
         &self,
         identity: UnitIdentity,

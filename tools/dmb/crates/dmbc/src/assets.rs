@@ -299,7 +299,7 @@ fn project_resource_rows(
                 "resource alias/runtime content identity mismatch",
             )));
         }
-        named.push(&input.named);
+        named.push(input.named.as_view());
         let content = if let Some(rows) = validated {
             let row = rows
                 .get(*ordinal)
@@ -349,8 +349,8 @@ fn project_resource_rows(
             .into(),
         });
     }
-    let rsc = byond_dmb::rsc::named_archive_encoded(&named)
-        .map_err(ResourceOutputError::InvalidPayload)?;
+    let rsc =
+        byond_dmb::rsc::named_views_encoded(&named).map_err(ResourceOutputError::InvalidPayload)?;
     Ok(ResourceProjection {
         archive: ResourceArchive::Captured(rsc),
         records,

@@ -282,7 +282,7 @@ fn encoded_record_requires_current_source_digest_and_retains_encoded_bytes() {
             archive_name: "picture.png".into(),
             disk_path: PathBuf::from("game/picture.png"),
             content_digest: Sha256::digest(b"encoded").into(),
-            named,
+            named: named.into(),
         },
         source_digest: Sha256::digest(b"source").into(),
     }];
@@ -350,3 +350,30 @@ fn candidate_io_failure_never_becomes_a_negative_lookup() {
 mod digest_reuse;
 #[path = "tests/capture_literal_visit_tests.rs"]
 mod literal_visit;
+
+#[test]
+fn raw_capture_retains_the_provider_payload_allocation() {
+    struct Shared(Arc<[u8]>);
+    impl CaptureProvider for Shared {
+        fn read_candidate(&self, path: &Path) -> io::Result<Option<Arc<[u8]>>> {
+            Ok((path == Path::new("game/a.txt")).then(|| Arc::clone(&self.0)))
+        }
+    }
+    let provider = Shared(Arc::from(&b"captured payload"[..]));
+    let captured = capture_expanded(
+        &plan(),
+        &expanded("/proc/p()\n    return 'a.txt'\n"),
+        CaptureConfig {
+            policy: &policy(),
+            encoded: &[],
+            additional: &[],
+        },
+        &provider,
+    )
+    .unwrap();
+    assert_eq!(captured.resources.inputs.len(), 1);
+    assert!(Arc::ptr_eq(
+        &provider.0,
+        captured.resources.inputs[0].named.shared_data()
+    ));
+}

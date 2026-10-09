@@ -401,7 +401,8 @@ mod tests {
                             0,
                             0,
                         )
-                        .unwrap(),
+                        .unwrap()
+                        .into(),
                     }
                 })
                 .collect(),

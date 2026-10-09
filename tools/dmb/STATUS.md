@@ -282,6 +282,21 @@ code buffer. Census reads retained parts without forcing serialization. This
 change passes release-profile whole-workspace/all-target Clippy with warnings
 denied (36.90 seconds) and 1,478 ordinary library checks (187.13 seconds).
 Its canonical equality includes differently segmented equivalent byte content;
-identical structured entries compare without materialization. A captured-project
-diagnostic is pending. These checks do not substitute for the outstanding
+identical structured entries compare without materialization. The captured-project
+diagnostic passed with unchanged DMB/RSC SHA-256 hashes. Known retained capacity
+at lowering fell from 753.4 to 699.7 MiB and at linking from 738.4 to 684.7 MiB;
+publication remained 270.4 MiB. Its unoptimized census run took 298.06 seconds
+under competing Rust builds, and is not a speed measurement. Diagnostic peak
+private memory was 2,267,754,496 bytes, still above the target; only the frozen
+optimized cohort supplies acceptance timing/memory evidence. These checks do not substitute for the outstanding
 release-profile workspace-test gate or Phase 5 runtime validation.
+
+The next batch consumes parsed executable bodies and static-filter
+storage, issues current procedure images on the shared executor, replaces a
+temporary relocation tree map with a hash map, shares captured resource payloads
+through borrowed RSC encoding, and validates argument records without allocating
+temporary vectors. It has no new daemon or disk-cache functionality. Build
+validation passes: release-profile all-target Clippy in 75.39 seconds and 1,485
+ordinary library checks in 304.43 seconds, zero failures/ignored checks.
+A whole-project diagnostic is pending. No benchmark result is yet attributed
+to this batch.

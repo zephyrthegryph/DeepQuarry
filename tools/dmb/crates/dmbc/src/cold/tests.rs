@@ -164,10 +164,12 @@ fn classified_cold_path_emits_real_class_field_and_procedure() {
         u32::from(u16::MAX),
         "stored modified defaults must not add a class runtime assignment"
     );
-    assert!(image
-        .procs
-        .iter()
-        .any(|proc| image.string(proc.strings[0]) == Some(b"/datum/demo/proc/read".as_slice())));
+    assert!(
+        image
+            .procs
+            .iter()
+            .any(|proc| image.string(proc.strings[0]) == Some(b"/datum/demo/proc/read".as_slice()))
+    );
 }
 #[test]
 fn pinned_cold_startup_interleaves_globals_class_and_distinct_procedure_statics() {

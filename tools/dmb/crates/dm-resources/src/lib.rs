@@ -8,7 +8,9 @@ pub mod native_resolver;
 #[cfg(test)]
 use byond_dmb::rsc::Entry;
 use byond_dmb::rsc::{NamedResource, ResourceKind};
+mod shared_named;
 use sha2::{Digest, Sha256};
+pub use shared_named::NamedResourceInput;
 use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Read};
@@ -26,7 +28,7 @@ pub struct ResourceInput {
     pub archive_name: String,
     pub disk_path: PathBuf,
     pub content_digest: [u8; 32],
-    pub named: NamedResource,
+    pub named: NamedResourceInput,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -188,7 +190,7 @@ impl ResourceSet {
                 archive_name: request.archive_name,
                 disk_path: request.disk_path,
                 content_digest,
-                named,
+                named: named.into(),
             });
         }
         Ok(Self {
@@ -201,9 +203,9 @@ impl ResourceSet {
         let resources = self
             .inputs
             .iter()
-            .map(|input| &input.named)
+            .map(|input| input.named.as_view())
             .collect::<Vec<_>>();
-        byond_dmb::rsc::named_archive_bytes(&resources)
+        byond_dmb::rsc::named_views_encoded(&resources).map(byond_dmb::rsc::EncodedRsc::into_bytes)
     }
 }
 
@@ -251,7 +253,10 @@ mod tests {
         );
         assert_eq!(a.rsc_bytes().unwrap(), b.rsc_bytes().unwrap());
         let decoded = byond_dmb::rsc::read_all(&mut a.rsc_bytes().unwrap().as_slice()).unwrap();
-        assert_eq!(decoded, vec![Entry::Named(a.inputs[0].named.clone())]);
+        assert_eq!(
+            decoded,
+            vec![Entry::Named(a.inputs[0].named.to_owned_named())]
+        );
         fs::write(second.join("test.png"), b"two").unwrap();
         let changed = ResourceSet::load([request(second.join("test.png"))]).unwrap();
         assert_eq!(

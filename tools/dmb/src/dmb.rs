@@ -4,7 +4,7 @@
 //! Unknown fields retain their exact numeric values. Procedure bytecode is
 //! stored as list words; semantic opcode decoding is a separate layer.
 use crate::hash::nqcrc;
-use crate::ids::{ResourceId, NONE};
+use crate::ids::{NONE, ResourceId};
 use std::collections::{HashMap, HashSet};
 use std::io::{self, ErrorKind};
 
@@ -17,13 +17,13 @@ use records::crypt_string;
 #[path = "dmb_write.rs"]
 mod writing;
 pub use records::{
-    mob_sight, Class, ClassInterface, DmString, GridRun, Header, Instance, MapObject, MobType,
-    Proc, ProcSource, ResourceRef, Variable, World, WorldViewEncoding,
+    Class, ClassInterface, DmString, GridRun, Header, Instance, MapObject, MobType, Proc,
+    ProcSource, ResourceRef, Variable, World, WorldViewEncoding, mob_sight,
 };
 pub use writing::EncodedDmb;
 #[path = "dmb_resources.rs"]
 mod resource_attachment;
-pub use resource_attachment::{attach_resource_refs, ResourceAttachment, ResourceLookup};
+pub use resource_attachment::{ResourceAttachment, ResourceLookup, attach_resource_refs};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dmb {
@@ -232,15 +232,15 @@ impl Dmb {
                 }
             }
             if changed.contains(&proc_.code_locals_args[2]) {
-                let arguments = self
-                    .proc_arguments(index)
+                let mut arguments = self
+                    .proc_arguments_iter(index)
                     .ok_or_else(|| invalid("malformed proc argument list"))?;
-                if arguments.iter().any(|arg| {
+                if arguments.clone().any(|arg| {
                     arg.variable_id != NONE && arg.variable_id as usize >= self.variables.len()
                 }) {
                     return Err(invalid("proc argument contains invalid VarID"));
                 }
-                if arguments.iter().any(|arg| {
+                if arguments.any(|arg| {
                     arg.source_expression_index().is_some_and(|reference| {
                         usize::from(reference) >= self.proc_references.len()
                     })
@@ -349,16 +349,16 @@ impl Dmb {
             if locals.iter().any(|&id| !in_table(id, self.variables.len())) {
                 return Err(invalid("proc locals list contains invalid VarID"));
             }
-            let arguments = self
-                .proc_arguments(proc_index)
+            let mut arguments = self
+                .proc_arguments_iter(proc_index)
                 .ok_or_else(|| invalid("malformed proc argument list"))?;
             if arguments
-                .iter()
+                .clone()
                 .any(|arg| !in_table(arg.variable_id, self.variables.len()))
             {
                 return Err(invalid("proc argument contains invalid VarID"));
             }
-            if arguments.iter().any(|arg| {
+            if arguments.any(|arg| {
                 arg.source_expression_index()
                     .is_some_and(|index| usize::from(index) >= self.proc_references.len())
             }) {
@@ -493,6 +493,15 @@ impl Dmb {
     }
 
     pub fn proc_arguments(&self, proc_index: usize) -> Option<Vec<ProcArgument>> {
+        self.proc_arguments_iter(proc_index).map(Iterator::collect)
+    }
+
+    /// Decode argument records directly from the retained list without allocating
+    /// a second argument vector. Cloning the iterator preserves validation order.
+    pub fn proc_arguments_iter(
+        &self,
+        proc_index: usize,
+    ) -> Option<impl ExactSizeIterator<Item = ProcArgument> + Clone + '_> {
         if self.is_reserved_proc_slot(proc_index) {
             return None;
         }
@@ -501,17 +510,12 @@ impl Dmb {
         if words.len() % 4 != 0 {
             return None;
         }
-        Some(
-            words
-                .chunks_exact(4)
-                .map(|arg| ProcArgument {
-                    type_flags: arg[0],
-                    value_source: arg[1],
-                    variable_id: arg[2],
-                    reserved: arg[3],
-                })
-                .collect(),
-        )
+        Some(words.chunks_exact(4).map(|arg| ProcArgument {
+            type_flags: arg[0],
+            value_source: arg[1],
+            variable_id: arg[2],
+            reserved: arg[3],
+        }))
     }
 
     pub fn argument_source_proc_id(&self, argument: &ProcArgument) -> Option<u32> {

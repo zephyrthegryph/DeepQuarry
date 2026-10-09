@@ -442,10 +442,10 @@ impl<P: CaptureProvider> Capture<'_, P> {
         } else if self.config.policy.raw_supported(&request.archive_name) {
             ResourceInput {
                 content_digest: source_digest,
-                named: byond_dmb::rsc::NamedResource::from_data(
+                named: crate::NamedResourceInput::from_shared_data(
                     crate::kind_for_name(&request.archive_name).as_byte(),
                     request.archive_name.as_bytes().to_vec(),
-                    bytes.to_vec(),
+                    Arc::clone(&bytes),
                     0,
                     0,
                 )
