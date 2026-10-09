@@ -781,16 +781,15 @@ CAPABILITIES(/datum/lleill_contact_review)
 		return
 
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins significantly shifting their form."))
-	task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(revert_beast_form_living_done), done_args = list(), on_fail = PROC_REF(revert_beast_form_living_failed), fail_args = list())
+	perform_op(src, src, "revert_beast_form", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return TRUE
 
-/mob/living/proc/revert_beast_form_living_done()
+/mob/living/proc/revert_beast_form_living_done(datum/act/op/A)
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " has reverted to their original form."))
 	revert_beast_tf()
 
-/mob/living/proc/revert_beast_form_living_failed()
+/mob/living/proc/revert_beast_form_living_failed(datum/act/op/A)
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " ceases shifting their form."))
-	return 0
 
 /mob/living/proc/revert_beast_tf()
 	if(!tf_mob_holder)
