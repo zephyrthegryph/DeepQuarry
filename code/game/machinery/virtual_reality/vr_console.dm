@@ -40,9 +40,9 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(vr_sleeper_emp))))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("vr_sleeper_scan", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_scan)))
-	op("vr_sleeper_enter", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), when(req(PROC_REF(drag_meant_holds))), needs(req(PROC_REF(vr_entry_ready), because = PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(interaction_enter)))
+	op("vr_sleeper_enter", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), when(req(PROC_REF(drag_meant))), needs(req_bool(PROC_REF(vr_entry_ready), because = PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(interaction_enter)))
 	op("vr_sleeper_eject", menu(), label("Eject VR Capsule"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
-	op("vr_sleeper_climb_in", menu(), label("Enter VR Capsule"), needs(req_adjacent(), req_capable(), req(PROC_REF(vr_entry_ready), because = PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_climb_in)))
+	op("vr_sleeper_climb_in", menu(), label("Enter VR Capsule"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(vr_entry_ready), because = PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_climb_in)))
 
 /obj/machinery/vr_sleeper/perfect
 	perfect_replica = TRUE
@@ -98,12 +98,6 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	if(occupant)
 		. += span_notice("[occupant] is inside.")
 
-/// Requirement (was REQ_* drag_meant): the legacy check answers TRUE to pass.
-/obj/machinery/vr_sleeper/proc/drag_meant_holds(datum/act/op/A)
-	var/mob/typed_held = A.held
-	var/answer = drag_meant(A.actor, src, typed_held)
-	return !istext(answer) && !!answer
-
 /obj/machinery/vr_sleeper/proc/interaction_scan(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
@@ -125,8 +119,10 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	return OP_DECLINE
 
 /// The old MouseDrop_T guard for the dragged mob.
-/obj/machinery/vr_sleeper/proc/drag_meant(mob/actor, atom/target, mob/dropping)
-	return isliving(dropping)
+/obj/machinery/vr_sleeper/proc/drag_meant(datum/act/op/A)
+	if(isliving(A.held))
+		return null
+	return /datum/msg/req_failed
 
 /obj/machinery/vr_sleeper/proc/interaction_enter(datum/act/op/A)
 	go_in_timed_done(A.held, A.actor)

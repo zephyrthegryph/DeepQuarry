@@ -119,12 +119,12 @@ TRACKED(/obj/structure/reflector, admin)
 	return 2
 
 CAPABILITIES(/obj/structure/reflector)
-	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(reflector_not_admin_holds), because = PROC_REF(reflector_not_admin_refusal))), then(PROC_REF(interaction_item)))
-	op("dismantle", tool(TOOL_WRENCH), label("Dismantle"), when(PROC_REF(can_be_deconstructed)), needs(req(PROC_REF(not_anchored), because = MSG(reflector/unweld_first))),
+	op("item", item(/obj/item), label("Use"), needs(req_bool(PROC_REF(reflector_not_admin_holds), because = PROC_REF(reflector_not_admin_refusal))), then(PROC_REF(interaction_item)))
+	op("dismantle", tool(TOOL_WRENCH), label("Dismantle"), when(PROC_REF(can_be_deconstructed)), needs(req_bool(PROC_REF(not_anchored), because = MSG(reflector/unweld_first))),
 		begins(MSG(reflector/dismantling)), wait(2 SECONDS), then(PROC_REF(dismantled)))
 	op("weld_down", lit_welder(fuel = 1), label("Weld to the floor"), when(PROC_REF(not_anchored)), begins(MSG(reflector/welding_down), blind = span_hear("You hear welding.")), wait(2 SECONDS), then(PROC_REF(welded_down)))
 	op("cut_free", lit_welder(fuel = 1), label("Cut free"), when(nameof(anchored)), priority(OP_PRIORITY_PART + 1), then(PROC_REF(cut_free)))
-	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Rotate"), when(req(PROC_REF(reflector_finished_holds))), then(PROC_REF(interaction_alt)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Rotate"), when(req_bool(PROC_REF(reflector_finished_holds))), then(PROC_REF(interaction_alt)))
 
 /obj/structure/reflector/proc/reflector_not_admin(mob/actor, atom/target, obj/item/held)
 	return !admin

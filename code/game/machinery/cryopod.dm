@@ -302,9 +302,9 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/cryopod)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cryopod_occupied))
-	op("cryopod_insert_grab", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT - 1), label("Put grabbed victim in"), needs(req(PROC_REF(can_take_occupant_holds), because = PROC_REF(can_take_occupant_refusal))), then(PROC_REF(interaction_insert_grab)))
+	op("cryopod_insert_grab", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT - 1), label("Put grabbed victim in"), needs(req(PROC_REF(can_take_occupant))), then(PROC_REF(interaction_insert_grab)))
 	op("cryopod_eject", menu(), label("Eject Pod"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
-	op("cryopod_enter", menu(), label("Enter Pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(self_entry_allowed), silent = TRUE), req(PROC_REF(can_enter_holds), because = PROC_REF(can_enter_refusal))), starts(PROC_REF(self_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_enter)))
+	op("cryopod_enter", menu(), label("Enter Pod"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(self_entry_allowed), silent = TRUE), req(PROC_REF(can_enter))), starts(PROC_REF(self_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_enter)))
 	op("cryopod_drag_in", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put in pod"), then(PROC_REF(interaction_drag_in)))
 
 /obj/machinery/cryopod/proc/work_step(datum/act/timer/A)
@@ -525,43 +525,24 @@ CAPABILITIES(/obj/machinery/cryopod)
 	spent(to_despawn)
 	set_occupant(null)
 
-/// Requirement (was REQ_* can_take_occupant): the legacy check answers TRUE to pass.
-/obj/machinery/cryopod/proc/can_take_occupant_holds(datum/act/op/A)
-	var/answer = can_take_occupant(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_take_occupant_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/cryopod/proc/can_take_occupant_refusal(datum/act/op/A)
-	var/answer = can_take_occupant(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
-/// Requirement (was REQ_* can_enter): the legacy check answers TRUE to pass.
-/obj/machinery/cryopod/proc/can_enter_holds(datum/act/op/A)
-	var/answer = can_enter(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_enter_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/cryopod/proc/can_enter_refusal(datum/act/op/A)
-	var/answer = can_enter(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /// Requirement: the pod must be empty.
-/obj/machinery/cryopod/proc/can_take_occupant(mob/user, atom/target, obj/item/held)
+/obj/machinery/cryopod/proc/can_take_occupant(datum/act/op/A)
 	if(slot_occupant(OCCUPANT_SLOT_CRYOPOD))
 		return "it's in use"
-	return TRUE
+	return null
 
-/// Requirement for climbing in: TRUE, or why the user can't.
-/obj/machinery/cryopod/proc/can_enter(mob/user, atom/target, obj/item/held)
+/// Requirement for climbing in: null, or why the user can't.
+/obj/machinery/cryopod/proc/can_enter(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!check_occupant_allowed(user))
-		return TRUE // the effect declines silently
+		return null // the effect declines silently
 	if(slot_occupant(OCCUPANT_SLOT_CRYOPOD))
 		return "it's in use"
 	if(isliving(user))
 		var/mob/living/L = user
 		if(L.has_buckled_mobs())
 			return "you have other entities attached to yourself, remove them first"
-	return TRUE
+	return null
 
 /obj/machinery/cryopod/proc/interaction_insert_grab(datum/act/op/A)
 	var/mob/user = A.actor

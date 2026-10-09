@@ -125,7 +125,7 @@
 	return 0
 
 CAPABILITIES(/obj/item/deskbell)
-	op("use_wrench", tool(TOOL_WRENCH), needs(req(PROC_REF(on_floor), silent = TRUE)), wait(0.5 SECONDS), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), needs(req_bool(PROC_REF(on_floor), silent = TRUE)), wait(0.5 SECONDS), then(PROC_REF(wrench_used)))
 
 /// Requirement: the bell lies on a turf (not in a hand or a bag).
 /obj/item/deskbell/proc/on_floor(datum/act/op/A)

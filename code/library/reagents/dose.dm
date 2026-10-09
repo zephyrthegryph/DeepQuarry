@@ -37,13 +37,13 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 	var/touch = route == CHEM_TOUCH
 	return list(
 		touch ? op("apply", at_target(/mob/living/carbon/human), when(CAP_PROC(targets_self)), priority(OP_PRIORITY_PART), label("Put on"),
-			needs(req_reagents(1, because = MSG(dose/target_empty)), req(CAP_PROC(limb_there), because = MSG(dose/limb_missing)),
-				req(CAP_PROC(limb_not_robotic), because = MSG(dose/limb_robotic)), req(CAP_PROC(limb_open), because = MSG(dose/limb_covered))),
+			needs(req_reagents(1, because = MSG(dose/target_empty)), req_bool(CAP_PROC(limb_there), because = MSG(dose/limb_missing)),
+				req_bool(CAP_PROC(limb_not_robotic), because = MSG(dose/limb_robotic)), req_bool(CAP_PROC(limb_open), because = MSG(dose/limb_covered))),
 			costs(RES_REAGENTS, CAP_PROC(whole)), consumes(), then(CAP_PROC(put_on)), says(MSG(dose/applied))) : null,
 		touch ? op("stick", at_target(/mob/living/carbon/human), when(cond_not(CAP_PROC(targets_self))), priority(OP_PRIORITY_PART), label("Apply to"),
 			begins(MSG(dose/begin_stick)), wait(CAP_PROC(wait_time)),
-			needs(req_reagents(1, because = MSG(dose/target_empty)), req(CAP_PROC(limb_there), because = MSG(dose/limb_missing)),
-				req(CAP_PROC(limb_not_robotic), because = MSG(dose/limb_robotic)), req(CAP_PROC(limb_open), because = MSG(dose/limb_covered))),
+			needs(req_reagents(1, because = MSG(dose/target_empty)), req_bool(CAP_PROC(limb_there), because = MSG(dose/limb_missing)),
+				req_bool(CAP_PROC(limb_not_robotic), because = MSG(dose/limb_robotic)), req_bool(CAP_PROC(limb_open), because = MSG(dose/limb_covered))),
 			costs(RES_REAGENTS, CAP_PROC(whole)), consumes(), then(CAP_PROC(put_on_other)), says(MSG(dose/stuck))) : null,
 		touch ? null : op("take", at_target(/mob/living/carbon/human), when(CAP_PROC(targets_self)), priority(OP_PRIORITY_PART), label("Swallow"),
 			needs(req_belly_free(), req_mouth_free()),
@@ -54,7 +54,7 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 			costs(RES_REAGENTS, CAP_PROC(whole)), consumes(), then(CAP_PROC(forced_down)), says(MSG(dose/forced))),
 		cuts_into ? op("cut", item(/obj/item), when(CAP_PROC(held_cuts)), label("Cut it up"), then(CAP_PROC(cut_up))) : null,
 		op("dissolve", at_target(), when(CAP_PROC(target_is_open_holder)), priority(OP_PRIORITY_PART), label("Dissolve in it"),
-			needs(req(CAP_PROC(target_has_reagents), because = MSG(dose/target_empty)), req(CAP_PROC(target_has_room), because = MSG(reagent_container/full))),
+			needs(req_bool(CAP_PROC(target_has_reagents), because = MSG(dose/target_empty)), req_bool(CAP_PROC(target_has_room), because = MSG(reagent_container/full))),
 			costs(RES_REAGENTS, CAP_PROC(whole)), consumes(), then(CAP_PROC(dose_dissolved)), says(MSG(dose/dissolved))))
 
 /// (source, sink, mode) of the act's op: the thing into the one it is taken by, put on, or dissolved in.
@@ -107,10 +107,10 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 	return reagents_takeable(target) > 0
 
 /datum/capability/lib/dose/proc/req_belly_free()
-	return req(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly))
+	return req_bool(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly))
 
 /datum/capability/lib/dose/proc/req_mouth_free()
-	return req(CAP_PROC(mouth_free), because = MSG(reagent_container/mouth_blocked))
+	return req_bool(CAP_PROC(mouth_free), because = MSG(reagent_container/mouth_blocked))
 
 /datum/capability/lib/dose/proc/belly_free(datum/act/op/A)
 	var/mob/living/target = A.target

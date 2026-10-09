@@ -27,7 +27,7 @@
 CAPABILITIES(/obj/item/assembly/signaler/anomaly)
 	op("anomaly_analyze", item(/obj/item/analyzer), label("Analyze"), then(PROC_REF(anomaly_analyze)))
 	op("anomaly_scan", item(/obj/item/anomaly_scanner), label("Scan"), then(PROC_REF(anomaly_scan)))
-	op("anomaly_interaction_item", item(/obj/item/anomaly_releaser), label("Release"), needs(req(PROC_REF(releaser_fresh), silent = TRUE)), wait(3 SECONDS), then(PROC_REF(release_done)))
+	op("anomaly_interaction_item", item(/obj/item/anomaly_releaser), label("Release"), needs(req_bool(PROC_REF(releaser_fresh), silent = TRUE)), wait(3 SECONDS), then(PROC_REF(release_done)))
 
 /// Old attackby's analyzer branch: read the field's frequency and code.
 /obj/item/assembly/signaler/anomaly/proc/anomaly_analyze(datum/act/op/A)

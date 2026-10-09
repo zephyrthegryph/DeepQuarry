@@ -382,8 +382,8 @@ CAPABILITIES(/obj/item)
 	owns_many(nameof(possessed_voice))
 	// Every item's defaults (the old /obj/item declare_interactions): a kit customises it (ahead of the rest, last on a suit that may refuse it), an empty
 	// hand picks it up, a pickup-mode bag collects it, a cyborg equips it from its module, and two menu entries.
-	op("kit_customize", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_PART), when(req(PROC_REF(kit_goes_first))), then(PROC_REF(interaction_kit_customize)))
-	op("kit_customize_last", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_DEFAULT - 1), when(req(PROC_REF(kit_goes_last))), then(PROC_REF(interaction_kit_customize)))
+	op("kit_customize", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(kit_goes_first))), then(PROC_REF(interaction_kit_customize)))
+	op("kit_customize_last", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_DEFAULT - 1), when(req_bool(PROC_REF(kit_goes_last))), then(PROC_REF(interaction_kit_customize)))
 	op("move_to_top", menu(), label("Move To Top"), needs(req_adjacent(), req_capable()), then(PROC_REF(move_to_top_effect)))
 	op("toggle_digestable", menu(), label("Toggle Digestable"), needs(req_adjacent(), req_capable(), carried()), then(PROC_REF(toggle_digestable_effect)))
 	op("pick_up_item", hand(), label("Pick up"), when(req_empty_hand()), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(interaction_pick_up_item)))

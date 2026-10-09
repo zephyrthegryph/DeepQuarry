@@ -39,6 +39,7 @@ impl Ctx {
 pub enum Role {
     Condition,
     Requirement,
+    BooleanRequirement,
     Effect,
     Output,
     Contribution,
@@ -50,17 +51,17 @@ pub enum Role {
 impl Role {
     /// Pure roles: evaluated with the no-write, no-publish, no-message guard.
     pub fn pure(&self) -> bool {
-        matches!(self, Role::Condition | Role::Requirement | Role::Output | Role::Contribution | Role::Reason)
+        matches!(self, Role::Condition | Role::Requirement | Role::BooleanRequirement | Role::Output | Role::Contribution | Role::Reason)
     }
 
-    /// Roles that answer TRUE/FALSE (a requirement's reason lives beside it).
+    /// Conditions and explicit transitional requirements answer TRUE/FALSE.
     pub fn boolean(&self) -> bool {
-        matches!(self, Role::Condition | Role::Requirement)
+        matches!(self, Role::Condition | Role::BooleanRequirement)
     }
 
     /// Roles whose result feeds the dependency graph (what they read subscribes).
     pub fn reads_covered(&self) -> bool {
-        matches!(self, Role::Condition | Role::Requirement | Role::Output | Role::Contribution)
+        matches!(self, Role::Condition | Role::Requirement | Role::BooleanRequirement | Role::Output | Role::Contribution)
     }
 }
 
@@ -75,6 +76,7 @@ pub struct HookForm {
 pub const HOOK_FORMS: &[HookForm] = &[
     HookForm { kw: "needs", ctx: Ctx::Op, role: Role::Requirement },
     HookForm { kw: "req", ctx: Ctx::Op, role: Role::Requirement },
+    HookForm { kw: "req_bool", ctx: Ctx::Op, role: Role::BooleanRequirement },
     HookForm { kw: "when", ctx: Ctx::Eval, role: Role::Condition },
     HookForm { kw: "contributes", ctx: Ctx::Eval, role: Role::Contribution },
     HookForm { kw: "contributes_to", ctx: Ctx::Eval, role: Role::Contribution },
@@ -82,6 +84,9 @@ pub const HOOK_FORMS: &[HookForm] = &[
     HookForm { kw: "look_layer", ctx: Ctx::Eval, role: Role::Condition },
     HookForm { kw: "then", ctx: Ctx::Op, role: Role::Effect },
     HookForm { kw: "because", ctx: Ctx::Op, role: Role::Reason },
+    // req_window_usable(remote = ...): the optional remote admission predicate remains boolean.
+    HookForm { kw: "remote", ctx: Ctx::Op, role: Role::Condition },
+    HookForm { kw: "remote_because", ctx: Ctx::Op, role: Role::Reason },
     // `asks(..., repeats = PROC_REF(x))`: asked with the op's context after each answer (pending_op request_done)
     HookForm { kw: "repeats", ctx: Ctx::Op, role: Role::Condition },
     // `asks(..., answerer = PROC_REF(x))`: the mob the question goes to, asked with the op's context when the question opens
@@ -153,7 +158,7 @@ fn hook_ranges(body: &str) -> Vec<(usize, usize, usize)> {
         let prev_ok = start == 0 || !(is_word(b[start - 1]) || b[start - 1] == b'.');
         if prev_ok {
             // `because = PROC_REF(x)` is a named argument, not a call.
-            if word == "because" || word == "when" || word == "repeats" || word == "answerer" {
+            if matches!(word, "because" | "when" | "repeats" | "answerer" | "remote" | "remote_because") {
                 let rest = body[i..].trim_start();
                 if rest.starts_with('=') && !rest.starts_with("==") {
                     out.push((HOOK_FORMS.iter().position(|f| f.kw == word).unwrap(), i, i));
@@ -241,7 +246,7 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
             let kw = HOOK_FORMS[idx].kw;
             // A named `when = PROC_REF(x)` / `because = PROC_REF(x)` covers only the reference written right after its `=`, not the next named
             // argument of the same entry (`adjacency(..., when = nameof(v), changed = PROC_REF(y))`).
-            let covers = if (kw == "because" || kw == "when" || kw == "repeats" || kw == "answerer") && s == e { start >= s && start <= s + 64 && body.get(s..start).is_some_and(|t| t.trim() == "=") } else { start >= s && start < e };
+            let covers = if matches!(kw, "because" | "when" | "repeats" | "answerer" | "remote" | "remote_because") && s == e { start >= s && start <= s + 64 && body.get(s..start).is_some_and(|t| t.trim() == "=") } else { start >= s && start < e };
             if covers && best.map(|b| s >= b.1).unwrap_or(true) {
                 best = Some(r);
             }
@@ -430,6 +435,40 @@ mod context_tests {
         let deliver = found.iter().find(|h| h.proc == "deliver").unwrap();
         assert_eq!(deliver.ctx, Ctx::Notice);
         assert_eq!(deliver.role, Role::Reaction);
+    }
+
+    #[test]
+    fn requirement_protocol_callbacks_keep_purity_reads_and_distinct_return_shapes() {
+        let found = handlers("CAPABILITIES(/datum/probe)\n\top(\"use\", needs(req(PROC_REF(reason)), req_bool(PROC_REF(boolean))), then(PROC_REF(effect)))\n");
+        let reason = found.iter().find(|handler| handler.proc == "reason").unwrap();
+        let boolean = found.iter().find(|handler| handler.proc == "boolean").unwrap();
+        assert_eq!(reason.ctx, Ctx::Op);
+        assert_eq!(reason.role, Role::Requirement);
+        assert!(!reason.role.boolean());
+        assert_eq!(boolean.ctx, Ctx::Op);
+        assert_eq!(boolean.role, Role::BooleanRequirement);
+        assert!(boolean.role.boolean());
+        for handler in [reason, boolean] {
+            assert!(handler.role.pure());
+            assert!(handler.role.reads_covered());
+        }
+    }
+
+    #[test]
+    fn requirement_protocol_window_remote_predicate_stays_boolean_with_its_own_reason() {
+        let found = handlers("CAPABILITIES(/datum/probe)\n\top(\"use\", needs(req_window_usable(remote = PROC_REF(remote_allowed), remote_because = PROC_REF(remote_refusal)), req(PROC_REF(final_requirement))), then(PROC_REF(effect)))\n");
+        let remote = found.iter().find(|handler| handler.proc == "remote_allowed").unwrap();
+        assert_eq!(remote.ctx, Ctx::Op);
+        assert_eq!(remote.role, Role::Condition);
+        assert!(remote.role.boolean());
+        assert!(remote.role.pure());
+        assert!(remote.role.reads_covered());
+        let refusal = found.iter().find(|handler| handler.proc == "remote_refusal").unwrap();
+        assert_eq!(refusal.ctx, Ctx::Op);
+        assert_eq!(refusal.role, Role::Reason);
+        assert!(!refusal.role.boolean());
+        assert_eq!(found.iter().find(|handler| handler.proc == "final_requirement").unwrap().role, Role::Requirement);
+        assert_eq!(found.iter().find(|handler| handler.proc == "effect").unwrap().role, Role::Effect);
     }
 
     #[test]

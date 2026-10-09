@@ -7,7 +7,7 @@ MSG_DEF_SELF(read_once_probe/unavailable, "probe is unavailable")
 	var/effects = 0
 
 CAPABILITIES(/obj/read_once_menu_probe)
-	op("sample", menu(), label("Sample"), needs(req(PROC_REF(allow_sample), because = MSG(read_once_probe/unavailable))), then(PROC_REF(record_sample)))
+	op("sample", menu(), label("Sample"), needs(req_bool(PROC_REF(allow_sample), because = MSG(read_once_probe/unavailable))), then(PROC_REF(record_sample)))
 	op("conditional", menu(), label("Conditional"), when(PROC_REF(allow_sample)), then(PROC_REF(record_sample)))
 
 /obj/read_once_menu_probe/proc/allow_sample(datum/act/op/A)

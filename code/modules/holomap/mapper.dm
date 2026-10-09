@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/mapping_unit)
 	owns_many(nameof(icon_image_cache))
 	owns_many(nameof(map_image_cache))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
-	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_use_mapper_holds), because = PROC_REF(can_use_mapper_refusal))), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), label("Use"), needs(req_bool(PROC_REF(can_use_mapper_holds), because = PROC_REF(can_use_mapper_refusal))), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/mapping_unit/deathsquad

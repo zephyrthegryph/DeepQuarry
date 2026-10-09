@@ -57,7 +57,7 @@
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
 	verb_entry(/mob/living/simple_mob/proc/set_name, hidden = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/set_desc, hidden = TRUE)
-	op("fur_pick", hand(), ungated(), label("Use"), when(req(PROC_REF(fur_pick_possible))), begins(MSG(stardog/fur_look)), asks(/datum/prompt/choice/stardog_fur_pick, fields = list("choices" = computed(PROC_REF(fur_pick_choices))), step = "pick"), starts(PROC_REF(fur_pick_reaches)), wait(3 SECONDS), then(PROC_REF(fur_pick_done)))
+	op("fur_pick", hand(), ungated(), label("Use"), when(req_bool(PROC_REF(fur_pick_possible))), begins(MSG(stardog/fur_look)), asks(/datum/prompt/choice/stardog_fur_pick, fields = list("choices" = computed(PROC_REF(fur_pick_choices))), step = "pick"), starts(PROC_REF(fur_pick_reaches)), wait(3 SECONDS), then(PROC_REF(fur_pick_done)))
 
 /// The one picked is told a hand is coming, as the wait starts.
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_reaches(datum/act/op/A)
@@ -431,7 +431,7 @@ CAPABILITIES(/turf/simulated/floor/outdoors/fur)
 	op("fur_item", item(/obj/item), label("Nothing"), passes(), then(PROC_REF(fur_item_passes)))
 	op("fur_pet", hand(), ungated(), label("Pet"), then(PROC_REF(fur_pet)))
 	op("fur_pet_verb", menu(), label("Pet Fur"), then(PROC_REF(fur_verb_pet)))
-	op("fur_emote_beyond", menu(), label("Emote Beyond"), needs(req_adjacent(), req_capable(), req(PROC_REF(emoter_is_living), silent = TRUE), req(PROC_REF(emoter_not_muted), because = MSG(fur/ic_muted))), asks(/datum/prompt/text, fields = list("title" = "Emote Beyond", "question" = "Type a message to emote.", "encode" = FALSE, "timeout" = 0), step = "message"), then(PROC_REF(fur_verb_emote_beyond)))
+	op("fur_emote_beyond", menu(), label("Emote Beyond"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(emoter_is_living), silent = TRUE), req_bool(PROC_REF(emoter_not_muted), because = MSG(fur/ic_muted))), asks(/datum/prompt/text, fields = list("title" = "Emote Beyond", "question" = "Type a message to emote.", "encode" = FALSE, "timeout" = 0), step = "message"), then(PROC_REF(fur_verb_emote_beyond)))
 
 MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 

@@ -21,7 +21,7 @@ MSG_DEF_SELF(tcomms_console/no_entry, "There is no such log entry on the server 
 CAPABILITIES(/obj/machinery/computer/telecomms/server)
 	interface("TelecommsLogBrowser")
 	tcomms_probe_console()
-	op("delete", ui_act("delete", arg("id", num())), needs(req(PROC_REF(may_delete), because = MSG(tcomms_console/denied)), req(PROC_REF(entry_exists), because = MSG(tcomms_console/no_entry))), then(PROC_REF(ui_act_delete)))
+	op("delete", ui_act("delete", arg("id", num())), needs(req_bool(PROC_REF(may_delete), because = MSG(tcomms_console/denied)), req_bool(PROC_REF(entry_exists), because = MSG(tcomms_console/no_entry))), then(PROC_REF(ui_act_delete)))
 
 /obj/machinery/computer/telecomms/server/probed()
 	return servers

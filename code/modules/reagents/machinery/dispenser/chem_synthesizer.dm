@@ -90,7 +90,7 @@ CAPABILITIES(/obj/machinery/chemical_synthesizer)
 	owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge)
 	op("add_cartridge", item(/obj/item/reagent_containers/chem_disp_cartridge), label("Insert cartridge"), then(PROC_REF(cartridge_added)))
 	op("set_catalyst", item(/obj/item/reagent_containers/glass), label("Set catalyst"),
-		needs(req(PROC_REF(no_catalyst), silent = TRUE), req(PROC_REF(clamp_works), because = MSG(chemical_synthesizer/machine_down)), req(PROC_REF(can_extract_from), because = MSG(chemical_synthesizer/not_open))),
+		needs(req_bool(PROC_REF(no_catalyst), silent = TRUE), req_bool(PROC_REF(clamp_works), because = MSG(chemical_synthesizer/machine_down)), req_bool(PROC_REF(can_extract_from), because = MSG(chemical_synthesizer/not_open))),
 		then(PROC_REF(catalyst_set)))
 	interface("ChemSynthesizer", observe = TRUE)
 	extend("ui_observe", needs(req_operable()))

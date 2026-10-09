@@ -24,7 +24,7 @@
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/customizable)
 	configure(reagents(add = list(REAGENT_ID_NUTRIMENT = 3)))
 	op("add", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), label("Add it"),
-		needs(req(PROC_REF(has_room_for), because = MSG(custom/stuffed)), req(PROC_REF(not_custom_itself), because = PROC_REF(custom_refusal))), then(PROC_REF(ingredient_added)))
+		needs(req_bool(PROC_REF(has_room_for), because = MSG(custom/stuffed)), req_bool(PROC_REF(not_custom_itself), because = PROC_REF(custom_refusal))), then(PROC_REF(ingredient_added)))
 	owns_many(nameof(ingredients))
 
 MSG_DEF_SELF(custom/stuffed, "That's already looking pretty stuffed.")
@@ -137,7 +137,7 @@ MSG_DEF_SELF(custom/recursive, "Sorry, no recursive food.")
 
 // A slice of bread closes it.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/customizable/sandwich)
-	op("top", item(/obj/item/reagent_containers/food/snacks/slice/bread), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(open_topped))), label("Close it"), then(PROC_REF(topped)))
+	op("top", item(/obj/item/reagent_containers/food/snacks/slice/bread), priority(OP_PRIORITY_PART + 1), when(req_bool(PROC_REF(open_topped))), label("Close it"), then(PROC_REF(topped)))
 
 /obj/item/reagent_containers/food/snacks/customizable/sandwich/proc/open_topped(datum/act/op/A)
 	return !addTop // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
@@ -198,7 +198,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/customizable/sandwich)
 
 // Bread + a food = a sandwich, bread + a shard = a sandwich with a shard in it.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/bread)
-	op("start_sandwich", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req(PROC_REF(holds_plain_food), because = MSG(custom/recursive))), label("Make a sandwich"), then(PROC_REF(sandwich_started)))
+	op("start_sandwich", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req_bool(PROC_REF(holds_plain_food), because = MSG(custom/recursive))), label("Make a sandwich"), then(PROC_REF(sandwich_started)))
 	op("shard_sandwich", item(/obj/item/material/shard), priority(OP_PRIORITY_PART), label("Make a sandwich"), then(PROC_REF(shard_sandwich_made)))
 
 /obj/item/reagent_containers/food/snacks/slice/bread/proc/sandwich_started(datum/act/op/A)
@@ -216,7 +216,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bun)
 	op("add_meatball", item(/obj/item/reagent_containers/food/snacks/meatball), priority(OP_PRIORITY_PART + 1), label("Make a burger"), then(PROC_REF(burger_made)))
 	op("add_cutlet", item(/obj/item/reagent_containers/food/snacks/cutlet), priority(OP_PRIORITY_PART + 1), label("Make a burger"), then(PROC_REF(burger_made)))
 	op("add_sausage", item(/obj/item/reagent_containers/food/snacks/sausage), priority(OP_PRIORITY_PART + 1), label("Make a hot dog"), then(PROC_REF(hotdog_made)))
-	op("start_burger", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req(PROC_REF(holds_plain_food), because = MSG(custom/recursive))), label("Make a burger"), then(PROC_REF(burger_started)))
+	op("start_burger", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req_bool(PROC_REF(holds_plain_food), because = MSG(custom/recursive))), label("Make a burger"), then(PROC_REF(burger_started)))
 
 /obj/item/reagent_containers/food/snacks/bun/proc/burger_made(datum/act/op/A)
 	return turn_into(A, /obj/item/reagent_containers/food/snacks/monkeyburger, "You make a burger.", uses_held = TRUE)
@@ -230,14 +230,14 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bun)
 // A flat dough + a food = a pizza.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/flatdough)
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
-	op("start_pizza", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req(PROC_REF(holds_plain_food), because = MSG(custom/recursive))), label("Make a pizza"), then(PROC_REF(pizza_started)))
+	op("start_pizza", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req_bool(PROC_REF(holds_plain_food), because = MSG(custom/recursive))), label("Make a pizza"), then(PROC_REF(pizza_started)))
 
 /obj/item/reagent_containers/food/snacks/sliceable/flatdough/proc/pizza_started(datum/act/op/A)
 	return custom_base_for(A, /obj/item/reagent_containers/food/snacks/customizable/pizza)
 
 // A spaghetti + a food = a pasta dish.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/spagetti)
-	op("start_pasta", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req(PROC_REF(holds_plain_food), because = MSG(custom/recursive))), label("Make a pasta dish"), then(PROC_REF(pasta_started)))
+	op("start_pasta", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req_bool(PROC_REF(holds_plain_food), because = MSG(custom/recursive))), label("Make a pasta dish"), then(PROC_REF(pasta_started)))
 
 /obj/item/reagent_containers/food/snacks/spagetti/proc/pasta_started(datum/act/op/A)
 	return custom_base_for(A, /obj/item/reagent_containers/food/snacks/customizable/pasta)
@@ -252,7 +252,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/spagetti)
 
 // A food put in a bowl starts a soup.
 CAPABILITIES(/obj/item/trash/bowl)
-	op("start_soup", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req(PROC_REF(holds_plain_food), because = MSG(custom/recursive))), label("Make a soup"), then(PROC_REF(soup_started)))
+	op("start_soup", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req_bool(PROC_REF(holds_plain_food), because = MSG(custom/recursive))), label("Make a soup"), then(PROC_REF(soup_started)))
 
 /obj/item/trash/bowl/proc/holds_plain_food(datum/act/op/A)
 	return !istype(A.held, /obj/item/reagent_containers/food/snacks/customizable)

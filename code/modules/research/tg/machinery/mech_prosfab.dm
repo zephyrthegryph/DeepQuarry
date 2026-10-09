@@ -21,9 +21,9 @@ MSG_DEF(prosfab/uploading, "You begin uploading the modification files from %I%.
 	var/species = "Human"
 
 CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
-	op("limb_disk", item(/obj/item/disk/limb), label("Install blueprints"), needs(req(PROC_REF(limb_disk_valid), because = MSG(prosfab/corrupted))),
+	op("limb_disk", item(/obj/item/disk/limb), label("Install blueprints"), needs(req_bool(PROC_REF(limb_disk_valid), because = MSG(prosfab/corrupted))),
 		wait(5 SECONDS), begins(MSG(prosfab/installing)), then(PROC_REF(limb_disk_done)))
-	op("species_disk", item(/obj/item/disk/species), label("Upload species files"), needs(req(PROC_REF(species_disk_valid), because = MSG(prosfab/corrupted))),
+	op("species_disk", item(/obj/item/disk/species), label("Upload species files"), needs(req_bool(PROC_REF(species_disk_valid), because = MSG(prosfab/corrupted))),
 		wait(5 SECONDS), begins(MSG(prosfab/uploading)), then(PROC_REF(species_disk_done)))
 	op("species", ui_act(), asks(/datum/prompt/choice, fields = list("question" = "Select a new species", "title" = "Prosfab Species Selection",
 		"choices" = computed(PROC_REF(species_choices)), "timeout" = 0)), then(PROC_REF(species_chosen)))

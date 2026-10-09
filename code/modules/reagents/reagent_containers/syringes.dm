@@ -75,7 +75,7 @@ CAPABILITIES(/obj/item/reagent_containers/syringe)
 		fills = TRUE)
 	op("pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(syringe_pick_up)))
 	op("stab", at_target(/mob/living), hostile(), stance(I_HURT), label("Stab"),
-		needs(req_not(req_is(nameof(mode), NEEDLE_BROKEN), because = MSG(needle/broken)), req(PROC_REF(may_stab), because = MSG(syringe/too_big))),
+		needs(req_not(req_is(nameof(mode), NEEDLE_BROKEN), because = MSG(needle/broken)), req_bool(PROC_REF(may_stab), because = MSG(syringe/too_big))),
 		then(PROC_REF(stabbed)))
 	owns_many(nameof(viruses))
 	every(2 SECONDS, then(PROC_REF(syringe_step)), when = nameof(used))
@@ -201,8 +201,8 @@ CAPABILITIES(/datum/syringe_contamination)
 
 // The lethal injection syringe draws no blood and does not stab.
 CAPABILITIES(/obj/item/reagent_containers/syringe/ld50_syringe)
-	extend("needle.draw_blood", needs(req(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood))))
-	extend("needle.take_blood", needs(req(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood))))
+	extend("needle.draw_blood", needs(req_bool(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood))))
+	extend("needle.take_blood", needs(req_bool(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood))))
 
 /obj/item/reagent_containers/syringe/ld50_syringe/proc/no_blood_draw(datum/act/op/A)
 	return FALSE

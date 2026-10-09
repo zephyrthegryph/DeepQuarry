@@ -79,7 +79,7 @@ GLOBAL_LIST_EMPTY(occupant_pod_slots)
 
 /datum/capability/lib/occupant_pod/entries()
 	GLOB.occupant_pod_slots[slot] = TRUE
-	var/list/who = list(req(CAP_PROC(victim_fits), because = CAP_PROC(victim_refusal)))
+	var/list/who = list(req_bool(CAP_PROC(victim_fits), because = CAP_PROC(victim_refusal)))
 	var/list/entries = list(
 		slot(slot, accepts = accepts, capacity = 1, exposure = SLOT_EXPOSURE_SEALED),
 		op("put_in", item(/mob/living), gesture(GESTURE_DRAG), label("Put inside"), global.tag(TAG_POD_ENTER),

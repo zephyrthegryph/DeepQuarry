@@ -58,9 +58,9 @@ CAPABILITIES(/obj/machinery/appliance)
 	op("change_output", ui_act("change_output", arg("value")), then(PROC_REF(ui_act_change_output)))
 	op("slot", ui_act("slot", arg("slot", num())), then(PROC_REF(ui_act_slot)))
 	op("remove_menu", ui_act("remove_menu"), then(PROC_REF(ui_act_remove_menu)))
-	op("appliance_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_take_item_holds), because = PROC_REF(can_take_item_refusal))), then(PROC_REF(appliance_interaction_item)))
+	op("appliance_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(can_take_item_holds), because = PROC_REF(can_take_item_refusal))), then(PROC_REF(appliance_interaction_item)))
 	op("appliance_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(appliance_interaction_hand)))
-	op("appliance_toggle_power_effect", menu(), label("Toggle Power"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_toggle_power_verb_holds), because = PROC_REF(can_toggle_power_verb_refusal))), then(PROC_REF(appliance_toggle_power_effect)))
+	op("appliance_toggle_power_effect", menu(), label("Toggle Power"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(can_toggle_power_verb_holds), because = PROC_REF(can_toggle_power_verb_refusal))), then(PROC_REF(appliance_toggle_power_effect)))
 	default_parts()
 
 /// Whether or not the machine is currently operating (cooking its contents).

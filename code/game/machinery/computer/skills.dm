@@ -219,19 +219,10 @@
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
 /// Requirement clause: no message (like the old check) beyond the reason text.
-/obj/machinery/computer/skills/proc/within_contact_range(mob/actor, atom/target, obj/item/held)
-	var/obj/machinery/computer/skills/machine = target
-	return !using_map || (machine.z in using_map.contact_levels) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
-
-/// Requirement (was REQ_* within_contact_range): the legacy check answers TRUE to pass.
-/obj/machinery/computer/skills/proc/within_contact_range_holds(datum/act/op/A)
-	var/answer = within_contact_range(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why within_contact_range_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/computer/skills/proc/within_contact_range_refusal(datum/act/op/A)
-	var/answer = within_contact_range(A.actor, src, A.held)
-	return istext(answer) ? answer : "you're too far away from the station!"
+/obj/machinery/computer/skills/proc/within_contact_range(datum/act/op/A)
+	if(!using_map || (read_once(z) in using_map.contact_levels))
+		return null
+	return "you're too far away from the station!"
 
 /obj/machinery/computer/skills/proc/interaction_open_ui_impl(datum/act/op/A)
 	var/mob/user = A.actor
@@ -241,7 +232,7 @@
 CAPABILITIES(/obj/machinery/computer/skills)
 	ref_one(nameof(active1), /datum/data/record)
 	interface("GeneralRecords", title = "Department Management")
-	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 2), needs(req(PROC_REF(within_contact_range_holds), because = PROC_REF(within_contact_range_refusal))))
+	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 2), needs(req(PROC_REF(within_contact_range))))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("login", ui_act("login", arg("login_type", num())), then(PROC_REF(ui_act_login)))
@@ -267,7 +258,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("del_all", ui_act("del_all"), then(PROC_REF(ui_act_del_all)))
 	op("sync_r", ui_act("sync_r"), then(PROC_REF(ui_act_sync_r)))
-	op("edit_notes", ui_act("edit_notes"), needs(req_adjacent(), req(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default))), step = "notes"), asks(/datum/prompt/yes_no/record_notes_delete, fields = list("record" = computed(PROC_REF(notes_record)), "timeout" = 0), step = "delete_notes", when = PROC_REF(notes_empty)), then(PROC_REF(ui_act_edit_notes)))
+	op("edit_notes", ui_act("edit_notes"), needs(req_adjacent(), req_bool(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default))), step = "notes"), asks(/datum/prompt/yes_no/record_notes_delete, fields = list("record" = computed(PROC_REF(notes_record)), "timeout" = 0), step = "delete_notes", when = PROC_REF(notes_empty)), then(PROC_REF(ui_act_edit_notes)))
 	op("del_r", ui_act("del_r"), then(PROC_REF(ui_act_del_r)))
 	op("d_rec", ui_act("d_rec", arg("d_rec")), then(PROC_REF(ui_act_d_rec)))
 	op("new", ui_act("new"), then(PROC_REF(ui_act_new)))
@@ -275,7 +266,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
 	extend(TAG_UI, then(PROC_REF(ui_records_fresh), early = TRUE))
 	// The record modals (the old ui_modal_opened()/ui_modal_answered()): a field is edited by a pick or by typing, as the field's kind says.
-	op("edit", ui_act("modal:edit", arg("arguments")), needs(req(PROC_REF(edit_field_known), silent = TRUE)),
+	op("edit", ui_act("modal:edit", arg("arguments")), needs(req_bool(PROC_REF(edit_field_known), silent = TRUE)),
 		asks(/datum/prompt/choice/skills_record_edit, fields = list("arguments" = arg_of("arguments"), "inline" = TRUE, "timeout" = 0), step = "edit_choice", when = PROC_REF(edit_by_choice)),
 		asks(/datum/prompt/text/skills_record_edit, fields = list("arguments" = arg_of("arguments"), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)),
 		then(PROC_REF(modal_edit)))

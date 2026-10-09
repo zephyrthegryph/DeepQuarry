@@ -82,7 +82,7 @@ CAPABILITIES(/obj/item/paicard)
 		asks(/datum/prompt/choice, fields = list("title" = "Remove part", "question" = "Which part would you like to remove?", "choices" = computed(PROC_REF(removable_parts)), "timeout" = 0), when = PROC_REF(panel_is_open)),
 		then(PROC_REF(interaction_self)))
 	// the old attack_ghost: a ghost loads itself into an empty card, after a yes (an occupied card falls to the ghost's default)
-	op("inhabit", observer(), label("Inhabit"), needs(req(PROC_REF(can_inhabit), because = PROC_REF(inhabit_refusal))),
+	op("inhabit", observer(), label("Inhabit"), needs(req_bool(PROC_REF(can_inhabit), because = PROC_REF(inhabit_refusal))),
 		asks(/datum/prompt/choice/pai_inhabit, fields = list("question" = computed(PROC_REF(inhabit_question))), when = PROC_REF(card_is_empty)),
 		then(PROC_REF(paicard_observer_inhabit)))
 

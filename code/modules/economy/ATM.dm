@@ -213,7 +213,7 @@ CAPABILITIES(/obj/machinery/atm)
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	op("atm_insert_card", item(/obj/item/card), priority(OP_PRIORITY_DEFAULT - 1), label("Insert card"), then(PROC_REF(atm_insert_card)))
 	op("atm_deposit_cash", item(/obj/item/spacecash), priority(OP_PRIORITY_DEFAULT - 1), label("Deposit cash"), then(PROC_REF(atm_deposit_cash)))
-	op("atm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(not_silicon_user), because = MSG(atm/firewalled))), then(PROC_REF(atm_use)))
+	op("atm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(not_silicon_user), because = MSG(atm/firewalled))), then(PROC_REF(atm_use)))
 
 /obj/machinery/atm/proc/ui_act_insert_card(datum/act/op/A)
 	if(held_card())

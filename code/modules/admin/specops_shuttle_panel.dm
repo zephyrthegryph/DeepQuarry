@@ -25,7 +25,7 @@ CAPABILITIES(/obj/machinery/computer/specops_shuttle)
 	without("ui_open")
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
 	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
-	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(lets_in_holds), because = PROC_REF(lets_in_refusal))), then(PROC_REF(interaction_open_ui_impl)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(lets_in_holds), because = PROC_REF(lets_in_refusal))), then(PROC_REF(interaction_open_ui_impl)))
 
 /// /obj/machinery/computer/specops_shuttle's window data.
 /obj/machinery/computer/specops_shuttle/ui_data(datum/act/eval/A)

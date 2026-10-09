@@ -47,7 +47,7 @@ CAPABILITY_TYPE(storage, CAP_STORAGE, /datum/capability/lib/storage, key = NONE,
 		op("gather", item(/obj/item/storage), when(CAP_PROC(gathers_here)), label("Gather"), \
 			then(CAP_PROC(gather_here)), passes()),
 		op("put_in", item(/obj/item), when(CAP_PROC(takes_it)), label("Put in"), \
-			needs(req(CAP_PROC(fits), because = CAP_PROC(unfit_reason))), \
+			needs(req_bool(CAP_PROC(fits), because = CAP_PROC(unfit_reason))), \
 			then(CAP_PROC(put_in_item))),
 		op("refuse", item(/obj/item), priority(OP_PRIORITY_DEFAULT), when(CAP_PROC(refuses_it)), label("Put in"), \
 			then(CAP_PROC(say_refusal)), passes()),

@@ -23,7 +23,7 @@ TRACKED(/obj/machinery/telecomms, temp)
 
 /// req_tcomms_multitool(): the actor has a multitool for the machine (in hand; an AI's own; a cyborg's at the machine).
 /proc/req_tcomms_multitool()
-	return req(TYPE_PROC_REF(/obj/machinery, actor_has_multitool), because = MSG(tcomms/needs_multitool))
+	return req_bool(TYPE_PROC_REF(/obj/machinery, actor_has_multitool), because = MSG(tcomms/needs_multitool))
 
 /obj/machinery/proc/actor_has_multitool(datum/act/op/A)
 	return !!get_multitool(A.actor)
@@ -217,7 +217,7 @@ TRACKED(/obj/machinery/telecomms, temp)
 CAPABILITIES(/obj/machinery/telecomms/relay)
 	op("receive", ui_act(), toggles(nameof(receiving)), then(PROC_REF(receiving_reported)))
 	op("broadcast", ui_act(), toggles(nameof(broadcasting)), then(PROC_REF(broadcasting_reported)))
-	op("change_listening", ui_act("change_listening"), needs(req(PROC_REF(can_change_level), because = MSG(tcomms/cannot_lock))), then(PROC_REF(ui_act_change_listening)))
+	op("change_listening", ui_act("change_listening"), needs(req_bool(PROC_REF(can_change_level), because = MSG(tcomms/cannot_lock))), then(PROC_REF(ui_act_change_listening)))
 
 /obj/machinery/telecomms/relay/Options_Menu()
 	var/list/data = ..()

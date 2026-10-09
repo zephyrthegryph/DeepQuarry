@@ -74,7 +74,7 @@ CAPABILITIES(/datum/tgui_module)
 	op("pc_shutdown", ui_act("PC_shutdown"), then(PROC_REF(ui_act_pc_shutdown)))
 	op("pc_minimize", ui_act("PC_minimize"), then(PROC_REF(ui_act_pc_minimize)))
 	// A button works while its window does: checked when it is pressed and again when the answer to its question arrives.
-	extend(TAG_UI, needs(req(PROC_REF(ui_usable), silent = TRUE)))
+	extend(TAG_UI, needs(req_bool(PROC_REF(ui_usable), silent = TRUE)))
 
 /// The window the viewer works this module through is still interactive. A button press arrives from that window; the answer to a question it
 /// asked needs the window to be still open (a question is dropped once the window is gone, as the re-run of the old handler was).

@@ -55,7 +55,7 @@ TRACKED(/obj/machinery/item_bank, busy_bank)
 
 CAPABILITIES(/obj/machinery/item_bank)
 	op("use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
-	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Store"), needs(req(PROC_REF(can_store_holds), because = PROC_REF(can_store_refusal))), then(PROC_REF(interaction_store)))
+	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Store"), needs(req_bool(PROC_REF(can_store_holds), because = PROC_REF(can_store_refusal))), then(PROC_REF(interaction_store)))
 
 /// Requirement (was REQ_* can_store): the legacy check answers TRUE to pass.
 /obj/machinery/item_bank/proc/can_store_holds(datum/act/op/A)

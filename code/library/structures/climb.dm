@@ -44,10 +44,10 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 	return list(
 		examine_line(MSG(climb/examine)),
 		op("climb", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(CAP_PROC(is_self_drag)), label("Climb"), \
-			needs(req(CAP_PROC(can_climb), because = CAP_PROC(why_not))), \
+			needs(req_bool(CAP_PROC(can_climb), because = CAP_PROC(why_not))), \
 			begins(MSG(climb/start)), wait(CAP_PROC(climb_time)), on_interrupt(CAP_PROC(climb_interrupted)), then(CAP_PROC(climb_over)), says(CAP_PROC(done_message)), logs(LOG_GAME)),
 		op("climb_menu", menu(), label("Climb"), \
-			needs(req(CAP_PROC(can_climb), because = CAP_PROC(why_not))), \
+			needs(req_bool(CAP_PROC(can_climb), because = CAP_PROC(why_not))), \
 			begins(MSG(climb/start)), wait(CAP_PROC(climb_time)), on_interrupt(CAP_PROC(climb_interrupted)), then(CAP_PROC(climb_over)), says(CAP_PROC(done_message)), logs(LOG_GAME)))
 
 /// The holder is climbable while it has the capability: the trait the old behaviour added.

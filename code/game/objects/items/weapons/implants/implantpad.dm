@@ -23,9 +23,9 @@
 CAPABILITIES(/obj/item/implantpad)
 	interface("ImplantPad", title = "Implant Mini-Computer", input = in_hand())
 	op("take_case", hand(), when(cond_all(PROC_REF(has_case), carried())), then(PROC_REF(case_taken)))
-	op("insert_case", item(/obj/item/implantcase), passes(), when(req(PROC_REF(has_no_case))), then(PROC_REF(case_inserted)))
+	op("insert_case", item(/obj/item/implantcase), passes(), when(req_bool(PROC_REF(has_no_case))), then(PROC_REF(case_inserted)))
 	op("tracking_id", ui_act("tracking_id", arg("delta", num())), then(PROC_REF(ui_act_tracking_id)))
-	extend(TAG_UI, needs(req(PROC_REF(user_conscious), because = MSG(implantpad/unconscious))))
+	extend(TAG_UI, needs(req_bool(PROC_REF(user_conscious), because = MSG(implantpad/unconscious))))
 
 /// An empty hand takes the case out of a pad it carries; a pad that is not carried, or holds none, is picked up as any item.
 /obj/item/implantpad/proc/has_case(datum/act/A)

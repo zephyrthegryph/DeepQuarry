@@ -84,7 +84,7 @@ CAPABILITIES(/obj/item/paper)
 	op("paper_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	op("paper_fold_plane", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Fold into a plane"), then(PROC_REF(interaction_fold_plane)))
 	op("paper_silicon_read", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Read"), then(PROC_REF(paper_silicon_read)))
-	op("wipe_lipstick", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Wipe off lipstick"), when(req(PROC_REF(wipes_other_mouth))),
+	op("wipe_lipstick", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Wipe off lipstick"), when(req_bool(PROC_REF(wipes_other_mouth))),
 		needs(req_adjacent()), begins(MSG(paper/wiping)), wait(1 SECOND), then(PROC_REF(wipe_lipstick_done)))
 	op("paper_rename", menu(), label("Rename paper"), needs(carried()), then(PROC_REF(paper_rename_op)))
 	param(nameof(info), pos = 1)

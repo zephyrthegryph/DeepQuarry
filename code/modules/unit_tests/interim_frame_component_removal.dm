@@ -40,3 +40,25 @@
 	TEST_ASSERT_EQUAL(length(frame.components), 1, "reinstalling registers exactly one actual component")
 	TEST_ASSERT(part in frame.components, "reinstalling registers the same original stock part")
 	TEST_ASSERT_EQUAL(frame.req_components[/obj/item/stock_parts/matter_bin], bin_requirement - 1, "reinstalling satisfies exactly one restored bin requirement")
+
+/// Native requirements preserve the real circuit-board type and component shortage checks.
+/datum/unit_test/interim_frame_native_board_requirement/Run()
+	var/obj/structure/frame/frame = allocate(/obj/structure/frame)
+	var/obj/item/circuitboard/autolathe/board = allocate(/obj/item/circuitboard/autolathe)
+	var/datum/act/op/A = allocate(/datum/act/op)
+	A.actor = allocate(/mob/living/carbon/human)
+	A.holder = frame
+	TEST_ASSERT_EQUAL(frame.native_board_fits(A), "needs a circuit board", "An absent board returns the exact refusal")
+	A.held = board
+	TEST_ASSERT_NULL(frame.native_board_fits(A), "The actual autolathe board is accepted by its matching frame")
+	A.held = allocate(/obj/item/circuitboard)
+	TEST_ASSERT_EQUAL(frame.native_board_fits(A), "this frame does not accept circuit boards of this type", "A real computer circuit board does not fit the machine frame")
+
+/datum/unit_test/interim_frame_native_component_requirement/Run()
+	var/obj/structure/frame/frame = allocate(/obj/structure/frame)
+	var/datum/act/op/A = allocate(/datum/act/op)
+	A.holder = frame
+	frame.req_components = list(/obj/item/stock_parts/matter_bin = 1)
+	TEST_ASSERT_EQUAL(frame.native_has_components(A), MSG(machine_frame/missing_components), "A missing real stock part returns the exact refusal")
+	frame.req_components[/obj/item/stock_parts/matter_bin] = 0
+	TEST_ASSERT_NULL(frame.native_has_components(A), "Satisfying the component requirement permits completion")

@@ -30,21 +30,13 @@
 	authorization = SUP_SEND_SHUTTLE | SUP_ACCEPT_ORDERS
 
 CAPABILITIES(/obj/machinery/computer/supplycomp)
-	op("open_ui", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(lets_in_holds), because = PROC_REF(lets_in_refusal))), then(TYPE_PROC_REF(/atom, op_open_ui)))
+	op("open_ui", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(lets_in))), then(TYPE_PROC_REF(/atom, op_open_ui)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
-/// Requirement (was REQ_* lets_in): the legacy check answers TRUE to pass.
-/obj/machinery/computer/supplycomp/proc/lets_in_holds(datum/act/op/A)
-	var/answer = lets_in(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why lets_in_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/computer/supplycomp/proc/lets_in_refusal(datum/act/op/A)
-	var/answer = lets_in(A.actor, src, A.held)
-	return istext(answer) ? answer : "you don't have the required access to use this console"
-
-/obj/machinery/computer/supplycomp/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
+/obj/machinery/computer/supplycomp/proc/lets_in(datum/act/op/A)
+	if(allowed(A.actor))
+		return null
+	return "you don't have the required access to use this console"
 
 /obj/machinery/computer/supplycomp/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor

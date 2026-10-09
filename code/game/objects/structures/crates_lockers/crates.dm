@@ -149,7 +149,7 @@ MSG_DEF_SELF(crate/inside, "You can't reach the lock from inside.")
 // has the access works the lock of a shut one, as a card does. It holds somebody in only while it is both locked and sealed.
 CAPABILITIES(/obj/structure/closet/crate/secure)
 	lock(starts_locked = nameof(locked))
-	extend(CAP_LOCK, needs(req_is(nameof(opened), FALSE, because = MSG(crate/close_first)), req_is(nameof(broken), FALSE, because = MSG(crate/broken)), req(PROC_REF(actor_outside), because = MSG(crate/inside))))
+	extend(CAP_LOCK, needs(req_is(nameof(opened), FALSE, because = MSG(crate/close_first)), req_is(nameof(broken), FALSE, because = MSG(crate/broken)), req_bool(PROC_REF(actor_outside), because = MSG(crate/inside))))
 	extend("lock.toggle_worn", binds(menu()), label("Toggle Lock"))
 	extend("door", when(cond_not(LOCK_LOCKED)), priority(above("lock.toggle_worn")))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
@@ -157,7 +157,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure)
 	extend("emag.subvert", needs(req_is(nameof(broken), FALSE, because = MSG(emag/already))))
 	op("slice", item(/obj/item/melee/energy/blade), label("Slice open"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_SUBVERT - 1), then(PROC_REF(blade_emagged)))
 	op("lock_with_item", item(/obj/item), label("Toggle Lock"), when(cond_not(nameof(opened))), when(req_credential_worn(null)), priority(OP_PRIORITY_DEFAULT + 1),
-		needs(req_is(nameof(broken), FALSE, because = MSG(crate/broken)), req(PROC_REF(actor_outside), because = MSG(crate/inside))), toggles(LOCK_LOCKED), says(PROC_REF(lock_toggled_message)))
+		needs(req_is(nameof(broken), FALSE, because = MSG(crate/broken)), req_bool(PROC_REF(actor_outside), because = MSG(crate/inside))), toggles(LOCK_LOCKED), says(PROC_REF(lock_toggled_message)))
 	on_change(LOCK_LOCKED, ANY, then(PROC_REF(lock_changed)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(secure_crate_emp)))
 

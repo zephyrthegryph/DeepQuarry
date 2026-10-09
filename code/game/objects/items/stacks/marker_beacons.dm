@@ -30,7 +30,7 @@ TRACKED(/obj/item/stack/marker_beacon, picked_color)
 
 CAPABILITIES(/obj/item/stack/marker_beacon)
 	without("ui_open")
-	op("place", in_hand(), label("Place"), needs(req(PROC_REF(can_place), because = PROC_REF(place_refusal))), then(PROC_REF(marker_beacon_self)))
+	op("place", in_hand(), label("Place"), needs(req_bool(PROC_REF(can_place), because = PROC_REF(place_refusal))), then(PROC_REF(marker_beacon_self)))
 	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), then(PROC_REF(recolor_asked)))
 
 MSG_DEF_SELF(marker_beacon/no_space, "You need more space to place a marker beacon here.")
@@ -122,8 +122,8 @@ MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here
 TRACKED(/obj/structure/marker_beacon, picked_color)
 
 CAPABILITIES(/obj/structure/marker_beacon)
-	op("pick_up", hand(), ungated(), needs(req(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_by_hand)))
-	op("pick_up_into", item(/obj/item/stack/marker_beacon), passes(), needs(req(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_into_stack)))
+	op("pick_up", hand(), ungated(), needs(req_bool(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_by_hand)))
+	op("pick_up_into", item(/obj/item/stack/marker_beacon), passes(), needs(req_bool(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_into_stack)))
 	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), then(PROC_REF(recolor_asked)))
 	param(nameof(color_at_make), pos = 1, apply = PROC_REF(light_beacon))
 

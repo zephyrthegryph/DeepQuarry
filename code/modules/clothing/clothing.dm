@@ -654,7 +654,7 @@ CAPABILITIES(/obj/item/clothing/shoes)
 	op("shoes_shake_out_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Shoes shake out self"), then(PROC_REF(shoes_shake_out_self)))
 	op("shoes_stuff_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Shoes stuff item"), then(PROC_REF(shoes_stuff_item)))
 	op("shoes_toggle_layer_verb", menu(), label("Switch Shoe Layer"), needs(carried(), req_not(req_is(nameof(shoes_under_pants), -1), because = MSG(shoes/layer_locked))), then(PROC_REF(shoes_toggle_layer_verb)))
-	op("shoes_draw_knife_verb", menu(), label("Draw Boot Knife"), needs(carried(), req(PROC_REF(pred_holding_knife_holds), because = PROC_REF(pred_holding_knife_refusal))), then(PROC_REF(shoes_draw_knife_verb)))
+	op("shoes_draw_knife_verb", menu(), label("Draw Boot Knife"), needs(carried(), req_bool(PROC_REF(pred_holding_knife_holds), because = PROC_REF(pred_holding_knife_refusal))), then(PROC_REF(shoes_draw_knife_verb)))
 
 /// Requirement (was REQ_ON pred_holding_knife): the legacy check answers TRUE to pass.
 /obj/item/clothing/shoes/proc/pred_holding_knife_holds(datum/act/op/A)
@@ -1140,7 +1140,7 @@ CAPABILITIES(/obj/item/clothing/under)
 	op("under_toggle_verb", menu(), label("Toggle Suit Sensors"), needs(carried()), then(PROC_REF(under_toggle_verb)))
 	op("under_rollsuit_verb", menu(), label("Roll Down Jumpsuit"), needs(carried(), req_not(req_is(nameof(rolled_down), -1), because = MSG(under/no_roll_down))), then(PROC_REF(under_rollsuit_verb)))
 	op("under_rollsleeves_verb", menu(), label("Roll Up Sleeves"), needs(carried(), req_not(req_is(nameof(rolled_sleeves), -1), because = MSG(under/no_roll_sleeves))), then(PROC_REF(under_rollsleeves_verb)))
-	op("under_holster_verb", menu(), label("Holster"), needs(carried(), req(PROC_REF(pred_has_holster_holds), because = PROC_REF(pred_has_holster_refusal))), then(PROC_REF(under_holster_verb)))
+	op("under_holster_verb", menu(), label("Holster"), needs(carried(), req_bool(PROC_REF(pred_has_holster_holds), because = PROC_REF(pred_has_holster_refusal))), then(PROC_REF(under_holster_verb)))
 
 
 

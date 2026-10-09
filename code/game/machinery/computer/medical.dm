@@ -41,14 +41,14 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 	op("del_r", ui_act("del_r"), then(PROC_REF(ui_act_del_r)))
 	op("d_rec", ui_act("d_rec", arg("d_rec")), then(PROC_REF(ui_act_d_rec)))
 	op("sync_r", ui_act("sync_r"), then(PROC_REF(ui_act_sync_r)))
-	op("edit_notes", ui_act("edit_notes"), needs(req_adjacent(), req(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default))), step = "notes"), asks(/datum/prompt/yes_no/record_notes_delete, fields = list("record" = computed(PROC_REF(notes_record)), "timeout" = 0), step = "delete_notes", when = PROC_REF(notes_empty)), then(PROC_REF(ui_act_edit_notes)))
+	op("edit_notes", ui_act("edit_notes"), needs(req_adjacent(), req_bool(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default))), step = "notes"), asks(/datum/prompt/yes_no/record_notes_delete, fields = list("record" = computed(PROC_REF(notes_record)), "timeout" = 0), step = "delete_notes", when = PROC_REF(notes_empty)), then(PROC_REF(ui_act_edit_notes)))
 	op("new", ui_act("new"), then(PROC_REF(ui_act_new)))
 	op("del_c", ui_act("del_c", arg("del_c", num())), then(PROC_REF(ui_act_del_c)))
 	op("search", ui_act("search", arg("t1", schema_text(4096))), then(PROC_REF(ui_act_search)))
 	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
 	extend(TAG_UI, then(PROC_REF(ui_records_fresh), early = TRUE))
 	// The record modals (the old ui_modal_opened()/ui_modal_answered()): a field is edited by a pick or by typing, as the field's kind says.
-	op("edit", ui_act("modal:edit", arg("arguments")), needs(req(PROC_REF(edit_field_known), silent = TRUE)),
+	op("edit", ui_act("modal:edit", arg("arguments")), needs(req_bool(PROC_REF(edit_field_known), silent = TRUE)),
 		asks(/datum/prompt/choice/medical_record_edit, fields = list("arguments" = arg_of("arguments"), "inline" = TRUE, "timeout" = 0), step = "edit_choice", when = PROC_REF(edit_by_choice)),
 		asks(/datum/prompt/text/medical_record_edit, fields = list("arguments" = arg_of("arguments"), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)),
 		then(PROC_REF(modal_edit)))

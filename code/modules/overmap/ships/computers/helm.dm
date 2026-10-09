@@ -398,7 +398,7 @@ TRACKED(/obj/machinery/computer/ship/helm, autopilot_disabled)
 	var/datum/tgui_module/ship/nav/nav_tgui
 
 CAPABILITIES(/obj/machinery/computer/ship/navigation)
-	op("ship_emote_beyond", menu(), ungated(), reach(REACH_ANY), label("Emote Beyond"), needs(req(PROC_REF(ship_emote_in_view), because = MSG(ship_emote/too_far)), req(PROC_REF(ship_emoter_capable), because = MSG(ship_emote/incapable)), req(PROC_REF(ship_emoter_not_muted), because = MSG(fur/ic_muted))), asks(/datum/prompt/text, step = "message", fields = list("title" = "Emote Beyond", "question" = "Type a message to emote.", "encode" = FALSE, "timeout" = 0)), then(PROC_REF(emote_beyond_entered)))
+	op("ship_emote_beyond", menu(), ungated(), reach(REACH_ANY), label("Emote Beyond"), needs(req_bool(PROC_REF(ship_emote_in_view), because = MSG(ship_emote/too_far)), req_bool(PROC_REF(ship_emoter_capable), because = MSG(ship_emote/incapable)), req_bool(PROC_REF(ship_emoter_not_muted), because = MSG(fur/ic_muted))), asks(/datum/prompt/text, step = "message", fields = list("title" = "Emote Beyond", "question" = "Type a message to emote.", "encode" = FALSE, "timeout" = 0)), then(PROC_REF(emote_beyond_entered)))
 	owns_one(nameof(nav_tgui), starts = /datum/tgui_module/ship/nav)
 
 /obj/machinery/computer/ship/navigation/Initialize(mapload)

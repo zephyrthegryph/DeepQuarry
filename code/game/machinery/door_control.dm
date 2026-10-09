@@ -33,14 +33,14 @@ MSG_DEF_SELF(button/no_lock, "It has no lock to subvert.")
 
 CAPABILITIES(/obj/machinery/button/remote)
 	emag(then(PROC_REF(lock_scorched)), repeatable = TRUE)
-	extend("emag.use", needs(req(PROC_REF(has_access_lock), because = MSG(button/no_lock))))
-	extend("emag.subvert", needs(req(PROC_REF(has_access_lock), because = MSG(button/no_lock))))
+	extend("emag.use", needs(req_bool(PROC_REF(has_access_lock), because = MSG(button/no_lock))))
+	extend("emag.subvert", needs(req_bool(PROC_REF(has_access_lock), because = MSG(button/no_lock))))
 	op("press_hand", hand(), label("Toggle"), wait(0),
-		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req(PROC_REF(can_press), because = MSG(button/spent)), req(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
-	op("press_item", item(/obj/item), label("Toggle"), when(req(PROC_REF(item_presses))), priority(OP_PRIORITY_NORMAL + 1), wait(0),
-		needs(req(PROC_REF(button_works), because = MSG(button/dead)), req(PROC_REF(can_press), because = MSG(button/spent)), req(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
+		needs(req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req_bool(PROC_REF(can_press), because = MSG(button/spent)), req_bool(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
+	op("press_item", item(/obj/item), label("Toggle"), when(req_bool(PROC_REF(item_presses))), priority(OP_PRIORITY_NORMAL + 1), wait(0),
+		needs(req_bool(PROC_REF(button_works), because = MSG(button/dead)), req_bool(PROC_REF(can_press), because = MSG(button/spent)), req_bool(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
 	op("press_silicon", ai(), wait(0),
-		needs(req(PROC_REF(has_network), because = MSG(button/no_route)), req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req(PROC_REF(can_press), because = MSG(button/spent)), req(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
+		needs(req_bool(PROC_REF(has_network), because = MSG(button/no_route)), req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req_bool(PROC_REF(can_press), because = MSG(button/spent)), req_bool(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
 	on_op("press_hand", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED)
 	on_op("press_item", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED)
 	on_op("press_silicon", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED)

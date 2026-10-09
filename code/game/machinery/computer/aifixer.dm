@@ -17,22 +17,12 @@
 /obj/machinery/computer/aifixer/var/restoring = FALSE
 TRACKED_BRIDGED(/obj/machinery/computer/aifixer, restoring, CHANGE_MACHINE_SETTINGS)
 
-/obj/machinery/computer/aifixer/proc/can_use_card(mob/actor, atom/target, obj/item/held)
+/obj/machinery/computer/aifixer/proc/can_use_card(datum/act/op/A)
 	if(!operable())
 		return "this terminal isn't functioning right now"
 	if(restoring)
 		return "terminal is busy restoring [occupier()] right now"
-	return TRUE
-
-/// Requirement (was REQ_* can_use_card): the legacy check answers TRUE to pass.
-/obj/machinery/computer/aifixer/proc/can_use_card_holds(datum/act/op/A)
-	var/answer = can_use_card(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_use_card_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/computer/aifixer/proc/can_use_card_refusal(datum/act/op/A)
-	var/answer = can_use_card(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	return null
 
 /obj/machinery/computer/aifixer/proc/interaction_use_card(datum/act/op/A)
 	var/mob/user = A.actor
@@ -74,11 +64,11 @@ MSG_DEF_SELF(aifixer/screws_stuck_beep, "The screws on the screen won't budge an
 
 CAPABILITIES(/obj/machinery/computer/aifixer)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(restoring), wakes_on = list(nameof(restoring)))
-	extend("disconnect", needs(req(PROC_REF(no_ai_loaded), because = PROC_REF(screws_stuck_reason))))
+	extend("disconnect", needs(req_bool(PROC_REF(no_ai_loaded), because = PROC_REF(screws_stuck_reason))))
 	interface("AiRestorer")
 	op("PRG_beginReconstruction", ui_act("PRG_beginReconstruction"), then(PROC_REF(ui_act_prg_beginreconstruction)))
 	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
-	op("use_card", item(/obj/item/aicard), priority(OP_PRIORITY_DEFAULT - 1), label("Use AI card"), needs(req(PROC_REF(can_use_card_holds), because = PROC_REF(can_use_card_refusal))), then(PROC_REF(interaction_use_card)))
+	op("use_card", item(/obj/item/aicard), priority(OP_PRIORITY_DEFAULT - 1), label("Use AI card"), needs(req(PROC_REF(can_use_card))), then(PROC_REF(interaction_use_card)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/computer/aifixer/ui_data(datum/act/eval/A)

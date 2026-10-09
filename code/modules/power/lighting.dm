@@ -109,7 +109,7 @@ CAPABILITIES(/obj/machinery/light)
 	contributes(STAT_NIGHTSHIFT_ENABLED, PROC_REF(wants_nightshift))
 	contributes(STAT_AREA_EMERGENCY_OFF, PROC_REF(emergency_switched_off))
 	op("insert", item(/obj/item/light), label("Insert bulb"), wait(0),
-		needs(req(PROC_REF(can_take_bulb), because = PROC_REF(bulb_refusal))), then(PROC_REF(insert_held)))
+		needs(req_bool(PROC_REF(can_take_bulb), because = PROC_REF(bulb_refusal))), then(PROC_REF(insert_held)))
 	op("remove", hand(), when(req_empty_hand()), label("Remove bulb"), wait(0), then(PROC_REF(take_bulb)))
 	op("hit", item(/obj/item), hostile(), when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))), wait(0), then(PROC_REF(hit_by)))
 	op("toggle_emergency", remote(), label("Toggle emergency lights"), wait(0), then(PROC_REF(toggle_emergency_lights)))
@@ -1425,7 +1425,7 @@ CAPABILITIES(/obj/machinery/light/flamp)
 	op("add_shade", item(/obj/item/lampshade), when(cond_not(nameof(lamp_shade))), wait(0), then(PROC_REF(shade_on)))
 	op("remove_shade", tool(TOOL_SCREWDRIVER), when(nameof(lamp_shade)), priority(above("open_casing")), wait(0), then(PROC_REF(shade_off)))
 	op("toggle", hand(), label("Toggle"), when(nameof(lamp_shade)), when(req_empty_hand()), priority(above("remove")), wait(0),
-		needs(req(PROC_REF(has_light_in_fitting), because = PROC_REF(no_light_reason))), then(PROC_REF(toggle_lamp)))
+		needs(req_bool(PROC_REF(has_light_in_fitting), because = PROC_REF(no_light_reason))), then(PROC_REF(toggle_lamp)))
 	extend("open_casing", when(cond_not(nameof(lamp_shade))))
 
 /obj/machinery/light/flamp/proc/has_light_in_fitting(datum/act/op/A)

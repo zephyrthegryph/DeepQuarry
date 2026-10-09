@@ -16,7 +16,7 @@
 // A folded bag used in hand is unfolded onto the floor (a refused folded bag keeps its owned injector).
 CAPABILITIES(/obj/item/bodybag)
 	owns_one(nameof(syringe), /obj/item/reagent_containers/syringe)
-	op("unfold", in_hand(), label("Unfold"), needs(req(PROC_REF(can_unfold), because = PROC_REF(unfold_refusal))), then(PROC_REF(unfolded)))
+	op("unfold", in_hand(), label("Unfold"), needs(req_bool(PROC_REF(can_unfold), because = PROC_REF(unfold_refusal))), then(PROC_REF(unfolded)))
 
 /// Unfolding must leave a refused folded bag and its owned injector intact: where it is carried must let it go.
 /obj/item/bodybag/proc/can_unfold(datum/act/op/A)
@@ -92,7 +92,7 @@ CAPABILITIES(/obj/structure/closet/body_bag)
 	op("label", item(/obj/item/pen), label("Label"), priority(OP_PRIORITY_PART),
 		asks(/datum/prompt/text, fields = list("question" = "What would you like the label to be?", "max_len" = MAX_NAME_LEN)), then(PROC_REF(labelled)))
 	op("cut_label", tool(TOOL_WIRECUTTER), label("Cut the tag off"), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(label_cut)), says(MSG(bodybag/cut_label)))
-	op("fold", at_target(/mob/living), gesture(GESTURE_DRAG), label("Fold up"), when(req(PROC_REF(dragged_onto_self))), then(PROC_REF(folded_up)))
+	op("fold", at_target(/mob/living), gesture(GESTURE_DRAG), label("Fold up"), when(req_bool(PROC_REF(dragged_onto_self))), then(PROC_REF(folded_up)))
 
 /// The label the pen was asked for is put on the bag (an empty one leaves the bag as it was).
 /obj/structure/closet/body_bag/proc/labelled(datum/act/op/A)
@@ -216,14 +216,14 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
 	owns_one(nameof(tank), /obj/item/tank)
 	owns_one(nameof(syringe), /obj/item/reagent_containers/syringe)
 	extend("door", when(cond_not(nameof(used))))
-	op("door_used", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(nameof(used)), when(req(PROC_REF(bare_hand_or_menu))),
+	op("door_used", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(nameof(used)), when(req_bool(PROC_REF(bare_hand_or_menu))),
 		confirms("Are you sure you want to open it? It will expire upon opening it."),
-		needs(req(PROC_REF(door_ready), because = MSG(closet/wont_budge))), then(PROC_REF(door_toggled)))
+		needs(req_bool(PROC_REF(door_ready), because = MSG(closet/wont_budge))), then(PROC_REF(door_toggled)))
 	op("scan", item(/obj/item/healthanalyzer), label("Scan"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(analyser_used)))
 	op("insert_injector", item(/obj/item/reagent_containers/syringe), label("Insert injector"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART),
-		needs(req(PROC_REF(can_insert_injector), because = PROC_REF(injector_refusal))), then(PROC_REF(injector_inserted)), says(MSG(cryobag/injector_in)))
+		needs(req_bool(PROC_REF(can_insert_injector), because = PROC_REF(injector_refusal))), then(PROC_REF(injector_inserted)), says(MSG(cryobag/injector_in)))
 	op("remove_injector", tool(TOOL_SCREWDRIVER), label("Remove injector"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), wait(0),
-		needs(req(PROC_REF(injector_removable), because = PROC_REF(remove_refusal))), then(PROC_REF(injector_removed)), says(MSG(cryobag/injector_out)))
+		needs(req_bool(PROC_REF(injector_removable), because = PROC_REF(remove_refusal))), then(PROC_REF(injector_removed)), says(MSG(cryobag/injector_out)))
 
 /obj/structure/closet/body_bag/cryobag/Initialize(mapload)
 	rel_set(src, nameof(tank), new tank_type(null)) // ALLOW(decl): made in nullspace, not in src. It's in nullspace to prevent ejection when the bag is opened.

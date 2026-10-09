@@ -31,7 +31,7 @@ CAPABILITIES(/turf/unsimulated/wall/supermatter)
 	op("supermatter_wall_silicon_examine", remote(), priority(OP_PRIORITY_DEFAULT - 2), label("Examine"), then(PROC_REF(supermatter_wall_examine)))
 	op("supermatter_wall_ghost_examine", observer(), label("Examine"), then(PROC_REF(supermatter_wall_examine)))
 	// The item op is declared first: a held item answers before the bare-hand touch (which would dust the player), and a click that is not on harm intent is refused.
-	op("supermatter_wall_item", item(/obj/item), needs(req(TYPE_PROC_REF(/atom, harm_click_only), because = MSG(harm_click_only))), priority(OP_PRIORITY_DEFAULT - 1), label("Touch with"), then(PROC_REF(supermatter_wall_item)))
+	op("supermatter_wall_item", item(/obj/item), needs(req_bool(TYPE_PROC_REF(/atom, harm_click_only), because = MSG(harm_click_only))), priority(OP_PRIORITY_DEFAULT - 1), label("Touch with"), then(PROC_REF(supermatter_wall_item)))
 	op("supermatter_wall_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(PROC_REF(supermatter_wall_hand)))
 
 /// Old attack_robot: a cyborg touches it only from next to it.

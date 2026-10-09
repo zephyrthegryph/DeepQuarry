@@ -946,7 +946,7 @@ CAPABILITIES(/obj/item/toy/plushie)
 	op("punch", in_hand(), stance(I_HURT), label("Punch"), then(PROC_REF(interaction_punch)))
 	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
 	// the old Name Plushie verb, carried, by someone with a mind (a unique plushie refuses)
-	op("rename", menu(), label("Name Plushie"), needs(carried(), req(PROC_REF(can_rename), because = PROC_REF(rename_refusal))),
+	op("rename", menu(), label("Name Plushie"), needs(carried(), req_bool(PROC_REF(can_rename), because = PROC_REF(rename_refusal))),
 		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the plushie?", "default" = "", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),
 		then(PROC_REF(plushie_named)))
 

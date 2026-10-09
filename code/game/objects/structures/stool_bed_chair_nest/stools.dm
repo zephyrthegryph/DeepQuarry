@@ -122,9 +122,9 @@ TRACKED(/obj/item/stool, base_icon)
 
 CAPABILITIES(/obj/item/stool)
 	op("pad", stack(/obj/item/stack, 1), wait(0), label("Pad"),
-		needs(req(PROC_REF(can_be_padded), because = PROC_REF(padding_refusal))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))
+		needs(req_bool(PROC_REF(can_be_padded), because = PROC_REF(padding_refusal))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))
 	op("unpad", tool(TOOL_WIRECUTTER), wait(0), label("Remove padding"),
-		needs(req(PROC_REF(has_padding), because = MSG(bed/no_padding))), then(PROC_REF(unpadded)), says(MSG(bed/unpadded)))
+		needs(req_bool(PROC_REF(has_padding), because = MSG(bed/no_padding))), then(PROC_REF(unpadded)), says(MSG(bed/unpadded)))
 	op("dismantle", tool(TOOL_WRENCH), wait(0), label("Dismantle"), then(PROC_REF(taken_apart)))
 	param(nameof(material_key), pos = 1)
 	param(nameof(padding_key), pos = 2, apply = PROC_REF(make_of))

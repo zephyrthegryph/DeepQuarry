@@ -435,11 +435,11 @@ CAPABILITIES(/datum/cap_data/wires)
 	owns_many(nameof(assemblies))
 	interface("Wires", state = nameof(GLOB.tgui_physical_state))
 	op("cut", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
-		req(PROC_REF(holds_cutters), because = MSG(wires/need_cutters))), then(PROC_REF(cut_pressed)))
+		req_bool(PROC_REF(holds_cutters), because = MSG(wires/need_cutters))), then(PROC_REF(cut_pressed)))
 	op("pulse", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
-		req(PROC_REF(holds_multitool), because = MSG(wires/need_multitool))), then(PROC_REF(pulse_pressed)))
+		req_bool(PROC_REF(holds_multitool), because = MSG(wires/need_multitool))), then(PROC_REF(pulse_pressed)))
 	op("attach", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
-		req(PROC_REF(can_attach), because = MSG(wires/need_signaler))), then(PROC_REF(attach_pressed)))
+		req_bool(PROC_REF(can_attach), because = MSG(wires/need_signaler))), then(PROC_REF(attach_pressed)))
 
 /datum/cap_data/wires/proc/all_wires()
 	. = list()

@@ -135,7 +135,7 @@ SETTER(/obj/item/clothing/mask/smokable, smoketime)
 CAPABILITIES(/obj/item/clothing/mask/smokable)
 	reagents(nameof(chem_volume))
 	every(2 SECONDS, then(PROC_REF(smokable_step)), when = nameof(lit))
-	op("item_applied", item(/obj/item), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(item_applied)))
+	op("item_applied", item(/obj/item), passes(), when(req_bool(PROC_REF(held_is_another))), then(PROC_REF(item_applied)))
 
 /// A click with the held item on itself is the in-hand use, not an item applied to it.
 /obj/item/clothing/mask/smokable/proc/held_is_another(datum/act/op/A)

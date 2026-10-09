@@ -38,7 +38,7 @@ MSG_DEF_SELF(mecha_cable/no_cable, "There's no more cable on the reel.")
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
 	op("toggle", topic("toggle"), then(PROC_REF(topic_toggle)))
-	op("cut", topic("cut"), needs(req(PROC_REF(reel_has_cable), because = MSG(mecha_cable/no_cable))), asks(/datum/prompt/number/mecha_cable_cut, fields = list("default" = computed(PROC_REF(cable_cut_default)), "subject" = computed(PROC_REF(cable_cut_subject))), step = "length"), then(PROC_REF(topic_cut)))
+	op("cut", topic("cut"), needs(req_bool(PROC_REF(reel_has_cable), because = MSG(mecha_cable/no_cable))), asks(/datum/prompt/number/mecha_cable_cut, fields = list("default" = computed(PROC_REF(cable_cut_default)), "subject" = computed(PROC_REF(cable_cut_subject))), step = "length"), then(PROC_REF(topic_cut)))
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_toggle(datum/act/op/op_act)
 	set_ready_state(!equip_ready)

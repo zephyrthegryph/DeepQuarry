@@ -80,7 +80,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 				req_sink_has_room()),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/pour))),
 		length(taps) ? op("fill", at_target(), when(CAP_PROC(target_is_tap)), priority(OP_PRIORITY_PART), priority(above("reagent_container.pour")), label("Fill"),
-			needs(req(CAP_PROC(sink_open), because = MSG(reagent_container/lid_closed)), req_source_has_reagents(),
+			needs(req_bool(CAP_PROC(sink_open), because = MSG(reagent_container/lid_closed)), req_source_has_reagents(),
 				req_sink_has_room()),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/fill))) : null,
 		(spray || needle || !splash) ? null : op("splash", at_target(), hostile(), stance(I_HURT), when(CAP_PROC(target_splashable)), label("Splash"),
@@ -88,20 +88,20 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/splash))),
 		(spray || needle) ? null : op("drink", at_target(/mob/living), when(cond_all(CAP_PROC(targets_self), CAP_PROC(blow_free))), stance(ingest_hostile ? list(I_HELP, I_DISARM, I_GRAB, I_HURT) : list(I_HELP, I_DISARM, I_GRAB)), priority(OP_PRIORITY_PART), label("Drink"),
 			needs(req_source_open(), req_source_has_reagents(),
-				req(CAP_PROC(can_be_fed), because = MSG(reagent_container/cannot_feed)), req_belly_free(),
+				req_bool(CAP_PROC(can_be_fed), because = MSG(reagent_container/cannot_feed)), req_belly_free(),
 				req_mouth_free()),
 			then(CAP_PROC(fed)), costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/drink))),
 		(feed && !spray && !needle) ? op("feed", at_target(/mob/living), when(cond_all(cond_not(CAP_PROC(targets_self)), CAP_PROC(blow_free))), stance(ingest_hostile ? list(I_HELP, I_DISARM, I_GRAB, I_HURT) : list(I_HELP, I_DISARM, I_GRAB)), priority(OP_PRIORITY_PART + 1), label("Feed"),
 			begins(MSG(reagent_container/begin_feed)), wait(feed_wait),
 			needs(req_source_open(), req_source_has_reagents(),
-				req(CAP_PROC(can_be_fed), because = MSG(reagent_container/cannot_feed)), req_belly_free(),
+				req_bool(CAP_PROC(can_be_fed), because = MSG(reagent_container/cannot_feed)), req_belly_free(),
 				req_mouth_free()),
 			then(CAP_PROC(fed)), costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/feed))) : null,
 		injects ? op("inject", at_target(/mob/living), when(cond_not(CAP_PROC(targets_self))), priority(OP_PRIORITY_PART), label("Inject"),
 			needs(req_source_has_reagents(), req_sink_has_room()),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/inject))) : null,
 		spray ? op("spray", at_target(), when(CAP_PROC(target_sprayable)), priority(OP_PRIORITY_PART), priority(above("reagent_container.fill")), label("Spray"),
-			needs(req_source_open(), req(CAP_PROC(source_has_amount), because = MSG(reagent_container/empty))),
+			needs(req_source_open(), req_bool(CAP_PROC(source_has_amount), because = MSG(reagent_container/empty))),
 			then(CAP_PROC(sprayed)), costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/spray))) : null,
 		(lid && lid_visible) ? look_layer(LOOK_LID, when = cond_not(REAGENT_CONTAINER_LID_OPEN)) : null,
 		look_layer(CAP_PROC(fill_layer)),
@@ -269,19 +269,19 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 
 // Named requirements the transfer ops repeat. Each is the requirement of the like-named proc below, with its refusal.
 /datum/capability/lib/reagent_container/proc/req_source_open()
-	return req(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed))
+	return req_bool(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed))
 
 /datum/capability/lib/reagent_container/proc/req_source_has_reagents()
-	return req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty))
+	return req_bool(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty))
 
 /datum/capability/lib/reagent_container/proc/req_sink_has_room()
-	return req(CAP_PROC(sink_has_room), because = MSG(reagent_container/full))
+	return req_bool(CAP_PROC(sink_has_room), because = MSG(reagent_container/full))
 
 /datum/capability/lib/reagent_container/proc/req_belly_free()
-	return req(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly))
+	return req_bool(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly))
 
 /datum/capability/lib/reagent_container/proc/req_mouth_free()
-	return req(CAP_PROC(mouth_free), because = MSG(reagent_container/mouth_blocked))
+	return req_bool(CAP_PROC(mouth_free), because = MSG(reagent_container/mouth_blocked))
 
 /datum/capability/lib/reagent_container/proc/source_open(datum/act/op/A)
 	var/list/flow = flow_of(A)

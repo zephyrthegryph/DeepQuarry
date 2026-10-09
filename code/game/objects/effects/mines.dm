@@ -488,7 +488,7 @@ MSG_DEF(mine/priming, span_infoplain("You start priming %T%. Hold still!"), "%U%
 	return ..()
 
 CAPABILITIES(/obj/item/mine)
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(10 SECONDS), needs(req(PROC_REF(has_trap), silent = TRUE)), begins(MSG(mine/removing_trap)), then(PROC_REF(screwdriver_act_done)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(10 SECONDS), needs(req_bool(PROC_REF(has_trap), silent = TRUE)), begins(MSG(mine/removing_trap)), then(PROC_REF(screwdriver_act_done)))
 	op("self", in_hand(), label("Use"), begins(PROC_REF(priming_begins)), wait(10 SECONDS), on_interrupt(PROC_REF(priming_failed)), then(PROC_REF(primed)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 

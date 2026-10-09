@@ -44,11 +44,11 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	op("eject_guy", ui_act("eject_guy"), then(PROC_REF(ui_act_eject_guy)))
 	op("toggleUV", ui_act("toggleUV"), then(PROC_REF(ui_act_toggleuv)))
 	op("togglesafeties", ui_act("togglesafeties"), then(PROC_REF(ui_act_togglesafeties)))
-	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
+	extend(TAG_UI, needs(req_bool(PROC_REF(ui_gate), silent = TRUE)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("get_out", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Suit Storage Unit"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_get_out)))
-	op("move_inside", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Hide in Suit Storage Unit"), needs(req_adjacent(), req_capable(), req(PROC_REF(storage_conscious), silent = TRUE), req(PROC_REF(storage_entry_ready), because = PROC_REF(storage_entry_reason))), starts(PROC_REF(storage_entry_started)), wait(1 SECOND), then(PROC_REF(interaction_move_inside)))
-	op("use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Load"), needs(req(PROC_REF(storage_grab_powered), silent = TRUE), req(PROC_REF(storage_grab_ready), because = PROC_REF(storage_grab_reason))), starts(PROC_REF(storage_grab_started)), wait(PROC_REF(storage_load_duration)), then(PROC_REF(interaction_use_item)))
+	op("move_inside", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Hide in Suit Storage Unit"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(storage_conscious), silent = TRUE), req(PROC_REF(can_move_inside))), starts(PROC_REF(storage_entry_started)), wait(1 SECOND), then(PROC_REF(interaction_move_inside)))
+	op("use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Load"), needs(req_bool(PROC_REF(storage_grab_powered), silent = TRUE), req_bool(PROC_REF(storage_grab_ready), because = PROC_REF(storage_grab_reason))), starts(PROC_REF(storage_grab_started)), wait(PROC_REF(storage_load_duration)), then(PROC_REF(interaction_use_item)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 /// Sealed occupant slot (C8a, containment.md §10). Suit, helmet and mask stay
@@ -373,27 +373,21 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	changed(src)
 	return TRUE
 
-/// Requirement for hiding inside: TRUE, or why not.
-/obj/machinery/suit_storage_unit/proc/can_move_inside(mob/user, atom/target, obj/item/held)
+/// Requirement for hiding inside: null, or why not.
+/obj/machinery/suit_storage_unit/proc/can_move_inside(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != CONSCIOUS)
-		return TRUE // the effect declines silently
+		return null // the effect declines silently
 	if(!isopen)
 		return "the unit's doors are shut"
 	if(!ispowered || isbroken)
 		return "the unit is not operational"
 	if(slot_item(OCCUPANT_SLOT_SUIT_STORAGE) || HELMET || SUIT)
 		return "it's too cluttered inside for you to fit in"
-	return TRUE
+	return null
 
 /obj/machinery/suit_storage_unit/proc/storage_conscious(datum/act/op/A)
 	return A.actor.stat == CONSCIOUS
-
-/obj/machinery/suit_storage_unit/proc/storage_entry_reason(datum/act/op/A)
-	var/result = can_move_inside(A.actor, src, A.held)
-	return istext(result) ? result : null
-
-/obj/machinery/suit_storage_unit/proc/storage_entry_ready(datum/act/op/A)
-	return isnull(storage_entry_reason(A))
 
 /obj/machinery/suit_storage_unit/proc/storage_entry_started(datum/act/op/A)
 	act_message(A.actor, null, others = span_info("%U% starts squeezing into the suit storage unit!"))
@@ -518,4 +512,3 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	set_isopen(1)
 	dump_everything()
 	changed(src)
-

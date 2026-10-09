@@ -50,7 +50,7 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 /datum/capability/lib/buckle
 
 /datum/capability/lib/buckle/entries()
-	var/list/who = list(req(CAP_PROC(can_buckle_victim), because = CAP_PROC(why_not)))
+	var/list/who = list(req_bool(CAP_PROC(can_buckle_victim), because = CAP_PROC(why_not)))
 	return list(
 		slot(SLOT_BUCKLE, accepts = list(/mob/living), capacity = slots),
 		examine_line(CAP_PROC(seated_line), when = CAP_PROC(has_occupants)),
@@ -62,7 +62,7 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 			needs(who), wait(delay), then(CAP_PROC(buckle_victim)), says(MSG(buckle/grabbed)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)),
 		op("unbuckle", hand(), when(CAP_PROC(has_occupants)), label("Unbuckle"), \
 			asks(/datum/prompt/choice, fields = list("question" = "Who do you wish to unbuckle?", "choices" = computed(CAP_PROC(occupant_names))), when = CAP_PROC(has_several)), \
-			needs(req(CAP_PROC(has_occupants), because = MSG(buckle/nobody))), then(CAP_PROC(unbuckle_chosen)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)))
+			needs(req_bool(CAP_PROC(has_occupants), because = MSG(buckle/nobody))), then(CAP_PROC(unbuckle_chosen)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)))
 
 // ---- who is being buckled ----
 

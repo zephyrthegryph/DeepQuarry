@@ -102,7 +102,7 @@ TRACKED(/obj/machinery/organ_printer, engineered_organs)
 
 CAPABILITIES(/obj/machinery/organ_printer)
 	op("printer_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(organ_printer_interaction_item)))
-	op("printer_menu", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(printer_menu_allowed), because = PROC_REF(printer_menu_refusal))), asks(/datum/prompt/choice, fields = list("title" = "Bioprinter Menu", "question" = "What do you want to do?", "choices" = list("Print Limbs", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "menu", when = PROC_REF(printer_has_reservoir)), asks(/datum/prompt/choice, fields = list("title" = "Print Choice", "question" = "What would you like to print?", "choices" = computed(PROC_REF(printer_product_choices)), "timeout" = 0), step = "product", when = PROC_REF(printer_choosing_product)), then(PROC_REF(print_choice_made)))
+	op("printer_menu", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(can_open_menu))), asks(/datum/prompt/choice, fields = list("title" = "Bioprinter Menu", "question" = "What do you want to do?", "choices" = list("Print Limbs", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "menu", when = PROC_REF(printer_has_reservoir)), asks(/datum/prompt/choice, fields = list("title" = "Print Choice", "question" = "What would you like to print?", "choices" = computed(PROC_REF(printer_product_choices)), "timeout" = 0), step = "product", when = PROC_REF(printer_choosing_product)), then(PROC_REF(print_choice_made)))
 	op("printer_eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable()), then(PROC_REF(organ_printer_eject_beaker)))
 	climb()
 	default_parts()
@@ -142,15 +142,15 @@ CAPABILITIES(/obj/machinery/organ_printer)
 
 	. = ..()
 
-/// Requirement: TRUE, or why the printer's menu can't be opened.
-/obj/machinery/organ_printer/proc/can_open_menu(mob/user, atom/target, obj/item/held)
+/// Requirement: null, or why the printer's menu can't be opened.
+/obj/machinery/organ_printer/proc/can_open_menu(datum/act/op/A)
 	if(!operable())
-		return TRUE // the effect ignores it silently
+		return null // the effect ignores it silently
 	if(panel_open)
 		return "close the panel first"
 	if(printing)
 		return "it's busy"
-	return TRUE
+	return null
 
 /obj/machinery/organ_printer/proc/printer_product_choices(datum/act/op/A)
 	var/list/possible_list = list()
@@ -330,7 +330,7 @@ MSG_DEF_SELF(flesh_printer/container_loaded, "the printer already has a containe
 	return !read_once(container)
 
 CAPABILITIES(/obj/machinery/organ_printer/flesh)
-	op("load_container", item(/obj/item/reagent_containers/glass), needs(req(PROC_REF(container_available), because = MSG(flesh_printer/container_loaded))), wait(1 SECOND), then(PROC_REF(load_container_done)))
+	op("load_container", item(/obj/item/reagent_containers/glass), needs(req_bool(PROC_REF(container_available), because = MSG(flesh_printer/container_loaded))), wait(1 SECOND), then(PROC_REF(load_container_done)))
 	op("flesh_printer_interaction_item", item(/obj/item), then(PROC_REF(flesh_printer_interaction_item)))
 
 /// Old attackby; anything else falls through to the base printer's.
@@ -353,12 +353,6 @@ CAPABILITIES(/obj/machinery/organ_printer/flesh)
 /obj/machinery/organ_printer/ownership()
 	. = ..()
 	. += owns(nameof(container), policy = OWN_CONTAINED)
-
-/obj/machinery/organ_printer/proc/printer_menu_allowed(datum/act/op/A)
-	return can_open_menu(A.actor, src, A.held_provider()) == TRUE
-
-/obj/machinery/organ_printer/proc/printer_menu_refusal(datum/act/op/A)
-	return can_open_menu(A.actor, src, A.held_provider())
 
 /obj/machinery/organ_printer/proc/printer_has_reservoir(datum/act/op/A)
 	return operable() && !!container

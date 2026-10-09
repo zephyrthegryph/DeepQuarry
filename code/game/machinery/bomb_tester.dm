@@ -41,9 +41,9 @@ CAPABILITIES(/obj/machinery/bomb_tester)
 	op("canister_scan", ui_act("canister_scan"), then(PROC_REF(ui_act_canister_scan)))
 	op("set_can_pressure", ui_act("set_can_pressure", arg("pressure", num())), then(PROC_REF(ui_act_set_can_pressure)))
 	op("start_sim", ui_act("start_sim"), then(PROC_REF(ui_act_start_sim)))
-	extend(TAG_UI, needs(req(PROC_REF(not_simulating), because = MSG(bomb_tester/simulating))))
+	extend(TAG_UI, needs(req_bool(PROC_REF(not_simulating), because = MSG(bomb_tester/simulating))))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
-	op("load_tank", item(/obj/item/tank), priority(OP_PRIORITY_DEFAULT - 1), label("Connect tank"), when(req(PROC_REF(has_free_tank_slot_holds))), then(PROC_REF(interaction_load_tank)))
+	op("load_tank", item(/obj/item/tank), priority(OP_PRIORITY_DEFAULT - 1), label("Connect tank"), when(any_of(req_empty(nameof(tank1)), req_empty(nameof(tank2)))), then(PROC_REF(interaction_load_tank)))
 	op("open", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open)))
 
 MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
@@ -99,14 +99,6 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 	..()
 	var/scan_rating = get_part_rating(/obj/item/stock_parts/scanning_module)
 	simulation_delay = 25 SECONDS - scan_rating SECONDS
-
-/obj/machinery/bomb_tester/proc/has_free_tank_slot(mob/actor, atom/target, obj/item/held)
-	return !tank1 || !tank2
-
-/// Requirement (was REQ_* has_free_tank_slot): the legacy check answers TRUE to pass.
-/obj/machinery/bomb_tester/proc/has_free_tank_slot_holds(datum/act/op/A)
-	var/answer = has_free_tank_slot(A.actor, src, A.held)
-	return !istext(answer) && !!answer
 
 /obj/machinery/bomb_tester/proc/interaction_load_tank(datum/act/op/A)
 	var/mob/user = A.actor

@@ -60,7 +60,7 @@ CAPABILITIES(/obj/item/plastique)
 	space(SPACE_PANEL, door = nameof(open_panel))
 	wires(name = "Explosive wires", count = 1, tools = FALSE)
 	on_wire(WIRE_EXPLODE, cut = PROC_REF(explode_wire), pulse = PROC_REF(explode_wire))
-	op("timer", in_hand(), needs(req_self_held(), req(PROC_REF(timer_item_in_hands), because = MSG(op/not_available)), req_capable()), label("Set explosive timer"),
+	op("timer", in_hand(), needs(req_self_held(), req_bool(PROC_REF(timer_item_in_hands), because = MSG(op/not_available)), req_capable()), label("Set explosive timer"),
 		asks(/datum/prompt/number, keeps = 0, fields = list("title" = "Timer", "question" = "Please set the timer.", "default" = 10, "min_value" = 10, "max_value" = 60000, "step" = 1, "timeout" = 0)), then(PROC_REF(timer_set)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))

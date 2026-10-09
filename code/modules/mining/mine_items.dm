@@ -231,7 +231,7 @@ CAPABILITIES(/obj/item/stack/flag)
 	without("ui_open")
 	op("flag_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(flag_interaction_item)))
 	op("flag_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Knock down"), then(PROC_REF(flag_hand)))
-	op("flag_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Plant"), needs(req(PROC_REF(can_plant_holds), because = PROC_REF(can_plant_refusal))), then(PROC_REF(flag_self)))
+	op("flag_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Plant"), needs(req_bool(PROC_REF(can_plant_holds), because = PROC_REF(can_plant_refusal))), then(PROC_REF(flag_self)))
 
 /obj/item/stack/flag/Initialize(mapload)
 	. = ..()
@@ -324,7 +324,7 @@ CAPABILITIES(/obj/item/stack/flag)
 
 CAPABILITIES(/obj/item/stack/lightpole)
 	without("ui_open")
-	op("lightpole_self", in_hand(), label("Plant"), needs(req(PROC_REF(can_plant_holds), because = PROC_REF(can_plant_refusal))), wait(8 SECONDS), then(PROC_REF(plant_done)))
+	op("lightpole_self", in_hand(), label("Plant"), needs(req_bool(PROC_REF(can_plant_holds), because = PROC_REF(can_plant_refusal))), wait(8 SECONDS), then(PROC_REF(plant_done)))
 
 /obj/item/stack/lightpole/red
 	name = "red flags"

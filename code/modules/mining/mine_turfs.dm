@@ -85,7 +85,7 @@ CAPABILITIES(/turf/simulated/mineral)
 	owns_one(nameof(artifact_find), /datum/artifact_find)
 	owns_one(nameof(geologic_data), /datum/geosample)
 	owns_many(nameof(finds))
-	op("mineral_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Dig"), needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(mineral_item)))
+	op("mineral_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Dig"), needs(req_bool(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(mineral_item)))
 
 /turf/simulated/mineral/ChangeTurf(turf/N, tell_universe, force_lighting_update, preserve_outdoors)
 	clear_ore_effects()

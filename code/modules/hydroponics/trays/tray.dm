@@ -153,19 +153,19 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 	op("tend", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("tk_harvest", tk(), label("Harvest"), then(PROC_REF(hydroponics_tk_harvest)))
 	// a ghost may become the living plant product of a ripe tray (the old attack_ghost: never fell through to the default)
-	op("ghost_harvest", observer(), label("Harvest"), needs(req(PROC_REF(can_ghost_harvest), because = PROC_REF(ghost_harvest_refusal))),
+	op("ghost_harvest", observer(), label("Harvest"), needs(req_bool(PROC_REF(can_ghost_harvest), because = PROC_REF(ghost_harvest_refusal))),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Living plant request", "question" = computed(PROC_REF(ghost_harvest_question)), "timeout" = 0), keeps = TARGET_PRESENT),
 		then(PROC_REF(ghost_harvested)))
-	op("close_lid", hand(), gesture(GESTURE_ALT), label("Toggle lid"), wait(0), when(req(PROC_REF(can_toggle_lid))), then(PROC_REF(interaction_close_lid)))
-	op("remove_label", menu(), label("Remove Label"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))), then(PROC_REF(interaction_remove_label)))
-	op("set_light", menu(), label("Set Light"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))),
+	op("close_lid", hand(), gesture(GESTURE_ALT), label("Toggle lid"), wait(0), when(req_bool(PROC_REF(can_toggle_lid))), then(PROC_REF(interaction_close_lid)))
+	op("remove_label", menu(), label("Remove Label"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req_bool(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))), then(PROC_REF(interaction_remove_label)))
+	op("set_light", menu(), label("Set Light"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req_bool(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))),
 		asks(/datum/prompt/choice, fields = list("question" = "Specify a light level.", "title" = "Light Level", "choices" = list(0,1,2,3,4,5,6,7,8,9,10), "buttons" = FALSE, "timeout" = 0), step = "light"),
 		then(PROC_REF(interaction_set_light)))
-	op("toggle_lid", menu(), label("Toggle Tray Lid"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))), then(PROC_REF(interaction_toggle_lid_verb)))
+	op("toggle_lid", menu(), label("Toggle Tray Lid"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req_bool(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))), then(PROC_REF(interaction_toggle_lid_verb)))
 	op("sample", tool(TOOL_WIRECUTTER), label("Take a sample"), wait(0), then(PROC_REF(sample_cut)))
-	op("bolt", tool(TOOL_WRENCH), label("Anchor"), wait(0), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(boltable))), then(PROC_REF(bolted)))
+	op("bolt", tool(TOOL_WRENCH), label("Anchor"), wait(0), priority(OP_PRIORITY_PART + 1), when(req_bool(PROC_REF(boltable))), then(PROC_REF(bolted)))
 	op("freezer", tool(TOOL_MULTITOOL), label("Toggle cryogenic freezing"), wait(0),
-		needs(req(PROC_REF(is_anchored), because = MSG(hydroponics/anchor_first)), req(PROC_REF(can_freeze), because = MSG(hydroponics/no_freezer))),
+		needs(req_bool(PROC_REF(is_anchored), because = MSG(hydroponics/anchor_first)), req_bool(PROC_REF(can_freeze), because = MSG(hydroponics/no_freezer))),
 		then(PROC_REF(freezer_toggled)))
 
 /// Only a mechanical tray has a lid (the hand binding brings the reach and the actor's state).

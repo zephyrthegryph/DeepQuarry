@@ -70,7 +70,7 @@
 	..()
 
 CAPABILITIES(/obj/item/material/gravemarker)
-	op("self", in_hand(), needs(req(PROC_REF(on_turf), silent = TRUE), req(PROC_REF(spot_free), because = MSG(gravemarker/occupied))),
+	op("self", in_hand(), needs(req_bool(PROC_REF(on_turf), silent = TRUE), req_bool(PROC_REF(spot_free), because = MSG(gravemarker/occupied))),
 		begins(MSG(gravemarker/placing)), wait(1 SECOND), then(PROC_REF(place_done)))
 	op("carve", tool(TOOL_SCREWDRIVER), label("Carve"), wait(0),
 		asks(/datum/prompt/text, fields = list("title" = "Gravestone Naming", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "name"),

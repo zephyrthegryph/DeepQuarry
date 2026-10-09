@@ -348,7 +348,7 @@ TRACKED(/obj/item/clothing/glasses/hud/security/eyepatch, eye)
 
 CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch)
 	held_verb(/obj/item/clothing/glasses/hud/security/eyepatch/proc/switch_eyepatch, SLOT_ANY_CARRIED)
-	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
+	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req_bool(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
 /obj/item/clothing/glasses/hud/security/eyepatch/proc/switch_eyepatch()
 	set name = "Switch Eyepatch"
@@ -382,7 +382,7 @@ TRACKED(/obj/item/clothing/glasses/hud/security/eyepatch2, eye)
 
 CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
 	held_verb(/obj/item/clothing/glasses/hud/security/eyepatch2/proc/switch_eyepatch, SLOT_ANY_CARRIED)
-	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
+	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req_bool(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
 /obj/item/clothing/glasses/hud/security/eyepatch2/proc/switch_eyepatch()
 	set name = "Switch Eyepatch"
@@ -416,7 +416,7 @@ TRACKED(/obj/item/clothing/glasses/hud/health/eyepatch, eye)
 
 CAPABILITIES(/obj/item/clothing/glasses/hud/health/eyepatch)
 	held_verb(/obj/item/clothing/glasses/hud/health/eyepatch/proc/switch_eyepatch, SLOT_ANY_CARRIED)
-	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
+	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req_bool(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
 /obj/item/clothing/glasses/hud/health/eyepatch/proc/switch_eyepatch()
 	set name = "Switch Eyepatch"

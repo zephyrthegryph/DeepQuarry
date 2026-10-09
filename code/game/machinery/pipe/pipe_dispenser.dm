@@ -29,7 +29,7 @@ CAPABILITIES(/obj/machinery/pipedispenser)
 	interface("PipeDispenser")
 	op("p_layer", ui_act("p_layer", arg("p_layer", num())), then(PROC_REF(ui_act_p_layer)))
 	op("dispense_pipe", ui_act("dispense_pipe", arg("bent"), arg("ref")), then(PROC_REF(ui_act_dispense_pipe)))
-	extend(TAG_UI, needs(req(PROC_REF(dispenser_usable), because = MSG(pipedispenser/cannot_use))))
+	extend(TAG_UI, needs(req_bool(PROC_REF(dispenser_usable), because = MSG(pipedispenser/cannot_use))))
 	op("put_back", item(/obj/item/pipe), label("Put back"), wait(0), says(MSG(pipedispenser/put_back)), then(PROC_REF(put_back)))
 	op("put_back_meter", item(/obj/item/pipe_meter), label("Put back"), wait(0), says(MSG(pipedispenser/put_back)), then(PROC_REF(put_back)))
 	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(PROC_REF(anchor_wait)), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
@@ -153,7 +153,7 @@ MSG_DEF(pipedispenser/shoved_back, "You shove %I% back in %T%.", "%U% shoves %I%
 /// Disposal pipes are dragged back into it.
 CAPABILITIES(/obj/machinery/pipedispenser/disposal)
 	op("shove_back", item(/obj/structure/disposalconstruct), gesture(GESTURE_DRAG), label("Put back"), wait(0),
-		needs(req(PROC_REF(loose_and_near), because = MSG(op/not_available))), says(MSG(pipedispenser/shoved_back)), then(PROC_REF(shoved_back)))
+		needs(req_bool(PROC_REF(loose_and_near), because = MSG(op/not_available))), says(MSG(pipedispenser/shoved_back)), then(PROC_REF(shoved_back)))
 
 /// The dragger can act, and the loose pipe and the dragger are both beside it.
 /obj/machinery/pipedispenser/disposal/proc/loose_and_near(datum/act/op/A)

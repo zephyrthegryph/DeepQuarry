@@ -350,7 +350,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 /// Old object verbs.
 CAPABILITIES(/obj/item/cataloguer/compact)
-	op("compact_toggle_effect", menu(), label("Toggle Cataloguer"), needs(carried(), req(PROC_REF(can_toggle_compact_holds), because = PROC_REF(can_toggle_compact_refusal))), then(PROC_REF(compact_toggle_effect_op)))
+	op("compact_toggle_effect", menu(), label("Toggle Cataloguer"), needs(carried(), req_bool(PROC_REF(can_toggle_compact_holds), because = PROC_REF(can_toggle_compact_refusal))), then(PROC_REF(compact_toggle_effect_op)))
 
 /// Requirement (was REQ_* can_toggle_compact): the legacy check answers TRUE to pass.
 /obj/item/cataloguer/compact/proc/can_toggle_compact_holds(datum/act/op/A)

@@ -76,7 +76,7 @@ CAPABILITIES(/obj/vehicle/train/engine)
 	op("engine_remove_key_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Remove key"), then(PROC_REF(interaction_engine_remove_key)))
 	op("engine_start_engine", menu(), label("Start engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), FALSE, because = MSG(vehicle/already_running))), then(PROC_REF(engine_start_engine)))
 	op("engine_stop_engine", menu(), label("Stop engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), TRUE, because = MSG(vehicle/already_stopped))), then(PROC_REF(engine_stop_engine)))
-	op("engine_remove_key", menu(), label("Remove key"), needs(req_on_holder_turf(), req_capable(), req(PROC_REF(pred_engine_has_key_holds), because = PROC_REF(pred_engine_has_key_refusal))), then(PROC_REF(engine_remove_key)))
+	op("engine_remove_key", menu(), label("Remove key"), needs(req_on_holder_turf(), req_capable(), req_bool(PROC_REF(pred_engine_has_key_holds), because = PROC_REF(pred_engine_has_key_refusal))), then(PROC_REF(engine_remove_key)))
 
 /// Requirement (was REQ pred_engine_has_key): the legacy check answers TRUE to pass.
 /obj/vehicle/train/engine/proc/pred_engine_has_key_holds(datum/act/op/A)

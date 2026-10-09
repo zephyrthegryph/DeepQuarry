@@ -150,7 +150,7 @@ MSG_DEF_SELF(papershredder/empty, "it is empty")
 CAPABILITIES(/obj/item/shreddedp)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 	rolls(nameof(color), PROC_REF(roll_color))
-	op("burn", item(/obj/item/flame/lighter), label("Burn"), needs(req(PROC_REF(can_burn), silent = TRUE), req(PROC_REF(lighter_lit), because = MSG(shreddedp/not_lit))),
+	op("burn", item(/obj/item/flame/lighter), label("Burn"), needs(req_bool(PROC_REF(can_burn), silent = TRUE), req_bool(PROC_REF(lighter_lit), because = MSG(shreddedp/not_lit))),
 		begins(MSG(shreddedp/burning)), wait(2 SECONDS), on_interrupt(PROC_REF(burn_interrupted)), then(PROC_REF(burnpaper_done)))
 
 MSG_DEF(shreddedp/burning, span_warning("You hold %I% up to %T%, burning it slowly."), span_warning("%U% holds %I% up to %T%. It looks like %THEYRE% trying to burn it!"))

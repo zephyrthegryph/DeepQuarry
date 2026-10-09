@@ -31,14 +31,14 @@ DECLARE_APPEARANCE(/obj/structure/low_wall, null, list(APPEARANCE_ANY = list(APP
 CAPABILITIES(/obj/structure/low_wall)
 	smoothing()
 	climb()
-	op("use_wrench", tool(TOOL_WRENCH), needs(req(PROC_REF(nothing_on_the_wall), because = PROC_REF(fixture_refusal))), begins(MSG(low_wall/disassembling)),
+	op("use_wrench", tool(TOOL_WRENCH), needs(req_bool(PROC_REF(nothing_on_the_wall), because = PROC_REF(fixture_refusal))), begins(MSG(low_wall/disassembling)),
 		plays(SFX_ITEMS_RATCHET, at_start = TRUE, volume = 2), wait(4 SECONDS), then(PROC_REF(wrench_act_done)))
 	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
-	op("build_grille", stack(/obj/item/stack/rods, 2), label("Use"), needs(req(PROC_REF(grille_supported), because = MSG(low_wall/no_grille)), req(PROC_REF(grille_clear), because = MSG(low_wall/window_in_the_way))),
+	op("build_grille", stack(/obj/item/stack/rods, 2), label("Use"), needs(req_bool(PROC_REF(grille_supported), because = MSG(low_wall/no_grille)), req_bool(PROC_REF(grille_clear), because = MSG(low_wall/window_in_the_way))),
 		starts(PROC_REF(fingerprinted)), begins(MSG(low_wall/assembling_grille)), wait(1 SECOND), then(PROC_REF(grille_built)))
-	op("build_window", stack(/obj/item/stack/material/glass, 4), label("Use"), needs(req(PROC_REF(window_supported), because = MSG(low_wall/no_window)), req(PROC_REF(window_clear), because = MSG(low_wall/window_here))),
+	op("build_window", stack(/obj/item/stack/material/glass, 4), label("Use"), needs(req_bool(PROC_REF(window_supported), because = MSG(low_wall/no_window)), req_bool(PROC_REF(window_clear), because = MSG(low_wall/window_here))),
 		starts(PROC_REF(fingerprinted)), begins(MSG(low_wall/assembling_window)), wait(4 SECONDS), then(PROC_REF(window_built)))
-	op("build_window_cyborg", stack(/obj/item/stack/material/cyborg/glass, 4), label("Use"), needs(req(PROC_REF(window_supported), because = MSG(low_wall/no_window)), req(PROC_REF(window_clear), because = MSG(low_wall/window_here))),
+	op("build_window_cyborg", stack(/obj/item/stack/material/cyborg/glass, 4), label("Use"), needs(req_bool(PROC_REF(window_supported), because = MSG(low_wall/no_window)), req_bool(PROC_REF(window_clear), because = MSG(low_wall/window_here))),
 		starts(PROC_REF(fingerprinted)), begins(MSG(low_wall/assembling_window)), wait(4 SECONDS), then(PROC_REF(window_built)))
 	op("place", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
 	op("place_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Place on wall"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_drag)))

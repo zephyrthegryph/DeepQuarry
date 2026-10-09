@@ -24,9 +24,9 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 	owns_one(nameof(entopic), /datum/entopic, starts = PROC_REF(make_entopic))
 	// Software goes straight into the buyer's NIF: a buyer needs a working one that can take it, and the software's own access.
 	extend("vend", needs(
-		req(PROC_REF(nif_ready), because = MSG(nifsoft_shop/no_nif)),
-		req(PROC_REF(nif_can_take), because = PROC_REF(nif_take_reason)),
-		req(PROC_REF(nif_soft_access), because = MSG(nifsoft_shop/unauthorized))))
+		req_bool(PROC_REF(nif_ready), because = MSG(nifsoft_shop/no_nif)),
+		req_bool(PROC_REF(nif_can_take), because = PROC_REF(nif_take_reason)),
+		req_bool(PROC_REF(nif_soft_access), because = MSG(nifsoft_shop/unauthorized))))
 
 /// The projection the shop shows itself as (owned: made with the shop, deleted with it).
 /obj/machinery/vending/nifsoft_shop/proc/make_entopic(datum/act/A)

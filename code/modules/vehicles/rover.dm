@@ -88,7 +88,7 @@ CAPABILITIES(/obj/vehicle/train/rover/engine)
 	op("rover_engine_key", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert key"), then(PROC_REF(interaction_rover_engine_key)))
 	op("rover_engine_start_engine", menu(), label("Start engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), FALSE, because = MSG(vehicle/already_running))), then(PROC_REF(rover_engine_start_engine)))
 	op("rover_engine_stop_engine", menu(), label("Stop engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), TRUE, because = MSG(vehicle/already_stopped))), then(PROC_REF(rover_engine_stop_engine)))
-	op("rover_engine_remove_key", menu(), label("Remove key"), needs(req_on_holder_turf(), req_capable(), req(PROC_REF(pred_rover_engine_has_key_holds), because = PROC_REF(pred_rover_engine_has_key_refusal))), then(PROC_REF(rover_engine_remove_key)))
+	op("rover_engine_remove_key", menu(), label("Remove key"), needs(req_on_holder_turf(), req_capable(), req_bool(PROC_REF(pred_rover_engine_has_key_holds), because = PROC_REF(pred_rover_engine_has_key_refusal))), then(PROC_REF(rover_engine_remove_key)))
 
 /// Requirement (was REQ pred_rover_engine_has_key): the legacy check answers TRUE to pass.
 /obj/vehicle/train/rover/engine/proc/pred_rover_engine_has_key_holds(datum/act/op/A)

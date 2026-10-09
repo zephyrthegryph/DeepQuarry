@@ -11,7 +11,7 @@
 //!
 //!   What it models as the resolver does (code/engine/parts/resolve.dm): the intents each binding answers (answers(), hostile(), a pinned
 //!   gesture(): a drag answers INTENT_DROP_ONTO, never a click), the tier by value (hostile() yields ATTACK; OP_PRIORITY_PART - 1 is its own
-//!   tier), disjoint stance() sets, when() conjuncts that negate (c / cond_not(c), req_is(K) / req_is(K, FALSE), req(X) is X, graph stages
+//!   tier), disjoint stance() sets, when() conjuncts that negate (c / cond_not(c), req_is(K) / req_is(K, FALSE), req_bool(X) is X, graph stages
 //!   that do not meet), and a constructor's entries its params switch off (`lid ? op(...) : null`, `if(by_hand)`), and binding specificity
 //!   (op_binding_specificity): of two held-item bindings, an item type narrower than /obj/item answers before a tool quality, which answers
 //!   before a broad item (item(/obj/item), whatever acceptance proc gates it), and a deeper item type before a shallower one, so only two
@@ -680,7 +680,7 @@ fn add_cond(op: &mut Op, c: &str) {
     op.conds.push(norm_cond(c));
 }
 
-/// One condition in a canonical spelling, so two spellings of one test compare equal: req(X) is X, req_is(K) is K, req_is(K, FALSE) is
+/// One condition in a canonical spelling, so two spellings of one test compare equal: req_bool(X) is X, req_is(K) is K, req_is(K, FALSE) is
 /// cond_not(K), and a double negation cancels.
 fn norm_cond(c: &str) -> String {
     let c = c.trim();
@@ -721,7 +721,7 @@ fn norm_cond(c: &str) -> String {
             return if negated { format!("cond_not({})", base) } else { base };
         }
     }
-    if let Some(inner) = whole_call(c, "req") {
+    if let Some(inner) = whole_call(c, "req_bool") {
         let args = split_args(inner);
         if args.len() == 1 {
             return norm_cond(&args[0]);
@@ -1323,7 +1323,8 @@ mod tests {
     fn negation() {
         assert!(cond_negates("PANEL_OPEN", "cond_not(PANEL_OPEN)"));
         assert!(cond_negates(&norm_cond("req_is(K)"), &norm_cond("req_is(K,FALSE)")));
-        assert!(cond_negates(&norm_cond("req(PROC_REF(x))"), &norm_cond("cond_not(PROC_REF(x))")));
+        assert!(cond_negates(&norm_cond("req_bool(PROC_REF(x))"), &norm_cond("cond_not(PROC_REF(x))")));
+        assert!(!cond_negates(&norm_cond("req(PROC_REF(x))"), &norm_cond("cond_not(PROC_REF(x))")), "a null-or-reason requirement is not its callback's boolean truth");
         assert!(cond_negates(&norm_cond("cond_not(cond_not(A))"), &norm_cond("cond_not(A)")));
         assert!(cond_negates("req_graph_at(list(S1,S2))", "req_graph_at(list(S3))"));
         assert!(!cond_negates("req_graph_at(list(S1,S2))", "req_graph_at(list(S2))"));

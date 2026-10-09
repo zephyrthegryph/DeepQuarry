@@ -249,7 +249,7 @@ TRACKED(/obj/item/rms, mode_index)
 TRACKED(/obj/item/rms, charge_cost)
 
 CAPABILITIES(/obj/item/rms)
-	op("choose_material", in_hand(), label("Choose material"), needs(req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))),
+	op("choose_material", in_hand(), label("Choose material"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(operator_living), because = MSG(op/not_available))),
 		asks(/datum/prompt/choice/rms_material, keeps = 0), then(PROC_REF(material_chosen)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
 
