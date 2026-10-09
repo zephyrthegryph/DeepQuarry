@@ -244,6 +244,7 @@ FOCUS_STARTED_EPOCH="$(date +%s)"
 focus_on_exit() {
 	local rc=$?
 	trap - EXIT
+	if [ "$(type -t slots_group_release)" = "function" ]; then slots_group_release; fi
 	if [ "$(type -t look_lock_release)" = "function" ]; then look_lock_release; fi
 	if [ "$(type -t cleanup_files)" = "function" ]; then cleanup_files; fi
 	if [ -n "${DQ_FOCUSED_RUN_ID:-}" ] && [ "$(sed -n 's/^state=//p' "$RUN_DIR/$DQ_FOCUSED_RUN_ID.status" 2>/dev/null)" = "running" ]; then
@@ -551,7 +552,7 @@ start_world() { # index
 	W_PID[$i]=$!
 }
 run_worlds() {
-	local began n i waited=0 running jsons=() rc=0 j shard
+	local began n i waited=0 running jsons=() rc=0 j shard W_DONE
 	began="$(date +%s)"
 	W_LABEL=(); W_FOCUS=(); W_SHARD=(); W_PARAMS=()
 	if [ ${#main_group[@]} -gt 0 ]; then add_world main "" "" "${main_group[@]}"; fi
@@ -592,18 +593,54 @@ run_worlds() {
 		unset DQ_KEEP_DERIVED_DME
 		return "$rc"
 	fi
-	for ((i = 1; i < ${#W_LABEL[@]}; i++)); do start_world "$i"; done
-	echo "== worlds: ${#W_LABEL[@]} running"
+	# The other worlds' test_world slots are taken together, in one queue entry (slots_group_acquire): a world never waits for a slot
+	# while a sibling holds one, and two sharded runs cannot each hold part of the budget. The group is clamped to the machine's
+	# capacity; the worlds beyond it start as earlier ones end, each handing its slot back the moment its world exits. World 0 took
+	# its own slot (it queues alone, after its compile) and waits for nothing else.
+	local rest=$(( ${#W_LABEL[@]} - 1 )) next=1 gsize=0 limited=0 started_n=0 reaped=0
+	if [ "$rest" -gt 0 ]; then
+		. tools/dq_machine_slots.sh
+		gsize="$(slots_group_size test_world "$rest")"
+		if [ "$(slots_capacity test_world)" -gt 0 ]; then
+			limited=1
+			[ "$gsize" -lt "$rest" ] && echo "== worlds: $rest more worlds, but at most $gsize test worlds run at once on this machine: the rest start as slots come back"
+			slots_group_acquire test_world "$gsize" "focused ${#W_LABEL[@]} worlds"
+		fi
+	fi
+	echo "== worlds: ${#W_LABEL[@]} total"
+	W_DONE=()
+	for ((i = 0; i < ${#W_LABEL[@]}; i++)); do W_DONE[$i]=0; done
 	while true; do
 		running=0
-		for ((i = 0; i < ${#W_LABEL[@]}; i++)); do
-			if kill -0 "${W_PID[$i]}" 2>/dev/null; then running=$((running + 1)); fi
+		for ((i = 0; i < next; i++)); do
+			[ "${W_DONE[$i]}" -eq 1 ] && continue
+			if kill -0 "${W_PID[$i]}" 2>/dev/null; then
+				running=$((running + 1))
+			else
+				W_DONE[$i]=1
+				# World 0 holds its own slot; every other world used one of the group's.
+				if [ "$i" -gt 0 ] && [ "$limited" -eq 1 ]; then slots_group_release_one; fi
+			fi
 		done
-		[ "$running" -eq 0 ] && break
+		# Start the worlds still waiting for a hand-off slot: one per slot the group holds that no running world uses.
+		while [ "$next" -lt "${#W_LABEL[@]}" ]; do
+			if [ "$limited" -eq 1 ]; then
+				local in_use=0 k
+				for ((k = 1; k < next; k++)); do [ "${W_DONE[$k]}" -eq 0 ] && in_use=$((in_use + 1)); done
+				[ "$in_use" -ge "$gsize" ] && break
+			fi
+			if [ "$limited" -eq 1 ]; then export DQ_SLOTS_PREHELD=test_world; fi
+			start_world "$next"
+			unset DQ_SLOTS_PREHELD
+			next=$((next + 1))
+			running=$((running + 1))
+		done
+		[ "$running" -eq 0 ] && [ "$next" -ge "${#W_LABEL[@]}" ] && break
 		sleep 5
 		waited=$((waited + 5))
 		if [ $((waited % 120)) -eq 0 ]; then echo "== worlds: $(( $(date +%s) - began ))s elapsed, $running of ${#W_LABEL[@]} still running"; fi
 	done
+	slots_group_release 2>/dev/null || true
 	unset DQ_KEEP_DERIVED_DME
 	: >"$combined_log"
 	for ((i = 0; i < ${#W_LABEL[@]}; i++)); do

@@ -205,7 +205,7 @@ semaphore shared by every worktree on the machine (state under `E:/dq-cache/slot
 | Class | Default | Taken by | Count variable |
 |---|---|---|---|
 | `dm_compile` | 2 | every `DreamMaker()` compile (`lib/byond.ts`) | `DQ_SLOTS_DM_COMPILE` |
-| `test_world` | 3 | each unit-test world's DreamDaemon launch (`runIsolatedTestWorld()` in `build.ts`: focused, split, look and sharded worlds) | `DQ_SLOTS_TEST_WORLD` |
+| `test_world` | a third of the CPUs, 2 to 6 (5 on 16) | each unit-test world's DreamDaemon launch (`runIsolatedTestWorld()` in `build.ts`: focused, split, look and sharded worlds) | `DQ_SLOTS_TEST_WORLD` |
 | `cargo` | 1 | every cargo invocation of `build.ts` (analyze, verdigris, dmb-check) | `DQ_SLOTS_CARGO` |
 | `look_state_pin` | 2 | a `dq_focused_test.sh` run holding a look pin, for the whole run | `DQ_SLOTS_LOOK_STATE_PIN` (old name `DQ_LOOK_PIN_SLOTS`) |
 
@@ -215,6 +215,14 @@ semaphore shared by every worktree on the machine (state under `E:/dq-cache/slot
 A holder that crashes does not block anyone: a slot or queue entry whose pid is gone (the Windows pid of a node or bash holder), or whose heartbeat
 (its `owner` file's mtime, touched every 15 s) is older than `DQ_SLOTS_STALE_SEC` (600), is removed by the next waiter. Lock order when a run needs
 several: `look_state_pin`, then `test_world`; `dm_compile` and `cargo` are never held while waiting for another class, so they cannot deadlock.
+
+A run that launches several worlds (a sharded `dm-test`, the look/main/slow worlds of `dq_focused_test.sh`) takes their `test_world` slots **as a
+group**: one queue entry, and the head of the queue takes slots as they free up and starts nothing until it has all it asked for, clamped to the
+class capacity (a group larger than the budget could never be satisfied; `dm-test` clamps `--shards`, and `dq_focused_test.sh` starts the extra
+worlds as earlier ones end). Only the head ever holds part of a group, so two sharded runs cannot each hold part of the budget and wait on each
+other, and a sibling world never waits for a slot while another of the run's worlds holds one. The worlds the run launches carry
+`DQ_SLOTS_PREHELD=test_world` and do not queue again; the run hands a slot back the moment its world exits. Shell: `slots_group_size`,
+`slots_group_acquire`, `slots_group_release_one`; TypeScript: `acquireSlotGroup()`.
 
 ```sh
 bash tools/dq_machine_slots.sh status              # who holds what, who waits
