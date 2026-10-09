@@ -36,55 +36,44 @@ GLOBAL_LIST_INIT(generated_read_roots, list(
 	"system:nightshift"
 ))
 
-/// Chunked read rows; one global initializer assembles the complete table.
-/proc/generated_reads_chunk_0()
-	return list(
-		"/obj/machinery/apc::accessor_user" = list(0,
+/// "<type>::<proc>" = list(rank, list(root id, kind, name id, hop name ids...), ...). Never edited by hand.
+GLOBAL_LIST_INIT(generated_reads_table, list(
+	"/obj/machinery/apc::accessor_user" = list(0,
 		list(1, 1, 1)),
-		"/obj/machinery/apc::actor_busy" = list(0,
+	"/obj/machinery/apc::actor_busy" = list(0,
 		list(2, 0, 2, 3),
 		list(2, 0, 3),
 		list(2, 0, 4)),
-		"/obj/machinery/apc::bad_field" = list(0),
-		"/obj/machinery/apc::bad_global" = list(0,
+	"/obj/machinery/apc::bad_field" = list(0),
+	"/obj/machinery/apc::bad_global" = list(0,
 		list(1, 0, 5)),
-		"/obj/machinery/apc::calls_ctx_free" = list(0,
+	"/obj/machinery/apc::calls_ctx_free" = list(0,
 		list(1, 0, 5),
 		list(1, 0, 6, 5)),
-		"/obj/machinery/apc::cell_low" = list(0,
+	"/obj/machinery/apc::cell_low" = list(0,
 		list(1, 0, 5),
 		list(1, 0, 2, 5),
 		list(1, 0, 7),
 		list(1, 0, 8, 5)),
-		"/obj/machinery/apc::dynamic" = list(0),
-		"/obj/machinery/apc::held_charge" = list(0,
+	"/obj/machinery/apc::dynamic" = list(0),
+	"/obj/machinery/apc::held_charge" = list(0,
 		list(3, 0, 2)),
-		"/obj/machinery/apc::loops" = list(0,
+	"/obj/machinery/apc::loops" = list(0,
 		list(1, 0, 9)),
-		"/obj/machinery/apc::night_user" = list(0,
+	"/obj/machinery/apc::night_user" = list(0,
 		list(1, 0, 9),
 		list(5, 3, 10)),
-		"/obj/machinery/apc::once_user" = list(0),
-		"/obj/machinery/apc::pure_user" = list(0,
+	"/obj/machinery/apc::pure_user" = list(0,
 		list(1, 0, 7)),
-		"/obj/machinery/apc::two_arg_user" = list(0,
+	"/obj/machinery/apc::two_arg_user" = list(0,
 		list(1, 0, 5),
 		list(1, 0, 2, 5),
 		list(1, 0, 7)),
-		"/obj/machinery/apc::uses_const" = list(0,
+	"/obj/machinery/apc::uses_const" = list(0,
 		list(1, 0, 11)),
-		"/obj/machinery/apc::uses_mode" = list(0,
+	"/obj/machinery/apc::uses_mode" = list(0,
 		list(1, 0, 12)),
-		"/obj/machinery/apc::via_spare" = list(0,
+	"/obj/machinery/apc::via_spare" = list(0,
 		list(1, 0, 2, 13),
 		list(1, 0, 13))
-	)
-/proc/generated_reads_assemble()
-	. = list()
-	var/list/chunks = list(
-		generated_reads_chunk_0()
-	)
-	for(var/list/chunk as anything in chunks)
-		for(var/key in chunk)
-			.[key] = chunk[key]
-GLOBAL_LIST_INIT(generated_reads_table, generated_reads_assemble())
+))

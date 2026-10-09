@@ -148,8 +148,7 @@ commit their last caller goes. Plan, phases and gates: doc §19.
 
 `tools/ci/check_ratchets.sh` runs the rewrite lints, all in one process: the `analyze` engine
 (`tools/analyze/`, see its README; `tools/ci/check_grep.sh` is its `check_grep` lint). It loads the
-tree once and caches per file: about 17 s cold (the semantic model parse), under a second warm or after a one-file edit that leaves the declarations alone;
-`analyze gen` returns at once when nothing it reads changed and parses the model once when declarations did. `analyze check --lint NAME`
+tree once and caches per file: about 17 s cold (the semantic model parse), 0.2 s warm, under a second after a one-file edit. `analyze check --lint NAME`
 runs one lint, `analyze check --changed-only` judges only the files you changed. A ratcheted lint's
 `tools/ci/*_baseline.txt` lists legacy sites as fingerprints (rule, file, normalized line text). A
 failure prints only **new** sites. After a sweep run `analyze baseline --update [--lint NAME]`: it
@@ -231,16 +230,9 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   that still tracks them. `deepquarry.dme` and `_unit_tests.dm` merge by union. `doc/rewrite/agent_workflow.md`.
 - Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
-- **Shared build caches** (`doc/testing.md` "Shared build caches"): the analyzer binary is cached by source hash
-  but built in each worktree's own target (never share a cargo target between worktrees), Bun lives in a shared
-  per-version dir (`DQ_BUN_CACHE`), and any step over 60 s prints `still running: <step> (<elapsed>)` every
-  minute; a silent long step is not a hang.
-- **Machine-wide slots** (`tools/dq_machine_slots.sh`, `doc/rewrite/agent_workflow.md` section 10): at most 2 DM compiles, 3
-  test worlds, 1 cargo build and 2 look-pin runs at once on the machine (`DQ_SLOTS_DM_COMPILE`, `DQ_SLOTS_TEST_WORLD`,
-  `DQ_SLOTS_CARGO`, `DQ_SLOTS_LOOK_STATE_PIN`); a waiter prints who holds them, the merge worktree goes first, a crashed
-  holder is reclaimed. `bash tools/dq_machine_slots.sh status` shows the table.
-- **A finished lane runs `bash tools/dq_lane_ready.sh --tests "<its tests>"`** (section 11 of the same document): it merges
-  master, proves the lane once and stamps it, so the merge agent tests only the combination.
+- **Shared build caches** (`doc/testing.md` "Shared build caches"): the analyzer builds in one shared cargo
+  target (`DQ_ANALYZE_TARGET`), Bun lives in a shared per-version dir (`DQ_BUN_CACHE`), and any step over
+  60 s prints `still running: <step> (<elapsed>)` every minute; a silent long step is not a hang.
 
 ### 4a. Testing (full reference: `doc/testing.md`)
 
@@ -257,9 +249,6 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
 - Lint: `tools/build/build.sh lint`. TGUI tests: `tools/build/build.sh tgui-test`. Rust:
   `cd verdigris && cargo test --package verdigris`.
 - Flaky or caused by me: `tools/build/build.sh test-repeat --runs=5`, `test-baseline`.
-- **Diagnose before re-running.** `dq_focused_test.sh` refuses the same arguments on the same tree twice in two hours (a pass
-  reports the earlier result; a failure points at the log): read the log and the code first. `--rerun-failed` runs only what
-  failed, `--force` runs the list anyway, and any edit lets a run through (`doc/rewrite/agent_workflow.md` section 12).
 - Performance and memory: measure with `bin/bench.cmd` / `build.sh bench` then `bench-compare`;
   add scenarios under `code/modules/benchmarks/`, not one-off profiling. `--profile-tests`
   gives per-test proc profiles.

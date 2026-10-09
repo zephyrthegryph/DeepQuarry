@@ -132,8 +132,6 @@ MSG_DEF_SELF(papershredder/empty, "it is empty")
 
 /// Fullness, 0..5.
 /obj/machinery/papershredder/proc/appearance_fill()
-	if(max_paper <= 0)
-		return 0
 	return max(0, min(5, FLOOR(paperamount / max_paper * 5, 1)))
 
 //

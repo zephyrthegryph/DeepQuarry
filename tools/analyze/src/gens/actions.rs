@@ -283,32 +283,7 @@ fn emit(cx: &GenCx, out: &mut GenOut, list: &[&Action], all: &BTreeMap<String, A
 
 /// The vars a notice type already has from a declaration outside the generated file.
 fn declared_elsewhere(cx: &GenCx, notice: &str) -> BTreeSet<String> {
-    const PREFIX: &str = "/datum/notice/";
-    // Which files mention a notice type: per-file facts (the runs of name characters after each `/datum/notice/`), read once per
-    // content change. `contains(notice)` on the comment-stripped text is true exactly when some run starts with the notice's name.
-    let mentions: std::sync::Arc<Vec<(String, Vec<String>)>> = cx.tree.memo("gen/notice_mentions", || {
-        let all = cx.tree.select(&crate::tree::CODE_DM);
-        let facts: Vec<Vec<String>> = crate::incr::facts("notice-mentions", &all, |f| {
-            let text = &f.code().text;
-            let mut out: Vec<String> = Vec::new();
-            let mut from = 0;
-            while let Some(i) = text[from..].find(PREFIX) {
-                let start = from + i + PREFIX.len();
-                let run: String = text[start..].chars().take_while(|c| c.is_alphanumeric() || *c == '_' || *c == '/').collect();
-                out.push(run);
-                from = start;
-            }
-            out.sort();
-            out.dedup();
-            out
-        });
-        all.iter().zip(facts).map(|(f, m)| (f.rel.clone(), m)).collect()
-    });
-    let name_chars = |s: &str| s.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '/');
-    let files: Vec<&crate::tree::SourceFile> = match notice.strip_prefix(PREFIX) {
-        Some(rest) if name_chars(rest) => mentions.iter().filter(|(rel, m)| rel != "code/engine/_generated/actions.dm" && m.iter().any(|run| run.starts_with(rest))).filter_map(|(rel, _)| cx.tree.get(rel)).collect(),
-        _ => cx.tree.select(&crate::tree::CODE_DM).into_iter().filter(|f| f.rel != "code/engine/_generated/actions.dm" && f.code().text.contains(notice)).collect(),
-    };
+    let files: Vec<&crate::tree::SourceFile> = cx.tree.select(&crate::tree::CODE_DM).into_iter().filter(|f| f.rel != "code/engine/_generated/actions.dm" && f.code().text.contains(notice)).collect();
     let table = crate::dm::dx::type_vars(&files);
     table.get(notice).map(|v| v.iter().cloned().collect()).unwrap_or_default()
 }

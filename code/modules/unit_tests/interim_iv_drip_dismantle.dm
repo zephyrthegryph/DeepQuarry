@@ -11,7 +11,7 @@
 	TEST_ASSERT_NULL(actor.get_active_hand(), "Insertion must release the actor's hand")
 	var/drip_handle = entity_handle(drip)
 	var/list/before = turf_contents_of_type(T, /obj/item/stack/rods)
-	test_op_handler(drip, "screwdriver_act_timed_done", actor)
+	drip.screwdriver_act_timed_done(actor)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(drip), "The actual completed action must remove the drip")
 	var/list/created = turf_contents_of_type(T, /obj/item/stack/rods) - before

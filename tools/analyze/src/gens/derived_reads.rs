@@ -13,10 +13,6 @@ impl Generator for DerivedReadsGen {
         "derived_reads"
     }
 
-    fn stage(&self) -> u8 {
-        1
-    }
-
     fn output(&self) -> &'static str {
         ""
     }

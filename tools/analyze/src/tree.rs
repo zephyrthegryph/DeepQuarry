@@ -306,7 +306,6 @@ pub struct Tree {
     extra: Mutex<HashMap<String, Option<std::sync::Arc<String>>>>,
     memo_cells: Mutex<HashMap<String, std::sync::Arc<OnceLock<std::sync::Arc<dyn std::any::Any + Send + Sync>>>>>,
     prewarm_once: OnceLock<()>,
-    prewarm_dm_once: OnceLock<()>,
     /// `(file key, line)` -> the normalized line text a baseline fingerprint uses, persisted so a
     /// warm run never has to load a file just to compare a baselined site.
     line_cache: Mutex<HashMap<(Hash, u32), String>>,
@@ -416,7 +415,7 @@ impl Tree {
             .collect();
         let index = files.iter().enumerate().map(|(i, f)| (f.rel.clone(), i)).collect();
         let meta = files.iter().map(|f| (f.rel.clone(), FileMeta { size: f.size, mtime_ns: f.mtime_ns, hash: f.hash })).collect();
-        (Tree { root: root.to_path_buf(), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new(), prewarm_dm_once: OnceLock::new(), line_cache: Mutex::new(HashMap::new()), line_cache_dirty: std::sync::atomic::AtomicBool::new(false) }, meta)
+        (Tree { root: root.to_path_buf(), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new(), line_cache: Mutex::new(HashMap::new()), line_cache_dirty: std::sync::atomic::AtomicBool::new(false) }, meta)
     }
 
     /// A tree over in-memory files (tests and fixtures).
@@ -424,7 +423,7 @@ impl Tree {
         let mut files = files;
         files.sort_by(|a, b| a.rel.cmp(&b.rel));
         let index = files.iter().enumerate().map(|(i, f)| (f.rel.clone(), i)).collect();
-        Tree { root: PathBuf::from("."), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new(), prewarm_dm_once: OnceLock::new(), line_cache: Mutex::new(HashMap::new()), line_cache_dirty: std::sync::atomic::AtomicBool::new(false) }
+        Tree { root: PathBuf::from("."), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new(), line_cache: Mutex::new(HashMap::new()), line_cache_dirty: std::sync::atomic::AtomicBool::new(false) }
     }
 
     /// A value built once per run and shared by every lint that asks for the same `key` (a parsed
@@ -474,20 +473,6 @@ impl Tree {
                     let _ = f.raw();
                     let _ = f.code();
                     let _ = f.clean();
-                })
-            })
-        });
-    }
-
-    /// Reads every `.dm` file and builds its code view in parallel, once: the generators scan the whole tree several times, and
-    /// the first touch of a file would otherwise read and strip it on that one thread. (`prewarm` also builds the sanitized
-    /// views and covers every extension, which the generators do not need.)
-    pub fn prewarm_dm(&self) {
-        self.prewarm_dm_once.get_or_init(|| {
-            run_isolated(|| {
-                self.files.par_iter().filter(|f| f.rel.ends_with(".dm")).for_each(|f| {
-                    let _ = f.raw();
-                    let _ = f.code();
                 })
             })
         });

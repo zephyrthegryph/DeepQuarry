@@ -72,21 +72,18 @@ fn defined_type(line: &str) -> Option<&str> {
 pub fn test_only_types(tree: &Tree) -> std::collections::BTreeSet<String> {
     let mut test = std::collections::BTreeSet::new();
     let mut prod = std::collections::HashSet::new();
-    let files: Vec<&crate::tree::SourceFile> = tree.files.iter().filter(|f| f.rel.ends_with(".dm") && !f.rel.starts_with(OUT_DIR) && !f.rel.starts_with("code/_generated/")).collect();
-    // Per file, cached by content: the types its lines define. A warm run reads no file for this.
-    let defined: Vec<Vec<String>> = crate::incr::facts("gen-defined-types", &files, |f| {
-        let mut v: Vec<String> = f.text().lines().filter_map(defined_type).map(|t| t.to_string()).collect();
-        v.sort();
-        v.dedup();
-        v
-    });
-    for (f, types) in files.iter().zip(defined) {
+    for f in tree.files.iter().filter(|f| f.rel.ends_with(".dm")) {
+        if f.rel.starts_with(OUT_DIR) || f.rel.starts_with("code/_generated/") {
+            continue;
+        }
         let is_test = test_only(&f.rel);
-        for t in types {
-            if is_test {
-                test.insert(t);
-            } else {
-                prod.insert(t);
+        for line in f.text().lines() {
+            if let Some(t) = defined_type(line) {
+                if is_test {
+                    test.insert(t.to_string());
+                } else {
+                    prod.insert(t.to_string());
+                }
             }
         }
     }
@@ -294,13 +291,6 @@ impl<'a> GenCx<'a> {
 }
 
 pub trait Generator: Send + Sync {
-    /// 0 for a generator that reads only declarations and file text; 1 for one that reads other generators' output or builds the
-    /// full model (`reads`, `derived_reads`). `analyze gen` runs stage 0 to a fixed point first and stage 1 on the settled
-    /// files, so the model is parsed once against its final inputs instead of once per pass.
-    fn stage(&self) -> u8 {
-        0
-    }
-
     /// The name `analyze gen NAME` takes (and the `[gen/NAME]` tag on its diagnostics).
     fn name(&self) -> &'static str;
     /// The file written, relative to `code/engine/_generated/`; empty for a generator that writes only `files()`.
@@ -377,36 +367,17 @@ fn norm(s: &str) -> String {
 
 /// Runs the named generators (all when empty). With `check`, nothing is written.
 pub fn run(root: &Path, tree: &Tree, names: &[String], check: bool) -> Vec<GenResult> {
-    run_stage(root, tree, names, check, None)
-}
-
-/// [`run`] limited to the generators of one [`Generator::stage`] (all stages when None).
-pub fn run_stage(root: &Path, tree: &Tree, names: &[String], check: bool, stage: Option<u8>) -> Vec<GenResult> {
-    let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
-    let began = std::time::Instant::now();
-    tree.prewarm_dm();
     let cx = GenCx::new(tree, root);
     let dme = std::fs::read_to_string(root.join("deepquarry.dme")).unwrap_or_default();
     let mut out = Vec::new();
     let test_types = test_only_types(tree);
-    if trace {
-        eprintln!("analyze: gen test-only types {} ms (cumulative {} ms)", began.elapsed().as_millis(), began.elapsed().as_millis());
-    }
     for g in registry() {
         if !names.is_empty() && !names.iter().any(|n| n == g.name()) {
             continue;
         }
-        if stage.is_some_and(|st| st != g.stage()) {
-            continue;
-        }
-        let step = std::time::Instant::now();
         let (text, diags) = render(g.as_ref(), &cx);
-        let rendered = step.elapsed().as_millis();
         let mut file_out = GenOut::default();
         let files = g.files(&cx, &mut file_out);
-        if trace {
-            eprintln!("analyze: gen {}: render {} ms, files() {} ms (cumulative {} ms)", g.name(), rendered, step.elapsed().as_millis() - rendered, began.elapsed().as_millis());
-        }
         let mut diags = diags;
         diags.extend(file_out.diags);
         for (rel, file_text) in files {

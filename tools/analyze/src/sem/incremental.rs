@@ -118,7 +118,7 @@ fn h128(bytes: &[u8]) -> Hash {
 }
 
 /// A digest of the lines that may declare a type with no body (see [`FileFacts::bare`]).
-pub(crate) fn bare_hash(tree: &Tree, rel: &str) -> Hash {
+fn bare_hash(tree: &Tree, rel: &str) -> Hash {
     const STATEMENTS: &[&str] = &["return", "break", "continue", "else", "do", "sleep", "goto", "try", "catch", "finally", "spawn", "set", "new", "null"];
     let mut lines: Vec<String> = Vec::new();
     let code: String = match tree.get(rel) {
@@ -142,7 +142,7 @@ pub(crate) fn bare_hash(tree: &Tree, rel: &str) -> Hash {
 }
 
 /// The text of an included file, from the tree or (a file no lint selected) from disk.
-pub(crate) fn text_of(tree: &Tree, rel: &str) -> String {
+fn text_of(tree: &Tree, rel: &str) -> String {
     match tree.get(rel) {
         Some(f) => f.text().to_string(),
         None => tree.read_extra(rel).map(|t| t.as_ref().clone()).unwrap_or_default(),
@@ -150,7 +150,7 @@ pub(crate) fn text_of(tree: &Tree, rel: &str) -> String {
 }
 
 /// Digest of the text with comments removed, trailing space trimmed and blank lines dropped.
-pub(crate) fn token_hash(tree: &Tree, rel: &str) -> Hash {
+fn token_hash(tree: &Tree, rel: &str) -> Hash {
     let stripped = super::decls::strip_comments_keep_strings(&text_of(tree, rel));
     let mut out = String::with_capacity(stripped.len());
     for l in stripped.lines() {
@@ -163,7 +163,7 @@ pub(crate) fn token_hash(tree: &Tree, rel: &str) -> Hash {
     h128(out.as_bytes())
 }
 
-pub(crate) fn has_directive(text: &str) -> bool {
+fn has_directive(text: &str) -> bool {
     crate::pat!(r"(?m)^[ \t]*#[ \t]*(?:define|undef|include)\b").is_match(text)
 }
 
@@ -186,7 +186,7 @@ fn included(tree: &Tree) -> Option<(Vec<String>, Hash)> {
 
 /// The environment key and the content hash of every included `.dm` (whether or not the tree holds
 /// it, so the key does not depend on which lints this run selected).
-pub(crate) fn environment(tree: &Tree) -> Option<(Hash, BTreeMap<String, Hash>)> {
+fn environment(tree: &Tree) -> Option<(Hash, BTreeMap<String, Hash>)> {
     let (inc, dme) = included(tree)?;
     let decls = super::decls::Decls::get(tree);
     let mut files = BTreeMap::new();
@@ -203,19 +203,13 @@ pub(crate) fn environment(tree: &Tree) -> Option<(Hash, BTreeMap<String, Hash>)>
 }
 
 /// Per-file facts read off a model: shape digests, written names, and the types each file locates.
-pub(crate) struct Collected {
-    pub(crate) shape: HashMap<String, Vec<String>>,
-    pub(crate) writes: HashMap<String, BTreeSet<String>>,
-    pub(crate) types: HashMap<String, BTreeSet<String>>,
+struct Collected {
+    shape: HashMap<String, Vec<String>>,
+    writes: HashMap<String, BTreeSet<String>>,
+    types: HashMap<String, BTreeSet<String>>,
 }
 
 fn collect(sem: &Sem) -> Collected {
-    collect_with(sem, true)
-}
-
-/// `with_writes` false skips the proc-body walk (the names each file's procs write), for a consumer that only needs the
-/// structure (shapes and located types).
-pub(crate) fn collect_with(sem: &Sem, with_writes: bool) -> Collected {
     let mut c = Collected { shape: HashMap::new(), writes: HashMap::new(), types: HashMap::new() };
     let mut procs: Vec<(dreammaker::objtree::ProcRef, &str)> = Vec::new();
     for ty in sem.objtree.iter_types() {
@@ -262,9 +256,6 @@ pub(crate) fn collect_with(sem: &Sem, with_writes: bool) -> Collected {
         }
     }
     // The bodies of every proc, walked on plain threads (this runs under a memo init).
-    if !with_writes {
-        procs.clear();
-    }
     let sets: Vec<HashSet<String>> = super::par_map(&procs, |(p, _)| super::reads::proc_writes(*p));
     for ((_, f), w) in procs.iter().zip(sets) {
         if !w.is_empty() {
@@ -277,7 +268,7 @@ pub(crate) fn collect_with(sem: &Sem, with_writes: bool) -> Collected {
     c
 }
 
-pub(crate) fn shape_hash(entries: Option<&Vec<String>>) -> Hash {
+fn shape_hash(entries: Option<&Vec<String>>) -> Hash {
     match entries {
         Some(v) => h128(v.join("\n").as_bytes()),
         None => 0,

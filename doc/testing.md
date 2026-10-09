@@ -445,18 +445,16 @@ cheap to regenerate.
 
 Fresh worktrees should not pay cold build costs:
 
-- **Analyzer.** `analyze-build` runs cargo in the worktree's own `tools/analyze/target` (compiled dependencies
-  come from sccache) and records the source key in `<binary>.key`. The content-keyed binary cache
-  (`DQ_ANALYZE_CACHE`) serves unchanged sources instantly; its key includes the cargo profile, so binaries of
-  different profiles never mix. Do not point several worktrees at one cargo target (`DQ_ANALYZE_TARGET=<dir>`
-  exists and is a hazard): cargo names a path package by its path inside the workspace and judges it fresh by
-  mtime, so a worktree can link another worktree's library or cache a binary built from other sources under its
-  own key (`doc/rewrite/agent_workflow.md` section 1). `cargo` runs hold the machine-wide `cargo` slot
-  (`doc/rewrite/agent_workflow.md` section 10), so concurrent builds queue instead of competing.
+- **Analyzer.** `analyze-build` runs cargo with `CARGO_TARGET_DIR` set to a shared dir
+  (`DQ_ANALYZE_TARGET`; default `E:/dq-cache/analyze-target` on Windows when `E:` exists, else
+  `~/.cache/dq/analyze-target`; `off` builds in the worktree) and copies the binary to the worktree's
+  own `tools/analyze/target/release/` path with its `.key` file. Dependencies compile once; cargo's lock
+  serialises concurrent worktrees (cargo prints `Blocking waiting for file lock`). The content-keyed
+  binary cache (`DQ_ANALYZE_CACHE`) serves unchanged sources instantly; its key includes the cargo
+  profile, so binaries of different profiles never mix.
 - **Analyzer profile.** `DQ_ANALYZE_PROFILE` picks the cargo profile. Locally the default is `dev-fast`
   (`tools/analyze/Cargo.toml`: opt-level 2, no LTO, 256 codegen units, incremental; binary at
-  `target/dev-fast/analyze`). CI (`CI` set) uses `release`; the gates and the push script use the local default (the findings of
-  the two are identical: checked on the whole tree). Measured on
+  `target/dev-fast/analyze`). CI (`CI` set) and `tools/dq_push_master.sh` use `release`. Measured on
   this machine with 9-16 cargo/rustc/dm processes from other lanes running (noisy), cargo rebuild of
   `analyze` after an edit under `tools/analyze/src`, and a cold `analyze check --no-cache` of the whole
   tree (warm runs are 0.4-0.7 s for every profile):

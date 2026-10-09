@@ -16,7 +16,6 @@ import path from 'node:path';
 import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
-import { acquireSlot, withSlot } from './lib/machine_slots';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
   BALANCE_RESULTS_FILE,
@@ -77,11 +76,7 @@ import {
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
-/** `cargo <args>` under the machine-wide cargo slot (lib/machine_slots.ts, tools/dq_machine_slots.sh): by default one cargo build at a
- * time on the machine, the merge worktree first, instead of a dozen worktrees fighting over the cores. DQ_SLOTS_CARGO=N changes it. */
-const cargoExec = (args: string[], options?: any) =>
-  withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => Juke.exec('cargo', args, options), (m) => Juke.logger.info(m));
-
+// DQEdit — renamed from 'vorestation'
 export const DME_NAME = 'deepquarry';
 
 function findDreamChecker(): string | null {
@@ -172,7 +167,7 @@ export const DmMapsIncludeTarget = new Juke.Target({
   },
 });
 
-// regenerate .dmi files from their PNG + .dmi.toml sources
+// DQAdd Start — regenerate .dmi files from their PNG + .dmi.toml sources
 // before DM compile. Architecture A migration: every DMI has editable
 // PNG + TOML sources alongside it; this target re-packs them when stale.
 //
@@ -198,7 +193,7 @@ export const IconRepackTarget = new Juke.Target({
   },
 });
 
-// remove all generated DMI files in icons/gen/. Use this when you
+// DQAdd — remove all generated DMI files in icons/gen/. Use this when you
 // want to force a full repack on the next build (e.g. after hash corruption).
 export const CleanIconsTarget = new Juke.Target({
   executes: async () => {
@@ -206,6 +201,7 @@ export const CleanIconsTarget = new Juke.Target({
     Juke.rm('icons/gen', { recursive: true });
   },
 });
+// DQAdd End
 
 // Width/height of every .dmm, so map templates aren't parsed at boot just to
 // learn their size (doc/rewrite/fixes.md Q2). DM falls back to parsing when an
@@ -219,7 +215,7 @@ export const MapBoundsTarget = new Juke.Target({
   },
 });
 
-// validate that every .dm file under code/ is included in
+// DQAdd Start — validate that every .dm file under code/ is included in
 // deepquarry.dme. Runs before the DM compile so missing includes are caught
 // with a helpful error rather than silently-uncompiled code.
 export const ValidateDmeTarget = new Juke.Target({
@@ -313,8 +309,9 @@ export const ValidateDmeTarget = new Juke.Target({
     Juke.logger.info(`ValidateDme: all ${dmFiles.length} code/ .dm files are reachable from the DME.`);
   },
 });
+// DQAdd End
 
-// build the in-tree verdigris Rust FFI cdylib before the
+// DQAdd Start — build the in-tree verdigris Rust FFI cdylib before the
 // server runs. Produces verdigris.dll (Windows) / libverdigris.so (Linux)
 // at the repo root, where DreamDaemon loads it via the generated vg_* bindings (cave-gen
 // + vendored auxmos atmos). The compiled lib is a gitignored per-platform
@@ -344,7 +341,7 @@ const verdigrisProvenanceMismatch = (): string | null =>
     ? checkVerdigrisProvenance(process.cwd(), VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, process.env.RUSTFLAGS || '')
     : null;
 
-// generated DM bindings for verdigris (doc/rewrite/rust_core.md §9).
+// DQAdd Start — generated DM bindings for verdigris (doc/rewrite/rust_core.md §9).
 // `verdigris-bindings` rewrites code/__defines/verdigris/_bindings.dm and
 // verdigris/ffi/src/abi.rs from the #[auxmacros::bind] functions. Every DM and
 // DLL build runs the check first and fails when either file is stale.
@@ -415,6 +412,7 @@ export const VerdigrisBindingsCheckTarget = new Juke.Target({
     }
   },
 });
+// DQAdd End
 
 // Shared content-addressed cache of built libraries (lib/verdigris_cache.ts), so a
 // fresh worktree copies the DLL instead of compiling the Rust workspace.
@@ -561,7 +559,7 @@ export const VerdigrisTarget = new Juke.Target({
   executes: async () => {
     const built = `${process.env.CARGO_TARGET_DIR || 'verdigris/target'}/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`;
     if (!VERDIGRIS_PROVENANCE_ENFORCED) {
-      await cargoExec(['build', '--release', '--target', VERDIGRIS_RUST_TARGET], { cwd: 'verdigris' });
+      await Juke.exec('cargo', ['build', '--release', '--target', VERDIGRIS_RUST_TARGET], { cwd: 'verdigris' });
       fs.copyFileSync(built, VERDIGRIS_LIB);
       storeVerdigrisBuild(built);
       return;
@@ -576,9 +574,13 @@ export const VerdigrisTarget = new Juke.Target({
     // third-party dependencies.
     if (verdigrisProvenanceMismatch()) {
       const localCrates = ['vg-core', 'vg-gas', 'vg-heat', 'vg-layout', 'vg-power', 'vg-ffi', 'auxmacros', 'auxcallback', 'verdigris'];
-      await cargoExec(['clean', '--release', '--target', VERDIGRIS_RUST_TARGET, ...localCrates.flatMap((c) => ['-p', c])], cargoOptions);
+      await Juke.exec(
+        'cargo',
+        ['clean', '--release', '--target', VERDIGRIS_RUST_TARGET, ...localCrates.flatMap((c) => ['-p', c])],
+        cargoOptions,
+      );
     }
-    await cargoExec(['build', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
+    await Juke.exec('cargo', ['build', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
     try {
       installVerdigrisLibrary(process.cwd(), built, VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, rustflags);
     } catch (error) {
@@ -586,15 +588,16 @@ export const VerdigrisTarget = new Juke.Target({
       // Cargo can report a cached release artifact as fresh after source files
       // are restored across worktrees. Rebuild the FFI crate once from scratch.
       Juke.logger.warn(`verdigris: ${error.message}; rebuilding the FFI crate`);
-      await cargoExec(['clean', '-p', 'vg-ffi', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
-      await cargoExec(['build', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
+      await Juke.exec('cargo', ['clean', '-p', 'vg-ffi', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
+      await Juke.exec('cargo', ['build', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
       installVerdigrisLibrary(process.cwd(), built, VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, rustflags);
     }
     storeVerdigrisBuild(built);
   },
 });
+// DQAdd End
 
-// the analyze lint engine (tools/analyze, doc: tools/analyze/README.md). One Rust
+// DQAdd Start — the analyze lint engine (tools/analyze, doc: tools/analyze/README.md). One Rust
 // binary replaces tools/ci's Python lints and check_grep.sh. Like verdigris it is built when its
 // sources are newer than the binary (inputs/outputs dirty-check; the target dir is excluded by
 // enumerating sources). `lint`/`analyze` run it; DM-only work that has no cargo can reuse a
@@ -619,17 +622,14 @@ const analyzeCacheDir = (): string | null => {
   if (process.platform === 'win32' && fs.existsSync('E:/')) return 'E:/dq-cache/analyze-bin';
   return path.join(os.homedir(), '.cache', 'dq', 'analyze-bin');
 };
-// A cargo target dir shared by several worktrees (DQ_ANALYZE_TARGET=<dir>) is OFF by default, and must stay off. Cargo names a path
-// package's artifacts and fingerprints by its path relative to the workspace, not by where the checkout is, so every worktree
-// builds into the same files, and it judges "fresh" by file mtime: a worktree whose sources are older than the artifact another
-// worktree just built (a different branch, a merge) links THAT worktree's library, fails to compile ("cannot find look_keys in
-// dq_analyze") or, worse, builds and caches a binary from someone else's sources under this worktree's source key. Each worktree
-// builds in its own tools/analyze/target; the compiled dependencies are shared through sccache, and finished binaries through
-// the content-addressed cache below.
+// Shared cargo target dir for the analyzer (DQ_ANALYZE_TARGET; `off` builds in the worktree).
 const analyzeSharedTargetDir = (): string | null => {
   const env = process.env.DQ_ANALYZE_TARGET;
-  if (!env || env === 'off' || env === '0') return null;
-  return path.resolve(env);
+  if (env === 'off' || env === '0') return null;
+  if (env) return path.resolve(env);
+  if (process.env.CARGO_TARGET_DIR) return null;
+  if (process.platform === 'win32' && fs.existsSync('E:/')) return 'E:/dq-cache/analyze-target';
+  return path.join(os.homedir(), '.cache', 'dq', 'analyze-target');
 };
 const analyzeSourceKey = (): string => {
   const hash = createHash('sha256').update(`analyze-v1|${ANALYZE_PROFILE}|${process.platform}|${process.arch}|`);
@@ -691,14 +691,14 @@ export const AnalyzeBuildTarget = new Juke.Target({
       fs.mkdirSync(shared, { recursive: true });
       Juke.logger.info(`analyze: building in shared target ${shared} (waits on cargo's lock if another build is running)`);
       const cargoEnv = { ...process.env, CARGO_TARGET_DIR: path.resolve(shared) };
-      await cargoExec(analyzeCargoArgs(), { env: cargoEnv });
+      await Juke.exec('cargo', analyzeCargoArgs(), { env: cargoEnv });
       const built = path.join(path.resolve(shared), ANALYZE_PROFILE, path.basename(ANALYZE_BIN));
       fs.mkdirSync(path.dirname(ANALYZE_BIN), { recursive: true });
       const tmpBin = `${ANALYZE_BIN}.${process.pid}.tmp`;
       fs.copyFileSync(built, tmpBin);
       fs.renameSync(tmpBin, ANALYZE_BIN);
     } else {
-      await cargoExec(analyzeCargoArgs());
+      await Juke.exec('cargo', analyzeCargoArgs());
     }
     const key = analyzePendingKey;
     if (!key) return;
@@ -768,7 +768,7 @@ export const DmbCheckTarget = new Juke.Target({
   executes: async () => {
     if (!fs.existsSync(DMB_BIN)) {
       Juke.logger.info(`dmb-check: building ${DMB_BIN} (once, about 2 minutes)`);
-      await cargoExec(['build', '--release', '-q', '--manifest-path', 'tools/dmb/Cargo.toml', '-p', 'dm-compile'], {
+      await Juke.exec('cargo', ['build', '--release', '-q', '--manifest-path', 'tools/dmb/Cargo.toml', '-p', 'dm-compile'], {
         env: { ...process.env, CARGO_TARGET_DIR: DMB_TARGET },
       });
     }
@@ -808,6 +808,7 @@ export const AnalyzeTarget = new Juke.Target({
     await Juke.exec(ANALYZE_BIN, ['check', ...(args || [])]);
   },
 });
+// DQAdd End
 
 // DreamDaemon security for test, bench and run worlds. -trusted makes BYOND show a
 // "Proceed with trusted mode?" dialog for any .dmb path it hasn't been told to
@@ -827,9 +828,9 @@ export const DmTarget = new Juke.Target({
   ],
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
-    IconRepackTarget, // regenerate .dmi from PNG+TOML before DM compile
-    ValidateDmeTarget, // fail fast if any code/ .dm is missing from the DME
-    VerdigrisBindingsCheckTarget, // _bindings.dm must match the Rust binds
+    IconRepackTarget, // DQAdd — regenerate .dmi from PNG+TOML before DM compile
+    ValidateDmeTarget, // DQAdd — fail fast if any code/ .dm is missing from the DME
+    VerdigrisBindingsCheckTarget, // DQAdd — _bindings.dm must match the Rust binds
     GenTarget, // DreamChecker runs beside DreamMaker below (it used to run first, ~45 s on its own)
     MapBoundsTarget, // boot reads template sizes from data/map_template_bounds.json
   ],
@@ -1344,15 +1345,12 @@ async function runIsolatedTestWorld(
     let daemonSignal: string | null = null;
     let daemonReason: string | null = null;
     let daemonError: string | null = null;
-    // At most DQ_SLOTS_TEST_WORLD (default 3) test worlds boot at once on the machine; the run slot above is per worktree.
-    const worldSlot = await acquireSlot('test_world', `test world ${slot.tag}${options.label ? ` (${options.label})` : ''}`, (m) => Juke.logger.info(m));
     try {
       const result = await DreamDaemon(
         {
           dmbFile: `${runBase}.dmb`,
           namedDmVersion: dmVersion,
           watchdogFile: resultsFile,
-          watchdogCleanFile: `${logDir}/finished_run.lk`,
           watchdogTimeoutMs: options.watchdogTimeoutMs ?? (focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined),
           onSpawn: options.sampler ? (pid) => options.sampler?.start(pid) : undefined,
         },
@@ -1370,8 +1368,6 @@ async function runIsolatedTestWorld(
     } catch (error) {
       // DreamDaemon exits non-zero even on clean runs; the files below decide.
       daemonError = String(error);
-    } finally {
-      worldSlot?.release();
     }
     let cleanText: string | null = null;
     try {
@@ -2801,7 +2797,7 @@ export const AutowikiTarget = new Juke.Target({
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
     IconRepackTarget,
-    VerdigrisTarget, // autowiki boots the world, which loads the FFI lib
+    VerdigrisTarget, // DQAdd — autowiki boots the world, which loads the FFI lib
   ],
   outputs: ['data/autowiki_edits.txt'],
   executes: async ({ get }) => {
@@ -2839,7 +2835,7 @@ export const AutowikiTarget = new Juke.Target({
 export const BunTarget = new Juke.Target({
   parameters: [CiParameter],
   inputs: ['tgui/**/package.json'],
-  // skip `bun install` when tgui/node_modules is newer
+  // DQAdd Start — skip `bun install` when tgui/node_modules is newer
   // than every package.json + bun.lock under tgui/. Without this Juke
   // re-runs `bun install --frozen-lockfile` on every build (~5s) even
   // when nothing has changed; the install itself then no-ops in ~70ms
@@ -2863,6 +2859,7 @@ export const BunTarget = new Juke.Target({
       return true; // bail conservatively if any stat fails
     }
   },
+  // DQAdd End
   executes: () => {
     return bun('install', '--frozen-lockfile', '--ignore-scripts');
   },
@@ -3039,7 +3036,7 @@ export const TguiLintTarget = new Juke.Target({
   dependsOn: [BunTarget, BiomeCheckTarget, TguiTscTarget],
 });
 
-// run SpacemanDMM dreamchecker before the DM compile if the
+// DQAdd Start — run SpacemanDMM dreamchecker before the DM compile if the
 // binary is available. Best-effort: if dreamchecker is not on PATH the target
 // no-ops with a warning. CI installs it via tools/ci/install_spaceman_dmm.sh;
 // local dev can skip it without consequence.
@@ -3087,6 +3084,7 @@ async function runDreamChecker(): Promise<void> {
     }
   }
 }
+// DQAdd End
 
 export const TguiDevTarget = new Juke.Target({
   dependsOn: [BunTarget],
@@ -3108,11 +3106,11 @@ export const TestTarget = new Juke.Target({
 });
 
 export const LintTarget = new Juke.Target({
-  dependsOn: [TguiLintTarget, DreamCheckerTarget, AnalyzeTarget], // DM lint via SpacemanDMM if available; the analyze engine lints
+  dependsOn: [TguiLintTarget, DreamCheckerTarget, AnalyzeTarget], // DQAdd — DM lint via SpacemanDMM if available; the analyze engine lints
 });
 
 export const BuildTarget = new Juke.Target({
-  dependsOn: [TguiTarget, DmTarget, VerdigrisTarget], // verdigris FFI lib
+  dependsOn: [TguiTarget, DmTarget, VerdigrisTarget], // DQAdd — verdigris FFI lib
 });
 
 export const ServerTarget = new Juke.Target({
@@ -3165,7 +3163,7 @@ export const TguiCleanTarget = new Juke.Target({
 });
 
 export const CleanTarget = new Juke.Target({
-  dependsOn: [TguiCleanTarget, CleanIconsTarget], // also remove icons/gen/
+  dependsOn: [TguiCleanTarget, CleanIconsTarget], // DQAdd — also remove icons/gen/
   executes: async () => {
     Juke.rm('*.{dmb,rsc}');
     Juke.rm('_maps/templates.dm');
