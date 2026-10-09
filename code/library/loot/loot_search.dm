@@ -1,7 +1,7 @@
 // Searching a pile (doc/rewrite/proposals/loot_and_map_resolvers.md, Option B): search is an op, not a proc.
 //
 //   CAPABILITIES(/obj/structure/loot_pile)
-//       op("search", hand(), label("Search"), claims(), needs(req(/mob/living, of = ON_ACTOR, silent = TRUE)), \
+//       op("search", hand(), label("Search"), claims(), needs(req(/mob/living, of = ON_ACTOR, silent = TRUE)),
 //           needs(req_loot_unsearched(), req_loot_not_picked_clean()), begins(MSG(loot_pile/searching)), wait(PROC_REF(search_time)), loot_rolls())
 //
 // The table a pile searches is its loot_search(table =) entry (loot_entries.dm); the tiers, the depletion and the repeat rule are the table's own loot(...) rows.

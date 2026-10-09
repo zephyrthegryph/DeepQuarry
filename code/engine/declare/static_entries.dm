@@ -138,12 +138,8 @@ SYSTEM_DEF(static_entries)
 		table_error(T, origin, declare_rule(RULE_CONFIGURE), "configure([changes.kind](...)) names a [changes.kind] the type does not inherit", "declare it with [changes.kind](...) in this block, or configure one an ancestor declares")
 		return
 	var/datum/entry/merged = engine.merge(known.item, changes)
-	var/at = T.items.Find(known)
-	var/datum/centry/C = new
-	C.item = merged // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
-	C.origin = origin
-	C.eff_key = known.eff_key
-	T.items[at] = C // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+	T.items -= known
+	table_add_item(T, merged, origin, null, null, known.eff_key)
 
 /// The centry of `kind` in a static table (the first), or null.
 /proc/static_find(datum/type_table/T, kind)

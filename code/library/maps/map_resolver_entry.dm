@@ -54,7 +54,8 @@ STATIC_ENTRY(map_resolver)
 			if(E?.args["resolver"])
 				info = new
 				info.resolver = E.args["resolver"]
-				info.reads = E.args["vars"] ? E.args["vars"].Copy() : list()
+				var/list/named = E.args["vars"]
+				info.reads = named ? named.Copy() : list()
 			info_of_table[T] = info
 		var/datum/map_resolver_info/known = info_of_table[T]
 		if(known)
