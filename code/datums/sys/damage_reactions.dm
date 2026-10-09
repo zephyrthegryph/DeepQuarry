@@ -66,7 +66,7 @@
 /atom/proc/react_to_entry(entry, severity = 0, atom/source = null, atom/attacker = null)
 	var/datum/damage_packet/packet = damage_packet(source, attacker, null, null, DAMAGE_PACKET_SILENT, 0, 0, null, entry, severity)
 	// The engine's hit action first (a silent entry is a hit too: an EMP or a blast that lands no integrity loss still reaches the hooks).
-	var/hit = (entry == DAMAGE_ENTRY_PROJECTILE) ? ACT_PASS : hit_try(src, packet) // a round reaches the hit action through its own damage packet
+	var/hit = (entry == DAMAGE_ENTRY_PROJECTILE && GLOB.projectile_pre_reacted == ref(src)) ? ACT_PASS : hit_try(src, packet) // bullet_act() already started the round's hit action
 	if(isnull(hit))
 		packet.release()
 		return TRUE
@@ -84,23 +84,41 @@
 /// for the round being resolved, so the packet adapters don't run them again.
 GLOBAL_VAR_INIT(projectile_pre_reacted, null)
 
-/// Runs the DAMAGE_PROJECTILE BEFORE reactions ahead of the round's own effects (on_hit(): stun,
-/// embed, reagents ...), so a blocking reaction (a shield, an immunity) stops those too, as the old
-/// bullet_act() cancel did. Returns TRUE if one blocked. Otherwise marks the target so the damage
-/// packet the round delivers next doesn't run them a second time (end_projectile_reactions()).
+/// The hit action and packet bullet_act() started for the round being resolved; ended by end_projectile_reactions().
+GLOBAL_VAR_INIT(projectile_hit_act, null)
+GLOBAL_VAR_INIT(projectile_hit_packet, null)
+
+/// Starts the round's hit action and runs the DAMAGE_PROJECTILE BEFORE reactions ahead of the round's own effects
+/// (on_hit(): stun, embed, reagents ...), so a veto (a hook that takes the hit over, or a blocking reaction: a shield,
+/// an immunity) stops those too, a zero-damage round included. Returns TRUE if one vetoed. Otherwise marks the target so
+/// the damage packet the round delivers next neither starts the hit action nor runs the reactions a second time
+/// (end_projectile_reactions() ends the action).
 /atom/proc/projectile_pre_reactions(obj/item/projectile/P)
-	var/list/rows = damage_rows_of(src)
-	if(!rows)
-		return FALSE
 	var/datum/damage_packet/packet = damage_packet(P, P.firer, null, null, DAMAGE_PACKET_SILENT | DAMAGE_PACKET_PROJECTILE, 0, 0, null, DAMAGE_ENTRY_PROJECTILE)
-	. = !!run_damage_reactions(rows, packet, DAMAGE_REACTION_PHASE_BEFORE)
-	packet.release()
-	if(!.)
-		GLOB.projectile_pre_reacted = ref(src)
+	var/hit = hit_try(src, packet)
+	if(isnull(hit))
+		packet.release()
+		return TRUE
+	var/list/rows = damage_rows_of(src)
+	if(rows && run_damage_reactions(rows, packet, DAMAGE_REACTION_PHASE_BEFORE))
+		act_cancel(hit)
+		packet.release()
+		return TRUE
+	GLOB.projectile_pre_reacted = ref(src)
+	GLOB.projectile_hit_act = hit
+	GLOB.projectile_hit_packet = packet
+	return FALSE
 
 /atom/proc/end_projectile_reactions()
-	if(GLOB.projectile_pre_reacted == ref(src))
-		GLOB.projectile_pre_reacted = null
+	if(GLOB.projectile_pre_reacted != ref(src))
+		return
+	GLOB.projectile_pre_reacted = null
+	var/datum/act/hit = GLOB.projectile_hit_act
+	var/datum/damage_packet/packet = GLOB.projectile_hit_packet
+	GLOB.projectile_hit_act = null
+	GLOB.projectile_hit_packet = null
+	act_done(hit)
+	packet?.release()
 
 /// Runs the reactions (both phases) to a packet that carries nothing, without the sink.
 /// Returns TRUE if a reaction blocked the hit.
