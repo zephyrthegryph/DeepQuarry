@@ -59,3 +59,8 @@ Lane-ready on `0c029a9704`: **85 passed / 0 failed / 0 skipped**, clean boot; pr
 **Stamping blocker:** `dq_merge_gates.sh` rejects the expected look-key output as a dirty tree before `dq_lane_ready.sh` can perform its documented snapshot-output commit. Every gate returned zero, but no lane-ready note was written. A minimal, opt-in snapshot-output fix is prepared in `data/codex-machinery/lane-ready-snapshot-output.patch`; another gate run requires clarification under the one-run policy. No branch push has been performed for this re-land yet.
 
 The user approved the opt-in snapshot-output workflow fix and one lane-ready retry. The default direct merge gate remains strict; only lane-ready requests permission for its own successful snapshot output. Staged edits, changed HEAD and non-snapshot edits still prevent stamping.
+
+
+Approved retry on `a992c9588c02` completed: **85 passed, 0 failed**, all gates passed, and lane-ready wrote and pushed its note. Production compile and DreamChecker remained clean. The snapshot-output stamping blocker is resolved. No appearance rows were blessed by this retry.
+
+A separate workflow performance defect remains: a mixed main/look batch with zero stale look keys launches an unfiltered appearance world instead of skipping it. This retry reported zero of 21,008 keys changed, then swept 8,396 types; it passed but took 2,848 seconds. The minimal runner fix is saved for its owner in `data/codex-machinery/zero-stale-look-runner.patch`, not applied. The broad sweep reported existing global state leaks; no assertions failed.
