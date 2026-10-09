@@ -23,6 +23,15 @@ including compilation. These are not the full release workspace gate.
 Receipts: `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-034905-06380360.json`
 and `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-035018-f134b27c.json`.
 
+Full release workspace compilation on the shared-stage candidate also exceeded
+the bounded 600-second attempt and one subsequent 600-second continuation before
+tests ran. Package-isolated fallback was stopped because changing workspace feature
+unification rebuilt dependencies. Alternating worktree/stable source roots also
+invalidated dependency fingerprints. Further checks use the same authenticated
+stable root. The release gate remains open; no runtime suite was launched.
+Latest compilation-only receipt:
+`E:/dq-cache/dmb-native-v2/stable-release-gate-20261009-035453-e0b10789-0.json`.
+
 ## Shared-stage source validation
 
 The latest batch shares exact macro trace text and empty trace vectors, uses one
