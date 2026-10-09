@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 pub struct RetainedMaps {
     parse: dm_session::ArtifactStore<MapPlan>,
     geometry: dm_session::ArtifactStore<GeometryArtifact>,
+    pub(super) outputs: dm_session::ArtifactStore<super::outputs::MapOutputs>,
     sources: Mutex<BTreeMap<PathBuf, RetainedText>>,
     revision: AtomicU64,
 }
@@ -19,11 +20,13 @@ impl RetainedMaps {
         self.parse
             .admitted_bytes()
             .saturating_add(self.geometry.admitted_bytes())
+            .saturating_add(self.outputs.admitted_bytes())
     }
     pub fn current_revision() -> Self {
         Self {
             parse: dm_session::ArtifactStore::current_revision(),
             geometry: dm_session::ArtifactStore::current_revision(),
+            outputs: dm_session::ArtifactStore::current_revision(),
             sources: Mutex::new(BTreeMap::new()),
             revision: AtomicU64::new(0),
         }
@@ -33,6 +36,7 @@ impl RetainedMaps {
 pub(super) struct CurrentRoster {
     parse: Vec<Arc<[u8]>>,
     geometry: Vec<Arc<[u8]>>,
+    pub(super) outputs: Vec<Arc<[u8]>>,
     sources: Vec<PathBuf>,
 }
 struct NoReads;
@@ -122,6 +126,9 @@ impl MapMemo {
         retained
             .geometry
             .retain_current_keys(current.geometry.iter().map(|k| k.as_ref()));
+        retained
+            .outputs
+            .retain_current_keys(current.outputs.iter().map(|k| k.as_ref()));
         retained
             .sources
             .lock()

@@ -49,6 +49,34 @@ pub(crate) struct MetadataDependencies {
     order: Vec<MemberId>,
 }
 impl MetadataDependencies {
+    pub(crate) fn visit_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        fn vector<T>(values: &Vec<T>, visit: &mut impl FnMut(usize, usize, usize)) {
+            visit(
+                values.as_ptr() as usize,
+                values.len().saturating_mul(std::mem::size_of::<T>()),
+                values.capacity().saturating_mul(std::mem::size_of::<T>()),
+            );
+        }
+        // All shape fields are scalar; an added owned field must update this audit.
+        for value in &self.roster {
+            match value {
+                Shape::Type { path: _, parent: _ }
+                | Shape::Member {
+                    owner: _,
+                    name: _,
+                    kind: _,
+                    mode: _,
+                } => (),
+            }
+        }
+        vector(&self.roster, &mut visit);
+        vector(&self.members_at_declaration, &mut visit);
+        vector(&self.dependants, &mut visit);
+        for dependants in &self.dependants {
+            vector(dependants, &mut visit);
+        }
+        vector(&self.order, &mut visit);
+    }
     pub(crate) fn capture(tree: &SemanticTree, skeletons: &[Skeleton]) -> Option<Self> {
         if tree.declarations().len() != skeletons.len() {
             return None;

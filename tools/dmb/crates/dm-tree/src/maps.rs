@@ -12,25 +12,25 @@ pub struct CapturedMap {
     pub include_occurrence: u32,
     pub source: Arc<str>,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AssignmentOrigin {
     pub span: Span,
     pub value_span: Span,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AtomOrigin {
     pub span: Span,
     pub type_span: Span,
     pub assignments: Arc<[AssignmentOrigin]>,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TemplateOrigin {
     pub span: Span,
     pub key_span: Span,
     pub payload_span: Span,
     pub atoms: Arc<[AtomOrigin]>,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BlockOrigin {
     pub span: Span,
     pub cells_span: Span,

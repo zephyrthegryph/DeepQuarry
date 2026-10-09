@@ -870,3 +870,21 @@ executed the intended fixtures (receipt initializer-direct-focused-20261009.json
 No DM runtime tests or new DeepQuarry performance cohort were run. Full modifier
 fact admission, startup/ABI roster processing and output linking remain migration
 work; these results do not establish full BYOND parity or complete incrementalism.
+
+### Retained map output migration — 9 October
+
+Map sources, parsed documents, geometry, descriptors and initializer code now
+reuse through the retained daemon owner and common exact dependency ledger.
+Descriptor entries and initializer code/debug payloads are immutable shared owners;
+current-table rebinding and binary encoding still run. Source/location/resource
+context and changed resolver reads invalidate reuse. The request telemetry now
+reports output_hits and outputs_prepared.
+
+Locked workspace all-target check passed (35.49 s after repairing Arc consumers).
+Eleven focused map/output/source-proof/owner/census/recipe fixtures passed;
+compile took 158 s and each executable group completed below 0.03 s.
+Receipt: E:/dq-cache/dmb-native-v2/map-outputs-focused-20261009.json.
+This is functional validation, not a new DeepQuarry timing or BYOND runtime gate.
+Metadata dependency vector backing is now traversed explicitly for census;
+private allocator/control overhead and conservative code-index charges remain
+disclosed limitations. Human DESIGN and REVIEW documents remain untouched.

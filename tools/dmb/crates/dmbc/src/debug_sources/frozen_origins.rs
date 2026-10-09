@@ -10,6 +10,11 @@ pub struct DebugOriginView<'a> {
 pub trait OriginAccess {
     fn iter(&self) -> impl Iterator<Item = DebugOriginView<'_>>;
 }
+impl<T: OriginAccess> OriginAccess for Arc<T> {
+    fn iter(&self) -> impl Iterator<Item = DebugOriginView<'_>> {
+        self.as_ref().iter()
+    }
+}
 impl OriginAccess for DebugOrigins {
     fn iter(&self) -> impl Iterator<Item = DebugOriginView<'_>> {
         self.entries.iter().map(|origin| DebugOriginView {
@@ -40,6 +45,26 @@ impl From<DebugOrigins> for FrozenDebugOrigins {
                 .entry(Arc::clone(&origin.semantic_path))
                 .or_insert_with(|| {
                     paths.push(origin.semantic_path);
+                    next
+                });
+            (index, origin.line)
+        }));
+        Self(Arc::new(Storage {
+            paths: paths.into_boxed_slice(),
+            origins: roster,
+        }))
+    }
+}
+impl From<Arc<DebugOrigins>> for FrozenDebugOrigins {
+    fn from(origins: Arc<DebugOrigins>) -> Self {
+        let mut paths = Vec::new();
+        let mut indexes = HashMap::new();
+        let roster = OriginRoster::from_entries(origins.entries.iter().map(|origin| {
+            let next = paths.len();
+            let index = *indexes
+                .entry(Arc::clone(&origin.semantic_path))
+                .or_insert_with(|| {
+                    paths.push(Arc::clone(&origin.semantic_path));
                     next
                 });
             (index, origin.line)

@@ -685,7 +685,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         .chain(
             map_initializers
                 .iter()
-                .map(|unit| (&unit.code, &unit.debug_origins)),
+                .map(|unit| (unit.code.as_ref(), unit.debug_origins.as_ref())),
         );
     let modified_defaults = pending_modified_defaults.map_err(ColdError::Initializer)?;
     let modified = crate::modified_initializers::collect_owned_prepared_with_defaults(

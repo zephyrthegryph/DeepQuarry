@@ -5,6 +5,7 @@ use dm_codegen_byond::lower_resolver::ResolverProc;
 use dm_link::InitializerIdentity;
 use std::sync::Arc;
 
+#[derive(Clone)]
 pub enum InitializationCoverage {
     ModifiedAssignments {
         count: u32,
@@ -18,10 +19,11 @@ pub enum InitializationCoverage {
         canonical_body: Arc<[u8]>,
     },
 }
+#[derive(Clone)]
 pub struct InitializationArtifact {
     pub identity: InitializerIdentity,
-    pub code: ResolverProc,
-    pub debug_origins: DebugOrigins,
+    pub code: Arc<ResolverProc>,
+    pub debug_origins: Arc<DebugOrigins>,
     pub coverage: InitializationCoverage,
 }
 impl From<LoweredInitializerUnit> for InitializationArtifact {
@@ -31,8 +33,8 @@ impl From<LoweredInitializerUnit> for InitializationArtifact {
                 dm_ir::InitializerScope::Global => InitializerIdentity::Global,
                 dm_ir::InitializerScope::Instance(owner) => InitializerIdentity::Class(owner),
             },
-            code: unit.code,
-            debug_origins: unit.debug_origins,
+            code: Arc::new(unit.code),
+            debug_origins: Arc::new(unit.debug_origins),
             coverage: InitializationCoverage::DeclarationWrites(unit.write_ordinals),
         }
     }

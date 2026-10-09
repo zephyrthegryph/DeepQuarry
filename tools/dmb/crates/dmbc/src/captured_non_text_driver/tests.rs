@@ -672,7 +672,7 @@ fn prepared_nontext_rejects_tampered_descriptor_before_model_release() {
         &directives,
     )
     .unwrap();
-    output.descriptors.as_mut().unwrap().entries[0].content =
+    std::sync::Arc::make_mut(&mut output.descriptors.as_mut().unwrap().entries)[0].content =
         Arc::<[u8]>::from(b"invalid descriptor".as_slice()).into();
     assert!(output.into_prepared(&frontend).is_err());
 }

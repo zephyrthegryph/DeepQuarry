@@ -175,8 +175,8 @@ pub fn lower<R: Resolver>(
         })?;
         let artifact = InitializationArtifact {
             identity,
-            code,
-            debug_origins: origins.collector.into_inner().finish(),
+            code: Arc::new(code),
+            debug_origins: Arc::new(origins.collector.into_inner().finish()),
             coverage: InitializationCoverage::MapAssignments {
                 count: u32::try_from(unit.assignments.len())
                     .map_err(|_| "map assignment count overflow")?,

@@ -286,8 +286,8 @@ fn finish_collection<R: Resolver>(
             identity: dm_link::InitializerIdentity::Modified(SymbolId::of(
                 &captured.descriptor.alias(),
             )),
-            code,
-            debug_origins,
+            code: Arc::new(code),
+            debug_origins: Arc::new(debug_origins),
             coverage: InitializationCoverage::ModifiedAssignments {
                 count: u32::try_from(fields.len())
                     .map_err(|_| "modified field count exceeds u32")?,

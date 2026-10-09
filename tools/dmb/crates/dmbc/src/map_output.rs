@@ -11,10 +11,11 @@ use dm_link::{Entry, InitializerIdentity, Key, LinkInventory, LinkTables};
 use dm_tree::maps::MapPlan;
 use std::{collections::BTreeMap, sync::Arc};
 
+#[derive(Clone)]
 pub struct DescriptorPlan {
     pub keys: Arc<[Key]>,
     pub initializers: Arc<[Option<InitializerIdentity>]>,
-    pub entries: Vec<Entry>,
+    pub entries: Arc<[Entry]>,
 }
 #[derive(Debug)]
 pub enum Error {
@@ -141,7 +142,7 @@ pub fn descriptors(
     Ok(DescriptorPlan {
         keys: keys.into(),
         initializers: initializers.into(),
-        entries,
+        entries: entries.into(),
     })
 }
 impl DescriptorPlan {

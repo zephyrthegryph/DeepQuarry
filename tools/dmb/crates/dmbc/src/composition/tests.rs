@@ -417,8 +417,8 @@ fn ownership_fixture_with_initializers(
                     source: 1,
                     descriptor: 2,
                 },
-                code: unit.code.clone(),
-                debug_origins: unit.debug_origins.clone(),
+                code: std::sync::Arc::new(unit.code.clone()),
+                debug_origins: std::sync::Arc::new(unit.debug_origins.clone()),
                 coverage: InitializationCoverage::MapAssignments {
                     count: 0,
                     canonical_body: std::sync::Arc::from(&b"map"[..]),
@@ -426,8 +426,8 @@ fn ownership_fixture_with_initializers(
             },
             InitializationArtifact {
                 identity: dm_link::InitializerIdentity::Modified(alias),
-                code: unit.code.clone(),
-                debug_origins: unit.debug_origins.clone(),
+                code: std::sync::Arc::new(unit.code.clone()),
+                debug_origins: std::sync::Arc::new(unit.debug_origins.clone()),
                 coverage: InitializationCoverage::ModifiedAssignments {
                     count: 0,
                     canonical_body: std::sync::Arc::from(&b"modified"[..]),

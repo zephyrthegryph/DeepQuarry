@@ -1,5 +1,6 @@
-//! S5 syntax and symbolic geometry reuse. No dense IDs, resource payloads or
-//! linked initializer artifacts enter this memo. Initializer lowering still runs.
+//! Captured map syntax, symbolic geometry, and immutable emission reuse.
+//! Current provenance and the common read ledger authorize artifacts; no dense
+//! table IDs, linked images, or resource payloads enter this owner.
 use crate::lowering_memo::{CachePublisher, RecordingResolver, ResolverRead};
 use crate::map_projection::{Projection, WorldDefaults};
 use dm_ir::Resolver;
@@ -9,11 +10,17 @@ use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc, Mutex,
 };
+#[path = "map_memo_outputs.rs"]
+mod outputs;
+pub use outputs::MapOutputInputs;
 #[path = "map_memo_retained.rs"]
 mod retained;
 #[path = "map_memo_wire.rs"]
 mod wire;
 pub use retained::RetainedMaps;
+#[cfg(test)]
+#[path = "map_memo_output_tests.rs"]
+mod output_tests;
 #[cfg(test)]
 #[path = "map_memo_retained_tests.rs"]
 mod retained_tests;
@@ -23,6 +30,8 @@ const MAX_ENTRIES: usize = 1024;
 pub struct Counts {
     pub parse_hits: AtomicU64,
     pub geometry_hits: AtomicU64,
+    pub output_hits: AtomicU64,
+    pub outputs_prepared: AtomicU64,
     pub parsed: AtomicU64,
     pub projected: AtomicU64,
     pub skipped_budget: AtomicU64,

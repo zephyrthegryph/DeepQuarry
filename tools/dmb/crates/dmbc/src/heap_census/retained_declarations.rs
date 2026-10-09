@@ -4,6 +4,7 @@ use dm_tree::frontend::{DeclarationStorageView, RetainedSemanticTree};
 
 pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
     let mut census = HeapCensus::new("retained_declarations");
+    super::metadata_dependencies::inspect(&mut census, state);
     state.visit_declaration_storage(|view| match view {
         DeclarationStorageView::Store { buckets, entries } => {
             census.owner("retained_declarations.index").observed_items += entries as u64;
@@ -85,6 +86,12 @@ mod tests {
         let first = inspect(&state);
         let second = inspect(&state);
         assert!(first.unique_known_capacity_bytes > 0);
+        assert!(first
+            .owners
+            .iter()
+            .any(|owner| owner.owner == "retained_metadata_dependencies"
+                && owner.unique_known_capacity_bytes > 0
+                && owner.unknown.is_empty()));
         assert_eq!(
             first.unique_known_capacity_bytes,
             second.unique_known_capacity_bytes

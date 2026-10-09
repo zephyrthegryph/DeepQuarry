@@ -623,21 +623,49 @@ fn capture_with_resource_operation<
             }
             .map_err(|error| format!("map projection: {error:?}"))
         })?;
-        let descriptors = timed(observer, CaptureStage::MapDescriptors, || {
-            crate::map_output::descriptors(frontend, &map, &captured.maps)
-                .map_err(|error| format!("map descriptors: {error:?}"))
-        })?;
-        let artifacts = timed(observer, CaptureStage::MapInitializers, || {
-            crate::map_artifacts::lower(
-                frontend,
-                &captured.maps,
-                &map,
-                &descriptors,
-                &symbols,
-                &resolver,
-                Some(context),
-            )
-        })?;
+        let prepare_descriptors = |cached: Option<&crate::map_output::DescriptorPlan>| {
+            timed(observer, CaptureStage::MapDescriptors, || match cached {
+                Some(plan) => Ok(plan.clone()),
+                None => crate::map_output::descriptors(frontend, &map, &captured.maps)
+                    .map_err(|error| format!("map descriptors: {error:?}")),
+            })
+        };
+        let prepare_initializers =
+            |cached: Option<&[InitializationArtifact]>,
+             descriptors: &crate::map_output::DescriptorPlan,
+             host: &dm_session::RecordingResolver<'_, _>| {
+                timed(observer, CaptureStage::MapInitializers, || match cached {
+                    Some(artifacts) => Ok(artifacts.to_vec()),
+                    None => crate::map_artifacts::lower(
+                        frontend,
+                        &captured.maps,
+                        &map,
+                        descriptors,
+                        &symbols,
+                        host,
+                        Some(context),
+                    ),
+                })
+            };
+        let (descriptors, artifacts) = match map_memo {
+            Some(memo) => memo.output_artifacts(
+                crate::map_memo::MapOutputInputs {
+                    frontend,
+                    maps: &captured.maps,
+                    projection: &map,
+                    host: &resolver,
+                    resource_search_context: Some(context),
+                },
+                prepare_descriptors,
+                prepare_initializers,
+            )?,
+            None => {
+                let descriptors = prepare_descriptors(None)?;
+                let recording = dm_session::RecordingResolver::new(&resolver);
+                let artifacts = prepare_initializers(None, &descriptors, &recording)?;
+                (descriptors, artifacts)
+            }
+        };
         (Some(map), Some(descriptors), artifacts)
     };
     if let Some(memo) = map_memo {

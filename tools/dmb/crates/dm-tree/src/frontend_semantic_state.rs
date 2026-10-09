@@ -19,6 +19,16 @@ struct Entry {
     metadata_dependencies: Option<crate::metadata_update::MetadataDependencies>,
 }
 impl RetainedSemanticTree {
+    /// Diagnostic-only borrowed dependency backing; no roster is materialized.
+    pub fn visit_metadata_dependency_storage(&self, visit: impl FnMut(usize, usize, usize)) {
+        if let Some(graph) = self
+            .entry
+            .as_ref()
+            .and_then(|entry| entry.metadata_dependencies.as_ref())
+        {
+            graph.visit_storage(visit);
+        }
+    }
     /// Explicit census; callback must not mutate/reenter this retained store.
     pub fn visit_declaration_storage(&self, visit: impl FnMut(super::DeclarationStorageView<'_>)) {
         self.declarations.visit_storage(visit);

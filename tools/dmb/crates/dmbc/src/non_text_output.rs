@@ -78,7 +78,7 @@ impl crate::composition::NonTextOutputStage for CapturedOutputStage<'_> {
                     || expected
                         .entries
                         .iter()
-                        .zip(&descriptors.entries)
+                        .zip(descriptors.entries.iter())
                         .any(|(left, right)| left.key != right.key || left.content != right.content)
                 {
                     return Err("map descriptor source identity mismatch".into());
