@@ -31,8 +31,8 @@ impl CapturedConstantEvaluator for Facts {
         _: &dm_ir::SymbolicExpression,
         _: &AbiContext<'_>,
     ) -> Result<dm_ir::SemanticValue, dm_codegen_byond::procedure_abi::AbiError> {
-        Err(dm_codegen_byond::procedure_abi::AbiError(
-            "no constants in fixture".into(),
+        Err(dm_codegen_byond::procedure_abi::AbiError::unsupported(
+            "no constants in fixture",
         ))
     }
 }

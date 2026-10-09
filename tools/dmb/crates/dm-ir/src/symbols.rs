@@ -55,7 +55,30 @@ pub struct SymbolTable {
     parent: Option<Arc<SymbolTable>>,
 }
 
+/// Borrowed backing inventory for diagnostic ownership traversal. HashMap's
+/// usable capacity is exposed; its private bucket allocation is not fabricated.
+pub struct SymbolTableStorage<'a> {
+    pub local_len: usize,
+    pub local_capacity: usize,
+    pub parent: Option<&'a Arc<SymbolTable>>,
+}
+
 impl SymbolTable {
+    /// Visit local shared spellings without sorting, copying, or materializing
+    /// inherited entries. Callers can deduplicate the immutable parent separately.
+    pub fn visit_storage(
+        &self,
+        mut visitor: impl FnMut(SymbolId, &Arc<str>),
+    ) -> SymbolTableStorage<'_> {
+        for (&id, text) in &self.texts {
+            visitor(id, text);
+        }
+        SymbolTableStorage {
+            local_len: self.texts.len(),
+            local_capacity: self.texts.capacity(),
+            parent: self.parent.as_ref(),
+        }
+    }
     /// Immutable spelling backing plus a small collision-checked local delta.
     pub fn overlay(parent: Arc<SymbolTable>) -> Self {
         Self {

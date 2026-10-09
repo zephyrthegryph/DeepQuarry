@@ -27,6 +27,9 @@ pub struct BuildHost {
     procedures: Option<(u128, ProcedureValues)>,
     semantic: Option<dm_tree::frontend::RetainedSemanticTree>,
     initializers: Option<(u128, Arc<crate::initializer_policy::InitializerArtifacts>)>,
+    startup: Option<(u128, Arc<crate::startup::StartupArtifacts>)>,
+    abi: Option<(u128, Arc<crate::driver_facts::AbiArtifacts>)>,
+    initializer_fragments: Option<(u128, Arc<crate::initializer_lowering::InitializerFragments>)>,
     symbolic: Option<(
         u128,
         Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>,
@@ -59,6 +62,9 @@ impl Default for BuildHost {
             semantic: Some(dm_tree::frontend::RetainedSemanticTree::new()),
             symbolic: None,
             initializers: None,
+            startup: None,
+            abi: None,
+            initializer_fragments: None,
         }
     }
 }
@@ -73,6 +79,9 @@ impl BuildHost {
             semantic: None,
             symbolic: None,
             initializers: None,
+            startup: None,
+            abi: None,
+            initializer_fragments: None,
         }
     }
 
@@ -83,6 +92,23 @@ impl BuildHost {
         self.symbolic
             .as_ref()
             .map(|(_, store)| store.retention_stats())
+    }
+
+    /// Constant-time retained declaration counters. Unknown payload ownership is
+    /// reported explicitly rather than presented as measured retained bytes.
+    pub fn declaration_retention_stats(
+        &self,
+    ) -> Option<dm_tree::frontend::DeclarationRetentionStats> {
+        self.semantic
+            .as_ref()
+            .map(|state| state.declaration_retention_stats())
+    }
+
+    /// Explicit diagnostic traversal; never performed during artifact lookup.
+    pub fn declaration_retention_census(&self) -> Option<crate::heap_census::HeapCensusReport> {
+        self.semantic
+            .as_ref()
+            .map(crate::heap_census::retained_declaration_census)
     }
 
     pub(crate) fn retains_artifacts(&self) -> bool {
@@ -129,6 +155,31 @@ impl BuildHost {
         );
         memo.symbolic = Some(Arc::clone(&self.symbolic.as_ref().unwrap().1));
         memo.initializers = Some(Arc::clone(&self.initializers.as_ref().unwrap().1));
+        if self
+            .startup
+            .as_ref()
+            .is_none_or(|(previous, _)| *previous != policy)
+        {
+            self.startup = Some((policy, Arc::new(Default::default())));
+        }
+        memo.startup = Some(Arc::clone(&self.startup.as_ref().unwrap().1));
+        if self
+            .abi
+            .as_ref()
+            .is_none_or(|(previous, _)| *previous != policy)
+        {
+            self.abi = Some((policy, Arc::new(Default::default())));
+        }
+        memo.abi = Some(Arc::clone(&self.abi.as_ref().unwrap().1));
+        if self
+            .initializer_fragments
+            .as_ref()
+            .is_none_or(|(previous, _)| *previous != policy)
+        {
+            self.initializer_fragments = Some((policy, Arc::new(Default::default())));
+        }
+        memo.initializer_fragments =
+            Some(Arc::clone(&self.initializer_fragments.as_ref().unwrap().1));
         Some(memo)
     }
 
@@ -220,6 +271,9 @@ impl BuildHost {
         self.procedures = None;
         self.symbolic = None;
         self.initializers = None;
+        self.startup = None;
+        self.abi = None;
+        self.initializer_fragments = None;
         if self.semantic.is_some() {
             self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());
         }

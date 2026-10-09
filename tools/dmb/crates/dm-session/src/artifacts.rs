@@ -1,4 +1,4 @@
-//! Immutable result ownership with bounded resident retention.
+//! Immutable result ownership with budgeted or current-revision retention.
 use crate::{matching_domains, ResolverRead};
 use dm_ir::{ReadDomain, ResolveQuery, Resolver};
 use std::{
@@ -11,6 +11,27 @@ pub struct AcceptedArtifact<T> {
     pub value: Arc<T>,
     pub reads: Arc<[ResolverRead]>,
     pub versions: Arc<[(ReadDomain, u128)]>,
+}
+
+/// Diagnostic-only borrowed storage. Bucket bytes are exposed Vec allocations;
+/// BTree nodes/control blocks are deliberately not represented as exact bytes.
+pub enum ArtifactStorageView<'a, T> {
+    Store {
+        buckets: usize,
+        entries: usize,
+    },
+    Bucket {
+        address: usize,
+        len: usize,
+        capacity: usize,
+        element_size: usize,
+    },
+    Entry {
+        key: &'a Arc<[u8]>,
+        reads: &'a Arc<[ResolverRead]>,
+        versions: &'a Arc<[(ReadDomain, u128)]>,
+        value: &'a Arc<T>,
+    },
 }
 #[derive(Clone)]
 struct Variant<T> {
@@ -26,7 +47,8 @@ struct Resident<T> {
 }
 
 /// Hashes choose buckets only; exact key bytes and all semantic answers authorize
-/// reuse. Variants are insertion ordered; the oldest of at most four is evicted.
+/// reuse. Budgeted stores evict insertion-ordered variants; current-revision
+/// stores keep one answer per exact key and prune against the caller's roster.
 pub struct ArtifactStore<T> {
     state: Mutex<Resident<T>>,
     retention: Retention,
@@ -44,6 +66,31 @@ impl<T> Default for ArtifactStore<T> {
     }
 }
 impl<T> ArtifactStore<T> {
+    /// Explicit census only. The callback runs under the store lock and must not
+    /// call back into this store. No value/key cloning or serialization occurs.
+    pub fn visit_storage(&self, mut visit: impl FnMut(ArtifactStorageView<'_, T>)) {
+        let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        visit(ArtifactStorageView::Store {
+            buckets: state.buckets.len(),
+            entries: state.buckets.values().map(Vec::len).sum(),
+        });
+        for bucket in state.buckets.values() {
+            visit(ArtifactStorageView::Bucket {
+                address: bucket.as_ptr() as usize,
+                len: bucket.len(),
+                capacity: bucket.capacity(),
+                element_size: std::mem::size_of::<Variant<T>>(),
+            });
+            for entry in bucket {
+                visit(ArtifactStorageView::Entry {
+                    key: &entry.key,
+                    reads: &entry.reads,
+                    versions: &entry.versions,
+                    value: &entry.value,
+                });
+            }
+        }
+    }
     pub fn with_limit(limit: usize) -> Self {
         Self {
             state: Mutex::new(Resident {
@@ -267,6 +314,47 @@ mod tests {
         }
     }
     struct Value(Arc<AtomicUsize>);
+    #[test]
+    fn diagnostic_storage_borrows_actual_owner_without_cloning_it() {
+        let store = ArtifactStore::current_revision();
+        let key: Arc<[u8]> = Arc::from(b"diagnostic".as_slice());
+        store.insert_with(Arc::clone(&key), Vec::new(), Vec::new(), 7, || vec![1u8, 2]);
+        let retained = store.lookup(&key, &Host).unwrap();
+        let count = Arc::strong_count(&retained);
+        let mut saw = (false, false, false);
+        store.visit_storage(|storage| match storage {
+            ArtifactStorageView::Store { buckets, entries } => {
+                assert_eq!((buckets, entries), (1, 1));
+                saw.0 = true;
+            }
+            ArtifactStorageView::Bucket {
+                address,
+                len,
+                capacity,
+                element_size,
+            } => {
+                assert_ne!(address, 0);
+                assert_eq!(len, 1);
+                assert!(capacity >= len);
+                assert_eq!(element_size, std::mem::size_of::<Variant<Vec<u8>>>());
+                saw.1 = true;
+            }
+            ArtifactStorageView::Entry {
+                key: borrowed_key,
+                value,
+                reads,
+                versions,
+            } => {
+                assert!(Arc::ptr_eq(borrowed_key, &key));
+                assert!(Arc::ptr_eq(value, &retained));
+                assert_eq!(Arc::strong_count(value), count);
+                assert!(reads.is_empty() && versions.is_empty());
+                saw.2 = true;
+            }
+        });
+        assert_eq!(saw, (true, true, true));
+        assert_eq!(store.admitted_bytes(), 7);
+    }
     impl Drop for Value {
         fn drop(&mut self) {
             self.0.fetch_add(1, Ordering::SeqCst);

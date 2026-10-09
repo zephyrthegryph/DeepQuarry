@@ -45,6 +45,9 @@ impl DriverFacts<'_> {
 mod evaluator;
 pub use evaluator::DriverEvaluator;
 use evaluator::LexicalAbiEvaluator;
+#[path = "driver_facts/abi_artifacts.rs"]
+mod abi_artifacts;
+pub use abi_artifacts::AbiArtifacts;
 
 /// Captured boundary facts are explicit; a missing entry never means Fresh.
 /// Discovery must certify Fresh only with complete named-procedure absence.
@@ -72,12 +75,12 @@ impl CertifiedIntrinsicAbi {
     ) -> Result<Self, AbiError> {
         const TEMPLATE: &[u8] = include_bytes!("../../../fixtures/native_template.bin");
         if !engine.matches_template(TEMPLATE, 1) {
-            return Err(AbiError(
-                "unsupported intrinsic ABI receipt template".into(),
+            return Err(AbiError::unsupported(
+                "unsupported intrinsic ABI receipt template",
             ));
         }
         let fact = crate::native_callbacks::lookup(owner, name)
-            .ok_or_else(|| AbiError("unsupported intrinsic ABI receipt callback".into()))?;
+            .ok_or_else(|| AbiError::unsupported("unsupported intrinsic ABI receipt callback"))?;
         Ok(Self {
             engine_identity: engine.identity(),
             owner,
@@ -100,17 +103,17 @@ impl CapturedInheritedFacts for DriverInheritedFacts<'_> {
         let id = self
             .unit_members
             .get(&context.identity)
-            .ok_or_else(|| AbiError("procedure is not in captured model".into()))?;
+            .ok_or_else(|| AbiError::unsupported("procedure is not in captured model"))?;
         let node = tree
             .member(*id)
-            .ok_or_else(|| AbiError("indexed procedure member missing".into()))?;
+            .ok_or_else(|| AbiError::unsupported("indexed procedure member missing"))?;
         if let Some(previous) = node.previous {
             return self
                 .source_layouts
                 .get(&previous)
                 .map(|abi| InheritedLayout::Known(abi.layout.clone()))
                 .ok_or_else(|| {
-                    AbiError("previous source procedure ABI has not been prepared".into())
+                    AbiError::unsupported("previous source procedure ABI has not been prepared")
                 });
         }
         match self.boundaries.get(&context.identity) {
@@ -121,8 +124,8 @@ impl CapturedInheritedFacts for DriverInheritedFacts<'_> {
                     || node.kind != MemberKind::Proc
                     || node.definition == dm_tree::DefinitionMode::Declare
                 {
-                    return Err(AbiError(
-                        "intrinsic ABI receipt does not match current procedure".into(),
+                    return Err(AbiError::unsupported(
+                        "intrinsic ABI receipt does not match current procedure",
                     ));
                 }
                 let mut cursor = Some(node.owner);
@@ -135,14 +138,14 @@ impl CapturedInheritedFacts for DriverInheritedFacts<'_> {
                     }
                     cursor = tree.parent(id);
                 }
-                Err(AbiError(
-                    "intrinsic ABI receipt is outside current ancestry".into(),
+                Err(AbiError::unsupported(
+                    "intrinsic ABI receipt is outside current ancestry",
                 ))
             }
             Some(BoundaryAbi::Engine { owner, name, kind }) => {
                 if *name != node.name || *kind != node.kind {
-                    return Err(AbiError(
-                        "engine boundary names a different procedure".into(),
+                    return Err(AbiError::unsupported(
+                        "engine boundary names a different procedure",
                     ));
                 }
                 let mut cursor = Some(node.owner);
@@ -152,16 +155,16 @@ impl CapturedInheritedFacts for DriverInheritedFacts<'_> {
                     cursor = tree.parent(id);
                 }
                 if !contains {
-                    return Err(AbiError(
-                        "engine boundary is outside current ancestry".into(),
+                    return Err(AbiError::unsupported(
+                        "engine boundary is outside current ancestry",
                     ));
                 }
                 self.engine
                     .procedure_layout(*owner, *name, *kind)
-                    .map_err(|error| AbiError(format!("engine ABI: {error:?}")))?
+                    .map_err(|error| AbiError::unsupported(format!("engine ABI: {error:?}")))?
                     .cloned()
                     .map(InheritedLayout::Known)
-                    .ok_or_else(|| AbiError("selected engine ABI is not captured".into()))
+                    .ok_or_else(|| AbiError::unsupported("selected engine ABI is not captured"))
             }
             None => Ok(InheritedLayout::Unsupported),
         }
@@ -176,19 +179,21 @@ pub fn unit_members(frontend: &ColdFrontend) -> Result<BTreeMap<UnitIdentity, Me
     for body in frontend.bodies.iter() {
         let node = tree
             .member(body.member)
-            .ok_or_else(|| AbiError("body member missing".into()))?;
+            .ok_or_else(|| AbiError::unsupported("body member missing"))?;
         let owner = tree
             .type_node(node.owner)
-            .ok_or_else(|| AbiError("body owner missing".into()))?
+            .ok_or_else(|| AbiError::unsupported("body owner missing"))?
             .path;
         let namespace = match node.kind {
             MemberKind::Proc => Namespace::Proc,
             MemberKind::Verb => Namespace::Verb,
-            MemberKind::Var => return Err(AbiError("variable body in procedure index".into())),
+            MemberKind::Var => {
+                return Err(AbiError::unsupported("variable body in procedure index"))
+            }
         };
         let occurrence = tree
             .member_occurrence(body.member)
-            .ok_or_else(|| AbiError("empty procedure chain".into()))?;
+            .ok_or_else(|| AbiError::unsupported("empty procedure chain"))?;
         let identity = UnitIdentity {
             owner,
             name: node.name,
@@ -196,7 +201,9 @@ pub fn unit_members(frontend: &ColdFrontend) -> Result<BTreeMap<UnitIdentity, Me
             occurrence,
         };
         if result.insert(identity, body.member).is_some() {
-            return Err(AbiError("ambiguous current procedure occurrence".into()));
+            return Err(AbiError::unsupported(
+                "ambiguous current procedure occurrence",
+            ));
         }
     }
     Ok(result)
@@ -205,7 +212,7 @@ pub fn unit_members(frontend: &ColdFrontend) -> Result<BTreeMap<UnitIdentity, Me
 pub struct PreparedSourceAbi {
     /// Encounter order, regardless of topological/worker completion order.
     pub units: Vec<(MemberId, crate::procedure_policy::PreparedUnit)>,
-    pub diagnostics: Vec<(usize, String)>,
+    pub diagnostics: Vec<(usize, AbiError)>,
 }
 pub struct PreparedPinnedSourceAbi {
     pub policy_identity: u128,
@@ -226,13 +233,23 @@ pub fn abi_diagnostics(
         .iter()
         .map(|(ordinal, message)| {
             let body = frontend.bodies.get(*ordinal).ok_or_else(|| {
-                AbiError("ABI diagnostic body ordinal is outside captured frontend".into())
+                AbiError::invariant("ABI diagnostic body ordinal is outside captured frontend")
             })?;
             Ok(crate::lowering::LoweringDiagnostic {
-                kind: dm_tree::frontend::DiagnosticKind::UnsupportedModel,
+                kind: match message.kind {
+                    dm_codegen_byond::procedure_abi::AbiErrorKind::Source => {
+                        dm_tree::frontend::DiagnosticKind::SourceError
+                    }
+                    dm_codegen_byond::procedure_abi::AbiErrorKind::Unsupported => {
+                        dm_tree::frontend::DiagnosticKind::UnsupportedModel
+                    }
+                    dm_codegen_byond::procedure_abi::AbiErrorKind::Invariant => {
+                        dm_tree::frontend::DiagnosticKind::Internal
+                    }
+                },
                 identity: identities.get(&body.member).copied(),
                 origin: body.source.clone(),
-                message: message.clone(),
+                message: message.message.clone(),
             })
         })
         .collect::<Result<Vec<_>, AbiError>>()?;
@@ -253,10 +270,12 @@ pub fn prepare_pinned_source_abi(
     resource_search_context: Option<u128>,
     workers: usize,
 ) -> Result<PreparedPinnedSourceAbi, AbiError> {
-    let coverage =
-        crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine).map_err(AbiError)?;
+    let coverage = crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine)
+        .map_err(AbiError::unsupported)?;
     let policy_identity = coverage.policy_identity();
-    let boundaries = coverage.boundaries(frontend).map_err(AbiError)?;
+    let boundaries = coverage
+        .boundaries(frontend)
+        .map_err(AbiError::unsupported)?;
     let evaluator = DriverEvaluator {
         pure_calls: None,
         resource_search_context,
@@ -287,7 +306,7 @@ pub fn prepare_pinned_source_abi_with_startup<R: Resolver>(
     workers: usize,
 ) -> Result<PreparedPinnedSourceAbi, AbiError> {
     let executor = dm_exec::BuildExecutor::new(workers)
-        .map_err(|error| AbiError(format!("ABI executor creation failed: {error}")))?;
+        .map_err(|error| AbiError::unsupported(format!("ABI executor creation failed: {error}")))?;
     prepare_pinned_source_abi_with_startup_on_executor(
         frontend,
         engine,
@@ -305,15 +324,39 @@ pub fn prepare_pinned_source_abi_with_startup_on_executor<R: Resolver>(
     resource_search_context: Option<u128>,
     executor: &dm_exec::BuildExecutor,
 ) -> Result<PreparedPinnedSourceAbi, AbiError> {
-    startup.validate_for(frontend).map_err(AbiError)?;
-    let static_resolver = startup.resolver(frontend, resolver).map_err(AbiError)?;
+    prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
+        frontend,
+        engine,
+        resolver,
+        startup,
+        resource_search_context,
+        executor,
+        None,
+    )
+}
+#[allow(clippy::too_many_arguments)] // Shared optional retained owner, same preparation pipeline.
+pub fn prepare_pinned_source_abi_with_startup_on_executor_with_artifacts<R: Resolver>(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    resolver: &R,
+    startup: &crate::startup::CapturedStartup,
+    resource_search_context: Option<u128>,
+    executor: &dm_exec::BuildExecutor,
+    artifacts: Option<&AbiArtifacts>,
+) -> Result<PreparedPinnedSourceAbi, AbiError> {
+    startup
+        .validate_for(frontend)
+        .map_err(AbiError::unsupported)?;
+    let static_resolver = startup
+        .resolver(frontend, resolver)
+        .map_err(AbiError::unsupported)?;
     let resolver = &static_resolver;
-    let coverage =
-        crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine).map_err(AbiError)?;
+    let coverage = crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine)
+        .map_err(AbiError::unsupported)?;
     let policy_identity = coverage.policy_identity();
     let boundaries = coverage
         .boundaries_with_units(frontend, startup.unit_members())
-        .map_err(AbiError)?;
+        .map_err(AbiError::unsupported)?;
     let evaluator = DriverEvaluator {
         pure_calls: None,
         resource_search_context,
@@ -329,6 +372,7 @@ pub fn prepare_pinned_source_abi_with_startup_on_executor<R: Resolver>(
         executor,
         true,
         Some(startup.unit_members()),
+        artifacts,
     )?;
     Ok(PreparedPinnedSourceAbi {
         policy_identity,
@@ -367,7 +411,7 @@ fn prepare_source_abi_mode(
     lexical_statics: bool,
 ) -> Result<PreparedSourceAbi, AbiError> {
     let executor = dm_exec::BuildExecutor::new(workers)
-        .map_err(|error| AbiError(format!("ABI executor creation failed: {error}")))?;
+        .map_err(|error| AbiError::unsupported(format!("ABI executor creation failed: {error}")))?;
     prepare_source_abi_mode_on_executor(
         frontend,
         engine,
@@ -376,6 +420,7 @@ fn prepare_source_abi_mode(
         resource_search_context,
         &executor,
         lexical_statics,
+        None,
         None,
     )
 }
@@ -389,7 +434,9 @@ fn prepare_source_abi_mode_on_executor(
     executor: &dm_exec::BuildExecutor,
     lexical_statics: bool,
     issued_units: Option<&BTreeMap<UnitIdentity, MemberId>>,
+    artifacts: Option<&AbiArtifacts>,
 ) -> Result<PreparedSourceAbi, AbiError> {
+    let artifact_keys = std::sync::Mutex::new(Vec::new());
     let owned_index;
     let index = match issued_units {
         Some(index) => index,
@@ -416,7 +463,7 @@ fn prepare_source_abi_mode_on_executor(
     for (ordinal, body) in frontend.bodies.iter().enumerate() {
         let node = tree
             .member(body.member)
-            .ok_or_else(|| AbiError("body member missing".into()))?;
+            .ok_or_else(|| AbiError::unsupported("body member missing"))?;
         match node.previous {
             None => ready.push(ordinal),
             Some(previous) => {
@@ -458,15 +505,19 @@ fn prepare_source_abi_mode_on_executor(
                                     let body = &frontend.bodies[*ordinal];
                                     let result = (|| {
                                         let node = tree.member(body.member).ok_or_else(|| {
-                                            AbiError("body member missing".into())
+                                            AbiError::unsupported("body member missing")
                                         })?;
                                         let metadata =
                                             node.metadata.procedure.as_ref().ok_or_else(|| {
-                                                AbiError("procedure metadata unsupported".into())
+                                                AbiError::unsupported(
+                                                    "procedure metadata unsupported",
+                                                )
                                             })?;
                                         let parsed =
                                             frontend.compact_body(body).map_err(|error| {
-                                                AbiError(format!("body parse: {error:?}"))
+                                                AbiError::unsupported(format!(
+                                                    "body parse: {error:?}"
+                                                ))
                                             })?;
                                         let context = AbiContext {
                                             identity: identities[&body.member],
@@ -474,7 +525,20 @@ fn prepare_source_abi_mode_on_executor(
                                             origin: &body.source,
                                             resolver: evaluator.resolver,
                                         };
-                                        policy.prepare(metadata, parsed, &context)
+                                        match artifacts {
+                                            Some(artifacts) => abi_artifacts::prepare(
+                                                artifacts,
+                                                &artifact_keys,
+                                                metadata,
+                                                parsed,
+                                                &context,
+                                                evaluator,
+                                                &inherited,
+                                                lexical_statics,
+                                                resource_search_context,
+                                            ),
+                                            None => policy.prepare(metadata, parsed, &context),
+                                        }
                                     })();
                                     (*ordinal, result)
                                 })
@@ -483,7 +547,7 @@ fn prepare_source_abi_mode_on_executor(
                         .collect::<Vec<_>>()
                 })
             }))
-            .map_err(|_| AbiError("ABI preparation worker panicked".into()))?;
+            .map_err(|_| AbiError::invariant("ABI preparation worker panicked"))?;
             ready.clear();
             for (ordinal, result) in wave {
                 remaining[ordinal] = false;
@@ -496,7 +560,7 @@ fn prepare_source_abi_mode_on_executor(
                         ready.extend(dependents[ordinal].iter().copied());
                     }
                     Err(error) => {
-                        failures.insert(ordinal, error.to_string());
+                        failures.insert(ordinal, error);
                     }
                 }
             }
@@ -505,11 +569,35 @@ fn prepare_source_abi_mode_on_executor(
 
     for (ordinal, pending) in remaining.into_iter().enumerate() {
         if pending {
+            // Descendants retain their failed predecessor's typed cause. A
+            // source error must not turn into an internal failure just because
+            // dependent layouts cannot be prepared after it.
+            let mut previous = tree
+                .member(frontend.bodies[ordinal].member)
+                .and_then(|node| node.previous);
+            let mut inherited_kind = None;
+            for _ in 0..frontend.bodies.len() {
+                let Some(member) = previous else { break };
+                if let Some(index) = body_ordinals.get(&member) {
+                    if let Some(error) = failures.get(index) {
+                        inherited_kind = Some(error.kind);
+                        break;
+                    }
+                }
+                previous = tree.member(member).and_then(|node| node.previous);
+            }
             failures.insert(
                 ordinal,
-                "predecessor ABI unavailable, failed or cyclic".into(),
+                AbiError {
+                    kind: inherited_kind
+                        .unwrap_or(dm_codegen_byond::procedure_abi::AbiErrorKind::Unsupported),
+                    message: "predecessor ABI unavailable, failed or cyclic".into(),
+                },
             );
         }
+    }
+    if let Some(artifacts) = artifacts {
+        artifacts.prune(&artifact_keys);
     }
     Ok(PreparedSourceAbi {
         units: results
@@ -538,8 +626,8 @@ impl<'a> FrozenPreparedPolicy<'a> {
         prepared: &'a PreparedSourceAbi,
     ) -> Result<Self, AbiError> {
         if !prepared.diagnostics.is_empty() {
-            return Err(AbiError(
-                "cannot lower a failed ABI preparation batch".into(),
+            return Err(AbiError::unsupported(
+                "cannot lower a failed ABI preparation batch",
             ));
         }
         let members = Arc::new(unit_members(frontend)?);
@@ -551,8 +639,8 @@ impl<'a> FrozenPreparedPolicy<'a> {
         members: Arc<BTreeMap<UnitIdentity, MemberId>>,
     ) -> Result<Self, AbiError> {
         if !prepared.diagnostics.is_empty() {
-            return Err(AbiError(
-                "cannot lower a failed ABI preparation batch".into(),
+            return Err(AbiError::unsupported(
+                "cannot lower a failed ABI preparation batch",
             ));
         }
         let inverse: HashMap<_, _> = members
@@ -562,16 +650,16 @@ impl<'a> FrozenPreparedPolicy<'a> {
         let mut by_identity = BTreeMap::new();
         for (index, (member, unit)) in prepared.units.iter().enumerate() {
             unit.require_production_abi()?;
-            let identity = inverse
-                .get(member)
-                .ok_or_else(|| AbiError("prepared member belongs to another frontend".into()))?;
+            let identity = inverse.get(member).ok_or_else(|| {
+                AbiError::unsupported("prepared member belongs to another frontend")
+            })?;
             if by_identity.insert(*identity, index).is_some() {
-                return Err(AbiError("duplicate prepared member".into()));
+                return Err(AbiError::unsupported("duplicate prepared member"));
             }
         }
         if by_identity.len() != members.len() {
-            return Err(AbiError(
-                "prepared ABI batch does not cover all bodies".into(),
+            return Err(AbiError::unsupported(
+                "prepared ABI batch does not cover all bodies",
             ));
         }
         let body_ordinals = frontend

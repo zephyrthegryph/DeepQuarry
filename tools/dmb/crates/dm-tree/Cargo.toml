@@ -9,6 +9,7 @@ description = "Immutable resolved DM declarations with separate source occurrenc
 dm-exec = { path = "../dm-exec" }
 dm-profile = { path = "../dm-profile" }
 dm-ir = { path = "../dm-ir" }
+dm-session = { path = "../dm-session" }
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 dm-syntax = { path = "../dm-syntax" }
 

@@ -82,6 +82,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
     if factory_policy.is_none() {
         if let Some(reuse) = reuse {
             artifact::retain_roster(reuse, &[]);
+            reuse.store.modifiers.retain_keys(&[]);
             reuse
                 .store
                 .declined
@@ -101,7 +102,21 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         });
         buckets[index].ordinals.push(ordinal);
     }
+    let modifier_keys = reuse.and_then(|reuse| {
+        crate::initializer_policy::modifier_facts::keys(writes, evaluator, reuse)
+    });
     let facts = map_buckets(&buckets, evaluator, executor, |_, bucket, worker| {
+        if let (Some(reuse), Some(keys)) = (reuse, modifier_keys.as_ref()) {
+            return crate::initializer_policy::modifier_facts::modifier_facts_reused(
+                bucket.ordinals.iter().map(|&ordinal| &writes[ordinal]),
+                symbols,
+                worker,
+                &bucket.ordinals,
+                evaluator,
+                reuse,
+                keys,
+            );
+        }
         modifier_facts_indexed(
             bucket.ordinals.iter().map(|&ordinal| &writes[ordinal]),
             symbols,

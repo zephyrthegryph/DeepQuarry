@@ -6,7 +6,7 @@ use std::collections::BTreeSet;
 use std::fmt;
 
 mod symbols;
-pub use symbols::{SymbolCollision, SymbolId, SymbolTable};
+pub use symbols::{SymbolCollision, SymbolId, SymbolTable, SymbolTableStorage};
 mod string_roster;
 pub use string_roster::{StringPayload, StringRoster, StringRosterError};
 

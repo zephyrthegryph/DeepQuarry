@@ -78,26 +78,21 @@ pub struct PreparedProcedure {
     pub argument_sources: Vec<ArgumentSource>,
     pub executable_body: Vec<Item>,
 }
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct AbiError(pub String);
-impl std::fmt::Display for AbiError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
-    }
-}
-impl std::error::Error for AbiError {}
+#[path = "procedure_abi_error.rs"]
+mod error;
+pub use error::{AbiError, AbiErrorKind};
 fn fail(message: impl Into<String>) -> AbiError {
-    AbiError(message.into())
+    AbiError::unsupported(message)
 }
 fn expression_text(value: &SymbolicExpression, symbols: &SymbolTable) -> Result<String, AbiError> {
     value
         .source_text(symbols)
-        .ok_or_else(|| fail("unavailable or malformed symbolic expression spelling"))
+        .ok_or_else(|| AbiError::invariant("unavailable or malformed symbolic expression spelling"))
 }
 fn compact(text: &str) -> Result<String, AbiError> {
     let lexed = dm_syntax::lex(text);
     if !lexed.diagnostics.is_empty() {
-        return Err(fail("invalid ABI expression syntax"));
+        return Err(AbiError::source("invalid ABI expression syntax"));
     }
     Ok(lexed
         .tokens
@@ -296,7 +291,7 @@ pub fn prepare_procedure(
         };
         let name = symbols
             .text(setting.name)
-            .ok_or_else(|| fail("setting name spelling unavailable"))?;
+            .ok_or_else(|| AbiError::invariant("setting name spelling unavailable"))?;
         let operation = match setting.operation {
             SettingOperation::Assign => "=",
             SettingOperation::In => " in ",
@@ -307,7 +302,9 @@ pub fn prepare_procedure(
                 expression_text(&setting.value, symbols)?
             ))?
         {
-            return Err(fail("procedure setting metadata differs from unit body"));
+            return Err(AbiError::invariant(
+                "procedure setting metadata differs from unit body",
+            ));
         }
     }
     let executable_body: Vec<_> = body
@@ -341,7 +338,9 @@ pub fn prepare_verified_procedure(
         })
     }
     if setting_left(body) {
-        return Err(fail("executable body still contains procedure settings"));
+        return Err(AbiError::invariant(
+            "executable body still contains procedure settings",
+        ));
     }
     fn select<'a>(
         nodes: &'a [ProcedureSettingNode],
@@ -409,9 +408,9 @@ pub fn prepare_verified_procedure(
         };
         let name = symbols
             .text(param.name)
-            .ok_or_else(|| fail("parameter name spelling unavailable"))?;
+            .ok_or_else(|| AbiError::invariant("parameter name spelling unavailable"))?;
         if inputs.parameters.iter().any(|old| old == name) {
-            return Err(fail("duplicate parameter name"));
+            return Err(AbiError::source("duplicate parameter name"));
         }
         inputs.parameters.push(name.to_owned());
         if param.flags & 2 != 0 {
@@ -422,14 +421,14 @@ pub fn prepare_verified_procedure(
             .map(|id| {
                 symbols
                     .text(id)
-                    .ok_or_else(|| fail("parameter type spelling unavailable"))
+                    .ok_or_else(|| AbiError::invariant("parameter type spelling unavailable"))
             })
             .transpose()?;
         let restriction_path = restriction_type
             .map(|id| {
-                symbols
-                    .text(id)
-                    .ok_or_else(|| fail("parameter restriction spelling unavailable"))
+                symbols.text(id).ok_or_else(|| {
+                    AbiError::invariant("parameter restriction spelling unavailable")
+                })
             })
             .transpose()?;
         let mut flags = type_flags(restriction_path)?;
@@ -503,9 +502,9 @@ pub fn prepare_verified_procedure(
     for setting in selected {
         let name = symbols
             .text(setting.name)
-            .ok_or_else(|| fail("setting name spelling unavailable"))?;
+            .ok_or_else(|| AbiError::invariant("setting name spelling unavailable"))?;
         if setting.operation == SettingOperation::In && name != "src" {
-            return Err(fail("only src supports an in setting"));
+            return Err(AbiError::source("only src supports an in setting"));
         }
         match name {
             "name" | "desc" | "category" => match evaluate(&setting.value)? {
@@ -530,7 +529,7 @@ pub fn prepare_verified_procedure(
                 let enabled = match number(evaluate(&setting.value)?)? {
                     0 => false,
                     1 => true,
-                    _ => return Err(fail("boolean setting must be zero or one")),
+                    _ => return Err(AbiError::source("boolean setting must be zero or one")),
                 };
                 let (bit, enabled) = match name {
                     "waitfor" => (4, enabled),
@@ -548,7 +547,7 @@ pub fn prepare_verified_procedure(
             "invisibility" => {
                 let value = number(evaluate(&setting.value)?)?;
                 if value > 127 {
-                    return Err(fail("invisibility exceeds 127"));
+                    return Err(AbiError::source("invisibility exceeds 127"));
                 }
                 layout.invisibility = Some(value);
                 layout.flags |= 8;

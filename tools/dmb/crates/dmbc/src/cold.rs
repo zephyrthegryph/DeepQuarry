@@ -319,13 +319,16 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
         dm_codegen_byond::typed_statements_supported_for_capture,
     );
     let startup = match revision {
-        Some(revision) => crate::startup::capture_revision_facts_with_executor_and_bodies(
-            revision,
-            &links.inventory.spellings,
-            executor,
-            &bodies,
-        )
-        .and_then(|facts| facts.view_revision(revision)),
+        Some(revision) => {
+            crate::startup::capture_revision_facts_with_executor_and_bodies_and_artifacts(
+                revision,
+                &links.inventory.spellings,
+                executor,
+                &bodies,
+                memo.and_then(|memo| memo.startup.as_deref()),
+            )
+            .and_then(|facts| facts.view_revision(revision))
+        }
         None => crate::startup::capture_with_executor_and_bodies(
             frontend,
             &links.inventory.spellings,
@@ -336,15 +339,17 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     .map_err(ColdError::Initializer)?;
     measurement.complete();
     let measurement = StageMeasurement::new(observer, ColdStage::AbiPreparation);
-    let prepared = crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor(
-        frontend,
-        links.engine,
-        resolver,
-        &startup,
-        declarations.resource_search_context,
-        executor,
-    )
-    .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+    let prepared =
+        crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
+            frontend,
+            links.engine,
+            resolver,
+            &startup,
+            declarations.resource_search_context,
+            executor,
+            memo.and_then(|memo| memo.abi.as_deref()),
+        )
+        .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
     if !prepared.prepared.diagnostics.is_empty() {
         return Err(ColdError::Lowering(
             crate::driver_facts::abi_diagnostics(frontend, &prepared.prepared)

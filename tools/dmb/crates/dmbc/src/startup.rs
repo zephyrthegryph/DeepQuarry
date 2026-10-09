@@ -5,6 +5,12 @@ use dm_tree::{
     frontend::ColdFrontend, initializers::InitializerPlan, procedure_statics::StaticPlan,
     OccurrenceId,
 };
+#[path = "startup_artifacts.rs"]
+mod artifacts;
+pub use artifacts::StartupArtifacts;
+#[cfg(test)]
+#[path = "startup_artifacts_tests.rs"]
+mod artifact_tests;
 
 pub struct CapturedStartup<'a> {
     frontend: &'a ColdFrontend,
@@ -115,6 +121,15 @@ fn capture_impl_with_bodies(
     bodies: &dm_tree::frontend::BodyArena<'_>,
     prefilter: bool,
 ) -> Result<StartupFacts, String> {
+    capture_impl_with_bodies_and_artifacts(frontend, executor, bodies, prefilter, None)
+}
+fn capture_impl_with_bodies_and_artifacts(
+    frontend: &ColdFrontend,
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    prefilter: bool,
+    artifacts: Option<&StartupArtifacts>,
+) -> Result<StartupFacts, String> {
     let units = std::sync::Arc::new(
         crate::driver_facts::unit_members(frontend).map_err(|e| e.to_string())?,
     );
@@ -132,6 +147,32 @@ fn capture_impl_with_bodies(
             )
         })
         .collect::<std::collections::HashMap<_, _>>();
+    let mut keys = std::collections::HashMap::new();
+    if let Some(artifacts) = artifacts {
+        for body in frontend.bodies.iter() {
+            let key = (|| {
+                let source = frontend
+                    .expanded
+                    .text
+                    .get(body.expanded_span.range())
+                    .ok_or("startup body source span outside capture")?;
+                if !prefilter || dm_tree::procedure_statics::may_contain_stored_declarations(source)
+                {
+                    let identity = *identities
+                        .get(&body.member)
+                        .ok_or("startup procedure identity missing")?;
+                    Ok(Some(artifacts::key(identity, source)))
+                } else {
+                    Ok::<_, String>(None)
+                }
+            })();
+            keys.insert(body.member, key);
+        }
+        artifacts.retain_keys(
+            keys.values()
+                .filter_map(|result| result.as_ref().ok()?.as_deref()),
+        );
+    }
     let capture_body = |body: &dm_tree::frontend::BodyOccurrence| {
         let identity = *identities
             .get(&body.member)
@@ -144,7 +185,17 @@ fn capture_impl_with_bodies(
             .text
             .get(body.expanded_span.range())
             .ok_or("startup body source span outside capture")?;
-        if prefilter && !dm_tree::procedure_statics::may_contain_stored_declarations(source) {
+        let candidate_key = keys
+            .get(&body.member)
+            .map(|result| result.as_ref().map(Option::as_deref).map_err(Clone::clone))
+            .transpose()?
+            .flatten();
+        let empty = if artifacts.is_some() {
+            candidate_key.is_none()
+        } else {
+            prefilter && !dm_tree::procedure_statics::may_contain_stored_declarations(source)
+        };
+        if empty {
             return Ok((
                 body.declaration,
                 ProcedureCapture::Empty(dm_tree::procedure_statics::capture_declarations(
@@ -153,9 +204,18 @@ fn capture_impl_with_bodies(
                 )?),
             ));
         }
+        if let (Some(artifacts), Some(key)) = (artifacts, candidate_key) {
+            if let Some(payload) = artifacts.lookup(key) {
+                let plan = payload.bind(frontend, body)?;
+                return Ok((body.declaration, ProcedureCapture::Issued(plan)));
+            }
+        }
         let plan = bodies
             .with_parsed(body, |parsed| parsed.capture_stored_declarations(identity))
             .map_err(|e| format!("startup body: {e:?}"))??;
+        if let (Some(artifacts), Some(key)) = (artifacts, candidate_key) {
+            artifacts.remember(key.to_vec(), &plan);
+        }
         Ok::<_, String>((body.declaration, ProcedureCapture::Issued(plan)))
     };
     let workers = executor.workers().min(frontend.bodies.len().max(1));
@@ -272,7 +332,20 @@ pub fn capture_revision_facts_with_executor_and_bodies(
     executor: &dm_exec::BuildExecutor,
     bodies: &dm_tree::frontend::BodyArena<'_>,
 ) -> Result<std::sync::Arc<StartupFacts>, String> {
-    let mut facts = capture_facts_with_executor_and_bodies(revision, spellings, executor, bodies)?;
+    capture_revision_facts_with_executor_and_bodies_and_artifacts(
+        revision, spellings, executor, bodies, None,
+    )
+}
+pub fn capture_revision_facts_with_executor_and_bodies_and_artifacts(
+    revision: &dm_tree::frontend::FrontendRevision,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    artifacts: Option<&StartupArtifacts>,
+) -> Result<std::sync::Arc<StartupFacts>, String> {
+    let mut facts = capture_facts_with_executor_and_bodies_and_artifacts(
+        revision, spellings, executor, bodies, artifacts,
+    )?;
     std::sync::Arc::get_mut(&mut facts)
         .expect("new startup facts are exclusively owned")
         .issuance = Some(revision.issuance());
@@ -322,7 +395,19 @@ fn capture_facts_with_executor_and_bodies(
     executor: &dm_exec::BuildExecutor,
     bodies: &dm_tree::frontend::BodyArena<'_>,
 ) -> Result<std::sync::Arc<StartupFacts>, String> {
-    let mut startup = capture_impl_with_bodies(frontend, executor, bodies, true)?;
+    capture_facts_with_executor_and_bodies_and_artifacts(
+        frontend, spellings, executor, bodies, None,
+    )
+}
+fn capture_facts_with_executor_and_bodies_and_artifacts(
+    frontend: &ColdFrontend,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    artifacts: Option<&StartupArtifacts>,
+) -> Result<std::sync::Arc<StartupFacts>, String> {
+    let mut startup =
+        capture_impl_with_bodies_and_artifacts(frontend, executor, bodies, true, artifacts)?;
     let mut symbols = dm_ir::SymbolTable::overlay(startup.plan.symbols.clone());
     for (expected, bytes) in spellings {
         let text =

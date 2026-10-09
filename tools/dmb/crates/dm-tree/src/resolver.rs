@@ -138,33 +138,10 @@ impl SemanticTree {
         }
         entries.sort_by_key(|e| (e.owner, e.name, e.kind as u8, e.shared_owner));
         entries.dedup();
-        let mut bytes = b"dm-tree-intrinsics-v2\0".to_vec();
         let source_identity = *Arc::make_mut(&mut self.inventory)
             .source_identity
             .get_or_insert(self.identity);
-        bytes.extend_from_slice(&source_identity.to_le_bytes());
-        bytes.push(u8::from(complete));
-        bytes.extend_from_slice(&hierarchy.schema.to_le_bytes());
-        bytes.extend_from_slice(&(hierarchy.parents.len() as u64).to_le_bytes());
-        for (owner, parent) in hierarchy.parents {
-            bytes.extend_from_slice(&owner.bits().to_le_bytes());
-            bytes.push(u8::from(parent.is_some()));
-            if let Some(parent) = parent {
-                bytes.extend_from_slice(&parent.bits().to_le_bytes());
-            }
-        }
-        bytes.extend_from_slice(&(entries.len() as u64).to_le_bytes());
-        for e in &entries {
-            bytes.extend_from_slice(&e.owner.bits().to_le_bytes());
-            bytes.extend_from_slice(&e.name.bits().to_le_bytes());
-            bytes.push(e.kind as u8);
-            bytes.push(u8::from(e.instance_storage_proven));
-            bytes.push(u8::from(e.shared_owner.is_some()));
-            if let Some(owner) = e.shared_owner {
-                bytes.extend_from_slice(&owner.bits().to_le_bytes());
-            }
-        }
-        self.identity = xxhash_rust::xxh3::xxh3_128(&bytes);
+        self.identity = intrinsic_identity(source_identity, complete, &hierarchy, &entries);
         let inventory = Arc::make_mut(&mut self.inventory);
         inventory.complete = complete;
         inventory.hierarchy_certified = true;
@@ -172,6 +149,25 @@ impl SemanticTree {
         inventory.index = index;
         self.rebuild_inventory_on_executor(executor);
         Ok(self)
+    }
+    pub(crate) fn refresh_metadata_identity(
+        &mut self,
+        source_identity: u128,
+        mut hierarchy: Option<EngineHierarchy>,
+    ) {
+        if let Some(hierarchy) = &mut hierarchy {
+            hierarchy.parents.sort_by_key(|entry| entry.0);
+            let inventory = Arc::make_mut(&mut self.inventory);
+            inventory.source_identity = Some(source_identity);
+            self.identity = intrinsic_identity(
+                source_identity,
+                inventory.complete,
+                hierarchy,
+                &inventory.intrinsic,
+            );
+        } else {
+            self.identity = source_identity;
+        }
     }
     pub(crate) fn complete_answer(&self, query: Q, answer: M) -> M {
         if !self.inventory.hierarchy_certified && matches!(query, Q::Parent(_) | Q::Ancestry(_)) {
@@ -234,6 +230,15 @@ impl SemanticTree {
     }
     fn rebuild_inventory_on_executor(&mut self, executor: Option<&dm_exec::BuildExecutor>) {
         inventory::rebuild(self, executor);
+    }
+    pub(crate) fn rebuild_inventory_selectors(
+        &mut self,
+        selected: &HashSet<SymbolId>,
+        executor: &dm_exec::BuildExecutor,
+    ) {
+        if !selected.is_empty() {
+            inventory::rebuild_selected(self, Some(executor), Some(selected));
+        }
     }
     pub(super) fn slot(owner: SymbolId, name: SymbolId) -> M {
         // Domain-separated structural identity; the returned owner/name mapping
@@ -565,3 +570,35 @@ mod tests {
 }
 
 mod inventory;
+
+fn intrinsic_identity(
+    source_identity: u128,
+    complete: bool,
+    hierarchy: &EngineHierarchy,
+    entries: &[IntrinsicMember],
+) -> u128 {
+    let mut bytes = b"dm-tree-intrinsics-v2\0".to_vec();
+    bytes.extend_from_slice(&source_identity.to_le_bytes());
+    bytes.push(u8::from(complete));
+    bytes.extend_from_slice(&hierarchy.schema.to_le_bytes());
+    bytes.extend_from_slice(&(hierarchy.parents.len() as u64).to_le_bytes());
+    for &(owner, parent) in &hierarchy.parents {
+        bytes.extend_from_slice(&owner.bits().to_le_bytes());
+        bytes.push(u8::from(parent.is_some()));
+        if let Some(parent) = parent {
+            bytes.extend_from_slice(&parent.bits().to_le_bytes());
+        }
+    }
+    bytes.extend_from_slice(&(entries.len() as u64).to_le_bytes());
+    for e in entries {
+        bytes.extend_from_slice(&e.owner.bits().to_le_bytes());
+        bytes.extend_from_slice(&e.name.bits().to_le_bytes());
+        bytes.push(e.kind as u8);
+        bytes.push(u8::from(e.instance_storage_proven));
+        bytes.push(u8::from(e.shared_owner.is_some()));
+        if let Some(owner) = e.shared_owner {
+            bytes.extend_from_slice(&owner.bits().to_le_bytes());
+        }
+    }
+    xxhash_rust::xxh3::xxh3_128(&bytes)
+}

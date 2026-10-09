@@ -12,8 +12,8 @@ pub fn formal_shape(parameter: &Parameter) -> Result<FormalShape, AbiError> {
     if parameter.flags & !2 != 0 {
         // Const is a lexical binding write constraint, not an argument type
         // bit. Other modifiers still need a separately certified policy.
-        return Err(AbiError(
-            "parameter declaration modifiers require lexical write-constraint policy".into(),
+        return Err(AbiError::unsupported(
+            "parameter declaration modifiers require lexical write-constraint policy",
         ));
     }
     match &parameter.array {
@@ -22,16 +22,16 @@ pub fn formal_shape(parameter: &Parameter) -> Result<FormalShape, AbiError> {
         }),
         Some(array) if array.dimensions.len() == 1 && array.dimensions[0].is_none() => {
             if parameter.declared_type != Some(SymbolId::of("/list")) {
-                return Err(AbiError(
-                    "unsized parameter array lacks certified list declared type".into(),
+                return Err(AbiError::unsupported(
+                    "unsized parameter array lacks certified list declared type",
                 ));
             }
             Ok(FormalShape::UnsizedList {
                 element_type: array.element_type,
             })
         }
-        Some(_) => Err(AbiError(
-            "sized or mixed formal array allocation semantics are unsupported".into(),
+        Some(_) => Err(AbiError::unsupported(
+            "sized or mixed formal array allocation semantics are unsupported",
         )),
     }
 }

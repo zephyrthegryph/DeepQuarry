@@ -10,6 +10,9 @@ use dm_codegen_byond::{
 };
 use dm_ir::{InitializerScope, Resolver};
 use dm_tree::{frontend::ColdFrontend, initializers::InitializerPlan};
+#[path = "initializer_fragments.rs"]
+mod fragments;
+pub use fragments::InitializerFragments;
 
 #[derive(Clone, Copy, Debug)]
 pub enum InitializerStage {
@@ -303,6 +306,14 @@ fn lower_plan<R: Resolver>(
     };
     measurement.complete();
     let measurement = crate::stage_measurements::Scope::new(observer, InitializerStage::Codegen);
+    let fragment_store = memo.and_then(|memo| memo.initializer_fragments.as_deref());
+    let fragment_keys = if let Some((store, memo)) = fragment_store.zip(memo) {
+        let keys = fragments::current_keys(&classified, memo.policy, resource_search_context)?;
+        store.retain_keys(&keys);
+        Some(keys)
+    } else {
+        None
+    };
     let lower_one = |index: usize| {
         let _profile = dm_profile::stage("initializer.codegen_group");
         lower_group(
@@ -313,6 +324,7 @@ fn lower_plan<R: Resolver>(
             host,
             resource_search_context,
             memo,
+            fragment_store.zip(fragment_keys.as_ref()),
         )
     };
     let units =
@@ -342,6 +354,10 @@ fn lower_group<R: Resolver>(
     host: &R,
     resource_search_context: Option<u128>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    fragments: Option<(
+        &InitializerFragments,
+        &std::collections::HashMap<usize, Vec<u8>>,
+    )>,
 ) -> Result<LoweredInitializerUnit, InitializerLoweringError> {
     let symbols = plan.symbols.as_ref();
     let mut assignments = Vec::with_capacity(group.writes.len());
@@ -473,7 +489,67 @@ fn lower_group<R: Resolver>(
             }
         }
     };
-    let code = if let Some(memo) = memo {
+    let code = if let Some((store, keys)) = fragments {
+        let prepared = dm_codegen_byond::initializer::prepare_assignment_group(
+            &assignment_views,
+            context(),
+            host,
+        )
+        .map_err(map_error)?;
+        let mut continuations = Vec::with_capacity(group.writes.len());
+        let mut unsupported = false;
+        for (index, &write_index) in group.writes.iter().enumerate() {
+            let write = &classified.writes[write_index];
+            let key = keys
+                .get(&write.source_ordinal)
+                .ok_or("initializer fragment key missing")?;
+            let fragment = store
+                .fragment(key, &prepared, index, &write.write, host)
+                .map_err(|mut error| {
+                    if let dm_codegen_byond::initializer::InitializerError::Lowering(errors) =
+                        &mut error
+                    {
+                        for diagnostic in errors {
+                            if let Some(span) = &mut diagnostic.span {
+                                // Fragment producer errors bind its single assignment.
+                                if span.start == 0 && span.end == 0 {
+                                    span.start = index;
+                                    span.end = index;
+                                }
+                            }
+                        }
+                    }
+                    map_error(error)
+                })?;
+            let Some(fragment) = fragment else {
+                unsupported = true;
+                break;
+            };
+            continuations.push(fragment);
+        }
+        if unsupported {
+            dm_codegen_byond::initializer::lower_assignment_views(
+                &assignment_views,
+                context(),
+                host,
+            )
+            .map_err(map_error)?
+        } else {
+            match prepared.assemble(continuations) {
+                Ok(code) => code,
+                Err(_) => {
+                    // Cross-fragment collisions use the established producer's
+                    // exact diagnostics rather than introducing a new failure.
+                    dm_codegen_byond::initializer::lower_assignment_views(
+                        &assignment_views,
+                        context(),
+                        host,
+                    )
+                    .map_err(map_error)?
+                }
+            }
+        }
+    } else if let Some(memo) = memo {
         let mut key = b"dmbc-anonymous-declaration-v2-relative-debug\0".to_vec();
         key.extend_from_slice(&memo.policy.to_le_bytes());
         key.extend_from_slice(

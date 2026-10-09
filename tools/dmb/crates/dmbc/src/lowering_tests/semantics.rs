@@ -244,7 +244,7 @@ fn captured_policy_prepares_guarded_settings_and_authoritative_layout() {
                 Some("0") => Ok(dm_ir::SemanticValue::NumberBits(0f32.to_bits())),
                 Some("1") => Ok(dm_ir::SemanticValue::NumberBits(1f32.to_bits())),
                 Some("null") => Ok(dm_ir::SemanticValue::Null),
-                _ => Err(AbiError("uncaptured constant".into())),
+                _ => Err(AbiError::unsupported("uncaptured constant")),
             }
         }
     }

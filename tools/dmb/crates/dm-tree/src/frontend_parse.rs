@@ -26,11 +26,22 @@ pub(super) fn parse_declarations(
     parse_declarations_with_executor(expanded, config, memo, &executor)
 }
 
+#[cfg(test)]
 pub(super) fn parse_declarations_with_executor(
     expanded: &ExpandedRegions,
     config: FrontendConfig<'_>,
     memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
     executor: &dm_exec::BuildExecutor,
+) -> Result<ParsedDeclarations, Vec<Diagnostic>> {
+    parse_declarations_with_state(expanded, config, memo, executor, None)
+}
+
+pub(super) fn parse_declarations_with_state(
+    expanded: &ExpandedRegions,
+    config: FrontendConfig<'_>,
+    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
+    executor: &dm_exec::BuildExecutor,
+    retained: Option<&super::declaration_state::RetainedDeclarations>,
 ) -> Result<ParsedDeclarations, Vec<Diagnostic>> {
     let source = expanded.text.as_ref();
     let parse_start = Instant::now();
@@ -45,6 +56,16 @@ pub(super) fn parse_declarations_with_executor(
     }
     let descriptor_scan = parse_start.elapsed();
     drop(profile_scan);
+    let retained_keys = retained.map(|state| {
+        let keys: Vec<_> = chunks
+            .iter()
+            .map(|&(offset, len)| {
+                super::declaration_state::RetainedDeclarations::key(&source[offset..offset + len])
+            })
+            .collect();
+        state.retain(&keys);
+        keys
+    });
     let region_hits = std::sync::atomic::AtomicUsize::new(0);
     let independent_hits = std::sync::atomic::AtomicUsize::new(0);
     let facts_hits = std::sync::atomic::AtomicUsize::new(0);
@@ -63,6 +84,7 @@ pub(super) fn parse_declarations_with_executor(
         for _ in 0..worker_count {
                     let sender = sender.clone();
                     let chunks = &chunks;
+                    let retained_keys = &retained_keys;
                     let next = &next;
                     let (
                         region_hits,
@@ -87,6 +109,12 @@ pub(super) fn parse_declarations_with_executor(
                                 break;
                             };
                             let text = &source[offset..offset + len];
+                            if let Some((parsed, facts, ledger)) = retained.zip(retained_keys.as_ref())
+                                .and_then(|(state, keys)| state.get(&keys[index], text, offset)) {
+                                facts_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                                if sender.send((index, offset, parsed, Vec::new(), None, Ok((facts, ledger)))).is_err() { break; }
+                                continue;
+                            }
                             let lookup_start = Instant::now();
                             let profile_lookup =
                                 dm_profile::item("frontend.fragment_lookup_decode_parse");
@@ -266,6 +294,12 @@ pub(super) fn parse_declarations_with_executor(
                                     produced_payload.map(|bytes| (receipt_index, span, bytes))
                                 })
                             };
+                            if errors.is_empty() {
+                                if let (Some(state), Some(keys), Ok((facts, ledger))) =
+                                    (retained, retained_keys.as_ref(), &facts) {
+                                    state.insert(&keys[index], text, offset, &parsed, facts, ledger);
+                                }
+                            }
                             if sender
                                 .send((index, offset, parsed, errors, fragment, facts))
                                 .is_err()

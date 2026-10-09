@@ -312,7 +312,7 @@ fn nested_setting_is_not_silently_lost_by_incomplete_metadata() {
     )
     .err()
     .unwrap();
-    assert!(error.0.contains("nested procedure settings"));
+    assert!(error.message.contains("nested procedure settings"));
 }
 #[test]
 fn parameter_modifiers_and_arrays_are_never_silently_erased() {
@@ -342,7 +342,7 @@ fn parameter_modifiers_and_arrays_are_never_silently_erased() {
     )
     .err()
     .unwrap();
-    assert!(error.0.contains("modifiers"));
+    assert!(error.message.contains("modifiers"));
     let mut parameter = parameter;
     parameter.flags = 0;
     parameter.array = Some(std::sync::Arc::new(dm_ir::ArrayDeclaration {
@@ -360,7 +360,7 @@ fn parameter_modifiers_and_arrays_are_never_silently_erased() {
     )
     .err()
     .unwrap();
-    assert!(error.0.contains("array"));
+    assert!(error.message.contains("array"));
 }
 #[test]
 fn unsized_untyped_list_formal_does_not_allocate_a_default() {

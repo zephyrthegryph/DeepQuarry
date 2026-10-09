@@ -434,11 +434,34 @@ pub(crate) fn compile_assignment_scopes_with_resolver<R: dm_ir::Resolver>(
         debug,
     )
 }
+pub(crate) fn compile_assignment_fragment_with_resolver<R: dm_ir::Resolver>(
+    scope: crate::typed_scopes::AssignmentScope<'_>,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    compile_prepared_scopes_mode(
+        crate::typed_scopes::prepare_assignments(&[scope])?,
+        symbols,
+        resolver,
+        debug,
+        false,
+    )
+}
 fn compile_prepared_scopes<R: dm_ir::Resolver>(
     prepared: crate::typed_scopes::PreparedScopes<'_>,
     symbols: &dm_ir::SymbolTable,
     resolver: &R,
     debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    compile_prepared_scopes_mode(prepared, symbols, resolver, debug, true)
+}
+fn compile_prepared_scopes_mode<R: dm_ir::Resolver>(
+    prepared: crate::typed_scopes::PreparedScopes<'_>,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+    emit_end: bool,
 ) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
     let bindings = LowerBindings::default();
     let lookup = crate::lower_resolver::ProjectResolver {
@@ -453,12 +476,13 @@ fn compile_prepared_scopes<R: dm_ir::Resolver>(
         runtime_types: std::cell::RefCell::new(Default::default()),
         resource_search_context: prepared.resource_search_context,
     };
-    let procedure = compile_with_lookup(
+    let procedure = compile_with_lookup_mode(
         &[],
         Some(TypedInput::Scopes(&prepared.scopes)),
         &bindings,
         Some(&lookup),
         debug,
+        emit_end,
     )?;
     Ok(crate::lower_resolver::ResolverProc {
         modified_instances: lookup.modified_instances.into_inner(),
@@ -535,6 +559,16 @@ fn compile_with_lookup(
     bindings: &LowerBindings,
     lookup: Option<&crate::lower_resolver::ProjectResolver<'_>>,
     debug: Option<&dyn DebugSourceProvider>,
+) -> Result<SimpleProc, Vec<LowerError>> {
+    compile_with_lookup_mode(body, typed, bindings, lookup, debug, true)
+}
+fn compile_with_lookup_mode(
+    body: &[Item],
+    typed: Option<TypedInput<'_>>,
+    bindings: &LowerBindings,
+    lookup: Option<&crate::lower_resolver::ProjectResolver<'_>>,
+    debug: Option<&dyn DebugSourceProvider>,
+    emit_end: bool,
 ) -> Result<SimpleProc, Vec<LowerError>> {
     let mut compiler = Compiler {
         result: SimpleProc::default(),
@@ -626,7 +660,9 @@ fn compile_with_lookup(
     if compiler.debug_current.is_none() {
         compiler.debug_current = compiler.debug_last;
     }
-    compiler.emit(opcode::END, vec![]);
+    if emit_end {
+        compiler.emit(opcode::END, vec![]);
+    }
     compiler.result.local_count = compiler.locals.len() as u32;
     compiler.result.local_names = compiler.locals;
     compiler.result.argument_names = bindings.parameters.clone();

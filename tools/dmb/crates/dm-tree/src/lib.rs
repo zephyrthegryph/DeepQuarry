@@ -10,6 +10,7 @@ pub mod constants;
 pub mod frontend;
 pub mod initializers;
 pub mod maps;
+mod metadata_update;
 pub mod non_text;
 mod normalize;
 mod procedure;
@@ -615,29 +616,8 @@ pub(crate) fn build_with_intrinsic_members_inventory(
                 }
                 parent = tree.parent(owner);
             }
-            if modes[i] == DefinitionMode::Override
-                && previous.is_none()
-                && node.kind == MemberKind::Var
-            {
-                let mut owner = Some(node.owner);
-                let mut opaque = None;
-                while let Some(current) = owner {
-                    if let Some(field) = intrinsic_fields.get(&(current, node.name)) {
-                        opaque = Some((*field).clone());
-                        break;
-                    }
-                    owner = tree.parent(current);
-                }
-                if let Some(opaque) = opaque {
-                    let metadata = Arc::make_mut(&mut members[i].metadata);
-                    metadata.declared_type = match opaque.declared_type {
-                        dm_ir::DeclaredTypeKnowledge::Known(path) => Some(path),
-                        dm_ir::DeclaredTypeKnowledge::Unsupported
-                        | dm_ir::DeclaredTypeKnowledge::KnownUntyped => None,
-                    };
-                    metadata.inherited_opaque = Some(opaque);
-                }
-            }
+            members[i].previous = previous;
+            metadata_update::apply_opaque_base(&tree, &mut members[i]);
             let node = &members[i];
             if modes[i] == DefinitionMode::Override
                 && previous.is_none()
@@ -684,36 +664,8 @@ pub(crate) fn build_with_intrinsic_members_inventory(
     }
     drop(previous_resolution_profile);
     let metadata_inheritance_profile = dm_profile::stage("frontend.tree.metadata_inheritance");
-    // Process previous links before dependants, including child declarations
-    // preceding both their parent and grandparent in the source stream.
-    let mut resolved = vec![false; members.len()];
-    for start in 0..members.len() {
-        let mut chain = Vec::new();
-        let mut cursor = Some(MemberId(start as u32));
-        while let Some(id) = cursor {
-            if resolved[id.index()] {
-                break;
-            }
-            chain.push(id);
-            cursor = members[id.index()].previous;
-        }
-        for id in chain.into_iter().rev() {
-            let i = id.index();
-            if modes[i] == DefinitionMode::Override && members[i].kind == MemberKind::Var {
-                if let Some(previous) = members[i].previous {
-                    let inherited = members[previous.index()].metadata.clone();
-                    let metadata = Arc::make_mut(&mut members[i].metadata);
-                    metadata.inherited_opaque = inherited.inherited_opaque.clone();
-                    metadata.declared_type = inherited.declared_type;
-                    metadata.list_element_type = inherited.list_element_type;
-                    metadata.flags = inherited.flags;
-                    metadata.array = inherited.array.clone();
-                    metadata.declared_initializer = inherited.declared_initializer.clone();
-                }
-            }
-            resolved[i] = true;
-        }
-    }
+    let order = metadata_update::resolution_order(&members);
+    metadata_update::resolve_metadata(&tree, &mut members, &order);
     drop(metadata_inheritance_profile);
     let mut mutable_types = tree.types.to_vec();
     for (node, ids) in mutable_types.iter_mut().zip(owned) {

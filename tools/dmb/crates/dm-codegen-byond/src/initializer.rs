@@ -9,6 +9,10 @@ use dm_ir::{
     InitializerTarget, InitializerValue, InitializerWrite, ResolveQuery, ResolvedMeaning, Resolver,
     SymRef, SymbolTable,
 };
+mod assignment_group;
+mod fragments;
+pub use assignment_group::PreparedAssignmentGroup;
+pub use fragments::AssignmentFragment;
 #[derive(Debug)]
 pub enum InitializerError {
     Unsupported(String),
@@ -163,6 +167,14 @@ pub fn lower_assignment_views<R: Resolver>(
     context: InitializerContext<'_>,
     host: &R,
 ) -> Result<ResolverProc, InitializerError> {
+    prepare_assignment_group(assignments, context, host)?.lower_whole(host)
+}
+/// Complete target admission precedes expression emission or retained lookup.
+pub fn prepare_assignment_group<'a, R: Resolver>(
+    assignments: &'a [AssignmentView<'a>],
+    context: InitializerContext<'a>,
+    host: &R,
+) -> Result<PreparedAssignmentGroup<'a>, InitializerError> {
     let mut statements = Vec::with_capacity(assignments.len());
     let mut inputs = Vec::with_capacity(assignments.len());
     let mut slots = Vec::new();
@@ -208,29 +220,14 @@ pub fn lower_assignment_views<R: Resolver>(
             slots.push(slot);
         }
     }
-    let scopes = statements
-        .iter()
-        .zip(&inputs)
-        .zip(assignments)
-        .map(
-            |((target, inputs), assignment)| crate::typed_scopes::AssignmentScope {
-                inputs,
-                target,
-                value: assignment.value,
-                occurrence: assignment.occurrence,
-            },
-        )
-        .collect::<Vec<_>>();
-    let mut code = crate::simple::compile_assignment_scopes_with_resolver(
-        &scopes,
-        context.symbols,
-        host,
-        context.debug,
-    )
-    .map_err(InitializerError::Lowering)?;
-    finish_initializer(&mut code, instance == Some(true))?;
-    attach_target_slots(&mut code, slots)?;
-    Ok(code)
+    Ok(PreparedAssignmentGroup::new(
+        assignments,
+        context,
+        statements,
+        inputs,
+        slots,
+        instance == Some(true),
+    ))
 }
 
 fn attach_target_slots(

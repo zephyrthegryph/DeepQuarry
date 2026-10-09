@@ -13,8 +13,8 @@ use std::{
     },
     time::{Duration, Instant},
 };
-/// Host retention is manifest-scoped; supersession requires the same semantic
-/// configuration AND logical destination. Different defines targeting one file
+/// Hosts are retained per manifest and semantic configuration. Supersession also
+/// requires the same logical destination. Different defines targeting one file
 /// serialize through the existing output lease but do not cancel each other.
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 struct RequestKey {
@@ -84,20 +84,57 @@ struct Slot {
     newest: Mutex<BTreeMap<RequestKey, control::Cancellation>>,
     last: Mutex<Instant>,
 }
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+struct SessionKey {
+    manifest: PathBuf,
+    defines: BTreeMap<String, String>,
+    engine: Option<PathBuf>,
+    bootstrap: bool,
+}
+impl Slot {
+    fn lock_host(&self) -> io::Result<std::sync::MutexGuard<'_, crate::runner_host::BuildHost>> {
+        let deadline = Instant::now() + Duration::from_secs(600);
+        loop {
+            control::checkpoint()?;
+            match self.host.try_lock() {
+                Ok(host) => return Ok(host),
+                Err(std::sync::TryLockError::Poisoned(error)) => return Ok(error.into_inner()),
+                Err(std::sync::TryLockError::WouldBlock) => {}
+            }
+            if Instant::now() >= deadline {
+                return Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    "daemon session admission deadline expired",
+                ));
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+    }
+}
 struct Shared {
     compiler: u128,
     retiring: AtomicBool,
-    slots: Mutex<BTreeMap<PathBuf, Arc<Slot>>>,
+    slots: Mutex<BTreeMap<SessionKey, Arc<Slot>>>,
     running: Mutex<usize>,
     workers: Mutex<usize>,
     capacity: Condvar,
     connections: AtomicUsize,
 }
 impl Shared {
-    fn slot(&self, path: PathBuf) -> Arc<Slot> {
+    fn slot(
+        &self,
+        path: PathBuf,
+        defines: &BTreeMap<String, String>,
+        config: Option<&crate::request::BuildRequest>,
+    ) -> Arc<Slot> {
         let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
         slots
-            .entry(path)
+            .entry(SessionKey {
+                manifest: path,
+                defines: defines.clone(),
+                engine: config.and_then(|request| request.engine_template.clone()),
+                bootstrap: config.is_some_and(|request| request.bootstrap_catalog),
+            })
             .or_insert_with(|| {
                 Arc::new(Slot {
                     host: Mutex::new(crate::runner_host::BuildHost::default()),
@@ -276,14 +313,24 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
             transport::set_timeout(&mut stream, Duration::from_secs(600))?;
             let path = std::fs::canonicalize(&request.project)?;
             let key = RequestKey::of(&request, &path);
-            let slot = shared.slot(path);
+            let slot = shared.slot(path, &request.defines, Some(&request));
             let token = control::Cancellation::default();
             let _latest = LatestRequest::register(&slot, key, token.clone());
             protocol::send(&mut stream, &Reply::Accepted)?;
             let stream = Arc::new(Mutex::new(stream));
             let _output = super::output_binding(Arc::clone(&stream));
             let _binding = control::bind(token);
-            let mut host = slot.host.lock().unwrap_or_else(|e| e.into_inner());
+            let mut host = match slot.lock_host() {
+                Ok(host) => host,
+                Err(error) => {
+                    return protocol::send(
+                        &mut *stream.lock().unwrap_or_else(|e| e.into_inner()),
+                        &Reply::Rejected(crate::request_failure::RequestFailure::from_error(
+                            &error,
+                        )),
+                    )
+                }
+            };
             let _permit = match shared.acquire(request.workers) {
                 Ok(permit) => permit,
                 Err(error) => {
@@ -355,8 +402,8 @@ mod tests {
     fn each_manifest_retains_one_host_and_idle_owner_can_be_evicted() {
         let shared = shared();
         let path = PathBuf::from("E:/fixture/one.dme");
-        let first = shared.slot(path.clone());
-        let second = shared.slot(path.clone());
+        let first = shared.slot(path.clone(), &BTreeMap::new(), None);
+        let second = shared.slot(path.clone(), &BTreeMap::new(), None);
         assert!(Arc::ptr_eq(&first, &second));
         *first.last.lock().unwrap() = Instant::now() - Duration::from_secs(601);
         shared.trim();
@@ -393,7 +440,11 @@ mod tests {
     #[test]
     fn supersession_is_configuration_scoped_and_old_completion_preserves_newest() {
         let shared = shared();
-        let slot = shared.slot(PathBuf::from("E:/fixture/project.dme"));
+        let slot = shared.slot(
+            PathBuf::from("E:/fixture/project.dme"),
+            &BTreeMap::new(),
+            None,
+        );
         let key = RequestKey {
             compile: true,
             defines: BTreeMap::new(),
@@ -446,5 +497,52 @@ mod tests {
         changed.artifact_directory = None;
         changed.output_store = Some("E:/fixture/store".into());
         assert_ne!(key, RequestKey::of(&changed, manifest));
+    }
+    #[test]
+    fn define_sets_retain_independent_hosts_and_cancelled_waiter_exits_immediately() {
+        let shared = shared();
+        let path = PathBuf::from("E:/fixture/project.dme");
+        let plain = shared.slot(path.clone(), &BTreeMap::new(), None);
+        let defines = BTreeMap::from([("MODE".into(), "1".into())]);
+        let alternate = shared.slot(path.clone(), &defines, None);
+        assert!(!Arc::ptr_eq(&plain, &alternate));
+        assert!(Arc::ptr_eq(&alternate, &shared.slot(path, &defines, None)));
+        let _busy = plain.host.lock().unwrap();
+        let token = control::Cancellation::default();
+        token.cancel();
+        let _binding = control::bind(token);
+        assert_eq!(
+            plain.lock_host().err().unwrap().kind(),
+            io::ErrorKind::Interrupted
+        );
+    }
+    #[test]
+    fn session_keys_use_structural_define_order_and_exact_engine_configuration() {
+        let shared = shared();
+        let path = PathBuf::from("E:/fixture/project.dme");
+        let one = BTreeMap::from([("A".into(), "1".into()), ("B".into(), "2".into())]);
+        let reversed = BTreeMap::from([("B".into(), "2".into()), ("A".into(), "1".into())]);
+        let first = shared.slot(path.clone(), &one, None);
+        assert!(Arc::ptr_eq(
+            &first,
+            &shared.slot(path.clone(), &reversed, None)
+        ));
+        let different = BTreeMap::from([("A".into(), "1B2".into())]);
+        assert!(!Arc::ptr_eq(
+            &first,
+            &shared.slot(path.clone(), &different, None)
+        ));
+        let args = vec!["compile".into(), path.to_string_lossy().into_owned()];
+        let crate::request::Command::Build(mut request) = crate::cli::parse(&args).unwrap() else {
+            panic!("build expected")
+        };
+        request.engine_template = Some("E:/fixture/engine.bin".into());
+        let engine = shared.slot(path.clone(), &one, Some(&request));
+        assert!(!Arc::ptr_eq(&first, &engine));
+        request.bootstrap_catalog = true;
+        assert!(!Arc::ptr_eq(
+            &engine,
+            &shared.slot(path, &one, Some(&request))
+        ));
     }
 }

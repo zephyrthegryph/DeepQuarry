@@ -83,7 +83,7 @@ impl PreparedUnit {
     }
     pub fn require_production_abi(&self) -> Result<&PreparedAbi, AbiError> {
         self.abi.as_deref().ok_or_else(|| {
-            AbiError("authoritative procedure ABI is required for full output".into())
+            AbiError::invariant("authoritative procedure ABI is required for full output")
         })
     }
 }
@@ -110,10 +110,10 @@ impl CapturedProcedurePolicy<'_> {
         // No complete project symbol table or binding map is cloned.
         let mut setting_symbols = SymbolTable::default();
         let actual = dm_tree::settings::extract_settings(&parsed.children, &mut setting_symbols)
-            .map_err(AbiError)?;
+            .map_err(AbiError::unsupported)?;
         if actual.as_ref() != metadata.settings.as_ref() {
-            return Err(AbiError(
-                "captured procedure setting tree differs from actual body".into(),
+            return Err(AbiError::unsupported(
+                "captured procedure setting tree differs from actual body",
             ));
         }
         let executable = dm_tree::settings::strip_setting_items(parsed.children.clone());

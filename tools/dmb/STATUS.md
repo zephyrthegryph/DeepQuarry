@@ -2,6 +2,59 @@
 
 Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 
+## Current migration work (9 October, later update)
+
+The latest completed matched cold cohort is `be11683d0b`, not the older cohort
+below. Against its matched control, launch/reap median was **15.346 s versus
+13.820 s**; total CPU was 32.391 s versus 32.547 s, and peak private bytes were
+1,554,059,264 versus 1,595,318,272. Read/write bytes were 326,324,811 /
+569,627,733. Wall time regressed about 11%; this is not an optimization win.
+Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/matched-gzip-20261009-085609-fb0c242d/comparison.json`.
+The human has prioritized finishing migration and correctness over further cold
+microtuning. These measurements exclude the subsequent retained-session work.
+
+Committed through `1268ec23c1`: native daemon/CLI dispatch, build-system compiler
+selection and fallback, resolved analysis query export, shared retained artifact
+ownership, initializer classification reuse and embedded default engine data.
+An owned tiny daemon smoke passed nine checks, including byte equality against a
+fresh local compile, source-error propagation and repeat compilation. Its 7.805 s
+batch duration is **not a DeepQuarry benchmark**. Evidence:
+`E:/dq-cache/dmb-daemon-smoke/20261009-100001-ef381fcb/report.json`.
+
+The next source batch adds retained declaration contributions, relative startup
+plans with fresh current-source issuance, per-procedure ABI artifacts, modifier
+facts and independently reusable initializer assignment continuations. Modified
+objects retain canonical descriptor/path recipes and reissue from the current
+typed expression; old AST owners are stripped before admission. Debug-disabled
+and current group-ordinal fixtures pass, and debug mode is an explicit key input.
+Stable-roster field metadata edits now recalculate changed members and inheritance
+dependants using the same resolver as a full build. ABI producer errors retain
+explicit source/unsupported/invariant categories through dependent overrides.
+
+Latest locked all-target check passed in 25.97 s. The focused migration gate
+passed 20 intended dmbc cases (3m52s compilation, under one second execution),
+five semantic-tree differential cases and twelve ABI cases. The initializer
+producer's separate fifteen-case check passed, including independent whole-group
+comparisons. Earlier checks caught and repaired stale startup offsets, missing
+fixture resolver coverage and debug-disabled modifier retention. Shared artifact
+storage checks pass nine cases; three startup cases pass after correction.
+Receipt: `E:/dq-cache/dmb-native-v2/migration-fragments-focused-20261009.json`.
+The updated binary and daemon edit/concurrency smoke are still pending. Four
+unhooked shared AST visitor/analysis children are drafts, not implemented exports.
+
+Remaining limits: additions, removals and parent edits still rebuild the semantic tree; current
+roster assembly and portions of startup/ABI inventory still run on each request.
+Stable metadata updates still scan the roster, copy the flat member array and
+issue fresh occurrences. The new reverse metadata dependency graph is not yet
+included in the opt-in retained declaration payload census; that census is not
+a total retained-heap measurement. Initializer error typing and exact diagnostic
+positions remain incomplete.
+There are no new real DeepQuarry daemon/body/structural timings yet. The tiny
+six-manifest smoke is not the six real worktree acceptance gate. The recorded
+BYOND structural baseline still has 1,853,923 differences and 126 uncovered fixed
+words. Runtime parity, including the historical power-bridge discrepancy, remains
+unresolved and deferred to Phase 5. This compiler is not declared production ready.
+
 ## Latest matched cold cohort (prepared-source snapshot)
 
 The compressed-trace ABABAB cohort for commit `64d40464a9` completed with

@@ -749,6 +749,15 @@ pub fn run_build_with_host(
             if let Some(totals) = runner_report::initializer_totals(procedure_memo.as_ref()) {
                 dmbc::daemon_eprintln!("native initializer reuse: {totals}");
             }
+            if let Some(totals) = runner_report::startup_totals(procedure_memo.as_ref()) {
+                dmbc::daemon_eprintln!("native startup reuse: {totals}");
+            }
+            if let Some(totals) = runner_report::abi_totals(procedure_memo.as_ref()) {
+                dmbc::daemon_eprintln!("native ABI reuse: {totals}");
+            }
+            if let Some(totals) = runner_report::initializer_fragment_totals(procedure_memo.as_ref()) {
+                dmbc::daemon_eprintln!("native initializer fragment reuse: {totals}");
+            }
         }
         drop(compilation_profile);
         let cache_flush_profile = dm_profile::stage("cache_flush");

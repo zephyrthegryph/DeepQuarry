@@ -171,7 +171,7 @@ fn lexical_abi_constants_support_long_acyclic_chains_and_reject_exact_cycles() {
         };
         let answer = LexicalAbiEvaluator(&evaluator).evaluate(expression, &context);
         if cyclic {
-            assert!(answer.unwrap_err().0.contains("constant cycle"));
+            assert!(answer.unwrap_err().message.contains("constant cycle"));
         } else {
             assert_eq!(answer.unwrap(), SemanticValue::NumberBits(7f32.to_bits()));
         }
@@ -360,8 +360,8 @@ fn abi_failures_keep_each_captured_source_and_specific_cause() {
     let prepared = PreparedSourceAbi {
         units: Vec::new(),
         diagnostics: vec![
-            (1, "second specific cause".into()),
-            (0, "first specific cause".into()),
+            (1, dm_codegen_byond::procedure_abi::AbiError::unsupported("second specific cause")),
+            (0, dm_codegen_byond::procedure_abi::AbiError::unsupported("first specific cause")),
         ],
     };
     let diagnostics = abi_diagnostics(&frontend, &prepared).unwrap();

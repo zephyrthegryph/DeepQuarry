@@ -534,34 +534,11 @@ impl AdaptedDeclarations {
         executor: Option<&dm_exec::BuildExecutor>,
     ) -> Result<TreeSnapshot, SnapshotError> {
         let mut skeletons = Vec::new();
-        // Engine parents seed defaults; authored parent_type has language
-        // precedence. Keep conflicts between two authored explicit parents an
-        // error rather than treating source declarations as arbitrary rewrites.
-        let mut authored_parents = std::collections::HashMap::new();
-        for row in &self.skeletons {
-            if let Skeleton::Type {
-                path,
-                explicit_parent: Some(parent),
-            } = row
-            {
-                if let Some(previous) = authored_parents.insert(*path, *parent) {
-                    if previous != *parent {
-                        let error = SnapshotError::Tree(crate::TreeError::ConflictingParent(*path));
-                        on_error(&error, &self.skeletons, &self.origins);
-                        return Err(error);
-                    }
-                }
-            }
-        }
-        let hierarchy = seed.map(|seed| {
-            let mut hierarchy = seed.hierarchy.clone();
-            for (path, parent) in &mut hierarchy.parents {
-                if let Some(authored) = authored_parents.get(path) {
-                    *parent = Some(*authored);
-                }
-            }
-            hierarchy
-        });
+        let hierarchy = seed_hierarchy(&self.skeletons, seed).map_err(|error| {
+            let error = SnapshotError::Tree(error);
+            on_error(&error, &self.skeletons, &self.origins);
+            error
+        })?;
         if let Some(hierarchy) = &hierarchy {
             skeletons.extend(
                 hierarchy
@@ -619,4 +596,57 @@ impl AdaptedDeclarations {
         )?);
         Ok(TreeSnapshot { tree, occurrences })
     }
+}
+
+/// One authored-parent precedence producer, shared by full and retained builds.
+pub(crate) fn seed_hierarchy(
+    skeletons: &[Skeleton],
+    seed: Option<&crate::frontend::EngineSeed>,
+) -> Result<Option<crate::EngineHierarchy>, crate::TreeError> {
+    let mut authored_parents = std::collections::HashMap::new();
+    for row in skeletons {
+        if let Skeleton::Type {
+            path,
+            explicit_parent: Some(parent),
+        } = row
+        {
+            if let Some(previous) = authored_parents.insert(*path, *parent) {
+                if previous != *parent {
+                    return Err(crate::TreeError::ConflictingParent(*path));
+                }
+            }
+        }
+    }
+    Ok(seed.map(|seed| {
+        let mut hierarchy = seed.hierarchy.clone();
+        for (path, parent) in &mut hierarchy.parents {
+            if let Some(authored) = authored_parents.get(path) {
+                *parent = Some(*authored);
+            }
+        }
+        hierarchy
+    }))
+}
+pub(crate) fn projected_identity(
+    skeletons: &[Skeleton],
+    seed: Option<&crate::frontend::EngineSeed>,
+) -> Result<(u128, Option<crate::EngineHierarchy>), crate::TreeError> {
+    let hierarchy = seed_hierarchy(skeletons, seed)?;
+    let mut combined = Vec::new();
+    if let Some(hierarchy) = &hierarchy {
+        combined.extend(
+            hierarchy
+                .parents
+                .iter()
+                .map(|&(path, parent)| Skeleton::Type {
+                    path,
+                    explicit_parent: parent,
+                }),
+        );
+    }
+    combined.extend_from_slice(skeletons);
+    Ok((
+        crate::declaration_identity(&combined, seed.map_or(&[][..], |seed| seed.fields.as_ref())),
+        hierarchy,
+    ))
 }

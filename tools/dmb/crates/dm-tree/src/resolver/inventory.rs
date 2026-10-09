@@ -27,10 +27,21 @@ fn fact(tree: &SemanticTree, id: MemberId) -> Option<Fact> {
 }
 type IndexedFactChunk = Vec<(usize, Fact)>;
 type FactSlot = Mutex<Option<IndexedFactChunk>>;
-fn facts(tree: &SemanticTree, executor: Option<&dm_exec::BuildExecutor>) -> Vec<Option<Fact>> {
+fn facts(
+    tree: &SemanticTree,
+    executor: Option<&dm_exec::BuildExecutor>,
+    selected: Option<&HashSet<SymbolId>>,
+) -> Vec<Option<Fact>> {
     let Some(executor) = executor else {
         return (0..tree.members.len())
-            .map(|index| fact(tree, MemberId(index as u32)))
+            .map(|index| {
+                let id = MemberId(index as u32);
+                if selected.is_some_and(|names| !names.contains(&tree.members[index].name)) {
+                    None
+                } else {
+                    fact(tree, id)
+                }
+            })
             .collect();
     };
     let next = AtomicUsize::new(0);
@@ -49,6 +60,10 @@ fn facts(tree: &SemanticTree, executor: Option<&dm_exec::BuildExecutor>) -> Vec<
                     let output = node
                         .members
                         .iter()
+                        .filter(|&&id| {
+                            selected
+                                .is_none_or(|names| names.contains(&tree.members[id.index()].name))
+                        })
                         .filter_map(|&id| fact(tree, id).map(|fact| (id.index(), fact)))
                         .collect();
                     *groups[index]
@@ -71,7 +86,14 @@ fn facts(tree: &SemanticTree, executor: Option<&dm_exec::BuildExecutor>) -> Vec<
     ordered
 }
 pub(super) fn rebuild(tree: &mut SemanticTree, executor: Option<&dm_exec::BuildExecutor>) {
-    let facts = facts(tree, executor);
+    rebuild_selected(tree, executor, None);
+}
+pub(super) fn rebuild_selected(
+    tree: &mut SemanticTree,
+    executor: Option<&dm_exec::BuildExecutor>,
+    selected: Option<&HashSet<SymbolId>>,
+) {
+    let facts = facts(tree, executor, selected);
     let mut unique = HashMap::new();
     let mut non_unique = HashSet::new();
     let mut shared = HashMap::new();
@@ -105,7 +127,8 @@ pub(super) fn rebuild(tree: &mut SemanticTree, executor: Option<&dm_exec::BuildE
         add(name, slot);
     }
     for entry in tree.inventory.intrinsic.iter() {
-        if entry.kind == MemberKind::Var {
+        if entry.kind == MemberKind::Var && selected.is_none_or(|names| names.contains(&entry.name))
+        {
             let authored = tree
                 .lookup_type(entry.owner)
                 .and_then(|owner| tree.direct.get(&(owner, entry.name, MemberKind::Var)))
@@ -130,8 +153,15 @@ pub(super) fn rebuild(tree: &mut SemanticTree, executor: Option<&dm_exec::BuildE
         }
     }
     let inventory = Arc::make_mut(&mut tree.inventory);
-    inventory.unique = unique;
-    inventory.non_unique = non_unique;
+    if let Some(selected) = selected {
+        inventory.unique.retain(|name, _| !selected.contains(name));
+        inventory.non_unique.retain(|name| !selected.contains(name));
+        inventory.unique.extend(unique);
+        inventory.non_unique.extend(non_unique);
+    } else {
+        inventory.unique = unique;
+        inventory.non_unique = non_unique;
+    }
 }
 
 #[cfg(test)]

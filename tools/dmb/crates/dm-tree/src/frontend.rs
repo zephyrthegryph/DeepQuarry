@@ -425,7 +425,7 @@ pub use body_arena::{BodyArena, BodyArenaStorage};
 
 #[path = "frontend_static_receipt.rs"]
 mod static_receipt;
-pub use static_receipt::IssuedStaticPlan;
+pub use static_receipt::{IssuedStaticPlan, RelativeStaticPlan};
 #[path = "frontend_expression_site.rs"]
 mod expression_site;
 
@@ -562,11 +562,16 @@ pub use pipeline::{
 #[path = "frontend_semantic_state.rs"]
 mod semantic_state;
 pub use semantic_state::RetainedSemanticTree;
+#[path = "frontend_declaration_state.rs"]
+mod declaration_state;
+pub use declaration_state::{
+    DeclarationContributionView, DeclarationRetentionStats, DeclarationStorageView,
+};
 #[path = "frontend_parse.rs"]
 mod declaration_parse;
 #[cfg(test)]
 use declaration_parse::parse_declarations;
-use declaration_parse::{parse_declarations_with_executor, ParsedDeclarations};
+use declaration_parse::ParsedDeclarations;
 
 #[path = "chunkfacts.rs"]
 mod chunkfacts;

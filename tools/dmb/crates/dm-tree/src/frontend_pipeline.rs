@@ -213,7 +213,13 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         allocation_ledger,
         declaration_errors,
         reuse_stats,
-    } = parse_declarations_with_executor(&expanded, config, memo, executor)?;
+    } = declaration_parse::parse_declarations_with_state(
+        &expanded,
+        config,
+        memo,
+        executor,
+        semantic_state.as_deref().map(|state| &state.declarations),
+    )?;
     timings.declaration_reuse = reuse_stats;
     diagnostics.extend(
         syntax_diagnostics

@@ -56,6 +56,23 @@ pub(crate) fn weight(
     )
 }
 
+/// Modifier facts are fixed Copy scalars. Reuse the same actual-ledger traversal;
+/// its initializer envelope is intentionally a conservative upper charge here.
+pub(crate) fn modifier_weight(
+    key: &[u8],
+    reads: &Vec<ResolverRead>,
+    versions: &Vec<(ReadDomain, u128)>,
+) -> Option<usize> {
+    weight(
+        &DefaultValue::Scalar(dm_ir::SemanticValue::Null),
+        None,
+        None,
+        key,
+        reads,
+        versions,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

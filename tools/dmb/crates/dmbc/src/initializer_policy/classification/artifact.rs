@@ -19,6 +19,8 @@ struct SemanticClassification {
     key: Option<Vec<u8>>,
 }
 pub struct InitializerArtifacts {
+    pub(in crate::initializer_policy) modifiers:
+        crate::initializer_policy::modifier_facts::ModifierArtifacts,
     values: dm_session::ArtifactStore<SemanticClassification>,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
@@ -28,6 +30,7 @@ impl Default for InitializerArtifacts {
     fn default() -> Self {
         Self {
             values: dm_session::ArtifactStore::current_revision(),
+            modifiers: Default::default(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
@@ -35,9 +38,19 @@ impl Default for InitializerArtifacts {
     }
 }
 impl InitializerArtifacts {
+    pub fn modifier_reuse_counts(&self) -> (u64, u64) {
+        (
+            self.modifiers.hits.load(Ordering::Relaxed),
+            self.modifiers.recomputed.load(Ordering::Relaxed),
+        )
+    }
+
     pub fn with_limit(bytes: usize) -> Self {
         Self {
             values: dm_session::ArtifactStore::with_limit(bytes),
+            // Preserve the explicit compatibility budget; the new full-current
+            // modifier owner is enabled only by retained-session defaults.
+            modifiers: crate::initializer_policy::modifier_facts::ModifierArtifacts::with_limit(0),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),

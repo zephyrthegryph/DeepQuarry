@@ -434,8 +434,8 @@ impl CapturedConstantEvaluator for DriverEvaluator<'_> {
         context: &AbiContext<'_>,
     ) -> Result<SemanticValue, AbiError> {
         self.scalar(context.identity.owner, expression)
-            .map_err(AbiError)?
-            .ok_or_else(|| AbiError("ABI setting is not a captured scalar".into()))
+            .map_err(AbiError::unsupported)?
+            .ok_or_else(|| AbiError::unsupported("ABI setting is not a captured scalar"))
     }
 }
 /// Lexical procedure-static ABI evaluation is used only with a complete captured
@@ -460,8 +460,8 @@ impl CapturedConstantEvaluator for LexicalAbiEvaluator<'_> {
                 Some(procedure),
                 &RefCell::new(std::collections::HashSet::new()),
             )
-            .map_err(AbiError)?
-            .ok_or_else(|| AbiError("ABI setting is not a captured scalar".into()))
+            .map_err(AbiError::unsupported)?
+            .ok_or_else(|| AbiError::unsupported("ABI setting is not a captured scalar"))
     }
 }
 impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<'_> {

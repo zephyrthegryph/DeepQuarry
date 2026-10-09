@@ -1,7 +1,24 @@
 //! Shared static-receipt backing, counted without cloning declaration buffers.
 use super::HeapCensus;
 impl HeapCensus {
-    pub(super) fn static_plan(&mut self, procedure: &dm_tree::procedure_statics::StaticPlan) {
+    pub(super) fn static_receipt(
+        &mut self,
+        receipt: &std::sync::Arc<dm_tree::frontend::IssuedStaticPlan>,
+    ) {
+        if self.arc_object("startup.static_receipts", receipt) {
+            self.arc_text("startup.static_source", receipt.source());
+            if let Some(payload) = receipt.retained_relative_payload() {
+                if self.arc_object("startup.relative_plan", payload) {
+                    self.arc_text("startup.static_source", payload.source());
+                    self.static_plan(payload.plan());
+                }
+            }
+        }
+    }
+    pub(super) fn static_plan(
+        &mut self,
+        procedure: &dm_tree::procedure_statics::StaticPlan,
+    ) -> usize {
         self.vec_payload("startup", &procedure.declarations);
         self.vec_payload("startup", &procedure.origins);
         self.items("startup.executable_bodies", &procedure.executable_body);
@@ -17,5 +34,6 @@ impl HeapCensus {
                 self.array("startup", array);
             }
         }
+        self.symbol_table_storage("startup.symbols", &procedure.symbols)
     }
 }

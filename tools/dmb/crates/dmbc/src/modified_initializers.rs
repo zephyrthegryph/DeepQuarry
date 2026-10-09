@@ -14,6 +14,9 @@ use std::{
 
 mod source_recipe;
 pub(crate) use source_recipe::SourceRecipe;
+mod descriptor_recipe;
+mod expression_recipe;
+pub(crate) use expression_recipe::ExpressionRecipe;
 
 pub struct Collected {
     pub descriptors: Vec<(SymRef, CapturedModifiedInstance)>,

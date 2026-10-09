@@ -7,10 +7,20 @@ mod initializer_ledger;
 mod macro_environments;
 mod prepared;
 mod relocation_metrics;
+mod resident_abi;
 mod resident_initializer;
+mod resident_initializer_fragment;
+pub(crate) use resident_abi::weight as resident_abi_weight;
+pub(crate) use resident_initializer_fragment::weight as resident_initializer_fragment_weight;
+mod resident_startup;
+pub(crate) use resident_startup::weight as resident_startup_weight;
 pub(crate) mod resident_weight;
+mod retained_declarations;
 mod session_symbolic;
-pub(crate) use resident_initializer::weight as resident_initializer_weight;
+pub(crate) use resident_initializer::{
+    modifier_weight as resident_modifier_weight, weight as resident_initializer_weight,
+};
+pub(crate) use retained_declarations::inspect as retained_declaration_census;
 mod typed_body;
 use std::{
     collections::{BTreeMap, BTreeSet, HashSet},
@@ -422,12 +432,10 @@ impl HeapCensus {
         if !self.arc_object("semantic_symbols", symbols) {
             return;
         }
-        for (_, spelling) in symbols.ordered() {
-            self.slice("semantic_symbols", spelling.as_bytes(), true);
-        }
+        self.symbol_table_storage("semantic_symbols", symbols);
         self.unknown(
             "semantic_symbols",
-            "private symbol HashMap bucket capacities, ancestor tables, and Arc control blocks",
+            "private symbol HashMap bucket allocations and Arc control blocks; spelling payload and shared ancestor owners are counted",
         );
     }
     fn expression(&mut self, owner: &str, value: &dm_ir::SymbolicExpression) {
@@ -611,7 +619,7 @@ impl HeapCensus {
         self.slice("startup", startup.procedure_captures(), false);
         for (_, capture) in startup.procedure_captures() {
             if let crate::startup::ProcedureCapture::Issued(receipt) = capture {
-                self.arc_object("startup.static_receipts", receipt);
+                self.static_receipt(receipt);
             }
         }
         for (_, procedure) in startup.procedures() {
@@ -619,7 +627,7 @@ impl HeapCensus {
         }
         self.unknown(
             "startup",
-            "private procedure index and per-static symbol table buckets/backing",
+            "private procedure index and symbol HashMap bucket allocation; spelling payloads and ancestor owners are counted",
         );
     }
 

@@ -103,9 +103,9 @@ pub fn capture_layout<'a>(
         if id == NONE {
             Ok(None)
         } else {
-            string(id)
-                .map(|value| Some(value.to_vec()))
-                .ok_or_else(|| AbiError(format!("engine procedure string {id} is missing")))
+            string(id).map(|value| Some(value.to_vec())).ok_or_else(|| {
+                AbiError::unsupported(format!("engine procedure string {id} is missing"))
+            })
         }
     }
     let display_name = optional(record.strings[1], &mut string)?;
@@ -119,8 +119,8 @@ pub fn capture_layout<'a>(
     };
     let invisibility = record.invisibility_setting();
     if invisibility.is_some_and(|value| value > 127) {
-        return Err(AbiError(
-            "engine procedure invisibility is outside the ABI range".into(),
+        return Err(AbiError::unsupported(
+            "engine procedure invisibility is outside the ABI range",
         ));
     }
     Ok(ProcLayout {
@@ -169,13 +169,15 @@ impl crate::procedure_policy::CapturedInheritedFacts for EngineInheritedFacts<'_
                 .engine
                 .procedure_layout(owner, name, kind)
                 .map_err(|error| {
-                    AbiError(format!("engine procedure ABI selection failed: {error:?}"))
+                    AbiError::unsupported(format!(
+                        "engine procedure ABI selection failed: {error:?}"
+                    ))
                 })?
                 .cloned()
                 .map(InheritedLayout::Known)
                 .ok_or_else(|| {
-                    AbiError(
-                        "selected inherited engine procedure has no captured ABI record".into(),
+                    AbiError::unsupported(
+                        "selected inherited engine procedure has no captured ABI record",
                     )
                 }),
         }

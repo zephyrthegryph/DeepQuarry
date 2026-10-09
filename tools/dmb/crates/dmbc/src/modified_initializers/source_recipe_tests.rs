@@ -1,4 +1,5 @@
 use super::*;
+use dm_syntax::ExprKind;
 use dm_ir::{ResolveQuery as Q, ResolvedMeaning as M};
 struct Source(&'static str);
 impl dm_preprocess::SourceProvider for Source {

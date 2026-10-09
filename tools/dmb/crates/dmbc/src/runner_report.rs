@@ -33,6 +33,50 @@ pub(super) fn initializer_totals(
     use std::sync::atomic::Ordering::Relaxed;
     memo.and_then(|memo| memo.initializers.as_ref())
         .map(|store| {
+            let (modifier_hits, modifier_recomputed) = store.modifier_reuse_counts();
+            serde_json::json!({
+                "scope": "retained_session_total",
+                "hits": store.hits.load(Relaxed),
+                "recomputed": store.recomputed.load(Relaxed),
+                "declined": store.declined.load(Relaxed),
+                "modifier_hits": modifier_hits,
+                "modifier_recomputed": modifier_recomputed,
+            })
+        })
+}
+
+pub(super) fn startup_totals(
+    memo: Option<&dmbc::lowering_memo::ProcedureMemo>,
+) -> Option<serde_json::Value> {
+    use std::sync::atomic::Ordering::Relaxed;
+    memo.and_then(|memo| memo.startup.as_ref()).map(|store| {
+        serde_json::json!({
+            "scope": "retained_session_total",
+            "hits": store.hits.load(Relaxed),
+            "recomputed": store.recomputed.load(Relaxed),
+        })
+    })
+}
+
+pub(super) fn abi_totals(
+    memo: Option<&dmbc::lowering_memo::ProcedureMemo>,
+) -> Option<serde_json::Value> {
+    memo.and_then(|memo| memo.abi.as_ref()).map(|store| {
+        let (hits, recomputed) = store.totals();
+        serde_json::json!({
+            "scope": "retained_session_total",
+            "hits": hits,
+            "recomputed": recomputed,
+        })
+    })
+}
+
+pub(super) fn initializer_fragment_totals(
+    memo: Option<&dmbc::lowering_memo::ProcedureMemo>,
+) -> Option<serde_json::Value> {
+    use std::sync::atomic::Ordering::Relaxed;
+    memo.and_then(|memo| memo.initializer_fragments.as_ref())
+        .map(|store| {
             serde_json::json!({
                 "scope": "retained_session_total",
                 "hits": store.hits.load(Relaxed),

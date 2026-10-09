@@ -9,6 +9,58 @@ impl dm_preprocess::SourceProvider for Source {
         Ok(self.0.into())
     }
 }
+#[test]
+fn owned_declarations_reuse_with_fresh_current_file_and_source_issuance() {
+    let source =
+        "/obj/base\n    var/count=1\n/proc/p()\n    set name = \"Display\"\n    return 1\n";
+    let mut state = RetainedSemanticTree::new();
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let first = build_with_executor_and_semantic_state(
+        Path::new("first.dme"),
+        &Source(source),
+        &BTreeMap::new(),
+        FrontendConfig {
+            workers: 1,
+            engine: None,
+            observer: None,
+        },
+        None,
+        &executor,
+        Some(&mut state),
+    )
+    .unwrap();
+    let second = build_with_executor_and_semantic_state(
+        Path::new("second.dme"),
+        &Source(source),
+        &BTreeMap::new(),
+        FrontendConfig {
+            workers: 1,
+            engine: None,
+            observer: None,
+        },
+        None,
+        &executor,
+        Some(&mut state),
+    )
+    .unwrap();
+    assert!(state.declaration_retention_stats().hits > 0);
+    assert!(Arc::ptr_eq(&first.snapshot.tree, &second.snapshot.tree));
+    assert!(!Arc::ptr_eq(
+        &first.snapshot.occurrences,
+        &second.snapshot.occurrences
+    ));
+    assert_eq!(
+        second.bodies[0].source.path.file_name().unwrap(),
+        "second.dme"
+    );
+    assert_eq!(
+        first.bodies[0].source.path.file_name().unwrap(),
+        "first.dme"
+    );
+    let arena = BodyArena::new(&second);
+    assert!(arena.with_parsed(&first.bodies[0], |_| ()).is_err());
+    assert!(arena.with_parsed(&second.bodies[0], |_| ()).is_ok());
+}
 fn build(state: &mut RetainedSemanticTree, source: &'static str) -> crate::frontend::ColdFrontend {
     let executor = dm_exec::BuildExecutor::new(1).unwrap();
     build_with_executor_and_semantic_state(
@@ -74,7 +126,78 @@ fn ordered_declarations_and_defaults_invalidate_tree_and_match_fresh_result() {
         changed.snapshot.tree.declarations(),
         fresh.snapshot.tree.declarations()
     );
-    assert_eq!((state.hits(), state.rebuilds()), (0, 3));
+    assert_eq!(
+        (state.hits(), state.rebuilds(), state.metadata_updates()),
+        (0, 2, 1)
+    );
+}
+#[test]
+fn stable_metadata_updates_inherited_arrays_storage_and_selector_negatives_match_full_build() {
+    use dm_ir::{ResolveQuery as Q, Resolver, SymbolId};
+    let before = "/datum/base\n    var/static/shared = 1\n    var/list/data[2]\n/datum/base/child\n    shared = 2\n    data = list(1)\n/datum/other\n    var/static/unrelated = 3\n";
+    let after = "/datum/base\n    var/shared = 4\n    var/list/data[4]\n/datum/base/child\n    shared = 2\n    data = list(1)\n/datum/other\n    var/static/unrelated = 3\n";
+    let mut state = RetainedSemanticTree::new();
+    let original = build(&mut state, before);
+    let updated = build(&mut state, after);
+    let full = build(&mut RetainedSemanticTree::new(), after);
+    assert_eq!((state.rebuilds(), state.metadata_updates()), (1, 1));
+    assert_eq!(
+        updated.snapshot.tree.identity(),
+        full.snapshot.tree.identity()
+    );
+    assert_eq!(
+        updated.snapshot.tree.declarations(),
+        full.snapshot.tree.declarations()
+    );
+    for (current, expected) in updated
+        .snapshot
+        .tree
+        .members()
+        .iter()
+        .zip(full.snapshot.tree.members())
+    {
+        assert_eq!(current.owner, expected.owner);
+        assert_eq!(current.previous, expected.previous);
+        assert_eq!(current.metadata, expected.metadata);
+        assert_eq!(current.content, expected.content);
+    }
+    for owner in ["/datum/base", "/datum/base/child", "/datum/other"] {
+        let owner = SymbolId::of(owner);
+        for name in ["shared", "data", "unrelated", "missing"] {
+            let name = SymbolId::of(name);
+            for query in [
+                Q::Var { owner, name },
+                Q::VarStorage { owner, name },
+                Q::DeclaredVarType { owner, name },
+                Q::UniqueStaticVar(name),
+            ] {
+                assert_eq!(
+                    Resolver::resolve(updated.snapshot.tree.as_ref(), query),
+                    Resolver::resolve(full.snapshot.tree.as_ref(), query)
+                );
+            }
+        }
+    }
+    let unrelated = SymbolId::of("unrelated");
+    let old = original
+        .snapshot
+        .tree
+        .members()
+        .iter()
+        .find(|member| member.name == unrelated)
+        .unwrap();
+    let new = updated
+        .snapshot
+        .tree
+        .members()
+        .iter()
+        .find(|member| member.name == unrelated)
+        .unwrap();
+    assert!(Arc::ptr_eq(&old.metadata, &new.metadata));
+    assert!(!Arc::ptr_eq(
+        &original.snapshot.occurrences,
+        &updated.snapshot.occurrences
+    ));
 }
 #[test]
 fn invalid_current_declaration_reports_current_origin_without_poisoning_retained_tree() {
