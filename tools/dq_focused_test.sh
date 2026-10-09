@@ -678,7 +678,12 @@ look_dump_merge() {
 look_keys_record() {
 	if [ "$look_world" -ne 1 ] || [ -z "$LOOK_PLAN_FILE" ] || [ ! -f "$LOOK_PLAN_FILE" ] || [ -n "$look_order" ]; then return 0; fi
 	if [[ " ${look_group[*]} " != *" dq_look_state_pin "* || " ${look_group[*]} " != *" dq_look_tree_pin "* ]]; then return 0; fi
-	cut -f1,2 "$LOOK_PLAN_FILE" >code/modules/unit_tests/snapshots/look_keys.txt
+	# One writer format: the analyzer's plan verbatim (type, key, probes), byte-identical to `analyze look-keys` output.
+	cp "$LOOK_PLAN_FILE" code/modules/unit_tests/snapshots/look_keys.txt
+	if ! cmp -s "$LOOK_PLAN_FILE" code/modules/unit_tests/snapshots/look_keys.txt; then
+		echo "== look pins: FAIL: recorded look_keys.txt differs from the analyzer plan"
+		return 1
+	fi
 	echo "== look pins: recorded $(wc -l <code/modules/unit_tests/snapshots/look_keys.txt | tr -d ' ') type keys in code/modules/unit_tests/snapshots/look_keys.txt (commit it with the snapshots)"
 }
 
