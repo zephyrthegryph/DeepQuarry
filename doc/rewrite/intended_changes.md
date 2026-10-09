@@ -3883,3 +3883,7 @@ look-state probes are narrowed to the vars `analyze look-keys` finds a draw read
   and the sweep's spot is restored by `ChangeTurf(old_type)`, which keeps state of the turf before it. Proposed fix: make each
   turf probe on a fresh tile of the template's floor type (`ChangeTurf` from a canonical turf, then drop `landed_holder`), then bless the one rule.
 * **Harness:** the bless writes CRLF and a lone newline for an empty row set; the committed files are LF and empty files stay empty, so those were normalised back.
+
+### Combined machinery prompts and requirement protocol (2026-10-08)
+
+The requirement-protocol branch now includes the prompts branch. Its scoped cryopod requirement pin therefore receives the same thirteen `Put grabbed victim in` menu rows already reviewed and recorded in `last_timed_1008` and the canonical cryopod pin: the native grab op now has a menu binding so passenger consent runs through `asks(answerer =)` while the loader remains the actor. This is a reuse of that existing capture, not a new recording. No CableLayer or bomb-tester pin rows change. Master’s CableLayer boolean adapter and bomb-tester boolean selection are replaced by direct null-or-reason checks of the same cable/on and tank-slot predicates; they must recover their original Toggle and Connect tank rows. The medical kiosk and cryopod prompt admission callbacks also use null-or-reason after combining the branches.
