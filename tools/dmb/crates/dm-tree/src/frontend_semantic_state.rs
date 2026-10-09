@@ -7,18 +7,40 @@ use std::sync::Arc;
 pub struct RetainedSemanticTree {
     pub(super) declarations: super::declaration_state::RetainedDeclarations,
     entry: Option<Entry>,
+    normalization: crate::owner_normalization::RetainedNormalization,
     hits: u64,
     rebuilds: u64,
     metadata_updates: u64,
 }
 struct Entry {
-    skeletons: Vec<Skeleton>,
+    index: crate::declaration_contributions::KeyedDeclarations,
     symbols: Vec<(dm_ir::SymbolId, String)>,
     engine: Option<EngineSeed>,
     tree: Arc<SemanticTree>,
     metadata_dependencies: Option<crate::metadata_update::MetadataDependencies>,
 }
 impl RetainedSemanticTree {
+    /// Diagnostic-only current keyed declaration owner.
+    pub fn retained_declaration_index(
+        &self,
+    ) -> Option<&crate::declaration_contributions::KeyedDeclarations> {
+        self.entry.as_ref().map(|entry| &entry.index)
+    }
+    pub fn visit_normalization_storage(
+        &self,
+        visit: impl FnMut(crate::owner_normalization::NormalizationStorageView<'_>),
+    ) {
+        self.normalization.visit_storage(visit);
+    }
+    pub fn metadata_owner_hits(&self) -> usize {
+        self.normalization.metadata.hits()
+    }
+    pub fn visit_effective_metadata_storage(
+        &self,
+        visit: impl FnMut(crate::owner_metadata::MetadataStorageView<'_>),
+    ) {
+        self.normalization.metadata.visit_storage(visit);
+    }
     /// Diagnostic-only borrowed dependency backing; no roster is materialized.
     pub fn visit_metadata_dependency_storage(&self, visit: impl FnMut(usize, usize, usize)) {
         if let Some(graph) = self
@@ -41,10 +63,14 @@ impl RetainedSemanticTree {
     }
     pub fn clear(&mut self) {
         self.entry = None;
+        self.normalization = crate::owner_normalization::RetainedNormalization::default();
         self.declarations.retain(&[]);
     }
     pub fn hits(&self) -> u64 {
         self.hits
+    }
+    pub fn normalization_hits(&self) -> usize {
+        self.normalization.hits()
     }
     pub fn metadata_updates(&self) -> u64 {
         self.metadata_updates
@@ -62,7 +88,7 @@ impl RetainedSemanticTree {
         let symbols = adapted.symbols.ordered();
         let reusable =
             self.entry.as_ref().filter(|entry| {
-                entry.skeletons == adapted.skeletons
+                entry.index.skeletons().eq(adapted.skeletons.iter())
                     && entry.symbols.len() == symbols.len()
                     && entry.symbols.iter().zip(&symbols).all(
                         |((id, text), (current_id, current))| {
@@ -85,14 +111,23 @@ impl RetainedSemanticTree {
                 occurrences: Arc::new(occurrences),
             });
         }
+        // Exact per-owner equality shares immutable declaration contributions;
+        // this index never carries a previous request's source authority.
+        let index = crate::declaration_contributions::KeyedDeclarations::capture(
+            self.entry.as_ref().map(|entry| &entry.index),
+            &adapted.skeletons,
+        )
+        .ok()
+        .map(|(index, _)| index);
         let updated = self.entry.as_ref().and_then(|entry| {
+            index.as_ref()?;
             if !same_engine(entry.engine.as_ref(), engine) {
                 return None;
             }
             entry.metadata_dependencies.as_ref()?.update(
                 &entry.tree,
-                &entry.skeletons,
-                &adapted.skeletons,
+                entry.index.skeletons(),
+                adapted.skeletons.iter(),
                 adapted.symbols.clone(),
                 executor,
             )
@@ -119,7 +154,7 @@ impl RetainedSemanticTree {
                 .as_mut()
                 .expect("updated tree has its retained producer");
             entry.tree = Arc::clone(&tree);
-            entry.skeletons = adapted.skeletons;
+            entry.index = index.expect("updated tree has its exact contribution index");
             entry.symbols = symbols
                 .into_iter()
                 .map(|(id, text)| (id, text.to_owned()))
@@ -131,21 +166,26 @@ impl RetainedSemanticTree {
             });
         }
         // Capture admission inputs before consuming them; never memoize failures.
-        let skeletons = adapted.skeletons.clone();
         let symbols = symbols
             .into_iter()
             .map(|(id, text)| (id, text.to_owned()))
             .collect();
-        let snapshot =
-            adapted.finish_with_engine_observed_on_executor(engine, on_error, executor)?;
-        let metadata_dependencies =
-            crate::metadata_update::MetadataDependencies::capture(&snapshot.tree, &skeletons);
-        self.entry = Some(Entry {
-            skeletons,
-            symbols,
-            engine: engine.cloned(),
-            tree: Arc::clone(&snapshot.tree),
-            metadata_dependencies,
+        let snapshot = adapted.finish_with_engine_normalization(
+            engine,
+            on_error,
+            executor,
+            index.as_ref().map(|index| (index, &self.normalization)),
+        )?;
+        self.entry = index.map(|index| {
+            let metadata_dependencies =
+                crate::metadata_update::MetadataDependencies::capture(&snapshot.tree, &index);
+            Entry {
+                index,
+                symbols,
+                engine: engine.cloned(),
+                tree: Arc::clone(&snapshot.tree),
+                metadata_dependencies,
+            }
         });
         self.rebuilds += 1;
         Ok(snapshot)

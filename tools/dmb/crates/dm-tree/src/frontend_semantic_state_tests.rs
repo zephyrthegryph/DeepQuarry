@@ -229,3 +229,166 @@ fn invalid_current_declaration_reports_current_origin_without_poisoning_retained
     assert!(Arc::ptr_eq(&valid.snapshot.tree, &repeated.snapshot.tree));
     assert_eq!((state.hits(), state.rebuilds()), (1, 1));
 }
+#[test]
+fn keyed_retained_owners_share_across_metadata_and_structural_rebuilds() {
+    let mut state = RetainedSemanticTree::new();
+    build(
+        &mut state,
+        "/datum/a\n    var/value = 1\n/datum/b\n    var/other = 2\n",
+    );
+    let b = dm_ir::SymbolId::of("/datum/b");
+    let a = dm_ir::SymbolId::of("/datum/a");
+    let original_b = state
+        .entry
+        .as_ref()
+        .unwrap()
+        .index
+        .owner(b)
+        .unwrap()
+        .clone();
+    let original_a = state
+        .entry
+        .as_ref()
+        .unwrap()
+        .index
+        .owner(a)
+        .unwrap()
+        .clone();
+    build(
+        &mut state,
+        "/datum/a\n    var/value = 3\n/datum/b\n    var/other = 2\n",
+    );
+    let entry = state.entry.as_ref().unwrap();
+    assert!(Arc::ptr_eq(&original_b, entry.index.owner(b).unwrap()));
+    assert!(!Arc::ptr_eq(&original_a, entry.index.owner(a).unwrap()));
+    assert_eq!((state.rebuilds(), state.metadata_updates()), (1, 1));
+    let source =
+        "/datum/a\n    var/value = 3\n    var/new_value = 4\n/datum/b\n    var/other = 2\n";
+    let changed = build(&mut state, source);
+    assert!(Arc::ptr_eq(
+        &original_b,
+        state.entry.as_ref().unwrap().index.owner(b).unwrap()
+    ));
+    let fresh = build(&mut RetainedSemanticTree::new(), source);
+    assert_eq!(
+        changed.snapshot.tree.identity(),
+        fresh.snapshot.tree.identity()
+    );
+    assert_eq!(
+        changed.snapshot.tree.declarations(),
+        fresh.snapshot.tree.declarations()
+    );
+    assert_eq!((state.rebuilds(), state.metadata_updates()), (2, 1));
+}
+
+#[test]
+fn metadata_update_copies_only_dirty_member_chunks_and_preserves_old_snapshot() {
+    fn source(value: usize) -> &'static str {
+        let mut text = String::from("/datum/a\n");
+        for index in 0..300 {
+            let initial = if index == 0 { value } else { index };
+            text.push_str(&format!("    var/v{index} = {initial}\n"));
+        }
+        Box::leak(text.into_boxed_str())
+    }
+    let mut state = RetainedSemanticTree::new();
+    let original = build(&mut state, source(1));
+    let changed_source = source(999);
+    let changed = build(&mut state, changed_source);
+    let fresh = build(&mut RetainedSemanticTree::new(), changed_source);
+    assert_eq!(state.metadata_updates(), 1);
+    let old = original.snapshot.tree.members();
+    let new = changed.snapshot.tree.members();
+    assert_eq!(old.len(), new.len());
+    assert_eq!(old.chunks().len(), new.chunks().len());
+    assert!(!Arc::ptr_eq(&old.chunks()[0], &new.chunks()[0]));
+    for (old_chunk, new_chunk) in old.chunks().iter().zip(new.chunks()).skip(1) {
+        assert!(Arc::ptr_eq(old_chunk, new_chunk));
+    }
+    for (actual, expected) in new.iter().zip(fresh.snapshot.tree.members()) {
+        assert_eq!(actual.metadata, expected.metadata);
+        assert_eq!(actual.content, expected.content);
+        assert_eq!(actual.previous, expected.previous);
+    }
+    assert_ne!(old[0].metadata, new[0].metadata);
+    assert_eq!(
+        old.iter().next_back().unwrap().name,
+        old[old.len() - 1].name
+    );
+    assert!(old.get(old.len()).is_none());
+}
+
+#[test]
+fn structural_projection_reuses_unaffected_owner_normalization_and_matches_fresh() {
+    let mut state = RetainedSemanticTree::new();
+    build(
+        &mut state,
+        "/datum/a\n    var/x = 1\n/datum/a/child\n    x = 2\n/datum/b\n    var/y = 3\n",
+    );
+    let source="/datum/a\n    var/x = 1\n    var/added = 4\n/datum/a/child\n    x = 2\n/datum/b\n    var/y = 3\n";
+    let actual = build(&mut state, source);
+    let fresh = build(&mut RetainedSemanticTree::new(), source);
+    assert!(state.normalization_hits() > 0);
+    assert_eq!(
+        actual.snapshot.tree.identity(),
+        fresh.snapshot.tree.identity()
+    );
+    assert_eq!(
+        actual.snapshot.tree.declarations(),
+        fresh.snapshot.tree.declarations()
+    );
+    for (actual, expected) in actual
+        .snapshot
+        .tree
+        .members()
+        .iter()
+        .zip(fresh.snapshot.tree.members())
+    {
+        assert_eq!(actual.owner, expected.owner);
+        assert_eq!(actual.kind, expected.kind);
+        assert_eq!(actual.previous, expected.previous);
+        assert_eq!(actual.metadata, expected.metadata);
+    }
+}
+
+#[test]
+fn structural_metadata_reuses_unaffected_owners_and_invalidates_inherited_flags() {
+    let mut state = RetainedSemanticTree::new();
+    let before =
+        "/datum/a\n    var/static/x = 1\n/datum/a/child\n    x = 2\n/datum/b\n    var/y = 3\n";
+    build(&mut state, before);
+    let with_added = "/datum/a\n    var/static/x = 1\n    var/added = 4\n/datum/a/child\n    x = 2\n/datum/b\n    var/y = 3\n";
+    build(&mut state, with_added);
+    assert!(state.metadata_owner_hits() > 0);
+    let previous_hits = state.metadata_owner_hits();
+    // This structural edit also changes x storage, which must invalidate the
+    // child's effective metadata despite an unchanged selected predecessor key.
+    let changed = "/datum/a\n    var/x = 1\n    var/added = 4\n    var/another = 5\n/datum/a/child\n    x = 2\n/datum/b\n    var/y = 3\n";
+    let actual = build(&mut state, changed);
+    let fresh = build(&mut RetainedSemanticTree::new(), changed);
+    assert_eq!(state.metadata_owner_hits() - previous_hits, 1);
+    assert_eq!(
+        actual.snapshot.tree.identity(),
+        fresh.snapshot.tree.identity()
+    );
+    for (actual, expected) in actual
+        .snapshot
+        .tree
+        .members()
+        .iter()
+        .zip(fresh.snapshot.tree.members())
+    {
+        assert_eq!(actual.owner, expected.owner);
+        assert_eq!(actual.previous, expected.previous);
+        assert_eq!(actual.metadata, expected.metadata);
+    }
+    use dm_ir::{ResolveQuery, Resolver};
+    let query = ResolveQuery::VarStorage {
+        owner: dm_ir::SymbolId::of("/datum/a/child"),
+        name: dm_ir::SymbolId::of("x"),
+    };
+    assert_eq!(
+        Resolver::resolve(actual.snapshot.tree.as_ref(), query),
+        Resolver::resolve(fresh.snapshot.tree.as_ref(), query)
+    );
+}

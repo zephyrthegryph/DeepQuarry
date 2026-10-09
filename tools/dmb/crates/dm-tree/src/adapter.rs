@@ -517,7 +517,7 @@ impl AdaptedDeclarations {
         seed: Option<&crate::frontend::EngineSeed>,
         on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
     ) -> Result<TreeSnapshot, SnapshotError> {
-        self.finish_with_engine_observed_execution(seed, on_error, None)
+        self.finish_with_engine_observed_execution(seed, on_error, None, None)
     }
     pub fn finish_with_engine_observed_on_executor(
         self,
@@ -525,13 +525,29 @@ impl AdaptedDeclarations {
         on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
         executor: &dm_exec::BuildExecutor,
     ) -> Result<TreeSnapshot, SnapshotError> {
-        self.finish_with_engine_observed_execution(seed, on_error, Some(executor))
+        self.finish_with_engine_observed_execution(seed, on_error, Some(executor), None)
+    }
+    pub(crate) fn finish_with_engine_normalization(
+        self,
+        seed: Option<&crate::frontend::EngineSeed>,
+        on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
+        executor: &dm_exec::BuildExecutor,
+        normalization: Option<(
+            &crate::declaration_contributions::KeyedDeclarations,
+            &crate::owner_normalization::RetainedNormalization,
+        )>,
+    ) -> Result<TreeSnapshot, SnapshotError> {
+        self.finish_with_engine_observed_execution(seed, on_error, Some(executor), normalization)
     }
     fn finish_with_engine_observed_execution(
         self,
         seed: Option<&crate::frontend::EngineSeed>,
         mut on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
         executor: Option<&dm_exec::BuildExecutor>,
+        normalization: Option<(
+            &crate::declaration_contributions::KeyedDeclarations,
+            &crate::owner_normalization::RetainedNormalization,
+        )>,
     ) -> Result<TreeSnapshot, SnapshotError> {
         let mut skeletons = Vec::new();
         let hierarchy = seed_hierarchy(&self.skeletons, seed).map_err(|error| {
@@ -554,12 +570,13 @@ impl AdaptedDeclarations {
         skeletons.extend(self.skeletons);
         let fields = seed.map_or(&[][..], |seed| seed.fields.as_ref());
         let intrinsics = seed.map_or(&[][..], |seed| seed.intrinsics.as_ref());
-        let mut tree = crate::build_with_intrinsic_members_inventory(
+        let mut tree = crate::build_with_intrinsic_members_indexed(
             self.symbols,
             &skeletons,
             fields,
             intrinsics,
             seed.is_none(),
+            normalization,
         )
         .map_err(|error| {
             let error = SnapshotError::Tree(error);

@@ -7,10 +7,18 @@ mod adapter;
 mod callable_namespace;
 pub mod constant_resolution;
 pub mod constants;
+pub mod declaration_contributions;
+pub mod declaration_observations;
 pub mod frontend;
 pub mod initializers;
 pub mod maps;
+mod member_arena;
+mod member_normalization;
 mod metadata_update;
+pub mod owner_metadata;
+mod owner_normalization;
+pub use member_arena::MemberArena;
+pub use owner_normalization::{NormalizationStorageView, ResolvedMember};
 pub mod non_text;
 mod normalize;
 mod procedure;
@@ -40,7 +48,9 @@ impl MemberId {
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub struct OccurrenceId(pub u32);
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum MemberKind {
     Var,
     Proc,
@@ -103,7 +113,7 @@ pub enum Target {
 pub struct SemanticTree {
     symbols: Arc<SymbolTable>,
     types: Arc<[TypeNode]>,
-    members: Arc<[MemberNode]>,
+    members: MemberArena,
     by_path: Arc<HashMap<SymbolId, TypeId>>,
     direct: Arc<HashMap<(TypeId, SymbolId, MemberKind), MemberId>>,
     /// One target per ordered skeleton, including all reopens.
@@ -162,7 +172,7 @@ impl SemanticTree {
     pub fn types(&self) -> &[TypeNode] {
         &self.types
     }
-    pub fn members(&self) -> &[MemberNode] {
+    pub fn members(&self) -> &MemberArena {
         &self.members
     }
     pub fn type_node(&self, id: TypeId) -> Option<&TypeNode> {
@@ -362,11 +372,31 @@ pub(crate) fn build_with_intrinsic_members(
     build_with_intrinsic_members_inventory(symbols, skeletons, fields, intrinsics, true)
 }
 pub(crate) fn build_with_intrinsic_members_inventory(
+    symbols: SymbolTable,
+    skeletons: &[Skeleton],
+    fields: &[dm_ir::OpaqueFieldBase],
+    intrinsics: &[IntrinsicMember],
+    rebuild_inventory: bool,
+) -> Result<SemanticTree, TreeError> {
+    build_with_intrinsic_members_indexed(
+        symbols,
+        skeletons,
+        fields,
+        intrinsics,
+        rebuild_inventory,
+        None,
+    )
+}
+pub(crate) fn build_with_intrinsic_members_indexed(
     mut symbols: SymbolTable,
     skeletons: &[Skeleton],
     fields: &[dm_ir::OpaqueFieldBase],
     intrinsics: &[IntrinsicMember],
     rebuild_inventory: bool,
+    normalization: Option<(
+        &declaration_contributions::KeyedDeclarations,
+        &owner_normalization::RetainedNormalization,
+    )>,
 ) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
     let mut by_path = HashMap::new();
@@ -474,7 +504,7 @@ pub(crate) fn build_with_intrinsic_members_inventory(
     let mut tree = SemanticTree {
         symbols: Arc::new(symbols),
         types: types.into(),
-        members: Arc::from([]),
+        members: MemberArena::default(),
         by_path: Arc::new(by_path),
         direct: Arc::new(HashMap::new()),
         declaration_targets: Arc::from([]),
@@ -577,95 +607,33 @@ pub(crate) fn build_with_intrinsic_members_inventory(
             }
         }
     }
-    // Formal definitions establish a group's base irrespective of source
-    // position; overrides keep encounter order. BYOND compile-only probes show
-    // implicit-before-formal and formal-before-implicit compile identically.
-    for (key, ids) in groups {
-        let formal = ids
-            .iter()
-            .copied()
-            .find(|id| modes[id.index()] == DefinitionMode::Declare);
-        let chain: Vec<_> = formal
-            .into_iter()
-            .chain(ids.into_iter().filter(|id| Some(*id) != formal))
-            .collect();
-        let mut previous = None;
-        for id in &chain {
-            members[id.index()].previous = previous;
-            previous = Some(*id);
-        }
-        if let Some(last) = chain.last() {
-            Arc::make_mut(&mut tree.direct).insert(key, *last);
-        }
-    }
+    member_normalization::normalize_groups(&mut tree, &mut members, &modes, groups);
     drop(member_install_profile);
     let previous_resolution_profile = dm_profile::stage("frontend.tree.previous_resolution");
-    for i in 0..members.len() {
-        callable_namespace::validate_explicit(&tree, &members[i], modes[i], root, &callable_kinds)?;
-        if members[i].previous.is_none() {
-            let node = &members[i];
-            let mut parent = tree.parent(node.owner);
-            let mut previous = None;
-            while let Some(owner) = parent {
-                if tree.types[owner.index()].path == root {
-                    break;
-                }
-                if let Some(id) = tree.direct.get(&(owner, node.name, node.kind)) {
-                    previous = Some(*id);
-                    break;
-                }
-                parent = tree.parent(owner);
-            }
-            members[i].previous = previous;
-            metadata_update::apply_opaque_base(&tree, &mut members[i]);
-            let node = &members[i];
-            if modes[i] == DefinitionMode::Override
-                && previous.is_none()
-                && node.metadata.inherited_opaque.is_none()
-            {
-                let mut ancestry = Vec::new();
-                let mut cursor = Some(node.owner);
-                while let Some(owner) = cursor {
-                    if ancestry.len() == 16 {
-                        break;
-                    }
-                    ancestry.push(
-                        tree.symbols
-                            .text(tree.types[owner.index()].path)
-                            .unwrap_or("<unknown>"),
-                    );
-                    cursor = tree.parent(owner);
-                }
-                let candidates: Vec<_> = members
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, candidate)| {
-                        candidate.name == node.name && candidate.kind == node.kind
-                    })
-                    .take(8)
-                    .map(|(index, candidate)| {
-                        (
-                            tree.symbols
-                                .text(tree.types[candidate.owner.index()].path)
-                                .unwrap_or("<unknown>"),
-                            modes[index],
-                        )
-                    })
-                    .collect();
-                eprintln!("dm-tree missing override: name={} ancestry={ancestry:?} source_candidates={candidates:?}", tree.symbols.text(node.name).unwrap_or("<unknown>"));
-                return Err(TreeError::MissingOverride {
-                    owner: tree.types[node.owner.index()].path,
-                    name: node.name,
-                    kind: node.kind,
-                });
-            }
-            members[i].previous = previous;
-        }
-    }
+    let normalized = if let Some((declarations, retained)) = normalization {
+        retained.resolve(&tree, &mut members, &modes, &callable_kinds, declarations)?
+    } else {
+        let member_count = members.len();
+        member_normalization::resolve_previous(
+            &tree,
+            &mut members,
+            &modes,
+            root,
+            &callable_kinds,
+            0..member_count,
+        )?;
+        None
+    };
     drop(previous_resolution_profile);
     let metadata_inheritance_profile = dm_profile::stage("frontend.tree.metadata_inheritance");
-    let order = metadata_update::resolution_order(&members);
-    metadata_update::resolve_metadata(&tree, &mut members, &order);
+    let order = metadata_update::resolution_order(members.len(), |id| members[id].previous);
+    if let (Some((_, retained)), Some(normalized)) = (normalization, normalized) {
+        retained
+            .metadata
+            .resolve(&tree, &mut members, &normalized, &order);
+    } else {
+        metadata_update::resolve_metadata(&tree, &mut members, &order);
+    }
     drop(metadata_inheritance_profile);
     let mut mutable_types = tree.types.to_vec();
     for (node, ids) in mutable_types.iter_mut().zip(owned) {

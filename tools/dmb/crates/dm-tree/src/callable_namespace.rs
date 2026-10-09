@@ -1,6 +1,6 @@
 //! Positive callable namespace anchors for implicit declarations.
 use super::*;
-type CallableKinds = HashMap<(SymbolId, SymbolId), MemberKind>;
+pub(crate) type CallableKinds = HashMap<(SymbolId, SymbolId), MemberKind>;
 pub(crate) fn collect(
     skeletons: &[Skeleton],
     intrinsics: &[IntrinsicMember],
@@ -41,6 +41,69 @@ pub(crate) fn collect(
     }
     Ok(callable_kinds)
 }
+#[derive(Clone, Copy)]
+pub(crate) struct CallableRequest {
+    pub owner: SymbolId,
+    pub name: SymbolId,
+    pub kind: MemberKind,
+    pub mode: DefinitionMode,
+    pub root: SymbolId,
+}
+/// One namespace algorithm over authoritative source observations. Both the
+/// dense constructor and retained keyed contributions use these same rules.
+pub(crate) fn effective_kind_from(
+    request: CallableRequest,
+    mut parent: impl FnMut(SymbolId) -> Option<SymbolId>,
+    mut anchor: impl FnMut(SymbolId, SymbolId) -> Option<MemberKind>,
+) -> MemberKind {
+    if request.mode == DefinitionMode::Implicit
+        && matches!(request.kind, MemberKind::Proc | MemberKind::Verb)
+    {
+        let mut cursor = Some(request.owner);
+        while let Some(current) = cursor {
+            if current != request.owner && current == request.root {
+                break;
+            }
+            if let Some(kind) = anchor(current, request.name) {
+                return kind;
+            }
+            cursor = parent(current);
+        }
+    }
+    request.kind
+}
+pub(crate) fn validate_explicit_from(
+    request: CallableRequest,
+    mut parent: impl FnMut(SymbolId) -> Option<SymbolId>,
+    mut anchor: impl FnMut(SymbolId, SymbolId) -> Option<MemberKind>,
+) -> Result<(), TreeError> {
+    if request.mode == DefinitionMode::Declare
+        && matches!(request.kind, MemberKind::Proc | MemberKind::Verb)
+    {
+        let mut cursor = parent(request.owner);
+        while let Some(owner) = cursor {
+            if owner == request.root {
+                break;
+            }
+            if let Some(kind) = anchor(owner, request.name) {
+                if kind != request.kind {
+                    return Err(TreeError::Duplicate {
+                        owner: request.owner,
+                        name: request.name,
+                        kind: request.kind,
+                    });
+                }
+                break;
+            }
+            cursor = parent(owner);
+        }
+    }
+    Ok(())
+}
+fn parent_path(tree: &SemanticTree, path: SymbolId) -> Option<SymbolId> {
+    tree.parent(tree.lookup_type(path)?)
+        .map(|id| tree.types[id.index()].path)
+}
 pub(crate) fn effective_kind(
     tree: &SemanticTree,
     owner_id: TypeId,
@@ -50,25 +113,17 @@ pub(crate) fn effective_kind(
     root: SymbolId,
     callable_kinds: &CallableKinds,
 ) -> MemberKind {
-    if mode == DefinitionMode::Implicit && matches!(kind, MemberKind::Proc | MemberKind::Verb) {
-        let mut cursor = Some(owner_id);
-        let mut inherited = None;
-        while let Some(current) = cursor {
-            // Synthetic root callables belong to the global
-            // namespace, not instance ancestry.
-            if current != owner_id && tree.types[current.index()].path == root {
-                break;
-            }
-            if let Some(kind) = callable_kinds.get(&(tree.types[current.index()].path, name)) {
-                inherited = Some(*kind);
-                break;
-            }
-            cursor = tree.parent(current);
-        }
-        inherited.unwrap_or(kind)
-    } else {
-        kind
-    }
+    effective_kind_from(
+        CallableRequest {
+            owner: tree.types[owner_id.index()].path,
+            name,
+            kind,
+            mode,
+            root,
+        },
+        |path| parent_path(tree, path),
+        |owner, name| callable_kinds.get(&(owner, name)).copied(),
+    )
 }
 pub(crate) fn validate_explicit(
     tree: &SemanticTree,
@@ -77,28 +132,17 @@ pub(crate) fn validate_explicit(
     root: SymbolId,
     callable_kinds: &CallableKinds,
 ) -> Result<(), TreeError> {
-    // An explicit proc declaration cannot replace a proven inherited verb
-    // (or vice versa). Only the bare form inherits the callable namespace.
-    if mode == DefinitionMode::Declare && matches!(node.kind, MemberKind::Proc | MemberKind::Verb) {
-        let mut parent = tree.parent(node.owner);
-        while let Some(owner) = parent {
-            if tree.types[owner.index()].path == root {
-                break;
-            }
-            if let Some(kind) = callable_kinds.get(&(tree.types[owner.index()].path, node.name)) {
-                if *kind != node.kind {
-                    return Err(TreeError::Duplicate {
-                        owner: tree.types[node.owner.index()].path,
-                        name: node.name,
-                        kind: node.kind,
-                    });
-                }
-                break;
-            }
-            parent = tree.parent(owner);
-        }
-    }
-    Ok(())
+    validate_explicit_from(
+        CallableRequest {
+            owner: tree.types[node.owner.index()].path,
+            name: node.name,
+            kind: node.kind,
+            mode,
+            root,
+        },
+        |path| parent_path(tree, path),
+        |owner, name| callable_kinds.get(&(owner, name)).copied(),
+    )
 }
 #[cfg(test)]
 mod tests {

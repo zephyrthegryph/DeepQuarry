@@ -561,6 +561,7 @@ pub use pipeline::{
 };
 #[path = "frontend_semantic_state.rs"]
 mod semantic_state;
+pub use crate::owner_normalization::NormalizationStorageView;
 pub use semantic_state::RetainedSemanticTree;
 #[path = "frontend_declaration_state.rs"]
 mod declaration_state;
