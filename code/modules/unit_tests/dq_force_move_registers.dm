@@ -3,12 +3,14 @@
 
 /// A real fishing net with the one slot a net's draw reads (the net itself declares none yet).
 /obj/item/material/fishing_net/dq_slotted_test
+	abstract_type = /obj/item/material/fishing_net/dq_slotted_test // a fixture: the look sweeps skip it
 
 CAPABILITIES(/obj/item/material/fishing_net/dq_slotted_test)
 	slot(CONTAINER_SLOT_FUEL)
 
 /// A real glass jar with a slot, for the same.
 /obj/item/glass_jar/dq_slotted_test
+	abstract_type = /obj/item/glass_jar/dq_slotted_test // a fixture: the look sweeps skip it
 
 CAPABILITIES(/obj/item/glass_jar/dq_slotted_test)
 	slot(CONTAINER_SLOT_FUEL)
