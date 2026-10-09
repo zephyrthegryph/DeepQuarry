@@ -957,7 +957,8 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/debug)
 /obj/random/mob/synx
 	name = "This is synxes"
 
-DECLARE_LOOT(/obj/random/mob/synx, LOOT_TABLE(/mob/living/simple_mob/animal/synx/ai))
+CAPABILITIES(/obj/random/mob/synx)
+	configure(loot(table = list(/mob/living/simple_mob/animal/synx/ai)))
 
 
 ////////////////////////////////////////////////////////////////////////////
