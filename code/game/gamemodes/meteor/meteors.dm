@@ -1,6 +1,3 @@
-/// Raises CHANGE_METEORS when a meteor appears or goes away (point defense watches it).
-GLOBAL_DATUM_INIT(meteor_watch, /datum, new)
-
 GLOBAL_VAR_INIT(meteor_wave_delay, 625) //minimum wait between waves in tenths of seconds
 //set to at least 100 unless you want evarr ruining every round
 
@@ -138,7 +135,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 /obj/effect/meteor/Initialize(mapload)
 	. = ..()
 	z_original = z
-	changed(GLOB.meteor_watch, CHANGE_METEORS)
 	SpinAnimation()
 
 /obj/effect/meteor/Move()
@@ -156,9 +152,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 	if(prob(10) && !istype(T, /turf/space)) //randomly takes a 'hit' from ramming
 		get_hit()
 
-// the meteor count changes for whoever watches the storm.
 /obj/effect/meteor/on_destroy(force)
-	changed(GLOB.meteor_watch, CHANGE_METEORS)
 	..()
 
 /obj/effect/meteor/Bump(atom/A)

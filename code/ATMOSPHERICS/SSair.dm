@@ -297,7 +297,7 @@ SYSTEM_DEF(air)
 		return
 	SSair.gas_visuals_last++
 	T.set_visuals()
-	native_changed(T, CHANGE_TURF_GAS_VISUAL, NATIVE_SRC_GAS_EVENT)
+	native_fired(NATIVE_SRC_GAS_EVENT)
 
 /// Spacewind: `cell`'s pressure differs from open neighbour `neighbor`'s by
 /// more than the threshold (`GasEvent::PressureJump`): the same

@@ -29,7 +29,6 @@
 	if(!isnum(new_temperature) || new_temperature == body_temperature())
 		return
 	heat_set(src, max(new_temperature, TCMB), source)
-	changed(src, CHANGE_MOB_VITALS)
 
 /// Shifts this mob's body temperature by `amount` K, clamping the result to [min_temp, max_temp]: the joules it takes, booked under `source`.
 /// Returns the change applied.
@@ -39,7 +38,6 @@
 	if(target == old)
 		return 0
 	heat_add(src, (target - old) * body_heat_capacity(), source)
-	changed(src, CHANGE_MOB_VITALS)
 	return body_temperature() - old
 
 /// Moves this mob's body temperature `fraction` of the way toward `target` K.

@@ -226,7 +226,7 @@
 		TEST_ASSERT(!(interaction.id in seen), "interaction id [interaction.id] is unique")
 		seen += interaction.id
 		TEST_ASSERT(istext(interaction.name) && length(interaction.name), "[interaction.id] has a name")
-		TEST_ASSERT(interaction.effect || istype(interaction, /datum/interaction/emag), "[interaction.id] has an effect") // the emag runs its own run_effect()
+		TEST_ASSERT(interaction.effect, "[interaction.id] has an effect")
 		TEST_ASSERT(isnull(interaction.category) || (interaction.category in INTERACTION_CATEGORIES) || (interaction.category in ABILITY_CATEGORIES), "[interaction.id] has a known category")
 		TEST_ASSERT(isnull(interaction.default_action) || (interaction.default_action in list(INPUT_ACTION_USE, INPUT_ACTION_ALTERNATE)), "[interaction.id] answers Use, Alternate or nothing")
 		TEST_ASSERT(isnull(interaction.entry) || (interaction.entry in list(INTERACTION_ENTRY_ITEM, INTERACTION_ENTRY_HAND, INTERACTION_ENTRY_SELF, INTERACTION_ENTRY_ALT, INTERACTION_ENTRY_DRAG)) || (interaction.entry in type_local_entries), "[interaction.id] has a known entry")
