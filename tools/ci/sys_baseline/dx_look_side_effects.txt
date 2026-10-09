@@ -76,95 +76,7 @@ dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	engine_paint_mask = i
 dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	engine_paint_mask.color = engine_paint
 dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	central_paint_mask = image(icon, "[initial_icon]-mask+central", src.layer + 2)
 dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	central_paint_mask.color = central_paint
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	underlays.Cut()
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	name = initial(name)
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	desc = initial(desc)
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	name = "tip tank"
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	name = "tip jar"
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	desc = "A [name] with money inside."
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	money.pixel_x = rand(-2, 3)
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	money.pixel_y = rand(-6, 6)
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	money.transform *= 0.6
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	victim.appearance = M.appearance
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	victim.pixel_y = 4
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	name = "[name] with [M]"
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	desc = "A large [name] with [M] inside."
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	victim.pixel_y = 6
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	victim.color = M.color
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	victim_glow.pixel_y = 6
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	victim_glow.color = M.color
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	name = "glass jar with [M]"
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	desc = "A small jar with [M] inside."
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	name = "[name] with [S]"
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	desc = "A large tank with [S] inside."
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	name = "glass jar with [S]"
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	desc = "A small jar with [S] inside."
-dx_appearance_side_effect	code/game/objects/items/glassjar.dm	desc = "[desc] It contains water."
-dx_appearance_side_effect	code/game/objects/items/weapons/tanks/tanks.dm	tank.update_icon()
-dx_appearance_side_effect	code/game/objects/items/weapons/tanks/tanks.dm	tank.update_icon()
-dx_appearance_side_effect	code/game/objects/mail.dm	envelope.color = colored_envelope
-dx_appearance_side_effect	code/game/objects/mail.dm	stamp_image.appearance_flags |= RESET_COLOR
-dx_appearance_side_effect	code/game/objects/mail.dm	postmark_image.appearance_flags |= RESET_COLOR
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = color
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	I.color = color
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	D.blend_mode = BLEND_MULTIPLY
-dx_appearance_side_effect	code/game/objects/structures/low_wall.dm	D.alpha = damage_alpha
-dx_appearance_side_effect	code/game/objects/structures/window.dm	flags &= ~ON_BORDER // Removes ON_BORDER
-dx_appearance_side_effect	code/modules/artifice/telecube.dm	glow.plane = PLANE_LIGHTING_ABOVE
-dx_appearance_side_effect	code/modules/artifice/telecube.dm	charge.plane = PLANE_LIGHTING_ABOVE
-dx_appearance_side_effect	code/modules/artifice/telecube.dm	glow.plane = initial(glow.plane)
-dx_appearance_side_effect	code/modules/artifice/telecube.dm	charge.plane = initial(glow.plane)
-dx_appearance_side_effect	code/modules/artifice/telecube.dm	glow.color = glow_color
-dx_appearance_side_effect	code/modules/artifice/telecube.dm	charge.color = glow_color
-dx_appearance_side_effect	code/modules/assembly/holder.dm	master.update_icon()
-dx_appearance_side_effect	code/modules/assembly/timer.dm	attached_overlays = list()
-dx_appearance_side_effect	code/modules/assembly/timer.dm	attached_overlays += "timer_timing"
-dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(0)
-dx_appearance_side_effect	code/modules/casino/slots.dm	set_light_on(FALSE)
-dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(2)
-dx_appearance_side_effect	code/modules/casino/slots.dm	set_light_on(TRUE)
-dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(0)
-dx_appearance_side_effect	code/modules/casino/slots.dm	set_light_on(FALSE)
-dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(2)
-dx_appearance_side_effect	code/modules/casino/slots.dm	set_light_on(TRUE)
 dx_appearance_side_effect	code/modules/clothing/spacesuits/rig/rig.dm	mob_icon = icon(icon = species_icon, icon_state = "[icon_state]")
-dx_appearance_side_effect	code/modules/economy/cash.dm	name = "[worth] [initial_name]\s"
-dx_appearance_side_effect	code/modules/economy/cash.dm	desc = "It's worth [worth] [initial_name]s."
-dx_appearance_side_effect	code/modules/economy/cash.dm	src.desc = "They are worth [worth] [initial_name]s."
-dx_appearance_side_effect	code/modules/economy/casinocash.dm	name = "[worth] casino credit\s"
-dx_appearance_side_effect	code/modules/economy/casinocash.dm	desc = "It's a stack of casino chips with a combined value of [worth] casino credits."
-dx_appearance_side_effect	code/modules/economy/casinocash.dm	banknote.transform = M
-dx_appearance_side_effect	code/modules/economy/casinocash.dm	banknote.transform = M
-dx_appearance_side_effect	code/modules/economy/casinocash.dm	src.desc = "They are worth [worth] casino credits."
-dx_appearance_side_effect	code/modules/economy/casinocash.dm	name = "[worth] replica casino chip\s"
-dx_appearance_side_effect	code/modules/economy/casinocash.dm	desc = "It's a stack of replica casino chips with a combined value of [worth] imaginary points."
-dx_appearance_side_effect	code/modules/economy/casinocash.dm	banknote.transform = M
-dx_appearance_side_effect	code/modules/economy/casinocash.dm	banknote.transform = M
-dx_appearance_side_effect	code/modules/economy/casinocash.dm	src.desc = "They are worth [worth] replica casino credits."
-dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	underlays.Cut()
-dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	name = initial(name)
-dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	desc = initial(desc)
-dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	name = "filled net"
-dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	desc = "A net with [M] inside."
-dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	underlays.Cut()
-dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	name = initial(name)
-dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	desc = initial(desc)
-dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	name = "filled butterfly net"
-dx_appearance_side_effect	code/modules/fishing/fishing_net.dm	desc = "A net with [M] inside."
-dx_appearance_side_effect	code/modules/games/cards.dm	name = "hand of cards ([cardNumber])"
-dx_appearance_side_effect	code/modules/games/cards.dm	desc = "Some playing cards."
-dx_appearance_side_effect	code/modules/games/cards.dm	name = "a playing card"
-dx_appearance_side_effect	code/modules/games/cards.dm	desc = "A playing card."
-dx_appearance_side_effect	code/modules/games/cards.dm	I.pixel_x += (-5+rand(10))
-dx_appearance_side_effect	code/modules/games/cards.dm	I.pixel_y += (-5+rand(10))
-dx_appearance_side_effect	code/modules/games/cards.dm	I.pixel_x = 8-(offset*i)
-dx_appearance_side_effect	code/modules/games/cards.dm	I.pixel_y = -6+(offset*i)
-dx_appearance_side_effect	code/modules/games/cards.dm	I.pixel_y = 8-(offset*i)
-dx_appearance_side_effect	code/modules/games/cards.dm	I.pixel_x = -7+(offset*i)
-dx_appearance_side_effect	code/modules/games/cards.dm	I.transform = M
-dx_appearance_side_effect	code/modules/holodeck/HolodeckObjects.dm	blade_overlay.color = lcolor
-dx_appearance_side_effect	code/modules/hydroponics/spreading/spreading.dm	set_light(blight, 0.5, l_color = clr)
-dx_appearance_side_effect	code/modules/hydroponics/spreading/spreading.dm	set_light(0)
 dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.appearance = inserted_item.appearance;
 dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.icon = src.icon
 dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.icon_state = "hepme" //the creature deserves its horrible end
@@ -194,12 +106,6 @@ dx_appearance_side_effect	code/modules/makeup/nailpolish.dm	color_underlay.color
 dx_appearance_side_effect	code/modules/mining/mine_turfs.dm	name = "[mineral().display_name] deposit"
 dx_appearance_side_effect	code/modules/mining/mine_turfs.dm	name = "rock"
 dx_appearance_side_effect	code/modules/mining/mine_turfs.dm	name = floor_name
-dx_appearance_side_effect	code/modules/paperwork/paper_bundle.dm	img.icon_state = O.icon_state
-dx_appearance_side_effect	code/modules/paperwork/paper_bundle.dm	img.pixel_x -= min(1*i, 2)
-dx_appearance_side_effect	code/modules/paperwork/paper_bundle.dm	img.pixel_y -= min(1*i, 2)
-dx_appearance_side_effect	code/modules/paperwork/paper_bundle.dm	desc = "[i] papers clipped to each other."
-dx_appearance_side_effect	code/modules/paperwork/paper_bundle.dm	desc = "A single sheet of paper."
-dx_appearance_side_effect	code/modules/paperwork/paper_bundle.dm	desc += "\nThere is a photo attached to it."
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	material_layer = image(icon, "[initial(icon_state)]-material")
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	material_glow = image(icon, "[initial(icon_state)]-material-glow")
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	material_glow.plane = PLANE_LIGHTING_ABOVE
@@ -213,6 +119,3 @@ dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/pa
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	light_range = 4
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	set_light(light_range, 2, light_color)
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	set_light(0, 0, "#FFFFFF")
-dx_appearance_side_effect	code/modules/reagents/machinery/pump.dm	I.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/vore/fluffstuff/custom_items.dm	name = initial(name)
-dx_appearance_side_effect	code/modules/vore/fluffstuff/custom_items.dm	desc = initial(desc)

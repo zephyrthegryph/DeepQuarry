@@ -1,0 +1,6 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "The remaining legacy look providers draw through draw(look) over tracked state: cash and casino chips, paper and its stamps, paper bundles, the telecube, mail, device assemblies and their holder, the transfer valve, glass jars, fishing nets, playing-card hands, slot machines, windows, windoor assemblies, the holographic sword, pumps, the reagent distillery, the anomaly harvester, recycling machines and space vines."
+  - bugfix: "A pile of cash or casino chips is renamed and redrawn when machines and registers take money from it."
+  - code_imp: "Dead update_icon() calls are removed and the stamp, crumple and worth state of paper and cash is tracked."

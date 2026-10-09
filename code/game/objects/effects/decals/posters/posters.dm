@@ -25,6 +25,7 @@
 
 CAPABILITIES(/obj/item/poster)
 	param(nameof(design_at_make), pos = 1, apply = PROC_REF(choose_design), keep = FALSE)
+	op("place", at_target(/turf), starts(PROC_REF(placing_started)), begins(MSG(poster/placing)), wait(1.7 SECONDS), then(PROC_REF(placed)))
 
 /// The poster design a rolled poster is made with (its constructor param): a decl or its type.
 /obj/item/poster/var/tmp/design_at_make
@@ -47,21 +48,23 @@ CAPABILITIES(/obj/item/poster)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return poster_decl
 
-//Places the poster on a wall
-/obj/item/poster/afterattack(atom/A, mob/user, adjacent, clickparams)
-	if(!adjacent)
-		return FALSE
+MSG_DEF_SELF(poster/not_a_wall, span_warning("You can't place this here!"))
+MSG_DEF_SELF(poster/not_facing, span_warning("You must stand directly in front of the wall you wish to place that on."))
+MSG_DEF_SELF(poster/wall_taken, span_notice("There is already a poster there!"))
+MSG_DEF_SELF(poster/placing, span_notice("You start placing the poster on the wall..."))
 
+/// Places the poster on a wall: it must be a wall the user faces from a tile of their own, with no poster on or beside it. The hung poster
+/// exists from the moment the work begins.
+/obj/item/poster/proc/placing_started(datum/act/op/A)
+	var/mob/user = A.actor
+	var/turf/W = A.target
 	//must place on a wall and user must not be inside a closet/mecha/whatever
-	var/turf/W = A
 	if(!iswall(W) || !isturf(user.loc))
-		to_chat(user, span_warning("You can't place this here!"))
-		return FALSE
+		return /datum/msg/poster/not_a_wall
 
 	var/placement_dir = get_dir(user, W)
 	if(!(placement_dir in GLOB.cardinal))
-		to_chat(user, span_warning("You must stand directly in front of the wall you wish to place that on."))
-		return FALSE
+		return /datum/msg/poster/not_facing
 
 	//just check if there is a poster on or adjacent to the wall
 	var/stuff_on_wall = 0
@@ -76,20 +79,15 @@ CAPABILITIES(/obj/item/poster)
 			break
 
 	if(stuff_on_wall)
-		to_chat(user, span_notice("There is already a poster there!"))
-		return FALSE
-
-	to_chat(user, span_notice("You start placing the poster on the wall...")) //Looks like it's uncluttered enough. Place the poster.
+		return /datum/msg/poster/wall_taken
 
 	new poster_type(user.loc, get_dir(user, W), src)
+	return null
 
-	task_timed(user, 17, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(user))
-	return TRUE
-
-/obj/item/poster/proc/afterattack_timed_done(mob/user)
-	to_chat(user, span_notice("You place the poster!"))
-	consume(src, user)
-	return TRUE
+/obj/item/poster/proc/placed(datum/act/op/A)
+	to_chat(A.actor, span_notice("You place the poster!"))
+	consume(src, A.actor)
+	return OP_OK
 
 //############################## THE ACTUAL DECALS ###########################
 

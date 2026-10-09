@@ -164,11 +164,9 @@ CAPABILITIES(/obj/item/daredevice)
 		var/mob/living/carbon/human/H = M
 		H.resize(chaos/100)
 		H.show_message(span_purple("The beam fires into your body, changing your size!"))
-		H.update_icon()
 	else if (istype(target, /mob/living/))
 		var/mob/living/H = M
 		H.resize(chaos/100)
-		H.update_icon()
 	else
 		return 1
 

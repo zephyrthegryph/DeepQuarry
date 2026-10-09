@@ -659,7 +659,6 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 				// Every generated wall is visited by this pass; propagating here would
 				// recompute and redraw each neighbour repeatedly.
 				wall.update_connections(FALSE)
-				wall.update_icon()
 		if(i < length(tiles) && generation_checkpoint("Updating wall adjacencies", 58))
 			return i + 1
 	return null

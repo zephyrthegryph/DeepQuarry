@@ -11,54 +11,74 @@
 	var/pick_time = 10 SECONDS
 	var/pick_verb = "pick"
 
+MSG_DEF_SELF(lockpick/not_locked, span_notice("%T% isn't locked."))
+MSG_DEF_SELF(lockpick/wrong_type, span_warning("%I% can't pick %T%. Another tool might work?"))
+MSG_DEF_SELF(lockpick/cannot_pick, span_warning("%T% can't be picked by %I%."))
+MSG_DEF(lockpick/picking, "You start to work on the lock of %T%...", "%U% starts working on the lock of %T%.")
+
+CAPABILITIES(/obj/item/lockpick)
+	op("pick", at_target(/obj/structure/simple_door), at_target(/obj/structure/fence/door), priority(OP_PRIORITY_PART), answers(INTENT_USE), needs(req(PROC_REF(handy_user), silent = TRUE)), starts(PROC_REF(pick_started)), begins(PROC_REF(pick_begins)), wait(PROC_REF(pick_duration)), then(PROC_REF(picked)))
+
+/// No lockpicking for monkeys.
+/obj/item/lockpick/proc/handy_user(datum/act/op/A)
+	var/mob/user = A.actor
+	return !!user?.IsAdvancedToolUser()
+
+/// A door that is not locked, of another lock type or not pickable at all ends the click before anything starts.
+/obj/item/lockpick/proc/pick_started(datum/act/op/A)
+	var/obj/structure/simple_door/door = A.target
+	if(istype(door))
+		if(!door.locked)
+			return /datum/msg/lockpick/not_locked
+		if(door.lock_type != pick_type)
+			return /datum/msg/lockpick/wrong_type
+		if(!door.can_pick)
+			return /datum/msg/lockpick/cannot_pick
+		playsound(src, door.keysound, 100, 1)
+		return null
+	var/obj/structure/fence/door/gate = A.target
+	if(!istype(gate))
+		return /datum/msg/lockpick/cannot_pick
+	if(!gate.locked)
+		return /datum/msg/lockpick/not_locked
+	if(gate.lock_type != pick_type)
+		return /datum/msg/lockpick/wrong_type
+	if(!gate.can_pick)
+		return /datum/msg/lockpick/cannot_pick
+	playsound(src, gate.keysound, 100, 1)
+	return null
+
+/obj/item/lockpick/proc/pick_begins(datum/act/op/A)
+	return msg_text(span_notice("You start to [pick_verb] the lock on \the [A.target]..."), span_notice("[A.actor] starts to [pick_verb] the lock on \the [A.target]."))
+
+/obj/item/lockpick/proc/pick_duration(datum/act/op/A)
+	var/obj/structure/simple_door/door = A.target
+	if(istype(door))
+		return pick_time * door.lock_difficulty
+	var/obj/structure/fence/door/gate = A.target
+	return pick_time * (istype(gate) ? gate.lock_difficulty : 1)
+
+/obj/item/lockpick/proc/picked(datum/act/op/A)
+	var/obj/structure/simple_door/door = A.target
+	var/obj/structure/fence/door/gate = A.target
+	to_chat(A.actor, span_notice("Success!"))
+	if(istype(door))
+		door.locked = FALSE
+	else if(istype(gate))
+		gate.locked = FALSE
+	return OP_OK
+
+/// You can pick your friends, and you can pick your nose, but you can't pick your friend's nose.
 /obj/item/lockpick/afterattack(atom/A, mob/user)
-	if(!user.IsAdvancedToolUser())	//no lockpicking for monkeys
+	if(!user.IsAdvancedToolUser())
 		return
-	if(istype(A, /obj/structure/simple_door))
-		var/obj/structure/simple_door/D = A
-		if(!D.locked)	//you can pick your nose, but you can't pick an unlocked door
-			to_chat(user, span_notice("\The [D] isn't locked."))
-			return
-		else if(D.lock_type != pick_type) //make sure our types match
-			to_chat(user, span_warning("\The [src] can't pick \the [D]. Another tool might work?"))
-			return
-		else if(!D.can_pick)	//make sure we're actually allowed to bypass it at all
-			to_chat(user, span_warning("\The [D] can't be [pick_verb]ed."))
-			return
-		else	//finally, we can assume that they do match
-			to_chat(user, span_notice("You start to [pick_verb] the lock on \the [D]..."))
-			playsound(src, D.keysound,100, 1)
-			task_timed(user, pick_time * D.lock_difficulty, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(user, D))
-	if(istype(A, /obj/structure/fence/door))
-		var/obj/structure/fence/door/D = A
-		if(!D.locked)	//you can pick your nose, but you can't pick an unlocked door
-			to_chat(user, span_notice("\The [D] isn't locked."))
-			return
-		else if(D.lock_type != pick_type) //make sure our types match
-			to_chat(user, span_warning("\The [src] can't pick \the [D]. Another tool might work?"))
-			return
-		else if(!D.can_pick)	//make sure we're actually allowed to bypass it at all
-			to_chat(user, span_warning("\The [D] can't be [pick_verb]ed."))
-			return
-		else	//finally, we can assume that they do match
-			to_chat(user, span_notice("You start to [pick_verb] the lock on \the [D]..."))
-			playsound(src, D.keysound,100, 1)
-			task_timed(user, pick_time * D.lock_difficulty, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done2), done_args = list(user, D))
-	else if(ishuman(A)) //you can pick your friends, and you can pick your nose, but you can't pick your friend's nose
+	if(ishuman(A))
 		var/mob/living/carbon/human/H = A
 		if(user.zone_sel.selecting == BP_HEAD)
 			if(H == user)
 				to_chat(user, span_notice("Your nose isn't locked. If you're feeling stuffy, maybe you should talk to a doctor..?"))
 			else
 				act_message(user, src, MSG_SELF(span_notice("You try to [pick_verb] [H]'s nose. It doesn't seem to be working.")), MSG_OTHERS(span_notice("%U% tries to [pick_verb] [H]'s nose with %T%! They don't seem to be having much success.")))
-			return
-
-/obj/item/lockpick/proc/afterattack_timed_done(mob/user, obj/structure/simple_door/D)
-	to_chat(user, span_notice("Success!"))
-	D.locked = FALSE
-/obj/item/lockpick/proc/afterattack_timed_done2(mob/user, obj/structure/simple_door/D)
-	to_chat(user, span_notice("Success!"))
-	D.locked = FALSE
 
 /obj/item/lockpick/pick_gun
 	name = "pick gun"

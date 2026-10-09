@@ -14,7 +14,7 @@
 CAPABILITIES(/obj/structure/alien)
 	extend(/datum/act/hit, instead(then(PROC_REF(alien_thrown_at))))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
-	op("melt", hand(), stance(I_HURT), label("Melt"), then(PROC_REF(interaction_melt)))
+	op("melt", hand(), stance(I_HURT), label("Melt"), wait(PROC_REF(melt_time)), then(PROC_REF(interaction_melt)))
 	op("hand", hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_hand)))
 
 /// A throw squelches into the resin before it lands. A thrown thing is the generic hit, so the squelch checks the entry; the hit goes on either way.
@@ -49,6 +49,17 @@ CAPABILITIES(/obj/structure/alien)
 /obj/structure/alien/proc/interaction_melt(datum/act/op/A)
 	return alien_hand_used(A, TRUE)
 
+/// A replicant resin spinner takes three seconds to melt it; a hulk, a hivenode carrier and a plain claw are answered at once.
+/obj/structure/alien/proc/melt_time(datum/act/op/A)
+	var/mob/living/carbon/M = A.actor
+	if(!istype(M) || (HULK in M.mutations))
+		return 0
+	if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
+		return 0
+	if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/resinspinner/replicant))
+		return 3 SECONDS
+	return 0
+
 /obj/structure/alien/proc/alien_hand_used(datum/act/op/A, harm)
 	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
@@ -66,16 +77,12 @@ CAPABILITIES(/obj/structure/alien)
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return OP_OK
 				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/resinspinner/replicant))
-					task_timed(M, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+					act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
+					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return OP_OK
 			act_message(user, null, others = span_warning("%U% claws at the [name]!"))
 			take_damage(rand(5,10), BRUTE, MELEE, sound_effect = FALSE)
 	return OP_OK
-
-/obj/structure/alien/proc/attack_hand_timed_done(mob/usr_mob)
-	visible_message (span_warning("[usr_mob] strokes the [name] and it melts away!"), 1)
-	take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
-	return
 
 /obj/structure/alien/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
 	if(air_group) return 0

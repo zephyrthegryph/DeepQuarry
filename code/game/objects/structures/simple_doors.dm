@@ -176,6 +176,8 @@ CAPABILITIES(/obj/structure/simple_door)
 			locked = !locked
 			playsound(src, keysound,100, 1)
 		return OP_OK
+	if(istype(W,/obj/item/lockpick))
+		return OP_PASS // the pick's own "pick" op (code/game/objects/items/lockpicks.dm) works the lock
 	if(istype(W,/obj/item) && breakable) //not sure, can't not just weapons get passed to this proc?
 		act_message(user, src, others = span_danger("%U% hits %T% with [W]!"))
 		if(material == get_material_by_name(MAT_RESIN))

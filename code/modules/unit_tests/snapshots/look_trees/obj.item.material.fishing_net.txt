@@ -1,0 +1,9 @@
+/obj/item/material/fishing_net icon: icons/obj/items.dmi
+/obj/item/material/fishing_net state: net
+/obj/item/material/fishing_net dir: 2
+/obj/item/material/fishing_net overlay: icons/obj/items.dmi:net:8:#000000
+/obj/item/material/fishing_net/butterfly_net icon: icons/obj/items.dmi
+/obj/item/material/fishing_net/butterfly_net state: butterfly_net
+/obj/item/material/fishing_net/butterfly_net dir: 2
+/obj/item/material/fishing_net/butterfly_net overlay: icons/obj/items.dmi:butterfly_net:8:#000000
+

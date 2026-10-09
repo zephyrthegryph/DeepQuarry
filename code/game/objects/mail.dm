@@ -47,6 +47,9 @@
 	var/scanned
 	/// Does it have a colored envelope?
 	var/colored_envelope
+	/// Where the postmark sits, rolled once at creation so a redraw keeps it.
+	var/postmark_dx = 0
+	var/postmark_roll = 0
 
 	///Var for attack_self chainn
 	var/special_handling = FALSE
@@ -74,8 +77,12 @@
 	// Add some random stamps.
 	if(stamped == TRUE)
 		var/stamp_count = rand(1, stamp_max)
+		var/list/new_stamps = list()
 		for(var/i = 1, i <= stamp_count, i++)
-			stamps += list("stamp_[rand(2, 8)]")
+			new_stamps += list("stamp_[rand(2, 8)]")
+		set_stamps(new_stamps)
+	set_postmark_dx(rand(-4, 0))
+	set_postmark_roll(rand())
 
 /obj/item/mail/blank
 	desc = "A blank envelope."
@@ -171,34 +178,24 @@ CAPABILITIES(/obj/item/mail/blank)
 	set_sealed(TRUE)
 	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/mail, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/mail/appearance_overlays()
-	. = list()
-	. += ..()
+TRACKED(/obj/item/mail, colored_envelope)
+TRACKED(/obj/item/mail, stamps)
+TRACKED(/obj/item/mail, postmarked)
+TRACKED(/obj/item/mail, postmark_dx)
+TRACKED(/obj/item/mail, postmark_roll)
+
+/obj/item/mail/draw(datum/look/look)
+	..()
 	if(colored_envelope)
-		var/image/envelope = image(icon, icon_state)
-		envelope.color = colored_envelope
-		. += envelope
+		look.overlay(look_overlay_image(icon, icon_state, color = colored_envelope))
 	var/bonus_stamp_offset = 0
 	for(var/stamp in stamps)
-		var/image/stamp_image = image(
-			icon_state = stamp,
-			pixel_x = stamp_offset_x,
-			pixel_y = stamp_offset_y + bonus_stamp_offset
-		)
-		stamp_image.appearance_flags |= RESET_COLOR
-		. += stamp_image
+		look.overlay(look_overlay_image(icon, stamp, pixel_x = stamp_offset_x, pixel_y = stamp_offset_y + bonus_stamp_offset, appearance_flags = RESET_COLOR))
 		bonus_stamp_offset -= 5
 
 	if(postmarked == TRUE)
-		var/image/postmark_image = image(
-			icon = icon,
-			icon_state = "postmark",
-			pixel_x = stamp_offset_x + rand(-4, 0),
-			pixel_y = stamp_offset_y + rand(bonus_stamp_offset + 3, 1)
-		)
-		postmark_image.appearance_flags |= RESET_COLOR
-		. += postmark_image
+		var/low = bonus_stamp_offset + 3
+		look.overlay(look_overlay_image(icon, "postmark", pixel_x = stamp_offset_x + postmark_dx, pixel_y = stamp_offset_y + low + round(postmark_roll * (1 - low)), appearance_flags = RESET_COLOR))
 
 CAPABILITIES(/obj/item/mail)
 	// the old attack_self: open the letter
@@ -266,7 +263,7 @@ MSG_DEF_SELF(mail/not_yours, "You can't open somebody's mail! That's <em>illegal
 
 	var/list/goodies = generic_goodies
 	if(this_job)
-		colored_envelope = this_job.get_mail_color()
+		set_colored_envelope(this_job.get_mail_color())
 		if(!preset_goodies)
 			var/list/job_goodies = this_job.get_mail_goodies(recipient.current, current_title)
 			if(LAZYLEN(job_goodies))
@@ -281,7 +278,6 @@ MSG_DEF_SELF(mail/not_yours, "You can't open somebody's mail! That's <em>illegal
 			var/atom/movable/target_atom = new target_good(src)
 			log_game("[key_name(recipient)] received [target_atom.name] in the mail ([target_good])")
 
-	update_icon()
 	return TRUE
 
 // Mail spawn for events
@@ -564,7 +560,6 @@ CAPABILITIES(/obj/item/storage/bag/mail)
 	name = special_name ? junk_names[junk] : "important [initial(name)]"
 
 	junk = new junk(src)
-	update_icon()
 	return TRUE
 
 CAPABILITIES(/obj/item/paper/fluff/junkmail_generic)

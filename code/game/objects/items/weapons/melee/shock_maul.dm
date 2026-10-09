@@ -182,12 +182,15 @@
 			to_chat(user, span_notice("This cell is not fitted for [src]."))
 	return OP_PASS
 
+MSG_DEF_SELF(shock_maul/out_of_charge, span_warning("%T% is out of charge."))
+
 TRACKED(/obj/item/melee/shock_maul, status)
 TRACKED(/obj/item/melee/shock_maul, wielded)
 
 CAPABILITIES(/obj/item/melee/shock_maul)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
-	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), label("Use"), when(PROC_REF(uncharged)), needs(req(PROC_REF(handy_user), silent = TRUE)), starts(PROC_REF(charge_started)), wait(PROC_REF(charge_duration)), then(PROC_REF(charged)))
+	op("off", in_hand(), label("Use"), when(PROC_REF(charged_up)), priority(OP_PRIORITY_TAKE_OUT), needs(req(PROC_REF(handy_user), silent = TRUE)), then(PROC_REF(disengaged)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(shock_maul_emp)))
 	drag_onto(PROC_REF(mousedrop_input))
@@ -209,30 +212,47 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 	else
 		return OP_DECLINE
 
-/// Old attack_self.
-/obj/item/melee/shock_maul/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!user.IsAdvancedToolUser())
-		return TRUE
-	if(!status && bcell && bcell.charge >= hitcost)
-		task_timed(user, charge_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
-	else if(status)
-		set_status(0)
-		act_message(user, src, MSG_SELF(span_notice("%T% is now off.")), MSG_OTHERS(span_notice("%U% safely disengages %T%'s power field.")))
-		update_held_icon()
-		play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
-		if(!bcell)
-			to_chat(user, span_warning("\The [src] does not have a power source!"))
-	else
-		to_chat(user, span_warning("\The [src] is out of charge."))
-	add_fingerprint(user)
-	return TRUE
+/// Whether the maul is off: a use charges it.
+/obj/item/melee/shock_maul/proc/uncharged(datum/act/op/A)
+	return !status
 
-/obj/item/melee/shock_maul/proc/attack_self_timed_done(mob/user)
+/// Whether the maul is charged: a use disengages it.
+/obj/item/melee/shock_maul/proc/charged_up(datum/act/op/A)
+	return !!status
+
+/// Whoever is too clumsy to work the field gets nothing, not even a message.
+/obj/item/melee/shock_maul/proc/handy_user(datum/act/op/A)
+	var/mob/user = A.actor
+	return !!user?.IsAdvancedToolUser()
+
+/// The charge-up begins only on a power source with enough charge; otherwise the use ends with the out-of-charge line.
+/obj/item/melee/shock_maul/proc/charge_started(datum/act/op/A)
+	if(!bcell || bcell.charge < hitcost)
+		return /datum/msg/shock_maul/out_of_charge
+	add_fingerprint(A.actor)
+	return null
+
+/obj/item/melee/shock_maul/proc/charge_duration(datum/act/A)
+	return charge_time
+
+/obj/item/melee/shock_maul/proc/charged(datum/act/op/A)
+	var/mob/user = A.actor
 	set_status(1)
 	act_message(user, src, MSG_SELF(span_warning("You charge %T%. <b>It's hammer time!</b>")), MSG_OTHERS(span_warning("%U% charges %T%!")))
 	play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
 	update_held_icon()
+	return OP_OK
+
+/obj/item/melee/shock_maul/proc/disengaged(datum/act/op/A)
+	var/mob/user = A.actor
+	set_status(0)
+	act_message(user, src, MSG_SELF(span_notice("%T% is now off.")), MSG_OTHERS(span_notice("%U% safely disengages %T%'s power field.")))
+	update_held_icon()
+	play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
+	if(!bcell)
+		to_chat(user, span_warning("\The [src] does not have a power source!"))
+	add_fingerprint(user)
+	return OP_OK
 
 /obj/item/melee/shock_maul/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
 	if(!proximity) return

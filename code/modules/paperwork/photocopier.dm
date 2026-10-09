@@ -245,26 +245,22 @@ CAPABILITIES(/obj/machinery/photocopier)
 	c.fields = copy.fields
 	c.stamps = copy.stamps
 	c.stamped = copy.stamped
-	c.ico = copy.ico
-	c.offset_x = copy.offset_x
-	c.offset_y = copy.offset_y
 	var/evidence_id = copy.medical_scan_evidence?["evidence_id"]
 	if(evidence_id)
 		c.attach_contract_evidence(evidence_id)
-	var/list/temp_overlays = copy.overlays       //Iterates through stamps
-	var/image/img                                //and puts a matching
-	for (var/j = 1, j <= min(temp_overlays.len, length(copy.ico)), j++) //gray overlay onto the copy
-		if (findtext(LAZYACCESS(copy.ico, j), "cap") || findtext(LAZYACCESS(copy.ico, j), "cent"))
-			img = image('icons/obj/bureaucracy.dmi', "paper_stamp-circle")
-		else if (findtext(LAZYACCESS(copy.ico, j), "tal"))
-			img = image('icons/obj/bureaucracy.dmi', "paper_stamp-square")
-		else if (findtext(LAZYACCESS(copy.ico, j), "deny"))
-			img = image('icons/obj/bureaucracy.dmi', "paper_stamp-x")
+	var/list/grey_marks //Iterates through the stamps and puts a matching
+	for(var/list/mark in copy.stamp_marks) //gray mark onto the copy
+		var/grey_state
+		if(findtext(mark[1], "cap") || findtext(mark[1], "cent"))
+			grey_state = "paper_stamp-circle"
+		else if(findtext(mark[1], "tal"))
+			grey_state = "paper_stamp-square"
+		else if(findtext(mark[1], "deny"))
+			grey_state = "paper_stamp-x"
 		else
-			img = image('icons/obj/bureaucracy.dmi', "paper_stamp-dots")
-		img.pixel_x = copy.offset_x[j]
-		img.pixel_y = copy.offset_y[j]
-		c.add_overlay(img)
+			grey_state = "paper_stamp-dots"
+		grey_marks = (grey_marks || list()) + list(list(grey_state, mark[2], mark[3]))
+	c.set_stamp_marks(grey_marks)
 	c.updateinfolinks()
 	if(need_toner)
 		toner--
@@ -390,8 +386,6 @@ CAPABILITIES(/obj/machinery/photocopier)
 		rel_add(p, nameof(p.pages), W)
 
 	p.forceMove(src.loc)
-	p.update_icon()
-	p.icon_state = "paper_words"
 	p.name = bundle.name
 	p.pixel_y = rand(-8, 8)
 	p.pixel_x = rand(-9, 9)

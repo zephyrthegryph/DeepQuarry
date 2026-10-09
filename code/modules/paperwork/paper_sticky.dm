@@ -140,12 +140,6 @@ CAPABILITIES(/obj/item/sticky_pad/random)
 	..()
 	reset_persistence_tracking()
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper/sticky, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paper/sticky/appearance_overlays()
-	. = list()
-	if(icon_state != "scrap")
-		icon_state = info ? "paper_words" : "paper"
-
 // Copied from duct tape.
 EXTEND_INTERACTIONS(/obj/item/paper/sticky, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(sticky_pick_up)))
 
@@ -158,7 +152,7 @@ EXTEND_INTERACTIONS(/obj/item/paper/sticky, INTERACT_HAND_DEFAULT("Pick up", PRO
 
 /obj/item/paper/sticky/afterattack(A, mob/user, flag, params)
 
-	if(!in_range(user, A) || istype(A, /obj/machinery/door) || icon_state == "scrap")
+	if(!in_range(user, A) || istype(A, /obj/machinery/door) || crumpled)
 		return
 
 	var/turf/target_turf = get_turf(A)

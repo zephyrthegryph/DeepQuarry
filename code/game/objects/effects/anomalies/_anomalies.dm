@@ -39,6 +39,11 @@ CAPABILITIES(/obj/effect/anomaly)
 /// Whether the anomaly leaves its core (its constructor param).
 /obj/effect/anomaly/var/drops_core = TRUE
 
+/// The stability a draw shows; the draw hears when it changes.
+/obj/effect/anomaly/proc/look_stability(datum/look/look)
+	look.watch(stats)
+	return stats?.stability
+
 // ALLOW(init/INSTANCE_STATE): an anomaly needs an area, makes its core with a random frequency and code, and counts down its lifespan
 /obj/effect/anomaly/Initialize(mapload)
 	. = ..()

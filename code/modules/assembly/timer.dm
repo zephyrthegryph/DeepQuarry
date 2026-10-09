@@ -20,14 +20,12 @@ TRACKED(/obj/item/assembly/timer, timing)
 
 	set_state(!timing)
 
-	update_icon()
 	return 0
 
 /obj/item/assembly/timer/toggle_secure()
 	set_secured(!secured)
 	if(!secured)
 		set_timing(FALSE)
-	update_icon()
 	return secured
 
 /obj/item/assembly/timer/proc/set_state(state)
@@ -46,16 +44,8 @@ TRACKED(/obj/item/assembly/timer, timing)
 		timer_end()
 		time = 10
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly/timer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/assembly/timer/appearance_overlays()
-	. = list()
-	attached_overlays = list()
-	if(timing)
-		. += "timer_timing"
-		attached_overlays += "timer_timing"
-	if(holder())
-		holder().update_icon()
-	return .
+/obj/item/assembly/timer/holder_layers()
+	return timing ? list("timer_timing") : null
 
 CAPABILITIES(/obj/item/assembly/timer)
 	every(2 SECONDS, then(PROC_REF(timer_step)), when = nameof(timing))
@@ -78,7 +68,6 @@ CAPABILITIES(/obj/item/assembly/timer)
 
 /obj/item/assembly/timer/proc/ui_act_timing(datum/act/op/A)
 	set_state(!timing)
-	update_icon()
 	return TRUE
 
 /obj/item/assembly/timer/proc/ui_act_set_time(datum/act/op/A, time_arg)

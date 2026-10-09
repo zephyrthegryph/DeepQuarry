@@ -535,7 +535,7 @@ CAPABILITIES(/obj/machinery/atm)
 	var/obj/item/spacecash/ewallet/E = new /obj/item/spacecash/ewallet(loc)
 	if(ishuman(human_user) && !human_user.get_active_hand())
 		human_user.put_in_hands(E)
-	E.worth = sum
+	E.set_worth(sum)
 	E.owner_name = authenticated_account().owner_name
 
 #undef NO_SCREEN

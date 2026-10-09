@@ -11,7 +11,6 @@
 	drop_sound = SFX_ITEMS_DROP_COMPONENT
 	pickup_sound =  SFX_ITEMS_PICKUP_COMPONENT
 
-	var/list/attached_overlays = null
 	var/tmp/obj/item/assembly_holder/holder
 	var/cooldown = FALSE //To prevent spam
 	var/wires_type = WIRE_RECEIVE | WIRE_PULSE
@@ -31,6 +30,19 @@
 /// Secured (ready to act); unsecured it can be attached to other assemblies.
 /obj/item/assembly/var/secured = TRUE
 TRACKED(/obj/item/assembly, secured)
+
+/// The overlay states this part adds to itself and, as "<state>_l" / "<state>_r", to the holder it sits in.
+/obj/item/assembly/proc/holder_layers()
+	return null
+
+/// The sprite state the holder shows for this part.
+/obj/item/assembly/proc/holder_state()
+	return initial(icon_state)
+
+/obj/item/assembly/draw(datum/look/look)
+	..()
+	for(var/layer in holder_layers())
+		look.overlay(layer)
 
 /obj/item/assembly/proc/holder_movement()
 	return
@@ -61,7 +73,6 @@ TRACKED(/obj/item/assembly, secured)
 
 /obj/item/assembly/proc/toggle_secure()
 	set_secured(!secured)
-	update_icon()
 	return secured
 
 /obj/item/assembly/proc/attach_assembly(obj/item/assembly/A, mob/user)

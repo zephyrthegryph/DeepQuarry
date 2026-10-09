@@ -71,7 +71,6 @@
 /datum/interaction/construction/window/anchor/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/window/window = target
 	window.update_nearby_tiles(need_rebuild = TRUE)
-	window.update_nearby_icons()
 	window.update_verbs()
 	to_chat(actor, span_notice("You have [window.anchored ? "" : "un"]fastened the [window.reinf ? "frame" : "window"] [window.anchored ? "to" : "from"] the floor."))
 	return TRUE
@@ -97,7 +96,6 @@
 
 /datum/interaction/construction/window/fasten/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/window/window = target
-	window.update_nearby_icons()
 	to_chat(actor, span_notice("You have [window.state == 1 ? "un" : ""]fastened the window [window.state ? "from" : "to"] the frame."))
 	return TRUE
 
@@ -132,5 +130,4 @@ MSG_DEF_SELF(start/interaction/window_repair, "You begin repairing %T%...")
 
 /obj/structure/window/proc/weld_repair(datum/act/op/A)
 	repair_damage(max_integrity)
-	update_icon()
 	return OP_OK

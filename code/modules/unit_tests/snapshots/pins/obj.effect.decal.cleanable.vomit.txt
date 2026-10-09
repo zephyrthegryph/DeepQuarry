@@ -43,6 +43,7 @@ human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Touch vomit
 human|/obj/item/card/id click: Click: Touch vomit
 human|/obj/item/mop_deploy menu: Insert a mop
+human|/obj/item/mop_deploy menu: Mop
 human|/obj/item/mop_deploy menu: Move To Top
 human|/obj/item/mop_deploy menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/mop_deploy menu: Touch vomit
