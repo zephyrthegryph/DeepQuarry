@@ -4,52 +4,52 @@ Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 
 ## Latest admitted measurement
 
-Phase 1 was opened under the user's D36 decision. Structural traversal remains
-complete; a new parallel-worker phase attribution gap requires a corrected
-measurement rerun. Phase 1 exit targets are **not met**. Full migration,
-incremental edit performance and production readiness are not claimed.
+Corrected context self-comparison completed on 9 October 2026. A and B run the
+**same frozen compiler**, ABABAB, three cold runs per label, eight workers, empty
+compiler caches and warmed captured inputs. All six measurement, fresh native
+DMB/RSC/diagnostic oracle and structural no-regression checks passed. Phase 1
+exit targets remain **not met**. No full migration or production readiness claim.
 
-Eight-worker cold compilation, empty compiler cache and warmed captured inputs:
-
-| Measurement | Previous A median | Candidate B median | Budget |
+| Measurement | Self A median | Self B median | Budget |
 | --- | ---: | ---: | ---: |
-| End-to-end compiler child wall | 19.09 s | **13.97 s** | Context; CPU judged |
-| Critical-path CPU | 15.625 s | **11.594 s** | ≤ 15 s |
-| Critical-path CPU uncertainty upper bound | 17.50 s | 13.50 s | ≤ 15 s |
-| Total process CPU | 34.141 s | 31.922 s | ≤ 40 s |
-| Peak private memory | 2.588 GB | **2.280 GB** | ≤ 1.5 GB |
-| Bytes read | 1.623 GB | 550 MB | ≤ 400 MB |
-| Bytes written | 616 MB | 625 MB | ≤ 600 MB |
+| Compiler child wall | 18.075 s | 16.450 s | Context; CPU judged |
+| Critical CPU | 12.031 s | 11.781 s | <= 15 s |
+| Critical CPU upper | 13.984 s | 13.813 s | <= 15 s |
+| Process CPU | 32.938 s | 33.016 s | <= 40 s |
+| Peak private memory | 2.176 GB | 2.174 GB | <= 1.5 GB |
+| Bytes read | 550 MB | 550 MB | <= 400 MB |
+| Bytes written | 655 MB | 655 MB | <= 600 MB |
 
-ABABAB, three runs per compiler. All six passed the then-current automatic
-measurement checks, fresh native DMB/RSC/diagnostic equality and structural
-no-regression. Wall median fell 26.85%. Critical CPU and stage-budget rows are
-**provisional**: an audit found parallel output workers missing their parent
-phase guards. Global process CPU, wall and private-memory measurements are
-unaffected. Corrected phase attribution must be rerun before CPU improvements
-or CPU-budget conclusions are promoted. Overall acceptance still fails memory,
-I/O and several stage budgets. No allocation-counting data is attributed to this
-release/mimalloc acceptance binary. Stage CPU upper bounds below use the same
-canonical mapping as the automated gate; nested totals must not be added again.
+Same-binary wall differences are noise, not a speedup. Acceptance fails memory,
+I/O and CPU stage budgets. Canonical selectors below match the harness exactly;
+inclusive phase maxima and exclusive residuals avoid adding overlapping children.
+Cells show point / uncertainty upper in seconds, each domain median over three
+runs. Windows bounds widen for genuinely separate observed residual intervals.
 
-| Stage | Critical CPU upper | Total CPU upper | Critical / total budget |
-| --- | ---: | ---: | ---: |
-| Input | 0.766 s | 3.750 s | 0.5 / 1 s |
-| Frontend | 2.672 s | 7.359 s | 3 / 12 s |
-| Tree and captured facts | 0.906 s | 1.156 s | 1 / 2 s |
-| Resources/maps | 2.453 s | 2.453 s | 2 / 6 s |
-| ABI/initializers | 1.109 s | 2.500 s | 1.5 / 4 s |
-| Lowering | 1.391 s | 9.813 s | 3 / 16 s |
-| Link | 1.500 s | 1.500 s | 1 / 2 s |
-| Composition/publication | 2.797 s | 2.797 s | 1.5 / 3 s |
+| Stage | A critical | A total | B critical | B total | Critical / total budget |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| input | 0.547 / 0.828 | 3.219 / 3.750 | 0.562 / 0.844 | 3.156 / 3.688 | 0.5 / 1 |
+| frontend | 2.844 / 3.375 | 7.062 / 8.906 | 2.781 / 3.312 | 7.047 / 9.078 | 3 / 12 |
+| tree | 0.875 / 0.938 | 0.875 / 1.188 | 0.922 / 0.984 | 1.016 / 1.328 | 1 / 2 |
+| resources/maps | 1.984 / 2.047 | 3.172 / 3.484 | 1.781 / 1.844 | 3.250 / 3.562 | 2 / 6 |
+| abi/initializers | 1.094 / 1.219 | 4.141 / 5.203 | 1.047 / 1.172 | 3.812 / 4.781 | 1.5 / 4 |
+| lowering | 1.344 / 1.406 | 9.188 / 9.500 | 1.375 / 1.438 | 9.203 / 9.516 | 3 / 16 |
+| link | 0.906 / 0.969 | 1.547 / 1.859 | 0.953 / 1.016 | 1.656 / 1.969 | 1 / 2 |
+| composition/publication | 2.391 / 3.188 | 2.938 / 10.281 | 2.438 / 3.281 | 3.000 / 10.328 | 1.5 / 3 |
+
+Largest observed total CPU domains are lowering (~9.2 s) and frontend (~7.0 s),
+both largely parallel; frontend and composition dominate critical CPU. Input
+total CPU exceeds budget even before uncertainty. ABI total upper exceeds its
+budget; resources and link straddle critical limits across identical-binary repeats.
+Composition total upper (~10.3 s) is uncertainty, not 10.3 s observed work.
 
 Scope: historical DeepQuarry `ac1af55d1a9a8e023e46bd058be59ed82c503f52`, captured
-`comparison.dme`, test defines, no daemon. This is not current master, server
-defines or a minimal-edit measurement. Previous self-comparison noise was 9.8%
-critical CPU and 8.0% wall. Warm-up/oracle/inspection time is outside child wall.
-Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/compare-throughput-20261008-221855/`.
-Candidate SHA-256: `d867a0eec45ad9e40e2254c750cb9f19700a94092d8c6fe96a017613fa402f1f`.
-Source archive: `4248f477056941768dde1cd50e6a4e266bc76ad5329d0dea94cf0e06f4b8ebb9`.
+`comparison.dme`, test defines, no daemon or minimal-edit measurement.
+Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/self-corrected-context-20261009-002353-d49988fe/comparison.json`.
+Domain calculations: `E:/dq-cache/dmb-native-v2/corrected-self-stage-medians-20261009.json`.
+Compiler SHA-256: `4c4048c98413212017638fa33a9eea867856568e79c15df3d5fc0b617ec346f7`.
+The earlier 13.97 s wall median remains separate historical evidence; its critical
+CPU attribution was incomplete, so no historical critical CPU delta is claimed.
 
 ## Newer implemented source
 
@@ -75,7 +75,7 @@ Its optimized build completed successfully in 635.15 s; comparison was withheld
 until the attribution fix. Build receipt:
 `E:/dq-cache/dmb-native-v2/source-typed-codegen-r6-20261008-232917.build.json`.
 Executable SHA-256: `fe00d12ea41c76e7084fdbc39b23d17476d0c86b120651f70a3710eed546ae7b`.
-The corrected source has not yet been frozen into a new optimized candidate.
+The corrected optimized candidate completed the self-comparison above.
 Generic `StageContext` propagation now captures caller stage names at explicit
 shared-executor job boundaries, enters thread-local guards on the executing
 worker and drops them in reverse order, including panic unwinding. Nested spawns
@@ -97,9 +97,8 @@ in the new initializer fixture; its required spelling is now supplied without
 weakening production validation. Final release all-target Clippy passed with
 warnings denied in 13.35 s:
 `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-001023.json`.
-Regenerated optimized traces remain required before critical CPU or stage-budget
-claims. Shared lexical arenas, typed statement-model reuse and immutable resource
-CRC changes have no accepted benchmark yet. Typed statement reuse retains the
+The corrected optimized self-comparison above now supplies admitted CPU evidence
+for shared lexical arenas, typed statement-model reuse and immutable resource CRC. Typed statement reuse retains the
 existing lossless fallback for unsupported bodies; supported bodies release raw
 children.
 
@@ -112,11 +111,23 @@ rosters and parallel independent procedure metadata; serial ID/list allocation
 preserves ordering and error precedence. Borrowed composition avoids its second
 word-buffer copy, and owned map/modified initializers transfer certified buffers.
 Tree spans distinguish member installation, ancestry resolution, inheritance and
-identity hashing. These implementations have no accepted
-post-context-fix critical CPU benchmark; neither memory targets nor Phase 1 exit
-are claimed from their presence in source.
+identity hashing. These implementations are covered by the corrected self-comparison; memory
+targets and Phase 1 exit remain unmet. Later file-backed resource and additional
+parallel inventory work are not included in this frozen measurement.
 
 ## Open correctness and architecture items
+
+The next batch passed release all-target Clippy (160.24 s), receipt
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-004411.json`, and 1,516
+ordinary workspace library checks (147.41 s), receipt
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-004828.json`.
+These ordinary-profile tests are not the outstanding release-profile gate.
+Optional file-backed RSC publication is implemented with request-owned resource
+pins held through final pair publication; sink I/O failures retain the memory
+fallback and source diagnostic precedence. Generic callers retain memory output.
+Its focused checks passed in that batch; full captured-project census is running
+and its optimized acceptance comparison has not run. The corrected self-cohort
+above does not measure this newer streamed-resource implementation.
 
 Whole-program structural diff: **1,853,923 differences**, unchanged in the admitted
 cohort: bytecode 1,636,088; globals 14; other 1,277; proc flags 14; proc table 8,983;

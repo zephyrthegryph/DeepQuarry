@@ -282,6 +282,12 @@ impl SymbolicCode {
         &self.relocations
     }
 
+    /// Allocated element capacities of the immutable words and relocation
+    /// buffers, respectively. These are storage observations, not identities.
+    pub fn storage_capacities(&self) -> (usize, usize) {
+        (self.words.capacity(), self.relocations.capacity())
+    }
+
     /// Resolve into a private image, leaving shared symbolic code unchanged on
     /// both success and failure. Resolution order is canonical word-offset order.
     pub fn link(
@@ -397,6 +403,24 @@ fn encode_reference(bytes: &mut impl FnMut(&[u8]), reference: SymRef) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn storage_capacities_preserve_backing_and_canonical_bytes() {
+        let mut words = Vec::with_capacity(19);
+        words.extend_from_slice(&[17, 0]);
+        let mut relocations = Vec::with_capacity(11);
+        relocations.push(Relocation {
+            offset: 1,
+            reference: SymRef::String(SymbolId::of("payload")),
+            encoding: RelocationEncoding::Direct,
+        });
+        let capacities = (words.capacity(), relocations.capacity());
+        let compact = SymbolicCode::new(words.clone(), relocations.clone()).unwrap();
+        let code = SymbolicCode::new(words, relocations).unwrap();
+        assert_eq!(code.storage_capacities(), capacities);
+        assert_eq!(code.canonical_bytes(), compact.canonical_bytes());
+        assert_eq!(code.fingerprint(), compact.fingerprint());
+    }
+
     use super::*;
 
     #[test]

@@ -120,6 +120,13 @@ impl PairStore {
             {
                 continue;
             }
+            // Never block while holding the global store lock: active builds
+            // own shared pins, and acquire them only under that same lock.
+            let pin = self.resource_pin_file(identity)?;
+            if fs2::FileExt::try_lock_exclusive(&pin).is_err() {
+                result.deferred.push(entry.path());
+                continue;
+            }
             match unlink_immutable(&entry.path()) {
                 Ok(()) => {
                     result.resources += 1;

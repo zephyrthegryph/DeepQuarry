@@ -374,6 +374,7 @@ pub fn capture_with_resource_reuse<
         observer,
         map_memo,
         admission,
+        None,
         crate::assets::capture_discovered,
     )
 }
@@ -396,6 +397,41 @@ pub fn capture_with_resource_reuse_on_executor<
     admission: Option<ResourceAdmission<'_>>,
     executor: &dm_exec::BuildExecutor,
 ) -> Result<CapturedNonTextOutput<R>, String> {
+    capture_with_resource_reuse_on_executor_with_sink(
+        frontend,
+        provider,
+        resource_provider,
+        host,
+        engine,
+        known_roots,
+        world_directives,
+        observer,
+        map_memo,
+        admission,
+        executor,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)] // Existing captured request plus optional immutable archive writer.
+pub fn capture_with_resource_reuse_on_executor_with_sink<
+    R: Resolver,
+    P: dm_preprocess::SourceProvider,
+    C: dm_resources::capture::CaptureProvider + Sync,
+>(
+    frontend: &ColdFrontend,
+    provider: &P,
+    resource_provider: &C,
+    host: R,
+    engine: &byond_dmb::dmb::Dmb,
+    known_roots: &BTreeSet<SymbolId>,
+    world_directives: &[Directive],
+    observer: Option<CaptureObserver<'_>>,
+    map_memo: Option<&crate::map_memo::MapMemo>,
+    admission: Option<ResourceAdmission<'_>>,
+    executor: &dm_exec::BuildExecutor,
+    sink: Option<&dyn crate::assets::ResourceArchiveSink>,
+) -> Result<CapturedNonTextOutput<R>, String> {
     capture_with_resource_operation(
         frontend,
         provider,
@@ -407,6 +443,7 @@ pub fn capture_with_resource_reuse_on_executor<
         observer,
         map_memo,
         admission,
+        sink,
         |demand, extra, provider| {
             crate::assets::capture_discovered_on_executor(demand, extra, provider, executor)
         },
@@ -429,6 +466,7 @@ fn capture_with_resource_operation<
     observer: Option<CaptureObserver<'_>>,
     map_memo: Option<&crate::map_memo::MapMemo>,
     admission: Option<ResourceAdmission<'_>>,
+    sink: Option<&dyn crate::assets::ResourceArchiveSink>,
     capture_resources: impl FnOnce(
         dm_resources::capture::ResourceDemand,
         &crate::assets::ExtraAssets,
@@ -558,7 +596,7 @@ fn capture_with_resource_operation<
                 .map_err(|error| error.to_string())
         })?;
         let projection = timed(observer, CaptureStage::ResourceProjection, || {
-            crate::assets::project_captured_resources(&resolver, &order)
+            crate::assets::project_captured_resources_with_sink(&resolver, &order, sink)
                 .map_err(|error| format!("resource projection: {error:?}"))
         })?;
         (resolver, projection, order, None, None)

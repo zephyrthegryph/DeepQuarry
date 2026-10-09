@@ -27,8 +27,11 @@ mod receipt;
 pub use receipt::InstallationReceipt;
 #[path = "publish_io.rs"]
 mod publication_io;
+#[path = "publish_resource_stream.rs"]
+mod resource_stream;
 pub use eviction::EvictionResult;
 use publication_io::{copy_hashed, write_owned, StagedPath};
+pub use resource_stream::ResourcePin;
 
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
@@ -212,6 +215,7 @@ impl PairStore {
             "temporary",
             "quarantine",
             "verified",
+            "resource-pins",
         ] {
             fs::create_dir_all(root.join(name))?;
         }

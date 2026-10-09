@@ -78,7 +78,6 @@ fn writer_string_interning_preserves_reserved_holes_and_safe_field_decoding() {
     assert!(!rebuilt
         .buckets
         .values()
-        .flatten()
         .any(|id| dm_link::is_reserved_string_index(*id)));
 }
 #[test]

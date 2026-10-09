@@ -229,6 +229,15 @@ impl ResourceArchive {
         }
     }
 }
+/// Optional output-store writer. Successful return certifies an immutable
+/// canonical archive leaf available to the later publication operation.
+pub trait ResourceArchiveSink {
+    fn retain(
+        &self,
+        rows: &[byond_dmb::rsc::NamedResourceView<'_>],
+    ) -> std::io::Result<crate::publish::ResourceIdentity>;
+}
+
 #[derive(Debug)]
 pub enum ResourceOutputError {
     InvalidOrder,
@@ -242,7 +251,7 @@ pub fn project_resources(
     resources: &dm_resources::ResourceSet,
     archive_order: &[usize],
 ) -> Result<ResourceProjection, ResourceOutputError> {
-    project_resource_rows(resources, archive_order, None)
+    project_resource_rows(resources, archive_order, None, None)
 }
 /// Consume metadata issued by the immutable validated capture host. Its owned
 /// payloads cannot be mutated through this API; no caller-supplied hash receipt
@@ -251,18 +260,29 @@ pub fn project_captured_resources<R: dm_ir::Resolver>(
     resolver: &dm_resources::native_resolver::NativeResourceResolver<R>,
     archive_order: &[usize],
 ) -> Result<ResourceProjection, ResourceOutputError> {
+    project_captured_resources_with_sink(resolver, archive_order, None)
+}
+/// Stream validated canonical records into an immutable output leaf when a
+/// sink is available. Failed output I/O falls back to the compatibility image.
+pub fn project_captured_resources_with_sink<R: dm_ir::Resolver>(
+    resolver: &dm_resources::native_resolver::NativeResourceResolver<R>,
+    archive_order: &[usize],
+    sink: Option<&dyn ResourceArchiveSink>,
+) -> Result<ResourceProjection, ResourceOutputError> {
     project_resource_rows(
         resolver
             .resources()
             .ok_or(ResourceOutputError::InvalidOrder)?,
         archive_order,
         Some(resolver.ordered_resources()),
+        sink,
     )
 }
 fn project_resource_rows(
     resources: &dm_resources::ResourceSet,
     archive_order: &[usize],
     validated: Option<&[dm_resources::native_resolver::NativeResourceRecord]>,
+    sink: Option<&dyn ResourceArchiveSink>,
 ) -> Result<ResourceProjection, ResourceOutputError> {
     use std::collections::{BTreeMap, BTreeSet};
     if archive_order.len() != resources.inputs.len() {
@@ -349,10 +369,15 @@ fn project_resource_rows(
             .into(),
         });
     }
-    let rsc =
-        byond_dmb::rsc::named_views_encoded(&named).map_err(ResourceOutputError::InvalidPayload)?;
+    let archive = match sink.and_then(|sink| sink.retain(&named).ok()) {
+        Some(identity) => ResourceArchive::Retained(identity),
+        None => ResourceArchive::Captured(
+            byond_dmb::rsc::named_views_encoded(&named)
+                .map_err(ResourceOutputError::InvalidPayload)?,
+        ),
+    };
     Ok(ResourceProjection {
-        archive: ResourceArchive::Captured(rsc),
+        archive,
         records,
         inventory,
     })
@@ -495,6 +520,37 @@ mod resource_output_tests {
             fingerprint: [0; 32],
         }
     }
+    #[test]
+    fn archive_sink_preserves_metadata_and_failed_sink_uses_memory_image() {
+        struct Sink(bool);
+        impl ResourceArchiveSink for Sink {
+            fn retain(
+                &self,
+                rows: &[byond_dmb::rsc::NamedResourceView<'_>],
+            ) -> std::io::Result<crate::publish::ResourceIdentity> {
+                if !self.0 {
+                    return Err(std::io::Error::other("sink unavailable"));
+                }
+                let image = byond_dmb::rsc::named_views_encoded(rows)?;
+                Ok(crate::publish::ResourceIdentity {
+                    bytes: image.len() as u64,
+                    hash: image.content_hash(),
+                })
+            }
+        }
+        let resources = resources();
+        let ordinary = project_resources(&resources, &[1, 0, 2]).unwrap();
+        let retained =
+            project_resource_rows(&resources, &[1, 0, 2], None, Some(&Sink(true))).unwrap();
+        let fallback =
+            project_resource_rows(&resources, &[1, 0, 2], None, Some(&Sink(false))).unwrap();
+        assert!(matches!(retained.archive, ResourceArchive::Retained(_)));
+        assert_eq!(retained.archive.identity(), ordinary.archive.identity());
+        assert_eq!(retained.records, ordinary.records);
+        assert_eq!(fallback.archive, ordinary.archive);
+        assert_eq!(fallback.records, ordinary.records);
+    }
+
     #[test]
     fn exact_alias_order_controls_first_kind_and_real_archive() {
         let resources = resources();

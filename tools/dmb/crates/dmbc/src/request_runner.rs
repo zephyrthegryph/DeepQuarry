@@ -8,6 +8,25 @@ use std::time::Instant;
 #[path = "runner_report.rs"]
 mod runner_report;
 
+struct OutputResourceSink<'a> {
+    store: &'a dmbc::publish::PairStore,
+    exact: bool,
+    pins: &'a std::sync::Mutex<Vec<dmbc::publish::ResourcePin>>,
+}
+impl dmbc::assets::ResourceArchiveSink for OutputResourceSink<'_> {
+    fn retain(
+        &self,
+        rows: &[byond_dmb::rsc::NamedResourceView<'_>],
+    ) -> io::Result<dmbc::publish::ResourceIdentity> {
+        let (identity, pin) = self.store.publish_resource_views_pinned(rows, self.exact)?;
+        self.pins
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .push(pin);
+        Ok(identity)
+    }
+}
+
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
         Command::Help => {
@@ -139,6 +158,9 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
     let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&input_provider, now_ns());
     let mut session = None;
     let mut pair_store = None;
+    // Request-owned leases outlive the borrowed capture sink and cold compiler.
+    // They are released only after the final immutable pair is published.
+    let resource_pins = std::sync::Mutex::new(Vec::new());
     let mut resource_prior = None;
     let mut memo_policy = 0;
     drop(input_context_profile);
@@ -470,6 +492,23 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             eprintln!("native resources and maps started");
         }
         let captured_engine = byond_dmb::dmb::Dmb::from_bytes(bytes)?;
+        // Output storage is independent of compiler memo policy. Failure here
+        // disables this memory optimization; publication still reports the
+        // ordinary output error after all source/semantic diagnostics succeed.
+        if pair_store.is_none() {
+            if let Ok(path) = output_store
+                .clone()
+                .map(Ok)
+                .unwrap_or_else(|| dmbc::publish::default_store_path(&project))
+            {
+                pair_store = dmbc::publish::PairStore::open(path).ok();
+            }
+        }
+        let resource_sink = pair_store.as_ref().map(|store| OutputResourceSink {
+            store,
+            exact: exact_inputs,
+            pins: &resource_pins,
+        });
         let roots = engine
             .frontend_seed()
             .hierarchy
@@ -524,20 +563,24 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
                 )
                 .map_err(|error| error.to_string())
         };
-        let mut nontext = dmbc::captured_non_text_driver::capture_with_resource_reuse_on_executor(
-            &frontend,
-            &inputs_capture,
-            &inputs_capture,
-            host,
-            &captured_engine,
-            &roots,
-            &defaults,
-            Some(&capture_observer),
-            map_memo.as_ref(),
-            Some(&admit_resources),
-            &executor,
-        )?
-        .into_prepared(&frontend)?;
+        let mut nontext =
+            dmbc::captured_non_text_driver::capture_with_resource_reuse_on_executor_with_sink(
+                &frontend,
+                &inputs_capture,
+                &inputs_capture,
+                host,
+                &captured_engine,
+                &roots,
+                &defaults,
+                Some(&capture_observer),
+                map_memo.as_ref(),
+                Some(&admit_resources),
+                &executor,
+                resource_sink
+                    .as_ref()
+                    .map(|sink| sink as &dyn dmbc::assets::ResourceArchiveSink),
+            )?
+            .into_prepared(&frontend)?;
         // Nontext capture owns the resolver, captured resources/maps and defaults
         // it needs. These inputs are not borrowed by its returned bundle.
         drop(defaults);
@@ -716,6 +759,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
                     exact_inputs,
                 )?,
         };
+        drop(resource_pins);
         let installation = store.install_receipt_exact(
             pair.id,
             &output_project.with_extension("dmb"),

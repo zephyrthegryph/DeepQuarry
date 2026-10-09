@@ -3,7 +3,9 @@
 //! A boundary shares one census, so Arc aliases and nested buffers count once.
 use serde::Serialize;
 mod dmb_image;
+mod macro_environments;
 mod prepared;
+mod relocation_metrics;
 mod typed_body;
 use std::{
     collections::{BTreeMap, BTreeSet, HashSet},
@@ -33,6 +35,7 @@ pub struct HeapCensusReport {
     pub unknown_capacity_payload_bytes: u64,
     pub owners: Vec<OwnerReport>,
     pub limitations: Vec<&'static str>,
+    pub frozen_code_metrics: relocation_metrics::RelocationMetrics,
 }
 pub struct HeapCensus {
     stage: String,
@@ -40,6 +43,7 @@ pub struct HeapCensus {
     // Addresses stay private to this diagnostic, never become output identities.
     allocations: HashSet<usize>,
     collections: HashSet<usize>,
+    frozen_code_metrics: relocation_metrics::RelocationMetrics,
 }
 
 impl HeapCensus {
@@ -49,6 +53,7 @@ impl HeapCensus {
             owners: BTreeMap::new(),
             allocations: HashSet::new(),
             collections: HashSet::new(),
+            frozen_code_metrics: Default::default(),
         }
     }
     fn owner(&mut self, name: &str) -> &mut OwnerReport {
@@ -283,7 +288,11 @@ impl HeapCensus {
                 }
             }
         }
-        self.unknown("frontend.directive_plan", "persistent macro environment nodes/bindings, effects, and private hash indexes are not exposed");
+        self.macro_environments(frontend);
+        self.unknown(
+            "frontend.directive_plan",
+            "private hash indexes and persistent macro map nodes are not exposed",
+        );
         self.syntax("frontend.declaration_ast", &frontend.syntax);
         self.slice("frontend.body_index", &frontend.bodies, true);
         for body in frontend.bodies.iter() {
@@ -736,8 +745,24 @@ impl HeapCensus {
     }
     fn symbolic_code(&mut self, code: &Arc<dm_ir::SymbolicCode>) {
         if self.arc_object("frozen_code", code) {
-            self.slice("frozen_code", code.words(), false);
-            self.slice("frozen_code", code.relocations(), false);
+            self.frozen_code_metrics.observe(code);
+            let (words_capacity, relocations_capacity) = code.storage_capacities();
+            self.owner("frozen_code").observed_items += code.words().len() as u64;
+            self.buffer(
+                "frozen_code",
+                code.words().as_ptr() as usize,
+                code.words().len().saturating_mul(size_of::<u32>()),
+                words_capacity.saturating_mul(size_of::<u32>()),
+            );
+            self.owner("frozen_code").observed_items += code.relocations().len() as u64;
+            self.buffer(
+                "frozen_code",
+                code.relocations().as_ptr() as usize,
+                code.relocations()
+                    .len()
+                    .saturating_mul(size_of::<dm_ir::Relocation>()),
+                relocations_capacity.saturating_mul(size_of::<dm_ir::Relocation>()),
+            );
         }
     }
     fn frozen_code(&mut self, code: &Arc<dm_codegen_byond::FrozenProc>) {
@@ -828,6 +853,7 @@ impl HeapCensus {
                 .map(|owner| owner.unknown_capacity_payload_bytes)
                 .sum(),
             owners,
+            frozen_code_metrics: self.frozen_code_metrics,
             limitations: vec![
                 "Shared allocations are deduplicated by live pointer and attributed to the first named owner in this boundary.",
                 "Vec capacities include inline element descriptors; nested heap buffers are counted separately, never those descriptors twice.",

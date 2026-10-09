@@ -15,6 +15,27 @@ pub struct MacroEnvironment {
     bindings: im::OrdMap<Arc<str>, Arc<Binding>>,
 }
 impl MacroEnvironment {
+    /// Exact persistent-root sharing, for opt-in diagnostics without cloning maps.
+    pub fn shares_storage_with(&self, other: &Self) -> bool {
+        self.bindings.ptr_eq(&other.bindings)
+    }
+
+    /// Borrow retained payloads; opaque persistent-map node capacity is not exposed.
+    /// The binding address and inline size permit deduplication across snapshots.
+    pub fn visit_storage(
+        &self,
+        mut visitor: impl FnMut(&Arc<str>, usize, usize, &Arc<Macro>, Option<&DefinitionOrigin>),
+    ) {
+        for (name, binding) in &self.bindings {
+            visitor(
+                name,
+                Arc::as_ptr(binding) as usize,
+                std::mem::size_of::<Binding>(),
+                &binding.definition,
+                binding.origin.as_ref(),
+            );
+        }
+    }
     pub(super) fn insert(
         &mut self,
         name: &str,
@@ -71,6 +92,7 @@ mod tests {
             None,
         );
         let first = env.clone();
+        assert!(first.shares_storage_with(&env));
         env.insert(
             "OTHER",
             Macro {
@@ -81,6 +103,17 @@ mod tests {
             None,
         );
         let second = env.clone();
+        assert!(!first.shares_storage_with(&second));
+        let retained = |snapshot: &MacroEnvironment| {
+            let mut result = None;
+            snapshot.visit_storage(|name, binding, _, definition, _| {
+                if name.as_ref() == "LARGE" {
+                    result = Some((binding, Arc::as_ptr(definition) as usize));
+                }
+            });
+            result.unwrap()
+        };
+        assert_eq!(retained(&first), retained(&second));
         assert!(std::ptr::eq(
             first.get("LARGE").unwrap(),
             second.get("LARGE").unwrap()
