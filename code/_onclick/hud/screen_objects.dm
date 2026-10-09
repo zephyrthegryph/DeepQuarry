@@ -745,17 +745,17 @@ CAPABILITIES(/atom/movable/screen/inventory)
 /// The handcuff overlay shows while the owner's mob wears handcuffs (the draw hears the mob's slot changes).
 /atom/movable/screen/inventory/hand/draw(datum/look/look)
 	..()
-	var/datum/hud/hud = owner_hud()
-	if(!hud)
+	var/datum/hud/owner_hud_now = src.hud // the relation itself: setting it redraws the hand
+	if(!owner_hud_now)
 		return
-	var/mob/M = hud.mymob()
-	look.watch(hud)
+	var/mob/M = owner_hud_now.mymob()
+	look.watch(owner_hud_now)
 	look.watch(M)
 	if(!iscarbon(M))
 		return
 	var/mob/living/carbon/C = M
 	if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
-		look.overlay(look_overlay_image('icons/mob/screen_gen.dmi', (hud.l_hand_hud_object == src) ? "l_hand_hud_handcuffs" : "r_hand_hud_handcuffs"))
+		look.overlay(look_overlay_image('icons/mob/screen_gen.dmi', (owner_hud_now.l_hand_hud_object == src) ? "l_hand_hud_handcuffs" : "r_hand_hud_handcuffs"))
 
 // PIP stuff
 /atom/movable/screen/component_button
