@@ -3932,3 +3932,5 @@ recycling panels, space vines and the maintenance vendor glow now draw through `
 * **Framework gap, not fixed here:** a thing put into another with a plain `forceMove()` never reaches the containment ledger (`slot_contents()` / `look.things_in()` read
   `L.slots`, filled only by `move_into()` / `own_bring_in()`, `code/engine/refs/containment/api.dm:235`, `ledger.dm:591`), so a draw cannot hear a creature scooped into a net or jar. The net
   asks `changed(src)` at its entry and exit sites and the jar redraws through its tracked `contains`; both are temporary until `forceMove()` into a holder registers in the default slot.
+* **Space vine with a growth threshold of 0** (`look_states/obj.effect.plant.txt`, `plant` and `plant/single`, `growth_threshold=0`): the draw no longer divides by it; it shows the full
+  stage (`mushroom7-3`, `-0` lost) where the legacy provider raised `Division by zero`. The three rows are written by hand to the rows the sweep produced (`growth_threshold=1` is the same).
