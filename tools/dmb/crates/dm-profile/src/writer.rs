@@ -52,6 +52,10 @@ mod tests {
             entries: Mutex::new(BTreeMap::new()),
             folded: Mutex::new(BTreeMap::new()),
             wall_folded: Mutex::new(BTreeMap::new()),
+            finished: std::sync::atomic::AtomicBool::new(false),
+            workers: std::sync::atomic::AtomicUsize::new(0),
+            bindings: std::sync::atomic::AtomicUsize::new(0),
+            dispatch: Mutex::new(None),
         });
         let writer = ObservedWriter::new(Vec::<u8>::new(), Arc::clone(&state));
         assert!(state.entries.lock().unwrap().is_empty());

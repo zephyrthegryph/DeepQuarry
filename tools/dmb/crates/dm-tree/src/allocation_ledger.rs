@@ -2,7 +2,10 @@
 //! This ledger retains grammar distinctions erased by flattened declarations.
 use dm_ir::{SymbolId, SymbolTable, TypePath};
 use dm_syntax::{Item, ItemKind, Span};
-use std::sync::Arc;
+#[path = "allocation_events.rs"]
+mod storage;
+pub use storage::AllocationEvents;
+pub(crate) use storage::EventBuilder;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NamespaceKind {
     Var,
@@ -48,7 +51,7 @@ pub struct AllocationEvent {
 }
 #[derive(Clone, Debug)]
 pub struct AllocationLedger {
-    pub events: Arc<[AllocationEvent]>,
+    pub events: AllocationEvents,
 }
 #[derive(Clone, Debug)]
 pub struct Error {
@@ -102,7 +105,7 @@ fn intern(symbols: &mut SymbolTable, text: &str, span: Span) -> Result<SymbolId,
         message: error.to_string(),
     })
 }
-fn push(events: &mut Vec<AllocationEvent>, item: &Item, kind: AllocationKind) {
+fn push(events: &mut EventBuilder, item: &Item, kind: AllocationKind) {
     events.push(AllocationEvent {
         encounter_order: events.len(),
         span: item.span,
@@ -121,10 +124,10 @@ pub fn capture(
         span: Span::new(0, 0),
         message: message.into(),
     })?;
-    let mut events = Vec::new();
+    let mut events = EventBuilder::new();
     walk(items, owner, None, symbols, &mut events)?;
     Ok(AllocationLedger {
-        events: events.into(),
+        events: events.finish(),
     })
 }
 fn walk(
@@ -132,7 +135,7 @@ fn walk(
     owner: &str,
     namespace: Option<&Namespace>,
     symbols: &mut SymbolTable,
-    events: &mut Vec<AllocationEvent>,
+    events: &mut EventBuilder,
 ) -> Result<(), Error> {
     for item in items {
         let header = item.header.trim();

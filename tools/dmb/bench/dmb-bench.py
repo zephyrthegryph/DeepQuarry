@@ -16,6 +16,16 @@ import statistics
 import subprocess
 import time
 
+_domain_spec = importlib.util.spec_from_file_location(
+    "dmb_bench_domain_adoption", Path(__file__).with_name("domain_adoption.py"))
+_domain_module = importlib.util.module_from_spec(_domain_spec)
+_domain_spec.loader.exec_module(_domain_module)
+DOMAIN_BOUND_METHOD = _domain_module.METHOD
+
+def domain_bound_adoption(row, stage_map):
+    return _domain_module.evaluate(row, stage_map, selected_stages)
+
+
 _watchdog_spec = importlib.util.spec_from_file_location(
     "dmb_bench_owned_watchdog", Path(__file__).with_name("watchdog.py"))
 if _watchdog_spec is None or _watchdog_spec.loader is None:
@@ -516,20 +526,20 @@ def gate(scenario, rows, history, stage_map):
         active_map = stage_map
     if len(mapped_names) != len(set(mapped_names)):
         return "not_evaluable", ["overlapping stage mappings"]
+    adopted_rows = []
+    for row in rows:
+        # Short unchanged sequence has its own existing measurement contract.
+        proof_row = row if scenario != "unchanged" else {
+            key: value for key, value in row.items()
+            if key not in ("domain_cpu_bounds", "domain_cpu_selectors")}
+        adopted, _, proof_errors = domain_bound_adoption(proof_row, active_map)
+        if proof_errors:
+            return "not_evaluable", proof_errors
+        adopted_rows.append(adopted)
     for domain, names in active_map.items():
-        costs = []
-        for row in rows:
-            by_name = selected_stages(row)
-            if any(name not in by_name for name in names):
-                return "not_evaluable", ["missing mapped profile stage: " + domain]
-            bounded = row.get("cpu_bounds_method") == "paired_thread_cpu_quantization"
-            def cost(stage, scalar, bounds):
-                return stage[bounds]["upper"] if bounded and cpu_bound(stage.get(bounds)) else stage.get(scalar)
-            if any(cost(by_name[n], "max_thread_cpu_s", "max_thread_cpu_bounds_s") is None
-                   or cost(by_name[n], "cpu_s", "cpu_bounds_s") is None for n in names):
-                return "not_evaluable", ["missing mapped stage CPU: " + domain]
-            costs.append((sum(cost(by_name[n], "max_thread_cpu_s", "max_thread_cpu_bounds_s") for n in names),
-                          sum(cost(by_name[n], "cpu_s", "cpu_bounds_s") for n in names)))
+        costs = [adopted[domain] for adopted in adopted_rows]
+        if any(not metric(value) for pair in costs for value in pair):
+            return "not_evaluable", ["missing mapped stage CPU: " + domain]
         if domain in STAGE_BUDGETS:
             limit = STAGE_BUDGETS[domain]
             if statistics.median(c[0] for c in costs) > limit[0] or statistics.median(c[1] for c in costs) > limit[1]:

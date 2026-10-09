@@ -678,16 +678,14 @@ pub(super) fn decode(
                 kind,
             })
         })
-        .collect::<Option<Vec<_>>>()?;
+        .collect::<Option<crate::allocation_ledger::AllocationEvents>>()?;
     Some((
         AdaptedDeclarations {
             symbols,
             skeletons,
             origins,
         },
-        AllocationLedger {
-            events: events.into(),
-        },
+        AllocationLedger { events },
     ))
 }
 
@@ -769,8 +767,8 @@ mod tests {
             assert_eq!(new.span.end, old.span.end + 31);
         }
         assert_eq!(
-            shifted_ledger.events[0].span.start,
-            ledger.events[0].span.start + 31
+            shifted_ledger.events.get(0).unwrap().span.start,
+            ledger.events.get(0).unwrap().span.start + 31
         );
         assert!(decode(&bytes, "", 0).is_none());
         let mut corrupt = bytes;

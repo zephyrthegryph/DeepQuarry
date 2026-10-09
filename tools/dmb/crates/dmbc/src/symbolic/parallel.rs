@@ -58,12 +58,10 @@ impl BoundContribution {
         compact_names(&mut frame.local_names);
         compact_names(&mut frame.argument_names);
         compact_vec(&mut frame.argument_type_flags);
-        compact_vec(&mut self.unit.lowered.debug_origins.entries);
         compact_vec(&mut self.strings.0);
         compact_vec(&mut self.slots.0);
         for helper in &mut self.helpers {
             compact_names(&mut helper.helper.local_names);
-            compact_vec(&mut helper.helper.debug_origins.entries);
             compact_vec(&mut helper.strings.0);
             compact_vec(&mut helper.slots.0);
         }
@@ -184,7 +182,7 @@ pub(super) fn freeze_unit(
                 frozen: Arc::new(frozen_helper),
                 current_image: None,
                 features: BytecodeFeatures::of(&helper.code.procedure.code),
-                debug_origins: helper.debug_origins,
+                debug_origins: helper.debug_origins.into(),
                 local_names: helper.code.procedure.local_names,
             },
         });

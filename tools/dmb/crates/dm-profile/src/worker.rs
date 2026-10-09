@@ -15,9 +15,15 @@ pub struct WorkerLifetime {
 }
 
 pub fn worker_lifetime(name: &'static str) -> WorkerLifetime {
+    let state = request::active_state();
+    if let Some(state) = &state {
+        state
+            .workers
+            .fetch_add(1, std::sync::atomic::Ordering::AcqRel);
+    }
     WorkerLifetime {
         begin: clock::thread_coarse_ns(),
-        state: ACTIVE.get().cloned(),
+        state,
         name,
         thread: format!("{:?}", std::thread::current().id()),
         wall: Instant::now(),
@@ -28,6 +34,12 @@ pub fn worker_lifetime(name: &'static str) -> WorkerLifetime {
 impl Drop for WorkerLifetime {
     fn drop(&mut self) {
         let Some(state) = &self.state else { return };
+        if state.finished.load(std::sync::atomic::Ordering::Acquire) {
+            state
+                .workers
+                .fetch_sub(1, std::sync::atomic::Ordering::AcqRel);
+            return;
+        }
         let end = clock::thread_coarse_ns();
         let mut entries = state.entries.lock().unwrap_or_else(|e| e.into_inner());
         record(
@@ -38,6 +50,10 @@ impl Drop for WorkerLifetime {
             end,
             self.wall.elapsed().as_secs_f64(),
         );
+        drop(entries);
+        state
+            .workers
+            .fetch_sub(1, std::sync::atomic::Ordering::AcqRel);
     }
 }
 

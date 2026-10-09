@@ -23,7 +23,7 @@ pub struct FrozenUnitMetadata {
     pub identity: UnitIdentity,
     pub origin: dm_tree::frontend::BodyOccurrence,
     pub abi: Option<Arc<crate::procedure_policy::PreparedAbi>>,
-    pub debug_origins: crate::debug_sources::DebugOrigins,
+    pub debug_origins: crate::debug_sources::FrozenDebugOrigins,
     pub frame: FrozenFrame,
 }
 pub struct FrozenFrame {
@@ -39,7 +39,7 @@ impl FrozenUnitMetadata {
             identity: unit.identity,
             origin: unit.origin,
             abi: unit.abi,
-            debug_origins: unit.debug_origins,
+            debug_origins: unit.debug_origins.into(),
             frame: FrozenFrame {
                 local_count: procedure.local_count,
                 local_names: procedure.local_names,
@@ -55,7 +55,7 @@ pub struct FrozenHelper {
     pub frozen: Arc<FrozenProc>,
     current_image: Option<CurrentImage>,
     features: BytecodeFeatures,
-    pub debug_origins: crate::debug_sources::DebugOrigins,
+    pub debug_origins: crate::debug_sources::FrozenDebugOrigins,
     pub local_names: Vec<String>,
 }
 /// Feature facts from encoder-validated instruction boundaries, never operand words.
@@ -81,15 +81,14 @@ impl BytecodeFeatures {
 struct CurrentImage {
     frozen: Arc<FrozenProc>,
     tables: LinkTables,
-    paths: Vec<Arc<str>>,
-    origins: origin_roster::OriginRoster,
+    origins: crate::debug_sources::FrozenDebugOrigins,
     image: ProcedureImage,
     features: BytecodeFeatures,
 }
 impl CurrentImage {
     fn issue(
         frozen: &Arc<FrozenProc>,
-        origins: &crate::debug_sources::DebugOrigins,
+        origins: &crate::debug_sources::FrozenDebugOrigins,
         tables: &LinkTables,
         features: BytecodeFeatures,
     ) -> Result<Self, IntegrationError> {
@@ -99,24 +98,10 @@ impl CurrentImage {
                 .link(frozen.code(), &source)
                 .map_err(IntegrationError::Link)?
         };
-        let mut paths = Vec::new();
-        let mut indexes = std::collections::HashMap::new();
-        let roster =
-            origin_roster::OriginRoster::from_entries(origins.entries.iter().map(|origin| {
-                let index = *indexes
-                    .entry(origin.semantic_path.as_ref())
-                    .or_insert_with(|| {
-                        let index = paths.len();
-                        paths.push(origin.semantic_path.clone());
-                        index
-                    });
-                (index, origin.line)
-            }));
         Ok(Self {
             frozen: Arc::clone(frozen),
             tables: tables.clone(),
-            paths,
-            origins: roster,
+            origins: origins.clone(),
             image,
             features,
         })
@@ -124,28 +109,17 @@ impl CurrentImage {
     fn matches(
         &self,
         frozen: &Arc<FrozenProc>,
-        origins: &crate::debug_sources::DebugOrigins,
+        origins: &crate::debug_sources::FrozenDebugOrigins,
         tables: &LinkTables,
     ) -> bool {
         Arc::ptr_eq(&self.frozen, frozen)
             && std::ptr::eq(self.tables.assignments(), tables.assignments())
-            && self.origins.len() == origins.entries.len()
-            && self
-                .origins
-                .iter()
-                .zip(&origins.entries)
-                .all(|((path, line), current)| {
-                    line == current.line
-                        && self
-                            .paths
-                            .get(path)
-                            .is_some_and(|stored| stored == &current.semantic_path)
-                })
+            && self.origins == *origins
     }
 }
 fn current_link(
     frozen: &Arc<FrozenProc>,
-    origins: &crate::debug_sources::DebugOrigins,
+    origins: &crate::debug_sources::FrozenDebugOrigins,
     tables: &LinkTables,
     certificate: Option<&CurrentImage>,
 ) -> Result<ProcedureImage, IntegrationError> {
@@ -158,7 +132,7 @@ fn current_link(
 }
 fn take_current_link(
     frozen: &Arc<FrozenProc>,
-    origins: &crate::debug_sources::DebugOrigins,
+    origins: &crate::debug_sources::FrozenDebugOrigins,
     tables: &LinkTables,
     certificate: &mut Option<CurrentImage>,
 ) -> Result<ProcedureImage, IntegrationError> {
@@ -188,7 +162,7 @@ pub struct FrozenInitializer {
     pub frozen: Arc<FrozenProc>,
     current_image: Option<CurrentImage>,
     features: BytecodeFeatures,
-    pub debug_origins: crate::debug_sources::DebugOrigins,
+    pub debug_origins: crate::debug_sources::FrozenDebugOrigins,
     pub local_names: Vec<String>,
 }
 impl FrozenInitializer {
@@ -228,7 +202,7 @@ impl FrozenBatch {
             tables: &LinkTables,
             key: Key,
             frozen: &Arc<FrozenProc>,
-            origins: &crate::debug_sources::DebugOrigins,
+            origins: &crate::debug_sources::FrozenDebugOrigins,
             image: &'a Option<CurrentImage>,
         ) {
             if let Some(image) = image
@@ -618,7 +592,7 @@ fn finish_frozen_inventory(
             frozen: Arc::new(frozen),
             current_image: None,
             features: BytecodeFeatures::of(&unit.code.procedure.code),
-            debug_origins: unit.debug_origins,
+            debug_origins: unit.debug_origins.into(),
             local_names: unit.code.procedure.local_names.clone(),
         });
     }
@@ -781,18 +755,18 @@ impl StringInventory {
     }
 }
 fn append_debug_inventory(
-    origins: &crate::debug_sources::DebugOrigins,
+    origins: &impl crate::debug_sources::OriginAccess,
     inventory: &mut LinkInventory,
     strings: &mut StringInventory,
 ) {
     // Lines retain separate debug origins, but identical path spellings need
     // only one inventory entry. Compare the full spelling, never just its hash.
     let mut paths = std::collections::HashSet::new();
-    for origin in &origins.entries {
+    for origin in origins.iter() {
         if !paths.insert(origin.semantic_path.as_ref()) {
             continue;
         }
-        let symbol = SymbolId::of(&origin.semantic_path);
+        let symbol = SymbolId::of(origin.semantic_path);
         strings.append(inventory, symbol, origin.semantic_path.as_bytes());
     }
 }
@@ -841,7 +815,7 @@ fn freeze_artifact(
 }
 mod current_images;
 mod freezing;
-mod origin_roster;
+pub(crate) mod origin_roster;
 mod parallel;
 mod prepared_contribution;
 mod procedure_artifact;

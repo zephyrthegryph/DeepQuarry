@@ -1,11 +1,12 @@
 //! Compact request-local source certificates; wide indices remain exact.
-pub(super) enum OriginRoster {
+#[derive(Debug)]
+pub(crate) enum OriginRoster {
     Compact(Box<[(u32, u32)]>),
     Wide(Box<[(usize, u32)]>),
 }
 
 impl OriginRoster {
-    pub(super) fn from_entries(entries: impl IntoIterator<Item = (usize, u32)>) -> Self {
+    pub(crate) fn from_entries(entries: impl IntoIterator<Item = (usize, u32)>) -> Self {
         let mut compact = Vec::new();
         let mut entries = entries.into_iter();
         while let Some((path, line)) = entries.next() {
@@ -25,14 +26,14 @@ impl OriginRoster {
         Self::Compact(compact.into_boxed_slice())
     }
 
-    pub(super) fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         match self {
             Self::Compact(entries) => entries.len(),
             Self::Wide(entries) => entries.len(),
         }
     }
 
-    pub(super) fn iter(&self) -> impl Iterator<Item = (usize, u32)> + '_ {
+    pub(crate) fn iter(&self) -> impl Iterator<Item = (usize, u32)> + '_ {
         (0..self.len()).map(|index| match self {
             Self::Compact(entries) => {
                 let (path, line) = entries[index];
@@ -42,7 +43,7 @@ impl OriginRoster {
         })
     }
 
-    fn census(&self, census: &mut crate::heap_census::HeapCensus) {
+    pub(crate) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         match self {
             Self::Compact(entries) => {
                 census.slice("current_image.origins.compact", entries, true);
@@ -71,11 +72,7 @@ impl super::FrozenBatch {
                     .filter_map(|initializer| initializer.current_image.as_ref()),
             );
         for image in images {
-            image.origins.census(census);
-            census.vec_payload("current_image.paths", &image.paths);
-            for path in &image.paths {
-                census.arc_text("current_image.paths", path);
-            }
+            image.origins.census(census, "current_image.origins");
             if census.arc_object("current_image.words", &image.image.words) {
                 census.vec_payload("current_image.words", &image.image.words);
             }

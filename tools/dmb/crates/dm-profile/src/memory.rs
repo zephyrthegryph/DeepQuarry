@@ -9,17 +9,12 @@ pub(crate) fn interval_ms() -> Option<u64> {
 }
 
 pub(crate) fn enter(state: &State, name: &'static str) {
-    #[cfg(windows)]
-    {
-        let mut entries = state
-            .entries
-            .lock()
-            .unwrap_or_else(|error| error.into_inner());
-        let entry = entries.entry(name).or_default();
-        entry.active = entry.active.saturating_add(1);
-    }
-    #[cfg(not(windows))]
-    let _ = (state, name);
+    let mut entries = state
+        .entries
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let entry = entries.entry(name).or_default();
+    entry.active = entry.active.saturating_add(1);
 }
 
 #[cfg(any(windows, test))]

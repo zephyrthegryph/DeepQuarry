@@ -92,3 +92,5 @@ mod modified_output_tests;
 pub mod pure_calls;
 
 pub mod modified_initializers;
+
+pub mod profile_host;

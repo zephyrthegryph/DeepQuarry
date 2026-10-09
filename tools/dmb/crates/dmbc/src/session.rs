@@ -7,6 +7,7 @@ use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 const SCHEMA: u32 = 2;
 const MAX_RECORD_BYTES: u64 = 32 * 1024 * 1024;
@@ -73,12 +74,28 @@ struct Envelope {
     record: Record,
 }
 
-pub struct Session {
+/// Immutable configured record namespace, independent of a build lease.
+/// Keeping this owner alive never blocks another request for the worktree.
+/// Its records remain hints: every reuse still requires current input proofs.
+pub struct SessionRecords {
     configuration: Configuration,
     directory: PathBuf,
-    // Reuses the existing worktree manifest build lock, conservatively shared
-    // by different configurations in that manifest directory. Held to drop.
+}
+
+/// Request-held manifest lease. It lives through capture and output installation,
+/// while the shared configured record namespace may survive this request.
+pub struct Session {
+    records: Arc<SessionRecords>,
+    _lease: BuildLease,
+}
+struct BuildLease {
     _build_lock: File,
+}
+impl std::ops::Deref for Session {
+    type Target = SessionRecords;
+    fn deref(&self) -> &Self::Target {
+        &self.records
+    }
 }
 
 /// Request measurements only; absent from immutable session serialization.
@@ -139,67 +156,14 @@ impl Session {
         Self::from_locked(configuration, lock)
     }
 
-    /// Caller transfers the already-held compile_driver build lock. Ownership
-    /// is explicit so the lock cannot be dropped between capture and publish.
+    /// Preserve the already-held manifest lock across configuration admission.
     pub fn from_locked(configuration: Configuration, build_lock: File) -> io::Result<Self> {
-        let checked = Configuration::new(
-            &configuration.worktree,
-            &configuration.manifest,
-            configuration.defines.clone(),
-            configuration.compiler,
-            configuration.engine,
-            configuration.policy,
-        )?;
-        if checked != configuration {
-            return Err(invalid("session configuration is not canonical"));
-        }
-        let directory = configuration
-            .manifest
-            .parent()
-            .ok_or_else(|| invalid("manifest parent missing"))?
-            .join(".dmbc")
-            .join("input-sessions")
-            .join(format!("{:032x}", configuration.identity()?));
-        fs::create_dir_all(&directory)?;
         Ok(Self {
-            configuration,
-            directory,
-            _build_lock: build_lock,
+            records: Arc::new(SessionRecords::open(configuration)?),
+            _lease: BuildLease {
+                _build_lock: build_lock,
+            },
         })
-    }
-
-    pub fn identity(&self) -> io::Result<u128> {
-        self.configuration.identity()
-    }
-
-    /// Recover a bounded set of prior immutable records. Modification time is
-    /// only a discovery ranking hint, never an input/content validation proof.
-    /// Corrupt newest records do not mask older candidates.
-    pub fn latest(&self, limit: usize) -> io::Result<Vec<u128>> {
-        let limit = limit.min(32);
-        let mut candidates = std::collections::BTreeSet::new();
-        for entry in fs::read_dir(&self.directory)? {
-            let entry = entry?;
-            if !entry.file_type()?.is_file() {
-                continue;
-            }
-            let name = entry.file_name();
-            let Some(name) = name.to_str().and_then(|name| name.strip_suffix(".bin")) else {
-                continue;
-            };
-            if name.len() != 32 {
-                continue;
-            }
-            let Ok(id) = u128::from_str_radix(name, 16) else {
-                continue;
-            };
-            let modified = entry.metadata()?.modified()?;
-            candidates.insert((modified, id));
-            if candidates.len() > limit {
-                candidates.pop_first();
-            }
-        }
-        Ok(candidates.into_iter().rev().map(|(_, id)| id).collect())
     }
 
     /// Publish only after the output pair has committed. No mutable head is
@@ -246,6 +210,88 @@ impl Session {
         }
         result?;
         Ok(id)
+    }
+
+    pub fn records(&self) -> Arc<SessionRecords> {
+        Arc::clone(&self.records)
+    }
+
+    /// Release only the request lease, retaining the same immutable namespace.
+    pub fn into_records(self) -> Arc<SessionRecords> {
+        self.records
+    }
+}
+impl SessionRecords {
+    pub fn open(configuration: Configuration) -> io::Result<Self> {
+        let checked = Configuration::new(
+            &configuration.worktree,
+            &configuration.manifest,
+            configuration.defines.clone(),
+            configuration.compiler,
+            configuration.engine,
+            configuration.policy,
+        )?;
+        if checked != configuration {
+            return Err(invalid("session configuration is not canonical"));
+        }
+        let directory = configuration
+            .manifest
+            .parent()
+            .ok_or_else(|| invalid("manifest parent missing"))?
+            .join(".dmbc")
+            .join("input-sessions")
+            .join(format!("{:032x}", configuration.identity()?));
+        fs::create_dir_all(&directory)?;
+        Ok(Self {
+            configuration,
+            directory,
+        })
+    }
+
+    /// Start a new request over this namespace using the ordinary manifest lock.
+    /// No resident compiler or daemon is activated by retaining this owner.
+    pub fn begin_request(self: &Arc<Self>) -> io::Result<Session> {
+        let build_lock = crate::compile_driver::acquire_build_lock(&self.configuration.manifest)?;
+        Ok(Session {
+            records: Arc::clone(self),
+            _lease: BuildLease {
+                _build_lock: build_lock,
+            },
+        })
+    }
+
+    pub fn identity(&self) -> io::Result<u128> {
+        self.configuration.identity()
+    }
+
+    /// Recover a bounded set of prior immutable records. Modification time is
+    /// only a discovery ranking hint, never an input/content validation proof.
+    /// Corrupt newest records do not mask older candidates.
+    pub fn latest(&self, limit: usize) -> io::Result<Vec<u128>> {
+        let limit = limit.min(32);
+        let mut candidates = std::collections::BTreeSet::new();
+        for entry in fs::read_dir(&self.directory)? {
+            let entry = entry?;
+            if !entry.file_type()?.is_file() {
+                continue;
+            }
+            let name = entry.file_name();
+            let Some(name) = name.to_str().and_then(|name| name.strip_suffix(".bin")) else {
+                continue;
+            };
+            if name.len() != 32 {
+                continue;
+            }
+            let Ok(id) = u128::from_str_radix(name, 16) else {
+                continue;
+            };
+            let modified = entry.metadata()?.modified()?;
+            candidates.insert((modified, id));
+            if candidates.len() > limit {
+                candidates.pop_first();
+            }
+        }
+        Ok(candidates.into_iter().rev().map(|(_, id)| id).collect())
     }
 
     /// Authenticate record/configuration only and issue private structural
@@ -467,6 +513,100 @@ mod tests {
             .unwrap()
             .is_none());
         drop(session);
+    }
+    #[test]
+    fn retained_namespace_releases_request_lock_and_reuses_exact_records() {
+        use fs2::FileExt;
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let temp = Temporary(std::env::temp_dir().join(format!(
+            "dmbc-retained-session-{}-{unique}",
+            std::process::id()
+        )));
+        fs::create_dir_all(&temp.0).unwrap();
+        let manifest = temp.0.join("project.dme");
+        let configuration =
+            Configuration::new(&temp.0, &manifest, BTreeMap::new(), 1, 2, 3).unwrap();
+        let request = Session::acquire(configuration.clone()).unwrap();
+        let retained = request.records();
+        let host = Host {
+            bytes: b"source".to_vec(),
+        };
+        let mut inputs = InputSnapshot::new(10_000_000_000);
+        inputs
+            .record_file(&manifest, host.stamp(&manifest).unwrap(), &host.bytes)
+            .unwrap();
+        let id = request
+            .store(Record {
+                inputs,
+                pair: 7,
+                outputs: None,
+                resource_manifest: None,
+            })
+            .unwrap();
+        let lock = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(temp.0.join(".dmbc/build.lock"))
+            .unwrap();
+        assert!(
+            lock.try_lock_exclusive().is_err(),
+            "request must retain its manifest lease"
+        );
+        let namespace = request.into_records();
+        assert!(Arc::ptr_eq(&retained, &namespace));
+        lock.try_lock_exclusive().unwrap();
+        FileExt::unlock(&lock).unwrap();
+        assert_eq!(
+            namespace.identity().unwrap(),
+            configuration.identity().unwrap()
+        );
+        let next = namespace.begin_request().unwrap();
+        assert!(Arc::ptr_eq(&next.records(), &namespace));
+        assert!(lock.try_lock_exclusive().is_err());
+        assert_eq!(
+            next.validate(id, &host, true, 20_000_000_000)
+                .unwrap()
+                .unwrap()
+                .record()
+                .pair,
+            7
+        );
+        drop(next);
+        lock.try_lock_exclusive().unwrap();
+        FileExt::unlock(&lock).unwrap();
+    }
+    #[test]
+    fn configured_record_owner_never_acquires_a_build_lease() {
+        use fs2::FileExt;
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let temp = Temporary(
+            std::env::temp_dir().join(format!("dmbc-record-owner-{}-{unique}", std::process::id())),
+        );
+        fs::create_dir_all(&temp.0).unwrap();
+        let manifest = temp.0.join("project.dme");
+        let owner = Arc::new(
+            SessionRecords::open(
+                Configuration::new(&temp.0, &manifest, BTreeMap::new(), 1, 2, 3).unwrap(),
+            )
+            .unwrap(),
+        );
+        assert!(!temp.0.join(".dmbc/build.lock").exists());
+        let request = owner.begin_request().unwrap();
+        drop(request);
+        let lock = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(temp.0.join(".dmbc/build.lock"))
+            .unwrap();
+        lock.try_lock_exclusive().unwrap();
+        FileExt::unlock(&lock).unwrap();
+        assert!(owner.latest(4).unwrap().is_empty());
     }
     #[test]
     fn configured_session_identity_includes_defines_and_compiler_engine() {

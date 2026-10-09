@@ -30,6 +30,16 @@ pub struct DomainCpuBounds {
     pub all_thread_union_upper_s: Option<f64>,
     pub upper_s: Option<f64>,
     pub proof: &'static str,
+    /// Additive diagnostic totals; neither existing acceptance nor process audit uses them.
+    pub total_point_s: Option<f64>,
+    pub original_total_upper_s: Option<f64>,
+    pub total_union_upper_s: Option<f64>,
+    pub total_upper_s: Option<f64>,
+    pub total_proof: &'static str,
+    /// Validated observations gathered; partial counts do not imply complete coverage.
+    pub selected_threads: usize,
+    pub selected_intervals: usize,
+    pub gap_complement: super::domain_complement::ComplementReport,
 }
 #[derive(Clone, Copy)]
 pub(super) struct TimedInterval {
@@ -80,6 +90,16 @@ fn domain(
         all_thread_union_upper_s: None,
         upper_s: None,
         proof: "missing_selector_or_cpu_observation",
+        total_point_s: Some(0.0),
+        original_total_upper_s: Some(0.0),
+        total_union_upper_s: None,
+        total_upper_s: None,
+        total_proof: "missing_selector_or_cpu_observation",
+        selected_threads: 0,
+        selected_intervals: 0,
+        gap_complement: super::domain_complement::ComplementReport::unavailable(
+            "missing_selector_or_cpu_observation",
+        ),
     };
     let mut selected = BTreeSet::new();
     let mut by_thread: BTreeMap<String, Vec<TimedInterval>> = BTreeMap::new();
@@ -92,6 +112,8 @@ fn domain(
         let Some(stage) = stages.iter().find(|stage| stage.name == name) else {
             report.critical_point_s = None;
             report.original_upper_s = None;
+            report.total_point_s = None;
+            report.original_total_upper_s = None;
             break;
         };
         let point = if exclusive {
@@ -111,6 +133,24 @@ fn domain(
         report.original_upper_s = report
             .original_upper_s
             .zip(bound)
+            .map(|(sum, value)| sum + value.upper);
+        let total_point = if exclusive {
+            stage.exclusive_cpu_s
+        } else {
+            stage.cpu_s
+        };
+        let total_bound = if exclusive {
+            stage.exclusive_cpu_bounds_s
+        } else {
+            stage.cpu_bounds_s
+        };
+        report.total_point_s = report
+            .total_point_s
+            .zip(total_point)
+            .map(|(sum, value)| sum + value);
+        report.original_total_upper_s = report
+            .original_total_upper_s
+            .zip(total_bound)
             .map(|(sum, value)| sum + value.upper);
         if !selected.insert((name, exclusive)) {
             failure = Some("duplicate_selector");
@@ -153,13 +193,19 @@ fn domain(
         }
     }
     report.upper_s = report.original_upper_s;
+    report.total_upper_s = report.original_total_upper_s;
+    report.selected_threads = by_thread.len();
+    report.selected_intervals = by_thread.values().map(Vec::len).sum();
     if let Some(reason) = failure {
         report.proof = reason;
+        report.total_proof = reason;
+        report.gap_complement = super::domain_complement::ComplementReport::unavailable(reason);
         return report;
     }
     if report.original_upper_s.is_none() {
         return report;
     }
+    report.gap_complement = super::domain_complement::collect(&by_thread, cfg!(windows));
     let cap = by_thread
         .into_values()
         .map(union_upper)
@@ -169,8 +215,18 @@ fn domain(
             report.all_thread_union_upper_s = Some(cap);
             report.upper_s = report.original_upper_s.map(|original| original.min(cap));
             report.proof = "complete_temporally_disjoint_all_thread_union";
+            if let Some(original) = report.original_total_upper_s {
+                report.total_union_upper_s = Some(cap);
+                report.total_upper_s = Some(original.min(cap));
+                report.total_proof = "complete_temporally_disjoint_all_thread_union";
+            } else {
+                report.total_proof = "missing_original_total_cpu_bound";
+            }
         }
-        Err(reason) => report.proof = reason,
+        Err(reason) => {
+            report.proof = reason;
+            report.total_proof = reason;
+        }
     }
     report
 }
@@ -190,6 +246,16 @@ pub(super) fn collect(
                     all_thread_union_upper_s: None,
                     upper_s: None,
                     proof: "duplicate_domain_name",
+                    total_point_s: None,
+                    original_total_upper_s: None,
+                    total_union_upper_s: None,
+                    total_upper_s: None,
+                    total_proof: "duplicate_domain_name",
+                    selected_threads: 0,
+                    selected_intervals: 0,
+                    gap_complement: super::domain_complement::ComplementReport::unavailable(
+                        "duplicate_domain_name",
+                    ),
                 },
             );
         } else {
@@ -272,6 +338,8 @@ mod tests {
             entries.insert(name, entry);
             stages.push(StageReport {
                 name: name.into(),
+                cpu_s: Some(end as f64 / 1e9),
+                cpu_bounds_s: Some(value.cpu.bounds(cfg!(windows))),
                 max_thread_cpu_s: Some(end as f64 / 1e9),
                 max_thread_cpu_bounds_s: Some(value.cpu.bounds(cfg!(windows))),
                 ..StageReport::default()
@@ -284,11 +352,22 @@ mod tests {
         };
         let complete = domain(&definition, &entries, &stages);
         assert_eq!(complete.critical_point_s, Some(0.1 + 0.2));
+        assert_eq!(complete.total_point_s, Some(0.1 + 0.2));
+        assert_eq!(
+            complete.total_union_upper_s,
+            complete.original_total_upper_s
+        );
+        assert_eq!(complete.total_upper_s, complete.original_total_upper_s);
+        assert_eq!(complete.selected_threads, 2);
+        assert_eq!(complete.selected_intervals, 2);
         assert_eq!(complete.all_thread_union_upper_s, complete.original_upper_s);
         entries.get_mut("a").unwrap().timed_intervals.clear();
         let fallback = domain(&definition, &entries, &stages);
         assert_eq!(fallback.proof, "missing_temporal_proof");
         assert_eq!(fallback.upper_s, fallback.original_upper_s);
+        assert_eq!(fallback.total_upper_s, fallback.original_total_upper_s);
+        assert_eq!(fallback.total_proof, "missing_temporal_proof");
+        assert!(fallback.total_union_upper_s.is_none());
         assert!(fallback.all_thread_union_upper_s.is_none());
         let absent = [CpuSelector::Inclusive("missing")];
         let missing = domain(
@@ -300,5 +379,85 @@ mod tests {
             &stages,
         );
         assert!(missing.upper_s.is_none());
+    }
+    #[test]
+    fn total_domain_reuses_exact_endpoints_and_sums_independent_threads() {
+        let start = Instant::now();
+        let mut entries = BTreeMap::new();
+        let mut stages = Vec::new();
+        for (name, a, b, raw_a, raw_b) in [
+            ("first", 0, 10, 0, 100_000_000),
+            ("second", 10, 20, 100_000_000, 200_000_000),
+        ] {
+            let value = interval(start, a, b, raw_a, raw_b);
+            let mut entry = Entry {
+                cpu_valid: true,
+                ..Entry::default()
+            };
+            for thread in ["one", "two"] {
+                entry
+                    .exclusive_intervals
+                    .insert(thread.into(), vec![value.cpu]);
+                entry
+                    .timed_exclusive_intervals
+                    .insert(thread.into(), vec![value]);
+            }
+            let bound = value.cpu.bounds(cfg!(windows));
+            entries.insert(name, entry);
+            stages.push(StageReport {
+                name: name.into(),
+                exclusive_cpu_s: Some(0.2),
+                exclusive_cpu_bounds_s: Some(super::super::clock::CpuBounds {
+                    lower: bound.lower * 2.0,
+                    upper: bound.upper * 2.0,
+                }),
+                max_thread_exclusive_cpu_s: Some(0.1),
+                max_thread_exclusive_cpu_bounds_s: Some(bound),
+                ..StageReport::default()
+            });
+        }
+        let selectors = [
+            CpuSelector::Exclusive("first"),
+            CpuSelector::Exclusive("second"),
+        ];
+        let definition = CpuDomain {
+            name: "total",
+            selectors: &selectors,
+        };
+        let result = domain(&definition, &entries, &stages);
+        let expected = 2.0
+            * interval(start, 0, 20, 0, 200_000_000)
+                .cpu
+                .bounds(cfg!(windows))
+                .upper;
+        assert_eq!(result.total_point_s, Some(0.4));
+        assert_eq!(result.total_union_upper_s, Some(expected));
+        assert_eq!(result.total_upper_s, Some(expected));
+        assert_eq!(result.selected_threads, 2);
+        assert_eq!(result.selected_intervals, 4);
+        assert_eq!(
+            result.total_proof,
+            "complete_temporally_disjoint_all_thread_union"
+        );
+        // Equal CPU readings across a temporal gap are never treated as one endpoint.
+        let gap = entries.get_mut("second").unwrap();
+        for values in gap.timed_exclusive_intervals.values_mut() {
+            values[0].begin += Duration::from_nanos(1);
+        }
+        let result = domain(&definition, &entries, &stages);
+        assert_eq!(result.total_upper_s, result.original_total_upper_s);
+        // An overlap invalidates the proof even with identical quantized readings.
+        for values in entries
+            .get_mut("second")
+            .unwrap()
+            .timed_exclusive_intervals
+            .values_mut()
+        {
+            values[0].begin = start + Duration::from_nanos(5);
+        }
+        let result = domain(&definition, &entries, &stages);
+        assert_eq!(result.total_proof, "overlapping_selector_intervals");
+        assert_eq!(result.total_upper_s, result.original_total_upper_s);
+        assert!(result.total_union_upper_s.is_none());
     }
 }

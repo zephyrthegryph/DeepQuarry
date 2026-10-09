@@ -13,7 +13,7 @@ pub struct ItemGuard {
     thread_bound: PhantomData<Rc<()>>,
 }
 pub fn item(name: &'static str) -> ItemGuard {
-    item_with_state(name, ACTIVE.get().cloned())
+    item_with_state(name, request::active_state())
 }
 fn item_with_state(name: &'static str, state: Option<Arc<State>>) -> ItemGuard {
     let mut value = ItemGuard {
@@ -93,6 +93,10 @@ mod tests {
             entries: Mutex::new(BTreeMap::new()),
             folded: Mutex::new(BTreeMap::new()),
             wall_folded: Mutex::new(BTreeMap::new()),
+            finished: std::sync::atomic::AtomicBool::new(false),
+            workers: std::sync::atomic::AtomicUsize::new(0),
+            bindings: std::sync::atomic::AtomicUsize::new(0),
+            dispatch: Mutex::new(None),
         });
         let wall = Instant::now();
         STACK.with(|stack| {

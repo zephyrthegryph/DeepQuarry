@@ -411,31 +411,34 @@ pub(super) fn expand(
             )
         })
         .collect();
-    let mut lines = Vec::new();
-    for (span, line, source_span, traces) in &output.lines {
-        let Some(ordinal) = ordinals
-            .get(&(*line, source_span.start, source_span.end))
-            .copied()
-        else {
-            return output;
-        };
-        lines.push(Line {
-            output: *span,
-            input: ordinal,
-            traces: traces
-                .iter()
-                .map(|trace| Trace {
-                    name: trace.name.to_string(),
-                    invocation_span: trace.invocation_span,
-                    replacement_chain: trace
-                        .replacement_chain
-                        .iter()
-                        .map(|name| name.to_string())
-                        .collect(),
-                })
-                .collect(),
-        });
-    }
+    let lines = output
+        .lines
+        .iter()
+        .map(|(span, line, source_span, traces)| {
+            let ordinal = ordinals
+                .get(&(line, source_span.start, source_span.end))
+                .copied()?;
+            Some(Line {
+                output: span,
+                input: ordinal,
+                traces: traces
+                    .iter()
+                    .map(|trace| Trace {
+                        name: trace.name.to_string(),
+                        invocation_span: trace.invocation_span,
+                        replacement_chain: trace
+                            .replacement_chain
+                            .iter()
+                            .map(|name| name.to_string())
+                            .collect(),
+                    })
+                    .collect(),
+            })
+        })
+        .collect::<Option<Vec<_>>>();
+    let Some(lines) = lines else {
+        return output;
+    };
     let mut diagnostics = Vec::new();
     for error in &output.diagnostics {
         let Some(ordinal) = input
@@ -506,6 +509,8 @@ fn hydrate(
         ..Default::default()
     };
     let mut trace_arena = super::trace_arena::TraceArena::default();
+    let mut lines =
+        super::expansion::output_lines::OutputLineBuilder::with_capacity(record.lines.len());
     for line in &record.lines {
         let (segment, current) = input[line.input];
         let traces = line
@@ -521,13 +526,14 @@ fn hydrate(
                     .cloned(),
             })
             .collect();
-        output.lines.push((
+        lines.push((
             line.output,
             current.source_line,
             current.source_span,
             trace_arena.freeze_expansions(traces),
         ));
     }
+    output.lines = lines.finish();
     for error in &record.diagnostics {
         output.diagnostics.push(Diagnostic {
             path: path.clone(),

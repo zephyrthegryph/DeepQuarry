@@ -312,7 +312,7 @@ pub(super) fn parse_declarations_with_executor(
         skeletons: Vec::new(),
         origins: Vec::new(),
     };
-    let mut allocation_events = Vec::new();
+    let mut allocation_events = crate::allocation_ledger::EventBuilder::new();
     let mut declaration_errors = Vec::new();
     for (_, offset, parsed, errors, fragment, facts) in ordered {
         match facts {
@@ -336,7 +336,7 @@ pub(super) fn parse_declarations_with_executor(
                 }
                 adapted.skeletons.extend(facts.skeletons);
                 adapted.origins.extend(facts.origins);
-                for mut event in ledger.events.iter().cloned() {
+                for mut event in ledger.events.iter() {
                     event.encounter_order = allocation_events.len();
                     allocation_events.push(event);
                 }
@@ -364,7 +364,7 @@ pub(super) fn parse_declarations_with_executor(
         diagnostics,
         adapted,
         allocation_ledger: crate::allocation_ledger::AllocationLedger {
-            events: allocation_events.into(),
+            events: allocation_events.finish(),
         },
         declaration_errors,
         reuse_stats: DeclarationReuseStats {

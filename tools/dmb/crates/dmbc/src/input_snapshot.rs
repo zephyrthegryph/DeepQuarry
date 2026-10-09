@@ -57,6 +57,8 @@ impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
 }
 
 pub struct FileSystemInputs;
+#[path = "input_snapshot_open.rs"]
+mod source_open;
 impl SnapshotProvider for FileSystemInputs {
     fn digest(&self, path: &Path) -> io::Result<(Stamp, u128)> {
         use std::io::Read;
@@ -106,13 +108,7 @@ impl SnapshotProvider for FileSystemInputs {
     fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)> {
         use std::io::Read;
         let _profile = dm_profile::stage("filesystem.read");
-        if !std::fs::metadata(path)?.is_file() {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "candidate is not a regular file",
-            ));
-        }
-        let mut file = std::fs::File::open(path)?;
+        let mut file = source_open::read_file(path)?;
         let before = stamp_handle(&file)?;
         let mut bytes = Vec::new();
         dm_profile::io_call(|| file.read_to_end(&mut bytes), |count| (*count as u64, 0))?;

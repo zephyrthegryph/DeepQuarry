@@ -79,7 +79,7 @@ impl NativeInputs {
         })?;
         let parent = project.parent().unwrap_or(Path::new(""));
         let mut seen = BTreeSet::from([project.clone()]);
-        let candidates = manifest
+        let mut candidates = manifest
             .lines()
             .iter()
             .filter_map(|line| literal_include_path(line.text))
@@ -91,9 +91,22 @@ impl NativeInputs {
                             || extension.eq_ignore_ascii_case("dme")
                     })
             })
-            .map(|path| canonical_path(&parent.join(path)))
-            .filter(|path| seen.insert(path.clone()))
+            .map(|path| parent.join(path))
             .collect::<Vec<_>>();
+        // Resolve filesystem paths on the existing pool. Retaining in manifest
+        // order afterwards preserves which alias supplies the first capture.
+        let chunk_size = candidates.len().div_ceil(executor.workers()).max(1);
+        executor.scope(|scope| {
+            for paths in candidates.chunks_mut(chunk_size) {
+                scope.spawn(move |_| {
+                    let _profile = dm_profile::stage("input_scan.candidate_paths");
+                    for path in paths {
+                        *path = canonical_path(path);
+                    }
+                });
+            }
+        });
+        candidates.retain(|path| seen.insert(path.clone()));
         let worker_count = if candidates.is_empty() {
             0
         } else {

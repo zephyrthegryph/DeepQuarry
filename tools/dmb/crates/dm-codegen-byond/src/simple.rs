@@ -419,6 +419,27 @@ pub fn compile_typed_scopes_with_resolver<R: dm_ir::Resolver>(
     debug: Option<&dyn DebugSourceProvider>,
 ) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
     let prepared = crate::typed_scopes::prepare(scopes)?;
+    compile_prepared_scopes(prepared, symbols, resolver, debug)
+}
+pub(crate) fn compile_assignment_scopes_with_resolver<R: dm_ir::Resolver>(
+    scopes: &[crate::typed_scopes::AssignmentScope<'_>],
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    compile_prepared_scopes(
+        crate::typed_scopes::prepare_assignments(scopes)?,
+        symbols,
+        resolver,
+        debug,
+    )
+}
+fn compile_prepared_scopes<R: dm_ir::Resolver>(
+    prepared: crate::typed_scopes::PreparedScopes<'_>,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
     let bindings = LowerBindings::default();
     let lookup = crate::lower_resolver::ProjectResolver {
         modified_instances: std::cell::RefCell::new(Default::default()),
@@ -558,12 +579,21 @@ fn compile_with_lookup(
     let lowered = if let Some(TypedInput::Scopes(scopes)) = typed {
         let mut result = Ok(());
         for scope in scopes {
-            if !typed_statements_supported(scope.statements) {
-                result = Err(error("initializer scopes", "unsupported typed statement"));
-                break;
-            }
             compiler.bindings = &scope.bindings;
-            result = compiler.typed_statements(scope.statements);
+            result = match scope.body {
+                crate::typed_scopes::ScopeBody::Statements(statements) => {
+                    if !typed_statements_supported(statements) {
+                        Err(error("initializer scopes", "unsupported typed statement"))
+                    } else {
+                        compiler.typed_statements(statements)
+                    }
+                }
+                crate::typed_scopes::ScopeBody::Assignment {
+                    target,
+                    value,
+                    occurrence,
+                } => compiler.typed_assignment(target, value, occurrence),
+            };
             if result.is_err() {
                 break;
             }

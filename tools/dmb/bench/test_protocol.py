@@ -220,6 +220,7 @@ class SignatureChecks(unittest.TestCase):
         expected, actual = self.root / "byond.dmb", self.root / "native.dmb"
         expected.write_text("byond fixture")
         actual.write_text("native fixture")
+        actual.with_suffix(".rsc").write_text("native resource fixture")
         pin = self.root / "pin.json"
         sha = lambda path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
         protocol.write(pin, {"snapshot_id": "snapshot", "dmb_sha256": sha(expected), "semantic_configuration": configuration})
@@ -232,14 +233,19 @@ class SignatureChecks(unittest.TestCase):
             protocol.write(Path(command[-2]), current)
             return 0, 0.0, False
         helper = SimpleNamespace(sha=sha, run=fake_run)
-        result = protocol.structural(helper, args, scenario, actual, self.root, "snapshot", {})
+        def inspect_fixture():
+            # Mock inspector bytes identify its current output; changed mock output
+            # must have a different inspector identity to avoid authentic reuse.
+            args.inspector.write_text(json.dumps(current, sort_keys=True))
+            return protocol.structural(helper, args, scenario, actual, self.root, "snapshot", {})
+        result = inspect_fixture()
         self.assertEqual(result["no_regression"], "passed")
         self.assertEqual(result["parity_acceptance"], "failed")
         current["category_signatures"]["bytecode"] = [new]
-        self.assertEqual(protocol.structural(helper, args, scenario, actual, self.root, "snapshot", {})["no_regression"], "failed")
+        self.assertEqual(inspect_fixture()["no_regression"], "failed")
         current["category_signatures"]["bytecode"] = [a]
         current["categories"]["bytecode"]["discrepancy_count"] = 3
-        self.assertEqual(protocol.structural(helper, args, scenario, actual, self.root, "snapshot", {})["no_regression"], "failed")
+        self.assertEqual(inspect_fixture()["no_regression"], "failed")
         # Full pair byte identity can independently preserve unknown evidence;
         # the structural tool/traversal contract is still mandatory.
         actual.with_suffix(".rsc").write_text("native resource fixture")
@@ -249,9 +255,9 @@ class SignatureChecks(unittest.TestCase):
         args.native_baseline = native_pin
         current["uncovered_signatures"] = None
         current["complete"] = False
-        self.assertEqual(protocol.structural(helper, args, scenario, actual, self.root, "snapshot", {})["no_regression"], "passed")
+        self.assertEqual(inspect_fixture()["no_regression"], "passed")
         actual.with_suffix(".rsc").write_text("changed resource fixture")
-        self.assertEqual(protocol.structural(helper, args, scenario, actual, self.root, "snapshot", {})["no_regression"], "not_evaluable")
+        self.assertEqual(inspect_fixture()["no_regression"], "not_evaluable")
 
     def test_unknown_semantics_allow_measurement_and_exact_burndown(self):
         case, changed = "a" * 32, "b" * 32
@@ -405,6 +411,43 @@ class StageTopologyChecks(unittest.TestCase):
         duplicate = {"input": ["input"], "lowering": ["input", "lowering"]}
         self.assertIn("stage mapping must cover the critical chain once",
                       protocol.protocol_quality(harness, old_row, duplicate))
+
+    def test_unchanged_requires_exact_short_chain_and_authenticated_full_proof_map(self):
+        spec = importlib.util.spec_from_file_location("short_chain_harness", Path(__file__).with_name("dmb-bench.py"))
+        harness = importlib.util.module_from_spec(spec);spec.loader.exec_module(harness)
+        mapping = {domain: [domain + ".inactive"] for domain in harness.STAGE_BUDGETS}
+        mapping["input"] = ["engine_input", "session_validation"]
+        row = {"scenario": "unchanged", "critical_path_stages": ["engine_input", "session_validation"],
+               "binary_mode": "acceptance", "allocation_counting": False,
+               "cpu_bounds_method": "paired_thread_cpu_quantization", "stages": [],
+               "domain_cpu_selectors": copy.deepcopy(mapping), "domain_cpu_bounds": {}}
+        for name in row["critical_path_stages"]:
+            row["stages"].append({"name": name, "max_thread_cpu_s": 0.01, "cpu_s": 0.01,
+                                  "max_thread_cpu_bounds_s": {"lower": 0, "upper": 0.04},
+                                  "cpu_bounds_s": {"lower": 0, "upper": 0.04}})
+        for domain in mapping:
+            active = domain == "input"
+            row["domain_cpu_bounds"][domain] = {
+                "critical_point_s": 0.02 if active else None, "total_point_s": 0.02 if active else None,
+                "original_upper_s": 0.08 if active else None,
+                "original_total_upper_s": 0.08 if active else None,
+                "upper_s": 0.08 if active else None, "total_upper_s": 0.08 if active else None,
+                "all_thread_union_upper_s": None, "total_union_upper_s": None,
+                "proof": "missing_selector_or_cpu_observation", "total_proof": "missing_selector_or_cpu_observation",
+                "selected_threads": 0, "selected_intervals": 0}
+        self.assertEqual(protocol.protocol_quality(harness, row, mapping), [])
+        for chain in (["session_validation", "engine_input"], ["engine_input"],
+                      ["engine_input", "session_validation", "frontend.inactive"]):
+            forged = copy.deepcopy(row);forged["critical_path_stages"] = chain
+            self.assertIn("stage mapping must cover the critical chain once",
+                          protocol.protocol_quality(harness, forged, mapping))
+        forged = copy.deepcopy(row)
+        forged["domain_cpu_selectors"]["frontend"] = ["forged.inactive"]
+        self.assertIn("domain endpoint proof selectors differ from authenticated stage map",
+                      protocol.protocol_quality(harness, forged, mapping))
+        duplicate = copy.deepcopy(mapping);duplicate["frontend"] = ["engine_input"]
+        self.assertIn("stage mapping must cover the critical chain once",
+                      protocol.protocol_quality(harness, row, duplicate))
 
 
 if __name__ == "__main__":

@@ -72,13 +72,13 @@ fn current_link_image_reuses_only_exact_code_tables_and_source_roster() {
     {
         let unit = &batch.units[0];
         let certificate = unit.current_image.as_ref().unwrap();
-        let mut changed = unit.lowered.debug_origins.clone();
+        let mut changed = unit.lowered.debug_origins.to_owned_origins();
         assert!(!changed.entries.is_empty());
         changed.entries[0].semantic_path = "different.dm".into();
-        assert!(!certificate.matches(&unit.frozen, &changed, &batch.tables));
-        changed = unit.lowered.debug_origins.clone();
+        assert!(!certificate.matches(&unit.frozen, &changed.into(), &batch.tables));
+        changed = unit.lowered.debug_origins.to_owned_origins();
         changed.entries[0].line = changed.entries[0].line.wrapping_add(1);
-        assert!(!certificate.matches(&unit.frozen, &changed, &batch.tables));
+        assert!(!certificate.matches(&unit.frozen, &changed.into(), &batch.tables));
         let mut malformed = CurrentImage::issue(
             &unit.frozen,
             &unit.lowered.debug_origins,
@@ -86,7 +86,7 @@ fn current_link_image_reuses_only_exact_code_tables_and_source_roster() {
             unit.features,
         )
         .unwrap();
-        malformed.paths.clear();
+        malformed.origins = crate::debug_sources::FrozenDebugOrigins::default();
         assert!(!malformed.matches(&unit.frozen, &unit.lowered.debug_origins, &batch.tables));
     }
     let first = batch.link_unit(0, &SourceBindings::default()).unwrap();
@@ -113,9 +113,11 @@ fn current_link_image_reuses_only_exact_code_tables_and_source_roster() {
     assert!(decoded
         .iter()
         .any(|instruction| instruction.name == "DbgLine" && instruction.operands[0] >= 21));
-    for origin in &mut batch.units[0].lowered.debug_origins.entries {
+    let mut rebound = batch.units[0].lowered.debug_origins.to_owned_origins();
+    for origin in &mut rebound.entries {
         origin.line += 30;
     }
+    batch.units[0].lowered.debug_origins = rebound.into();
     let moved = batch.link_unit(0, &SourceBindings::default()).unwrap();
     assert!(!Arc::ptr_eq(&first.words, &moved.words));
     let direct = batch
@@ -448,7 +450,9 @@ fn certified_feature_facts_match_decoded_images_and_decline_changed_origins() {
             "composer only reuses features on exact words"
         );
     }
-    batch.units[0].lowered.debug_origins.entries[0].line += 1;
+    let mut rebound = batch.units[0].lowered.debug_origins.to_owned_origins();
+    rebound.entries[0].line += 1;
+    batch.units[0].lowered.debug_origins = rebound.into();
     assert!(!batch.feature_images().contains_key(&index));
 }
 
@@ -558,9 +562,11 @@ fn consuming_changed_origins_relinks_instead_of_taking_stale_image() {
     )
     .unwrap();
     let retained = batch.link_unit(0, &SourceBindings::default()).unwrap();
-    for origin in &mut batch.units[0].lowered.debug_origins.entries {
+    let mut rebound = batch.units[0].lowered.debug_origins.to_owned_origins();
+    for origin in &mut rebound.entries {
         origin.line += 50;
     }
+    batch.units[0].lowered.debug_origins = rebound.into();
     let expected = batch
         .tables
         .link(
@@ -633,9 +639,11 @@ fn current_image_workers_return_first_image_error_in_serial_artifact_order() {
     for workers in [1, 2, 8] {
         let mut batch = freeze();
         for (index, unit) in batch.units.iter_mut().enumerate() {
-            for origin in &mut unit.lowered.debug_origins.entries {
+            let mut rebound = unit.lowered.debug_origins.to_owned_origins();
+            for origin in &mut rebound.entries {
                 origin.semantic_path = format!("code/image_{index}.dm").into();
             }
+            unit.lowered.debug_origins = rebound.into();
         }
         let empty_tables = LinkTables::build(LinkInventory::default()).unwrap();
         let first = &batch.units[0];

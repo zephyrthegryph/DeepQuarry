@@ -23,7 +23,7 @@ pub struct ExpandedRegions {
 pub(super) struct RegionOutput {
     pub(super) text: String,
     pub(super) receipt: Option<Arc<region_memo::ExpansionRecord>>,
-    pub(super) lines: Vec<(Span, usize, Span, Arc<Vec<MacroExpansion>>)>,
+    pub(super) lines: output_lines::OutputLines,
     pub(super) diagnostics: Vec<Diagnostic>,
 }
 
@@ -206,6 +206,7 @@ pub(super) fn expand_region(
     let region = &plan.regions[index];
     let file_name = plan.semantic_path(region.occurrence);
     let mut output = RegionOutput::default();
+    let mut lines = output_lines::OutputLineBuilder::default();
     let mut input = 0;
     let mut trace_arena = super::trace_arena::TraceArena::default();
     for (segment_index, segment) in region.segments.iter().enumerate() {
@@ -266,7 +267,7 @@ pub(super) fn expand_region(
                 let start = output.text.len();
                 output.text.push_str(part);
                 output.text.push('\n');
-                output.lines.push((
+                lines.push((
                     Span::new(start, output.text.len()),
                     line.source_line,
                     line.source_span,
@@ -275,6 +276,7 @@ pub(super) fn expand_region(
             }
         }
     }
+    output.lines = lines.finish();
     output
 }
 
@@ -358,7 +360,7 @@ mod tests {
                 output
                     .lines
                     .iter()
-                    .map(|(span, line, source, _)| (*span, *line, *source))
+                    .map(|(span, line, source, _)| (span, line, source))
                     .collect::<Vec<_>>(),
                 origins
             );
@@ -482,3 +484,6 @@ mod tests {
         }
     }
 }
+
+#[path = "output_lines.rs"]
+pub(super) mod output_lines;

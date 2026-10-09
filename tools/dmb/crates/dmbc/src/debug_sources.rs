@@ -196,3 +196,6 @@ mod tests {
         assert_eq!(moved.source_bindings().lines.get(&0), Some(&30));
     }
 }
+
+mod frozen_origins;
+pub use frozen_origins::{DebugOriginView, FrozenDebugOrigins, OriginAccess};

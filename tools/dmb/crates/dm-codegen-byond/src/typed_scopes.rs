@@ -2,7 +2,23 @@
 //! lexical lookup; code labels, consumed resolver receipts and debug ordinals
 //! belong to the single shared compiler accumulator.
 use crate::{LowerBindings, LowerError, ProcedureInputs};
-use dm_syntax::Statement;
+use dm_syntax::{Expr, Span, Statement};
+
+pub(crate) struct AssignmentScope<'a> {
+    pub inputs: &'a ProcedureInputs,
+    pub target: &'a Expr,
+    pub value: &'a Expr,
+    pub occurrence: Span,
+}
+#[derive(Clone, Copy)]
+pub(crate) enum ScopeBody<'a> {
+    Statements(&'a [Statement]),
+    Assignment {
+        target: &'a Expr,
+        value: &'a Expr,
+        occurrence: Span,
+    },
+}
 
 pub struct TypedScope<'a> {
     pub inputs: &'a ProcedureInputs,
@@ -10,7 +26,7 @@ pub struct TypedScope<'a> {
 }
 pub(crate) struct PreparedScope<'a> {
     pub bindings: LowerBindings,
-    pub statements: &'a [Statement],
+    pub body: ScopeBody<'a>,
 }
 pub(crate) struct PreparedScopes<'a> {
     pub scopes: Vec<PreparedScope<'a>>,
@@ -19,12 +35,35 @@ pub(crate) struct PreparedScopes<'a> {
 pub(crate) fn prepare<'a>(
     scopes: &[TypedScope<'a>],
 ) -> Result<PreparedScopes<'a>, Vec<LowerError>> {
-    let resource_search_context = scopes
-        .first()
-        .and_then(|scope| scope.inputs.resource_search_context);
+    prepare_bodies(
+        scopes
+            .iter()
+            .map(|scope| (scope.inputs, ScopeBody::Statements(scope.statements))),
+    )
+}
+pub(crate) fn prepare_assignments<'a>(
+    scopes: &[AssignmentScope<'a>],
+) -> Result<PreparedScopes<'a>, Vec<LowerError>> {
+    prepare_bodies(scopes.iter().map(|scope| {
+        (
+            scope.inputs,
+            ScopeBody::Assignment {
+                target: scope.target,
+                value: scope.value,
+                occurrence: scope.occurrence,
+            },
+        )
+    }))
+}
+fn prepare_bodies<'a>(
+    scopes: impl ExactSizeIterator<Item = (&'a ProcedureInputs, ScopeBody<'a>)>,
+) -> Result<PreparedScopes<'a>, Vec<LowerError>> {
+    let mut resource_search_context = None;
     let mut prepared = Vec::with_capacity(scopes.len());
-    for scope in scopes {
-        let input = scope.inputs;
+    for (index, (input, body)) in scopes.enumerate() {
+        if index == 0 {
+            resource_search_context = input.resource_search_context;
+        }
         if input.current_proc_path.is_some()
             || !input.parameters.is_empty()
             || !input.parameter_type_flags.is_empty()
@@ -50,7 +89,7 @@ pub(crate) fn prepare<'a>(
                 procedure_identity: input.procedure_identity,
                 ..LowerBindings::default()
             },
-            statements: scope.statements,
+            body,
         });
     }
     Ok(PreparedScopes {

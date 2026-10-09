@@ -92,9 +92,18 @@ pub fn lower_assignment<R: Resolver>(
     context: InitializerContext<'_>,
     host: &R,
 ) -> Result<ResolverProc, InitializerError> {
-    lower_assignments(
-        &[(target.clone(), lexical_owner, value.clone())],
-        lexical_owner,
+    if context.symbols.text(lexical_owner).is_none() {
+        return Err(InitializerError::Invalid(
+            "initializer lexical owner spelling missing".into(),
+        ));
+    }
+    lower_assignment_views(
+        &[AssignmentView {
+            target,
+            lexical_owner,
+            value,
+            occurrence: value.span,
+        }],
         context,
         host,
     )
@@ -126,8 +135,31 @@ pub fn lower_assignments<R: Resolver>(
 
 /// Ordered shared writes may have distinct lexical owners; receiver/lexical
 /// instance writes still require one exact receiver. No procedure concatenation.
+#[derive(Clone, Copy)]
+pub struct AssignmentView<'a> {
+    pub target: &'a InitializerTarget,
+    pub lexical_owner: dm_ir::SymbolId,
+    pub value: &'a dm_syntax::Expr,
+    pub occurrence: dm_syntax::Span,
+}
 pub fn lower_scoped_assignments<R: Resolver>(
     assignments: &[(InitializerTarget, dm_ir::SymbolId, dm_syntax::Expr)],
+    context: InitializerContext<'_>,
+    host: &R,
+) -> Result<ResolverProc, InitializerError> {
+    let views = assignments
+        .iter()
+        .map(|(target, owner, value)| AssignmentView {
+            target,
+            lexical_owner: *owner,
+            value,
+            occurrence: value.span,
+        })
+        .collect::<Vec<_>>();
+    lower_assignment_views(&views, context, host)
+}
+pub fn lower_assignment_views<R: Resolver>(
+    assignments: &[AssignmentView<'_>],
     context: InitializerContext<'_>,
     host: &R,
 ) -> Result<ResolverProc, InitializerError> {
@@ -136,7 +168,13 @@ pub fn lower_scoped_assignments<R: Resolver>(
     let mut slots = Vec::new();
     let mut instance = None;
     let mut receiver = None;
-    for (target, owner, value) in assignments {
+    for assignment in assignments {
+        let AssignmentView {
+            target,
+            lexical_owner: owner,
+            occurrence,
+            ..
+        } = *assignment;
         let current_instance = matches!(target, InitializerTarget::Instance { .. });
         if instance.is_some_and(|previous| previous != current_instance) {
             return Err(InitializerError::Unsupported(
@@ -152,9 +190,9 @@ pub fn lower_scoped_assignments<R: Resolver>(
             }
             receiver = Some(*receiver_owner);
         }
-        let (statement, slot) = prepare_assignment(target, *owner, value, &context, host)?;
+        let (statement, slot) = prepare_assignment(target, owner, occurrence, &context, host)?;
         statements.push(statement);
-        let owner_text = context.symbols.text(*owner).ok_or_else(|| {
+        let owner_text = context.symbols.text(owner).ok_or_else(|| {
             InitializerError::Invalid("initializer lexical owner spelling missing".into())
         })?;
         inputs.push(ProcedureInputs {
@@ -173,14 +211,23 @@ pub fn lower_scoped_assignments<R: Resolver>(
     let scopes = statements
         .iter()
         .zip(&inputs)
-        .map(|(statement, inputs)| crate::typed_scopes::TypedScope {
-            inputs,
-            statements: std::slice::from_ref(statement),
-        })
+        .zip(assignments)
+        .map(
+            |((target, inputs), assignment)| crate::typed_scopes::AssignmentScope {
+                inputs,
+                target,
+                value: assignment.value,
+                occurrence: assignment.occurrence,
+            },
+        )
         .collect::<Vec<_>>();
-    let mut code =
-        crate::compile_typed_scopes_with_resolver(&scopes, context.symbols, host, context.debug)
-            .map_err(InitializerError::Lowering)?;
+    let mut code = crate::simple::compile_assignment_scopes_with_resolver(
+        &scopes,
+        context.symbols,
+        host,
+        context.debug,
+    )
+    .map_err(InitializerError::Lowering)?;
     finish_initializer(&mut code, instance == Some(true))?;
     attach_target_slots(&mut code, slots)?;
     Ok(code)
@@ -337,11 +384,11 @@ fn admit_modified_rhs(value: &dm_syntax::Expr) -> Result<(), InitializerError> {
     Ok(())
 }
 
-type PreparedAssignment = (dm_syntax::Statement, Option<(SymRef, ResolvedSlot)>);
+type PreparedAssignment = (dm_syntax::Expr, Option<(SymRef, ResolvedSlot)>);
 fn prepare_assignment<R: Resolver>(
     target: &InitializerTarget,
     lexical_owner: dm_ir::SymbolId,
-    value: &dm_syntax::Expr,
+    span: dm_syntax::Span,
     context: &InitializerContext<'_>,
     host: &R,
 ) -> Result<PreparedAssignment, InitializerError> {
@@ -423,7 +470,6 @@ fn prepare_assignment<R: Resolver>(
         }
     };
     let owner_text = text(owner)?;
-    let span = value.span;
     let target_expr = match *target {
         InitializerTarget::ProcedureStatic(_) => dm_syntax::Expr {
             span,
@@ -456,18 +502,8 @@ fn prepare_assignment<R: Resolver>(
             }
         }
     };
-    let statement = dm_syntax::Statement {
-        span,
-        header_span: span,
-        raw_header: "initializer assignment".into(),
-        kind: dm_syntax::StatementKind::Assign {
-            target: target_expr,
-            op: "=".into(),
-            value: value.clone(),
-        },
-    };
     let slot = target_slot.map(|slot| (SymRef::VariableSlot(slot.symbol), slot));
-    Ok((statement, slot))
+    Ok((target_expr, slot))
 }
 
 fn finish_initializer(code: &mut ResolverProc, instance: bool) -> Result<(), InitializerError> {
@@ -952,3 +988,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "initializer_borrowed_tests.rs"]
+mod borrowed_tests;

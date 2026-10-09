@@ -77,10 +77,14 @@ impl BuildExecutor {
         // grow this ledger, and ordinary OS failures remain fallible.
         let handles = Arc::new(Mutex::new(Vec::new()));
         let spawned = Arc::clone(&handles);
+        // The pool's one-shot worker coverage belongs to the request that
+        // constructs it, even before its first scoped job starts.
+        let request = dm_profile::RequestContext::capture();
         let result = ThreadPoolBuilder::new()
             .num_threads(workers)
             .thread_name(|index| format!("dm-build-{index}"))
             .spawn_handler(move |thread| {
+                let request = request.clone();
                 let mut builder = std::thread::Builder::new();
                 if let Some(name) = thread.name() {
                     builder = builder.name(name.to_owned());
@@ -89,6 +93,11 @@ impl BuildExecutor {
                     builder = builder.stack_size(size);
                 }
                 let handle = builder.spawn(move || {
+                    let _request = request.as_ref().map(|request| {
+                        request
+                            .enter()
+                            .expect("worker request remains live until pool shutdown")
+                    });
                     let _lifetime = dm_profile::worker_lifetime("compiler.worker_lifetime");
                     thread.run();
                 })?;

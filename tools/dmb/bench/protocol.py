@@ -531,8 +531,17 @@ def protocol_quality(h, row, stage_map):
         if not isinstance(entries, list) or not entries or any(not isinstance(name, str) for name in entries):
             return ["nonempty explicit stage lists required"]
         names.extend(entries)
-    if len(names) != len(set(names)) or set(names) != set(row.get("critical_path_stages", [])):
+    chain = row.get("critical_path_stages", [])
+    if row.get("scenario") == "unchanged":
+        short = ["engine_input", "session_validation"]
+        valid_chain = chain == short and all(names.count(name) == 1 for name in short)
+    else:
+        valid_chain = set(names) == set(chain)
+    if len(names) != len(set(names)) or not valid_chain:
         errors.append("stage mapping must cover the critical chain once")
+    if hasattr(h, "domain_bound_adoption"):
+        _, _, proof_errors = h.domain_bound_adoption(row, stage_map)
+        errors.extend(proof_errors)
     if row.get("binary_mode") == "acceptance" and row.get("allocation_counting") is not False:
         errors.append("acceptance binary must disable allocation counting")
     return errors
@@ -730,7 +739,10 @@ def execute(h, args):
                         code, wall, timeout = h.run(measured, root, directory / "cold", args.watchdog, env)
                         end_context = h.process_context()
                         report_path = directory / "cold.trace.report.json"
+                        profile_report_sha256 = h.sha(report_path) if report_path.is_file() else None
                         report = h.profile(report_path)
+                        if profile_report_sha256 is not None and h.sha(report_path) != profile_report_sha256:
+                            raise ValueError("profile report changed while loading domain proof")
                         hashes = {ext: h.sha(manifest.with_suffix(ext)) for ext in (".dmb", ".rsc")} if code == 0 and not timeout else {}
                         verified = False
                         diagnostics = None
@@ -773,13 +785,17 @@ def execute(h, args):
                                "structural_invocation_finished": verified,
                                "pair_sha256": hashes, "diagnostics": diagnostics, "structural_diff": diff,
                                "command": measured, "trace": str(directory / "cold.trace.json"),
-                               "profile_report": str(report_path), "competing_processes_start": start_context,
+                               "profile_report": str(report_path), "profile_report_sha256": profile_report_sha256,
+                               "competing_processes_start": start_context,
                                "competing_processes_end": end_context, "binary_mode": args.binary_mode,
                                "watchdog_seconds": args.watchdog, "artifact_directory": str(directory),
                                "unmeasured_warmup": run_warmup,
                                "source_edit_provenance": scenario.get("_edited_snapshot", {}).get("provenance"),
                                **profile_measurement(report, wall)}
                         row["stage_map"] = map_provenance[label]
+                        row["domain_bound_methodology"] = h.DOMAIN_BOUND_METHOD
+                        _, domain_notes, _ = h.domain_bound_adoption(row, stage_maps[label])
+                        row["domain_bound_adoption"] = domain_notes
                         row["allocation_counting"] = report.get("allocation_counting", False)
                         if row["allocation_counting"] != (args.binary_mode == "counting"):
                             row["profile_error"] = "binary allocation mode disagrees with pinned profile metadata"

@@ -29,8 +29,8 @@ struct HelperArtifact {
 /// private; this is not a caller-supplied proof of a different source revision.
 struct ProcedureRevisionBinding {
     origin: dm_tree::frontend::BodyOccurrence,
-    debug: crate::debug_sources::DebugOrigins,
-    helpers: Vec<crate::debug_sources::DebugOrigins>,
+    debug: crate::debug_sources::FrozenDebugOrigins,
+    helpers: Vec<crate::debug_sources::FrozenDebugOrigins>,
 }
 pub(super) struct Contribution {
     artifact: Arc<ReusableProcedureArtifact>,

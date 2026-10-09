@@ -25,8 +25,8 @@ comparison against the previous optimized candidate. Memory, input,
 resources/maps, ABI/initializers and composition/publication gates remain open.
 Candidate byte budgets fit, but the I/O gate remains not evaluable because
 blocked-I/O timing is unavailable. Full release tests were not completed before
-the cohort; the separate release gate has now started against the same stable
-derived candidate. This cohort excludes the later startup forwarding, borrowed
+the cohort; the separate release gate against that immutable candidate
+closed at the 1,200 s compilation watchdog without test execution. This cohort excludes the later startup forwarding, borrowed
 initializer assignments, transient output/debug roster and parallel path fixes.
 
 Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/matched-gzip-20261009-054556-be4e68dd/comparison.json`.
@@ -512,3 +512,54 @@ contract is preserved. Source-level implementation cannot close measured gates.
 
 Structured evidence: `phase0/results.jsonl`, `bench/results.jsonl`.
 Earlier narratives: `archive/STATUS-20261008-ownership.md` and older archives.
+
+## Overnight migration batch in progress (9 October)
+
+The completed matched cold cohort still measures commit `64d40464`: 12.498 s
+median child wall, 9.578 s critical CPU point, 30.875 s total CPU and
+1,569,341,440 peak private bytes. The Phase 1 gates remain open. Newer changes
+below are not included in those numbers.
+
+The pending batch moves initializer evaluation through the actual prepared AST
+boundary, lowers borrowed initializer assignments, shares frozen debug origins,
+compacts transient expanded lines and declaration ledger coordinates, and
+parallelizes ordered path preparation. Session records are separated from the
+request-held manifest lease. Command-line profile finalization now uses the
+same library boundary intended for retained request hosts. This does not
+implement or activate a daemon or retained semantic revision.
+
+Validation found and corrected two fixture compilation problems and an error
+fixture whose expression the existing compiler legitimately accepts. The latest
+ordinary check stopped at that fixture; a coherent check of the completed batch
+is still required. Source writes overlapped that diagnostic check, so it is not
+a validation receipt for the session refactor. A separate bounded full release
+check is running against the immutable older `64d40464` candidate; it cannot
+validate this pending batch. Runtime baseline remains deferred to Phase 5.
+
+The immutable `64d40464` full release attempt closed at its 1,200 s
+compilation watchdog without test execution. Receipt:
+`E:/dq-cache/dmb-native-v2/stable-release-gate-20261009-063800-eb3e7803.json`.
+It made progress across compilation targets but does not close the release
+test gate. No release-profile flags were relaxed. Independent review also
+caught a missing finalization admission-seal call in the new profiling code;
+the prepared fix must be applied and validated before capturing a benchmark
+source. The current ordinary check is diagnostic for the preceding snapshot.
+
+The finalization seal is now physically verified before the binding/worker/stage
+checks. A focused release-profile executor/profiler run passed 43 checks across
+seven targets in 40.438 s including compilation, with no failed/ignored tests:
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-070805-6c7fd698.json`.
+The ordinary workspace library run passed 1,602 checks across 15 targets in
+279.511 s; that snapshot predates only the finalization seal and updated executor
+context fixture, so it is not full-workspace evidence for the final source:
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-065535-0c2a3d58.json`.
+The 28 focused Python benchmark checks also pass. Full release workspace testing
+and the new source's captured-project benchmark remain outstanding.
+
+Release all-target workspace Clippy passed with warnings denied in 57.409 s
+including compilation after removing three redundant fixture conversions:
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-071022-8a953707.json`.
+This checks all targets but does not substitute for full release test execution.
+The next alternating comparison will use the prior optimized candidate as
+control, with the exact same request-aware profiler and executor source overlay
+on both sides. Old cohort receipts and their instrumentation are unchanged.

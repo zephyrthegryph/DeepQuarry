@@ -384,6 +384,28 @@ impl Compiler<'_> {
         Ok(())
     }
 
+    /// One borrowed initializer write: occurrence belongs to the issued unit,
+    /// while every expression span remains in the authored immutable AST.
+    pub(super) fn typed_assignment(
+        &mut self,
+        target: &Expr,
+        value: &Expr,
+        occurrence: dm_syntax::Span,
+    ) -> Result<(), LowerError> {
+        let saved_debug = self.debug_current;
+        let saved_span = self.statement_span;
+        let saved_slots = self.local_slots.clone();
+        let saved_types = self.local_types.clone();
+        let result = self
+            .debug_at(occurrence.start, "initializer assignment")
+            .and_then(|()| self.assign_expr(target, "=", value, "initializer assignment"))
+            .map_err(|error| error.at(self.statement_span));
+        self.debug_current = saved_debug;
+        self.statement_span = saved_span;
+        self.local_slots = saved_slots;
+        self.local_types = saved_types;
+        result
+    }
     pub(super) fn typed_statements(&mut self, statements: &[Statement]) -> Result<(), LowerError> {
         let saved_debug = self.debug_current;
         let saved_span = self.statement_span;

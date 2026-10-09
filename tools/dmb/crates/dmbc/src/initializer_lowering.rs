@@ -52,14 +52,14 @@ impl DebugSourceProvider for CapturedOrigins {
         u32::try_from(write_ordinal).map_err(|_| "initializer debug ordinal exceeds u32".into())
     }
 }
-fn value_expression(value: &RuntimeValue) -> dm_syntax::Expr {
+fn value_expression(value: &RuntimeValue) -> std::borrow::Cow<'_, dm_syntax::Expr> {
     use dm_syntax::{Expr, ExprKind, Span};
     match value {
-        RuntimeValue::Expression(value) => value.clone(),
+        RuntimeValue::Expression(value) => std::borrow::Cow::Borrowed(value),
         RuntimeValue::SizedArray(dimensions) => {
             // A policy-issued typed constructor; no DM source is generated.
             let span = Span::new(0, 0);
-            Expr {
+            std::borrow::Cow::Owned(Expr {
                 span,
                 kind: ExprKind::Unary {
                     op: "new".into(),
@@ -80,7 +80,7 @@ fn value_expression(value: &RuntimeValue) -> dm_syntax::Expr {
                         },
                     }),
                 },
-            }
+            })
         }
     }
 }
@@ -329,7 +329,7 @@ fn lower_group<R: Resolver>(
     let mut assignments = Vec::with_capacity(group.writes.len());
     let mut entries = Vec::with_capacity(group.writes.len());
     let mut write_ordinals = Vec::with_capacity(group.writes.len());
-    for (index, &write_index) in group.writes.iter().enumerate() {
+    for &write_index in &group.writes {
         let write = classified
             .writes
             .get(write_index)
@@ -406,7 +406,7 @@ fn lower_group<R: Resolver>(
                 line: u32::try_from(line).map_err(|_| "initializer source line exceeds u32")?,
             });
         }
-        let mut value = value_expression(
+        let value = value_expression(
             write
                 .runtime_value
                 .as_ref()
@@ -415,8 +415,7 @@ fn lower_group<R: Resolver>(
         // Typed statements carry a local occurrence discriminator. The
         // provider above binds it to captured source provenance, never to
         // synthetic parser text or inferred source byte offsets.
-        value.span = dm_syntax::Span::new(index, index);
-        assignments.push((write.write.target.clone(), write.write.lexical_owner, value));
+        assignments.push((&write.write.target, write.write.lexical_owner, value));
         write_ordinals.push(write.source_ordinal);
     }
     let debug = CapturedOrigins {
@@ -425,6 +424,18 @@ fn lower_group<R: Resolver>(
     // Current classification and provenance are always validated above.
     // Exact authored values and policy-issued array dimensions describe the
     // executable inputs; local debug ordinals are reconstructed every build.
+    let assignment_views = assignments
+        .iter()
+        .enumerate()
+        .map(|(index, (target, lexical_owner, value))| {
+            dm_codegen_byond::initializer::AssignmentView {
+                target,
+                lexical_owner: *lexical_owner,
+                value: value.as_ref(),
+                occurrence: dm_syntax::Span::new(index, index),
+            }
+        })
+        .collect::<Vec<_>>();
     let context = || InitializerContext {
         symbols,
         resource_search_context,
@@ -505,8 +516,8 @@ fn lower_group<R: Resolver>(
                     recorder.record_occurrence(identity);
                 }
             }
-            let code = dm_codegen_byond::initializer::lower_scoped_assignments(
-                &assignments,
+            let code = dm_codegen_byond::initializer::lower_assignment_views(
+                &assignment_views,
                 context(),
                 &recorder,
             )
@@ -534,7 +545,7 @@ fn lower_group<R: Resolver>(
     } else {
         // Cold oracle path performs no cache key, serialization, extra
         // ancestry reads or recording allocation.
-        dm_codegen_byond::initializer::lower_scoped_assignments(&assignments, context(), host)
+        dm_codegen_byond::initializer::lower_assignment_views(&assignment_views, context(), host)
             .map_err(map_error)?
     };
     Ok(LoweredInitializerUnit {

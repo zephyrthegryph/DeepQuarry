@@ -329,11 +329,14 @@ impl HeapCensus {
             "private issued bodies/source indexes are not exposed",
         );
         if self.arc_object("frontend.allocation_ledger", &frontend.allocation_ledger) {
-            self.slice(
-                "frontend.allocation_ledger",
-                &frontend.allocation_ledger.events,
-                true,
-            );
+            frontend
+                .allocation_ledger
+                .events
+                .visit_storage(|pointer, items, bytes| {
+                    let owner = "frontend.allocation_ledger";
+                    self.owner(owner).observed_items += items as u64;
+                    self.buffer(owner, pointer, bytes, bytes);
+                });
         }
         self.snapshot(&frontend.snapshot);
     }
@@ -666,6 +669,9 @@ impl HeapCensus {
             }
         }
     }
+    fn frozen_debug(&mut self, owner: &str, debug: &crate::debug_sources::FrozenDebugOrigins) {
+        debug.census(self, owner);
+    }
     fn abi(&mut self, abi: &Arc<crate::procedure_policy::PreparedAbi>) {
         let owner = "procedure_abi";
         if !self.arc_object(owner, abi) {
@@ -813,7 +819,7 @@ impl HeapCensus {
         self.vec_payload("frozen_units", &batch.initializers);
         for unit in &batch.units {
             self.frozen_code(&unit.frozen);
-            self.debug("frozen_units", &unit.lowered.debug_origins);
+            self.frozen_debug("frozen_units", &unit.lowered.debug_origins);
             self.strings("frozen_units", &unit.lowered.frame.local_names);
             self.strings("frozen_units", &unit.lowered.frame.argument_names);
             self.vec_payload("frozen_units", &unit.lowered.frame.argument_type_flags);
@@ -823,12 +829,12 @@ impl HeapCensus {
         }
         for helper in &batch.helpers {
             self.frozen_code(&helper.frozen);
-            self.debug("frozen_units", &helper.debug_origins);
+            self.frozen_debug("frozen_units", &helper.debug_origins);
             self.strings("frozen_units", &helper.local_names);
         }
         for initializer in &batch.initializers {
             self.frozen_code(&initializer.frozen);
-            self.debug("frozen_units", &initializer.debug_origins);
+            self.frozen_debug("frozen_units", &initializer.debug_origins);
             self.strings("frozen_units", &initializer.local_names);
         }
         self.owner("link_tables").observed_items += batch.tables.assignments().len() as u64;

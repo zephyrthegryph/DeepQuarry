@@ -9,7 +9,15 @@ pub struct Calibration {
     pub calibration_cpu_s: Option<f64>,
     pub note: &'static str,
 }
-const COARSE_TICK_NS: f64 = 15_625_000.0;
+const COARSE_TICK_NANOS: u64 = 15_625_000;
+const COARSE_TICK_NS: f64 = COARSE_TICK_NANOS as f64;
+pub(crate) fn uncertainty_ns(windows: bool) -> u128 {
+    if windows {
+        u128::from(COARSE_TICK_NANOS) * 2
+    } else {
+        0
+    }
+}
 
 #[derive(Clone, Copy, Debug, Serialize)]
 pub struct CpuBounds {
@@ -46,6 +54,14 @@ impl CpuInterval {
         };
         (value.raw_end >= value.raw_begin && value.coarse_end >= value.coarse_begin)
             .then_some(value)
+    }
+    /// Integer counterpart for additive proofs; existing floating bounds are unchanged.
+    pub(crate) fn bounds_ns(self, windows: bool) -> Option<(u128, u128)> {
+        let raw = self.raw_end.checked_sub(self.raw_begin)?;
+        let coarse = self.coarse_end.checked_sub(self.coarse_begin)?;
+        let delta = u128::from(if windows { coarse } else { raw });
+        let error = uncertainty_ns(windows);
+        Some((delta.saturating_sub(error), delta.checked_add(error)?))
     }
     pub fn bounds(self, windows: bool) -> CpuBounds {
         if !windows {

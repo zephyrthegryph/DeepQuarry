@@ -7,7 +7,7 @@ use std::sync::{
 
 struct Job<'a> {
     frozen: &'a Arc<FrozenProc>,
-    origins: &'a crate::debug_sources::DebugOrigins,
+    origins: &'a crate::debug_sources::FrozenDebugOrigins,
     features: BytecodeFeatures,
 }
 fn image(job: &Job<'_>, tables: &LinkTables) -> Result<CurrentImage, IntegrationError> {

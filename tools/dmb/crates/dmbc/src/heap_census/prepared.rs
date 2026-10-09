@@ -15,11 +15,11 @@ impl HeapCensus {
         frame: &crate::symbolic::FrozenFrame,
         abi: &Option<std::sync::Arc<crate::procedure_policy::PreparedAbi>>,
         origin: &dm_tree::frontend::BodyOccurrence,
-        debug: &crate::debug_sources::DebugOrigins,
+        debug: &crate::debug_sources::FrozenDebugOrigins,
     ) {
         let owner = "prepared_contributions";
         self.frozen_code(frozen);
-        self.debug(owner, debug);
+        self.frozen_debug(owner, debug);
         self.source_location(owner, &origin.source);
         self.slice(owner, &origin.ast_path, true);
         self.slice(owner, &origin.setting_context_origins, true);
@@ -37,10 +37,10 @@ impl HeapCensus {
         &mut self,
         frozen: &std::sync::Arc<dm_codegen_byond::FrozenProc>,
         names: &Vec<String>,
-        debug: &crate::debug_sources::DebugOrigins,
+        debug: &crate::debug_sources::FrozenDebugOrigins,
     ) {
         self.frozen_code(frozen);
-        self.debug("prepared_contributions", debug);
+        self.frozen_debug("prepared_contributions", debug);
         self.strings("prepared_contributions", names);
     }
     pub(crate) fn prepared_strings(&mut self, strings: &Vec<dm_ir::StringPayload>) {

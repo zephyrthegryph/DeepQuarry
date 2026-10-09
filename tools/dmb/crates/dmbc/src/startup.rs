@@ -346,6 +346,33 @@ pub struct StartupEvaluator<'a> {
     pub symbols: &'a dm_ir::SymbolTable,
 }
 impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluator<'_> {
+    fn evaluate_prepared_write(
+        &self,
+        write: &dm_ir::InitializerWrite,
+        value: &dm_ir::SymbolicExpression,
+    ) -> Result<
+        (
+            crate::initializer_policy::Evaluation,
+            Option<crate::initializer_policy::PreparedInitializerExpression>,
+        ),
+        String,
+    > {
+        if write.lexical_procedure.is_some() {
+            crate::initializer_policy::CapturedInitializerEvaluator::evaluate_prepared_write(
+                &crate::driver_facts::DriverEvaluator {
+                    pure_calls: self.ordinary.pure_calls(),
+                    resource_search_context: self.resource_search_context,
+                    resolver: self.resolver,
+                    symbols: self.symbols,
+                },
+                write,
+                value,
+            )
+        } else {
+            self.ordinary.evaluate_prepared_write(write, value)
+        }
+    }
+
     fn evaluate_ast_write(
         &self,
         write: &dm_ir::InitializerWrite,
@@ -650,3 +677,7 @@ mod spelling_tests {
         assert!(!dm_tree::procedure_statics::may_contain_stored_declarations("// global comment"));
     }
 }
+
+#[cfg(test)]
+#[path = "startup_evaluator_forwarding_tests.rs"]
+mod evaluator_forwarding_tests;

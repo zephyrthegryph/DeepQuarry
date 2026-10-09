@@ -2,6 +2,8 @@
 mod cpu_bounds;
 use cpu_bounds::{interval_bounds, sum_bounds, union_interval_bounds};
 mod domain_bounds;
+mod domain_complement;
+pub use domain_complement::ComplementReport;
 mod stage_domains;
 pub use domain_bounds::{CpuDomain, CpuSelector, DomainCpuBounds};
 pub use stage_domains::StageMap;
@@ -26,11 +28,13 @@ use std::{
     marker::PhantomData,
     path::{Path, PathBuf},
     rc::Rc,
-    sync::{Arc, Mutex, OnceLock},
+    sync::{
+        atomic::{AtomicBool, AtomicUsize},
+        Arc, Mutex,
+    },
     time::Instant,
 };
 pub use tracing;
-use tracing_subscriber::prelude::*;
 pub use worker::{worker_lifetime, WorkerLifetime};
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -149,14 +153,20 @@ struct State {
     entries: Mutex<BTreeMap<&'static str, Entry>>,
     folded: Mutex<BTreeMap<(String, String), Vec<clock::CpuInterval>>>,
     wall_folded: Mutex<BTreeMap<String, u64>>,
+    finished: AtomicBool,
+    workers: AtomicUsize,
+    bindings: AtomicUsize,
+    dispatch: Mutex<Option<tracing::Dispatch>>,
 }
-static ACTIVE: OnceLock<Arc<State>> = OnceLock::new();
 struct Frame {
     name: &'static str,
     last_cpu: Option<u64>,
     last_coarse_cpu: Option<u64>,
     last_wall: Instant,
 }
+mod request;
+mod setup;
+pub use request::{RequestContext, RequestContextGuard};
 mod context;
 pub use context::{StageContext, StageContextGuard};
 thread_local! {static STACK:RefCell<Vec<Frame>>=const {RefCell::new(Vec::new())};}
@@ -278,7 +288,7 @@ pub struct StageGuard {
 }
 /// Enter the same named stage on every participating thread. Guards are thread-bound.
 pub fn stage(name: &'static str) -> StageGuard {
-    let state = ACTIVE.get().cloned();
+    let state = request::active_state();
     if state.is_none() {
         return StageGuard {
             state: None,
@@ -349,7 +359,7 @@ pub fn record_io(
     write_bytes: u64,
     blocked: impl Into<Option<std::time::Duration>>,
 ) {
-    let Some(state) = ACTIVE.get() else {
+    let Some(state) = request::active_state() else {
         return;
     };
     STACK.with(|stack| {
@@ -374,7 +384,7 @@ pub fn io_call<T>(
     operation: impl FnOnce() -> std::io::Result<T>,
     byte_counts: impl FnOnce(&T) -> (u64, u64),
 ) -> std::io::Result<T> {
-    let Some(state) = ACTIVE.get() else {
+    let Some(state) = request::active_state() else {
         return operation();
     };
     let start = Instant::now();
@@ -521,70 +531,22 @@ pub struct ProfileGuard {
     flame: Option<tracing_flame::FlushGuard<std::io::BufWriter<trace_output::TraceWriter>>>,
     trace_outputs: trace_output::Outputs,
     memory_sampler: Option<memory::Sampler>,
+    request_binding: Option<RequestContextGuard>,
+    request_lease: request::RequestLease,
 }
 pub fn artifact_path(path: &Path, suffix: &str) -> PathBuf {
     path.with_extension(suffix.trim_start_matches('.'))
 }
 pub fn initialize(path: &Path) -> Result<ProfileGuard, String> {
-    let start = Instant::now();
-    let process = clock::process();
-    if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
-        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    }
-    let state = Arc::new(State {
-        calibration: clock::calibrate(),
-        entries: Mutex::new(BTreeMap::new()),
-        folded: Mutex::new(BTreeMap::new()),
-        wall_folded: Mutex::new(BTreeMap::new()),
-    });
-    let setup = internal_observer::InternalThreadObserver::new(Arc::clone(&state), "profile.setup");
-    let mut trace_outputs = trace_output::Outputs::from_environment().map_err(|e| e.to_string())?;
-    let writer = writer::ObservedWriter::new(
-        trace_outputs
-            .writer(path, "chrome-json")
-            .map_err(|e| e.to_string())?,
-        Arc::clone(&state),
-    );
-    let (chrome, chrome_guard) = tracing_chrome::ChromeLayerBuilder::new()
-        .writer(writer)
-        .include_args(true)
-        .name_fn(Box::new(|entry| match entry {
-            tracing_chrome::EventOrSpan::Span(span) => span
-                .extensions()
-                .get::<names::StageName>()
-                .map(|name| name.0.clone())
-                .unwrap_or_else(|| span.metadata().name().into()),
-            tracing_chrome::EventOrSpan::Event(event) => event.metadata().name().into(),
-        }))
-        .build();
-    let flame_writer = trace_outputs
-        .writer(&artifact_path(path, ".tracing.folded"), "tracing-folded")
-        .map_err(|e| e.to_string())?;
-    let flame = tracing_flame::FlameLayer::new(std::io::BufWriter::new(flame_writer));
-    let flame_guard = flame.flush_on_drop();
-    tracing_subscriber::registry()
-        .with(names::Names)
-        .with(chrome)
-        .with(flame)
-        .try_init()
-        .map_err(|e| e.to_string())?;
-    ACTIVE
-        .set(Arc::clone(&state))
-        .map_err(|_| "profiler already initialized".to_string())?;
-    let memory_sampler = memory::Sampler::start(Arc::clone(&state))?;
-    drop(setup);
-    Ok(ProfileGuard {
-        state,
-        start,
-        process,
-        path: path.into(),
-        chrome: Some(chrome_guard),
-        flame: Some(flame_guard),
-        trace_outputs,
-        memory_sampler,
-    })
+    setup::initialize(path)
 }
+
 impl ProfileGuard {
+    /// Captures this exact request for scoped work; finished tokens refuse entry.
+    pub fn request_context(&self) -> RequestContext {
+        RequestContext::from_state(&self.state).expect("live profiler dispatch")
+    }
+
     /// Lets a caller select a proven alternate pipeline (for example an
     /// authenticated unchanged build). Missing selected stages still fail the
     /// critical-path measurement in `finish`.
@@ -600,7 +562,11 @@ impl ProfileGuard {
     /// Residuals exclude nested CPU stages; the caller must cover omitted children
     /// and prove that selected inclusive stages do not overlap.
     pub fn finish(mut self, sequential_stages: &[&str]) -> Result<Report, String> {
-        self.finish_inner(sequential_stages, &[])
+        let result = self.finish_inner(sequential_stages, &[]);
+        if result.is_ok() {
+            self.close_request();
+        }
+        result
     }
     /// Add opt-in domain proofs without changing critical-path or process-audit metrics.
     pub fn finish_with_domains(
@@ -608,13 +574,44 @@ impl ProfileGuard {
         sequential_stages: &[&str],
         domains: &[CpuDomain<'_>],
     ) -> Result<Report, String> {
-        self.finish_inner(sequential_stages, domains)
+        let result = self.finish_inner(sequential_stages, domains);
+        if result.is_ok() {
+            self.close_request();
+        }
+        result
+    }
+    fn close_request(&mut self) {
+        self.request_binding.take();
+        self.request_lease.close();
     }
     fn finish_inner(
         &mut self,
         sequential_stages: &[&str],
         domains: &[CpuDomain<'_>],
     ) -> Result<Report, String> {
+        self.request_lease.begin_close();
+        if self
+            .state
+            .bindings
+            .load(std::sync::atomic::Ordering::Acquire)
+            > 1
+            || self
+                .state
+                .workers
+                .load(std::sync::atomic::Ordering::Acquire)
+                != 0
+            || self
+                .state
+                .entries
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .values()
+                .any(|e| e.active != 0)
+        {
+            return Err(
+                "profile finish requires all stage guards and worker lifetimes joined".into(),
+            );
+        }
         let shutdown = internal_observer::InternalThreadObserver::new(
             Arc::clone(&self.state),
             "profile.finalization",
@@ -954,6 +951,15 @@ impl Drop for ProfileGuard {
                 eprintln!("profile artifact write failed: {error}");
             }
         }
+        if self.memory_sampler.is_some() || self.chrome.is_some() || self.flame.is_some() {
+            if let Some(sampler) = self.memory_sampler.take() {
+                let _ = sampler.stop();
+            }
+            self.chrome.take();
+            self.flame.take();
+            let _ = self.trace_outputs.finish();
+        }
+        self.close_request();
     }
 }
 
