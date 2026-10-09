@@ -5,7 +5,6 @@
 	icon_state = "randompile"
 	density = TRUE
 	anchored = TRUE
-	loot_decl = /loot/trash_pile
 
 	// ALLOW(instance_list): d: passed to the lootable element, which adds the searcher's ckey to it in place
 	var/list/searchedby	= list()// Characters that have searched this trashpile, with values of searched time.
@@ -23,6 +22,7 @@ CAPABILITIES(/obj/structure/trash_pile)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("search", hand(), label("Search"), claims(), needs(req(/mob/living/carbon/human, of = ON_ACTOR, silent = TRUE)), begins(PROC_REF(search_begins)), wait(PROC_REF(search_time)), then(PROC_REF(searched)))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	loot_search(table = /loot/trash_pile, wake_chance = 5)
 
 /// Rolled before init (rolls()): what the pile looks like.
 /obj/structure/trash_pile/proc/roll_icon_state(datum/roller/R)
@@ -143,7 +143,7 @@ MSG_DEF(trash_pile/searching, "You search through %T%.", "%U% searches through %
 		rel_clear(src, nameof(hider))
 		to_chat(user,span_danger("Some sort of creature leaps out of 	he [src]!"))
 	else
-		loot_pile_search(src, user, searchedby, 5)
+		loot_pile_search(src, user, searchedby)
 
 /obj/structure/mob_spawner/mouse_nest
 	name = "trash"

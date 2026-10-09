@@ -414,14 +414,12 @@ CAPABILITIES(/obj/random)
 
 // ---- searchable loot ----
 
-/obj/structure
-	/// The loot declaration searching this drops from (LOOT_REF(/loot/...)), or null.
-	var/loot_decl
-
-/// Searches `source` (a pile with `loot_decl`) for `L`: the tiered roll of loot piles. `searched_by`
-/// is the source's list of ckeys that searched it. `wake_chance`: percent chance a raccoon jumps out.
-/proc/loot_pile_search(obj/structure/source, mob/living/L, list/searched_by, wake_chance = 0)
-	var/datum/loot_decl/decl = loot_decl_for(source.loot_decl)
+/// Searches `source` (a pile with a loot_search() entry) for `L`: the tiered roll of loot piles. `searched_by`
+/// is the source's list of ckeys that searched it. The table and the percent chance a raccoon jumps out are the pile's loot_search() entry.
+/proc/loot_pile_search(obj/structure/source, mob/living/L, list/searched_by)
+	var/table = loot_search_table(source.type)
+	var/wake_chance = loot_search_wake_chance(source.type)
+	var/datum/loot_decl/decl = loot_decl_for(table)
 	if(!decl)
 		return
 	var/source_ref = REF(source)
@@ -441,7 +439,7 @@ CAPABILITIES(/obj/random)
 			return
 		searched_by |= L.ckey
 
-	var/datum/loot_rng/rng = loot_rng_at(source, source.loot_decl)
+	var/datum/loot_rng/rng = loot_rng_at(source, table)
 	var/datum/loot_entry/sub/tier = decl.main_table
 	var/span = "notice"
 	var/obj/item/gamma

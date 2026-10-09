@@ -237,16 +237,15 @@
 /proc/dq_loot_pin_piles()
 	. = list()
 	for(var/type in typesof(/obj/structure/loot_pile) | typesof(/obj/structure/trash_pile))
-		var/obj/structure/S = type
-		if(initial(S.loot_decl))
+		if(loot_search_table(type))
 			. += "[type]"
 	sortTim(., GLOBAL_PROC_REF(cmp_text_asc))
 
 /// One search of `pile` by `searcher` under the pin's rules; the row text of what it did.
-/datum/unit_test/dq_loot_search_pin/proc/pin_search(obj/structure/pile, mob/living/carbon/human/searcher, list/searched_by, wake_chance, turf/T)
+/datum/unit_test/dq_loot_search_pin/proc/pin_search(obj/structure/pile, mob/living/carbon/human/searcher, list/searched_by, turf/T)
 	test_chat_clear()
 	var/list/before = contents_of(T).Copy()
-	loot_pile_search(pile, searcher, searched_by, wake_chance)
+	loot_pile_search(pile, searcher, searched_by)
 	var/list/gained = list()
 	for(var/atom/movable/AM as anything in contents_of(T))
 		if(AM in before)
@@ -271,7 +270,6 @@
 	add_trait(unlucky, TRAIT_UNLUCKY, "loot_pin")
 	for(var/pile_text in dq_loot_pin_piles())
 		var/pile_type = text2path(pile_text)
-		var/wake = ispath(pile_type, /obj/structure/trash_pile) ? 5 : 0
 		for(var/k in 1 to DQ_LOOT_PIN_SEARCH_SEEDS)
 			var/seed = dq_loot_pin_seed(k)
 			rand_seed(dq_test_seed_for("[pile_text][seed]"))
@@ -285,12 +283,12 @@
 				if(QDELETED(pile))
 					break
 				searcher.ckey = "pinsearcher[i]"
-				steps += "search [i]: [pin_search(pile, searcher, searched_by, wake, T)]"
+				steps += "search [i]: [pin_search(pile, searcher, searched_by, T)]"
 			if(!QDELETED(pile))
 				searcher.ckey = "pinsearcher1"
-				steps += "again by 1: [pin_search(pile, searcher, searched_by, wake, T)]"
+				steps += "again by 1: [pin_search(pile, searcher, searched_by, T)]"
 				unlucky.ckey = "pinunlucky"
-				steps += "unlucky: [pin_search(pile, unlucky, searched_by, wake, T)]"
+				steps += "unlucky: [pin_search(pile, unlucky, searched_by, T)]"
 				qdel(pile)
 			rows["[pile_text] | seed [seed]"] = jointext(steps, " || ")
 			CHECK_TICK
