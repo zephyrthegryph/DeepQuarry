@@ -96,7 +96,6 @@ legacy_entry	code/game/machinery/navbeacon.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/game/machinery/oxygen_pump.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/game/machinery/supplybeacon.dm	silicon_use = ROBOT_USE_HAND_ADJACENT
 legacy_entry	code/game/machinery/syndicatebeacon.dm	silicon_use = NONE // silicons can't use it
-legacy_entry	code/game/objects/items.dm	var/static/list/module_spec = INTERACT_SILICON("Equip", PROC_REF(item_silicon_equip_module), REQ_TARGET_STATE(/obj/item/proc/item_in_robot_module))
 legacy_entry	code/game/objects/structures/catwalk.dm	silicon_use = ROBOT_USE_HAND_ADJACENT
 legacy_entry	code/game/objects/structures/crates_lockers/__closets.dm	silicon_use = ROBOT_USE_HAND_ADJACENT
 legacy_entry	code/game/objects/structures/fence.dm	silicon_use = ROBOT_USE_HAND_ADJACENT // cyborgs open it from next to it; the AI can't
@@ -112,7 +111,6 @@ legacy_entry	code/modules/holomap/station_holomap.dm	silicon_use = NONE // Silic
 legacy_entry	code/modules/keybindings/adapters.dm	var/silicon_use = NONE
 legacy_entry	code/modules/materials/sheets/organic/tanning/tanning_rack.dm	silicon_use = ROBOT_USE_HAND // attack_hand has the adjacency checks
 legacy_entry	code/modules/mob/living/bot/bot.dm	silicon_use = SILICON_USE_HAND
-legacy_entry	code/modules/mob/living/silicon/robot/robot.dm	INTERACT_SILICON("Deploy to shell", PROC_REF(robot_ai_deploy_shell)))
 legacy_entry	code/modules/multiz/hoist.dm	silicon_use = ROBOT_USE_HAND
 legacy_entry	code/modules/multiz/ladders.dm	silicon_use = ROBOT_USE_HAND
 legacy_entry	code/modules/power/privacy_switch.dm	silicon_use = SILICON_USE_HAND

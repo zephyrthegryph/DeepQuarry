@@ -224,7 +224,6 @@ init_visuals	code/modules/samples/samples.dm	icon_state = "generic_sample[sample
 init_visuals	code/modules/vehicles/Securitrain.dm	add_overlay(I)
 init_visuals	code/modules/vehicles/bike.dm	icon_state = "[bike_icon]_off"
 init_visuals	code/modules/vehicles/cargo_train.dm	add_overlay(I)
-init_visuals	code/modules/vehicles/construction.dm	icon_state = "[initial(icon_state)][build_stage]"
 init_visuals	code/modules/vore/resizing/crackers.dm	icon_state = style
 init_visuals	code/modules/vore/resizing/crackers.dm	icon_state = style
 init_visuals	code/modules/vore/resizing/holder_micro.dm	icon_state = "teshariplushie_white"

@@ -140,7 +140,7 @@ GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, ST
 			// The tool that undoes the step before also builds this one: building goes first (the old ladder's forward edge outranked the way back).
 			var/list/before = rows[steps - step + 2]
 			if(istext(key) && before["backkey"] == key)
-				parts += priority(above("construction.undo:[stage_key(stage_ids[step])]"))
+				parts += priority(OP_PRIORITY_PART)
 		if(step < steps)
 			parts += undone(TYPE_PROC_REF(/obj/item/mecha_parts, mecha_step_undone))
 			entries += stage(stage_ids[step + 1], parts, undo = list(tool(row["backkey"]), wait(0)))
@@ -191,13 +191,22 @@ GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, ST
 /// Each part on the chassis shows its "+o" overlay, until the last one finishes the shell (its finished picture has them built in).
 /obj/item/mecha_parts/draw(datum/look/look)
 	..()
-	if(!blueprint || !parts_mask || mecha_parts_done(null))
+	for(var/state in mecha_part_overlays(blueprint, parts_mask))
+		look.overlay(state)
+
+/// The "+o" overlay of each part of `blueprint_type` that is on (`mask`), none once every part is (the finished shell has them built in).
+/proc/mecha_part_overlays(blueprint_type, mask)
+	READS_FROM()
+	. = list()
+	if(!blueprint_type || !mask)
 		return
-	var/datum/mecha_blueprint/plan = mecha_blueprint()
+	var/datum/mecha_blueprint/plan = mecha_blueprint_of(blueprint_type)
+	if(mask == (1 << length(plan.mecha_parts)) - 1)
+		return
 	for(var/i in 1 to length(plan.mecha_parts))
-		if(parts_mask & (1 << (i - 1)))
+		if(mask & (1 << (i - 1)))
 			var/obj/item/part_type = plan.mecha_parts[i]
-			look.overlay("[initial(part_type.icon_state)]+o")
+			. += "[initial(part_type.icon_state)]+o"
 
 /// The row of the step a chassis at its current stage is about to take (building) or has just taken back (undone): the ladder is listed last step first.
 /obj/item/mecha_parts/proc/mecha_step_row(datum/mecha_blueprint/plan)

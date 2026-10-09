@@ -55,7 +55,6 @@ base_var	code/datums/capabilities/library/signaler.dm	var/cap_signal_frequency
 base_var	code/datums/capabilities/library/signaler.dm	var/cap_signal_code
 base_var	code/datums/character_identity.dm	var/datum/character_identity/own_identity = new
 base_var	code/datums/character_identity.dm	var/datum/character_identity/identity
-base_var	code/datums/interactions/construction.dm	/atom/var/construction_graph
 base_var	code/datums/lifecycle/verbs.dm	/atom/movable/var/lifecycle_lifetime = 0
 base_var	code/datums/lifecycle/verbs.dm	/atom/movable/var/tmp/lifecycle_lifetime_timer
 base_var	code/datums/lifecycle/verbs.dm	/mob/living/var/delete_on_death = FALSE
@@ -537,7 +536,6 @@ base_var	code/modules/mob/living/carbon/human/life.dm	var/environment_steady = F
 base_var	code/modules/mob/living/carbon/human/life.dm	var/nutrition_drained_at = 0
 base_var	code/modules/mob/living/carbon/human/life.dm	/mob/living/carbon/human/var/tmp/health_doll_key
 base_var	code/modules/mob/living/carbon/human/life.dm	var/synth_cosmetic_pain = FALSE
-base_var	code/modules/mob/living/carbon/human/species/shadekin/state/powers/phase_shift.dm	/mob/living/var/tmp/dq_phase_shift_pending_cost = 0
 base_var	code/modules/mob/living/carbon/human/species/shadekin/state/shadekin.dm	/mob/living/var/datum/shadekin/shadekin
 base_var	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	/mob/living/carbon/human/var/datum/forms/character_forms
 base_var	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	/mob/living/var/vore_shred_time = 45 SECONDS

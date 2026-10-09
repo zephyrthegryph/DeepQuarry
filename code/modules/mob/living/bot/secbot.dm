@@ -487,14 +487,14 @@ CAPABILITIES(/obj/item/secbot_assembly)
 	var/obj/item/held = A.held
 	if(istype(held, /obj/item/robot_parts/l_arm) || istype(held, /obj/item/robot_parts/r_arm))
 		return TRUE
-	return istype(held, /obj/item/organ/external/arm) && (held.name == "robotic right arm" || held.name == "robotic left arm")
+	return read_once(istype(held, /obj/item/organ/external/arm) && (held.name == "robotic right arm" || held.name == "robotic left arm"))
 
 /// A robot leg: two robot_parts types, or a robotic external leg organ by name.
 /obj/item/secbot_assembly/proc/robot_leg_held(datum/act/op/A)
 	var/obj/item/held = A.held
 	if(istype(held, /obj/item/robot_parts/l_leg) || istype(held, /obj/item/robot_parts/r_leg))
 		return TRUE
-	return istype(held, /obj/item/organ/external/leg) && (held.name == "robotic right leg" || held.name == "robotic left leg")
+	return read_once(istype(held, /obj/item/organ/external/leg) && (held.name == "robotic right leg" || held.name == "robotic left leg"))
 
 /// The picture follows the stages built: the welded hole, the sensor's eye, the arm.
 /obj/item/secbot_assembly/draw(datum/look/look)

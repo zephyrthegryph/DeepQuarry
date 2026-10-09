@@ -174,9 +174,9 @@ CAPABILITIES(/obj/machinery/replicator)
 		else
 			visible_message(fail_message)
 
-/// Requirement: no armblades, no grabs, nothing the user can't let go of.
+/// Requirement: no armblades, no grabs (an item that cannot be let go of). What is in the hand needs no accessibility check.
 /obj/machinery/replicator/proc/can_insert(mob/living/user, atom/target, obj/item/held)
-	if(!istype(held) || !held.canremove || !user.canUnEquip(held))
+	if(!istype(held) || !held.canremove)
 		return "you cannot put [held] into the machine"
 	return TRUE
 

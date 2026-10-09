@@ -755,9 +755,14 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/proc/repairing_another(datum/act/op/A)
 	return A.actor != src
 
+/// Whether the server lets AIs deploy into shells (config).
+/proc/ai_shells_allowed()
+	READS_FROM()
+	return CONFIG_GET(flag/allow_ai_shells)
+
 /// An AI may deploy into a shell that allows it and is not another AI's.
 /mob/living/silicon/robot/proc/shell_open_to_ai(datum/act/op/A)
-	return read_once(shell && CONFIG_GET(flag/allow_ai_shells) && (!connected_ai || connected_ai == A.actor))
+	return read_once(shell && ai_shells_allowed() && (!connected_ai || connected_ai == A.actor))
 
 /mob/living/silicon/robot/proc/robot_wires_worked(datum/act/op/A)
 	wires_open(src, A.actor)
