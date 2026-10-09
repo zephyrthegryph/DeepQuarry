@@ -631,4 +631,62 @@ This is a useful retained-host prototype, not full incremental compilation:
 frontend reassembly and startup facts are still freshly issued, retained worker
 brackets are not yet connected to the request runner, and daemon transport,
 cross-revision semantic reuse and six-worktree acceptance remain unfinished.
-The new source's matched cold comparison is pending; no new timing is claimed.
+The new source's matched cold comparison is recorded below.
+
+## Matched cold comparison — 9 October, 08:29
+
+Committed candidate `1d5006992b`, compared with `607bad5b72` carrying the
+candidate's exact profiler/executor overlay. ABABAB, three cold runs per compiler,
+eight workers, gzip level 1, captured historical DeepQuarry `ac1af55d1a`.
+
+| Median | Control | Candidate |
+|---|---:|---:|
+| Child wall seconds | 12.2873 | 11.6744 |
+| Critical CPU seconds | 9.359375 | 8.84375 |
+| Critical CPU uncertainty upper seconds | 11.515625 | 10.859375 |
+| Total CPU seconds | 29.421875 | 29.890625 |
+| Peak private bytes | 1,539,751,936 | 1,598,050,304 |
+
+Wall time fell 5.0% and critical CPU fell 5.5%; total CPU rose 1.6% and memory
+rose 3.8%. This is a cold CLI comparison, not a daemon or minimal-edit result.
+Measurement admission and structural no-regression passed. Candidate memory,
+input, ABI/initializers and composition/publication still fail their budgets.
+The existing blocked-I/O completeness gate remains unevaluable; measured bytes
+were 326,324,811 read and 569,631,392 written. Those fit the numeric byte budgets,
+but do not establish complete blocked-time reporting or BYOND runtime parity.
+
+Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/matched-gzip-20261009-080118-c1a328bd/comparison.json`.
+Pending retained-worker integration, procedure memo promotion, sealed input reads
+and annotated I/O bounds are excluded from these frozen binaries. Their first
+ordinary library validation failed compiling the new profiling report; no tests
+executed in that attempt (`r6-workspace-tests-20261009-082930-f3d4c567.json`).
+
+## Retained request integration — work in progress
+
+The shared runner now brackets its complete frontend-through-publication tail
+with the host's retained worker pool. Worker-count changes join the prior pool;
+unchanged-session returns avoid creating a pool. Procedure memo facades retain
+only admitted immutable values across requests, with current resolver answers
+checked on every replay. Validated disk results promote without republishing;
+debug/source/ABI bindings remain current. Capacity admission walks accessible
+owned buffers and charges containers conservatively; unsupported helper models
+decline resident retention. This is not an allocator-page or RSS guarantee.
+
+Input reads carry a private owned bytes/digest envelope. Replay constructs it
+only after exact size/hash verification; callers cannot mutate authenticated
+bytes. Engine frontend seeds now share the existing exact engine owner. Dynamic
+trace labels share one immutable allocation. Annotated I/O wait bounds are
+explicitly partial and do not certify complete storage blocking. Future benchmark
+summaries separate numeric byte-budget acceptance from that reporting obligation;
+historical summaries are unchanged.
+
+The ordinary library run `r6-workspace-tests-20261009-083055-a0924b12.json`
+compiled successfully, then failed one procedure-memo fixture: it expected four
+disk hits after replay, while the new promotion path produced two disk and two
+resident hits. The fixture now checks both counters, unchanged code, shifted
+source origins, zero recomputation and zero pending republication. Validation of
+this corrected batch is running. No new performance result is claimed for it.
+
+Daemon transport, cross-revision frontend/startup binding, semantic dependency
+reuse and six-worktree acceptance remain unfinished. Phase 1 gates remain open;
+the daemon and disk-cache activation remain deferred until those gates close.
