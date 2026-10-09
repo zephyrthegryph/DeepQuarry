@@ -2,8 +2,11 @@
 //! This ledger retains grammar distinctions erased by flattened declarations.
 use dm_ir::{SymbolId, SymbolTable, TypePath};
 use dm_syntax::{Item, ItemKind, Span};
+#[path = "allocation_bound.rs"]
+mod bound;
 #[path = "allocation_events.rs"]
 mod storage;
+pub(crate) use bound::ValidatedEventLeaf;
 pub use storage::AllocationEvents;
 pub(crate) use storage::EventBuilder;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

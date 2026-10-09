@@ -10,8 +10,10 @@ pub struct DeclarationRetentionStats {
     /// Full metadata/index capacities have not yet been traversed by the census.
     pub unknown_retained_record_upper_bound: usize,
     pub hits: usize,
+    pub grammar_roster_hits: usize,
 }
 pub(super) struct RetainedDeclarations {
+    pub(super) grammar: super::grammar_roster::RetainedGrammar,
     values: ArtifactStore<Contribution>,
     keys: AtomicUsize,
     hits: AtomicUsize,
@@ -20,6 +22,7 @@ pub(super) struct RetainedDeclarations {
 impl Default for RetainedDeclarations {
     fn default() -> Self {
         Self {
+            grammar: super::grammar_roster::RetainedGrammar::default(),
             values: ArtifactStore::current_revision(),
             keys: AtomicUsize::new(0),
             hits: AtomicUsize::new(0),
@@ -38,6 +41,7 @@ pub(super) struct Contribution {
     syntax: Arc<RelativeSyntax>,
     skeletons: Arc<Vec<crate::Skeleton>>,
     ledger: AllocationLedger,
+    event_leaf: crate::allocation_ledger::ValidatedEventLeaf,
 }
 /// Complete public borrowed payload; no old source authority is reconstructed.
 pub struct DeclarationContributionView<'a> {
@@ -47,6 +51,12 @@ pub struct DeclarationContributionView<'a> {
     pub skeletons: &'a Arc<Vec<crate::Skeleton>>,
     pub facts: &'a crate::AdaptedDeclarations,
     pub ledger: &'a AllocationLedger,
+    event_leaf: &'a crate::allocation_ledger::ValidatedEventLeaf,
+}
+impl DeclarationContributionView<'_> {
+    pub fn visit_allocation_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        self.event_leaf.visit_storage(&mut visit);
+    }
 }
 pub enum DeclarationStorageView<'a> {
     SymbolCatalog {
@@ -113,6 +123,7 @@ impl RetainedDeclarations {
                     skeletons: &value.skeletons,
                     facts: &value.facts,
                     ledger: &value.ledger,
+                    event_leaf: &value.event_leaf,
                 },
             }),
         });
@@ -196,6 +207,7 @@ impl RetainedDeclarations {
             current_keys: self.keys.load(Ordering::Relaxed),
             unknown_retained_record_upper_bound: self.keys.load(Ordering::Relaxed),
             hits: self.hits.load(Ordering::Relaxed),
+            grammar_roster_hits: self.grammar.hits(),
         }
     }
 }
@@ -399,23 +411,8 @@ impl CurrentContribution {
             origin
         })
     }
-    pub(super) fn events(
-        &self,
-    ) -> impl Iterator<Item = crate::allocation_ledger::AllocationEvent> + '_ {
-        self.value.ledger.events.iter().map(|mut event| {
-            let shift = |value: dm_syntax::Span| {
-                dm_syntax::Span::new(value.start + self.offset, value.end + self.offset)
-            };
-            event.span = shift(event.span);
-            event.header_span = shift(event.header_span);
-            match &mut event.kind {
-                AllocationKind::Field { initializer, .. } => *initializer = initializer.map(shift),
-                AllocationKind::Procedure { body, .. } => *body = shift(*body),
-                AllocationKind::Parent { value, .. } => *value = shift(*value),
-                _ => {}
-            }
-            event
-        })
+    pub(super) fn event_leaf(&self) -> (crate::allocation_ledger::ValidatedEventLeaf, usize) {
+        (self.value.event_leaf.clone(), self.offset)
     }
 }
 impl Contribution {
@@ -430,9 +427,11 @@ impl Contribution {
         let ledger = rebase(&mut facts, &ledger, text, offset, 0)?;
         let syntax = Arc::new(RelativeSyntax::capture(items, text).ok()?);
         let skeletons = Arc::new(std::mem::take(&mut facts.skeletons));
+        let event_leaf = crate::allocation_ledger::ValidatedEventLeaf::new(ledger.events.clone());
         Some(Self {
             facts,
             ledger,
+            event_leaf,
             syntax,
             skeletons,
         })

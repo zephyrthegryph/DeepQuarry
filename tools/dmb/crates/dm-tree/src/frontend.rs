@@ -563,6 +563,9 @@ pub use pipeline::{
 mod semantic_state;
 pub use crate::owner_normalization::NormalizationStorageView;
 pub use semantic_state::RetainedSemanticTree;
+#[path = "frontend_grammar_roster.rs"]
+mod grammar_roster;
+pub use grammar_roster::{GrammarAnswer, GrammarDescriptors, GrammarQuery};
 #[path = "frontend_declaration_state.rs"]
 mod declaration_state;
 pub use declaration_state::{

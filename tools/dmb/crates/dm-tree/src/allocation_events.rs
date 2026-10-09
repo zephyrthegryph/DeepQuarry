@@ -23,6 +23,7 @@ impl CompactEvent {
 enum Records {
     Compact(Box<[CompactEvent]>),
     Wide(Box<[AllocationEvent]>),
+    Bound(super::bound::BoundEvents),
 }
 #[derive(Clone)]
 pub struct AllocationEvents(Arc<Records>);
@@ -38,10 +39,18 @@ impl PartialEq for AllocationEvents {
 }
 impl Eq for AllocationEvents {}
 impl AllocationEvents {
+    pub(crate) fn bind_leaves(
+        leaves: impl IntoIterator<Item = (super::ValidatedEventLeaf, usize)>,
+    ) -> Result<Self, super::bound::BindError> {
+        Ok(Self(Arc::new(Records::Bound(
+            super::bound::BoundEvents::new(leaves)?,
+        ))))
+    }
     pub fn len(&self) -> usize {
         match self.0.as_ref() {
             Records::Compact(v) => v.len(),
             Records::Wide(v) => v.len(),
+            Records::Bound(v) => v.len(),
         }
     }
     pub fn is_empty(&self) -> bool {
@@ -51,15 +60,25 @@ impl AllocationEvents {
         match self.0.as_ref() {
             Records::Compact(v) => v.get(index).map(CompactEvent::event),
             Records::Wide(v) => v.get(index).cloned(),
+            Records::Bound(v) => v.get(index),
         }
     }
     pub fn iter(
         &self,
     ) -> impl ExactSizeIterator<Item = AllocationEvent> + DoubleEndedIterator + '_ {
-        (0..self.len()).map(|index| self.get(index).expect("issued ledger index"))
+        match self.0.as_ref() {
+            Records::Bound(value) => EventsIter::Bound(value.iter()),
+            _ => EventsIter::Owned {
+                events: self,
+                range: 0..self.len(),
+            },
+        }
     }
     /// Allocation addresses serve diagnostic accounting only, never proof identity.
     pub fn visit_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        self.visit_storage_dyn(&mut visit);
+    }
+    pub(super) fn visit_storage_dyn(&self, visit: &mut dyn FnMut(usize, usize, usize)) {
         visit(
             Arc::as_ptr(&self.0) as usize,
             1,
@@ -76,9 +95,41 @@ impl AllocationEvents {
                 v.len(),
                 std::mem::size_of_val(v.as_ref()),
             ),
+            Records::Bound(v) => v.visit_storage(visit),
         }
     }
 }
+enum EventsIter<'a> {
+    Bound(super::bound::BoundIter<'a>),
+    Owned {
+        events: &'a AllocationEvents,
+        range: std::ops::Range<usize>,
+    },
+}
+impl Iterator for EventsIter<'_> {
+    type Item = AllocationEvent;
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Bound(iter) => iter.next(),
+            Self::Owned { events, range } => range.next().and_then(|index| events.get(index)),
+        }
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self {
+            Self::Bound(iter) => iter.size_hint(),
+            Self::Owned { range, .. } => range.size_hint(),
+        }
+    }
+}
+impl DoubleEndedIterator for EventsIter<'_> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Bound(iter) => iter.next_back(),
+            Self::Owned { events, range } => range.next_back().and_then(|index| events.get(index)),
+        }
+    }
+}
+impl ExactSizeIterator for EventsIter<'_> {}
 impl FromIterator<AllocationEvent> for AllocationEvents {
     fn from_iter<T: IntoIterator<Item = AllocationEvent>>(events: T) -> Self {
         let mut builder = EventBuilder::new();

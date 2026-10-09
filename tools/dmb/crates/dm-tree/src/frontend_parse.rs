@@ -45,15 +45,26 @@ pub(super) fn parse_declarations_with_state(
 ) -> Result<ParsedDeclarations, Vec<Diagnostic>> {
     let source = expanded.text.as_ref();
     let parse_start = Instant::now();
-    let mut chunks = Vec::new();
     let profile_scan = dm_profile::stage("frontend.grammar_scan");
-    let report =
-        dm_syntax::for_each_stable_source_chunk(source, source.len().max(1), 32, |text, offset| {
-            chunks.push((offset, text.len()))
-        });
-    if report.skipped_declarations != 0 {
-        return Err(vec![internal("grammar chunker omitted a declaration")]);
+    let retained_descriptors = retained.and_then(|state| state.grammar.lookup(expanded));
+    let mut fresh_chunks = Vec::new();
+    if retained_descriptors.is_none() {
+        let report = dm_syntax::for_each_stable_source_chunk(
+            source,
+            source.len().max(1),
+            32,
+            |text, offset| fresh_chunks.push((offset, text.len())),
+        );
+        if report.skipped_declarations != 0 {
+            return Err(vec![internal("grammar chunker omitted a declaration")]);
+        }
+        if let Some(state) = retained {
+            state.grammar.insert(expanded, fresh_chunks.clone());
+        }
     }
+    let chunks = retained_descriptors
+        .as_ref()
+        .map_or(fresh_chunks.as_slice(), |roster| roster.spans().as_slice());
     let descriptor_scan = parse_start.elapsed();
     drop(profile_scan);
     let retained_keys = retained.map(|state| {
@@ -342,7 +353,7 @@ pub(super) fn parse_declarations_with_state(
         skeletons: crate::skeleton_roster::SkeletonRoster::default(),
         origins: Vec::new(),
     };
-    let mut allocation_events = crate::allocation_ledger::EventBuilder::new();
+    let mut allocation_leaves = Vec::new();
     let mut declaration_errors = Vec::new();
     let mut current_contributions = Vec::new();
     for (_, offset, errors, fragment, facts) in ordered {
@@ -357,10 +368,7 @@ pub(super) fn parse_declarations_with_state(
                 current_contributions.push(Arc::clone(&current.value));
                 adapted.skeletons.push_leaf(current.skeletons());
                 adapted.origins.extend(current.origins());
-                for mut event in current.events() {
-                    event.encounter_order = allocation_events.len();
-                    allocation_events.push(event);
-                }
+                allocation_leaves.push(current.event_leaf());
                 syntax_chunks.push(current.syntax);
             }
             Err(errors) => declaration_errors.extend(errors),
@@ -393,7 +401,12 @@ pub(super) fn parse_declarations_with_state(
         diagnostics,
         adapted,
         allocation_ledger: crate::allocation_ledger::AllocationLedger {
-            events: allocation_events.finish(),
+            events: crate::allocation_ledger::AllocationEvents::bind_leaves(allocation_leaves)
+                .map_err(|error| {
+                    vec![internal(&format!(
+                        "allocation ledger binding failed: {error:?}"
+                    ))]
+                })?,
         },
         declaration_errors,
         reuse_stats: DeclarationReuseStats {

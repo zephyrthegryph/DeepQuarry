@@ -112,6 +112,20 @@ impl RetainedSemanticTree {
         }
     }
     /// Explicit census; callback must not mutate/reenter this retained store.
+    pub fn visit_grammar_storage(
+        &self,
+        visit: impl FnMut(
+            dm_session::ObservedArtifactStorageView<
+                '_,
+                super::GrammarDescriptors,
+                super::GrammarQuery,
+                super::GrammarAnswer,
+                (),
+            >,
+        ),
+    ) {
+        self.declarations.grammar.visit_storage(visit);
+    }
     pub fn visit_declaration_storage(&self, visit: impl FnMut(super::DeclarationStorageView<'_>)) {
         self.declarations.visit_storage(visit);
     }
