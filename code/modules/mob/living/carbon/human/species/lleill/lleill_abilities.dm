@@ -776,7 +776,7 @@ CAPABILITY_TYPE(beast_form, CAP_BEAST_FORM, /datum/capability/beast_form, key = 
 /datum/capability/beast_form
 
 /datum/capability/beast_form/entries()
-	return list(op("revert_beast_form", ai(), wait(10 SECONDS), on_interrupt(PROC_REF(revert_beast_form_living_failed)), then(PROC_REF(revert_beast_form_living_done))))
+	return list(op("revert_beast_form", ai(), wait(10 SECONDS), on_interrupt(TYPE_PROC_REF(/mob/living, revert_beast_form_living_failed)), then(TYPE_PROC_REF(/mob/living, revert_beast_form_living_done))))
 
 /mob/living/proc/revert_beast_form()
 	set name = "Revert Beast Form"
