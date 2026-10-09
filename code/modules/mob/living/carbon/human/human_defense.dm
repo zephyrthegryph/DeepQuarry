@@ -24,6 +24,9 @@ emp_act
 		else // Otherwise we blocked normally and stopped all the damage.
 			return 0
 
+	if(projectile_hit_begin(P)) // a hit hook took the round over: no autopsy, embed or effects
+		return 0
+
 	if(!P.nodamage)
 		organ.add_autopsy_data("[P.name]", P.damage)
 

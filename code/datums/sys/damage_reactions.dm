@@ -7,13 +7,50 @@
 /atom/proc/react_to_entry(entry, severity = 0, atom/source = null, atom/attacker = null)
 	var/datum/damage_packet/packet = damage_packet(source, attacker, null, null, DAMAGE_PACKET_SILENT, 0, 0, null, entry, severity)
 	// The engine's hit action first (a silent entry is a hit too: an EMP or a blast that lands no integrity loss still reaches the hooks).
-	var/hit = (entry == DAMAGE_ENTRY_PROJECTILE) ? ACT_PASS : hit_try(src, packet) // a round reaches the hit action through its own damage packet
+	var/hit = (entry == DAMAGE_ENTRY_PROJECTILE && GLOB.projectile_pre_reacted == ref(src)) ? ACT_PASS : hit_try(src, packet) // bullet_act() already started the round's hit action
 	if(isnull(hit))
 		packet.release()
 		return TRUE
 	act_done(hit)
 	packet.release()
 	return FALSE
+
+/// The target (as a ref) whose hit action bullet_act() has already started for the round being resolved, so the damage
+/// packet the round delivers next neither starts the hit action a second time nor runs the hooks again.
+GLOBAL_VAR_INIT(projectile_pre_reacted, null)
+
+/// The hit action and packet bullet_act() started for the round being resolved; ended by projectile_hit_end().
+GLOBAL_VAR_INIT(projectile_hit_act, null)
+GLOBAL_VAR_INIT(projectile_hit_packet, null)
+
+/// Starts the round's hit action ahead of the round's own effects (on_hit(): stun, embed, reagents ...), so a veto (a hook
+/// that takes the hit over) stops those too, a zero-damage round included. Returns TRUE if a hook vetoed. Otherwise marks
+/// the target so the damage packet the round delivers next reuses the action (projectile_hit_end() ends it). Safe to call
+/// again for the same target while the action is open: it does nothing and returns FALSE.
+/atom/proc/projectile_hit_begin(obj/item/projectile/P)
+	if(GLOB.projectile_pre_reacted == ref(src))
+		return FALSE
+	var/datum/damage_packet/packet = damage_packet(P, P.firer, null, null, DAMAGE_PACKET_SILENT | DAMAGE_PACKET_PROJECTILE, 0, 0, null, DAMAGE_ENTRY_PROJECTILE)
+	var/hit = hit_try(src, packet)
+	if(isnull(hit))
+		packet.release()
+		return TRUE
+	GLOB.projectile_pre_reacted = ref(src)
+	GLOB.projectile_hit_act = hit
+	GLOB.projectile_hit_packet = packet
+	return FALSE
+
+/// Ends the hit action projectile_hit_begin() started on this atom, if any.
+/atom/proc/projectile_hit_end()
+	if(GLOB.projectile_pre_reacted != ref(src))
+		return
+	GLOB.projectile_pre_reacted = null
+	var/datum/act/hit = GLOB.projectile_hit_act
+	var/datum/damage_packet/packet = GLOB.projectile_hit_packet
+	GLOB.projectile_hit_act = null
+	GLOB.projectile_hit_packet = null
+	act_done(hit)
+	packet?.release()
 
 // ---- reflects(kinds, chance): projectiles bounce back ----
 
