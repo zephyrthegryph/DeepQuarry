@@ -155,12 +155,24 @@ the sha of those still failing; `--adopt --reason` adds a run's NEW failures (a 
 `dq_push_master.sh` refreshes the list from the focused run JSONs for the pushed head if any exist (no tests run there);
 a changed list goes in as its own data-only commit on top (`DQ_KNOWN_FAILURES_REFRESH=0` turns that off).
 
-**Slow pins in a second world (`--split-slow`).** `dq_look_state_pin` and `dq_look_tree_pin` (`DQ_SLOW_TESTS` overrides the
-list) run in a second DreamDaemon (`run2`) beside the rest, from the same compiled `.dmb`; the summaries merge into one
-`data/test-runs/<id>_focused.json` and one exit code. It is the default when the selection holds a slow pin and other
-tests; `--no-split-slow` or `DQ_FOCUS_SPLIT=0` disables it, and `--bless` / `--repeat` never split. The slow world's timeout
-defaults to 45 minutes (`DQ_FOCUS_TIMEOUT_MINUTES` overrides both). Worlds share no mutable file: each takes its own run slot
-(`data/runs/runN`), port, log dir, spritesheet dir and results file, exactly as shards do.
+**Look pins (`dq_look_state_pin`, `dq_look_tree_pin`).** One sweep (`code/modules/unit_tests/dq_look_sweep.dm`) makes each creatable type once and
+writes both snapshot sets: the made look is the tree row and the state pin's base, and every probe writes a var on that same instance, redraws,
+captures, writes the original back and checks the look returned (a type whose look does not return is listed as `look sweep IMPURE` in tests.log and
+probes on fresh instances). The vars probed are narrowed to those a draw can read by `analyze look-keys` (`data/look-plan.tsv`: per type a key and a
+probe list, `*` meaning unknown, scan everything). `dq_focused_test.sh` runs the pins as `DQ_LOOK_SHARDS` (default 4, `--look-shards=N`) worlds from the
+one compiled `.dmb`, each probing every Nth type (`sweep_owns`), beside one world for any other selected tests; the summaries merge into one
+`data/test-runs/<id>_focused.json`. Without `--full` only types whose key differs from `code/modules/unit_tests/snapshots/look_keys.txt` are probed (no
+changed type: no world is booted); a passing run that covered both pins rewrites that file, so commit it with the snapshots. `--full` probes everything
+(merge worktree, nightly); `--bless` and `--repeat` run the pins unsharded and full; `tools/dq_pin.sh --look-state/--look-tree` records new pins with
+`--look-shards=1 --full`. `--look-order=reverse|shuffle:N` reorders the types and `--look-dump=DIR` writes the rows each world produced, merged and
+sorted under `DIR/merged` (two runs compare with `diff -r`): the determinism proof. `--no-split-slow` / `DQ_FOCUS_SPLIT=0` restores one world. Other
+slow tests (`DQ_SLOW_TESTS`) still go to a second world. The slow world's timeout defaults to 45 minutes (`DQ_FOCUS_TIMEOUT_MINUTES` overrides it).
+Worlds share no mutable file: each takes its own run slot (`data/runs/runN`), port, log dir, spritesheet dir and results file, exactly as shards do.
+
+**At most two look-pin runs at once on the machine (`tools/dq_look_lock.sh`).** A run holding a look pin takes one of two slots under
+`E:/dq-cache/look-pin-locks` (`DQ_LOOK_LOCK_DIR`, `DQ_LOOK_PIN_SLOTS`; 0 turns it off) before it starts and gives it back when it ends. A third run prints
+`look-pin lock: waiting` with its place in the queue and who holds the slots, and waits. The merge worktree (`E:/projects/dq-wt/merge-base`) is queued ahead of
+every other worktree; within a priority the order is arrival. A slot or queue entry whose process is gone is reclaimed by the next waiter.
 
 **Do not hand back mid-run.** `dq_focused_test.sh` ends every run with one line,
 `FOCUSED RESULT: N passed, M failed (json: path)`, and its exit status. A long batch is started with `--detach`, which prints

@@ -3861,3 +3861,25 @@ The cycler preserves shock-before-empty-grab checking: starts() silently refuses
 ### Declarative machinery requirements (2026-10-08)
 
 CableLayer's cable-or-on admission uses any_of(req_full(cable), req_is(on)); the bomb tester selects loading when either declared tank relation is empty; the painter selects on req_operable() and requires an empty insert relation. These replace four former-REQ boolean adapters without changing operation keys or labels. Cable and painter refusal text is unchanged, and native requirement reads track relation/stat changes directly. No pin row change is intended for these three classes.
+## Look pin sweep (rewrite/pin-speed)
+
+The two look pins are one sweep (`code/modules/unit_tests/dq_look_sweep.dm`, doc/rewrite/agent_workflow.md section 9): each type is made once, from a block emptied and
+restored to the template's state, with the kernel's zero-delay work settled on a frozen clock; the probes run on that instance and the look must come back after each. The
+look-state probes are narrowed to the vars `analyze look-keys` finds a draw reading, and a run probes only types whose key changed since `snapshots/look_keys.txt`.
+
+* **Re-blessed rows (one unsharded, full, unnarrowed `--bless` run; everything else came out byte-identical to the recorded files):**
+  * *Leftovers from earlier types, removed.* The old tree pin never emptied the tile between types, so a fridge or cabinet took in what the type before it spilled:
+    `look_trees/obj.machinery.smartfridge.txt`, nine `survival_pod` types, the fill overlay `-3` / `boxes3` / `chem3` becomes `-0` (an empty fridge);
+    `look_trees/obj.structure.closet.secure_closet.guncabinet.txt`, `guncabinet/rifle`, `laser x2 + projectile` becomes `projectile x2` (its own two rifles).
+  * *Blob cores.* The snapshot subject is placed without an overmind and given one of a fixed type (`/datum/blob_type/classic` unless the core names its own,
+    `dq_snapshot_allocate()`), so the colour no longer follows what the RNG had drawn: `look_trees/obj.structure.blob.txt`, `core` and `core/random_medium`
+    `#8ba6e9` becomes `#aaff00`, `core/random_hard` `#aaaabb` becomes `#aaff00` (`random_easy` already was). A random core's pin is now the pin of the fixed type.
+  * *Self-ending mobs.* `morph/dominated_prey` and `overmap` decide in `after_init` (the fix recorded in b27c997ee1, which master reverted along with the rest of its
+    merge; only these two files are taken from it) to end themselves when made without prey / a marker, so init no longer writes owned objects into a dying mob.
+    `look_trees/mob.living.simple_mob.txt` (both) `runtime: OWN: refused ...` becomes `deleted itself on creation`; `look_states/mob.living.simple_mob.vore.morph.txt` loses
+    its `runtime: OWN: refused _own_put(hud_list)` row (the probe makes nothing).
+* **Still order dependent, NOT blessed:** `look_trees/turf.simulated.shuttle.txt`, `shuttle/plating/carry` and `shuttle/plating/airless/carry` underlay
+  (`tiles_vr.dmi:steel:-45` recorded; a path-order sweep gives `space.dmi:white:-82`, a shuffled one gives either). The settle step did not remove it. Likely cause (not proven): what the floor "landed on" is read from the tile it replaces,
+  and the sweep's spot is restored by `ChangeTurf(old_type)`, which keeps state of the turf before it. Proposed fix: make each
+  turf probe on a fresh tile of the template's floor type (`ChangeTurf` from a canonical turf, then drop `landed_holder`), then bless the one rule.
+* **Harness:** the bless writes CRLF and a lone newline for an empty row set; the committed files are LF and empty files stay empty, so those were normalised back.

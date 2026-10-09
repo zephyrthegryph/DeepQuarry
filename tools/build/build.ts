@@ -1823,6 +1823,18 @@ function testWorldParams(get: any): Record<string, string> {
     params['snapshot-bless'] = '1';
     Juke.logger.warn('DQ_SNAPSHOT_BLESS=1: snapshot tests rewrite their recorded files; review the diff before committing.');
   }
+  // tools/dq_focused_test.sh: one slice of a sweep per focused world (DQ_FOCUS_SHARD=index/count, 0-based; the sweep tests ask
+  // sweep_owns()), and extra world params (DQ_WORLD_PARAMS=key=value&key=value; the look sweep's look-plan, look-types, look-order,
+  // look-dump). A sharded dm-test run sets its own shard params after this, so they win there.
+  const slice = /^(\d+)\/(\d+)$/.exec(process.env.DQ_FOCUS_SHARD ?? '');
+  if (slice) {
+    params['shard-index'] = slice[1];
+    params['shard-count'] = slice[2];
+  }
+  for (const pair of (process.env.DQ_WORLD_PARAMS ?? '').split('&')) {
+    const eq = pair.indexOf('=');
+    if (eq > 0) params[pair.slice(0, eq)] = pair.slice(eq + 1);
+  }
   return params;
 }
 
