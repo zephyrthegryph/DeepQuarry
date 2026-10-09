@@ -220,7 +220,6 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 		hit(W.force)
 		if(get_integrity() <= 7)
 			set_anchored(FALSE)
-			update_nearby_icons()
 			step(src, get_dir(user, src))
 	else
 		play_sfx(src, SFX_EFFECTS_GLASSHIT)
@@ -282,6 +281,9 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 	unacidable = TRUE
 	var/active = 0
 
+TRACKED(/obj/item/holo/esword, active)
+TRACKED(/obj/item/holo/esword, lcolor)
+
 /obj/item/holo/esword/green
 	lcolor = "#008000"
 
@@ -304,7 +306,7 @@ CAPABILITIES(/obj/item/holo/esword)
 /// Old attack_self.
 /obj/item/holo/esword/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	active = !active
+	set_active(!active)
 	if (active)
 		force = 30
 		item_state = "[icon_state]_blade"
@@ -318,7 +320,6 @@ CAPABILITIES(/obj/item/holo/esword)
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		to_chat(user, span_notice("[src] can now be concealed."))
 
-	update_icon()
 	add_fingerprint(user)
 	return TRUE
 
@@ -332,21 +333,12 @@ CAPABILITIES(/obj/item/holo/esword)
 		else
 			rainbow = FALSE
 		to_chat(user, span_notice("You manipulate the color controller in [src]."))
-		update_icon()
 	return OP_DECLINE
 
-DECLARE_APPEARANCE_PROC(/obj/item/holo/esword, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/holo/esword/appearance_overlays()
-	. = list()
-	. += ..()
-	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
-	blade_overlay.color = lcolor
-	if(active)
-		. += blade_overlay
-	if(ishuman(loc))
-		var/mob/living/carbon/human/H = loc
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+/// The blade, in its colour, while it is switched on (the look redraws the hand it is held in when the sprite changes).
+/obj/item/holo/esword/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "[initial(icon_state)]_blade", color = lcolor), active)
 
 //BASKETBALL OBJECTS
 

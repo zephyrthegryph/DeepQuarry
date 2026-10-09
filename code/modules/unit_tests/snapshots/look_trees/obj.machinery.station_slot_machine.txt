@@ -1,0 +1,5 @@
+/obj/machinery/station_slot_machine icon: icons/obj/casino.dmi
+/obj/machinery/station_slot_machine state: ntslotmachine
+/obj/machinery/station_slot_machine dir: 2
+/obj/machinery/station_slot_machine overlay: icons/obj/casino.dmi:ntslotmachine:8:#000000
+

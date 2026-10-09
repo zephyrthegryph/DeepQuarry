@@ -207,7 +207,7 @@ CAPABILITIES(/obj/item/paper/admin)
 		info += t
 		updateinfolinks()
 	update_space(t)
-	update_icon()
+	changed(src)
 
 /obj/item/paper/admin/proc/updateDisplay()
 	SStgui.update_uis(src)

@@ -269,13 +269,10 @@
 
 	if(istype(cashmoney, /obj/item/spacecasinocash))
 		act_message(user, src, others = span_info("%U% inserts some chips into %T%."))
-		cashmoney.worth -= price
+		cashmoney.set_worth(cashmoney.worth - price)
 
 		if(cashmoney.worth <= 0)
 			consume(cashmoney, user)
-		else
-			cashmoney.update_icon()
-			changed(cashmoney)
 	return 1
 
 /obj/machinery/casino_prize_dispenser/ui_assets(mob/user)

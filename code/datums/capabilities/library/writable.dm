@@ -110,7 +110,7 @@
 /datum/capability/writable/proc/write(atom/holder, mob/user, obj/item/held)
 	var/obj/item/paper/P = holder
 	if(istype(P))
-		if(P.icon_state == "scrap")
+		if(P.crumpled)
 			return refuse(user, "\The [P] is too crumpled to write on.")
 		P.can_read_view = TRUE
 		P.tgui_view = "write"

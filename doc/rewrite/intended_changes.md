@@ -3891,3 +3891,48 @@ look-state probes are narrowed to the vars `analyze look-keys` finds a draw read
   and the sweep's spot is restored by `ChangeTurf(old_type)`, which keeps state of the turf before it. Proposed fix: make each
   turf probe on a fresh tile of the template's floor type (`ChangeTurf` from a canonical turf, then drop `landed_holder`), then bless the one rule.
 * **Harness:** the bless writes CRLF and a lone newline for an empty row set; the committed files are LF and empty files stay empty, so those were normalised back.
+
+## Draw rest: the last legacy look providers (rewrite/draw-rest)
+
+Cash and casino chips, paper family and stamps, bundles, mail, telecube, device assemblies and holder, transfer valve, glass jar, fishing and butterfly nets,
+card hands, slot machines, windows (base, bay, eris, fancy shuttle, survival pod), windoor assembly, holo sword, pump, reagent distillery, anomaly harvester,
+recycling panels, space vines and the maintenance vendor glow now draw through `draw(look)`.
+
+* **Pin classes blessed (`look_trees/`):**
+  * *Drawn at creation.* A legacy provider ran on the first `update_icon()`, so a thing nobody asked to redraw kept its mapped look; the first refresh now draws every atom.
+    `obj.item.spacecash` / `spacecasinocash` / `spacecasinocash_fake` roots (a pile of worth 0 shows one note), `obj.machinery.anomaly_harvester` (`harvester_off`),
+    the distillery and its industrial type (`distiller-input` / `-output` / `-connector` over the mapped state), `obj.item.mail` (`postmark`, `stamp_*`).
+  * *Overlay icon is explicit.* The new overlays name their icon (`telecube.dmi:cube-ready`, `bureaucracy.dmi:postmark`) where a legacy `image("state")` had none. Same sprite.
+  * *Preset text shows the written sheet.* 52 papers with `info` set by their type (`paper/Cloning`, `fluff/love_letter`, `carbon/cursedform`, `alien/source`, ...) draw
+    `paper_words` (`alienpaper_words`, `paper_stack_words`) at creation; the legacy pin recorded the blank sheet because nothing redrew them.
+  * *Full-tile bay and eris windows drop the editor preview.* They draw a blank base state with their joins (`bay_window.dmi::`) where the pin recorded `preview_glass` (the
+    legacy `after_init` blanking never ran in the frozen sweep). In the live game the result is the same.
+  * *An empty hand.* A `/obj/item/hand` made with no cards ends itself (its `hand_empty` effect) where the legacy pin kept the mapped `empty` state.
+* **Cash:** `worth` is tracked; every `.worth -=` / `=` in the registers, ATM, casino machines, arcade and trader goes through `set_worth()`, so a pile is renamed and redrawn
+  whenever a machine takes from it (before, the name went stale until the next `update_icon()`). `set_worth()` and `adjust_worth()` lose their `update` argument. Scattered notes use
+  the shared seeded layouts (`note_seed`, rolled once); the casino chips no longer re-roll their scatter on every redraw. The charge card keeps its own look.
+* **Paper:** stamps are `stamp_marks` (state, x, y) replacing `ico`, `offset_x`, `offset_y` and the raw stamp overlays; the photocopier writes grey marks. `crumpled` is tracked and
+  `writable`, the sticky note and the pen check it instead of reading `icon_state == "scrap"`. The words (`info`) are a plain var every printer writes, so the writes after creation in
+  `paper.dm` and the admin fax ask `changed(src)`. The clipboard draws the top sheet's stamps (it passed the overlay list as one entry). A bundle with no pages draws nothing.
+* **Assemblies:** `attached_overlays` is gone; each part answers `holder_layers()` / `holder_state()` and the holder draws them (watching both parts). A proximity sensor primes its grenade
+  from `on_change(scanning)`. A mousetrap's `armed` is tracked.
+* **Transfer valve:** the second tank's underlay is shifted with `pixel_x = -13` (it was an `/icon` shifted WEST 13).
+* **Jar and nets:** a jar's coin heap is placed by index, not re-rolled; a tank scales its animal by a matrix (no longer `adjust_scale()` on the animal and back); the duplicate glow image is
+  dropped (it was the same image). A net names itself for what it holds; `holds_creature()` replaces reading its own `icon_state` for the weight.
+* **Hands:** a lone card's jitter is rolled once (`jitter_x`, `jitter_y`); `concealed` and `direction` are tracked.
+* **Slot machines:** `slot_phase` ("rolling", "winning", or none) replaces writing `icon_state`; `ispowered` and `isbroken` are tracked.
+* **Windows:** the join pieces come from the smoothing index (`connections`) for every window, as for bay and eris, where the base window looked at its anchored same-glass neighbours itself.
+  A slim window's lean sign is rolled once (`tilt_sign`); its tilt runs as a look effect. Silicate is a tracked `silicate` and a white sheen layer (`updateSilicate()` and
+  `update_nearby_icons()` are gone). `look_overlay_image()` gains `blend_mode` for the bay window's multiplied damage layer.
+* **Space vines:** growth is a function of health, the growth threshold and the fringe cap computed afresh (`plant_growth_cap()`), where `refresh_icon()` lowered `max_growth` further on every call.
+  The wall shift is rolled once (`wall_shift`).
+* **Pump:** its overlays are named from the type's own state (`initial(icon_state)`), where the legacy provider named them from the state the last redraw left (`pump-running-tank`).
+* **Not done in this lane:** `rig.dm`, `protean_rig.dm`, `nailpolish.dm`, `mecha.dm` and the mecha appearance files, `mine_turfs.dm` (they still use `task_start` or `datum/interaction`); the maint
+  recycler (a vis object), the remote scene tool and voodoo doll (they read another mob's whole look); `code/game/machinery` and `code/modules/power`.
+* **Framework gap, not fixed here:** a thing put into another with a plain `forceMove()` never reaches the containment ledger (`slot_contents()` / `look.things_in()` read
+  `L.slots`, filled only by `move_into()` / `own_bring_in()`, `code/engine/refs/containment/api.dm:235`, `ledger.dm:591`), so a draw cannot hear a creature scooped into a net or jar. The net
+  asks `changed(src)` at its entry and exit sites and the jar redraws through its tracked `contains`; both are temporary until `forceMove()` into a holder registers in the default slot.
+* **Space vine with a growth threshold of 0** (`look_states/obj.effect.plant.txt`, `plant` and `plant/single`, `growth_threshold=0`): the draw no longer divides by it; it shows the full
+  stage (`mushroom7-3`, `-0` lost) where the legacy provider raised `Division by zero`. The three rows are written by hand to the rows the sweep produced (`growth_threshold=1` is the same).
+* **Pump state pin** (`look_states/obj.machinery.pump.txt`, `on=1` and `on=2`): the running pump's rows change from the `pump-running-tank` / `pump-running-glass` layers (named from the state the previous redraw left) to the
+  `pump` -> `pump-running` base state, with the tank and glass layers named from the type's own state and so unchanged. Harness: the bless also wrote a lone newline into empty files (six `look_states/` files); restored.

@@ -227,7 +227,6 @@ TRACKED(/obj/item/gun/energy/sizegun, size_set_to)
 				return
 		if(!M.resize(set_size, uncapped = M.has_large_resize_bounds(), ignore_prefs = ignoring_prefs, allow_stripping = TRUE))
 			to_chat(M, span_blue("The beam fires into your body, changing your size!"))
-		M.update_icon()
 		return
 	return 1
 
@@ -247,7 +246,6 @@ TRACKED(/obj/item/gun/energy/sizegun, size_set_to)
 		M.resize(set_size, uncapped = TRUE, ignore_prefs = TRUE) // Always ignores prefs, caution is advisable
 
 		to_chat(M, span_blue("The beam fires into your body, changing your size!"))
-		M.update_icon()
 		return
 	return 1
 

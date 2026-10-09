@@ -284,8 +284,7 @@ CAPABILITIES(/datum/trader_review)
 				for(var/obj/item/spacecash/c in bank)
 					var/loadsamoney = w.worth
 					consume(w, user)
-					c.worth += loadsamoney
-					c.update_icon()
+					c.set_worth(c.worth + loadsamoney)
 					loadsamoney = null
 					act_message(src, user, others = span_notice("%U% accepts %T%'s [O]."))
 					return OP_PASS
@@ -331,8 +330,7 @@ CAPABILITIES(/datum/trader_review)
 			for(var/obj/c in bank)
 				if(istype(c, /obj/item/spacecash))
 					var/obj/item/spacecash/a = c
-					a.worth -= amount
-					a.update_icon()
+					a.set_worth(a.worth - amount)
 					if(a.worth <= 0)
 						rel_remove(src, nameof(bank), a)
 						spent(a)

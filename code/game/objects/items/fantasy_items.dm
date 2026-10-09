@@ -81,7 +81,6 @@ CAPABILITIES(/obj/structure/bed/bath)
 			to_chat(user, span_notice("You wet \the [I] in \the [src]."))
 			play_sfx(src, SFX_EFFECTS_SLOSH)
 	if(istype(I, /obj/item/reagent_containers/glass))
-		update_icon()
 		return OP_PASS
 	else if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I

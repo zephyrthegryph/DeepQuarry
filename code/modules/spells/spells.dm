@@ -130,7 +130,6 @@
 		rel_set(src, nameof(owner), loc)
 	if(!owner_ref())
 		return INITIALIZE_HINT_QDEL
-	update_icon()
 
 /obj/item/spell/unrestricted/run_checks()
 	if(owner_ref())

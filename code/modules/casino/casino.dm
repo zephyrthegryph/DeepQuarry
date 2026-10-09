@@ -549,8 +549,7 @@ TRACKED(/obj/machinery/wheel_of_fortune, lottery_sale)
 		return
 
 	to_chat(user,span_notice("You put [lottery_price] credits worth of chips into the Wheel of Fortune and it pings to notify of your lottery ticket registered!"))
-	cashmoney.worth -= lottery_price
-	cashmoney.update_icon()
+	cashmoney.set_worth(cashmoney.worth - lottery_price)
 
 	if(cashmoney.worth <= 0)
 		consume(cashmoney, user)
@@ -714,7 +713,6 @@ TRACKED(/obj/machinery/casinosentientprize_handler, casinosentientprize_sale)
 				C.name = "Sentient Prize Collar: Available! [user.name] purchaseable at the SPASM!"
 				C.desc = "Golden Goose Sentient Prize collar. The tags shows in flashy colorful text the wearer is [user.name] and is currently available to buy at the Sentient Prize Automated Sales Machinery!"
 				C.icon_state = "casinoslave_available"
-				C.update_icon()
 				rel_add(src, nameof(collar_list), C)
 
 				spawn_casinochips(casinosentientprize_price, src.loc)
@@ -766,7 +764,6 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 		if(confirm == "Yes")
 			to_chat(user, span_warning("[C.sentientprizename] collar has been deleted from registry!"))
 			C.icon_state = "casinoslave"
-			C.update_icon()
 			C.name = "disabled Sentient Prize Collar: [C.sentientprizename]"
 			C.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [C.sentientprizename], but harsh red text informs you its been disabled."
 			LAZYREMOVE(sentientprizes_ckeys_list, C.sentientprizeckey)
@@ -1014,8 +1011,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 				declined_tf = TRUE
 
 	// All sleeping dialogs are done and the collar is re-validated — charge now.
-	cashmoney.worth -= charge
-	cashmoney.update_icon()
+	cashmoney.set_worth(cashmoney.worth - charge)
 
 	if(cashmoney.worth <= 0)
 		consume(cashmoney, user)
@@ -1023,7 +1019,6 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 	if(buystate == "selfbuy")
 		to_chat(user,span_notice("You put [charge] credits worth of chips into the SPASM and nullify your collar!"))
 		collar.icon_state = "casinoslave"
-		collar.update_icon()
 		collar.name = "disabled Sentient Prize Collar: [collar.sentientprizename]"
 		collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [collar.sentientprizename], but harsh red text informs you its been disabled."
 		LAZYREMOVE(sentientprizes_ckeys_list, collar.sentientprizeckey)
@@ -1046,7 +1041,6 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 		else if(declined_tf)
 			to_chat(user,span_notice("You decided to claim your prize without transformation."))
 		collar.icon_state = "casinoslave_owned"
-		collar.update_icon()
 		collar.ownername = user.name
 		collar.name =  "Sentient Prize Collar: [collar.sentientprizename] owned by [collar.ownername]!"
 		collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [collar.sentientprizename] and they are owned by [collar.ownername]."

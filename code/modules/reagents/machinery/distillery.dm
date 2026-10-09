@@ -41,16 +41,6 @@
 
 	var/static/radial_mix = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_mix")
 
-// Overlay holders so we don't have to constantly remake them.
-	var/image/overlay_output_beaker
-	var/image/overlay_input_beaker
-	var/image/overlay_off
-	var/image/overlay_ready
-	var/image/overlay_cooling
-	var/image/overlay_heating
-	var/image/overlay_dumping
-	var/image/overlay_connected
-
 	var/obj/item/reagent_containers/glass/InputBeaker
 	var/obj/item/reagent_containers/glass/OutputBeaker
 
@@ -79,9 +69,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 	if(!base_state)
 		base_state = icon_state
 
-	setup_overlay_vars()
 
-	update_icon()
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/RefreshParts()
 	var/total_laser_rating = get_part_rating(/obj/item/stock_parts/micro_laser)
@@ -90,16 +78,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 	min_temp = max(1, initial(min_temp) - (30 * (total_laser_rating - 1)))
 
 	return
-
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/setup_overlay_vars()
-	overlay_output_beaker = image(icon = src.icon, icon_state = "[base_state]-output")
-	overlay_input_beaker = image(icon = src.icon, icon_state = "[base_state]-input")
-	overlay_off = image(icon = src.icon, icon_state = "[base_state]-bad")
-	overlay_ready = image(icon = src.icon, icon_state = "[base_state]-good")
-	overlay_cooling = image(icon = src.icon, icon_state = "[base_state]-cool")
-	overlay_heating = image(icon = src.icon, icon_state = "[base_state]-heat")
-	overlay_dumping = image(icon = src.icon, icon_state = "[base_state]-dump")
-	overlay_connected = image(icon = src.icon, icon_state = "[base_state]-connector")
 
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/examine(mob/user)
@@ -206,9 +184,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 		if("adjust temp")
 			var/temp = A.step_value("temp")
 			if(isnum(temp) && !use_atmos)
-				target_temp = clamp(temp, min_temp, max_temp)
+				set_target_temp(clamp(temp, min_temp, max_temp))
 
-	update_icon()
 	return OP_OK
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/has_free_beaker_slot(datum/act/op/A)
@@ -240,7 +217,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 				W.add_fingerprint(user)
 				move_into(src, nameof(src.OutputBeaker), W, user)
 
-	update_icon()
 	return TRUE
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/use_power(amount, chan = -1)
@@ -320,38 +296,35 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 			use_power(power_rating * CELLRATE * 0.5)
 			reagents.trans_to_holder(OutputBeaker.reagents, amount = rand(1, 5))
 
-	update_icon()
+	changed(src) // the gas temperature the lamp shows is not published
 	if(!on)
 		distillery_heat(0, null)
 		if(isnull(heat_body))
 			return PROCESS_KILL
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/reagent_distillery, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/appearance_overlays()
-	. = list()
-	. += ..()
+TRACKED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, target_temp)
 
-	if(InputBeaker)
-		. += overlay_input_beaker
-
-	if(OutputBeaker)
-		. += overlay_output_beaker
+/// The beakers, the status lamp (dumping, ready, heating, cooling or off) and the port connector. The gas temperature is not
+/// published, so the process step asks for the redraw each cycle while it runs.
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/draw(datum/look/look)
+	..()
+	look.watch(OutputBeaker)
+	look.overlay("[base_state]-input", InputBeaker)
+	look.overlay("[base_state]-output", OutputBeaker)
 
 	if(on)
 		if(OutputBeaker && OutputBeaker.reagents.total_volume < OutputBeaker.reagents.maximum_volume)
-			. += overlay_dumping
+			look.overlay("[base_state]-dump")
 		else if(abs(get_temperature() - target_temp) <= 0.5)
-			. += overlay_ready
+			look.overlay("[base_state]-good")
 		else if(get_temperature() < target_temp)
-			. += overlay_heating
+			look.overlay("[base_state]-heat")
 		else
-			. += overlay_cooling
-
+			look.overlay("[base_state]-cool")
 	else
-		. += overlay_off
+		look.overlay("[base_state]-bad")
 
-	if(connected_port())
-		. += overlay_connected
+	look.overlay("[base_state]-connector", connected_port())
 
 /*
  * Subtypes

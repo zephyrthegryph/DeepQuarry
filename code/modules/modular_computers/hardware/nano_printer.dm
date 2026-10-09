@@ -87,8 +87,6 @@ CAPABILITIES(/obj/item/computer_hardware/nano_printer)
 			user.drop_from_inventory(B)
 			user.put_in_hands(B.pages[1])
 			consume(B, user)
-		else //if at least two items remain, just update the bundle icon
-			B.update_icon()
 		to_chat(user, "You add [num_of_pages_added] papers from \the [W] into \the [src].")
 	return OP_PASS
 

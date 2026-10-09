@@ -365,39 +365,28 @@ CAPABILITIES(/obj/structure/window/bay)
 
 /// Draws against its neighbours, once they exist.
 /obj/structure/window/bay/proc/connect_after_init(datum/act/timer/A)
-	icon_state = ""
-	update_icon()
+	update_connections()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/window/bay, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
-/obj/structure/window/bay/appearance_overlays()
-	. = list()
-	update_connections() // an unanchored one answers all zeros itself (can_visually_connect())
-
+/obj/structure/window/bay/look_parts(datum/look/look)
+	look.state("")
+	if(length(connections) < 4 || length(other_connections) < 4)
+		return
 	var/percent_damage = 0 // Used for icon state of damage layer
 	var/damage_alpha = 0 // Used for alpha blending of damage layer
-	if (max_integrity && get_integrity() < max_integrity)
-		percent_damage = (max_integrity - get_integrity()) / max_integrity // Percentage of damage received (Not health remaining)
-		percent_damage = round(percent_damage, 0.25) // Round to nearest multiple of 25
+	if(max_integrity && get_integrity_damage() > 0)
+		percent_damage = round(get_integrity_damage() / max_integrity, 0.25) // Percentage of damage received (Not health remaining), to the nearest multiple of 25
 		damage_alpha = 256 * percent_damage - 1
 
 	var/img_dir
-	var/image/I
 	for(var/i = 1 to 4)
 		img_dir = 1<<(i-1)
 		if(other_connections[i] != "0")
-			I = image(icon, "[basestate]_other_onframe[other_connections[i]]", dir = img_dir)
-			I.color = color
+			look.overlay(look_overlay_image(icon, "[basestate]_other_onframe[other_connections[i]]", dir = img_dir, color = color))
 		else
-			I = image(icon, "[basestate]_onframe[connections[i]]", dir = img_dir)
-			I.color = color
-		. += I
+			look.overlay(look_overlay_image(icon, "[basestate]_onframe[connections[i]]", dir = img_dir, color = color))
 
 	if(damage_alpha)
-		var/image/D
-		D = image(icon, "window0_damage", dir = img_dir)
-		D.blend_mode = BLEND_MULTIPLY
-		D.alpha = damage_alpha
-		. += D
+		look.overlay(look_overlay_image(icon, "window0_damage", dir = img_dir, alpha = damage_alpha, blend_mode = BLEND_MULTIPLY))
 
 /obj/structure/window/bay/reinforced
 	name = "reinforced window"
@@ -451,23 +440,17 @@ CAPABILITIES(/obj/structure/window/eris)
 
 /// Draws against its neighbours, once they exist.
 /obj/structure/window/eris/proc/connect_after_init(datum/act/timer/A)
-	icon_state = ""
-	update_icon()
+	update_connections()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/window/eris, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/window/eris/appearance_overlays()
-	. = list()
-	update_connections() // an unanchored one answers all zeros itself (can_visually_connect())
-
-	var/img_dir
-	var/image/I
+/obj/structure/window/eris/look_parts(datum/look/look)
+	look.state("")
+	if(length(connections) < 4 || length(other_connections) < 4)
+		return
 	for(var/i = 1 to 4)
-		img_dir = 1<<(i-1)
 		if(other_connections[i] != "0")
-			I = image(icon, "[basestate][other_connections[i]]", dir = img_dir)
+			look.overlay(look_overlay_image(icon, "[basestate][other_connections[i]]", dir = 1<<(i-1)))
 		else
-			I = image(icon, "[basestate][connections[i]]", dir = img_dir)
-		. += I
+			look.overlay(look_overlay_image(icon, "[basestate][connections[i]]", dir = 1<<(i-1)))
 
 /obj/structure/window/eris/reinforced
 	name = "reinforced window"

@@ -185,16 +185,14 @@ MAP_RESOLVER_VARS(/obj/effect/floor_decal/fancy_shuttle, "fancy_shuttle_tag")
 	var/fancy_shuttle_tag
 
 // Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
-DECLARE_APPEARANCE_PROC(/obj/structure/window/fancy_shuttle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/window/fancy_shuttle/appearance_overlays()
-	. = list()
+/obj/structure/window/fancy_shuttle/look_parts(datum/look/look)
 	if(fancy_shuttle_tag) // after a shuttle jump it won't be set anymore, but the shuttle jump proc will set our icon and state
 		var/list/helper = GLOB.fancy_shuttles[fancy_shuttle_tag]
 		if(!helper)
 			WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
-			return .
-		icon = helper[1]
-		icon_state = "walls [x - helper[2]],[y - helper[3]]"
+			return
+		look.set_icon(helper[1])
+		look.state("walls [x - helper[2]],[y - helper[3]]")
 
 /**
  * Invisible ship equipment (otherwise the same as normal)

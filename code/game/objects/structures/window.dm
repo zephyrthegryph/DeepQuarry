@@ -50,10 +50,6 @@
 	play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 100)
 
 // Crack visuals / warnings as integrity drops past thresholds.
-/obj/structure/window/on_update_integrity(old_value, new_value)
-	. = ..()
-	update_icon()
-
 /obj/structure/window/atom_destruction(damage_flag)
 	shatter()
 	return ..()
@@ -64,17 +60,7 @@
 		if(get_integrity() >= max_integrity)
 			visible_message("[src] looks fully repaired." )
 	else // Reinforce
-		silicate = min(silicate + amount, 100)
-		updateSilicate()
-
-/obj/structure/window/proc/updateSilicate()
-	cut_overlays()
-	update_icon()
-
-	var/image/img = image(src)
-	img.color = "#ffffff"
-	img.alpha = silicate * 255 / 100
-	add_overlay(img)
+		set_silicate(min(silicate + amount, 100))
 
 /obj/structure/window/proc/shatter(display_message = 1)
 	play_sfx(src, SFX_SHATTER)
@@ -127,7 +113,6 @@
 	if(!reinf && get_integrity() - source.thrown_impact_force(throwingdatum) <= 7)
 		set_anchored(FALSE)
 		update_verbs()
-		update_nearby_icons()
 		step(src, get_dir(source, src))
 	..()
 
@@ -238,7 +223,6 @@
 			hit(W.force)
 			if(get_integrity() <= 7)
 				set_anchored(FALSE)
-				update_nearby_icons()
 				step(src, get_dir(user, src))
 		else
 			play_sfx(src, SFX_EFFECTS_GLASSHIT)
@@ -273,11 +257,11 @@
 	update_nearby_tiles(need_rebuild=1) //Compel updates before
 	. = ..()
 	if(.)
-		updateSilicate()
 		update_nearby_tiles(need_rebuild=1)
 
 CAPABILITIES(/obj/structure/window)
 	smoothing()
+	rolls(nameof(tilt_sign), pick_one(list(-1, 1)))
 	param(nameof(dir), pos = 1)
 	param(nameof(constructed), pos = 2)
 	op("bang", hand(), stance(I_HURT), label("Bang on"), then(PROC_REF(interaction_bang)))
@@ -308,16 +292,12 @@ CAPABILITIES(/obj/structure/window)
 	ini_dir = dir
 
 	update_nearby_tiles(need_rebuild=1)
-	update_nearby_icons()
 
 // neighbouring windows and tables re-smooth without it.
 /obj/structure/window/on_destroy(force)
 	set_density(FALSE)
 	update_nearby_tiles()
-	var/turf/location = loc
 	..()
-	for(var/obj/structure/window/W in orange(location, 1))
-		W.update_icon()
 
 /obj/structure/window/Move()
 	var/ini_dir = dir
@@ -336,12 +316,6 @@ CAPABILITIES(/obj/structure/window)
 		return TRUE
 	return ..()
 
-//This proc is used to update the icons of nearby windows. It should not be confused with update_nearby_tiles(), which is an atmos proc!
-/obj/structure/window/proc/update_nearby_icons()
-	update_icon()
-	for(var/obj/structure/window/W in orange(src, 1))
-		W.update_icon()
-
 //Updates the availabiliy of the rotation verbs
 /obj/structure/window/proc/update_verbs()
 	if(anchored || is_fulltile())
@@ -353,38 +327,47 @@ CAPABILITIES(/obj/structure/window)
 		grant(src, granted_verb(/atom/movable/proc/rotate_clockwise), src)
 		grant(src, granted_verb(/atom/movable/proc/turn_around), src)
 
-//merges adjacent full-tile windows into one (blatant ripoff from game/smoothwall.dm)
-DECLARE_APPEARANCE_PROC(/obj/structure/window, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
-/obj/structure/window/appearance_overlays()
-	. = list()
-	//A little cludge here, since I don't know how it will work with slim windows. Most likely VERY wrong.
-	//this way it will only update full-tile ones
+TRACKED(/obj/structure/window, silicate)
+TRACKED(/obj/structure/window, tilt_sign)
+
+/// Which way the sprite of a slim window leans as it takes damage, rolled once (1 or -1).
+/obj/structure/window/var/tilt_sign = 1
+
+/// The glass: a slim one leans as it takes damage, a full tile joins its neighbours; silicate lays a white sheen over either.
+/obj/structure/window/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/obj/structure/window/proc/look_parts(datum/look/look)
 	if(!is_fulltile())
 		// Rotate the sprite somewhat so non-fulltiled windows can be seen as needing repair.
-		var/full_tilt_degrees = 15
-		var/tilt_to_apply = abs((get_integrity() / max_integrity) - 1)
-		if(tilt_to_apply && prob(50))
-			tilt_to_apply = -tilt_to_apply
-		adjust_rotation(LERP(0, full_tilt_degrees, tilt_to_apply))
+		look.effect(PROC_REF(window_tilt), LERP(0, 15, max_integrity ? get_integrity_damage() / max_integrity : 0) * tilt_sign)
+		look.state("[basestate]")
+		look.overlay(look_overlay_image(icon, "[basestate]", color = "#ffffff", alpha = silicate * 255 / 100), silicate > 0)
+		return
+	look.effect(PROC_REF(window_fulltile_flags))
+	look.state("")
+	if(length(connections) < 4)
+		return
+	for(var/image/I in window_overlay_images(connections))
+		look.overlay(I)
+	if(silicate > 0)
+		for(var/i = 1 to 4)
+			look.overlay(look_overlay_image(icon, "[basestate][connections[i]]", dir = 1<<(i-1), color = "#ffffff", alpha = silicate * 255 / 100))
 
-		icon_state = "[basestate]"
-		return .
-	else
-		flags &= ~ON_BORDER // Removes ON_BORDER
-	var/list/dirs = list()
-	if(anchored)
-		for(var/obj/structure/window/W in orange(src,1))
-			if(W.anchored && W.density && W.glasstype == src.glasstype && W.is_fulltile()) //Only counts anchored, not-destroyed fill-tile windows.
-				dirs += get_dir(src, W)
+/// A slim window leans by `degrees`.
+/obj/structure/window/proc/window_tilt(degrees)
+	adjust_rotation(degrees)
 
-	icon_state = ""
-	. += window_overlay_images(dirs_to_corner_states(dirs))
+/// A full tile does not stand on a border.
+/obj/structure/window/proc/window_fulltile_flags()
+	flags &= ~ON_BORDER // Removes ON_BORDER
 
 /// The overlay images for a full-tile window in this state (doc/rewrite/init_and_turfs.md sec 3.5):
 /// built once per (icon, basestate, corner connections, damage step, layer) and shared by every
 /// window in that state. Read-only: callers pass it to add_overlay(), which copies.
 /obj/structure/window/proc/window_overlay_images(list/connections)
-	var/ratio = CEILING((get_integrity() / max_integrity) * 4, 1) * 25
+	var/ratio = CEILING(((max_integrity - get_integrity_damage()) / max_integrity) * 4, 1) * 25
 	var/step = ratio > 75 ? 100 : ratio
 	return CACHED_KEY(window_overlay_sets, "[icon]|[basestate]|[connections.Join(",")]|[step]|[layer]", icon, basestate, connections, step, layer)
 

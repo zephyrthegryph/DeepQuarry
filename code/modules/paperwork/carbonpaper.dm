@@ -6,24 +6,16 @@
 	var/iscopy = 0
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper/carbon, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paper/carbon/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/paper/carbon, copied)
+TRACKED(/obj/item/paper/carbon, iscopy)
+
+/obj/item/paper/carbon/look_parts(datum/look/look)
 	if(iscopy)
-		if(info)
-			icon_state = "cpaper_words"
-			return .
-		icon_state = "cpaper"
-	else if (copied)
-		if(info)
-			icon_state = "paper_words"
-			return .
-		icon_state = "paper"
+		look.state(info ? "cpaper_words" : "cpaper")
+	else if(copied)
+		look.state(info ? "paper_words" : "paper")
 	else
-		if(info)
-			icon_state = "paper_stack_words"
-			return .
-		icon_state = "paper_stack"
+		look.state(info ? "paper_stack_words" : "paper_stack")
 
 
 
@@ -46,9 +38,8 @@ CAPABILITIES(/obj/item/paper/carbon)
 		copy.fields = c.fields
 		copy.updateinfolinks()
 		to_chat(user, span_notice("You tear off the carbon-copy!"))
-		c.copied = 1
-		copy.iscopy = 1
-		copy.update_icon()
-		c.update_icon()
+		c.set_copied(1)
+		copy.set_iscopy(1)
+		changed(copy)
 	else
 		to_chat(user, "There are no more carbon copies attached to this paper!")

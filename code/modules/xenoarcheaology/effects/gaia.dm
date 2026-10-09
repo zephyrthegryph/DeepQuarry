@@ -32,7 +32,6 @@ CAPABILITIES(/datum/artifact_effect/gaia)
 		Tray = P.plant
 		if(Tray)
 			age_plantlife(Tray)
-			P.update_icon()
 
 /datum/artifact_effect/gaia/DoEffectTouch(mob/user)
 	var/atom/holder = get_master_holder()
