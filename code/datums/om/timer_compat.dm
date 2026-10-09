@@ -12,8 +12,6 @@
 
 
 
-/proc/om_run(list/spec, ...)
-	return deferred_run(arglist(args))
 
 
 

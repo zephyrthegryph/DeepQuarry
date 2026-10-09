@@ -26,10 +26,6 @@
 /datum/om/behaviour/proc/on_examine(datum/E, datum/om/event/examine/event)
 	return
 
-/// Emits /datum/om/event/examine on `A` when a behaviour wants it.
-/proc/om_emit_examine(atom/A, mob/user, list/texts)
-	PUBLISH_LEGACY(A, /datum/notice/examine, user, texts)
-
 // ---------------------------------------------------------------- moved
 
 /// Notification: the movable changed loc.
@@ -50,10 +46,6 @@
 
 /datum/om/behaviour/proc/on_moved(datum/E, datum/om/event/moved/event)
 	return
-
-/// Emits /datum/om/event/moved on `AM` when a behaviour wants it.
-/proc/om_emit_moved(atom/movable/AM, atom/old_loc, direction, forced)
-	PUBLISH_LEGACY(AM, /datum/notice/moved, old_loc, direction, forced)
 
 // ---------------------------------------------------------------- attack_self / attackby
 

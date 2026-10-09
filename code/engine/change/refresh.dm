@@ -105,13 +105,6 @@
 	if(first_mark)
 		rel_notify_watchers(E)
 
-/// A legacy declared field (OM_FIELD, OM_FLAG_FIELD: a machine's `stat` bits, `on`, `locked`) was written through its generated setter, which
-/// raises its channel without naming the var: the stat layer still hears it, so a contribution that reads the field (STAT_OPERABLE's
-/// stat_bits_allow(), powered()) recomputes before the writer's next line, as it does for a TRACKED var.
-/proc/om_field_written(datum/E, field)
-	if(GLOB.stat_input_keys?[field] && field != GLOB.stat_writing)
-		stat_inputs_changed(E, field)
-
 /// FALSE when a refresh of E could not do anything: an atom (not a mob, which its species and traits can grant verbs)
 /// whose type is known to derive nothing (no look, verbs, capabilities, type verbs or declared dependencies), with no
 /// periodic work and no open window. The same rule entity_raise_change() applies, so a setter on such an atom costs no

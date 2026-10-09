@@ -287,7 +287,7 @@
 		output += damage_flavour_text(damage_band)
 
 	output += examine_lines(user)
-	om_emit_examine(src, user, output)
+	PUBLISH_LEGACY(src, /datum/notice/examine, user, output)
 	return output
 
 // Don't make these call bicon or anything, these are what bicon uses. They need to return an icon.

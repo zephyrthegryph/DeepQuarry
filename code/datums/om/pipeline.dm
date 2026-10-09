@@ -39,8 +39,6 @@
 
 
 
-/proc/om_pipeline_audit(datum/om/scheduler/sched, parked_sample = 400, awake_sample = 100, expected = FALSE)
-	return pipeline_pipeline_audit(arglist(args))
 
 
 
