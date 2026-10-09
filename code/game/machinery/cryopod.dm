@@ -567,7 +567,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 	return TRUE
 
 /obj/machinery/cryopod/proc/self_entry_allowed(datum/act/op/A)
-	return read_once(check_occupant_allowed(A.actor))
+	return read_once(check_occupant_allowed(A.actor)) ? null : MSG(req_silent)
 
 /obj/machinery/cryopod/proc/self_entry_started(datum/act/op/A)
 	act_message(A.actor, src, others = "%U% [on_enter_visible_message] %T%.")

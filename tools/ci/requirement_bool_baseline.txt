@@ -97,7 +97,6 @@ boolean_callback	code/game/machinery/computer/skills.dm	op("edit_notes", ui_act(
 boolean_callback	code/game/machinery/computer/skills.dm	op("edit", ui_act("modal:edit", arg("arguments")), needs(req_bool(PROC_REF(edit_field_known), silent = TRUE)),
 boolean_callback	code/game/machinery/cryo.dm	extend(TAG_POD_ENTER, needs(req_operable(), req_bool(PROC_REF(piped), because = MSG(cryo_cell/not_connected))))
 boolean_callback	code/game/machinery/cryo.dm	extend("ui_open", ungated(), needs(req_closed(SPACE_PANEL), req_bool(PROC_REF(actor_outside), silent = TRUE)))
-boolean_callback	code/game/machinery/cryopod.dm	op("cryopod_enter", menu(), label("Enter Pod"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(self_entry_allowed), silent = TRUE), req(PROC_REF(can_enter))), starts(PROC_REF(self_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_enter)))
 boolean_callback	code/game/machinery/deployable.dm	extend("emag.use", needs(req_bool(PROC_REF(emag_stage_left), because = MSG(emag/already))))
 boolean_callback	code/game/machinery/deployable.dm	extend("emag.subvert", needs(req_bool(PROC_REF(emag_stage_left), because = MSG(emag/already))))
 boolean_callback	code/game/machinery/door_control.dm	extend("emag.use", needs(req_bool(PROC_REF(has_access_lock), because = MSG(button/no_lock))))
