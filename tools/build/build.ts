@@ -3064,28 +3064,10 @@ async function runDreamChecker(): Promise<void> {
   if (!dreamChecker) {
     throw new Error('DreamChecker disappeared after dependency detection.');
   }
-  // DreamChecker 1.11 auto-selects a root-level DME when multiple manifests
-  // are present, even though SpacemanDMM.toml names deepquarry.dme. Local
-  // profiling creates audit*.dme copies concurrently, which previously made
-  // release builds lint a UNIT_TESTS manifest instead of production code.
-  const stashDirectory = 'data/.dreamchecker-dme-stash';
-  fs.mkdirSync(stashDirectory, { recursive: true });
-  const stashed = fs.readdirSync('.')
-    .filter((name) => name.endsWith('.dme') && name !== `${DME_NAME}.dme`)
-    .map((name) => {
-      const destination = `${stashDirectory}/${name}`;
-      fs.renameSync(name, destination);
-      return { destination, name };
-    });
-  try {
-    await Juke.exec(dreamChecker, []);
-  } finally {
-    for (const { destination, name } of stashed) {
-      if (fs.existsSync(destination) && !fs.existsSync(name)) {
-        fs.renameSync(destination, name);
-      }
-    }
-  }
+  // DreamChecker 1.11 auto-selects a root-level DME when several are present, so name the production manifest
+  // explicitly. It used to move the other root *.dme files away for the run; that renamed deepquarry.test.dme
+  // under a parallel test compile (EBUSY on Windows). Nothing is renamed or written now.
+  await Juke.exec(dreamChecker, ['-e', `${DME_NAME}.dme`]);
 }
 
 export const TguiDevTarget = new Juke.Target({

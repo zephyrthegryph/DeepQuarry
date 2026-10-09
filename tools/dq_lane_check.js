@@ -125,9 +125,34 @@ if (fetch) {
   git(['fetch', '-q', 'origin', `+${NOTES}:${NOTES}`]);
 }
 let allValid = true;
-for (const ref of refs) {
-  if (!git(['rev-parse', '-q', '--verify', ref]).ok) {
-    console.log(`LANE ${ref} UNSTAMPED no such ref tests=`);
+/** The ref a person meant: as given, then rewrite/<name>, origin/<name>, origin/rewrite/<name>. */
+function resolveRef(ref) {
+  for (const cand of [ref, `rewrite/${ref}`, `origin/${ref}`, `origin/rewrite/${ref}`]) {
+    if (git(['rev-parse', '-q', '--verify', `${cand}^{commit}`]).ok) return cand;
+  }
+  return null;
+}
+
+/** The branch names recorded in the stamps of this clone, for the hint when a name matches nothing. */
+function stampedBranches() {
+  const names = new Set();
+  for (const row of lines(git(['notes', `--ref=${NOTES}`, 'list']).out)) {
+    const note = git(['notes', `--ref=${NOTES}`, 'show', row.split(' ')[1]]);
+    try {
+      const b = JSON.parse(note.out).branch;
+      if (b) names.add(b);
+    } catch {
+      /* not a stamp */
+    }
+  }
+  return [...names];
+}
+
+for (const given of refs) {
+  const ref = resolveRef(given);
+  if (!ref) {
+    const known = stampedBranches();
+    console.log(`LANE ${given} UNSTAMPED no such ref (tried ${given}, rewrite/${given}, origin/...); stamped branches: ${known.join(' ') || 'none'} tests=`);
     allValid = false;
     continue;
   }
