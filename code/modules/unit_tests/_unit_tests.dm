@@ -602,6 +602,7 @@
 #include "dq_timed_pin_w9a_behaviour.dm"
 #include "dq_timed_pin_w9b_behaviour.dm"
 #include "dq_timed_pin_w9c_behaviour.dm"
+#include "dq_timed_pin_w10_behaviour.dm"
 #include "dq_timed_pin_w7_behaviour.dm"
 #include "dq_timed_pin_w2_behaviour.dm"
 #include "dq_proximity_tests.dm"

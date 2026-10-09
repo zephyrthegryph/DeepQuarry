@@ -2261,7 +2261,7 @@ CAPABILITIES(/obj/item/toy/nuke)
 CAPABILITIES(/obj/item/toy/minigibber)
 	owns_one(nameof(stored_minature), /obj)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
-	op("feed", item(/obj/item), label("Feed"), then(PROC_REF(interaction_feed)))
+	op("feed", item(/obj/item/toy/figure), item(/obj/item/toy/character), label("Feed"), when(req(PROC_REF(can_feed))), claims(), begins(PROC_REF(feed_begins)), wait(1 SECOND), on_interrupt(PROC_REF(feed_stopped)), then(PROC_REF(interaction_feed)))
 
 
 /// Old attack_self.
@@ -2278,36 +2278,27 @@ CAPABILITIES(/obj/item/toy/minigibber)
 		COOLDOWN_START(src, cooldown, 0.8 SECONDS)
 	return TRUE
 
+/// A figure goes in, a character only from the feeder's own hands.
+/obj/item/toy/minigibber/proc/can_feed(datum/act/op/A)
+	var/obj/item/O = A.held
+	return istype(O, /obj/item/toy/figure) || read_once(O.loc == A.actor)
+
+/obj/item/toy/minigibber/proc/feed_begins(datum/act/op/A)
+	return msg_text(span_notice("You start feeding \the [A.held] [icon2html(A.held, A.actor.client)] into \the [src]'s mini-input."))
+
 /// Old attackby: feed a figure into the gibber.
 /obj/item/toy/minigibber/proc/interaction_feed(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/O = A.held
-	if(istype(O,/obj/item/toy/figure) || istype(O,/obj/item/toy/character) && O.loc == user)
-		to_chat(user, span_notice("You start feeding \the [O] [icon2html(O, user.client)] into \the [src]'s mini-input."))
-		task_start(/datum/task/timed/minigibber_attackby, user, src, receiver = src, O = O)
-		return OP_PASS
-	return OP_DECLINE
-
-/datum/task/timed/minigibber_attackby
-	duration = 1 SECOND
-	claims = TRUE
-	complete_proc = /obj/item/toy/minigibber/proc/attackby_timed_done
-	cancel_proc = /obj/item/toy/minigibber/proc/attackby_timed_failed
-	var/obj/O
-
-/obj/item/toy/minigibber/proc/attackby_timed_done(datum/task/timed/minigibber_attackby/task)
-	var/obj/O = task.O
-	var/mob/user = task.actor
 	if(O.loc != user)
 		to_chat(user, span_warning("\The [O] is too far away to feed into \the [src]!"))
 	else
 		act_message(user, src, MSG_SELF(span_notice("You feed \the [O] into %T%!")), MSG_OTHERS(span_notice("%U% feeds \the [O] into %T%!")))
 		move_into(src, nameof(src.stored_minature), O, user)
+	return OP_OK
 
-/obj/item/toy/minigibber/proc/attackby_timed_failed(datum/task/timed/minigibber_attackby/task)
-	var/obj/O = task.O
-	var/mob/user = task.actor
-	act_message(user, src, MSG_SELF(span_notice("You stop feeding \the [O] into %T%.")), MSG_OTHERS(span_notice("%U% stops feeding \the [O] into %T%!")))
+/obj/item/toy/minigibber/proc/feed_stopped(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You stop feeding \the [A.held] into %T%.")), MSG_OTHERS(span_notice("%U% stops feeding \the [A.held] into %T%!")))
 
 /*
  * Toy xeno

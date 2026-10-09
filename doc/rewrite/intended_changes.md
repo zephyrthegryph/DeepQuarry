@@ -3941,3 +3941,9 @@ recycling panels, space vines and the maintenance vendor glow now draw through `
 
 * **Lockpick on a simple door.** The legacy pick worked from the lockpick's `afterattack()` after the door's item handler ran. The door's handler hit the door with the pick first (`breakable`); it now returns `OP_PASS` for a lockpick so the pick's own `pick` op works the lock and the door is no longer struck.
 * **Sink items.** The sink's item and hand washes refuse a second wash through `claims()` ("in use") instead of the sink's own "Someone's already washing here." text.
+
+## Timed actions round 2: menu pins (rewrite/timed)
+
+Re-blessed rows of `obj.item.ghost_trap`, `obj.item.paicard`, `obj.item.tank` (and `.phoron`, `.jetpack`), `obj.item.toy.minigibber`. Nothing is lost from the base item ops: every key list still holds `pick_up_item`, `move_to_top` and `toggle_digestable`. The classes:
+* **A catch-all item or hand op narrowed.** The minigibber's `feed` took any held item and declined all but figures; it is now `item(/obj/item/toy/figure)` and `item(/obj/item/toy/character)` with a `when()`, so a screwdriver or any other item shows `nothing` instead of `Feed`. The ghost trap's `hand` op ("Use", it declined for every click that was not a release or a deactivation) is gone; a bare-hand click on a trap now reads `Pick up`, the base item's op the old op declined to. The tank's `tank_item` still takes every item; `attach_assembly` is new for an assembly holder (its refusal "You need to wire the device up first" is the op's `because`).
+* **New ops.** `deploy`, `deactivate`, `free_occupant` (ghost trap), `attach_assembly` (tank), `open_panel` and the seven `install_*` ops (pAI card), with `Install part` rows for each part type and its refusal when the socket is filled.

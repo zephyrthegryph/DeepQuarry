@@ -2,3 +2,4 @@ author: "Claude"
 delete-after: true
 changes:
   - refactor: "Timed actions of 30 more files (mop, chainsaw, shock maul, graffiti, fulton, boulders, gibber, microwave, toilets, hoists and more) are ops with wait()"
+  - refactor: "pAI card parts and panel, tank assembly and valve work, ghost trap deploy and release, and the miniature gibber are ops with wait()"
