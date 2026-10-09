@@ -7,7 +7,7 @@ use byond_dmb::{
     dmb::{DmString, Dmb, Proc, Variable},
     ids::NONE,
 };
-use dm_codegen_byond::procedure_abi::{ArgumentSource, Category};
+use dm_codegen_byond::procedure_abi::Category;
 use dm_ir::{SymbolId, SymbolTable};
 use dm_link::Key;
 use std::{
@@ -388,9 +388,7 @@ fn compose_records_access(
     let engine_strings = dmb.strings.len();
     let engine_procs = dmb.procs.len();
     let mut strings = BTreeMap::new();
-    let mut procs = BTreeMap::new();
-    let mut helpers = BTreeMap::new();
-    let mut initializers = BTreeMap::new();
+    let mut plan = procedure_plan::CompositionPlan::default();
     let mut stage_keys = BTreeSet::new();
     let mut builtin_global_vars = None;
     for (&key, &index) in batch.tables.assignments() {
@@ -429,7 +427,7 @@ fn compose_records_access(
                         "only fresh global procedures are supported by the bounded entry",
                     ));
                 }
-                procs.insert(
+                plan.procedures.push((
                     index,
                     crate::lowering::UnitIdentity {
                         owner,
@@ -437,12 +435,12 @@ fn compose_records_access(
                         namespace,
                         occurrence,
                     },
-                );
+                ));
             }
             Key::Type(_) if (index as usize) >= dmb.classes.len() && projection.is_some() => {}
             Key::Variable { .. } | Key::ProcedureStatic(_) if projection.is_some() => {}
             Key::ArgumentSource { .. } if (index as usize) >= engine_procs => {
-                helpers.insert(index, key);
+                plan.helpers.push((index, key));
             }
             Key::Initializer(identity) if (index as usize) >= engine_procs => {
                 if matches!(
@@ -455,7 +453,7 @@ fn compose_records_access(
                     }
                     stage_keys.insert(key);
                 }
-                initializers.insert(index, identity);
+                plan.initializers.push((index, identity));
             }
             Key::Instance(_) if stage.is_some() && (index as usize) >= dmb.instances.len() => {
                 stage_keys.insert(key);
@@ -468,6 +466,11 @@ fn compose_records_access(
             _ => validate_binding(&dmb, key, index, symbols, batch.tables.content(key))?,
         }
     }
+    plan.canonicalize();
+    let procedure_count = plan.procedures.len();
+    let helper_count = plan.helpers.len();
+    let initializer_count = plan.initializers.len();
+    let plan = plan.bind(&batch);
     for (index, data) in strings {
         while dmb.strings.len() < index as usize
             && dm_link::is_reserved_string_index(dmb.strings.len() as u32)
@@ -526,7 +529,7 @@ fn compose_records_access(
             name,
         });
     }
-    if helpers.len() != batch.helpers.len() {
+    if helper_count != batch.helpers.len() {
         return Err(unsupported("helper inventory coverage mismatch"));
     }
     let helper_order = batch
@@ -548,31 +551,33 @@ fn compose_records_access(
                 .ok_or_else(|| unsupported("missing helper procedure index"))?,
         );
     }
-    if procs.len() != batch.units.len() {
+    if procedure_count != batch.units.len() {
         return Err(unsupported("every unit must be one fresh global procedure"));
     }
-    let mut units = BTreeMap::new();
-    for (index, unit) in batch.units.iter().enumerate() {
-        let identity = unit.lowered.identity;
-        if units.insert(identity, index).is_some() {
-            return Err(unsupported("duplicate procedure artifact"));
-        }
-    }
-    for (index, identity) in procs {
-        let owner = identity.owner;
-        let name = identity.name;
+    let procedures = plan.procedures?;
+    let metadata = procedure_plan::prepare_metadata(
+        &procedures,
+        &batch,
+        projection.map(|(plan, _)| plan),
+        symbols,
+        &source_references,
+        executor,
+    );
+    for (slot, metadata) in procedures.into_iter().zip(metadata) {
+        let index = slot.table_index;
         reserve_procedure_sentinel(&mut dmb);
         if index as usize != dmb.procs.len() {
             return Err(CompositionError::NonContiguous(
                 "procedure table indexes".into(),
             ));
         }
-        let &unit_index = units
-            .get(&identity)
+        let unit_index = slot
+            .artifact
             .ok_or_else(|| unsupported("missing global procedure artifact"))?;
         let linked_words = batch
             .unit_words(unit_index, &mob_bindings)
             .map_err(CompositionError::Link)?;
+        let metadata = metadata?;
         let unit = &batch.units[unit_index];
         let abi = unit
             .lowered
@@ -580,14 +585,6 @@ fn compose_records_access(
             .as_ref()
             .ok_or_else(|| unsupported("procedure ABI was not authoritative"))?;
         let proc = &unit.lowered.frame;
-        if proc.argument_names.len() != proc.argument_type_flags.len()
-            || proc.argument_names.len() != abi.argument_sources.len()
-        {
-            return Err(unsupported("argument metadata count mismatch"));
-        }
-        if proc.local_count as usize != proc.local_names.len() {
-            return Err(unsupported("local metadata count mismatch"));
-        }
         let code_id = append_list(&mut dmb, linked_words)?;
         let mut locals = Vec::new();
         for name in &proc.local_names {
@@ -603,6 +600,7 @@ fn compose_records_access(
         }
         let locals_id = append_list(&mut dmb, locals)?;
         let mut args = Vec::new();
+        let mut value_sources = metadata.value_sources.into_iter();
         for (argument, name) in proc.argument_names.iter().enumerate() {
             let name_id = string_index.intern(&mut dmb, name.as_bytes())?;
             let variable_id = u32::try_from(dmb.variables.len())
@@ -612,24 +610,9 @@ fn compose_records_access(
                 value: 0,
                 name: name_id,
             });
-            let value_source = match &abi.argument_sources[argument] {
-                ArgumentSource::Builtin { kind, parameter } => {
-                    u32::from(*kind) | (u32::from(*parameter) << 8)
-                }
-                ArgumentSource::Helper {
-                    argument: helper_argument,
-                } => {
-                    let key = crate::symbolic::helper_key(
-                        unit.lowered.identity,
-                        u32::try_from(*helper_argument)
-                            .map_err(|_| unsupported("helper argument overflow"))?,
-                    );
-                    let position = source_references
-                        .index(key)
-                        .ok_or_else(|| unsupported("missing argument source companion"))?;
-                    0x40 | (u32::from(position) << 8)
-                }
-            };
+            let value_source = value_sources
+                .next()
+                .expect("prepared argument count checked")?;
             args.extend([
                 proc.argument_type_flags[argument],
                 value_source,
@@ -638,28 +621,9 @@ fn compose_records_access(
             ]);
         }
         let args_id = append_list(&mut dmb, args)?;
-        let procedure_key = match identity.namespace {
-            Namespace::Proc => Key::Proc {
-                owner,
-                name,
-                occurrence: identity.occurrence,
-            },
-            Namespace::Verb => Key::Verb {
-                owner,
-                name,
-                occurrence: identity.occurrence,
-            },
-        };
-        let declared = match projection {
-            Some((plan, _)) => *plan
-                .procedure_declarations
-                .get(&procedure_key)
-                .ok_or_else(|| unsupported("missing source procedure declaration provenance"))?,
-            None => true,
-        };
-        let path = proc_path(symbols, owner, name, identity.namespace, declared)?;
+        let path = metadata.path?;
         let path_id = string_index.intern(&mut dmb, path.as_bytes())?;
-        let default_display = text(symbols, name)?.replace('_', " ");
+        let default_display = metadata.default_display?;
         let display = abi
             .layout
             .display_name
@@ -684,29 +648,16 @@ fn compose_records_access(
             code_locals_args: [code_id, locals_id, args_id],
         });
     }
-    let by_key: BTreeMap<_, _> = batch
-        .helpers
-        .iter()
-        .enumerate()
-        .map(|(helper_index, helper)| {
-            (
-                crate::symbolic::helper_key(helper.owner, helper.argument),
-                helper_index,
-            )
-        })
-        .collect();
-    if by_key.len() != batch.helpers.len() {
-        return Err(unsupported("duplicate helper artifact"));
-    }
-    for (index, key) in helpers {
+    for slot in plan.helpers? {
+        let index = slot.table_index;
         reserve_procedure_sentinel(&mut dmb);
         if index as usize != dmb.procs.len() {
             return Err(CompositionError::NonContiguous(
                 "helper procedure indexes".into(),
             ));
         }
-        let &helper_index = by_key
-            .get(&key)
+        let helper_index = slot
+            .artifact
             .ok_or_else(|| unsupported("missing helper artifact"))?;
         let words = batch
             .helper_words(helper_index, &mob_bindings)
@@ -718,27 +669,20 @@ fn compose_records_access(
             &batch.helpers[helper_index].local_names,
         )?;
     }
-    if initializers.len() != batch.initializers.len() {
+    if initializer_count != batch.initializers.len() {
         return Err(unsupported("initializer inventory coverage mismatch"));
     }
-    let initialization: BTreeMap<_, _> = batch
-        .initializers
-        .iter()
-        .enumerate()
-        .map(|(unit_index, unit)| (unit.identity, unit_index))
-        .collect();
-    if initialization.len() != batch.initializers.len() {
-        return Err(unsupported("duplicate initializer artifact"));
-    }
-    for (index, identity) in initializers {
+    for slot in plan.initializers? {
+        let index = slot.table_index;
+        let identity = slot.identity;
         reserve_procedure_sentinel(&mut dmb);
         if index as usize != dmb.procs.len() {
             return Err(CompositionError::NonContiguous(
                 "initializer indexes".into(),
             ));
         }
-        let &unit_index = initialization
-            .get(&identity)
+        let unit_index = slot
+            .artifact
             .ok_or_else(|| unsupported("initializer artifact absent"))?;
         let words = batch
             .initializer_words(unit_index, &mob_bindings)
@@ -948,3 +892,5 @@ pub use owned::{
     compose_global_fixture_owned, compose_projected_owned_with_symbols,
     compose_projected_owned_with_symbols_on_executor,
 };
+
+mod procedure_plan;

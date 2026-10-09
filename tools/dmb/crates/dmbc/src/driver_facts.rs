@@ -644,6 +644,9 @@ impl<'a> FrozenPreparedPolicy<'a> {
     }
 }
 impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
+    fn uses_issued_statements(&self) -> bool {
+        true
+    }
     fn prepare_issued(
         &self,
         metadata: &dm_ir::ProcedureMetadata,
@@ -682,13 +685,20 @@ impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
         metadata: &dm_ir::ProcedureMetadata,
         parsed: dm_tree::frontend::ParsedBody<'_>,
         context: &AbiContext<'_>,
-    ) -> Result<(crate::procedure_policy::PreparedUnit, dm_syntax::Item), String> {
+    ) -> Result<
+        (
+            crate::procedure_policy::PreparedUnit,
+            dm_syntax::Item,
+            Option<std::sync::Arc<dm_tree::frontend::StatementBody>>,
+        ),
+        String,
+    > {
         let body = self.validate(context.identity, metadata, context.symbols, context.origin)?;
         self.frontend
             .validate_parsed_body(&parsed, body)
             .map_err(|error| error.message)?;
         let unit = self.unit(context.identity)?;
-        let mut header = parsed.into_item();
+        let (mut header, statements) = parsed.into_parts();
         let executable_body =
             dm_tree::settings::strip_setting_items(std::mem::take(&mut header.children));
         Ok((
@@ -698,6 +708,7 @@ impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
                 abi: unit.abi.clone(),
             },
             header,
+            statements,
         ))
     }
     fn inputs(

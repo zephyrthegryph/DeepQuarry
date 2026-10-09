@@ -553,9 +553,10 @@ fn procedure_memo_frozen_preparation_hits_without_prelookup_body_parse() {
     let borrowed = policy
         .prepare_captured(metadata, &parsed, &context)
         .unwrap();
-    let (owned, header) = policy
+    let (owned, header, statements) = policy
         .prepare_owned_captured(metadata, parsed, &context)
         .unwrap();
+    assert!(statements.is_none());
     assert_eq!(owned.executable_body, borrowed.executable_body);
     assert_eq!(owned.executable_body[0].header.as_ptr(), local_ptr);
     assert_eq!(header.header.as_ptr(), header_ptr);

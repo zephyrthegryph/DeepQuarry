@@ -307,6 +307,8 @@ impl ColdFrontend {
                 message: error.message,
             })?;
         Ok(ParsedBody {
+            statements: None,
+            statement_attempted: false,
             item,
             issuer: self,
             occurrence: issued,
@@ -420,8 +422,37 @@ pub use body_arena::{BodyArena, BodyArenaStorage};
 
 pub struct ParsedBody<'a> {
     item: Item,
+    statements: Option<Arc<StatementBody>>,
+    statement_attempted: bool,
     issuer: &'a ColdFrontend,
     occurrence: &'a BodyOccurrence,
+}
+/// A typed statement tree issued from an exact lossless procedure parse.
+/// Full lossless children are released once the target admits this model.
+pub struct StatementBody {
+    parsed: dm_syntax::ParsedBody,
+    declaration_headers: std::collections::HashSet<(usize, usize)>,
+    stored_candidates: bool,
+}
+impl StatementBody {
+    pub fn parsed(&self) -> &dm_syntax::ParsedBody {
+        &self.parsed
+    }
+    pub fn declaration_header_storage(&self) -> (usize, usize) {
+        (
+            self.declaration_headers.len(),
+            self.declaration_headers.capacity(),
+        )
+    }
+    pub fn may_contain_stored_declarations(&self) -> bool {
+        self.stored_candidates
+    }
+    pub(crate) fn declaration_headers(&self) -> &std::collections::HashSet<(usize, usize)> {
+        &self.declaration_headers
+    }
+    pub fn view(&self) -> dm_syntax::StatementView<'_> {
+        dm_syntax::StatementView::all(&self.parsed.statements)
+    }
 }
 impl ParsedBody<'_> {
     pub fn item(&self) -> &Item {
@@ -433,6 +464,47 @@ impl ParsedBody<'_> {
     /// Consume this issued parse without copying its executable items.
     pub fn into_item(self) -> Item {
         self.item
+    }
+    pub fn statement_attempted(&self) -> bool {
+        self.statement_attempted
+    }
+    pub fn statement_body(&self) -> Option<&StatementBody> {
+        self.statements.as_deref()
+    }
+    pub fn shared_statement_body(&self) -> Option<Arc<StatementBody>> {
+        self.statements.clone()
+    }
+    pub fn into_parts(self) -> (Item, Option<Arc<StatementBody>>) {
+        (self.item, self.statements)
+    }
+    pub(super) fn admit_statements(
+        mut self,
+        supported: fn(&[dm_syntax::Statement]) -> bool,
+    ) -> Self {
+        self.statement_attempted = true;
+        let parsed = dm_syntax::parse_body_items(&self.item.children);
+        fn headers(items: &[Item], result: &mut std::collections::HashSet<(usize, usize)>) {
+            for item in items {
+                if item.header.trim_start().starts_with("var/") {
+                    result.insert((item.header_span.start, item.header_span.end));
+                }
+                headers(&item.children, result);
+            }
+        }
+        let mut declaration_headers = std::collections::HashSet::new();
+        headers(&self.item.children, &mut declaration_headers);
+        let stored_candidates =
+            crate::procedure_statics::items_may_contain_stored_declarations(&self.item.children);
+        if parsed.diagnostics.is_empty() && supported(&parsed.statements) {
+            self.item.children = Vec::new();
+        }
+        self.statements = Some(Arc::new(StatementBody {
+            parsed,
+            declaration_headers,
+            stored_candidates,
+        }));
+
+        self
     }
 }
 

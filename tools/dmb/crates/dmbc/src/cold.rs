@@ -314,7 +314,10 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
 ) -> Result<PreparedCold, ColdError> {
     let total = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::StartupCapture);
-    let bodies = dm_tree::frontend::BodyArena::new(frontend);
+    let bodies = dm_tree::frontend::BodyArena::new_typed(
+        frontend,
+        dm_codegen_byond::typed_statements_supported_for_capture,
+    );
     let startup = match revision {
         Some(revision) => crate::startup::capture_revision_facts_with_executor_and_bodies(
             revision,

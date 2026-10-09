@@ -82,10 +82,11 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             message: diagnostic.message,
         }]
     })?;
-    let (prepared, parsed) = if let Some(ready) = ready {
+    let typed_attempted = parsed.statement_attempted();
+    let (prepared, parsed, statements) = if let Some(ready) = ready {
         let mut header = parsed.into_item();
         header.children = Vec::new();
-        (ready, header)
+        (ready, header, None)
     } else {
         let context = AbiContext {
             identity,
@@ -114,7 +115,67 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         ));
     }
     inputs.procedure_identity = Some(procedure_identity);
-    let executable_body = if let Some(startup) = startup {
+    let mut typed_removed = None;
+    let mut typed_valid = false;
+    let executable_mask = if let Some(statements) = statements.as_ref() {
+        let current = if statements.may_contain_stored_declarations() {
+            dm_tree::procedure_statics::capture_issued_statements(procedure_identity, statements)
+                .map_err(unsupported)?
+        } else {
+            dm_tree::procedure_statics::capture_declarations(procedure_identity, &[])
+                .map_err(unsupported)?
+        };
+        if let Some(startup) = startup {
+            let captured = startup
+                .procedure(body.declaration)
+                .ok_or_else(|| unsupported("procedure startup inventory missing".into()))?;
+            if captured.procedure != current.procedure
+                || captured.declarations != current.declarations
+                || captured.origins != current.origins
+            {
+                return Err(unsupported(
+                    "procedure startup inventory differs from current body".into(),
+                ));
+            }
+        } else if !current.declarations.is_empty() {
+            return Err(unsupported(
+                "procedure statics require verified shared-slot/default/startup admission".into(),
+            ));
+        }
+        let removed: std::collections::HashSet<_> = current
+            .origins
+            .iter()
+            .map(|origin| (origin.header_span.start, origin.header_span.end))
+            .collect();
+        let mask = dm_syntax::StatementMask::from_predicate(
+            &statements.parsed().statements,
+            |statement| {
+                dm_tree::settings::is_setting_header(&statement.raw_header)
+                    || removed.contains(&(statement.header_span.start, statement.header_span.end))
+            },
+        );
+        typed_valid = statements
+            .parsed()
+            .diagnostics
+            .iter()
+            .all(|diagnostic| mask.hides_diagnostic(diagnostic));
+        typed_removed = Some(removed);
+        Some(mask)
+    } else {
+        None
+    };
+    let executable_view = statements
+        .as_ref()
+        .zip(executable_mask.as_ref())
+        .map(|(body, mask)| dm_syntax::StatementView::masked(&body.parsed().statements, mask));
+    let typed_ready = typed_valid
+        && executable_view.is_some_and(dm_codegen_byond::typed_statement_view_supported);
+
+    let executable_body = if typed_ready {
+        Vec::new()
+    } else if let Some(removed) = &typed_removed {
+        dm_tree::procedure_statics::filter_executable_items(prepared.executable_body, removed)
+    } else if let Some(startup) = startup {
         let captured = startup
             .procedure(body.declaration)
             .ok_or_else(|| unsupported("procedure startup inventory missing".into()))?;
@@ -189,13 +250,29 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
     };
     let code = {
         let _profile = dm_profile::item("lowering.fresh_codegen");
-        compile_simple_proc_with_resolver_and_debug(
-            &executable_body,
-            &inputs,
-            symbols,
-            host,
-            Some(&debug),
-        )
+        match executable_view {
+            Some(view) if typed_ready => dm_codegen_byond::compile_statement_view_with_resolver(
+                view,
+                &inputs,
+                symbols,
+                host,
+                Some(&debug),
+            ),
+            _ if typed_attempted => dm_codegen_byond::compile_preparsed_lossless_with_resolver(
+                &executable_body,
+                &inputs,
+                symbols,
+                host,
+                Some(&debug),
+            ),
+            _ => compile_simple_proc_with_resolver_and_debug(
+                &executable_body,
+                &inputs,
+                symbols,
+                host,
+                Some(&debug),
+            ),
+        }
     }
     .map_err(|errors| {
         if let Some(capture) = capture {

@@ -23,11 +23,14 @@ mod simple;
 pub mod typed_scopes;
 pub use lower_resolver::ProcedureInputs;
 pub use simple::{
-    compile_simple_proc, compile_simple_proc_with_bindings, compile_simple_proc_with_params,
+    compile_preparsed_lossless_with_resolver, compile_simple_proc,
+    compile_simple_proc_with_bindings, compile_simple_proc_with_params,
     compile_simple_proc_with_resolver, compile_simple_proc_with_resolver_and_debug,
-    compile_typed_scopes_with_resolver, compile_typed_statements_with_resolver,
-    decode_constant_string_literal, nameof_reference, ArgumentMetadata, DebugSourceProvider,
-    LowerBindings, LowerError, LowerErrorKind, LowerSpan, SharedLowerBindings, SimpleProc,
+    compile_statement_view_with_resolver, compile_typed_scopes_with_resolver,
+    compile_typed_statements_with_resolver, decode_constant_string_literal, nameof_reference,
+    typed_statement_view_supported, typed_statements_supported,
+    typed_statements_supported_for_capture, ArgumentMetadata, DebugSourceProvider, LowerBindings,
+    LowerError, LowerErrorKind, LowerSpan, SharedLowerBindings, SimpleProc,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]

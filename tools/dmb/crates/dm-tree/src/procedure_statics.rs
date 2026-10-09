@@ -167,18 +167,20 @@ pub fn capture_owned(procedure: ProcedureIdentity, body: Vec<Item>) -> Result<St
         .iter()
         .map(|origin| (origin.header_span.start, origin.header_span.end))
         .collect();
-    fn filter(items: Vec<Item>, removed: &HashSet<(usize, usize)>) -> Vec<Item> {
-        items
-            .into_iter()
-            .filter(|item| !removed.contains(&(item.header_span.start, item.header_span.end)))
-            .map(|mut item| {
-                item.children = filter(item.children, removed);
-                item
-            })
-            .collect()
-    }
-    plan.executable_body = filter(body, &removed);
+    plan.executable_body = filter_executable_items(body, &removed);
     Ok(plan)
+}
+
+/// Apply an already authenticated startup declaration roster without reparsing.
+pub fn filter_executable_items(items: Vec<Item>, removed: &HashSet<(usize, usize)>) -> Vec<Item> {
+    items
+        .into_iter()
+        .filter(|item| !removed.contains(&(item.header_span.start, item.header_span.end)))
+        .map(|mut item| {
+            item.children = filter_executable_items(item.children, removed);
+            item
+        })
+        .collect()
 }
 
 /// Capture the same owned startup facts and source origins as [`capture`],
@@ -195,15 +197,6 @@ pub fn capture_declarations(
             parsed.diagnostics
         ));
     }
-    let mut plan = StaticPlan {
-        procedure,
-        declarations: Vec::new(),
-        origins: Vec::new(),
-        symbols: SymbolTable::default(),
-        executable_body: Vec::new(),
-    };
-    let mut names = HashSet::new();
-    walk(procedure, &parsed.statements, &mut plan, &mut names)?;
     fn captured_headers(items: &[Item], headers: &mut HashSet<(usize, usize)>) {
         for item in items {
             if item.header.trim_start().starts_with("var/") {
@@ -214,6 +207,37 @@ pub fn capture_declarations(
     }
     let mut headers = HashSet::new();
     captured_headers(body, &mut headers);
+    capture_statement_declarations(procedure, &parsed, &headers)
+}
+
+/// Reuse the authenticated body statement model observed during startup.
+pub fn capture_issued_statements(
+    procedure: ProcedureIdentity,
+    body: &crate::frontend::StatementBody,
+) -> Result<StaticPlan, String> {
+    capture_statement_declarations(procedure, body.parsed(), body.declaration_headers())
+}
+
+fn capture_statement_declarations(
+    procedure: ProcedureIdentity,
+    parsed: &dm_syntax::ParsedBody,
+    headers: &HashSet<(usize, usize)>,
+) -> Result<StaticPlan, String> {
+    if !parsed.diagnostics.is_empty() {
+        return Err(format!(
+            "invalid procedure static body: {:?}",
+            parsed.diagnostics
+        ));
+    }
+    let mut plan = StaticPlan {
+        procedure,
+        declarations: Vec::new(),
+        origins: Vec::new(),
+        symbols: SymbolTable::default(),
+        executable_body: Vec::new(),
+    };
+    let mut names = HashSet::new();
+    walk(procedure, &parsed.statements, &mut plan, &mut names)?;
     if plan
         .origins
         .iter()
@@ -225,6 +249,7 @@ pub fn capture_declarations(
     }
     Ok(plan)
 }
+
 fn walk(
     procedure: ProcedureIdentity,
     statements: &[Statement],

@@ -3,7 +3,9 @@
 //! Preparation never interprets conditional state or discovers includes. Callers
 //! supply already captured sources; a later directive walk decides which are used.
 use super::canonical_path;
-use crate::{logical_lines, strip_source_comments};
+#[cfg(test)]
+use crate::logical_lines;
+use crate::{strip_source_comments, SourceText};
 use dm_syntax::Span;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -26,7 +28,7 @@ pub struct PreparedLine {
     pub source_span: Span,
     pub source_line: usize,
     pub source_lines: usize,
-    pub text: Arc<str>,
+    pub text: SourceText,
 }
 
 /// Prepared bytes and locations are constructed together and cannot be replaced
@@ -47,9 +49,16 @@ impl PreparedSource {
                 .enumerate()
                 .filter_map(|(offset, byte)| (byte == b'\n').then_some(offset + 1)),
         );
-        let uncommented = strip_source_comments(&original);
+        let uncommented = match strip_source_comments(&original) {
+            std::borrow::Cow::Borrowed(_) => SourceText::from(Arc::clone(&original)),
+            std::borrow::Cow::Owned(text) => SourceText::from(text),
+        };
+        let logical = crate::logical_arena::plan(&uncommented);
+        let transformed =
+            (!logical.transformed.is_empty()).then(|| SourceText::from(logical.transformed));
         let mut source_line = 0;
-        let lines = logical_lines(&uncommented)
+        let lines = logical
+            .lines
             .into_iter()
             .map(|logical| {
                 let first = source_line;
@@ -61,7 +70,14 @@ impl PreparedSource {
                     ),
                     source_line: first + 1,
                     source_lines: logical.source_lines,
-                    text: Arc::from(logical.text),
+                    text: if logical.transformed {
+                        transformed
+                            .as_ref()
+                            .expect("transformed logical line has arena bytes")
+                            .view(logical.range)
+                    } else {
+                        uncommented.view(logical.range)
+                    },
                 }
             })
             .collect::<Vec<_>>();
@@ -330,7 +346,7 @@ mod tests {
                 .iter()
                 .find(|line| line.text.contains("var/before"))
                 .unwrap();
-            assert!(Arc::ptr_eq(&before.text, &prepared_before.text));
+            assert!(before.text.shares_backing(&prepared_before.text));
             assert!(Arc::ptr_eq(
                 &plan.source_line_starts[Path::new("parent.dm")],
                 parent.line_starts()

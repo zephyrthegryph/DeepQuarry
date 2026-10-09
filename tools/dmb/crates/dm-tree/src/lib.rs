@@ -493,6 +493,7 @@ pub(crate) fn build_with_intrinsic_members_inventory(
             .map(|field| ((field.owner, field.name), field.clone()))
             .collect(),
     );
+    let member_install_profile = dm_profile::stage("frontend.tree.member_install");
     let mut members: Vec<MemberNode> = Vec::new();
     let mut targets = Vec::new();
     let mut owned = vec![Vec::new(); tree.types.len()];
@@ -579,6 +580,8 @@ pub(crate) fn build_with_intrinsic_members_inventory(
             tree.direct.insert(key, *last);
         }
     }
+    drop(member_install_profile);
+    let previous_resolution_profile = dm_profile::stage("frontend.tree.previous_resolution");
     for i in 0..members.len() {
         callable_namespace::validate_explicit(&tree, &members[i], modes[i], root, &callable_kinds)?;
         if members[i].previous.is_none() {
@@ -662,6 +665,8 @@ pub(crate) fn build_with_intrinsic_members_inventory(
             members[i].previous = previous;
         }
     }
+    drop(previous_resolution_profile);
+    let metadata_inheritance_profile = dm_profile::stage("frontend.tree.metadata_inheritance");
     // Process previous links before dependants, including child declarations
     // preceding both their parent and grandparent in the source stream.
     let mut resolved = vec![false; members.len()];
@@ -692,6 +697,7 @@ pub(crate) fn build_with_intrinsic_members_inventory(
             resolved[i] = true;
         }
     }
+    drop(metadata_inheritance_profile);
     let mut mutable_types = tree.types.to_vec();
     for (node, ids) in mutable_types.iter_mut().zip(owned) {
         node.members = ids.into();
@@ -702,7 +708,9 @@ pub(crate) fn build_with_intrinsic_members_inventory(
         tree.rebuild_inventory();
     }
     tree.declaration_targets = targets.into();
+    let identity_profile = dm_profile::stage("frontend.tree.identity");
     tree.identity = declaration_identity(skeletons, fields);
+    drop(identity_profile);
     Ok(tree)
 }
 pub(crate) fn declaration_identity(

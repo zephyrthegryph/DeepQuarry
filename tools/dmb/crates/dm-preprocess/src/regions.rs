@@ -46,7 +46,7 @@ pub struct IncludeOccurrence {
 pub struct RegionLine {
     pub source_span: Span,
     pub source_line: usize,
-    pub text: Arc<str>,
+    pub text: crate::SourceText,
 }
 
 /// Contiguous active text with one exact expansion environment. A region may

@@ -213,3 +213,9 @@ mod tests {
     include!("lib_tests_1.rs");
     include!("lib_tests_2.rs");
 }
+
+mod statement_filter;
+pub use statement_filter::filter_statements;
+
+mod statement_view;
+pub use statement_view::{StatementMask, StatementView};

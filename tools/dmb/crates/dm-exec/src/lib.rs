@@ -42,6 +42,23 @@ pub struct BuildExecutor {
     workers: usize,
 }
 
+/// Borrowed Rayon scope whose every explicit job inherits the caller's stages.
+pub struct BuildScope<'borrow, 'scope> {
+    inner: &'borrow Scope<'scope>,
+}
+impl<'scope> BuildScope<'_, 'scope> {
+    pub fn spawn<F>(&self, operation: F)
+    where
+        F: FnOnce(&BuildScope<'_, 'scope>) + Send + 'scope,
+    {
+        let context = dm_profile::StageContext::capture();
+        self.inner.spawn(move |inner| {
+            let _context = context.enter();
+            operation(&BuildScope { inner });
+        });
+    }
+}
+
 impl BuildExecutor {
     /// Zero requests one worker rather than Rayon's implicit hardware count.
     pub fn new(workers: usize) -> Result<Self, ExecutorError> {
@@ -102,17 +119,17 @@ impl BuildExecutor {
     /// build's pool. The body and return value need not be Send.
     pub fn scope<'scope, F, R>(&self, operation: F) -> R
     where
-        F: FnOnce(&Scope<'scope>) -> R,
+        F: FnOnce(&BuildScope<'_, 'scope>) -> R,
     {
         self.pool
             .as_ref()
             .expect("live build executor")
-            .in_place_scope(operation)
+            .in_place_scope(|inner| operation(&BuildScope { inner }))
     }
 
     pub fn scope_in_place<'scope, F, R>(&self, operation: F) -> R
     where
-        F: FnOnce(&Scope<'scope>) -> R,
+        F: FnOnce(&BuildScope<'_, 'scope>) -> R,
     {
         self.scope(operation)
     }
@@ -124,10 +141,14 @@ impl BuildExecutor {
         F: FnOnce() -> R + Send,
         R: Send,
     {
+        let context = dm_profile::StageContext::capture();
         self.pool
             .as_ref()
             .expect("live build executor")
-            .install(operation)
+            .install(move || {
+                let _context = context.enter();
+                operation()
+            })
     }
 
     /// Explicit consuming shutdown for callers immediately before a profiler

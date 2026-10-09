@@ -156,7 +156,13 @@ pub(super) fn lower_one_memo<R: Resolver, P: AbiPolicy>(
             .with_parsed(body, |parsed| lookup_disk(Some(parsed.item())))
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?
     } else {
-        lookup_disk(None)
+        let header = (!prepared
+            .abi
+            .as_ref()
+            .is_none_or(|abi| abi.source_helpers.is_empty()))
+        .then(|| frontend.compact_body(body).ok())
+        .flatten();
+        lookup_disk(header)
     };
     if let Some(errors) = disk
         .errors

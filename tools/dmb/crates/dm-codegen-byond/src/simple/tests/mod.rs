@@ -140,3 +140,5 @@ fn compile_fixture_proc_with_bindings(
     }
     crate::compile_simple_proc_with_bindings(body, &bindings)
 }
+
+mod preparsed;

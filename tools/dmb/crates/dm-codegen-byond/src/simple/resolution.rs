@@ -338,6 +338,19 @@ impl Compiler<'_> {
             .and_then(|shared| shared.string_constants.get(name))
             .cloned())
     }
+    pub(super) fn statement_visible(&self, statement: &Statement) -> bool {
+        self.statement_mask
+            .is_none_or(|mask| mask.visible(statement))
+    }
+    pub(super) fn statement_view<'s>(
+        &'s self,
+        statements: &'s [Statement],
+    ) -> dm_syntax::StatementView<'s> {
+        match self.statement_mask {
+            Some(mask) => dm_syntax::StatementView::masked(statements, mask),
+            None => dm_syntax::StatementView::all(statements),
+        }
+    }
     pub(super) fn prepare_user_labels(
         &mut self,
         statements: &[Statement],
@@ -345,6 +358,9 @@ impl Compiler<'_> {
     ) -> Result<(), LowerError> {
         let mut seen = BTreeSet::new();
         for statement in statements {
+            if !self.statement_visible(statement) {
+                continue;
+            }
             if let StatementKind::Label { name, .. } = &statement.kind {
                 if name.is_empty()
                     || !name.chars().all(|ch| ch.is_alphanumeric() || ch == '_')

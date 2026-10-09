@@ -356,6 +356,17 @@ fn captured_override_chain_keeps_physical_namespace_and_super_occurrences_distin
 }
 
 fn ownership_fixture() -> (FrozenBatch, SymbolTable) {
+    ownership_fixture_source("/proc/ownership_transfer_probe()\n    return \"exact\"\n")
+}
+
+fn ownership_fixture_source(source: &'static str) -> (FrozenBatch, SymbolTable) {
+    ownership_fixture_with_initializers(source, false)
+}
+
+fn ownership_fixture_with_initializers(
+    source: &'static str,
+    anonymous: bool,
+) -> (FrozenBatch, SymbolTable) {
     struct Policy;
     impl crate::lowering::AbiPolicy for Policy {
         fn inputs(
@@ -370,7 +381,7 @@ fn ownership_fixture() -> (FrozenBatch, SymbolTable) {
     }
     let bytes = include_bytes!("../../../../fixtures/native_template.bin");
     let engine = crate::engine::EngineSnapshot::from_bytes(bytes, 1).unwrap();
-    let frontend = frontend("/proc/ownership_transfer_probe()\n    return \"exact\"\n");
+    let frontend = frontend(source);
     let mut symbols = engine.symbols().clone();
     for (_, text) in frontend.snapshot.tree.symbols().ordered() {
         symbols.intern(text).unwrap();
@@ -382,18 +393,57 @@ fn ownership_fixture() -> (FrozenBatch, SymbolTable) {
         Default::default(),
     );
     assert!(lowered.diagnostics.is_empty(), "{:?}", lowered.diagnostics);
-    assert_eq!(lowered.units.len(), 1);
-    lowered.units[0].abi = Some(std::sync::Arc::new(crate::procedure_policy::PreparedAbi {
-        layout: Default::default(),
-        argument_sources: Vec::new(),
-        source_helpers: Vec::new(),
-    }));
-    let links = crate::engine_link::capture(bytes, &engine).unwrap();
-    let batch = crate::symbolic::freeze_and_link_tables(
+    assert!(!lowered.units.is_empty());
+    for unit in &mut lowered.units {
+        unit.abi = Some(std::sync::Arc::new(crate::procedure_policy::PreparedAbi {
+            layout: Default::default(),
+            argument_sources: Vec::new(),
+            source_helpers: Vec::new(),
+        }));
+    }
+    let mut links = crate::engine_link::capture(bytes, &engine).unwrap();
+    let artifacts = if anonymous {
+        use crate::initialization_artifact::{InitializationArtifact, InitializationCoverage};
+        let alias = symbols.intern("modified-probe").unwrap();
+        // The linker requires a spelling in its inventory, not merely the
+        // semantic symbol table. Real modified capture supplies this roster.
+        links
+            .inventory
+            .spellings
+            .push((alias, std::sync::Arc::from(&b"modified-probe"[..])));
+        let unit = &lowered.units[0];
+        vec![
+            InitializationArtifact {
+                identity: dm_link::InitializerIdentity::Map {
+                    source: 1,
+                    descriptor: 2,
+                },
+                code: unit.code.clone(),
+                debug_origins: unit.debug_origins.clone(),
+                coverage: InitializationCoverage::MapAssignments {
+                    count: 0,
+                    canonical_body: std::sync::Arc::from(&b"map"[..]),
+                },
+            },
+            InitializationArtifact {
+                identity: dm_link::InitializerIdentity::Modified(alias),
+                code: unit.code.clone(),
+                debug_origins: unit.debug_origins.clone(),
+                coverage: InitializationCoverage::ModifiedAssignments {
+                    count: 0,
+                    canonical_body: std::sync::Arc::from(&b"modified"[..]),
+                },
+            },
+        ]
+    } else {
+        Vec::new()
+    };
+    let batch = crate::symbolic::freeze_artifact_tables(
         lowered,
         &symbols,
         &links.references,
         links.inventory,
+        artifacts,
     )
     .unwrap();
     (batch, symbols)
@@ -515,4 +565,66 @@ fn sealed_composition_rejects_source_coverage_and_stage_receipt_mismatches() {
     inputs.stage = Some(Box::new(WrongSource));
     assert!(matches!(ValidatedComposition::prepare(&frontend, inputs),
         Err(CompositionError::Unsupported(message)) if message.contains("nontext occurrence roster")));
+}
+
+#[test]
+fn parallel_procedure_plan_preserves_bytes_and_empty_lists() {
+    let (batch, symbols) = ownership_fixture_source(
+        "/proc/first_plan_probe()\n    return \"exact\"\n/proc/second_plan_probe()\n    return 7\n",
+    );
+    let engine = include_bytes!("../../../../fixtures/native_template.bin");
+    let executor = dm_exec::BuildExecutor::new(2).unwrap();
+    let serial = compose_records_access(
+        engine,
+        owned::BatchAccess::Borrowed(&batch),
+        &symbols,
+        None,
+        None,
+        None,
+    )
+    .unwrap();
+    let parallel = compose_records_access(
+        engine,
+        owned::BatchAccess::Borrowed(&batch),
+        &symbols,
+        None,
+        None,
+        Some(&executor),
+    )
+    .unwrap();
+    assert_eq!(serial.bytes(), parallel.bytes());
+    let decoded = Dmb::from_bytes(parallel.bytes()).unwrap();
+    for unit in &batch.units {
+        let index = batch
+            .tables
+            .index(crate::symbolic::unit_key(unit.lowered.identity))
+            .unwrap();
+        let [code, locals, args] = decoded.procs[index as usize].code_locals_args;
+        assert_ne!(code, locals);
+        assert_ne!(locals, args);
+        assert_ne!(code, args);
+        assert!(!decoded.lists[code as usize].is_empty());
+        assert!(decoded.lists[locals as usize].is_empty());
+        assert!(decoded.lists[args as usize].is_empty());
+    }
+}
+
+#[test]
+fn map_and_modified_initializer_words_transfer_without_changing_bytes() {
+    let (batch, _) =
+        ownership_fixture_with_initializers("/proc/anonymous_words_probe()\n    return 7\n", true);
+    let mobs = dm_link::MobBindings::default();
+    let expected: Vec<_> = {
+        let mut borrowed = owned::BatchAccess::Borrowed(&batch);
+        (0..batch.initializers.len())
+            .map(|index| borrowed.initializer_words(index, &mobs).unwrap())
+            .collect()
+    };
+    let mut consumed = owned::BatchAccess::Owned(batch);
+    for (index, expected) in expected.into_iter().enumerate() {
+        assert_eq!(consumed.initializer_words(index, &mobs).unwrap(), expected);
+        // The consumed certificate may be rebuilt from the authoritative
+        // symbolic artifact; a second request must retain exact semantics.
+        assert_eq!(consumed.initializer_words(index, &mobs).unwrap(), expected);
+    }
 }

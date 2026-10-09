@@ -356,6 +356,25 @@ pub fn compile_simple_proc_with_resolver_and_debug<R: dm_ir::Resolver>(
     compile_resolver_body(body, None, inputs, symbols, resolver, debug)
 }
 
+/// Lower an issued lossless body whose typed parse was already attempted.
+/// This preserves the existing raw fallback without repeating statement parsing.
+pub fn compile_preparsed_lossless_with_resolver<R: dm_ir::Resolver>(
+    body: &[Item],
+    inputs: &crate::lower_resolver::ProcedureInputs,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    compile_resolver_body(
+        body,
+        Some(TypedInput::Lossless),
+        inputs,
+        symbols,
+        resolver,
+        debug,
+    )
+}
+
 /// Lower already parsed statements through the same opcode/operand emitter.
 /// No synthetic procedure text or alternate initializer opcode implementation.
 pub fn compile_typed_statements_with_resolver<R: dm_ir::Resolver>(
@@ -365,9 +384,26 @@ pub fn compile_typed_statements_with_resolver<R: dm_ir::Resolver>(
     resolver: &R,
     debug: Option<&dyn DebugSourceProvider>,
 ) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    compile_statement_view_with_resolver(
+        dm_syntax::StatementView::all(statements),
+        inputs,
+        symbols,
+        resolver,
+        debug,
+    )
+}
+
+/// Shared immutable source model with an authenticated executable mask.
+pub fn compile_statement_view_with_resolver<R: dm_ir::Resolver>(
+    view: dm_syntax::StatementView<'_>,
+    inputs: &crate::lower_resolver::ProcedureInputs,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
     compile_resolver_body(
         &[],
-        Some(TypedInput::Statements(statements)),
+        Some(TypedInput::Statements(view)),
         inputs,
         symbols,
         resolver,
@@ -449,7 +485,8 @@ fn compile_resolver_body<R: dm_ir::Resolver>(
 
 #[derive(Clone, Copy)]
 enum TypedInput<'a> {
-    Statements(&'a [Statement]),
+    Lossless,
+    Statements(dm_syntax::StatementView<'a>),
     Scopes(&'a [crate::typed_scopes::PreparedScope<'a>]),
     Modified(&'a [(String, Expr)]),
 }
@@ -486,6 +523,10 @@ fn compile_with_lookup(
         debug_current: None,
         debug_last: None,
         statement_span: None,
+        statement_mask: match typed {
+            Some(TypedInput::Statements(view)) => view.mask(),
+            _ => None,
+        },
         discarded_call_root: None,
         resolver_failure: std::cell::RefCell::new(None),
         locals: Vec::new(),
@@ -529,13 +570,15 @@ fn compile_with_lookup(
         }
         result
     } else if let Some(TypedInput::Statements(statements)) = typed {
-        if !typed_statements_supported(statements) {
+        if !typed_statement_view_supported(statements) {
             return Err(vec![error(
                 "typed statements",
                 "unsupported typed statement",
             )]);
         }
-        compiler.typed_statements(statements)
+        compiler.typed_statements(statements.statements())
+    } else if let Some(TypedInput::Lossless) = typed {
+        compiler.statements(body)
     } else if let Some(TypedInput::Modified(fields)) = typed {
         compiler.modified_fields(fields)
     } else {
@@ -624,89 +667,124 @@ fn compile_with_lookup(
     Ok(compiler.result)
 }
 
-fn typed_statements_supported(statements: &[Statement]) -> bool {
-    statements.iter().all(|statement| match &statement.kind {
-        StatementKind::Return(_)
-        | StatementKind::Call(_)
-        | StatementKind::Expression(_)
-        | StatementKind::Assign { .. }
-        | StatementKind::Break
-        | StatementKind::BreakLabel(_)
-        | StatementKind::Continue
-        | StatementKind::ContinueLabel(_)
-        | StatementKind::Throw(_)
-        | StatementKind::Goto(_) => true,
-        StatementKind::Label { body, .. } => typed_statements_supported(body),
-        StatementKind::Var { declaration, .. } => local_name(declaration).is_some(),
-        StatementKind::Set { .. } => true,
-        StatementKind::While { body, .. }
-        | StatementKind::DoWhile { body, .. }
-        | StatementKind::Spawn { body, .. } => typed_statements_supported(body),
-        StatementKind::For {
-            control: ForControl::All { declaration },
-            body,
-        } => local_name(declaration).is_some() && typed_statements_supported(body),
-        StatementKind::For {
-            control: ForControl::Each { binding, .. },
-            body,
-        } => {
-            let binding = binding
-                .rsplit_once(" as ")
-                .map_or(binding.as_str(), |(name, _)| name.trim());
-            (local_name(binding).is_some()
-                || (!binding.is_empty()
-                    && binding.chars().all(|ch| ch.is_alphanumeric() || ch == '_')))
-                && typed_statements_supported(body)
-        }
-        StatementKind::For {
-            control:
-                ForControl::Pair {
-                    key_binding,
-                    value_binding,
-                    ..
-                },
-            body,
-        } => {
-            [key_binding, value_binding].into_iter().all(|binding| {
-                local_name(binding).is_some()
+/// Eligibility for an already filtered executable typed body.
+pub fn typed_statements_supported(statements: &[Statement]) -> bool {
+    supported_statements(statements, false, None)
+}
+/// Eligibility before authoritative stored declarations are removed.
+pub fn typed_statements_supported_for_capture(statements: &[Statement]) -> bool {
+    supported_statements(statements, true, None)
+}
+pub fn typed_statement_view_supported(view: dm_syntax::StatementView<'_>) -> bool {
+    supported_statements(view.statements(), false, view.mask())
+}
+fn supported_statements(
+    statements: &[Statement],
+    stored_declarations: bool,
+    mask: Option<&dm_syntax::StatementMask>,
+) -> bool {
+    statements
+        .iter()
+        .filter(|statement| mask.is_none_or(|mask| mask.visible(statement)))
+        .all(|statement| match &statement.kind {
+            StatementKind::Return(_)
+            | StatementKind::Call(_)
+            | StatementKind::Expression(_)
+            | StatementKind::Assign { .. }
+            | StatementKind::Break
+            | StatementKind::BreakLabel(_)
+            | StatementKind::Continue
+            | StatementKind::ContinueLabel(_)
+            | StatementKind::Throw(_)
+            | StatementKind::Goto(_) => true,
+            StatementKind::Label { body, .. } => {
+                supported_statements(body, stored_declarations, mask)
+            }
+            StatementKind::Var { declaration, .. } => {
+                local_name(declaration).is_some()
+                    || (stored_declarations
+                        && declaration
+                            .split('/')
+                            .skip(1)
+                            .any(|part| matches!(part, "static" | "const" | "global")))
+            }
+            StatementKind::Set { .. } => true,
+            StatementKind::While { body, .. }
+            | StatementKind::DoWhile { body, .. }
+            | StatementKind::Spawn { body, .. } => {
+                supported_statements(body, stored_declarations, mask)
+            }
+            StatementKind::For {
+                control: ForControl::All { declaration },
+                body,
+            } => {
+                local_name(declaration).is_some()
+                    && supported_statements(body, stored_declarations, mask)
+            }
+            StatementKind::For {
+                control: ForControl::Each { binding, .. },
+                body,
+            } => {
+                let binding = binding
+                    .rsplit_once(" as ")
+                    .map_or(binding.as_str(), |(name, _)| name.trim());
+                (local_name(binding).is_some()
                     || (!binding.is_empty()
-                        && binding.chars().all(|ch| ch.is_alphanumeric() || ch == '_'))
-            }) && typed_statements_supported(body)
-        }
-        StatementKind::For {
-            control: ForControl::Range { .. },
-            body,
-        } => typed_statements_supported(body),
-        StatementKind::For {
-            control: ForControl::CStyle { .. },
-            body,
-        } => typed_statements_supported(body),
-        StatementKind::Switch {
-            cases, else_branch, ..
-        } => {
-            cases
-                .iter()
-                .all(|case| typed_statements_supported(&case.body))
-                && typed_statements_supported(else_branch)
-        }
-        StatementKind::Try {
-            body,
-            catch_binding,
-            catch_body,
-        } => {
-            catch_binding
-                .as_ref()
-                .is_none_or(|binding| local_name(binding).is_some())
-                && typed_statements_supported(body)
-                && typed_statements_supported(catch_body)
-        }
-        StatementKind::If {
-            then_branch,
-            else_branch,
-            ..
-        } => typed_statements_supported(then_branch) && typed_statements_supported(else_branch),
-        _ => false,
-    })
+                        && binding.chars().all(|ch| ch.is_alphanumeric() || ch == '_')))
+                    && supported_statements(body, stored_declarations, mask)
+            }
+            StatementKind::For {
+                control:
+                    ForControl::Pair {
+                        key_binding,
+                        value_binding,
+                        ..
+                    },
+                body,
+            } => {
+                [key_binding, value_binding].into_iter().all(|binding| {
+                    local_name(binding).is_some()
+                        || (!binding.is_empty()
+                            && binding.chars().all(|ch| ch.is_alphanumeric() || ch == '_'))
+                }) && supported_statements(body, stored_declarations, mask)
+            }
+            StatementKind::For {
+                control: ForControl::Range { .. },
+                body,
+            } => supported_statements(body, stored_declarations, mask),
+            StatementKind::For {
+                control: ForControl::CStyle { .. },
+                body,
+            } => supported_statements(body, stored_declarations, mask),
+            StatementKind::Switch {
+                cases, else_branch, ..
+            } => {
+                cases
+                    .iter()
+                    .all(|case| supported_statements(&case.body, stored_declarations, mask))
+                    && supported_statements(else_branch, stored_declarations, mask)
+            }
+            StatementKind::Try {
+                body,
+                catch_binding,
+                catch_body,
+            } => {
+                catch_binding
+                    .as_ref()
+                    .is_none_or(|binding| local_name(binding).is_some())
+                    && supported_statements(body, stored_declarations, mask)
+                    && supported_statements(catch_body, stored_declarations, mask)
+            }
+            StatementKind::If {
+                then_branch,
+                else_branch,
+                ..
+            } => {
+                supported_statements(then_branch, stored_declarations, mask)
+                    && supported_statements(else_branch, stored_declarations, mask)
+            }
+            _ => false,
+        })
 }
 
 fn local_name(declaration: &str) -> Option<&str> {
@@ -781,6 +859,7 @@ struct Compiler<'a> {
     debug_current: Option<u32>,
     debug_last: Option<u32>,
     statement_span: Option<LowerSpan>,
+    statement_mask: Option<&'a dm_syntax::StatementMask>,
     // Exact AST node identity, not source-span equality: synthesized expressions
     // can share spans. Only an immediate statement call may discard its result.
     discarded_call_root: Option<*const Expr>,

@@ -41,13 +41,18 @@ pub fn compact_setting_items(items: Vec<Item>) -> Vec<Item> {
     result
 }
 
+/// Shared lexical admission for setting leaves in either AST representation.
+pub fn is_setting_header(header: &str) -> bool {
+    keyword(header, "set")
+}
+
 /// Remove lexical setting leaves, preserving every executable container and
 /// runtime guard, including guards whose blocks become empty.
 pub fn strip_setting_items(items: Vec<Item>) -> Vec<Item> {
     items
         .into_iter()
         .filter_map(|mut item| {
-            if keyword(&item.header, "set") {
+            if is_setting_header(&item.header) {
                 return None;
             }
             item.children = strip_setting_items(item.children);

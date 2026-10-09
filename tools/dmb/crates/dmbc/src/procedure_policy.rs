@@ -62,11 +62,6 @@ impl PreparedReplay {
     /// Only the frozen captured policy may issue this after validating its
     /// current body, metadata, symbol lineage and source occurrence.
     pub(crate) fn from_frozen(inputs: ProcedureInputs, abi: Arc<PreparedAbi>) -> Option<Self> {
-        // Helpers require actual parsed header expressions for current issuance.
-        // Keep their existing full preparation path until a header issuer exists.
-        if !abi.source_helpers.is_empty() {
-            return None;
-        }
         Some(Self { inputs, abi })
     }
     pub(crate) fn into_view(self) -> PreparedUnit {

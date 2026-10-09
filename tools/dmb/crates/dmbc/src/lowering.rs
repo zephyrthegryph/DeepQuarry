@@ -196,6 +196,10 @@ pub fn source_unit_roster(
 /// Converts signature/default/annotation semantics using one pinned compiler ABI.
 /// Reject unsupported flags/value-source/default decoding rather than guessing.
 pub trait AbiPolicy: Sync {
+    fn uses_issued_statements(&self) -> bool {
+        false
+    }
+
     /// Custom policies retain full parsing. Only an authoritative captured policy
     /// can issue a fixed-transform replay preparation for the current body.
     fn prepare_issued(
@@ -222,11 +226,18 @@ pub trait AbiPolicy: Sync {
         metadata: &ProcedureMetadata,
         parsed: dm_tree::frontend::ParsedBody<'_>,
         context: &AbiContext<'_>,
-    ) -> Result<(PreparedUnit, dm_syntax::Item), String> {
+    ) -> Result<
+        (
+            PreparedUnit,
+            dm_syntax::Item,
+            Option<std::sync::Arc<dm_tree::frontend::StatementBody>>,
+        ),
+        String,
+    > {
         let prepared = self.prepare_captured(metadata, &parsed, context)?;
         let mut header = parsed.into_item();
         header.children = Vec::new();
-        Ok((prepared, header))
+        Ok((prepared, header, None))
     }
     fn inputs(
         &self,
@@ -334,7 +345,14 @@ pub fn lower_frontend_on_executor<R: Resolver, P: AbiPolicy>(
     config: LoweringConfig,
     executor: &dm_exec::BuildExecutor,
 ) -> LoweringBatch {
-    let bodies = dm_tree::frontend::BodyArena::new(frontend);
+    let bodies = if policy.uses_issued_statements() {
+        dm_tree::frontend::BodyArena::new_typed(
+            frontend,
+            dm_codegen_byond::typed_statements_supported_for_capture,
+        )
+    } else {
+        dm_tree::frontend::BodyArena::new(frontend)
+    };
     lower_frontend_impl_on_execution(
         frontend,
         host,
@@ -354,7 +372,14 @@ pub fn lower_frontend_with_statics_on_executor<R: Resolver, P: AbiPolicy>(
     startup: &crate::startup::CapturedStartup,
     executor: &dm_exec::BuildExecutor,
 ) -> LoweringBatch {
-    let bodies = dm_tree::frontend::BodyArena::new(frontend);
+    let bodies = if policy.uses_issued_statements() {
+        dm_tree::frontend::BodyArena::new_typed(
+            frontend,
+            dm_codegen_byond::typed_statements_supported_for_capture,
+        )
+    } else {
+        dm_tree::frontend::BodyArena::new(frontend)
+    };
     lower_frontend_impl_on_execution(
         frontend,
         host,
@@ -374,7 +399,14 @@ pub fn lower_frontend_with_memo_on_executor<R: Resolver, P: AbiPolicy>(
     memo: &crate::lowering_memo::ProcedureMemo,
     executor: &dm_exec::BuildExecutor,
 ) -> LoweringBatch {
-    let bodies = dm_tree::frontend::BodyArena::new(frontend);
+    let bodies = if policy.uses_issued_statements() {
+        dm_tree::frontend::BodyArena::new_typed(
+            frontend,
+            dm_codegen_byond::typed_statements_supported_for_capture,
+        )
+    } else {
+        dm_tree::frontend::BodyArena::new(frontend)
+    };
     lower_frontend_impl_on_execution(
         frontend,
         host,
@@ -448,7 +480,14 @@ fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
             }
         }
     };
-    let bodies = dm_tree::frontend::BodyArena::new(frontend);
+    let bodies = if policy.uses_issued_statements() {
+        dm_tree::frontend::BodyArena::new_typed(
+            frontend,
+            dm_codegen_byond::typed_statements_supported_for_capture,
+        )
+    } else {
+        dm_tree::frontend::BodyArena::new(frontend)
+    };
     lower_frontend_impl_on_execution(
         frontend,
         host,

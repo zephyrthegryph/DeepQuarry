@@ -4,6 +4,7 @@
 use serde::Serialize;
 mod dmb_image;
 mod prepared;
+mod typed_body;
 use std::{
     collections::{BTreeMap, BTreeSet, HashSet},
     io::{self, Write},
@@ -145,6 +146,16 @@ impl HeapCensus {
     pub fn arc_text(&mut self, owner: &str, value: &Arc<str>) {
         self.buffer(owner, value.as_ptr() as usize, value.len(), value.len());
     }
+    fn source_text(&mut self, owner: &str, value: &dm_preprocess::SourceText) {
+        value.visit_storage(|pointer, size, storage| {
+            if self.buffer(owner, pointer, size, size) {
+                match storage {
+                    dm_preprocess::SourceTextStorage::Original(text) => self.arc_text(owner, text),
+                    dm_preprocess::SourceTextStorage::Transformed(text) => self.string(owner, text),
+                }
+            }
+        });
+    }
     pub(crate) fn arc_object<T>(&mut self, owner: &str, value: &Arc<T>) -> bool {
         self.buffer(
             owner,
@@ -268,7 +279,7 @@ impl HeapCensus {
             for segment in &region.segments {
                 self.vec_payload("frontend.directive_plan", &segment.lines);
                 for line in &segment.lines {
-                    self.arc_text("frontend.directive_plan", &line.text);
+                    self.source_text("frontend.directive_plan", &line.text);
                 }
             }
         }
@@ -334,6 +345,11 @@ impl HeapCensus {
                 // is counted here; issuer and occurrence borrow frontend data.
                 self.string(owner, &parsed.item().header);
                 self.items(owner, &parsed.item().children);
+                if let Some(body) = parsed.shared_statement_body() {
+                    if self.arc_object(owner, &body) {
+                        self.typed_body(owner, &body);
+                    }
+                }
             }
             Err(error) => {
                 self.string(owner, &error.message);
@@ -800,9 +816,18 @@ impl HeapCensus {
     pub fn finish(self) -> HeapCensusReport {
         let owners: Vec<_> = self.owners.into_values().collect();
         HeapCensusReport {
-            schema: 1, stage: self.stage, scope: "retained_accessible_container_payload_and_capacity_not_total_heap",
-            unique_known_capacity_bytes: owners.iter().map(|owner| owner.unique_known_capacity_bytes).sum(),
-            unknown_capacity_payload_bytes: owners.iter().map(|owner| owner.unknown_capacity_payload_bytes).sum(), owners,
+            schema: 1,
+            stage: self.stage,
+            scope: "retained_accessible_container_payload_and_capacity_not_total_heap",
+            unique_known_capacity_bytes: owners
+                .iter()
+                .map(|owner| owner.unique_known_capacity_bytes)
+                .sum(),
+            unknown_capacity_payload_bytes: owners
+                .iter()
+                .map(|owner| owner.unknown_capacity_payload_bytes)
+                .sum(),
+            owners,
             limitations: vec![
                 "Shared allocations are deduplicated by live pointer and attributed to the first named owner in this boundary.",
                 "Vec capacities include inline element descriptors; nested heap buffers are counted separately, never those descriptors twice.",

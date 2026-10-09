@@ -118,6 +118,9 @@ fn streamed_preparation_preserves_comments_continuations_and_locations() {
         "var/x = \"unterminated\n#define X 2\n",
         "/* unterminated\n#define HIDDEN 1\n",
         "var/x = list(1, [2]) // comment\nvar/y = 3",
+        "#define X 1 \\  \r\n + 2\r\n#define Y 3 \\\n + 4\n",
+        "\\\n#define X 2\n\\",
+        "var/x = list(\r\n 1,\r\n 2)\r\n",
     ];
     for source in fixtures {
         let expected = reference_strip(source);

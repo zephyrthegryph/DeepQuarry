@@ -6,6 +6,7 @@ use std::sync::{Mutex, MutexGuard};
 /// Only inspected bodies are retained; taking a body releases its arena slot.
 pub struct BodyArena<'frontend> {
     frontend: &'frontend ColdFrontend,
+    statement_support: Option<fn(&[dm_syntax::Statement]) -> bool>,
     slots: Vec<Mutex<BodyState<'frontend>>>,
     #[cfg(test)]
     parses: std::sync::atomic::AtomicUsize,
@@ -49,6 +50,7 @@ impl<'frontend> BodyArena<'frontend> {
     pub fn new(frontend: &'frontend ColdFrontend) -> Self {
         Self {
             frontend,
+            statement_support: None,
             slots: (0..frontend.issued_bodies.len())
                 .map(|_| Mutex::new(BodyState::Unparsed))
                 .collect(),
@@ -57,6 +59,16 @@ impl<'frontend> BodyArena<'frontend> {
         }
     }
 
+    /// Production bodies retain one admitted statement model, or lossless
+    /// syntax when the target needs its existing fallback. Parsing stays lazy.
+    pub fn new_typed(
+        frontend: &'frontend ColdFrontend,
+        supported: fn(&[dm_syntax::Statement]) -> bool,
+    ) -> Self {
+        let mut arena = Self::new(frontend);
+        arena.statement_support = Some(supported);
+        arena
+    }
     /// Inspect one issued body. The callback runs under this body's slot lock;
     /// it must not recursively access the same slot. Other bodies are independent.
     pub fn with_parsed<R>(
@@ -125,7 +137,12 @@ impl<'frontend> BodyArena<'frontend> {
             #[cfg(test)]
             self.parses
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            *slot = BodyState::Ready(self.frontend.parse_body(occurrence));
+            *slot = BodyState::Ready(self.frontend.parse_body(occurrence).map(|parsed| {
+                match self.statement_support {
+                    Some(supported) => parsed.admit_statements(supported),
+                    None => parsed,
+                }
+            }));
         }
     }
 }
@@ -148,6 +165,41 @@ mod tests {
         build(Path::new("project.dme"), &Source("/proc/probe()\n    if(1)\n        set waitfor = 0\n        return 7\n/proc/other()\n    return 2\n"), &BTreeMap::new(), 1).unwrap()
     }
 
+    #[test]
+    fn typed_body_is_lazy_shared_with_startup_and_consumed_once() {
+        let frontend = frontend();
+        let arena = BodyArena::new_typed(&frontend, |_| true);
+        assert_eq!(arena.parses.load(Ordering::Relaxed), 0);
+        let body = &frontend.bodies[0];
+        let statements = arena
+            .with_parsed(body, |parsed| {
+                assert!(parsed.item().children.is_empty());
+                parsed
+                    .statement_body()
+                    .unwrap()
+                    .parsed()
+                    .statements
+                    .as_ptr()
+            })
+            .unwrap();
+        let taken = arena.take_parsed(body).unwrap();
+        assert!(taken.item().children.is_empty());
+        assert_eq!(
+            taken.statement_body().unwrap().parsed().statements.as_ptr(),
+            statements
+        );
+        assert_eq!(arena.parses.load(Ordering::Relaxed), 1);
+        assert!(arena.take_parsed(body).is_err());
+    }
+    #[test]
+    fn rejected_typed_admission_preserves_lossless_and_statement_model() {
+        let frontend = frontend();
+        let arena = BodyArena::new_typed(&frontend, |_| false);
+        let parsed = arena.take_parsed(&frontend.bodies[0]).unwrap();
+        assert!(!parsed.item().children.is_empty());
+        assert!(parsed.statement_body().is_some());
+        assert!(parsed.statement_attempted());
+    }
     #[test]
     fn retained_visit_neither_parses_nor_consumes() {
         let frontend = frontend();

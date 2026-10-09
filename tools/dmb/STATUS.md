@@ -1,302 +1,150 @@
 # Native compiler status
 
-## Latest validated candidate — 8 October, shared worker pool
+Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 
-Phase 0 measurement and structural traversal gates are closed; Phase 1 is open
-under the user's D36 decision. All six ABABAB self-comparison runs passed the
-strict CPU interval cross-check, fresh DMB/RSC/diagnostic oracle and structural
-no-regression checks. Phase 1 performance and memory targets still fail.
+## Latest admitted measurement
 
-Eight-worker cold compilation, empty compiler cache, warmed captured inputs:
+Phase 1 was opened under the user's D36 decision. Structural traversal remains
+complete; a new parallel-worker phase attribution gap requires a corrected
+measurement rerun. Phase 1 exit targets are **not met**. Full migration,
+incremental edit performance and production readiness are not claimed.
 
-| Measurement | Six-run median | Range |
-| --- | ---: | ---: |
-| End-to-end compiler child wall | 20.93 s | 15.15–22.46 s |
-| Critical-path CPU | 16.77 s | 13.00–18.19 s |
-| Total process CPU | 35.85 s | 30.56–37.92 s |
-| Peak private memory | 2.54 GB | 2.53–2.65 GB |
+Eight-worker cold compilation, empty compiler cache and warmed captured inputs:
 
-Self-comparison A/B median drift is 9.8% critical-path CPU and 8.0% wall;
-changes smaller than that are not established speedups in this machine window.
-The input warm-up (86.01 s) and structural/oracle harness work are outside child
-compile wall. This is the pinned historical test-defined DeepQuarry fixture,
-not a benchmark of current master or warm edits.
-Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/self-pool-20261008-193650/`.
-Source archive: `042a29a6d88ac48bd9d274a91fff4a78281b36d446457281298e80a3377eed3c`.
+| Measurement | Previous A median | Candidate B median | Budget |
+| --- | ---: | ---: | ---: |
+| End-to-end compiler child wall | 19.09 s | **13.97 s** | Context; CPU judged |
+| Critical-path CPU | 15.625 s | **11.594 s** | ≤ 15 s |
+| Critical-path CPU uncertainty upper bound | 17.50 s | 13.50 s | ≤ 15 s |
+| Total process CPU | 34.141 s | 31.922 s | ≤ 40 s |
+| Peak private memory | 2.588 GB | **2.280 GB** | ≤ 1.5 GB |
+| Bytes read | 1.623 GB | 550 MB | ≤ 400 MB |
+| Bytes written | 616 MB | 625 MB | ≤ 600 MB |
 
-## Implemented candidate awaiting output benchmark — 8 October, 20:43
+ABABAB, three runs per compiler. All six passed the then-current automatic
+measurement checks, fresh native DMB/RSC/diagnostic equality and structural
+no-regression. Wall median fell 26.85%. Critical CPU and stage-budget rows are
+**provisional**: an audit found parallel output workers missing their parent
+phase guards. Global process CPU, wall and private-memory measurements are
+unaffected. Corrected phase attribution must be rerun before CPU improvements
+or CPU-budget conclusions are promoted. Overall acceptance still fails memory,
+I/O and several stage budgets. No allocation-counting data is attributed to this
+release/mimalloc acceptance binary. Stage CPU upper bounds below use the same
+canonical mapping as the automated gate; nested totals must not be added again.
 
-Typed `SymRef` operands and numeric branch IDs now flow directly through lowering,
-encoding and linking; exact binary string payloads share an interned roster.
-The request-local body arena parses each issued body once and transfers it into
-lowering. Parallel resources, directive preparation, type inventory, initializer
-classification/code generation and canonical DMB table encoding use one borrowed
-build executor. Initializer groups merge in source order; a single global group
-and dependent constant/inheritance propagation remain sequential.
+| Stage | Critical CPU upper | Total CPU upper | Critical / total budget |
+| --- | ---: | ---: | ---: |
+| Input | 0.766 s | 3.750 s | 0.5 / 1 s |
+| Frontend | 2.672 s | 7.359 s | 3 / 12 s |
+| Tree and captured facts | 0.906 s | 1.156 s | 1 / 2 s |
+| Resources/maps | 2.453 s | 2.453 s | 2 / 6 s |
+| ABI/initializers | 1.109 s | 2.500 s | 1.5 / 4 s |
+| Lowering | 1.391 s | 9.813 s | 3 / 16 s |
+| Link | 1.500 s | 1.500 s | 1 / 2 s |
+| Composition/publication | 2.797 s | 2.797 s | 1.5 / 3 s |
 
-Immutable DMB/RSC owners compute their hashes during canonical serialization.
-Publication consumes those certificates, avoids immediate staged-output rereads,
-and preserves exact-input verification and authenticated resource reuse. UTF-8
-input decoding reuses the authenticated byte allocation; conversion to the
-current `Arc<str>` representation still copies. The opt-in heap census counts
-retained body ASTs and output capacity; worker transient AST copies are excluded.
+Scope: historical DeepQuarry `ac1af55d1a9a8e023e46bd058be59ed82c503f52`, captured
+`comparison.dme`, test defines, no daemon. This is not current master, server
+defines or a minimal-edit measurement. Previous self-comparison noise was 9.8%
+critical CPU and 8.0% wall. Warm-up/oracle/inspection time is outside child wall.
+Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/compare-throughput-20261008-221855/`.
+Candidate SHA-256: `d867a0eec45ad9e40e2254c750cb9f19700a94092d8c6fe96a017613fa402f1f`.
+Source archive: `4248f477056941768dde1cd50e6a4e266bc76ad5329d0dea94cf0e06f4b8ebb9`.
 
-Validation: **1,445 ordinary workspace library tests passed**, zero failures;
-release Clippy across workspace/all targets passed with warnings denied.
-This does not claim the full release-profile workspace test gate. Earlier full
-ordinary workspace runs found five obsolete typed-binding fixtures, now fixed;
-all compiler libraries are green. No DreamDaemon or DM test runs were made.
+## Newer implemented source
 
-Frozen source archive:
-`848b95d470abb6ea37232ae997077dff0201944e4edf2ffcfdd7e1ba9fe240cc`.
-The native method fixes now compile the complete captured DeepQuarry project.
-The unoptimized diagnostic succeeded in 207.38 s; the frozen release diagnostic
-with heap census succeeded in 32.56 s using the default worker stack. These are
-successful output diagnostics, not accepted throughput comparisons. The new
-ABABAB comparison is running against the previous accepted compiler. Its first
-control run passed the fresh output oracle but failed stage-mapping accounting;
-the independent CPU ratio bounds passed. Measurement admission remains failed
-until that accounting issue is explained; no tolerances have been relaxed.
+`c9e64d0d78` shares frozen symbolic code with linker content and seals composition
+before releasing source/startup owners. Exact collision checks preserve canonical
+bytes, including equivalent differently segmented content. `955cf8b662` moves
+parsed executable bodies/static-filter storage, shares captured asset payloads,
+issues current images on the shared executor, uses a temporary relocation hash
+map and validates argument records without temporary vectors.
 
-1,456 ordinary workspace library tests passed after the method/provider/publication
-fixes (8 October, 21:43), and release all-target Clippy passed. New early-freeze,
-capacity-compaction and shared-debug-path changes are implemented but await their
-own validation; those changes are excluded from the frozen benchmark candidate.
-The retained frontend census fell from 596.6 MiB to 557.5 MiB after macro-trace
-compaction; process peak-memory improvement remains unmeasured.
+Latest validation: 1,485 ordinary library checks passed, zero failures/ignored
+checks (304.43 s); release all-target Clippy with warnings denied passed (75.39 s).
+Full captured-project diagnostic passed with unchanged DMB/RSC SHA-256 hashes
+(172.49 s, unoptimized census binary; **not acceptance timing**).
+Known retained capacity: frontend 557.5 MiB, startup 623.4 MiB, lowering 699.7 MiB,
+linking 684.7 MiB, publication 270.4 MiB. Earlier lowering was 1,114.8 MiB and
+publication 827.9 MiB. Census excludes allocator overhead/private backing and
+worker temporaries. Diagnostic peak private memory remained 2.262 GB.
 
-Frozen candidate archive:
-`f17e02dc6c0feac78151c77a5ac910f7654c5d2991c43d3f05e03fec437ca9b9`.
-Compiler SHA-256:
-`d734d632386c127ee457db74eb110657aecf5445c801cc27728dab1dcb4ef860`.
-Evidence: `E:/dq-cache/dmb-native-v2/census-20261008-214351/` and
-`E:/dmb-native-v2-phase0/r6-cohorts/compare-throughput-20261008-214351/`.
-No accepted speedup or process-memory reduction is claimed yet.
+The earlier optimized source `955cf8b662fb8ded31ad00441753b40fa7a37c45` lacks
+complete worker parent-stage attribution; any traces from it are diagnostic only.
+Its optimized build completed successfully in 635.15 s; comparison was withheld
+until the attribution fix. Build receipt:
+`E:/dq-cache/dmb-native-v2/source-typed-codegen-r6-20261008-232917.build.json`.
+Executable SHA-256: `fe00d12ea41c76e7084fdbc39b23d17476d0c86b120651f70a3710eed546ae7b`.
+The corrected source has not yet been frozen into a new optimized candidate.
+Generic `StageContext` propagation now captures caller stage names at explicit
+shared-executor job boundaries, enters thread-local guards on the executing
+worker and drops them in reverse order, including panic unwinding. Nested spawns
+inherit their active context; disabled profiling allocates no context storage.
+`install` propagates its executing closure's context; the ABI parallel iterator
+retains its explicit per-chunk phase guard for other participating workers.
+Canonical inclusive phase selectors and exclusive ancestor residuals are unchanged.
 
-Changed requests still reconstruct the frontend, scalar facts and linked image.
-Disk procedure/expansion/map memos are present, but a retained daemon session
-pipeline is not implemented. The accepted 20.93 s figure is a full build, not
-an unchanged or minimal-edit measurement. Phase 2 edit targets remain open.
+Current source passed release all-target Clippy with warnings denied (84.38 s):
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261008-235525.json`.
+The explicit `dm-exec` context integration test passed (11.19 s), covering nested
+jobs, panic unwinding, installed work and clean worker reuse:
+`E:/dq-cache/dmb-native-v2/profile-context-check-20261008-235701-2ef39ec2.json`.
+The final ordinary library batch passed 1,504 checks in 115.98 s:
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-000821.json`.
+It includes the composition planner, source/tree instrumentation and word-transfer
+corrections. Two earlier attempts exposed incomplete synthetic linker inventory
+in the new initializer fixture; its required spelling is now supplied without
+weakening production validation. Final release all-target Clippy passed with
+warnings denied in 13.35 s:
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-001023.json`.
+Regenerated optimized traces remain required before critical CPU or stage-budget
+claims. Shared lexical arenas, typed statement-model reuse and immutable resource
+CRC changes have no accepted benchmark yet. Typed statement reuse retains the
+existing lossless fallback for unsupported bodies; supported bodies release raw
+children.
 
-Updated 8 October 2026. Binding plan: DESIGN.md revision 6.
+Implemented source now uses shared `SourceText` file/continuation arenas instead
+of per-line text allocations, and one issued `StatementBody` through startup,
+static extraction and lowering. Unsupported typed bodies retain lossless fallback.
+Immutable shared resource payloads retain reusable CRC evidence rather than
+rescanning unchanged payload bytes. Composition uses canonical ordered artifact
+rosters and parallel independent procedure metadata; serial ID/list allocation
+preserves ordering and error precedence. Borrowed composition avoids its second
+word-buffer copy, and owned map/modified initializers transfer certified buffers.
+Tree spans distinguish member installation, ancestry resolution, inheritance and
+identity hashing. These implementations have no accepted
+post-context-fix critical CPU benchmark; neither memory targets nor Phase 1 exit
+are claimed from their presence in source.
 
-## Historical profiler-only measurements
+## Open correctness and architecture items
 
-At this historical checkpoint, no admitted revision-6 cohort existed. Earlier counting/LTO-disabled
-figures are diagnostics, not acceptance measurements. No speedup is attributed
-from runs in different windows.
+Whole-program structural diff: **1,853,923 differences**, unchanged in the admitted
+cohort: bytecode 1,636,088; globals 14; other 1,277; proc flags 14; proc table 8,983;
+strings 201,358; type headers 1,949; type set 10; var defaults 4,230. There are 126
+uncovered fixed words. Stable counts are a no-regression gate, not semantic parity.
+Runtime baseline is deferred to Phase 5. `power_bridge.dm:154` behavior remains
+unresolved. No new DreamDaemon/DM suite runs were made and all-tests parity is
+not claimed. Full release-profile workspace test evidence remains outstanding;
+ordinary library checks and release Clippy are separate gates.
 
-Latest completed diagnostic: frozen compiler `58b6a3d51067`, eight workers, historical
-DeepQuarry `ac1af55d1a` captured `comparison.dme`, no cache or daemon. Native DMB,
-RSC and normalized diagnostics match an independent fresh native compile.
-This is neither current-production-map evidence nor DreamMaker/runtime parity.
-
-| Measure | Latest diagnostic | Revision-6 budget |
-| --- | ---: | ---: |
-| Critical-path CPU upper bound | 18.30 s median (diagnostic) | ≤ 15 s; ≤ 20 s needs trace reason |
-| Total CPU | 33.87 s median (diagnostic) | ≤ 40 s |
-| Peak private memory | 2.55 GB maximum | ≤ 1.5 GB |
-| Bytes read | 1.623 GB | ≤ 400 MB plus cache population |
-| Bytes written | 615 MB | ≤ 600 MB plus cache segments |
-| Warm daemon body edit | Not measured | ≤ 1 s |
-| Warm daemon structural edit | Not measured | ≤ 2.5 s |
-
-The corrected thin-LTO/non-counting ABABAB cohort completed six runs. All fresh
-oracles and structural checks passed; four CPU coverage intervals passed, two
-failed. Profile-window wall median 18.87 s, range 16.99–21.39 s. End-to-end child
-wall was overwritten by profile fields and is unavailable in this cohort; the
-reporting bug is now fixed for future runs. No accepted baseline/noise floor.
-Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/self-profiler-20261008-165336/`.
-53 measured threads add ±1.656 s uncertainty; A2 actual uncovered CPU was only
-0.141 s. The user authorized continued parallel implementation; the shared
-pool exception was approved; the completed result is recorded above.
-
-## Correctness and implementation
-
-| First structural traversal | Provisional discrepancies |
-| --- | ---: |
-| Type sets / headers / defaults | 10 / 1,949 / 4,230 |
-| Procedure tables / flags / globals | 8,983 / 14 / 14 |
-| Strings by use | 201,358 |
-| Name-resolved bytecode | 1,636,088 |
-| Other | 1,277 |
-
-All six uncapped traversals completed with exact case signatures and anonymous
-ownership pairing. Total differences: 1,853,923. Unsupported coverage is 126
-fixed-word occurrences; unresolved typed-reference and anonymous pairing gaps
-are gone after the mob/client repairs. Counts are differing fields/instruction
-positions, not independent bugs. Structural measurement admission and subsequent
-no-regression checks passed; semantic parity remains incomplete. Raw reports
-remain in the cohort; summaries use authenticated references to avoid duplication.
-
-Authored layer/luminosity and global procedure namespace
-repairs have pinned static evidence; no repaired-output runtime rerun has run.
-The recorded native global recursion and null-global errors came from calling
-`New`, `Initialize` and variable-edit methods through the erroneous proc table.
-The original `power_bridge.dm:154` behavioral difference remains unresolved.
-
-The human deferred the full runtime baseline to Phase 5 and approved opening
-Phase 1 after Phase 0 measurement and structural-diff gates complete (D36).
-No new DreamDaemon or full runtime suite is running.
-The edited-source private BYOND baseline compiled successfully in 119.2 s after
-bounded four-worker staging (110.5 s). Native counting traces for cold and edited
-source passed fresh-output and structural-tool checks. Child walls were 25.65 s
-and 24.90 s; counting CPU is diagnostic only, never throughput acceptance or
-warm incremental latency. Verified outputs and both diagnostic caches were removed.
-Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/allocations-20261008-172557/`.
-
-Ten largest inclusive allocation spans in the cold counting trace (overlap;
-do not sum these as heap ownership):
-
-| Span | Allocated GB |
-| --- | ---: |
-| build | 6.26 |
-| cold.procedure_lowering | 4.62 |
-| frontend.declaration_parsing | 3.87 |
-| request.compilation | 3.13 |
-| lowering.fresh_codegen | 2.97 |
-| frontend.fresh_declaration_facts | 2.08 |
-| linking.freeze_artifacts | 1.69 |
-| frontend.expansion | 1.59 |
-| frontend | 1.57 |
-| frontend.fragment_lookup_decode_parse | 1.44 |
-
-The CLI uses a shared typed runner. Reusable engine/frontend ownership prototypes
-are preserved but are not a daemon, do not eliminate frontend reassembly, and
-are not the current performance task. Resident/cache work is paused. Whole
-canonical linking and encoding remain intentional; text-keyed codegen and its
-translation pass must be removed in Phase 1.
-
-The earlier shared-runner batch passed 259 compiler library checks, 91
-preprocessor unit checks, two integration checks, and all-target Clippy with
-warnings denied. Current uncommitted changes passed 263 compiler library checks,
-14 linker checks, 10 profiler unit checks and its artifact integration check,
-plus all-target Clippy for those crates. Thirty-three benchmark protocol/provenance/NTFS retention checks pass.
-The thin-LTO acceptance and separate counting binaries are frozen. The comparator
-passed 478 library checks, including unmatched-procedure evidence, renumbering,
-unknown-case multiplicity and malformed-reference regressions; all-target Clippy
-passes. The release comparator is frozen. Latest profiler checks passed 13 unit
-checks and its artifact integration check; current profiler/compiler Clippy passes.
-Verified old output retention recovered 16.76 GiB; compacting duplicate evidence
-recovered another 1.42 GiB. Human cleanup restored about 99 GiB free on E: and
-67 GiB on C:; the disk-space blocker is cleared. Closed owned
-hardlink cleanup is implemented in the cohort so immutable private outputs can
-be disposed after their oracle passes. External/pinned links remain protected.
-
-The full ordinary-profile workspace check now passes: 1,486 tests across 92
-test/doc-test executions, zero failures or ignored tests. It includes the pinned
-BYOND fixture comparisons. A stale analysis-export assertion was corrected to
-expect proc-wide settings in lexical order, preserving its source-origin checks.
-The first attempt reached its 600-second watchdog during fixture execution;
-the completed rerun took 127.65 seconds including the affected rebuild.
-This is not the separately required release-profile workspace result: that
-Thin-LTO attempt was stopped during compilation before tests ran. Workspace
-formatting passes; release-profile whole-workspace/all-target Clippy passes with
-warnings denied (64.56 seconds).
+Changed requests still reconstruct whole-program stages. Existing disk memos are
+preserved, but retained daemon sessions, fast structural edits, Phase 3 cache
+segments, six-worktree acceptance and integration/fallback gates remain open.
+No new daemon or disk-cache functionality is added before Phase 1 exits.
+Composition metadata/list planning still has serial work. Initial filesystem
+read Vec-to-Arc conversion still copies. Immutable pair publication plus writable
+conventional output installation writes the large files twice; the current
+contract is preserved. Source-level implementation cannot close measured gates.
 
 ## Next three actions
 
-Shared-executor migration validation passes: 1,498 ordinary-profile workspace
-tests in 154.37 seconds, zero failures/ignored tests; release-profile
-whole-workspace/all-target Clippy passes (31.13 seconds), and formatting passes.
-Focused release executor/profiler checks also passed before the final invalid-
-worker-count regression was added; that regression passes in the full workspace.
-Unsupported worker counts now fail before allocation or thread creation.
-The acceptance candidate is being frozen for the whole-program comparison.
+1. Validate shared lexical arenas and one issued typed statement model through
+   startup/static extraction/lowering; retain exact spans, errors and fallback.
+2. Freeze and build a corrected optimized candidate containing context propagation,
+   regenerate its comparison and trace remaining input, resources,
+   link/composition, memory and I/O misses; cut measured owners/work, not gates.
+3. Close Phase 1 worker-count/order/output and release-test evidence, then build
+   retained sessions and measure unchanged, body and structural edits honestly.
 
-1. Finish validation of the shared build executor, authorized by the user's
-   instruction to continue implementing on 8 October; rerun the pinned self
-   cohort with the unchanged strict 5% uncertainty check. One pool now spans
-   input preparation, expansion, parsing, startup, ABI, lowering and freezing.
-2. Retain the separate release-profile test requirement as open; preserve the
-   completed ordinary workspace tests and whole-workspace Clippy evidence.
-3. After the measurement gate, measure mimalloc alone, move remaining main-thread
-   bulk work, emit symbol IDs directly and retain startup parses for lowering.
-
-Structured evidence: `phase0/results.jsonl` and `bench/results.jsonl`.
-Earlier narratives: [r5 close-out archive](archive/STATUS-r5-closeout.md).
-
-## 8 October: consuming procedure completion
-
-The production worker now lowers, captures its memo receipt, and consumes each
-procedure into its typed frozen contribution before returning. The coordinator
-retains compact contributions rather than the whole rich instruction forest.
-Required-type admission and modified-instance discovery use the same ordered
-collectors as the compatibility path; source bindings and prepared initializer
-sidecars are released or moved at their last use. Fresh CLI memo storage now
-keeps disk publication/replay but skips request-local resident RichIR clones.
-
-The full captured DeepQuarry diagnostic completed successfully in 205.58 seconds
-using the unoptimized diagnostic binary and heap census. This is **not** an
-acceptance speed measurement. Its DMB and RSC SHA-256 hashes match the previous
-successful diagnostic exactly. Known retained container capacity at
-`lowering.ready` fell from 1,114.8 MiB to 755.8 MiB, approximately 359 MiB less.
-This census excludes allocator overhead and unknown backing; it is not peak RSS.
-
-The first optimized A/B pair passed its fresh-output oracle but failed exact
-stage-map coverage, so the cohort was stopped and its receipts preserved.
-Per-binary pinned maps and self-comparison selection are repaired; 30 focused
-Python harness checks pass. No new accepted speedup is claimed. The last accepted
-full-project median remains 20.93 seconds on the captured historical project.
-
-The final ordinary library run passed 1,466 checks in 89.91 seconds, with zero
-failures or ignored checks. Release-profile whole-workspace/all-target Clippy
-passes with warnings denied (133.49 seconds). Parallel final instruction
-validation uses the shared executor with ordered error reduction. The narrow
-debug-site accessor preserves macro/include/offset semantics without constructing
-temporary include chains. These latest changes await frozen throughput evidence.
-The retained daemon, structural-edit incremental pipeline, disk artifact replay,
-runtime baseline and production readiness remain open. Phase 1 must close before
-daemon or new disk-cache work resumes, as required by the review.
-
-## 8 October late: source ownership and shared linker content
-
-The CLI now seals a validated composition input, then releases the frontend,
-startup tree and source resolvers before composing the output. The borrowed
-compatibility API uses the same validation and composition implementation.
-An ownership regression checks that the semantic source tree is released before
-composition and that the resulting DMB bytes are identical. Captured policies
-also preserve custom mob/resource indices and negative lookup answers.
-
-The captured-project diagnostic completed in 161.91 seconds with the unoptimized
-census binary; this is not an acceptance speed measurement. DMB and RSC hashes
-are unchanged. Known retained capacity at publication fell from 827.9 MiB to
-270.4 MiB. Peak private memory remained about 2.31 GB during lowering, above the
-1.5 GB target; this lifetime change does not close that gate. Release all-target
-Clippy passed in 22.44 seconds and ordinary library checks passed in 93.16 seconds.
-
-The corrected immutable optimized ABABAB cohort completed: previous/candidate
-cold wall medians are 19.09/13.97 seconds (26.85% less); critical-path CPU medians
-are 15.625/11.594 seconds (25.8% less), total CPU 34.141/31.922 seconds. Peak
-private memory medians are 2,588,090,368/2,279,854,080 bytes. All six measurements,
-fresh-output oracles and structural no-regression checks passed. Overall phase
-acceptance still fails the memory, several stage CPU and I/O budgets. The frozen
-candidate excludes the later source lifetime and shared-content changes.
-Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/compare-throughput-20261008-221855/`;
-the alternating comparison is also recorded in `phase0/results.jsonl`.
-
-The next source change stores procedure/helper linker content as shared symbolic
-code with small canonical prefix/suffix buffers. It preserves the previous byte
-envelope and exact collision checks, while avoiding a second eagerly serialized
-code buffer. Census reads retained parts without forcing serialization. This
-change passes release-profile whole-workspace/all-target Clippy with warnings
-denied (36.90 seconds) and 1,478 ordinary library checks (187.13 seconds).
-Its canonical equality includes differently segmented equivalent byte content;
-identical structured entries compare without materialization. The captured-project
-diagnostic passed with unchanged DMB/RSC SHA-256 hashes. Known retained capacity
-at lowering fell from 753.4 to 699.7 MiB and at linking from 738.4 to 684.7 MiB;
-publication remained 270.4 MiB. Its unoptimized census run took 298.06 seconds
-under competing Rust builds, and is not a speed measurement. Diagnostic peak
-private memory was 2,267,754,496 bytes, still above the target; only the frozen
-optimized cohort supplies acceptance timing/memory evidence. These checks do not substitute for the outstanding
-release-profile workspace-test gate or Phase 5 runtime validation.
-
-The next batch consumes parsed executable bodies and static-filter
-storage, issues current procedure images on the shared executor, replaces a
-temporary relocation tree map with a hash map, shares captured resource payloads
-through borrowed RSC encoding, and validates argument records without allocating
-temporary vectors. It has no new daemon or disk-cache functionality. Build
-validation passes: release-profile all-target Clippy in 75.39 seconds and 1,485
-ordinary library checks in 304.43 seconds, zero failures/ignored checks.
-A whole-project diagnostic is pending. No benchmark result is yet attributed
-to this batch.
+Structured evidence: `phase0/results.jsonl`, `bench/results.jsonl`.
+Earlier narratives: `archive/STATUS-20261008-ownership.md` and older archives.

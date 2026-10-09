@@ -125,8 +125,14 @@ fn capture_impl_with_bodies(
             ));
         }
         let plan = bodies
-            .with_parsed(body, |parsed| {
-                dm_tree::procedure_statics::capture_declarations(identity, &parsed.item().children)
+            .with_parsed(body, |parsed| match parsed.statement_body() {
+                Some(statements) => {
+                    dm_tree::procedure_statics::capture_issued_statements(identity, statements)
+                }
+                None => dm_tree::procedure_statics::capture_declarations(
+                    identity,
+                    &parsed.item().children,
+                ),
             })
             .map_err(|e| format!("startup body: {e:?}"))??;
         Ok::<_, String>((body.declaration, plan))

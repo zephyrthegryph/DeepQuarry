@@ -7,6 +7,9 @@ impl Compiler<'_> {
         statements: &[Statement],
     ) -> Result<(), LowerError> {
         for statement in statements {
+            if !self.statement_visible(statement) {
+                continue;
+            }
             let scoped_statement = matches!(
                 &statement.kind,
                 StatementKind::For { .. } | StatementKind::Try { .. }
@@ -42,17 +45,18 @@ impl Compiler<'_> {
                     let prior_depth = self
                         .label_loop_depths
                         .insert(name.clone(), self.loops.len());
-                    let is_iterator_loop = body.first().is_some_and(|statement| {
-                        matches!(
-                            &statement.kind,
-                            StatementKind::For {
-                                control: ForControl::Each { .. }
-                                    | ForControl::Pair { .. }
-                                    | ForControl::All { .. },
-                                ..
-                            }
-                        )
-                    });
+                    let is_iterator_loop =
+                        self.statement_view(body).first().is_some_and(|statement| {
+                            matches!(
+                                &statement.kind,
+                                StatementKind::For {
+                                    control: ForControl::Each { .. }
+                                        | ForControl::Pair { .. }
+                                        | ForControl::All { .. },
+                                    ..
+                                }
+                            )
+                        });
                     let target_iterator_depth = self.iterator_depth + usize::from(is_iterator_loop);
                     let prior_iterator_depth = self
                         .label_iterator_depths
@@ -844,7 +848,7 @@ impl Compiler<'_> {
                     let else_label = self.label();
                     self.emit(opcode::JZ, vec![Word::Branch(else_label)]);
                     self.typed_statements(then_branch)?;
-                    if else_branch.is_empty() {
+                    if self.statement_view(else_branch).is_empty() {
                         self.result.code.items.push(CodeItem::Label(else_label));
                     } else {
                         let end_label = self.label();

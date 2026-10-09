@@ -223,6 +223,41 @@ fn actual_macro_expansions_retain_definition_and_replacement_ancestry() {
 }
 
 #[test]
+fn continued_macro_definition_preserves_definition_and_use_provenance() {
+    let plan = fixture(&[
+        ("project.dme", "#include \"body.dm\"\n"),
+        (
+            "body.dm",
+            "#define INNER 7\n#define OUTER \\\n INNER\nvar/value = OUTER\n",
+        ),
+    ]);
+    let output = expand_regions(&plan, 2);
+    assert!(output.diagnostics.is_empty(), "{:?}", output.diagnostics);
+    let origin = &output.origins[0];
+    assert_eq!(origin.origin.source_line, 4);
+    assert_eq!(origin.macro_expansions.len(), 2);
+    assert_eq!(origin.macro_expansions[0].name, "OUTER");
+    assert_eq!(
+        origin.macro_expansions[0]
+            .definition
+            .as_ref()
+            .unwrap()
+            .source_line,
+        2
+    );
+    assert_eq!(origin.macro_expansions[1].name, "INNER");
+    assert_eq!(
+        origin.macro_expansions[1]
+            .definition
+            .as_ref()
+            .unwrap()
+            .source_line,
+        1
+    );
+    assert_eq!(origin.macro_expansions[1].replacement_chain, vec!["OUTER"]);
+}
+
+#[test]
 fn expansion_and_directive_diagnostics_are_merged_in_encounter_order() {
     let plan = fixture(&[
         ("project.dme", "#include \"parent.dm\"\n"),

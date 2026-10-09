@@ -10,6 +10,8 @@ pub struct NamedResourceInput {
     pub declared_size: u32,
     pub name: Vec<u8>,
     data: Arc<[u8]>,
+    // Deterministically derived from private immutable data; never the public recorded ID.
+    full_crc: u32,
 }
 impl NamedResourceInput {
     pub fn from_shared_data(
@@ -31,6 +33,7 @@ impl NamedResourceInput {
             declared_size,
             name,
             data,
+            full_crc: id,
         })
     }
     pub fn asset_bytes(&self) -> io::Result<&[u8]> {
@@ -42,7 +45,12 @@ impl NamedResourceInput {
         })
     }
     pub fn content_id(&self) -> io::Result<u32> {
-        Ok(byond_dmb::hash::nqcrc(u32::MAX, self.asset_bytes()?))
+        let payload = self.asset_bytes()?;
+        Ok(if payload.len() == self.data.len() {
+            self.full_crc
+        } else {
+            byond_dmb::hash::nqcrc(u32::MAX, payload)
+        })
     }
     pub fn shared_data(&self) -> &Arc<[u8]> {
         &self.data
@@ -73,6 +81,7 @@ impl NamedResourceInput {
 }
 impl From<NamedResource> for NamedResourceInput {
     fn from(value: NamedResource) -> Self {
+        let full_crc = byond_dmb::hash::nqcrc(u32::MAX, &value.data);
         Self {
             kind: value.kind,
             id: value.id,
@@ -81,6 +90,7 @@ impl From<NamedResource> for NamedResourceInput {
             declared_size: value.declared_size,
             name: value.name,
             data: value.data.into(),
+            full_crc,
         }
     }
 }
@@ -118,5 +128,46 @@ mod tests {
         assert_eq!(borrowed.bytes(), legacy.bytes());
         assert_eq!(borrowed.content_hash(), legacy.content_hash());
         assert!(Arc::ptr_eq(&source, input.shared_data()));
+    }
+    #[test]
+    fn recorded_id_and_declared_prefix_cannot_override_immutable_crc() {
+        let bytes: Arc<[u8]> = Arc::from(&b"complete asset"[..]);
+        let mut input =
+            NamedResourceInput::from_shared_data(0, b"a.txt".to_vec(), Arc::clone(&bytes), 0, 0)
+                .unwrap();
+        let full = byond_dmb::hash::nqcrc(u32::MAX, &bytes);
+        input.id ^= 1;
+        assert_eq!(input.content_id().unwrap(), full);
+        assert_ne!(input.id, input.content_id().unwrap());
+        input.declared_size = 4;
+        assert_eq!(
+            input.content_id().unwrap(),
+            byond_dmb::hash::nqcrc(u32::MAX, &bytes[..4])
+        );
+        input.declared_size = bytes.len() as u32 + 1;
+        assert_eq!(
+            input.content_id().unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+    }
+    #[test]
+    fn mutable_import_authenticates_bytes_and_preserves_trailing_capacity() {
+        let mut mutable =
+            NamedResource::from_data(0, b"a.txt".to_vec(), b"asset trailing".to_vec(), 0, 0)
+                .unwrap();
+        mutable.id ^= 1;
+        let mut input: NamedResourceInput = mutable.into();
+        assert_eq!(
+            input.content_id().unwrap(),
+            byond_dmb::hash::nqcrc(u32::MAX, b"asset trailing")
+        );
+        assert_ne!(input.id, input.content_id().unwrap());
+        input.declared_size = 5;
+        assert_eq!(
+            input.content_id().unwrap(),
+            byond_dmb::hash::nqcrc(u32::MAX, b"asset")
+        );
+        let roundtrip: NamedResourceInput = input.to_owned_named().into();
+        assert_eq!(input, roundtrip);
     }
 }

@@ -142,6 +142,8 @@ struct Frame {
     last_coarse_cpu: Option<u64>,
     last_wall: Instant,
 }
+mod context;
+pub use context::{StageContext, StageContextGuard};
 thread_local! {static STACK:RefCell<Vec<Frame>>=const {RefCell::new(Vec::new())};}
 
 fn sum_bounds(values: impl Iterator<Item = clock::CpuBounds>) -> clock::CpuBounds {

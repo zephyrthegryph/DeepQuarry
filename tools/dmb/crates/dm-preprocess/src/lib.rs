@@ -188,6 +188,9 @@ pub use project_context::{preprocess_project, preprocess_project_cached};
 
 mod source_lines;
 use source_lines::*;
+mod logical_arena;
+mod source_text;
+pub use source_text::{SourceText, SourceTextStorage};
 
 mod macro_expansion;
 use macro_expansion::*;

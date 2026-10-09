@@ -110,51 +110,19 @@ pub(super) struct LogicalLine {
 }
 
 pub(super) fn logical_lines(source: &str) -> Vec<LogicalLine> {
-    let mut lines = Vec::new();
-    let mut joined = String::new();
-    let mut source_lines = 0;
-    let mut state = LogicalState::default();
-    for physical in source.split_inclusive('\n') {
-        if physical.trim_start().starts_with('#')
-            && !joined.trim_start().starts_with("#define ")
-            && !joined.is_empty()
-            && !state.open_literal
-        {
-            lines.push(LogicalLine {
-                text: std::mem::take(&mut joined),
-                source_lines,
-            });
-            source_lines = 0;
-            state = LogicalState::default();
-        }
-        source_lines += 1;
-        let content = physical.trim_end_matches(['\r', '\n']);
-        if !state.open_block_string {
-            if let Some(prefix) = content.trim_end().strip_suffix('\\') {
-                joined.push_str(prefix);
-                state = logical_state(&joined);
-                continue;
+    let plan = crate::logical_arena::plan(source);
+    plan.lines
+        .into_iter()
+        .map(|line| LogicalLine {
+            text: if line.transformed {
+                &plan.transformed[line.range]
+            } else {
+                &source[line.range]
             }
-        }
-        joined.push_str(physical);
-        state = logical_state(&joined);
-        if state.open_literal || (!joined.trim_start().starts_with('#') && state.open_expression) {
-            continue;
-        }
-        lines.push(LogicalLine {
-            text: std::mem::take(&mut joined),
-            source_lines,
-        });
-        source_lines = 0;
-        state = LogicalState::default();
-    }
-    if !joined.is_empty() {
-        lines.push(LogicalLine {
-            text: joined,
-            source_lines,
-        });
-    }
-    lines
+            .to_owned(),
+            source_lines: line.source_lines,
+        })
+        .collect()
 }
 
 /// Remove comments before line-oriented preprocessing. Keep every newline and

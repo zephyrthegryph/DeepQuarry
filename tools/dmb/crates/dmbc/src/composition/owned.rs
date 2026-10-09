@@ -24,7 +24,7 @@ impl BatchAccess<'_> {
     ) -> Result<Vec<u32>, IntegrationError> {
         let mut words = match self {
             Self::Borrowed(batch) => Ok::<Vec<u32>, IntegrationError>(
-                batch.link_unit(index, &Default::default())?.words.to_vec(),
+                batch.link_unit(index, &Default::default())?.into_words(),
             ),
             Self::Owned(batch) => Ok::<Vec<u32>, IntegrationError>(
                 batch
@@ -48,7 +48,7 @@ impl BatchAccess<'_> {
     ) -> Result<Vec<u32>, IntegrationError> {
         let mut words = match self {
             Self::Borrowed(batch) => Ok::<Vec<u32>, IntegrationError>(
-                batch.link_helper(&batch.helpers[index])?.words.to_vec(),
+                batch.link_helper(&batch.helpers[index])?.into_words(),
             ),
             Self::Owned(batch) => {
                 Ok::<Vec<u32>, IntegrationError>(batch.take_helper_image(index)?.into_words())
@@ -72,27 +72,10 @@ impl BatchAccess<'_> {
             Self::Borrowed(batch) => Ok::<Vec<u32>, IntegrationError>(
                 batch
                     .link_initializer(&batch.initializers[index])?
-                    .words
-                    .to_vec(),
+                    .into_words(),
             ),
             Self::Owned(batch) => {
-                // Map/modified output stages still need their linked images.
-                if matches!(
-                    batch.initializers[index].identity,
-                    dm_link::InitializerIdentity::Map { .. }
-                        | dm_link::InitializerIdentity::Modified(_)
-                ) {
-                    Ok::<Vec<u32>, IntegrationError>(
-                        batch
-                            .link_initializer(&batch.initializers[index])?
-                            .words
-                            .to_vec(),
-                    )
-                } else {
-                    Ok::<Vec<u32>, IntegrationError>(
-                        batch.take_initializer_image(index)?.into_words(),
-                    )
-                }
+                Ok::<Vec<u32>, IntegrationError>(batch.take_initializer_image(index)?.into_words())
             }
         }?;
         dm_link::admit_type_path_words(
