@@ -54,5 +54,25 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, item, melee_hit
+human|/obj/item/measuring_tape menu: Hit
+human|/obj/item/measuring_tape menu: Measure
+human|/obj/item/measuring_tape menu: Move To Top
+human|/obj/item/measuring_tape menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/measuring_tape menu: Use
+human|/obj/item/measuring_tape click: Click: Measure
+human|/obj/item/xenoarch_multi_tool menu: Hit
+human|/obj/item/xenoarch_multi_tool menu: Measure
+human|/obj/item/xenoarch_multi_tool menu: Move To Top
+human|/obj/item/xenoarch_multi_tool menu: Scan for Anomalies (refused: You can't do that.)
+human|/obj/item/xenoarch_multi_tool menu: Swap Functionality (refused: You can't do that.)
+human|/obj/item/xenoarch_multi_tool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/xenoarch_multi_tool menu: Use
+human|/obj/item/xenoarch_multi_tool click: Click: Measure
+human|/obj/item/pickaxe menu: Dig
+human|/obj/item/pickaxe menu: Hit
+human|/obj/item/pickaxe menu: Move To Top
+human|/obj/item/pickaxe menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pickaxe menu: Use
+human|/obj/item/pickaxe click: Click: Dig
+keys: dig, drag_buckle, item, measure_multi, measure_tape, melee_hit
 

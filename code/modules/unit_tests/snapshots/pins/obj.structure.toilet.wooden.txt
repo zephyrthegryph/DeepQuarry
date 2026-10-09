@@ -94,5 +94,21 @@ human|/obj/item menu: Wooden item
 human|/obj/item menu: Wooden touch
 human|/obj/item menu: Yank the flush lever
 human|/obj/item click: Click: Wooden item
-keys: drag_buckle, flush, flush_yank, melee_hit, silicon_use, use_crowbar, use_wrench, wooden_item, wooden_item_cyborg, wooden_touch
+human|/obj/item/bluespace_crystal menu: Flush
+human|/obj/item/bluespace_crystal menu: Hit
+human|/obj/item/bluespace_crystal menu: Move To Top
+human|/obj/item/bluespace_crystal menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/bluespace_crystal menu: Wooden item
+human|/obj/item/bluespace_crystal menu: Wooden touch
+human|/obj/item/bluespace_crystal menu: Yank the flush lever
+human|/obj/item/bluespace_crystal click: Click: Wooden item
+human|/obj/item/stock_parts/matter_bin menu: Flush
+human|/obj/item/stock_parts/matter_bin menu: Hit
+human|/obj/item/stock_parts/matter_bin menu: Move To Top
+human|/obj/item/stock_parts/matter_bin menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stock_parts/matter_bin menu: Wooden item
+human|/obj/item/stock_parts/matter_bin menu: Wooden touch
+human|/obj/item/stock_parts/matter_bin menu: Yank the flush lever
+human|/obj/item/stock_parts/matter_bin click: Click: Wooden item
+keys: drag_buckle, flush, flush_yank, insert_crystal, melee_hit, replace_bin, silicon_use, swirlie, use_crowbar, use_wrench, wooden_item, wooden_item_cyborg, wooden_touch
 
