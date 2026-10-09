@@ -29,7 +29,10 @@ impl ExpressionRecipe {
             if node.span == span && matches!(&node.kind, ExprKind::ObjectInitializer { .. }) {
                 matches.push(path.clone());
             }
-            for_each_child(node, |index, child| {
+            dm_syntax::for_each_expression_child(node, |index, child| {
+                let Ok(index) = u32::try_from(index) else {
+                    return;
+                };
                 path.push(index);
                 find(child, span, path, matches);
                 path.pop();
@@ -53,8 +56,8 @@ impl ExpressionRecipe {
         let mut expression = root;
         for index in &self.path {
             let mut selected = None;
-            for_each_child(expression, |candidate, child| {
-                if candidate == *index {
+            dm_syntax::for_each_expression_child(expression, |candidate, child| {
+                if candidate == *index as usize {
                     selected = Some(child);
                 }
             });
@@ -68,49 +71,5 @@ impl ExpressionRecipe {
     }
     pub(crate) fn retained_parts(&self) -> (&Vec<u32>, &Arc<[u8]>) {
         (&self.path, self.descriptor.canonical())
-    }
-}
-fn for_each_child<'a>(node: &'a Expr, mut visit: impl FnMut(u32, &'a Expr)) {
-    match &node.kind {
-        ExprKind::Ident(_) | ExprKind::Literal(_) | ExprKind::TypePath(_) => {}
-        ExprKind::Unary { value, .. }
-        | ExprKind::TypeFilter { value, .. }
-        | ExprKind::Group(value) => visit(0, value),
-        ExprKind::Member { object, .. }
-        | ExprKind::StaticMember { object, .. }
-        | ExprKind::SafeMember { object, .. } => visit(0, object),
-        ExprKind::Binary { lhs, rhs, .. } => {
-            visit(0, lhs);
-            visit(1, rhs);
-        }
-        ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => {
-            visit(0, object);
-            visit(1, index);
-        }
-        ExprKind::Conditional {
-            condition,
-            then_value,
-            else_value,
-        } => {
-            visit(0, condition);
-            visit(1, then_value);
-            visit(2, else_value);
-        }
-        ExprKind::Call { callee, args } => {
-            visit(0, callee);
-            for (index, arg) in args.iter().enumerate() {
-                if let Some(index) = u32::try_from(index).ok().and_then(|i| i.checked_add(1)) {
-                    visit(index, arg);
-                }
-            }
-        }
-        ExprKind::ObjectInitializer { object, fields } => {
-            visit(0, object);
-            for (index, (_, value)) in fields.iter().enumerate() {
-                if let Some(index) = u32::try_from(index).ok().and_then(|i| i.checked_add(1)) {
-                    visit(index, value);
-                }
-            }
-        }
     }
 }

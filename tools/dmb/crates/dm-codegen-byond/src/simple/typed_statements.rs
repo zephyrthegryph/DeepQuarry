@@ -14,8 +14,8 @@ impl Compiler<'_> {
                 &statement.kind,
                 StatementKind::For { .. } | StatementKind::Try { .. }
             );
-            let saved_slots = scoped_statement.then(|| self.local_slots.clone());
-            let saved_types = scoped_statement.then(|| self.local_types.clone());
+            let saved_slots = scoped_statement.then(|| self.local_slots.checkpoint());
+            let saved_types = scoped_statement.then(|| self.local_types.checkpoint());
             self.debug_at(statement.header_span.start, &statement.raw_header)?;
             match &statement.kind {
                 StatementKind::Set { .. } => {
@@ -866,10 +866,10 @@ impl Compiler<'_> {
                 }
             }
             if let Some(saved_slots) = saved_slots {
-                self.local_slots = saved_slots;
+                self.local_slots.restore(saved_slots);
             }
             if let Some(saved_types) = saved_types {
-                self.local_types = saved_types;
+                self.local_types.restore(saved_types);
             }
         }
         Ok(())

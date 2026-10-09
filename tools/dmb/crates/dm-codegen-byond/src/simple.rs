@@ -585,8 +585,8 @@ fn compile_with_lookup_mode(
         discarded_call_root: None,
         resolver_failure: std::cell::RefCell::new(None),
         locals: Vec::new(),
-        local_slots: HashMap::new(),
-        local_types: HashMap::new(),
+        local_slots: dm_syntax::ScopeMap::default(),
+        local_types: dm_syntax::ScopeMap::default(),
         string_roster: StringRoster::default(),
         seen_classes: BTreeSet::new(),
         seen_resources: BTreeSet::new(),
@@ -853,22 +853,7 @@ fn supported_statements(
         })
 }
 
-fn local_name(declaration: &str) -> Option<&str> {
-    let raw = declaration
-        .strip_prefix("var/")
-        .or_else(|| {
-            declaration
-                .strip_prefix("var")
-                .filter(|tail| tail.chars().next().is_some_and(char::is_whitespace))
-        })?
-        .trim_start();
-    if raw.starts_with("static/") || raw.starts_with("global/") {
-        return None;
-    }
-    let raw_name = raw.rsplit('/').next()?;
-    let name = raw_name.split_once('[').map_or(raw_name, |(name, _)| name);
-    (!name.is_empty() && name.chars().all(|ch| ch.is_alphanumeric() || ch == '_')).then_some(name)
-}
+use dm_syntax::local_name;
 
 fn runtime_declaration_path(path: &str) -> String {
     format!(
@@ -933,8 +918,8 @@ struct Compiler<'a> {
     // survive those fallbacks and prevent any successful lowered result.
     resolver_failure: std::cell::RefCell<Option<LowerError>>,
     locals: Vec<String>,
-    local_slots: HashMap<String, u32>,
-    local_types: HashMap<String, String>,
+    local_slots: dm_syntax::ScopeMap<u32>,
+    local_types: dm_syntax::ScopeMap<String>,
     string_roster: StringRoster,
     seen_classes: BTreeSet<SymbolId>,
     seen_resources: BTreeSet<u128>,

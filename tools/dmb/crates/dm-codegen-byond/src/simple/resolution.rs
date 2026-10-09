@@ -394,23 +394,23 @@ impl Compiler<'_> {
     ) -> Result<(), LowerError> {
         let saved_debug = self.debug_current;
         let saved_span = self.statement_span;
-        let saved_slots = self.local_slots.clone();
-        let saved_types = self.local_types.clone();
+        let saved_slots = self.local_slots.checkpoint();
+        let saved_types = self.local_types.checkpoint();
         let result = self
             .debug_at(occurrence.start, "initializer assignment")
             .and_then(|()| self.assign_expr(target, "=", value, "initializer assignment"))
             .map_err(|error| error.at(self.statement_span));
         self.debug_current = saved_debug;
         self.statement_span = saved_span;
-        self.local_slots = saved_slots;
-        self.local_types = saved_types;
+        self.local_slots.restore(saved_slots);
+        self.local_types.restore(saved_types);
         result
     }
     pub(super) fn typed_statements(&mut self, statements: &[Statement]) -> Result<(), LowerError> {
         let saved_debug = self.debug_current;
         let saved_span = self.statement_span;
-        let saved_slots = self.local_slots.clone();
-        let saved_types = self.local_types.clone();
+        let saved_slots = self.local_slots.checkpoint();
+        let saved_types = self.local_types.checkpoint();
         let saved_labels = self.user_labels.clone();
         let saved_label_iterator_depths = self.user_label_iterator_depths.clone();
         let saved_breaks = self.label_breaks.clone();
@@ -422,8 +422,8 @@ impl Compiler<'_> {
             .map_err(|error| error.at(self.statement_span));
         self.debug_current = saved_debug;
         self.statement_span = saved_span;
-        self.local_slots = saved_slots;
-        self.local_types = saved_types;
+        self.local_slots.restore(saved_slots);
+        self.local_types.restore(saved_types);
         self.user_labels = saved_labels;
         self.user_label_iterator_depths = saved_label_iterator_depths;
         self.label_breaks = saved_breaks;

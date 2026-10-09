@@ -10,7 +10,12 @@ mod audit;
 mod declaration_type;
 pub use declaration_type::{normalize_declaration_type, project_declaration_type, DeclarationType};
 pub mod map;
+mod scope_map;
 mod statements;
+pub use scope_map::{ScopeCheckpoint, ScopeMap};
+mod lexical_scope;
+pub use lexical_scope::{local_name, Binding, BindingId, BindingValue, LexicalScopes, ScopeError};
+mod visit;
 pub use audit::{
     audit_source_streaming, for_each_parsed_chunk, for_each_source_chunk,
     for_each_source_chunk_with_limits, for_each_stable_source_chunk, parse_proc_at_span,
@@ -19,6 +24,10 @@ pub use audit::{
 pub use statements::{
     parse_body_items, parse_proc_body, ForControl, ForInitializer, ParsedBody, Statement,
     StatementKind, SwitchAlternative, SwitchCase,
+};
+pub use visit::{
+    for_each_expression_child, visit_expression, visit_statement_view, visit_statements, NodeStep,
+    TypedVisitor, VisitDecision, VisitReport,
 };
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Hash)]
