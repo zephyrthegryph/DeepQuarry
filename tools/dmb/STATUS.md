@@ -18,6 +18,31 @@ Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/paired-corrected-context-20261009-
 The following earlier comparison remains historical evidence for its own frozen
 candidate; its faster wall measurement is not the latest result.
 
+### Cached CLI diagnostic comparison
+
+The completed ABABAB cached sequence uses the same `36749fd74d` candidate,
+eight workers, fresh processes and three runs per compiler/scenario. All 24
+measurement, native fresh-output/diagnostic oracle, cache-sequence and structural
+no-regression checks passed. These are diagnostic disk-cache measurements, not
+daemon acceptance or current-master results.
+
+| Scenario | Control wall median | Candidate wall median | Candidate process CPU |
+| --- | ---: | ---: | ---: |
+| Populate empty disk cache | 25.578 s | 26.253 s | 64.172 s |
+| Unchanged source, existing cache | 17.661 s | 14.526 s | 32.000 s |
+| One procedure edit, existing cache | 14.804 s | 15.037 s | 32.797 s |
+| Fresh compile of edited source | 13.188 s | 13.333 s | 30.250 s |
+
+The procedure edit has no wall-speed improvement. Cached unchanged peak private
+memory is 2.250 GB, and writes are 925.8 MB. The extra approximately 270 MB
+written relative to uncached compilation comes mainly from additional per-hit
+profiling streams: the folded trace alone adds 137 MB; Chrome tracing adds another
+stream. The unchanged request recomputes zero procedures and its cache-flush
+interval writes 486 bytes. This does not establish daemon iteration speed.
+
+Evidence: `E:/dq-cache/dmb-native-v2/cached-semantic-20261009-a/cohort/comparison.json`.
+Execution receipt: `E:/dq-cache/dmb-native-v2/cached-semantic-20261009-a/execution.json`.
+
 The corrected-context control versus compact-code candidate completed an ABABAB
 cold comparison on 9 October: three runs per compiler, eight workers, empty
 compiler caches and warmed captured inputs. All six measurement, fresh native

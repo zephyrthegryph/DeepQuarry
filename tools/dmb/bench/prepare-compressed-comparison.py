@@ -7,8 +7,34 @@ import time
 import zipfile
 from pathlib import Path, PurePosixPath
 
-OVERLAY = ("tools/dmb/crates/dm-profile/Cargo.toml", "tools/dmb/crates/dm-profile/src/lib.rs",
-           "tools/dmb/crates/dm-profile/src/trace_output.rs", "tools/dmb/Cargo.lock")
+PROFILE = "tools/dmb/crates/dm-profile/"
+LOCK = "tools/dmb/Cargo.lock"
+
+
+def snapshot_overlay(root):
+    """Explicit crate inputs only, including every nested Rust module."""
+    crate = root / PROFILE
+    names = [PROFILE + "Cargo.toml", LOCK]
+    names.extend(path.relative_to(root).as_posix()
+                 for path in (crate / "src").rglob("*.rs"))
+    if PROFILE + "src/lib.rs" not in names:
+        raise ValueError("profiler overlay is missing src/lib.rs")
+    folded = [name.casefold() for name in names]
+    if len(set(folded)) != len(names):
+        raise ValueError("profiler overlay path collision")
+    result = {}
+    for name in sorted(names):
+        path = root / name
+        if path.is_symlink() or any(parent.is_symlink() for parent in path.parents
+                                    if parent != root and root in parent.parents):
+            raise ValueError("profiler overlay must not contain symbolic links")
+        result[name] = path.read_bytes()
+    return result
+
+
+def replaced_by_overlay(name):
+    return name == LOCK or name.startswith(PROFILE)
+
 
 
 def sha(path):
@@ -40,13 +66,13 @@ def prepare(control, candidate, overlay_root, output, timeout):
     overlay_root = e_path(overlay_root)
     output = e_path(output)
     output.mkdir(parents=True, exist_ok=False)
-    overlays = {name: (overlay_root / name).read_bytes() for name in OVERLAY}
+    overlays = snapshot_overlay(overlay_root)
     overlay_rows = [{"path": name, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
                     for name, data in overlays.items()]
     write(output / "overlay.manifest.json", overlay_rows)
     result = {"schema": 1, "purpose": "same-profiler-gzip-comparison-source-only",
               "required_environment": {"DMB_TRACE_COMPRESSION": "gzip"},
-              "required_report_mode": "gzip-level1-v1", "overlay": overlay_rows, "snapshots": []}
+              "required_report_mode": "gzip-level1-v1", "overlay_scope": "complete-dm-profile-crate-rust-and-lock", "overlay": overlay_rows, "snapshots": []}
     for label, record_path in (("control", control), ("candidate", candidate)):
         deadline()
         record_path = e_path(record_path)
@@ -64,7 +90,8 @@ def prepare(control, candidate, overlay_root, output, timeout):
         rows = []
         with zipfile.ZipFile(archive) as source:
             names = [entry.filename for entry in source.infolist() if not entry.is_dir()]
-            if len(names) != len(set(names)) or set(names) != set(expected):
+            if (len(names) != len(set(name.casefold() for name in names))
+                    or set(names) != set(expected)):
                 raise ValueError("archive file roster differs from authenticated manifest")
             for name in sorted(expected):
                 deadline()
@@ -74,19 +101,19 @@ def prepare(control, candidate, overlay_root, output, timeout):
                 data = source.read(name)
                 if len(data) != expected[name]["bytes"] or hashlib.sha256(data).hexdigest() != expected[name]["sha256"]:
                     raise ValueError("parent source file differs from manifest: " + name)
-                data = overlays.get(name, data)
+                if replaced_by_overlay(name):
+                    continue
                 path = destination / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 with path.open("xb") as stream:
                     stream.write(data)
                 rows.append({"path": name, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()})
         for name, data in overlays.items():
-            if name not in expected:
-                path = destination / name
-                path.parent.mkdir(parents=True, exist_ok=True)
-                with path.open("xb") as stream:
-                    stream.write(data)
-                rows.append({"path": name, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()})
+            path = destination / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("xb") as stream:
+                stream.write(data)
+            rows.append({"path": name, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()})
         rows.sort(key=lambda row: row["path"])
         derived_manifest = output / (label + ".manifest.json")
         write(derived_manifest, rows)
@@ -101,7 +128,7 @@ def prepare(control, candidate, overlay_root, output, timeout):
             "source_archive": str(derived_archive), "source_archive_sha256": sha(derived_archive),
             "manifest": str(derived_manifest), "manifest_sha256": sha(derived_manifest),
             "build_source": str(destination), "files": len(rows), "build_status": "not_built"})
-    if any((overlay_root / name).read_bytes() != data for name, data in overlays.items()):
+    if snapshot_overlay(overlay_root) != overlays:
         raise ValueError("overlay source changed during preparation; snapshots not admitted")
     write(output / "comparison-source.json", result)
     return result
