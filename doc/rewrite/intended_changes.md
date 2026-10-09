@@ -3700,6 +3700,29 @@ The single focused capture wrote 23 selected pin types, 15 selected i7 types and
 | /obj/machinery/washing_machine | Grab and resist timing use native operation keys. Reused non-harm Hit rows align with master. |
 | /obj/structure/AIcore | Native add_cables/add_panel keys expose typed material bindings, adding stack-material held rows; actual construction costs and states are regression tested. |
 
+## Draw structures, effects and HUD buttons (rewrite/draw-structures)
+
+Converted to `draw(look)` over tracked state, with their `update_icon()` and `changed(src)` calls gone: closets, crates and lockers (`closet_look()` is the one overridable part: the egg, the statue, the gun cabinet, the body bags and the mind locker replace it), the gun cabinet, the vehicle cage, the cliff, the railing, the low wall frames (bay, eris), the janitorial cart, the bonfire and fireplace (fuel is a `CONTAINER_SLOT_FUEL` slot), the cleanable decal family (blood, gibs, tracks, reagent puddles, crayon, chem coating), the fire axe cabinet, display case, inflatable door and simple door (their plain vars are `TRACKED`), the ability buttons and the hand screens. New builder forms: `look.contents_of(src, slot, type)` (the types a slot holds, real and declared, nothing made; stands for `SLOT_OCCUPANCY_KEY`), `look.things_in(src, slot, type)`, `look.picture_of(thing)`, `look.show_copy_of(thing, layer)`; `/atom/proc/slot_kinds()` behind the first; the latent ledger now publishes the slot's occupancy when an entry is made or used (`latent_set_count()`) and when a holder declares its generator.
+
+Not converted, and why: the window family (`window.dm`, `window_construction.dm`, the bay and eris windows in `low_wall.dm`) because `/obj/structure/window/fancy_shuttle` (turfs/simulated/fancy_shuttles.dm, another lane) and `survival_pod` windows still draw through legacy providers and inherit the base; the windoor assembly because `windowdoor.dm` (machinery lane) writes its `facing` by hand; the grille's `changed(src)` because the RCD repair in `turfs/simulated/walls.dm` writes `destroyed` by hand; `bombspawner.dm`'s `V.update_icon()` because the transfer valve is still a legacy provider.
+
+Pins were not recorded in this lane (the committed snapshots are the base); the merge blesses against these expected classes. Rows that change, by cause:
+
+* **A look drawn from the start.** The legacy providers ran at the first `update_icon()` (a closet's `closet_after_init`, a cliff's `shape_cliff`); the draw runs at creation. Rows: the cliff roots show `cliff-<dir><variant>...` where the mapped state was; closets show the closed/open state of their decal icon.
+* **No `color = null` on a closet.** The decal swap no longer clears the atom colour; the look sets only the icon. No row changes unless a closet type maps a colour.
+* **Blockers follow the drawn state.** Closets, crates, the cabinet, the vehicle cage and the cliff change their sprite through the look, so the plane-8 emissive blocker row follows the made state, as in the furniture round.
+* **State-probe rows of the draw round.** Cliff corner/bottom rows show the made `cliff-<dir>` state (drawn from creation, as above). Body bags and coffins now show their `open`/`base`/`closed_unlocked` overlay and state rows on every opened toggle, because opening is a tracked write that redraws instead of waiting for `update_icon()`. The morph runtime row names `em_block` before `hud_list` as the refused ownership put, because the draw now runs at creation and makes the blocker first; the refusals themselves are unchanged.
+* **Shuttle carry underlays.** `underlay_update()` turned `join_flags` to find the turf opposite a joined diagonal, and an unjoined turf has `join_flags = 0`, for which `turn(0, ...)` picks a random direction: the carry plating's underlay was whatever neighbour the roll landed on (the recorded `steel` tile). An unjoined turf now lies on the area's base turf every time; the two rows (`/turf/simulated/shuttle/plating/carry` and `.../airless/carry`) read the base turf of the test map, space (`icons/turf/space.dmi:white`, plane -82). Pinned by `dq_shuttle_underlay_is_not_random`.
+* **Relation writes mark through one path.** The list view write (`_rel_attach`/`_rel_detach`) called both `own_field_changed()` and a second mark-if-read proc; the second is gone and `own_field_changed()` marks what reads the var once for a list write and a single ref alike (`dq_draw_relation_writes_redraw_once`).
+* **The gun cabinet's guns are real.** An energy gun is not latent-safe, so a cabinet's starting guns are made when it declares its contents after init; the draw reads the slot's types (`look.contents_of()`) and makes nothing. The tests delete the cabinet and drain the tile, since the guns spill when it goes.
+* **Gun cabinet.** Guns are drawn from the slot by type (`laser`/`projectile`, one per gun, three at most) and nothing is made by the draw; rows are the same states, the guns stay declared.
+* **Body bags.** The label and the stasis indicator are look layers; the label is the tracked `has_label`.
+* **Vehicle cage.** The caged vehicle is an overlay behind the frame (the look has no underlays): an `underlay:` row becomes an `overlay:` row.
+* **Cleanable decals.** The janitor mark is `janhud<n>` with `n` rolled at creation (seeded), not `rand()` per draw. Gibs are the file icon tinted by the blood colour with the flesh as a `RESET_COLOR` overlay (the legacy flesh image was built with a direction where the state belonged and never showed; the icon was a blended runtime icon): the `icon:` row is the file, a `<state>_flesh` overlay row appears. Dried decals are drawn darker under their dried name from the tracked `dried`. A reagent puddle of blood or water is named and drawn as the blood decal it is (legacy: no name, no colour).
+* **Bonfire.** Its fuel is the `fuel` slot; rows do not change.
+* **Ability and hand buttons.** Not pinned (not `/obj`/`/mob`).
+
+Hybrid fixes outside the three folders, each the minimum a conversion needed: callers of the new setters (`set_basecolor()`, `set_fleshcolor()`, `set_synthblood()`, `set_ability_icon_state()`) in `modules/body`, `modules/mob`, `modules/event`, `modules/admin`, `modules/xenoarcheaology`; the body bag providers in `items/bodybag.dm` and `items/robobag.dm` (closet descendants).
 ## Draw items: cells, guns, devices, weapons, spells (rewrite/draw-items)
 
 Expected pin classes for the merge to bless (look-tree `/obj/item`, look-state `/obj/item/gun`, `/obj/item/cell`, `/obj/item/ammo_magazine`, `/obj/item/ammo_casing`); no pin is blessed in this lane.
@@ -3823,7 +3846,7 @@ Files re-recorded: pizzabox, condiment, drinks, appliance, beehive, bunsen_burne
 | New `open=`, `closed=`, `broken=`, `frozen=`, `busy=`, `heating=`, `bee_count=` rows | These vars now redraw the look (tracked state read by `draw`), which the polluted base could not show. |
 | yeoldoven keeps its own `yeoldoven*` states | Oven draws `[state_prefix]open` etc.; the prefix is a var of the type. |
 | glass2 claraflask `volume=0` | Same Division by zero, reported by the refresh catch spelling. Still a draw bug at zero volume, left as pinned. |
-| Rel list add/remove | `rel_add`/`rel_remove` on a list view now mark outputs that read the var (`own_mark_if_read`), so a beehive's frames and a pizza box's stack redraw. |
+| Rel list add/remove | `rel_add`/`rel_remove` on a list view now mark outputs that read the var (through `own_field_changed()`, the one path every relation write takes; the second mark-if-read proc is gone), so a beehive's frames and a pizza box's stack redraw. |
 
 ### Blessed rows, second pass (rewrite/draw-reagents)
 

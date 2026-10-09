@@ -25,6 +25,8 @@
 	var/lock_difficulty = 1	//multiplier to picking/bypassing time
 	var/keysound = SFX_ITEMS_TOOLBELT_EQUIP
 
+TRACKED(/obj/structure/simple_door, state)
+
 /// Heat behaviour rule: a flammable material door burns.
 /obj/structure/simple_door/proc/rule_burn(datum/rule/rule)
 	TemperatureAct(get_temperature())
@@ -134,8 +136,7 @@ CAPABILITIES(/obj/structure/simple_door)
 /obj/structure/simple_door/proc/open_finish()
 	set_density(FALSE)
 	set_opacity(0)
-	state = 1
-	changed(src)
+	set_state(1)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 
@@ -148,8 +149,7 @@ CAPABILITIES(/obj/structure/simple_door)
 /obj/structure/simple_door/proc/close_finish()
 	set_density(TRUE)
 	set_opacity(1)
-	state = 0
-	changed(src)
+	set_state(0)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 

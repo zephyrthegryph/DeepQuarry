@@ -75,8 +75,7 @@
 		var/turf/T = get_turf(src)
 		var/obj/effect/decal/cleanable/blood/B = new (T)
 
-		B.basecolor = src.color
-		B.update_icon()
+		B.set_basecolor(src.color)
 		dissolved(src)
 
 /obj/item/organ/internal/regennetwork
@@ -122,8 +121,7 @@
 		var/turf/T = get_turf(src)
 		var/obj/effect/decal/cleanable/blood/B = new (T)
 
-		B.basecolor = src.color
-		B.update_icon()
+		B.set_basecolor(src.color)
 		dissolved(src)
 
 	if(src && !is_bruised())

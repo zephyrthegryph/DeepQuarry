@@ -252,7 +252,6 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 		return OP_OK
 	if(!open) //Someone closed it while we were trying to swirlie. Rude.
 		set_open(TRUE) //Open it.
-		changed(src)
 	if(!refilling)
 		act_message(user, GM, MSG_SELF(span_notice("You give %T% a swirlie!")), \
 			MSG_OTHERS(span_danger("%U% gives %T% a swirlie!")), \
@@ -585,7 +584,6 @@ MSG_DEF_SELF(toilet/refilling, span_notice("Wait for %T% to finish refilling..."
 		MSG_OTHERS(span_notice("%U% [cistern ? "replaces the lid on the cistern" : "lifts the lid off the cistern"]!")), \
 		MSG_BLIND("You hear grinding porcelain."))
 	set_cistern(!cistern)
-	changed(src)
 
 /obj/structure/toilet/proc/cistern_open(datum/act/op/A)
 	return cistern
@@ -1075,7 +1073,6 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
 	// Clear the vessel.
 	visible_message(span_infoplain(span_bold("\The [user]") + " tips the contents of \the [thing] into \the [src]."))
 	thing.reagents.clear_reagents()
-	thing.update_icon()
 	return OP_PASS
 
 CAPABILITIES(/obj/structure/sink)

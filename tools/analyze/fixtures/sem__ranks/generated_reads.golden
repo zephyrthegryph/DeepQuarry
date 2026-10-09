@@ -24,10 +24,20 @@ GLOBAL_LIST_INIT(generated_read_roots, list(
 	"target"
 ))
 
-/// "<type>::<proc>" = list(rank, list(root id, kind, name id, hop name ids...), ...). Never edited by hand.
-GLOBAL_LIST_INIT(generated_reads_table, list(
-	"/obj/machinery/chain::raw" = list(0,
+/// Chunked read rows; one global initializer assembles the complete table.
+/proc/generated_reads_chunk_0()
+	return list(
+		"/obj/machinery/chain::raw" = list(0,
 		list(1, 0, 1)),
-	"/obj/machinery/chain::ready" = list(3,
+		"/obj/machinery/chain::ready" = list(3,
 		list(1, 0, 2))
-))
+	)
+/proc/generated_reads_assemble()
+	. = list()
+	var/list/chunks = list(
+		generated_reads_chunk_0()
+	)
+	for(var/list/chunk as anything in chunks)
+		for(var/key in chunk)
+			.[key] = chunk[key]
+GLOBAL_LIST_INIT(generated_reads_table, generated_reads_assemble())

@@ -64,7 +64,6 @@ CAPABILITIES(/obj/structure/bed/chair/e_chair)
 	if(!A.powered(EQUIP))
 		return
 	A.use_power_oneoff(5000, EQUIP)
-	A.update_icon()
 
 	flick("echair1", src)
 	fx_sparks(src, 12)
@@ -76,7 +75,6 @@ CAPABILITIES(/obj/structure/bed/chair/e_chair)
 			L.status_at_least(STAT_STUNNED, 600)
 	visible_message(span_danger("The electric chair went off!"), span_danger("You hear a deep sharp shock!"))
 
-	A.update_icon()
 	return
 
 /// Old object verbs.

@@ -16,6 +16,10 @@
 	/// The axe it starts with (a declared default child), or null for an empty cabinet.
 	var/fireaxe_type = /obj/item/material/twohanded/fireaxe
 
+TRACKED(/obj/structure/fireaxecabinet, open)
+TRACKED(/obj/structure/fireaxecabinet, hitstaken)
+TRACKED(/obj/structure/fireaxecabinet, smashed)
+
 MSG_DEF_SELF(fireaxecabinet/locked, "The cabinet won't budge.")
 
 CAPABILITIES(/obj/structure/fireaxecabinet)
@@ -42,11 +46,9 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 		return struck_shut(A)
 	if (istype(O, /obj/item/material/twohanded/fireaxe) && open)
 		if(!fireaxe)
-			if(O:wielded)
-				O:wielded = 0
-				O.update_icon()
 			if(!move_into(src, nameof(src.fireaxe), O, user))
 				return OP_OK
+			O.update_held_icon() // it is in the cabinet now, not in a hand: the axe unwields itself
 			to_chat(user, span_notice("You place the fire axe back in the [name]."))
 		else
 			if(smashed)
@@ -58,7 +60,7 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 			return OP_OK
 		if(O.has_tool_quality(TOOL_MULTITOOL))
 			if(open)
-				open = 0
+				set_open(0)
 				flick("[cabinet_state()]closing", src)
 				return OP_OK
 			else
@@ -91,19 +93,18 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 		if(W.force < 15)
 			to_chat(user, span_notice("The cabinet's protective glass glances off the hit."))
 		else
-			hitstaken++
+			set_hitstaken(hitstaken + 1)
 			if(hitstaken == 4)
 				play_sfx(src, SFX_EFFECTS_GLASSBR3) //Break cabinet, receive goodies. Cabinet's fucked for life after that.
-				smashed = 1
+				set_smashed(1)
 				locked = 0
-				open= 1
+				set_open(1)
 
 	return OP_OK
 
 /obj/structure/fireaxecabinet/proc/attackby_tool_done(mob/user)
 	locked = 0
 	to_chat(user, span_warning("You disable the locking modules."))
-	changed(src)
 /obj/structure/fireaxecabinet/proc/attackby_tool_done2(mob/user)
 	locked = 1
 	to_chat(user, span_warning("You re-enable the locking modules."))
@@ -139,12 +140,10 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 	return OP_OK
 
 /obj/structure/fireaxecabinet/proc/toggle_close_open()
-	open = !open
+	set_open(!open)
 	if(open)
-		changed(src)
 		flick("[cabinet_state()]opening", src)
 	else
-		changed(src)
 		flick("[cabinet_state()]closing", src)
 
 /obj/structure/fireaxecabinet/proc/toggle_openness_effect(datum/act/op/A)
