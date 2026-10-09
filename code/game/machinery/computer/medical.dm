@@ -147,7 +147,8 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 	if(!read_once(user.Adjacent(src)))
 		return "too far away"
 	var/has_hand = FALSE
-	for(var/datum/prov/provider as anything in read_once(providers_for(user, null)))
+	var/list/hand_providers = read_once(providers_for(user, null))
+	for(var/datum/prov/provider as anything in hand_providers)
 		if((provider.aff() & AFF_MANIPULATE) && (provider.authority_mask() & AUTH_PHYSICAL))
 			has_hand = TRUE
 			break
