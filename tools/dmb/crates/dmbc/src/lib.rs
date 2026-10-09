@@ -16,6 +16,7 @@ pub mod input_snapshot;
 pub mod map_memo;
 pub mod publish;
 pub mod request;
+pub mod output_cli;
 pub mod request_failure;
 pub mod request_runner;
 pub mod resource_manifest;

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+dm-session = { path = "../dm-session" }
 dm-exec = { path = "../dm-exec" }
 dm-profile = { path = "../dm-profile" }
 dm-syntax = { path = "../dm-syntax" }

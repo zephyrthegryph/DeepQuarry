@@ -295,6 +295,7 @@ pub fn run_build_with_host(
                     );
                     return Ok(BuildOutcome::Published {
                         pair,
+                        store: std::fs::canonicalize(store.root_path())?,
                         output_project,
                         session_hit: true,
                         seconds: total.elapsed().as_secs_f64(),
@@ -912,6 +913,7 @@ pub fn run_build_with_host(
         disk_admission.complete();
         return Ok(BuildOutcome::Published {
             pair,
+            store: std::fs::canonicalize(store.root_path())?,
             output_project,
             session_hit: false,
             seconds: total.elapsed().as_secs_f64(),

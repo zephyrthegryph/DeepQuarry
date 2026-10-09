@@ -215,6 +215,7 @@ pub fn link_prepared_artifact_tables(
         inventory,
         initialization,
         None,
+        None,
     )
 }
 pub fn link_prepared_artifact_tables_on_executor(
@@ -232,8 +233,30 @@ pub fn link_prepared_artifact_tables_on_executor(
         inventory,
         initialization,
         Some(executor),
+        None,
     )
 }
+#[allow(clippy::too_many_arguments)]
+pub fn link_prepared_artifact_tables_on_executor_with_bindings(
+    contributions: Vec<PreparedContribution>,
+    symbols: &SymbolTable,
+    external: &ReferenceBindings,
+    inventory: LinkInventory,
+    initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
+    executor: &dm_exec::BuildExecutor,
+    bindings: Option<&dm_link::RetainedBindings>,
+) -> Result<FrozenBatch, IntegrationError> {
+    link_prepared_execution(
+        contributions,
+        symbols,
+        external,
+        inventory,
+        initialization,
+        Some(executor),
+        bindings,
+    )
+}
+#[allow(clippy::too_many_arguments)]
 fn link_prepared_execution(
     contributions: Vec<PreparedContribution>,
     symbols: &SymbolTable,
@@ -241,6 +264,7 @@ fn link_prepared_execution(
     mut inventory: LinkInventory,
     initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
     executor: Option<&dm_exec::BuildExecutor>,
+    bindings: Option<&dm_link::RetainedBindings>,
 ) -> Result<FrozenBatch, IntegrationError> {
     let mut units = Vec::with_capacity(contributions.len());
     let mut helpers = Vec::new();
@@ -290,6 +314,7 @@ fn link_prepared_execution(
         initialization,
         freeze_detail,
         executor,
+        bindings,
     )
 }
 

@@ -10,6 +10,7 @@ mod retained_census;
 pub struct ReusableProcedureArtifact {
     identity: UnitIdentity,
     frozen: Arc<FrozenProc>,
+    image_owner: Arc<latest_image::LatestImage>,
     features: BytecodeFeatures,
     frame: FrozenFrame,
     abi: Option<Arc<crate::procedure_policy::PreparedAbi>>,
@@ -21,6 +22,7 @@ pub struct ReusableProcedureArtifact {
 struct HelperArtifact {
     argument: u32,
     frozen: Arc<FrozenProc>,
+    image_owner: Arc<latest_image::LatestImage>,
     features: BytecodeFeatures,
     local_names: Vec<String>,
     strings: OwnedStrings,
@@ -110,6 +112,7 @@ impl Clone for HelperArtifact {
         Self {
             argument: self.argument,
             frozen: self.frozen.clone(),
+            image_owner: Arc::clone(&self.image_owner),
             features: self.features,
             local_names: self.local_names.clone(),
             strings: self.strings.clone(),
@@ -123,6 +126,7 @@ impl Clone for ReusableProcedureArtifact {
         Self {
             identity: self.identity,
             frozen: self.frozen.clone(),
+            image_owner: Arc::clone(&self.image_owner),
             features: self.features,
             frame: clone_frame(&self.frame),
             abi: self.abi.clone(),
@@ -157,6 +161,7 @@ impl Contribution {
             frozen,
             features,
             current_image,
+            image_owner,
         } = bound.unit;
         debug_assert!(
             current_image.is_none(),
@@ -176,6 +181,7 @@ impl Contribution {
                 owner,
                 argument,
                 frozen,
+                image_owner,
                 features,
                 current_image,
                 debug_origins,
@@ -187,6 +193,7 @@ impl Contribution {
             helper_artifacts.push(HelperArtifact {
                 argument,
                 frozen,
+                image_owner,
                 features,
                 local_names,
                 strings: entry.strings,
@@ -199,6 +206,7 @@ impl Contribution {
             artifact: Arc::new(ReusableProcedureArtifact {
                 identity,
                 frozen,
+                image_owner,
                 features,
                 frame,
                 abi,
@@ -232,6 +240,7 @@ impl Contribution {
                 frame: artifact.frame,
             },
             frozen: artifact.frozen,
+            image_owner: artifact.image_owner,
             features: artifact.features,
             current_image: None,
         };
@@ -244,6 +253,7 @@ impl Contribution {
                     owner: identity,
                     argument: helper.argument,
                     frozen: helper.frozen,
+                    image_owner: helper.image_owner,
                     features: helper.features,
                     current_image: None,
                     debug_origins,

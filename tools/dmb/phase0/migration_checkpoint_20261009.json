@@ -4,14 +4,24 @@
     "source_status": "shared relative AST, borrowed skeleton leaves and active symbol catalog wired; workspace checked and focused frontend fixtures passed",
     "workspace_all_targets_passed_seconds": 29.460584299988113,
     "workspace_receipt": "E:/dq-cache/dmb-native-v2/cargo-step-20261009-155444-1e782a.log",
-    "independent_focused_gates": {"symbols": 6, "source_text": 5, "predefined_core": 2, "predefined_native_fixture": 1, "compiler_adapter": 9},
+    "independent_focused_gates": {
+      "symbols": 6,
+      "source_text": 5,
+      "predefined_core": 2,
+      "predefined_native_fixture": 1,
+      "compiler_adapter": 9
+    },
     "independent_commit": "ab806d016d",
     "frontend_fixtures_passed": 57,
     "shared_roster_fixtures_passed": 1,
     "relative_iterator_fixtures_passed": 3,
     "driver_fixture_gate": "current-header fixture passed after the earlier build timeout; initializer assembly, export coverage and retained census fixtures also passed",
     "driver_fixture_receipt": "E:/dq-cache/dmb-native-v2/cargo-step-20261009-161957-b8a0bd.log",
-    "remaining_global_work": ["dirty grammar scanning (unchanged roster reuse implemented)", "current origin projection", "final shallow symbol map projection"],
+    "remaining_global_work": [
+      "dirty grammar scanning (unchanged roster reuse implemented)",
+      "current origin projection",
+      "final shallow symbol map projection"
+    ],
     "end_to_end_timings": null,
     "runtime_gate": "deferred to Phase 5"
   },
@@ -77,10 +87,21 @@
     "authenticated_bounded_iteration_runner": "91560320b1"
   },
   "validation": {
-    "workspace_all_targets": {"passed": true, "build_seconds": 46.32},
-    "executor_tests": {"passed": 10},
-    "retained_semantic_tree_tests": {"passed": 9, "test_seconds": 0.19},
-    "iteration_receipt_tests": {"passed": 7, "test_seconds": 0.151}
+    "workspace_all_targets": {
+      "passed": true,
+      "build_seconds": 46.32
+    },
+    "executor_tests": {
+      "passed": 10
+    },
+    "retained_semantic_tree_tests": {
+      "passed": 9,
+      "test_seconds": 0.19
+    },
+    "iteration_receipt_tests": {
+      "passed": 7,
+      "test_seconds": 0.151
+    }
   },
   "later_focused_validation": {
     "lexical_tests": 4,
@@ -157,5 +178,25 @@
     "Phase 5 runtime baseline and power_bridge behavior mismatch",
     "six real worktree memory and concurrency admission"
   ],
-  "benchmark_policy": "The optimized iteration receipt establishes native/fresh byte parity for four captured revisions at commit 91b8e0b3e7. It is not a matched throughput/CPU/memory admission cohort, does not establish BYOND parity, and excludes newer active source. Validation/build times are not compiler benchmarks."
+  "benchmark_policy": "The optimized iteration receipt establishes native/fresh byte parity for four captured revisions at commit 91b8e0b3e7. It is not a matched throughput/CPU/memory admission cohort, does not establish BYOND parity, and excludes newer active source. Validation/build times are not compiler benchmarks.",
+  "current_binding_and_output_handoff_wave": {
+    "source_status": "production wired; focused fixtures passed",
+    "workspace_all_targets_seconds": 29.9,
+    "link_fixtures_passed": 24,
+    "cli_output_contract_fixtures_passed": 3,
+    "latest_image_fixtures_passed": 2,
+    "expansion_input_census_fixtures_passed": 1,
+    "expansion_input_receipt_fixtures_passed": 3,
+    "build_launcher_mock_fixtures_passed": 16,
+    "dmbc_fixture_build_seconds": 253,
+    "end_to_end_timings": null,
+    "runtime_gate": "deferred to Phase 5",
+    "remaining": [
+      "binding assignment still rebuilt before exact owner equality admission",
+      "packed mob/client output composition reuse next slice",
+      "changed joined text still assembled contiguously",
+      "session destination relocation and client cache-root transport next slice",
+      "six-worktree memory/concurrency and BYOND baseline open"
+    ]
+  }
 }

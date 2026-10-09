@@ -748,13 +748,14 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         .map(Into::into)
         .chain(initialization_artifacts)
         .collect();
-    let frozen = crate::symbolic::link_prepared_artifact_tables_on_executor(
+    let frozen = crate::symbolic::link_prepared_artifact_tables_on_executor_with_bindings(
         contributions,
         plan.symbols.as_ref(),
         links.references,
         inventory,
         initialization,
         executor,
+        memo.and_then(|memo| memo.link_bindings.as_deref()),
     )
     .map_err(ColdError::Linking)?;
     measurement.complete();

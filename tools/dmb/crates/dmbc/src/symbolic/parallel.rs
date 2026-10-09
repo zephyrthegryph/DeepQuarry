@@ -181,6 +181,7 @@ pub(super) fn freeze_unit(
                 argument: helper.argument,
                 frozen: Arc::new(frozen_helper),
                 current_image: None,
+                image_owner: Arc::new(Default::default()),
                 features: BytecodeFeatures::of(&helper.code.procedure.code),
                 debug_origins: helper.debug_origins.into(),
                 local_names: helper.code.procedure.local_names,
@@ -192,6 +193,7 @@ pub(super) fn freeze_unit(
         lowered: FrozenUnitMetadata::consume(lowered),
         frozen: Arc::new(frozen),
         current_image: None,
+        image_owner: Arc::new(Default::default()),
     };
     let mut contribution = BoundContribution {
         unit,

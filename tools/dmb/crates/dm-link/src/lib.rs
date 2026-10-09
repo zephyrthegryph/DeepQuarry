@@ -157,18 +157,21 @@ pub enum LinkError {
     SourceLineOverflow(u32),
     Relocation(RelocationError),
 }
+mod relocation_binding;
+pub use relocation_binding::{BindingAnswers, BoundRelocations};
+mod bindings;
+pub use bindings::{BindingTables, RetainedBindings};
 #[derive(Clone, Debug)]
 pub struct LinkTables {
-    indexes: Arc<BTreeMap<Key, u32>>,
-    slots: Arc<BTreeMap<SymbolId, (SymbolId, SymbolId)>>,
+    bindings: BindingTables,
     content: Arc<BTreeMap<Key, EntryContent>>,
 }
 impl LinkTables {
     pub fn index(&self, key: Key) -> Option<u32> {
-        self.indexes.get(&key).copied()
+        self.bindings.assignments().get(&key).copied()
     }
     pub fn assignments(&self) -> &BTreeMap<Key, u32> {
-        &self.indexes
+        self.bindings.assignments()
     }
     pub fn content(&self, key: Key) -> Option<&[u8]> {
         self.content.get(&key).map(AsRef::as_ref)
@@ -177,7 +180,16 @@ impl LinkTables {
     pub fn content_value(&self, key: Key) -> Option<&EntryContent> {
         self.content.get(&key)
     }
+    pub fn binding_tables(&self) -> BindingTables {
+        self.bindings.clone()
+    }
     pub fn build(inventory: LinkInventory) -> Result<Self, LinkError> {
+        Self::build_with_bindings(inventory, None)
+    }
+    pub fn build_with_bindings(
+        inventory: LinkInventory,
+        previous: Option<&BindingTables>,
+    ) -> Result<Self, LinkError> {
         let mut spellings = BTreeMap::new();
         for (id, bytes) in inventory.spellings {
             if SymbolId::of_bytes(&bytes) != id {
@@ -352,8 +364,7 @@ impl LinkTables {
             }
         }
         Ok(Self {
-            indexes: Arc::new(indexes),
-            slots: Arc::new(slots),
+            bindings: BindingTables::validated(indexes, slots, previous),
             content: Arc::new(content),
         })
     }
@@ -362,46 +373,7 @@ impl LinkTables {
         code: &SymbolicCode,
         source: &SourceBindings,
     ) -> Result<ProcedureImage, LinkError> {
-        let mut resolved = HashMap::new();
-        for relocation in code.relocations() {
-            let reference = relocation.reference;
-            // Immutable tables/source bindings give repeated references the
-            // same answer. Retain first-encounter resolution/error order.
-            let std::collections::hash_map::Entry::Vacant(entry) = resolved.entry(reference) else {
-                continue;
-            };
-            let index = match reference {
-                SymRef::LineDelta(delta) => source
-                    .first_line
-                    .checked_add(delta)
-                    .ok_or(LinkError::SourceLineOverflow(delta))?,
-                SymRef::SourceLine(origin) => *source
-                    .lines
-                    .get(&origin)
-                    .ok_or(LinkError::MissingSourceLine(origin))?,
-                SymRef::SourceFile(origin) => {
-                    let symbol = *source
-                        .files
-                        .get(&origin)
-                        .ok_or(LinkError::MissingSourceFile(origin))?;
-                    self.index(Key::String(symbol))
-                        .ok_or(LinkError::UnknownKey(Key::String(symbol)))?
-                }
-                _ => {
-                    let key = reference_key(reference, &self.slots)
-                        .ok_or(LinkError::UnknownReference(reference))?;
-                    self.index(key)
-                        .ok_or(LinkError::UnknownReference(reference))?
-                }
-            };
-            entry.insert(index);
-        }
-        let words = code
-            .link(|reference| resolved.get(&reference).copied())
-            .map_err(LinkError::Relocation)?;
-        Ok(ProcedureImage {
-            words: Arc::new(words),
-        })
+        self.bind_relocations(code, source)?.encode()
     }
 }
 fn symbols(key: Key) -> impl Iterator<Item = SymbolId> {

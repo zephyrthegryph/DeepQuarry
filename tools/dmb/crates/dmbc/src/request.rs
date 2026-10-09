@@ -48,6 +48,7 @@ pub enum Command {
 pub enum BuildOutcome {
     Published {
         pair: crate::publish::OutputPair,
+        store: PathBuf,
         output_project: PathBuf,
         session_hit: bool,
         seconds: f64,

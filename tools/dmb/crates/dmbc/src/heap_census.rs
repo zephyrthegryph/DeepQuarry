@@ -24,6 +24,9 @@ mod resident_initializer_fragment;
 pub(crate) use resident_abi::weight as resident_abi_weight;
 pub(crate) use resident_initializer_fragment::weight as resident_initializer_fragment_weight;
 mod resident_maps;
+mod expansion_inputs;
+mod latest_images;
+pub(crate) use expansion_inputs::inspect as expansion_input_census;
 mod resident_startup;
 pub(crate) use resident_maps::{
     geometry_weight as resident_map_geometry_weight, plan_weight as resident_map_plan_weight,
@@ -361,7 +364,6 @@ impl HeapCensus {
         }
         self.snapshot(&frontend.snapshot);
     }
-
     pub fn syntax(&mut self, owner: &str, syntax: &Arc<dm_syntax::AstFile>) {
         if !self.arc_object(owner, syntax) {
             return;
@@ -653,7 +655,6 @@ impl HeapCensus {
             "private procedure index and symbol HashMap bucket allocation; spelling payloads and ancestor owners are counted",
         );
     }
-
     fn debug(&mut self, owner: &str, debug: &crate::debug_sources::DebugOrigins) {
         if self.vec_payload(owner, &debug.entries) {
             for entry in &debug.entries {
@@ -810,6 +811,7 @@ impl HeapCensus {
         self.vec_payload("frozen_units", &batch.helpers);
         self.vec_payload("frozen_units", &batch.initializers);
         for unit in &batch.units {
+            self.latest_image(unit.latest_image());
             self.frozen_code(&unit.frozen);
             self.frozen_debug("frozen_units", &unit.lowered.debug_origins);
             self.strings("frozen_units", &unit.lowered.frame.local_names);
@@ -820,11 +822,13 @@ impl HeapCensus {
             }
         }
         for helper in &batch.helpers {
+            self.latest_image(helper.latest_image());
             self.frozen_code(&helper.frozen);
             self.frozen_debug("frozen_units", &helper.debug_origins);
             self.strings("frozen_units", &helper.local_names);
         }
         for initializer in &batch.initializers {
+            self.latest_image(initializer.latest_image());
             self.frozen_code(&initializer.frozen);
             self.frozen_debug("frozen_units", &initializer.debug_origins);
             self.strings("frozen_units", &initializer.local_names);

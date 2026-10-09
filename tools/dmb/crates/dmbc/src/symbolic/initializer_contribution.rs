@@ -11,6 +11,7 @@ pub(crate) struct InitializerEncoding {
 
 pub(crate) struct FrozenInitializerContribution {
     pub(crate) frozen: Arc<FrozenProc>,
+    pub(crate) image_owner: Arc<latest_image::LatestImage>,
     pub(crate) slots: Vec<SlotAlias>,
     pub(crate) strings: Vec<dm_ir::StringPayload>,
 }
@@ -75,6 +76,7 @@ pub(super) fn freeze_current(
     let frozen = freezing::encode_admitted(&unit.code, identity, freeze_detail)?;
     let contribution = FrozenInitializerContribution {
         frozen: Arc::new(frozen),
+        image_owner: Arc::new(Default::default()),
         slots: admission.slots,
         strings: unit.code.procedure.strings.clone(),
     };

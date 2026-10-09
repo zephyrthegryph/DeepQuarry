@@ -74,6 +74,7 @@ pub struct ProcedureMemo {
     pub(crate) initializer_assemblies:
         Option<Arc<crate::initializer_lowering::InitializerAssemblies>>,
     pub(crate) class_projections: Option<Arc<crate::class_projection::ClassProjections>>,
+    pub(crate) link_bindings: Option<Arc<dm_link::RetainedBindings>>,
     disk: Option<Arc<dm_cache::CacheSnapshot>>,
     pending: Mutex<Pending>,
     pub counts: MemoCounts,
@@ -268,6 +269,7 @@ impl ProcedureMemo {
             initializer_fragments: None,
             initializer_assemblies: None,
             class_projections: None,
+            link_bindings: None,
             disk: None,
             pending: Mutex::new(Pending::default()),
             counts: MemoCounts::default(),
@@ -309,6 +311,7 @@ impl ProcedureMemo {
             initializer_fragments: None,
             initializer_assemblies: None,
             class_projections: None,
+            link_bindings: None,
             disk: Some(snapshot.into()),
             pending: Mutex::new(Pending::default()),
             counts: MemoCounts::default(),

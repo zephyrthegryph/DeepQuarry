@@ -225,6 +225,7 @@ version = "0.1.0"
 dependencies = [
  "dm-exec",
  "dm-profile",
+ "dm-session",
  "dm-syntax",
  "dm-wire",
  "im",

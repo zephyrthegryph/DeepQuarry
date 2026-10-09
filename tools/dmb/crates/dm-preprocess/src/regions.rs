@@ -17,8 +17,11 @@ mod environment;
 pub mod prepared_source;
 pub use environment::MacroEnvironment;
 mod expansion;
+mod expansion_input;
+pub use expansion_input::ExpansionInputs;
 mod origin_arena;
 pub mod region_memo;
+pub use region_memo::storage::ExpansionStorageView;
 mod trace_arena;
 pub use origin_arena::{ExpandedOriginArena, ExpandedOriginView, OriginIter, OriginView};
 pub use region_memo::{

@@ -164,9 +164,13 @@ impl Store {
 }
 #[derive(Default)]
 pub(super) struct ResidentMemo {
+    inputs: dm_preprocess::regions::ExpansionInputs,
     store: Mutex<Store>,
 }
 impl ResidentMemo {
+    pub(super) fn input_census(&self) -> crate::heap_census::HeapCensusReport {
+        crate::heap_census::expansion_input_census(&self.inputs)
+    }
     fn records(&self, kind: usize, key: u128) -> Vec<Record> {
         self.store
             .lock()
@@ -213,6 +217,9 @@ impl<'a> MemoView<'a> {
     }
 }
 impl ExpansionMemo for MemoView<'_> {
+    fn input_admissions(&self) -> Option<&dm_preprocess::regions::ExpansionInputs> {
+        self.resident.map(|resident| &resident.inputs)
+    }
     fn candidates(&self, key: u128) -> Vec<Arc<ExpansionRecord>> {
         let mut result = self.disk.map_or_else(Vec::new, |d| d.candidates(key));
         result.extend(self.records(0, key).into_iter().filter_map(|r| {

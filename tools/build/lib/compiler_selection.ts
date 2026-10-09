@@ -111,8 +111,12 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
     try { return { ...result, output: parseCompileResult(readNativeResult(receipt), executable, outputProject) }; }
     catch (error) { throw new NativeResultError(`Native compile succeeded without an authenticated pair result: ${error}`); }
   } finally {
-    try { fs.unlinkSync(receipt); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
-    fs.rmdirSync(owned);
+    // Housekeeping cannot turn a successful native publication into a second
+    // compiler invocation. Preserve/report a cleanup limitation instead.
+    try {
+      try { fs.unlinkSync(receipt); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+      fs.rmdirSync(owned);
+    } catch (error) { Juke.logger.warn(`Native result cleanup preserved ${owned}: ${error}`); }
   }
 }
 export async function selectedCompiler(dme: string, options: DreamMakerOptions, byond: (capturedProject?: string) => Promise<ByondCompilationResult | void>, execute: CompilerExecutor = Juke.exec): Promise<CompiledOutput> {

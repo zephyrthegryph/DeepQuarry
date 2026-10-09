@@ -18,7 +18,21 @@ fn main() {
     }
 }
 fn main_inner() {
-    let arguments: Vec<String> = std::env::args().skip(1).collect();
+    let mut arguments: Vec<String> = std::env::args().skip(1).collect();
+    let compile_result = match dmbc::output_cli::extract_compile_result(&mut arguments) {
+        Ok(path) => path,
+        Err(error) => {
+            eprintln!("{error}");
+            std::process::exit(2);
+        }
+    };
+    if arguments.first().map(String::as_str) == Some("acquire") {
+        if let Err(error) = dmbc::output_cli::acquire(&arguments) {
+            eprintln!("{error}");
+            std::process::exit(1);
+        }
+        return;
+    }
     if arguments == ["--serve-daemon"] {
         if let Err(error) = dmbc::daemon::serve() {
             eprintln!("native daemon: {error}");
@@ -31,7 +45,13 @@ fn main_inner() {
     if !arguments.iter().any(|argument| argument == "--trace") {
         if let Ok(dmbc::request::Command::Build(request)) = dmbc::cli::parse(&arguments) {
             if !request.no_daemon {
-                if let Err(error) = dmbc::daemon::route(*request) {
+                let result = dmbc::daemon::route(*request).and_then(|outcome| {
+                    if let Some(path) = compile_result.as_deref() {
+                        dmbc::output_cli::write_compile(path, &outcome)?;
+                    }
+                    Ok(outcome)
+                });
+                if let Err(error) = result {
                     eprintln!("{error}");
                     std::process::exit(dmbc::request_failure::exit_code(error.as_ref()));
                 }
@@ -65,7 +85,9 @@ fn main_inner() {
     let parse_profile = dm_profile::stage("cli.parse");
     let command = dmbc::cli::parse(&arguments);
     drop(parse_profile);
-    let result = command.and_then(dmbc::request_runner::run);
+    let result = command
+        .and_then(dmbc::request_runner::run)
+        .and_then(|outcome| dmbc::output_cli::finish_command(compile_result.as_deref(), outcome));
     if let Some(profile) = profile {
         let finished = dmbc::profile_host::finish(profile, result.is_ok());
         if let Err(error) = finished {

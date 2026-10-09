@@ -84,6 +84,7 @@ fn current_link_image_reuses_only_exact_code_tables_and_source_roster() {
             &unit.lowered.debug_origins,
             &batch.tables,
             unit.features,
+            &unit.image_owner,
         )
         .unwrap();
         malformed.origins = crate::debug_sources::FrozenDebugOrigins::default();
@@ -652,6 +653,7 @@ fn current_image_workers_return_first_image_error_in_serial_artifact_order() {
             &first.lowered.debug_origins,
             &empty_tables,
             first.features,
+            &first.image_owner,
         )
         .err()
         .expect("first image must fail");

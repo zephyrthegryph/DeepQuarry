@@ -9,9 +9,10 @@ struct Job<'a> {
     frozen: &'a Arc<FrozenProc>,
     origins: &'a crate::debug_sources::FrozenDebugOrigins,
     features: BytecodeFeatures,
+    owner: &'a Arc<latest_image::LatestImage>,
 }
 fn image(job: &Job<'_>, tables: &LinkTables) -> Result<CurrentImage, IntegrationError> {
-    CurrentImage::issue(job.frozen, job.origins, tables, job.features)
+    CurrentImage::issue(job.frozen, job.origins, tables, job.features, job.owner)
 }
 fn images(
     jobs: &[Job<'_>],
@@ -72,16 +73,19 @@ pub(super) fn issue(
             frozen: &unit.frozen,
             origins: &unit.lowered.debug_origins,
             features: unit.features,
+            owner: &unit.image_owner,
         })
         .chain(helpers.iter().map(|unit| Job {
             frozen: &unit.frozen,
             origins: &unit.debug_origins,
             features: unit.features,
+            owner: &unit.image_owner,
         }))
         .chain(initializers.iter().map(|unit| Job {
             frozen: &unit.frozen,
             origins: &unit.debug_origins,
             features: unit.features,
+            owner: &unit.image_owner,
         }))
         .collect();
     // Scope joins all workers. Ordered collect returns the same first error as

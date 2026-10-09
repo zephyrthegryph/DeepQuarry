@@ -21,6 +21,7 @@ impl BuildHost {
         self.initializer_fragments = None;
         self.initializer_assemblies = None;
         self.class_projections = None;
+        self.link_bindings = None;
         self.maps = None;
     }
 }

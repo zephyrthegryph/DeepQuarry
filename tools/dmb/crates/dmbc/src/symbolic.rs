@@ -16,7 +16,13 @@ pub struct FrozenUnit {
     pub lowered: FrozenUnitMetadata,
     pub frozen: Arc<FrozenProc>,
     current_image: Option<CurrentImage>,
+    image_owner: Arc<latest_image::LatestImage>,
     features: BytecodeFeatures,
+}
+impl FrozenUnit {
+    pub(crate) fn latest_image(&self) -> &Arc<latest_image::LatestImage> {
+        &self.image_owner
+    }
 }
 /// Composition-only metadata: resolver receipts and rich instructions are released.
 pub struct FrozenUnitMetadata {
@@ -54,9 +60,15 @@ pub struct FrozenHelper {
     pub argument: u32,
     pub frozen: Arc<FrozenProc>,
     current_image: Option<CurrentImage>,
+    image_owner: Arc<latest_image::LatestImage>,
     features: BytecodeFeatures,
     pub debug_origins: crate::debug_sources::FrozenDebugOrigins,
     pub local_names: Vec<String>,
+}
+impl FrozenHelper {
+    pub(crate) fn latest_image(&self) -> &Arc<latest_image::LatestImage> {
+        &self.image_owner
+    }
 }
 /// Feature facts from encoder-validated instruction boundaries, never operand words.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -80,7 +92,7 @@ impl BytecodeFeatures {
 /// Request-local certificate. Neither dense words nor table bindings enter memo storage.
 struct CurrentImage {
     frozen: Arc<FrozenProc>,
-    tables: LinkTables,
+    bindings: dm_link::BindingTables,
     origins: crate::debug_sources::FrozenDebugOrigins,
     image: ProcedureImage,
     features: BytecodeFeatures,
@@ -91,16 +103,21 @@ impl CurrentImage {
         origins: &crate::debug_sources::FrozenDebugOrigins,
         tables: &LinkTables,
         features: BytecodeFeatures,
+        owner: &Arc<latest_image::LatestImage>,
     ) -> Result<Self, IntegrationError> {
-        let image = {
-            let source = origins.source_bindings();
+        // A uniquely owned completion has no retained artifact consumer. Keep
+        // the ordinary cold path movable rather than retaining its own image
+        // and forcing a second full word allocation during output emission.
+        let image = if Arc::strong_count(owner) > 1 {
+            owner.link(frozen, origins, tables)?
+        } else {
             tables
-                .link(frozen.code(), &source)
+                .link(frozen.code(), &origins.source_bindings())
                 .map_err(IntegrationError::Link)?
         };
         Ok(Self {
             frozen: Arc::clone(frozen),
-            tables: tables.clone(),
+            bindings: tables.binding_tables(),
             origins: origins.clone(),
             image,
             features,
@@ -113,7 +130,7 @@ impl CurrentImage {
         tables: &LinkTables,
     ) -> bool {
         Arc::ptr_eq(&self.frozen, frozen)
-            && std::ptr::eq(self.tables.assignments(), tables.assignments())
+            && self.bindings.same_owner(&tables.binding_tables())
             && self.origins == *origins
     }
 }
@@ -161,11 +178,16 @@ pub struct FrozenInitializer {
     pub coverage: crate::initialization_artifact::InitializationCoverage,
     pub frozen: Arc<FrozenProc>,
     current_image: Option<CurrentImage>,
+    image_owner: Arc<latest_image::LatestImage>,
     features: BytecodeFeatures,
     pub debug_origins: crate::debug_sources::FrozenDebugOrigins,
     pub local_names: Vec<String>,
 }
 impl FrozenInitializer {
+    pub(crate) fn latest_image(&self) -> &Arc<latest_image::LatestImage> {
+        &self.image_owner
+    }
+
     pub fn declaration_writes(&self) -> &[usize] {
         match &self.coverage {
             crate::initialization_artifact::InitializationCoverage::DeclarationWrites(writes) => {
@@ -485,6 +507,7 @@ pub fn freeze_artifact_tables_with_executor(
         initialization,
         freeze_detail,
         Some(executor),
+        None,
     )
 }
 struct FrozenInventory {
@@ -501,6 +524,7 @@ fn finish_frozen_inventory(
     initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
     freeze_detail: bool,
     executor: Option<&dm_exec::BuildExecutor>,
+    bindings: Option<&dm_link::RetainedBindings>,
 ) -> Result<FrozenBatch, IntegrationError> {
     let FrozenInventory {
         mut inventory,
@@ -591,6 +615,7 @@ fn finish_frozen_inventory(
             coverage: unit.coverage,
             frozen,
             current_image: None,
+            image_owner: Arc::clone(&contribution.image_owner),
             features: BytecodeFeatures::of(&unit.code.procedure.code),
             debug_origins: unit.debug_origins.into(),
             local_names: unit.code.procedure.local_names.clone(),
@@ -601,7 +626,11 @@ fn finish_frozen_inventory(
     drop(string_inventory);
     let tables = {
         let _profile = dm_profile::stage("linking.table_assignment");
-        LinkTables::build(inventory).map_err(IntegrationError::Link)?
+        match bindings {
+            Some(bindings) => bindings.build(inventory),
+            None => LinkTables::build(inventory),
+        }
+        .map_err(IntegrationError::Link)?
     };
     // Validate once and retain images certified for these exact current inputs.
     let image_profile = dm_profile::stage("linking.current_images");
@@ -786,6 +815,7 @@ trait InventorySink {
 mod current_images;
 mod freezing;
 mod initializer_contribution;
+pub(crate) mod latest_image;
 pub(crate) use initializer_contribution::InitializerEncoding;
 #[cfg(test)]
 mod helper_reuse_tests;
@@ -794,7 +824,8 @@ mod parallel;
 mod prepared_contribution;
 mod procedure_artifact;
 pub use prepared_contribution::{
-    link_prepared_artifact_tables, link_prepared_artifact_tables_on_executor, prepare_contribution,
+    link_prepared_artifact_tables, link_prepared_artifact_tables_on_executor,
+    link_prepared_artifact_tables_on_executor_with_bindings, prepare_contribution,
     PreparedContribution, PreparedModifiedSeed, ReusableProcedureArtifact,
 };
 

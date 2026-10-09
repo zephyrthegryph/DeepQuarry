@@ -62,7 +62,7 @@ import { renderReport } from './lib/bench_report';
 import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
 import { compilerCacheIdentity, compilerMode } from './lib/compiler_selection';
-import { conventionalOutput, currentCompiledOutput, type CompiledOutput } from './lib/native_pair';
+import { conventionalOutput, currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
@@ -622,7 +622,9 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
     });
   } catch (error) {
     // Don't leave a half-built derived dme/rsc lying around after a failed compile.
-    await removeDerivedArtifacts(dme.replace(/\.dme$/, '.*'));
+    // A failed native build leaves the previous published generation and its
+    // conventional compatibility files intact. No child launches after failure.
+    await removeDerivedArtifacts(compilerMode() === 'native' ? dme : dme.replace(/\.dme$/, '.*'));
     try {
       fs.rmSync(cacheFile, { force: true });
     } catch {
@@ -688,7 +690,8 @@ async function runTestWorld(
       params,
     );
     killedByWatchdog = !!result.killedByWatchdog;
-  } catch {
+  } catch (error) {
+    if (error instanceof NativeAcquisitionError) throw error;
     // DreamDaemon exits non-zero even on clean runs; the files below decide.
   }
   const processSummary = sampler ? sampler.stop() : null;
@@ -873,7 +876,7 @@ async function runIsolatedTestWorld(
     try {
       const result = await DreamDaemon(
         {
-          dmbFile: compiled.kind === 'native_pair' ? dmbFile : `${runBase}.dmb`,
+          dmbFile: `${runBase}.dmb`,
           compiledOutput: compiled.kind === 'native_pair' ? compiled : { ...compiled, dmb: path.resolve(`${runBase}.dmb`), rsc: path.resolve(`${runBase}.rsc`) },
           namedDmVersion: dmVersion,
           watchdogFile: resultsFile,
@@ -888,7 +891,8 @@ async function runIsolatedTestWorld(
         new URLSearchParams(params).toString(),
       );
       killedByWatchdog = !!result.killedByWatchdog;
-    } catch {
+    } catch (error) {
+      if (error instanceof NativeAcquisitionError) throw error;
       // DreamDaemon exits non-zero even on clean runs; the files below decide.
     }
     let cleanText: string | null = null;

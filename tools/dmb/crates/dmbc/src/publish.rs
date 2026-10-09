@@ -147,6 +147,12 @@ pub struct PairStore {
     verified: Mutex<HashMap<u128, (OutputPair, Vec<crate::input_snapshot::Stamp>)>>,
     verified_resources: Mutex<HashMap<(u64, u128), crate::input_snapshot::Stamp>>,
 }
+impl PairStore {
+    /// Publication authority for machine receipts, never inferred from output copies.
+    pub fn root_path(&self) -> &Path {
+        &self.root
+    }
+}
 
 /// Content identity of an archive already owned by this store. A cold linker
 /// can reuse this handle without loading the archive into its output buffer.

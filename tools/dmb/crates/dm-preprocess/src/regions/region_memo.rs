@@ -4,6 +4,8 @@
 pub(super) mod retained_size;
 #[cfg(test)]
 mod retained_size_tests;
+#[path = "expansion_storage.rs"]
+pub(super) mod storage;
 use super::{DirectivePlan, MacroEnvironment, MacroExpansion};
 use crate::{Diagnostic, DiagnosticKind, Macro, MacroLookup};
 use dm_syntax::Span;
@@ -88,6 +90,9 @@ impl FragmentRecord {
 /// A caller-owned memo, optionally backed by validated disk records. No hidden
 /// process cache or filesystem access exists in the preprocessor.
 pub trait ExpansionMemo: Sync {
+    fn input_admissions(&self) -> Option<&super::ExpansionInputs> {
+        None
+    }
     fn candidates(&self, key: u128) -> Vec<Arc<ExpansionRecord>>;
     fn insert(&self, record: Arc<ExpansionRecord>);
     /// Acceptance is determined by the consumer's complete current-context validation.
@@ -301,6 +306,9 @@ impl ExpansionRecord {
     pub fn version(&self) -> u32 {
         EXPANSION_VERSION
     }
+    pub(super) fn location_reads(&self) -> &[(usize, bool, String)] {
+        &self.locations
+    }
     pub fn reads(&self) -> &[MacroRead] {
         &self.reads
     }
@@ -384,6 +392,12 @@ pub(super) fn expand(
     index: usize,
     memo: &dyn ExpansionMemo,
 ) -> super::expansion::RegionOutput {
+    if let Some(record) = memo
+        .input_admissions()
+        .and_then(|inputs| inputs.lookup(plan, index))
+    {
+        return hydrate(plan, index, &inputs(plan, index), &record);
+    }
     let Some((source, control, key)) = context(plan, index) else {
         return super::expansion::expand_region(plan, index, None);
     };
@@ -421,6 +435,9 @@ pub(super) fn expand(
                 .any(|error| error.input >= input.len())
         {
             return false;
+        }
+        if let Some(admissions) = memo.input_admissions() {
+            admissions.insert(plan, index, Arc::clone(record));
         }
         accepted = Some(hydrate(plan, index, &input, record));
         true
@@ -523,6 +540,9 @@ pub(super) fn expand(
         diagnostics,
         fragments: Vec::new(),
     });
+    if let Some(admissions) = memo.input_admissions() {
+        admissions.insert(plan, index, Arc::clone(&record));
+    }
     memo.insert(Arc::clone(&record));
     let mut output = output;
     output.text = crate::SourceText::from(Arc::clone(&record.text));

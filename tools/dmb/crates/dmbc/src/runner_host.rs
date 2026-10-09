@@ -42,6 +42,7 @@ pub struct BuildHost {
         Arc<crate::initializer_lowering::InitializerAssemblies>,
     )>,
     class_projections: Option<(u128, Arc<crate::class_projection::ClassProjections>)>,
+    link_bindings: Option<(u128, Arc<dm_link::RetainedBindings>)>,
     symbolic: Option<(
         u128,
         Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>,
@@ -81,6 +82,7 @@ impl Default for BuildHost {
             initializer_fragments: None,
             initializer_assemblies: None,
             class_projections: None,
+            link_bindings: None,
         }
     }
 }
@@ -102,6 +104,7 @@ impl BuildHost {
             initializer_fragments: None,
             initializer_assemblies: None,
             class_projections: None,
+            link_bindings: None,
         }
     }
 
@@ -112,6 +115,11 @@ impl BuildHost {
         self.symbolic
             .as_ref()
             .map(|(_, store)| store.retention_stats())
+    }
+
+    /// Explicit diagnostic traversal of exact retained expansion-input owners.
+    pub fn expansion_input_retention_census(&self) -> Option<crate::heap_census::HeapCensusReport> {
+        self.memo.as_ref().map(memo::ResidentMemo::input_census)
     }
 
     /// Constant-time retained declaration counters. Unknown payload ownership is
@@ -269,6 +277,14 @@ impl BuildHost {
             self.class_projections = Some((policy, Arc::new(Default::default())));
         }
         memo.class_projections = Some(Arc::clone(&self.class_projections.as_ref().unwrap().1));
+        if self
+            .link_bindings
+            .as_ref()
+            .is_none_or(|(previous, _)| *previous != policy)
+        {
+            self.link_bindings = Some((policy, Arc::new(Default::default())));
+        }
+        memo.link_bindings = Some(Arc::clone(&self.link_bindings.as_ref().unwrap().1));
         Some(memo)
     }
 
@@ -367,6 +383,7 @@ impl BuildHost {
         self.initializer_fragments = None;
         self.initializer_assemblies = None;
         self.class_projections = None;
+        self.link_bindings = None;
         self.maps = None;
         if self.semantic.is_some() {
             self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());

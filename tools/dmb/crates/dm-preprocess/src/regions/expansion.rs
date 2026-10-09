@@ -79,6 +79,9 @@ fn expand_regions_inner(
     retain_tokens: bool,
     memo: Option<&dyn region_memo::ExpansionMemo>,
 ) -> ExpandedRegions {
+    if let Some(admissions) = memo.and_then(|memo| memo.input_admissions()) {
+        admissions.retain_current(plan);
+    }
     let count = plan.regions.len();
     let worker_count = executor.workers().min(count.max(1));
     let outputs = if worker_count == 1 {

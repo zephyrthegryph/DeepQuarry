@@ -42,6 +42,7 @@ impl HeapCensus {
         if self.arc_object("initializer_encoding", encoding) {
             if let Some(ready) = encoding.retained() {
                 if self.arc_object("initializer_encoding.payload", ready) {
+                    self.latest_image(&ready.image_owner);
                     self.frozen_code(&ready.frozen);
                     self.vec_payload("initializer_encoding.slots", &ready.slots);
                     self.prepared_strings(&ready.strings);

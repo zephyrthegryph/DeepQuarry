@@ -2,6 +2,7 @@ import { afterEach, expect, test } from 'bun:test';
 import { classifyShadowReport, compilerCacheIdentity, compilerMode, selectedCompiler, shadowSnapshotContract } from './compiler_selection';
 import Juke from '../juke/index.js';
 import fs from 'node:fs';
+import path from 'node:path';
 const originalEnvironment = { ...process.env };
 afterEach(() => {
   for (const name of ['DQ_COMPILER', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DQ_SHADOW_ROOT']) {
@@ -26,14 +27,18 @@ test('native uses current manifest/defines and successful compilation does not r
   let recorded: string[] = [];
   const execute = async (_executable: string, args: string[]) => {
     recorded = args;
+    const receipt = args[args.indexOf('--compile-result-file') + 1];
+    fs.writeFileSync(receipt, JSON.stringify({ schema_version: 1, kind: 'native_pair', store: path.resolve('E:/dq-cache/fixture-store'), pair_id: '1'.repeat(32), dmb_hash: '2'.repeat(32), rsc_hash: '3'.repeat(32), dmb_bytes: 1, rsc_bytes: 2, output_project: path.resolve('project.dme') }));
     return { code: 0, combined: '', stdout: '', stderr: '', signal: null };
   };
   let byondCalls = 0;
-  await selectedCompiler('project.dme', { defines: ['CITESTING=1'] }, async () => { byondCalls++; }, execute);
+  const output = await selectedCompiler('project.dme', { defines: ['CITESTING=1'] }, async () => { byondCalls++; }, execute);
+  expect(output.kind).toBe('native_pair');
   expect(byondCalls).toBe(0);
   expect(recorded).toContain('-DCITESTING=1');
   expect(recorded).toContain('6');
   expect(recorded).not.toContain('--artifact-directory');
+  expect(recorded).toContain('--compile-result-file');
 });
 test('transitional native nonzero status explicitly falls back exactly once', async () => {
   process.env.DQ_COMPILER = 'native';
@@ -41,7 +46,8 @@ test('transitional native nonzero status explicitly falls back exactly once', as
   process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
   const execute = async () => ({ code: 1, combined: 'diagnostic', stdout: '', stderr: 'diagnostic', signal: null });
   let byondCalls = 0;
-  await selectedCompiler('project.dme', {}, async () => { byondCalls++; }, execute);
+  const output = await selectedCompiler('project.dme', {}, async () => { byondCalls++; }, execute);
+  expect(output.kind).toBe('conventional');
   expect(byondCalls).toBe(1);
 });
 
@@ -55,6 +61,15 @@ test('typed source and cancellation statuses never fall back', async () => {
     await expect(selectedCompiler('project.dme', {}, async () => { byondCalls++; }, execute)).rejects.toBeInstanceOf(Juke.ExitCode);
     expect(byondCalls).toBe(0);
   }
+});
+
+test('successful native status without machine pair result never falls back', async () => {
+  process.env.DQ_COMPILER = 'native';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  let fallback = 0;
+  await expect(selectedCompiler('project.dme', {}, async () => { fallback++; }, async () => ({ code: 0, combined: '' }))).rejects.toThrow('without an authenticated pair result');
+  expect(fallback).toBe(0);
 });
 
 test('native cannot silently discard requested compiler version or warning policy', async () => {

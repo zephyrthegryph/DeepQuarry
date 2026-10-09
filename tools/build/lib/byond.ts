@@ -498,7 +498,17 @@ export async function DreamDaemon(
   ...args: any[]
 ): Promise<DDResult> {
   const output = options.compiledOutput ?? currentCompiledOutput(options.dmbFile, compilerMode() === 'native');
-  return withCompiledOutput(output, Juke.exec, dmbFile => runHostedWorld({ ...options, dmbFile }, args));
+  return withCompiledOutput(output, Juke.exec, async dmbFile => {
+    const hosted = { ...options, dmbFile };
+    try { return await runHostedWorld(hosted, args); }
+    finally {
+      if (output.kind === 'native_pair' && hosted.daemonLog && fs.existsSync(hosted.daemonLog)) {
+        const destination = options.daemonLog ?? options.dmbFile.replace(/\.dmb$/, '.log');
+        try { fs.copyFileSync(hosted.daemonLog, destination); }
+        catch (error) { Juke.logger.warn(`Native daemon log preserved at ${hosted.daemonLog}: ${error}`); }
+      }
+    }
+  });
 }
 
 async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult> {
