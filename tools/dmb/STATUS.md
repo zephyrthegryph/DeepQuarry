@@ -72,7 +72,29 @@ Receipts: `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-025343-85d91c89
 `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-030557-c864b49e.json`, and
 `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-025503-7ed34cec.json`.
 
-## Latest admitted measurement
+## Latest matched compressed-trace measurement
+
+The authenticated control/candidate profiler overlays completed ABABAB, three
+cold runs per compiler and eight workers. Candidate median child wall was
+**11.588 s**, versus **11.133 s** for control: 4.1% slower, not a wall win.
+Candidate total CPU was **27.438 s**, versus 28.203 s; critical CPU was 8.688 s,
+uncertainty upper 10.828 s. Private memory was **1,576,521,728 bytes**, versus
+2,193,870,848. Reads were 326,324,811 bytes and writes **568,835,247 bytes**.
+All six measurement/oracle/structural no-regression checks passed. Reports proved
+`gzip-level1-v1` for both compilers; this is an authenticated profiler overlay,
+not an unmodified parent commit. The source parent for candidate is `59c1774fdb`;
+the later scanner, streaming-codec and compact-origin changes are excluded.
+
+Writes now fit the 600 MB byte budget, but memory and input, ABI/initializer and
+composition CPU gates remain open. Full I/O acceptance is not evaluable because
+blocked I/O time is unavailable. Raw versus gzip timings are separate methodology
+cohorts and are not a paired speedup claim. This remains captured historical
+DeepQuarry, fresh CLI, empty compiler caches, no daemon, and no runtime parity claim.
+
+Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/matched-gzip-20261009-041540-1e4173ff/comparison.json`
+and `E:/dq-cache/dmb-native-v2/matched-gzip-result-20261009-041540-1e4173ff.json`.
+
+## Previous admitted raw-trace measurement
 
 The memory-owner candidate (`59c1774fdb`) completed ABABAB, three cold runs per
 compiler and eight workers on the same captured historical project. Median child
