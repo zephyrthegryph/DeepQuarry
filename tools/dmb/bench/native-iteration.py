@@ -173,10 +173,17 @@ def run_child(executable, arguments, directory, deadline, require_owned=False, c
             code = child.wait(timeout=remaining)
         except subprocess.TimeoutExpired:
             cleanup = terminate_owned(child)
-            (directory / "timeout.json").write_text(json.dumps(cleanup), encoding="utf-8")
+            (directory / "timeout.json").write_text(json.dumps({
+                "cleanup": cleanup, "watchdog_s": remaining,
+                "wall_s": time.monotonic() - started, "arguments": arguments,
+                "executable_sha256": sha(executable), "status": "timed_out",
+                "admitted_output": False,
+            }, indent=2), encoding="utf-8")
             raise TimeoutError(f"compiler child exceeded {remaining:.1f}s")
-    return {"exit": code, "wall_s": time.monotonic() - started,
-            "wall_scope": "client launch through reap; daemon work included for retained requests"}
+    result = {"exit": code, "wall_s": time.monotonic() - started,
+              "wall_scope": "client launch through reap; daemon work included for retained requests"}
+    (directory / "child.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    return result
 
 
 def compile_one(executable, project, manifest, workers, semantic, artifacts, logs,
@@ -184,12 +191,14 @@ def compile_one(executable, project, manifest, workers, semantic, artifacts, log
     if daemon.poll() is not None or not endpoint.probe(daemon):
         raise RuntimeError("owned daemon missing before request")
     arguments = ["compile", str(project / manifest), "--workers", str(workers),
+                 "--progress",
                  "--artifact-directory", str(artifacts / "artifacts"),
                  "--output-store", str(artifacts / "store"), *semantic]
     if mode == "fresh":
         arguments.extend(["--no-daemon", "--no-cache"])
     result = run_child(executable, arguments, logs, deadline,
                        require_owned and mode == "retained", cache_directory)
+    result["stage_progress_logging"] = True
     stats = (project / manifest).parent / ".dmbc" / (manifest.stem + ".stats.json")
     for name, path in (("compiler_stats", stats),
                        ("last_run", stats.with_name(manifest.stem + ".last-run.json"))):

@@ -11,6 +11,27 @@
     "retained_semantic_tree_tests": {"passed": 9, "test_seconds": 0.19},
     "iteration_receipt_tests": {"passed": 7, "test_seconds": 0.151}
   },
+  "later_focused_validation": {
+    "lexical_tests": 4,
+    "keyed_contribution_tests": 4,
+    "stable_dependency_key_tests": 1,
+    "body_export_and_cli_tests": 2,
+    "daemon_export_request_key_tests": 1,
+    "effective_metadata_census_tests": 1,
+    "shadow_admission_tests": 7,
+    "all_passed": true,
+    "scope": "Focused fixtures only; newer active source is not covered implicitly"
+  },
+  "real_debug_attempt": {
+    "compiler_commit": "91b8e0b3e7",
+    "profile": "dev",
+    "workers": 2,
+    "status": "initial compiler child exceeded 300 seconds",
+    "admitted_rows": 0,
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261009-143020-2e057da8/receipt.json",
+    "owned_daemon_reaped": true,
+    "optimized_iteration_timings": null
+  },
   "open": [
     "rebuilt real DeepQuarry stack-overflow retry and current end-to-end timings",
     "global type/member installation and dense projection",
