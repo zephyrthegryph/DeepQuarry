@@ -124,12 +124,20 @@ fn hash_compiler_image() -> io::Result<u128> {
 pub fn route(
     request: crate::request::BuildRequest,
 ) -> Result<crate::request::BuildOutcome, Box<dyn std::error::Error>> {
+    let mut request = request;
+    if request.cache_root.is_none() {
+        request.cache_root = Some(crate::request::client_cache_root()?);
+    }
+    if let Some(root) = &mut request.cache_root {
+        if !root.is_absolute() {
+            *root = std::env::current_dir()?.join(&*root);
+        }
+    }
     if request.no_daemon || request.trace_path.is_some() {
         return crate::request_runner::run_build(request);
     }
     // Supervisors may require an already-owned server and prohibit lifecycle changes.
     let allow_lifecycle = std::env::var_os("DMB_DAEMON_AUTOSTART").is_none_or(|value| value != "0");
-    let mut request = request;
     let cwd = std::env::current_dir()?;
     if !request.project.is_absolute() {
         request.project = cwd.join(&request.project);

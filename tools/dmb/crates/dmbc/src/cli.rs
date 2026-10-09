@@ -1,4 +1,4 @@
-//! Parse the established CLI without consulting process arguments or files.
+//! Parse the established CLI and capture the caller's cache namespace without file IO.
 use crate::request::{BuildCommand, BuildRequest, Command};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -139,6 +139,7 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
         output_store,
         exact_inputs,
         no_cache,
+        cache_root: Some(crate::request::client_cache_root()?),
         record_inputs,
         replay_inputs,
         artifact_directory,

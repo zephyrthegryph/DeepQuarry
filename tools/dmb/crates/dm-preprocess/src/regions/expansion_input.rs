@@ -172,11 +172,13 @@ impl ObservationHost<Query, Answer, ()> for Current<'_> {
 /// Keys are locators only; exact source/control shape and recorded observations
 /// certify every hit. Storage weights are deliberately unreported here.
 pub struct ExpansionInputs {
+    joined: super::joined_text::JoinedText,
     values: ObservedArtifactStore<ExpansionInputReceipt, Query, Answer, ()>,
 }
 impl Default for ExpansionInputs {
     fn default() -> Self {
         Self {
+            joined: Default::default(),
             values: ObservedArtifactStore::current_revision(),
         }
     }
@@ -189,6 +191,7 @@ impl ExpansionInputs {
         };
         use super::ExpansionStorageView as View;
         use dm_session::ObservedArtifactStorageView as Store;
+        self.joined.visit_storage(&mut visit);
         self.values.visit_storage(|view| match view {
             Store::Store { entries, .. } => visit(View::Index { entries }),
             Store::Bucket {
@@ -230,6 +233,13 @@ impl ExpansionInputs {
                 value.record.visit_storage(&mut visit);
             }
         });
+    }
+    pub(super) fn joined_text(
+        &self,
+        plan: &DirectivePlan,
+        outputs: &[super::expansion::RegionOutput],
+    ) -> crate::SourceText {
+        self.joined.assemble(plan, outputs)
     }
     fn key(plan: &DirectivePlan, index: usize) -> Option<[u8; 16]> {
         let region = plan.regions.get(index)?;

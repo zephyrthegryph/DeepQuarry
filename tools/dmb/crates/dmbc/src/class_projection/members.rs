@@ -436,7 +436,9 @@ pub(crate) fn materialize_members_with_roster(
                     "shared slot order disagrees with footer allocation".into(),
                 ));
             }
-            footer.extend([record, flags]);
+            // BYOND retains tmp on the class declaration, but strips it from
+            // the shared VM slot footer (including globals and proc statics).
+            footer.extend([record, flags & !4]);
         }
         dmb.variable_footer = list(dmb, footer)?;
     }

@@ -42,7 +42,7 @@ and preparation times must not be reported as measured compiler time.
 
 No output evidence directory or cache is created by this document. Existing C/E probes
 and preserved receipts are untouched. This invocation explicitly keeps run caches under E:/dq-cache. The compiler's
-default remains the review's E:/.dmbd/cache; DMB_CACHE_DIR still overrides it.
+default is E:/dq-cache/dmbd/cache; DMB_CACHE_DIR still overrides it.
 
 ## Stage mapping
 

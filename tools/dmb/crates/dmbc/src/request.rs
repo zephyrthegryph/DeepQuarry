@@ -3,6 +3,15 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
+pub(crate) fn client_cache_root() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    let root = dm_cache::Cache::default_root()?;
+    Ok(if root.is_absolute() {
+        root
+    } else {
+        std::env::current_dir()?.join(root)
+    })
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum BuildCommand {
     Analyze,
@@ -25,6 +34,9 @@ pub struct BuildRequest {
     pub output_store: Option<PathBuf>,
     pub exact_inputs: bool,
     pub no_cache: bool,
+    /// Client-resolved disk namespace; never changes the server environment.
+    #[serde(default)]
+    pub cache_root: Option<PathBuf>,
     pub record_inputs: Option<PathBuf>,
     pub replay_inputs: Option<PathBuf>,
     pub artifact_directory: Option<PathBuf>,

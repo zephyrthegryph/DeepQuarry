@@ -25,6 +25,7 @@ fn build_defaults_and_supplied_workers_preserve_existing_admission() {
     assert!(!request.bootstrap_catalog);
     assert!(!request.exact_inputs);
     assert!(!request.no_cache);
+    assert!(request.cache_root.as_ref().unwrap().is_absolute());
     // Stage worker clamps remain in their existing implementations. Parsing
     // must not impose a new limit or silently change a supplied request.
     assert_eq!(build(&["analyze", "a.dme", "--workers", "99"]).workers, 99);
@@ -34,6 +35,21 @@ fn build_defaults_and_supplied_workers_preserve_existing_admission() {
             .to_string(),
         "--workers must be positive"
     );
+}
+
+#[test]
+fn transported_cache_root_preserves_client_namespace_and_legacy_requests() {
+    let mut request = build(&["compile", "relative.dme"]);
+    request.cache_root = Some(PathBuf::from("E:/dq-cache/worktree-specific-cache"));
+    let encoded = serde_json::to_value(&request).unwrap();
+    let received: BuildRequest = serde_json::from_value(encoded.clone()).unwrap();
+    assert_eq!(received.cache_root, request.cache_root);
+    let mut legacy = encoded;
+    legacy.as_object_mut().unwrap().remove("cache_root");
+    assert!(serde_json::from_value::<BuildRequest>(legacy)
+        .unwrap()
+        .cache_root
+        .is_none());
 }
 
 #[test]

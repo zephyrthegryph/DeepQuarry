@@ -198,5 +198,27 @@
       "session destination relocation and client cache-root transport next slice",
       "six-worktree memory/concurrency and BYOND baseline open"
     ]
+  },
+  "wire_join_and_destination_wave": {
+    "source_status": "production wired; focused fixtures passed",
+    "workspace_all_targets_seconds": 40.76,
+    "shared_tmp_independent_byond_fixture": 1,
+    "shared_tmp_initial_fixture_failure": "missing inventory spellings fixed; backend distinction verified against DreamMaker 516.1687 capture",
+    "session_output_fixtures": 2,
+    "session_fixture_initial_failure": "provider stamp count corrected to include read authentication",
+    "cli_and_output_contract_fixtures": 11,
+    "retained_wire_image_fixtures": 2,
+    "type_path_binding_fixtures": 1,
+    "independent_wire_domain_fixtures": 2,
+    "joined_owner_fixtures": 2,
+    "end_to_end_timings": null,
+    "runtime_gate": "deferred to Phase 5",
+    "remaining": [
+      "changed joined text still contiguous",
+      "disk typed hits still deserialize DTOs",
+      "daemon disk population/fallback still Phase2 policy",
+      "six-worktree compaction variant preservation open",
+      "BYOND whole-program structural/runtime baseline open"
+    ]
   }
 }

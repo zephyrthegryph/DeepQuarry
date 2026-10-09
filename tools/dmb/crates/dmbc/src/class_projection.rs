@@ -664,3 +664,7 @@ mod tests;
 #[cfg(test)]
 #[path = "class_projection/shared_writer_tests.rs"]
 mod shared_writer_tests;
+
+#[cfg(test)]
+#[path = "class_projection/shared_tmp_tests.rs"]
+mod shared_tmp_tests;

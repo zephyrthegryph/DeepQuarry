@@ -139,9 +139,12 @@ fn expand_regions_inner(
         }));
     }
     diagnostics.sort_by_key(|(ordinal, line, _)| (*ordinal, *line));
-    let text_capacity = outputs.iter().map(|output| output.text.len()).sum();
     let origin_capacity = outputs.iter().map(|output| output.lines.len()).sum();
-    let mut text = String::with_capacity(text_capacity);
+    let text = match memo.and_then(|memo| memo.input_admissions()) {
+        Some(admissions) => admissions.joined_text(plan, &outputs),
+        None => super::joined_text::assemble(plan, &outputs),
+    };
+    let mut output_offset = 0usize;
     let mut result = ExpandedRegions {
         origins: ExpandedOriginArena::default(),
         diagnostics: diagnostics
@@ -164,12 +167,12 @@ fn expand_regions_inner(
             .take()
             .expect("a text region is emitted once");
         let path = plan.occurrences[region.occurrence].path.clone();
-        let output_start = text.len();
-        text.push_str(&output.text);
+        let output_start = output_offset;
+        output_offset += output.text.len();
         if let Some(record) = output.receipt {
             result.receipts.push(region_memo::RegionReceipt {
                 region: *index,
-                output: Span::new(output_start, text.len()),
+                output: Span::new(output_start, output_offset),
                 record,
             });
         }
@@ -191,7 +194,8 @@ fn expand_regions_inner(
         }
     }
     result.origins = origins.finish();
-    result.text = text.into();
+    debug_assert_eq!(output_offset, text.len());
+    result.text = text;
     if retain_tokens {
         let lexed = lex_spans(&result.text);
         result.tokens = lexed.tokens;

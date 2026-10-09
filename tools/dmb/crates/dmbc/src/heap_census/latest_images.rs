@@ -19,5 +19,16 @@ impl HeapCensus {
                 self.vec_payload("latest_images.words",&image.words);
             }
         });
+        owner.visit_retained_wire(|base, answers, image| {
+            for words in [&base.words, &image.words] {
+                if self.arc_object("latest_images.wire_words", words) {
+                    self.vec_payload("latest_images.wire_words", words);
+                }
+            }
+            let patches = answers.storage();
+            if self.arc_object("latest_images.wire_answers", patches) {
+                self.vec_payload("latest_images.wire_answers", patches);
+            }
+        });
     }
 }

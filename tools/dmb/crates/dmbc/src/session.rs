@@ -146,6 +146,30 @@ impl ValidatedRecord {
     pub fn into_record(self) -> Record {
         self.record
     }
+    /// A reusable pair does not prove this request's conventional destination.
+    pub fn refresh_outputs_at(
+        &mut self,
+        output_project: &Path,
+        provider: &impl SnapshotProvider,
+        exact: bool,
+        now_ns: u128,
+    ) -> io::Result<(bool, usize)> {
+        let Some(outputs) = &self.record.outputs else {
+            return Ok((false, 0));
+        };
+        let expected = ["dmb", "rsc", "dmb-pair.json"]
+            .map(|extension| canonical_path(&output_project.with_extension(extension)));
+        if outputs.files().count() != 3
+            || outputs.proof_paths().count() != 3
+            || !outputs.folders().is_empty()
+            || !expected
+                .iter()
+                .all(|path| outputs.files().any(|file| &file.path == path))
+        {
+            return Ok((false, 0));
+        }
+        self.refresh_outputs(provider, exact, now_ns)
+    }
 }
 
 impl Session {
@@ -436,6 +460,10 @@ impl SessionRecords {
 fn invalid(error: impl std::fmt::Display) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, error.to_string())
 }
+
+#[cfg(test)]
+#[path = "session_output_tests.rs"]
+mod output_tests;
 
 #[cfg(test)]
 mod tests {

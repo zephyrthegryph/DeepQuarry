@@ -22,70 +22,63 @@ impl BatchAccess<'_> {
         index: usize,
         mobs: &dm_link::MobBindings,
     ) -> Result<Vec<u32>, IntegrationError> {
-        let mut words = match self {
-            Self::Borrowed(batch) => Ok::<Vec<u32>, IntegrationError>(
-                batch.link_unit(index, &Default::default())?.into_words(),
+        let image = match self {
+            Self::Borrowed(batch) => Ok::<dm_link::ProcedureImage, IntegrationError>(
+                batch.link_unit(index, &Default::default())?,
             ),
-            Self::Owned(batch) => Ok::<Vec<u32>, IntegrationError>(
-                batch
-                    .take_unit_image(index, &Default::default())?
-                    .into_words(),
+            Self::Owned(batch) => Ok::<dm_link::ProcedureImage, IntegrationError>(
+                batch.take_unit_image(index, &Default::default())?,
             ),
         }?;
-        dm_link::admit_type_path_words(
-            &mut words,
+        crate::symbolic::latest_image::LatestImage::wire_words(
+            self.units[index].latest_image(),
+            image,
             self.units[index].frozen.code(),
             &self.tables,
             mobs,
         )
-        .map_err(IntegrationError::WireDomain)?;
-        Ok::<Vec<u32>, IntegrationError>(words)
     }
     pub(super) fn helper_words(
         &mut self,
         index: usize,
         mobs: &dm_link::MobBindings,
     ) -> Result<Vec<u32>, IntegrationError> {
-        let mut words = match self {
-            Self::Borrowed(batch) => Ok::<Vec<u32>, IntegrationError>(
-                batch.link_helper(&batch.helpers[index])?.into_words(),
+        let image = match self {
+            Self::Borrowed(batch) => Ok::<dm_link::ProcedureImage, IntegrationError>(
+                batch.link_helper(&batch.helpers[index])?,
             ),
             Self::Owned(batch) => {
-                Ok::<Vec<u32>, IntegrationError>(batch.take_helper_image(index)?.into_words())
+                Ok::<dm_link::ProcedureImage, IntegrationError>(batch.take_helper_image(index)?)
             }
         }?;
-        dm_link::admit_type_path_words(
-            &mut words,
+        crate::symbolic::latest_image::LatestImage::wire_words(
+            self.helpers[index].latest_image(),
+            image,
             self.helpers[index].frozen.code(),
             &self.tables,
             mobs,
         )
-        .map_err(IntegrationError::WireDomain)?;
-        Ok::<Vec<u32>, IntegrationError>(words)
     }
     pub(super) fn initializer_words(
         &mut self,
         index: usize,
         mobs: &dm_link::MobBindings,
     ) -> Result<Vec<u32>, IntegrationError> {
-        let mut words = match self {
-            Self::Borrowed(batch) => Ok::<Vec<u32>, IntegrationError>(
-                batch
-                    .link_initializer(&batch.initializers[index])?
-                    .into_words(),
+        let image = match self {
+            Self::Borrowed(batch) => Ok::<dm_link::ProcedureImage, IntegrationError>(
+                batch.link_initializer(&batch.initializers[index])?,
             ),
-            Self::Owned(batch) => {
-                Ok::<Vec<u32>, IntegrationError>(batch.take_initializer_image(index)?.into_words())
-            }
+            Self::Owned(batch) => Ok::<dm_link::ProcedureImage, IntegrationError>(
+                batch.take_initializer_image(index)?,
+            ),
         }?;
-        dm_link::admit_type_path_words(
-            &mut words,
+        crate::symbolic::latest_image::LatestImage::wire_words(
+            self.initializers[index].latest_image(),
+            image,
             self.initializers[index].frozen.code(),
             &self.tables,
             mobs,
         )
-        .map_err(IntegrationError::WireDomain)?;
-        Ok::<Vec<u32>, IntegrationError>(words)
     }
     pub(super) fn certified_features(&self) -> HashMap<u32, (&[u32], BytecodeFeatures)> {
         match self {

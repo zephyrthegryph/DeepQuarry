@@ -5,8 +5,10 @@ use std::{
     sync::Arc,
 };
 mod entry_content;
+mod type_path_binding;
 mod wire_domains;
 pub use entry_content::{EntryContent, SymbolicContent};
+pub use type_path_binding::{bind_type_path_words, BoundTypeWords, TypePathAnswers, TypePathPatch};
 #[cfg(test)]
 mod link_lookup_tests;
 pub use wire_domains::{admit_type_path_words, MobBindings, WireDomainError};

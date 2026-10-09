@@ -99,6 +99,7 @@ pub fn run_build_with_host(
         output_store,
         exact_inputs,
         no_cache,
+        cache_root,
         record_inputs,
         replay_inputs,
         artifact_directory,
@@ -248,7 +249,8 @@ pub fn run_build_with_host(
                     let pair_verification_seconds =
                         pair_verification_started.elapsed().as_secs_f64();
                     let output_validation_started = Instant::now();
-                    let (outputs_match, output_rehashes) = validated.refresh_outputs(
+                    let (outputs_match, output_rehashes) = validated.refresh_outputs_at(
+                        &output_project,
                         &dmbc::input_snapshot::FileSystemInputs,
                         exact_inputs,
                         now_ns(),
@@ -318,7 +320,10 @@ pub fn run_build_with_host(
     }
     let disk_admission = host.disk_admission(memo_policy);
     let memo_cache = if executable && !no_cache && disk_admission.allows_reads() {
-        match dm_cache::Cache::user_default(dm_cache::Limits::default()) {
+        match cache_root.map_or_else(
+            || dm_cache::Cache::user_default(dm_cache::Limits::default()),
+            |root| dm_cache::Cache::open(root, dm_cache::Limits::default()),
+        ) {
             Ok(cache) => Some(Arc::new(cache)),
             Err(error) => {
                 dmbc::daemon_eprintln!("native cache unavailable: {error}; compiling fresh");

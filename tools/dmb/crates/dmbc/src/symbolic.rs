@@ -816,6 +816,7 @@ mod current_images;
 mod freezing;
 mod initializer_contribution;
 pub(crate) mod latest_image;
+mod wire_image;
 pub(crate) use initializer_contribution::InitializerEncoding;
 #[cfg(test)]
 mod helper_reuse_tests;

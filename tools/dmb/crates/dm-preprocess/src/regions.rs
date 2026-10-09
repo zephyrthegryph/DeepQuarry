@@ -18,6 +18,7 @@ pub mod prepared_source;
 pub use environment::MacroEnvironment;
 mod expansion;
 mod expansion_input;
+mod joined_text;
 pub use expansion_input::ExpansionInputs;
 mod origin_arena;
 pub mod region_memo;

@@ -45,14 +45,18 @@ impl Cache {
         Ok(Self { root, limits })
     }
     pub fn user_default(limits: Limits) -> Result<Self, CacheError> {
+        Self::open(Self::default_root()?, limits)
+    }
+    /// Select the caller's cache namespace without opening or creating it.
+    pub fn default_root() -> Result<PathBuf, CacheError> {
         if let Some(root) = std::env::var_os("DMB_CACHE_DIR") {
             if root.is_empty() {
                 return Err(CacheError::Invalid("DMB_CACHE_DIR is empty".into()));
             }
-            return Self::open(PathBuf::from(root), limits);
+            return Ok(PathBuf::from(root));
         }
         let root = if cfg!(windows) {
-            PathBuf::from("E:/.dmbd/cache")
+            PathBuf::from("E:/dq-cache/dmbd/cache")
         } else if let Some(root) = std::env::var_os("XDG_CACHE_HOME") {
             PathBuf::from(root).join("dmbd")
         } else {
@@ -62,7 +66,7 @@ impl Cache {
             )
             .join(".cache/dmbd")
         };
-        Self::open(root, limits)
+        Ok(root)
     }
     /// Check quota-aware available space before appending a segment. This never
     /// skips a record; shortages are explicit publication errors.

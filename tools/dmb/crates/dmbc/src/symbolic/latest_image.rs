@@ -4,6 +4,7 @@ use super::*;
 #[derive(Default)]
 pub(crate) struct LatestImage {
     value: std::sync::Mutex<Option<Linked>>,
+    wire: super::wire_image::WireImage,
 }
 struct Linked {
     frozen: Arc<FrozenProc>,
@@ -37,6 +38,28 @@ impl LatestImage {
             image: image.clone(),
         });
         Ok(image)
+    }
+    pub(crate) fn wire_words(
+        owner: &Arc<Self>,
+        image: ProcedureImage,
+        code: &dm_ir::SymbolicCode,
+        tables: &LinkTables,
+        mobs: &dm_link::MobBindings,
+    ) -> Result<Vec<u32>, IntegrationError> {
+        if Arc::strong_count(owner) > 1 {
+            owner.wire.words(image, code, tables, mobs)
+        } else {
+            let mut words = image.into_words();
+            dm_link::admit_type_path_words(&mut words, code, tables, mobs)
+                .map_err(IntegrationError::WireDomain)?;
+            Ok(words)
+        }
+    }
+    pub(crate) fn visit_retained_wire(
+        &self,
+        visitor: impl FnMut(&ProcedureImage, &dm_link::TypePathAnswers, &ProcedureImage),
+    ) {
+        self.wire.visit_retained(visitor);
     }
     pub(crate) fn visit_retained(
         &self,

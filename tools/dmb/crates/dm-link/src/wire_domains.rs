@@ -1,8 +1,8 @@
 //! Final VM value domains are distinct from declaration/class table domains.
 //! Only certified relocations are interpreted; retained template code and values
 //! already emitted in their native domain must never be scanned or rewritten.
-use crate::{Key, LinkTables};
-use dm_ir::{RelocationEncoding, SymRef, SymbolId, SymbolicCode};
+use crate::LinkTables;
+use dm_ir::{SymbolId, SymbolicCode};
 use std::collections::HashMap;
 
 pub type MobBindings = HashMap<SymbolId, u32>;
@@ -27,42 +27,9 @@ pub fn admit_type_path_words(
     mobs: &MobBindings,
 ) -> Result<(), WireDomainError> {
     for site in code.relocations() {
-        let tag = match site.encoding {
-            RelocationEncoding::PackedValue24 {
-                tag: tag @ (8 | 59),
-            } => tag,
-            _ => continue,
-        };
-        let SymRef::Type(path) = site.reference else {
-            return Err(WireDomainError::InvalidSite(site.offset));
-        };
-        let class = tables
-            .index(Key::Type(path))
-            .ok_or(WireDomainError::MissingClass(path))?;
-        let mob = if tag == 59 {
-            if path != SymbolId::of("/client") {
-                return Err(WireDomainError::UnsupportedClientPath(path));
-            }
-            0
-        } else {
-            *mobs.get(&path).ok_or(WireDomainError::MissingMob(path))?
-        };
-        if mob > 0x00ff_ffff {
-            return Err(WireDomainError::MobIndexOverflow(mob));
+        if let Some(patch) = crate::type_path_binding::resolve_site(words, site, tables, mobs)? {
+            crate::type_path_binding::apply(words, patch);
         }
-        let at = site.offset as usize;
-        let pair = words
-            .get_mut(
-                at..at
-                    .checked_add(2)
-                    .ok_or(WireDomainError::InvalidSite(site.offset))?,
-            )
-            .ok_or(WireDomainError::InvalidSite(site.offset))?;
-        if pair != [u32::from(tag) | ((class >> 16) << 8), class & 0xffff] {
-            return Err(WireDomainError::WrongClassBinding(site.offset));
-        }
-        pair[0] = u32::from(tag) | ((mob >> 16) << 8);
-        pair[1] = mob & 0xffff;
     }
     Ok(())
 }
@@ -70,8 +37,8 @@ pub fn admit_type_path_words(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::LinkInventory;
-    use dm_ir::Relocation;
+    use crate::{Key, LinkInventory};
+    use dm_ir::{Relocation, RelocationEncoding, SymRef};
 
     #[test]
     fn root_client_path_has_singleton_payload_without_rewriting_other_class_values() {
