@@ -137,3 +137,15 @@ CAPABILITIES(/mob/living/simple_mob/dq_projectile_immune)
 	Q.stun = 10
 	control.bullet_act(Q, BP_TORSO)
 	TEST_ASSERT(control.status_units(STAT_STUNNED) > 0, "the same round stuns a mob with no blocking reaction")
+
+/// A zero-damage stun round (a taser dart) is vetoed by the same hook, and the hit action runs once per round.
+/datum/unit_test/sys_damage_reactions/blocked_zero_damage_stun
+
+/datum/unit_test/sys_damage_reactions/blocked_zero_damage_stun/Run()
+	var/mob/living/simple_mob/dq_projectile_immune/immune = allocate(/mob/living/simple_mob/dq_projectile_immune)
+	var/obj/item/projectile/P = projectile(INJURY_BLUNT, 0)
+	P.stun = 10
+	P.weaken = 10
+	immune.bullet_act(P, BP_TORSO)
+	TEST_ASSERT_EQUAL(immune.status_units(STAT_STUNNED), 0, "a vetoed zero-damage round applies no stun")
+	TEST_ASSERT_EQUAL(immune.status_units(STAT_WEAKENED), 0, "nor weaken")
