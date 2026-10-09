@@ -5,6 +5,7 @@ from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 
 def module(name):
@@ -68,6 +69,28 @@ class ReuseChecks(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "configuration mismatch"):
             protocol.preflight_structural_baseline(harness, args, {}, "s", {"project": "other"})
 
+    def test_validated_report_identity_checks_scope_and_every_hash(self):
+        configuration = "c" * 64
+        descriptor = {"evidence_format": "structural-report-reference-v1", "snapshot_id": "s",
+            "semantic_configuration_sha256": configuration, "report": str(self.report),
+            "report_sha256": reuse.digest(self.report)}
+        path = self.root / "descriptor.json"
+        path.write_text(json.dumps(descriptor), encoding="utf-8")
+        identity = protocol.structural_evidence.validated_identity(descriptor, "s", configuration, path)
+        self.assertTrue(protocol.structural_evidence.same_report(identity, self.report, "s", configuration))
+        changed = self.root / "changed.json"
+        changed.write_text(json.dumps(dict(self.full, categories={"changed": 1})), encoding="utf-8")
+        self.assertFalse(protocol.structural_evidence.same_report(identity, changed, "s", configuration))
+        with self.assertRaisesRegex(ValueError, "scope mismatch"):
+            protocol.structural_evidence.same_report(identity, self.report, "edited", configuration)
+        path.write_text(json.dumps(dict(descriptor, snapshot_id="edited")), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "descriptor changed"):
+            protocol.structural_evidence.same_report(identity, self.report, "s", configuration)
+        path.write_text(json.dumps(descriptor), encoding="utf-8")
+        self.report.write_text("tampered", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "report changed"):
+            protocol.structural_evidence.same_report(identity, changed, "s", configuration)
+
     def test_protocol_recomputes_admission_and_current_rsc_for_each_row(self):
         expected = self.root / "expected.dmb"; expected.write_bytes(b"byond")
         actual = self.root / "actual.dmb"; actual.write_bytes(b"native")
@@ -93,7 +116,9 @@ class ReuseChecks(unittest.TestCase):
         first = self.root / "first"; first.mkdir()
         second = self.root / "second"; second.mkdir()
         a = protocol.structural(harness, args, scenario, actual, first, "s", {})
-        b = protocol.structural(harness, args, scenario, actual, second, "s", {})
+        with patch.object(protocol.structural_evidence, "load", side_effect=AssertionError("identical report must not parse baseline signatures")):
+            b = protocol.structural(harness, args, scenario, actual, second, "s", {})
+        self.assertEqual(b["no_regression_basis"], "authenticated_same_structural_report_identity")
         self.assertEqual(len(calls), 1)
         self.assertEqual(a["no_regression"], "baseline_established")
         self.assertEqual(b["no_regression"], "passed")

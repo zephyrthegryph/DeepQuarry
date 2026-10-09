@@ -264,11 +264,21 @@ def preflight_structural_baseline(h, args, scenario, snapshot_id, configuration)
         return {}
     path = Path(baseline).resolve()
     expected_configuration = configuration_gate.digest(configuration)
+    descriptor_hash = h.sha(path)
     descriptor = json.loads(path.read_text(encoding="utf-8"))
     full = structural_evidence.load(descriptor, snapshot_id, expected_configuration)
+    if h.sha(path) != descriptor_hash:
+        raise ValueError("structural baseline descriptor changed during preflight")
     if not exact_structural_evidence(full):
         raise ValueError("structural baseline lacks complete exact-case evidence")
-    pins = {path: h.sha(path)}
+    certificates = getattr(args, "structural_baseline_identities", None)
+    if certificates is None:
+        certificates = args.structural_baseline_identities = {}
+    certificate = structural_evidence.validated_identity(descriptor, snapshot_id, expected_configuration, path)
+    if certificate is not None and certificate["descriptor_sha256"] != descriptor_hash:
+        raise ValueError("structural baseline descriptor changed during identity issuance")
+    certificates[str(path)] = certificate
+    pins = {path: descriptor_hash}
     if descriptor.get("evidence_format") == "structural-report-reference-v1":
         report = Path(descriptor["report"]).resolve()
         pins[report] = descriptor["report_sha256"]
@@ -337,19 +347,33 @@ def structural(h, args, scenario, manifest, run_dir, snapshot_id, env):
     baseline_path = scenario.get("structural_baseline", args.structural_baseline)
     value["no_regression"] = "not_evaluable"
     previous = None
+    identity_equal = False
     if baseline_path:
-        previous = structural_evidence.load(json.loads(Path(baseline_path).read_text(encoding="utf-8")), snapshot_id, value["semantic_configuration_sha256"])
+        certificate = getattr(args, "structural_baseline_identities", {}).get(str(Path(baseline_path).resolve()))
+        identity_equal = exact_structural_evidence(value) and structural_evidence.same_report(
+            certificate, report, snapshot_id, value["semantic_configuration_sha256"])
+        if not identity_equal:
+            previous = structural_evidence.load(json.loads(Path(baseline_path).read_text(encoding="utf-8")), snapshot_id, value["semantic_configuration_sha256"])
     elif args.establish_structural_baseline:
         baselines = getattr(args, "established_baselines", None)
         if baselines is None:
             baselines = args.established_baselines = {}
+        identities = getattr(args, "established_baseline_identities", None)
+        if identities is None:
+            identities = args.established_baseline_identities = {}
         baseline_key = (snapshot_id, value["semantic_configuration_sha256"])
         descriptor = baselines.get(baseline_key)
-        previous = structural_evidence.load(descriptor, *baseline_key) if descriptor else None
-        if previous is None and exact_structural_evidence(value):
+        identity_equal = exact_structural_evidence(value) and structural_evidence.same_report(
+            identities.get(baseline_key), report, *baseline_key)
+        previous = structural_evidence.load(descriptor, *baseline_key) if descriptor and not identity_equal else None
+        if descriptor is None and exact_structural_evidence(value):
             descriptor = dict(value, report=str(report), report_sha256=h.sha(report))
             baselines[baseline_key] = structural_evidence.compact(descriptor)
+            identities[baseline_key] = structural_evidence.validated_identity(baselines[baseline_key], *baseline_key)
             value["no_regression"] = "baseline_established"
+    if identity_equal:
+        value["no_regression"] = "passed"
+        value["no_regression_basis"] = "authenticated_same_structural_report_identity"
     if previous is not None:
         value["no_regression"] = structural_no_regression(previous, value)
     native_pin = scenario.get("native_baseline", getattr(args, "native_baseline", None))
@@ -525,6 +549,9 @@ def comparison_stage_map_paths(args):
 def execute(h, args):
     # Reset even when an embedding caller reuses its argument object.
     args.structural_reports = structural_reuse.Reports()
+    args.structural_baseline_identities = {}
+    args.established_baseline_identities = {}
+    args.established_baselines = {}
     root = args.project_root.resolve()
     output = require_e(args.output)
     cache = require_e(args.cache)

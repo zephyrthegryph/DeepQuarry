@@ -4,6 +4,20 @@ Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 
 ## Latest admitted measurement
 
+The later semantic-owner and staged-output candidate (`36749fd74d`) completed
+another ABABAB comparison, three cold runs per compiler, on the same captured
+historical project. Median child wall was **12.639 s**, versus **12.227 s** for
+the control: no wall-speed improvement in this cohort. Process CPU was 30.172 s
+versus 29.797 s. Peak private memory fell from 2.149 GB to **1.624 GB** (24.4%),
+and compiler reads fell from 550,004,461 to **326,324,811 bytes**. Writes remained
+655,317,267 bytes. All measurement and structural no-regression admissions passed;
+the memory, write-volume, input, ABI/initializer and composition CPU gates remain
+open. This is not daemon or minimal-edit evidence, nor BYOND semantic parity.
+
+Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/paired-corrected-context-20261009-021800-ff90ad70/comparison.json`.
+The following earlier comparison remains historical evidence for its own frozen
+candidate; its faster wall measurement is not the latest result.
+
 The corrected-context control versus compact-code candidate completed an ABABAB
 cold comparison on 9 October: three runs per compiler, eight workers, empty
 compiler caches and warmed captured inputs. All six measurement, fresh native

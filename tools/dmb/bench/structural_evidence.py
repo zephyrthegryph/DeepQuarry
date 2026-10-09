@@ -55,3 +55,28 @@ def load(value, expected_snapshot=None, expected_configuration=None):
     if expected_configuration is not None and full.get('semantic_configuration_sha256') != expected_configuration:
         raise ValueError('structural baseline configuration mismatch')
     return full
+
+
+def validated_identity(descriptor, snapshot, configuration, descriptor_path=None):
+    """Call only after full exact-case validation; retain no signature arrays."""
+    if descriptor.get('evidence_format') != 'structural-report-reference-v1':
+        return None
+    if descriptor.get('snapshot_id') != snapshot or descriptor.get('semantic_configuration_sha256') != configuration:
+        raise ValueError('validated structural identity scope mismatch')
+    return {'snapshot_id': snapshot, 'semantic_configuration_sha256': configuration,
+            'report': descriptor['report'], 'report_sha256': descriptor['report_sha256'],
+            'descriptor_path': str(descriptor_path) if descriptor_path is not None else None,
+            'descriptor_sha256': sha(descriptor_path) if descriptor_path is not None else None}
+
+
+def same_report(identity, current_report, snapshot, configuration):
+    """Evaluate exact report equality afresh, never a previous admission."""
+    if identity is None:
+        return False
+    if identity['snapshot_id'] != snapshot or identity['semantic_configuration_sha256'] != configuration:
+        raise ValueError('structural report identity scope mismatch')
+    if identity['descriptor_path'] is not None and sha(identity['descriptor_path']) != identity['descriptor_sha256']:
+        raise ValueError('structural baseline descriptor changed after preflight')
+    if sha(identity['report']) != identity['report_sha256']:
+        raise ValueError('structural baseline report changed after validation')
+    return sha(current_report) == identity['report_sha256']
