@@ -14,10 +14,20 @@ fn fixture_dm() -> String {
 
 /// type -> (key, probes) of a tree whose single file is `dm`.
 fn plan_of(dm: &str) -> BTreeMap<String, (String, String)> {
+    plan_of_files(dm, &[])
+}
+
+/// As `plan_of`, with extra files (path relative to the tree root, text) beside `code/look.dm`.
+fn plan_of_files(dm: &str, extra: &[(&str, &str)]) -> BTreeMap<String, (String, String)> {
     let dir = tempfile::tempdir().expect("tempdir");
     let code = dir.path().join("code");
     std::fs::create_dir_all(&code).unwrap();
     std::fs::write(code.join("look.dm"), dm).unwrap();
+    for (rel, text) in extra {
+        let f = dir.path().join(rel);
+        std::fs::create_dir_all(f.parent().unwrap()).unwrap();
+        std::fs::write(f, text).unwrap();
+    }
     let repo = PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().parent().unwrap().to_path_buf();
     let opts = Options { root: dir.path().to_path_buf(), lints: vec!["sem/keys".to_string()], no_cache: true, raw: true, scopes_from: Some(repo), ..Default::default() };
     let engine = Engine::new(dq_analyze::run::registry(), opts).expect("engine");
@@ -73,4 +83,25 @@ fn look_keys_dynamic_var_access_makes_probes_unknown() {
     let rows = plan_of(&fixture_dm());
     assert_eq!(rows["/obj/dynamic_thing"].1, "*");
     assert_ne!(rows["/obj/base_thing/door"].1, "*");
+}
+
+#[test]
+fn look_keys_global_salt_is_the_look_builder_only() {
+    let builder = "code/engine/present/appearance_builder.dm";
+    let unrelated = [("code/engine/present/messages.dm", "/proc/a_message()
+	return 1
+"), ("code/modules/unit_tests/dq_look_pins.dm", "/proc/a_pin()
+	return 1
+")];
+    let base = plan_of_files(&fixture_dm(), &[(builder, "/proc/build_look()
+	return 1
+")]);
+    let other_engine = plan_of_files(&fixture_dm(), &[(builder, "/proc/build_look()
+	return 1
+"), unrelated[0], unrelated[1]]);
+    assert_eq!(base, other_engine, "an unrelated engine or pin-test edit moved a key");
+    let edited = plan_of_files(&fixture_dm(), &[(builder, "/proc/build_look()
+	return 2
+")]);
+    assert_ne!(base["/obj/plain_thing"].0, edited["/obj/plain_thing"].0, "a look-builder edit left the keys alone");
 }

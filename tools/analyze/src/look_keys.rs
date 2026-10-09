@@ -41,12 +41,14 @@ use crate::tree::{Tree, CODE_DM};
 /// Procs every closure starts from.
 pub const ROOT_PROCS: &[&str] = &["update_icon", "update_icon_state", "update_overlays", "on_update_icon", "update_icon_overlays", "draw", "set_dir"];
 
-/// Files whose contents are part of every key (the presentation engine and the pins that read the look).
-const SALT_FILES: &[&str] = &["code/datums/sys/appearance.dm", "code/modules/unit_tests/dq_look_pins.dm", "code/modules/unit_tests/dq_snapshot_files.dm"];
-const SALT_DIRS: &[&str] = &["code/engine/present/"];
-const SALT_PREFIXES: &[&str] = &["code/modules/unit_tests/dq_look_sweep"];
+/// Files whose contents are part of every key: only the code that draws (the appearance builder that applies a look and the
+/// refresh path). Other engine files, the pin tests and the sweep harness do not change a drawn look, so editing them leaves
+/// every key alone.
+const SALT_FILES: &[&str] = &["code/datums/sys/appearance.dm", "code/engine/present/appearance_builder.dm"];
+const SALT_DIRS: &[&str] = &[];
+const SALT_PREFIXES: &[&str] = &[];
 /// Procs whose defining files are part of the salt.
-const SALT_PROCS: &[(&str, &str)] = &[("/atom", "update_icon"), ("/atom", "changed"), ("/", "appearance_flush"), ("/obj", "update_icon"), ("/mob", "update_icon")];
+const SALT_PROCS: &[(&str, &str)] = &[("/atom", "update_icon"), ("/", "appearance_flush"), ("/obj", "update_icon"), ("/mob", "update_icon")];
 
 /// A name with more definitions than this, called on a receiver of unknown type, reaches only the definitions on the type
 /// chain and on the base types (not every definition in the tree). `--explain` lists the names this cut.
