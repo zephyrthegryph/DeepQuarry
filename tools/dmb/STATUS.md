@@ -23,7 +23,31 @@ Receipts: `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-025343-85d91c89
 
 ## Latest admitted measurement
 
-The later semantic-owner and staged-output candidate (`36749fd74d`) completed
+The shared-stage candidate (`3c0b93dffc`) completed an ABABAB comparison on the
+same captured historical project, three cold runs per compiler and eight workers.
+Median child wall was **12.609 s**, versus **12.839 s** for the control (1.8% lower).
+Process CPU was 30.234 s versus 30.844 s. Peak private memory was **1,572,433,920
+bytes**, versus 2,162,270,208 (27.3% lower). Reads were 326,324,811 bytes and writes
+655,317,422. All six measurement, fresh-native-output/diagnostic oracle and
+structural no-regression admissions passed. The memory, write-volume, input,
+resources/maps, ABI/initializer and composition CPU acceptance gates remain open;
+CPU acceptance uses uncertainty upper bounds. This does not establish daemon
+iteration performance, current-master compatibility or BYOND semantic parity.
+
+Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/paired-corrected-context-20261009-032736-6f8bda19/comparison.json`.
+The optimized candidate build passed in 562.148 s. Its authenticated stable source
+root allows subsequent builds and release validation to reuse unchanged source
+timestamps. The target cache was already shared by a junction; changed source-root
+identity, rather than separate target storage, caused repeated compilation.
+
+The next unvalidated source batch transfers filesystem resource vectors into
+immutable shared owners without copying their payloads, captures stored defaults
+and releases the classified runtime initializer ledger before procedure lowering,
+and adds an opt-in deduplicated ledger census. These changes are not in this cohort.
+
+### Previous semantic-owner comparison
+
+The earlier semantic-owner and staged-output candidate (`36749fd74d`) completed
 another ABABAB comparison, three cold runs per compiler, on the same captured
 historical project. Median child wall was **12.639 s**, versus **12.227 s** for
 the control: no wall-speed improvement in this cohort. Process CPU was 30.172 s
