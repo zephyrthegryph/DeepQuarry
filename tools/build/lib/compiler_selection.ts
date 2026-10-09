@@ -6,6 +6,41 @@ import Juke from '../juke/index.js';
 import type { DreamMakerOptions } from './byond';
 
 type CompilerMode = 'byond' | 'native' | 'shadow';
+const structuralCategories = ['type_set', 'type_headers', 'variable_defaults', 'procedure_table', 'procedure_flags', 'globals', 'strings_by_use', 'bytecode', 'other'];
+export type ShadowAdmission = { status: 'parity' | 'invalid_report' | 'incomplete' | 'differences'; reason: string };
+function object(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+function count(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
+/** Strict shadow parity; this does not admit a historical divergence baseline. */
+export function classifyShadowReport(value: unknown, snapshot: string): ShadowAdmission {
+  const invalid = (reason: string): ShadowAdmission => ({ status: 'invalid_report', reason });
+  if (!object(value) || value.schema_version !== 1 || value.snapshot_id !== snapshot) return invalid('unsupported schema or mismatched comparison snapshot');
+  if (typeof value.traversal_complete !== 'boolean' || typeof value.tool_complete !== 'boolean' || typeof value.complete !== 'boolean' || (value.semantic_coverage !== 'complete' && value.semantic_coverage !== 'incomplete')) return invalid('missing comparison completion fields');
+  if (!count(value.total_discrepancies) || !count(value.unexplained_discrepancies) || value.unexplained_discrepancies > value.total_discrepancies || !object(value.categories) || !object(value.uncovered)) return invalid('missing or invalid discrepancy/coverage counts');
+  let total = 0;
+  for (const category of structuralCategories) {
+    if (!object(value.categories[category])) return invalid(`missing category ${category}`);
+  }
+  for (const category of Object.values(value.categories)) {
+    if (!object(category) || !count(category.discrepancy_count)) return invalid('invalid category count');
+    total += category.discrepancy_count;
+    if (!Number.isSafeInteger(total)) return invalid('category total exceeds exact numeric range');
+  }
+  if (total !== value.total_discrepancies) return invalid('category counts disagree with total');
+  let uncovered = 0;
+  for (const coverage of Object.values(value.uncovered)) {
+    if (!object(coverage) || !count(coverage.occurrence_count)) return invalid('invalid uncovered count');
+    uncovered += coverage.occurrence_count;
+    if (!Number.isSafeInteger(uncovered)) return invalid('coverage total exceeds exact numeric range');
+  }
+  if (value.complete !== (value.semantic_coverage === 'complete') || (value.complete && uncovered !== 0)) return invalid('semantic coverage fields contradict uncovered evidence');
+  if (!value.traversal_complete || !value.tool_complete || !value.complete) return { status: 'incomplete', reason: `comparison coverage incomplete (${uncovered} uncovered occurrences)` };
+  if (total !== 0 || value.unexplained_discrepancies !== 0) return { status: 'differences', reason: `${total} structural discrepancies (${value.unexplained_discrepancies} unexplained)` };
+  return { status: 'parity', reason: 'complete named structural comparison with zero discrepancies' };
+}
 export type CompilerExecutor = (executable: string, args: string[], options?: { throw?: boolean }) => Promise<{ code: number | null; combined: string }>;
 export function compilerMode(): CompilerMode {
   const mode = process.env.DQ_COMPILER ?? 'byond';
@@ -90,8 +125,20 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
     const report = path.join(artifacts, 'structural-diff.json');
     const expected = path.resolve(dme.replace(/\.dme$/i, '.dmb'));
     const snapshot = createHash('sha256').update(fs.readFileSync(dme)).digest('hex');
-    await execute(inspector, ['structural-diff', expected, nativeDmb, report, snapshot]);
-    Juke.logger.info(`Shadow structural comparison: ${report}`);
+    const inspected = await execute(inspector, ['structural-diff', expected, nativeDmb, report, snapshot], { throw: false });
+    if (inspected.code !== 0) {
+      Juke.logger.error(`Shadow comparison failed: inspector exited ${inspected.code}. See ${artifacts}.`);
+      throw new Juke.ExitCode(1);
+    }
+    let admission: ShadowAdmission;
+    try { admission = classifyShadowReport(JSON.parse(fs.readFileSync(report, 'utf8')), snapshot); }
+    catch (error) { admission = { status: 'invalid_report', reason: String(error) }; }
+    fs.writeFileSync(path.join(artifacts, 'structural-admission.json'), JSON.stringify(admission, null, 2));
+    if (admission.status !== 'parity') {
+      Juke.logger.error(`Shadow ${admission.status}: ${admission.reason}. See ${report}.`);
+      throw new Juke.ExitCode(1);
+    }
+    Juke.logger.info(`Shadow structural parity: ${report}`);
   } finally {
     // Preserve small diagnostics/receipts, remove only this invocation's bulky outputs.
     const store = path.resolve(artifacts, 'store');
