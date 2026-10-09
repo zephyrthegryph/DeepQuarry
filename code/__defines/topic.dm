@@ -11,10 +11,10 @@
 // converts TOPIC_NUM / TOPIC_TEXT, then calls the handler as
 //	proc(mob/user, list/args)
 // where args[name] is the validated value (null when the href omitted it) and args[TOPIC_HREF]
-// is the raw href_list (for topic_ask() re-runs; never locate() from it).
+// is the raw href_list (never locate() from it).
 // Rows inherit: a subtype sees its parents' rows; a row for the same key replaces the parent's.
 
-/// args key holding the raw href_list (topic_ask() reads it).
+/// args key holding the raw href_list.
 #define TOPIC_HREF "_href"
 
 #define TOPIC_SPEC_REF 1

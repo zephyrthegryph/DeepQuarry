@@ -108,8 +108,8 @@
 	wall_turf.ChangeTurf(/turf/simulated/wall)
 	var/turf/simulated/wall/wall = wall_turf
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	wall.set_material(steel, steel, steel)
-	wall.construction_stage = 5
+	wall.apply_materials(steel, steel, steel)
+	wall.set_construction_stage(5)
 	var/list/lines = construction_examine_lines(H, wall)
 	var/text = jointext(lines, "\n")
 	TEST_ASSERT(findtext(text, "Next: unscrew the support lines (needs a screwdriver)"), "the screwdriver step: [text]")
@@ -131,7 +131,7 @@
 	var/turf/simulated/wall/wall = wall_turf
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	var/datum/material/plasteel = get_material_by_name(MAT_PLASTEEL)
-	wall.set_material(steel, plasteel, steel)
+	wall.apply_materials(steel, plasteel, steel)
 	TEST_ASSERT_EQUAL(wall.construction_stage, 6, "a reinforced wall starts at 6")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
@@ -160,7 +160,7 @@
 		H.drop_from_inventory(tool)
 
 	// Back: 5 -> 6 and 4 -> 5 are the reversible steps.
-	wall.construction_stage = 4
+	wall.set_construction_stage(4)
 	H.put_in_active_hand(screwdriver)
 	wall.tool_interaction(H, screwdriver)
 	TEST_ASSERT_EQUAL(wall.construction_stage, 5, "the screwdriver screws the lines back down")
@@ -171,7 +171,7 @@
 	H.drop_from_inventory(cutters)
 
 	// The last step pries the sheath off: the wall comes down.
-	wall.construction_stage = 0
+	wall.set_construction_stage(0)
 	H.put_in_active_hand(crowbar)
 	wall.tool_interaction(H, crowbar)
 	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 10 SECONDS, "prying the sheath takes 10 s")
@@ -192,7 +192,7 @@
 	wall_turf.ChangeTurf(/turf/simulated/wall)
 	var/turf/simulated/wall/wall = wall_turf
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	wall.set_material(steel, null, steel)
+	wall.apply_materials(steel, null, steel)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 	welder.toolspeed = 1
@@ -224,7 +224,7 @@
 	wall_turf.ChangeTurf(/turf/simulated/wall)
 	var/turf/simulated/wall/wall = wall_turf
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	wall.set_material(steel, steel, steel)
+	wall.apply_materials(steel, steel, steel)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 	H.put_in_active_hand(welder)
@@ -270,7 +270,7 @@
 	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 
-	floor.set_flooring(get_flooring_data(/datum/decl/flooring/carpet))
+	floor.install_flooring(get_flooring_data(/datum/decl/flooring/carpet))
 	var/datum/construction_graph/graph = construction_graph_of(floor)
 	TEST_ASSERT_EQUAL(graph.state_of(floor), "floored", "carpeted")
 	H.put_in_active_hand(crowbar)
@@ -279,7 +279,7 @@
 	TEST_ASSERT(locate_on(floor, /obj/item/stack/tile/carpet), "the carpet comes back as a tile")
 	H.drop_from_inventory(crowbar)
 
-	floor.broken = TRUE
+	floor.set_broken(TRUE)
 	TEST_ASSERT_EQUAL(graph.state_of(floor), "damaged", "broken plating")
 	H.put_in_active_hand(welder)
 	floor.tool_interaction(H, welder)

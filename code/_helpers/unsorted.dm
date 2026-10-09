@@ -781,7 +781,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 						X.icon = old_icon1
 						X.copy_overlays(T, TRUE)
 						X.underlays = old_underlays
-						X.decals = old_decals
+						X.set_decals(old_decals)
 
 					// air-transfer used ZAS zone.air; LINDA uses per-turf return_air().
 					var/datum/gas_mixture/source_air = T.return_air()

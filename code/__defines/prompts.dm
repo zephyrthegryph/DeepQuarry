@@ -3,8 +3,6 @@
 // ---- re-run prompts (code/datums/prompts/reruns.dm): the first call asks and returns null; the answer re-runs the caller, where
 // the same call returns the answer. `prompt` is a /datum/prompt kind; the named arguments are its fields (open_request()'s), plus
 // cancel_answer. ----
-/// In a Topic() handler.
-#define topic_ask(user, href_list, key, prompt, fields...) topic_rerun_ask(user, href_list, key, prompt, list(fields))
 /// In an ADMIN_VERB body (`verb_args`: the verb's args).
 #define verb_ask(user, key, verb_args, prompt, fields...) verb_rerun_ask(user, key, verb_args, prompt, list(fields))
 /// In a /client proc: re-runs proc_name with proc_args; `rights` (R_*) are re-checked.

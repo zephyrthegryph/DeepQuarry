@@ -151,7 +151,7 @@
 		X.icon_state = old_icon_state1
 		X.icon = old_icon1
 		X.copy_overlays(T, TRUE)
-		X.decals = old_decals
+		X.set_decals(old_decals)
 
 	// air-transfer used ZAS zone.air. Under LINDA each turf has its own
 	// air via return_air(); copy from source-turf's air to dest-turf's air directly.

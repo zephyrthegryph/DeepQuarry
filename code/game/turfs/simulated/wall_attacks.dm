@@ -10,7 +10,6 @@
 		can_open = WALL_OPENING
 		set_density(FALSE)
 		blocks_air = ZONE_BLOCKED
-		update_icon()
 		update_air()
 		set_light(0)
 		src.blocks_air = 0
@@ -21,7 +20,6 @@
 		can_open = WALL_OPENING
 		set_density(TRUE)
 		blocks_air = AIR_BLOCKED
-		update_icon()
 		update_air()
 		set_light(1)
 		src.blocks_air = 1
@@ -30,7 +28,6 @@
 			SSair.mark_for_update(turf)
 
 	can_open = WALL_CAN_OPEN
-	update_icon()
 
 /turf/simulated/wall/proc/update_air()
 	if(!SSair)

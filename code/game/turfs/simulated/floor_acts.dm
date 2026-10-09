@@ -51,6 +51,13 @@ CAPABILITIES(/turf/simulated/floor)
 	op("floor_item_grab", item(/obj/item), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 2), label("Draw graffiti"), then(PROC_REF(floor_item_grab)))
 	op("floor_item_hurt", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 2), label("Hit the floor"), then(PROC_REF(floor_item_hurt)))
 	op("floor_graffiti", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Graffiti"), then(PROC_REF(floor_graffiti_alt)))
+	on_change(nameof(flooring), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(flooring_override), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(plating_exposed), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(scorch_state), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(plating_damage_state), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(broken), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(burnt), ANY, then(PROC_REF(edge_inputs_changed)))
 
 /// The tile breaks as its condition crosses the failure fraction.
 /turf/simulated/floor/on_update_integrity(old_value, new_value)

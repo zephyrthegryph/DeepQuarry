@@ -22,12 +22,12 @@
 /obj/structure/closet/secure_closet/guncabinet/sidearm broken=2 -overlay: icons/obj/guncabinet.dmi:locked:-32767
 /obj/structure/closet/secure_closet/guncabinet/rifle opened=1 +overlay: icons/obj/guncabinet.dmi:door_open:-32767
 /obj/structure/closet/secure_closet/guncabinet/rifle opened=1 -overlay: icons/obj/guncabinet.dmi:door:-32767
-/obj/structure/closet/secure_closet/guncabinet/rifle opened=1 -overlay: icons/obj/guncabinet.dmi:laser:-32767 x3
 /obj/structure/closet/secure_closet/guncabinet/rifle opened=1 -overlay: icons/obj/guncabinet.dmi:locked:-32767
+/obj/structure/closet/secure_closet/guncabinet/rifle opened=1 -overlay: icons/obj/guncabinet.dmi:projectile:-32767 x2
 /obj/structure/closet/secure_closet/guncabinet/rifle opened=2 +overlay: icons/obj/guncabinet.dmi:door_open:-32767
 /obj/structure/closet/secure_closet/guncabinet/rifle opened=2 -overlay: icons/obj/guncabinet.dmi:door:-32767
-/obj/structure/closet/secure_closet/guncabinet/rifle opened=2 -overlay: icons/obj/guncabinet.dmi:laser:-32767 x3
 /obj/structure/closet/secure_closet/guncabinet/rifle opened=2 -overlay: icons/obj/guncabinet.dmi:locked:-32767
+/obj/structure/closet/secure_closet/guncabinet/rifle opened=2 -overlay: icons/obj/guncabinet.dmi:projectile:-32767 x2
 /obj/structure/closet/secure_closet/guncabinet/rifle broken=1 +overlay: icons/obj/guncabinet.dmi:broken:-32767
 /obj/structure/closet/secure_closet/guncabinet/rifle broken=1 -overlay: icons/obj/guncabinet.dmi:locked:-32767
 /obj/structure/closet/secure_closet/guncabinet/rifle broken=2 +overlay: icons/obj/guncabinet.dmi:broken:-32767

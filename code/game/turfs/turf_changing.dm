@@ -16,9 +16,11 @@
 	if(istype(above))
 		above.update_icon()
 
+	// The edges around this turf, and the 'ceiling-less' gap of the tile below, read the new turf.
+	turf_edges_refresh(src)
 	var/turf/simulated/below = GetBelow(src)
 	if(istype(below))
-		below.update_icon() // To add or remove the 'ceiling-less' overlay.
+		below.edges_refresh()
 
 // Under LINDA, a turf is "simulated" if it's /turf/simulated. Stub returns simulated-ness.
 /proc/has_valid_atmos_zone(turf/simulated/T)

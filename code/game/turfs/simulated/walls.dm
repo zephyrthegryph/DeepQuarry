@@ -41,6 +41,8 @@ CAPABILITIES(/turf/simulated/wall)
 	op("wall_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Touch"), then(PROC_REF(wall_hand)))
 	op("wall_graffiti", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Graffiti"), then(PROC_REF(wall_graffiti_alt)))
 	adjacency(ADJ_KIND_SMOOTH, dirs = ADJ_ALL_AROUND, connects = PROC_REF(smooth_joins), changed = PROC_REF(smooth_changed))
+	on_change(nameof(material), ANY, then(PROC_REF(smooth_inputs_changed)))
+	on_change(nameof(density), ANY, then(PROC_REF(edge_inputs_changed)))
 	param(nameof(wall_material_key), pos = 1)
 	param(nameof(reinf_material_key), pos = 2)
 	param(nameof(girder_material_key), pos = 3)
@@ -59,10 +61,12 @@ CAPABILITIES(/turf/simulated/wall)
 		girder_material_key = length(forced_materials) >= 3 ? forced_materials[3] : null
 	. = ..()
 	icon_state = "blank"
-	material = get_material_by_name(wall_material_key || DEFAULT_WALL_MATERIAL)
+	if(!damage_overlays[1]) //list hasn't been populated
+		generate_overlays()
+	set_material(get_material_by_name(wall_material_key || DEFAULT_WALL_MATERIAL))
 	girder_material = get_material_by_name(girder_material_key || DEFAULT_WALL_MATERIAL)
 	if(!isnull(reinf_material_key))
-		reinf_material = get_material_by_name(reinf_material_key)
+		set_reinf_material(get_material_by_name(reinf_material_key))
 	update_material()
 	check_radioactive()
 
@@ -182,7 +186,7 @@ TRACKED(/turf/simulated/wall, thermite)
 	if(!F)
 		return
 	F.burn_tile()
-	F.icon_state = "wall_thermite"
+	F.set_scorch_state("wall_thermite")
 	visible_message(span_danger("\The [src] spontaneously combusts!.")) //!!OH SHIT!!
 	return
 
@@ -207,9 +211,7 @@ TRACKED(/turf/simulated/wall, thermite)
 
 /turf/simulated/wall/on_update_integrity(old_value, new_value)
 	. = ..()
-	// Inside a map-load batch the batch redraws every queued wall once (BATCH_WORK_ADJACENCY, code/engine/lifeforms/adjacency.dm).
-	if(!SSatoms?.batch_defer(BATCH_WORK_ADJACENCY, src))
-		update_icon()
+	sync_damage_step()
 
 /turf/simulated/wall/atom_destruction(damage_flag)
 	. = ..()
@@ -239,8 +241,8 @@ TRACKED(/turf/simulated/wall, thermite)
 			O.forceMove(src)
 
 	clear_plants()
-	material = get_material_by_name("placeholder")
-	reinf_material = null
+	set_material(get_material_by_name("placeholder"))
+	set_reinf_material(null)
 	girder_material = null
 	update_connections(1)
 
@@ -1299,10 +1301,10 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 			// This is mostly the same as using on a floor. The girder's material is preserved, however.
 			T.ChangeTurf(wall_type)
 			var/turf/simulated/wall/new_T = get_turf(src) // Ref to the wall we just built.
-			// Apparently set_material(...) for walls requires refs to the material singletons and not strings.
+			// Apparently apply_materials(...) for walls requires refs to the material singletons and not strings.
 			// This is different from how other material objects with their own set_material(...) do it, but whatever.
 			var/datum/material/M = GLOB.name_to_material[the_rcd.material_to_use]
-			new_T.set_material(M, the_rcd.make_rwalls ? M : null, girder_material)
+			new_T.apply_materials(M, the_rcd.make_rwalls ? M : null, girder_material)
 			new_T.add_hiddenprint(user)
 			replaced_by(src, new_T)
 			return TRUE

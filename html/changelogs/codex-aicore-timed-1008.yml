@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "AI core frames again respond to wrench and welder clicks for timed construction."
