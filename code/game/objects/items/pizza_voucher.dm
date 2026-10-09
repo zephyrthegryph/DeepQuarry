@@ -60,7 +60,7 @@ CAPABILITIES(/obj/item/pizzavoucher)
 /obj/effect/falling_effect/pizza_delivery
 	name = "PIZZA PIE POWER!"
 	crushing = FALSE
-	falling_type = LOOT_REF(/loot/pizza_delivery)
+	falling_type = /loot/pizza_delivery
 
 DECLARE_LOOT(/loot/pizza_delivery, LOOT_TABLE(/obj/item/pizzabox/meat, /obj/item/pizzabox/margherita, /obj/item/pizzabox/vegetable, /obj/item/pizzabox/mushroom, /obj/item/pizzabox/pineapple))
 

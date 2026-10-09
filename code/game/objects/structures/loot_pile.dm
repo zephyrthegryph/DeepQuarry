@@ -16,7 +16,7 @@
 	density = TRUE
 	anchored = FALSE
 
-	loot_decl = LOOT_REF(/loot/mecha/odd_gygax)
+	loot_decl = /loot/mecha/odd_gygax
 
 /obj/structure/loot_pile/mecha/odd_ripley
 	name = "\improper mecha wreckage"
@@ -25,7 +25,7 @@
 	density = TRUE
 	anchored = FALSE
 
-	loot_decl = LOOT_REF(/loot/mecha/odd_riplay)
+	loot_decl = /loot/mecha/odd_riplay
 
 /obj/structure/loot_pile/christmas_tree
 	name = "festive tree"
@@ -38,4 +38,4 @@
 	bound_height = 64
 	density = 1
 
-	loot_decl = LOOT_REF(/loot/christmas_tree)
+	loot_decl = /loot/christmas_tree

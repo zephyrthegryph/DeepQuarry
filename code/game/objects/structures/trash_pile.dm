@@ -5,7 +5,7 @@
 	icon_state = "randompile"
 	density = TRUE
 	anchored = TRUE
-	loot_decl = LOOT_REF(/loot/trash_pile)
+	loot_decl = /loot/trash_pile
 
 	// ALLOW(instance_list): d: passed to the lootable element, which adds the searcher's ckey to it in place
 	var/list/searchedby	= list()// Characters that have searched this trashpile, with values of searched time.

@@ -49,27 +49,27 @@ CAPABILITIES(/obj/structure/loot_pile)
 	name = "pile of junk"
 	desc = "Lots of junk lying around.  They say one man's trash is another man's treasure."
 	icon_states_to_use = list("junk_pile1", "junk_pile2", "junk_pile3", "junk_pile4", "junk_pile5")
-	loot_decl = LOOT_REF(/loot/maint/junk)
+	loot_decl = /loot/maint/junk
 
 /obj/structure/loot_pile/maint/trash
 	name = "pile of trash"
 	desc = "Lots of garbage in one place.  Might be able to find something if you're in the mood for dumpster diving."
 	icon_states_to_use = list("trash_pile1", "trash_pile2")
-	loot_decl = LOOT_REF(/loot/maint/trash)
+	loot_decl = /loot/maint/trash
 
 /obj/structure/loot_pile/maint/boxfort
 	name = "pile of boxes"
 	desc = "A large pile of boxes sits here."
 	density = TRUE
 	icon_states_to_use = list("boxfort")
-	loot_decl = LOOT_REF(/loot/boxes)
+	loot_decl = /loot/boxes
 
 /obj/structure/loot_pile/maint/technical
 	name = "broken machine"
 	desc = "A destroyed machine with unknown purpose, and doesn't look like it can be fixed.  It might still have some functional components?"
 	density = TRUE
 	icon_states_to_use = list("technical_pile1", "technical_pile2", "technical_pile3")
-	loot_decl = LOOT_REF(/loot/maint/technical)
+	loot_decl = /loot/maint/technical
 
 
 // Surface piles for POIs, most have rarer loot
@@ -77,29 +77,29 @@ CAPABILITIES(/obj/structure/loot_pile)
 	name = "alien pod"
 	desc = "A pod which looks bigger on the inside. Something quite shiny might be inside?"
 	icon_state = "alien_pile1"
-	loot_decl = LOOT_REF(/loot/surface/alien)
+	loot_decl = /loot/surface/alien
 /obj/structure/loot_pile/surface/alien/engineering
-	loot_decl = LOOT_REF(/loot/surface/alien/engineering)
+	loot_decl = /loot/surface/alien/engineering
 /obj/structure/loot_pile/surface/alien/medical
-	loot_decl = LOOT_REF(/loot/surface/alien/medical)
+	loot_decl = /loot/surface/alien/medical
 /obj/structure/loot_pile/surface/alien/security
-	loot_decl = LOOT_REF(/loot/surface/alien/security)
+	loot_decl = /loot/surface/alien/security
 /obj/structure/loot_pile/surface/alien/end
-	loot_decl = LOOT_REF(/loot/surface/alien/end)
+	loot_decl = /loot/surface/alien/end
 
 /obj/structure/loot_pile/surface/bones
 	name = "bone pile"
 	desc = "A pile of various dusty bones. Your graverobbing instincts tell you there might be valuables here."
 	icon = 'icons/obj/bones.dmi'
 	icon_state = "bonepile"
-	loot_decl = LOOT_REF(/loot/surface/bones)
+	loot_decl = /loot/surface/bones
 
 /obj/structure/loot_pile/surface/drone
 	name = "drone wreckage"
 	desc = "The ruins of some unfortunate drone. Perhaps something is salvageable."
 	icon = 'icons/mob/animal.dmi'
 	icon_state = "drone_dead"
-	loot_decl = LOOT_REF(/loot/surface/drone)
+	loot_decl = /loot/surface/drone
 
 /obj/structure/loot_pile/surface/drone/large
 	//icon = 'icons/mob/animal_vr64x64.dmi' //This file doesn't exist anymore.
@@ -111,7 +111,7 @@ CAPABILITIES(/obj/structure/loot_pile)
 	desc = "The ruins of some unfortunate pod. Perhaps something is salvageable."
 	icon = 'icons/mecha/mecha.dmi'
 	icon_state = "engineering_pod-broken"
-	loot_decl = LOOT_REF(/loot/mecha)
+	loot_decl = /loot/mecha
 	density = TRUE
 	anchored = FALSE // In case a dead mecha-mob dies in a bad spot.
 
@@ -119,7 +119,7 @@ CAPABILITIES(/obj/structure/loot_pile)
 	name = "ripley wreckage"
 	desc = "The ruins of some unfortunate ripley. Perhaps something is salvageable."
 	icon_state = "ripley-broken"
-	loot_decl = LOOT_REF(/loot/mecha/ripley)
+	loot_decl = /loot/mecha/ripley
 /obj/structure/loot_pile/mecha/ripley/firefighter
 	icon_state = "firefighter-broken"
 /obj/structure/loot_pile/mecha/ripley/random_sprite
@@ -128,13 +128,13 @@ CAPABILITIES(/obj/structure/loot_pile)
 /obj/structure/loot_pile/mecha/deathripley
 	name = "strange ripley wreckage"
 	icon_state = "deathripley-broken"
-	loot_decl = LOOT_REF(/loot/mecha/deathripley)
+	loot_decl = /loot/mecha/deathripley
 
 /obj/structure/loot_pile/mecha/odysseus
 	name = "odysseus wreckage"
 	desc = "The ruins of some unfortunate odysseus. Perhaps something is salvageable."
 	icon_state = "odysseus-broken"
-	loot_decl = LOOT_REF(/loot/mecha/odysseus)
+	loot_decl = /loot/mecha/odysseus
 /obj/structure/loot_pile/mecha/odysseus/murdysseus
 	icon_state = "murdysseus-broken"
 
@@ -147,7 +147,7 @@ CAPABILITIES(/obj/structure/loot_pile)
 	name = "gygax wreckage"
 	desc = "The ruins of some unfortunate gygax. Perhaps something is salvageable."
 	icon_state = "gygax-broken"
-	loot_decl = LOOT_REF(/loot/mecha/gygax)
+	loot_decl = /loot/mecha/gygax
 /obj/structure/loot_pile/mecha/gygax/dark
 	icon_state = "darkgygax-broken"
 /obj/structure/loot_pile/mecha/gygax/dark/adv
@@ -162,7 +162,7 @@ CAPABILITIES(/obj/structure/loot_pile)
 	name = "durand wreckage"
 	desc = "The ruins of some unfortunate durand. Perhaps something is salvageable."
 	icon_state = "durand-broken"
-	loot_decl = LOOT_REF(/loot/mecha/durand)
+	loot_decl = /loot/mecha/durand
 
 /obj/structure/loot_pile/mecha/marauder // Todo: Better loot.
 	name = "marauder wreckage"
@@ -182,7 +182,7 @@ CAPABILITIES(/obj/structure/loot_pile)
 	name = "phazon wreckage"
 	desc = "The ruins of some unfortunate phazon. Perhaps something is salvageable."
 	icon_state = "phazon-broken"
-	loot_decl = LOOT_REF(/loot/mecha/phazon)
+	loot_decl = /loot/mecha/phazon
 
 
 /obj/structure/loot_pile/surface/medicine_cabinet
@@ -190,14 +190,14 @@ CAPABILITIES(/obj/structure/loot_pile)
 	desc = "An old cabinet, it might still have something of use inside."
 	icon_state = "medicine_cabinet"
 	density = FALSE
-	loot_decl = LOOT_REF(/loot/expired_medicine)
+	loot_decl = /loot/expired_medicine
 
 /obj/structure/loot_pile/surface/medicine_cabinet/fresh
 	name = "medicine cabinet"
 	desc = "A cabinet designed to hold medicine, it might still have something of use inside."
 	icon_state = "medicine_cabinet"
 	density = FALSE
-	loot_decl = LOOT_REF(/loot/fresh_medicine)
+	loot_decl = /loot/fresh_medicine
 
 //Micro mecha loot.
 /obj/structure/loot_pile/mecha/mouse_tank
@@ -208,7 +208,7 @@ CAPABILITIES(/obj/structure/loot_pile)
 	density = TRUE
 	anchored = FALSE // In case a dead mecha-mob dies in a bad spot.
 
-	loot_decl = LOOT_REF(/loot/mecha/mouse_tank)
+	loot_decl = /loot/mecha/mouse_tank
 
 /obj/structure/loot_pile/mecha/mouse_tank/livewire
 	name = "\improper Livewire wreckage"
@@ -217,7 +217,7 @@ CAPABILITIES(/obj/structure/loot_pile)
 	density = TRUE
 	anchored = FALSE // In case a dead mecha-mob dies in a bad spot.
 
-	loot_decl = LOOT_REF(/loot/mecha/mouse_tank/livewire)
+	loot_decl = /loot/mecha/mouse_tank/livewire
 
 /obj/structure/loot_pile/mecha/mouse_tank/eraticator
 	name = "\improper Eraticator wreckage"
@@ -226,7 +226,7 @@ CAPABILITIES(/obj/structure/loot_pile)
 	density = TRUE
 	anchored = FALSE // In case a dead mecha-mob dies in a b
 
-	loot_decl = LOOT_REF(/loot/mecha/mouse_tank/eraticator)
+	loot_decl = /loot/mecha/mouse_tank/eraticator
 
 /obj/structure/loot_pile/mecha/ripley/pirate
 	icon = 'icons/mob/pirates.dmi'
