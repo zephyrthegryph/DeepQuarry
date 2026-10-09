@@ -15,6 +15,8 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 	var/generic_filth = FALSE
 	var/age = 0
 	var/list/random_icon_states
+	/// Which of the janitor HUD's marks it shows (1 to 9), rolled when it is made.
+	var/hud_variant = 1
 
 	///The type of cleaning required to clean the decal, CLEAN_TYPE_LIGHT_DECAL can be cleaned with mops and soap, CLEAN_TYPE_HARD_DECAL can be cleaned by soap, see __DEFINES/cleaning.dm for the others
 	var/clean_type = CLEAN_TYPE_LIGHT_DECAL
@@ -23,6 +25,7 @@ CAPABILITIES(/obj/effect/decal/cleanable)
 	owns_many(nameof(viruses), /datum/affliction/contagion)
 	param(nameof(age), pos = 1, apply = PROC_REF(age_or_contagions))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = nameof(random_icon_states))
+	rolls(nameof(hud_variant), range_of(1, 9))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A vomit made with contagions carries them (new /obj/effect/decal/cleanable/vomit(loc, contagion_copies(...))).
 /obj/effect/decal/cleanable/proc/age_or_contagions(given)
@@ -38,8 +41,7 @@ CAPABILITIES(/obj/effect/decal/cleanable)
 /obj/effect/decal/cleanable/Initialize(mapload)
 	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 		SSpersistence.track_value(src, /datum/persistent/filth)
-	. = ..()
-	update_icon()
+	return ..()
 
 /// Adopts `contagions` into viruses as private copies. copy = FALSE when they are fresh unowned
 /// copies (contagion_copies()); a contagion some other holder owns is always copied, so a splat
@@ -59,19 +61,13 @@ CAPABILITIES(/obj/effect/decal/cleanable)
 	SSpersistence.forget_value(src, /datum/persistent/filth)
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/decal/cleanable/appearance_overlays()
-	. = list()
-	// Overrides should not inheret from this, and instead replace it entirely to match this in some form.
-	// add_janitor_hud_overlay() does not pre-cut overlays, so cut_overlays() must be called first.
-	// This is so it may be used with update_icon() overrides that use overlays, while adding the janitor overlay at the end.
-	. += add_janitor_hud_overlay()
+DECLARE_SHARED_CACHE(janitor_hud_images, GLOBAL_PROC_REF(build_janitor_hud_image), SC_NEVER)
 
-/obj/effect/decal/cleanable/proc/add_janitor_hud_overlay()
-	. = list()
+/// Builder for janitor_hud_images: the janitor HUD's mark `variant`.
+/proc/build_janitor_hud_image(variant)
 	// This was original a seperate object that followed the grime, it got stuck in everything you can imagine!
 	// It also likely doubled the memory use of every cleanable decal on station...
-	var/image/hud = image('icons/mob/hud.dmi', src, "janhud[rand(1,9)]")
+	var/image/hud = image('icons/mob/hud.dmi', icon_state = "janhud[variant]")
 	hud.appearance_flags = (RESET_COLOR|PIXEL_SCALE|KEEP_APART)
 	hud.plane = PLANE_JANHUD
 	hud.layer = BELOW_MOB_LAYER
@@ -80,6 +76,18 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable, TYPE_PROC_REF(/atom, appear
 	//hud.appearance_flags = RESET_ALPHA | RESET_COLOR
 	//hud.alpha = 255
 	//HUD VARIANT end
-	. += hud
+	return hud
+
+/obj/effect/decal/cleanable/draw(datum/look/look)
+	..()
+	cleanable_look(look)
+
+/// What the decal looks like. A subtype replaces it entirely (and ends with janitor_hud()) rather than extending it.
+/obj/effect/decal/cleanable/proc/cleanable_look(datum/look/look)
+	janitor_hud(look)
+
+/// The janitor HUD's mark on the decal.
+/obj/effect/decal/cleanable/proc/janitor_hud(datum/look/look)
+	look.overlay(CACHED_KEY(janitor_hud_images, "[hud_variant]", hud_variant))
 
 // Contagion datums are shared (copied lists, one disease spread across many decals), never owned here.

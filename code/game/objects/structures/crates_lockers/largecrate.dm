@@ -80,11 +80,6 @@ CAPABILITIES(/obj/structure/largecrate)
 	desc = "Wulf Aeronautics says it comes in a box for the consumer's sake... How is this so light?"
 	icon_state = "vehiclecrate"
 
-/obj/structure/largecrate/vehicle/Initialize(mapload)
-	. = ..()
-	for(var/obj/O in contents)
-		O.update_icon()
-
 /obj/structure/largecrate/vehicle/bike
 	name = "spacebike crate"
 	starts_with = list(/obj/structure/vehiclecage/spacebike)

@@ -8,11 +8,14 @@
 	generic_filth = FALSE
 	persistent = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs/robot, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/decal/cleanable/blood/gibs/robot/appearance_overlays()
-	. = list()
-	color = "#FFFFFF"
-	. += add_janitor_hud_overlay()
+/// Drawn in the picture's own colours.
+/obj/effect/decal/cleanable/blood/gibs/robot/wet_color()
+	return "#FFFFFF"
+
+/obj/effect/decal/cleanable/blood/gibs/robot/cleanable_look(datum/look/look)
+	look.set_color(shown_color())
+	dried_look(look)
+	janitor_hud(look)
 
 /obj/effect/decal/cleanable/blood/gibs/robot/dry()	//pieces of robots do not dry up like
 	return
@@ -22,8 +25,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs/robot, TYPE_PROC_
 
 /obj/effect/decal/cleanable/blood/gibs/robot/streak_splat()
 	if (prob(40))
-		var/obj/effect/decal/cleanable/blood/oil/streak = new(src.loc)
-		streak.update_icon()
+		new /obj/effect/decal/cleanable/blood/oil(src.loc)
 	else if (prob(10))
 		fx_sparks(src, 3)
 

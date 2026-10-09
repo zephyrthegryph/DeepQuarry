@@ -298,6 +298,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 		UNSETEMPTY(latent)
 		spent(entry)
 	propagate()
+	PUBLISH_CHANGE(holder, SLOT_OCCUPANCY_KEY)
 
 /// Whether `entry` is still one of ours.
 /datum/ledger/proc/latent_holds(datum/latent_entry/entry)

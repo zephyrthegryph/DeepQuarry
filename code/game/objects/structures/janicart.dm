@@ -23,6 +23,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 	var/static/list/equippable_item_whitelist
 
 TRACKED(/obj/structure/janitorialcart, has_items)
+TRACKED(/obj/structure/janitorialcart, signs)
 
 CAPABILITIES(/obj/structure/janitorialcart)
 	owns_one(nameof(mybag), /obj/item/storage/bag/trash)
@@ -94,7 +95,7 @@ CAPABILITIES(/obj/structure/janitorialcart)
 
 	else if(istype(I, /obj/item/clothing/suit/caution))
 		if(signs < 4)
-			signs++
+			set_signs(signs + 1)
 			setTguiIcon("signs", I)
 		else
 			user.balloon_alert(user, "[src] can't hold any more signs.")
@@ -106,7 +107,6 @@ CAPABILITIES(/obj/structure/janitorialcart)
 		return FALSE
 
 	user.drop_from_inventory(I, src)
-	update_icon()
 	user.balloon_alert(user, "you put [I] into [src].")
 	return TRUE
 
@@ -149,7 +149,6 @@ CAPABILITIES(/obj/structure/janitorialcart)
 		move_into(src, nameof(src.mybucket), O, user)
 		setTguiIcon("mybucket", mybucket)
 		user.balloon_alert(user, "you mount the [O] on the janicart.")
-		update_icon()
 		return OP_PASS
 	return OP_DECLINE
 
@@ -173,7 +172,6 @@ CAPABILITIES(/obj/structure/janitorialcart)
 
 	else if (istype(I, /obj/item/reagent_containers/glass/bucket) && mybucket)
 		I.afterattack(mybucket, user, 1, null, I_HELP) // wetting it in the bucket is a peaceful use
-		update_icon()
 		return TRUE
 
 	else if(istype(I, /obj/item/reagent_containers/spray) && !myspray)
@@ -216,7 +214,6 @@ CAPABILITIES(/obj/structure/janitorialcart)
 	else if(istype(I, /obj/item/reagent_containers) && mybucket)
 		var/obj/item/reagent_containers/C = I
 		C.afterattack(mybucket, user, 1, null, I_HELP) // refilling from the bucket is a peaceful use
-		update_icon()
 	return TRUE
 
 /obj/structure/janitorialcart/proc/interaction_hand(datum/act/op/A)
@@ -247,7 +244,6 @@ CAPABILITIES(/obj/structure/janitorialcart)
 		nullTguiIcon("mybag")
 	else if(is_type_in_typecache(I, equippable_item_whitelist))
 		equip_janicart_item(user, I)
-	update_icon()
 	return TRUE
 
 /obj/structure/janitorialcart/proc/ui_act_mop(datum/act/op/A)
@@ -260,7 +256,6 @@ CAPABILITIES(/obj/structure/janitorialcart)
 		nullTguiIcon("mymop")
 	else if(is_type_in_typecache(I, equippable_item_whitelist))
 		equip_janicart_item(user, I)
-	update_icon()
 	return TRUE
 
 /obj/structure/janitorialcart/proc/ui_act_spray(datum/act/op/A)
@@ -273,7 +268,6 @@ CAPABILITIES(/obj/structure/janitorialcart)
 		nullTguiIcon("myspray")
 	else if(is_type_in_typecache(I, equippable_item_whitelist))
 		equip_janicart_item(user, I)
-	update_icon()
 	return TRUE
 
 /obj/structure/janitorialcart/proc/ui_act_replacer(datum/act/op/A)
@@ -286,7 +280,6 @@ CAPABILITIES(/obj/structure/janitorialcart)
 		nullTguiIcon("myreplacer")
 	else if(is_type_in_typecache(I, equippable_item_whitelist))
 		equip_janicart_item(user, I)
-	update_icon()
 	return TRUE
 
 /obj/structure/janitorialcart/proc/ui_act_sign(datum/act/op/A)
@@ -299,12 +292,11 @@ CAPABILITIES(/obj/structure/janitorialcart)
 		if(sign)
 			user.put_in_hands(sign)
 			user.balloon_alert(user, "you take  [sign] from [src].")
-			signs--
+			set_signs(signs - 1)
 			if(!signs)
 				nullTguiIcon("signs")
 	else
 		user.balloon_alert(user, "[src] doesn't have any signs left.")
-	update_icon()
 	return TRUE
 
 /obj/structure/janitorialcart/proc/ui_act_bucket(datum/act/op/A)
@@ -317,27 +309,20 @@ CAPABILITIES(/obj/structure/janitorialcart)
 	else
 		to_chat(user, span_notice("((Drag and drop a mop bucket onto [src] to equip it.))"))
 		return FALSE
-	update_icon()
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/janitorialcart, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/janitorialcart/appearance_overlays()
-	. = list()
-
+/// The cart shows what hangs on it: the bucket (and its water), the bag, mop, spray, light replacer and signs.
+/obj/structure/janitorialcart/draw(datum/look/look)
+	..()
+	look.watch(mybucket)
 	if(mybucket)
-		. += "cart_bucket"
-		if(mybucket.reagents.total_volume >= 1)
-			. += "water_cart"
-	if(mybag)
-		. += "cart_garbage"
-	if(mymop)
-		. += "cart_mop"
-	if(myspray)
-		. += "cart_spray"
-	if(myreplacer)
-		. += "cart_replacer"
-	if(signs)
-		. += "cart_sign[signs]"
+		look.overlay("cart_bucket")
+		look.overlay("water_cart", when = mybucket.reagents.total_volume >= 1)
+	look.overlay("cart_garbage", when = !isnull(mybag))
+	look.overlay("cart_mop", when = !isnull(mymop))
+	look.overlay("cart_spray", when = !isnull(myspray))
+	look.overlay("cart_replacer", when = !isnull(myreplacer))
+	look.overlay("cart_sign[signs]", when = signs > 0)
 
 //This is called if the cart is caught in an explosion, or destroyed by weapon fire
 /obj/structure/janitorialcart/proc/spill(chance = 100)
@@ -365,12 +350,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/janitorialcart, TYPE_PROC_REF(/atom, appe
 	if (signs)
 		for (var/obj/item/clothing/suit/caution/Sign in contents_of(src))
 			if (prob(min((chance*2),100)))
-				signs--
+				set_signs(signs - 1)
 				Sign.forceMove(dropspot)
 				Sign.tumble(3)
 				if (signs < 0)//safety for something that shouldn't happen
-					signs = 0
-					update_icon()
+					set_signs(0)
 					return
 
 	if (mybag && prob(min((chance*2),100)))//Bag is flimsy
@@ -379,7 +363,6 @@ DECLARE_APPEARANCE_PROC(/obj/structure/janitorialcart, TYPE_PROC_REF(/atom, appe
 		mybag.spill()//trashbag spills its contents too
 		rel_take(src, nameof(mybag))
 
-	update_icon()
 	clearTguiIcons()
 
 /obj/structure/janitorialcart/proc/dismantle(mob/user = null)

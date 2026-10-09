@@ -48,6 +48,10 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	var/is_double_cliff = FALSE // Set to true when making the two-tile cliffs, used for projectile checks.
 	var/uphill_penalty = 30 // Odds of a projectile not making it up the cliff.
 
+TRACKED(/obj/structure/cliff, icon_variant)
+TRACKED(/obj/structure/cliff, corner)
+TRACKED(/obj/structure/cliff, ramp)
+
 /obj/structure/cliff/Initialize(mapload)
 	. = ..()
 	register_dangerous_to_step()
@@ -114,12 +118,10 @@ CAPABILITIES(/obj/structure/cliff/automatic)
 /// Picks its look and grows its lower edge, once its neighbours exist.
 /obj/structure/cliff/automatic/proc/shape_cliff(datum/act/timer/A)
 	if(dir in GLOB.cardinal)
-		icon_variant = pick("a", "b", "c")
+		set_icon_variant(pick("a", "b", "c"))
 
 	if(dir & NORTH && !bottom) // North-facing cliffs require more cliffs to be made.
 		make_bottom()
-
-	update_icon()
 
 /obj/structure/cliff/proc/make_bottom()
 	// First, make sure there's room to put the bottom side.
@@ -132,31 +134,27 @@ CAPABILITIES(/obj/structure/cliff/automatic)
 	is_double_cliff = TRUE
 	bottom.set_dir(dir)
 	bottom.is_double_cliff = TRUE
-	bottom.icon_variant = icon_variant
-	bottom.corner = corner
-	bottom.ramp = ramp
+	bottom.set_icon_variant(icon_variant)
+	bottom.set_corner(corner)
+	bottom.set_ramp(ramp)
 	bottom.layer = layer - 0.1
 	bottom.set_density(density)
-	bottom.update_icon()
 
-/obj/structure/cliff/set_dir(new_dir)
+/// The ledge's sprite by its facing and kind, with the ground above it cut out of a different turf's picture.
+/obj/structure/cliff/draw(datum/look/look)
 	..()
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/cliff/appearance_overlays()
-	. = list()
-	icon_state = "cliff-[dir][icon_variant][bottom ? "-bottom" : ""][corner ? "-corner" : ""][ramp ? "-ramp" : ""]"
+	var/state = look.state("cliff-[dir][icon_variant][bottom ? "-bottom" : ""][corner ? "-corner" : ""][ramp ? "-ramp" : ""]")
 
 	// Now for making the top-side look like a different turf.
 	var/turf/T = get_step(src, dir)
 	if(!istype(T))
-		return .
+		return
 
-	var/subtraction_icon_state = "[icon_state]-subtract"
-	var/cache_string = "[icon_state]_[T.icon]_[T.icon_state]"
-	if(T && icon_exists(icon, subtraction_icon_state))
-		. += CACHED_KEY(cliff_overlays, cache_string, icon, subtraction_icon_state, T.icon, T.icon_state, T.dir, layer - 0.2)
+	var/subtraction_icon_state = "[state]-subtract"
+	var/list/ground = look.picture_of(T)
+	var/cache_string = "[state]_[ground[1]]_[ground[2]]"
+	if(icon_exists(icon, subtraction_icon_state))
+		look.overlay(CACHED_KEY(cliff_overlays, cache_string, icon, subtraction_icon_state, ground[1], ground[2], ground[3], layer - 0.2))
 
 // Movement-related code.
 

@@ -8,6 +8,8 @@
 	var/my_vehicle_type
 	var/paint_color = "#666666"
 
+TRACKED(/obj/structure/vehiclecage, paint_color)
+
 // C11: one slot for the caged vehicle. No custom Destroy() overrides the
 // base /atom/movable one, so the default spill policy (not SLOT_DROP_HOLDER)
 // is correct here: disassemble() already moves the vehicle out before
@@ -32,7 +34,6 @@
 			if(I.density || I.anchored || I == src || !I.simulated || !istype(I, my_vehicle_type))
 				continue
 			load_vehicle(I)
-	update_icon()
 
 MSG_DEF(vehiclecage/unbolting, "You begin loosening %T%'s bolts.", "%U% begins loosening %T%'s bolts.")
 MSG_DEF(vehiclecage/cutting, "You begin cutting %T%'s bolts.", "%U% begins cutting %T%'s bolts.")
@@ -53,21 +54,12 @@ CAPABILITIES(/obj/structure/vehiclecage)
 	disassemble(A.held, A.actor)
 	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/structure/vehiclecage, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/vehiclecage/appearance_overlays()
-	. = list()
-	. += ..()
-	underlays.Cut()
-
-	var/image/framepaint = new(icon = 'icons/obj/storage.dmi', icon_state = "[initial(icon_state)]_a", layer = MOB_LAYER + 1.1)
-	framepaint.plane = MOB_PLANE
-	framepaint.color = paint_color
-	. += framepaint
-
-	for(var/obj/vehicle/V in slot_contents(CONTAINER_SLOT_VEHICLE_CAGE))
-		var/image/showcase = new(V)
-		showcase.layer = src.layer - 0.1
-		underlays += showcase
+/// The cage's frame in the vehicle's paint, and the caged vehicle shown behind it.
+/obj/structure/vehiclecage/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/obj/storage.dmi', "[initial(icon_state)]_a", layer = MOB_LAYER + 1.1, plane = MOB_PLANE, color = paint_color))
+	for(var/obj/vehicle/V as anything in look.things_in(src, CONTAINER_SLOT_VEHICLE_CAGE, /obj/vehicle))
+		look.show_copy_of(V, layer = layer - 0.1)
 
 /obj/structure/vehiclecage/proc/interaction_drag(datum/act/op/A)
 	var/mob/user = A.actor
@@ -93,9 +85,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/vehiclecage, TYPE_PROC_REF(/atom, appeara
 
 	V.forceMove(src)
 
-	paint_color = V.paint_color
-
-	update_icon()
+	set_paint_color(V.paint_color)
 
 /obj/structure/vehiclecage/proc/disassemble(obj/item/W as obj, mob/user as mob)
 	var/turf/T = get_turf(src)

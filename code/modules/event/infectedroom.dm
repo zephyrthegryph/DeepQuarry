@@ -68,8 +68,7 @@
 		if(decal == 1)
 			var/obj/effect/decal/cleanable/blood/C
 			C = new(pick_n_take(target_turfs))
-			C.basecolor = get_random_colour(rand(0, 1))
-			C.update_icon()
+			C.set_basecolor(get_random_colour(rand(0, 1)))
 			C.add_contagions(list(chosen_disease)) // private copies (cleanable.dm)
 		else if(decal == 2)
 			var/obj/effect/decal/cleanable/vomit/V

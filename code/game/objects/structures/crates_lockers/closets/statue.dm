@@ -131,7 +131,9 @@ CAPABILITIES(/obj/structure/closet/statue)
 	receive_weapon_hit(I, user)
 	return OP_OK
 
-APPEARANCE_NONE(/obj/structure/closet/statue)
+/// A statue keeps its mapped sprite (the encased mob's shape), with none of a closet's door states.
+/obj/structure/closet/statue/closet_look(datum/look/look)
+	return
 
 /obj/structure/closet/statue/proc/shatter(mob/user as mob)
 	if (user)

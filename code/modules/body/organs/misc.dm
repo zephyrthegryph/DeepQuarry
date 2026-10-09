@@ -29,8 +29,7 @@
 		if(goo)
 			goo.name = "husk ichor"
 			goo.desc = "It's thick and stinks of decay."
-			goo.basecolor = "#412464"
-			goo.update_icon()
+			goo.set_basecolor("#412464")
 
 /obj/item/organ/internal/borer/removed(mob/living/user)
 	var/mob/living/prev_owner = owner
