@@ -1,3 +1,9 @@
 /obj/structure/closet/coffin opened=1 +state: open
+/obj/structure/closet/coffin opened=1 +overlay: icons/obj/closets/coffin.dmi:open:8:#000000
 /obj/structure/closet/coffin opened=1 -state: closed_unlocked
+/obj/structure/closet/coffin opened=1 -overlay: icons/obj/closets/coffin.dmi:closed_unlocked:8:#000000
+/obj/structure/closet/coffin opened=2 +state: open
+/obj/structure/closet/coffin opened=2 +overlay: icons/obj/closets/coffin.dmi:open:8:#000000
+/obj/structure/closet/coffin opened=2 -state: closed_unlocked
+/obj/structure/closet/coffin opened=2 -overlay: icons/obj/closets/coffin.dmi:closed_unlocked:8:#000000
 

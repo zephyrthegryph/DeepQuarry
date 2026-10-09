@@ -1,2 +1,2 @@
-/mob/living/simple_mob/vore/morph/dominated_prey runtime: OWN: refused _own_put(hud_list): /mob/living/simple_mob/vore/morph/dominated_prey -> /image; /mob/living/simple_mob/vore/morph/dominated_prey is being destroyed (phase scrub)%//%["code/engine/refs/lifecycle_links.dm",54]%//%
+/mob/living/simple_mob/vore/morph/dominated_prey runtime: OWN: refused _own_set(em_block): /mob/living/simple_mob/vore/morph/dominated_prey -> /atom/movable/emissive_blocker; /mob/living/simple_mob/vore/morph/dominated_prey is being destroyed (phase scrub)%//%["code/engine/refs/lifecycle_links.dm",54]%//%
 
