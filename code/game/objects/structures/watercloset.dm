@@ -231,7 +231,7 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 	if(!istype(G) || !open || swirlie_mob)
 		return FALSE
 	var/mob/living/GM = G.grab_target()
-	if(!isliving(GM) || G.state <= GRAB_PASSIVE)
+	if(!isliving(GM) || read_once(G.state <= GRAB_PASSIVE))
 		return FALSE
 	return read_once(GM.loc == get_turf(src))
 

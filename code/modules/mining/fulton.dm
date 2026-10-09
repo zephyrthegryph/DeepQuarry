@@ -21,7 +21,7 @@ CAPABILITIES(/obj/item/extraction_pack)
 
 /// Requirement: the pack is linked to a beacon and the target can be sent (anything else is refused, some of it silently).
 /obj/item/extraction_pack/proc/can_attach(datum/act/op/A)
-	return isnull(attach_refusal(A))
+	return read_once(isnull(attach_refusal(A)))
 
 /// Why the pack cannot be attached to the target: a text, the silent message for a target that is simply not eligible, or null.
 /obj/item/extraction_pack/proc/attach_refusal(datum/act/op/A)

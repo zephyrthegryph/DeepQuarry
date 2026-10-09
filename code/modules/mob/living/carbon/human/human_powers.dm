@@ -326,7 +326,7 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 
 /// Requirement: no regeneration already runs.
 /mob/living/carbon/human/proc/regenerate_idle(datum/act/op/A)
-	return !active_regen
+	return !read_once(active_regen)
 
 /mob/living/carbon/human/proc/regenerate_started(datum/act/op/A)
 	active_regen = TRUE

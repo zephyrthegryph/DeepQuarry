@@ -129,7 +129,7 @@ MSG_DEF_SELF(particle_gun/removing_safety, span_notice("You begin removing %I% f
 
 /// A pressure interlock is fitted.
 /obj/item/gun/energy/particle/proc/safety_attached(datum/act/op/A)
-	return safetycatch && attached_safety
+	return read_once(safetycatch) && attached_safety
 
 /obj/item/gun/energy/particle/proc/safety_removed(datum/act/op/A)
 	var/mob/user = A.actor

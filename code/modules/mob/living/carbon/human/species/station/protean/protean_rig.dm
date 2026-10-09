@@ -347,7 +347,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 
 /// A module offered to a rig that is not dormant (a dormant core is repaired with it instead).
 /obj/item/rig/protean/proc/module_offered(datum/act/op/A)
-	return !get_dormancy()
+	return read_once(!get_dormancy())
 
 /// No installed module of the same class (unless it is redundant).
 /obj/item/rig/protean/proc/module_class_free(datum/act/op/A)

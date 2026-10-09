@@ -877,7 +877,7 @@ CAPABILITIES(/obj/structure/control_pod)
 
 /// Nobody is in the pod.
 /obj/structure/control_pod/proc/pod_free(datum/act/op/A)
-	return !controller
+	return !read_once(controller)
 
 /// Why the pod is taken: names who is inside.
 /obj/structure/control_pod/proc/pod_busy_text(datum/act/op/A)

@@ -77,7 +77,7 @@ CAPABILITIES(/obj/structure/alien)
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return OP_OK
 				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/resinspinner/replicant))
-					visible_message(span_warning("[user] strokes the [name] and it melts away!"), 1)
+					act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return OP_OK
 			act_message(user, null, others = span_warning("%U% claws at the [name]!"))

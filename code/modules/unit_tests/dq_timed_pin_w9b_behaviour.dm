@@ -62,7 +62,7 @@
 /datum/unit_test/dq_timed_pin_w9b/microwave_clean/setup_scene()
 	user = person()
 	var/obj/machinery/microwave/M = allocate(/obj/machinery/microwave, get_step(run_loc_floor_bottom_left, NORTH))
-	M.set_dirty(MAX_MICROWAVE_DIRTINESS)
+	M.set_dirty(100) // the most dirt a microwave takes
 	target = M
 	held = hold(/obj/item/soap)
 

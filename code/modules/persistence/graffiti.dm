@@ -56,7 +56,7 @@ CAPABILITIES(/obj/effect/decal/writing)
 /// The engraving question is asked only of a sharp item.
 /obj/effect/decal/writing/proc/sharp_held(datum/act/op/A)
 	var/obj/item/thing = A.held
-	return !!thing?.sharp
+	return !!read_once(thing?.sharp)
 
 /// Whether there is a message to carve and the carver is still able to: the wait follows only then.
 /obj/effect/decal/writing/proc/engrave_ready(datum/act/op/A)

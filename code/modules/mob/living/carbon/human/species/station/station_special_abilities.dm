@@ -852,11 +852,11 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 
 /// Requirement: standing on a turf, not inside something.
 /mob/living/carbon/human/proc/cocoon_has_space(datum/act/op/A)
-	return isturf(loc)
+	return read_once(isturf(loc))
 
 /// Requirement: awake, loose and rested (no tongue flicking while stunned).
 /mob/living/carbon/human/proc/cocoon_fit(datum/act/op/A)
-	return !(src?.buckled_to() || stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
+	return !(src?.buckled_to() || stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !read_once(COOLDOWN_FINISHED(src, last_special)))
 
 /mob/living/carbon/human/proc/enter_cocoon_human_done(datum/act/op/A)
 	var/obj/item/storage/vore_egg/bugcocoon/C = new(loc)

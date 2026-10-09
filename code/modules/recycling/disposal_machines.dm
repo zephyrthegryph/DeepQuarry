@@ -408,7 +408,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	//animals cannot put mobs other than themselves into disposal
 	if(isanimal(user) && target != user)
 		return FALSE
-	if(user.stat || !user.canmove)
+	if(user.stat || !read_once(user.canmove))
 		return FALSE
 	if(target.buckled_to() || read_once(get_dist(user, src) > 1) || read_once(get_dist(user, target) > 1))
 		return FALSE

@@ -16,9 +16,9 @@ CAPABILITIES(/obj/structure/ladder_assembly)
 	op("name_ladder", item(/obj/item/pen),
 		asks(/datum/prompt/text, fields = list("question" = "Enter the name for the ladder.", "title" = "Ladder Name", "default" = nameof(created_name), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "k15"),
 		then(PROC_REF(interaction_item)))
-	op("weld_unanchored", tool(TOOL_WELDER), when(PROC_REF(is_unanchored)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle))), wait(0), then(PROC_REF(bolts_needed)))
-	op("weld_down", tool(TOOL_WELDER), label("Weld to the floor"), when(PROC_REF(is_wrenched)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle)), req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(weld_down_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(weld_down_done)))
-	op("weld_up", tool(TOOL_WELDER), label("Cut free from the floor"), when(PROC_REF(is_welded)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle)), req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(weld_up_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(weld_up_done)))
+	op("weld_unanchored", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(is_unanchored)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle))), wait(0), then(PROC_REF(bolts_needed)))
+	op("weld_down", tool(TOOL_WELDER), priority(OP_PRIORITY_NORMAL), label("Weld to the floor"), when(PROC_REF(is_wrenched)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle)), req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(weld_down_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(weld_down_done)))
+	op("weld_up", tool(TOOL_WELDER), priority(OP_PRIORITY_PART), label("Cut free from the floor"), when(PROC_REF(is_welded)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle)), req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(weld_up_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(weld_up_done)))
 
 MSG_DEF_SELF(ladder_assembly/on_shuttle, span_warning("%T% cannot be constructed on a shuttle."))
 

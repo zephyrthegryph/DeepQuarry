@@ -1511,7 +1511,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 
 /// Nothing to do to a barrel that was already shortened.
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_possible(datum/act/op/A)
-	return !sawn_off
+	return !read_once(sawn_off)
 
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_misfire(datum/act/op/A)
 	var/mob/user = A.actor
