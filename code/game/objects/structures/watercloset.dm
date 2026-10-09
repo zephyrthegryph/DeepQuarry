@@ -57,6 +57,9 @@ CAPABILITIES(/obj/structure/toilet)
 		then(PROC_REF(interaction_hand)))
 	// the old attack_ai: the hand's Use for a silicon, except a cyborg that is remote viewing or has no player
 	op("silicon_use", remote(), label("Use"), needs(req_bool(PROC_REF(silicon_at_hand), silent = TRUE)), then(PROC_REF(interaction_hand)))
+	op("swirlie", item(/obj/item/grab), label("Give a swirlie"), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(swirlie_possible)), starts(PROC_REF(swirlie_started)), begins(PROC_REF(swirlie_begins)), wait(3 SECONDS), then(PROC_REF(swirlie_done)))
+	op("insert_crystal", item(/obj/item/bluespace_crystal), label("Insert"), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(crystal_slot_free)), begins(MSG(toilet/inserting_crystal)), wait(2 SECONDS), then(PROC_REF(crystal_inserted)))
+	op("replace_bin", item(/obj/item/stock_parts/matter_bin), label("Replace the bin"), priority(OP_PRIORITY_DEFAULT), when(nameof(cistern)), begins(PROC_REF(bin_begins)), wait(2 SECONDS), then(PROC_REF(bin_replaced)))
 	op("item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
 	op("item_cyborg", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(interaction_item_cyborg)))
 	// the old click_alt: pull the flush lever (a living, conscious actor; the lid open)
@@ -204,25 +207,9 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 			if(GM.loc != get_turf(src))
 				to_chat(user, span_notice("[GM.name] needs to be on the toilet."))
 				return OP_OK
-			var/mob/living/swirlie = swirlie_mob
-			if(open && !swirlie)
-				act_message(user, GM, MSG_SELF(span_notice("You start to give %T% a swirlie!")), MSG_OTHERS(span_danger("%U% starts to give %T% a swirlie!")))
-				rel_set(src, nameof(swirlie_mob), GM)
-				task_start(/datum/task/timed/toilet_attackby, user, GM, receiver = src)
-				rel_clear(src, nameof(swirlie_mob))
-			else
-				act_message(user, GM, MSG_SELF(span_notice("You slam %T% into the [src]!")), MSG_OTHERS(span_danger("%U% slams %T% into the [src]!")))
-				GM.injure(INJURY_BLUNT, 5, BP_HEAD, src)
-
-	if(cistern && !teleplumb_crystal && istype(I, /obj/item/bluespace_crystal))
-		to_chat(user, span_notice("You begin to insert \the [I] into \the [src]..."))
-		task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user))
-		return OP_OK
-
-	if(cistern && istype(I, /obj/item/stock_parts/matter_bin))
-		to_chat(user, span_notice("You begin to replace \the [bin] in \the [src] with \the [I]."))
-		task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(I, user))
-		return OP_OK
+			// the swirlie itself is the "swirlie" op; anything else slams the head
+			act_message(user, GM, MSG_SELF(span_notice("You slam %T% into the [src]!")), MSG_OTHERS(span_danger("%U% slams %T% into the [src]!")))
+			GM.injure(INJURY_BLUNT, 5, BP_HEAD, src)
 
 	if(cistern && !cyborg) //STOP PUTTING YOUR MODULES IN THE TOILET.
 		if(I.w_class > ITEMSIZE_NORMAL) //3
@@ -238,16 +225,33 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 		return OP_OK
 	return OP_DECLINE
 
-/datum/task/timed/toilet_attackby
-	duration = 3 SECONDS
-	complete_proc = /obj/structure/toilet/proc/attackby_timed_done
+/// Requirement: a grab holding a mob tightly on the open toilet, with nobody already in it.
+/obj/structure/toilet/proc/swirlie_possible(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	if(!istype(G) || !open || swirlie_mob)
+		return FALSE
+	var/mob/living/GM = G.grab_target()
+	if(!isliving(GM) || read_once(G.state <= GRAB_PASSIVE))
+		return FALSE
+	return read_once(GM.loc == get_turf(src))
 
-/obj/structure/toilet/proc/attackby_timed_done(datum/task/timed/toilet_attackby/task)
-	var/mob/living/user = task.actor
-	var/mob/living/GM = task.target
+/obj/structure/toilet/proc/swirlie_started(datum/act/op/A)
+	var/mob/living/user = A.actor
+	user.setClickCooldown(user.get_attack_speed(A.held))
+
+/obj/structure/toilet/proc/swirlie_begins(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	var/mob/living/GM = G.grab_target()
+	return msg_text(span_notice("You start to give [GM] a swirlie!"), span_danger("[A.actor] starts to give [GM] a swirlie!"))
+
+/obj/structure/toilet/proc/swirlie_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/grab/G = A.held
+	var/mob/living/GM = G.grab_target()
+	if(!isliving(GM))
+		return OP_OK
 	if(!open) //Someone closed it while we were trying to swirlie. Rude.
 		set_open(TRUE) //Open it.
-		changed(src)
 	if(!refilling)
 		act_message(user, GM, MSG_SELF(span_notice("You give %T% a swirlie!")), \
 			MSG_OTHERS(span_danger("%U% gives %T% a swirlie!")), \
@@ -263,7 +267,17 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 	else
 		act_message(user, GM, MSG_SELF(span_warning("You cant give %T% swirlie while \the [src] is still refilling!")), \
 			MSG_OTHERS(span_warning("%U% tries to give [GM.name] a swirlie, but the toilet was still refilling!")))
-/obj/structure/toilet/proc/attackby_timed_done2(obj/item/I, mob/living/user)
+	return OP_OK
+
+MSG_DEF_SELF(toilet/inserting_crystal, span_notice("You begin to insert %I% into %T%..."))
+
+/// The cistern is open and has no teleplumbing crystal yet.
+/obj/structure/toilet/proc/crystal_slot_free(datum/act/op/A)
+	return cistern && !teleplumb_crystal
+
+/obj/structure/toilet/proc/crystal_inserted(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	to_chat(user, span_notice("You insert \the [I] into \the [src]. A deep rumble eminates from within it, and a faint blue glow eminates from the bottom of the bowl for a moment."))
 	user.drop_item()
 	I.forceMove(src)
@@ -271,14 +285,18 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 	//TODO: add a way to link this to custom destinations.
 	rel_set(src, nameof(teleplumb_dest), locate(/obj/effect/landmark/teleplumb_exit))
 	desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
-	return
-/obj/structure/toilet/proc/attackby_timed_done3(obj/item/I, mob/living/user)
+	return OP_OK
+
+/obj/structure/toilet/proc/bin_begins(datum/act/op/A)
+	return msg_text(span_notice("You begin to replace \the [bin] in \the [src] with \the [A.held]."))
+
+/obj/structure/toilet/proc/bin_replaced(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	to_chat(user, span_notice("You replace \the [bin] with \the [I]."))
 	bin.forceMove(src.loc) //Remove the old bin.
-	if(!move_into(src, nameof(src.bin), I, user))
-		return
-	return
-
+	move_into(src, nameof(src.bin), I, user)
+	return OP_OK
 
 /// Old click_alt: pull the flush lever.
 /obj/structure/toilet/proc/interaction_alt(datum/act/op/A)
@@ -542,7 +560,9 @@ CAPABILITIES(/obj/machinery/shower)
 	op("analyze", item(/obj/item/analyzer), label("Check water temperature"), then(PROC_REF(interaction_analyze)))
 	op("set_temperature", hand(), ungated(), gesture(GESTURE_ALT), label("Set temperature"), passes(),
 		asks(/datum/prompt/choice, fields = list("title" = "Water Temperature Valve", "question" = "What setting would you like to set the temperature valve to?", "choices" = list("normal", "boiling", "freezing"), "timeout" = 0)),
-		then(PROC_REF(temperature_chosen)))
+		begins(MSG(shower/adjusting)), wait(5 SECONDS), then(PROC_REF(temperature_chosen)))
+
+MSG_DEF_SELF(shower/adjusting, span_notice("You begin to adjust the temperature..."))
 
 /obj/machinery/shower/Initialize(mapload)
 	. = ..()
@@ -564,7 +584,6 @@ MSG_DEF_SELF(toilet/refilling, span_notice("Wait for %T% to finish refilling..."
 		MSG_OTHERS(span_notice("%U% [cistern ? "replaces the lid on the cistern" : "lifts the lid off the cistern"]!")), \
 		MSG_BLIND("You hear grinding porcelain."))
 	set_cistern(!cistern)
-	changed(src)
 
 /obj/structure/toilet/proc/cistern_open(datum/act/op/A)
 	return cistern
@@ -607,17 +626,12 @@ MSG_DEF_SELF(toilet/refilling, span_notice("Wait for %T% to finish refilling..."
 	var/datum/prompt/R = A.answer
 	if(!R)
 		return OP_OK
-	var/newtemp = R.value
-	to_chat(user, span_notice("You begin to adjust the temperature..."))
-	task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_set_temperature_timed_done), done_args = list(user, newtemp))
+	current_temperature = R.value
 	handle_mist()
-	return OP_OK
-
-/obj/machinery/shower/proc/interaction_set_temperature_timed_done(mob/user, newtemp)
-	current_temperature = newtemp
 	act_message(user, null, MSG_SELF(span_notice("You adjust the shower to [current_temperature] temperature.")), \
 		MSG_OTHERS(span_notice("%U% adjusts the shower.")))
 	add_fingerprint(user)
+	return OP_OK
 
 /obj/machinery/shower/examine(mob/user)
 	. = ..()
@@ -1059,18 +1073,18 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
 	// Clear the vessel.
 	visible_message(span_infoplain(span_bold("\The [user]") + " tips the contents of \the [thing] into \the [src]."))
 	thing.reagents.clear_reagents()
-	thing.update_icon()
 	return OP_PASS
 
 CAPABILITIES(/obj/structure/sink)
 	// a wash claims the sink: nobody else washes in it meanwhile; a silicon has no hands to wash
 	op("wash", hand(), label("Wash hands"), when(req_actor_kind(/mob/living/silicon, not = TRUE)),
-		needs(req_bool(PROC_REF(hand_usable), because = PROC_REF(hand_refusal)), req_bool(PROC_REF(sink_free), because = MSG(sink/busy))), then(PROC_REF(interaction_wash)))
-	op("item", item(/obj/item), label("Use"), needs(req_bool(PROC_REF(sink_free), because = MSG(sink/busy))), then(PROC_REF(interaction_item)))
+		needs(req_bool(PROC_REF(hand_usable), because = PROC_REF(hand_refusal))), claims(), begins(MSG(sink/washing_hands)), plays(SFX_EFFECTS_SINK_LONG, at_start = TRUE), wait(4 SECONDS), on_interrupt(PROC_REF(wash_hands_stopped)), then(PROC_REF(interaction_wash)))
+	op("item", item(/obj/item), label("Use"), claims(), begins(PROC_REF(wash_item_begins)), wait(PROC_REF(wash_item_time)), on_interrupt(PROC_REF(wash_item_stopped)), then(PROC_REF(interaction_item)))
 	op("empty", item(/obj/item/reagent_containers), gesture(GESTURE_DRAG), label("Empty into sink"), then(PROC_REF(interaction_drag)))
 	op("sink_wash_gurgled_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Wash"), when(req_bool(PROC_REF(holding_gurgled))), claims(), begins(MSG(sink/washing_gurgled)), wait(4 SECONDS), then(PROC_REF(wash_gurgled_done)), says(MSG(sink/washed_gurgled)))
 
 MSG_DEF_SELF(sink/busy, "Someone's already washing here.")
+MSG_DEF_SELF(sink/washing_hands, span_notice("You start washing your hands."))
 
 /// Requirement for washing: the hand the actor would wash with works.
 /obj/structure/sink/proc/hand_usable(datum/act/op/A)
@@ -1089,20 +1103,9 @@ MSG_DEF_SELF(sink/busy, "Someone's already washing here.")
 		return temp.name
 	return null
 
-/// Requirement: a wash claims the sink.
-/obj/structure/sink/proc/sink_free(datum/act/op/A)
-	return !task_busy(src)
-
 /// Old attack_hand: wash your hands (it takes a while, and the sink is yours meanwhile).
 /obj/structure/sink/proc/interaction_wash(datum/act/op/A)
 	var/mob/user = A.actor
-	to_chat(user, span_notice("You start washing your hands."))
-	play_sfx(src, SFX_EFFECTS_SINK_LONG)
-
-	task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
-	return OP_OK
-
-/obj/structure/sink/proc/attack_hand_timed_done(mob/user)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		if(H.get_equipped_item(SLOT_ID_GLOVES))
@@ -1123,10 +1126,40 @@ MSG_DEF_SELF(sink/busy, "Someone's already washing here.")
 		user.wash(CLEAN_SCRUB)
 	for(var/mob/V in viewers(src, null))
 		V.show_message(span_notice("[user] washes their hands using \the [src]."))
+	return OP_OK
 
-/obj/structure/sink/proc/attack_hand_timed_failed(mob/user)
-	to_chat(user, span_notice("You stop washing your hands."))
-	return
+/obj/structure/sink/proc/wash_hands_stopped(datum/act/op/A)
+	to_chat(A.actor, span_notice("You stop washing your hands."))
+
+/// Whether the held thing is washed (the timed part of the use); containers, batons that shock, mops and soap are dealt with at once.
+/obj/structure/sink/proc/sink_washes(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	var/obj/item/reagent_containers/RG = O
+	if(istype(RG) && RG.is_open_container())
+		return FALSE
+	if(istype(O, /obj/item/melee/baton))
+		var/obj/item/melee/baton/B = O
+		if(B.bcell && B.bcell.charge > 0 && B.status == 1)
+			return FALSE
+	else if(istype(O, /obj/item/mop) || istype(O, /obj/item/soap))
+		return FALSE
+	if(!isturf(user.loc))
+		return FALSE
+	if(istype(O, /obj/item/robot_tongue))
+		var/obj/item/robot_tongue/J = O
+		if(J.water.energy < J.water.max_energy)
+			return FALSE
+	return TRUE
+
+/obj/structure/sink/proc/wash_item_time(datum/act/op/A)
+	return sink_washes(A) ? 4 SECONDS : 0
+
+/obj/structure/sink/proc/wash_item_begins(datum/act/op/A)
+	return msg_text(span_notice("You start washing \the [A.held]."))
+
+/obj/structure/sink/proc/wash_item_stopped(datum/act/op/A)
+	to_chat(A.actor, span_notice("You stop washing \the [A.held]."))
 
 /// Old attackby: fill a container, wet a mop or soap, short out a live baton, or wash the thing.
 /obj/structure/sink/proc/interaction_item(datum/act/op/A)
@@ -1167,43 +1200,13 @@ MSG_DEF_SELF(sink/busy, "Someone's already washing here.")
 		O.wash(CLEAN_SCRUB)
 		return OP_OK
 
-	var/turf/location = user.loc
-	if(!isturf(location)) return OP_OK
-
-	var/obj/item/I = O
-	if(!I || !istype(I,/obj/item)) return OP_OK
-
-	if(istype(I, /obj/item/robot_tongue))
-		var/obj/item/robot_tongue/J = I
-		if(J.water.energy < J.water.max_energy) return OP_OK
-
-	to_chat(user, span_notice("You start washing \the [I]."))
-
-	task_start(/datum/task/timed/sink_attackby, user, src, O = O, I = I)
-	return OP_OK
-
-/datum/task/timed/sink_attackby
-	duration = 4 SECONDS
-	claims = TRUE
-	complete_proc = /obj/structure/sink/proc/attackby_timed_done4
-	cancel_proc = /obj/structure/sink/proc/attackby_timed_failed4
-	var/obj/item/O
-	var/obj/item/I
-
-/obj/structure/sink/proc/attackby_timed_done4(datum/task/timed/sink_attackby/task)
-	var/obj/item/O = task.O
-	var/mob/user = task.actor
-	var/obj/item/I = task.I
+	if(!sink_washes(A))
+		return OP_OK
 
 	O.wash(CLEAN_SCRUB)
 	O.water_act(rand(1,10))
-	act_message(user, src, MSG_SELF(span_notice("You wash \a [I] using %T%.")), MSG_OTHERS(span_notice("%U% washes \a [I] using %T%.")))
-
-/obj/structure/sink/proc/attackby_timed_failed4(datum/task/timed/sink_attackby/task)
-	var/mob/user = task.actor
-	var/obj/item/I = task.I
-	to_chat(user, span_notice("You stop washing \the [I]."))
-	return
+	act_message(user, src, MSG_SELF(span_notice("You wash \a [O] using %T%.")), MSG_OTHERS(span_notice("%U% washes \a [O] using %T%.")))
+	return OP_OK
 
 /obj/structure/sink/kitchen
 	name = "kitchen sink"

@@ -135,7 +135,6 @@ init_visuals	code/game/machinery/gear_dispenser.dm	icon_state = "suit_storage"
 init_visuals	code/game/machinery/teleporter.dm	add_overlay("controller-wires")
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = DEFAULTPICK(random_icon_states, null)
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = "writing1"
-init_visuals	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	add_overlay(IM)
 init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "human_female"
 init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "monkey"
 init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "corgi"
@@ -181,7 +180,6 @@ init_visuals	code/modules/clothing/shoes/miscellaneous.dm	icon_state = "[bootcol
 init_visuals	code/modules/clothing/spacesuits/void/void.dm	add_overlay(glass_overlay)
 init_visuals	code/modules/clothing/under/miscellaneous.dm	icon_state = "[unicolor]_ranger_uniform"
 init_visuals	code/modules/detectivework/tools/sample_kits.dm	icon_state = "fingerprint1"
-init_visuals	code/modules/economy/EFTPOS.dm	R.add_overlay(stampoverlay)
 init_visuals	code/modules/entrepreneur/entrepreneur_items.dm	icon_state = pick(colour_choice)
 init_visuals	code/modules/food/drinkingglass/drinkingglass.dm	icon_state = base_icon
 init_visuals	code/modules/food/food/snacks.dm	icon_state = "nugget_[shape]"

@@ -151,7 +151,7 @@ CAPABILITIES(/obj/item/projectile/energy/hook)
 						return
 					T = pick(possible_targets)
 
-				after(target, 0.2 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list(crack_sound, 40, 1))
+				after(target, 0.2 SECONDS, GLOBAL_PROC_REF(playsound), with = list(target, crack_sound, 40, 1))
 				visible_message(span_notice("\The [T] is snatched by \the [src]!"))
 				T.throw_at(get_turf(firer), 7, 1, src)
 				success = TRUE
@@ -162,7 +162,7 @@ CAPABILITIES(/obj/item/projectile/energy/hook)
 				if(I_HELP)
 					var/message = pick(help_messages)
 					if(message == "slaps")
-						after(src, 0.1 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/effects/snap.ogg', 50, 1))
+						after(src, 0.1 SECONDS, GLOBAL_PROC_REF(playsound), with = list(src, 'sound/effects/snap.ogg', 50, 1))
 					visible_message(span_notice("\The [src] [message] [target]."))
 					done_mob_unique = TRUE
 					success = TRUE
@@ -182,7 +182,7 @@ CAPABILITIES(/obj/item/projectile/energy/hook)
 					success = TRUE
 				if(I_GRAB)
 					var/turf/STurf = get_turf(L)
-					after(STurf, 0.2 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list(crack_sound, 60, 1))
+					after(STurf, 0.2 SECONDS, GLOBAL_PROC_REF(playsound), with = list(STurf, crack_sound, 60, 1))
 					act_message(src, L, others = span_critical("%U% rips %T% towards \the [firer]!"))
 					L.throw_at(get_turf(get_step(firer,get_dir(firer,L))), 6, 1, src)
 					done_mob_unique = TRUE

@@ -64,17 +64,9 @@ CAPABILITIES(/obj/item/ticket_printer)
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "sec_ticket"
 
-/obj/item/paper/sec_ticket/Initialize(mapload, text, title)
-	. = ..()
-	// Restores the type's icon after the paper base's own update_icon()
-	icon = 'icons/obj/bureaucracy.dmi'
-	icon_state = "sec_ticket" // ALLOW(decl): restores the type's icon_state after the paper base's own update_icon(), like the icon line above
-
-DECLARE_APPEARANCE_PROC(/obj/item/paper/sec_ticket, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paper/sec_ticket/appearance_overlays()
-		. = list()
-		icon = icon
-		icon_state = icon_state
+/// A ticket keeps the state its creation gave it.
+/obj/item/paper/sec_ticket/look_parts(datum/look/look)
+	return
 
 
 /obj/item/ticket_printer/train
@@ -106,14 +98,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper/sec_ticket, TYPE_PROC_REF(/atom, appeara
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "permit_ticket"
 
-/obj/item/paper/permit_ticket/Initialize(mapload, text, title)
-	. = ..()
-	// Restores the type's icon after the paper base's own update_icon()
-	icon = 'icons/obj/bureaucracy.dmi'
-	icon_state = "permit_ticket" // ALLOW(decl): restores the type's icon_state after the paper base's own update_icon(), like the icon line above
-
-DECLARE_APPEARANCE_PROC(/obj/item/paper/permit_ticket, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paper/permit_ticket/appearance_overlays()
-		. = list()
-		icon = icon
-		icon_state = icon_state
+/// A ticket keeps the state its creation gave it.
+/obj/item/paper/permit_ticket/look_parts(datum/look/look)
+	return

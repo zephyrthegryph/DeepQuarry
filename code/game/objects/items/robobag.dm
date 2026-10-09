@@ -24,10 +24,9 @@
 	if(corptag && Adjacent(user))
 		. += span_notice("[src] has a [corptag] attached to it.")
 
-DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag/robobag, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/closet/body_bag/cryobag/robobag/appearance_overlays()
-	. = list()
-	. += ..()
+/// The synthmorph bag adds the tag it wears.
+/obj/structure/closet/body_bag/cryobag/robobag/closet_look(datum/look/look)
+	..()
 	if(corptag)
 		var/corptag_icon_state = "tag_blank"
 		if(istype(corptag,/obj/item/clothing/accessory/badge/holo/detective) || istype(corptag, /obj/item/clothing/accessory/badge/holo/hos) || istype(corptag, /obj/item/clothing/accessory/badge/old) || istype(corptag, /obj/item/clothing/accessory/badge/sheriff))
@@ -39,7 +38,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag/robobag, TYPE_PRO
 		else if(istype(corptag, /obj/item/clothing/accessory/badge/corporate_tag))
 			corptag_icon_state = corptag.icon_state
 
-		. += corptag_icon_state
+		look.overlay(corptag_icon_state)
 
 MSG_DEF(robobag/tag_removed, "You remove %I% from %T%.", "%U% removes the tag from %T%.")
 
@@ -61,7 +60,6 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag)
 	old_tag.forceMove(get_turf(A.actor))
 	to_chat(A.actor, span_notice("You remove \the [old_tag] from \the [src]."))
 	rel_take(src, nameof(corptag))
-	update_icon()
 	return OP_OK
 
 // its corpse tag drops to the floor.
@@ -111,7 +109,6 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag)
 		W.moveToNullspace()
 		rel_set(src, nameof(src.corptag), W)
 		to_chat(user, span_notice("You attach \the [corptag] to \the [src]."))
-	update_icon()
 	return OP_OK
 
 /datum/body_effect/fbp_debug

@@ -5,7 +5,7 @@
 	var/obj/machinery/meter/meter = allocate(/obj/machinery/meter, T)
 	meter.set_target(pipe)
 	TEST_ASSERT_EQUAL(meter.target_ref(), pipe, "The real meter must watch its actual selected pipe")
-	var/meter_handle = om_handle(meter)
+	var/meter_handle = entity_handle(meter)
 	var/list/before = turf_contents_of_type(T, /obj/item/pipe_meter)
 	qdel(pipe)
 	// Register the real event-generated replacement before any assertion terminates the test.
@@ -17,4 +17,4 @@
 	var/obj/item/pipe_meter/portable = created[1]
 	TEST_ASSERT(!QDELETED(portable), "The mounted meter's deletion must preserve its portable successor")
 	TEST_ASSERT_EQUAL(portable.loc, T, "The portable meter must remain on the actual pipe floor")
-	TEST_ASSERT_NULL(om_resolve(meter_handle), "The machinery meter handle must terminate for an item successor")
+	TEST_ASSERT_NULL(resolve_handle(meter_handle), "The machinery meter handle must terminate for an item successor")

@@ -1,3 +1,6 @@
+/// Returned by cook_loop() when the loop is over.
+#define MICROWAVE_LOOP_STOP "__loop_stop"
+
 #define MICROWAVE_FLAGS (OPENCONTAINER | NOREACT)
 #define MICROWAVE_NORMAL 0
 #define MICROWAVE_MUCK 1
@@ -53,7 +56,8 @@ CAPABILITIES(/obj/machinery/microwave)
 	without("ui_open")
 	op("cook", ui_act("cook"), then(PROC_REF(ui_act_cook)))
 	op("dispose", ui_act("dispose"), then(PROC_REF(ui_act_dispose)))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), when(cond_not(nameof(panel_open))), begins(PROC_REF(secure_begins)), wait(PROC_REF(secure_time)), on_interrupt(PROC_REF(secure_interrupted)), then(PROC_REF(secure_done)))
+	op("clean", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Clean"), when(req(PROC_REF(can_clean))), begins(MSG(microwave/clean_begins)), wait(2 SECONDS), then(PROC_REF(clean_done)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("microwave_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(microwave_interaction_item)))
@@ -205,17 +209,21 @@ TRACKED(/obj/machinery/microwave, broken)
 		to_chat(user, span_warning("It's dirty!"))
 		return TRUE
 
-	act_message(user, src, MSG_SELF(span_notice("You start to clean %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts to clean %T%.")))
-
-	task_timed(user, 2 SECONDS, src, src, PROC_REF(clean_done), list(user))
 	return TRUE
 
-/obj/machinery/microwave/proc/clean_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have cleaned %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " has cleaned %T%.")))
+MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_infoplain(span_bold("%U%") + " starts to clean %T%."))
+
+/// Requirement: a full dirty, unbroken microwave and a cleaner in hand (anything else falls through to handle_dirty()'s refusal).
+/obj/machinery/microwave/proc/can_clean(datum/act/op/A)
+	return dirty >= MAX_MICROWAVE_DIRTINESS && broken <= NOT_BROKEN && is_type_in_list(A.held, list(/obj/item/soap, /obj/item/reagent_containers/spray/cleaner, /obj/item/reagent_containers/glass/rag))
+
+/obj/machinery/microwave/proc/clean_done(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You have cleaned %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " has cleaned %T%.")))
 
 	set_dirty(0)
 	flags |= MICROWAVE_FLAGS
 	post_state_change()
+	return OP_OK
 
 /obj/machinery/microwave/proc/try_insert_item(obj/item/O, mob/user)
 	if(is_type_in_list(O, GLOB.acceptable_items))
@@ -284,25 +292,22 @@ TRACKED(/obj/machinery/microwave, broken)
 		return OP_OK
 	return OP_DECLINE
 
-/obj/machinery/microwave/proc/crowbar_used(datum/act/op/A)
-	var/mob/user = A.actor
+/// How long securing or unsecuring takes: two seconds, shorter with a faster crowbar.
+/obj/machinery/microwave/proc/secure_time(datum/act/op/A)
 	var/obj/item/tool = A.held
-	if(panel_open)
-		return OP_DECLINE
-	act_message(user, src, MSG_SELF(span_notice("You attempt to [anchored ? "unsecure" : "secure"] %T%.")), \
-		MSG_OTHERS(span_notice("%U% begins [anchored ? "unsecuring" : "securing"] %T%.")))
-	task_start(/datum/task/timed/microwave_secure, user, src, duration = (2 SECONDS) / tool.toolspeed)
-	return OP_OK
+	return (2 SECONDS) / tool.toolspeed
 
-/datum/task/timed/microwave_secure
-	complete_proc = /obj/machinery/microwave/proc/secure_done
-	fail_message = span_notice("You decide not to do that.")
+/obj/machinery/microwave/proc/secure_begins(datum/act/op/A)
+	return msg_text(span_notice("You attempt to [anchored ? "unsecure" : "secure"] %T%."), span_notice("%U% begins [anchored ? "unsecuring" : "securing"] %T%."))
 
-/obj/machinery/microwave/proc/secure_done(datum/task/timed/microwave_secure/task)
-	var/mob/user = task.actor
-	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "unsecure" : "secure"] %T%.")), \
+/obj/machinery/microwave/proc/secure_interrupted(datum/act/op/A)
+	to_chat(A.actor, span_notice("You decide not to do that."))
+
+/obj/machinery/microwave/proc/secure_done(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You [anchored ? "unsecure" : "secure"] %T%.")), \
 		MSG_OTHERS(span_notice("%U% [anchored ? "unsecures" : "secures"] %T%.")))
 	set_anchored(!anchored)
+	return OP_OK
 
 /obj/machinery/microwave/tgui_status(mob/user)
 	if(user == paicard?.pai)
@@ -470,7 +475,7 @@ TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 	loop_type = type
 	loop_cycles = cycles
 	loop_wait = max(12 - 2 * efficiency, 2)
-	if(cook_loop() != REPEAT_STOP)
+	if(cook_loop() != MICROWAVE_LOOP_STOP)
 		set_loop_running(TRUE)
 
 /// One cook-loop cycle (every() while loop_running).
@@ -478,7 +483,7 @@ TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 	if((broken_now()) && loop_type == MICROWAVE_PRE)
 		set_loop_running(FALSE)
 		broke()
-		return REPEAT_STOP
+		return MICROWAVE_LOOP_STOP
 
 	if(loop_cycles <= 0 || !length(cookingContents()))
 		switch(loop_type)
@@ -492,7 +497,7 @@ TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 			if(MICROWAVE_PRE)
 				begin_cook_loop(MICROWAVE_NORMAL, 10)
 				return
-		return REPEAT_STOP
+		return MICROWAVE_LOOP_STOP
 
 	loop_cycles--
 

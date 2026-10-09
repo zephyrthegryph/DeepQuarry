@@ -129,6 +129,7 @@ CAPABILITIES(/datum/game_mode_panel)
 	var/datum/game_mode_panel/tgui_game_mode_panel
 
 CAPABILITIES(/datum/game_mode)
+	every(2 SECONDS, then(PROC_REF(mode_step)), when = nameof(mode_running))
 	owns_one(nameof(tgui_game_mode_panel), /datum/game_mode_panel)
 	op("toggle", topic("toggle", arg("toggle", schema_text(), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), then(PROC_REF(topic_toggle)))
 	op("set", topic("set", arg("set", schema_text(), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), asks(/datum/prompt/number/game_mode_option, fields = list("question" = computed(PROC_REF(game_mode_option_question)), "window_max" = computed(PROC_REF(game_mode_option_max))), step = "value"), then(PROC_REF(topic_set)))

@@ -77,7 +77,7 @@
 		if(life_test_parked(L))
 			return TRUE
 		seq_run_frame_now(L, LIFE_SEQ)
-		om_scheduler().run_pass(1e9)
+		time_scheduler().run_pass(1e9)
 	return life_test_parked(L)
 
 /// Keys of the steps that would keep this mob awake (should_run() holds), for failure messages.
@@ -105,7 +105,7 @@
 /proc/life_test_clock_begin()
 	RETURN_TYPE(/datum/om/scheduler)
 	test_driver_begin()
-	return om_scheduler()
+	return time_scheduler()
 
 /proc/life_test_clock_end()
 	test_driver_end()

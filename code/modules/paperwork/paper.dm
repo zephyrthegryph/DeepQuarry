@@ -28,11 +28,10 @@
 	var/fields		//Amount of user created fields
 	var/free_space = MAX_PAPER_MESSAGE_LEN
 	var/list/stamped
-	var/list/ico      //Icons and
-	// ALLOW(instance_list): d: stamp and photo offsets indexed in step with ico
-	var/list/offset_x[0] //offsets stored for later
-	// ALLOW(instance_list): d: stamp and photo offsets indexed in step with ico
-	var/list/offset_y[0] //usage by the photocopier
+	/// The stamps pressed on it, as list(icon_state, pixel_x, pixel_y) entries (the photocopier keeps them as grey marks).
+	var/list/stamp_marks
+	/// Crumpled into a scrap ball.
+	var/crumpled = FALSE
 	var/rigged = 0
 	COOLDOWN_DECLARE(honk_cooldown)
 	var/age = 0
@@ -101,7 +100,9 @@ CAPABILITIES(/obj/item/paper)
 /obj/item/paper/card
 	plane_foldable = FALSE //No fun allowed
 
-APPEARANCE_NONE(/obj/item/paper/card)
+/// A card draws neither a written nor a blank sheet: its cover is its mapped state.
+/obj/item/paper/card/look_parts(datum/look/look)
+	return
 
 /obj/item/paper/card/smile
 	name = "happy card"
@@ -129,13 +130,8 @@ APPEARANCE_NONE(/obj/item/paper/card)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "alienpaper"
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper/alien, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paper/alien/appearance_overlays()
-	. = list()
-	if(info)
-		icon_state = "alienpaper_words"
-	else
-		icon_state = "alienpaper"
+/obj/item/paper/alien/look_parts(datum/look/look)
+	look.state(info ? "alienpaper_words" : "alienpaper")
 
 /obj/item/paper/alien/burnpaper()
 	return
@@ -161,19 +157,33 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper/alien, TYPE_PROC_REF(/atom, appearance_o
 		info = replacetext(info, "\n", "<BR>")
 		info = parsepencode(info)
 
-	update_icon()
 	update_space(info)
 	updateinfolinks()
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paper/appearance_overlays()
-	. = list()
-	if(icon_state == "paper_talisman")
-		return .
-	if(info)
-		icon_state = "paper_words"
-		return .
-	icon_state = "paper"
+TRACKED(/obj/item/paper, crumpled)
+TRACKED(/obj/item/paper, stamp_marks)
+
+/// The sheet: blank or written (or a scrap once crumpled), with the stamps on it. The words are the plain `info` var every
+/// printer and form writes, so a write after creation asks for the redraw with changed(src).
+/obj/item/paper/draw(datum/look/look)
+	..()
+	look_parts(look)
+	for(var/list/mark in stamp_marks)
+		look.overlay(stamp_image(mark))
+
+/// The sheet's state; a type with another cover (a card, a scrap, a ticket) overrides this.
+/obj/item/paper/proc/look_parts(datum/look/look)
+	if(initial(icon_state) == "paper_talisman")
+		return
+	look.state(crumpled ? "scrap" : (info ? "paper_words" : "paper"))
+
+/// Presses one more stamp mark on the sheet.
+/obj/item/paper/proc/add_stamp_mark(state, x, y)
+	set_stamp_marks((stamp_marks || list()) + list(list(state, x, y)))
+
+/// The overlay of one stamp mark.
+/obj/item/paper/proc/stamp_image(list/mark)
+	return look_overlay_image('icons/obj/bureaucracy.dmi', mark[1], pixel_x = mark[2], pixel_y = mark[3])
 
 /obj/item/paper/proc/update_space(new_text)
 	if(!new_text)
@@ -322,7 +332,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 	if(contains_signature)
 		on_signature(user, get_signature(i, user))
 	play_sfx(src, SFX_BUREAUCRACY_PEN, 0.5)
-	update_icon()
+	changed(src)
 
 /obj/item/paper/proc/on_signature(mob/living/user, signature)
 	return
@@ -374,14 +384,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 	if(occult)
 		return
 	if(stance == I_HURT)
-		if(icon_state == "scrap")
+		if(crumpled)
 			user.show_message(span_warning("\The [src] is already crumpled."))
 			return
 		//crumple dat paper
 		info = stars(info,85)
 		act_message(user, src, others = "%U% crumples %T% into a ball!")
 		play_sfx(src, SFX_BUREAUCRACY_PAPERCRUMPLE)
-		icon_state = "scrap"
+		set_crumpled(TRUE)
+		changed(src)
 		return
 	user.examinate(src)
 	if(rigged && (GLOB.Holiday == "April Fool's Day"))
@@ -436,7 +447,7 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 		name = title
 	info = html_encode(text)
 	info = parsepencode(text)
-	update_icon()
+	changed(src)
 	update_space(info)
 	updateinfolinks()
 
@@ -489,9 +500,9 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 	stamps = null
 	free_space = MAX_PAPER_MESSAGE_LEN
 	stamped = list()
-	cut_overlays()
+	set_stamp_marks(null)
 	updateinfolinks()
-	update_icon()
+	changed(src)
 
 /obj/item/paper/proc/get_signature(obj/item/pen/P, mob/user as mob)
 	return pen_signature(P, user)
@@ -557,7 +568,6 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 		if(src.loc == user)
 			user.drop_from_inventory(src)
 		src.forceMove(P)
-		P.update_icon()
 		to_chat(user, span_notice("You tuck the [src] into \the [P]."))
 
 	if(istype(P, /obj/item/paper) || istype(P, /obj/item/photo))
@@ -602,10 +612,9 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 
 		rel_add(B, nameof(B.pages), src)
 		rel_add(B, nameof(B.pages), P)
-		B.update_icon()
 
 	else if(istype(P, /obj/item/pen))
-		if(icon_state == "scrap")
+		if(crumpled)
 			to_chat(user, span_warning("\The [src] is too crumpled to write on."))
 			return OP_PASS
 
@@ -625,7 +634,6 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 		stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics(stamp_mark_text(P, "paper"))
 		if((!in_range(src, user) && loc != user && !( istype(loc, /obj/item/clipboard) ) && loc.loc != user && user.get_active_hand() != P))
 			return OP_PASS
-		var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
 		var/x, y
 		if(istype(P, /obj/item/stamp/captain) || istype(P, /obj/item/stamp/centcomm))
 			x = rand(-2, 0)
@@ -633,24 +641,15 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 		else
 			x = rand(-2, 2)
 			y = rand(-3, 2)
-		offset_x += x
-		offset_y += y
-		stampoverlay.pixel_x = x
-		stampoverlay.pixel_y = y
 
 		if(!clown && !stamp_usable_by(P, user))
 			to_chat(user, span_notice("You are totally unable to use the stamp. HONK!"))
 			return OP_PASS
 
-		if(!ico)
-			ico = new
-		LAZYADD(ico, "paper_[P.icon_state]")
-		stampoverlay.icon_state = "paper_[P.icon_state]"
-
 		if(!stamped)
 			stamped = new
 		stamped += P.type
-		add_overlay(stampoverlay)
+		add_stamp_mark("paper_[P.icon_state]", x, y)
 
 		play_sfx(src, SFX_BUREAUCRACY_STAMP)
 		to_chat(user, span_notice("You stamp the paper with your rubber stamp."))
@@ -706,8 +705,11 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 /obj/item/paper/crumpled
 	name = "paper scrap"
 	icon_state = "scrap"
+	crumpled = TRUE
 
-APPEARANCE_NONE(/obj/item/paper/crumpled)
+/// A scrap keeps its mapped state.
+/obj/item/paper/crumpled/look_parts(datum/look/look)
+	return
 
 /obj/item/paper/crumpled/bloody
 	icon_state = "scrap_bloodied"

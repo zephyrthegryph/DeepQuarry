@@ -181,14 +181,14 @@ CAPABILITIES(/obj/forms_holder)
 	for(var/i in 1 to 6)
 		PUBLISH(L, forms_ping)
 	TEST_ASSERT_EQUAL(L.runs, 0, "a burst runs nothing inside the window")
-	TEST_ASSERT_EQUAL(om_timer_count(L), 1, "and the six triggers share one timer")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(L), 1, "and the six triggers share one timer")
 	test_time(1 SECOND)
 	TEST_ASSERT_EQUAL(L.runs, 0, "still inside the window")
 	test_time(1.5 SECONDS)
 	TEST_ASSERT_EQUAL(L.runs, 1, "the window closes into exactly one run")
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(L.runs, 1, "and no more without another trigger")
-	TEST_ASSERT_EQUAL(om_timer_count(L), 0, "an idle holder has no timer")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(L), 0, "an idle holder has no timer")
 
 /datum/unit_test/dq_forms/coalesce_sustained_runs_at_the_interval
 
@@ -199,7 +199,7 @@ CAPABILITIES(/obj/forms_holder)
 		test_time(1 SECOND)
 	TEST_ASSERT(L.runs >= 8 && L.runs <= 10, "twenty triggers over twenty seconds on a two second window: about one run per interval, got [L.runs]")
 	test_time(5 SECONDS)
-	TEST_ASSERT(om_timer_count(L) == 0, "and when the triggers stop the holder is quiet again")
+	TEST_ASSERT(time_scheduler().timer_count(L) == 0, "and when the triggers stop the holder is quiet again")
 
 /datum/unit_test/dq_forms/coalesce_on_change_with_an_interval_proc
 
@@ -241,7 +241,7 @@ CAPABILITIES(/obj/forms_holder)
 	TEST_ASSERT(revoke(L, /datum/capability/forms_listening, S), "revoked mid-window")
 	test_time(5 SECONDS)
 	TEST_ASSERT_EQUAL(L.cap_runs, 1, "a revoked capability's pending run never happens")
-	TEST_ASSERT_EQUAL(om_timer_count(L), 0, "and its window is cancelled, not left to expire")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(L), 0, "and its window is cancelled, not left to expire")
 
 /datum/forms_source
 
@@ -305,7 +305,7 @@ CAPABILITIES(/obj/forms_holder)
 	mode_enter(M, "mode", /datum/capability/forms_idle)
 	test_time(30 SECONDS)
 	TEST_ASSERT_EQUAL(M.mode, /datum/capability/forms_idle, "the working state's after_in_state() never fired after it was left")
-	TEST_ASSERT_EQUAL(om_timer_count(M), 1, "only the idle state's every() is scheduled")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(M), 1, "only the idle state's every() is scheduled")
 	// Control: left alone, the timer fires and the state's own go() moves the mode.
 	mode_enter(M, "mode", /datum/capability/forms_working)
 	test_time(11 SECONDS)

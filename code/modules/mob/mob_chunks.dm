@@ -168,14 +168,6 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 
 // ---------------------------------------------------------------- proximity gate
 
-/// Something whose periodic work only matters with mobs (or players) nearby -- a radiation source,
-/// a spawner, a haunting -- ends its step with `return sleep_until_mob_near(radius)` when nobody is
-/// in range: it watches the chunks around it and restarts on its lane when a mob moves into one (proximity_woke(), periodic.dm).
-
-/atom/movable/var/tmp/list/proximity_chunks
-/atom/movable/var/tmp/proximity_mask = 0
-/atom/movable/var/tmp/proximity_lane
-
 /// TRUE when a living mob (a player, with `players_only`) is within `radius` tiles.
 /atom/movable/proc/mob_near(radius, players_only = FALSE)
 	var/turf/T = get_turf(src)
@@ -185,22 +177,3 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 		if(!players_only || L.client)
 			return TRUE
 	return FALSE
-
-/// Ends this step's periodic work until a mob (a player, with `players_only`) moves within reach of
-/// `radius`. Returns PROCESS_KILL. `lane` is the periodic lane to restart on.
-/atom/movable/proc/sleep_until_mob_near(radius, players_only = FALSE, lane = PERIODIC_SLOW)
-	if(proximity_chunks)
-		proximity_chunks = unwatch_mob_chunks(src, proximity_chunks, proximity_mask)
-	var/turf/T = get_turf(src)
-	if(!T)
-		return PROCESS_KILL
-	proximity_mask = players_only ? CHANGE_CHUNK_PLAYER : CHANGE_CHUNK_ANY_MOB
-	proximity_lane = lane
-	sleep_audit_join(src)
-	proximity_chunks = watch_mob_chunks(src, mob_chunks_around(T, radius), proximity_mask, PROC_REF(proximity_woke))
-	return PROCESS_KILL
-
-/atom/movable/sleep_violation()
-	if(proximity_chunks && every_running(src))
-		return "watching for mobs while already running"
-	return ..()

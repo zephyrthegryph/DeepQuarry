@@ -28,7 +28,7 @@ CAPABILITIES(/obj/effect/dead_plant)
 	consume(src, user)
 	return OP_PASS
 
-/// Growing (on PERIODIC_PLANTS) while in REGISTRY_GROWING_PLANTS: add_plant() / remove_plant().
+/// Growing (plant_step every() on `growing`) while in REGISTRY_GROWING_PLANTS: add_plant() / remove_plant().
 REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 
 /obj/effect/plant
@@ -52,18 +52,26 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	var/tmp/datum/seed/seed_static
 	var/sampled = 0
 	var/floor = 0
+	/// How far a wall plant sits into its wall, rolled once so a redraw keeps it.
+	var/wall_shift = 12
 	var/spread_chance = 40
 	var/spread_distance = 3
 	var/evolve_chance = 2
 	EXPIRY_DECLARE(mature_time) //minimum maturation time
 	COOLDOWN_DECLARE(neighbor_refresh_cooldown)
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/plant
+	/// Is it in the growing registry? The growth every() below runs while it is.
+	var/growing = FALSE
+
+TRACKED(/obj/effect/plant, growing)
 
 CAPABILITIES(/obj/effect/plant)
+	every(7.5 SECONDS, then(PROC_REF(plant_step)), when = nameof(growing))
 	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(plant), /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
 	op("hit_plant", item(/obj/item), then(PROC_REF(interaction_hit_plant)))
 	op("touch_plant", hand(), then(PROC_REF(interaction_touch_plant)))
+	rolls(nameof(wall_shift), range_of(12, 14))
 	param(nameof(seed_at_make), pos = 1)
 	param(nameof(parent), pos = 2)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(plant_blast_die_off))))
@@ -107,49 +115,79 @@ CAPABILITIES(/obj/effect/plant)
 	max_health = round(seed().get_trait(TRAIT_ENDURANCE)/2)
 	if(seed().get_trait(TRAIT_SPREAD)==2)
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity)) // Grabby
-		max_growth = VINE_GROWTH_STAGES
-		growth_threshold = max_health/VINE_GROWTH_STAGES
+		set_max_growth(VINE_GROWTH_STAGES)
+		set_growth_threshold(max_health/VINE_GROWTH_STAGES)
 		icon = 'icons/obj/hydroponics_vines.dmi'
-		growth_type = 2 // Vines by default.
+		set_growth_type(2) // Vines by default.
 		if(seed().get_trait(TRAIT_CARNIVOROUS) >= 2)
-			growth_type = 1 // WOOOORMS.
+			set_growth_type(1) // WOOOORMS.
 		else if(!(seed().seed_noun in list("seeds","pits")))
 			if(seed().seed_noun in list("nodes", "cuttings"))
-				growth_type = 3 // Biomass
+				set_growth_type(3) // Biomass
 			else
-				growth_type = 4 // Mold
+				set_growth_type(4) // Mold
 	else
-		max_growth = seed().growth_stages
-		growth_threshold = max_health/seed().growth_stages
+		set_max_growth(seed().growth_stages)
+		set_growth_threshold(max_health/seed().growth_stages)
 
 	if(max_growth > 2 && prob(50))
-		max_growth-- //Ensure some variation in final sprite, makes the carpet of crap look less wonky.
+		set_max_growth(max_growth - 1) //Ensure some variation in final sprite, makes the carpet of crap look less wonky.
 
 	EXPIRY_SET(src, mature_time, seed().get_trait(TRAIT_MATURATION) + 15, CLOCK_WORLD) //prevent vines from maturing until at least a few seconds after they've been created.
 	spread_chance = seed().get_trait(TRAIT_POTENCY)
 	spread_distance = ((growth_type>0) ? round(spread_chance*0.6) : round(spread_chance*0.3))
-	update_icon()
 
 // Plants will sometimes be spawned in the turf adjacent to the one they need to end up in, for the sake of correct dir/etc being set.
 /obj/effect/plant/proc/finish_spreading()
 	set_dir(calc_dir())
-	update_icon()
 	SSplants.add_plant(src)
 	//Some plants eat through plating.
 	if(islist(seed().chems) && !isnull(seed().chems[REAGENT_ID_PACID]))
 		var/turf/T = get_turf(src)
 		T.ex_act(prob(80) ? 3 : 2)
 
-DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/plant/appearance_overlays()
-	. = list()
-	//TODO: should really be caching this.
-	refresh_icon()
+TRACKED(/obj/effect/plant, health)
+TRACKED(/obj/effect/plant, growth_threshold)
+TRACKED(/obj/effect/plant, growth_type)
+TRACKED(/obj/effect/plant, max_growth)
+TRACKED(/obj/effect/plant, floor)
+TRACKED(/obj/effect/plant, wall_shift)
+
+/// The most stages the plant reaches: its own, held back at the fringe of its spread.
+/obj/effect/plant/proc/plant_growth_cap()
+	var/growth_cap = max_growth
+	if(spread_distance > 5)
+		var/at_fringe = get_dist(src, parent())
+		if(at_fringe >= (spread_distance-3))
+			growth_cap--
+		if(at_fringe >= (spread_distance-2))
+			growth_cap--
+	return max(1, growth_cap)
+
+/// The plant: its stage of growth, flush against the wall it grows from when it is not on the floor, tinted and lit by its seed.
+/obj/effect/plant/draw(datum/look/look)
+	..()
+	var/growth_cap = plant_growth_cap()
+	var/growth = growth_threshold ? min(growth_cap, round(health/growth_threshold)) : growth_cap
+	if(growth_type > 0)
+		switch(growth_type)
+			if(1)
+				look.state("worms")
+			if(2)
+				look.state("vines-[growth]")
+			if(3)
+				look.state("mass-[growth]")
+			if(4)
+				look.state("mold-[growth]")
+	else
+		look.state("[seed().get_trait(TRAIT_PLANT_ICON)]-[growth]")
+
+	look.effect(PROC_REF(plant_settle), growth > 2 && growth == growth_cap)
+
 	if(growth_type == 0 && !floor)
-		src.transform = null
 		var/matrix/M = matrix()
 		// should make the plant flush against the wall it's meant to be growing from.
-		M.Translate(0,-(rand(12,14)))
+		M.Translate(0, -wall_shift)
 		switch(dir)
 			if(WEST)
 				M.Turn(90)
@@ -157,10 +195,10 @@ DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overl
 				M.Turn(180)
 			if(EAST)
 				M.Turn(270)
-		src.transform = M
+		look.set_transform(M)
 	var/icon_colour = seed().get_trait(TRAIT_PLANT_COLOUR)
 	if(icon_colour)
-		color = icon_colour
+		look.set_color(icon_colour)
 	// Apply colour and light from seed datum.
 	if(seed().get_trait(TRAIT_BIOLUM))
 		var/clr
@@ -170,34 +208,13 @@ DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overl
 		var/blight = 1+round(seed().get_trait(TRAIT_POTENCY)/20)
 		if(blight >= 5)
 			blight = 5
-		set_light(blight, 0.5, l_color = clr)
-		return .
+		look.light(blight, 0.5, clr)
 	else
-		set_light(0)
+		look.light_off()
 
-/obj/effect/plant/proc/refresh_icon()
-	var/growth = min(max_growth,round(health/growth_threshold))
-	var/at_fringe = get_dist(src,parent())
-	if(spread_distance > 5)
-		if(at_fringe >= (spread_distance-3))
-			max_growth--
-		if(at_fringe >= (spread_distance-2))
-			max_growth--
-	max_growth = max(1,max_growth)
-	if(growth_type > 0)
-		switch(growth_type)
-			if(1)
-				icon_state = "worms"
-			if(2)
-				icon_state = "vines-[growth]"
-			if(3)
-				icon_state = "mass-[growth]"
-			if(4)
-				icon_state = "mold-[growth]"
-	else
-		icon_state = "[seed().get_trait(TRAIT_PLANT_ICON)]-[growth]"
-
-	if(growth>2 && growth == max_growth)
+/// A fully grown plant stands tall (and, of woody seeds, blocks the way); a younger one lies flat and open.
+/obj/effect/plant/proc/plant_settle(full_grown)
+	if(full_grown)
 		plane = ABOVE_PLANE
 		set_opacity(1)
 		if(!isnull(seed().chems[REAGENT_ID_WOODPULP]))
@@ -234,11 +251,11 @@ DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overl
 	if(dirList.len)
 		var/newDir = pick(dirList)
 		if(newDir == 16)
-			floor = 1
+			set_floor(1)
 			newDir = 1
 		return newDir
 
-	floor = 1
+	set_floor(1)
 	return 1
 
 /// Old attackby: a scalpel takes a sample, anything else hacks at the plant. The item's normal handling still follows.
@@ -251,7 +268,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overl
 	if(istype(held, /obj/item/surgical/scalpel))
 		take_plant_sample(user)
 	else if(held.force)
-		health -= held.force
+		set_health(health - held.force)
 	return OP_PASS
 
 /// Old attack_hand: pull free whoever the plant has entangled.
@@ -273,7 +290,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overl
 	if(prob(70))
 		sampled = TRUE
 	seed().harvest(user, 0, TRUE)
-	health -= rand(3, 5) * 5
+	set_health(health - rand(3, 5) * 5)
 	sampled = TRUE
 	check_health()
 	return TRUE
@@ -306,7 +323,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overl
 	aggression -= resiliance
 
 	if(aggression > 0)
-		health -= aggression*5
+		set_health(health - aggression*5)
 		check_health()
 
 
@@ -352,9 +369,9 @@ DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overl
 
 		//make vine zero start off fully matured
 		var/obj/effect/plant/vine = new(T,seed)
-		vine.health = vine.max_health
+		vine.set_health(vine.max_health)
 		vine.mature_time = 0
-		vine.periodic_step()
+		vine.plant_step(null)
 
 		message_admins(span_notice("Event: Spacevines spawned at [T.loc] ([T.x],[T.y],[T.z])"))
 		return

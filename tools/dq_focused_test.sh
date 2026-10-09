@@ -13,6 +13,15 @@
 #   bash tools/dq_focused_test.sh --split-slow dq_look_tree_pin dq_boot_gate  # slow pins in a second world, at the same time
 #   bash tools/dq_focused_test.sh --detach <tests>                         # start in the background; prints a run id
 #   bash tools/dq_focused_test.sh --status <runid>                         # poll a detached run (exit 0 passed, 1 failed, 3 running)
+#   bash tools/dq_focused_test.sh --rerun-failed [data/test-runs/X.json]   # run only what failed in the last run (or in that record)
+#   bash tools/dq_focused_test.sh --force <tests>                          # run a list again that the guard below refuses
+#
+# The rerun guard ("diagnose before re-running"): the same list of arguments on the same tree (HEAD, tracked changes and untracked
+# sources identical) is not run twice within DQ_FOCUS_RERUN_WINDOW_MIN (default 120) minutes. A list that passed is not rerun and
+# reports the earlier result (exit 0); a list that failed is refused (exit 4) with a pointer to the log, because the same tests on
+# the same code fail the same way: read the log and the code first. --rerun-failed runs only the failures of the last run (the
+# way to check a flake), --force runs the list anyway, and any edit to the tree lets a run through by itself. --bless, --repeat=N and
+# --list are never guarded. The record is data/focused-runs/ledger.tsv.
 #
 # Every run ends with one line: "FOCUSED RESULT: N passed, M failed (json: path)". A merge agent keeps that line and the
 # exit code; it must not hand back while a run is going: start with --detach and poll --status (agent_workflow.md section 9).
@@ -26,8 +35,8 @@
 # Look pins (dq_look_state_pin, dq_look_tree_pin) run as DQ_LOOK_SHARDS (default 4; --look-shards=N) parallel worlds, each probing a
 # slice of the types, and only the types whose analyzer key changed since code/modules/unit_tests/snapshots/look_keys.txt;
 # --full probes every type. --look-order=reverse|shuffle:N reorders the types (the determinism proof) and --look-dump=DIR writes the
-# produced rows sorted under DIR/merged for `diff -r`. At most two look-pin runs execute at once on the machine (tools/dq_look_lock.sh;
-# the merge worktree goes first; DQ_LOOK_PIN_SLOTS=0 turns the cap off). --bless runs them unsharded and full.
+# produced rows sorted under DIR/merged for `diff -r`. At most two look-pin runs execute at once on the machine (the look_state_pin class of tools/dq_machine_slots.sh;
+# the merge worktree goes first; DQ_SLOTS_LOOK_STATE_PIN=0 turns the cap off). --bless runs them unsharded and full.
 #
 # Every run fails when the world logged a runtime or a warning before its first test (the boot gate,
 # doc/rewrite/boot_gate.md); the build prints "BOOT GATE" with the first warnings when it trips.
@@ -92,6 +101,104 @@ for arg in "$@"; do
 done
 [ "$prev" = "--status" ] && status_cmd ""
 
+# ---- The rerun guard ---------------------------------------------------------------------------------------------------------
+LEDGER="$RUN_DIR/ledger.tsv"
+
+# A digest of the tree a run tests: HEAD, the tracked changes and the untracked sources. Any edit moves it.
+tree_digest() {
+	{ git rev-parse HEAD; git diff HEAD; git ls-files -o --exclude-standard -- code tools tgui/packages; } 2>/dev/null | sha1sum | cut -c1-16
+}
+
+# One ledger row per finished run: epoch, key, exit code, failed count, result json, head, the arguments.
+ledger_add() { # rc failed json
+	[ -n "${FOCUS_KEY:-}" ] || return 0
+	mkdir -p "$RUN_DIR"
+	printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$(date +%s)" "$FOCUS_KEY" "$1" "$2" "${3:-}" "$(git rev-parse --short=10 HEAD 2>/dev/null)" "${FOCUS_ARGS_TEXT:-}" >>"$LEDGER" 2>/dev/null || true
+}
+
+# The failed test names (short, without /datum/unit_test/) of a result json, one per line.
+failed_names_of() {
+	node -e '
+		const r = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+		for (const t of r.failed || []) console.log(t.replace(/^\/datum\/unit_test\//, ""));' "$1"
+}
+
+if [ -z "${DQ_FOCUS_GUARD_DONE:-}" ]; then
+	force=0
+	rerun=0
+	rerun_json=""
+	exempt=0
+	clean=()
+	for arg in ${passthrough[@]+"${passthrough[@]}"}; do
+		case "$arg" in
+			--force) force=1 ;;
+			--rerun-failed) rerun=1 ;;
+			--rerun-failed=*) rerun=1; rerun_json="${arg#--rerun-failed=}" ;;
+			--bless|--list|--repeat=*|-h|--help) exempt=1; clean+=("$arg") ;;
+			*) clean+=("$arg") ;;
+		esac
+	done
+	passthrough=(${clean[@]+"${clean[@]}"})
+	if [ "$rerun" -eq 1 ]; then
+		# Only what failed in the last recorded run (or in the named record), plus this call's own flags.
+		if [ -z "$rerun_json" ] && [ -f "$LEDGER" ]; then rerun_json="$(awk -F'\t' '$4 > 0 && $5 != "" { j = $5 } END { print j }' "$LEDGER")"; fi
+		if [ -z "$rerun_json" ] || [ ! -f "$rerun_json" ]; then
+			echo "dq_focused_test: --rerun-failed: no failed focused run on record in this worktree ($LEDGER); name the tests, or pass the record: --rerun-failed=data/test-runs/X.json" >&2
+			exit 2
+		fi
+		mapfile -t failed_list < <(failed_names_of "$rerun_json")
+		if [ ${#failed_list[@]} -eq 0 ]; then
+			echo "dq_focused_test: --rerun-failed: $rerun_json lists no failed test" >&2
+			exit 2
+		fi
+		echo "== rerunning the ${#failed_list[@]} test(s) that failed in $rerun_json: ${failed_list[*]:0:8}$([ ${#failed_list[@]} -gt 8 ] && echo ' ...')"
+		keep=()
+		for arg in ${passthrough[@]+"${passthrough[@]}"}; do
+			case "$arg" in -*) keep+=("$arg") ;; esac
+		done
+		passthrough=(${keep[@]+"${keep[@]}"} "${failed_list[@]}")
+	fi
+	FOCUS_ARGS_TEXT="$(printf '%s ' ${passthrough[@]+"${passthrough[@]}"} | cut -c1-300)"
+	FOCUS_KEY="$({ tree_digest; printf '%s\n' ${passthrough[@]+"${passthrough[@]}"} | sort; } | sha1sum | cut -c1-16)"
+	export FOCUS_KEY FOCUS_ARGS_TEXT
+	if [ "$force" -eq 0 ] && [ "$rerun" -eq 0 ] && [ "$exempt" -eq 0 ] && [ -f "$LEDGER" ]; then
+		window=$(( ${DQ_FOCUS_RERUN_WINDOW_MIN:-120} * 60 ))
+		prior="$(awk -F'\t' -v k="$FOCUS_KEY" -v now="$(date +%s)" -v win="$window" '$2 == k && now - $1 <= win { line = $0 } END { print line }' "$LEDGER")"
+		if [ -n "$prior" ]; then
+			IFS=$'\t' read -r p_epoch _ p_rc p_failed p_json p_head _ <<<"$prior"
+			p_age=$(( ($(date +%s) - p_epoch) / 60 ))
+			if [ "$p_rc" -eq 0 ]; then
+				echo "FOCUSED RESULT: (not rerun) this exact list already passed on this exact tree $p_age min ago (json: ${p_json:-none}); --force runs it again"
+				if [ "$detach" -eq 1 ]; then
+					DQ_FOCUSED_RUN_ID="$(date +%Y%m%dT%H%M%S)-$$"
+					mkdir -p "$RUN_DIR"
+					{ echo state=passed; echo "run_id=$DQ_FOCUSED_RUN_ID"; echo "finished=$(date -u +%Y-%m-%dT%H:%M:%SZ)"; echo "result=not rerun: passed $p_age min ago"; echo "json=${p_json:-}"; echo "exit_code=0"; } >"$RUN_DIR/$DQ_FOCUSED_RUN_ID.status"
+					echo "FOCUSED RUN STARTED: $DQ_FOCUSED_RUN_ID (already passed; nothing to wait for)"
+				fi
+				exit 0
+			fi
+			{
+				if [ "${p_failed:-0}" -gt 0 ]; then
+					echo "dq_focused_test: REFUSED: this exact list already ran on this exact tree $p_age min ago (HEAD $p_head) and FAILED ($p_failed failed; result ${p_json:-none})."
+					echo "  Read the log and the code first: the same tests on the same code fail the same way, unless the failure is order- or seed-dependent (the log says so:"
+					echo "  'rng seed ... reruns this test alone', STATE LEAK lines). The failures are in $p_json (\"tests\"), the world log is data/logs/runN/tests.log, and"
+					echo "  the last runs' output is under data/focused-runs/."
+					echo "  - run only what failed (a flake check):   bash tools/dq_focused_test.sh --rerun-failed"
+				else
+					echo "dq_focused_test: REFUSED: this exact list already ran on this exact tree $p_age min ago (HEAD $p_head) and ended unclean (exit $p_rc) with no failed test (result ${p_json:-none})."
+					echo "  Read the log and the code first: a world that died, was killed by the watchdog, tripped the boot gate or logged a runtime ends this way; the reason is in"
+					echo "  data/logs/runN/tests.log and runtime-errors.log and in the last output under data/focused-runs/. If it was a machine hiccup (a daemon that did not exit, a"
+					echo "  loaded machine), say so and run it again with --force."
+				fi
+				echo "  - run this list again regardless:          bash tools/dq_focused_test.sh --force <the same arguments>"
+				echo "  - after any edit to the tree the guard lets the run through by itself."
+			} >&2
+			exit 4
+		fi
+	fi
+	export DQ_FOCUS_GUARD_DONE=1
+fi
+
 # --detach: rerun this script in the background with the same arguments, return at once with a run id. The child writes
 # data/focused-runs/<id>.status (state=running, then passed/failed) and .log. A caller polls --status instead of holding
 # a monitor open or handing back mid-run.
@@ -130,6 +237,25 @@ status_write() { # state [key=value ...]
 }
 FOCUS_STARTED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 FOCUS_STARTED_EPOCH="$(date +%s)"
+
+# The one EXIT trap. It releases what the run holds (the temp focus lists, a look-pin slot) and, for a detached child, makes the
+# status file say how the run ended when nothing else did: a script that exits before it reaches print_result (a bad test name, a
+# usage error, a signal) must not leave `state=running` behind for --status to report forever.
+focus_on_exit() {
+	local rc=$?
+	trap - EXIT
+	if [ "$(type -t slots_group_release)" = "function" ]; then slots_group_release; fi
+	if [ "$(type -t look_lock_release)" = "function" ]; then look_lock_release; fi
+	if [ "$(type -t cleanup_files)" = "function" ]; then cleanup_files; fi
+	if [ -n "${DQ_FOCUSED_RUN_ID:-}" ] && [ "$(sed -n 's/^state=//p' "$RUN_DIR/$DQ_FOCUSED_RUN_ID.status" 2>/dev/null)" = "running" ]; then
+		local why
+		why="$(grep -v '^[[:space:]]*$' "$RUN_DIR/$DQ_FOCUSED_RUN_ID.log" 2>/dev/null | tail -n 1 | cut -c1-300)"
+		status_write failed "result=exited before a result (exit $rc)" "exit_code=$rc" "reason=${why:-no output}"
+	fi
+	exit "$rc"
+}
+trap focus_on_exit EXIT
+trap 'exit 130' INT TERM
 
 usage() {
 	echo "usage: $0 [--full-map] [--repeat=N] [--<dm-test flag>...] <test name | /datum/unit_test/path | 'glob*'> [...]" >&2
@@ -262,7 +388,6 @@ focus_arg() {
 cleanup_files() {
 	if [ ${#focus_files[@]} -gt 0 ]; then rm -f "${focus_files[@]}"; fi
 }
-trap cleanup_files EXIT
 
 # Short names (no leading slash): Git Bash would rewrite "/datum/..." into a
 # Windows path on its way to cmd.exe. dm-test adds the /datum/unit_test/ prefix back.
@@ -313,12 +438,10 @@ if [ ${#look_group[@]} -gt 0 ] && [ "$bless" -eq 0 ] && [ "$repeat" -eq 1 ] && [
 	do_split=1
 fi
 # The cap on look-pin runs across the machine (tools/dq_look_lock.sh): any run that holds a look pin waits for a slot first.
-if [ ${#look_group[@]} -gt 0 ] && [ "${DQ_LOOK_PIN_SLOTS:-2}" != "0" ]; then
+if [ ${#look_group[@]} -gt 0 ]; then
 	# shellcheck source=tools/dq_look_lock.sh
 	. tools/dq_look_lock.sh
-	trap 'look_lock_release; cleanup_files' EXIT
-	trap 'exit 130' INT TERM
-	look_lock_acquire
+	DQ_LOOK_LOCK_LABEL="focused ${look_group[*]:0:2}" look_lock_acquire
 fi
 
 LOOK_PARAMS=""
@@ -372,12 +495,14 @@ print_result() {
 		skipped="$(sed -n 's/.*failed, \([0-9]*\) skipped.*/\1/p' <<<"$line")"
 	else
 		echo "FOCUSED RESULT: no results (exit code $rc; the world died or the build failed)"
+		# Not recorded: a run with no result says nothing about the tests, so a rerun is not a repeat of it.
 		status_write failed "result=no results" "exit_code=$rc"
 		return 0
 	fi
 	if [ "${skipped:-0}" -gt 0 ]; then note=", $skipped skipped"; fi
 	if [ "$rc" -ne 0 ] && [ "${failed:-0}" -eq 0 ]; then tail_note=" [exit $rc: the world was not clean: boot gate, watchdog or crash]"; fi
 	echo "FOCUSED RESULT: $passed passed, $failed failed$note (json: ${json:-none})$tail_note"
+	ledger_add "$rc" "${failed:-0}" "${json:-}"
 	if [ "$rc" -ne 0 ]; then st=failed; fi
 	status_write "$st" "result=$passed passed, $failed failed$note" "passed=$passed" "failed=$failed" "json=${json:-}" "exit_code=$rc"
 	if [ "${failed:-0}" -gt 0 ] && [ -n "$json" ] && [ -f "$json" ] && [ -f tools/dq_known_failures.sh ]; then
@@ -427,7 +552,7 @@ start_world() { # index
 	W_PID[$i]=$!
 }
 run_worlds() {
-	local began n i waited=0 running jsons=() rc=0 j shard
+	local began n i waited=0 running jsons=() rc=0 j shard W_DONE
 	began="$(date +%s)"
 	W_LABEL=(); W_FOCUS=(); W_SHARD=(); W_PARAMS=()
 	if [ ${#main_group[@]} -gt 0 ]; then add_world main "" "" "${main_group[@]}"; fi
@@ -468,18 +593,54 @@ run_worlds() {
 		unset DQ_KEEP_DERIVED_DME
 		return "$rc"
 	fi
-	for ((i = 1; i < ${#W_LABEL[@]}; i++)); do start_world "$i"; done
-	echo "== worlds: ${#W_LABEL[@]} running"
+	# The other worlds' test_world slots are taken together, in one queue entry (slots_group_acquire): a world never waits for a slot
+	# while a sibling holds one, and two sharded runs cannot each hold part of the budget. The group is clamped to the machine's
+	# capacity; the worlds beyond it start as earlier ones end, each handing its slot back the moment its world exits. World 0 took
+	# its own slot (it queues alone, after its compile) and waits for nothing else.
+	local rest=$(( ${#W_LABEL[@]} - 1 )) next=1 gsize=0 limited=0 started_n=0 reaped=0
+	if [ "$rest" -gt 0 ]; then
+		. tools/dq_machine_slots.sh
+		gsize="$(slots_group_size test_world "$rest")"
+		if [ "$(slots_capacity test_world)" -gt 0 ]; then
+			limited=1
+			[ "$gsize" -lt "$rest" ] && echo "== worlds: $rest more worlds, but at most $gsize test worlds run at once on this machine: the rest start as slots come back"
+			slots_group_acquire test_world "$gsize" "focused ${#W_LABEL[@]} worlds"
+		fi
+	fi
+	echo "== worlds: ${#W_LABEL[@]} total"
+	W_DONE=()
+	for ((i = 0; i < ${#W_LABEL[@]}; i++)); do W_DONE[$i]=0; done
 	while true; do
 		running=0
-		for ((i = 0; i < ${#W_LABEL[@]}; i++)); do
-			if kill -0 "${W_PID[$i]}" 2>/dev/null; then running=$((running + 1)); fi
+		for ((i = 0; i < next; i++)); do
+			[ "${W_DONE[$i]}" -eq 1 ] && continue
+			if kill -0 "${W_PID[$i]}" 2>/dev/null; then
+				running=$((running + 1))
+			else
+				W_DONE[$i]=1
+				# World 0 holds its own slot; every other world used one of the group's.
+				if [ "$i" -gt 0 ] && [ "$limited" -eq 1 ]; then slots_group_release_one; fi
+			fi
 		done
-		[ "$running" -eq 0 ] && break
+		# Start the worlds still waiting for a hand-off slot: one per slot the group holds that no running world uses.
+		while [ "$next" -lt "${#W_LABEL[@]}" ]; do
+			if [ "$limited" -eq 1 ]; then
+				local in_use=0 k
+				for ((k = 1; k < next; k++)); do [ "${W_DONE[$k]}" -eq 0 ] && in_use=$((in_use + 1)); done
+				[ "$in_use" -ge "$gsize" ] && break
+			fi
+			if [ "$limited" -eq 1 ]; then export DQ_SLOTS_PREHELD=test_world; fi
+			start_world "$next"
+			unset DQ_SLOTS_PREHELD
+			next=$((next + 1))
+			running=$((running + 1))
+		done
+		[ "$running" -eq 0 ] && [ "$next" -ge "${#W_LABEL[@]}" ] && break
 		sleep 5
 		waited=$((waited + 5))
 		if [ $((waited % 120)) -eq 0 ]; then echo "== worlds: $(( $(date +%s) - began ))s elapsed, $running of ${#W_LABEL[@]} still running"; fi
 	done
+	slots_group_release 2>/dev/null || true
 	unset DQ_KEEP_DERIVED_DME
 	: >"$combined_log"
 	for ((i = 0; i < ${#W_LABEL[@]}; i++)); do
@@ -525,6 +686,7 @@ look_keys_record() {
 if [ "$look_world" -eq 1 ] && [ "$LOOK_STALE_COUNT" -eq 0 ] && [ ${#main_group[@]} -eq 0 ] && [ ${#slow_group[@]} -eq 0 ]; then
 	echo "FOCUSED RESULT: 0 passed, 0 failed (look pins: no type changed since the recorded keys, nothing probed; --full probes all)"
 	status_write passed "result=look pins: nothing stale" "passed=0" "failed=0" "exit_code=0"
+	ledger_add 0 0 ""
 	exit 0
 fi
 

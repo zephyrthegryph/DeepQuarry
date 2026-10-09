@@ -5,6 +5,7 @@ import Bun from 'bun';
 import Juke from '../juke/index.js';
 import { regQuery } from './winreg';
 import { completeNativeFallback, nativeDreamMaker } from '../../dmb/integration/build';
+import { withSlot } from './machine_slots';
 
 /** Cached path to DM compiler */
 let dmPath: string;
@@ -121,7 +122,18 @@ type Option = Partial<{
   ignoreWarningCodes: string[];
 }>;
 
+/**
+ * Compiles `dmeFile`. Holds a machine-wide `dm_compile` slot for the whole compile (lib/machine_slots.ts; two at a time by
+ * default, DQ_SLOTS_DM_COMPILE=N changes it, the merge worktree goes first), so a dozen worktrees do not stretch every compile.
+ */
 export async function DreamMaker(
+  dmeFile: string,
+  options: Option = {},
+): Promise<void> {
+  return withSlot('dm_compile', `DreamMaker ${dmeFile}`, () => compileWithDreamMaker(dmeFile, options), (m) => Juke.logger.info(m));
+}
+
+async function compileWithDreamMaker(
   dmeFile: string,
   options: Option = {},
 ): Promise<void> {
@@ -240,8 +252,22 @@ type DDOptions = {
    * `watchdogTimeoutMs` is a hard backstop for a genuinely hung run.
    */
   watchdogFile?: string;
+  /**
+   * The marker the world writes when it has finished, clean or not (`finished_run.lk`, FinishTestRun() in code/game/world.dm). With
+   * it, the grace after `watchdogFile` appears is long (DQ_DD_FINISH_GRACE_SEC, default 180 s) while the marker is missing, because
+   * a world on a busy machine can need more than `watchdogGraceMs` to write `clean_run.lk` and its logs, and a world killed first
+   * is reported as an unclean run it was not; and it is short (5 s) once the marker exists, because what remains is the Windows
+   * zombie.
+   */
+  watchdogCleanFile?: string;
   watchdogGraceMs?: number;
   watchdogTimeoutMs?: number;
+  /**
+   * A log the running world appends to (`tests.log`). Once it exists, a world whose log has not grown for DQ_DD_STALL_MINUTES (default 12)
+   * before it wrote its results is stalled (a hung proc, a wait that never ends): it is killed with the log's last line in the reason, so it
+   * stops holding a machine slot and the line says where it stopped, instead of sitting until the hard timeout.
+   */
+  stallFile?: string;
   /** Called with the daemon's pid once it has started (watchdog runs only). */
   onSpawn?: (pid: number) => void;
   /** Set by DreamDaemon(): the -logself file the world's output goes to (Windows). */
@@ -401,14 +427,45 @@ function runDreamDaemonWithWatchdog(
       }
     }
 
+    let cleanSeen = false;
+    const stallMs = (Number(process.env.DQ_DD_STALL_MINUTES) || 12) * 60 * 1000;
+    function stalledReason(): string | null {
+      if (!options.stallFile || process.env.DQ_DD_STALL_MINUTES === '0') return null;
+      try {
+        const age = Date.now() - fs.statSync(options.stallFile).mtimeMs;
+        if (age < stallMs) return null;
+        const lines = fs.readFileSync(options.stallFile, 'utf-8').split('\n').filter((l) => l.trim());
+        return `stalled: ${options.stallFile} has not changed for ${Math.round(age / 60000)} min; its last line: ${(lines[lines.length - 1] ?? '').slice(0, 300)}`;
+      } catch {
+        return null; // no log yet: the world is still booting
+      }
+    }
     function checkDone() {
-      if (settled || graceTimer) {
+      if (settled) {
+        return;
+      }
+      if (!graceTimer) {
+        const stalled = stalledReason();
+        if (stalled) {
+          finish(true, stalled, true);
+          return;
+        }
+      }
+      if (graceTimer) {
+        // Waiting for the world to finish writing: once its clean marker is there only the zombie is left.
+        if (options.watchdogCleanFile && !cleanSeen && fs.existsSync(options.watchdogCleanFile)) {
+          cleanSeen = true;
+          clearTimeout(graceTimer);
+          graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), Math.min(graceMs, 5_000));
+        }
         return;
       }
       if (fs.existsSync(watchdogFile)) {
         // Tests finished. Give -close a chance to exit cleanly, then force-kill
         // if the daemon is still alive (the Windows zombie case).
-        graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), graceMs);
+        const finishGraceMs = options.watchdogCleanFile ? Math.max(graceMs, (Number(process.env.DQ_DD_FINISH_GRACE_SEC) || 180) * 1000) : graceMs;
+        cleanSeen = !!options.watchdogCleanFile && fs.existsSync(options.watchdogCleanFile);
+        graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), cleanSeen ? Math.min(graceMs, 5_000) : finishGraceMs);
       }
     }
 

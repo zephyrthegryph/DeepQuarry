@@ -122,13 +122,6 @@ CAPABILITIES(/obj/structure/closet)
 		for(var/obj/item/I as anything in loose)
 			move_into(src, null, I)
 
-	if(ispath(closet_appearance))
-		closet_appearance = GLOB.closet_appearances[closet_appearance]
-		if(istype(closet_appearance))
-			icon = closet_appearance.icon
-			color = null
-	update_icon()
-
 // ---- Containment (C1): one interior slot. The base Destroy() spills it.
 // C2: the interior is internal (it shares the room's air, so not sealed);
 // heat reaches it through the closet's insulation, and only rounds and stabs
@@ -435,12 +428,31 @@ CAPABILITIES(/obj/structure/closet)
 	if(!toggle(user))
 		to_chat(user, span_notice("It won't budge!"))
 
-/// The closet is sealed shut (welded, or screwed down for a coffin): the template's picture.
-/obj/structure/closet/proc/appearance_sealed()
-	return is_welded(src)
+/// The decl that defines what decals the closet shows (its mapped path or one resolved already), or null for a closet with its own icon.
+/obj/structure/closet/proc/closet_looks()
+	RETURN_TYPE(/datum/decl/closet_appearance)
+	if(ispath(closet_appearance))
+		return GLOB.closet_appearances[closet_appearance]
+	return closet_appearance
 
-APPEARANCE_TEMPLATE(/obj/structure/closet, "closed_unlocked{appearance_sealed?_welded:}")
-DECLARE_APPEARANCE(/obj/structure/closet, "opened", list("1" = list(APPEARANCE_ICON_STATE = "open")))
+/obj/structure/closet/draw(datum/look/look)
+	..()
+	closet_look(look)
+
+/// The closet's own sprite: its decal icon, then the door open, or shut (and sealed: welded, or screwed down for a coffin) with the lock it shows. A type that
+/// shows something else overrides it and does not call the parent.
+/obj/structure/closet/proc/closet_look(datum/look/look)
+	var/datum/decl/closet_appearance/decor = closet_looks()
+	if(decor)
+		look.set_icon(decor.icon)
+	if(opened)
+		look.state("open")
+		return
+	look.state("closed_[closet_lock_look()][is_welded(src) ? "_welded" : ""]")
+
+/// The lock as the shut sprite shows it.
+/obj/structure/closet/proc/closet_lock_look()
+	return "unlocked"
 
 /obj/structure/closet/attack_generic(mob/user, damage, attack_message = "destroys")
 	if(damage < STRUCTURE_MIN_DAMAGE_THRESHOLD)
@@ -487,7 +499,6 @@ DECLARE_APPEARANCE(/obj/structure/closet, "opened", list("1" = list(APPEARANCE_I
 
 /obj/structure/closet/proc/break_open()
 	set_welded(src, FALSE)
-	update_icon()
 	//Do this to prevent contents from being opened into nullspace (read: bluespace)
 	if(istype(loc, /obj/structure/bigDelivery))
 		var/obj/structure/bigDelivery/BD = loc
@@ -512,20 +523,18 @@ DECLARE_APPEARANCE(/obj/structure/closet, "opened", list("1" = list(APPEARANCE_I
 	return ..()
 
 /obj/structure/closet/proc/animate_door(closing = FALSE)
-	if(!closet_appearance?.door_anim_time)
-		update_icon()
+	var/datum/decl/closet_appearance/decor = closet_looks()
+	if(!decor?.door_anim_time)
 		return
 	if(!door_obj)
 		rel_set(src, nameof(door_obj), new /obj/effect/overlay/closet_door)
 	vis_contents |= door_obj
-	door_obj.icon = icon
+	door_obj.icon = decor.icon
 	door_obj.icon_state = "door_front"
 	is_animating_door = TRUE
-	if(!closing)
-		update_icon()
-	var/num_steps = closet_appearance.door_anim_time / world.tick_lag
+	var/num_steps = decor.door_anim_time / world.tick_lag
 	for(var/I in 0 to num_steps)
-		var/angle = closet_appearance.door_anim_angle * (closing ? 1 - (I/num_steps) : (I/num_steps))
+		var/angle = decor.door_anim_angle * (closing ? 1 - (I/num_steps) : (I/num_steps))
 		var/matrix/M = get_door_transform(angle)
 		var/door_state = angle >= 90 ? "door_back" : "door_front"
 		var/door_layer = angle >= 90 ? FLOAT_LAYER : ABOVE_MOB_LAYER
@@ -538,22 +547,22 @@ DECLARE_APPEARANCE(/obj/structure/closet, "opened", list("1" = list(APPEARANCE_I
 			animate(door_obj, transform = M, icon_state = door_state, layer = door_layer, time = world.tick_lag, flags = ANIMATION_END_NOW)
 		else
 			animate(transform = M, icon_state = door_state, layer = door_layer, time = world.tick_lag)
-	after(src, closet_appearance.door_anim_time, PROC_REF(end_door_animation), key = "door_animation", with = list(closing))
+	after(src, decor.door_anim_time, PROC_REF(end_door_animation), key = "door_animation", with = list(closing))
 
 /obj/structure/closet/proc/end_door_animation(closing = FALSE)
 	is_animating_door = FALSE
 	if(closing)
 		// There's not really harm in leaving it on, but, one less atom to send to clients to render when lockers are closed
 		vis_contents -= door_obj
-		update_icon()
 
 /obj/structure/closet/proc/get_door_transform(angle)
 	var/matrix/M = matrix()
-	if(!closet_appearance)
+	var/datum/decl/closet_appearance/decor = closet_looks()
+	if(!decor)
 		return M
-	M.Translate(-closet_appearance.door_hinge, 0)
-	M.Multiply(matrix(cos(angle), 0, 0, -sin(angle) * closet_appearance.door_anim_squish, 1, 0))
-	M.Translate(closet_appearance.door_hinge, 0)
+	M.Translate(-decor.door_hinge, 0)
+	M.Multiply(matrix(cos(angle), 0, 0, -sin(angle) * decor.door_anim_squish, 1, 0))
+	M.Translate(decor.door_hinge, 0)
 	return M
 
 /obj/structure/closet/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
@@ -612,6 +621,6 @@ DECLARE_APPEARANCE(/obj/structure/closet, "opened", list("1" = list(APPEARANCE_I
 	. = ..()
 	join_bluespace_network()
 
-/// The icon is derived from closet_appearance in closet_after_init() (C5 parity).
+/// The icon is derived from closet_appearance by the look (C5 parity).
 /obj/structure/closet/state_exclude()
 	return ..() + list("icon")

@@ -181,7 +181,6 @@ CAPABILITIES(/obj/item/deck)
 	var/datum/playingcard/P = cards[1]
 	rel_move(src, nameof(cards), H, nameof(H.cards), P)
 	H.parentdeck = src
-	H.update_icon()
 	act_message(user, null, others = span_infoplain(span_bold("%U%") + " draws a card."))
 	to_chat(user,span_notice("It's the [P]."))
 
@@ -339,7 +338,6 @@ CAPABILITIES(/obj/item/deck)
 				rel_move(src, nameof(cards), H, nameof(H.cards), P)
 				H.parentdeck = src
 				break
-	H.update_icon()
 
 	act_message(user, src, others = span_notice("%U% searches for specific cards in %T%, and draws [cards_to_draw.len]."))
 
@@ -361,8 +359,7 @@ CAPABILITIES(/obj/item/deck)
 			break
 		rel_move(src, nameof(cards), H, nameof(H.cards), cards[1])
 		H.parentdeck = src
-		H.concealed = 1
-		H.update_icon()
+		H.set_concealed(1)
 	if(user==target)
 		act_message(user, null, others = span_notice("%U% deals [dcard] card(s) to %THEMSELVES%."))
 	else
@@ -391,15 +388,13 @@ CAPABILITIES(/obj/item/deck)
 		P.name = cardtext
 		// SNOWFLAKE FOR CAG, REMOVE IF OTHER CARDS ARE ADDED THAT USE THIS.
 		P.card_icon = "cag_white_card"
-		update_icon()
 	else if(istype(O,/obj/item/hand))
 		var/obj/item/hand/H = O
 		if(H.parentdeck == src.parentdeck) // Prevent cardmixing
 			for(var/datum/playingcard/P in cards?.Copy())
 				rel_move(src, nameof(cards), H, nameof(H.cards), P)
-			H.concealed = src.concealed
+			H.set_concealed(src.concealed)
 			consume(src, user)
-			H.update_icon()
 			return OP_PASS
 		else
 			to_chat(user,span_notice("You cannot mix cards from other decks!"))
@@ -495,7 +490,6 @@ CAPABILITIES(/obj/item/pack)
 	user.drop_item()
 	consume(src, user)
 
-	H.update_icon()
 	user.put_in_active_hand(H)
 	return TRUE
 
@@ -550,10 +544,8 @@ CAPABILITIES(/obj/item/pack)
 
 		var/obj/item/hand/H = new(src.loc)
 		rel_move(src, nameof(cards), H, nameof(H.cards), card)
-		H.concealed = 0
+		H.set_concealed(0)
 		H.parentdeck = src.parentdeck
-		H.update_icon()
-		src.update_icon()
 		act_message(user, null, others = span_notice("%U% plays \the [discarding]."))
 		H.forceMove(get_turf(user))
 		H.Move(get_step(user,user.dir))
@@ -562,6 +554,8 @@ CAPABILITIES(/obj/item/pack)
 		spent(src, user)
 
 CAPABILITIES(/obj/item/hand)
+	rolls(nameof(jitter_x), range_of(-5, 5))
+	rolls(nameof(jitter_y), range_of(-5, 5))
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_alt)))
@@ -583,8 +577,7 @@ CAPABILITIES(/obj/item/hand)
 
 /// Old attack_self.
 /obj/item/hand/proc/interaction_self(datum/act/op/A)
-	concealed = !concealed
-	update_icon()
+	set_concealed(!concealed)
 	act_message(A.actor, null, others = span_notice("%U% [concealed ? "conceals" : "reveals"] their hand."))
 	return OP_OK
 
@@ -632,9 +625,7 @@ CAPABILITIES(/obj/item/hand)
 	user.put_in_hands(H)
 	rel_move(src, nameof(cards), H, nameof(H.cards), card)
 	H.parentdeck = src.parentdeck
-	H.concealed = src.concealed
-	H.update_icon()
-	src.update_icon()
+	H.set_concealed(src.concealed)
 
 	if(!length(cards))
 		spent(src, user)
@@ -643,32 +634,32 @@ CAPABILITIES(/obj/item/hand)
 /obj/item/hand
 	/// The direction of whoever laid it on a table (the fan follows it), or null.
 	var/tmp/direction
+	/// Where a lone card sits, rolled once so a redraw keeps it.
+	var/jitter_x = 0
+	var/jitter_y = 0
 
-DECLARE_APPEARANCE_PROC(/obj/item/hand, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/hand/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/hand, concealed)
+TRACKED(/obj/item/hand, direction)
+TRACKED(/obj/item/hand, jitter_x)
+TRACKED(/obj/item/hand, jitter_y)
 
+/// The cards, concealed or not: one card sits jittered, more are fanned out along the direction of whoever laid them on a table.
+/obj/item/hand/draw(datum/look/look)
+	..()
 	var/cardNumber = length(cards)
 
 	if(!cardNumber)
-		spent(src)
-		return .
+		look.effect(PROC_REF(hand_empty))
+		return
 	else if(cardNumber > 1)
-		name = "hand of cards ([cardNumber])"
-		desc = "Some playing cards."
+		look.identity(name = "hand of cards ([cardNumber])", desc = "Some playing cards.")
 	else
-		name = "a playing card"
-		desc = "A playing card."
-
-
+		look.identity(name = "a playing card", desc = "A playing card.")
 
 	if(cardNumber == 1)
 		var/datum/playingcard/P = cards[1]
-		var/image/I = new(src.icon, (concealed ? "[P.back_icon]" : "[P.card_icon]") )
-		I.pixel_x += (-5+rand(10))
-		I.pixel_y += (-5+rand(10))
-		. += I
-		return .
+		look.overlay(look_overlay_image(icon, P.face_state(concealed), pixel_x = jitter_x, pixel_y = jitter_y))
+		return
 
 	var/offset = FLOOR(20/cardNumber, 1)
 
@@ -687,29 +678,27 @@ DECLARE_APPEARANCE_PROC(/obj/item/hand, TYPE_PROC_REF(/atom, appearance_overlays
 				M.Translate(-2,  0)
 	var/i = 0
 	for(var/datum/playingcard/P in cards)
-		var/image/I = new(src.icon, (concealed ? "[P.back_icon]" : "[P.card_icon]") )
+		var/x = 0
+		var/y = 0
 		switch(direction)
 			if(SOUTH)
-				I.pixel_x = 8-(offset*i)
+				x = 8-(offset*i)
 			if(WEST)
-				I.pixel_y = -6+(offset*i)
+				y = -6+(offset*i)
 			if(EAST)
-				I.pixel_y = 8-(offset*i)
+				y = 8-(offset*i)
 			else
-				I.pixel_x = -7+(offset*i)
-		I.transform = M
-		. += I
+				x = -7+(offset*i)
+		look.overlay(look_overlay_image(icon, P.face_state(concealed), pixel_x = x, pixel_y = y, transform = M))
 		i++
 
+/// A hand with no cards left is gone.
+/obj/item/hand/proc/hand_empty()
+	spent(src)
 
 /obj/item/hand/dropped(mob/user, equipping, slot)
 	..()
-	direction = locate(/obj/structure/table, loc) ? user.dir : null
-	update_icon()
-
-/obj/item/hand/pickup(mob/user)
-	..()
-	src.update_icon()
+	set_direction(locate(/obj/structure/table, loc) ? user.dir : null)
 
 /obj/item/hand/item_ctrl_click(mob/user)
 	if(user.stat || !Adjacent(user))
@@ -931,3 +920,7 @@ CAPABILITIES(/datum/prompt/checklist/card_game_review)
 	rel_set(box, nameof(box.prompt), src)
 	box.tgui_interact(user)
 	return box
+
+/// The sprite state of this card face up, or its back when `concealed`.
+/datum/playingcard/proc/face_state(concealed)
+	return concealed ? "[back_icon]" : "[card_icon]"

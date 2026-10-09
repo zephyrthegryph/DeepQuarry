@@ -383,6 +383,10 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental)
 	src.total_smoke--
 
 /datum/effect/effect/system/smoke_spread/start(I)
+	// A fire-and-forget system: it lives as long as the longest expire_smoke() it can still owe (3 s of drift, 75% of the smoke's life, up to
+	// 3 s of jitter, 1 s spare) and then deletes itself. start() again (start_repeatedly) re-arms it.
+	var/obj/effect/effect/smoke/kind = smoke_type
+	expire(3 SECONDS + initial(kind.time_to_live) * 0.75 + 3 SECONDS + 1 SECOND)
 	var/i = 0
 	for(i=0, i<src.number, i++)
 		if(src.total_smoke > 20)
@@ -700,3 +704,8 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental)
 /datum/effect/effect/system/steam_trail_follow/proc/oldposition() as /turf
 	return oldposition
 
+
+/// Starts the effect `times` times, `interval` deciseconds apart, on the effect's own clock.
+/datum/effect/effect/system/proc/start_repeatedly(times, interval)
+	for(var/i in 0 to times - 1)
+		after(src, i * interval, PROC_REF(start))

@@ -234,3 +234,7 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 /// The watching_mob this refers to (a relation view: null once that is deleted).
 /obj/machinery/station_map/proc/watching_mob() as /mob
 	return watching_mob
+
+/// after() target: takes an image off a mob's client screen (after a fade-out).
+/proc/remove_client_image(mob/M, image/I)
+	M.client?.images -= I

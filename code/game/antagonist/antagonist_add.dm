@@ -33,7 +33,7 @@
 	var/msg = span_notice("Once you decide on a goal to pursue, you can optionally display it to \
 		everyone at the end of the shift with the " + span_bold("Set Ambition") + " verb, located in the IC tab.  You can change this at any time, \
 		and it otherwise has no bearing on your round.")
-	after(player.current, 1 SECOND, TYPE_PROC_REF(/datum, om_chat), with = list(msg)) //Added a delay so that this should pop up at the bottom and not the top of the text flood the new antag gets.
+	after(player.current, 1 SECOND, GLOBAL_PROC_REF(to_chat), with = list(player.current, msg)) //Added a delay so that this should pop up at the bottom and not the top of the text flood the new antag gets.
 	grant(player.current, granted_verb(/mob/living/proc/write_ambition), src)
 
 	if(can_speak_aooc)

@@ -253,7 +253,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/structure/sink/S = allocate(/obj/structure/sink, run_loc_floor_bottom_left)
 	var/obj/item/pen/P = allocate(/obj/item/pen, run_loc_floor_bottom_left)
-	P.gurgled = TRUE
+	P.set_gurgled(TRUE)
 	user.put_in_active_hand(P)
 	test_chat_clear()
 	test_click(user, S, P)
@@ -271,7 +271,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/structure/sink/S = allocate(/obj/structure/sink, run_loc_floor_bottom_left)
 	var/obj/item/pen/P = allocate(/obj/item/pen, run_loc_floor_bottom_left)
-	P.gurgled = TRUE
+	P.set_gurgled(TRUE)
 	user.put_in_active_hand(P)
 	test_click(user, S, P)
 	var/datum/T = running(user)
@@ -290,8 +290,8 @@
 	var/obj/structure/sink/S = allocate(/obj/structure/sink, run_loc_floor_bottom_left)
 	var/obj/item/pen/P1 = allocate(/obj/item/pen, run_loc_floor_bottom_left)
 	var/obj/item/pen/P2 = allocate(/obj/item/pen, run_loc_floor_bottom_left)
-	P1.gurgled = TRUE
-	P2.gurgled = TRUE
+	P1.set_gurgled(TRUE)
+	P2.set_gurgled(TRUE)
 	one.put_in_active_hand(P1)
 	two.put_in_active_hand(P2)
 	test_click(one, S, P1)

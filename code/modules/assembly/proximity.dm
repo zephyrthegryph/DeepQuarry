@@ -19,15 +19,13 @@ TRACKED(/obj/item/assembly/prox_sensor, timing)
 	if(!..())
 		return FALSE
 	set_timing(!timing)
-	update_icon()
 	return FALSE
 
 /obj/item/assembly/prox_sensor/toggle_secure()
 	set_secured(!secured)
 	if(!secured)
-		scanning = 0
+		set_scanning(0)
 		set_timing(FALSE)
-	update_icon()
 	return secured
 
 /obj/item/assembly/prox_sensor/HasProximity(turf/T, WF, old_loc)
@@ -71,21 +69,20 @@ TRACKED(/obj/item/assembly/prox_sensor, timing)
 /obj/item/assembly/prox_sensor/proc/toggle_scan()
 	if(!secured)
 		return FALSE
-	scanning = !scanning
-	update_icon()
+	set_scanning(!scanning)
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly/prox_sensor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/assembly/prox_sensor/appearance_overlays()
-	. = list()
-	LAZYCLEARLIST(attached_overlays)
+TRACKED(/obj/item/assembly/prox_sensor, scanning)
+
+/obj/item/assembly/prox_sensor/holder_layers()
+	var/list/layers
 	if(timing)
-		. += "prox_timing"
-		LAZYADD(attached_overlays, "prox_timing")
+		LAZYADD(layers, "prox_timing")
 	if(scanning)
-		. += "prox_scanning"
-		LAZYADD(attached_overlays, "prox_scanning")
-	if(holder())
-		holder().update_icon()
+		LAZYADD(layers, "prox_scanning")
+	return layers
+
+/// A grenade this sensor primes follows its scanning.
+/obj/item/assembly/prox_sensor/proc/scanning_changed(datum/act/A)
 	if(holder() && istype(holder().loc,/obj/item/grenade/chem_grenade))
 		var/obj/item/grenade/chem_grenade/grenade = holder().loc
 		grenade.primed(scanning)
@@ -101,6 +98,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/prox_sensor, TYPE_PROC_REF(/atom, app
 CAPABILITIES(/obj/item/assembly/prox_sensor)
 	/// Scans and counts down only while secured.
 	every(2 SECONDS, then(PROC_REF(prox_sensor_step)), when = nameof(secured))
+	on_change(nameof(scanning), ANY, then(PROC_REF(scanning_changed)))
 	interface("AssemblyProx", state = nameof(GLOB.tgui_deep_inventory_state))
 	without("ui_open")
 	op("scanning", ui_act("scanning"), then(PROC_REF(ui_act_scanning)))
@@ -140,7 +138,6 @@ CAPABILITIES(/obj/item/assembly/prox_sensor)
 
 /obj/item/assembly/prox_sensor/proc/ui_act_timing(datum/act/op/A)
 	set_timing(!timing)
-	update_icon()
 	return TRUE
 
 /obj/item/assembly/prox_sensor/proc/ui_act_set_time(datum/act/op/A, time_arg)

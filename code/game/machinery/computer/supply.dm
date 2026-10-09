@@ -361,7 +361,6 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	reqform.info += S.get_html_manifest()
 	reqform.info += "<hr>"
 	reqform.info += "STAMP BELOW TO APPROVE THIS REQUISITION:<br>"
-	reqform.update_icon() // legacy paper (not yet on draw()): shows it written
 	changed(reqform)
 
 /// Refuses unless this console accepts orders.

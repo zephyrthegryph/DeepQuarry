@@ -216,7 +216,7 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 	every_hop_ensure(holder)
 
 /// TRUE while a type-level every() of `holder` has a run scheduled (it is armed, not parked behind its `when =`): the readable state that
-/// replaces om_task_periodic_running().
+/// replaces the old periodic-lane query.
 /proc/every_running(datum/holder)
 	var/index = 0
 	for(var/datum/centry/C as anything in compiled_entries(table_of(holder), ENTRY_EVERY))

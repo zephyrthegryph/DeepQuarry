@@ -1387,47 +1387,30 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 				if(!(organ.is_robotic()) && (should_have_organ(O_HEART))) //There is no blood in protheses.
 					organ.set_status(organ.status | ORGAN_BLEEDING)
 
-/mob/living/carbon/human/verb/check_pulse()
-	set category = VERB_CAT_OBJECT
-	set name = "Check pulse"
-	set desc = "Approximately count somebody's pulse. Requires you to stand still at least 6 seconds."
-	set src in view(1)
-	var/self = 0
+MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
-	if(usr.stat || usr.restrained() || !isliving(usr)) return
+/// Counting a pulse: the target has one to count, and who counts is told that both must stay still.
+/mob/living/carbon/human/proc/check_pulse_started(datum/act/op/A)
+	var/mob/user = A.actor
+	var/self = (user == src)
+	if(!pulse)
+		return MSG(human/no_pulse)
+	to_chat(user, span_notice("[self ? "You have a" : "[src] has a"] pulse! Counting..."))
+	to_chat(user, span_filter_notice("You must[self ? "" : " both"] remain still until counting is finished."))
 
-	if(usr == src)
-		self = 1
-	if(!self)
-		act_message(usr, src, MSG_SELF(span_filter_notice("You begin counting %T%'s pulse.")), \
-			MSG_OTHERS(span_notice("%U% kneels down, puts %THEIR% hand on %T%'s wrist and begins counting [p_their()] pulse.")))
-	else
-		act_message(usr, null, MSG_SELF(span_filter_notice("You begin counting your pulse.")), \
-			MSG_OTHERS(span_notice("%U% begins counting [p_their()] pulse.")))
+/mob/living/carbon/human/proc/check_pulse_begins(datum/act/op/A)
+	if(A.actor == src)
+		return msg_text(span_filter_notice("You begin counting your pulse."), span_notice("%U% begins counting %THEIR% pulse."))
+	return msg_text(span_filter_notice("You begin counting %T%'s pulse."), span_notice("%U% kneels down, puts %THEIR% hand on %T%'s wrist and begins counting %THEIR% pulse."))
 
-	if(src.pulse)
-		to_chat(usr, span_notice("[self ? "You have a" : "[src] has a"] pulse! Counting..."))
-	else
-		to_chat(usr, span_danger("[src] has no pulse!"))
-		return
-
-	to_chat(usr, span_filter_notice("You must[self ? "" : " both"] remain still until counting is finished."))
-	task_start(/datum/task/timed/human_check_pulse_human, usr, src, receiver = src, self = self)
-
-/datum/task/timed/human_check_pulse_human
-	duration = 6 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/check_pulse_human_done
-	cancel_proc = /mob/living/carbon/human/proc/check_pulse_human_failed
-	var/self
-
-/mob/living/carbon/human/proc/check_pulse_human_done(datum/task/timed/human_check_pulse_human/task)
-	var/self = task.self
-	var/mob/usr_mob = task.actor
+/mob/living/carbon/human/proc/check_pulse_human_done(datum/act/op/A)
+	var/mob/usr_mob = A.actor
+	var/self = (usr_mob == src)
 	var/message = span_notice("[self ? "Your" : "[src]'s"] pulse is [src.get_pulse(GETPULSE_HAND)].")
 	to_chat(usr_mob,message)
 
-/mob/living/carbon/human/proc/check_pulse_human_failed(datum/task/timed/human_check_pulse_human/task)
-	var/mob/usr_mob = task.actor
+/mob/living/carbon/human/proc/check_pulse_human_failed(datum/act/op/A)
+	var/mob/usr_mob = A.actor
 	to_chat(usr_mob, span_warning("You failed to check the pulse. Try again."))
 
 /// `keep_organs`: change the species' facts (languages, verbs, components, factors, HUD) but
@@ -1646,8 +1629,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 			to_chat(src, span_warning("You ran out of blood to write with!"))
 
 		var/obj/effect/decal/cleanable/blood/writing/W = new(T)
-		W.basecolor = (hand_blood_color) ? hand_blood_color : "#A10808"
-		W.update_icon()
+		W.set_basecolor((hand_blood_color) ? hand_blood_color : "#A10808")
 		W.message = message
 		W.add_fingerprint(src)
 

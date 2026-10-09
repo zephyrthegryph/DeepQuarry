@@ -132,11 +132,11 @@
 /turf/simulated/shuttle/plating/airless/carry icon: icons/turf/shuttle_parts.dmi
 /turf/simulated/shuttle/plating/airless/carry state: carry_ingame
 /turf/simulated/shuttle/plating/airless/carry dir: 2
-/turf/simulated/shuttle/plating/airless/carry underlay: icons/turf/flooring/tiles_vr.dmi:steel:-45
+/turf/simulated/shuttle/plating/airless/carry underlay: icons/turf/space.dmi:white:-82
 /turf/simulated/shuttle/plating/carry icon: icons/turf/shuttle_parts.dmi
 /turf/simulated/shuttle/plating/carry state: carry_ingame
 /turf/simulated/shuttle/plating/carry dir: 2
-/turf/simulated/shuttle/plating/carry underlay: icons/turf/flooring/tiles_vr.dmi:steel:-45
+/turf/simulated/shuttle/plating/carry underlay: icons/turf/space.dmi:white:-82
 /turf/simulated/shuttle/plating/skipjack icon: icons/turf/floors.dmi
 /turf/simulated/shuttle/plating/skipjack state: plating
 /turf/simulated/shuttle/plating/skipjack dir: 2

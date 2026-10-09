@@ -10,6 +10,9 @@
 	var/occupied = 1
 	var/destroyed = 0
 
+TRACKED(/obj/structure/displaycase, occupied)
+TRACKED(/obj/structure/displaycase, destroyed)
+
 // Glass-on-glass hit sound while the case still stands.
 /obj/structure/displaycase/play_attack_sound(damage_amount, damage_type, damage_flag)
 	play_sfx(src, SFX_EFFECTS_GLASSHIT)
@@ -19,10 +22,9 @@
 	SHOULD_CALL_PARENT(FALSE)
 	if(!destroyed)
 		set_density(FALSE)
-		destroyed = 1
+		set_destroyed(1)
 		new /obj/item/material/shard( src.loc )
 		play_sfx(src, SFX_SHATTER)
-		changed(src)
 
 /// The look (the draw sweep: from its template).
 /obj/structure/displaycase/draw(datum/look/look)
@@ -48,7 +50,7 @@ CAPABILITIES(/obj/structure/displaycase)
 	if (src.destroyed && src.occupied)
 		new /obj/item/gun/energy/captain( src.loc )
 		to_chat(user, span_notice("You deactivate the hover field built into the case."))
-		src.occupied = 0
+		set_occupied(0)
 		src.add_fingerprint(user)
 	else
 		to_chat(user, span_warning("You kick the display case."))

@@ -1098,7 +1098,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 			T.service_mask |= mine
 			LAZYADD(T.services, S)
 			LAZYADD(T.service_masks, mine)
-	T.sys_periodic_mask = periodic_mask_for(path)
 	T.derived_relays = scheduler_field_derived_relays_of(path)
 	for(var/i in 1 to length(T.derived_relays) step 2)
 		T.relay_mask |= scheduler_field_field_table(path)[T.derived_relays[i]]

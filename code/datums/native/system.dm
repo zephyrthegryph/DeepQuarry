@@ -174,7 +174,7 @@
 
 /// CROSSED (`watch`, `band`): the watch's own delivery.
 /datum/system/native/proc/on_crossed(handle, band, list/box, p, count)
-	var/datum/native_watch/W = om_native_watch_of(handle)
+	var/datum/native_watch/W = kernel_native_native_watch_of(handle)
 	if(!W)
 		om_world_dropped()
 		return
@@ -206,7 +206,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 	return GLOB.native_key_names[num2text(key, 12)]
 
 /// `E`'s value under `key` (a Rust channel mask, or a DM CHANGE_* channel) changed. Reactions hear it through
-/// publish_change() under the key's `native("...")` name (READERS demand-gates it). The om_raise_change() call is
+/// publish_change() under the key's `native("...")` name (READERS demand-gates it). The entity_raise_change() call is
 /// the bridge for OM-era readers that key on channel bits: om_listen listeners, declared appearances, caches
 /// and periodic work (code/datums/om/entity.dm om_dispatch_change).
 /proc/native_publish_change(datum/E, key)
@@ -216,7 +216,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 	var/name = native_key_name(key)
 	if(name && rx_readers(E, name))
 		publish_change(E, name)
-	om_raise_change(E, key)
+	entity_raise_change(E, key)
 	return TRUE
 
 /// Something of `kind` (an event header) happened to `E`, with `args`. Published as a /datum/notice/native:
@@ -235,8 +235,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 	if(QDELETED(watch) || !watch.handle)
 		return FALSE
 	if(watch.rx_reaction)
-		// ALLOW(ownership): the watch resolves its owner by weak ref each delivery; the ref is a handle, not a held relation
-		var/datum/holder = om_resolve(watch.owner_ref)
+		var/datum/holder = resolve_handle(watch.owner_ref)
 		if(!holder)
 			ended_with(watch)
 			return FALSE

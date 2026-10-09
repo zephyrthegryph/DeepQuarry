@@ -82,7 +82,7 @@ human|/obj/item/tool/screwdriver menu: Toggle Hardsuit (refused: You can't do th
 human|/obj/item/tool/screwdriver menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: Click: Protean rig item
+human|/obj/item/tool/screwdriver click: Click: Protean rig hand
 human|/obj/item/tool/crowbar menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Engage Module (refused: You can't do that.)
@@ -104,7 +104,7 @@ human|/obj/item/tool/crowbar menu: Toggle Hardsuit (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: Click: Protean rig item
+human|/obj/item/tool/crowbar click: Click: Protean rig hand
 human|/obj/item/tool/wrench menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Engage Module (refused: You can't do that.)
@@ -126,7 +126,7 @@ human|/obj/item/tool/wrench menu: Toggle Hardsuit (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/tool/wrench click: Click: Protean rig item
+human|/obj/item/tool/wrench click: Click: Protean rig hand
 human|/obj/item/tool/wirecutters menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Engage Module (refused: You can't do that.)
@@ -148,7 +148,7 @@ human|/obj/item/tool/wirecutters menu: Toggle Hardsuit (refused: You can't do th
 human|/obj/item/tool/wirecutters menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: Click: Protean rig item
+human|/obj/item/tool/wirecutters click: Click: Protean rig hand
 human|/obj/item/multitool menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/multitool menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/multitool menu: Engage Module (refused: You can't do that.)
@@ -170,7 +170,7 @@ human|/obj/item/multitool menu: Toggle Hardsuit (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/multitool click: Click: Protean rig item
+human|/obj/item/multitool click: Click: Protean rig hand
 human|/obj/item/weldingtool menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Engage Module (refused: You can't do that.)
@@ -192,7 +192,7 @@ human|/obj/item/weldingtool menu: Toggle Hardsuit (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/weldingtool click: Click: Protean rig item
+human|/obj/item/weldingtool click: Click: Protean rig hand
 human|/obj/item/stack/cable_coil menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Engage Module (refused: You can't do that.)
@@ -215,7 +215,7 @@ human|/obj/item/stack/cable_coil menu: Toggle Hardsuit (refused: You can't do th
 human|/obj/item/stack/cable_coil menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: Click: Protean rig item
+human|/obj/item/stack/cable_coil click: Click: Protean rig hand
 human|/obj/item/stack/material/steel menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Engage Module (refused: You can't do that.)
@@ -237,7 +237,7 @@ human|/obj/item/stack/material/steel menu: Toggle Hardsuit (refused: You can't d
 human|/obj/item/stack/material/steel menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: Click: Protean rig item
+human|/obj/item/stack/material/steel click: Click: Protean rig hand
 human|/obj/item/card/id menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/card/id menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/card/id menu: Engage Module (refused: You can't do that.)
@@ -260,7 +260,7 @@ human|/obj/item/card/id menu: Toggle Hardsuit (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/card/id click: Click: Protean rig item
+human|/obj/item/card/id click: Click: Protean rig hand
 human|/obj/item/kit menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Deploy Hardsuit (refused: You can't do that.)
@@ -283,7 +283,7 @@ human|/obj/item/kit menu: Toggle Hardsuit (refused: You can't do that.)
 human|/obj/item/kit menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/kit menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/kit menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/kit click: Click: Protean rig item
+human|/obj/item/kit click: Click: Protean rig hand
 human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/storage menu: Deploy Hardsuit (refused: You can't do that.)
@@ -306,7 +306,7 @@ human|/obj/item/storage menu: Toggle Hardsuit (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/storage click: Click: Protean rig item
+human|/obj/item/storage click: Click: Protean rig hand
 human|/obj/item/card/emag menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/card/emag menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/card/emag menu: Engage Module (refused: You can't do that.)
@@ -351,7 +351,30 @@ human|/obj/item menu: Toggle Hardsuit (refused: You can't do that.)
 human|/obj/item menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item menu: Toggle Module (refused: You can't do that.)
 human|/obj/item menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item click: Click: Protean rig item
+human|/obj/item click: Click: Protean rig hand
+human|/obj/item/rig_module menu: Configure Voice Synthesiser (refused: You can't do that.)
+human|/obj/item/rig_module menu: Deploy Hardsuit (refused: You can't do that.)
+human|/obj/item/rig_module menu: Engage Module (refused: You can't do that.)
+human|/obj/item/rig_module menu: Install module (refused: The hardsuit already has a module of that class installed.)
+human|/obj/item/rig_module menu: Move To Top
+human|/obj/item/rig_module menu: Open Hardsuit Interface (refused: You can't do that.)
+human|/obj/item/rig_module menu: Protean rig hand
+human|/obj/item/rig_module menu: Protean rig item
+human|/obj/item/rig_module menu: Remove Assimilated Rig (refused: You can't do that.)
+human|/obj/item/rig_module menu: Remove Stored Bag (refused: You can't do that.)
+human|/obj/item/rig_module menu: Rig item
+human|/obj/item/rig_module menu: Rig shock hand
+human|/obj/item/rig_module menu: Select Module (refused: You can't do that.)
+human|/obj/item/rig_module menu: Switch Vision Mode (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Boots (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Chestpiece (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Gauntlets (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Hardsuit (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Module (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Visor (refused: You can't do that.)
+human|/obj/item/rig_module click: Click: Install module
 wires: AI Override, Interface Lock, Interface Shock, Security, System Control
-keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, interact_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, protean_removebag_verb, protean_removerig_verb, protean_rig_hand, protean_rig_item, rig_alter_voice_verb, rig_deploy_suit_verb, rig_engage_module_verb, rig_hardsuit_interface_verb, rig_item, rig_select_module_verb, rig_shock_hand, rig_switch_vision_mode_verb, rig_toggle_boots_verb, rig_toggle_chest_verb, rig_toggle_gauntlets_verb, rig_toggle_helmet_verb, rig_toggle_module_verb, rig_toggle_seals_verb, rig_toggle_vision_verb, tank_settings, toggle_ai_control, toggle_cooling, toggle_digestable, toggle_piece, toggle_seals, toggle_suit_lock
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, interact_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, protean_install_module, protean_removebag_verb, protean_removerig_verb, protean_rig_hand, protean_rig_item, rig_alter_voice_verb, rig_deploy_suit_verb, rig_engage_module_verb, rig_hardsuit_interface_verb, rig_item, rig_select_module_verb, rig_shock_hand, rig_switch_vision_mode_verb, rig_toggle_boots_verb, rig_toggle_chest_verb, rig_toggle_gauntlets_verb, rig_toggle_helmet_verb, rig_toggle_module_verb, rig_toggle_seals_verb, rig_toggle_vision_verb, tank_settings, toggle_ai_control, toggle_cooling, toggle_digestable, toggle_piece, toggle_seals, toggle_suit_lock
 

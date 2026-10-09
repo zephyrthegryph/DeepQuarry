@@ -1119,12 +1119,10 @@ TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 		if(istype(cashmoney, /obj/item/spacecash))
 
 			act_message(user, src, others = span_info("%U% inserts some cash into %T%."))
-			cashmoney.worth -= gameprice
+			cashmoney.set_worth(cashmoney.worth - gameprice)
 
 			if(cashmoney.worth <= 0)
 				consume(cashmoney, user)
-			else
-				cashmoney.update_icon()
 
 		// Machine has no idea who paid with cash
 		credit_purchase("(cash)")
@@ -1142,7 +1140,7 @@ TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 			visible_message(span_info("Insufficient funds."))
 			return 0
 		else
-			wallet.worth -= gameprice
+			wallet.set_worth(wallet.worth - gameprice)
 			credit_purchase("[wallet.owner_name] (chargecard)")
 			return 1
 	if(emagged())

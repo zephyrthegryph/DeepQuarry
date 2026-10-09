@@ -9,26 +9,26 @@
  * and after `change` runs it must wake within `ticks`. Returns null on success or the failure.
  */
 /proc/om_wake_test(datum/D, list/change, ticks = 4)
-	om_trace(D)
+	pipeline_trace(D)
 	om_test_ticks(ticks)
 	// Settle first: a wake already queued before the steady window (the test's own setup) lands
 	// on the scheduler's next pass, which a busy test world can push past `ticks`.
 	om_settle(D, ticks * 10)
-	var/before = om_traced_count(D)
+	var/before = pipeline_traced_count(D)
 	om_test_ticks(ticks)
-	if(om_traced_count(D) != before)
-		om_untrace(D)
+	if(pipeline_traced_count(D) != before)
+		pipeline_untrace(D)
 		return "[D.type] woke while its input held steady"
-	om_run(change)
+	deferred_run(change)
 	// Wakes ride the scheduler's lanes and deadline share: under a busy test world give them a
 	// little longer than `ticks` before calling one lost.
 	var/after = before
 	for(var/i in 1 to ticks * 10)
 		om_test_ticks(1)
-		after = om_traced_count(D)
+		after = pipeline_traced_count(D)
 		if(after != before)
 			break
-	om_untrace(D)
+	pipeline_untrace(D)
 	if(after == before)
 		return "[D.type] did not wake after its input changed"
 	return null
@@ -46,7 +46,7 @@
 			return TRUE
 	var/list/T = rec.timers
 	if(length(T))
-		var/local = om_timer_local(rec)
+		var/local = timer_local(rec)
 		for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
 			if(T[i + 1] <= local)
 				return TRUE
@@ -65,7 +65,7 @@
 /proc/om_wait_for_wake(datum/D, count = 0, max_ticks = 40)
 	for(var/i in 1 to max_ticks)
 		om_test_ticks(1)
-		if(om_traced_count(D) > count)
+		if(pipeline_traced_count(D) > count)
 			return TRUE
 	return FALSE
 
@@ -76,17 +76,6 @@
 /// A mob chunk watch's handler (watch_mob_chunks(watcher, chunks, mask, handler) calls handler(chunk, bits) on the watcher).
 /datum/om_wake_test_subscriber/proc/chunk_woke(datum/mob_chunk/C, bits)
 	wakes += bits
-
-/datum/om/behaviour/sleeper/test_subscriber
-	name = "test subscriber"
-
-/datum/om/behaviour/sleeper/test_subscriber/on_wake(datum/om_wake_test_subscriber/S, changes)
-	S.wakes += changes
-
-/// Makes `S` watch `mask` on `target`.
-/proc/om_test_watch(datum/om_wake_test_subscriber/S, datum/target, mask)
-	om_attach(S, /datum/om/behaviour/sleeper/test_subscriber)
-	om_watch(S, target, mask, /datum/om/behaviour/sleeper/test_subscriber)
 
 /// Deadline wakes: a door's autoclose runs on one after() timer; power and electrification restore through timed_set().
 /datum/unit_test/dq_om_wake_airlock_deadlines
@@ -119,16 +108,6 @@
 	TEST_ASSERT(!A.main_power_out, "main power did not return when its hold ran out")
 
 
-/// Bolts and power raise CHANGE_MACHINE_MODE for whoever watches the door.
-/datum/unit_test/dq_om_wake_airlock_mode_key
-
-/datum/unit_test/dq_om_wake_airlock_mode_key/Run()
-	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, test_floor())
-	var/datum/om_wake_test_subscriber/watcher = allocate(/datum/om_wake_test_subscriber)
-	om_test_watch(watcher, A, CHANGE_MACHINE_MODE)
-	var/failure = om_wake_test(watcher, om_callable(A, TYPE_PROC_REF(/obj/machinery/door/airlock, drop_bolts), TRUE))
-	TEST_ASSERT(!failure, failure)
-
 /// Cameras: EMP recovery and the motion alarm are timers; losing a target is a signal.
 /datum/unit_test/dq_om_wake_camera_timers
 
@@ -136,7 +115,7 @@
 	var/obj/machinery/camera/C = allocate(/obj/machinery/camera, test_floor())
 	TEST_ASSERT(!after_pending(C, "camera_timer_token"), "an idle camera has a timer")
 	TEST_ASSERT_NULL(C.sleep_violation(), "an idle camera is not asleep")
-	var/failure = om_wake_test(C, om_callable(src, PROC_REF(emp_camera_briefly), C), 20)
+	var/failure = om_wake_test(C, deferred_call(src, PROC_REF(emp_camera_briefly), C), 20)
 	TEST_ASSERT(!failure, failure)
 	OM_TEST_WAIT_UNTIL(!C.emp_held(), 80)
 	TEST_ASSERT(!C.emp_held(), "the camera did not recover at the end of its EMP")

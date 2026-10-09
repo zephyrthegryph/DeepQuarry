@@ -41,15 +41,10 @@
 	R.info += "4. If everything is done correctly, the money will be transferred. To unlock the device you will have to reset the EFTPOS device.<br>"
 
 	//stamp the paper
-	var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
-	stampoverlay.icon_state = "paper_stamp-cent"
 	if(!R.stamped)
 		R.stamped = new
-	R.offset_x += 0
-	R.offset_y += 0
-	LAZYADD(R.ico, "paper_stamp-cent")
+	R.add_stamp_mark("paper_stamp-cent", 0, 0)
 	R.stamped += /obj/item/stamp
-	R.add_overlay(stampoverlay)
 	R.stamps += "<HR><i>This paper has been stamped by the EFTPOS device.</i>"
 
 /obj/item/eftpos/proc/print_reference()
@@ -141,7 +136,7 @@ CAPABILITIES(/obj/item/eftpos)
 						src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
 						transaction_paid = 1
 
-						E.worth -= transaction_amount
+						E.set_worth(E.worth - transaction_amount)
 						linked_account().credit(transaction_amount, E.owner_name, transaction_purpose || "None supplied.", machine_id)
 					else
 						to_chat(user, "[icon2html(src, user.client)]" + span_warning("\The [O] doesn't have that much money!"))

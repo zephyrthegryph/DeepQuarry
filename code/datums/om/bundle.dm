@@ -11,5 +11,3 @@
 /datum/om/type_table
 	parent_type = /datum/scheduler_type_table
 
-/proc/om_read(datum/holder, spec)
-	return definition_read(arglist(args))

@@ -23,7 +23,7 @@
 	acti_sound = SFX_WEAPONS_KENETIC_RELOAD
 	always_process = TRUE
 
-/obj/item/weldingtool/lasercannon/periodic_step()
+/obj/item/weldingtool/lasercannon/weldingtool_step(datum/act/timer/A)
 	if(get_fuel() <= get_max_fuel())
 		reagents.add_reagent(REAGENT_ID_FUEL, 1)
 	..()

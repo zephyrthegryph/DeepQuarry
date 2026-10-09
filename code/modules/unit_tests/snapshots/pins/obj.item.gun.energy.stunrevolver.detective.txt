@@ -164,5 +164,19 @@ human|/obj/item menu: Resprite gun (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Toggle DNA Samples Allowance (refused: You can't do that.)
 human|/obj/item click: Click: Fit
-keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, interaction_hand, kit_customize, kit_customize_last, move_to_top, pick_up_item, rename, reskin, toggle_digestable
+human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell menu: Drain its charge (refused: not in your hand)
+human|/obj/item/cell menu: Fit
+human|/obj/item/cell menu: Give DNA (refused: You can't do that.)
+human|/obj/item/cell menu: Insert cell
+human|/obj/item/cell menu: Interaction hand
+human|/obj/item/cell menu: Move To Top
+human|/obj/item/cell menu: Name Gun (refused: You can't do that.)
+human|/obj/item/cell menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/cell menu: Resprite gun (refused: You can't do that.)
+human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/cell menu: Use
+human|/obj/item/cell click: Click: Insert cell
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, interaction_hand, kit_customize, kit_customize_last, load_cell, move_to_top, pick_up_item, rename, reskin, toggle_digestable
 

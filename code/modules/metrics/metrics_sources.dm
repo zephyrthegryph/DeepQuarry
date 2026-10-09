@@ -98,7 +98,7 @@
 
 /datum/metrics_source/om/collect(datum/system/server_metrics/M, dt)
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
-	var/datum/om/registry/reg = om_registry()
+	var/datum/om/registry/reg = definition_registry()
 	if(!sched || !reg)
 		return
 	var/static/list/lane_names = list("urgent", "simulation", "derived", "presentation", "background", "world")

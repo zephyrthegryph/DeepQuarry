@@ -19,7 +19,7 @@
 	for(var/obj/effect/ebeam/segment as anything in segments)
 		TEST_ASSERT(QDELETED(segment), "terminal teardown deletes every drawn segment")
 		TEST_ASSERT_NULL(segment.owner(), "the deleted segment no longer names its beam owner")
-	TEST_ASSERT_EQUAL(om_timer_count(beam), 0, "terminal teardown cancels the pending repeat timer")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(beam), 0, "terminal teardown cancels the pending repeat timer")
 
 /// Draw() can terminate a beam before Start() reaches its state setter.
 /datum/unit_test/om/interim_beam_invalid_start/run_om(list/made)
@@ -34,5 +34,5 @@
 	TEST_ASSERT(QDELETED(beam), "Start terminates a beam whose endpoint disappeared")
 	TEST_ASSERT(!after_pending(beam, "beam_tick"), "Start never rearms the controller after Draw deletes it")
 	scheduler_advance(0.01 SECONDS)
-	TEST_ASSERT_EQUAL(om_timer_count(beam), 0, "the invalid controller has no repeat timer after field processing")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(beam), 0, "the invalid controller has no repeat timer after field processing")
 	TEST_ASSERT_EQUAL(length(beam.elements), 0, "the invalid controller leaves no owned visual segments")

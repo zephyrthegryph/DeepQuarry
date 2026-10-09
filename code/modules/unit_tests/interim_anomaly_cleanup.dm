@@ -15,7 +15,7 @@
 	TEST_ASSERT(QDELETED(anomaly), "actual lifespan timer consumes its source at the configured deadline")
 	TEST_ASSERT(QDELETED(core), "actual expiry deletes the owned core")
 	TEST_ASSERT(QDELETED(countdown), "actual expiry deletes the owned countdown")
-	TEST_ASSERT_EQUAL(om_timer_count(anomaly), 0, "actual expiry leaves no source timers")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(anomaly), 0, "actual expiry leaves no source timers")
 
 /datum/unit_test/interim_anomaly_explosion_cleanup/Run()
 	var/obj/effect/anomaly/anomaly = allocate(/obj/effect/anomaly, run_loc_floor_bottom_left)
@@ -26,7 +26,7 @@
 	TEST_ASSERT_EQUAL(anomaly.ex_act(1), TRUE, "actual severe explosion reports successful anomaly deletion")
 	TEST_ASSERT(QDELETED(anomaly), "actual severe explosion consumes the exact source")
 	TEST_ASSERT(QDELETED(core) && QDELETED(countdown), "actual severe explosion deletes both original owned children")
-	TEST_ASSERT_EQUAL(om_timer_count(anomaly), 0, "actual explosion cancels the original lifespan timer")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(anomaly), 0, "actual explosion cancels the original lifespan timer")
 
 /datum/unit_test/interim_anomaly_neutralize_cleanup/Run()
 	var/turf/T = run_loc_floor_bottom_left
@@ -41,4 +41,4 @@
 	TEST_ASSERT(QDELETED(core), "actual neutralization preserves its existing explicit core-delete policy")
 	TEST_ASSERT(QDELETED(countdown), "actual neutralization removes its original owned countdown")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/effect/effect/smoke)), 1, "actual neutralization produces its one real smoke effect")
-	TEST_ASSERT_EQUAL(om_timer_count(anomaly), 0, "actual neutralization cancels its source lifespan timer")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(anomaly), 0, "actual neutralization cancels its source lifespan timer")

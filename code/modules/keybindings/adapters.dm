@@ -166,6 +166,12 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 	return TRUE
 
 /datum/input_adapter/hands/use_variant(mob/user, atom/target, variant)
+	// A Disarm or Grab from the Menu is one click as that variant: the target's ops answer it first (a cow's Tip over), exactly as a player's click does
+	// (input_resolve_click()); what no op takes goes on to the hands' use.
+	if(op_has_ops(target) || op_has_ops(user.held_for_ops()) || op_has_click_ops(user))
+		var/datum/op_result/result = op_resolve_click_with_params(user, target, user.held_for_ops(), GESTURE_CLICK, ORIGIN_CLICK, "", TRUE, TRUE)
+		if(result)
+			return TRUE
 	return use(user, target, list(), "")
 
 /*

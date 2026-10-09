@@ -818,7 +818,6 @@ CAPABILITIES(/obj/item/radio/borg)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!SSradio && initial_run)
-		// ALLOW(sys_om_after_rearm): not a loop - one retry with initial_run = FALSE, which never re-arms (the retry marks the radio broken); it waits on the global radio service, not on state of this radio.
 		after(src, 3 SECONDS, PROC_REF(controller_check), with = list(FALSE))
 		return
 	if(!SSradio && !initial_run)

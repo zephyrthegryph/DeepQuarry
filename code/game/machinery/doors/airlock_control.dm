@@ -46,7 +46,6 @@ TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTING
 	if(do_lock)
 		set_bolted(src, TRUE, TRUE)
 	if(delayed_status)
-		// ALLOW(sys_om_after_rearm): one retry that waits for the delayed status to land, not a loop over state
 		after(src, 0.2 SECONDS, PROC_REF(check_completion))
 		return
 	var/completed_command = cur_command

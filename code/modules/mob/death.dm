@@ -32,7 +32,7 @@
 
 	animation.expire(DISINTEGRATE_DELAY)
 	// The body and whatever is still inside it go as one batched destroy.
-	after(src, DISINTEGRATE_DELAY, /datum/proc/om_qdel_batch_self)
+	expire(DISINTEGRATE_DELAY)
 #undef DISINTEGRATE_DELAY
 
 /// Gib: burst into gibs. Cannot gib ghosts.

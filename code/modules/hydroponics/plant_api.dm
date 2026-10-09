@@ -51,8 +51,8 @@
 /datum/system/plants/proc/add_plant(obj/effect/plant/plant)
 	if(!QDELETED(plant))
 		registry_join(REGISTRY_GROWING_PLANTS, plant)
-		om_task_periodic(plant, PERIODIC_PLANTS)
+		plant.set_growing(TRUE)
 
 /datum/system/plants/proc/remove_plant(obj/effect/plant/plant)
 	registry_leave(REGISTRY_GROWING_PLANTS, plant)
-	om_task_periodic_stop(plant)
+	plant.set_growing(FALSE)

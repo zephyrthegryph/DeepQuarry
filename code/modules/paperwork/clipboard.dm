@@ -37,9 +37,14 @@
 
 /obj/item/clipboard/draw(datum/look/look)
 	..()
-	if(toppaper())
-		look.overlay(toppaper().icon_state)
-		look.overlay(toppaper().overlays)
+	var/obj/item/top = toppaper()
+	if(top)
+		look.watch(top)
+		look.overlay(top.icon_state)
+		var/obj/item/paper/sheet = top
+		if(istype(sheet))
+			for(var/list/mark in sheet.stamp_marks)
+				look.overlay(sheet.stamp_image(mark))
 	if(haspen())
 		look.overlay("clipboard_pen")
 	look.overlay("clipboard_over")

@@ -21,6 +21,7 @@
 /obj/structure/bonfire/var/burning = FALSE
 TRACKED(/obj/structure/bonfire, burning)
 CAPABILITIES(/obj/structure/bonfire)
+	slot(CONTAINER_SLOT_FUEL)
 	every(2 SECONDS, then(PROC_REF(bonfire_step)), when = nameof(burning))
 	param(nameof(fuel_material), pos = 1, apply = PROC_REF(build_of))
 	op("build", item(/obj/item/stack/rods), label("Use"), when(cond_not(nameof(can_buckle))), when(cond_not(nameof(grill))),
@@ -132,10 +133,10 @@ TRACKED(/obj/structure/bonfire, grill)
 
 /obj/structure/bonfire/proc/get_fuel_amount()
 	var/F = 0
-	for(var/A in contents)
-		if(istype(A, /obj/item/stack/material/wood))
+	for(var/kind in slot_kinds(CONTAINER_SLOT_FUEL, /obj/item/stack/material))
+		if(ispath(kind, /obj/item/stack/material/wood))
 			F += 0.5
-		if(istype(A, /obj/item/stack/material/log))
+		if(ispath(kind, /obj/item/stack/material/log))
 			F += 1.0
 	return F
 
@@ -147,7 +148,6 @@ TRACKED(/obj/structure/bonfire, grill)
 		var/atom/movable/AM = pop(contents)
 		AM.forceMove(get_turf(src))
 		to_chat(user, span_notice("You take \the [AM] out of \the [src] before it has a chance to burn away."))
-		changed(src)
 
 /obj/structure/bonfire/proc/add_fuel(atom/movable/new_fuel, mob/user)
 	if(get_fuel_amount() >= 10)
@@ -157,9 +157,8 @@ TRACKED(/obj/structure/bonfire, grill)
 		var/obj/item/stack/F = new_fuel
 		var/obj/item/stack/S = F.split(1)
 		if(S)
-			S.forceMove(src)
+			move_into(src, null, S, user)
 			to_chat(user, span_warning("You add \the [new_fuel] to \the [src]."))
-			changed(src)
 			return TRUE
 		return FALSE
 	else
@@ -177,13 +176,11 @@ TRACKED(/obj/structure/bonfire, grill)
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
 		EXPIRY_SET(src, next_fuel_consumption, 6 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
-		changed(src)
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
 		EXPIRY_SET(src, next_fuel_consumption, 3 MINUTE, CLOCK_WORLD)
 		consume(consumed_fuel)
-		changed(src)
 		return TRUE
 	return FALSE
 
@@ -294,7 +291,6 @@ TRACKED(/obj/structure/bonfire, grill)
 		M.pixel_y += 13
 	else // Just unbuckled someone
 		M.pixel_y -= 13
-	changed(src)
 
 /obj/structure/fireplace //more like a space heater than a bonfire. A cozier alternative to both.
 	name = "fireplace"
@@ -311,6 +307,7 @@ TRACKED(/obj/structure/bonfire, grill)
 /obj/structure/fireplace/var/burning = FALSE
 TRACKED(/obj/structure/fireplace, burning)
 CAPABILITIES(/obj/structure/fireplace)
+	slot(CONTAINER_SLOT_FUEL)
 	every(2 SECONDS, then(PROC_REF(fireplace_step)), when = nameof(burning))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
@@ -333,10 +330,10 @@ CAPABILITIES(/obj/structure/fireplace)
 
 /obj/structure/fireplace/proc/get_fuel_amount()
 	var/F = 0
-	for(var/A in contents)
-		if(istype(A, /obj/item/stack/material/wood))
+	for(var/kind in slot_kinds(CONTAINER_SLOT_FUEL, /obj/item/stack/material))
+		if(ispath(kind, /obj/item/stack/material/wood))
 			F += 0.5
-		if(istype(A, /obj/item/stack/material/log))
+		if(ispath(kind, /obj/item/stack/material/log))
 			F += 1.0
 	return F
 
@@ -354,7 +351,7 @@ CAPABILITIES(/obj/structure/fireplace)
 		var/obj/item/stack/F = new_fuel
 		var/obj/item/stack/S = F.split(1)
 		if(S)
-			S.forceMove(src)
+			move_into(src, null, S, user)
 			to_chat(user, span_warning("You add \the [new_fuel] to \the [src]."))
 			return TRUE
 		return FALSE

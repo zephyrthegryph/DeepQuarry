@@ -261,6 +261,38 @@
 
 READS_AS(/atom/proc/slot_occupancy, SLOT_OCCUPANCY_KEY)
 
+/**
+ * The types of what `slot_id` (null: the default slot) holds that are a `type`: a real thing by its own type, a latent one by its entry's type, once each.
+ * Nothing is materialized and no generator is rolled: a holder that has not yet declared its generator answers from the declared lines (the types it
+ * will hold), one with a ledger from the ledger. A look draw reads it through look.contents_of(), which stands for SLOT_OCCUPANCY_KEY.
+ */
+/atom/proc/slot_kinds(slot_id, type = /atom/movable)
+	RETURN_TYPE(/list)
+	. = list()
+	var/datum/ledger/L = containment_ledger()
+	if(!L && latent_contents_enabled() && !latent_is_declared())
+		var/list/generator = latent_generator()
+		if(length(generator))
+			for(var/path in generator)
+				if(ispath(path, type))
+					for(var/n in 1 to dq_latent_spawn_count(generator[path]))
+						. += path
+			return
+	if(!L)
+		L = dq_ledger(src)
+		if(!L)
+			return
+	var/id = slot_id || L.default_id
+	for(var/atom/movable/thing as anything in L.slots[id])
+		if(istype(thing, type))
+			. += thing.type
+	for(var/datum/latent_entry/entry as anything in L.latent_list(id))
+		if(ispath(entry.path, type))
+			for(var/n in 1 to entry.count)
+				. += entry.path
+
+READS_AS(/atom/proc/slot_kinds, SLOT_OCCUPANCY_KEY)
+
 /// The limit of `slot_id` on this holder, or null when it has none.
 /atom/proc/slot_capacity(slot_id)
 	var/datum/ledger/L = dq_ledger(src)

@@ -30,7 +30,7 @@
 	var/obj/item/circuitboard/airalarm/board = allocate(/obj/item/circuitboard/airalarm, T)
 	TEST_ASSERT(actor.put_in_active_hand(board), "The actor must hold the actual air-alarm board")
 	var/list/before = turf_contents_of_type(T, /obj/machinery/door/firedoor)
-	var/frame_handle = om_handle(frame)
+	var/frame_handle = entity_handle(frame)
 	add_trait(board, TRAIT_NODROP, "interim_firedoor_board_consumption")
 	rc_click(actor, frame, board, I_HELP, FALSE)
 	own_turf_contents(T)
@@ -54,4 +54,4 @@
 	var/expected_type = glass_case ? /obj/machinery/door/firedoor/glass : /obj/machinery/door/firedoor
 	TEST_ASSERT_EQUAL(door.type, expected_type, "Successful insertion must preserve the chosen glass configuration")
 	TEST_ASSERT_EQUAL(door.loc, T, "The completed firedoor must remain on the secured assembly floor")
-	TEST_ASSERT_NULL(om_resolve(frame_handle), "A structure assembly handle must terminate for its cross-family firedoor successor")
+	TEST_ASSERT_NULL(resolve_handle(frame_handle), "A structure assembly handle must terminate for its cross-family firedoor successor")

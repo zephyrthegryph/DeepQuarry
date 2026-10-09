@@ -48,7 +48,8 @@
 		return
 	spread_to(DEFAULTPICK(neighbors, null))
 
-/obj/effect/plant/periodic_step()
+/// Every 7.5 s while `growing` (the plant system sets it when the plant joins the growing registry).
+/obj/effect/plant/proc/plant_step(datum/act/A)
 
 	// Something is very wrong, kill ourselves.
 	if(!seed())
@@ -63,12 +64,11 @@
 	// Handle life.
 	var/turf/simulated/T = get_turf(src)
 	if(istype(T))
-		health -= seed().handle_environment(T,T.return_air(),null,1)
+		set_health(health - seed().handle_environment(T,T.return_air(),null,1))
 	if(health < max_health)
-		health += rand(3,5)
-		refresh_icon()
+		set_health(health + rand(3,5))
 		if(health > max_health)
-			health = max_health
+			set_health(max_health)
 	else if(health == max_health && !plant)
 		rel_set(src, nameof(plant), new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(T,seed()))
 		plant.set_dir(src.dir)
@@ -154,7 +154,6 @@
 	child.set_anchored(FALSE)
 	child.Move(target_turf)	// Do a normal move, so we can cross and uncross things we need to. Stairs, Open space "falling", etc.
 	child.set_anchored(TRUE)
-	child.update_icon()
 
 	// start: Pitcher plant spawning
 	if((seed().get_trait(TRAIT_POTENCY)) >= 70) //Random event spacevines have 70 potency minimum. Should guarantee this always triggers on spacevines.

@@ -2,8 +2,8 @@
 #define MAX_TICKS_TO_MAKE_UP 3 //how many missed ticks will we attempt to make up for this run.
 
 // A throw in flight (fold wave F3; SSthrowing is gone). Each /datum/thrownthing runs on the
-// continuous throwing lane (PERIODIC_THROWING, code/datums/om/periodic.dm): throw_at() starts it,
-// periodic_step() moves it once per server tick, and it parks when it lands (finalize() deletes it).
+// throw_steps system (code/controllers/subsystems/tick_members.dm): throw_at() starts it,
+// throw_step() moves it once per server tick, and it parks when it lands (finalize() deletes it).
 
 /datum/thrownthing
 	/// The movable being thrown (which holds this throw as `throwing`). Deleting the movable deletes the throw. Read with throw_subject().
@@ -118,10 +118,10 @@ CAPABILITIES(/datum/thrownthing)
 	. = ..()
 	if(!QDELETED(subject))
 		unobserve(subject, /datum/notice/living_turf_collision, src)
-	om_task_periodic_stop(src)
+	SSthrow_steps.kernel_leave(src)
 
 /// One server tick of flight on the throwing lane (was SSthrowing.fire()).
-/datum/thrownthing/periodic_step(delta)
+/datum/thrownthing/proc/throw_step()
 	if(QDELETED(src) || QDELETED(throw_subject()))
 		return PROCESS_KILL
 	tick()

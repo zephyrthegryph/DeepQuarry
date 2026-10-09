@@ -11,11 +11,15 @@
 
 	EXPIRY_DECLARE(last_world_time)
 
+/// The random-event clock runs (the events service sets it when it makes the container).
+/datum/event_container/var/clock_running = FALSE
+TRACKED(/datum/event_container, clock_running)
 CAPABILITIES(/datum/event_container)
+	every(2 SECONDS, then(PROC_REF(event_clock_step)), when = nameof(clock_running))
 	owns_many(nameof(event_pool))
 
 /// The random-event clock: every 2 s it advances (or, paused, pushes back) the next event.
-/datum/event_container/periodic_step()
+/datum/event_container/proc/event_clock_step(datum/act/timer/A)
 	if(!GLOB.round_start_time)
 		return //don't do events if the round hasn't even started yet
 

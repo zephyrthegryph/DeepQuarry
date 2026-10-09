@@ -290,7 +290,7 @@ CAPABILITIES(/obj/item/projectile)
 	if(prob(50))
 		homing_offset_y = -homing_offset_y
 
-/obj/item/projectile/periodic_step()
+/obj/item/projectile/proc/projectile_step()
 	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
 	if(!loc || !fired || !trajectory)
 		fired = FALSE
@@ -386,7 +386,7 @@ CAPABILITIES(/obj/item/projectile)
 	fired = TRUE
 	if(hitscan)
 		. = process_hitscan()
-	om_task_periodic(src, PERIODIC_PROJECTILES)
+	SSprojectile_steps.kernel_join(src)
 	pixel_move(1, FALSE)	//move it now!
 
 /obj/item/projectile/Moved(atom/old_loc, direction, forced = FALSE)

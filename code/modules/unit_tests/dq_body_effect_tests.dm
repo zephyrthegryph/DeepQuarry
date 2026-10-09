@@ -15,7 +15,7 @@
 /datum/unit_test/dq_body_effect_expires_on_body_clock
 
 /datum/unit_test/dq_body_effect_expires_on_body_clock/Run()
-	om_test_begin()
+	scheduler_test_begin()
 	var/mob/living/carbon/human/H = new(null)
 	var/base = H.factor(BF_SLOWDOWN)
 	TEST_ASSERT(H.apply_body_effect(/datum/body_effect/entangled, 4 SECONDS), "entangled should take hold")
@@ -34,13 +34,13 @@
 	TEST_ASSERT(dq_near(H.factor(BF_SLOWDOWN), base), "the factor should return to baseline, got [H.factor(BF_SLOWDOWN)]")
 	qdel(stasis_source)
 	qdel(H)
-	om_test_end()
+	scheduler_test_end()
 
 /// EXTEND refreshes to the longer duration; ALLOWED stacks factors per application; FORBID ignores repeats.
 /datum/unit_test/dq_body_effect_stacking_rules
 
 /datum/unit_test/dq_body_effect_stacking_rules/Run()
-	om_test_begin()
+	scheduler_test_begin()
 	var/mob/living/carbon/human/H = new(null)
 	var/base = H.factor(BF_SLOWDOWN)
 
@@ -65,19 +65,19 @@
 	scheduler_advance(3)
 	TEST_ASSERT(!H.has_body_effect(/datum/body_effect/dq_test_forbid), "a refused reapplication must not extend a FORBID effect")
 	qdel(H)
-	om_test_end()
+	scheduler_test_end()
 
 /// Curing doom (curea removes it) lifts it; only running out kills.
 /datum/unit_test/dq_body_effect_doom_cure_does_not_kill
 
 /datum/unit_test/dq_body_effect_doom_cure_does_not_kill/Run()
-	om_test_begin()
+	scheduler_test_begin()
 	var/mob/living/carbon/human/H = new(null)
 	H.apply_body_effect(/datum/body_effect/doomed, 30 SECONDS)
 	H.remove_body_effect(/datum/body_effect/doomed, TRUE)
 	TEST_ASSERT(H.stat != DEAD, "removing doom must not kill the patient")
 	qdel(H)
-	om_test_end()
+	scheduler_test_end()
 
 /// The poisoned modifier is a lingering poisoning affliction now: synthetics are spared by
 /// biology, organics get a self-resolving toxin.

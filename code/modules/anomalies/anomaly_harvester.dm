@@ -8,7 +8,7 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	extend("machine_unanchor", then(PROC_REF(rewrenched)))
 	default_parts()
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(PROC_REF(interaction_part_replacement_impl)))
-	op("attach_scanner", item(/obj/item/anomaly_scanner), priority(OP_PRIORITY_DEFAULT - 2), label("Attach anomaly"), then(PROC_REF(interaction_attach_scanner)))
+	op("attach_scanner", item(/obj/item/anomaly_scanner), priority(OP_PRIORITY_DEFAULT - 2), label("Attach anomaly"), wait(PROC_REF(attach_time)), then(PROC_REF(interaction_attach_scanner)))
 
 /obj/machinery/anomaly_harvester
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
@@ -45,7 +45,6 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 		if(points && points >= points_to_create)
 			points -= points_to_create
 			generate_sample()
-	update_icon()
 
 /obj/machinery/anomaly_harvester/proc/add_points(add_points)
 	add_points *= efficiency
@@ -71,6 +70,11 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	add_fingerprint(A.actor)
 	return default_part_replacement(A.actor, A.held) ? OP_OK : OP_DECLINE
 
+/// How long attaching takes: two seconds with an anchored harvester and a scanner holding an anomaly, else the click is answered at once.
+/obj/machinery/anomaly_harvester/proc/attach_time(datum/act/op/A)
+	var/obj/item/anomaly_scanner/scanner = A.held
+	return anchored && scanner.buffered_anomaly ? 2 SECONDS : 0
+
 /obj/machinery/anomaly_harvester/proc/interaction_attach_scanner(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/anomaly_scanner/scanner = A.held
@@ -79,12 +83,8 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 		to_chat(user, span_danger("The [src] is not anchored!"))
 		return OP_OK
 	if(scanner.buffered_anomaly)
-		task_timed(user, 2 SECONDS, src, src, PROC_REF(attach_scanned_anomaly), list(scanner))
-	return OP_OK
-
-/obj/machinery/anomaly_harvester/proc/attach_scanned_anomaly(obj/item/anomaly_scanner/scanner)
-	if(scanner.buffered_anomaly)
 		attach_anomaly(scanner.buffered_anomaly)
+	return OP_OK
 
 /obj/machinery/anomaly_harvester/proc/attach_anomaly(obj/effect/anomaly/anomaly)
 	// The scanner's buffered_anomaly and the stats' attached_harvester are relation views.
@@ -97,7 +97,6 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 		var/obj/machinery/anomaly_harvester/harvester = stats.attached_harvester
 		if(harvester)
 			rel_clear(harvester, nameof(harvester.harvested))
-			harvester.update_icon()
 		rel_clear(stats, nameof(stats.attached_harvester))
 	rel_set(src, nameof(harvested), anom)
 	rel_set(stats, nameof(stats.attached_harvester), src)
@@ -119,28 +118,20 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 		else
 			new /obj/item/research_sample/common(src)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/anomaly_harvester, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/anomaly_harvester/appearance_overlays()
-	. = list()
-	if(!operable() || !anchored)
-		. += "harvester_off"
-	else
-		. += "harvester_on"
+/// Running or not, and the stability of the anomaly it holds.
+/obj/machinery/anomaly_harvester/draw(datum/look/look)
+	..()
+	look.overlay((!operable() || !anchored) ? "harvester_off" : "harvester_on")
 
-	if(harvested)
-		var/obj/effect/anomaly/anom = harvested
-		if(!istype(anom))
-			return .
-
-		var/datum/anomaly_stats/stats = anom.stats
-
-		switch(stats.stability)
+	var/obj/effect/anomaly/anom = harvested
+	if(istype(anom))
+		switch(anom.look_stability(look))
 			if(ANOMALY_STABLE)
-				. += "harvester_stable"
+				look.overlay("harvester_stable")
 			if(ANOMALY_DECAYING)
-				. += "harvester_decay"
+				look.overlay("harvester_decay")
 			else
-				. += "harvester_grow"
+				look.overlay("harvester_grow")
 
 /// /obj/machinery/anomaly_harvester's window data.
 /obj/machinery/anomaly_harvester/ui_data(datum/act/eval/A)

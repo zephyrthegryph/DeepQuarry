@@ -357,7 +357,7 @@ STAGE_DEF(machine_frame, finished)
 		B.update_icon()
 	replace_with(src, B)
 
-/// Builds a computer, and redraws the consoles beside it.
+/// Builds a computer.
 /obj/structure/frame/proc/finish_computer(mob/user = null)
 	var/obj/machinery/B = new circuit.build_path(src.loc)
 	B.pixel_x = pixel_x
@@ -366,10 +366,4 @@ STAGE_DEF(machine_frame, finished)
 	circuit.construct(B, user)
 	circuit.moveToNullspace()
 	rel_move(src, nameof(circuit), B, nameof(B.circuit))
-	var/obj/machinery/computer/LC = locate_within(get_step(B, turn(B.dir, 90)), /obj/machinery/computer)
-	var/obj/machinery/computer/RC = locate_within(get_step(B, turn(B.dir, -90)), /obj/machinery/computer)
-	if(LC)
-		LC.update_icon()
-	if(RC)
-		RC.update_icon()
 	replace_with(src, B)

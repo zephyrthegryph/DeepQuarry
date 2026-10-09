@@ -24,14 +24,8 @@
 /datum/proc/scheduler_queue_presentation()
 	return
 
-/datum/proc/scheduler_evaluate_periodic()
-	return
-
 /datum/time_scheduler/proc/drain_presentation()
 	return TRUE
-
-/datum/definition_registry/proc/periodic_mask_for(path)
-	return 0
 
 /datum/native_watch/proc/bind_native()
 	return 0

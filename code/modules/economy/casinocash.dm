@@ -66,6 +66,8 @@ CAPABILITIES(/obj/machinery/chipmachine)
 	w_class = ITEMSIZE_SMALL
 	var/access = ACCESS_CRATE_CASH
 	var/worth = 0
+	/// Where this stack starts in the shared note layouts (rolled once).
+	var/note_seed = 0
 
 /// Old attackby.
 /obj/item/spacecasinocash/proc/casino_combine(datum/act/op/A)
@@ -86,54 +88,42 @@ CAPABILITIES(/obj/machinery/chipmachine)
 		consume(src, user)
 	return OP_PASS
 
-DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/spacecasinocash/appearance_overlays()
-	. = list()
-	name = "[worth] casino credit\s"
+TRACKED(/obj/item/spacecasinocash, worth)
+TRACKED(/obj/item/spacecasinocash, note_seed)
+
+/obj/item/spacecasinocash/draw(datum/look/look)
+	..()
+	look.identity(name = "[worth] casino credit\s")
 	if(worth in list(1000,500,200,100,50,20,10,1))
-		icon_state = "spacecasinocash[worth]"
-		desc = "It's a stack of casino chips with a combined value of [worth] casino credits."
-		return .
-	var/sum = src.worth
+		look.state("spacecasinocash[worth]")
+		look.identity(desc = "It's a stack of casino chips with a combined value of [worth] casino credits.")
+		return
+	var/sum = worth
 	var/num = 0
 	for(var/i in list(1000,500,200,100,50,20,10,1))
 		while(sum >= i && num < 50)
 			sum -= i
 			num++
-			var/image/banknote = image('icons/obj/casino.dmi', "spacecasinocash[i]")
-			var/matrix/M = matrix()
-			M.Translate(rand(-6, 6), rand(-4, 8))
-			M.Turn(pick(-45, 0, 0, 0, 0, 0, 0, 0, 45))
-			banknote.transform = M
-			. += banknote
+			look.overlay(chip_image(i, num))
 	if(num == 0) // Less than one credit, let's just make it look like 1 for ease
-		var/image/banknote = image('icons/obj/casino.dmi', "spacecasinocash1")
-		var/matrix/M = matrix()
-		M.Translate(rand(-6, 6), rand(-4, 8))
-		M.Turn(pick(-45, 0, 0, 0, 0, 0, 0, 0, 45))
-		banknote.transform = M
-		. += banknote
-	src.desc = "They are worth [worth] casino credits."
+		look.overlay(chip_image(1, 0))
+	look.identity(desc = "They are worth [worth] casino credits.")
 
-/obj/item/spacecasinocash/proc/adjust_worth(adjust_worth = 0, update = 1)
-	worth += adjust_worth
+/// The chip image for the `index`th chip of this stack, laid out by the shared seeded note layouts.
+/obj/item/spacecasinocash/proc/chip_image(denomination, index)
+	var/list/layouts = GLOB.spacecash_note_layouts
+	return look_overlay_image('icons/obj/casino.dmi', "spacecasinocash[denomination]", transform = layouts[((note_seed + index) % length(layouts)) + 1])
+
+/obj/item/spacecasinocash/proc/adjust_worth(adjust_worth = 0)
+	set_worth(worth + adjust_worth)
 	if(worth > 0)
-		if(update)
-			update_icon()
-			changed(src)
 		return worth
 	else
 		spent(src)
 		return 0
 
-/obj/item/spacecasinocash/proc/set_worth(new_worth = 0, update = 1)
-	worth = max(0, new_worth)
-	if(update)
-		update_icon()
-		changed(src)
-	return worth
-
 CAPABILITIES(/obj/item/spacecasinocash)
+	rolls(nameof(note_seed), range_of(0, 49))
 	op("casino_take", in_hand(), label("Use"),
 		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(casino_take_question)), "title" = "Take chips", "default" = 20, "max_value" = nameof(worth), "timeout" = 0), step = "k142"),
 		then(PROC_REF(casino_take)))
@@ -210,7 +200,7 @@ CAPABILITIES(/obj/item/spacecasinocash)
 /proc/spawn_casinochips(sum, spawnloc, mob/living/carbon/human/human_user as mob)
 	var/obj/item/spacecasinocash/SC = new (spawnloc)
 
-	SC.set_worth(sum, TRUE)
+	SC.set_worth(sum)
 	if (ishuman(human_user) && !human_user.get_active_hand())
 		human_user.put_in_hands(SC)
 	return
@@ -264,6 +254,8 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 	w_class = ITEMSIZE_SMALL
 	var/access = ACCESS_CRATE_CASH
 	var/worth = 0
+	/// Where this stack starts in the shared note layouts (rolled once).
+	var/note_seed = 0
 
 /// Old attackby.
 /obj/item/spacecasinocash_fake/proc/casino_fake_combine(datum/act/op/A)
@@ -284,52 +276,42 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 		consume(src, user)
 	return OP_PASS
 
-DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash_fake, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/spacecasinocash_fake/appearance_overlays()
-	. = list()
-	name = "[worth] replica casino chip\s"
+TRACKED(/obj/item/spacecasinocash_fake, worth)
+TRACKED(/obj/item/spacecasinocash_fake, note_seed)
+
+/obj/item/spacecasinocash_fake/draw(datum/look/look)
+	..()
+	look.identity(name = "[worth] replica casino chip\s")
 	if(worth in list(1000,500,200,100,50,20,10,1))
-		icon_state = "spacecasinocash[worth]"
-		desc = "It's a stack of replica casino chips with a combined value of [worth] imaginary points."
-		return .
-	var/sum = src.worth
+		look.state("spacecasinocash[worth]")
+		look.identity(desc = "It's a stack of replica casino chips with a combined value of [worth] imaginary points.")
+		return
+	var/sum = worth
 	var/num = 0
 	for(var/i in list(1000,500,200,100,50,20,10,1))
 		while(sum >= i && num < 50)
 			sum -= i
 			num++
-			var/image/banknote = image('icons/obj/casino.dmi', "spacecasinocash[i]")
-			var/matrix/M = matrix()
-			M.Translate(rand(-6, 6), rand(-4, 8))
-			banknote.transform = M
-			. += banknote
+			look.overlay(chip_image(i, num))
 	if(num == 0) // Less than one credit, let's just make it look like 1 for ease
-		var/image/banknote = image('icons/obj/casino.dmi', "spacecasinocash1")
-		var/matrix/M = matrix()
-		M.Translate(rand(-6, 6), rand(-4, 8))
-		banknote.transform = M
-		. += banknote
-	src.desc = "They are worth [worth] replica casino credits."
+		look.overlay(chip_image(1, 0))
+	look.identity(desc = "They are worth [worth] replica casino credits.")
 
-/obj/item/spacecasinocash_fake/proc/adjust_worth(adjust_worth = 0, update = 1)
-	worth += adjust_worth
+/// The chip image for the `index`th chip of this stack, laid out by the shared seeded note layouts.
+/obj/item/spacecasinocash_fake/proc/chip_image(denomination, index)
+	var/list/layouts = GLOB.spacecash_note_layouts
+	return look_overlay_image('icons/obj/casino.dmi', "spacecasinocash[denomination]", transform = layouts[((note_seed + index) % length(layouts)) + 1])
+
+/obj/item/spacecasinocash_fake/proc/adjust_worth(adjust_worth = 0)
+	set_worth(worth + adjust_worth)
 	if(worth > 0)
-		if(update)
-			update_icon()
-			changed(src)
 		return worth
 	else
 		spent(src)
 		return 0
 
-/obj/item/spacecasinocash_fake/proc/set_worth(new_worth = 0, update = 1)
-	worth = max(0, new_worth)
-	if(update)
-		update_icon()
-		changed(src)
-	return worth
-
 CAPABILITIES(/obj/item/spacecasinocash_fake)
+	rolls(nameof(note_seed), range_of(0, 49))
 	op("casino_fake_take", in_hand(), label("Use"),
 		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(casino_fake_take_question)), "title" = "Take chips", "default" = 20, "max_value" = nameof(worth), "timeout" = 0), step = "k323"),
 		then(PROC_REF(casino_fake_take)))

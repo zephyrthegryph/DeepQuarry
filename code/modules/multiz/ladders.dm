@@ -33,6 +33,7 @@ CAPABILITIES(/obj/structure/ladder)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	links(/obj/structure/ladder::target_down, /obj/structure/ladder::target_up)
 	op("hand", hand(), label("Use"), ungated(), needs(req_capable()), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = cond_all(nameof(target_down), nameof(target_up))), then(PROC_REF(interaction_hand)))
+	op("deconstruct", tool(TOOL_WELDER), label("Deconstruct"), needs(req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(deconstruct_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(deconstruct_done)))
 	op("ladder_ghost_climb", observer(), label("Climb"), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = cond_all(nameof(target_down), nameof(target_up))), then(PROC_REF(ladder_ghost_climb)))
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
@@ -44,36 +45,30 @@ CAPABILITIES(/obj/structure/ladder)
 	else
 		return HOOK_DECLINE
 
-/obj/structure/ladder/welder_act(mob/user, obj/item/C)
-	var/obj/item/weldingtool/WT = C.get_welder()
-	if(WT.remove_fuel(0, user))
-		play_sfx(src, SFX_ITEMS_WELDER2)
-		act_message(user, src, MSG_SELF("You start to deconstruct %T%."), MSG_OTHERS("%U% starts to deconstruct %T%."), MSG_BLIND("You hear welding"))
-		task_timed(user, 2 SECONDS, src, src, PROC_REF(deconstruct_done), list(user, WT))
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+/obj/structure/ladder/proc/deconstruct_begins(datum/act/op/A)
+	return msg_text("You start to deconstruct %T%.", "%U% starts to deconstruct %T%.", "You hear welding")
 
-/obj/structure/ladder/proc/deconstruct_done(mob/user, obj/item/weldingtool/WT)
-	if(!WT.isOn())
-		return
-	var/obj/structure/ladder_assembly/A
+/obj/structure/ladder/proc/deconstruct_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/structure/ladder_assembly/LA
 	to_chat(user, "You deconstruct \the [src].")
 	if(target_up)
 		target_up.visible_message("\The [target_up] deconstructs from below")
-		A = new /obj/structure/ladder_assembly(target_up.loc)
-		A.state = LADDER_CONSTRUCTION_WELDED
-		A.set_anchored(TRUE)
+		LA = new /obj/structure/ladder_assembly(target_up.loc)
+		LA.set_state(LADDER_CONSTRUCTION_WELDED)
+		LA.set_anchored(TRUE)
 		destroyed(target_up, user, "deconstructed")
 	if(target_down)
 		target_down.visible_message("\The [target_down] deconstructs from above")
-		A = new /obj/structure/ladder_assembly(target_down.loc)
-		A.state = LADDER_CONSTRUCTION_WELDED
-		A.set_anchored(TRUE)
+		LA = new /obj/structure/ladder_assembly(target_down.loc)
+		LA.set_state(LADDER_CONSTRUCTION_WELDED)
+		LA.set_anchored(TRUE)
 		destroyed(target_down, user, "deconstructed")
-	A = new /obj/structure/ladder_assembly(loc)
-	A.state = LADDER_CONSTRUCTION_WRENCHED
-	A.set_anchored(TRUE)
+	LA = new /obj/structure/ladder_assembly(loc)
+	LA.set_state(LADDER_CONSTRUCTION_WRENCHED)
+	LA.set_anchored(TRUE)
 	destroyed(src, user, "deconstructed")
+	return OP_OK
 
 /// Old attack_hand.
 /obj/structure/ladder/proc/interaction_hand(datum/act/op/A)

@@ -687,7 +687,33 @@
 				return TRUE
 	return FALSE
 
+/// Can `cond_a` and `cond_b` never both hold? any_of(...) excludes a condition when every alternative does, all_of(...) when one conjunct does, so
+/// any_of(req_is(a), req_is(b)) excludes all_of(req_is(a, FALSE), req_is(b, FALSE)) (and the other way round); the leaves are compared one by one.
 /proc/op_cond_negates(cond_a, cond_b)
+	if(islist(cond_b) && length(cond_b) == 2 && cond_b[1] == "not" && cond_b[2] == cond_a)
+		return TRUE
+	if(istype(cond_a, /datum/entry/part/req/any) || istype(cond_a, /datum/entry/part/req/all))
+		return op_cond_group_negates(cond_a, cond_b)
+	if(istype(cond_b, /datum/entry/part/req/any) || istype(cond_b, /datum/entry/part/req/all))
+		return op_cond_group_negates(cond_b, cond_a)
+	return op_cond_leaf_negates(cond_a, cond_b)
+
+/// `group` is an any_of or an all_of; does it exclude `other` (a leaf or another group)?
+/proc/op_cond_group_negates(datum/entry/group, other)
+	var/list/members = group.children
+	if(!length(members))
+		return FALSE
+	if(istype(group, /datum/entry/part/req/all))
+		for(var/member in members)
+			if(op_cond_negates(member, other) || op_cond_negates(other, member))
+				return TRUE
+		return FALSE
+	for(var/member in members)
+		if(!op_cond_negates(member, other) && !op_cond_negates(other, member))
+			return FALSE
+	return TRUE
+
+/proc/op_cond_leaf_negates(cond_a, cond_b)
 	if(islist(cond_b) && length(cond_b) == 2 && cond_b[1] == "not" && cond_b[2] == cond_a)
 		return TRUE
 	// req_actor_kind(T) against req_actor_kind(T, not = TRUE), or against cond_not(req_actor_kind(T)): one actor is of a kind or it is not
@@ -704,7 +730,7 @@
 	if(istype(cond_a, /datum/entry/part/req/is) && istype(cond_b, /datum/entry/part/req/is))
 		var/datum/entry/part/req/is/RA = cond_a
 		var/datum/entry/part/req/is/RB = cond_b
-		return RA.args["key"] == RB.args["key"] && !!RA.args["value"] != !!RB.args["value"]
+		return RA.args["key"] == RB.args["key"] && RA.args["of"] == RB.args["of"] && !!RA.args["value"] != !!RB.args["value"]
 	return FALSE
 
 /// Do two req_actor_kind() type arguments name the same kinds (a type, or a list of them, in any order)?

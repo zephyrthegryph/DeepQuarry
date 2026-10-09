@@ -43,11 +43,9 @@ TRACKED(/obj/item/reagent_containers/syringe, mode)
 
 /obj/item/reagent_containers/syringe/pickup(mob/user)
 	..()
-	update_icon()
 
 /obj/item/reagent_containers/syringe/dropped(mob/user, equipping, slot)
 	..()
-	update_icon()
 
 // A syringe is a sealed container of its volume that draws from containers and tanks, puts into containers, takes blood, injects people and stabs them
 // (needle(), code/library/reagents/needle.dm). Its mode (capped, draw, inject, broken) is the `mode` var, changed in hand. The giant syringe and the
@@ -93,7 +91,6 @@ MSG_DEF_SELF(syringe/no_blood, "This needle isn't designed for drawing blood.")
 /// Picking the syringe up refreshes its look.
 /obj/item/reagent_containers/syringe/proc/syringe_pick_up(datum/act/op/A)
 	pick_up_by_hand(A.actor)
-	update_icon()
 	return OP_OK
 
 /obj/item/reagent_containers/syringe/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)

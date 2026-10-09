@@ -38,8 +38,8 @@
 	var/randomize_colors = FALSE
 
 	var/glow_color = "#FFFFFF"
-	var/image/glow = null
-	var/image/charge = null
+	/// On the floor (not held or stored): its glow then shows through the dark.
+	var/on_floor = FALSE
 
 	var/cooldown_time = 30 SECONDS
 	var/ready = TRUE
@@ -53,47 +53,33 @@
 /obj/item/telecube/Initialize(mapload)
 	. = ..()
 
-	glow = image("[icon_state]-ready")
-	glow.appearance_flags = KEEP_APART
-	charge = image("[icon_state]-charging")
-	charge.appearance_flags = KEEP_APART
+	set_on_floor(isturf(loc))
 
 	if(randomize_colors)
-		glow_color = rgb(rand(0, 255),rand(0, 255),rand(0, 255))
+		set_glow_color(rgb(rand(0, 255),rand(0, 255),rand(0, 255)))
 		color = rgb(rand(30, 255),rand(30, 255),rand(30, 255))
 
 	if(start_paired)
 		rel_set(src, nameof(mate), new /obj/item/telecube(src.loc))
 		if(mirror_colors)
-			mate().glow_color = color
+			mate().set_glow_color(color)
 			mate().color = glow_color
 		else
-			mate().glow_color = glow_color
+			mate().set_glow_color(glow_color)
 			mate().color = color
 		mate().pair_cube(src)
 
-	update_icon()
+TRACKED(/obj/item/telecube, ready)
+TRACKED(/obj/item/telecube, glow_color)
+TRACKED(/obj/item/telecube, on_floor)
 
-DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/telecube/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/telecube/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "[icon_state]-[ready ? "ready" : "charging"]", plane = on_floor ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = glow_color, appearance_flags = KEEP_APART))
 
-	if(isturf(loc))
-		glow.plane = PLANE_LIGHTING_ABOVE
-		charge.plane = PLANE_LIGHTING_ABOVE
-	else //So it shows up in inventory looking ok
-		glow.plane = initial(glow.plane)
-		charge.plane = initial(glow.plane)
-
-	if(glow_color != glow.color)
-		glow.color = glow_color
-		charge.color = glow_color
-
-	if(!ready)
-		. += charge
-	else
-		. += glow
+/obj/item/telecube/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	set_on_floor(isturf(loc))
 
 // its mate collapses into an explosion.
 /obj/item/telecube/on_destroy(force)
@@ -105,20 +91,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 
 	..()
 
-/obj/item/telecube/equipped()
-	. = ..()
-	update_icon()
-
-/obj/item/telecube/dropped(mob/user, equipping, slot)
-	. = ..()
-	update_icon()
-
 /obj/item/telecube/proc/pair_cube(obj/item/telecube/M)
 	if(mate())
 		return 0
 	else
 		rel_set(src, nameof(mate), M)
-		update_icon()
 		return 1
 
 /obj/item/telecube/proc/teleport_to_mate(atom/movable/A, areaporting = FALSE)
@@ -184,15 +161,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 	if(!ready)
 		return
 
-	ready = FALSE
-	update_icon()
+	set_ready(FALSE)
 	after(src, cooldown_time, PROC_REF(ready))
 	if(mate_too && mate())
 		mate().cooldown(mate_too = FALSE) //No infinite recursion pls
 
 /obj/item/telecube/proc/ready()
-	ready = TRUE
-	update_icon()
+	set_ready(TRUE)
 
 /// Fades `AM` out, moves it to `T` (if any) once faded, then fades it back in (half a second each).
 /obj/item/telecube/proc/fade_and_move(atom/movable/AM, turf/T, announce = FALSE)

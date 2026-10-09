@@ -241,8 +241,6 @@ initialize	code/game/objects/items/devices/scanners/motion_tracker.dm	/obj/item/
 initialize	code/game/objects/items/devices/spy_bug.dm	/obj/item/bug_monitor/Initialize(mapload)
 initialize	code/game/objects/items/devices/spy_bug.dm	/obj/machinery/camera/bug/Initialize(mapload)
 initialize	code/game/objects/items/devices/spy_bug.dm	/obj/machinery/camera/bug/spy/Initialize(mapload)
-initialize	code/game/objects/items/devices/ticket_printer.dm	/obj/item/paper/sec_ticket/Initialize(mapload, text, title)
-initialize	code/game/objects/items/devices/ticket_printer.dm	/obj/item/paper/permit_ticket/Initialize(mapload, text, title)
 initialize	code/game/objects/items/devices/translocator.dm	/obj/item/perfect_tele/Initialize(mapload)
 initialize	code/game/objects/items/devices/tvcamera.dm	/obj/item/tvcamera/Initialize(mapload)
 initialize	code/game/objects/items/devices/tvcamera.dm	/obj/item/clothing/accessory/bodycam/Initialize(mapload)
@@ -253,7 +251,6 @@ initialize	code/game/objects/items/devices/uplink.dm	/obj/item/radio/headset/upl
 initialize	code/game/objects/items/ghost_hunting/goggles.dm	/obj/item/clothing/glasses/ghost/Initialize(mapload)
 initialize	code/game/objects/items/ghost_hunting/trap.dm	/obj/item/ghost_trap/Initialize(mapload)
 initialize	code/game/objects/items/ghost_hunting/weapons.dm	/obj/item/proton_pack/Initialize(mapload)
-initialize	code/game/objects/items/glassjar.dm	/obj/item/glass_jar/Initialize(mapload)
 initialize	code/game/objects/items/paintkit.dm	/obj/item/kit/suit/rig/debug/Initialize(mapload)
 initialize	code/game/objects/items/pizza_voucher.dm	/obj/item/pizzavoucher/Initialize(mapload)
 initialize	code/game/objects/items/poi_items.dm	/obj/item/poi/broken_drone_circuit/Initialize(mapload)
@@ -372,7 +369,6 @@ initialize	code/game/objects/structures/catwalk.dm	/obj/structure/catwalk/Initia
 initialize	code/game/objects/structures/cliff.dm	/obj/structure/cliff/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/__closets.dm	/obj/structure/closet/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/__closets.dm	/obj/structure/closet/bluespace/Initialize(mapload)
-initialize	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	/obj/structure/closet/secure_closet/guncabinet/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	/obj/structure/closet/secure_closet/guncabinet/excursion/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	/obj/structure/closet/secure_closet/medical3/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	/obj/structure/closet/secure_closet/chief_medical_officer/Initialize(mapload)
@@ -390,7 +386,6 @@ initialize	code/game/objects/structures/crates_lockers/closets/utility_closets.d
 initialize	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	/obj/structure/closet/wardrobe/red/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/crates.dm	/obj/structure/closet/crate/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/largecrate.dm	/obj/structure/largecrate/Initialize(mapload)
-initialize	code/game/objects/structures/crates_lockers/largecrate.dm	/obj/structure/largecrate/vehicle/Initialize(mapload)
 initialize	code/game/objects/structures/crates_lockers/largecrate.dm	/obj/structure/largecrate/animal/pred/Initialize(mapload) //This is nessesary to get a random one each time.
 initialize	code/game/objects/structures/crates_lockers/largecrate.dm	/obj/structure/largecrate/piano/Initialize(mapload) //This is nessesary to get a random one each time.
 initialize	code/game/objects/structures/crates_lockers/vehiclecage.dm	/obj/structure/vehiclecage/Initialize(mapload)

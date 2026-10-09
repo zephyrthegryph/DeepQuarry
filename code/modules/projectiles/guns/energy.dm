@@ -125,31 +125,41 @@ TRACKED(/obj/item/gun/energy, recharge_due)
 		projectile.color = "#88ddff"
 	return projectile
 
-/obj/item/gun/energy/proc/cell_inserted(mob/user, obj/item/cell/P)
+MSG_DEF_SELF(energy_gun/no_port, span_notice("%T% does not have a battery port."))
+MSG_DEF_SELF(energy_gun/unfitted, span_notice("This cell is not fitted for %T%."))
+MSG_DEF_SELF(energy_gun/has_cell, span_notice("%T% already has a power cell."))
+MSG_DEF(energy_gun/cell_loading, span_notice("You start to insert %I% into %T%."), "%U% is reloading %T%.")
+MSG_DEF(energy_gun/cell_loaded, span_notice("You insert %I% into %T%."), "%U% inserts %I% into %T%.")
+
+/// Whether the cell is the kind this gun takes.
+/obj/item/gun/energy/proc/cell_fits(obj/item/cell/P)
+	return istype(P, accept_cell_type)
+
+/// Refuses a cell the gun cannot take (no port, wrong kind, one already fitted) before the wait begins.
+/obj/item/gun/energy/proc/cell_load_started(datum/act/op/A)
+	var/obj/item/cell/P = A.held
+	if(self_recharge || battery_lock)
+		return MSG(energy_gun/no_port)
+	if(!cell_fits(P))
+		return MSG(energy_gun/unfitted)
+	if(power_supply)
+		return MSG(energy_gun/has_cell)
+
+/obj/item/gun/energy/proc/cell_load_time(datum/act/op/A)
+	var/obj/item/cell/P = A.held
+	return reload_time * P.w_class
+
+/obj/item/gun/energy/proc/cell_load_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/cell/P = A.held
 	if(power_supply)
 		return
 	user.remove_from_mob(P)
 	rel_set(src, nameof(power_supply), P)
 	P.forceMove(src)
-	act_message(user, src, MSG_SELF(span_notice("You insert [P] into %T%.")), MSG_OTHERS("%U% inserts [P] into %T%."))
+	act_message_t(user, src, /datum/msg/energy_gun/cell_loaded, P)
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD
-
-/obj/item/gun/energy/proc/load_ammo(obj/item/C, mob/user)
-	if(istype(C, /obj/item/cell))
-		if(self_recharge || battery_lock)
-			to_chat(user, span_notice("[src] does not have a battery port."))
-			return
-		if(istype(C, accept_cell_type))
-			var/obj/item/cell/P = C
-			if(power_supply)
-				to_chat(user, span_notice("[src] already has a power cell."))
-			else
-				act_message(user, src, MSG_SELF(span_notice("You start to insert [P] into %T%.")), MSG_OTHERS("%U% is reloading %T%."))
-				task_timed(user, reload_time * P.w_class, src, src, PROC_REF(cell_inserted), list(user, P))
-		else
-			to_chat(user, span_notice("This cell is not fitted for [src]."))
-	return
 
 /obj/item/gun/energy/proc/unload_ammo(mob/user)
 	if(self_recharge || battery_lock)
@@ -164,19 +174,13 @@ TRACKED(/obj/item/gun/energy, recharge_due)
 	else
 		to_chat(user, span_notice("[src] does not have a power cell."))
 
-/// Old attackby: the parent's first, then loading.
-/obj/item/gun/energy/gun_item(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/held = A.held
-	. = ..()
-	load_ammo(held, user)
-
 // power_supply names the cell in the gun's contents (the contents own it and it goes with the gun), or, for
 // the shield generator's gun, the generator's cell: a relation view across the hierarchy.
 CAPABILITIES(/obj/item/gun/energy)
 	ref_one(nameof(power_supply))
 	every(2 SECONDS, then(PROC_REF(energy_gun_recharge_step)), when = cond_all(nameof(self_recharge), nameof(recharge_due)))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	op("load_cell", item(/obj/item/cell), priority(OP_PRIORITY_PART), label("Insert cell"), starts(PROC_REF(cell_load_started)), begins(MSG(energy_gun/cell_loading)), wait(PROC_REF(cell_load_time)), then(PROC_REF(cell_load_done)))
 
 /// Old attack_hand.
 /obj/item/gun/energy/proc/interaction_hand(datum/act/op/A)

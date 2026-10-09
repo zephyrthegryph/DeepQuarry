@@ -10,7 +10,7 @@
 	var/active_ability_cooldown = 20 SECONDS
 	COOLDOWN_DECLARE(active_use_cooldown)
 
-	var/should_tick = TRUE	// Incase it's a toggle.
+	var/should_tick = TRUE	// Incase it's a toggle. The passive every() runs while it is set.
 
 	var/passive_ability_cooldown = 5 SECONDS
 	COOLDOWN_DECLARE(passive_use_cooldown)
@@ -19,7 +19,10 @@
 
 	drop_sound = SFX_EFFECTS_SLIME_SQUISH
 
+TRACKED(/obj/item/blobcore_chunk, should_tick)
+
 CAPABILITIES(/obj/item/blobcore_chunk)
+	every(2 SECONDS, then(PROC_REF(chunk_passive_step)), when = nameof(should_tick))
 	reagents(120)
 	owns_one(nameof(blob_type), /datum/blob_type)
 	param(nameof(parent_blob_type), pos = 1, apply = PROC_REF(setup_blobtype), keep = FALSE)
@@ -45,16 +48,14 @@ CAPABILITIES(/obj/item/blobcore_chunk)
 		color = blob_type.color
 
 		if(blob_type.chunk_active_type == BLOB_CHUNK_CONSTANT)
-			should_tick = TRUE
+			set_should_tick(TRUE)
 		else if(blob_type.chunk_active_type == BLOB_CHUNK_TOGGLE)
-			should_tick = FALSE
+			set_should_tick(FALSE)
 
 		active_ability_cooldown = blob_type.chunk_active_ability_cooldown
 		passive_ability_cooldown = blob_type.chunk_passive_ability_cooldown
 
 		blob_type.chunk_setup(src)
-
-		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/blobcore_chunk/proc/call_chunk_unique(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -91,7 +92,8 @@ CAPABILITIES(/obj/item/blobcore_chunk)
 		to_chat(user, span_notice("\The [src] doesn't seem to respond."))
 	return TRUE
 
-/obj/item/blobcore_chunk/periodic_step()
+/// Every 2 s while `should_tick`: the blob type's passive ability, on its own cooldown.
+/obj/item/blobcore_chunk/proc/chunk_passive_step(datum/act/A)
 	if(blob_type && should_tick && COOLDOWN_FINISHED(src, passive_use_cooldown))
 		COOLDOWN_START(src, passive_use_cooldown, passive_ability_cooldown)
 		blob_type.on_chunk_tick(src)
@@ -100,7 +102,7 @@ CAPABILITIES(/obj/item/blobcore_chunk)
 /obj/item/blobcore_chunk/proc/interaction_alt(datum/act/op/A)
 	var/mob/living/carbon/user = A.actor
 	if(blob_type && blob_type.chunk_active_type == BLOB_CHUNK_TOGGLE)
-		should_tick = !should_tick
+		set_should_tick(!should_tick)
 
 		if(should_tick)
 			to_chat(user, span_alien("\The [src] shudders with life."))

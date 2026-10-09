@@ -1,0 +1,6 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "Closets, crates, lockers, the gun cabinet, the vehicle cage, cliffs, railings, low walls, the janitorial cart, bonfires, blood and the other cleanable decals, and the ability buttons draw themselves from tracked state"
+  - bugfix: "Blood spilled as a plain blood or water reagent puddle is named and drawn as blood or water instead of nameless"
+  - bugfix: "A gun cabinet shows the guns it is declared to hold without making them, and updates as guns are put in or taken out"

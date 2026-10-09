@@ -12,15 +12,14 @@
 	if(armed)
 		. += "It looks like it's armed."
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly/mousetrap, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/assembly/mousetrap/appearance_overlays()
-	. = list()
-	if(armed)
-		icon_state = "mousetraparmed"
-	else
-		icon_state = "mousetrap"
-	if(holder())
-		holder().update_icon()
+TRACKED(/obj/item/assembly/mousetrap, armed)
+
+/obj/item/assembly/mousetrap/holder_state()
+	return armed ? "mousetraparmed" : "mousetrap"
+
+/obj/item/assembly/mousetrap/draw(datum/look/look)
+	..()
+	look.state(holder_state())
 
 /obj/item/assembly/mousetrap/proc/triggered(mob/target, type = "feet")
 	if(!armed)
@@ -45,8 +44,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/mousetrap, TYPE_PROC_REF(/atom, appea
 		M.splat()
 	play_sfx(target, SFX_EFFECTS_SNAP)
 	layer = MOB_LAYER - 0.2
-	armed = 0
-	update_icon()
+	set_armed(0)
 	pulse(0)
 
 /// Overrides assembly's interaction_self(): arm/disarm instead of opening the UI.
@@ -65,8 +63,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/mousetrap, TYPE_PROC_REF(/atom, appea
 			return OP_OK
 
 		to_chat(user, span_notice("You disarm [src]."))
-	armed = !armed
-	update_icon()
+	set_armed(!armed)
 	play_sfx(user, SFX_WEAPONS_HANDCUFFS)
 	return OP_OK
 

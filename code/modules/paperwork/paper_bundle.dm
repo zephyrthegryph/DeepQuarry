@@ -57,7 +57,6 @@
 		var/obj/P = pages[page]
 		P.attackby(W, user)
 
-	update_icon()
 	attack_self(user) //Update the browsed page.
 	add_fingerprint(user)
 	return OP_PASS
@@ -111,7 +110,6 @@
 /obj/item/paper_bundle/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	add_fingerprint(user)
-	update_icon()
 	tgui_interact(user)
 	return OP_OK
 
@@ -222,7 +220,6 @@ CAPABILITIES(/obj/item/paper_bundle)
 		return TRUE
 	if(page > length(pages))
 		page = length(pages)
-	update_icon()
 	return TRUE
 
 /// Old Rename bundle verb.
@@ -254,38 +251,34 @@ CAPABILITIES(/obj/item/paper_bundle)
 	return
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper_bundle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paper_bundle/appearance_overlays()
-	. = list()
-	var/obj/item/paper/P = pages[1]
-	icon_state = P.icon_state
-	. += P.overlays
-	underlays = 0
+/// The top sheet and its stamps, the other sheets stacked beneath it, an attached photo and the clip.
+/obj/item/paper_bundle/draw(datum/look/look)
+	..()
+	if(!length(pages))
+		return
+	var/obj/item/paper/top = pages[1]
+	look.watch(top)
+	look.state(top.icon_state)
+	for(var/list/mark in top.stamp_marks)
+		look.overlay(top.stamp_image(mark))
 	var/i = 0
-	var/photo
-	for(var/obj/O in contents_of(src))
-		var/image/img = image('icons/obj/bureaucracy.dmi')
+	var/photo = FALSE
+	var/offset_x = 0
+	var/offset_y = 0
+	for(var/obj/O in pages)
+		look.watch(O)
 		if(istype(O, /obj/item/paper))
-			img.icon_state = O.icon_state
-			img.pixel_x -= min(1*i, 2)
-			img.pixel_y -= min(1*i, 2)
-			pixel_x = min(0.5*i, 1)
-			pixel_y = min(  1*i, 2)
-			underlays += img
+			look.underlay(look_overlay_image('icons/obj/bureaucracy.dmi', O.icon_state, pixel_x = -min(1*i, 2), pixel_y = -min(1*i, 2)))
+			offset_x = min(0.5*i, 1)
+			offset_y = min(1*i, 2)
 			i++
 		else if(istype(O, /obj/item/photo))
 			var/obj/item/photo/Ph = O
-			img = Ph.tiny
-			photo = 1
-			. += img
-	if(i>1)
-		desc =  "[i] papers clipped to each other."
-	else
-		desc = "A single sheet of paper."
-	if(photo)
-		desc += "\nThere is a photo attached to it."
-	. += image('icons/obj/bureaucracy.dmi', "clip")
-	return .
+			photo = TRUE
+			look.overlay(Ph.tiny)
+	look.offset(offset_x, offset_y)
+	look.identity(desc = "[i > 1 ? "[i] papers clipped to each other." : "A single sheet of paper."][photo ? "\nThere is a photo attached to it." : ""]")
+	look.overlay(look_overlay_image('icons/obj/bureaucracy.dmi', "clip"))
 
 /obj/item/paper_bundle/proc/burn_through(mob/user, obj/item/flame/P, class)
 	if(user && P && get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)

@@ -35,7 +35,7 @@
 	TEST_ASSERT(SSevents.initialized, "the event service never initialized (SSatoms)")
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
 		var/datum/event_container/EC = SSevents.event_containers[i]
-		TEST_ASSERT(EC.periodic_pipe == PERIODIC_SLOW, "event container [i] is not on the slow lane")
+		TEST_ASSERT(EC.clock_running, "event container [i] is not keeping its clock")
 
 /// The radiation lane drains its queue, and a disabled service queues nothing.
 /datum/unit_test/dq_world_lanes_f3_radiation
@@ -56,49 +56,18 @@
 	TEST_ASSERT(!length(S.processing), "the radiation step never drained its queue")
 	TEST_ASSERT_EQUAL(result, STEP_DONE, "a drained radiation step is still yielding")
 
-/// A throw runs on the continuous throwing lane and parks when it lands.
-/datum/unit_test/dq_world_lanes_f3_throwing
-
-/datum/unit_test/dq_world_lanes_f3_throwing/Run()
-	var/obj/item/stack/rods/R = allocate(/obj/item/stack/rods, run_loc_floor_bottom_left)
-	var/turf/target = locate(run_loc_floor_bottom_left.x + 2, run_loc_floor_bottom_left.y, run_loc_floor_bottom_left.z)
-	R.throw_at(target, 2, 1)
-	var/datum/thrownthing/TT = R.throwing
-	TEST_ASSERT_NOTNULL(TT, "throw_at() made no thrownthing")
-	TEST_ASSERT(TT.periodic_pipe == PERIODIC_THROWING, "a throw is not on the throwing lane")
-	var/steps = 0
-	while(!QDELETED(TT) && steps++ < 100)
-		// world.time is frozen inside a test; a throw's pace is measured from its start_time,
-		// so age the throw by one server tick per step as the lane would.
-		TT.start_time -= world.tick_lag
-		if(TT.periodic_step(1) == PROCESS_KILL)
-			break
-	TEST_ASSERT(QDELETED(TT), "the throw never landed")
-	TEST_ASSERT_NULL(R.throwing, "the landed item still points at its throw")
-	TEST_ASSERT_NULL(TT.periodic_pipe, "a landed throw kept its lane")
-
-/// A reflector starts its clocked lane when it catches a beam and parks once it has re-fired.
+/// A reflector arms its every() when it catches a beam and parks once it has re-fired.
 /datum/unit_test/dq_world_lanes_f3_reflector
 
 /datum/unit_test/dq_world_lanes_f3_reflector/Run()
-	var/datum/cadence/P = cadence_def(PERIODIC_REFLECTORS)
-	TEST_ASSERT_EQUAL(P.clock, CLOCK_WORLD, "the reflector lane runs on world time")
-	TEST_ASSERT_EQUAL(P.every, 0.5 SECONDS, "the reflector lane lost SSreflector's cadence")
 	var/obj/structure/reflector/box/B = allocate(/obj/structure/reflector/box, run_loc_floor_bottom_left)
-	TEST_ASSERT_NULL(B.periodic_pipe, "an idle reflector is running")
+	TEST_ASSERT(!B.refiring, "an idle reflector is running")
 	var/obj/item/projectile/beam/beam = allocate(/obj/item/projectile/beam, run_loc_floor_bottom_left)
 	B.redirect_projectile(beam, 0)
-	TEST_ASSERT(B.periodic_pipe == PERIODIC_REFLECTORS, "catching a beam did not start the reflector lane")
-	TEST_ASSERT_EQUAL(B.periodic_step(5), PROCESS_KILL, "a reflector that fired did not park")
+	TEST_ASSERT(B.refiring, "catching a beam did not arm the reflector every()")
+	B.reflector_step(null)
+	TEST_ASSERT(!B.refiring, "a reflector that fired did not park")
 	TEST_ASSERT(!LAZYLEN(B.has_projectiles), "the reflector kept the beams it fired")
-
-/// The loot icon lane runs in the lobby too, like SSlooting did.
-/datum/unit_test/dq_world_lanes_f3_loot_lane
-
-/datum/unit_test/dq_world_lanes_f3_loot_lane/Run()
-	var/datum/cadence/P = cadence_def(PERIODIC_LOOT_ICONS)
-	TEST_ASSERT(P.runlevels & RUNLEVEL_LOBBY, "the loot icon lane does not run in the lobby")
-	TEST_ASSERT_EQUAL(P.every, 0.5 SECONDS, "the loot icon lane lost SSlooting's cadence")
 
 /// Songs are REGISTRY_SONGS and running events are REGISTRY_ACTIVE_EVENTS.
 /datum/unit_test/dq_world_lanes_f3_registries

@@ -119,3 +119,27 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 	for(var/var_name in D.timed_until)
 		timed_cancel(D, var_name)
 	D.timed_until = null
+
+/// Knocks the thing about: `steps` random steps, a few deciseconds apart.
+/atom/movable/proc/scatter_steps(steps)
+	var/delay = 0
+	for(var/i in 1 to steps)
+		after(src, delay, PROC_REF(scatter_step))
+		delay += rand(2, 4)
+
+/atom/movable/proc/scatter_step()
+	step(src, pick(GLOB.cardinal))
+
+/// Turns through `dirs` in order, `interval` deciseconds apart (a wiggle or a dance).
+/atom/proc/dir_sequence(list/dirs, interval = 1)
+	var/delay = 0
+	for(var/d in dirs)
+		after(src, delay, TYPE_PROC_REF(/atom, set_dir), with = list(d))
+		delay += interval
+
+/// Cycles the atom's colour through `colors`, `interval` deciseconds apart (a warning flash).
+/atom/proc/color_sequence(list/colors, interval = 1)
+	var/delay = 0
+	for(var/c in colors)
+		after(src, delay, TYPE_PROC_REF(/atom, set_base_color), with = list(c))
+		delay += interval

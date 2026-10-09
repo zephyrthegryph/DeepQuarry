@@ -22,6 +22,18 @@
 //!
 //! Cost: the semantic parse (about 8 s cold) is skipped when no `.dm` file changed since the last run: the DM part of every
 //! row is cached in the analyze cache directory, and only the icon sources are hashed again.
+//!
+//! Incremental: the cache also records, per row, its **footprint** (the procs of its closure, as a bitset over a table of the
+//! procs some closure contains, each with the digest of its text; and the types of its chain, with the digest of the var values
+//! each file assigns to each type) and, per included file, its structure facts (the shape digest, comment-free token digest,
+//! bare type headers, directives and located types of `sem::incremental`). After an edit the plan is rebuilt from the cache
+//! when every changed file left the structure alone (comment edits are ignored; a partial parse of the changed files must give
+//! the same shape and the same types) and is not part of the salt, a `DECLARE_APPEARANCE` file or an `abstract_type` file.
+//! A partial parse of just the changed files then says which closure procs changed their text and which types were assigned
+//! different var values, and only the rows that hold one of those are recomputed (one semantic parse); the others are kept.
+//! An edit to a proc no closure contains (most gameplay code) needs no parse of the whole tree at all. Any doubt (a changed
+//! declaration, define, file set, structure, analyzer) is a full recompute, which is also what `--no-cache` and the tests do;
+//! the tests compare the two.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -35,18 +47,21 @@ use serde::{Deserialize, Serialize};
 use crate::sem::ast;
 use crate::sem::decls::{strip_comments_keep_strings, Decls};
 use crate::sem::hooks::{self, HandlerRef};
+use crate::sem::incremental as inc;
 use crate::sem::Sem;
 use crate::tree::{Tree, CODE_DM};
 
 /// Procs every closure starts from.
 pub const ROOT_PROCS: &[&str] = &["update_icon", "update_icon_state", "update_overlays", "on_update_icon", "update_icon_overlays", "draw", "set_dir"];
 
-/// Files whose contents are part of every key (the presentation engine and the pins that read the look).
-const SALT_FILES: &[&str] = &["code/datums/sys/appearance.dm", "code/modules/unit_tests/dq_look_pins.dm", "code/modules/unit_tests/dq_snapshot_files.dm"];
-const SALT_DIRS: &[&str] = &["code/engine/present/"];
-const SALT_PREFIXES: &[&str] = &["code/modules/unit_tests/dq_look_sweep"];
+/// Files whose contents are part of every key: only the code that draws (the appearance builder that applies a look and the
+/// refresh path). Other engine files, the pin tests and the sweep harness do not change a drawn look, so editing them leaves
+/// every key alone.
+const SALT_FILES: &[&str] = &["code/datums/sys/appearance.dm", "code/engine/present/appearance_builder.dm"];
+const SALT_DIRS: &[&str] = &[];
+const SALT_PREFIXES: &[&str] = &[];
 /// Procs whose defining files are part of the salt.
-const SALT_PROCS: &[(&str, &str)] = &[("/atom", "update_icon"), ("/atom", "changed"), ("/", "appearance_flush"), ("/obj", "update_icon"), ("/mob", "update_icon")];
+const SALT_PROCS: &[(&str, &str)] = &[("/atom", "update_icon"), ("/", "appearance_flush"), ("/obj", "update_icon"), ("/mob", "update_icon")];
 
 /// A name with more definitions than this, called on a receiver of unknown type, reaches only the definitions on the type
 /// chain and on the base types (not every definition in the tree). `--explain` lists the names this cut.
@@ -58,6 +73,53 @@ const SUBTREE_CAP: usize = 8;
 const BASE_TYPES: &[&str] = &["/datum", "/atom", "/atom/movable", "/obj", "/mob", "/turf"];
 
 const CACHE_VERSION: &str = "look-keys-v4";
+
+/// A small multiplicative hasher for the model's integer-keyed tables (the closure walk does tens of millions of lookups;
+/// SipHash was a third of its time). Not for anything that leaves the process.
+#[derive(Default, Clone, Copy)]
+struct Fx(u64);
+const FX_K: u64 = 0x517c_c1b7_2722_0a95;
+impl std::hash::Hasher for Fx {
+    fn write(&mut self, bytes: &[u8]) {
+        for b in bytes {
+            self.0 = (self.0.rotate_left(5) ^ *b as u64).wrapping_mul(FX_K);
+        }
+    }
+    fn write_u8(&mut self, i: u8) {
+        self.0 = (self.0.rotate_left(5) ^ i as u64).wrapping_mul(FX_K);
+    }
+    fn write_u32(&mut self, i: u32) {
+        self.0 = (self.0.rotate_left(5) ^ i as u64).wrapping_mul(FX_K);
+    }
+    fn write_u64(&mut self, i: u64) {
+        self.0 = (self.0.rotate_left(5) ^ i).wrapping_mul(FX_K);
+    }
+    fn write_usize(&mut self, i: usize) {
+        self.write_u64(i as u64);
+    }
+    fn finish(&self) -> u64 {
+        self.0
+    }
+}
+type FxMap<K, V> = HashMap<K, V, std::hash::BuildHasherDefault<Fx>>;
+type FxSet<K> = HashSet<K, std::hash::BuildHasherDefault<Fx>>;
+
+/// Cost accounting for `DQ_LOOK_TRACE`: nanoseconds and call counts per phase.
+mod prof {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    pub static NS: [AtomicU64; 8] = [const { AtomicU64::new(0) }; 8];
+    pub static N: [AtomicU64; 8] = [const { AtomicU64::new(0) }; 8];
+    pub const NAMES: [&str; 8] = ["analyze_proc", "closure: root setup", "own_vars", "declared_below+probes", "closure(incl.)", "closure: expansion loop", "closure: targets()", "closure: hashing"];
+    pub fn add(slot: usize, t0: std::time::Instant) {
+        NS[slot].fetch_add(t0.elapsed().as_nanos() as u64, Ordering::Relaxed);
+        N[slot].fetch_add(1, Ordering::Relaxed);
+    }
+    pub fn report() {
+        for i in 0..8 {
+            eprintln!("look-keys: phase {:<24} {:>9.2?} over {} calls", NAMES[i], std::time::Duration::from_nanos(NS[i].load(Ordering::Relaxed)), N[i].load(Ordering::Relaxed));
+        }
+    }
+}
 const BASES: &[&str] = &["/obj", "/mob", "/turf"];
 /// Subtrees whose look changes through something the closure cannot see: every numeric var is probed. The batons' state follows
 /// `edge` and the other item flags (their look rows exist for every var written), which no draw proc of theirs reads.
@@ -87,9 +149,11 @@ pub struct Explain {
 pub struct Plan {
     pub rows: Vec<Row>,
     pub explain: Option<Explain>,
+    /// How the DM part was obtained: "cached", "incremental: ...", "full" or "explain".
+    pub mode: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct CacheRow {
     ty: String,
     partial: Vec<u8>,
@@ -97,10 +161,76 @@ pub struct CacheRow {
     probes: String,
 }
 
+/// The structure facts of one included file (see `sem::incremental::FileFacts`), plus the types it locates.
+#[derive(Serialize, Deserialize, Default, Clone, PartialEq)]
+struct FileRec {
+    shape: u128,
+    tokens: u128,
+    bare: u128,
+    directive: bool,
+    made: Vec<String>,
+    /// Per type, a digest of the var values this file assigns to it (see `var_digests`): an edit that changes the digest of a
+    /// type moves the rows whose chain holds that type; an edit that changes none can only move rows through a proc.
+    vars: BTreeMap<String, u128>,
+}
+
+/// A proc some closure contains: where it is (the file, its type, its name and its ordinal among that type's definitions of the name
+/// in that file) and a digest of its text (parameters and body, locations stripped).
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+struct ProcKey {
+    file: String,
+    owner: String,
+    name: String,
+    ord: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct ProcRec {
+    key: ProcKey,
+    text: u128,
+}
+
+fn bit_set(bits: &mut Vec<u8>, i: usize) {
+    if bits.len() <= i / 8 {
+        bits.resize(i / 8 + 1, 0);
+    }
+    bits[i / 8] |= 1 << (i % 8);
+}
+
+/// What the incremental path needs from the run that wrote the cache.
+#[derive(Serialize, Deserialize, Default, Clone)]
+struct Incr {
+    /// `ENGINE_HASH` and `CACHE_VERSION` of the run that wrote it: a different engine may compute different rows.
+    engine: String,
+    /// `lk_env`: deepquarry.dme, the declaration markers and the defines.
+    env: u128,
+    /// Content hash of every `.dm` file the tree holds.
+    hashes: Vec<(String, u128)>,
+    /// Structure facts of the files the model includes.
+    files: BTreeMap<String, FileRec>,
+    /// Files whose contents are part of every key: any change recomputes everything.
+    salt: Vec<String>,
+    /// Files holding `DECLARE_APPEARANCE` or `abstract_type` -> `special_digest`: a change to what they declare can add or
+    /// remove rows or marker text the model does not see, so it recomputes everything; an edit elsewhere in them does not.
+    special: BTreeMap<String, u128>,
+    /// The procs some closure contains.
+    procs: Vec<ProcRec>,
+    /// The closures rows use, as bitsets over `procs`.
+    closures: Vec<Vec<u8>>,
+    /// Parallel to `rows`: the index into `closures`.
+    foot: Vec<u32>,
+    /// Per type of any row's chain: its parent.
+    types: BTreeMap<String, Option<String>>,
+    /// The `DECLARE_APPEARANCE` declarations of the whole tree (no changed file may hold one on the incremental path, so
+    /// they stay valid and the tree need not be scanned again).
+    appearance: Vec<(String, String, String)>,
+}
+
 #[derive(Serialize, Deserialize)]
 struct CacheFile {
     key: Vec<u8>,
     rows: Vec<CacheRow>,
+    incr: Option<Incr>,
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -225,6 +355,10 @@ struct Info {
     hash: [u8; 32],
     tokens: BTreeSet<String>,
     edges: Vec<(String, Kind, u8)>,
+    /// Digest of the proc's parameters and body, locations stripped (no owner, name or ordinal).
+    text_hash: u128,
+    /// `edges` interned in the model's edge table, those whose name has no definition anywhere dropped (they reach nothing).
+    eids: Vec<u32>,
     dynamic: Vec<String>,
     icons: Vec<String>,
     /// Defined in an engine directory: part of the closure (hashed) but never expanded, as the reads walk treats it.
@@ -254,13 +388,22 @@ struct Model<'a> {
     tindex: HashMap<String, u32>,
     parent: Vec<Option<u32>>,
     pdefs: Vec<PDef<'a>>,
-    own: HashMap<(u32, &'a str), (u32, u32)>,
+    own: FxMap<(u32, u32), (u32, u32)>,
     own_proc_count: Vec<u32>,
-    by_name: HashMap<&'a str, Vec<u32>>,
+    by_name: FxMap<&'a str, u32>,
+    /// proc name id -> its definitions (pdef ids, ascending).
+    by_nid: Vec<Vec<u32>>,
+    names: Vec<&'a str>,
+    /// Distinct (name, receiver, flags) call edges seen so far: (name id, receiver, flags).
+    edge_ids: FxMap<(String, Kind, u8), u32>,
+    edge_tab: Vec<(u32, Kind, u8)>,
+    any_cache: FxMap<u32, Rc<Vec<u32>>>,
+    why_on: bool,
+
     infos: Vec<Option<Rc<Info>>>,
     varnames: HashSet<String>,
     inv: HashMap<String, Vec<u32>>,
-    dispatch_cache: HashMap<(u32, String), Rc<Vec<u32>>>,
+    dispatch_cache: FxMap<(u32, u32), Rc<Vec<u32>>>,
     // per type declarations
     handler_roots: HashMap<u32, Vec<(String, Option<String>)>>,
     marker_words: HashMap<u32, BTreeSet<String>>,
@@ -288,9 +431,11 @@ impl<'a> Model<'a> {
             }
         }
         let mut pdefs: Vec<PDef<'a>> = Vec::new();
-        let mut own = HashMap::new();
+        let mut own: FxMap<(u32, u32), (u32, u32)> = FxMap::default();
         let mut own_proc_count = vec![0u32; raw.len()];
-        let mut by_name: HashMap<&'a str, Vec<u32>> = HashMap::new();
+        let mut by_name: FxMap<&'a str, u32> = FxMap::default();
+        let mut by_nid: Vec<Vec<u32>> = Vec::new();
+        let mut proc_names: Vec<&'a str> = Vec::new();
         for (ti, t) in raw.iter().enumerate() {
             let mut names: Vec<(&'a String, &'a dreammaker::objtree::TypeProc)> = t.get().procs.iter().collect();
             names.sort_by(|a, b| a.0.cmp(b.0));
@@ -300,11 +445,16 @@ impl<'a> Model<'a> {
                     continue;
                 }
                 let start = pdefs.len() as u32;
+                let nid = *by_name.entry(name.as_str()).or_insert_with(|| {
+                    proc_names.push(name.as_str());
+                    by_nid.push(Vec::new());
+                    (proc_names.len() - 1) as u32
+                });
                 for (idx, val) in tp.value.iter().enumerate() {
-                    by_name.entry(name.as_str()).or_default().push(pdefs.len() as u32);
+                    by_nid[nid as usize].push(pdefs.len() as u32);
                     pdefs.push(PDef { owner: ti as u32, name: name.as_str(), idx, val });
                 }
-                own.insert((ti as u32, name.as_str()), (start, tp.value.len() as u32));
+                own.insert((ti as u32, nid), (start, tp.value.len() as u32));
                 own_proc_count[ti] += tp.value.len() as u32;
             }
         }
@@ -364,10 +514,17 @@ impl<'a> Model<'a> {
             own,
             own_proc_count,
             by_name,
+            by_nid,
+            names: proc_names,
+            edge_ids: FxMap::default(),
+            edge_tab: Vec::new(),
+            any_cache: FxMap::default(),
+            why_on: std::env::var("DQ_LOOK_WHY").is_ok(),
+
             infos: vec![None; n],
             varnames,
             inv: HashMap::new(),
-            dispatch_cache: HashMap::new(),
+            dispatch_cache: FxMap::default(),
             handler_roots,
             marker_words,
             marker_hash,
@@ -409,9 +566,16 @@ impl<'a> Model<'a> {
     }
 
     fn chain_defs(&self, chain: &[u32], name: &str) -> Vec<u32> {
+        match self.by_name.get(name) {
+            Some(nid) => self.chain_defs_id(chain, *nid),
+            None => Vec::new(),
+        }
+    }
+
+    fn chain_defs_id(&self, chain: &[u32], nid: u32) -> Vec<u32> {
         let mut out = Vec::new();
         for t in chain {
-            if let Some((s, n)) = self.own.get(&(*t, name)) {
+            if let Some((s, n)) = self.own.get(&(*t, nid)) {
                 out.extend(*s..*s + *n);
             }
         }
@@ -420,29 +584,61 @@ impl<'a> Model<'a> {
 
     /// The definitions of `name` a call on an object of declared type `k` may reach: k's chain and k's whole subtree.
     fn dispatch(&mut self, k: u32, name: &str) -> Rc<Vec<u32>> {
-        if let Some(v) = self.dispatch_cache.get(&(k, name.to_string())) {
+        match self.by_name.get(name).copied() {
+            Some(nid) => self.dispatch_id(k, nid),
+            None => Rc::new(Vec::new()),
+        }
+    }
+
+    fn dispatch_id(&mut self, k: u32, nid: u32) -> Rc<Vec<u32>> {
+        if let Some(v) = self.dispatch_cache.get(&(k, nid)) {
             return v.clone();
         }
         let chain = self.chain(k);
-        let mut out = self.chain_defs(&chain, name);
+        let mut out = self.chain_defs_id(&chain, nid);
         let mut below: Vec<u32> = Vec::new();
-        if let Some(all) = self.by_name.get(name) {
-            for id in all {
-                let o = self.pdefs[*id as usize].owner;
-                if o != k && self.is_desc(o, k) {
-                    below.push(*id);
-                }
+        for id in &self.by_nid[nid as usize] {
+            let o = self.pdefs[*id as usize].owner;
+            if o != k && self.is_desc(o, k) {
+                below.push(*id);
             }
         }
         if below.len() > SUBTREE_CAP {
-            self.capped.insert(format!("{} on {} ({} definitions in its subtree; chain only)", name, self.paths[k as usize], below.len()));
+            self.capped.insert(format!("{} on {} ({} definitions in its subtree; chain only)", self.names[nid as usize], self.paths[k as usize], below.len()));
         } else {
             out.extend(below);
         }
         out.sort_unstable();
         out.dedup();
         let rc = Rc::new(out);
-        self.dispatch_cache.insert((k, name.to_string()), rc.clone());
+        self.dispatch_cache.insert((k, nid), rc.clone());
+        rc
+    }
+
+    /// What a call on an unknown receiver reaches besides the type chain: every definition of the name when there are few,
+    /// else the base types' only. Independent of the type being closed, so computed once per name.
+    fn any_defs(&mut self, nid: u32) -> Rc<Vec<u32>> {
+        if let Some(v) = self.any_cache.get(&nid) {
+            return v.clone();
+        }
+        let all = &self.by_nid[nid as usize];
+        let out: Vec<u32> = if all.len() <= ANY_CAP {
+            all.clone()
+        } else {
+            // Too common to follow everywhere: the base types only.
+            self.capped.insert(format!("{} on an unknown receiver ({} definitions; type chain and base types only)", self.names[nid as usize], all.len()));
+            let mut v = Vec::new();
+            for b in BASE_TYPES {
+                if let Some(bi) = self.tindex.get(*b) {
+                    if let Some((st, n)) = self.own.get(&(*bi, nid)) {
+                        v.extend(*st..*st + *n);
+                    }
+                }
+            }
+            v
+        };
+        let rc = Rc::new(out);
+        self.any_cache.insert(nid, rc.clone());
         rc
     }
 
@@ -454,7 +650,25 @@ impl<'a> Model<'a> {
         if let Some(i) = &self.infos[id as usize] {
             return i.clone();
         }
-        let info = Rc::new(self.analyze_proc(id));
+        let mut info = self.analyze_proc(id);
+        let mut eids: Vec<u32> = Vec::with_capacity(info.edges.len());
+        for (name, kind, flags) in &info.edges {
+            // A name nothing defines reaches nothing, whatever the receiver.
+            let Some(nid) = self.by_name.get(name.as_str()).copied() else { continue };
+            let key = (name.clone(), kind.clone(), *flags);
+            let eid = match self.edge_ids.get(&key) {
+                Some(e) => *e,
+                None => {
+                    let e = self.edge_tab.len() as u32;
+                    self.edge_tab.push((nid, kind.clone(), *flags));
+                    self.edge_ids.insert(key, e);
+                    e
+                }
+            };
+            eids.push(eid);
+        }
+        info.eids = eids;
+        let info = Rc::new(info);
         for t in &info.tokens {
             if self.varnames.contains(t) || (t.starts_with("set_") && self.varnames.contains(&t[4..])) {
                 self.inv.entry(t.clone()).or_default().push(id);
@@ -465,10 +679,18 @@ impl<'a> Model<'a> {
     }
 
     fn analyze_proc(&self, id: u32) -> Info {
+        let t_prof = std::time::Instant::now();
+        let r = self.analyze_proc_inner(id);
+        prof::add(0, t_prof);
+        r
+    }
+
+    fn analyze_proc_inner(&self, id: u32) -> Info {
         let pd = &self.pdefs[id as usize];
         let owner_path = &self.paths[pd.owner as usize];
         let text = strip_locations(&format!("{:?}|{:?}", pd.val.parameters, pd.val.code));
         let hash = digest(&[owner_path.as_bytes(), pd.name.as_bytes(), &(pd.idx as u64).to_le_bytes(), text.as_bytes()]);
+        let text_hash = u128::from_le_bytes(blake3::hash(text.as_bytes()).as_bytes()[..16].try_into().unwrap());
         let tokens = quoted_tokens(&text);
         let icons = tokens.iter().filter(|t| t.ends_with(".dmi")).cloned().collect();
         let mut locals: HashMap<String, Option<String>> = HashMap::new();
@@ -504,9 +726,9 @@ impl<'a> Model<'a> {
         dynamic.dedup();
         let opaque = self.sem.file_of(pd.val.location).is_some_and(|f| crate::sem::handlers::OPAQUE_DIRS.iter().any(|d| f.starts_with(d)));
         if opaque {
-            return Info { hash, tokens: BTreeSet::new(), edges: Vec::new(), dynamic: Vec::new(), icons: Vec::new(), opaque };
+            return Info { hash, text_hash, tokens: BTreeSet::new(), edges: Vec::new(), eids: Vec::new(), dynamic: Vec::new(), icons: Vec::new(), opaque };
         }
-        Info { hash, tokens, edges: edges.into_iter().collect(), dynamic, icons, opaque }
+        Info { hash, text_hash, tokens, edges: edges.into_iter().collect(), eids: Vec::new(), dynamic, icons, opaque }
     }
 
     fn visit_expr(&self, e: &Expression, pd: &PDef<'a>, owner_path: &str, locals: &HashMap<String, Option<String>>, stmt_set: &HashSet<*const Expression>, edges: &mut BTreeSet<(String, Kind, u8)>, dynamic: &mut Vec<String>) {
@@ -633,46 +855,32 @@ impl<'a> Model<'a> {
     /// result is dropped, on another object, with `src` not passed to it, changes that object and not this one: it is not
     /// followed (unless the receiver may be `src` itself, which reaches the type chain only). Every other call on another
     /// object is followed to that object's type chain and, when small, its subtree.
-    fn targets(&mut self, name: &str, kind: &Kind, flags: u8, t_ctx: bool, from_owner: u32, chain: &[u32]) -> Vec<(u32, bool)> {
-        let mut out: Vec<(u32, bool)> = Vec::new();
+    fn targets(&mut self, eid: u32, t_ctx: bool, from_owner: u32, chain: &[u32], out: &mut Vec<(u32, bool)>) {
+        let (nid, kind, flags) = self.edge_tab[eid as usize].clone();
         let other_only = flags & 1 != 0 && flags & 2 == 0;
         match kind {
-            Kind::Src if t_ctx => out.extend(self.chain_defs(chain, name).into_iter().map(|d| (d, true))),
+            Kind::Src if t_ctx => out.extend(self.chain_defs_id(chain, nid).into_iter().map(|d| (d, true))),
             Kind::Src => {
                 if !other_only {
-                    out.extend(self.dispatch(from_owner, name).iter().map(|d| (*d, false)));
+                    out.extend(self.dispatch_id(from_owner, nid).iter().map(|d| (*d, false)));
                 }
             }
             Kind::Typed(k) => {
-                if chain.contains(k) {
+                if chain.contains(&k) {
                     // The receiver may be `src` itself.
-                    out.extend(self.chain_defs(chain, name).into_iter().map(|d| (d, true)));
+                    out.extend(self.chain_defs_id(chain, nid).into_iter().map(|d| (d, true)));
                 }
                 if !other_only {
-                    out.extend(self.dispatch(*k, name).iter().map(|d| (*d, false)));
+                    out.extend(self.dispatch_id(k, nid).iter().map(|d| (*d, false)));
                 }
             }
             Kind::Any => {
-                out.extend(self.chain_defs(chain, name).into_iter().map(|d| (d, true)));
+                out.extend(self.chain_defs_id(chain, nid).into_iter().map(|d| (d, true)));
                 if !other_only {
-                    let all = self.by_name.get(name).cloned().unwrap_or_default();
-                    if all.len() <= ANY_CAP {
-                        out.extend(all.into_iter().map(|d| (d, false)));
-                    } else {
-                        // Too common to follow everywhere: the base types only.
-                        self.capped.insert(format!("{} on an unknown receiver ({} definitions; type chain and base types only)", name, all.len()));
-                        for b in BASE_TYPES {
-                            if let Some(bi) = self.tindex.get(*b) {
-                                if let Some((st, n)) = self.own.get(&(*bi, self.pdefs[all[0] as usize].name)) {
-                                    out.extend((*st..*st + *n).map(|d| (d, false)));
-                                }
-                            }
-                        }
-                    }
+                    out.extend(self.any_defs(nid).iter().map(|d| (*d, false)));
                 }
             }
         }
-        out
     }
 
     fn closure(&mut self, t: u32) -> Rc<Closure> {
@@ -687,6 +895,7 @@ impl<'a> Model<'a> {
                 return c;
             }
         }
+        let t_roots = std::time::Instant::now();
         let chain = self.chain(t);
         let mut root_names: BTreeSet<String> = ROOT_PROCS.iter().map(|s| s.to_string()).collect();
         let mut cap_roots: BTreeSet<(String, String)> = BTreeSet::new();
@@ -710,65 +919,94 @@ impl<'a> Model<'a> {
                 // A word of a declaration that names a global proc is an entry proc (`cover()`); other words are keywords.
                 for w in ws {
                     if let Some(root) = self.tindex.get("/") {
-                        if self.entry_procs.contains(w) && self.own.contains_key(&(*root, w.as_str())) {
+                        if self.entry_procs.contains(w) && self.by_name.get(w.as_str()).is_some_and(|nid| self.own.contains_key(&(*root, *nid))) {
                             root_names.insert(w.clone());
                         }
                     }
                 }
             }
         }
-        let mut visited: HashSet<(u32, bool)> = HashSet::new();
+        let words = self.pdefs.len() / 64 + 1;
+        // Visited definitions, by the context they run in: `vis_src` with `src` = the type being closed, `vis_other` not.
+        let mut vis_src = vec![0u64; words];
+        let mut vis_other = vec![0u64; words];
         let mut why: HashMap<u32, (Option<u32>, String)> = HashMap::new();
-        let mut done_edges: HashSet<(String, Kind, u8, bool, u32)> = HashSet::new();
+        let mut done_edges: FxSet<(u32, bool, u32)> = FxSet::default();
         let mut stack: Vec<(u32, bool)> = Vec::new();
         let mut roots_found: Vec<String> = Vec::new();
+        let mut mark = |src_ctx: bool, d: u32| -> bool {
+            let set = if src_ctx { &mut vis_src } else { &mut vis_other };
+            let (w, b) = ((d / 64) as usize, d % 64);
+            if set[w] >> b & 1 == 1 {
+                return false;
+            }
+            set[w] |= 1 << b;
+            true
+        };
         for name in &root_names {
             let defs = self.chain_defs(&chain, name);
             if !defs.is_empty() {
                 roots_found.push(name.clone());
             }
             for d in defs {
-                if visited.insert((d, true)) {
+                if mark(true, d) {
                     stack.push((d, true));
-                    why.entry(d).or_insert((None, format!("root {}", name)));
+                    if self.why_on {
+                        why.entry(d).or_insert((None, format!("root {}", name)));
+                    }
                 }
             }
         }
         for (ct, p) in &cap_roots {
             if let Some(k) = self.known_type(ct) {
                 for d in self.dispatch(k, p).iter() {
-                    if visited.insert((*d, false)) {
+                    if mark(false, *d) {
                         stack.push((*d, false));
                     }
                 }
                 roots_found.push(format!("{}::{}", ct, p));
             }
         }
+        prof::add(1, t_roots);
+        let t_loop = std::time::Instant::now();
+        let mut defs: Vec<(u32, bool)> = Vec::new();
         while let Some((id, t_ctx)) = stack.pop() {
             let info = self.info(id);
             if info.opaque {
                 continue;
             }
             let from_owner = self.pdefs[id as usize].owner;
-            for (name, kind, flags) in &info.edges {
-                // One expansion per distinct edge: every later occurrence reaches the same definitions.
-                let ctx_owner = if !t_ctx { from_owner } else { u32::MAX };
-                if !done_edges.insert((name.clone(), kind.clone(), *flags, t_ctx, ctx_owner)) {
+            // One expansion per distinct edge: every later occurrence reaches the same definitions.
+            let ctx_owner = if !t_ctx { from_owner } else { u32::MAX };
+            for eid in &info.eids {
+                if !done_edges.insert((*eid, t_ctx, ctx_owner)) {
                     continue;
                 }
-                let defs = self.targets(name, kind, *flags, t_ctx, from_owner, &chain);
-                for (d, ctx) in defs {
-                    if visited.insert((d, ctx)) {
-                        stack.push((d, ctx));
-                        why.entry(d).or_insert((Some(id), format!("{} {:?}", name, kind)));
+                defs.clear();
+                self.targets(*eid, t_ctx, from_owner, &chain, &mut defs);
+                for (d, ctx) in defs.iter() {
+                    if mark(*ctx, *d) {
+                        stack.push((*d, *ctx));
+                        if self.why_on {
+                            let (nid, kind, _) = &self.edge_tab[*eid as usize];
+                            why.entry(*d).or_insert((Some(id), format!("{} {:?}", self.names[*nid as usize], kind)));
+                        }
                     }
                 }
             }
         }
-        let mut ids: Vec<u32> = visited.iter().map(|(i, _)| *i).collect();
-        ids.sort_unstable();
-        ids.dedup();
-        let mut bits = vec![0u64; self.pdefs.len() / 64 + 1];
+        prof::add(5, t_loop);
+        let t_hash = std::time::Instant::now();
+        let mut ids: Vec<u32> = Vec::new();
+        for w in 0..words {
+            let mut word = vis_src[w] | vis_other[w];
+            while word != 0 {
+                let b = word.trailing_zeros();
+                ids.push((w as u32) * 64 + b);
+                word &= word - 1;
+            }
+        }
+        let mut bits = vec![0u64; words];
         let mut h = blake3::Hasher::new();
         let mut icons = BTreeSet::new();
         let mut first_dynamic: Option<(u32, String)> = None;
@@ -784,6 +1022,7 @@ impl<'a> Model<'a> {
                 }
             }
         }
+        prof::add(7, t_hash);
         if let Ok(w) = std::env::var("DQ_LOOK_WHY") {
             for id in &ids {
                 let pd = &self.pdefs[*id as usize];
@@ -811,11 +1050,34 @@ impl<'a> Model<'a> {
         c
     }
 
+    /// Where proc definition `id` is: its file, type, name and its ordinal among the definitions of that name on that type that
+    /// sit in the same file (stable when only bodies change, and the same in a model of just that file).
+    fn proc_key(&self, id: u32) -> ProcKey {
+        let pd = &self.pdefs[id as usize];
+        let file = self.sem.file_of(pd.val.location).unwrap_or("").to_string();
+        let mut ord = 0u32;
+        if let Some(nid) = self.by_name.get(pd.name) {
+            if let Some((start, count)) = self.own.get(&(pd.owner, *nid)) {
+                for other in *start..*start + *count {
+                    if other >= id {
+                        break;
+                    }
+                    if self.sem.file_of(self.pdefs[other as usize].val.location).unwrap_or("") == file {
+                        ord += 1;
+                    }
+                }
+            }
+        }
+        ProcKey { file, owner: self.paths[pd.owner as usize].clone(), name: pd.name.to_string(), ord }
+    }
+
     /// Initial values of the type's own vars: (digest, icon paths named).
     fn own_vars(&mut self, t: u32) -> ([u8; 32], BTreeSet<String>) {
         if let Some(v) = &self.var_hash[t as usize] {
             return v.clone();
         }
+        let t_prof = std::time::Instant::now();
+        let _g = ProfGuard(2, t_prof);
         let ty = self.types[t as usize];
         let mut vars: Vec<(&String, &dreammaker::objtree::TypeVar)> = ty.get().vars.iter().collect();
         vars.sort_by(|a, b| a.0.cmp(b.0));
@@ -849,9 +1111,9 @@ impl<'a> Model<'a> {
         }
     }
 
-    fn declared_below(&self, t: u32, base: u32) -> Vec<String> {
-        let mut out = BTreeSet::new();
-        let mut base_names: HashSet<&str> = HashSet::new();
+    /// The var names declared on a base type and its ancestors (a var of one of these is not a candidate probe).
+    fn base_var_names(&self, base: u32) -> FxSet<&'a str> {
+        let mut base_names: FxSet<&'a str> = FxSet::default();
         for c in self.chain(base) {
             for (n, v) in &self.types[c as usize].get().vars {
                 if v.declaration.is_some() {
@@ -859,6 +1121,11 @@ impl<'a> Model<'a> {
                 }
             }
         }
+        base_names
+    }
+
+    fn declared_below(&self, t: u32, base: u32, base_names: &FxSet<&str>) -> Vec<String> {
+        let mut out = BTreeSet::new();
         for c in self.chain(t) {
             if c == base || !self.is_desc(c, base) {
                 continue;
@@ -870,6 +1137,13 @@ impl<'a> Model<'a> {
             }
         }
         out.into_iter().collect()
+    }
+}
+
+struct ProfGuard(usize, std::time::Instant);
+impl Drop for ProfGuard {
+    fn drop(&mut self) {
+        prof::add(self.0, self.1);
     }
 }
 
@@ -1022,44 +1296,116 @@ fn salt_digest(tree: &Tree, root: &Path, sem: &Sem) -> [u8; 32] {
 
 /// The legacy appearance declarations, which expand to a table entry and leave no marker: `DECLARE_APPEARANCE(PATH, VAR, ROWS)`
 /// and `DECLARE_APPEARANCE_PROC(PATH, PROC, FIELDS)`. (type path, macro name, argument text after the path)
-fn appearance_decls(tree: &Tree) -> Vec<(String, String, String)> {
+fn appearance_decls(tree: &Tree, files: &mut BTreeSet<String>) -> Vec<(String, String, String)> {
     let mut out = Vec::new();
     for f in tree.select(&CODE_DM) {
-        let text = f.code().text.as_str();
-        let mut from = 0;
-        while let Some(i) = text[from..].find("DECLARE_APPEARANCE") {
-            let at = from + i;
-            from = at + 1;
-            let line_start = text[..at].rfind(NL).map(|p| p + 1).unwrap_or(0);
-            if !text[line_start..at].trim().is_empty() {
-                continue;
-            }
-            let rest = &text[at..];
-            let name_end = rest.find(|c: char| !(c.is_ascii_alphanumeric() || c == '_')).unwrap_or(rest.len());
-            let name = &rest[..name_end];
-            let after = rest[name_end..].trim_start();
-            if !after.starts_with('(') {
-                continue;
-            }
-            let open = at + name_end + (rest[name_end..].len() - after.len());
-            let Some(close) = crate::sem::decls::matching_paren(text, open) else { continue };
-            let args = crate::sem::decls::split_args(&text[open + 1..close]);
-            if let Some(path) = args.first() {
-                out.push((path.trim().to_string(), name.to_string(), args[1..].join(",")));
-            }
+        if f.text().contains("DECLARE_APPEARANCE") {
+            files.insert(f.rel.clone());
+            out.extend(appearance_in(f));
         }
     }
     out
 }
 
+/// The appearance declarations of one file.
+fn appearance_in(f: &crate::tree::SourceFile) -> Vec<(String, String, String)> {
+    let mut out = Vec::new();
+    let text = f.code().text.as_str();
+    let mut from = 0;
+    while let Some(i) = text[from..].find("DECLARE_APPEARANCE") {
+        let at = from + i;
+        from = at + 1;
+        let line_start = text[..at].rfind(NL).map(|p| p + 1).unwrap_or(0);
+        if !text[line_start..at].trim().is_empty() {
+            continue;
+        }
+        let rest = &text[at..];
+        let name_end = rest.find(|c: char| !(c.is_ascii_alphanumeric() || c == '_')).unwrap_or(rest.len());
+        let name = &rest[..name_end];
+        let after = rest[name_end..].trim_start();
+        if !after.starts_with('(') {
+            continue;
+        }
+        let open = at + name_end + (rest[name_end..].len() - after.len());
+        let Some(close) = crate::sem::decls::matching_paren(text, open) else { continue };
+        let args = crate::sem::decls::split_args(&text[open + 1..close]);
+        if let Some(path) = args.first() {
+            out.push((path.trim().to_string(), name.to_string(), args[1..].join(",")));
+        }
+    }
+    out
+}
+
+/// What a file contributes through `DECLARE_APPEARANCE` and `abstract_type`, the two things the plan reads from text rather
+/// than from the model: a digest of the abstract_type lines and the appearance declarations. An edit elsewhere in the file
+/// leaves it alone.
+fn special_digest(f: &crate::tree::SourceFile) -> u128 {
+    let mut h = blake3::Hasher::new();
+    for line in f.code().text.lines() {
+        if line.contains("abstract_type") {
+            h.update(line.trim().as_bytes());
+            h.update(b"
+");
+        }
+    }
+    for (path, name, body) in appearance_in(f) {
+        h.update(&digest(&[path.as_bytes(), name.as_bytes(), body.as_bytes()]));
+    }
+    u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+}
+
 /// The DM-derived part of the plan: per type, (partial digest, icon paths, probes).
 pub fn dm_part(tree: &Tree, root: &Path, only: Option<&str>) -> Option<(Vec<CacheRow>, Option<Explain>)> {
+    let c = dm_compute(tree, root, only, None, None)?;
+    Some((c.rows, c.explain))
+}
+
+/// Everything one pass over the model produces.
+struct Computed {
+    rows: Vec<CacheRow>,
+    explain: Option<Explain>,
+    /// Parallel to `rows`: the index into `closures`.
+    foot: Vec<u32>,
+    /// The chain types of the computed rows.
+    types: BTreeMap<String, Option<String>>,
+    /// The procs the closures contain, and each closure as indices into them.
+    procs: Vec<ProcRec>,
+    closures: Vec<Vec<u32>>,
+    salt: Vec<String>,
+    special: Vec<String>,
+    appearance: Vec<(String, String, String)>,
+}
+
+/// `only` computes (and explains) one type; `restrict` computes just those types (the incremental path); `seed` is the cache's
+/// `DECLARE_APPEARANCE` list, which stays valid because no changed file holds one.
+fn dm_compute(tree: &Tree, root: &Path, only: Option<&str>, restrict: Option<&HashSet<String>>, seed: Option<&Vec<(String, String, String)>>) -> Option<Computed> {
     let sem = crate::sem::sem_for(tree)?;
     let decls = Decls::get(tree);
     let handlers = hooks::discover(&decls);
     let t_model = std::time::Instant::now();
-    let appearance = appearance_decls(tree);
+    let mut special_files: BTreeSet<String> = BTreeSet::new();
+    let appearance: Vec<(String, String, String)> = match seed {
+        Some(a) => a.clone(),
+        None => {
+            // Reads every file: load them all on the worker threads first.
+            tree.prewarm();
+            let a = appearance_decls(tree, &mut special_files);
+            for f in tree.select(&CODE_DM) {
+                if f.text().contains("abstract_type") {
+                    special_files.insert(f.rel.clone());
+                }
+            }
+            a
+        }
+    };
     let mut m = Model::new(&sem, &decls, &handlers, &appearance);
+    let want_foot = only.is_none();
+    let mut closures: Vec<Vec<u32>> = Vec::new();
+    let mut local_proc: FxMap<u32, u32> = FxMap::default();
+    let mut proc_ids: Vec<u32> = Vec::new();
+    let mut closure_ix: FxMap<usize, u32> = FxMap::default();
+    let mut foot: Vec<u32> = Vec::new();
+    let mut type_foot: BTreeMap<String, Option<String>> = BTreeMap::new();
     if std::env::var("DQ_LOOK_TRACE").is_ok() {
         eprintln!("look-keys: model {:.2?}: {} types, {} procs", t_model.elapsed(), m.types.len(), m.pdefs.len());
     }
@@ -1067,11 +1413,17 @@ pub fn dm_part(tree: &Tree, root: &Path, only: Option<&str>) -> Option<(Vec<Cach
     let mut rows = Vec::new();
     let mut explain = None;
     let order: Vec<u32> = (0..m.types.len() as u32).collect();
+    let mut base_names: FxMap<u32, FxSet<&str>> = FxMap::default();
     for t in order {
         let path = m.paths[t as usize].clone();
         let Some(base_path) = BASES.iter().find(|b| path.starts_with(&format!("{}/", b))) else { continue };
         if let Some(o) = only {
             if o != path {
+                continue;
+            }
+        }
+        if let Some(r) = restrict {
+            if !r.contains(&path) {
                 continue;
             }
         }
@@ -1083,7 +1435,9 @@ pub fn dm_part(tree: &Tree, root: &Path, only: Option<&str>) -> Option<(Vec<Cach
             continue;
         }
         let base = m.tindex[*base_path];
+        let t_closure = std::time::Instant::now();
         let c = m.closure(t);
+        prof::add(4, t_closure);
         // vars and declarations of the chain
         let chain = m.chain(t);
         let mut icons: BTreeSet<String> = c.icons.clone();
@@ -1112,7 +1466,9 @@ pub fn dm_part(tree: &Tree, root: &Path, only: Option<&str>) -> Option<(Vec<Cach
         let partial = h.finalize().as_bytes().to_vec();
 
         // probes
-        let cands = m.declared_below(t, base);
+        let t_probe = std::time::Instant::now();
+        let base_names = base_names.entry(base).or_insert_with(|| m.base_var_names(base));
+        let cands = m.declared_below(t, base, base_names);
         let mut chain_words: BTreeSet<&String> = BTreeSet::new();
         for ct in &chain {
             if let Some(ws) = m.marker_words.get(ct) {
@@ -1155,6 +1511,7 @@ pub fn dm_part(tree: &Tree, root: &Path, only: Option<&str>) -> Option<(Vec<Cach
             }
             found.join(",")
         };
+        prof::add(3, t_probe);
         let icon_list: Vec<String> = icons.into_iter().collect();
         if only.is_some() {
             let closure = c
@@ -1168,10 +1525,44 @@ pub fn dm_part(tree: &Tree, root: &Path, only: Option<&str>) -> Option<(Vec<Cach
                 .collect();
             explain = Some(Explain { closure, probes: probes.clone(), probe_reason: reasons, icons: icon_list.clone(), dynamic: c.dynamic.clone(), roots: c.roots.clone(), capped: m.capped.iter().cloned().collect() });
         }
+        if want_foot {
+            for ct in &chain {
+                let cp = m.paths[*ct as usize].clone();
+                if !type_foot.contains_key(&cp) {
+                    let parent = m.parent[*ct as usize].map(|p| m.paths[p as usize].clone());
+                    type_foot.insert(cp, parent);
+                }
+            }
+            let ix = *closure_ix.entry(Rc::as_ptr(&c) as usize).or_insert_with(|| {
+                let local: Vec<u32> = c
+                    .ids
+                    .iter()
+                    .map(|id| {
+                        *local_proc.entry(*id).or_insert_with(|| {
+                            proc_ids.push(*id);
+                            (proc_ids.len() - 1) as u32
+                        })
+                    })
+                    .collect();
+                closures.push(local);
+                (closures.len() - 1) as u32
+            });
+            foot.push(ix);
+        }
         rows.push(CacheRow { ty: path, partial, icons: icon_list, probes });
     }
-    rows.sort_by(|a, b| a.ty.cmp(&b.ty));
-    Some((rows, explain))
+    // Rows (and their footprints) in type order.
+    let mut order_ix: Vec<usize> = (0..rows.len()).collect();
+    order_ix.sort_by(|a, b| rows[*a].ty.cmp(&rows[*b].ty));
+    let rows: Vec<CacheRow> = order_ix.iter().map(|i| CacheRow { ty: rows[*i].ty.clone(), partial: rows[*i].partial.clone(), icons: rows[*i].icons.clone(), probes: rows[*i].probes.clone() }).collect();
+    if want_foot {
+        foot = order_ix.iter().map(|i| foot[*i].clone()).collect();
+    }
+    let procs: Vec<ProcRec> = if want_foot { proc_ids.iter().map(|id| ProcRec { key: m.proc_key(*id), text: m.info(*id).text_hash }).collect() } else { Vec::new() };
+    if std::env::var("DQ_LOOK_TRACE").is_ok() {
+        prof::report();
+    }
+    Some(Computed { rows, explain, foot, types: type_foot, procs, closures, salt: salt_files(tree, &sem), special: special_files.into_iter().collect(), appearance })
 }
 
 /// Icon sources of a `.dmi` path: its `.dmi.toml` and the `.png` beside it. A source that is not found is
@@ -1243,48 +1634,432 @@ fn tree_key(tree: &Tree) -> Vec<u8> {
     h.finalize().as_bytes().to_vec()
 }
 
+fn load_cache(p: &Path) -> Option<CacheFile> {
+    let bytes = std::fs::read(p).ok()?;
+    match crate::incr::de::<CacheFile>(&bytes) {
+        Ok(c) => Some(c),
+        Err(e) => {
+            if std::env::var("DQ_LOOK_TRACE").is_ok() {
+                eprintln!("look-keys: cache {} unreadable ({}); computing", p.display(), e);
+            }
+            None
+        }
+    }
+}
+
+fn store_cache(p: &Path, file: &CacheFile) {
+    if let Some(dir) = p.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    if std::env::var("DQ_LOOK_TRACE").is_ok() {
+        let size = |r: Result<Vec<u8>, bincode::Error>| r.map(|b| b.len()).unwrap_or(0);
+        eprintln!("look-keys: cache parts: rows {} B", size(crate::incr::ser(&file.rows)));
+        if let Some(i) = &file.incr {
+            eprintln!(
+                "look-keys: cache parts: hashes {} B, files {} B, procs {} B ({} procs), closures {} B ({} closures), foot {} B, types {} B",
+                size(crate::incr::ser(&i.hashes)),
+                size(crate::incr::ser(&i.files)),
+                size(crate::incr::ser(&i.procs)),
+                i.procs.len(),
+                size(crate::incr::ser(&i.closures)),
+                i.closures.len(),
+                size(crate::incr::ser(&i.foot)),
+                size(crate::incr::ser(&i.types))
+            );
+        }
+    }
+    match crate::incr::ser(file) {
+        Ok(bytes) => {
+            let tmp = p.with_extension(format!("tmp{}", std::process::id()));
+            if std::fs::write(&tmp, bytes).is_ok() {
+                let _ = std::fs::rename(&tmp, p);
+            }
+        }
+        Err(e) => eprintln!("look-keys: could not store {}: {}", p.display(), e),
+    }
+}
+
+/// Per file and type, a digest of the var values the file assigns to the type: `(var, value text)` for every var whose value has an
+/// expression or a constant, grouped by the file of the value. `only` limits the work to those files (a partial model).
+fn var_digests(sem: &Sem, only: Option<&[String]>) -> HashMap<String, BTreeMap<String, u128>> {
+    let mut rows: HashMap<String, BTreeMap<String, Vec<String>>> = HashMap::new();
+    for ty in sem.objtree.iter_types() {
+        let t = ty.get();
+        let path = if t.path.is_empty() { "/" } else { t.path.as_str() };
+        for (name, v) in &t.vars {
+            let value = match (&v.value.expression, &v.value.constant) {
+                (Some(e), _) => format!("{:?}", e),
+                (None, Some(c)) => format!("{:?}", c),
+                _ => continue,
+            };
+            let Some(f) = sem.file_of(v.value.location) else { continue };
+            if let Some(only) = only {
+                if !only.iter().any(|o| o == f) {
+                    continue;
+                }
+            }
+            rows.entry(f.to_string()).or_default().entry(path.to_string()).or_default().push(format!("{}|{}", name, strip_locations(&value)));
+        }
+    }
+    rows.into_iter()
+        .map(|(f, types)| {
+            let per_type = types
+                .into_iter()
+                .map(|(t, mut v)| {
+                    v.sort();
+                    let mut h = blake3::Hasher::new();
+                    for x in &v {
+                        h.update(&(x.len() as u64).to_le_bytes());
+                        h.update(x.as_bytes());
+                    }
+                    (t, u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap()))
+                })
+                .collect();
+            (f, per_type)
+        })
+        .collect()
+}
+
+/// The text digest of every proc definition located in the `only` files of a (partial) model, by `ProcKey`. Mirrors the model's
+/// own enumeration: a (type, name) with no body anywhere is skipped; the ordinal counts the earlier definitions of the name on
+/// the type that sit in the same file.
+fn proc_texts(sem: &Sem, only: &[String]) -> HashMap<ProcKey, u128> {
+    let mut out = HashMap::new();
+    for ty in sem.objtree.iter_types() {
+        let t = ty.get();
+        let owner = if t.path.is_empty() { "/".to_string() } else { t.path.clone() };
+        for (name, tp) in &t.procs {
+            if tp.value.is_empty() || tp.value.iter().all(|v| v.code.is_none()) {
+                continue;
+            }
+            let mut seen: HashMap<&str, u32> = HashMap::new();
+            for val in &tp.value {
+                let Some(file) = sem.file_of(val.location) else { continue };
+                let ord = seen.entry(file).or_insert(0);
+                let this = *ord;
+                *ord += 1;
+                if !only.iter().any(|o| o == file) {
+                    continue;
+                }
+                let text = strip_locations(&format!("{:?}|{:?}", val.parameters, val.code));
+                let hash = u128::from_le_bytes(blake3::hash(text.as_bytes()).as_bytes()[..16].try_into().unwrap());
+                out.insert(ProcKey { file: file.to_string(), owner: owner.clone(), name: name.clone(), ord: this }, hash);
+            }
+        }
+    }
+    out
+}
+
+/// What outside the files' bodies the rows read: `deepquarry.dme`, the `code/__defines` files and the declaration markers (their
+/// names, arguments and normalized text, not their positions, which `Decls::key` includes: a line added above a marker would
+/// otherwise look like a changed declaration).
+fn lk_env(tree: &Tree) -> Option<u128> {
+    let dme = std::fs::read(tree.root.join("deepquarry.dme")).ok()?;
+    let decls = Decls::get(tree);
+    let mut marks: Vec<(String, String, String)> = decls.markers.iter().map(|m| (m.name.clone(), m.args.join("\u{1f}"), normalize_source(&m.body))).collect();
+    marks.sort();
+    let defines: Vec<(&str, u128)> = tree.select(&CODE_DM).iter().filter(|f| f.rel.starts_with("code/__defines/")).map(|f| (f.rel.as_str(), f.hash)).collect();
+    Some(crate::incr::ctx_key(&(blake3::hash(&dme).as_bytes().to_vec(), marks, defines)))
+}
+
+fn file_rec(tree: &Tree, rel: &str, col: &inc::Collected, vars: &HashMap<String, BTreeMap<String, u128>>) -> FileRec {
+    FileRec {
+        vars: vars.get(rel).cloned().unwrap_or_default(),
+        shape: inc::shape_hash(col.shape.get(rel)),
+        tokens: inc::token_hash(tree, rel),
+        bare: inc::bare_hash(tree, rel),
+        directive: inc::has_directive(&inc::text_of(tree, rel)),
+        made: col.types.get(rel).map(|t| t.iter().cloned().collect()).unwrap_or_default(),
+    }
+}
+
+/// The incremental state to store after a full computation (None when the tree has no `deepquarry.dme` to key it on).
+fn full_state(tree: &Tree, comp: &Computed) -> Option<Incr> {
+    let (_, included) = inc::environment(tree)?;
+    let env = lk_env(tree)?;
+    let sem = crate::sem::sem_for(tree)?;
+    let col = inc::collect_with(&sem, false);
+    let vars = var_digests(&sem, None);
+    let rels: Vec<&String> = included.keys().collect();
+    let recs: Vec<(String, FileRec)> = crate::sem::par_map(&rels, |rel| ((*rel).clone(), file_rec(tree, rel, &col, &vars)));
+    Some(Incr {
+        engine: format!("{}|{}", CACHE_VERSION, crate::cache::ENGINE_HASH),
+        env,
+        hashes: tree.select(&CODE_DM).iter().map(|f| (f.rel.clone(), f.hash)).collect(),
+        files: recs.into_iter().collect(),
+        salt: comp.salt.clone(),
+        special: comp.special.iter().filter_map(|r| tree.get(r).map(|f| (r.clone(), special_digest(f)))).collect(),
+        procs: comp.procs.clone(),
+        closures: comp.closures.iter().map(|ids| ids.iter().fold(Vec::new(), |mut bits, i| {
+            bit_set(&mut bits, *i as usize);
+            bits
+        })).collect(),
+        foot: comp.foot.clone(),
+        types: comp.types.clone(),
+        appearance: comp.appearance.clone(),
+    })
+}
+
+/// Rebuilds the rows from the cached ones after an edit that left the structure alone, recomputing only the rows whose
+/// footprint holds a changed file. None = cannot tell, compute everything.
+fn try_incremental(tree: &Tree, root: &Path, c: &CacheFile, old: &Incr) -> Option<(Vec<CacheRow>, Incr, String)> {
+    let trace = std::env::var("DQ_LOOK_TRACE").is_ok();
+    let refuse = |why: &str| -> Option<(Vec<CacheRow>, Incr, String)> {
+        if trace {
+            eprintln!("look-keys: incremental refused: {}", why);
+        }
+        None
+    };
+    if old.engine != format!("{}|{}", CACHE_VERSION, crate::cache::ENGINE_HASH) {
+        return refuse("the analyzer changed since the cache was written");
+    }
+    if old.foot.len() != c.rows.len() {
+        return refuse("footprints do not match the rows");
+    }
+    let Some((_, included)) = inc::environment(tree) else { return refuse("no deepquarry.dme") };
+    let Some(env) = lk_env(tree) else { return refuse("no deepquarry.dme") };
+    if env != old.env {
+        return refuse("deepquarry.dme, the declarations or the defines changed");
+    }
+    let now: Vec<(String, u128)> = tree.select(&CODE_DM).iter().map(|f| (f.rel.clone(), f.hash)).collect();
+    if now.len() != old.hashes.len() || now.iter().zip(&old.hashes).any(|(a, b)| a.0 != b.0) {
+        return refuse("the set of .dm files changed");
+    }
+    let changed: Vec<&String> = now.iter().zip(&old.hashes).filter(|(a, b)| a.1 != b.1).map(|(a, _)| &a.0).collect();
+    let mut cosmetic: Vec<String> = Vec::new();
+    let mut substantive: Vec<String> = Vec::new();
+    for rel in &changed {
+        if old.salt.contains(*rel) {
+            return refuse(&format!("{} is part of the salt", rel));
+        }
+        let text = inc::text_of(tree, rel);
+        let special_now = tree.get(rel).filter(|f| f.text().contains("DECLARE_APPEARANCE") || f.text().contains("abstract_type")).map(special_digest);
+        if special_now != old.special.get(*rel).copied() {
+            return refuse(&format!("{} changed what it declares with DECLARE_APPEARANCE or abstract_type", rel));
+        }
+        if !included.contains_key(*rel) {
+            // Not in the model, and its declarations are in the environment key: nothing the rows read.
+            cosmetic.push((*rel).clone());
+            continue;
+        }
+        let Some(rec) = old.files.get(*rel) else { return refuse(&format!("no structure record for {}", rel)) };
+        if inc::token_hash(tree, rel) == rec.tokens {
+            cosmetic.push((*rel).clone());
+            continue;
+        }
+        if rec.directive || inc::has_directive(&text) {
+            return refuse(&format!("{} has a #define, #undef or #include", rel));
+        }
+        if inc::bare_hash(tree, rel) != rec.bare {
+            return refuse(&format!("{} changed a bare type header", rel));
+        }
+        substantive.push((*rel).clone());
+    }
+    // The types whose assigned var values differ in a changed file (before or after), and the closure procs whose text differs.
+    let mut types_changed: HashSet<String> = HashSet::new();
+    let mut new_vars: HashMap<String, BTreeMap<String, u128>> = HashMap::new();
+    let mut new_texts: HashMap<ProcKey, u128> = HashMap::new();
+    if !substantive.is_empty() {
+        let Ok(part) = Sem::build_partial(root, tree, &substantive) else { return refuse("partial parse failed") };
+        let got = inc::collect_with(&part, false);
+        // A partial model locates a type in the first changed file that mentions it (an implicit parent included), so the
+        // check is the one `sem::incremental` makes: every type it locates is a known one, and every type this file
+        // located before is still located here.
+        let known: HashSet<&str> = old.files.values().flat_map(|r| r.made.iter().map(|t| t.as_str())).collect();
+        let none = BTreeSet::new();
+        new_vars = var_digests(&part, Some(&substantive));
+        new_texts = proc_texts(&part, &substantive);
+        for rel in &substantive {
+            let empty = BTreeMap::new();
+            let before = &old.files[rel].vars;
+            let after = new_vars.get(rel).unwrap_or(&empty);
+            for (t, d) in before.iter() {
+                if after.get(t) != Some(d) {
+                    types_changed.insert(t.clone());
+                }
+            }
+            for (t, d) in after.iter() {
+                if before.get(t) != Some(d) {
+                    types_changed.insert(t.clone());
+                }
+            }
+            let rec = &old.files[rel];
+            if inc::shape_hash(got.shape.get(rel)) != rec.shape {
+                return refuse(&format!("{} changed the structure (a var or proc declaration)", rel));
+            }
+            let made = got.types.get(rel).unwrap_or(&none);
+            if made.iter().any(|t| !known.contains(t.as_str())) {
+                return refuse(&format!("{} gained a type", rel));
+            }
+            if rec.made.iter().any(|t| !made.contains(t)) {
+                return refuse(&format!("{} lost a type", rel));
+            }
+        }
+    }
+    if trace {
+        let mut names: Vec<&String> = types_changed.iter().collect();
+        names.sort();
+        eprintln!("look-keys: changed files {:?}; types with different var values: {:?}", changed, names);
+    }
+    let mut state = old.clone();
+    state.hashes = now;
+    for rel in cosmetic.iter().chain(substantive.iter()) {
+        if let Some(rec) = state.files.get_mut(rel) {
+            rec.tokens = inc::token_hash(tree, rel);
+        }
+    }
+    for rel in &substantive {
+        // Remember the digest of the values the file assigns now (the partial model computed it).
+        if let Some(rec) = state.files.get_mut(rel) {
+            rec.vars = new_vars.get(rel).cloned().unwrap_or_default();
+        }
+    }
+    // The closure procs whose text changed (a proc the partial model no longer has counts as changed).
+    let mut changed_procs: Vec<u8> = Vec::new();
+    let mut n_changed_procs = 0usize;
+    for (i, rec) in state.procs.iter_mut().enumerate() {
+        if !substantive.iter().any(|f| *f == rec.key.file) {
+            continue;
+        }
+        match new_texts.get(&rec.key) {
+            Some(t) if *t == rec.text => {}
+            Some(t) => {
+                rec.text = *t;
+                bit_set(&mut changed_procs, i);
+                n_changed_procs += 1;
+            }
+            None => {
+                bit_set(&mut changed_procs, i);
+                n_changed_procs += 1;
+            }
+        }
+    }
+    // The rows a changed file can move: those whose closure holds a changed proc, and those whose chain holds a type that was
+    // assigned different var values.
+    let closure_hit: Vec<bool> = old.closures.iter().map(|bits| bits.iter().zip(&changed_procs).any(|(a, b)| a & b != 0)).collect();
+    let mut chain_memo: FxMap<&str, bool> = FxMap::default();
+    fn chain_hit<'t>(ty: &'t str, types: &'t BTreeMap<String, Option<String>>, changed: &HashSet<String>, memo: &mut FxMap<&'t str, bool>) -> bool {
+        if let Some(v) = memo.get(ty) {
+            return *v;
+        }
+        let r = changed.contains(ty)
+            || match types.get(ty) {
+                Some(parent) => parent.as_deref().is_some_and(|p| chain_hit(p, types, changed, memo)),
+                None => true, // a chain type with no record: cannot tell
+            };
+        memo.insert(ty, r);
+        r
+    }
+    let mut affected: HashSet<String> = HashSet::new();
+    for (i, row) in c.rows.iter().enumerate() {
+        let cl = old.foot[i];
+        if closure_hit.get(cl as usize).copied().unwrap_or(true) || (!types_changed.is_empty() && chain_hit(row.ty.as_str(), &old.types, &types_changed, &mut chain_memo)) {
+            affected.insert(row.ty.clone());
+        }
+    }
+    let summary = format!("{} changed file(s) ({} cosmetic or outside the model), {} closure proc(s) and {} type(s)' var values changed", substantive.len() + cosmetic.len(), cosmetic.len(), n_changed_procs, types_changed.len());
+    if affected.is_empty() {
+        return Some((c.rows.clone(), state, format!("incremental: no row holds a changed proc or var ({}), no full parse", summary)));
+    }
+    let comp = dm_compute(tree, root, None, Some(&affected), Some(&old.appearance))?;
+    if comp.rows.len() != affected.len() {
+        return refuse("a recomputed type vanished");
+    }
+    // Join the recomputed closures: the proc table only grows, so the old bitsets keep their meaning.
+    let mut index: FxMap<ProcKey, u32> = state.procs.iter().enumerate().map(|(i, r)| (r.key.clone(), i as u32)).collect();
+    let mut global: Vec<u32> = Vec::with_capacity(comp.procs.len());
+    for r in &comp.procs {
+        let g = match index.get(&r.key) {
+            Some(g) => {
+                state.procs[*g as usize].text = r.text;
+                *g
+            }
+            None => {
+                state.procs.push(r.clone());
+                let g = (state.procs.len() - 1) as u32;
+                index.insert(r.key.clone(), g);
+                g
+            }
+        };
+        global.push(g);
+    }
+    let base = old.closures.len() as u32;
+    let mut closures: Vec<Vec<u8>> = old.closures.clone();
+    for ids in &comp.closures {
+        let mut bits = Vec::new();
+        for i in ids {
+            bit_set(&mut bits, global[*i as usize] as usize);
+        }
+        closures.push(bits);
+    }
+    let fresh: FxMap<&str, usize> = comp.rows.iter().enumerate().map(|(i, r)| (r.ty.as_str(), i)).collect();
+    let mut rows = c.rows.clone();
+    let mut foot = old.foot.clone();
+    for (i, row) in rows.iter_mut().enumerate() {
+        if let Some(j) = fresh.get(row.ty.as_str()) {
+            *row = comp.rows[*j].clone();
+            foot[i] = base + comp.foot[*j];
+        }
+    }
+    // Keep the closures some row still uses.
+    let mut remap: FxMap<u32, u32> = FxMap::default();
+    let mut kept: Vec<Vec<u8>> = Vec::new();
+    for f in foot.iter_mut() {
+        let n = *remap.entry(*f).or_insert_with(|| {
+            kept.push(closures[*f as usize].clone());
+            (kept.len() - 1) as u32
+        });
+        *f = n;
+    }
+    state.closures = kept;
+    state.foot = foot;
+    for (path, parent) in comp.types {
+        state.types.insert(path, parent);
+    }
+    Some((rows, state, format!("incremental: {} of {} types recomputed ({})", affected.len(), c.rows.len(), summary)))
+}
+
 /// The whole plan for a loaded tree. `cache` is the file the DM part is stored in (None = never cached).
 pub fn plan(tree: &Tree, root: &Path, opts: &PlanOpts, cache: Option<&Path>) -> Option<Plan> {
-    let mut rows: Option<Vec<CacheRow>> = None;
-    let mut explain = None;
     let key = tree_key(tree);
+    let mut explain = None;
+    let mut mode = String::from("full");
+    let mut rows: Option<Vec<CacheRow>> = None;
+    let mut store: Option<CacheFile> = None;
     if opts.explain.is_none() {
-        if let Some(p) = cache {
-            if let Ok(bytes) = std::fs::read(p) {
-                if let Ok(c) = crate::incr::de::<CacheFile>(&bytes) {
-                    if c.key == key {
-                        rows = Some(c.rows);
-                    }
+        if let Some(c) = cache.and_then(load_cache) {
+            if c.key == key {
+                mode = "cached".to_string();
+                rows = Some(c.rows);
+            } else if let Some(old) = &c.incr {
+                if let Some((r, state, how)) = try_incremental(tree, root, &c, old) {
+                    mode = how;
+                    store = Some(CacheFile { key: key.clone(), rows: r.clone(), incr: Some(state) });
+                    rows = Some(r);
                 }
             }
         }
     }
-    let cached = rows.is_some();
     let rows = match rows {
         Some(r) => r,
         None => {
-            let (r, e) = dm_part(tree, root, opts.explain.as_deref())?;
-            explain = e;
-            r
+            let comp = dm_compute(tree, root, opts.explain.as_deref(), None, None)?;
+            explain = comp.explain.clone();
+            if opts.explain.is_none() {
+                let incr = full_state(tree, &comp);
+                store = Some(CacheFile { key: key.clone(), rows: comp.rows.clone(), incr });
+            } else {
+                mode = "explain".to_string();
+            }
+            comp.rows
         }
     };
-    if !cached && opts.explain.is_none() {
-        if let Some(p) = cache {
-            if let Some(dir) = p.parent() {
-                let _ = std::fs::create_dir_all(dir);
-            }
-            let file = CacheFile { key, rows: rows.iter().map(|r| CacheRow { ty: r.ty.clone(), partial: r.partial.clone(), icons: r.icons.clone(), probes: r.probes.clone() }).collect() };
-            if let Ok(bytes) = crate::incr::ser(&file) {
-                let tmp = p.with_extension(format!("tmp{}", std::process::id()));
-                if std::fs::write(&tmp, bytes).is_ok() {
-                    let _ = std::fs::rename(&tmp, p);
-                }
-            }
-        }
+    if let (Some(file), Some(p)) = (&store, cache) {
+        store_cache(p, file);
     }
     let (out, sources) = finish(root, &rows);
     let _ = sources;
-    Some(Plan { rows: out, explain })
+    Some(Plan { rows: out, explain, mode })
 }
 
 const NL: char = 10 as char;
@@ -1378,6 +2153,6 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
         return ExitCode::FAILURE;
     }
     let stars = p.rows.iter().filter(|r| r.probes == "*").count();
-    eprintln!("analyze look-keys: {} types, {} with probes `*`, {:.2?}; wrote {}", p.rows.len(), stars, t0.elapsed(), path.display());
+    eprintln!("analyze look-keys: {} types, {} with probes `*`, {:.2?} ({}); wrote {}", p.rows.len(), stars, t0.elapsed(), p.mode, path.display());
     ExitCode::SUCCESS
 }

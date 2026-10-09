@@ -66,6 +66,8 @@ CAPABILITIES(/obj/item/bodybag)
 	var/contains_body = FALSE
 	var/has_label = FALSE
 
+TRACKED(/obj/structure/closet/body_bag, has_label)
+
 /obj/item/bodybag/large
 	name = "mass grave body bag"
 	desc = "A large folded bag designed for the storage and transportation of cadavers."
@@ -103,8 +105,7 @@ CAPABILITIES(/obj/structure/closet/body_bag)
 	var/t = sanitizeSafe(R?.value, MAX_NAME_LEN)
 	if(t)
 		name = "body bag - [t]"
-		has_label = TRUE
-		add_overlay("bodybag_label")
+		set_has_label(TRUE)
 	else
 		name = "body bag"
 	return OP_OK
@@ -112,8 +113,7 @@ CAPABILITIES(/obj/structure/closet/body_bag)
 /// The tag comes off.
 /obj/structure/closet/body_bag/proc/label_cut(datum/act/op/A)
 	name = "body bag"
-	has_label = FALSE
-	cut_overlays()
+	set_has_label(FALSE)
 	return OP_OK
 
 /obj/structure/closet/body_bag/store_mobs()
@@ -165,18 +165,10 @@ CAPABILITIES(/obj/structure/closet/body_bag)
 		var/obj/structure/morgue/M = loc
 		M.update(broadcast)
 
-/// Draws itself entirely: drop the parent's keyed declarations.
-APPEARANCE_NONE(/obj/structure/closet/body_bag)
-DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/closet/body_bag/appearance_overlays()
-	. = list()
-	if(opened)
-		icon_state = "open"
-	else
-		icon_state = "base"
-
-	if(has_label)
-		. += "bodybag_label"
+/// A body bag draws itself entirely: open or shut, with its label.
+/obj/structure/closet/body_bag/closet_look(datum/look/look)
+	look.state(opened ? "open" : "base")
+	look.overlay("bodybag_label", when = has_label)
 
 /obj/item/bodybag/cryobag
 	name = "stasis bag"
@@ -234,14 +226,10 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
 	if(used)
 		replace_with(src, /obj/item/usedcryobag)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/closet/body_bag/cryobag/appearance_overlays()
-	. = list()
-	. += ..()
-	var/image/I = image(icon, "indicator[opened]")
-	I.appearance_flags = RESET_COLOR
-	I.color = COLOR_LIME
-	. += I
+/// The stasis bag adds its indicator lamp.
+/obj/structure/closet/body_bag/cryobag/closet_look(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "indicator[opened]", color = COLOR_LIME, appearance_flags = RESET_COLOR))
 
 /obj/structure/closet/body_bag/cryobag/fold_into_item(obj/item/bodybag/folded)
 	if(syringe)

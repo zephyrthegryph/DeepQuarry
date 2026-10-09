@@ -421,7 +421,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 			src.visible_message("[icon2html(src,viewers(src))]" + span_warning("Not enough funds."))
 		else
 			// Transfer the money
-			E.worth -= transaction_amount
+			E.set_worth(E.worth - transaction_amount)
 			linked_account.credit(transaction_amount, E.owner_name, transaction_purpose, machine_id, FALSE)
 
 			SSsupply.create_service_external_invoice(linked_account, machine_id, item_list, price_list, E.owner_name, transaction_amount, "E-Wallet", verified_sale_items)
@@ -447,8 +447,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 		src.visible_message("[icon2html(src, viewers(src))]" + span_warning("Not enough money."))
 	else
 		// Insert cash into magical slot
-		SC.worth -= transaction_amount
-		SC.update_icon()
+		SC.set_worth(SC.worth - transaction_amount)
 		if(!SC.worth)
 			if(ishuman(SC.loc))
 				var/mob/living/carbon/human/H = SC.loc

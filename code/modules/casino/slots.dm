@@ -24,6 +24,8 @@
 	light_color = "#B1FBBFF"
 	var/isbroken = 0  //1 if someone banged it with something heavy
 	var/ispowered = 1 //starts powered, changes with power_change()
+	/// "rolling" while the slots spin, "winning" while the win is paid out, else null.
+	var/slot_phase
 	var/symbol1 = null
 	var/symbol2 = null
 	var/symbol3 = null
@@ -36,28 +38,26 @@ CAPABILITIES(/obj/machinery/slot_machine)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert chip"), needs(req_bool(PROC_REF(not_running_holds), because = PROC_REF(not_running_refusal)), req_is(nameof(anchored), TRUE, because = MSG(slot_machine/unanchored))), then(PROC_REF(interaction_attackby)))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/slot_machine/appearance_overlays()
-	. = list()
-	if(!ispowered || isbroken)
-		icon_state = "slotmachine_off"
-		if(isbroken) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
-			. += "slotmachine_broken"
-		set_light(0)
-		set_light_on(FALSE)
-		return .
+TRACKED(/obj/machinery/slot_machine, ispowered)
+TRACKED(/obj/machinery/slot_machine, isbroken)
+TRACKED(/obj/machinery/slot_machine, slot_phase)
 
-	icon_state = "slotmachine"
-	set_light(2)
-	set_light_on(TRUE)
-	return .
+/obj/machinery/slot_machine/draw(datum/look/look)
+	..()
+	if(!ispowered || isbroken)
+		look.state("slotmachine_off")
+		look.overlay("slotmachine_broken", isbroken) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
+		look.light_off()
+		return
+	look.state("slotmachine[slot_phase ? "_[slot_phase]" : ""]")
+	look.light(2)
 
 /obj/machinery/slot_machine/power_change()
 	if(isbroken) //Broken shit can't be powered.
 		return
 	. = ..()
 	if(!power_lost())
-		ispowered = 1
+		set_ispowered(1)
 	else
 		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
 
@@ -110,15 +110,13 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 		return
 
 	to_chat(user,span_notice("You puts 5 credits in the slot machine and presses start."))
-	cashmoney.worth -= 5
-	cashmoney.update_icon()
-	changed(cashmoney)
+	cashmoney.set_worth(cashmoney.worth - 5)
 
 	if(cashmoney.worth <= 0)
 		consume(cashmoney, user)
 
 	hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
-	icon_state = "slotmachine_rolling"
+	set_slot_phase("rolling")
 	play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE_PULL)
 
 	var/slot1 = rand(0,9)
@@ -175,6 +173,8 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 	light_color = "#B1FBBFF"
 	var/isbroken = 0  //1 if someone banged it with something heavy
 	var/ispowered = 1 //starts powered, changes with power_change()
+	/// "rolling" while the slots spin, "winning" while the win is paid out, else null.
+	var/slot_phase
 	var/symbol1 = null
 	var/symbol2 = null
 	var/symbol3 = null
@@ -187,28 +187,26 @@ CAPABILITIES(/obj/machinery/station_slot_machine)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert cash"), needs(req_bool(PROC_REF(not_running_holds), because = PROC_REF(not_running_refusal)), req_is(nameof(anchored), TRUE, because = MSG(station_slot_machine/unanchored))), then(PROC_REF(interaction_attackby)))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/station_slot_machine/appearance_overlays()
-	. = list()
-	if(!ispowered || isbroken)
-		icon_state = "ntslotmachine_off"
-		if(isbroken) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
-			. += "ntslotmachine_broken"
-		set_light(0)
-		set_light_on(FALSE)
-		return .
+TRACKED(/obj/machinery/station_slot_machine, ispowered)
+TRACKED(/obj/machinery/station_slot_machine, isbroken)
+TRACKED(/obj/machinery/station_slot_machine, slot_phase)
 
-	icon_state = "ntslotmachine"
-	set_light(2)
-	set_light_on(TRUE)
-	return .
+/obj/machinery/station_slot_machine/draw(datum/look/look)
+	..()
+	if(!ispowered || isbroken)
+		look.state("ntslotmachine_off")
+		look.overlay("ntslotmachine_broken", isbroken) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
+		look.light_off()
+		return
+	look.state("ntslotmachine[slot_phase ? "_[slot_phase]" : ""]")
+	look.light(2)
 
 /obj/machinery/station_slot_machine/power_change()
 	if(isbroken) //Broken shit can't be powered.
 		return
 	. = ..()
 	if(!power_lost())
-		ispowered = 1
+		set_ispowered(1)
 	else
 		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
 
@@ -261,14 +259,13 @@ MSG_DEF_SELF(station_slot_machine/unanchored, "the slot machine isn't secured")
 		return
 
 	to_chat(user,span_notice("You puts 5 Thalers in the slot machine and presses start."))
-	cashmoney.worth -= 5
-	cashmoney.update_icon()
+	cashmoney.set_worth(cashmoney.worth - 5)
 
 	if(cashmoney.worth <= 0)
 		consume(cashmoney, user)
 
 	hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
-	icon_state = "ntslotmachine_rolling"
+	set_slot_phase("rolling")
 	play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE_PULL)
 
 	var/slot1 = rand(0,9)
@@ -346,7 +343,7 @@ MSG_DEF_SELF(station_slot_machine/unanchored, "the slot machine isn't secured")
 		winnings = 1000
 		celebrate = 1
 
-	icon_state = initial(icon_state) // Set it back to the original iconstate.
+	set_slot_phase(null) // Set it back to the original look.
 
 	if(!output) // Is there anything to output? If not, consider it a loss.
 		to_chat(user,"Better luck next time!")
@@ -355,7 +352,7 @@ MSG_DEF_SELF(station_slot_machine/unanchored, "the slot machine isn't secured")
 	to_chat(user,output) //Output message
 
 	if(winnings) //Did the person win?
-		icon_state = "slotmachine_winning"
+		set_slot_phase("winning")
 		play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE)
 		after(src, delaytime, PROC_REF(pay_out), with = list(winnings))
 
@@ -366,7 +363,7 @@ MSG_DEF_SELF(station_slot_machine/unanchored, "the slot machine isn't secured")
 
 /obj/machinery/slot_machine/proc/pay_out(winnings)
 	spawn_casinochips(winnings, src.loc)
-	icon_state = "slotmachine"
+	set_slot_phase(null)
 
 /obj/machinery/station_slot_machine/proc/show_result(mob/user, symbol1, symbol2, symbol3)
 	var/output //Output variable to send out in chat after the large if statement.
@@ -412,7 +409,7 @@ MSG_DEF_SELF(station_slot_machine/unanchored, "the slot machine isn't secured")
 		platinumwin = TRUE;
 		celebrate = 1
 
-	icon_state = initial(icon_state) // Set it back to the original iconstate.
+	set_slot_phase(null) // Set it back to the original look.
 
 	if(!output) // Is there anything to output? If not, consider it a loss.
 		to_chat(user,"Better luck next time!")
@@ -425,7 +422,7 @@ MSG_DEF_SELF(station_slot_machine/unanchored, "the slot machine isn't secured")
 		play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE)
 
 	if(winnings) //Did the person win?
-		icon_state = "ntslotmachine_winning"
+		set_slot_phase("winning")
 		play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE)
 		after(src, delaytime, PROC_REF(pay_out), with = list(winnings))
 
@@ -436,12 +433,10 @@ MSG_DEF_SELF(station_slot_machine/unanchored, "the slot machine isn't secured")
 
 /obj/machinery/station_slot_machine/proc/pay_out(winnings)
 	spawn_money(winnings, src.loc)
-	icon_state = "ntslotmachine"
+	set_slot_phase(null)
 
 /obj/machinery/slot_machine/proc/lose_power()
-	ispowered = 0
-	update_icon()
+	set_ispowered(0)
 
 /obj/machinery/station_slot_machine/proc/lose_power()
-	ispowered = 0
-	update_icon()
+	set_ispowered(0)

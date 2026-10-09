@@ -30,9 +30,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/chemcoating)
 /obj/effect/decal/cleanable/chemcoating/Crossed(AM as mob|obj)
 	Bumped(AM)
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/chemcoating, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/decal/cleanable/chemcoating/appearance_overlays()
-	. = list()
-	. += ..()
-	color = reagents.get_color()
-	. += add_janitor_hud_overlay()
+/// The coating is the colour of what it holds.
+/obj/effect/decal/cleanable/chemcoating/cleanable_look(datum/look/look)
+	look.set_color(reagents.get_color())
+	janitor_hud(look)
