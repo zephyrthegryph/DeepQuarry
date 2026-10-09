@@ -20,7 +20,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, test_turf)
 	var/obj/item/denecrotizer/D = allocate(/obj/item/denecrotizer, test_turf)
 	D.revive_time = 0
-	D.charges = 5
+	D.set_charges(5)
 
 	target.death()
 
@@ -52,7 +52,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, test_turf)
 	var/obj/item/denecrotizer/D = allocate(/obj/item/denecrotizer, test_turf)
 	D.revive_time = 0
-	D.charges = 5
+	D.set_charges(5)
 
 	target.death()
 	observe(target, /datum/notice/living_revived, src, then(PROC_REF(set_custom_see_in_dark)))

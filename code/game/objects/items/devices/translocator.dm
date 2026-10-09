@@ -207,7 +207,6 @@ This device records all warnings given and teleport events for admin review in c
 	if(istype(W,cell_type) && !power_source)
 		if(!move_into(src, nameof(src.power_source), W, user))
 			return OP_OK
-		power_source.update_icon() //Why doesn't a cell do this already? :|
 		to_chat(user,span_notice("You insert \the [power_source] into \the [src]."))
 
 	else if(istype(W,/obj/item/perfect_tele_beacon))

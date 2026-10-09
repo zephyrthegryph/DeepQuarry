@@ -40,8 +40,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 /obj/item/rcd/proc/consume_resources(amount)
 	if(!can_afford(amount))
 		return FALSE
-	stored_matter -= amount
-	update_icon()
+	set_stored_matter(stored_matter - amount)
 	return TRUE
 
 // Useful for testing before actually paying (e.g. before a timed action).
@@ -344,20 +343,28 @@ CAPABILITIES(/obj/item/rcd)
 TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_start_loaded, FALSE)
 
 /obj/item/rcd/Initialize(mapload)
-	if(TYPE_TABLE_GET(src, rcd_start_loaded))
-		stored_matter = max_stored_matter
 	. = ..()
-	update_icon()
+	if(TYPE_TABLE_GET(src, rcd_start_loaded))
+		set_stored_matter(max_stored_matter)
 
-/// Stored matter as a percentage of capacity (the charge overlay level).
-/obj/item/rcd/proc/appearance_matter_percent()
-	return max_stored_matter ? (stored_matter / max_stored_matter) * 100 : 0
+TRACKED(/obj/item/rcd, stored_matter)
+TRACKED(/obj/item/rcd, max_stored_matter)
 
-/obj/item/rcd/proc/appearance_matter_empty()
-	return !round((stored_matter / max_stored_matter) * 10, 1)
+/// The charge level shown, 0..10, by how full the matter store is.
+/obj/item/rcd/proc/matter_level()
+	return max_stored_matter ? clamp(round((stored_matter / max_stored_matter) * 10, 1), 0, 10) : 0
 
-APPEARANCE_TEMPLATE(/obj/item/rcd, "{initial(icon_state)}{appearance_matter_empty?_empty:}")
-APPEARANCE_LEVEL(/obj/item/rcd, "appearance_matter_percent", 10, "{initial(icon_state)}_charge%d")
+/// Whether the look shows the matter store (an electric RCD runs off a cell and draws none).
+/obj/item/rcd/proc/shows_matter()
+	return TRUE
+
+/obj/item/rcd/draw(datum/look/look)
+	..()
+	if(!shows_matter())
+		return
+	var/level = matter_level()
+	look.state("[initial(icon_state)][level ? "" : "_empty"]")
+	look.overlay("[initial(icon_state)]_charge[level]")
 
 /obj/item/rcd/proc/perform_effect(atom/A, time_taken)
 	rel_add(src, nameof(effects), new /obj/effect/constructing_effect(get_turf(A), time_taken, TYPE_TABLE_GET(src, rcd_modes)[mode_index]), A)
@@ -390,7 +397,8 @@ APPEARANCE_LEVEL(/obj/item/rcd, "appearance_matter_percent", 10, "{initial(icon_
 	return TRUE
 
 //////////////////
-APPEARANCE_NONE(/obj/item/rcd/electric)
+/obj/item/rcd/electric/shows_matter()
+	return FALSE
 
 /obj/item/rcd/shipwright
 	icon_state = "swrcd"

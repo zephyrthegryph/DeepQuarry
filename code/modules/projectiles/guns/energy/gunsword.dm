@@ -33,6 +33,7 @@
 	item_state = "gsaberoff"
 	maxcharge = 2400
 	charge_amount = 20
+	standard_overlays = FALSE
 	force = 3
 	throwforce = 5
 	throw_speed = 1
@@ -104,11 +105,9 @@ CAPABILITIES(/obj/item/cell/device/weapon/gunsword)
 			user.injure(INJURY_CUT, 5, source = src)
 			user.injure(INJURY_BURN, 5, source = src)
 		deactivate(user)
-		update_icon()
 		update_held_icon()
 	else
 		activate(user)
-		update_icon()
 		update_held_icon()
 
 	if(ishuman(user))
@@ -119,4 +118,3 @@ CAPABILITIES(/obj/item/cell/device/weapon/gunsword)
 	add_fingerprint(user)
 	return TRUE
 
-APPEARANCE_NONE(/obj/item/cell/device/weapon/gunsword)

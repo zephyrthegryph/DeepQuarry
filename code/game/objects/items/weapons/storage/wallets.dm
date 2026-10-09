@@ -57,7 +57,6 @@ CAPABILITIES(/obj/item/storage/wallet)
 		if(W == front_id())
 			rel_clear(src, nameof(front_id))
 			name = original_name || initial(name)
-			changed(src)
 
 /obj/item/storage/wallet/insert_item(obj/item/W, mob/user, prevent_warning = FALSE)
 	. = ..()
@@ -67,7 +66,6 @@ CAPABILITIES(/obj/item/storage/wallet)
 			if(!original_name)
 				original_name = name
 			name = "[original_name] ([front_id()])"
-			changed(src)
 
 /obj/item/storage/wallet/draw(datum/look/look)
 	. = ..()
@@ -158,7 +156,6 @@ CAPABILITIES(/obj/item/storage/wallet/poly)
 /obj/item/storage/wallet/poly/proc/emp_recovered(original_state)
 	if(src)
 		icon_state = original_state
-		changed(src)
 
 /// Relation view: front id (reads null once it is gone).
 /obj/item/storage/wallet/proc/front_id() as /obj/item/card/id

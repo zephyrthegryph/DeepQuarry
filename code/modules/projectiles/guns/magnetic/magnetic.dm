@@ -23,7 +23,7 @@
 	var/power_cost = 950                                       // Cost per fire, should consume almost an entire basic cell.
 	var/power_per_tick                                         // Capacitor charge per process(). Updated based on capacitor rating.
 
-	var/state = 0
+TRACKED(/obj/item/gun/magnetic, removable_components)
 
 /// Currently installed powercell.
 /obj/item/gun/magnetic/var/obj/item/cell/cell
@@ -58,9 +58,6 @@ CAPABILITIES(/obj/item/gun/magnetic)
 	if(capacitor)
 		power_per_tick = (power_cost*0.15) * capacitor.rating
 
-	update_icon()
-
-
 /obj/item/gun/magnetic/get_cell()
 	return cell
 
@@ -68,7 +65,6 @@ CAPABILITIES(/obj/item/gun/magnetic)
 /// (declared on capacitor_unsettled); firing drains the capacitor, which restarts it.
 /obj/item/gun/magnetic/proc/magnetic_step(datum/act/timer/A)
 	if(!capacitor_unsettled())
-		update_state()
 		return // it charged (or bled) itself settled
 	if(capacitor)
 		if(cell)
@@ -77,9 +73,8 @@ CAPABILITIES(/obj/item/gun/magnetic)
 		else
 			capacitor.use(capacitor.charge * 0.05)
 
-	update_state() // May update icon, only if things changed.
-
-/obj/item/gun/magnetic/proc/update_state()
+/// The indicator flags (ICON_*) of the gun's parts and charge, read by its look and its examine.
+/obj/item/gun/magnetic/proc/magnetic_flags()
 	var/newstate = 0
 
 	// Parts or lack thereof
@@ -101,33 +96,18 @@ CAPABILITIES(/obj/item/gun/magnetic)
 	if(loaded)
 		newstate |= ICON_LOADED
 
-	// Only update if the state has changed
-	var/needs_update = FALSE
-	if(state != newstate)
-		needs_update = TRUE
+	return newstate
 
-	state = newstate
-
-	if(needs_update)
-		update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/magnetic/appearance_overlays()
-	. = list()
-	if(state & ICON_CELL)
-		. += "[icon_state]_cell"
-	if(state & ICON_CAP)
-		. += "[icon_state]_capacitor"
-	if(state & ICON_BAD)
-		. += "[icon_state]_red"
-	if(state & ICON_CHARGE)
-		. += "[icon_state]_amber"
-	if(state & ICON_READY)
-		. += "[icon_state]_green"
-	if(state & ICON_LOADED)
-		. += "[icon_state]_loaded"
-
-	. += ..()
+/obj/item/gun/magnetic/draw(datum/look/look)
+	..()
+	var/flags = magnetic_flags()
+	var/base = initial(icon_state)
+	look.overlay("[base]_cell", when = flags & ICON_CELL)
+	look.overlay("[base]_capacitor", when = flags & ICON_CAP)
+	look.overlay("[base]_red", when = flags & ICON_BAD)
+	look.overlay("[base]_amber", when = flags & ICON_CHARGE)
+	look.overlay("[base]_green", when = flags & ICON_READY)
+	look.overlay("[base]_loaded", when = flags & ICON_LOADED)
 
 /obj/item/gun/magnetic/proc/show_ammo()
 	var/list/ammotext = list()
@@ -146,10 +126,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 		if(capacitor)
 			. += span_notice("The installed [capacitor.name] has a charge level of [round((capacitor.charge/capacitor.max_charge)*100)]%.")
 
-		if(state & ICON_BAD)
+		var/flags = magnetic_flags()
+		if(flags & ICON_BAD)
 			. += span_notice("The capacitor charge indicator is blinking [span_red("red")]. Maybe you should check the cell or capacitor.")
 		else
-			if(state & ICON_CHARGE)
+			if(flags & ICON_CHARGE)
 				. += span_notice("The capacitor charge indicator is [span_orange("amber")].")
 			else
 				. += span_notice("The capacitor charge indicator is [span_green("green")].")
@@ -164,7 +145,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " unscrews \the [capacitor] from %T%."))
 	playsound(src, tool.usesound, 50, 1)
 	rel_take(src, nameof(capacitor))
-	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attackby.
@@ -181,7 +161,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 				return
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = cell)
-			update_icon()
 			return
 
 		if(istype(thing, /obj/item/stock_parts/capacitor))
@@ -193,7 +172,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			power_per_tick = (power_cost*0.15) * capacitor.rating
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = capacitor)
-			update_icon()
 			return
 
 	if(istype(thing, load_type))
@@ -214,7 +192,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with \the [loaded]."))
 		play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-		update_icon()
 		return
 	return ..()
 
@@ -236,7 +213,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 			user.put_in_hands(removing)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " removes %I% from %T%."), item = removing)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
-			update_icon()
 			return TRUE
 	return OP_DECLINE
 
@@ -253,7 +229,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 
 	use_ammo()
 	capacitor.use(power_cost)
-	update_icon()
 
 	if(gun_unreliable && prob(gun_unreliable))
 		after(src, 0.3 SECONDS, PROC_REF(unreliable_explode)) // So that it will still fire - considered modifying Fire() to return a value but burst fire makes that annoying.
@@ -323,7 +298,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 					projectile_type = /obj/item/projectile/bullet/magnetic/fuelrod
 	use_ammo()
 	capacitor.use(power_cost)
-	update_icon()
 	if(projectile_type)
 		return new projectile_type(src)
 	else
@@ -414,7 +388,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 /// overloads, and the gun blows.
 /obj/item/gun/magnetic/fuelrod/proc/fuelrod_collapse()
 	visible_message(span_danger("\The [src] begins to rattle, its acceleration chamber collapsing in on itself!"))
-	removable_components = FALSE
+	set_removable_components(FALSE)
 	after(src, 1.5 SECONDS, PROC_REF(fuelrod_overload))
 
 /obj/item/gun/magnetic/fuelrod/proc/fuelrod_overload()

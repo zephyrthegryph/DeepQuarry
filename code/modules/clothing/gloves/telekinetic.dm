@@ -35,7 +35,6 @@ CAPABILITIES(/obj/item/clothing/gloves/telekinetic)
 	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(cell)
-			cell.update_icon()
 			user.put_in_hands(cell)
 			rel_take(src, nameof(cell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))

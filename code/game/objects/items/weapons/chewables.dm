@@ -30,7 +30,6 @@ CAPABILITIES(/obj/item/clothing/mask/chewable)
 		to_chat(user, span_notice("You unwrap \the [name]."))
 		play_sfx(src.loc, SFX_ITEMS_DROP_WRAPPER)
 		slot_flags = SLOT_EARS | SLOT_MASK
-		update_icon()
 	return OP_DECLINE
 
 /obj/item/clothing/mask/chewable/draw(datum/look/look)
@@ -189,28 +188,20 @@ TRACKED(/obj/item/storage/box/fancy/chewables/tobacco/nico, open)
 /obj/item/storage/box/fancy/chewables/tobacco/nico/draw(datum/look/look)
 	. = ..()
 	if(open)
-		look.state(open_state)
+		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : open_state)
 		if(held_count() >= 1)
 			look.overlay("chew_nico[held_count()]")
 	else
-		look.state(closed_state)
+		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : closed_state)
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/open(mob/user as mob)
 	if(open)
 		return
 	set_open(TRUE)
-	if(contents_count(src) == 0)
-		icon_state = "[initial(icon_state)]_empty"
-	else
-		changed(src)
 	..()
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/close(mob/user as mob)
 	set_open(FALSE)
-	if(contents_count(src) == 0)
-		icon_state = "[initial(icon_state)]_empty"
-	else
-		changed(src)
 	..()
 
 /obj/item/clothing/mask/chewable/candy
@@ -238,7 +229,6 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy)
 	. = ..()
 	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),10) // ALLOW(decl): Initialize rolls a random flavour per instance; a declaration has no random form
 	color = reagents.get_color()
-	update_icon()
 
 /obj/item/storage/box/gum
 	name = "\improper Frooty-Choos flavored gum"
@@ -352,7 +342,6 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy/lolli)
 	. = ..()
 	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),20) // ALLOW(decl): Initialize rolls a random flavour per instance; a declaration has no random form
 	color = reagents.get_color()
-	update_icon()
 
 /obj/item/storage/box/pocky
 	name = "\improper Totemo yoi Pocky"

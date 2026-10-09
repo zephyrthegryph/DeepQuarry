@@ -16,6 +16,8 @@
 	var/deployed = FALSE
 	var/obj/item/radio/intercom/science/ghost_reporter
 
+TRACKED(/obj/item/ghost_trap, deployed)
+
 CAPABILITIES(/obj/item/ghost_trap)
 	ref_one(nameof(captured_entity))
 	// Watches its catch every 2 s while it holds one; empty, it sleeps.
@@ -71,7 +73,6 @@ CAPABILITIES(/obj/item/ghost_trap)
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
 			rel_clear(src, nameof(captured_entity))
 			our_entity.forceMove(get_turf(src))
-			changed(src)
 			return
 
 	to_chat(user, span_info("There appears to be nothing in the trap!"))
@@ -105,7 +106,6 @@ CAPABILITIES(/obj/item/ghost_trap)
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
 			rel_clear(src, nameof(captured_entity))
 			announce_escape(our_entity)
-			changed(src)
 
 /obj/item/ghost_trap/proc/announce_escape(mob/our_entity)
 	var/area/our_area = get_area(src)
@@ -137,9 +137,8 @@ CAPABILITIES(/obj/item/ghost_trap)
 		MSG_OTHERS(span_danger("%U% has deployed %T%.")))
 	play_sfx(src, SFX_MACHINES_CLICK, 1.4)
 
-	deployed = TRUE
+	set_deployed(TRUE)
 	user.drop_from_inventory(src)
-	changed(src)
 	set_anchored(TRUE)
 	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
@@ -155,7 +154,6 @@ CAPABILITIES(/obj/item/ghost_trap)
 	escapee.forceMove(get_turf(src))
 	announce_escape(escapee)
 	visible_message(span_danger("A loud buzzer rings out as \the [src] suddenly opens, alerting that a containment breach has ocurred!"))
-	changed(src)
 
 /// Old attack_hand.
 /obj/item/ghost_trap/proc/interaction_hand(datum/act/op/A)
@@ -179,13 +177,12 @@ CAPABILITIES(/obj/item/ghost_trap)
 	for(var/A in src?.buckled_mob_list())
 		unbuckle_mob(A)
 	set_anchored(FALSE)
-	deployed = FALSE
+	set_deployed(FALSE)
 /obj/item/ghost_trap/proc/attack_hand_timed_done2(mob/user)
 	act_message(user, src, MSG_SELF(span_notice("You have deactivated %T%!")), \
 		MSG_OTHERS(span_danger("%U% has deactivated %T%.")))
-	deployed = FALSE
+	set_deployed(FALSE)
 	set_anchored(FALSE)
-	changed(src)
 
 /obj/item/ghost_trap/proc/catch_ghost(mob/passing_entity)
 	if(!ismob(passing_entity)) //wtf did you do
@@ -233,9 +230,8 @@ CAPABILITIES(/obj/item/ghost_trap)
 		visible_message(span_danger("A flurry of beams shoot into the air from \the [src]!"))
 		SSmotiontracker.ping(src,100) // Clunk!
 		catch_ghost(passing_entity)
-		deployed = FALSE
+		set_deployed(FALSE)
 		set_anchored(FALSE)
-		changed(src)
 		log_and_message_admins("has been captured at \the [get_area(loc)] by the [name], last touched by [forensic_data?.get_lastprint()]", passing_entity)
 
 /obj/item/ghost_trap/proc/ghost_trap_hidden_vore_effect(datum/act/op/A)

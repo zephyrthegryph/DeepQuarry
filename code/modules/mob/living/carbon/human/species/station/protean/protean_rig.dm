@@ -596,8 +596,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 
 /obj/item/cell/protean/Initialize(mapload)
 	. = ..()
-	charge = maxcharge
-	update_icon()
+	set_charge(maxcharge)
 
 /obj/item/rig/protean/equipped(mob/living/carbon/human/M)
 	..()

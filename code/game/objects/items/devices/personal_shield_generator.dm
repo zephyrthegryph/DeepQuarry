@@ -206,7 +206,6 @@ TRACKED(/obj/item/personal_shield_generator, shield_active)
 	if(istype(bcell, /obj/item/cell/device/shield_generator/parry))
 		to_chat(user, span_notice("You cannot remove the cell from this device."))
 		return OP_OK
-	bcell.update_icon()
 	bcell.forceMove(get_turf(src))
 	rel_take(src, nameof(bcell))
 	if(active_weapon)

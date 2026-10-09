@@ -22,7 +22,6 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "jammer0"
 	var/active_state = "jammer1"
-	var/last_overlay_percent = null // Stores overlay icon_state to avoid excessive recreation of overlays.
 
 	var/jam_range = 7
 	var/obj/item/cell/device/weapon/power_source
@@ -42,10 +41,6 @@ CAPABILITIES(/obj/item/radio_jammer)
 /obj/item/radio_jammer/var/on = FALSE
 TRACKED(/obj/item/radio_jammer, on)
 
-/obj/item/radio_jammer/Initialize(mapload)
-	. = ..()
-	update_icon() // So it starts with the full overlay.
-
 // a running jammer stops jamming.
 /obj/item/radio_jammer/on_destroy(force)
 	if(on)
@@ -62,14 +57,12 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 		to_chat(user,span_warning("\The [src] deactivates."))
 	registry_leave(REGISTRY_RADIO_JAMMERS, src)
 	set_on(FALSE)
-	update_icon()
 
 /obj/item/radio_jammer/proc/turn_on(mob/user)
 	if(user)
 		to_chat(user,span_notice("\The [src] is now active."))
 	registry_join(REGISTRY_RADIO_JAMMERS, src)
 	set_on(TRUE)
-	update_icon()
 
 /obj/item/radio_jammer/proc/radio_jammer_step(datum/act/timer/A)
 	if(!power_source || !power_source.check_charge(tick_cost))
@@ -79,7 +72,6 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 		turn_off(notify)
 	else
 		power_source.use(tick_cost)
-		update_icon()
 
 
 /obj/item/radio_jammer/proc/interaction_hand(datum/act/op/A)
@@ -109,30 +101,15 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 	if(!power_source)
 		if(!move_into(src, nameof(src.power_source), W, user))
 			return TRUE
-		power_source.update_icon() //Why doesn't a cell do this already? :|
-		update_icon()
 		to_chat(user,span_notice("You insert \the [power_source] into \the [src]."))
 		return TRUE
 	return OP_DECLINE
 
-DECLARE_APPEARANCE_PROC(/obj/item/radio_jammer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/radio_jammer/appearance_overlays()
-	. = list()
+/obj/item/radio_jammer/draw(datum/look/look)
+	..()
 	if(on)
-		icon_state = active_state
-	else
-		icon_state = initial(icon_state)
-
-	var/overlay_percent = 0
-	if(power_source)
-		overlay_percent = between(0, round( power_source.percent() , 25), 100)
-	else
-		overlay_percent = 0
-
-	// Only Cut() if we need to.
-	if(overlay_percent != last_overlay_percent)
-		. += "jammer_overlay_[overlay_percent]"
-		last_overlay_percent = overlay_percent
+		look.state(active_state)
+	look.overlay("jammer_overlay_[power_source ? between(0, round(power_source.percent(), 25), 100) : 0]")
 
 //Unlimited use, unlimited range jammer for admins. Turn it on, drop it somewhere, it works.
 /obj/item/radio_jammer/admin

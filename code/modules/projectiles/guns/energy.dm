@@ -34,6 +34,8 @@
 /// TRUE while a self-recharging gun may be below full: firing raises it, a step that finds the cell full drops it.
 /obj/item/gun/energy/var/tmp/recharge_due = TRUE
 TRACKED(/obj/item/gun/energy, self_recharge)
+TRACKED(/obj/item/gun/energy, modifystate)
+TRACKED(/obj/item/gun/energy, charge_cost)
 TRACKED(/obj/item/gun/energy, recharge_due)
 
 /obj/item/gun/energy/Initialize(mapload)
@@ -47,8 +49,7 @@ TRACKED(/obj/item/gun/energy, recharge_due)
 			rel_clear(src, nameof(power_supply))
 	//random starting power! gives us a random number of shots in the battery between 0 and the max possible
 	if(random_start_ammo && cell_type)
-		power_supply.charge = charge_cost*rand(0,power_supply.maxcharge/charge_cost)
-	update_icon()
+		power_supply.set_charge(charge_cost*rand(0,power_supply.maxcharge/charge_cost))
 
 /obj/item/gun/energy/get_cell()
 	return power_supply
@@ -99,20 +100,11 @@ TRACKED(/obj/item/gun/energy, recharge_due)
 						H.remove_blood(deficit)
 
 			power_supply.give(rechargeamt) //... to recharge 1/5th the battery
-			update_icon()
 			var/mob/living/M = loc // TGMC Ammo HUD
 			if(istype(M)) // TGMC Ammo HUD
 				M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD
 		else
 			charge_tick = 0
-
-/obj/item/gun/energy/switch_firemodes(mob/user)
-	if(..())
-		update_icon()
-
-/// The pulse drained the cell (through the contents): show the new charge.
-/obj/item/gun/energy/proc/energy_gun_emp_refresh(datum/act/A)
-	update_icon()
 
 /obj/item/gun/energy/consume_next_projectile()
 	if(!power_supply) return null
@@ -141,8 +133,6 @@ TRACKED(/obj/item/gun/energy, recharge_due)
 	P.forceMove(src)
 	act_message(user, src, MSG_SELF(span_notice("You insert [P] into %T%.")), MSG_OTHERS("%U% inserts [P] into %T%."))
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-	update_icon()
-	update_held_icon()
 	user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD
 
 /obj/item/gun/energy/proc/load_ammo(obj/item/C, mob/user)
@@ -167,12 +157,9 @@ TRACKED(/obj/item/gun/energy, recharge_due)
 		return
 	if(power_supply)
 		user.put_in_hands(power_supply)
-		power_supply.update_icon()
 		act_message(user, src, MSG_SELF(span_notice("You remove [power_supply] from %T%.")), MSG_OTHERS("%U% removes [power_supply] from %T%."))
 		rel_clear(src, nameof(power_supply))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
-		update_icon()
-		update_held_icon()
 		user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD
 	else
 		to_chat(user, span_notice("[src] does not have a power cell."))
@@ -189,7 +176,6 @@ TRACKED(/obj/item/gun/energy, recharge_due)
 CAPABILITIES(/obj/item/gun/energy)
 	ref_one(nameof(power_supply))
 	every(2 SECONDS, then(PROC_REF(energy_gun_recharge_step)), when = cond_all(nameof(self_recharge), nameof(recharge_due)))
-	on_notice(/datum/notice/hit/emp, then(PROC_REF(energy_gun_emp_refresh)))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
@@ -227,42 +213,37 @@ CAPABILITIES(/obj/item/gun/energy)
 		else
 			. += "Does not have a power cell."
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/appearance_overlays()
-	. = list()
-	if(power_supply == null)
-		if(modifystate)
-			icon_state = "[modifystate]_open"
-		else
-			icon_state = "[initial(icon_state)]_open"
-		return .
-	else if(charge_meter)
-		var/ratio = power_supply.charge / power_supply.maxcharge
+/// The look: the charge meter state, over what the capabilities and the gun base drew.
+/obj/item/gun/energy/draw(datum/look/look)
+	..()
+	look.watch(power_supply) // a view, not a child: its charge changes redraw the gun
+	draw_charge_state(look)
 
+/// The base name of the gun's charge states ("laser" for laser100): the fire mode's state, else the icon's own.
+/obj/item/gun/energy/proc/charge_state_name()
+	return modifystate ? modifystate : initial(icon_state)
+
+/// The charge meter state (a quarter step of the cell, at least a quarter while a shot is left), or the open state without a cell.
+/// A gun that draws its charge as overlays instead overrides this.
+/obj/item/gun/energy/proc/draw_charge_state(datum/look/look)
+	var/base = charge_state_name()
+	if(!power_supply)
+		look.state("[base]_open")
+	else if(charge_meter)
+		var/ratio = power_supply.maxcharge > 0 ? power_supply.charge / power_supply.maxcharge : 0
 		//make sure that rounding down will not give us the empty state even if we have charge for a shot left.
 		if(power_supply.charge < charge_cost)
 			ratio = 0
 		else
 			ratio = max(round(ratio, 0.25) * 100, 25)
-
-		if(modifystate)
-			icon_state = "[modifystate][ratio]"
-		else
-			icon_state = "[initial(icon_state)][ratio]"
-
-	else if(power_supply)
-		if(modifystate)
-			icon_state = "[modifystate]"
-		else
-			icon_state = "[initial(icon_state)]"
-
-	update_held_icon()
+		look.state("[base][ratio]")
+	else
+		look.state(base)
 
 /obj/item/gun/energy/proc/start_recharge()
 	if(power_supply == null)
 		rel_set(src, nameof(power_supply), new /obj/item/cell/device/weapon(src))
 	set_self_recharge(1)
-	update_icon()
 
 /obj/item/gun/energy/get_description_interaction()
 	var/list/results = list()

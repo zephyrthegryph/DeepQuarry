@@ -12,6 +12,8 @@
 	var/self_bind = FALSE
 	flags = NOBLUDGEON
 
+TRACKED(/obj/item/mindbinder, self_bind)
+
 /obj/item/mindbinder/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	return ITEM_INTERACT_SUCCESS
@@ -20,12 +22,11 @@
 	if(length(possessed_voice) == 1)
 		to_chat(user,span_warning("The device beeps a warning that there is already a mind loaded!"))
 		return
-	self_bind = !self_bind
+	set_self_bind(!self_bind)
 	if(self_bind)
 		to_chat(user,span_notice("You prepare the device to use your own mind!"))
 	else
 		to_chat(user,span_notice("You disable the device from using your mind."))
-	changed(src)
 
 /obj/item/mindbinder/pre_attack(atom/A, mob/user, params)
 	if(istype(A, /obj/structure/gargoyle))
@@ -155,7 +156,6 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 		doTime = 5 SECONDS
 	task_timed(user, doTime, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done2), done_args = list(target, user))
 
-	changed(src)
 
 /obj/item/mindbinder/proc/bind_mob_timed_done(mob/living/target, mob/usr_mob)
 	if(!target.ckey)
@@ -164,8 +164,7 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 		target.set_tf_mob_holder(usr_mob)
 	if(target.tf_mob_holder == target)
 		target.set_tf_mob_holder(null)
-	self_bind = !self_bind
-	changed(src)
+	set_self_bind(!self_bind)
 	to_chat(usr_mob,span_notice("Your mind as been bound to [target]."))
 /obj/item/mindbinder/proc/bind_mob_timed_done2(mob/living/target, mob/usr_mob)
 	if(length(possessed_voice) == 1 && !target.ckey)
@@ -200,12 +199,10 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 	act_message(user, src, MSG_SELF(span_notice("You begin to bind someone's mind into [item]!")), MSG_OTHERS(span_warning("%U% presses %T% against [item]. The device beginning to let out a series of beeps!")))
 	task_timed(user, 5 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done2), done_args = list(item, user))
 
-	changed(src)
 
 /obj/item/mindbinder/proc/bind_item_timed_done(obj/item/item, mob/usr_mob)
 	item.inhabit_item(usr_mob, null, usr_mob, TRUE)
-	self_bind = !self_bind
-	changed(src)
+	set_self_bind(!self_bind)
 	to_chat(usr_mob,span_notice("Your mind as been bound to [item]."))
 /obj/item/mindbinder/proc/bind_item_timed_done2(obj/item/item, mob/usr_mob)
 	if(length(possessed_voice) == 1)
@@ -226,7 +223,6 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 
 	open_request(src, /datum/prompt/choice/mindbinder/store_mob, PROC_REF(store_mob_confirmed), answerer = user, victim = target)
 
-	changed(src)
 
 /obj/item/mindbinder/proc/store_mob_timed_done(mob/living/target, mob/usr_mob)
 	if(length(possessed_voice) == 0 && target.mind)
@@ -248,7 +244,6 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 	act_message(user, src, MSG_SELF(span_notice("You begin to download someone's mind from [item]!")), MSG_OTHERS(span_warning("%U% presses %T% against [item]. The device beginning to let out a series of beeps!")))
 	task_start(/datum/task/timed/mindbinder_store_item, user, item, receiver = src, target_arg = target)
 
-	changed(src)
 
 /datum/task/timed/mindbinder_store_item
 	duration = 5 SECONDS

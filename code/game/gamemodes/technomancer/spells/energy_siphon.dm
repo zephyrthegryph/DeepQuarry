@@ -51,7 +51,6 @@
 			to_chat(user, span_warning("You cannot steal energy from \a [AM]."))
 			return 0
 		rel_set(src, nameof(siphoning), AM)
-		update_icon()
 		add_attack_logs(user,AM,"Siphoned energy from [src]")
 	else
 		stop_siphoning()
@@ -72,7 +71,6 @@
 /obj/item/spell/energy_siphon/proc/stop_siphoning()
 	rel_clear(src, nameof(siphoning))
 	rel_clear(src, nameof(things_to_siphon))
-	update_icon()
 
 #define SIPHON_CELL_TO_ENERGY	0.5
 #define SIPHON_FBP_TO_ENERGY	5.0
@@ -86,8 +84,6 @@
 
 	if(!siphoning)
 		return 0
-
-	update_icon()
 
 	//playsound(source = src, soundin = 'TODO', vol = 30, vary = 0, extrarange = 0, falloff = 0, is_global = 0)
 
@@ -147,7 +143,9 @@
 		to_chat(user, span_warning("\The [siphoning] cannot be drained any further."))
 		stop_siphoning()
 
-APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon{siphoning?_drain:}")
+/obj/item/spell/energy_siphon/draw(datum/look/look)
+	..()
+	look.state(siphoning() ? "energy_siphon_drain" : "energy_siphon")
 
 /obj/item/spell/energy_siphon/proc/create_lightning(mob/user, atom/source)
 	if(user && source && user != source)

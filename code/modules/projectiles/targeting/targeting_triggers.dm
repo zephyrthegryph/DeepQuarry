@@ -28,5 +28,5 @@
 	var/obj/item/gun/G = aiming_with()
 	if(istype(G))
 		G.Fire(aiming_at, owner(), reflex = 1)
-		locked = 0
+		set_locked(0)
 		EXPIRY_SET(src, lock_time, 10, CLOCK_WORLD)
