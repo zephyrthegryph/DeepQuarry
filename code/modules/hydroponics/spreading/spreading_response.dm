@@ -73,7 +73,7 @@
 				unbuckle()
 		else
 			user.setClickCooldown(user.get_attack_speed())
-			health -= rand(1,5)
+			set_health(health - rand(1,5))
 			var/text = pick("rip","tear","pull", "bite", "tug")
 			act_message(user, src, MSG_SELF(span_warning("You [text] at %T%.")), \
 				MSG_OTHERS(span_warning("%U% [text]s at %T%.")), \

@@ -18,10 +18,22 @@ CAPABILITIES(/obj/machinery/recycling)
 /obj/machinery/recycling/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL // these are all stateful
 
-DECLARE_APPEARANCE(/obj/machinery/recycling, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("-panel"))))
-DECLARE_APPEARANCE(/obj/machinery/recycling/crusher, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("crusher-panel"))))
-DECLARE_APPEARANCE(/obj/machinery/recycling/sorter, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("sorter-panel"))))
-DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("stamper-panel"))))
+/obj/machinery/recycling/draw(datum/look/look)
+	..()
+	look.overlay(panel_overlay(), panel_open)
+
+/// The layer an open service panel shows.
+/obj/machinery/recycling/proc/panel_overlay()
+	return "-panel"
+
+/obj/machinery/recycling/crusher/panel_overlay()
+	return "crusher-panel"
+
+/obj/machinery/recycling/sorter/panel_overlay()
+	return "sorter-panel"
+
+/obj/machinery/recycling/stamper/panel_overlay()
+	return "stamper-panel"
 
 /**
  * Generic procs common to all

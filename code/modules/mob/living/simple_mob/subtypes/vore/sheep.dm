@@ -111,11 +111,4 @@ CAPABILITIES(/mob/living/simple_mob/vore/sheep)
 		return
 	if(wool_growth >= 200)
 		harvestable_wool = TRUE
-
-/mob/living/simple_mob/vore/sheep/update_icon()
-	if(harvestable_wool)
-		icon_living = "sheep"
-	else
-		icon_living = "sheep_bald"
-	return ..()
 */

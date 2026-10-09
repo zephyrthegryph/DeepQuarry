@@ -130,5 +130,4 @@ MSG_DEF_SELF(start/interaction/window_repair, "You begin repairing %T%...")
 
 /obj/structure/window/proc/weld_repair(datum/act/op/A)
 	repair_damage(max_integrity)
-	update_icon()
 	return OP_OK

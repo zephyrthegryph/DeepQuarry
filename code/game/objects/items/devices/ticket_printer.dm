@@ -64,12 +64,6 @@ CAPABILITIES(/obj/item/ticket_printer)
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "sec_ticket"
 
-/obj/item/paper/sec_ticket/Initialize(mapload, text, title)
-	. = ..()
-	// Restores the type's icon after the paper base's own update_icon()
-	icon = 'icons/obj/bureaucracy.dmi'
-	icon_state = "sec_ticket" // ALLOW(decl): restores the type's icon_state after the paper base's own update_icon(), like the icon line above
-
 /// A ticket keeps the state its creation gave it.
 /obj/item/paper/sec_ticket/look_parts(datum/look/look)
 	return
@@ -103,12 +97,6 @@ CAPABILITIES(/obj/item/ticket_printer)
 	desc = "A ticket issued to permit someone to do something!"
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "permit_ticket"
-
-/obj/item/paper/permit_ticket/Initialize(mapload, text, title)
-	. = ..()
-	// Restores the type's icon after the paper base's own update_icon()
-	icon = 'icons/obj/bureaucracy.dmi'
-	icon_state = "permit_ticket" // ALLOW(decl): restores the type's icon_state after the paper base's own update_icon(), like the icon line above
 
 /// A ticket keeps the state its creation gave it.
 /obj/item/paper/permit_ticket/look_parts(datum/look/look)
