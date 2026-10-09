@@ -771,8 +771,12 @@ CAPABILITIES(/datum/lleill_contact_review)
 	var/new_mob = new tf_type(src.loc)
 	return new_mob
 
-CAPABILITIES(/mob/living)
-	op("revert_beast_form", ai(), wait(10 SECONDS), on_interrupt(PROC_REF(revert_beast_form_living_failed)), then(PROC_REF(revert_beast_form_living_done)))
+/// The beast form a Lleill or glamour creature took: the ten seconds it takes to shift back (granted with the revert verb).
+CAPABILITY_TYPE(beast_form, CAP_BEAST_FORM, /datum/capability/beast_form, key = NONE)
+/datum/capability/beast_form
+
+/datum/capability/beast_form/entries()
+	return list(op("revert_beast_form", ai(), wait(10 SECONDS), on_interrupt(PROC_REF(revert_beast_form_living_failed)), then(PROC_REF(revert_beast_form_living_done))))
 
 /mob/living/proc/revert_beast_form()
 	set name = "Revert Beast Form"
@@ -940,6 +944,7 @@ CAPABILITIES(/mob/living)
 		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.lleill_energy -= energy_cost
 		grant(new_mob, granted_verb(/mob/living/proc/revert_beast_form), new_mob)
+		grant(new_mob, /datum/capability/beast_form, new_mob)
 		grant(new_mob, granted_verb(/mob/living/proc/set_size), new_mob)
 		grant(new_mob, granted_verb(/mob/living/simple_mob/proc/ColorMate), new_mob)
 		transfer_mob_identity(new_mob)
