@@ -4006,3 +4006,5 @@ Every site that declared `DECLARE_INTERACTIONS`, `EXTEND_INTERACTIONS` or a `/da
   - The hit pin's rows are what current `origin/master` records already (its recorded rows were stale: `emag` on an energy field, plants, chameleon guns); the branch adds only the
     `refresh_queued` rows of `mecha_parts/component` and `mecha_tracking`, which the chassis `draw()` brings.
   - The i7 snapshots record the legacy resolver's ids and blocked reasons: the construction edges, the silicon equip-module spec and the disposal ids are ops now.
+  - The look state pin gains the cyborg `shell` rows (`shell=1`/`2` drops the eyes, `shell=0` brings them back; `robot_look.dm` draws `!shell || deployed`): the robot's analyzer key moved with
+    this branch, so the type was probed again and its recorded rows, never extended since the shell state was tracked, were completed.
