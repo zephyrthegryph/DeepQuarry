@@ -1,5 +1,5 @@
 // Behaviour-preservation tests for the mob/living domain (hc-mobs): what a player, an AI or an explosion can observe of the mobs whose legacy
-// declarations (DAMAGE_REACTION, om_ask, DECLARE_UI, DECLARE_INTERACTIONS ...) are converted to the final forms. The file passes on the legacy
+// declarations (DAMAGE_REACTION, om_ask, DECLARE_UI and the legacy interaction declarations) are converted to the final forms. The file passes on the legacy
 // code and after the conversion; only the adapter block below changes.
 //
 // Rules the tests keep (as in dq_p2_*_behaviour.dm):

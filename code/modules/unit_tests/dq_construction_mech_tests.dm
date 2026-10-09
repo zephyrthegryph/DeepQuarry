@@ -1,42 +1,14 @@
-// Mech/fighter/micro-mech chassis construction graphs (roadmap I5): every graph
-// walks its full parts phase and reversible ladder forward to the finished
-// mecha, and its reversible steps go back with the same materials and state.
+// Mech/fighter/micro-mech chassis construction: every blueprint walks its full parts phase and ladder forward to the finished
+// mecha, and its reversible steps go back with the same materials and state. Driven with clicks; state is read from the chassis.
 //
-// Helpers reused from dq_construction_tests.dm: dq_walk, dq_materials_on,
-// dq_fast_tool, dq_fueled_welder.
+// Helpers reused from dq_construction_tests.dm: dq_materials_on, dq_materials_equal, dq_fast_tool, dq_fueled_welder.
 
-/// The chassis type that names `graph_path` as its construction_graph, or null.
-/datum/unit_test/proc/mech_chassis_type_for(graph_path)
+/// The chassis type whose blueprint is `blueprint_path`, or null.
+/datum/unit_test/proc/mech_chassis_type_for(blueprint_path)
 	for(var/obj/item/mecha_parts/path as anything in subtypesof(/obj/item/mecha_parts))
-		if(initial(path.construction_graph) == graph_path)
+		if(initial(path.blueprint) == blueprint_path)
 			return path
 	return null
-
-/// The edge among `target`'s current edges whose item matches `item`'s type.
-/datum/unit_test/proc/mech_edge_for_item(atom/target, obj/item/item)
-	for(var/datum/interaction/construction/edge as anything in construction_edges_for(target))
-		if(edge.item_type && istype(item, edge.item_type))
-			return edge
-	return null
-
-/// The edge leaving a reversible-ladder state that builds forward (the higher-priority one).
-/datum/unit_test/proc/mech_forward_edge(atom/target)
-	var/datum/interaction/construction/best
-	for(var/datum/interaction/construction/edge as anything in construction_edges_for(target))
-		if(!best || edge.priority > best.priority)
-			best = edge
-	return best
-
-/// The edge leaving a reversible-ladder state that undoes the last forward step, or null at the top.
-/datum/unit_test/proc/mech_backward_edge(atom/target)
-	var/list/edges = construction_edges_for(target)
-	if(length(edges) < 2)
-		return null
-	var/datum/interaction/construction/worst
-	for(var/datum/interaction/construction/edge as anything in edges)
-		if(!worst || edge.priority < worst.priority)
-			worst = edge
-	return worst
 
 /// One of each tool quality the mecha ladders use, sitting on `T`, zero-speed and fuelled.
 /datum/unit_test/proc/mech_make_tools(turf/T)
@@ -47,234 +19,181 @@
 	.[TOOL_WIRECUTTER] = dq_fast_tool(/obj/item/tool/wirecutters, T)
 	.[TOOL_CROWBAR] = dq_fast_tool(/obj/item/tool/crowbar, T)
 
-/// What `edge` needs held: a tool from `tools`, a matching item already sitting on `T`
-/// (left there by a refund, or pre-staged for a round trip), or a freshly made one.
-/datum/unit_test/proc/mech_item_for_edge(datum/interaction/construction/edge, list/tools, turf/T)
-	if(edge.tool)
-		return tools[edge.tool]
-	var/obj/item/path = edge.item_type
-	if(ispath(path, /obj/item/stack))
-		var/obj/item/stack/existing = locate_on(T, path)
-		if(existing && existing.get_amount() >= max(edge.item_amount, 1))
-			return existing
-		return allocate(path, T, max(edge.item_amount, 1))
-	var/obj/item/existing = locate_on(T, path)
-	if(existing)
-		return existing
-	return allocate(path, T)
+/// The actor uses `held` on `target` and the time it takes passes.
+/datum/unit_test/proc/mech_use(mob/living/carbon/human/actor, atom/target, obj/item/held)
+	if(actor.get_active_hand() != held)
+		if(actor.get_active_hand())
+			actor.drop_item()
+		actor.put_in_active_hand(held)
+	actor.next_click = 0
+	test_click(actor, target, held)
+	test_time(10 SECONDS)
 
-/// Attaches every part `graph` needs to `chassis`, in graph order, with `actor`.
-/datum/unit_test/proc/mech_attach_all_parts(mob/actor, obj/item/chassis, datum/construction_graph/mecha/graph, turf/T)
-	for(var/obj/item/part_type as anything in graph.mecha_parts)
-		var/obj/item/part = allocate(part_type, T)
-		var/datum/interaction/construction/edge = mech_edge_for_item(chassis, part)
-		TEST_ASSERT(edge, "[graph.id]: a part edge exists for [part_type]")
-		if(!edge)
-			continue
-		TEST_ASSERT(dq_walk(actor, chassis, edge, part), "[graph.id]: attaching [part_type] succeeds")
+/// What a step keyed `key` needs held: a tool from `tools`, or the item/stack made fresh on `T`.
+/datum/unit_test/proc/mech_held_for(key, list/tools, turf/T)
+	if(istext(key))
+		return tools[key]
+	if(ispath(key, /obj/item/stack))
+		return allocate(key, T, ispath(key, /obj/item/stack/cable_coil) ? 4 : 5)
+	return allocate(key, T)
 
-/// Walks `target`'s reversible ladder all the way forward (to completion). TRUE if it finished.
-/datum/unit_test/proc/mech_walk_to_completion(mob/actor, atom/target, list/tools, turf/T)
-	var/guard = 0
-	while(!QDELETED(target) && guard < 100)
-		guard++
-		var/datum/interaction/construction/edge = mech_forward_edge(target)
-		if(!edge)
-			return FALSE
-		var/obj/item/held = mech_item_for_edge(edge, tools, T)
-		if(!dq_walk(actor, target, edge, held))
-			return FALSE
-	return QDELETED(target)
+/// Attaches every part of `blueprint` to `chassis`.
+/datum/unit_test/proc/mech_attach_all_parts(mob/living/carbon/human/actor, obj/item/mecha_parts/chassis, datum/mecha_blueprint/blueprint, turf/T)
+	for(var/part_type in blueprint.mecha_parts)
+		var/before = chassis.parts_mask
+		mech_use(actor, chassis, allocate(part_type, T))
+		TEST_ASSERT(chassis.parts_mask != before, "[blueprint.id]: attaching [part_type] succeeds")
 
-/// Creates on `T` whatever items the top `steps_down` ladder rungs of `graph` will consume
-/// going forward, so the round trip's "materials before" snapshot already counts them as the
-/// player's own supplies (rather than materials the ladder's refunds conjure from nothing).
-/// Stack amounts match mecha_ladder/New()'s own defaults (4 for cable coil, 5 otherwise).
-/datum/unit_test/proc/mech_prestage_ladder_items(datum/construction_graph/mecha/graph, steps_down, turf/T)
-	var/top = length(graph.ladder)
-	for(var/i in 0 to steps_down - 1)
-		var/idx = top - i
-		if(idx < 1)
-			break
-		var/key = graph.ladder[idx]["key"]
-		if(!ispath(key))
-			continue
-		if(ispath(key, /obj/item/stack))
-			var/amount = ispath(key, /obj/item/stack/cable_coil) ? 4 : 5
-			var/obj/item/stack/existing = locate_on(T, key)
-			if(existing)
-				existing.add(amount)
-			else
-				allocate(key, T, amount)
-		else if(!(locate_on(T, key)))
-			allocate(key, T)
-
-/// Builds a fresh chassis for `graph_path`, attaches its parts, and returns it (already at the top of the ladder).
-/datum/unit_test/proc/mech_fresh_shell(mob/actor, graph_path, turf/T)
-	var/datum/construction_graph/mecha/graph = GLOB.construction_graphs[graph_path]
-	if(!graph)
-		return null
-	var/chassis_type = mech_chassis_type_for(graph_path)
+/// Builds a fresh chassis for `blueprint_path`, attaches its parts, and returns it (a finished shell).
+/datum/unit_test/proc/mech_fresh_shell(mob/living/carbon/human/actor, blueprint_path, turf/T)
+	var/chassis_type = mech_chassis_type_for(blueprint_path)
 	if(!chassis_type)
 		return null
-	var/obj/item/chassis = allocate(chassis_type, T)
-	mech_attach_all_parts(actor, chassis, graph, T)
+	var/obj/item/mecha_parts/chassis = allocate(chassis_type, T)
+	mech_attach_all_parts(actor, chassis, mecha_blueprint_of(blueprint_path), T)
 	return chassis
+
+/// Walks the first `steps` forward steps (all of them when null). Returns the number taken.
+/datum/unit_test/proc/mech_walk_forward(mob/living/carbon/human/actor, obj/item/mecha_parts/chassis, datum/mecha_blueprint/blueprint, list/tools, turf/T, steps)
+	var/count = length(blueprint.ladder)
+	var/taken = 0
+	for(var/i in 1 to (isnull(steps) ? count : steps))
+		if(QDELETED(chassis))
+			break
+		var/list/row = blueprint.ladder[count - i + 1]
+		var/stage_before = graph_current(chassis)
+		mech_use(actor, chassis, mech_held_for(row["key"], tools, T))
+		if(!QDELETED(chassis) && graph_current(chassis) == stage_before)
+			break
+		taken++
+	return taken
 
 // ---- Full builds: parts, then every forward ladder step, to the finished mecha ----
 
-/datum/unit_test/dq_construction_mech_ripley_full_build
+/datum/unit_test/proc/mech_full_build(blueprint_path)
+	test_driver_begin()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.enable_godmode()
+	var/list/tools = mech_make_tools(T)
+	var/datum/mecha_blueprint/blueprint = mecha_blueprint_of(blueprint_path)
+	var/obj/item/mecha_parts/chassis = mech_fresh_shell(H, blueprint_path, T)
+	TEST_ASSERT(chassis, "[blueprint_path]: a chassis exists")
+	if(!chassis)
+		return
+	TEST_ASSERT_EQUAL(chassis.icon_state, "[blueprint.icon_prefix]0", "[blueprint_path]: the shell is finished once every part is attached")
+	TEST_ASSERT_EQUAL(graph_current(chassis), STAGE_MECHA_SHELL, "[blueprint_path]: the finished shell stands at the first stage")
+	mech_walk_forward(H, chassis, blueprint, tools, T)
+	TEST_ASSERT(QDELETED(chassis), "[blueprint_path]: the chassis is gone")
+	TEST_ASSERT(own(locate_on(T, blueprint.result)), "[blueprint_path]: the finished mecha spawned")
+	own_turf_contents(T)
 
 /datum/unit_test/dq_construction_mech_ripley_full_build/Run()
-	var/turf/T = test_floor()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/list/tools = mech_make_tools(T)
-	var/obj/item/chassis = mech_fresh_shell(H, /datum/construction_graph/mecha/ripley, T)
-	TEST_ASSERT(chassis, "a ripley chassis and graph exist")
-	if(!chassis)
-		return
-	TEST_ASSERT_EQUAL(chassis.icon_state, "ripley0", "the shell is finished once every part is attached")
-	TEST_ASSERT(mech_walk_to_completion(H, chassis, tools, T), "the ladder walks all the way to completion")
-	TEST_ASSERT(QDELETED(chassis), "the chassis is gone")
-	TEST_ASSERT(own(locate_on(T, /obj/mecha/working/ripley)), "the finished Ripley spawned")
-
-/datum/unit_test/dq_construction_mech_gygax_full_build
+	mech_full_build(/datum/mecha_blueprint/ripley)
 
 /datum/unit_test/dq_construction_mech_gygax_full_build/Run()
-	var/turf/T = test_floor()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/list/tools = mech_make_tools(T)
-	var/obj/item/chassis = mech_fresh_shell(H, /datum/construction_graph/mecha/gygax, T)
-	TEST_ASSERT(chassis, "a gygax chassis and graph exist")
-	if(!chassis)
-		return
-	TEST_ASSERT_EQUAL(chassis.icon_state, "gygax0", "the shell is finished once every part is attached")
-	TEST_ASSERT(mech_walk_to_completion(H, chassis, tools, T), "the ladder walks all the way to completion")
-	TEST_ASSERT(QDELETED(chassis), "the chassis is gone")
-	TEST_ASSERT(own(locate_on(T, /obj/mecha/combat/gygax)), "the finished Gygax spawned")
-
-/datum/unit_test/dq_construction_mech_pinnace_full_build
+	mech_full_build(/datum/mecha_blueprint/gygax)
 
 /datum/unit_test/dq_construction_mech_pinnace_full_build/Run()
-	var/turf/T = test_floor()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/list/tools = mech_make_tools(T)
-	var/obj/item/chassis = mech_fresh_shell(H, /datum/construction_graph/mecha/fighter/pinnace, T)
-	TEST_ASSERT(chassis, "a pinnace chassis and graph exist")
-	if(!chassis)
-		return
-	TEST_ASSERT_EQUAL(chassis.icon_state, "pinnace0", "the shell is finished once every part is attached")
-	TEST_ASSERT(mech_walk_to_completion(H, chassis, tools, T), "the ladder walks all the way to completion")
-	TEST_ASSERT(QDELETED(chassis), "the chassis is gone")
-	TEST_ASSERT(own(locate_on(T, /obj/mecha/combat/fighter/pinnace)), "the finished Pinnace spawned")
-
-/datum/unit_test/dq_construction_mech_polecat_full_build
+	mech_full_build(/datum/mecha_blueprint/fighter/pinnace)
 
 /datum/unit_test/dq_construction_mech_polecat_full_build/Run()
-	var/turf/T = test_floor()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/list/tools = mech_make_tools(T)
-	var/obj/item/chassis = mech_fresh_shell(H, /datum/construction_graph/mecha/micro/polecat, T)
-	TEST_ASSERT(chassis, "a polecat chassis and graph exist")
-	if(!chassis)
-		return
-	TEST_ASSERT_EQUAL(chassis.icon_state, "polecat0", "the shell is finished once every part is attached")
-	TEST_ASSERT(mech_walk_to_completion(H, chassis, tools, T), "the ladder walks all the way to completion")
-	TEST_ASSERT(QDELETED(chassis), "the chassis is gone")
-	TEST_ASSERT(own(locate_on(T, /obj/mecha/micro/sec/polecat)), "the finished Polecat spawned")
+	mech_full_build(/datum/mecha_blueprint/micro/polecat)
 
 // ---- Round trips: forward some steps, then the same steps back, same materials and state ----
 
-/datum/unit_test/proc/mech_round_trip(graph_path, steps_down)
+/datum/unit_test/proc/mech_round_trip(blueprint_path, steps_down)
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.enable_godmode()
 	var/list/tools = mech_make_tools(T)
-	var/obj/item/chassis = mech_fresh_shell(H, graph_path, T)
-	TEST_ASSERT(chassis, "[graph_path]: a chassis and graph exist")
+	var/datum/mecha_blueprint/blueprint = mecha_blueprint_of(blueprint_path)
+	var/obj/item/mecha_parts/chassis = mech_fresh_shell(H, blueprint_path, T)
+	TEST_ASSERT(chassis, "[blueprint_path]: a chassis exists")
 	if(!chassis)
 		return
-	var/datum/construction_graph/mecha/graph = GLOB.construction_graphs[graph_path]
-	if(graph)
-		mech_prestage_ladder_items(graph, steps_down, T)
-	var/before_state = chassis.vars["construction_state"]
-	var/before_icon = chassis.icon_state
+	// What the forward steps will consume is staged first, so the snapshot counts it as the player's own supplies.
+	var/count = length(blueprint.ladder)
+	var/list/held_for_step = list()
+	for(var/i in 1 to steps_down)
+		held_for_step += mech_held_for(blueprint.ladder[count - i + 1]["key"], tools, T)
 	var/list/materials_before = dq_materials_on(T)
+	var/before_icon = chassis.icon_state
+	var/before_stage = graph_current(chassis)
 	for(var/i in 1 to steps_down)
-		var/datum/interaction/construction/edge = mech_forward_edge(chassis)
-		TEST_ASSERT(edge, "[graph_path]: a forward edge exists at step [i]")
-		if(!edge)
-			return
-		var/obj/item/held = mech_item_for_edge(edge, tools, T)
-		TEST_ASSERT(dq_walk(H, chassis, edge, held), "[graph_path]: forward step [i] succeeds")
+		var/stage_before = graph_current(chassis)
+		mech_use(H, chassis, held_for_step[i])
+		TEST_ASSERT(graph_current(chassis) != stage_before, "[blueprint_path]: forward step [i] advances")
 	for(var/i in 1 to steps_down)
-		var/datum/interaction/construction/edge = mech_backward_edge(chassis)
-		TEST_ASSERT(edge, "[graph_path]: a backward edge exists at step [i]")
-		if(!edge)
-			return
-		var/obj/item/held = mech_item_for_edge(edge, tools, T)
-		TEST_ASSERT(dq_walk(H, chassis, edge, held), "[graph_path]: backward step [i] succeeds")
-	TEST_ASSERT_EQUAL(chassis.vars["construction_state"], before_state, "[graph_path]: the state round-trips")
-	TEST_ASSERT_EQUAL(chassis.icon_state, before_icon, "[graph_path]: the icon_state round-trips")
-	TEST_ASSERT(dq_materials_equal(dq_materials_on(T), materials_before), "[graph_path]: the same materials came back")
-	own_turf_contents(T) // the refunded materials
-
-/datum/unit_test/dq_construction_mech_ripley_round_trip
+		var/stage_before = graph_current(chassis)
+		var/list/row = blueprint.ladder[count - (steps_down - i)]
+		mech_use(H, chassis, tools[row["backkey"]])
+		TEST_ASSERT(graph_current(chassis) != stage_before, "[blueprint_path]: backward step [i] retreats")
+	TEST_ASSERT_EQUAL(graph_current(chassis), before_stage, "[blueprint_path]: the stage round-trips")
+	TEST_ASSERT_EQUAL(chassis.icon_state, before_icon, "[blueprint_path]: the icon_state round-trips")
+	TEST_ASSERT(dq_materials_equal(dq_materials_on(T), materials_before), "[blueprint_path]: the same materials came back")
+	own_turf_contents(T)
 
 /datum/unit_test/dq_construction_mech_ripley_round_trip/Run()
-	mech_round_trip(/datum/construction_graph/mecha/ripley, 5)
-
-/datum/unit_test/dq_construction_mech_gygax_round_trip
+	mech_round_trip(/datum/mecha_blueprint/ripley, 5)
 
 /datum/unit_test/dq_construction_mech_gygax_round_trip/Run()
-	mech_round_trip(/datum/construction_graph/mecha/gygax, 6)
-
-/datum/unit_test/dq_construction_mech_pinnace_round_trip
+	mech_round_trip(/datum/mecha_blueprint/gygax, 6)
 
 /datum/unit_test/dq_construction_mech_pinnace_round_trip/Run()
-	mech_round_trip(/datum/construction_graph/mecha/fighter/pinnace, 5)
-
-/datum/unit_test/dq_construction_mech_polecat_round_trip
+	mech_round_trip(/datum/mecha_blueprint/fighter/pinnace, 5)
 
 /datum/unit_test/dq_construction_mech_polecat_round_trip/Run()
-	mech_round_trip(/datum/construction_graph/mecha/micro/polecat, 6)
+	mech_round_trip(/datum/mecha_blueprint/micro/polecat, 6)
 
-// ---- Every mech graph: one step forward then straight back, from the top of the ladder ----
+// ---- Parts phase ----
 
-/datum/unit_test/dq_construction_mech_all_graphs_round_trip
+/// The ladder does not start until every part is on, and a part already on is not taken twice.
+/datum/unit_test/dq_construction_mech_parts_phase/Run()
+	test_driver_begin()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.enable_godmode()
+	var/list/tools = mech_make_tools(T)
+	var/datum/mecha_blueprint/blueprint = mecha_blueprint_of(/datum/mecha_blueprint/ripley)
+	var/obj/item/mecha_parts/chassis = allocate(mech_chassis_type_for(/datum/mecha_blueprint/ripley), T)
+	var/first_type = blueprint.mecha_parts[1]
+	mech_use(H, chassis, allocate(first_type, T))
+	var/mask = chassis.parts_mask
+	TEST_ASSERT(mask, "the first part is on")
+	var/obj/item/duplicate = allocate(first_type, T)
+	mech_use(H, chassis, duplicate)
+	TEST_ASSERT_EQUAL(chassis.parts_mask, mask, "a second copy of a part already on is not taken")
+	TEST_ASSERT(!QDELETED(duplicate), "and is kept")
+	mech_use(H, chassis, tools[TOOL_WRENCH])
+	TEST_ASSERT_EQUAL(graph_current(chassis), STAGE_MECHA_SHELL, "no ladder step starts before every part is on")
 
-/datum/unit_test/dq_construction_mech_all_graphs_round_trip/Run()
-	for(var/datum/construction_graph/mecha/path as anything in subtypesof(/datum/construction_graph/mecha))
+// ---- Every blueprint: one step forward then straight back, down the whole ladder ----
+
+/datum/unit_test/dq_construction_mech_all_blueprints_round_trip/Run()
+	for(var/datum/mecha_blueprint/path as anything in subtypesof(/datum/mecha_blueprint))
 		if(!initial(path.id))
 			continue
+		test_driver_begin()
 		var/turf/T = test_floor()
 		var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+		H.enable_godmode()
 		var/list/tools = mech_make_tools(T)
-		var/obj/item/chassis = mech_fresh_shell(H, path, T)
-		TEST_ASSERT(chassis, "[path]: a chassis and graph exist")
+		var/datum/mecha_blueprint/blueprint = mecha_blueprint_of(path)
+		var/obj/item/mecha_parts/chassis = mech_fresh_shell(H, path, T)
+		TEST_ASSERT(chassis, "[path]: a chassis exists")
 		if(!chassis)
 			continue
-		var/guard = 0
-		while(!QDELETED(chassis) && guard < 100)
-			guard++
-			var/state_before = chassis.vars["construction_state"]
+		var/count = length(blueprint.ladder)
+		for(var/i in 1 to count - 1)
+			var/list/row = blueprint.ladder[count - i + 1]
+			var/stage_before = graph_current(chassis)
 			var/icon_before = chassis.icon_state
-			var/datum/interaction/construction/fwd = mech_forward_edge(chassis)
-			if(!fwd)
-				break
-			var/obj/item/fwd_held = mech_item_for_edge(fwd, tools, T)
-			TEST_ASSERT(dq_walk(H, chassis, fwd, fwd_held), "[path]: forward from [state_before] succeeds")
-			if(QDELETED(chassis))
-				break
-			var/datum/interaction/construction/back = mech_backward_edge(chassis)
-			TEST_ASSERT(back, "[path]: a backward edge exists after leaving [state_before]")
-			if(!back)
-				break
-			var/obj/item/back_held = mech_item_for_edge(back, tools, T)
-			TEST_ASSERT(dq_walk(H, chassis, back, back_held), "[path]: backward to [state_before] succeeds")
-			TEST_ASSERT_EQUAL(chassis.vars["construction_state"], state_before, "[path]: state round-trips at [state_before]")
-			TEST_ASSERT_EQUAL(chassis.icon_state, icon_before, "[path]: icon_state round-trips at [state_before]")
-			// Advance past this rung without reversing it, so the next iteration tests the next one down.
-			var/obj/item/advance_held = mech_item_for_edge(fwd, tools, T)
-			if(!dq_walk(H, chassis, fwd, advance_held))
-				break
-		own_turf_contents(T) // the finished mecha and any refunds
+			mech_use(H, chassis, mech_held_for(row["key"], tools, T))
+			TEST_ASSERT(graph_current(chassis) != stage_before, "[path]: forward step [i] advances")
+			mech_use(H, chassis, tools[row["backkey"]])
+			TEST_ASSERT_EQUAL(graph_current(chassis), stage_before, "[path]: step [i] goes back to its stage")
+			TEST_ASSERT_EQUAL(chassis.icon_state, icon_before, "[path]: icon_state round-trips at step [i]")
+			mech_use(H, chassis, mech_held_for(row["key"], tools, T))
+		own_turf_contents(T)

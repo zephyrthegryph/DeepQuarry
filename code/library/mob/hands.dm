@@ -5,6 +5,7 @@
 // refuses a target out of arm's reach.
 
 CAPABILITIES(/mob/living/carbon/human)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE, say = /datum/msg/req_silent) // a sequencer on a robotic limb; the effect says what it did
 	op("vr_transform", menu(), when(PROC_REF(vr_transform_granted)), label("Transform Into Creature"), needs(req_self(), req_capable()), asks(/datum/prompt/choice, fields = list("title" = "Mob list", "question" = "Please select a creature:", "choices" = computed(PROC_REF(vr_creature_options)), "ask_flags" = ASK_CONSCIOUS, "timeout" = 0), step = "creature"), then(PROC_REF(vr_creature_chosen)))
 	op("vr_logout", menu(), when(PROC_REF(vr_logout_granted)), label("Log Out Of Virtual Reality"), needs(req_self()), asks(/datum/prompt/yes_no, fields = list("title" = "Log out?", "question" = "Would you like to log out of virtual reality?", "timeout" = 0), step = "logout"), then(PROC_REF(fake_exit_vr_answered)))
 	hands()
@@ -64,6 +65,7 @@ CAPABILITIES(/mob/living/silicon/robot)
 	// no hands of its own; that waits until every module set has a gripper. A selected gripper is preferred over these (held_carrier()).
 	hands()
 	robot_interactions() // robot.dm: its item, tool and touch ops
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE, say = /datum/msg/req_silent) // the cover lock, the interface, the operator seat; the effect says what it did
 	// an opened chassis gives up its cell (or the fried remains of its mount) to whatever hand takes it: a person's, another cyborg's gripper
 	op("take_power_part", hand(), when(TYPE_PROC_REF(/mob/living/silicon/robot, power_part_exposed)), label("Remove the cell"),
 		priority(OP_PRIORITY_TAKE_OUT), wait(0), then(TYPE_PROC_REF(/mob/living/silicon/robot, power_part_taken)))

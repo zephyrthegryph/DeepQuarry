@@ -334,7 +334,7 @@
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	// ITION: MicroHandCrush
-	if(W == src && user.a_intent == I_HURT)
+	if(W == src && user.input_stance() == I_HURT)
 		for(var/mob/living/M in contents_of(src))
 			if(user.size_multiplier > M.size_multiplier)
 				var/dam = (user.size_multiplier - M.size_multiplier)*(rand(2,5))

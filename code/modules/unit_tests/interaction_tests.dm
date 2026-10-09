@@ -18,22 +18,13 @@
 	primary_wrench_calls++
 	return wrench_result
 
-/// Secondary tool use reaches declared interactions whose default action is Alternate.
-/datum/interaction/unit_test_secondary_wrench
-	id = "unit_test_secondary_wrench"
-	name = "Test secondary wrench"
-	category = INTERACTION_CAT_CONFIGURE
-	default_action = INPUT_ACTION_ALTERNATE
-	tool = TOOL_WRENCH
-	effect = /atom/movable/unit_test_interaction_target/proc/note_secondary_wrench
+/// Secondary tool use reaches the declared ops pinned to the right-click gesture.
+CAPABILITIES(/atom/movable/unit_test_interaction_target)
+	op("unit_test_secondary_wrench", tool(TOOL_WRENCH), gesture(GESTURE_RIGHT), wait(0), label("Test secondary wrench"), then(PROC_REF(note_secondary_wrench)))
 
-/atom/movable/unit_test_interaction_target/declare_interactions(list/into)
-	..()
-	into += /datum/interaction/unit_test_secondary_wrench
-
-/atom/movable/unit_test_interaction_target/proc/note_secondary_wrench(mob/actor, obj/item/held, datum/interaction/interaction)
+/atom/movable/unit_test_interaction_target/proc/note_secondary_wrench(datum/act/op/A)
 	secondary_wrench_calls++
-	return TRUE
+	return OP_OK
 
 /atom/movable/unit_test_interaction_target/attackby(obj/item/tool, mob/user, attack_modifier, click_parameters)
 	attackby_calls++
@@ -75,8 +66,8 @@
 	target.forceMove(user.loc)
 	user.put_in_hands(tool)
 	var/secondary_result = target.item_interaction_secondary(user, tool, list())
-	TEST_ASSERT(secondary_result & ITEM_INTERACT_SUCCESS, "Secondary tool use did not run the declared Alternate interaction.")
-	TEST_ASSERT_EQUAL(target.secondary_wrench_calls, 1, "Secondary dispatch did not reach the declared interaction.")
+	TEST_ASSERT(secondary_result & ITEM_INTERACT_SUCCESS, "Secondary tool use did not run the declared right-click op.")
+	TEST_ASSERT_EQUAL(target.secondary_wrench_calls, 1, "Secondary dispatch did not reach the declared op.")
 	TEST_ASSERT_EQUAL(target.primary_wrench_calls, 1, "Secondary dispatch incorrectly invoked the primary hook.")
 
 	target.primary_crowbar_calls = 0

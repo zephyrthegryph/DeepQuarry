@@ -20,7 +20,7 @@
 	TEST_ASSERT(actor.put_in_active_hand(device), "the actor holds the actual optical device")
 	var/accuracy_before = device.accuracy
 	var/recoil_before = device.recoil
-	device.monorifle_verb_sights(actor, null, null)
+	device.monorifle_verb_sights(actor, null)
 	TEST_ASSERT_EQUAL(device.zoom_calls, 1, "the handler invokes real zoom once")
 	TEST_ASSERT_EQUAL(device.zoom_actor_ref, REF(actor), "the handler forwards its actual actor")
 	TEST_ASSERT_EQUAL(device.zoom_offset_seen, round(world.view * device.scope_multiplier), "the correct offset remains separate from interaction arguments")

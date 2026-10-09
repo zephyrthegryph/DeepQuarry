@@ -102,7 +102,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	if(.)
 		return
 	// Interactions that need no tool quality but answer Use with an item in hand.
-	switch(try_gesture(user, src, tool, INPUT_ACTION_USE, null, TRUE))
+	switch(try_interaction(user, src, tool, INPUT_ACTION_USE, null, TRUE))
 		if(INTERACTION_TRY_RAN)
 			return ITEM_INTERACT_SUCCESS
 		if(INTERACTION_TRY_MENU, INTERACTION_TRY_BLOCKED)
@@ -112,16 +112,6 @@ avoid code duplication. This includes items that may sometimes act as a standard
 /// Right-click counterpart to item_interaction().
 /atom/proc/item_interaction_secondary(mob/user, obj/item/tool, list/modifiers)
 	return tool_interaction(user, tool, modifiers, TRUE)
-
-/// The tool_act path: the base *_act procs end here, so subtype overrides that call ..() reach it.
-/// `secondary` (right-click tool use) is the quality's Alternate gesture instead of Use.
-/atom/proc/interaction_tool_act(mob/user, obj/item/tool, quality, secondary = FALSE)
-	switch(try_gesture(user, src, tool, secondary ? INPUT_ACTION_ALTERNATE : INPUT_ACTION_USE, quality))
-		if(INTERACTION_TRY_RAN)
-			return ITEM_INTERACT_SUCCESS
-		if(INTERACTION_TRY_MENU, INTERACTION_TRY_BLOCKED)
-			return ITEM_INTERACT_BLOCKING
-	return NONE
 
 /// An item used on this atom by code (not a click): the ops first, as a click's swing does, then the gate every item use passes.
 /// TRUE when the input was used up.

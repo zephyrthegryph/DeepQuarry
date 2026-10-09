@@ -315,23 +315,3 @@
 	for(var/i in 1 to min(length(lines), length(golden)))
 		TEST_ASSERT_EQUAL(lines[i], golden[i], "line [i] of the explanation differs from the golden, whole text follows:\n[text]")
 
-// ---------------------------------------------------------------------------------------------------------------------
-// A legacy DECLARE_INTERACTIONS entry resolves beside a new op.
-// ---------------------------------------------------------------------------------------------------------------------
-
-/datum/unit_test/dq_e2/legacy_entry_beside_new_op
-
-/datum/unit_test/dq_e2/legacy_entry_beside_new_op/run_gate()
-	var/mob/living/simple_mob/e0_fixture/M = actor()
-	var/obj/e2_mixed/X = allocate(/obj/e2_mixed)
-	var/datum/op_result/plain = test_click(M, X, null)
-	TEST_ASSERT_EQUAL(plain?.key, "wave", "a plain click is the new op")
-	TEST_ASSERT_EQUAL(X.waved, 1, "which ran")
-	var/datum/op_result/alt = test_click(M, X, null, GESTURE_ALT)
-	TEST_ASSERT_NOTNULL(alt, "an alt-click resolved")
-	TEST_ASSERT(findtext(alt.key, "legacy:"), "to the legacy entry that answers it, in the same pass: [alt?.key]")
-	TEST_ASSERT_EQUAL(alt.outcome, ACT_COMMITTED, "which committed")
-	TEST_ASSERT_EQUAL(X.legacy_used, 1, "the legacy effect ran")
-	TEST_ASSERT(assert_resolves(M, X, null, GESTURE_CLICK, "wave"), "the new op still wins its own input")
-	var/text = explain_click(M, X, null, GESTURE_ALT)
-	TEST_ASSERT(findtext(text, "legacy:"), "explain_click lists the legacy candidate beside the new op:\n[text]")

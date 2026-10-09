@@ -104,7 +104,7 @@
 
 /datum/species/shadekin/handle_death(mob/living/carbon/human/H)
 	var/special_handling = TRUE // varswitch for downstream // Enable.
-	H.dq_do_clear_dark_maws(H, null, null) //clear dark maws on death or similar
+	H.ability_clear_dark_maws(null) //clear dark maws on death or similar
 	var/datum/shadekin/SK = H.get_shadekin_state()
 	if(!special_handling || (SK && SK.no_retreat))
 		after(H, 0.1 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, species_death_vanish))

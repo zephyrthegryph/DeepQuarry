@@ -56,11 +56,6 @@ CAPABILITY_DEF(shadekin_utility, CAP_SHADEKIN_UTILITY, key = NONE)
 	face_atom(target)
 	return OP_OK
 
-/datum/body_effect/shadekin/heal_boop, 1 MINUTE)
-	act_message(actor, src, others = span_notice("%U% gently places a hand on %T%..."))
-	actor.face_atom(src)
-	return TRUE
-
 /datum/body_effect/shadekin/heal_boop
 	tick_interval = 2 SECONDS
 	name = "Shadekin Regen"

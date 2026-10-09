@@ -219,7 +219,7 @@
 	TEST_ASSERT_EQUAL(ctx.check(OP_STAGE_PROVIDER), /datum/msg/req_no_provider, "but no hand for the physical route")
 	ctx.release()
 
-/// An observer's click travels ROUTE_UI and reaches an ACT_EXAMINE op there: the old INTERACT_OBSERVER.
+/// An observer's click travels ROUTE_UI and reaches an ACT_EXAMINE op there: the old observer entry.
 /obj/cap_fixture/observed
 	name = "observed fixture"
 	var/list/ran
@@ -279,7 +279,7 @@
 	var/datum/interaction/capability/E = gesture_entry_for(user, A, held, GESTURE_CLICK)
 	return E?.op?.key
 
-/// The three files converted as worked examples of the INTERACT_* mapping (operations_and_actions.md §5): an item's USE
+/// The three files converted as worked examples of the old interaction-spec mapping (operations_and_actions.md §5): an item's USE
 /// and VERBs (the megaphone), a machine's ITEM, HAND and VERB (the medical records console) and the stance shapes (the
 /// desk bell).
 /datum/unit_test/dx_op_converted_examples/Run()
@@ -289,22 +289,22 @@
 
 	var/obj/item/megaphone/super/giga = allocate(/obj/item/megaphone/super, T)
 	var/datum/interaction/capability/shout = op_entry_named(H, giga, "shout")
-	TEST_ASSERT(shout && !shout.op.legacy, "INTERACT_USE became a real self-use op")
+	TEST_ASSERT(shout && !shout.op.legacy, "the old self-use entry became a real self-use op")
 	TEST_ASSERT_EQUAL(shout.entry, INTERACTION_ENTRY_SELF, "that attack_self still runs")
 	TEST_ASSERT(!shout.is_meant(H, giga, null), "a click on the megaphone never means it")
 	var/datum/interaction/capability/volume = op_entry_named(H, giga, "Change Volume")
-	TEST_ASSERT_EQUAL(volume?.op?.action, ACT_NONE, "INTERACT_VERB became an ACT_NONE op")
+	TEST_ASSERT_EQUAL(volume?.op?.action, ACT_NONE, "the old verb entry became an ACT_NONE op")
 	TEST_ASSERT_EQUAL(test_op(H, giga, "change_volume"), "you need to be carrying it", "only while carried, as REQ_IN_INVENTORY")
 
 	var/obj/machinery/computer/med_data/records = allocate(/obj/machinery/computer/med_data, T)
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, T)
-	TEST_ASSERT_EQUAL(dx_gesture_key(H, records, null), "open_records", "INTERACT_HAND became the empty hand's op")
+	TEST_ASSERT_EQUAL(dx_gesture_key(H, records, null), "open_records", "the old hand entry became the empty hand's op")
 	TEST_ASSERT(H.put_in_active_hand(card), "the human holds an ID card")
-	TEST_ASSERT_EQUAL(dx_gesture_key(H, records, card), "insert_scan", "INTERACT_ITEM became the ID slot's insert op")
+	TEST_ASSERT_EQUAL(dx_gesture_key(H, records, card), "insert_scan", "the old item entry became the ID slot's insert op")
 	TEST_ASSERT_EQUAL(try_interaction(H, records, card, INPUT_ACTION_USE, null, TRUE), INTERACTION_TRY_RAN, "a click with the card ran it")
 	TEST_ASSERT_EQUAL(records.scan, card, "the card is in the slot")
 	var/datum/interaction/capability/eject = op_entry_named(H, records, "Eject ID Card")
-	TEST_ASSERT_EQUAL(eject?.op?.action, ACT_NONE, "INTERACT_VERB became the slot's ACT_NONE eject")
+	TEST_ASSERT_EQUAL(eject?.op?.action, ACT_NONE, "the old verb entry became the slot's ACT_NONE eject")
 	TEST_ASSERT(perform_op(H, records, "Eject ID Card"), "the Menu's eject runs by name")
 	TEST_ASSERT_NULL(records.scan, "the card came out")
 	TEST_ASSERT(H.is_in_hands(card), "into the hand")

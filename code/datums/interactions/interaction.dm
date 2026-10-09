@@ -283,8 +283,7 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 /proc/init_interactions_by_type()
 	var/list/by_type = list()
 	for(var/datum/interaction/path as anything in subtypesof(/datum/interaction))
-		// Construction edges belong to their graphs (construction.dm), not this registry.
-		if(!initial(path.id) || ispath(path, /datum/interaction/construction))
+		if(!initial(path.id))
 			continue
 		by_type[path] = new path
 	return by_type

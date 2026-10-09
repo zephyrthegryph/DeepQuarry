@@ -250,27 +250,6 @@
 	TEST_ASSERT_EQUAL(T.dragged, 0, "a drag onto another thing does not reach the target")
 
 // ---------------------------------------------------------------------------------------------------------------------
-// A legacy entry interaction answers the shape of input its handler did: attack_hand an empty hand, attackby a held item used on something else.
-// ---------------------------------------------------------------------------------------------------------------------
-
-/datum/unit_test/dq_p2_engine/legacy_entries_fit_the_input
-
-/datum/unit_test/dq_p2_engine/legacy_entries_fit_the_input/run_gate()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/p2_legacy_target/T = allocate(/obj/p2_legacy_target)
-	var/obj/item/p2_op_item/I = allocate(/obj/item/p2_op_item)
-	H.drop_item()
-	H.put_in_active_hand(I)
-	test_click(H, T, I)
-	TEST_ASSERT_EQUAL(T.touched, 0, "an item in hand is not given the touch of an empty hand")
-	TEST_ASSERT_EQUAL(T.used_with, 1, "the entry for an item used on it ran")
-	H.drop_item()
-	test_click(H, T, null)
-	TEST_ASSERT_EQUAL(T.touched, 1, "an empty hand touches it")
-	TEST_ASSERT_EQUAL(T.used_with, 1, "and uses no item on it")
-	own_turf_contents(get_turf(T))
-
-// ---------------------------------------------------------------------------------------------------------------------
 // A turf is something an op can be done at: the surface of a turf is the turf (its loc is an area, which nobody touches).
 // ---------------------------------------------------------------------------------------------------------------------
 

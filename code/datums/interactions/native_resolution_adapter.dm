@@ -81,7 +81,7 @@ GLOBAL_LIST_EMPTY(op_legacy_plans) // interaction type -> /datum/op_plan
 /proc/op_run_legacy(datum/op_cand/C, datum/op_resolution/R, datum/op_result/result)
 	var/datum/interaction/I = C.legacy
 	var/ran = I.attempt(R.actor, R.target, R.held)
-	if(ran == INTERACTION_TRY_RAN || ran == INTERACTION_TRY_PENDING || ran == INTERACTION_TRY_PASS)
+	if(ran == INTERACTION_TRY_RAN || ran == INTERACTION_TRY_PENDING)
 		result.outcome = ACT_COMMITTED
 	else
 		result.outcome = ACT_REFUSED

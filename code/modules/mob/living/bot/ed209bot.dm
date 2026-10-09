@@ -143,7 +143,7 @@ CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
 	to_chat(A.actor, span_notice("You add the helmet to [src]."))
 	return OP_OK
 
-/obj/item/secbot_assembly/ed209_assembly/proc/sensor_added(datum/act/op/A)
+/obj/item/secbot_assembly/ed209_assembly/sensor_added(datum/act/op/A)
 	name = "covered, shielded and sensored frame assembly"
 	item_state = "ed209_prox"
 	icon_state = "ed209_prox"

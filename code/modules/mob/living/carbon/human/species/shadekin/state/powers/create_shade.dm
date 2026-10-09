@@ -16,9 +16,6 @@
 	apply_body_effect(/datum/body_effect/shadekin/create_shade, 20 SECONDS)
 	return OP_OK
 
-/datum/body_effect/shadekin/create_shade, 20 SECONDS)
-	return TRUE
-
 /datum/body_effect/shadekin/create_shade
 	tick_interval = 2 SECONDS
 	name = "Shadekin Shadegen"
