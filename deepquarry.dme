@@ -962,7 +962,6 @@
 #include "code\engine\refs\ownership.dm"
 #include "code\engine\refs\prototypes.dm"
 #include "code\engine\refs\views.dm"
-#include "code\datums\ownership\views.dm"
 #include "code\datums\ownership\registry_types.dm"
 #include "code\engine\refs\shared.dm"
 #include "code\engine\change\delivery.dm"

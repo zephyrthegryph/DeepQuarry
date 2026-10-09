@@ -42,9 +42,9 @@ CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
 	if(!parent)
 		var/mob/living/simple_mob/vore/overmap/P = new parent_mob_type(loc, src)
 		rel_set(src, nameof(parent), P)
-	om_mob_event_setup()
+	observe_parent()
 
-/obj/effect/overmap/visitable/simplemob/proc/om_mob_event_setup()
+/obj/effect/overmap/visitable/simplemob/proc/observe_parent()
 	scanner_desc = parent.scanner_desc
 	observe(parent, /datum/notice/moved, src, then(PROC_REF(on_parent_moved)))
 	skybox_pixel_x = rand(-100,100)
@@ -178,9 +178,9 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/simplemob)
 	if(!parent)
 		var/mob/living/simple_mob/vore/overmap/P = new parent_mob_type(loc, src)
 		rel_set(src, nameof(parent), P)
-	om_mob_event_setup()
+	observe_parent()
 
-/obj/effect/overmap/visitable/ship/simplemob/proc/om_mob_event_setup()
+/obj/effect/overmap/visitable/ship/simplemob/proc/observe_parent()
 	scanner_desc = parent.scanner_desc
 	observe(parent, /datum/notice/moved, src, then(PROC_REF(on_parent_moved)))
 	skybox_pixel_x = rand(-100,100)

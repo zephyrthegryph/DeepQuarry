@@ -112,14 +112,17 @@
 	var/obj/structure/blob/normal/B = allocate(/obj/structure/blob/normal, T)
 	TEST_ASSERT_EQUAL(B.max_integrity, 25, "a normal blob has 25 integrity")
 	TEST_ASSERT_EQUAL(B.get_integrity(), 21, "a normal blob doesn't start at full health")
+	refresh_flush() // the blob draws its look at the refresh at the end of the frame
 	TEST_ASSERT_EQUAL(B.icon_state, "blob", "a healthy blob looks healthy")
 
 	B.adjust_integrity(-6)
 	TEST_ASSERT_EQUAL(B.get_integrity(), 15, "blob damage comes off integrity")
+	refresh_flush() // the blob draws its look at the refresh at the end of the frame
 	TEST_ASSERT_EQUAL(B.icon_state, "blob_damaged", "a blob at 15 or less looks damaged")
 
 	B.adjust_integrity(5)
 	TEST_ASSERT_EQUAL(B.get_integrity(), 20, "pulses heal blob integrity")
+	refresh_flush() // the blob draws its look at the refresh at the end of the frame
 	TEST_ASSERT_EQUAL(B.icon_state, "blob", "a healed blob looks healthy again")
 
 	B.deal_damage(DAMAGE_BLUNT, 4)

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Removed the dead om_* wrappers (examine/moved emitters, handle forwarding, om_run) and banned their names"

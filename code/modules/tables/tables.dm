@@ -97,7 +97,7 @@ CAPABILITIES(/obj/structure/table)
 	op("slam", item(/obj/item/grab), hostile(), label("Slam against table"), when(req(PROC_REF(slam_applies))), then(PROC_REF(slam_face)))
 	op("put_on", item(/obj/item/grab), label("Put on table"), when(req(PROC_REF(person_grabbed))),
 		needs(req(PROC_REF(person_can_go_on), because = PROC_REF(person_refusal))), then(PROC_REF(put_person_on)))
-	op("place", item(/obj/item), label("Place"), priority(OP_PRIORITY_NORMAL - 5),
+	op("place", item(/obj/item), label("Place"), priority(OP_PRIORITY_NORMAL - 5), answers(INTENT_USE, INTENT_ATTACK),
 		needs(req(PROC_REF(has_surface), because = MSG(table/needs_plating)), req(PROC_REF(held_is_carried), because = MSG(table/not_in_hand))),
 		then(PROC_REF(place_held)))
 	op("place_dragged", item(/obj/item), gesture(GESTURE_DRAG), label("Place"),
