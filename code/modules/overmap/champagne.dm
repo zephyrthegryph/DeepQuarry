@@ -61,7 +61,7 @@
 		MSG_OTHERS(span_notice("%U% smashes %T% on [comp]")), \
 		MSG_BLIND(span_notice("You hear glass shattering")))
 	log_and_message_admins("Created a new shuttle [S.name]. [ADMIN_JMP(comp_turf)]", user)
-	after(comp_turf, 1 SECOND, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/voice/Serithi/shuttlehere.ogg', 75, 0))
+	after(comp_turf, 1 SECOND, GLOBAL_PROC_REF(playsound), with = list(comp_turf, 'sound/voice/Serithi/shuttlehere.ogg', 75, 0))
 	consume(src, user)
 
 	return TRUE

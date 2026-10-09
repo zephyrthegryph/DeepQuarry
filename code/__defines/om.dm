@@ -64,7 +64,6 @@
 #define CHANGE_DATUM_A (1<<8)
 #define CHANGE_DATUM_B (1<<9)
 #define CHANGE_DATUM_C (1<<10)
-#define CHANGE_DATUM_D (1<<11)
 
 // Rust -> DM change delivery sources (code/datums/om/native_adapter.dm).
 #define NATIVE_SRC_GAS_EVENT 1
@@ -80,9 +79,6 @@
 
 
 
-/// The key of verb PATH shown under its own NAME and DESC (a renamed verb instance, `new PATH(target, NAME, DESC)`): what
-/// verb_entry(path, name =, desc =) and has_verb() use.
-#define VERB_NAMED(PATH, NAME, DESC) verb_named_key(PATH, NAME, DESC)
 /// verb_source() names: shared sources for verb grants nothing else owns.
 #define VERB_SOURCE_CONFIG "config"
 #define VERB_SOURCE_ADMIN "admin"
@@ -133,23 +129,11 @@
 #define AGG_MAX 6
 #define AGG_CUSTOM 7
 
-// ---- Combinators for checks, effects and derived rows (plain lists).
-// These are macros only so they can appear in var declarations; each is a plain list.
-#define ALL_OF(parts...) list("all", ##parts)
-#define ANY_OF(parts...) list("any", ##parts)
-#define NOT_OF(part) list("not", part)
 /// A parameterised check spec: CHECK(/datum/om/check/in_range, 1). `path` must be a literal type path.
 #define CHECK(path, arg) list(path = arg)
 
-// One-line derived declarations (plain lists; see decl.dm).
-#define FROM_VAR(name) list("var", name)
 #define DERIVE(name, expr, channel) list("derive" = "check", "name" = name, "expr" = expr, "channel" = channel)
-#define DERIVE_SUM(name, over, reader, channel) list("derive" = "sum", "name" = name, "over" = over, "reader" = reader, "channel" = channel)
-#define DERIVE_COUNT(name, over, channel) list("derive" = "count", "name" = name, "over" = over, "channel" = channel)
-#define DERIVE_MAX(name, over, reader, channel) list("derive" = "max", "name" = name, "over" = over, "reader" = reader, "channel" = channel)
 
-// ---- Events (section G). ----
-#define EVENT_VETO 1
 /// The entity world-wide events go to (was SEND_GLOBAL_SIGNAL's target).
 #define OM_WORLD (GLOB.om_world)
 
@@ -174,7 +158,6 @@
 /// F.abort() scopes. FRAME: stop now, nothing idles this frame. REST: stop now, keep the
 /// idles already decided.
 #define OM_ABORT_FRAME 1
-#define OM_ABORT_REST 2
 /// A frame fact in a run_if spec: FACT("alive"), NOT_OF(FACT("in_stasis")).
 #define FACT(name) list(/datum/om/check/fact = name)
 /// /datum/om/pipeline/var/run_mode bits (compiled at boot).
@@ -258,23 +241,14 @@
 // Named relation reads are typed procs on /datum (code/datums/om/relation.dm):
 // M.buckled_to(), A.buckled_mob_list(), M.pulling_target(), ... E.slot_item(slot).
 
-// ---------------------------------------------------------------- periodic work (code/datums/om/periodic.dm)
+// ---------------------------------------------------------------- periodic cadences (code/engine/kernel/cadences.dm)
 
-/// Starts `E`'s periodic work on cadence type `P` (idempotent): it joins the cadence and the kernel steps it.
-#define om_task_periodic(E, P) _om_periodic_start(E, P)
-/// Ends `E`'s periodic work: it leaves its cadence and costs nothing. Does nothing when it isn't running.
-#define om_task_periodic_stop(E) _om_periodic_stop(E)
-/// TRUE while `E` has periodic work on any cadence.
-#define om_task_periodic_running(E) (!isnull((E).periodic_pipe))
 
 /// The source a periodic member holds its cadence membership under (member_join()).
 #define PERIODIC_SOURCE "periodic"
 #define PERIODIC_SLOW /datum/cadence/slow
 #define PERIODIC_SECOND /datum/cadence/second
 #define PERIODIC_FAST /datum/cadence/fast
-#define PERIODIC_PROJECTILES /datum/cadence/continuous/projectiles
-#define PERIODIC_STATUS_EFFECTS /datum/cadence/continuous/status_effects
-#define PERIODIC_THROWING /datum/cadence/continuous/throwing
 
 // ---------------------------------------------------------------- published facts as change channels
 // What S2's reactor keys were is now plain change channels on the entity the fact belongs to;
@@ -313,34 +287,10 @@
 // declared_cache_vars() names. The core nulls the var when the rule fires.
 /// Cleared when any of `bits` is raised on the entity (changed / OM_CHANGED).
 #define CACHE_ON_CHANGE(bits) list("change", bits)
-/// Cleared when an event of `path` (or a subtype) is emitted on the entity.
-#define CACHE_ON_EVENT(path) list("event", path)
-/// Cleared when an edge of relation `path` is added to or removed from the entity.
-#define CACHE_ON_RELATION(path) list("relation", path)
 
 // ---------------------------------------------------------------- declared fields (code/datums/om/fields.dm)
 
-/// Declares field F of type T in one place: the var `T/var/F = D`, its typed setter
-/// `T/proc/set_F(value)` and its registration (`/datum/om/field_def<T>/F`, read by
-/// fields_of()). The setter writes the var and raises channel C, does nothing when the value is
-/// unchanged, and returns TRUE on a change. F is a bare identifier, so a misspelt field in a
-/// setter call or a second declaration is a compile error.
-///
-/// The expansion is deliberately fixed so tools can treat it as tracked without parsing macros:
-/// the var is always named exactly F and its only writer is the proc named exactly `set_F` on T
-/// (the external AST linter tools/dm-health may model an OM_FIELD field as
-/// `tracked(setter=set_F)`; tools/ci/field_write_lint.py enforces it today). Don't change the
-/// naming without updating both.
-#define OM_FIELD(T, F, D, C) T/var/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; changed(src, C); PUBLISH_CHANGE(src, #F); om_field_written(src, #F); return TRUE } };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
 
-/// A declared field whose var holds an entity under the ownership model (doc/rewrite/ownership.md):
-/// an owned child, a relation view, a proto or a shared singleton. Declares `T/var/VT/F = null` and
-/// registers it raising C, with NO generated setter: its only writers are the ownership accessors
-/// (rel_set/own_take/own_clear, rel_set/rel_clear/rel_add/rel_remove, proto_set, shared_set), which
-/// raise C through own_field_changed(), and so do the framework's automatic clears (a view whose
-/// target died, an owned child that left or was disposed of). A periodic declaration or stage gated
-/// on F therefore re-evaluates when the related entity is destroyed, with no guard in the body.
-#define OM_FIELD_VIEW(T, VT, F, C) T/var/VT/F = null;/datum/om/field_def##T/F { of = T; field = #F; channel = C }
 
 
 /// A derived (read-only) field: `T/proc/F()` computes it from its declared INPUTS, a list of the

@@ -1,3 +1,6 @@
+/// Returned by cook_loop() when the loop is over.
+#define MICROWAVE_LOOP_STOP "__loop_stop"
+
 #define MICROWAVE_FLAGS (OPENCONTAINER | NOREACT)
 #define MICROWAVE_NORMAL 0
 #define MICROWAVE_MUCK 1
@@ -467,7 +470,7 @@ TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 	loop_type = type
 	loop_cycles = cycles
 	loop_wait = max(12 - 2 * efficiency, 2)
-	if(cook_loop() != REPEAT_STOP)
+	if(cook_loop() != MICROWAVE_LOOP_STOP)
 		set_loop_running(TRUE)
 
 /// One cook-loop cycle (every() while loop_running).
@@ -475,7 +478,7 @@ TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 	if((broken_now()) && loop_type == MICROWAVE_PRE)
 		set_loop_running(FALSE)
 		broke()
-		return REPEAT_STOP
+		return MICROWAVE_LOOP_STOP
 
 	if(loop_cycles <= 0 || !length(cookingContents()))
 		switch(loop_type)
@@ -489,7 +492,7 @@ TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 			if(MICROWAVE_PRE)
 				begin_cook_loop(MICROWAVE_NORMAL, 10)
 				return
-		return REPEAT_STOP
+		return MICROWAVE_LOOP_STOP
 
 	loop_cycles--
 

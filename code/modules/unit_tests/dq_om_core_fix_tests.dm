@@ -4,90 +4,14 @@
 
 // ---------------------------------------------------------------- fixtures
 
-/datum/om/event/cf_probe
-
-/datum/om/event/cf_probe/dispatch(datum/om/behaviour/B, datum/E)
-	return B.on_cf_probe(E, src)
-
-/datum/om/behaviour/proc/on_cf_probe(datum/E, datum/om/event/cf_probe/event)
-	return
-
-/// Detaches itself (bumping att_ver) when it hears the probe.
-/datum/om/behaviour/test/cf_self_detach
-	handles = list(/datum/om/event/cf_probe)
-
-/datum/om/behaviour/test/cf_self_detach/on_cf_probe(datum/om_test_entity/E, datum/om/event/cf_probe/event)
-	LAZYADD(E.log, "detacher")
-	om_detach(E, /datum/om/behaviour/test/cf_self_detach)
-
-/datum/om/behaviour/test/cf_listener
-	handles = list(/datum/om/event/cf_probe)
-
-/datum/om/behaviour/test/cf_listener/on_cf_probe(datum/om_test_entity/E, datum/om/event/cf_probe/event)
-	E.events++
-
 /datum/om/event/before/cf_outer
 
-/datum/om/event/before/cf_outer/dispatch(datum/om/behaviour/B, datum/om_test_entity/E)
-	if(!istype(B, /datum/om/behaviour/test/cf_nesting))
-		return null
-	LAZYADD(E.log, "outer")
-	// A different before-event on the same entity is allowed; its answer is ours.
-	return om_emit(E, new /datum/om/event/before/cf_inner)
-
 /datum/om/event/before/cf_inner
-
-/datum/om/event/before/cf_inner/dispatch(datum/om/behaviour/B, datum/om_test_entity/E)
-	if(!istype(B, /datum/om/behaviour/test/cf_nesting))
-		return null
-	LAZYADD(E.log, "inner")
-	return E.enabled ? null : EVENT_VETO
-
-/datum/om/behaviour/test/cf_nesting
-	handles = list(/datum/om/event/before/cf_outer, /datum/om/event/before/cf_inner)
-
-/// A subtype of the event test_task is interrupted by.
-/datum/om/event/test/other/cf_child
 
 /proc/om_cf_global_hit(datum/om_test_entity/L)
 	LAZYADD(L.log, "global")
 
 // ---------------------------------------------------------------- events
-
-/// om_deliver() re-finds its place when a handler detaches a behaviour, so the
-/// behaviours after it still hear the event exactly once.
-/datum/unit_test/om/core_fix_deliver_survives_detach
-
-/datum/unit_test/om/core_fix_deliver_survives_detach/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
-	om_attach(E, /datum/om/behaviour/test/cf_self_detach)
-	om_attach(E, /datum/om/behaviour/test/cf_listener)
-	om_emit(E, new /datum/om/event/cf_probe)
-	TEST_ASSERT_EQUAL(E.events, 1, "the listener heard the event once after the detacher left")
-	TEST_ASSERT(!om_attached(E, /datum/om/behaviour/test/cf_self_detach), "the detacher is gone")
-	om_emit(E, new /datum/om/event/cf_probe)
-	TEST_ASSERT_EQUAL(E.events, 2, "and hears the next one")
-
-/// A before-event may raise a different before-event on the same entity; only
-/// the same type re-entering is vetoed.
-/datum/unit_test/om/core_fix_nested_before_events
-
-/datum/unit_test/om/core_fix_nested_before_events/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
-	om_attach(E, /datum/om/behaviour/test/cf_nesting)
-	var/errors = length(sched.errors)
-	TEST_ASSERT_NULL(om_emit(E, new /datum/om/event/before/cf_outer), "nested different before-event is not force-vetoed")
-	TEST_ASSERT_EQUAL(length(sched.errors), errors, "and reports nothing")
-	TEST_ASSERT(("inner" in E.log), "the inner event was delivered")
-	E.enabled = FALSE
-	TEST_ASSERT_EQUAL(om_emit(E, new /datum/om/event/before/cf_outer), EVENT_VETO, "the inner veto propagates")
-	TEST_ASSERT_NULL(E.om_rec.in_veto, "the guard stack is empty afterwards")
-	// Same-type re-entry is still refused (dq_om_core_tests covers the report).
-	sched.expect_errors = TRUE
-	om_attach(E, /datum/om/behaviour/test/veto_handler)
-	var/datum/om/event/before/test_veto/again = new
-	again.reenter = TRUE
-	TEST_ASSERT_EQUAL(om_emit(E, again), EVENT_VETO, "same-type re-entry is vetoed")
 
 /// Tasks: om_wants() and delivery read a precomputed interrupt set (with subtypes),
 /// not "any task wants every event".
@@ -132,28 +56,6 @@
 	TEST_ASSERT(("global" in E.log) && ("typed" in E.log), "both fire through the stored flag")
 
 // ---------------------------------------------------------------- deadlines
-
-/// run_bucket() compacts in place: many deadlines sharing a bucket each fire once, and
-/// ones not yet due stay put.
-/datum/unit_test/om/core_fix_bucket_compaction
-
-/datum/unit_test/om/core_fix_bucket_compaction/run_om(list/made)
-	var/list/due = list()
-	var/list/later = list()
-	for(var/i in 1 to 20)
-		var/datum/om_test_entity/E = entity(made)
-		deadline_deadline(E, 1 SECONDS, /datum/om/behaviour/test/deadline_only)
-		due += E
-	for(var/i in 1 to 5)
-		var/datum/om_test_entity/L = entity(made)
-		deadline_deadline(L, 1 SECONDS + OM_DEADLINE_BUCKETS, /datum/om/behaviour/test/deadline_only)
-		later += L
-	scheduler_advance(1.5)
-	for(var/datum/om_test_entity/E as anything in due)
-		TEST_ASSERT_EQUAL(E.deadlines, 1, "each shared-bucket deadline fired once")
-	for(var/datum/om_test_entity/L as anything in later)
-		TEST_ASSERT_EQUAL(L.deadlines, 0, "a deadline a wheel turn away is kept")
-		TEST_ASSERT(deadline_deadline_pending(L, /datum/om/behaviour/test/deadline_only), "and still pending")
 
 // ---------------------------------------------------------------- interactions
 

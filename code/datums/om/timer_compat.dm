@@ -11,8 +11,6 @@
 
 
 
-/proc/om_callable(datum/target, proc_ref, ...)
-	return deferred_call(arglist(args))
 
 /proc/om_run(list/spec, ...)
 	return deferred_run(arglist(args))

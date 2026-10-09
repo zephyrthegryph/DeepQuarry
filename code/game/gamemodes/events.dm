@@ -177,3 +177,8 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 			if(prob(botEmagChance))
 				emag_target(bot, 1)
 */
+
+/// after() target: a command announcement (for delayed event announcements; use the
+/// global owner, since no entity owns a round event).
+/proc/delayed_command_announcement(message, new_title, new_sound)
+	GLOB.command_announcement.Announce(message, new_title, new_sound = new_sound)

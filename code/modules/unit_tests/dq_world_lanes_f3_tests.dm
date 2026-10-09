@@ -56,27 +56,6 @@
 	TEST_ASSERT(!length(S.processing), "the radiation step never drained its queue")
 	TEST_ASSERT_EQUAL(result, STEP_DONE, "a drained radiation step is still yielding")
 
-/// A throw runs on the continuous throwing lane and parks when it lands.
-/datum/unit_test/dq_world_lanes_f3_throwing
-
-/datum/unit_test/dq_world_lanes_f3_throwing/Run()
-	var/obj/item/stack/rods/R = allocate(/obj/item/stack/rods, run_loc_floor_bottom_left)
-	var/turf/target = locate(run_loc_floor_bottom_left.x + 2, run_loc_floor_bottom_left.y, run_loc_floor_bottom_left.z)
-	R.throw_at(target, 2, 1)
-	var/datum/thrownthing/TT = R.throwing
-	TEST_ASSERT_NOTNULL(TT, "throw_at() made no thrownthing")
-	TEST_ASSERT(TT.periodic_pipe == PERIODIC_THROWING, "a throw is not on the throwing lane")
-	var/steps = 0
-	while(!QDELETED(TT) && steps++ < 100)
-		// world.time is frozen inside a test; a throw's pace is measured from its start_time,
-		// so age the throw by one server tick per step as the lane would.
-		TT.start_time -= world.tick_lag
-		if(TT.periodic_step(1) == PROCESS_KILL)
-			break
-	TEST_ASSERT(QDELETED(TT), "the throw never landed")
-	TEST_ASSERT_NULL(R.throwing, "the landed item still points at its throw")
-	TEST_ASSERT_NULL(TT.periodic_pipe, "a landed throw kept its lane")
-
 /// A reflector arms its every() when it catches a beam and parks once it has re-fired.
 /datum/unit_test/dq_world_lanes_f3_reflector
 

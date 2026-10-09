@@ -44,7 +44,7 @@
 	// The kernel's own infrastructure systems (the inbox, requests, jobs) and the Life sweep run in the test graph while the test owns the
 	// clock; a sequence's sweep runs as in the game run level.
 	for(var/datum/work_item/W as anything in K.work_all)
-		// The periodic cadences (PERIODIC_SLOW...) are stepped on the test clock too, so an om_task_periodic() member ticks under test_time().
+		// The periodic cadences (PERIODIC_SLOW...) are stepped on the test clock too, so an cadence_start() member ticks under test_time().
 		if((W.owner_type in GLOB.kernel_test_systems) || istype(W, /datum/work_item/cadence))
 			W.test_owned = TRUE
 			if(istype(W, /datum/work_item/sequence))
@@ -61,7 +61,7 @@
 	K.work_dirty = TRUE
 	return sched
 
-GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/requests, /datum/system/kernel_jobs, /datum/sequence/life))
+GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/requests, /datum/system/kernel_jobs, /datum/sequence/life, /datum/system/projectile_steps, /datum/system/point_steps, /datum/system/throw_steps, /datum/system/status_priority, /datum/system/status_fast, /datum/system/status_normal))
 
 /// Hands the clock back: the live scheduler is current again, and the infrastructure systems' items return to the live graph.
 /proc/kernel_test_end()

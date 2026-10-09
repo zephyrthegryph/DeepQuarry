@@ -69,7 +69,7 @@
 	else
 		to_chat(user, span_notice("Blood found on [A]. Analysing..."))
 		for(var/blood in blood_dna)
-			after(user, 1.5 SECONDS, TYPE_PROC_REF(/datum, om_chat), with = list(span_notice("Blood type: [blood_dna[blood]]\nDNA: [blood]")))
+			after(user, 1.5 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(user, span_notice("Blood type: [blood_dna[blood]]\nDNA: [blood]")))
 
 /datum/data/pda/utility/scanmode/halogen
 	base_name = "Halogen Counter"

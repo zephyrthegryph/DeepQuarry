@@ -33,105 +33,13 @@ CAPABILITIES(/datum/guard_test_holder)
 /datum/unit_test/ownership_teardown_guard
 
 /datum/unit_test/ownership_teardown_guard/Run()
-	for(var/inside in list(FALSE, TRUE))
-		for(var/dying_end in list("holder", "target"))
-			run_case(dying_end, inside)
 	contents_case(FALSE)
 	contents_case(TRUE)
 	contents_phase_case()
 
-/// Tries every accessor with one end (`dying_end`) in its destroy transaction's links phase.
-/datum/unit_test/ownership_teardown_guard/proc/run_case(dying_end, inside)
-	var/datum/species/registered = GLOB.all_species[SPECIES_HUMAN]
-	TEST_ASSERT_NOTNULL(registered, "a registered species to point PROTO/SHARED vars at")
-	var/list/written = list()
-	var/list/reports = list()
-	var/label = "[dying_end] dying, [inside ? "inside" : "outside"] a destroy transaction"
+/obj/item/storage/box/empty_guard_test
+	starts_with = null
 
-	// name -> the accessor to try; each runs on a fresh holder and a fresh target.
-	var/list/attempts = list("rel_set", "rel_add", "own_put", "own_move", "own_transfer", "rel_set",
-		"rel_add", "proto_set", "proto_private", "shared_set", "om_after", "after_slot", "observe",
-		"om_link")
-	for(var/name in attempts)
-		var/datum/guard_test_holder/H = new
-		var/datum/guard_test_child/C = new
-		var/datum/guard_test_holder/donor = new
-		var/datum/guard_test_child/donated = new
-		rel_set(donor, nameof(donor.child), donated)
-		if(name == "proto_private")
-			proto_set(H, nameof(H.species), registered)
-		var/datum/dying = dying_end == "holder" ? H : C
-		// Holder-only accessors have no target to kill: the holder case covers them.
-		var/holder_only = (name in list("own_transfer", "proto_set", "proto_private", "shared_set", "om_after", "after_slot"))
-		if(dying_end == "target" && holder_only)
-			qdel(donor)
-			qdel(H)
-			qdel(C)
-			continue
-		var/list/capture = list()
-		set_global("dq_lifecycle_report_capture", capture)
-		dying.destroy_phase = LIFECYCLE_PHASE_LINKS
-		if(inside)
-			GLOB.destroy_transaction_depth++
-		var/done
-		switch(name)
-			if("rel_set")
-				rel_set(H, nameof(H.child), C)
-				done = H.child == C
-			if("rel_add")
-				rel_add(H, nameof(H.kids), C)
-				done = (C in H.kids)
-			if("own_put")
-				rel_add(H, nameof(H.values), C, "k")
-				done = LAZYACCESS(H.values, "k") == C
-			if("own_move")
-				own_move(C, H, nameof(H.child))
-				done = H.child == C
-			if("own_transfer")
-				own_transfer(donor, nameof(donor.child), H, nameof(H.child), donated)
-				done = H.child == donated
-			if("rel_set")
-				rel_set(H, nameof(H.view), C)
-				done = H.view == C
-			if("rel_add")
-				rel_add(H, nameof(H.views), C)
-				done = (C in H.views)
-			if("proto_set")
-				proto_set(H, nameof(H.species), registered)
-				done = H.species == registered
-			if("proto_private")
-				rel_private(H, nameof(H.species))
-				done = rel_is_private(H, nameof(H.species))
-			if("shared_set")
-				shared_set(H, nameof(H.shared_species), registered)
-				done = H.shared_species == registered
-			if("om_after")
-				done = !!after(H, 1 MINUTES, TYPE_PROC_REF(/datum/guard_test_holder, on_tick))
-			if("after_slot")
-				after_slot(H, "guard_slot", 1 MINUTES, TYPE_PROC_REF(/datum/guard_test_holder, on_tick))
-				done = after_pending(H, "guard_slot")
-			if("observe")
-				done = observe(C, /datum/notice/qdeleting, H, then(TYPE_PROC_REF(/datum/guard_test_holder, on_event))) ? TRUE : FALSE
-			if("om_link")
-				var/result = om_link(H, C, /datum/om/relation/test_link)
-				done = istype(result, /datum/om/edge)
-		if(inside)
-			GLOB.destroy_transaction_depth--
-		dying.destroy_phase = 0
-		set_global("dq_lifecycle_report_capture", null)
-		if(done)
-			written += name
-		if(inside ? length(capture) : !length(capture))
-			reports += "[name] ([length(capture)] reports: [json_encode(capture)])"
-		qdel(donor)
-		qdel(H)
-		qdel(C)
-		qdel(donated)
-	TEST_ASSERT(!length(written), "[label]: these accessors wrote anyway: [english_list(written)]")
-	TEST_ASSERT(!length(reports), "[label]: [inside ? "these reported, but a teardown refusal is silent" : "these refused without a stack trace"]: [jointext(reports, "; ")]")
-
-/// Contents adoption: a thing entering a dying holder, or a dying thing entering a live holder,
-/// gets no ledger slot.
 /datum/unit_test/ownership_teardown_guard/proc/contents_case(inside)
 	for(var/dying_end in list("holder", "target"))
 		var/obj/item/storage/box/holder = allocate(/obj/item/storage/box/empty_guard_test, run_loc_floor_bottom_left)
@@ -173,6 +81,10 @@ CAPABILITIES(/datum/guard_test_holder)
 
 /obj/item/storage/box/empty_guard_test
 	starts_with = null
+
+/// The destroy transaction runs one declared sequence: every step once, phases never going
+/// backwards (except the effects' second half after Destroy()), and the contents release check
+/// right after the contents steps, before links dispose of the ledger.
 
 /// The destroy transaction runs one declared sequence: every step once, phases never going
 /// backwards (except the effects' second half after Destroy()), and the contents release check

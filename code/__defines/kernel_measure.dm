@@ -17,7 +17,7 @@
 #define KM_DEPTH_BIN_WIDTH 5
 
 /// Systems the tables can hold. A system that does not fit is charged to KM_SYS_OTHER.
-#define KM_MAX_SYSTEMS 192
+#define KM_MAX_SYSTEMS 208
 /// Ticks the flight recorder keeps (60 s at 20 fps).
 #define KM_RING_LEN 1200
 /// Systems named in a tick record and its overrun log line.

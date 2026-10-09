@@ -197,7 +197,7 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 					dq_lifecycle_leave_own_slot(D) // slot-exit hooks see live back-refs
 				dq_lifecycle_clear_links(D)
 			if(DESTROY_STEP_TEARDOWN)
-				// Periodic work (om_task_periodic()), client screens, walk() loops, then the
+				// Periodic work (cadence_start()), client screens, walk() loops, then the
 				// object-model teardown: OM timers, hooks, tasks, deadlines, grants and
 				// behaviours (entity_teardown_rest()) and OM handles. /datum/Destroy() (phase 7) only
 				// clears the tag, closes tgui windows and does reference-tracking bookkeeping.
@@ -301,12 +301,12 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 /// type overrides it today; the default does nothing. Must not sleep.
 // ---- Phase 5: teardown ----
 
-/// Ends any periodic work (om_task_periodic(), code/datums/om/periodic.dm),
+/// Ends any periodic work (cadence_start(), code/engine/kernel/cadences.dm),
 /// releases HUD/screen objects from any client they're shown to, stops walk()
 /// loops, and tears down the datum's object-model state.
 /proc/dq_lifecycle_teardown(datum/D)
 	if(D.periodic_pipe)
-		om_task_periodic_stop(D)
+		cadence_stop(D)
 	if(isatom(D))
 		var/atom/AT = D
 		AT.dq_lifecycle_release_screen()

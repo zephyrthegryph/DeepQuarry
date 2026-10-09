@@ -23,7 +23,7 @@
 //   om_world_when(owner, condition, proc, lane)       a COND_* condition
 //   om_world_on_rate(owner, model, cmp, level, proc, lane) a rate model crossing a level
 //
-// Periodic work is not a world watch: it is a periodic lane (om_task_periodic(),
+// Periodic work is not a world watch: it is a periodic lane (cadence_start(),
 // §4.10) or a clock (§4.6).
 
 /// OM lane -> Rust wake lane (0 urgent, drained in full; 1 normal; 2 background).

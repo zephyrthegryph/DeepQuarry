@@ -12,7 +12,7 @@
 				add_trait(projectile, TRAIT_NODROP, "interim_cap_projectile_cleanup")
 				TEST_ASSERT(projectile.loc.release_refusal(projectile, user), "the actual sticky cap refuses ordinary removal")
 			var/handle = entity_handle(projectile)
-			projectile.periodic_step()
+			projectile.projectile_step()
 			TEST_ASSERT(QDELETED(projectile), "the existing nullspace retirement consumes this spent cap immediately")
 			TEST_ASSERT_NULL(resolve_handle(handle), "the actual consumed projectile identity no longer resolves")
 			TEST_ASSERT_NULL(user.get_active_hand(), "retirement leaves the actual inventory hand vacant")

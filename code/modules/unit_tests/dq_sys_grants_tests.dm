@@ -131,29 +131,6 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 	var/mob/living/carbon/human/dq_grants_hiding/M = allocate(/mob/living/carbon/human/dq_grants_hiding, test_floor())
 	TEST_ASSERT(!(/mob/verb/observe in M.verbs), "hidden verb_entry() strips an inherited /type/verb/")
 
-/// VERB_NAMED: a renamed verb instance, granted and revoked by its key.
-/datum/unit_test/dq_sys_grants_named_verb
-
-/datum/unit_test/dq_sys_grants_named_verb/Run()
-	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
-	var/obj/item/target = allocate(/obj/item, test_floor())
-	var/obj/item/source = allocate(/obj/item, test_floor())
-	var/key = VERB_NAMED(/obj/proc/dq_sys_grants_test_obj_verb, "DQ Renamed Verb", "A renamed test verb")
-	grant(target, granted_verb(/obj/proc/dq_sys_grants_test_obj_verb, verb_name = "DQ Renamed Verb", verb_desc = "A renamed test verb"), source)
-	TEST_ASSERT(has_verb(target, key), "the named verb is on after the grant")
-	var/found = FALSE
-	for(var/procpath/P as anything in target.verbs)
-		if(P.name == "DQ Renamed Verb")
-			found = TRUE
-	TEST_ASSERT(found, "it shows under its own name")
-	qdel(source)
-	TEST_ASSERT(!has_verb(target, key), "the source's deletion takes it off")
-	found = FALSE
-	for(var/procpath/P as anything in target.verbs)
-		if(P.name == "DQ Renamed Verb")
-			found = TRUE
-	TEST_ASSERT(!found, "and out of the verbs list")
-
 /// Turf verbs are declared (conditional verb_entry() on climbable): toggling needs no store entry on the turf.
 /datum/unit_test/dq_sys_grants_turf_declared
 

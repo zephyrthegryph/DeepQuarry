@@ -59,9 +59,6 @@
 	var/list/ui
 	/// Global observer mask for this type (services).
 	var/service_mask = 0
-	/// Channels of this type's declared periodic fields: a raise re-evaluates its declarations at once
-	/// (code/datums/sys/periodic.dm).
-	var/sys_periodic_mask = 0
 	/// Cross-entity derived inputs ("rel.field", fields.dm): stride 2, relation var name, field name.
 	var/list/derived_relays
 	/// The channels of those relation vars: a raise resubscribes (scheduler_field_derived_relink()).

@@ -1,4 +1,4 @@
-// Behaviour of the slow work that used to be om_task_periodic()/periodic_step(): each type's work starts when
+// Behaviour of the slow work that used to be cadence_start()/periodic_step(): each type's work starts when
 // its trigger happens, runs on its interval, and stops itself when there is nothing left to do.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)

@@ -4,8 +4,6 @@
 	parent_type = /datum/scheduled_behaviour/internal/edge_refresh
 	abstract_type = /datum/om/behaviour/internal/edge_refresh
 
-/proc/om_link(datum/source, datum/target, rel_path)
-	return relation_link(arglist(args))
 
 /proc/om_unlink(datum/source, datum/target, rel_path)
 	return relation_unlink(arglist(args))
@@ -16,8 +14,6 @@
 
 
 
-/proc/om_z_generation_bump(z)
-	return relation_z_generation_bump(arglist(args))
 
 
 

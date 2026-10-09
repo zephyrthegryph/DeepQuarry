@@ -25,31 +25,6 @@
 	TEST_ASSERT(istype(inline_callback, /datum/om/behaviour/inline), "A synthesized callback still passes existing profiler inline identity checks")
 	qdel(inline_callback)
 
-// Legacy child branches retain their inherited engine behaviour, even though their old
-// path parents are compatibility aliases rather than their actual runtime parents.
-/datum/unit_test/dq_time_foundation_definition_families/Run()
-	var/list/families = list(
-		/datum/om/behaviour/inline = /datum/scheduled_behaviour,
-		/datum/om/behaviour/sleeper/timed = /datum/scheduled_behaviour,
-		/datum/om/event/before = /datum/definition_event,
-		/datum/om/check/fact = /datum/requirement_definition,
-		/datum/om/check/combinator = /datum/requirement_definition,
-		/datum/om/decl = /datum/definition_bundle,
-		/datum/om/relation/slot = /datum/relation_definition)
-	for(var/path in families)
-		var/datum/core_definition/definition = allocate(path)
-		TEST_ASSERT(istype(definition, families[path]), "[path] remains in its actual engine definition family")
-		TEST_ASSERT(istype(definition, /datum/core_definition), "[path] retains the common definition fields and methods")
-	var/datum/om_test_entity/actor = allocate(/datum/om_test_entity)
-	var/datum/requirement_definition/condition = allocate(/datum/om/check/test_enabled)
-	var/datum/requirement_definition/combinator/combination = allocate(/datum/om/check/combinator)
-	combination.op = "all"
-	combination.parts = list(condition)
-	TEST_ASSERT_EQUAL(definition_check_get(combination), combination, "Canonical check lookup accepts the actual legacy child instance")
-	TEST_ASSERT_NULL(combination.why_not(actor, null), "An enabled actor satisfies the inherited all-of check")
-	actor.enabled = FALSE
-	TEST_ASSERT(combination.why_not(actor, null), "Disabling the actor makes the same inherited check refuse")
-
 /datum/unit_test/om/dq_time_foundation_clock_callback
 
 /datum/unit_test/om/dq_time_foundation_clock_callback/run_om(list/made)

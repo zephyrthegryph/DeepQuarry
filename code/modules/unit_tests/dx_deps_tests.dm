@@ -236,18 +236,18 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
 /datum/unit_test/dx_deps_should_run_wake/Run()
 	var/obj/cap_fixture/dx_deps_laser/F = allocate(/obj/cap_fixture/dx_deps_laser)
 	refresh_flush()
-	TEST_ASSERT(!om_task_periodic_running(F), "a full pointer does not recharge")
+	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "a full pointer does not recharge")
 	var/draws = F.draw_calls
 	var/checks = F.should_run_calls
 	F.set_energy(3)
 	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_RUN | DEP_UI, "energy is read by should_run() and the UI only")
 	refresh_flush()
-	TEST_ASSERT(om_task_periodic_running(F), "the drop woke the recharge")
+	TEST_ASSERT((!isnull(F.periodic_pipe)), "the drop woke the recharge")
 	TEST_ASSERT_EQUAL(F.should_run_calls, checks + 1, "should_run() re-checked once")
 	TEST_ASSERT_EQUAL(F.draw_calls, draws, "draw() was not re-run for an energy change")
 	F.set_energy(8)
 	refresh_flush()
-	TEST_ASSERT(!om_task_periodic_running(F), "a full pointer parks again")
+	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "a full pointer parks again")
 	// A change that reaches only draw().
 	checks = F.should_run_calls
 	F.set_pointing(TRUE)
