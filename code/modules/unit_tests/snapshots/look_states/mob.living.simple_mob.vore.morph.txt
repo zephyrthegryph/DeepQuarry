@@ -1,0 +1,2 @@
+/mob/living/simple_mob/vore/morph/dominated_prey runtime: OWN: refused _own_put(hud_list): /mob/living/simple_mob/vore/morph/dominated_prey -> /image; /mob/living/simple_mob/vore/morph/dominated_prey is being destroyed (phase scrub)%//%["code/engine/refs/lifecycle_links.dm",54]%//%
+
