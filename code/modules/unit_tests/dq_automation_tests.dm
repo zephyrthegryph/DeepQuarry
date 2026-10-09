@@ -93,9 +93,9 @@
 	H.injure(INJURY_CELLULAR, 20, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 	// Brute tank only: trauma mends, burns and cellular damage don't.
-	pack.brutecharge = 60
-	pack.burncharge = 0
-	pack.toxcharge = 0
+	pack.set_brutecharge(60)
+	pack.set_burncharge(0)
+	pack.set_toxcharge(0)
 	var/physical = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	var/thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
 	var/genetic = H.injury_load(INJURY_CATEGORY_GENETIC)
@@ -106,8 +106,8 @@
 	TEST_ASSERT(pack.brutecharge < 60, "treating should drain the brute tank")
 
 	// Burn tank only: burns mend, trauma doesn't.
-	pack.brutecharge = 0
-	pack.burncharge = 60
+	pack.set_brutecharge(0)
+	pack.set_burncharge(60)
 	physical = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
 	pack.treat_demand(H, 5)
@@ -116,7 +116,7 @@
 	TEST_ASSERT_EQUAL(H.injury_load(INJURY_CATEGORY_GENETIC), genetic, "no medigun mode mends cellular damage")
 
 	// Empty tanks treat nothing.
-	pack.burncharge = 0
+	pack.set_burncharge(0)
 	TEST_ASSERT_EQUAL(pack.treat_demand(H, 5), 0, "empty tanks should treat nothing")
 
 #endif

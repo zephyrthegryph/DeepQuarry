@@ -91,27 +91,24 @@ CAPABILITIES(/obj/item/gun/energy/particle)
 	else if (severity <= 60) //50% chance of fizzling and wasting a shot
 		act_message(user, src, MSG_SELF(span_danger("You fire %T%, but the shot fizzles in the air!")), \
 			MSG_OTHERS(span_warning("%U% fires %T%, but the shot fizzles in the air!")))
-		power_supply.charge -= charge_cost
+		power_supply.set_charge(power_supply.charge - charge_cost)
 		playsound(src, fire_sound, 100, 1)
 		fx_sparks(T, 2)
-		update_icon()
 	else if (severity <= 80) //20% chance of shorting out and emptying the cell
 		act_message(user, src, MSG_SELF(span_danger("You pull the trigger, but %T% shorts out!")), \
 			MSG_OTHERS(span_warning("%U% pulls the trigger, but %T% shorts out!")))
-		power_supply.charge = 0
+		power_supply.set_charge(0)
 		fx_sparks(T, 2)
-		update_icon()
 	else if (severity <= 90) //10% chance of breaking the gun
 		act_message(user, src, MSG_SELF(span_danger("You pull the trigger, but %T% bursts into a shower of sparks!")), \
 			MSG_OTHERS(span_warning("%U% pulls the trigger, but %T% erupts in a shower of sparks!")))
 		fx_sparks(T, 2)
-		power_supply.charge = 0
-		power_supply.maxcharge = 1 //just to avoid div/0 runtimes
+		power_supply.set_charge(0)
+		power_supply.set_maxcharge(1) //just to avoid div/0 runtimes
 		power_supply.desc += " It seems to be burnt out!"
 		desc += " The casing is covered in scorch-marks."
 		fire_delay += fire_delay // even if you swap out the cell for a good one, the gun's cluckety-clucked.
-		charge_cost += charge_cost
-		update_icon()
+		set_charge_cost(charge_cost + charge_cost)
 	else if (severity <= 150) // 10% chance of exploding
 		act_message(user, src, MSG_SELF(span_danger("%T% explodes!")), MSG_OTHERS(span_danger("%U% pulls the trigger, but %T% explodes!")))
 		log_and_message_admins("blew themself up with a particle gun.", user)

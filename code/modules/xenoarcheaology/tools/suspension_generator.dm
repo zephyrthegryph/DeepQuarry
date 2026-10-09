@@ -32,12 +32,12 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 /// Holds its field (draining its cell); runs while it has one (declared).
 /obj/machinery/suspension_gen/proc/work_step(datum/act/timer/A)
 	if(suspension_field)
-		cell.charge -= power_use
+		cell.set_charge(cell.charge - power_use)
 
 		var/turf/T = get_turf(suspension_field)
 		for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
 			M.status_at_least(STAT_WEAKENED, 3)
-			cell.charge -= power_use
+			cell.set_charge(cell.charge - power_use)
 			if(prob(5))
 				to_chat(M, span_warning("[pick("You feel tingly","You feel like floating","It is hard to speak","You can barely move")]."))
 

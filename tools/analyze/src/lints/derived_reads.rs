@@ -270,9 +270,9 @@ fn helper_name(name: &str) -> bool {
         .is_match(name)
 }
 
-/// Whether a proc's body is read after parsing (the rest are kept without a body, to save memory).
-fn keeps_body(name: &str) -> bool {
-    name == "derived" || name == "reactions" || proc_kind(name).is_some() || name.starts_with("derive_") || helper_name(name)
+/// Every proc keeps its body: a draw's reads include those of the procs it calls (`drawn_helper_reads`), so any proc may be a helper.
+fn keeps_body(_name: &str) -> bool {
+    true
 }
 
 /// Whether any rule, generator or fix reads a proc of this name from the model: the reactive kinds,
@@ -1087,6 +1087,76 @@ pub(crate) fn generated_for(tree: &Tree, files: &[&SourceFile]) -> String {
     generated_text(&Model::get(tree, files), &crate::sem::gen::test_only_types(tree))
 }
 
+/// The names an unscoped call (`name(`, `src.name(`) in a proc body invokes. `..()` and `obj.name()` are not named.
+fn called_names(proc: &Proc) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for (_, line) in &proc.body {
+        let text = py_lstrip(line);
+        if text.starts_with('#') {
+            continue;
+        }
+        for m in pat!(r"(?<![\w.:/])(?:src\.)?([A-Za-z_]\w*)\s*\(").captures_iter(text) {
+            let n = m.s(1).to_string();
+            if !out.contains(&n) {
+                out.push(n);
+            }
+        }
+    }
+    out
+}
+
+/// A draw (or hidden_verbs) reads what the procs it calls read, on its own type and its parents, transitively: the reads of a callee
+/// belong to the drawn type; an override of a callee on a subtype is a read of that subtype (the call is virtual). The walk visits each
+/// proc once, so a recursive helper ends. Names are matched by proc name, so a read is over-approximated, never missed.
+fn drawn_helper_reads(model: &Model, per_owner: &mut BTreeMap<String, BTreeMap<(String, String), Vec<String>>>) {
+    let mut by_name: HashMap<&str, Vec<&Proc>> = HashMap::new();
+    for p in &model.procs {
+        if p.owner == "/" || starts_any(&p.rel, GENERATED_SKIP_DIRS) || p.rel == GENERATED_REL || p.owner.starts_with("/datum/capability") {
+            continue;
+        }
+        by_name.entry(p.name.as_str()).or_default().push(p);
+    }
+    for d in &model.procs {
+        if proc_kind(&d.name) != Some("drawn")
+            || d.owner == "/"
+            || starts_any(&d.rel, GENERATED_SKIP_DIRS)
+            || d.rel == GENERATED_REL
+            || d.owner.starts_with("/datum/capability")
+        {
+            continue;
+        }
+        let holder_chain = chain(&d.owner);
+        let mut seen: HashSet<(String, usize)> = HashSet::new();
+        seen.insert((d.rel.clone(), d.start));
+        let mut queue: Vec<&Proc> = vec![d];
+        let mut reached: Vec<&Proc> = Vec::new();
+        while let Some(p) = queue.pop() {
+            for callee in called_names(p) {
+                for q in by_name.get(callee.as_str()).map(|v| v.as_slice()).unwrap_or(&[]) {
+                    let above = holder_chain.contains(&q.owner);
+                    if !above && !chain(&q.owner).contains(&d.owner) {
+                        continue;
+                    }
+                    if seen.insert((q.rel.clone(), q.start)) {
+                        queue.push(q);
+                        reached.push(q);
+                    }
+                }
+            }
+        }
+        for q in reached {
+            let holder = if holder_chain.contains(&q.owner) { d.owner.clone() } else { q.owner.clone() };
+            let known = model.union(&model.vars, &holder);
+            let slot = per_owner.entry(holder).or_default().entry(("drawn".to_string(), String::new())).or_default();
+            for (name, _) in body_reads(q, &known) {
+                if !slot.contains(&name) {
+                    slot.push(name);
+                }
+            }
+        }
+    }
+}
+
 fn generated_text(model: &Model, test_types: &BTreeSet<String>) -> String {
     // owner -> (kind, derive name or "") -> vars
     let mut per_owner: BTreeMap<String, BTreeMap<(String, String), Vec<String>>> = BTreeMap::new();
@@ -1127,6 +1197,7 @@ fn generated_text(model: &Model, test_types: &BTreeSet<String>) -> String {
             }
         }
     }
+    drawn_helper_reads(model, &mut per_owner);
     // owner -> handler -> reads
     let mut reaction_slots: BTreeMap<String, BTreeMap<&'static str, Vec<String>>> = BTreeMap::new();
     for r in reaction_reads(model) {
@@ -1542,6 +1613,34 @@ fn selftest() -> Result<String, String> {
     );
     let (_, model2) = model_of(&[("code/a.dm", declared.clone())]);
     check("generated is stable", generated_text(&model2, &BTreeSet::new()) == text, String::new());
+    // 10: a draw reads what the procs it calls read, transitively; a subtype's override is a read of the subtype; recursion ends
+    let helper_fixture = tabs("
+/obj/lamp
+	var/lit = FALSE
+	var/spare = 0
+/obj/lamp/draw(datum/look/look)
+	..()
+	draw_state(look)
+/obj/lamp/proc/draw_state(datum/look/look)
+	look.state(state_name())
+	draw_state(look)
+/obj/lamp/proc/state_name()
+	return lit ? \"on\" : \"off\"
+/obj/lamp/big
+	var/extra = 0
+/obj/lamp/big/state_name()
+	return extra ? \"x\" : \"y\"
+");
+    let (_, hmodel) = model_of(&[("code/h.dm", helper_fixture)]);
+    let htext = generated_text(&hmodel, &BTreeSet::new());
+    let lamp = htext.split("/obj/lamp/big/generated_reads()").next().unwrap_or("");
+    let big = htext.split("/obj/lamp/big/generated_reads()").nth(1).unwrap_or("");
+    check(
+        "a draw follows the procs it calls",
+        lamp.contains("drawn_from(nameof(lit))") && !htext.contains("nameof(spare)"),
+        htext.clone(),
+    );
+    check("an override on a subtype is that subtype's read", big.contains("drawn_from(nameof(extra))"), htext.clone());
     // 11: a window host's ui_data() reads must be tracked
     let ui_fixture = tabs("
 /obj/panel

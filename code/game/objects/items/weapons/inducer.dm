@@ -18,6 +18,8 @@
 	var/recharging = FALSE
 	var/opened = FALSE
 
+TRACKED(/obj/item/inducer, opened)
+
 /obj/item/inducer/unloaded
 	cell_type = null
 	opened = TRUE
@@ -31,8 +33,6 @@
 	var/totransfer = min(cell.charge,(powertransfer * coefficient))
 	var/transferred = target.give(totransfer)
 	cell.use(transferred)
-	cell.update_icon()
-	target.update_icon()
 
 /obj/item/inducer/get_cell()
 	return cell
@@ -102,7 +102,7 @@ CAPABILITIES(/obj/item/inducer)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 50, 1)
-	opened = !opened
+	set_opened(!opened)
 	to_chat(user, span_notice("You [opened ? "open" : "close"] the battery compartment."))
 	return OP_OK
 
@@ -203,7 +203,6 @@ CAPABILITIES(/obj/item/inducer)
 	var/mob/user = A.actor
 	if(opened && cell)
 		act_message(user, src, MSG_SELF(span_notice("You remove [cell].")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%!")))
-		cell.update_icon()
 		user.put_in_hands(cell)
 		rel_take(src, nameof(cell))
 	return TRUE
@@ -279,13 +278,13 @@ CAPABILITIES(/obj/item/cell/standin)
 	. = ..()
 	if(!istype(hume))
 		return INITIALIZE_HINT_QDEL
-	charge = hume.nutrition
-	maxcharge = initial(hume.nutrition)
+	set_charge(hume.nutrition)
+	set_maxcharge(initial(hume.nutrition))
 	expire(20 SECONDS)
 
 
-/obj/item/cell/standin/give(amount, update_appearance = TRUE)
-	. = ..(amount * NUTRITION_COEFF, update_appearance) //Shrink amount to store
+/obj/item/cell/standin/give(amount)
+	. = ..(amount * NUTRITION_COEFF) //Shrink amount to store
 	hume().adjust_nutrition(.) //Add the amount we really stored
 	. /= NUTRITION_COEFF //Inflate amount to take from the giver
 

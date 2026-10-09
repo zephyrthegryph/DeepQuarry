@@ -277,18 +277,10 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "harpoonwand-2"
 
-DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon/wand, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/bluespace_harpoon/wand/appearance_overlays()
-	. = list()
-	if(transforming)
-		switch(mode)
-			if(0)
-				flick("harpoonwand-2-change", src)
-				icon_state = "harpoonwand-1"
-			if(1)
-				flick("harpoonwand-1-change",src)
-				icon_state = "harpoonwand-2"
-		transforming = 0
+/obj/item/bluespace_harpoon/wand/draw(datum/look/look)
+	..()
+	look.state(mode ? "harpoonwand-2" : "harpoonwand-1")
+	look.play_flick(mode ? "harpoonwand-1-change" : "harpoonwand-2-change")
 
 /*
  * magic orb

@@ -31,6 +31,8 @@
 	var/obj/item/tank/phoron/ptank = null
 	var/volume_per_max_burn = 20 // gets divided by the intended burn ratio
 
+TRACKED(/obj/item/flamethrower, status)
+
 CAPABILITIES(/obj/item/flamethrower)
 	owns_one(nameof(igniter), /obj/item/assembly/igniter)
 	owns_one(nameof(ptank), /obj/item/tank/phoron)
@@ -56,7 +58,7 @@ CAPABILITIES(/obj/item/flamethrower/full)
 /obj/item/flamethrower/full/Initialize(mapload)
 	. = ..()
 	igniter.set_secured(FALSE) // for disassembly
-	status = TRUE
+	set_status(TRUE)
 
 /// On or off: while lit it heats its turf every 2 s.
 /obj/item/flamethrower/var/lit = FALSE
@@ -104,13 +106,9 @@ TRACKED(/obj/item/flamethrower, lit)
 			consumed(used_gas, src)
 			if(!check_fuel())
 				set_lit(FALSE)
-			changed(src)
-			changed(src)
 		else
 			to_chat(user, span_notice("There is not enough pressure in [src]'s tank!"))
 			set_lit(FALSE)
-			changed(src)
-			changed(src)
 		// prevent spam
 		COOLDOWN_START(src, operating, 1.5 SECONDS)
 	return
@@ -170,7 +168,7 @@ TRACKED(/obj/item/flamethrower, lit)
 	var/mob/user = A.actor
 	if(!igniter || lit || user.stat || user.restrained() || user.lying)
 		return OP_OK
-	status = !status
+	set_status(!status)
 	to_chat(user, span_notice("[igniter] is now [status ? "secured" : "unsecured"]!"))
 	return OP_OK
 

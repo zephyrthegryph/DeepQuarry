@@ -15,35 +15,6 @@
 	charge_cost = 800
 	fire_delay = 50
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/netgun, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/netgun/appearance_overlays()
-	. = list()
-	if(power_supply == null)
-		if(modifystate)
-			icon_state = "[modifystate]_open"
-		else
-			icon_state = "[initial(icon_state)]_open"
-		return .
-	else if(charge_meter)
-		var/ratio = power_supply.charge / power_supply.maxcharge
-
-		//make sure that rounding down will not give us the empty state even if we have charge for a shot left.
-		if(power_supply.charge < charge_cost)
-			ratio = 0
-		else
-			ratio = max(round(ratio, 0.25) * 100, 25)
-
-		if(modifystate)
-			icon_state = "[modifystate][ratio]"
-		else
-			icon_state = "[initial(icon_state)][ratio]"
-
-	else if(power_supply)
-		if(modifystate)
-			icon_state = "[modifystate]"
-		else
-			icon_state = "[initial(icon_state)]"
-
 /obj/item/gun/energy/netgun/shrink
 	name = "compactor energy net gun"
 	desc = "A customized version of the famous \"Varmint Catcher\", this \"Varmint Compactor\" is designed to reduce the captured targets to a much more manageable size."
@@ -71,18 +42,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/netgun, TYPE_PROC_REF(/atom, appear
 		list(mode_name="capture", projectile_type=/obj/item/projectile/beam/energy_net, fire_sound = SFX_WEAPONS_ELUGER, charge_cost=1200, fire_delay=50)
 	)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/hunter, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/hunter/appearance_overlays()
-	. = list()
-
+/// The look: the cell, its charge pips and the fire mode lamp are overlays on the one state.
+/obj/item/gun/energy/hunter/draw_charge_state(datum/look/look)
 	if(power_supply)
-		var/ratio = power_supply.charge / power_supply.maxcharge
-
+		var/ratio = power_supply.maxcharge > 0 ? power_supply.charge / power_supply.maxcharge : 0
 		if(power_supply.charge < charge_cost)
 			ratio = 0
 		else
 			ratio = max(round(ratio, 0.25) * 100, 25)
-
-		. += "[initial(icon_state)]_cell"
-		. += "[initial(icon_state)]_[ratio]"
-		. += "[initial(icon_state)]_[mode_name]"
+		look.overlay("[initial(icon_state)]_cell")
+		look.overlay("[initial(icon_state)]_[ratio]")
+		look.overlay("[initial(icon_state)]_[mode_name]")

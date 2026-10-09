@@ -40,7 +40,6 @@ CAPABILITIES(/obj/item/multitool/ai_detector)
 	var/old_detect_state = detect_state
 	var/new_detect_state = detect_ai()
 	set_detect_state(new_detect_state)
-	changed(src)
 	update_warning(old_detect_state, new_detect_state)
 
 // This also detects security using cameras.

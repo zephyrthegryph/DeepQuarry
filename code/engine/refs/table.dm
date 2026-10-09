@@ -420,6 +420,10 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	// A relation write publishes each end it touches (both ends of a paired view call this).
 	if(holder && READERS(holder, var_name))
 		publish_change(holder, var_name)
+		// A type with no derived() table has nothing to route a read to (derived_var_touched found none): the old rule holds, a change
+		// that something reads re-derives everything. Its draw()'s reads are generated (generated_reads()), so READERS knows them.
+		if(!QDELING(holder) && !derived_is_exact(holder))
+			state_changed(holder)
 	var/datum/definition_registry/R = GLOB?.om_reg
 	if(!R || !holder)
 		return

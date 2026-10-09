@@ -88,12 +88,10 @@ CAPABILITIES(/obj/item/storage/fancy/egg_box)
 	if (isobserver(user))
 		return
 	set_open(TRUE)
-	changed(src)
 	..()
 
 /obj/item/storage/fancy/egg_box/close(mob/user as mob)
 	set_open(FALSE)
-	changed(src)
 	..()
 
 /*
@@ -284,28 +282,20 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 /obj/item/storage/fancy/cigarettes/draw(datum/look/look)
 	. = ..()
 	if(open)
-		look.state(open_state)
+		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : open_state)
 		if(held_count() >= 1)
 			look.overlay("cig[held_count()]")
 	else
-		look.state(closed_state)
+		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : closed_state)
 
 /obj/item/storage/fancy/cigarettes/open(mob/user as mob)
 	if(open)
 		return
 	set_open(TRUE)
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
-		icon_state = "[initial(icon_state)]_empty"
-	else
-		changed(src)
 	..()
 
 /obj/item/storage/fancy/cigarettes/close(mob/user as mob)
 	set_open(FALSE)
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
-		icon_state = "[initial(icon_state)]_empty"
-	else
-		changed(src)
 	..()
 
 /obj/item/storage/fancy/cigarettes/remove_from_storage(obj/item/W, atom/new_location, mob/user)
@@ -339,7 +329,6 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 
 		reagents.maximum_volume = 15 * length(slot_contents(CONTAINER_SLOT_STORAGE))
 		to_chat(user, span_notice("You take a cigarette out of the pack."))
-		changed(src)
 		return ITEM_INTERACT_SUCCESS
 	else
 		..()
@@ -444,12 +433,10 @@ CAPABILITIES(/obj/item/storage/fancy/cigar)
 	if(open)
 		return
 	set_open(TRUE)
-	changed(src)
 	..()
 
 /obj/item/storage/fancy/cigar/close(mob/user as mob)
 	set_open(FALSE)
-	changed(src)
 	..()
 
 /obj/item/storage/fancy/cigar/choiba

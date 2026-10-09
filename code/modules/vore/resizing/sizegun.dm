@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/gun/energy/sizegun)
 	set category = VERB_CAT_OBJECT
 	set src in view(1)
 
-	size_set_to = (rand(25,200)) /100
+	set_size_set_to((rand(25,200)) /100)
 	act_message(usr, null, MSG_SELF(span_notice("You spin the dial to a random value!")), \
 		MSG_OTHERS(span_warning("%U% spins the size dial to a random value!")))
 
@@ -66,30 +66,25 @@ CAPABILITIES(/obj/item/gun/energy/sizegun)
 		return //cancelled
 	//We do valid resize testing in actual firings because people move after setting these things.
 	//Just a basic clamp here to the valid ranges.
-	size_set_to = clamp((size_select / 100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
+	set_size_set_to(clamp((size_select / 100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS))
 	to_chat(user, span_notice("You set the size to [size_select]%"))
 	if(size_set_to < RESIZE_MINIMUM || size_set_to > RESIZE_MAXIMUM)
 		to_chat(user, span_notice("Note: Resizing limited to 25-200% automatically while outside dormatory areas.")) //hint that we clamp it in resize
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/sizegun/appearance_overlays()
-	. = list()
-	var/grow_mode = "shrink"
-	if(size_set_to > 1)
-		grow_mode = "grow"
-	if(charge_meter)
-		var/ratio = power_supply.charge / power_supply.maxcharge
+TRACKED(/obj/item/gun/energy/sizegun, size_set_to)
 
+/// The look: shrink or grow by the set size, with the charge step; the hands follow the mode.
+/obj/item/gun/energy/sizegun/draw_charge_state(datum/look/look)
+	var/grow_mode = size_set_to > 1 ? "grow" : "shrink"
+	if(charge_meter)
+		var/ratio = power_supply.maxcharge > 0 ? power_supply.charge / power_supply.maxcharge : 0
 		//make sure that rounding down will not give us the empty state even if we have charge for a shot left.
 		if(power_supply.charge < charge_cost)
 			ratio = 0
 		else
 			ratio = max(round(ratio, 0.25) * 100, 25)
-
-		icon_state = "[initial_icon_state]-[grow_mode][ratio]"
-		item_state = "[initial_icon_state]-[grow_mode]"
-
-	update_held_icon()
+		look.state("[initial_icon_state]-[grow_mode][ratio]")
+		look.held_state("[initial_icon_state]-[grow_mode]")
 
 /obj/item/gun/energy/sizegun/examine(mob/user)
 	. = ..()
@@ -150,7 +145,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 /obj/item/gun/energy/sizegun/admin/size_selected_apply(mob/user, size_select)
 	if(!size_select)
 		return //cancelled
-	size_set_to = clamp((size_select / 100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
+	set_size_set_to(clamp((size_select / 100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS))
 	to_chat(user, span_notice("You set the size to [size_select]%"))
 
 /obj/item/gun/energy/sizegun/afterattack(atom/A, mob/living/user, adjacent, params)
@@ -160,7 +155,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 		if(prob(50))
 			to_chat(user, span_notice("\The [src] backfires and consumes its entire charge!"))
 			Fire(user, user)
-			power_supply.charge = 0
+			power_supply.set_charge(0)
 			var/mob/living/M = loc // TGMC Ammo HUD
 			if(istype(M)) // TGMC Ammo HUD
 				M?.hud_used.update_ammo_hud(M, src)
@@ -175,7 +170,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 		if(prob(50))
 			to_chat(user, span_notice("\The [src] backfires and consumes its entire charge!"))
 			Fire(user, user)
-			power_supply.charge = 0
+			power_supply.set_charge(0)
 			var/mob/living/M = loc // TGMC Ammo HUD
 			if(istype(M)) // TGMC Ammo HUD
 				M?.hud_used.update_ammo_hud(M, src)

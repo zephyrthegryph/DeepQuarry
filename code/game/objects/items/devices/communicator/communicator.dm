@@ -318,8 +318,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 /obj/item/communicator/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	initialize_exonet(user)
-	alert_called = 0
-	changed(src)
+	set_alert_called(0)
 	tgui_interact(user)
 	return OP_OK
 
@@ -392,6 +391,8 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 	if(alert_called)
 		return "-called"
 	return ""
+
+TRACKED(/obj/item/communicator, alert_called)
 
 /// The look (the draw sweep: from its template).
 /obj/item/communicator/draw(datum/look/look)

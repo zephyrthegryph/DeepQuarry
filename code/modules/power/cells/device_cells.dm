@@ -22,6 +22,7 @@
  * Crap Device
  */
 /obj/item/cell/device/crap
+	standard_overlays = FALSE
 	name = "\improper rechargable D battery"
 	desc = "An older, cheap power cell designed to power handheld devices. It's probably been in use for quite some time now."
 	description_fluff = "You can't top the rust top." //TOTALLY TRADEMARK INFRINGEMENT
@@ -29,7 +30,6 @@
 	charge = 240
 	maxcharge = 240
 
-APPEARANCE_NONE(/obj/item/cell/device/crap)
 /obj/item/cell/device/crap/empty
 	charge = 0
 
@@ -128,6 +128,7 @@ APPEARANCE_NONE(/obj/item/cell/device/crap)
 	value = CATALOGUER_REWARD_EASY
 
 /obj/item/cell/device/weapon/recharge/alien
+	standard_overlays = FALSE
 	name = "void cell (device)"
 	desc = "An alien technology that produces energy seemingly out of nowhere. Its small, cylinderal shape means it might be able to be used with human technology, perhaps?"
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_void_cell)
@@ -140,7 +141,6 @@ APPEARANCE_NONE(/obj/item/cell/device/crap)
 	var/swaps_to = /obj/item/cell/void
 	standard_overlays = FALSE
 
-APPEARANCE_NONE(/obj/item/cell/device/weapon/recharge/alien)
 CAPABILITIES(/obj/item/cell/device/weapon/recharge/alien)
 	// The old subtype EXTEND_INTERACTIONS ran this before the inherited charge/drain entries.
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(interaction_self)))
@@ -159,7 +159,7 @@ CAPABILITIES(/obj/item/cell/device/weapon/recharge/alien)
 	to_chat(user, span_notice("You swap [cell_name] to 'machinery cell' mode."))
 	var/obj/item/cell/newcell = new replacement_type(null)
 	user.put_in_active_hand(newcell)
-	newcell.charge = newcell.maxcharge * percentage
+	newcell.set_charge(newcell.maxcharge * percentage)
 	newcell.persist_storable = original_persist_storable
 	return TRUE
 

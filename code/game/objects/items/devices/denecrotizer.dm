@@ -133,6 +133,13 @@ TRACKED(/mob/living/simple_mob, ghostjoin)
 	var/revive_time = 30 SECONDS //Don't do this in combat
 	var/advanced = 1 //allows for ghosts to join mobs who get revived by this, and updates their faction to yours
 
+TRACKED(/obj/item/denecrotizer, charges)
+
+/obj/item/denecrotizer/draw(datum/look/look)
+	..()
+	if(charges == 0)
+		look.state("[initial(icon_state)]-o")
+
 /obj/item/denecrotizer/examine(mob/user)
 	. = ..()
 	var/cooldowntime = round((cooldown - (world.time - last_used)) * 0.1)
@@ -186,11 +193,9 @@ TRACKED(/mob/living/simple_mob, ghostjoin)
 	target.set_ghostjoin(1)
 	registry_join(REGISTRY_GHOST_PODS, target)
 	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
-	charges--
+	set_charges(charges - 1)
 	log_and_message_admins("used a denecrotizer to tame/offer a simplemob to ghosts: [target]. [ADMIN_FLW(src)]", user)
 	act_message(target, user, others = "%U%'s eyes widen, as though in revelation as it looks at %T%.", runemessage = "eyes widen")
-	if(charges == 0)
-		icon_state = "[initial(icon_state)]-o"
 
 /obj/item/denecrotizer/proc/ghostjoin_rez(mob/living/simple_mob/target, mob/living/user)
 	act_message(user, target, others = "%U% gently presses [src] to %T%...", runemessage = "presses [src] to [target]")
@@ -208,9 +213,7 @@ TRACKED(/mob/living/simple_mob, ghostjoin)
 		target.set_ghostjoin(1)
 		registry_join(REGISTRY_GHOST_PODS, target)
 	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
-	charges--
-	if(charges == 0)
-		icon_state = "[initial(icon_state)]-o"
+	set_charges(charges - 1)
 	return
 
 /obj/item/denecrotizer/proc/basic_rez(mob/living/simple_mob/target, mob/living/user) //so medical can have a way to bring back people's pets or whatever, does not change any settings about the mob or offer it to ghosts.
@@ -228,9 +231,7 @@ TRACKED(/mob/living/simple_mob, ghostjoin)
 	target.update_icon()
 	act_message(target, user, others = "%U% lifts its head and looks at %T%.", runemessage = "lifts its head and looks at [user]")
 	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
-	charges--
-	if(charges == 0)
-		icon_state = "[initial(icon_state)]-o"
+	set_charges(charges - 1)
 	return
 
 /obj/item/denecrotizer/proc/basic_rez_timed_failed(datum/task/timed/denecrotizer_basic_rez/task)

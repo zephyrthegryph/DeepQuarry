@@ -30,7 +30,6 @@
 	if(recharging)
 		return
 	recharging = 1
-	update_icon()
 	play_sfx(src, SFX_WEAPONS_CLOCKWORK_CLOCKWORK_COCK)
 	act_message(user, src, MSG_SELF(span_notice("You pull the charging handle on %T% and begin the reloading sequence.")), \
 		MSG_OTHERS(span_notice("%U% pulls the charging handle on %T% and it whirrs to life!")))
@@ -47,7 +46,6 @@
 
 /obj/item/gun/energy/clockwork/proc/recharge_end(mob/user)
 	recharging = 0
-	update_icon()
 	user?.hud_used?.update_ammo_hud(user, src) // Update one last time once we're finished!
 
 /obj/item/projectile/bullet/rifle/clockwork
