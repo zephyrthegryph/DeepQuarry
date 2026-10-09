@@ -16745,8 +16745,8 @@
 /obj/machinery/computer/id_restorer	582b6dd351942b71
 /obj/machinery/computer/looking_glass	afa4cd91c7136f70
 /obj/machinery/computer/mecha	a6f89050dc508655
-/obj/machinery/computer/med_data	f937799d00bc908a
-/obj/machinery/computer/med_data/laptop	763841911282b527
+/obj/machinery/computer/med_data	306df770d925a516
+/obj/machinery/computer/med_data/laptop	6f897c95875641a5
 /obj/machinery/computer/message_monitor	417c28ce63945958
 /obj/machinery/computer/operating	5b41d860c0dc83e5
 /obj/machinery/computer/pandemic	7164643d4823977f
