@@ -2,6 +2,27 @@
 
 Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 
+## Pending scanner/initializer candidate
+
+The next source batch uses SIMD candidate searches in the shared selective
+comment scanner, a lexical negative stored-declaration filter, streamed exact
+initializer-plan hashing, and avoids allocating stored-header rosters for ordinary
+locals. Whole-plan hashing retains the existing byte codec; per-write temporary
+buffers remain. Invalid grammar containing qualifier text only in literals may
+report during lowering instead of startup. Valid full-capture parity fixtures
+remain unchanged.
+
+Ordinary workspace library checks passed after the test expectation correction
+(56.585 s), then passed again including the ordinary-local roster change
+(72.726 s). These are not release-profile or runtime gates. Receipts:
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-044508-fa1440e5.json`
+and `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-044622-463880ca.json`.
+This batch has not yet been benchmarked.
+
+Cleanup removed 24 proven obsolete census output/trace leaves, totaling
+2,605,265,225 logical bytes. Immutable pair archives, receipts and the newest
+census artifacts remain. Physical free-space gain was not independently measured.
+Receipt: `E:/dq-cache/dmb-native-v2/obsolete-census-leaves-cleanup-20261009-043152.json`.
 ## Next memory candidate
 
 Immutable resource bytes now retain their original filesystem vector allocation;

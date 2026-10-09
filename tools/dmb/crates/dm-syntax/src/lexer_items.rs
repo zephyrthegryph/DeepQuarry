@@ -276,13 +276,17 @@ pub fn visit_comment_spans(source: &str, mut visitor: impl FnMut(Span)) {
     let bytes = source.as_bytes();
     let mut pos = 0;
     while pos < bytes.len() {
-        // Candidate bytes are ASCII and therefore UTF-8 character boundaries.
-        while pos < bytes.len() && !matches!(bytes[pos], b'/' | b'"' | b'\'' | b'@' | b'{') {
-            pos += 1;
-        }
-        if pos == bytes.len() {
-            break;
-        }
+        // SIMD search skips ordinary runs. All five candidates are ASCII and
+        // therefore safe UTF-8 slice boundaries; literal grammar stays shared.
+        let rest = &bytes[pos..];
+        let literal = memchr::memchr3(b'/', b'"', b'\'', rest);
+        let raw_or_block = memchr::memchr2(b'@', b'{', rest);
+        let next = match (literal, raw_or_block) {
+            (Some(left), Some(right)) => left.min(right),
+            (Some(offset), None) | (None, Some(offset)) => offset,
+            (None, None) => break,
+        };
+        pos += next;
         if let Some((kind, length, _)) = literal_or_comment(&source[pos..]) {
             if kind == TokenKind::Comment {
                 visitor(Span::new(pos, pos + length));
@@ -308,6 +312,26 @@ beta"#;
         let spans = selective(source);
         let texts: Vec<_> = spans.iter().map(|span| &source[span.range()]).collect();
         assert_eq!(texts, ["/* outer /* inner */ end */", "// tail"]);
+    }
+    #[test]
+    fn boundary_search_handles_long_unicode_runs_and_adjacent_raw_markers() {
+        let ordinary = "雪αidentifier123 ".repeat(513);
+        let source = format!("{ordinary}@{{\"/* literal */\"}}@'// resource'@@/ /* nested /* inner */ end */\n{ordinary}// tail");
+        let spans = selective(&source);
+        assert_eq!(
+            spans
+                .iter()
+                .map(|span| &source[span.range()])
+                .collect::<Vec<_>>(),
+            ["/* nested /* inner */ end */", "// tail"]
+        );
+        let mut expected = Vec::new();
+        visit_tokens(&source, |token| {
+            if token.kind == TokenKind::Comment {
+                expected.push(token.span);
+            }
+        });
+        assert_eq!(spans, expected);
     }
     #[test]
     fn selective_matches_full_lexer_at_every_utf8_prefix() {

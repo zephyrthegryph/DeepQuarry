@@ -202,19 +202,13 @@ pub fn plan(
     if !errors.is_empty() {
         return Err(errors);
     }
-    let mut canonical = b"dm-authored-initializer-plan-v1\0".to_vec();
-    canonical.extend_from_slice(&(writes.len() as u64).to_le_bytes());
-    for write in &writes {
-        let bytes = write.canonical_bytes();
-        canonical.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
-        canonical.extend_from_slice(&bytes);
-    }
+    let identity = plan_identity(b"dm-authored-initializer-plan-v1\0", true, &writes);
     Ok(InitializerPlan {
         symbols: source.tree.shared_symbols(),
         source: source.clone(),
         writes: writes.into(),
         origins: origins.into(),
-        identity: xxhash_rust::xxh3::xxh3_128(&canonical),
+        identity,
     })
 }
 
@@ -342,19 +336,30 @@ fn assemble_procedure_statics(
     if !declarations.is_empty() || !by_occurrence.is_empty() {
         return Err("startup captures are outside complete emission order".into());
     }
-    let mut canonical = b"dm-authored-startup-plan-v2\0".to_vec();
-    for write in &writes {
-        let bytes = write.canonical_bytes();
-        canonical.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
-        canonical.extend_from_slice(&bytes);
-    }
+    let identity = plan_identity(b"dm-authored-startup-plan-v2\0", false, &writes);
     Ok(InitializerPlan {
         source: base.source.clone(),
         symbols: Arc::new(symbols),
         writes: writes.into(),
         origins: origins.into(),
-        identity: xxhash_rust::xxh3::xxh3_128(&canonical),
+        identity,
     })
+}
+
+/// Preserve the existing write codec and framing, retaining only one write's
+/// canonical buffer at a time rather than a second whole-plan byte image.
+fn plan_identity(header: &[u8], include_count: bool, writes: &[InitializerWrite]) -> u128 {
+    let mut hash = xxhash_rust::xxh3::Xxh3::new();
+    hash.update(header);
+    if include_count {
+        hash.update(&(writes.len() as u64).to_le_bytes());
+    }
+    for write in writes {
+        let bytes = write.canonical_bytes();
+        hash.update(&(bytes.len() as u64).to_le_bytes());
+        hash.update(&bytes);
+    }
+    hash.digest128()
 }
 
 #[cfg(test)]
@@ -377,6 +382,34 @@ mod tests {
         (0..snapshot.occurrences.source_order().len())
             .map(|index| OccurrenceId(index as u32))
             .collect()
+    }
+    fn assert_legacy_identity(plan: &InitializerPlan, header: &[u8], count: bool) {
+        let mut bytes = header.to_vec();
+        if count {
+            bytes.extend_from_slice(&(plan.writes.len() as u64).to_le_bytes());
+        }
+        for write in plan.writes.iter() {
+            let canonical = write.canonical_bytes();
+            bytes.extend_from_slice(&(canonical.len() as u64).to_le_bytes());
+            bytes.extend_from_slice(&canonical);
+        }
+        assert_eq!(plan.identity, xxhash_rust::xxh3::xxh3_128(&bytes));
+    }
+
+    #[test]
+    fn streaming_identity_preserves_variable_unicode_expression_array_and_order_bytes() {
+        let source =
+            "var/a = list(1, \"雪\", list(2, 3))\nvar/b[2][3]\nvar/c = \"different-length\"\n";
+        let snapshot = snapshot(source, 0);
+        let order = order(&snapshot);
+        let captured = plan(&snapshot, &order).unwrap();
+        assert_eq!(captured.writes.len(), 3);
+        assert_legacy_identity(&captured, b"dm-authored-initializer-plan-v1\0", true);
+        let mut reverse = order;
+        reverse.reverse();
+        let reordered = plan(&snapshot, &reverse).unwrap();
+        assert_legacy_identity(&reordered, b"dm-authored-initializer-plan-v1\0", true);
+        assert_ne!(captured.identity, reordered.identity);
     }
     #[test]
     fn procedure_statics_join_global_writes_at_source_encounter() {
@@ -424,6 +457,9 @@ mod tests {
             matches!(startup.writes[2].target,InitializerTarget::Shared{name,..} if name==SymbolId::of("b"))
         );
         assert_eq!(startup.writes[1].lexical_procedure, Some(identity));
+        assert_legacy_identity(&base, b"dm-authored-initializer-plan-v1\0", true);
+        assert_legacy_identity(&startup, b"dm-authored-startup-plan-v2\0", false);
+
         assert_eq!(startup.symbols.text(SymbolId::of("local")), Some("local"));
     }
     #[test]

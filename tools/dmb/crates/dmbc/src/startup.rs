@@ -646,11 +646,7 @@ mod spelling_tests {
                 "/proc/plain()\n    var/local = 1\n    return local\n"
             )
         );
-        assert!(dm_tree::procedure_statics::may_contain_stored_declarations(
-            "return \"static\""
-        ));
-        assert!(dm_tree::procedure_statics::may_contain_stored_declarations(
-            "// global comment"
-        ));
+        assert!(!dm_tree::procedure_statics::may_contain_stored_declarations("return \"static\""));
+        assert!(!dm_tree::procedure_statics::may_contain_stored_declarations("// global comment"));
     }
 }

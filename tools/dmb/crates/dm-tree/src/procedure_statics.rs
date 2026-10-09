@@ -125,15 +125,31 @@ fn stored_local_modifier(component: &str) -> u32 {
         .find_map(|(name, bit)| (*name == component).then_some(*bit))
         .unwrap_or(0)
 }
-/// Negative-only eligibility check over already expanded source. The producer
-/// requires one of these literal path components. Substrings in comments,
-/// strings or longer identifiers deliberately remain candidates; no grammar or
-/// syntax admission is performed here. Final executable parsing is mandatory.
+/// Negative-only eligibility check over already expanded source. Most bodies
+/// fail the cheap substring guard; candidates use the same streaming lexical
+/// core as the parser. Only exact identifier tokens can be stored qualifiers.
+/// Unknown or malformed lexical input remains a candidate so this optimization
+/// never replaces the authoritative capture diagnostics.
 pub fn may_contain_stored_declarations(expanded_source: &str) -> bool {
-    STORED_LOCAL_QUALIFIERS
+    if !STORED_LOCAL_QUALIFIERS
         .iter()
         .any(|(name, _)| expanded_source.contains(name))
+    {
+        return false;
+    }
+    let mut candidate = false;
+    let diagnostics = dm_syntax::visit_tokens(expanded_source, |token| match token.kind {
+        dm_syntax::TokenKind::Ident => {
+            candidate |= stored_local_modifier(token.text(expanded_source)) != 0;
+        }
+        dm_syntax::TokenKind::Unknown | dm_syntax::TokenKind::Interpolation => candidate = true,
+        _ => (),
+    });
+    candidate || !diagnostics.is_empty()
 }
+#[cfg(test)]
+#[path = "procedure_static_prefilter_tests.rs"]
+mod prefilter_tests;
 /// Apply the same negative proof to the actual prepared body, including bodies
 /// transformed by a caller's ABI policy. No source-only admission is assumed.
 pub fn items_may_contain_stored_declarations(items: &[Item]) -> bool {

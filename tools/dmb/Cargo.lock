@@ -276,6 +276,9 @@ dependencies = [
 [[package]]
 name = "dm-syntax"
 version = "0.1.0"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "dm-tree"

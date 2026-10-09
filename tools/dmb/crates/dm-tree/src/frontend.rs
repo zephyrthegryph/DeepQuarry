@@ -493,10 +493,15 @@ impl ParsedBody<'_> {
                 headers(&item.children, result);
             }
         }
-        let mut declaration_headers = std::collections::HashSet::new();
-        headers(&self.item.children, &mut declaration_headers);
         let stored_candidates =
             crate::procedure_statics::items_may_contain_stored_declarations(&self.item.children);
+        let mut declaration_headers = std::collections::HashSet::new();
+        // This roster certifies only extracted stored-local declarations. The
+        // existing negative proof excludes all such origins; ordinary locals
+        // need neither header traversal nor HashSet backing allocation.
+        if stored_candidates {
+            headers(&self.item.children, &mut declaration_headers);
+        }
         if parsed.diagnostics.is_empty() && supported(&parsed.statements) {
             self.item.children = Vec::new();
         }

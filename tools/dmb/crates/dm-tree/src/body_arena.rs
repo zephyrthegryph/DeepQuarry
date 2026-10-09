@@ -256,6 +256,52 @@ mod tests {
     }
 
     #[test]
+    fn ordinary_locals_do_not_retain_stored_header_roster_but_statics_do() {
+        for (source, expected_static) in [
+            (
+                "/proc/probe()\n    var/local = 1\n    return local\n",
+                false,
+            ),
+            (
+                "/proc/probe()\n    var/static/local = 1\n    return local\n",
+                true,
+            ),
+        ] {
+            let frontend = build(
+                Path::new("project.dme"),
+                &Source(source),
+                &BTreeMap::new(),
+                1,
+            )
+            .unwrap();
+            let arena = BodyArena::new_typed(&frontend, |_| true);
+            let identity = dm_ir::ProcedureIdentity {
+                owner: dm_ir::SymbolId::of("/"),
+                name: dm_ir::SymbolId::of("probe"),
+                verb: false,
+                occurrence: 0,
+            };
+            arena
+                .with_parsed(&frontend.bodies[0], |parsed| {
+                    let body = parsed.statement_body().unwrap();
+                    assert_eq!(body.may_contain_stored_declarations(), expected_static);
+                    let (length, capacity) = body.declaration_header_storage();
+                    if expected_static {
+                        assert_eq!(length, 1);
+                    } else {
+                        assert_eq!((length, capacity), (0, 0));
+                    }
+                    let captured =
+                        crate::procedure_statics::capture_issued_statements(identity, body)
+                            .unwrap();
+                    assert_eq!(captured.declarations.len(), usize::from(expected_static));
+                    assert_eq!(captured.origins.len(), usize::from(expected_static));
+                })
+                .unwrap();
+        }
+    }
+
+    #[test]
     fn concurrent_inspections_share_one_parse() {
         let frontend = frontend();
         let arena = BodyArena::new(&frontend);
