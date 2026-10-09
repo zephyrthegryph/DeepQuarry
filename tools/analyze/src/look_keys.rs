@@ -60,8 +60,16 @@ pub const ROOT_PROCS: &[&str] = &["update_icon", "update_icon_state", "update_ov
 const SALT_FILES: &[&str] = &["code/datums/sys/appearance.dm", "code/engine/present/appearance_builder.dm"];
 const SALT_DIRS: &[&str] = &[];
 const SALT_PREFIXES: &[&str] = &[];
-/// Procs whose defining files are part of the salt.
-const SALT_PROCS: &[(&str, &str)] = &[("/atom", "update_icon"), ("/", "appearance_flush"), ("/obj", "update_icon"), ("/mob", "update_icon")];
+/// Procs whose defining files are part of the salt. None: a draw proc is in every closure that reaches it, so its text is
+/// already in the key; hashing its whole file (`_atom.dm`, `objs.dm`, `mob.dm`) put every unrelated edit in all keys.
+const SALT_PROCS: &[(&str, &str)] = &[];
+
+/// Procs the closure never enters (not followed, not hashed): code that cannot change a drawn look. A call to one is a
+/// message, a log line, a fault report or test scaffolding. Engine plumbing that does shape every draw is named in the
+/// salt (`SALT_FILES`, `SALT_PROCS`) instead of being hashed into every key through whatever reaches it.
+const SINK_DIRS: &[&str] = &["code/modules/unit_tests/", "code/tests/", "code/engine/", "code/controllers/", "code/modules/admin/", "code/modules/tgui/", "code/modules/metrics/", "code/modules/benchmarks/", "code/__defines/verdigris/"];
+const SINK_NAMES: &[&str] = &["to_chat", "to_world", "to_world_log", "message_admins", "stack_trace", "_stack_trace", "Error", "icon2html", "REF", "dq_report_caught", "doMove", "forceMove", "moveToNullspace", "Move", "Moved", "Entered", "Exited", "Crossed", "Uncrossed", "qdel", "on_destroy", "visible_message", "audible_message", "show_message", "tgui_alert", "tgui_input_text", "tgui_input_list", "tgui_input_number", "playsound", "play_sfx", "say", "whisper", "emote", "ghost", "gib", "dust", "death", "apply_damage", "injure", "mend", "take_damage", "receive_damage", "bullet_act", "throw_at", "fall", "handle_fall", "ChangeTurf", "deconstruct", "explosion", "ex_act", "report_fault", "loc_name", "Admin_Coordinates_Readable", "Safe_COORD_Location"];
+const SINK_PREFIXES: &[&str] = &["log_", "admin_", "debug_", "assert"];
 
 /// A name with more definitions than this, called on a receiver of unknown type, reaches only the definitions on the type
 /// chain and on the base types (not every definition in the tree). `--explain` lists the names this cut.
@@ -72,7 +80,7 @@ const SUBTREE_CAP: usize = 8;
 /// The types whose procs every closure may reach through an unknown receiver.
 const BASE_TYPES: &[&str] = &["/datum", "/atom", "/atom/movable", "/obj", "/mob", "/turf"];
 
-const CACHE_VERSION: &str = "look-keys-v4";
+const CACHE_VERSION: &str = "look-keys-v5";
 
 /// A small multiplicative hasher for the model's integer-keyed tables (the closure walk does tens of millions of lookups;
 /// SipHash was a third of its time). Not for anything that leaves the process.
@@ -399,6 +407,9 @@ struct Model<'a> {
     edge_tab: Vec<(u32, Kind, u8)>,
     any_cache: FxMap<u32, Rc<Vec<u32>>>,
     why_on: bool,
+    sink_cache: FxMap<u32, bool>,
+    /// The checkout root as it can appear in a debug-printed string literal.
+    root_forms: Vec<String>,
 
     infos: Vec<Option<Rc<Info>>>,
     varnames: HashSet<String>,
@@ -520,6 +531,8 @@ impl<'a> Model<'a> {
             edge_tab: Vec::new(),
             any_cache: FxMap::default(),
             why_on: std::env::var("DQ_LOOK_WHY").is_ok(),
+            sink_cache: FxMap::default(),
+            root_forms: Vec::new(),
 
             infos: vec![None; n],
             varnames,
@@ -642,6 +655,23 @@ impl<'a> Model<'a> {
         rc
     }
 
+    /// A definition the closure does not enter (`SINK_*`), unless its file is in the salt.
+    fn is_sink(&mut self, id: u32) -> bool {
+        if let Some(v) = self.sink_cache.get(&id) {
+            return *v;
+        }
+        let pd = &self.pdefs[id as usize];
+        let name = pd.name;
+        let mut sink = SINK_NAMES.contains(&name) || SINK_PREFIXES.iter().any(|p| name.starts_with(p));
+        if !sink {
+            if let Some(f) = self.sem.file_of(pd.val.location) {
+                sink = SINK_DIRS.iter().any(|d| f.starts_with(d)) && !SALT_FILES.contains(&f);
+            }
+        }
+        self.sink_cache.insert(id, sink);
+        sink
+    }
+
     fn known_type(&self, path: &str) -> Option<u32> {
         self.tindex.get(path).copied()
     }
@@ -688,7 +718,13 @@ impl<'a> Model<'a> {
     fn analyze_proc_inner(&self, id: u32) -> Info {
         let pd = &self.pdefs[id as usize];
         let owner_path = &self.paths[pd.owner as usize];
-        let text = strip_locations(&format!("{:?}|{:?}", pd.val.parameters, pd.val.code));
+        let mut text = strip_locations(&format!("{:?}|{:?}", pd.val.parameters, pd.val.code));
+        // A `__FILE__`-style macro expands to the absolute path of the checkout: the same text in every worktree.
+        for r in &self.root_forms {
+            if text.contains(r.as_str()) {
+                text = text.replace(r.as_str(), "");
+            }
+        }
         let hash = digest(&[owner_path.as_bytes(), pd.name.as_bytes(), &(pd.idx as u64).to_le_bytes(), text.as_bytes()]);
         let text_hash = u128::from_le_bytes(blake3::hash(text.as_bytes()).as_bytes()[..16].try_into().unwrap());
         let tokens = quoted_tokens(&text);
@@ -984,6 +1020,7 @@ impl<'a> Model<'a> {
                 }
                 defs.clear();
                 self.targets(*eid, t_ctx, from_owner, &chain, &mut defs);
+                defs.retain(|(d, _)| !self.is_sink(*d));
                 for (d, ctx) in defs.iter() {
                     if mark(*ctx, *d) {
                         stack.push((*d, *ctx));
@@ -1014,6 +1051,10 @@ impl<'a> Model<'a> {
             bits[(*id / 64) as usize] |= 1 << (*id % 64);
             let info = self.info(*id);
             h.update(&info.hash);
+            if std::env::var("DQ_LOOK_PARTS").is_ok() {
+                let pd = &self.pdefs[*id as usize];
+                eprintln!("look-keys proc {}::{} {}", self.paths[pd.owner as usize], pd.name, hex(&info.hash[..6]));
+            }
             icons.extend(info.icons.iter().cloned());
             if first_dynamic.is_none() {
                 if let Some(d) = info.dynamic.first() {
@@ -1399,6 +1440,14 @@ fn dm_compute(tree: &Tree, root: &Path, only: Option<&str>, restrict: Option<&Ha
         }
     };
     let mut m = Model::new(&sem, &decls, &handlers, &appearance);
+    {
+        let r = root.to_string_lossy().to_string();
+        let mut forms = vec![r.replace("\\", "\\\\"), r.replace("\\", "/"), r.clone()];
+        forms.retain(|f| f.len() > 3);
+        forms.sort_by_key(|f| std::cmp::Reverse(f.len()));
+        forms.dedup();
+        m.root_forms = forms;
+    }
     let want_foot = only.is_none();
     let mut closures: Vec<Vec<u32>> = Vec::new();
     let mut local_proc: FxMap<u32, u32> = FxMap::default();
@@ -1459,10 +1508,14 @@ fn dm_compute(tree: &Tree, root: &Path, only: Option<&str>, restrict: Option<&Ha
                 }
             }
         }
+        let dbg_vars = if only.is_some() && std::env::var("DQ_LOOK_PARTS").is_ok() { Some(h.clone().finalize()) } else { None };
         h.update(b"closure");
         h.update(&c.digest);
         h.update(b"salt");
         h.update(&salt);
+        if let Some(v) = dbg_vars {
+            eprintln!("look-keys parts: vars+markers {} closure {} salt {}", hex(v.as_bytes()), hex(&c.digest), hex(&salt));
+        }
         let partial = h.finalize().as_bytes().to_vec();
 
         // probes
