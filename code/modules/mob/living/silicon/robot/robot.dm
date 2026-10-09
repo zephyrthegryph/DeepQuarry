@@ -721,10 +721,10 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /proc/robot_interactions()
 	return list(
 		op("robot_item", item(/obj/item), label("Use on"), passes(), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_item_used))),
-		op("robot_pet", hand(), ungated(), stance(I_HELP), label("Pet"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_help))),
-		op("robot_tap", hand(), ungated(), stance(I_DISARM), label("Tap"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_disarm))),
-		op("robot_hold", hand(), ungated(), stance(I_GRAB), label("Take hold"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_grab))),
-		op("robot_punch", hand(), ungated(), stance(I_HURT), label("Punch"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_hurt))),
+		op("robot_pet", hand(), ungated(), when(req_empty_hand()), stance(I_HELP), label("Pet"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_help))),
+		op("robot_tap", hand(), ungated(), when(req_empty_hand()), stance(I_DISARM), label("Tap"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_disarm))),
+		op("robot_hold", hand(), ungated(), when(req_empty_hand()), stance(I_GRAB), label("Take hold"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_grab))),
+		op("robot_punch", hand(), ungated(), when(req_empty_hand()), stance(I_HURT), label("Punch"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_hurt))),
 		op("deploy_shell", remote(), label("Deploy to shell"), priority(OP_PRIORITY_NORMAL - 1), when(TYPE_PROC_REF(/mob/living/silicon/robot, shell_open_to_ai)), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_ai_deploy_shell))),
 		op("robot_pry", tool(TOOL_CROWBAR), stance(I_HELP, I_DISARM, I_GRAB), label("Pry the cover or a part"), wait(0), then(TYPE_PROC_REF(/mob/living/silicon/robot, interaction_crowbar))),
 		op("robot_weld_repair", tool(TOOL_WELDER), stance(I_HELP, I_DISARM, I_GRAB), label("Weld the dents"), costs(RES_FUEL, 0), wait(0),

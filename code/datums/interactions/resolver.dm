@@ -169,6 +169,11 @@
 	var/routed = try_gesture(actor, target, held, action, quality, no_tool, adapter)
 	if(!isnull(routed))
 		return routed
+	// What the action table does not reach: the op engine's own resolution, for a call that did not come from a player's click (a tool's own act, an item
+	// used by code). A click the inbox resolved already (GLOB.op_click_resolved) must not run its ops a second time.
+	var/datum/op_result/engine = try_engine(actor, target, held, action, quality, no_tool)
+	if(engine)
+		return engine
 	// Narrowed before any why_not(): only this action (and quality) is resolved, converted legacy
 	// handlers (I7, which have an entry) are skipped, and
 	// the blocked list is only built below when nothing is available.
@@ -195,6 +200,19 @@
 			meant.tell_blocked(actor, target, resolution.blocked[meant])
 			return INTERACTION_TRY_BLOCKED
 	return null
+
+/// A call's click through the op engine (op_resolve_click()): INTERACTION_TRY_RAN when an op ran or started, INTERACTION_TRY_BLOCKED when the winner refused,
+/// null when no op took it (or the inbox resolved this click already).
+/proc/try_engine(mob/actor, atom/target, obj/item/held, action, quality, no_tool)
+	if(GLOB.op_click_resolved[actor])
+		return null
+	var/gesture = gesture_of_action(action, quality)
+	if(isnull(gesture) || !(op_has_ops(target) || op_has_ops(held) || op_has_click_ops(actor)))
+		return null
+	var/datum/op_result/result = op_resolve_click(actor, target, held, gesture, ORIGIN_CLICK, FALSE, TRUE, quality, no_tool)
+	if(!result)
+		return null
+	return result.outcome == ACT_REFUSED ? INTERACTION_TRY_BLOCKED : INTERACTION_TRY_RAN
 
 /// The tool_act path: the base *_act procs end here, so subtype overrides that call ..() reach it.
 /// `secondary` (right-click tool use) runs the quality's Alternate interactions instead of Use.

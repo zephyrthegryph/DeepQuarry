@@ -115,8 +115,8 @@
 
 /// Eight stance-declared specs once, one per stance for the hand and for an item: a harm click hammers, the other stances ring.
 CAPABILITIES(/obj/item/deskbell)
-	op("ring", hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Ring"), then(PROC_REF(ring_by_hand)))
-	op("hammer", hand(), hostile(), stance(I_HURT), label("Hammer rudely"), then(PROC_REF(hammer_by_hand)))
+	op("ring", hand(), when(req_empty_hand()), stance(I_HELP, I_DISARM, I_GRAB), label("Ring"), then(PROC_REF(ring_by_hand)))
+	op("hammer", hand(), when(req_empty_hand()), hostile(), stance(I_HURT), label("Hammer rudely"), then(PROC_REF(hammer_by_hand)))
 	op("ring_with_item", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Ring"), then(PROC_REF(ring_with_item)))
 	op("hammer_with_item", item(/obj/item), hostile(), stance(I_HURT), label("Hammer rudely"), then(PROC_REF(hammer_with_item)))
 	op("use_wrench", tool(TOOL_WRENCH), needs(req(PROC_REF(on_floor), silent = TRUE)), wait(0.5 SECONDS), then(PROC_REF(wrench_used)))
