@@ -1,0 +1,23 @@
+{
+  "scope": "native compiler migration; not performance admission",
+  "commits": {
+    "worker_stacks_and_daemon_identity": "3b0c85a7c4",
+    "keyed_owner_normalization_and_effective_metadata": "67bd12ef40",
+    "authenticated_bounded_iteration_runner": "91560320b1"
+  },
+  "validation": {
+    "workspace_all_targets": {"passed": true, "build_seconds": 46.32},
+    "executor_tests": {"passed": 10},
+    "retained_semantic_tree_tests": {"passed": 9, "test_seconds": 0.19},
+    "iteration_receipt_tests": {"passed": 7, "test_seconds": 0.151}
+  },
+  "open": [
+    "rebuilt real DeepQuarry stack-overflow retry and current end-to-end timings",
+    "global type/member installation and dense projection",
+    "compiler-selected nonlocal executable reference facts",
+    "BYOND structural discrepancies and incomplete semantic coverage",
+    "Phase 5 runtime baseline and power_bridge behavior mismatch",
+    "six real worktree memory and concurrency admission"
+  ],
+  "benchmark_policy": "Historical cold timings exclude these changes. Validation/build times are not compiler benchmarks. No successful real cohort has completed for this source."
+}
