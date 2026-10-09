@@ -62,7 +62,6 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 	to_chat(user, "You twist the valve and pop the tank out of [src].")
 	user.put_in_hands(tank())
 	rel_clear(src, nameof(tank))
-	update_icon()
 
 /obj/item/gun/launcher/pneumatic/proc/unload_hopper(mob/user)
 	if(contents_count(item_storage) > 0)
@@ -92,7 +91,6 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 			return OP_PASS
 		rel_set(src, nameof(tank), W)
 		act_message(user, src, MSG_SELF("You jam [W] into %T%'s valve and twist it closed."), MSG_OTHERS("%U% jams [W] into %T%'s valve and twists it closed."))
-		update_icon()
 	else if(istype(W))
 		item_storage.try_insert(W, user)
 
@@ -163,11 +161,6 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 		look.state("pneumatic")
 		look.held_state("pneumatic")
 
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		// the hands that hold it redraw when the look changes its sprite (look.apply_to())
-		// the hands that hold it redraw when the look changes its sprite (look.apply_to())
-
 //Constructable pneumatic cannon.
 
 /obj/item/cannonframe
@@ -177,6 +170,8 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 	item_state = "pneumatic"
 
 	var/buildstate = 0
+
+TRACKED(/obj/item/cannonframe, buildstate)
 
 /// The look (the draw sweep: from its template).
 /obj/item/cannonframe/draw(datum/look/look)
@@ -204,15 +199,13 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
 			playsound(src, tool.usesound, 100, 1)
 			to_chat(user, span_notice("You weld the pipe into place."))
-			buildstate++
-			changed(src)
+			set_buildstate(buildstate + 1)
 	if(buildstate == 3)
 		if(T.remove_fuel(0,user))
 			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
 			playsound(src, tool.usesound, 100, 1)
 			to_chat(user, span_notice("You weld the metal chassis together."))
-			buildstate++
-			changed(src)
+			set_buildstate(buildstate + 1)
 	if(buildstate == 5)
 		if(T.remove_fuel(0,user))
 			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
@@ -232,16 +225,14 @@ CAPABILITIES(/obj/item/cannonframe)
 		if(buildstate == 0)
 			consume(W, user)
 			to_chat(user, span_notice("You secure the piping inside the frame."))
-			buildstate++
-			changed(src)
+			set_buildstate(buildstate + 1)
 			return OP_PASS
 	else if(istype(W,/obj/item/stack/material) && W.get_material_name() == MAT_STEEL)
 		if(buildstate == 2)
 			var/obj/item/stack/material/M = W
 			if(M.use(5))
 				to_chat(user, span_notice("You assemble a chassis around the cannon frame."))
-				buildstate++
-				changed(src)
+				set_buildstate(buildstate + 1)
 			else
 				to_chat(user, span_notice("You need at least five metal sheets to complete this task."))
 			return OP_PASS
@@ -249,8 +240,7 @@ CAPABILITIES(/obj/item/cannonframe)
 		if(buildstate == 4)
 			consume(W, user)
 			to_chat(user, span_notice("You install the transfer valve and connect it to the piping."))
-			buildstate++
-			changed(src)
+			set_buildstate(buildstate + 1)
 			return OP_PASS
 	else
 		return OP_DECLINE

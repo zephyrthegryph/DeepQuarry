@@ -23,7 +23,7 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 	if(!material)
 		return INITIALIZE_HINT_QDEL
 	icon_state = "blank" // ALLOW(decl): material-coloured, drawn by update_icon()
-	max_butts = round(material.hardness/5) //This is arbitrary but whatever.
+	set_max_butts(round(material.hardness/5)) //This is arbitrary but whatever.
 	color = null
 	randpixel_xy()
 	set_base_overlay(CACHED_KEY(ashtray_overlays, "base-[material.name]", "ashtray", material.icon_colour))
@@ -34,6 +34,7 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 /// The dish itself, in its material's colour (made once the material is known).
 /obj/item/material/ashtray/var/image/base_overlay
 TRACKED(/obj/item/material/ashtray, base_overlay)
+TRACKED(/obj/item/material/ashtray, max_butts)
 
 /// The fill changes what it says about itself.
 /obj/item/material/ashtray/proc/set_butts(value)
@@ -57,7 +58,6 @@ CAPABILITIES(/obj/item/material/ashtray)
 /obj/item/material/ashtray/proc/sync_butts()
 	if(!set_butts(contents_count(src)))
 		describe_fill()
-	changed(src)
 
 /obj/item/material/ashtray/proc/describe_fill()
 	if(butts == max_butts)

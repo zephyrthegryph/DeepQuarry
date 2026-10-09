@@ -189,7 +189,7 @@ B1:code/modules/generated_station/generated_station_objectives.dm:SSexpedition 1
 B1:code/modules/generated_station/generated_station_utility_topology.dm:SSexpedition 1
 B1:code/modules/holomap/holomap_datum.dm:SSholomaps 1
 B1:code/modules/holomap/mapper.dm:SSholomaps 2
-B1:code/modules/holomap/station_holomap.dm:SSholomaps 6
+B1:code/modules/holomap/station_holomap.dm:SSholomaps 5
 B1:code/modules/lighting/lighting_corner.dm:SSlighting 10
 B1:code/modules/lighting/lighting_corner.dm:SSplanets 3
 B1:code/modules/lighting/lighting_fake_sun.dm:SSlighting 3

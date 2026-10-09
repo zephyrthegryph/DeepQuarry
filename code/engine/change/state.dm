@@ -23,6 +23,8 @@
 	/// The dir last published to a drawn mover's look (Moved() compares it, because Move() turns a mover natively).
 	var/look_seen_dir
 	var/list/look_overlays
+	/// The last look drew underlays: the next apply takes them back before it draws its own.
+	var/look_underlays = FALSE
 	var/list/refresh_hidden_verbs
 	var/list/refresh_granted_verbs
 	var/refresh_swept = FALSE

@@ -42,8 +42,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 	name = "[seed().seed_name]"
 	trash = seed().get_trash_type()
 
-	update_icon()
-
 	potency = seed().get_trait(TRAIT_POTENCY)
 
 	if(seed().chems)
@@ -124,11 +122,15 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 		SSplants.product_descs["[seed().uid]"] = desc
 	desc += ". Delicious! Probably."
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/food/snacks/grown/appearance_overlays()
-	. = list()
+/// The fruit of its seed: the shape in the colour of the product, and the leaves in the colour of the plant.
+/obj/item/reagent_containers/food/snacks/grown/draw(datum/look/look)
+	..()
 	if(!seed() || !SSplants?.plant_icon_cache)
-		return .
+		return
+	look.overlay(fruit_icon())
+
+/// The drawn fruit of its seed, shared by every fruit of the same product and colours.
+/obj/item/reagent_containers/food/snacks/grown/proc/fruit_icon()
 	var/image/plant_icon
 	var/icon_key = "fruit-[seed().get_trait(TRAIT_PRODUCT_ICON)]-[seed().get_trait(TRAIT_PRODUCT_COLOUR)]-[seed().get_trait(TRAIT_PLANT_COLOUR)]"
 	if(SSplants.plant_icon_cache[icon_key])
@@ -143,7 +145,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PRO
 			fruit_leaves.color = "[seed().get_trait(TRAIT_PLANT_COLOUR)]"
 			plant_icon.add_overlay(fruit_leaves)
 		SSplants.plant_icon_cache[icon_key] = plant_icon
-	. += plant_icon
+	return plant_icon
 
 /obj/item/reagent_containers/food/snacks/grown/Crossed(mob/living/M)
 	if(M.is_incorporeal())
@@ -187,8 +189,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PRO
 				var/obj/item/cell/potato/pocell = new /obj/item/cell/potato(get_turf(user))
 				if(src.loc == user && ishuman(user))
 					user.put_in_hands(pocell)
-				pocell.maxcharge = src.potency * 200
-				pocell.charge = pocell.maxcharge
+				pocell.set_maxcharge(src.potency * 200)
+				pocell.set_charge(pocell.maxcharge)
 				consume(src, user)
 				return OP_PASS
 

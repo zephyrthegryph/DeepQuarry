@@ -73,13 +73,13 @@ CAPABILITIES(/obj/item/computer_hardware/battery_module)
 		rel_set(src, nameof(battery), new path(src))
 	else
 		rel_set(src, nameof(battery), new/obj/item/cell(src))
-	battery.maxcharge = battery_rating
-	battery.charge = 0
+	battery.set_maxcharge(battery_rating)
+	battery.set_charge(0)
 
 
 /obj/item/computer_hardware/battery_module/proc/charge_to_full()
 	if(battery)
-		battery.charge = battery.maxcharge
+		battery.set_charge(battery.maxcharge)
 
 /obj/item/computer_hardware/battery_module/get_cell()
 	return battery

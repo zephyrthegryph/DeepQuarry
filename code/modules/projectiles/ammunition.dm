@@ -27,7 +27,6 @@ CAPABILITIES(/obj/item/ammo_casing)
 	. = BB
 	rel_take(src, nameof(BB))
 	set_dir(pick(GLOB.cardinal)) //spin spent casings
-	changed(src)
 
 /// Mass reloading: one matching shell from `floor` into the box every half second.
 /obj/item/ammo_casing/proc/collect_shell(mob/user, obj/item/ammo_magazine/box, turf/floor)
@@ -60,7 +59,6 @@ CAPABILITIES(/obj/item/ammo_casing)
 	if(!bullet)
 		return STEP_DONE
 	move_into(box, nameof(box.stored_ammo), bullet)
-	box.update_icon()
 	task.collected++
 	return next_shell(box, task.floor) ? STEP_REPEAT(0.5 SECONDS) : STEP_DONE
 
@@ -175,6 +173,9 @@ CAPABILITIES(/obj/item/ammo_casing)
 	var/list/icon_keys		//keys
 	var/list/ammo_states	//values
 
+TRACKED(/obj/item/ammo_magazine, latent_rounds)
+TRACKED(/obj/item/ammo_magazine, max_ammo)
+
 CAPABILITIES(/obj/item/ammo_magazine)
 	owns_many(nameof(stored_ammo))
 	param(nameof(forge_material), pos = 1)
@@ -199,7 +200,7 @@ CAPABILITIES(/obj/item/ammo_magazine)
 		// Lying on a turf or in a latent holder, the rounds are a count until
 		// something handles the magazine (C5). Forged rounds are always real.
 		if(!forge_material && (isturf(loc) || loc?.latent_contents_enabled()) && dq_latent_eligible(ammo_type))
-			latent_rounds = initial_ammo
+			set_latent_rounds(initial_ammo)
 		else
 			for(var/i in 1 to initial_ammo)
 				rel_add(src, nameof(stored_ammo), new ammo_type(src))
@@ -210,7 +211,6 @@ CAPABILITIES(/obj/item/ammo_magazine)
 		var/datum/material/forged = get_material_by_name(forge_material)
 		if(forged)
 			set_forged_material(forged)
-	update_icon()
 
 /// Old attackby (both of its definitions: magazine-to-magazine loading ran first). It never
 /// called the base attackby: any item stops here, but afterattack still follows.
@@ -231,7 +231,6 @@ CAPABILITIES(/obj/item/ammo_magazine)
 			return
 		if(!move_into(src, nameof(src.stored_ammo), C, user))
 			return
-		update_icon()
 	if(istype(W, /obj/item/ammo_magazine/clip))
 		var/obj/item/ammo_magazine/clip/L = W
 		if(L.caliber != caliber)
@@ -247,9 +246,7 @@ CAPABILITIES(/obj/item/ammo_magazine)
 		AC.forceMove(src)
 		rel_move(L, nameof(L.stored_ammo), src, nameof(stored_ammo), AC) //move this casing from the clip's loaded list to ours
 		moveElement(stored_ammo, length(stored_ammo), 1) //to the head of our magazine's list
-		L.update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-	update_icon()
 
 /// Old attack_self: this dumps all the bullets right on the floor.
 /obj/item/ammo_magazine/proc/magazine_interaction_self(datum/act/op/A)
@@ -267,7 +264,6 @@ CAPABILITIES(/obj/item/ammo_magazine)
 			C.forceMove(user.loc)
 			C.set_dir(pick(GLOB.cardinal))
 		rel_take_all(src, nameof(stored_ammo))
-		update_icon()
 	else
 		to_chat(user, span_notice("\The [src] is not designed to be unloaded."))
 	return OP_OK
@@ -283,7 +279,6 @@ CAPABILITIES(/obj/item/ammo_magazine)
 				own_take_member(src, nameof(stored_ammo), C)
 				user.put_in_hands(C)
 				act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
-				update_icon()
 				return OP_OK
 	return OP_DECLINE
 
@@ -298,7 +293,7 @@ CAPABILITIES(/obj/item/ammo_magazine)
 	var/list/rounds = list()
 	for(var/i in 1 to latent_rounds)
 		rounds += new ammo_type(src)
-	latent_rounds = 0
+	set_latent_rounds(0)
 	// The new rounds go to the head of the list, in order.
 	var/head = 1
 	for(var/obj/item/ammo_casing/new_round as anything in rounds)
@@ -319,18 +314,17 @@ CAPABILITIES(/obj/item/ammo_magazine)
 	if(latent_rounds && loc && !isturf(loc) && !loc?.latent_contents_enabled())
 		make_rounds_real()
 
-DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/ammo_magazine/appearance_overlays()
-	. = list()
+/obj/item/ammo_magazine/draw(datum/look/look)
+	..()
 	if(multiple_sprites)
 		//find the lowest key greater than or equal to length(stored_ammo)
 		var/new_state = null
 		for(var/idx in 1 to length(icon_keys))
 			var/threshold = LAZYACCESS(icon_keys, idx)
-			if (threshold >= ammo_count())
+			if (threshold >= length(stored_ammo) + latent_rounds)
 				new_state = LAZYACCESS(ammo_states, idx)
 				break
-		icon_state = (new_state)? new_state : initial(icon_state)
+		look.state(new_state ? new_state : initial(icon_state))
 
 
 /obj/item/ammo_magazine/examine(mob/user)
@@ -398,7 +392,6 @@ CAPABILITIES(/obj/item/ammo_magazine/ammo_box)
 				own_take_member(src, nameof(stored_ammo), C)
 				user.put_in_hands(C)
 				act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
-				update_icon()
 				return TRUE
 	return OP_DECLINE
 

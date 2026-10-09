@@ -37,6 +37,13 @@
 	var/gridstatus = 0
 	var/chargecap = 1000
 
+TRACKED(/obj/item/medigun_backpack, brutevol)
+TRACKED(/obj/item/medigun_backpack, toxvol)
+TRACKED(/obj/item/medigun_backpack, burnvol)
+TRACKED(/obj/item/medigun_backpack, brutecharge)
+TRACKED(/obj/item/medigun_backpack, toxcharge)
+TRACKED(/obj/item/medigun_backpack, burncharge)
+
 CAPABILITIES(/obj/item/medigun_backpack)
 	// Recharges its tanks and cell every 2 s while its manipulator, capacitor and matter bin are all fitted.
 	every(2 SECONDS, then(PROC_REF(medigun_backpack_step)), when = cond_all(nameof(smanipulator), nameof(scapacitor), nameof(sbin)))
@@ -114,11 +121,11 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 /obj/item/medigun_backpack/proc/drain_tank(tank, amount)
 	switch(tank)
 		if(MEDIGUN_TANK_BRUTE)
-			brutecharge = max(0, brutecharge - amount)
+			set_brutecharge(max(0, brutecharge - amount))
 		if(MEDIGUN_TANK_BURN)
-			burncharge = max(0, burncharge - amount)
+			set_burncharge(max(0, burncharge - amount))
 		if(MEDIGUN_TANK_TOX)
-			toxcharge = max(0, toxcharge - amount)
+			set_toxcharge(max(0, toxcharge - amount))
 
 /// Mend what `H`'s automated triage demands from the tanks' tags, up to
 /// `strength` per tank this cycle. Returns the total amount treated.
@@ -172,24 +179,24 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 		modifier = brutevol
 	if(modifier > (tankmax - brutecharge))
 		modifier = tankmax - brutecharge
-	brutevol -= modifier
-	brutecharge += modifier
+	set_brutevol(brutevol - modifier)
+	set_brutecharge(brutecharge + modifier)
 
 /obj/item/medigun_backpack/proc/adjust_burnvol(modifier)
 	if(modifier > burnvol)
 		modifier = burnvol
 	if(modifier > (tankmax - burncharge))
 		modifier = tankmax - burncharge
-	burnvol -= modifier
-	burncharge += modifier
+	set_burnvol(burnvol - modifier)
+	set_burncharge(burncharge + modifier)
 
 /obj/item/medigun_backpack/proc/adjust_toxvol(modifier)
 	if(modifier > toxvol)
 		modifier = toxvol
 	if(modifier > (tankmax - toxcharge))
 		modifier = tankmax - toxcharge
-	toxvol -= modifier
-	toxcharge += modifier
+	set_toxvol(toxvol - modifier)
+	set_toxcharge(toxcharge + modifier)
 
 /obj/item/medigun_backpack/proc/medigun_backpack_step(datum/act/timer/A)
 	if(!bcell)
@@ -198,30 +205,21 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 	var/obj/item/bork_medigun/medigun = get_medigun()
 
 	if(bcell.charge >= 10)
-		var/icon_needs_update = FALSE
 		if(brutecharge < tankmax && brutevol > 0 && (bcell.checked_use(smaniptier * 2)))
 			adjust_brutevol(smaniptier * 2)
-			icon_needs_update = TRUE
 		if(burncharge < tankmax && burnvol > 0 && (bcell.checked_use(smaniptier * 2)))
 			adjust_burnvol(smaniptier * 2)
-			icon_needs_update = TRUE
 		if(toxcharge < tankmax && toxvol > 0 && (bcell.checked_use(smaniptier * 2)))
 			adjust_toxvol(smaniptier * 2)
-			icon_needs_update = TRUE
 		//Alien tier
 		if(sbintier >= 5 && medigun.busy == MEDIGUN_IDLE && (bcell.charge >= 10))
 			if(brutevol < chemcap && (bcell.checked_use(10)))
-				icon_needs_update = TRUE
-				brutevol ++
+				set_brutevol(brutevol + 1)
 			if(burnvol < chemcap && (bcell.checked_use(10)))
-				icon_needs_update = TRUE
-				burnvol ++
+				set_burnvol(burnvol + 1)
 			if(toxvol < chemcap && (bcell.checked_use(10)))
-				icon_needs_update = TRUE
-				toxvol ++
+				set_toxvol(toxvol + 1)
 
-		if(icon_needs_update)
-			changed(src)
 
 	if(scapacitor.get_rating() >= 5)
 		if(apc_charge())
@@ -238,7 +236,6 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 	if(missing > 0)
 		if(ccell && ccell.checked_use(missing))
 			bcell.give(missing)
-			changed(src)
 			return
 
 		if(ismob(loc))
@@ -294,7 +291,6 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 		medigun.icon_state = "medblaster_cmo"
 		medigun.base_icon_state = "medblaster_cmo"
 
-	changed(src)
 
 /obj/item/medigun_backpack/Initialize(mapload)
 	make_tethered(medigun_path)
@@ -309,7 +305,7 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 		medigun.base_icon_state = "medblaster_cmo"
 		medigun.wielded_item_state = ""
 	if(bcell) // declared default: starts empty
-		bcell.charge = 0
+		bcell.set_charge(0)
 
 
 /obj/item/medigun_backpack/proc/get_medigun()
@@ -438,29 +434,29 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 			var/scaptier = scapacitor.get_rating()
 			if(scaptier == 1)
 				chargecap = 1000
-				bcell.maxcharge = 1000
+				bcell.set_maxcharge(1000)
 				if(bcell.charge > chargecap)
-					bcell.charge = chargecap
+					bcell.set_charge(chargecap)
 			else if(scaptier == 2)
 				chargecap = 2000
-				bcell.maxcharge = 2000
+				bcell.set_maxcharge(2000)
 				if(bcell.charge > chargecap)
-					bcell.charge = chargecap
+					bcell.set_charge(chargecap)
 			else if(scaptier == 3)
 				chargecap = 3000
-				bcell.maxcharge = 3000
+				bcell.set_maxcharge(3000)
 				if(bcell.charge > chargecap)
-					bcell.charge = chargecap
+					bcell.set_charge(chargecap)
 			else if(scaptier == 4)
 				chargecap = 4000
-				bcell.maxcharge = 4000
+				bcell.set_maxcharge(4000)
 				if(bcell.charge > chargecap)
-					bcell.charge = chargecap
+					bcell.set_charge(chargecap)
 			else if(scaptier == 5)
 				chargecap = 5000
-				bcell.maxcharge = 5000
+				bcell.set_maxcharge(5000)
 				if(bcell.charge > chargecap)
-					bcell.charge = chargecap
+					bcell.set_charge(chargecap)
 
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			return OP_PASS
@@ -479,17 +475,17 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 				chemcap = 60*(sbintier)
 				tankmax = 30*sbintier
 			if(brutecharge > chemcap)
-				brutecharge = chemcap
+				set_brutecharge(chemcap)
 			if(burncharge > chemcap)
-				burncharge = chemcap
+				set_burncharge(chemcap)
 			if(toxcharge > chemcap)
-				toxcharge = chemcap
+				set_toxcharge(chemcap)
 			if(brutecharge > tankmax)
-				brutecharge = tankmax
+				set_brutecharge(tankmax)
 			if(burncharge > tankmax)
-				burncharge = tankmax
+				set_burncharge(tankmax)
 			if(toxcharge > tankmax)
-				toxcharge = tankmax
+				set_toxcharge(tankmax)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			return OP_PASS
 
@@ -535,19 +531,18 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 
 				switch(R.id)
 					if(REAGENT_ID_BICARIDINE)
-						brutevol += totransfer
+						set_brutevol(brutevol + totransfer)
 					if(REAGENT_ID_ANTITOXIN)
-						toxvol += totransfer
+						set_toxvol(toxvol + totransfer)
 					if(REAGENT_ID_KELOTANE)
-						burnvol += totransfer
+						set_burnvol(burnvol + totransfer)
 					if(REAGENT_ID_DERMALINE)
-						burnvol += totransfer
+						set_burnvol(burnvol + totransfer)
 				if(totransfer > 0)
 					if(R.id != "tricordrazine")
 						to_chat(user, span_notice("You add [totransfer / modifier] units of [R.name] to the [src]. \n The [src] stores [round(totransfer)] U of [name]."))
 					container.reagents.remove_reagent(R.id, totransfer / modifier)
 					play_sfx(src, SFX_WEAPONS_EMPTY)
-				changed(src)
 				. = TRUE
 	return
 

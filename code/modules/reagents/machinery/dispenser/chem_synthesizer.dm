@@ -26,6 +26,8 @@
 	panel_open = TRUE
 
 	var/busy = FALSE
+	/// The reaction is done and the product is waiting to be bottled.
+	var/finishing = FALSE
 	var/production_mode = FALSE // Toggle between click-step input and comma-delineated text input for creating recipes.
 	var/use_catalyst = TRUE // Determines whether or not the catalyst will be added to reagents while processing a recipe.
 	var/stalled = FALSE  // Required for emergency stop to interrupt on-going recipes.
@@ -77,6 +79,9 @@
 		REAGENT_ID_ALUMINIUM, REAGENT_ID_SILICON, REAGENT_ID_PHOSPHORUS, REAGENT_ID_SULFUR, REAGENT_ID_CHLORINE, REAGENT_ID_POTASSIUM, REAGENT_ID_IRON,
 		REAGENT_ID_COPPER, REAGENT_ID_MERCURY, REAGENT_ID_RADIUM, REAGENT_ID_WATER, REAGENT_ID_ETHANOL, REAGENT_ID_SUGAR, REAGENT_ID_SACID, REAGENT_ID_TUNGSTEN, REAGENT_ID_CALCIUM
 		)
+
+TRACKED(/obj/machinery/chemical_synthesizer, busy)
+TRACKED(/obj/machinery/chemical_synthesizer, finishing)
 
 /obj/machinery/chemical_synthesizer/var/_recharge_reagents = TRUE
 TRACKED_BRIDGED(/obj/machinery/chemical_synthesizer, _recharge_reagents, CHANGE_MACHINE_SETTINGS)
@@ -174,32 +179,29 @@ CAPABILITIES(/obj/machinery/chemical_synthesizer)
 	if(panel_open)
 		. += "It has [length(cartridges)] cartridges installed, and has space for [SYNTHESIZER_MAX_CARTRIDGES - length(cartridges)] more."
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/chemical_synthesizer/appearance_overlays()
-	. = list()
-	underlays.Cut()
+/// The machine: broken, off, idle (with or without its catalyst bottle), working, or done; the catalyst and the mix under it in the colour of each.
+/obj/machinery/chemical_synthesizer/draw(datum/look/look)
+	..()
 	if(broken_now())
-		icon_state = "synth_broken"
-		return .
+		look.state("synth_broken")
+		return
 	if(power_lost())
-		icon_state = "synth_off"
-		return .
-	if(!busy)
-		if(catalyst)
-			icon_state = "synth_idle_bottle"
-		else
-			icon_state = "synth_idle"
+		look.state("synth_off")
+		return
+	look.watch(reagents)
+	look.watch(catalyst)
+	if(finishing)
+		look.state("synth_finished")
+	else if(busy)
+		look.state("synth_working")
 	else
-		icon_state = "synth_working"
+		look.state(catalyst ? "synth_idle_bottle" : "synth_idle")
 	if(catalyst) // All underlay icon_states requires the catalyst bottle to be present, so this works as a check.
-		if(catalyst.reagents.reagent_list.len)
-			var/image/cat_filling = image(icon, src, "synth_catalyst", -1)
-			cat_filling.color = catalyst.reagents.get_color()
-			underlays += cat_filling
-		if(src.reagents.reagent_list.len)
-			var/image/ves_filling = image(icon, src, "synth_vessel", -2)
-			ves_filling.color = src.reagents.get_color()
-			underlays += ves_filling
+		look.watch(catalyst.reagents)
+		if(catalyst.reagents.master_id)
+			look.underlay(look_overlay_image(icon, "synth_catalyst", layer = -1, color = catalyst.reagents.tint))
+		if(reagents.master_id)
+			look.underlay(look_overlay_image(icon, "synth_vessel", layer = -2, color = reagents.tint))
 
 /obj/machinery/chemical_synthesizer/proc/add_cartridge(obj/item/reagent_containers/chem_disp_cartridge/C, mob/user)
 	if(!panel_open)
@@ -268,7 +270,6 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	if(!move_into(src, nameof(src.catalyst), RC, user))
 		return OP_OK
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/chemical_synthesizer/proc/wrench_used(datum/act/op/A)
@@ -411,7 +412,6 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	if(!busy && catalyst)
 		catalyst.forceMove(get_turf(src))
 		rel_take(src, nameof(catalyst))
-		update_icon()
 
 /obj/machinery/chemical_synthesizer/proc/ui_act_toggle_catalyst(datum/act/op/A)
 	var/mob/user = A.actor
@@ -557,10 +557,10 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 
 /// Requirement: the machine is idle (the old handlers asked only while it was).
 /obj/machinery/chemical_synthesizer/proc/is_busy(datum/act/op/A)
-	return busy // ALLOW(reads): asked when the button is pressed and again when its question is answered, never cached
+	return busy
 
 /obj/machinery/chemical_synthesizer/proc/is_idle(datum/act/op/A)
-	return !busy // ALLOW(reads): asked when the button is pressed and again when its question is answered, never cached
+	return !busy
 /obj/machinery/chemical_synthesizer/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/spritesheet/chem_master),
@@ -705,7 +705,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 		to_chat(user, "Empty the reaction vessel before starting the queue!")
 		return
 
-	busy = TRUE
+	set_busy(TRUE)
 	set_use_power(USE_POWER_ACTIVE)
 	if(use_catalyst)
 		// Populate the list of catalyst chems. This is important when it's time to bottle_product().
@@ -716,7 +716,6 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 		catalyst.reagents.trans_to_holder(src.reagents, catalyst.reagents.total_volume)
 
 	// Start the first recipe in the queue, starting with step 1.
-	update_icon()
 	follow_recipe(queue[1], 1)
 
 
@@ -776,7 +775,6 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	// After all this mess of code, we reach the line where the magic happens.
 	C.reagents.trans_to_holder(src.reagents, quantity)
 	work_start(src) // a cartridge to refill
-	update_icon() // Update underlays.
 	play_sfx(src, SFX_MACHINES_HPLC_BINARY_PUMP)
 
 	// Advance to the next step in the recipe. If this is outside of the recipe's index, we're finished. Otherwise, proceed to next step.
@@ -793,8 +791,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 		// Add a delay of 1 tick per unit of reagent. Clear the catalyst_ids.
 		catalyst_ids = list()
 		var/delay = reagents.total_volume
-		update_icon() // Update the icon first to remove underlays, then switch to the new icon_state.
-		icon_state = "synth_finished"
+		set_finishing(TRUE)
 		after(src, delay, PROC_REF(bottle_product), with = list(r_id))
 
 	else
@@ -841,7 +838,8 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 				B.pixel_y = rand(-7, 7)
 				B.icon_state = "bottle-[bottle_icon]"
 				reagents.trans_to_obj(B, min(reagents.total_volume, MAX_UNITS_PER_BOTTLE))
-				changed(B)
+
+	set_finishing(FALSE)
 
 	// Sanity check when manual bottling is triggered.
 	if(queue.len)
@@ -853,23 +851,21 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 			for(var/datum/reagent/chem in catalyst.reagents.reagent_list)
 				LAZYADD(catalyst_ids, chem.id)
 			catalyst.reagents.trans_to_holder(src.reagents, catalyst.reagents.total_volume)
-		update_icon()
 		follow_recipe(queue[1], 1)
 
 	else
-		busy = FALSE
+		set_busy(FALSE)
 		set_use_power(USE_POWER_IDLE)
 		queue = list()
-		update_icon()
 
 
 // What happens to the synthesizer if it breaks or loses power in the middle of running. Chemists must fix things manually.
 /obj/machinery/chemical_synthesizer/proc/stall()
-	busy = FALSE
+	set_busy(FALSE)
+	set_finishing(FALSE)
 	set_use_power(USE_POWER_IDLE)
 	queue = list()
 	catalyst_ids = list()
-	update_icon()
 
 #undef SYNTHESIZER_MAX_CARTRIDGES
 #undef SYNTHESIZER_MAX_RECIPES

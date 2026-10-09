@@ -8,6 +8,7 @@
  * Crap
  */
 /obj/item/cell/crap
+	standard_overlays = FALSE
 	name = "\improper rechargable AA battery"
 	desc = "An older, cheap power cell. It's probably been in use for quite some time now."
 	desc = "You can't top the plasma top." // TOTALLY TRADEMARK INFRINGEMENT //
@@ -17,7 +18,6 @@
 	robot_durability = 20
 
 /* 
-APPEARANCE_NONE(/obj/item/cell/crap)
 */// CHOMPRemve End
 
 /obj/item/cell/crap/empty
@@ -101,13 +101,13 @@ APPEARANCE_NONE(/obj/item/cell/crap)
 	maxcharge = 15000
 
 /obj/item/cell/mech/lead
+	standard_overlays = FALSE
 	name = "lead acid battery"
 	desc = "An ancient battery design not commonly seen anymore. It looks like it'd fit inside a mech however..."
 	icon_state = "lead"
 	charge = 8000
 	maxcharge = 8000
 
-APPEARANCE_NONE(/obj/item/cell/mech/lead)
 /obj/item/cell/mech/high
 	name = "high-capacity mecha power cell"
 	icon_state = "exs_m"
@@ -137,7 +137,7 @@ APPEARANCE_NONE(/obj/item/cell/mech/lead)
 /obj/item/cell/infinite/check_charge()
 	return 1
 
-/obj/item/cell/infinite/use(amount, update_appearance = TRUE, seconds = 0)
+/obj/item/cell/infinite/use(amount, seconds = 0)
 	return max(amount, 0)
 
 /*
@@ -171,6 +171,7 @@ APPEARANCE_NONE(/obj/item/cell/mech/lead)
  * Emergency Light
  */
 /obj/item/cell/emergency_light
+	standard_overlays = FALSE
 	name = "miniature power cell"
 	desc = "A tiny power cell with a very low power capacity. Used in light fixtures to power them in the event of an outage."
 	charge = 360
@@ -179,12 +180,11 @@ APPEARANCE_NONE(/obj/item/cell/mech/lead)
 	connector_type = "emergency"
 	w_class = ITEMSIZE_TINY
 
-APPEARANCE_NONE(/obj/item/cell/emergency_light)
 /obj/item/cell/emergency_light/Initialize(mapload)
 	. = ..()
 	var/area/A = get_area(src)
 	if(!A.lightswitch || !A.light_power)
-		charge = 0 //For naturally depowered areas, we start with no power
+		set_charge(0) //For naturally depowered areas, we start with no power
 
 /*
  * Backup Battery
@@ -263,7 +263,7 @@ CAPABILITIES(/obj/item/cell/void)
 	to_chat(user, span_notice("You swap [cell_name] to 'device cell' mode."))
 	var/obj/item/cell/newcell = new replacement_type(null)
 	user.put_in_active_hand(newcell)
-	newcell.charge = newcell.maxcharge * percentage
+	newcell.set_charge(newcell.maxcharge * percentage)
 	newcell.persist_storable = original_persist_storable
 	return TRUE
 

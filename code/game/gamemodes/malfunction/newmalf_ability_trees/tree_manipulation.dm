@@ -195,7 +195,7 @@
 		if(temp_apc)
 			temp_apc.emp_act(EMP_LIGHT) // Such power surges are not good for APC electronics
 			if(temp_apc.cell)
-				temp_apc.cell.maxcharge -= between(0, (temp_apc.cell.maxcharge/2) + 500, temp_apc.cell.maxcharge)
+				temp_apc.cell.set_maxcharge(temp_apc.cell.maxcharge - between(0, (temp_apc.cell.maxcharge/2) + 500, temp_apc.cell.maxcharge))
 				if(temp_apc.cell.maxcharge < 100) // That's it, you busted the APC cell completely. Break the APC and completely destroy the cell.
 					destroyed(temp_apc.cell, null, "overload")
 					temp_apc.atom_break()

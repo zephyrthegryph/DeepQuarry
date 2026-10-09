@@ -135,7 +135,7 @@ TYPE_TABLE(/obj/mecha/working/ripley/deathripley, mecha_starting_equipment, list
 	. = ..()
 	max_integrity = 190	//Just slightly worse.
 	update_integrity(25)
-	cell.charge = rand(0, cell.charge)
+	cell.set_charge(rand(0, cell.charge))
 
 /obj/mecha/working/ripley
 	minimum_penetration = 0

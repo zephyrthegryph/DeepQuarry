@@ -23,18 +23,17 @@ CAPABILITIES(/obj/machinery/pump_relay)
 
 /obj/machinery/pump_relay/on_reagent_change(changetype)
 	. = ..()
-	update_icon()
 	if(prob(2))
 		visible_message(span_infoplain("\The [src] gurgles as it pumps fluid."))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/pump_relay, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/pump_relay/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/machinery/pump_relay/draw(datum/look/look)
+	..()
 	// GOOBY!
-	if(reagents && reagents.total_volume >= 5)
-		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
-		switch(percent)
+	var/datum/reagents/R = reagents
+	look.watch(R) // its level and colour are tracked on the holder
+	if(R?.total_volume >= 5)
+		var/percent
+		switch((R.total_volume / R.maximum_volume) * 100)
 			if(5  to 10)		percent = 1
 			if(10 to 20)		percent = 2
 			if(20 to 30)		percent = 3
@@ -45,9 +44,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump_relay, TYPE_PROC_REF(/atom, appearan
 			if(70 to 80)		percent = 8
 			if(80 to 90)		percent = 9
 			if(90 to INFINITY)	percent = 10
-		var/image/filling = image(icon, loc, "pumprelay_r_[percent]",dir = dir)
-		filling.color = reagents.get_color()
-		. += filling
+		look.overlay(look_overlay_image(icon, "pumprelay_r_[percent]", color = R.tint, dir = dir), when = !isnull(percent))
 
 /obj/machinery/pump_relay/examine(mob/user, infix, suffix)
 	. = ..()

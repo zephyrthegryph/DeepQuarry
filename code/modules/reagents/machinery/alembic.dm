@@ -19,6 +19,7 @@
 	var/expected_base = 0
 TRACKED(/obj/machinery/alembic, bubbling)
 TRACKED(/obj/machinery/alembic, potion_reagent)
+TRACKED(/obj/machinery/alembic, base_reagent)
 
 /// The icon_state suffix for the alembic's fill/bubbling stage.
 /obj/machinery/alembic/proc/appearance_stage()
@@ -49,12 +50,12 @@ TRACKED(/obj/machinery/alembic, potion_reagent)
 	return TRUE
 
 /obj/machinery/alembic/proc/alembic_no_base(datum/act/op/A)
-	return !base_reagent // ALLOW(reads): the slot is read when a base is offered to it, never from a cached menu
+	return !base_reagent
 
 /obj/machinery/alembic/proc/interaction_load_base(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
-	src.base_reagent = O
+	set_base_reagent(O)
 	user.drop_item()
 	O.forceMove(src)
 	to_chat(user, span_notice("You place the [O] in the alembic."))
@@ -70,8 +71,7 @@ TRACKED(/obj/machinery/alembic, potion_reagent)
 	to_chat(user, span_notice("The alembic finishes brewing the potion!"))
 	spawn_potion()
 	set_potion_reagent(0)
-	base_reagent = 0
-	changed(src)
+	set_base_reagent(0)
 
 /obj/machinery/alembic/proc/interaction_brew(datum/act/op/A)
 	var/mob/user = A.actor

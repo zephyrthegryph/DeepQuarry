@@ -5,13 +5,16 @@
 	icon_state = "blankdurg"
 	pokephrase = "Squeaky!"
 
-	var/base_color = "#FFFFFF"
+	var/fabric_color = "#FFFFFF"
 	var/list/possible_overlays
 	var/list/added_overlays
 
+TRACKED(/obj/item/toy/plushie/customizable, fabric_color)
+TRACKED(/obj/item/toy/plushie/customizable, added_overlays)
+
 /obj/item/toy/plushie/customizable/draw(datum/look/look)
 	..()
-	look.overlay(look_appearance(icon, look.state_so_far(src), color = base_color))
+	look.overlay(look_appearance(icon, look.state_so_far(src), color = fabric_color))
 	if(added_overlays)
 		for(var/key, value in added_overlays)
 			look.overlay(look_appearance(icon, key, color = value["color"], alpha = value["alpha"]))
@@ -37,7 +40,7 @@
 			))
 
 	var/list/data = list(
-		"base_color" = base_color,
+		"base_color" = fabric_color,
 		"name" = name,
 		"icon" = icon,
 		"preview" = icon2base64(get_flat_icon(src)),
@@ -53,19 +56,19 @@
 
 /// The overlay a colour button names is on the plushie: only then is its colour asked.
 /obj/item/toy/plushie/customizable/proc/overlay_added(datum/act/op/A)
-	return !!LAZYACCESS(added_overlays, A.args["icon_state"]) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+	return !!LAZYACCESS(added_overlays, A.args["icon_state"])
 
 /obj/item/toy/plushie/customizable/proc/overlay_color_title(datum/act/op/A)
 	return LAZYACCESS(possible_overlays, A.args["icon_state"])
 
 /obj/item/toy/plushie/customizable/proc/plushie_base_color(datum/act/op/A)
-	return base_color
+	return fabric_color
 
 /obj/item/toy/plushie/customizable/proc/ui_gate(datum/act/op/A)
 	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!added_overlays)
-		added_overlays = list()
+		set_added_overlays(list())
 	return TRUE
 
 /obj/item/toy/plushie/customizable/proc/ui_act_add_overlay(datum/act/op/A, new_overlay_arg)
@@ -78,7 +81,7 @@
 		return FALSE
 	. = TRUE
 	added_overlays[new_overlay] = list(color = "#FFFFFF", alpha = 255)
-	changed(src)
+	tracked_changed(src, nameof(added_overlays))
 
 /obj/item/toy/plushie/customizable/proc/ui_act_remove_overlay(datum/act/op/A, removed_overlay_arg)
 	if(!ui_gate(A))
@@ -90,7 +93,7 @@
 		return FALSE
 	. = TRUE
 	added_overlays.Remove(removed_overlay)
-	changed(src)
+	tracked_changed(src, nameof(added_overlays))
 
 /obj/item/toy/plushie/customizable/proc/ui_act_change_overlay_color(datum/act/op/A, icon_state)
 	if(!ui_gate(A))
@@ -105,7 +108,7 @@
 	if(!target)
 		return FALSE
 	target["color"] = A.step_value("color")
-	changed(src)
+	tracked_changed(src, nameof(added_overlays))
 
 /obj/item/toy/plushie/customizable/proc/ui_act_move_overlay_up(datum/act/op/A, icon)
 	if(!ui_gate(A))
@@ -117,7 +120,7 @@
 	. = TRUE
 	if (idx < added_overlays.len)
 		added_overlays.Swap(idx, idx + 1)
-	changed(src)
+	tracked_changed(src, nameof(added_overlays))
 
 /obj/item/toy/plushie/customizable/proc/ui_act_move_overlay_down(datum/act/op/A, icon)
 	if(!ui_gate(A))
@@ -129,14 +132,13 @@
 	. = TRUE
 	if (idx > 1)
 		added_overlays.Swap(idx, idx - 1)
-	changed(src)
+	tracked_changed(src, nameof(added_overlays))
 
 /obj/item/toy/plushie/customizable/proc/ui_act_change_base_color(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
 	. = TRUE
-	base_color = A.step_value("color")
-	changed(src)
+	set_fabric_color(A.step_value("color"))
 
 /obj/item/toy/plushie/customizable/proc/ui_act_set_overlay_alpha(datum/act/op/A, alpha, icon_state)
 	if(!ui_gate(A))
@@ -147,7 +149,7 @@
 	. = TRUE
 	var/new_alpha = alpha
 	target["alpha"] = new_alpha
-	changed(src)
+	tracked_changed(src, nameof(added_overlays))
 
 /obj/item/toy/plushie/customizable/proc/ui_act_import_config(datum/act/op/A, config)
 	if(!ui_gate(A))
@@ -156,11 +158,12 @@
 		return FALSE
 	. = TRUE
 	var/our_data = config
-	base_color = sanitize_hexcolor(our_data["base_color"])
+	set_fabric_color(sanitize_hexcolor(our_data["base_color"]))
 	var/new_name = sanitize_name(our_data["name"])
 	if(new_name)
 		set_new_name(new_name)
 	added_overlays.Cut()
+	tracked_changed(src, nameof(added_overlays))
 	if(!possible_overlays)
 		return
 	for(var/overlay in our_data["overlays"])
@@ -168,7 +171,7 @@
 			var/new_color = sanitize_hexcolor(overlay["color"])
 			var/new_alpha = CLAMP(text2num(overlay["alpha"]), 0, 255)
 			added_overlays[overlay["icon_state"]] = list(color = new_color, alpha = new_alpha)
-	changed(src)
+	tracked_changed(src, nameof(added_overlays))
 
 CAPABILITIES(/obj/item/toy/plushie/customizable)
 	op("clear", ui_act(), then(PROC_REF(ui_act_clear)))
@@ -192,10 +195,10 @@ CAPABILITIES(/obj/item/toy/plushie/customizable)
 /obj/item/toy/plushie/customizable/proc/ui_act_clear(datum/act/op/A)
 	add_fingerprint(A.actor)
 	if(!added_overlays)
-		added_overlays = list()
+		set_added_overlays(list())
 	added_overlays.Cut()
-	base_color = "#FFFFFF"
-	changed(src)
+	tracked_changed(src, nameof(added_overlays))
+	set_fabric_color("#FFFFFF")
 	return OP_OK
 
 /obj/item/toy/plushie/customizable/proc/ui_act_rename(datum/act/op/A, name)

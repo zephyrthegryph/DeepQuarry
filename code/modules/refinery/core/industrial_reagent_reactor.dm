@@ -31,8 +31,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
 	rel_set(src, nameof(internal_tank), new /obj/machinery/portable_atmospherics/canister/empty())
 	update_gas_network()
 	COOLDOWN_START(src, next_mode_toggle, dis_time SECONDS)
-	// Update neighbours and self for state
-	update_neighbours()
 
 
 /obj/machinery/reagent_refinery/reactor/refinery_step()
@@ -74,7 +72,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
 		if(operable())
 			var/image/dot = image(icon, icon_state = "vat_dot_[ toggle_mode > REACTOR_MODE_INTAKE ? "on" : "off" ]") // Show refinery output mode
 			look.overlay(dot)
-		look.overlay(update_input_connection_overlays("reactor_intakes"))
+		look.overlay(update_input_connection_overlays(look, "reactor_intakes"))
 
 /obj/machinery/reagent_refinery/reactor/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// no back/forth, filters don't use just their forward, they send the side too!

@@ -5,7 +5,6 @@
 	return
 
 /mob/proc/update_icons()
-	update_icon() //Ugh.
 	return
 
 // Obsolete

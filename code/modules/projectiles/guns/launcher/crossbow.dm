@@ -236,6 +236,8 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 
 	var/buildstate = 0
 
+TRACKED(/obj/item/crossbowframe, buildstate)
+
 /// The look (the draw sweep: from its template).
 /obj/item/crossbowframe/draw(datum/look/look)
 	..()
@@ -269,8 +271,7 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
 			playsound(src, tool.usesound, 50, 1)
 			to_chat(user, span_notice("You weld the rods into place."))
-		buildstate++
-		changed(src)
+		set_buildstate(buildstate + 1)
 	return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/crossbowframe)
@@ -285,8 +286,7 @@ CAPABILITIES(/obj/item/crossbowframe)
 			var/obj/item/stack/rods/R = W
 			if(R.use(3))
 				to_chat(user, span_notice("You assemble a backbone of rods around the wooden stock."))
-				buildstate++
-				changed(src)
+				set_buildstate(buildstate + 1)
 			else
 				to_chat(user, span_notice("You need at least three rods to complete this task."))
 			return OP_PASS
@@ -295,16 +295,14 @@ CAPABILITIES(/obj/item/crossbowframe)
 		if(buildstate == 2)
 			if(C.use(5))
 				to_chat(user, span_notice("You wire a crude cell mount into the top of the crossbow."))
-				buildstate++
-				changed(src)
+				set_buildstate(buildstate + 1)
 			else
 				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
 			return OP_PASS
 		else if(buildstate == 4)
 			if(C.use(5))
 				to_chat(user, span_notice("You string a steel cable across the crossbow's lath."))
-				buildstate++
-				changed(src)
+				set_buildstate(buildstate + 1)
 			else
 				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
 			return OP_PASS
@@ -313,8 +311,7 @@ CAPABILITIES(/obj/item/crossbowframe)
 			var/obj/item/stack/material/P = W
 			if(P.use(3))
 				to_chat(user, span_notice("You assemble and install a heavy plastic lath onto the crossbow."))
-				buildstate++
-				changed(src)
+				set_buildstate(buildstate + 1)
 			else
 				to_chat(user, span_notice("You need at least three plastic sheets to complete this task."))
 			return OP_PASS

@@ -19,14 +19,12 @@
 	var/datum/tgui_module/alarm_monitor/TMA = TM
 	if(istype(TMA) && TMA.has_major_alarms())
 		if(!has_alert)
-			program_icon_state = "alert-red"
+			set_program_icon_state("alert-red")
 			ui_header = "alarm_red.gif"
-			update_computer_icon()
 			has_alert = 1
 	else
 		if(has_alert)
-			program_icon_state = "alert-green"
+			set_program_icon_state("alert-green")
 			ui_header = "alarm_green.gif"
-			update_computer_icon()
 			has_alert = 0
 	return 1

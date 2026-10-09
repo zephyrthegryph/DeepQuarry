@@ -26,6 +26,8 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+TRACKED(/obj/item/melee/baton, status)
+
 CAPABILITIES(/obj/item/melee/baton)
 	owns_one(nameof(bcell), /obj/item/cell)
 	op("power", in_hand(), when(cond_not(nameof(special_handling))), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
@@ -87,8 +89,7 @@ CAPABILITIES(/obj/item/melee/baton/loaded)
 /obj/item/melee/baton/proc/powercheck()
 	if(bcell)
 		if(bcell.charge < hitcost)
-			status = 0
-			changed(src)
+			set_status(0)
 
 /obj/item/melee/baton/draw(datum/look/look)
 	..()
@@ -112,9 +113,8 @@ CAPABILITIES(/obj/item/melee/baton/loaded)
 /obj/item/melee/baton/dropped(mob/user, equipping, slot)
 	..()
 	if(status && grip_safety && !taped_safety)
-		status = 0
+		set_status(0)
 		visible_message(span_warning("\The [src]'s grip safety engages!"))
-	changed(src)
 
 /obj/item/melee/baton/examine(mob/user)
 	. = ..()
@@ -137,7 +137,6 @@ CAPABILITIES(/obj/item/melee/baton/loaded)
 				if(!move_into(src, nameof(src.bcell), W, user))
 					return OP_PASS
 				to_chat(user, span_notice("You install a cell in [src]."))
-				changed(src)
 			else
 				to_chat(user, span_notice("[src] already has a cell."))
 		else
@@ -160,11 +159,10 @@ CAPABILITIES(/obj/item/melee/baton/loaded)
 	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(bcell)
-			bcell.update_icon()
 			user.put_in_hands(bcell)
 			rel_take(src, nameof(bcell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
-			status = 0
+			set_status(0)
 			return OP_OK
 		return OP_DECLINE
 	else
@@ -173,11 +171,11 @@ CAPABILITIES(/obj/item/melee/baton/loaded)
 /obj/item/melee/baton/proc/baton_power_toggled(datum/act/op/A)
 	var/mob/user = A.actor
 	if(bcell && bcell.charge >= hitcost)
-		status = !status
+		set_status(!status)
 		to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
 		play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
 	else
-		status = 0
+		set_status(0)
 		if(!bcell)
 			to_chat(user, span_warning("[src] does not have a power source!"))
 		else

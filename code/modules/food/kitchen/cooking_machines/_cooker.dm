@@ -91,22 +91,19 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 		rel_add(src, nameof(cooking_objs), new /datum/cooking_item/(new container_type(src)))
 	set_cooking(FALSE)
 
-	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
+/// The cooker's status light: idle, preheating, or off.
+/obj/machinery/appliance/cooker/draw(datum/look/look)
+	..()
+	draw_lights(look)
 
-APPEARANCE_NONE(/obj/machinery/appliance/cooker)
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/cooker/appearance_overlays()
-	. = list()
-	var/image/light
+/// The lights a cooker shows; a type with lights of its own replaces this.
+/obj/machinery/appliance/cooker/proc/draw_lights(datum/look/look)
+	var/light = "light_off"
 	if(use_power == 1 && !has_condition())
-		light = image(icon, "light_idle")
+		light = "light_idle"
 	else if(use_power == 2 && !has_condition())
-		light = image(icon, "light_preheating")
-	else
-		light = image(icon, "light_off")
-	light.pixel_x = light_x
-	light.pixel_y = light_y
-	. += light
+		light = "light_preheating"
+	look.overlay(look_overlay_image(icon, light, pixel_x = light_x, pixel_y = light_y))
 
 /obj/machinery/appliance/cooker/work_step(datum/act/timer/A)
 	if (!has_condition())

@@ -25,13 +25,15 @@
 	var/light_range_on = 2
 	light_color = "#64C864"
 
-	var/image/small_station_map = null
-	var/image/floor_markings = null
 	var/image/panel = null
 
 	var/original_zLevel = 1	// zLevel on which the station map was initialized.
+	var/offsets_settled_flag = FALSE
 	var/bogus = TRUE		// set to 0 when you initialize the station map on a zLevel that has its own icon formatted for use by station holomaps.
 	var/datum/station_holomap/holomap_datum
+
+TRACKED(/obj/machinery/station_map, bogus)
+TRACKED(/obj/machinery/station_map, offsets_settled_flag)
 
 CAPABILITIES(/obj/machinery/station_map)
 	ref_one(nameof(watching_mob))
@@ -57,23 +59,21 @@ CAPABILITIES(/obj/machinery/station_map)
 	stopWatching()
 
 /obj/machinery/station_map/proc/setup_holomap()
-	bogus = FALSE
 	var/turf/T = get_turf(src)
 	original_zLevel = T.z
 	if(!("[HOLOMAP_EXTRA_STATIONMAP]_[original_zLevel]" in SSholomaps.extraMiniMaps))
-		bogus = TRUE
+		set_bogus(TRUE)
 		holomap_datum.initialize_holomap_bogus()
-		update_icon()
 		return
 
 	holomap_datum.initialize_holomap(T, reinit = TRUE)
+	set_bogus(FALSE)
 
-	small_station_map = image(SSholomaps.extraMiniMaps["[HOLOMAP_EXTRA_STATIONMAPSMALL]_[original_zLevel]"], dir = dir)
+	after(src, 0.1 SECONDS, PROC_REF(offsets_settled)) //When built from frames, need to allow time for it to set pixel_x and pixel_y
 
-	floor_markings = image('icons/obj/machines/stationmap.dmi', "decal_station_map")
-	floor_markings.dir = src.dir
-
-	after(src, 0.1 SECONDS, TYPE_PROC_REF(/atom, update_icon)) //When built from frames, need to allow time for it to set pixel_x and pixel_y
+/// The pixel offset of a machine built from a frame is set a moment after init: the floor markings (which cancel it) draw once it has settled.
+/obj/machinery/station_map/proc/offsets_settled()
+	set_offsets_settled_flag(TRUE)
 
 MSG_DEF_SELF(station_map/watched, "someone else is currently watching the holomap")
 MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
@@ -178,35 +178,25 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 	else
 		set_light(light_range_on, light_power_on)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/station_map, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/station_map/appearance_overlays()
-	. = list()
+/obj/machinery/station_map/draw(datum/look/look)
+	..()
 	if(!holomap_datum)
-		return .
+		return
 
 	if(broken_now())
-		icon_state = "station_mapb"
+		look.state("station_mapb")
 	else if((power_lost()) || !anchored)
-		icon_state = "station_map0"
+		look.state("station_map0")
 	else
-		icon_state = "station_map"
-
-		if(bogus)
-			holomap_datum.initialize_holomap_bogus()
-		else
-			small_station_map = image(SSholomaps.extraMiniMaps["[HOLOMAP_EXTRA_STATIONMAPSMALL]_[original_zLevel]"], dir = src.dir)
-			. += small_station_map
-			holomap_datum.initialize_holomap(get_turf(src))
+		look.state("station_map")
+		if(!bogus)
+			look.overlay(look_overlay_image(SSholomaps.extraMiniMaps["[HOLOMAP_EXTRA_STATIONMAPSMALL]_[original_zLevel]"], null, dir = dir))
 
 	// Put the little "map" overlay down where it looks nice
-	if(floor_markings)
-		floor_markings.dir = src.dir
-		floor_markings.pixel_x = -src.pixel_x
-		floor_markings.pixel_y = -src.pixel_y
-		. += floor_markings
+	if(!bogus && offsets_settled_flag)
+		look.overlay(look_overlay_image('icons/obj/machines/stationmap.dmi', "decal_station_map", pixel_x = -pixel_x, pixel_y = -pixel_y, dir = dir))
 
-	if(panel_open)
-		. += "station_map-panel"
+	look.overlay("station_map-panel", when = panel_open)
 
 /datum/frame/frame_types/station_map
 	name = "Station Map Frame"

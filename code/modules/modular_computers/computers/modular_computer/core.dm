@@ -70,7 +70,6 @@
 	install_default_hardware()
 	if(hard_drive)
 		install_default_programs()
-	update_icon()
 	. = ..()
 
 // its program is killed and hardware uninstalled.
@@ -91,38 +90,29 @@
 		to_chat(user, "You emag \the [src]. It's screen briefly shows a \"OVERRIDE ACCEPTED: New software downloads available.\" message.")
 		return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/modular_computer/appearance_overlays()
-	. = list()
-	icon_state = icon_state_unpowered
-
-
-	. = list()
-
+/obj/item/modular_computer/draw(datum/look/look)
+	..()
+	look.state(icon_state_unpowered)
 	if(bsod)
-		. += mutable_appearance(overlay_icon, "bsod")
-		. += emissive_appearance(overlay_icon, "bsod")
-		return .
+		look.overlay("bsod", icon = overlay_icon)
+		look.overlay(emissive_appearance(overlay_icon, "bsod"))
+		return
 	if(!enabled)
 		if(icon_state_screensaver)
-			. += mutable_appearance(overlay_icon, icon_state_screensaver)
-			. += emissive_appearance(overlay_icon, icon_state_screensaver)
-		set_light(0)
-		return .
-
-	set_light(light_strength)
-
-	if(active_program())
-		var/program_state = active_program().program_icon_state ? active_program().program_icon_state : icon_state_menu
-		. += mutable_appearance(overlay_icon, program_state)
-		. += emissive_appearance(overlay_icon, program_state)
-		if(active_program().program_key_state)
-			. += mutable_appearance(overlay_icon, active_program().program_key_state)
+			look.overlay(icon_state_screensaver, icon = overlay_icon)
+			look.overlay(emissive_appearance(overlay_icon, icon_state_screensaver))
+		return
+	look.light(light_strength)
+	var/datum/computer_file/program/running = active_program // the relation var itself, so rel_set/rel_clear redraw
+	if(running && !QDELETED(running))
+		look.watch(running)
+		var/program_state = running.program_icon_state ? running.program_icon_state : icon_state_menu
+		look.overlay(program_state, icon = overlay_icon)
+		look.overlay(emissive_appearance(overlay_icon, program_state))
+		look.overlay(running.program_key_state, when = !!running.program_key_state, icon = overlay_icon)
 	else
-		. += mutable_appearance(overlay_icon, icon_state_menu)
-		. += emissive_appearance(overlay_icon, icon_state_menu)
-
-	return .
+		look.overlay(icon_state_menu, icon = overlay_icon)
+		look.overlay(emissive_appearance(overlay_icon, icon_state_menu))
 
 /obj/item/modular_computer/proc/turn_on(mob/user)
 	if(bsod)
@@ -156,7 +146,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appeara
 		active_program().kill_program(forced)
 		rel_clear(src, nameof(active_program))
 	after(src, 0.1 SECONDS, PROC_REF(delayed_reopen_ui), with = list(user))
-	update_icon()
 
 /obj/item/modular_computer/proc/delayed_reopen_ui(mob/user)
 	// Re-open the UI on this computer. It should show the main screen now.
@@ -188,11 +177,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appeara
 		visible_message("\The [src] shuts down.")
 	set_enabled(FALSE)
 	last_power_usage = 0
-	update_icon()
 
 /obj/item/modular_computer/proc/enable_computer(mob/user = null)
 	set_enabled(TRUE)
-	update_icon()
 
 	// Autorun feature
 	var/datum/computer_file/data/autorun = hard_drive ? hard_drive.find_file_by_name("autorun") : null
@@ -210,7 +197,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appeara
 	active_program().program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
 	SStgui.close_uis(active_program().TM ? active_program().TM : active_program())
 	rel_clear(src, nameof(active_program))
-	update_icon()
 	if(istype(user))
 		tgui_interact(user) // Re-open the UI on this computer. It should show the main screen now.
 
@@ -231,7 +217,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appeara
 		P.program_state = PROGRAM_STATE_ACTIVE
 		rel_set(src, nameof(active_program), P)
 		rel_remove(src, nameof(idle_threads), P)
-		update_icon()
 		return
 
 	if(length(idle_threads) >= processor_unit.max_idle_programs+1)
@@ -245,8 +230,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appeara
 	if(active_program())
 		minimize_program(user)
 
-	if(P.run_program(user))
-		update_icon()
+	P.run_program(user)
 	return 1
 
 /obj/item/modular_computer/proc/update_uis()

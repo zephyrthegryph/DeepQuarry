@@ -3700,6 +3700,58 @@ The single focused capture wrote 23 selected pin types, 15 selected i7 types and
 | /obj/machinery/washing_machine | Grab and resist timing use native operation keys. Reused non-harm Hit rows align with master. |
 | /obj/structure/AIcore | Native add_cables/add_panel keys expose typed material bindings, adding stack-material held rows; actual construction costs and states are regression tested. |
 
+## Draw items: cells, guns, devices, weapons, spells (rewrite/draw-items)
+
+Expected pin classes for the merge to bless (look-tree `/obj/item`, look-state `/obj/item/gun`, `/obj/item/cell`, `/obj/item/ammo_magazine`, `/obj/item/ammo_casing`); no pin is blessed in this lane.
+
+* **Cell charge is tracked.** `charge` and `maxcharge` are written through `set_charge()` / `set_maxcharge()`; the cell look is a `draw()` (the quarter-step overlay, unchanged). Everything that draws from a cell (energy guns, magnetic guns, rigs, batons, tools) redraws when the charge changes, with no `update_icon()`. `cell.use(amount, seconds)` and `cell.give(amount)` lost their `update_appearance` argument. Writers in `recharger.dm`, `apc.dm`, `portable_turret.dm` and `lighting.dm` are one-line setter changes for Codex to review.
+* **Energy guns.** One `draw()` plus `draw_charge_state()`; `modifystate`, `charge_cost` and `mode_name` are tracked and a firemode switch publishes them. A gun with no cell shows its open state; a cell of zero capacity no longer divides by zero. Pin class: energy guns whose state follows an unusual field (hunter, protector, detective revolver, kinetic accelerator, sizegun, tongue, relic) look the same at creation.
+* **Chameleon gun.** The mimicked sprite is the tracked `disguise_state`; a redraw keeps the disguise and an EMP reveals the desert eagle.
+* **Magnetic guns.** The indicator state is exact and immediate (it was polled every 2 s); the `state` bitmask var is gone; the capacitor charge redraws the amber/green threshold. Parts and charge overlays were listed twice before and now once (same sprite).
+* **Smartgun.** Steady closed state draws the default sprite (not `smartgun_closed`); the magazine is an overlay instead of an underlay (no underlay support in the look): check the art.
+* **Magazines, clips, casings, handfuls.** The ammo-count look follows the owned `stored_ammo` list and `latent_rounds`. A handful sets its name through `look.identity()`.
+* **Cigarette pack, nicotine gum box.** The `_empty` state is drawn whenever the pack is empty (it was written on open/close and lost at the next redraw).
+* **Welding tool.** The fuel counter also redraws on refuel and regeneration (reagent change); in-hand state and light go through the look.
+* **Devices.** Flares and glowsticks show `-empty` whenever fuel is 0; the denecrotizer shows `-o` whenever charges is 0 (also a mapped-in empty one); the intercom's powered state is the tracked `on`; the radio jammer always draws its charge overlay; the flash's burnt state is tracked `broken`; the communicator, defib, plushie editor and ghost trap redraw from tracked state. `shockpaddles/set_cooldown(delay)` is now `start_cooldown(delay)`.
+* **Spells.** The illusion copy overlay is built by `look_overlay_image` (FLOAT layer and plane); the spell `toggled` overlay is a shared cached image.
+* **Blessed in this lane (look_states / look_trees):** `obj.item.ammo_magazine` (m9mm: the ammo-count overlay follows rounds loaded, `m91` to `m91-10` at the full level); `obj.item.gun.projectile.automatic.l6_saw` and `mg42` (a raised cover now draws the open overlay, it drew closed before; the look tree full-ammo state is `l6closed50`); `obj.item.melee.robotic.baton` (the `_active` sprite follows the tracked `status`, the baton's cell charge). Not blessed and reverted: run noise in other types' snapshots (the blob core colour, the morph OWN refusal text, empty-file newlines).
+* **Draw reads follow the procs a draw calls.** The draw-read generator (`derived_reads.rs`) now follows, on the drawn type and its parents, every proc a draw calls (transitively, once each), and a subtype's override of a called proc is a read of that subtype. Before, a var read only inside a helper (`ammo_count()`, `charge_state_name()`) was never a draw read. About 66 types gained reads; they only add redraw triggers.
+* **Relation writes on a type with no `derived()` table.** `own_field_changed()` did nothing for such a type, so clearing a `ref_one` view (a gun's cell) never redrew the gun. A type that declares nothing keeps the old rule (a change that something reads re-derives everything), and `READERS` knows its generated draw reads, so the write now marks it.
+* **Left legacy, with reasons:** the rig look (cache and slot refresh in its provider), tanks and the tank assembly proxy (no tracked gas pressure), transfer valve (needs underlays), glass jar (impure draw), bodybags (legacy closet parent), ticket printer (legacy paper), capture crystal, tape roll pickup/drop, the welding tool's reagent hook.
+
+
+
+## Reagent, food and hydroponics draws (rewrite/draw-reagents)
+
+Expected pin classes for the merge to bless (no pin is blessed on this branch; the committed snapshots on master are the base). Rows are icon, state, dir, colour, overlays and underlays of every creatable subtype, so only the classes below should move:
+
+| Class | Types | Expected change and cause |
+|---|---|---|
+| Fill colour spelling | glass (beakers, bottles, vials), syringes, drinking glass fillings | The filling reads the holder's tracked `tint` (the same `get_color()` value, kept by `update_total()`), so a colour row can differ only where `get_color()` changed between creation and the first draw (a prefilled container is drawn after its prefill, as before). |
+| Draw after init | glass2 drinking glasses, mugs, shakers | The legacy provider ran on the first `update_icon()`; the draw runs at the first refresh, after the whole init. A glass that is prefilled in init shows its filling at creation. |
+| Glass ice/fizz/underlay | `/obj/item/reagent_containers/food/drinks/glass2` chain | Filling, ice, fizz and fruit-slice layers are `look.underlay()` (new in the builder) instead of raw `underlays +=`; same icon states and layers. The protein and protean shakes draw nothing of the glass (was APPEARANCE_NONE). |
+| Variable food scale | `/obj/item/reagent_containers/food/snacks/variable` | The size follows the reagent volume at all times (empty draws at the minimum scale); the size word in the name and the weight class are applied once by `settle_size()` when a dish is finished, not on every redraw (the old provider multiplied the weight class on each redraw). Pins carry no transform, so only the state pin may move. |
+| Appliance lights and state | `/obj/machinery/appliance` (oven, grill, fryer, mixer, candy, cereal) | Same states and light overlays. Running sounds moved out of the draw into `loop_sync()` handlers on `cooking`, operable and switched-on changes; a machine no longer restarts its loop on a redraw. |
+| Tray alerts | `/obj/machinery/portable_atmospherics/hydroponics` | Alert images are built by the draw (same states, lighting-above plane). Name is the look's identity. |
+| Pizza box | `/obj/item/pizzabox` | Same states; the stack is a `ref_many` relation, so a stacked box redraws when it is stacked or its tag is written. |
+| Rag underlay | `/obj/item/reagent_containers/food/drinks/bottle` | Same underlay and light; drawn from the rag it watches. |
+| Synthesizer | `/obj/machinery/chemical_synthesizer` | Same states; `synth_finished` is a tracked `finishing` flag between the last reaction step and bottling. |
+
+Other changes: `/datum/reagents` tracks `total_volume`, `tint` and `master_id` (kept by `update_total()` for non-mob holders; the sum no longer counts survivors twice when a removal runs inside it). A syringe's mode written by the needle capability publishes a tracked change. Tray, microwave, gibber, alembic and gaia/farmbot/hand-labeler writers use the new setters.
+
+Left on legacy forms, with the cause:
+
+* Syringe pickup/dropped/pick-up `update_icon()` (3): the draw reads `loc` (stored sideways, held shows the mode); `loc` is not a tracked draw input. Needs a design decision.
+* Vines (`/obj/effect/plant`, spreading, 6 sites): the provider discounts `max_growth` and rolls a wall offset on every redraw, so it is not idempotent. Needs a decision on when the fringe discount applies.
+* Pump (9): the low-power overlay reads the cell's charge, untracked in code/modules/power.
+* Distillery (5): the ready/heating/cooling overlay reads the heat body's temperature, not tracked state.
+* Chem master (1): `loaded_pill_bottle.update_icon()` for a pill bottle whose wrapper colour is a plain var in code/game/objects/items/weapons/storage.
+* Smartfridge `changed(src)` (3): the stock count reads `/datum/stored_item.amount`, shared with vending and untracked.
+* Condiments and drinks `on_reagent_change()` handlers still write icon_state, name and desc directly (not a draw).
+* `rag.dm` (detectivework) still calls the bottle's `update_icon()`; redundant now.
+* `lint_scopes.toml` `look_converted` folders: not added (edit refused by the permission layer). Fully clean now: code/library/reagents/, code/modules/food/, code/modules/hydroponics/{trays/,grown*}, code/modules/reagents/{holder,hose,reactions,reagents,machinery/dispenser}/ and Chemistry*.dm.
+
+
 ### AIcore tool waits (2026-10-08)
 
 Old-code behavior pins passed for all five paths before conversion (completion, dropped tool and moved actor per path). On that code, native item dispatch intercepted real clicks before handwritten wrench_act/welder_act; the old pins therefore exercised the actual tool_act dispatcher. Converted pins drive real clicks and keep the same state, custody, cancellation and cost assertions.
@@ -3760,3 +3812,36 @@ A turf's draw reads its own tracked state and the masks the adjacency index keep
 * **Test harness:** `dq_look_capture_turf()` drains the `on_change` reactions (`stat_drain_point()`) before it flushes the looks, as a kernel tick does between a flooring being laid and the draw.
 
 * **The generated TRACKED setter is null-aware** (`TRACKED_UNCHANGED()` in `code/__defines/capabilities.dm`, used by `TRACKED`, `TRACKED_BRIDGED` and `TRACKED_SCHEMA`). DM reads `null == 0`, `null == ""` and `null == FALSE` as true, so a write between null and one of them was dropped without publishing; it now publishes, and a repeat of the same value (null to null included) still does not. Source audit of tracked vars that default to null and have a `set_x(0|FALSE|"")` caller (each new publish is a real state change that readers should hear): `/area` `eject`, `fire`, `party`; `/obj/machinery/organ_printer` `printing`; `/obj/item/pipe_painter` `mode`; `/obj/item/clothing/accessory/badge/holo` `emagged`; `/mob` `blinded`, `transforming`; `/mob/living/carbon/human` `block_hud`; `/mob/living/simple_mob/vore/blaidd` `blaidd_invisibility`; `/mob/living/simple_mob/vore/bigdragon` `enraged`, `flames`; `/datum/computer_file/program/wordprocessor` `is_edited`; the telecomms consoles' `temp` ("" to null); and `/turf/simulated/floor` `broken`, `burnt`. The audit is by name and file, so a var declared in a parent type in another file is not covered.
+
+### Blessed look_states rows (rewrite/draw-reagents)
+
+Files re-recorded: pizzabox, condiment, drinks, appliance, beehive, bunsen_burner, chem_master, chemical_synthesizer, gibber, microwave, hydroponics, smartfridge.
+
+| Class | Cause |
+|---|---|
+| Rows `runtime: PURITY ... was written/granted inside an output` and `Division by zero` removed | The base was recorded after a `volume=0` probe divided by zero in a drawn type; the probe's caught exception left the output-evaluation context up, so every later probe of other types in the run reported a purity runtime. The carton draw now guards a zero volume; the rows are replaced by the real look changes. |
+| New `open=`, `closed=`, `broken=`, `frozen=`, `busy=`, `heating=`, `bee_count=` rows | These vars now redraw the look (tracked state read by `draw`), which the polluted base could not show. |
+| yeoldoven keeps its own `yeoldoven*` states | Oven draws `[state_prefix]open` etc.; the prefix is a var of the type. |
+| glass2 claraflask `volume=0` | Same Division by zero, reported by the refresh catch spelling. Still a draw bug at zero volume, left as pinned. |
+| Rel list add/remove | `rel_add`/`rel_remove` on a list view now mark outputs that read the var (`own_mark_if_read`), so a beehive's frames and a pizza box's stack redraw. |
+
+### Blessed rows, second pass (rewrite/draw-reagents)
+
+| Class | Files | Cause |
+|---|---|---|
+| Zero-volume divide removed | look_states glass, drinks (claraflask) | Glass, vial, blood pack and glass2 draws divided by `volume`; a zero volume now draws as an empty level instead of throwing. The `volume=0` rows change from `runtime: Division by zero` to the real fill rows. |
+| Pizza box tag at creation | look_trees pizzabox | The tag overlay of a prefilled box is drawn at creation (the draw reads `boxtag`); the old update ran before the tag was set. |
+| Oven at creation | look_trees appliance | An unpowered oven draws shut and off (`ovenclosed_off`) from its tracked `open` and `has_condition()`; the old base recorded the open sprite and `yeoldoven` an extra `light_off` overlay left by the earlier runtime. |
+
+Engine: an output that throws (draw, should_run, hidden_verbs, derive_<var>, push_to_rust, window data) now restores the evaluation depth and logs `OUTPUT RUNTIME: type.output` (`output_failed()` in derived.dm), so one runtime no longer reports every later write as made inside an output. Test: `dq_draw_reagents_a_throwing_draw_leaves_the_next_output_working`.
+
+Rows of other lanes left alone: look_states `mob.living.simple_mob.vore.morph` (4 rows) and look_trees `obj.structure.blob` (386 rows).
+
+## Draw pockets: refinery, computers, electronics, HUD, abilities, AI, pAI (rewrite/draw-pockets)
+
+* **Converted to `draw(look)` over tracked state:** the refinery (vat, mixer, pump, filter, pump relay, chemical canister; they read the holder's tracked `total_volume`/`tint` through `look.watch(reagents)`, and neighbours through `look.neighbour()`; `update_neighbours()` is deleted), modular computers (program, bsod, screensaver), integrated electronics (assemblies, clothing, implant, device: `opened` is tracked), organ icon, the shield generator family, holomap, overmap ships (`speed` is tracked and `adjust_speed()` assigns a new list), admin verbs, HUD (hands, abilities), AI, pAI, vore panel/belly leftovers, and the mob leftovers. Folders that joined `look_converted` are listed in `tools/ci/lint_scopes.toml`.
+* **Engine fix:** a draw that read other entities (`look.watch()`) but drew nothing yet dropped its subscription (`refresh_look()` returned before syncing the watch), so a hand HUD, an empty vat or an empty tank never heard the state that fills them. The untouched path now syncs the watch too. Covered by `dq_draw_pocket_hand_hud_follows_handcuffs`. New builder part: `look.set_invisibility()` (the ability master hides while it holds no abilities; a draw that stops naming it gets the type default back).
+* **Hand HUD:** the handcuff overlay is drawn from the mob's equipped slot (`look.watch(mob)`); `update_hud_handcuffed()` is deleted.
+* **Left unconverted, and why:** blood and gore decals (`B.update_icon()` in organs, admin secrets, human, observer, drippy: legacy decal providers, draw-structures), the newscaster (machinery), the farmbot's hydroponics tray (draw-reagents), the protean rig (item), `nano_printer` paper bundle (legacy provider in paperwork), and the size gun and mouse ray, custom items and crackers (energy guns and items: after draw-items batch 18). `modular_computers/hardware/`, `vore/resizing/`, `vore/fluffstuff/`, `body/organs/` (except `organ_icon.dm`), `admin/topic/`, `admin/verbs/secrets.dm` and the rest of `mob/` stay out of `look_converted`.
+* **Belly overlay preference of a robot:** a panel edit publishes `belly_change` on the host, which recomputes the robot's tracked `vore_light_states`; the preference itself is read only there, so it is not tracked.
+* **Pins:** `dq_look_tree_pin` shows only the eight `obj/structure/blob/core` colour rows (seeded random, the same on the base); no row was blessed. `dq_look_state_pin` was not run here (the merge batch runs it).

@@ -18,21 +18,22 @@
 	. = ..()
 	reagents.maximum_volume = size*8 + 10 // the holder is declared on reagent_containers
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/variable, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/food/snacks/variable/appearance_overlays()
-	. = list()
-	if (reagents && reagents.total_volume)
-		var/ratio = reagents.total_volume / size
+/// The size of a cooked food follows how much of it there is: a thing of `size` units is its normal size, a third root of the ratio scales it.
+/obj/item/reagent_containers/food/snacks/variable/proc/scale_for(volume)
+	if(volume)
+		return clamp((volume / size)**(1/3), min_scale, max_scale) //Scaling factor is square root of desired area
+	return min_scale
 
-		scale = ratio**(1/3) //Scaling factor is square root of desired area
-		scale = clamp(scale, min_scale, max_scale)
-	else
-		scale = min_scale
-
+/obj/item/reagent_containers/food/snacks/variable/draw(datum/look/look)
+	..()
+	look.watch(reagents)
 	var/matrix/M = matrix()
-	M.Scale(scale)
-	src.transform = M
+	M.Scale(scale_for(reagents?.total_volume))
+	look.set_transform(M)
 
+/// The cooking has finished: it takes the size of what it was made of (its carrying weight scales with it) and its first size word in front of its name.
+/obj/item/reagent_containers/food/snacks/variable/proc/settle_size()
+	scale = scale_for(reagents?.total_volume)
 	w_class *= scale
 	if (!prefix)
 		if (scale == min_scale)

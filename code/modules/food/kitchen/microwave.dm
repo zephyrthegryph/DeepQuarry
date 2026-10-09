@@ -145,9 +145,12 @@ CAPABILITIES(/obj/machinery/microwave)
 /obj/machinery/microwave/proc/appearance_mw_bloody_operating()
 	return !broken && dirty >= MAX_MICROWAVE_DIRTINESS && operating ? 1 : 0
 
+TRACKED(/obj/machinery/microwave, operating)
+TRACKED(/obj/machinery/microwave, dirty)
+TRACKED(/obj/machinery/microwave, broken)
+
 /obj/machinery/microwave/proc/post_state_change()
 	update_static_data_for_all_viewers()
-	changed(src)
 	SStgui.update_uis(src)
 
 /// Old attackby.
@@ -191,7 +194,7 @@ CAPABILITIES(/obj/machinery/microwave)
 	act_message(user, src, MSG_SELF(span_notice(full_repair ? "You have fixed %T%." : "You have fixed part of %T%.")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + (full_repair ? " fixes %T%." : " fixes part of %T%."))))
 
-	broken = full_repair ? NOT_BROKEN : KINDA_BROKEN
+	set_broken(full_repair ? NOT_BROKEN : KINDA_BROKEN)
 	flags |= MICROWAVE_FLAGS
 
 	post_state_change()
@@ -213,7 +216,7 @@ CAPABILITIES(/obj/machinery/microwave)
 /obj/machinery/microwave/proc/clean_done(mob/user)
 	act_message(user, src, MSG_SELF(span_notice("You have cleaned %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " has cleaned %T%.")))
 
-	dirty = 0
+	set_dirty(0)
 	flags |= MICROWAVE_FLAGS
 	post_state_change()
 
@@ -461,7 +464,7 @@ TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 /obj/machinery/microwave/proc/muck()
 	wzhzhzh()
 	play_sfx(src, SFX_EFFECTS_SPLAT) // Play a splat sound
-	src.dirty = MAX_MICROWAVE_DIRTINESS // Make it dirty so it can't be used util cleaned
+	set_dirty(MAX_MICROWAVE_DIRTINESS) // Make it dirty so it can't be used util cleaned
 	post_state_change()
 	begin_cook_loop(MICROWAVE_MUCK, 4)
 
@@ -506,7 +509,7 @@ TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 	var/datum/recipe/recipe = select_recipe(GLOB.available_recipes[appliancetype], src)
 	if(!recipe)
 		if(length(cookingContents()) >= 1)
-			dirty += 1
+			set_dirty(dirty + 1)
 			var/obj/item/cooked = fail()
 			cooked.forceMove(loc)
 			if(prob(max(10,dirty*5)))
@@ -554,7 +557,7 @@ TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/microwave/proc/wzhzhzh() // Whoever named this proc is fucking literally Satan. ~ Z
 	visible_message(span_notice("\The [src] [visible_action]."), span_notice("You hear a [audible_action ? audible_action : "[src]"]."))
-	operating = TRUE
+	set_operating(TRUE)
 	set_use_power(USE_POWER_ACTIVE)
 	post_state_change()
 	soundloop.start()
@@ -570,7 +573,7 @@ TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 /obj/machinery/microwave/proc/stop(success = TRUE)
 	if(success)
 		play_sfx(src.loc, SFX_MACHINES_DING)
-	operating = FALSE // Turn it off again aferwards
+	set_operating(FALSE) // Turn it off again aferwards
 	if(broken)
 		set_use_power(USE_POWER_OFF)
 	else
@@ -582,7 +585,7 @@ TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 	for (var/atom/movable/A in cookingContents())
 		A.forceMove(loc)
 	if (src.reagents.total_volume)
-		src.dirty++
+		set_dirty(dirty + 1)
 	src.reagents.clear_reagents()
 	if(message)
 		to_chat(user, span_notice("You dispose of \the [src]'s contents."))
@@ -596,7 +599,7 @@ TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 	if(spark)
 		fx_sparks(src, 2)
 	src.visible_message(span_warning("\The [src] breaks!")) //Let them know they're stupid
-	src.broken = REALLY_BROKEN // Make it broken so it can't be used util fixed
+	set_broken(REALLY_BROKEN) // Make it broken so it can't be used util fixed
 	src.flags &= ~MICROWAVE_FLAGS //So you can't add condiments
 	src.ejectpai() // If it broke, time to yeet the PAI.
 

@@ -422,7 +422,6 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 
 	play_sfx(src, SFX_WEAPONS_CHARGEUP)
 	spinning_up = TRUE
-	update_icon()
 	act_message(user, src, MSG_SELF(span_notice("You start charging %T%!")), MSG_OTHERS(span_notice("%U% starts charging %T%!")))
 	task_start(/datum/task/timed/bfgtaser_spun_up, user, src, receiver = src, target_arg = target, clickparams = clickparams, pointblank = pointblank, reflex = reflex, stance = stance)
 

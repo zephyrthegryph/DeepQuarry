@@ -1,0 +1,5 @@
+/obj/machinery/chemical_synthesizer icon: icons/obj/chemical_ch.dmi
+/obj/machinery/chemical_synthesizer state: synth_idle_bottle
+/obj/machinery/chemical_synthesizer dir: 2
+/obj/machinery/chemical_synthesizer overlay: icons/obj/chemical_ch.dmi:synth_idle_bottle:8:#000000
+

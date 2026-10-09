@@ -16,8 +16,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/splitter)
 /obj/machinery/reagent_refinery/splitter/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	// Update neighbours and self for state
-	update_neighbours()
 
 /obj/machinery/reagent_refinery/splitter/refinery_step()
 	if(!anchored)

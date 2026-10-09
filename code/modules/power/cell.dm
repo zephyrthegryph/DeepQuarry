@@ -40,9 +40,8 @@
 	drop_sound = SFX_ITEMS_DROP_COMPONENT
 	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
-	// Overlay stuff.
+	/// Whether the cell draws its charge-level overlay.
 	var/standard_overlays = TRUE
-	var/last_overlay_state = null // Used to optimize update_icon() calls.
 
 	/// gradual_charge(): the charge multiplier, whether it sparks, and whether a user must stay in
 	/// reach, for the steps still left.
@@ -60,6 +59,8 @@
 	/// gradual_charge(): one-second charge steps still to run.
 	var/tmp/gradual_charge_left = 0
 
+TRACKED(/obj/item/cell, charge)
+TRACKED(/obj/item/cell, maxcharge)
 TRACKED(/obj/item/cell, self_recharge)
 TRACKED(/obj/item/cell, recharging)
 TRACKED(/obj/item/cell, gradual_charge_left)
@@ -85,7 +86,6 @@ CAPABILITIES(/obj/item/cell)
 	apply_blueprint_effects()
 	enable_material_service()
 	c_uid = cell_uid++
-	update_icon()
 
 /obj/item/cell/get_cell()
 	return src
@@ -116,21 +116,11 @@ CAPABILITIES(/obj/item/cell)
 
 	return use(cell_amt) / CELLRATE
 
-#define OVERLAY_FULL	2
-#define OVERLAY_PARTIAL	1
-#define OVERLAY_EMPTY	0
-
-APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_state)}_%p")
-
-/// Charge percentage for the charge overlay; null (no overlay) for cells without standard overlays.
-/obj/item/cell/proc/appearance_charge_level()
-	if(!standard_overlays)
-		return null
-	return percent()
-
-#undef OVERLAY_FULL
-#undef OVERLAY_PARTIAL
-#undef OVERLAY_EMPTY
+/// The look: the charge-level overlay, a quarter step of the stored charge.
+/obj/item/cell/draw(datum/look/look)
+	..()
+	if(standard_overlays)
+		look.overlay("[initial(icon_state)]_[clamp(round(percent() * 4 / 100, 1), 0, 4) * 25]")
 
 /obj/item/cell/proc/percent()		// return % charge of cell
 	var/charge_percent = 0
@@ -245,7 +235,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	var/moved_heat = work_charge / CELLRATE * thermal.heat_pump_coefficient
 	if(moved_heat <= 0)
 		return 0
-	charge -= work_charge
+	set_charge(charge - work_charge)
 	// The pump moves the cell's heat into its surroundings, and its work ends there as heat too.
 	var/turf/location = get_turf(src)
 	var/datum/gas_mixture/ambient = location?.return_air()
@@ -272,7 +262,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 // use power from a cell, returns the amount actually used. `seconds`: the draw was a steady load over that long,
 // settled in one batch (an emergency light's discharge): its rate, not its total, is what the cell's discharge
 // limit, efficiency and heating see.
-/obj/item/cell/proc/use(amount, update_appearance = TRUE, seconds = 0)
+/obj/item/cell/proc/use(amount, seconds = 0)
 	if(rigged && amount > 0)
 		explode()
 		return 0
@@ -289,7 +279,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	var/used = min(charge * efficiency, amount)
 	var/debited = used / efficiency
 	var/charge_before = charge
-	charge = max(0, min(charge - used, charge - debited))
+	set_charge(max(0, min(charge - used, charge - debited)))
 	// BYOND uses single-precision numbers. Account the represented change in
 	// stored charge, not a pre-rounding estimate of that change.
 	debited = charge_before - charge
@@ -297,7 +287,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 		// Pay a representable charge step rather than reporting an affordable
 		// fractional action as failed after already debiting the cell. Any
 		// rounding surplus is included in the actual waste-heat accounting.
-		charge = max(0, charge - max(charge_before * MATERIAL_CHARGE_FLOAT_EPSILON, MATERIAL_CHARGE_FLOAT_EPSILON))
+		set_charge(max(0, charge - max(charge_before * MATERIAL_CHARGE_FLOAT_EPSILON, MATERIAL_CHARGE_FLOAT_EPSILON)))
 		debited = charge_before - charge
 	used = min(used, debited)
 	if(span <= 1)
@@ -313,8 +303,6 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	COOLDOWN_START(src, charge_cooldown, charge_delay)
 	if(used && self_recharge)
 		set_recharging(TRUE) // the self-charge parks itself once full; a discharge starts it again
-	if(update_appearance)
-		update_icon()
 	return used
 
 // Checks if the specified amount can be provided. If it can, it removes the amount
@@ -325,17 +313,13 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	return use(amount) >= amount
 
 // recharge the cell
-/obj/item/cell/proc/give(amount, update_appearance = TRUE)
+/obj/item/cell/proc/give(amount)
 	if(rigged && amount > 0)
 		explode()
 		return 0
 
 	var/amount_used = clamp(amount, 0, maxcharge - charge)
-	charge += amount_used
-	if(update_appearance)
-		update_icon()
-		if(loc)
-			loc.update_icon()
+	set_charge(charge + amount_used)
 	return amount_used
 
 /// Recharges the cell over time. 100 per second multiplied by the multiplier, `iterations` times
@@ -373,13 +357,10 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 			if(loc.loc && loc.loc != user) //Are we inside of something the user is holding?
 				set_gradual_charge_left(0)
 				return
-	charge += 100 * gradual_multiplier
-	if(charge > maxcharge)
-		charge = maxcharge
+	set_charge(min(charge + 100 * gradual_multiplier, maxcharge))
 	if(gradual_sparks)
 		var/T = get_turf(src)
 		new /obj/effect/effect/sparks(T)
-	update_icon()
 	set_gradual_charge_left(gradual_charge_left - 1)
 
 /obj/item/cell/examine(mob/user)
@@ -447,14 +428,14 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	// Clear the trigger before queueing.  Destruction callbacks and machinery
 	// shutdown may attempt another draw while the explosion is pending.
 	rigged = FALSE
-	charge = 0
+	set_charge(0)
 	explosion(T, devastation_range, heavy_impact_range, light_impact_range, flash_range)
 
 	consume(src)
 
 /obj/item/cell/proc/corrupt()
-	charge /= 2
-	maxcharge /= 2
+	set_charge(charge / 2)
+	set_maxcharge(maxcharge / 2)
 	if (prob(10))
 		rigged = 1 //broken batterys are dangerous
 
@@ -464,11 +445,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 /obj/item/cell/proc/cell_emp_drain(datum/act/A)
 	var/datum/notice/hit/emp/N = A
 	var/datum/damage_packet/packet = N.packet
-	charge -= (charge / packet.severity) * (1 - material_emp_resistance / 100)
-	if (charge < 0)
-		charge = 0
-
-	update_icon()
+	set_charge(max(0, charge - (charge / packet.severity) * (1 - material_emp_resistance / 100)))
 
 
 
