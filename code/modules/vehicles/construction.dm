@@ -18,9 +18,12 @@
 
 	var/tmp/obj/item/cell/cell
 
-/obj/item/vehicle_assembly/Initialize(mapload)
-	. = ..()
-	icon_state = "[initial(icon_state)]0"
+CAPABILITIES(/obj/item/vehicle_assembly)
+	after_init(0, then(PROC_REF(frame_picture)))
+
+/// Every assembly starts as its bare frame (stage 0 of its pictures).
+/obj/item/vehicle_assembly/proc/frame_picture(datum/act/timer/A)
+	set_build_visuals(0)
 
 /// Sets the numbered icon_state for `stage` and, when given, the display name.
 /obj/item/vehicle_assembly/proc/set_build_visuals(stage, new_name)

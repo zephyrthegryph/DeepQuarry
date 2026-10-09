@@ -68,10 +68,7 @@ MSG_DEF_SELF(stage/mecha/step_22, "It is partly built.")
 
 /// The stages of a chassis ladder in order: the shell, then each step. The index of the stage a chassis is at is the number of the step it is
 /// about to take.
-/proc/mecha_stage_ids()
-	RETURN_TYPE(/list)
-	var/static/list/ids = list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, STAGE_MECHA_STEP_2, STAGE_MECHA_STEP_3, STAGE_MECHA_STEP_4, STAGE_MECHA_STEP_5, STAGE_MECHA_STEP_6, STAGE_MECHA_STEP_7, STAGE_MECHA_STEP_8, STAGE_MECHA_STEP_9, STAGE_MECHA_STEP_10, STAGE_MECHA_STEP_11, STAGE_MECHA_STEP_12, STAGE_MECHA_STEP_13, STAGE_MECHA_STEP_14, STAGE_MECHA_STEP_15, STAGE_MECHA_STEP_16, STAGE_MECHA_STEP_17, STAGE_MECHA_STEP_18, STAGE_MECHA_STEP_19, STAGE_MECHA_STEP_20, STAGE_MECHA_STEP_21, STAGE_MECHA_STEP_22)
-	return ids
+GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, STAGE_MECHA_STEP_2, STAGE_MECHA_STEP_3, STAGE_MECHA_STEP_4, STAGE_MECHA_STEP_5, STAGE_MECHA_STEP_6, STAGE_MECHA_STEP_7, STAGE_MECHA_STEP_8, STAGE_MECHA_STEP_9, STAGE_MECHA_STEP_10, STAGE_MECHA_STEP_11, STAGE_MECHA_STEP_12, STAGE_MECHA_STEP_13, STAGE_MECHA_STEP_14, STAGE_MECHA_STEP_15, STAGE_MECHA_STEP_16, STAGE_MECHA_STEP_17, STAGE_MECHA_STEP_18, STAGE_MECHA_STEP_19, STAGE_MECHA_STEP_20, STAGE_MECHA_STEP_21, STAGE_MECHA_STEP_22))
 
 /// What a chassis becomes, as data: one type per chassis.
 /datum/mecha_blueprint
@@ -119,7 +116,7 @@ MSG_DEF_SELF(stage/mecha/step_22, "It is partly built.")
 	var/datum/mecha_blueprint/blueprint = mecha_blueprint_of(blueprint_type)
 	var/list/rows = blueprint.ladder
 	var/steps = length(rows)
-	var/list/stage_ids = mecha_stage_ids()
+	var/list/stage_ids = GLOB.mecha_stage_ids
 	if(steps + 1 > length(stage_ids))
 		stack_trace("[blueprint_type]: its ladder of [steps] steps is longer than the [length(stage_ids) - 1] stages declared for it")
 		steps = length(stage_ids) - 1
@@ -181,21 +178,30 @@ MSG_DEF_SELF(stage/mecha/step_22, "It is partly built.")
 	var/bit = mecha_part_bit(part)
 	if(!bit)
 		return OP_REFUSED
-	parts_mask |= bit
+	set_parts_mask(parts_mask | bit)
 	act_message(A.actor, src, MSG_SELF(span_infoplain("You connect [part] to %T%")), MSG_OTHERS(span_infoplain("%U% has connected [part] to %T%.")))
-	add_overlay(part.icon_state + "+o")
 	if(mecha_parts_done(A))
 		var/datum/mecha_blueprint/plan = mecha_blueprint()
 		icon = plan.icon_finished
 		icon_state = "[plan.icon_prefix]0"
 		set_density(TRUE)
-		overlays.len = 0
 	log_world("MECHA CONSTRUCTION: [A.actor] attached [part] to [src] ([blueprint]), parts [parts_mask]")
 	return OP_OK
 
+/// Each part on the chassis shows its "+o" overlay, until the last one finishes the shell (its finished picture has them built in).
+/obj/item/mecha_parts/draw(datum/look/look)
+	..()
+	if(!blueprint || !parts_mask || mecha_parts_done(null))
+		return
+	var/datum/mecha_blueprint/plan = mecha_blueprint()
+	for(var/i in 1 to length(plan.mecha_parts))
+		if(parts_mask & (1 << (i - 1)))
+			var/obj/item/part_type = plan.mecha_parts[i]
+			look.overlay("[initial(part_type.icon_state)]+o")
+
 /// The row of the step a chassis at its current stage is about to take (building) or has just taken back (undone): the ladder is listed last step first.
 /obj/item/mecha_parts/proc/mecha_step_row(datum/mecha_blueprint/plan)
-	var/step = mecha_stage_ids().Find(graph_current(src))
+	var/step = GLOB.mecha_stage_ids.Find(graph_current(src))
 	return plan.ladder[length(plan.ladder) - step + 1]
 
 /// A step's tool sound: the same sounds the old ladder played; a crowbar makes none.

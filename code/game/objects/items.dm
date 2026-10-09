@@ -381,13 +381,11 @@ TRACKED(/obj/item, gurgled_color)
 	return
 
 /obj/item/proc/item_in_robot_module(datum/act/A)
-	return istype(loc, /obj/item/robot_module)
+	return read_once(istype(loc, /obj/item/robot_module))
 
 /// Old /obj/item/attack_ai: a cyborg clicking an item of its module equips it. Offered only on a module's items (declared with every item's
 /// defaults, robot/component.dm), so it never competes with an item's own.
 /obj/item/proc/item_silicon_equip_module(datum/act/op/A)
-	if(!isrobot(A.actor))
-		return OP_OK
 	var/mob/living/silicon/robot/R = A.actor
 	R.activate_module(src)
 	R.hud_used.update_robot_modules_display()

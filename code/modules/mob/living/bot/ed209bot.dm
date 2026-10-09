@@ -119,7 +119,7 @@ MSG_DEF_SELF(ed209/start_attach_gun, "Now attaching the gun to the frame...")
 CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
 	without(CAP_CONSTRUCTION)
 	construction(start(STAGE_BOT_FRAME_BARE), bot_frame_legs(), ed209_body(),
-		stage(STAGE_ED209_TASERED, item(/obj/item/gun/energy/taser), when(PROC_REF(plain_taser_held)), consumes(), wait(0), then(PROC_REF(taser_added)), undo = null),
+		stage(STAGE_ED209_TASERED, item(/obj/item/gun/energy/taser), when(req(PROC_REF(plain_taser_held))), consumes(), wait(0), then(PROC_REF(taser_added)), undo = null),
 		ed209_gun_attached(),
 		stage(STAGE_ED209_FINISHED, item(/obj/item/cell), consumes(), wait(0), then(PROC_REF(finished)), undo = null),
 		stage(STAGE_ED209_SWAPPED, item(/obj/item/gun/energy/taser/xeno), consumes(), wait(0), then(PROC_REF(swapped_to_slime)), from = STAGE_ED209_WIRED, undo = null))

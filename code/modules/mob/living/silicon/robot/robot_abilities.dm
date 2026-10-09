@@ -131,6 +131,8 @@ CAPABILITY_DEF(robot_naming, CAP_ROBOT_NAMING, key = NONE)
 	return list(
 		op("pick_name", label("Pick name"), menu(button = "Pick name", bind = "ability_robot_pick_name"),
 			needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, can_pick_custom_name), because = MSG(robot_ability/name_taken))),
+			asks(/datum/prompt/text, fields = list("title" = "Name change", "question" = "You are a robot. Enter a name, or leave blank for the default name.", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"),
+			on_interrupt(TYPE_PROC_REF(/mob/living/silicon/robot, ability_name_cancelled)),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_pick_name))))
 
 /// Whether the robot grants itself the pick-name ability.
@@ -141,13 +143,16 @@ CAPABILITY_DEF(robot_naming, CAP_ROBOT_NAMING, key = NONE)
 /mob/living/silicon/robot/proc/can_pick_custom_name(datum/act/op/A)
 	return !custom_name
 
+/// The answer is the name; a blank one (or a cancel, ability_name_cancelled()) is the default name.
 /mob/living/silicon/robot/proc/ability_pick_name(datum/act/op/A)
-	// A cancel answers "": the default name.
-	open_request(src, /datum/prompt/text, PROC_REF(robot_name_entered), answerer = src, title = "Name change", question = "You are a robot. Enter a name, or leave blank for the default name.", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE, timeout = 0)
+	robot_name_entered(A.answer?.value)
 	return OP_OK
 
-/mob/living/silicon/robot/proc/robot_name_entered(datum/act/request/A)
-	var/newname = sanitizeSafe(A.answer ? A.answer.value : "", MAX_NAME_LEN)
+/mob/living/silicon/robot/proc/ability_name_cancelled(datum/act/op/A)
+	robot_name_entered("")
+
+/mob/living/silicon/robot/proc/robot_name_entered(entered)
+	var/newname = sanitizeSafe(entered || "", MAX_NAME_LEN)
 	if (newname && !custom_name)
 		custom_name = newname
 		sprite_name = newname
@@ -240,15 +245,21 @@ CAPABILITY_DEF(robot_recolour, CAP_ROBOT_RECOLOUR, key = NONE)
 	return list(
 		op("recolour", label("Recolour module"), menu(button = "Recolour module", bind = "ability_robot_recolour"),
 			needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, not_recoloured), because = MSG(robot_ability/already_recoloured))),
+			asks(/datum/prompt/colormatrix, fields = list("title" = "Robot Recolor", "question" = "Allows you to recolor yourself", "preview" = computed(TYPE_PROC_REF(/mob/living/silicon/robot, recolour_preview)), "ui_state" = computed(TYPE_PROC_REF(/mob/living/silicon/robot, recolour_ui_state))), step = "matrix"),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_recolour))))
 
 /mob/living/silicon/robot/proc/not_recoloured(datum/act/op/A)
 	return !has_recoloured
 
+/// The window paints us in place (and sets has_recoloured); there is no answer to act on.
 /mob/living/silicon/robot/proc/ability_recolour(datum/act/op/A)
-	// The window paints us in place (and sets has_recoloured); there's no answer to act on.
-	open_request(src, /datum/prompt/colormatrix, null, answerer = src, title = "Robot Recolor", question = "Allows you to recolor yourself", preview = src, ui_state = GLOB.tgui_conscious_state)
 	return OP_OK
+
+/mob/living/silicon/robot/proc/recolour_preview(datum/act/A)
+	return src
+
+/mob/living/silicon/robot/proc/recolour_ui_state(datum/act/A)
+	return GLOB.tgui_conscious_state
 
 // ---------------------------------------------------------------------------
 // Granted once, permanently, by the upgrade item that installs it (code/game/objects/items/robot/robot_upgrades.dm).

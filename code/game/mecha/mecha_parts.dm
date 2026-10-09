@@ -11,8 +11,6 @@
 	w_class = ITEMSIZE_HUGE
 	/// A chassis: its /datum/mecha_blueprint (code/game/mecha/mecha_construction_paths.dm).
 	var/blueprint
-	/// A chassis: which of its blueprint's parts are on, one bit per part.
-	var/parts_mask = 0
 
 
 /obj/item/mecha_parts/chassis
@@ -469,3 +467,7 @@ CAPABILITIES(/obj/item/mecha_parts/chassis/hades)
 
 /obj/item/circuitboard/mecha/hades/main
 	name = "stange control circuit"
+
+/// A chassis: which of its blueprint's parts are on, one bit per part. Tracked: the chassis draws a "+o" overlay for each.
+/obj/item/mecha_parts/var/parts_mask = 0
+TRACKED(/obj/item/mecha_parts, parts_mask)

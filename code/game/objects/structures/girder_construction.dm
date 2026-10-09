@@ -22,7 +22,7 @@ MSG_DEF_SELF(girder/column_disassembled, "You disassembled the girder!")
 	return list(
 		op("secure", tool(TOOL_WRENCH), when(TYPE_PROC_REF(/obj/structure/girder, is_displaced)), priority(OP_PRIORITY_PART), label("Secure the girder"), wait(4 SECONDS), begins(MSG(girder/securing)), says(MSG(girder/secured)), then(TYPE_PROC_REF(/obj/structure/girder, secured))),
 		op("dislodge", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/obj/structure/girder, is_anchored)), priority(OP_PRIORITY_PART), label("Dislodge the girder"), wait(4 SECONDS), begins(MSG(girder/dislodging)), says(MSG(girder/dislodged)), then(TYPE_PROC_REF(/obj/structure/girder, dislodged))),
-		op("disassemble", tool(TOOL_WRENCH), when(TYPE_PROC_REF(/obj/structure/girder, is_bare_anchored)), priority(OP_PRIORITY_PART), label("Disassemble the girder"), wait(TYPE_PROC_REF(/obj/structure/girder, disassemble_time)), begins(MSG(girder/disassembling)), says(MSG(girder/disassembled)), then(TYPE_PROC_REF(/obj/structure/girder, disassembled))),
+		op("disassemble", tool(TOOL_WRENCH), when(TYPE_PROC_REF(/obj/structure/girder, is_bare_anchored)), priority(OP_PRIORITY_PART - 1), label("Disassemble the girder"), wait(TYPE_PROC_REF(/obj/structure/girder, disassemble_time)), begins(MSG(girder/disassembling)), says(MSG(girder/disassembled)), then(TYPE_PROC_REF(/obj/structure/girder, disassembled))),
 		// chooses whether a stack of material reinforces the girder or plates it into a wall
 		op("toggle_reinforcing", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/obj/structure/girder, is_bare_anchored)), priority(OP_PRIORITY_PART - 5), label("Switch between reinforcing and plating"), wait(0), then(TYPE_PROC_REF(/obj/structure/girder, reinforcing_toggled))),
 		op("unsecure_struts", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/obj/structure/girder, struts_secured)), priority(OP_PRIORITY_PART), label("Unsecure the support struts"), wait(4 SECONDS), begins(MSG(girder/struts_unsecuring)), says(MSG(girder/struts_unsecured)), then(TYPE_PROC_REF(/obj/structure/girder, struts_unsecured))),
@@ -39,17 +39,17 @@ MSG_DEF_SELF(girder/column_disassembled, "You disassembled the girder!")
 	return regular_girder() && !anchored
 
 /obj/structure/girder/proc/is_anchored(datum/act/A)
-	return regular_girder() && anchored && !state
+	return read_once(regular_girder() && anchored && !state)
 
 /// Anchored, struts neither loose nor secured, and no reinforcement material on it.
 /obj/structure/girder/proc/is_bare_anchored(datum/act/A)
-	return regular_girder() && anchored && !state && !reinf_material
+	return read_once(regular_girder() && anchored && !state && !reinf_material)
 
 /obj/structure/girder/proc/struts_secured(datum/act/A)
-	return regular_girder() && anchored && state == 2
+	return read_once(regular_girder() && anchored && state == 2)
 
 /obj/structure/girder/proc/struts_loose(datum/act/A)
-	return regular_girder() && anchored && state == 1
+	return read_once(regular_girder() && anchored && state == 1)
 
 /// 3.5 seconds plus a tick for every 50 integrity (the op scales it by the tool).
 /obj/structure/girder/proc/disassemble_time(datum/act/op/A)

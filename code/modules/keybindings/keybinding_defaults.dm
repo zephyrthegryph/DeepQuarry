@@ -8,6 +8,36 @@
 #define KB_HUMAN(keys...) list(KEYBIND_PROFILE_DEFAULT = list(##keys))
 #define KB_ROBOT(keys...) list(KEYBIND_PROFILE_ROBOT = list(##keys))
 
+/// The ability bindings: id, name, op key. Whether one is usable right now (grant, state, cost) is checked when the key is pressed, by the op itself.
+GLOBAL_LIST_INIT(ability_keybind_rows, list(
+	list("shadekin_phase_shift", "Phase shift", ABILITY_ID_SHADEKIN_PHASE_SHIFT),
+	list("shadekin_dark_respite", "Dark respite", ABILITY_ID_SHADEKIN_DARK_RESPITE),
+	list("shadekin_regenerate_other", "Regenerate other", ABILITY_ID_SHADEKIN_REGENERATE_OTHER),
+	list("shadekin_create_shade", "Create shade", ABILITY_ID_SHADEKIN_CREATE_SHADE),
+	list("shadekin_dark_maw", "Dark maw", ABILITY_ID_SHADEKIN_DARK_MAW),
+	list("shadekin_dark_tunneling", "Dark tunneling", ABILITY_ID_SHADEKIN_DARK_TUNNELING),
+	list("shadekin_clear_dark_maws", "Dispel dark maws", ABILITY_ID_SHADEKIN_CLEAR_DARK_MAWS),
+	list("robot_toggle_lights", "Toggle lights", ABILITY_ID_ROBOT_TOGGLE_LIGHTS),
+	list("robot_pick_name", "Pick name", ABILITY_ID_ROBOT_PICK_NAME),
+	list("robot_customize_appearance", "Customize appearance", ABILITY_ID_ROBOT_CUSTOMIZE_APPEARANCE),
+	list("robot_toggle_glowy_stomach", "Toggle glowing stomach & accents", ABILITY_ID_ROBOT_TOGGLE_GLOWY_STOMACH),
+	list("robot_spark_plug", "Emit sparks", ABILITY_ID_ROBOT_SPARK_PLUG),
+	list("robot_toggle_grabbability", "Toggle pickup", ABILITY_ID_ROBOT_TOGGLE_GRABBABILITY),
+	list("robot_sensor_mode", "Toggle sensor augmentation", ABILITY_ID_ROBOT_SENSOR_MODE),
+	list("robot_purge_nutrition", "Purge nutrition", ABILITY_ID_ROBOT_PURGE_NUTRITION),
+	list("robot_toggle_decals", "Control decals & animations", ABILITY_ID_ROBOT_TOGGLE_DECALS),
+	list("robot_recolour", "Recolour module", ABILITY_ID_ROBOT_RECOLOUR),
+	list("robot_toggle_vtec", "Toggle VTEC", ABILITY_ID_ROBOT_TOGGLE_VTEC),
+	list("robot_pick_shell", "Customize appearance", ABILITY_ID_ROBOT_PICK_SHELL),
+	list("robot_set_mail_tag", "Set mail tag", ABILITY_ID_ROBOT_SET_MAIL_TAG),
+	list("robot_eject_cargo", "Eject cargo", ABILITY_ID_ROBOT_EJECT_CARGO),
+	list("robot_nom", "Robot nom", ABILITY_ID_ROBOT_NOM),
+	list("robot_mount", "Robot mount/dismount", ABILITY_ID_ROBOT_MOUNT),
+	list("robot_toggle_module_1", "Module 1", ABILITY_ID_ROBOT_TOGGLE_MODULE_1),
+	list("robot_toggle_module_2", "Module 2", ABILITY_ID_ROBOT_TOGGLE_MODULE_2),
+	list("robot_toggle_module_3", "Module 3", ABILITY_ID_ROBOT_TOGGLE_MODULE_3),
+))
+
 /// One row per binding: id, name, category, command, release command, default keys.
 /proc/keybinding_definitions()
 	. = list(
@@ -114,35 +144,7 @@
 		. += list(list(INTERACTION_CATEGORY_BINDING(category), "[capitalize(category)] (hovered or in front)", KEYBIND_CAT_INTERACTION, ".input-category [category]", null, null))
 	// Abilities: one row per ability op, unbound by default. Whether it's usable right now (grant, state, cost) is checked when the key is
 	// pressed, by the op itself (abilities.dm). The row id stays ability_<old ability id>; the command carries the op key.
-	var/list/ability_rows = list(
-		list("shadekin_phase_shift", "Phase shift", ABILITY_ID_SHADEKIN_PHASE_SHIFT),
-		list("shadekin_dark_respite", "Dark respite", ABILITY_ID_SHADEKIN_DARK_RESPITE),
-		list("shadekin_regenerate_other", "Regenerate other", ABILITY_ID_SHADEKIN_REGENERATE_OTHER),
-		list("shadekin_create_shade", "Create shade", ABILITY_ID_SHADEKIN_CREATE_SHADE),
-		list("shadekin_dark_maw", "Dark maw", ABILITY_ID_SHADEKIN_DARK_MAW),
-		list("shadekin_dark_tunneling", "Dark tunneling", ABILITY_ID_SHADEKIN_DARK_TUNNELING),
-		list("shadekin_clear_dark_maws", "Dispel dark maws", ABILITY_ID_SHADEKIN_CLEAR_DARK_MAWS),
-		list("robot_toggle_lights", "Toggle lights", ABILITY_ID_ROBOT_TOGGLE_LIGHTS),
-		list("robot_pick_name", "Pick name", ABILITY_ID_ROBOT_PICK_NAME),
-		list("robot_customize_appearance", "Customize appearance", ABILITY_ID_ROBOT_CUSTOMIZE_APPEARANCE),
-		list("robot_toggle_glowy_stomach", "Toggle glowing stomach & accents", ABILITY_ID_ROBOT_TOGGLE_GLOWY_STOMACH),
-		list("robot_spark_plug", "Emit sparks", ABILITY_ID_ROBOT_SPARK_PLUG),
-		list("robot_toggle_grabbability", "Toggle pickup", ABILITY_ID_ROBOT_TOGGLE_GRABBABILITY),
-		list("robot_sensor_mode", "Toggle sensor augmentation", ABILITY_ID_ROBOT_SENSOR_MODE),
-		list("robot_purge_nutrition", "Purge nutrition", ABILITY_ID_ROBOT_PURGE_NUTRITION),
-		list("robot_toggle_decals", "Control decals & animations", ABILITY_ID_ROBOT_TOGGLE_DECALS),
-		list("robot_recolour", "Recolour module", ABILITY_ID_ROBOT_RECOLOUR),
-		list("robot_toggle_vtec", "Toggle VTEC", ABILITY_ID_ROBOT_TOGGLE_VTEC),
-		list("robot_pick_shell", "Customize appearance", ABILITY_ID_ROBOT_PICK_SHELL),
-		list("robot_set_mail_tag", "Set mail tag", ABILITY_ID_ROBOT_SET_MAIL_TAG),
-		list("robot_eject_cargo", "Eject cargo", ABILITY_ID_ROBOT_EJECT_CARGO),
-		list("robot_nom", "Robot nom", ABILITY_ID_ROBOT_NOM),
-		list("robot_mount", "Robot mount/dismount", ABILITY_ID_ROBOT_MOUNT),
-		list("robot_toggle_module_1", "Module 1", ABILITY_ID_ROBOT_TOGGLE_MODULE_1),
-		list("robot_toggle_module_2", "Module 2", ABILITY_ID_ROBOT_TOGGLE_MODULE_2),
-		list("robot_toggle_module_3", "Module 3", ABILITY_ID_ROBOT_TOGGLE_MODULE_3),
-	)
-	for(var/list/row as anything in ability_rows)
+	for(var/list/row as anything in GLOB.ability_keybind_rows)
 		. += list(list(ABILITY_KEYBIND(row[1]), row[2], KEYBIND_CAT_ABILITIES, ".use-ability [row[3]]", null, null))
 
 #undef KB_BOTH

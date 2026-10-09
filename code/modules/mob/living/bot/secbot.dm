@@ -473,7 +473,7 @@ CAPABILITIES(/obj/item/secbot_assembly)
 	construction(start(STAGE_SECBOT_HELMET),
 		stage(STAGE_SECBOT_HOLED, tool(TOOL_WELDER), wait(0), then(PROC_REF(hole_welded)), undo = null),
 		stage(STAGE_SECBOT_SENSING, item(/obj/item/assembly/prox_sensor), consumes(), wait(0), then(PROC_REF(sensor_added)), undo = null),
-		stage(STAGE_SECBOT_ARMED, inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)), when(PROC_REF(robot_arm_held)), consumes(), wait(0), then(PROC_REF(arm_added)), undo = null),
+		stage(STAGE_SECBOT_ARMED, inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)), when(req(PROC_REF(robot_arm_held))), consumes(), wait(0), then(PROC_REF(arm_added)), undo = null),
 		stage(STAGE_SECBOT_FINISHED, item(/obj/item/melee/baton), consumes(), wait(0), then(PROC_REF(finished)), undo = null))
 
 /// Old attackby: name the bot with a pen.
@@ -496,20 +496,27 @@ CAPABILITIES(/obj/item/secbot_assembly)
 		return TRUE
 	return istype(held, /obj/item/organ/external/leg) && (held.name == "robotic right leg" || held.name == "robotic left leg")
 
+/// The picture follows the stages built: the welded hole, the sensor's eye, the arm.
+/obj/item/secbot_assembly/draw(datum/look/look)
+	..()
+	if(built(src, STAGE_SECBOT_HOLED))
+		look.overlay("hs_hole")
+	if(built(src, STAGE_SECBOT_SENSING))
+		look.overlay("hs_eye")
+	if(built(src, STAGE_SECBOT_ARMED))
+		look.overlay("hs_arm")
+
 /obj/item/secbot_assembly/proc/hole_welded(datum/act/op/A)
-	add_overlay("hs_hole")
 	to_chat(A.actor, span_notice("You weld a hole in \the [src]."))
 	return OP_OK
 
 /obj/item/secbot_assembly/proc/sensor_added(datum/act/op/A)
-	add_overlay("hs_eye")
 	name = "helmet/signaler/prox sensor assembly"
 	to_chat(A.actor, span_notice("You add \the [A.held] to [src]."))
 	return OP_OK
 
 /obj/item/secbot_assembly/proc/arm_added(datum/act/op/A)
 	name = "helmet/signaler/prox sensor/robot arm assembly"
-	add_overlay("hs_arm")
 	to_chat(A.actor, span_notice("You add \the [A.held] to [src]."))
 	return OP_OK
 
@@ -538,8 +545,8 @@ MSG_DEF_SELF(bot_frame/start_wire, "You start to wire %T%.")
 /// The two leg stages of a walking bot assembly's ladder.
 /proc/bot_frame_legs()
 	return list(
-		stage(STAGE_BOT_FRAME_ONE_LEG, inputs(item(/obj/item/robot_parts/l_leg), item(/obj/item/robot_parts/r_leg), item(/obj/item/organ/external/leg)), when(TYPE_PROC_REF(/obj/item/secbot_assembly, robot_leg_held)), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly, leg_one_added)), undo = null),
-		stage(STAGE_BOT_FRAME_TWO_LEGS, inputs(item(/obj/item/robot_parts/l_leg), item(/obj/item/robot_parts/r_leg), item(/obj/item/organ/external/leg)), when(TYPE_PROC_REF(/obj/item/secbot_assembly, robot_leg_held)), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly, leg_two_added)), undo = null))
+		stage(STAGE_BOT_FRAME_ONE_LEG, inputs(item(/obj/item/robot_parts/l_leg), item(/obj/item/robot_parts/r_leg), item(/obj/item/organ/external/leg)), when(req(TYPE_PROC_REF(/obj/item/secbot_assembly, robot_leg_held))), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly, leg_one_added)), undo = null),
+		stage(STAGE_BOT_FRAME_TWO_LEGS, inputs(item(/obj/item/robot_parts/l_leg), item(/obj/item/robot_parts/r_leg), item(/obj/item/organ/external/leg)), when(req(TYPE_PROC_REF(/obj/item/secbot_assembly, robot_leg_held))), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly, leg_two_added)), undo = null))
 
 /obj/item/secbot_assembly/proc/leg_one_added(datum/act/op/A)
 	name = "legs/frame assembly"

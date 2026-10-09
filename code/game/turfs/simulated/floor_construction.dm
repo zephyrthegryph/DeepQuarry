@@ -22,20 +22,20 @@ MSG_DEF_SELF(floor/structures_on, "It has structures that must be removed before
 
 /// Bare plating that is neither broken nor burnt.
 /turf/simulated/floor/proc/plating_intact(datum/act/A)
-	return is_plating() && !broken && !burnt
+	return read_once(is_plating() && !broken && !burnt)
 
 /// Bare plating that is broken or burnt.
 /turf/simulated/floor/proc/plating_damaged(datum/act/A)
-	return is_plating() && (broken || burnt)
+	return read_once(is_plating() && (broken || burnt))
 
 /turf/simulated/floor/proc/can_pry_covering(datum/act/A)
-	return !is_plating() && (broken || burnt || (flooring.flags & (TURF_IS_FRAGILE | TURF_REMOVE_CROWBAR)))
+	return read_once(!is_plating() && (broken || burnt || (flooring.flags & (TURF_IS_FRAGILE | TURF_REMOVE_CROWBAR))))
 
 /turf/simulated/floor/proc/can_unscrew_covering(datum/act/A)
-	return !is_plating() && !broken && !burnt && (flooring.flags & TURF_REMOVE_SCREWDRIVER)
+	return read_once(!is_plating() && !broken && !burnt && (flooring.flags & TURF_REMOVE_SCREWDRIVER))
 
 /turf/simulated/floor/proc/can_unwrench_covering(datum/act/A)
-	return !is_plating() && (flooring.flags & TURF_REMOVE_WRENCH)
+	return read_once(!is_plating() && (flooring.flags & TURF_REMOVE_WRENCH))
 
 /turf/simulated/floor/proc/covering_pried(datum/act/op/A)
 	pry_covering(A.actor)
@@ -60,8 +60,7 @@ MSG_DEF_SELF(floor/structures_on, "It has structures that must be removed before
 
 /// There is a base turf under the plating to expose.
 /turf/simulated/floor/proc/plating_has_base(datum/act/A)
-	var/base_type = get_base_turf_by_area(src)
-	return base_type && type != base_type
+	return read_once(get_base_turf_by_area(src) && type != get_base_turf_by_area(src))
 
 /// No structure stands on the plating.
 /turf/simulated/floor/proc/plating_clear(datum/act/A)

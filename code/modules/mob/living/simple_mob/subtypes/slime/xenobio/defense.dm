@@ -4,7 +4,7 @@
 // Handles trying to wrestle a slime off of someone being eatten.
 /// Declared in CAPABILITIES(/mob/living/simple_mob/slime/xenobio) (combat_ai/ports/slime.dm): it only answers while the slime is eating someone.
 /mob/living/simple_mob/slime/xenobio/proc/eating_someone(datum/act/A)
-	return !!victim
+	return read_once(!!victim)
 
 /// Wrestle it off its victim.
 /mob/living/simple_mob/slime/xenobio/proc/xenoslime_wrestle_off(datum/act/op/A)

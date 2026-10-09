@@ -50,14 +50,14 @@ MSG_DEF_SELF(wall/repaired, "You finish repairing the damage to %T%.")
 
 		// a reinforced wall, outermost layer first
 		op("cut_grille", tool(TOOL_WIRECUTTER), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_6)), wall_worker(), label("Cut the outer grille"), wait(0), says(MSG(wall/cut_grille)), then(TYPE_PROC_REF(/turf/simulated/wall, cut_grille))),
-		op("mend_grille", tool(TOOL_WIRECUTTER), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_5)), wall_worker(), label("Mend the outer grille"), wait(0), says(MSG(wall/mend_grille)), then(TYPE_PROC_REF(/turf/simulated/wall, mend_grille))),
+		op("mend_grille", tool(TOOL_WIRECUTTER), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_5)), wall_worker(), priority(OP_PRIORITY_NORMAL - 1), label("Mend the outer grille"), wait(0), says(MSG(wall/mend_grille)), then(TYPE_PROC_REF(/turf/simulated/wall, mend_grille))),
 		op("unscrew_lines", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_5)), wall_worker(), label("Unscrew the support lines"), wait(4 SECONDS), begins(MSG(wall/unscrew_lines_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/unscrew_lines)), then(TYPE_PROC_REF(/turf/simulated/wall, unscrew_lines))),
-		op("screw_lines", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_4)), wall_worker(), label("Screw down the support lines"), wait(4 SECONDS), begins(MSG(wall/screw_lines_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/screw_lines)), then(TYPE_PROC_REF(/turf/simulated/wall, screw_lines))),
-		op("slice_cover", lit_welder(fuel = 0), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_4)), wall_worker(), label("Slice through the metal cover"), wait(6 SECONDS), begins(MSG(wall/slice_cover_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/slice_cover)), then(TYPE_PROC_REF(/turf/simulated/wall, slice_cover))),
+		op("screw_lines", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_4)), wall_worker(), priority(OP_PRIORITY_NORMAL - 1), label("Screw down the support lines"), wait(4 SECONDS), begins(MSG(wall/screw_lines_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/screw_lines)), then(TYPE_PROC_REF(/turf/simulated/wall, screw_lines))),
+		op("slice_cover", lit_welder(fuel = 0), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_4)), wall_worker(), priority(OP_PRIORITY_NORMAL - 1), label("Slice through the metal cover"), wait(6 SECONDS), begins(MSG(wall/slice_cover_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/slice_cover)), then(TYPE_PROC_REF(/turf/simulated/wall, slice_cover))),
 		op("slice_cover_cutter", item(/obj/item/pickaxe/plasmacutter), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_4)), when(TYPE_PROC_REF(/turf/simulated/wall, no_thermite)), wall_worker(), label("Slice through the metal cover"), wait(TYPE_PROC_REF(/turf/simulated/wall, cutter_time_cover)), begins(MSG(wall/slice_cover_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, alt_started)), says(MSG(wall/slice_cover)), then(TYPE_PROC_REF(/turf/simulated/wall, slice_cover))),
 		op("pry_cover", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_3)), wall_worker(), label("Pry off the cover"), wait(10 SECONDS), begins(MSG(wall/pry_cover_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/pry_cover)), then(TYPE_PROC_REF(/turf/simulated/wall, pry_cover))),
 		op("loosen_bolts", tool(TOOL_WRENCH), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_2)), wall_worker(), label("Loosen the anchoring bolts"), wait(4 SECONDS), begins(MSG(wall/loosen_bolts_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/loosen_bolts)), then(TYPE_PROC_REF(/turf/simulated/wall, loosen_bolts))),
-		op("slice_rods", lit_welder(fuel = 0), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_1)), wall_worker(), label("Slice through the support rods"), wait(7 SECONDS), begins(MSG(wall/slice_rods_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/slice_rods)), then(TYPE_PROC_REF(/turf/simulated/wall, slice_rods))),
+		op("slice_rods", lit_welder(fuel = 0), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_1)), wall_worker(), priority(OP_PRIORITY_NORMAL - 2), label("Slice through the support rods"), wait(7 SECONDS), begins(MSG(wall/slice_rods_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/slice_rods)), then(TYPE_PROC_REF(/turf/simulated/wall, slice_rods))),
 		op("slice_rods_cutter", item(/obj/item/pickaxe/plasmacutter), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_1)), when(TYPE_PROC_REF(/turf/simulated/wall, no_thermite)), wall_worker(), label("Slice through the support rods"), wait(TYPE_PROC_REF(/turf/simulated/wall, cutter_time_rods)), begins(MSG(wall/slice_rods_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, alt_started)), says(MSG(wall/slice_rods)), then(TYPE_PROC_REF(/turf/simulated/wall, slice_rods))),
 		op("pry_sheath", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/turf/simulated/wall, at_stage_0)), wall_worker(), label("Pry off the outer sheath"), wait(10 SECONDS), begins(MSG(wall/pry_sheath_begins)), starts(TYPE_PROC_REF(/turf/simulated/wall, tool_started)), says(MSG(wall/pry_sheath)), then(TYPE_PROC_REF(/turf/simulated/wall, pry_sheath))))
 
@@ -75,32 +75,32 @@ MSG_DEF_SELF(wall/repaired, "You finish repairing the damage to %T%.")
 
 /// No reinforcement layers are left to go through: a plain wall, or a reinforced one with no stage.
 /turf/simulated/wall/proc/is_plain(datum/act/A)
-	return !reinf_material || isnull(construction_stage)
+	return read_once(!reinf_material || isnull(construction_stage))
 
 /// `construction_stage` is null or a step number that may be 0 (null == 0 is true in DM), so each stage asks for a number.
 /turf/simulated/wall/proc/at_stage(stage)
-	return reinf_material && !isnull(construction_stage) && construction_stage == stage
+	return read_once(reinf_material && !isnull(construction_stage) && construction_stage == stage)
 
 /turf/simulated/wall/proc/at_stage_6(datum/act/A)
-	return at_stage(6)
+	return read_once(at_stage(6))
 
 /turf/simulated/wall/proc/at_stage_5(datum/act/A)
-	return at_stage(5)
+	return read_once(at_stage(5))
 
 /turf/simulated/wall/proc/at_stage_4(datum/act/A)
-	return at_stage(4)
+	return read_once(at_stage(4))
 
 /turf/simulated/wall/proc/at_stage_3(datum/act/A)
-	return at_stage(3)
+	return read_once(at_stage(3))
 
 /turf/simulated/wall/proc/at_stage_2(datum/act/A)
-	return at_stage(2)
+	return read_once(at_stage(2))
 
 /turf/simulated/wall/proc/at_stage_1(datum/act/A)
-	return at_stage(1)
+	return read_once(at_stage(1))
 
 /turf/simulated/wall/proc/at_stage_0(datum/act/A)
-	return at_stage(0)
+	return read_once(at_stage(0))
 
 // ---- a tool touching the wall ----
 
@@ -252,7 +252,7 @@ MSG_DEF_SELF(wall/repaired, "You finish repairing the damage to %T%.")
 /turf/simulated/wall/proc/repairable(datum/act/A)
 	if(thermite || (locate_within(src, /obj/effect/overlay/wallrot)))
 		return FALSE
-	return get_integrity() < max_integrity
+	return read_once(get_integrity() < max_integrity)
 
 /// At least half a second; longer the more damage there is.
 /turf/simulated/wall/proc/repair_time(datum/act/op/A)

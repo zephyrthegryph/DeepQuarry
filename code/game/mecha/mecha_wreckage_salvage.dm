@@ -10,13 +10,13 @@ MSG_DEF_SELF(mecha_wreckage/nothing_to_cut, "There is nothing left to cut.")
 MSG_DEF_SELF(mecha_wreckage/nothing_to_pry, "You don't see anything that can be pried out.")
 
 /obj/effect/decal/mecha_wreckage/proc/has_salvage_left(datum/act/A)
-	return salvage_num > 0
+	return read_once(salvage_num > 0)
 
 /obj/effect/decal/mecha_wreckage/proc/has_welder_salvage(datum/act/A)
-	return length(welder_salvage) > 0
+	return read_once(length(welder_salvage) > 0)
 
 /obj/effect/decal/mecha_wreckage/proc/has_pry_salvage(datum/act/A)
-	return length(crowbar_salvage) > 0
+	return read_once(length(crowbar_salvage) > 0)
 
 /obj/effect/decal/mecha_wreckage/proc/cut_salvage(datum/act/op/A)
 	var/mob/user = A.actor

@@ -757,7 +757,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 /// An AI may deploy into a shell that allows it and is not another AI's.
 /mob/living/silicon/robot/proc/shell_open_to_ai(datum/act/op/A)
-	return shell && CONFIG_GET(flag/allow_ai_shells) && (!connected_ai || connected_ai == A.actor)
+	return read_once(shell && CONFIG_GET(flag/allow_ai_shells) && (!connected_ai || connected_ai == A.actor))
 
 /mob/living/silicon/robot/proc/robot_wires_worked(datum/act/op/A)
 	wires_open(src, A.actor)
@@ -1012,7 +1012,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 /// TRUE when there is plating damage to weld.
 /mob/living/silicon/robot/proc/has_dents(datum/act/op/A)
-	return !!injury_load(INJURY_CATEGORY_PHYSICAL)
+	return read_once(!!injury_load(INJURY_CATEGORY_PHYSICAL))
 
 /// Welder: fix the chassis's dents (not your own).
 /mob/living/silicon/robot/proc/interaction_weld_repair(datum/act/op/A)

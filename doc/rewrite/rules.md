@@ -153,7 +153,7 @@ Energy is deducted before the final `CanPass` check, so a failed shift still cos
 
 As an ability:
 
-```dm
+```dm before
 /datum/ability/shadekin_phase_shift
 	name = "Phase shift"
 	category = ABILITY_CAT_MOVEMENT

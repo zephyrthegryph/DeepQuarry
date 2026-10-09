@@ -116,18 +116,22 @@ CAPABILITIES(/obj/dq_combat_probe)
 
 	// Disarm and Grab are ops of a living target (attack_variants, combat_mode.dm); you can't Disarm or Grab yourself, and an object has neither.
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
-	var/datum/op_result/on_self = perform_op(H, H, "attack_variants.disarm", null, ORIGIN_MENU)
+	var/datum/op_result/on_self = dq_attack_variant_result(H, H, ATTACK_VARIANT_DISARM)
 	TEST_ASSERT_EQUAL(on_self?.outcome, ACT_REFUSED, "you can't Disarm yourself")
-	on_self = perform_op(H, H, "attack_variants.grab", null, ORIGIN_MENU)
+	on_self = dq_attack_variant_result(H, H, ATTACK_VARIANT_GRAB)
 	TEST_ASSERT_EQUAL(on_self?.outcome, ACT_REFUSED, "you can't Grab yourself")
 	TEST_ASSERT_NOTNULL(other, "a second living mob exists")
-	var/datum/op_result/on_probe = perform_op(H, probe, "attack_variants.disarm", null, ORIGIN_MENU)
+	var/datum/op_result/on_probe = dq_attack_variant_result(H, probe, ATTACK_VARIANT_DISARM)
 	TEST_ASSERT_EQUAL(on_probe?.outcome, ACT_REFUSED, "Disarm isn't offered on objects")
 
 /// Runs the Disarm or Grab op of `target` for `actor`, as the Menu does. TRUE if it committed.
 /proc/dq_attack_variant_op(mob/actor, atom/target, variant)
-	var/datum/op_result/result = perform_op(actor, target, variant == ATTACK_VARIANT_GRAB ? "attack_variants.grab" : "attack_variants.disarm", null, ORIGIN_MENU)
+	var/datum/op_result/result = dq_attack_variant_result(actor, target, variant)
 	return result?.outcome == ACT_COMMITTED
+
+/// The result of the Disarm or Grab op of `target` for `actor`, from the Menu.
+/proc/dq_attack_variant_result(mob/actor, atom/target, variant)
+	return perform_op(actor, target, variant == ATTACK_VARIANT_GRAB ? "attack_variants.grab" : "attack_variants.disarm", null, ORIGIN_MENU)
 
 /// Is the op `key` in the menu `actor` gets for `target` (holding `held`), enabled? Stance-declared ops are listed only in their stance.
 /datum/unit_test/proc/dq_combat_menu_has(mob/actor, atom/target, key, obj/item/held)
