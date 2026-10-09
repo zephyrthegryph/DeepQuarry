@@ -1,5 +1,9 @@
 /obj/item/gun/projectile/automatic/l6_saw cover_open=1 +state: l6open50
+/obj/item/gun/projectile/automatic/l6_saw cover_open=1 +overlay: icons/obj/64x32guns_ch.dmi:l6open50:8:#000000
 /obj/item/gun/projectile/automatic/l6_saw cover_open=1 -state: l6closed50
+/obj/item/gun/projectile/automatic/l6_saw cover_open=1 -overlay: icons/obj/64x32guns_ch.dmi:l6closed50:8:#000000
 /obj/item/gun/projectile/automatic/l6_saw cover_open=2 +state: l6open50
+/obj/item/gun/projectile/automatic/l6_saw cover_open=2 +overlay: icons/obj/64x32guns_ch.dmi:l6open50:8:#000000
 /obj/item/gun/projectile/automatic/l6_saw cover_open=2 -state: l6closed50
+/obj/item/gun/projectile/automatic/l6_saw cover_open=2 -overlay: icons/obj/64x32guns_ch.dmi:l6closed50:8:#000000
 
