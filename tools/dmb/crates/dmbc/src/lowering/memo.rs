@@ -217,7 +217,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         }
         miss = MemoMissReason::UnrebasablePrivateSidecar;
     }
-    let lookup_disk = |parsed: Option<&dm_syntax::Item>| {
+    let lookup_disk = |parsed: Option<crate::argument_sources::ProcedureHeader<'_>>| {
         memo.lookup_procedure(
             &key,
             identity,
@@ -232,7 +232,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     };
     let disk = if needs_parsed {
         bodies
-            .with_parsed(body, |parsed| lookup_disk(Some(parsed.item())))
+            .with_parsed(body, |parsed| lookup_disk(Some(parsed.item().into())))
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?
     } else {
         let header = (!prepared
@@ -241,7 +241,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             .is_none_or(|abi| abi.source_helpers.is_empty()))
         .then(|| frontend.compact_body(body).ok())
         .flatten();
-        lookup_disk(header)
+        lookup_disk(header.map(Into::into))
     };
     if let Some(errors) = disk
         .errors

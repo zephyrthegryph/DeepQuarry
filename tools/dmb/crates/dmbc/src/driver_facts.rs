@@ -537,7 +537,7 @@ fn prepare_source_abi_mode_on_executor(
                                                 lexical_statics,
                                                 resource_search_context,
                                             ),
-                                            None => policy.prepare(metadata, parsed, &context),
+                                            None => policy.prepare_view(metadata, parsed, &context),
                                         }
                                     })();
                                     (*ordinal, result)

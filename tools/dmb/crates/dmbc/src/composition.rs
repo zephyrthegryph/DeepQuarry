@@ -183,26 +183,28 @@ pub fn validate_global_program(
     {
         return Err(unsupported("source maps and skins are not admitted"));
     }
-    fn admit(items: &[dm_syntax::Item]) -> Result<(), CompositionError> {
+    fn admit<'a>(
+        items: impl IntoIterator<Item = dm_tree::frontend::ItemView<'a>>,
+    ) -> Result<(), CompositionError> {
         for item in items {
-            match item.kind {
+            match item.kind() {
                 dm_syntax::ItemKind::Proc => {}
                 dm_syntax::ItemKind::Type
-                    if matches!(item.header.trim(), "/" | "proc" | "/proc") =>
+                    if matches!(item.header().trim(), "/" | "proc" | "/proc") =>
                 {
-                    admit(&item.children)?
+                    admit(item.children())?
                 }
                 _ => {
                     return Err(unsupported(format!(
                         "source declaration not admitted: {}",
-                        item.header
+                        item.header()
                     )))
                 }
             }
         }
         Ok(())
     }
-    admit(&frontend.syntax.items)?;
+    admit(frontend.syntax.items())?;
     let mut names = std::collections::BTreeSet::new();
     for body in frontend.bodies.iter() {
         let member = frontend

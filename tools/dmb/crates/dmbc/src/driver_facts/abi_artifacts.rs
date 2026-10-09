@@ -113,7 +113,7 @@ pub(super) fn prepare(
     store: &AbiArtifacts,
     keys: &Mutex<Vec<Arc<[u8]>>>,
     metadata: &dm_ir::ProcedureMetadata,
-    parsed: &dm_syntax::Item,
+    parsed: dm_tree::frontend::ItemView<'_>,
     context: &AbiContext<'_>,
     evaluator: &DriverEvaluator<'_>,
     inherited: &DriverInheritedFacts<'_>,
@@ -122,7 +122,7 @@ pub(super) fn prepare(
 ) -> Result<PreparedUnit, AbiError> {
     // Always authenticate the current issued header/settings before accepting old answers.
     let mut symbols = dm_ir::SymbolTable::default();
-    if dm_tree::settings::extract_settings(&parsed.children, &mut symbols)
+    if dm_tree::settings::extract_settings(&parsed.relative_item().children, &mut symbols)
         .map_err(AbiError::unsupported)?
         .as_ref()
         != metadata.settings.as_ref()
@@ -209,7 +209,7 @@ pub(super) fn prepare(
         resolver: &recording,
         ..*context
     };
-    let mut unit = policy.prepare(metadata, parsed, &recorded_context)?;
+    let mut unit = policy.prepare_view(metadata, parsed, &recorded_context)?;
     store.recomputed.fetch_add(1, Ordering::Relaxed);
     if reusable {
         let abi = Arc::clone(

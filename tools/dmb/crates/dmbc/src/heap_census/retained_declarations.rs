@@ -11,6 +11,14 @@ pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
     super::lexical_callable::inspect(&mut census, state);
     super::storage_inventory::inspect(&mut census, state);
     state.visit_declaration_storage(|view| match view {
+        DeclarationStorageView::SymbolCatalog { symbols, counts, contributions } => {
+            census.symbol_table_storage("retained_declarations.active_symbols", symbols);
+            census.owner("retained_declarations.symbol_refcounts").observed_items += counts as u64;
+            census.owner("retained_declarations.active_contributions").observed_items += contributions as u64;
+            if counts != 0 || contributions != 0 {
+                census.unknown("retained_declarations.symbol_catalog", "logical BTree refcount and shared contribution roster entry counts are not allocated-capacity estimates; private BTree backing excluded");
+            }
+        }
         DeclarationStorageView::Store { buckets, entries } => {
             census.owner("retained_declarations.index").observed_items += entries as u64;
             if buckets != 0 {
@@ -33,11 +41,11 @@ pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
                 contribution.allocation_size, contribution.allocation_size) {
                 return;
             }
-            census.items(owner, contribution.items);
+            census.relative_syntax(owner, contribution.syntax);
             census.symbol_table_storage(owner, &contribution.facts.symbols);
             census.unknown(owner, "private symbol HashMap buckets and shared Arc control blocks are not exposed; all spelling owners are counted");
-            if census.vec_payload(owner, &contribution.facts.skeletons) {
-                for skeleton in &contribution.facts.skeletons {
+            if census.arc_object(owner, contribution.skeletons) && census.vec_payload(owner, contribution.skeletons.as_ref()) {
+                for skeleton in contribution.skeletons.iter() {
                     if let dm_tree::Skeleton::Member { metadata, .. } = skeleton {
                         if census.arc_object(owner, metadata) {
                             census.declaration(metadata);

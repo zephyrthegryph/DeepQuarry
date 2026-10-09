@@ -94,6 +94,17 @@ pub struct CapturedProcedurePolicy<'a> {
     pub resource_search_context: Option<u128>,
 }
 impl CapturedProcedurePolicy<'_> {
+    /// ABI interpretation reads semantic settings and local layout only. Current
+    /// provenance is supplied by AbiContext; the borrowed relative node avoids
+    /// cloning a shifted header/body merely to perform the same interpretation.
+    pub fn prepare_view(
+        &self,
+        metadata: &ProcedureMetadata,
+        parsed: dm_tree::frontend::ItemView<'_>,
+        context: &AbiContext<'_>,
+    ) -> Result<PreparedUnit, AbiError> {
+        self.prepare(metadata, parsed.relative_item(), context)
+    }
     pub fn prepare(
         &self,
         metadata: &ProcedureMetadata,

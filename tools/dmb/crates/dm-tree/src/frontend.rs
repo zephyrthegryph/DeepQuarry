@@ -198,7 +198,7 @@ pub struct ColdFrontend {
     pub engine: Option<EngineModelStatus>,
     pub plan: DirectivePlan,
     pub expanded: ExpandedRegions,
-    pub syntax: Arc<AstFile>,
+    pub syntax: Arc<DeclarationSyntax>,
     /// Original grammar groups, before flattened declaration normalization.
     pub allocation_ledger: Arc<crate::allocation_ledger::AllocationLedger>,
     pub snapshot: TreeSnapshot,
@@ -207,7 +207,7 @@ pub struct ColdFrontend {
     pub bodies: Arc<[BodyOccurrence]>,
     body_by_declaration: Arc<HashMap<OccurrenceId, usize>>,
     issued_bodies: Arc<[BodyOccurrence]>,
-    issued_syntax: Arc<AstFile>,
+    issued_syntax: Arc<DeclarationSyntax>,
     issued_arena: Arc<str>,
     /// Explicit linker projection. It never changes semantic override priority
     /// or reorders origins independently from their declaration targets.
@@ -218,7 +218,7 @@ impl ColdFrontend {
     /// Borrow the issuer's declaration/settings projection without parsing an
     /// executable body. Occurrence and syntax addresses are checked together;
     /// unsupported setting ancestors and their original spans remain intact.
-    pub fn compact_body(&self, occurrence: &BodyOccurrence) -> Result<&Item, Diagnostic> {
+    pub fn compact_body(&self, occurrence: &BodyOccurrence) -> Result<ItemView<'_>, Diagnostic> {
         let reject = || Diagnostic {
             kind: DiagnosticKind::Internal,
             stage: DiagnosticStage::Internal,
@@ -241,16 +241,12 @@ impl ColdFrontend {
         {
             return Err(reject());
         }
-        let mut items = self.syntax.items.as_slice();
-        let mut selected = None;
-        for index in occurrence.ast_path.iter() {
-            let item = items.get(*index).ok_or_else(reject)?;
-            selected = Some(item);
-            items = &item.children;
-        }
-        let item = selected.ok_or_else(reject)?;
-        if item.span != occurrence.expanded_span
-            || !matches!(item.kind, ItemKind::Proc | ItemKind::Verb)
+        let item = self
+            .syntax
+            .item_path(&occurrence.ast_path)
+            .ok_or_else(reject)?;
+        if item.span() != occurrence.expanded_span
+            || !matches!(item.kind(), ItemKind::Proc | ItemKind::Verb)
         {
             return Err(reject());
         }
@@ -285,7 +281,7 @@ impl ColdFrontend {
         let issued = &self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
         if !std::ptr::eq(self, input.issuer)
             || !std::ptr::eq(issued, input.occurrence)
-            || !std::ptr::eq(compact, input.compact)
+            || !compact.same_node(input.compact)
         {
             return Err(internal(
                 "body input was issued by a different frontend occurrence",
@@ -404,14 +400,14 @@ impl FrontendIssuance {
 pub struct IssuedBodyInput<'a> {
     issuer: &'a ColdFrontend,
     occurrence: &'a BodyOccurrence,
-    compact: &'a Item,
+    compact: ItemView<'a>,
     source: &'a str,
 }
 impl IssuedBodyInput<'_> {
     pub fn source(&self) -> &str {
         self.source
     }
-    pub fn compact(&self) -> &Item {
+    pub fn compact(&self) -> ItemView<'_> {
         self.compact
     }
     pub fn occurrence(&self) -> &BodyOccurrence {
@@ -419,6 +415,9 @@ impl IssuedBodyInput<'_> {
     }
 }
 
+#[path = "frontend_relative_declarations.rs"]
+mod relative_declarations;
+pub use relative_declarations::{CurrentSyntaxChunk, DeclarationSyntax, ItemView, RelativeSyntax};
 #[path = "body_arena.rs"]
 mod body_arena;
 pub use body_arena::{BodyArena, BodyArenaStorage};
@@ -551,6 +550,7 @@ impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
 
 /// Build a resolved source model from a captured provider. Map/resource consumers
 /// receive the ordered non-text ledger and terminal FILE_DIR domain afterward.
+#[cfg(test)]
 #[path = "frontend_ast_capacity.rs"]
 mod ast_capacity;
 #[path = "frontend_pipeline.rs"]
@@ -763,25 +763,28 @@ fn resolution_error(
     }
 }
 
-fn collect_bodies(
-    items: &[Item],
+fn collect_bodies<'a>(
+    items: impl IntoIterator<Item = ItemView<'a>>,
     path: &mut Vec<usize>,
     declarations: &HashMap<usize, (OccurrenceId, MemberId)>,
     mapping: &Mapping<'_>,
     bodies: &mut Vec<BodyOccurrence>,
 ) -> Result<(), Vec<Diagnostic>> {
-    for (index, item) in items.iter().enumerate() {
+    for (index, item) in items.into_iter().enumerate() {
         path.push(index);
-        if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
+        if matches!(item.kind(), ItemKind::Proc | ItemKind::Verb) {
             let declaration = declarations
-                .get(&item.span.start)
+                .get(&item.span().start)
                 .copied()
                 .ok_or_else(|| vec![internal("procedure body has no resolved declaration")])?;
             let source = mapping
-                .output(item.span.start)
+                .output(item.span().start)
                 .ok_or_else(|| vec![internal("procedure body has no source origin")])?;
             let mut setting_spans = Vec::new();
-            crate::settings::setting_spans(&item.children, &mut setting_spans);
+            crate::settings::setting_spans(&item.relative_item().children, &mut setting_spans);
+            for span in &mut setting_spans {
+                *span = dm_syntax::Span::new(span.start + item.offset(), span.end + item.offset());
+            }
             let setting_context_origins = setting_spans
                 .into_iter()
                 .map(|span| {
@@ -794,12 +797,12 @@ fn collect_bodies(
                 declaration: declaration.0,
                 member: declaration.1,
                 ast_path: path.clone().into(),
-                expanded_span: item.span,
+                expanded_span: item.span(),
                 source,
                 setting_context_origins: setting_context_origins.into(),
             });
         } else {
-            collect_bodies(&item.children, path, declarations, mapping, bodies)?;
+            collect_bodies(item.children(), path, declarations, mapping, bodies)?;
         }
         path.pop();
     }
@@ -845,7 +848,11 @@ mod worker_facts_tests {
             assert!(parsed.diagnostics.is_empty());
             assert!(parsed.declaration_errors.is_empty());
             let ast = AstFile {
-                items: parsed.items,
+                items: parsed
+                    .syntax
+                    .items()
+                    .map(|item| item.materialize())
+                    .collect(),
                 ..AstFile::default()
             };
             let mut expected =
@@ -853,7 +860,11 @@ mod worker_facts_tests {
             let ledger =
                 crate::allocation_ledger::capture(&ast.items, "/", &mut expected.symbols).unwrap();
             assert!(
-                parsed.adapted.skeletons == expected.skeletons,
+                parsed
+                    .adapted
+                    .skeletons
+                    .iter()
+                    .eq(expected.skeletons.iter()),
                 "worker skeleton order differs"
             );
             assert!(

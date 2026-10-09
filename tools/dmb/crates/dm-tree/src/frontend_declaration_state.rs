@@ -15,6 +15,7 @@ pub(super) struct RetainedDeclarations {
     values: ArtifactStore<Contribution>,
     keys: AtomicUsize,
     hits: AtomicUsize,
+    symbols: std::sync::Mutex<ActiveSymbols>,
 }
 impl Default for RetainedDeclarations {
     fn default() -> Self {
@@ -22,6 +23,7 @@ impl Default for RetainedDeclarations {
             values: ArtifactStore::current_revision(),
             keys: AtomicUsize::new(0),
             hits: AtomicUsize::new(0),
+            symbols: std::sync::Mutex::new(ActiveSymbols::default()),
         }
     }
 }
@@ -32,19 +34,26 @@ impl dm_ir::Resolver for NoReads {
     }
 }
 pub(super) struct Contribution {
-    items: Vec<Item>,
     facts: crate::AdaptedDeclarations,
+    syntax: Arc<RelativeSyntax>,
+    skeletons: Arc<Vec<crate::Skeleton>>,
     ledger: AllocationLedger,
 }
 /// Complete public borrowed payload; no old source authority is reconstructed.
 pub struct DeclarationContributionView<'a> {
     pub allocation_address: usize,
     pub allocation_size: usize,
-    pub items: &'a Vec<Item>,
+    pub syntax: &'a Arc<RelativeSyntax>,
+    pub skeletons: &'a Arc<Vec<crate::Skeleton>>,
     pub facts: &'a crate::AdaptedDeclarations,
     pub ledger: &'a AllocationLedger,
 }
 pub enum DeclarationStorageView<'a> {
+    SymbolCatalog {
+        symbols: &'a SymbolTable,
+        counts: usize,
+        contributions: usize,
+    },
     Store {
         buckets: usize,
         entries: usize,
@@ -64,6 +73,15 @@ pub enum DeclarationStorageView<'a> {
 }
 impl RetainedDeclarations {
     pub(super) fn visit_storage(&self, mut visit: impl FnMut(DeclarationStorageView<'_>)) {
+        let symbols = self
+            .symbols
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        visit(DeclarationStorageView::SymbolCatalog {
+            symbols: &symbols.symbols,
+            counts: symbols.counts.len(),
+            contributions: symbols.contributions.len(),
+        });
         self.values.visit_storage(|storage| match storage {
             ArtifactStorageView::Store { buckets, entries } => {
                 visit(DeclarationStorageView::Store { buckets, entries })
@@ -91,7 +109,8 @@ impl RetainedDeclarations {
                 contribution: DeclarationContributionView {
                     allocation_address: Arc::as_ptr(value) as usize,
                     allocation_size: std::mem::size_of::<Contribution>(),
-                    items: &value.items,
+                    syntax: &value.syntax,
+                    skeletons: &value.skeletons,
                     facts: &value.facts,
                     ledger: &value.ledger,
                 },
@@ -109,23 +128,43 @@ impl RetainedDeclarations {
             .retain_current_keys(keys.iter().map(Vec::as_slice));
         self.keys.store(keys.len(), Ordering::Relaxed);
     }
-    pub(super) fn get(
+    pub(super) fn get_shared(
+        &self,
+        key: &[u8],
+        text: &str,
+        offset: usize,
+    ) -> Option<CurrentContribution> {
+        let value = self.values.lookup(key, &NoReads)?;
+        let bound = CurrentContribution::bind(value, text, offset)?;
+        self.hits.fetch_add(1, Ordering::Relaxed);
+        Some(bound)
+    }
+    pub(super) fn capture(
+        &self,
+        key: &[u8],
+        text: &str,
+        offset: usize,
+        items: Vec<Item>,
+        facts: crate::AdaptedDeclarations,
+        ledger: AllocationLedger,
+    ) -> Option<CurrentContribution> {
+        let value = Contribution::capture_owned(text, offset, items, facts, ledger)?;
+        self.values
+            .insert_with(Arc::from(key), Vec::new(), Vec::new(), 0, || value);
+        CurrentContribution::bind(self.values.lookup(key, &NoReads)?, text, offset)
+    }
+    #[cfg(test)]
+    fn get(
         &self,
         key: &[u8],
         text: &str,
         offset: usize,
     ) -> Option<(Vec<Item>, crate::AdaptedDeclarations, AllocationLedger)> {
-        let mut rebound = None;
-        self.values.visit_explained(key, &NoReads, &mut |value| {
-            rebound = value.rebind(text, offset);
-            rebound.is_some()
-        });
-        if rebound.is_some() {
-            self.hits.fetch_add(1, Ordering::Relaxed);
-        }
-        rebound
+        let current = self.get_shared(key, text, offset)?;
+        current.value.rebind(text, offset)
     }
-    pub(super) fn insert(
+    #[cfg(test)]
+    fn insert(
         &self,
         key: &[u8],
         text: &str,
@@ -134,13 +173,23 @@ impl RetainedDeclarations {
         facts: &crate::AdaptedDeclarations,
         ledger: &AllocationLedger,
     ) {
-        let Some(value) = Contribution::capture(text, offset, items, facts, ledger) else {
-            return;
-        };
-        // Zero is NOT a memory estimate: this full-current-roster mode has no
-        // byte budget; public statistics explicitly mark every record unknown.
-        self.values
-            .insert_with(Arc::from(key), Vec::new(), Vec::new(), 0, || value);
+        self.capture(
+            key,
+            text,
+            offset,
+            items.to_vec(),
+            facts.clone(),
+            ledger.clone(),
+        );
+    }
+    pub(super) fn current_symbols(
+        &self,
+        current: &[Arc<Contribution>],
+    ) -> Result<SymbolTable, dm_ir::SymbolCollision> {
+        self.symbols
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .update(current)
     }
     pub(super) fn stats(&self) -> DeclarationRetentionStats {
         DeclarationRetentionStats {
@@ -217,6 +266,47 @@ fn rebase(
 mod tests {
     use super::*;
     #[test]
+    fn current_bindings_share_relative_payload_and_catalog_removes_old_names() {
+        let text = "/obj/probe\n    var/unique_name=1\n";
+        let parsed = dm_syntax::parse_declaration_skeleton(text);
+        let ast = AstFile {
+            items: parsed.items,
+            diagnostics: parsed.diagnostics,
+            tokens: Vec::new(),
+        };
+        let mut facts = crate::from_ast(&ast, SymbolTable::default(), FileId(0), 0, 0).unwrap();
+        let ledger =
+            crate::allocation_ledger::capture(&ast.items, "/", &mut facts.symbols).unwrap();
+        let name = facts.symbols.intern("unique_name").unwrap();
+        let store = RetainedDeclarations::default();
+        let key = RetainedDeclarations::key(text);
+        store.retain(&[key.clone()]);
+        let first = store
+            .capture(&key, text, 0, ast.items, facts, ledger)
+            .unwrap();
+        let shifted = store.get_shared(&key, text, 80).unwrap();
+        assert!(Arc::ptr_eq(&first.value, &shifted.value));
+        assert!(Arc::ptr_eq(
+            first.syntax.shared_relative(),
+            shifted.syntax.shared_relative()
+        ));
+        assert!(Arc::ptr_eq(&first.skeletons(), &shifted.skeletons()));
+        let a = first.syntax.items().next().unwrap();
+        let b = shifted.syntax.items().next().unwrap();
+        assert!(std::ptr::eq(a.relative_item(), b.relative_item()));
+        assert_eq!(b.span().start, a.span().start + 80);
+        let symbols = store.current_symbols(&[Arc::clone(&first.value)]).unwrap();
+        assert_eq!(symbols.text(name), Some("unique_name"));
+        let symbols = store
+            .current_symbols(&[Arc::clone(&shifted.value)])
+            .unwrap();
+        assert_eq!(symbols.text(name), Some("unique_name"));
+        assert!(store.current_symbols(&[]).unwrap().text(name).is_none());
+        // Previously issued bindings remain immutable after current-roster pruning.
+        store.retain(&[]);
+        assert_eq!(b.header(), "/obj/probe");
+    }
+    #[test]
     fn owned_chunk_rebinds_all_nested_coordinates_and_rejects_foreign_spans() {
         let text =
             "/obj/base\n    var/count=1\n/proc/p()\n    set name = \"Display\"\n    return 1\n";
@@ -242,7 +332,11 @@ mod tests {
             Contribution::capture(text, 113, &shifted_items, &shifted, &shifted_ledger).unwrap();
         assert_eq!(restored.ledger.events, ledger.events);
         assert_eq!(restored.facts.origins, facts.origins);
-        assert_eq!(restored.items, ast.items);
+        assert_eq!(restored.skeletons.as_ref(), &facts.skeletons);
+        assert_eq!(
+            restored.syntax.relative_items().as_ref(),
+            ast.items.as_slice()
+        );
         assert!(contribution.rebind(text, usize::MAX).is_none());
         let mut foreign = facts.clone();
         foreign.origins[0].span.file = FileId(1);
@@ -259,7 +353,91 @@ mod tests {
         assert!(store.get(&key, text, 0).is_none());
     }
 }
+pub(super) struct CurrentContribution {
+    pub(super) value: Arc<Contribution>,
+    pub(super) syntax: CurrentSyntaxChunk,
+    offset: usize,
+}
+impl CurrentContribution {
+    fn bind(value: Arc<Contribution>, text: &str, offset: usize) -> Option<Self> {
+        let syntax = value.syntax.bind(text.len(), offset).ok()?;
+        // Origin and allocation spans were validated against the same relative source.
+        offset
+            .checked_add(text.len())
+            .filter(|end| *end <= u32::MAX as usize)?;
+        Some(Self {
+            value,
+            syntax,
+            offset,
+        })
+    }
+    pub(super) fn fresh(
+        text: &str,
+        offset: usize,
+        items: Vec<Item>,
+        facts: crate::AdaptedDeclarations,
+        ledger: AllocationLedger,
+    ) -> Option<Self> {
+        Self::bind(
+            Arc::new(Contribution::capture_owned(
+                text, offset, items, facts, ledger,
+            )?),
+            text,
+            offset,
+        )
+    }
+    pub(super) fn symbols(&self) -> &SymbolTable {
+        &self.value.facts.symbols
+    }
+    pub(super) fn skeletons(&self) -> Arc<Vec<crate::Skeleton>> {
+        Arc::clone(&self.value.skeletons)
+    }
+    pub(super) fn origins(&self) -> impl Iterator<Item = crate::Provenance> + '_ {
+        self.value.facts.origins.iter().cloned().map(|mut origin| {
+            origin.span.start += self.offset as u32;
+            origin.span.end += self.offset as u32;
+            origin
+        })
+    }
+    pub(super) fn events(
+        &self,
+    ) -> impl Iterator<Item = crate::allocation_ledger::AllocationEvent> + '_ {
+        self.value.ledger.events.iter().map(|mut event| {
+            let shift = |value: dm_syntax::Span| {
+                dm_syntax::Span::new(value.start + self.offset, value.end + self.offset)
+            };
+            event.span = shift(event.span);
+            event.header_span = shift(event.header_span);
+            match &mut event.kind {
+                AllocationKind::Field { initializer, .. } => *initializer = initializer.map(shift),
+                AllocationKind::Procedure { body, .. } => *body = shift(*body),
+                AllocationKind::Parent { value, .. } => *value = shift(*value),
+                _ => {}
+            }
+            event
+        })
+    }
+}
 impl Contribution {
+    fn capture_owned(
+        text: &str,
+        offset: usize,
+        mut items: Vec<Item>,
+        mut facts: crate::AdaptedDeclarations,
+        ledger: AllocationLedger,
+    ) -> Option<Self> {
+        items_spans(&mut items, text, offset, 0)?;
+        let ledger = rebase(&mut facts, &ledger, text, offset, 0)?;
+        let syntax = Arc::new(RelativeSyntax::capture(items, text).ok()?);
+        let skeletons = Arc::new(std::mem::take(&mut facts.skeletons));
+        Some(Self {
+            facts,
+            ledger,
+            syntax,
+            skeletons,
+        })
+    }
+    #[cfg(test)]
     fn capture(
         text: &str,
         offset: usize,
@@ -267,25 +445,73 @@ impl Contribution {
         facts: &crate::AdaptedDeclarations,
         ledger: &AllocationLedger,
     ) -> Option<Self> {
-        let mut items = items.to_vec();
-        let mut facts = facts.clone();
-        items_spans(&mut items, text, offset, 0)?;
-        let ledger = rebase(&mut facts, ledger, text, offset, 0)?;
-        Some(Self {
-            items,
-            facts,
-            ledger,
-        })
+        Self::capture_owned(text, offset, items.to_vec(), facts.clone(), ledger.clone())
     }
+    #[cfg(test)]
     fn rebind(
         &self,
         text: &str,
         offset: usize,
     ) -> Option<(Vec<Item>, crate::AdaptedDeclarations, AllocationLedger)> {
-        let mut items = self.items.clone();
+        let mut items = self.syntax.relative_items().to_vec();
         let mut facts = self.facts.clone();
+        facts.skeletons = self.skeletons.as_ref().clone();
         items_spans(&mut items, text, 0, offset)?;
         let ledger = rebase(&mut facts, &self.ledger, text, 0, offset)?;
         Some((items, facts, ledger))
+    }
+}
+
+#[derive(Default)]
+struct ActiveSymbols {
+    contributions: std::collections::BTreeMap<usize, Arc<Contribution>>,
+    counts: std::collections::BTreeMap<dm_ir::SymbolId, usize>,
+    symbols: SymbolTable,
+}
+impl ActiveSymbols {
+    fn update(
+        &mut self,
+        current: &[Arc<Contribution>],
+    ) -> Result<SymbolTable, dm_ir::SymbolCollision> {
+        let next: std::collections::BTreeMap<_, _> = current
+            .iter()
+            .map(|value| (Arc::as_ptr(value) as usize, Arc::clone(value)))
+            .collect();
+        if next.len() == self.contributions.len() && next.keys().eq(self.contributions.keys()) {
+            // Retained Arcs prevent address reuse: exact immutable leaf roster.
+            return Ok(self.symbols.clone());
+        }
+        // Precheck every added leaf against a shallow transaction before committing.
+        let mut symbols = self.symbols.clone();
+        let mut counts = self.counts.clone();
+        for (address, value) in &self.contributions {
+            if !next.contains_key(address) {
+                for (id, _) in value.facts.symbols.ordered() {
+                    if let Some(count) = counts.get_mut(&id) {
+                        *count -= 1;
+                    }
+                }
+            }
+        }
+        counts.retain(|_, count| *count != 0);
+        // Historical-only spellings cannot conflict with the new active roster.
+        symbols.retain_local(|id| counts.contains_key(&id));
+        for (address, value) in &next {
+            if !self.contributions.contains_key(address) {
+                for (id, _) in value.facts.symbols.ordered() {
+                    *counts.entry(id).or_default() += 1;
+                }
+            }
+        }
+        counts.retain(|_, count| *count != 0);
+        for (address, value) in &next {
+            if !self.contributions.contains_key(address) {
+                symbols.merge_from(&value.facts.symbols)?;
+            }
+        }
+        self.counts = counts;
+        self.symbols = symbols;
+        self.contributions = next;
+        Ok(self.symbols.clone())
     }
 }

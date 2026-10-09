@@ -1,8 +1,15 @@
 //! Positive callable namespace anchors for implicit declarations.
 use super::*;
 pub(crate) type CallableKinds = HashMap<(SymbolId, SymbolId), MemberKind>;
+#[cfg(test)]
 pub(crate) fn collect(
     skeletons: &[Skeleton],
+    intrinsics: &[IntrinsicMember],
+) -> Result<CallableKinds, TreeError> {
+    collect_view(skeletons.into(), intrinsics)
+}
+pub(crate) fn collect_view(
+    skeletons: crate::skeleton_roster::SkeletonView<'_>,
     intrinsics: &[IntrinsicMember],
 ) -> Result<CallableKinds, TreeError> {
     // A bare callable overrides either callable namespace. Resolve its kind

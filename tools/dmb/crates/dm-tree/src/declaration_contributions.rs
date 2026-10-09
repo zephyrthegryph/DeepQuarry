@@ -100,6 +100,12 @@ impl KeyedDeclarations {
         previous: Option<&Self>,
         skeletons: &[Skeleton],
     ) -> Result<(Self, ContributionChanges), ContributionError> {
+        Self::capture_view(previous, skeletons.into())
+    }
+    pub(crate) fn capture_view(
+        previous: Option<&Self>,
+        skeletons: crate::skeleton_roster::SkeletonView<'_>,
+    ) -> Result<(Self, ContributionChanges), ContributionError> {
         let mut grouped = BTreeMap::<SymbolId, Vec<usize>>::new();
         let mut roster = Vec::with_capacity(skeletons.len());
         for (index, skeleton) in skeletons.iter().enumerate() {

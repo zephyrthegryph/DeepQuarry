@@ -68,7 +68,18 @@ fn issued_parser_fragments_replay_compact_settings_ranges_and_cross_include_gram
     assert_eq!(independent.reuse_stats.independent_hits, 1);
     assert_eq!(independent.reuse_stats.facts_hits, 1);
     assert_eq!(independent.reuse_stats.parsed_chunks, 0);
-    assert_eq!(independent.items, first.items);
+    assert_eq!(
+        independent
+            .syntax
+            .items()
+            .map(|item| item.materialize())
+            .collect::<Vec<_>>(),
+        first
+            .syntax
+            .items()
+            .map(|item| item.materialize())
+            .collect::<Vec<_>>()
+    );
     assert!(independent.adapted.skeletons == first.adapted.skeletons);
     assert_eq!(
         independent.allocation_ledger.events,
@@ -102,12 +113,32 @@ fn issued_parser_fragments_replay_compact_settings_ranges_and_cross_include_gram
     let hit = parse_declarations(&reused, config, Some(&memo)).unwrap();
     assert_eq!(hit.reuse_stats.region_hits, 1);
     assert_eq!(hit.reuse_stats.facts_hits, 1);
-    assert_eq!(hit.items, first.items);
+    assert_eq!(
+        hit.syntax
+            .items()
+            .map(|item| item.materialize())
+            .collect::<Vec<_>>(),
+        first
+            .syntax
+            .items()
+            .map(|item| item.materialize())
+            .collect::<Vec<_>>()
+    );
     assert!(hit.adapted.skeletons == first.adapted.skeletons);
     assert_eq!(hit.adapted.origins, first.adapted.origins);
     assert_eq!(hit.allocation_ledger.events, first.allocation_ledger.events);
     assert_eq!(hit.diagnostics, first.diagnostics);
-    assert_eq!(hit.items[0].children[1].children[0].header, "if(1)");
+    assert_eq!(
+        hit.syntax
+            .item(0)
+            .unwrap()
+            .child(1)
+            .unwrap()
+            .child(0)
+            .unwrap()
+            .header(),
+        "if(1)"
+    );
     // Invalid typed parser payload is a parse miss, without changing diagnostics.
     let poisoned = receipt
         .record()
@@ -120,7 +151,18 @@ fn issued_parser_fragments_replay_compact_settings_ranges_and_cross_include_gram
     memo.insert(Arc::new(poisoned));
     let repaired = expand_regions_text_with_memo(&plan, 2, &memo);
     let parsed = parse_declarations(&repaired, config, Some(&memo)).unwrap();
-    assert_eq!(parsed.items, first.items);
+    assert_eq!(
+        parsed
+            .syntax
+            .items()
+            .map(|item| item.materialize())
+            .collect::<Vec<_>>(),
+        first
+            .syntax
+            .items()
+            .map(|item| item.materialize())
+            .collect::<Vec<_>>()
+    );
     // The type block crosses the include boundary: only the joined grammar-safe
     // descriptor is parsed, never the included indented member as a root program.
     let cross = Memory(BTreeMap::from([
@@ -133,8 +175,11 @@ fn issued_parser_fragments_replay_compact_settings_ranges_and_cross_include_gram
     let crossplan = plan_regions(Path::new("project.dme"), &cross, &BTreeMap::new());
     let expanded = expand_regions_text_with_memo(&crossplan, 2, &memo);
     let parsed = parse_declarations(&expanded, config, Some(&memo)).unwrap();
-    assert_eq!(parsed.items.len(), 1);
-    assert_eq!(parsed.items[0].children[0].header, "var/value = 7");
+    assert_eq!(parsed.syntax.len(), 1);
+    assert_eq!(
+        parsed.syntax.item(0).unwrap().child(0).unwrap().header(),
+        "var/value = 7"
+    );
     for receipt in &expanded.receipts {
         assert!(receipt
             .record()

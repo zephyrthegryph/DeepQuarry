@@ -4,6 +4,8 @@
 //! table for every source snapshot, even when the tree remains shared in an Arc.
 //! This crate intentionally has no dependency on the legacy declaration index.
 mod adapter;
+mod skeleton_roster;
+pub(crate) use adapter::SharedAdaptedDeclarations;
 mod callable_namespace;
 pub mod constant_resolution;
 pub mod constants;
@@ -386,7 +388,7 @@ pub(crate) fn build_with_intrinsic_members_inventory(
 ) -> Result<SemanticTree, TreeError> {
     build_with_intrinsic_members_indexed(
         symbols,
-        skeletons,
+        skeletons.into(),
         fields,
         intrinsics,
         rebuild_inventory,
@@ -395,7 +397,7 @@ pub(crate) fn build_with_intrinsic_members_inventory(
 }
 pub(crate) fn build_with_intrinsic_members_indexed(
     mut symbols: SymbolTable,
-    skeletons: &[Skeleton],
+    skeletons: skeleton_roster::SkeletonView<'_>,
     fields: &[dm_ir::OpaqueFieldBase],
     intrinsics: &[IntrinsicMember],
     rebuild_inventory: bool,
@@ -582,7 +584,7 @@ pub(crate) fn build_with_intrinsic_members_indexed(
             .callables
             .collect(&tree, declarations, intrinsics)?
     } else {
-        callable_namespace::collect(skeletons, intrinsics)?
+        callable_namespace::collect_view(skeletons, intrinsics)?
     };
     let local_owners = normalization.map(|(declarations, retained)| {
         retained.local.prepare(&tree, declarations, &callable_kinds)
@@ -735,16 +737,18 @@ pub(crate) fn build_with_intrinsic_members_indexed(
             .len()
             .checked_sub(index.len())
             .expect("authored index is a source suffix");
-        debug_assert!(index.skeletons().eq(skeletons[prefix..].iter()));
-        tree_identity::retained_declaration_identity(&skeletons[..prefix], index, fields)
+        debug_assert!(index
+            .skeletons()
+            .eq(skeletons.slice(prefix..skeletons.len()).iter()));
+        tree_identity::retained_declaration_identity_view(skeletons.slice(0..prefix), index, fields)
     } else {
-        declaration_identity(skeletons, fields)
+        tree_identity::declaration_identity_view(skeletons, fields)
     };
     drop(identity_profile);
     Ok(tree)
 }
 mod tree_identity;
-use tree_identity::{declaration_identity, metadata_fingerprint};
+use tree_identity::metadata_fingerprint;
 mod resolver_impl;
 
 #[cfg(test)]

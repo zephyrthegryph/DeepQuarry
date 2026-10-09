@@ -207,7 +207,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     );
     let profile_stage = dm_profile::stage("frontend.declaration_parsing");
     let ParsedDeclarations {
-        items: compact_items,
+        syntax,
         diagnostics: syntax_diagnostics,
         mut adapted,
         allocation_ledger,
@@ -231,11 +231,6 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 location: mapping.output(offset + diagnostic.span.start),
             }),
     );
-    let mut syntax = AstFile {
-        items: compact_items,
-        ..AstFile::default()
-    };
-    ast_capacity::compact(&mut syntax);
     let syntax = Arc::new(syntax);
     diagnostics.sort_by_key(|diagnostic| {
         diagnostic
@@ -290,11 +285,9 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 .get(path)
                 .and_then(|id| files.get(id.index()))
                 .ok_or_else(|| vec![internal("include region has no captured source")])?;
-            let text = file
-                .text
-                .get(region.source_span.range())
-                .ok_or_else(|| vec![internal("include region lies outside captured source")])?;
-            Ok(xxhash_rust::xxh3::xxh3_128(text.as_bytes()))
+            file.text
+                .span_fingerprint(region.source_span.range())
+                .ok_or_else(|| vec![internal("include region lies outside captured source")])
         })
         .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?;
     let mut declaration_regions = Vec::new();
@@ -399,7 +392,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         .collect();
     let mut bodies = Vec::new();
     collect_bodies(
-        &syntax.items,
+        syntax.items(),
         &mut Vec::new(),
         &declarations_by_start,
         &mapping,

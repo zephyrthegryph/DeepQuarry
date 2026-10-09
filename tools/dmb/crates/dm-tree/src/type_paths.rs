@@ -119,7 +119,7 @@ mod tests {
             crate::declaration_contributions::KeyedDeclarations::capture(None, &initial).unwrap();
         crate::build_with_intrinsic_members_indexed(
             symbols.clone(),
-            &initial,
+            (&initial).into(),
             &[],
             &[],
             false,
@@ -139,16 +139,22 @@ mod tests {
                 .unwrap();
         let actual = crate::build_with_intrinsic_members_indexed(
             symbols.clone(),
-            &changed,
+            (&changed).into(),
             &[],
             &[],
             false,
             Some((&index, &retained)),
         )
         .unwrap();
-        let fresh =
-            crate::build_with_intrinsic_members_indexed(symbols, &changed, &[], &[], false, None)
-                .unwrap();
+        let fresh = crate::build_with_intrinsic_members_indexed(
+            symbols,
+            (&changed).into(),
+            &[],
+            &[],
+            false,
+            None,
+        )
+        .unwrap();
         assert!(retained.paths.hits() >= 3);
         let facts = |tree: &crate::SemanticTree| {
             tree.types

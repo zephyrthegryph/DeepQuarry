@@ -1,6 +1,6 @@
 //! Request-independent resolved declarations, never old source/body authority.
 use super::EngineSeed;
-use crate::{AdaptedDeclarations, Provenance, SemanticTree, Skeleton, SnapshotError, TreeSnapshot};
+use crate::{Provenance, SemanticTree, Skeleton, SnapshotError, TreeSnapshot};
 use std::sync::Arc;
 
 #[derive(Default)]
@@ -140,11 +140,12 @@ impl RetainedSemanticTree {
     }
     pub(super) fn resolve(
         &mut self,
-        adapted: AdaptedDeclarations,
+        adapted: impl Into<crate::SharedAdaptedDeclarations>,
         engine: Option<&EngineSeed>,
         mut on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
         executor: &dm_exec::BuildExecutor,
     ) -> Result<TreeSnapshot, SnapshotError> {
+        let adapted = adapted.into();
         let symbols = adapted.symbols.ordered();
         let reusable =
             self.entry.as_ref().filter(|entry| {
@@ -162,7 +163,7 @@ impl RetainedSemanticTree {
             let occurrences =
                 crate::OccurrenceTable::build(&tree, adapted.origins).map_err(|error| {
                     let error = SnapshotError::Origins(error);
-                    on_error(&error, &adapted.skeletons, &[]);
+                    on_error(&error, &adapted.skeletons.to_vec(), &[]);
                     error
                 })?;
             self.hits += 1;
@@ -173,9 +174,9 @@ impl RetainedSemanticTree {
         }
         // Exact per-owner equality shares immutable declaration contributions;
         // this index never carries a previous request's source authority.
-        let index = crate::declaration_contributions::KeyedDeclarations::capture(
+        let index = crate::declaration_contributions::KeyedDeclarations::capture_view(
             self.entry.as_ref().map(|entry| &entry.index),
-            &adapted.skeletons,
+            adapted.skeletons.view(),
         )
         .ok()
         .map(|(index, _)| index);
@@ -201,7 +202,7 @@ impl RetainedSemanticTree {
             )
             .map_err(|error| {
                 let error = SnapshotError::Tree(error);
-                on_error(&error, &adapted.skeletons, &adapted.origins);
+                on_error(&error, &adapted.skeletons.to_vec(), &adapted.origins);
                 error
             })?;
             tree.refresh_metadata_identity(identity, hierarchy);
@@ -209,7 +210,7 @@ impl RetainedSemanticTree {
             let occurrences =
                 crate::OccurrenceTable::build(&tree, adapted.origins).map_err(|error| {
                     let error = SnapshotError::Origins(error);
-                    on_error(&error, &adapted.skeletons, &[]);
+                    on_error(&error, &adapted.skeletons.to_vec(), &[]);
                     error
                 })?;
             let entry = self

@@ -169,7 +169,7 @@ fn nested_settings_lexical_identity_and_include_origins_survive_body_compaction(
         origins.iter().map(|origin| origin.line).collect::<Vec<_>>(),
         vec![1, 2, 4, 5]
     );
-    let compact = &first.syntax.items[0].children;
+    let compact = &first.syntax.item(0).unwrap().relative_item().children;
     assert_eq!(compact.len(), 2);
     assert_eq!(compact[0].children.len(), 1);
 }
@@ -701,7 +701,7 @@ fn declaration_skeleton_matches_full_grammar_and_setting_compaction() {
 fn compact_body_preserves_setting_inputs_and_rejects_foreign_occurrences() {
     let frontend = fixture(&[("project.dme", "/proc/probe()\n    if(1)\n        set name = \"display\"\n        return 7\n    else\n        set desc = \"fallback\"\n    return 9\n")]).unwrap();
     let occurrence = &frontend.bodies[0];
-    let compact = frontend.compact_body(occurrence).unwrap();
+    let compact = frontend.compact_body(occurrence).unwrap().materialize();
     let full = frontend.body(occurrence).unwrap();
     let mut compact_symbols = dm_ir::SymbolTable::default();
     let mut full_symbols = dm_ir::SymbolTable::default();

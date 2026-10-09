@@ -1,5 +1,20 @@
 {
   "scope": "native compiler migration; not performance admission",
+  "relative_declaration_migration": {
+    "source_status": "shared relative AST, borrowed skeleton leaves and active symbol catalog wired; workspace checked and focused frontend fixtures passed",
+    "workspace_all_targets_passed_seconds": 29.460584299988113,
+    "workspace_receipt": "E:/dq-cache/dmb-native-v2/cargo-step-20261009-155444-1e782a.log",
+    "independent_focused_gates": {"symbols": 6, "source_text": 5, "predefined_core": 2, "predefined_native_fixture": 1, "compiler_adapter": 9},
+    "independent_commit": "ab806d016d",
+    "frontend_fixtures_passed": 57,
+    "shared_roster_fixtures_passed": 1,
+    "relative_iterator_fixtures_passed": 3,
+    "driver_fixture_gate": "compilation exceeded 300-second watchdog; zero driver fixtures executed, not a pass",
+    "driver_fixture_receipt": "E:/dq-cache/dmb-native-v2/cargo-step-20261009-155634-acea53.log",
+    "remaining_global_work": ["grammar scanning", "current origin and allocation-ledger projection", "final shallow symbol map projection"],
+    "end_to_end_timings": null,
+    "runtime_gate": "deferred to Phase 5"
+  },
   "commits": {
     "worker_stacks_and_daemon_identity": "3b0c85a7c4",
     "keyed_owner_normalization_and_effective_metadata": "67bd12ef40",

@@ -363,7 +363,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         Some(abi) => crate::argument_sources::lower_helpers(
             crate::argument_sources::HelperInputs {
                 frontend,
-                parsed,
+                parsed: parsed.into(),
                 metadata,
                 owner: identity,
                 inputs: &inputs,

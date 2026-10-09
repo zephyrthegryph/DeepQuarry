@@ -435,7 +435,7 @@ fn rebind<R: Resolver>(
     body: &dm_tree::frontend::BodyOccurrence,
     host: &R,
     prepared: &crate::procedure_policy::PreparedUnit,
-    parsed: Option<&dm_syntax::Item>,
+    parsed: Option<crate::argument_sources::ProcedureHeader<'_>>,
 ) -> Result<LoweredUnit, crate::lowering_memo::ReplayDecline> {
     use crate::lowering_memo::ReplayDecline as Decline;
     let identity = payload.identity.ok_or(Decline::BodyIdentity)?;
@@ -594,7 +594,7 @@ enum Candidate {
 pub(crate) struct ProcedureReplayContext<'a> {
     pub frontend: &'a dm_tree::frontend::ColdFrontend,
     pub body: &'a dm_tree::frontend::BodyOccurrence,
-    pub parsed: Option<&'a dm_syntax::Item>,
+    pub parsed: Option<crate::argument_sources::ProcedureHeader<'a>>,
 }
 #[derive(Default)]
 pub(crate) struct ResidentPromotion {

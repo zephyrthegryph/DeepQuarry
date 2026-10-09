@@ -80,7 +80,7 @@ impl ReusableProcedureArtifact {
         let abi = prepared.abi.as_ref()?;
         let context = crate::argument_sources::HelperInputs {
             frontend,
-            parsed,
+            parsed: parsed.into(),
             metadata,
             owner: self.identity,
             inputs: &prepared.inputs,

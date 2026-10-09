@@ -22,7 +22,7 @@ pub struct LoweredHelper {
 /// parameter's relative span is checked against the real expanded header before
 /// assigning any debug provenance to the companion's parser-only container.
 fn source_offset(
-    parsed: &Item,
+    parsed: ProcedureHeader<'_>,
     metadata: &ProcedureMetadata,
     index: usize,
 ) -> Result<usize, String> {
@@ -31,7 +31,7 @@ fn source_offset(
         .parameters
         .get(index)
         .ok_or("source helper argument is out of range")?;
-    let lexed = dm_syntax::lex(&parsed.header);
+    let lexed = dm_syntax::lex(parsed.header);
     if !lexed.diagnostics.is_empty() {
         return Err("invalid source helper signature tokens".into());
     }
@@ -117,9 +117,30 @@ impl dm_codegen_byond::DebugSourceProvider for FixedOrigin {
         Ok(0)
     }
 }
+#[derive(Clone, Copy)]
+pub struct ProcedureHeader<'a> {
+    header: &'a str,
+    header_span: dm_syntax::Span,
+}
+impl<'a> From<&'a Item> for ProcedureHeader<'a> {
+    fn from(item: &'a Item) -> Self {
+        Self {
+            header: &item.header,
+            header_span: item.header_span,
+        }
+    }
+}
+impl<'a> From<dm_tree::frontend::ItemView<'a>> for ProcedureHeader<'a> {
+    fn from(item: dm_tree::frontend::ItemView<'a>) -> Self {
+        Self {
+            header: item.header(),
+            header_span: item.header_span(),
+        }
+    }
+}
 pub struct HelperInputs<'a> {
     pub frontend: &'a ColdFrontend,
-    pub parsed: &'a Item,
+    pub parsed: ProcedureHeader<'a>,
     pub metadata: &'a ProcedureMetadata,
     pub owner: UnitIdentity,
     pub inputs: &'a ProcedureInputs,
@@ -253,7 +274,7 @@ fn current_helper_origin(
         .expanded
         .text
         .get(context.parsed.header_span.start..context.parsed.header_span.end)
-        != Some(context.parsed.header.as_str())
+        != Some(context.parsed.header)
     {
         return Err("cached helper header mapping differs".into());
     }
@@ -267,4 +288,49 @@ fn current_helper_origin(
             line: u32::try_from(origin.line).map_err(|_| "helper line exceeds u32")?,
         }],
     })
+}
+
+#[cfg(test)]
+mod view_tests {
+    use super::*;
+    struct Source(&'static str);
+    impl dm_preprocess::SourceProvider for Source {
+        fn read(&self, _: &std::path::Path) -> Result<String, String> {
+            Ok(self.0.into())
+        }
+    }
+    #[test]
+    fn borrowed_current_header_preserves_argument_source_offset_after_shift() {
+        for source in [
+            "/proc/probe(x in list(1, 2))\n    return x\n",
+            "\n\n/proc/probe(x in list(1, 2))\n    return x\n",
+        ] {
+            let frontend = dm_tree::frontend::build(
+                std::path::Path::new("project.dme"),
+                &Source(source),
+                &Default::default(),
+                1,
+            )
+            .unwrap();
+            let body = &frontend.bodies[0];
+            let view = frontend.compact_body(body).unwrap();
+            let metadata = frontend
+                .snapshot
+                .tree
+                .member(body.member)
+                .unwrap()
+                .metadata
+                .procedure
+                .as_ref()
+                .unwrap();
+            let absolute = source_offset(view.into(), metadata, 0).unwrap();
+            assert!(frontend.expanded.text[absolute..].starts_with("list(1, 2)"));
+            assert_eq!(frontend.location(absolute).unwrap().line, body.source.line);
+            let requested = view.materialize();
+            assert_eq!(
+                source_offset((&requested).into(), metadata, 0).unwrap(),
+                absolute
+            );
+        }
+    }
 }

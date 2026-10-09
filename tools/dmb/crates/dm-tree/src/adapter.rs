@@ -16,6 +16,21 @@ pub struct AdaptedDeclarations {
     pub skeletons: Vec<Skeleton>,
     pub origins: Vec<Provenance>,
 }
+#[derive(Clone, Debug)]
+pub(crate) struct SharedAdaptedDeclarations {
+    pub(crate) symbols: SymbolTable,
+    pub(crate) skeletons: crate::skeleton_roster::SkeletonRoster,
+    pub(crate) origins: Vec<Provenance>,
+}
+impl From<AdaptedDeclarations> for SharedAdaptedDeclarations {
+    fn from(adapted: AdaptedDeclarations) -> Self {
+        Self {
+            symbols: adapted.symbols,
+            skeletons: crate::skeleton_roster::SkeletonRoster::from_owned(adapted.skeletons),
+            origins: adapted.origins,
+        }
+    }
+}
 /// Adapt one expanded region's AST, preserving declaration order. The caller
 /// replaces the expansion stack and region identity with preprocessor records.
 pub fn from_ast(
@@ -527,6 +542,36 @@ impl AdaptedDeclarations {
     ) -> Result<TreeSnapshot, SnapshotError> {
         self.finish_with_engine_observed_execution(seed, on_error, Some(executor), None)
     }
+}
+
+impl AdaptedDeclarations {
+    fn finish_with_engine_observed_execution(
+        self,
+        seed: Option<&crate::frontend::EngineSeed>,
+        on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
+        executor: Option<&dm_exec::BuildExecutor>,
+        normalization: Option<(
+            &crate::declaration_contributions::KeyedDeclarations,
+            &crate::owner_normalization::RetainedNormalization,
+        )>,
+    ) -> Result<TreeSnapshot, SnapshotError> {
+        SharedAdaptedDeclarations::from(self).finish_execution(
+            seed,
+            on_error,
+            executor,
+            normalization,
+        )
+    }
+}
+impl SharedAdaptedDeclarations {
+    pub(crate) fn finish_with_engine_observed_on_executor(
+        self,
+        seed: Option<&crate::frontend::EngineSeed>,
+        on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
+        executor: &dm_exec::BuildExecutor,
+    ) -> Result<TreeSnapshot, SnapshotError> {
+        self.finish_execution(seed, on_error, Some(executor), None)
+    }
     pub(crate) fn finish_with_engine_normalization(
         self,
         seed: Option<&crate::frontend::EngineSeed>,
@@ -537,9 +582,9 @@ impl AdaptedDeclarations {
             &crate::owner_normalization::RetainedNormalization,
         )>,
     ) -> Result<TreeSnapshot, SnapshotError> {
-        self.finish_with_engine_observed_execution(seed, on_error, Some(executor), normalization)
+        self.finish_execution(seed, on_error, Some(executor), normalization)
     }
-    fn finish_with_engine_observed_execution(
+    fn finish_execution(
         self,
         seed: Option<&crate::frontend::EngineSeed>,
         mut on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
@@ -549,30 +594,31 @@ impl AdaptedDeclarations {
             &crate::owner_normalization::RetainedNormalization,
         )>,
     ) -> Result<TreeSnapshot, SnapshotError> {
-        let mut skeletons = Vec::new();
-        let hierarchy = seed_hierarchy(&self.skeletons, seed).map_err(|error| {
+        let mut skeletons = crate::skeleton_roster::SkeletonRoster::default();
+        let hierarchy = seed_hierarchy_rows(self.skeletons.iter(), seed).map_err(|error| {
             let error = SnapshotError::Tree(error);
-            on_error(&error, &self.skeletons, &self.origins);
+            on_error(&error, &self.skeletons.to_vec(), &self.origins);
             error
         })?;
         if let Some(hierarchy) = &hierarchy {
-            skeletons.extend(
+            skeletons.append(crate::skeleton_roster::SkeletonRoster::from_owned(
                 hierarchy
                     .parents
                     .iter()
                     .map(|&(path, parent)| Skeleton::Type {
                         path,
                         explicit_parent: parent,
-                    }),
-            );
+                    })
+                    .collect(),
+            ));
         }
         let engine_count = skeletons.len();
-        skeletons.extend(self.skeletons);
+        skeletons.append(self.skeletons);
         let fields = seed.map_or(&[][..], |seed| seed.fields.as_ref());
         let intrinsics = seed.map_or(&[][..], |seed| seed.intrinsics.as_ref());
         let mut tree = crate::build_with_intrinsic_members_indexed(
             self.symbols,
-            &skeletons,
+            skeletons.view(),
             fields,
             intrinsics,
             seed.is_none(),
@@ -580,7 +626,14 @@ impl AdaptedDeclarations {
         )
         .map_err(|error| {
             let error = SnapshotError::Tree(error);
-            on_error(&error, &skeletons[engine_count..], &self.origins);
+            on_error(
+                &error,
+                &skeletons
+                    .view()
+                    .slice(engine_count..skeletons.len())
+                    .to_vec(),
+                &self.origins,
+            );
             error
         })?;
         // The source ledger is a projection, not a made-up origin for seeds.
@@ -607,7 +660,14 @@ impl AdaptedDeclarations {
             }
             .map_err(|error| {
                 let error = SnapshotError::Inventory(error);
-                on_error(&error, &skeletons[engine_count..], &self.origins);
+                on_error(
+                    &error,
+                    &skeletons
+                        .view()
+                        .slice(engine_count..skeletons.len())
+                        .to_vec(),
+                    &self.origins,
+                );
                 error
             })?;
         }
@@ -617,7 +677,14 @@ impl AdaptedDeclarations {
                 let error = SnapshotError::Origins(error);
                 // Origin validation errors carry their own exact error value;
                 // resolution_error never selects a declaration for this domain.
-                on_error(&error, &skeletons[engine_count..], &[]);
+                on_error(
+                    &error,
+                    &skeletons
+                        .view()
+                        .slice(engine_count..skeletons.len())
+                        .to_vec(),
+                    &[],
+                );
                 error
             },
         )?);
@@ -626,6 +693,7 @@ impl AdaptedDeclarations {
 }
 
 /// One authored-parent precedence producer, shared by full and retained builds.
+#[cfg(test)]
 pub(crate) fn seed_hierarchy(
     skeletons: &[Skeleton],
     seed: Option<&crate::frontend::EngineSeed>,

@@ -3,6 +3,8 @@
 //! A boundary shares one census, so Arc aliases and nested buffers count once.
 use serde::Serialize;
 mod dmb_image;
+mod declaration_syntax;
+mod source_text;
 mod effective_metadata;
 mod local_shape;
 mod lexical_callable;
@@ -193,16 +195,6 @@ impl HeapCensus {
     pub fn arc_text(&mut self, owner: &str, value: &Arc<str>) {
         self.buffer(owner, value.as_ptr() as usize, value.len(), value.len());
     }
-    fn source_text(&mut self, owner: &str, value: &dm_preprocess::SourceText) {
-        value.visit_storage(|pointer, size, storage| {
-            if self.buffer(owner, pointer, size, size) {
-                match storage {
-                    dm_preprocess::SourceTextStorage::Original(text) => self.arc_text(owner, text),
-                    dm_preprocess::SourceTextStorage::Transformed(text) => self.string(owner, text),
-                }
-            }
-        });
-    }
     pub(crate) fn arc_object<T>(&mut self, owner: &str, value: &Arc<T>) -> bool {
         self.buffer(
             owner,
@@ -337,7 +329,7 @@ impl HeapCensus {
             "frontend.directive_plan",
             "private hash indexes and persistent macro map nodes are not exposed",
         );
-        self.syntax("frontend.declaration_ast", &frontend.syntax);
+        self.declaration_syntax("frontend.declaration_ast", &frontend.syntax);
         self.slice("frontend.body_index", &frontend.bodies, true);
         for body in frontend.bodies.iter() {
             self.slice("frontend.body_index", &body.ast_path, true);

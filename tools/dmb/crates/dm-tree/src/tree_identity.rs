@@ -1,11 +1,18 @@
 use super::*;
 use xxhash_rust::xxh3::Xxh3;
 
+#[cfg(test)]
 pub(crate) fn declaration_identity(
     skeletons: &[Skeleton],
     fields: &[dm_ir::OpaqueFieldBase],
 ) -> u128 {
     declaration_identity_rows(skeletons.iter().map(|row| (row, None)), fields)
+}
+pub(crate) fn declaration_identity_view(
+    rows: crate::skeleton_roster::SkeletonView<'_>,
+    fields: &[dm_ir::OpaqueFieldBase],
+) -> u128 {
+    declaration_identity_rows(rows.iter().map(|row| (row, None)), fields)
 }
 fn update_row(bytes: &mut Xxh3, skeleton: &Skeleton, fingerprint: Option<u128>) {
     match skeleton {
@@ -67,8 +74,23 @@ fn declaration_identity_rows<'a>(
     }
     finish_identity(bytes, fields)
 }
+#[cfg(test)]
 pub(crate) fn retained_declaration_identity(
     prefix: &[Skeleton],
+    index: &crate::declaration_contributions::KeyedDeclarations,
+    fields: &[dm_ir::OpaqueFieldBase],
+) -> u128 {
+    declaration_identity_rows(
+        prefix.iter().map(|row| (row, None)).chain(
+            index
+                .ordered()
+                .map(|row| (&row.skeleton, Some(row.metadata_fingerprint()))),
+        ),
+        fields,
+    )
+}
+pub(crate) fn retained_declaration_identity_view(
+    prefix: crate::skeleton_roster::SkeletonView<'_>,
     index: &crate::declaration_contributions::KeyedDeclarations,
     fields: &[dm_ir::OpaqueFieldBase],
 ) -> u128 {

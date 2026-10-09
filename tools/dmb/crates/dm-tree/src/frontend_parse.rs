@@ -1,9 +1,9 @@
 use super::*;
 
 pub(super) struct ParsedDeclarations {
-    pub(super) items: Vec<Item>,
+    pub(super) syntax: DeclarationSyntax,
     pub(super) diagnostics: Vec<(usize, dm_syntax::Diagnostic)>,
-    pub(super) adapted: crate::AdaptedDeclarations,
+    pub(super) adapted: crate::SharedAdaptedDeclarations,
     pub(super) allocation_ledger: crate::allocation_ledger::AllocationLedger,
     pub(super) declaration_errors: Vec<crate::AdapterError>,
     pub(super) reuse_stats: DeclarationReuseStats,
@@ -73,7 +73,7 @@ pub(super) fn parse_declarations_with_state(
     let lookup_ns = std::sync::atomic::AtomicU64::new(0);
     let facts_ns = std::sync::atomic::AtomicU64::new(0);
     let worker_count = executor.workers().min(chunks.len().max(1));
-    let mut items = Vec::new();
+    let mut syntax_chunks = Vec::new();
     let mut diagnostics = Vec::new();
     // One bounded pool for the complete capture. Workers claim whole grammar-
     // safe descriptors; completion order never determines declaration identity.
@@ -109,10 +109,10 @@ pub(super) fn parse_declarations_with_state(
                                 break;
                             };
                             let text = &source[offset..offset + len];
-                            if let Some((parsed, facts, ledger)) = retained.zip(retained_keys.as_ref())
-                                .and_then(|(state, keys)| state.get(&keys[index], text, offset)) {
+                            if let Some(current) = retained.zip(retained_keys.as_ref())
+                                .and_then(|(state, keys)| state.get_shared(&keys[index], text, offset)) {
                                 facts_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                                if sender.send((index, offset, parsed, Vec::new(), None, Ok((facts, ledger)))).is_err() { break; }
+                                if sender.send((index, offset, Vec::new(), None, Ok(current))).is_err() { break; }
                                 continue;
                             }
                             let lookup_start = Instant::now();
@@ -294,14 +294,16 @@ pub(super) fn parse_declarations_with_state(
                                     produced_payload.map(|bytes| (receipt_index, span, bytes))
                                 })
                             };
-                            if errors.is_empty() {
-                                if let (Some(state), Some(keys), Ok((facts, ledger))) =
-                                    (retained, retained_keys.as_ref(), &facts) {
-                                    state.insert(&keys[index], text, offset, &parsed, facts, ledger);
-                                }
-                            }
+                            let current = facts.and_then(|(facts,ledger)| {
+                                let current = if let (Some(state),Some(keys))=(retained,retained_keys.as_ref()) {
+                                    state.capture(&keys[index],text,offset,parsed,facts,ledger)
+                                } else {
+                                    super::declaration_state::CurrentContribution::fresh(text,offset,parsed,facts,ledger)
+                                };
+                                current.ok_or_else(||vec![crate::AdapterError{span:dm_ir::Span{file:FileId(0),start:offset as u32,end:offset as u32},message:"relative declaration binding failed".into()}])
+                            });
                             if sender
-                                .send((index, offset, parsed, errors, fragment, facts))
+                                .send((index, offset, errors, fragment, current))
                                 .is_err()
                             {
                                 break;
@@ -329,45 +331,37 @@ pub(super) fn parse_declarations_with_state(
     };
     let mut ordered = std::panic::catch_unwind(std::panic::AssertUnwindSafe(parse))
         .map_err(|_| vec![internal("declaration parsing worker panicked")])?;
-    ordered.sort_by_key(|(index, _, _, _, _, _)| *index);
+    ordered.sort_by_key(|(index, _, _, _, _)| *index);
     let merge_start = Instant::now();
     let _profile_merge = dm_profile::stage("frontend.ordered_declaration_merge");
     let mut updated = std::collections::BTreeMap::new();
-    let mut adapted = crate::AdaptedDeclarations {
+    let mut adapted = crate::SharedAdaptedDeclarations {
         symbols: config
             .engine
             .map_or_else(SymbolTable::default, |engine| engine.symbols.clone()),
-        skeletons: Vec::new(),
+        skeletons: crate::skeleton_roster::SkeletonRoster::default(),
         origins: Vec::new(),
     };
     let mut allocation_events = crate::allocation_ledger::EventBuilder::new();
     let mut declaration_errors = Vec::new();
-    for (_, offset, parsed, errors, fragment, facts) in ordered {
+    let mut current_contributions = Vec::new();
+    for (_, offset, errors, fragment, facts) in ordered {
         match facts {
-            Ok((facts, ledger)) => {
-                for (expected, spelling) in facts.symbols.ordered() {
-                    // The local producer/decoder already certified this ID.
-                    // Repeated names need exact collision comparison, not a
-                    // second text hash/allocation in the merged dictionary.
-                    if adapted.symbols.text(expected) == Some(spelling) {
-                        continue;
-                    }
-                    let actual = adapted
+            Ok(current) => {
+                if retained.is_none() {
+                    adapted
                         .symbols
-                        .intern(spelling)
+                        .merge_from(current.symbols())
                         .map_err(|error| vec![internal(&error.to_string())])?;
-                    if actual != expected {
-                        return Err(vec![internal(
-                            "worker declaration symbol identity mismatch",
-                        )]);
-                    }
                 }
-                adapted.skeletons.extend(facts.skeletons);
-                adapted.origins.extend(facts.origins);
-                for mut event in ledger.events.iter() {
+                current_contributions.push(Arc::clone(&current.value));
+                adapted.skeletons.push_leaf(current.skeletons());
+                adapted.origins.extend(current.origins());
+                for mut event in current.events() {
                     event.encounter_order = allocation_events.len();
                     allocation_events.push(event);
                 }
+                syntax_chunks.push(current.syntax);
             }
             Err(errors) => declaration_errors.extend(errors),
         }
@@ -377,8 +371,16 @@ pub(super) fn parse_declarations_with_state(
                 .or_insert_with(|| expanded.receipts[index].record().as_ref().clone());
             record.append_fragment(parserwire::VERSION, span, bytes.into());
         }
-        items.extend(parsed);
         diagnostics.extend(errors.into_iter().map(|error| (offset, error)));
+    }
+    if let Some(state) = retained {
+        let symbols = state
+            .current_symbols(&current_contributions)
+            .map_err(|error| vec![internal(&error.to_string())])?;
+        adapted
+            .symbols
+            .merge_from(&symbols)
+            .map_err(|error| vec![internal(&error.to_string())])?;
     }
     if let Some(memo) = memo {
         for record in updated.into_values() {
@@ -386,7 +388,8 @@ pub(super) fn parse_declarations_with_state(
         }
     }
     Ok(ParsedDeclarations {
-        items,
+        syntax: DeclarationSyntax::new(syntax_chunks)
+            .map_err(|error| vec![internal(&format!("relative syntax roster: {error:?}"))])?,
         diagnostics,
         adapted,
         allocation_ledger: crate::allocation_ledger::AllocationLedger {
