@@ -200,18 +200,6 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 
 /obj/item/organ/external/var/icon_cache_key
 
-// new damage icon system
-// adjusted to set damage_state to brute/burn code only (without r_name0 as before)
-DECLARE_APPEARANCE_PROC(/obj/item/organ/external, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/organ/external/appearance_overlays()
-	. = list()
-	var/n_is = damage_state_text()
-	if (n_is != damage_state)
-		damage_state = n_is
-		return .
-	return .
-
-
 // Returns an image for use by the human health dolly HUD element.
 // If the user has traumatic shock, it will be passed in as a minimum
 // damage amount to represent the pain of the injuries involved.

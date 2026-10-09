@@ -52,20 +52,18 @@ CAPABILITIES(/datum/computer_file/program)
 /datum/computer_file/program/tgui_host()
 	return computer().tgui_host()
 
+TRACKED(/datum/computer_file/program, program_icon_state)
+TRACKED(/datum/computer_file/program, program_key_state)
+
 /datum/computer_file/program/clone()
 	var/datum/computer_file/program/temp = ..()
 	temp.required_access = required_access
 	temp.filedesc = filedesc
-	temp.program_icon_state = program_icon_state
+	temp.set_program_icon_state(program_icon_state)
 	temp.requires_ntnet = requires_ntnet
 	temp.requires_ntnet_feature = requires_ntnet_feature
 	temp.usage_flags = usage_flags
 	return temp
-
-// Relays icon update to the computer.
-/datum/computer_file/program/proc/update_computer_icon()
-	if(computer())
-		computer().update_icon()
 
 // Attempts to create a log in global ntnet datum. Returns 1 on success, 0 on fail.
 /datum/computer_file/program/proc/generate_network_log(text)
@@ -226,7 +224,6 @@ CAPABILITIES(/datum/computer_file/program)
 	program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
 
 	rel_clear(computer(), nameof(/obj/item/modular_computer::active_program))
-	computer().update_icon()
 	SStgui.get_open_ui(user, src)?.close()
 
 	if(istype(user))

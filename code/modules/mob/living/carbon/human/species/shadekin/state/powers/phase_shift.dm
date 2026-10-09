@@ -191,7 +191,6 @@
 		can_pull_size = initial(can_pull_size)
 		can_pull_mobs = initial(can_pull_mobs)
 		dq_clear_hovering(src) // reset to type-default
-		update_icon()
 
 		//Cosmetics mostly
 		var/obj/effect/temp_visual/shadekin/phase_in/phaseanim = new SK.phase_in_anim(src.loc)
@@ -317,7 +316,6 @@
 	invisibility = INVISIBILITY_SHADEKIN
 	see_invisible = INVISIBILITY_SHADEKIN
 	set_see_invisible_default(INVISIBILITY_SHADEKIN) // Allow seeing phased entities while phased.
-	update_icon()
 	alpha = 127
 
 	canmove = original_canmove

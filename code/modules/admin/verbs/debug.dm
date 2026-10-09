@@ -508,19 +508,15 @@ ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singu
 		if(istype(get_area(F), /area/space))
 			F.set_Varedit_start(TRUE)
 	for(var/obj/machinery/power/grounding_rod/GR in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		GR.anchored = TRUE
-		GR.update_icon()
+		GR.set_anchored(TRUE)
 	for(var/obj/machinery/power/tesla_coil/TC in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		TC.anchored = TRUE
-		TC.update_icon()
+		TC.set_anchored(TRUE)
 	for(var/obj/structure/particle_accelerator/PA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PA.anchored = TRUE
 		graph_place(PA, STAGE_PA_CLOSED)
-		PA.update_icon()
 	for(var/obj/machinery/particle_accelerator/PA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PA.anchored = TRUE
 		graph_place(PA, STAGE_PA_CLOSED)
-		PA.update_icon()
 
 	// /obj/machinery/power/rad_collector was deleted with the ZAS power
 	// machinery; this loop is a no-op until LINDA's equivalent is wired.

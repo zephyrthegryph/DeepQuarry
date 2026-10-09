@@ -71,7 +71,6 @@
 
 	grant(src, granted_verb(/mob/living/silicon/pai/proc/pai_nom), src)
 	grant(src, granted_verb(/mob/living/proc/vertical_nom), src)
-	update_icon()
 
 /mob/living/silicon/pai/verb/fold_up()
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
@@ -141,7 +140,6 @@
 
 	canmove = 1
 	set_resting(0)
-	icon_state = SSpai.chassis_data(chassis_name).sprite_icon_state
 	if(isopenspace(card.loc))
 		fall()
 	revoke(src, granted_verb(/mob/living/silicon/pai/proc/pai_nom), src)

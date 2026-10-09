@@ -426,13 +426,10 @@ CAPABILITIES(/obj/machinery/computer/ship/navigation)
 	circuit = /obj/item/circuitboard/nav/tele
 	density = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/ship/navigation/telescreen/appearance_overlays()
-	. = list()
+/obj/machinery/computer/ship/navigation/telescreen/draw(datum/look/look)
+	..()
 	if(power_lost() || broken_now())
-		icon_state = "tele_off"
-		set_light(0)
+		look.state("tele_off")
+		look.light_off()
 	else
-		icon_state = "tele_nav"
-		set_light(light_range_on, light_power_on)
-	. += ..()
+		look.state("tele_nav")

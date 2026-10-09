@@ -1,7 +1,7 @@
 // AI Life: power, body, APU and vision as separate steps. The machine AI plan
 // (plans/machine.dm) is the one death rule: hardware load, or an exhausted
 // backup capacitor. The power-loss routine is a timer-driven state machine
-// (aiRestorePowerRoutine = AI_POWER_*), not a sleeping spawn.
+// (set_aiRestorePowerRoutine(AI_POWER_*)), not a sleeping spawn.
 
 /mob/living/silicon/ai
 
@@ -66,7 +66,6 @@
 			if(!(sight & SEE_TURFS))
 				cancel_power_restore()
 				set_ai_vision(TRUE)
-				update_icon()
 
 /mob/living/silicon/ai/proc/lacks_power()
 	if(APU_power)
@@ -86,8 +85,7 @@
 
 /// Power just went out: blind the core and start the restore routine.
 /mob/living/silicon/ai/proc/begin_power_loss()
-	aiRestorePowerRoutine = AI_POWER_RESTORING
-	update_icon()
+	set_aiRestorePowerRoutine(AI_POWER_RESTORING)
 	set_ai_vision(FALSE)
 	to_chat(src, "You've lost power!")
 	disconnect_shell(message = "Disconnected from remote shell due to depowered networking interface.")
@@ -97,11 +95,10 @@
 /// Power is back: stop the routine and restore sight.
 /mob/living/silicon/ai/proc/end_power_loss(message)
 	cancel_power_restore()
-	aiRestorePowerRoutine = AI_POWER_NORMAL
+	set_aiRestorePowerRoutine(AI_POWER_NORMAL)
 	if(message)
 		to_chat(src, message)
 	set_ai_vision(TRUE)
-	update_icon()
 	log_runtime("AI_POWER: [key_name(src)] power restored.")
 
 /mob/living/silicon/ai/proc/schedule_power_restore_step(step, delay)
@@ -135,7 +132,7 @@
 		if(4)
 			if(istype(T, /turf/space))
 				to_chat(src, "Unable to verify! No power connection detected!")
-				aiRestorePowerRoutine = AI_POWER_FAILED
+				set_aiRestorePowerRoutine(AI_POWER_FAILED)
 				return
 			to_chat(src, "Connection verified. Searching for APC in power network.")
 			schedule_power_restore_step(5, AI_POWER_STEP)
@@ -148,7 +145,7 @@
 					break
 			if(!theAPC)
 				to_chat(src, attempt == 1 ? "Unable to locate APC!" : "Lost connection with the APC!")
-				aiRestorePowerRoutine = AI_POWER_FAILED
+				set_aiRestorePowerRoutine(AI_POWER_FAILED)
 				return
 			switch(attempt)
 				if(1)
@@ -168,16 +165,15 @@
 					break
 			if(!theAPC)
 				to_chat(src, "Lost connection with the APC!")
-				aiRestorePowerRoutine = AI_POWER_FAILED
+				set_aiRestorePowerRoutine(AI_POWER_FAILED)
 				return
 			to_chat(src, "Receiving control information from APC.")
 			theAPC.set_equipment(3)
 			theAPC.set_operating(1)
-			aiRestorePowerRoutine = AI_POWER_RESTORED
+			set_aiRestorePowerRoutine(AI_POWER_RESTORED)
 			log_runtime("AI_POWER: [key_name(src)] forced [theAPC] on.")
 			to_chat(src, "Here are your current laws:")
 			show_laws()
-			update_icon()
 
 // --- APU -----------------------------------------------------------------------------------------
 

@@ -136,7 +136,7 @@ CAPABILITIES(/obj/item/aicard)
 	ai.destroy_eyeobj(src)
 	ai.cancel_camera()
 	ai.control_disabled = 1
-	ai.aiRestorePowerRoutine = 0
+	ai.set_aiRestorePowerRoutine(0)
 	rel_set(src, nameof(carded_ai), ai)
 	ai.disconnect_shell("Disconnected from remote shell due to core intelligence transfer.") //If the AI is controlling a borg, force the player back to core!
 

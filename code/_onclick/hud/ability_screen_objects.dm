@@ -21,7 +21,6 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 	if(ismob(loc))
 		rel_set(src, nameof(my_mob), loc)
 		update_abilities(0, loc)
-		overlays.Add(closed_state)
 	else
 		message_admins("ERROR: ability_master's New() was not given an owner argument.  This is a bug.")
 
@@ -46,15 +45,10 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 			if(my_mob() && my_mob().client)
 				my_mob().client.screen -= O
 		showing = 0
-		overlays.len = 0
-		overlays.Add(closed_state)
 	else if(forced_state != 1) // We're opening it, show the icons. OR, if forced_state == 2, we're forcing it to open it.
 		open_ability_master()
 		update_abilities(1)
 		showing = 1
-		overlays.len = 0
-		overlays.Add(open_state)
-	update_icon()
 
 /atom/movable/screen/movable/ability_master/proc/open_ability_master()
 	var/list/screen_loc_xy = splittext(screen_loc,",")
@@ -79,24 +73,22 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 			my_mob().client.screen |= src
 
 /atom/movable/screen/movable/ability_master/proc/update_abilities(forced = 0, mob/user)
-	update_icon()
 	if(user && user.client)
 		if(!(src in user.client.screen))
 			user.client.screen += src
 	var/i = 1
 	for(var/atom/movable/screen/ability/ability in ability_objects)
-		ability.update_icon()
 		ability.index = i
 		ability.maptext = "[ability.index]" // Slot number
 		i++
 
-DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/atom/movable/screen/movable/ability_master/appearance_overlays()
-	. = list()
-	if(length(ability_objects))
-		invisibility = INVISIBILITY_NONE
-	else
-		invisibility = INVISIBILITY_ABSTRACT
+TRACKED(/atom/movable/screen/movable/ability_master, showing)
+
+/// The master shows the open or closed button, and is hidden while it holds no abilities.
+/atom/movable/screen/movable/ability_master/draw(datum/look/look)
+	..()
+	look.overlay(showing ? open_state : closed_state)
+	look.set_invisibility(length(ability_objects) ? INVISIBILITY_NONE : INVISIBILITY_ABSTRACT)
 
 /atom/movable/screen/movable/ability_master/proc/add_ability(name_given)
 	if(!name_given) return
@@ -108,7 +100,6 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, TYPE_PROC_R
 
 	new_button.name = name_given
 	new_button.ability_icon_state = name_given
-	new_button.update_icon()
 	rel_add(src, nameof(ability_objects), new_button)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
@@ -120,7 +111,6 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, TYPE_PROC_R
 
 	if(length(ability_objects))
 		toggle_open(showing + 1)
-	update_icon()
 
 /atom/movable/screen/movable/ability_master/proc/remove_all_abilities()
 	for(var/atom/movable/screen/ability/A in ability_objects)
@@ -163,23 +153,13 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, TYPE_PROC_R
 	var/atom/movable/screen/movable/ability_master/ability_master
 
 
-// an ability leaves its master's list (the master owns the list; the ability can go first).
-/atom/movable/screen/ability/on_destroy(force)
-	var/atom/movable/screen/movable/ability_master/master = master_of()
-	if(master) // we leave its list in phase 2
-		if(!LAZYLEN(master.ability_objects) || !length(master.ability_objects - src))
-			master.update_icon()
+TRACKED(/atom/movable/screen/ability, background_base_state)
+TRACKED(/atom/movable/screen/ability, ability_icon_state)
+
+/atom/movable/screen/ability/draw(datum/look/look)
 	..()
-
-DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/atom/movable/screen/ability/appearance_overlays()
-	. = list()
-
-
-
-	icon_state = "[background_base_state]_spell_base"
-
-	. += ability_icon_state
+	look.state("[background_base_state]_spell_base")
+	look.overlay(ability_icon_state)
 
 
 CAPABILITIES(/atom/movable/screen/ability)

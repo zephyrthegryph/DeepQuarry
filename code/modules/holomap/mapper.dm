@@ -185,7 +185,6 @@ CAPABILITIES(/obj/item/mapping_unit)
 	if(istype(W,cell_type) && !cell)
 		if(!move_into(src, nameof(src.cell), W, user))
 			return OP_PASS
-		cell.update_icon() //Why doesn't a cell do this already? :|
 		to_chat(user,span_notice("You insert \the [cell] into \the [src]."))
 	return OP_PASS
 

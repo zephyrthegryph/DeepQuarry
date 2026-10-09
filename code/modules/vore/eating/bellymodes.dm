@@ -418,5 +418,3 @@
 			M.updateVRPanel()
 	if(owner.client)
 		owner.updateVRPanel()
-	if(isanimal(owner))
-		owner.update_icon()

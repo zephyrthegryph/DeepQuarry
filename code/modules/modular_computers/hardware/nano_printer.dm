@@ -32,7 +32,6 @@
 		P.info = text_to_print
 	if(paper_title)
 		P.name = paper_title
-	P.update_icon()
 	P.fields = count_fields(P.info)
 	P.updateinfolinks()
 

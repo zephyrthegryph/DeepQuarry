@@ -741,21 +741,20 @@ CAPABILITIES(/atom/movable/screen/inventory)
 
 // Hand slots are special to handle the handcuffs overlay
 /atom/movable/screen/inventory/hand
-	var/image/handcuff_overlay
 
-DECLARE_APPEARANCE_PROC(/atom/movable/screen/inventory/hand, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/atom/movable/screen/inventory/hand/appearance_overlays()
-	. = list()
-	. += ..()
-	if(!owner_hud())
-		return .
-	if(!handcuff_overlay)
-		var/state = (owner_hud().l_hand_hud_object == src) ? "l_hand_hud_handcuffs" : "r_hand_hud_handcuffs"
-		handcuff_overlay = image("icon"='icons/mob/screen_gen.dmi', "icon_state"=state)
-	if(owner_hud().mymob() && iscarbon(owner_hud().mymob()))
-		var/mob/living/carbon/C = owner_hud().mymob()
-		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
-			. += handcuff_overlay
+/// The handcuff overlay shows while the owner's mob wears handcuffs (the draw hears the mob's slot changes).
+/atom/movable/screen/inventory/hand/draw(datum/look/look)
+	..()
+	var/datum/hud/hud = owner_hud()
+	if(!hud)
+		return
+	var/mob/M = hud.mymob()
+	look.watch(M)
+	if(!iscarbon(M))
+		return
+	var/mob/living/carbon/C = M
+	if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
+		look.overlay(look_overlay_image('icons/mob/screen_gen.dmi', (hud.l_hand_hud_object == src) ? "l_hand_hud_handcuffs" : "r_hand_hud_handcuffs"))
 
 // PIP stuff
 /atom/movable/screen/component_button

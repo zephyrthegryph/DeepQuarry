@@ -39,7 +39,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/waste_processor)
 /obj/machinery/reagent_refinery/waste_processor/draw(datum/look/look)
 	..()
 	if(anchored)
-		look.overlay(update_input_connection_overlays("waste_intakes"))
+		look.overlay(update_input_connection_overlays(look, "waste_intakes"))
 
 /obj/machinery/reagent_refinery/waste_processor/examine(mob/user, infix, suffix)
 	. = ..()

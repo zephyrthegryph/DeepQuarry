@@ -11,9 +11,6 @@
 	// reagent control
 	if(default_max_vol > 0)
 		create_reagents(default_max_vol, reagent_type)
-	// Update neighbours and self for state
-	update_neighbours()
-	update_icon()
 	make_rotatable()
 
 // its reagents are flushed.
@@ -27,11 +24,9 @@
 
 /obj/machinery/reagent_refinery/set_dir(newdir)
 	. = ..()
-	update_icon()
 	wake_refinery_line()
 
 /obj/machinery/reagent_refinery/on_reagent_change(changetype)
-	update_icon()
 	wake_refinery_line()
 
 // A refinery line runs on the machine pipeline only while something moves (roadmap S5): a machine
@@ -121,8 +116,6 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 	act_message(user, src, MSG_SELF("You [anchored ? "secure" : "unsecure"] the bolts holding %T% to the floor."), \
 		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor."), \
 		MSG_BLIND("You hear a ratchet."))
-	update_neighbours()
-	update_icon()
 	wake_refinery_line()
 	rewrenched()
 	return OP_OK
@@ -130,15 +123,6 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 /// After the wrench secured or unsecured the machine (a reactor resets its gas line).
 /obj/machinery/reagent_refinery/proc/rewrenched()
 	return
-
-/// Updates the icons of all neighbour machines, used when connecting.
-/obj/machinery/reagent_refinery/proc/update_neighbours()
-	// Update icons and neighbour icons to avoid loss of sanity
-	for(var/direction in GLOB.cardinal)
-		var/turf/T = get_step(get_turf(src),direction)
-		var/obj/machinery/other = locate_on(T, /obj/machinery/reagent_refinery)
-		if(other && other.anchored)
-			other.update_icon()
 
 /// The question's title.
 /obj/machinery/reagent_refinery/proc/transfer_amount_title(datum/act/op/A)
@@ -150,7 +134,6 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 	var/N = A.step_value("amount")
 	if(N && Adjacent(user))
 		amount_per_transfer_from_this = N
-		update_icon()
 	return OP_OK
 
 /// Transfers reagents from us to the next machine. Calls handle_transfer() on any target machines to check if they can accept reagents.
@@ -216,11 +199,11 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 		examine_list += "Does not require power. "
 
 /// Checks neighbouring machines for if we should connect visually to them
-/obj/machinery/reagent_refinery/proc/update_input_connection_overlays(overlay_state)
+/obj/machinery/reagent_refinery/proc/update_input_connection_overlays(datum/look/look, overlay_state)
 	. = list()
 	for(var/direction in GLOB.cardinal)
-		var/turf/T = get_step(get_turf(src),direction)
-		var/obj/machinery/reagent_refinery/other = locate_on(T, /obj/machinery/reagent_refinery)
+		// The neighbour is watched: its anchoring, facing and filter side redraw this machine.
+		var/obj/machinery/reagent_refinery/other = look.neighbour(src, direction, /obj/machinery/reagent_refinery)
 		if(!other?.anchored)
 			continue
 

@@ -329,7 +329,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 			proto_set(src, nameof(selected_sprite), new/datum/ai_icon("Custom", "[src.ckey]-ai", "4", "[ckey]-ai-crash", "#FFFFFF", "#FFFFFF", "#FFFFFF")) // the AI's private custom icon
 		else
 			proto_set(src, nameof(selected_sprite), GLOB.default_ai_icon)
-	update_icon()
 
 /mob/living/silicon/ai/pointed(atom/A as mob|obj|turf in view())
 	set popup_menu = 0
@@ -407,8 +406,6 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 
 	if (!custom_sprite)
 		open_request(src, /datum/prompt/choice, PROC_REF(ai_icon_chosen), answerer = src, valid = PROC_REF(ai_icon_askable), title = "AI", question = "Select an icon!", choices = GLOB.ai_icons, timeout = 0)
-		return
-	update_icon()
 
 /// Re-checked on the answer: the AI is up, powered and has no custom sprite.
 /mob/living/silicon/ai/proc/ai_icon_askable(datum/request/R)
@@ -418,7 +415,6 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 	if(!A.answer)
 		return
 	proto_set(src, nameof(selected_sprite), A.answer.value)
-	update_icon()
 
 /mob/living/silicon/ai/var/announcement_cooldown = 0
 /mob/living/silicon/ai/proc/ai_announcement()
@@ -987,21 +983,21 @@ CAPABILITIES(/datum/prompt/yes_no/ai_door_request)
 	destroyed(src, null, "explosion")
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/silicon/ai/appearance_overlays()
-	. = list()
-	if(!selected_sprite)
-		proto_set(src, nameof(selected_sprite), GLOB.default_ai_icon)
+TRACKED(/mob/living/silicon/ai, aiRestorePowerRoutine)
 
+/mob/living/silicon/ai/draw(datum/look/look)
+	..()
+	if(!selected_sprite)
+		return
 	if(stat == DEAD)
-		icon_state = selected_sprite.dead_icon
-		set_light(3, 1, selected_sprite.dead_light)
+		look.state(selected_sprite.dead_icon)
+		look.light(3, 1, selected_sprite.dead_light)
 	else if(aiRestorePowerRoutine)
-		icon_state = selected_sprite.nopower_icon
-		set_light(1, 1, selected_sprite.nopower_light)
+		look.state(selected_sprite.nopower_icon)
+		look.light(1, 1, selected_sprite.nopower_light)
 	else
-		icon_state = selected_sprite.alive_icon
-		set_light(1, 1, selected_sprite.alive_light)
+		look.state(selected_sprite.alive_icon)
+		look.light(1, 1, selected_sprite.alive_light)
 
 // Pass lying down or getting up to our pet human, if we're in a rig.
 /mob/living/silicon/ai/lay_down()

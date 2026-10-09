@@ -15,12 +15,14 @@
 /obj/item/electronic_assembly/clothing/tgui_host()
 	return clothing().tgui_host()
 
-DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/electronic_assembly/clothing/appearance_overlays()
-	. = list()
-	. += ..()
-	clothing().icon_state = icon_state
-	// We don't need to update the mob sprite since it won't (and shouldn't) actually get changed.
+/obj/item/electronic_assembly/clothing/draw(datum/look/look)
+	..()
+	look.effect(PROC_REF(sync_clothing_state), look.state_so_far(src))
+
+/// The worn clothing shows the assembly's sprite state. The mob sprite is not updated since it won't (and shouldn't) change.
+/obj/item/electronic_assembly/clothing/proc/sync_clothing_state(shown)
+	if(clothing())
+		clothing().icon_state = shown
 
 // This is 'small' relative to the size of regular clothing assemblies.
 /obj/item/electronic_assembly/clothing/small
