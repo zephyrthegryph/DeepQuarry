@@ -81,3 +81,23 @@
 	TEST_ASSERT_EQUAL(card.loc, get_turf(H), "With no free hand the returned card lands at the actor's feet")
 	TEST_ASSERT(!H.is_in_hands(card), "Eject does not replace either object already carried")
 	TEST_ASSERT(H.is_in_hands(first) && H.is_in_hands(second), "Both existing hand occupants remain carried")
+
+/// Legacy slot admission permits a silicon's named eject away from the console, without window access.
+/datum/unit_test/dq_hc_computers/medical_native_slot_remote_eject
+/datum/unit_test/dq_hc_computers/medical_native_slot_remote_eject/run_gate()
+	var/obj/machinery/computer/med_data/C = hc_console(/obj/machinery/computer/med_data)
+	C.set_grid_power(FALSE)
+	C.set_broken_condition(TRUE)
+	var/turf/far = get_step(get_step(hc_spot(), NORTH), NORTH)
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, far, null, null, null, TRUE)
+	var/mob/living/silicon/robot/robot = allocate(/mob/living/silicon/robot, far)
+	var/mob/living/carbon/human/loader = hc_actor()
+	for(var/mob/remote_user as anything in list(AI, robot))
+		TEST_ASSERT(!remote_user.Adjacent(C), "The silicon truly operates from outside physical adjacency")
+		var/obj/item/card/id/card = allocate(/obj/item/card/id, hc_side())
+		TEST_ASSERT(move_into(C, nameof(C.scan), card, loader), "The physical ID slot is preloaded for the remote eject")
+		TEST_ASSERT_EQUAL(C.scan, card, "The physical console slot really holds the selected card")
+		var/datum/op_result/ejected = test_menu(remote_user, C, "eject_scan_menu")
+		TEST_ASSERT_EQUAL(ejected?.outcome, ACT_COMMITTED, "The legacy silicon-use admission still permits remote physical-slot menu eject")
+		TEST_ASSERT_NULL(C.scan, "Remote eject clears the owned card slot")
+		TEST_ASSERT_EQUAL(card.loc, far, "A silicon with no physical hand puts the ejected card at its own drop location")

@@ -38,9 +38,9 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 	interface("MedicalRecords", title = "Medical Records")
 	// Keep the existing plain-click ranking: the computer's generic item op wins;
 	// this named insertion is also offered by the context menu.
-	op("insert_scan", inputs(item(/obj/item/card/id), menu()), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID card"), when(cond_not(nameof(scan))), needs(req(/obj/item/card/id, because = MSG(records/id_required)), req_adjacent(), req_capable(), req_held_releasable()), then(PROC_REF(insert_scan)))
-	op("eject_scan_menu", menu(), ungated(), label("Eject ID Card"), when(nameof(scan)), needs(req_adjacent(), req_capable(), req(PROC_REF(scan_removable))), then(PROC_REF(eject_scan)))
-	op("open_records", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Open records"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(records_empty_hand)))), then(PROC_REF(open_records)))
+	op("insert_scan", inputs(item(/obj/item/card/id), menu()), authority(AUTH_PHYSICAL | AUTH_REMOTE_ACCESS | AUTH_AI), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID card"), when(cond_not(nameof(scan))), needs(req(/obj/item/card/id, because = MSG(records/id_required)), req(PROC_REF(records_slot_reachable)), req_capable(), req_held_releasable()), then(PROC_REF(insert_scan)))
+	op("eject_scan_menu", menu(), authority(AUTH_PHYSICAL | AUTH_REMOTE_ACCESS | AUTH_AI), ungated(), label("Eject ID Card"), when(nameof(scan)), needs(req(PROC_REF(records_slot_reachable)), req_capable(), req(PROC_REF(scan_removable))), then(PROC_REF(eject_scan)))
+	op("open_records", inputs(hand(), menu()), by(NONE), reach(REACH_ANY), authority(AUTH_PHYSICAL | AUTH_REMOTE_ACCESS | AUTH_AI), priority(OP_PRIORITY_DEFAULT - 1), label("Open records"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(records_plain_hand)))), needs(req(PROC_REF(records_open_admission))), then(PROC_REF(open_records)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("login", ui_act("login", arg("login_type", num())), then(PROC_REF(ui_act_login)))
@@ -100,6 +100,13 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 		"blood_type" = list("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"),
 	)
 
+/// Physical slots retain the console's declared silicon reach, independently of window access.
+/obj/machinery/computer/med_data/proc/records_slot_reachable(datum/act/op/A)
+	var/mob/user = A.actor
+	if(user && (read_once(user.Adjacent(src)) || (issilicon(user) && (read_once(silicon_use) & (SILICON_USE_HAND | ROBOT_USE_HAND)))))
+		return null
+	return "you're too far away"
+
 /// The named insertion uses the same checked transfer as the old ID-card slot.
 /obj/machinery/computer/med_data/proc/insert_scan(datum/act/op/A)
 	if(!move_into(src, nameof(scan), A.held, A.actor))
@@ -121,9 +128,34 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 	act_message_t(A.actor, src, MSG(records/ejected_id), card)
 	return OP_OK
 
-/// Empty-handed physical selection; a named menu choice can still open while holding an item.
-/obj/machinery/computer/med_data/proc/records_empty_hand(datum/act/op/A)
-	return A.held ? MSG(req_hand_full) : null
+/// A physical click needs an empty, admitted hand; refused menu rows remain visible.
+/obj/machinery/computer/med_data/proc/records_plain_hand(datum/act/op/A)
+	if(A.held)
+		return MSG(req_hand_full)
+	return records_open_admission(A)
+
+/// The old named hand operation's physical provider and machine checks are requirements,
+/// so a menu can display the same refusal even when the actor has no qualifying hand.
+/obj/machinery/computer/med_data/proc/records_open_admission(datum/act/op/A)
+	if(A.authority & AUTH_ADMIN)
+		return null
+	var/mob/user = A.actor
+	if(!user || isobserver(user))
+		return "too far away"
+	if(issilicon(user))
+		return MSG(req_no_provider)
+	if(!read_once(user.Adjacent(src)))
+		return "too far away"
+	var/has_hand = FALSE
+	for(var/datum/prov/provider as anything in read_once(providers_for(user, null)))
+		if((provider.aff() & AFF_MANIPULATE) && (provider.authority_mask() & AUTH_PHYSICAL))
+			has_hand = TRUE
+			break
+	if(!has_hand)
+		return MSG(req_no_provider)
+	if(!read_once(user.operation_actor_capable()))
+		return MSG(req_not_capable)
+	return op_hand_refusal(A)
 
 /// The explicit records menu entry preserves its fingerprint and window effect.
 /obj/machinery/computer/med_data/proc/open_records(datum/act/op/A)
