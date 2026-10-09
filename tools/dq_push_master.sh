@@ -16,6 +16,7 @@
 #
 # 5. After the push, refreshes tools/ci/known_failures.txt when a focused run JSON for the pushed head exists (no tests run).
 #
+# DQ_PUSH_DRY_RUN=1 runs every step and stops where it would push (to prove a stamp or a merge flow without touching master).
 # Logs: data/push-check/<sha>.{dm,ratchets,analyze}.log. It never runs checkout, reset, restore, stash or cherry-pick.
 # tools/hooks/pre-push refuses a push to master that did not come from here (install: tools/hooks/install_pre_push.sh).
 set -uo pipefail
@@ -99,6 +100,10 @@ for round in 1 2 3; do
 	[ "$(git rev-parse HEAD)" = "$sha" ] || die "HEAD moved during the checks"
 	if why="$(dirty)"; then die "the tree changed during the checks: $why"; fi
 
+	if [ "${DQ_PUSH_DRY_RUN:-0}" = "1" ]; then
+		echo "dq_push_master: DRY RUN: ${sha:0:12} passed every check (dm, DreamChecker, ratchets, analyze); not pushing"
+		exit 0
+	fi
 	echo "== pushing ${sha:0:12} to origin/master"
 	if DQ_PUSH_VERIFIED="$sha" git push origin "$sha:refs/heads/master"; then
 		echo "dq_push_master: pushed ${sha:0:12} (checked: dm, DreamChecker, ratchets, analyze)"

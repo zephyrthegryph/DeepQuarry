@@ -252,6 +252,14 @@ type DDOptions = {
    * `watchdogTimeoutMs` is a hard backstop for a genuinely hung run.
    */
   watchdogFile?: string;
+  /**
+   * The marker the world writes when it has finished, clean or not (`finished_run.lk`, FinishTestRun() in code/game/world.dm). With
+   * it, the grace after `watchdogFile` appears is long (DQ_DD_FINISH_GRACE_SEC, default 180 s) while the marker is missing, because
+   * a world on a busy machine can need more than `watchdogGraceMs` to write `clean_run.lk` and its logs, and a world killed first
+   * is reported as an unclean run it was not; and it is short (5 s) once the marker exists, because what remains is the Windows
+   * zombie.
+   */
+  watchdogCleanFile?: string;
   watchdogGraceMs?: number;
   watchdogTimeoutMs?: number;
   /** Called with the daemon's pid once it has started (watchdog runs only). */
@@ -413,14 +421,26 @@ function runDreamDaemonWithWatchdog(
       }
     }
 
+    let cleanSeen = false;
     function checkDone() {
-      if (settled || graceTimer) {
+      if (settled) {
+        return;
+      }
+      if (graceTimer) {
+        // Waiting for the world to finish writing: once its clean marker is there only the zombie is left.
+        if (options.watchdogCleanFile && !cleanSeen && fs.existsSync(options.watchdogCleanFile)) {
+          cleanSeen = true;
+          clearTimeout(graceTimer);
+          graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), Math.min(graceMs, 5_000));
+        }
         return;
       }
       if (fs.existsSync(watchdogFile)) {
         // Tests finished. Give -close a chance to exit cleanly, then force-kill
         // if the daemon is still alive (the Windows zombie case).
-        graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), graceMs);
+        const finishGraceMs = options.watchdogCleanFile ? Math.max(graceMs, (Number(process.env.DQ_DD_FINISH_GRACE_SEC) || 180) * 1000) : graceMs;
+        cleanSeen = !!options.watchdogCleanFile && fs.existsSync(options.watchdogCleanFile);
+        graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), cleanSeen ? Math.min(graceMs, 5_000) : finishGraceMs);
       }
     }
 

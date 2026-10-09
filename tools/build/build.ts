@@ -1352,6 +1352,7 @@ async function runIsolatedTestWorld(
           dmbFile: `${runBase}.dmb`,
           namedDmVersion: dmVersion,
           watchdogFile: resultsFile,
+          watchdogCleanFile: `${logDir}/finished_run.lk`,
           watchdogTimeoutMs: options.watchdogTimeoutMs ?? (focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined),
           onSpawn: options.sampler ? (pid) => options.sampler?.start(pid) : undefined,
         },

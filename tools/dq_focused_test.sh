@@ -178,11 +178,18 @@ if [ -z "${DQ_FOCUS_GUARD_DONE:-}" ]; then
 				exit 0
 			fi
 			{
-				echo "dq_focused_test: REFUSED: this exact list already ran on this exact tree $p_age min ago (HEAD $p_head) and FAILED ($p_failed failed; result ${p_json:-none})."
-				echo "  Read the log and the code first: the same tests on the same code fail the same way, unless the failure is order- or seed-dependent (the log says so:"
-				echo "  'rng seed ... reruns this test alone', STATE LEAK lines). The failures are in $p_json (\"tests\"), the world log is data/logs/runN/tests.log, and"
-				echo "  the last runs' output is under data/focused-runs/."
-				echo "  - run only what failed (a flake check):   bash tools/dq_focused_test.sh --rerun-failed"
+				if [ "${p_failed:-0}" -gt 0 ]; then
+					echo "dq_focused_test: REFUSED: this exact list already ran on this exact tree $p_age min ago (HEAD $p_head) and FAILED ($p_failed failed; result ${p_json:-none})."
+					echo "  Read the log and the code first: the same tests on the same code fail the same way, unless the failure is order- or seed-dependent (the log says so:"
+					echo "  'rng seed ... reruns this test alone', STATE LEAK lines). The failures are in $p_json (\"tests\"), the world log is data/logs/runN/tests.log, and"
+					echo "  the last runs' output is under data/focused-runs/."
+					echo "  - run only what failed (a flake check):   bash tools/dq_focused_test.sh --rerun-failed"
+				else
+					echo "dq_focused_test: REFUSED: this exact list already ran on this exact tree $p_age min ago (HEAD $p_head) and ended unclean (exit $p_rc) with no failed test (result ${p_json:-none})."
+					echo "  Read the log and the code first: a world that died, was killed by the watchdog, tripped the boot gate or logged a runtime ends this way; the reason is in"
+					echo "  data/logs/runN/tests.log and runtime-errors.log and in the last output under data/focused-runs/. If it was a machine hiccup (a daemon that did not exit, a"
+					echo "  loaded machine), say so and run it again with --force."
+				fi
 				echo "  - run this list again regardless:          bash tools/dq_focused_test.sh --force <the same arguments>"
 				echo "  - after any edit to the tree the guard lets the run through by itself."
 			} >&2
