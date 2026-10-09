@@ -1,4 +1,4 @@
-//! Conventional resources remain writable copies, authenticated on every install.
+//! Conventional outputs remain writable copies, authenticated on every install.
 use super::*;
 
 #[cfg(test)]
@@ -6,6 +6,15 @@ pub(super) fn resource(source: &Path, destination: &Path, expected: (u64, u128))
     resource_receipt(source, destination, expected).map(|_| ())
 }
 pub(super) fn resource_receipt(
+    source: &Path,
+    destination: &Path,
+    expected: (u64, u128),
+) -> io::Result<receipt::InstalledFile> {
+    conventional_receipt(source, destination, expected)
+}
+/// Reuse only an exact, authenticated writable regular file. Immutable store
+/// hardlinks/read-only outputs still require isolated atomic copy replacement.
+pub(super) fn conventional_receipt(
     source: &Path,
     destination: &Path,
     expected: (u64, u128),

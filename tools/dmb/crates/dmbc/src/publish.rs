@@ -623,7 +623,7 @@ impl PairStore {
         )?;
         #[cfg(test)]
         publication_fault("install_rsc_replaced")?;
-        let dmb_receipt = replace_copy_receipt(
+        let dmb_receipt = install::conventional_receipt(
             &source.join("deepquarry.dmb"),
             dmb,
             (pair.dmb_bytes, pair.dmb_hash),

@@ -105,8 +105,72 @@ pub struct Relocation {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SymbolicCode {
     words: Vec<u32>,
-    relocations: Vec<Relocation>,
+    sites: Box<[PackedSite]>,
+    references: Box<[SymRef]>,
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PackedSite {
+    offset: u32,
+    payload: u32,
+    descriptor: u32,
+}
+const _: () = assert!(std::mem::size_of::<PackedSite>() == 12);
+impl PackedSite {
+    fn decode(self, references: &[SymRef]) -> Relocation {
+        let reference = match self.descriptor >> 16 {
+            0 => references[self.payload as usize],
+            1 => SymRef::SourceFile(self.payload),
+            2 => SymRef::SourceLine(self.payload),
+            3 => SymRef::LineDelta(self.payload),
+            _ => unreachable!("private validated relocation descriptor"),
+        };
+        let encoding = if self.descriptor & 0x100 == 0 {
+            RelocationEncoding::Direct
+        } else {
+            RelocationEncoding::PackedValue24 {
+                tag: self.descriptor as u8,
+            }
+        };
+        Relocation {
+            offset: self.offset,
+            reference,
+            encoding,
+        }
+    }
+}
+/// Borrowed allocation-free view yielding exact public relocation values.
+#[derive(Clone)]
+pub struct RelocationView<'a> {
+    sites: std::slice::Iter<'a, PackedSite>,
+    references: &'a [SymRef],
+}
+impl RelocationView<'_> {
+    pub fn is_empty(&self) -> bool {
+        self.sites.len() == 0
+    }
+    pub fn iter(&self) -> Self {
+        self.clone()
+    }
+}
+impl Iterator for RelocationView<'_> {
+    type Item = Relocation;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.sites.next().map(|site| site.decode(self.references))
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.sites.size_hint()
+    }
+}
+impl DoubleEndedIterator for RelocationView<'_> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.sites
+            .next_back()
+            .map(|site| site.decode(self.references))
+    }
+}
+impl ExactSizeIterator for RelocationView<'_> {}
+impl std::iter::FusedIterator for RelocationView<'_> {}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RelocationError {
@@ -167,7 +231,7 @@ impl SymbolicCode {
         if !canonical {
             relocations.sort_unstable_by_key(|relocation| relocation.offset);
         }
-        Ok(Self { words, relocations })
+        Ok(Self::compact(words, relocations))
     }
 
     /// Require an exact relocation ledger from the typed operand encoder. This
@@ -212,7 +276,7 @@ impl SymbolicCode {
                 return Err(RelocationError::DuplicateSite(offset));
             }
         }
-        for relocation in &self.relocations {
+        for relocation in self.relocations() {
             let (kind, encoding) = expected
                 .remove(&relocation.offset)
                 .ok_or(RelocationError::MissingSite(relocation.offset))?;
@@ -256,8 +320,8 @@ impl SymbolicCode {
         for word in &self.words {
             bytes(&word.to_le_bytes())
         }
-        bytes(&(self.relocations.len() as u64).to_le_bytes());
-        for relocation in &self.relocations {
+        bytes(&(self.sites.len() as u64).to_le_bytes());
+        for relocation in self.relocations() {
             bytes(&relocation.offset.to_le_bytes());
             match relocation.encoding {
                 RelocationEncoding::Direct => bytes(&[0]),
@@ -278,14 +342,79 @@ impl SymbolicCode {
         &self.words
     }
 
-    pub fn relocations(&self) -> &[Relocation] {
-        &self.relocations
+    pub fn relocations(&self) -> RelocationView<'_> {
+        RelocationView {
+            sites: self.sites.iter(),
+            references: &self.references,
+        }
     }
-
-    /// Allocated element capacities of the immutable words and relocation
-    /// buffers, respectively. These are storage observations, not identities.
+    pub fn relocation(&self, index: usize) -> Option<Relocation> {
+        self.sites
+            .get(index)
+            .map(|site| site.decode(&self.references))
+    }
+    /// Word vector capacity and exact compact-site allocation length.
     pub fn storage_capacities(&self) -> (usize, usize) {
-        (self.words.capacity(), self.relocations.capacity())
+        (self.words.capacity(), self.sites.len())
+    }
+    /// Exact retained buffers; no expanded relocation array is materialized.
+    pub fn visit_storage(&self, mut visitor: impl FnMut(usize, usize, usize)) {
+        visitor(
+            self.words.as_ptr() as usize,
+            self.words.len() * 4,
+            self.words.capacity() * 4,
+        );
+        visitor(
+            self.sites.as_ptr() as usize,
+            self.sites.len() * 12,
+            self.sites.len() * 12,
+        );
+        visitor(
+            self.references.as_ptr() as usize,
+            self.references.len() * std::mem::size_of::<SymRef>(),
+            self.references.len() * std::mem::size_of::<SymRef>(),
+        );
+    }
+    pub fn reference_count(&self) -> usize {
+        self.references.len()
+    }
+    fn compact(words: Vec<u32>, relocations: Vec<Relocation>) -> Self {
+        let mut references = Vec::new();
+        let mut indexes = HashMap::new();
+        let sites = relocations
+            .into_iter()
+            .map(|relocation| {
+                let (kind, payload) = match relocation.reference {
+                    SymRef::SourceFile(value) => (1, value),
+                    SymRef::SourceLine(value) => (2, value),
+                    SymRef::LineDelta(value) => (3, value),
+                    reference => (
+                        0,
+                        *indexes.entry(reference).or_insert_with(|| {
+                            let index = u32::try_from(references.len())
+                                .expect("reference count bounded by validated words");
+                            references.push(reference);
+                            index
+                        }),
+                    ),
+                };
+                let encoding = match relocation.encoding {
+                    RelocationEncoding::Direct => 0,
+                    RelocationEncoding::PackedValue24 { tag } => 0x100 | u32::from(tag),
+                };
+                PackedSite {
+                    offset: relocation.offset,
+                    payload,
+                    descriptor: (kind << 16) | encoding,
+                }
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        Self {
+            words,
+            sites,
+            references: references.into_boxed_slice(),
+        }
     }
 
     /// Resolve into a private image, leaving shared symbolic code unchanged on
@@ -295,7 +424,7 @@ impl SymbolicCode {
         mut resolve: impl FnMut(SymRef) -> Option<u32>,
     ) -> Result<Vec<u32>, RelocationError> {
         let mut linked = self.words.clone();
-        for relocation in &self.relocations {
+        for relocation in self.relocations() {
             let value = resolve(relocation.reference)
                 .ok_or(RelocationError::Unresolved(relocation.reference))?;
             let at = relocation.offset as usize;
@@ -402,483 +531,4 @@ fn encode_reference(bytes: &mut impl FnMut(&[u8]), reference: SymRef) {
 }
 
 #[cfg(test)]
-mod tests {
-    #[test]
-    fn storage_capacities_preserve_backing_and_canonical_bytes() {
-        let mut words = Vec::with_capacity(19);
-        words.extend_from_slice(&[17, 0]);
-        let mut relocations = Vec::with_capacity(11);
-        relocations.push(Relocation {
-            offset: 1,
-            reference: SymRef::String(SymbolId::of("payload")),
-            encoding: RelocationEncoding::Direct,
-        });
-        let capacities = (words.capacity(), relocations.capacity());
-        let compact = SymbolicCode::new(words.clone(), relocations.clone()).unwrap();
-        let code = SymbolicCode::new(words, relocations).unwrap();
-        assert_eq!(code.storage_capacities(), capacities);
-        assert_eq!(code.canonical_bytes(), compact.canonical_bytes());
-        assert_eq!(code.fingerprint(), compact.fingerprint());
-    }
-
-    use super::*;
-
-    #[test]
-    fn canonical_count_uses_exact_codec_for_every_reference_and_encoding() {
-        let owner = SymbolId::of("/datum/sample");
-        let name = SymbolId::of("sample");
-        let procedure = crate::ProcedureIdentity {
-            owner,
-            name,
-            verb: true,
-            occurrence: 17,
-        };
-        let refs = [
-            SymRef::String(name),
-            SymRef::Type(owner),
-            SymRef::Proc {
-                owner,
-                name,
-                occurrence: 7,
-            },
-            SymRef::Verb {
-                owner,
-                name,
-                occurrence: 8,
-            },
-            SymRef::Var { owner, name },
-            SymRef::ArgumentSource {
-                owner,
-                name,
-                verb: true,
-                occurrence: 9,
-                argument: 3,
-            },
-            SymRef::ProcedureStatic(crate::ProcedureStaticIdentity { procedure, name }),
-            SymRef::VariableSlot(name),
-            SymRef::BuiltinGlobalVars,
-            SymRef::Instance(owner),
-            SymRef::SourceFile(15),
-            SymRef::SourceLine(42),
-            SymRef::LineDelta(13),
-            SymRef::ConstantList(71),
-            SymRef::Resource(93),
-        ];
-        for reference in refs {
-            for encoding in [
-                RelocationEncoding::Direct,
-                RelocationEncoding::PackedValue24 { tag: 6 },
-            ] {
-                let code = SymbolicCode::new(
-                    vec![0; encoding.width() as usize],
-                    vec![Relocation {
-                        offset: 0,
-                        reference,
-                        encoding,
-                    }],
-                )
-                .unwrap();
-                let bytes = code.canonical_bytes();
-                assert_eq!(code.canonical_len(), bytes.len());
-                assert_eq!(code.fingerprint(), xxhash_rust::xxh3::xxh3_128(&bytes));
-            }
-        }
-        let code = SymbolicCode::new(
-            vec![0],
-            vec![Relocation {
-                offset: 0,
-                reference: SymRef::BuiltinGlobalVars,
-                encoding: RelocationEncoding::Direct,
-            }],
-        )
-        .unwrap();
-        let mut expected = b"dm-symbolic-code-v2\0".to_vec();
-        expected.extend_from_slice(&1u64.to_le_bytes());
-        expected.extend_from_slice(&0u32.to_le_bytes());
-        expected.extend_from_slice(&1u64.to_le_bytes());
-        expected.extend_from_slice(&0u32.to_le_bytes());
-        expected.extend_from_slice(&[0, 6]);
-        assert_eq!(code.canonical_bytes(), expected);
-    }
-    // Retain the original storage validator as an independent error-order oracle.
-    fn original_storage_validation(
-        words: Vec<u32>,
-        mut relocations: Vec<Relocation>,
-    ) -> Result<SymbolicCode, RelocationError> {
-        u32::try_from(words.len()).map_err(|_| RelocationError::WordCountOverflow)?;
-        let mut seen = HashSet::new();
-        for relocation in &relocations {
-            for delta in 0..relocation.encoding.width() {
-                let at = relocation
-                    .offset
-                    .checked_add(delta)
-                    .ok_or(RelocationError::OutOfBounds(relocation.offset))?;
-                let word = words
-                    .get(at as usize)
-                    .ok_or(RelocationError::OutOfBounds(at))?;
-                if !seen.insert(at) {
-                    return Err(RelocationError::Duplicate(at));
-                }
-                if *word != 0 {
-                    return Err(RelocationError::NonzeroPlaceholder(at));
-                }
-            }
-        }
-        relocations.sort_unstable_by_key(|relocation| relocation.offset);
-        Ok(SymbolicCode { words, relocations })
-    }
-
-    #[test]
-    fn canonical_storage_fast_path_preserves_generic_errors_and_content() {
-        let direct = RelocationEncoding::Direct;
-        let packed = RelocationEncoding::PackedValue24 { tag: 6 };
-        let site = |offset, encoding| Relocation {
-            offset,
-            reference: SymRef::String(SymbolId::of("text")),
-            encoding,
-        };
-        let cases = [
-            (vec![], vec![], None),
-            (vec![0; 4], vec![site(0, packed), site(2, packed)], None),
-            (vec![0; 4], vec![site(3, direct), site(0, packed)], None),
-            (
-                vec![0; 4],
-                vec![site(0, packed), site(1, direct)],
-                Some(RelocationError::Duplicate(1)),
-            ),
-            (
-                vec![0; 4],
-                vec![site(1, direct), site(0, packed)],
-                Some(RelocationError::Duplicate(1)),
-            ),
-            (
-                vec![1],
-                vec![site(0, direct)],
-                Some(RelocationError::NonzeroPlaceholder(0)),
-            ),
-            (
-                vec![0, 1],
-                vec![site(0, packed)],
-                Some(RelocationError::NonzeroPlaceholder(1)),
-            ),
-            (
-                vec![0],
-                vec![site(0, packed)],
-                Some(RelocationError::OutOfBounds(1)),
-            ),
-            (
-                vec![0; 4],
-                vec![site(u32::MAX, packed)],
-                Some(RelocationError::OutOfBounds(u32::MAX)),
-            ),
-            (
-                vec![1; 4],
-                vec![site(0, direct), site(u32::MAX, packed)],
-                Some(RelocationError::NonzeroPlaceholder(0)),
-            ),
-            (
-                vec![1; 4],
-                vec![site(4, direct), site(0, direct)],
-                Some(RelocationError::OutOfBounds(4)),
-            ),
-        ];
-        for (words, relocations, expected_error) in cases {
-            let expected = original_storage_validation(words.clone(), relocations.clone());
-            assert_eq!(expected.as_ref().err(), expected_error.as_ref());
-            assert_eq!(SymbolicCode::new(words, relocations), expected);
-        }
-        // Both interval widths, both encounter orders, overlaps, out-of-bounds
-        // and competing nonzero/duplicate failures, independent of golden cases.
-        for bits in 0..16 {
-            let words: Vec<_> = (0..4).map(|at| (bits >> at) & 1).collect();
-            for left in 0..6 {
-                for right in 0..6 {
-                    for encoding in [direct, packed] {
-                        let relocations = vec![site(left, encoding), site(right, packed)];
-                        assert_eq!(
-                            SymbolicCode::new(words.clone(), relocations.clone()),
-                            original_storage_validation(words.clone(), relocations)
-                        );
-                    }
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn borrowed_site_ledgers_preserve_unsorted_validation_and_error_precedence() {
-        let packed = RelocationEncoding::PackedValue24 { tag: 6 };
-        let direct = RelocationEncoding::Direct;
-        let code = SymbolicCode::new(
-            vec![0; 6],
-            vec![
-                Relocation {
-                    offset: 3,
-                    reference: SymRef::BuiltinGlobalVars,
-                    encoding: direct,
-                },
-                Relocation {
-                    offset: 0,
-                    reference: SymRef::String(SymbolId::of("text")),
-                    encoding: packed,
-                },
-            ],
-        )
-        .unwrap();
-        let string = RelocationKind::String;
-        let variable = RelocationKind::Variable;
-        let fixtures = [
-            (vec![(3, variable, direct), (0, string, packed)], Ok(())),
-            (
-                vec![
-                    (3, string, direct),
-                    (0, variable, packed),
-                    (6, string, direct),
-                ],
-                Err(RelocationError::OutOfBounds(6)),
-            ),
-            (
-                vec![(0, string, packed), (1, variable, direct)],
-                Err(RelocationError::DuplicateSite(1)),
-            ),
-            (
-                vec![(3, variable, direct)],
-                Err(RelocationError::MissingSite(0)),
-            ),
-            (
-                vec![(3, string, direct), (0, variable, packed)],
-                Err(RelocationError::KindMismatch {
-                    offset: 0,
-                    expected: variable,
-                    actual: string,
-                }),
-            ),
-            (
-                vec![(3, variable, direct), (0, string, direct)],
-                Err(RelocationError::EncodingMismatch(0)),
-            ),
-            (
-                vec![
-                    (5, string, direct),
-                    (3, variable, direct),
-                    (2, string, direct),
-                    (0, string, packed),
-                ],
-                Err(RelocationError::MissingRelocation(2)),
-            ),
-        ];
-        for (sites, expected) in fixtures {
-            assert_eq!(code.validate_encoded_sites(&sites), expected);
-            assert_eq!(
-                code.validate_encoded_sites_iter(sites.iter().copied()),
-                expected
-            );
-        }
-    }
-
-    #[test]
-    fn packed_values_validate_both_words_encoding_and_range() {
-        let reference = SymRef::String(SymbolId::of("text"));
-        let relocation = Relocation {
-            offset: 0,
-            reference,
-            encoding: RelocationEncoding::PackedValue24 { tag: 6 },
-        };
-        assert_eq!(
-            SymbolicCode::new(vec![0], vec![relocation]),
-            Err(RelocationError::OutOfBounds(1))
-        );
-        assert_eq!(
-            SymbolicCode::new(vec![0, 1], vec![relocation]),
-            Err(RelocationError::NonzeroPlaceholder(1))
-        );
-        let overlapping = Relocation {
-            offset: 1,
-            reference,
-            encoding: RelocationEncoding::Direct,
-        };
-        assert_eq!(
-            SymbolicCode::new(vec![0, 0], vec![relocation, overlapping]),
-            Err(RelocationError::Duplicate(1))
-        );
-        let code = SymbolicCode::new(vec![0, 0], vec![relocation]).unwrap();
-        assert_eq!(
-            code.validate_encoded_sites(&[(
-                0,
-                RelocationKind::String,
-                RelocationEncoding::PackedValue24 { tag: 12 }
-            )]),
-            Err(RelocationError::EncodingMismatch(0))
-        );
-        assert_eq!(code.link(|_| Some(0x123456)).unwrap(), [0x1206, 0x3456]);
-        assert_eq!(
-            code.link(|_| Some(0x1000000)),
-            Err(RelocationError::PackedValueOverflow {
-                offset: 0,
-                value: 0x1000000
-            })
-        );
-        assert_eq!(code.words(), [0, 0]);
-        let different_tag = SymbolicCode::new(
-            vec![0, 0],
-            vec![Relocation {
-                encoding: RelocationEncoding::PackedValue24 { tag: 12 },
-                ..relocation
-            }],
-        )
-        .unwrap();
-        assert_ne!(code.fingerprint(), different_tag.fingerprint());
-    }
-
-    #[test]
-    fn typed_operand_sites_require_exact_reference_kinds() {
-        let code = SymbolicCode::new(
-            vec![42, 0],
-            vec![Relocation {
-                offset: 1,
-                encoding: RelocationEncoding::Direct,
-                reference: SymRef::BuiltinGlobalVars,
-            }],
-        )
-        .unwrap();
-        assert_eq!(
-            code.validate_sites(&[(1, RelocationKind::Variable)]),
-            Ok(())
-        );
-        assert_eq!(
-            code.validate_sites(&[]),
-            Err(RelocationError::MissingSite(1))
-        );
-        assert_eq!(
-            code.validate_sites(&[(1, RelocationKind::String)]),
-            Err(RelocationError::KindMismatch {
-                offset: 1,
-                expected: RelocationKind::String,
-                actual: RelocationKind::Variable
-            })
-        );
-        assert_eq!(
-            code.validate_sites(&[(1, RelocationKind::Variable), (1, RelocationKind::Variable)]),
-            Err(RelocationError::DuplicateSite(1))
-        );
-        assert_eq!(
-            code.validate_sites(&[(2, RelocationKind::Variable)]),
-            Err(RelocationError::OutOfBounds(2))
-        );
-        assert_eq!(
-            SymbolicCode::new(vec![0], vec![])
-                .unwrap()
-                .validate_sites(&[(0, RelocationKind::String)]),
-            Err(RelocationError::MissingRelocation(0))
-        );
-    }
-
-    #[test]
-    fn fingerprints_preserve_namespace_and_canonicalize_site_order() {
-        let owner = SymbolId::of("/datum/a");
-        let name = SymbolId::of("read");
-        let proc = SymRef::Proc {
-            owner,
-            name,
-            occurrence: 0,
-        };
-        let verb = SymRef::Verb {
-            owner,
-            name,
-            occurrence: 0,
-        };
-        let one = |reference| {
-            SymbolicCode::new(
-                vec![0],
-                vec![Relocation {
-                    offset: 0,
-                    reference,
-                    encoding: RelocationEncoding::Direct,
-                }],
-            )
-            .unwrap()
-            .fingerprint()
-        };
-        assert_ne!(one(proc), one(verb));
-        assert_ne!(one(SymRef::Type(owner)), one(SymRef::Instance(owner)));
-        assert_ne!(
-            one(SymRef::BuiltinGlobalVars),
-            one(SymRef::VariableSlot(SymbolId::of("vars")))
-        );
-        let a = Relocation {
-            offset: 0,
-            encoding: RelocationEncoding::Direct,
-            reference: proc,
-        };
-        let b = Relocation {
-            offset: 1,
-            encoding: RelocationEncoding::Direct,
-            reference: SymRef::String(name),
-        };
-        assert_eq!(
-            SymbolicCode::new(vec![0, 0], vec![a, b])
-                .unwrap()
-                .fingerprint(),
-            SymbolicCode::new(vec![0, 0], vec![b, a])
-                .unwrap()
-                .fingerprint()
-        );
-    }
-
-    #[test]
-    fn linking_separate_table_assignments_never_mutates_shared_words() {
-        let symbol = SymRef::String(SymbolId::of("text"));
-        let code = SymbolicCode::new(
-            vec![99, 0, 0],
-            vec![
-                Relocation {
-                    offset: 2,
-                    encoding: RelocationEncoding::Direct,
-                    reference: SymRef::LineDelta(4),
-                },
-                Relocation {
-                    offset: 1,
-                    encoding: RelocationEncoding::Direct,
-                    reference: symbol,
-                },
-            ],
-        )
-        .unwrap();
-        assert_eq!(
-            code.link(|reference| Some(match reference {
-                SymRef::String(_) => 7,
-                SymRef::LineDelta(line) => 20 + line,
-                _ => unreachable!(),
-            }))
-            .unwrap(),
-            vec![99, 7, 24]
-        );
-        assert_eq!(
-            code.link(|_| None),
-            Err(RelocationError::Unresolved(symbol))
-        );
-        assert_eq!(code.link(|_| Some(3)).unwrap(), vec![99, 3, 3]);
-        assert_eq!(code.words(), [99, 0, 0]);
-    }
-
-    #[test]
-    fn malformed_relocation_tables_are_rejected_before_linking() {
-        let relocation = Relocation {
-            offset: 0,
-            encoding: RelocationEncoding::Direct,
-            reference: SymRef::LineDelta(0),
-        };
-        assert_eq!(
-            SymbolicCode::new(vec![], vec![relocation]),
-            Err(RelocationError::OutOfBounds(0))
-        );
-        assert_eq!(
-            SymbolicCode::new(vec![0], vec![relocation, relocation]),
-            Err(RelocationError::Duplicate(0))
-        );
-        assert_eq!(
-            SymbolicCode::new(vec![1], vec![relocation]),
-            Err(RelocationError::NonzeroPlaceholder(0))
-        );
-    }
-}
+mod tests;

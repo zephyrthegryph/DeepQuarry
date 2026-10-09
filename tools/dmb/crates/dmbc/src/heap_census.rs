@@ -746,23 +746,11 @@ impl HeapCensus {
     fn symbolic_code(&mut self, code: &Arc<dm_ir::SymbolicCode>) {
         if self.arc_object("frozen_code", code) {
             self.frozen_code_metrics.observe(code);
-            let (words_capacity, relocations_capacity) = code.storage_capacities();
-            self.owner("frozen_code").observed_items += code.words().len() as u64;
-            self.buffer(
-                "frozen_code",
-                code.words().as_ptr() as usize,
-                code.words().len().saturating_mul(size_of::<u32>()),
-                words_capacity.saturating_mul(size_of::<u32>()),
-            );
-            self.owner("frozen_code").observed_items += code.relocations().len() as u64;
-            self.buffer(
-                "frozen_code",
-                code.relocations().as_ptr() as usize,
-                code.relocations()
-                    .len()
-                    .saturating_mul(size_of::<dm_ir::Relocation>()),
-                relocations_capacity.saturating_mul(size_of::<dm_ir::Relocation>()),
-            );
+            self.owner("frozen_code").observed_items +=
+                (code.words().len() + code.relocations().len()) as u64;
+            code.visit_storage(|address, length, capacity| {
+                self.buffer("frozen_code", address, length, capacity);
+            });
         }
     }
     fn frozen_code(&mut self, code: &Arc<dm_codegen_byond::FrozenProc>) {

@@ -454,14 +454,14 @@ mod tests {
         let frozen = freeze_proc(&proc).unwrap();
         assert_eq!(frozen.code().words(), [0x60, 0, 0, 0x33, 0xffe7, 0, 0]);
         assert_eq!(
-            frozen.code().relocations()[0],
+            frozen.code().relocation(0).unwrap(),
             Relocation {
                 offset: 1,
                 reference: SymRef::String(text),
                 encoding: OperandEncoding::PackedValue24 { tag: 6 }
             }
         );
-        assert_eq!(frozen.code().relocations()[1].offset, 5);
+        assert_eq!(frozen.code().relocation(1).unwrap().offset, 5);
         assert_eq!(
             frozen.code().link(|_| Some(0x123456)).unwrap(),
             [0x60, 0x1206, 0x3456, 0x33, 0xffe7, 0x123456, 0]
@@ -505,9 +505,9 @@ mod tests {
             ],
         };
         let frozen = freeze_proc(&proc).unwrap();
-        assert_eq!(frozen.code().relocations()[0].reference, reference);
+        assert_eq!(frozen.code().relocation(0).unwrap().reference, reference);
         assert_eq!(
-            frozen.code().relocations()[1],
+            frozen.code().relocation(1).unwrap(),
             Relocation {
                 offset: 4,
                 reference: SymRef::Type(owner),

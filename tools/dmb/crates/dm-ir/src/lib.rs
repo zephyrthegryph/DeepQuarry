@@ -37,7 +37,8 @@ pub use memo_resolver::{MemoResolver, MemoStats};
 
 mod symbolic;
 pub use symbolic::{
-    Relocation, RelocationEncoding, RelocationError, RelocationKind, SymRef, SymbolicCode,
+    Relocation, RelocationEncoding, RelocationError, RelocationKind, RelocationView, SymRef,
+    SymbolicCode,
 };
 
 macro_rules! id {

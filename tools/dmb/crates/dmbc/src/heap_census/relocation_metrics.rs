@@ -14,7 +14,11 @@ pub struct RelocationMetrics {
     pub words_len: u64,
     pub words_capacity: u64,
     pub relocations_capacity: u64,
+    /// Public decoded value size, not the compact retained site stride.
     pub relocation_size_bytes: usize,
+    pub packed_site_size_bytes: usize,
+    pub retained_reference_entries: u64,
+    pub retained_relocation_storage_bytes: u64,
     pub sym_ref_size_bytes: usize,
 }
 impl Default for RelocationMetrics {
@@ -29,6 +33,9 @@ impl Default for RelocationMetrics {
             words_capacity: 0,
             relocations_capacity: 0,
             relocation_size_bytes: size_of::<dm_ir::Relocation>(),
+            packed_site_size_bytes: 12,
+            retained_reference_entries: 0,
+            retained_relocation_storage_bytes: 0,
             sym_ref_size_bytes: size_of::<SymRef>(),
         }
     }
@@ -55,6 +62,11 @@ impl RelocationMetrics {
         self.words_len += code.words().len() as u64;
         self.words_capacity += words as u64;
         self.relocations_capacity += relocations as u64;
+        self.retained_reference_entries += code.reference_count() as u64;
+        self.retained_relocation_storage_bytes +=
+            (relocations as u64).saturating_mul(12).saturating_add(
+                (code.reference_count() as u64).saturating_mul(size_of::<SymRef>() as u64),
+            );
     }
 }
 

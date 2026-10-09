@@ -117,12 +117,30 @@ parallel inventory work are not included in this frozen measurement.
 
 ## Open correctness and architecture items
 
-The latest source batch passed release all-target Clippy with warnings denied
-(92.186 s), receipt
-`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-005654-c5ab3554.json`,
-and 1,521 ordinary workspace library checks (265.726 s), receipt
-`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-005840-375d7192.json`.
+The latest compact-code source batch passed release all-target Clippy with warnings
+denied (31.722 s), receipt
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-010838-c637ec51.json`,
+and 1,525 ordinary workspace library checks (128.485 s), receipt
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-011029-84bd1c01.json`.
 These ordinary-profile tests are not the outstanding release-profile gate.
+
+Frozen `SymbolicCode` now retains 12-byte relocation sites and one exact-sized
+per-procedure dictionary of distinct non-source `SymRef` values. Source-file,
+source-line and line-delta payloads remain full-width inline ordinals. Borrowed
+iteration reconstructs exact relocation values without an expanded array;
+constructor validation/error order and canonical v2 bytes remain unchanged.
+The recorded pre-change linking census implies 51,184,656 bytes of compact
+site/dictionary payload versus 195,442,688 bytes of relocation capacity: an
+estimated 144,258,032-byte retained payload reduction. This excludes container,
+allocator and temporary constructor overhead and is **not a measured peak-memory
+reduction**. New census counts the actual separate retained allocations.
+Conventional output installation now reuses unchanged writable DMB/RSC files
+only after the shared receipt helper authenticates their hashes and file stamps,
+skipping the unchanged copy. This is output reuse, not a decoded engine cache.
+Owned certified word-buffer reuse and direct final-slice parallel DMB encoding
+remain implemented; the next optimized candidate must measure their combined
+effect with compact symbolic storage. Its diagnostic freeze/census and optimized
+acceptance comparison are pending.
 Optional file-backed RSC publication streams encoding and hashing into immutable
 archives; unchanged archives use a hash-only probe and authenticated reuse.
 Request-owned resource pins survive until final pair publication. Sink I/O failures
