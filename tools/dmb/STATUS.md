@@ -8,8 +8,8 @@ Immutable resource bytes now retain their original filesystem vector allocation;
 capture, raw encoding and aliases share the same owner. Stored modified defaults
 are captured before procedure lowering, allowing the classified runtime AST ledger
 to be released earlier while preserving diagnostic precedence. An optional ledger
-census uses the existing AST walker and allocation deduplication. These changes
-are not yet measured.
+census uses the existing AST walker and allocation deduplication. Their admitted
+cold measurement is recorded below.
 
 The batch also adds an opt-in generic CPU-domain bound API. It can cap the original
 upper bound only with complete, temporally disjoint interval proof across every
@@ -52,6 +52,25 @@ Receipts: `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-025343-85d91c89
 `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-025503-7ed34cec.json`.
 
 ## Latest admitted measurement
+
+The memory-owner candidate (`59c1774fdb`) completed ABABAB, three cold runs per
+compiler and eight workers on the same captured historical project. Median child
+wall was **11.802 s**, versus **11.673 s** for the control: no wall-speed gain in
+this cohort. Process CPU was **28.297 s**, versus 29.859 s (5.2% lower). Critical
+CPU was 8.766 s, uncertainty upper 10.844 s. Median peak private memory was
+**1,565,057,024 bytes**, versus 2,167,504,896 (27.8% lower). Reads were 326,324,811
+bytes and writes 655,313,307. All six measurement, fresh-native-output/diagnostic
+and structural no-regression checks passed. Memory, write volume, input,
+ABI/initializer and composition CPU acceptance remain open. The resource/maps
+CPU gate passed in this cohort. This is not daemon/edit performance or BYOND
+semantic parity.
+
+Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/paired-corrected-context-20261009-041438-a9e35a44/comparison.json`.
+The optimized build passed in 427.083 s, including the authenticated stable-root
+workflow. New lexical prefilter, initializer identity streaming and SIMD comment
+scanning changes are excluded and awaiting validation.
+
+### Previous shared-stage comparison
 
 The shared-stage candidate (`3c0b93dffc`) completed an ABABAB comparison on the
 same captured historical project, three cold runs per compiler and eight workers.
