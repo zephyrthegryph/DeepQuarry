@@ -3798,7 +3798,7 @@ look-state probes are narrowed to the vars `analyze look-keys` finds a draw read
     `look_trees/mob.living.simple_mob.txt` (both) `runtime: OWN: refused ...` becomes `deleted itself on creation`; `look_states/mob.living.simple_mob.vore.morph.txt` loses
     its `runtime: OWN: refused _own_put(hud_list)` row (the probe makes nothing).
 * **Still order dependent, NOT blessed:** `look_trees/turf.simulated.shuttle.txt`, `shuttle/plating/carry` and `shuttle/plating/airless/carry` underlay
-  (`tiles_vr.dmi:steel:-45` recorded; a path-order sweep gives `space.dmi:white:-82`, a shuffled one gives either). What the floor "landed on" depends on the tile's type
-  when the carry turf replaces it, and the sweep's spot is restored by `ChangeTurf(old_type)`, which carries the landed holder of the turf before it. Proposed fix: make each
+  (`tiles_vr.dmi:steel:-45` recorded; a path-order sweep gives `space.dmi:white:-82`, a shuffled one gives either). The settle step did not remove it. Likely cause (not proven): what the floor "landed on" is read from the tile it replaces,
+  and the sweep's spot is restored by `ChangeTurf(old_type)`, which keeps state of the turf before it. Proposed fix: make each
   turf probe on a fresh tile of the template's floor type (`ChangeTurf` from a canonical turf, then drop `landed_holder`), then bless the one rule.
 * **Harness:** the bless writes CRLF and a lone newline for an empty row set; the committed files are LF and empty files stay empty, so those were normalised back.
