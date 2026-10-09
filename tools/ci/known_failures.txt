@@ -3,4 +3,3 @@
 dq_km_every_behaviour_has_a_system	fails on master: a behaviour has no system	1d164d2693
 dq_lane_a/change_drain_survives_a_throwing_condition	fails on master: throwing condition kills the change drain	1d164d2693
 ownership_framework_checks	fails on master: end-of-run OWN AUDIT names /datum/effect/system/explosion and smoke_spread dropped with a rec (the fw-fixes lane fixes it)	1c57f0b145
-dq_hit_pin	fails on master: refresh_queued/refresh_bits and emp/emag snapshots differ (needs a re-bless)	79f28a2653

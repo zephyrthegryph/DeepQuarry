@@ -7,7 +7,6 @@ human|none menu: Dark respite (refused: you don't have that ability)
 human|none menu: Dark tunneling (refused: you don't have that ability)
 human|none menu: Disarm
 human|none menu: Dispel dark maws (refused: you don't have that ability)
-human|none menu: Emag (refused: needs a cryptographic sequencer)
 human|none menu: Emit sparks (refused: you don't have that ability)
 human|none menu: Grab
 human|none menu: Help
@@ -52,7 +51,6 @@ robot|none menu: Dark tunneling (refused: you don't have that ability)
 robot|none menu: Deploy to shell
 robot|none menu: Disarm
 robot|none menu: Dispel dark maws (refused: you don't have that ability)
-robot|none menu: Emag (refused: needs a cryptographic sequencer)
 robot|none menu: Emit sparks (refused: can only be done to yourself)
 robot|none menu: Grab
 robot|none menu: Help
@@ -99,7 +97,6 @@ human|/obj/item/tool/screwdriver menu: Dark respite (refused: you don't have tha
 human|/obj/item/tool/screwdriver menu: Dark tunneling (refused: you don't have that ability)
 human|/obj/item/tool/screwdriver menu: Disarm
 human|/obj/item/tool/screwdriver menu: Dispel dark maws (refused: you don't have that ability)
-human|/obj/item/tool/screwdriver menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/tool/screwdriver menu: Emit sparks (refused: you don't have that ability)
 human|/obj/item/tool/screwdriver menu: Grab
 human|/obj/item/tool/screwdriver menu: Help
@@ -145,7 +142,6 @@ human|/obj/item/tool/crowbar menu: Dark respite (refused: you don't have that ab
 human|/obj/item/tool/crowbar menu: Dark tunneling (refused: you don't have that ability)
 human|/obj/item/tool/crowbar menu: Disarm
 human|/obj/item/tool/crowbar menu: Dispel dark maws (refused: you don't have that ability)
-human|/obj/item/tool/crowbar menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/tool/crowbar menu: Emit sparks (refused: you don't have that ability)
 human|/obj/item/tool/crowbar menu: Grab
 human|/obj/item/tool/crowbar menu: Help
@@ -191,7 +187,6 @@ human|/obj/item/tool/wrench menu: Dark respite (refused: you don't have that abi
 human|/obj/item/tool/wrench menu: Dark tunneling (refused: you don't have that ability)
 human|/obj/item/tool/wrench menu: Disarm
 human|/obj/item/tool/wrench menu: Dispel dark maws (refused: you don't have that ability)
-human|/obj/item/tool/wrench menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/tool/wrench menu: Emit sparks (refused: you don't have that ability)
 human|/obj/item/tool/wrench menu: Grab
 human|/obj/item/tool/wrench menu: Help
@@ -237,7 +232,6 @@ human|/obj/item/tool/wirecutters menu: Dark respite (refused: you don't have tha
 human|/obj/item/tool/wirecutters menu: Dark tunneling (refused: you don't have that ability)
 human|/obj/item/tool/wirecutters menu: Disarm
 human|/obj/item/tool/wirecutters menu: Dispel dark maws (refused: you don't have that ability)
-human|/obj/item/tool/wirecutters menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/tool/wirecutters menu: Emit sparks (refused: you don't have that ability)
 human|/obj/item/tool/wirecutters menu: Grab
 human|/obj/item/tool/wirecutters menu: Help
@@ -283,7 +277,6 @@ human|/obj/item/multitool menu: Dark respite (refused: you don't have that abili
 human|/obj/item/multitool menu: Dark tunneling (refused: you don't have that ability)
 human|/obj/item/multitool menu: Disarm
 human|/obj/item/multitool menu: Dispel dark maws (refused: you don't have that ability)
-human|/obj/item/multitool menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/multitool menu: Emit sparks (refused: you don't have that ability)
 human|/obj/item/multitool menu: Grab
 human|/obj/item/multitool menu: Help
@@ -329,7 +322,6 @@ human|/obj/item/weldingtool menu: Dark respite (refused: you don't have that abi
 human|/obj/item/weldingtool menu: Dark tunneling (refused: you don't have that ability)
 human|/obj/item/weldingtool menu: Disarm
 human|/obj/item/weldingtool menu: Dispel dark maws (refused: you don't have that ability)
-human|/obj/item/weldingtool menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/weldingtool menu: Emit sparks (refused: you don't have that ability)
 human|/obj/item/weldingtool menu: Grab
 human|/obj/item/weldingtool menu: Help
@@ -375,7 +367,6 @@ human|/obj/item/stack/cable_coil menu: Dark respite (refused: you don't have tha
 human|/obj/item/stack/cable_coil menu: Dark tunneling (refused: you don't have that ability)
 human|/obj/item/stack/cable_coil menu: Disarm
 human|/obj/item/stack/cable_coil menu: Dispel dark maws (refused: you don't have that ability)
-human|/obj/item/stack/cable_coil menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/stack/cable_coil menu: Emit sparks (refused: you don't have that ability)
 human|/obj/item/stack/cable_coil menu: Grab
 human|/obj/item/stack/cable_coil menu: Help
@@ -422,7 +413,6 @@ human|/obj/item/stack/material/steel menu: Dark respite (refused: you don't have
 human|/obj/item/stack/material/steel menu: Dark tunneling (refused: you don't have that ability)
 human|/obj/item/stack/material/steel menu: Disarm
 human|/obj/item/stack/material/steel menu: Dispel dark maws (refused: you don't have that ability)
-human|/obj/item/stack/material/steel menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/stack/material/steel menu: Emit sparks (refused: you don't have that ability)
 human|/obj/item/stack/material/steel menu: Grab
 human|/obj/item/stack/material/steel menu: Help
@@ -468,7 +458,6 @@ human|/obj/item/card/id menu: Dark respite (refused: you don't have that ability
 human|/obj/item/card/id menu: Dark tunneling (refused: you don't have that ability)
 human|/obj/item/card/id menu: Disarm
 human|/obj/item/card/id menu: Dispel dark maws (refused: you don't have that ability)
-human|/obj/item/card/id menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/card/id menu: Emit sparks (refused: you don't have that ability)
 human|/obj/item/card/id menu: Grab
 human|/obj/item/card/id menu: Help
@@ -515,7 +504,6 @@ human|/obj/item/card/emag menu: Dark respite (refused: you don't have that abili
 human|/obj/item/card/emag menu: Dark tunneling (refused: you don't have that ability)
 human|/obj/item/card/emag menu: Disarm
 human|/obj/item/card/emag menu: Dispel dark maws (refused: you don't have that ability)
-human|/obj/item/card/emag menu: Emag
 human|/obj/item/card/emag menu: Emit sparks (refused: you don't have that ability)
 human|/obj/item/card/emag menu: Grab
 human|/obj/item/card/emag menu: Help
@@ -551,7 +539,7 @@ human|/obj/item/card/emag menu: Use on
 human|/obj/item/card/emag menu: Weld the dents (refused: hold Disarm)
 human|/obj/item/card/emag menu: Weld the dents (refused: hold Grab)
 human|/obj/item/card/emag menu: Weld the dents (refused: needs a welder)
-human|/obj/item/card/emag click: nothing
+human|/obj/item/card/emag click: Click: Use
 wires: AI Control, Camera, Law Check, Lockdown
-keys: break_bolt, disarm, drag_buckle, drop_hat, emag, gen_drag_interaction_swallow, gen_hand_interaction_touch, gen_hand_ungated_robot_interaction_hand, gen_item_interaction_hit, gen_item_robot_interaction_item, gen_silicon_robot_ai_deploy_shell, grab, robot_customize_appearance, robot_eject_cargo, robot_mount, robot_nom, robot_pick_name, robot_pick_shell, robot_pry_disarm, robot_pry_grab, robot_pry_help, robot_purge_nutrition, robot_recolour, robot_sensor_mode, robot_set_mail_tag, robot_spark_plug, robot_toggle_decals, robot_toggle_glowy_stomach, robot_toggle_grabbability, robot_toggle_lights, robot_toggle_module_1, robot_toggle_module_2, robot_toggle_module_3, robot_toggle_vtec, robot_weld_repair_disarm, robot_weld_repair_grab, robot_weld_repair_help, shadekin_clear_dark_maws, shadekin_create_shade, shadekin_dark_maw, shadekin_dark_respite, shadekin_dark_tunneling, shadekin_phase_shift, shadekin_regenerate_other, take_power_part
+keys: break_bolt, disarm, drag_buckle, drop_hat, emag.subvert, emag.use, gen_drag_interaction_swallow, gen_hand_interaction_touch, gen_hand_ungated_robot_interaction_hand, gen_item_interaction_hit, gen_item_robot_interaction_item, gen_silicon_robot_ai_deploy_shell, grab, robot_customize_appearance, robot_eject_cargo, robot_mount, robot_nom, robot_pick_name, robot_pick_shell, robot_pry_disarm, robot_pry_grab, robot_pry_help, robot_purge_nutrition, robot_recolour, robot_sensor_mode, robot_set_mail_tag, robot_spark_plug, robot_toggle_decals, robot_toggle_glowy_stomach, robot_toggle_grabbability, robot_toggle_lights, robot_toggle_module_1, robot_toggle_module_2, robot_toggle_module_3, robot_toggle_vtec, robot_weld_repair_disarm, robot_weld_repair_grab, robot_weld_repair_help, shadekin_clear_dark_maws, shadekin_create_shade, shadekin_dark_maw, shadekin_dark_respite, shadekin_dark_tunneling, shadekin_phase_shift, shadekin_regenerate_other, take_power_part
 

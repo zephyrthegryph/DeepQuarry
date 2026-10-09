@@ -3941,3 +3941,20 @@ recycling panels, space vines and the maintenance vendor glow now draw through `
 
 * **Lockpick on a simple door.** The legacy pick worked from the lockpick's `afterattack()` after the door's item handler ran. The door's handler hit the door with the pick first (`breakable`); it now returns `OP_PASS` for a lockpick so the pick's own `pick` op works the lock and the door is no longer struck.
 * **Sink items.** The sink's item and hand washes refuse a second wash through `claims()` ("in use") instead of the sink's own "Someone's already washing here." text.
+
+## Re-land of leftovers and proj-hooks (rewrite/reland)
+
+* **Conversion pins, emag key rename** (`snapshots/pins/mob.living.silicon.robot.txt`, `mob.living.silicon.robot.platform.txt`; 33 rows). The leftovers lane's emag conversion replaced the single `emag`
+  interaction key with the ops `emag.subvert` and `emag.use`. Consequences, all one change: the `keys:` row changes; the "Emag" menu rows (the greyed "needs a cryptographic sequencer" entries for each
+  hand, and the sequencer's own "Emag" entry) are gone because the ops are not offered in the menu; a human clicking with a sequencer on the platform reads `Click: Use` where it read
+  `nothing` / `Click: Platform item`.
+* **Hit pins** (`snapshots/hit_pins/`, 174 rows, seven types: energy_field, plant, ammo_magazine.smart, assembly.mousetrap, gun.energy, gun.energy.chameleon, modular_computer). Every class has one cause or the next:
+  * `refresh_queued: 131071 -> 0` and `refresh_bits: N -> 0`: a thing made for the pin still has its first refresh pending when the trigger runs; the pin's drain after the hit flushes it (engine refresh, `code/engine/change/refresh.dm`),
+    so every trigger of those types now shows the flush, and the former `nothing` rows (emag, emp 2, explosion 3, projectile, thrown) became these rows.
+  * `icon_state`, `light_*`, `color`, `disguise_state` rows on `energy_field` (`shield` -> `shield_broken`), `plant` (`bush4-1` -> `mushroom7-0`), `gun.energy` (`energy` -> `energy50/75/100`) and `gun.energy.chameleon`
+    (`null` -> `deagle`): the same first flush draws the type's look for the first time; the old rows were recorded after a draw that had already landed (`energy100` -> `energy50`), now the base is the undrawn `energy`.
+    The values drawn are the type's initial look, unchanged.
+  * `plant` emag: `periodic_pipe: null -> /datum/cadence/plants` is now `growing: 0 -> 1` and `om_rec` (the growth `every()` is keyed on the tracked `growing`, the periodic pipe being retired).
+  * Nothing in these rows is a change in what a hit does. `dq_hit_pin` leaves `tools/ci/known_failures.txt`.
+* **Projectile hit action.** A projectile's hit action (the `/datum/act/hit/projectile` hooks) now starts in `bullet_act()` before the round's effects (stun, embed, autopsy, reagents), so an `instead()` hook
+  stops all of them, a zero-damage round (a taser dart) reaches the hook, and the hook runs once per hit (the damage packet reuses the open action: `projectile_hit_begin()` / `projectile_hit_end()`).
