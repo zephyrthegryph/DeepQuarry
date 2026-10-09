@@ -12,6 +12,8 @@
 # 4. Checks HEAD and the tree did not change meanwhile, then `git push origin HEAD:master` (never forced). If
 #    master moved, it merges again and rechecks (up to 3 rounds).
 #
+# 5. After the push, refreshes tools/ci/known_failures.txt when a focused run JSON for the pushed head exists (no tests run).
+#
 # Logs: data/push-check/<sha>.{dm,ratchets,analyze}.log. It never runs checkout, reset, restore, stash or cherry-pick.
 # tools/hooks/pre-push refuses a push to master that did not come from here (install: tools/hooks/install_pre_push.sh).
 set -uo pipefail
@@ -33,6 +35,25 @@ dirty() {
 	return 1
 }
 
+# After a push: if a focused run for the pushed head is on disk, refresh tools/ci/known_failures.txt from it (tests that
+# now pass leave the list, still-failing ones get the new sha). No tests run here. A changed list is committed on top of
+# the pushed head and pushed (data only: no gate reads it; same DQ_PUSH_VERIFIED rule). Best effort: never fails the push.
+# DQ_KNOWN_FAILURES_REFRESH=0 turns it off. A rejected push leaves the commit local; the next dq_push_master carries it.
+refresh_known_failures() {
+	[ "${DQ_KNOWN_FAILURES_REFRESH:-1}" = "0" ] && return 0
+	local rc=0 new
+	bash tools/dq_known_failures.sh --refresh-for-head "$1" || rc=$?
+	[ "$rc" -eq 10 ] || return 0
+	git add tools/ci/known_failures.txt && git commit -q -m "Refresh known failures from the run on ${1:0:10}" || { echo "dq_push_master: known_failures refresh: commit failed (ignored)"; return 0; }
+	new="$(git rev-parse HEAD)"
+	if DQ_PUSH_VERIFIED="$new" git push -q origin "$new:refs/heads/master"; then
+		echo "dq_push_master: pushed known_failures refresh ${new:0:12}"
+	else
+		echo "dq_push_master: known_failures refresh committed locally (${new:0:12}); push rejected, it goes with the next push"
+	fi
+	return 0
+}
+
 mkdir -p data/push-check
 for round in 1 2 3; do
 	if why="$(dirty)"; then die "$why: commit (or remove) them first"; fi
@@ -49,8 +70,15 @@ for round in 1 2 3; do
 	grep -q "Found 0 diagnostics" "$log.dm.log" || { grep -iE "error|warning" "$log.dm.log" | head -30; die "DreamChecker reported diagnostics; see $log.dm.log"; }
 	grep -qE "deepquarry\.dmb - 0 errors" "$log.dm.log" || die "DreamMaker did not report 0 errors; see $log.dm.log"
 
-	echo "== check_ratchets.sh (log $log.ratchets.log)"
-	bash tools/ci/check_ratchets.sh >"$log.ratchets.log" 2>&1 || { tail -30 "$log.ratchets.log"; die "check_ratchets.sh failed"; }
+	# tools/dq_merge_gates.sh stamps the exact HEAD it ran check_ratchets.sh on (same release analyzer, clean tree, nothing
+	# changed since: dirty() above and the HEAD check below). The same check on the same commit is not run twice; a new
+	# merge commit, a different HEAD or DQ_PUSH_FULL=1 runs it here.
+	if [ "${DQ_PUSH_FULL:-0}" != "1" ] && [ -f "data/merge-gates/${sha:0:12}.ratchets.ok" ] && [ "$(cat "data/merge-gates/${sha:0:12}.ratchets.ok")" = "$sha" ]; then
+		echo "== check_ratchets.sh: passed on exactly this HEAD in tools/dq_merge_gates.sh; not repeated"
+	else
+		echo "== check_ratchets.sh (log $log.ratchets.log)"
+		bash tools/ci/check_ratchets.sh >"$log.ratchets.log" 2>&1 || { tail -30 "$log.ratchets.log"; die "check_ratchets.sh failed"; }
+	fi
 	echo "== build.sh analyze (log $log.analyze.log)"
 	tools/build/build.sh analyze >"$log.analyze.log" 2>&1 || { tail -30 "$log.analyze.log"; die "build.sh analyze failed"; }
 
@@ -60,6 +88,7 @@ for round in 1 2 3; do
 	echo "== pushing ${sha:0:12} to origin/master"
 	if DQ_PUSH_VERIFIED="$sha" git push origin "$sha:refs/heads/master"; then
 		echo "dq_push_master: pushed ${sha:0:12} (checked: dm, DreamChecker, ratchets, analyze)"
+		refresh_known_failures "$sha"
 		exit 0
 	fi
 	echo "dq_push_master: push rejected (master moved?); merging again"
