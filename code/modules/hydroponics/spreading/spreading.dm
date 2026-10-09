@@ -168,7 +168,7 @@ TRACKED(/obj/effect/plant, wall_shift)
 /obj/effect/plant/draw(datum/look/look)
 	..()
 	var/growth_cap = plant_growth_cap()
-	var/growth = min(growth_cap, round(health/growth_threshold))
+	var/growth = growth_threshold ? min(growth_cap, round(health/growth_threshold)) : growth_cap
 	if(growth_type > 0)
 		switch(growth_type)
 			if(1)

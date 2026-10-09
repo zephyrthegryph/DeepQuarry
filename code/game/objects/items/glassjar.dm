@@ -1,9 +1,4 @@
 
-#define JAR_NOTHING 0
-#define JAR_MONEY   1
-#define JAR_ANIMAL  2
-#define JAR_SPIDER  3
-
 /obj/item/glass_jar
 	name = "glass jar"
 	desc = "A small empty jar."
@@ -206,7 +201,3 @@ TYPE_TABLE(/obj/item/glass_jar/fish, glass_jar_mobs, list(/mob/living/simple_mob
 	desc = "A large plastic tank."
 	MATERIAL_BULK(MAT_PLASTIC, 4000)
 
-#undef JAR_NOTHING
-#undef JAR_MONEY
-#undef JAR_ANIMAL
-#undef JAR_SPIDER
