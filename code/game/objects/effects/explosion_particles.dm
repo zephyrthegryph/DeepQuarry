@@ -57,6 +57,9 @@
 	P.set_up(10,get_location())
 	P.start()
 	after(src, 0.5 SECONDS, PROC_REF(spread_smoke))
+	// A fire-and-forget system: it lives for the smoke it still owes and then deletes itself, so the ownership audit sees a system on its way
+	// out (a pending expire()), not one dropped with its timer still holding it.
+	expire(1 SECOND)
 
 /datum/effect/system/explosion/proc/spread_smoke()
 	PRIVATE_PROC(TRUE)
