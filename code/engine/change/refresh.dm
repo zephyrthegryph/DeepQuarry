@@ -35,6 +35,7 @@
 		want = !!D.should_run()
 	catch(var/exception/fault_should_run)
 		output_failed(D, "should_run", fault_should_run, eval_depth_should_run)
+		throw fault_should_run
 	DERIVED_EVAL_END
 	var/pending = after_pending(D, "periodic_interval")
 	if(want && !pending)
@@ -430,6 +431,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			D.push_to_rust()
 		catch(var/exception/fault_push_to_rust)
 			output_failed(D, "push_to_rust", fault_push_to_rust, eval_depth_push_to_rust)
+			throw fault_push_to_rust
 		DERIVED_EVAL_END
 		if(probing)
 			side = side || !GLOB.derive_side_base_reached
@@ -474,6 +476,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		want = !!D.should_run()
 	catch(var/exception/fault_should_run)
 		output_failed(D, "should_run", fault_should_run, eval_depth_should_run)
+		throw fault_should_run
 	DERIVED_EVAL_END
 	var/running = (!isnull(D.periodic_pipe))
 	if(want && !running)
@@ -491,6 +494,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		A.draw(L)
 	catch(var/exception/fault_draw)
 		output_failed(A, "draw", fault_draw, eval_depth_draw)
+		throw fault_draw
 	DERIVED_EVAL_END
 	// Transient flashes (look_flash()) sit on top of whatever draw() described.
 	var/datum/cap_engine_state/engine = capability_data(A)?[/datum/cap_engine_state] // inline cap_engine_state_of(): every look refresh passes here
@@ -535,6 +539,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		hidden = A.hidden_verbs() || list()
 	catch(var/exception/fault_hidden_verbs)
 		output_failed(A, "hidden_verbs", fault_hidden_verbs, eval_depth_hidden_verbs)
+		throw fault_hidden_verbs
 	DERIVED_EVAL_END
 	if(!length(hidden) && !length(A.rx?.refresh_hidden_verbs))
 		return hidden
@@ -650,6 +655,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		hidden = A.hidden_verbs() || list()
 	catch(var/exception/fault_hidden_verbs)
 		output_failed(A, "hidden_verbs", fault_hidden_verbs, eval_depth_hidden_verbs)
+		throw fault_hidden_verbs
 	DERIVED_EVAL_END
 	var/list/was = A.rx?.refresh_hidden_verbs || list()
 	if(length(hidden ^ was))
@@ -666,6 +672,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 			wants = !!A.should_run()
 		catch(var/exception/fault_should_run)
 			output_failed(A, "should_run", fault_should_run, eval_depth_should_run)
+			throw fault_should_run
 		DERIVED_EVAL_END
 		if(wants != (!isnull(A.periodic_pipe)))
 			drift += "should_run()"
@@ -679,6 +686,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 			value = call(A, V.proc_name)()
 		catch(var/exception/fault_derive)
 			output_failed(A, "derive", fault_derive, eval_depth_derive)
+			throw fault_derive
 		DERIVED_EVAL_END
 		if(value != A.vars[V.name])
 			drift += "derive([V.name])"

@@ -100,6 +100,7 @@ SYSTEM_DEF(ui_push)
 			send_update()
 		catch(var/exception/fault_output)
 			output_failed(src, "output", fault_output, eval_depth_output)
+			throw fault_output
 		DERIVED_EVAL_END
 		return TRUE
 	if(status != was)

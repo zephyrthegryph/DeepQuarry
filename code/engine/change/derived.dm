@@ -579,6 +579,7 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 			value = call(D, V.proc_name)()
 		catch(var/exception/fault_derive)
 			output_failed(D, "derive", fault_derive, eval_depth_derive)
+			throw fault_derive
 		DERIVED_EVAL_END
 		if(D.vars[V.name] == value)
 			continue
@@ -603,9 +604,8 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 	return ""
 
 /// An output (draw, should_run, hidden_verbs, a derive_<var>, push_to_rust, a window's data) threw: the evaluation context goes back to the depth it
-/// had before the output ran, so the engine is not left "inside an output" (every later write, message and publication would be reported as a purity
+/// had before the output ran (the caller then rethrows), so the engine is not left "inside an output" (every later write, message and publication would be reported as a purity
 /// violation), and the runtime is logged with the type and the output before it goes on to whoever catches it.
 /proc/output_failed(datum/D, output_name, exception/fault, depth)
 	GLOB.derived_evaluating = depth
 	log_world("OUTPUT RUNTIME: [D?.type].[output_name]: [fault] ([fault.file]:[fault.line])")
-	throw fault
