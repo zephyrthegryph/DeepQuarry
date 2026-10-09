@@ -13,7 +13,7 @@ impl dm_preprocess::SourceProvider for Source {
     }
 }
 impl dm_resources::capture::CaptureProvider for Source {
-    fn read_candidate(&self, path: &Path) -> std::io::Result<Option<Arc<[u8]>>> {
+    fn read_candidate(&self, path: &Path) -> std::io::Result<Option<dm_resources::SharedBytes>> {
         let bytes = match path.file_name().and_then(|name| name.to_str()) {
             Some("skin.dmf") => dm_preprocess::SourceProvider::read(self, path)
                 .unwrap()
@@ -54,7 +54,7 @@ impl dm_preprocess::SourceProvider for MissingDomain {
     }
 }
 impl dm_resources::capture::CaptureProvider for MissingDomain {
-    fn read_candidate(&self, path: &Path) -> std::io::Result<Option<Arc<[u8]>>> {
+    fn read_candidate(&self, path: &Path) -> std::io::Result<Option<dm_resources::SharedBytes>> {
         if path.file_name().and_then(|name| name.to_str()) == Some("skin.dmf") {
             return Ok(Some(
                 dm_preprocess::SourceProvider::read(self, path)
@@ -306,7 +306,7 @@ fn retained_source_only_capture_preserves_rows_and_skips_asset_reads() {
     }
     struct NoAssets;
     impl dm_resources::capture::CaptureProvider for NoAssets {
-        fn read_candidate(&self, _: &Path) -> std::io::Result<Option<Arc<[u8]>>> {
+        fn read_candidate(&self, _: &Path) -> std::io::Result<Option<dm_resources::SharedBytes>> {
             panic!("retained capture reread asset payload")
         }
     }

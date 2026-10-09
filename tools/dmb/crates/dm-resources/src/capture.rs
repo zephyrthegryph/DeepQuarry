@@ -7,6 +7,8 @@
 use crate::native_resolver::{
     CapturedResourceLookup, CapturedResourceOutcome, CapturedSearchContext, NativeResourceResolver,
 };
+use crate::SharedBytes;
+use std::sync::Arc;
 use crate::{ResourceInput, ResourceRequest, ResourceSet};
 use dm_preprocess::regions::{DirectivePlan, ExpandedRegions};
 use dm_syntax::{Span, SpanToken, TokenKind};
@@ -14,7 +16,6 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeSet, HashMap};
 use std::io;
 use std::path::{Component, Path, PathBuf};
-use std::sync::Arc;
 mod parallel;
 pub use parallel::capture_discovered_on_executor;
 
@@ -182,11 +183,11 @@ impl std::error::Error for CaptureError {}
 /// A provider returns a snapshot payload or a genuine negative candidate.
 /// Permission/decoding/storage errors must be Err, never negative or Unsupported.
 pub trait CaptureProvider {
-    fn read_candidate(&self, path: &Path) -> io::Result<Option<Arc<[u8]>>>;
+    fn read_candidate(&self, path: &Path) -> io::Result<Option<SharedBytes>>;
 }
 pub struct FileSystemCapture;
 impl CaptureProvider for FileSystemCapture {
-    fn read_candidate(&self, path: &Path) -> io::Result<Option<Arc<[u8]>>> {
+    fn read_candidate(&self, path: &Path) -> io::Result<Option<SharedBytes>> {
         match std::fs::metadata(path) {
             Ok(metadata) if !metadata.is_file() => return Ok(None),
             Ok(_) => {}
@@ -195,7 +196,7 @@ impl CaptureProvider for FileSystemCapture {
         }
         // Disappearance after observing a file is an IO failure, not a fabricated
         // negative snapshot of a candidate that was never captured.
-        std::fs::read(path).map(|bytes| Some(Arc::from(bytes)))
+        std::fs::read(path).map(|bytes| Some(SharedBytes::from(bytes)))
     }
 }
 
@@ -358,7 +359,7 @@ fn capture_seeded<P: CaptureProvider>(
 }
 #[derive(Clone)]
 struct CapturedCandidate {
-    bytes: Option<Arc<[u8]>>,
+    bytes: Option<SharedBytes>,
     digest: Option<[u8; 32]>,
 }
 struct Capture<'a, P> {
@@ -372,7 +373,7 @@ struct Capture<'a, P> {
     unsupported: Vec<UnsupportedResource>,
 }
 impl<P: CaptureProvider> Capture<'_, P> {
-    fn read(&mut self, path: &Path) -> Result<Option<Arc<[u8]>>, CaptureError> {
+    fn read(&mut self, path: &Path) -> Result<Option<SharedBytes>, CaptureError> {
         if let Some(error) = self.failures.remove(path) {
             return Err(error);
         }
@@ -414,7 +415,7 @@ impl<P: CaptureProvider> Capture<'_, P> {
     fn add(
         &mut self,
         request: ResourceRequest,
-        bytes: Arc<[u8]>,
+        bytes: SharedBytes,
         span: Option<Span>,
     ) -> Result<CapturedResourceOutcome, CaptureError> {
         // add is reached only after read captured this immutable candidate.
@@ -445,7 +446,7 @@ impl<P: CaptureProvider> Capture<'_, P> {
                 named: crate::NamedResourceInput::from_shared_data(
                     crate::kind_for_name(&request.archive_name).as_byte(),
                     request.archive_name.as_bytes().to_vec(),
-                    Arc::clone(&bytes),
+                    bytes.clone(),
                     0,
                     0,
                 )

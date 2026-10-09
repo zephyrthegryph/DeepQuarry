@@ -8,8 +8,10 @@ pub mod native_resolver;
 #[cfg(test)]
 use byond_dmb::rsc::Entry;
 use byond_dmb::rsc::{NamedResource, ResourceKind};
+mod shared_bytes;
 mod shared_named;
 use sha2::{Digest, Sha256};
+pub use shared_bytes::SharedBytes;
 pub use shared_named::NamedResourceInput;
 use std::collections::HashMap;
 use std::fs;

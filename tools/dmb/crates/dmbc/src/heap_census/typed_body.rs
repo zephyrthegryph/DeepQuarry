@@ -48,6 +48,13 @@ impl HeapCensus {
         }
         let mut pending = Vec::new();
         statements(self, owner, &parsed.statements, &mut pending);
+        self.typed_nodes(owner, pending);
+    }
+    pub(crate) fn typed_expression(&mut self, owner: &str, expression: &Expr) {
+        // The root is inline in its containing owner; only nested allocations count.
+        self.typed_nodes(owner, vec![Node::Expr(expression)]);
+    }
+    fn typed_nodes(&mut self, owner: &str, mut pending: Vec<Node<'_>>) {
         while let Some(node) = pending.pop() {
             match node {
                 Node::Statement(statement) => {

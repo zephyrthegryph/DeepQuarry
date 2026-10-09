@@ -2,6 +2,27 @@
 
 Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 
+## Next memory candidate
+
+Immutable resource bytes now retain their original filesystem vector allocation;
+capture, raw encoding and aliases share the same owner. Stored modified defaults
+are captured before procedure lowering, allowing the classified runtime AST ledger
+to be released earlier while preserving diagnostic precedence. An optional ledger
+census uses the existing AST walker and allocation deduplication. These changes
+are not yet measured.
+
+The batch also adds an opt-in generic CPU-domain bound API. It can cap the original
+upper bound only with complete, temporally disjoint interval proof across every
+selected thread; missing proof retains the original bound. Existing critical CPU
+metrics, process audit and benchmark acceptance remain unchanged. The API is not
+wired to benchmark acceptance.
+
+Release workspace/all-target Clippy passed in 65.619 s. Ordinary workspace library
+checks passed **1,566 tests across 15 targets**, zero failures/ignored, in 228.047 s
+including compilation. These are not the full release workspace gate.
+Receipts: `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-034905-06380360.json`
+and `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-035018-f134b27c.json`.
+
 ## Shared-stage source validation
 
 The latest batch shares exact macro trace text and empty trace vectors, uses one

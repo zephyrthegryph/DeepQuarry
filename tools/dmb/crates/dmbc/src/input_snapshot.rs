@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Mutex, OnceLock};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Stamp {
@@ -312,7 +312,7 @@ impl<P: SnapshotProvider> dm_preprocess::SourceProvider for RecordingInputs<P> {
     }
 }
 impl<P: SnapshotProvider> dm_resources::capture::CaptureProvider for RecordingInputs<P> {
-    fn read_candidate(&self, path: &Path) -> io::Result<Option<Arc<[u8]>>> {
+    fn read_candidate(&self, path: &Path) -> io::Result<Option<dm_resources::SharedBytes>> {
         // Every attempted candidate records its parent listing, including
         // negative outcomes. Discovery still owns exact FILE_DIR precedence.
         let parent = path
@@ -320,7 +320,7 @@ impl<P: SnapshotProvider> dm_resources::capture::CaptureProvider for RecordingIn
             .ok_or_else(|| invalid("resource candidate has no parent"))?;
         self.record_search_folder(parent)?;
         match self.read_recorded(path) {
-            Ok(bytes) => Ok(Some(Arc::from(bytes))),
+            Ok(bytes) => Ok(Some(dm_resources::SharedBytes::from(bytes))),
             Err(error) if error.kind() == io::ErrorKind::NotFound => {
                 self.snapshot
                     .lock()

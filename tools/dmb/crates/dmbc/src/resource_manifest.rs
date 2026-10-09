@@ -245,7 +245,6 @@ mod tests {
     use std::{
         collections::BTreeSet,
         path::{Path, PathBuf},
-        sync::Arc,
     };
     struct Inputs {
         bytes: Vec<u8>,
@@ -267,7 +266,7 @@ mod tests {
         }
     }
     impl CaptureProvider for Inputs {
-        fn read_candidate(&self, _: &Path) -> io::Result<Option<Arc<[u8]>>> {
+        fn read_candidate(&self, _: &Path) -> io::Result<Option<dm_resources::SharedBytes>> {
             Ok(Some(self.bytes.clone().into()))
         }
     }

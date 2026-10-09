@@ -1,9 +1,10 @@
 //! Source-bound BYOND516 raw asset encoding policy.
 //! Paired current-source evidence: phase0/resources/raw_payload_control.
 use crate::capture::{CapturePolicy, EncodedResourceInput};
+use crate::SharedBytes;
 use crate::{ResourceInput, ResourceRequest};
 use sha2::{Digest, Sha256};
-use std::{io, sync::Arc};
+use std::io;
 /// These extensions have current-source/native-RSC byte equality controls.
 /// Unsupported formats can still supply an explicit current-source encoder.
 pub fn byond516_raw_policy() -> CapturePolicy {
@@ -23,14 +24,15 @@ pub fn encode_raw(
     source: &[u8],
     policy: &CapturePolicy,
 ) -> io::Result<EncodedResourceInput> {
-    encode_raw_shared(request, Arc::from(source), policy)
+    encode_raw_shared(request, SharedBytes::from(source), policy)
 }
 /// Encode a captured immutable source without duplicating its backing allocation.
 pub fn encode_raw_shared(
     request: ResourceRequest,
-    source: Arc<[u8]>,
+    source: impl Into<SharedBytes>,
     policy: &CapturePolicy,
 ) -> io::Result<EncodedResourceInput> {
+    let source = source.into();
     crate::validate_archive_name(&request.archive_name)?;
     let extension = std::path::Path::new(&request.archive_name)
         .extension()
@@ -65,18 +67,21 @@ mod tests {
     use super::*;
     #[test]
     fn shared_raw_encoder_keeps_source_allocation() {
-        let source: Arc<[u8]> = Arc::from(&b"raw shared payload"[..]);
+        let source: SharedBytes = SharedBytes::from(&b"raw shared payload"[..]);
         let encoded = encode_raw_shared(
             ResourceRequest {
                 archive_name: "a.txt".into(),
                 disk_path: "a.txt".into(),
             },
-            Arc::clone(&source),
+            source.clone(),
             &byond516_raw_policy(),
         )
         .unwrap();
-        assert!(Arc::ptr_eq(&source, encoded.input.named.shared_data()));
-        assert!(Arc::ptr_eq(
+        assert!(SharedBytes::ptr_eq(
+            &source,
+            encoded.input.named.shared_data()
+        ));
+        assert!(SharedBytes::ptr_eq(
             &source,
             encoded.clone().input.named.shared_data()
         ));

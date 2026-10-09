@@ -1,5 +1,7 @@
 //! Parallel candidate capture with the same ordered search and observation ledger.
 use super::*;
+#[cfg(test)]
+use crate::SharedBytes;
 use std::sync::Mutex;
 
 /// Read and hash only demanded candidates. Each search wave visits one FILE_DIR
@@ -125,12 +127,12 @@ fn capture_wave<P: CaptureProvider + Sync>(
 mod tests {
     use super::*;
     struct Memory {
-        files: HashMap<PathBuf, Arc<[u8]>>,
+        files: HashMap<PathBuf, SharedBytes>,
         reads: Mutex<Vec<PathBuf>>,
         denied: BTreeSet<PathBuf>,
     }
     impl CaptureProvider for Memory {
-        fn read_candidate(&self, path: &Path) -> io::Result<Option<Arc<[u8]>>> {
+        fn read_candidate(&self, path: &Path) -> io::Result<Option<SharedBytes>> {
             self.reads.lock().unwrap().push(path.to_owned());
             if self.denied.contains(path) {
                 return Err(io::Error::new(io::ErrorKind::PermissionDenied, "denied"));
@@ -153,8 +155,14 @@ mod tests {
     fn memory() -> Memory {
         Memory {
             files: HashMap::from([
-                (PathBuf::from("game/a.txt"), Arc::from(b"a".as_slice())),
-                (PathBuf::from("game/late/b.txt"), Arc::from(b"b".as_slice())),
+                (
+                    PathBuf::from("game/a.txt"),
+                    SharedBytes::from(b"a".as_slice()),
+                ),
+                (
+                    PathBuf::from("game/late/b.txt"),
+                    SharedBytes::from(b"b".as_slice()),
+                ),
             ]),
             reads: Mutex::new(Vec::new()),
             denied: BTreeSet::new(),

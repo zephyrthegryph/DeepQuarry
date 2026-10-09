@@ -1,4 +1,8 @@
 //! Span profiler with platform CPU clocks. No sampling agent or elevation.
+mod cpu_bounds;
+use cpu_bounds::{interval_bounds, sum_bounds, union_interval_bounds};
+mod domain_bounds;
+pub use domain_bounds::{CpuDomain, CpuSelector, DomainCpuBounds};
 mod item;
 pub use item::{item, ItemGuard};
 mod allocator;
@@ -113,6 +117,8 @@ pub struct Report {
     pub coverage_notes: Vec<String>,
     pub private_memory_sample_interval_ms: Option<u64>,
     pub trace_output: trace_output::Metadata,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub domain_cpu_bounds: BTreeMap<String, DomainCpuBounds>,
 }
 #[derive(Default)]
 struct Entry {
@@ -120,6 +126,8 @@ struct Entry {
     threads: BTreeMap<String, u64>,
     intervals: BTreeMap<String, Vec<clock::CpuInterval>>,
     exclusive_intervals: BTreeMap<String, Vec<clock::CpuInterval>>,
+    timed_intervals: BTreeMap<String, Vec<domain_bounds::TimedInterval>>,
+    timed_exclusive_intervals: BTreeMap<String, Vec<domain_bounds::TimedInterval>>,
     interval_missing: bool,
     exclusive: u64,
     exclusive_threads: BTreeMap<String, u64>,
@@ -149,78 +157,6 @@ mod context;
 pub use context::{StageContext, StageContextGuard};
 thread_local! {static STACK:RefCell<Vec<Frame>>=const {RefCell::new(Vec::new())};}
 
-fn sum_bounds(values: impl Iterator<Item = clock::CpuBounds>) -> clock::CpuBounds {
-    values.fold(
-        clock::CpuBounds {
-            lower: 0.0,
-            upper: 0.0,
-        },
-        clock::CpuBounds::add,
-    )
-}
-// Union only observations from the same thread. Overlapping spans share clock
-// uncertainty; charging it once per nested segment would multiply one error.
-fn union_interval_bounds(mut intervals: Vec<clock::CpuInterval>) -> Option<clock::CpuBounds> {
-    intervals.sort_unstable_by_key(|i| (i.raw_begin, i.raw_end));
-    let mut merged: Vec<clock::CpuInterval> = Vec::new();
-    for interval in intervals {
-        if let Some(last) = merged.last_mut() {
-            if interval.raw_begin <= last.raw_end {
-                // Paired coarse endpoints must remain monotonic. Equal raw
-                // boundaries must have identical paired observations.
-                if interval.coarse_begin < last.coarse_begin
-                    || interval.coarse_begin > last.coarse_end
-                    || (interval.raw_begin == last.raw_begin
-                        && interval.coarse_begin != last.coarse_begin)
-                    || (interval.raw_begin == last.raw_end
-                        && interval.coarse_begin != last.coarse_end)
-                {
-                    return None;
-                }
-                if interval.raw_end > last.raw_end {
-                    if interval.coarse_end < last.coarse_end {
-                        return None;
-                    }
-                    last.raw_end = interval.raw_end;
-                    last.coarse_end = interval.coarse_end;
-                } else if interval.coarse_end > last.coarse_end
-                    || (interval.raw_end == last.raw_end && interval.coarse_end != last.coarse_end)
-                {
-                    return None;
-                }
-                continue;
-            }
-        }
-        merged.push(interval);
-    }
-    Some(sum_bounds(
-        merged.into_iter().map(|i| i.bounds(cfg!(windows))),
-    ))
-}
-fn interval_bounds(intervals: &[clock::CpuInterval]) -> clock::CpuBounds {
-    // Merge only exactly contiguous observations, never fill an unobserved gap.
-    let mut merged: Vec<clock::CpuInterval> = Vec::new();
-    for interval in intervals {
-        if let Some(last) = merged.last_mut() {
-            if last.raw_end == interval.raw_begin && last.coarse_end == interval.coarse_begin {
-                last.raw_end = interval.raw_end;
-                last.coarse_end = interval.coarse_end;
-                continue;
-            }
-        }
-        merged.push(*interval);
-    }
-    merged
-        .into_iter()
-        .map(|interval| interval.bounds(cfg!(windows)))
-        .fold(
-            clock::CpuBounds {
-                lower: 0.0,
-                upper: 0.0,
-            },
-            clock::CpuBounds::add,
-        )
-}
 fn cpu_interval(start: Option<u64>, end: Option<u64>) -> Option<u64> {
     end.zip(start)
         .and_then(|(end, start)| end.checked_sub(start))
@@ -263,6 +199,7 @@ fn cpu_segment(state: &State, now: Option<u64>, coarse: Option<u64>, wall: Insta
                 .duration_since(frame.last_wall)
                 .as_nanos()
                 .min(u64::MAX as u128) as u64;
+            let interval_start = frame.last_wall;
             frame.last_wall = wall;
             if let Some(delta) = cpu_interval(frame.last_cpu, now) {
                 let thread = thread_label::owned();
@@ -287,6 +224,17 @@ fn cpu_segment(state: &State, now: Option<u64>, coarse: Option<u64>, wall: Insta
                         .entry(thread.clone())
                         .or_default()
                         .push(interval);
+                    entries
+                        .entry(frame.name)
+                        .or_default()
+                        .timed_exclusive_intervals
+                        .entry(thread.clone())
+                        .or_default()
+                        .push(domain_bounds::TimedInterval {
+                            cpu: interval,
+                            begin: interval_start,
+                            end: wall,
+                        });
                     state
                         .folded
                         .lock()
@@ -488,6 +436,15 @@ impl Drop for StageGuard {
                         .entry(thread.to_owned())
                         .or_default()
                         .push(interval);
+                    entry
+                        .timed_intervals
+                        .entry(thread.to_owned())
+                        .or_default()
+                        .push(domain_bounds::TimedInterval {
+                            cpu: interval,
+                            begin: self.start,
+                            end: end_wall,
+                        });
                 } else {
                     entry.interval_missing = true;
                 }
@@ -639,9 +596,21 @@ impl ProfileGuard {
     /// Residuals exclude nested CPU stages; the caller must cover omitted children
     /// and prove that selected inclusive stages do not overlap.
     pub fn finish(mut self, sequential_stages: &[&str]) -> Result<Report, String> {
-        self.finish_inner(sequential_stages)
+        self.finish_inner(sequential_stages, &[])
     }
-    fn finish_inner(&mut self, sequential_stages: &[&str]) -> Result<Report, String> {
+    /// Add opt-in domain proofs without changing critical-path or process-audit metrics.
+    pub fn finish_with_domains(
+        mut self,
+        sequential_stages: &[&str],
+        domains: &[CpuDomain<'_>],
+    ) -> Result<Report, String> {
+        self.finish_inner(sequential_stages, domains)
+    }
+    fn finish_inner(
+        &mut self,
+        sequential_stages: &[&str],
+        domains: &[CpuDomain<'_>],
+    ) -> Result<Report, String> {
         let shutdown = internal_observer::InternalThreadObserver::new(
             Arc::clone(&self.state),
             "profile.finalization",
@@ -815,6 +784,7 @@ impl ProfileGuard {
         };
         let covered_bounds = covered_union.map(|(_, bounds)| bounds);
         let covered = covered_union.map(|(cpu, _)| cpu);
+        let domain_cpu_bounds = domain_bounds::collect(domains, &entries, &stages);
         drop(entries);
         // The direct stage and coarse endpoints are the same clock. Preserve
         // the legacy field with the same union, rather than double-counting.
@@ -856,6 +826,7 @@ impl ProfileGuard {
                     .map(|values| sum_bounds(values.into_iter()))
             };
         let report = Report {
+            domain_cpu_bounds,
             trace_output,
             schema: 1,
             wall_s: measured_wall,
@@ -974,7 +945,7 @@ impl ProfileGuard {
 impl Drop for ProfileGuard {
     fn drop(&mut self) {
         if self.chrome.is_some() {
-            if let Err(error) = self.finish_inner(&[]) {
+            if let Err(error) = self.finish_inner(&[], &[]) {
                 eprintln!("profile artifact write failed: {error}");
             }
         }

@@ -3,6 +3,7 @@
 //! A boundary shares one census, so Arc aliases and nested buffers count once.
 use serde::Serialize;
 mod dmb_image;
+mod initializer_ledger;
 mod macro_environments;
 mod prepared;
 mod relocation_metrics;
@@ -862,7 +863,10 @@ impl HeapCensus {
             self.string("resource_records", &input.archive_name);
             self.path("resource_records", &input.disk_path);
             self.vec_payload("resource_records", &input.named.name);
-            self.slice("resource_payloads", input.named.shared_data(), true);
+            let bytes = input.named.shared_data().shared_vec();
+            if self.arc_object("resource_payloads", bytes) {
+                self.vec_payload("resource_payloads", bytes);
+            }
         }
     }
     pub fn finish(self) -> HeapCensusReport {

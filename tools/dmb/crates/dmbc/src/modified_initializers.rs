@@ -508,6 +508,83 @@ mod resource_tests {
         }
     }
     #[test]
+    fn captured_default_seed_shares_descriptor_backing_after_runtime_ledger_drop() {
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &std::path::Path) -> Result<String, String> {
+                Ok("/var/value = 1\n".into())
+            }
+        }
+        let frontend = dm_tree::frontend::build(
+            std::path::Path::new("defaults.dme"),
+            &Source,
+            &Default::default(),
+            1,
+        )
+        .unwrap();
+        let startup = crate::startup::capture(&frontend).unwrap();
+        let ast = dm_syntax::parse_expression("/obj/base{asset='asset.txt'}")
+            .expr
+            .unwrap();
+        let dm_syntax::ExprKind::ObjectInitializer { fields, .. } = ast.kind else {
+            panic!("descriptor")
+        };
+        let descriptor = Arc::new(
+            dm_ir::ModifiedInstance::capture_with_resources(
+                SymbolId::of("/obj/base"),
+                SymbolId::of("/"),
+                Some(7),
+                &fields,
+                |_| None,
+                None,
+                |path| {
+                    Ok(dm_ir::CapturedModifiedResource {
+                        path: SymbolId::of(path),
+                        content: 99,
+                    })
+                },
+            )
+            .unwrap(),
+        );
+        let classified = crate::initializer_policy::ClassifiedInitializers {
+            writes: vec![crate::initializer_policy::ClassifiedWrite {
+                source_ordinal: 0,
+                write: startup.plan().writes[0].clone(),
+                default: crate::initializer_policy::DefaultValue::Scalar(
+                    dm_ir::SemanticValue::ModifiedInstance(Arc::clone(&descriptor)),
+                ),
+                phase: Some(crate::initializer_policy::Phase::Runtime),
+                runtime_value: Some(crate::initializer_policy::RuntimeValue::Expression(
+                    dm_syntax::parse_expression("list(1,2,3)").expr.unwrap(),
+                )),
+            }],
+            groups: vec![crate::initializer_policy::RuntimeGroup {
+                receiver: None,
+                writes: vec![0],
+            }],
+        };
+        let seeds = default_seeds(&frontend, startup.plan(), &classified).unwrap();
+        assert_eq!(seeds.len(), 1);
+        assert_eq!(
+            seeds[0].0,
+            SymRef::Instance(SymbolId::of(&descriptor.alias()))
+        );
+        assert_eq!(seeds[0].1.descriptor, *descriptor);
+        assert_eq!(
+            seeds[0].1.descriptor.fields().as_ptr(),
+            descriptor.fields().as_ptr()
+        );
+        assert_eq!(
+            seeds[0].1.descriptor.canonical_bytes().as_ptr(),
+            descriptor.canonical_bytes().as_ptr()
+        );
+        drop(classified);
+        assert_eq!(seeds[0].2.entries[0].semantic_path.as_ref(), "defaults.dme");
+        assert_eq!(seeds[0].2.entries[0].line, 1);
+        assert_eq!(seeds[0].1.field_origins, [Some(0)]);
+        assert_eq!(seeds[0].1.descriptor.resources()["'asset.txt'"].content, 99);
+    }
+    #[test]
     fn modified_resource_initializer_emits_the_captured_payload_and_rejects_changed_proof() {
         let ast = dm_syntax::parse_expression("/obj/base{asset='asset.txt'}")
             .expr

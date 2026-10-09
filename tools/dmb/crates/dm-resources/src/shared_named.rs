@@ -1,6 +1,7 @@
 //! Producer payload ownership; cloning aliases never copies asset bytes.
+use crate::SharedBytes;
 use byond_dmb::rsc::{NamedResource, NamedResourceView};
-use std::{io, sync::Arc};
+use std::io;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NamedResourceInput {
     pub kind: u8,
@@ -9,7 +10,7 @@ pub struct NamedResourceInput {
     pub source_timestamp: u32,
     pub declared_size: u32,
     pub name: Vec<u8>,
-    data: Arc<[u8]>,
+    data: SharedBytes,
     // Deterministically derived from private immutable data; never the public recorded ID.
     full_crc: u32,
 }
@@ -17,10 +18,11 @@ impl NamedResourceInput {
     pub fn from_shared_data(
         kind: u8,
         name: Vec<u8>,
-        data: Arc<[u8]>,
+        data: impl Into<SharedBytes>,
         timestamp: u32,
         source_timestamp: u32,
     ) -> io::Result<Self> {
+        let data = data.into();
         let declared_size = u32::try_from(data.len()).map_err(|_| {
             io::Error::new(io::ErrorKind::InvalidInput, "RSC asset exceeds u32 size")
         })?;
@@ -52,7 +54,7 @@ impl NamedResourceInput {
             byond_dmb::hash::nqcrc(u32::MAX, payload)
         })
     }
-    pub fn shared_data(&self) -> &Arc<[u8]> {
+    pub fn shared_data(&self) -> &SharedBytes {
         &self.data
     }
     pub fn as_view(&self) -> NamedResourceView<'_> {
@@ -100,13 +102,13 @@ mod tests {
     use super::*;
     #[test]
     fn shared_payload_and_alias_clones_keep_original_allocation_and_wire_bytes() {
-        let source: Arc<[u8]> = Arc::from(&b"source payload"[..]);
+        let source: SharedBytes = SharedBytes::from(&b"source payload"[..]);
         let input =
-            NamedResourceInput::from_shared_data(6, b"a.png".to_vec(), Arc::clone(&source), 17, 23)
+            NamedResourceInput::from_shared_data(6, b"a.png".to_vec(), source.clone(), 17, 23)
                 .unwrap();
         let alias = input.clone();
-        assert!(Arc::ptr_eq(&source, input.shared_data()));
-        assert!(Arc::ptr_eq(&source, alias.shared_data()));
+        assert!(SharedBytes::ptr_eq(&source, input.shared_data()));
+        assert!(SharedBytes::ptr_eq(&source, alias.shared_data()));
         let old = input.to_owned_named();
         let borrowed =
             byond_dmb::rsc::named_views_encoded(&[input.as_view(), alias.as_view()]).unwrap();
@@ -127,13 +129,13 @@ mod tests {
         assert_eq!(borrowed.bytes(), exact);
         assert_eq!(borrowed.bytes(), legacy.bytes());
         assert_eq!(borrowed.content_hash(), legacy.content_hash());
-        assert!(Arc::ptr_eq(&source, input.shared_data()));
+        assert!(SharedBytes::ptr_eq(&source, input.shared_data()));
     }
     #[test]
     fn recorded_id_and_declared_prefix_cannot_override_immutable_crc() {
-        let bytes: Arc<[u8]> = Arc::from(&b"complete asset"[..]);
+        let bytes: SharedBytes = SharedBytes::from(&b"complete asset"[..]);
         let mut input =
-            NamedResourceInput::from_shared_data(0, b"a.txt".to_vec(), Arc::clone(&bytes), 0, 0)
+            NamedResourceInput::from_shared_data(0, b"a.txt".to_vec(), bytes.clone(), 0, 0)
                 .unwrap();
         let full = byond_dmb::hash::nqcrc(u32::MAX, &bytes);
         input.id ^= 1;

@@ -569,6 +569,18 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         &initialization.units,
     )
     .map_err(ColdError::Projection)?;
+    crate::heap_census::emit_if_enabled("initializer_ledger.ready", |census| {
+        census.frontend(frontend);
+        census.startup(startup);
+        census.initializer_ledger(&initialization.classified);
+    })
+    .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
+    // Capture only stored descriptor defaults while their source ledger is live.
+    // Keep failures deferred until the former seed stage so body diagnostics win
+    // exactly as before; this capture performs no resolver/evaluator operations.
+    let pending_modified_defaults =
+        crate::modified_initializers::default_seeds(frontend, plan, &initialization.classified);
+    drop(initialization.classified);
     measurement.complete();
     let initializers = stage.elapsed();
     let mut inventory = links.inventory;
@@ -663,11 +675,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
                 .iter()
                 .map(|unit| (&unit.code, &unit.debug_origins)),
         );
-    let modified_defaults =
-        crate::modified_initializers::default_seeds(frontend, plan, &initialization.classified)
-            .map_err(ColdError::Initializer)?;
-    // Projection/default capture own their results; release the runtime AST ledger.
-    drop(initialization.classified);
+    let modified_defaults = pending_modified_defaults.map_err(ColdError::Initializer)?;
     let modified = crate::modified_initializers::collect_owned_prepared_with_defaults(
         body_seeds,
         seeds,
@@ -771,3 +779,7 @@ mod tests;
 #[cfg(test)]
 #[path = "cold/prepared_tests.rs"]
 mod prepared_tests;
+
+#[cfg(test)]
+#[path = "cold/ledger_release_tests.rs"]
+mod ledger_release_tests;

@@ -1,4 +1,5 @@
 use super::*;
+use crate::SharedBytes;
 #[test]
 fn discovered_capture_preserves_search_reads_order_payloads_and_configuration() {
     let files = [
@@ -82,11 +83,11 @@ fn discovered_capture_preserves_search_reads_order_payloads_and_configuration() 
 }
 use std::cell::RefCell;
 struct Memory {
-    files: HashMap<PathBuf, Arc<[u8]>>,
+    files: HashMap<PathBuf, SharedBytes>,
     reads: RefCell<Vec<PathBuf>>,
 }
 impl CaptureProvider for Memory {
-    fn read_candidate(&self, path: &Path) -> io::Result<Option<Arc<[u8]>>> {
+    fn read_candidate(&self, path: &Path) -> io::Result<Option<SharedBytes>> {
         self.reads.borrow_mut().push(path.to_owned());
         Ok(self.files.get(path).cloned())
     }
@@ -95,7 +96,7 @@ fn memory(files: &[(&str, &[u8])]) -> Memory {
     Memory {
         files: files
             .iter()
-            .map(|(name, bytes)| (PathBuf::from(name), Arc::from(*bytes)))
+            .map(|(name, bytes)| (PathBuf::from(name), SharedBytes::from(*bytes)))
             .collect(),
         reads: RefCell::new(vec![]),
     }
@@ -337,7 +338,7 @@ fn encoded_record_requires_current_source_digest_and_retains_encoded_bytes() {
 fn candidate_io_failure_never_becomes_a_negative_lookup() {
     struct Denied;
     impl CaptureProvider for Denied {
-        fn read_candidate(&self, _: &Path) -> io::Result<Option<Arc<[u8]>>> {
+        fn read_candidate(&self, _: &Path) -> io::Result<Option<SharedBytes>> {
             Err(io::Error::new(io::ErrorKind::PermissionDenied, "denied"))
         }
     }
@@ -353,13 +354,13 @@ mod literal_visit;
 
 #[test]
 fn raw_capture_retains_the_provider_payload_allocation() {
-    struct Shared(Arc<[u8]>);
+    struct Shared(SharedBytes);
     impl CaptureProvider for Shared {
-        fn read_candidate(&self, path: &Path) -> io::Result<Option<Arc<[u8]>>> {
-            Ok((path == Path::new("game/a.txt")).then(|| Arc::clone(&self.0)))
+        fn read_candidate(&self, path: &Path) -> io::Result<Option<SharedBytes>> {
+            Ok((path == Path::new("game/a.txt")).then(|| self.0.clone()))
         }
     }
-    let provider = Shared(Arc::from(&b"captured payload"[..]));
+    let provider = Shared(SharedBytes::from(&b"captured payload"[..]));
     let captured = capture_expanded(
         &plan(),
         &expanded("/proc/p()\n    return 'a.txt'\n"),
@@ -372,7 +373,7 @@ fn raw_capture_retains_the_provider_payload_allocation() {
     )
     .unwrap();
     assert_eq!(captured.resources.inputs.len(), 1);
-    assert!(Arc::ptr_eq(
+    assert!(SharedBytes::ptr_eq(
         &provider.0,
         captured.resources.inputs[0].named.shared_data()
     ));
