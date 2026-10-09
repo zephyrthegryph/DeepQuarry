@@ -163,6 +163,7 @@
 	H.set_combat_mode(FALSE)
 	// lighting it melted the wall: the turf is plating now and carries no coating
 	wall_turf.ChangeTurf(old_type)
+	own_turf_contents(get_step(T, NORTH) || get_step(T, SOUTH)) // the girder the melted wall left
 	test_driver_end()
 
 // ---- Floors ----

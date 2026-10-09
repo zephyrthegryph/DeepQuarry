@@ -72,7 +72,7 @@ CAPABILITIES(/mob/living/silicon/robot)
 	robot_interactions() // robot.dm: its item, tool and touch ops
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE, say = /datum/msg/req_silent) // the cover lock, the interface, the operator seat; the effect says what it did
 	// an opened chassis gives up its cell (or the fried remains of its mount) to whatever hand takes it: a person's, another cyborg's gripper
-	op("take_power_part", hand(), when(TYPE_PROC_REF(/mob/living/silicon/robot, power_part_exposed)), label("Remove the cell"),
+	op("take_power_part", hand(), when(req_empty_hand()), when(TYPE_PROC_REF(/mob/living/silicon/robot, power_part_exposed)), label("Remove the cell"),
 		priority(OP_PRIORITY_TAKE_OUT), wait(0), then(TYPE_PROC_REF(/mob/living/silicon/robot, power_part_taken)))
 	// a cyborg clicking itself drops its hat; breaking its restraining bolt is the resist verb's work and ignores a stun, so it is not a physical binding
 	op("drop_hat", hand(), label("Drop hat"), priority(OP_PRIORITY_PART), when(PROC_REF(hat_droppable)), starts(PROC_REF(hat_drop_started)), wait(3 SECONDS), then(PROC_REF(hat_dropped)))

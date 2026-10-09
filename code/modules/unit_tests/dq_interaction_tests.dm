@@ -143,6 +143,6 @@
 	R.opened = FALSE
 	H.set_use_stance(I_HURT)
 	H.put_in_active_hand(crowbar)
-	TEST_ASSERT(R.crowbar_act(H, crowbar) & ITEM_INTERACT_SKIP_TO_ATTACK, "combat mode: the crowbar goes on to strike")
+	TEST_ASSERT(!(R.crowbar_act(H, crowbar) & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING)), "combat mode: no op answers the crowbar, so it goes on to strike")
 	TEST_ASSERT(!R.opened, "combat mode: the cover stays shut")
 	H.set_use_stance(I_HELP)

@@ -10,6 +10,13 @@
 			return path
 	return null
 
+/// A snapshot of dq_materials_on() as text, for a failure message.
+/proc/dq_materials_text(list/materials)
+	var/list/parts = list()
+	for(var/type in materials)
+		parts += "[type] x[materials[type]]"
+	return jointext(parts, ", ")
+
 /// One of each tool quality the mecha ladders use, sitting on `T`, zero-speed and fuelled.
 /datum/unit_test/proc/mech_make_tools(turf/T)
 	. = list()
@@ -19,14 +26,25 @@
 	.[TOOL_WIRECUTTER] = dq_fast_tool(/obj/item/tool/wirecutters, T)
 	.[TOOL_CROWBAR] = dq_fast_tool(/obj/item/tool/crowbar, T)
 
-/// The actor uses `held` on `target` and the time it takes passes.
-/datum/unit_test/proc/mech_use(mob/living/carbon/human/actor, atom/target, obj/item/held)
+/// The actor takes `held` into the active hand, ready to click.
+/datum/unit_test/proc/mech_take(mob/living/carbon/human/actor, obj/item/held)
 	if(actor.get_active_hand() != held)
 		if(actor.get_active_hand())
 			actor.drop_item()
 		actor.put_in_active_hand(held)
 	actor.next_click = 0
+
+/// The actor uses `held` on `target` and the time it takes passes.
+/datum/unit_test/proc/mech_use(mob/living/carbon/human/actor, atom/target, obj/item/held)
+	mech_take(actor, held)
 	test_click(actor, target, held)
+	test_time(10 SECONDS)
+
+/// The actor takes the stage they stand at back with `held`, picking the undo from the chassis's menu: the tool that undoes a step is often the one that
+/// builds the next, and a click gives that build first (a player takes the way back from the menu then).
+/datum/unit_test/proc/mech_undo(mob/living/carbon/human/actor, atom/target, obj/item/held)
+	mech_take(actor, held)
+	test_menu(actor, target, "construction.undo:[stage_key(graph_current(target))]")
 	test_time(10 SECONDS)
 
 /// What a step keyed `key` needs held: a tool from `tools`, or the item/stack made fresh on `T`.
@@ -128,11 +146,13 @@
 	for(var/i in 1 to steps_down)
 		var/stage_before = graph_current(chassis)
 		var/list/row = blueprint.ladder[count - (steps_down - i)]
-		mech_use(H, chassis, tools[row["backkey"]])
+		mech_undo(H, chassis, tools[row["backkey"]])
 		TEST_ASSERT(graph_current(chassis) != stage_before, "[blueprint_path]: backward step [i] retreats")
+	H.drop_item() // the last tool used lies where the snapshot found it
 	TEST_ASSERT_EQUAL(graph_current(chassis), before_stage, "[blueprint_path]: the stage round-trips")
 	TEST_ASSERT_EQUAL(chassis.icon_state, before_icon, "[blueprint_path]: the icon_state round-trips")
-	TEST_ASSERT(dq_materials_equal(dq_materials_on(T), materials_before), "[blueprint_path]: the same materials came back")
+	var/list/materials_after = dq_materials_on(T)
+	TEST_ASSERT(dq_materials_equal(materials_after, materials_before), "[blueprint_path]: the same materials came back ([dq_materials_text(materials_before)] -> [dq_materials_text(materials_after)])")
 	own_turf_contents(T)
 
 /datum/unit_test/dq_construction_mech_ripley_round_trip/Run()
@@ -191,8 +211,8 @@
 			var/stage_before = graph_current(chassis)
 			var/icon_before = chassis.icon_state
 			mech_use(H, chassis, mech_held_for(row["key"], tools, T))
-			TEST_ASSERT(graph_current(chassis) != stage_before, "[path]: forward step [i] advances")
-			mech_use(H, chassis, tools[row["backkey"]])
+			TEST_ASSERT(graph_current(chassis) != stage_before, "[path]: forward step [i] advances (key [row["key"]], at [stage_key(stage_before)])")
+			mech_undo(H, chassis, tools[row["backkey"]])
 			TEST_ASSERT_EQUAL(graph_current(chassis), stage_before, "[path]: step [i] goes back to its stage")
 			TEST_ASSERT_EQUAL(chassis.icon_state, icon_before, "[path]: icon_state round-trips at step [i]")
 			mech_use(H, chassis, mech_held_for(row["key"], tools, T))

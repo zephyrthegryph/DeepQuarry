@@ -99,6 +99,7 @@
 	var/turf/T = scratch_turf()
 	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.enable_godmode() // the test floor has no air: the half minute each use waits would put the actor out
 	H.set_combat_mode(FALSE)
 	var/datum/mech_body_plan/plan = mech_body_plan()
 	mech.state = MECHA_OPERATING
@@ -110,8 +111,13 @@
 
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 	plan.afflict(mech, MECHA_INT_TANK_BREACH)
-	mech.take_damage(20)
+	// The armour and hull take most of a blow, and whether any reaches the frame is a roll: hit until some does.
+	for(var/blows in 1 to 20)
+		mech.take_damage(20)
+		if(mech.get_integrity() < mech.max_integrity)
+			break
 	var/damaged = mech.get_integrity()
+	TEST_ASSERT(damaged < mech.max_integrity, "the frame is dented")
 	use(H, mech, welder)
 	TEST_ASSERT(!plan.has_affliction(mech, MECHA_INT_TANK_BREACH), "a welder seals a breached tank first")
 	TEST_ASSERT_EQUAL(mech.get_integrity(), damaged, "and patches no integrity that time")

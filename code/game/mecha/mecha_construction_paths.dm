@@ -127,6 +127,8 @@ GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, ST
 		var/key = row["key"]
 		if(istext(key))
 			parts += tool(key)
+			if(key == TOOL_WELDER)
+				parts += costs(RES_FUEL, 0) // the old step burned remove_fuel(0): a lit welder, no fuel
 		else if(ispath(key, /obj/item/stack))
 			parts += stack(key, ispath(key, /obj/item/stack/cable_coil) ? 4 : 5)
 		else
@@ -143,7 +145,10 @@ GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, ST
 				parts += priority(OP_PRIORITY_PART + 1)
 		if(step < steps)
 			parts += undone(TYPE_PROC_REF(/obj/item/mecha_parts, mecha_step_undone))
-			entries += stage(stage_ids[step + 1], parts, undo = list(tool(row["backkey"]), wait(0)))
+			var/list/undo_parts = list(tool(row["backkey"]), wait(0))
+			if(row["backkey"] == TOOL_WELDER)
+				undo_parts += costs(RES_FUEL, 0)
+			entries += stage(stage_ids[step + 1], parts, undo = undo_parts)
 		else
 			entries += stage(stage_ids[step + 1], parts, undo = NO_UNDO)
 	return construction(entries)
