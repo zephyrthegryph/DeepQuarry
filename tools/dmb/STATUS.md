@@ -2,14 +2,14 @@
 
 Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 
-## New source batch awaiting measurement
+## Shared-stage source validation
 
 The latest batch shares exact macro trace text and empty trace vectors, uses one
 literal/comment boundary scanner for full and selective lexing, removes the
 duplicate frozen operand-site roster, shares startup's procedure index, borrows
 initializer bucket inputs, caches thread labels, and validates final instructions
 with disjoint weighted tasks on the common executor. These changes preserve the
-existing checks and ordering; their speed and peak memory are not measured yet.
+existing checks and ordering; their admitted measurement is recorded below.
 
 Release workspace/all-target Clippy passed in 65.886 s. Ordinary workspace library
 checks passed **1,559 tests across 15 targets**, zero failures/ignored, in 251.850 s
