@@ -107,6 +107,95 @@ fn look_keys_global_salt_is_the_look_builder_only() {
     assert_ne!(base["/obj/plain_thing"].0, edited["/obj/plain_thing"].0, "a look-builder edit left the keys alone");
 }
 
+/// Types of the fixture plus a sibling pair under `base_thing` that tests edit one of.
+fn family_dm() -> String {
+    format!("{}
+/obj/base_thing/door/big
+	open = 2
+
+/obj/base_thing/window
+	open = 3
+", fixture_dm())
+}
+
+#[test]
+fn look_keys_engine_plumbing_outside_the_salt_leaves_every_key_alone() {
+    // A draw proc that passes through movement, engine and logging plumbing, as every real draw eventually does.
+    let dm = fixture_dm().replace("	draw_tint()
+", "	draw_tint()
+	doMove()
+	engine_plumb()
+	log_draw()
+");
+    let plumbing = |n: u32| -> Vec<(String, String)> {
+        vec![
+            ("code/game/movable.dm".to_string(), format!("/obj/proc/doMove()
+	return {}
+", n)),
+            ("code/engine/kernel/plumb.dm".to_string(), format!("/proc/engine_plumb()
+	return {}
+", n)),
+            ("code/_helpers/logging.dm".to_string(), format!("/proc/log_draw()
+	return {}
+", n)),
+        ]
+    };
+    let rows = |n: u32| {
+        let files = plumbing(n);
+        let refs: Vec<(&str, &str)> = files.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
+        plan_of_files(&dm, &refs)
+    };
+    assert_eq!(rows(1), rows(2), "a doMove-like or engine edit moved a key");
+    // The same edit to a gameplay helper a draw proc calls does move the keys of the types that call it.
+    let helper = |n: u32| plan_of_files(&fixture_dm().replace("	draw_tint()
+", "	draw_tint()
+	gameplay_part()
+"), &[("code/game/part.dm", &format!("/obj/proc/gameplay_part()
+	return {}
+", n))]);
+    assert_ne!(helper(1)["/obj/base_thing/door"].0, helper(2)["/obj/base_thing/door"].0, "a draw helper edit left the key alone");
+}
+
+#[test]
+fn look_keys_a_draw_edit_moves_only_that_type_and_its_subtypes() {
+    let door_draw = "
+/obj/base_thing/door/update_icon()
+	..()
+	overlays += \"door\"
+";
+    let base = plan_of(&format!("{}{}", family_dm(), door_draw));
+    let edited = plan_of(&format!("{}{}", family_dm(), door_draw.replace("\"door\"", "\"door2\"")));
+    for t in ["/obj/base_thing/door", "/obj/base_thing/door/big"] {
+        assert_ne!(base[t].0, edited[t].0, "{} did not move", t);
+    }
+    for t in ["/obj/base_thing/window", "/obj/plain_thing", "/obj/dynamic_thing"] {
+        assert_eq!(base[t].0, edited[t].0, "{} moved", t);
+    }
+}
+
+#[test]
+fn look_keys_an_icon_edit_moves_only_the_types_using_that_icon() {
+    let dm = format!("{}
+/obj/lamp
+	icon = 'icons/lamp.dmi'
+
+CAPABILITIES(/obj/lamp)
+", family_dm());
+    let plan_with = |thing: &str, lamp: &str| plan_of_files(&dm, &[("icons/thing.dmi.toml", thing), ("icons/lamp.dmi.toml", lamp)]);
+    let base = plan_with("a = 1
+", "b = 1
+");
+    let edited = plan_with("a = 2
+", "b = 1
+");
+    for t in ["/obj/base_thing/door", "/obj/base_thing/door/big", "/obj/base_thing/window"] {
+        assert_ne!(base[t].0, edited[t].0, "{} did not move with its icon", t);
+    }
+    for t in ["/obj/lamp", "/obj/plain_thing", "/obj/dynamic_thing"] {
+        assert_eq!(base[t].0, edited[t].0, "{} moved with another type's icon", t);
+    }
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // The incremental path: an edit that leaves the structure alone gives the rows a full computation gives.
 

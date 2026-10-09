@@ -1418,8 +1418,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	log_game("[key_name(user)] emagged [key_name(src)]. Laws overridden.")
 	laws_changed()
 
-/// The emag() capability's effect (CAPABILITIES(/mob/living/silicon/robot), library/mob/hands.dm). A branch that did nothing declines (the card goes on as an
-/// ordinary item); a try that happened, a failed hack included, uses the card up by one.
+/// A sequencer on a cyborg (the emag capability in CAPABILITIES(/mob/living/silicon/robot), code/library/mob/hands.dm). OP_OK pays a use; OP_DECLINE tried and used nothing.
 /mob/living/silicon/robot/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!opened)//Cover is closed
@@ -1446,7 +1445,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 			to_chat(src, span_danger("ALERT: [user.real_name] is your new master. Obey your new laws and [user.p_their()] commands."))
 		else
 			to_chat(user, span_filter_notice("[src] already has an operator assigned."))
-		return OP_OK//Prevents the X has hit Y with Z message also you cant emag them twice
+		return OP_DECLINE // an emagged cyborg is not emagged twice
 	if(wiresexposed)
 		to_chat(user, span_filter_notice("You must close the panel first."))
 		return OP_DECLINE
@@ -1455,7 +1454,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 		to_chat(user, span_danger("[src] is remotely controlled! Your emag attempt has triggered a system reset instead!"))
 		log_game("[key_name(user)] attempted to emag an AI shell belonging to [key_name(src) ? key_name(src) : connected_ai]. The shell has been reset as a result.")
 		module_reset()
-		return OP_OK
+		return OP_DECLINE
 
 	if(!prob(50))
 		to_chat(user, span_filter_warning("You fail to hack [src]'s interface."))

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Look keys no longer move on engine, movement, logging or atom-file edits, so look pins re-probe only the types a merge changed"

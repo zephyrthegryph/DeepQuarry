@@ -153,10 +153,6 @@ CAPABILITIES(/obj/item/card/emag)
 	uses = 12
 	var/burnt_out = FALSE
 
-/obj/item/card/emag/borg/afterattack(atom/A, mob/user, proximity, click_parameters)
-	if(!proximity || burnt_out) return
-	return ..(A, user, proximity, click_parameters)
-
 /obj/item/card/emag/borg/can_emag(mob/user)
 	return !burnt_out && ..()
 

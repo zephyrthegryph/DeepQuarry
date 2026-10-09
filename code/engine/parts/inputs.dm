@@ -378,7 +378,7 @@ GLOBAL_LIST_EMPTY(op_click_resolved)
 	return made
 
 /// The plan of `holder` whose topic("key") names this href: a key "action=foo" matches href action=foo and is tried before a bare "action" key, as a
-/// TOPIC_ACTION row's did, so an op names its href by the same text and no link changes. The args are every other value of the href.
+/// retired table row's did, so an op names its href by the same text and no link changes. The args are every other value of the href.
 /proc/op_topic_plan(datum/holder, list/href_list, namespace = null)
 	RETURN_TYPE(/datum/op_plan)
 	if(!isdatum(holder) || QDELETED(holder) || !length(href_list))
@@ -403,7 +403,7 @@ GLOBAL_LIST_EMPTY(op_click_resolved)
 	return null
 
 /// A Topic href as an op: the holder's topic op that names it (or the holder its topic_forward() hands the href to) runs for `actor`, through the same
-/// path and the same refusals as a click. Returns its /datum/op_result, or null when no op names the href (the TOPIC_ACTION table still answers it).
+/// path and the same refusals as a click. Returns its /datum/op_result, or null when no op names the href.
 /proc/op_topic_href(mob/actor, datum/holder, list/href_list, forward_depth = 0, namespace = null)
 	RETURN_TYPE(/datum/op_result)
 	if(!actor || !isdatum(holder) || QDELETED(holder))

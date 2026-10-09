@@ -28,6 +28,8 @@
 	return update_icon()
 /mob/op_notify(text)
 	return to_chat(src, span_warning(text))
+/mob/op_balloon(text)
+	return balloon_alert(src, text)
 /mob/living/op_uses_actor_stats()
 	return TRUE
 /mob/living/op_hand_capable()

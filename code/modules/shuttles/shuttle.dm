@@ -43,7 +43,7 @@ TRACKED(/datum/shuttle, shuttle_flags)
 /// the destination view itself, so a landmark destroyed mid-jump still ends the jump at arrival time
 /// (falling back to the start) instead of stranding the shuttle in transit.
 /datum/shuttle/var/tmp/transit_active = FALSE
-TRACKED_BRIDGED(/datum/shuttle, transit_active, CHANGE_DATUM_B)
+TRACKED(/datum/shuttle, transit_active)
 /// Long jump in transit: the destination and start landmarks (relation views), and whether the
 /// landing warning was made.
 /datum/shuttle/var/tmp/obj/effect/shuttle_landmark/transit_dest
