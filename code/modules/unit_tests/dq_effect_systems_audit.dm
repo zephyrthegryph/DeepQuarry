@@ -15,16 +15,22 @@
 
 /datum/unit_test/dq_effect_systems_leave_nothing_for_own_audit/Run()
 	test_driver_begin()
+	// systems that exist before the test starts any (the world's own) are not ours to judge
+	var/list/before = list()
+	for(var/datum/effect/system/explosion/old_boom)
+		before += old_boom
+	for(var/datum/effect/effect/system/smoke_spread/old_smoke)
+		before += old_smoke
 	dq_start_effect_systems(run_loc_floor_bottom_left)
 	for(var/line in own_audit(quiet = TRUE))
 		TEST_ASSERT(!(findtext(line, "dropped with a rec") && (findtext(line, "effect/system/explosion") || findtext(line, "effect/system/smoke_spread"))), "the audit found a dropped effect system: [line]")
 	test_time(30 SECONDS)
 	var/list/left_over = list()
 	for(var/datum/effect/system/explosion/boom)
-		if(!QDELETED(boom))
+		if(!QDELETED(boom) && !(boom in before))
 			left_over += "[boom.type] expire pending [after_pending(boom, "lifecycle_lifetime_timer")]"
 	for(var/datum/effect/effect/system/smoke_spread/smoke)
-		if(!QDELETED(smoke))
+		if(!QDELETED(smoke) && !(smoke in before))
 			left_over += "[smoke.type] expire pending [after_pending(smoke, "lifecycle_lifetime_timer")] total_smoke [smoke.total_smoke]"
 	TEST_ASSERT(!length(left_over), "the systems deleted themselves once their smoke was out: [jointext(left_over, "; ")]")
 	for(var/line in own_audit(quiet = TRUE))
