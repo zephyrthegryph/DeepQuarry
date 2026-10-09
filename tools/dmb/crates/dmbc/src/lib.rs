@@ -44,6 +44,7 @@ pub mod initializer_policy;
 mod initializer_tokens;
 pub mod intrinsic_initializer_facts;
 pub mod lowering;
+pub mod selected_query;
 pub mod lowering_memo;
 mod lowering_memo_wire;
 pub mod mob_writer;

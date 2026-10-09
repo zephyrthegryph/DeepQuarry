@@ -3,11 +3,15 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import Juke from '../juke/index.js';
-import type { DreamMakerOptions } from './byond';
+import type { ByondCompilationResult, DreamMakerOptions } from './byond';
 
 type CompilerMode = 'byond' | 'native' | 'shadow';
 const structuralCategories = ['type_set', 'type_headers', 'variable_defaults', 'procedure_table', 'procedure_flags', 'globals', 'strings_by_use', 'bytecode', 'other'];
 export type ShadowAdmission = { status: 'parity' | 'invalid_report' | 'incomplete' | 'differences'; reason: string };
+/** Current DreamMaker adapter issues no authenticated compilation-input receipt. */
+export function shadowSnapshotContract(): { status: 'incomplete'; reason: string } {
+  return { status: 'incomplete', reason: 'DreamMaker callback supplies no authenticated source/resource closure or effective compiler configuration receipt; shared compilation snapshot is unproven' };
+}
 function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
@@ -86,9 +90,9 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
   const [executable, args] = nativeCommand(dme, options, artifacts);
   return execute(executable, args, { throw: false });
 }
-export async function selectedCompiler(dme: string, options: DreamMakerOptions, byond: () => Promise<void>, execute: CompilerExecutor = Juke.exec): Promise<void> {
+export async function selectedCompiler(dme: string, options: DreamMakerOptions, byond: (capturedProject?: string) => Promise<ByondCompilationResult | void>, execute: CompilerExecutor = Juke.exec): Promise<void> {
   const mode = compilerMode();
-  if (mode === 'byond') return byond();
+  if (mode === 'byond') { await byond(); return; }
   if (mode === 'native') {
     let reason: string;
     try {
@@ -104,7 +108,8 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
     }
     // Explicit internal/unsupported and infrastructure failure statuses allow fallback.
     Juke.logger.warn(`Native fallback to DreamMaker: ${reason}.`);
-    return byond();
+    await byond();
+    return;
   }
   const root = path.resolve(process.env.DQ_SHADOW_ROOT ?? 'E:/dq-cache/dmb-shadow');
   fs.mkdirSync(root, { recursive: true });
@@ -115,7 +120,7 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
   try {
     const native = await nativeCompile(dme, options, execute, artifacts);
     fs.writeFileSync(path.join(artifacts, 'native.log'), native.combined);
-    await byond();
+    const byondResult = await byond();
     if (native.code !== 0) {
       Juke.logger.error(`Shadow compiler disagreement: native exited ${native.code}, DreamMaker succeeded. See ${artifacts}.`);
       throw new Juke.ExitCode(1);
@@ -124,7 +129,25 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
     if (!inspector) throw new Error('Shadow mode requires DQ_DMB_INSPECT for named per-procedure comparison.');
     const report = path.join(artifacts, 'structural-diff.json');
     const expected = path.resolve(dme.replace(/\.dme$/i, '.dmb'));
-    const snapshot = createHash('sha256').update(fs.readFileSync(dme)).digest('hex');
+    // A comparison label identifies this evidence, never proves both compilers
+    // consumed the same complete source/resource snapshot. DreamMaker currently
+    // returns no authenticated read roster or effective-version receipt.
+    const comparisonContext = {
+      schema: 'unverified-shadow-comparison-context-v1',
+      project: path.resolve(dme), manifestSha256: createHash('sha256').update(fs.readFileSync(dme)).digest('hex'),
+      requestedDefines: options.defines ?? [], requestedNamedDmVersion: options.namedDmVersion ?? null,
+      requestedWarningsAsErrors: options.warningsAsErrors ?? false,
+      requestedIgnoredWarningCodes: options.ignoreWarningCodes ?? [],
+      nativeCompilerIdentity: compilerCacheIdentity(),
+      expectedDmbSha256: createHash('sha256').update(fs.readFileSync(expected)).digest('hex'),
+      nativeDmbSha256: createHash('sha256').update(fs.readFileSync(nativeDmb)).digest('hex'),
+    };
+    const sourceSnapshot = shadowSnapshotContract();
+    const snapshot = createHash('sha256').update(JSON.stringify(comparisonContext)).digest('hex');
+    // Invocation metadata is useful evidence but cannot issue snapshot authority.
+    // Even a supplied future receipt needs an authenticated producer/consumer
+    // protocol before admission; no callback boolean or cast is trusted here.
+    fs.writeFileSync(path.join(artifacts, 'source-snapshot-contract.json'), JSON.stringify({ comparisonContext, comparisonLabel: snapshot, sourceSnapshot, byondInvocation: byondResult ? byondResult.invocation : null }, null, 2));
     const inspected = await execute(inspector, ['structural-diff', expected, nativeDmb, report, snapshot], { throw: false });
     if (inspected.code !== 0) {
       Juke.logger.error(`Shadow comparison failed: inspector exited ${inspected.code}. See ${artifacts}.`);
@@ -133,7 +156,9 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
     let admission: ShadowAdmission;
     try { admission = classifyShadowReport(JSON.parse(fs.readFileSync(report, 'utf8')), snapshot); }
     catch (error) { admission = { status: 'invalid_report', reason: String(error) }; }
-    fs.writeFileSync(path.join(artifacts, 'structural-admission.json'), JSON.stringify(admission, null, 2));
+    const structuralAdmission = admission;
+    if (admission.status === 'parity') admission = sourceSnapshot;
+    fs.writeFileSync(path.join(artifacts, 'structural-admission.json'), JSON.stringify({ ...admission, structuralAdmission, sourceSnapshot }, null, 2));
     if (admission.status !== 'parity') {
       Juke.logger.error(`Shadow ${admission.status}: ${admission.reason}. See ${report}.`);
       throw new Juke.ExitCode(1);

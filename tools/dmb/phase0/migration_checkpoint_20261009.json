@@ -32,13 +32,49 @@
     "owned_daemon_reaped": true,
     "optimized_iteration_timings": null
   },
+  "real_optimized_iteration": {
+    "compiler_commit": "91b8e0b3e7",
+    "profile": "release, LTO disabled; prototype, not revision-6 acceptance profile",
+    "compiler_sha256": "30cd1adff26a4d8190e53f34f25357af9dfdb6cec9dfc7dbb4a8b700def3a2f7",
+    "workers": 2,
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261009-150050-d1e53719/receipt.json",
+    "initial_daemon_seconds": 37.2669709000038,
+    "initial_fresh_seconds": 24.132178399944678,
+    "unchanged_daemon_seconds": 0.7204238999984227,
+    "unchanged_fresh_seconds": 17.822633699979633,
+    "body_edit_daemon_seconds": 16.383325100003276,
+    "body_edit_fresh_seconds": 18.15642850002041,
+    "new_procedure_daemon_seconds": 21.064688500016928,
+    "new_procedure_fresh_seconds": 20.215884900011588,
+    "fresh_native_byte_oracles_passed": 4,
+    "BYOND_structural_baseline_gate": "open",
+    "owned_daemon_reaped": true,
+    "scope": "Client launch through reap, real captured DeepQuarry; excludes staging and structural-inspector time. Newer uncommitted owner-path/catalog/identity and selected-query work is not in this executable."
+  },
+  "retained_shape_and_selected_query_validation": {
+    "retained_tree_commit": "418902a60f",
+    "callable_catalog_tests": 2,
+    "lexical_path_tests": 2,
+    "semantic_state_tests": 11,
+    "canonical_identity_test": 1,
+    "shared_variable_resolution_test": 1,
+    "selected_codegen_tests": 3,
+    "selected_analysis_tests": 2,
+    "current_query_and_memo_test": 1,
+    "selected_wire_test": 1,
+    "resolved_cli_option_test": 1,
+    "shadow_admission_tests": 7,
+    "workspace_all_targets_check_seconds": 48.97249529999681,
+    "all_passed": true,
+    "scope": "Focused fixtures and all-target type checking. Resolved CLI end-to-end fixture, next storage-inventory/receiver slices, real fresh benchmark for this batch, and BYOND parity remain open."
+  },
   "open": [
-    "rebuilt real DeepQuarry stack-overflow retry and current end-to-end timings",
+    "real benchmarks for the newer retained owner-path/catalog/identity and selected-query batch",
     "global type/member installation and dense projection",
     "compiler-selected nonlocal executable reference facts",
     "BYOND structural discrepancies and incomplete semantic coverage",
     "Phase 5 runtime baseline and power_bridge behavior mismatch",
     "six real worktree memory and concurrency admission"
   ],
-  "benchmark_policy": "Historical cold timings exclude these changes. Validation/build times are not compiler benchmarks. No successful real cohort has completed for this source."
+  "benchmark_policy": "The optimized iteration receipt establishes native/fresh byte parity for four captured revisions at commit 91b8e0b3e7. It is not a matched throughput/CPU/memory admission cohort, does not establish BYOND parity, and excludes newer active source. Validation/build times are not compiler benchmarks."
 }

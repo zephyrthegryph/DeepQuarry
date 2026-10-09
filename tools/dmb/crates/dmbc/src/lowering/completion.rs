@@ -76,7 +76,30 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
     }
     let workers = executor.workers();
     let chunk = config.max_chunk.clamp(1, 256);
-    let mut bodies: Vec<_> = frontend.bodies.iter().collect();
+    let mut bodies: Vec<_> = execution.selected_bodies.map_or_else(
+        || frontend.bodies.iter().collect(),
+        |selected| selected.iter().copied().collect(),
+    );
+    if execution.selected_bodies.is_some() {
+        let mut seen = std::collections::BTreeSet::new();
+        let mut invalid = Vec::new();
+        for body in &bodies {
+            if frontend.body_input(body).is_err() || !seen.insert(body.declaration.0) {
+                invalid.push(LoweringDiagnostic {
+                    kind: DiagnosticKind::Internal,
+                    identity: None,
+                    origin: body.source.clone(),
+                    message: "reference query requires unique current body issuance".into(),
+                });
+            }
+        }
+        if !invalid.is_empty() {
+            return CompletedLoweringBatch {
+                diagnostics: invalid,
+                ..Default::default()
+            };
+        }
+    }
     bodies.sort_by_key(|body| {
         (
             body.source.encounter_ordinal,
@@ -118,6 +141,7 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
                                             memo,
                                             execution.bodies,
                                             symbolic,
+                                            execution.capture_references,
                                         )
                                         .map(|unit| {
                                             // Memo capture/remember already completed. The

@@ -5,6 +5,8 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
+#[path = "runner_facts.rs"]
+mod runner_facts;
 #[path = "runner_report.rs"]
 mod runner_report;
 
@@ -40,7 +42,7 @@ impl dmbc::assets::ResourceArchiveSink for OutputResourceSink<'_> {
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
         Command::Help => {
-            dmbc::daemon_println!("dmbc analyze|compile [--bodies (analyze only)] [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
+            dmbc::daemon_println!("dmbc analyze|compile [--bodies|--resolved (analyze only)] [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
             dmbc::daemon_println!(
                 "dmbc stats [PROJECT] | explain PROCEDURE [PROJECT] | gc [PROJECT]"
             );
@@ -126,7 +128,11 @@ pub fn run_build_with_host(
     }
     // These are caller-supplied source defines. No target ABI is inferred by the
     // reusable frontend; supply DM_VERSION/DM_BUILD explicitly when needed.
-    let embedded_engine = command == BuildCommand::Compile && engine_template.is_none();
+    let executable = matches!(
+        command,
+        BuildCommand::Compile | BuildCommand::AnalyzeResolved
+    );
+    let embedded_engine = executable && engine_template.is_none();
     if embedded_engine {
         bootstrap_catalog = true;
     }
@@ -148,7 +154,7 @@ pub fn run_build_with_host(
         .map_or(0, |bytes| xxhash_rust::xxh3::xxh3_128(bytes));
     drop(engine_input_profile);
     let input_context_profile = dm_profile::stage("request.input_context");
-    if command == BuildCommand::Compile {
+    if executable {
         if engine_bytes.as_deref()
             != Some(include_bytes!("../../../fixtures/native_template.bin").as_slice())
         {
@@ -189,7 +195,7 @@ pub fn run_build_with_host(
     let mut memo_policy = 0;
     drop(input_context_profile);
     let session_profile = dm_profile::stage("session_validation");
-    let compiler = if command == BuildCommand::Compile && (!no_cache || host.retains_artifacts()) {
+    let compiler = if executable && (!no_cache || host.retains_artifacts()) {
         let compiler = dmbc::daemon::compiler_identity()?;
         let mut policy_bytes = b"native-lowering-policy-v1\0".to_vec();
         policy_bytes.extend_from_slice(&compiler.to_le_bytes());
@@ -309,7 +315,7 @@ pub fn run_build_with_host(
     if engine_capture.is_none() {
         host.clear_regions();
     }
-    let memo_cache = if command == BuildCommand::Compile && !no_cache {
+    let memo_cache = if executable && !no_cache {
         match dm_cache::Cache::user_default(dm_cache::Limits::default()) {
             Ok(cache) => Some(Arc::new(cache)),
             Err(error) => {
@@ -483,42 +489,9 @@ pub fn run_build_with_host(
         let facts_started = Instant::now();
         drop(frontend_handoff_profile);
         let facts_profile = dm_profile::stage("captured_facts");
-        let mut symbols = dm_ir::SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
-        let constants = dmbc::engine_host::ConstantCatalog::native_516_1687(&mut symbols)
-            .map_err(|error| format!("engine constants: {error:?}"))?;
-        let ordinary = frontend
-            .snapshot
-            .tree
-            .types()
-            .iter()
-            .map(|node| node.path)
-            .collect();
-        let runtime = dmbc::engine_host::RuntimeAliasCatalog::new(
-            engine.identity(),
-            &symbols,
-            Vec::new(),
-            ordinary,
-            dmbc::engine_host::Completeness::Partial,
-        )
-        .map_err(|error| format!("runtime type catalog: {error:?}"))?;
-        let pinned_facts =
-            dmbc::engine_host::PinnedHostFacts::capture(engine, &frontend, &constants, &runtime)?;
-        let source_host = dmbc::engine_host::EngineResolverHost::new(
-            frontend.snapshot.tree.clone(),
-            constants.clone(),
-            runtime.clone(),
-        )
-        .with_pinned_facts(engine, &frontend, Arc::clone(&pinned_facts))?;
-        let scalar = dmbc::compile_driver::scalars(
-            &frontend,
-            engine,
-            &source_host,
-            source_host.configuration_identity(),
-        );
-        drop(source_host);
+        let (host, scalar) = runner_facts::prepare(&frontend, engine)?;
         let defaults = dmbc::compile_driver::map_defaults(&scalar)?;
-        let host = dmbc::engine_host::EngineResolverHost::new(Arc::new(scalar), constants, runtime)
-            .with_pinned_facts(engine, &frontend, pinned_facts)?;
+        drop(scalar);
         dmbc::heap_census::emit_if_enabled("captured_facts.ready", |census| {
             census.frontend(&frontend);
             host.census(census);
@@ -699,7 +672,6 @@ pub fn run_build_with_host(
             )?;
             // The sealed composition retains exact output facts and no source owners.
             drop(resolver);
-            drop(symbols);
             drop(frontend);
             let output =
                 composition.compose(executor, progress_enabled.then_some(&cold_observer))?;
@@ -941,6 +913,18 @@ pub fn run_build_with_host(
     }
     let mut output = io::BufWriter::new(dmbc::daemon::stdout_writer());
     let counts = dm_analysis::tree_export::write_jsonl(&frontend, &mut output)?;
+    if command == BuildCommand::AnalyzeResolved {
+        let retained_engine = engine_capture.as_ref().ok_or("resolved analysis requires pinned engine")?;
+        let (resolver, _scalar) = runner_facts::prepare(&frontend, &retained_engine.snapshot)?;
+        let links = retained_engine.link_overlay()?;
+        let fallback_memo = dmbc::lowering_memo::ProcedureMemo::new(memo_policy);
+        let memo = procedure_memo.as_ref().unwrap_or(&fallback_memo);
+        let procedures = crate::analysis_export::write_resolved(
+            &frontend, &retained_engine.snapshot, &resolver, &links.inventory.spellings,
+            executor, memo, &mut output,
+        )?;
+        dmbc::daemon_eprintln!("resolved executable analysis: {procedures} issued procedures; selected-reference coverage remains partial");
+    }
     if command == BuildCommand::AnalyzeBodies {
         let bodies = crate::analysis_export::write_bodies(&frontend, &mut output)?;
         dmbc::daemon_eprintln!("source executable analysis: {bodies} issued bodies; semantic gaps remain explicit");

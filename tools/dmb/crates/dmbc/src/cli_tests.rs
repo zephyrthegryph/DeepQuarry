@@ -199,3 +199,20 @@ fn executable_analysis_is_explicit_and_never_a_compile_option() {
     let arguments = ["compile", "project.dme", "--bodies"].map(str::to_owned);
     assert!(crate::cli::parse(&arguments).is_err());
 }
+
+#[test]
+fn resolved_analysis_is_explicit_and_disjoint_from_lexical_mode() {
+    let arguments = ["analyze", "project.dme", "--resolved"].map(str::to_owned);
+    let Command::Build(request) = crate::cli::parse(&arguments).unwrap() else {
+        panic!("build request")
+    };
+    assert_eq!(request.command, BuildCommand::AnalyzeResolved);
+    assert!(request.engine_template.is_none()); // runner selects the pinned embedded template
+    for arguments in [
+        ["compile", "project.dme", "--resolved"],
+        ["analyze", "--bodies", "--resolved"],
+        ["analyze", "--resolved", "--bodies"],
+    ] {
+        assert!(crate::cli::parse(&arguments.map(str::to_owned)).is_err());
+    }
+}

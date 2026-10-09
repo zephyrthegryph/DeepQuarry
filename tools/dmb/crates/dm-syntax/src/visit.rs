@@ -7,7 +7,7 @@ use crate::{
 #[path = "visit_tests.rs"]
 mod tests;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum NodeStep {
     Statement(usize),
     Branch(usize),

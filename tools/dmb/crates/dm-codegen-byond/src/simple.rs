@@ -483,6 +483,7 @@ fn compile_prepared_scopes_mode<R: dm_ir::Resolver>(
         Some(&lookup),
         debug,
         emit_end,
+        None,
     )?;
     Ok(crate::lower_resolver::ResolverProc {
         modified_instances: lookup.modified_instances.into_inner(),
@@ -495,38 +496,9 @@ fn compile_prepared_scopes_mode<R: dm_ir::Resolver>(
     })
 }
 
-fn compile_resolver_body<R: dm_ir::Resolver>(
-    body: &[Item],
-    typed: Option<TypedInput<'_>>,
-    inputs: &crate::lower_resolver::ProcedureInputs,
-    symbols: &dm_ir::SymbolTable,
-    resolver: &R,
-    debug: Option<&dyn DebugSourceProvider>,
-) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
-    let bindings = inputs.lexical_bindings();
-    let lookup = crate::lower_resolver::ProjectResolver {
-        modified_instances: std::cell::RefCell::new(Default::default()),
-        procedure_values: std::cell::RefCell::new(Default::default()),
-        procedure_statics: std::cell::RefCell::new(Default::default()),
-        resolver,
-        symbols,
-        slots: std::cell::RefCell::new(Default::default()),
-        resources: std::cell::RefCell::new(Default::default()),
-        instances: std::cell::RefCell::new(Default::default()),
-        runtime_types: std::cell::RefCell::new(Default::default()),
-        resource_search_context: inputs.resource_search_context,
-    };
-    let procedure = compile_with_lookup(body, typed, &bindings, Some(&lookup), debug)?;
-    Ok(crate::lower_resolver::ResolverProc {
-        modified_instances: lookup.modified_instances.into_inner(),
-        procedure_values: lookup.procedure_values.into_inner(),
-        procedure_statics: lookup.procedure_statics.into_inner(),
-        procedure,
-        slots: lookup.slots.into_inner(),
-        resources: lookup.resources.into_inner(),
-        instances: lookup.instances.into_inner(),
-    })
-}
+#[path = "simple/resolver_body.rs"]
+mod resolver_body;
+use resolver_body::compile_resolver_body;
 
 #[derive(Clone, Copy)]
 enum TypedInput<'a> {
@@ -560,7 +532,7 @@ fn compile_with_lookup(
     lookup: Option<&crate::lower_resolver::ProjectResolver<'_>>,
     debug: Option<&dyn DebugSourceProvider>,
 ) -> Result<SimpleProc, Vec<LowerError>> {
-    compile_with_lookup_mode(body, typed, bindings, lookup, debug, true)
+    compile_with_lookup_mode(body, typed, bindings, lookup, debug, true, None)
 }
 fn compile_with_lookup_mode(
     body: &[Item],
@@ -569,9 +541,23 @@ fn compile_with_lookup_mode(
     lookup: Option<&crate::lower_resolver::ProjectResolver<'_>>,
     debug: Option<&dyn DebugSourceProvider>,
     emit_end: bool,
+    reference_output: Option<reference_facts::ReferenceRequest<'_>>,
 ) -> Result<SimpleProc, Vec<LowerError>> {
     let mut compiler = Compiler {
         result: SimpleProc::default(),
+        reference_capture: if reference_output.is_some() {
+            match typed {
+                Some(TypedInput::Statements(view)) => Some(reference_facts::ReferenceCapture::new(
+                    view,
+                    reference_output
+                        .as_ref()
+                        .and_then(|request| request.body_span),
+                )),
+                _ => None,
+            }
+        } else {
+            None
+        },
         bindings,
         lookup,
         debug,
@@ -730,6 +716,13 @@ fn compile_with_lookup_mode(
         }
     }
     compiler.result.strings = compiler.string_roster.into_payloads();
+    if let Some(request) = reference_output {
+        *request.output = compiler
+            .reference_capture
+            .take()
+            .map(|capture| capture.facts)
+            .unwrap_or_default();
+    }
     Ok(compiler.result)
 }
 
@@ -904,6 +897,7 @@ fn is_output_target(expr: &Expr) -> bool {
 
 struct Compiler<'a> {
     result: SimpleProc,
+    reference_capture: Option<reference_facts::ReferenceCapture>,
     bindings: &'a LowerBindings,
     lookup: Option<&'a crate::lower_resolver::ProjectResolver<'a>>,
     debug: Option<&'a dyn DebugSourceProvider>,
@@ -939,6 +933,12 @@ struct Compiler<'a> {
 
 #[path = "simple/assignments.rs"]
 mod assignments;
+#[path = "simple/reference_facts.rs"]
+mod reference_facts;
+#[path = "simple/reference_resolution.rs"]
+mod reference_resolution;
+pub use reference_facts::compile_statement_view_with_resolver_and_references;
+pub use reference_facts::compile_statement_view_with_resolver_and_references_at;
 #[path = "simple/calls_dispatch.rs"]
 mod calls_dispatch;
 #[path = "simple/calls_general.rs"]

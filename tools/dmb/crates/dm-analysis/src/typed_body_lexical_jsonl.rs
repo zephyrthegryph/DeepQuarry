@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use std::io::Write;
 
 pub const SCHEMA: &str = "dm-lexical-body-analysis-v1";
-fn path(steps: &[NodeStep]) -> Vec<Value> {
+pub(crate) fn path(steps: &[NodeStep]) -> Vec<Value> {
     steps
         .iter()
         .map(|step| match step {

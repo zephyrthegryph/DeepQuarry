@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test';
-import { classifyShadowReport, compilerCacheIdentity, compilerMode, selectedCompiler } from './compiler_selection';
+import { classifyShadowReport, compilerCacheIdentity, compilerMode, selectedCompiler, shadowSnapshotContract } from './compiler_selection';
 import Juke from '../juke/index.js';
 const originalEnvironment = { ...process.env };
 afterEach(() => {
@@ -64,6 +64,13 @@ function structuralReport() {
     categories: Object.fromEntries(['type_set', 'type_headers', 'variable_defaults', 'procedure_table', 'procedure_flags', 'globals', 'strings_by_use', 'bytecode', 'other'].map(name => [name, { discrepancy_count: 0 }])),
   };
 }
+test('zero structural differences do not authenticate DreamMaker input closure', () => {
+  expect(classifyShadowReport(structuralReport(), 'current').status).toBe('parity');
+  const contract = shadowSnapshotContract();
+  expect(contract.status).toBe('incomplete');
+  expect(contract.reason).toContain('source/resource closure');
+  expect(contract.reason).toContain('configuration receipt');
+});
 test('shadow requires full comparison coverage and zero discrepancies', () => {
   expect(classifyShadowReport(structuralReport(), 'current').status).toBe('parity');
   const differences = structuralReport();

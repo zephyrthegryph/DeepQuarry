@@ -56,3 +56,6 @@ mod disk_only;
 
 #[path = "lowering_tests/owned_prepare.rs"]
 mod owned_prepare;
+
+#[path = "lowering_tests/reference_capture.rs"]
+mod reference_capture;

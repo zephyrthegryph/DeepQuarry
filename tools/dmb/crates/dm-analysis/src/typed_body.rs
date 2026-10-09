@@ -6,6 +6,8 @@ use std::fmt;
 pub mod lexical;
 #[path = "typed_body_queries.rs"]
 pub mod queries;
+#[path = "typed_body_selected.rs"]
+pub mod selected;
 #[cfg(test)]
 #[path = "typed_body_tests.rs"]
 mod tests;

@@ -52,6 +52,20 @@ pub fn call_target(callee: &Expr) -> CallTarget<'_> {
         _ => CallTarget::Unsupported,
     }
 }
+/// Lexical spelling of a reference-bearing node, without selecting its meaning.
+pub fn reference_node_name(node: &Expr) -> Option<&str> {
+    match &node.kind {
+        ExprKind::Ident(name) => Some(name),
+        ExprKind::Member { selector, .. }
+        | ExprKind::SafeMember { selector, .. }
+        | ExprKind::StaticMember { selector, .. } => Some(selector),
+        ExprKind::Call { .. } => match call_target(node) {
+            CallTarget::Dynamic { dispatcher, .. } => Some(dispatcher),
+            _ => None,
+        },
+        _ => None,
+    }
+}
 #[derive(Clone, Copy, Debug)]
 pub struct NamedArgument<'a> {
     pub key: &'a Expr,

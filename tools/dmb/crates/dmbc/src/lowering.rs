@@ -277,6 +277,9 @@ pub struct LoweredUnit {
     pub effective: bool,
     pub origin: BodyOccurrence,
     pub code: ResolverProc,
+    /// Optional compiler-selected facts with relative typed-node coordinates.
+    /// Source locations are always bound against this request's body issuance.
+    pub selected_references: Option<Arc<dm_ir::SelectedReferences>>,
     pub metadata: Arc<ProcedureMetadata>,
     pub abi: Option<Arc<PreparedAbi>>,
     pub debug_origins: DebugOrigins,
@@ -329,13 +332,34 @@ pub fn lower_frontend_with_memo<R: Resolver, P: AbiPolicy>(
 pub struct LoweringExecution<'a, 'frontend> {
     pub executor: &'a dm_exec::BuildExecutor,
     pub bodies: &'a dm_tree::frontend::BodyArena<'frontend>,
+    pub capture_references: bool,
+    /// Analysis query selection; compilation uses the complete issued roster.
+    pub selected_bodies: Option<&'a [&'frontend BodyOccurrence]>,
 }
 impl<'a, 'frontend> LoweringExecution<'a, 'frontend> {
     pub fn new(
         executor: &'a dm_exec::BuildExecutor,
         bodies: &'a dm_tree::frontend::BodyArena<'frontend>,
     ) -> Self {
-        Self { executor, bodies }
+        Self {
+            executor,
+            bodies,
+            capture_references: false,
+            selected_bodies: None,
+        }
+    }
+    /// Explicit analysis clients pay for typed-node selection recording.
+    /// Ordinary builds keep the existing no-capture lowering path.
+    pub fn with_reference_capture(mut self) -> Self {
+        self.capture_references = true;
+        self
+    }
+    /// Query a subset through the same admission and lowering producer.
+    /// Each selection must be a unique occurrence from the current frontend.
+    /// This never certifies a complete program for output composition.
+    pub fn with_selected_bodies(mut self, bodies: &'a [&'frontend BodyOccurrence]) -> Self {
+        self.selected_bodies = Some(bodies);
+        self
     }
 }
 pub fn lower_frontend_on_executor<R: Resolver, P: AbiPolicy>(

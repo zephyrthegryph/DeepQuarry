@@ -121,17 +121,43 @@ export type DreamMakerOptions = Partial<{
   ignoreWarningCodes: string[];
 }>;
 
+declare const byondSnapshotAuthority: unique symbol;
+/** Reserved for a producer that compiles an authenticated immutable closure.
+ * No current producer issues this receipt; a manifest hash is insufficient.
+ */
+export type AuthenticatedByondSnapshot = {
+  readonly [byondSnapshotAuthority]: true;
+  readonly schema: 1;
+  readonly immutableRoot: string;
+  readonly files: readonly { readonly path: string; readonly bytes: number; readonly sha256: string }[];
+  readonly resourceSearchRoots: readonly string[];
+  readonly configuration: {
+    readonly project: string;
+    readonly effectiveDefines: Readonly<Record<string, string>>;
+    readonly compilerSha256: string;
+    readonly version: number;
+    readonly build: number;
+  };
+  readonly outputSha256: { readonly dmb: string; readonly rsc: string };
+};
+export type ByondCompilationResult = {
+  readonly invocation: { readonly command: readonly string[]; readonly version: number; readonly build: number };
+  readonly snapshot?: AuthenticatedByondSnapshot;
+};
+
 export async function DreamMaker(
   dmeFile: string,
   options: DreamMakerOptions = {},
 ): Promise<void> {
-  return selectedCompiler(dmeFile, options, () => compileByond(dmeFile, options));
+  // A future core-issued closed snapshot can route both backends through the
+  // same owned project. Until that issuer exists, selection passes no override.
+  return selectedCompiler(dmeFile, options, capturedProject => compileByond(capturedProject ?? dmeFile, options));
 }
 
 async function compileByond(
   dmeFile: string,
   options: DreamMakerOptions,
-): Promise<void> {
+): Promise<ByondCompilationResult> {
   if (options.namedDmVersion !== null) {
     Juke.logger.info('Using named byond version:', options.namedDmVersion);
   }
@@ -187,9 +213,10 @@ async function compileByond(
       );
       throw new Juke.ExitCode(1);
     }
+    return { version: major, build: minor };
   };
 
-  await testDmVersion(dmPath);
+  const version = await testDmVersion(dmPath);
   testOutputFile(`${dmeBaseName}.dmb`);
   testOutputFile(`${dmeBaseName}.rsc`);
 
@@ -228,6 +255,7 @@ async function compileByond(
     ...defines.map((def) => `-D${def}`),
     dmeFile,
   ]);
+  return { invocation: { command: [dmPath, ...defines.map(def => `-D${def}`), dmeFile], ...version } };
 }
 
 type DDOptions = {

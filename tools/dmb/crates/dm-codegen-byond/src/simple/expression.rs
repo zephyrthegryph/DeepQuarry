@@ -259,12 +259,13 @@ impl Compiler<'_> {
                             )?
                             .is_some()
                         {
-                            let variable = self.variable(name, statement)?;
+                            let variable = self.variable_for_node(expr, name, statement)?;
                             self.emit(opcode::GET_VAR, vec![Word::Variable(variable)]);
                             return Ok(());
                         }
                     }
                     let path = self.current_procedure_value(statement)?;
+                    self.record_selection(expr, name, dm_ir::SelectedMeaning::ProcedureValue(path));
                     self.emit(
                         opcode::PUSH_VAL,
                         vec![Word::Value(ValueWord::ProcPath(path))],
@@ -272,6 +273,7 @@ impl Compiler<'_> {
                     return Ok(());
                 }
                 if dm_syntax::is_literal_identifier(name) {
+                    self.record_selection(expr, name, dm_ir::SelectedMeaning::Literal);
                     let literal = Expr {
                         kind: ExprKind::Literal(name.clone()),
                         span: expr.span,
@@ -292,6 +294,11 @@ impl Compiler<'_> {
                 {
                     if name == "__PROC__" {
                         let path = self.current_procedure_value(statement)?;
+                        self.record_selection(
+                            expr,
+                            name,
+                            dm_ir::SelectedMeaning::ProcedureValue(path),
+                        );
                         self.emit(
                             opcode::PUSH_VAL,
                             vec![Word::Value(ValueWord::ProcPath(path))],
@@ -304,6 +311,11 @@ impl Compiler<'_> {
                             let tag = self.class_tag(&path)?.ok_or_else(|| {
                                 error(statement, "__TYPE__ has unsupported owner type")
                             })?;
+                            self.record_selection(
+                                expr,
+                                name,
+                                dm_ir::SelectedMeaning::TypeValue(Some(SymbolId::of(&path))),
+                            );
                             if self.seen_classes.insert(SymbolId::of(&path)) {
                                 self.result.class_paths.push(SymbolId::of(&path));
                             }
@@ -315,11 +327,21 @@ impl Compiler<'_> {
                                 })],
                             );
                         } else {
+                            self.record_selection(
+                                expr,
+                                name,
+                                dm_ir::SelectedMeaning::TypeValue(None),
+                            );
                             self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
                         }
                         return Ok(());
                     }
                     if let Some(bits) = self.numeric_constant(name)? {
+                        self.record_selection(
+                            expr,
+                            name,
+                            dm_ir::SelectedMeaning::NumericConstant(bits),
+                        );
                         let number = f32::from_bits(bits);
                         if number >= 0.0 && number <= u16::MAX as f32 && number.fract() == 0.0 {
                             self.emit(opcode::PUSH_INT, vec![Word::Immediate(number as u32)]);
@@ -329,6 +351,11 @@ impl Compiler<'_> {
                         return Ok(());
                     }
                     if let Some(value) = self.string_constant(name)? {
+                        self.record_selection(
+                            expr,
+                            name,
+                            dm_ir::SelectedMeaning::StringConstant(SymbolId::of(&value)),
+                        );
                         self.intern_string(&value);
                         self.emit(
                             opcode::PUSH_VAL,
@@ -337,7 +364,7 @@ impl Compiler<'_> {
                         return Ok(());
                     }
                 }
-                let var = self.variable(name, statement)?;
+                let var = self.variable_for_node(expr, name, statement)?;
                 self.emit(opcode::GET_VAR, vec![Word::Variable(var)]);
             }
             ExprKind::Member { .. } => {
@@ -365,9 +392,21 @@ impl Compiler<'_> {
                                 }
                             ),
                         )? {
+                            self.record_property_selection(
+                                expr,
+                                selector,
+                                &VariableWord::Global(symbol),
+                                false,
+                            );
                             VariableWord::Global(symbol)
                         } else {
                             self.intern_string(selector);
+                            self.record_property_selection(
+                                expr,
+                                selector,
+                                &VariableWord::Field(SymbolId::of(selector)),
+                                false,
+                            );
                             VariableWord::Field(SymbolId::of(selector))
                         }
                     }
@@ -376,6 +415,12 @@ impl Compiler<'_> {
                 self.result.code.items.extend(safe_labels);
             }
             ExprKind::StaticMember { object, selector } => {
+                self.record_property_selection(
+                    expr,
+                    selector,
+                    &VariableWord::StaticField(SymbolId::of(selector)),
+                    false,
+                );
                 self.expression(object, statement)?;
                 let safe_labels = self.defer_safe_postfix_labels(object);
                 self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
@@ -399,6 +444,7 @@ impl Compiler<'_> {
                 if matches!(variable, VariableWord::Field(_)) {
                     self.intern_string(selector);
                 }
+                self.record_property_selection(expr, selector, &variable, true);
                 self.emit(opcode::GET_VAR, vec![Word::Variable(variable)]);
                 self.result.code.items.push(CodeItem::Label(end));
             }

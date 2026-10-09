@@ -25,6 +25,14 @@ impl Compiler<'_> {
                     "dynamic call requires target, name, and positional arguments",
                 ));
             }
+            self.record_selection(
+                callee,
+                dispatcher,
+                dm_ir::SelectedMeaning::DynamicCall {
+                    dispatcher: SymbolId::of(dispatcher),
+                    target_count: target.len() as u8,
+                },
+            );
             for target in target {
                 self.expression(target, statement)?;
             }
@@ -64,6 +72,7 @@ impl Compiler<'_> {
                 .unwrap_or_else(|| {
                     VariableWord::DynamicProc(self.intern_string(&selector.replace('_', " ")))
                 });
+            self.record_call_selection(callee, selector, &proc_selector, true);
             self.expression(object, statement)?;
             let end = self.label();
             self.emit(317, vec![Word::Branch(end)]);
@@ -102,16 +111,34 @@ impl Compiler<'_> {
                 }
                 if named_arguments {
                     self.named_arguments(args, statement)?;
-                    self.emit(0xcd, vec![Word::Reference(self.global_proc(selector)?)]);
+                    let reference = self.global_proc(selector)?;
+                    self.record_selection(
+                        callee,
+                        selector,
+                        dm_ir::SelectedMeaning::ProcedureCall {
+                            reference,
+                            safe: false,
+                        },
+                    );
+                    self.emit(0xcd, vec![Word::Reference(reference)]);
                 } else {
                     for arg in args {
                         self.expression(arg, statement)?;
                     }
+                    let reference = self.global_proc(selector)?;
+                    self.record_selection(
+                        callee,
+                        selector,
+                        dm_ir::SelectedMeaning::ProcedureCall {
+                            reference,
+                            safe: false,
+                        },
+                    );
                     self.emit(
                         opcode::CALL_GLOB,
                         vec![
                             Word::Immediate(args.len() as u32),
-                            Word::Reference(self.global_proc(selector)?),
+                            Word::Reference(reference),
                         ],
                     );
                 }
@@ -123,6 +150,7 @@ impl Compiler<'_> {
                 .unwrap_or_else(|| {
                     VariableWord::DynamicProc(self.intern_string(&selector.replace('_', " ")))
                 });
+            self.record_call_selection(callee, selector, &proc_selector, false);
             let mut safe_labels = Vec::new();
             if let Ok(owner) = self.variable_expr(object, statement) {
                 if named_arguments {
@@ -182,6 +210,11 @@ impl Compiler<'_> {
             return Err(error(statement, "only simple src proc calls are supported"));
         };
         if self.intrinsic_call(name, args, statement, named_arguments, arglist_argument)? {
+            self.record_selection(
+                callee,
+                name,
+                dm_ir::SelectedMeaning::IntrinsicCall(SymbolId::of(name)),
+            );
             return Ok(());
         }
         self.named_call(

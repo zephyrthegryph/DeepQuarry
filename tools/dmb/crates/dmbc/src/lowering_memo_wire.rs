@@ -7,10 +7,12 @@ use dm_codegen_byond::procedure_abi::{ArgumentSource, Category, ProcLayout};
 use dm_ir::{ProcedureIdentity, ProcedureStaticIdentity, ResolveQuery, Resolver, SymRef, SymbolId};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, sync::Arc};
-const EXECUTABLE_SCHEMA: u32 = 0x0206_0001;
+const EXECUTABLE_SCHEMA: u32 = 0x0206_0005;
 const FAILURE_SCHEMA: u32 = 0x0206_0002;
 #[path = "lowering_memo_private.rs"]
 mod private;
+#[path = "lowering_memo_selected_wire.rs"]
+mod selected_wire;
 #[derive(Serialize, Deserialize)]
 enum ArgumentWire {
     Builtin((u8, u8)),
@@ -43,6 +45,7 @@ struct Payload {
     relative_debug: Vec<usize>,
     abi: Option<Abi>,
     helpers: Vec<HelperWire>,
+    selected_references: Option<selected_wire::SelectedWire>,
 }
 #[derive(Serialize, Deserialize)]
 struct HelperWire {
@@ -203,7 +206,7 @@ pub(crate) fn encode(
         }
     };
     let payload = Payload {
-        version: 1,
+        version: 4,
         key: key.to_vec(),
         identity: Some(ProcedureIdentity {
             owner: unit.identity.owner,
@@ -212,6 +215,10 @@ pub(crate) fn encode(
             occurrence: unit.identity.occurrence,
         }),
         effective: unit.effective,
+        selected_references: match unit.selected_references.as_deref() {
+            Some(facts) => Some(selected_wire::SelectedWire::capture(facts)?),
+            None => None,
+        },
         versions: versions.to_vec(),
         reads: reads
             .iter()
@@ -240,7 +247,13 @@ pub(crate) fn encode(
 fn payload(bytes: &[u8]) -> Result<Payload, String> {
     let payload: Payload = dm_wire::decode(EXECUTABLE_SCHEMA, bytes, bytes.len())?;
     validate_versions(&payload.versions)?;
-    if payload.version != 1 || payload.abi.as_ref().is_some_and(|abi| abi.category > 2) {
+    if payload.version != 4
+        || payload.abi.as_ref().is_some_and(|abi| abi.category > 2)
+        || payload
+            .selected_references
+            .as_ref()
+            .is_some_and(|facts| !facts.valid())
+    {
         return Err("unsupported lowering schema/ABI".into());
     }
     Ok(payload)
@@ -379,7 +392,7 @@ pub(crate) fn encode_executable(
     code: &ResolverProc,
 ) -> Option<Vec<u8>> {
     let payload = Payload {
-        version: 1,
+        version: 4,
         key: key.to_vec(),
         identity: None,
         effective: false,
@@ -387,6 +400,7 @@ pub(crate) fn encode_executable(
         debug: Vec::new(),
         relative_debug: Vec::new(),
         helpers: Vec::new(),
+        selected_references: None,
         versions: versions.to_vec(),
         reads: reads
             .iter()
@@ -407,6 +421,7 @@ pub(crate) fn decode_executable<R: Resolver>(
     if payload.identity.is_some()
         || payload.abi.is_some()
         || !payload.helpers.is_empty()
+        || payload.selected_references.is_some()
         || payload.key != key
         || read_mismatch(&payload.reads, &payload.versions, host).is_some()
     {
@@ -555,6 +570,15 @@ fn rebind<R: Resolver>(
         metadata,
         abi,
         code,
+        selected_references: payload
+            .selected_references
+            .map(|facts| {
+                facts
+                    .rehydrate()
+                    .map(Arc::new)
+                    .ok_or(Decline::ExecutableIssuer)
+            })
+            .transpose()?,
         debug_origins,
         source_helpers,
     })
@@ -781,7 +805,7 @@ mod executable_tests {
         );
         assert!(dm_wire::decode::<Payload>(EXECUTABLE_SCHEMA, &bytes, 1).is_err());
         let changed = Payload {
-            version: 1,
+            version: 4,
             key: b"other key".to_vec(),
             identity: None,
             effective: false,
@@ -792,6 +816,7 @@ mod executable_tests {
             relative_debug: vec![],
             abi: None,
             helpers: vec![],
+            selected_references: None,
         };
         let changed = dm_wire::encode(EXECUTABLE_SCHEMA, &changed).unwrap();
         assert!(decode_executable(&changed, b"exact typed initializer", &Host(false), 0).is_none());

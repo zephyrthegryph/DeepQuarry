@@ -76,13 +76,16 @@ Shadow now validates schema, snapshot label, all nine mandatory categories and
 count consistency. Inspector failure, malformed evidence, incomplete traversal,
 incomplete tool/semantic coverage, and any discrepancy fail with distinct
 classification in `structural-admission.json`. Only complete zero-discrepancy
-reports are labeled structural parity. This is stricter than admitting a known
+reports with an authenticated shared input closure can establish structural
+parity. This is stricter than admitting a known
 historical burn-down baseline; shadow has no such baseline input.
 
 Remaining acceptance gaps in that adapter:
 
-- The shadow snapshot label hashes the manifest alone; it does not authenticate
-  the entire source/configuration closure used by both compilers.
+- The shadow context records configuration and output evidence, but the
+  compiler-issued shared BYOND input-closure capability is not yet available.
+  Even a complete zero-discrepancy report remains incomplete without it;
+  manifest identity or native positive reads cannot substitute for that proof.
 - Native integration requires explicit compiler/template paths. The direct
   runner verifies `--artifact-directory` output hashes; it does not exercise
   `build.ts`, nightly scheduling, diagnostic corpus parity, or test-slot pair-ID

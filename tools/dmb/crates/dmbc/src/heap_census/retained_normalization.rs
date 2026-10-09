@@ -11,6 +11,7 @@ fn contribution(census: &mut HeapCensus, value: &Arc<TypeContribution>) {
     if !census.arc_object(owner, value) {
         return;
     }
+    census.slice("retained_normalization.shapes", value.shared_shape(), true);
     if census.slice(owner, value.shared_rows(), true) {
         for row in value.rows() {
             if let dm_tree::Skeleton::Member { metadata, .. } = &row.skeleton {
@@ -21,8 +22,13 @@ fn contribution(census: &mut HeapCensus, value: &Arc<TypeContribution>) {
         }
     }
 }
-fn answer(census: &mut HeapCensus, value: &SourceAnswer) {
+pub(super) fn answer(census: &mut HeapCensus, value: &SourceAnswer) {
     match value {
+        SourceAnswer::OwnerShape(value) => {
+            if let Some(shape) = value {
+                census.slice("retained_normalization.shapes", shape, true);
+            }
+        }
         SourceAnswer::Owner(value) => {
             if let Some(owner) = &value.0 {
                 contribution(census, owner);
@@ -70,7 +76,7 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
             census.buffer("retained_normalization.values", address, size, size);
             for read in reads.iter() {
                 match read.query {
-                    SourceQuery::Owner { owner: _ } | SourceQuery::SelectedPredecessor { owner: _, name: _, kind: _ }
+                    SourceQuery::Owner { owner: _ } | SourceQuery::OwnerShape { owner: _ } | SourceQuery::SelectedPredecessor { owner: _, name: _, kind: _ }
                     | SourceQuery::Parent { path: _ } | SourceQuery::Family { owner: _, name: _, kind: _ }
                     | SourceQuery::CallableAnchor { owner: _, name: _ } | SourceQuery::OpaqueField { owner: _, name: _ } => (),
                 }

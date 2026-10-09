@@ -62,6 +62,9 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--bodies" if command == BuildCommand::Analyze => command = BuildCommand::AnalyzeBodies,
+            "--resolved" if command == BuildCommand::Analyze => {
+                command = BuildCommand::AnalyzeResolved
+            }
             "--no-daemon" => no_daemon = true,
             "--exact-inputs" => exact_inputs = true,
             "--no-cache" => no_cache = true,

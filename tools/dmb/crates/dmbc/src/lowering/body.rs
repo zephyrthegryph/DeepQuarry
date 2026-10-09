@@ -4,6 +4,7 @@ pub(super) struct LoweringCapture<'a, 'frontend> {
     pub startup: Option<&'a crate::startup::CapturedStartup<'frontend>>,
     pub capture: Option<&'a RefCell<MemoCapture>>,
     pub ready: Option<PreparedUnit>,
+    pub capture_references: bool,
 }
 pub(super) fn lower_one<R: Resolver, P: AbiPolicy>(
     frontend: &ColdFrontend,
@@ -12,6 +13,7 @@ pub(super) fn lower_one<R: Resolver, P: AbiPolicy>(
     policy: &P,
     startup: Option<&crate::startup::CapturedStartup>,
     bodies: &dm_tree::frontend::BodyArena<'_>,
+    capture_references: bool,
 ) -> Result<LoweredUnit, Vec<LoweringDiagnostic>> {
     lower_one_captured(
         frontend,
@@ -23,6 +25,7 @@ pub(super) fn lower_one<R: Resolver, P: AbiPolicy>(
             startup,
             capture: None,
             ready: None,
+            capture_references,
         },
     )
 }
@@ -38,6 +41,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         startup,
         capture,
         ready,
+        capture_references,
     } = captured;
     let tree = &frontend.snapshot.tree;
     let error = |identity, message| {
@@ -267,9 +271,27 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         entry: parsed.header_span.start,
         capture,
     };
+    let mut selected_references = None;
     let code = {
         let _profile = dm_profile::item("lowering.fresh_codegen");
         match executable_view {
+            Some(view) if typed_ready && capture_references => {
+                dm_codegen_byond::compile_statement_view_with_resolver_and_references_at(
+                    view,
+                    &inputs,
+                    symbols,
+                    host,
+                    Some(&debug),
+                    dm_syntax::Span {
+                        start: body.expanded_span.start,
+                        end: body.expanded_span.end,
+                    },
+                )
+                .map(|(code, references)| {
+                    selected_references = Some(Arc::new(references));
+                    code
+                })
+            }
             Some(view) if typed_ready => dm_codegen_byond::compile_statement_view_with_resolver(
                 view,
                 &inputs,
@@ -358,6 +380,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         effective: source_identity.effective,
         origin: body.clone(),
         code,
+        selected_references,
         metadata: Arc::clone(metadata),
         abi: prepared.abi,
         debug_origins: debug.original.finish(),

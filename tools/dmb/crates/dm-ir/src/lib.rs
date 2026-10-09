@@ -30,8 +30,14 @@ pub use procedure_static::{
     ProcedureIdentity, ProcedureStaticDeclaration, ProcedureStaticIdentity,
 };
 
+pub mod reference_resolution;
 mod resolver;
+mod selected_references;
 pub use resolver::{procedure_value_query, ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
+pub use selected_references::{
+    SelectedBuiltin, SelectedMeaning, SelectedReference, SelectedReferences,
+    SELECTED_REFERENCES_POLICY,
+};
 mod memo_resolver;
 pub use memo_resolver::{MemoResolver, MemoStats};
 

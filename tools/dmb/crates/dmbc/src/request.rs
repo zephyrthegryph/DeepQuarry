@@ -8,6 +8,8 @@ pub enum BuildCommand {
     Analyze,
     /// Explicitly emit executable syntax and lexical facts for analysis clients.
     AnalyzeBodies,
+    /// Explicit compiler-selected references with current ABI and source issuance.
+    AnalyzeResolved,
     Compile,
 }
 

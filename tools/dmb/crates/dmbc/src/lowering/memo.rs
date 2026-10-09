@@ -10,20 +10,51 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
     bodies: &dm_tree::frontend::BodyArena<'_>,
     symbolic: bool,
+    capture_references: bool,
 ) -> Result<CompletedInput, Vec<LoweringDiagnostic>> {
+    // Symbolic completion cannot discard an explicitly requested analysis sidecar.
+    let symbolic = symbolic && !capture_references;
     let Some(memo) = memo else {
-        return lower_one(frontend, body, host, policy, startup, bodies)
-            .map(CompletedInput::lowered);
+        return lower_one(
+            frontend,
+            body,
+            host,
+            policy,
+            startup,
+            bodies,
+            capture_references,
+        )
+        .map(CompletedInput::lowered);
     };
     let key_start = std::time::Instant::now();
     if startup.is_some_and(|capture| capture.validate_for(frontend).is_err()) {
-        return lower_one(frontend, body, host, policy, startup, bodies)
-            .map(CompletedInput::lowered);
+        return lower_one(
+            frontend,
+            body,
+            host,
+            policy,
+            startup,
+            bodies,
+            capture_references,
+        )
+        .map(CompletedInput::lowered);
     }
     let Some(mut key) = crate::lowering_memo::key(frontend, body, memo.policy) else {
-        return lower_one(frontend, body, host, policy, startup, bodies)
-            .map(CompletedInput::lowered);
+        return lower_one(
+            frontend,
+            body,
+            host,
+            policy,
+            startup,
+            bodies,
+            capture_references,
+        )
+        .map(CompletedInput::lowered);
     };
+    if capture_references {
+        key.push(0);
+        key.extend_from_slice(dm_ir::SELECTED_REFERENCES_POLICY);
+    }
     // Frozen ABI policies are prepared before this stage. Their actual folded
     // outputs must enter the key because no resolver call happens on replay.
     let tree = &frontend.snapshot.tree;
@@ -78,8 +109,16 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         ))
     })();
     let Some((needs_parsed, prepared, identity)) = ready else {
-        return lower_one(frontend, body, host, policy, startup, bodies)
-            .map(CompletedInput::lowered);
+        return lower_one(
+            frontend,
+            body,
+            host,
+            policy,
+            startup,
+            bodies,
+            capture_references,
+        )
+        .map(CompletedInput::lowered);
     };
     memo.counts.key_preparation_ns.fetch_add(
         key_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
@@ -117,6 +156,9 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         let _profile = dm_profile::item("lowering.resident_validate");
         memo.values.visit_receipted(&key, host, &mut |value| {
             let previous = &value.unit;
+            if capture_references && previous.selected_references.is_none() {
+                return false;
+            }
             let rebased = crate::lowering_memo::rebase_debug(frontend, body, &value.relative_debug);
             let absolute =
                 !previous.code.modified_instances.is_empty() || !previous.source_helpers.is_empty();
@@ -214,7 +256,10 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         note(MemoOutcome::DiskHit, None, None);
         return Err(errors);
     }
-    if let Some(unit) = disk.unit {
+    if let Some(unit) = disk
+        .unit
+        .filter(|unit| !capture_references || unit.selected_references.is_some())
+    {
         let admission = if symbolic {
             disk.resident.as_ref().and_then(|promotion| {
                 symbolic_input::disk_admission(memo, key.clone(), host, promotion)
@@ -264,6 +309,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             startup,
             capture: Some(&capture),
             ready: needs_parsed.then_some(prepared),
+            capture_references,
         },
     );
     let mut admission = None;

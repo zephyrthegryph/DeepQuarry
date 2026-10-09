@@ -18,7 +18,8 @@ mod reference_roles;
 pub use lexical_scope::{local_name, Binding, BindingId, BindingValue, LexicalScopes, ScopeError};
 pub use reference_roles::{
     arglist_argument, assignment_target_access, call_target, is_global_receiver,
-    is_literal_identifier, named_argument, CallTarget, NamedArgument, ReferenceAccess,
+    is_literal_identifier, named_argument, reference_node_name, CallTarget, NamedArgument,
+    ReferenceAccess,
 };
 mod visit;
 pub use audit::{

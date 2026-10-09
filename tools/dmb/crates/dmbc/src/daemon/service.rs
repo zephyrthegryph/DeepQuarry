@@ -31,7 +31,11 @@ impl RequestKey {
     fn of(request: &crate::request::BuildRequest, manifest: &std::path::Path) -> Self {
         Self {
             compile: request.command == crate::request::BuildCommand::Compile,
-            executable_analysis: request.command == crate::request::BuildCommand::AnalyzeBodies,
+            executable_analysis: matches!(
+                request.command,
+                crate::request::BuildCommand::AnalyzeBodies
+                    | crate::request::BuildCommand::AnalyzeResolved
+            ),
             defines: request.defines.clone(),
             engine: request.engine_template.clone(),
             bootstrap: request.bootstrap_catalog,

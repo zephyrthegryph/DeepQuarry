@@ -443,6 +443,7 @@ impl Compiler<'_> {
             if crate::builtin_catalog::is_void(name) {
                 self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
             }
+            self.record_named_intrinsic(expr, name);
             return Ok(());
         }
         let has_member_proc = self.current_has_declared_member_proc(name)?
@@ -454,17 +455,21 @@ impl Compiler<'_> {
                 } else if let Some(list) = arglist_argument {
                     self.expression(list, statement)?;
                 }
-                self.emit(0xcd, vec![Word::Reference(self.global_proc(name)?)]);
+                let reference = self.global_proc(name)?;
+                self.record_named_call_selection(expr, name, &VariableWord::StaticProc(reference));
+                self.emit(0xcd, vec![Word::Reference(reference)]);
                 return Ok(());
             }
             for arg in args {
                 self.expression(arg, statement)?;
             }
+            let reference = self.global_proc(name)?;
+            self.record_named_call_selection(expr, name, &VariableWord::StaticProc(reference));
             self.emit(
                 opcode::CALL_GLOB,
                 vec![
                     Word::Immediate(args.len() as u32),
-                    Word::Reference(self.global_proc(name)?),
+                    Word::Reference(reference),
                 ],
             );
             return Ok(());
@@ -513,6 +518,7 @@ impl Compiler<'_> {
                     &format!("unresolved unqualified procedure: {name}"),
                 ));
             }
+            self.record_named_call_selection(expr, name, &proc_selector);
             if named_arguments {
                 self.named_arguments(args, statement)?;
             } else if let Some(list) = arglist_argument {

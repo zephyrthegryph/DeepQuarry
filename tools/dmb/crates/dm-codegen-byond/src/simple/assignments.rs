@@ -212,74 +212,27 @@ impl Compiler<'_> {
         name: &str,
         statement: &str,
     ) -> Result<VariableWord, LowerError> {
-        if let Some(&index) = self.local_slots.get(name) {
-            return Ok(VariableWord::Local(index));
-        }
-        if let Some(index) = self.bindings.parameters.iter().position(|n| n == name) {
-            return Ok(VariableWord::Arg(index as u32));
-        }
-        if let Some(lookup) = self.lookup {
-            if let Some(slot) =
-                self.semantic(lookup.procedure_static_slot(self.bindings.procedure_identity, name))?
-            {
-                return Ok(VariableWord::Global(slot));
-            }
-        }
-        if self.lookup.is_some()
-            && !matches!(
-                name,
-                "src" | "usr" | "world" | "args" | "caller" | "callee" | "."
-            )
-        {
-            if let Some(owner) = self.bindings.current_type_path.as_deref() {
-                if let Some(slot) = self.member_global(owner, name)? {
-                    return Ok(VariableWord::Global(slot));
-                }
-            }
-        }
-        match name {
-            "src" => Ok(VariableWord::Src),
-            "usr" => Ok(VariableWord::Usr),
-            "world" => Ok(VariableWord::World),
-            "args" => Ok(VariableWord::Args),
-            "caller" => Ok(VariableWord::Caller),
-            "callee" => Ok(VariableWord::Callee),
-            "." => Ok(VariableWord::Dot),
-            _ if self.has_field(name)? => {
-                self.intern_string(name);
-                Ok(VariableWord::SetCache(
-                    Box::new(VariableWord::Src),
-                    Box::new(VariableWord::Field(SymbolId::of(name))),
-                ))
-            }
-            _ if self.has_global(name)? => {
-                if let Some(lookup) = self.lookup {
-                    let query = dm_ir::ResolveQuery::VarStorage {
-                        owner: dm_ir::SymbolId::of("/"),
-                        name: dm_ir::SymbolId::of(name),
-                    };
-                    let slot = self
-                        .semantic(lookup.slot(query))?
-                        .ok_or_else(|| error(statement, "global variable has no shared storage"))?;
-                    Ok(VariableWord::Global(slot))
-                } else {
-                    Ok(VariableWord::Global(self.global_variable(name)?))
-                }
-            }
-            _ => Err(error(
-                statement,
-                &format!("unresolved variable name: {name}"),
-            )),
-        }
+        let meaning = self.variable_meaning(name, statement)?;
+        self.variable_operand(&meaning, name, statement)
     }
-
     pub(super) fn variable_expr(
         &mut self,
         expr: &Expr,
         statement: &str,
     ) -> Result<VariableWord, LowerError> {
+        let word = self.variable_expr_inner(expr, statement)?;
+        if let ExprKind::Member { selector, .. } = &expr.kind {
+            self.record_property_selection(expr, selector, &word, false);
+        }
+        Ok(word)
+    }
+    fn variable_expr_inner(
+        &mut self,
+        expr: &Expr,
+        statement: &str,
+    ) -> Result<VariableWord, LowerError> {
         match &expr.kind {
-            ExprKind::Ident(name) => self.variable(name, statement),
+            ExprKind::Ident(name) => self.variable_for_node(expr, name, statement),
             ExprKind::Group(inner) => self.variable_expr(inner, statement),
             ExprKind::Member {
                 object,
@@ -395,9 +348,21 @@ impl Compiler<'_> {
                         }
                     ),
                 )? {
+                    self.record_property_selection(
+                        target,
+                        selector,
+                        &VariableWord::Global(symbol),
+                        false,
+                    );
                     return Ok(VariableWord::Global(symbol));
                 }
                 self.intern_string(selector);
+                self.record_property_selection(
+                    target,
+                    selector,
+                    &VariableWord::Field(SymbolId::of(selector)),
+                    false,
+                );
                 Ok(VariableWord::Field(SymbolId::of(selector)))
             }
         }

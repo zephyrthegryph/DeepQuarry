@@ -77,6 +77,15 @@ pub(crate) fn procedure(
     }
     let mut c = HeapCensus::new("resident_admission");
     c.resolver_code(&unit.code);
+    if let Some(references) = &unit.selected_references {
+        if c.arc_object("resident_reference_selections", references)
+            && c.vec_payload("resident_reference_selections", &references.references)
+        {
+            for reference in &references.references {
+                c.vec_payload("resident_reference_selections", &reference.path);
+            }
+        }
+    }
     c.vec_payload("resident_helpers", &unit.source_helpers);
     // resolver_code's sole fixed-map limitation is covered explicitly below;
     // private modified values were rejected before this traversal.
