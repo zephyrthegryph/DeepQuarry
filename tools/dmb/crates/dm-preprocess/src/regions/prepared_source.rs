@@ -37,7 +37,7 @@ pub struct PreparedLine {
 pub struct PreparedSource {
     original: Arc<str>,
     line_starts: Arc<[usize]>,
-    lines: Arc<[PreparedLine]>,
+    lines: prepared_lines::LineStorage,
     directives: directive_index::DirectiveIndex,
 }
 impl PreparedSource {
@@ -57,10 +57,8 @@ impl PreparedSource {
         let transformed =
             (!logical.transformed.is_empty()).then(|| SourceText::from(logical.transformed));
         let mut source_line = 0;
-        let lines = logical
-            .lines
-            .into_iter()
-            .map(|logical| {
+        let lines =
+            prepared_lines::LineStorage::from_lines(logical.lines.into_iter().map(|logical| {
                 let first = source_line;
                 source_line += logical.source_lines;
                 PreparedLine {
@@ -79,14 +77,13 @@ impl PreparedSource {
                         uncommented.view(logical.range)
                     },
                 }
-            })
-            .collect::<Vec<_>>();
-        let directives = directive_index::DirectiveIndex::new(&lines);
+            }));
+        let directives = directive_index::DirectiveIndex::new(lines.view());
         Self {
             directives,
             original,
             line_starts: starts.into(),
-            lines: lines.into(),
+            lines,
         }
     }
     pub fn original(&self) -> &Arc<str> {
@@ -99,11 +96,21 @@ impl PreparedSource {
         self.directives.get(index)
     }
     pub(crate) fn is_include(&self, index: usize) -> bool {
-        self.directive(index)
-            .is_some_and(|directive| directive.parts(&self.lines[index].text).0 == "include")
+        self.directive(index).is_some_and(|directive| {
+            directive
+                .parts(
+                    self.lines
+                        .view()
+                        .get(index)
+                        .expect("directive index belongs to prepared lines")
+                        .text,
+                )
+                .0
+                == "include"
+        })
     }
-    pub fn lines(&self) -> &[PreparedLine] {
-        &self.lines
+    pub fn lines(&self) -> PreparedLines<'_> {
+        self.lines.view()
     }
 }
 
@@ -343,7 +350,7 @@ mod tests {
                 .iter()
                 .find(|line| line.text.contains("var/before"))
                 .unwrap();
-            assert!(before.text.shares_backing(&prepared_before.text));
+            assert!(before.text.shares_backing(prepared_before.text));
             assert!(Arc::ptr_eq(
                 &plan.source_line_starts[Path::new("parent.dm")],
                 parent.line_starts()
@@ -530,3 +537,7 @@ mod tests {
 mod directive_index;
 #[path = "directive_syntax.rs"]
 mod directive_syntax;
+
+#[path = "prepared_lines.rs"]
+mod prepared_lines;
+pub use prepared_lines::{PreparedLineView, PreparedLines};

@@ -136,17 +136,33 @@ mod tests {
         let prepared = crate::regions::prepared_source::PreparedSource::new(Arc::clone(&original));
         let lines = prepared.lines();
         assert_eq!(lines.len(), 4);
-        assert!(lines[0].text.shares_backing(&lines[1].text));
-        assert!(lines[2].text.shares_backing(&lines[3].text));
-        assert!(!lines[0].text.shares_backing(&lines[2].text));
-        lines[0].text.visit_storage(|_, _, storage| match storage {
-            SourceTextStorage::Original(text) => assert!(Arc::ptr_eq(text, &original)),
-            SourceTextStorage::Transformed(_) => panic!("ordinary source line was copied"),
-        });
-        assert_eq!(lines[2].text.as_str(), "#define X 1  + 2\n");
-        assert_eq!(lines[3].text.as_str(), "#define Y 3  + 4\n");
-        assert_eq!(lines[2].source_lines, 2);
-        assert_eq!(lines[3].source_line, 5);
+        assert!(lines
+            .get(0)
+            .unwrap()
+            .text
+            .shares_backing(lines.get(1).unwrap().text));
+        assert!(lines
+            .get(2)
+            .unwrap()
+            .text
+            .shares_backing(lines.get(3).unwrap().text));
+        assert!(!lines
+            .get(0)
+            .unwrap()
+            .text
+            .shares_backing(lines.get(2).unwrap().text));
+        lines
+            .get(0)
+            .unwrap()
+            .text
+            .visit_storage(|_, _, storage| match storage {
+                SourceTextStorage::Original(text) => assert!(Arc::ptr_eq(text, &original)),
+                SourceTextStorage::Transformed(_) => panic!("ordinary source line was copied"),
+            });
+        assert_eq!(lines.get(2).unwrap().text.as_str(), "#define X 1  + 2\n");
+        assert_eq!(lines.get(3).unwrap().text.as_str(), "#define Y 3  + 4\n");
+        assert_eq!(lines.get(2).unwrap().source_lines, 2);
+        assert_eq!(lines.get(3).unwrap().source_line, 5);
     }
 
     #[test]
@@ -154,12 +170,19 @@ mod tests {
         let original: Arc<str> = Arc::from("var/a = 1 // café\nvar/b = 2 /* hidden */\n");
         let prepared = crate::regions::prepared_source::PreparedSource::new(Arc::clone(&original));
         let lines = prepared.lines();
-        assert!(lines[0].text.shares_backing(&lines[1].text));
-        assert_eq!(lines[0].text.as_str(), "var/a = 1         \n");
-        assert_eq!(lines[1].text.as_str(), "var/b = 2             \n");
-        assert_eq!(lines[0].source_span.start, 0);
-        assert_eq!(lines[1].source_span.end, original.len());
-        lines[0].text.visit_storage(|_, _, storage| {
+        assert!(lines
+            .get(0)
+            .unwrap()
+            .text
+            .shares_backing(lines.get(1).unwrap().text));
+        assert_eq!(lines.get(0).unwrap().text.as_str(), "var/a = 1         \n");
+        assert_eq!(
+            lines.get(1).unwrap().text.as_str(),
+            "var/b = 2             \n"
+        );
+        assert_eq!(lines.get(0).unwrap().source_span.start, 0);
+        assert_eq!(lines.get(1).unwrap().source_span.end, original.len());
+        lines.get(0).unwrap().text.visit_storage(|_, _, storage| {
             assert!(matches!(storage, SourceTextStorage::Transformed(_)));
         });
     }

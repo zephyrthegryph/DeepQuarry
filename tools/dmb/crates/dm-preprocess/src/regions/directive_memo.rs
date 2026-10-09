@@ -1,6 +1,6 @@
 //! Ordered directive interval receipts. Includes remain fresh recursion barriers.
 use super::region_memo::retained_size::{macro_heap, record, shared_macro, slice, vector};
-use super::{prepared_source::PreparedLine, MacroEnvironment};
+use super::{prepared_source::PreparedLines, MacroEnvironment};
 use crate::{Conditional, DiagnosticKind, Macro, MacroLookup};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -148,13 +148,13 @@ fn key(source: &str, control: &[u8]) -> u128 {
 }
 pub(super) fn context<'a>(
     original: &'a str,
-    lines: &[PreparedLine],
+    lines: PreparedLines<'_>,
 ) -> Option<(&'a str, Arc<[u8]>, u128)> {
     let first = lines.first()?;
     let end = lines.last()?.source_span.end;
     let source = original.get(first.source_span.start..end)?;
     let mut control = DIRECTIVE_VERSION.to_le_bytes().to_vec();
-    for line in lines {
+    for line in lines.iter() {
         for number in [
             line.source_span.start - first.source_span.start,
             line.source_span.end - first.source_span.start,

@@ -82,7 +82,7 @@ impl NativeInputs {
         let candidates = manifest
             .lines()
             .iter()
-            .filter_map(|line| literal_include_path(&line.text))
+            .filter_map(|line| literal_include_path(line.text))
             .filter(|path| {
                 path.extension()
                     .and_then(|value| value.to_str())

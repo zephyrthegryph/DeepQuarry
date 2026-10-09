@@ -268,18 +268,20 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         &mut self,
         occurrence: usize,
         region: usize,
-        lines: &[prepared_source::PreparedLine],
+        lines: prepared_source::PreparedLines<'_>,
         record: &DirectiveRecord,
         pending: &mut Vec<RegionLine>,
     ) {
         for action in record.actions() {
             match action {
                 directive_memo::Action::Text(input) => {
-                    let line = &lines[*input];
+                    let line = lines
+                        .get(*input)
+                        .expect("recorded directive input outside range");
                     pending.push(RegionLine {
                         source_span: line.source_span,
                         source_line: line.source_line,
-                        text: line.text.clone(),
+                        text: crate::SourceText::clone(line.text),
                     });
                 }
                 directive_memo::Action::Freeze => self.freeze_lines(region, pending),
@@ -288,7 +290,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     name,
                     definition,
                 } => {
-                    let line = &lines[*input];
+                    let line = lines
+                        .get(*input)
+                        .expect("recorded directive input outside range");
                     self.apply_define(
                         occurrence,
                         region,
@@ -305,7 +309,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     message,
                 } => self.error(
                     occurrence,
-                    lines[*input].source_line,
+                    lines
+                        .get(*input)
+                        .expect("recorded directive input outside range")
+                        .source_line,
                     *kind,
                     message.clone(),
                 ),
@@ -537,7 +544,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         .find(|&index| prepared.is_include(index))
                         .unwrap_or(lines.len());
                     if let Some(context) =
-                        directive_memo::context(prepared.original(), &lines[cursor..end])
+                        directive_memo::context(prepared.original(), lines.slice(cursor..end))
                     {
                         let hit =
                             memo.directive_candidates(context.2)
@@ -557,11 +564,12 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                             self.replay_directives(
                                 occurrence,
                                 region,
-                                &lines[cursor..end],
+                                lines.slice(cursor..end),
                                 &record,
                                 &mut pending,
                             );
-                            line_number += lines[cursor..end]
+                            line_number += lines
+                                .slice(cursor..end)
                                 .iter()
                                 .map(|line| line.source_lines)
                                 .sum::<usize>();
@@ -582,7 +590,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             if let Some(recording) = self.recording.as_mut() {
                 recording.current = cursor - recording.start;
             }
-            let logical = &lines[cursor];
+            let logical = lines.get(cursor).expect("directive cursor outside source");
             cursor += 1;
             let source_line = logical.source_line;
             line_number += logical.source_lines;
@@ -600,12 +608,12 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     pending.push(RegionLine {
                         source_span: span,
                         source_line,
-                        text: logical.text.clone(),
+                        text: crate::SourceText::clone(logical.text),
                     });
                 }
                 continue;
             };
-            let (word, rest) = syntax.parts(&logical.text);
+            let (word, rest) = syntax.parts(logical.text);
             if matches!(word, "if" | "ifdef" | "ifndef" | "elif" | "else" | "endif") {
                 self.conditional(occurrence, source_line, word, rest);
                 continue;

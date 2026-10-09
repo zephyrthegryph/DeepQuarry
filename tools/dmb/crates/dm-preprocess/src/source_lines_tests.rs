@@ -182,7 +182,7 @@ fn streamed_preparation_preserves_comments_continuations_and_locations() {
         for ((actual, expected), prepared) in actual_lines
             .iter()
             .zip(&expected_lines)
-            .zip(prepared.lines())
+            .zip(prepared.lines().iter())
         {
             assert_eq!(actual.text, expected.text);
             assert_eq!(actual.source_lines, expected.source_lines);

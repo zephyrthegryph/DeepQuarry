@@ -1,6 +1,6 @@
 //! Immutable sparse directive lookup with constant-time bit rank.
 //! Non-directive source lines retain no pointer or syntax allocation.
-use super::{directive_syntax::DirectiveSyntax, PreparedLine};
+use super::{directive_syntax::DirectiveSyntax, PreparedLines};
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
@@ -15,21 +15,20 @@ pub(super) struct DirectiveIndex {
     lines: usize,
 }
 impl DirectiveIndex {
-    pub(super) fn new(lines: &[PreparedLine]) -> Self {
+    pub(super) fn new(lines: PreparedLines<'_>) -> Self {
         let mut blocks = Vec::with_capacity(lines.len().div_ceil(64));
         let mut syntax = Vec::new();
-        for chunk in lines.chunks(64) {
-            let mut block = Block {
-                bits: 0,
-                first: syntax.len(),
-            };
-            for (index, line) in chunk.iter().enumerate() {
-                if let Some(value) = DirectiveSyntax::new(&line.text) {
-                    block.bits |= 1u64 << index;
-                    syntax.push(value);
-                }
+        for (index, line) in lines.iter().enumerate() {
+            if index % 64 == 0 {
+                blocks.push(Block {
+                    bits: 0,
+                    first: syntax.len(),
+                });
             }
-            blocks.push(block);
+            if let Some(value) = DirectiveSyntax::new(line.text) {
+                blocks.last_mut().expect("directive block exists").bits |= 1u64 << (index % 64);
+                syntax.push(value);
+            }
         }
         Self {
             blocks: blocks.into(),
@@ -66,11 +65,11 @@ mod tests {
         }
         let source = PreparedSource::new(Arc::from(text));
         for (index, line) in source.lines().iter().enumerate() {
-            let expected = DirectiveSyntax::new(&line.text);
+            let expected = DirectiveSyntax::new(line.text);
             let actual = source.directive(index);
             assert_eq!(
-                actual.map(|v| v.parts(&line.text)),
-                expected.as_ref().map(|v| v.parts(&line.text))
+                actual.map(|v| v.parts(line.text)),
+                expected.as_ref().map(|v| v.parts(line.text))
             );
             assert_eq!(
                 actual.map(|v| &v.definition),
