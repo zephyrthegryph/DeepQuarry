@@ -56,10 +56,13 @@ TRACKED(/obj/item/plastique, timer)
 		return
 	explode(get_turf(src))
 
+MSG_DEF_SELF(plastique/planting, "Planting explosives...")
+
 CAPABILITIES(/obj/item/plastique)
 	space(SPACE_PANEL, door = nameof(open_panel))
 	wires(name = "Explosive wires", count = 1, tools = FALSE)
 	on_wire(WIRE_EXPLODE, cut = PROC_REF(explode_wire), pulse = PROC_REF(explode_wire))
+	op("plant", at_target(/obj), at_target(/turf), when(PROC_REF(plantable)), begins(MSG(plastique/planting)), starts(PROC_REF(plant_started)), wait(5 SECONDS, keeps = HELD | ADJACENT | STAY | TARGET_PRESENT), then(PROC_REF(planted)))
 	op("timer", in_hand(), needs(req_self_held(), req(PROC_REF(timer_item_in_hands), because = MSG(op/not_available)), req_capable()), label("Set explosive timer"),
 		asks(/datum/prompt/number, keeps = 0, fields = list("title" = "Timer", "question" = "Please set the timer.", "default" = 10, "min_value" = 10, "max_value" = 60000, "step" = 1, "timeout" = 0)), then(PROC_REF(timer_set)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
@@ -80,19 +83,18 @@ CAPABILITIES(/obj/item/plastique)
 	to_chat(A.actor, "Timer set for [timer] seconds.")
 	return OP_OK
 
-/obj/item/plastique/afterattack(atom/movable/target, mob/user, flag)
-	if (!flag)
-		return
-	if (ismob(target) || istype(target, /turf/unsimulated) || istype(target, /turf/simulated/shuttle) || istype(target, /obj/item/storage/) || istype(target, /obj/item/clothing/accessory/storage/) || istype(target, /obj/item/clothing/under))
-		return
-	to_chat(user, "Planting explosives...")
-	user.do_attack_animation(target)
+/// What a charge cannot be planted on: a mob, unsimulated or shuttle ground, storage and clothing.
+/obj/item/plastique/proc/plantable(datum/act/op/A)
+	var/atom/target = A.target
+	return !(ismob(target) || istype(target, /turf/unsimulated) || istype(target, /turf/simulated/shuttle) || istype(target, /obj/item/storage/) || istype(target, /obj/item/clothing/accessory/storage/) || istype(target, /obj/item/clothing/under))
 
-	task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(target, user))
+/obj/item/plastique/proc/plant_started(datum/act/op/A)
+	A.actor.do_attack_animation(A.target)
+	return null
 
-/obj/item/plastique/proc/afterattack_timed_done(atom/movable/target, mob/user)
-	if(!(in_range(user, target)))
-		return
+/obj/item/plastique/proc/planted(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/target = A.target
 	user.drop_item()
 	rel_set(src, nameof(target), target_ref())
 	moveToNullspace()
@@ -107,6 +109,7 @@ CAPABILITIES(/obj/item/plastique)
 	target.add_overlay(image_overlay)
 	to_chat(user, "Bomb has been planted. Timer counting down from [timer].")
 	after(src, timer SECONDS, PROC_REF(explode), with = list(get_turf(target)))
+	return OP_OK
 
 /obj/item/plastique/proc/explode(location)
 	if(!target_ref())

@@ -24,6 +24,9 @@
 
 CAPABILITIES(/obj/item/gun/energy/particle)
 	owns_one(nameof(attached_safety), /obj/item/pressurelock)
+	op("remove_safety", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART), label("Remove safety"), when(req(PROC_REF(safety_attached))), begins(MSG(particle_gun/removing_safety)), wait(2.5 SECONDS), then(PROC_REF(safety_removed)))
+
+MSG_DEF_SELF(particle_gun/removing_safety, span_notice("You begin removing %I% from %T%."))
 
 
 /obj/item/gun/energy/particle/advanced //particle equivalent of AEG
@@ -124,7 +127,12 @@ CAPABILITIES(/obj/item/gun/energy/particle)
 	..(severity*2, user, T)
 
 
-/obj/item/gun/energy/particle/proc/safety_removed(mob/user)
+/// A pressure interlock is fitted.
+/obj/item/gun/energy/particle/proc/safety_attached(datum/act/op/A)
+	return safetycatch && attached_safety
+
+/obj/item/gun/energy/particle/proc/safety_removed(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!attached_safety)
 		return
 	to_chat(user, span_notice("You remove \the [attached_safety] from \the [src]."))
@@ -145,11 +153,6 @@ CAPABILITIES(/obj/item/gun/energy/particle)
 		safetycatch = 1
 		return OP_PASS
 
-	if(held.has_tool_quality(TOOL_SCREWDRIVER))
-		if(safetycatch && attached_safety)
-			to_chat(user, span_notice("You begin removing \the [attached_safety] from \the [src]."))
-			task_timed(user, 2.5 SECONDS, src, src, PROC_REF(safety_removed), list(user))
-			return OP_PASS
 	return ..()
 
 

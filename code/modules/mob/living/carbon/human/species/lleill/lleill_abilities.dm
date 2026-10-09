@@ -234,8 +234,15 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 	verbpath = /mob/living/carbon/human/proc/lleill_rings
 	ability_icon_state = "lleill_ring"
 
-/mob/living/carbon/human/proc/lleill_ring_interrupted()
+/mob/living/carbon/human/proc/lleill_ring_interrupted(datum/act/op/A)
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to form white rings on the ground."))
+
+/// What a new ring costs: 25 energy for every ring already placed.
+/mob/living/carbon/human/proc/lleill_ring_spawn_cost()
+	return 25 * length(teleporters)
+
+/mob/living/carbon/human/proc/lleill_ring_spawn_done(datum/act/op/A)
+	lleill_ring_placed(lleill_ring_spawn_cost())
 
 /mob/living/carbon/human/proc/lleill_ring_placed(energy_cost_spawn)
 	if(species.lleill_energy < energy_cost_spawn)
@@ -309,7 +316,7 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 		if(species.lleill_energy < energy_cost_spawn)
 			to_chat(src, span_warning("You do not have enough energy to do that!"))
 			return
-		task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(lleill_ring_placed), done_args = list(energy_cost_spawn), on_fail = PROC_REF(lleill_ring_interrupted))
+		perform_op(src, src, "lleill_ring_spawn", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 		return
 	if(findtext(r_action,"Teleport to Ring"))
 		if(species.lleill_energy < energy_cost_tele)
@@ -774,14 +781,14 @@ CAPABILITIES(/datum/lleill_contact_review)
 		return
 
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins significantly shifting their form."))
-	task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(revert_beast_form_living_done), done_args = list(), on_fail = PROC_REF(revert_beast_form_living_failed), fail_args = list())
+	perform_op(src, src, "revert_beast_form", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 
-/mob/living/proc/revert_beast_form_living_done()
+/mob/living/proc/revert_beast_form_living_done(datum/act/op/A)
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " has reverted to their original form."))
 	revert_beast_tf()
 
-/mob/living/proc/revert_beast_form_living_failed()
+/mob/living/proc/revert_beast_form_living_failed(datum/act/op/A)
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " ceases shifting their form."))
 	return 0
 

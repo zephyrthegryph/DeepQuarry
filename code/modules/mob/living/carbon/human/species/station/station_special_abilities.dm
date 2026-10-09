@@ -841,20 +841,24 @@ CAPABILITIES(/datum/shred_limb_review)
 	update_eyes()
 	to_chat(src, "Your eyes [species.has_glowing_eyes ? "are now" : "are no longer"] glowing.")
 
+MSG_DEF_SELF(human/cocoon_no_space, "You don't have enough space to spin a cocoon!")
+MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current state."))
+
 /mob/living/carbon/human/proc/enter_cocoon()
 	set name = "Spin Cocoon"
 	set category = VERB_CAT_ABILITIES_WEAVER
-	if(!isturf(loc))
-		to_chat(src, "You don't have enough space to spin a cocoon!")
-		return
 
-	if(src?.buckled_to() ||stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //No tongue flicking while status_units(STAT_STUNNED).
-		to_chat(src, span_warning("You can't do that in your current state."))
-		return
+	perform_op(src, src, "enter_cocoon", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-	task_timed(src, 25, target = src, receiver = src, on_done = PROC_REF(enter_cocoon_human_done), done_args = list())
+/// Requirement: standing on a turf, not inside something.
+/mob/living/carbon/human/proc/cocoon_has_space(datum/act/op/A)
+	return isturf(loc)
 
-/mob/living/carbon/human/proc/enter_cocoon_human_done()
+/// Requirement: awake, loose and rested (no tongue flicking while stunned).
+/mob/living/carbon/human/proc/cocoon_fit(datum/act/op/A)
+	return !(src?.buckled_to() || stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
+
+/mob/living/carbon/human/proc/enter_cocoon_human_done(datum/act/op/A)
 	var/obj/item/storage/vore_egg/bugcocoon/C = new(loc)
 	forceMove(C)
 

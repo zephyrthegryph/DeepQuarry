@@ -10,10 +10,51 @@
 	var/state = 0
 	var/created_name = null
 
+TRACKED(/obj/structure/ladder_assembly, state)
+
 CAPABILITIES(/obj/structure/ladder_assembly)
 	op("name_ladder", item(/obj/item/pen),
 		asks(/datum/prompt/text, fields = list("question" = "Enter the name for the ladder.", "title" = "Ladder Name", "default" = nameof(created_name), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "k15"),
 		then(PROC_REF(interaction_item)))
+	op("weld_unanchored", tool(TOOL_WELDER), when(PROC_REF(is_unanchored)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle))), wait(0), then(PROC_REF(bolts_needed)))
+	op("weld_down", tool(TOOL_WELDER), label("Weld to the floor"), when(PROC_REF(is_wrenched)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle)), req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(weld_down_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(weld_down_done)))
+	op("weld_up", tool(TOOL_WELDER), label("Cut free from the floor"), when(PROC_REF(is_welded)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle)), req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(weld_up_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(weld_up_done)))
+
+MSG_DEF_SELF(ladder_assembly/on_shuttle, span_warning("%T% cannot be constructed on a shuttle."))
+
+/obj/structure/ladder_assembly/proc/is_unanchored(datum/act/op/A)
+	return state == LADDER_CONSTRUCTION_UNANCHORED
+
+/obj/structure/ladder_assembly/proc/is_wrenched(datum/act/op/A)
+	return state == LADDER_CONSTRUCTION_WRENCHED
+
+/obj/structure/ladder_assembly/proc/is_welded(datum/act/op/A)
+	return state == LADDER_CONSTRUCTION_WELDED
+
+/// Requirement: the assembly does not stand on a shuttle.
+/obj/structure/ladder_assembly/proc/not_on_shuttle(datum/act/op/A)
+	return read_once(!istype(get_area(src), /area/shuttle))
+
+/obj/structure/ladder_assembly/proc/bolts_needed(datum/act/op/A)
+	to_chat(A.actor, span_warning("The reinforcing bolts need to be secured."))
+	return OP_OK
+
+/obj/structure/ladder_assembly/proc/weld_down_begins(datum/act/op/A)
+	return msg_text("You start to weld %T% to the floor.", "%U% starts to weld %T% to the floor.", "You hear welding")
+
+/obj/structure/ladder_assembly/proc/weld_up_begins(datum/act/op/A)
+	return msg_text("You start to cut %T% free from the floor.", "%U% starts to cut %T% free from the floor.", "You hear welding")
+
+/obj/structure/ladder_assembly/proc/weld_down_done(datum/act/op/A)
+	set_state(LADDER_CONSTRUCTION_WELDED)
+	to_chat(A.actor, "You weld \the [src] to the floor.")
+	try_construct(A.actor)
+	return OP_OK
+
+/obj/structure/ladder_assembly/proc/weld_up_done(datum/act/op/A)
+	set_state(LADDER_CONSTRUCTION_WRENCHED)
+	to_chat(A.actor, "You cut \the [src] free from the floor.")
+	return OP_OK
 
 /// Old attackby: a pen names the ladder (the click goes on).
 /obj/structure/ladder_assembly/proc/interaction_item(datum/act/op/A)
@@ -28,14 +69,14 @@ CAPABILITIES(/obj/structure/ladder_assembly)
 		return ITEM_INTERACT_BLOCKING
 	switch(state)
 		if(LADDER_CONSTRUCTION_UNANCHORED)
-			state = LADDER_CONSTRUCTION_WRENCHED
+			set_state(LADDER_CONSTRUCTION_WRENCHED)
 			play_sfx(src, SFX_ITEMS_RATCHET, 1.5)
 			act_message(user, src, MSG_SELF("You secure the reinforcing bolts."), \
 				MSG_OTHERS("%U% secures %T%'s reinforcing bolts."), \
 				MSG_BLIND("You hear a ratchet"))
 			set_anchored(TRUE)
 		if(LADDER_CONSTRUCTION_WRENCHED)
-			state = LADDER_CONSTRUCTION_UNANCHORED
+			set_state(LADDER_CONSTRUCTION_UNANCHORED)
 			play_sfx(src, SFX_ITEMS_RATCHET, 1.5)
 			act_message(user, src, MSG_SELF("You undo the reinforcing bolts."), \
 				MSG_OTHERS("%U% unsecures %T%'s reinforcing bolts."), \
@@ -44,54 +85,6 @@ CAPABILITIES(/obj/structure/ladder_assembly)
 		if(LADDER_CONSTRUCTION_WELDED)
 			to_chat(user, span_warning("\The [src] needs to be unwelded."))
 	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/ladder_assembly/welder_act(mob/user, obj/item/W)
-	if(istype(get_area(src), /area/shuttle))
-		to_chat(user, span_warning("\The [src] cannot be constructed on a shuttle."))
-		return ITEM_INTERACT_BLOCKING
-	var/obj/item/weldingtool/WT = W.get_welder()
-	switch(state)
-		if(LADDER_CONSTRUCTION_UNANCHORED)
-			to_chat(user, span_warning("The reinforcing bolts need to be secured."))
-		if(LADDER_CONSTRUCTION_WRENCHED)
-			if(!WT.remove_fuel(0, user))
-				to_chat(user, span_warning("You need more welding fuel to complete this task."))
-				return ITEM_INTERACT_BLOCKING
-			play_sfx(src, SFX_ITEMS_WELDER2)
-			act_message(user, src, MSG_SELF("You start to weld %T% to the floor."), \
-				MSG_OTHERS("%U% starts to weld %T% to the floor."), \
-				MSG_BLIND("You hear welding"))
-			task_start(/datum/task/timed/ladder_assembly_weld, user, src, receiver = src, WT = WT, from_state = LADDER_CONSTRUCTION_WRENCHED)
-		if(LADDER_CONSTRUCTION_WELDED)
-			if(!WT.remove_fuel(0, user))
-				to_chat(user, span_warning("You need more welding fuel to complete this task."))
-				return ITEM_INTERACT_BLOCKING
-			play_sfx(src, SFX_ITEMS_WELDER2)
-			act_message(user, src, MSG_SELF("You start to cut %T% free from the floor."), \
-				MSG_OTHERS("%U% starts to cut %T% free from the floor."), \
-				MSG_BLIND("You hear welding"))
-			task_start(/datum/task/timed/ladder_assembly_weld, user, src, receiver = src, WT = WT, from_state = LADDER_CONSTRUCTION_WELDED)
-	return ITEM_INTERACT_SUCCESS
-
-/datum/task/timed/ladder_assembly_weld
-	duration = 2 SECONDS
-	complete_proc = /obj/structure/ladder_assembly/proc/weld_done
-	var/obj/item/weldingtool/WT
-	var/from_state
-
-/obj/structure/ladder_assembly/proc/weld_done(datum/task/timed/ladder_assembly_weld/task)
-	var/mob/user = task.actor
-	var/obj/item/weldingtool/WT = task.WT
-	var/from_state = task.from_state
-	if(!WT.isOn() || state != from_state)
-		return
-	if(from_state == LADDER_CONSTRUCTION_WRENCHED)
-		state = LADDER_CONSTRUCTION_WELDED
-		to_chat(user, "You weld \the [src] to the floor.")
-		try_construct(user)
-	else
-		state = LADDER_CONSTRUCTION_WRENCHED
-		to_chat(user, "You cut \the [src] free from the floor.")
 
 // Try to construct this into a real stairway.
 // It must have a matching ladder assembly above and/or below, and both must be welded in place

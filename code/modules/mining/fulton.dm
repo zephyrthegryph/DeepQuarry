@@ -17,6 +17,32 @@
 CAPABILITIES(/obj/item/extraction_pack)
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "Select a beacon to connect to", "title" = "Balloon Extraction Pack", "choices" = computed(PROC_REF(possible_beacon_choices)), "timeout" = 0), step = "beacon", when = PROC_REF(has_possible_beacons)), then(PROC_REF(interaction_self)))
 
+	op("attach", at_target(/atom/movable), label("Attach"), needs(req(PROC_REF(can_attach), because = PROC_REF(attach_refusal))), begins(PROC_REF(attach_begins)), wait(5 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(attach_done)))
+
+/// Requirement: the pack is linked to a beacon and the target can be sent (anything else is refused, some of it silently).
+/obj/item/extraction_pack/proc/can_attach(datum/act/op/A)
+	return isnull(attach_refusal(A))
+
+/// Why the pack cannot be attached to the target: a text, the silent message for a target that is simply not eligible, or null.
+/obj/item/extraction_pack/proc/attach_refusal(datum/act/op/A)
+	var/atom/movable/target = A.target
+	if(!beacon())
+		return "[src] is not linked to a beacon, and cannot be used."
+	if(!can_use_indoors)
+		var/turf/T = get_turf(target)
+		if(T && !T.is_outdoors())
+			return "[src] can only be used on things that are outdoors!"
+	if(!istype(target) || !read_once(A.actor.Adjacent(target)))
+		return /datum/msg/req_silent
+	if(!safe_for_living_creatures && check_for_living_mobs(target))
+		return "[src] is not safe for use with living creatures, they wouldn't survive the trip back!"
+	if(!isturf(target.loc) || target.anchored) // no extracting stuff inside other stuff
+		return /datum/msg/req_silent
+	return null
+
+/obj/item/extraction_pack/proc/attach_begins(datum/act/op/A)
+	return msg_text(span_notice("You start attaching the pack to [A.target]..."))
+
 /// The extraction beacons on this pack's networks.
 /obj/item/extraction_pack/proc/possible_beacons()
 	var/list/possible_beacons = list()
@@ -46,34 +72,12 @@ CAPABILITIES(/obj/item/extraction_pack)
 	to_chat(user, "You link the extraction pack to the beacon system.")
 	return OP_OK
 
-/obj/item/extraction_pack/afterattack(atom/movable/A, mob/living/carbon/human/user, flag, params)
-	if(!beacon())
-		to_chat(user, "[src] is not linked to a beacon, and cannot be used.")
-		return
-	if(!can_use_indoors)
-		var/turf/T = get_turf(A)
-		if(T && !T.is_outdoors())
-			to_chat(user, "[src] can only be used on things that are outdoors!")
-			return
-	if(!flag)
-		return
-	if(!istype(A))
-		return
-	else
-		if(!safe_for_living_creatures && check_for_living_mobs(A))
-			to_chat(user, "[src] is not safe for use with living creatures, they wouldn't survive the trip back!")
-			return
-		if(!isturf(A.loc)) // no extracting stuff inside other stuff
-			return
-		if(A.anchored)
-			return
-		to_chat(user, span_notice("You start attaching the pack to [A]..."))
-		task_timed(user, 5 SECONDS, A, src, PROC_REF(attach_done), list(user, A))
-
 /// The pack is on: the balloon lifts `A` off (a sequence of steps on the holder, fulton_*()).
-/obj/item/extraction_pack/proc/attach_done(mob/living/carbon/human/user, atom/movable/A)
+/obj/item/extraction_pack/proc/attach_done(datum/act/op/Op)
+	var/mob/user = Op.actor
+	var/atom/movable/A = Op.target
 	if(!beacon() || A.anchored || !isturf(A.loc))
-		return
+		return OP_OK
 	to_chat(user, span_notice("You attach the pack to [A] and activate it."))
 	uses_left--
 	if(isliving(A))
@@ -95,6 +99,7 @@ CAPABILITIES(/obj/item/extraction_pack)
 	holder_obj.fulton_expand(A, landing)
 	if(uses_left <= 0)
 		consume(src, user)
+	return OP_OK
 
 /obj/effect/extraction_holder/proc/fulton_balloon(state)
 	var/mutable_appearance/balloon = mutable_appearance('icons/obj/fulton_balloon.dmi', state)

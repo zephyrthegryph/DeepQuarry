@@ -1548,7 +1548,8 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
 	attack_verb = list("fluffed", "fwomped", "fuwa'd", "squirmshed")
 	special_handling = TRUE
 
-/obj/item/toy/plushie/fluff/seona_mofuorb/proc/search_done(mob/user)
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/search_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!stored_item)
 		return
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
@@ -1557,6 +1558,7 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
 
 // special_handling: the inherited plushie "Squeeze" steps aside, and this runs ahead of it.
 CAPABILITIES(/obj/item/toy/plushie/fluff/seona_mofuorb)
+	op("mofuorb_search", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Search"), when(req(PROC_REF(search_ready))), claims(), wait(1 SECOND), then(PROC_REF(search_done)))
 	op("mofuorb_hug", in_hand(), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 1), label("Hug"), then(PROC_REF(mofuorb_hug)))
 	op("mofuorb_poke", in_hand(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 1), label("Poke"), then(PROC_REF(mofuorb_poke)))
 	op("mofuorb_strangle", in_hand(), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 1), label("Strangle"), then(PROC_REF(mofuorb_strangle)))
@@ -1575,10 +1577,11 @@ CAPABILITIES(/obj/item/toy/plushie/fluff/seona_mofuorb)
 /obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_punch(datum/act/op/A)
 	return mofuorb_squeeze(A.actor, I_HURT)
 
+/// Something is stored in the opened plushie to find.
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/search_ready(datum/act/op/A)
+	return stored_item && opened
+
 /obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_squeeze(mob/user, stance)
-	if(stored_item && opened && !task_busy(src))
-		task_timed(user, 1 SECOND, src, src, PROC_REF(search_done), list(user), claims = TRUE)
-		return OP_OK
 	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 5 SECONDS)
 		return OP_OK
 	if(stance == I_HELP)

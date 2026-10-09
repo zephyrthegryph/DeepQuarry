@@ -8,7 +8,7 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	extend("machine_unanchor", then(PROC_REF(rewrenched)))
 	default_parts()
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(PROC_REF(interaction_part_replacement_impl)))
-	op("attach_scanner", item(/obj/item/anomaly_scanner), priority(OP_PRIORITY_DEFAULT - 2), label("Attach anomaly"), then(PROC_REF(interaction_attach_scanner)))
+	op("attach_scanner", item(/obj/item/anomaly_scanner), priority(OP_PRIORITY_DEFAULT - 2), label("Attach anomaly"), wait(PROC_REF(attach_time)), then(PROC_REF(interaction_attach_scanner)))
 
 /obj/machinery/anomaly_harvester
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
@@ -71,6 +71,11 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	add_fingerprint(A.actor)
 	return default_part_replacement(A.actor, A.held) ? OP_OK : OP_DECLINE
 
+/// How long attaching takes: two seconds with an anchored harvester and a scanner holding an anomaly, else the click is answered at once.
+/obj/machinery/anomaly_harvester/proc/attach_time(datum/act/op/A)
+	var/obj/item/anomaly_scanner/scanner = A.held
+	return anchored && scanner.buffered_anomaly ? 2 SECONDS : 0
+
 /obj/machinery/anomaly_harvester/proc/interaction_attach_scanner(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/anomaly_scanner/scanner = A.held
@@ -79,12 +84,8 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 		to_chat(user, span_danger("The [src] is not anchored!"))
 		return OP_OK
 	if(scanner.buffered_anomaly)
-		task_timed(user, 2 SECONDS, src, src, PROC_REF(attach_scanned_anomaly), list(scanner))
-	return OP_OK
-
-/obj/machinery/anomaly_harvester/proc/attach_scanned_anomaly(obj/item/anomaly_scanner/scanner)
-	if(scanner.buffered_anomaly)
 		attach_anomaly(scanner.buffered_anomaly)
+	return OP_OK
 
 /obj/machinery/anomaly_harvester/proc/attach_anomaly(obj/effect/anomaly/anomaly)
 	// The scanner's buffered_anomaly and the stats' attached_harvester are relation views.

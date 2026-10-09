@@ -1490,31 +1490,46 @@ TYPE_TABLE(/obj/item/gun/projectile/automatic/wt550, projectile_initial_transfor
 	if(sawn_off)
 		P.submunition_spread_max = 100 //More spread when sawn off
 
-/// Old attackby (this file's; its ..() is shotgun.dm's definition, included earlier).
-/obj/item/gun/projectile/shotgun/doublebarrel/gun_item(datum/act/op/A)
-	var/mob/user = A.actor
+MSG_DEF_SELF(doublebarrel/already_short, span_warning("%T% is already shortened!"))
+MSG_DEF_SELF(doublebarrel/saw_begins, span_notice("You begin to shorten the barrel of %T%."))
+MSG_DEF(doublebarrel/saw_misfire, span_danger("The shotgun goes off in your face!"), span_danger("The shotgun goes off!"))
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
+	// A saw, an energy blade or a plasma cutter shortens the barrel: a loaded gun goes off instead, an empty one takes three seconds (stealthy).
+	op("saw_off", item(/obj/item), priority(OP_PRIORITY_PART), label("Shorten barrel"), when(req(PROC_REF(saw_offered))), needs(req(PROC_REF(saw_possible), because = MSG(doublebarrel/already_short))), begins(MSG(doublebarrel/saw_begins)), wait(3 SECONDS), then(PROC_REF(saw_off_done)))
+	op("saw_off_loaded", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), label("Shorten barrel"), when(req(PROC_REF(saw_misfires))), needs(req(PROC_REF(saw_possible), because = MSG(doublebarrel/already_short))), then(PROC_REF(saw_misfire)))
+
+/// The held item cuts metal.
+/obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_offered(datum/act/op/A)
 	var/obj/item/held = A.held
-	if(istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter))
-		. = OP_PASS
-		if(sawn_off) //Don't do anything if we were already sawed off.
-			return
-		to_chat(user, span_notice("You begin to shorten the barrel of \the [src]."))
-		if(length(loaded))
-			var/burstsetting = burst
-			burst = 2
-			act_message(user, null, MSG_SELF(span_danger("The shotgun goes off in your face!")), MSG_OTHERS(span_danger("The shotgun goes off!")))
-			Fire_userless(user)
-			burst = burstsetting
-			return
-		task_timed(user, 3 SECONDS, src, src, PROC_REF(sawed_off), list(user))	//SHIT IS STEALTHY EYYYYY
-	else
-		return ..()
+	return !length(loaded) && (istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter))
 
-/obj/item/gun/projectile/shotgun/doublebarrel/proc/sawed_off(mob/user)
-	icon_state = "sawnshotgun"
+/// The held item cuts metal, but the gun still has a round in it.
+/obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_misfires(datum/act/op/A)
+	var/obj/item/held = A.held
+	return length(loaded) && (istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter))
+
+/// Nothing to do to a barrel that was already shortened.
+/obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_possible(datum/act/op/A)
+	return !sawn_off
+
+/obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_misfire(datum/act/op/A)
+	var/mob/user = A.actor
+	to_chat(user, span_notice("You begin to shorten the barrel of \the [src]."))
+	var/burstsetting = burst
+	burst = 2
+	act_message_t(user, null, /datum/msg/doublebarrel/saw_misfire)
+	Fire_userless(user)
+	user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD Port
+	burst = burstsetting
+
+/obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_off_done(datum/act/op/A)
+	var/mob/user = A.actor
+	if(sawn_off)
+		return
 	item_state = "sawnshotgun"
-
 	desc = "Omar's coming!"
+	saw_off()
 	to_chat(user, span_warning("You shorten the barrel of \the [src]!"))
 
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_off()

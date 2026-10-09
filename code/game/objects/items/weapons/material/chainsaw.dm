@@ -21,33 +21,6 @@ TRACKED(/obj/item/chainsaw, on)
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	. = ..()
 
-/obj/item/chainsaw/proc/turnOn(mob/user as mob)
-	if(on) return
-
-	act_message(user, src, MSG_SELF("You start pulling the string on %T%."), MSG_OTHERS("%U% starts pulling the string on %T%."))
-
-	if(max_fuel <= 0)
-		task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(turnOn_timed_done), done_args = list(user), on_fail = PROC_REF(turnOn_timed_failed), fail_args = list(user))
-	else
-		task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(turnOn_timed_done2), done_args = list(user), on_fail = PROC_REF(turnOn_timed_failed2), fail_args = list(user))
-
-/obj/item/chainsaw/proc/turnOn_timed_done(mob/user)
-	to_chat(user, "\The [src] won't start!")
-
-/obj/item/chainsaw/proc/turnOn_timed_failed(mob/user)
-	to_chat(user, "You fumble with the string.")
-/obj/item/chainsaw/proc/turnOn_timed_done2(mob/user)
-	act_message(user, src, MSG_SELF("You start %T% up with a loud grinding!"), MSG_OTHERS("%U% starts %T% up with a loud grinding!"))
-	attack_verb = list("shredded", "ripped", "torn")
-	play_sfx(src, SFX_WEAPONS_CHAINSAW_STARTUP, 4, vary = TRUE)
-	force = active_force
-	edge = TRUE
-	sharp = TRUE
-	set_on(TRUE)
-
-/obj/item/chainsaw/proc/turnOn_timed_failed2(mob/user)
-	to_chat(user, "You fumble with the string.")
-
 /obj/item/chainsaw/proc/turnOff(mob/user as mob)
 	if(!on) return
 	to_chat(user, "You switch the gas nozzle on the chainsaw, turning it off.")
@@ -58,19 +31,43 @@ TRACKED(/obj/item/chainsaw, on)
 	sharp = FALSE
 	set_on(FALSE)
 
+MSG_DEF(chainsaw/pulling, "You start pulling the string on %T%.", "%U% starts pulling the string on %T%.")
+MSG_DEF_SELF(chainsaw/refilling, span_notice("You begin filling the tank on the chainsaw."))
+
 CAPABILITIES(/obj/item/chainsaw)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), when(PROC_REF(stopped)), begins(MSG(chainsaw/pulling)), wait(1.5 SECONDS), then(PROC_REF(started)), on_interrupt(PROC_REF(string_fumbled)))
+	op("off", in_hand(), when(PROC_REF(running)), priority(OP_PRIORITY_TAKE_OUT), then(PROC_REF(switched_off)))
+	op("refuel", at_target(/obj/structure/reagent_dispensers/fueltank), begins(MSG(chainsaw/refilling)), wait(1.5 SECONDS), then(PROC_REF(refueled)), on_interrupt(PROC_REF(refuel_abandoned)))
 	/// Burns fuel every 2 s while running.
 	every(2 SECONDS, then(PROC_REF(chainsaw_step)), when = nameof(on))
 
-/// Old attack_self.
-/obj/item/chainsaw/proc/interaction_self(datum/act/op/A)
+/obj/item/chainsaw/proc/stopped(datum/act/op/A)
+	return !on
+
+/obj/item/chainsaw/proc/running(datum/act/op/A)
+	return on
+
+/obj/item/chainsaw/proc/switched_off(datum/act/op/A)
+	turnOff(A.actor)
+	return OP_OK
+
+/// The string pull finished: with no fuel tank at all it will not start.
+/obj/item/chainsaw/proc/started(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!on)
-		turnOn(user)
-	else
-		turnOff(user)
-	return TRUE
+	if(max_fuel <= 0)
+		to_chat(user, "\The [src] won't start!")
+		return OP_OK
+	act_message(user, src, MSG_SELF("You start %T% up with a loud grinding!"), MSG_OTHERS("%U% starts %T% up with a loud grinding!"))
+	attack_verb = list("shredded", "ripped", "torn")
+	play_sfx(src, SFX_WEAPONS_CHAINSAW_STARTUP, 4, vary = TRUE)
+	force = active_force
+	edge = TRUE
+	sharp = TRUE
+	set_on(TRUE)
+	return OP_OK
+
+/obj/item/chainsaw/proc/string_fumbled(datum/act/op/A)
+	to_chat(A.actor, "You fumble with the string.")
 
 /obj/item/chainsaw/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
 	if(!proximity) return
@@ -94,26 +91,16 @@ CAPABILITIES(/obj/item/chainsaw)
 			if(Hyd.seed && !Hyd.dead)
 				to_chat(user, span_notice("You shred the plant."))
 				Hyd.die()
-	if (istype(A, /obj/structure/reagent_dispensers/fueltank) && get_dist(src,A) <= 1)
-		to_chat(user, span_notice("You begin filling the tank on the chainsaw."))
-		task_start(/datum/task/timed/chainsaw_afterattack, user, src, receiver = src, A = A)
 
-/datum/task/timed/chainsaw_afterattack
-	duration = 15
-	complete_proc = /obj/item/chainsaw/proc/afterattack_timed_done
-	cancel_proc = /obj/item/chainsaw/proc/afterattack_timed_failed
-	var/atom/A
-
-/obj/item/chainsaw/proc/afterattack_timed_done(datum/task/timed/chainsaw_afterattack/task)
-	var/atom/A = task.A
-	var/mob/user = task.actor
-	A.reagents.trans_to_obj(src, max_fuel)
+/obj/item/chainsaw/proc/refueled(datum/act/op/A)
+	var/atom/tank = A.target
+	tank.reagents.trans_to_obj(src, max_fuel)
 	play_sfx(src, SFX_EFFECTS_REFILL)
-	to_chat(user, span_notice("Chainsaw succesfully refueled."))
+	to_chat(A.actor, span_notice("Chainsaw succesfully refueled."))
+	return OP_OK
 
-/obj/item/chainsaw/proc/afterattack_timed_failed(datum/task/timed/chainsaw_afterattack/task)
-	var/mob/user = task.actor
-	to_chat(user, span_notice("Don't move while you're refilling the chainsaw."))
+/obj/item/chainsaw/proc/refuel_abandoned(datum/act/op/A)
+	to_chat(A.actor, span_notice("Don't move while you're refilling the chainsaw."))
 
 /// Burns fuel every 2 s while running (declared above); off, it sleeps.
 /obj/item/chainsaw/proc/chainsaw_step(datum/act/timer/A)

@@ -29,18 +29,14 @@
 	source.reagents.reaction(src, TOUCH, 10)	//10 is the multiplier for the reaction effect. probably needed to wet the floor properly.
 	source.reagents.remove_any(1)				//reaction() doesn't use up the reagents
 */
-/obj/item/mop_deploy/afterattack(atom/A, mob/user, proximity)
-	if(!proximity) return
-	if(istype(A, /turf) || istype(A, /obj/effect/decal/cleanable) || istype(A, /obj/effect/overlay) || istype(A, /obj/effect/rune))
-		act_message(user, null, others = span_warning("%U% begins to clean \the [get_turf(A)]."))
+MSG_DEF(mop_deploy/cleaning, null, span_warning("%U% begins to clean the floor."))
 
-		task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user))
-
-/obj/item/mop_deploy/proc/afterattack_timed_done(atom/A, mob/user)
-	var/turf/T = get_turf(A)
+/obj/item/mop_deploy/proc/mopped(datum/act/op/A)
+	var/turf/T = get_turf(A.target)
 	if(T)
 		T.clean_deploy(src)
-	to_chat(user, span_notice("You have finished mopping!"))
+	to_chat(A.actor, span_notice("You have finished mopping!"))
+	return OP_OK
 
 // Mops and soap on an effect (decals, runes, overlays) go straight to their afterattack
 // cleaning: nothing else about the effect (signals, less specific interactions) reacts.
@@ -54,6 +50,7 @@ CAPABILITIES(/obj/item/mop_deploy)
 	reagents(5)
 	after_init(1, then(PROC_REF(check_held))) // after the hand that made it has taken it
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("mop", at_target(/turf), at_target(/obj/effect/decal/cleanable), at_target(/obj/effect/overlay), at_target(/obj/effect/rune), begins(MSG(mop_deploy/cleaning)), wait(4 SECONDS), then(PROC_REF(mopped)))
 
 /// Old attack_self.
 /obj/item/mop_deploy/proc/interaction_self(datum/act/op/A)

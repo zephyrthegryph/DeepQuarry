@@ -309,26 +309,32 @@
 	if(!heard_something)
 		to_chat(src, span_notice("You hear no movement but your own."))
 
+MSG_DEF_SELF(human/regen_hungry, span_warning("You lack the biomass to begin regeneration!"))
+MSG_DEF_SELF(human/regen_active, span_warning("You are already regenerating tissue!"))
+MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s flesh begins to mend..."))
+
 /mob/living/carbon/human/proc/regenerate()
 	set name = "Regenerate"
 	set desc = "Allows you to regrow limbs and heal organs after a period of rest."
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(nutrition < 250)
-		to_chat(src, span_warning("You lack the biomass to begin regeneration!"))
-		return
+	perform_op(src, src, "regenerate", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-	if(active_regen)
-		to_chat(src, span_warning("You are already regenerating tissue!"))
-		return
-	else
-		active_regen = TRUE
-		act_message(src, null, others = span_filter_notice(span_bold("%U%") + "'s flesh begins to mend..."))
+/// Requirement: enough biomass to regrow with.
+/mob/living/carbon/human/proc/regenerate_fed(datum/act/op/A)
+	return nutrition >= 250
 
-	var/delay_length = round(active_regen_delay * species.active_regen_mult)
-	task_timed(src, delay_length, target = src, receiver = src, on_done = PROC_REF(regenerate_human_done), done_args = list(), on_fail = PROC_REF(regenerate_human_failed), fail_args = list())
+/// Requirement: no regeneration already runs.
+/mob/living/carbon/human/proc/regenerate_idle(datum/act/op/A)
+	return !active_regen
 
-/mob/living/carbon/human/proc/regenerate_human_done()
+/mob/living/carbon/human/proc/regenerate_started(datum/act/op/A)
+	active_regen = TRUE
+
+/mob/living/carbon/human/proc/regenerate_time(datum/act/op/A)
+	return round(active_regen_delay * species.active_regen_mult)
+
+/mob/living/carbon/human/proc/regenerate_human_done(datum/act/op/A)
 	adjust_nutrition(-200)
 
 	for(var/obj/item/organ/internal/I in internal_organ_list())
@@ -372,7 +378,7 @@
 	update_icons_body()
 	active_regen = FALSE
 
-/mob/living/carbon/human/proc/regenerate_human_failed()
+/mob/living/carbon/human/proc/regenerate_human_failed(datum/act/op/A)
 	to_chat(src, span_critical("Your regeneration is interrupted!"))
 	adjust_nutrition(-75)
 	active_regen = FALSE
