@@ -400,6 +400,7 @@
 #include "dq_look_pins.dm"
 #include "dq_look_sweep.dm"
 #include "dq_hit_pins.dm"
+#include "dq_loot_pins.dm"
 #include "dq_ui_pins.dm"
 #include "dq_ui_pins_admin.dm"
 #include "dq_ui_pins_other.dm"

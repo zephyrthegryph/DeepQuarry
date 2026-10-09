@@ -1,0 +1,38 @@
+/obj/effect/catwalk_plated => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/structure/catwalk
+/obj/effect/decal/warning_stripes => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/falling_effect => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita
+/obj/effect/fancy_shuttle_floor_preview => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/floorbreak => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/floor_decal => turf /turf/simulated/floor/tiled/steel | decals 1 | nothing
+/obj/effect/floor_decal/asteroid => turf /turf/simulated/floor/tiled/steel | decals 1 | nothing
+/obj/effect/floor_decal/corner/white {dir = 1; color = "#123456"} => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/floor_decal/fancy_shuttle => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/floor_decal/reset => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/gibspawner => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs/core
+/obj/effect/gibspawner/human => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs/core, 0,0 /obj/effect/decal/cleanable/blood/gibs/down
+/obj/effect/graffitispawner => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/effect/decal/cleanable/crayon
+/obj/effect/instantboom {devastation = 0; heavyboom = 0; lightboom = 0; flash = 0} => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/landmark {name = "blobstart"} => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/landmark/map_data {height = 1} => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/low_wall_spawner => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/map_helper => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/map_helper/airlock => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/map_helper/airlock {name = "dq pin helper"; command = "cycle"} => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/mouse_hole_spawner => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/recycler_beacon => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/spawner/onetankbomb => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/item/tank/phoron/onetankbomb
+/obj/effect/spawner/parts/t2 => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/item/stock_parts/capacitor, 0,0 /obj/item/stock_parts/capacitor, 0,0 /obj/item/stock_parts/capacitor, 0,0 /obj/item/stock_parts/capacitor, 0,0 /obj/item/stock_parts/capacitor, 0,0 /obj/item/stock_parts/manipulator, 0,0 /obj/item/stock_parts/manipulator, 0,0 /obj/item/stock_parts/manipulator, 0,0 /obj/item/stock_parts/manipulator, 0,0 /obj/item/stock_parts/manipulator, 0,0 /obj/item/stock_parts/matter_bin, 0,0 /obj/item/stock_parts/matter_bin, 0,0 /obj/item/stock_parts/matter_bin, 0,0 /obj/item/stock_parts/matter_bin, 0,0 /obj/item/stock_parts/matter_bin, 0,0 /obj/item/stock_parts/micro_laser, 0,0 /obj/item/stock_parts/micro_laser, 0,0 /obj/item/stock_parts/micro_laser, 0,0 /obj/item/stock_parts/micro_laser, 0,0 /obj/item/stock_parts/micro_laser, 0,0 /obj/item/stock_parts/scanning_module, 0,0 /obj/item/stock_parts/scanning_module, 0,0 /obj/item/stock_parts/scanning_module, 0,0 /obj/item/stock_parts/scanning_module, 0,0 /obj/item/stock_parts/scanning_module
+/obj/effect/wingrille_spawn => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/structure/grille, 0,0 /obj/structure/window/basic, 0,0 /obj/structure/window/basic, 0,0 /obj/structure/window/basic, 0,0 /obj/structure/window/basic
+/obj/effect/wire_deleter => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/fiftyspawner {type_to_spawn = /obj/item/stack/rods} => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/fruitspawner => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/item/animal_spawner => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/item/holder/mouse
+/obj/item/fossil/base => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/item/fossil/bone
+/obj/item/reagent_containers/food/snacks/bageltwo => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/item/reagent_containers/food/snacks/bagelplain, 0,0 /obj/item/reagent_containers/food/snacks/bagelplain
+/obj/random/mob/sif => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /mob/living/simple_mob/animal/passive/mouse
+/obj/random/tool => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/item/tool/screwdriver
+/obj/random_multi {id = "dq_pin"} => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/random_multi/single_item {id = "dq_pin"; item_path = /obj/item/tool/wrench; weight = 2} => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/tcspawner => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/item/stack/telecrystal
+registries => blobstart 0 | recycler 1 | multi_point dq_pin 0
+
