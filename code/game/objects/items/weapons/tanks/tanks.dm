@@ -60,8 +60,9 @@ CAPABILITIES(/obj/item/tank)
 	without("ui_open")
 	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
-	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
-	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), starts(PROC_REF(wirecutter_started)), wait(PROC_REF(wirecutter_time)), on_interrupt(PROC_REF(wire_clip_slipped)), then(PROC_REF(wirecutter_used)))
+	op("use_welder", tool(TOOL_WELDER), needs(req_welder_lit()), costs(RES_FUEL, 1), starts(PROC_REF(welder_started)), wait(PROC_REF(welder_time)), on_interrupt(PROC_REF(welder_act_timed_failed)), then(PROC_REF(welder_used)))
+	op("attach_assembly", item(/obj/item/assembly_holder), priority(OP_PRIORITY_PART), label("Attach assembly"), needs(req(PROC_REF(is_wired), because = MSG(tank/needs_wires))), begins(MSG(tank/attaching)), wait(5 SECONDS), on_interrupt(PROC_REF(attach_stopped)), then(PROC_REF(assembly_attached)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("tank_item", item(/obj/item), label("Tank item"), then(PROC_REF(tank_item)))
 
@@ -89,6 +90,8 @@ TRACKED(/obj/item/tank, seal_damaged)
 /// TRUE while a mob holds or wears the tank (set by equipped(), cleared by dropped()).
 /obj/item/tank/var/handled = FALSE
 TRACKED(/obj/item/tank, handled)
+TRACKED(/obj/item/tank, wired)
+TRACKED(/obj/item/tank, valve_welded)
 
 /obj/item/tank/on_update_integrity(old_value, new_value)
 	. = ..()
@@ -174,57 +177,59 @@ TRACKED(/obj/item/tank, handled)
 	if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
 		if(C.use(1))
-			wired = 1
+			set_wired(1)
 			to_chat(user, span_notice("You attach the wires to the tank."))
 			src.add_bomb_overlay()
 
-	if(istype(W, /obj/item/assembly_holder))
-		if(wired)
-			to_chat(user, span_notice("You begin attaching the assembly to \the [src]."))
-			task_start(/datum/task/timed/tank_attackby, user, src, receiver = src, W = W)
-		else
-			to_chat(user, span_notice("You need to wire the device up first."))
 	return OP_PASS
 
-/datum/task/timed/tank_attackby
-	duration = 5 SECONDS
-	complete_proc = /obj/item/tank/proc/attackby_timed_done
-	cancel_proc = /obj/item/tank/proc/attackby_timed_failed
-	var/obj/item/W
+MSG_DEF_SELF(tank/needs_wires, span_notice("You need to wire the device up first."))
+MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T%."))
 
-/obj/item/tank/proc/attackby_timed_done(datum/task/timed/tank_attackby/task)
-	var/obj/item/W = task.W
-	var/mob/user = task.actor
+/obj/item/tank/proc/is_wired(datum/act/op/A)
+	return wired
+
+/obj/item/tank/proc/assembly_attached(datum/act/op/A)
+	var/obj/item/W = A.held
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You finish attaching the assembly to \the [src]."))
 	GLOB.bombers += "[key_name(user)] attached an assembly to a wired [src]. Temp: [src.air_contents.return_temperature()-T0C]"
 	message_admins("[key_name_admin(user)] attached an assembly to a wired [src]. Temp: [src.air_contents.return_temperature()-T0C]")
 	assemble_bomb(W,user)
 
-/obj/item/tank/proc/attackby_timed_failed(datum/task/timed/tank_attackby/task)
-	var/mob/user = task.actor
-	to_chat(user, span_notice("You stop attaching the assembly."))
+/obj/item/tank/proc/attach_stopped(datum/act/op/A)
+	to_chat(A.actor, span_notice("You stop attaching the assembly."))
+
+/// The wires clipped with a device on them take ten careful seconds, bare wires one.
+/obj/item/tank/proc/wirecutter_time(datum/act/op/A)
+	if(wired && src.proxyassembly.assembly)
+		return 10 SECONDS
+	return wired ? 1 SECOND : 0
+
+/obj/item/tank/proc/wirecutter_started(datum/act/op/A)
+	if(wired && src.proxyassembly.assembly)
+		to_chat(A.actor, span_notice("You carefully begin clipping the wires that attach to the tank."))
 
 /obj/item/tank/proc/wirecutter_used(datum/act/op/A)
-	var/mob/user = A.actor
-	if(wired && src.proxyassembly.assembly)
-
-		to_chat(user, span_notice("You carefully begin clipping the wires that attach to the tank."))
-		task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user), on_fail = PROC_REF(wire_clip_slipped), fail_args = list(user))
-
-	else if(wired)
-		task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done2), done_args = list(user))
-
+	if(!wired)
+		to_chat(A.actor, span_notice("There are no wires to cut!"))
+		return OP_OK
+	if(src.proxyassembly.assembly)
+		wirecutter_act_timed_done(A.actor)
 	else
-		to_chat(user, span_notice("There are no wires to cut!"))
+		wirecutter_act_timed_done2(A.actor)
 	return OP_OK
 
-/obj/item/tank/proc/wire_clip_slipped(mob/user)
-	to_chat(user, span_danger("You slip and bump the igniter!"))
+/// Interrupted while clipping a live assembly: a slip bumps the igniter.
+/obj/item/tank/proc/wire_clip_slipped(datum/act/op/A)
+	if(!(wired && src.proxyassembly.assembly))
+		return
+	to_chat(A.actor, span_danger("You slip and bump the igniter!"))
 	if(prob(85))
 		src.proxyassembly?.receive_signal()
 
 /obj/item/tank/proc/wirecutter_act_timed_done(mob/user)
-	wired = 0
+	set_wired(0)
 	cut_overlay("bomb_assembly")
 	to_chat(user, span_notice("You cut the wire and remove the device."))
 
@@ -245,43 +250,38 @@ TRACKED(/obj/item/tank, handled)
 	update_gauge()
 /obj/item/tank/proc/wirecutter_act_timed_done2(mob/user)
 	to_chat(user, span_notice("You quickly clip the wire from the tank."))
-	wired = 0
+	set_wired(0)
 	cut_overlay("bomb_assembly")
+
+/// Four seconds of welding on a valve that is still open.
+/obj/item/tank/proc/welder_time(datum/act/op/A)
+	return valve_welded ? 0 : 4 SECONDS
+
+/obj/item/tank/proc/welder_started(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!valve_welded)
+		to_chat(user, span_notice("You begin welding the \the [src] emergency pressure relief valve."))
+		var/obj/item/weldingtool/WT = A.held.get_welder()
+		WT?.eyecheck(user)
 
 /obj/item/tank/proc/welder_used(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	var/obj/item/weldingtool/WT = tool.get_welder()
-	if(WT?.remove_fuel(1,user))
-		if(!valve_welded)
-			to_chat(user, span_notice("You begin welding the \the [src] emergency pressure relief valve."))
-			task_start(/datum/task/timed/tank_welder_act, user, src, receiver = src, tool = tool, WT = WT)
-			WT.eyecheck(user)
-		else
-			to_chat(user, span_notice("The emergency pressure relief valve has already been welded."))
+	if(valve_welded)
+		to_chat(user, span_notice("The emergency pressure relief valve has already been welded."))
+	else
+		to_chat(user, span_notice("You carefully weld \the [src] emergency pressure relief valve shut.") + " " + span_warning("\The [src] may now rupture under pressure!"))
+		set_valve_welded(1)
+		set_leaking(FALSE)
 	add_fingerprint(user)
 	return OP_OK
 
-/datum/task/timed/tank_welder_act
-	duration = 4 SECONDS
-	complete_proc = /obj/item/tank/proc/welder_act_timed_done
-	cancel_proc = /obj/item/tank/proc/welder_act_timed_failed
-	var/obj/item/tool
-	var/obj/item/weldingtool/WT
-
-/obj/item/tank/proc/welder_act_timed_done(datum/task/timed/tank_welder_act/task)
-	var/mob/user = task.actor
-	to_chat(user, span_notice("You carefully weld \the [src] emergency pressure relief valve shut.") + " " + span_warning("\The [src] may now rupture under pressure!"))
-	src.valve_welded = 1
-	set_leaking(FALSE)
-
-/obj/item/tank/proc/welder_act_timed_failed(datum/task/timed/tank_welder_act/task)
-	var/mob/user = task.actor
-	var/obj/item/tool = task.tool
-	var/obj/item/weldingtool/WT = task.WT
+/obj/item/tank/proc/welder_act_timed_failed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	var/obj/item/weldingtool/WT = tool.get_welder()
 	GLOB.bombers += "[key_name(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]"
 	message_admins("[key_name_admin(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]")
-	if(WT.welding)
+	if(WT?.welding)
 		to_chat(user, span_danger("You accidentally rake \the [tool] across \the [src]!"))
 		max_integrity -= rand(20,60)
 		if(get_integrity() > max_integrity)
@@ -620,10 +620,10 @@ TRACKED(/obj/item/tank, handled)
 	src.air_contents.adjust_gas(GAS_PHORON, (phoron_amt) - LINDA_GAS_AMT(src.air_contents, GAS_PHORON))
 	src.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(src.air_contents, GAS_O2))
 	// update_values() removed; no-op under LINDA.
-	src.valve_welded = 1
+	set_valve_welded(1)
 	heat_set(src.air_contents, PLASMA_MINIMUM_BURN_TEMPERATURE-1, HEAT_SOURCE_OTHER)
 
-	src.wired = 1
+	set_wired(1)
 
 	var/obj/item/assembly_holder/H = new(src)
 	rel_set(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly), H)
