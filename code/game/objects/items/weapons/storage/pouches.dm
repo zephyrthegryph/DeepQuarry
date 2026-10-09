@@ -23,6 +23,8 @@
 CAPABILITIES(/obj/item/storage/pouch)
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 	op("insert_delayed", ai(), wait(PROC_REF(insert_wait)), then(PROC_REF(stalled_insert)))
+	// A slow pouch gives an item up after a wait too; the item and the place it goes to come from the storage hook that started it.
+	op("remove_delayed", ai(), takes("item", "new_location"), wait(PROC_REF(remove_wait)), then(PROC_REF(stalled_remove)))
 
 /obj/item/storage/pouch/stall_insertion(obj/item/W, mob/user)
 	// No delay if you have the pouch in your hands
@@ -50,7 +52,7 @@ CAPABILITIES(/obj/item/storage/pouch)
 		return TRUE // Skip delay
 
 	if(remove_delay && !stall_passed)
-		task_start(/datum/task/timed/pouch_stalled_remove, user, src, receiver = src, duration = remove_delay, W = W, new_location = new_location)
+		perform_op(user, src, "remove_delayed", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("item" = W, "new_location" = new_location))
 		return FALSE // the delay runs first; stalled_remove() retries the move
 
 	if(W in slot_contents(CONTAINER_SLOT_STORAGE))
@@ -58,18 +60,18 @@ CAPABILITIES(/obj/item/storage/pouch)
 
 	return FALSE //Item was somehow already removed
 
-/datum/task/timed/pouch_stalled_remove
-	complete_proc = /obj/item/storage/pouch/proc/stalled_remove
-	var/obj/item/W
-	var/atom/new_location
+/// How long the delayed removal waits.
+/obj/item/storage/pouch/proc/remove_wait(datum/act/op/A)
+	return remove_delay
 
-/obj/item/storage/pouch/proc/stalled_remove(datum/task/timed/pouch_stalled_remove/task)
-	var/obj/item/W = task.W
-	var/mob/user = task.actor
-	var/atom/new_location = task.new_location
+/obj/item/storage/pouch/proc/stalled_remove(datum/act/op/A)
+	var/obj/item/W = A.arg("item")
+	if(QDELETED(W))
+		return OP_REFUSED
 	stall_passed = TRUE
-	remove_from_storage(W, new_location, user)
+	remove_from_storage(W, A.arg("new_location"), A.actor)
 	stall_passed = FALSE
+	return OP_OK
 
 /obj/item/storage/pouch/pocket_description(mob/haver, mob/examiner)
 	return "[src]"

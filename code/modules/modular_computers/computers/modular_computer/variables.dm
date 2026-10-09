@@ -93,6 +93,8 @@ CAPABILITIES(/obj/item/modular_computer)
 	every(2 SECONDS, then(PROC_REF(modular_computer_step)), when = nameof(enabled))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	interface("NtosMain", autoupdate = TRUE)
+	// A welder repairs the casing: as long as the damage says, for the fuel the damage says, both fixed when the weld starts.
+	op("weld_repair", tool(TOOL_WELDER), label("Repair"), needs(req(PROC_REF(needs_repair), because = MSG(modular_computer/no_repairs))), begins(MSG(modular_computer/welding)), costs(RES_FUEL, PROC_REF(weld_fuel), locked = TRUE), wait(PROC_REF(weld_time)), says(MSG(modular_computer/welded)), then(PROC_REF(weld_repair_done)))
 	without("ui_open")
 	op("PC_exit", ui_act("PC_exit"), then(PROC_REF(ui_act_pc_exit)))
 	op("PC_shutdown", ui_act("PC_shutdown"), then(PROC_REF(ui_act_pc_shutdown)))

@@ -46,6 +46,10 @@
 	/// resource id -> amount, from costs(); cost_order keeps declaration order.
 	var/list/costs
 	var/list/cost_order
+	/// resource id -> TRUE for a costs(..., locked = TRUE): the amount is read when a wait starts and kept.
+	var/list/cost_locked
+	/// takes("name", ...): the argument names a foreign caller may pass to perform_op(with =).
+	var/list/takes
 	/// A cooldown(t) in deciseconds, or null.
 	var/cooldown_t
 	var/consumes = FALSE
@@ -477,6 +481,10 @@
 			return
 	LAZYADD(P.steps, src) // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 
+/datum/entry/part/takes/compile(datum/op_plan/P, level)
+	for(var/name in src.args["names"])
+		LAZYOR(P.takes, name)
+
 /datum/entry/part/asks/compile(datum/op_plan/P, level)
 	LAZYADD(P.steps, src) // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 
@@ -490,6 +498,8 @@
 	if(src.args["add"] && !isnull(LAZYACCESS(P.costs, "[id]")))
 		n += P.costs["[id]"]
 	LAZYSET(P.costs, "[id]", n)
+	if(src.args["locked"])
+		LAZYSET(P.cost_locked, "[id]", TRUE)
 	P.cost_order = P.cost_order || list()
 	P.cost_order |= "[id]"
 

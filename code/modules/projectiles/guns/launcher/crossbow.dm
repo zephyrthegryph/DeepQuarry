@@ -75,6 +75,11 @@
 	special_handling = TRUE
 TRACKED(/obj/item/gun/launcher/crossbow, tension)
 
+// Drawing the string is one op that waits a notch at a time, 2.5 seconds each, until the string is at its maximum tension; leaving, firing or
+// losing the bolt ends it with the notches drawn so far, and the string relaxes.
+CAPABILITIES(/obj/item/gun/launcher/crossbow)
+	op("draw_string", ai(), needs(req(PROC_REF(draw_holds), because = MSG(req_silent))), wait(2.5 SECONDS, repeats = PROC_REF(draw_more), after_step = PROC_REF(draw_notch)), on_interrupt(PROC_REF(draw_relaxed)))
+
 /obj/item/gun/launcher/crossbow/update_release_force()
 	release_force = tension*release_speed
 
@@ -123,25 +128,29 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 	current_user = user
 	act_message(user, src, MSG_SELF(span_notice("You begin to draw back the string of %T%.")), MSG_OTHERS("%U% begins to draw back the string of %T%."))
 	set_tension(1)
-	draw_step(user)
+	// crossbow strings don't just magically pull back on their own: one notch of tension every 2.5 seconds up to max_tension
+	var/datum/op_result/drawing = perform_op(user, src, "draw_string", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
+	if(drawing.outcome == ACT_REFUSED)
+		set_tension(0)
 
-/// One notch of tension every 2.5 seconds (a timed action each) up to max_tension.
-//crossbow strings don't just magically pull back on their own.
-/obj/item/gun/launcher/crossbow/proc/draw_step(mob/user)
-	if(!(bolt && tension && loc == current_user))
-		return
-	task_timed(user, 2.5 SECONDS, src, src, PROC_REF(draw_notch), list(user), on_fail = PROC_REF(draw_relaxed), fail_args = list(user))
+/// The bolt is nocked and the string is drawn at all (the crossbow is the op's held item: leaving the hands that drew it stops the draw).
+/obj/item/gun/launcher/crossbow/proc/draw_holds(datum/act/op/A)
+	return bolt && tension
 
-/obj/item/gun/launcher/crossbow/proc/draw_relaxed(mob/user)
-	act_message(user, src, others = "%U% stops drawing and relaxes the string of %T%.", \
+/// Another notch follows while the string is short of its maximum tension.
+/obj/item/gun/launcher/crossbow/proc/draw_more(datum/act/op/A)
+	return tension < max_tension
+
+/obj/item/gun/launcher/crossbow/proc/draw_relaxed(datum/act/op/A)
+	if(!tension)
+		return // fired or relaxed already: nothing left to let go of
+	act_message(A.actor, src, others = "%U% stops drawing and relaxes the string of %T%.", \
 		blind = span_warning("You stop drawing back and relax the string of %T%."))
 	set_tension(0)
 
-/obj/item/gun/launcher/crossbow/proc/draw_notch(mob/user)
-	//double check that the user hasn't removed the bolt in the meantime
-	if(!(bolt && tension && loc == current_user))
-		return
-
+/// One notch drawn.
+/obj/item/gun/launcher/crossbow/proc/draw_notch(datum/act/op/A)
+	var/mob/user = A.actor
 	set_tension(tension + 1)
 
 	if(tension >= max_tension)
@@ -150,7 +159,6 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 		return
 
 	act_message(user, src, MSG_SELF(span_notice("You continue drawing back the string of %T%!")), MSG_OTHERS("%U% draws back the string of %T%!"))
-	draw_step(user)
 
 /obj/item/gun/launcher/crossbow/proc/increase_tension(mob/user as mob)
 

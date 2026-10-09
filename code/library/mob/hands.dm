@@ -11,6 +11,13 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("regenerate", ai(), needs(req(PROC_REF(regenerate_fed), because = MSG(human/regen_hungry)), req(PROC_REF(regenerate_idle), because = MSG(human/regen_active))), starts(PROC_REF(regenerate_started)), begins(MSG(human/regen_begins)), wait(PROC_REF(regenerate_time)), on_interrupt(PROC_REF(regenerate_human_failed)), then(PROC_REF(regenerate_human_done)))
 	op("enter_cocoon", ai(), needs(req(PROC_REF(cocoon_has_space), because = MSG(human/cocoon_no_space)), req(PROC_REF(cocoon_fit), because = MSG(human/cocoon_state))), wait(2.5 SECONDS), then(PROC_REF(enter_cocoon_human_done)))
 	op("check_pulse", menu(), label("Check pulse"), needs(req_capable()), starts(PROC_REF(check_pulse_started)), begins(PROC_REF(check_pulse_begins)), wait(6 SECONDS), on_interrupt(PROC_REF(check_pulse_human_failed)), then(PROC_REF(check_pulse_human_done)))
+	// Pressure on a bleeding limb is held until the user lets go (the hand changes or they move): wait_until() with no end of its own.
+	op("apply_pressure", ai(), reach(REACH_ADJACENT), takes("zone", "hand"), starts(PROC_REF(pressure_started)), wait_until(until = PROC_REF(pressure_hand_changed)), on_interrupt(PROC_REF(pressure_released)), then(PROC_REF(pressure_released)))
+	// Licking wounds clean: a lap per wound, as long as the wound is bad (lick_wounds.dm); standing still is the only thing it keeps.
+	op("lick_wounds", ai(), takes("patient", "limb"), wait(PROC_REF(lick_time), repeats = PROC_REF(lick_more), after_step = PROC_REF(lick_done)), on_interrupt(PROC_REF(lick_interrupted)))
+	// Devouring from the water: the victim is picked, then kept for the five seconds it takes to drag them under; if they get away it fails.
+	op("underwater_devour", ai(), asks(/datum/prompt/choice/victim/underwater, fields = list("choices" = computed(PROC_REF(underwater_devour_choices))), step = "victim", keeps_answer = TRUE),
+		starts(PROC_REF(underwater_devour_started)), wait(5 SECONDS, keeps = STAY | TARGET_PRESENT | ALIVE), on_interrupt(PROC_REF(underwater_devour_escaped)), then(PROC_REF(underwater_devour_human_done)))
 	op("lleill_ring_spawn", ai(), wait(10 SECONDS), on_interrupt(PROC_REF(lleill_ring_interrupted)), then(PROC_REF(lleill_ring_spawn_done)))
 	hands()
 	body_clock(STAT_BODY_CLOCK_ACTIVE)
