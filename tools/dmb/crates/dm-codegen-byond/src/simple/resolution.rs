@@ -297,14 +297,12 @@ impl Compiler<'_> {
     }
     pub(super) fn numeric_constant(&self, name: &str) -> Result<Option<u32>, LowerError> {
         if let Some(lookup) = self.lookup {
-            return match self.semantic(lookup.constant(name))? {
-                Some(dm_ir::SemanticValue::NumberBits(bits)) => Ok(Some(bits)),
-                Some(dm_ir::SemanticValue::Text(_)) | None => Ok(None),
-                _ => self.semantic(Err(lookup.error(
-                    dm_ir::ResolveQuery::PredefinedConstant(dm_ir::SymbolId::of(name)),
-                    "unsupported predefined constant value",
-                ))),
-            };
+            let value = self.semantic(lookup.constant(name))?;
+            return self.predefined_projection(
+                lookup,
+                name,
+                dm_ir::predefined_resolution::numeric_value(value),
+            );
         }
         Ok(self
             .bindings
@@ -315,21 +313,12 @@ impl Compiler<'_> {
     }
     pub(super) fn string_constant(&self, name: &str) -> Result<Option<String>, LowerError> {
         if let Some(lookup) = self.lookup {
-            return match self.semantic(lookup.constant(name))? {
-                Some(dm_ir::SemanticValue::Text(bytes)) => {
-                    self.semantic(String::from_utf8(bytes.to_vec()).map(Some).map_err(|_| {
-                        lookup.error(
-                            dm_ir::ResolveQuery::PredefinedConstant(dm_ir::SymbolId::of(name)),
-                            "predefined constant is not UTF-8",
-                        )
-                    }))
-                }
-                Some(dm_ir::SemanticValue::NumberBits(_)) | None => Ok(None),
-                _ => self.semantic(Err(lookup.error(
-                    dm_ir::ResolveQuery::PredefinedConstant(dm_ir::SymbolId::of(name)),
-                    "unsupported predefined constant value",
-                ))),
-            };
+            let value = self.semantic(lookup.constant(name))?;
+            return self.predefined_projection(
+                lookup,
+                name,
+                dm_ir::predefined_resolution::text_value(value),
+            );
         }
         Ok(self
             .bindings

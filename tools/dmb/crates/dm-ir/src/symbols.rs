@@ -100,6 +100,55 @@ impl SymbolTable {
         self.insert(SymbolId::of(text), text)
     }
 
+    /// Merge certified IDs and shared spellings without hashing their text again.
+    /// Validate the complete incoming ancestry before mutating this dictionary.
+    pub fn merge_from(&mut self, source: &SymbolTable) -> Result<(), SymbolCollision> {
+        fn check(
+            target: &SymbolTable,
+            source: &SymbolTable,
+            collision: &mut Option<SymbolCollision>,
+        ) {
+            if let Some(parent) = &source.parent {
+                check(target, parent, collision);
+            }
+            for (&id, incoming) in &source.texts {
+                if let Some(existing) = target.text(id) {
+                    if existing != incoming.as_ref()
+                        && collision.as_ref().is_none_or(|previous| id < previous.id)
+                    {
+                        *collision = Some(SymbolCollision {
+                            id,
+                            existing: Arc::from(existing),
+                            incoming: Arc::clone(incoming),
+                        });
+                    }
+                }
+            }
+        }
+        fn append(target: &mut SymbolTable, source: &SymbolTable) {
+            if let Some(parent) = &source.parent {
+                append(target, parent);
+            }
+            for (&id, text) in &source.texts {
+                if target.text(id).is_none() {
+                    target.texts.insert(id, Arc::clone(text));
+                }
+            }
+        }
+        let mut collision = None;
+        check(self, source, &mut collision);
+        if let Some(collision) = collision {
+            return Err(collision);
+        }
+        append(self, source);
+        Ok(())
+    }
+
+    /// Remove inactive local entries while preserving immutable parent backing.
+    pub fn retain_local(&mut self, mut keep: impl FnMut(SymbolId) -> bool) {
+        self.texts.retain(|&id, _| keep(id));
+    }
+
     fn insert(&mut self, id: SymbolId, text: &str) -> Result<SymbolId, SymbolCollision> {
         if let Some(existing) = self.parent.as_ref().and_then(|parent| parent.text(id)) {
             if existing != text {
@@ -161,6 +210,63 @@ impl SymbolTable {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn certified_merge_shares_spellings_and_preserves_parent() {
+        let mut base = SymbolTable::default();
+        let a = base.intern("a").unwrap();
+        let base = Arc::new(base);
+        let mut source = SymbolTable::overlay(Arc::clone(&base));
+        let b = source.intern("b").unwrap();
+        let mut target = SymbolTable::overlay(Arc::clone(&base));
+        target.merge_from(&source).unwrap();
+        assert!(Arc::ptr_eq(&target.texts[&b], &source.texts[&b]));
+        assert_eq!(target.texts.len(), 1);
+        target.retain_local(|_| false);
+        assert_eq!(target.text(a), Some("a"));
+        assert_eq!(target.text(b), None);
+        assert!(target.is_extension_of(&base));
+    }
+
+    #[test]
+    fn certified_merge_collision_is_atomic_across_ancestry() {
+        let mut target = SymbolTable::default();
+        let collision = target.intern("existing").unwrap();
+        let mut source_parent = SymbolTable::default();
+        source_parent.intern("new ancestor").unwrap();
+        let mut source = SymbolTable::overlay(Arc::new(source_parent));
+        source.insert(collision, "different").unwrap();
+        source.intern("new local").unwrap();
+        let before = target.ordered();
+        let before: Vec<_> = before
+            .into_iter()
+            .map(|(id, text)| (id, text.to_owned()))
+            .collect();
+        assert!(target.merge_from(&source).is_err());
+        assert_eq!(
+            target
+                .ordered()
+                .into_iter()
+                .map(|(id, text)| (id, text.to_owned()))
+                .collect::<Vec<_>>(),
+            before
+        );
+    }
+
+    #[test]
+    fn certified_merge_reports_lowest_collision_id_deterministically() {
+        let mut target = SymbolTable::default();
+        let first = target.intern("first").unwrap();
+        let second = target.intern("second").unwrap();
+        let mut source = SymbolTable::default();
+        source.insert(first, "other first").unwrap();
+        source.insert(second, "other second").unwrap();
+        assert_eq!(
+            target.merge_from(&source).unwrap_err().id,
+            first.min(second)
+        );
+        assert_eq!(target.len(), 2);
+    }
 
     #[test]
     fn overlay_shares_backing_and_rejects_parent_collisions() {

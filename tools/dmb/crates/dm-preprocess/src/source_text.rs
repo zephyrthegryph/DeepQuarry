@@ -2,20 +2,34 @@
 use std::{
     fmt,
     ops::{Deref, Range},
-    sync::Arc,
+    sync::{Arc, Mutex, OnceLock},
 };
 
 #[derive(Clone)]
-enum Backing {
+enum TextBacking {
     Original(Arc<str>),
     Transformed(String),
 }
-impl Backing {
+impl TextBacking {
     fn text(&self) -> &str {
         match self {
             Self::Original(text) => text,
             Self::Transformed(text) => text,
         }
+    }
+}
+struct Backing {
+    text: TextBacking,
+    fingerprints: OnceLock<Mutex<Vec<SpanFingerprint>>>,
+}
+#[derive(Clone, Copy)]
+struct SpanFingerprint {
+    range: (usize, usize),
+    digest: u128,
+}
+impl Backing {
+    fn text(&self) -> &str {
+        self.text.text()
     }
 }
 #[derive(Clone)]
@@ -35,14 +49,62 @@ impl SourceText {
     }
     pub fn visit_storage(&self, visitor: impl FnOnce(usize, usize, SourceTextStorage<'_>)) {
         let storage = match self.backing.as_ref() {
-            Backing::Original(text) => SourceTextStorage::Original(text),
-            Backing::Transformed(text) => SourceTextStorage::Transformed(text),
+            Backing {
+                text: TextBacking::Original(text),
+                ..
+            } => SourceTextStorage::Original(text),
+            Backing {
+                text: TextBacking::Transformed(text),
+                ..
+            } => SourceTextStorage::Transformed(text),
         };
         visitor(
             Arc::as_ptr(&self.backing) as usize,
             std::mem::size_of::<Backing>(),
             storage,
         );
+    }
+    /// Content fingerprint only: this issues no source/provenance authority.
+    /// Ranges are relative to this view and must delimit valid UTF-8 text.
+    pub fn span_fingerprint(&self, range: Range<usize>) -> Option<u128> {
+        let text = self.as_str().get(range.clone())?;
+        let absolute = (
+            self.range.start.checked_add(range.start)?,
+            self.range.start.checked_add(range.end)?,
+        );
+        let cache = self
+            .backing
+            .fingerprints
+            .get_or_init(|| Mutex::new(Vec::new()));
+        let mut entries = cache.lock().unwrap_or_else(|poison| poison.into_inner());
+        match entries.binary_search_by_key(&absolute, |entry| entry.range) {
+            Ok(index) => Some(entries[index].digest),
+            Err(index) => {
+                let digest = xxhash_rust::xxh3::xxh3_128(text.as_bytes());
+                // Bound arbitrary span-history retention independently of input size.
+                if entries.len() < 4096 {
+                    entries.insert(
+                        index,
+                        SpanFingerprint {
+                            range: absolute,
+                            digest,
+                        },
+                    );
+                }
+                Some(digest)
+            }
+        }
+    }
+    /// Borrow memo storage for pointer-deduplicated retained-owner accounting.
+    pub fn visit_fingerprint_storage(&self, visitor: impl FnOnce(usize, usize, usize)) {
+        if let Some(cache) = self.backing.fingerprints.get() {
+            let entries = cache.lock().unwrap_or_else(|poison| poison.into_inner());
+            visitor(
+                entries.as_ptr() as usize,
+                entries.len() * std::mem::size_of::<SpanFingerprint>(),
+                entries.capacity() * std::mem::size_of::<SpanFingerprint>(),
+            );
+        }
     }
     #[cfg(test)]
     pub(crate) fn shares_backing(&self, other: &Self) -> bool {
@@ -61,7 +123,10 @@ impl From<Arc<str>> for SourceText {
     fn from(text: Arc<str>) -> Self {
         let length = text.len();
         Self {
-            backing: Arc::new(Backing::Original(text)),
+            backing: Arc::new(Backing {
+                text: TextBacking::Original(text),
+                fingerprints: OnceLock::new(),
+            }),
             range: 0..length,
         }
     }
@@ -70,7 +135,10 @@ impl From<String> for SourceText {
     fn from(text: String) -> Self {
         let length = text.len();
         Self {
-            backing: Arc::new(Backing::Transformed(text)),
+            backing: Arc::new(Backing {
+                text: TextBacking::Transformed(text),
+                fingerprints: OnceLock::new(),
+            }),
             range: 0..length,
         }
     }
@@ -106,6 +174,49 @@ impl Eq for SourceText {}
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn span_fingerprints_share_absolute_ranges_and_reject_invalid_utf8_ranges() {
+        let source = SourceText::from(String::from("one\ncafé\n"));
+        let view = source.view(4..source.len());
+        let expected = xxhash_rust::xxh3::xxh3_128("café\n".as_bytes());
+        assert_eq!(source.span_fingerprint(4..source.len()), Some(expected));
+        assert_eq!(view.span_fingerprint(0..view.len()), Some(expected));
+        assert_eq!(view.span_fingerprint(0..4), None); // middle of é
+        assert_eq!(view.span_fingerprint(6..7), None);
+        assert_eq!(view.span_fingerprint(4..2), None);
+        let mut first = None;
+        source.visit_fingerprint_storage(|pointer, length, capacity| {
+            assert_eq!(length, std::mem::size_of::<SpanFingerprint>());
+            assert!(capacity >= length);
+            first = Some(pointer);
+        });
+        view.visit_fingerprint_storage(|pointer, _, _| assert_eq!(Some(pointer), first));
+        assert_eq!(source.as_str(), "one\ncafé\n");
+    }
+
+    #[test]
+    fn arbitrary_span_history_is_bounded_and_poison_does_not_change_fingerprints() {
+        let source = SourceText::from("x".repeat(4100));
+        for end in 0..4100 {
+            assert_eq!(
+                source.span_fingerprint(0..end),
+                Some(xxhash_rust::xxh3::xxh3_128(&source.as_bytes()[..end]))
+            );
+        }
+        source.visit_fingerprint_storage(|_, length, _| {
+            assert_eq!(length, 4096 * std::mem::size_of::<SpanFingerprint>());
+        });
+        let cache = source.backing.fingerprints.get().unwrap();
+        let _ = std::panic::catch_unwind(|| {
+            let _guard = cache.lock().unwrap();
+            panic!("test poisoned optional memo");
+        });
+        assert_eq!(
+            source.span_fingerprint(0..4100),
+            Some(xxhash_rust::xxh3::xxh3_128(source.as_bytes()))
+        );
+    }
 
     #[test]
     fn string_backing_moves_allocation_and_views_preserve_utf8() {

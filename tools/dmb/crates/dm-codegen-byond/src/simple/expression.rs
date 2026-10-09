@@ -336,32 +336,43 @@ impl Compiler<'_> {
                         }
                         return Ok(());
                     }
-                    if let Some(bits) = self.numeric_constant(name)? {
-                        self.record_selection(
-                            expr,
-                            name,
-                            dm_ir::SelectedMeaning::NumericConstant(bits),
-                        );
-                        let number = f32::from_bits(bits);
-                        if number >= 0.0 && number <= u16::MAX as f32 && number.fract() == 0.0 {
-                            self.emit(opcode::PUSH_INT, vec![Word::Immediate(number as u32)]);
-                        } else {
-                            self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Number(bits))]);
+                    match dm_ir::predefined_resolution::select_predefined(
+                        &predefined_resolution::PredefinedCompiler(self),
+                        name,
+                    )? {
+                        Some(dm_ir::predefined_resolution::PredefinedConstant::NumberBits(
+                            bits,
+                        )) => {
+                            self.record_selection(
+                                expr,
+                                name,
+                                dm_ir::SelectedMeaning::NumericConstant(bits),
+                            );
+                            let number = f32::from_bits(bits);
+                            if number >= 0.0 && number <= u16::MAX as f32 && number.fract() == 0.0 {
+                                self.emit(opcode::PUSH_INT, vec![Word::Immediate(number as u32)]);
+                            } else {
+                                self.emit(
+                                    opcode::PUSH_VAL,
+                                    vec![Word::Value(ValueWord::Number(bits))],
+                                );
+                            }
+                            return Ok(());
                         }
-                        return Ok(());
-                    }
-                    if let Some(value) = self.string_constant(name)? {
-                        self.record_selection(
-                            expr,
-                            name,
-                            dm_ir::SelectedMeaning::StringConstant(SymbolId::of(&value)),
-                        );
-                        self.intern_string(&value);
-                        self.emit(
-                            opcode::PUSH_VAL,
-                            vec![Word::Value(ValueWord::String(SymbolId::of(&value)))],
-                        );
-                        return Ok(());
+                        Some(dm_ir::predefined_resolution::PredefinedConstant::Text(value)) => {
+                            self.record_selection(
+                                expr,
+                                name,
+                                dm_ir::SelectedMeaning::StringConstant(SymbolId::of(&value)),
+                            );
+                            self.intern_string(&value);
+                            self.emit(
+                                opcode::PUSH_VAL,
+                                vec![Word::Value(ValueWord::String(SymbolId::of(&value)))],
+                            );
+                            return Ok(());
+                        }
+                        None => {}
                     }
                 }
                 let var = self.variable_for_node(expr, name, statement)?;

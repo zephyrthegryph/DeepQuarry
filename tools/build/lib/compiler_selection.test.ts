@@ -1,9 +1,10 @@
 import { afterEach, expect, test } from 'bun:test';
 import { classifyShadowReport, compilerCacheIdentity, compilerMode, selectedCompiler, shadowSnapshotContract } from './compiler_selection';
 import Juke from '../juke/index.js';
+import fs from 'node:fs';
 const originalEnvironment = { ...process.env };
 afterEach(() => {
-  for (const name of ['DQ_COMPILER', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS']) {
+  for (const name of ['DQ_COMPILER', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DQ_SHADOW_ROOT']) {
     if (originalEnvironment[name] === undefined) delete process.env[name];
     else process.env[name] = originalEnvironment[name];
   }
@@ -53,6 +54,49 @@ test('typed source and cancellation statuses never fall back', async () => {
     let byondCalls = 0;
     await expect(selectedCompiler('project.dme', {}, async () => { byondCalls++; }, execute)).rejects.toBeInstanceOf(Juke.ExitCode);
     expect(byondCalls).toBe(0);
+  }
+});
+
+test('native cannot silently discard requested compiler version or warning policy', async () => {
+  process.env.DQ_COMPILER = 'native';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  for (const options of [
+    { namedDmVersion: 'pinned-reference' },
+    { warningsAsErrors: true },
+    { ignoreWarningCodes: ['unused_var'] },
+  ]) {
+    let nativeCalls = 0;
+    let byondCalls = 0;
+    await selectedCompiler('project.dme', options, async () => { byondCalls++; }, async () => {
+      nativeCalls++;
+      return { code: 0, combined: '' };
+    });
+    expect(nativeCalls).toBe(0);
+    expect(byondCalls).toBe(1);
+  }
+});
+
+test('shadow rejects unsupported configuration before either compiler executes', async () => {
+  process.env.DQ_COMPILER = 'shadow';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  fs.mkdirSync('E:/dq-cache', { recursive: true });
+  const ownedRoot = fs.mkdtempSync('E:/dq-cache/shadow-policy-fixture-');
+  process.env.DQ_SHADOW_ROOT = ownedRoot;
+  let nativeCalls = 0;
+  let byondCalls = 0;
+  try {
+    await expect(selectedCompiler('project.dme', { warningsAsErrors: true }, async () => {
+      byondCalls++;
+    }, async () => {
+      nativeCalls++;
+      return { code: 0, combined: '' };
+    })).rejects.toThrow('Native compiler does not support requested DreamMaker options: warningsAsErrors');
+    expect(nativeCalls).toBe(0);
+    expect(byondCalls).toBe(0);
+  } finally {
+    fs.rmSync(ownedRoot, { recursive: true, force: true });
   }
 });
 

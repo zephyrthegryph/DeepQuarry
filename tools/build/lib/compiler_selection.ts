@@ -72,6 +72,16 @@ export function compilerCacheIdentity(): string {
   return hash.digest('hex');
 }
 function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: string): [string, string[]] {
+  // The native CLI currently has no equivalent version selector or warning
+  // policy. Never turn a successful native process into silent policy loss.
+  const unsupported = [
+    options.namedDmVersion != null ? 'namedDmVersion' : null,
+    options.warningsAsErrors ? 'warningsAsErrors' : null,
+    options.ignoreWarningCodes?.length ? 'ignoreWarningCodes' : null,
+  ].filter((value): value is string => value !== null);
+  if (unsupported.length) {
+    throw new Error(`Native compiler does not support requested DreamMaker options: ${unsupported.join(', ')}.`);
+  }
   const executable = process.env.DQ_NATIVE_COMPILER;
   const template = process.env.DQ_NATIVE_ENGINE_TEMPLATE;
   if (!executable || !template) {
