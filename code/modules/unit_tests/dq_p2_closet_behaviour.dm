@@ -71,6 +71,8 @@
 
 /// The shown icon state of the closet (what a player sees: the lock and the weld).
 /proc/p2cl_icon(obj/structure/closet/C)
+	// The closet's picture is drawn at the refresh at the end of the frame: flush it, then read what it shows.
+	refresh_flush()
 	return C.icon_state
 
 /// A person inside pushes on the door (a move key): the closet's relaymove.

@@ -1,4 +1,5 @@
 author: "zephyr"
 delete-after: true
 changes:
-  - code_imp: "Kernel system rows follow the scheduled behaviour types; two stale tests fixed and known_failures emptied"
+  - code_imp: "Kernel system rows follow the scheduled behaviour types; known_failures is empty: stale look, topic and watch-index tests fixed"
+  - bugfix: "A weapon clicked on a table in combat mode is placed on it again (the table's place op answers the attack intent)"
