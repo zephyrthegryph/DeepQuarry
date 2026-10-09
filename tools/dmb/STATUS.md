@@ -2,6 +2,24 @@
 
 Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 
+## Compact prepared-source candidate
+
+Commit `64d40464a9` stores prepared logical lines in 40-byte checked records
+instead of 56-byte records, with an exact wide fallback. Directive planning,
+memo replay and source consumers use borrowed immutable range views. Construction
+fills the compact backing directly; no full-width intermediate vector remains.
+The expected 16 bytes per logical line saving is not a measured private-memory
+result. This owner is released after frontend construction.
+
+Ordinary library checks passed 1,586 tests across 15 targets, with zero failures
+or ignored tests, in 126.636 s including compilation. Release all-target Clippy
+passed in 23.113 s. Evidence: `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-054253-701960af.json`
+and `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-053541-ce9c96db.json`.
+The exact committed candidate is frozen for a matched compressed-trace cohort:
+`E:/dq-cache/dmb-native-v2/matched-gzip-preparation-20261009-054556-be4e68dd.json`.
+No timing or acceptance improvement is claimed before this cohort completes.
+Later transient region-output changes are excluded from that snapshot.
+
 ## Compact provenance and single-codec candidate
 
 Expanded origin storage now uses 32-byte indexed records instead of 72-byte
