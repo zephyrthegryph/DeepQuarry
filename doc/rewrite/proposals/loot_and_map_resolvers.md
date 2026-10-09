@@ -231,3 +231,29 @@ Resolver specifics for A:
 3. Pure tables (`/loot/...`, 38): a `LOOT_TABLE_DEF(name, ...)` declaration line, or make each one a real (abstract) type so they are ordinary `CAPABILITIES(T)` blocks?
 4. May the pin snapshot (306 declarations x 20 seeds) be committed? It is roughly 6k lines; the alternative is a hash per declaration (306 lines, but a failure
    no longer shows what moved).
+
+## 6. How it was built (differences from sections 2 to 4)
+
+- **Static entries.** A loot table or a resolver belongs to a type that is never made, so `declared_entries()` (an instance proc) cannot hold it. A kind marked
+  `STATIC_ENTRY(kind)` (`loot`, `loot_search`, `map_resolver`) is left out of the instance chain by `analyze gen declare` and written into
+  `declared_static_blocks()` instead; the `static_entries` kernel system (`code/engine/declare/static_entries.dm`) compiles those blocks once at world setup,
+  parents first, before the first map load (the atoms and mapping systems need it). `configure(kind(...))` is merged by the kind's `/datum/entry_engine`
+  (`merge()`), a plain second declaration of a singleton kind is an error, and each kind builds its cache from the finished tables (`static_built()`): the
+  loot declarations by type, the per-type resolver table. Nested lookups only read.
+- **`loot()` is named parameters**, not sub-entries: `loot(table =, count =, chance =, all =, hook =, per_round =, unlucky =, uncommon =, rare =, gamma_chance =,
+  depletion =, repeat_search =)`. A subtype's `configure(loot(...))` replaces the parameters it names; what spawns (`table`, `all`, `per_round`) is one unit, as
+  `loot_merge_specs` made it. The row constructors take a list (`loot_set(weight, list(...))`, `loot_sub`, `loot_tier(chance, list(...))`): a variadic proc
+  loses the weight of a `/path = weight` argument, a list keeps it.
+- **Pure tables** are abstract `/loot/...` types; there is no `LOOT_TABLE_DEF`. `loot_type_hash()` hashes the text the declaration type had
+  (`/datum/loot_decl/loot/...`) for them, so the seeds did not move.
+- **`loot_search(table =, wake_chance =)`** names a pile's table (the old `loot_decl` var and the argument the trash pile passed). The roll proc that used to be
+  called `loot_search()` was renamed for the entry (`loot_pile_search()`, then `loot_search_roll()`).
+- **Resolvers.** The `/atom` `map_resolver` and `map_resolver_vars` vars are gone: `GLOB.map_resolvers` holds, for every type under a declaring one, its
+  `/datum/map_resolver_info`; `SSatoms.InitAtom()` looks the instance's type up in it.
+- **Waves** were closed under inheritance (a legacy declaration does not inherit from an entry), by `tools/codemods/declare_loot.py` and `map_resolver.py`; both
+  forms were read until the last site went, then deleted and banned (21 names) in one commit.
+- **Pins** (`code/modules/unit_tests/snapshots/loot/`): the rolls (`rolls.txt`, 6120 rows), the pile searches, the resolver table (every atom type that resolves)
+  and the map-reader fixture (`resolver_fixture.dmm`). Recording them needed a null guard in the repair droid (the rolls delete uninstalled ones), and left out of the
+  fixture the stairs spawner, the turbolift holder, `/obj/random`, `/obj/effect/spawner/parts` and `newbomb` (a base spawner with no table recurses forever, a mapped
+  TTV bomb runtimes during a load; the table pin covers their resolvers).
+- **Option B** (search as an op, `code/library/loot/loot_search.dm`): see `doc/rewrite/intended_changes.md`, "Loot piles: the search op".
