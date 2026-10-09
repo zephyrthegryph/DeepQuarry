@@ -152,3 +152,79 @@ fn parallel_value_failure_is_source_ordered_and_all_buckets_join() {
     assert_eq!(errors.issues[0].source_ordinal, 0);
     assert_eq!(factory.0.load(std::sync::atomic::Ordering::Relaxed), 2);
 }
+
+struct BorrowedFactory {
+    source_addresses: std::collections::HashSet<usize>,
+    modifier_reads: std::sync::atomic::AtomicUsize,
+}
+impl CapturedInitializerEvaluator for BorrowedFactory {
+    fn evaluate(&self, owner: SymbolId, value: &SymbolicExpression) -> Result<Evaluation, String> {
+        Evaluator.evaluate(owner, value)
+    }
+    fn binding_knowledge(
+        &self,
+        write: &InitializerWrite,
+    ) -> Result<Option<BindingKnowledge>, String> {
+        assert!(
+            self.source_addresses
+                .contains(&(std::ptr::from_ref(write) as usize)),
+            "modifier workers must borrow the authored roster rather than copied bucket writes"
+        );
+        self.modifier_reads
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        Ok(write.declaration_flags.map(BindingKnowledge::Modifiers))
+    }
+}
+impl InitializerEvaluatorFactory for BorrowedFactory {
+    fn with_evaluator(
+        &self,
+        _: Option<&crate::engine::EngineSnapshot>,
+        operation: &mut dyn FnMut(&dyn CapturedInitializerEvaluator),
+    ) {
+        operation(self);
+    }
+}
+#[test]
+fn parallel_buckets_borrow_authored_writes_and_keep_serial_output() {
+    let mut symbols = SymbolTable::default();
+    let first = symbols.intern("/datum/first").unwrap();
+    let second = symbols.intern("/datum/second").unwrap();
+    let name = symbols.intern("value").unwrap();
+    let writes = [(first, "list(2)"), (second, "run()"), (first, "list(2,2)")]
+        .into_iter()
+        .map(|(owner, source)| {
+            write(
+                owner,
+                name,
+                InitializerValue::Expression(expression(source, &mut symbols).unwrap()),
+            )
+        })
+        .collect::<Vec<_>>();
+    let factory = BorrowedFactory {
+        source_addresses: writes
+            .iter()
+            .map(|write| std::ptr::from_ref(write) as usize)
+            .collect(),
+        modifier_reads: std::sync::atomic::AtomicUsize::new(0),
+    };
+    let serial = classify_with_token_mode(&writes, &symbols, &Evaluator, false).unwrap();
+    let executor = dm_exec::BuildExecutor::new(2).unwrap();
+    let parallel = classify_with_token_mode_on_executor(
+        &writes,
+        &symbols,
+        ParallelEvaluator {
+            factory: &factory,
+            engine: None,
+        },
+        false,
+        &executor,
+    )
+    .unwrap();
+    assert_eq!(
+        factory
+            .modifier_reads
+            .load(std::sync::atomic::Ordering::Relaxed),
+        writes.len()
+    );
+    assert_eq!(format!("{:?}", serial), format!("{:?}", parallel));
+}

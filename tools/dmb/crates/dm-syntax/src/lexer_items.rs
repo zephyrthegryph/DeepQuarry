@@ -124,87 +124,8 @@ pub fn visit_tokens(source: &str, mut visitor: impl FnMut(SpanToken)) -> Vec<Dia
                 .map(|(_, c)| c.len_utf8())
                 .sum::<usize>();
             (TokenKind::Whitespace, pos + n, false)
-        } else if rest.starts_with("//") {
-            (
-                TokenKind::Comment,
-                pos + rest.find(['\r', '\n']).unwrap_or(rest.len()),
-                false,
-            )
-        } else if rest.starts_with("/*") {
-            let mut depth = 1usize;
-            let mut cursor = 2usize;
-            while depth > 0 && cursor + 1 < rest.len() {
-                if rest[cursor..].starts_with("/*") {
-                    depth += 1;
-                    cursor += 2;
-                } else if rest[cursor..].starts_with("*/") {
-                    depth -= 1;
-                    cursor += 2;
-                } else {
-                    cursor += rest[cursor..].chars().next().unwrap().len_utf8();
-                }
-            }
-            if depth == 0 {
-                (TokenKind::Comment, pos + cursor, false)
-            } else {
-                (TokenKind::Comment, source.len(), true)
-            }
-        } else if let Some(stripped) = rest.strip_prefix("@'") {
-            let close = stripped.find('\'').map(|at| at + 3);
-            (
-                TokenKind::String,
-                pos + close.unwrap_or(rest.len()),
-                close.is_none(),
-            )
-        } else if rest.starts_with("@{\"") {
-            let close = quoted_end(&rest[1..], true, true);
-            (
-                TokenKind::String,
-                pos + close.map_or(rest.len(), |end| end + 1),
-                close.is_none(),
-            )
-        } else if rest.starts_with("{\"") {
-            let close = quoted_end(rest, true, false);
-            (
-                TokenKind::String,
-                pos + close.unwrap_or(rest.len()),
-                close.is_none(),
-            )
-        } else if rest.starts_with("@\"") {
-            let close = quoted_end(&rest[1..], false, true);
-            (
-                TokenKind::String,
-                pos + close.map_or(rest.len(), |end| end + 1),
-                close.is_none(),
-            )
-        } else if c == '"' || c == '\'' {
-            let mut escape = false;
-            let close = if c == '"' {
-                quoted_end(rest, false, false)
-            } else {
-                let mut close = None;
-                for (offset, ch) in rest.char_indices().skip(1) {
-                    if escape {
-                        escape = false;
-                        continue;
-                    }
-                    if ch == '\\' {
-                        escape = true;
-                        continue;
-                    }
-                    if ch == c {
-                        close = Some(offset + ch.len_utf8());
-                        break;
-                    }
-                }
-                close
-            };
-            let kind = if c == '\'' {
-                TokenKind::Resource
-            } else {
-                TokenKind::String
-            };
-            (kind, pos + close.unwrap_or(rest.len()), close.is_none())
+        } else if let Some((kind, length, unterminated)) = literal_or_comment(rest) {
+            (kind, pos + length, unterminated)
         } else if ident_start(c) {
             let n = rest
                 .char_indices()
@@ -258,4 +179,226 @@ pub fn visit_tokens(source: &str, mut visitor: impl FnMut(SpanToken)) -> Vec<Dia
         pos = end;
     }
     diagnostics
+}
+
+fn literal_or_comment(rest: &str) -> Option<(TokenKind, usize, bool)> {
+    let c = rest.chars().next()?;
+    let result = if rest.starts_with("//") {
+        (
+            TokenKind::Comment,
+            rest.find(['\r', '\n']).unwrap_or(rest.len()),
+            false,
+        )
+    } else if rest.starts_with("/*") {
+        let mut depth = 1usize;
+        let mut cursor = 2usize;
+        while depth > 0 && cursor + 1 < rest.len() {
+            if rest[cursor..].starts_with("/*") {
+                depth += 1;
+                cursor += 2;
+            } else if rest[cursor..].starts_with("*/") {
+                depth -= 1;
+                cursor += 2;
+            } else {
+                cursor += rest[cursor..].chars().next().unwrap().len_utf8();
+            }
+        }
+        if depth == 0 {
+            (TokenKind::Comment, cursor, false)
+        } else {
+            (TokenKind::Comment, rest.len(), true)
+        }
+    } else if let Some(stripped) = rest.strip_prefix("@'") {
+        let close = stripped.find('\'').map(|at| at + 3);
+        (
+            TokenKind::String,
+            close.unwrap_or(rest.len()),
+            close.is_none(),
+        )
+    } else if rest.starts_with("@{\"") {
+        let close = quoted_end(&rest[1..], true, true);
+        (
+            TokenKind::String,
+            close.map_or(rest.len(), |end| end + 1),
+            close.is_none(),
+        )
+    } else if rest.starts_with("{\"") {
+        let close = quoted_end(rest, true, false);
+        (
+            TokenKind::String,
+            close.unwrap_or(rest.len()),
+            close.is_none(),
+        )
+    } else if rest.starts_with("@\"") {
+        let close = quoted_end(&rest[1..], false, true);
+        (
+            TokenKind::String,
+            close.map_or(rest.len(), |end| end + 1),
+            close.is_none(),
+        )
+    } else if c == '"' || c == '\'' {
+        let mut escape = false;
+        let close = if c == '"' {
+            quoted_end(rest, false, false)
+        } else {
+            let mut close = None;
+            for (offset, ch) in rest.char_indices().skip(1) {
+                if escape {
+                    escape = false;
+                    continue;
+                }
+                if ch == '\\' {
+                    escape = true;
+                    continue;
+                }
+                if ch == c {
+                    close = Some(offset + ch.len_utf8());
+                    break;
+                }
+            }
+            close
+        };
+        let kind = if c == '\'' {
+            TokenKind::Resource
+        } else {
+            TokenKind::String
+        };
+        (kind, close.unwrap_or(rest.len()), close.is_none())
+    } else {
+        return None;
+    };
+    Some(result)
+}
+
+/// Visit only comments, sharing exact literal boundaries with the full lexer.
+/// Full lexical diagnostics remain available through `visit_tokens`.
+pub fn visit_comment_spans(source: &str, mut visitor: impl FnMut(Span)) {
+    let bytes = source.as_bytes();
+    let mut pos = 0;
+    while pos < bytes.len() {
+        // Candidate bytes are ASCII and therefore UTF-8 character boundaries.
+        while pos < bytes.len() && !matches!(bytes[pos], b'/' | b'"' | b'\'' | b'@' | b'{') {
+            pos += 1;
+        }
+        if pos == bytes.len() {
+            break;
+        }
+        if let Some((kind, length, _)) = literal_or_comment(&source[pos..]) {
+            if kind == TokenKind::Comment {
+                visitor(Span::new(pos, pos + length));
+            }
+            pos += length;
+        } else {
+            pos += 1;
+        }
+    }
+}
+#[cfg(test)]
+mod comment_tests {
+    use super::*;
+    fn selective(source: &str) -> Vec<Span> {
+        let mut spans = Vec::new();
+        visit_comment_spans(source, |span| spans.push(span));
+        spans
+    }
+    #[test]
+    fn comments_exclude_literals_and_preserve_nested_extent() {
+        let source = r#"alpha = "// not comment"; '/*resource*/'; @"/*raw*/"; {"//block"} /* outer /* inner */ end */ // tail
+beta"#;
+        let spans = selective(source);
+        let texts: Vec<_> = spans.iter().map(|span| &source[span.range()]).collect();
+        assert_eq!(texts, ["/* outer /* inner */ end */", "// tail"]);
+    }
+    #[test]
+    fn selective_matches_full_lexer_at_every_utf8_prefix() {
+        let fixtures = [
+            "\u{3b1} / x // tail\r\n/* outer /* nested */ remaining */ \u{96ea}",
+            r#""hello [list("nested ["deep"]", 'resource')] // text" // real"#,
+            r#"@"regex [\] /*literal*/" @'raw/*resource*/' @{"raw // block"} /*yes*/"#,
+            r#"{"multiline
+["inner /* text */"]"} 'escaped\'//resource' // actual"#,
+            "/* unterminated nested /* x */",
+            "\"unterminated [\"nested\" // x",
+            "ordinary identifiers_123 0xABC 1e-4 #INF /*end*/",
+        ];
+        for source in fixtures {
+            for end in (0..=source.len()).filter(|end| source.is_char_boundary(*end)) {
+                let prefix = &source[..end];
+                let mut expected = Vec::new();
+                visit_tokens(prefix, |token| {
+                    if token.kind == TokenKind::Comment {
+                        expected.push(token.span);
+                    }
+                });
+                assert_eq!(selective(prefix), expected, "prefix {prefix:?}");
+                let mut last = None;
+                let mut depth = 0isize;
+                let diagnostics = visit_tokens(prefix, |token| {
+                    match token.text(prefix) {
+                        "(" | "[" => depth += 1,
+                        ")" | "]" => depth -= 1,
+                        _ => {}
+                    }
+                    last = Some(token);
+                });
+                let expected_balance = LexicalBalance {
+                    expression_depth: depth,
+                    open_literal: last.is_some_and(|token| {
+                        token.kind == TokenKind::String
+                            && diagnostics
+                                .iter()
+                                .any(|diagnostic| diagnostic.span.start == token.span.start)
+                    }),
+                    open_block_string: last.is_some_and(|token| {
+                        token.kind == TokenKind::String
+                            && token.text(prefix).starts_with("{\"")
+                            && token.span.end == prefix.len()
+                            && !token.text(prefix).ends_with("\"}")
+                    }),
+                };
+                assert_eq!(
+                    lexical_balance(prefix),
+                    expected_balance,
+                    "balance prefix {prefix:?}"
+                );
+            }
+        }
+    }
+}
+
+/// Continuation facts from literal boundaries and punctuation, without full tokens.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct LexicalBalance {
+    pub expression_depth: isize,
+    pub open_literal: bool,
+    pub open_block_string: bool,
+}
+
+pub fn lexical_balance(source: &str) -> LexicalBalance {
+    let mut balance = LexicalBalance::default();
+    let bytes = source.as_bytes();
+    let mut pos = 0;
+    while pos < bytes.len() {
+        // Every ordinary byte after a literal means it is no longer the last token.
+        balance.open_literal = false;
+        balance.open_block_string = false;
+        if matches!(bytes[pos], b'/' | b'"' | b'\'' | b'@' | b'{') {
+            if let Some((kind, length, unterminated)) = literal_or_comment(&source[pos..]) {
+                if kind == TokenKind::String && pos + length == source.len() {
+                    balance.open_literal = unterminated;
+                    let text = &source[pos..];
+                    balance.open_block_string = text.starts_with("{\"") && !text.ends_with("\"}");
+                }
+                pos += length;
+                continue;
+            }
+        }
+        match bytes[pos] {
+            b'(' | b'[' => balance.expression_depth += 1,
+            b')' | b']' => balance.expression_depth -= 1,
+            _ => {}
+        }
+        pos += 1;
+    }
+    balance
 }

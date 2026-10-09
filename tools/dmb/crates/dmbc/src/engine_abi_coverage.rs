@@ -62,8 +62,19 @@ impl<'a> NamedEngineCoverage<'a> {
         &self,
         frontend: &ColdFrontend,
     ) -> Result<BTreeMap<UnitIdentity, crate::driver_facts::BoundaryAbi>, String> {
+        if frontend.engine.as_ref().map(|status| status.identity) != Some(self.engine.identity()) {
+            return Err("ABI coverage belongs to another captured frontend engine".into());
+        }
+        let units = unit_members(frontend).map_err(|error| error.to_string())?;
+        self.boundaries_with_units(frontend, &units)
+    }
+    pub(crate) fn boundaries_with_units(
+        &self,
+        frontend: &ColdFrontend,
+        units: &BTreeMap<UnitIdentity, MemberId>,
+    ) -> Result<BTreeMap<UnitIdentity, crate::driver_facts::BoundaryAbi>, String> {
         let mut result = BTreeMap::new();
-        for (unit, selection) in self.select(frontend)? {
+        for (unit, selection) in self.select_with_units(frontend, units)? {
             match selection {
                 BoundarySelection::SourcePrevious(_) => {}
                 BoundarySelection::CapturedEngine { owner, name, kind } => {
@@ -91,10 +102,7 @@ impl<'a> NamedEngineCoverage<'a> {
                     let symbols = frontend.snapshot.tree.symbols();
                     let owner = symbols.text(unit.owner).unwrap_or("<unknown owner>");
                     let name = symbols.text(unit.name).unwrap_or("<unknown name>");
-                    let member = unit_members(frontend)
-                        .map_err(|error| error.to_string())?
-                        .get(&unit)
-                        .copied();
+                    let member = units.get(&unit).copied();
                     let origin = frontend
                         .bodies
                         .iter()
@@ -166,9 +174,20 @@ impl<'a> NamedEngineCoverage<'a> {
         if frontend.engine.as_ref().map(|status| status.identity) != Some(self.engine.identity()) {
             return Err("ABI coverage belongs to another captured frontend engine".into());
         }
+        let units = unit_members(frontend).map_err(|error| error.to_string())?;
+        self.select_with_units(frontend, &units)
+    }
+    fn select_with_units(
+        &self,
+        frontend: &ColdFrontend,
+        units: &BTreeMap<UnitIdentity, MemberId>,
+    ) -> Result<BTreeMap<UnitIdentity, BoundarySelection>, String> {
+        if frontend.engine.as_ref().map(|status| status.identity) != Some(self.engine.identity()) {
+            return Err("ABI coverage belongs to another captured frontend engine".into());
+        }
         let tree = &frontend.snapshot.tree;
         let mut selections = BTreeMap::new();
-        for (identity, member) in unit_members(frontend).map_err(|e| e.to_string())? {
+        for (&identity, &member) in units {
             let node = tree
                 .member(member)
                 .ok_or("current procedure member missing")?;
@@ -309,6 +328,20 @@ mod tests {
             BoundarySelection::SourcePrevious(*base.1)
         );
         assert!(coverage.boundaries(&frontend).is_ok());
+        assert_eq!(
+            coverage.select(&frontend).unwrap(),
+            coverage.select_with_units(&frontend, &index).unwrap()
+        );
+        let legacy = coverage.boundaries(&frontend).unwrap();
+        let indexed = coverage.boundaries_with_units(&frontend, &index).unwrap();
+        assert_eq!(
+            legacy.keys().collect::<Vec<_>>(),
+            indexed.keys().collect::<Vec<_>>()
+        );
+        assert!(legacy
+            .values()
+            .chain(indexed.values())
+            .all(|value| matches!(value, crate::driver_facts::BoundaryAbi::Fresh)));
     }
     impl dm_preprocess::SourceProvider for IntrinsicSource {
         fn read(&self, _: &Path) -> Result<String, String> {

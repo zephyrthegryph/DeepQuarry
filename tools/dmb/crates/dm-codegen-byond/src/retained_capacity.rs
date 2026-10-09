@@ -91,7 +91,10 @@ mod tests {
             compacted.code().canonical_bytes(),
             frozen.code().canonical_bytes()
         );
-        assert_eq!(compacted.sites(), frozen.sites());
+        assert_eq!(
+            compacted.sites().collect::<Vec<_>>(),
+            frozen.sites().collect::<Vec<_>>()
+        );
         assert_eq!(compacted.labels(), frozen.labels());
         let mut after = Vec::new();
         procedure

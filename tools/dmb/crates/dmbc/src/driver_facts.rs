@@ -321,7 +321,9 @@ pub fn prepare_pinned_source_abi_with_startup_on_executor<R: Resolver>(
     let coverage =
         crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine).map_err(AbiError)?;
     let policy_identity = coverage.policy_identity();
-    let boundaries = coverage.boundaries(frontend).map_err(AbiError)?;
+    let boundaries = coverage
+        .boundaries_with_units(frontend, startup.unit_members())
+        .map_err(AbiError)?;
     let evaluator = DriverEvaluator {
         pure_calls: None,
         resource_search_context,
@@ -336,6 +338,7 @@ pub fn prepare_pinned_source_abi_with_startup_on_executor<R: Resolver>(
         resource_search_context,
         executor,
         true,
+        Some(startup.unit_members()),
     )?;
     Ok(PreparedPinnedSourceAbi {
         policy_identity,
@@ -383,8 +386,10 @@ fn prepare_source_abi_mode(
         resource_search_context,
         &executor,
         lexical_statics,
+        None,
     )
 }
+#[allow(clippy::too_many_arguments)] // Explicit issued source index and borrowed ABI boundaries.
 fn prepare_source_abi_mode_on_executor(
     frontend: &ColdFrontend,
     engine: &EngineSnapshot,
@@ -393,8 +398,16 @@ fn prepare_source_abi_mode_on_executor(
     resource_search_context: Option<u128>,
     executor: &dm_exec::BuildExecutor,
     lexical_statics: bool,
+    issued_units: Option<&BTreeMap<UnitIdentity, MemberId>>,
 ) -> Result<PreparedSourceAbi, AbiError> {
-    let index = unit_members(frontend)?;
+    let owned_index;
+    let index = match issued_units {
+        Some(index) => index,
+        None => {
+            owned_index = unit_members(frontend)?;
+            &owned_index
+        }
+    };
     let identities: HashMap<_, _> = index.iter().map(|(key, id)| (*id, *key)).collect();
     let tree = &frontend.snapshot.tree;
     let mut layouts = HashMap::new();
@@ -431,7 +444,7 @@ fn prepare_source_abi_mode_on_executor(
                 engine,
                 source_layouts: &layouts,
                 boundaries,
-                unit_members: &index,
+                unit_members: index,
             };
             let lexical = LexicalAbiEvaluator(evaluator);
             let selected_evaluator: &dyn CapturedConstantEvaluator =
@@ -525,7 +538,7 @@ pub struct FrozenPreparedPolicy<'a> {
     frontend: &'a ColdFrontend,
     prepared: &'a PreparedSourceAbi,
     by_identity: BTreeMap<UnitIdentity, usize>,
-    members: BTreeMap<UnitIdentity, MemberId>,
+    members: Arc<BTreeMap<UnitIdentity, MemberId>>,
     body_ordinals: HashMap<MemberId, usize>,
 }
 impl<'a> FrozenPreparedPolicy<'a> {
@@ -538,7 +551,19 @@ impl<'a> FrozenPreparedPolicy<'a> {
                 "cannot lower a failed ABI preparation batch".into(),
             ));
         }
-        let members = unit_members(frontend)?;
+        let members = Arc::new(unit_members(frontend)?);
+        Self::new_with_units(frontend, prepared, members)
+    }
+    pub(crate) fn new_with_units(
+        frontend: &'a ColdFrontend,
+        prepared: &'a PreparedSourceAbi,
+        members: Arc<BTreeMap<UnitIdentity, MemberId>>,
+    ) -> Result<Self, AbiError> {
+        if !prepared.diagnostics.is_empty() {
+            return Err(AbiError(
+                "cannot lower a failed ABI preparation batch".into(),
+            ));
+        }
         let inverse: HashMap<_, _> = members
             .iter()
             .map(|(identity, member)| (*member, *identity))

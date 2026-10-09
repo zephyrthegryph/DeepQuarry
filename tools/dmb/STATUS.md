@@ -2,6 +2,25 @@
 
 Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 
+## New source batch awaiting measurement
+
+The latest batch shares exact macro trace text and empty trace vectors, uses one
+literal/comment boundary scanner for full and selective lexing, removes the
+duplicate frozen operand-site roster, shares startup's procedure index, borrows
+initializer bucket inputs, caches thread labels, and validates final instructions
+with disjoint weighted tasks on the common executor. These changes preserve the
+existing checks and ordering; their speed and peak memory are not measured yet.
+
+Release workspace/all-target Clippy passed in 65.886 s. Ordinary workspace library
+checks passed **1,559 tests across 15 targets**, zero failures/ignored, in 251.850 s
+including compilation. The full release workspace gate reached its 600-second
+watchdog during test-target compilation before test execution and remains open.
+No DreamDaemon or DM runtime suite was launched.
+
+Receipts: `E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-025343-85d91c89.json`,
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-030557-c864b49e.json`, and
+`E:/dq-cache/dmb-native-v2/r6-workspace-tests-20261009-025503-7ed34cec.json`.
+
 ## Latest admitted measurement
 
 The later semantic-owner and staged-output candidate (`36749fd74d`) completed

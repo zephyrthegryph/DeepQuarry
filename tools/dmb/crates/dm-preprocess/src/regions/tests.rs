@@ -215,11 +215,18 @@ fn actual_macro_expansions_retain_definition_and_replacement_ancestry() {
     let output = expand_regions(&plan, 2);
     let trace = &output.origins[0].macro_expansions;
     assert_eq!(trace.len(), 2);
-    assert_eq!(trace[0].name, "OUTER");
+    assert_eq!(trace[0].name.as_ref(), "OUTER");
     assert_eq!(trace[0].definition.as_ref().unwrap().source_line, 2);
-    assert_eq!(trace[1].name, "INNER");
+    assert_eq!(trace[1].name.as_ref(), "INNER");
     assert_eq!(trace[1].definition.as_ref().unwrap().source_line, 1);
-    assert_eq!(trace[1].replacement_chain, vec!["OUTER"]);
+    assert_eq!(
+        trace[1]
+            .replacement_chain
+            .iter()
+            .map(|name| name.as_ref())
+            .collect::<Vec<_>>(),
+        vec!["OUTER"]
+    );
 }
 
 #[test]
@@ -236,7 +243,7 @@ fn continued_macro_definition_preserves_definition_and_use_provenance() {
     let origin = &output.origins[0];
     assert_eq!(origin.origin.source_line, 4);
     assert_eq!(origin.macro_expansions.len(), 2);
-    assert_eq!(origin.macro_expansions[0].name, "OUTER");
+    assert_eq!(origin.macro_expansions[0].name.as_ref(), "OUTER");
     assert_eq!(
         origin.macro_expansions[0]
             .definition
@@ -245,7 +252,7 @@ fn continued_macro_definition_preserves_definition_and_use_provenance() {
             .source_line,
         2
     );
-    assert_eq!(origin.macro_expansions[1].name, "INNER");
+    assert_eq!(origin.macro_expansions[1].name.as_ref(), "INNER");
     assert_eq!(
         origin.macro_expansions[1]
             .definition
@@ -254,7 +261,14 @@ fn continued_macro_definition_preserves_definition_and_use_provenance() {
             .source_line,
         1
     );
-    assert_eq!(origin.macro_expansions[1].replacement_chain, vec!["OUTER"]);
+    assert_eq!(
+        origin.macro_expansions[1]
+            .replacement_chain
+            .iter()
+            .map(|name| name.as_ref())
+            .collect::<Vec<_>>(),
+        vec!["OUTER"]
+    );
 }
 
 #[test]
@@ -458,7 +472,7 @@ fn persistent_full_environments_keep_token_paste_and_definition_epochs_exact() {
             origin
                 .macro_expansions
                 .iter()
-                .find(|expansion| expansion.name == "VALUE1")
+                .find(|expansion| expansion.name.as_ref() == "VALUE1")
                 .unwrap()
                 .definition
                 .as_ref()

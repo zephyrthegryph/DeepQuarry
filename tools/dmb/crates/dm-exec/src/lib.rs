@@ -3,6 +3,9 @@
 //! Jobs may borrow build data. Scope completion joins all jobs, including on
 //! panic; dropping the executor terminates and joins its actual OS workers.
 //! There is no global Rayon pool or hardware-dependent worker-count cap.
+mod weighted;
+pub use weighted::weighted_ranges;
+
 use rayon::{Scope, ThreadPool, ThreadPoolBuildError, ThreadPoolBuilder};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;

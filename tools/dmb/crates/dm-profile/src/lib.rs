@@ -6,6 +6,7 @@ mod clock;
 mod internal_observer;
 mod memory;
 mod names;
+mod thread_label;
 mod trace_output;
 mod worker;
 mod writer;
@@ -264,7 +265,7 @@ fn cpu_segment(state: &State, now: Option<u64>, coarse: Option<u64>, wall: Insta
                 .min(u64::MAX as u128) as u64;
             frame.last_wall = wall;
             if let Some(delta) = cpu_interval(frame.last_cpu, now) {
-                let thread = format!("{:?}", std::thread::current().id());
+                let thread = thread_label::owned();
                 let mut entries = state.entries.lock().unwrap_or_else(|e| e.into_inner());
                 entries.entry(frame.name).or_default().exclusive += delta;
                 *entries
@@ -473,31 +474,26 @@ impl Drop for StageGuard {
         entry.active = entry.active.saturating_sub(1);
         entry.report.name = self.name.into();
         entry.report.calls += 1;
-        record_cpu_interval(
-            entry,
-            &format!("{:?}", std::thread::current().id()),
-            cpu,
-            self.aggregate_interval,
-        );
-        if self.aggregate_interval {
-            if let Some(interval) =
-                clock::CpuInterval::from_samples(self.cpu, end_cpu, self.coarse_cpu, end_coarse_cpu)
-            {
-                entry
-                    .intervals
-                    .entry(format!("{:?}", std::thread::current().id()))
-                    .or_default()
-                    .push(interval);
-            } else {
-                entry.interval_missing = true;
+        thread_label::with_label(|thread| {
+            record_cpu_interval(entry, thread, cpu, self.aggregate_interval);
+            if self.aggregate_interval {
+                if let Some(interval) = clock::CpuInterval::from_samples(
+                    self.cpu,
+                    end_cpu,
+                    self.coarse_cpu,
+                    end_coarse_cpu,
+                ) {
+                    entry
+                        .intervals
+                        .entry(thread.to_owned())
+                        .or_default()
+                        .push(interval);
+                } else {
+                    entry.interval_missing = true;
+                }
             }
-        }
-        record_coarse_interval(
-            entry,
-            &format!("{:?}", std::thread::current().id()),
-            coarse_cpu,
-            self.aggregate_interval,
-        );
+            record_coarse_interval(entry, thread, coarse_cpu, self.aggregate_interval);
+        });
         if self.aggregate_interval {
             entry.report.wall_s += end_wall.duration_since(self.start).as_secs_f64();
             entry.report.allocations += allocations.saturating_sub(self.allocations);

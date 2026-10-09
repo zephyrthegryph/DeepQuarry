@@ -1,10 +1,6 @@
 //! Independent checks of immutable final procedure images, merged by table index.
 use super::*;
 use crate::symbolic::BytecodeFeatures;
-use std::sync::{
-    atomic::{AtomicUsize, Ordering},
-    Mutex,
-};
 
 type Certificates<'a> = HashMap<u32, (&'a [u32], BytecodeFeatures)>;
 
@@ -55,24 +51,21 @@ pub(super) fn validate(
         }
         return Ok(features);
     };
-    let next = AtomicUsize::new(0);
-    let outputs: Vec<_> = (0..dmb.procs.len()).map(|_| Mutex::new(None)).collect();
+    // Weight by accessible word counts without decoding or selecting diagnostics.
+    // At most one task/span per worker avoids tiny CPU intervals and trace churn.
+    let ranges = weighted_ranges(dmb, executor.workers());
+    let mut outputs: Vec<_> = (0..dmb.procs.len()).map(|_| None).collect();
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         executor.scope(|scope| {
-            for _ in 0..executor.workers().min(dmb.procs.len()) {
-                let next = &next;
-                let outputs = &outputs;
+            let mut remaining = outputs.as_mut_slice();
+            for range in ranges {
+                let (chunk, rest) = remaining.split_at_mut(range.len());
+                remaining = rest;
                 scope.spawn(move |_| {
                     let _profile = dm_profile::stage("composition.final_instruction_validation");
-                    loop {
-                        let index = next.fetch_add(1, Ordering::Relaxed);
-                        if index >= dmb.procs.len() {
-                            break;
-                        }
-                        *outputs[index]
-                            .lock()
-                            .expect("final instruction result lock poisoned") =
-                            Some(procedure(dmb, certificates, index));
+                    let first = range.start;
+                    for (offset, output) in chunk.iter_mut().enumerate() {
+                        *output = Some(procedure(dmb, certificates, first + offset));
                     }
                 });
             }
@@ -83,14 +76,19 @@ pub(super) fn validate(
     // reduction selects the diagnostic visible to the caller.
     let mut features = (false, false);
     for output in outputs {
-        let found = output
-            .into_inner()
-            .map_err(|_| unsupported("final instruction result lock poisoned"))?
-            .ok_or_else(|| unsupported("final instruction worker omitted procedure"))??;
+        let found =
+            output.ok_or_else(|| unsupported("final instruction worker omitted procedure"))??;
         features.0 |= found.0;
         features.1 |= found.1;
     }
     Ok(features)
+}
+
+/// Missing code receives planning weight only; diagnostics remain with visitor.
+fn weighted_ranges(dmb: &Dmb, workers: usize) -> Vec<std::ops::Range<usize>> {
+    dm_exec::weighted_ranges(dmb.procs.len(), workers, |index| {
+        dmb.proc_code_words(index).map_or(1, <[u32]>::len)
+    })
 }
 
 #[cfg(test)]
@@ -120,12 +118,22 @@ mod tests {
             .unwrap()
             .1
             .clone();
+        // Span all weighted tasks. The first error must win regardless of
+        // which later task completes first.
         let first = dmb.procs.len();
-        for _ in 0..2 {
+        for _ in 0..259 {
             let mut record = record.clone();
             record.code_locals_args[0] = dmb.lists.len() as u32;
             dmb.lists.push(vec![u32::MAX]);
             dmb.procs.push(record);
+        }
+        for workers in [1, 2, 8] {
+            let ranges = weighted_ranges(&dmb, workers);
+            assert_eq!(ranges.len(), workers.min(dmb.procs.len()));
+            assert_eq!(ranges.first().unwrap().start, 0);
+            assert_eq!(ranges.last().unwrap().end, dmb.procs.len());
+            assert!(ranges.iter().all(|range| !range.is_empty()));
+            assert!(ranges.windows(2).all(|pair| pair[0].end == pair[1].start));
         }
         let expected = format!("{:?}", validate(&dmb, &certificates, None).unwrap_err());
         assert!(expected.contains(&format!("proc={first},")));

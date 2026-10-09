@@ -3,15 +3,15 @@ pub(super) struct PendingWrite {
     pub(super) write: ClassifiedWrite,
     pub(super) key: Option<Vec<u8>>,
 }
-fn classify_pending(
-    writes: &[InitializerWrite],
+fn classify_pending<'a>(
+    writes: impl ExactSizeIterator<Item = &'a InitializerWrite>,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
     facts: &[ModifierFact],
     source_ordinal: &mut usize,
 ) -> Result<Vec<PendingWrite>, String> {
     let mut classified = Vec::with_capacity(writes.len());
-    for (ordinal, original) in writes.iter().enumerate() {
+    for (ordinal, original) in writes.enumerate() {
         *source_ordinal = ordinal;
         // Header properties are certified ABI domains, not variables with
         // fabricated declaration flags. All domains share authored-value and
@@ -251,7 +251,7 @@ pub(super) fn classify_from_facts(
     debug_defined: bool,
 ) -> Result<ClassifiedInitializers, String> {
     finish_pending(
-        classify_pending(writes, symbols, evaluator, facts, source_ordinal)?,
+        classify_pending(writes.iter(), symbols, evaluator, facts, source_ordinal)?,
         debug_defined,
         source_ordinal,
     )

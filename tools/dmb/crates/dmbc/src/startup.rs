@@ -19,6 +19,9 @@ pub struct StartupFacts {
     procedures: Vec<(OccurrenceId, StaticPlan)>,
     procedure_index: std::collections::HashMap<OccurrenceId, usize>,
     static_inventory: std::sync::Arc<dm_tree::procedure_statics::StaticInventory>,
+    unit_members: std::sync::Arc<
+        std::collections::BTreeMap<crate::lowering::UnitIdentity, dm_tree::MemberId>,
+    >,
 }
 impl std::ops::Deref for CapturedStartup<'_> {
     type Target = StartupFacts;
@@ -27,6 +30,13 @@ impl std::ops::Deref for CapturedStartup<'_> {
     }
 }
 impl StartupFacts {
+    pub(crate) fn unit_members(
+        &self,
+    ) -> &std::sync::Arc<std::collections::BTreeMap<crate::lowering::UnitIdentity, dm_tree::MemberId>>
+    {
+        &self.unit_members
+    }
+
     /// Raw compatibility models require full current declaration/body recapture.
     pub fn view<'a>(
         self: &std::sync::Arc<Self>,
@@ -92,12 +102,14 @@ fn capture_impl_with_bodies(
     bodies: &dm_tree::frontend::BodyArena<'_>,
     prefilter: bool,
 ) -> Result<StartupFacts, String> {
-    let units = crate::driver_facts::unit_members(frontend).map_err(|e| e.to_string())?;
+    let units = std::sync::Arc::new(
+        crate::driver_facts::unit_members(frontend).map_err(|e| e.to_string())?,
+    );
     let identities = units
-        .into_iter()
+        .iter()
         .map(|(unit, member)| {
             (
-                member,
+                *member,
                 ProcedureIdentity {
                     owner: unit.owner,
                     name: unit.name,
@@ -195,6 +207,7 @@ fn capture_impl_with_bodies(
         procedures,
         procedure_index,
         static_inventory,
+        unit_members: units,
     })
 }
 /// Extend only the compilation spelling dictionary. Captured declarations,
@@ -552,6 +565,15 @@ mod spelling_tests {
         let second = capture_revision_facts_with_executor(&revision, &[], &executor).unwrap();
         let serial = capture(&revision).unwrap();
         assert_eq!(first.plan.identity, serial.plan.identity);
+        assert_eq!(
+            first.unit_members().as_ref(),
+            &crate::driver_facts::unit_members(&revision).unwrap()
+        );
+        let view = first.view_revision(&revision).unwrap();
+        assert!(std::sync::Arc::ptr_eq(
+            first.unit_members(),
+            view.unit_members()
+        ));
         assert_eq!(first.plan.writes.as_ref(), second.plan.writes.as_ref());
         assert_eq!(first.plan.origins.as_ref(), second.plan.origins.as_ref());
         first

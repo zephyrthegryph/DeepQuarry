@@ -102,7 +102,9 @@ pub struct Lexed {
 
 mod lexer_items;
 use lexer_items::*;
-pub use lexer_items::{lex, lex_spans, quoted_end, visit_tokens};
+pub use lexer_items::{
+    lex, lex_spans, lexical_balance, quoted_end, visit_comment_spans, visit_tokens, LexicalBalance,
+};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ItemKind {

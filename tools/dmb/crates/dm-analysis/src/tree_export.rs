@@ -213,9 +213,9 @@ fn source(location: &SourceLocation) -> Value {
         "span_precision":"logical_line", "include_occurrence":location.include_occurrence,
         "include_chain":location.include_chain.as_ref(), "encounter_ordinal":location.encounter_ordinal,
         "macro_expansions":location.macro_expansions.iter().map(|expansion| json!({
-            "name":expansion.name, "invocation_start":expansion.invocation_span.start,
+            "name":expansion.name.as_ref(), "invocation_start":expansion.invocation_span.start,
             "invocation_end":expansion.invocation_span.end, "invocation_space":"expansion_input",
-            "replacement_chain":expansion.replacement_chain,
+            "replacement_chain":expansion.replacement_chain.iter().map(|name| name.as_ref()).collect::<Vec<_>>(),
             "definition":expansion.definition.as_ref().map(|definition| json!({
                 "path":definition.path.to_string_lossy(), "start":definition.source_span.start,
                 "end":definition.source_span.end, "line":definition.source_line,

@@ -2,7 +2,7 @@
 //! Admission is deliberately bounded by the production composer. A successful
 //! return means every declaration was admitted, rather than a partial artifact.
 use crate::{
-    composition::{CompositionError, validate_global_program},
+    composition::{validate_global_program, CompositionError},
     lowering::{AbiPolicy, LoweringConfig, LoweringDiagnostic},
     symbolic::{IntegrationError, ReferenceBindings},
 };
@@ -351,8 +351,12 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
                 .map_err(|error| ColdError::AbiPreparation(error.to_string()))?,
         ));
     }
-    let policy = crate::driver_facts::FrozenPreparedPolicy::new(frontend, &prepared.prepared)
-        .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+    let policy = crate::driver_facts::FrozenPreparedPolicy::new_with_units(
+        frontend,
+        &prepared.prepared,
+        std::sync::Arc::clone(startup.unit_members()),
+    )
+    .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
     measurement.complete();
     let abi_preparation = total.elapsed();
     let mut output = prepare_with_startup(

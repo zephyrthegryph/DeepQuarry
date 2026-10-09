@@ -425,9 +425,13 @@ pub(super) fn expand(
             traces: traces
                 .iter()
                 .map(|trace| Trace {
-                    name: trace.name.clone(),
+                    name: trace.name.to_string(),
                     invocation_span: trace.invocation_span,
-                    replacement_chain: trace.replacement_chain.clone(),
+                    replacement_chain: trace
+                        .replacement_chain
+                        .iter()
+                        .map(|name| name.to_string())
+                        .collect(),
                 })
                 .collect(),
         });
@@ -501,15 +505,16 @@ fn hydrate(
         receipt: Some(Arc::clone(record)),
         ..Default::default()
     };
+    let mut trace_arena = super::trace_arena::TraceArena::default();
     for line in &record.lines {
         let (segment, current) = input[line.input];
         let traces = line
             .traces
             .iter()
             .map(|trace| MacroExpansion {
-                name: trace.name.clone(),
+                name: trace_arena.name(&trace.name),
                 invocation_span: trace.invocation_span,
-                replacement_chain: trace.replacement_chain.clone(),
+                replacement_chain: trace_arena.chain_strings(&trace.replacement_chain),
                 definition: region.segments[segment]
                     .macros
                     .definition_origin(&trace.name)
@@ -520,7 +525,7 @@ fn hydrate(
             line.output,
             current.source_line,
             current.source_span,
-            Arc::new(traces),
+            trace_arena.freeze_expansions(traces),
         ));
     }
     for error in &record.diagnostics {
@@ -620,6 +625,68 @@ mod tests {
                 .map(|(name, value)| (name.to_string(), value.to_string()))
                 .collect(),
         )
+    }
+    #[test]
+    fn empty_trace_sharing_preserves_each_authored_origin() {
+        let memo = Memo::default();
+        let plan = plan("var/a = 1\nvar/b = 2\n", &[]);
+        let fresh = expand_regions_text(&plan, 1);
+        let recorded = expand_regions_text_with_memo(&plan, 1, &memo);
+        let hydrated = expand_regions_text_with_memo(&plan, 1, &memo);
+        assert_eq!(
+            format!("{:?}", fresh.origins),
+            format!("{:?}", recorded.origins)
+        );
+        assert_eq!(
+            format!("{:?}", fresh.origins),
+            format!("{:?}", hydrated.origins)
+        );
+        for output in [&fresh, &hydrated] {
+            assert_eq!(output.origins.len(), 2);
+            let first = &output.origins[0];
+            let second = &output.origins[1];
+            assert!(first.macro_expansions.is_empty());
+            assert!(Arc::ptr_eq(
+                &first.macro_expansions,
+                &second.macro_expansions
+            ));
+            assert_ne!(first.source_span, second.source_span);
+            assert_ne!(first.output_span, second.output_span);
+            assert_ne!(first.origin.source_line, second.origin.source_line);
+        }
+    }
+    #[test]
+    fn fresh_and_hydrated_trace_text_matches_and_shares_per_region() {
+        let memo = Memo::default();
+        let plan = plan(
+            "var/a = OUTER + OUTER\nvar/b = OUTER\n",
+            &[("OUTER", "INNER"), ("INNER", "1")],
+        );
+        let fresh = expand_regions_text(&plan, 1);
+        let recorded = expand_regions_text_with_memo(&plan, 1, &memo);
+        let hydrated = expand_regions_text_with_memo(&plan, 1, &memo);
+        assert_eq!(
+            format!("{:?}", fresh.origins),
+            format!("{:?}", recorded.origins)
+        );
+        assert_eq!(
+            format!("{:?}", fresh.origins),
+            format!("{:?}", hydrated.origins)
+        );
+        for output in [&fresh, &hydrated] {
+            let traces = &output.origins[0].macro_expansions;
+            assert_eq!(traces.len(), 4);
+            assert!(Arc::ptr_eq(&traces[0].name, &traces[2].name));
+            assert!(Arc::ptr_eq(
+                &traces[1].replacement_chain,
+                &traces[3].replacement_chain
+            ));
+            assert_ne!(traces[0].invocation_span, traces[2].invocation_span);
+            assert!(Arc::ptr_eq(
+                &traces[0].name,
+                &output.origins[1].macro_expansions[0].name
+            ));
+        }
     }
     #[test]
     fn expansion_memo_validates_positive_negative_and_unused_macro_reads() {

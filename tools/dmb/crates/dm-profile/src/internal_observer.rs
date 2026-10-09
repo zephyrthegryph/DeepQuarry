@@ -19,7 +19,7 @@ impl InternalThreadObserver {
         Self {
             state,
             name,
-            thread: format!("{:?}", std::thread::current().id()),
+            thread: crate::thread_label::owned(),
             begin,
             wall: Instant::now(),
             thread_id: std::thread::current().id(),

@@ -148,6 +148,20 @@ impl HeapCensus {
             value.capacity(),
         );
     }
+    fn macro_trace(&mut self, owner: &str, expansion: &dm_preprocess::regions::MacroExpansion) {
+        self.arc_text(owner, &expansion.name);
+        let chain = &expansion.replacement_chain;
+        if self.buffer(
+            owner,
+            chain.as_ptr() as usize,
+            std::mem::size_of_val(chain.as_ref()),
+            std::mem::size_of_val(chain.as_ref()),
+        ) {
+            for name in chain.iter() {
+                self.arc_text(owner, name);
+            }
+        }
+    }
     pub fn arc_text(&mut self, owner: &str, value: &Arc<str>) {
         self.buffer(owner, value.as_ptr() as usize, value.len(), value.len());
     }
@@ -242,8 +256,7 @@ impl HeapCensus {
                 && self.vec_payload("frontend.macro_expansions", &origin.macro_expansions)
             {
                 for expansion in origin.macro_expansions.iter() {
-                    self.string("frontend.macro_expansions", &expansion.name);
-                    self.strings("frontend.macro_expansions", &expansion.replacement_chain);
+                    self.macro_trace("frontend.macro_expansions", expansion);
                 }
             }
         }
@@ -368,8 +381,7 @@ impl HeapCensus {
                         && self.vec_payload(owner, &location.macro_expansions)
                     {
                         for expansion in location.macro_expansions.iter() {
-                            self.string(owner, &expansion.name);
-                            self.strings(owner, &expansion.replacement_chain);
+                            self.macro_trace(owner, expansion);
                         }
                     }
                 }
@@ -571,6 +583,11 @@ impl HeapCensus {
         let facts = startup.facts();
         if !self.arc_object("startup", &facts) {
             return;
+        }
+        let units = startup.unit_members();
+        if self.arc_object("startup.unit_members", units) {
+            self.owner("startup.unit_members").observed_items += units.len() as u64;
+            self.unknown("startup.unit_members", "private BTreeMap node capacity excluded; one shared authoritative procedure identity index");
         }
         let inventory = startup.static_inventory();
         if self.arc_object("startup.static_inventory", inventory) {
@@ -780,7 +797,6 @@ impl HeapCensus {
             return;
         }
         self.symbolic_code(&code.shared_code());
-        self.slice("frozen_code", code.sites(), false);
         self.slice("frozen_code", code.labels(), false);
     }
     pub fn frozen(&mut self, batch: &crate::symbolic::FrozenBatch) {

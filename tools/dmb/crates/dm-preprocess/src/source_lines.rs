@@ -129,12 +129,9 @@ pub(super) fn logical_lines(source: &str) -> Vec<LogicalLine> {
 /// byte position so directives inside a block comment cannot become active.
 pub(super) fn strip_source_comments(source: &str) -> Cow<'_, str> {
     let mut bytes = None;
-    let _ = dm_syntax::visit_tokens(source, |token| {
-        if token.kind != TokenKind::Comment {
-            return;
-        }
+    dm_syntax::visit_comment_spans(source, |span| {
         let bytes = bytes.get_or_insert_with(|| source.as_bytes().to_vec());
-        for byte in &mut bytes[token.span.range()] {
+        for byte in &mut bytes[span.range()] {
             if !matches!(*byte, b'\r' | b'\n') {
                 *byte = b' ';
             }
@@ -155,44 +152,23 @@ pub(super) struct LogicalState {
     pub(super) open_expression: bool,
 }
 
-/// One borrowed tokenization answers all continuation questions. The caller
-/// retains this state until the joined text changes; token spans are temporary.
+/// Shared literal boundaries answer continuation questions without full tokens.
+/// The caller retains this state until the joined text changes.
 pub(super) fn logical_state(source: &str) -> LogicalState {
     // A continuation requires a literal delimiter or an expression bracket.
     // Plain declaration/path/assignment lines need no tokenization. Keep the
-    // existing lexer authoritative for every line containing such a delimiter.
+    // shared lexical boundary grammar authoritative for delimiter-bearing lines.
     if !source
         .bytes()
         .any(|byte| matches!(byte, b'"' | b'\'' | b'(' | b')' | b'[' | b']'))
     {
         return LogicalState::default();
     }
-    let mut last = None;
-    let mut depth = 0isize;
-    let diagnostics = dm_syntax::visit_tokens(source, |token| {
-        match token.text(source) {
-            "(" | "[" => depth += 1,
-            ")" | "]" => depth -= 1,
-            _ => {}
-        }
-        last = Some(token);
-    });
-    let open_literal = last.is_some_and(|token| {
-        token.kind == TokenKind::String
-            && diagnostics
-                .iter()
-                .any(|diagnostic| diagnostic.span.start == token.span.start)
-    });
-    let open_block_string = last.is_some_and(|token| {
-        token.kind == TokenKind::String
-            && token.text(source).starts_with("{\"")
-            && token.span.end == source.len()
-            && !token.text(source).ends_with("\"}")
-    });
+    let balance = dm_syntax::lexical_balance(source);
     LogicalState {
-        open_literal,
-        open_block_string,
-        open_expression: depth > 0,
+        open_literal: balance.open_literal,
+        open_block_string: balance.open_block_string,
+        open_expression: balance.expression_depth > 0,
     }
 }
 

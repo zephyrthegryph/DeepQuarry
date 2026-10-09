@@ -6,7 +6,6 @@ use std::sync::{
 };
 struct Bucket {
     ordinals: Vec<usize>,
-    writes: Vec<InitializerWrite>,
 }
 fn map_buckets<T: Send>(
     buckets: &[Bucket],
@@ -76,15 +75,18 @@ pub(in crate::initializer_policy) fn classify(
             let index = buckets.len();
             buckets.push(Bucket {
                 ordinals: Vec::new(),
-                writes: Vec::new(),
             });
             index
         });
         buckets[index].ordinals.push(ordinal);
-        buckets[index].writes.push(write.clone());
     }
     let facts = map_buckets(&buckets, evaluator, executor, |_, bucket, worker| {
-        modifier_facts_indexed(&bucket.writes, symbols, worker, Some(&bucket.ordinals))
+        modifier_facts_indexed(
+            bucket.ordinals.iter().map(|&ordinal| &writes[ordinal]),
+            symbols,
+            worker,
+            Some(&bucket.ordinals),
+        )
     })?;
     let mut issues = Vec::new();
     let mut admitted = Vec::with_capacity(facts.len());
@@ -102,7 +104,7 @@ pub(in crate::initializer_policy) fn classify(
     let classified = map_buckets(&buckets, evaluator, executor, |index, bucket, worker| {
         let mut ordinal = 0;
         classify_pending(
-            &bucket.writes,
+            bucket.ordinals.iter().map(|&ordinal| &writes[ordinal]),
             symbols,
             worker,
             &admitted[index],

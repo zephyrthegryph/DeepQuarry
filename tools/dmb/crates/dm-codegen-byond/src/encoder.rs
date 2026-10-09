@@ -11,7 +11,6 @@ pub struct OperandSite {
 }
 pub struct FrozenProc {
     code: std::sync::Arc<SymbolicCode>,
-    sites: Vec<OperandSite>,
     labels: Vec<Option<u32>>,
 }
 impl FrozenProc {
@@ -21,8 +20,18 @@ impl FrozenProc {
     pub fn shared_code(&self) -> std::sync::Arc<SymbolicCode> {
         std::sync::Arc::clone(&self.code)
     }
-    pub fn sites(&self) -> &[OperandSite] {
-        &self.sites
+    /// Allocation-free operand roster derived from independently validated code.
+    /// Emission visits increasing word offsets; canonical relocation storage
+    /// preserves that order after the mandatory independent site check.
+    pub fn sites(
+        &self,
+    ) -> impl ExactSizeIterator<Item = OperandSite> + DoubleEndedIterator + std::iter::FusedIterator + '_
+    {
+        self.code.relocations().map(|relocation| OperandSite {
+            offset: relocation.offset,
+            kind: relocation.reference.kind(),
+            encoding: relocation.encoding,
+        })
     }
     pub fn labels(&self) -> &[Option<u32>] {
         &self.labels
@@ -129,7 +138,6 @@ pub fn freeze_proc_observed<G>(
     }
     Ok(FrozenProc {
         code: std::sync::Arc::new(code),
-        sites: emission.sites,
         labels,
     })
 }
@@ -462,6 +470,27 @@ mod tests {
             }
         );
         assert_eq!(frozen.code().relocation(1).unwrap().offset, 5);
+        let mut sites = frozen.sites();
+        assert_eq!(sites.len(), 2);
+        assert_eq!(
+            sites.next(),
+            Some(OperandSite {
+                offset: 1,
+                kind: SymRef::String(text).kind(),
+                encoding: OperandEncoding::PackedValue24 { tag: 6 },
+            })
+        );
+        assert_eq!(sites.len(), 1);
+        assert_eq!(
+            sites.next_back(),
+            Some(OperandSite {
+                offset: 5,
+                kind: SymRef::String(field).kind(),
+                encoding: OperandEncoding::Direct,
+            })
+        );
+        assert_eq!(sites.next(), None);
+
         assert_eq!(
             frozen.code().link(|_| Some(0x123456)).unwrap(),
             [0x60, 0x1206, 0x3456, 0x33, 0xffe7, 0x123456, 0]
@@ -617,7 +646,10 @@ mod tests {
         let direct = freeze_proc(&proc).unwrap();
         let measured = freeze_proc_observed(&proc, |stage| observed.push(stage)).unwrap();
         assert_eq!(direct.code(), measured.code());
-        assert_eq!(direct.sites(), measured.sites());
+        assert_eq!(
+            direct.sites().collect::<Vec<_>>(),
+            measured.sites().collect::<Vec<_>>()
+        );
         assert_eq!(observed.len(), 4);
     }
 }

@@ -18,6 +18,7 @@ pub mod prepared_source;
 pub use environment::MacroEnvironment;
 mod expansion;
 pub mod region_memo;
+mod trace_arena;
 pub use region_memo::{
     ExpansionMemo, ExpansionRecord, FragmentRecord, EXPANSION_VERSION, FRAGMENT_VERSION,
 };
@@ -69,9 +70,9 @@ pub struct DefinitionOrigin {
 /// byte range when that input came from a replacement or argument rescan.
 #[derive(Clone, Debug)]
 pub struct MacroExpansion {
-    pub name: String,
+    pub name: Arc<str>,
     pub invocation_span: Span,
-    pub replacement_chain: Vec<String>,
+    pub replacement_chain: Arc<[Arc<str>]>,
     pub definition: Option<DefinitionOrigin>,
 }
 

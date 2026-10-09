@@ -497,17 +497,17 @@ fn modifier_facts(
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
 ) -> Result<Vec<ModifierFact>, ClassificationError> {
-    modifier_facts_indexed(writes, symbols, evaluator, None)
+    modifier_facts_indexed(writes.iter(), symbols, evaluator, None)
 }
-fn modifier_facts_indexed(
-    writes: &[InitializerWrite],
+fn modifier_facts_indexed<'a>(
+    writes: impl ExactSizeIterator<Item = &'a InitializerWrite>,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
     source_ordinals: Option<&[usize]>,
 ) -> Result<Vec<ModifierFact>, ClassificationError> {
     let mut facts = Vec::with_capacity(writes.len());
     let mut issues = Vec::new();
-    for (local, write) in writes.iter().enumerate() {
+    for (local, write) in writes.enumerate() {
         let ordinal = source_ordinals.map_or(local, |ordinals| ordinals[local]);
         let fact = (|| -> Result<ModifierFact, String> {
             if let Some(domain) = header_domain(write, symbols)? {

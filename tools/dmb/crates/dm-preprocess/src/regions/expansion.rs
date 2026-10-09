@@ -205,14 +205,15 @@ pub(super) fn expand_region(
     let file_name = plan.semantic_path(region.occurrence);
     let mut output = RegionOutput::default();
     let mut input = 0;
+    let mut trace_arena = super::trace_arena::TraceArena::default();
     for (segment_index, segment) in region.segments.iter().enumerate() {
         for line in &segment.lines {
             let mut macro_expansions = Vec::new();
             let mut trace = |name: &str, invocation_span: Span, chain: &[&str]| {
                 macro_expansions.push(MacroExpansion {
-                    name: name.to_owned(),
+                    name: trace_arena.name(name),
                     invocation_span,
-                    replacement_chain: chain.iter().map(|name| (*name).to_owned()).collect(),
+                    replacement_chain: trace_arena.chain(chain),
                     definition: segment.macros.definition_origin(name).cloned(),
                 });
             };
@@ -256,11 +257,7 @@ pub(super) fn expand_region(
             };
             // Traces survive through analysis and lowering. Release growth
             // slack before publishing immutable backing shared by emitted lines.
-            for expansion in &mut macro_expansions {
-                expansion.replacement_chain.shrink_to_fit();
-            }
-            macro_expansions.shrink_to_fit();
-            let macro_expansions = Arc::new(macro_expansions);
+            let macro_expansions = trace_arena.freeze_expansions(macro_expansions);
             // The terminal separator is not another emitted line. Interior
             // empty lines are source content, including inside block strings.
             for part in text.strip_suffix('\n').unwrap_or(&text).split('\n') {
@@ -321,11 +318,11 @@ mod tests {
                         },
                         &mut |name, invocation_span, chain| {
                             trace.push(MacroExpansion {
-                                name: name.to_owned(),
+                                name: Arc::from(name),
                                 invocation_span,
                                 replacement_chain: chain
                                     .iter()
-                                    .map(|name| (*name).to_owned())
+                                    .map(|name| Arc::from(*name))
                                     .collect(),
                                 definition: segment.macros.definition_origin(name).cloned(),
                             });
@@ -407,7 +404,7 @@ mod tests {
             offset = origin.output_span.end;
         }
         assert_eq!(offset, serial.text.len());
-        assert_eq!(serial.origins[0].macro_expansions[0].name, "VALUE");
+        assert_eq!(serial.origins[0].macro_expansions[0].name.as_ref(), "VALUE");
         assert!(Arc::ptr_eq(
             &serial.origins[1].macro_expansions,
             &serial.origins[2].macro_expansions,
