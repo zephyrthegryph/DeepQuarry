@@ -168,6 +168,9 @@ CAPABILITIES(/obj/lanea_fixture)
 	bad.entry = good.entry
 	bad.serial = ++GLOB.hook_serial
 	bad.whens = list(new /datum/entry)
+	bad.reads = good.reads
+	// The drain only runs a hook the holder's type indexes (change_hook_applies), so the bad one joins the index for this test.
+	index["armed"] += bad
 	F.set_armed(TRUE)
 	var/list/marked = list()
 	marked[bad] = TRUE
@@ -179,6 +182,7 @@ CAPABILITIES(/obj/lanea_fixture)
 	TEST_ASSERT_EQUAL(F.fired, 1, "the hook behind the throwing one still ran")
 	TEST_ASSERT_EQUAL(length(GLOB.hook_change_pending), 0, "nothing is stranded in the pending list")
 	TEST_ASSERT_EQUAL(GLOB.act_depth, 0, "the depth is back to zero")
+	index["armed"] -= bad
 	qdel(bad)
 
 // ---------------------------------------------------------------- A: ownership API

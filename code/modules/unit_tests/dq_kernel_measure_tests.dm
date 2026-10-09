@@ -24,23 +24,21 @@
 	var/datum/om/registry/reg = definition_registry()
 	var/datum/km_systems/systems = km_systems()
 	TEST_ASSERT(length(reg.behaviours) > 0, "the registry has behaviours")
-	for(var/datum/om/behaviour/B as anything in reg.behaviours)
+	for(var/datum/scheduled_behaviour/B as anything in reg.behaviours)
 		TEST_ASSERT(B.system_idx >= 1 && B.system_idx <= systems.count(), "[B.type] is bound to a system (system_idx [B.system_idx])")
 		var/key = systems.key_of(B.system_idx)
 		TEST_ASSERT(length(key) && key != "?", "[B.type] resolves to a system key")
 		if(B.system_key)
 			TEST_ASSERT_EQUAL(key, B.system_key, "[B.type]: an explicit system_key wins")
-		else if(!istype(B, /datum/om/behaviour/inline))
+		else if(!istype(B, /datum/scheduled_behaviour/inline))
 			// KM_SYS_OTHER only when the registry ran out of room.
 			TEST_ASSERT(B.system_idx != KM_SYS_OTHER, "[B.type] fell into the overflow system: raise KM_MAX_SYSTEMS")
 			// The registry binds at boot, inside global initialisation: what it bound is what the rule says now.
 			TEST_ASSERT_EQUAL(key, km_system_key_for_path(B.type), "[B.type] was bound by the rule as it stands")
 	// Inline behaviours (a bundle's reacts / ticks / events rows) carry their bundle's name.
-	var/inline_seen = 0
-	for(var/datum/om/behaviour/inline/B in reg.behaviours)
-		inline_seen++
+	// No bundle declares reacts / ticks / events rows any more, so there may be none: what exists must carry its bundle's name.
+	for(var/datum/scheduled_behaviour/inline/B in reg.behaviours)
 		TEST_ASSERT(length(B.system_key), "an inline behaviour ([B.name]) has its bundle's name as its system")
-	TEST_ASSERT(inline_seen > 0, "there are inline behaviours to check")
 	// Every type the folder rows name is real and owns at least one registered behaviour: a stale row would
 	// quietly stop attributing a folder.
 	var/list/rows = km_system_rows()
@@ -48,7 +46,7 @@
 		for(var/path in rows[key])
 			TEST_ASSERT(ispath(path), "row [key]: [path] is not a type")
 			var/owns = FALSE
-			for(var/datum/om/behaviour/B as anything in reg.behaviours)
+			for(var/datum/scheduled_behaviour/B as anything in reg.behaviours)
 				if(ispath(B.type, path))
 					owns = TRUE
 					break

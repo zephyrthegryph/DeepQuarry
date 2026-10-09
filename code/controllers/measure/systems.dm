@@ -126,7 +126,7 @@
 	var/list/rows = list(
 		// code/datums/om/: the scheduler's own behaviours (expiry, rates, timers, tasks, io, ui pushes, edges) and
 		// the sleeper/timed bases in pipeline.dm.
-		"om_core" = list(/datum/om/behaviour/internal, /datum/om/behaviour/sleeper/timed),
+		"om_core" = list(/datum/scheduled_behaviour/internal, /datum/scheduled_behaviour/sleeper/timed),
 	)
 	return rows
 
@@ -161,6 +161,8 @@
 	var/rest = text
 	if(findtext(text, "/datum/om/behaviour/") == 1)
 		rest = copytext(text, length("/datum/om/behaviour/") + 1)
+	else if(findtext(text, "/datum/scheduled_behaviour/") == 1)
+		rest = copytext(text, length("/datum/scheduled_behaviour/") + 1)
 	else if(findtext(text, "/datum/om/pipeline/") == 1)
 		rest = copytext(text, length("/datum/om/pipeline/") + 1)
 	var/list/segments = splittext(rest, "/")
