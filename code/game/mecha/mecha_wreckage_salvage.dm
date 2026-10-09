@@ -13,10 +13,10 @@ MSG_DEF_SELF(mecha_wreckage/nothing_to_pry, "You don't see anything that can be 
 	return salvage_num > 0
 
 /obj/effect/decal/mecha_wreckage/proc/has_welder_salvage(datum/act/A)
-	return !isemptylist(welder_salvage)
+	return length(welder_salvage) > 0
 
 /obj/effect/decal/mecha_wreckage/proc/has_pry_salvage(datum/act/A)
-	return !isemptylist(crowbar_salvage)
+	return length(crowbar_salvage) > 0
 
 /obj/effect/decal/mecha_wreckage/proc/cut_salvage(datum/act/op/A)
 	var/mob/user = A.actor

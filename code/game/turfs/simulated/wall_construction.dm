@@ -246,11 +246,11 @@ MSG_DEF_SELF(wall/repaired, "You finish repairing the damage to %T%.")
 
 /// Thermite is on the wall and no wallrot covers it.
 /turf/simulated/wall/proc/thermite_ready(datum/act/A)
-	return thermite && !(locate_on(src, /obj/effect/overlay/wallrot))
+	return thermite && !(locate_within(src, /obj/effect/overlay/wallrot))
 
 /// Damaged, with no thermite and no wallrot.
 /turf/simulated/wall/proc/repairable(datum/act/A)
-	if(thermite || (locate_on(src, /obj/effect/overlay/wallrot)))
+	if(thermite || (locate_within(src, /obj/effect/overlay/wallrot)))
 		return FALSE
 	return get_integrity() < max_integrity
 

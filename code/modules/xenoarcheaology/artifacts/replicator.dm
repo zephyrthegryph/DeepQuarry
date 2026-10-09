@@ -174,14 +174,17 @@ CAPABILITIES(/obj/machinery/replicator)
 		else
 			visible_message(fail_message)
 
-/// Requirement: no armblades, no grabs, nothing the user can't let go of.
+/// Requirement: no armblades, no grabs. (Nothing the user can't let go of: insert_op() asks the user's hands when the item goes in.)
 /obj/machinery/replicator/proc/can_insert(mob/living/user, atom/target, obj/item/held)
-	if(!istype(held) || !held.canremove || !user.canUnEquip(held))
+	if(!istype(held) || !held.canremove)
 		return "you cannot put [held] into the machine"
 	return TRUE
 
 /// The insert op: it passes the actor and the item to interaction_insert(), which the vore and clothing replicators override.
 /obj/machinery/replicator/proc/insert_op(datum/act/op/A)
+	if(!A.actor.canUnEquip(A.held))
+		to_chat(A.actor, span_warning("You cannot put [A.held] into the machine."))
+		return OP_REFUSED
 	interaction_insert(A.actor, A.held)
 	return OP_OK
 
