@@ -1,0 +1,165 @@
+/obj/structure/window icon: icons/obj/structures_vr.dmi
+/obj/structure/window state: 
+/obj/structure/window dir: 2
+/obj/structure/window overlay: icons/obj/structures_vr.dmi::8:#000000
+/obj/structure/window/bay icon: icons/obj/bay_window.dmi
+/obj/structure/window/bay state: 
+/obj/structure/window/bay dir: 2
+/obj/structure/window/bay color: #00e1ff
+/obj/structure/window/bay alpha: 180
+/obj/structure/window/bay overlay: icons/obj/bay_window.dmi:preview_glass:8:#000000
+/obj/structure/window/bay overlay: icons/obj/bay_window.dmi:window_onframe0:-32767:#00e1ff x4
+/obj/structure/window/bay/reinforced icon: icons/obj/bay_window.dmi
+/obj/structure/window/bay/reinforced state: 
+/obj/structure/window/bay/reinforced dir: 2
+/obj/structure/window/bay/reinforced color: #00e1ff
+/obj/structure/window/bay/reinforced alpha: 180
+/obj/structure/window/bay/reinforced overlay: icons/obj/bay_window.dmi:preview_rglass:8:#000000
+/obj/structure/window/bay/reinforced overlay: icons/obj/bay_window.dmi:rwindow_onframe0:-32767:#00e1ff x4
+/obj/structure/window/bay/phoronbasic icon: icons/obj/bay_window.dmi
+/obj/structure/window/bay/phoronbasic state: 
+/obj/structure/window/bay/phoronbasic dir: 2
+/obj/structure/window/bay/phoronbasic color: #fc2bc5
+/obj/structure/window/bay/phoronbasic alpha: 180
+/obj/structure/window/bay/phoronbasic overlay: icons/obj/bay_window.dmi:preview_phoron:8:#000000
+/obj/structure/window/bay/phoronbasic overlay: icons/obj/bay_window.dmi:window_onframe0:-32767:#fc2bc5 x4
+/obj/structure/window/bay/phoronreinforced icon: icons/obj/bay_window.dmi
+/obj/structure/window/bay/phoronreinforced state: 
+/obj/structure/window/bay/phoronreinforced dir: 2
+/obj/structure/window/bay/phoronreinforced color: #fc2bc5
+/obj/structure/window/bay/phoronreinforced alpha: 180
+/obj/structure/window/bay/phoronreinforced overlay: icons/obj/bay_window.dmi:preview_rphoron:8:#000000
+/obj/structure/window/bay/phoronreinforced overlay: icons/obj/bay_window.dmi:rwindow_onframe0:-32767:#fc2bc5 x4
+/obj/structure/window/eris icon: icons/obj/eris_window.dmi
+/obj/structure/window/eris state: 
+/obj/structure/window/eris dir: 2
+/obj/structure/window/eris alpha: 150
+/obj/structure/window/eris overlay: icons/obj/eris_window.dmi:preview_glass:8:#000000
+/obj/structure/window/eris overlay: icons/obj/eris_window.dmi:window0:-32767 x4
+/obj/structure/window/eris/reinforced icon: icons/obj/eris_window.dmi
+/obj/structure/window/eris/reinforced state: 
+/obj/structure/window/eris/reinforced dir: 2
+/obj/structure/window/eris/reinforced alpha: 150
+/obj/structure/window/eris/reinforced overlay: icons/obj/eris_window.dmi:preview_rglass:8:#000000
+/obj/structure/window/eris/reinforced overlay: icons/obj/eris_window.dmi:rwindow0:-32767 x4
+/obj/structure/window/eris/phoronbasic icon: icons/obj/eris_window.dmi
+/obj/structure/window/eris/phoronbasic state: 
+/obj/structure/window/eris/phoronbasic dir: 2
+/obj/structure/window/eris/phoronbasic alpha: 150
+/obj/structure/window/eris/phoronbasic overlay: icons/obj/eris_window.dmi:preview_phoron0:-32767 x4
+/obj/structure/window/eris/phoronbasic overlay: icons/obj/eris_window.dmi:pwindow:8:#000000
+/obj/structure/window/eris/phoronreinforced icon: icons/obj/eris_window.dmi
+/obj/structure/window/eris/phoronreinforced state: 
+/obj/structure/window/eris/phoronreinforced dir: 2
+/obj/structure/window/eris/phoronreinforced alpha: 150
+/obj/structure/window/eris/phoronreinforced overlay: icons/obj/eris_window.dmi:preview_rphoron0:-32767 x4
+/obj/structure/window/eris/phoronreinforced overlay: icons/obj/eris_window.dmi:rpwindow:8:#000000
+/obj/structure/window/basic icon: icons/obj/structures_vr.dmi
+/obj/structure/window/basic state: window
+/obj/structure/window/basic dir: 2
+/obj/structure/window/basic overlay: icons/obj/structures_vr.dmi:window:8:#000000
+/obj/structure/window/basic/full icon: icons/obj/structures_vr.dmi
+/obj/structure/window/basic/full state: 
+/obj/structure/window/basic/full dir: 2
+/obj/structure/window/basic/full overlay: icons/obj/structures_vr.dmi::8:#000000
+/obj/structure/window/basic/full overlay: icons/obj/structures_vr.dmi:window0:-32767 x4
+/obj/structure/window/phoronbasic icon: icons/obj/structures_vr.dmi
+/obj/structure/window/phoronbasic state: phoronwindow
+/obj/structure/window/phoronbasic dir: 2
+/obj/structure/window/phoronbasic overlay: icons/obj/structures_vr.dmi:phoronwindow:8:#000000
+/obj/structure/window/phoronbasic/full icon: icons/obj/structures_vr.dmi
+/obj/structure/window/phoronbasic/full state: 
+/obj/structure/window/phoronbasic/full dir: 2
+/obj/structure/window/phoronbasic/full overlay: icons/obj/structures_vr.dmi::8:#000000
+/obj/structure/window/phoronbasic/full overlay: icons/obj/structures_vr.dmi:phoronwindow0:-32767 x4
+/obj/structure/window/phoronreinforced icon: icons/obj/structures_vr.dmi
+/obj/structure/window/phoronreinforced state: phoronrwindow
+/obj/structure/window/phoronreinforced dir: 2
+/obj/structure/window/phoronreinforced overlay: icons/obj/structures_vr.dmi:phoronrwindow:8:#000000
+/obj/structure/window/phoronreinforced/full icon: icons/obj/structures_vr.dmi
+/obj/structure/window/phoronreinforced/full state: 
+/obj/structure/window/phoronreinforced/full dir: 2
+/obj/structure/window/phoronreinforced/full overlay: icons/obj/structures_vr.dmi::8:#000000
+/obj/structure/window/phoronreinforced/full overlay: icons/obj/structures_vr.dmi:phoronrwindow0:-32767 x4
+/obj/structure/window/reinforced icon: icons/obj/structures_vr.dmi
+/obj/structure/window/reinforced state: rwindow
+/obj/structure/window/reinforced dir: 2
+/obj/structure/window/reinforced overlay: icons/obj/structures_vr.dmi:rwindow:8:#000000
+/obj/structure/window/reinforced/full icon: icons/obj/structures_vr.dmi
+/obj/structure/window/reinforced/full state: 
+/obj/structure/window/reinforced/full dir: 2
+/obj/structure/window/reinforced/full overlay: icons/obj/structures_vr.dmi::8:#000000
+/obj/structure/window/reinforced/full overlay: icons/obj/structures_vr.dmi:rwindow0:-32767 x4
+/obj/structure/window/reinforced/tinted icon: icons/obj/structures_vr.dmi
+/obj/structure/window/reinforced/tinted state: twindow
+/obj/structure/window/reinforced/tinted dir: 2
+/obj/structure/window/reinforced/tinted overlay: icons/obj/structures_vr.dmi:twindow:8:#000000
+/obj/structure/window/reinforced/tinted/frosted icon: icons/obj/structures_vr.dmi
+/obj/structure/window/reinforced/tinted/frosted state: fwindow
+/obj/structure/window/reinforced/tinted/frosted dir: 2
+/obj/structure/window/reinforced/tinted/frosted overlay: icons/obj/structures_vr.dmi:fwindow:8:#000000
+/obj/structure/window/reinforced/tinted/full icon: icons/obj/structures_vr.dmi
+/obj/structure/window/reinforced/tinted/full state: 
+/obj/structure/window/reinforced/tinted/full dir: 2
+/obj/structure/window/reinforced/tinted/full overlay: icons/obj/structures_vr.dmi::8:#000000
+/obj/structure/window/reinforced/tinted/full overlay: icons/obj/structures_vr.dmi:twindow0:-32767 x4
+/obj/structure/window/reinforced/polarized icon: icons/obj/structures_vr.dmi
+/obj/structure/window/reinforced/polarized state: rwindow
+/obj/structure/window/reinforced/polarized dir: 2
+/obj/structure/window/reinforced/polarized overlay: icons/obj/structures_vr.dmi:rwindow:8:#000000
+/obj/structure/window/reinforced/polarized/full icon: icons/obj/structures_vr.dmi
+/obj/structure/window/reinforced/polarized/full state: 
+/obj/structure/window/reinforced/polarized/full dir: 2
+/obj/structure/window/reinforced/polarized/full overlay: icons/obj/structures_vr.dmi::8:#000000
+/obj/structure/window/reinforced/polarized/full overlay: icons/obj/structures_vr.dmi:rwindow0:-32767 x4
+/obj/structure/window/reinforced/polarized/survival_pod icon: icons/obj/survival_pod.dmi
+/obj/structure/window/reinforced/polarized/survival_pod state: pwindow
+/obj/structure/window/reinforced/polarized/survival_pod dir: 2
+/obj/structure/window/reinforced/polarized/survival_pod overlay: icons/obj/survival_pod.dmi:pwindow:8:#000000
+/obj/structure/window/reinforced/holowindow icon: icons/obj/structures_vr.dmi
+/obj/structure/window/reinforced/holowindow state: rwindow
+/obj/structure/window/reinforced/holowindow dir: 2
+/obj/structure/window/reinforced/holowindow overlay: icons/obj/structures_vr.dmi:rwindow:8:#000000
+/obj/structure/window/reinforced/holowindow/disappearing icon: icons/obj/structures_vr.dmi
+/obj/structure/window/reinforced/holowindow/disappearing state: rwindow
+/obj/structure/window/reinforced/holowindow/disappearing dir: 2
+/obj/structure/window/reinforced/holowindow/disappearing overlay: icons/obj/structures_vr.dmi:rwindow:8:#000000
+/obj/structure/window/reinforced/survival_pod icon: icons/obj/survival_pod.dmi
+/obj/structure/window/reinforced/survival_pod state: pwindow
+/obj/structure/window/reinforced/survival_pod dir: 2
+/obj/structure/window/reinforced/survival_pod overlay: icons/obj/survival_pod.dmi:pwindow:8:#000000
+/obj/structure/window/shuttle icon: icons/obj/podwindows.dmi
+/obj/structure/window/shuttle state: w
+/obj/structure/window/shuttle dir: 5
+/obj/structure/window/shuttle overlay: icons/obj/podwindows.dmi:w:8:#000000
+/obj/structure/window/titanium icon: icons/obj/structures_vr.dmi
+/obj/structure/window/titanium state: window
+/obj/structure/window/titanium dir: 2
+/obj/structure/window/titanium color: #a7a3a6
+/obj/structure/window/titanium overlay: icons/obj/structures_vr.dmi:window:8:#000000
+/obj/structure/window/titanium/full icon: icons/obj/structures_vr.dmi
+/obj/structure/window/titanium/full state: 
+/obj/structure/window/titanium/full dir: 2
+/obj/structure/window/titanium/full color: #a7a3a6
+/obj/structure/window/titanium/full overlay: icons/obj/structures_vr.dmi::8:#000000
+/obj/structure/window/titanium/full overlay: icons/obj/structures_vr.dmi:window0:-32767 x4
+/obj/structure/window/plastitanium icon: icons/obj/structures_vr.dmi
+/obj/structure/window/plastitanium state: window
+/obj/structure/window/plastitanium dir: 2
+/obj/structure/window/plastitanium color: #676366
+/obj/structure/window/plastitanium overlay: icons/obj/structures_vr.dmi:window:8:#000000
+/obj/structure/window/plastitanium/full icon: icons/obj/structures_vr.dmi
+/obj/structure/window/plastitanium/full state: 
+/obj/structure/window/plastitanium/full dir: 2
+/obj/structure/window/plastitanium/full color: #676366
+/obj/structure/window/plastitanium/full overlay: icons/obj/structures_vr.dmi::8:#000000
+/obj/structure/window/plastitanium/full overlay: icons/obj/structures_vr.dmi:window0:-32767 x4
+/obj/structure/window/fancy_shuttle icon: icons/turf/fancy_shuttles/_fancy_helpers.dmi
+/obj/structure/window/fancy_shuttle state: hull_window
+/obj/structure/window/fancy_shuttle dir: 2
+/obj/structure/window/fancy_shuttle overlay: icons/turf/fancy_shuttles/_fancy_helpers.dmi:hull_window:8:#000000
+/obj/structure/window/maintenance_panel icon: icons/obj/maintenance_panel.dmi
+/obj/structure/window/maintenance_panel state: panel
+/obj/structure/window/maintenance_panel dir: 2
+/obj/structure/window/maintenance_panel overlay: icons/obj/maintenance_panel.dmi:panel:8:#000000
+

@@ -1,0 +1,5 @@
+/obj/item/hand icon: icons/obj/playing_cards.dmi
+/obj/item/hand state: empty
+/obj/item/hand dir: 2
+/obj/item/hand overlay: icons/obj/playing_cards.dmi:empty:8:#000000
+

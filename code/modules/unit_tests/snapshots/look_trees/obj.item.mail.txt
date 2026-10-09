@@ -1,0 +1,19 @@
+/obj/item/mail icon: icons/obj/bureaucracy.dmi
+/obj/item/mail state: mail_small
+/obj/item/mail dir: 2
+/obj/item/mail overlay: icons/obj/bureaucracy.dmi:mail_small:8:#000000
+/obj/item/mail/envelope icon: icons/obj/bureaucracy.dmi
+/obj/item/mail/envelope state: mail_large
+/obj/item/mail/envelope dir: 2
+/obj/item/mail/envelope overlay: icons/obj/bureaucracy.dmi:mail_large:8:#000000
+/obj/item/mail/blank icon: icons/obj/bureaucracy.dmi
+/obj/item/mail/blank state: mail_small
+/obj/item/mail/blank dir: 2
+/obj/item/mail/blank overlay: icons/obj/bureaucracy.dmi:mail_small:8:#000000
+/obj/item/mail/junkmail icon: icons/obj/bureaucracy.dmi
+/obj/item/mail/junkmail state: mail_small
+/obj/item/mail/junkmail dir: 2
+/obj/item/mail/junkmail overlay: :stamp_8:-32767
+/obj/item/mail/junkmail overlay: icons/obj/bureaucracy.dmi:mail_small:8:#000000
+/obj/item/mail/junkmail overlay: icons/obj/bureaucracy.dmi:postmark:-32767
+

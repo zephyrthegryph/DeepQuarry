@@ -1,0 +1,21 @@
+/obj/item/remote_scene_tool icon: code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi
+/obj/item/remote_scene_tool state: sticker_inactive
+/obj/item/remote_scene_tool dir: 2
+/obj/item/remote_scene_tool overlay: code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi:sticker_inactive:8:#000000
+/obj/item/remote_scene_tool/voodoo_doll icon: code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi
+/obj/item/remote_scene_tool/voodoo_doll state: voodoo_doll_inactive
+/obj/item/remote_scene_tool/voodoo_doll dir: 2
+/obj/item/remote_scene_tool/voodoo_doll overlay: code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi:voodoo_doll_inactive:8:#000000
+/obj/item/remote_scene_tool/voodoo_necklace icon: code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi
+/obj/item/remote_scene_tool/voodoo_necklace state: necklace_inactive
+/obj/item/remote_scene_tool/voodoo_necklace dir: 2
+/obj/item/remote_scene_tool/voodoo_necklace overlay: code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi:necklace_inactive:8:#000000
+/obj/item/remote_scene_tool/tally_necklace icon: icons/vore/custom_remote_scene_tools.dmi
+/obj/item/remote_scene_tool/tally_necklace state: collar_inactive
+/obj/item/remote_scene_tool/tally_necklace dir: 2
+/obj/item/remote_scene_tool/tally_necklace overlay: icons/vore/custom_remote_scene_tools.dmi:collar_inactive:8:#000000
+/obj/item/remote_scene_tool/tally_doll icon: icons/vore/custom_remote_scene_tools.dmi
+/obj/item/remote_scene_tool/tally_doll state: doll_inactive
+/obj/item/remote_scene_tool/tally_doll dir: 2
+/obj/item/remote_scene_tool/tally_doll overlay: icons/vore/custom_remote_scene_tools.dmi:doll_inactive:8:#000000
+
