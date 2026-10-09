@@ -5,6 +5,7 @@ import Bun from 'bun';
 import Juke from '../juke/index.js';
 import { regQuery } from './winreg';
 import { completeNativeFallback, nativeDreamMaker } from '../../dmb/integration/build';
+import { withSlot } from './machine_slots';
 
 /** Cached path to DM compiler */
 let dmPath: string;
@@ -121,7 +122,18 @@ type Option = Partial<{
   ignoreWarningCodes: string[];
 }>;
 
+/**
+ * Compiles `dmeFile`. Holds a machine-wide `dm_compile` slot for the whole compile (lib/machine_slots.ts; two at a time by
+ * default, DQ_SLOTS_DM_COMPILE=N changes it, the merge worktree goes first), so a dozen worktrees do not stretch every compile.
+ */
 export async function DreamMaker(
+  dmeFile: string,
+  options: Option = {},
+): Promise<void> {
+  return withSlot('dm_compile', `DreamMaker ${dmeFile}`, () => compileWithDreamMaker(dmeFile, options), (m) => Juke.logger.info(m));
+}
+
+async function compileWithDreamMaker(
   dmeFile: string,
   options: Option = {},
 ): Promise<void> {

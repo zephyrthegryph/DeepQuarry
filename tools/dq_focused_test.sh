@@ -131,6 +131,24 @@ status_write() { # state [key=value ...]
 FOCUS_STARTED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 FOCUS_STARTED_EPOCH="$(date +%s)"
 
+# The one EXIT trap. It releases what the run holds (the temp focus lists, a look-pin slot) and, for a detached child, makes the
+# status file say how the run ended when nothing else did: a script that exits before it reaches print_result (a bad test name, a
+# usage error, a signal) must not leave `state=running` behind for --status to report forever.
+focus_on_exit() {
+	local rc=$?
+	trap - EXIT
+	if [ "$(type -t look_lock_release)" = "function" ]; then look_lock_release; fi
+	if [ "$(type -t cleanup_files)" = "function" ]; then cleanup_files; fi
+	if [ -n "${DQ_FOCUSED_RUN_ID:-}" ] && [ "$(sed -n 's/^state=//p' "$RUN_DIR/$DQ_FOCUSED_RUN_ID.status" 2>/dev/null)" = "running" ]; then
+		local why
+		why="$(grep -v '^[[:space:]]*$' "$RUN_DIR/$DQ_FOCUSED_RUN_ID.log" 2>/dev/null | tail -n 1 | cut -c1-300)"
+		status_write failed "result=exited before a result (exit $rc)" "exit_code=$rc" "reason=${why:-no output}"
+	fi
+	exit "$rc"
+}
+trap focus_on_exit EXIT
+trap 'exit 130' INT TERM
+
 usage() {
 	echo "usage: $0 [--full-map] [--repeat=N] [--<dm-test flag>...] <test name | /datum/unit_test/path | 'glob*'> [...]" >&2
 	exit 2
@@ -262,7 +280,6 @@ focus_arg() {
 cleanup_files() {
 	if [ ${#focus_files[@]} -gt 0 ]; then rm -f "${focus_files[@]}"; fi
 }
-trap cleanup_files EXIT
 
 # Short names (no leading slash): Git Bash would rewrite "/datum/..." into a
 # Windows path on its way to cmd.exe. dm-test adds the /datum/unit_test/ prefix back.
@@ -316,8 +333,6 @@ fi
 if [ ${#look_group[@]} -gt 0 ] && [ "${DQ_LOOK_PIN_SLOTS:-2}" != "0" ]; then
 	# shellcheck source=tools/dq_look_lock.sh
 	. tools/dq_look_lock.sh
-	trap 'look_lock_release; cleanup_files' EXIT
-	trap 'exit 130' INT TERM
 	look_lock_acquire
 fi
 
