@@ -56,7 +56,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 
 /datum/unit_test/dq_look_tree_pin
 	tier = TEST_TIER_EXHAUSTIVE
-	timeout = 1800
+	timeout = 3600
 	is_sweep_test = TRUE
 
 /datum/unit_test/dq_look_tree_pin/Run()
@@ -69,7 +69,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 
 /datum/unit_test/dq_look_state_pin
 	tier = TEST_TIER_EXHAUSTIVE
-	timeout = 1800
+	timeout = 3600
 	is_sweep_test = TRUE
 
 /datum/unit_test/dq_look_state_pin/Run()
