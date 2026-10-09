@@ -19,6 +19,15 @@
 	var/use_modern_ai = FALSE
 
 CAPABILITIES(/mob/living)
+	attack_variants()
+	op("touch_help", hand(), stance(I_HELP), priority(OP_PRIORITY_DEFAULT), label("Help"), then(PROC_REF(touch_help)))
+	op("touch_disarm", hand(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT), label("Shove"), then(PROC_REF(touch_disarm)))
+	op("touch_grab", hand(), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT), label("Take hold"), then(PROC_REF(touch_grab)))
+	op("touch_hurt", hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT), label("Punch"), then(PROC_REF(touch_hurt)))
+	op("hit_help", item(/obj/item), stance(I_HELP), priority(OP_PRIORITY_DEFAULT), label("Use on"), then(PROC_REF(hit_help)))
+	op("hit_disarm", item(/obj/item), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT), label("Shove with"), then(PROC_REF(hit_disarm)))
+	op("hit_grab", item(/obj/item), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT), label("Hold with"), then(PROC_REF(hit_grab)))
+	op("hit_hurt", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_DEFAULT), label("Hit"), then(PROC_REF(hit_hurt)))
 	living_action_status_contributions()
 	ref_one(nameof(cameraFollow))
 	every(PROC_REF(autofire_interval), then(PROC_REF(autofire_tick)), when = nameof(autofire_on))

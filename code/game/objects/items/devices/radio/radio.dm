@@ -200,10 +200,10 @@ CAPABILITIES(/obj/item/radio)
 	broadcasting = !broadcasting && !wire_is_cut(src, WIRE_RADIO_SIGNAL)
 
 /obj/item/radio/proc/radio_controls_opened(datum/act/op/A)
-	interaction_self(A.actor, A.held, null)
+	interaction_self(A.actor, A.held)
 	return OP_OK
 
-/obj/item/radio/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/radio/proc/interaction_self(mob/user, obj/item/held)
 	if(beacon || electric_pack || uplink)
 		return FALSE
 	interact(user)

@@ -34,9 +34,6 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	if(!use)
 		return TRUE
 	act_done(use)
-	// Converted handlers (I7): interactions with entry = INTERACTION_ENTRY_SELF.
-	if(run_interaction_entry(user, src, src, INTERACTION_ENTRY_SELF))
-		return TRUE
 	// The item's in_hand() ops: the Z key and an item's action button reach them here (a click on the held item resolves them in the inbox first).
 	if(op_resolve_click(user, src, src, GESTURE_SELF, ORIGIN_CLICK))
 		return TRUE
@@ -69,16 +66,29 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		. = pre_attack(A, user, click_parameters)
 		if(.)	// We're returning the value of pre_attack, important if it has a special return.
 			return
+	// The click's parameters and the swing's modifier (a cleave, an off-hand swing) are what the ops this swing reaches read
+	// (dq_interaction_click_params(), GLOB.interaction_entry_attack_modifier).
+	var/saved_params = dq_interaction_set_click_params(user, click_parameters)
+	var/saved_modifier = GLOB.interaction_entry_attack_modifier[user]
+	if(user)
+		GLOB.interaction_entry_attack_modifier[user] = attack_modifier
 	var/interaction_result
-	if(secondary)
-		interaction_result = A.item_interaction_secondary(user, src, modifiers)
-	else
-		interaction_result = A.item_interaction(user, src, modifiers)
-	if(ITEM_INTERACT_CONSUMED(interaction_result))
-		return interaction_result
-	// SKIP_TO_ATTACK deliberately bypasses the modern interaction hooks but still
-	// enters attackby(), which is the canonical attack/fallback path during migration.
-	return A.attackby(src, user, attack_modifier, click_parameters)
+	try
+		if(secondary)
+			interaction_result = A.item_interaction_secondary(user, src, modifiers)
+		else
+			interaction_result = A.item_interaction(user, src, modifiers)
+		if(!ITEM_INTERACT_CONSUMED(interaction_result))
+			// SKIP_TO_ATTACK deliberately bypasses the modern interaction hooks but still
+			// enters attackby(), which is the canonical attack/fallback path during migration.
+			interaction_result = A.attackby(src, user, attack_modifier, click_parameters)
+	catch(var/exception/error)
+		dq_interaction_set_click_params(user, saved_params)
+		dq_interaction_restore_attack_modifier(user, saved_modifier)
+		throw error
+	dq_interaction_set_click_params(user, saved_params)
+	dq_interaction_restore_attack_modifier(user, saved_modifier)
+	return interaction_result
 
 /**
  * Modern item interaction entry point: every quality offered by a multi-purpose
@@ -92,7 +102,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	if(.)
 		return
 	// Interactions that need no tool quality but answer Use with an item in hand.
-	switch(try_interaction(user, src, tool, INPUT_ACTION_USE, null, TRUE))
+	switch(try_gesture(user, src, tool, INPUT_ACTION_USE, null, TRUE))
 		if(INTERACTION_TRY_RAN)
 			return ITEM_INTERACT_SUCCESS
 		if(INTERACTION_TRY_MENU, INTERACTION_TRY_BLOCKED)
@@ -102,6 +112,23 @@ avoid code duplication. This includes items that may sometimes act as a standard
 /// Right-click counterpart to item_interaction().
 /atom/proc/item_interaction_secondary(mob/user, obj/item/tool, list/modifiers)
 	return tool_interaction(user, tool, modifiers, TRUE)
+
+/// The tool_act path: the base *_act procs end here, so subtype overrides that call ..() reach it.
+/// `secondary` (right-click tool use) is the quality's Alternate gesture instead of Use.
+/atom/proc/interaction_tool_act(mob/user, obj/item/tool, quality, secondary = FALSE)
+	switch(try_gesture(user, src, tool, secondary ? INPUT_ACTION_ALTERNATE : INPUT_ACTION_USE, quality))
+		if(INTERACTION_TRY_RAN)
+			return ITEM_INTERACT_SUCCESS
+		if(INTERACTION_TRY_MENU, INTERACTION_TRY_BLOCKED)
+			return ITEM_INTERACT_BLOCKING
+	return NONE
+
+/// An item used on this atom by code (not a click): the ops first, as a click's swing does, then the gate every item use passes.
+/// TRUE when the input was used up.
+/atom/proc/item_used_on(obj/item/W, mob/user)
+	if(ITEM_INTERACT_CONSUMED(item_interaction(user, W, null)))
+		return TRUE
+	return attackby(W, user)
 
 /// Dispatches all qualities on a tool in their declared order.
 /atom/proc/tool_interaction(mob/user, obj/item/tool, list/modifiers, secondary = FALSE)
@@ -162,28 +189,10 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	return interaction_tool_act(user, tool, TOOL_WELDER)
 
 /**
- * Used with an item. Converted handlers (I7) are interactions with
- * `entry = INTERACTION_ENTRY_ITEM`; they run first, where the type's own
- * attackby override used to. Returns TRUE when the input was used up, so the
- * item's afterattack doesn't follow.
+ * Used with an item: the ops answered it first (item_interaction()); what is left is the gate every item use passes. Returns TRUE when the input
+ * was used up, so the item's afterattack doesn't follow.
  */
 /atom/proc/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
-	var/list/outcome = list()
-	var/saved_params = dq_interaction_set_click_params(user, click_parameters)
-	var/saved_modifier = GLOB.interaction_entry_attack_modifier[user]
-	if(user)
-		GLOB.interaction_entry_attack_modifier[user] = attack_modifier
-	var/datum/interaction/answered
-	try
-		answered = run_interaction_entry(user, src, W, INTERACTION_ENTRY_ITEM, outcome)
-	catch(var/exception/error)
-		dq_interaction_set_click_params(user, saved_params)
-		dq_interaction_restore_attack_modifier(user, saved_modifier)
-		throw error
-	dq_interaction_set_click_params(user, saved_params)
-	dq_interaction_restore_attack_modifier(user, saved_modifier)
-	if(answered)
-		return (INTERACTION_TRY_PASS in outcome) ? FALSE : answered.consumes_input
 	if(attackby_stopped(src, W, user, click_parameters))
 		return TRUE
 	return FALSE
@@ -209,41 +218,51 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 		GLOB.interaction_entry_attack_modifier[actor] = saved
 
 /**
- * Every living mob's defaults, after everything else it offers. Each is declared
- * per stance, so the one that runs carries the intent: an empty hand helps,
- * disarms, grabs or punches it (unarmed_touch()), and an item is used on it, or
- * disarms, grabs or hits with it (hit_with_item()).
+ * Every living mob's defaults, after everything else it offers (declared in CAPABILITIES(/mob/living), combat_ai/integration/mob_living.dm). Each is
+ * declared per stance, so the one that runs carries the intent: an empty hand helps, disarms, grabs or punches it (unarmed_touch()), and an item is
+ * used on it, or disarms, grabs or hits with it (hit_with_item()).
  */
-/mob/living/declare_interactions(list/into)
-	..()
-	var/static/list/default_specs = list(
-		INTERACT_HAND_DEFAULT_AS(I_HELP, "Help", PROC_REF(interaction_touch)),
-		INTERACT_HAND_DEFAULT_AS(I_DISARM, "Shove", PROC_REF(interaction_touch)),
-		INTERACT_HAND_DEFAULT_AS(I_GRAB, "Take hold", PROC_REF(interaction_touch)),
-		INTERACT_HAND_DEFAULT_AS(I_HURT, "Punch", PROC_REF(interaction_touch)),
-		INTERACT_ITEM_DEFAULT_AS(I_HELP, "Use on", PROC_REF(interaction_hit)),
-		INTERACT_ITEM_DEFAULT_AS(I_DISARM, "Shove with", PROC_REF(interaction_hit)),
-		INTERACT_ITEM_DEFAULT_AS(I_GRAB, "Hold with", PROC_REF(interaction_hit)),
-		INTERACT_ITEM_DEFAULT_AS(I_HURT, "Hit", PROC_REF(interaction_hit)),
-	)
-	for(var/spec in default_specs)
-		into += dq_interaction_from_spec(/mob/living, spec)
+/mob/living/proc/touch_help(datum/act/op/A)
+	return living_touch(A, I_HELP)
 
-/mob/living/proc/interaction_touch(mob/living/user, obj/item/held, datum/interaction/interaction)
-	unarmed_touch(user, interaction.stance)
-	return TRUE
+/mob/living/proc/touch_disarm(datum/act/op/A)
+	return living_touch(A, I_DISARM)
+
+/mob/living/proc/touch_grab(datum/act/op/A)
+	return living_touch(A, I_GRAB)
+
+/mob/living/proc/touch_hurt(datum/act/op/A)
+	return living_touch(A, I_HURT)
+
+/mob/living/proc/hit_help(datum/act/op/A)
+	return living_hit(A, I_HELP)
+
+/mob/living/proc/hit_disarm(datum/act/op/A)
+	return living_hit(A, I_DISARM)
+
+/mob/living/proc/hit_grab(datum/act/op/A)
+	return living_hit(A, I_GRAB)
+
+/mob/living/proc/hit_hurt(datum/act/op/A)
+	return living_hit(A, I_HURT)
+
+/mob/living/proc/living_touch(datum/act/op/A, stance)
+	unarmed_touch(A.actor, stance)
+	return OP_OK
 
 /// Signal listeners first (a nanoform's held body), then the hit. A hit that didn't use the input lets afterattack follow.
-/mob/living/proc/interaction_hit(mob/user, obj/item/I, datum/interaction/interaction)
+/mob/living/proc/living_hit(datum/act/op/A, stance)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(attackby_stopped(src, I, user, dq_interaction_click_params(user)))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	var/modifier = GLOB.interaction_entry_attack_modifier[user]
-	var/hit = hit_with_item(I, user, isnull(modifier) ? 1 : modifier, interaction.stance)
+	var/hit = hit_with_item(I, user, isnull(modifier) ? 1 : modifier, stance)
 	// An item that does no harm (attack() answers ITEM_INTERACT_FAILURE: force 0, no bludgeon, a stance that does not hit) did nothing to this mob: its own
 	// afterattack follows, as it did before attack() answered with the ITEM_INTERACT_* flags (a spray, a syringe, a dropper, a splash all live there).
 	if(hit == ITEM_INTERACT_FAILURE)
-		return INTERACTION_HANDLED_PASS
-	return hit ? TRUE : INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return hit ? OP_OK : OP_PASS
 
 /// An empty-hand touch on this mob in `stance` (I_HELP, I_DISARM, I_GRAB or I_HURT); mob types extend it (their unarmed combat). The base reacts for the AI and thorns.
 /mob/living/proc/unarmed_touch(mob/living/user, stance = I_HELP)

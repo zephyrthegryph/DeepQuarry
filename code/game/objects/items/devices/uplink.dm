@@ -241,7 +241,7 @@ CAPABILITIES(/obj/item/uplink/hidden)
 	. = ..()
 	rel_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
 
-/obj/item/radio/uplink/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/radio/uplink/interaction_self(mob/user, obj/item/held)
 	. = ..()
 	if(.)
 		return TRUE

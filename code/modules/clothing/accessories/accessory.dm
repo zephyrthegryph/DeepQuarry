@@ -886,10 +886,10 @@ CAPABILITIES(/obj/item/clothing/accessory/collar)
 			return OP_DECLINE
 		to_chat(user,span_notice("You adjust the [name]'s tag."))
 
-	open_collar_tag(user, held, null)
+	open_collar_tag(user, held)
 	return OP_OK
 
-/obj/item/clothing/accessory/collar/proc/open_collar_tag(mob/user, obj/item/held, datum/interaction/interaction, tool_edit = FALSE, erasemethod, erasing, writemethod)
+/obj/item/clothing/accessory/collar/proc/open_collar_tag(mob/user, obj/item/held, tool_edit = FALSE, erasemethod, erasing, writemethod)
 	var/original_client_ckey
 	if(istype(user, /client))
 		var/client/C = user
@@ -897,7 +897,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar)
 		user = C.mob
 	if(!ismob(user) || QDELETED(user))
 		return
-	open_request(src, /datum/prompt/text/collar_tag, PROC_REF(collar_tag_entered), answerer = user, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), original_client_ckey = original_client_ckey, tool_edit = tool_edit, erasemethod = erasemethod, erasing = erasing, writemethod = writemethod)
+	open_request(src, /datum/prompt/text/collar_tag, PROC_REF(collar_tag_entered), answerer = user, captured_item = held, item_expected = !isnull(held), original_client_ckey = original_client_ckey, tool_edit = tool_edit, erasemethod = erasemethod, erasing = erasing, writemethod = writemethod)
 
 /obj/item/clothing/accessory/collar/proc/collar_tag_entered(datum/act/request/A)
 	var/datum/prompt/text/collar_tag/request = A.request
@@ -969,7 +969,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar)
 	if(!(istype(user.get_active_hand(),I)) || !(istype(user.get_inactive_hand(),src)) || (user.stat))
 		return
 
-	open_collar_tag(user, I, null, TRUE, erasemethod, erasing, writemethod)
+	open_collar_tag(user, I, TRUE, erasemethod, erasing, writemethod)
 
 /obj/item/clothing/accessory/collar/proc/apply_tool_tag(datum/act/request/A)
 	var/datum/prompt/text/collar_tag/request = A.request
@@ -1010,9 +1010,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar)
 	encode = TRUE
 	multiline = FALSE
 	var/obj/item/captured_item
-	var/datum/interaction/captured_interaction
 	var/item_expected = FALSE
-	var/interaction_expected = FALSE
 	var/original_client_ckey
 	var/tool_edit = FALSE
 	var/erasemethod
@@ -1021,22 +1019,18 @@ CAPABILITIES(/obj/item/clothing/accessory/collar)
 
 CAPABILITIES(/datum/prompt/text/collar_tag)
 	ref_one(nameof(captured_item), /obj/item)
-	ref_one(nameof(captured_interaction), /datum/interaction)
 
 /datum/prompt/text/collar_tag/prepare(datum/act/A)
 	. = ..()
 	var/obj/item/item = captured_item
-	var/datum/interaction/interaction = captured_interaction
 	rel_clear(src, nameof(captured_item))
-	rel_clear(src, nameof(captured_interaction))
 	rel_set(src, nameof(captured_item), item)
-	rel_set(src, nameof(captured_interaction), interaction)
 
 /datum/prompt/text/collar_tag/proc/user_value()
 	return original_client_ckey ? GLOB.directory[original_client_ckey] : answerer
 
 /datum/prompt/text/collar_tag/proc/captures_gone()
-	return QDELETED(answerer) || (original_client_ckey && !GLOB.directory[original_client_ckey]) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
+	return QDELETED(answerer) || (original_client_ckey && !GLOB.directory[original_client_ckey]) || (item_expected && QDELETED(captured_item))
 
 /datum/prompt/text/collar_tag/recheck_extra()
 	. = ..()

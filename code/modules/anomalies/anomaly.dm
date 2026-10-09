@@ -240,36 +240,30 @@ CAPABILITIES(/obj/item/assembly/signaler/anomaly/choice)
 /datum/prompt/choice/research_anomaly
 	timeout = 0
 	var/obj/item/captured_item
-	var/datum/interaction/captured_interaction
 	var/datum/captured_callback
 	var/item_expected = FALSE
-	var/interaction_expected = FALSE
 	var/callback_expected = FALSE
 	var/callback_value
 	var/original_client_ckey
 
 CAPABILITIES(/datum/prompt/choice/research_anomaly)
 	ref_one(nameof(captured_item), /obj/item)
-	ref_one(nameof(captured_interaction), /datum/interaction)
 	ref_one(nameof(captured_callback), /datum)
 
 /datum/prompt/choice/research_anomaly/prepare(datum/act/A)
 	. = ..()
 	var/obj/item/item = captured_item
-	var/datum/interaction/interaction = captured_interaction
 	var/datum/callback = captured_callback
 	rel_clear(src, nameof(captured_item))
-	rel_clear(src, nameof(captured_interaction))
 	rel_clear(src, nameof(captured_callback))
 	rel_set(src, nameof(captured_item), item)
-	rel_set(src, nameof(captured_interaction), interaction)
 	rel_set(src, nameof(captured_callback), callback)
 
 /datum/prompt/choice/research_anomaly/proc/user_value()
 	return original_client_ckey ? GLOB.directory[original_client_ckey] : answerer
 
 /datum/prompt/choice/research_anomaly/proc/captures_gone()
-	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction)) || (callback_expected && QDELETED(captured_callback)) || (original_client_ckey && !GLOB.directory[original_client_ckey])
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (callback_expected && QDELETED(captured_callback)) || (original_client_ckey && !GLOB.directory[original_client_ckey])
 
 /datum/prompt/choice/research_anomaly/recheck_extra()
 	. = ..()

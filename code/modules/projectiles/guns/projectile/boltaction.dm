@@ -153,11 +153,11 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle)
 
 /// The pump_rifle_verb_scope op: the verb's effect, as the old resolver ran it.
 /obj/item/gun/projectile/shotgun/pump/rifle/proc/pump_rifle_verb_scope_op(datum/act/op/A)
-	pump_rifle_verb_scope(A.actor, A.held, null)
+	pump_rifle_verb_scope(A.actor, A.held)
 	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/projectile/shotgun/pump/rifle/proc/pump_rifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/shotgun/pump/rifle/proc/pump_rifle_verb_scope(mob/user, obj/item/held)
 
 
 

@@ -151,6 +151,7 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 
 CAPABILITIES(/obj/machinery/teleport/hub)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("ghost_follow", observer(), label("Follow the link"), then(PROC_REF(hub_ghost_follow)))
 
 /// Something walked into it (the bump action's notice).
 /obj/machinery/teleport/hub/proc/bumped_into(datum/act/A)

@@ -34,7 +34,6 @@
 /datum/interaction_resolution/proc/best_of(list/interactions, action, category)
 	. = list()
 	var/best_priority
-	var/list/entries_seen
 	for(var/datum/interaction/interaction as anything in interactions)
 		if(action && interaction.default_action != action)
 			continue
@@ -45,11 +44,6 @@
 			best_priority = priority
 		else if(priority < best_priority)
 			break
-		// Converted legacy handlers never tie with each other: the first of an entry answers, as the override chain did.
-		if(interaction.entry)
-			if(LAZYFIND(entries_seen, interaction.entry))
-				continue
-			LAZYADD(entries_seen, interaction.entry)
 		. += interaction
 
 /// The interaction's priority for this actor.
@@ -105,7 +99,7 @@
 	var/list/blocked = list()
 	var/list/priorities = resolution.priorities
 	// The type's interactions, then the construction edges leaving its current state (construction.dm).
-	for(var/datum/interaction/interaction as anything in interaction_candidates(target) + cap_extra_interactions(target) + construction_edges_for(target))
+	for(var/datum/interaction/interaction as anything in interaction_candidates(target) + cap_extra_interactions(target))
 		if(action && interaction.default_action != action)
 			continue
 		if(quality && interaction.tool != quality)
@@ -176,7 +170,7 @@
 	if(!isnull(routed))
 		return routed
 	// Narrowed before any why_not(): only this action (and quality) is resolved, converted legacy
-	// handlers (I7, run from their own entry procs, run_interaction_entry()) are skipped, and
+	// handlers (I7, which have an entry) are skipped, and
 	// the blocked list is only built below when nothing is available.
 	// With `quality`, the best of that quality's interactions for the action is what the old
 	// full pass found (best for the action filtered to the quality, else the quality's best).
@@ -285,136 +279,12 @@
 		return FALSE
 	return interaction.perform(actor, target, held)
 
-// ---------------------------------------------------------------------------
-// Legacy entries (I7)
-
-/// Actor -> how many legacy entries are dispatching for them right now. The entry proc decided reach itself.
-GLOBAL_LIST_EMPTY(interaction_entry_actors)
-/// Actors whose running entry interaction answered INTERACTION_HANDLED_PASS (set by generic run_effect()).
-GLOBAL_LIST_EMPTY(interaction_entry_pass)
-
-/// A type's interactions for one entry, in dispatch order: priority, then declaration order. Cached per type.
-/proc/interaction_entry_candidates(atom/target, entry)
-	return CACHED_KEY(interaction_entry_candidates, "[target.type]|[entry]", target, entry)
-
-DECLARE_SHARED_CACHE(interaction_entry_candidates, GLOBAL_PROC_REF(build_interaction_entry_candidates), SC_NEVER)
-
-/proc/build_interaction_entry_candidates(atom/target, entry)
-	var/list/candidates = list()
-	for(var/datum/interaction/interaction as anything in interaction_candidates(target))
-		if(interaction.entry == entry)
-			candidates += interaction
-	return sort_interactions(candidates)
-
 /**
- * Runs the interactions a converted legacy handler became, from that handler's
- * old entry proc (attackby, attack_hand, attack_self, click_alt, MouseDrop_T).
- * Every caller of the proc still reaches them, in the override chain's order:
- * types declare their own interactions before calling ..(), so the most
- * specific type's come first, in the order its old handler tested them.
- *
- * The first interaction the actor meant (is_meant(): the right item, and its
- * offered_when clauses) answers. If its requirements fail, the actor is told
- * why and the input stops there, as an old handler returned early with a
- * message. If its effect declines (returns FALSE), the next one is tried, as an
- * old handler fell through to ..().
- *
- * The actor's adapter doesn't filter: the entry's callers already decided who
- * reaches it (the AI through silicon_use, telekinesis at range, grippers).
- * With `gate` (hand entries), target.hand_gate() runs once, before the first
- * interaction that is `behind_gate`, or at the end if none was meant.
- * Returns the interaction that answered, INTERACTION_GATE_STOPPED when the gate
- * stopped it, or null when nothing was meant.
- * `result` (a list) gets the outcome, INTERACTION_TRY_RAN or INTERACTION_TRY_BLOCKED, plus
- * INTERACTION_TRY_PASS when the effect answered INTERACTION_HANDLED_PASS (input not used up).
- */
-/proc/run_interaction_entry(mob/actor, atom/target, obj/item/held, entry, list/result, gate)
-	if(!actor || !target)
-		return null
-	var/list/candidates = interaction_entry_candidates(target, entry)
-	var/gate_ran = !gate
-	if(!length(candidates))
-		if(!gate_ran && target.hand_gate(actor))
-			result?.Add(INTERACTION_TRY_BLOCKED)
-			return INTERACTION_GATE_STOPPED
-		return null
-	GLOB.interaction_entry_actors[actor] = (GLOB.interaction_entry_actors[actor] || 0) + 1
-	// A nested entry (an effect that touches something else) keeps the outer one's pass flag.
-	var/saved_pass = GLOB.interaction_entry_pass[actor]
-	GLOB.interaction_entry_pass -= actor
-	. = null
-	try
-		for(var/datum/interaction/interaction as anything in candidates)
-			if(!interaction.applies_to(target) || !interaction.is_meant(actor, target, held))
-				continue
-			// The gate sits below the first handler that went on to ..(), as in the override chain.
-			if(!gate_ran && interaction.behind_gate)
-				gate_ran = TRUE
-				if(target.hand_gate(actor))
-					result?.Add(INTERACTION_TRY_BLOCKED)
-					. = INTERACTION_GATE_STOPPED
-					break
-			var/outcome = interaction.attempt(actor, target, held)
-			if(outcome)
-				result?.Add(outcome)
-				if(GLOB.interaction_entry_pass[actor])
-					result?.Add(INTERACTION_TRY_PASS)
-				. = interaction
-				break
-			if(QDELETED(target))
-				break
-	catch(var/exception/error)
-		interaction_entry_restore_pass(actor, saved_pass)
-		interaction_entry_done(actor)
-		throw error
-	interaction_entry_restore_pass(actor, saved_pass)
-	interaction_entry_done(actor)
-	// Nothing meant: the touch still reaches the gate, as the base proc did.
-	if(!. && !gate_ran && !QDELETED(target) && target.hand_gate(actor))
-		result?.Add(INTERACTION_TRY_BLOCKED)
-		return INTERACTION_GATE_STOPPED
-
-/// Click parameters of the item/drag entry each actor is inside (attackby's click_parameters,
-/// MouseDrop_T's params), so an effect can place precisely: dq_interaction_click_params().
-GLOBAL_LIST_EMPTY(interaction_entry_click_params)
-
-/// Sets `actor`'s entry click parameters (null clears them); returns the previous value to restore.
-/proc/dq_interaction_set_click_params(mob/actor, params)
-	if(!actor)
-		return null
-	. = GLOB.interaction_entry_click_params[actor]
-	if(params)
-		GLOB.interaction_entry_click_params[actor] = params
-	else
-		GLOB.interaction_entry_click_params -= actor
-
-/// The click parameters of the entry `actor` is running an interaction from, or null.
-/proc/dq_interaction_click_params(mob/actor)
-	return actor ? GLOB.interaction_entry_click_params[actor] : null
-
-/proc/interaction_entry_restore_pass(mob/actor, saved_pass)
-	if(saved_pass)
-		GLOB.interaction_entry_pass[actor] = saved_pass
-	else
-		GLOB.interaction_entry_pass -= actor
-
-/proc/interaction_entry_done(mob/actor)
-	var/count = GLOB.interaction_entry_actors[actor] - 1
-	if(count > 0)
-		GLOB.interaction_entry_actors[actor] = count
-	else
-		GLOB.interaction_entry_actors -= actor
-
-/**
- * Requirement clause REQ_INTERACTION_REACH: adjacent; or a silicon the target
- * lets use it remotely (silicon_use); or inside a legacy entry, whose callers
- * decided reach themselves (telekinesis, the AI's attack_ai, grippers).
+ * Requirement clause REQ_INTERACTION_REACH: adjacent; or a silicon the target lets use it remotely (silicon_use).
  */
 /proc/dq_interaction_reach(mob/actor, atom/target, obj/item/held)
 	if(!actor || !target)
 		return FALSE
-	if(GLOB.interaction_entry_actors[actor])
-		return TRUE
 	if(actor.Adjacent(target))
 		return TRUE
 	if(issilicon(actor) && (target.silicon_use & (SILICON_USE_HAND | ROBOT_USE_HAND)))
@@ -433,13 +303,10 @@ GLOBAL_LIST_EMPTY(interaction_entry_click_params)
 /datum/interaction_resolution/proc/held() as /obj/item
 	return held
 
-/// Requirement clause REQ_SELF_USE_REACH: the item is in one of the actor's hands, or attack_self()
-/// already dispatched it (its callers decided that themselves: action buttons, anchored items).
+/// Requirement clause REQ_SELF_USE_REACH: the item is in one of the actor's hands.
 /proc/dq_interaction_self_reach(mob/actor, atom/target, obj/item/held)
 	if(!actor || !target)
 		return FALSE
-	if(GLOB.interaction_entry_actors[actor])
-		return TRUE
 	return actor.get_active_hand() == target || actor.get_inactive_hand() == target
 
 /// Requirement clause REQ_IN_INVENTORY: the target is somewhere on the actor.

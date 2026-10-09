@@ -128,7 +128,7 @@ TRACKED(/obj/item/personal_shield_generator, shield_active)
 
 /// The toggle_shield_effect op: the verb's effect, as the old resolver ran it.
 /obj/item/personal_shield_generator/proc/toggle_shield_effect_op(datum/act/op/A)
-	toggle_shield_effect(A.actor, A.held, null)
+	toggle_shield_effect(A.actor, A.held)
 	return OP_OK
 
 /// Requirement (was REQ_* pred_has_weapon): the legacy check answers TRUE to pass.
@@ -143,7 +143,7 @@ TRACKED(/obj/item/personal_shield_generator, shield_active)
 
 /// The weapon_toggle_effect op: the verb's effect, as the old resolver ran it.
 /obj/item/personal_shield_generator/proc/weapon_toggle_effect_op(datum/act/op/A)
-	weapon_toggle_effect(A.actor, A.held, null)
+	weapon_toggle_effect(A.actor, A.held)
 	return OP_OK
 
 /obj/item/personal_shield_generator/proc/interaction_hand(datum/act/op/A)
@@ -246,7 +246,7 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 
 //Gun stuff
 
-/obj/item/personal_shield_generator/proc/toggle_shield_effect(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+/obj/item/personal_shield_generator/proc/toggle_shield_effect(mob/living/carbon/human/user, obj/item/held)
 
 	if(!COOLDOWN_FINISHED(user, last_special))
 		return
@@ -273,7 +273,7 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 			user.update_modifier_visuals() //Forces coloration to WORK.
 			play_sfx(src, SFX_WEAPONS_SABERON) //Shield turning off! PLACEHOLDER
 
-/obj/item/personal_shield_generator/proc/weapon_toggle_effect(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction) //Make this work on Alt-Click
+/obj/item/personal_shield_generator/proc/weapon_toggle_effect(mob/living/carbon/human/user, obj/item/held) //Make this work on Alt-Click
 
 	if(!COOLDOWN_FINISHED(user, last_special))
 		return

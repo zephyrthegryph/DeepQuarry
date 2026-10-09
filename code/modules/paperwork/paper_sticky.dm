@@ -147,14 +147,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper/sticky, TYPE_PROC_REF(/atom, appearance_
 		icon_state = info ? "paper_words" : "paper"
 
 // Copied from duct tape.
-EXTEND_INTERACTIONS(/obj/item/paper/sticky, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(sticky_pick_up)))
+CAPABILITIES(/obj/item/paper/sticky)
+	extend("pick_up_item", then(PROC_REF(sticky_picked_up)))
 
 /// Picking a note up off a wall ends its persistence.
-/obj/item/paper/sticky/proc/sticky_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/paper/sticky/proc/sticky_picked_up(datum/act/op/A)
 	if(!istype(loc, /turf))
 		reset_persistence_tracking()
+	return OP_OK
 
 /obj/item/paper/sticky/afterattack(A, mob/user, flag, params)
 

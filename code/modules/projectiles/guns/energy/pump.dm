@@ -247,11 +247,11 @@ CAPABILITIES(/obj/item/gun/energy/locked/frontier/rifle)
 		if(istext(refusal))
 			to_chat(A.actor, span_warning(refusal))
 		return OP_DECLINE
-	frontier_rifle_verb_scope(A.actor, A.held, null)
+	frontier_rifle_verb_scope(A.actor, A.held)
 	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/energy/locked/frontier/rifle/proc/frontier_rifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/energy/locked/frontier/rifle/proc/frontier_rifle_verb_scope(mob/user, obj/item/held)
 	toggle_scope(2.0, user)
 
 /obj/item/gun/energy/locked/frontier/rifle/frontier_pump_base()

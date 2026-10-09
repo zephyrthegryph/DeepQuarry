@@ -40,7 +40,7 @@ CAPABILITIES(/obj/item/clothing/head/welding)
 
 /// The head_welding_toggle_verb op: the verb's effect, as the old resolver ran it.
 /obj/item/clothing/head/welding/proc/head_welding_toggle_verb_op(datum/act/op/A)
-	head_welding_toggle_verb(A.actor, A.held, null)
+	head_welding_toggle_verb(A.actor, A.held)
 	return OP_OK
 
 /// Old attack_self.
@@ -49,7 +49,7 @@ CAPABILITIES(/obj/item/clothing/head/welding)
 	head_welding_toggle_verb(user)
 
 /// Old verb "Adjust welding mask".
-/obj/item/clothing/head/welding/proc/head_welding_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/welding/proc/head_welding_toggle_verb(mob/user, obj/item/held)
 	if(!base_state)
 		base_state = icon_state
 

@@ -226,12 +226,12 @@ CAPABILITIES(/obj/item/paper_bundle)
 	return TRUE
 
 /// Old Rename bundle verb.
-/obj/item/paper_bundle/proc/paper_bundle_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	return paper_bundle_label_stage(user, held, interaction)
+/obj/item/paper_bundle/proc/paper_bundle_verb_rename(mob/user, obj/item/held)
+	return paper_bundle_label_stage(user, held)
 
-/obj/item/paper_bundle/proc/paper_bundle_label_stage(mob/user, obj/item/held, datum/interaction/interaction, paper_answer, paper_answer_ready = FALSE)
+/obj/item/paper_bundle/proc/paper_bundle_label_stage(mob/user, obj/item/held, paper_answer, paper_answer_ready = FALSE)
 	if(!paper_answer_ready)
-		open_request(src, /datum/prompt/text/paper_rename_review, PROC_REF(paper_bundle_label_answered), answerer = user, paper_operator = user, paper_held = held, paper_interaction = interaction, question = "What would you like to label the bundle?", title = "Bundle Labelling", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+		open_request(src, /datum/prompt/text/paper_rename_review, PROC_REF(paper_bundle_label_answered), answerer = user, paper_operator = user, paper_held = held, question = "What would you like to label the bundle?", title = "Bundle Labelling", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
 		return
 	var/_answer_k189 = paper_answer
 	if(isnull(_answer_k189))
@@ -244,7 +244,7 @@ CAPABILITIES(/obj/item/paper_bundle)
 
 
 /// Old Loose bundle verb.
-/obj/item/paper_bundle/proc/paper_bundle_verb_loosen(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/paper_bundle/proc/paper_bundle_verb_loosen(mob/user, obj/item/held)
 	to_chat(user, span_notice("You loosen the bundle."))
 	for(var/obj/O in contents_of(src))
 		O.forceMove(user.loc)
@@ -308,4 +308,4 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper_bundle, TYPE_PROC_REF(/atom, appearance_
 
 /obj/item/paper_bundle/proc/paper_bundle_label_apply(datum/act/request/A)
 	var/datum/prompt/text/paper_rename_review/ask = A.answer
-	return paper_bundle_label_stage(ask.paper_operator, ask.paper_held, ask.paper_interaction, ask.value, TRUE)
+	return paper_bundle_label_stage(ask.paper_operator, ask.paper_held, ask.value, TRUE)

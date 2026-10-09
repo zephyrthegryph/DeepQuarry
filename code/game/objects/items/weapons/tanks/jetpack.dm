@@ -39,11 +39,11 @@ CAPABILITIES(/obj/item/tank/jetpack)
 		. += span_danger("The meter on \the [src] indicates you are almost out of gas!")
 		play_sfx(src, SFX_EFFECTS_ALERT)
 
-/obj/item/tank/jetpack/proc/toggle_rockets_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/tank/jetpack/proc/toggle_rockets_effect(mob/user, obj/item/held)
 	stabilization_on = !( stabilization_on )
 	to_chat(user, "You toggle the stabilization [stabilization_on? "on":"off"].")
 
-/obj/item/tank/jetpack/proc/jetpack_toggle_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/tank/jetpack/proc/jetpack_toggle_effect(mob/user, obj/item/held)
 
 	on = !on
 	if(on)
@@ -131,10 +131,10 @@ DECLARE_GAS(/obj/item/tank/jetpack/carbondioxide, "air_contents", "volume", T20C
 /// Old object verbs.
 /// The toggle_rockets_effect op: the verb's effect, as the old resolver ran it.
 /obj/item/tank/jetpack/proc/toggle_rockets_effect_op(datum/act/op/A)
-	toggle_rockets_effect(A.actor, A.held, null)
+	toggle_rockets_effect(A.actor, A.held)
 	return OP_OK
 
 /// The jetpack_toggle_effect op: the verb's effect, as the old resolver ran it.
 /obj/item/tank/jetpack/proc/jetpack_toggle_effect_op(datum/act/op/A)
-	jetpack_toggle_effect(A.actor, A.held, null)
+	jetpack_toggle_effect(A.actor, A.held)
 	return OP_OK

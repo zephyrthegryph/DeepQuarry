@@ -98,25 +98,19 @@ a creative player the means to solve many problems.  Circuits are held inside an
 	encode = FALSE
 	multiline = FALSE
 	var/obj/item/captured_item
-	var/datum/interaction/captured_interaction
 	var/item_expected = FALSE
-	var/interaction_expected = FALSE
 
 CAPABILITIES(/datum/prompt/text/electronics_rename)
 	ref_one(nameof(captured_item), /obj/item)
-	ref_one(nameof(captured_interaction), /datum/interaction)
 
 /datum/prompt/text/electronics_rename/prepare(datum/act/A)
 	. = ..()
 	var/obj/item/item = captured_item
-	var/datum/interaction/interaction = captured_interaction
 	rel_clear(src, nameof(captured_item))
-	rel_clear(src, nameof(captured_interaction))
 	rel_set(src, nameof(captured_item), item)
-	rel_set(src, nameof(captured_interaction), interaction)
 
 /datum/prompt/text/electronics_rename/proc/captures_gone()
-	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item))
 
 /datum/prompt/text/electronics_rename/recheck_extra()
 	. = ..()

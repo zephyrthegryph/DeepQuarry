@@ -78,11 +78,11 @@ CAPABILITIES(/obj/item/gun/projectile/heavysniper)
 		if(istext(refusal))
 			to_chat(A.actor, span_warning(refusal))
 		return OP_DECLINE
-	heavysniper_verb_scope(A.actor, A.held, null)
+	heavysniper_verb_scope(A.actor, A.held)
 	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/projectile/heavysniper/proc/heavysniper_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/heavysniper/proc/heavysniper_verb_scope(mob/user, obj/item/held)
 	toggle_scope(2.0, user)
 
 ////////////// Dragunov Sniper Rifle //////////////
@@ -124,9 +124,9 @@ CAPABILITIES(/obj/item/gun/projectile/SVD)
 		if(istext(refusal))
 			to_chat(A.actor, span_warning(refusal))
 		return OP_DECLINE
-	svd_verb_scope(A.actor, A.held, null)
+	svd_verb_scope(A.actor, A.held)
 	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/projectile/SVD/proc/svd_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/SVD/proc/svd_verb_scope(mob/user, obj/item/held)
 	toggle_scope(2.0, user)

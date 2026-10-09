@@ -336,15 +336,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 	return OP_OK
 
 /// Old Rename paper verb.
-/obj/item/paper/proc/paper_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	return paper_rename_stage(user, held, interaction)
+/obj/item/paper/proc/paper_verb_rename(mob/user, obj/item/held)
+	return paper_rename_stage(user, held)
 
-/obj/item/paper/proc/paper_rename_stage(mob/user, obj/item/held, datum/interaction/interaction, paper_answer, paper_answer_ready = FALSE)
+/obj/item/paper/proc/paper_rename_stage(mob/user, obj/item/held, paper_answer, paper_answer_ready = FALSE)
 	if(CLUMSY_FAIL_CHANCE(user))
 		to_chat(user, span_warning("You cut yourself on the paper."))
 		return
 	if(!paper_answer_ready)
-		open_request(src, /datum/prompt/text/paper_rename_review, PROC_REF(paper_rename_answered), answerer = user, paper_operator = user, paper_held = held, paper_interaction = interaction, question = "What would you like to label the paper?", title = "Paper Labelling", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+		open_request(src, /datum/prompt/text/paper_rename_review, PROC_REF(paper_rename_answered), answerer = user, paper_operator = user, paper_held = held, question = "What would you like to label the paper?", title = "Paper Labelling", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
 		return
 	var/_answer_k309 = paper_answer
 	if(isnull(_answer_k309))
@@ -1004,7 +1004,7 @@ CAPABILITIES(/datum/prompt/text/paper_write_review)
 
 /obj/item/paper/proc/paper_rename_apply(datum/act/request/A)
 	var/datum/prompt/text/paper_rename_review/ask = A.answer
-	return paper_rename_stage(ask.paper_operator, ask.paper_held, ask.paper_interaction, ask.value, TRUE)
+	return paper_rename_stage(ask.paper_operator, ask.paper_held, ask.value, TRUE)
 
 /datum/prompt/text/paper_rename_review
 	timeout = 0
@@ -1012,13 +1012,10 @@ CAPABILITIES(/datum/prompt/text/paper_write_review)
 	var/paper_operator_expected = FALSE
 	var/obj/item/paper_held
 	var/paper_held_expected = FALSE
-	var/datum/interaction/paper_interaction
-	var/paper_interaction_expected = FALSE
 
 CAPABILITIES(/datum/prompt/text/paper_rename_review)
 	ref_one(nameof(paper_operator), /mob)
 	ref_one(nameof(paper_held), /obj/item)
-	ref_one(nameof(paper_interaction), /datum/interaction)
 
 /datum/prompt/text/paper_rename_review/prepare(datum/act/A)
 	. = ..()
@@ -1032,12 +1029,7 @@ CAPABILITIES(/datum/prompt/text/paper_rename_review)
 	rel_clear(src, nameof(paper_held))
 	if(captured_paper_held && !QDELETED(captured_paper_held))
 		rel_set(src, nameof(paper_held), captured_paper_held)
-	var/datum/interaction/captured_paper_interaction = paper_interaction
-	paper_interaction_expected = !isnull(captured_paper_interaction)
-	rel_clear(src, nameof(paper_interaction))
-	if(captured_paper_interaction && !QDELETED(captured_paper_interaction))
-		rel_set(src, nameof(paper_interaction), captured_paper_interaction)
 
 /datum/prompt/text/paper_rename_review/recheck_extra()
-	if((paper_operator_expected && QDELETED(paper_operator)) || (paper_held_expected && QDELETED(paper_held)) || (paper_interaction_expected && QDELETED(paper_interaction)))
+	if((paper_operator_expected && QDELETED(paper_operator)) || (paper_held_expected && QDELETED(paper_held)))
 		return "gone"

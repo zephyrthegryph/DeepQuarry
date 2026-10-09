@@ -84,8 +84,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/sheep)
 //If you just update icon_living it should still work with vore states and dying, you'll just need to make and label the sprites appropriately.
 //Make sure you un-comment the variables above too.
 
-//Add INTERACT_ITEM_PEACEFUL("Shear", PROC_REF(sheep_interaction_shear)) to the sheep's EXTEND_INTERACTIONS above when re-enabling.
-/mob/living/simple_mob/vore/sheep/proc/sheep_interaction_shear(mob/user, obj/item/O, datum/interaction/interaction)
+//Add op("shear", item(/obj/item), stance(I_HELP), label("Shear"), then(PROC_REF(sheep_interaction_shear))) to the sheep's CAPABILITIES block when re-enabling.
+/mob/living/simple_mob/vore/sheep/proc/sheep_interaction_shear(mob/user, obj/item/O)
 	if(!istype(O, /obj/item/material/knife) && !O.has_tool_quality(TOOL_WIRECUTTER))
 		return FALSE
 	if(!harvestable_wool)
