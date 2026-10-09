@@ -20,7 +20,6 @@
 
 CAPABILITIES(/mob/living)
 	living_action_status_contributions()
-	op("revert_beast_form", ai(), wait(10 SECONDS), on_interrupt(PROC_REF(revert_beast_form_living_failed)), then(PROC_REF(revert_beast_form_living_done)))
 	ref_one(nameof(cameraFollow))
 	every(PROC_REF(autofire_interval), then(PROC_REF(autofire_tick)), when = nameof(autofire_on))
 	ref_many(nameof(shared_soul_links))

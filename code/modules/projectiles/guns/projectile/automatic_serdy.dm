@@ -1520,7 +1520,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 	burst = 2
 	act_message_t(user, null, /datum/msg/doublebarrel/saw_misfire)
 	Fire_userless(user)
-	user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD Port
 	burst = burstsetting
 
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_off_done(datum/act/op/A)

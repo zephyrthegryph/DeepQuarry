@@ -771,6 +771,9 @@ CAPABILITIES(/datum/lleill_contact_review)
 	var/new_mob = new tf_type(src.loc)
 	return new_mob
 
+CAPABILITIES(/mob/living)
+	op("revert_beast_form", ai(), wait(10 SECONDS), on_interrupt(PROC_REF(revert_beast_form_living_failed)), then(PROC_REF(revert_beast_form_living_done)))
+
 /mob/living/proc/revert_beast_form()
 	set name = "Revert Beast Form"
 	set desc = "Return to your humanoid form."
