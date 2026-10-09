@@ -36,6 +36,9 @@ pub use dm_ir::{
     ExpressionToken, Parameter, ProcedureMetadata, ProcedureSetting, ProcedureSettingNode,
     ProcedureSignature, SemanticValue, SettingOperation, SymbolicExpression,
 };
+pub use resolver::storage_inventory::{
+    StorageAnswer, StorageFact, StorageInput, StorageOwner, StorageQuery,
+};
 pub use resolver::{EngineHierarchy, IntrinsicMember, InventoryError};
 
 use dm_ir::{Span, SymbolCollision, SymbolId, SymbolTable, TypeId};
@@ -719,7 +722,11 @@ pub(crate) fn build_with_intrinsic_members_indexed(
     tree.types = mutable_types.into();
     tree.members = members.into();
     if rebuild_inventory {
-        tree.rebuild_inventory();
+        if let Some((index, retained)) = normalization {
+            tree.rebuild_inventory_retained(index, &retained.storage, None);
+        } else {
+            tree.rebuild_inventory();
+        }
     }
     tree.declaration_targets = targets.into();
     let identity_profile = dm_profile::stage("frontend.tree.identity");

@@ -4,6 +4,9 @@ use dm_tree::{constant_resolution::ScalarSnapshot, frontend::ColdFrontend};
 use std::sync::Arc;
 
 type PreparedHost = (EngineResolverHost<ScalarSnapshot>, Arc<ScalarSnapshot>);
+#[cfg(test)]
+#[path = "analysis_export_resolved_tests.rs"]
+mod resolved_tests;
 pub(super) fn prepare(
     frontend: &ColdFrontend,
     engine: &EngineSnapshot,

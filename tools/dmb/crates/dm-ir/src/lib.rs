@@ -30,6 +30,7 @@ pub use procedure_static::{
     ProcedureIdentity, ProcedureStaticDeclaration, ProcedureStaticIdentity,
 };
 
+pub mod receiver_resolution;
 pub mod reference_resolution;
 mod resolver;
 mod selected_references;

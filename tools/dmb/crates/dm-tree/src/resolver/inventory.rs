@@ -1,16 +1,11 @@
 //! Independent resolved storage facts, merged in the original declaration order.
+use super::storage_inventory::StorageFact as Fact;
 use super::*;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Mutex,
 };
-#[derive(Clone, Copy)]
-struct Fact {
-    name: SymbolId,
-    slot: Option<(SymbolId, SymbolId)>,
-    instance: bool,
-}
-fn fact(tree: &SemanticTree, id: MemberId) -> Option<Fact> {
+pub(super) fn fact(tree: &SemanticTree, id: MemberId) -> Option<Fact> {
     let member = &tree.members[id.index()];
     if member.kind != MemberKind::Var {
         return None;
@@ -94,6 +89,20 @@ pub(super) fn rebuild_selected(
     selected: Option<&HashSet<SymbolId>>,
 ) {
     let facts = facts(tree, executor, selected);
+    reduce(tree, facts, selected);
+}
+pub(super) fn rebuild_retained(
+    tree: &mut SemanticTree,
+    executor: Option<&dm_exec::BuildExecutor>,
+    declarations: &crate::declaration_contributions::KeyedDeclarations,
+    retained: &super::storage_inventory::RetainedStorage,
+) {
+    let facts = retained
+        .facts_on_executor(tree, declarations, executor)
+        .unwrap_or_else(|| facts(tree, executor, None));
+    reduce(tree, facts, None);
+}
+fn reduce(tree: &mut SemanticTree, facts: Vec<Option<Fact>>, selected: Option<&HashSet<SymbolId>>) {
     let mut unique = HashMap::new();
     let mut non_unique = HashSet::new();
     let mut shared = HashMap::new();

@@ -933,6 +933,8 @@ struct Compiler<'a> {
 
 #[path = "simple/assignments.rs"]
 mod assignments;
+#[path = "simple/receiver_resolution.rs"]
+mod receiver_resolution;
 #[path = "simple/reference_facts.rs"]
 mod reference_facts;
 #[path = "simple/reference_resolution.rs"]

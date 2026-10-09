@@ -32,6 +32,23 @@ impl RetainedSemanticTree {
     ) {
         self.normalization.visit_storage(visit);
     }
+    pub fn storage_owner_hits(&self) -> usize {
+        self.normalization.storage.hits()
+    }
+    pub fn visit_storage_owner_storage(
+        &self,
+        visit: impl FnMut(
+            dm_session::ObservedArtifactStorageView<
+                '_,
+                crate::StorageOwner,
+                crate::StorageQuery,
+                crate::StorageAnswer,
+                (),
+            >,
+        ),
+    ) {
+        self.normalization.storage.visit_storage(visit);
+    }
     pub fn callable_owner_hits(&self) -> usize {
         self.normalization.callables.hits()
     }

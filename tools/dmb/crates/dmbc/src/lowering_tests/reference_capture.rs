@@ -114,6 +114,47 @@ fn selected_reference_capture_reuses_admitted_facts_and_preserves_normal_words()
             != true
     }));
     let duplicate = [&frontend.bodies[0], &frontend.bodies[0]];
+    let visit_bodies = dm_tree::frontend::BodyArena::new_typed(&frontend, |_| true);
+    let mut visited = 0;
+    let diagnostics = crate::selected_query::visit(
+        &frontend,
+        &host,
+        &policy,
+        LoweringConfig::default(),
+        &startup,
+        &memo,
+        LoweringExecution::new(&executor, &visit_bodies).with_selected_bodies(&selected),
+        1,
+        |_| -> Result<(), ()> {
+            visited += 1;
+            Ok(())
+        },
+    )
+    .map_err(|_| "bounded query failed")
+    .unwrap();
+    assert!(diagnostics.is_empty());
+    assert_eq!(visited, 1);
+    let duplicate_bodies = dm_tree::frontend::BodyArena::new_typed(&frontend, |_| true);
+    visited = 0;
+    let duplicate_result = crate::selected_query::visit(
+        &frontend,
+        &host,
+        &policy,
+        LoweringConfig::default(),
+        &startup,
+        &memo,
+        LoweringExecution::new(&executor, &duplicate_bodies).with_selected_bodies(&duplicate),
+        1,
+        |_| -> Result<(), ()> {
+            visited += 1;
+            Ok(())
+        },
+    );
+    assert!(matches!(
+        duplicate_result,
+        Err(crate::selected_query::VisitFailure::Admission(_))
+    ));
+    assert_eq!(visited, 0, "validate the entire request before page output");
     let foreign = super::frontend("/proc/foreign()\n    return 5\n");
     let foreign_selection = [&foreign.bodies[0]];
     for selection in [&duplicate[..], &foreign_selection[..]] {

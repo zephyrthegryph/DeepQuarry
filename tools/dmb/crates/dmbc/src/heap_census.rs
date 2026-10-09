@@ -6,6 +6,7 @@ mod dmb_image;
 mod effective_metadata;
 mod local_shape;
 mod lexical_callable;
+mod storage_inventory;
 mod initializer_ledger;
 mod macro_environments;
 mod metadata_dependencies;

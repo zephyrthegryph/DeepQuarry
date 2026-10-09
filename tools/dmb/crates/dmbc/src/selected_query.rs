@@ -6,6 +6,9 @@ use crate::lowering::{
 };
 use dm_ir::{Resolver, SelectedMeaning, SymbolId};
 use dm_tree::frontend::{BodyOccurrence, ColdFrontend, DiagnosticKind, SourceLocation};
+#[path = "selected_query_pages.rs"]
+mod pages;
+pub use pages::{visit, VisitFailure};
 
 pub struct CurrentReference {
     pub name: SymbolId,

@@ -12,6 +12,7 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
     memo: &crate::lowering_memo::ProcedureMemo,
     writer: &mut impl Write,
 ) -> Result<usize, Box<dyn std::error::Error>> {
+    crate::daemon::control::checkpoint()?;
     let bodies = BodyArena::new_typed(
         frontend,
         dm_codegen_byond::typed_statements_supported_for_capture,
@@ -24,6 +25,7 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
         memo.startup.as_deref(),
     )?;
     let startup = startup.view_revision(frontend)?;
+    crate::daemon::control::checkpoint()?;
     let prepared =
         crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
             frontend,
@@ -34,6 +36,7 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
             executor,
             memo.abi.as_deref(),
         )?;
+    crate::daemon::control::checkpoint()?;
     if !prepared.prepared.diagnostics.is_empty() {
         let diagnostics = crate::driver_facts::abi_diagnostics(frontend, &prepared.prepared)?;
         write_diagnostics(&diagnostics, writer)?;
@@ -46,7 +49,8 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
         &prepared.prepared,
         std::sync::Arc::clone(startup.unit_members()),
     )?;
-    let batch = match crate::selected_query::query_partial(
+    let mut procedures = 0;
+    let diagnostics = match crate::selected_query::visit(
         frontend,
         resolver,
         &policy,
@@ -57,9 +61,17 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
         &startup,
         memo,
         crate::lowering::LoweringExecution::new(executor, &bodies),
+        64,
+        |procedure| -> Result<(), Box<dyn std::error::Error>> {
+            crate::daemon::control::checkpoint()?;
+            procedure.write_jsonl(writer)?;
+            procedures += 1;
+            Ok(())
+        },
     ) {
-        Ok(batch) => batch,
-        Err(diagnostics) => {
+        Ok(diagnostics) => diagnostics,
+        Err(crate::selected_query::VisitFailure::Visitor(error)) => return Err(error),
+        Err(crate::selected_query::VisitFailure::Admission(diagnostics)) => {
             write_diagnostics(&diagnostics, writer)?;
             writer.flush()?;
             return Err(crate::request_failure::RequestFailure::internal(
@@ -68,18 +80,16 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
             .into());
         }
     };
-    for procedure in &batch.units {
-        procedure.write_jsonl(writer)?;
-    }
-    write_diagnostics(&batch.diagnostics, writer)?;
+    crate::daemon::control::checkpoint()?;
+    write_diagnostics(&diagnostics, writer)?;
     coverage(
         writer,
-        batch.units.len(),
-        batch.diagnostics.len(),
+        procedures,
+        diagnostics.len(),
         "compiler-selected reference subset; unsupported and unbound selections remain explicit",
     )?;
-    reject_errors(&batch.diagnostics, writer)?;
-    Ok(batch.units.len())
+    reject_errors(&diagnostics, writer)?;
+    Ok(procedures)
 }
 fn reject_errors(
     diagnostics: &[crate::lowering::LoweringDiagnostic],
@@ -152,6 +162,7 @@ pub(crate) fn write_bodies(
     let arena = BodyArena::new_typed(frontend, |_| true);
     let mut count = 0;
     for occurrence in frontend.bodies.iter() {
+        crate::daemon::control::checkpoint()?;
         let body = arena
             .take_parsed(occurrence)
             .map_err(|error| error.message)?;

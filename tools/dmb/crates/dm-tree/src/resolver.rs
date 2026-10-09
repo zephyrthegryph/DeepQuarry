@@ -58,7 +58,7 @@ impl SemanticTree {
         hierarchy: EngineHierarchy,
         entries: Vec<IntrinsicMember>,
     ) -> Result<Self, InventoryError> {
-        self.attach_intrinsics(hierarchy, entries, true, None)
+        self.attach_intrinsics(hierarchy, entries, true, None, None)
     }
     /// Certify hierarchy while retaining incomplete member inventory. Known
     /// presence/slots resolve; unknown declarations remain Unsupported.
@@ -67,7 +67,7 @@ impl SemanticTree {
         hierarchy: EngineHierarchy,
         entries: Vec<IntrinsicMember>,
     ) -> Result<Self, InventoryError> {
-        self.attach_intrinsics(hierarchy, entries, false, None)
+        self.attach_intrinsics(hierarchy, entries, false, None, None)
     }
     pub(crate) fn with_engine_intrinsics_on_executor(
         self,
@@ -75,7 +75,23 @@ impl SemanticTree {
         entries: Vec<IntrinsicMember>,
         executor: &dm_exec::BuildExecutor,
     ) -> Result<Self, InventoryError> {
-        self.attach_intrinsics(hierarchy, entries, false, Some(executor))
+        self.attach_intrinsics(hierarchy, entries, false, Some(executor), None)
+    }
+    pub(crate) fn with_engine_intrinsics_retained(
+        self,
+        hierarchy: EngineHierarchy,
+        entries: Vec<IntrinsicMember>,
+        executor: Option<&dm_exec::BuildExecutor>,
+        declarations: &crate::declaration_contributions::KeyedDeclarations,
+        retained: &storage_inventory::RetainedStorage,
+    ) -> Result<Self, InventoryError> {
+        self.attach_intrinsics(
+            hierarchy,
+            entries,
+            false,
+            executor,
+            Some((declarations, retained)),
+        )
     }
     fn attach_intrinsics(
         mut self,
@@ -83,6 +99,10 @@ impl SemanticTree {
         mut entries: Vec<IntrinsicMember>,
         complete: bool,
         executor: Option<&dm_exec::BuildExecutor>,
+        retained: Option<(
+            &crate::declaration_contributions::KeyedDeclarations,
+            &storage_inventory::RetainedStorage,
+        )>,
     ) -> Result<Self, InventoryError> {
         hierarchy.parents.sort_by_key(|entry| entry.0);
         let mut parents = HashMap::new();
@@ -147,7 +167,11 @@ impl SemanticTree {
         inventory.hierarchy_certified = true;
         inventory.intrinsic = entries.into();
         inventory.index = index;
-        self.rebuild_inventory_on_executor(executor);
+        if let Some((declarations, retained)) = retained {
+            inventory::rebuild_retained(&mut self, executor, declarations, retained);
+        } else {
+            self.rebuild_inventory_on_executor(executor);
+        }
         Ok(self)
     }
     pub(crate) fn refresh_metadata_identity(
@@ -224,6 +248,14 @@ impl SemanticTree {
             }
         }
         answer
+    }
+    pub(crate) fn rebuild_inventory_retained(
+        &mut self,
+        declarations: &crate::declaration_contributions::KeyedDeclarations,
+        retained: &storage_inventory::RetainedStorage,
+        executor: Option<&dm_exec::BuildExecutor>,
+    ) {
+        inventory::rebuild_retained(self, executor, declarations, retained);
     }
     pub(crate) fn rebuild_inventory(&mut self) {
         self.rebuild_inventory_on_executor(None);
@@ -570,6 +602,7 @@ mod tests {
 }
 
 mod inventory;
+pub mod storage_inventory;
 
 fn intrinsic_identity(
     source_identity: u128,

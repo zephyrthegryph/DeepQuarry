@@ -9,6 +9,7 @@ pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
     super::effective_metadata::inspect(&mut census, state);
     super::local_shape::inspect(&mut census, state);
     super::lexical_callable::inspect(&mut census, state);
+    super::storage_inventory::inspect(&mut census, state);
     state.visit_declaration_storage(|view| match view {
         DeclarationStorageView::Store { buckets, entries } => {
             census.owner("retained_declarations.index").observed_items += entries as u64;

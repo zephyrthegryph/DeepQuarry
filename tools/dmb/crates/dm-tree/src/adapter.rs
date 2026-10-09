@@ -587,13 +587,23 @@ impl AdaptedDeclarations {
         tree.declaration_targets = tree.declaration_targets[engine_count..].into();
         if let Some(seed) = seed {
             let hierarchy = hierarchy.unwrap();
-            tree = match executor {
-                Some(executor) => tree.with_engine_intrinsics_on_executor(
+            tree = if let Some((declarations, retained)) = normalization {
+                tree.with_engine_intrinsics_retained(
                     hierarchy,
                     seed.intrinsics.to_vec(),
                     executor,
-                ),
-                None => tree.with_engine_intrinsics(hierarchy, seed.intrinsics.to_vec()),
+                    declarations,
+                    &retained.storage,
+                )
+            } else {
+                match executor {
+                    Some(executor) => tree.with_engine_intrinsics_on_executor(
+                        hierarchy,
+                        seed.intrinsics.to_vec(),
+                        executor,
+                    ),
+                    None => tree.with_engine_intrinsics(hierarchy, seed.intrinsics.to_vec()),
+                }
             }
             .map_err(|error| {
                 let error = SnapshotError::Inventory(error);

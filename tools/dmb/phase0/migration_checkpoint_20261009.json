@@ -68,6 +68,16 @@
     "all_passed": true,
     "scope": "Focused fixtures and all-target type checking. Resolved CLI end-to-end fixture, next storage-inventory/receiver slices, real fresh benchmark for this batch, and BYOND parity remain open."
   },
+  "storage_receiver_and_bounded_query_validation": {
+    "storage_inventory_tests": 4,
+    "shared_receiver_resolution_tests": 2,
+    "backend_receiver_tests": 14,
+    "bounded_query_and_cross_page_duplicate_test": 1,
+    "resolved_pipeline_current_source_shift_test": 1,
+    "workspace_all_targets_check_seconds": 30.779216599999927,
+    "all_passed": true,
+    "scope": "Current retained storage, receiver core, streaming query and census source. Immutable relative declaration/symbol contribution drafts remain unreferenced; no real benchmark or BYOND parity admission for this wave."
+  },
   "open": [
     "real benchmarks for the newer retained owner-path/catalog/identity and selected-query batch",
     "global type/member installation and dense projection",

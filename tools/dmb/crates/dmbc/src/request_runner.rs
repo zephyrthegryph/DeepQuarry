@@ -912,10 +912,12 @@ pub fn run_build_with_host(
         });
     }
     let mut output = io::BufWriter::new(dmbc::daemon::stdout_writer());
+    dmbc::daemon::control::checkpoint()?;
     let counts = dm_analysis::tree_export::write_jsonl(&frontend, &mut output)?;
     if command == BuildCommand::AnalyzeResolved {
         let retained_engine = engine_capture.as_ref().ok_or("resolved analysis requires pinned engine")?;
         let (resolver, _scalar) = runner_facts::prepare(&frontend, &retained_engine.snapshot)?;
+        dmbc::daemon::control::checkpoint()?;
         let links = retained_engine.link_overlay()?;
         let fallback_memo = dmbc::lowering_memo::ProcedureMemo::new(memo_policy);
         let memo = procedure_memo.as_ref().unwrap_or(&fallback_memo);
