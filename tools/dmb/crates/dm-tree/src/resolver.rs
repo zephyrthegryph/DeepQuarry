@@ -139,7 +139,9 @@ impl SemanticTree {
         entries.sort_by_key(|e| (e.owner, e.name, e.kind as u8, e.shared_owner));
         entries.dedup();
         let mut bytes = b"dm-tree-intrinsics-v2\0".to_vec();
-        let source_identity = *self.inventory.source_identity.get_or_insert(self.identity);
+        let source_identity = *Arc::make_mut(&mut self.inventory)
+            .source_identity
+            .get_or_insert(self.identity);
         bytes.extend_from_slice(&source_identity.to_le_bytes());
         bytes.push(u8::from(complete));
         bytes.extend_from_slice(&hierarchy.schema.to_le_bytes());
@@ -163,10 +165,11 @@ impl SemanticTree {
             }
         }
         self.identity = xxhash_rust::xxh3::xxh3_128(&bytes);
-        self.inventory.complete = complete;
-        self.inventory.hierarchy_certified = true;
-        self.inventory.intrinsic = entries.into();
-        self.inventory.index = index;
+        let inventory = Arc::make_mut(&mut self.inventory);
+        inventory.complete = complete;
+        inventory.hierarchy_certified = true;
+        inventory.intrinsic = entries.into();
+        inventory.index = index;
         self.rebuild_inventory_on_executor(executor);
         Ok(self)
     }

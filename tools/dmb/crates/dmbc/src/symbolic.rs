@@ -82,7 +82,7 @@ struct CurrentImage {
     frozen: Arc<FrozenProc>,
     tables: LinkTables,
     paths: Vec<Arc<str>>,
-    origins: Vec<(usize, u32)>,
+    origins: origin_roster::OriginRoster,
     image: ProcedureImage,
     features: BytecodeFeatures,
 }
@@ -101,10 +101,8 @@ impl CurrentImage {
         };
         let mut paths = Vec::new();
         let mut indexes = std::collections::HashMap::new();
-        let roster = origins
-            .entries
-            .iter()
-            .map(|origin| {
+        let roster =
+            origin_roster::OriginRoster::from_entries(origins.entries.iter().map(|origin| {
                 let index = *indexes
                     .entry(origin.semantic_path.as_ref())
                     .or_insert_with(|| {
@@ -113,8 +111,7 @@ impl CurrentImage {
                         index
                     });
                 (index, origin.line)
-            })
-            .collect();
+            }));
         Ok(Self {
             frozen: Arc::clone(frozen),
             tables: tables.clone(),
@@ -137,8 +134,12 @@ impl CurrentImage {
                 .origins
                 .iter()
                 .zip(&origins.entries)
-                .all(|(&(path, line), current)| {
-                    line == current.line && self.paths[path] == current.semantic_path
+                .all(|((path, line), current)| {
+                    line == current.line
+                        && self
+                            .paths
+                            .get(path)
+                            .is_some_and(|stored| stored == &current.semantic_path)
                 })
     }
 }
@@ -840,11 +841,13 @@ fn freeze_artifact(
 }
 mod current_images;
 mod freezing;
+mod origin_roster;
 mod parallel;
 mod prepared_contribution;
+mod procedure_artifact;
 pub use prepared_contribution::{
     link_prepared_artifact_tables, link_prepared_artifact_tables_on_executor, prepare_contribution,
-    PreparedContribution, PreparedModifiedSeed,
+    PreparedContribution, PreparedModifiedSeed, ReusableProcedureArtifact,
 };
 
 #[cfg(test)]

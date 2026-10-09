@@ -9,27 +9,39 @@ impl HeapCensus {
             }
         }
     }
-    pub(crate) fn prepared_unit(&mut self, unit: &crate::symbolic::FrozenUnit) {
+    pub(crate) fn prepared_procedure_parts(
+        &mut self,
+        frozen: &std::sync::Arc<dm_codegen_byond::FrozenProc>,
+        frame: &crate::symbolic::FrozenFrame,
+        abi: &Option<std::sync::Arc<crate::procedure_policy::PreparedAbi>>,
+        origin: &dm_tree::frontend::BodyOccurrence,
+        debug: &crate::debug_sources::DebugOrigins,
+    ) {
         let owner = "prepared_contributions";
-        self.frozen_code(&unit.frozen);
-        self.debug(owner, &unit.lowered.debug_origins);
-        self.source_location(owner, &unit.lowered.origin.source);
-        self.slice(owner, &unit.lowered.origin.ast_path, true);
-        self.slice(owner, &unit.lowered.origin.setting_context_origins, true);
-        for origin in unit.lowered.origin.setting_context_origins.iter() {
+        self.frozen_code(frozen);
+        self.debug(owner, debug);
+        self.source_location(owner, &origin.source);
+        self.slice(owner, &origin.ast_path, true);
+        self.slice(owner, &origin.setting_context_origins, true);
+        for origin in origin.setting_context_origins.iter() {
             self.source_location(owner, origin);
         }
-        self.strings(owner, &unit.lowered.frame.local_names);
-        self.strings(owner, &unit.lowered.frame.argument_names);
-        self.vec_payload(owner, &unit.lowered.frame.argument_type_flags);
-        if let Some(abi) = &unit.lowered.abi {
+        self.strings(owner, &frame.local_names);
+        self.strings(owner, &frame.argument_names);
+        self.vec_payload(owner, &frame.argument_type_flags);
+        if let Some(abi) = abi {
             self.abi(abi);
         }
     }
-    pub(crate) fn prepared_helper(&mut self, helper: &crate::symbolic::FrozenHelper) {
-        self.frozen_code(&helper.frozen);
-        self.debug("prepared_contributions", &helper.debug_origins);
-        self.strings("prepared_contributions", &helper.local_names);
+    pub(crate) fn prepared_helper_parts(
+        &mut self,
+        frozen: &std::sync::Arc<dm_codegen_byond::FrozenProc>,
+        names: &Vec<String>,
+        debug: &crate::debug_sources::DebugOrigins,
+    ) {
+        self.frozen_code(frozen);
+        self.debug("prepared_contributions", debug);
+        self.strings("prepared_contributions", names);
     }
     pub(crate) fn prepared_strings(&mut self, strings: &Vec<dm_ir::StringPayload>) {
         let owner = "prepared_strings";

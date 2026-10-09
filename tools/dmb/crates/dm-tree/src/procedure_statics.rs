@@ -7,15 +7,17 @@ use dm_ir::{
 use dm_syntax::{Item, Span, Statement, StatementKind};
 use std::{collections::HashSet, sync::Arc};
 
+#[path = "procedure_static_inventory.rs"]
+mod inventory;
+pub use inventory::StaticInventory;
+
 /// Immutable lexical overlay. A miss is authoritative only for the exact
 /// captured procedure inventory; other procedure contexts stay unsupported.
 pub struct StaticResolver<'a, R: dm_ir::Resolver> {
     domain_version: Option<u128>,
     underlying_version: Option<u128>,
     pub underlying: &'a R,
-    procedures: HashSet<ProcedureIdentity>,
-    declarations:
-        std::collections::BTreeMap<ProcedureStaticIdentity, Arc<ProcedureStaticDeclaration>>,
+    inventory: Arc<StaticInventory>,
 }
 impl<'a, R: dm_ir::Resolver> StaticResolver<'a, R> {
     pub fn new(
@@ -31,34 +33,19 @@ impl<'a, R: dm_ir::Resolver> StaticResolver<'a, R> {
         underlying: &'a R,
         plans: impl IntoIterator<Item = (ProcedureIdentity, &'p StaticPlan)>,
     ) -> Result<Self, String> {
-        let mut procedures = HashSet::new();
-        let mut declarations = std::collections::BTreeMap::new();
-        for (procedure, plan) in plans {
-            if plan.procedure != procedure {
-                return Err("procedure static inventory context mismatch".into());
-            }
-            if !procedures.insert(procedure) {
-                return Err("duplicate procedure static inventory".into());
-            }
-            for declaration in &plan.declarations {
-                if declaration.identity.procedure != procedure {
-                    return Err("static declaration belongs to another procedure".into());
-                }
-                if declarations
-                    .insert(declaration.identity, Arc::new(declaration.clone()))
-                    .is_some()
-                {
-                    return Err("duplicate structural static declaration".into());
-                }
-            }
-        }
+        Self::from_inventory(underlying, Arc::new(StaticInventory::from_plans(plans)?))
+    }
+    pub fn from_inventory(
+        underlying: &'a R,
+        inventory: Arc<StaticInventory>,
+    ) -> Result<Self, String> {
         let domain_version = underlying
             .domain_version(dm_ir::ReadDomain::Tree)
             .map(|base| {
                 let mut hash = xxhash_rust::xxh3::Xxh3::new();
                 hash.update(b"dm-procedure-static-domain-v1\0");
                 hash.update(&base.to_le_bytes());
-                let mut captured: Vec<_> = procedures.iter().collect();
+                let mut captured: Vec<_> = inventory.procedures.iter().collect();
                 captured.sort();
                 hash.update(&(captured.len() as u64).to_le_bytes());
                 for procedure in captured {
@@ -67,8 +54,8 @@ impl<'a, R: dm_ir::Resolver> StaticResolver<'a, R> {
                     hash.update(&[u8::from(procedure.verb)]);
                     hash.update(&procedure.occurrence.to_le_bytes());
                 }
-                hash.update(&(declarations.len() as u64).to_le_bytes());
-                for declaration in declarations.values() {
+                hash.update(&(inventory.declarations.len() as u64).to_le_bytes());
+                for declaration in inventory.declarations.values() {
                     let bytes = declaration.canonical_bytes();
                     hash.update(&(bytes.len() as u64).to_le_bytes());
                     hash.update(&bytes);
@@ -79,8 +66,7 @@ impl<'a, R: dm_ir::Resolver> StaticResolver<'a, R> {
             domain_version,
             underlying_version: underlying.domain_version(dm_ir::ReadDomain::Tree),
             underlying,
-            procedures,
-            declarations,
+            inventory,
         })
     }
 }
@@ -100,9 +86,10 @@ impl<R: dm_ir::Resolver> dm_ir::Resolver for StaticResolver<'_, R> {
     fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
         match query {
             dm_ir::ResolveQuery::ProcedureStatic { procedure, name }
-                if self.procedures.contains(&procedure) =>
+                if self.inventory.procedures.contains(&procedure) =>
             {
-                self.declarations
+                self.inventory
+                    .declarations
                     .get(&ProcedureStaticIdentity { procedure, name })
                     .map(|declaration| {
                         dm_ir::ResolvedMeaning::ProcedureStatic(Arc::clone(declaration))

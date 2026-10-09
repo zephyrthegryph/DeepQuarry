@@ -129,8 +129,9 @@ pub(super) fn rebuild(tree: &mut SemanticTree, executor: Option<&dm_exec::BuildE
             }
         }
     }
-    tree.inventory.unique = unique;
-    tree.inventory.non_unique = non_unique;
+    let inventory = Arc::make_mut(&mut tree.inventory);
+    inventory.unique = unique;
+    inventory.non_unique = non_unique;
 }
 
 #[cfg(test)]

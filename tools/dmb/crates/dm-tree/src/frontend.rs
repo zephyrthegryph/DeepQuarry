@@ -537,6 +537,8 @@ impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
 
 /// Build a resolved source model from a captured provider. Map/resource consumers
 /// receive the ordered non-text ledger and terminal FILE_DIR domain afterward.
+#[path = "frontend_ast_capacity.rs"]
+mod ast_capacity;
 #[path = "frontend_pipeline.rs"]
 mod pipeline;
 pub use pipeline::{build, build_with_config, build_with_executor, build_with_expansion_memo};

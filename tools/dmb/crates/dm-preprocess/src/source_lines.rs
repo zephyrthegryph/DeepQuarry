@@ -158,7 +158,13 @@ pub(super) struct LogicalState {
 /// One borrowed tokenization answers all continuation questions. The caller
 /// retains this state until the joined text changes; token spans are temporary.
 pub(super) fn logical_state(source: &str) -> LogicalState {
-    if source.is_empty() {
+    // A continuation requires a literal delimiter or an expression bracket.
+    // Plain declaration/path/assignment lines need no tokenization. Keep the
+    // existing lexer authoritative for every line containing such a delimiter.
+    if !source
+        .bytes()
+        .any(|byte| matches!(byte, b'"' | b'\'' | b'(' | b')' | b'[' | b']'))
+    {
         return LogicalState::default();
     }
     let mut last = None;

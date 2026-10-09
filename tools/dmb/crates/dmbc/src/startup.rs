@@ -18,6 +18,7 @@ pub struct StartupFacts {
     plan: InitializerPlan,
     procedures: Vec<(OccurrenceId, StaticPlan)>,
     procedure_index: std::collections::HashMap<OccurrenceId, usize>,
+    static_inventory: std::sync::Arc<dm_tree::procedure_statics::StaticInventory>,
 }
 impl std::ops::Deref for CapturedStartup<'_> {
     type Target = StartupFacts;
@@ -184,11 +185,16 @@ fn capture_impl_with_bodies(
         .enumerate()
         .map(|(index, (occurrence, _))| (*occurrence, index))
         .collect();
+    let static_inventory =
+        std::sync::Arc::new(dm_tree::procedure_statics::StaticInventory::from_plans(
+            procedures.iter().map(|(_, plan)| (plan.procedure, plan)),
+        )?);
     Ok(StartupFacts {
         issuance: None,
         plan,
         procedures,
         procedure_index,
+        static_inventory,
     })
 }
 /// Extend only the compilation spelling dictionary. Captured declarations,
@@ -427,6 +433,11 @@ impl CapturedStartup<'_> {
     pub fn plan(&self) -> &InitializerPlan {
         &self.plan
     }
+    pub(crate) fn static_inventory(
+        &self,
+    ) -> &std::sync::Arc<dm_tree::procedure_statics::StaticInventory> {
+        &self.static_inventory
+    }
     pub fn procedures(&self) -> &[(OccurrenceId, StaticPlan)] {
         &self.procedures
     }
@@ -462,11 +473,9 @@ impl CapturedStartup<'_> {
         {
             return Err("static resolver belongs to another frontend".into());
         }
-        dm_tree::procedure_statics::StaticResolver::from_plans(
+        dm_tree::procedure_statics::StaticResolver::from_inventory(
             host,
-            self.procedures
-                .iter()
-                .map(|(_, plan)| (plan.procedure, plan)),
+            std::sync::Arc::clone(&self.static_inventory),
         )
     }
 }

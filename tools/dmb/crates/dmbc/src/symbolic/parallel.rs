@@ -1,8 +1,9 @@
 //! Bounded immutable unit freezing with deterministic ordered inventory replay.
+use super::procedure_artifact::Contribution;
 use super::*;
 
-#[derive(Default)]
-struct Slots(Vec<SlotAlias>);
+#[derive(Default, Clone)]
+pub(super) struct Slots(pub(super) Vec<SlotAlias>);
 impl InventorySink for Slots {
     // Freezing emits only procedure.strings (see freezing.rs). Retain that
     // exact ordered roster by moving its buffers after successful validation,
@@ -12,7 +13,8 @@ impl InventorySink for Slots {
         self.0.push(alias);
     }
 }
-struct OwnedStrings(Vec<dm_ir::StringPayload>);
+#[derive(Clone)]
+pub(super) struct OwnedStrings(pub(super) Vec<dm_ir::StringPayload>);
 impl OwnedStrings {
     fn take(procedure: &mut dm_codegen_byond::SimpleProc) -> Self {
         Self(std::mem::take(&mut procedure.strings))
@@ -23,18 +25,18 @@ impl OwnedStrings {
         }
     }
 }
-struct HelperContribution {
-    helper: FrozenHelper,
-    strings: OwnedStrings,
-    slots: Slots,
-    content: dm_link::EntryContent,
+pub(super) struct HelperContribution {
+    pub(super) helper: FrozenHelper,
+    pub(super) strings: OwnedStrings,
+    pub(super) slots: Slots,
+    pub(super) content: dm_link::EntryContent,
 }
-pub(super) struct Contribution {
-    unit: FrozenUnit,
-    strings: OwnedStrings,
-    helpers: Vec<HelperContribution>,
-    slots: Slots,
-    content: dm_link::EntryContent,
+pub(super) struct BoundContribution {
+    pub(super) unit: FrozenUnit,
+    pub(super) strings: OwnedStrings,
+    pub(super) helpers: Vec<HelperContribution>,
+    pub(super) slots: Slots,
+    pub(super) content: dm_link::EntryContent,
 }
 fn compact_vec<T>(values: &mut Vec<T>) {
     if values.capacity() > values.len() {
@@ -49,7 +51,7 @@ fn compact_names(values: &mut Vec<String>) {
     }
     compact_vec(values);
 }
-impl Contribution {
+impl BoundContribution {
     /// Only retained completion payloads are compacted; discarded rich IR is untouched.
     fn compact_retained(&mut self) {
         let frame = &mut self.unit.lowered.frame;
@@ -66,20 +68,6 @@ impl Contribution {
             compact_vec(&mut helper.slots.0);
         }
         compact_vec(&mut self.helpers);
-    }
-
-    pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
-        census.prepared_unit(&self.unit);
-        census.prepared_strings(&self.strings.0);
-        census.vec_payload("prepared_inventory.slots", &self.slots.0);
-        census.prepared_entry_bytes(&self.content);
-        census.vec_payload("prepared_helpers", &self.helpers);
-        for helper in &self.helpers {
-            census.prepared_helper(&helper.helper);
-            census.prepared_strings(&helper.strings.0);
-            census.vec_payload("prepared_inventory.slots", &helper.slots.0);
-            census.prepared_entry_bytes(&helper.content);
-        }
     }
 
     pub(super) fn replay(
@@ -207,7 +195,7 @@ pub(super) fn freeze_unit(
         frozen: Arc::new(frozen),
         current_image: None,
     };
-    let mut contribution = Contribution {
+    let mut contribution = BoundContribution {
         unit,
         strings,
         helpers,
@@ -215,7 +203,7 @@ pub(super) fn freeze_unit(
         content,
     };
     contribution.compact_retained();
-    Ok(contribution)
+    Ok(Contribution::from_bound(contribution))
 }
 
 /// At most one outstanding owned unit per worker; results cannot accumulate a

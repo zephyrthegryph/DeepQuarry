@@ -54,6 +54,20 @@ class ReuseChecks(unittest.TestCase):
         with self.assertRaises(OSError):
             self.registry.lookup(self.identity)
 
+    def test_preflight_rejects_wrong_snapshot_and_configuration_before_run(self):
+        full = dict(self.full, semantic_configuration_sha256=protocol.configuration_gate.digest({"project": "test"}),
+            categories={name: {"discrepancy_count": 0} for name in protocol.STRUCTURAL_CATEGORIES},
+            category_signatures={name: [] for name in protocol.STRUCTURAL_CATEGORIES},
+            uncovered={}, uncovered_signatures={})
+        self.report.write_text(json.dumps(full), encoding="utf-8")
+        args = SimpleNamespace(structural_baseline=self.report)
+        harness = SimpleNamespace(sha=reuse.digest)
+        self.assertTrue(protocol.preflight_structural_baseline(harness, args, {}, "s", {"project": "test"}))
+        with self.assertRaisesRegex(ValueError, "snapshot mismatch"):
+            protocol.preflight_structural_baseline(harness, args, {}, "edited", {"project": "test"})
+        with self.assertRaisesRegex(ValueError, "configuration mismatch"):
+            protocol.preflight_structural_baseline(harness, args, {}, "s", {"project": "other"})
+
     def test_protocol_recomputes_admission_and_current_rsc_for_each_row(self):
         expected = self.root / "expected.dmb"; expected.write_bytes(b"byond")
         actual = self.root / "actual.dmb"; actual.write_bytes(b"native")

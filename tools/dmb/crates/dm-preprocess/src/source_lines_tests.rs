@@ -1,6 +1,25 @@
 use super::*;
 use crate::regions::prepared_source::PreparedSource;
 use std::sync::Arc;
+
+#[test]
+fn delimiter_free_lines_keep_the_full_lexer_continuation_answer() {
+    for source in [
+        "",
+        "  \r\n",
+        "/datum/example",
+        "var/number = 3.5e-2",
+        "return value + other",
+        "#define NAME /datum/example",
+        "name = café",
+        "/* unfinished",
+        "// comment",
+        "value = \\",
+        "var/value = null;",
+    ] {
+        assert_eq!(logical_state(source), reference_state(source), "{source:?}");
+    }
+}
 fn reference_strip(source: &str) -> Cow<'_, str> {
     let lexed = lex_spans(source);
     let comments: Vec<_> = lexed

@@ -572,6 +572,28 @@ impl HeapCensus {
         if !self.arc_object("startup", &facts) {
             return;
         }
+        let inventory = startup.static_inventory();
+        if self.arc_object("startup.static_inventory", inventory) {
+            let (len, capacity) = inventory.procedure_storage();
+            self.owner("startup.static_inventory").observed_items += len as u64;
+            self.unknown("startup.static_inventory", &format!("private procedure HashSet backing: {len} entries, {capacity} capacity; BTreeMap node backing unavailable"));
+            for declaration in inventory.declarations() {
+                if self.arc_object("startup.static_inventory", declaration) {
+                    match &declaration.initializer {
+                        dm_ir::InitializerValue::Expression(expression) => {
+                            self.expression("startup.static_inventory", expression)
+                        }
+                        dm_ir::InitializerValue::ArrayAllocation(array) => {
+                            self.array("startup.static_inventory", array)
+                        }
+                        dm_ir::InitializerValue::NoAuthoredValue => (),
+                    }
+                    if let Some(array) = &declaration.declared_array {
+                        self.array("startup.static_inventory", array);
+                    }
+                }
+            }
+        }
         let plan = startup.plan();
         self.snapshot(&plan.source);
         self.symbols(&plan.symbols);
@@ -762,6 +784,7 @@ impl HeapCensus {
         self.slice("frozen_code", code.labels(), false);
     }
     pub fn frozen(&mut self, batch: &crate::symbolic::FrozenBatch) {
+        batch.census_current_images(self);
         self.vec_payload("frozen_units", &batch.units);
         self.vec_payload("frozen_units", &batch.helpers);
         self.vec_payload("frozen_units", &batch.initializers);
@@ -791,7 +814,7 @@ impl HeapCensus {
                 self.entry_content("link_tables", content);
             }
         }
-        self.unknown("link_tables", "private Arc/BTreeMap node backing, slot maps, and cached CurrentImage words/certificates");
+        self.unknown("link_tables", "private Arc/BTreeMap node backing and slot maps; current image words and certificate rosters are counted separately");
     }
     pub fn dmb(&mut self, dmb: &byond_dmb::dmb::Dmb) {
         self.dmb_image(dmb);

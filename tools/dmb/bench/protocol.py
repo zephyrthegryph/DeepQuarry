@@ -257,6 +257,24 @@ def structural_no_regression(previous, current):
     return "passed"
 
 
+def preflight_structural_baseline(h, args, scenario, snapshot_id, configuration):
+    """Reject cross-snapshot baseline mistakes before launching any compiler."""
+    baseline = scenario.get("structural_baseline", args.structural_baseline)
+    if not baseline:
+        return {}
+    path = Path(baseline).resolve()
+    expected_configuration = configuration_gate.digest(configuration)
+    descriptor = json.loads(path.read_text(encoding="utf-8"))
+    full = structural_evidence.load(descriptor, snapshot_id, expected_configuration)
+    if not exact_structural_evidence(full):
+        raise ValueError("structural baseline lacks complete exact-case evidence")
+    pins = {path: h.sha(path)}
+    if descriptor.get("evidence_format") == "structural-report-reference-v1":
+        report = Path(descriptor["report"]).resolve()
+        pins[report] = descriptor["report_sha256"]
+    return pins
+
+
 def structural(h, args, scenario, manifest, run_dir, snapshot_id, env):
     baseline = Path(scenario.get("byond_dmb", args.byond_dmb)).resolve()
     baseline_snapshot = Path(scenario.get("byond_snapshot", args.byond_snapshot)).resolve()
@@ -546,6 +564,7 @@ def execute(h, args):
             raise ValueError("revision6 initial cohort supports cold only; authenticated resident/edit warm-up protocol is not yet implemented")
         journal = scenario.get("input_journal", args.input_journal)
         scenario["_closure_validation"] = authenticate_replay_closure(h, root, scenario, journal, byond_pin)
+        scenario["_structural_baseline_pinned"] = preflight_structural_baseline(h, args, scenario, byond_pin["snapshot_id"], configuration)
         if args.input_journal and scenario.get("edits"):
             raise ValueError("captured replay edits require a separately pinned scenario journal")
     cached_scenarios.validate(scenarios, args.input_journal, args.worker_counts)
@@ -614,6 +633,8 @@ def execute(h, args):
     for scenario in scenarios:
         pinned_files.update(scenario.get("_edited_snapshot", {}).get("pinned", {}))
         pinned_files.update(scenario["_closure_validation"]["pinned"])
+        pinned_files.update(scenario["_structural_baseline_pinned"])
+        protected.update(scenario["_structural_baseline_pinned"])
 
     originals = {}
     for scenario in scenarios:

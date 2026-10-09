@@ -213,10 +213,12 @@ pub fn build_with_executor<P: SourceProvider>(
                 location: mapping.output(offset + diagnostic.span.start),
             }),
     );
-    let syntax = Arc::new(AstFile {
+    let mut syntax = AstFile {
         items: compact_items,
         ..AstFile::default()
-    });
+    };
+    ast_capacity::compact(&mut syntax);
+    let syntax = Arc::new(syntax);
     diagnostics.sort_by_key(|diagnostic| {
         diagnostic
             .location

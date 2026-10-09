@@ -69,6 +69,26 @@ fn current_link_image_reuses_only_exact_code_tables_and_source_roster() {
         LinkInventory::default(),
     )
     .unwrap();
+    {
+        let unit = &batch.units[0];
+        let certificate = unit.current_image.as_ref().unwrap();
+        let mut changed = unit.lowered.debug_origins.clone();
+        assert!(!changed.entries.is_empty());
+        changed.entries[0].semantic_path = "different.dm".into();
+        assert!(!certificate.matches(&unit.frozen, &changed, &batch.tables));
+        changed = unit.lowered.debug_origins.clone();
+        changed.entries[0].line = changed.entries[0].line.wrapping_add(1);
+        assert!(!certificate.matches(&unit.frozen, &changed, &batch.tables));
+        let mut malformed = CurrentImage::issue(
+            &unit.frozen,
+            &unit.lowered.debug_origins,
+            &batch.tables,
+            unit.features,
+        )
+        .unwrap();
+        malformed.paths.clear();
+        assert!(!malformed.matches(&unit.frozen, &unit.lowered.debug_origins, &batch.tables));
+    }
     let first = batch.link_unit(0, &SourceBindings::default()).unwrap();
     let second = batch.link_unit(0, &SourceBindings::default()).unwrap();
     assert!(

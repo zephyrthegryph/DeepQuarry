@@ -3,11 +3,12 @@ use super::*;
 use crate::debug_sources::DebugOrigins;
 use dm_codegen_byond::lower_resolver::ResolverProc;
 
+pub use super::procedure_artifact::ReusableProcedureArtifact;
 pub use crate::modified_initializers::PreparedSeed as PreparedModifiedSeed;
 pub struct PreparedContribution {
     identity: UnitIdentity,
     effective: bool,
-    contribution: parallel::Contribution,
+    contribution: super::procedure_artifact::Contribution,
     required_types: Vec<SymbolId>,
     modified_seeds: Vec<PreparedModifiedSeed>,
 }
@@ -21,6 +22,11 @@ impl PreparedContribution {
         }
     }
 
+    /// Retain the immutable payload without retaining source/debug provenance
+    /// or any current output table assignment.
+    pub fn shared_artifact(&self) -> Arc<ReusableProcedureArtifact> {
+        self.contribution.shared_artifact()
+    }
     pub fn identity(&self) -> UnitIdentity {
         self.identity
     }
@@ -303,12 +309,18 @@ mod tests {
             .filter(|unit| unit.effective)
             .map(|unit| unit_reference(unit.identity))
             .collect();
-        let prepared = batch
+        let prepared: Vec<PreparedContribution> = batch
             .units
             .into_iter()
             .map(|unit| {
                 prepare_contribution(unit, tree.symbols(), &bindings, &external, false).unwrap()
             })
+            .collect();
+        // Retaining the reusable owner exercises the shared-payload emission
+        // path; current provenance is still supplied by each completion.
+        let retained: Vec<_> = prepared
+            .iter()
+            .map(PreparedContribution::shared_artifact)
             .collect();
         let early = link_prepared_artifact_tables(
             prepared,
@@ -324,7 +336,20 @@ mod tests {
         }
 
         assert_eq!(legacy.units.len(), early.units.len());
-        for index in 0..legacy.units.len() {
+        assert_eq!(retained.len(), legacy.units.len());
+        for (index, artifact) in retained.iter().enumerate() {
+            assert_eq!(
+                artifact.identity(),
+                early.units[index].lowered.identity
+            );
+            assert!(Arc::ptr_eq(
+                &artifact.code().shared_code(),
+                &early.units[index].frozen.shared_code()
+            ));
+            assert_eq!(
+                legacy.units[index].lowered.debug_origins,
+                early.units[index].lowered.debug_origins
+            );
             assert_eq!(
                 legacy.units[index].lowered.identity,
                 early.units[index].lowered.identity

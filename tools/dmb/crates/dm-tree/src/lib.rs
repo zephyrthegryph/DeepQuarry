@@ -103,12 +103,12 @@ pub struct SemanticTree {
     symbols: Arc<SymbolTable>,
     types: Arc<[TypeNode]>,
     members: Arc<[MemberNode]>,
-    by_path: HashMap<SymbolId, TypeId>,
-    direct: HashMap<(TypeId, SymbolId, MemberKind), MemberId>,
+    by_path: Arc<HashMap<SymbolId, TypeId>>,
+    direct: Arc<HashMap<(TypeId, SymbolId, MemberKind), MemberId>>,
     /// One target per ordered skeleton, including all reopens.
     declaration_targets: Arc<[Target]>,
     identity: u128,
-    inventory: resolver::ResolverInventory,
+    inventory: Arc<resolver::ResolverInventory>,
     intrinsic_fields: Arc<HashMap<(SymbolId, SymbolId), dm_ir::OpaqueFieldBase>>,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -457,11 +457,11 @@ pub(crate) fn build_with_intrinsic_members_inventory(
         symbols: Arc::new(symbols),
         types: types.into(),
         members: Arc::from([]),
-        by_path,
-        direct: HashMap::new(),
+        by_path: Arc::new(by_path),
+        direct: Arc::new(HashMap::new()),
         declaration_targets: Arc::from([]),
         identity: 0,
-        inventory: resolver::ResolverInventory::default(),
+        inventory: Arc::new(resolver::ResolverInventory::default()),
         intrinsic_fields: Arc::new(HashMap::new()),
     };
     let mut intrinsic_fields = HashMap::new();
@@ -553,7 +553,7 @@ pub(crate) fn build_with_intrinsic_members_inventory(
                 });
                 modes.push(*mode);
                 groups.entry(key).or_default().push(id);
-                tree.direct.insert(key, id);
+                Arc::make_mut(&mut tree.direct).insert(key, id);
                 owned[owner_id.index()].push(id);
                 targets.push(Target::Member(id));
             }
@@ -577,7 +577,7 @@ pub(crate) fn build_with_intrinsic_members_inventory(
             previous = Some(*id);
         }
         if let Some(last) = chain.last() {
-            tree.direct.insert(key, *last);
+            Arc::make_mut(&mut tree.direct).insert(key, *last);
         }
     }
     drop(member_install_profile);
@@ -789,3 +789,7 @@ mod native_root_parent_tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "shared_indexes_tests.rs"]
+mod shared_indexes_tests;

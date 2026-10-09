@@ -38,7 +38,7 @@ pub struct PreparedSource {
     original: Arc<str>,
     line_starts: Arc<[usize]>,
     lines: Arc<[PreparedLine]>,
-    directives: Arc<[Option<Box<directive_syntax::DirectiveSyntax>>]>,
+    directives: directive_index::DirectiveIndex,
 }
 impl PreparedSource {
     pub fn new(original: Arc<str>) -> Self {
@@ -81,12 +81,9 @@ impl PreparedSource {
                 }
             })
             .collect::<Vec<_>>();
-        let directives = lines
-            .iter()
-            .map(|line| directive_syntax::DirectiveSyntax::new(&line.text).map(Box::new))
-            .collect::<Vec<_>>();
+        let directives = directive_index::DirectiveIndex::new(&lines);
         Self {
-            directives: directives.into(),
+            directives,
             original,
             line_starts: starts.into(),
             lines: lines.into(),
@@ -99,7 +96,7 @@ impl PreparedSource {
         &self.line_starts
     }
     pub(crate) fn directive(&self, index: usize) -> Option<&directive_syntax::DirectiveSyntax> {
-        self.directives[index].as_deref()
+        self.directives.get(index)
     }
     pub(crate) fn is_include(&self, index: usize) -> bool {
         self.directive(index)
@@ -529,5 +526,7 @@ mod tests {
     }
 }
 
+#[path = "directive_index.rs"]
+mod directive_index;
 #[path = "directive_syntax.rs"]
 mod directive_syntax;
