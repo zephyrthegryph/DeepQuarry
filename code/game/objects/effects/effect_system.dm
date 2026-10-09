@@ -383,6 +383,10 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental)
 	src.total_smoke--
 
 /datum/effect/effect/system/smoke_spread/start(I)
+	// A fire-and-forget system: it lives as long as the longest expire_smoke() it can still owe (3 s of drift, 75% of the smoke's life, up to
+	// 3 s of jitter, 1 s spare) and then deletes itself. start() again (start_repeatedly) re-arms it.
+	var/obj/effect/effect/smoke/kind = smoke_type
+	expire(3 SECONDS + initial(kind.time_to_live) * 0.75 + 3 SECONDS + 1 SECOND)
 	var/i = 0
 	for(i=0, i<src.number, i++)
 		if(src.total_smoke > 20)

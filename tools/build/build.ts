@@ -16,7 +16,7 @@ import path from 'node:path';
 import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
-import { acquireSlot, withSlot } from './lib/machine_slots';
+import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, withSlot } from './lib/machine_slots';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
   BALANCE_RESULTS_FILE,
@@ -1296,7 +1296,7 @@ async function runIsolatedTestWorld(
   dmVersion: string | null,
   worldParams: Record<string, string>,
   focus: string[] | null,
-  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string } = {},
+  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; worldSlot?: HeldSlot | null } = {},
 ): Promise<IsolatedRun> {
   const slot = acquireRunSlot();
   const base = dmbFile.replace(/\.dmb$/, '');
@@ -1344,8 +1344,9 @@ async function runIsolatedTestWorld(
     let daemonSignal: string | null = null;
     let daemonReason: string | null = null;
     let daemonError: string | null = null;
-    // At most DQ_SLOTS_TEST_WORLD (default 3) test worlds boot at once on the machine; the run slot above is per worktree.
-    const worldSlot = await acquireSlot('test_world', `test world ${slot.tag}${options.label ? ` (${options.label})` : ''}`, (m) => Juke.logger.info(m));
+    // At most DQ_SLOTS_TEST_WORLD (default: a third of the CPUs) test worlds boot at once on the machine; the run slot above is per
+    // worktree. A sharded run passes the slot it took with the rest of its group (worldSlot), so no shard queues while another holds one.
+    const worldSlot = options.worldSlot !== undefined ? options.worldSlot : await acquireSlot('test_world', `test world ${slot.tag}${options.label ? ` (${options.label})` : ''}`, (m) => Juke.logger.info(m));
     try {
       const result = await DreamDaemon(
         {
@@ -1353,6 +1354,7 @@ async function runIsolatedTestWorld(
           namedDmVersion: dmVersion,
           watchdogFile: resultsFile,
           watchdogCleanFile: `${logDir}/finished_run.lk`,
+          stallFile: `${logDir}/tests.log`,
           watchdogTimeoutMs: options.watchdogTimeoutMs ?? (focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined),
           onSpawn: options.sampler ? (pid) => options.sampler?.start(pid) : undefined,
         },
@@ -1994,6 +1996,7 @@ async function runShardWorld(
   worldParams: Record<string, string>,
   linkFrom: string,
   wholeTier: boolean,
+  worldSlot: HeldSlot | null,
 ): Promise<ShardRun> {
   const tag = `shard${shardIndex}`;
   fs.mkdirSync('data/bench', { recursive: true });
@@ -2011,7 +2014,7 @@ async function runShardWorld(
         ...worldParams,
       },
       null,
-      { watchdogTimeoutMs: shardWatchdogMs, sampler, label: `${tag} of ${shardCount}`, linkFrom },
+      { watchdogTimeoutMs: shardWatchdogMs, sampler, label: `${tag} of ${shardCount}`, linkFrom, worldSlot },
     );
     return { ...run, index: shardIndex };
   } finally {
@@ -2124,6 +2127,10 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   await fs.promises.copyFile(`${DME_NAME}.test.dmb`, `${privateBase}.dmb`);
   await fs.promises.copyFile(`${DME_NAME}.test.rsc`, `${privateBase}.rsc`);
   let runs: ShardRun[];
+  // All the shards' test_world slots at once (one queue entry): a shard never waits for a slot while its siblings hold theirs, so two
+  // sharded runs cannot each hold part of the budget. A slot goes back as its shard's world ends.
+  const worldSlots: (HeldSlot | null)[] = await acquireSlotGroup('test_world', shardCount, `dm-test ${shardCount} shards`, (m) => Juke.logger.info(m));
+  if (worldSlots.length === 0) for (let i = 0; i < shardCount; i++) worldSlots.push(null);
   try {
     runs = await Promise.all(
       Array.from({ length: shardCount }, (_, i) =>
@@ -2137,9 +2144,11 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
           worldParams,
           privateBase,
           wholeTier,
+          worldSlots[i] ?? null,
         )),
     );
   } finally {
+    for (const slot of worldSlots) slot?.release();
     await removeDerivedArtifacts(`${privateBase}.dmb`);
     await removeDerivedArtifacts(`${privateBase}.rsc`);
   }
@@ -2233,11 +2242,17 @@ export const DmTestTarget = new Juke.Target({
     // mode, --shards=0 sizes from free dd-slots. A --focus run is one world:
     // it's a handful of tests, so extra boots would only cost time.
     const requestedShards = get(ShardsParameter);
-    const shardCount = focus
+    let shardCount = focus
       ? 1
       : requestedShards === 0
         ? pickAutoShardCount()
         : Math.max(requestedShards ?? defaultShardCount(), 1);
+    // More shards than the machine runs test worlds at once would only queue: clamp, so the group of slots can be satisfied.
+    const worldBudget = slotCapacity('test_world');
+    if (worldBudget > 0 && shardCount > worldBudget) {
+      Juke.logger.info(`dm-test: ${shardCount} shards asked for, but at most ${worldBudget} test worlds run at once on this machine (DQ_SLOTS_TEST_WORLD): using ${worldBudget}.`);
+      shardCount = worldBudget;
+    }
     if (shardCount > 1) {
       await runSharded(shardCount, get);
       return;

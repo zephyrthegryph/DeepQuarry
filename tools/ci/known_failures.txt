@@ -10,3 +10,4 @@ dq_p2_closet/the_picture_follows_the_door	fails on master: "closed looks as it d
 dq_p2_closet/the_picture_follows_the_lock	fails on master: "locking brings it back" (pristine origin/master worktree)	79f28a2653
 dq_integrity_pool/blob	fails on master: "a blob at 15 or less looks damaged" (pristine origin/master worktree)	79f28a2653
 om/interim_player_notes_filter_actor	fails on master: "the actual legacy topic handler opens exactly one typed filter prompt" (pristine origin/master worktree)	79f28a2653
+dq_hit_pin	fails on master: refresh_queued/refresh_bits and emp/emag snapshots differ (needs a re-bless)	79f28a2653

@@ -43,6 +43,7 @@ CAPABILITIES(/obj/item/e2_cloth)
 /obj/e2_box
 	name = "e2 box"
 	var/opened = FALSE
+	var/sealed = FALSE
 	var/pried = 0
 	var/keys = 0
 	var/slid = 0
@@ -52,6 +53,7 @@ CAPABILITIES(/obj/item/e2_cloth)
 	var/last_ping
 
 TRACKED(/obj/e2_box, opened)
+TRACKED(/obj/e2_box, sealed)
 
 CAPABILITIES(/obj/e2_box)
 	op("open", hand(), toggles(nameof(opened)), logs(LOG_GAME))

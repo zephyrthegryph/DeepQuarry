@@ -248,6 +248,42 @@
 	TEST_ASSERT(length(ui_clash) > 0, "two ops answering one window action clash")
 
 // ---------------------------------------------------------------------------------------------------------------------
+// any_of / all_of over req_is() conditions: the clash check sees when they can never both hold.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_e2/any_all_of_req_is_exclusive
+
+/datum/unit_test/dq_e2/any_all_of_req_is_exclusive/run_gate()
+	// any_of(a, b) against all_of(not a, not b): when one holds the other cannot
+	GLOB.declare_report_capture = list()
+	table_compile(/obj/e2_box, null, list( 		op("g", hand(), when(any_of(req_is("opened"), req_is("sealed"))), then("note_pry")), 		op("h", hand(), when(all_of(req_is("opened", FALSE), req_is("sealed", FALSE))), then("note_key"))), "test:any_all:1")
+	var/list/exclusive = GLOB.declare_report_capture
+	GLOB.declare_report_capture = null
+	TEST_ASSERT_EQUAL(length(exclusive), 0, "any_of(a, b) and all_of(!a, !b) never both hold, so they do not clash: [jointext(exclusive, " | ")]")
+	// the same pair the other way round
+	GLOB.declare_report_capture = list()
+	table_compile(/obj/e2_box, null, list( 		op("g", hand(), when(all_of(req_is("opened", FALSE), req_is("sealed", FALSE))), then("note_pry")), 		op("h", hand(), when(any_of(req_is("opened"), req_is("sealed"))), then("note_key"))), "test:any_all:2")
+	var/list/reversed = GLOB.declare_report_capture
+	GLOB.declare_report_capture = null
+	TEST_ASSERT_EQUAL(length(reversed), 0, "and in the other order: [jointext(reversed, " | ")]")
+	// any_of(a, b) against not a alone: b can hold with a false, so they can both hold
+	GLOB.declare_report_capture = list()
+	table_compile(/obj/e2_box, null, list( 		op("g", hand(), when(any_of(req_is("opened"), req_is("sealed"))), then("note_pry")), 		op("h", hand(), when(req_is("opened", FALSE)), then("note_key"))), "test:any_all:3")
+	var/list/overlap = GLOB.declare_report_capture
+	GLOB.declare_report_capture = null
+	var/matched = FALSE
+	for(var/report in overlap)
+		if(findtext(report, "[RULE_OP_CLASH]") && findtext(report, "\"g\"") && findtext(report, "\"h\""))
+			matched = TRUE
+	TEST_ASSERT(matched, "any_of(a, b) against !a can both hold (b alone), so it still clashes: [jointext(overlap, " | ")]")
+	// all_of(a, c) against not a: one conjunct is enough
+	GLOB.declare_report_capture = list()
+	table_compile(/obj/e2_box, null, list( 		op("g", hand(), when(all_of(req_is("opened"), req_is("sealed"))), then("note_pry")), 		op("h", hand(), when(req_is("opened", FALSE)), then("note_key"))), "test:any_all:4")
+	var/list/conjunct = GLOB.declare_report_capture
+	GLOB.declare_report_capture = null
+	TEST_ASSERT_EQUAL(length(conjunct), 0, "all_of(a, b) against !a cannot both hold: [jointext(conjunct, " | ")]")
+
+// ---------------------------------------------------------------------------------------------------------------------
 // explain_click matches a golden.
 // ---------------------------------------------------------------------------------------------------------------------
 

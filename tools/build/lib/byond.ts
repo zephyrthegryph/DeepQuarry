@@ -262,6 +262,12 @@ type DDOptions = {
   watchdogCleanFile?: string;
   watchdogGraceMs?: number;
   watchdogTimeoutMs?: number;
+  /**
+   * A log the running world appends to (`tests.log`). Once it exists, a world whose log has not grown for DQ_DD_STALL_MINUTES (default 12)
+   * before it wrote its results is stalled (a hung proc, a wait that never ends): it is killed with the log's last line in the reason, so it
+   * stops holding a machine slot and the line says where it stopped, instead of sitting until the hard timeout.
+   */
+  stallFile?: string;
   /** Called with the daemon's pid once it has started (watchdog runs only). */
   onSpawn?: (pid: number) => void;
   /** Set by DreamDaemon(): the -logself file the world's output goes to (Windows). */
@@ -422,9 +428,28 @@ function runDreamDaemonWithWatchdog(
     }
 
     let cleanSeen = false;
+    const stallMs = (Number(process.env.DQ_DD_STALL_MINUTES) || 12) * 60 * 1000;
+    function stalledReason(): string | null {
+      if (!options.stallFile || process.env.DQ_DD_STALL_MINUTES === '0') return null;
+      try {
+        const age = Date.now() - fs.statSync(options.stallFile).mtimeMs;
+        if (age < stallMs) return null;
+        const lines = fs.readFileSync(options.stallFile, 'utf-8').split('\n').filter((l) => l.trim());
+        return `stalled: ${options.stallFile} has not changed for ${Math.round(age / 60000)} min; its last line: ${(lines[lines.length - 1] ?? '').slice(0, 300)}`;
+      } catch {
+        return null; // no log yet: the world is still booting
+      }
+    }
     function checkDone() {
       if (settled) {
         return;
+      }
+      if (!graceTimer) {
+        const stalled = stalledReason();
+        if (stalled) {
+          finish(true, stalled, true);
+          return;
+        }
       }
       if (graceTimer) {
         // Waiting for the world to finish writing: once its clean marker is there only the zombie is left.

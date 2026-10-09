@@ -12,7 +12,7 @@
 #
 # Classes and default counts (an env var overrides each; 0 turns that class off; DQ_SLOTS=0 turns all of it off):
 #   dm_compile      DQ_SLOTS_DM_COMPILE=2       a DreamMaker compile (tools/build/lib/byond.ts DreamMaker())
-#   test_world      DQ_SLOTS_TEST_WORLD=3       one DreamDaemon unit-test world (tools/build/build.ts runIsolatedTestWorld())
+#   test_world      DQ_SLOTS_TEST_WORLD=cpus/3  (2 to 6; 5 on 16 CPUs) one DreamDaemon unit-test world (tools/build/build.ts runIsolatedTestWorld())
 #   cargo           DQ_SLOTS_CARGO=1            a cargo build (analyze, verdigris, dmb-check)
 #   look_state_pin  DQ_SLOTS_LOOK_STATE_PIN=2   a focused run holding dq_look_state_pin / dq_look_tree_pin
 #                                               (DQ_LOOK_PIN_SLOTS is accepted as the old name)
@@ -45,6 +45,23 @@ slots_dir() {
 	fi
 }
 
+slots_cpus() { # logical CPUs of this machine (1 when unknown)
+	local n
+	n="${NUMBER_OF_PROCESSORS:-}"
+	[ -n "$n" ] || n="$(nproc 2>/dev/null)"
+	case "$n" in '' | *[!0-9]*) n=1 ;; esac
+	[ "$n" -ge 1 ] || n=1
+	echo "$n"
+}
+
+slots_default_test_world() { # one DreamDaemon is mostly single-threaded; leave room for compiles and cargo: a third of the CPUs, 2 to 6
+	local n
+	n=$(( $(slots_cpus) / 3 ))
+	[ "$n" -lt 2 ] && n=2
+	[ "$n" -gt 6 ] && n=6
+	echo "$n"
+}
+
 slots_capacity() { # class -> count (0 = off)
 	local cls="$1" up var val
 	[ "${DQ_SLOTS:-1}" = "0" ] && { echo 0; return; }
@@ -55,7 +72,7 @@ slots_capacity() { # class -> count (0 = off)
 	if [ -z "$val" ]; then
 		case "$cls" in
 			dm_compile) val=2 ;;
-			test_world) val=3 ;;
+			test_world) val="$(slots_default_test_world)" ;;
 			cargo) val=1 ;;
 			look_state_pin) val=2 ;;
 			*) val=1 ;;
@@ -125,7 +142,7 @@ _slots_reap() { # class dir: remove dead holders and waiters
 			# mkdir done, owner not written yet: give the taker a moment, then treat the slot as dead.
 			sleep 1
 			[ -f "$f/owner" ] || rm -rf "$f"
-		elif _slots_dead "$f/owner"; then
+		elif [ -f "$f/owner" ] && _slots_dead "$f/owner"; then # the owner file can vanish between the two tests (its holder released): a gone file is not a dead holder, and removing the directory would take a slot another waiter just made
 			echo "== machine slots: reclaiming a dead slot ($f: $(_slots_field "$f/owner" worktree) pid $(_slots_field "$f/owner" pid) $(_slots_field "$f/owner" label))" >&2
 			rm -rf "$f"
 		fi
@@ -244,6 +261,118 @@ slots_release() {
 	return "$rc"
 }
 
+# ---- groups: several slots of one class taken together, for a run that launches several worlds -------------------------------
+# A sharded run used to start N worlds that each queued for a slot of their own: the run held some slots while its other worlds
+# waited, and two such runs could each hold part of the budget. A group is one queue entry: the head of the queue takes slots as
+# they free up and starts nothing until it has all it asked for (at most the class capacity, so it can always be satisfied).
+# Only the head of the queue ever holds a partial group, so two groups cannot deadlock each other. The worlds it then launches
+# run with DQ_SLOTS_PREHELD=<class> (they do not queue again), and the run hands a slot back as each world exits.
+SLOTS_GROUP_DIRS=()   # held slot directories ("" once released)
+SLOTS_GROUP_CLASS=""
+SLOTS_GROUP_T_QUEUED=0
+SLOTS_GROUP_T_GOT=0
+SLOTS_GROUP_HB=""
+
+slots_group_size() { # class wanted -> how many slots a group of that wish gets (the wish, clamped to the capacity)
+	local max
+	max="$(slots_capacity "$1")"
+	if [ "$max" -gt 0 ] && [ "$2" -gt "$max" ]; then echo "$max"; else echo "$2"; fi
+}
+
+slots_group_acquire() { # class n [label]: waits for n slots at once (n is clamped to the capacity); sets SLOTS_GROUP_DIRS
+	local rc
+	_slots_errexit_off
+	_slots_group_acquire "$@"
+	rc=$?
+	_slots_errexit_back
+	return "$rc"
+}
+
+_slots_group_acquire() {
+	local cls="${1:?class}" want="${2:?n}" label="${3:-}" max root d top prio now name waited=0 last=0 i have=0 pos o
+	local owners=() dirs=()
+	SLOTS_GROUP_DIRS=()
+	SLOTS_GROUP_CLASS="$cls"
+	max="$(slots_capacity "$cls")"
+	[ "$max" -gt 0 ] 2>/dev/null || return 0
+	[ "$want" -le "$max" ] || want="$max"
+	root="$(slots_dir)"
+	d="$root/$cls"
+	mkdir -p "$d/queue" 2>/dev/null || { echo "== machine slots: cannot create $d; running without a $cls limit" >&2; return 0; }
+	top="$(_slots_worktree)"
+	prio="$(_slots_priority "$top")"
+	now="$(date +%s)"
+	name="$prio-$(printf '%013d' "$now")-$$"
+	SLOTS_QUEUE="$d/queue/$name"
+	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" >"$SLOTS_QUEUE"
+	SLOTS_GROUP_T_QUEUED="$now"
+	while true; do
+		_slots_reap "$d"
+		if [ "$(ls "$d/queue" 2>/dev/null | sort | head -n 1)" = "$name" ]; then
+			for ((i = 1; i <= max && have < want; i++)); do
+				if mkdir "$d/slot.$i" 2>/dev/null; then
+					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$(date +%s)" "$prio" >"$d/slot.$i/owner"
+					dirs+=("$d/slot.$i")
+					owners+=("$d/slot.$i/owner")
+					have=$((have + 1))
+				fi
+			done
+			if [ "$have" -ge "$want" ]; then
+				SLOTS_GROUP_DIRS=("${dirs[@]}")
+				SLOTS_GROUP_T_GOT="$(date +%s)"
+				rm -f "$SLOTS_QUEUE"
+				SLOTS_QUEUE=""
+				# One heartbeat for the whole group; a released slot's owner file is gone and is skipped.
+				(
+					while kill -0 "$$" 2>/dev/null; do
+						sleep "${DQ_SLOTS_HEARTBEAT_SEC:-15}"
+						for o in "${owners[@]}"; do [ -f "$o" ] && touch "$o" 2>/dev/null; done
+					done
+				) >/dev/null 2>&1 &
+				SLOTS_GROUP_HB=$!
+				disown "$SLOTS_GROUP_HB" 2>/dev/null || true
+				echo "== machine slots: $cls group of $want (of $max) after ${waited}s"
+				return 0
+			fi
+		fi
+		if [ "$waited" -eq 0 ] || [ $((waited - last)) -ge 30 ]; then
+			last="$waited"
+			pos="$(ls "$d/queue" 2>/dev/null | sort | grep -n -x -- "$name" | cut -d: -f1)"
+			echo "== machine slots: $cls: waiting ${waited}s for a group of $want, holding $have, place ${pos:-?} of $(ls "$d/queue" 2>/dev/null | wc -l) in the queue (at most $max at once on this machine). Held by:$(_slots_who "$d")"
+		fi
+		touch "$SLOTS_QUEUE" 2>/dev/null
+		sleep "${DQ_SLOTS_POLL_SEC:-3}"
+		waited=$((waited + ${DQ_SLOTS_POLL_SEC:-3}))
+	done
+}
+
+slots_group_release_one() { # hand back one slot of the group; the last one stops the heartbeat
+	local i left=0 dir="" now owner
+	_slots_errexit_off
+	now="$(date +%s)"
+	for i in "${!SLOTS_GROUP_DIRS[@]}"; do
+		if [ -n "${SLOTS_GROUP_DIRS[$i]}" ]; then
+			if [ -z "$dir" ]; then dir="${SLOTS_GROUP_DIRS[$i]}"; SLOTS_GROUP_DIRS[$i]=""; else left=$((left + 1)); fi
+		fi
+	done
+	if [ -n "$dir" ]; then
+		owner="$dir/owner"
+		printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$SLOTS_GROUP_CLASS" "${dir##*.}" "$(_slots_field "$owner" worktree)" "$(_slots_field "$owner" label)" "$((SLOTS_GROUP_T_GOT - SLOTS_GROUP_T_QUEUED))" "$((now - SLOTS_GROUP_T_GOT))" >>"$(slots_dir)/events.tsv" 2>/dev/null
+		rm -rf "$dir"
+	fi
+	if [ "$left" -eq 0 ] && [ -n "$SLOTS_GROUP_HB" ]; then kill "$SLOTS_GROUP_HB" 2>/dev/null; SLOTS_GROUP_HB=""; fi
+	_slots_errexit_back
+	return 0
+}
+
+slots_group_release() { # hand back all of them (an EXIT trap calls this), and leave the queue
+	local i
+	for i in "${!SLOTS_GROUP_DIRS[@]}"; do slots_group_release_one; done
+	if [ -n "$SLOTS_QUEUE" ]; then rm -f "$SLOTS_QUEUE"; SLOTS_QUEUE=""; fi
+	if [ -n "$SLOTS_GROUP_HB" ]; then kill "$SLOTS_GROUP_HB" 2>/dev/null; SLOTS_GROUP_HB=""; fi
+	return 0
+}
+
 slots_run() { # class [--label TEXT] -- command...
 	local cls="${1:?class}" label="" rc
 	shift
@@ -329,6 +458,18 @@ slots_selftest() {
 	DQ_SLOTS_CARGO=0 bash "$0" run cargo -- echo unlimited | grep -q unlimited || { echo "FAIL: DQ_SLOTS_CARGO=0 should run without a limit"; ok=0; }
 	# 4. env counts and the old pin-speed name.
 	[ "$(DQ_SLOTS_DM_COMPILE=5 slots_capacity dm_compile)" = 5 ] && [ "$(DQ_LOOK_PIN_SLOTS=4 slots_capacity look_state_pin)" = 4 ] && [ "$(unset DQ_SLOTS_CARGO; slots_capacity cargo)" = 1 ] || { echo "FAIL: capacity env"; ok=0; }
+	# 5. a group is clamped to the capacity and starts only when it has all its slots; two groups never run each on part of the budget.
+	export DQ_SLOTS_TEST_WORLD=3
+	[ "$(slots_group_size test_world 9)" = 3 ] && [ "$(slots_group_size test_world 2)" = 2 ] || { echo "FAIL: group size clamp"; ok=0; }
+	bash -c 'source "$0"; slots_group_acquire test_world 2 g1 >/dev/null; sleep 6; slots_group_release' "$self" & p1=$!
+	sleep 2
+	bash -c 'source "$0"; slots_group_acquire test_world 2 g2 >"$1"; echo started >>"$1"; slots_group_release' "$self" "$tmp/g2.log" & p2=$!
+	sleep 2
+	grep -q started "$tmp/g2.log" 2>/dev/null && { echo "FAIL: group g2 started on part of the budget while g1 held 2 of 3"; ok=0; }
+	wait "$p1" "$p2"
+	grep -q "group of 2" "$tmp/g2.log" && grep -q started "$tmp/g2.log" || { echo "FAIL: group g2 never got its slots"; ok=0; }
+	[ -z "$(ls "$tmp/test_world" | grep '^slot')" ] || { echo "FAIL: a group left slots behind"; ok=0; }
+	unset DQ_SLOTS_TEST_WORLD
 	rm -rf "$tmp"
 	if [ "$ok" -eq 1 ]; then echo "selftest: ok"; return 0; fi
 	echo "selftest: FAILED"
