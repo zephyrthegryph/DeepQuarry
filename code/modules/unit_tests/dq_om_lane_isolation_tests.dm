@@ -106,7 +106,7 @@
 		var/datum/om_test_entity/W = witnesses[other]
 		TEST_ASSERT(W.ticks >= 2, "lane [lane]: a failing behaviour stalled lane [other] ([W.ticks] ticks)")
 	TEST_ASSERT(length(sched.errors) > errors_before, "lane [lane]: behaviour runtimes are recorded")
-	var/list/S = sched.stat_for(om_registry().behaviour(om_lane_iso_bad(lane)).id)
+	var/list/S = sched.stat_for(definition_registry().behaviour(om_lane_iso_bad(lane)).id)
 	TEST_ASSERT(S[OM_STAT_ERRORS] >= 3, "lane [lane]: tick and gate runtimes are counted per behaviour ([S[OM_STAT_ERRORS]])")
 
 	// The whole lane loop runtimes: other lanes still run in the same pass.

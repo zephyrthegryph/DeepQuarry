@@ -123,7 +123,7 @@
 	..()
 	if(E.nested)
 		E.nested = 0
-		om_stage_run_now(E, /datum/om/stage/test/a)
+		pipeline_stage_run_now(E, /datum/om/stage/test/a)
 		F.fact("on")
 
 /// Starts slow work that sleeps: stages never sleep, so it goes through INVOKE_ASYNC.
@@ -199,7 +199,7 @@
 
 /proc/pipe_test_new(path = /datum/pipe_test_entity)
 	var/datum/pipe_test_entity/E = new path
-	om_start(E)
+	entity_start(E)
 	return E
 
 /proc/pipe_test_state(datum/E)
@@ -213,12 +213,12 @@
 	var/datum/om/scheduler/sched
 
 /datum/unit_test/om_pipeline/Run()
-	rel_set(src, nameof(sched), om_test_begin())
+	rel_set(src, nameof(sched), scheduler_test_begin())
 	try
 		run_pipeline()
 	catch(var/exception/e)
 		TEST_FAIL("runtime in pipeline test: [e] ([e.file]:[e.line])")
-	om_test_end()
+	scheduler_test_end()
 
 /datum/unit_test/om_pipeline/proc/run_pipeline()
 	return
@@ -252,7 +252,7 @@
 
 /datum/unit_test/om_pipeline/facts_are_cached/run_pipeline()
 	var/datum/pipe_test_entity/E = pipe_test_new()
-	var/datum/om/pipeline/P = om_registry().behaviour(/datum/om/pipeline/test)
+	var/datum/om/pipeline/P = definition_registry().behaviour(/datum/om/pipeline/test)
 	var/datum/om/frame/test/F = P.frame_acquire(sched, E, 1)
 	F.fact("on")
 	F.fact("on")
@@ -285,8 +285,8 @@
 	TEST_ASSERT(!S.parked, "one idle frame doesn't park (hysteresis)")
 	om_run_frame_now(E, /datum/om/pipeline/test)
 	TEST_ASSERT(S.parked, "two in a row park it")
-	var/datum/om/pipeline/P = om_registry().behaviour(/datum/om/pipeline/test)
-	om_cancel_all_after(E, P)
+	var/datum/om/pipeline/P = definition_registry().behaviour(/datum/om/pipeline/test)
+	deadline_cancel_all_after(E, P)
 	TEST_ASSERT(E in P.parked_on(sched), "listed as parked")
 	var/before = S.frames
 	scheduler_advance(5)
@@ -308,11 +308,11 @@
 	var/datum/om/frame/S = pipe_test_state(E)
 	// The reactive pipeline runs its stages once on start; get that out of the log.
 	sched.run_pass(1e9)
-	var/datum/om/stage/T = om_registry().stage_by_type[/datum/om/stage/test/e]
+	var/datum/om/stage/T = definition_registry().stage_by_type[/datum/om/stage/test/e]
 	om_run_frame_now(E, /datum/om/pipeline/test)
 	om_run_frame_now(E, /datum/om/pipeline/test)
 	TEST_ASSERT(S.parked, "parked")
-	TEST_ASSERT(om_deadline_pending(E, /datum/om/pipeline/test, OM_DL_STAGE - 1 + T.pos), "e's rewake is pending")
+	TEST_ASSERT(deadline_deadline_pending(E, /datum/om/pipeline/test, OM_DL_STAGE - 1 + T.pos), "e's rewake is pending")
 	LAZYCLEARLIST(E.log)
 	var/waited = 0
 	var/unparked_at = 0
@@ -359,7 +359,7 @@
 /datum/unit_test/om_pipeline/variants_by_depth
 
 /datum/unit_test/om_pipeline/variants_by_depth/run_pipeline()
-	var/datum/om/pipeline/P = om_registry().behaviour(/datum/om/pipeline/test)
+	var/datum/om/pipeline/P = definition_registry().behaviour(/datum/om/pipeline/test)
 	var/datum/om/stage/resolved0 = P.resolve(/datum/om/stage/test/a, /datum/pipe_test_entity)
 	TEST_ASSERT_EQUAL(resolved0?.type, /datum/om/stage/test/a, "the root serves the base type")
 	var/datum/om/stage/resolved1 = P.resolve(/datum/om/stage/test/a, /datum/pipe_test_entity/deep)
@@ -381,7 +381,7 @@
 	E.nested = 1
 	om_run_frame_now(E, /datum/om/pipeline/test)
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "c,a,b,d,e,f,g,a,h", "the nested run ran inside g, and the frame went on")
-	var/datum/om/pipeline/P = om_registry().behaviour(/datum/om/pipeline/test)
+	var/datum/om/pipeline/P = definition_registry().behaviour(/datum/om/pipeline/test)
 	TEST_ASSERT_NOTNULL(sched.free_frames[P.pipe_idx], "the frame went back to the free slot")
 
 /// Slow work a stage starts with INVOKE_ASYNC runs inline up to its first sleep, so its effects
@@ -403,7 +403,7 @@
 /datum/unit_test/om_pipeline/multi_type_decl
 
 /datum/unit_test/om_pipeline/multi_type_decl/run_pipeline()
-	var/datum/om/registry/reg = om_registry()
+	var/datum/om/registry/reg = definition_registry()
 	TEST_ASSERT(reg.decl_typecache[/datum/pipe_test_other], "every listed type is in the decl cache")
 	TEST_ASSERT(reg.behaviour(/datum/om/pipeline/test) in reg.type_table(/datum/pipe_test_other).behaviours, "the second type gets the rows")
 	TEST_ASSERT(reg.behaviour(/datum/om/pipeline/test) in reg.type_table(/datum/pipe_test_entity/deep).behaviours, "subtypes of the first too")
@@ -413,15 +413,15 @@
 
 /datum/unit_test/om_pipeline/decl_stages/run_pipeline()
 	var/datum/pipe_test_other/O = new
-	om_start(O)
+	entity_start(O)
 	var/datum/om/frame/S = om_pipe_state(O, /datum/om/pipeline/test)
 	TEST_ASSERT_EQUAL(S?.plan.n, 1, "the other type's plan is its decl's stage (the base stages serve another type)")
 	var/datum/om/stage/T = S?.plan.stages[1]
 	TEST_ASSERT_EQUAL(T?.type, /datum/om/stage/test/other_only, "listed by its decl")
 	var/datum/pipe_test_entity/E = pipe_test_new()
 	TEST_ASSERT(!(/datum/om/stage/test/other_only in pipe_test_state(E).plan.stages), "types whose decl doesn't list it don't get it")
-	var/datum/om/stage/c = om_registry().stage_by_type[/datum/om/stage/test/d]
-	var/datum/om/stage/d = om_registry().stage_by_type[/datum/om/stage/test/e]
+	var/datum/om/stage/c = definition_registry().stage_by_type[/datum/om/stage/test/d]
+	var/datum/om/stage/d = definition_registry().stage_by_type[/datum/om/stage/test/e]
 	TEST_ASSERT(T && T.pos > c.pos && T.pos < d.pos, "ordered at boot with the pipeline's own stages")
 
 // --- min_interval ------------------------------------------------------------------------
@@ -485,7 +485,7 @@
 
 /datum/unit_test/om_pipeline/runlevels_dormant/run_pipeline()
 	var/datum/pipe_gate_entity/G = new
-	om_start(G)
+	entity_start(G)
 	scheduler_advance(2)
 	var/before = G.upkeeps
 	TEST_ASSERT(before > 0, "it runs in its runlevel")
@@ -504,7 +504,7 @@
 /datum/unit_test/om_pipeline/apc_and_smes_park
 
 /datum/unit_test/om_pipeline/apc_and_smes_park/run_pipeline()
-	om_test_end()
+	scheduler_test_end()
 	var/obj/machinery/power/apc/A = dq_power_test_apc()
 	TEST_ASSERT_NOTNULL(A, "the test map has no working APC")
 	if(!A)
@@ -516,7 +516,7 @@
 	A.end_power_failure()
 	TEST_ASSERT(!A.failure_left(), "a reboot ends it")
 	A.apply_area_power()
-	rel_set(src, nameof(sched), om_test_begin())
+	rel_set(src, nameof(sched), scheduler_test_begin())
 
 /// A fire alarm has no work until a countdown is armed; arming one starts it, and it ends and parks when the alarm trips.
 /datum/unit_test/om_pipeline/firealarm_parks_and_wakes

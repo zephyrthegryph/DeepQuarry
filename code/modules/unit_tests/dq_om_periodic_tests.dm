@@ -72,7 +72,7 @@
 	var/after_stop = D.steps
 	sleep(1 SECONDS)
 	TEST_ASSERT_EQUAL(D.steps, after_stop, "a stopped member kept being stepped by the kernel")
-	TEST_ASSERT(!length(om_pipeline_audit(null, 400, 100, TRUE)), "the audit reported a missed wake")
+	TEST_ASSERT(!length(pipeline_pipeline_audit(null, 400, 100, TRUE)), "the audit reported a missed wake")
 
 /// A member that stops itself during its sweep does not make the member swapped into its slot miss the sweep.
 /datum/unit_test/dq_om_periodic_sweep_survives_leaving_members
@@ -172,11 +172,11 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	TEST_ASSERT_EQUAL(om_traced_count(S), before, "an unwatched datum woke")
 
 	var/id = after(S, 1, /datum/proc/dq_om_test_timer_hit)
-	TEST_ASSERT(om_timer_pending(S, id), "the timer is not pending")
+	TEST_ASSERT(timer_pending(S, id), "the timer is not pending")
 	TEST_ASSERT(om_wait_for_wake(S, before), "the timer did not fire")
 	om_test_ticks(8)
 	TEST_ASSERT(om_traced_count(S) == before + 1, "the timer did not fire exactly once")
-	TEST_ASSERT(!om_timer_pending(S, id), "a fired timer is still pending")
+	TEST_ASSERT(!timer_pending(S, id), "a fired timer is still pending")
 	om_untrace(S)
 
 #endif
@@ -300,7 +300,7 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 
 /datum/unit_test/dq_om_audit_finds_no_missed_wakes/Run()
 	om_test_ticks(10)
-	var/list/missed = om_pipeline_audit(null, 100000, 100000, TRUE)
+	var/list/missed = pipeline_pipeline_audit(null, 100000, 100000, TRUE)
 	var/list/names = list()
 	for(var/datum/om/stage/T as anything in missed)
 		names |= "[T.type]"
@@ -358,11 +358,11 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	var/datum/event/E = new /datum/event/nothing(EM)
 	TEST_ASSERT(isnull(E.periodic_pipe), "a new event steps from its every(), not from a legacy lane")
 	E.kill()
-	TEST_ASSERT(!om_task_periodic_running(E), "a killed event kept its lane")
+	TEST_ASSERT(!every_running(E), "a killed event kept its every()")
 	own_remove(SSevents, nameof(/datum/system/events::finished_events), E) // the service owns finished events
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
 		var/datum/event_container/EC = SSevents.event_containers[i]
-		TEST_ASSERT(EC.periodic_pipe == PERIODIC_SLOW, "event container [i] is not keeping its clock")
+		TEST_ASSERT(EC.clock_running, "event container [i] is not keeping its clock")
 
 /// Shuttles (was SSshuttles' fire loop): a shuttle with work is on the slow lane, an idle one is not.
 /datum/unit_test/dq_om_shuttles_on_lanes
@@ -379,27 +379,26 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/// Planets (was SSplanets' per-planet loop): each planet keeps its clock and weather on the slow lane.
+/// Planets (was SSplanets' per-planet loop): each planet keeps its clock and weather on its own every().
 /datum/unit_test/dq_om_planets_on_lanes
 
 /datum/unit_test/dq_om_planets_on_lanes/Run()
 	for(var/datum/planet/P as anything in SSplanets.planets)
-		TEST_ASSERT(P.periodic_pipe == PERIODIC_SLOW, "planet [P.name] is not on the slow lane")
+		TEST_ASSERT(P.clock_running, "planet [P.name] is not keeping its clock")
 
 #endif
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/// Spreading plants (was SSplants' loop) grow on their own lane from add_plant() to remove_plant().
+/// Spreading plants (was SSplants' loop) grow on their own every() from add_plant() to remove_plant(): the interval is 7.5 s.
 /datum/unit_test/dq_om_plants_on_lane
 
 /datum/unit_test/dq_om_plants_on_lane/Run()
-	var/datum/probe = allocate(/datum/dq_periodic_probe)
-	om_task_periodic(probe, PERIODIC_PLANTS)
-	TEST_ASSERT(probe.periodic_pipe == PERIODIC_PLANTS, "the plant lane did not take a datum")
-	var/datum/cadence/P = cadence_def(PERIODIC_PLANTS)
-	TEST_ASSERT_EQUAL(P.every, 7.5 SECONDS, "the plant lane lost the old SSplants cadence")
-	om_task_periodic_stop(probe)
+	var/list/entries = compiled_entries(table_of_type(/obj/effect/plant), ENTRY_EVERY)
+	TEST_ASSERT_EQUAL(length(entries), 1, "the plant type lost its growth every()")
+	var/datum/centry/C = entries[1]
+	var/datum/entry/E = C.item
+	TEST_ASSERT_EQUAL(E.args["interval"], 7.5 SECONDS, "the plant every() lost the old SSplants cadence")
 
 #endif
 

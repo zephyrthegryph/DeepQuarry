@@ -30,7 +30,11 @@
 	var/moon_name = null // Purely for flavor. Null means no moon exists.
 	var/moon_phase = null // Set if above is defined.
 
+/// The planet's clock, weather and sun run (the planet service sets it when it makes the planet).
+/datum/planet/var/clock_running = FALSE
+TRACKED(/datum/planet, clock_running)
 CAPABILITIES(/datum/planet)
+	every(2 SECONDS, then(PROC_REF(planet_step)), when = nameof(clock_running))
 	ref_many(nameof(planet_floors))
 	ref_many(nameof(planet_walls))
 	owns_one(nameof(current_time), /datum/time)
@@ -55,11 +59,11 @@ CAPABILITIES(/datum/planet)
 			))
 	update_sun()
 
-/// Every 2 s on the slow lane (the planet service starts every planet): the planet's clock, weather and
+/// every(), 2 s while clock_running (the planet service starts every planet): the planet's clock, weather and
 /// sun. Lighting and wall temperature changes queue on the planet service, which applies them in batches.
-/datum/planet/periodic_step(delta)
+/datum/planet/proc/planet_step(datum/act/timer/A)
 	if(current_time)
-		var/difference = last_step ? world.time - last_step : delta
+		var/difference = last_step ? world.time - last_step : A.dt
 		rel_set(src, nameof(current_time), current_time.add_seconds((difference / 10) * PLANET_TIME_MODIFIER))
 	EXPIRY_STAMP(src, last_step, CLOCK_WORLD)
 	update_weather() // We update this first, because some weather types decease the brightness of the sun.
@@ -92,4 +96,4 @@ CAPABILITIES(/datum/planet)
 
 // Turfs are never deleted.
 
-// The planet's turfs are relation lists: a released z-level (om_drop_z) clears them.
+// The planet's turfs are relation lists: a released z-level (relation_drop_z) clears them.

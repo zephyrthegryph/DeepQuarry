@@ -243,7 +243,7 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 		if(tube.has_exit(dir))
 			current_tube = tube
 			break
-	task_start(/datum/task/transit_pod, src, null, tube_h = om_handle(current_tube)) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
+	task_start(/datum/task/transit_pod, src, null, tube_h = entity_handle(current_tube))
 
 /// A pod travelling the tubes: wait each tube's exit delay, look for the next tube, wait its
 /// enter delay, hop in; out of the tubes, coast in a line until slowed to a halt.
@@ -265,7 +265,7 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 /obj/structure/transit_tube_pod/proc/travel_step(datum/task/transit_pod/T)
 	switch(T.phase)
 		if("exit")
-			var/obj/structure/transit_tube/tube = om_resolve(T.tube_h) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
+			var/obj/structure/transit_tube/tube = resolve_handle(T.tube_h)
 			if(!tube)
 				return travel_coast(T)
 			var/next_dir = tube.get_exit(dir)
@@ -288,12 +288,12 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 				set_dir(next_dir)
 				Move(get_step(loc, dir)) // Allow collisions when leaving the tubes.
 				return travel_coast(T)
-			T.tube_h = om_handle(next_tube) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
+			T.tube_h = entity_handle(next_tube)
 			T.last_delay = next_tube.enter_delay(src, next_dir)
 			T.phase = "enter"
 			return STEP_REPEAT(T.last_delay)
 		if("enter")
-			var/obj/structure/transit_tube/tube = om_resolve(T.tube_h) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
+			var/obj/structure/transit_tube/tube = resolve_handle(T.tube_h)
 			if(!tube)
 				return travel_coast(T)
 			set_dir(T.next_dir)

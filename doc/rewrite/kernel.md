@@ -1320,7 +1320,7 @@ DECLARE_REPEAT(/obj/machinery/magnetic_module, "magnet_delay", magnetic_process,
 
 ```dm
 // datums/behaviours/radiation_countdown.dm:22 — a sixth: a self re-arming timer
-	om_after_replace(src, TIME_UNTIL_DELETION, TYPE_PROC_REF(/mob/living, radiation_countdown_clear))
+	after(src, TIME_UNTIL_DELETION, TYPE_PROC_REF(/mob/living, radiation_countdown_clear), key = "radiation_countdown")
 ```
 
 **After:** one vocabulary for items, machines, mobs and systems alike.

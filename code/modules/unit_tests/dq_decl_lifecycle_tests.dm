@@ -238,7 +238,7 @@ CAPABILITIES(/obj/item/dq_decl_probe/dry)
 /datum/unit_test/dq_decl_scheduling
 
 /datum/unit_test/dq_decl_scheduling/Run()
-	om_test_begin()
+	scheduler_test_begin()
 	var/obj/item/dq_decl_probe/probe = new(dq_containment_floor())
 	TEST_ASSERT(probe.periodic_pipe == PERIODIC_SLOW, "periodic work started at materialize")
 	TEST_ASSERT(!probe.timer_fired, "the timer waits")
@@ -247,7 +247,7 @@ CAPABILITIES(/obj/item/dq_decl_probe/dry)
 	probe.dematerialize()
 	TEST_ASSERT(isnull(probe.periodic_pipe), "periodic work stopped at dematerialize")
 	qdel(probe)
-	om_test_end()
+	scheduler_test_end()
 
 /datum/unit_test/dq_decl_destroy_effects
 

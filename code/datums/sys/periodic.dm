@@ -69,14 +69,14 @@ GLOBAL_LIST_INIT(sys_periodic_defs, build_sys_periodic_defs())
 			name = copytext(spec, 2)
 		var/list/info = sys_periodic_field_info(of, name)
 		if(!info[1])
-			stack_trace("sys_periodic: [of] declares periodic work on '[name]', which is not a declared field of it (OM_FIELD / OM_FLAG_FIELD / OM_FIELD_SETTER / OM_DERIVE_FIELD)")
+			stack_trace("sys_periodic: [of] declares periodic work on '[name]', which is not a declared field of it (OM_FIELD / OM_DERIVE_FIELD)")
 		names += name
 		negated += neg
 		derived += info[2]
 		mask |= info[1]
 
 /// list(channel, derived) for field `name` of `path`: the OR of every field_def registered on
-/// `path` or an ancestor (the same merge as om_registry().fields_of(), which is not available
+/// `path` or an ancestor (the same merge as definition_registry().fields_of(), which is not available
 /// yet while the registry builds its services).
 /proc/sys_periodic_field_info(path, name)
 	var/static/list/derived_defs
@@ -91,7 +91,7 @@ GLOBAL_LIST_INIT(sys_periodic_defs, build_sys_periodic_defs())
 		if(initial(F.field) == name && ispath(path, initial(F.of)))
 			is_derived = TRUE
 			break
-	var/list/table = om_field_table(path)
+	var/list/table = scheduler_field_field_table(path)
 	return list(table[name] || 0, is_derived)
 
 /// TRUE when every field of D holds on E.
@@ -145,7 +145,7 @@ REGISTRY_TYPE(/datum/sys_periodic_def, GLOBAL_PROC_REF(registry_sys_periodic_def
 /proc/sys_periodic_start(datum/E, datum/sys_periodic_table/T)
 	if(QDELETED(E))
 		return
-	om_rec_of(E) // the record carries the service's listen mask for E's type
+	scheduler_record_of(E) // the record carries the service's listen mask for E's type
 	sys_periodic_apply(E, T)
 
 /// Dematerialize: stop the while-work; repeats are cancelled (the core also drops timers).

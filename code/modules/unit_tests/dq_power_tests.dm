@@ -298,7 +298,7 @@
 	// Area power is an OM channel (CHANGE_AREA_POWER); whatever watches it (lights,
 	// machines asleep on sleep_until_keys()) is woken by the raise. Count the raise.
 	var/area/area = A.area
-	var/datum/om/rec/rec = om_rec_of(area)
+	var/datum/om/rec/rec = scheduler_record_of(area)
 	var/datum/om/scheduler/sched = rec.sched
 	var/old_listen = area.om_listen
 	area.om_listen |= CHANGE_AREA_POWER

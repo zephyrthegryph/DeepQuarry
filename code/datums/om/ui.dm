@@ -1,20 +1,12 @@
 // Object-model core: Rust-owned watches (A.6) and dt helpers (K). The window push and status wake hooks that lived here are the
 // UI push system (code/modules/tgui/ui_push.dm) and the window status watch (code/modules/tgui/ui_status.dm).
 
-/proc/om_native_bridge_watch(datum/E, bits)
-	return entity_native_bridge_watch(E, bits)
 
-/proc/om_native_bridge_relevance(datum/E, level)
-	return entity_native_bridge_relevance(E, level)
 
-/proc/om_native_watch(datum/scheduler_record/rec)
-	return entity_native_watch(rec)
 
 /proc/om_native_deliver(datum/E, bits)
 	return entity_native_deliver(E, bits)
 
-/proc/om_native_relevance(datum/E, level)
-	return entity_native_relevance(E, level)
 
 // ---------------------------------------------------------------- dt helpers
 

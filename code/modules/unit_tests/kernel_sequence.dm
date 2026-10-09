@@ -439,7 +439,7 @@ SEQ_TEST_STEP(cy)
 /datum/unit_test/kernel_sequence_rewake
 
 /datum/unit_test/kernel_sequence_rewake/Run()
-	var/datum/om/scheduler/sched = om_test_begin()
+	var/datum/om/scheduler/sched = scheduler_test_begin()
 	var/datum/seq_test_entity/E = allocate(/datum/seq_test_entity)
 	var/datum/seq_state/S = seq_start(E, SEQ_TEST)
 	seq_run_frame_now(E, SEQ_TEST)
@@ -461,7 +461,7 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT(S.parked, "and, a rewake counting as one idle frame already, it parked again as soon as se slept")
 	seq_stop(E, SEQ_TEST)
 	TEST_ASSERT(!seq_rewake_pending(E, SEQ_TEST, "se"), "stopping cancels the rewakes")
-	om_test_end()
+	scheduler_test_end()
 
 // ---------------------------------------------------------------- time
 
@@ -653,7 +653,7 @@ TRACKED(/datum/seq_rx_fixture, level)
 /datum/unit_test/kernel_sequence_at_most
 
 /datum/unit_test/kernel_sequence_at_most/Run()
-	om_test_begin()
+	scheduler_test_begin()
 	var/datum/seq_rx_fixture/F = allocate(/datum/seq_rx_fixture)
 	F.set_level(1)
 	rx_drain()
@@ -677,7 +677,7 @@ TRACKED(/datum/seq_rx_fixture, level)
 	scheduler_advance(1.1)
 	rx_drain()
 	TEST_ASSERT_EQUAL(length(F.heard), 3, "which ends in turn")
-	om_test_end()
+	scheduler_test_end()
 
 #undef SEQ_TEST_ORDER
 #undef SEQ_TEST

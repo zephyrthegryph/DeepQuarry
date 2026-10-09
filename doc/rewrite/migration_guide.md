@@ -1035,7 +1035,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injectio
 
 ```dm
 // BEFORE: geiger.dm:131 (a replace-timer used as "reset if nothing for N")
-	om_after_replace(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger))
+	after(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger), key = "reset_danger")
 // AFTER: a timed value that reverts by itself
 	timed_set(src, nameof(perceived_danger), new_danger, for_time = TIME_WITHOUT_RADIATION_BEFORE_RESET, revert_to = RAD_LEVEL_NONE)
 ```

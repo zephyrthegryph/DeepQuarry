@@ -37,8 +37,8 @@
 	RETURN_TYPE(/datum/om/scheduler)
 	var/datum/controller/kernel/K = kernel()
 	if(!isnull(K.test_now))
-		return om_scheduler()
-	var/datum/om/scheduler/sched = om_test_begin()
+		return time_scheduler()
+	var/datum/om/scheduler/sched = scheduler_test_begin()
 	K.test_now = 0
 	K.test_slots = 0
 	// The kernel's own infrastructure systems (the inbox, requests, jobs) and the Life sweep run in the test graph while the test owns the
@@ -69,7 +69,7 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 	if(isnull(K.test_now))
 		return
 	K.test_now = null
-	om_test_end()
+	scheduler_test_end()
 	for(var/datum/work_item/W as anything in K.work_all)
 		if((W.owner_type in GLOB.kernel_test_systems) || istype(W, /datum/work_item/cadence))
 			W.test_owned = FALSE
@@ -150,7 +150,7 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 
 /// The scheduler the injected clock moves: the current test scheduler, started on first use.
 /datum/controller/kernel/proc/test_sched()
-	var/datum/om/scheduler/S = om_scheduler()
+	var/datum/om/scheduler/S = time_scheduler()
 	if(isnull(S.manual_time))
 		S = kernel_test_begin()
 	return S

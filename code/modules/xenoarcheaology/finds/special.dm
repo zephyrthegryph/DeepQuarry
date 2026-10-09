@@ -24,12 +24,20 @@ CAPABILITIES(/obj/item/reagent_containers/glass/replenishing)
 	var/list/heard_talk
 	EXPIRY_DECLARE(last_twitch)
 	var/max_stored_messages = 100
+	/// Is it worn and has it something to say? The echo every() below runs while it is.
+	var/echoing = FALSE
+
+TRACKED(/obj/item/clothing/mask/gas/poltergeist, echoing)
+
+CAPABILITIES(/obj/item/clothing/mask/gas/poltergeist)
+	every(2 SECONDS, then(PROC_REF(poltergeist_step)), when = nameof(echoing))
 
 /// Echoes what it heard through its wearer every 2 s while worn by someone with something to say
 /// (hearing or being put on starts it); otherwise it sleeps.
-/obj/item/clothing/mask/gas/poltergeist/periodic_step()
+/obj/item/clothing/mask/gas/poltergeist/proc/poltergeist_step(datum/act/A)
 	if(!length(heard_talk) || !isliving(src.loc))
-		return PROCESS_KILL
+		set_echoing(FALSE)
+		return
 	if(length(heard_talk) && isliving(src.loc) && prob(10))
 		var/mob/living/M = src.loc
 		M.say(DEFAULTPICK(heard_talk, null))
@@ -40,7 +48,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/replenishing)
 		LAZYREMOVE(heard_talk, DEFAULTPICK(heard_talk, null))
 	LAZYADD(heard_talk, multilingual_to_message(message_pieces))
 	if(isliving(loc))
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_echoing(TRUE)
 	if(isliving(src.loc) && ELAPSED(src, last_twitch, CLOCK_WORLD) > 5 SECONDS)
 		EXPIRY_STAMP(src, last_twitch, CLOCK_WORLD)
 
@@ -212,7 +220,7 @@ CAPABILITIES(/obj/effect/shadow_wight)
 /obj/item/clothing/mask/gas/poltergeist/equipped(mob/user, slot)
 	. = ..()
 	if(length(heard_talk))
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_echoing(TRUE)
 
 /// Accessor for the target_turf var.
 /obj/effect/decal/cleanable/blood/splatter/animated/proc/target_turf() as /turf

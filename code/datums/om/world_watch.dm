@@ -121,7 +121,7 @@
 
 /// World-wake counters for the profiler and the benchmarks.
 /proc/om_world_diagnostics(datum/om/scheduler/sched)
-	sched = sched || GLOB.om_live_sched || om_scheduler()
+	sched = sched || GLOB.om_live_sched || time_scheduler()
 	var/list/by_type = list()
 	for(var/type in sched.world_wakes_by_type)
 		by_type["[type]"] = sched.world_wakes_by_type[type]

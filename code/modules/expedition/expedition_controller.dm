@@ -65,8 +65,8 @@ CAPABILITIES(/datum/expedition_teardown_job)
 	var/site_name = site().name
 	if(z_level >= 1 && z_level <= world.maxz)
 		// Nothing may keep naming a turf of a pooled z: drop the views made during the wipe too.
-		var/dropped = om_drop_z(z_level)
-		log_world("Expedition: om_drop_z(z[z_level]) cleared [dropped] relation view(s) before pooling.")
+		var/dropped = relation_drop_z(z_level)
+		log_world("Expedition: relation_drop_z(z[z_level]) cleared [dropped] relation view(s) before pooling.")
 		controller().free_z |= z_level
 	controller().teardown_z -= "[z_level]"
 	log_world("Expedition: released [site_name], z[z_level] recycled after [yield_count] budget yields (reason: [reason]).")
@@ -390,7 +390,7 @@ CAPABILITIES(/datum/system/expedition)
 /datum/system/expedition/proc/wipe_z_async(z, on_done, list/on_done_with = null)
 	evacuate_mobs_from_z(z)
 	// The z is about to be reused: views naming its turfs are cleared first.
-	om_drop_z(z)
+	relation_drop_z(z)
 	job_cursor(src, PROC_REF(wipe_z_slice), list(block(locate(1, 1, z), locate(world.maxx, world.maxy, z)), 1), on_done, FALSE, on_done_with)
 
 /datum/system/expedition/proc/wipe_z_slice(list/cursor)
@@ -402,7 +402,7 @@ CAPABILITIES(/datum/system/expedition)
 		var/last = min(length(turfs), i + WIPE_Z_CHUNK - 1)
 		wipe_turfs(turfs.Copy(i, last + 1), space_area)
 		i = last + 1
-		if(i <= length(turfs) && om_scheduler().out_of_budget())
+		if(i <= length(turfs) && time_scheduler().out_of_budget())
 			cursor[2] = i
 			return cursor
 	return null
@@ -609,7 +609,7 @@ CAPABILITIES(/datum/system/expedition)
 /datum/system/expedition/proc/wipe_z(z)
 	evacuate_mobs_from_z(z)
 	// The z is about to be reused: views naming its turfs are cleared first.
-	om_drop_z(z)
+	relation_drop_z(z)
 	var/area/space/space_area = generated_station_space_area()
 	var/list/turfs = block(locate(1, 1, z), locate(world.maxx, world.maxy, z))
 	for(var/i = 1, i <= length(turfs), i += WIPE_Z_CHUNK)

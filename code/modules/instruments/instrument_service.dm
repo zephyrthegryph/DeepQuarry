@@ -1,5 +1,5 @@
 // The instrument system (was SSinstruments): instrument data and instrument sound-channel bookkeeping.
-// Playing songs run on the instruments continuous lane (PERIODIC_INSTRUMENTS, code/datums/om/periodic.dm) and
+// Playing songs schedule their own notes and
 // every song is in REGISTRY_SONGS, so this has no periodic work: it is a lazy system, set up on first use
 // through SSinstruments.ready() (it stays out of the boot DAG).
 SYSTEM_DEF(instruments)

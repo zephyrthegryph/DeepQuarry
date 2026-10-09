@@ -1,6 +1,6 @@
 // Kernel measurement (unified plan step 2, code/controllers/measure/): the system rule, the roll-up of a
 // behaviour's cost to its system, the histogram percentiles, overrun attribution, the flight recorder's ring and
-// the input latency record. Tests that need a scheduler use the OM harness (om_test_begin(), scheduler_advance()),
+// the input latency record. Tests that need a scheduler use the OM harness (scheduler_test_begin(), scheduler_advance()),
 // whose scheduler charges its own meter; the rest build meters directly, so nothing here touches the live one
 // except where a test swaps it in on purpose and puts it back before asserting.
 
@@ -53,7 +53,7 @@
 /datum/unit_test/dq_km_every_behaviour_has_a_system
 
 /datum/unit_test/dq_km_every_behaviour_has_a_system/Run()
-	var/datum/om/registry/reg = om_registry()
+	var/datum/om/registry/reg = definition_registry()
 	var/datum/km_systems/systems = km_systems()
 	TEST_ASSERT(length(reg.behaviours) > 0, "the registry has behaviours")
 	for(var/datum/om/behaviour/B as anything in reg.behaviours)
@@ -181,7 +181,7 @@
 /datum/unit_test/om/dq_km_rollup_charges_a_fake_behaviour
 
 /datum/unit_test/om/dq_km_rollup_charges_a_fake_behaviour/run_om(list/made)
-	var/datum/om/behaviour/fake = om_registry().behaviour(/datum/om/behaviour/test/km_fake)
+	var/datum/om/behaviour/fake = definition_registry().behaviour(/datum/om/behaviour/test/km_fake)
 	TEST_ASSERT_NOTNULL(fake, "the fake behaviour is registered")
 	var/idx = km_systems().index_by_key["km_fake_system"]
 	TEST_ASSERT_EQUAL(fake.system_idx, idx, "its system_key bound it to km_fake_system")
@@ -212,7 +212,7 @@
 	TEST_ASSERT_EQUAL(meter.n_touched, 0, "closing the tick clears the touched list")
 	TEST_ASSERT_EQUAL(meter.tick_ms[idx], 0, "and the tick's charge")
 	// Another behaviour's cost never lands on this system.
-	var/datum/om/behaviour/every = om_registry().behaviour(/datum/om/behaviour/test/every_second)
+	var/datum/om/behaviour/every = definition_registry().behaviour(/datum/om/behaviour/test/every_second)
 	TEST_ASSERT(every.system_idx != idx, "a different behaviour is a different system")
 
 	// Counters are deltas against a set's base: a window opened now sees only what runs after.
@@ -525,8 +525,8 @@
 	TEST_ASSERT(!isnull(panel["streak"]) && !isnull(panel["overruns"]), "and the tick counters")
 	var/list/diag = km_diagnostics(null)
 	TEST_ASSERT(islist(diag["systems"]) && islist(diag["input"]), "diagnostics carry the same records")
-	var/list/om = om_diagnostics(GLOB.om_live_sched)
-	TEST_ASSERT(islist(om["kernel"]), "om_diagnostics() exposes them")
+	var/list/om = scheduler_diagnostics(GLOB.om_live_sched)
+	TEST_ASSERT(islist(om["kernel"]), "scheduler_diagnostics() exposes them")
 	TEST_ASSERT(islist(om["kernel"]["systems"]), "with the per-system rows")
 	var/datum/tick_meter/M = new(8)
 	var/a = km_test_system("km_test_a")

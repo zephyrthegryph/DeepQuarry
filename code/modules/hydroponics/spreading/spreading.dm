@@ -28,7 +28,7 @@ CAPABILITIES(/obj/effect/dead_plant)
 	consume(src, user)
 	return OP_PASS
 
-/// Growing (on PERIODIC_PLANTS) while in REGISTRY_GROWING_PLANTS: add_plant() / remove_plant().
+/// Growing (plant_step every() on `growing`) while in REGISTRY_GROWING_PLANTS: add_plant() / remove_plant().
 REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 
 /obj/effect/plant
@@ -58,8 +58,13 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	EXPIRY_DECLARE(mature_time) //minimum maturation time
 	COOLDOWN_DECLARE(neighbor_refresh_cooldown)
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/plant
+	/// Is it in the growing registry? The growth every() below runs while it is.
+	var/growing = FALSE
+
+TRACKED(/obj/effect/plant, growing)
 
 CAPABILITIES(/obj/effect/plant)
+	every(7.5 SECONDS, then(PROC_REF(plant_step)), when = nameof(growing))
 	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(plant), /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
 	op("hit_plant", item(/obj/item), then(PROC_REF(interaction_hit_plant)))
@@ -354,7 +359,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overl
 		var/obj/effect/plant/vine = new(T,seed)
 		vine.health = vine.max_health
 		vine.mature_time = 0
-		vine.periodic_step()
+		vine.plant_step(null)
 
 		message_admins(span_notice("Event: Spacevines spawned at [T.loc] ([T.x],[T.y],[T.z])"))
 		return

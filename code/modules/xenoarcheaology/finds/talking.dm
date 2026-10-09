@@ -6,6 +6,13 @@
 	var/tmp/atom/holder_atom
 	var/talk_interval = 50
 	var/talk_chance = 10
+	/// Has it a holder to talk through? The talk every() below runs while it does.
+	var/talking = FALSE
+
+TRACKED(/datum/talking_atom, talking)
+
+CAPABILITIES(/datum/talking_atom)
+	every(2 SECONDS, then(PROC_REF(talk_step)), when = nameof(talking))
 
 /datum/talking_atom/New(atom/holder)
 	rel_set(src, nameof(holder_atom), holder)
@@ -13,11 +20,11 @@
 
 /datum/talking_atom/proc/init()
 	if(holder_atom())
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_talking(TRUE)
 
-/datum/talking_atom/periodic_step()
+/datum/talking_atom/proc/talk_step(datum/act/A)
 	if(!holder_atom())
-		om_task_periodic_stop(src)
+		set_talking(FALSE)
 
 	else if(heard_words.len >= 1 && COOLDOWN_FINISHED(src, talk_cooldown) && prob(talk_chance))
 		SaySomething()

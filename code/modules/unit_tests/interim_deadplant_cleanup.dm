@@ -37,7 +37,7 @@
 	TEST_ASSERT(!QDELETED(live) && live.loc == neighbor_floor, "Actual item clearing preserves the exact original adjacent live plant and floor")
 	TEST_ASSERT(T in live.neighbors, "The actual neighboring plant refresh discovers the original cleared floor as a real spreading target")
 	TEST_ASSERT(live in REGISTRY_MEMBERS(REGISTRY_GROWING_PLANTS), "The actual refreshed live neighbor is registered for resumed growth")
-	TEST_ASSERT_EQUAL(live.periodic_pipe, PERIODIC_PLANTS, "The actual refreshed neighbor resumes its original plant lane")
+	TEST_ASSERT(live.growing, "The actual refreshed neighbor resumes growing")
 	TEST_ASSERT_EQUAL(live.health, original_health, "Actual neighbor refreshing preserves the original live plant health")
 	TEST_ASSERT_EQUAL(live.seed(), seed, "Actual neighbor refreshing preserves the exact original shared seed")
 	TEST_ASSERT_EQUAL(actor.get_active_hand(), pen, "Actual item clearing preserves the original held clearing item")

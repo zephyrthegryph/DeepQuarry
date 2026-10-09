@@ -238,7 +238,7 @@
 	return reads ? reads.Copy() : list()
 
 /// A work item that runs one stage (a family root or variant type) on every entity that has it in `members`:
-/// runnable() is the stage's own (!idle), and the work is om_stage_run_now(). The stage stays where it is.
+/// runnable() is the stage's own (!idle), and the work is pipeline_stage_run_now(). The stage stays where it is.
 /datum/work_item/stage
 	/// The stage family type.
 	var/stage_type
@@ -264,5 +264,5 @@
 /datum/work_item/stage/perform(datum/owner, datum/member, dt)
 	if(!member)
 		return STEP_DONE
-	om_stage_run_now(member, stage_type)
+	pipeline_stage_run_now(member, stage_type)
 	return STEP_DONE

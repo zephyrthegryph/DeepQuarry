@@ -22,13 +22,13 @@
 		TEST_ASSERT(interim_native_frame_step(frame, actor, "construction.build:machine_frame_paneled.add_glass", glass), "Computer construction must install its glass panel")
 		TEST_ASSERT_EQUAL(glass.get_amount(), 1, "Panel installation must consume exactly two glass sheets")
 		finish_type = "construction.build:machine_frame_finished.connect_monitor"
-	var/old_handle = om_handle(frame)
+	var/old_handle = entity_handle(frame)
 	var/completed = interim_native_frame_step(frame, actor, finish_type)
 	// Generated successors must be registered even if a following assertion fails.
 	own_turf_contents(T)
 	TEST_ASSERT(completed, "The real final construction edge must complete")
 	TEST_ASSERT(QDELETED(frame), "Completing construction must destroy the original frame")
-	TEST_ASSERT_NULL(om_resolve(old_handle), "The frame identity must terminate for a successor outside the structure/frame family")
+	TEST_ASSERT_NULL(resolve_handle(old_handle), "The frame identity must terminate for a successor outside the structure/frame family")
 	var/obj/machinery/successor = locate_within(T, expected_type)
 	TEST_ASSERT(successor, "Completion must build the exact board-declared machinery type")
 	TEST_ASSERT_EQUAL(successor.circuit, board, "The successor must own the player's exact circuit board")

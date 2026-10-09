@@ -15,7 +15,7 @@ CAPABILITIES(/datum/system/behaviours)
 /datum/system/behaviours/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
-	var/datum/om/registry/reg = om_registry()
+	var/datum/om/registry/reg = definition_registry()
 	var/static/list/lane_names = list("Urgent", "Simulation", "Derived", "Presentation", "Background", "World")
 	var/elapsed = max(world.time - profile_reset_time, 1) / (1 SECONDS)
 	data["elapsed_s"] = round(elapsed, 0.1)

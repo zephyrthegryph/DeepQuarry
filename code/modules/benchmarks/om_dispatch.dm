@@ -90,7 +90,7 @@
 		baseline_ms += TICK_USAGE_TO_MS(start)
 
 	// Object model: one simulated second = every slot of the ring, once.
-	var/datum/om/scheduler/sched = om_test_begin()
+	var/datum/om/scheduler/sched = scheduler_test_begin()
 	for(var/datum/om_bench_entity/E as anything in entities)
 		om_attach(E, /datum/om/behaviour/bench_tick)
 	sched.advance(1)
@@ -99,7 +99,7 @@
 		var/start = TICK_USAGE
 		sched.advance(1)
 		om_ms += TICK_USAGE_TO_MS(start)
-	om_test_end()
+	scheduler_test_end()
 
 	var/calls = n * rounds
 	metric("om_dispatch_process_ns_per_call", baseline_ms * 1e6 / calls, "ns")
@@ -141,7 +141,7 @@
 					if(S.idle(E))
 						flags[j] = TRUE
 			loop_ms += TICK_USAGE_TO_MS(start)
-		var/datum/om/scheduler/psched = om_test_begin()
+		var/datum/om/scheduler/psched = scheduler_test_begin()
 		for(var/datum/om_bench_entity/E as anything in pipe_entities)
 			om_attach(E, /datum/om/pipeline/bench)
 		psched.advance(2)
@@ -151,14 +151,14 @@
 			psched.advance(1)
 			pipe_ms += TICK_USAGE_TO_MS(start)
 		// The runner alone, called directly (no ring, no scheduler pass).
-		var/datum/om/pipeline/P = om_registry().behaviour(/datum/om/pipeline/bench)
+		var/datum/om/pipeline/P = definition_registry().behaviour(/datum/om/pipeline/bench)
 		var/direct_ms = 0
 		for(var/r in 1 to rounds)
 			var/start = TICK_USAGE
 			for(var/datum/om_bench_entity/E as anything in pipe_entities)
 				P.run_frame(E, 1)
 			direct_ms += TICK_USAGE_TO_MS(start)
-		om_test_end()
+		scheduler_test_end()
 		var/frames = pipe_n * rounds
 		metric("om_dispatch_runner_[label]_ns_per_entity", direct_ms * 1e6 / frames, "ns")
 		metric("om_dispatch_frameloop_[label]_ns_per_entity", loop_ms * 1e6 / frames, "ns")

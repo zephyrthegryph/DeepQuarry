@@ -103,11 +103,11 @@
 	var/soon = after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("soon"))
 	var/mid = after(E, 3 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("mid"))
 	var/datum/om/rec/rec = E.om_rec
-	TEST_ASSERT_EQUAL(om_timer_index(rec, mid), 2 * OM_TIMER_STRIDE + 1, "binary search finds the third timer")
-	TEST_ASSERT_EQUAL(om_timer_index(rec, 999), 0, "and nothing for an unknown id")
-	TEST_ASSERT(om_cancel_timer(E, soon), "cancel the soonest")
-	TEST_ASSERT(!om_timer_pending(E, soon), "gone")
-	TEST_ASSERT(om_timer_pending(E, late) && om_timer_pending(E, mid), "the others remain")
+	TEST_ASSERT_EQUAL(timer_index(rec, mid), 2 * OM_TIMER_STRIDE + 1, "binary search finds the third timer")
+	TEST_ASSERT_EQUAL(timer_index(rec, 999), 0, "and nothing for an unknown id")
+	TEST_ASSERT(timer_cancel(E, soon), "cancel the soonest")
+	TEST_ASSERT(!timer_pending(E, soon), "gone")
+	TEST_ASSERT(timer_pending(E, late) && timer_pending(E, mid), "the others remain")
 	scheduler_advance(2)
 	TEST_ASSERT(!("soon" in E.log), "a cancelled timer never fires")
 	TEST_ASSERT(!("mid" in E.log), "not yet")
@@ -142,18 +142,18 @@
 	var/list/later = list()
 	for(var/i in 1 to 20)
 		var/datum/om_test_entity/E = entity(made)
-		om_deadline(E, 1 SECONDS, /datum/om/behaviour/test/deadline_only)
+		deadline_deadline(E, 1 SECONDS, /datum/om/behaviour/test/deadline_only)
 		due += E
 	for(var/i in 1 to 5)
 		var/datum/om_test_entity/L = entity(made)
-		om_deadline(L, 1 SECONDS + OM_DEADLINE_BUCKETS, /datum/om/behaviour/test/deadline_only)
+		deadline_deadline(L, 1 SECONDS + OM_DEADLINE_BUCKETS, /datum/om/behaviour/test/deadline_only)
 		later += L
 	scheduler_advance(1.5)
 	for(var/datum/om_test_entity/E as anything in due)
 		TEST_ASSERT_EQUAL(E.deadlines, 1, "each shared-bucket deadline fired once")
 	for(var/datum/om_test_entity/L as anything in later)
 		TEST_ASSERT_EQUAL(L.deadlines, 0, "a deadline a wheel turn away is kept")
-		TEST_ASSERT(om_deadline_pending(L, /datum/om/behaviour/test/deadline_only), "and still pending")
+		TEST_ASSERT(deadline_deadline_pending(L, /datum/om/behaviour/test/deadline_only), "and still pending")
 
 // ---------------------------------------------------------------- interactions
 
@@ -187,7 +187,7 @@
 		ids["[i]"] = after(E, delay, /datum/om_test_entity/proc/timer_hit, with = list("[i]"))
 		expected += list(list(delay, i))
 	for(var/i in 3 to 120 step 3)
-		TEST_ASSERT(om_cancel_timer(E, ids["[i]"]), "cancelled timer [i]")
+		TEST_ASSERT(timer_cancel(E, ids["[i]"]), "cancelled timer [i]")
 	var/list/kept = list()
 	for(var/list/pair in expected)
 		if(pair[2] % 3)
@@ -200,7 +200,7 @@
 			if(pb[1] < pa[1] || (pb[1] == pa[1] && pb[2] < pa[2]))
 				kept.Swap(a, b)
 	var/datum/om/rec/rec = E.om_rec
-	TEST_ASSERT_EQUAL(rec.timer_soonest, om_timer_local(rec) + kept[1][1], "the soonest follows the heap root once the cancelled ones are gone")
+	TEST_ASSERT_EQUAL(rec.timer_soonest, timer_local(rec) + kept[1][1], "the soonest follows the heap root once the cancelled ones are gone")
 	scheduler_advance(30)
 	TEST_ASSERT_EQUAL(length(E.log), length(kept), "every uncancelled timer fired once, no cancelled one did")
 	for(var/n in 1 to length(kept))
@@ -216,7 +216,7 @@
 	var/datum/om_test_entity/E = entity(made)
 	for(var/i in 1 to 400)
 		var/id = after(E, 50 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("x"))
-		om_cancel_timer(E, id)
+		timer_cancel(E, id)
 	after(E, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("one"))
 	var/datum/om/rec/rec = E.om_rec
 	TEST_ASSERT(length(rec.timer_heap) / OM_TIMER_HEAP_STRIDE <= 2 + OM_TIMER_HEAP_SLACK + 2, "cancelled entries do not pile up in the heap ([length(rec.timer_heap) / OM_TIMER_HEAP_STRIDE])")

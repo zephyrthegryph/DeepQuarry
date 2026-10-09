@@ -31,6 +31,10 @@
 	var/mob/living/pet
 	/// The mob holding this leash. Read with leash_master().
 	var/mob/living/holder
+	/// Is the leash on a pet? The every() below runs while it is.
+	var/leashed = FALSE
+
+TRACKED(/obj/item/leash, leashed)
 
 /// Was LEASH_PET().
 /obj/item/leash/proc/leash_pet() as /mob/living
@@ -61,12 +65,14 @@
 
 /// The pet reference went: no pet, no leash, so the holder lets go too.
 /obj/item/leash/proc/pet_ended(mob/living/old_pet)
+	set_leashed(FALSE)
 	release_pet(old_pet)
 	if(holder)
 		rel_set(src, nameof(holder), null)
 
 /// The holder reference went: no holder, no leash, so the pet is free.
 /obj/item/leash/proc/holder_ended(mob/living/old_holder)
+	set_leashed(FALSE)
 	release_holder(old_holder)
 	if(pet)
 		rel_set(src, nameof(pet), null)
@@ -84,7 +90,7 @@
 	new_pet.apply_body_effect(/datum/body_effect/leash)
 	new_pet.throw_alert("leashed", /atom/movable/screen/alert/leash_pet, new_master = src)
 	observe(new_pet, /datum/notice/moved, src, then(TYPE_PROC_REF(/obj/item/leash, on_pet_move)))
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_leashed(TRUE)
 	new_holder.throw_alert("leash", /atom/movable/screen/alert/leash_dom, new_master = src)
 	observe(new_holder, /datum/notice/moved, src, then(TYPE_PROC_REF(/obj/item/leash, on_master_move)))
 
@@ -102,25 +108,26 @@
 	throwforce = 1
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/leash/periodic_step()
+/// Every 2 s while leashed: the pet and holder must still be there, sentient, not absorbed and collared.
+/obj/item/leash/proc/leash_step(datum/act/A)
 	var/mob/living/leash_pet = src?.leash_pet()
 	var/mob/living/leash_master = src?.leash_master()
 	if(!leash_pet || !leash_master) //If there is no pet, there is no dom. Loop breaks.
 		clear_leash()
-		return PROCESS_KILL
+		return
 
 	if(!leash_pet.mind) //in the extremely niche case a sentient simplemob is leashed, and then ghosts, use this
 		clear_leash()
-		return PROCESS_KILL
+		return
 
 	if(leash_pet.absorbed) //Glrk'd
 		clear_leash()
-		return PROCESS_KILL
+		return
 	if(!is_wearing_collar(leash_pet) && istype(leash_pet, /mob/living/carbon/human)) //The pet has slipped their collar and is not the pet anymore.
 		act_message(leash_pet, null, MSG_SELF(span_warning("You have slipped out of your collar!")), \
 			MSG_OTHERS(span_warning("%U% has slipped out of %THEIR% collar!")))
 		clear_leash()
-		return PROCESS_KILL
+		return
 
 //Called when someone is clicked with the leash
 /obj/item/leash/attack(mob/living/C, mob/living/user, target_zone, attack_modifier) //C is the target, user is the one with the leash
@@ -211,6 +218,7 @@
 //Called when the leash is used in hand
 //Tugs the pet closer
 CAPABILITIES(/obj/item/leash)
+	every(2 SECONDS, then(PROC_REF(leash_step)), when = nameof(leashed))
 	ref_one(nameof(pet), /mob/living, on_unlink = PROC_REF(pet_ended))
 	ref_one(nameof(holder), /mob/living, on_unlink = PROC_REF(holder_ended))
 	op("tug", in_hand(), label("Tug leash"), then(PROC_REF(leash_tug_requested)))

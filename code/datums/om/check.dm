@@ -7,8 +7,6 @@
 /proc/om_check_get(spec, datum/om/registry/reg)
 	return definition_check_get(arglist(args))
 
-/proc/om_spec_key(spec, datum/om/registry/reg)
-	return definition_spec_key(arglist(args))
 
 /proc/om_why_not(spec, datum/actor, datum/target)
 	return definition_why_not(arglist(args))

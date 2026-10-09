@@ -11,7 +11,7 @@
 /// The slot ids the group declared for holder key `key`, joined.
 /proc/dq_test_slot_group_ids(key)
 	var/list/ids = list()
-	for(var/datum/om/relation/slot/def as anything in (om_registry().slot_group_for(key) || list()))
+	for(var/datum/om/relation/slot/def as anything in (definition_registry().slot_group_for(key) || list()))
 		ids += def.slot_id
 	return jointext(ids, ",")
 

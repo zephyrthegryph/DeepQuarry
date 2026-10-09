@@ -207,7 +207,7 @@
 /// The timer slot for body effect timer `name` ("[path]#[serial]" or "[path]#tick"): on the mob,
 /// or, for a world-clock effect, on the global owner under a name that includes the mob.
 /mob/living/proc/body_effect_slot(datum/body_effect/def, name)
-	return def.world_clock ? "body_effect:[om_handle(src)]:[name]" : "body_effect:[name]"
+	return def.world_clock ? "body_effect:[entity_handle(src)]:[name]" : "body_effect:[name]"
 
 /// Schedules body effect timer `name` for `path` on the definition's clock (replacing one of that
 /// name). The slot owns the timer: firing, cancelling and deletion end it.

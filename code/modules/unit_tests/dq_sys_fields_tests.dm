@@ -14,7 +14,7 @@
 /datum/unit_test/dq_sys_fields_registered
 
 /datum/unit_test/dq_sys_fields_registered/Run()
-	var/datum/om/registry/reg = om_registry()
+	var/datum/om/registry/reg = definition_registry()
 	var/list/F = reg.fields_of(/obj/machinery/recharger)
 	TEST_ASSERT_EQUAL(F["on"], CHANGE_MACHINE_SETTINGS, "on channel")
 	TEST_ASSERT_EQUAL(F["locked"], CHANGE_MACHINE_MODE, "locked channel")
@@ -37,7 +37,7 @@
 
 /datum/unit_test/dq_sys_fields_custom_setters_raise/Run()
 	var/obj/machinery/M = allocate(/obj/machinery)
-	var/datum/om/rec/rec = om_rec_of(M)
+	var/datum/om/rec/rec = scheduler_record_of(M)
 	var/datum/om/scheduler/sched = rec.sched
 	M.om_listen |= CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
 	M.set_anchored(FALSE)

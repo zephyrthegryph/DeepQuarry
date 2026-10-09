@@ -149,14 +149,14 @@ SYSTEM_DEF(ticker)
 				Kernel.SetRunLevel(RUNLEVEL_LOBBY)
 
 		if(GAME_STATE_PLAYING)
-			// The mode's own periodic work (latespawn, meteor waves) runs on the slow lane,
-			// started when the round starts (setup()).
+			// The mode's own periodic work (latespawn, meteor waves) runs as the mode's every()
+			// (mode_step), armed by mode_running when the round starts (setup()).
 			if(mode.explosion_in_progress)
 				return // wait until explosion is done.
 
 			if(force_ending)
 				current_state = GAME_STATE_FINISHED
-				om_task_periodic_stop(mode)
+				mode.set_mode_running(FALSE)
 				declare_completion(force_ending)
 				Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
 			else
@@ -173,7 +173,7 @@ SYSTEM_DEF(ticker)
 				if(game_finished && mode_finished)
 					end_game_state = END_GAME_READY_TO_END
 					current_state = GAME_STATE_FINISHED
-					om_task_periodic_stop(mode)
+					mode.set_mode_running(FALSE)
 					Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
 					declare_completion() // its SQL and TGS chat run off-thread (io_job, send2chat)
 				else if (mode_finished && (end_game_state < END_GAME_MODE_FINISHED))
@@ -242,7 +242,7 @@ SYSTEM_DEF(ticker)
 	play_simple_announcement(world, ANNOUNCER_MSG_ROUND_START)
 
 	current_state = GAME_STATE_PLAYING
-	om_task_periodic(mode, PERIODIC_SLOW)
+	mode.set_mode_running(TRUE)
 	Kernel.SetRunLevel(RUNLEVEL_GAME)
 
 	//Holiday Round-start stuff	~Carn

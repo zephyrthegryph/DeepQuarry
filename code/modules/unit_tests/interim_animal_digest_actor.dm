@@ -34,7 +34,7 @@
 	TEST_ASSERT_EQUAL(timers[3], TYPE_PROC_REF(/obj/belly, reset_digest_mode), "the actual timer invokes the existing reset proc")
 	var/list/timer_args = timers[4]
 	TEST_ASSERT_EQUAL(timer_args[1], animal.vore_default_mode, "the actual scheduled reset captures the animal's original mode")
-	TEST_ASSERT_EQUAL(om_timer_left(belly, timers[1]), 20 MINUTES, "the actual scheduled reset retains its complete defined duration")
+	TEST_ASSERT_EQUAL(timer_left(belly, timers[1]), 20 MINUTES, "the actual scheduled reset retains its complete defined duration")
 	animal.toggle_digestion_for(bystander)
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 2, "an explicit different human opens the real disable choice")
 	var/datum/prompt/choice/disable = GLOB.test_prompts[2]

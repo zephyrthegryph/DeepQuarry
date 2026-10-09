@@ -29,7 +29,7 @@ CAPABILITIES(/datum/game_mode/meteor)
 	return GLOB.meteor_wave_delay
 
 /// The mode's periodic work is the waves alone (no latespawn), on their own timer.
-/datum/game_mode/meteor/periodic_step()
+/datum/game_mode/meteor/mode_step(datum/act/timer/A)
 	return
 
 /// every(): one wave of meteors every GLOB.meteor_wave_delay while the waves run.

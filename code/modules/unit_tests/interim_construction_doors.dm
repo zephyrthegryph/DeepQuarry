@@ -288,7 +288,7 @@
 	for(var/remains_type in list(/obj/effect/decal/remains/human, /obj/effect/decal/remains/robot))
 		var/obj/effect/decal/remains/remains = allocate(remains_type)
 		var/expected_debris_type = remains.crumble_into
-		var/old_handle = om_handle(remains)
+		var/old_handle = entity_handle(remains)
 		var/list/before = turf_contents_of_type(floor, expected_debris_type)
 		TEST_ASSERT(test_op_handler(remains, "interaction_crumble_remains", actor), "Touching floor remains must complete the crumble interaction")
 		TEST_ASSERT(QDELETED(remains), "Crumbling must destroy the original remains")
@@ -297,5 +297,5 @@
 		TEST_ASSERT_EQUAL(length(created), 1, "Crumbling must produce exactly one declared debris object")
 		var/atom/movable/debris = own(created[1])
 		TEST_ASSERT_EQUAL(debris.loc, floor, "Replacement debris must stay on the original floor")
-		TEST_ASSERT_EQUAL(om_resolve(old_handle), debris, "A remains handle must follow its replacement within the decal family")
+		TEST_ASSERT_EQUAL(resolve_handle(old_handle), debris, "A remains handle must follow its replacement within the decal family")
 		TEST_ASSERT(!QDELETED(debris), "Destroying the original must preserve the replacement debris")

@@ -91,7 +91,7 @@
 		sys_periodic_start(A, decls.sys_periodic)
 
 /// The inverse, from /atom/on_dematerialize(). Registries, behaviours and timers are left by
-/// the core (leave_registries(), om_teardown_rest()).
+/// the core (leave_registries(), entity_teardown_rest()).
 /proc/lifecycle_decls_dematerialize(atom/A, datum/lifecycle_decls/decls)
 	if(decls.periodic)
 		om_task_periodic_stop(A)

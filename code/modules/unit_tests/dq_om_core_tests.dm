@@ -1,6 +1,6 @@
 // Object-model core (doc/rewrite/object_model_core.md): one test per
 // primitive, and one regression test per bug class the design removes.
-// Every test runs on its own deterministic scheduler (om_test_begin()).
+// Every test runs on its own deterministic scheduler (scheduler_test_begin()).
 
 // ---------------------------------------------------------------- fixtures
 
@@ -291,7 +291,7 @@
 	var/datum/om/scheduler/sched
 
 /datum/unit_test/om/Run()
-	rel_set(src, nameof(sched), om_test_begin())
+	rel_set(src, nameof(sched), scheduler_test_begin())
 	var/list/made = list()
 	try
 		run_om(made)
@@ -300,7 +300,7 @@
 	for(var/datum/D as anything in made)
 		if(!QDELETED(D))
 			qdel(D)
-	om_test_end()
+	scheduler_test_end()
 
 /datum/unit_test/om/proc/run_om(list/made)
 	return
@@ -372,7 +372,7 @@
 	var/list/entities = list()
 	for(var/i in 1 to 6)
 		var/datum/om_test_entity/E = entity(made)
-		var/datum/om/rec/rec = om_rec_of(E)
+		var/datum/om/rec/rec = scheduler_record_of(E)
 		rec.phase = 0
 		entities += E
 	var/datum/om_test_entity/rejoin = entities[2]
@@ -410,11 +410,11 @@
 	var/datum/om_test_entity/P = entity(made)
 	om_attach(P, /datum/om/behaviour/test/presentation)
 	var/datum/om_test_entity/D = entity(made)
-	om_deadline(D, 5, /datum/om/behaviour/test/deadline_only)
+	deadline_deadline(D, 5, /datum/om/behaviour/test/deadline_only)
 	scheduler_advance(2)
 	TEST_ASSERT(P.ticks >= 1, "presentation lane starved by the simulation lane")
 	TEST_ASSERT_EQUAL(D.deadlines, 1, "deadline starved by the lanes")
-	var/list/S = sched.stat_for(om_registry().behaviour(/datum/om/behaviour/test/every_second).id)
+	var/list/S = sched.stat_for(definition_registry().behaviour(/datum/om/behaviour/test/every_second).id)
 	TEST_ASSERT(S[OM_STAT_DEFERRALS] > 0, "the crowded lane should have deferred")
 	sched.harness_caps = null
 	sched.harness_deadline_cap = 0
@@ -462,7 +462,7 @@
 /datum/unit_test/om/order_after_runs_in_order
 
 /datum/unit_test/om/order_after_runs_in_order/run_om(list/made)
-	var/datum/om/registry/reg = om_registry()
+	var/datum/om/registry/reg = definition_registry()
 	var/datum/om/behaviour/A = reg.behaviour(/datum/om/behaviour/test/every_second)
 	var/datum/om/behaviour/B = reg.behaviour(/datum/om/behaviour/test/every_second_b)
 	TEST_ASSERT(A.id < B.id, "order_after compiles into id order")
@@ -547,22 +547,22 @@
 
 /datum/unit_test/om/deadlines_replace_and_cancel/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
-	om_deadline(E, 5, /datum/om/behaviour/test/deadline_only)
-	om_deadline(E, 10, /datum/om/behaviour/test/deadline_only)
+	deadline_deadline(E, 5, /datum/om/behaviour/test/deadline_only)
+	deadline_deadline(E, 10, /datum/om/behaviour/test/deadline_only)
 	scheduler_advance(0.7)
 	TEST_ASSERT_EQUAL(E.deadlines, 0, "calling after() again replaces the deadline")
 	scheduler_advance(0.5)
 	TEST_ASSERT_EQUAL(E.deadlines, 1, "the replacement fires once")
-	om_deadline(E, 5, /datum/om/behaviour/test/deadline_only)
-	om_cancel_after(E, /datum/om/behaviour/test/deadline_only)
+	deadline_deadline(E, 5, /datum/om/behaviour/test/deadline_only)
+	deadline_cancel_after(E, /datum/om/behaviour/test/deadline_only)
 	scheduler_advance(1)
 	TEST_ASSERT_EQUAL(E.deadlines, 1, "cancelled deadlines never fire")
 	var/datum/om_test_entity/doomed = entity(made)
-	om_deadline(doomed, 5, /datum/om/behaviour/test/deadline_only)
+	deadline_deadline(doomed, 5, /datum/om/behaviour/test/deadline_only)
 	qdel(doomed)
 	scheduler_advance(1)
 	TEST_ASSERT_EQUAL(doomed.deadlines, 0, "a deleted entity's deadline is skipped")
-	om_deadline(E, 200 SECONDS, /datum/om/behaviour/test/deadline_only)
+	deadline_deadline(E, 200 SECONDS, /datum/om/behaviour/test/deadline_only)
 	scheduler_advance(201)
 	TEST_ASSERT_EQUAL(E.deadlines, 2, "deadlines beyond one wheel turn still fire")
 
@@ -575,7 +575,7 @@
 		entities += entity(made)
 	var/ffi_before = __verdigris_ffi_calls
 	for(var/datum/om_test_entity/E as anything in entities)
-		om_deadline(E, 3, /datum/om/behaviour/test/deadline_only)
+		deadline_deadline(E, 3, /datum/om/behaviour/test/deadline_only)
 	scheduler_advance(0.5)
 	TEST_ASSERT_EQUAL(__verdigris_ffi_calls, ffi_before, "deadlines crossed into Rust")
 	for(var/datum/om_test_entity/E as anything in entities)
@@ -596,9 +596,9 @@
 	var/datum/om_test_entity/E = entity(made)
 	om_attach(E, /datum/om/behaviour/test/every_second)
 	scheduler_advance(2)
-	var/list/snapshot = om_diagnostics(sched)
+	var/list/snapshot = scheduler_diagnostics(sched)
 	var/list/types = snapshot["types"]
-	var/list/row = types[om_registry().behaviour(/datum/om/behaviour/test/every_second).name]
+	var/list/row = types[definition_registry().behaviour(/datum/om/behaviour/test/every_second).name]
 	TEST_ASSERT_NOTNULL(row, "per-type counters exist")
 	TEST_ASSERT(row["runs"] >= 1, "runs counted")
 	TEST_ASSERT_EQUAL(row["population"], 1, "ring population reported")
@@ -658,11 +658,11 @@
 	qdel(target)
 	TEST_ASSERT(!length(owner.om_rec.watching), "the watch dies with its target")
 	var/datum/om/service/test_observer/S
-	for(var/datum/om/service/candidate as anything in om_registry().services)
+	for(var/datum/om/service/candidate as anything in definition_registry().services)
 		if(istype(candidate, /datum/om/service/test_observer))
 			S = candidate
 	var/datum/om_test_entity/watched = entity(made)
-	om_rec_of(watched)
+	scheduler_record_of(watched)
 	var/calls = S.calls
 	changed(watched, CHANGE_DATUM_C)
 	changed(watched, CHANGE_DATUM_C)
@@ -693,7 +693,7 @@
 /datum/unit_test/om/derived_lazy_eager_and_chained
 
 /datum/unit_test/om/derived_lazy_eager_and_chained/run_om(list/made)
-	var/datum/om/registry/reg = om_registry()
+	var/datum/om/registry/reg = definition_registry()
 	var/datum/om/derived/D2 = reg.derived_def("test_double")
 	var/datum/om/derived/D4 = reg.derived_def("test_quad")
 	TEST_ASSERT(D2.order < D4.order, "derived inputs are ordered first")
@@ -869,10 +869,10 @@
 /datum/unit_test/om/decl_tables_and_bundles
 
 /datum/unit_test/om/decl_tables_and_bundles/run_om(list/made)
-	TEST_ASSERT(om_type_has_decl(/datum/om_test_entity/decl_host), "decl typecache")
-	TEST_ASSERT(!om_type_has_decl(/datum/om_test_entity), "only the declared family")
+	TEST_ASSERT(entity_type_has_decl(/datum/om_test_entity/decl_host), "decl typecache")
+	TEST_ASSERT(!entity_type_has_decl(/datum/om_test_entity), "only the declared family")
 	var/datum/om_test_entity/E = entity(made, /datum/om_test_entity/decl_host)
-	om_start(E)
+	entity_start(E)
 	scheduler_advance(2)
 	TEST_ASSERT(E.ticks >= 1, "a tick row from a nested bundle calls the entity's proc")
 	changed(E, CHANGE_DATUM_A)
@@ -896,13 +896,13 @@
 				found = TRUE
 				break
 		TEST_ASSERT(found, "expected a boot error containing '[needle]'; got: [jointext(reg.errors, " | ")]")
-	TEST_ASSERT(!length(om_registry().errors), "the live registry has no errors: [jointext(om_registry().errors, " | ")]")
+	TEST_ASSERT(!length(definition_registry().errors), "the live registry has no errors: [jointext(definition_registry().errors, " | ")]")
 
 /// Regression: per-type config is never mutated per entity.
 /datum/unit_test/om/regression_defs_are_immutable
 
 /datum/unit_test/om/regression_defs_are_immutable/run_om(list/made)
-	var/datum/om/behaviour/B = om_registry().behaviour(/datum/om/behaviour/test/relevant)
+	var/datum/om/behaviour/B = definition_registry().behaviour(/datum/om/behaviour/test/relevant)
 	var/list/before = B.compiled_intervals.Copy()
 	var/list/relevance_before = B.relevance.Copy()
 	var/datum/om_test_entity/A = entity(made)
@@ -938,7 +938,7 @@
 /datum/unit_test/om/declared_cache_cleared_by_rule/run_om(list/made)
 	var/datum/om_test_entity/cached/E = entity(made, /datum/om_test_entity/cached)
 	var/datum/om_test_entity/other = entity(made)
-	om_rec_of(E)
+	scheduler_record_of(E)
 	rel_set(E, nameof(E.on_change_cache), other)
 	rel_set(E, nameof(E.on_event_cache), other)
 	rel_set(E, nameof(E.on_relation_cache), other)

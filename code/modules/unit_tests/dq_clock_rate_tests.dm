@@ -78,7 +78,7 @@
 	var/datum/om_test_entity/clock_probe/stopped = entity(made, /datum/om_test_entity/clock_probe)
 	for(var/datum/om_test_entity/clock_probe/E in list(slow, fast, stopped))
 		clock_probe_running(E)
-		om_deadline(E, 2 SECONDS, /datum/om/behaviour/test/deadline_clocked)
+		deadline_deadline(E, 2 SECONDS, /datum/om/behaviour/test/deadline_clocked)
 	clock_probe_rate(slow, 0.5)
 	clock_probe_rate(fast, 2)
 	clock_probe_rate(stopped, 0)
@@ -97,7 +97,7 @@
 
 /datum/unit_test/om/clock_rate_first_change_moves_deadlines/run_om(list/made)
 	var/datum/om_test_entity/clock_probe/E = entity(made, /datum/om_test_entity/clock_probe)
-	om_deadline(E, 2 SECONDS, /datum/om/behaviour/test/deadline_clocked)
+	deadline_deadline(E, 2 SECONDS, /datum/om/behaviour/test/deadline_clocked)
 	scheduler_advance(1)
 	clock_probe_rate(E, 0)
 	scheduler_advance(3)

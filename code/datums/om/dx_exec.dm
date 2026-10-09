@@ -43,10 +43,6 @@ GLOBAL_LIST_EMPTY(dx_exec_stats)
 	var/list/context = length(args) > 6 ? args.Copy(7) : null
 	return dx_exec(owner, DX_MEASURE_TEXT, list(C, text, style, width), on_done, context)
 
-/// shell(command) for a callback: on_done(exit_code, context...). Null if shell() is unavailable.
-/proc/dx_shell(owner, command, on_done, ...)
-	var/list/context = length(args) > 3 ? args.Copy(4) : null
-	return dx_exec(owner, DX_SHELL, list(command), on_done, context)
 
 /// world.shelleo(command) for a callback: on_done(list(errorlevel, stdout, stderr), context...).
 /proc/dx_shelleo(owner, command, on_done, ...)
@@ -57,7 +53,7 @@ GLOBAL_LIST_EMPTY(dx_exec_stats)
 /// datum or the op's client is already gone).
 /proc/dx_exec(owner, op, list/op_args, on_done, list/context)
 	if(isnull(owner))
-		owner = om_global_owner()
+		owner = timer_global_owner()
 	var/owner_ref = dx_exec_wrap(owner)
 	if(isnull(owner_ref))
 		return FALSE
@@ -84,7 +80,7 @@ GLOBAL_LIST_EMPTY(dx_exec_stats)
 		var/client/C = value
 		return "ckey:[C.ckey]"
 	if(isdatum(value))
-		var/h = om_handle(value)
+		var/h = entity_handle(value)
 		return h ? list("rerun_h" = h) : null
 	return value
 

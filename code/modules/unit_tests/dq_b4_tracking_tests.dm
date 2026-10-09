@@ -39,7 +39,7 @@
 
 /datum/unit_test/dq_b4_base_vars_bridge/Run()
 	var/obj/machinery/M = allocate(/obj/machinery)
-	var/datum/om/rec/rec = om_rec_of(M)
+	var/datum/om/rec/rec = scheduler_record_of(M)
 	var/datum/om/scheduler/sched = rec.sched
 	M.om_listen |= CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
 	M.set_anchored(FALSE)
@@ -47,7 +47,7 @@
 	M.set_anchored(TRUE)
 	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_ANCHORED), 1, "a machine's set_anchored raises CHANGE_MACHINE_ANCHORED")
 	sched.test_raises = null
-	var/list/plain = om_registry().fields_of(/obj/structure)
+	var/list/plain = definition_registry().fields_of(/obj/structure)
 	TEST_ASSERT(!plain["anchored"] && !plain["density"], "a plain object's anchored and density raise no channel")
 
 /// NOPOWER is the power capability's state (set_powered(), published as MACHINE_KEY_POWERED), BROKEN the integrity

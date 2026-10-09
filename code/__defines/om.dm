@@ -27,12 +27,10 @@
 #define CHANGE_RELATION_ADDED (1<<1)
 #define CHANGE_RELATION_REMOVED (1<<2)
 #define CHANGE_EFFECTS (1<<3)
-#define CHANGE_CLOCK (1<<4)
 #define CHANGE_RELEVANCE (1<<5)
 #define CHANGE_CONTENTS (1<<6)
 /// A related entity (relation forwarding or a watch) changed; delivered to the observer.
 #define CHANGE_RELATED (1<<7)
-#define CHANGE_GENERIC_MASK 0xFF
 
 // Mob family.
 #define CHANGE_MOB_STAT (1<<8)
@@ -41,7 +39,6 @@
 #define CHANGE_MOB_HANDS (1<<11)
 #define CHANGE_MOB_EQUIPMENT (1<<12)
 #define CHANGE_MOB_CLIENT (1<<13)
-#define CHANGE_MOB_MOVEMENT (1<<14)
 #define CHANGE_MOB_STATUS (1<<15)
 #define CHANGE_MOB_VITALS (1<<16)
 #define CHANGE_MOB_CAN_MOVE (1<<17)
@@ -52,12 +49,7 @@
 
 // Item family.
 #define CHANGE_ITEM_LOC (1<<8)
-#define CHANGE_ITEM_MASS (1<<9)
-#define CHANGE_ITEM_HEAT (1<<10)
 #define CHANGE_ITEM_CHARGE (1<<11)
-#define CHANGE_ITEM_WORN (1<<12)
-#define CHANGE_ITEM_ARMOR (1<<13)
-#define CHANGE_ITEM_TOTAL_MASS (1<<14)
 
 // Machine family.
 #define CHANGE_MACHINE_POWER (1<<8)
@@ -65,13 +57,8 @@
 #define CHANGE_MACHINE_BROKEN (1<<10)
 #define CHANGE_MACHINE_ANCHORED (1<<11)
 #define CHANGE_MACHINE_OCCUPANT (1<<12)
-#define CHANGE_MACHINE_OUTPUT (1<<13)
-#define CHANGE_MACHINE_POWERED_OK (1<<14)
-#define CHANGE_MACHINE_CHARGE (1<<15)
 /// Settings a player or program changed (input/output levels, breakers, modes).
 #define CHANGE_MACHINE_SETTINGS (1<<16)
-/// A watched gas condition crossed a threshold band (code/datums/om/watch.dm).
-#define CHANGE_MACHINE_GAS (1<<17)
 
 // Generic datum family (framework-owned datums: sessions, edges, tasks).
 #define CHANGE_DATUM_A (1<<8)
@@ -91,9 +78,6 @@
 /// A turf's visible gas changed (Rust visual event, delivered by native_changed()).
 #define CHANGE_TURF_GAS_VISUAL CHANGE_DATUM_A
 
-/// The one guarded setter call. Content writes changed(E, bits); this form
-/// is for hot setters that want the listen-mask test inlined.
-#define OM_CHANGED(E, bits) if((E).om_listen & (bits)) { om_dispatch_change(E, bits) }
 
 
 /// The key of verb PATH shown under its own NAME and DESC (a renamed verb instance, `new PATH(target, NAME, DESC)`): what
@@ -154,21 +138,14 @@
 #define ALL_OF(parts...) list("all", ##parts)
 #define ANY_OF(parts...) list("any", ##parts)
 #define NOT_OF(part) list("not", part)
-/// Effects only: sum of other effects' values.
-#define SUM_OF(parts...) list("sum", ##parts)
 /// A parameterised check spec: CHECK(/datum/om/check/in_range, 1). `path` must be a literal type path.
 #define CHECK(path, arg) list(path = arg)
 
 // One-line derived declarations (plain lists; see decl.dm).
 #define FROM_VAR(name) list("var", name)
-#define FROM_DERIVED(name) list("derived", name)
-#define OVER_SLOT(id) list("slot", id)
 #define DERIVE(name, expr, channel) list("derive" = "check", "name" = name, "expr" = expr, "channel" = channel)
 #define DERIVE_SUM(name, over, reader, channel) list("derive" = "sum", "name" = name, "over" = over, "reader" = reader, "channel" = channel)
 #define DERIVE_COUNT(name, over, channel) list("derive" = "count", "name" = name, "over" = over, "channel" = channel)
-#define DERIVE_ANY(name, over, reader, channel) list("derive" = "any", "name" = name, "over" = over, "reader" = reader, "channel" = channel)
-#define DERIVE_ALL(name, over, reader, channel) list("derive" = "all", "name" = name, "over" = over, "reader" = reader, "channel" = channel)
-#define DERIVE_MIN(name, over, reader, channel) list("derive" = "min", "name" = name, "over" = over, "reader" = reader, "channel" = channel)
 #define DERIVE_MAX(name, over, reader, channel) list("derive" = "max", "name" = name, "over" = over, "reader" = reader, "channel" = channel)
 
 // ---- Events (section G). ----
@@ -206,8 +183,6 @@
 #define OM_PIPE_MODE_PROFILING (1<<2)
 #define OM_PIPE_MODE_REACTIVE (1<<3)
 #define OM_PIPE_MODE_PARKS (1<<4)
-/// Set for one frame by run_frame() when the profiler samples it.
-#define OM_PIPE_MODE_PROFILE (1<<5)
 /// Asleep bits: 16 stages per word.
 #define OM_PIPE_WORD(i) ((((i) - 1) >> 4) + 1)
 #define OM_PIPE_BIT(i) (1 << (((i) - 1) & 15))
@@ -297,14 +272,9 @@
 #define PERIODIC_SLOW /datum/cadence/slow
 #define PERIODIC_SECOND /datum/cadence/second
 #define PERIODIC_FAST /datum/cadence/fast
-#define PERIODIC_PLANTS /datum/cadence/plants
 #define PERIODIC_PROJECTILES /datum/cadence/continuous/projectiles
-#define PERIODIC_INSTRUMENTS /datum/cadence/continuous/instruments
 #define PERIODIC_STATUS_EFFECTS /datum/cadence/continuous/status_effects
-#define PERIODIC_TAB_ITEMS /datum/cadence/continuous/tab_items
 #define PERIODIC_THROWING /datum/cadence/continuous/throwing
-#define PERIODIC_REFLECTORS /datum/cadence/reflectors
-#define PERIODIC_LOOT_ICONS /datum/cadence/loot_icons
 
 // ---------------------------------------------------------------- published facts as change channels
 // What S2's reactor keys were is now plain change channels on the entity the fact belongs to;
@@ -326,13 +296,8 @@
 #define CHANGE_POWER_GRID_RATE (1<<19)
 #define CHANGE_POWER_GRID_STATE (1<<20)
 #define CHANGE_POWER_GRID_TOPOLOGY (1<<21)
-/// A pipe network's leaks or topology changed (on the network, or on GLOB.new_pipe_networks for
-/// a change whose network is not known yet).
-#define CHANGE_PIPE_LEAKS CHANGE_DATUM_A
 /// A meteor appeared or went away (on GLOB.meteor_watch).
 #define CHANGE_METEORS CHANGE_DATUM_A
-/// A shuttle's schedule changed (on SSemergency_shuttle for evac, SSsupply for supply).
-#define CHANGE_SHUTTLE_SCHEDULE CHANGE_DATUM_D
 	/// Which schedule a status display shows (shuttle_schedule_source()).
 	#define SHUTTLE_SCHEDULE_EVAC 1
 	#define SHUTTLE_SCHEDULE_SUPPLY 2
@@ -368,18 +333,6 @@
 /// naming without updating both.
 #define OM_FIELD(T, F, D, C) T/var/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; changed(src, C); PUBLISH_CHANGE(src, #F); om_field_written(src, #F); return TRUE } };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
 
-/// A declared bitfield (doc/rewrite/systems.md Â§2). Declares `T/var/F = D` and generates
-/// `set_F(v)` (whole value), `F_add(bits)`, `F_remove(bits)` and `has_F(bits)` (TRUE when any of
-/// `bits` is set). Every writer raises C, and only when the value actually changed; each returns
-/// TRUE on a change. Registered like OM_FIELD (field_def), so stages may `reads = list("F")`.
-#define OM_FLAG_FIELD(T, F, D, C) T/var/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; changed(src, C); PUBLISH_CHANGE(src, #F); om_field_written(src, #F); return TRUE } };T/proc/F##_add(bits) { if((F & bits) == bits) { return FALSE } else { F |= bits; changed(src, C); PUBLISH_CHANGE(src, #F); om_field_written(src, #F); return TRUE } };T/proc/F##_remove(bits) { if(!(F & bits)) { return FALSE } else { F &= ~bits; changed(src, C); PUBLISH_CHANGE(src, #F); om_field_written(src, #F); return TRUE } };T/proc/has_##F(bits) { return (F & bits) ? TRUE : FALSE };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
-
-/// Registers an existing var F of T, with its existing hand-written setter `T/proc/set_F(value)`,
-/// as a declared field raising C (set_anchored, set_density). The setter must raise C on a real
-/// change; field_write_lint treats set_F on T as the only writer. Register the same field again on
-/// a family root (/obj/machinery, /mob) to add that family's channel; fields_of() ORs them.
-#define OM_FIELD_SETTER(T, F, C) /datum/om/field_def##T/F { of = T; field = #F; channel = C }
-
 /// A declared field whose var holds an entity under the ownership model (doc/rewrite/ownership.md):
 /// an owned child, a relation view, a proto or a shared singleton. Declares `T/var/VT/F = null` and
 /// registers it raising C, with NO generated setter: its only writers are the ownership accessors
@@ -389,40 +342,17 @@
 /// on F therefore re-evaluates when the related entity is destroyed, with no guard in the body.
 #define OM_FIELD_VIEW(T, VT, F, C) T/var/VT/F = null;/datum/om/field_def##T/F { of = T; field = #F; channel = C }
 
-/// OM_FIELD_VIEW() for a var already declared on T or an ancestor (registers it, declares nothing).
-#define OM_FIELD_VIEW_OF(T, F, C) /datum/om/field_def##T/F { of = T; field = #F; channel = C }
 
 /// A derived (read-only) field: `T/proc/F()` computes it from its declared INPUTS, a list of the
 /// declared fields it reads (by name) and of raw channels for inputs that are not fields (an item's
 /// location: CHANGE_ITEM_LOC). Its channel is the union of the inputs' channels, resolved once per
-/// type (om_field_table()), so every input setter raises it: nothing refreshes a derived field by
+/// type (scheduler_field_field_table()), so every input setter raises it: nothing refreshes a derived field by
 /// hand. A stage that `reads = list("F")` wakes on it. There is no var and no setter. `OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, list("leaking", "atom_integrity", CHANGE_ITEM_LOC))`
 #define OM_DERIVE_FIELD(T, F, INPUTS) /datum/om/field_def##T/F { of = T; field = #F; inputs = INPUTS; derived = TRUE }
 
-// Keyed and counted timers (timer.dm): scheduler procs, called as if they were globals.
-#define om_after_unique(args...) om_scheduler().after_unique(args)
-#define om_after_replace(args...) om_scheduler().after_replace(args)
-#define om_cancel_calls(E, proc_ref) om_scheduler().cancel_calls(E, proc_ref)
-#define om_timer_count(E) om_scheduler().timer_count(E)
 // ---------------------------------------------------------------- om_prompt requires (prompt.dm)
 // Common re-checks for an answer: actor = the user, target = the spec's target, else E.
 
-/// The user can still work E the way its UI allows (adjacent, silicon access, conscious).
-#define PROMPT_USABLE list(/datum/om/check/ui_usable)
-/// The user can still work E, judged by the named tgui state (GLOB.tgui_<name>_state).
-#define PROMPT_USABLE_BY(state_name) list(CHECK(/datum/om/check/ui_usable, state_name))
-/// E is still carried by the user, who is not incapacitated.
-#define PROMPT_HELD list(/datum/om/check/carried, /datum/om/check/not_incapacitated)
-/// E is still in the user's hands, and the user is not incapacitated.
-#define PROMPT_IN_HAND list(/datum/om/check/in_hands, /datum/om/check/not_incapacitated)
-/// E is still next to the user, who is not incapacitated.
-#define PROMPT_ADJACENT list(/datum/om/check/adjacent, /datum/om/check/not_incapacitated)
-/// The user is still conscious (self prompts: abilities, verbs on your own mob).
-#define PROMPT_CONSCIOUS list(/datum/om/check/conscious)
-/// The user is still alive.
-#define PROMPT_ALIVE list(/datum/om/check/stat_at_most = UNCONSCIOUS)
-/// The user still holds these admin rights (R_* flags; 0 = any admin rank).
-#define PROMPT_ADMIN(rights) list(CHECK(/datum/om/check/admin_rights, rights))
 
 // ---------------------------------------------------------------- named-argument launchers
 // DM rejects a named argument a proc doesn't declare, so these are macros: the named arguments

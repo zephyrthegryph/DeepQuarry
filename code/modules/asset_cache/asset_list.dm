@@ -122,7 +122,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 	if (isnull(cached_serialized_url_mappings) || cached_serialized_url_mappings_transport_type != SSassets.transport.type)
 		cached_serialized_url_mappings = TGUI_CREATE_MESSAGE("asset/mappings", get_url_mappings())
 		cached_serialized_url_mappings_transport_type = SSassets.transport.type
-		om_rec_of(src) // join the object model so the declared caches are cleared on CHANGE_EXPLICIT
+		scheduler_record_of(src) // join the object model so the declared caches are cleared on CHANGE_EXPLICIT
 
 	return cached_serialized_url_mappings
 

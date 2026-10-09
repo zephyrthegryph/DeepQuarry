@@ -9,7 +9,7 @@ OM_FIELD(/datum/om_field_test_entity, level, 0, CHANGE_DATUM_A)
 /datum/unit_test/dq_om_declared_fields_cover_reads
 
 /datum/unit_test/dq_om_declared_fields_cover_reads/Run()
-	var/datum/om/registry/reg = om_registry()
+	var/datum/om/registry/reg = definition_registry()
 	var/list/problems = reg.check_field_reads()
 	TEST_ASSERT(!length(problems), "declared field reads not covered by wake_on: [jointext(problems, "; ")]")
 	var/list/pump_fields = reg.fields_of(/obj/machinery/portable_atmospherics/powered/pump)
@@ -20,7 +20,7 @@ OM_FIELD(/datum/om_field_test_entity, level, 0, CHANGE_DATUM_A)
 
 /datum/unit_test/dq_om_field_setter_raises/Run()
 	var/datum/om_field_test_entity/E = allocate(/datum/om_field_test_entity)
-	var/datum/om/rec/rec = om_rec_of(E)
+	var/datum/om/rec/rec = scheduler_record_of(E)
 	var/datum/om/scheduler/sched = rec.sched
 	E.om_listen |= CHANGE_DATUM_A
 	sched.test_raises = list()

@@ -46,7 +46,7 @@
 			return TRUE
 	var/list/T = rec.timers
 	if(length(T))
-		var/local = om_timer_local(rec)
+		var/local = timer_local(rec)
 		for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
 			if(T[i + 1] <= local)
 				return TRUE

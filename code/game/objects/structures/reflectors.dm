@@ -22,7 +22,10 @@
 	var/can_decon = TRUE
 	var/list/has_projectiles // Lazy: caught beam damage, angle text -> summed damage (numbers; the beams themselves are deleted on catch)
 	var/bullet_act_in_progress = FALSE
+	/// Has it caught a beam it has yet to re-fire? The every() below runs while it has.
+	var/refiring = FALSE
 
+TRACKED(/obj/structure/reflector, refiring)
 TRACKED(/obj/structure/reflector, finished)
 TRACKED(/obj/structure/reflector, admin)
 
@@ -57,14 +60,14 @@ TRACKED(/obj/structure/reflector, admin)
 			else
 				. += span_notice("Use screwdriver to unlock the rotation.")
 
-/// Re-fires what it caught, on the reflector lane (PERIODIC_REFLECTORS, 0.5 s; was SSreflector).
+/// Re-fires what it caught, every 0.5 s while `refiring`.
 /// It starts when it catches a beam and parks once it has fired.
-/obj/structure/reflector/periodic_step(delta)
+/obj/structure/reflector/proc/reflector_step(datum/act/A)
 	if(bullet_act_in_progress) // a hit is mid-resolution: fire on the next step instead of waiting here
 		return
 	Fire()
 	if(!LAZYLEN(has_projectiles))
-		return PROCESS_KILL
+		set_refiring(FALSE)
 
 /obj/structure/reflector/proc/Fire()
 	UNTIL(!bullet_act_in_progress)
@@ -91,7 +94,7 @@ TRACKED(/obj/structure/reflector, admin)
 	var/caught_damage = P.damage
 	LAZYINITLIST(has_projectiles)
 	has_projectiles[angle_key] += caught_damage
-	om_task_periodic(src, PERIODIC_REFLECTORS)
+	set_refiring(TRUE)
 	spent(P)
 
 /obj/structure/reflector/set_dir(new_dir)
@@ -119,6 +122,7 @@ TRACKED(/obj/structure/reflector, admin)
 	return 2
 
 CAPABILITIES(/obj/structure/reflector)
+	every(0.5 SECONDS, then(PROC_REF(reflector_step)), when = nameof(refiring))
 	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(reflector_not_admin_holds), because = PROC_REF(reflector_not_admin_refusal))), then(PROC_REF(interaction_item)))
 	op("dismantle", tool(TOOL_WRENCH), label("Dismantle"), when(PROC_REF(can_be_deconstructed)), needs(req(PROC_REF(not_anchored), because = MSG(reflector/unweld_first))),
 		begins(MSG(reflector/dismantling)), wait(2 SECONDS), then(PROC_REF(dismantled)))

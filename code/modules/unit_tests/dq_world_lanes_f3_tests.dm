@@ -77,28 +77,18 @@
 	TEST_ASSERT_NULL(R.throwing, "the landed item still points at its throw")
 	TEST_ASSERT_NULL(TT.periodic_pipe, "a landed throw kept its lane")
 
-/// A reflector starts its clocked lane when it catches a beam and parks once it has re-fired.
+/// A reflector arms its every() when it catches a beam and parks once it has re-fired.
 /datum/unit_test/dq_world_lanes_f3_reflector
 
 /datum/unit_test/dq_world_lanes_f3_reflector/Run()
-	var/datum/cadence/P = cadence_def(PERIODIC_REFLECTORS)
-	TEST_ASSERT_EQUAL(P.clock, CLOCK_WORLD, "the reflector lane runs on world time")
-	TEST_ASSERT_EQUAL(P.every, 0.5 SECONDS, "the reflector lane lost SSreflector's cadence")
 	var/obj/structure/reflector/box/B = allocate(/obj/structure/reflector/box, run_loc_floor_bottom_left)
-	TEST_ASSERT_NULL(B.periodic_pipe, "an idle reflector is running")
+	TEST_ASSERT(!B.refiring && !every_running(B), "an idle reflector is running")
 	var/obj/item/projectile/beam/beam = allocate(/obj/item/projectile/beam, run_loc_floor_bottom_left)
 	B.redirect_projectile(beam, 0)
-	TEST_ASSERT(B.periodic_pipe == PERIODIC_REFLECTORS, "catching a beam did not start the reflector lane")
-	TEST_ASSERT_EQUAL(B.periodic_step(5), PROCESS_KILL, "a reflector that fired did not park")
+	TEST_ASSERT(B.refiring && every_running(B), "catching a beam did not arm the reflector every()")
+	B.reflector_step(null)
+	TEST_ASSERT(!B.refiring, "a reflector that fired did not park")
 	TEST_ASSERT(!LAZYLEN(B.has_projectiles), "the reflector kept the beams it fired")
-
-/// The loot icon lane runs in the lobby too, like SSlooting did.
-/datum/unit_test/dq_world_lanes_f3_loot_lane
-
-/datum/unit_test/dq_world_lanes_f3_loot_lane/Run()
-	var/datum/cadence/P = cadence_def(PERIODIC_LOOT_ICONS)
-	TEST_ASSERT(P.runlevels & RUNLEVEL_LOBBY, "the loot icon lane does not run in the lobby")
-	TEST_ASSERT_EQUAL(P.every, 0.5 SECONDS, "the loot icon lane lost SSlooting's cadence")
 
 /// Songs are REGISTRY_SONGS and running events are REGISTRY_ACTIVE_EVENTS.
 /datum/unit_test/dq_world_lanes_f3_registries

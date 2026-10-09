@@ -1,5 +1,5 @@
 // The event system (was SSevents): the event containers and the finished events. It schedules nothing of its
-// own: each active event and each container runs on the slow periodic lane (code/datums/om/periodic.dm), and
+// own: each active event and each container steps itself with its own every(), and
 // the running events are REGISTRY_ACTIVE_EVENTS. It boots after SSatoms (the subsystem's atoms dependency), once
 // the map is up.
 SYSTEM_DEF(events)
@@ -30,7 +30,8 @@ CAPABILITIES(/datum/system/events)
 			/*EVENT_LEVEL_MAJOR 	= */ new/datum/event_container/major
 		)
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
-		om_task_periodic(event_containers[i], PERIODIC_SLOW)
+		var/datum/event_container/EC = event_containers[i]
+		EC.set_clock_running(TRUE)
 	if(using_map.use_overmap)
 		if(using_map.overmap_z)
 			GLOB.overmap_event_handler.create_events(using_map.overmap_z, using_map.overmap_size, using_map.overmap_event_areas)

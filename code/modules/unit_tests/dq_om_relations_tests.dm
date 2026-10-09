@@ -11,7 +11,7 @@
 /// instead of waiting on the live scheduler's next lane pass.
 /proc/dq_test_find_edge(datum/source, datum/target, rel_path)
 	RETURN_TYPE(/datum/om/edge)
-	var/datum/om/relation/R = om_registry().relation(rel_path)
+	var/datum/om/relation/R = definition_registry().relation(rel_path)
 	for(var/datum/om/edge/edge as anything in source?.om_rec?.edges)
 		if(edge.rel == R && edge.source == source && edge.target == target)
 			return edge

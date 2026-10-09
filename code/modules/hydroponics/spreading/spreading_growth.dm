@@ -48,7 +48,8 @@
 		return
 	spread_to(DEFAULTPICK(neighbors, null))
 
-/obj/effect/plant/periodic_step()
+/// Every 7.5 s while `growing` (the plant system sets it when the plant joins the growing registry).
+/obj/effect/plant/proc/plant_step(datum/act/A)
 
 	// Something is very wrong, kill ourselves.
 	if(!seed())
