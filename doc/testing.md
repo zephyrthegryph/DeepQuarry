@@ -311,6 +311,11 @@ time) and the failures.
 params (CI, `test-repeat`, `test-baseline`) runs every test in its tier, and
 `sweep_types()` returns its input unchanged.
 
+### The look sweep
+
+`dq_look_tree_pin` and `dq_look_state_pin` are sweep tests over one shared pass (`code/modules/unit_tests/dq_look_sweep.dm`); a focused run shards them across
+`DQ_LOOK_SHARDS` worlds and probes only the types whose `analyze look-keys` key changed (`--full` for all). Details: `doc/rewrite/agent_workflow.md` section 9.
+
 ### Profiling a slow test
 
 `dm-test --profile-tests` (works with `--focus` and through
