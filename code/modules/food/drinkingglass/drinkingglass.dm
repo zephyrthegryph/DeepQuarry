@@ -88,7 +88,7 @@
 		var/list/over_liquid = list()
 
 		var/amnt = 100
-		var/percent = round((reagents.total_volume / volume) * 100)
+		var/percent = volume ? round((reagents.total_volume / volume) * 100) : 0
 		for(var/k in filling_states)
 			if(percent <= k)
 				amnt = k

@@ -3801,3 +3801,15 @@ Files re-recorded: pizzabox, condiment, drinks, appliance, beehive, bunsen_burne
 | yeoldoven keeps its own `yeoldoven*` states | Oven draws `[state_prefix]open` etc.; the prefix is a var of the type. |
 | glass2 claraflask `volume=0` | Same Division by zero, reported by the refresh catch spelling. Still a draw bug at zero volume, left as pinned. |
 | Rel list add/remove | `rel_add`/`rel_remove` on a list view now mark outputs that read the var (`own_mark_if_read`), so a beehive's frames and a pizza box's stack redraw. |
+
+### Blessed rows, second pass (rewrite/draw-reagents)
+
+| Class | Files | Cause |
+|---|---|---|
+| Zero-volume divide removed | look_states glass, drinks (claraflask) | Glass, vial, blood pack and glass2 draws divided by `volume`; a zero volume now draws as an empty level instead of throwing. The `volume=0` rows change from `runtime: Division by zero` to the real fill rows. |
+| Pizza box tag at creation | look_trees pizzabox | The tag overlay of a prefilled box is drawn at creation (the draw reads `boxtag`); the old update ran before the tag was set. |
+| Oven at creation | look_trees appliance | An unpowered oven draws shut and off (`ovenclosed_off`) from its tracked `open` and `has_condition()`; the old base recorded the open sprite and `yeoldoven` an extra `light_off` overlay left by the earlier runtime. |
+
+Engine: an output that throws (draw, should_run, hidden_verbs, derive_<var>, push_to_rust, window data) now restores the evaluation depth and logs `OUTPUT RUNTIME: type.output` (`output_failed()` in derived.dm), so one runtime no longer reports every later write as made inside an output. Test: `dq_draw_reagents_a_throwing_draw_leaves_the_next_output_working`.
+
+Rows of other lanes left alone: look_states `mob.living.simple_mob.vore.morph` (4 rows) and look_trees `obj.structure.blob` (386 rows).

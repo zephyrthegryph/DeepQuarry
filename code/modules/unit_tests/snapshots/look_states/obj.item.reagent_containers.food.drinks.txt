@@ -1,2 +1,3 @@
-/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask volume=0 runtime: refresh of /obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask: Division by zero (:)%//%["code/engine/change/refresh.dm",332]%//%
+/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask volume=0 +underlay: icons/vore/custom_items_vr.dmi:claraflask15:-32767:#a1644a
+/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask volume=0 -underlay: icons/vore/custom_items_vr.dmi:claraflask100:-32767:#a1644a
 

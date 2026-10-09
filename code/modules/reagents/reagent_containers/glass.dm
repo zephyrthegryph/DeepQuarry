@@ -153,7 +153,7 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 	look.watch(R) // its level and colour are tracked on the holder: the filling follows them
 	if(filled && R?.total_volume)
 		var/image/filling = image('icons/obj/reagentfillings.dmi', src, "[icon_state]10")
-		var/percent = round((R.total_volume / volume) * 100)
+		var/percent = volume ? round((R.total_volume / volume) * 100) : 0
 		switch(percent)
 			if(0.1 to 20)	filling.icon_state = "[icon_state]-10"
 			if(20 to 40) 	filling.icon_state = "[icon_state]-20"

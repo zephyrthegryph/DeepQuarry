@@ -94,8 +94,12 @@ SYSTEM_DEF(ui_push)
 		return FALSE
 	if(owed & UI_PUSH_DATA)
 		GLOB.ui_push_count++
+		var/eval_depth_output = GLOB.derived_evaluating
 		DERIVED_EVAL_BEGIN
-		send_update()
+		try
+			send_update()
+		catch(var/exception/fault_output)
+			output_failed(src, "output", fault_output, eval_depth_output)
 		DERIVED_EVAL_END
 		return TRUE
 	if(status != was)

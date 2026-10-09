@@ -39,7 +39,7 @@
 /obj/item/reagent_containers/blood/draw(datum/look/look)
 	..()
 	look.watch(reagents)
-	var/percent = round((reagents.total_volume / volume) * 100)
+	var/percent = volume ? round((reagents.total_volume / volume) * 100) : 0
 	if(percent >= 0 && percent <= 9)
 		look.state("empty")
 		look.held_state("bloodpack_empty")

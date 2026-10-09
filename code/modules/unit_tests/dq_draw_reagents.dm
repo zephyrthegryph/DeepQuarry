@@ -319,3 +319,38 @@ TRACKED(/obj/dq_draw_underlay, mode)
 	A.set_mode(0)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(length(A.underlays), 0, "a look without it takes it back")
+
+// ---- a draw that throws does not leave the engine inside an output ----
+
+/obj/dq_draw_throws
+	name = "draw throws"
+	icon = 'icons/obj/stock_parts.dmi'
+	icon_state = "fix"
+	var/boom = FALSE
+
+TRACKED(/obj/dq_draw_throws, boom)
+
+/obj/dq_draw_throws/draw(datum/look/look)
+	..()
+	if(boom)
+		CRASH("dq_draw_throws: drawn on purpose")
+	look.overlay("over-fine")
+
+/datum/unit_test/dq_draw_reagents_a_throwing_draw_leaves_the_next_output_working
+
+/datum/unit_test/dq_draw_reagents_a_throwing_draw_leaves_the_next_output_working/Run()
+	var/obj/dq_draw_throws/A = allocate(/obj/dq_draw_throws, test_floor())
+	var/obj/dq_draw_throws/B = allocate(/obj/dq_draw_throws, test_floor())
+	refresh_flush()
+	A.boom = TRUE
+	var/threw = FALSE
+	try
+		refresh_look(A)
+	catch(var/exception/fault)
+		threw = TRUE
+	TEST_ASSERT(threw, "the draw's runtime reaches the caller")
+	TEST_ASSERT_EQUAL(GLOB.derived_evaluating, 0, "and the engine is not left inside an output")
+	TEST_ASSERT(!OP_PURE_ACTIVE, "so a write after it is not reported as made inside one")
+	A.boom = FALSE
+	TEST_ASSERT_NOTNULL(refresh_look(B), "the next output evaluates")
+	TEST_ASSERT_NOTNULL(refresh_look(A), "and the one that threw draws again once it stops")

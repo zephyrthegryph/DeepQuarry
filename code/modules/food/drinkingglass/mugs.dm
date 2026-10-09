@@ -47,7 +47,7 @@
 /obj/item/reagent_containers/food/drinks/glass2/coffeemug/draw_contents(datum/look/look)
 	if(reagents.total_volume)
 		var/filling
-		var/percent = round((reagents.total_volume / volume) * 100)
+		var/percent = volume ? round((reagents.total_volume / volume) * 100) : 0
 		switch(percent)
 			if(0 to 39)
 				return
@@ -220,7 +220,7 @@
 /obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/draw_contents(datum/look/look)
 	if(reagents.total_volume)
 		var/filling
-		var/percent = round((reagents.total_volume / volume) * 100)
+		var/percent = volume ? round((reagents.total_volume / volume) * 100) : 0
 		switch(percent)
 			if(0 to 69)
 				return

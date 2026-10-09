@@ -7,11 +7,12 @@
 /obj/machinery/appliance/cooker/oven state: ovenclosed_off
 /obj/machinery/appliance/cooker/oven dir: 2
 /obj/machinery/appliance/cooker/oven overlay: icons/obj/cooking_machines.dmi:light_off:-32767
-/obj/machinery/appliance/cooker/oven overlay: icons/obj/cooking_machines.dmi:ovenopen:8:#000000
+/obj/machinery/appliance/cooker/oven overlay: icons/obj/cooking_machines.dmi:ovenclosed_off:8:#000000
 /obj/machinery/appliance/cooker/oven/yeoldoven icon: icons/obj/cooking_machines.dmi
 /obj/machinery/appliance/cooker/oven/yeoldoven state: yeoldovenclosed_off
 /obj/machinery/appliance/cooker/oven/yeoldoven dir: 2
-/obj/machinery/appliance/cooker/oven/yeoldoven overlay: icons/obj/cooking_machines.dmi:yeoldovenopen:8:#000000
+/obj/machinery/appliance/cooker/oven/yeoldoven overlay: icons/obj/cooking_machines.dmi:light_off:-32767
+/obj/machinery/appliance/cooker/oven/yeoldoven overlay: icons/obj/cooking_machines.dmi:yeoldovenclosed_off:8:#000000
 /obj/machinery/appliance/cooker/fryer icon: icons/obj/cooking_machines.dmi
 /obj/machinery/appliance/cooker/fryer state: fryer_off
 /obj/machinery/appliance/cooker/fryer dir: 2
