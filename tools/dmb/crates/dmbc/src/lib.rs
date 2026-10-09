@@ -18,6 +18,7 @@ pub mod publish;
 pub mod request;
 pub mod request_runner;
 pub mod resource_manifest;
+pub mod runner_host;
 pub mod session;
 pub mod telemetry;
 pub mod verification;

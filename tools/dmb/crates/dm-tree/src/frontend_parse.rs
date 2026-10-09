@@ -118,19 +118,13 @@ pub(super) fn parse_declarations_with_executor(
                                         parserwire::VERSION,
                                         text,
                                     );
-                                    memo.fragment_candidates(key).into_iter().rev().find_map(
-                                        |record| {
-                                            record
-                                                .matches(parserwire::VERSION, text)
-                                                .then(|| {
-                                                    parserwire::decode_with_facts(
-                                                        record.payload(),
-                                                        text,
-                                                    )
-                                                })
-                                                .flatten()
-                                        },
-                                    )
+                                    let mut accepted = None;
+                                    memo.visit_fragment_candidates(key, &mut |record| {
+                                        if !record.matches(parserwire::VERSION, text) { return false; }
+                                        accepted = parserwire::decode_with_facts(record.payload(), text);
+                                        accepted.is_some()
+                                    });
+                                    accepted
                                 })
                             } else {
                                 None
@@ -347,9 +341,7 @@ pub(super) fn parse_declarations_with_executor(
             let record = updated
                 .entry(index)
                 .or_insert_with(|| expanded.receipts[index].record().as_ref().clone());
-            if let Some(next) = record.with_fragment(parserwire::VERSION, span, bytes.into()) {
-                *record = next;
-            }
+            record.append_fragment(parserwire::VERSION, span, bytes.into());
         }
         items.extend(parsed);
         diagnostics.extend(errors.into_iter().map(|error| (offset, error)));

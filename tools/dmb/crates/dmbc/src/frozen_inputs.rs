@@ -4,6 +4,7 @@ use crate::input_snapshot::{FileSystemInputs, FolderListing, SnapshotProvider, S
 use dm_preprocess::regions::canonical_path;
 use serde::{Deserialize, Serialize};
 use std::{
+    borrow::Cow,
     collections::{BTreeMap, BTreeSet},
     fs, io,
     path::{Path, PathBuf},
@@ -17,6 +18,20 @@ struct Index {
     folders: BTreeMap<PathBuf, FolderListing>,
 }
 
+impl Index {
+    fn lookup_path<'a>(&'a self, path: &Path) -> Cow<'a, Path> {
+        if let Some((key, _)) = self.files.get_key_value(path) {
+            return Cow::Borrowed(key);
+        }
+        if let Some(key) = self.negative.get(path) {
+            return Cow::Borrowed(key);
+        }
+        if let Some((key, _)) = self.folders.get_key_value(path) {
+            return Cow::Borrowed(key);
+        }
+        Cow::Owned(canonical_path(path))
+    }
+}
 pub enum Inputs {
     Live,
     Recording(Journal),
@@ -97,20 +112,46 @@ impl Journal {
 impl SnapshotProvider for Inputs {
     fn stamp(&self, path: &Path) -> io::Result<Stamp> {
         if let Self::Replay(journal) = self {
-            let path = canonical_path(path);
             let index = journal
                 .index
                 .lock()
                 .map_err(|_| invalid("verification mutex poisoned"))?;
-            return match index.files.get(&path) {
+            let path = index.lookup_path(path);
+            return match index.files.get(path.as_ref()) {
                 Some((stamp, _)) => Ok(stamp.clone()),
-                None if index.negative.contains(&path) => Err(Journal::missing(&path)),
-                None => Err(Journal::unknown(&path)),
+                None if index.negative.contains(path.as_ref()) => {
+                    Err(Journal::missing(path.as_ref()))
+                }
+                None => Err(Journal::unknown(path.as_ref())),
             };
         }
         FileSystemInputs.stamp(path)
     }
     fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)> {
+        if let Self::Replay(journal) = self {
+            let (stamp, hash) = {
+                let index = journal
+                    .index
+                    .lock()
+                    .map_err(|_| invalid("verification mutex poisoned"))?;
+                let path = index.lookup_path(path);
+                match index.files.get(path.as_ref()) {
+                    Some(value) => value.clone(),
+                    None if index.negative.contains(path.as_ref()) => {
+                        return Err(Journal::missing(path.as_ref()))
+                    }
+                    None => return Err(Journal::unknown(path.as_ref())),
+                }
+            };
+            let bytes = dm_profile::io_call(
+                || fs::read(journal.payload(hash)),
+                |bytes| (bytes.len() as u64, 0),
+            )?;
+            if bytes.len() as u64 != stamp.size || xxhash_rust::xxh3::xxh3_128(&bytes) != hash {
+                return Err(invalid("verification payload checksum mismatch"));
+            }
+            return Ok((stamp, bytes));
+        }
         let path = canonical_path(path);
         match self {
             Self::Live => FileSystemInputs.read(&path),
@@ -148,32 +189,22 @@ impl SnapshotProvider for Inputs {
                     Err(error) => Err(error),
                 }
             }
-            Self::Replay(journal) => {
-                let (stamp, hash) = {
-                    let index = journal
-                        .index
-                        .lock()
-                        .map_err(|_| invalid("verification mutex poisoned"))?;
-                    match index.files.get(&path) {
-                        Some(value) => value.clone(),
-                        None if index.negative.contains(&path) => {
-                            return Err(Journal::missing(&path))
-                        }
-                        None => return Err(Journal::unknown(&path)),
-                    }
-                };
-                let bytes = dm_profile::io_call(
-                    || fs::read(journal.payload(hash)),
-                    |bytes| (bytes.len() as u64, 0),
-                )?;
-                if bytes.len() as u64 != stamp.size || xxhash_rust::xxh3::xxh3_128(&bytes) != hash {
-                    return Err(invalid("verification payload checksum mismatch"));
-                }
-                Ok((stamp, bytes))
-            }
+            Self::Replay(_) => unreachable!("replay handled before path normalization"),
         }
     }
     fn list(&self, path: &Path) -> io::Result<FolderListing> {
+        if let Self::Replay(journal) = self {
+            let index = journal
+                .index
+                .lock()
+                .map_err(|_| invalid("verification mutex poisoned"))?;
+            let path = index.lookup_path(path);
+            return index
+                .folders
+                .get(path.as_ref())
+                .cloned()
+                .ok_or_else(|| Journal::unknown(path.as_ref()));
+        }
         let path = canonical_path(path);
         match self {
             Self::Live => FileSystemInputs.list(&path),
@@ -193,14 +224,7 @@ impl SnapshotProvider for Inputs {
                 index.folders.insert(path, listing.clone());
                 Ok(listing)
             }
-            Self::Replay(journal) => journal
-                .index
-                .lock()
-                .map_err(|_| invalid("verification mutex poisoned"))?
-                .folders
-                .get(&path)
-                .cloned()
-                .ok_or_else(|| Journal::unknown(&path)),
+            Self::Replay(_) => unreachable!("replay handled before path normalization"),
         }
     }
     fn digest(&self, path: &Path) -> io::Result<(Stamp, u128)> {
@@ -214,6 +238,64 @@ impl SnapshotProvider for Inputs {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn borrowed_replay_lookup_keeps_canonical_key_and_alias_fallback() {
+        let canonical = PathBuf::from("folder/source.dm");
+        let missing = PathBuf::from("folder/absent.dm");
+        let mut index = Index::default();
+        index.files.insert(
+            canonical.clone(),
+            (
+                Stamp {
+                    size: 0,
+                    modified_ns: 0,
+                    file_id: None,
+                },
+                0,
+            ),
+        );
+        index.negative.insert(missing.clone());
+        assert!(matches!(index.lookup_path(&canonical), Cow::Borrowed(_)));
+        assert_eq!(
+            index.lookup_path(Path::new("folder/./source.dm")).as_ref(),
+            canonical.as_path()
+        );
+        assert_eq!(
+            index
+                .lookup_path(Path::new("folder/sub/../source.dm"))
+                .as_ref(),
+            canonical.as_path()
+        );
+        assert_eq!(
+            index
+                .lookup_path(Path::new("folder/sub/../absent.dm"))
+                .as_ref(),
+            missing.as_path()
+        );
+        assert_eq!(
+            index
+                .lookup_path(Path::new("folder/sub/../unknown.dm"))
+                .as_ref(),
+            Path::new("folder/unknown.dm")
+        );
+        assert!(matches!(
+            index.lookup_path(Path::new("folder/unknown.dm")),
+            Cow::Owned(_)
+        ));
+        #[cfg(windows)]
+        {
+            let path = PathBuf::from(r"E:\root\source.dm");
+            index.negative.insert(path.clone());
+            assert!(matches!(index.lookup_path(&path), Cow::Borrowed(_)));
+            assert_eq!(
+                index
+                    .lookup_path(Path::new(r"E:\root\sub\..\source.dm"))
+                    .as_ref(),
+                path.as_path()
+            );
+        }
+    }
+
     #[test]
     fn replay_uses_captured_bytes_membership_and_absence_after_live_edits() {
         let root = std::env::temp_dir().join(format!(

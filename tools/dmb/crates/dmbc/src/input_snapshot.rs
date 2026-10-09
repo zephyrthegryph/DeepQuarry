@@ -142,87 +142,9 @@ impl SnapshotProvider for FileSystemInputs {
     }
 }
 
-#[cfg(not(windows))]
-pub(crate) fn stamp_handle(file: &std::fs::File) -> io::Result<Stamp> {
-    let metadata = file.metadata()?;
-    if !metadata.is_file() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "candidate is not a regular file",
-        ));
-    }
-    let modified_ns = metadata
-        .modified()?
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_err(|_| invalid("input modification time predates epoch"))?
-        .as_nanos();
-    Ok(Stamp {
-        size: metadata.len(),
-        modified_ns,
-        file_id: platform_file_id(file)?,
-    })
-}
-#[cfg(unix)]
-fn platform_file_id(file: &std::fs::File) -> io::Result<Option<u128>> {
-    use std::os::unix::fs::MetadataExt;
-    let metadata = file.metadata()?;
-    Ok(Some(
-        (u128::from(metadata.dev()) << 64) | u128::from(metadata.ino()),
-    ))
-}
-#[cfg(windows)]
-pub(crate) fn stamp_handle(file: &std::fs::File) -> io::Result<Stamp> {
-    use std::os::windows::io::AsRawHandle;
-    #[repr(C)]
-    struct Information {
-        attributes: u32,
-        creation: [u32; 2],
-        access: [u32; 2],
-        write: [u32; 2],
-        volume: u32,
-        size_high: u32,
-        size_low: u32,
-        links: u32,
-        index_high: u32,
-        index_low: u32,
-    }
-    #[link(name = "kernel32")]
-    extern "system" {
-        fn GetFileInformationByHandle(handle: *mut std::ffi::c_void, info: *mut Information)
-            -> i32;
-    }
-    let mut information = std::mem::MaybeUninit::<Information>::uninit();
-    // SAFETY: file owns a live handle; Win32 initializes the exact C-layout
-    // structure on success. No initialized data is read on failure.
-    if unsafe { GetFileInformationByHandle(file.as_raw_handle(), information.as_mut_ptr()) } == 0 {
-        return Err(io::Error::last_os_error());
-    }
-    let information = unsafe { information.assume_init() };
-    if information.attributes & 0x10 != 0 {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "candidate is not a regular file",
-        ));
-    }
-    let write_ticks = (u128::from(information.write[1]) << 32) | u128::from(information.write[0]);
-    let modified_ns = write_ticks
-        .checked_sub(116_444_736_000_000_000)
-        .ok_or_else(|| invalid("input modification time predates epoch"))?
-        * 100;
-    Ok(Stamp {
-        size: (u64::from(information.size_high) << 32) | u64::from(information.size_low),
-        modified_ns,
-        file_id: Some(
-            (u128::from(information.volume) << 64)
-                | (u128::from(information.index_high) << 32)
-                | u128::from(information.index_low),
-        ),
-    })
-}
-#[cfg(not(any(unix, windows)))]
-fn platform_file_id(_: &std::fs::File) -> io::Result<Option<u128>> {
-    Ok(None)
-}
+#[path = "input_handle.rs"]
+mod handle;
+pub(crate) use handle::{isolated_output_stamp, stamp_handle};
 
 /// One capture owner shared by lexical workers and resource discovery. Records
 /// only actual reads; it retains no payload cache. Drop it after taking snapshot.

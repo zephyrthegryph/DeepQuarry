@@ -90,6 +90,29 @@ impl FragmentRecord {
 pub trait ExpansionMemo: Sync {
     fn candidates(&self, key: u128) -> Vec<Arc<ExpansionRecord>>;
     fn insert(&self, record: Arc<ExpansionRecord>);
+    /// Acceptance is determined by the consumer's complete current-context validation.
+    fn visit_candidates(
+        &self,
+        key: u128,
+        accept: &mut dyn FnMut(&Arc<ExpansionRecord>) -> bool,
+    ) -> bool {
+        self.candidates(key).iter().rev().any(accept)
+    }
+    fn visit_directive_candidates(
+        &self,
+        key: u128,
+        accept: &mut dyn FnMut(&Arc<super::DirectiveRecord>) -> bool,
+    ) -> bool {
+        self.directive_candidates(key).iter().rev().any(accept)
+    }
+    fn visit_fragment_candidates(
+        &self,
+        key: u128,
+        accept: &mut dyn FnMut(&Arc<FragmentRecord>) -> bool,
+    ) -> bool {
+        self.fragment_candidates(key).iter().rev().any(accept)
+    }
+
     fn directive_candidates(&self, _key: u128) -> Vec<Arc<super::DirectiveRecord>> {
         Vec::new()
     }
@@ -229,15 +252,20 @@ impl ExpansionRecord {
     pub fn with_fragment(&self, schema: u32, span: Span, payload: Arc<[u8]>) -> Option<Self> {
         self.text.get(span.range())?;
         let mut result = self.clone();
-        result
-            .fragments
+        result.append_fragment(schema, span, payload)?;
+        Some(result)
+    }
+    /// Enrich an exclusively owned draft without cloning its expansion receipt.
+    pub fn append_fragment(&mut self, schema: u32, span: Span, payload: Arc<[u8]>) -> Option<()> {
+        self.text.get(span.range())?;
+        self.fragments
             .retain(|fragment| fragment.schema != schema || fragment.span != span);
-        result.fragments.push(ParseFragment {
+        self.fragments.push(ParseFragment {
             schema,
             span,
             payload,
         });
-        Some(result)
+        Some(())
     }
     pub fn to_bytes(&self) -> Result<Vec<u8>, String> {
         dm_wire::encode(EXPANSION_VERSION, self)
@@ -360,9 +388,10 @@ pub(super) fn expand(
         return super::expansion::expand_region(plan, index, None);
     };
     let input = inputs(plan, index);
-    for record in memo.candidates(key).into_iter().rev() {
+    let mut accepted = None;
+    memo.visit_candidates(key, &mut |record| {
         if record.key != key || record.source.as_ref() != source || record.control != control {
-            continue;
+            return false;
         }
         if record.reads.iter().any(|read| {
             plan.regions[index]
@@ -372,7 +401,7 @@ pub(super) fn expand(
                     segment.macros.shared_definition(&read.name) != read.definition
                 })
         }) {
-            continue;
+            return false;
         }
         if record.locations.iter().any(|(ordinal, file, expected)| {
             input.get(*ordinal).is_none_or(|(_, line)| {
@@ -383,7 +412,7 @@ pub(super) fn expand(
                 }
             })
         }) {
-            continue;
+            return false;
         }
         if record.lines.iter().any(|line| line.input >= input.len())
             || record
@@ -391,9 +420,13 @@ pub(super) fn expand(
                 .iter()
                 .any(|error| error.input >= input.len())
         {
-            continue;
+            return false;
         }
-        return hydrate(plan, index, &input, &record);
+        accepted = Some(hydrate(plan, index, &input, record));
+        true
+    });
+    if let Some(output) = accepted {
+        return output;
     }
     let recorder = Recorder::default();
     let output = super::expansion::expand_region(plan, index, Some(&recorder));

@@ -116,7 +116,7 @@ mod tests {
             name: SymbolId::of(name),
             kind: MemberKind::Proc,
             mode,
-            metadata: MemberMetadata::default(),
+            metadata: Arc::new(MemberMetadata::default()),
             content,
         }
     }

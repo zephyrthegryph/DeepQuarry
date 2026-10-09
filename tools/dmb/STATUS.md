@@ -563,3 +563,72 @@ This checks all targets but does not substitute for full release test execution.
 The next alternating comparison will use the prior optimized candidate as
 control, with the exact same request-aware profiler and executor source overlay
 on both sides. Old cohort receipts and their instrumentation are unchanged.
+
+## Matched cold comparison — 9 October, 07:38
+
+Committed candidate `607bad5b72`, versus prior optimized `64d40464` with
+the candidate's exact profiler/executor overlay on both sides. ABABAB, three
+cold runs per compiler, eight workers, gzip level 1, captured historical
+DeepQuarry `ac1af55d1a`; these are not current-master measurements.
+
+| Median | Control | Candidate |
+|---|---:|---:|
+| Child wall seconds | 13.9811 | 12.4763 |
+| Critical CPU seconds | 10.6250 | 9.34375 |
+| Critical CPU uncertainty upper seconds | 12.71875 | 11.515625 |
+| Total CPU seconds | 32.28125 | 30.53125 |
+| Peak private bytes | 1,564,590,080 | 1,553,612,800 |
+
+Measurement admission and structural no-regression passed. Candidate memory
+still exceeds 1.5 GB; input, resources/maps and composition/publication remain
+over stage budgets. Blocked I/O acceptance remains unevaluable. Fresh-native
+output comparisons do not establish BYOND semantic parity. Phase 1 remains open;
+actual daemon/cross-revision incremental compilation remains unfinished.
+
+Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/matched-gzip-20261009-071225-9e39227f/comparison.json`.
+Pending uncommitted RSC-proof, metadata-sharing, tracing and retained-host changes
+are excluded from this comparison.
+
+Subsequent ordinary library validation passed **1,620 tests** in 272.537 s
+including compilation (`r6-workspace-tests-20261009-073914-a06cc57f.json`).
+Focused release executor/profiler validation passed **51 tests** in 295.952 s
+including compilation (`r6-workspace-tests-20261009-074358-461fe3b9.json`).
+The latter covers persistent physical worker brackets, same-worker request
+isolation, panic cleanup and bounded lossless Chrome trace draining. These
+checks do not establish a complete release workspace gate or daemon activation.
+Further resident memo and immutable asset fingerprint changes postdate the
+1,620-test run and require their own validation and captured-source comparison.
+
+## Retained-host core prototype — 9 October, 08:00
+
+The shared request runner now accepts a `BuildHost` retaining exact authenticated
+engine owners and bounded region candidates. Candidate visitors use the ordinary
+consumer's complete validation; rejected resident variants fall through to disk.
+Validated disk hits are promoted without republishing. Keyed lookup checks at
+most four variants; ordered indexes drive eviction. Retention is capped at
+48 MiB total and 16 MiB per kind including conservative container charges.
+CLI one-shot runs bypass resident storage, and no-cache one-shot runs pass actual
+`None` to preprocessing so they do not construct unused memo records.
+
+Shared immutable resource owners now compute SHA and canonical CRC together in
+capture workers. Full-length resolver/resource IDs reuse those facts; declared
+prefixes hash their actual bounded bytes. Canonical CRC uses eight-byte tables,
+checked against an independent bitwise implementation and arbitrary streaming
+boundaries. Declaration metadata/ABI owners share immutable allocations; prior
+RSC proofs retain existing exact/racy verification and isolated writable outputs.
+Chrome tracing uses a bounded lossless request-local queue and reports drain
+errors. Persistent executor request brackets bind every physical worker and join
+coverage on success, failure and panic.
+
+Validation: **1,628 ordinary library tests passed**, zero failures, 82.615 s
+including compilation (`r6-workspace-tests-20261009-075840-b6901eb7.json`).
+Release all-target workspace Clippy passed with warnings denied, 44.529 s
+(`r6-workspace-tests-20261009-075707-45b7adf9.json`). The 51 focused release
+executor/profiler tests above apply to unchanged profiling/executor source.
+No DM runtime runs were made; full release workspace testing remains incomplete.
+
+This is a useful retained-host prototype, not full incremental compilation:
+frontend reassembly and startup facts are still freshly issued, retained worker
+brackets are not yet connected to the request runner, and daemon transport,
+cross-revision semantic reuse and six-worktree acceptance remain unfinished.
+The new source's matched cold comparison is pending; no new timing is claimed.

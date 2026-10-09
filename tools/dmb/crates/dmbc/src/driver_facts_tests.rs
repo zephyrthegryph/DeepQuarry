@@ -813,3 +813,75 @@ fn authored_static_lexical_and_global_type_names_shadow_intrinsic() {
         );
     }
 }
+
+#[test]
+fn inherited_source_layout_retains_exact_prepared_owner_without_copying_payloads() {
+    let frontend = frontend();
+    let engine =
+        EngineSnapshot::from_bytes(include_bytes!("../../../fixtures/native_template.bin"), 1)
+            .unwrap();
+    let units = unit_members(&frontend).unwrap();
+    let (base, base_member) = units
+        .iter()
+        .find(|(unit, _)| unit.owner == SymbolId::of("/base"))
+        .unwrap();
+    let child = *units
+        .keys()
+        .find(|unit| unit.owner == SymbolId::of("/child"))
+        .unwrap();
+    let layout = dm_codegen_byond::procedure_abi::ProcLayout {
+        display_name: Some(b"shared display".to_vec()),
+        description: Some(b"shared description".to_vec()),
+        category: dm_codegen_byond::procedure_abi::Category::Text(b"shared category".to_vec()),
+        flags: 0x101,
+        invisibility: Some(0),
+        ..Default::default()
+    };
+    let owner = Arc::new(crate::procedure_policy::PreparedAbi {
+        layout: layout.clone(),
+        argument_sources: Vec::new(),
+        source_helpers: Vec::new(),
+    });
+    let weak = Arc::downgrade(&owner);
+    let layouts = HashMap::from([(*base_member, Arc::clone(&owner))]);
+    assert!(Arc::ptr_eq(&owner, &layouts[base_member]));
+    assert_eq!(
+        owner.layout.description.as_ref().unwrap().as_ptr(),
+        layouts[base_member]
+            .layout
+            .description
+            .as_ref()
+            .unwrap()
+            .as_ptr()
+    );
+    drop(owner);
+    assert!(weak.upgrade().is_some());
+    let boundaries = BTreeMap::from([(*base, BoundaryAbi::Fresh)]);
+    let facts = DriverInheritedFacts {
+        frontend: &frontend,
+        engine: &engine,
+        source_layouts: &layouts,
+        boundaries: &boundaries,
+        unit_members: &units,
+    };
+    let origin = &frontend
+        .bodies
+        .iter()
+        .find(|body| body.member == units[&child])
+        .unwrap()
+        .source;
+    let inherited = facts
+        .inherited(&AbiContext {
+            identity: child,
+            symbols: frontend.snapshot.tree.symbols(),
+            origin,
+            resolver: frontend.snapshot.tree.as_ref(),
+        })
+        .unwrap();
+    match inherited {
+        InheritedLayout::Known(actual) => assert_eq!(actual, layout),
+        _ => panic!("expected exact inherited layout"),
+    }
+    drop(layouts);
+    assert!(weak.upgrade().is_none());
+}

@@ -12,7 +12,7 @@ fn member(owner: &str, name: &str, mode: DefinitionMode, content: u128) -> Skele
         name: SymbolId::of(name),
         kind: MemberKind::Proc,
         mode,
-        metadata: MemberMetadata::default(),
+        metadata: Arc::new(MemberMetadata::default()),
         content,
     }
 }
@@ -69,4 +69,35 @@ fn cycles_and_duplicate_declarations_are_errors() {
         ),
         Err(TreeError::Duplicate { .. })
     ));
+}
+
+#[test]
+fn authored_metadata_shares_between_skeleton_and_tree_until_effective_mutation() {
+    let metadata = MemberMetadata {
+        canonical: Arc::from(&b"authored signature"[..]),
+        ..MemberMetadata::default()
+    };
+    let metadata = Arc::new(metadata);
+    let skeleton = Skeleton::Member {
+        owner: SymbolId::of("/obj/base"),
+        name: SymbolId::of("chain"),
+        kind: MemberKind::Proc,
+        mode: DefinitionMode::Declare,
+        metadata: Arc::clone(&metadata),
+        content: 7,
+    };
+    let tree = build(symbols(), &[skeleton]).unwrap();
+    let installed = &tree
+        .members()
+        .iter()
+        .find(|member| member.name == SymbolId::of("chain"))
+        .unwrap()
+        .metadata;
+    assert!(Arc::ptr_eq(&metadata, installed));
+    let mut effective = Arc::clone(installed);
+    Arc::make_mut(&mut effective).display_name = Some(SymbolId::of("changed effective name"));
+    assert!(!Arc::ptr_eq(&metadata, &effective));
+    assert!(metadata.display_name.is_none());
+    assert!(installed.display_name.is_none());
+    assert_eq!(metadata.canonical, effective.canonical);
 }

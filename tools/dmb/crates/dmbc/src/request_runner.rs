@@ -74,6 +74,14 @@ fn inspect(project: PathBuf, target: Option<&str>) -> Result<(), Box<dyn std::er
 }
 
 pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    run_build_with_host(request, &mut crate::runner_host::BuildHost::one_shot())
+}
+
+/// Execute the same pipeline with an optional retained exact-engine owner.
+pub fn run_build_with_host(
+    request: BuildRequest,
+    host: &mut crate::runner_host::BuildHost,
+) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     let _build_profile = dm_profile::stage("build");
     let request_profile = dm_profile::stage("request.prepare");
     let BuildRequest {
@@ -172,6 +180,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
     // They are released only after the final immutable pair is published.
     let resource_outputs = std::sync::Mutex::new(ResourceOutputs::default());
     let mut resource_prior = None;
+    let mut prior_outputs = None;
     let mut memo_policy = 0;
     drop(input_context_profile);
     let session_profile = dm_profile::stage("session_validation");
@@ -207,6 +216,9 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         for id in configured.latest(if verification_capture { 0 } else { 4 })? {
             if let Some(mut validated) =
                 configured.validate_filesystem_observed(id, exact_inputs, now_ns(), |record| {
+                    if prior_outputs.is_none() {
+                        prior_outputs = record.outputs.clone();
+                    }
                     if resource_prior.is_none() {
                         if let Some(manifest) = &record.resource_manifest {
                             resource_prior = Some((record.pair, manifest.clone()));
@@ -280,20 +292,12 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
     // An authenticated unchanged session needs no decoded engine or bootstrap
     // catalog. The key above pins exact engine bytes and this compiler/policy.
     let engine_capture = engine_bytes
-        .map(|bytes| {
-            let snapshot = dmbc::engine::EngineSnapshot::from_bytes(&bytes, 1)
-                .map_err(|error| format!("engine template: {error:?}"))?;
-            let snapshot = if bootstrap_catalog {
-                snapshot
-                    .with_bootstrap_catalog()
-                    .map_err(|error| format!("engine catalog: {error:?}"))?
-            } else {
-                snapshot
-            };
-            Ok::<_, String>((bytes, snapshot))
-        })
+        .map(|bytes| host.engine(project.clone(), defines.clone(), bootstrap_catalog, bytes))
         .transpose()?;
-    let engine = engine_capture.as_ref().map(|(_, engine)| engine);
+    if engine_capture.is_none() {
+        host.clear_regions();
+    }
+    let engine = engine_capture.as_ref().map(|capture| &capture.snapshot);
     let memo_cache = if command == BuildCommand::Compile && !no_cache {
         match dm_cache::Cache::user_default(dm_cache::Limits::default()) {
             Ok(cache) => Some(Arc::new(cache)),
@@ -350,6 +354,13 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
                 .clone(),
         )
     });
+    // --no-cache bypasses disk; this explicit host may still retain bounded,
+    // authoritatively validated region candidates between requests.
+    let frontend_memo = host.expansion_memo(
+        expansion_memo
+            .as_ref()
+            .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
+    );
     let map_memo = cache_snapshot.clone().map(|snapshot| {
         dmbc::map_memo::MapMemo::with_disk(memo_policy, 64 * 1024 * 1024, snapshot).with_publisher(
             cache_publisher
@@ -421,7 +432,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
                 engine: seed.as_ref(),
                 observer: progress_enabled.then_some(&progress),
             },
-            expansion_memo
+            frontend_memo
                 .as_ref()
                 .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
             &executor,
@@ -437,9 +448,11 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
     });
     if command == BuildCommand::Compile {
         let frontend_report = runner_report::FrontendReport::capture(&frontend);
-        let (bytes, engine) = engine_capture
+        let retained_engine = engine_capture
             .as_ref()
             .ok_or("compile requires captured engine")?;
+        let bytes = &retained_engine.bytes;
+        let engine = &retained_engine.snapshot;
         dmbc::heap_census::emit_if_enabled("frontend.ready", |census| census.frontend(&frontend))?;
         if progress_enabled {
             eprintln!(
@@ -605,7 +618,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         drop(nontext_profile);
         let linking_inputs_started = Instant::now();
         let linking_inputs_profile = dm_profile::stage("linking_inputs");
-        let mut links = dmbc::engine_link::capture(bytes, engine)?;
+        let mut links = retained_engine.link_overlay()?;
         nontext.extend_inventory(&mut links.inventory)?;
         let artifacts = std::mem::take(&mut nontext.artifacts);
         let linking_inputs_seconds = linking_inputs_started.elapsed().as_secs_f64();
@@ -660,7 +673,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             let (resolver, output_stage, publication) = nontext.into_composition_parts();
             let composition = prepared.seal(
                 &frontend,
-                Arc::<[u8]>::from(bytes.as_slice()),
+                Arc::clone(bytes),
                 owned_values,
                 Some(Box::new(output_stage)),
             )?;
@@ -777,13 +790,18 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         let ResourceOutputs { pins: _, prepared } = resource_outputs
             .into_inner()
             .unwrap_or_else(|error| error.into_inner());
-        let installation = store.install_receipt_exact_with_prepared_resource(
+        let installation = store.install_receipt_with_resource_proof(
             pair.id,
             &output_project.with_extension("dmb"),
             &output_project.with_extension("rsc"),
             &output_project.with_extension("dmb-pair.json"),
             exact_inputs,
-            prepared,
+            dmbc::publish::ResourceInstall {
+                prepared,
+                prior: prior_outputs
+                    .as_ref()
+                    .map(|outputs| dmbc::publish::PriorResourceProof::new(outputs, now_ns())),
+            },
         )?;
         input_provider.finish()?;
         if let (Some(cache), Some(snapshot), Some(session)) =

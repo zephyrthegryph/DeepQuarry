@@ -875,9 +875,9 @@ impl HeapCensus {
             self.string("resource_records", &input.archive_name);
             self.path("resource_records", &input.disk_path);
             self.vec_payload("resource_records", &input.named.name);
-            let bytes = input.named.shared_data().shared_vec();
+            let bytes = input.named.shared_data().shared_owner();
             if self.arc_object("resource_payloads", bytes) {
-                self.vec_payload("resource_payloads", bytes);
+                self.vec_payload("resource_payloads", bytes.bytes());
             }
         }
     }

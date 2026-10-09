@@ -11,8 +11,6 @@ pub struct NamedResourceInput {
     pub declared_size: u32,
     pub name: Vec<u8>,
     data: SharedBytes,
-    // Deterministically derived from private immutable data; never the public recorded ID.
-    full_crc: u32,
 }
 impl NamedResourceInput {
     pub fn from_shared_data(
@@ -26,7 +24,7 @@ impl NamedResourceInput {
         let declared_size = u32::try_from(data.len()).map_err(|_| {
             io::Error::new(io::ErrorKind::InvalidInput, "RSC asset exceeds u32 size")
         })?;
-        let id = byond_dmb::hash::nqcrc(u32::MAX, &data);
+        let id = data.nqcrc();
         Ok(Self {
             kind,
             id,
@@ -35,7 +33,6 @@ impl NamedResourceInput {
             declared_size,
             name,
             data,
-            full_crc: id,
         })
     }
     pub fn asset_bytes(&self) -> io::Result<&[u8]> {
@@ -49,7 +46,7 @@ impl NamedResourceInput {
     pub fn content_id(&self) -> io::Result<u32> {
         let payload = self.asset_bytes()?;
         Ok(if payload.len() == self.data.len() {
-            self.full_crc
+            self.data.nqcrc()
         } else {
             byond_dmb::hash::nqcrc(u32::MAX, payload)
         })
@@ -83,7 +80,6 @@ impl NamedResourceInput {
 }
 impl From<NamedResource> for NamedResourceInput {
     fn from(value: NamedResource) -> Self {
-        let full_crc = byond_dmb::hash::nqcrc(u32::MAX, &value.data);
         Self {
             kind: value.kind,
             id: value.id,
@@ -92,7 +88,6 @@ impl From<NamedResource> for NamedResourceInput {
             declared_size: value.declared_size,
             name: value.name,
             data: value.data.into(),
-            full_crc,
         }
     }
 }

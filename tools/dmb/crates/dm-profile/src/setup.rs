@@ -27,18 +27,7 @@ pub(super) fn initialize(path: &Path) -> Result<ProfileGuard, String> {
             .map_err(|e| e.to_string())?,
         Arc::clone(&state),
     );
-    let (chrome, chrome_guard) = tracing_chrome::ChromeLayerBuilder::new()
-        .writer(writer)
-        .include_args(true)
-        .name_fn(Box::new(|entry| match entry {
-            tracing_chrome::EventOrSpan::Span(span) => span
-                .extensions()
-                .get::<names::StageName>()
-                .map(|name| name.0.clone())
-                .unwrap_or_else(|| span.metadata().name().into()),
-            tracing_chrome::EventOrSpan::Event(event) => event.metadata().name().into(),
-        }))
-        .build();
+    let (chrome, chrome_guard) = chrome::layer(writer)?;
     let flame_writer = trace_outputs
         .writer(&artifact_path(path, ".tracing.folded"), "tracing-folded")
         .map_err(|e| e.to_string())?;

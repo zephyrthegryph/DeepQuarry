@@ -70,7 +70,7 @@ pub enum Skeleton {
         name: SymbolId,
         kind: MemberKind,
         mode: DefinitionMode,
-        metadata: MemberMetadata,
+        metadata: Arc<MemberMetadata>,
         content: u128,
     },
 }
@@ -547,7 +547,7 @@ pub(crate) fn build_with_intrinsic_members_inventory(
                     owner: owner_id,
                     name: *name,
                     kind,
-                    metadata: Arc::new(metadata.clone()),
+                    metadata: Arc::clone(metadata),
                     content: *content,
                     previous,
                 });

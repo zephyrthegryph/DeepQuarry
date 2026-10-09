@@ -94,5 +94,41 @@ fn requests_route_exact_state_dispatch_and_close_every_lifecycle() {
         let _stage = dm_profile::stage("final");
     }
     final_request.finish(&["final"]).unwrap();
+    let (jobs, receive) = std::sync::mpsc::channel::<(dm_profile::RequestContext, &'static str)>();
+    let (done, completed) = std::sync::mpsc::channel();
+    let persistent = std::thread::spawn(move || {
+        while let Ok((context, marker)) = receive.recv() {
+            {
+                let _binding = context.enter().unwrap();
+                let _coverage = dm_profile::worker_lifetime("compiler.worker_lifetime");
+                let _stage = dm_profile::stage("persistent.worker");
+                dm_profile::tracing::info!(marker, "persistent request event");
+            }
+            done.send(std::thread::current().id()).unwrap();
+        }
+    });
+    let mut worker_id = None;
+    for (name, marker) in [
+        ("persistent-a", "persistent-first-only"),
+        ("persistent-b", "persistent-second-only"),
+    ] {
+        let profile =
+            dm_profile::initialize(&directory.join(format!("{name}.trace.json"))).unwrap();
+        jobs.send((profile.request_context(), marker)).unwrap();
+        let id = completed.recv().unwrap();
+        if let Some(previous) = worker_id {
+            assert_eq!(id, previous);
+        }
+        worker_id = Some(id);
+        profile.finish(&["persistent.worker"]).unwrap();
+    }
+    drop(jobs);
+    persistent.join().unwrap();
+    let a = std::fs::read_to_string(directory.join("persistent-a.trace.json")).unwrap();
+    let b = std::fs::read_to_string(directory.join("persistent-b.trace.json")).unwrap();
+    assert!(a.contains("persistent-first-only"));
+    assert!(!a.contains("persistent-second-only"));
+    assert!(b.contains("persistent-second-only"));
+    assert!(!b.contains("persistent-first-only"));
     std::fs::remove_dir_all(directory).unwrap();
 }

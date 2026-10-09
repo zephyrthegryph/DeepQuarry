@@ -87,7 +87,7 @@ fn capture_wave<P: CaptureProvider + Sync>(
                         let candidate = provider
                             .read_candidate(path)
                             .map(|bytes| CapturedCandidate {
-                                digest: bytes.as_ref().map(|bytes| Sha256::digest(bytes).into()),
+                                digest: bytes.as_ref().map(|bytes| bytes.sha256()),
                                 bytes,
                             })
                             .map_err(|source| CaptureError::Io {

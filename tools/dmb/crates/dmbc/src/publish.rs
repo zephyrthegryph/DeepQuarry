@@ -22,6 +22,7 @@ mod destinations;
 mod eviction;
 #[path = "publish_install.rs"]
 mod install;
+pub(crate) use install::{PriorResourceProof, ResourceInstall};
 #[path = "publish_receipt.rs"]
 mod receipt;
 pub use receipt::InstallationReceipt;
@@ -627,6 +628,28 @@ impl PairStore {
         exact: bool,
         prepared: Option<PreparedOutputFile>,
     ) -> io::Result<InstallationReceipt> {
+        self.install_receipt_with_resource_proof(
+            id,
+            dmb,
+            rsc,
+            marker,
+            exact,
+            ResourceInstall {
+                prepared,
+                prior: None,
+            },
+        )
+    }
+    pub(crate) fn install_receipt_with_resource_proof(
+        &self,
+        id: u128,
+        dmb: &Path,
+        rsc: &Path,
+        marker: &Path,
+        exact: bool,
+        resource: ResourceInstall<'_>,
+    ) -> io::Result<InstallationReceipt> {
+        let ResourceInstall { prepared, prior } = resource;
         destinations::distinct([dmb, rsc, marker])?;
         let _lock = self.lock()?;
         let source = self.root.join("pairs").join(format!("{id:032x}"));
@@ -639,10 +662,12 @@ impl PairStore {
                     hash: pair.rsc_hash,
                 },
             )?,
-            None => install::resource_receipt(
+            None => install::resource_receipt_with_prior(
                 &source.join("deepquarry.rsc"),
                 rsc,
                 (pair.rsc_bytes, pair.rsc_hash),
+                prior,
+                exact,
             )?,
         };
         #[cfg(test)]

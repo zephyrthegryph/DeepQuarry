@@ -209,7 +209,10 @@ impl PreparedSources {
         Ok(Self { sources })
     }
     pub fn get(&self, path: &Path) -> Option<Arc<PreparedSource>> {
-        self.sources.get(&canonical_path(path)).cloned()
+        self.sources
+            .get(path)
+            .or_else(|| self.sources.get(&canonical_path(path)))
+            .cloned()
     }
     pub fn len(&self) -> usize {
         self.sources.len()

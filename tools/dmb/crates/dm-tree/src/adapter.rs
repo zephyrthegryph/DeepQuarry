@@ -284,7 +284,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         name: symbol(context.symbols, raw_name)?,
                         kind: MemberKind::Var,
                         mode: DefinitionMode::Declare,
-                        metadata,
+                        metadata: Arc::new(metadata),
                         content,
                     }))
                 }
@@ -371,7 +371,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         } else {
                             DefinitionMode::Implicit
                         },
-                        metadata,
+                        metadata: Arc::new(metadata),
                         content,
                     }))
                 }
@@ -409,7 +409,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         name: symbol(context.symbols, name)?,
                         kind: MemberKind::Var,
                         mode: DefinitionMode::Override,
-                        metadata,
+                        metadata: Arc::new(metadata),
                         content,
                     }))
                 }

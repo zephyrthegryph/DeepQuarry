@@ -8,7 +8,6 @@ use crate::native_resolver::{
     CapturedResourceLookup, CapturedResourceOutcome, CapturedSearchContext, NativeResourceResolver,
 };
 use crate::SharedBytes;
-use std::sync::Arc;
 use crate::{ResourceInput, ResourceRequest, ResourceSet};
 use dm_preprocess::regions::{DirectivePlan, ExpandedRegions};
 use dm_syntax::{Span, SpanToken, TokenKind};
@@ -16,6 +15,7 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeSet, HashMap};
 use std::io;
 use std::path::{Component, Path, PathBuf};
+use std::sync::Arc;
 mod parallel;
 pub use parallel::capture_discovered_on_executor;
 
@@ -387,7 +387,7 @@ impl<P: CaptureProvider> Capture<'_, P> {
                             path: path.to_owned(),
                             source,
                         })?;
-                let digest = bytes.as_ref().map(|bytes| Sha256::digest(bytes).into());
+                let digest = bytes.as_ref().map(|bytes| bytes.sha256());
                 self.files.insert(
                     path.to_owned(),
                     CapturedCandidate {

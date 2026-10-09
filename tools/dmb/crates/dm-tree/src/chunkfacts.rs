@@ -584,7 +584,7 @@ pub(super) fn decode(
                             3 => DefinitionMode::Implicit,
                             _ => return None,
                         },
-                        metadata: meaning,
+                        metadata: Arc::new(meaning),
                         content,
                     }
                 }

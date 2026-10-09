@@ -122,7 +122,11 @@ impl<R: Resolver> NativeResourceResolver<R> {
                 ));
             }
             let payload = input.named.asset_bytes()?;
-            let digest: [u8; 32] = Sha256::digest(payload).into();
+            let digest: [u8; 32] = if payload.len() == input.named.shared_data().len() {
+                input.named.shared_data().sha256()
+            } else {
+                Sha256::digest(payload).into()
+            };
             if digest != input.content_digest {
                 return Err(invalid(
                     "captured resource payload disagrees with content digest",
@@ -409,6 +413,36 @@ mod tests {
             fingerprint: [0; 32],
         }
     }
+    #[test]
+    fn immutable_digest_memo_does_not_admit_forged_digest_or_full_hash_for_prefix() {
+        let admit = |resources| {
+            NativeResourceResolver::from_captured(
+                Tree,
+                &SymbolTable::default(),
+                resources,
+                std::iter::empty::<CapturedSearchContext>(),
+                std::iter::empty::<CapturedResourceLookup>(),
+            )
+        };
+        let mut forged = resources();
+        let cached = forged.inputs[0].named.shared_data().sha256();
+        assert_eq!(cached, forged.inputs[0].content_digest);
+        forged.inputs[0].content_digest[0] ^= 1;
+        assert!(admit(forged).is_err());
+
+        let mut prefix = resources();
+        prefix.inputs.truncate(1);
+        let input = &mut prefix.inputs[0];
+        let full_digest = input.named.shared_data().sha256();
+        input.named.declared_size = 4;
+        input.named.id = byond_dmb::hash::nqcrc(u32::MAX, input.named.asset_bytes().unwrap());
+        input.content_digest = Sha256::digest(input.named.asset_bytes().unwrap()).into();
+        assert_ne!(input.content_digest, full_digest);
+        assert!(admit(prefix.clone()).is_ok());
+        prefix.inputs[0].content_digest = full_digest;
+        assert!(admit(prefix).is_err());
+    }
+
     #[test]
     fn resource_domain_invalidates_captured_negative_lookup() {
         // Context must be issued, including negative observations.

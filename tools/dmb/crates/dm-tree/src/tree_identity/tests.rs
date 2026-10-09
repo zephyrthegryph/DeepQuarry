@@ -208,7 +208,7 @@ fn streaming_tree_identity_preserves_domains_catalog_duplicates_and_source_order
             name: SymbolId::of(&format!("member{index}")),
             kind,
             mode,
-            metadata: populated(),
+            metadata: std::sync::Arc::new(populated()),
             content: index as u128,
         });
     }

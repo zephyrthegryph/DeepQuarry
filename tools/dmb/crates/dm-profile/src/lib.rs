@@ -164,6 +164,7 @@ struct Frame {
     last_coarse_cpu: Option<u64>,
     last_wall: Instant,
 }
+mod chrome;
 mod request;
 mod setup;
 pub use request::{RequestContext, RequestContextGuard};
@@ -527,7 +528,7 @@ pub struct ProfileGuard {
     start: Instant,
     process: clock::Process,
     path: PathBuf,
-    chrome: Option<tracing_chrome::FlushGuard>,
+    chrome: Option<chrome::FlushGuard>,
     flame: Option<tracing_flame::FlushGuard<std::io::BufWriter<trace_output::TraceWriter>>>,
     trace_outputs: trace_output::Outputs,
     memory_sampler: Option<memory::Sampler>,
@@ -619,15 +620,20 @@ impl ProfileGuard {
         if let Some(sampler) = self.memory_sampler.take() {
             sampler.stop()?;
         }
-        // Drop sends the termination message and joins the Chrome writer. Its
+        // Finish drains the bounded queue and joins the Chrome writer. Its
         // direct lifetime CPU receipt must exist before the report snapshot.
-        self.chrome.take();
+        let chrome_result = self
+            .chrome
+            .take()
+            .map(chrome::FlushGuard::finish)
+            .transpose();
         let flame_result = self.flame.as_ref().map(|guard| guard.flush()).transpose();
         self.flame.take();
         let trace_output = self
             .trace_outputs
             .finish()
             .map_err(|error| error.to_string())?;
+        chrome_result?;
         flame_result.map_err(|error| error.to_string())?;
         drop(shutdown);
         let process = clock::process();
@@ -864,7 +870,7 @@ impl ProfileGuard {
             cpu_folded_omitted_threads: omitted_threads,
             stages,
             coverage_notes: vec![
-                "Profiler setup/finalization and memory-worker CPU use direct non-tracing endpoint receipts. Chrome writer CPU covers its first underlying write/flush through drop after final flush; tracing-chrome buffers its initial output, so worker startup/initial buffered serialization before that boundary is unobserved. Worker joins precede the independent process endpoint and report snapshot. These internal receipts record CPU/wall only; allocation fields are not separately observed. Report serialization after the snapshot is outside this measurement window.".into(),
+                "Profiler setup/finalization and memory-worker CPU use direct non-tracing endpoint receipts. Chrome writer CPU covers its first underlying write/flush through drop after final flush; the bounded request-local Chrome writer buffers its initial output, so worker startup/initial buffered serialization before that boundary is unobserved. Worker joins precede the independent process endpoint and report snapshot. These internal receipts record CPU/wall only; allocation fields are not separately observed. Report serialization after the snapshot is outside this measurement window.".into(),
                 "Stage CPU uses GetThreadTimes on Windows or CLOCK_THREAD_CPUTIME_ID on Linux, directly as nanoseconds; no cycles or calibration. Item-only spans record wall and allocations and do not split parent CPU intervals. Successful monotonic Windows stage endpoints provide bounds plus/minus31.25ms. Missing clocks stay unknown. Independent process coverage and entire ratio bounds retain5% tolerance. Chrome cpu_raw units are thread CPU nanoseconds.".into(),
                 "CPU folded stacks use exclusive entered stage segments; uninstrumented threads/work are excluded. Chrome/flame wall traces come from tracing spans.".into(),
                 "Same-named nested spans on one thread contribute only their outermost inclusive CPU, wall and allocation interval to the named stage aggregate; call counts and individual Chrome spans retain every call.".into(),

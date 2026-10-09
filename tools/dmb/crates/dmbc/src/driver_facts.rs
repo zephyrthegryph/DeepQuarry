@@ -90,7 +90,7 @@ pub struct DriverInheritedFacts<'a> {
     pub frontend: &'a ColdFrontend,
     pub engine: &'a EngineSnapshot,
     /// Prepared ABI of actual previous source members, populated in dependency order.
-    pub source_layouts: &'a HashMap<MemberId, ProcLayout>,
+    pub source_layouts: &'a HashMap<MemberId, Arc<crate::procedure_policy::PreparedAbi>>,
     pub boundaries: &'a BTreeMap<UnitIdentity, BoundaryAbi>,
     pub unit_members: &'a BTreeMap<UnitIdentity, MemberId>,
 }
@@ -108,8 +108,7 @@ impl CapturedInheritedFacts for DriverInheritedFacts<'_> {
             return self
                 .source_layouts
                 .get(&previous)
-                .cloned()
-                .map(InheritedLayout::Known)
+                .map(|abi| InheritedLayout::Known(abi.layout.clone()))
                 .ok_or_else(|| {
                     AbiError("previous source procedure ABI has not been prepared".into())
                 });
@@ -499,8 +498,9 @@ fn prepare_source_abi_mode_on_executor(
                 remaining[ordinal] = false;
                 match result {
                     Ok(unit) => {
-                        let layout = unit.require_production_abi()?.layout.clone();
-                        layouts.insert(frontend.bodies[ordinal].member, layout);
+                        unit.require_production_abi()?;
+                        let abi = Arc::clone(unit.abi.as_ref().expect("validated production ABI"));
+                        layouts.insert(frontend.bodies[ordinal].member, abi);
                         results[ordinal] = Some(unit);
                         ready.extend(dependents[ordinal].iter().copied());
                     }

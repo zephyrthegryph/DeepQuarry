@@ -546,20 +546,21 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     if let Some(context) =
                         directive_memo::context(prepared.original(), lines.slice(cursor..end))
                     {
-                        let hit =
-                            memo.directive_candidates(context.2)
-                                .into_iter()
-                                .rev()
-                                .find(|record| {
-                                    record.matches(
-                                        context.0,
-                                        &context.1,
-                                        end - cursor,
-                                        &self.environment,
-                                        &self.conditionals,
-                                        (&self.plan.file_dirs, &self.file_dir_definitions),
-                                    )
-                                });
+                        let mut hit = None;
+                        memo.visit_directive_candidates(context.2, &mut |record| {
+                            let accepted = record.matches(
+                                context.0,
+                                &context.1,
+                                end - cursor,
+                                &self.environment,
+                                &self.conditionals,
+                                (&self.plan.file_dirs, &self.file_dir_definitions),
+                            );
+                            if accepted {
+                                hit = Some(std::sync::Arc::clone(record));
+                            }
+                            accepted
+                        });
                         if let Some(record) = hit {
                             self.replay_directives(
                                 occurrence,

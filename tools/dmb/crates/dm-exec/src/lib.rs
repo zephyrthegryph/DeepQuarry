@@ -3,7 +3,9 @@
 //! Jobs may borrow build data. Scope completion joins all jobs, including on
 //! panic; dropping the executor terminates and joins its actual OS workers.
 //! There is no global Rayon pool or hardware-dependent worker-count cap.
+mod request_scope;
 mod weighted;
+pub use request_scope::RequestError;
 pub use weighted::weighted_ranges;
 
 use rayon::{Scope, ThreadPool, ThreadPoolBuildError, ThreadPoolBuilder};
@@ -43,6 +45,9 @@ pub struct BuildExecutor {
     pool: Option<ThreadPool>,
     handles: Arc<Mutex<Vec<JoinHandle<()>>>>,
     workers: usize,
+    identity: u64,
+    unbound: bool,
+    request_active: std::sync::atomic::AtomicBool,
 }
 
 /// Borrowed Rayon scope whose every explicit job inherits the caller's stages.
@@ -65,6 +70,15 @@ impl<'scope> BuildScope<'_, 'scope> {
 impl BuildExecutor {
     /// Zero requests one worker rather than Rayon's implicit hardware count.
     pub fn new(workers: usize) -> Result<Self, ExecutorError> {
+        Self::construct(workers, false)
+    }
+
+    /// Creates persistent workers without attaching a profiling request.
+    pub fn new_unbound(workers: usize) -> Result<Self, ExecutorError> {
+        Self::construct(workers, true)
+    }
+
+    fn construct(workers: usize, unbound: bool) -> Result<Self, ExecutorError> {
         let workers = workers.max(1);
         let maximum = rayon::max_num_threads();
         if workers > maximum {
@@ -79,7 +93,9 @@ impl BuildExecutor {
         let spawned = Arc::clone(&handles);
         // The pool's one-shot worker coverage belongs to the request that
         // constructs it, even before its first scoped job starts.
-        let request = dm_profile::RequestContext::capture();
+        let request = (!unbound)
+            .then(dm_profile::RequestContext::capture)
+            .flatten();
         let result = ThreadPoolBuilder::new()
             .num_threads(workers)
             .thread_name(|index| format!("dm-build-{index}"))
@@ -98,7 +114,8 @@ impl BuildExecutor {
                             .enter()
                             .expect("worker request remains live until pool shutdown")
                     });
-                    let _lifetime = dm_profile::worker_lifetime("compiler.worker_lifetime");
+                    let _lifetime =
+                        (!unbound).then(|| dm_profile::worker_lifetime("compiler.worker_lifetime"));
                     thread.run();
                 })?;
                 spawned
@@ -113,6 +130,9 @@ impl BuildExecutor {
                 pool: Some(pool),
                 handles,
                 workers,
+                identity: request_scope::identity(),
+                unbound,
+                request_active: std::sync::atomic::AtomicBool::new(false),
             }),
             Err(error) => {
                 // Rayon has released its partial registry before returning an
@@ -133,6 +153,13 @@ impl BuildExecutor {
     where
         F: FnOnce(&BuildScope<'_, 'scope>) -> R,
     {
+        assert!(
+            !self.unbound
+                || self
+                    .request_active
+                    .load(std::sync::atomic::Ordering::Acquire),
+            "unbound executor requires a request bracket"
+        );
         self.pool
             .as_ref()
             .expect("live build executor")
@@ -154,6 +181,13 @@ impl BuildExecutor {
         R: Send,
     {
         let context = dm_profile::StageContext::capture();
+        assert!(
+            !self.unbound
+                || self
+                    .request_active
+                    .load(std::sync::atomic::Ordering::Acquire),
+            "unbound executor requires a request bracket"
+        );
         self.pool
             .as_ref()
             .expect("live build executor")
