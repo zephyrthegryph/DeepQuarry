@@ -154,7 +154,8 @@ TRACKED(/obj/item/glass_jar, filled)
 			jar_name = can_fill ? "tip tank" : "tip jar"
 			jar_desc = "A [jar_name] with money inside."
 			var/i = 0
-			for(var/obj/item/spacecash/S in look.things_in(src, null, /obj/item/spacecash))
+			for(var/obj/item/spacecash/S in contents_of(src))
+				look.watch(S)
 				i++
 				var/matrix/small = matrix()
 				small.Scale(0.6)
@@ -162,19 +163,22 @@ TRACKED(/obj/item/glass_jar, filled)
 		if(JAR_ANIMAL)
 			//tank
 			if(can_fill)
-				for(var/mob/M in look.things_in(src, null, /mob))
+				for(var/mob/M in contents_of(src))
+					look.watch(M)
 					var/matrix/shrunk = matrix()
 					shrunk.Scale(0.7)
 					look.underlay(look_overlay_image(of = M, pixel_y = 4, transform = shrunk))
 					jar_name = "[initial(name)] with [M]"
 					jar_desc = "A large [jar_name] with [M] inside."
 			else
-				for(var/mob/M in look.things_in(src, null, /mob))
+				for(var/mob/M in contents_of(src))
+					look.watch(M)
 					look.underlay(look_overlay_image(of = M, pixel_y = 6))
 					jar_name = "glass jar with [M]"
 					jar_desc = "A small jar with [M] inside."
 		if(JAR_SPIDER)
-			for(var/obj/effect/spider/spiderling/S in look.things_in(src, null, /obj/effect/spider/spiderling))
+			for(var/obj/effect/spider/spiderling/S in contents_of(src))
+				look.watch(S)
 				look.underlay(look_overlay_image(of = S))
 				if(can_fill)
 					jar_name = "[initial(name)] with [S]"
