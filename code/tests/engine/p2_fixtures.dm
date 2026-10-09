@@ -49,6 +49,29 @@ CAPABILITIES(/obj/p2_hit/listener)
 	heard++
 	integrity_when_heard = get_integrity()
 
+/// An EMP reaction of the legacy form: before_op(damage(DAMAGE_EMP)), blocking when `legacy_blocks`.
+/obj/p2_hit/legacy
+	var/legacy_blocks = TRUE
+
+DAMAGE_REACTION(/obj/p2_hit/legacy, DAMAGE_EMP, PROC_REF(legacy_emp))
+
+/obj/p2_hit/legacy/proc/legacy_emp(datum/damage_packet/packet)
+	legacy++
+	return legacy_blocks ? DAMAGE_REACTION_BLOCK : 0
+
+/// Both forms: the new hook halves the EMP, then the legacy row (which does not block) runs and the sink lands what is left.
+/obj/p2_hit/both
+	var/legacy_blocks = FALSE
+
+CAPABILITIES(/obj/p2_hit/both)
+	extend(/datum/act/hit/emp, adjusts("packet.amounts", scale = 0.5))
+
+DAMAGE_REACTION(/obj/p2_hit/both, DAMAGE_EMP, PROC_REF(legacy_emp))
+
+/obj/p2_hit/both/proc/legacy_emp(datum/damage_packet/packet)
+	legacy++
+	return 0
+
 // ---- ruined() in dismantle ----
 
 /// A frame with a one-stage build and a dismantle that is ruined when `wrecked`: a reusable frame item, or scrap.

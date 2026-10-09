@@ -285,3 +285,29 @@
 			qdel(C)
 
 #endif
+
+/// Power's wakes reach their subscribers: an area's power change raises its
+/// OM channel.
+/datum/unit_test/dq_power_area_key_wakes_subscriber
+
+/datum/unit_test/dq_power_area_key_wakes_subscriber/Run()
+	var/obj/machinery/power/apc/A = dq_power_test_apc()
+	TEST_ASSERT_NOTNULL(A, "the test map has no working APC")
+	if(!A)
+		return
+	// Area power is an OM channel (CHANGE_AREA_POWER); whatever watches it (lights,
+	// machines asleep on sleep_until_keys()) is woken by the raise. Count the raise.
+	var/area/area = A.area
+	var/datum/om/rec/rec = scheduler_record_of(area)
+	var/datum/om/scheduler/sched = rec.sched
+	var/old_listen = area.om_listen
+	area.om_listen |= CHANGE_AREA_POWER
+	sched.test_raises = list()
+	area.power_change()
+	var/raised = 0
+	for(var/list/raise as anything in sched.test_raises)
+		if(raise[1] == area && (raise[2] & CHANGE_AREA_POWER))
+			raised++
+	sched.test_raises = null
+	area.om_listen = old_listen
+	TEST_ASSERT(raised >= 1, "the area's power change did not raise CHANGE_AREA_POWER")

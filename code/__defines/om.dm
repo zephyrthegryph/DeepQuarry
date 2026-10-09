@@ -40,9 +40,12 @@
 #define CHANGE_MOB_EQUIPMENT (1<<12)
 #define CHANGE_MOB_CLIENT (1<<13)
 #define CHANGE_MOB_STATUS (1<<15)
+#define CHANGE_MOB_VITALS (1<<16)
 #define CHANGE_MOB_CAN_MOVE (1<<17)
 /// Modifiers, instability, diseases: the long-running conditions the upkeep systems follow.
 #define CHANGE_MOB_CONDITIONS (1<<18)
+/// The zone the mob aims at (zone_sel) changed.
+#define CHANGE_MOB_TARGETING (1<<19)
 
 // Item family.
 #define CHANGE_ITEM_LOC (1<<8)
@@ -71,6 +74,8 @@
 #define NATIVE_SRC_OTHER 6
 #define NATIVE_SRC_COUNT 6
 
+/// A turf's visible gas changed (Rust visual event, delivered by native_changed()).
+#define CHANGE_TURF_GAS_VISUAL CHANGE_DATUM_A
 
 
 
@@ -257,12 +262,16 @@
 #define CHANGE_INTEGRITY (1<<23)
 /// Any atom: what a neighbour shows it changed (appearance_notify_neighbours(), smoothing providers).
 #define CHANGE_NEIGHBOURS (1<<22)
+/// An area's power channels or light switch changed (area power_change()).
+#define CHANGE_AREA_POWER CHANGE_DATUM_A
 /// Power machine family, raised on every machine bound to a power region
 /// (code/modules/power/power_grid.dm): the region's supply or load moved; its
 /// brownout or monitor warning changed; a machine joined or left it.
 #define CHANGE_POWER_GRID_RATE (1<<19)
 #define CHANGE_POWER_GRID_STATE (1<<20)
 #define CHANGE_POWER_GRID_TOPOLOGY (1<<21)
+/// A meteor appeared or went away (on GLOB.meteor_watch).
+#define CHANGE_METEORS CHANGE_DATUM_A
 	/// Which schedule a status display shows (shuttle_schedule_source()).
 	#define SHUTTLE_SCHEDULE_EVAC 1
 	#define SHUTTLE_SCHEDULE_SUPPLY 2

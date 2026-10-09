@@ -1,5 +1,5 @@
 // Item windows' links (their hrefs) through the input inbox: blueprints, the wire reader and the RCD's access page work only for someone holding the
-// item. These read the same for an op.
+// item. These read the same whether a link is a TOPIC_ACTION row or an op.
 
 /// A person with a screen: the tgui state an href is checked against closes for a mind-less mob, and a test mob has no client.
 /mob/living/carbon/human/dq_topic_user

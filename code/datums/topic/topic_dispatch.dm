@@ -1,8 +1,56 @@
-// The core Topic() dispatcher: every href on a datum is an op (topic(...) / topic_in(...), code/engine/parts/inputs.dm). The sources an op's
-// among = names are in code/__defines/topic.dm.
+// The core Topic() dispatcher (doc/rewrite/systems.md §20; macros in code/__defines/topic.dm).
 
-/// Answers an href on `target` for `user`: the op that names it (the inbox tried first for a player's link; this reaches the admin holder's own,
-/// a re-run answer and a forward), else the datum's topic_forward(). Returns TRUE when an op took it, or null when nothing did.
+/// type -> (href key -> action row). Built once per type on first use.
+GLOBAL_LIST_EMPTY(topic_tables)
+
+/// The action rows of this type, as a list of rows (TOPIC_ACTION links onto this).
+/datum/proc/topic_actions()
+	return null
+
+/// Appends one row (list(key, proc, specs, namespace)) to `rows`; used by TOPIC_ACTION and
+/// TOPIC_NS_ACTION. A row with a namespace is only reachable through a dispatch naming it.
+/proc/topic_register(list/rows, key, proc_name, list/specs, namespace = null)
+	if(!rows)
+		rows = list()
+	rows += list(list(key, proc_name, specs, namespace))
+	return rows
+
+/// The type of `target` (a client counts as a datum here).
+/proc/topic_target_type(datum/target)
+	return target.type
+
+/// The key -> row table of `target`'s type in `namespace` (null: the plain href rows).
+/proc/topic_table(target, namespace = null)
+	var/target_type = topic_target_type(target)
+	var/cache_key = isnull(namespace) ? target_type : "[namespace]|[target_type]"
+	var/list/table = GLOB.topic_tables[cache_key]
+	if(table)
+		return table
+	table = list()
+	var/datum/D = target
+	var/list/rows = D.topic_actions()
+	for(var/list/row as anything in rows)
+		if(row[4] == namespace)
+			table[row[1]] = row
+	GLOB.topic_tables[cache_key] = table
+	return table
+
+/// The row of `target`'s table (in `namespace`) matching `href_list`, or null.
+/proc/topic_find_row(target, list/href_list, namespace = null)
+	var/list/table = topic_table(target, namespace)
+	for(var/key in href_list)
+		if(!istext(key))
+			continue
+		var/value = href_list[key]
+		var/list/row = istext(value) ? table["[key]=[value]"] : null
+		if(!row)
+			row = table[key]
+		if(row)
+			return row
+	return null
+
+/// Finds the row matching `href_list` in `target`'s table and runs it for `user`.
+/// Returns the handler's return value, or null when nothing matched or a check failed.
 /proc/topic_dispatch(target, mob/user, list/href_list)
 	if(!target || !href_list)
 		return null
@@ -12,11 +60,58 @@
 	// An op that names the href answers it (the inbox tried first for a player's link; this reaches the admin holder's own, a re-run answer and a forward).
 	if(user && op_topic_href(user, target, href_list))
 		return TRUE
+	var/list/row = topic_find_row(target, href_list)
+	if(!row)
+		var/datum/D = target
+		var/datum/forward = D.topic_forward()
+		if(forward && forward != D)
+			return topic_dispatch(forward, user, href_list)
+		return null
+	return topic_run(target, user, href_list, row)
+
+/// Runs one row: rights, typed
+/// args, handler.
+/proc/topic_run(target, mob/user, list/href_list, list/row)
 	var/datum/D = target
-	var/datum/forward = D.topic_forward()
-	if(forward && forward != D)
-		return topic_dispatch(forward, user, href_list)
-	return null
+	if(QDELETED(D))
+		return null
+	var/list/handler_args = list()
+	handler_args[TOPIC_HREF] = href_list
+	for(var/list/spec as anything in row[3])
+		switch(spec[1])
+			if(TOPIC_SPEC_RIGHTS)
+				if(!admin_can(user?.client, spec[2]))
+					// A rights failure on an href is how exploit attempts show up: always tell admins.
+					var/attempt = "[key_name(user)] tried href action '[row[1]]' on [topic_target_type(target)] without [rights2text(spec[2], " ")]"
+					admin_log_denial(user?.client, "topic:[row[1]]", spec[2])
+					log_admin(attempt)
+					log_href("TOPIC_RIGHTS rejected: [attempt]")
+					message_admins("[key_name_admin(user)] tried href action '[row[1]]' on [topic_target_type(target)] without sufficient rights.")
+					if(user)
+						to_chat(user, span_red("Error: You do not have sufficient rights to do that. You require one of the following flags:[rights2text(spec[2], " ")]."), confidential = TRUE)
+					return null
+			if(TOPIC_SPEC_REF)
+				var/name = spec[2]
+				var/raw = href_list[name]
+				if(isnull(raw))
+					handler_args[name] = null
+					continue
+				var/found = topic_resolve_ref(target, raw, spec[3], length(spec) >= 4 ? spec[4] : null)
+				if(isnull(found))
+					log_href("TOPIC_REF rejected: [key_name(user)] sent [name]=[raw] (wants [spec[3]]) to [topic_target_type(target)] action [row[1]]")
+					return null
+				handler_args[name] = found
+			if(TOPIC_SPEC_NUM)
+				// ALLOW(sys_topic_raw_num): the core dispatcher's TOPIC_NUM conversion.
+				handler_args[spec[2]] = text2num(href_list[spec[2]])
+			if(TOPIC_SPEC_TEXT)
+				var/text = href_list[spec[2]]
+				if(!isnull(text))
+					text = "[text]"
+					if(length(spec) >= 3 && spec[3] && length(text) > spec[3])
+						text = copytext(text, 1, spec[3] + 1)
+				handler_args[spec[2]] = text
+	return call(target, row[2])(user, handler_args)
 
 /// `locate(raw) in <source>`, then istype(`wanted`); null if either fails or it is being deleted.
 /proc/topic_resolve_ref(target, raw, wanted, source)

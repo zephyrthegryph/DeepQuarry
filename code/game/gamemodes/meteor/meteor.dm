@@ -11,7 +11,7 @@
 
 /// The waves have begun (METEOR_DELAY into the round); they then repeat every GLOB.meteor_wave_delay.
 /datum/game_mode/meteor/var/meteor_waves = FALSE
-TRACKED(/datum/game_mode/meteor, meteor_waves)
+TRACKED_BRIDGED(/datum/game_mode/meteor, meteor_waves, CHANGE_DATUM_A)
 CAPABILITIES(/datum/game_mode/meteor)
 	every(PROC_REF(meteor_wave_delay), then(PROC_REF(meteor_wave)), when = nameof(meteor_waves))
 

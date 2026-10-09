@@ -103,6 +103,34 @@
 	TEST_ASSERT(plain.get_integrity() < plain.max_integrity, "yet the hits landed")
 
 // ---------------------------------------------------------------------------------------------------------------------
+// The legacy DAMAGE_REACTION rows still run, alone and beside a new hook (the hook first).
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/hit_legacy_rows_still_run
+
+/datum/unit_test/dq_p2_engine/hit_legacy_rows_still_run/run_gate()
+	var/obj/p2_hit/legacy/L = allocate(/obj/p2_hit/legacy)
+	var/answered = deliver(L, DAMAGE_ENTRY_EMP)
+	var/ran = L.legacy
+	var/integrity_after_block = L.get_integrity()
+	L.legacy_blocks = FALSE
+	var/landed = deliver(L, DAMAGE_ENTRY_EMP)
+	TEST_ASSERT_EQUAL(ran, 1, "the legacy before_op row ran")
+	TEST_ASSERT_EQUAL(answered, 0, "and its block stopped the hit")
+	TEST_ASSERT_EQUAL(integrity_after_block, L.max_integrity, "integrity is unchanged")
+	TEST_ASSERT(landed > 0, "a row that does not block lets the hit land")
+
+/datum/unit_test/dq_p2_engine/hit_hook_then_legacy_row
+
+/datum/unit_test/dq_p2_engine/hit_hook_then_legacy_row/run_gate()
+	var/obj/p2_hit/both/B = allocate(/obj/p2_hit/both)
+	var/obj/p2_hit/plain/plain = allocate(/obj/p2_hit/plain)
+	var/full = deliver(plain, DAMAGE_ENTRY_EMP)
+	var/answered = deliver(B, DAMAGE_ENTRY_EMP)
+	TEST_ASSERT_EQUAL(B.legacy, 1, "the legacy row ran")
+	TEST_ASSERT_EQUAL(answered, full * 0.5, "after the hook halved the packet")
+
+// ---------------------------------------------------------------------------------------------------------------------
 // ruined() in dismantle: the ruined parts replace the ordinary ones; the ledger is refunded either way.
 // ---------------------------------------------------------------------------------------------------------------------
 

@@ -59,6 +59,11 @@
 #define VV_TOPIC "vv"
 /// Namespace of actions on the admin's own client (basic edits, lists, Vars, rename, ...).
 #define VV_ADMIN_TOPIC "vv_admin"
+/// A VV dropdown action on datums of PATH; the handler runs on the VV'd datum as proc(mob/user, list/args).
+#define VV_TOPIC_ACTION(PATH, KEY, PROC, SPECS...) ##PATH/topic_actions() { return topic_register(..(), KEY, PROC, list(SPECS), VV_TOPIC); }
+/// A VV action handled by the admin's client; declare the VV target as a TOPIC_REF spec.
+#define VV_ADMIN_TOPIC_ACTION(KEY, PROC, SPECS...) /client/topic_actions() { return topic_register(..(), KEY, PROC, list(SPECS), VV_ADMIN_TOPIC); }
+
 // VV HREF KEYS
 #define VV_HK_TARGET "target"
 #define VV_HK_VARNAME "targetvar" //name or index of var for 1 variable targeting hrefs.

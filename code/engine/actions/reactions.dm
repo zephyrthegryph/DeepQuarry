@@ -243,6 +243,11 @@
 	var/list/holder_keys
 	/// sig -> on_change reaction with at_most (a held delivery finds its reaction when its window ends).
 	var/list/at_most_by_sig
+	/// before_op / after_op reactions on damage keys (damage(trigger)) as list(trigger, handler, phase), parents
+	/// first: what receive_damage() runs (code/datums/sys/damage_reactions.dm). Null: none.
+	var/list/damage_rows
+	/// TRUE when a damage row is an after_op.
+	var/damage_after = FALSE
 
 /// type -> /datum/rx_table, or 0 for a type that reacts to nothing and reads nothing.
 GLOBAL_LIST_EMPTY(rx_tables)
@@ -330,8 +335,10 @@ GLOBAL_LIST_EMPTY(rx_tables)
 				LAZYSET(T.at_most_by_sig, R.sig, R)
 		if(RXN_BEFORE_OP)
 			rx_table_add_op(T.before_keyed, T.before_typed, R)
+			T.add_domain_reaction(R)
 		if(RXN_AFTER_OP)
 			rx_table_add_op(T.after_keyed, T.after_typed, R)
+			T.add_domain_reaction(R)
 		if(RXN_NOTICE)
 			// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 			T.notices += R
@@ -355,3 +362,7 @@ GLOBAL_LIST_EMPTY(rx_tables)
 		return
 	LAZYINITLIST(keyed[R.key])
 	keyed[R.key] += R
+
+/// A domain may cache its typed reaction rows alongside the generic table.
+/datum/rx_table/proc/add_domain_reaction(datum/reaction/R)
+	return

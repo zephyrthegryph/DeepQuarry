@@ -1069,6 +1069,7 @@ world_reads	code/game/gamemodes/cult/narsie.dm	GLOB.narsie_cometh = 1
 world_reads	code/game/gamemodes/cult/ritual.dm	if(!GLOB.cultwords["travel"])
 world_reads	code/game/gamemodes/cult/ritual.dm	for(var/V in GLOB.cultwords)
 world_reads	code/game/gamemodes/cult/ritual.dm	words[GLOB.cultwords[V]] = V
+world_reads	code/game/gamemodes/meteor/meteors.dm	changed(GLOB.meteor_watch, CHANGE_METEORS)
 world_reads	code/game/machinery/atm_ret_field.dm	for(var/direction in GLOB.cardinal)
 world_reads	code/game/machinery/camera/camera.dm	LAZYOR(client_huds, GLOB.global_hud.whitense)
 world_reads	code/game/machinery/doors/firedoor.dm	for(var/direction in GLOB.cardinal)

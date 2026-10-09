@@ -243,6 +243,8 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 		return
 	if(choice != selecting)
 		set_selecting(choice)
+		if(user)
+			changed(user, CHANGE_MOB_TARGETING)
 
 TRACKED(/atom/movable/screen/zone_sel, selecting)
 

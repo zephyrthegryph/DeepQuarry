@@ -121,6 +121,7 @@ unkeyed_wire_after	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/
 unkeyed_wire_after	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	after(src, 0.1 SECONDS, PROC_REF(yeet), with = list(am))
 unkeyed_wire_after	code/modules/power/grid_checker.dm	after(src, 30 SECONDS, PROC_REF(end_wire_lockout))
 unkeyed_wire_after	code/modules/recycling/disposal_junctions.dm	after(src, 10 SECONDS, PROC_REF(reset_scan))
+manual_push	code/_onclick/hud/screen_objects.dm	changed(user, CHANGE_MOB_TARGETING)
 manual_push	code/datums/capabilities/capabilities.dm	changed(A, CHANGE_CAPABILITY)
 manual_push	code/datums/capabilities/capability_ext.dm	changed(A, CHANGE_CAPABILITY)
 manual_push	code/datums/capabilities/capability_ext.dm	changed(A, CHANGE_CAPABILITY)
@@ -138,6 +139,9 @@ manual_push	code/datums/capabilities/library/writable.dm	changed(A, CHANGE_CAPAB
 manual_push	code/datums/capabilities/timed.dm	changed(D, CHANGE_EXPLICIT, var_name)
 manual_push	code/datums/sys/appearance.dm	changed(T, CHANGE_NEIGHBOURS)
 manual_push	code/datums/sys/appearance.dm	changed(A, CHANGE_NEIGHBOURS)
+manual_push	code/game/area/areas.dm	changed(src, CHANGE_AREA_POWER)
+manual_push	code/game/area/areas.dm	changed(src, CHANGE_AREA_POWER)
+manual_push	code/game/area/areas.dm	changed(src, CHANGE_AREA_POWER)
 manual_push	code/game/atom/atom_defense.dm	changed(src, CHANGE_INTEGRITY) // damage is a dispatched change: derived procs (draw) re-run; OM observers hear it
 manual_push	code/game/machinery/doors/airlock.dm	changed(src, CHANGE_MACHINE_MODE)
 manual_push	code/game/machinery/machinery_power.dm	changed(src, CHANGE_MACHINE_SETTINGS, nameof(use_power))
@@ -151,6 +155,8 @@ manual_push	code/modules/body/body_effects.dm	changed(src, CHANGE_MOB_CONDITIONS
 manual_push	code/modules/body/injury.dm	changed(src, CHANGE_MOB_HEALTH)
 manual_push	code/modules/body/injury.dm	changed(src, CHANGE_MOB_HEALTH)
 manual_push	code/modules/body/injury.dm	changed(src, CHANGE_MOB_HEALTH)
+manual_push	code/modules/heat/heat_mobs.dm	changed(src, CHANGE_MOB_VITALS)
+manual_push	code/modules/heat/heat_mobs.dm	changed(src, CHANGE_MOB_VITALS)
 manual_push	code/modules/medical/stabilisation/stasis.dm	changed(src, CHANGE_MOB_CONDITIONS)
 manual_push	code/modules/mob/living/carbon/brain/MMI.dm	changed(occupant, CHANGE_MOB_HEALTH) // wake the status stage to work off the interference
 manual_push	code/modules/mob/living/carbon/human/human.dm	changed(src, CHANGE_MOB_CONDITIONS) // species vision and senses

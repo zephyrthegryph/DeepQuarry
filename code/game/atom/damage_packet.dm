@@ -1,15 +1,26 @@
 // --- The sinks ------------------------------------------------------------------
 
 /// Apply a damage packet. Returns the amount actually applied after mitigation.
-/// The hit action's hooks run first (extend(/datum/act/hit/x, instead(...)) in the type's CAPABILITIES block): one that
-/// cancels stops the hit. Then the sink applies it. Not overridable: a type changes where damage lands by overriding damage_sink().
+/// The type's damage reactions run first (before_op(damage(...)) in its composed reactions table,
+/// doc/rewrite/reactions.md section 1b): one that blocks stops the hit. Then the sink applies it, then the
+/// after_op(damage(...)) rows. Not overridable: a type changes where damage lands by overriding damage_sink().
 /atom/proc/receive_damage(datum/damage_packet/packet)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	// The engine's hit action (the hit bridge): hooks of /datum/act/hit and its entry subtypes run first. A holder nothing hooks pays one act_wanted() check.
 	var/hit = hit_try(src, packet)
 	if(isnull(hit))
 		return 0
+	var/list/rows = damage_rows_of(src)
+	if(!rows)
+		. = damage_sink(packet)
+		act_done(hit)
+		return
+	if(run_damage_reactions(rows, packet, DAMAGE_REACTION_PHASE_BEFORE))
+		act_cancel(hit)
+		return 0
 	. = damage_sink(packet)
+	if(damage_rows_after(src) && !QDELETED(src))
+		run_damage_reactions(rows, packet, DAMAGE_REACTION_PHASE_AFTER)
 	act_done(hit)
 
 /// The hit action type an entry of a packet is, the most specific one (a hook of /datum/act/hit applies to every subtype of it): projectile, melee
@@ -121,12 +132,13 @@
 	packet.release()
 
 /// Deliver `amount` of an item's (or blob's) declared kinds in `packet`, then release it.
-/// A packet from an entry that lands nothing still reaches the type's hit hooks (react_to_entry()).
+/// A packet from an entry that lands nothing still runs the type's declared reactions.
 /atom/proc/receive_split(datum/damage_packet/packet, injury_kind, alist/injury_kinds, amount)
 	if(amount > 0 && packet.add_split(injury_kind, injury_kinds, amount))
 		. = receive_damage(packet)
 	else
-		if(amount > 0)
+		var/blocked = packet.entry && react_to_packet(packet)
+		if(amount > 0 && !blocked)
 			. = receive_internal_injury(packet, injury_kind, injury_kinds, amount)
 	packet.release()
 
@@ -137,6 +149,8 @@
 		react_to_entry(DAMAGE_ENTRY_PROJECTILE, 0, P, P.firer)
 		return 0
 	var/datum/damage_packet/packet = damage_packet(P, P.firer, null, def_zone, DAMAGE_PACKET_PROJECTILE, P.armor_penetration, P.dir, null, DAMAGE_ENTRY_PROJECTILE)
+	if(GLOB.projectile_pre_reacted == ref(src))
+		packet.flags |= DAMAGE_PACKET_PRE_REACTED
 	if(P.edge)
 		packet.flags |= DAMAGE_PACKET_EDGE
 	return receive_split(packet, P.injury_kind, P.injury_kinds, P.damage * multiplier)

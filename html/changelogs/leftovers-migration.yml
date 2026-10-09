@@ -1,5 +1,0 @@
-author: "zephyrthegryph"
-delete-after: true
-changes:
-  - refactor: "Cyborg and human emags are emag capability entries; declared emag, damage-reaction and topic-action tables are deleted and banned"
-  - code_imp: "Deleted five change channels nothing listened to"

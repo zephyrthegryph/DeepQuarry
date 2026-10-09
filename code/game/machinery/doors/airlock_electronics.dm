@@ -57,6 +57,9 @@ CAPABILITIES(/obj/item/airlock_electronics)
 	emagged = 1
 	return OP_OK
 
+/obj/item/airlock_electronics/mark_emagged()
+	emagged = TRUE
+
 /// The computed part of the window data.
 /obj/item/airlock_electronics/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

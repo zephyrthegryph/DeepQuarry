@@ -1,4 +1,5 @@
-// The exosuit's control-panel links (its hrefs), through the input inbox: the pilot's reach the controls, a stranger's do nothing. These read the same for an op.
+// The exosuit's control-panel links (its hrefs), through the input inbox: the pilot's reach the controls, a stranger's do nothing. These read the same
+// whether a link is a TOPIC_ACTION row or an op.
 
 /datum/unit_test/dq_topic_mecha_panel
 

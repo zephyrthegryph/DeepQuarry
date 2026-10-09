@@ -1,5 +1,5 @@
 // Mob window links (hrefs) through the input inbox: a language panel's links work only for the mob whose panel it is, and name a language the mob knows.
-// These read the same for an op.
+// These read the same whether a link is a TOPIC_ACTION row or an op.
 
 /datum/unit_test/dq_topic_language_links
 

@@ -293,6 +293,7 @@ TRACKED(/area, always_unpowered)
 // power, and the base power_change() emits machinery_power_lost or
 // machinery_power_restored when it flips.
 /area/proc/power_change()
+	changed(src, CHANGE_AREA_POWER)
 	// The machines' has_power is a read of this area's channels (area_gives_power()): settle it now, whatever wrote the channel vars (the tracked
 	// writer marks the same stat for a later drain, which then finds it unchanged), so power_change() below acts on a current reading.
 	var/datum/stat_def/power_def = stat_def_of(STAT_HAS_POWER)
@@ -346,6 +347,7 @@ TRACKED(/area, always_unpowered)
 			oneoff_environ += amount
 	if(amount)
 		power_loads_changed()
+		changed(src, CHANGE_AREA_POWER)
 	return amount
 
 /// The lights standing in the area (a copy; the fixtures are among the machines that name it as their power_area).
@@ -659,3 +661,4 @@ CAPABILITIES(/area)
 /// What the area's machines ask of a channel changed: its APC takes the new load at the next power step.
 /area/proc/demand_changed(datum/act/A)
 	power_loads_changed()
+	changed(src, CHANGE_AREA_POWER)
