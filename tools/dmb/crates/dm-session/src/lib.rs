@@ -2,5 +2,11 @@
 //! Exact keys and issuer-domain answers authorize reuse; hashes only select buckets.
 mod artifacts;
 mod reads;
-pub use artifacts::{AcceptedArtifact, ArtifactStorageView, ArtifactStore, DEFAULT_RESIDENT_BYTES};
+pub use artifacts::{
+    AcceptedArtifact, ArtifactStorageView, ArtifactStore, ObservedArtifact,
+    ObservedArtifactStorageView, ObservedArtifactStore, DEFAULT_RESIDENT_BYTES,
+};
 pub use reads::{matching_domains, RecordingResolver, ResolverRead};
+
+pub mod observations;
+pub use observations::{Observation, ObservationHost, ObservationLedger};

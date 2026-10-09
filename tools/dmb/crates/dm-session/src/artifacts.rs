@@ -1,21 +1,26 @@
 //! Immutable result ownership with budgeted or current-revision retention.
-use crate::{matching_domains, ResolverRead};
-use dm_ir::{ReadDomain, ResolveQuery, Resolver};
+use crate::{
+    observations::{Observation, ObservationHost},
+    ResolverRead,
+};
+#[cfg(test)]
+use dm_ir::Resolver;
+use dm_ir::{ReadDomain, ResolveQuery, ResolvedMeaning};
 use std::{
     collections::BTreeMap,
     sync::{Arc, Mutex},
 };
 pub const DEFAULT_RESIDENT_BYTES: usize = 8 * 1024 * 1024;
 /// Exact key/read acceptance issued by this store; the ledger shares its backing.
-pub struct AcceptedArtifact<T> {
+pub struct ObservedArtifact<T, Q, A, D> {
     pub value: Arc<T>,
-    pub reads: Arc<[ResolverRead]>,
-    pub versions: Arc<[(ReadDomain, u128)]>,
+    pub reads: Arc<[Observation<Q, A, D>]>,
+    pub versions: Arc<[(D, u128)]>,
 }
 
 /// Diagnostic-only borrowed storage. Bucket bytes are exposed Vec allocations;
 /// BTree nodes/control blocks are deliberately not represented as exact bytes.
-pub enum ArtifactStorageView<'a, T> {
+pub enum ObservedArtifactStorageView<'a, T, Q, A, D> {
     Store {
         buckets: usize,
         entries: usize,
@@ -28,29 +33,29 @@ pub enum ArtifactStorageView<'a, T> {
     },
     Entry {
         key: &'a Arc<[u8]>,
-        reads: &'a Arc<[ResolverRead]>,
-        versions: &'a Arc<[(ReadDomain, u128)]>,
+        reads: &'a Arc<[Observation<Q, A, D>]>,
+        versions: &'a Arc<[(D, u128)]>,
         value: &'a Arc<T>,
     },
 }
 #[derive(Clone)]
-struct Variant<T> {
+struct Variant<T, Q = ResolveQuery, A = ResolvedMeaning, D = ReadDomain> {
     key: Arc<[u8]>,
-    reads: Arc<[ResolverRead]>,
-    versions: Arc<[(ReadDomain, u128)]>,
+    reads: Arc<[Observation<Q, A, D>]>,
+    versions: Arc<[(D, u128)]>,
     value: Arc<T>,
     weight: usize,
 }
-struct Resident<T> {
-    buckets: BTreeMap<u128, Vec<Variant<T>>>,
+struct Resident<T, Q, A, D> {
+    buckets: BTreeMap<u128, Vec<Variant<T, Q, A, D>>>,
     bytes: usize,
 }
 
 /// Hashes choose buckets only; exact key bytes and all semantic answers authorize
 /// reuse. Budgeted stores evict insertion-ordered variants; current-revision
 /// stores keep one answer per exact key and prune against the caller's roster.
-pub struct ArtifactStore<T> {
-    state: Mutex<Resident<T>>,
+pub struct ObservedArtifactStore<T, Q, A, D> {
+    state: Mutex<Resident<T, Q, A, D>>,
     retention: Retention,
 }
 #[derive(Clone, Copy)]
@@ -60,29 +65,32 @@ enum Retention {
     /// One value per exact key; history is replaced rather than accumulated.
     RetainedCurrentRevision,
 }
-impl<T> Default for ArtifactStore<T> {
+impl<T, Q, A, D> Default for ObservedArtifactStore<T, Q, A, D> {
     fn default() -> Self {
         Self::with_limit(DEFAULT_RESIDENT_BYTES)
     }
 }
-impl<T> ArtifactStore<T> {
+impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
     /// Explicit census only. The callback runs under the store lock and must not
     /// call back into this store. No value/key cloning or serialization occurs.
-    pub fn visit_storage(&self, mut visit: impl FnMut(ArtifactStorageView<'_, T>)) {
+    pub fn visit_storage(
+        &self,
+        mut visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>),
+    ) {
         let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-        visit(ArtifactStorageView::Store {
+        visit(ObservedArtifactStorageView::Store {
             buckets: state.buckets.len(),
             entries: state.buckets.values().map(Vec::len).sum(),
         });
         for bucket in state.buckets.values() {
-            visit(ArtifactStorageView::Bucket {
+            visit(ObservedArtifactStorageView::Bucket {
                 address: bucket.as_ptr() as usize,
                 len: bucket.len(),
                 capacity: bucket.capacity(),
-                element_size: std::mem::size_of::<Variant<T>>(),
+                element_size: std::mem::size_of::<Variant<T, Q, A, D>>(),
             });
             for entry in bucket {
-                visit(ArtifactStorageView::Entry {
+                visit(ObservedArtifactStorageView::Entry {
                     key: &entry.key,
                     reads: &entry.reads,
                     versions: &entry.versions,
@@ -141,33 +149,35 @@ impl<T> ArtifactStore<T> {
         }
     }
 }
-impl<T: Send + Sync> ArtifactStore<T> {
-    pub fn lookup<R: Resolver>(&self, key: &[u8], resolver: &R) -> Option<Arc<T>> {
+impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
+    ObservedArtifactStore<T, Q, A, D>
+{
+    pub fn lookup<R: ObservationHost<Q, A, D>>(&self, key: &[u8], resolver: &R) -> Option<Arc<T>> {
         self.lookup_explained(key, resolver).0
     }
-    pub fn lookup_explained<R: Resolver>(
+    pub fn lookup_explained<R: ObservationHost<Q, A, D>>(
         &self,
         key: &[u8],
         resolver: &R,
-    ) -> (Option<Arc<T>>, Option<ResolveQuery>) {
+    ) -> (Option<Arc<T>>, Option<Q>) {
         self.visit_explained(key, resolver, &mut |_| true)
     }
     /// Consumer rejection continues to the next exact read-valid variant.
-    pub fn visit_explained<R: Resolver>(
+    pub fn visit_explained<R: ObservationHost<Q, A, D>>(
         &self,
         key: &[u8],
         resolver: &R,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
-    ) -> (Option<Arc<T>>, Option<ResolveQuery>) {
+    ) -> (Option<Arc<T>>, Option<Q>) {
         let (accepted, changed) = self.visit_receipted(key, resolver, accept);
         (accepted.map(|accepted| accepted.value), changed)
     }
-    pub fn visit_receipted<R: Resolver>(
+    pub fn visit_receipted<R: ObservationHost<Q, A, D>>(
         &self,
         key: &[u8],
         resolver: &R,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
-    ) -> (Option<AcceptedArtifact<T>>, Option<ResolveQuery>) {
+    ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
         let hash = xxhash_rust::xxh3::xxh3_128(key);
         // Resolver work takes place outside the store lock, allowing parallel units.
         let candidates = {
@@ -189,17 +199,20 @@ impl<T: Send + Sync> ArtifactStore<T> {
         };
         let mut changed = None;
         for (reads, versions, value) in candidates.into_iter().rev() {
-            let matching = matching_domains(&versions, resolver);
-            let mismatch = reads.iter().find(|read| {
-                !matching.contains(&read.domain)
-                    && resolver.resolve(read.query).canonical_bytes()
-                        != read.answer.canonical_bytes()
+            let matching = crate::observations::certified_domains(&versions, |domain| {
+                resolver.version(domain)
             });
-            if let Some(read) = mismatch {
-                changed = Some(read.query);
+            let mismatch = crate::observations::first_changed(
+                &reads,
+                &matching,
+                |query| resolver.answer(query),
+                |current, previous| resolver.equivalent(current, previous),
+            );
+            if let Some(query) = mismatch {
+                changed = Some(query.clone());
             } else if accept(&value) {
                 return (
-                    Some(AcceptedArtifact {
+                    Some(ObservedArtifact {
                         value,
                         reads,
                         versions,
@@ -210,20 +223,11 @@ impl<T: Send + Sync> ArtifactStore<T> {
         }
         (None, changed)
     }
-    pub fn insert(&self, key: Arc<[u8]>, reads: Vec<ResolverRead>, value: T) {
-        let weight = key.len()
-            + std::mem::size_of::<T>()
-            + reads
-                .iter()
-                .map(|read| read.answer.canonical_bytes().len())
-                .sum::<usize>();
-        self.insert_with(key, reads, Vec::new(), weight, || value);
-    }
     pub fn insert_with(
         &self,
         key: Arc<[u8]>,
-        reads: Vec<ResolverRead>,
-        versions: Vec<(ReadDomain, u128)>,
+        reads: Vec<Observation<Q, A, D>>,
+        versions: Vec<(D, u128)>,
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> bool {
@@ -299,6 +303,22 @@ impl<T: Send + Sync> ArtifactStore<T> {
         });
         state.bytes += weight;
         true
+    }
+}
+
+pub type ArtifactStore<T> = ObservedArtifactStore<T, ResolveQuery, ResolvedMeaning, ReadDomain>;
+pub type AcceptedArtifact<T> = ObservedArtifact<T, ResolveQuery, ResolvedMeaning, ReadDomain>;
+pub type ArtifactStorageView<'a, T> =
+    ObservedArtifactStorageView<'a, T, ResolveQuery, ResolvedMeaning, ReadDomain>;
+impl<T: Send + Sync> ArtifactStore<T> {
+    pub fn insert(&self, key: Arc<[u8]>, reads: Vec<ResolverRead>, value: T) {
+        let weight = key.len()
+            + std::mem::size_of::<T>()
+            + reads
+                .iter()
+                .map(|read| read.answer.canonical_bytes().len())
+                .sum::<usize>();
+        self.insert_with(key, reads, Vec::new(), weight, || value);
     }
 }
 
