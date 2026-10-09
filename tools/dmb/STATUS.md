@@ -2,6 +2,39 @@
 
 Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 
+## Latest matched cold cohort (prepared-source snapshot)
+
+The compressed-trace ABABAB cohort for commit `64d40464a9` completed with
+three measured runs per compiler, eight workers and the captured historical
+DeepQuarry project `ac1af55d`. All six runs passed measurement admission,
+native fresh-output/diagnostic equality and structural no-regression.
+
+| Median | Control | Candidate |
+| --- | ---: | ---: |
+| Child wall | 11.790 s | 12.498 s |
+| Critical CPU point | 9.422 s | 9.578 s |
+| Critical CPU upper | 11.484 s | 11.703 s |
+| Total CPU | 30.250 s | 30.875 s |
+| Peak private bytes | 2,198,388,736 | 1,569,341,440 |
+| Read bytes | 550,004,461 | 326,324,811 |
+| Written bytes | 568,844,338 | 569,274,453 |
+
+This is a 28.6% memory reduction against this control, not a CPU improvement:
+candidate wall is 6.0% higher and total CPU 2.1% higher. It is not a paired
+comparison against the previous optimized candidate. Memory, input,
+resources/maps, ABI/initializers and composition/publication gates remain open.
+Candidate byte budgets fit, but the I/O gate remains not evaluable because
+blocked-I/O timing is unavailable. Full release tests were not completed before
+the cohort; the separate release gate has now started against the same stable
+derived candidate. This cohort excludes the later startup forwarding, borrowed
+initializer assignments, transient output/debug roster and parallel path fixes.
+
+Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/matched-gzip-20261009-054556-be4e68dd/comparison.json`.
+A separate precondition audit records the stale preparation wording and unrelated
+user Cargo activity during sequential builds without modifying frozen receipts:
+`E:/dq-cache/dmb-native-v2/matched-gzip-precondition-audit-20261009-054556-be4e68dd-20261009-060514.json`.
+BYOND behavioral parity and retained incremental sessions remain unfinished.
+
 ## Compact prepared-source candidate
 
 Commit `64d40464a9` stores prepared logical lines in 40-byte checked records
