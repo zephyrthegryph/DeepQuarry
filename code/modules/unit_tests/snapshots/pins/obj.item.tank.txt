@@ -62,9 +62,14 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Tank item
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage click: Click: Tank item
+human|/obj/item/assembly_holder menu: Attach assembly (refused: <span class='notice'>You need to wire the device up first.</span>)
+human|/obj/item/assembly_holder menu: Move To Top
+human|/obj/item/assembly_holder menu: Tank item
+human|/obj/item/assembly_holder menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly_holder click: Click: Attach assembly
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Tank item
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Tank item
-keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, pressure, self, tank_item, toggle, toggle_digestable, use_welder, use_wirecutter
+keys: attach_assembly, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, pressure, self, tank_item, toggle, toggle_digestable, use_welder, use_wirecutter
 
