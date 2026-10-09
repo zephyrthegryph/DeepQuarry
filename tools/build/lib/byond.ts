@@ -434,8 +434,7 @@ function runDreamDaemonWithWatchdog(
       try {
         const age = Date.now() - fs.statSync(options.stallFile).mtimeMs;
         if (age < stallMs) return null;
-        const lines = fs.readFileSync(options.stallFile, 'utf-8').split(/?
-/).filter((l) => l.trim());
+        const lines = fs.readFileSync(options.stallFile, 'utf-8').split('\n').filter((l) => l.trim());
         return `stalled: ${options.stallFile} has not changed for ${Math.round(age / 60000)} min; its last line: ${(lines[lines.length - 1] ?? '').slice(0, 300)}`;
       } catch {
         return null; // no log yet: the world is still booting
