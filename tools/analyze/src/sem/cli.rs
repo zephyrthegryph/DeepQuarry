@@ -201,6 +201,10 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
     let mut written: Vec<std::path::PathBuf> = Vec::new();
     let mut results = Vec::new();
     let mut last_tree: Option<Engine> = None;
+    let stages: std::collections::HashMap<&'static str, u8> = super::gen::registry().iter().map(|g| (g.name(), g.stage())).collect();
+    let order: Vec<&'static str> = super::gen::registry().iter().map(|g| g.name()).collect();
+    // The stage 1 results of the pass that ran it: its files were written, and the next pass only proves stage 0 is still fresh.
+    let mut stage1_results: Option<Vec<super::gen::GenResult>> = None;
     for pass in 0..5 {
         let o = Options { root: root.to_path_buf(), lints: vec!["sem/keys".to_string()], ..Default::default() };
         let engine = match Engine::new(crate::run::registry(), o) {
@@ -230,24 +234,38 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
             }
             written.extend(wrote0);
             results = r0;
+            stage1_results = None;
             continue;
+        }
+        if let Some(s1) = stage1_results.take() {
+            // Stage 0 is still fresh against the files stage 1 wrote. Stage 1's own output is not an input of any generator
+            // (the tests prove a stage 1 pass from any starting content writes the same files), so it is not run again: that
+            // would parse the full model a second time to prove the same thing.
+            let mut all = r0;
+            all.extend(s1);
+            all.sort_by_key(|r| order.iter().position(|n| *n == r.name).unwrap_or(usize::MAX));
+            results = all;
+            last_tree = Some(engine);
+            break;
         }
         let r1 = super::gen::run_stage(root, &engine.tree, &names, check, Some(1));
         let wrote1: Vec<_> = r1.iter().filter(|r| r.state == super::gen::State::Written).map(|r| r.path.clone()).collect();
         // Report in registry order, as a single pass always did.
         let mut all = r0;
         all.extend(r1);
-        let order: Vec<&'static str> = super::gen::registry().iter().map(|g| g.name()).collect();
         all.sort_by_key(|r| order.iter().position(|n| *n == r.name).unwrap_or(usize::MAX));
-        results = all;
         if check || wrote1.is_empty() {
+            results = all;
             last_tree = Some(engine);
             break;
         }
         if trace {
-            eprintln!("analyze: gen pass {}: stage 1 wrote {} file(s); checking the fixed point", pass + 1, wrote1.len());
+            eprintln!("analyze: gen pass {}: stage 1 wrote {} file(s); checking that stage 0 is still fresh", pass + 1, wrote1.len());
         }
         written.extend(wrote1);
+        let (s1, s0): (Vec<_>, Vec<_>) = all.into_iter().partition(|r| stages.get(r.name).copied().unwrap_or(0) == 1);
+        results = s0;
+        stage1_results = Some(s1);
     }
     if results.is_empty() {
         eprintln!("analyze gen: no generator named {:?}", names);
