@@ -27,8 +27,26 @@ pub(crate) fn inspect(store: &InitializerAssemblies) -> HeapCensusReport {
                 census.resolver_code(code);
                 census.initializer_fragment_recipes(recipes, references);
                 census.vec_payload("initializer_assemblies.root_indexes", root_indexes);
+                census.initializer_encoding(value.encoding());
             }
         }
     });
     census.finish()
+}
+
+impl HeapCensus {
+    pub(crate) fn initializer_encoding(
+        &mut self,
+        encoding: &Arc<crate::symbolic::InitializerEncoding>,
+    ) {
+        if self.arc_object("initializer_encoding", encoding) {
+            if let Some(ready) = encoding.retained() {
+                if self.arc_object("initializer_encoding.payload", ready) {
+                    self.frozen_code(&ready.frozen);
+                    self.vec_payload("initializer_encoding.slots", &ready.slots);
+                    self.prepared_strings(&ready.strings);
+                }
+            }
+        }
+    }
 }

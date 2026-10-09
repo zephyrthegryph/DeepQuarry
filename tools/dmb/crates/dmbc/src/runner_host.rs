@@ -8,6 +8,10 @@ use std::{
     sync::{Arc, Mutex, OnceLock},
 };
 
+#[path = "runner_disk.rs"]
+mod disk;
+#[path = "runner_host_idle.rs"]
+mod idle;
 #[path = "runner_host_memo.rs"]
 mod memo;
 
@@ -22,6 +26,7 @@ type HostParts<'a> = (
 /// One semantic session's retained artifacts and bounded executor. A long-lived
 /// caller reuses this owner across requests without retaining a publication lease.
 pub struct BuildHost {
+    disk_warmup: disk::WarmupState,
     engine: Option<Arc<RetainedEngine>>,
     memo: Option<memo::ResidentMemo>,
     executor: Option<dm_exec::BuildExecutor>,
@@ -36,6 +41,7 @@ pub struct BuildHost {
         u128,
         Arc<crate::initializer_lowering::InitializerAssemblies>,
     )>,
+    class_projections: Option<(u128, Arc<crate::class_projection::ClassProjections>)>,
     symbolic: Option<(
         u128,
         Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>,
@@ -61,6 +67,7 @@ pub(crate) struct RetainedEngine {
 impl Default for BuildHost {
     fn default() -> Self {
         Self {
+            disk_warmup: Default::default(),
             engine: None,
             executor: None,
             procedures: None,
@@ -73,6 +80,7 @@ impl Default for BuildHost {
             abi: None,
             initializer_fragments: None,
             initializer_assemblies: None,
+            class_projections: None,
         }
     }
 }
@@ -80,6 +88,7 @@ impl BuildHost {
     /// CLI adapter: no resident candidates or memo-record construction without disk.
     pub fn one_shot() -> Self {
         Self {
+            disk_warmup: Default::default(),
             engine: None,
             executor: None,
             procedures: None,
@@ -92,6 +101,7 @@ impl BuildHost {
             abi: None,
             initializer_fragments: None,
             initializer_assemblies: None,
+            class_projections: None,
         }
     }
 
@@ -128,6 +138,22 @@ impl BuildHost {
         self.initializer_assemblies
             .as_ref()
             .map(|(_, store)| crate::heap_census::initializer_assembly_census(store))
+    }
+
+    /// Explicit diagnostic owner traversal, outside artifact admission.
+    pub fn owner_projection_retention_census(
+        &self,
+    ) -> Option<crate::heap_census::HeapCensusReport> {
+        self.class_projections
+            .as_ref()
+            .map(|(_, store)| crate::heap_census::owner_projection_census(store))
+    }
+
+    /// Existing memo policy pins compiler/schema; engine() separately admits
+    /// exact project/defines/bootstrap/engine bytes and clears this state on change.
+    /// Moving the disk cache does not invalidate resident semantic values.
+    pub(crate) fn disk_admission(&mut self, policy: u128) -> disk::DiskAdmission {
+        self.disk_warmup.admit(self.memo.is_some(), policy)
     }
 
     pub(crate) fn retains_artifacts(&self) -> bool {
@@ -235,10 +261,19 @@ impl BuildHost {
         }
         memo.initializer_assemblies =
             Some(Arc::clone(&self.initializer_assemblies.as_ref().unwrap().1));
+        if self
+            .class_projections
+            .as_ref()
+            .is_none_or(|(previous, _)| *previous != policy)
+        {
+            self.class_projections = Some((policy, Arc::new(Default::default())));
+        }
+        memo.class_projections = Some(Arc::clone(&self.class_projections.as_ref().unwrap().1));
         Some(memo)
     }
 
     pub(crate) fn clear_regions(&mut self) {
+        self.disk_warmup.clear();
         if self.memo.is_some() {
             self.memo = Some(memo::ResidentMemo::default());
         }
@@ -323,6 +358,7 @@ impl BuildHost {
         if self.memo.is_some() {
             self.memo = Some(memo::ResidentMemo::default());
         }
+        self.disk_warmup.clear();
         self.procedures = None;
         self.symbolic = None;
         self.initializers = None;
@@ -330,6 +366,7 @@ impl BuildHost {
         self.abi = None;
         self.initializer_fragments = None;
         self.initializer_assemblies = None;
+        self.class_projections = None;
         self.maps = None;
         if self.semantic.is_some() {
             self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());

@@ -37,7 +37,7 @@ fn public_frontend_mutation_cannot_reuse_issued_startup_facts() {
     let original = FrontendRevision::new(frontend());
     let facts = capture_revision_facts_with_spellings_and_workers(&original, &[], 1).unwrap();
     let mut changed = (*original).clone();
-    changed.expanded.text = Arc::from(changed.expanded.text.replace("= 3", "= 4"));
+    changed.expanded.text = changed.expanded.text.replace("= 3", "= 4").into();
     assert!(facts
         .view_revision(&FrontendRevision::new(changed))
         .is_err());
@@ -78,7 +78,7 @@ fn public_frontend_mutation_cannot_reuse_issued_startup_facts() {
 fn owned_startup_certificate_does_not_keep_body_source_payloads_alive() {
     let frontend = FrontendRevision::new(frontend());
     let syntax = Arc::downgrade(&frontend.syntax);
-    let arena = Arc::downgrade(&frontend.expanded.text);
+    let arena = frontend.expanded.text.downgrade();
     let bodies = Arc::downgrade(&frontend.bodies);
     let ledger = Arc::downgrade(&frontend.allocation_ledger);
     let facts = capture_revision_facts_with_spellings_and_workers(&frontend, &[], 1).unwrap();

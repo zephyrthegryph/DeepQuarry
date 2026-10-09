@@ -1,13 +1,12 @@
 //! Admission of exact typed relocations before shared direct encoding.
 use super::*;
-pub(super) fn freeze_artifact_to_sink(
+pub(super) fn admit_artifact_to_sink(
     code: &dm_codegen_byond::lower_resolver::ResolverProc,
     identity: UnitIdentity,
     source_bindings: &std::collections::BTreeSet<SymRef>,
     external: &ReferenceBindings,
     sink: &mut dyn InventorySink,
-    freeze_detail: bool,
-) -> Result<FrozenProc, IntegrationError> {
+) -> Result<(), IntegrationError> {
     let mut admitted = std::collections::BTreeSet::new();
     for payload in &code.procedure.strings {
         if SymbolId::of_bytes(&payload.bytes) != payload.id {
@@ -87,6 +86,14 @@ pub(super) fn freeze_artifact_to_sink(
             message: format!("uncaptured semantic reference {reference:?}"),
         });
     }
+    Ok(())
+}
+
+pub(super) fn encode_admitted(
+    code: &dm_codegen_byond::lower_resolver::ResolverProc,
+    identity: UnitIdentity,
+    freeze_detail: bool,
+) -> Result<FrozenProc, IntegrationError> {
     freeze_proc_observed(&code.procedure.code, |stage| {
         freeze_detail.then(|| {
             dm_profile::item(match stage {
@@ -101,4 +108,16 @@ pub(super) fn freeze_artifact_to_sink(
         unit: identity,
         message: error.to_string(),
     })
+}
+
+pub(super) fn freeze_artifact_to_sink(
+    code: &dm_codegen_byond::lower_resolver::ResolverProc,
+    identity: UnitIdentity,
+    source_bindings: &std::collections::BTreeSet<SymRef>,
+    external: &ReferenceBindings,
+    sink: &mut dyn InventorySink,
+    freeze_detail: bool,
+) -> Result<FrozenProc, IntegrationError> {
+    admit_artifact_to_sink(code, identity, source_bindings, external, sink)?;
+    encode_admitted(code, identity, freeze_detail)
 }

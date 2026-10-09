@@ -67,6 +67,7 @@ pub struct MapMemo {
     budget: usize,
     disk: Option<Arc<dm_cache::CacheSnapshot>>,
     resident: Mutex<Resident>,
+    read_only_disk: bool,
     publisher: Option<Arc<CachePublisher>>,
     publication_errors: Mutex<Vec<String>>,
     pub counts: Counts,
@@ -88,6 +89,7 @@ impl MapMemo {
             budget: byte_budget,
             disk: None,
             resident: Mutex::new(Resident::default()),
+            read_only_disk: false,
             publisher: None,
             publication_errors: Mutex::new(Vec::new()),
             counts: Counts::default(),
@@ -104,6 +106,11 @@ impl MapMemo {
     }
     /// One map record per bounded callback; the host may batch these records in
     /// its PublishSink. Publication never holds the resident mutex.
+    /// Hydrate existing records without encoding/populating this disk store.
+    pub fn with_read_only_disk(mut self) -> Self {
+        self.read_only_disk = true;
+        self
+    }
     pub fn with_publisher(mut self, publisher: Arc<CachePublisher>) -> Self {
         self.publisher = Some(publisher);
         self
@@ -180,6 +187,9 @@ impl MapMemo {
         true
     }
     fn queue(&self, key: &[u8], geometry: bool, bytes: Vec<u8>) {
+        if self.read_only_disk {
+            return;
+        }
         if let Some(publisher) = &self.publisher {
             let record = dm_cache::Record {
                 key: Self::record_key(key, geometry),
@@ -301,7 +311,10 @@ impl MapMemo {
         self.counts.parsed.fetch_add(1, Ordering::Relaxed);
         let plan = dm_tree::maps::plan(captured)?;
         self.admit_retained_parse(retained_key, &plan);
-        if self.retained.is_some() && self.disk.is_none() && self.publisher.is_none() {
+        if self.retained.is_some()
+            && (self.read_only_disk || self.disk.is_none())
+            && self.publisher.is_none()
+        {
             return Ok(plan);
         }
         if let Some(bytes) = wire::encode_parse(&key, &plan) {

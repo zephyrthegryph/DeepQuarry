@@ -62,6 +62,7 @@ import { renderReport } from './lib/bench_report';
 import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
 import { compilerCacheIdentity, compilerMode } from './lib/compiler_selection';
+import { conventionalOutput, currentCompiledOutput, type CompiledOutput } from './lib/native_pair';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
@@ -428,6 +429,7 @@ export const DmTarget = new Juke.Target({
     NamedVersionFile,
   ],
   outputs: ({ get }) => {
+    if (compilerMode() !== 'byond') return []; // Native worlds require this invocation's exact pair result.
     if (get(DmVersionParameter)) {
       return []; // Always rebuild when dm version is provided
     }
@@ -590,7 +592,7 @@ function computeCompileHash(dmeText: string, defines: string[], dmVersion: strin
   return hash.digest('hex');
 }
 
-async function compileDerived(dme: string, get: any, defines: string[]): Promise<void> {
+async function compileDerived(dme: string, get: any, defines: string[]): Promise<CompiledOutput> {
   writeDerivedDme(dme);
   const dmeText = fs.readFileSync(dme, 'utf-8');
   const allDefines = [...defines, ...get(DefineParameter)];
@@ -604,14 +606,15 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
       const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
       if (cached.hash === hash) {
         Juke.logger.info(`compileDerived: reusing ${dmbFile} (compile inputs unchanged since ${cached.compiledAt}).`);
-        return;
+        return conventionalOutput(dme);
       }
     } catch {
       // No cache record yet, or it's unreadable/stale-format: fall through and recompile.
     }
   }
+  let output: CompiledOutput;
   try {
-    await DreamMaker(dme, {
+    output = await DreamMaker(dme, {
       defines: allDefines,
       warningsAsErrors: get(WarningParameter).includes('error'),
       ignoreWarningCodes: get(NoWarningParameter),
@@ -629,6 +632,7 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
   }
   fs.mkdirSync(DMB_CACHE_DIR, { recursive: true });
   writeJson(cacheFile, { hash, defines: allDefines, dmVersion, compiledAt: new Date().toISOString() });
+  return output;
 }
 
 type WorldRun = {
@@ -818,8 +822,9 @@ async function runIsolatedTestWorld(
   dmVersion: string | null,
   worldParams: Record<string, string>,
   focus: string[] | null,
-  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string } = {},
+  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; compiledOutput?: CompiledOutput } = {},
 ): Promise<IsolatedRun> {
+  const compiled = options.compiledOutput ?? currentCompiledOutput(dmbFile, compilerMode() === 'native');
   const slot = acquireRunSlot();
   const base = dmbFile.replace(/\.dmb$/, '');
   const runBase = `${base}.${slot.tag}`;
@@ -831,7 +836,10 @@ async function runIsolatedTestWorld(
     // .dmb. Run slots are reused, so without this a world inherited the last
     // one's cache, possibly from another build ("failed to write new icon").
     fs.rmSync(`${runBase}.dyn.rsc`, { force: true });
-    if (options.linkFrom) {
+    if (compiled.kind === 'native_pair') {
+      // DreamDaemon acquires this exact generation and owns independent writable
+      // copies until the hosted child closes; conventional paths are not read.
+    } else if (options.linkFrom) {
       // A sharded run's private copy (see runSharded()): hard links, so N
       // shards don't each copy the ~270 MB .dmb/.rsc again.
       linkOrCopy(`${options.linkFrom}.dmb`, `${runBase}.dmb`);
@@ -865,7 +873,8 @@ async function runIsolatedTestWorld(
     try {
       const result = await DreamDaemon(
         {
-          dmbFile: `${runBase}.dmb`,
+          dmbFile: compiled.kind === 'native_pair' ? dmbFile : `${runBase}.dmb`,
+          compiledOutput: compiled.kind === 'native_pair' ? compiled : { ...compiled, dmb: path.resolve(`${runBase}.dmb`), rsc: path.resolve(`${runBase}.rsc`) },
           namedDmVersion: dmVersion,
           watchdogFile: resultsFile,
           watchdogTimeoutMs: options.watchdogTimeoutMs ?? (focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined),
@@ -1427,6 +1436,7 @@ async function runShardWorld(
   priority: boolean,
   worldParams: Record<string, string>,
   linkFrom: string,
+  compiledOutput: CompiledOutput,
 ): Promise<ShardRun> {
   const tag = `shard${shardIndex}`;
   fs.mkdirSync('data/bench', { recursive: true });
@@ -1449,7 +1459,7 @@ async function runShardWorld(
         ...worldParams,
       },
       null,
-      { watchdogTimeoutMs: shardWatchdogMs, sampler, label: `${tag} of ${shardCount}`, linkFrom },
+      { watchdogTimeoutMs: shardWatchdogMs, sampler, label: `${tag} of ${shardCount}`, linkFrom, compiledOutput },
     );
     return { ...run, index: shardIndex };
   } finally {
@@ -1530,7 +1540,7 @@ function defaultShardCount(): number {
  * their results into one data/test-runs/ record. */
 async function runSharded(shardCount: number, get: any): Promise<void> {
   reportFocus();
-  await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
+  const compiledOutput = await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
   const priority = process.env.DQ_DD_PRIORITY === '1';
   const tier = resolveTier(get);
   const worldParams = testWorldParams(get);
@@ -1558,8 +1568,10 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   // shard's run slot hard-links. Copying it once per shard was over 1 GB of
   // synchronous writes before any world started: minutes on a busy disk.
   const privateBase = `${DME_NAME}.test.shards-${process.pid}`;
-  await fs.promises.copyFile(`${DME_NAME}.test.dmb`, `${privateBase}.dmb`);
-  await fs.promises.copyFile(`${DME_NAME}.test.rsc`, `${privateBase}.rsc`);
+  if (compiledOutput.kind === 'conventional') {
+    await fs.promises.copyFile(`${DME_NAME}.test.dmb`, `${privateBase}.dmb`);
+    await fs.promises.copyFile(`${DME_NAME}.test.rsc`, `${privateBase}.rsc`);
+  }
   let runs: ShardRun[];
   try {
     runs = await Promise.all(
@@ -1573,11 +1585,14 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
           priority,
           worldParams,
           privateBase,
+          compiledOutput,
         )),
     );
   } finally {
-    await removeDerivedArtifacts(`${privateBase}.dmb`);
-    await removeDerivedArtifacts(`${privateBase}.rsc`);
+    if (compiledOutput.kind === 'conventional') {
+      await removeDerivedArtifacts(`${privateBase}.dmb`);
+      await removeDerivedArtifacts(`${privateBase}.rsc`);
+    }
   }
   const wallSeconds = (Date.now() - started) / 1000;
   for (const run of runs) {

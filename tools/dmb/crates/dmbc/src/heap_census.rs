@@ -18,6 +18,8 @@ mod prepared;
 mod relocation_metrics;
 mod resident_abi;
 mod resident_initializer;
+mod resident_owner_projection;
+pub(crate) use resident_owner_projection::{weight as resident_owner_projection_weight, inspect as owner_projection_census};
 mod resident_initializer_fragment;
 pub(crate) use resident_abi::weight as resident_abi_weight;
 pub(crate) use resident_initializer_fragment::weight as resident_initializer_fragment_weight;
@@ -267,7 +269,7 @@ impl HeapCensus {
             self.arc_path(owner, &file.path);
             self.slice(owner, &file.line_starts, true);
         }
-        self.arc_text("frontend.expanded_text", &frontend.expanded.text);
+        self.source_text("frontend.expanded_text", &frontend.expanded.text);
         self.vec_payload("frontend.expanded_tokens", &frontend.expanded.tokens);
         frontend
             .expanded
@@ -443,10 +445,10 @@ impl HeapCensus {
                     true,
                 );
             }
-            self.unknown(
-                "semantic_occurrences",
-                "private by_target index allocations and occurrence ID groups",
-            );
+            snapshot.occurrences.visit_target_index_storage(|pointer, _, bytes| {
+                self.buffer("semantic_occurrence_index", pointer, bytes, bytes);
+            });
+            self.unknown("semantic_occurrence_index", "private target HashMap bucket backing and shared Arc control blocks excluded");
         }
     }
     fn symbols(&mut self, symbols: &Arc<dm_ir::SymbolTable>) {

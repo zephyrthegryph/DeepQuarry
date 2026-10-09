@@ -4,6 +4,8 @@
 //! table for every source snapshot, even when the tree remains shared in an Arc.
 //! This crate intentionally has no dependency on the legacy declaration index.
 mod adapter;
+mod occurrence_index;
+mod relative_origins;
 mod skeleton_roster;
 pub(crate) use adapter::SharedAdaptedDeclarations;
 mod callable_namespace;
@@ -296,63 +298,12 @@ pub struct Occurrence {
 pub struct OccurrenceTable {
     tree_identity: u128,
     occurrences: Arc<[Occurrence]>,
-    by_target: HashMap<Target, Arc<[OccurrenceId]>>,
+    index: Arc<occurrence_index::TargetOccurrenceIndex>,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OccurrenceCountMismatch {
     pub declarations: usize,
     pub origins: usize,
-}
-impl OccurrenceTable {
-    pub fn build(
-        tree: &SemanticTree,
-        origins: Vec<Provenance>,
-    ) -> Result<Self, OccurrenceCountMismatch> {
-        if origins.len() != tree.declarations().len() {
-            return Err(OccurrenceCountMismatch {
-                declarations: tree.declarations().len(),
-                origins: origins.len(),
-            });
-        }
-        let mut groups: HashMap<Target, Vec<OccurrenceId>> = HashMap::new();
-        let occurrences: Vec<_> = tree
-            .declarations()
-            .iter()
-            .copied()
-            .zip(origins)
-            .enumerate()
-            .map(|(i, (target, provenance))| {
-                groups
-                    .entry(target)
-                    .or_default()
-                    .push(OccurrenceId(i as u32));
-                Occurrence { target, provenance }
-            })
-            .collect();
-        Ok(Self {
-            tree_identity: tree.identity(),
-            occurrences: occurrences.into(),
-            by_target: groups
-                .into_iter()
-                .map(|(key, value)| (key, value.into()))
-                .collect(),
-        })
-    }
-    pub fn tree_identity(&self) -> u128 {
-        self.tree_identity
-    }
-    pub fn source_order(&self) -> &[Occurrence] {
-        &self.occurrences
-    }
-    pub fn get(&self, id: OccurrenceId) -> Option<&Occurrence> {
-        self.occurrences.get(id.0 as usize)
-    }
-    pub fn for_target(&self, target: Target) -> &[OccurrenceId] {
-        self.by_target
-            .get(&target)
-            .map(AsRef::as_ref)
-            .unwrap_or(&[])
-    }
 }
 
 /// Resolve forward parent declarations before members, then preserve the exact

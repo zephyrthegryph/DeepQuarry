@@ -5,7 +5,10 @@ use crate::initializer_policy::DefaultValue;
 mod callbacks;
 mod class_roster;
 mod headers;
+pub(crate) mod member_contribution;
+mod retained;
 pub(crate) use class_roster::MaterializedClassRoster;
+pub use retained::ClassProjections;
 mod routing;
 pub use callbacks::materialize_callback_flags;
 use dm_ir::{SemanticValue, SymbolId, SymbolicExpression};
@@ -108,7 +111,7 @@ pub fn project(
     order: &[OccurrenceId],
     evaluator: &dyn CapturedFieldEvaluator,
 ) -> Result<ClassProjection, ProjectionError> {
-    project_inner(source, order, evaluator, None)
+    project_inner(source, order, evaluator, None, None)
 }
 pub fn project_classified(
     source: &TreeSnapshot,
@@ -116,6 +119,16 @@ pub fn project_classified(
     plan: &dm_tree::initializers::InitializerPlan,
     classified: &crate::initializer_policy::ClassifiedInitializers,
     units: &[crate::initializer_lowering::LoweredInitializerUnit],
+) -> Result<ClassProjection, ProjectionError> {
+    project_classified_with_artifacts(source, order, plan, classified, units, None)
+}
+pub fn project_classified_with_artifacts(
+    source: &TreeSnapshot,
+    order: &[OccurrenceId],
+    plan: &dm_tree::initializers::InitializerPlan,
+    classified: &crate::initializer_policy::ClassifiedInitializers,
+    units: &[crate::initializer_lowering::LoweredInitializerUnit],
+    artifacts: Option<&ClassProjections>,
 ) -> Result<ClassProjection, ProjectionError> {
     struct NoEvaluation;
     impl CapturedFieldEvaluator for NoEvaluation {
@@ -126,11 +139,17 @@ pub fn project_classified(
     if plan.source.tree.identity() != source.tree.identity() {
         return Err(ProjectionError::IdentityMismatch);
     }
-    let ledger = crate::class_initialization::admit_lowered(plan, classified, units)
+    let ledger = crate::class_initialization::admit_lowered_borrowed(plan, classified, units)
         .map_err(ProjectionError::Unsupported)?;
-    let mut projection = project_inner(source, order, &NoEvaluation, Some(&ledger))?;
+    let mut projection = project_inner(
+        source,
+        order,
+        &NoEvaluation,
+        Some(ledger.as_slice()),
+        artifacts,
+    )?;
     let mut statics = Vec::new();
-    for default in &ledger.defaults {
+    for default in &ledger {
         if let dm_tree::initializers::InitializerOriginKind::ProcedureStatic { identity, .. } =
             &default.origin_kind
         {
@@ -158,7 +177,7 @@ pub fn project_classified(
     projection.procedure_statics = statics.into();
     let mut order = Vec::new();
     let mut seen = std::collections::BTreeSet::new();
-    for default in &ledger.defaults {
+    for default in &ledger {
         let write = &plan.writes[default.source_ordinal];
         let key = match &default.origin_kind {
             dm_tree::initializers::InitializerOriginKind::ProcedureStatic { identity, .. } => {
@@ -192,7 +211,8 @@ fn project_inner(
     source: &TreeSnapshot,
     order: &[OccurrenceId],
     evaluator: &dyn CapturedFieldEvaluator,
-    defaults: Option<&crate::class_initialization::DefaultLedger>,
+    defaults: Option<&[crate::class_initialization::BorrowedDefault<'_>]>,
+    artifacts: Option<&ClassProjections>,
 ) -> Result<ClassProjection, ProjectionError> {
     if source.tree.identity() != source.occurrences.tree_identity() {
         return Err(ProjectionError::IdentityMismatch);
@@ -217,15 +237,18 @@ fn project_inner(
     let mut fields = Vec::new();
     let default_index: HashMap<_, _> = defaults
         .into_iter()
-        .flat_map(|ledger| ledger.defaults.iter())
+        .flat_map(|ledger| ledger.iter())
         .filter(|value| {
             matches!(
                 value.origin_kind,
                 dm_tree::initializers::InitializerOriginKind::Declaration(_)
             )
         })
-        .map(|value| (value.occurrence, &value.value))
+        .map(|value| (value.occurrence, value.value))
         .collect();
+    let mut retention = artifacts
+        .filter(|_| defaults.is_some())
+        .and_then(|store| store.begin(source, order, &default_index));
     let mut procedure_declarations = BTreeMap::new();
     let mut group_order = Vec::new();
     let mut procs: BTreeMap<(SymbolId, SymbolId, bool), Vec<(bool, Key)>> = BTreeMap::new();
@@ -237,158 +260,44 @@ fn project_inner(
             .occurrences
             .get(id)
             .ok_or(ProjectionError::InvalidOccurrence(id))?;
-        let Target::Member(member_id) = occurrence.target else {
+        let placement = member_contribution::CurrentPlacement { occurrence };
+        let Target::Member(member_id) = placement.occurrence.target else {
             continue;
         };
-        let member = tree
-            .member(member_id)
-            .ok_or(ProjectionError::MissingMember)?;
-        let owner = tree
-            .type_node(member.owner)
-            .ok_or(ProjectionError::MissingMember)?
-            .path;
-        match member.kind {
-            MemberKind::Var => {
-                let metadata = &member.metadata;
-                if metadata.array.is_some() && defaults.is_none() {
-                    return Err(ProjectionError::Unsupported(
-                        "array defaults need initializer materialization".into(),
-                    ));
-                }
-                let role = if member.definition == DefinitionMode::Declare {
-                    FieldRole::Declaration
-                } else {
-                    FieldRole::Assignment
-                };
-                let (flags, shared, declaring_owner, intrinsic) =
-                    if let Some(base) = &metadata.inherited_opaque {
-                        if role == FieldRole::Declaration {
-                            return Err(ProjectionError::OpaqueField {
-                                owner,
-                                name: member.name,
-                            });
-                        }
-                        match dm_ir::Resolver::resolve(
-                            tree.as_ref(),
-                            dm_ir::ResolveQuery::VarStorage {
-                                owner,
-                                name: member.name,
-                            },
-                        ) {
-                            dm_ir::ResolvedMeaning::InstanceField {
-                                declaring_owner,
-                                name,
-                            } if name == member.name => (None, false, declaring_owner, true),
-                            dm_ir::ResolvedMeaning::Slot {
-                                owner: slot_owner,
-                                name,
-                                ..
-                            } if name == member.name => (None, true, slot_owner, true),
-                            _ => {
-                                return Err(ProjectionError::OpaqueField {
-                                    owner: base.owner,
-                                    name: member.name,
-                                })
-                            }
-                        }
-                    } else {
-                        let (flags, shared) = wire_flags(metadata.flags, owner)?;
-                        let mut declaration = member;
-                        while declaration.definition != DefinitionMode::Declare {
-                            declaration = tree
-                                .member(declaration.previous.ok_or(ProjectionError::MissingMember)?)
-                                .ok_or(ProjectionError::MissingMember)?;
-                        }
-                        let declaring_owner = tree
-                            .type_node(declaration.owner)
-                            .ok_or(ProjectionError::MissingMember)?
-                            .path;
-                        (Some(flags), shared, declaring_owner, false)
-                    };
-                let expression = if role == FieldRole::Declaration {
-                    metadata.declared_initializer.as_ref()
-                } else {
-                    metadata.initializer.as_ref()
-                };
-                let value = if let Some(value) = default_index.get(&id) {
-                    (*value).clone()
-                } else {
-                    if defaults.is_some() {
-                        return Err(ProjectionError::Unsupported(
-                            "classified source occurrence default is absent".into(),
-                        ));
-                    }
-                    DefaultValue::Scalar(match expression {
-                        Some(value) => evaluator
-                            .evaluate(owner, value)
-                            .map_err(ProjectionError::Evaluation)?,
-                        None if role == FieldRole::Declaration => SemanticValue::Null,
-                        None => {
-                            return Err(ProjectionError::Unsupported(
-                                "assignment has no authored value".into(),
-                            ))
-                        }
-                    })
-                };
-                // Mutable lists have occurrence identity and cannot be merged as
-                // scalar records; the initializer linker must materialize them.
-                if matches!(value, DefaultValue::Scalar(SemanticValue::List(_))) {
-                    return Err(ProjectionError::Unsupported(
-                        "list defaults need occurrence-specific materialization".into(),
-                    ));
-                }
-                fields.push(FieldProjection {
-                    owner,
-                    declaring_owner,
-                    name: member.name,
-                    role,
-                    wire_flags: flags,
-                    intrinsic,
-                    shared,
-                    value,
-                });
+        let contribution = match retention.as_mut() {
+            Some(request) => {
+                request.produce(tree, member_id, default_index.get(&id).copied(), evaluator)?
             }
-            MemberKind::Proc | MemberKind::Verb => {
-                let verb = member.kind == MemberKind::Verb;
-                let depth = tree
-                    .override_chain(member_id)
-                    .iter()
-                    .filter(|id| {
-                        tree.member(**id).is_some_and(|previous| {
-                            previous.owner == member.owner
-                                && previous.kind == member.kind
-                                && previous.name == member.name
-                        })
-                    })
-                    .count()
-                    .checked_sub(1)
-                    .ok_or(ProjectionError::MissingMember)?;
-                let occurrence = u32::try_from(depth).map_err(|_| {
-                    ProjectionError::Unsupported("procedure occurrence overflow".into())
-                })?;
-                let key = if verb {
-                    Key::Verb {
-                        owner,
-                        name: member.name,
-                        occurrence,
-                    }
-                } else {
-                    Key::Proc {
-                        owner,
-                        name: member.name,
-                        occurrence,
-                    }
-                };
-                procedure_declarations.insert(key, member.definition == DefinitionMode::Declare);
-                if !procs.contains_key(&(owner, member.name, verb)) {
-                    group_order.push((owner, member.name, verb));
+            None => member_contribution::produce(
+                tree,
+                member_id,
+                default_index.get(&id).copied(),
+                defaults.is_some(),
+                evaluator,
+            )?,
+        };
+        match contribution {
+            member_contribution::MemberContribution::Field(field) => fields.push(field),
+            member_contribution::MemberContribution::Procedure {
+                owner,
+                name,
+                verb,
+                key,
+                declared,
+            } => {
+                procedure_declarations.insert(key, declared);
+                if !procs.contains_key(&(owner, name, verb)) {
+                    group_order.push((owner, name, verb));
                 }
                 procs
-                    .entry((owner, member.name, verb))
+                    .entry((owner, name, verb))
                     .or_default()
-                    .push((member.definition == DefinitionMode::Declare, key));
+                    .push((declared, key));
             }
         }
+    }
+    if let Some(request) = retention {
+        request.finish();
     }
     let chains = group_order
         .into_iter()
@@ -432,7 +341,7 @@ fn project_inner(
         procedure_statics: Arc::from([]),
         runtime_writes: defaults
             .into_iter()
-            .flat_map(|ledger| ledger.defaults.iter())
+            .flat_map(|ledger| ledger.iter())
             .filter(|value| value.runtime)
             .map(|value| (value.source_ordinal, value.initializer))
             .collect::<Vec<_>>()

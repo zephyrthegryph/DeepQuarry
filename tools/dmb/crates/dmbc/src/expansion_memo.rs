@@ -14,6 +14,7 @@ pub struct DiskExpansionMemo {
     disk: Arc<dm_cache::CacheSnapshot>,
     pending: Mutex<(usize, BTreeMap<dm_cache::RecordKey, dm_cache::Record>)>,
     insert_guard: Mutex<()>,
+    read_only_disk: bool,
     publisher: Option<Arc<crate::lowering_memo::CachePublisher>>,
     publication_errors: Mutex<Vec<String>>,
     recent: Mutex<(usize, BTreeMap<dm_cache::RecordKey, dm_cache::Record>)>,
@@ -31,6 +32,7 @@ impl DiskExpansionMemo {
             policy,
             disk: disk.into(),
             insert_guard: Mutex::new(()),
+            read_only_disk: false,
             publisher: None,
             publication_errors: Mutex::new(Vec::new()),
             recent: Mutex::new((0, BTreeMap::new())),
@@ -44,6 +46,11 @@ impl DiskExpansionMemo {
         }
     }
     /// Stream bounded batches. The callback runs outside all memo locks.
+    /// Hydrate existing records without encoding/populating this disk store.
+    pub fn with_read_only_disk(mut self) -> Self {
+        self.read_only_disk = true;
+        self
+    }
     pub fn with_publisher(mut self, publisher: Arc<crate::lowering_memo::CachePublisher>) -> Self {
         self.publisher = Some(publisher);
         self
@@ -229,6 +236,9 @@ impl ExpansionMemo for DiskExpansionMemo {
             .collect()
     }
     fn insert_directive(&self, record: Arc<DirectiveRecord>) {
+        if self.read_only_disk {
+            return;
+        }
         let bytes = match record.to_bytes() {
             Ok(bytes) => bytes,
             Err(error) => {
@@ -283,6 +293,9 @@ impl ExpansionMemo for DiskExpansionMemo {
             .collect()
     }
     fn insert_fragment(&self, record: Arc<FragmentRecord>) {
+        if self.read_only_disk {
+            return;
+        }
         let bytes = match record.to_bytes() {
             Ok(bytes) => bytes,
             Err(error) => {
@@ -343,6 +356,9 @@ impl ExpansionMemo for DiskExpansionMemo {
         records
     }
     fn insert(&self, record: Arc<ExpansionRecord>) {
+        if self.read_only_disk {
+            return;
+        }
         let bytes = match record.to_bytes() {
             Ok(bytes) => bytes,
             Err(error) => {
@@ -431,6 +447,52 @@ mod tests {
         assert_eq!(seen.load(Ordering::Relaxed), 1);
         assert!(memo.recent_payload(memo.key(9)).is_some());
         assert!(memo.publication_errors().is_empty());
+    }
+    #[test]
+    fn read_only_disk_hydrates_resident_without_population_and_preserves_normal_writer() {
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &std::path::Path) -> Result<String, String> {
+                Ok("/proc/probe()\n    return 3\n".into())
+            }
+        }
+        let path = std::env::temp_dir().join(format!(
+            "expansion-readonly-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let cache = dm_cache::Cache::open(path, dm_cache::Limits::default()).unwrap();
+        let writer = DiskExpansionMemo::new(1, cache.snapshot().unwrap());
+        let plan = dm_preprocess::regions::plan_regions(
+            std::path::Path::new("project.dme"),
+            &Source,
+            &BTreeMap::new(),
+        );
+        let seeded = dm_preprocess::regions::expand_regions_text_with_memo(&plan, 1, &writer);
+        assert!(seeded.diagnostics.is_empty());
+        assert!(!writer.pending.lock().unwrap().1.is_empty());
+        // Force the ordinary bounded flush; its existing snapshot fallback writes.
+        writer.pending.lock().unwrap().0 = 8 * 1024 * 1024;
+        writer.flush_if_needed();
+        assert!(writer.published_records.load(Ordering::Relaxed) > 0);
+        let reader = DiskExpansionMemo::new(1, cache.snapshot().unwrap()).with_read_only_disk();
+        let host = crate::runner_host::BuildHost::default();
+        let view = host.expansion_memo(Some(&reader)).unwrap();
+        let first = dm_preprocess::regions::expand_regions_text_with_memo(&plan, 1, &view);
+        let second = dm_preprocess::regions::expand_regions_text_with_memo(&plan, 1, &view);
+        assert_eq!(first.text.as_ref(), seeded.text.as_ref());
+        assert!(Arc::ptr_eq(
+            first.receipts[0].record(),
+            second.receipts[0].record()
+        ));
+        reader.insert(Arc::clone(first.receipts[0].record()));
+        assert!(reader.take_pending().is_empty());
+        assert_eq!(reader.stored.load(Ordering::Relaxed), 0);
+        assert_eq!(reader.published_records.load(Ordering::Relaxed), 0);
+        assert!(reader.publication_errors().is_empty());
     }
     #[test]
     fn expansion_stream_publication_failure_is_reported() {

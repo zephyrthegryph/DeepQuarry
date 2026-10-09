@@ -208,7 +208,7 @@ pub struct ColdFrontend {
     body_by_declaration: Arc<HashMap<OccurrenceId, usize>>,
     issued_bodies: Arc<[BodyOccurrence]>,
     issued_syntax: Arc<DeclarationSyntax>,
-    issued_arena: Arc<str>,
+    issued_arena: dm_preprocess::SourceText,
     /// Explicit linker projection. It never changes semantic override priority
     /// or reorders origins independently from their declaration targets.
     pub emission_order: Arc<[OccurrenceId]>,
@@ -226,7 +226,7 @@ impl ColdFrontend {
             message: "body occurrence differs from compact frontend capture".into(),
         };
         if !Arc::ptr_eq(&self.syntax, &self.issued_syntax)
-            || !Arc::ptr_eq(&self.expanded.text, &self.issued_arena)
+            || !self.expanded.text.same_view(&self.issued_arena)
         {
             return Err(reject());
         }
@@ -568,6 +568,7 @@ mod grammar_roster;
 pub use grammar_roster::{GrammarAnswer, GrammarDescriptors, GrammarQuery};
 #[path = "frontend_declaration_state.rs"]
 mod declaration_state;
+pub(crate) use declaration_state::Contribution;
 pub use declaration_state::{
     DeclarationContributionView, DeclarationRetentionStats, DeclarationStorageView,
 };
@@ -766,48 +767,37 @@ fn resolution_error(
     }
 }
 
-fn collect_bodies<'a>(
-    items: impl IntoIterator<Item = ItemView<'a>>,
-    path: &mut Vec<usize>,
+fn collect_bodies(
+    syntax: &DeclarationSyntax,
     declarations: &HashMap<usize, (OccurrenceId, MemberId)>,
     mapping: &Mapping<'_>,
     bodies: &mut Vec<BodyOccurrence>,
 ) -> Result<(), Vec<Diagnostic>> {
-    for (index, item) in items.into_iter().enumerate() {
-        path.push(index);
-        if matches!(item.kind(), ItemKind::Proc | ItemKind::Verb) {
-            let declaration = declarations
-                .get(&item.span().start)
-                .copied()
-                .ok_or_else(|| vec![internal("procedure body has no resolved declaration")])?;
-            let source = mapping
-                .output(item.span().start)
-                .ok_or_else(|| vec![internal("procedure body has no source origin")])?;
-            let mut setting_spans = Vec::new();
-            crate::settings::setting_spans(&item.relative_item().children, &mut setting_spans);
-            for span in &mut setting_spans {
-                *span = dm_syntax::Span::new(span.start + item.offset(), span.end + item.offset());
-            }
-            let setting_context_origins = setting_spans
-                .into_iter()
-                .map(|span| {
-                    mapping.output(span.start).ok_or_else(|| {
-                        vec![internal("procedure setting has no current source origin")]
-                    })
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-            bodies.push(BodyOccurrence {
-                declaration: declaration.0,
-                member: declaration.1,
-                ast_path: path.clone().into(),
-                expanded_span: item.span(),
-                source,
-                setting_context_origins: setting_context_origins.into(),
-            });
-        } else {
-            collect_bodies(item.children(), path, declarations, mapping, bodies)?;
-        }
-        path.pop();
+    for recipe in syntax.body_recipes() {
+        let span = recipe.span();
+        let declaration = declarations
+            .get(&span.start)
+            .copied()
+            .ok_or_else(|| vec![internal("procedure body has no resolved declaration")])?;
+        let source = mapping
+            .output(span.start)
+            .ok_or_else(|| vec![internal("procedure body has no source origin")])?;
+        let setting_context_origins = recipe
+            .settings()
+            .map(|span| {
+                mapping
+                    .output(span.start)
+                    .ok_or_else(|| vec![internal("procedure setting has no current source origin")])
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        bodies.push(BodyOccurrence {
+            declaration: declaration.0,
+            member: declaration.1,
+            ast_path: recipe.path(),
+            expanded_span: span,
+            source,
+            setting_context_origins: setting_context_origins.into(),
+        });
     }
     Ok(())
 }

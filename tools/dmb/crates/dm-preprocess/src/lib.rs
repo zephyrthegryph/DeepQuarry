@@ -237,7 +237,7 @@ mod source_lines;
 use source_lines::*;
 mod logical_arena;
 mod source_text;
-pub use source_text::{SourceText, SourceTextStorage};
+pub use source_text::{SourceText, SourceTextStorage, WeakSourceText};
 
 mod macro_expansion;
 use macro_expansion::*;

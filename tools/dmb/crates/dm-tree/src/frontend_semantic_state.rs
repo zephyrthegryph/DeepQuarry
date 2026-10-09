@@ -17,9 +17,19 @@ struct Entry {
     symbols: Vec<(dm_ir::SymbolId, String)>,
     engine: Option<EngineSeed>,
     tree: Arc<SemanticTree>,
+    occurrence_index: Arc<crate::occurrence_index::TargetOccurrenceIndex>,
     metadata_dependencies: Option<crate::metadata_update::MetadataDependencies>,
 }
 impl RetainedSemanticTree {
+    /// Exposed immutable payloads; private HashMap bucket backing remains unknown.
+    pub fn visit_occurrence_index_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        if let Some(entry) = &self.entry {
+            crate::occurrence_index::TargetOccurrenceIndex::visit_storage(
+                &entry.occurrence_index,
+                &mut visit,
+            );
+        }
+    }
     /// Diagnostic-only current keyed declaration owner.
     pub fn retained_declaration_index(
         &self,
@@ -159,7 +169,8 @@ impl RetainedSemanticTree {
         mut on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
         executor: &dm_exec::BuildExecutor,
     ) -> Result<TreeSnapshot, SnapshotError> {
-        let adapted = adapted.into();
+        let mut adapted = adapted.into();
+        let origins = std::mem::replace(&mut adapted.origins, Vec::new().into()).into_owned();
         let symbols = adapted.symbols.ordered();
         let reusable =
             self.entry.as_ref().filter(|entry| {
@@ -174,12 +185,16 @@ impl RetainedSemanticTree {
             });
         if let Some(entry) = reusable {
             let tree = Arc::clone(&entry.tree);
-            let occurrences =
-                crate::OccurrenceTable::build(&tree, adapted.origins).map_err(|error| {
-                    let error = SnapshotError::Origins(error);
-                    on_error(&error, &adapted.skeletons.to_vec(), &[]);
-                    error
-                })?;
+            let occurrences = crate::OccurrenceTable::build_with_index(
+                &tree,
+                origins,
+                Some(&entry.occurrence_index),
+            )
+            .map_err(|error| {
+                let error = SnapshotError::Origins(error);
+                on_error(&error, &adapted.skeletons.to_vec(), &[]);
+                error
+            })?;
             self.hits += 1;
             return Ok(TreeSnapshot {
                 tree,
@@ -216,21 +231,30 @@ impl RetainedSemanticTree {
             )
             .map_err(|error| {
                 let error = SnapshotError::Tree(error);
-                on_error(&error, &adapted.skeletons.to_vec(), &adapted.origins);
+                on_error(&error, &adapted.skeletons.to_vec(), &origins);
                 error
             })?;
             tree.refresh_metadata_identity(identity, hierarchy);
             let tree = Arc::new(tree);
-            let occurrences =
-                crate::OccurrenceTable::build(&tree, adapted.origins).map_err(|error| {
-                    let error = SnapshotError::Origins(error);
-                    on_error(&error, &adapted.skeletons.to_vec(), &[]);
-                    error
-                })?;
+            let prior_index = self
+                .entry
+                .as_ref()
+                .expect("metadata update has retained entry");
+            let occurrences = crate::OccurrenceTable::build_with_index(
+                &tree,
+                origins,
+                Some(&prior_index.occurrence_index),
+            )
+            .map_err(|error| {
+                let error = SnapshotError::Origins(error);
+                on_error(&error, &adapted.skeletons.to_vec(), &[]);
+                error
+            })?;
             let entry = self
                 .entry
                 .as_mut()
                 .expect("updated tree has its retained producer");
+            entry.occurrence_index = occurrences.target_index();
             entry.tree = Arc::clone(&tree);
             entry.index = index.expect("updated tree has its exact contribution index");
             entry.symbols = symbols
@@ -248,6 +272,7 @@ impl RetainedSemanticTree {
             .into_iter()
             .map(|(id, text)| (id, text.to_owned()))
             .collect();
+        adapted.origins = origins.into();
         let snapshot = adapted.finish_with_engine_normalization(
             engine,
             on_error,
@@ -262,6 +287,7 @@ impl RetainedSemanticTree {
                 symbols,
                 engine: engine.cloned(),
                 tree: Arc::clone(&snapshot.tree),
+                occurrence_index: snapshot.occurrences.target_index(),
                 metadata_dependencies,
             }
         });

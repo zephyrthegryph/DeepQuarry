@@ -67,8 +67,13 @@ pub(crate) struct RetainedAssembly {
     root_indexes: Vec<usize>,
     references: Vec<SymRef>,
     root_count: usize,
+    encoding: std::sync::Arc<crate::symbolic::InitializerEncoding>,
 }
 impl RetainedAssembly {
+    pub(crate) fn encoding(&self) -> &std::sync::Arc<crate::symbolic::InitializerEncoding> {
+        &self.encoding
+    }
+
     pub(crate) fn retained_parts(
         &self,
     ) -> (
@@ -128,6 +133,7 @@ impl InitializerAssemblies {
         self.values
             .retain_current_keys(keys.iter().map(Vec::as_slice));
     }
+    #[cfg(test)]
     pub(super) fn lookup<R: Resolver>(
         &self,
         key: &[u8],
@@ -135,6 +141,19 @@ impl InitializerAssemblies {
         symbols: &SymbolTable,
         host: &R,
     ) -> Option<ResolverProc> {
+        self.lookup_with_encoding(key, roots, symbols, host)
+            .map(|(code, _)| code)
+    }
+    pub(super) fn lookup_with_encoding<R: Resolver>(
+        &self,
+        key: &[u8],
+        roots: &[dm_codegen_byond::initializer::AssignmentView<'_>],
+        symbols: &SymbolTable,
+        host: &R,
+    ) -> Option<(
+        ResolverProc,
+        std::sync::Arc<crate::symbolic::InitializerEncoding>,
+    )> {
         let payload = self.values.lookup(key, host)?;
         if roots.len() != payload.root_count || payload.recipes.len() != payload.root_indexes.len()
         {
@@ -158,7 +177,7 @@ impl InitializerAssemblies {
         let mut code = payload.code.clone();
         code.modified_instances = captured;
         self.hits.fetch_add(1, Ordering::Relaxed);
-        Some(code)
+        Some((code, std::sync::Arc::clone(&payload.encoding)))
     }
     pub(super) fn remember(
         &self,
@@ -166,7 +185,7 @@ impl InitializerAssemblies {
         code: &ResolverProc,
         roots: &[dm_codegen_byond::initializer::AssignmentView<'_>],
         recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>,
-    ) {
+    ) -> Option<std::sync::Arc<crate::symbolic::InitializerEncoding>> {
         self.recomputed.fetch_add(1, Ordering::Relaxed);
         let mut recipes = Vec::new();
         let mut root_indexes = Vec::new();
@@ -181,7 +200,7 @@ impl InitializerAssemblies {
                 .collect();
             if matches.len() != 1 {
                 self.declined.fetch_add(1, Ordering::Relaxed);
-                return;
+                return None;
             }
             let (index, recipe) = matches.into_iter().next().unwrap();
             root_indexes.push(index);
@@ -204,8 +223,9 @@ impl InitializerAssemblies {
             weight.checked_add(root_indexes.capacity() * std::mem::size_of::<usize>())
         }) else {
             self.declined.fetch_add(1, Ordering::Relaxed);
-            return;
+            return None;
         };
+        let encoding = std::sync::Arc::new(crate::symbolic::InitializerEncoding::default());
         self.values
             .insert_with(key.into(), reads, versions, weight, || RetainedAssembly {
                 code: stripped,
@@ -213,7 +233,9 @@ impl InitializerAssemblies {
                 root_indexes,
                 references,
                 root_count: roots.len(),
+                encoding: std::sync::Arc::clone(&encoding),
             });
+        Some(encoding)
     }
 }
 #[cfg(test)]

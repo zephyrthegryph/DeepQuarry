@@ -2,7 +2,7 @@
 use std::{
     fmt,
     ops::{Deref, Range},
-    sync::{Arc, Mutex, OnceLock},
+    sync::{Arc, Mutex, OnceLock, Weak},
 };
 
 #[derive(Clone)]
@@ -37,6 +37,20 @@ pub struct SourceText {
     backing: Arc<Backing>,
     range: Range<usize>,
 }
+/// Weak storage lifetime observation; it carries no compiler issuance authority.
+#[derive(Clone)]
+pub struct WeakSourceText {
+    backing: Weak<Backing>,
+    range: Range<usize>,
+}
+impl WeakSourceText {
+    pub fn upgrade(&self) -> Option<SourceText> {
+        Some(SourceText {
+            backing: self.backing.upgrade()?,
+            range: self.range.clone(),
+        })
+    }
+}
 /// Borrow actual backing allocations for a deduplicated retained-owner census.
 /// Transformed storage exposes its String capacity without copying its payload.
 pub enum SourceTextStorage<'a> {
@@ -44,6 +58,12 @@ pub enum SourceTextStorage<'a> {
     Transformed(&'a String),
 }
 impl SourceText {
+    pub fn downgrade(&self) -> WeakSourceText {
+        WeakSourceText {
+            backing: Arc::downgrade(&self.backing),
+            range: self.range.clone(),
+        }
+    }
     pub fn as_str(&self) -> &str {
         &self.backing.text()[self.range.clone()]
     }
@@ -106,6 +126,11 @@ impl SourceText {
             );
         }
     }
+    /// Exact immutable storage identity, including the selected byte range.
+    /// This does not certify a compiler revision, source parse or occurrence.
+    pub fn same_view(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.backing, &other.backing) && self.range == other.range
+    }
     #[cfg(test)]
     pub(crate) fn shares_backing(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.backing, &other.backing)
@@ -117,6 +142,11 @@ impl SourceText {
             backing: Arc::clone(&self.backing),
             range: (self.range.start + range.start)..(self.range.start + range.end),
         }
+    }
+}
+impl Default for SourceText {
+    fn default() -> Self {
+        String::new().into()
     }
 }
 impl From<Arc<str>> for SourceText {
@@ -174,6 +204,26 @@ impl Eq for SourceText {}
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn exact_view_identity_and_weak_lifetime_preserve_backing_and_range() {
+        let source = SourceText::from(String::from("café\nsecond\n"));
+        let clone = source.clone();
+        assert!(source.same_view(&clone));
+        assert!(!source.same_view(&SourceText::from(source.as_str())));
+        let first = source.view(0..6);
+        let second = source.view(6..source.len());
+        assert!(!first.same_view(&second));
+        assert!(first.same_view(&source.view(0..6)));
+        let weak = first.downgrade();
+        assert!(weak.upgrade().unwrap().same_view(&first));
+        drop(first);
+        drop(second);
+        drop(source);
+        assert!(weak.upgrade().is_some());
+        drop(clone);
+        assert!(weak.upgrade().is_none());
+    }
 
     #[test]
     fn span_fingerprints_share_absolute_ranges_and_reject_invalid_utf8_ranges() {

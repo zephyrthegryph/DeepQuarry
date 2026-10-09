@@ -25,6 +25,7 @@ pub struct InitializationArtifact {
     pub code: Arc<ResolverProc>,
     pub debug_origins: Arc<DebugOrigins>,
     pub coverage: InitializationCoverage,
+    pub(crate) encoding: Option<Arc<crate::symbolic::InitializerEncoding>>,
 }
 impl From<LoweredInitializerUnit> for InitializationArtifact {
     fn from(unit: LoweredInitializerUnit) -> Self {
@@ -35,6 +36,7 @@ impl From<LoweredInitializerUnit> for InitializationArtifact {
             },
             code: Arc::new(unit.code),
             debug_origins: Arc::new(unit.debug_origins),
+            encoding: unit.encoding,
             coverage: InitializationCoverage::DeclarationWrites(unit.write_ordinals),
         }
     }

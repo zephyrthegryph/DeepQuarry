@@ -541,15 +541,15 @@ fn finish_frozen_inventory(
             namespace: Namespace::Proc,
             occurrence: 0,
         };
-        let frozen = freeze_artifact(
-            &unit.code,
+        let contribution = initializer_contribution::freeze_current(
+            &unit,
             context,
             &source_bindings,
             external,
-            &mut inventory,
-            &mut string_inventory,
             freeze_detail,
         )?;
+        contribution.replay(&mut inventory, &mut string_inventory);
+        let frozen = Arc::clone(&contribution.frozen);
         append_debug_inventory(&unit.debug_origins, &mut inventory, &mut string_inventory);
         let mut content = b"dm-initializer-code-v1\0".to_vec();
         match &unit.coverage {
@@ -575,21 +575,21 @@ fn finish_frozen_inventory(
                 content.extend_from_slice(canonical_body);
             }
         }
-        let code = frozen.code().canonical_bytes();
-        content.extend_from_slice(&(code.len() as u64).to_le_bytes());
-        content.extend_from_slice(&code);
+        let shared_code = frozen.shared_code();
+        content.extend_from_slice(&(shared_code.canonical_len() as u64).to_le_bytes());
+        let mut suffix = Vec::new();
         for name in &unit.code.procedure.local_names {
-            content.extend_from_slice(&(name.len() as u64).to_le_bytes());
-            content.extend_from_slice(name.as_bytes());
+            suffix.extend_from_slice(&(name.len() as u64).to_le_bytes());
+            suffix.extend_from_slice(name.as_bytes());
         }
         inventory.entries.push(Entry {
             key,
-            content: content.into(),
+            content: dm_link::EntryContent::symbolic(content.into(), shared_code, suffix.into()),
         });
         initializers.push(FrozenInitializer {
             identity,
             coverage: unit.coverage,
-            frozen: Arc::new(frozen),
+            frozen,
             current_image: None,
             features: BytecodeFeatures::of(&unit.code.procedure.code),
             debug_origins: unit.debug_origins.into(),
@@ -783,38 +783,10 @@ trait InventorySink {
     fn string(&mut self, id: SymbolId, bytes: &[u8]);
     fn slot(&mut self, alias: SlotAlias);
 }
-struct SerialSink<'a> {
-    inventory: &'a mut LinkInventory,
-    strings: &'a mut StringInventory,
-}
-impl InventorySink for SerialSink<'_> {
-    fn string(&mut self, id: SymbolId, bytes: &[u8]) {
-        self.strings.append(self.inventory, id, bytes);
-    }
-    fn slot(&mut self, alias: SlotAlias) {
-        self.inventory.slots.push(alias);
-    }
-}
-fn freeze_artifact(
-    code: &dm_codegen_byond::lower_resolver::ResolverProc,
-    identity: UnitIdentity,
-    source_bindings: &std::collections::BTreeSet<SymRef>,
-    external: &ReferenceBindings,
-    inventory: &mut LinkInventory,
-    strings: &mut StringInventory,
-    freeze_detail: bool,
-) -> Result<FrozenProc, IntegrationError> {
-    freezing::freeze_artifact_to_sink(
-        code,
-        identity,
-        source_bindings,
-        external,
-        &mut SerialSink { inventory, strings },
-        freeze_detail,
-    )
-}
 mod current_images;
 mod freezing;
+mod initializer_contribution;
+pub(crate) use initializer_contribution::InitializerEncoding;
 #[cfg(test)]
 mod helper_reuse_tests;
 pub(crate) mod origin_roster;

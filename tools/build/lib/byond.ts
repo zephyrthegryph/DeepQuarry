@@ -4,7 +4,8 @@ import path from 'node:path';
 import Bun from 'bun';
 import Juke from '../juke/index.js';
 import { regQuery } from './winreg';
-import { selectedCompiler } from './compiler_selection';
+import { compilerMode, selectedCompiler } from './compiler_selection';
+import { currentCompiledOutput, rememberCompiledOutput, withCompiledOutput, type CompiledOutput } from './native_pair';
 
 /** Cached path to DM compiler */
 let dmPath: string;
@@ -148,10 +149,12 @@ export type ByondCompilationResult = {
 export async function DreamMaker(
   dmeFile: string,
   options: DreamMakerOptions = {},
-): Promise<void> {
+): Promise<CompiledOutput> {
   // A future core-issued closed snapshot can route both backends through the
   // same owned project. Until that issuer exists, selection passes no override.
-  return selectedCompiler(dmeFile, options, capturedProject => compileByond(capturedProject ?? dmeFile, options));
+  const output = await selectedCompiler(dmeFile, options, capturedProject => compileByond(capturedProject ?? dmeFile, options));
+  rememberCompiledOutput(dmeFile, output);
+  return output;
 }
 
 async function compileByond(
@@ -260,6 +263,8 @@ async function compileByond(
 
 type DDOptions = {
   dmbFile: string;
+  /** Exact successful native pair, or explicit conventional fallback output. */
+  compiledOutput?: CompiledOutput;
   namedDmVersion?: string | null;
   /**
    * Watchdog for runs that terminate themselves (e.g. the unit-test boot, which
@@ -389,6 +394,7 @@ function runDreamDaemonWithWatchdog(
       options.onSpawn(child.pid);
     }
     let settled = false;
+    let hardTimeout = false;
     let graceTimer: ReturnType<typeof setTimeout> | null = null;
     const poll = setInterval(checkDone, 1_000);
     const hardTimer = setTimeout(() => finish(true, 'hard timeout', true), hardTimeoutMs);
@@ -398,6 +404,7 @@ function runDreamDaemonWithWatchdog(
         return;
       }
       settled = true;
+      hardTimeout = isHardTimeout;
       clearInterval(poll);
       clearTimeout(hardTimer);
       if (graceTimer) {
@@ -408,14 +415,8 @@ function runDreamDaemonWithWatchdog(
         log(`DreamDaemon watchdog: force-killing daemon (${reason}).`);
         killProcessTree(child.pid);
       }
-      resolve({
-        code: child.exitCode ?? 0,
-        signal: null,
-        stdout: '',
-        stderr: '',
-        combined: '',
-        killedByWatchdog: isHardTimeout,
-      } as DDResult);
+      // A kill request is not a reaped child. Native acquired copies remain
+      // owned until close, including the forced-timeout path.
     }
 
     function checkDone() {
@@ -444,6 +445,10 @@ function runDreamDaemonWithWatchdog(
       finish(false, 'exited', false);
     });
     child.on('error', () => finish(false, 'spawn error', false));
+    child.on('close', (code, signal) => {
+      finish(false, 'closed', false);
+      resolve({ code: code ?? 0, signal, stdout: '', stderr: '', combined: '', killedByWatchdog: hardTimeout } as DDResult);
+    });
   });
 }
 
@@ -492,6 +497,11 @@ export async function DreamDaemon(
   options: DDOptions,
   ...args: any[]
 ): Promise<DDResult> {
+  const output = options.compiledOutput ?? currentCompiledOutput(options.dmbFile, compilerMode() === 'native');
+  return withCompiledOutput(output, Juke.exec, dmbFile => runHostedWorld({ ...options, dmbFile }, args));
+}
+
+async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult> {
   checkVerdigrisAbi();
   await approveWorldDlls(options.dmbFile);
   const dmPath = await getDmPath(options.namedDmVersion);

@@ -20,6 +20,7 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
             census.slice("retained_grammar.versions", versions, true);
             if census.arc_object("retained_grammar.descriptors", value) {
                 census.vec_payload("retained_grammar.descriptors", value.spans());
+                census.vec_payload("retained_grammar.checkpoints", value.checkpoints());
             }
             for read in reads.iter() {
                 if let Some(records) = read.answer.records() {

@@ -22,6 +22,35 @@ pub struct DefaultLedger {
     pub source_identity: u128,
     pub defaults: Vec<CapturedDefault>,
 }
+/// Current request-only admission view; never a retained semantic artifact.
+pub(crate) struct BorrowedDefault<'a> {
+    pub origin_kind: dm_tree::initializers::InitializerOriginKind,
+    pub source_ordinal: usize,
+    pub occurrence: OccurrenceId,
+    pub value: &'a DefaultValue,
+    pub runtime: bool,
+    pub initializer: InitializerIdentity,
+}
+pub(crate) fn admit_lowered_borrowed<'a>(
+    plan: &InitializerPlan,
+    classified: &'a ClassifiedInitializers,
+    units: &[crate::initializer_lowering::LoweredInitializerUnit],
+) -> Result<Vec<BorrowedDefault<'a>>, String> {
+    admit_coverage_with(
+        plan,
+        classified,
+        units.iter().map(|unit| {
+            (
+                match unit.scope {
+                    dm_ir::InitializerScope::Global => InitializerIdentity::Global,
+                    dm_ir::InitializerScope::Instance(owner) => InitializerIdentity::Class(owner),
+                },
+                unit.write_ordinals.as_slice(),
+            )
+        }),
+        |row| row,
+    )
+}
 pub fn admit(
     plan: &InitializerPlan,
     classified: &ClassifiedInitializers,
@@ -60,6 +89,26 @@ fn admit_coverage<'a>(
     classified: &ClassifiedInitializers,
     units: impl IntoIterator<Item = (InitializerIdentity, &'a [usize])>,
 ) -> Result<DefaultLedger, String> {
+    let defaults = admit_coverage_with(plan, classified, units, |row| CapturedDefault {
+        origin_kind: row.origin_kind,
+        source_ordinal: row.source_ordinal,
+        occurrence: row.occurrence,
+        value: row.value.clone(),
+        runtime: row.runtime,
+        initializer: row.initializer,
+    })?;
+    Ok(DefaultLedger {
+        tree_identity: plan.source.tree.identity(),
+        source_identity: plan.identity,
+        defaults,
+    })
+}
+fn admit_coverage_with<'units, 'values, T>(
+    plan: &InitializerPlan,
+    classified: &'values ClassifiedInitializers,
+    units: impl IntoIterator<Item = (InitializerIdentity, &'units [usize])>,
+    mut emit: impl FnMut(BorrowedDefault<'values>) -> T,
+) -> Result<Vec<T>, String> {
     if plan.writes.len() != plan.origins.len() || classified.writes.len() != plan.writes.len() {
         return Err("classified defaults do not cover captured source ledger".into());
     }
@@ -159,24 +208,23 @@ fn admit_coverage<'a>(
         } else if runtime.contains_key(&ordinal) || fact.runtime_value.is_some() {
             return Err("scalar default has unexpected runtime initializer coverage".into());
         }
-        defaults.push(CapturedDefault {
-            origin_kind: origin.kind,
-            source_ordinal: ordinal,
-            occurrence: origin.occurrence,
-            value: fact.default.clone(),
-            runtime: fact.phase.is_some(),
-            initializer: expected,
-        });
+        defaults.push((
+            ordinal,
+            emit(BorrowedDefault {
+                origin_kind: origin.kind,
+                source_ordinal: ordinal,
+                occurrence: origin.occurrence,
+                value: &fact.default,
+                runtime: fact.phase.is_some(),
+                initializer: expected,
+            }),
+        ));
     }
     if !runtime.is_empty() {
         return Err("initializer artifact covers unknown source writes".into());
     }
-    defaults.sort_by_key(|value| value.source_ordinal);
-    Ok(DefaultLedger {
-        tree_identity: plan.source.tree.identity(),
-        source_identity: plan.identity,
-        defaults,
-    })
+    defaults.sort_by_key(|value| value.0);
+    Ok(defaults.into_iter().map(|(_, value)| value).collect())
 }
 #[cfg(test)]
 mod tests {
@@ -231,8 +279,15 @@ mod tests {
         let ledger = admit(&plan, &facts, &batch).unwrap();
         assert_eq!(ledger.defaults.len(), 1);
         assert_eq!(ledger.defaults[0].occurrence, plan.origins[0].occurrence);
+        let borrowed = admit_lowered_borrowed(&plan, &facts, &[]).unwrap();
+        assert_eq!(borrowed.len(), ledger.defaults.len());
+        assert_eq!(borrowed[0].value, &ledger.defaults[0].value);
+        assert!(std::ptr::eq(borrowed[0].value, &facts.writes[0].default));
+        assert_eq!(borrowed[0].occurrence, ledger.defaults[0].occurrence);
+        drop(borrowed);
         facts.writes[0].source_ordinal = usize::MAX;
         assert!(admit(&plan, &facts, &batch).is_err());
+        assert!(admit_lowered_borrowed(&plan, &facts, &[]).is_err());
         let runtime = crate::initializer_policy::classify(
             &plan.writes,
             frontend.snapshot.tree.symbols(),

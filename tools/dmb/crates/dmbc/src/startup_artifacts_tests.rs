@@ -107,7 +107,7 @@ fn changed_static_body_and_deleted_procedure_replace_current_roster_without_sour
     let store = StartupArtifacts::default();
     let pool = dm_exec::BuildExecutor::new(1).unwrap();
     let original = revision("/proc/p()\n    var/static/cache = 3\n    return cache\n");
-    let source = Arc::downgrade(&original.expanded.text);
+    let source = original.expanded.text.downgrade();
     {
         let arena = dm_tree::frontend::BodyArena::new(&original);
         drop(capture(&original, &pool, &arena, Some(&store)));

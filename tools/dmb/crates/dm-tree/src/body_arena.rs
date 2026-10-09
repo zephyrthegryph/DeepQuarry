@@ -413,12 +413,12 @@ mod tests {
         let mut frontend = frontend();
         // Keep the declaration/settings projection and offsets fixed while
         // constructing an issued executable slice with a malformed quote.
-        let malformed: std::sync::Arc<str> = frontend
+        let malformed: dm_preprocess::SourceText = frontend
             .expanded
             .text
             .replace("return 2", "return \"")
             .into();
-        frontend.expanded.text = std::sync::Arc::clone(&malformed);
+        frontend.expanded.text = malformed.clone();
         frontend.issued_arena = malformed;
         let arena = BodyArena::new(&frontend);
         let body = &frontend.bodies[1];

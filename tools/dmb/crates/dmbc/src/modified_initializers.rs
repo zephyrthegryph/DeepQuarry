@@ -283,6 +283,7 @@ fn finish_collection<R: Resolver>(
         };
         enqueue(&code, &debug_origins, &mut seen, &mut pending)?;
         let artifact = InitializationArtifact {
+            encoding: None,
             identity: dm_link::InitializerIdentity::Modified(SymbolId::of(
                 &captured.descriptor.alias(),
             )),

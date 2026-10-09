@@ -24,6 +24,9 @@ impl HeapCensus {
         if !self.arc_object(owner, relative) {
             return;
         }
+        relative.visit_body_storage(|address, logical, capacity| {
+            self.buffer(owner, address, logical, capacity);
+        });
         let roots = relative.relative_items();
         if !self.slice(owner, roots, true) {
             return;

@@ -20,14 +20,14 @@ pub struct AdaptedDeclarations {
 pub(crate) struct SharedAdaptedDeclarations {
     pub(crate) symbols: SymbolTable,
     pub(crate) skeletons: crate::skeleton_roster::SkeletonRoster,
-    pub(crate) origins: Vec<Provenance>,
+    pub(crate) origins: crate::relative_origins::OriginRoster,
 }
 impl From<AdaptedDeclarations> for SharedAdaptedDeclarations {
     fn from(adapted: AdaptedDeclarations) -> Self {
         Self {
             symbols: adapted.symbols,
             skeletons: crate::skeleton_roster::SkeletonRoster::from_owned(adapted.skeletons),
-            origins: adapted.origins,
+            origins: adapted.origins.into(),
         }
     }
 }
@@ -594,10 +594,11 @@ impl SharedAdaptedDeclarations {
             &crate::owner_normalization::RetainedNormalization,
         )>,
     ) -> Result<TreeSnapshot, SnapshotError> {
+        let origins = self.origins.into_owned();
         let mut skeletons = crate::skeleton_roster::SkeletonRoster::default();
         let hierarchy = seed_hierarchy_rows(self.skeletons.iter(), seed).map_err(|error| {
             let error = SnapshotError::Tree(error);
-            on_error(&error, &self.skeletons.to_vec(), &self.origins);
+            on_error(&error, &self.skeletons.to_vec(), &origins);
             error
         })?;
         if let Some(hierarchy) = &hierarchy {
@@ -632,7 +633,7 @@ impl SharedAdaptedDeclarations {
                     .view()
                     .slice(engine_count..skeletons.len())
                     .to_vec(),
-                &self.origins,
+                &origins,
             );
             error
         })?;
@@ -666,13 +667,13 @@ impl SharedAdaptedDeclarations {
                         .view()
                         .slice(engine_count..skeletons.len())
                         .to_vec(),
-                    &self.origins,
+                    &origins,
                 );
                 error
             })?;
         }
         let tree = Arc::new(tree);
-        let occurrences = Arc::new(crate::OccurrenceTable::build(&tree, self.origins).map_err(
+        let occurrences = Arc::new(crate::OccurrenceTable::build(&tree, origins).map_err(
             |error| {
                 let error = SnapshotError::Origins(error);
                 // Origin validation errors carry their own exact error value;

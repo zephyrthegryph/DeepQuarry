@@ -747,7 +747,7 @@ fn parsed_body_receipts_reject_other_issuers_and_public_capture_replacement() {
         .validate_parsed_body(&parsed, &foreign.bodies[0])
         .is_err());
     let mut changed_arena = frontend.clone();
-    changed_arena.expanded.text = Arc::from("/proc/probe()\n    return 9\n");
+    changed_arena.expanded.text = "/proc/probe()\n    return 9\n".into();
     assert!(changed_arena.parse_body(&changed_arena.bodies[0]).is_err());
     assert!(changed_arena.body_input(&changed_arena.bodies[0]).is_err());
     let mut changed_syntax = frontend.clone();

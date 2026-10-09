@@ -525,6 +525,7 @@ pub(super) fn expand(
     });
     memo.insert(Arc::clone(&record));
     let mut output = output;
+    output.text = crate::SourceText::from(Arc::clone(&record.text));
     output.receipt = Some(record);
     output
 }
@@ -537,9 +538,10 @@ fn hydrate(
     let region = &plan.regions[index];
     let path = plan.occurrences[region.occurrence].path.as_ref();
     let mut output = super::expansion::RegionOutput {
-        text: record.text.to_string(),
+        text: crate::SourceText::from(Arc::clone(&record.text)),
         receipt: Some(Arc::clone(record)),
-        ..Default::default()
+        lines: Default::default(),
+        diagnostics: Vec::new(),
     };
     let mut trace_arena = super::trace_arena::TraceArena::default();
     let mut lines =
@@ -650,6 +652,44 @@ mod tests {
                 .or_default()
                 .push(r);
         }
+    }
+    #[test]
+    fn fresh_and_retained_region_outputs_share_the_certified_text_backing() {
+        let plan = plan("/proc/probe()\n    return 7\n", &[]);
+        let memo = Memo::default();
+        let fresh = expand(&plan, 0, &memo);
+        let record = Arc::clone(fresh.receipt.as_ref().unwrap());
+        let reused = expand(&plan, 0, &memo);
+        for output in [&fresh, &reused] {
+            assert_eq!(output.text.as_str(), record.text());
+            output.text.visit_storage(|_, _, storage| match storage {
+                crate::source_text::SourceTextStorage::Original(text) => {
+                    assert!(Arc::ptr_eq(text, &record.text))
+                }
+                crate::source_text::SourceTextStorage::Transformed(_) => {
+                    panic!("issued region output copied the certified immutable text")
+                }
+            });
+        }
+        assert_eq!(fresh.lines.len(), reused.lines.len());
+        for ((span, line, input, traces), (other_span, other_line, other_input, other_traces)) in
+            fresh.lines.iter().zip(reused.lines.iter())
+        {
+            assert_eq!((span, line, input), (other_span, other_line, other_input));
+            assert_eq!(traces.len(), other_traces.len());
+            for (trace, other) in traces.iter().zip(other_traces.iter()) {
+                assert_eq!(trace.name, other.name);
+                assert_eq!(trace.invocation_span, other.invocation_span);
+                assert_eq!(trace.replacement_chain, other.replacement_chain);
+                let definition = |origin: &Option<super::super::DefinitionOrigin>| {
+                    origin
+                        .as_ref()
+                        .map(|origin| (origin.path.clone(), origin.source_span, origin.source_line))
+                };
+                assert_eq!(definition(&trace.definition), definition(&other.definition));
+            }
+        }
+        assert_eq!(fresh.diagnostics, reused.diagnostics);
     }
     fn plan(body: &str, defines: &[(&str, &str)]) -> DirectivePlan {
         let source = Memory(BTreeMap::from([(

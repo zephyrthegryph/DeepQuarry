@@ -4,6 +4,17 @@ use dm_tree::frontend::{DeclarationStorageView, RetainedSemanticTree};
 
 pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
     let mut census = HeapCensus::new("retained_declarations");
+    let mut has_index = false;
+    state.visit_occurrence_index_storage(|pointer, _, bytes| {
+        has_index = true;
+        census.buffer("semantic_occurrence_index", pointer, bytes, bytes);
+    });
+    if has_index {
+        census.unknown(
+            "semantic_occurrence_index",
+            "private target HashMap bucket backing and shared Arc control blocks excluded",
+        );
+    }
     super::grammar_roster::inspect(&mut census, state);
     super::metadata_dependencies::inspect(&mut census, state);
     super::retained_normalization::inspect(&mut census, state);

@@ -13,6 +13,8 @@ use std::{
     },
     time::{Duration, Instant},
 };
+#[path = "service_housekeeping.rs"]
+mod housekeeping;
 /// Hosts are retained per manifest and semantic configuration. Supersession also
 /// requires the same logical destination. Different defines targeting one file
 /// serialize through the existing output lease but do not cancel each other.
@@ -89,6 +91,7 @@ struct Slot {
     host: Mutex<crate::runner_host::BuildHost>,
     newest: Mutex<BTreeMap<RequestKey, control::Cancellation>>,
     last: Mutex<Instant>,
+    idle_tier: AtomicUsize,
 }
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 struct SessionKey {
@@ -134,7 +137,7 @@ impl Shared {
         config: Option<&crate::request::BuildRequest>,
     ) -> Arc<Slot> {
         let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
-        slots
+        let slot = slots
             .entry(SessionKey {
                 manifest: path,
                 defines: defines.clone(),
@@ -146,9 +149,12 @@ impl Shared {
                     host: Mutex::new(crate::runner_host::BuildHost::default()),
                     newest: Mutex::new(BTreeMap::new()),
                     last: Mutex::new(Instant::now()),
+                    idle_tier: AtomicUsize::new(0),
                 })
             })
-            .clone()
+            .clone();
+        slot.idle_tier.store(0, Ordering::Release);
+        slot
     }
     fn acquire(self: &Arc<Self>, workers: usize) -> io::Result<Permit> {
         let workers = workers.max(1);
@@ -177,19 +183,7 @@ impl Shared {
     }
     fn trim(&self) {
         let pressured = transport::private_bytes().is_some_and(|bytes| bytes > 4_000_000_000);
-        self.slots
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .retain(|_, slot| {
-                Arc::strong_count(slot) > 1
-                    || !pressured
-                        && slot
-                            .last
-                            .lock()
-                            .unwrap_or_else(|e| e.into_inner())
-                            .elapsed()
-                            < Duration::from_secs(600)
-            });
+        self.housekeep(Instant::now(), pressured);
     }
 }
 struct Permit(Arc<Shared>, usize);
@@ -235,7 +229,11 @@ pub(super) fn serve() -> io::Result<()> {
             }
         })?;
     let mut activity = Instant::now();
+    let mut housekeeping = housekeeping::Deadline::new(activity);
     loop {
+        if housekeeping.due(Instant::now()) {
+            shared.trim();
+        }
         if shared.retiring.load(Ordering::Acquire)
             && *shared.running.lock().unwrap_or_else(|e| e.into_inner()) == 0
         {
@@ -272,7 +270,7 @@ pub(super) fn serve() -> io::Result<()> {
                     })?;
             }
             Ok(Err(error)) => return Err(error),
-            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => shared.trim(),
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
             Err(_) => return Err(io::Error::other("daemon listener stopped")),
         }
     }

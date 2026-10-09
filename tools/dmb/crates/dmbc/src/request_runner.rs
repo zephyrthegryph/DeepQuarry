@@ -315,7 +315,8 @@ pub fn run_build_with_host(
     if engine_capture.is_none() {
         host.clear_regions();
     }
-    let memo_cache = if executable && !no_cache {
+    let disk_admission = host.disk_admission(memo_policy);
+    let memo_cache = if executable && !no_cache && disk_admission.allows_reads() {
         match dm_cache::Cache::user_default(dm_cache::Limits::default()) {
             Ok(cache) => Some(Arc::new(cache)),
             Err(error) => {
@@ -335,6 +336,8 @@ pub fn run_build_with_host(
                 None
             }
         });
+    // Retained hydration reads existing segments only; no disk population or leases.
+    let memo_cache = memo_cache.filter(|_| disk_admission.allows_writes());
     let published_keys = Arc::new(std::sync::Mutex::new(std::collections::BTreeSet::new()));
     let cache_publisher: Option<Arc<dmbc::lowering_memo::CachePublisher>> =
         memo_cache.as_ref().map(|cache| {
@@ -359,21 +362,23 @@ pub fn run_build_with_host(
             let memo = memo.with_explanation_limit(131072);
             match &cache_publisher {
                 Some(publisher) => memo.with_publisher(Arc::clone(publisher)),
+                None if !disk_admission.allows_writes() => memo.with_read_only_disk(),
                 None => memo,
             }
         });
     let expansion_memo = cache_snapshot.clone().map(|snapshot| {
-        dmbc::expansion_memo::DiskExpansionMemo::new(memo_policy, snapshot).with_publisher(
-            cache_publisher
-                .as_ref()
-                .expect("snapshot publisher")
-                .clone(),
-        )
+        let memo = dmbc::expansion_memo::DiskExpansionMemo::new(memo_policy, snapshot);
+        match &cache_publisher {
+            Some(publisher) => memo.with_publisher(Arc::clone(publisher)),
+            None if !disk_admission.allows_writes() => memo.with_read_only_disk(),
+            None => memo,
+        }
     });
     let map_memo = host
         .map_memo(memo_policy, cache_snapshot.clone())
         .map(|memo| match &cache_publisher {
             Some(publisher) => memo.with_publisher(Arc::clone(publisher)),
+            None if !disk_admission.allows_writes() => memo.with_read_only_disk(),
             None => memo,
         });
     let seed = engine_capture
@@ -904,6 +909,7 @@ pub fn run_build_with_host(
             output.timings.lowering.as_secs_f64(), output.timings.initializers.as_secs_f64(),
             output.timings.symbolic_linking.as_secs_f64(), output.timings.composition.as_secs_f64(),
             pair.dmb_bytes, pair.rsc_bytes, pair.name());
+        disk_admission.complete();
         return Ok(BuildOutcome::Published {
             pair,
             output_project,
@@ -945,6 +951,7 @@ pub fn run_build_with_host(
         timings.provenance_and_body_indexing.as_secs_f64(),
         timings.total.as_secs_f64(),
     );
+    // Partial analysis exports do not certify a fully populated compile session.
     Ok(BuildOutcome::Analyzed {
         semantic_rows: counts.semantic_rows,
         occurrence_rows: counts.occurrence_rows,

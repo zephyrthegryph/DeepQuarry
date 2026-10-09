@@ -77,26 +77,23 @@ fn source_offset(
     let leading = expression.len() - expression.trim_start().len();
     let expression = expression.trim();
     let actual = dm_syntax::lex(expression);
-    let tokens: Vec<_> = actual
-        .tokens
-        .iter()
-        .filter(|token| {
-            !matches!(
-                token.kind,
-                TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
-            )
-        })
-        .collect();
+    let mut tokens = actual.tokens.iter().filter(|token| {
+        !matches!(
+            token.kind,
+            TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
+        )
+    });
     let expected = parameter
         .source_expression
         .as_ref()
         .ok_or("source helper expression missing")?;
     if !actual.diagnostics.is_empty()
-        || tokens.len() != expected.tokens.len()
-        || tokens
-            .iter()
-            .zip(expected.tokens.iter())
-            .any(|(a, b)| a.kind != b.kind || dm_ir::SymbolId::of(&a.text) != b.text)
+        || expected.tokens.iter().any(|expected| {
+            tokens.next().is_none_or(|actual| {
+                actual.kind != expected.kind || dm_ir::SymbolId::of(&actual.text) != expected.text
+            })
+        })
+        || tokens.next().is_some()
     {
         return Err("source helper expression differs from typed signature".into());
     }

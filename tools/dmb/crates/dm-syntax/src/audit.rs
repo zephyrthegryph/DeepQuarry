@@ -2,8 +2,8 @@
 //! the source text; this module never builds a whole-project token or AST Vec.
 
 use crate::{
-    parse, parse_proc_body, quoted_end, AstFile, Diagnostic, DiagnosticKind, Item, ItemKind, Span,
-    Statement, StatementKind,
+    parse, parse_proc_body, AstFile, Diagnostic, DiagnosticKind, Item, ItemKind, Span, Statement,
+    StatementKind,
 };
 use std::collections::BTreeMap;
 
@@ -139,60 +139,18 @@ pub fn for_each_stable_source_chunk(
     max_declarations: usize,
     mut visit: impl FnMut(&str, usize),
 ) -> ChunkReport {
-    let limit = max_declaration_bytes.max(1);
-    let maximum = max_declarations.max(1);
-    let mut report = ChunkReport::default();
-    let mut start = 0;
-    let mut declaration_start = 0;
-    let mut count = 0;
-    let mut boundary = |end: usize| {
-        if end <= declaration_start {
-            return;
-        }
-        let declaration = &source[declaration_start..end];
-        if declaration.len() > limit {
-            if declaration_start > start && !source[start..declaration_start].trim().is_empty() {
-                visit(&source[start..declaration_start], start);
-                report.parsed_chunks += 1;
-                report.parsed_bytes += declaration_start - start;
-            }
-            report.skipped_declarations += 1;
-            report.skipped_bytes += declaration.len();
-            report
-                .first_skipped_span
-                .get_or_insert(Span::new(declaration_start, end));
-            start = end;
-            count = 0;
-        } else {
-            count += 1;
-            // Fixed FNV framing is only a grouping rule, never cache authority.
-            let header = declaration
-                .lines()
-                .find(|line| !line.trim().is_empty())
-                .unwrap_or("");
-            let hash = header.bytes().fold(0xcbf29ce484222325u64, |hash, byte| {
-                (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3)
-            });
-            if count >= maximum || hash & 15 == 0 {
-                if !source[start..end].trim().is_empty() {
-                    visit(&source[start..end], start);
-                    report.parsed_chunks += 1;
-                    report.parsed_bytes += end - start;
-                }
-                start = end;
-                count = 0;
-            }
-        }
-        declaration_start = end;
-    };
-    for_each_top_level_boundary(source, &mut boundary);
-    boundary(source.len());
-    if start < source.len() && !source[start..].trim().is_empty() {
-        visit(&source[start..], start);
-        report.parsed_chunks += 1;
-        report.parsed_bytes += source.len() - start;
-    }
-    report
+    crate::stable_chunks::scan_stable_source_chunks_from::<()>(
+        source,
+        crate::BoundaryCheckpoint::default(),
+        max_declaration_bytes,
+        max_declarations,
+        |text, offset, _| {
+            visit(text, offset);
+            std::ops::ControlFlow::Continue(())
+        },
+    )
+    .expect("initial joined-stream stable checkpoint is valid")
+    .0
 }
 
 /// Reparse exactly one procedure from the original source when lowering it.
@@ -440,117 +398,15 @@ pub fn audit_source_streaming(
 }
 
 fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
-    let mut at_line_start = true;
-    let mut indented = false;
-    let mut delimiter_depth = 0usize;
-    let mut pos = 0usize;
-    while pos < source.len() {
-        let rest = &source[pos..];
-        let first = rest.as_bytes()[0];
-        if first == b'/' && rest.starts_with("//") {
-            pos += rest.find('\n').unwrap_or(rest.len());
-            continue;
-        }
-        if first == b'/' && rest.starts_with("/*") {
-            let mut depth = 1usize;
-            let mut cursor = 2usize;
-            while depth > 0 && cursor + 1 < rest.len() {
-                if rest[cursor..].starts_with("/*") {
-                    depth += 1;
-                    cursor += 2;
-                } else if rest[cursor..].starts_with("*/") {
-                    depth -= 1;
-                    cursor += 2;
-                } else {
-                    cursor += rest[cursor..].chars().next().unwrap().len_utf8();
-                }
-            }
-            let end = if depth == 0 { cursor } else { rest.len() };
-            (at_line_start, indented) =
-                after_token_line_start(&rest[..end], at_line_start, indented, true);
-            pos += end;
-            continue;
-        }
-        let string = if first == b'@' && rest.starts_with("@{\"") {
-            quoted_end(&rest[1..], true, true).map(|end| end + 1)
-        } else if first == b'{' && rest.starts_with("{\"") {
-            quoted_end(rest, true, false)
-        } else if first == b'@' && rest.starts_with("@\"") {
-            quoted_end(&rest[1..], false, true).map(|end| end + 1)
-        } else if first == b'"' {
-            quoted_end(rest, false, false)
-        } else {
-            None
-        };
-        if let Some(end) = string {
-            (at_line_start, indented) =
-                after_token_line_start(&rest[..end], at_line_start, indented, false);
-            pos += end;
-            continue;
-        }
-        if first == b'\'' {
-            let mut escaped = false;
-            let mut end = rest.len();
-            for (at, ch) in rest.char_indices().skip(1) {
-                if escaped {
-                    escaped = false;
-                } else if ch == '\\' {
-                    escaped = true;
-                } else if ch == '\'' {
-                    end = at + 1;
-                    break;
-                }
-            }
-            (at_line_start, indented) =
-                after_token_line_start(&rest[..end], at_line_start, indented, false);
-            pos += end;
-            continue;
-        }
-        let ch = if first.is_ascii() {
-            char::from(first)
-        } else {
-            rest.chars().next().unwrap()
-        };
-        if ch == '\n' {
-            at_line_start = true;
-            indented = false;
-        } else if matches!(ch, ' ' | '\t') && at_line_start {
-            indented = true;
-        } else if !matches!(ch, ' ' | '\t' | '\r') {
-            // Expanded #include directives can leave spaces before the first
-            // absolute declaration path of an included file.
-            if at_line_start && delimiter_depth == 0 && (!indented || ch == '/') {
-                visit(pos);
-            }
-            at_line_start = false;
-        }
-        match ch {
-            '(' | '[' | '{' => delimiter_depth += 1,
-            ')' | ']' | '}' => delimiter_depth = delimiter_depth.saturating_sub(1),
-            _ => {}
-        }
-        pos += ch.len_utf8();
-    }
-}
-
-fn after_token_line_start(
-    token: &str,
-    previous: bool,
-    previously_indented: bool,
-    trivia: bool,
-) -> (bool, bool) {
-    match token.rfind('\n') {
-        Some(at) => {
-            let tail = &token[at + 1..];
-            (
-                tail.bytes()
-                    .all(|byte| matches!(byte, b' ' | b'\t' | b'\r')),
-                tail.bytes().any(|byte| matches!(byte, b' ' | b'\t')),
-            )
-        }
-        None if trivia => (previous, previously_indented),
-        None => (false, previously_indented),
-    }
+    let _ = crate::boundary_scan::scan_top_level_boundaries::<()>(
+        source,
+        crate::boundary_scan::BoundaryCheckpoint::default(),
+        |checkpoint| {
+            visit(checkpoint.offset());
+            std::ops::ControlFlow::Continue(())
+        },
+    )
+    .expect("initial joined-stream boundary checkpoint is valid");
 }
 
 #[cfg(test)]
@@ -707,6 +563,7 @@ mod tests {
 #[cfg(test)]
 mod ascii_scan_tests {
     use super::*;
+    use crate::{boundary_scan::after_token_line_start, quoted_end};
     fn reference_boundaries(source: &str, mut visit: impl FnMut(usize)) {
         let mut at_line_start = true;
         let mut indented = false;

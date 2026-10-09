@@ -7,6 +7,10 @@
 use std::ops::Range;
 
 mod audit;
+mod boundary_scan;
+mod stable_chunks;
+pub use boundary_scan::{scan_top_level_boundaries, BoundaryCheckpoint, BoundaryScanError};
+pub use stable_chunks::scan_stable_source_chunks_from;
 mod declaration_type;
 pub use declaration_type::{normalize_declaration_type, project_declaration_type, DeclarationType};
 pub mod map;

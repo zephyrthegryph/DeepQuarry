@@ -13,6 +13,54 @@ pub struct RelativeSyntax {
     items: Arc<[Item]>,
     source_len: usize,
     max_end: usize,
+    bodies: Vec<RelativeBody>,
+}
+#[derive(Debug)]
+struct RelativeBody {
+    path: Arc<[usize]>,
+    span: Span,
+    settings: Arc<[Span]>,
+}
+fn capture_bodies(items: &[Item], path: &mut Vec<usize>, output: &mut Vec<RelativeBody>) {
+    for (index, item) in items.iter().enumerate() {
+        path.push(index);
+        if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
+            let mut settings = Vec::new();
+            crate::settings::setting_spans(&item.children, &mut settings);
+            output.push(RelativeBody {
+                path: path.clone().into(),
+                span: item.span,
+                settings: settings.into(),
+            });
+        } else {
+            capture_bodies(&item.children, path, output);
+        }
+        path.pop();
+    }
+}
+pub(crate) struct CurrentBodyRecipe<'a> {
+    relative: &'a RelativeBody,
+    offset: usize,
+    root_prefix: usize,
+}
+impl CurrentBodyRecipe<'_> {
+    pub(crate) fn span(&self) -> Span {
+        Span::new(
+            self.relative.span.start + self.offset,
+            self.relative.span.end + self.offset,
+        )
+    }
+    pub(crate) fn path(&self) -> Arc<[usize]> {
+        let mut path = self.relative.path.to_vec();
+        path[0] += self.root_prefix;
+        path.into()
+    }
+    pub(crate) fn settings(&self) -> impl Iterator<Item = Span> + '_ {
+        self.relative
+            .settings
+            .iter()
+            .map(|span| Span::new(span.start + self.offset, span.end + self.offset))
+    }
 }
 impl RelativeSyntax {
     /// Mint once from root-relative parser output, validating every byte span.
@@ -28,14 +76,36 @@ impl RelativeSyntax {
             }
             pending.extend(&item.children);
         }
+        let mut bodies = Vec::new();
+        capture_bodies(&items, &mut Vec::new(), &mut bodies);
         Ok(Self {
             items: items.into(),
             source_len: source.len(),
             max_end,
+            bodies,
         })
     }
     pub fn relative_items(&self) -> &Arc<[Item]> {
         &self.items
+    }
+    pub fn visit_body_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        visit(
+            self.bodies.as_ptr() as usize,
+            self.bodies.len() * std::mem::size_of::<RelativeBody>(),
+            self.bodies.capacity() * std::mem::size_of::<RelativeBody>(),
+        );
+        for body in &self.bodies {
+            visit(
+                body.path.as_ptr() as usize,
+                std::mem::size_of_val(body.path.as_ref()),
+                std::mem::size_of_val(body.path.as_ref()),
+            );
+            visit(
+                body.settings.as_ptr() as usize,
+                std::mem::size_of_val(body.settings.as_ref()),
+                std::mem::size_of_val(body.settings.as_ref()),
+            );
+        }
     }
     /// The caller has already checked the immutable exact source key. This is
     /// a coordinate certificate, not a replacement for source authentication.
@@ -163,6 +233,22 @@ pub struct DeclarationSyntax {
     len: usize,
 }
 impl DeclarationSyntax {
+    pub(crate) fn body_recipes(&self) -> impl Iterator<Item = CurrentBodyRecipe<'_>> {
+        self.chunks
+            .iter()
+            .zip(self.prefix.iter())
+            .flat_map(|(chunk, &root_prefix)| {
+                chunk
+                    .relative
+                    .bodies
+                    .iter()
+                    .map(move |relative| CurrentBodyRecipe {
+                        relative,
+                        offset: chunk.offset,
+                        root_prefix,
+                    })
+            })
+    }
     pub(crate) fn new(chunks: Vec<CurrentSyntaxChunk>) -> Result<Self, BindingError> {
         let mut prefix = Vec::with_capacity(chunks.len());
         let mut len = 0usize;
@@ -292,6 +378,38 @@ mod tests {
         assert_eq!(items.next().unwrap().span().start, 0);
         assert_eq!(items.next_back().unwrap().span().start, 107);
         assert_eq!(items.len(), 0);
+    }
+    #[test]
+    fn body_recipes_share_syntax_and_rebind_paths_settings_and_coordinates() {
+        let source = "/datum/example\n    proc/read()\n        set waitfor = 0\n        return 1\n/proc/other()\n    return 2\n";
+        let parsed = dm_syntax::parse_declaration_skeleton(source);
+        assert!(parsed.diagnostics.is_empty());
+        let relative = Arc::new(RelativeSyntax::capture(parsed.items, source).unwrap());
+        let syntax = DeclarationSyntax::new(vec![
+            relative.bind(source.len(), 0).unwrap(),
+            relative.bind(source.len(), 200).unwrap(),
+        ])
+        .unwrap();
+        let recipes = syntax.body_recipes().collect::<Vec<_>>();
+        assert_eq!(recipes.len(), 4);
+        for recipe in &recipes {
+            let path = recipe.path();
+            let item = syntax.item_path(&path).unwrap();
+            assert!(matches!(item.kind(), ItemKind::Proc | ItemKind::Verb));
+            assert_eq!(recipe.span(), item.span());
+        }
+        assert_eq!(recipes[0].path().as_ref(), &[0, 0]);
+        assert_eq!(recipes[2].path().as_ref(), &[2, 0]);
+        let first = recipes[0].settings().collect::<Vec<_>>();
+        let shifted = recipes[2].settings().collect::<Vec<_>>();
+        assert_eq!(first.len(), 1);
+        assert_eq!(shifted[0].start, first[0].start + 200);
+        assert_eq!(shifted[0].end, first[0].end + 200);
+        assert!(source[first[0].range()].contains("waitfor"));
+        assert!(Arc::ptr_eq(
+            syntax.chunks()[0].shared_relative(),
+            syntax.chunks()[1].shared_relative()
+        ));
     }
     #[test]
     fn bindings_reject_overflow_foreign_lengths_and_non_utf8_span_boundaries() {

@@ -27,6 +27,50 @@
     "clear_fix": "release declaration contribution keys, grammar descriptor keys and active symbol catalog; lifetime hit counters retained",
     "scope": "Focused fixtures. No performance or BYOND parity admission for this executable yet. Dirty grammar, relative origins and retained class projection remain active work."
   },
+  "shared_frontend_and_owner_wave": {
+    "source_status": "wired; workspace and focused frontend/driver validation passed",
+    "workspace_all_targets_passed_seconds": 23.175723399966955,
+    "workspace_receipt": "E:/dq-cache/dmb-native-v2/cargo-step-20261009-165050-28655c.log",
+    "syntax_fixtures": 101,
+    "frontend_fixtures": 63,
+    "target_index_fixtures": 2,
+    "source_text_fixtures": 6,
+    "region_memo_fixtures": 7,
+    "driver_validation": {
+      "initializer_encoding": 1,
+      "owner_projection": 1,
+      "borrowed_default_admission": 1,
+      "disk_warmup": 2,
+      "expansion_disk_read_only_and_publication": 3,
+      "daemon_housekeeping": 3,
+      "idle_host_tiers": 2,
+      "startup_source_ownership": 4,
+      "startup_artifact_source_rebinding": 3,
+      "retained_census_clear": 1,
+      "owner_projection_charge": 1,
+      "initial_driver_build_seconds": 296.69554210000206,
+      "initial_driver_receipt": "E:/dq-cache/dmb-native-v2/cargo-step-20261009-165125-15c7ed.log",
+      "zero_test_filters": "runner_disk::tests and startup file-name filters executed zero; replaced with runner_host::disk::tests and startup::{owned_tests,artifact_tests}, listed above"
+    },
+    "implemented": [
+      "one resumable joined-stream grammar scanner/grouping producer with exact suffix convergence",
+      "relative origin leaves mapped once into current provenance",
+      "immutable body recipes with current source/settings/path issuance",
+      "exact shared target-index admission with fresh occurrences",
+      "joined SourceText allocation ownership and weak-lifetime observation",
+      "retained symbolic owner projections with per-owner source-bearing decline",
+      "initializer encoding reuse on the already admitted assembly owner",
+      "read-only retained-host disk warmup and resident-only subsequent requests",
+      "deadline-driven idle daemon housekeeping with bounded deterministic transitions"
+    ],
+    "end_to_end_timings": null,
+    "remaining": [
+      "global expansion admission/planning and joined assembly",
+      "full current descriptor/source projection and final symbol map",
+      "table binding owner and linked image reuse (drafted, not activated)",
+      "disk population economics, six-worktree acceptance and BYOND parity gates"
+    ]
+  },
   "commits": {
     "worker_stacks_and_daemon_identity": "3b0c85a7c4",
     "keyed_owner_normalization_and_effective_metadata": "67bd12ef40",

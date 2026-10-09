@@ -7,7 +7,7 @@ use std::sync::Mutex;
 
 #[derive(Clone, Debug, Default)]
 pub struct ExpandedRegions {
-    pub text: Arc<str>,
+    pub text: crate::SourceText,
     /// Lex the joined stream once: declarations and expressions may cross
     /// include boundaries and cannot be parsed as independent file programs.
     pub tokens: Vec<SpanToken>,
@@ -19,9 +19,8 @@ pub struct ExpandedRegions {
     pub lexical_diagnostics: Vec<dm_syntax::Diagnostic>,
 }
 
-#[derive(Default)]
 pub(super) struct RegionOutput {
-    pub(super) text: String,
+    pub(super) text: crate::SourceText,
     pub(super) receipt: Option<Arc<region_memo::ExpansionRecord>>,
     pub(super) lines: output_lines::OutputLines,
     pub(super) diagnostics: Vec<Diagnostic>,
@@ -205,7 +204,8 @@ pub(super) fn expand_region(
 ) -> RegionOutput {
     let region = &plan.regions[index];
     let file_name = plan.semantic_path(region.occurrence);
-    let mut output = RegionOutput::default();
+    let mut text_buffer = String::new();
+    let mut diagnostics = Vec::new();
     let mut lines = output_lines::OutputLineBuilder::default();
     let mut input = 0;
     let mut trace_arena = super::trace_arena::TraceArena::default();
@@ -248,7 +248,7 @@ pub(super) fn expand_region(
                 ) {
                     Ok(text) => Cow::Owned(text),
                     Err(message) => {
-                        output.diagnostics.push(Diagnostic {
+                        diagnostics.push(Diagnostic {
                             path: plan.occurrences[region.occurrence].path.as_ref().clone(),
                             line: line.source_line,
                             kind: DiagnosticKind::Macro,
@@ -264,11 +264,11 @@ pub(super) fn expand_region(
             // The terminal separator is not another emitted line. Interior
             // empty lines are source content, including inside block strings.
             for part in text.strip_suffix('\n').unwrap_or(&text).split('\n') {
-                let start = output.text.len();
-                output.text.push_str(part);
-                output.text.push('\n');
+                let start = text_buffer.len();
+                text_buffer.push_str(part);
+                text_buffer.push('\n');
                 lines.push((
-                    Span::new(start, output.text.len()),
+                    Span::new(start, text_buffer.len()),
                     line.source_line,
                     line.source_span,
                     macro_expansions.clone(),
@@ -276,8 +276,12 @@ pub(super) fn expand_region(
             }
         }
     }
-    output.lines = lines.finish();
-    output
+    RegionOutput {
+        text: text_buffer.into(),
+        receipt: None,
+        lines: lines.finish(),
+        diagnostics,
+    }
 }
 
 #[cfg(test)]
@@ -346,7 +350,7 @@ mod tests {
                     }
                 }
             }
-            assert_eq!(output.text, expected);
+            assert_eq!(output.text.as_str(), expected);
             assert!(output.diagnostics.is_empty());
             assert_eq!(
                 output

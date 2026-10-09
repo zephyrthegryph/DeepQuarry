@@ -1,5 +1,7 @@
 //! Exact output-piece observations for the existing joined grammar scanner.
 use super::ExpandedRegions;
+#[path = "frontend_grammar_convergence.rs"]
+mod convergence;
 use dm_preprocess::regions::ExpansionRecord;
 use dm_session::{ObservationHost, ObservationLedger, ObservedArtifactStore};
 use std::sync::{
@@ -60,8 +62,20 @@ impl ObservationHost<GrammarQuery, GrammarAnswer, ()> for CurrentPieces {
 pub struct GrammarDescriptors {
     pub(crate) spans: Vec<(usize, usize)>,
     pub(crate) source_len: usize,
+    starts: Vec<dm_syntax::BoundaryCheckpoint>,
+    reused: usize,
+    scanned_bytes: usize,
 }
 impl GrammarDescriptors {
+    pub fn checkpoints(&self) -> &Vec<dm_syntax::BoundaryCheckpoint> {
+        &self.starts
+    }
+    pub fn construction_reused_descriptors(&self) -> usize {
+        self.reused
+    }
+    pub fn construction_scanned_bytes(&self) -> usize {
+        self.scanned_bytes
+    }
     pub fn spans(&self) -> &Vec<(usize, usize)> {
         &self.spans
     }
@@ -80,11 +94,12 @@ impl Default for RetainedGrammar {
 }
 impl RetainedGrammar {
     fn key() -> Vec<u8> {
-        let mut key = b"joined-grammar-descriptors-v1".to_vec();
+        let mut key = b"joined-grammar-descriptors-v2".to_vec();
         key.extend_from_slice(&super::parserwire::VERSION.to_le_bytes());
         key.extend_from_slice(&32u64.to_le_bytes());
         key
     }
+    #[cfg(test)]
     pub(super) fn lookup(&self, expanded: &ExpandedRegions) -> Option<Arc<GrammarDescriptors>> {
         let host = CurrentPieces::capture(expanded)?;
         let descriptors = self.values.lookup(&Self::key(), &host)?;
@@ -100,29 +115,78 @@ impl RetainedGrammar {
         self.hits.fetch_add(1, Ordering::Relaxed);
         Some(descriptors)
     }
-    pub(super) fn insert(&self, expanded: &ExpandedRegions, spans: Vec<(usize, usize)>) {
-        let Some(host) = CurrentPieces::capture(expanded) else {
-            return;
-        };
-        let ledger = ObservationLedger::default();
-        ledger.record(
-            GrammarQuery::OrderedPieces,
-            host.answer(&GrammarQuery::OrderedPieces),
-            (),
-            None,
-        );
+    pub(super) fn discover(
+        &self,
+        expanded: &ExpandedRegions,
+    ) -> Result<Arc<GrammarDescriptors>, &'static str> {
+        let host = CurrentPieces::capture(expanded);
         let key = Self::key();
-        self.values.retain_current_keys([key.as_slice()]);
-        self.values.insert_with(
-            key.into(),
-            ledger.reads(),
-            ledger.domain_receipts(),
-            0,
-            || GrammarDescriptors {
-                spans,
-                source_len: host.length,
-            },
-        );
+        if let Some(host) = &host {
+            if let Some(value) = self.values.lookup(&key, host) {
+                if value.source_len == host.length {
+                    self.hits.fetch_add(1, Ordering::Relaxed);
+                    return Ok(value);
+                }
+            }
+        }
+        let mut previous = None;
+        if host.is_some() {
+            self.values.visit_storage(|entry| {
+                if let dm_session::ObservedArtifactStorageView::Entry {
+                    key: stored,
+                    reads,
+                    value,
+                    ..
+                } = entry
+                {
+                    if stored.as_ref() == key.as_slice()
+                        && reads.len() == 1
+                        && reads[0].query == GrammarQuery::OrderedPieces
+                    {
+                        previous = Some((Arc::clone(value), reads[0].answer.clone()));
+                    }
+                }
+            });
+        }
+        let built = convergence::build(
+            &expanded.text,
+            previous
+                .as_ref()
+                .map(|(value, answer)| (value.as_ref(), answer)),
+        )?;
+        let descriptors = GrammarDescriptors {
+            reused: built.reused,
+            scanned_bytes: built.scanned_bytes,
+            ..built.descriptors
+        };
+        if let Some(host) = host {
+            let ledger = ObservationLedger::default();
+            ledger.record(
+                GrammarQuery::OrderedPieces,
+                host.answer(&GrammarQuery::OrderedPieces),
+                (),
+                None,
+            );
+            self.values.retain_current_keys([key.as_slice()]);
+            self.values.insert_with(
+                key.clone().into(),
+                ledger.reads(),
+                ledger.domain_receipts(),
+                0,
+                || descriptors,
+            );
+            self.values
+                .lookup(&key, &host)
+                .ok_or("new grammar descriptor admission failed")
+        } else {
+            // Missing exact piece coverage cannot authorize history reuse.
+            Ok(Arc::new(descriptors))
+        }
+    }
+    #[cfg(test)]
+    fn insert(&self, expanded: &ExpandedRegions, spans: Vec<(usize, usize)>) {
+        let value = self.discover(expanded).unwrap();
+        assert_eq!(value.spans, spans);
     }
     pub(super) fn clear(&self) {
         self.values.retain_current_keys(std::iter::empty::<&[u8]>());
@@ -228,7 +292,7 @@ mod tests {
         assert_eq!(changed.text.len(), first.text.len());
         assert!(store.lookup(&changed).is_none());
         let mut tampered = again.clone();
-        tampered.text = Arc::from(again.text.replace("count = 1", "count = 9"));
+        tampered.text = again.text.replace("count = 1", "count = 9").into();
         assert!(store.lookup(&tampered).is_none());
         let mut incomplete = again.clone();
         incomplete.receipts.pop();
@@ -290,6 +354,81 @@ mod tests {
             updated.adapted.symbols.ordered(),
             fresh.adapted.symbols.ordered()
         );
+    }
+    fn expand_text(text: &str) -> ExpandedRegions {
+        let source = Source(BTreeMap::from([(
+            PathBuf::from("project.dme"),
+            text.to_owned(),
+        )]));
+        let plan = dm_preprocess::regions::plan_regions(
+            Path::new("project.dme"),
+            &source,
+            &BTreeMap::new(),
+        );
+        assert!(plan.diagnostics.is_empty());
+        dm_preprocess::regions::expand_regions_text_with_memo(&plan, 1, &Memo)
+    }
+    #[test]
+    fn body_and_structural_edits_converge_to_exact_fresh_descriptor_suffix() {
+        let source = format!(
+            "/datum/container\n    var/value=1\n{}",
+            (0..180)
+                .map(|index| format!("/proc/p{index}(arg=1)\n    return {index}\n"))
+                .collect::<String>()
+        );
+        for edited in [
+            source.replace("    return 80\n", "    return list(80,81,82,83)\n"),
+            source.replace(
+                "/proc/p80(arg=1)",
+                "/proc/inserted()\n    return 1\n/proc/p80(arg=1)",
+            ),
+            source.replace("    var/value=1\n", "    var/value=1\n    var/other=2\n"),
+            source.replace("/proc/p80(arg=1)", "/proc/p80(arg=9)"),
+            source.replace("/proc/p80(arg=1)\n    return 80\n", ""),
+            source.replace("    return 80\n", "    return \"\u{3b1}\"\n"),
+        ] {
+            let store = RetainedGrammar::default();
+            let base = expand_text(&source);
+            let before = store.discover(&base).unwrap();
+            assert_eq!(before.spans, scan(&base));
+            let expanded = expand_text(&edited);
+            let rebuilt = store.discover(&expanded).unwrap();
+            assert_eq!(rebuilt.spans, scan(&expanded));
+            assert_eq!(rebuilt.spans.len(), rebuilt.starts.len());
+            assert!(
+                rebuilt.construction_reused_descriptors() > 0,
+                "edit must reuse an exact prefix or converged suffix"
+            );
+            assert!(
+                rebuilt.construction_scanned_bytes() < expanded.text.len(),
+                "edit must avoid whole joined grammar scan"
+            );
+            assert_eq!(store.discover(&expanded).unwrap().spans, rebuilt.spans);
+            assert_eq!(store.hits(), 1);
+        }
+    }
+    #[test]
+    fn convergence_preserves_literals_delimiter_changes_and_cross_include_units() {
+        let source = (0..180)
+            .map(|index| format!("/proc/p{index}()\n    return {index}\n"))
+            .collect::<String>();
+        for replacement in [
+            "    return {\"multiline\n/proc/not_a_declaration()\nend\"}\n",
+            "    return list(80,\n        list(1,2))\n",
+            "    /* nested /* block */ comment */ return 80\n",
+            "    return (80\n", // Changes lexical depth through the suffix: convergence must decline.
+        ] {
+            let store = RetainedGrammar::default();
+            store.discover(&expand_text(&source)).unwrap();
+            let edited = source.replace("    return 80\n", replacement);
+            let expanded = expand_text(&edited);
+            assert_eq!(store.discover(&expanded).unwrap().spans, scan(&expanded));
+        }
+        let store = RetainedGrammar::default();
+        let first = expand(1);
+        store.discover(&first).unwrap();
+        let changed = expand(2);
+        assert_eq!(store.discover(&changed).unwrap().spans, scan(&changed));
     }
     #[test]
     fn parser_fragments_are_not_grammar_inputs() {

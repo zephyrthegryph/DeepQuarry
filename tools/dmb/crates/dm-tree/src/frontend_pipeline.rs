@@ -290,8 +290,9 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 .ok_or_else(|| vec![internal("include region lies outside captured source")])
         })
         .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?;
-    let mut declaration_regions = Vec::new();
-    for origin in &mut adapted.origins {
+    let mut declaration_regions = Vec::with_capacity(adapted.origins.len());
+    let mut current_origins = Vec::with_capacity(adapted.origins.len());
+    for origin in adapted.origins.iter() {
         let expanded_origin = mapping
             .origin(origin.span.start as usize)
             .ok_or_else(|| vec![internal("declaration has no current expansion origin")])?;
@@ -302,11 +303,11 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             .get(expanded_origin.origin.path.as_ref())
             .ok_or_else(|| vec![internal("declaration has no captured source file")])?;
         declaration_regions.push(expanded_origin.region);
-        origin.span = source_span(file, expanded_origin.source_span)?;
-        origin.include_occurrence = u32::try_from(plan.regions[expanded_origin.region].occurrence)
+        let span = source_span(file, expanded_origin.source_span)?;
+        let include_occurrence = u32::try_from(plan.regions[expanded_origin.region].occurrence)
             .map_err(|_| vec![internal("too many include occurrences")])?;
-        origin.region = region_hashes[expanded_origin.region];
-        origin.expansion_stack = expanded_origin
+        let region = region_hashes[expanded_origin.region];
+        let expansion_stack = expanded_origin
             .macro_expansions
             .iter()
             .filter_map(|expansion| expansion.definition.as_ref())
@@ -318,7 +319,14 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             .map(|(file, definition)| source_span(file, definition.source_span))
             .collect::<Result<Vec<_>, _>>()?
             .into();
+        current_origins.push(crate::Provenance {
+            span,
+            include_occurrence,
+            region,
+            expansion_stack,
+        });
     }
+    adapted.origins = current_origins.into();
     timings.provenance_and_body_indexing += provenance_start.elapsed();
     observe(
         config,
@@ -391,13 +399,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         })
         .collect();
     let mut bodies = Vec::new();
-    collect_bodies(
-        syntax.items(),
-        &mut Vec::new(),
-        &declarations_by_start,
-        &mapping,
-        &mut bodies,
-    )?;
+    collect_bodies(&syntax, &declarations_by_start, &mapping, &mut bodies)?;
     let mut ranks = vec![0; plan.regions.len()];
     for (rank, region) in expanded.emission_regions.iter().enumerate() {
         ranks[*region] = rank;
@@ -429,7 +431,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             typed_member_metadata_decoded: false,
         }),
         plan,
-        issued_arena: Arc::clone(&expanded.text),
+        issued_arena: expanded.text.clone(),
         expanded,
         issued_syntax: Arc::clone(&syntax),
         syntax,

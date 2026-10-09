@@ -174,6 +174,7 @@ pub fn lower<R: Resolver>(
                 include.semantic_path, map.captured.include_occurrence, atom.template, atom.atom)
         })?;
         let artifact = InitializationArtifact {
+            encoding: None,
             identity,
             code: Arc::new(code),
             debug_origins: Arc::new(origins.collector.into_inner().finish()),

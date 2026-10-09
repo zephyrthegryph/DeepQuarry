@@ -73,11 +73,13 @@ pub struct ProcedureMemo {
         Option<Arc<crate::initializer_lowering::InitializerFragments>>,
     pub(crate) initializer_assemblies:
         Option<Arc<crate::initializer_lowering::InitializerAssemblies>>,
+    pub(crate) class_projections: Option<Arc<crate::class_projection::ClassProjections>>,
     disk: Option<Arc<dm_cache::CacheSnapshot>>,
     pending: Mutex<Pending>,
     pub counts: MemoCounts,
     limits: MemoLimits,
     explanations: Mutex<BTreeMap<dm_ir::ProcedureIdentity, MemoExplanation>>,
+    read_only_disk: bool,
     publisher: Option<Arc<CachePublisher>>,
     publication_errors: Mutex<Vec<String>>,
     explanation_limit: usize,
@@ -161,6 +163,11 @@ impl ProcedureMemo {
     }
     /// Request-owned publication; IO happens outside the pending lock. Failure
     /// affects cache availability only and is observable through counts/errors.
+    /// Hydrate existing records without encoding/populating this disk store.
+    pub fn with_read_only_disk(mut self) -> Self {
+        self.read_only_disk = true;
+        self
+    }
     pub fn with_publisher(mut self, publisher: Arc<CachePublisher>) -> Self {
         self.publisher = Some(publisher);
         self
@@ -260,11 +267,13 @@ impl ProcedureMemo {
             abi: None,
             initializer_fragments: None,
             initializer_assemblies: None,
+            class_projections: None,
             disk: None,
             pending: Mutex::new(Pending::default()),
             counts: MemoCounts::default(),
             limits: MemoLimits::default(),
             explanations: Mutex::new(BTreeMap::new()),
+            read_only_disk: false,
             publisher: None,
             publication_errors: Mutex::new(Vec::new()),
             explanation_limit: 256,
@@ -299,11 +308,13 @@ impl ProcedureMemo {
             abi: None,
             initializer_fragments: None,
             initializer_assemblies: None,
+            class_projections: None,
             disk: Some(snapshot.into()),
             pending: Mutex::new(Pending::default()),
             counts: MemoCounts::default(),
             limits,
             explanations: Mutex::new(BTreeMap::new()),
+            read_only_disk: false,
             publisher: None,
             publication_errors: Mutex::new(Vec::new()),
             explanation_limit: 256,
@@ -409,7 +420,7 @@ impl ProcedureMemo {
         relative_debug: &[usize],
         versions: &[(ReadDomain, u128)],
     ) {
-        if self.disk.is_none() {
+        if self.read_only_disk || self.disk.is_none() {
             return;
         }
         let start = std::time::Instant::now();
@@ -468,7 +479,7 @@ impl ProcedureMemo {
         errors: &[dm_codegen_byond::LowerError],
         versions: &[(ReadDomain, u128)],
     ) {
-        if self.disk.is_none() {
+        if self.read_only_disk || self.disk.is_none() {
             return;
         }
         let payload = {
@@ -491,7 +502,7 @@ impl ProcedureMemo {
         versions: &[(ReadDomain, u128)],
     ) {
         self.counts.recomputed.fetch_add(1, Ordering::Relaxed);
-        if self.disk.is_none() {
+        if self.read_only_disk || self.disk.is_none() {
             return;
         }
         let start = std::time::Instant::now();

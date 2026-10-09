@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import Juke from '../juke/index.js';
 import type { ByondCompilationResult, DreamMakerOptions } from './byond';
+import { conventionalOutput, createNativeRequestDirectory, parseCompileResult, readNativeResult, type CompiledOutput, type NativePairOutput } from './native_pair';
 
 type CompilerMode = 'byond' | 'native' | 'shadow';
 const structuralCategories = ['type_set', 'type_headers', 'variable_defaults', 'procedure_table', 'procedure_flags', 'globals', 'strings_by_use', 'bytecode', 'other'];
@@ -96,30 +97,44 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
   if (artifacts) args.push('--artifact-directory', artifacts, '--output-store', path.join(artifacts, 'store'), '--exact-inputs', '--no-cache');
   return [executable, args];
 }
-async function nativeCompile(dme: string, options: DreamMakerOptions, execute: CompilerExecutor, artifacts?: string): Promise<{ code: number | null; combined: string }> {
+class NativeResultError extends Error {}
+async function nativeCompile(dme: string, options: DreamMakerOptions, execute: CompilerExecutor, artifacts?: string): Promise<{ code: number | null; combined: string; output?: NativePairOutput }> {
   const [executable, args] = nativeCommand(dme, options, artifacts);
-  return execute(executable, args, { throw: false });
+  const owned = createNativeRequestDirectory('compile-result');
+  const receipt = path.join(owned, 'result.json');
+  args.push('--compile-result-file', receipt);
+  if (!artifacts && process.env.DQ_NATIVE_OUTPUT_STORE) args.push('--output-store', path.resolve(process.env.DQ_NATIVE_OUTPUT_STORE));
+  try {
+    const result = await execute(executable, args, { throw: false });
+    if (result.code !== 0) return result;
+    const outputProject = artifacts ? path.join(artifacts, path.basename(dme)) : dme;
+    try { return { ...result, output: parseCompileResult(readNativeResult(receipt), executable, outputProject) }; }
+    catch (error) { throw new NativeResultError(`Native compile succeeded without an authenticated pair result: ${error}`); }
+  } finally {
+    try { fs.unlinkSync(receipt); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+    fs.rmdirSync(owned);
+  }
 }
-export async function selectedCompiler(dme: string, options: DreamMakerOptions, byond: (capturedProject?: string) => Promise<ByondCompilationResult | void>, execute: CompilerExecutor = Juke.exec): Promise<void> {
+export async function selectedCompiler(dme: string, options: DreamMakerOptions, byond: (capturedProject?: string) => Promise<ByondCompilationResult | void>, execute: CompilerExecutor = Juke.exec): Promise<CompiledOutput> {
   const mode = compilerMode();
-  if (mode === 'byond') { await byond(); return; }
+  if (mode === 'byond') { await byond(); return conventionalOutput(dme); }
   if (mode === 'native') {
     let reason: string;
     try {
       const result = await nativeCompile(dme, options, execute);
-      if (result.code === 0) return;
+      if (result.code === 0) return result.output!;
       // Typed CLI source and cancellation errors must never invoke another compiler.
       if (result.code === 2 || result.code === 75) throw new Juke.ExitCode(result.code);
       if (result.code !== 1 && result.code !== 70) throw new Juke.ExitCode(result.code ?? 1);
       reason = `native compiler exited ${result.code}; diagnostics are above`;
     } catch (error) {
-      if (error instanceof Juke.ExitCode) throw error;
+      if (error instanceof Juke.ExitCode || error instanceof NativeResultError) throw error;
       reason = String(error);
     }
     // Explicit internal/unsupported and infrastructure failure statuses allow fallback.
     Juke.logger.warn(`Native fallback to DreamMaker: ${reason}.`);
     await byond();
-    return;
+    return conventionalOutput(dme);
   }
   const root = path.resolve(process.env.DQ_SHADOW_ROOT ?? 'E:/dq-cache/dmb-shadow');
   fs.mkdirSync(root, { recursive: true });
@@ -174,6 +189,7 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
       throw new Juke.ExitCode(1);
     }
     Juke.logger.info(`Shadow structural parity: ${report}`);
+    return conventionalOutput(dme);
   } finally {
     // Preserve small diagnostics/receipts, remove only this invocation's bulky outputs.
     const store = path.resolve(artifacts, 'store');

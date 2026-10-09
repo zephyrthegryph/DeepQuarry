@@ -36,12 +36,13 @@ impl dm_ir::Resolver for NoReads {
         dm_ir::ResolvedMeaning::Unsupported(query)
     }
 }
-pub(super) struct Contribution {
+pub(crate) struct Contribution {
     facts: crate::AdaptedDeclarations,
     syntax: Arc<RelativeSyntax>,
     skeletons: Arc<Vec<crate::Skeleton>>,
     ledger: AllocationLedger,
     event_leaf: crate::allocation_ledger::ValidatedEventLeaf,
+    origin_max: u32,
 }
 /// Complete public borrowed payload; no old source authority is reconstructed.
 pub struct DeclarationContributionView<'a> {
@@ -311,6 +312,36 @@ mod tests {
             shifted.syntax.shared_relative()
         ));
         assert!(Arc::ptr_eq(&first.skeletons(), &shifted.skeletons()));
+        let mut origins = crate::relative_origins::RelativeOriginRoster::default();
+        origins.push(Arc::clone(&first.value), 0).unwrap();
+        origins.push(Arc::clone(&shifted.value), 80).unwrap();
+        assert!(origins.push(Arc::clone(&first.value), usize::MAX).is_none());
+        let bound = crate::relative_origins::OriginRoster::Bound(origins);
+        let expected: Vec<_> = first
+            .value
+            .relative_origins()
+            .iter()
+            .cloned()
+            .chain(
+                first
+                    .value
+                    .relative_origins()
+                    .iter()
+                    .cloned()
+                    .map(|mut origin| {
+                        origin.span.start += 80;
+                        origin.span.end += 80;
+                        origin
+                    }),
+            )
+            .collect();
+        assert_eq!(bound, expected);
+        let values = bound.into_owned();
+        assert_eq!(values, expected);
+        assert_eq!(
+            first.value.relative_origins()[0].span.start,
+            expected[0].span.start
+        );
         let a = first.syntax.items().next().unwrap();
         let b = shifted.syntax.items().next().unwrap();
         assert!(std::ptr::eq(a.relative_item(), b.relative_item()));
@@ -412,18 +443,21 @@ impl CurrentContribution {
     pub(super) fn skeletons(&self) -> Arc<Vec<crate::Skeleton>> {
         Arc::clone(&self.value.skeletons)
     }
-    pub(super) fn origins(&self) -> impl Iterator<Item = crate::Provenance> + '_ {
-        self.value.facts.origins.iter().cloned().map(|mut origin| {
-            origin.span.start += self.offset as u32;
-            origin.span.end += self.offset as u32;
-            origin
-        })
+    pub(super) fn origin_leaf(&self) -> (Arc<Contribution>, usize) {
+        (Arc::clone(&self.value), self.offset)
     }
     pub(super) fn event_leaf(&self) -> (crate::allocation_ledger::ValidatedEventLeaf, usize) {
         (self.value.event_leaf.clone(), self.offset)
     }
 }
 impl Contribution {
+    pub(crate) fn relative_origins(&self) -> &[crate::Provenance] {
+        &self.facts.origins
+    }
+    pub(crate) fn relative_origin_max(&self) -> u32 {
+        self.origin_max
+    }
+
     fn capture_owned(
         text: &str,
         offset: usize,
@@ -436,10 +470,17 @@ impl Contribution {
         let syntax = Arc::new(RelativeSyntax::capture(items, text).ok()?);
         let skeletons = Arc::new(std::mem::take(&mut facts.skeletons));
         let event_leaf = crate::allocation_ledger::ValidatedEventLeaf::new(ledger.events.clone());
+        let origin_max = facts
+            .origins
+            .iter()
+            .map(|origin| origin.span.start.max(origin.span.end))
+            .max()
+            .unwrap_or(0);
         Some(Self {
             facts,
             ledger,
             event_leaf,
+            origin_max,
             syntax,
             skeletons,
         })

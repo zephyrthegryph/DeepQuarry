@@ -46,7 +46,10 @@ pub(super) fn parse_declarations_with_state(
     let source = expanded.text.as_ref();
     let parse_start = Instant::now();
     let profile_scan = dm_profile::stage("frontend.grammar_scan");
-    let retained_descriptors = retained.and_then(|state| state.grammar.lookup(expanded));
+    let retained_descriptors = retained
+        .map(|state| state.grammar.discover(expanded))
+        .transpose()
+        .map_err(|message| vec![internal(message)])?;
     let mut fresh_chunks = Vec::new();
     if retained_descriptors.is_none() {
         let report = dm_syntax::for_each_stable_source_chunk(
@@ -57,9 +60,6 @@ pub(super) fn parse_declarations_with_state(
         );
         if report.skipped_declarations != 0 {
             return Err(vec![internal("grammar chunker omitted a declaration")]);
-        }
-        if let Some(state) = retained {
-            state.grammar.insert(expanded, fresh_chunks.clone());
         }
     }
     let chunks = retained_descriptors
@@ -351,9 +351,10 @@ pub(super) fn parse_declarations_with_state(
             .engine
             .map_or_else(SymbolTable::default, |engine| engine.symbols.clone()),
         skeletons: crate::skeleton_roster::SkeletonRoster::default(),
-        origins: Vec::new(),
+        origins: Vec::new().into(),
     };
     let mut allocation_leaves = Vec::new();
+    let mut origin_leaves = crate::relative_origins::RelativeOriginRoster::default();
     let mut declaration_errors = Vec::new();
     let mut current_contributions = Vec::new();
     for (_, offset, errors, fragment, facts) in ordered {
@@ -367,7 +368,12 @@ pub(super) fn parse_declarations_with_state(
                 }
                 current_contributions.push(Arc::clone(&current.value));
                 adapted.skeletons.push_leaf(current.skeletons());
-                adapted.origins.extend(current.origins());
+                let (origin_leaf, origin_offset) = current.origin_leaf();
+                origin_leaves
+                    .push(origin_leaf, origin_offset)
+                    .ok_or_else(|| {
+                        vec![internal("relative declaration origin binding overflow")]
+                    })?;
                 allocation_leaves.push(current.event_leaf());
                 syntax_chunks.push(current.syntax);
             }
@@ -381,6 +387,7 @@ pub(super) fn parse_declarations_with_state(
         }
         diagnostics.extend(errors.into_iter().map(|error| (offset, error)));
     }
+    adapted.origins = crate::relative_origins::OriginRoster::Bound(origin_leaves);
     if let Some(state) = retained {
         let symbols = state
             .current_symbols(&current_contributions)

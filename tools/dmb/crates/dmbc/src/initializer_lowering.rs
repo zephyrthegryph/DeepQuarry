@@ -10,6 +10,7 @@ use dm_codegen_byond::{
 };
 use dm_ir::{InitializerScope, Resolver};
 use dm_tree::{frontend::ColdFrontend, initializers::InitializerPlan};
+use std::sync::Arc;
 #[path = "initializer_fragments.rs"]
 mod fragments;
 pub use fragments::InitializerFragments;
@@ -39,6 +40,7 @@ pub struct LoweredInitializerUnit {
     pub write_ordinals: Vec<usize>,
     pub code: ResolverProc,
     pub debug_origins: DebugOrigins,
+    pub(crate) encoding: Option<Arc<crate::symbolic::InitializerEncoding>>,
 }
 pub struct LoweredInitializers {
     pub classified: ClassifiedInitializers,
@@ -512,7 +514,9 @@ fn lower_group<R: Resolver>(
         return Err("initializer assembly root roster differs from group".into());
     }
     if let Some((store, key)) = assembly {
-        if let Some(code) = store.lookup(key, &assignment_views, symbols, host) {
+        if let Some((code, encoding)) =
+            store.lookup_with_encoding(key, &assignment_views, symbols, host)
+        {
             return Ok(LoweredInitializerUnit {
                 scope: group
                     .receiver
@@ -521,6 +525,7 @@ fn lower_group<R: Resolver>(
                 write_ordinals,
                 code,
                 debug_origins: debug.origins,
+                encoding: Some(encoding),
             });
         }
     }
@@ -692,9 +697,12 @@ fn lower_group<R: Resolver>(
         dm_codegen_byond::initializer::lower_assignment_views(&assignment_views, context(), host)
             .map_err(map_error)?
     };
-    if let (Some((store, key)), Some(recorder)) = (assembly, assembly_recorder.as_ref()) {
-        store.remember(key, &code, &assignment_views, recorder);
-    }
+    let encoding =
+        if let (Some((store, key)), Some(recorder)) = (assembly, assembly_recorder.as_ref()) {
+            store.remember(key, &code, &assignment_views, recorder)
+        } else {
+            None
+        };
     Ok(LoweredInitializerUnit {
         scope: group
             .receiver
@@ -703,5 +711,6 @@ fn lower_group<R: Resolver>(
         write_ordinals,
         code,
         debug_origins: debug.origins,
+        encoding,
     })
 }

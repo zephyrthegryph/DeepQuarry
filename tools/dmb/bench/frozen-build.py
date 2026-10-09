@@ -70,7 +70,9 @@ def main():
                 relative = PurePosixPath(entry.filename)
                 if relative.is_absolute() or ".." in relative.parts or "\\" in entry.filename:
                     raise ValueError("unsafe archive path")
-                if relative.parts[:2] != ("tools", "dmb"):
+                if relative.parts[:2] != ("tools", "dmb") and not (
+                    entry.is_dir() and relative.parts == ("tools",)
+                ):
                     raise ValueError("archive entry outside compiler source")
                 mode = entry.external_attr >> 16
                 if stat.S_ISLNK(mode):

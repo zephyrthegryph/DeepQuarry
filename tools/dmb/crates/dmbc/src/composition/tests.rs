@@ -413,6 +413,7 @@ fn ownership_fixture_with_initializers(
         let unit = &lowered.units[0];
         vec![
             InitializationArtifact {
+                encoding: None,
                 identity: dm_link::InitializerIdentity::Map {
                     source: 1,
                     descriptor: 2,
@@ -425,6 +426,7 @@ fn ownership_fixture_with_initializers(
                 },
             },
             InitializationArtifact {
+                encoding: None,
                 identity: dm_link::InitializerIdentity::Modified(alias),
                 code: std::sync::Arc::new(unit.code.clone()),
                 debug_origins: std::sync::Arc::new(unit.debug_origins.clone()),
