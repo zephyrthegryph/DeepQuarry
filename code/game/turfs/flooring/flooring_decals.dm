@@ -30,8 +30,7 @@ MAP_RESOLVER(/obj/effect/floor_decal, GLOBAL_PROC_REF(resolve_floor_decal))
 		edits["dir"] = dir
 	if(colour)
 		edits["color"] = colour
-	var/obj/effect/floor_decal/P = path
-	return call(initial(P.map_resolver))(T, path, edits)
+	return call(map_resolver_proc(path))(T, path, edits)
 
 /// Adds one decal image to floor `T` (shared per look), remembered in T.decals.
 /proc/floor_decal_apply(turf/T, icon, icon_state, dir, color, alpha, layer = MAPPER_DECAL_LAYER, extra_key = "")

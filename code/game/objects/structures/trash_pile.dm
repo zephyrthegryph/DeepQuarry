@@ -143,7 +143,7 @@ MSG_DEF(trash_pile/searching, "You search through %T%.", "%U% searches through %
 		rel_clear(src, nameof(hider))
 		to_chat(user,span_danger("Some sort of creature leaps out of 	he [src]!"))
 	else
-		loot_search(src, user, searchedby, 5)
+		loot_pile_search(src, user, searchedby, 5)
 
 /obj/structure/mob_spawner/mouse_nest
 	name = "trash"

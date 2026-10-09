@@ -27,9 +27,7 @@
 
 /// What loot_spawn() takes for an owner written as text.
 /proc/dq_loot_pin_ref(owner)
-	if(copytext(owner, 1, 7) == "/loot/")
-		return text2path("/datum/loot_decl[owner]")
-	return text2path(owner)
+	return text2path(owner) || text2path("/datum/loot_decl[owner]")
 
 /// A pin file's rows as key => value.
 /proc/dq_loot_pin_read(name)
@@ -248,7 +246,7 @@
 /datum/unit_test/dq_loot_search_pin/proc/pin_search(obj/structure/pile, mob/living/carbon/human/searcher, list/searched_by, wake_chance, turf/T)
 	test_chat_clear()
 	var/list/before = contents_of(T).Copy()
-	loot_search(pile, searcher, searched_by, wake_chance)
+	loot_pile_search(pile, searcher, searched_by, wake_chance)
 	var/list/gained = list()
 	for(var/atom/movable/AM as anything in contents_of(T))
 		if(AM in before)
@@ -310,13 +308,11 @@
 
 /// The resolver proc of an atom type, as text ("" when it has none). The one place the pin reads how a type names its resolver.
 /proc/dq_resolver_pin_proc(type)
-	var/atom/P = type
-	return "[initial(P.map_resolver)]"
+	return "[map_resolver_proc(type)]"
 
 /// The vars its resolver reads besides the common ones, ";"-joined, in the order they were written.
 /proc/dq_resolver_pin_vars(type)
-	var/atom/P = type
-	return "[initial(P.map_resolver_vars)]"
+	return jointext(map_resolver_vars_of(type), ";")
 
 /// Every atom type that resolves at map time: its resolver and the vars it reads. Inheritance is resolved for every subtype of every resolver type.
 /datum/unit_test/dq_resolver_table_pin

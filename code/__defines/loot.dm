@@ -68,3 +68,7 @@
 
 /// Modulus of the loot seed hashes: h * 31 + 255 stays below 2^24, exact in BYOND's floats.
 #define LOOT_HASH_MOD 524287
+
+// Entry kinds of the loot and map-resolver declarations (code/library/loot/loot_entries.dm, code/library/maps/map_resolver_entry.dm).
+#define ENTRY_LOOT "loot"
+#define ENTRY_LOOT_SEARCH "loot_search"

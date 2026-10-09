@@ -36,7 +36,7 @@ CAPABILITIES(/obj/structure/loot_pile)
 	return rand(4 SECONDS, 6 SECONDS)
 
 /obj/structure/loot_pile/proc/searched(datum/act/op/A)
-	loot_search(src, A.actor, searchedby, 0)
+	loot_pile_search(src, A.actor, searchedby, 0)
 
 /obj/structure/loot_pile/Initialize(mapload)
 	if(icon_states_to_use && length(icon_states_to_use))

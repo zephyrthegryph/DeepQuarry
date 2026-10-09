@@ -28,6 +28,10 @@
 ///         interface("Thing")
 ///         op("eject", ui_act(), then(PROC_REF(eject)))
 #define CAPABILITIES(T) ##T/__capabilities()
+/// STATIC_ENTRY(kind) names an entry constructor (`loot`, `map_resolver`) whose entries a CAPABILITIES block may carry but that are read without an
+/// instance of the type: `analyze gen declare` leaves them out of declared_entries() and writes them into declared_static_blocks(), which the
+/// static_entries system compiles at world setup (code/engine/declare/static_entries.dm). The kind's /datum/entry_engine sets static_kind = TRUE.
+#define STATIC_ENTRY(kind)
 /// A capability whose body returns entries: CAPABILITY_DEF(name, CAP_X, key =, stacks =, param = default, ...).
 #define CAPABILITY_DEF(name, cap_id, params...)
 /// A capability with code of its own: CAPABILITY_TYPE(name, CAP_X, /datum/capability/x, key =, stacks =, param = default, ...).

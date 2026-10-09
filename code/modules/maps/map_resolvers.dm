@@ -2,10 +2,33 @@
 
 /atom
 	/// proc(atom/loc, path, list/varedits) that resolves this type at map time instead of making
-	/// it a live atom (MAP_RESOLVER), or null.
+	/// it a live atom (a legacy MAP_RESOLVER), or null.
 	var/map_resolver
-	/// Extra vars its resolver reads (MAP_RESOLVER_VARS), ";"-separated.
+	/// Extra vars its resolver reads (a legacy MAP_RESOLVER_VARS), ";"-separated.
 	var/map_resolver_vars
+
+/// type => its /datum/map_resolver_info, for every type under one that declares map_resolver(...): built at world setup, never after.
+GLOBAL_LIST_EMPTY(map_resolvers)
+
+/// The vars (besides the common ones) the resolver of `type` reads, in the order they were written: its map_resolver entry's `vars` (or an ancestor's),
+/// else (until converted) the legacy MAP_RESOLVER_VARS string.
+/proc/map_resolver_vars_of(type)
+	static_entries_ensure("map_resolver_vars_of([type])")
+	var/datum/map_resolver_info/info = GLOB.map_resolvers[type]
+	if(info)
+		return info.reads
+	var/atom/P = type
+	var/legacy = initial(P.map_resolver_vars)
+	return legacy ? splittext(legacy, ";") : list()
+
+/// The resolver proc of `type`, or null: its map_resolver entry (or an ancestor's), else (until converted) the legacy MAP_RESOLVER var.
+/proc/map_resolver_proc(type)
+	static_entries_ensure("map_resolver_proc([type])")
+	var/datum/map_resolver_info/info = GLOB.map_resolvers[type]
+	if(info)
+		return info.resolver
+	var/atom/P = type
+	return initial(P.map_resolver)
 
 /// Per-load scratch state for resolvers (key -> value), cleared when the load's atoms finish.
 GLOBAL_LIST_EMPTY(map_resolve_scratch)
@@ -25,8 +48,7 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 /// The map reader's hook: resolves `path` at `crds` from the model's var edits. TRUE when it was
 /// resolved (the reader then creates nothing).
 /proc/map_resolve_path(path, turf/crds, list/varedits)
-	var/atom/P = path
-	var/resolver = initial(P.map_resolver)
+	var/resolver = map_resolver_proc(path)
 	if(!resolver)
 		return FALSE
 	if(!call(resolver)(crds, path, varedits))
@@ -38,7 +60,8 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 /// initialized nor qdel'd. TRUE when resolved.
 /proc/map_resolve_instance(atom/A)
 	var/list/varedits = map_varedits_of(A)
-	if(!call(A.map_resolver)(A.loc, A.type, varedits))
+	var/datum/map_resolver_info/info = GLOB.map_resolvers[A.type]
+	if(!call(info ? info.resolver : A.map_resolver)(A.loc, A.type, varedits))
 		return FALSE
 	A.tag = null
 	if(ismovable(A))
@@ -55,8 +78,7 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 	var/list/names = names_by_type[A.type]
 	if(!names)
 		names = splittext(MAP_RESOLVER_COMMON_VARS, ";")
-		if(A.map_resolver_vars)
-			names |= splittext(A.map_resolver_vars, ";")
+		names |= map_resolver_vars_of(A.type)
 		for(var/name in names.Copy())
 			if(!(name in A.vars))
 				names -= name

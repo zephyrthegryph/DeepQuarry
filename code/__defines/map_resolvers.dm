@@ -31,3 +31,6 @@
 /// Var NAME of the resolved type P (a var typed as that type): the instance's map varedit when it
 /// has one, else the type's default.
 #define MAP_VAR(P, VAREDITS, NAME) ((VAREDITS && (#NAME in VAREDITS)) ? VAREDITS[#NAME] : initial(P.NAME))
+
+/// Entry kind of the map_resolver(...) declaration (code/library/maps/map_resolver_entry.dm).
+#define ENTRY_MAP_RESOLVER "map_resolver"
