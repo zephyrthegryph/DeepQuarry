@@ -63,7 +63,7 @@ CAPABILITIES(/obj/item/plastique)
 	wires(name = "Explosive wires", count = 1, tools = FALSE)
 	on_wire(WIRE_EXPLODE, cut = PROC_REF(explode_wire), pulse = PROC_REF(explode_wire))
 	op("plant", at_target(/obj), at_target(/turf), when(PROC_REF(plantable)), begins(MSG(plastique/planting)), starts(PROC_REF(plant_started)), wait(5 SECONDS, keeps = HELD | ADJACENT | STAY | TARGET_PRESENT), then(PROC_REF(planted)))
-	op("timer", in_hand(), needs(req_self_held(), req_bool(PROC_REF(timer_item_in_hands), because = MSG(op/not_available)), req_capable()), label("Set explosive timer"),
+	op("timer", in_hand(), needs(req_self_held(), req(PROC_REF(timer_item_in_hands), because = MSG(op/not_available)), req_capable()), label("Set explosive timer"),
 		asks(/datum/prompt/number, keeps = 0, fields = list("title" = "Timer", "question" = "Please set the timer.", "default" = 10, "min_value" = 10, "max_value" = 60000, "step" = 1, "timeout" = 0)), then(PROC_REF(timer_set)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
@@ -74,8 +74,8 @@ CAPABILITIES(/obj/item/plastique)
 /obj/item/plastique/proc/timer_item_in_hands(datum/act/op/A)
 	var/mob/living/actor = A.actor
 	if(!istype(actor))
-		return FALSE
-	return actor.item_is_in_hands(src)
+		return /datum/msg/op/not_available
+	return actor.item_is_in_hands(src) ? null : /datum/msg/op/not_available
 
 /obj/item/plastique/proc/timer_set(datum/act/op/A)
 	var/datum/prompt/number/R = A.answer

@@ -873,15 +873,16 @@ MSG_DEF(control_pod/reaching, span_notice("You reach out to touch %T%..."), span
 MSG_DEF(control_pod/pulls_back, span_warning("You pull back from %T%."), span_warning("%U% pulls back from %T%."))
 
 CAPABILITIES(/obj/structure/control_pod)
-	op("hand", hand(), label("Use"), needs(req(PROC_REF(pod_free), because = PROC_REF(pod_busy_text))), starts(PROC_REF(control_started)), begins(MSG(control_pod/reaching)), wait(10 SECONDS), on_interrupt(PROC_REF(control_failed)), then(PROC_REF(control_done)))
+	op("hand", hand(), label("Use"), needs(req(PROC_REF(pod_free))), starts(PROC_REF(control_started)), begins(MSG(control_pod/reaching)), wait(10 SECONDS), on_interrupt(PROC_REF(control_failed)), then(PROC_REF(control_done)))
 
 /// Nobody is in the pod.
 /obj/structure/control_pod/proc/pod_free(datum/act/op/A)
-	return !read_once(controller)
+	return read_once(controller) ? pod_busy_text(A) : null
 
 /// Why the pod is taken: names who is inside.
 /obj/structure/control_pod/proc/pod_busy_text(datum/act/op/A)
-	return span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!")
+	var/mob/living/user_inside = read_once(controller)
+	return span_warning("You can see \the [user_inside] inside! Tendrils of nerves seem to have attached themselves to \the [user_inside]! There's no room for you right now!")
 
 /// Refuses a pod with no dog to answer it, or a dog that does not trust anyone yet (take care of my dog).
 /obj/structure/control_pod/proc/control_started(datum/act/op/A)

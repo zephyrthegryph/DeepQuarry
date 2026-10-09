@@ -91,36 +91,26 @@ TRACKED(/obj/machinery/gibber, dirty)
 	return
 
 CAPABILITIES(/obj/machinery/gibber)
-	op("gibber_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 2), ungated(), label("Start gibbing"), needs(req_bool(PROC_REF(can_start_gibbing_holds), because = PROC_REF(can_start_gibbing_refusal))), then(PROC_REF(gibber_interaction_hand)))
-	op("gibber_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(can_feed_grab_holds), because = PROC_REF(can_feed_grab_refusal))), starts(PROC_REF(stuff_started)), begins(PROC_REF(grab_stuff_begins)), wait(PROC_REF(grab_stuff_time)), then(PROC_REF(gibber_interaction_item)))
+	op("gibber_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 2), ungated(), label("Start gibbing"), needs(req(PROC_REF(can_start_gibbing))), then(PROC_REF(gibber_interaction_hand)))
+	op("gibber_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_feed_grab))), starts(PROC_REF(stuff_started)), begins(PROC_REF(grab_stuff_begins)), wait(PROC_REF(grab_stuff_time)), then(PROC_REF(gibber_interaction_item)))
 	op("gibber_interaction_drag", item(/mob), priority(OP_PRIORITY_DEFAULT - 1), gesture(GESTURE_DRAG), label("Put inside"), starts(PROC_REF(stuff_started)), begins(PROC_REF(drag_stuff_begins)), wait(PROC_REF(drag_stuff_time)), then(PROC_REF(gibber_interaction_drag)))
 	op("gibber_verb_eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Empty Gibber"), needs(req_adjacent(), req_capable()), then(PROC_REF(gibber_verb_eject)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /// Requirement: the gibber isn't already running (an inoperable one is ignored silently by the effect).
-/obj/machinery/gibber/proc/can_start_gibbing(mob/user, atom/target, obj/item/held)
+/obj/machinery/gibber/proc/can_start_gibbing(datum/act/op/A)
 	if(operable() && operating)
 		return "the gibber is locked and running, wait for it to finish"
-	return TRUE
+	return null
 
 /// Requirement: a strong enough grip (only asked of grabs; other items fall through).
-/obj/machinery/gibber/proc/can_feed_grab(mob/user, atom/target, obj/item/held)
-	var/obj/item/grab/G = held
+/obj/machinery/gibber/proc/can_feed_grab(datum/act/op/A)
+	var/obj/item/grab/G = A.held
 	if(istype(G) && G.state < 2) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 		return "you need a better grip to do that"
-	return TRUE
+	return null
 
 /// Old attack_hand.
-/// Requirement (was REQ_* can_start_gibbing): the legacy check answers TRUE to pass.
-/obj/machinery/gibber/proc/can_start_gibbing_holds(datum/act/op/A)
-	var/answer = can_start_gibbing(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_start_gibbing_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/gibber/proc/can_start_gibbing_refusal(datum/act/op/A)
-	var/answer = can_start_gibbing(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/machinery/gibber/proc/gibber_interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!operable())
@@ -139,16 +129,6 @@ CAPABILITIES(/obj/machinery/gibber)
 	return OP_OK
 
 /// Old attackby.
-/// Requirement (was REQ_* can_feed_grab): the legacy check answers TRUE to pass.
-/obj/machinery/gibber/proc/can_feed_grab_holds(datum/act/op/A)
-	var/answer = can_feed_grab(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_feed_grab_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/gibber/proc/can_feed_grab_refusal(datum/act/op/A)
-	var/answer = can_feed_grab(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/machinery/gibber/proc/gibber_interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held

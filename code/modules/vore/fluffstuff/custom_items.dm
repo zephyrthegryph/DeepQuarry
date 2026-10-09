@@ -1577,7 +1577,7 @@ CAPABILITIES(/obj/item/toy/plushie/fluff/seona_mofuorb)
 
 /// Something is stored in the opened plushie to find.
 /obj/item/toy/plushie/fluff/seona_mofuorb/proc/search_ready(datum/act/op/A)
-	return stored_item && read_once(opened)
+	return stored_item && read_once(opened) ? null : /datum/msg/req_failed
 
 /obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_squeeze(mob/user, stance)
 	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 5 SECONDS)

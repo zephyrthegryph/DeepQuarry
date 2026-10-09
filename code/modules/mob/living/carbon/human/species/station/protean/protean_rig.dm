@@ -347,15 +347,15 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 
 /// A module offered to a rig that is not dormant (a dormant core is repaired with it instead).
 /obj/item/rig/protean/proc/module_offered(datum/act/op/A)
-	return read_once(!get_dormancy())
+	return (read_once(!get_dormancy())) ? null : /datum/msg/req_failed
 
 /// No installed module of the same class (unless it is redundant).
 /obj/item/rig/protean/proc/module_class_free(datum/act/op/A)
 	var/obj/item/rig_module/W = A.held
 	for(var/obj/item/rig_module/installed_mod in installed_modules)
 		if(!installed_mod.redundant && istype(installed_mod, W))
-			return FALSE
-	return TRUE
+			return /datum/msg/protean_rig/module_class
+	return null
 
 /obj/item/rig/protean/proc/attackby_protean_done(datum/act/op/A)
 	var/mob/living/user = A.actor

@@ -223,7 +223,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 /// Whoever is too clumsy to work the field gets nothing, not even a message.
 /obj/item/melee/shock_maul/proc/handy_user(datum/act/op/A)
 	var/mob/user = A.actor
-	return !!user?.IsAdvancedToolUser()
+	return user?.IsAdvancedToolUser() ? null : /datum/msg/req_silent
 
 /// The charge-up begins only on a power source with enough charge; otherwise the use ends with the out-of-charge line.
 /obj/item/melee/shock_maul/proc/charge_started(datum/act/op/A)

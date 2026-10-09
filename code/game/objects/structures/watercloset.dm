@@ -56,7 +56,7 @@ CAPABILITIES(/obj/structure/toilet)
 		asks(/datum/prompt/yes_no, fields = list("title" = "Toilet Crystal", "question" = "You see a glimmering crystal attached to parts of the toilet's components... Do you want to take it?", "yes_text" = "Take it!", "no_text" = "Leave it.", "timeout" = 0), step = "crystal", when = PROC_REF(offers_crystal)),
 		then(PROC_REF(interaction_hand)))
 	// the old attack_ai: the hand's Use for a silicon, except a cyborg that is remote viewing or has no player
-	op("silicon_use", remote(), label("Use"), needs(req_bool(PROC_REF(silicon_at_hand), silent = TRUE)), then(PROC_REF(interaction_hand)))
+	op("silicon_use", remote(), label("Use"), needs(req(PROC_REF(silicon_at_hand), silent = TRUE)), then(PROC_REF(interaction_hand)))
 	op("swirlie", item(/obj/item/grab), label("Give a swirlie"), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(swirlie_possible)), starts(PROC_REF(swirlie_started)), begins(PROC_REF(swirlie_begins)), wait(3 SECONDS), then(PROC_REF(swirlie_done)))
 	op("insert_crystal", item(/obj/item/bluespace_crystal), label("Insert"), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(crystal_slot_free)), begins(MSG(toilet/inserting_crystal)), wait(2 SECONDS), then(PROC_REF(crystal_inserted)))
 	op("replace_bin", item(/obj/item/stock_parts/matter_bin), label("Replace the bin"), priority(OP_PRIORITY_DEFAULT), when(nameof(cistern)), begins(PROC_REF(bin_begins)), wait(2 SECONDS), then(PROC_REF(bin_replaced)))
@@ -136,7 +136,7 @@ READS_AS(/obj/structure/toilet/proc/cistern_loot_count, TOILET_CISTERN_KEY)
 
 /// A silicon's hand is its own: a cyborg uses the toilet only from its body, with a player in it.
 /obj/structure/toilet/proc/silicon_at_hand(datum/act/op/A)
-	return read_once(silicon_in_body(A.actor)) // a player's presence is asked when the click is made
+	return (read_once(silicon_in_body(A.actor))) ? null : /datum/msg/req_silent // a player's presence is asked when the click is made
 
 /// Is `user` a silicon acting from its own body (not a cyborg remote viewing, or one with no player)?
 /obj/structure/toilet/proc/silicon_in_body(mob/user)
@@ -1078,20 +1078,18 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
 CAPABILITIES(/obj/structure/sink)
 	// a wash claims the sink: nobody else washes in it meanwhile; a silicon has no hands to wash
 	op("wash", hand(), label("Wash hands"), when(req_actor_kind(/mob/living/silicon, not = TRUE)),
-		needs(req_bool(PROC_REF(hand_usable), because = PROC_REF(hand_refusal))), claims(), begins(MSG(sink/washing_hands)), plays(SFX_EFFECTS_SINK_LONG, at_start = TRUE), wait(4 SECONDS), on_interrupt(PROC_REF(wash_hands_stopped)), then(PROC_REF(interaction_wash)))
+		needs(req(PROC_REF(hand_usable))), claims(), begins(MSG(sink/washing_hands)), plays(SFX_EFFECTS_SINK_LONG, at_start = TRUE), wait(4 SECONDS), on_interrupt(PROC_REF(wash_hands_stopped)), then(PROC_REF(interaction_wash)))
 	op("item", item(/obj/item), label("Use"), claims(), begins(PROC_REF(wash_item_begins)), wait(PROC_REF(wash_item_time)), on_interrupt(PROC_REF(wash_item_stopped)), then(PROC_REF(interaction_item)))
 	op("empty", item(/obj/item/reagent_containers), gesture(GESTURE_DRAG), label("Empty into sink"), then(PROC_REF(interaction_drag)))
-	op("sink_wash_gurgled_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Wash"), when(req_bool(PROC_REF(holding_gurgled))), claims(), begins(MSG(sink/washing_gurgled)), wait(4 SECONDS), then(PROC_REF(wash_gurgled_done)), says(MSG(sink/washed_gurgled)))
+	op("sink_wash_gurgled_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Wash"), when(req(PROC_REF(holding_gurgled))), claims(), begins(MSG(sink/washing_gurgled)), wait(4 SECONDS), then(PROC_REF(wash_gurgled_done)), says(MSG(sink/washed_gurgled)))
 
 MSG_DEF_SELF(sink/busy, "Someone's already washing here.")
 MSG_DEF_SELF(sink/washing_hands, span_notice("You start washing your hands."))
 
 /// Requirement for washing: the hand the actor would wash with works.
 /obj/structure/sink/proc/hand_usable(datum/act/op/A)
-	return read_once(isnull(unusable_hand_name(A.actor))) // the limbs answer when asked
-
-/obj/structure/sink/proc/hand_refusal(datum/act/op/A)
-	return "You try to move your [unusable_hand_name(A.actor)], but cannot."
+	var/hand_name = read_once(unusable_hand_name(A.actor)) // the limbs answer when asked
+	return isnull(hand_name) ? null : "You try to move your [hand_name], but cannot."
 
 /// The name of `user`'s active hand when it cannot be used, or null.
 /obj/structure/sink/proc/unusable_hand_name(mob/user)
