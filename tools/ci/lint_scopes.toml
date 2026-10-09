@@ -290,6 +290,9 @@ ui_push_converted = [
 # The folders and files where task_timed(), task_start(), task_busy() and om_task_periodic*() reached zero: a hard ban there (timed_task_forms_banned_in_converted_folders).
 # Entries are only ever added.
 timed_forms_converted = [
+  "code/game/machinery/medical_kiosk.dm",
+  "code/game/machinery/cryopod.dm",
+  "code/game/machinery/suit_storage/suit_cycler.dm",
   "code/game/objects/effects/anomalies/_anomalies.dm",
   "code/game/objects/effects/decals/Cleanable/misc.dm",
   "code/game/objects/effects/mines.dm",

@@ -3845,3 +3845,19 @@ Rows of other lanes left alone: look_states `mob.living.simple_mob.vore.morph` (
 * **Left unconverted, and why:** blood and gore decals (`B.update_icon()` in organs, admin secrets, human, observer, drippy: legacy decal providers, draw-structures), the newscaster (machinery), the farmbot's hydroponics tray (draw-reagents), the protean rig (item), `nano_printer` paper bundle (legacy provider in paperwork), and the size gun and mouse ray, custom items and crackers (energy guns and items: after draw-items batch 18). `modular_computers/hardware/`, `vore/resizing/`, `vore/fluffstuff/`, `body/organs/` (except `organ_icon.dm`), `admin/topic/`, `admin/verbs/secrets.dm` and the rest of `mob/` stay out of `look_converted`.
 * **Belly overlay preference of a robot:** a panel edit publishes `belly_change` on the host, which recomputes the robot's tracked `vore_light_states`; the preference itself is read only there, so it is not tracked.
 * **Pins:** `dq_look_tree_pin` shows only the eight `obj/structure/blob/core` colour rows (seeded random, the same on the base); no row was blessed. `dq_look_state_pin` was not run here (the merge batch runs it).
+
+### Machinery prompt waits (2026-10-08)
+
+Old-code pins for these three classes passed at e03f6c58d6 before conversion, recorded in e6e9a6b5a3. The landed prompt forms now replace their remaining timed tasks.
+
+| Class | Cause of conversion-pin changes |
+|---|---|
+| `/obj/machinery/medical_kiosk` | The Use operation owns a target claim through the service question and five-second scan. Patient state and active power begin after selection; cancelling the question releases the claim without starting scan power. Native requirements expose patient/panel/operability refusals in the menu. Service choices, reports and scan duration are preserved. |
+| `/obj/machinery/cryopod` | Grab and drag loading use native passenger-answerer consent and a two-second wait while retaining the loader as actor. Grab loading also has a menu binding for the same operation. Cancel, decline, movement and deletion end the pending operation without taking custody. The existing Enter Pod operation is unchanged. |
+| `/obj/machinery/suit_cycler` | Grab insertion uses a native two-second wait. Its real electrification shock runs in starts(); a successful shock returns a refusal before begins or a wait. Empty grabs silently refuse before building the insertion message. Occupancy and shock behavior are retained. |
+
+The cycler preserves shock-before-empty-grab checking: starts() silently refuses a missing passenger only after the actual shock attempt. An empty-grab shock regression exercises this ordering. The runner's approved reentrant-cancellation guard prevents a shock-induced cancellation from trying to suspend its already released action.
+
+### Declarative machinery requirements (2026-10-08)
+
+CableLayer's cable-or-on admission uses any_of(req_full(cable), req_is(on)); the bomb tester selects loading when either declared tank relation is empty; the painter selects on req_operable() and requires an empty insert relation. These replace four former-REQ boolean adapters without changing operation keys or labels. Cable and painter refusal text is unchanged, and native requirement reads track relation/stat changes directly. No pin row change is intended for these three classes.

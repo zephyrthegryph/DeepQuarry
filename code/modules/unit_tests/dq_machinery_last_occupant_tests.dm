@@ -1,22 +1,39 @@
-// Headless consent pins bypass only go_in's network-client admission: the real passenger-owned prompt and completion remain unchanged.
+// Headless fixture forces only the consent predicate; the real native op retains passenger answerer and loader ownership.
 /datum/unit_test/dq_timed_pin/last_occupant
 	abstract_type = /datum/unit_test/dq_timed_pin/last_occupant
 
-/datum/unit_test/dq_timed_pin/last_occupant/proc/consent(obj/machinery/cryopod/P, mob/passenger, mob/loader)
-	return open_request(P, /datum/prompt/yes_no/cryo_consent, TYPE_PROC_REF(/obj/machinery/cryopod, storage_consent_answered), answerer = passenger, title = "Cryopod", question = "Would you like to enter long-term storage?", loader = loader, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
+/datum/unit_test/dq_timed_pin/last_occupant/Run()
+	set_global(nameof(GLOB.latency_last_ineligible), GLOB.latency_last_ineligible)
+	set_global(nameof(GLOB.latency_last_pin_reason), GLOB.latency_last_pin_reason)
+	return ..()
 
+/obj/machinery/cryopod/last_occupant_fixture
+
+/obj/machinery/cryopod/last_occupant_fixture/loading_needs_consent(datum/act/op/A)
+	return TRUE
+
+/datum/unit_test/dq_timed_pin/last_occupant/proc/consent(obj/machinery/cryopod/P, mob/passenger, mob/loader)
+	var/obj/item/grab/G = allocate(/obj/item/grab, loader, passenger)
+	if(loader.get_active_hand() != G)
+		loader.put_in_active_hand(G)
+	TEST_ASSERT_EQUAL(loader.get_active_hand(), G, "the loader holds the actual passenger grab")
+	test_menu(loader, P, "cryopod_insert_grab")
+	var/datum/pending_op/pending = op_pending_of(loader)
+	TEST_ASSERT(pending, "the loader owns the actual native pending op")
+	TEST_ASSERT_EQUAL(pending.actor, loader, "answerer dispatch preserves the loader as actor")
+	return pending.request
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_yes
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_yes/run_pin()
 	var/turf/T = run_loc_floor_bottom_left
-	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod, T)
+	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod/last_occupant_fixture, T)
 	var/mob/living/carbon/human/loader = person(T)
 	var/mob/living/carbon/human/passenger = person(T)
 	interim_keep_awake(loader)
 	interim_keep_awake(passenger)
-	var/datum/prompt/yes_no/cryo_consent/R = consent(P, passenger, loader)
+	var/datum/prompt/yes_no/R = consent(P, passenger, loader)
 	TEST_ASSERT(R?.is_open(), "the real consent question opens")
 	TEST_ASSERT_EQUAL(R.answerer, passenger, "the passenger is the answerer")
-	TEST_ASSERT_EQUAL(R.loader, loader, "the separate loader is preserved")
+	TEST_ASSERT_EQUAL(op_pending_of(loader)?.actor, loader, "the separate loader is preserved")
 	test_answer(passenger, TRUE)
 	TEST_ASSERT(running(loader), "consent starts the loader's actual timed task")
 	TEST_ASSERT_NULL(running(passenger), "consent does not give the passenger the loader's task")
@@ -29,13 +46,13 @@
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_no
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_no/run_pin()
 	var/turf/T = run_loc_floor_bottom_left
-	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod, T)
+	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod/last_occupant_fixture, T)
 	var/mob/living/carbon/human/loader = person(T)
 	var/mob/living/carbon/human/passenger = person(T)
-	var/datum/prompt/yes_no/cryo_consent/R = consent(P, passenger, loader)
+	var/datum/prompt/yes_no/R = consent(P, passenger, loader)
 	TEST_ASSERT(R?.is_open(), "the real consent question opens before refusal")
 	test_answer(passenger, FALSE)
-	TEST_ASSERT_NULL(running(loader), "refusal starts no loader task")
+	TEST_ASSERT_NULL(op_pending_of(loader), "refusal ends the loader op without a timed wait")
 	test_time(3 SECONDS)
 	TEST_ASSERT_NULL(P.slot_item(OCCUPANT_SLOT_CRYOPOD), "refusal leaves the pod empty")
 	TEST_ASSERT_EQUAL(passenger.loc, T, "refusal preserves passenger custody")
@@ -43,18 +60,24 @@
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_cancel
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_cancel/run_pin()
 	var/turf/T = run_loc_floor_bottom_left
-	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod, T)
+	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod/last_occupant_fixture, T)
 	var/mob/living/carbon/human/loader = person(T)
 	var/mob/living/carbon/human/passenger = person(T)
-	var/datum/prompt/yes_no/cryo_consent/R = consent(P, passenger, loader)
+	var/datum/prompt/yes_no/R = consent(P, passenger, loader)
 	TEST_ASSERT(R?.is_open(), "the real consent question opens before cancellation")
 	test_answer(passenger, null, REQ_CANCELLED)
-	TEST_ASSERT_NULL(running(loader), "cancellation starts no loader task")
+	TEST_ASSERT_NULL(op_pending_of(loader), "cancellation ends the loader op without a timed wait")
 	test_time(3 SECONDS)
 	TEST_ASSERT_NULL(P.slot_item(OCCUPANT_SLOT_CRYOPOD), "cancellation leaves the pod empty")
 
 /datum/unit_test/dq_timed_pin/last_occupant/cycler_shock
+	var/empty_grab = FALSE
+
+/datum/unit_test/dq_timed_pin/last_occupant/cycler_shock/empty
+	empty_grab = TRUE
+
 /datum/unit_test/dq_timed_pin/last_occupant/cycler_shock/run_pin()
+	set_global(nameof(GLOB.status_policies), GLOB.status_policies)
 	var/turf/T = run_loc_floor_bottom_left
 	var/area/A = get_area(T)
 	var/obj/machinery/power/apc/old_apc = A.get_apc()
@@ -82,25 +105,37 @@
 	if(H.get_active_hand() != G)
 		H.put_in_active_hand(G)
 	TEST_ASSERT_EQUAL(H.get_active_hand(), G, "the shock victim actually holds the live grab")
+	if(empty_grab)
+		TEST_ASSERT(link_break(G, LK_GRABBING, V), "the real grab releases its passenger before the click")
+		TEST_ASSERT_NULL(G.grab_target(), "the empty-grab variant actually has no passenger")
+		TEST_ASSERT_EQUAL(H.get_active_hand(), G, "the empty actual grab remains in the actor's hand")
 	TEST_ASSERT(!H.has_status(STAT_STUNNED), "the actor starts unstunned")
+	test_chat_clear()
 	test_menu(H, M, "cycler_insert_grab")
 	for(var/obj/effect/effect/sparks/S in T)
 		own(S)
 	TEST_ASSERT(H.has_status(STAT_STUNNED), "the real powered machine shock stuns the actor")
 	TEST_ASSERT_NULL(running(H), "a successful shock prevents the actual timed insertion")
+	TEST_ASSERT_NULL(op_pending_of(H), "the reentrant shock cancellation leaves no pending operation")
+	TEST_ASSERT(!op_claimed(M), "the cancelled insertion releases the machine claim")
+	for(var/line in test_chat_of(V))
+		TEST_ASSERT(!findtext(lowertext("[line]"), "starts putting"), "shock aborts before the insertion begins announcement")
 	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_SUIT_CYCLER), "shock leaves the real occupant slot empty")
 	TEST_ASSERT_EQUAL(V.loc, T, "shock leaves the victim outside")
+	test_time(3 SECONDS)
+	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_SUIT_CYCLER), "the refused shock cannot leave a late insertion timer")
+	TEST_ASSERT_NULL(op_pending_of(H), "the refused shock stays finished after the former wait deadline")
 	rel_set(A, nameof(A.apc), old_apc)
 
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_loader_moves
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_loader_moves/run_pin()
 	var/turf/T = run_loc_floor_bottom_left
-	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod, T)
+	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod/last_occupant_fixture, T)
 	var/mob/living/carbon/human/loader = person(T)
 	var/mob/living/carbon/human/passenger = person(T)
 	interim_keep_awake(loader)
 	interim_keep_awake(passenger)
-	var/datum/prompt/yes_no/cryo_consent/R = consent(P, passenger, loader)
+	var/datum/prompt/yes_no/R = consent(P, passenger, loader)
 	TEST_ASSERT(R?.is_open(), "the real passenger question opens")
 	test_answer(passenger, TRUE)
 	var/datum/action = running(loader)
@@ -114,13 +149,32 @@
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_passenger_deleted
 /datum/unit_test/dq_timed_pin/last_occupant/cryo_passenger_deleted/run_pin()
 	var/turf/T = run_loc_floor_bottom_left
-	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod, T)
+	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod/last_occupant_fixture, T)
 	var/mob/living/carbon/human/loader = person(T)
 	var/mob/living/carbon/human/passenger = person(T)
-	var/datum/prompt/yes_no/cryo_consent/R = consent(P, passenger, loader)
+	var/datum/prompt/yes_no/R = consent(P, passenger, loader)
 	TEST_ASSERT(R?.is_open(), "the actual passenger consent is open before deletion")
 	qdel(passenger)
 	test_time(3 SECONDS)
 	TEST_ASSERT_NULL(running(loader), "deleting the answerer cannot start a loader task")
 	TEST_ASSERT_NULL(P.slot_item(OCCUPANT_SLOT_CRYOPOD), "a deleted passenger never acquires custody")
 	TEST_ASSERT(QDELETED(R) || !R.is_open(), "the deleted passenger's actual question closes")
+
+/datum/unit_test/dq_timed_pin/last_occupant/cryo_clientless
+/datum/unit_test/dq_timed_pin/last_occupant/cryo_clientless/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/cryopod/P = allocate(/obj/machinery/cryopod, T)
+	var/mob/living/carbon/human/loader = person(T)
+	var/mob/living/carbon/human/passenger = person(T)
+	interim_keep_awake(loader)
+	interim_keep_awake(passenger)
+	TEST_ASSERT_NULL(passenger.client, "the actual passenger has no client; the production predicate is used")
+	var/datum/request/R = consent(P, passenger, loader)
+	TEST_ASSERT_NULL(R, "the production clientless path skips consent rather than opening a question")
+	TEST_ASSERT(running(loader), "the clientless passenger starts the loader's real wait")
+	TEST_ASSERT_NULL(running(passenger), "the clientless passenger does not own the loader's operation")
+	test_time(1 SECOND)
+	TEST_ASSERT_NULL(P.slot_item(OCCUPANT_SLOT_CRYOPOD), "the clientless fallback still waits before taking custody")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(P.slot_item(OCCUPANT_SLOT_CRYOPOD), passenger, "the production clientless fallback acquires the passenger after the wait")
+	TEST_ASSERT_EQUAL(passenger.loc, P, "the clientless fallback's physical location matches the occupant ledger")

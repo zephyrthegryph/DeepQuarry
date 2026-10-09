@@ -53,6 +53,8 @@
 	if(panel_open == 1)
 		look.state("colormate_open")
 
+MSG_DEF_SELF(gear_painter/loaded, "the machine is already loaded")
+
 CAPABILITIES(/obj/machinery/gear_painter)
 	owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL)
 	interface("ColorMate")
