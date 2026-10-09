@@ -1470,12 +1470,13 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	log_game("[key_name(user)] emagged [key_name(src)]. Laws overridden.")
 	laws_changed()
 
-DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
-/mob/living/silicon/robot/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/// A sequencer on a cyborg (the emag capability in CAPABILITIES(/mob/living/silicon/robot), code/library/mob/hands.dm). OP_OK pays a use; OP_DECLINE tried and used nothing.
+/mob/living/silicon/robot/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!opened)//Cover is closed
 		if(!locked)
 			to_chat(user, span_filter_notice("The cover is already unlocked."))
-			return
+			return OP_DECLINE
 		if(prob(90))
 			to_chat(user, span_filter_notice("You emag the cover lock."))
 			locked = FALSE
@@ -1484,7 +1485,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 			to_chat(src, span_filter_warning("Hack attempt detected."))
 		if(shell) // A warning to Traitors who may not know that emagging AI shells does not slave them.
 			to_chat(user, span_warning("[src] seems to be controlled remotely! Emagging the interface may not work as expected."))
-		return 1
+		return OP_OK
 
 	if(emagged)
 		if (!has_zeroth_law())
@@ -1496,26 +1497,26 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 			to_chat(src, span_danger("ALERT: [user.real_name] is your new master. Obey your new laws and [user.p_their()] commands."))
 		else
 			to_chat(user, span_filter_notice("[src] already has an operator assigned."))
-		return//Prevents the X has hit Y with Z message also you cant emag them twice
+		return OP_DECLINE // an emagged cyborg is not emagged twice
 	if(wiresexposed)
 		to_chat(user, span_filter_notice("You must close the panel first."))
-		return
+		return OP_DECLINE
 
 	if(shell) // AI shells cannot be emagged, so we try to make it look like a standard reset. Smart players may see through this, however.
 		to_chat(user, span_danger("[src] is remotely controlled! Your emag attempt has triggered a system reset instead!"))
 		log_game("[key_name(user)] attempted to emag an AI shell belonging to [key_name(src) ? key_name(src) : connected_ai]. The shell has been reset as a result.")
 		module_reset()
-		return
+		return OP_DECLINE
 
 	if(!prob(50))
 		to_chat(user, span_filter_warning("You fail to hack [src]'s interface."))
 		to_chat(src, span_filter_warning("Hack attempt detected."))
-		return 1
+		return OP_OK
 
 	subvert_laws(user)
 	to_chat(user, span_filter_notice("You emag [src]'s interface."))
 	play_subversion_sequence(user.real_name, user.p_their())
-	return 1
+	return OP_OK
 
 /// Boot messages after an emag, one step per timer.
 /mob/living/silicon/robot/proc/play_subversion_sequence(operator_name, operator_their, step = 1)

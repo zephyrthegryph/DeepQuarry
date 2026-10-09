@@ -585,7 +585,7 @@ SYSTEM_DEF(input)
 	return E.result
 
 /// Follows a topic link through the input inbox as a player's href would: the op of `holder` that names the href runs, origin ORIGIN_UI. Returns its
-/// /datum/op_result, or null when no op names it (a TOPIC_ACTION row of the holder answers it then, and the effect is all a test can read).
+/// /datum/op_result, or null when no op names it.
 /proc/inbox_topic(mob/actor, datum/holder, list/href_list)
 	RETURN_TYPE(/datum/op_result)
 	var/datum/input_event/topic/E = new(actor, holder, list2params(href_list), href_list)

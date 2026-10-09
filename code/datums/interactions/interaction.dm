@@ -370,10 +370,6 @@ DECLARE_SHARED_CACHE(interaction_candidates, GLOBAL_PROC_REF(build_interaction_c
 			stack_trace("[target.type] declares [entry], which is not a registered interaction")
 			continue
 		candidates |= interaction
-	// A declared emag (DECLARE_EMAG, code/datums/sys/emag.dm) is an interaction of the type.
-	var/datum/interaction/emag = emag_interaction_for(target)
-	if(emag)
-		candidates |= emag
 	return candidates
 
 /// Called on the target after an interaction's effect ran: a player (or program) changed it. Types

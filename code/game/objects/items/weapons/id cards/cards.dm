@@ -107,14 +107,6 @@ TRACKED(/obj/item/card, sprite_stack)
 	item_state = "card-id"
 	var/uses = 10
 
-/// The card acts before the target's own attackby: the target's declared Emag interaction
-/// (code/datums/sys/emag.dm) runs, or the card is an ordinary item when it declares none.
-/obj/item/card/emag/resolve_attackby(atom/A, mob/user, attack_modifier, click_parameters)
-	var/datum/interaction/emag = emag_interaction_for(A)
-	if(!emag || isnull(emag.attempt(user, A, src)))
-		return ..(A, user, click_parameters)
-	return 1
-
 /// Whether the card can still emag anything.
 /obj/item/card/emag/proc/can_emag(mob/user)
 	return uses > 0
@@ -160,13 +152,6 @@ CAPABILITIES(/obj/item/card/emag)
 /obj/item/card/emag/borg
 	uses = 12
 	var/burnt_out = FALSE
-
-/obj/item/card/emag/borg/afterattack(atom/A, mob/user, proximity, click_parameters)
-	if(!proximity || burnt_out) return
-	var/datum/interaction/emag = emag_interaction_for(A)
-	if(!emag || isnull(emag.attempt(user, A, src)))
-		return ..(A, user, proximity, click_parameters)
-	return 1
 
 /obj/item/card/emag/borg/can_emag(mob/user)
 	return !burnt_out && ..()
