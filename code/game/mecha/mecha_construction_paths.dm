@@ -69,6 +69,7 @@ MSG_DEF_SELF(stage/mecha/step_22, "It is partly built.")
 /// The stages of a chassis ladder in order: the shell, then each step. The index of the stage a chassis is at is the number of the step it is
 /// about to take.
 /proc/mecha_stage_ids()
+	RETURN_TYPE(/list)
 	var/static/list/ids = list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, STAGE_MECHA_STEP_2, STAGE_MECHA_STEP_3, STAGE_MECHA_STEP_4, STAGE_MECHA_STEP_5, STAGE_MECHA_STEP_6, STAGE_MECHA_STEP_7, STAGE_MECHA_STEP_8, STAGE_MECHA_STEP_9, STAGE_MECHA_STEP_10, STAGE_MECHA_STEP_11, STAGE_MECHA_STEP_12, STAGE_MECHA_STEP_13, STAGE_MECHA_STEP_14, STAGE_MECHA_STEP_15, STAGE_MECHA_STEP_16, STAGE_MECHA_STEP_17, STAGE_MECHA_STEP_18, STAGE_MECHA_STEP_19, STAGE_MECHA_STEP_20, STAGE_MECHA_STEP_21, STAGE_MECHA_STEP_22)
 	return ids
 
