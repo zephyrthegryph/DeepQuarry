@@ -2,5 +2,3 @@
 # A spec is a /datum/unit_test/ name without the prefix, or parent/* for every child. Edit with --adopt/--refresh, not by hand.
 dq_km_every_behaviour_has_a_system	fails on master: a behaviour has no system	1d164d2693
 dq_lane_a/change_drain_survives_a_throwing_condition	fails on master: throwing condition kills the change drain	1d164d2693
-dq_combat_mode_variant_keys	click arrives as a disarm (the cow is tipped); code/modules/unit_tests/dq_combat_mode_te*; seen on draw-mobs-base and integ-14 runs	04faf2744a
-dq_hc_struct/air_control_menu_leads_to_the_frequency_question	LIFECYCLE LEAK: /datum/pending_op.step_answers_saved holds a deleted /datum/prompt/choice (lifecycle_links.dm:54)	04faf2744a

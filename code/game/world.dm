@@ -669,6 +669,11 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		text2file("Success!", "[GLOB.log_directory]/clean_run.lk")
 	else
 		log_world("Test run failed!\n[fail_reasons.Join("\n")]")
+	// The marker the build's watchdog waits for (tools/build/lib/byond.ts, watchdogCleanFile): written for a failed run too, so a
+	// daemon that lingers after the world is done is killed within seconds, while a world still writing its logs on a busy machine
+	// is given time to finish before it is declared unclean.
+	if(GLOB && GLOB.log_directory)
+		text2file(fail_reasons ? "Failed" : "Finished", "[GLOB.log_directory]/finished_run.lk")
 	// Shut down once Reboot() has returned (the MC is already down, so this is a world tick
 	// callback, not a timer): deleting the world from inside Reboot() leaves byond in a bad way.
 	world_next_tick(GLOBAL_PROC_REF(world_finish_test_shutdown))

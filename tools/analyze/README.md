@@ -209,6 +209,50 @@ changed file is outside the footprint, has no `#define`/`#undef`/`#include`, and
 digest and written names, a bare type header the old text did not have being a change. Any doubt is a miss, never a stale
 hit. A change inside the footprint, or to the structure, runs the full model (8 s) and refreshes the record.
 
+### How `analyze gen` stays fast
+
+A generator has a `stage()`: 0 for one that reads only declarations and file text, 1 for one that reads another generator's output
+or builds the full model (`reads`, `derived_reads`). `analyze gen` runs stage 0 until nothing is written, reloads the tree, runs
+stage 1 once on the settled files, and then proves stage 0 is still fresh against what stage 1 wrote (stage 1's own output is no
+generator's input, so it is not run again: running it again would parse the full model a second time). So a merge that changes
+declarations parses the model once, not once per pass. A run that converged records `data/analyze-cache/gen-state.bin`: the
+analyzer build, a digest of every file the generators can read (and `deepquarry.dme`) and the content digest of every output. The next
+run with the same inputs and intact outputs prints the fresh files and returns (about 0.4 s, from the tree walk), whatever else
+changed (`lint_scopes.toml`, a lint's baseline). `DQ_ANALYZE_TRACE=1` prints the passes, each generator's render time and
+whether the model was built.
+
+**The shared store.** A converged run also copies its outputs into `E:/dq-cache/gen-store/<key>/` (`DQ_GEN_STORE`, `off` disables it; the 40 newest
+entries are kept), keyed by the analyzer build and the content of every file the generators read except the generated files themselves, so the key is
+the same before and after they are written. A run that meets a key the store holds (a new worktree of a commit another worktree generated, a merge
+of one lane whose lane-ready run generated the same tree, a hand-edited output) copies the files back after checking each against the manifest's digest,
+instead of generating them: a fresh worktree's first `gen` goes from 28-80 s to about 1 s. Only clean runs (no diagnostic) are stored.
+
+The whole-tree scans the generators do (the defined types of every file, which files mention a notice type, `#define` names,
+`SYSTEM_DEF`) read the `.dm` tree on all cores first (`Tree::prewarm_dm`); the first two are per-file facts cached by content
+(`gen-defined-types`, `notice-mentions`), so a run after an edit reads only the edited files for them.
+
+### `analyze look-keys` (the look plan)
+
+`analyze look-keys [--out FILE] [--explain TYPE] [--no-cache]` writes one line per concrete /obj, /mob and /turf type: its key (a
+digest of everything that can change its look rows) and the vars a state probe should write. Cold it parses the model (8-15 s) and
+walks the draw closure of 6,200 distinct closures (about 15 s: edges are interned, the visited sets are bitsets, the integer tables
+use a multiplicative hasher). `data/analyze-cache/look-keys.bin` makes the next run incremental:
+
+| The edit | Cost |
+|---|---|
+| nothing | 0.5 s (the stored rows) |
+| comments, blank lines, a file the model does not include | 2 s (no row can move) |
+| a proc no closure contains, or var values no chain type is assigned (most gameplay code) | 2 s (a partial parse of the changed files) |
+| a proc in some closure, or a var value of a chain type | one full model parse (8-15 s), then only the rows whose closure holds a changed proc, or whose chain holds a type assigned different values, are recomputed |
+| a new or removed var, proc or type, a `#define`, a changed declaration marker, `deepquarry.dme`, a salt file, a `DECLARE_APPEARANCE`/`abstract_type` line, a different analyzer build | everything (cold cost) |
+
+The cache records per row the closure as a bitset over the table of procs some closure contains (each with a digest of its text), per
+included file the structure facts of `sem::incremental` (shape, comment-free tokens, bare headers, directives, located types) and a digest
+of the var values it assigns to each type. A partial parse of just the changed files (`Sem::build_partial`) must give the same shape and
+types and says which closure procs changed their text and which types were assigned different values. The tests
+(`tests/look_keys.rs`) compare the incremental rows with a full computation after each kind of edit; `DQ_LOOK_TRACE=1` says why an edit was
+refused and prints the phase timings.
+
 ### Declarations the analysis reads
 
 Markers expand to nothing in DM (`code/__defines/engine/markers.dm`), so they are read from comment-stripped text with
@@ -318,8 +362,7 @@ generator that never calls it costs no parse), `handlers()` (the procs declarati
 must be deterministic (sorted, no timestamps, no absolute paths) and is compared byte for byte, so `analyze gen` rewrites only a
 file whose text changed (an unchanged tree keeps its mtimes and the build's .dmb caches); `analyze gen --check` writes nothing.
 Both fail when the file is not `#include`d in `deepquarry.dme`. The output is not committed: every build runs `analyze gen`
-first (tools/build/build.ts `GenTarget`), which loops until no file changes, because `reads` and `derived_reads` read
-`declare.dm` (doc/rewrite/agent_workflow.md). Diagnostics use the engine's format, `file:line: [gen/x]
+first (tools/build/build.ts `GenTarget`). Diagnostics use the engine's format, `file:line: [gen/x]
 message`, and the same exemption mechanism as the lints. Put a golden next to a fixture and a test in `tests/semantic.rs`
 (`BLESS_GOLDENS=1 cargo test` writes it).
 
