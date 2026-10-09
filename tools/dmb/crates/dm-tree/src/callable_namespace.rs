@@ -25,21 +25,38 @@ pub(crate) fn collect(
             ..
         } = skeleton
         {
-            if *mode != DefinitionMode::Implicit
-                && matches!(kind, MemberKind::Proc | MemberKind::Verb)
-            {
-                if *mode == DefinitionMode::Declare && !callable_formals.insert((*owner, *name)) {
-                    return Err(TreeError::Duplicate {
-                        owner: *owner,
-                        name: *name,
-                        kind: *kind,
-                    });
-                }
-                callable_kinds.insert((*owner, *name), *kind);
+            if let Some(duplicate) = insert_anchor(
+                *owner,
+                *name,
+                *kind,
+                *mode,
+                &mut callable_kinds,
+                &mut callable_formals,
+            ) {
+                return Err(duplicate);
             }
         }
     }
     Ok(callable_kinds)
+}
+/// Shared authored anchor rule; final encounter wins, formals remain unique
+/// across both callable namespaces on the same owner.
+pub(crate) fn insert_anchor(
+    owner: SymbolId,
+    name: SymbolId,
+    kind: MemberKind,
+    mode: DefinitionMode,
+    anchors: &mut CallableKinds,
+    formals: &mut HashSet<(SymbolId, SymbolId)>,
+) -> Option<TreeError> {
+    if mode == DefinitionMode::Implicit || !matches!(kind, MemberKind::Proc | MemberKind::Verb) {
+        return None;
+    }
+    if mode == DefinitionMode::Declare && !formals.insert((owner, name)) {
+        return Some(TreeError::Duplicate { owner, name, kind });
+    }
+    anchors.insert((owner, name), kind);
+    None
 }
 #[derive(Clone, Copy)]
 pub(crate) struct CallableRequest {

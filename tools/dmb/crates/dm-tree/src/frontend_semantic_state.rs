@@ -32,6 +32,49 @@ impl RetainedSemanticTree {
     ) {
         self.normalization.visit_storage(visit);
     }
+    pub fn callable_owner_hits(&self) -> usize {
+        self.normalization.callables.hits()
+    }
+    pub fn visit_callable_owner_storage(
+        &self,
+        visit: impl FnMut(
+            dm_session::ObservedArtifactStorageView<
+                '_,
+                crate::owner_callable::CallableOwner,
+                crate::declaration_observations::SourceQuery,
+                crate::declaration_observations::SourceAnswer,
+                crate::declaration_observations::SourceDomain,
+            >,
+        ),
+    ) {
+        self.normalization.callables.visit_storage(visit);
+    }
+    pub fn type_path_hits(&self) -> usize {
+        self.normalization.paths.hits()
+    }
+    pub fn visit_type_path_storage(
+        &self,
+        visit: impl FnMut(
+            dm_session::ObservedArtifactStorageView<
+                '_,
+                crate::type_paths::LexicalPath,
+                dm_ir::SymbolId,
+                Option<String>,
+                (),
+            >,
+        ),
+    ) {
+        self.normalization.paths.visit_storage(visit);
+    }
+    pub fn local_shape_hits(&self) -> usize {
+        self.normalization.local.hits()
+    }
+    pub fn visit_local_shape_storage(
+        &self,
+        visit: impl FnMut(crate::owner_local_shape::LocalShapeStorageView<'_>),
+    ) {
+        self.normalization.local.visit_storage(visit);
+    }
     pub fn metadata_owner_hits(&self) -> usize {
         self.normalization.metadata.hits()
     }
@@ -133,14 +176,17 @@ impl RetainedSemanticTree {
             )
         });
         if let Some(mut tree) = updated {
-            let (identity, hierarchy) =
-                crate::adapter::projected_identity(&adapted.skeletons, engine).map_err(
-                    |error| {
-                        let error = SnapshotError::Tree(error);
-                        on_error(&error, &adapted.skeletons, &adapted.origins);
-                        error
-                    },
-                )?;
+            let (identity, hierarchy) = crate::adapter::projected_identity_indexed(
+                index
+                    .as_ref()
+                    .expect("updated tree has current declaration index"),
+                engine,
+            )
+            .map_err(|error| {
+                let error = SnapshotError::Tree(error);
+                on_error(&error, &adapted.skeletons, &adapted.origins);
+                error
+            })?;
             tree.refresh_metadata_identity(identity, hierarchy);
             let tree = Arc::new(tree);
             let occurrences =

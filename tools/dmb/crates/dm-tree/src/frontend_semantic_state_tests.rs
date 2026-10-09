@@ -392,3 +392,59 @@ fn structural_metadata_reuses_unaffected_owners_and_invalidates_inherited_flags(
         Resolver::resolve(fresh.snapshot.tree.as_ref(), query)
     );
 }
+
+#[test]
+fn structural_edits_reuse_local_shapes_and_preserve_formal_before_implicit_order() {
+    let mut state = RetainedSemanticTree::new();
+    build(&mut state,"/datum/a\n    var/x = 1\n    callback()\n        return 1\n    proc/callback()\n        return 2\n/datum/b\n    var/y = 3\n");
+    let source="/datum/a\n    var/x = 1\n    var/added = 4\n    callback()\n        return 1\n    proc/callback()\n        return 2\n/datum/b\n    var/y = 3\n";
+    let actual = build(&mut state, source);
+    let fresh = build(&mut RetainedSemanticTree::new(), source);
+    assert!(state.local_shape_hits() > 0);
+    assert_eq!(
+        actual.snapshot.tree.identity(),
+        fresh.snapshot.tree.identity()
+    );
+    assert_eq!(
+        actual.snapshot.tree.declarations(),
+        fresh.snapshot.tree.declarations()
+    );
+    for (actual, expected) in actual
+        .snapshot
+        .tree
+        .members()
+        .iter()
+        .zip(fresh.snapshot.tree.members())
+    {
+        assert_eq!(actual.kind, expected.kind);
+        assert_eq!(actual.previous, expected.previous);
+        assert_eq!(actual.metadata, expected.metadata);
+    }
+}
+#[test]
+fn changed_inherited_callable_anchor_invalidates_local_shape() {
+    let mut state = RetainedSemanticTree::new();
+    build(&mut state,"/datum/a\n    proc/callback()\n        return 1\n/datum/a/child\n    callback()\n        return 2\n");
+    let source="/datum/a\n    verb/callback()\n        return 1\n/datum/a/child\n    callback()\n        return 2\n";
+    let actual = build(&mut state, source);
+    let fresh = build(&mut RetainedSemanticTree::new(), source);
+    for (actual, expected) in actual
+        .snapshot
+        .tree
+        .members()
+        .iter()
+        .zip(fresh.snapshot.tree.members())
+    {
+        assert_eq!(actual.kind, expected.kind);
+        assert_eq!(actual.previous, expected.previous);
+    }
+    let child = dm_ir::SymbolId::of("/datum/a/child");
+    let member = actual
+        .snapshot
+        .tree
+        .members()
+        .iter()
+        .find(|member| actual.snapshot.tree.types()[member.owner.index()].path == child)
+        .unwrap();
+    assert_eq!(member.kind, crate::MemberKind::Verb);
+}

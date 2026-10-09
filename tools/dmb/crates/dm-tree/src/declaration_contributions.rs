@@ -22,11 +22,24 @@ pub struct DeclarationKey {
 pub struct DeclarationRow {
     pub key: DeclarationKey,
     pub skeleton: Skeleton,
+    metadata_fingerprint: u128,
+}
+impl DeclarationRow {
+    pub(crate) fn metadata_fingerprint(&self) -> u128 {
+        self.metadata_fingerprint
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DeclarationShape {
+    pub key: DeclarationKey,
+    pub mode: Option<crate::DefinitionMode>,
+    pub explicit_parent: Option<SymbolId>,
 }
 #[derive(Clone, Debug)]
 pub struct TypeContribution {
     owner: SymbolId,
     rows: Arc<[DeclarationRow]>,
+    shape: Arc<[DeclarationShape]>,
 }
 impl TypeContribution {
     pub fn owner(&self) -> SymbolId {
@@ -37,6 +50,9 @@ impl TypeContribution {
     }
     pub fn shared_rows(&self) -> &Arc<[DeclarationRow]> {
         &self.rows
+    }
+    pub fn shared_shape(&self) -> &Arc<[DeclarationShape]> {
+        &self.shape
     }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -112,6 +128,12 @@ impl KeyedDeclarations {
                 changes.reused_owners += 1;
                 continue;
             }
+            let prior_rows: BTreeMap<_, _> = previous
+                .and_then(|previous| previous.owners.get(&owner))
+                .into_iter()
+                .flat_map(|owner| owner.rows.iter())
+                .map(|row| (row.key, row))
+                .collect();
             let mut occurrences = HashMap::<DeclarationFamily, u32>::new();
             let mut rows = Vec::with_capacity(indices.len());
             for index in indices {
@@ -126,16 +148,47 @@ impl KeyedDeclarations {
                 *occurrence = occurrence
                     .checked_add(1)
                     .ok_or(ContributionError::TooManyFamilyDeclarations(owner))?;
+                let metadata_fingerprint = prior_rows
+                    .get(&key)
+                    .filter(|row| row.skeleton == *skeleton)
+                    .map(|row| row.metadata_fingerprint)
+                    .unwrap_or_else(|| match skeleton {
+                        Skeleton::Member { metadata, .. } => crate::metadata_fingerprint(metadata),
+                        Skeleton::Type { .. } => 0,
+                    });
                 rows.push(DeclarationRow {
                     key,
                     skeleton: skeleton.clone(),
+                    metadata_fingerprint,
                 });
             }
+            let shape: Vec<_> = rows
+                .iter()
+                .map(|row| {
+                    let (mode, explicit_parent) = match &row.skeleton {
+                        Skeleton::Type {
+                            explicit_parent, ..
+                        } => (None, *explicit_parent),
+                        Skeleton::Member { mode, .. } => (Some(*mode), None),
+                    };
+                    DeclarationShape {
+                        key: row.key,
+                        mode,
+                        explicit_parent,
+                    }
+                })
+                .collect();
+            let shape = previous
+                .and_then(|previous| previous.owners.get(&owner))
+                .filter(|prior| prior.shape.as_ref() == shape)
+                .map(|prior| Arc::clone(&prior.shape))
+                .unwrap_or_else(|| shape.into());
             owners.insert(
                 owner,
                 Arc::new(TypeContribution {
                     owner,
                     rows: rows.into(),
+                    shape,
                 }),
             );
             changes.changed_owners += 1;

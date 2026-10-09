@@ -8,6 +8,9 @@ use dm_ir::{OpaqueFieldBase, SymbolId};
 use std::sync::Arc;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SourceQuery {
+    OwnerShape {
+        owner: SymbolId,
+    },
     Owner {
         owner: SymbolId,
     },
@@ -44,9 +47,10 @@ impl SourceQuery {
     pub fn domain(self) -> SourceDomain {
         match self {
             Self::Parent { .. } => SourceDomain::ParentGraph,
-            Self::Owner { .. } | Self::Family { .. } | Self::SelectedPredecessor { .. } => {
-                SourceDomain::AuthoredDeclarations
-            }
+            Self::OwnerShape { .. }
+            | Self::Owner { .. }
+            | Self::Family { .. }
+            | Self::SelectedPredecessor { .. } => SourceDomain::AuthoredDeclarations,
             Self::CallableAnchor { .. } => SourceDomain::CallableNamespace,
             Self::OpaqueField { .. } => SourceDomain::EngineDeclarations,
         }
@@ -96,6 +100,7 @@ impl PartialEq for OwnerAnswer {
 impl Eq for OwnerAnswer {}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SourceAnswer {
+    OwnerShape(Option<Arc<[crate::declaration_contributions::DeclarationShape]>>),
     Owner(OwnerAnswer),
     SelectedPredecessor(Option<DeclarationKey>),
     /// Outer None means no such type; Some(None) means the graph root.
@@ -114,6 +119,11 @@ pub(crate) struct DeclarationHost<'a> {
 impl DeclarationHost<'_> {
     pub fn answer(&self, query: SourceQuery) -> SourceAnswer {
         match query {
+            SourceQuery::OwnerShape { owner } => SourceAnswer::OwnerShape(
+                self.declarations
+                    .owner(owner)
+                    .map(|owner| Arc::clone(owner.shared_shape())),
+            ),
             SourceQuery::Owner { owner } => {
                 SourceAnswer::Owner(OwnerAnswer(self.declarations.owner(owner).cloned()))
             }

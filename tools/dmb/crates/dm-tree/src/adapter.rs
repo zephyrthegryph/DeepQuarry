@@ -620,6 +620,12 @@ pub(crate) fn seed_hierarchy(
     skeletons: &[Skeleton],
     seed: Option<&crate::frontend::EngineSeed>,
 ) -> Result<Option<crate::EngineHierarchy>, crate::TreeError> {
+    seed_hierarchy_rows(skeletons.iter(), seed)
+}
+fn seed_hierarchy_rows<'a>(
+    skeletons: impl IntoIterator<Item = &'a Skeleton>,
+    seed: Option<&crate::frontend::EngineSeed>,
+) -> Result<Option<crate::EngineHierarchy>, crate::TreeError> {
     let mut authored_parents = std::collections::HashMap::new();
     for row in skeletons {
         if let Skeleton::Type {
@@ -644,26 +650,34 @@ pub(crate) fn seed_hierarchy(
         hierarchy
     }))
 }
+#[cfg(test)]
 pub(crate) fn projected_identity(
     skeletons: &[Skeleton],
     seed: Option<&crate::frontend::EngineSeed>,
 ) -> Result<(u128, Option<crate::EngineHierarchy>), crate::TreeError> {
     let hierarchy = seed_hierarchy(skeletons, seed)?;
-    let mut combined = Vec::new();
-    if let Some(hierarchy) = &hierarchy {
-        combined.extend(
-            hierarchy
-                .parents
-                .iter()
-                .map(|&(path, parent)| Skeleton::Type {
-                    path,
-                    explicit_parent: parent,
-                }),
-        );
-    }
-    combined.extend_from_slice(skeletons);
-    Ok((
-        crate::declaration_identity(&combined, seed.map_or(&[][..], |seed| seed.fields.as_ref())),
-        hierarchy,
-    ))
+    let identity = crate::tree_identity::projected_declaration_identity(
+        hierarchy
+            .as_ref()
+            .into_iter()
+            .flat_map(|hierarchy| hierarchy.parents.iter().copied()),
+        skeletons,
+        seed.map_or(&[][..], |seed| seed.fields.as_ref()),
+    );
+    Ok((identity, hierarchy))
+}
+pub(crate) fn projected_identity_indexed(
+    index: &crate::declaration_contributions::KeyedDeclarations,
+    seed: Option<&crate::frontend::EngineSeed>,
+) -> Result<(u128, Option<crate::EngineHierarchy>), crate::TreeError> {
+    let hierarchy = seed_hierarchy_rows(index.skeletons(), seed)?;
+    let identity = crate::tree_identity::retained_projected_identity(
+        hierarchy
+            .as_ref()
+            .into_iter()
+            .flat_map(|hierarchy| hierarchy.parents.iter().copied()),
+        index,
+        seed.map_or(&[][..], |seed| seed.fields.as_ref()),
+    );
+    Ok((identity, hierarchy))
 }

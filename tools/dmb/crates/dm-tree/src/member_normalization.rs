@@ -2,6 +2,16 @@
 //! Namespace and predecessor semantics remain authoritative here.
 use crate::*;
 use std::collections::HashMap;
+pub(crate) fn formal_chain<T: Copy + PartialEq>(
+    ids: &[T],
+    mut is_formal: impl FnMut(T) -> bool,
+) -> Vec<T> {
+    let formal = ids.iter().copied().find(|&id| is_formal(id));
+    formal
+        .into_iter()
+        .chain(ids.iter().copied().filter(|id| Some(*id) != formal))
+        .collect()
+}
 pub(crate) fn normalize_groups(
     tree: &mut SemanticTree,
     members: &mut [MemberNode],
@@ -12,14 +22,7 @@ pub(crate) fn normalize_groups(
     // position; overrides keep encounter order. BYOND compile-only probes show
     // implicit-before-formal and formal-before-implicit compile identically.
     for (key, ids) in groups {
-        let formal = ids
-            .iter()
-            .copied()
-            .find(|id| modes[id.index()] == DefinitionMode::Declare);
-        let chain: Vec<_> = formal
-            .into_iter()
-            .chain(ids.into_iter().filter(|id| Some(*id) != formal))
-            .collect();
+        let chain = formal_chain(&ids, |id| modes[id.index()] == DefinitionMode::Declare);
         let mut previous = None;
         for id in &chain {
             members[id.index()].previous = previous;

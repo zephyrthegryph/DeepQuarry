@@ -230,3 +230,89 @@ fn streaming_tree_identity_preserves_domains_catalog_duplicates_and_source_order
         legacy_identity(&skeletons, &fields)
     );
 }
+
+#[test]
+fn retained_authored_fingerprints_match_legacy_after_order_metadata_and_content_edits() {
+    let root = SymbolId::of("/");
+    let owner = SymbolId::of("/datum/a");
+    let prefix = vec![Skeleton::Type {
+        path: root,
+        explicit_parent: None,
+    }];
+    let mut rows = vec![
+        Skeleton::Type {
+            path: owner,
+            explicit_parent: None,
+        },
+        Skeleton::Member {
+            owner,
+            name: SymbolId::of("value"),
+            kind: MemberKind::Var,
+            mode: DefinitionMode::Declare,
+            metadata: Arc::new(populated()),
+            content: 44,
+        },
+        Skeleton::Member {
+            owner,
+            name: SymbolId::of("next"),
+            kind: MemberKind::Proc,
+            mode: DefinitionMode::Declare,
+            metadata: Arc::new(MemberMetadata::default()),
+            content: 55,
+        },
+    ];
+    let mut previous = None;
+    for step in 0..4 {
+        match step {
+            1 => {
+                if let Skeleton::Member { metadata, .. } = &mut rows[1] {
+                    Arc::make_mut(metadata).flags ^= 1;
+                }
+            }
+            2 => {
+                if let Skeleton::Member { content, .. } = &mut rows[2] {
+                    *content += 1;
+                }
+            }
+            3 => rows.swap(1, 2),
+            _ => {}
+        }
+        let index =
+            crate::declaration_contributions::KeyedDeclarations::capture(previous.as_ref(), &rows)
+                .unwrap()
+                .0;
+        let mut full = prefix.clone();
+        full.extend(rows.iter().cloned());
+        let expected = legacy_identity(&full, &[]);
+        assert_eq!(
+            retained_declaration_identity(&prefix, &index, &[]),
+            expected,
+            "step={step}"
+        );
+        assert_eq!(
+            retained_projected_identity([(root, None)], &index, &[]),
+            expected
+        );
+        for row in index.ordered() {
+            if let Skeleton::Member { metadata, .. } = &row.skeleton {
+                assert_eq!(row.metadata_fingerprint(), legacy_metadata(metadata));
+            }
+        }
+        previous = Some(index);
+    }
+    let index = previous.unwrap();
+    let seed = crate::frontend::EngineSeed {
+        identity: 7,
+        symbols: SymbolTable::default(),
+        hierarchy: EngineHierarchy {
+            schema: 8,
+            parents: vec![(root, None), (owner, Some(root))],
+        },
+        intrinsics: Arc::from([]),
+        fields: Arc::from([]),
+    };
+    assert_eq!(
+        crate::adapter::projected_identity_indexed(&index, Some(&seed)).unwrap(),
+        crate::adapter::projected_identity(&rows, Some(&seed)).unwrap()
+    );
+}

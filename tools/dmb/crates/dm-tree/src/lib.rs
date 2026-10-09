@@ -15,6 +15,8 @@ pub mod maps;
 mod member_arena;
 mod member_normalization;
 mod metadata_update;
+pub mod owner_callable;
+pub mod owner_local_shape;
 pub mod owner_metadata;
 mod owner_normalization;
 pub use member_arena::MemberArena;
@@ -25,6 +27,7 @@ mod procedure;
 pub mod procedure_statics;
 mod resolver;
 pub mod settings;
+pub mod type_paths;
 mod variable_facts;
 pub use adapter::{
     from_ast, from_ast_in_scope, AdaptedDeclarations, AdapterError, SnapshotError, TreeSnapshot,
@@ -400,37 +403,60 @@ pub(crate) fn build_with_intrinsic_members_indexed(
 ) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
     let mut by_path = HashMap::new();
+    let mut lexical_parents = HashMap::new();
+    let path_store = normalization.map(|(_, retained)| &retained.paths);
     fn ensure(
         path: SymbolId,
         symbols: &mut SymbolTable,
         paths: &mut Vec<SymbolId>,
         index: &mut HashMap<SymbolId, TypeId>,
+        lexical_parents: &mut HashMap<SymbolId, Option<SymbolId>>,
+        retained: Option<&type_paths::RetainedTypePaths>,
     ) -> Result<TypeId, TreeError> {
         if let Some(id) = index.get(&path) {
             return Ok(*id);
         }
-        let text = symbols
-            .text(path)
-            .ok_or(TreeError::UnknownSymbol(path))?
-            .to_owned();
-        let parsed = dm_ir::TypePath::parse(&text).map_err(|_| TreeError::InvalidPath(path))?;
-        if let Some(parent) = parsed.parent() {
-            let symbol = symbols.intern(parent.as_str())?;
-            ensure(symbol, symbols, paths, index)?;
+        let parent = if let Some(retained) = retained {
+            retained.resolve(path, symbols)?.parent.clone()
+        } else {
+            let text = symbols.text(path).ok_or(TreeError::UnknownSymbol(path))?;
+            let parsed = dm_ir::TypePath::parse(text).map_err(|_| TreeError::InvalidPath(path))?;
+            parsed
+                .parent()
+                .map(|parent| Arc::<str>::from(parent.as_str()))
+        };
+        let parent = parent.map(|parent| symbols.intern(&parent)).transpose()?;
+        if let Some(parent) = parent {
+            ensure(parent, symbols, paths, index, lexical_parents, retained)?;
         }
+        lexical_parents.insert(path, parent);
         let id = TypeId(u32::try_from(paths.len()).map_err(|_| TreeError::TooManyNodes)?);
         paths.push(path);
         index.insert(path, id);
         Ok(id)
     }
     let root = symbols.intern("/")?;
-    ensure(root, &mut symbols, &mut paths, &mut by_path)?;
+    ensure(
+        root,
+        &mut symbols,
+        &mut paths,
+        &mut by_path,
+        &mut lexical_parents,
+        path_store,
+    )?;
     for skeleton in skeletons {
         let path = match skeleton {
             Skeleton::Type { path, .. } => *path,
             Skeleton::Member { owner, .. } => *owner,
         };
-        ensure(path, &mut symbols, &mut paths, &mut by_path)?;
+        ensure(
+            path,
+            &mut symbols,
+            &mut paths,
+            &mut by_path,
+            &mut lexical_parents,
+            path_store,
+        )?;
     }
     let mut explicit = HashMap::new();
     let mut declared = HashSet::new();
@@ -458,11 +484,7 @@ pub(crate) fn build_with_intrinsic_members_indexed(
         let parent = if let Some(parent) = explicit.get(&path) {
             Some(by_path[parent])
         } else {
-            let parent_text = dm_ir::TypePath::parse(symbols.text(path).unwrap())
-                .unwrap()
-                .parent();
-            parent_text.map(|parent| {
-                let lexical = SymbolId::of(parent.as_str());
+            lexical_parents[&path].map(|lexical| {
                 let datum = SymbolId::of("/datum");
                 // Native ordinary top-level declarations inherit /datum.
                 // Engine roots have explicit parents and take the branch above;
@@ -481,6 +503,9 @@ pub(crate) fn build_with_intrinsic_members_indexed(
             synthetic: !declared.contains(&path),
             members: Arc::from([]),
         });
+    }
+    if let Some(retained) = path_store {
+        retained.retain(&paths);
     }
     // Linear graph coloring avoids per-node ancestry walks on deep trees.
     let mut colors = vec![0u8; types.len()];
@@ -549,7 +574,30 @@ pub(crate) fn build_with_intrinsic_members_indexed(
     // appears before its parent. Resolve previous links only after collection.
     let mut modes = Vec::new();
     let mut groups: HashMap<(TypeId, SymbolId, MemberKind), Vec<MemberId>> = HashMap::new();
-    let callable_kinds = callable_namespace::collect(skeletons, intrinsics)?;
+    let callable_kinds = if let Some((declarations, retained)) = normalization {
+        retained
+            .callables
+            .collect(&tree, declarations, intrinsics)?
+    } else {
+        callable_namespace::collect(skeletons, intrinsics)?
+    };
+    let local_owners = normalization.map(|(declarations, retained)| {
+        retained.local.prepare(&tree, declarations, &callable_kinds)
+    });
+    let local_members = local_owners.as_ref().and_then(|owners| {
+        let (declarations, _) = normalization?;
+        let members: Vec<_> = declarations
+            .roster()
+            .iter()
+            .filter_map(|handle| owners[&handle.owner].rows[handle.row as usize].as_ref())
+            .collect();
+        (members.len()
+            == skeletons
+                .iter()
+                .filter(|row| matches!(row, Skeleton::Member { .. }))
+                .count())
+        .then_some(members)
+    });
     for skeleton in skeletons {
         match skeleton {
             Skeleton::Type { path, .. } => targets.push(Target::Type(tree.by_path[path])),
@@ -565,23 +613,30 @@ pub(crate) fn build_with_intrinsic_members_indexed(
                     return Err(TreeError::UnknownSymbol(*name));
                 }
                 let owner_id = tree.by_path[owner];
-                let kind = callable_namespace::effective_kind(
-                    &tree,
-                    owner_id,
-                    *name,
-                    *kind,
-                    *mode,
-                    root,
-                    &callable_kinds,
-                );
+                let local = local_members.as_ref().map(|local| local[members.len()]);
+                let kind = local.map(|member| member.kind).unwrap_or_else(|| {
+                    callable_namespace::effective_kind(
+                        &tree,
+                        owner_id,
+                        *name,
+                        *kind,
+                        *mode,
+                        root,
+                        &callable_kinds,
+                    )
+                });
                 let key = (owner_id, *name, kind);
                 let previous = tree.direct.get(&key).copied();
-                if *mode == DefinitionMode::Declare
-                    && groups.get(&key).is_some_and(|ids| {
-                        ids.iter()
-                            .any(|id| modes[id.index()] == DefinitionMode::Declare)
-                    })
-                {
+                let duplicate = local
+                    .map(|member| member.duplicate_formal)
+                    .unwrap_or_else(|| {
+                        *mode == DefinitionMode::Declare
+                            && groups.get(&key).is_some_and(|ids| {
+                                ids.iter()
+                                    .any(|id| modes[id.index()] == DefinitionMode::Declare)
+                            })
+                    });
+                if duplicate {
                     return Err(TreeError::Duplicate {
                         owner: *owner,
                         name: *name,
@@ -600,14 +655,36 @@ pub(crate) fn build_with_intrinsic_members_indexed(
                     previous,
                 });
                 modes.push(*mode);
-                groups.entry(key).or_default().push(id);
+                if local_members.is_none() {
+                    groups.entry(key).or_default().push(id);
+                }
                 Arc::make_mut(&mut tree.direct).insert(key, id);
                 owned[owner_id.index()].push(id);
                 targets.push(Target::Member(id));
             }
         }
     }
-    member_normalization::normalize_groups(&mut tree, &mut members, &modes, groups);
+    if let Some(local_members) = &local_members {
+        let projection: HashMap<_, _> = local_members
+            .iter()
+            .enumerate()
+            .map(|(index, member)| (member.key, MemberId(index as u32)))
+            .collect();
+        for (index, local) in local_members.iter().enumerate() {
+            members[index].previous = local.previous.map(|key| projection[&key]);
+        }
+        for (owner, local) in local_owners
+            .as_ref()
+            .expect("local members have their owner plan")
+        {
+            let owner_id = tree.by_path[owner];
+            for &((name, kind), key) in local.selectors.iter() {
+                Arc::make_mut(&mut tree.direct).insert((owner_id, name, kind), projection[&key]);
+            }
+        }
+    } else {
+        member_normalization::normalize_groups(&mut tree, &mut members, &modes, groups);
+    }
     drop(member_install_profile);
     let previous_resolution_profile = dm_profile::stage("frontend.tree.previous_resolution");
     let normalized = if let Some((declarations, retained)) = normalization {
@@ -646,7 +723,16 @@ pub(crate) fn build_with_intrinsic_members_indexed(
     }
     tree.declaration_targets = targets.into();
     let identity_profile = dm_profile::stage("frontend.tree.identity");
-    tree.identity = declaration_identity(skeletons, fields);
+    tree.identity = if let Some((index, _)) = normalization {
+        let prefix = skeletons
+            .len()
+            .checked_sub(index.len())
+            .expect("authored index is a source suffix");
+        debug_assert!(index.skeletons().eq(skeletons[prefix..].iter()));
+        tree_identity::retained_declaration_identity(&skeletons[..prefix], index, fields)
+    } else {
+        declaration_identity(skeletons, fields)
+    };
     drop(identity_profile);
     Ok(tree)
 }

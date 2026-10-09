@@ -154,3 +154,29 @@ fn removal_retains_only_current_owners_and_old_shared_snapshot_remains_valid() {
     assert!(empty.is_empty());
     assert_eq!(changes.removed_owners, 1);
 }
+
+#[test]
+fn scalar_owner_shape_is_shared_across_metadata_content_changes() {
+    let mut rows = vec![
+        ty("/a"),
+        member("/a", "x", MemberKind::Var, DefinitionMode::Declare, 1),
+    ];
+    let (first, _) = KeyedDeclarations::capture(None, &rows).unwrap();
+    if let Skeleton::Member { content, .. } = &mut rows[1] {
+        *content = 2;
+    }
+    let (second, _) = KeyedDeclarations::capture(Some(&first), &rows).unwrap();
+    let first = first.owner(path("/a")).unwrap();
+    let second = second.owner(path("/a")).unwrap();
+    assert!(!Arc::ptr_eq(first, second));
+    assert!(Arc::ptr_eq(first.shared_shape(), second.shared_shape()));
+    assert_eq!(first.shared_shape()[1].mode, Some(DefinitionMode::Declare));
+    if let Skeleton::Member { mode, .. } = &mut rows[1] {
+        *mode = DefinitionMode::Implicit;
+    }
+    let (third, _) = KeyedDeclarations::capture(None, &rows).unwrap();
+    assert_ne!(
+        second.shared_shape().as_ref(),
+        third.owner(path("/a")).unwrap().shared_shape().as_ref()
+    );
+}

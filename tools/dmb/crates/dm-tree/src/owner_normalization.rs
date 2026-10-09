@@ -23,6 +23,9 @@ pub(crate) struct RetainedNormalization {
     values: ObservedArtifactStore<ResolvedOwner, SourceQuery, SourceAnswer, SourceDomain>,
     hits: std::sync::atomic::AtomicUsize,
     pub(crate) metadata: crate::owner_metadata::RetainedMetadata,
+    pub(crate) callables: crate::owner_callable::RetainedCallableOwners,
+    pub(crate) paths: crate::type_paths::RetainedTypePaths,
+    pub(crate) local: crate::owner_local_shape::RetainedOwnerShapes,
 }
 /// Explicit borrowed census; callbacks must not reenter the retained store.
 pub enum NormalizationStorageView<'a> {
@@ -108,6 +111,9 @@ impl Default for RetainedNormalization {
             values: ObservedArtifactStore::current_revision(),
             hits: std::sync::atomic::AtomicUsize::new(0),
             metadata: crate::owner_metadata::RetainedMetadata::default(),
+            callables: crate::owner_callable::RetainedCallableOwners::default(),
+            paths: crate::type_paths::RetainedTypePaths::default(),
+            local: crate::owner_local_shape::RetainedOwnerShapes::default(),
         }
     }
 }
@@ -116,18 +122,26 @@ fn key(owner: SymbolId) -> Arc<[u8]> {
     bytes.extend_from_slice(&owner.bits().to_le_bytes());
     bytes.into()
 }
-fn observe(host: &DeclarationHost<'_>, ledger: &Ledger, query: SourceQuery) -> SourceAnswer {
+pub(crate) fn observe(
+    host: &DeclarationHost<'_>,
+    ledger: &Ledger,
+    query: SourceQuery,
+) -> SourceAnswer {
     let answer = host.answer(query);
     ledger.record(query, answer.clone(), query.domain(), None);
     answer
 }
-fn parent(host: &DeclarationHost<'_>, ledger: &Ledger, path: SymbolId) -> Option<SymbolId> {
+pub(crate) fn parent(
+    host: &DeclarationHost<'_>,
+    ledger: &Ledger,
+    path: SymbolId,
+) -> Option<SymbolId> {
     match observe(host, ledger, SourceQuery::Parent { path }) {
         SourceAnswer::Parent(parent) => parent.flatten(),
         _ => unreachable!("typed parent query"),
     }
 }
-fn anchor(
+pub(crate) fn anchor(
     host: &DeclarationHost<'_>,
     ledger: &Ledger,
     owner: SymbolId,
