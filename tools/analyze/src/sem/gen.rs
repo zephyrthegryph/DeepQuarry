@@ -367,17 +367,27 @@ fn norm(s: &str) -> String {
 
 /// Runs the named generators (all when empty). With `check`, nothing is written.
 pub fn run(root: &Path, tree: &Tree, names: &[String], check: bool) -> Vec<GenResult> {
+    let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
+    let began = std::time::Instant::now();
     let cx = GenCx::new(tree, root);
     let dme = std::fs::read_to_string(root.join("deepquarry.dme")).unwrap_or_default();
     let mut out = Vec::new();
     let test_types = test_only_types(tree);
+    if trace {
+        eprintln!("analyze: gen test-only types {} ms (cumulative {} ms)", began.elapsed().as_millis(), began.elapsed().as_millis());
+    }
     for g in registry() {
         if !names.is_empty() && !names.iter().any(|n| n == g.name()) {
             continue;
         }
+        let step = std::time::Instant::now();
         let (text, diags) = render(g.as_ref(), &cx);
+        let rendered = step.elapsed().as_millis();
         let mut file_out = GenOut::default();
         let files = g.files(&cx, &mut file_out);
+        if trace {
+            eprintln!("analyze: gen {}: render {} ms, files() {} ms (cumulative {} ms)", g.name(), rendered, step.elapsed().as_millis() - rendered, began.elapsed().as_millis());
+        }
         let mut diags = diags;
         diags.extend(file_out.diags);
         for (rel, file_text) in files {
