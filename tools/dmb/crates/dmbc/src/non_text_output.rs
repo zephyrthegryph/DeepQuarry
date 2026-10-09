@@ -330,6 +330,15 @@ impl PreparedOutputStage {
     pub(super) fn into_archive(self) -> crate::assets::ResourceArchive {
         self.resources.archive
     }
+    /// Transfer publication bytes while retaining the same authenticated archive
+    /// identity. DMB/skin emission reads resource rows and inventory, not RSC bytes.
+    pub(super) fn take_archive(&mut self) -> crate::assets::ResourceArchive {
+        let identity = self.resources.archive.identity();
+        std::mem::replace(
+            &mut self.resources.archive,
+            crate::assets::ResourceArchive::Retained(identity),
+        )
+    }
 }
 impl crate::composition::NonTextOutputStage for PreparedOutputStage {
     fn required_types(&self) -> Vec<dm_ir::SymbolId> {

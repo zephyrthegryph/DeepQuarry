@@ -673,6 +673,6 @@ fn prepared_nontext_rejects_tampered_descriptor_before_model_release() {
     )
     .unwrap();
     output.descriptors.as_mut().unwrap().entries[0].content =
-        Arc::from(b"invalid descriptor".as_slice());
+        Arc::<[u8]>::from(b"invalid descriptor".as_slice()).into();
     assert!(output.into_prepared(&frontend).is_err());
 }

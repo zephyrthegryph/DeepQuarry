@@ -21,13 +21,17 @@ pub struct ProcedureStaticIdentity {
 }
 impl ProcedureStaticIdentity {
     pub fn canonical_bytes(self) -> Vec<u8> {
-        let mut bytes = b"dm-procedure-static-identity-v1\0".to_vec();
-        bytes.extend_from_slice(&self.procedure.owner.bits().to_le_bytes());
-        bytes.extend_from_slice(&self.procedure.name.bits().to_le_bytes());
-        bytes.push(u8::from(self.procedure.verb));
-        bytes.extend_from_slice(&self.procedure.occurrence.to_le_bytes());
-        bytes.extend_from_slice(&self.name.bits().to_le_bytes());
+        let mut bytes = Vec::new();
+        self.write_canonical(|chunk| bytes.extend_from_slice(chunk));
         bytes
+    }
+    pub(crate) fn write_canonical(self, mut write: impl FnMut(&[u8])) {
+        write(b"dm-procedure-static-identity-v1\0");
+        write(&self.procedure.owner.bits().to_le_bytes());
+        write(&self.procedure.name.bits().to_le_bytes());
+        write(&[u8::from(self.procedure.verb)]);
+        write(&self.procedure.occurrence.to_le_bytes());
+        write(&self.name.bits().to_le_bytes());
     }
 }
 #[derive(Clone, Debug, PartialEq, Eq)]

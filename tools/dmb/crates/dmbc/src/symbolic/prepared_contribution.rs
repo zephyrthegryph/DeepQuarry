@@ -207,6 +207,50 @@ mod tests {
         let tree = frontend.snapshot.tree.as_ref();
         let batch = crate::lowering::lower_frontend(&frontend, tree, &Policy, Default::default());
         assert!(batch.diagnostics.is_empty());
+        let expected_content: std::collections::BTreeMap<_, _> = batch
+            .units
+            .iter()
+            .map(|unit| {
+                let frozen =
+                    dm_codegen_byond::encoder::freeze_proc(&unit.code.procedure.code).unwrap();
+                let mut bytes = b"dm-frozen-procedure-v2\0".to_vec();
+                match &unit.abi {
+                    None => bytes.push(0),
+                    Some(abi) => {
+                        bytes.push(1);
+                        let data = abi.canonical_bytes();
+                        bytes.extend_from_slice(&(data.len() as u64).to_le_bytes());
+                        bytes.extend_from_slice(&data);
+                    }
+                }
+                for data in [
+                    frozen.code().canonical_bytes(),
+                    unit.metadata.canonical_bytes(),
+                ] {
+                    bytes.extend_from_slice(&(data.len() as u64).to_le_bytes());
+                    bytes.extend_from_slice(&data);
+                }
+                let procedure = &unit.code.procedure;
+                bytes.extend_from_slice(&procedure.local_count.to_le_bytes());
+                for names in [&procedure.local_names, &procedure.argument_names] {
+                    bytes.extend_from_slice(&(names.len() as u64).to_le_bytes());
+                    for name in names {
+                        bytes.extend_from_slice(&(name.len() as u64).to_le_bytes());
+                        bytes.extend_from_slice(name.as_bytes());
+                    }
+                }
+                for values in [
+                    &procedure.argument_type_flags,
+                    &procedure.argument_value_sources,
+                ] {
+                    bytes.extend_from_slice(&(values.len() as u64).to_le_bytes());
+                    for value in values {
+                        bytes.extend_from_slice(&value.to_le_bytes());
+                    }
+                }
+                (unit_key(unit.identity), bytes)
+            })
+            .collect();
         let external = ReferenceBindings::default();
         let legacy = freeze_and_link_tables(
             crate::lowering::LoweringBatch {
@@ -240,6 +284,10 @@ mod tests {
         )
         .unwrap();
         assert_eq!(legacy.tables.assignments(), early.tables.assignments());
+        for (key, bytes) in expected_content {
+            assert_eq!(early.tables.content(key), Some(bytes.as_slice()));
+        }
+
         assert_eq!(legacy.units.len(), early.units.len());
         for index in 0..legacy.units.len() {
             assert_eq!(

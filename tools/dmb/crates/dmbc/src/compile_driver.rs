@@ -292,6 +292,39 @@ pub fn compile_revision_observed_with_memo_on_executor<R: Resolver>(
 }
 
 #[allow(clippy::too_many_arguments)]
+pub fn prepare_revision_observed_with_memo_on_executor<R: Resolver>(
+    frontend: &dm_tree::frontend::FrontendRevision,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    executor: &dm_exec::BuildExecutor,
+    observer: Option<&cold::ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+) -> Result<cold::PreparedCold, cold::ColdError> {
+    prepare_observed_input(
+        frontend,
+        resolver,
+        engine,
+        engine_bytes,
+        links,
+        values,
+        resource_context,
+        maps,
+        stage,
+        executor.workers(),
+        observer,
+        memo,
+        Some(frontend),
+        Some(executor),
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
 fn compile_observed_input<R: Resolver>(
     frontend: &ColdFrontend,
     resolver: &R,
@@ -317,6 +350,51 @@ fn compile_observed_input<R: Resolver>(
             &owned_executor
         }
     };
+    prepare_observed_input(
+        frontend,
+        resolver,
+        engine,
+        engine_bytes,
+        links,
+        values,
+        resource_context,
+        maps,
+        stage,
+        workers,
+        observer,
+        memo,
+        revision,
+        Some(executor),
+    )?
+    .compose_borrowed(engine_bytes, frontend, values, stage, executor, observer)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn prepare_observed_input<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    workers: usize,
+    observer: Option<&cold::ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    revision: Option<&dm_tree::frontend::FrontendRevision>,
+    executor: Option<&dm_exec::BuildExecutor>,
+) -> Result<cold::PreparedCold, cold::ColdError> {
+    let owned_executor;
+    let executor = match executor {
+        Some(executor) => executor,
+        None => {
+            owned_executor = dm_exec::BuildExecutor::new(workers)
+                .map_err(|error| cold::ColdError::AbiPreparation(error.to_string()))?;
+            &owned_executor
+        }
+    };
     let order = crate::type_creation_order::collect(
         &frontend.allocation_ledger,
         &frontend.expanded.text,
@@ -332,7 +410,7 @@ fn compile_observed_input<R: Resolver>(
         symbols: frontend.snapshot.tree.symbols(),
         resource_search_context: resource_context,
     };
-    cold::compile_captured_classified_with_pinned_abi_memo_revision(
+    cold::prepare_captured_classified_with_pinned_abi_memo_revision(
         frontend,
         resolver,
         cold::CapturedLinkInputs {

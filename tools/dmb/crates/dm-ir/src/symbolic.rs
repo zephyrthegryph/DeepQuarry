@@ -237,24 +237,37 @@ impl SymbolicCode {
     /// arena IDs or worker enumeration. Relocations are already in offset order.
     pub fn canonical_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
-        bytes.extend_from_slice(b"dm-symbolic-code-v2\0");
-        bytes.extend_from_slice(&(self.words.len() as u64).to_le_bytes());
+        self.write_canonical(|chunk| bytes.extend_from_slice(chunk));
+        bytes
+    }
+    /// Exact encoded length through the same codec, without allocating bytes.
+    pub fn canonical_len(&self) -> usize {
+        let mut length = 0usize;
+        self.write_canonical(|chunk| {
+            length = length
+                .checked_add(chunk.len())
+                .expect("canonical code length exceeds usize");
+        });
+        length
+    }
+    fn write_canonical(&self, mut bytes: impl FnMut(&[u8])) {
+        bytes(b"dm-symbolic-code-v2\0");
+        bytes(&(self.words.len() as u64).to_le_bytes());
         for word in &self.words {
-            bytes.extend_from_slice(&word.to_le_bytes())
+            bytes(&word.to_le_bytes())
         }
-        bytes.extend_from_slice(&(self.relocations.len() as u64).to_le_bytes());
+        bytes(&(self.relocations.len() as u64).to_le_bytes());
         for relocation in &self.relocations {
-            bytes.extend_from_slice(&relocation.offset.to_le_bytes());
+            bytes(&relocation.offset.to_le_bytes());
             match relocation.encoding {
-                RelocationEncoding::Direct => bytes.push(0),
+                RelocationEncoding::Direct => bytes(&[0]),
                 RelocationEncoding::PackedValue24 { tag } => {
-                    bytes.push(1);
-                    bytes.push(tag);
+                    bytes(&[1]);
+                    bytes(&[tag]);
                 }
             }
             encode_reference(&mut bytes, relocation.reference);
         }
-        bytes
     }
 
     pub fn fingerprint(&self) -> u128 {
@@ -298,15 +311,15 @@ impl SymbolicCode {
     }
 }
 
-fn encode_reference(bytes: &mut Vec<u8>, reference: SymRef) {
+fn encode_reference(bytes: &mut impl FnMut(&[u8]), reference: SymRef) {
     match reference {
         SymRef::String(symbol) => {
-            bytes.push(0);
-            bytes.extend_from_slice(&symbol.bits().to_le_bytes())
+            bytes(&[0]);
+            bytes(&symbol.bits().to_le_bytes())
         }
         SymRef::Type(symbol) => {
-            bytes.push(1);
-            bytes.extend_from_slice(&symbol.bits().to_le_bytes())
+            bytes(&[1]);
+            bytes(&symbol.bits().to_le_bytes())
         }
         SymRef::Proc {
             owner,
@@ -318,14 +331,14 @@ fn encode_reference(bytes: &mut Vec<u8>, reference: SymRef) {
             name,
             occurrence,
         } => {
-            bytes.push(if matches!(reference, SymRef::Proc { .. }) {
+            bytes(&[if matches!(reference, SymRef::Proc { .. }) {
                 2
             } else {
                 3
-            });
-            bytes.extend_from_slice(&owner.bits().to_le_bytes());
-            bytes.extend_from_slice(&name.bits().to_le_bytes());
-            bytes.extend_from_slice(&occurrence.to_le_bytes())
+            }]);
+            bytes(&owner.bits().to_le_bytes());
+            bytes(&name.bits().to_le_bytes());
+            bytes(&occurrence.to_le_bytes())
         }
         SymRef::ArgumentSource {
             owner,
@@ -334,50 +347,50 @@ fn encode_reference(bytes: &mut Vec<u8>, reference: SymRef) {
             occurrence,
             argument,
         } => {
-            bytes.push(13);
-            bytes.extend_from_slice(&owner.bits().to_le_bytes());
-            bytes.extend_from_slice(&name.bits().to_le_bytes());
-            bytes.push(u8::from(verb));
-            bytes.extend_from_slice(&occurrence.to_le_bytes());
-            bytes.extend_from_slice(&argument.to_le_bytes());
+            bytes(&[13]);
+            bytes(&owner.bits().to_le_bytes());
+            bytes(&name.bits().to_le_bytes());
+            bytes(&[u8::from(verb)]);
+            bytes(&occurrence.to_le_bytes());
+            bytes(&argument.to_le_bytes());
         }
         SymRef::Var { owner, name } => {
-            bytes.push(4);
-            bytes.extend_from_slice(&owner.bits().to_le_bytes());
-            bytes.extend_from_slice(&name.bits().to_le_bytes())
+            bytes(&[4]);
+            bytes(&owner.bits().to_le_bytes());
+            bytes(&name.bits().to_le_bytes())
         }
         SymRef::ProcedureStatic(identity) => {
-            bytes.push(14);
-            bytes.extend_from_slice(&identity.canonical_bytes());
+            bytes(&[14]);
+            identity.write_canonical(bytes);
         }
         SymRef::VariableSlot(symbol) => {
-            bytes.push(5);
-            bytes.extend_from_slice(&symbol.bits().to_le_bytes())
+            bytes(&[5]);
+            bytes(&symbol.bits().to_le_bytes())
         }
-        SymRef::BuiltinGlobalVars => bytes.push(6),
+        SymRef::BuiltinGlobalVars => bytes(&[6]),
         SymRef::Instance(symbol) => {
-            bytes.push(7);
-            bytes.extend_from_slice(&symbol.bits().to_le_bytes())
+            bytes(&[7]);
+            bytes(&symbol.bits().to_le_bytes())
         }
         SymRef::SourceFile(origin) => {
-            bytes.push(8);
-            bytes.extend_from_slice(&origin.to_le_bytes())
+            bytes(&[8]);
+            bytes(&origin.to_le_bytes())
         }
         SymRef::ConstantList(content) => {
-            bytes.push(9);
-            bytes.extend_from_slice(&content.to_le_bytes())
+            bytes(&[9]);
+            bytes(&content.to_le_bytes())
         }
         SymRef::Resource(content) => {
-            bytes.push(10);
-            bytes.extend_from_slice(&content.to_le_bytes())
+            bytes(&[10]);
+            bytes(&content.to_le_bytes())
         }
         SymRef::SourceLine(origin) => {
-            bytes.push(12);
-            bytes.extend_from_slice(&origin.to_le_bytes())
+            bytes(&[12]);
+            bytes(&origin.to_le_bytes())
         }
         SymRef::LineDelta(delta) => {
-            bytes.push(11);
-            bytes.extend_from_slice(&delta.to_le_bytes())
+            bytes(&[11]);
+            bytes(&delta.to_le_bytes())
         }
     }
 }
@@ -386,6 +399,83 @@ fn encode_reference(bytes: &mut Vec<u8>, reference: SymRef) {
 mod tests {
     use super::*;
 
+    #[test]
+    fn canonical_count_uses_exact_codec_for_every_reference_and_encoding() {
+        let owner = SymbolId::of("/datum/sample");
+        let name = SymbolId::of("sample");
+        let procedure = crate::ProcedureIdentity {
+            owner,
+            name,
+            verb: true,
+            occurrence: 17,
+        };
+        let refs = [
+            SymRef::String(name),
+            SymRef::Type(owner),
+            SymRef::Proc {
+                owner,
+                name,
+                occurrence: 7,
+            },
+            SymRef::Verb {
+                owner,
+                name,
+                occurrence: 8,
+            },
+            SymRef::Var { owner, name },
+            SymRef::ArgumentSource {
+                owner,
+                name,
+                verb: true,
+                occurrence: 9,
+                argument: 3,
+            },
+            SymRef::ProcedureStatic(crate::ProcedureStaticIdentity { procedure, name }),
+            SymRef::VariableSlot(name),
+            SymRef::BuiltinGlobalVars,
+            SymRef::Instance(owner),
+            SymRef::SourceFile(15),
+            SymRef::SourceLine(42),
+            SymRef::LineDelta(13),
+            SymRef::ConstantList(71),
+            SymRef::Resource(93),
+        ];
+        for reference in refs {
+            for encoding in [
+                RelocationEncoding::Direct,
+                RelocationEncoding::PackedValue24 { tag: 6 },
+            ] {
+                let code = SymbolicCode::new(
+                    vec![0; encoding.width() as usize],
+                    vec![Relocation {
+                        offset: 0,
+                        reference,
+                        encoding,
+                    }],
+                )
+                .unwrap();
+                let bytes = code.canonical_bytes();
+                assert_eq!(code.canonical_len(), bytes.len());
+                assert_eq!(code.fingerprint(), xxhash_rust::xxh3::xxh3_128(&bytes));
+            }
+        }
+        let code = SymbolicCode::new(
+            vec![0],
+            vec![Relocation {
+                offset: 0,
+                reference: SymRef::BuiltinGlobalVars,
+                encoding: RelocationEncoding::Direct,
+            }],
+        )
+        .unwrap();
+        let mut expected = b"dm-symbolic-code-v2\0".to_vec();
+        expected.extend_from_slice(&1u64.to_le_bytes());
+        expected.extend_from_slice(&0u32.to_le_bytes());
+        expected.extend_from_slice(&1u64.to_le_bytes());
+        expected.extend_from_slice(&0u32.to_le_bytes());
+        expected.extend_from_slice(&[0, 6]);
+        assert_eq!(code.canonical_bytes(), expected);
+    }
     // Retain the original storage validator as an independent error-order oracle.
     fn original_storage_validation(
         words: Vec<u32>,

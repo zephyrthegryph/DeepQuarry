@@ -173,6 +173,33 @@ impl<R> CapturedNonTextOutput<R> {
     }
 }
 impl<R> PreparedNonTextOutput<R> {
+    /// Split the exact publication archive from source-independent output plans.
+    pub fn into_composition_parts(
+        self,
+    ) -> (
+        NativeResourceResolver<R>,
+        crate::non_text_output::PreparedOutputStage,
+        PublicationNonText,
+    ) {
+        let Self {
+            resolver,
+            symbols: _,
+            artifacts: _,
+            resource_search_context: _,
+            mut stage,
+            resource_catalog,
+            resource_archive_order,
+            retained_resource_inputs,
+        } = self;
+        let publication = PublicationNonText {
+            archive: stage.take_archive(),
+            resource_catalog,
+            resource_archive_order,
+            retained_resource_inputs,
+        };
+        (resolver, stage, publication)
+    }
+
     pub fn stage(&self) -> &crate::non_text_output::PreparedOutputStage {
         &self.stage
     }

@@ -81,7 +81,7 @@ mod tests {
             spellings: vec![(path, std::sync::Arc::from(b"/client".as_slice()))],
             entries: vec![crate::Entry {
                 key: Key::Type(path),
-                content: std::sync::Arc::from(b"client".as_slice()),
+                content: std::sync::Arc::<[u8]>::from(b"client".as_slice()).into(),
             }],
             ..Default::default()
         })
@@ -115,7 +115,7 @@ mod tests {
             spellings: vec![(path, std::sync::Arc::from(b"/mob/example".as_slice()))],
             entries: vec![crate::Entry {
                 key: Key::Type(path),
-                content: std::sync::Arc::from(b"mob".as_slice()),
+                content: std::sync::Arc::<[u8]>::from(b"mob".as_slice()).into(),
             }],
             ..Default::default()
         })

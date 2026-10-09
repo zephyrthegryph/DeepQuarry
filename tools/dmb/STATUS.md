@@ -248,3 +248,40 @@ temporary include chains. These latest changes await frozen throughput evidence.
 The retained daemon, structural-edit incremental pipeline, disk artifact replay,
 runtime baseline and production readiness remain open. Phase 1 must close before
 daemon or new disk-cache work resumes, as required by the review.
+
+## 8 October late: source ownership and shared linker content
+
+The CLI now seals a validated composition input, then releases the frontend,
+startup tree and source resolvers before composing the output. The borrowed
+compatibility API uses the same validation and composition implementation.
+An ownership regression checks that the semantic source tree is released before
+composition and that the resulting DMB bytes are identical. Captured policies
+also preserve custom mob/resource indices and negative lookup answers.
+
+The captured-project diagnostic completed in 161.91 seconds with the unoptimized
+census binary; this is not an acceptance speed measurement. DMB and RSC hashes
+are unchanged. Known retained capacity at publication fell from 827.9 MiB to
+270.4 MiB. Peak private memory remained about 2.31 GB during lowering, above the
+1.5 GB target; this lifetime change does not close that gate. Release all-target
+Clippy passed in 22.44 seconds and ordinary library checks passed in 93.16 seconds.
+
+The corrected immutable optimized ABABAB cohort completed: previous/candidate
+cold wall medians are 19.09/13.97 seconds (26.85% less); critical-path CPU medians
+are 15.625/11.594 seconds (25.8% less), total CPU 34.141/31.922 seconds. Peak
+private memory medians are 2,588,090,368/2,279,854,080 bytes. All six measurements,
+fresh-output oracles and structural no-regression checks passed. Overall phase
+acceptance still fails the memory, several stage CPU and I/O budgets. The frozen
+candidate excludes the later source lifetime and shared-content changes.
+Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/compare-throughput-20261008-221855/`;
+the alternating comparison is also recorded in `phase0/results.jsonl`.
+
+The next source change stores procedure/helper linker content as shared symbolic
+code with small canonical prefix/suffix buffers. It preserves the previous byte
+envelope and exact collision checks, while avoiding a second eagerly serialized
+code buffer. Census reads retained parts without forcing serialization. This
+change passes release-profile whole-workspace/all-target Clippy with warnings
+denied (36.90 seconds) and 1,478 ordinary library checks (187.13 seconds).
+Its canonical equality includes differently segmented equivalent byte content;
+identical structured entries compare without materialization. A captured-project
+diagnostic is pending. These checks do not substitute for the outstanding
+release-profile workspace-test gate or Phase 5 runtime validation.

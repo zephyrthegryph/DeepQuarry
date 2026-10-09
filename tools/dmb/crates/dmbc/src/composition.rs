@@ -941,6 +941,8 @@ fn emit_anonymous(
 mod tests;
 
 mod final_instructions;
+mod lifecycle;
+pub use lifecycle::{OwnedCompositionInputs, ValidatedComposition};
 mod owned;
 pub use owned::{
     compose_global_fixture_owned, compose_projected_owned_with_symbols,

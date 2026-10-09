@@ -190,7 +190,7 @@ pub fn capture(bytes: &[u8], engine: &EngineSnapshot) -> Result<EngineLinkFacts,
     } else {
         inventory.entries.push(Entry {
             key,
-            content: Arc::from(b"builtin-global-vars-kind82-v1".as_slice()),
+            content: Arc::<[u8]>::from(b"builtin-global-vars-kind82-v1".as_slice()).into(),
         });
     }
     Ok(EngineLinkFacts {
@@ -225,7 +225,10 @@ fn bind(
         }
         return Err(format!("ambiguous retained engine binding {key:?}"));
     }
-    inventory.entries.push(Entry { key, content });
+    inventory.entries.push(Entry {
+        key,
+        content: content.into(),
+    });
     inventory.fixed.push((key, index));
     Ok(())
 }

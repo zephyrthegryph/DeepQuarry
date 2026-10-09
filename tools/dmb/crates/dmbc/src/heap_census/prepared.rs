@@ -39,8 +39,8 @@ impl HeapCensus {
             }
         }
     }
-    pub(crate) fn prepared_entry_bytes(&mut self, bytes: &Arc<[u8]>) {
-        self.slice("prepared_inventory.entry_bytes", bytes, true);
+    pub(crate) fn prepared_entry_bytes(&mut self, content: &dm_link::EntryContent) {
+        self.entry_content("prepared_inventory.entry_bytes", content);
     }
     pub(crate) fn prepared_modified(
         &mut self,

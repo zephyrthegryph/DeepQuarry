@@ -167,7 +167,7 @@ fn finalize_preserves_runtime_override_token_instead_of_parent_scalar() {
             .push((symbol, Arc::from(symbols.text(symbol).unwrap().as_bytes())));
         inventory.entries.push(dm_link::Entry {
             key,
-            content: Arc::from([]),
+            content: Arc::<[u8]>::from([]).into(),
         });
         inventory.fixed.push((key, index));
     }

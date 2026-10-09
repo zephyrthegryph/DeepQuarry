@@ -29,7 +29,7 @@ pub fn contribute(
         inventory.spellings.push((id, Arc::from(alias.as_bytes())));
         inventory.entries.push(Entry {
             key: Key::Instance(id),
-            content: Arc::from(bytes),
+            content: Arc::<[u8]>::from(bytes).into(),
         });
     }
     Ok(())

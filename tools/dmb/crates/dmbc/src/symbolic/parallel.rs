@@ -27,14 +27,14 @@ struct HelperContribution {
     helper: FrozenHelper,
     strings: OwnedStrings,
     slots: Slots,
-    content: Arc<[u8]>,
+    content: dm_link::EntryContent,
 }
 pub(super) struct Contribution {
     unit: FrozenUnit,
     strings: OwnedStrings,
     helpers: Vec<HelperContribution>,
     slots: Slots,
-    content: Arc<[u8]>,
+    content: dm_link::EntryContent,
 }
 fn compact_vec<T>(values: &mut Vec<T>) {
     if values.capacity() > values.len() {
@@ -125,7 +125,12 @@ impl Contribution {
         }
     }
 }
-fn replay_inventory(slots: Slots, key: Key, content: Arc<[u8]>, inventory: &mut LinkInventory) {
+fn replay_inventory(
+    slots: Slots,
+    key: Key,
+    content: dm_link::EntryContent,
+    inventory: &mut LinkInventory,
+) {
     inventory.slots.extend(slots.0);
     inventory.entries.push(Entry { key, content });
 }
@@ -153,7 +158,7 @@ pub(super) fn freeze_unit(
     }
     // Exact frozen code content is known. Remaining proc metadata belongs
     // to explicit emitter policy, separately retained in LoweredUnit.
-    let content = procedure_content(&lowered, &frozen.code().canonical_bytes());
+    let content = procedure_content(&lowered, frozen.shared_code());
     let strings = OwnedStrings::take(&mut lowered.code.procedure);
     for mut helper in std::mem::take(&mut lowered.source_helpers) {
         if helper.owner != lowered.identity || !helper.code.procedure.argument_names.is_empty() {
@@ -171,19 +176,20 @@ pub(super) fn freeze_unit(
             &mut helper_slots,
             freeze_detail,
         )?;
-        let mut content = b"dm-argument-source-v1\0".to_vec();
-        let code = frozen_helper.code().canonical_bytes();
-        content.extend_from_slice(&(code.len() as u64).to_le_bytes());
-        content.extend_from_slice(&code);
+        let mut prefix = b"dm-argument-source-v1\0".to_vec();
+        let code = frozen_helper.shared_code();
+        prefix.extend_from_slice(&(code.canonical_len() as u64).to_le_bytes());
+        let mut suffix = Vec::new();
         for name in &helper.code.procedure.local_names {
-            content.extend_from_slice(&(name.len() as u64).to_le_bytes());
-            content.extend_from_slice(name.as_bytes());
+            suffix.extend_from_slice(&(name.len() as u64).to_le_bytes());
+            suffix.extend_from_slice(name.as_bytes());
         }
+        let content = dm_link::EntryContent::symbolic(prefix.into(), code, suffix.into());
         let helper_strings = OwnedStrings::take(&mut helper.code.procedure);
         helpers.push(HelperContribution {
             strings: helper_strings,
             slots: helper_slots,
-            content: content.into(),
+            content,
             helper: FrozenHelper {
                 owner: helper.owner,
                 argument: helper.argument,
@@ -372,10 +378,18 @@ mod inventory_tests {
         let content: Arc<[u8]> = Arc::from(&b"exact retained content"[..]);
         let original = Arc::clone(&content);
         let mut inventory = LinkInventory::default();
-        replay_inventory(Slots(vec![first, second]), key, content, &mut inventory);
+        replay_inventory(
+            Slots(vec![first, second]),
+            key,
+            content.into(),
+            &mut inventory,
+        );
         assert_eq!(inventory.slots, vec![first, second]);
         assert_eq!(inventory.entries.len(), 1);
         assert_eq!(inventory.entries[0].key, key);
-        assert!(Arc::ptr_eq(&inventory.entries[0].content, &original));
+        assert!(Arc::ptr_eq(
+            &inventory.entries[0].content.shared_bytes(),
+            &original
+        ));
     }
 }

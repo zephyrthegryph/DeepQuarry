@@ -11,6 +11,8 @@ use dm_link::LinkInventory;
 use dm_tree::frontend::ColdFrontend;
 use std::time::{Duration, Instant};
 mod initializer_factory;
+mod prepared;
+pub use prepared::{PreparedCold, PreparedComposition};
 
 #[derive(Clone, Copy, Debug)]
 pub enum ColdStage {
@@ -71,6 +73,7 @@ pub enum ColdError {
     Initializer(String),
     InitializerInvariant(String),
     Projection(crate::class_projection::ProjectionError),
+    RuntimeTypeValues(crate::class_projection::ProjectionError),
 }
 fn initializer_lowering_error(
     error: crate::initializer_diagnostics::InitializerLoweringError,
@@ -277,6 +280,38 @@ pub(crate) fn compile_captured_classified_with_pinned_abi_memo_revision<R: Resol
     revision: Option<&dm_tree::frontend::FrontendRevision>,
     executor: &dm_exec::BuildExecutor,
 ) -> Result<ColdOutput, ColdError> {
+    let engine_bytes = links.engine_bytes;
+    let types = declarations.type_values;
+    prepare_captured_classified_with_pinned_abi_memo_revision(
+        frontend,
+        resolver,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+        observer,
+        memo,
+        revision,
+        executor,
+    )?
+    .compose_borrowed(engine_bytes, frontend, types, non_text, executor, observer)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    observer: Option<&ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    revision: Option<&dm_tree::frontend::FrontendRevision>,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<PreparedCold, ColdError> {
     let total = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::StartupCapture);
     let bodies = dm_tree::frontend::BodyArena::new(frontend);
@@ -317,7 +352,7 @@ pub(crate) fn compile_captured_classified_with_pinned_abi_memo_revision<R: Resol
         .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
     measurement.complete();
     let abi_preparation = total.elapsed();
-    let mut output = compile_with_startup(
+    let mut output = prepare_with_startup(
         frontend,
         resolver,
         &policy,
@@ -334,6 +369,7 @@ pub(crate) fn compile_captured_classified_with_pinned_abi_memo_revision<R: Resol
     )?;
     output.timings.abi_preparation = abi_preparation;
     output.timings.total = total.elapsed();
+    output.started = total;
     Ok(output)
 }
 
@@ -393,6 +429,42 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     executor: &dm_exec::BuildExecutor,
     bodies: dm_tree::frontend::BodyArena<'_>,
 ) -> Result<ColdOutput, ColdError> {
+    let engine_bytes = links.engine_bytes;
+    let types = declarations.type_values;
+    prepare_with_startup(
+        frontend,
+        resolver,
+        policy,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+        startup,
+        observer,
+        memo,
+        executor,
+        bodies,
+    )?
+    .compose_borrowed(engine_bytes, frontend, types, non_text, executor, observer)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    policy: &P,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    startup: &crate::startup::CapturedStartup<'_>,
+    observer: Option<&ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    executor: &dm_exec::BuildExecutor,
+    bodies: dm_tree::frontend::BodyArena<'_>,
+) -> Result<PreparedCold, ColdError> {
     startup
         .validate_for(frontend)
         .map_err(ColdError::Initializer)?;
@@ -658,40 +730,36 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     .map_err(ColdError::Linking)?;
     measurement.complete();
     let symbolic_linking = stage.elapsed();
-    let stage = Instant::now();
-    let measurement = StageMeasurement::new(observer, ColdStage::Composition);
     crate::heap_census::emit_if_enabled("linking.ready", |census| {
         census.frontend(frontend);
         census.startup(startup);
         census.frozen(&frozen);
     })
     .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
-    let dmb = crate::composition::compose_projected_owned_with_symbols_on_executor(
-        links.engine_bytes,
+    // The descriptor wrapper borrowed these fields through required-type admission.
+    // No source/ABI/evaluator owner escapes the preparation stage.
+    Ok(PreparedCold {
         frozen,
-        frontend,
-        &projection,
-        declarations.type_values,
-        non_text,
-        plan.symbols.as_ref(),
-        executor,
-    )
-    .map_err(ColdError::Composition)?;
-    measurement.complete();
-    Ok(ColdOutput {
-        dmb,
+        projection,
+        modified: modified.descriptors,
+        symbols: std::sync::Arc::clone(&plan.symbols),
         startup: Some(startup.facts()),
         timings: ColdTimings {
             abi_preparation: Duration::ZERO,
             lowering,
             initializers,
             symbolic_linking,
-            composition: stage.elapsed(),
+            composition: Duration::ZERO,
             total: total.elapsed(),
         },
+        started: total,
     })
 }
 
 #[cfg(test)]
 #[path = "cold/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "cold/prepared_tests.rs"]
+mod prepared_tests;

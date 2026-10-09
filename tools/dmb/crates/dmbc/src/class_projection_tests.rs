@@ -26,7 +26,7 @@ fn retained_parent_projection_preserves_native_header_and_physical_identity() {
             .push((symbol, Arc::from(path.as_bytes())));
         inventory.entries.push(dm_link::Entry {
             key: Key::Type(symbol),
-            content: Arc::from([]),
+            content: Arc::<[u8]>::from([]).into(),
         });
         inventory.fixed.push((Key::Type(symbol), index));
     }
@@ -90,7 +90,7 @@ fn procedure_literal_default_uses_exact_frozen_procedure_table_index() {
     for key in [variable, callable] {
         inventory.entries.push(dm_link::Entry {
             key,
-            content: Arc::from([]),
+            content: Arc::<[u8]>::from([]).into(),
         });
     }
     inventory.fixed = vec![(variable, footer_index), (callable, layout.wire_proc)];
@@ -259,7 +259,7 @@ fn ordinary_source_root_matches_native_datum_parent_prototype() {
         .push((path, Arc::from(b"/standalone_empty".as_slice())));
     inventory.entries.push(dm_link::Entry {
         key: Key::Type(path),
-        content: Arc::from([]),
+        content: Arc::<[u8]>::from([]).into(),
     });
     inventory
         .reserved_prefixes

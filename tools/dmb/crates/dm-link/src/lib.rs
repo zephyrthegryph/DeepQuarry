@@ -4,7 +4,9 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     sync::Arc,
 };
+mod entry_content;
 mod wire_domains;
+pub use entry_content::{EntryContent, SymbolicContent};
 pub use wire_domains::{admit_type_path_words, MobBindings, WireDomainError};
 
 /// String slots sharing the native variable-modifier/sentinel word space.
@@ -105,7 +107,7 @@ impl Key {
 #[derive(Clone, Debug)]
 pub struct Entry {
     pub key: Key,
-    pub content: Arc<[u8]>,
+    pub content: EntryContent,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SlotAlias {
@@ -157,7 +159,7 @@ pub enum LinkError {
 pub struct LinkTables {
     indexes: Arc<BTreeMap<Key, u32>>,
     slots: Arc<BTreeMap<SymbolId, (SymbolId, SymbolId)>>,
-    content: Arc<BTreeMap<Key, Arc<[u8]>>>,
+    content: Arc<BTreeMap<Key, EntryContent>>,
 }
 impl LinkTables {
     pub fn index(&self, key: Key) -> Option<u32> {
@@ -168,6 +170,10 @@ impl LinkTables {
     }
     pub fn content(&self, key: Key) -> Option<&[u8]> {
         self.content.get(&key).map(AsRef::as_ref)
+    }
+    /// Borrow structural content without materializing canonical byte buffers.
+    pub fn content_value(&self, key: Key) -> Option<&EntryContent> {
+        self.content.get(&key)
     }
     pub fn build(inventory: LinkInventory) -> Result<Self, LinkError> {
         let mut spellings = BTreeMap::new();
@@ -190,7 +196,7 @@ impl LinkTables {
                 }
             }
             if content
-                .insert(entry.key, Arc::clone(&entry.content))
+                .insert(entry.key, entry.content.clone())
                 .is_some_and(|previous| previous != entry.content)
             {
                 return Err(LinkError::ContentCollision(entry.key));
@@ -563,7 +569,7 @@ mod tests {
         for key in keys {
             inventory.entries.push(Entry {
                 key,
-                content: Arc::from([]),
+                content: Arc::<[u8]>::from([]).into(),
             });
         }
         inventory.reserved_prefixes.insert(Table::List, 0xfffe);
@@ -643,7 +649,7 @@ mod tests {
             .into_iter()
             .map(|key| Entry {
                 key,
-                content: Arc::from([]),
+                content: Arc::<[u8]>::from([]).into(),
             })
             .collect(),
             ..Default::default()
@@ -694,7 +700,7 @@ mod tests {
             inventory.spellings.push((id, Arc::clone(&bytes)));
             inventory.entries.push(Entry {
                 key: Key::String(id),
-                content: bytes,
+                content: bytes.into(),
             });
             order.push(Key::String(id));
         }
@@ -748,7 +754,7 @@ mod tests {
             };
             inventory.entries.push(Entry {
                 key,
-                content: Arc::from([]),
+                content: Arc::<[u8]>::from([]).into(),
             });
             order.push(key);
         }

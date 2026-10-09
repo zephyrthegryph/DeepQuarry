@@ -476,13 +476,14 @@ fn request_string_inventory_reuses_exact_bytes_and_preserves_conflicts() {
     assert_eq!(inventory.entries.len(), 1);
     assert!(Arc::ptr_eq(
         &inventory.spellings[0].1,
-        &inventory.entries[0].content
+        &inventory.entries[0].content.shared_bytes()
     ));
     let tables = LinkTables::build(inventory.clone()).unwrap();
     assert_eq!(tables.index(Key::String(id)), Some(0));
     // Physical engine content conflicts remain errors even when the spelling
     // already existed before this request's exact-string index was created.
-    inventory.entries[0].content = Arc::from(b"different physical content".as_slice());
+    inventory.entries[0].content =
+        Arc::<[u8]>::from(b"different physical content".as_slice()).into();
     let mut strings = StringInventory::new(&inventory);
     strings.append(&mut inventory, id, b"shared spelling");
     assert!(

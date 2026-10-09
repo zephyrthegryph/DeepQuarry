@@ -71,7 +71,7 @@ fn authored_baseline_luminosity_and_inherited_selector_match_pinned_byond() {
             .push((path, Arc::from(symbols.text(path).unwrap().as_bytes())));
         inventory.entries.push(dm_link::Entry {
             key: Key::Type(path),
-            content: Arc::from([]),
+            content: Arc::<[u8]>::from([]).into(),
         });
         inventory.fixed.push((Key::Type(path), id));
     }

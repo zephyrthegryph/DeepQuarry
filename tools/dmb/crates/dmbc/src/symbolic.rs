@@ -659,22 +659,25 @@ fn finish_frozen_inventory(
         initializers,
     })
 }
-fn procedure_content(lowered: &LoweredUnit, code_bytes: &[u8]) -> Arc<[u8]> {
-    let mut bytes = b"dm-frozen-procedure-v2\0".to_vec();
+fn procedure_content(
+    lowered: &LoweredUnit,
+    code: Arc<dm_ir::SymbolicCode>,
+) -> dm_link::EntryContent {
+    let mut prefix = b"dm-frozen-procedure-v2\0".to_vec();
     match &lowered.abi {
-        None => bytes.push(0),
+        None => prefix.push(0),
         Some(abi) => {
-            bytes.push(1);
+            prefix.push(1);
             let encoded = abi.canonical_bytes();
-            bytes.extend_from_slice(&(encoded.len() as u64).to_le_bytes());
-            bytes.extend_from_slice(&encoded);
+            prefix.extend_from_slice(&(encoded.len() as u64).to_le_bytes());
+            prefix.extend_from_slice(&encoded);
         }
     }
     let metadata = lowered.metadata.canonical_bytes();
-    for part in [code_bytes, metadata.as_slice()] {
-        bytes.extend_from_slice(&(part.len() as u64).to_le_bytes());
-        bytes.extend_from_slice(part);
-    }
+    prefix.extend_from_slice(&(code.canonical_len() as u64).to_le_bytes());
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(&(metadata.len() as u64).to_le_bytes());
+    bytes.extend_from_slice(&metadata);
     let procedure = &lowered.code.procedure;
     bytes.extend_from_slice(&procedure.local_count.to_le_bytes());
     for names in [&procedure.local_names, &procedure.argument_names] {
@@ -693,7 +696,7 @@ fn procedure_content(lowered: &LoweredUnit, code_bytes: &[u8]) -> Arc<[u8]> {
             bytes.extend_from_slice(&value.to_le_bytes());
         }
     }
-    bytes.into()
+    dm_link::EntryContent::symbolic(prefix.into(), code, bytes.into())
 }
 fn unit_reference(identity: UnitIdentity) -> SymRef {
     match identity.namespace {
@@ -742,7 +745,7 @@ impl StringInventory {
                 .entries
                 .iter()
                 .filter_map(|entry| match entry.key {
-                    Key::String(id) => Some((id, Arc::clone(&entry.content))),
+                    Key::String(id) => Some((id, entry.content.shared_bytes())),
                     _ => None,
                 })
                 .collect(),
@@ -785,7 +788,7 @@ impl StringInventory {
             self.content.entry(id).or_insert_with(|| Arc::clone(&bytes));
             inventory.entries.push(Entry {
                 key: Key::String(id),
-                content: bytes,
+                content: bytes.into(),
             });
         }
     }

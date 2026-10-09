@@ -7,6 +7,9 @@ use crate::{
 use dm_ir::SymbolId;
 use dm_tree::frontend::ColdFrontend;
 
+mod prepared;
+pub use prepared::{PreparedTypeValues, PreparedValueDomains};
+
 pub struct CapturedTypeValues<'a> {
     frontend: &'a ColdFrontend,
 }

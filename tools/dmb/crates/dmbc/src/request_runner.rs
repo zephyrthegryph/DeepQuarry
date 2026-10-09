@@ -5,6 +5,8 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
+#[path = "runner_report.rs"]
+mod runner_report;
 
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
@@ -402,6 +404,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         }
     });
     if command == BuildCommand::Compile {
+        let frontend_report = runner_report::FrontendReport::capture(&frontend);
         let (bytes, engine) = engine_capture
             .as_ref()
             .ok_or("compile requires captured engine")?;
@@ -546,13 +549,6 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         let linking_inputs_profile = dm_profile::stage("linking_inputs");
         let mut links = dmbc::engine_link::capture(bytes, engine)?;
         nontext.extend_inventory(&mut links.inventory)?;
-        let values = dmbc::type_values::CapturedTypeValues::pinned(&frontend, engine)
-            .map_err(|error| format!("runtime type values: {error:?}"))?;
-        let values = dmbc::resource_values::CapturedResourceValues::new(
-            &values,
-            &nontext.resolver,
-            nontext.resource_search_context,
-        );
         let artifacts = std::mem::take(&mut nontext.artifacts);
         let linking_inputs_seconds = linking_inputs_started.elapsed().as_secs_f64();
         drop(linking_inputs_profile);
@@ -571,31 +567,60 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         };
         // One immutable captured host for this compile. Consumer read recording
         // remains outside this optimization, including on memo hits.
-        let compilation_resolver = dm_ir::MemoResolver::new(&nontext.resolver, 65_536);
-        let compile_result = dmbc::compile_driver::compile_revision_observed_with_memo_on_executor(
-            &frontend,
-            &compilation_resolver,
-            engine,
-            bytes,
-            links,
-            &values,
-            Some(nontext.resource_search_context),
-            artifacts,
-            Some(nontext.stage()),
-            &executor,
-            progress_enabled.then_some(&cold_observer),
-            procedure_memo.as_ref(),
-        );
-        if progress_enabled {
-            eprintln!("native resolver memo: {:?}", compilation_resolver.stats());
-        }
+        let compile_result = (|| {
+            let values = dmbc::type_values::CapturedTypeValues::pinned(&frontend, engine)
+                .map_err(dmbc::cold::ColdError::RuntimeTypeValues)?;
+            let values = dmbc::resource_values::CapturedResourceValues::new(
+                &values,
+                &nontext.resolver,
+                nontext.resource_search_context,
+            );
+            let compilation_resolver = dm_ir::MemoResolver::new(&nontext.resolver, 65_536);
+            let prepared = dmbc::compile_driver::prepare_revision_observed_with_memo_on_executor(
+                &frontend,
+                &compilation_resolver,
+                engine,
+                bytes,
+                links,
+                &values,
+                Some(nontext.resource_search_context),
+                artifacts,
+                Some(nontext.stage()),
+                &executor,
+                progress_enabled.then_some(&cold_observer),
+                procedure_memo.as_ref(),
+            )?;
+            if progress_enabled {
+                eprintln!("native resolver memo: {:?}", compilation_resolver.stats());
+            }
+            let explanations = runner_report::explanations(&frontend, procedure_memo.as_ref());
+            let owned_values = Arc::new(dmbc::resource_values::PreparedResourceValues::capture(
+                &values,
+                &prepared.domains(),
+            ));
+            drop(compilation_resolver);
+            let (resolver, output_stage, publication) = nontext.into_composition_parts();
+            let composition = prepared.seal(
+                &frontend,
+                Arc::<[u8]>::from(bytes.as_slice()),
+                owned_values,
+                Some(Box::new(output_stage)),
+            )?;
+            // The sealed composition retains exact output facts and no source owners.
+            drop(resolver);
+            drop(symbols);
+            drop(frontend);
+            let output =
+                composition.compose(&executor, progress_enabled.then_some(&cold_observer))?;
+            Ok::<_, dmbc::cold::ColdError>((output, publication, explanations))
+        })();
         if progress_enabled && compile_result.is_err() {
             eprintln!("native failed stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s total={:.3}s",
-                input_preparation_seconds, frontend.timings.total.as_secs_f64(), facts_seconds, nontext_seconds,
+                input_preparation_seconds, frontend_report.frontend_seconds, facts_seconds, nontext_seconds,
                 linking_inputs_seconds, compilation_started.elapsed().as_secs_f64(),
                 total.elapsed().as_secs_f64());
         }
-        let output = match compile_result {
+        let (output, publication, explanations) = match compile_result {
             Ok(output) => output,
             Err(dmbc::cold::ColdError::Lowering(diagnostics)) => {
                 dmbc::diagnostics::write_lowering_diagnostics(
@@ -610,15 +635,13 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             Err(dmbc::cold::ColdError::Initializer(message)) => {
                 return Err(format!("native unsupported: {message}").into())
             }
+            Err(dmbc::cold::ColdError::RuntimeTypeValues(error)) => {
+                return Err(format!("runtime type values: {error:?}").into())
+            }
             Err(error) => return Err(format!("native compilation: {error:?}").into()),
         };
         let compilation_seconds = compilation_started.elapsed().as_secs_f64();
-        // Compilation and its diagnostics have finished. End resolver/value
-        // borrows before consuming source captures into exact publication facts.
-        drop(compilation_resolver);
-        let publication = nontext.into_publication();
         dmbc::heap_census::emit_if_enabled("publication.ready", |census| {
-            census.frontend(&frontend);
             census.output_encoded("dmb.bytes", &output.dmb);
             if let dmbc::assets::ResourceArchive::Captured(archive) = &publication.archive {
                 census.output_resources("rsc.bytes", archive);
@@ -757,14 +780,6 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         let publication_seconds = publication_started.elapsed().as_secs_f64();
         drop(publication_profile);
         let _finalization_profile = dm_profile::stage("request.finalization");
-        let explanations: Vec<_> = procedure_memo.as_ref().map(|memo| memo.explain()).unwrap_or_default().into_iter().map(|entry| {
-            let symbols = frontend.snapshot.tree.symbols();
-            let owner = symbols.text(entry.identity.owner).unwrap_or("<unknown>");
-            let name = symbols.text(entry.identity.name).unwrap_or("<unknown>");
-            let namespace = if entry.identity.verb { "verb" } else { "proc" };
-            let path = format!("{}/{namespace}/{name}", owner.trim_end_matches('/'));
-            serde_json::json!({"path":path,"occurrence":entry.identity.occurrence,"outcome":format!("{:?}",entry.outcome),"reason":entry.reason.map(|reason|format!("{reason:?}")),"changed_query":entry.changed_query})
-        }).collect();
         let memo_stats = procedure_memo.as_ref().map(|memo| {
             use std::sync::atomic::Ordering::Relaxed;
             serde_json::json!({"disk_hits":memo.counts.disk_hits.load(Relaxed),"issued_preparations":memo.counts.issued_preparations.load(Relaxed),"parsed_preparations":memo.counts.parsed_preparations.load(Relaxed),"recomputed":memo.counts.recomputed.load(Relaxed),"pending_dropped":memo.counts.pending_dropped.load(Relaxed),"published_records":memo.counts.published_records.load(Relaxed),"publication_failed":memo.counts.publication_failed.load(Relaxed),"key_preparation_seconds":memo.counts.key_preparation_ns.load(Relaxed) as f64 / 1e9,"lookup_seconds":memo.counts.lookup_ns.load(Relaxed) as f64 / 1e9,"occurrence_reads_seconds":memo.counts.occurrence_reads_ns.load(Relaxed) as f64 / 1e9,"explanation_seconds":memo.counts.explanation_ns.load(Relaxed) as f64 / 1e9,"encode_seconds":memo.counts.encode_ns.load(Relaxed) as f64 / 1e9,"publication_cpu_scope_seconds":memo.counts.publication_ns.load(Relaxed) as f64 / 1e9,"errors":memo.publication_errors()})
@@ -777,10 +792,9 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             use std::sync::atomic::Ordering::Relaxed;
             serde_json::json!({"parse_hits":memo.counts.parse_hits.load(Relaxed),"geometry_hits":memo.counts.geometry_hits.load(Relaxed),"parsed":memo.counts.parsed.load(Relaxed),"projected":memo.counts.projected.load(Relaxed),"disk_admitted":memo.counts.disk_admitted.load(Relaxed),"skipped_disk_budget":memo.counts.skipped_disk_budget.load(Relaxed),"published_records":memo.counts.published_records.load(Relaxed),"publication_failed":memo.counts.publication_failed.load(Relaxed),"errors":memo.publication_errors()})
         });
-        let d = &frontend.timings.declaration_reuse;
-        let declaration_stats = serde_json::json!({"chunks":d.chunks,"region_hits":d.region_hits,"independent_hits":d.independent_hits,"facts_hits":d.facts_hits,"parsed_chunks":d.parsed_chunks,"descriptor_scan_seconds":d.descriptor_scan.as_secs_f64(),"worker_lookup_decode_and_parse_seconds":d.worker_lookup_decode_and_parse.as_secs_f64(),"worker_fresh_facts_seconds":d.worker_fresh_facts.as_secs_f64(),"ordered_merge_seconds":d.ordered_merge.as_secs_f64()});
+        let declaration_stats = frontend_report.declaration_reuse;
         eprintln!("native declaration reuse: {declaration_stats}");
-        let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend.timings.total.as_secs_f64(),"declaration_reuse":declaration_stats,"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"explanations":explanations});
+        let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend_report.frontend_seconds,"declaration_reuse":declaration_stats,"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"explanations":explanations});
         if let Err(error) = dmbc::telemetry::save(&project, "stats", &stats) {
             eprintln!("native telemetry skipped: {error}");
         }
@@ -790,7 +804,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             &serde_json::json!({"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"pair":pair.name()}),
         );
         eprintln!("native stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s publication={:.3}s",
-            input_preparation_seconds, frontend.timings.total.as_secs_f64(), facts_seconds, nontext_seconds,
+            input_preparation_seconds, frontend_report.frontend_seconds, facts_seconds, nontext_seconds,
             linking_inputs_seconds, compilation_seconds, publication_seconds);
         eprintln!("native compile: total={:.3}s ABI={:.3}s lowering={:.3}s initialization={:.3}s linking={:.3}s composition={:.3}s DMB={} RSC={} pair={}",
             total.elapsed().as_secs_f64(), output.timings.abi_preparation.as_secs_f64(),

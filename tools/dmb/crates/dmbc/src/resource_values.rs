@@ -56,6 +56,58 @@ impl crate::class_projection::TypeValuePolicy for CapturedResourceValues<'_> {
     }
 }
 
+/// Owned exact answers for final emission. Linker-assigned dense indexes remain
+/// the composition wrapper's responsibility, not a source policy snapshot.
+pub struct PreparedResourceValues {
+    types: crate::type_values::PreparedTypeValues,
+    resources: std::collections::BTreeMap<SymbolId, Result<dm_link::Key, ProjectionError>>,
+    indices: std::collections::BTreeMap<SymbolId, Result<u32, ProjectionError>>,
+}
+impl PreparedResourceValues {
+    pub fn capture(
+        policy: &dyn crate::class_projection::TypeValuePolicy,
+        domains: &crate::type_values::PreparedValueDomains,
+    ) -> Self {
+        Self {
+            types: crate::type_values::PreparedTypeValues::capture(policy, domains),
+            indices: domains
+                .resources()
+                .map(|path| (path, policy.resource_index(path)))
+                .collect(),
+            resources: domains
+                .resources()
+                .map(|path| (path, policy.resource_key(path)))
+                .collect(),
+        }
+    }
+}
+impl crate::class_projection::TypeValuePolicy for PreparedResourceValues {
+    fn mob_index(&self, path: SymbolId) -> Result<u32, ProjectionError> {
+        crate::class_projection::TypeValuePolicy::mob_index(&self.types, path)
+    }
+    fn resource_index(&self, path: SymbolId) -> Result<u32, ProjectionError> {
+        self.indices.get(&path).cloned().unwrap_or_else(|| {
+            Err(ProjectionError::Unsupported(
+                "resource index is absent from prepared emission domain".into(),
+            ))
+        })
+    }
+    fn tag(&self, path: SymbolId) -> Result<u8, ProjectionError> {
+        crate::class_projection::TypeValuePolicy::tag(&self.types, path)
+    }
+    fn resource_key(&self, path: SymbolId) -> Result<dm_link::Key, ProjectionError> {
+        match self.resources.get(&path) {
+            Some(Ok(key @ dm_link::Key::Resource(_))) => Ok(*key),
+            Some(Ok(_)) => Err(ProjectionError::Unsupported(
+                "prepared resource answer has a different semantic domain".into(),
+            )),
+            Some(Err(error)) => Err(error.clone()),
+            None => Err(ProjectionError::Unsupported(
+                "resource is absent from prepared emission domain".into(),
+            )),
+        }
+    }
+}
 pub fn index(
     resolver: &dyn Resolver,
     path: SymbolId,
@@ -95,7 +147,7 @@ mod tests {
         let mut inventory = LinkInventory::default();
         inventory.entries.push(Entry {
             key: Key::Resource(42),
-            content: Arc::from(b"exact asset".as_slice()),
+            content: Arc::<[u8]>::from(b"exact asset".as_slice()).into(),
         });
         inventory.reserved_prefixes.insert(Table::Resource, 5);
         let tables = LinkTables::build(inventory).unwrap();

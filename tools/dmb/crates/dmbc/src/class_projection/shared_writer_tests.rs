@@ -81,7 +81,7 @@ fn shared_string_writer_matches_wrappers_with_duplicates_reserved_slots_and_auth
             .push((path, Arc::from(symbols.text(path).unwrap().as_bytes())));
         inventory.entries.push(dm_link::Entry {
             key: Key::Type(path),
-            content: Arc::from([]),
+            content: Arc::<[u8]>::from([]).into(),
         });
         inventory.fixed.push((Key::Type(path), id));
     }

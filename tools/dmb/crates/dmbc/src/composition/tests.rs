@@ -1,4 +1,5 @@
 use super::*;
+use std::sync::Arc;
 #[test]
 fn native_reserved_list_padding_preserves_code_and_argument_links_roundtrip() {
     let mut dmb =
@@ -164,7 +165,7 @@ fn builtin_global_vars_uses_variable_record_domain_without_footer_allocation() {
         .insert(dm_link::Table::VariableRecord, record);
     inventory.entries.push(dm_link::Entry {
         key: Key::BuiltinGlobalVars,
-        content: std::sync::Arc::from(b"builtin-vars-kind82".as_slice()),
+        content: Arc::<[u8]>::from(b"builtin-vars-kind82".as_slice()).into(),
     });
     let batch = FrozenBatch {
         units: vec![],
@@ -247,7 +248,7 @@ fn canonical_indexes_cannot_overwrite_pinned_strings() {
     let inventory = dm_link::LinkInventory {
         entries: vec![dm_link::Entry {
             key: Key::String(wrong),
-            content: std::sync::Arc::from(b"not-the-engine-string".as_slice()),
+            content: Arc::<[u8]>::from(b"not-the-engine-string".as_slice()).into(),
         }],
         spellings: vec![(
             wrong,
@@ -435,4 +436,83 @@ fn consuming_composition_rejects_invalid_post_stage_instructions() {
     assert!(
         matches!(result, Err(CompositionError::Unsupported(message)) if message.contains("invalid composed bytecode"))
     );
+}
+
+fn lifecycle_inputs() -> (dm_tree::frontend::ColdFrontend, OwnedCompositionInputs) {
+    struct Values;
+    impl crate::class_projection::TypeValuePolicy for Values {
+        fn tag(&self, _: SymbolId) -> Result<u8, crate::class_projection::ProjectionError> {
+            Ok(0x21)
+        }
+    }
+    struct NoDefaults;
+    impl crate::class_projection::CapturedFieldEvaluator for NoDefaults {
+        fn evaluate(
+            &self,
+            _: SymbolId,
+            _: &dm_tree::SymbolicExpression,
+        ) -> Result<dm_ir::SemanticValue, String> {
+            Err("fixture has no defaults".into())
+        }
+    }
+    let frontend = frontend("/proc/ownership_transfer_probe()\n    return \"exact\"\n");
+    let (batch, symbols) = ownership_fixture();
+    let projection =
+        crate::class_projection::project(&frontend.snapshot, &frontend.emission_order, &NoDefaults)
+            .unwrap();
+    let inputs = OwnedCompositionInputs {
+        engine: std::sync::Arc::from(
+            include_bytes!("../../../../fixtures/native_template.bin").as_slice(),
+        ),
+        batch,
+        symbols: std::sync::Arc::new(symbols),
+        projection,
+        values: std::sync::Arc::new(Values),
+        stage: None,
+    };
+    (frontend, inputs)
+}
+
+#[test]
+fn sealed_composition_outlives_frontend_and_matches_borrowed_writer() {
+    let (frontend, inputs) = lifecycle_inputs();
+    let borrowed = compose_projected_with_symbols(
+        &inputs.engine,
+        &inputs.batch,
+        &frontend,
+        &inputs.projection,
+        inputs.values.as_ref(),
+        None,
+        &inputs.symbols,
+    )
+    .unwrap();
+    let prepared = ValidatedComposition::prepare(&frontend, inputs).unwrap();
+    drop(frontend);
+    let executor = dm_exec::BuildExecutor::new(2).unwrap();
+    assert_eq!(prepared.compose(&executor).unwrap().bytes(), borrowed);
+}
+
+#[test]
+fn sealed_composition_rejects_source_coverage_and_stage_receipt_mismatches() {
+    let (frontend, mut inputs) = lifecycle_inputs();
+    inputs.projection.occurrence_count += 1;
+    assert!(matches!(ValidatedComposition::prepare(&frontend, inputs),
+        Err(CompositionError::Unsupported(message)) if message.contains("source model")));
+    let (frontend, mut inputs) = lifecycle_inputs();
+    inputs.batch.units.clear();
+    assert!(matches!(ValidatedComposition::prepare(&frontend, inputs),
+        Err(CompositionError::Unsupported(message)) if message.contains("procedure coverage")));
+    struct WrongSource;
+    impl NonTextOutputStage for WrongSource {
+        fn validate_source(&self, _: &dm_tree::frontend::ColdFrontend) -> Result<(), String> {
+            Err("different captured nontext occurrence roster".into())
+        }
+        fn apply(&self, _: &mut Dmb, _: &FrozenBatch) -> Result<BTreeSet<Key>, String> {
+            panic!("unvalidated stage must not execute")
+        }
+    }
+    let (frontend, mut inputs) = lifecycle_inputs();
+    inputs.stage = Some(Box::new(WrongSource));
+    assert!(matches!(ValidatedComposition::prepare(&frontend, inputs),
+        Err(CompositionError::Unsupported(message)) if message.contains("nontext occurrence roster")));
 }

@@ -700,12 +700,35 @@ impl HeapCensus {
             self.string("lowered_units", &diagnostic.message);
         }
     }
+    pub(crate) fn entry_content(&mut self, owner: &str, content: &dm_link::EntryContent) {
+        match content {
+            dm_link::EntryContent::Bytes(bytes) => {
+                self.slice(owner, bytes, true);
+            }
+            dm_link::EntryContent::Symbolic(content) => {
+                if self.arc_object(owner, content) {
+                    let (prefix, code, suffix) = content.parts();
+                    self.slice(owner, prefix, true);
+                    self.symbolic_code(code);
+                    self.slice(owner, suffix, true);
+                    if let Some(bytes) = content.materialized_bytes() {
+                        self.slice(owner, bytes, true);
+                    }
+                }
+            }
+        }
+    }
+    fn symbolic_code(&mut self, code: &Arc<dm_ir::SymbolicCode>) {
+        if self.arc_object("frozen_code", code) {
+            self.slice("frozen_code", code.words(), false);
+            self.slice("frozen_code", code.relocations(), false);
+        }
+    }
     fn frozen_code(&mut self, code: &Arc<dm_codegen_byond::FrozenProc>) {
         if !self.arc_object("frozen_code", code) {
             return;
         }
-        self.slice("frozen_code", code.code().words(), false);
-        self.slice("frozen_code", code.code().relocations(), false);
+        self.symbolic_code(&code.shared_code());
         self.slice("frozen_code", code.sites(), false);
         self.slice("frozen_code", code.labels(), false);
     }
@@ -735,8 +758,8 @@ impl HeapCensus {
         }
         self.owner("link_tables").observed_items += batch.tables.assignments().len() as u64;
         for &key in batch.tables.assignments().keys() {
-            if let Some(bytes) = batch.tables.content(key) {
-                self.slice("link_tables", bytes, true);
+            if let Some(content) = batch.tables.content_value(key) {
+                self.entry_content("link_tables", content);
             }
         }
         self.unknown("link_tables", "private Arc/BTreeMap node backing, slot maps, and cached CurrentImage words/certificates");

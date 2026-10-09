@@ -10,13 +10,16 @@ pub struct OperandSite {
     pub encoding: OperandEncoding,
 }
 pub struct FrozenProc {
-    code: SymbolicCode,
+    code: std::sync::Arc<SymbolicCode>,
     sites: Vec<OperandSite>,
     labels: Vec<Option<u32>>,
 }
 impl FrozenProc {
     pub fn code(&self) -> &SymbolicCode {
         &self.code
+    }
+    pub fn shared_code(&self) -> std::sync::Arc<SymbolicCode> {
+        std::sync::Arc::clone(&self.code)
     }
     pub fn sites(&self) -> &[OperandSite] {
         &self.sites
@@ -125,7 +128,7 @@ pub fn freeze_proc_observed<G>(
         .map_err(FreezeError::Relocation)?;
     }
     Ok(FrozenProc {
-        code,
+        code: std::sync::Arc::new(code),
         sites: emission.sites,
         labels,
     })
@@ -381,6 +384,21 @@ mod tests {
     use crate::{Instruction, LabelId, Ledger, SymbolId};
     fn instruction(opcode: u32, operands: Vec<Word>) -> Item {
         Item::Instruction(Instruction { opcode, operands })
+    }
+    #[test]
+    fn frozen_shared_code_clones_share_immutable_word_and_relocation_owners() {
+        let frozen = freeze_proc(&SymbolicProc {
+            items: vec![instruction(0, vec![])],
+        })
+        .unwrap();
+        let first = frozen.shared_code();
+        let second = frozen.shared_code();
+        assert!(std::sync::Arc::ptr_eq(&first, &second));
+        assert!(std::ptr::eq(first.as_ref(), frozen.code()));
+        assert_eq!(first.canonical_len(), first.canonical_bytes().len());
+        drop(frozen);
+        assert_eq!(first.words(), [0]);
+        assert!(second.relocations().is_empty());
     }
     #[test]
     fn debug_origins_and_numeric_branch_labels_are_direct_relocations() {
