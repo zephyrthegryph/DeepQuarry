@@ -29,6 +29,6 @@ Final production compile:0errors,50existingwarnings; fresh lint/DreamChecker0dia
 
 The two failures were newly added painter/bomb-tester tests using plain clicks: existing interface-generated ui_open at default priority outranks their default-minus-one loading ops. Requirement-menu rows passed. Tests now select the public loading menu ops and keep real state/custody/refusal assertions, rather than calling effect handlers. That separate preexisting plain-click ranking defect is documented in the gap report; no input priority was changed or blessed. Test fixtures now restore lazy diagnostic globals as well.
 
-Pending user approval: one eight-test repair batch to verify the corrected menu-input tests and fixture-global cleanup. Those final test-only edits have not yet run; do not treat verification as fully green until that batch completes.
+Approved eight-test repair batch: 8 passed, 0 failed, 0 skipped; compile 0 errors, 50 existing warnings. Result: data/test-runs/20261009T015422_e4eb0ec495.json. Corrected menu-input tests, fixture cleanup, real powered cycler shock/empty grab and reentrant starts refusal all passed.
 
 Logs:data/codex-machinery/prompts-reqs-1008/{prompts,final}-{lint,ratchets,focused}.log.
