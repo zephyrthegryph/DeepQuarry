@@ -7,6 +7,8 @@ use std::fmt;
 
 mod symbols;
 pub use symbols::{SymbolCollision, SymbolId, SymbolTable};
+mod string_roster;
+pub use string_roster::{StringPayload, StringRoster, StringRosterError};
 
 mod declarations;
 pub use declarations::{

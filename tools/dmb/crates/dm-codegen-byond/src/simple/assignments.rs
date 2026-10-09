@@ -16,7 +16,7 @@ impl Compiler<'_> {
             let end = self.label();
             self.emit(
                 if op == "||=" { opcode::JNZ } else { opcode::JZ },
-                vec![Word::Branch(end.clone())],
+                vec![Word::Branch(end)],
             );
             self.assignment_value_preserving_cache(&variable, value, statement)?;
             self.emit(opcode::SET_VAR, vec![Word::Variable(variable)]);
@@ -53,14 +53,14 @@ impl Compiler<'_> {
         if let ExprKind::SafeMember { object, selector } = &target.kind {
             self.expression(object, statement)?;
             let end = self.label();
-            self.emit(318, vec![Word::Branch(end.clone())]);
+            self.emit(318, vec![Word::Branch(end)]);
             self.emit(opcode::PUSH_CACHE, vec![]);
             self.expression(value, statement)?;
             self.emit(opcode::POP_CACHE, vec![]);
             let variable = self
                 .expression_member_global(object, selector)?
-                .map(|symbol| VariableWord::Global(symbol.to_owned()))
-                .unwrap_or_else(|| VariableWord::Field(selector.clone()));
+                .map(VariableWord::Global)
+                .unwrap_or_else(|| VariableWord::Field(SymbolId::of(selector)));
             if matches!(variable, VariableWord::Field(_)) {
                 self.intern_string(selector);
             }
@@ -85,7 +85,7 @@ impl Compiler<'_> {
         if let ExprKind::SafeIndex { object, index } = &target.kind {
             self.expression(object, statement)?;
             let end = self.label();
-            self.emit(318, vec![Word::Branch(end.clone())]);
+            self.emit(318, vec![Word::Branch(end)]);
             self.emit(opcode::PUSH_CACHE, vec![]);
             self.expression(value, statement)?;
             self.emit(opcode::POP_CACHE, vec![]);
@@ -136,7 +136,7 @@ impl Compiler<'_> {
                     self.intern_string(selector);
                     self.emit(
                         opcode::SET_VAR,
-                        vec![Word::Variable(VariableWord::Field(selector.clone()))],
+                        vec![Word::Variable(VariableWord::Field(SymbolId::of(selector)))],
                     );
                     return Ok(());
                 }
@@ -184,7 +184,7 @@ impl Compiler<'_> {
                 self.expression(object, statement)?;
                 self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
                 self.intern_string(selector);
-                VariableWord::Field(selector.clone())
+                VariableWord::Field(SymbolId::of(selector))
             }
         };
         self.ensure_writable(&variable, statement)?;
@@ -249,7 +249,7 @@ impl Compiler<'_> {
                 self.intern_string(name);
                 Ok(VariableWord::SetCache(
                     Box::new(VariableWord::Src),
-                    Box::new(VariableWord::Field(name.to_owned())),
+                    Box::new(VariableWord::Field(SymbolId::of(name))),
                 ))
             }
             _ if self.has_global(name)? => {
@@ -263,7 +263,7 @@ impl Compiler<'_> {
                         .ok_or_else(|| error(statement, "global variable has no shared storage"))?;
                     Ok(VariableWord::Global(slot))
                 } else {
-                    Ok(VariableWord::Global(name.to_owned()))
+                    Ok(VariableWord::Global(self.global_variable(name)?))
                 }
             }
             _ => Err(error(
@@ -288,7 +288,7 @@ impl Compiler<'_> {
             } => {
                 if matches!(&object.kind, ExprKind::Ident(name) if name == "global") {
                     if selector == "vars" {
-                        return Ok(VariableWord::Global(BUILTIN_GLOBAL_VARS_SYMBOL.into()));
+                        return Ok(VariableWord::Global(SymRef::BuiltinGlobalVars));
                     }
                     if self.has_global(selector)? {
                         if let Some(lookup) = self.lookup {
@@ -301,7 +301,7 @@ impl Compiler<'_> {
                             })?;
                             return Ok(VariableWord::Global(slot));
                         }
-                        return Ok(VariableWord::Global(selector.clone()));
+                        return Ok(VariableWord::Global(self.global_variable(selector)?));
                     }
                     return Err(error(
                         statement,
@@ -314,14 +314,14 @@ impl Compiler<'_> {
                     self.inferred_expression_type(object)?
                 } {
                     if let Some(symbol) = self.member_global(&owner, selector)? {
-                        return Ok(VariableWord::Global(symbol.to_owned()));
+                        return Ok(VariableWord::Global(symbol));
                     }
                 }
                 let owner = self.variable_expr(object, statement)?;
                 self.intern_string(selector);
                 Ok(VariableWord::SetCache(
                     Box::new(owner),
-                    Box::new(VariableWord::Field(selector.clone())),
+                    Box::new(VariableWord::Field(SymbolId::of(selector))),
                 ))
             }
             _ => Err(error(statement, "unsupported variable target")),
@@ -395,10 +395,10 @@ impl Compiler<'_> {
                         }
                     ),
                 )? {
-                    return Ok(VariableWord::Global(symbol.to_owned()));
+                    return Ok(VariableWord::Global(symbol));
                 }
                 self.intern_string(selector);
-                Ok(VariableWord::Field(selector.clone()))
+                Ok(VariableWord::Field(SymbolId::of(selector)))
             }
         }
     }
@@ -436,7 +436,7 @@ impl Compiler<'_> {
                 opcode::SET_VAR,
                 vec![Word::Variable(VariableWord::SetCache(
                     Box::new(VariableWord::Src),
-                    Box::new(VariableWord::Field(name.clone())),
+                    Box::new(VariableWord::Field(SymbolId::of(name))),
                 ))],
             );
         }
@@ -484,7 +484,7 @@ impl Compiler<'_> {
                 self.expression(object, statement)?;
                 self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
                 self.intern_string(selector);
-                VariableWord::Field(selector.clone())
+                VariableWord::Field(SymbolId::of(selector))
             }
         };
         self.ensure_writable(&variable, statement)?;
@@ -552,7 +552,7 @@ impl Compiler<'_> {
                     } else {
                         opcode::JMP_AND
                     },
-                    vec![Word::Branch(end.clone())],
+                    vec![Word::Branch(end)],
                 );
                 self.local_initializer(rhs, declaration, statement)?;
                 self.result.code.items.push(CodeItem::Label(end));
@@ -572,12 +572,15 @@ impl Compiler<'_> {
             let tag = self
                 .class_tag(&path)?
                 .ok_or_else(|| error(statement, "unsupported inferred locate type"))?;
-            if self.seen_classes.insert(path.clone()) {
-                self.result.class_paths.push(path.clone());
+            if self.seen_classes.insert(SymbolId::of(&path)) {
+                self.result.class_paths.push(SymbolId::of(&path));
             }
             self.emit(
                 opcode::PUSH_VAL,
-                vec![Word::Value(ValueWord::ClassPath { path, tag })],
+                vec![Word::Value(ValueWord::ClassPath {
+                    path: SymbolId::of(&path),
+                    tag,
+                })],
             );
             self.emit(0x5b, vec![]);
             return Ok(());
@@ -597,12 +600,15 @@ impl Compiler<'_> {
                 let tag = self
                     .class_tag(&path)?
                     .ok_or_else(|| error(statement, "unsupported inferred locate type"))?;
-                if self.seen_classes.insert(path.clone()) {
-                    self.result.class_paths.push(path.clone());
+                if self.seen_classes.insert(SymbolId::of(&path)) {
+                    self.result.class_paths.push(SymbolId::of(&path));
                 }
                 self.emit(
                     opcode::PUSH_VAL,
-                    vec![Word::Value(ValueWord::ClassPath { path, tag })],
+                    vec![Word::Value(ValueWord::ClassPath {
+                        path: SymbolId::of(&path),
+                        tag,
+                    })],
                 );
                 self.expression(rhs, statement)?;
                 self.emit(0x97, vec![]);
@@ -619,9 +625,9 @@ impl Compiler<'_> {
             self.emit(opcode::TEST, vec![]);
             let else_label = self.label();
             let end_label = self.label();
-            self.emit(opcode::JZ, vec![Word::Branch(else_label.clone())]);
+            self.emit(opcode::JZ, vec![Word::Branch(else_label)]);
             self.local_initializer(then_value, declaration, statement)?;
-            self.emit(opcode::JMP, vec![Word::Branch(end_label.clone())]);
+            self.emit(opcode::JMP, vec![Word::Branch(end_label)]);
             self.result.code.items.push(CodeItem::Label(else_label));
             if matches!(&else_value.kind, ExprKind::Literal(value) if value == "null") {
                 self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::Null)]);
@@ -650,12 +656,15 @@ impl Compiler<'_> {
             let tag = self
                 .class_tag(&path)?
                 .ok_or_else(|| error(statement, "unsupported inferred constructor type"))?;
-            if self.seen_classes.insert(path.clone()) {
-                self.result.class_paths.push(path.clone());
+            if self.seen_classes.insert(SymbolId::of(&path)) {
+                self.result.class_paths.push(SymbolId::of(&path));
             }
             self.emit(
                 opcode::PUSH_VAL,
-                vec![Word::Value(ValueWord::ClassPath { path, tag })],
+                vec![Word::Value(ValueWord::ClassPath {
+                    path: SymbolId::of(&path),
+                    tag,
+                })],
             );
             if args
                 .iter()

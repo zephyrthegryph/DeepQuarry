@@ -40,30 +40,19 @@ pub enum Table {
     Instance,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub struct Symbol {
-    pub table: Table,
-    /// Semantic linker key. It must not contain a Salsa intern ID.
-    pub key: String,
-}
+pub use dm_ir::{StringPayload, StringRoster, SymRef, SymbolId};
 
-impl Symbol {
-    pub fn new(table: Table, key: impl Into<String>) -> Self {
-        Self {
-            table,
-            key: key.into(),
-        }
-    }
-}
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub struct LabelId(pub u32);
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Word {
     Immediate(u32),
     SourceFile(u32),
     SourceLine(u32),
-    Reference(Symbol),
+    Reference(SymRef),
     /// Absolute word offset within this procedure's code list.
-    Branch(String),
+    Branch(LabelId),
     Value(ValueWord),
     Variable(VariableWord),
 }
@@ -105,18 +94,18 @@ impl NativePrimitiveType {
 pub enum ValueWord {
     Null,
     Number(u32),
-    String(String),
-    Resource(String),
+    String(SymbolId),
+    Resource(u128),
     FileType,
     /// Pinned native primitive: typed tag with zero payload, no class table row.
     PrimitiveType(NativePrimitiveType),
     ClassPath {
-        path: String,
+        path: SymbolId,
         tag: u8,
     },
-    ProcPath(String),
+    ProcPath(SymRef),
     /// A native modified-type instance, rather than a generated subtype.
-    Instance(String),
+    Instance(SymbolId),
 }
 
 /// BYOND's compound `v` operand. Field/global names use string-table IDs.
@@ -135,26 +124,28 @@ pub enum VariableWord {
     Cache,
     CacheKey,
     CacheIndex,
-    Field(String),
-    StaticField(String),
+    Field(SymbolId),
+    StaticField(SymbolId),
     Initial(Box<VariableWord>),
     IsSaved(Box<VariableWord>),
-    Global(String),
-    DynamicProc(String),
-    StaticProc(String),
-    StaticVerb(String),
+    Global(SymRef),
+    DynamicProc(SymbolId),
+    StaticProc(SymRef),
+    StaticVerb(SymRef),
     SetCache(Box<VariableWord>, Box<VariableWord>),
 }
 
 impl Word {
-    fn for_each_reference(&self, visit: &mut impl FnMut(Table, &str)) {
+    fn for_each_reference(&self, visit: &mut impl FnMut(SymRef)) {
         match self {
-            Self::Reference(symbol) => visit(symbol.table, &symbol.key),
-            Self::Value(ValueWord::String(key)) => visit(Table::String, key),
-            Self::Value(ValueWord::Resource(key)) => visit(Table::Resource, key),
-            Self::Value(ValueWord::ClassPath { path, .. }) => visit(Table::Class, path),
-            Self::Value(ValueWord::ProcPath(path)) => visit(Table::Proc, path),
-            Self::Value(ValueWord::Instance(path)) => visit(Table::Instance, path),
+            Self::Reference(reference) => visit(*reference),
+            Self::SourceFile(origin) => visit(SymRef::SourceFile(*origin)),
+            Self::SourceLine(origin) => visit(SymRef::SourceLine(*origin)),
+            Self::Value(ValueWord::String(id)) => visit(SymRef::String(*id)),
+            Self::Value(ValueWord::Resource(content)) => visit(SymRef::Resource(*content)),
+            Self::Value(ValueWord::ClassPath { path, .. }) => visit(SymRef::Type(*path)),
+            Self::Value(ValueWord::ProcPath(reference)) => visit(*reference),
+            Self::Value(ValueWord::Instance(id)) => visit(SymRef::Instance(*id)),
             Self::Variable(variable) => variable.for_each_reference(visit),
             _ => {}
         }
@@ -171,13 +162,14 @@ impl Word {
 }
 
 impl VariableWord {
-    fn for_each_reference(&self, visit: &mut impl FnMut(Table, &str)) {
+    fn for_each_reference(&self, visit: &mut impl FnMut(SymRef)) {
         match self {
-            Self::Field(key) | Self::StaticField(key) | Self::DynamicProc(key) => {
-                visit(Table::String, key)
+            Self::Field(id) | Self::StaticField(id) | Self::DynamicProc(id) => {
+                visit(SymRef::String(*id))
             }
-            Self::Global(key) => visit(Table::Variable, key),
-            Self::StaticProc(path) | Self::StaticVerb(path) => visit(Table::Proc, path),
+            Self::Global(reference) | Self::StaticProc(reference) | Self::StaticVerb(reference) => {
+                visit(*reference)
+            }
             Self::Initial(variable) | Self::IsSaved(variable) => variable.for_each_reference(visit),
             Self::SetCache(a, b) => {
                 a.for_each_reference(visit);
@@ -211,7 +203,7 @@ pub struct Instruction {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Item {
-    Label(String),
+    Label(LabelId),
     Instruction(Instruction),
 }
 
@@ -223,7 +215,7 @@ pub struct SymbolicProc {
 impl SymbolicProc {
     /// Visit every external table symbol used by this procedure. Duplicate
     /// references are retained so callers can choose their own deduplication.
-    pub fn for_each_reference(&self, mut visit: impl FnMut(Table, &str)) {
+    pub fn for_each_reference(&self, mut visit: impl FnMut(SymRef)) {
         for item in &self.items {
             if let Item::Instruction(instruction) = item {
                 for operand in &instruction.operands {
@@ -234,290 +226,210 @@ impl SymbolicProc {
     }
 }
 
+/// Explicit fixture/client wire IDs, keyed by the same typed references as production.
+/// Production canonical linking lives in dm-link; this contains no spelling binder.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Ledger {
-    ids: BTreeMap<Symbol, u32>,
+    ids: BTreeMap<SymRef, u32>,
     occupied_ids: BTreeSet<(Table, u32)>,
 }
-
+impl Table {
+    pub fn of_reference(reference: SymRef) -> Option<Self> {
+        use dm_ir::RelocationKind as K;
+        Some(match reference.kind() {
+            K::String => Self::String,
+            K::Type => Self::Class,
+            K::Procedure => Self::Proc,
+            K::Variable => Self::Variable,
+            K::List => Self::List,
+            K::Resource => Self::Resource,
+            K::Instance => Self::Instance,
+            K::SourceLine => return None,
+        })
+    }
+}
 impl Ledger {
-    /// Bind another spelling for an already allocated table payload. Callers
-    /// must explicitly identify aliases; ordinary allocations use `bind`.
-    pub fn bind_alias(&mut self, symbol: Symbol, id: u32) -> Result<(), LinkError> {
-        if self.ids.contains_key(&symbol) {
-            return Err(LinkError::DuplicateSymbol(symbol));
+    pub fn bind_alias(&mut self, reference: SymRef, id: u32) -> Result<(), LinkError> {
+        if self.ids.contains_key(&reference) {
+            return Err(LinkError::DuplicateSymbol(reference));
         }
-        self.ids.insert(symbol, id);
+        self.ids.insert(reference, id);
         Ok(())
     }
-    /// Bind an externally allocated table ID (for example from a native DMB
-    /// scaffold). Existing IDs may have gaps; callers own their exact order.
-    pub fn bind(&mut self, symbol: Symbol, id: u32) -> Result<(), LinkError> {
-        if self.ids.contains_key(&symbol) {
-            return Err(LinkError::DuplicateSymbol(symbol));
+    pub fn bind(&mut self, reference: SymRef, id: u32) -> Result<(), LinkError> {
+        let table = Table::of_reference(reference).ok_or(LinkError::InvalidReference(reference))?;
+        if self.ids.contains_key(&reference) {
+            return Err(LinkError::DuplicateSymbol(reference));
         }
-        if self.occupied_ids.contains(&(symbol.table, id)) {
-            return Err(LinkError::DuplicateId {
-                table: symbol.table,
-                id,
-            });
+        if !self.occupied_ids.insert((table, id)) {
+            return Err(LinkError::DuplicateId { table, id });
         }
-        self.occupied_ids.insert((symbol.table, id));
-        self.ids.insert(symbol, id);
+        self.ids.insert(reference, id);
         Ok(())
     }
-    /// Assign IDs in caller-provided serialized table order, never interner or
-    /// hash-map iteration order. A separate ordered list is required per table.
-    // Preserve checked ID conversion and original insertion order.
-    #[allow(clippy::explicit_counter_loop)]
     pub fn assign(
         &mut self,
         table: Table,
-        ordered_keys: impl IntoIterator<Item = String>,
+        references: impl IntoIterator<Item = SymRef>,
     ) -> Result<(), LinkError> {
-        let keys: Vec<_> = ordered_keys.into_iter().collect();
-        let mut seen = std::collections::BTreeSet::new();
-        for key in &keys {
-            let symbol = Symbol::new(table, key.clone());
-            if self.ids.contains_key(&symbol) || !seen.insert(symbol.clone()) {
-                return Err(LinkError::DuplicateSymbol(symbol));
+        let references: Vec<_> = references.into_iter().collect();
+        let mut seen = BTreeSet::new();
+        for &reference in &references {
+            if Table::of_reference(reference) != Some(table) {
+                return Err(LinkError::InvalidReference(reference));
+            }
+            if self.ids.contains_key(&reference) || !seen.insert(reference) {
+                return Err(LinkError::DuplicateSymbol(reference));
             }
         }
-        let mut next = self
+        let next = self
             .ids
             .iter()
-            .filter(|(symbol, _)| symbol.table == table)
+            .filter(|(reference, _)| Table::of_reference(**reference) == Some(table))
             .map(|(_, id)| *id)
             .max()
-            .map_or(0, |id| id as usize + 1);
-        for key in keys {
-            let id = u32::try_from(next).map_err(|_| LinkError::TooManyRecords(table))?;
-            let symbol = Symbol::new(table, key);
-            self.ids.insert(symbol, id);
+            .map_or(0, |id| u64::from(id) + 1);
+        // Validate all output IDs before mutation.
+        if next + references.len() as u64 > u64::from(u32::MAX) + 1 {
+            return Err(LinkError::TooManyRecords(table));
+        }
+        for (offset, reference) in references.into_iter().enumerate() {
+            let id = u32::try_from(next + offset as u64)
+                .map_err(|_| LinkError::TooManyRecords(table))?;
+            self.ids.insert(reference, id);
             self.occupied_ids.insert((table, id));
-            next += 1;
         }
         Ok(())
     }
-
-    pub fn id(&self, symbol: &Symbol) -> Option<u32> {
-        self.ids.get(symbol).copied()
+    pub fn id(&self, reference: &SymRef) -> Option<u32> {
+        self.ids.get(reference).copied()
     }
 }
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum LinkError {
-    DuplicateSymbol(Symbol),
-    DuplicateId { table: Table, id: u32 },
+    DuplicateSymbol(SymRef),
+    DuplicateId {
+        table: Table,
+        id: u32,
+    },
     TooManyRecords(Table),
-    DuplicateLabel(String),
-    MissingLabel(String),
-    MissingSymbol(Symbol),
+    DuplicateLabel(LabelId),
+    MissingLabel(LabelId),
+    InvalidLabel(LabelId),
+    MissingSymbol(SymRef),
+    InvalidReference(SymRef),
+    ReferenceKind {
+        expected: dm_ir::RelocationKind,
+        actual: dm_ir::RelocationKind,
+    },
     OffsetOverflow,
     MissingDebugOrigin(u32),
     Decode(String),
-    InstructionBoundary { expected: usize, decoded: usize },
-    BranchOperandIsNotTarget { offset: usize },
+    InstructionBoundary {
+        expected: usize,
+        decoded: usize,
+    },
+    BranchOperandIsNotTarget {
+        offset: usize,
+    },
 }
-
 impl fmt::Display for LinkError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{self:?}")
     }
 }
 impl std::error::Error for LinkError {}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LinkedProc {
     pub words: Vec<u32>,
-    pub labels: BTreeMap<String, u32>,
-    /// Word positions containing external table IDs. Used by the layout index
-    /// to decide which serialized records depend on a table reordering.
-    pub relocations: Vec<(usize, Symbol)>,
+    pub labels: Vec<Option<u32>>,
+    pub relocations: Vec<(usize, SymRef)>,
 }
-
 pub fn link_proc(proc: &SymbolicProc, ledger: &Ledger) -> Result<LinkedProc, LinkError> {
-    encoder::encode(proc, &mut |symbol| {
-        ledger
-            .id(symbol)
-            .ok_or_else(|| LinkError::MissingSymbol(symbol.clone()))
-    })
-    .map(|encoded| encoded.linked)
+    encoder::link(proc, |reference| ledger.id(&reference))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    fn string(value: &str) -> SymRef {
+        SymRef::String(SymbolId::of(value))
+    }
     #[test]
     fn table_ids_follow_explicit_order() {
         let mut ledger = Ledger::default();
         ledger
-            .assign(Table::String, ["z".into(), "a".into()])
+            .assign(Table::String, [string("z"), string("a")])
             .unwrap();
-        assert_eq!(ledger.id(&Symbol::new(Table::String, "z")), Some(0));
-        assert_eq!(ledger.id(&Symbol::new(Table::String, "a")), Some(1));
+        assert_eq!(ledger.id(&string("z")), Some(0));
+        assert_eq!(ledger.id(&string("a")), Some(1));
         assert!(matches!(
-            ledger.assign(Table::String, ["z".into()]),
+            ledger.assign(Table::String, [string("z")]),
             Err(LinkError::DuplicateSymbol(_))
         ));
     }
-
     #[test]
-    fn duplicate_ids_are_checked_within_each_table_after_assign_and_bind() {
+    fn duplicate_ids_are_checked_in_each_typed_table() {
         let mut ledger = Ledger::default();
         ledger
-            .assign(Table::String, ["first".into(), "second".into()])
+            .assign(Table::String, [string("first"), string("second")])
             .unwrap();
         assert!(matches!(
-            ledger.bind(Symbol::new(Table::String, "third"), 1),
-            Err(LinkError::DuplicateId {
-                table: Table::String,
-                id: 1
-            })
+            ledger.bind(string("third"), 1),
+            Err(LinkError::DuplicateId { .. })
         ));
         ledger
-            .bind(Symbol::new(Table::Variable, "first"), 1)
+            .bind(SymRef::VariableSlot(SymbolId::of("first")), 1)
             .unwrap();
-        ledger.bind(Symbol::new(Table::String, "third"), 4).unwrap();
-        assert!(matches!(
-            ledger.bind(Symbol::new(Table::String, "fourth"), 4),
-            Err(LinkError::DuplicateId {
-                table: Table::String,
-                id: 4
-            })
-        ));
-        ledger.assign(Table::String, ["fifth".into()]).unwrap();
-        assert_eq!(ledger.id(&Symbol::new(Table::String, "fifth")), Some(5));
+        ledger.bind(string("third"), 4).unwrap();
+        ledger.assign(Table::String, [string("fifth")]).unwrap();
+        assert_eq!(ledger.id(&string("fifth")), Some(5));
     }
-
     #[test]
-    fn symbolic_proc_visits_nested_external_references() {
+    fn reference_traversal_keeps_typed_identity_and_debug_origins() {
+        let slot = SymRef::VariableSlot(SymbolId::of("global"));
         let proc = SymbolicProc {
             items: vec![Item::Instruction(Instruction {
                 opcode: 0,
                 operands: vec![
-                    Word::Reference(Symbol::new(Table::Proc, "/proc/direct")),
-                    Word::Value(ValueWord::ProcPath("/proc/path".into())),
-                    Word::Value(ValueWord::ClassPath {
-                        path: "/datum/example".into(),
-                        tag: 32,
-                    }),
-                    Word::Value(ValueWord::String("text".into())),
-                    Word::Value(ValueWord::Resource("file.dmi".into())),
-                    Word::Variable(VariableWord::SetCache(
-                        Box::new(VariableWord::Initial(Box::new(VariableWord::Global(
-                            "global_name".into(),
-                        )))),
-                        Box::new(VariableWord::IsSaved(Box::new(VariableWord::DynamicProc(
-                            "method_name".into(),
-                        )))),
-                    )),
-                    Word::Variable(VariableWord::StaticProc(
-                        "/datum/example/proc/method".into(),
-                    )),
+                    Word::Reference(string("direct")),
+                    Word::SourceFile(3),
+                    Word::Value(ValueWord::Resource(123)),
+                    Word::Variable(VariableWord::Initial(Box::new(VariableWord::Global(slot)))),
                 ],
             })],
         };
-        let mut actual = Vec::new();
-        proc.for_each_reference(|table, key| actual.push((table, key.to_owned())));
+        let mut refs = Vec::new();
+        proc.for_each_reference(|reference| refs.push(reference));
         assert_eq!(
-            actual,
+            refs,
             [
-                (Table::Proc, "/proc/direct"),
-                (Table::Proc, "/proc/path"),
-                (Table::Class, "/datum/example"),
-                (Table::String, "text"),
-                (Table::Resource, "file.dmi"),
-                (Table::Variable, "global_name"),
-                (Table::String, "method_name"),
-                (Table::Proc, "/datum/example/proc/method"),
+                string("direct"),
+                SymRef::SourceFile(3),
+                SymRef::Resource(123),
+                slot
             ]
-            .map(|(table, key)| (table, key.to_owned()))
         );
     }
-
     #[test]
-    fn static_proc_selector_links_by_procedure_id() {
-        let path = "/datum/example/proc/method";
-        let proc = SymbolicProc {
-            items: vec![Item::Instruction(Instruction {
-                opcode: 0x29,
-                operands: vec![
-                    Word::Variable(VariableWord::SetCache(
-                        Box::new(VariableWord::Arg(0)),
-                        Box::new(VariableWord::StaticProc(path.into())),
-                    )),
-                    Word::Immediate(0),
-                ],
-            })],
-        };
-        let mut ledger = Ledger::default();
-        ledger.bind(Symbol::new(Table::Proc, path), 17).unwrap();
-        let linked = link_proc(&proc, &ledger).unwrap();
-        assert_eq!(linked.words, [0x29, 0xffdc, 0xffd9, 0, 0xffdf, 17, 0]);
-        assert_eq!(
-            linked.relocations,
-            vec![(5, Symbol::new(Table::Proc, path))]
-        );
-    }
-
-    #[test]
-    fn branch_label_relocates_after_instruction_size() {
-        // Native jump opcode 0xf has a one-word absolute destination.
+    fn typed_proc_roundtrips_without_text_binder() {
         let proc = SymbolicProc {
             items: vec![
+                Item::Label(LabelId(0)),
                 Item::Instruction(Instruction {
                     opcode: 0xf,
-                    operands: vec![Word::Branch("end".into())],
-                }),
-                Item::Label("end".into()),
-                Item::Instruction(Instruction {
-                    opcode: 0x0,
-                    operands: vec![],
+                    operands: vec![Word::Branch(LabelId(0))],
                 }),
             ],
         };
-        let linked = link_proc(&proc, &Ledger::default()).unwrap();
-        assert_eq!(linked.words[1], 2);
-        assert_eq!(linked.labels["end"], 2);
-    }
-
-    #[test]
-    fn missing_symbol_is_a_link_error() {
-        let proc = SymbolicProc {
-            items: vec![Item::Instruction(Instruction {
-                opcode: 0x0,
-                operands: vec![Word::Reference(Symbol::new(Table::String, "x"))],
-            })],
-        };
-        assert!(matches!(
-            link_proc(&proc, &Ledger::default()),
-            Err(LinkError::MissingSymbol(_))
-        ));
-    }
-
-    #[test]
-    fn symbolic_lowering_round_trips_through_disk_encoding() {
-        let ast = dm_syntax::parse("/proc/test(obj/O)\n    return O.child.name\n");
-        let proc = compile_simple_proc_with_params(&ast.items[0].children, &["O".into()]).unwrap();
-        let encoded = serde_json::to_vec(&proc).unwrap();
-        let restored: SimpleProc = serde_json::from_slice(&encoded).unwrap();
-        assert_eq!(restored, proc);
-        assert_eq!(restored.code, proc.code);
-
-        let mut bindings = LowerBindings::default();
-        bindings.parameters.push("O".into());
-        bindings.fields.insert("child".into());
-        bindings
-            .field_types
-            .insert("child".into(), "/datum/child".into());
-        bindings.globals.insert("shared".into());
-        bindings
-            .global_types
-            .insert("shared".into(), "/datum/shared".into());
-        let encoded = serde_json::to_vec(&bindings).unwrap();
-        let restored: LowerBindings = serde_json::from_slice(&encoded).unwrap();
-        assert_eq!(restored, bindings);
+        let bytes = serde_json::to_vec(&proc).unwrap();
+        assert_eq!(
+            serde_json::from_slice::<SymbolicProc>(&bytes).unwrap(),
+            proc
+        );
+        assert_eq!(
+            link_proc(&proc, &Ledger::default()).unwrap().words,
+            [0xf, 0]
+        );
     }
 }

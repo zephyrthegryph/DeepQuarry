@@ -107,9 +107,12 @@ impl PairStore {
             let Some(name) = entry.file_name().to_str().map(str::to_owned) else {
                 continue;
             };
-            if archives.contains(&name) || !is_archive_name(&name) {
+            if archives.contains(&name) {
                 continue;
             }
+            let Some(identity) = archive_identity(&name) else {
+                continue;
+            };
             if now
                 .duration_since(entry.metadata()?.modified()?)
                 .unwrap_or_default()
@@ -118,21 +121,32 @@ impl PairStore {
                 continue;
             }
             match unlink_immutable(&entry.path()) {
-                Ok(()) => result.resources += 1,
+                Ok(()) => {
+                    result.resources += 1;
+                    self.verified_resources
+                        .lock()
+                        .map_err(|_| invalid("resource verification lock poisoned"))?
+                        .remove(&(identity.bytes, identity.hash));
+                    let _ = fs::remove_file(self.root.join("verified").join(format!(
+                        "resource-{:032x}-{}.json",
+                        identity.hash, identity.bytes
+                    )));
+                }
                 Err(_) => result.deferred.push(entry.path()),
             }
         }
         Ok(result)
     }
 }
-fn is_archive_name(name: &str) -> bool {
-    let Some(stem) = name.strip_suffix(".rsc") else {
-        return false;
-    };
-    let Some((hash, len)) = stem.split_once('-') else {
-        return false;
-    };
-    hash.len() == 32 && u128::from_str_radix(hash, 16).is_ok() && len.parse::<u64>().is_ok()
+fn archive_identity(name: &str) -> Option<super::ResourceIdentity> {
+    let (hash, len) = name.strip_suffix(".rsc")?.split_once('-')?;
+    if hash.len() != 32 {
+        return None;
+    }
+    Some(super::ResourceIdentity {
+        hash: u128::from_str_radix(hash, 16).ok()?,
+        bytes: len.parse().ok()?,
+    })
 }
 fn read_small(path: &Path) -> io::Result<Vec<u8>> {
     let mut file = fs::File::open(path)?;
@@ -161,11 +175,11 @@ fn unlink_pair(path: &Path) -> io::Result<()> {
     fs::remove_dir(path)
 }
 #[cfg(not(windows))]
-fn unlink_immutable(path: &Path) -> io::Result<()> {
+pub(super) fn unlink_immutable(path: &Path) -> io::Result<()> {
     fs::remove_file(path)
 }
 #[cfg(windows)]
-fn unlink_immutable(path: &Path) -> io::Result<()> {
+pub(super) fn unlink_immutable(path: &Path) -> io::Result<()> {
     use std::os::windows::{fs::OpenOptionsExt, io::AsRawHandle};
     #[link(name = "kernel32")]
     extern "system" {

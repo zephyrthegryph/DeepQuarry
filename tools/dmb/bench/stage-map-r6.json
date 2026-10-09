@@ -28,13 +28,16 @@
   ],
   "resources_maps": [
     "exclusive:request.nontext_context",
-    "resources_maps"
+    "resources_maps",
+    "resources.candidate_capture"
   ],
   "abi_initializers": [
     "engine_capture",
     "cold.startup_capture",
     "cold.abi_preparation",
-    "cold.initializers"
+    "cold.initializers",
+    "initializer.classification",
+    "initializer.codegen_group"
   ],
   "lowering": [
     "cold.procedure_lowering",
@@ -51,6 +54,7 @@
     "cache_flush",
     "publication",
     "exclusive:request.finalization",
-    "profile.finalization"
+    "profile.finalization",
+    "output.dmb_encode"
   ]
 }

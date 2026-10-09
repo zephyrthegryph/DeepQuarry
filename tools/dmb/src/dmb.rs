@@ -14,10 +14,13 @@ use codec::*;
 #[path = "dmb_records.rs"]
 mod records;
 use records::crypt_string;
+#[path = "dmb_write.rs"]
+mod writing;
 pub use records::{
     mob_sight, Class, ClassInterface, DmString, GridRun, Header, Instance, MapObject, MobType,
     Proc, ProcSource, ResourceRef, Variable, World, WorldViewEncoding,
 };
+pub use writing::EncodedDmb;
 #[path = "dmb_resources.rs"]
 mod resource_attachment;
 pub use resource_attachment::{attach_resource_refs, ResourceAttachment, ResourceLookup};
@@ -797,191 +800,27 @@ impl Dmb {
     pub fn to_bytes(&self) -> io::Result<Vec<u8>> {
         self.to_bytes_with_list_spans().map(|(bytes, _)| bytes)
     }
-
-    /// Serialize and produce the exact list-record index in the same pass.
     pub fn to_bytes_with_list_spans(&self) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
-        if self.header.version_line != b"world bin v516\n"
-            || !self
-                .header
-                .compatibility_line
-                .starts_with(b"min compatibility v")
-            || !self.header.compatibility_line.ends_with(b"\n")
-            || self
-                .header
-                .compatibility_line
-                .iter()
-                .filter(|&&byte| byte == b'\n')
-                .count()
-                != 1
-            || (self.header.flags & 0x8000_0000 != 0) != self.header.extended_flags.is_some()
-        {
-            return Err(invalid("unsupported DMB header"));
-        }
-        self.validate_references()?;
-        let cells = self
-            .dimensions
-            .iter()
-            .try_fold(1usize, |product, &value| {
-                product.checked_mul(usize::from(value))
-            })
-            .ok_or_else(|| invalid("grid dimensions overflow"))?;
-        let mut covered = 0usize;
-        for run in &self.grid {
-            if run.copies == 0 {
-                return Err(invalid("zero-length grid run"));
-            }
-            covered = covered
-                .checked_add(usize::from(run.copies))
-                .ok_or_else(|| invalid("grid run count overflow"))?;
-        }
-        if covered != cells {
-            return Err(invalid("grid runs do not cover map dimensions"));
-        }
-        if self.lists.iter().any(|list| list.len() > u16::MAX as usize) {
-            return Err(invalid("list exceeds u16 element count"));
-        }
-        if self.world.client_script_files.len() > u16::MAX as usize {
-            return Err(invalid("client script file list exceeds u16 count"));
-        }
-        if compatibility_version(&self.header.compatibility_line)? <= 514
-            && self.world.savefile_byond_version != 0
-        {
-            return Err(invalid(
-                "savefile version has no field at this compatibility level",
-            ));
-        }
-        for class in &self.classes {
-            if (class.interface == 15) != class.extended_interface.is_some()
-                || (class.transform_flag != 0) != class.transform.is_some()
-                || (class.color_matrix_flag != 0) != class.color_matrix.is_some()
-            {
-                return Err(invalid("class presence flag disagrees with data"));
-            }
-        }
-        if self
-            .mobs
-            .iter()
-            .any(|mob| (mob.sight & 0x80 != 0) != mob.extended_sight.is_some())
-        {
-            return Err(invalid("mob sight flag disagrees with data"));
-        }
-        if self
-            .procs
-            .iter()
-            .any(|proc| (proc.flags & 0x80 != 0) != proc.extended_flags.is_some())
-        {
-            return Err(invalid("proc flag disagrees with data"));
-        }
-        let mut w = Writer::new(
-            if self.header.flags & 0x4000_0000 != 0 {
-                4
-            } else {
-                2
-            },
-            compatibility_version(&self.header.compatibility_line)?,
-        );
-        if let Some(line) = &self.header.executor_line {
-            // Native world.executor text may contain newlines. The reader stops
-            // at a version line followed by a compatibility line, so reject
-            // that ambiguous sentinel rather than valid multiline text.
-            if !line.starts_with(b"#!")
-                || !line.ends_with(b"\n")
-                || line
-                    .windows(b"\nworld bin v516\nmin compatibility v".len())
-                    .any(|part| part == b"\nworld bin v516\nmin compatibility v")
-            {
-                return Err(invalid("invalid executor shebang"));
-            }
-            w.raw(line);
-        }
-        w.raw(&self.header.version_line);
-        w.raw(&self.header.compatibility_line);
-        w.u32(self.header.flags);
-        if let Some(flags) = self.header.extended_flags {
-            w.u32(flags);
-        }
-        for value in self.dimensions {
-            w.u16(value);
-        }
-        for run in &self.grid {
-            w.object(run.turf);
-            w.object(run.area);
-            w.object(run.contents);
-            w.u8(run.copies);
-        }
-        let total_string_bytes = self.strings.iter().try_fold(0usize, |sum, string| {
-            sum.checked_add(string.data.len() + 1)
-                .ok_or_else(|| invalid("string total overflow"))
-        })?;
-        w.u32(u32::try_from(total_string_bytes).map_err(|_| invalid("string total exceeds u32"))?);
-        w.table(&self.classes, |w, item| item.write(w))?;
-        w.table(&self.mobs, |w, item| item.write(w))?;
-        w.object(
-            u32::try_from(self.strings.len()).map_err(|_| invalid("string count exceeds u32"))?,
-        );
-        let mut string_hash = u32::MAX;
-        let string_origin = self.header.executor_line.as_ref().map_or(0, Vec::len);
-        for string in &self.strings {
-            let mut remaining = string.data.len();
-            for _ in 0..string.long_chunks {
-                let offset = w.at() - string_origin;
-                w.u16(u16::MAX ^ offset as u16);
-                remaining = remaining
-                    .checked_sub(u16::MAX as usize)
-                    .ok_or_else(|| invalid("invalid long string chunks"))?;
-            }
-            if remaining >= u16::MAX as usize {
-                return Err(invalid("string needs additional length chunks"));
-            }
-            let offset = w.at() - string_origin;
-            w.u16((remaining as u16) ^ offset as u16);
-            let offset = w.at() - string_origin;
-            let mut encrypted = string.data.clone();
-            crypt_string(&mut encrypted, offset);
-            w.raw(&encrypted);
-            string_hash = nqcrc(string_hash, &string.data);
-            string_hash = nqcrc(string_hash, &[0]);
-        }
-        w.u32(string_hash);
-        let mut list_spans = Vec::with_capacity(self.lists.len());
-        w.table(&self.lists, |w, list| {
-            let start = w.at();
-            w.u16(list.len() as u16);
-            for &value in list {
-                w.object(value);
-            }
-            list_spans.push(start..w.at());
-        })?;
-        w.table(&self.procs, |w, item| item.write(w))?;
-        w.table(&self.variables, |w, item| {
-            w.u8(item.kind);
-            w.u32(item.value);
-            w.object(item.name);
-        })?;
-        w.u32(self.variable_footer);
-        w.table(&self.proc_references, |w, value| w.object(*value))?;
-        w.table(&self.instances, |w, item| {
-            w.u8(item.kind);
-            w.u32(item.class);
-            w.object(item.initializer);
-        })?;
-        w.u32(
-            u32::try_from(self.map_objects.len())
-                .map_err(|_| invalid("map object count exceeds u32"))?,
-        );
-        for item in &self.map_objects {
-            w.u16(item.offset);
-            w.object(item.instance);
-        }
-        self.world.write(&mut w);
-        w.table(&self.resources, |w, item| {
-            w.u32(item.id);
-            w.u8(item.kind);
-        })?;
-        if w.object_overflow {
-            return Err(invalid("object ID exceeds selected 16-bit width"));
-        }
-        Ok((w.bytes, list_spans))
+        writing::write(self, None).map(|(owner, spans)| (owner.into_bytes(), spans))
+    }
+    /// Canonical serialization with a digest bound to its immutable byte owner.
+    pub fn encode(&self) -> io::Result<EncodedDmb> {
+        writing::write(self, None).map(|(owner, _)| owner)
+    }
+    pub fn encode_on_executor(&self, executor: &dm_exec::BuildExecutor) -> io::Result<EncodedDmb> {
+        writing::write(self, Some(executor)).map(|(owner, _)| owner)
+    }
+    /// Encodes canonical table chunks on the existing build executor. No global
+    /// pool or additional OS workers are created.
+    pub fn to_bytes_on_executor(&self, executor: &dm_exec::BuildExecutor) -> io::Result<Vec<u8>> {
+        self.to_bytes_with_list_spans_on_executor(executor)
+            .map(|(bytes, _)| bytes)
+    }
+    pub fn to_bytes_with_list_spans_on_executor(
+        &self,
+        executor: &dm_exec::BuildExecutor,
+    ) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
+        writing::write(self, Some(executor)).map(|(owner, spans)| (owner.into_bytes(), spans))
     }
 }
 

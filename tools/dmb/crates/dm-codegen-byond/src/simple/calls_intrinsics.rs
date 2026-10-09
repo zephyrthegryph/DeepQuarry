@@ -23,7 +23,7 @@ impl Compiler<'_> {
             self.emit(comparison, vec![]);
             let end = self.label();
             for argument in &args[2..] {
-                self.emit(opcode::JZ, vec![Word::Branch(end.clone())]);
+                self.emit(opcode::JZ, vec![Word::Branch(end)]);
                 self.expression(argument, statement)?;
                 self.emit(comparison, vec![]);
             }
@@ -111,7 +111,7 @@ impl Compiler<'_> {
             self.emit(
                 2,
                 vec![
-                    Word::Reference(crate::Symbol::new(crate::Table::String, key)),
+                    Word::Reference(SymRef::String(key)),
                     Word::Immediate(expressions.len() as u32),
                 ],
             );
@@ -139,7 +139,7 @@ impl Compiler<'_> {
             self.intern_string("/generator");
             self.emit(
                 opcode::PUSH_VAL,
-                vec![Word::Value(ValueWord::String("/generator".into()))],
+                vec![Word::Value(ValueWord::String(SymbolId::of("/generator")))],
             );
             if named_arguments {
                 self.named_arguments(args, statement)?;
@@ -269,7 +269,7 @@ impl Compiler<'_> {
                     }
                 }
                 for (_, _, _, label) in &choices {
-                    words.push(Word::Branch(label.clone()));
+                    words.push(Word::Branch(*label));
                 }
                 self.emit(0xb1, words);
             } else {
@@ -279,17 +279,17 @@ impl Compiler<'_> {
                     words.push(Word::Immediate(
                         ((cumulative / total) * 65535.0_f64).floor() as u32,
                     ));
-                    words.push(Word::Branch(label.clone()));
+                    words.push(Word::Branch(*label));
                 }
-                words.push(Word::Branch(choices.last().unwrap().3.clone()));
+                words.push(Word::Branch(choices.last().unwrap().3));
                 self.emit(0x79, words);
             }
             let end = self.label();
             for (index, (_, _, value, label)) in choices.iter().enumerate() {
-                self.result.code.items.push(CodeItem::Label(label.clone()));
+                self.result.code.items.push(CodeItem::Label(*label));
                 self.expression(value, statement)?;
                 if index + 1 != choices.len() {
-                    self.emit(opcode::JMP, vec![Word::Branch(end.clone())]);
+                    self.emit(opcode::JMP, vec![Word::Branch(end)]);
                 }
             }
             self.result.code.items.push(CodeItem::Label(end));
@@ -366,7 +366,7 @@ impl Compiler<'_> {
                     opcode::GET_VAR,
                     vec![Word::Variable(VariableWord::SetCache(
                         Box::new(owner),
-                        Box::new(VariableWord::StaticField(selector)),
+                        Box::new(VariableWord::StaticField(SymbolId::of(&selector))),
                     ))],
                 );
             } else if let ExprKind::Member { object, .. } = &target.kind {
@@ -374,7 +374,9 @@ impl Compiler<'_> {
                 self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
                 self.emit(
                     opcode::GET_VAR,
-                    vec![Word::Variable(VariableWord::StaticField(selector))],
+                    vec![Word::Variable(VariableWord::StaticField(SymbolId::of(
+                        &selector,
+                    )))],
                 );
             }
             return Ok(true);
@@ -418,13 +420,13 @@ impl Compiler<'_> {
             let tag = self
                 .class_tag(&target_type)?
                 .ok_or_else(|| error(statement, "istype() inferred unsupported type"))?;
-            if self.seen_classes.insert(target_type.clone()) {
-                self.result.class_paths.push(target_type.clone());
+            if self.seen_classes.insert(SymbolId::of(&target_type)) {
+                self.result.class_paths.push(SymbolId::of(&target_type));
             }
             self.emit(
                 opcode::PUSH_VAL,
                 vec![Word::Value(ValueWord::ClassPath {
-                    path: target_type,
+                    path: SymbolId::of(&target_type),
                     tag,
                 })],
             );

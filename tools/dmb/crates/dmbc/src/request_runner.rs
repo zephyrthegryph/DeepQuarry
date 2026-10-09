@@ -191,11 +191,12 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
                         now_ns(),
                     )?;
                     if !outputs_match {
-                        store.install(
+                        store.install_exact(
                             pair.id,
                             &output_project.with_extension("dmb"),
                             &output_project.with_extension("rsc"),
                             &output_project.with_extension("dmb-pair.json"),
+                            exact_inputs,
                         )?;
                     }
                     if progress_enabled {
@@ -336,19 +337,25 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             event.total_items
         );
     };
+    // One request-local execution boundary spans input capture, parsing, ABI,
+    // lowering and linking. Its Drop joins workers before the CLI profiler ends.
+    let executor = dm_exec::BuildExecutor::new(workers)?;
     let input_preparation_seconds;
     let frontend_result = {
         let preparation_start = Instant::now();
         drop(frontend_context_profile);
         let input_profile = dm_profile::stage("input_scan");
-        let inputs =
-            match dmbc::native_inputs::NativeInputs::prepare(&project, &inputs_capture, workers) {
-                Ok(inputs) => Some(inputs),
-                Err(dmbc::native_inputs::NativeInputError::RequiredSourceRead { .. }) => None,
-                Err(dmbc::native_inputs::NativeInputError::InternalPreparation { message }) => {
-                    return Err(format!("native internal: {message}").into())
-                }
-            };
+        let inputs = match dmbc::native_inputs::NativeInputs::prepare_with_executor(
+            &project,
+            &inputs_capture,
+            &executor,
+        ) {
+            Ok(inputs) => Some(inputs),
+            Err(dmbc::native_inputs::NativeInputError::RequiredSourceRead { .. }) => None,
+            Err(dmbc::native_inputs::NativeInputError::InternalPreparation { message }) => {
+                return Err(format!("native internal: {message}").into())
+            }
+        };
         input_preparation_seconds = preparation_start.elapsed().as_secs_f64();
         drop(input_profile);
         let source_context_profile = dm_profile::stage("request.source_context");
@@ -371,7 +378,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         // speculative preparations before maps, resources and lowering begin.
         drop(source_context_profile);
         let _frontend_profile = dm_profile::stage("frontend");
-        dm_tree::frontend::build_with_expansion_memo(
+        dm_tree::frontend::build_with_executor(
             &project,
             &provider,
             &defines,
@@ -383,6 +390,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             expansion_memo
                 .as_ref()
                 .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
+            &executor,
         )
     };
     let frontend_handoff_profile = dm_profile::stage("request.frontend_handoff");
@@ -397,6 +405,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         let (bytes, engine) = engine_capture
             .as_ref()
             .ok_or("compile requires captured engine")?;
+        dmbc::heap_census::emit_if_enabled("frontend.ready", |census| census.frontend(&frontend))?;
         if progress_enabled {
             eprintln!(
                 "native captured facts started: {} types, {} members, {} bodies",
@@ -507,7 +516,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
                 )
                 .map_err(|error| error.to_string())
         };
-        let mut nontext = dmbc::captured_non_text_driver::capture_with_resource_reuse(
+        let mut nontext = dmbc::captured_non_text_driver::capture_with_resource_reuse_on_executor(
             &frontend,
             &inputs_capture,
             &inputs_capture,
@@ -518,6 +527,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             Some(&capture_observer),
             map_memo.as_ref(),
             Some(&admit_resources),
+            &executor,
         )?
         .into_prepared(&frontend)?;
         // Nontext capture owns the resolver, captured resources/maps and defaults
@@ -557,7 +567,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         // One immutable captured host for this compile. Consumer read recording
         // remains outside this optimization, including on memo hits.
         let compilation_resolver = dm_ir::MemoResolver::new(&nontext.resolver, 65_536);
-        let compile_result = dmbc::compile_driver::compile_revision_observed_with_memo(
+        let compile_result = dmbc::compile_driver::compile_revision_observed_with_memo_on_executor(
             &frontend,
             &compilation_resolver,
             engine,
@@ -567,7 +577,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             Some(nontext.resource_search_context),
             artifacts,
             Some(nontext.stage()),
-            workers,
+            &executor,
             progress_enabled.then_some(&cold_observer),
             procedure_memo.as_ref(),
         );
@@ -602,6 +612,13 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         // borrows before consuming source captures into exact publication facts.
         drop(compilation_resolver);
         let publication = nontext.into_publication();
+        dmbc::heap_census::emit_if_enabled("publication.ready", |census| {
+            census.frontend(&frontend);
+            census.output_encoded("dmb.bytes", &output.dmb);
+            if let dmbc::assets::ResourceArchive::Captured(archive) = &publication.archive {
+                census.output_resources("rsc.bytes", archive);
+            }
+        })?;
         drop(compilation_profile);
         let cache_flush_profile = dm_profile::stage("cache_flush");
         if let (Some(cache), Some(memo)) = (&memo_cache, &procedure_memo) {
@@ -661,17 +678,22 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
         };
         let pair = match &publication.archive {
             dmbc::assets::ResourceArchive::Captured(bytes) => {
-                store.publish(session_id, &output.dmb, bytes)?
+                store.publish_images_exact(session_id, &output.dmb, bytes, exact_inputs)?
             }
-            dmbc::assets::ResourceArchive::Retained(identity) => {
-                store.publish_with_resource(session_id, &output.dmb, *identity)?
-            }
+            dmbc::assets::ResourceArchive::Retained(identity) => store
+                .publish_encoded_with_resource_exact(
+                    session_id,
+                    &output.dmb,
+                    *identity,
+                    exact_inputs,
+                )?,
         };
-        store.install(
+        store.install_exact(
             pair.id,
             &output_project.with_extension("dmb"),
             &output_project.with_extension("rsc"),
             &output_project.with_extension("dmb-pair.json"),
+            exact_inputs,
         )?;
         input_provider.finish()?;
         if let (Some(cache), Some(snapshot), Some(session)) =

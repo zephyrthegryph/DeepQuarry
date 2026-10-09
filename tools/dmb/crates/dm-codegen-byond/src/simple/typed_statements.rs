@@ -34,11 +34,11 @@ impl Compiler<'_> {
                     let label = self
                         .user_labels
                         .get(name)
-                        .ok_or_else(|| error(&statement.raw_header, "undefined label"))?
-                        .clone();
+                        .copied()
+                        .ok_or_else(|| error(&statement.raw_header, "undefined label"))?;
                     self.result.code.items.push(CodeItem::Label(label));
                     let end = self.label();
-                    let prior_break = self.label_breaks.insert(name.clone(), end.clone());
+                    let prior_break = self.label_breaks.insert(name.clone(), end);
                     let prior_depth = self
                         .label_loop_depths
                         .insert(name.clone(), self.loops.len());
@@ -79,8 +79,8 @@ impl Compiler<'_> {
                     let label = self
                         .user_labels
                         .get(name)
-                        .ok_or_else(|| error(&statement.raw_header, "undefined goto label"))?
-                        .clone();
+                        .copied()
+                        .ok_or_else(|| error(&statement.raw_header, "undefined goto label"))?;
                     let depth = *self.label_try_depths.get(&label).unwrap_or(&0);
                     if depth > self.try_depth {
                         return Err(error(
@@ -219,11 +219,11 @@ impl Compiler<'_> {
                 StatementKind::While { condition, body } => {
                     let start = self.label();
                     let end = self.label();
-                    self.result.code.items.push(CodeItem::Label(start.clone()));
+                    self.result.code.items.push(CodeItem::Label(start));
                     self.condition(condition, &statement.raw_header)?;
-                    self.emit(opcode::JZ, vec![Word::Branch(end.clone())]);
-                    self.loops.push((start.clone(), end.clone()));
-                    self.breaks.push(end.clone());
+                    self.emit(opcode::JZ, vec![Word::Branch(end)]);
+                    self.loops.push((start, end));
+                    self.breaks.push(end);
                     let result = self.typed_statements(body);
                     self.loops.pop();
                     self.breaks.pop();
@@ -235,9 +235,9 @@ impl Compiler<'_> {
                     let start = self.label();
                     let continue_label = self.label();
                     let end = self.label();
-                    self.result.code.items.push(CodeItem::Label(start.clone()));
-                    self.loops.push((continue_label.clone(), end.clone()));
-                    self.breaks.push(end.clone());
+                    self.result.code.items.push(CodeItem::Label(start));
+                    self.loops.push((continue_label, end));
+                    self.breaks.push(end);
                     let result = self.typed_statements(body);
                     self.loops.pop();
                     self.breaks.pop();
@@ -254,7 +254,7 @@ impl Compiler<'_> {
                         self.emit(opcode::PUSH_INT, vec![Word::Immediate(0)]);
                     }
                     let end = self.label();
-                    self.emit(0x25, vec![Word::Branch(end.clone())]);
+                    self.emit(0x25, vec![Word::Branch(end)]);
                     self.typed_statements(body)?;
                     self.emit(opcode::END, vec![]);
                     self.result.code.items.push(CodeItem::Label(end));
@@ -289,12 +289,15 @@ impl Compiler<'_> {
                         vec![Word::Variable(VariableWord::Local(slot))],
                     );
                     self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::World)]);
-                    if self.seen_classes.insert(path.clone()) {
-                        self.result.class_paths.push(path.clone());
+                    if self.seen_classes.insert(SymbolId::of(&path)) {
+                        self.result.class_paths.push(SymbolId::of(&path));
                     }
                     self.emit(
                         opcode::PUSH_VAL,
-                        vec![Word::Value(ValueWord::ClassPath { path, tag })],
+                        vec![Word::Value(ValueWord::ClassPath {
+                            path: SymbolId::of(&path),
+                            tag,
+                        })],
                     );
                     if self.iterator_depth > 0 {
                         self.emit(opcode::ITER_PUSH, vec![]);
@@ -305,16 +308,16 @@ impl Compiler<'_> {
                     );
                     let start = self.label();
                     let end = self.label();
-                    self.result.code.items.push(CodeItem::Label(start.clone()));
+                    self.result.code.items.push(CodeItem::Label(start));
                     self.emit(opcode::ITER_NEXT, vec![]);
                     self.emit(
                         opcode::SET_VAR,
                         vec![Word::Variable(VariableWord::Local(slot))],
                     );
-                    self.emit(opcode::JZ, vec![Word::Branch(end.clone())]);
+                    self.emit(opcode::JZ, vec![Word::Branch(end)]);
                     self.iterator_depth += 1;
-                    self.loops.push((start.clone(), end.clone()));
-                    self.breaks.push(end.clone());
+                    self.loops.push((start, end));
+                    self.breaks.push(end);
                     let result = self.typed_statements(body);
                     self.breaks.pop();
                     self.loops.pop();
@@ -396,13 +399,13 @@ impl Compiler<'_> {
                     );
                     let start = self.label();
                     let end = self.label();
-                    self.result.code.items.push(CodeItem::Label(start.clone()));
+                    self.result.code.items.push(CodeItem::Label(start));
                     self.emit(opcode::ITER_NEXT, vec![]);
                     self.emit(
                         opcode::SET_VAR,
                         vec![Word::Variable(binding_variable.clone())],
                     );
-                    self.emit(opcode::JZ, vec![Word::Branch(end.clone())]);
+                    self.emit(opcode::JZ, vec![Word::Branch(end)]);
                     if mask == 0
                         || (explicit_mask.is_none()
                             && binding
@@ -418,8 +421,8 @@ impl Compiler<'_> {
                             let tag = self.class_tag(&path)?.ok_or_else(|| {
                                 error(&statement.raw_header, "unsupported iterator type")
                             })?;
-                            if self.seen_classes.insert(path.clone()) {
-                                self.result.class_paths.push(path.clone());
+                            if self.seen_classes.insert(SymbolId::of(&path)) {
+                                self.result.class_paths.push(SymbolId::of(&path));
                             }
                             self.emit(
                                 opcode::GET_VAR,
@@ -427,16 +430,19 @@ impl Compiler<'_> {
                             );
                             self.emit(
                                 opcode::PUSH_VAL,
-                                vec![Word::Value(ValueWord::ClassPath { path, tag })],
+                                vec![Word::Value(ValueWord::ClassPath {
+                                    path: SymbolId::of(&path),
+                                    tag,
+                                })],
                             );
                             self.emit(0x7d, vec![]);
                             self.emit(opcode::TEST, vec![]);
-                            self.emit(0xfa, vec![Word::Branch(start.clone())]);
+                            self.emit(0xfa, vec![Word::Branch(start)]);
                         }
                     }
                     self.iterator_depth += 1;
-                    self.loops.push((start.clone(), end.clone()));
-                    self.breaks.push(end.clone());
+                    self.loops.push((start, end));
+                    self.breaks.push(end);
                     let result = self.typed_statements(body);
                     self.breaks.pop();
                     self.loops.pop();
@@ -502,14 +508,14 @@ impl Compiler<'_> {
                     );
                     let start = self.label();
                     let end = self.label();
-                    self.result.code.items.push(CodeItem::Label(start.clone()));
+                    self.result.code.items.push(CodeItem::Label(start));
                     self.emit(opcode::ITER_NEXT, vec![]);
                     self.emit(0x17e, vec![Word::Variable(pair[1].clone())]);
                     self.emit(opcode::SET_VAR, vec![Word::Variable(pair[0].clone())]);
-                    self.emit(opcode::JZ, vec![Word::Branch(end.clone())]);
+                    self.emit(opcode::JZ, vec![Word::Branch(end)]);
                     self.iterator_depth += 1;
-                    self.loops.push((start.clone(), end.clone()));
-                    self.breaks.push(end.clone());
+                    self.loops.push((start, end));
+                    self.breaks.push(end);
                     let result = self.typed_statements(body);
                     self.breaks.pop();
                     self.loops.pop();
@@ -573,19 +579,13 @@ impl Compiler<'_> {
                     self.emit(if step.is_some() { 0xfe } else { 0xfc }, vec![]);
                     let loop_start = self.label();
                     let loop_end = self.label();
-                    self.result
-                        .code
-                        .items
-                        .push(CodeItem::Label(loop_start.clone()));
+                    self.result.code.items.push(CodeItem::Label(loop_start));
                     self.emit(
                         if step.is_some() { 0xff } else { 0xfd },
-                        vec![
-                            Word::Branch(loop_end.clone()),
-                            Word::Variable(binding_variable),
-                        ],
+                        vec![Word::Branch(loop_end), Word::Variable(binding_variable)],
                     );
-                    self.loops.push((loop_start.clone(), loop_end.clone()));
-                    self.breaks.push(loop_end.clone());
+                    self.loops.push((loop_start, loop_end));
+                    self.breaks.push(loop_end);
                     let result = self.typed_statements(body);
                     self.breaks.pop();
                     self.loops.pop();
@@ -640,13 +640,13 @@ impl Compiler<'_> {
                     let start = self.label();
                     let increment = self.label();
                     let end = self.label();
-                    self.result.code.items.push(CodeItem::Label(start.clone()));
+                    self.result.code.items.push(CodeItem::Label(start));
                     if let Some(condition) = condition {
                         self.condition(condition, &statement.raw_header)?;
-                        self.emit(opcode::JZ, vec![Word::Branch(end.clone())]);
+                        self.emit(opcode::JZ, vec![Word::Branch(end)]);
                     }
-                    self.loops.push((increment.clone(), end.clone()));
-                    self.breaks.push(end.clone());
+                    self.loops.push((increment, end));
+                    self.breaks.push(end);
                     let result = self.typed_statements(body);
                     self.loops.pop();
                     self.breaks.pop();
@@ -686,7 +686,7 @@ impl Compiler<'_> {
                                     self.expression(value, &statement.raw_header)?;
                                     self.emit(opcode::TEQ, vec![]);
                                     self.emit(opcode::POP, vec![]);
-                                    self.emit(opcode::JNZ, vec![Word::Branch(matched.clone())]);
+                                    self.emit(opcode::JNZ, vec![Word::Branch(matched)]);
                                 }
                                 SwitchAlternative::Range(lower, upper) => {
                                     let after = self.label();
@@ -697,7 +697,7 @@ impl Compiler<'_> {
                                     self.expression(lower, &statement.raw_header)?;
                                     self.emit(opcode::TGE, vec![]);
                                     self.emit(opcode::TEST, vec![]);
-                                    self.emit(opcode::JZ, vec![Word::Branch(after.clone())]);
+                                    self.emit(opcode::JZ, vec![Word::Branch(after)]);
                                     self.emit(
                                         opcode::GET_VAR,
                                         vec![Word::Variable(VariableWord::Local(slot))],
@@ -705,15 +705,15 @@ impl Compiler<'_> {
                                     self.expression(upper, &statement.raw_header)?;
                                     self.emit(opcode::TLE, vec![]);
                                     self.emit(opcode::TEST, vec![]);
-                                    self.emit(opcode::JNZ, vec![Word::Branch(matched.clone())]);
+                                    self.emit(opcode::JNZ, vec![Word::Branch(matched)]);
                                     self.result.code.items.push(CodeItem::Label(after));
                                 }
                             }
                         }
-                        self.emit(opcode::JMP, vec![Word::Branch(next.clone())]);
+                        self.emit(opcode::JMP, vec![Word::Branch(next)]);
                         self.result.code.items.push(CodeItem::Label(matched));
                         self.typed_statements(&case.body)?;
-                        self.emit(opcode::JMP, vec![Word::Branch(end.clone())]);
+                        self.emit(opcode::JMP, vec![Word::Branch(end)]);
                         self.result.code.items.push(CodeItem::Label(next));
                     }
                     self.typed_statements(else_branch)?;
@@ -726,12 +726,12 @@ impl Compiler<'_> {
                 } => {
                     let catch_label = self.label();
                     let end_label = self.label();
-                    self.emit(0x12c, vec![Word::Branch(catch_label.clone())]);
+                    self.emit(0x12c, vec![Word::Branch(catch_label)]);
                     self.try_depth += 1;
                     let protected = self.typed_statements(body);
                     self.try_depth -= 1;
                     protected?;
-                    self.emit(0x12e, vec![Word::Branch(end_label.clone())]);
+                    self.emit(0x12e, vec![Word::Branch(end_label)]);
                     self.result.code.items.push(CodeItem::Label(catch_label));
                     if let Some(binding) = catch_binding {
                         let name = local_name(binding).ok_or_else(|| {
@@ -757,8 +757,8 @@ impl Compiler<'_> {
                     let target = self
                         .breaks
                         .last()
-                        .ok_or_else(|| error(&statement.raw_header, "break outside loop"))?
-                        .clone();
+                        .copied()
+                        .ok_or_else(|| error(&statement.raw_header, "break outside loop"))?;
                     let leaves_try = self
                         .label_try_depths
                         .get(&target)
@@ -769,11 +769,10 @@ impl Compiler<'_> {
                     );
                 }
                 StatementKind::BreakLabel(name) => {
-                    let target = self
-                        .label_breaks
-                        .get(name)
-                        .ok_or_else(|| error(&statement.raw_header, "break label is not active"))?
-                        .clone();
+                    let target =
+                        self.label_breaks.get(name).copied().ok_or_else(|| {
+                            error(&statement.raw_header, "break label is not active")
+                        })?;
                     let leaves_try = self
                         .label_try_depths
                         .get(&target)
@@ -798,8 +797,7 @@ impl Compiler<'_> {
                         .loops
                         .last()
                         .ok_or_else(|| error(&statement.raw_header, "continue outside loop"))?
-                        .0
-                        .clone();
+                        .0;
                     let leaves_try = self
                         .label_try_depths
                         .get(&target)
@@ -817,8 +815,7 @@ impl Compiler<'_> {
                         .loops
                         .get(depth)
                         .ok_or_else(|| error(&statement.raw_header, "continue label has no loop"))?
-                        .0
-                        .clone();
+                        .0;
                     let leaves_try = self
                         .label_try_depths
                         .get(&target)
@@ -845,13 +842,13 @@ impl Compiler<'_> {
                 } => {
                     self.condition(condition, &statement.raw_header)?;
                     let else_label = self.label();
-                    self.emit(opcode::JZ, vec![Word::Branch(else_label.clone())]);
+                    self.emit(opcode::JZ, vec![Word::Branch(else_label)]);
                     self.typed_statements(then_branch)?;
                     if else_branch.is_empty() {
                         self.result.code.items.push(CodeItem::Label(else_label));
                     } else {
                         let end_label = self.label();
-                        self.emit(opcode::JMP, vec![Word::Branch(end_label.clone())]);
+                        self.emit(opcode::JMP, vec![Word::Branch(end_label)]);
                         self.result.code.items.push(CodeItem::Label(else_label));
                         self.typed_statements(else_branch)?;
                         self.result.code.items.push(CodeItem::Label(end_label));

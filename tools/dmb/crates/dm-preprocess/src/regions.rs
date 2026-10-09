@@ -25,7 +25,8 @@ pub use region_memo::{
 mod tests;
 
 pub use expansion::{
-    expand_regions, expand_regions_text, expand_regions_text_with_memo, ExpandedRegions,
+    expand_regions, expand_regions_text, expand_regions_text_with_executor,
+    expand_regions_text_with_memo, expand_regions_with_executor, ExpandedRegions,
 };
 
 /// An accepted or suppressed include directive, including its parent chain.

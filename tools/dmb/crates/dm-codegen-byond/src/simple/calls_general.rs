@@ -27,7 +27,7 @@ impl Compiler<'_> {
             self.intern_string(leaf);
             self.emit(
                 opcode::PUSH_VAL,
-                vec![Word::Value(ValueWord::String(leaf.into()))],
+                vec![Word::Value(ValueWord::String(SymbolId::of(leaf)))],
             );
             return Ok(());
         }
@@ -269,7 +269,7 @@ impl Compiler<'_> {
             self.intern_string(class_path);
             self.emit(
                 opcode::PUSH_VAL,
-                vec![Word::Value(ValueWord::String(class_path.into()))],
+                vec![Word::Value(ValueWord::String(SymbolId::of(class_path)))],
             );
             let named = args
                 .iter()
@@ -454,13 +454,7 @@ impl Compiler<'_> {
                 } else if let Some(list) = arglist_argument {
                     self.expression(list, statement)?;
                 }
-                self.emit(
-                    0xcd,
-                    vec![Word::Reference(crate::Symbol::new(
-                        crate::Table::Proc,
-                        format!("/proc/{name}"),
-                    ))],
-                );
+                self.emit(0xcd, vec![Word::Reference(self.global_proc(name)?)]);
                 return Ok(());
             }
             for arg in args {
@@ -470,10 +464,7 @@ impl Compiler<'_> {
                 opcode::CALL_GLOB,
                 vec![
                     Word::Immediate(args.len() as u32),
-                    Word::Reference(crate::Symbol::new(
-                        crate::Table::Proc,
-                        format!("/proc/{name}"),
-                    )),
+                    Word::Reference(self.global_proc(name)?),
                 ],
             );
             return Ok(());
@@ -510,7 +501,9 @@ impl Compiler<'_> {
             let proc_selector = self
                 .current_member_proc(name)?
                 .map(member_proc_selector)
-                .unwrap_or_else(|| VariableWord::DynamicProc(name.replace('_', " ")));
+                .unwrap_or_else(|| {
+                    VariableWord::DynamicProc(self.intern_string(&name.replace('_', " ")))
+                });
             if (self.lookup.is_some() || self.bindings.shared.is_some())
                 && matches!(proc_selector, VariableWord::DynamicProc(_))
                 && !self.current_has_declared_member_proc(name)?
@@ -519,9 +512,6 @@ impl Compiler<'_> {
                     statement,
                     &format!("unresolved unqualified procedure: {name}"),
                 ));
-            }
-            if let VariableWord::DynamicProc(display) = &proc_selector {
-                self.intern_string(display);
             }
             if named_arguments {
                 self.named_arguments(args, statement)?;

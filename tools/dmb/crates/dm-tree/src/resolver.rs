@@ -58,7 +58,7 @@ impl SemanticTree {
         hierarchy: EngineHierarchy,
         entries: Vec<IntrinsicMember>,
     ) -> Result<Self, InventoryError> {
-        self.attach_intrinsics(hierarchy, entries, true)
+        self.attach_intrinsics(hierarchy, entries, true, None)
     }
     /// Certify hierarchy while retaining incomplete member inventory. Known
     /// presence/slots resolve; unknown declarations remain Unsupported.
@@ -67,13 +67,22 @@ impl SemanticTree {
         hierarchy: EngineHierarchy,
         entries: Vec<IntrinsicMember>,
     ) -> Result<Self, InventoryError> {
-        self.attach_intrinsics(hierarchy, entries, false)
+        self.attach_intrinsics(hierarchy, entries, false, None)
+    }
+    pub(crate) fn with_engine_intrinsics_on_executor(
+        self,
+        hierarchy: EngineHierarchy,
+        entries: Vec<IntrinsicMember>,
+        executor: &dm_exec::BuildExecutor,
+    ) -> Result<Self, InventoryError> {
+        self.attach_intrinsics(hierarchy, entries, false, Some(executor))
     }
     fn attach_intrinsics(
         mut self,
         mut hierarchy: EngineHierarchy,
         mut entries: Vec<IntrinsicMember>,
         complete: bool,
+        executor: Option<&dm_exec::BuildExecutor>,
     ) -> Result<Self, InventoryError> {
         hierarchy.parents.sort_by_key(|entry| entry.0);
         let mut parents = HashMap::new();
@@ -158,7 +167,7 @@ impl SemanticTree {
         self.inventory.hierarchy_certified = true;
         self.inventory.intrinsic = entries.into();
         self.inventory.index = index;
-        self.rebuild_inventory();
+        self.rebuild_inventory_on_executor(executor);
         Ok(self)
     }
     pub(crate) fn complete_answer(&self, query: Q, answer: M) -> M {
@@ -217,70 +226,10 @@ impl SemanticTree {
         answer
     }
     pub(crate) fn rebuild_inventory(&mut self) {
-        let mut unique = HashMap::new();
-        let mut non_unique = HashSet::new();
-        let mut shared = HashMap::new();
-        let mut add = |name, slot| {
-            unique
-                .entry(name)
-                .and_modify(|previous| {
-                    if *previous != slot {
-                        *previous = None;
-                    }
-                })
-                .or_insert(slot);
-        };
-        // Declaration chains contain inherited assignment occurrences. Counting
-        // their formal identity deduplicates inheritance, never wire slot IDs.
-        for (id, member) in self.members.iter().enumerate() {
-            if member.kind == MemberKind::Var {
-                match self.variable_storage_for_member(MemberId(id as u32)) {
-                    M::InstanceField { .. } => {
-                        non_unique.insert(member.name);
-                    }
-                    M::Slot { owner, name, .. }
-                        if shared
-                            .insert(name, owner)
-                            .is_some_and(|previous| previous != owner) =>
-                    {
-                        non_unique.insert(name);
-                    }
-                    _ => {}
-                }
-                add(member.name, self.source_slot(MemberId(id as u32)));
-            }
-        }
-        for e in self.inventory.intrinsic.iter() {
-            if e.kind == MemberKind::Var {
-                // A source declaration on the same owner replaces this entry.
-                let authored = self
-                    .lookup_type(e.owner)
-                    .and_then(|owner| self.direct.get(&(owner, e.name, MemberKind::Var)))
-                    .is_some();
-                if !authored {
-                    if e.instance_storage_proven {
-                        non_unique.insert(e.name);
-                    }
-                    if let Some(owner) = e.shared_owner {
-                        if shared
-                            .insert(e.name, owner)
-                            .is_some_and(|previous| previous != owner)
-                        {
-                            non_unique.insert(e.name);
-                        }
-                    }
-                    add(e.name, e.shared_owner.map(|owner| (owner, e.name)));
-                }
-            }
-        }
-        self.inventory.unique = unique;
-        self.inventory.non_unique = non_unique;
+        self.rebuild_inventory_on_executor(None);
     }
-    fn source_slot(&self, id: MemberId) -> Option<(SymbolId, SymbolId)> {
-        match self.variable_storage_for_member(id) {
-            M::Slot { owner, name, .. } => Some((owner, name)),
-            _ => None,
-        }
+    fn rebuild_inventory_on_executor(&mut self, executor: Option<&dm_exec::BuildExecutor>) {
+        inventory::rebuild(self, executor);
     }
     pub(super) fn slot(owner: SymbolId, name: SymbolId) -> M {
         // Domain-separated structural identity; the returned owner/name mapping
@@ -610,3 +559,5 @@ mod tests {
         ));
     }
 }
+
+mod inventory;

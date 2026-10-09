@@ -33,34 +33,33 @@ impl Compiler<'_> {
             .push(CodeItem::Instruction(Instruction { opcode, operands }));
     }
 
-    pub(super) fn intern_string(&mut self, value: &str) {
-        if self.seen_strings.insert(value.to_owned()) {
-            self.result.strings.push(value.to_owned());
+    pub(super) fn intern_string(&mut self, value: &str) -> SymbolId {
+        self.intern_bytes(value.as_bytes())
+    }
+
+    pub(super) fn intern_format_template(&mut self, bytes: Vec<u8>) -> SymbolId {
+        self.intern_bytes(&bytes)
+    }
+
+    fn intern_bytes(&mut self, bytes: &[u8]) -> SymbolId {
+        match self.string_roster.intern_bytes(bytes) {
+            Ok(id) => id,
+            Err(collision) => {
+                let mut failure = error("string payload", &collision.to_string());
+                failure.kind = LowerErrorKind::Internal;
+                self.resolver_failure.borrow_mut().get_or_insert(failure);
+                SymbolId::of_bytes(bytes)
+            }
         }
     }
 
-    pub(super) fn intern_format_template(&mut self, bytes: Vec<u8>) -> String {
-        if let Ok(text) = std::str::from_utf8(&bytes) {
-            let key = text.to_owned();
-            self.intern_string(&key);
-            return key;
-        }
-        let mut key = String::from("\u{e000}format:");
-        for byte in &bytes {
-            key.push_str(&format!("{byte:02x}"));
-        }
-        if self.seen_strings.insert(key.clone()) {
-            self.result.strings.push(key.clone());
-        }
-        self.result.format_templates.insert(key.clone(), bytes);
-        key
-    }
-
-    pub(super) fn label(&mut self) -> String {
-        let next = self.next_label;
-        self.next_label += 1;
-        let label = format!("block_{next}");
-        self.label_try_depths.insert(label.clone(), self.try_depth);
+    pub(super) fn label(&mut self) -> LabelId {
+        let label = LabelId(self.next_label);
+        self.next_label = self
+            .next_label
+            .checked_add(1)
+            .expect("procedure label count exceeds u32");
+        self.label_try_depths.insert(label, self.try_depth);
         label
     }
 
@@ -90,7 +89,7 @@ impl Compiler<'_> {
             self.emit(opcode::IS_NULL, vec![]);
             self.emit(opcode::TEST, vec![]);
             let skip = self.label();
-            self.emit(opcode::JZ, vec![Word::Branch(skip.clone())]);
+            self.emit(opcode::JZ, vec![Word::Branch(skip)]);
             if let Some(path) = self
                 .bindings
                 .parameter_types

@@ -4,11 +4,11 @@ use crate::lowering::{LoweredUnit, Namespace, UnitIdentity};
 use crate::lowering_memo::ResolverRead;
 use dm_codegen_byond::lower_resolver::{ResolvedInstance, ResolvedSlot, ResolverProc};
 use dm_codegen_byond::procedure_abi::{ArgumentSource, Category, ProcLayout};
-use dm_ir::{ProcedureIdentity, ProcedureStaticIdentity, ResolveQuery, Resolver, SymbolId};
+use dm_ir::{ProcedureIdentity, ProcedureStaticIdentity, ResolveQuery, Resolver, SymRef, SymbolId};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, sync::Arc};
-const EXECUTABLE_SCHEMA: u32 = 0x0205_0001;
-const FAILURE_SCHEMA: u32 = 0x0205_0002;
+const EXECUTABLE_SCHEMA: u32 = 0x0206_0001;
+const FAILURE_SCHEMA: u32 = 0x0206_0002;
 #[path = "lowering_memo_private.rs"]
 mod private;
 #[derive(Serialize, Deserialize)]
@@ -52,12 +52,12 @@ struct HelperWire {
 #[derive(Serialize, Deserialize)]
 struct CodeWire {
     code: dm_codegen_byond::SimpleProc,
-    slots: Vec<(dm_codegen_byond::Symbol, SymbolId, SymbolId, SymbolId)>,
-    resources: BTreeMap<String, u128>,
-    instances: Vec<(String, SymbolId, SymbolId)>,
-    procedure_values: BTreeMap<dm_codegen_byond::Symbol, ProcedureIdentity>,
-    procedure_statics: BTreeMap<dm_codegen_byond::Symbol, ProcedureStaticIdentity>,
-    modified: Vec<(dm_codegen_byond::Symbol, private::DescriptorWire)>,
+    slots: Vec<(SymRef, SymbolId, SymbolId, SymbolId)>,
+    resources: BTreeMap<SymbolId, u128>,
+    instances: Vec<(SymbolId, SymbolId, SymbolId)>,
+    procedure_values: BTreeMap<SymRef, ProcedureIdentity>,
+    procedure_statics: BTreeMap<SymRef, ProcedureStaticIdentity>,
+    modified: Vec<(SymRef, private::DescriptorWire)>,
 }
 impl CodeWire {
     fn capture(code: &ResolverProc) -> Self {
@@ -66,26 +66,29 @@ impl CodeWire {
             slots: code
                 .slots
                 .iter()
-                .map(|(key, slot)| (key.clone(), slot.symbol, slot.owner, slot.name))
+                .map(|(key, slot)| (*key, slot.symbol, slot.owner, slot.name))
                 .collect(),
             resources: code.resources.clone(),
             instances: code
                 .instances
                 .iter()
-                .map(|(key, value)| (key.clone(), value.alias, value.runtime_type))
+                .map(|(key, value)| (*key, value.alias, value.runtime_type))
                 .collect(),
             procedure_values: code.procedure_values.clone(),
             procedure_statics: code.procedure_statics.clone(),
             modified: code
                 .modified_instances
                 .iter()
-                .map(|(key, value)| (key.clone(), private::DescriptorWire::capture(value)))
+                .map(|(key, value)| (*key, private::DescriptorWire::capture(value)))
                 .collect(),
         }
     }
     fn rehydrate<R: Resolver>(self, host: &R, debug_count: usize) -> Option<ResolverProc> {
         let mut slots = BTreeMap::new();
         for (key, symbol, owner, name) in self.slots {
+            if key != SymRef::VariableSlot(symbol) {
+                return None;
+            }
             if slots
                 .insert(
                     key,
@@ -102,6 +105,9 @@ impl CodeWire {
         }
         let mut instances = BTreeMap::new();
         for (key, alias, runtime_type) in self.instances {
+            if key != alias {
+                return None;
+            }
             if instances
                 .insert(
                     key,
@@ -118,12 +124,32 @@ impl CodeWire {
         let mut modified_instances = BTreeMap::new();
         for (key, wire) in self.modified {
             let captured = wire.rehydrate(host, debug_count)?;
-            if key.table != dm_codegen_byond::Table::Instance
-                || key.key != captured.descriptor.alias()
+            if key != SymRef::Instance(SymbolId::of(&captured.descriptor.alias()))
                 || modified_instances.insert(key, captured).is_some()
             {
                 return None;
             }
+        }
+        if self.procedure_values.iter().any(|(key, value)| {
+            *key != if value.verb {
+                SymRef::Verb {
+                    owner: value.owner,
+                    name: value.name,
+                    occurrence: value.occurrence,
+                }
+            } else {
+                SymRef::Proc {
+                    owner: value.owner,
+                    name: value.name,
+                    occurrence: value.occurrence,
+                }
+            }
+        }) || self
+            .procedure_statics
+            .iter()
+            .any(|(key, value)| *key != SymRef::ProcedureStatic(*value))
+        {
+            return None;
         }
         Some(ResolverProc {
             procedure: self.code,
@@ -923,3 +949,7 @@ mod executable_tests {
         assert!(other.code.is_none() && other.errors.is_none());
     }
 }
+
+#[cfg(test)]
+#[path = "lowering_memo_wire_typed_tests.rs"]
+mod typed_identity_tests;

@@ -5,18 +5,15 @@ use crate::{
     debug_sources::{DebugOrigin, DebugOrigins},
     initialization_artifact::{InitializationArtifact, InitializationCoverage},
 };
-use dm_codegen_byond::{
-    lower_resolver::{CapturedModifiedInstance, ResolverProc},
-    Symbol, Table,
-};
-use dm_ir::{Resolver, SymbolId, SymbolTable};
+use dm_codegen_byond::lower_resolver::{CapturedModifiedInstance, ResolverProc};
+use dm_ir::{Resolver, SymRef, SymbolId, SymbolTable};
 use std::{
     collections::{HashMap, VecDeque},
     sync::Arc,
 };
 
 pub struct Collected {
-    pub descriptors: Vec<(Symbol, CapturedModifiedInstance)>,
+    pub descriptors: Vec<(SymRef, CapturedModifiedInstance)>,
     pub artifacts: Vec<InitializationArtifact>,
 }
 struct Origins {
@@ -91,20 +88,20 @@ fn origins(captured: &CapturedModifiedInstance, parent: &DebugOrigins) -> Result
 fn enqueue(
     code: &ResolverProc,
     debug: &DebugOrigins,
-    seen: &mut HashMap<Symbol, Arc<[u8]>>,
-    pending: &mut VecDeque<(Symbol, CapturedModifiedInstance, Origins)>,
+    seen: &mut HashMap<SymRef, Arc<[u8]>>,
+    pending: &mut VecDeque<(SymRef, CapturedModifiedInstance, Origins)>,
 ) -> Result<(), String> {
     let mut ordered = Vec::new();
-    code.procedure.code.for_each_reference(|table, key| {
-        if table == Table::Instance {
-            ordered.push(Symbol::new(table, key));
+    code.procedure.code.for_each_reference(|reference| {
+        if matches!(reference, SymRef::Instance(_)) {
+            ordered.push(reference);
         }
     });
     for symbol in ordered {
         let Some(captured) = code.modified_instances.get(&symbol) else {
             continue;
         };
-        if symbol.key != captured.descriptor.alias() {
+        if symbol != SymRef::Instance(SymbolId::of(&captured.descriptor.alias())) {
             return Err("modified symbol differs from issued descriptor".into());
         }
         let bytes = captured.descriptor.canonical_bytes();
@@ -115,7 +112,7 @@ fn enqueue(
             continue;
         }
         let source = origins(captured, debug)?;
-        seen.insert(symbol.clone(), Arc::from(bytes));
+        seen.insert(symbol, Arc::from(bytes));
         pending.push_back((symbol, captured.clone(), source));
     }
     Ok(())
@@ -132,7 +129,7 @@ pub fn collect<'a, R: Resolver>(
 }
 pub fn collect_with_defaults<'a, R: Resolver>(
     seeds: impl IntoIterator<Item = (&'a ResolverProc, &'a DebugOrigins)>,
-    defaults: &[(Symbol, CapturedModifiedInstance, DebugOrigins)],
+    defaults: &[(SymRef, CapturedModifiedInstance, DebugOrigins)],
     symbols: &SymbolTable,
     host: &R,
     calls: Option<&dyn dm_tree::constants::PureCalls>,
@@ -140,7 +137,7 @@ pub fn collect_with_defaults<'a, R: Resolver>(
     let mut seen = HashMap::new();
     let mut pending = VecDeque::new();
     for (symbol, captured, debug) in defaults {
-        if symbol.table != Table::Instance || symbol.key != captured.descriptor.alias() {
+        if *symbol != SymRef::Instance(SymbolId::of(&captured.descriptor.alias())) {
             return Err("modified default alias differs from issued descriptor".into());
         }
         let bytes: Arc<[u8]> = Arc::from(captured.descriptor.canonical_bytes());
@@ -150,8 +147,8 @@ pub fn collect_with_defaults<'a, R: Resolver>(
             }
             continue;
         }
-        seen.insert(symbol.clone(), bytes);
-        pending.push_back((symbol.clone(), captured.clone(), origins(captured, debug)?));
+        seen.insert(*symbol, bytes);
+        pending.push_back((*symbol, captured.clone(), origins(captured, debug)?));
     }
     for (code, debug) in seeds {
         enqueue(code, debug, &mut seen, &mut pending)?;
@@ -177,13 +174,15 @@ pub fn collect_with_defaults<'a, R: Resolver>(
             },
             &ResourceProofHost { host, descriptor },
         )
-        .map_err(|error| format!("modified initializer {}: {error:?}", symbol.key))?;
+        .map_err(|error| format!("modified initializer {symbol:?}: {error:?}"))?;
         let debug_origins = DebugOrigins {
             entries: source.entries,
         };
         enqueue(&code, &debug_origins, &mut seen, &mut pending)?;
         let artifact = InitializationArtifact {
-            identity: dm_link::InitializerIdentity::Modified(SymbolId::of(&symbol.key)),
+            identity: dm_link::InitializerIdentity::Modified(SymbolId::of(
+                &captured.descriptor.alias(),
+            )),
             code,
             debug_origins,
             coverage: InitializationCoverage::ModifiedAssignments {
@@ -203,15 +202,15 @@ pub fn default_seeds(
     frontend: &dm_tree::frontend::ColdFrontend,
     plan: &dm_tree::initializers::InitializerPlan,
     classified: &crate::initializer_policy::ClassifiedInitializers,
-) -> Result<Vec<(Symbol, CapturedModifiedInstance, DebugOrigins)>, String> {
+) -> Result<Vec<(SymRef, CapturedModifiedInstance, DebugOrigins)>, String> {
     fn append(
         value: &dm_ir::SemanticValue,
         origin: &DebugOrigin,
-        output: &mut Vec<(Symbol, CapturedModifiedInstance, DebugOrigins)>,
+        output: &mut Vec<(SymRef, CapturedModifiedInstance, DebugOrigins)>,
     ) {
         match value {
             dm_ir::SemanticValue::ModifiedInstance(descriptor) => output.push((
-                Symbol::new(Table::Instance, descriptor.alias()),
+                SymRef::Instance(SymbolId::of(&descriptor.alias())),
                 CapturedModifiedInstance {
                     descriptor: descriptor.as_ref().clone(),
                     field_origins: vec![Some(0); descriptor.fields().len()],
@@ -351,7 +350,7 @@ fn prepare_value(
 /// Descriptor records are installed before the captured map/skin stage, sharing
 /// the same frozen instance/procedure tables and exact coverage validation.
 pub struct Stage<'a> {
-    pub descriptors: &'a [(Symbol, CapturedModifiedInstance)],
+    pub descriptors: &'a [(SymRef, CapturedModifiedInstance)],
     pub types: &'a dyn crate::class_projection::TypeValuePolicy,
     pub next: Option<&'a dyn crate::composition::NonTextOutputStage>,
 }
@@ -439,7 +438,7 @@ mod resource_tests {
             field_origins: vec![Some(0)],
             origin: Some(0),
         };
-        let symbol = Symbol::new(Table::Instance, captured.descriptor.alias());
+        let symbol = SymRef::Instance(SymbolId::of(&captured.descriptor.alias()));
         let debug = DebugOrigins {
             entries: vec![DebugOrigin {
                 semantic_path: "body.dm".into(),
@@ -461,12 +460,15 @@ mod resource_tests {
         .unwrap();
         assert_eq!(output.artifacts.len(), 1);
         assert_eq!(
-            output.artifacts[0].code.resources.get("asset.txt"),
+            output.artifacts[0]
+                .code
+                .resources
+                .get(&SymbolId::of("asset.txt")),
             Some(&99)
         );
         assert!(output.artifacts[0].code.procedure.code.items.iter().any(|item| matches!(item,
             dm_codegen_byond::Item::Instruction(instruction) if instruction.operands.iter().any(|word|
-                matches!(word,dm_codegen_byond::Word::Value(dm_codegen_byond::ValueWord::Resource(path)) if path == "asset.txt")))));
+                matches!(word,dm_codegen_byond::Word::Value(dm_codegen_byond::ValueWord::Resource(content)) if *content == 99)))));
         assert!(collect_with_defaults(
             std::iter::empty(),
             &defaults,

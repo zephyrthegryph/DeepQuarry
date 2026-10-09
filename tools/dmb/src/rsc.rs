@@ -263,8 +263,68 @@ pub fn read_entry(reader: &mut impl Read) -> io::Result<Option<Entry>> {
     })))
 }
 
-/// Serialize borrowed resources into one exactly sized archive without cloning payloads.
+/// Immutable encoder-issued archive bytes and their streaming content hash.
+/// No public constructor or mutable access can detach the hash from its payload.
+#[derive(Debug, PartialEq, Eq)]
+pub struct EncodedRsc {
+    bytes: Vec<u8>,
+    hash: u128,
+}
+impl EncodedRsc {
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+    pub fn content_hash(&self) -> u128 {
+        self.hash
+    }
+    pub fn len(&self) -> usize {
+        self.bytes.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.bytes.is_empty()
+    }
+    pub fn capacity(&self) -> usize {
+        self.bytes.capacity()
+    }
+    /// Consuming the owner relinquishes its certificate before mutable access.
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.bytes
+    }
+}
+impl AsRef<[u8]> for EncodedRsc {
+    fn as_ref(&self) -> &[u8] {
+        self.bytes()
+    }
+}
+impl std::ops::Deref for EncodedRsc {
+    type Target = [u8];
+    fn deref(&self) -> &[u8] {
+        self.bytes()
+    }
+}
+
+struct ArchiveWriter {
+    bytes: Vec<u8>,
+    hash: xxhash_rust::xxh3::Xxh3,
+}
+impl Write for ArchiveWriter {
+    fn write(&mut self, input: &[u8]) -> io::Result<usize> {
+        let count = self.bytes.write(input)?;
+        self.hash.update(&input[..count]);
+        Ok(count)
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        self.bytes.flush()
+    }
+}
+
+/// Compatibility byte output consumes the same immutable encoder owner.
 pub fn named_archive_bytes(resources: &[&NamedResource]) -> io::Result<Vec<u8>> {
+    named_archive_encoded(resources).map(EncodedRsc::into_bytes)
+}
+
+/// Serialize and hash borrowed resource framing and payloads in a single pass.
+pub fn named_archive_encoded(resources: &[&NamedResource]) -> io::Result<EncodedRsc> {
     let mut size = 0usize;
     for resource in resources {
         size = size
@@ -273,14 +333,22 @@ pub fn named_archive_bytes(resources: &[&NamedResource]) -> io::Result<Vec<u8>> 
             })?)
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "RSC archive too large"))?;
     }
-    let mut output = Vec::new();
+    let mut output = ArchiveWriter {
+        bytes: Vec::new(),
+        hash: xxhash_rust::xxh3::Xxh3::new(),
+    };
     output
+        .bytes
         .try_reserve_exact(size)
         .map_err(|error| io::Error::new(io::ErrorKind::OutOfMemory, error))?;
     for resource in resources {
         write_named(&mut output, resource)?;
     }
-    Ok(output)
+    output.flush()?;
+    Ok(EncodedRsc {
+        hash: output.hash.digest128(),
+        bytes: output.bytes,
+    })
 }
 
 fn named_entry_size(resource: &NamedResource) -> io::Result<usize> {
@@ -351,6 +419,35 @@ pub fn write_all(writer: &mut impl Write, entries: &[Entry]) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn encoded_archive_hash_covers_exact_framing_and_payload_without_rehash_owner() {
+        let first =
+            NamedResource::from_data(6, b"icons/a.png".to_vec(), vec![0, 255, 2, 3], 19, 23)
+                .unwrap();
+        let second =
+            NamedResource::from_data(0, vec![b'b', 255], b"text".to_vec(), 29, 31).unwrap();
+        let rows = [&first, &second];
+        let encoded = named_archive_encoded(&rows).unwrap();
+        let mut expected = Vec::new();
+        for row in rows {
+            write_named(&mut expected, row).unwrap();
+        }
+        assert_eq!(encoded.bytes(), expected);
+        assert_eq!(
+            encoded.content_hash(),
+            xxhash_rust::xxh3::xxh3_128(&expected)
+        );
+        assert_eq!(named_archive_bytes(&rows).unwrap(), expected);
+        assert_eq!(encoded.len(), expected.len());
+        assert!(encoded.capacity() >= encoded.len());
+        let mut mutable = encoded.into_bytes();
+        mutable[0] ^= 1;
+        assert_ne!(mutable, expected);
+        let empty = named_archive_encoded(&[]).unwrap();
+        assert!(empty.is_empty());
+        assert_eq!(empty.content_hash(), xxhash_rust::xxh3::xxh3_128(&[]));
+    }
+
     #[test]
     fn native_incremental_archive_splits_deleted_capacity_into_asset_remnants() {
         let load = |mut bytes: &[u8]| read_all(&mut bytes).unwrap();

@@ -36,6 +36,7 @@ pub struct PreparedSource {
     original: Arc<str>,
     line_starts: Arc<[usize]>,
     lines: Arc<[PreparedLine]>,
+    directives: Arc<[Option<Box<directive_syntax::DirectiveSyntax>>]>,
 }
 impl PreparedSource {
     pub fn new(original: Arc<str>) -> Self {
@@ -64,7 +65,12 @@ impl PreparedSource {
                 }
             })
             .collect::<Vec<_>>();
+        let directives = lines
+            .iter()
+            .map(|line| directive_syntax::DirectiveSyntax::new(&line.text).map(Box::new))
+            .collect::<Vec<_>>();
         Self {
+            directives: directives.into(),
             original,
             line_starts: starts.into(),
             lines: lines.into(),
@@ -76,6 +82,13 @@ impl PreparedSource {
     pub fn line_starts(&self) -> &Arc<[usize]> {
         &self.line_starts
     }
+    pub(crate) fn directive(&self, index: usize) -> Option<&directive_syntax::DirectiveSyntax> {
+        self.directives[index].as_deref()
+    }
+    pub(crate) fn is_include(&self, index: usize) -> bool {
+        self.directive(index)
+            .is_some_and(|directive| directive.parts(&self.lines[index].text).0 == "include")
+    }
     pub fn lines(&self) -> &[PreparedLine] {
         &self.lines
     }
@@ -85,6 +98,7 @@ impl PreparedSource {
 pub enum PreparationError {
     DuplicatePath(PathBuf),
     WorkerPanicked,
+    ExecutorCreation(String),
 }
 
 /// One build's immutable preparations. No memo, include policy or filesystem
@@ -98,6 +112,16 @@ impl PreparedSources {
         captures: impl IntoIterator<Item = (PathBuf, Arc<str>)>,
         workers: usize,
     ) -> Result<Self, PreparationError> {
+        let executor = dm_exec::BuildExecutor::new(workers)
+            .map_err(|error| PreparationError::ExecutorCreation(error.to_string()))?;
+        Self::prepare_with_executor(captures, &executor)
+    }
+
+    /// Prepare captures on an existing build executor; no nested pool is created.
+    pub fn prepare_with_executor(
+        captures: impl IntoIterator<Item = (PathBuf, Arc<str>)>,
+        executor: &dm_exec::BuildExecutor,
+    ) -> Result<Self, PreparationError> {
         let captures = captures
             .into_iter()
             .map(|(path, text)| (canonical_path(&path), text))
@@ -109,19 +133,18 @@ impl PreparedSources {
             }
         }
         let count = captures.len();
-        let worker_count = workers
-            .max(1)
-            .min(std::thread::available_parallelism().map_or(1, usize::from))
-            .min(count.max(1));
+        let worker_count = executor.workers().min(count.max(1));
         let next = AtomicUsize::new(0);
         let outputs = Mutex::new((0..count).map(|_| None).collect::<Vec<_>>());
-        let succeeded = std::thread::scope(|scope| {
-            let handles = (0..worker_count)
-                .map(|_| {
-                    let captures = &captures;
-                    let next = &next;
-                    let outputs = &outputs;
-                    scope.spawn(move || loop {
+        let failed = std::sync::atomic::AtomicBool::new(false);
+        executor.scope(|scope| {
+            for _ in 0..worker_count {
+                let captures = &captures;
+                let next = &next;
+                let outputs = &outputs;
+                let failed = &failed;
+                scope.spawn(move |_| {
+                    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| loop {
                         let index = next.fetch_add(1, Ordering::Relaxed);
                         if index >= captures.len() {
                             break;
@@ -131,18 +154,14 @@ impl PreparedSources {
                             break;
                         };
                         outputs[index] = Some(prepared);
-                    })
-                })
-                .collect::<Vec<_>>();
-            let mut all_joined = true;
-            for handle in handles {
-                // Join every worker even after one fails; iterator all() would
-                // short-circuit these side effects.
-                all_joined &= handle.join().is_ok();
+                    }));
+                    if result.is_err() {
+                        failed.store(true, Ordering::Relaxed);
+                    }
+                });
             }
-            all_joined
         });
-        if !succeeded {
+        if failed.load(Ordering::Relaxed) {
             return Err(PreparationError::WorkerPanicked);
         }
         let outputs = outputs
@@ -250,7 +269,7 @@ mod tests {
         let reference = plan_regions(Path::new("project.dme"), &direct, &BTreeMap::new());
         let reference_output = expand_regions(&reference, 1);
         assert!(reference_output.diagnostics.is_empty());
-        for workers in [1, 2, usize::MAX] {
+        for workers in [1, 2, 8] {
             let prepared = PreparedSources::prepare(
                 files
                     .iter()
@@ -319,6 +338,15 @@ mod tests {
         }
     }
     #[test]
+    fn unsupported_worker_request_is_a_preparation_error() {
+        let error =
+            PreparedSources::prepare(Vec::<(PathBuf, Arc<str>)>::new(), usize::MAX).unwrap_err();
+        assert!(
+            matches!(error, PreparationError::ExecutorCreation(message) if !message.is_empty())
+        );
+    }
+
+    #[test]
     fn duplicate_access_paths_are_rejected_before_preparation() {
         let error = PreparedSources::prepare(
             [
@@ -333,6 +361,38 @@ mod tests {
             PreparationError::DuplicatePath(PathBuf::from("same.dm"))
         );
     }
+    #[test]
+    fn borrowed_executor_preparation_is_reusable_and_checks_duplicate_paths() {
+        let executor = dm_exec::BuildExecutor::new(3).unwrap();
+        for _ in 0..2 {
+            let prepared = PreparedSources::prepare_with_executor(
+                [
+                    (PathBuf::from("a.dm"), Arc::from("var/a = 1\n")),
+                    (PathBuf::from("b.dm"), Arc::from("var/b = 2\n")),
+                ],
+                &executor,
+            )
+            .unwrap();
+            assert_eq!(prepared.len(), 2);
+            assert_eq!(
+                prepared.get(Path::new("a.dm")).unwrap().original().as_ref(),
+                "var/a = 1\n"
+            );
+        }
+        let error = PreparedSources::prepare_with_executor(
+            [
+                (PathBuf::from("folder/../same.dm"), Arc::from("var/a = 1\n")),
+                (PathBuf::from("same.dm"), Arc::from("var/a = 2\n")),
+            ],
+            &executor,
+        )
+        .unwrap_err();
+        assert_eq!(
+            error,
+            PreparationError::DuplicatePath(PathBuf::from("same.dm"))
+        );
+    }
+
     #[test]
     fn logical_offsets_preserve_comments_continuations_and_multiline_literals() {
         let source: Arc<str> = Arc::from("/* comment\ncontinued */\n#define VALUE \\\n  4\nvar/name = {\"first\nsecond\"}\nvar/r = @\"^\\[abc\\]$\"\n");
@@ -452,3 +512,6 @@ mod tests {
         }
     }
 }
+
+#[path = "directive_syntax.rs"]
+mod directive_syntax;

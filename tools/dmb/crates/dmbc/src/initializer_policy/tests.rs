@@ -577,3 +577,6 @@ fn world_header_exception_is_exact_and_does_not_cover_runtime_fields() {
         .reason
         .contains("opaque initializer declaration modifiers"));
 }
+
+#[path = "parallel_tests.rs"]
+mod parallel_tests;

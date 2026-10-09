@@ -296,6 +296,25 @@ pub fn prepare_pinned_source_abi_with_startup<R: Resolver>(
     resource_search_context: Option<u128>,
     workers: usize,
 ) -> Result<PreparedPinnedSourceAbi, AbiError> {
+    let executor = dm_exec::BuildExecutor::new(workers)
+        .map_err(|error| AbiError(format!("ABI executor creation failed: {error}")))?;
+    prepare_pinned_source_abi_with_startup_on_executor(
+        frontend,
+        engine,
+        resolver,
+        startup,
+        resource_search_context,
+        &executor,
+    )
+}
+pub fn prepare_pinned_source_abi_with_startup_on_executor<R: Resolver>(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    resolver: &R,
+    startup: &crate::startup::CapturedStartup,
+    resource_search_context: Option<u128>,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<PreparedPinnedSourceAbi, AbiError> {
     startup.validate_for(frontend).map_err(AbiError)?;
     let static_resolver = startup.resolver(frontend, resolver).map_err(AbiError)?;
     let resolver = &static_resolver;
@@ -309,13 +328,13 @@ pub fn prepare_pinned_source_abi_with_startup<R: Resolver>(
         resolver,
         symbols: startup.plan().symbols.as_ref(),
     };
-    let prepared = prepare_source_abi_mode(
+    let prepared = prepare_source_abi_mode_on_executor(
         frontend,
         engine,
         &evaluator,
         &boundaries,
         resource_search_context,
-        workers,
+        executor,
         true,
     )?;
     Ok(PreparedPinnedSourceAbi {
@@ -354,6 +373,27 @@ fn prepare_source_abi_mode(
     workers: usize,
     lexical_statics: bool,
 ) -> Result<PreparedSourceAbi, AbiError> {
+    let executor = dm_exec::BuildExecutor::new(workers)
+        .map_err(|error| AbiError(format!("ABI executor creation failed: {error}")))?;
+    prepare_source_abi_mode_on_executor(
+        frontend,
+        engine,
+        evaluator,
+        boundaries,
+        resource_search_context,
+        &executor,
+        lexical_statics,
+    )
+}
+fn prepare_source_abi_mode_on_executor(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    evaluator: &DriverEvaluator<'_>,
+    boundaries: &BTreeMap<UnitIdentity, BoundaryAbi>,
+    resource_search_context: Option<u128>,
+    executor: &dm_exec::BuildExecutor,
+    lexical_statics: bool,
+) -> Result<PreparedSourceAbi, AbiError> {
     let index = unit_members(frontend)?;
     let identities: HashMap<_, _> = index.iter().map(|(key, id)| (*id, *key)).collect();
     let tree = &frontend.snapshot.tree;
@@ -383,94 +423,82 @@ fn prepare_source_abi_mode(
             }
         }
     }
-    // One bounded request-local pool survives every dependency wave. The
-    // outer worker span covers the complete worker loop, avoiding a new
-    // short calibration envelope and coarse interval bound for every wave.
+    // The build executor survives every dependency wave and every other stage.
     if !ready.is_empty() {
-        rayon::ThreadPoolBuilder::new()
-            .num_threads(workers.clamp(1, 8).min(frontend.bodies.len().max(1)))
-            .build_scoped(
-                |thread| {
-                    let _profile = dm_profile::stage("cold.abi_preparation");
-                    thread.run();
-                },
-                |pool| -> Result<(), AbiError> {
-                    while !ready.is_empty() {
-                        let inherited = DriverInheritedFacts {
-                            frontend,
-                            engine,
-                            source_layouts: &layouts,
-                            boundaries,
-                            unit_members: &index,
-                        };
-                        let lexical = LexicalAbiEvaluator(evaluator);
-                        let selected_evaluator: &dyn CapturedConstantEvaluator =
-                            if lexical_statics { &lexical } else { evaluator };
-                        let policy = crate::procedure_policy::CapturedProcedurePolicy {
-                            evaluator: selected_evaluator,
-                            inherited: &inherited,
-                            resource_search_context,
-                        };
-                        // Indexed collection preserves ready encounter order. install returns
-                        // only after the wave and all sibling jobs finish, including unwinding.
-                        let wave = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                            pool.install(|| {
-                                ready
-                                    .par_iter()
-                                    .map(|ordinal| {
-                                        let body = &frontend.bodies[*ordinal];
-                                        let result = (|| {
-                                            let node =
-                                                tree.member(body.member).ok_or_else(|| {
-                                                    AbiError("body member missing".into())
-                                                })?;
-                                            let metadata =
-                                                node.metadata.procedure.as_ref().ok_or_else(
-                                                    || {
-                                                        AbiError(
-                                                            "procedure metadata unsupported".into(),
-                                                        )
-                                                    },
-                                                )?;
-                                            let parsed =
-                                                frontend.compact_body(body).map_err(|error| {
-                                                    AbiError(format!("body parse: {error:?}"))
-                                                })?;
-                                            let context = AbiContext {
-                                                identity: identities[&body.member],
-                                                symbols: evaluator.symbols,
-                                                origin: &body.source,
-                                                resolver: evaluator.resolver,
-                                            };
-                                            policy.prepare(metadata, parsed, &context)
-                                        })();
-                                        (*ordinal, result)
-                                    })
-                                    .collect::<Vec<_>>()
-                            })
-                        }))
-                        .map_err(|_| AbiError("ABI preparation worker panicked".into()))?;
-                        ready.clear();
-                        for (ordinal, result) in wave {
-                            remaining[ordinal] = false;
-                            match result {
-                                Ok(unit) => {
-                                    let layout = unit.require_production_abi()?.layout.clone();
-                                    layouts.insert(frontend.bodies[ordinal].member, layout);
-                                    results[ordinal] = Some(unit);
-                                    ready.extend(dependents[ordinal].iter().copied());
-                                }
-                                Err(error) => {
-                                    failures.insert(ordinal, error.to_string());
-                                }
-                            }
-                        }
+        while !ready.is_empty() {
+            let inherited = DriverInheritedFacts {
+                frontend,
+                engine,
+                source_layouts: &layouts,
+                boundaries,
+                unit_members: &index,
+            };
+            let lexical = LexicalAbiEvaluator(evaluator);
+            let selected_evaluator: &dyn CapturedConstantEvaluator =
+                if lexical_statics { &lexical } else { evaluator };
+            let policy = crate::procedure_policy::CapturedProcedurePolicy {
+                evaluator: selected_evaluator,
+                inherited: &inherited,
+                resource_search_context,
+            };
+            // Indexed collection preserves ready encounter order. install returns
+            // only after the wave and all sibling jobs finish, including unwinding.
+            let wave = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                executor.install(|| {
+                    ready
+                        .par_chunks(ready.len().div_ceil(executor.workers()).max(1))
+                        .flat_map_iter(|chunk| {
+                            let _profile = dm_profile::stage("cold.abi_preparation");
+                            chunk
+                                .iter()
+                                .map(|ordinal| {
+                                    let body = &frontend.bodies[*ordinal];
+                                    let result = (|| {
+                                        let node = tree.member(body.member).ok_or_else(|| {
+                                            AbiError("body member missing".into())
+                                        })?;
+                                        let metadata =
+                                            node.metadata.procedure.as_ref().ok_or_else(|| {
+                                                AbiError("procedure metadata unsupported".into())
+                                            })?;
+                                        let parsed =
+                                            frontend.compact_body(body).map_err(|error| {
+                                                AbiError(format!("body parse: {error:?}"))
+                                            })?;
+                                        let context = AbiContext {
+                                            identity: identities[&body.member],
+                                            symbols: evaluator.symbols,
+                                            origin: &body.source,
+                                            resolver: evaluator.resolver,
+                                        };
+                                        policy.prepare(metadata, parsed, &context)
+                                    })();
+                                    (*ordinal, result)
+                                })
+                                .collect::<Vec<_>>()
+                        })
+                        .collect::<Vec<_>>()
+                })
+            }))
+            .map_err(|_| AbiError("ABI preparation worker panicked".into()))?;
+            ready.clear();
+            for (ordinal, result) in wave {
+                remaining[ordinal] = false;
+                match result {
+                    Ok(unit) => {
+                        let layout = unit.require_production_abi()?.layout.clone();
+                        layouts.insert(frontend.bodies[ordinal].member, layout);
+                        results[ordinal] = Some(unit);
+                        ready.extend(dependents[ordinal].iter().copied());
                     }
-                    Ok(())
-                },
-            )
-            .map_err(|error| AbiError(format!("ABI worker pool creation failed: {error}")))??;
+                    Err(error) => {
+                        failures.insert(ordinal, error.to_string());
+                    }
+                }
+            }
+        }
     }
+
     for (ordinal, pending) in remaining.into_iter().enumerate() {
         if pending {
             failures.insert(

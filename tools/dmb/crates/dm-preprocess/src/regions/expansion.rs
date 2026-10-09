@@ -30,13 +30,20 @@ pub(super) struct RegionOutput {
 /// Freeze directive state first, then expand independent regions in a bounded
 /// scoped pool. Completion order never determines emission or diagnostics order.
 pub fn expand_regions(plan: &DirectivePlan, workers: usize) -> ExpandedRegions {
-    expand_regions_inner(plan, workers, true, None)
+    expand_regions_with_executor(
+        plan,
+        &dm_exec::BuildExecutor::new(workers).expect("expansion executor creation failed"),
+    )
 }
 
 /// Large cold frontends lex bounded declaration chunks themselves. Retaining
 /// millions of whole-project lexical spans would defeat the source arena model.
 pub fn expand_regions_text(plan: &DirectivePlan, workers: usize) -> ExpandedRegions {
-    expand_regions_inner(plan, workers, false, None)
+    expand_regions_text_with_executor(
+        plan,
+        &dm_exec::BuildExecutor::new(workers).expect("expansion executor creation failed"),
+        None,
+    )
 }
 
 pub fn expand_regions_text_with_memo(
@@ -44,17 +51,37 @@ pub fn expand_regions_text_with_memo(
     workers: usize,
     memo: &dyn region_memo::ExpansionMemo,
 ) -> ExpandedRegions {
-    expand_regions_inner(plan, workers, false, Some(memo))
+    expand_regions_text_with_executor(
+        plan,
+        &dm_exec::BuildExecutor::new(workers).expect("expansion executor creation failed"),
+        Some(memo),
+    )
 }
+/// Expand on the build's shared workers without creating another pool.
+pub fn expand_regions_with_executor(
+    plan: &DirectivePlan,
+    executor: &dm_exec::BuildExecutor,
+) -> ExpandedRegions {
+    expand_regions_inner(plan, executor, true, None)
+}
+
+/// Expand text with optional memo reuse on the explicitly supplied executor.
+pub fn expand_regions_text_with_executor(
+    plan: &DirectivePlan,
+    executor: &dm_exec::BuildExecutor,
+    memo: Option<&dyn region_memo::ExpansionMemo>,
+) -> ExpandedRegions {
+    expand_regions_inner(plan, executor, false, memo)
+}
+
 fn expand_regions_inner(
     plan: &DirectivePlan,
-    workers: usize,
+    executor: &dm_exec::BuildExecutor,
     retain_tokens: bool,
     memo: Option<&dyn region_memo::ExpansionMemo>,
 ) -> ExpandedRegions {
     let count = plan.regions.len();
-    let hardware_workers = std::thread::available_parallelism().map_or(1, usize::from);
-    let worker_count = workers.max(1).min(hardware_workers).min(count.max(1));
+    let worker_count = executor.workers().min(count.max(1));
     let outputs = if worker_count == 1 {
         (0..count)
             .map(|index| match memo {
@@ -65,11 +92,11 @@ fn expand_regions_inner(
     } else {
         let next = AtomicUsize::new(0);
         let outputs = Mutex::new((0..count).map(|_| None).collect::<Vec<_>>());
-        std::thread::scope(|scope| {
+        executor.scope(|scope| {
             for _ in 0..worker_count {
                 let next = &next;
                 let outputs = &outputs;
-                scope.spawn(move || {
+                scope.spawn(move |_| {
                     let _profile = dm_profile::stage("frontend.expansion");
                     loop {
                         let index = next.fetch_add(1, Ordering::Relaxed);

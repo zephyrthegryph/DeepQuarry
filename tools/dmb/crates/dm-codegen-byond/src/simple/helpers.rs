@@ -1,8 +1,8 @@
 //! Helpers lowering over the shared compiler context.
 use super::*;
 
-pub(super) fn member_proc_selector(path: String) -> VariableWord {
-    if path.contains("/verb/") {
+pub(super) fn member_proc_selector(path: SymRef) -> VariableWord {
+    if matches!(path, SymRef::Verb { .. }) {
         VariableWord::StaticVerb(path)
     } else {
         VariableWord::StaticProc(path)

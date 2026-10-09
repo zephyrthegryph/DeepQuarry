@@ -27,7 +27,27 @@ pub enum BindingKnowledge {
         receipt: u128,
     },
 }
+/// An immutable factory creates request-equivalent borrowed policy views in a
+/// worker. It must invoke the operation exactly once and must not retain it.
+/// Evaluation is independent across type buckets; ordinal diagnostics and token
+/// issuance are merged by the caller in authored source order.
+pub trait InitializerEvaluatorFactory: Sync {
+    fn with_evaluator(
+        &self,
+        engine: Option<&crate::engine::EngineSnapshot>,
+        operation: &mut dyn FnMut(&dyn CapturedInitializerEvaluator),
+    );
+}
+#[derive(Clone, Copy)]
+pub struct ParallelEvaluator<'a> {
+    pub factory: &'a dyn InitializerEvaluatorFactory,
+    pub engine: Option<&'a crate::engine::EngineSnapshot>,
+}
 pub trait CapturedInitializerEvaluator {
+    fn parallel_evaluator(&self) -> Option<ParallelEvaluator<'_>> {
+        None
+    }
+
     /// Compatibility evaluators keep their exact evaluation/error behavior.
     /// Production may return the already parsed expression for runtime lowering.
     fn evaluate_prepared_write(
@@ -101,6 +121,12 @@ pub struct EngineCapturedEvaluator<'a> {
     pub evaluator: &'a dyn CapturedInitializerEvaluator,
 }
 impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
+    fn parallel_evaluator(&self) -> Option<ParallelEvaluator<'_>> {
+        let mut context = self.evaluator.parallel_evaluator()?;
+        context.engine = Some(self.engine);
+        Some(context)
+    }
+
     fn evaluate_prepared_write(
         &self,
         write: &InitializerWrite,
@@ -471,9 +497,18 @@ fn modifier_facts(
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
 ) -> Result<Vec<ModifierFact>, ClassificationError> {
+    modifier_facts_indexed(writes, symbols, evaluator, None)
+}
+fn modifier_facts_indexed(
+    writes: &[InitializerWrite],
+    symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    source_ordinals: Option<&[usize]>,
+) -> Result<Vec<ModifierFact>, ClassificationError> {
     let mut facts = Vec::with_capacity(writes.len());
     let mut issues = Vec::new();
-    for (ordinal, write) in writes.iter().enumerate() {
+    for (local, write) in writes.iter().enumerate() {
+        let ordinal = source_ordinals.map_or(local, |ordinals| ordinals[local]);
         let fact = (|| -> Result<ModifierFact, String> {
             if let Some(domain) = header_domain(write, symbols)? {
                 return Ok(ModifierFact::Header(domain));
@@ -555,7 +590,7 @@ pub fn classify_with_token_mode(
 ) -> Result<ClassifiedInitializers, ClassificationError> {
     let facts = modifier_facts(writes, symbols, evaluator)?;
     let mut source_ordinal = 0;
-    classify_from_facts(
+    classification::classify_from_facts(
         writes,
         symbols,
         evaluator,
@@ -578,221 +613,19 @@ pub fn classify(
 ) -> Result<ClassifiedInitializers, String> {
     classify_with_diagnostics(writes, symbols, evaluator).map_err(|error| error.to_string())
 }
-fn classify_from_facts(
-    writes: &[InitializerWrite],
-    symbols: &SymbolTable,
-    evaluator: &dyn CapturedInitializerEvaluator,
-    facts: &[ModifierFact],
-    source_ordinal: &mut usize,
-    debug_defined: bool,
-) -> Result<ClassifiedInitializers, String> {
-    let mut classified = Vec::with_capacity(writes.len());
-    let mut tokens = crate::initializer_tokens::Tokens::new(debug_defined);
-    for (ordinal, original) in writes.iter().enumerate() {
-        *source_ordinal = ordinal;
-        // Header properties are certified ABI domains, not variables with
-        // fabricated declaration flags. All domains share authored-value and
-        // lexical validation, then delegate exact value policy to their writer.
-        if let ModifierFact::Header(domain) = facts[ordinal] {
-            let InitializerTarget::Instance {
-                receiver_owner,
-                name,
-                ..
-            } = original.target
-            else {
-                return Err("header classification fact has no instance target".into());
-            };
-            let label = domain.label();
-            if original.lexical_owner != receiver_owner || original.lexical_procedure.is_some() {
-                return Err(format!(
-                    "{label} header lexical owner differs from receiver"
-                ));
-            }
-            if original.declared_array.is_some() {
-                return Err(format!("{label} header property cannot allocate an array"));
-            }
-            let InitializerValue::Expression(value) = &original.value else {
-                return Err(format!(
-                    "{label} header property requires an authored value"
-                ));
-            };
-            let Evaluation::Scalar(value) = evaluator.evaluate_write(original, value)? else {
-                return Err(format!(
-                    "{label} header property requires a captured scalar"
-                ));
-            };
-            let name = symbols
-                .text(name)
-                .ok_or_else(|| format!("{label} property spelling unavailable"))?;
-            domain.validate(name, &value)?;
-            classified.push(ClassifiedWrite {
-                source_ordinal: ordinal,
-                write: original.clone(),
-                default: DefaultValue::Scalar(value),
-                phase: None,
-                runtime_value: None,
-            });
-            continue;
-        }
-        let constant_binding = match facts[ordinal] {
-            ModifierFact::Known(flags) => flags & 2 != 0,
-            ModifierFact::MutableInstance => false,
-            ModifierFact::Header(_) => {
-                return Err("header classification fact was not consumed".into())
-            }
-        };
-        let write = original.clone();
-        if let Some(array) = &original.declared_array {
-            let unsized_only = array.dimensions.len() == 1 && array.dimensions[0].is_none();
-            if !unsized_only {
-                if !matches!(original.value, InitializerValue::ArrayAllocation(_)) {
-                    return Err("explicit sized array initializer is unsupported".into());
-                }
-                let mut dimensions = Vec::with_capacity(array.dimensions.len());
-                for dimension in array.dimensions.iter() {
-                    let dimension = dimension.as_ref().ok_or("mixed unsized array dimensions")?;
-                    let Evaluation::Scalar(SemanticValue::NumberBits(bits)) =
-                        evaluator.evaluate_write(&write, dimension)?
-                    else {
-                        return Err("array dimension must be a constant integer".into());
-                    };
-                    let size = f32::from_bits(bits);
-                    if !(0.0..=65535.0).contains(&size) || size.fract() != 0.0 {
-                        return Err("invalid array dimension".into());
-                    }
-                    dimensions.push(size as u16);
-                }
-                if dimensions.is_empty() {
-                    return Err("array has no dimensions".into());
-                }
-                if constant_binding {
-                    return Err("const array allocation is unsupported".into());
-                }
-                // Native sized-array declarations retain null defaults; they
-                // allocate during initialization without an expression token.
-                let default = DefaultValue::Scalar(SemanticValue::Null);
-                classified.push(ClassifiedWrite {
-                    source_ordinal: ordinal,
-                    write,
-                    default,
-                    phase: Some(Phase::LiteralAllocation),
-                    runtime_value: Some(RuntimeValue::SizedArray(dimensions.into())),
-                });
-                continue;
-            }
-        }
-        let mut parsed_runtime = None;
-        let (default, phase) = match &write.value {
-            InitializerValue::NoAuthoredValue => (DefaultValue::Scalar(SemanticValue::Null), None),
-            InitializerValue::ArrayAllocation(_) => {
-                return Err("array allocation lacks authored shape".into())
-            }
-            InitializerValue::Expression(value) => {
-                let (evaluation, prepared) = evaluator.evaluate_prepared_write(&write, value)?;
-                match evaluation {
-                    Evaluation::Scalar(value) if !matches!(value, SemanticValue::List(_)) => {
-                        (DefaultValue::Scalar(value), None)
-                    }
-                    evaluation => {
-                        if constant_binding {
-                            return Err("const initializer is not scalar".into());
-                        }
-                        let PreparedInitializerExpression { source: text, ast } = match prepared {
-                            Some(prepared) => prepared,
-                            None => {
-                                let text = value
-                                    .source_text(symbols)
-                                    .ok_or("initializer spelling missing")?;
-                                let parsed = dm_syntax::parse_expression(&text);
-                                if !parsed.diagnostics.is_empty() {
-                                    return Err("invalid initializer expression".into());
-                                }
-                                PreparedInitializerExpression {
-                                    source: text,
-                                    ast: parsed.expr.ok_or("missing initializer expression")?,
-                                }
-                            }
-                        };
-                        let expr = &ast;
-                        let literal =
-                            matches!(evaluation, Evaluation::Scalar(SemanticValue::List(_)))
-                                || scalar_literal(expr, &write, symbols, &text, evaluator)?;
-                        let default = if let Some(key) =
-                            crate::initializer_tokens::construction_key(
-                                expr, &text, &write, symbols, evaluator,
-                            )? {
-                            let (token, canonical) = tokens.issue(key)?;
-                            DefaultValue::InitializerExpression { token, canonical }
-                        } else {
-                            DefaultValue::Scalar(SemanticValue::Null)
-                        };
-                        parsed_runtime = Some(ast);
-                        (
-                            default,
-                            Some(if literal {
-                                Phase::LiteralAllocation
-                            } else {
-                                Phase::Runtime
-                            }),
-                        )
-                    }
-                }
-            }
-        };
-        let runtime_value = if phase.is_some() {
-            Some(RuntimeValue::Expression(
-                parsed_runtime.ok_or("runtime expression missing")?,
-            ))
-        } else {
-            None
-        };
-        classified.push(ClassifiedWrite {
-            source_ordinal: ordinal,
-            write,
-            default,
-            phase,
-            runtime_value,
-        });
-    }
-    let mut groups: Vec<RuntimeGroup> = Vec::new();
-    let mut receiver_groups = std::collections::HashMap::new();
-    for (write_index, write) in classified
-        .iter()
-        .enumerate()
-        .filter(|(_, write)| write.phase.is_some())
-    {
-        let receiver = match write.write.target {
-            InitializerTarget::Shared { .. } => None,
-            InitializerTarget::ProcedureStatic(_) => None,
-            InitializerTarget::Instance { receiver_owner, .. } => Some(receiver_owner),
-        };
-        // The index accelerates lookup only; first encounter still determines
-        // group order, and each group's writes retain their original order.
-        let index = *receiver_groups.entry(receiver).or_insert_with(|| {
-            let index = groups.len();
-            groups.push(RuntimeGroup {
-                receiver,
-                writes: Vec::new(),
-            });
-            index
-        });
-        groups[index].writes.push(write_index);
-    }
-    for group in &mut groups {
-        if group.receiver.is_none() {
-            // Stable partition: literal lists/sized arrays precede runtime calls;
-            // each phase retains source order. Instance writes are never sorted.
-            group
-                .writes
-                .sort_by_key(|index| classified[*index].phase == Some(Phase::Runtime));
-        }
-    }
-    Ok(ClassifiedInitializers {
-        writes: classified,
-        groups,
-    })
-}
 
 #[cfg(test)]
 #[path = "initializer_policy/tests.rs"]
 mod tests;
+
+mod classification;
+
+pub fn classify_with_token_mode_on_executor(
+    writes: &[InitializerWrite],
+    symbols: &SymbolTable,
+    evaluator: ParallelEvaluator<'_>,
+    debug_defined: bool,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<ClassifiedInitializers, ClassificationError> {
+    classification::parallel::classify(writes, symbols, evaluator, debug_defined, executor)
+}

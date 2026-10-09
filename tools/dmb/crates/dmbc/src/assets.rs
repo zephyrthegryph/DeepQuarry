@@ -142,6 +142,25 @@ pub fn capture_discovered<P: CaptureProvider>(
     )
 }
 
+pub fn capture_discovered_on_executor<P: CaptureProvider + Sync>(
+    demand: dm_resources::capture::ResourceDemand,
+    extra: &ExtraAssets,
+    provider: &P,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<CapturedResources, CaptureError> {
+    let policy = dm_resources::encoding::byond516_raw_policy();
+    dm_resources::capture::capture_discovered_on_executor(
+        demand,
+        CaptureConfig {
+            policy: &policy,
+            encoded: &extra.encoded_skins,
+            additional: &extra.skins,
+        },
+        provider,
+        executor,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -189,22 +208,22 @@ pub struct ResourceProjection {
 }
 #[derive(Debug, PartialEq, Eq)]
 pub enum ResourceArchive {
-    Captured(Vec<u8>),
+    Captured(byond_dmb::rsc::EncodedRsc),
     /// Authenticated immutable archive, never a synthetic empty payload.
     Retained(crate::publish::ResourceIdentity),
 }
 impl ResourceArchive {
     pub fn captured_bytes(&self) -> Option<&[u8]> {
         match self {
-            Self::Captured(bytes) => Some(bytes),
+            Self::Captured(image) => Some(image.bytes()),
             Self::Retained(_) => None,
         }
     }
     pub fn identity(&self) -> crate::publish::ResourceIdentity {
         match self {
-            Self::Captured(bytes) => crate::publish::ResourceIdentity {
-                bytes: bytes.len() as u64,
-                hash: xxhash_rust::xxh3::xxh3_128(bytes),
+            Self::Captured(image) => crate::publish::ResourceIdentity {
+                bytes: image.len() as u64,
+                hash: image.content_hash(),
             },
             Self::Retained(identity) => *identity,
         }
@@ -330,8 +349,8 @@ fn project_resource_rows(
             .into(),
         });
     }
-    let rsc =
-        byond_dmb::rsc::named_archive_bytes(&named).map_err(ResourceOutputError::InvalidPayload)?;
+    let rsc = byond_dmb::rsc::named_archive_encoded(&named)
+        .map_err(ResourceOutputError::InvalidPayload)?;
     Ok(ResourceProjection {
         archive: ResourceArchive::Captured(rsc),
         records,

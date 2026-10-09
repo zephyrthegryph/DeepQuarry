@@ -39,7 +39,11 @@ fn colon_fields_bypass_static_receiver_facts_while_dot_remains_strict() {
         let code =
             compile_simple_proc_with_resolver(&parsed.items[0].children, &inputs, &symbols, &host)
                 .unwrap();
-        assert!(code.procedure.strings.iter().any(|name| name == "status"));
+        assert!(code
+            .procedure
+            .strings
+            .iter()
+            .any(|payload| payload.bytes.as_ref() == b"status"));
         assert!(host.0.lock().unwrap().is_empty(), "{body}");
     }
     let parsed = dm_syntax::parse("/proc/probe(W)\n    return W.status\n");
@@ -72,10 +76,7 @@ fn frame_references_use_native_words_and_lexical_parameters_shadow_them() {
             &host,
         )
         .unwrap();
-        let frozen = crate::encoder::freeze_proc(&code.procedure.code, |_| {
-            Err("frame has no table reference".into())
-        })
-        .unwrap();
+        let frozen = crate::encoder::freeze_proc(&code.procedure.code).unwrap();
         assert!(frozen
             .code()
             .words()
@@ -127,7 +128,11 @@ fn computed_receiver_with_proven_instance_storage_skips_global_uniqueness() {
         &host,
     )
     .unwrap();
-    assert!(code.procedure.strings.iter().any(|name| name == "status"));
+    assert!(code
+        .procedure
+        .strings
+        .iter()
+        .any(|payload| payload.bytes.as_ref() == b"status"));
     assert!(host
         .0
         .lock()
@@ -172,6 +177,7 @@ fn authored_call_return_annotation_types_nested_field_context() {
             .collect(),
     };
     struct Host {
+        identity: dm_ir::ProcedureIdentity,
         metadata: Arc<DeclarationMeaning>,
         reads: Mutex<Vec<Q>>,
     }
@@ -188,12 +194,20 @@ fn authored_call_return_annotation_types_nested_field_context() {
                     owner,
                     name,
                     verb: false,
-                } if name == SymbolId::of("current_message") => M::Member {
+                } if owner == self.identity.owner && name == self.identity.name => M::Member {
                     owner,
                     name,
                     fingerprint: 1,
                     data: self.metadata.clone(),
                 },
+                Q::ProcedureValue {
+                    owner,
+                    name,
+                    verb: false,
+                    formal: true,
+                } if owner == self.identity.owner && name == self.identity.name => {
+                    M::Value(dm_ir::SemanticValue::Procedure(self.identity))
+                }
                 Q::VarStorage { owner, name } if name == SymbolId::of("attachment") => {
                     M::InstanceField {
                         declaring_owner: owner,
@@ -207,7 +221,14 @@ fn authored_call_return_annotation_types_nested_field_context() {
             }
         }
     }
+    let identity = dm_ir::ProcedureIdentity {
+        owner: SymbolId::of("/datum/client"),
+        name: SymbolId::of("current_message"),
+        verb: false,
+        occurrence: 7,
+    };
     let host = Host {
+        identity,
         metadata: Arc::new(DeclarationMeaning {
             procedure: Some(Arc::new(ProcedureMetadata {
                 signature: ProcedureSignature {
@@ -233,11 +254,25 @@ fn authored_call_return_annotation_types_nested_field_context() {
         &host,
     )
     .unwrap();
+    assert_eq!(
+        code.procedure_values.get(&dm_ir::SymRef::Proc {
+            owner: identity.owner,
+            name: identity.name,
+            occurrence: identity.occurrence
+        }),
+        Some(&identity)
+    );
+    assert!(host.reads.lock().unwrap().contains(&Q::ProcedureValue {
+        owner: identity.owner,
+        name: identity.name,
+        verb: false,
+        formal: true
+    }));
     assert!(code
         .procedure
         .class_paths
         .iter()
-        .any(|path| path == "/datum/file"));
+        .any(|path| *path == dm_ir::SymbolId::of("/datum/file")));
     assert!(host.reads.lock().unwrap().iter().any(|query|
         matches!(query,Q::DeclaredVarType {owner,..} if *owner==SymbolId::of("/datum/message"))));
 }
@@ -271,15 +306,13 @@ fn current_proc_builtin_precedes_unrelated_member_queries_and_keeps_relocation()
         .iter()
         .all(|query| matches!(query, Q::ProcedureStatic { .. })));
     assert_eq!(code.procedure_values.values().next(), Some(&identity));
-    let frozen = crate::encoder::freeze_proc(&code.procedure.code, |symbol| {
-        assert_eq!(code.procedure_values.get(symbol), Some(&identity));
-        Ok(dm_ir::SymRef::Proc {
-            owner,
-            name,
-            occurrence: 0,
-        })
-    })
-    .unwrap();
+    let reference = dm_ir::SymRef::Proc {
+        owner,
+        name,
+        occurrence: 0,
+    };
+    assert_eq!(code.procedure_values.get(&reference), Some(&identity));
+    let frozen = crate::encoder::freeze_proc(&code.procedure.code).unwrap();
     assert_eq!(frozen.code().relocations().len(), 1);
     let linked = frozen.code().link(|_| Some(13)).unwrap();
     assert!(linked.windows(2).any(|words| words == [38, 13]));
@@ -344,12 +377,8 @@ fn authored_global_access_records_exact_root_slot_sidecar() {
         let (symbol, slot) = code.slots.iter().next().unwrap();
         assert_eq!(slot.owner, SymbolId::of("/"));
         assert_eq!(slot.name, SymbolId::of("__rust_g"));
-        assert_eq!(symbol.key, "var/__rust_g");
-        let frozen = crate::encoder::freeze_proc(&code.procedure.code, |actual| {
-            assert_eq!(actual, symbol);
-            Ok(dm_ir::SymRef::VariableSlot(slot.symbol))
-        })
-        .unwrap();
+        assert_eq!(*symbol, dm_ir::SymRef::VariableSlot(slot.symbol));
+        let frozen = crate::encoder::freeze_proc(&code.procedure.code).unwrap();
         assert_eq!(frozen.code().relocations().len(), 1);
     }
 }
@@ -377,15 +406,13 @@ fn current_proc_values_preserve_each_same_owner_body_occurrence() {
             compile_simple_proc_with_resolver(&parsed.items[0].children, &inputs, &symbols, &host)
                 .unwrap();
         assert_eq!(code.procedure_values.len(), 1);
-        let frozen = crate::encoder::freeze_proc(&code.procedure.code, |symbol| {
-            assert_eq!(code.procedure_values.get(symbol), Some(&identity));
-            Ok(dm_ir::SymRef::Proc {
-                owner,
-                name,
-                occurrence,
-            })
-        })
-        .unwrap();
+        let reference = dm_ir::SymRef::Proc {
+            owner,
+            name,
+            occurrence,
+        };
+        assert_eq!(code.procedure_values.get(&reference), Some(&identity));
+        let frozen = crate::encoder::freeze_proc(&code.procedure.code).unwrap();
         let linked = frozen
             .code()
             .link(|reference| match reference {

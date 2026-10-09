@@ -1,10 +1,62 @@
 # Native compiler status
 
+## Latest validated candidate — 8 October, shared worker pool
+
+Phase 0 measurement and structural traversal gates are closed; Phase 1 is open
+under the user's D36 decision. All six ABABAB self-comparison runs passed the
+strict CPU interval cross-check, fresh DMB/RSC/diagnostic oracle and structural
+no-regression checks. Phase 1 performance and memory targets still fail.
+
+Eight-worker cold compilation, empty compiler cache, warmed captured inputs:
+
+| Measurement | Six-run median | Range |
+| --- | ---: | ---: |
+| End-to-end compiler child wall | 20.93 s | 15.15–22.46 s |
+| Critical-path CPU | 16.77 s | 13.00–18.19 s |
+| Total process CPU | 35.85 s | 30.56–37.92 s |
+| Peak private memory | 2.54 GB | 2.53–2.65 GB |
+
+Self-comparison A/B median drift is 9.8% critical-path CPU and 8.0% wall;
+changes smaller than that are not established speedups in this machine window.
+The input warm-up (86.01 s) and structural/oracle harness work are outside child
+compile wall. This is the pinned historical test-defined DeepQuarry fixture,
+not a benchmark of current master or warm edits.
+Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/self-pool-20261008-193650/`.
+Source archive: `042a29a6d88ac48bd9d274a91fff4a78281b36d446457281298e80a3377eed3c`.
+
+## Implemented candidate awaiting output benchmark � 8 October, 20:43
+
+Typed `SymRef` operands and numeric branch IDs now flow directly through lowering,
+encoding and linking; exact binary string payloads share an interned roster.
+The request-local body arena parses each issued body once and transfers it into
+lowering. Parallel resources, directive preparation, type inventory, initializer
+classification/code generation and canonical DMB table encoding use one borrowed
+build executor. Initializer groups merge in source order; a single global group
+and dependent constant/inheritance propagation remain sequential.
+
+Immutable DMB/RSC owners compute their hashes during canonical serialization.
+Publication consumes those certificates, avoids immediate staged-output rereads,
+and preserves exact-input verification and authenticated resource reuse. UTF-8
+input decoding reuses the authenticated byte allocation; conversion to the
+current `Arc<str>` representation still copies. The opt-in heap census counts
+retained body ASTs and output capacity; worker transient AST copies are excluded.
+
+Validation: **1,445 ordinary workspace library tests passed**, zero failures;
+release Clippy across workspace/all targets passed with warnings denied.
+This does not claim the full release-profile workspace test gate. Earlier full
+ordinary workspace runs found five obsolete typed-binding fixtures, now fixed;
+all compiler libraries are green. No DreamDaemon or DM test runs were made.
+
+Frozen source archive:
+`848b95d470abb6ea37232ae997077dff0201944e4edf2ffcfdd7e1ba9fe240cc`.
+Release build and full output comparison are pending. These changes are outside
+the accepted pool benchmark above; no speedup or memory reduction is claimed yet.
+
 Updated 8 October 2026. Binding plan: DESIGN.md revision 6.
 
-## Measurements against the cold budgets
+## Historical profiler-only measurements
 
-**No revision-6 acceptance cohort exists yet.** Earlier counting/LTO-disabled
+At this historical checkpoint, no admitted revision-6 cohort existed. Earlier counting/LTO-disabled
 figures are diagnostics, not acceptance measurements. No speedup is attributed
 from runs in different windows.
 
@@ -30,7 +82,8 @@ wall was overwritten by profile fields and is unavailable in this cohort; the
 reporting bug is now fixed for future runs. No accepted baseline/noise floor.
 Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/self-profiler-20261008-165336/`.
 53 measured threads add ±1.656 s uncertainty; A2 actual uncovered CPU was only
-0.141 s. A shared-pool-before-gate exception is pending human decision.
+0.141 s. The user authorized continued parallel implementation; the shared
+pool exception was approved; the completed result is recorded above.
 
 ## Correctness and implementation
 
@@ -117,12 +170,22 @@ warnings denied (64.56 seconds).
 
 ## Next three actions
 
-1. Resolve the pending shared-pool-before-gate decision; retain the strict 5%
-   uncertainty check and rerun the pinned alternating cohort after its repair.
+Shared-executor migration validation passes: 1,498 ordinary-profile workspace
+tests in 154.37 seconds, zero failures/ignored tests; release-profile
+whole-workspace/all-target Clippy passes (31.13 seconds), and formatting passes.
+Focused release executor/profiler checks also passed before the final invalid-
+worker-count regression was added; that regression passes in the full workspace.
+Unsupported worker counts now fail before allocation or thread creation.
+The acceptance candidate is being frozen for the whole-program comparison.
+
+1. Finish validation of the shared build executor, authorized by the user's
+   instruction to continue implementing on 8 October; rerun the pinned self
+   cohort with the unchanged strict 5% uncertainty check. One pool now spans
+   input preparation, expansion, parsing, startup, ABI, lowering and freezing.
 2. Retain the separate release-profile test requirement as open; preserve the
    completed ordinary workspace tests and whole-workspace Clippy evidence.
-3. Open Phase 1 after authorization/gates: measure mimalloc alone, move bulk
-   work onto one pool, emit symbol IDs directly and parse bodies once.
+3. After the measurement gate, measure mimalloc alone, move remaining main-thread
+   bulk work, emit symbol IDs directly and retain startup parses for lowering.
 
 Structured evidence: `phase0/results.jsonl` and `bench/results.jsonl`.
 Earlier narratives: [r5 close-out archive](archive/STATUS-r5-closeout.md).

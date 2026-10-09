@@ -63,9 +63,12 @@ dependencies = [
 name = "byond-dmb"
 version = "0.1.0"
 dependencies = [
+ "dm-exec",
+ "dm-profile",
  "md5",
  "serde",
  "serde_json",
+ "xxhash-rust",
 ]
 
 [[package]]
@@ -176,6 +179,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "dm-exec"
+version = "0.1.0"
+dependencies = [
+ "dm-profile",
+ "rayon",
+]
+
+[[package]]
 name = "dm-ir"
 version = "0.1.0"
 dependencies = [
@@ -196,6 +207,7 @@ dependencies = [
 name = "dm-preprocess"
 version = "0.1.0"
 dependencies = [
+ "dm-exec",
  "dm-profile",
  "dm-syntax",
  "dm-wire",
@@ -225,8 +237,10 @@ name = "dm-resources"
 version = "0.1.0"
 dependencies = [
  "byond-dmb",
+ "dm-exec",
  "dm-ir",
  "dm-preprocess",
+ "dm-profile",
  "dm-syntax",
  "serde",
  "serde_json",
@@ -242,6 +256,7 @@ version = "0.1.0"
 name = "dm-tree"
 version = "0.1.0"
 dependencies = [
+ "dm-exec",
  "dm-ir",
  "dm-preprocess",
  "dm-profile",
@@ -269,6 +284,7 @@ dependencies = [
  "dm-analysis",
  "dm-cache",
  "dm-codegen-byond",
+ "dm-exec",
  "dm-ir",
  "dm-link",
  "dm-preprocess",

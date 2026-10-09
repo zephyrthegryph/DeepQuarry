@@ -1,7 +1,6 @@
 use super::*;
 use crate::{
-    directive_identifier, eval_condition, macro_defined, parse_define, parse_include, split_word,
-    Conditional, DiagnosticKind,
+    directive_identifier, eval_condition, macro_defined, parse_include, Conditional, DiagnosticKind,
 };
 
 pub(super) fn plan<P: SourceProvider>(
@@ -532,12 +531,11 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             {
                 self.finish_recording(region, &mut pending);
             }
-            if self.recording.is_none() && !directive_memo::is_include(&lines[cursor]) {
+            if self.recording.is_none() && !prepared.is_include(cursor) {
                 if let Some(memo) = self.memo {
-                    let end = lines[cursor..]
-                        .iter()
-                        .position(directive_memo::is_include)
-                        .map_or(lines.len(), |index| cursor + index);
+                    let end = (cursor..lines.len())
+                        .find(|&index| prepared.is_include(index))
+                        .unwrap_or(lines.len());
                     if let Some(context) =
                         directive_memo::context(prepared.original(), &lines[cursor..end])
                     {
@@ -592,7 +590,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             let start = span.start;
             let end = span.end;
             let active = self.conditionals.last().is_none_or(|frame| frame.active);
-            let Some(directive) = logical.text.trim_start().strip_prefix('#') else {
+            let Some(syntax) = prepared.directive(cursor - 1) else {
                 if active {
                     if let Some(recording) = self.recording.as_mut() {
                         recording
@@ -607,7 +605,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 }
                 continue;
             };
-            let (word, rest) = split_word(directive.trim_start());
+            let (word, rest) = syntax.parts(&logical.text);
             if matches!(word, "if" | "ifdef" | "ifndef" | "elif" | "else" | "endif") {
                 self.conditional(occurrence, source_line, word, rest);
                 continue;
@@ -627,7 +625,12 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             match word {
                 "define" => {
                     self.freeze_lines(region, &mut pending);
-                    match parse_define(rest) {
+                    match syntax
+                        .definition
+                        .as_ref()
+                        .expect("define syntax captured")
+                        .clone()
+                    {
                         Ok((name, definition)) => {
                             self.apply_define(
                                 occurrence,
@@ -645,9 +648,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 }
                 "undef" => {
                     self.freeze_lines(region, &mut pending);
-                    match directive_identifier(rest) {
+                    match syntax
+                        .identifier
+                        .as_ref()
+                        .expect("undef syntax captured")
+                        .clone()
+                    {
                         Ok(name) => {
-                            self.apply_undef(region, name);
+                            self.apply_undef(region, &name);
                         }
                         Err(error) => {
                             self.error(occurrence, source_line, DiagnosticKind::Macro, error)

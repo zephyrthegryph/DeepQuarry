@@ -336,6 +336,81 @@ pub fn capture_with_resource_reuse<
     map_memo: Option<&crate::map_memo::MapMemo>,
     admission: Option<ResourceAdmission<'_>>,
 ) -> Result<CapturedNonTextOutput<R>, String> {
+    capture_with_resource_operation(
+        frontend,
+        provider,
+        resource_provider,
+        host,
+        engine,
+        known_roots,
+        world_directives,
+        observer,
+        map_memo,
+        admission,
+        crate::assets::capture_discovered,
+    )
+}
+
+#[allow(clippy::too_many_arguments)] // One request-owned executor for every capture stage.
+pub fn capture_with_resource_reuse_on_executor<
+    R: Resolver,
+    P: dm_preprocess::SourceProvider,
+    C: dm_resources::capture::CaptureProvider + Sync,
+>(
+    frontend: &ColdFrontend,
+    provider: &P,
+    resource_provider: &C,
+    host: R,
+    engine: &byond_dmb::dmb::Dmb,
+    known_roots: &BTreeSet<SymbolId>,
+    world_directives: &[Directive],
+    observer: Option<CaptureObserver<'_>>,
+    map_memo: Option<&crate::map_memo::MapMemo>,
+    admission: Option<ResourceAdmission<'_>>,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<CapturedNonTextOutput<R>, String> {
+    capture_with_resource_operation(
+        frontend,
+        provider,
+        resource_provider,
+        host,
+        engine,
+        known_roots,
+        world_directives,
+        observer,
+        map_memo,
+        admission,
+        |demand, extra, provider| {
+            crate::assets::capture_discovered_on_executor(demand, extra, provider, executor)
+        },
+    )
+}
+
+#[allow(clippy::too_many_arguments)] // Shared ordered orchestration, independent candidate capture strategy.
+fn capture_with_resource_operation<
+    R: Resolver,
+    P: dm_preprocess::SourceProvider,
+    C: dm_resources::capture::CaptureProvider,
+>(
+    frontend: &ColdFrontend,
+    provider: &P,
+    resource_provider: &C,
+    host: R,
+    engine: &byond_dmb::dmb::Dmb,
+    known_roots: &BTreeSet<SymbolId>,
+    world_directives: &[Directive],
+    observer: Option<CaptureObserver<'_>>,
+    map_memo: Option<&crate::map_memo::MapMemo>,
+    admission: Option<ResourceAdmission<'_>>,
+    capture_resources: impl FnOnce(
+        dm_resources::capture::ResourceDemand,
+        &crate::assets::ExtraAssets,
+        &C,
+    ) -> Result<
+        dm_resources::capture::CapturedResources,
+        dm_resources::capture::CaptureError,
+    >,
+) -> Result<CapturedNonTextOutput<R>, String> {
     let captured = timed(observer, CaptureStage::NonTextParsing, || {
         crate::non_text::capture_with_map_memo(frontend, provider, map_memo)
             .map_err(|error| format!("nontext capture: {error:?}"))
@@ -416,10 +491,13 @@ pub fn capture_with_resource_reuse<
         )
     } else {
         let resources = timed(observer, CaptureStage::AssetCapture, || {
-            let resources =
-                crate::assets::capture_discovered(demand, &captured.assets, resource_provider)
-                    .map_err(|error| error.to_string())?;
+            let resources = capture_resources(demand, &captured.assets, resource_provider)
+                .map_err(|error| error.to_string())?;
             reject_missing_literals(frontend, &captured, &resources)?;
+            crate::heap_census::emit_if_enabled("resources.captured", |census| {
+                census.resources(&resources)
+            })
+            .map_err(|error| format!("heap census: {error}"))?;
             resources
                 .require_complete()
                 .map_err(|error| error.to_string())?;

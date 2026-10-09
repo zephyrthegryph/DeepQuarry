@@ -1,7 +1,7 @@
 //! Anonymous descriptor inventory and attachment over the shared linker.
 use crate::{class_projection::TypeValuePolicy, symbolic::FrozenBatch};
-use dm_codegen_byond::{lower_resolver::CapturedModifiedInstance, Symbol, Table};
-use dm_ir::SymbolId;
+use dm_codegen_byond::lower_resolver::CapturedModifiedInstance;
+use dm_ir::{SymRef, SymbolId};
 use dm_link::{Entry, InitializerIdentity, Key, LinkInventory};
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -9,13 +9,13 @@ use std::{
 };
 
 pub fn contribute(
-    descriptors: &[(Symbol, CapturedModifiedInstance)],
+    descriptors: &[(SymRef, CapturedModifiedInstance)],
     inventory: &mut LinkInventory,
 ) -> Result<(), String> {
     let mut seen = BTreeMap::<SymbolId, &[u8]>::new();
     for (symbol, captured) in descriptors {
         let alias = captured.descriptor.alias();
-        if symbol != &Symbol::new(Table::Instance, &alias) {
+        if symbol != &SymRef::Instance(SymbolId::of(&alias)) {
             return Err("modified descriptor symbol/content mismatch".into());
         }
         let id = SymbolId::of(&alias);
@@ -39,7 +39,7 @@ pub fn contribute(
 /// keys before map descriptor keys. No reserved engine instance is overwritten.
 pub fn attach(
     dmb: &mut byond_dmb::dmb::Dmb,
-    descriptors: &[(Symbol, CapturedModifiedInstance)],
+    descriptors: &[(SymRef, CapturedModifiedInstance)],
     batch: &FrozenBatch,
     types: &dyn TypeValuePolicy,
 ) -> Result<BTreeSet<Key>, String> {

@@ -64,7 +64,7 @@ fn initial_globals_locals_and_parameters_match_native() {
             },
             ..Default::default()
         };
-        let compiled = compile_simple_proc_with_bindings(&item.children, &bindings).unwrap();
+        let compiled = compile_fixture_proc_with_bindings(&item.children, &bindings).unwrap();
         let mut ledger = Ledger::default();
         let id = native
             .variables
@@ -72,10 +72,7 @@ fn initial_globals_locals_and_parameters_match_native() {
             .position(|variable| native.string(variable.name) == Some(b"initial_probe"))
             .unwrap();
         ledger
-            .bind(
-                crate::Symbol::new(Table::Variable, "initial_probe"),
-                id as u32,
-            )
+            .bind(reference(Table::Variable, "initial_probe"), id as u32)
             .unwrap();
         let path = format!("/proc/{name}");
         let id = native
@@ -115,19 +112,22 @@ fn default_arguments_and_mutated_iteration_match_native() {
         let bindings = LowerBindings {
             parameters: params,
             parameter_defaults: defaults,
-            global_procs: BTreeSet::from(["control_defaults".into()]),
+            global_procs: HashMap::from([(
+                "control_defaults".into(),
+                reference(Table::Proc, "/proc/control_defaults"),
+            )]),
             ..Default::default()
         };
-        let compiled = compile_simple_proc_with_bindings(&item.children, &bindings).unwrap();
+        let compiled = compile_fixture_proc_with_bindings(&item.children, &bindings).unwrap();
         let mut ledger = Ledger::default();
         for key in &compiled.strings {
             let id = native
                 .strings
                 .iter()
-                .position(|entry| entry.data == compiled.string_bytes(key))
+                .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
                 .unwrap();
             ledger
-                .bind(crate::Symbol::new(Table::String, key), id as u32)
+                .bind(reference(Table::String, key), id as u32)
                 .unwrap();
         }
         let helper = native
@@ -137,7 +137,7 @@ fn default_arguments_and_mutated_iteration_match_native() {
             .unwrap();
         ledger
             .bind(
-                crate::Symbol::new(Table::Proc, "/proc/control_defaults"),
+                reference(Table::Proc, "/proc/control_defaults"),
                 helper as u32,
             )
             .unwrap();
@@ -230,13 +230,20 @@ fn shared_bindings_resolve_names_without_serializing_project_maps() {
     let ast = dm_syntax::parse("/proc/test()\n    return project_value + project_proc()\n");
     let mut shared = SharedLowerBindings::default();
     shared.globals.insert("project_value".into());
-    shared.global_procs.insert("project_proc".into());
+    shared.global_variables.insert(
+        "project_value".into(),
+        reference(Table::Variable, "project_value"),
+    );
+    shared.global_procs.insert(
+        "project_proc".into(),
+        reference(Table::Proc, "/proc/project_proc"),
+    );
     shared.fingerprint = "project-digest".into();
     let bindings = LowerBindings {
         shared: Some(Arc::new(shared)),
         ..LowerBindings::default()
     };
-    let compiled = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings).unwrap();
+    let compiled = compile_fixture_proc_with_bindings(&ast.items[0].children, &bindings).unwrap();
     assert!(compiled.code.items.iter().any(|item| matches!(item,
         CodeItem::Instruction(instruction) if instruction.opcode == opcode::CALL_GLOB)));
     let serialized = serde_json::to_string(&bindings).unwrap();
@@ -261,7 +268,7 @@ fn const_formal_guards_binding_writes_without_freezing_payloads() {
         "for(value = 1 to 3)\n        return",
     ] {
         let ast = dm_syntax::parse(&format!("/proc/test(value)\n    {body}\n"));
-        let result = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings);
+        let result = compile_fixture_proc_with_bindings(&ast.items[0].children, &bindings);
         let errors = result.expect_err("const binding mutation must fail");
         assert!(
             errors
@@ -278,7 +285,7 @@ fn const_formal_guards_binding_writes_without_freezing_payloads() {
         "var/other = 3\n    other = 4",
     ] {
         let ast = dm_syntax::parse(&format!("/proc/test(value)\n    {body}\n"));
-        let result = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings);
+        let result = compile_fixture_proc_with_bindings(&ast.items[0].children, &bindings);
         assert!(result.is_ok(), "{:?}", result.err());
     }
 }
@@ -293,7 +300,7 @@ fn shared_numeric_constants_respect_lexical_shadowing() {
         .numeric_constants
         .insert("UNIX".into(), 3.0_f32.to_bits());
     let shared = Arc::new(shared);
-    let constant = compile_simple_proc_with_bindings(
+    let constant = compile_fixture_proc_with_bindings(
         &ast.items[0].children,
         &LowerBindings {
             shared: Some(shared.clone()),
@@ -301,7 +308,7 @@ fn shared_numeric_constants_respect_lexical_shadowing() {
         },
     )
     .unwrap();
-    let shadow = compile_simple_proc_with_bindings(
+    let shadow = compile_fixture_proc_with_bindings(
         &ast.items[1].children,
         &LowerBindings {
             parameters: vec!["UNIX".into()],
@@ -364,16 +371,14 @@ fn compiler_context_constants_match_native() {
             current_type_path: owner.map(str::to_owned),
             ..LowerBindings::default()
         };
-        let compiled = compile_simple_proc_with_bindings(&item.children, &bindings).unwrap();
+        let compiled = compile_fixture_proc_with_bindings(&item.children, &bindings).unwrap();
         let mut ledger = Ledger::default();
         if id == 0 || id == 2 {
-            ledger
-                .bind(crate::Symbol::new(Table::Proc, path), id)
-                .unwrap();
+            ledger.bind(reference(Table::Proc, path), id).unwrap();
         }
         if id == 3 {
             ledger
-                .bind(crate::Symbol::new(Table::Class, "/datum/context_probe"), 0)
+                .bind(reference(Table::Class, "/datum/context_probe"), 0)
                 .unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -403,10 +408,10 @@ fn typed_parameter_inferred_new_matches_native() {
             ..LowerBindings::default()
         };
         let compiled =
-            compile_simple_proc_with_bindings(&ast.items[id].children, &bindings).unwrap();
+            compile_fixture_proc_with_bindings(&ast.items[id].children, &bindings).unwrap();
         let mut ledger = Ledger::default();
         ledger
-            .bind(crate::Symbol::new(Table::Class, "/datum/point"), 0)
+            .bind(reference(Table::Class, "/datum/point"), 0)
             .unwrap();
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         assert_eq!(
@@ -450,13 +455,13 @@ fn typed_local_infers_constructor_path() {
     );
     assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
     let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
-    assert_eq!(compiled.class_paths, vec!["/datum/expedition_building"]);
+    assert_eq!(
+        compiled.class_paths,
+        vec![SymbolId::of("/datum/expedition_building")]
+    );
     let mut ledger = Ledger::default();
     ledger
-        .bind(
-            crate::Symbol::new(Table::Class, "/datum/expedition_building"),
-            7,
-        )
+        .bind(reference(Table::Class, "/datum/expedition_building"), 7)
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
@@ -470,7 +475,7 @@ fn typed_local_infers_constructor_path() {
     let bare_compiled = compile_simple_proc(&bare.items[0].children).unwrap();
     assert_eq!(
         bare_compiled.class_paths,
-        vec!["/datum/expedition_building"]
+        vec![SymbolId::of("/datum/expedition_building")]
     );
     let reassigned = dm_syntax::parse(
         "/proc/create()\n    var/datum/expedition_building/B\n    B = new(3)\n    return B\n",
@@ -478,7 +483,7 @@ fn typed_local_infers_constructor_path() {
     let reassigned_compiled = compile_simple_proc(&reassigned.items[0].children).unwrap();
     assert_eq!(
         reassigned_compiled.class_paths,
-        vec!["/datum/expedition_building"]
+        vec![SymbolId::of("/datum/expedition_building")]
     );
 }
 
@@ -546,13 +551,13 @@ fn literal_parameter_defaults_match_native_prologue() {
         ],
         ..LowerBindings::default()
     };
-    let compiled = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings).unwrap();
+    let compiled = compile_fixture_proc_with_bindings(&ast.items[0].children, &bindings).unwrap();
     let mut ledger = Ledger::default();
     ledger
-        .bind(crate::Symbol::new(Table::String, "hi"), string_id as u32)
+        .bind(reference(Table::String, "hi"), string_id as u32)
         .unwrap();
     ledger
-        .bind(crate::Symbol::new(Table::Class, "/obj"), class_id as u32)
+        .bind(reference(Table::Class, "/obj"), class_id as u32)
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     assert_eq!(linked.words, native.proc_code_words(proc_id).unwrap());

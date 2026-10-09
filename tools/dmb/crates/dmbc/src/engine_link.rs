@@ -2,7 +2,6 @@
 //! Unnamed rows and duplicate strings occupy space without invented symbols.
 use crate::{engine::EngineSnapshot, symbolic::ReferenceBindings};
 use byond_dmb::{dmb::Dmb, ids::NONE};
-use dm_codegen_byond::{Symbol, Table as OperandTable};
 use dm_ir::{SymRef, SymbolId};
 use dm_link::{Entry, Key, LinkInventory, Table};
 use std::{collections::BTreeMap, sync::Arc};
@@ -71,9 +70,7 @@ pub fn capture(bytes: &[u8], engine: &EngineSnapshot) -> Result<EngineLinkFacts,
             index,
             retained_identity(engine, Table::Type, index),
         )?;
-        references
-            .references
-            .insert(Symbol::new(OperandTable::Class, path), SymRef::Type(id));
+        references.references.insert(SymRef::Type(id));
     }
     for layout in engine.procedure_layouts() {
         let Some(name) = layout.name else {
@@ -89,7 +86,7 @@ pub fn capture(bytes: &[u8], engine: &EngineSnapshot) -> Result<EngineLinkFacts,
             .ok_or("engine proc spelling missing")?;
         spelling(&mut inventory, owner_text);
         spelling(&mut inventory, name_text);
-        let (key, reference, namespace) = match layout.kind {
+        let (key, reference) = match layout.kind {
             dm_tree::MemberKind::Proc => (
                 Key::Proc {
                     owner: layout.owner,
@@ -101,7 +98,6 @@ pub fn capture(bytes: &[u8], engine: &EngineSnapshot) -> Result<EngineLinkFacts,
                     name,
                     occurrence: 0,
                 },
-                "proc",
             ),
             dm_tree::MemberKind::Verb => (
                 Key::Verb {
@@ -114,7 +110,6 @@ pub fn capture(bytes: &[u8], engine: &EngineSnapshot) -> Result<EngineLinkFacts,
                     name,
                     occurrence: 0,
                 },
-                "verb",
             ),
             dm_tree::MemberKind::Var => return Err("variable in captured procedure layout".into()),
         };
@@ -125,13 +120,7 @@ pub fn capture(bytes: &[u8], engine: &EngineSnapshot) -> Result<EngineLinkFacts,
             layout.wire_proc as usize,
             retained_identity(engine, Table::Procedure, layout.wire_proc as usize),
         )?;
-        let path = format!(
-            "{}/{namespace}/{name_text}",
-            owner_text.trim_end_matches('/')
-        );
-        references
-            .references
-            .insert(Symbol::new(OperandTable::Proc, path), reference);
+        references.references.insert(reference);
     }
     let footer = if dmb.variable_footer == NONE {
         Vec::new()

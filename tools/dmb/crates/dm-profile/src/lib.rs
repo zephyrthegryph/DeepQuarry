@@ -6,6 +6,7 @@ mod clock;
 mod internal_observer;
 mod memory;
 mod names;
+mod worker;
 mod writer;
 pub use allocator::CountingAllocator;
 use serde::Serialize;
@@ -22,6 +23,7 @@ use std::{
 };
 pub use tracing;
 use tracing_subscriber::prelude::*;
+pub use worker::{worker_lifetime, WorkerLifetime};
 
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct StageReport {
@@ -671,7 +673,9 @@ impl ProfileGuard {
             .values()
             .map(|entry| {
                 let mut report = entry.report.clone();
-                report.cpu_measurement = if entry.cpu_stage {
+                report.cpu_measurement = if report.name == "compiler.worker_lifetime" {
+                    "worker_lifetime_coverage_not_additive_stage_cpu"
+                } else if entry.cpu_stage {
                     "stage_thread_cpu"
                 } else {
                     "wall_allocations_only"
@@ -687,6 +691,7 @@ impl ProfileGuard {
                         | "profile.finalization"
                         | "profile.chrome_writer"
                         | "profiler.memory_sampler"
+                        | "compiler.worker_lifetime"
                 ) {
                     report.allocation_scope = "unmeasured_internal_observer";
                     report.peak_live_scope = "unmeasured_internal_observer";
@@ -766,7 +771,7 @@ impl ProfileGuard {
                 report
             })
             .collect::<Vec<_>>();
-        let covered_bounds = if entries
+        let covered_union = if entries
             .values()
             .filter(|entry| entry.cpu_stage)
             .any(|entry| !entry.cpu_valid || entry.cpu_missing || entry.interval_missing)
@@ -784,21 +789,23 @@ impl ProfileGuard {
             }
             by_thread
                 .into_values()
-                .map(union_interval_bounds)
+                .map(|intervals| {
+                    let cpu = worker::union_interval_cpu(intervals.clone());
+                    union_interval_bounds(intervals).map(|bounds| (cpu, bounds))
+                })
                 .collect::<Option<Vec<_>>>()
-                .map(|values| sum_bounds(values.into_iter()))
+                .map(|values| {
+                    let cpu = values.iter().map(|(cpu, _)| *cpu).sum::<u64>() as f64 / 1e9;
+                    let bounds = sum_bounds(values.into_iter().map(|(_, bounds)| bounds));
+                    (cpu, bounds)
+                })
         };
+        let covered_bounds = covered_union.map(|(_, bounds)| bounds);
+        let covered = covered_union.map(|(cpu, _)| cpu);
         drop(entries);
-        let covered = stages
-            .iter()
-            .filter(|stage| stage.cpu_measurement == "stage_thread_cpu")
-            .map(|stage| stage.exclusive_cpu_s)
-            .sum::<Option<f64>>();
-        let coarse_covered = stages
-            .iter()
-            .filter(|stage| stage.cpu_measurement == "stage_thread_cpu")
-            .map(|stage| stage.coarse_exclusive_thread_cpu_s)
-            .sum::<Option<f64>>();
+        // The direct stage and coarse endpoints are the same clock. Preserve
+        // the legacy field with the same union, rather than double-counting.
+        let coarse_covered = covered;
         let unique = sequential_stages
             .iter()
             .copied()

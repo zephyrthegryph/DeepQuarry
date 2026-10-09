@@ -147,7 +147,7 @@ impl SnapshotProvider for FileSystemInputs {
 }
 
 #[cfg(not(windows))]
-fn stamp_handle(file: &std::fs::File) -> io::Result<Stamp> {
+pub(crate) fn stamp_handle(file: &std::fs::File) -> io::Result<Stamp> {
     let metadata = file.metadata()?;
     if !metadata.is_file() {
         return Err(io::Error::new(
@@ -175,7 +175,7 @@ fn platform_file_id(file: &std::fs::File) -> io::Result<Option<u128>> {
     ))
 }
 #[cfg(windows)]
-fn stamp_handle(file: &std::fs::File) -> io::Result<Stamp> {
+pub(crate) fn stamp_handle(file: &std::fs::File) -> io::Result<Stamp> {
     use std::os::windows::io::AsRawHandle;
     #[repr(C)]
     struct Information {
@@ -291,10 +291,23 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
 #[cfg(test)]
 #[path = "input_snapshot_recording_tests.rs"]
 mod recording_tests;
+/// Authentication precedes decoding; consume the authenticated allocation on
+/// UTF-8 sources. Legacy mixed encodings retain the shared decoder's exact rules.
+fn decode_owned_source(bytes: Vec<u8>) -> String {
+    match String::from_utf8(bytes) {
+        Ok(mut text) => {
+            if text.starts_with('\u{feff}') {
+                text.drain(..3);
+            }
+            text
+        }
+        Err(error) => dm_preprocess::decode_source_bytes(&error.into_bytes()),
+    }
+}
 impl<P: SnapshotProvider> dm_preprocess::SourceProvider for RecordingInputs<P> {
     fn read(&self, path: &Path) -> Result<String, String> {
         self.read_recorded(path)
-            .map(|bytes| dm_preprocess::decode_source_bytes(&bytes))
+            .map(decode_owned_source)
             .map_err(|error| error.to_string())
     }
 }
@@ -655,6 +668,24 @@ fn check_listing(listing: &FolderListing) -> io::Result<()> {
 mod tests {
     use super::*;
     use std::cell::Cell;
+    #[test]
+    fn owned_source_preserves_decoder_and_utf8_allocation() {
+        let bytes = b"ordinary source".to_vec();
+        let allocation = bytes.as_ptr();
+        let decoded = decode_owned_source(bytes);
+        assert_eq!(decoded.as_ptr(), allocation);
+        for bytes in [
+            b"\xef\xbb\xbfhello".as_slice(),
+            b"\xef\xbb\xbf\xef\xbb\xbf\x80",
+            b"valid \xc3\xa9 then \x80\xff\xc3",
+            b"",
+        ] {
+            assert_eq!(
+                decode_owned_source(bytes.to_vec()),
+                dm_preprocess::decode_source_bytes(bytes)
+            );
+        }
+    }
     struct Host {
         bytes: Vec<u8>,
         stamp: Stamp,

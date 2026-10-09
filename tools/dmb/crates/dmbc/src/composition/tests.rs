@@ -430,6 +430,7 @@ fn consuming_composition_rejects_invalid_post_stage_instructions() {
         &symbols,
         None,
         Some(&Corrupt),
+        None,
     );
     assert!(
         matches!(result, Err(CompositionError::Unsupported(message)) if message.contains("invalid composed bytecode"))

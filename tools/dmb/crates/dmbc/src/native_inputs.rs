@@ -47,12 +47,25 @@ fn prepare_source<P: SourceProvider>(
 
 impl NativeInputs {
     /// Capture the required manifest once. Only its direct literal source paths
-    /// are offered to at most two workers. Conditional state, macro effects,
+    /// are offered to the build's worker pool. Conditional state, macro effects,
     /// FILE_DIR and recursive include discovery belong to the ordered frontend.
     pub fn prepare<P: SourceProvider + Sync>(
         project: &Path,
         provider: &P,
         workers: usize,
+    ) -> Result<Self, NativeInputError> {
+        let executor = dm_exec::BuildExecutor::new(workers).map_err(|error| {
+            NativeInputError::InternalPreparation {
+                message: error.to_string(),
+            }
+        })?;
+        Self::prepare_with_executor(project, provider, &executor)
+    }
+
+    pub fn prepare_with_executor<P: SourceProvider + Sync>(
+        project: &Path,
+        provider: &P,
+        executor: &dm_exec::BuildExecutor,
     ) -> Result<Self, NativeInputError> {
         let project = canonical_path(project);
         let manifest = prepare_source(provider, &project).map_err(|message| {
@@ -81,20 +94,17 @@ impl NativeInputs {
         let worker_count = if candidates.is_empty() {
             0
         } else {
-            workers
-                .clamp(1, 2)
-                .min(std::thread::available_parallelism().map_or(1, usize::from))
-                .min(candidates.len())
+            executor.workers().min(candidates.len())
         };
         let next = AtomicUsize::new(0);
         let outputs = Mutex::new(vec![None; candidates.len()]);
-        let workers_succeeded = std::thread::scope(|scope| {
-            let handles = (0..worker_count)
-                .map(|_| {
+        let workers_succeeded = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            executor.scope(|scope| {
+                for _ in 0..worker_count {
                     let candidates = &candidates;
                     let outputs = &outputs;
                     let next = &next;
-                    scope.spawn(move || {
+                    scope.spawn(move |_| {
                         let _profile = dm_profile::stage("input_scan");
                         loop {
                             let index = next.fetch_add(1, Ordering::Relaxed);
@@ -111,17 +121,11 @@ impl NativeInputs {
                             };
                             outputs[index] = Some(prepared);
                         }
-                    })
-                })
-                .collect::<Vec<_>>();
-            // Join every worker, including after an earlier panic. Code defects
-            // are internal failures; only ordinary read errors are optional.
-            let mut all_joined = true;
-            for handle in handles {
-                all_joined &= handle.join().is_ok();
-            }
-            all_joined
-        });
+                    });
+                }
+            });
+        }))
+        .is_ok();
         if !workers_succeeded {
             return Err(NativeInputError::InternalPreparation {
                 message: "worker panicked".into(),
@@ -217,10 +221,10 @@ mod tests {
         let direct = Memory::new(&files);
         let reference = plan_regions(Path::new("project.dme"), &direct, &BTreeMap::new());
         let expected = expand_regions(&reference, 1);
-        for workers in [0, 1, 2, usize::MAX] {
+        for workers in [0, 1, 2, 8] {
             let source = Memory::new(&files);
             let inputs = NativeInputs::prepare(Path::new("project.dme"), &source, workers).unwrap();
-            assert!(inputs.stats().workers <= 2);
+            assert!(inputs.stats().workers <= workers.max(1));
             assert_eq!(inputs.stats().candidates, 3);
             assert_eq!(inputs.stats().deferred, 1);
             let provider = inputs.provider(&source);

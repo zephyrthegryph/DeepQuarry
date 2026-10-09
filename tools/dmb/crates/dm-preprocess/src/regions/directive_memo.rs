@@ -260,12 +260,6 @@ impl MacroLookup for Lookup<'_> {
         self.environment.get(name).is_some()
     }
 }
-pub(super) fn is_include(line: &PreparedLine) -> bool {
-    line.text
-        .trim_start()
-        .strip_prefix('#')
-        .is_some_and(|directive| crate::split_word(directive.trim_start()).0 == "include")
-}
 
 #[cfg(test)]
 mod tests {

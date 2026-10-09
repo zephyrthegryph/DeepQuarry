@@ -515,7 +515,23 @@ impl AdaptedDeclarations {
     pub fn finish_with_engine_observed(
         self,
         seed: Option<&crate::frontend::EngineSeed>,
+        on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
+    ) -> Result<TreeSnapshot, SnapshotError> {
+        self.finish_with_engine_observed_execution(seed, on_error, None)
+    }
+    pub fn finish_with_engine_observed_on_executor(
+        self,
+        seed: Option<&crate::frontend::EngineSeed>,
+        on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
+        executor: &dm_exec::BuildExecutor,
+    ) -> Result<TreeSnapshot, SnapshotError> {
+        self.finish_with_engine_observed_execution(seed, on_error, Some(executor))
+    }
+    fn finish_with_engine_observed_execution(
+        self,
+        seed: Option<&crate::frontend::EngineSeed>,
         mut on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
+        executor: Option<&dm_exec::BuildExecutor>,
     ) -> Result<TreeSnapshot, SnapshotError> {
         let mut skeletons = Vec::new();
         // Engine parents seed defaults; authored parent_type has language
@@ -561,23 +577,35 @@ impl AdaptedDeclarations {
         skeletons.extend(self.skeletons);
         let fields = seed.map_or(&[][..], |seed| seed.fields.as_ref());
         let intrinsics = seed.map_or(&[][..], |seed| seed.intrinsics.as_ref());
-        let mut tree =
-            crate::build_with_intrinsic_members(self.symbols, &skeletons, fields, intrinsics)
-                .map_err(|error| {
-                    let error = SnapshotError::Tree(error);
-                    on_error(&error, &skeletons[engine_count..], &self.origins);
-                    error
-                })?;
+        let mut tree = crate::build_with_intrinsic_members_inventory(
+            self.symbols,
+            &skeletons,
+            fields,
+            intrinsics,
+            seed.is_none(),
+        )
+        .map_err(|error| {
+            let error = SnapshotError::Tree(error);
+            on_error(&error, &skeletons[engine_count..], &self.origins);
+            error
+        })?;
         // The source ledger is a projection, not a made-up origin for seeds.
         tree.declaration_targets = tree.declaration_targets[engine_count..].into();
         if let Some(seed) = seed {
-            tree = tree
-                .with_engine_intrinsics(hierarchy.unwrap(), seed.intrinsics.to_vec())
-                .map_err(|error| {
-                    let error = SnapshotError::Inventory(error);
-                    on_error(&error, &skeletons[engine_count..], &self.origins);
-                    error
-                })?;
+            let hierarchy = hierarchy.unwrap();
+            tree = match executor {
+                Some(executor) => tree.with_engine_intrinsics_on_executor(
+                    hierarchy,
+                    seed.intrinsics.to_vec(),
+                    executor,
+                ),
+                None => tree.with_engine_intrinsics(hierarchy, seed.intrinsics.to_vec()),
+            }
+            .map_err(|error| {
+                let error = SnapshotError::Inventory(error);
+                on_error(&error, &skeletons[engine_count..], &self.origins);
+                error
+            })?;
         }
         let tree = Arc::new(tree);
         let occurrences = Arc::new(crate::OccurrenceTable::build(&tree, self.origins).map_err(

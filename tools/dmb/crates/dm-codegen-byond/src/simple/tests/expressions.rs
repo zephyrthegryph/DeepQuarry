@@ -82,7 +82,13 @@ fn logical_assignments_match_native_short_circuit_bodies() {
         let compiled = compile_simple_proc_with_params(&item.children, &params).unwrap();
         let mut ledger = Ledger::default();
         ledger
-            .assign(Table::String, compiled.strings.clone())
+            .assign(
+                Table::String,
+                compiled
+                    .strings
+                    .iter()
+                    .map(|payload| SymRef::String(payload.id)),
+            )
             .unwrap();
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         let id = native
@@ -121,10 +127,10 @@ fn grouped_augmented_assignment_target_matches_native() {
         let string_id = native
             .strings
             .iter()
-            .position(|entry| entry.data == compiled.string_bytes(key))
+            .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
             .unwrap();
         ledger
-            .bind(crate::Symbol::new(Table::String, key), string_id as u32)
+            .bind(reference(Table::String, key), string_id as u32)
             .unwrap();
     }
     let linked = link_proc(&compiled.code, &ledger).unwrap();

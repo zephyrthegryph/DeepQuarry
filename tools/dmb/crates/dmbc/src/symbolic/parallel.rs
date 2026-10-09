@@ -16,26 +16,14 @@ impl InventorySink for Ops {
         self.0.push(Op::Slot(alias));
     }
 }
-struct OwnedStrings {
-    spellings: Vec<String>,
-    templates: std::collections::HashMap<String, Vec<u8>>,
-}
-
+struct OwnedStrings(Vec<dm_ir::StringPayload>);
 impl OwnedStrings {
     fn take(procedure: &mut dm_codegen_byond::SimpleProc) -> Self {
-        Self {
-            spellings: std::mem::take(&mut procedure.strings),
-            templates: std::mem::take(&mut procedure.format_templates),
-        }
+        Self(std::mem::take(&mut procedure.strings))
     }
     fn replay(&self, inventory: &mut LinkInventory, strings: &mut StringInventory) {
-        for spelling in &self.spellings {
-            let bytes = self
-                .templates
-                .get(spelling)
-                .map(Vec::as_slice)
-                .unwrap_or_else(|| spelling.as_bytes());
-            strings.append(inventory, SymbolId::of_bytes(bytes), bytes);
+        for payload in &self.0 {
+            strings.append(inventory, payload.id, &payload.bytes);
         }
     }
 }
@@ -95,7 +83,7 @@ fn replay_ops(ops: Ops, inventory: &mut LinkInventory) {
 fn freeze_unit(
     mut lowered: LoweredUnit,
     symbols: &SymbolTable,
-    source_bindings: &BTreeMap<Symbol, SymRef>,
+    source_bindings: &std::collections::BTreeSet<SymRef>,
     external: &ReferenceBindings,
     freeze_detail: bool,
 ) -> Result<Contribution, IntegrationError> {
@@ -181,94 +169,105 @@ fn freeze_unit(
 
 /// At most one outstanding owned unit per worker; results cannot accumulate a
 /// second unbounded rich-IR batch. All workers are joined before errors escape.
-pub(super) fn freeze_units(
+pub(super) fn freeze_units_with_executor(
     units: Vec<LoweredUnit>,
     symbols: &SymbolTable,
-    source_bindings: &BTreeMap<Symbol, SymRef>,
+    source_bindings: &std::collections::BTreeSet<SymRef>,
     external: &ReferenceBindings,
     freeze_detail: bool,
-    workers: usize,
+    executor: &dm_exec::BuildExecutor,
     mut emit: impl FnMut(Contribution),
 ) -> Result<(), IntegrationError> {
-    let workers = workers.clamp(1, 8).min(units.len().max(1));
+    let workers = executor.workers().min(units.len().max(1));
     if workers == 1 {
         for unit in units {
-            emit(freeze_unit(
-                unit,
-                symbols,
-                source_bindings,
-                external,
-                freeze_detail,
-            )?);
+            let identity = unit.identity;
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                freeze_unit(unit, symbols, source_bindings, external, freeze_detail)
+            }))
+            .unwrap_or_else(|_| {
+                Err(IntegrationError::Freeze {
+                    unit: identity,
+                    message: "unit freezing worker panicked".into(),
+                })
+            });
+            emit(result?);
         }
         return Ok(());
     }
-    std::thread::scope(|scope| {
-        let (completed_tx, completed_rx) = std::sync::mpsc::sync_channel(workers);
-        let mut senders = Vec::new();
-        let mut handles = Vec::new();
-        for _ in 0..workers {
-            let (tx, rx) = std::sync::mpsc::sync_channel::<(usize, LoweredUnit)>(1);
-            senders.push(tx);
-            let completed = completed_tx.clone();
-            handles.push(scope.spawn(move || {
-                // One natural lifetime scope records all worker CPU, including
-                // shared encoder scopes only when detail profiling is requested.
-                let _profile = dm_profile::stage("linking.freeze_artifacts");
-                while let Ok((index, unit)) = rx.recv() {
-                    let identity = unit.identity;
-                    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        freeze_unit(unit, symbols, source_bindings, external, freeze_detail)
-                    }))
-                    .unwrap_or_else(|_| {
-                        Err(IntegrationError::Freeze {
-                            unit: identity,
-                            message: "unit freezing worker panicked".into(),
-                        })
-                    });
-                    if completed.send((index, result)).is_err() {
-                        break;
+    let first_identity = units.first().map(|unit| unit.identity);
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        executor.scope(|scope| {
+            let (completed_tx, completed_rx) = std::sync::mpsc::sync_channel(workers);
+            let mut senders = Vec::new();
+            for _ in 0..workers {
+                let (tx, rx) = std::sync::mpsc::sync_channel::<(usize, LoweredUnit)>(1);
+                senders.push(tx);
+                let completed = completed_tx.clone();
+                scope.spawn(move |_| {
+                    // One natural lifetime scope records all worker CPU, including
+                    // shared encoder scopes only when detail profiling is requested.
+                    let _profile = dm_profile::stage("linking.freeze_artifacts");
+                    while let Ok((index, unit)) = rx.recv() {
+                        let identity = unit.identity;
+                        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            freeze_unit(unit, symbols, source_bindings, external, freeze_detail)
+                        }))
+                        .unwrap_or_else(|_| {
+                            Err(IntegrationError::Freeze {
+                                unit: identity,
+                                message: "unit freezing worker panicked".into(),
+                            })
+                        });
+                        if completed.send((index, result)).is_err() {
+                            break;
+                        }
+                    }
+                });
+            }
+            drop(completed_tx);
+            let mut pending = units.into_iter();
+            let mut outcome = Ok(());
+            loop {
+                let wave: Vec<_> = pending.by_ref().take(workers).collect();
+                if wave.is_empty() {
+                    break;
+                }
+                let count = wave.len();
+                for (index, unit) in wave.into_iter().enumerate() {
+                    senders[index]
+                        .send((index, unit))
+                        .expect("freeze worker receiver vanished");
+                }
+                let mut ordered: Vec<_> = (0..count).map(|_| None).collect();
+                for _ in 0..count {
+                    let (index, result) =
+                        completed_rx.recv().expect("freeze worker result vanished");
+                    ordered[index] = Some(result);
+                }
+                for result in ordered {
+                    match result.expect("every freeze task has an indexed result") {
+                        Ok(contribution) => emit(contribution),
+                        Err(error) => {
+                            outcome = Err(error);
+                            break;
+                        }
                     }
                 }
-            }));
-        }
-        drop(completed_tx);
-        let mut pending = units.into_iter();
-        let mut outcome = Ok(());
-        loop {
-            let wave: Vec<_> = pending.by_ref().take(workers).collect();
-            if wave.is_empty() {
-                break;
-            }
-            let count = wave.len();
-            for (index, unit) in wave.into_iter().enumerate() {
-                senders[index]
-                    .send((index, unit))
-                    .expect("freeze worker receiver vanished");
-            }
-            let mut ordered: Vec<_> = (0..count).map(|_| None).collect();
-            for _ in 0..count {
-                let (index, result) = completed_rx.recv().expect("freeze worker result vanished");
-                ordered[index] = Some(result);
-            }
-            for result in ordered {
-                match result.expect("every freeze task has an indexed result") {
-                    Ok(contribution) => emit(contribution),
-                    Err(error) => {
-                        outcome = Err(error);
-                        break;
-                    }
+                if outcome.is_err() {
+                    break;
                 }
             }
-            if outcome.is_err() {
-                break;
-            }
-        }
-        drop(senders);
-        for handle in handles {
-            handle.join().expect("unit freezing scheduler panicked");
-        }
-        outcome
+            drop(senders);
+            outcome
+        })
+    }));
+    result.unwrap_or_else(|_| match first_identity {
+        Some(unit) => Err(IntegrationError::Freeze {
+            unit,
+            message: "unit freezing scheduler panicked".into(),
+        }),
+        None => Ok(()),
     })
 }
 
@@ -278,21 +277,20 @@ mod tests {
 
     #[test]
     fn ordered_string_roster_and_binary_templates_move_without_payload_copies() {
+        let literal_payload = dm_ir::StringPayload::new(Arc::<[u8]>::from(&b"literal"[..]));
+        let template_payload =
+            dm_ir::StringPayload::new(Arc::<[u8]>::from(&[0xff, 0x16, b'X'][..]));
         let mut procedure = dm_codegen_byond::SimpleProc {
-            strings: vec!["literal".into(), "template".into(), "literal".into()],
+            strings: vec![literal_payload.clone(), template_payload, literal_payload],
             ..Default::default()
         };
-        procedure
-            .format_templates
-            .insert("template".into(), vec![0xff, 0x16, b'X']);
-        let literal = procedure.strings[0].as_ptr();
-        let template = procedure.format_templates["template"].as_ptr();
+        let literal = procedure.strings[0].bytes.as_ptr();
+        let template = procedure.strings[1].bytes.as_ptr();
         let owned = OwnedStrings::take(&mut procedure);
         assert!(procedure.strings.is_empty());
-        assert!(procedure.format_templates.is_empty());
-        assert_eq!(owned.spellings[0].as_ptr(), literal);
-        assert_eq!(owned.templates["template"].as_ptr(), template);
-        assert_eq!(owned.spellings, ["literal", "template", "literal"]);
+        assert_eq!(owned.0[0].bytes.as_ptr(), literal);
+        assert_eq!(owned.0[1].bytes.as_ptr(), template);
+        assert_eq!(owned.0[0], owned.0[2]);
         let mut inventory = LinkInventory::default();
         let mut strings = StringInventory::new(&inventory);
         owned.replay(&mut inventory, &mut strings);

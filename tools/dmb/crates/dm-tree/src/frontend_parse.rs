@@ -12,13 +12,27 @@ pub(super) struct ParsedDeclarations {
 /// Grammar-safe descriptor discovery is serial; lexing/parsing is bounded by
 /// worker count and two descriptors per worker in each joined batch. Workers
 /// discard executable AST children before returning their compact declarations.
+#[cfg(test)]
 pub(super) fn parse_declarations(
     expanded: &ExpandedRegions,
     config: FrontendConfig<'_>,
     memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
 ) -> Result<ParsedDeclarations, Vec<Diagnostic>> {
+    let executor = dm_exec::BuildExecutor::new(config.workers).map_err(|error| {
+        vec![internal(&format!(
+            "declaration executor creation failed: {error}"
+        ))]
+    })?;
+    parse_declarations_with_executor(expanded, config, memo, &executor)
+}
+
+pub(super) fn parse_declarations_with_executor(
+    expanded: &ExpandedRegions,
+    config: FrontendConfig<'_>,
+    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<ParsedDeclarations, Vec<Diagnostic>> {
     let source = expanded.text.as_ref();
-    let workers = config.workers;
     let parse_start = Instant::now();
     let mut chunks = Vec::new();
     let profile_scan = dm_profile::stage("frontend.grammar_scan");
@@ -37,21 +51,16 @@ pub(super) fn parse_declarations(
     let parsed_chunks = std::sync::atomic::AtomicUsize::new(0);
     let lookup_ns = std::sync::atomic::AtomicU64::new(0);
     let facts_ns = std::sync::atomic::AtomicU64::new(0);
-    let hardware_workers = std::thread::available_parallelism().map_or(1, usize::from);
-    let worker_count = workers
-        .max(1)
-        .min(hardware_workers)
-        .min(chunks.len().max(1));
+    let worker_count = executor.workers().min(chunks.len().max(1));
     let mut items = Vec::new();
     let mut diagnostics = Vec::new();
     // One bounded pool for the complete capture. Workers claim whole grammar-
     // safe descriptors; completion order never determines declaration identity.
     let next = std::sync::atomic::AtomicUsize::new(0);
-    let mut ordered = std::thread::scope(|scope| {
+    let parse = || {
+        executor.scope(|scope| {
         let (sender, receiver) = std::sync::mpsc::sync_channel(worker_count * 2);
-        let handles: Vec<_> =
-            (0..worker_count)
-                .map(|_| {
+        for _ in 0..worker_count {
                     let sender = sender.clone();
                     let chunks = &chunks;
                     let next = &next;
@@ -70,7 +79,7 @@ pub(super) fn parse_declarations(
                         &lookup_ns,
                         &facts_ns,
                     );
-                    scope.spawn(move || {
+                    scope.spawn(move |_| {
                         let _profile_worker = dm_profile::stage("frontend.declaration_parsing");
                         loop {
                             let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -270,9 +279,8 @@ pub(super) fn parse_declarations(
                                 break;
                             }
                         }
-                    })
-                })
-                .collect();
+                    });
+                }
         drop(sender);
         let mut ordered = Vec::with_capacity(chunks.len());
         for result in receiver {
@@ -288,17 +296,11 @@ pub(super) fn parse_declarations(
                 );
             }
         }
-        // Consume every join, including after a panic, before releasing source.
-        let failed = handles
-            .into_iter()
-            .map(|handle| handle.join())
-            .fold(false, |failed, result| failed | result.is_err());
-        if failed {
-            Err(vec![internal("declaration parsing worker panicked")])
-        } else {
-            Ok(ordered)
-        }
-    })?;
+        ordered
+    })
+    };
+    let mut ordered = std::panic::catch_unwind(std::panic::AssertUnwindSafe(parse))
+        .map_err(|_| vec![internal("declaration parsing worker panicked")])?;
     ordered.sort_by_key(|(index, _, _, _, _, _)| *index);
     let merge_start = Instant::now();
     let _profile_merge = dm_profile::stage("frontend.ordered_declaration_merge");

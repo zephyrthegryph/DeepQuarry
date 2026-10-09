@@ -2,14 +2,26 @@
 //! resolver; the input structure contains only this procedure's lexical state.
 use crate::simple::{LowerBindings, LowerError};
 use dm_ir::{
-    ResolveQuery as Q, ResolvedMeaning as M, Resolver, SemanticValue, SymbolId, SymbolTable,
+    ResolveQuery as Q, ResolvedMeaning as M, Resolver, SemanticValue, SymRef, SymbolId, SymbolTable,
 };
 use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
 
-pub(crate) fn shared_slot_key(owner: &str, name: &str) -> String {
-    format!("var{}/{name}", owner.trim_end_matches('/'))
+pub(crate) fn procedure_reference(identity: dm_ir::ProcedureIdentity) -> SymRef {
+    if identity.verb {
+        SymRef::Verb {
+            owner: identity.owner,
+            name: identity.name,
+            occurrence: identity.occurrence,
+        }
+    } else {
+        SymRef::Proc {
+            owner: identity.owner,
+            name: identity.name,
+            occurrence: identity.occurrence,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -33,16 +45,16 @@ pub struct CapturedModifiedInstance {
 }
 #[derive(Clone)]
 pub struct ResolverProc {
-    pub modified_instances: BTreeMap<crate::Symbol, CapturedModifiedInstance>,
-    pub procedure_values: BTreeMap<crate::Symbol, dm_ir::ProcedureIdentity>,
-    pub procedure_statics: BTreeMap<crate::Symbol, dm_ir::ProcedureStaticIdentity>,
+    pub modified_instances: BTreeMap<SymRef, CapturedModifiedInstance>,
+    pub procedure_values: BTreeMap<SymRef, dm_ir::ProcedureIdentity>,
+    pub procedure_statics: BTreeMap<SymRef, dm_ir::ProcedureStaticIdentity>,
     pub procedure: crate::SimpleProc,
     /// Exact resolver-issued slot tuples; no output slot is selected here.
-    pub slots: BTreeMap<crate::Symbol, ResolvedSlot>,
-    pub resources: BTreeMap<String, u128>,
+    pub slots: BTreeMap<SymRef, ResolvedSlot>,
+    pub resources: BTreeMap<SymbolId, u128>,
     /// RuntimeType licenses alias classification, not the modifier payload.
     /// The linker still requires an explicit semantic instance artifact.
-    pub instances: BTreeMap<String, ResolvedInstance>,
+    pub instances: BTreeMap<SymbolId, ResolvedInstance>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -77,15 +89,15 @@ impl ProcedureInputs {
     }
 }
 pub(crate) struct ProjectResolver<'a> {
-    pub modified_instances: RefCell<BTreeMap<crate::Symbol, CapturedModifiedInstance>>,
-    pub procedure_values: RefCell<BTreeMap<crate::Symbol, dm_ir::ProcedureIdentity>>,
-    pub procedure_statics: RefCell<BTreeMap<crate::Symbol, dm_ir::ProcedureStaticIdentity>>,
+    pub modified_instances: RefCell<BTreeMap<SymRef, CapturedModifiedInstance>>,
+    pub procedure_values: RefCell<BTreeMap<SymRef, dm_ir::ProcedureIdentity>>,
+    pub procedure_statics: RefCell<BTreeMap<SymRef, dm_ir::ProcedureStaticIdentity>>,
     pub resolver: &'a dyn Resolver,
     pub symbols: &'a SymbolTable,
-    pub slots: RefCell<BTreeMap<crate::Symbol, ResolvedSlot>>,
-    pub resources: RefCell<BTreeMap<String, u128>>,
-    pub instances: RefCell<BTreeMap<String, ResolvedInstance>>,
-    pub runtime_types: RefCell<BTreeMap<String, SymbolId>>,
+    pub slots: RefCell<BTreeMap<SymRef, ResolvedSlot>>,
+    pub resources: RefCell<BTreeMap<SymbolId, u128>>,
+    pub instances: RefCell<BTreeMap<SymbolId, ResolvedInstance>>,
+    pub runtime_types: RefCell<BTreeMap<SymbolId, SymbolId>>,
     pub resource_search_context: Option<u128>,
 }
 impl ProjectResolver<'_> {
@@ -95,7 +107,7 @@ impl ProjectResolver<'_> {
         lexical_owner: &str,
         fields: &[(String, dm_syntax::Expr)],
         origin: Option<u32>,
-    ) -> Result<String, LowerError> {
+    ) -> Result<SymbolId, LowerError> {
         let query = Q::RuntimeType(SymbolId::of(path));
         let M::Symbol(runtime_type) = self.answer(query)? else {
             return Err(self.error(
@@ -131,7 +143,8 @@ impl ProjectResolver<'_> {
         )
         .map_err(|reason| self.error(query, &reason))?;
         let alias = descriptor.alias();
-        let symbol = crate::Symbol::new(crate::Table::Instance, &alias);
+        let alias = SymbolId::of(&alias);
+        let symbol = SymRef::Instance(alias);
         let mut descriptors = self.modified_instances.borrow_mut();
         if descriptors
             .get(&symbol)
@@ -152,16 +165,12 @@ impl ProjectResolver<'_> {
     pub fn procedure_value_key(
         &self,
         identity: dm_ir::ProcedureIdentity,
-    ) -> Result<String, LowerError> {
-        let key = format!(
-            "procedure-value:{:016x}:{:016x}:{}:{}",
-            identity.owner.bits(),
-            identity.name.bits(),
-            u8::from(identity.verb),
-            identity.occurrence
-        );
-        let symbol = crate::Symbol::new(crate::Table::Proc, &key);
-        let old = self.procedure_values.borrow_mut().insert(symbol, identity);
+    ) -> Result<SymRef, LowerError> {
+        let reference = procedure_reference(identity);
+        let old = self
+            .procedure_values
+            .borrow_mut()
+            .insert(reference, identity);
         if old.is_some_and(|old| old != identity) {
             return Err(self.error(
                 Q::ProcedureValue {
@@ -173,9 +182,9 @@ impl ProjectResolver<'_> {
                 "conflicting procedure literal answers",
             ));
         }
-        Ok(key)
+        Ok(reference)
     }
-    pub fn procedure_literal(&self, path: &str) -> Result<String, LowerError> {
+    pub fn procedure_literal(&self, path: &str) -> Result<SymRef, LowerError> {
         let query = dm_ir::procedure_value_query(path).ok_or_else(|| {
             self.error(
                 Q::Type(SymbolId::of(path)),
@@ -224,52 +233,43 @@ impl ProjectResolver<'_> {
         &self,
         procedure: Option<dm_ir::ProcedureIdentity>,
         name: &str,
-    ) -> Result<Option<String>, LowerError> {
+    ) -> Result<Option<SymRef>, LowerError> {
         let Some(declaration) = self.procedure_static(procedure, name)? else {
             return Ok(None);
         };
         let identity = declaration.identity;
-        let key = format!(
-            "procedure-static:{:016x}:{:016x}:{}:{}:{:016x}",
-            identity.procedure.owner.bits(),
-            identity.procedure.name.bits(),
-            u8::from(identity.procedure.verb),
-            identity.procedure.occurrence,
-            identity.name.bits()
-        );
+        let reference = SymRef::ProcedureStatic(identity);
         self.procedure_statics
             .borrow_mut()
-            .insert(crate::Symbol::new(crate::Table::Variable, &key), identity);
-        Ok(Some(key))
+            .insert(reference, identity);
+        Ok(Some(reference))
     }
-    pub fn runtime_type(&self, path: &str) -> Result<String, LowerError> {
-        let alias = SymbolId::of(path);
+    pub fn runtime_type(&self, path: &str) -> Result<SymbolId, LowerError> {
+        self.runtime_type_symbol(SymbolId::of(path))
+    }
+    pub fn runtime_type_symbol(&self, alias: SymbolId) -> Result<SymbolId, LowerError> {
         let query = Q::RuntimeType(alias);
         let runtime_type = match self.answer(query)? {
             M::Symbol(id) => id,
             M::Missing => return Err(self.error(query, "runtime type coverage is missing")),
             _ => return Err(self.error(query, "invalid runtime type answer")),
         };
-        let text = self.text(query, runtime_type)?;
-        let old = self
-            .runtime_types
-            .borrow_mut()
-            .insert(path.to_owned(), runtime_type);
+        let old = self.runtime_types.borrow_mut().insert(alias, runtime_type);
         if old.is_some_and(|old| old != runtime_type) {
             return Err(self.error(query, "conflicting runtime type answers"));
         }
         if runtime_type != alias {
             self.instances.borrow_mut().insert(
-                path.to_owned(),
+                alias,
                 ResolvedInstance {
                     alias,
                     runtime_type,
                 },
             );
         }
-        Ok(text)
+        Ok(runtime_type)
     }
-    pub fn resource(&self, path: &str) -> Result<String, LowerError> {
+    pub fn resource(&self, path: &str) -> Result<u128, LowerError> {
         let path_id = SymbolId::of(path);
         let query = match self.resource_search_context {
             Some(search_context) => Q::ResourceIn {
@@ -280,12 +280,11 @@ impl ProjectResolver<'_> {
         };
         match self.answer(query)? {
             M::Resource { path, content } => {
-                let alias = self.text(query, path)?;
-                let old = self.resources.borrow_mut().insert(alias.clone(), content);
+                let old = self.resources.borrow_mut().insert(path, content);
                 if old.is_some_and(|old| old != content) {
                     return Err(self.error(query, "conflicting captured resource content"));
                 }
-                Ok(alias)
+                Ok(content)
             }
             M::Missing => Err(self.error(query, "resource missing in captured search context")),
             _ => Err(self.error(query, "invalid resource lookup answer")),
@@ -348,18 +347,15 @@ impl ProjectResolver<'_> {
             _ => Err(self.error(query, "invalid presence answer")),
         }
     }
-    pub fn declared_type(&self, query: Q) -> Result<Option<String>, LowerError> {
+    pub fn declared_type(&self, query: Q) -> Result<Option<SymbolId>, LowerError> {
         match self.answer(query)? {
             M::Missing => Ok(None),
-            M::DeclaredType(value) => value.map(|id| self.text(query, id)).transpose(),
-            M::Member { data, .. } => data
-                .declared_type
-                .map(|id| self.text(query, id))
-                .transpose(),
+            M::DeclaredType(value) => Ok(value),
+            M::Member { data, .. } => Ok(data.declared_type),
             _ => Err(self.error(query, "declared type metadata unavailable")),
         }
     }
-    pub fn slot(&self, query: Q) -> Result<Option<String>, LowerError> {
+    pub fn slot(&self, query: Q) -> Result<Option<SymRef>, LowerError> {
         match self.answer(query)? {
             M::Missing => Ok(None),
             M::InstanceField {
@@ -376,16 +372,13 @@ impl ProjectResolver<'_> {
                 owner,
                 name,
             } => {
-                let key = shared_slot_key(&self.text(query, owner)?, &self.text(query, name)?);
+                let key = SymRef::VariableSlot(symbol);
                 let slot = ResolvedSlot {
                     symbol,
                     owner,
                     name,
                 };
-                let old = self.slots.borrow_mut().insert(
-                    crate::Symbol::new(crate::Table::Variable, &key),
-                    slot.clone(),
-                );
+                let old = self.slots.borrow_mut().insert(key, slot.clone());
                 if old.is_some_and(|old| old != slot) {
                     return Err(self.error(query, "conflicting slot tuple"));
                 }
@@ -394,7 +387,7 @@ impl ProjectResolver<'_> {
             _ => Err(self.error(query, "slot symbol spelling unavailable")),
         }
     }
-    pub fn member_proc(&self, owner: &str, name: &str) -> Result<Option<String>, LowerError> {
+    pub fn member_proc(&self, owner: &str, name: &str) -> Result<Option<SymRef>, LowerError> {
         let owner_id = SymbolId::of(owner);
         let name_id = SymbolId::of(name);
         let proc_query = Q::Proc {
@@ -447,18 +440,34 @@ impl ProjectResolver<'_> {
                 self.text(query, declaring_owner)?;
                 Ok(None)
             }
-            M::Member { owner, name, .. } => Ok(Some(format!(
-                "{}/{}/{}",
-                self.text(query, owner)?.trim_end_matches('/'),
-                namespace,
-                self.text(query, name)?
-            ))),
+            M::Member { owner, name, .. } if name == name_id => {
+                let verb = namespace == "verb";
+                let value_query = Q::ProcedureValue {
+                    owner,
+                    name,
+                    verb,
+                    formal: true,
+                };
+                match self.answer(value_query)? {
+                    M::Value(SemanticValue::Procedure(identity))
+                        if identity.owner == owner
+                            && identity.name == name
+                            && identity.verb == verb =>
+                    {
+                        self.procedure_value_key(identity).map(Some)
+                    }
+                    _ => Err(self.error(
+                        value_query,
+                        "member procedure identity is not positively captured",
+                    )),
+                }
+            }
             _ => Err(self.error(query, "procedure declaration metadata unavailable")),
         }
     }
     /// Only an authored exact path annotation supplies a receiver type. Return
     /// value inference never examines executable bodies or invents engine ABI.
-    pub fn procedure_return_type(&self, query: Q) -> Result<Option<String>, LowerError> {
+    pub fn procedure_return_type(&self, query: Q) -> Result<Option<SymbolId>, LowerError> {
         let answer = self.answer(query)?;
         let M::Member { data, .. } = answer else {
             return match answer {

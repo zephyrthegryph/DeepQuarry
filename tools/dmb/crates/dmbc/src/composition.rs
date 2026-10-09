@@ -233,6 +233,14 @@ pub fn compose_global_program(
     batch: &FrozenBatch,
     frontend: &dm_tree::frontend::ColdFrontend,
 ) -> Result<Vec<u8>, CompositionError> {
+    compose_global_program_encoded(engine_bytes, batch, frontend)
+        .map(byond_dmb::dmb::EncodedDmb::into_bytes)
+}
+pub fn compose_global_program_encoded(
+    engine_bytes: &[u8],
+    batch: &FrozenBatch,
+    frontend: &dm_tree::frontend::ColdFrontend,
+) -> Result<byond_dmb::dmb::EncodedDmb, CompositionError> {
     validate_global_program(frontend)?;
     let covered: HashSet<_> = batch
         .units
@@ -250,7 +258,14 @@ pub fn compose_global_program(
             "source procedure coverage does not match lowered artifacts",
         ));
     }
-    compose_global_fixture(engine_bytes, batch, frontend.snapshot.tree.symbols())
+    compose_records_access(
+        engine_bytes,
+        owned::BatchAccess::Borrowed(batch),
+        frontend.snapshot.tree.symbols(),
+        None,
+        None,
+        None,
+    )
 }
 /// Compose new global procedures into a pinned immutable engine image. Symbolic
 /// table assignments are never silently rebased. Unsupported source table keys,
@@ -329,7 +344,9 @@ fn compose_records(
         symbols,
         projection,
         stage,
+        None,
     )
+    .map(byond_dmb::dmb::EncodedDmb::into_bytes)
 }
 fn compose_records_access(
     engine_bytes: &[u8],
@@ -340,7 +357,8 @@ fn compose_records_access(
         &dyn crate::class_projection::TypeValuePolicy,
     )>,
     stage: Option<&dyn NonTextOutputStage>,
-) -> Result<Vec<u8>, CompositionError> {
+    executor: Option<&dm_exec::BuildExecutor>,
+) -> Result<byond_dmb::dmb::EncodedDmb, CompositionError> {
     let mut dmb = {
         let _profile = dm_profile::stage("composition.decode_engine");
         Dmb::from_bytes(engine_bytes).map_err(CompositionError::Decode)?
@@ -863,12 +881,22 @@ fn compose_records_access(
         .map_err(CompositionError::Decode)?;
     drop(references_profile);
     let bytes = {
+        crate::heap_census::emit_if_enabled("composition.model", |census| census.dmb(&dmb))
+            .map_err(CompositionError::Decode)?;
         let _profile = dm_profile::stage("composition.encode");
-        dmb.to_bytes().map_err(CompositionError::Decode)?
+        match executor {
+            Some(executor) => dmb.encode_on_executor(executor),
+            None => dmb.encode(),
+        }
+        .map_err(CompositionError::Decode)?
     };
     // The encoded image owns its bytes; release the source graph before
     // constructing the independent round-trip validation graph.
     drop(dmb);
+    crate::heap_census::emit_if_enabled("composition.encoded", |census| {
+        census.output_encoded("dmb.bytes", &bytes)
+    })
+    .map_err(CompositionError::Decode)?;
     let _profile = dm_profile::stage("composition.independent_roundtrip");
     Dmb::from_bytes(&bytes)
         .and_then(|decoded| decoded.validate_references())
@@ -941,4 +969,7 @@ fn emit_anonymous(
 mod tests;
 
 mod owned;
-pub use owned::{compose_global_fixture_owned, compose_projected_owned_with_symbols};
+pub use owned::{
+    compose_global_fixture_owned, compose_projected_owned_with_symbols,
+    compose_projected_owned_with_symbols_on_executor,
+};

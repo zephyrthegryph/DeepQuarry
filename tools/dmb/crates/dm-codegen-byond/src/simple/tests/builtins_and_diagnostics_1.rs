@@ -123,10 +123,7 @@ fn length_matches_native_fixture() {
         .unwrap();
     let mut ledger = Ledger::default();
     ledger
-        .bind(
-            crate::Symbol::new(Table::String, "Ａ２～"),
-            string_id as u32,
-        )
+        .bind(reference(Table::String, "Ａ２～"), string_id as u32)
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     let id = native
@@ -152,10 +149,7 @@ fn copytext_three_arguments_matches_native_fixture() {
         .unwrap();
     let mut ledger = Ledger::default();
     ledger
-        .bind(
-            crate::Symbol::new(Table::String, "Ａ２～"),
-            string_id as u32,
-        )
+        .bind(reference(Table::String, "Ａ２～"), string_id as u32)
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     let id = native
@@ -208,9 +202,7 @@ fn findtext_two_arguments_uses_native_defaults() {
     let ast = dm_syntax::parse("/proc/test(x)\n    return findtext(x, \"-\")\n");
     let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["x".into()]).unwrap();
     let mut ledger = Ledger::default();
-    ledger
-        .bind(crate::Symbol::new(Table::String, "-"), 1)
-        .unwrap();
+    ledger.bind(reference(Table::String, "-"), 1).unwrap();
     let ours =
         byond_dmb::bytecode::decode(&link_proc(&compiled.code, &ledger).unwrap().words).unwrap();
     assert_eq!(ours[2].opcode, opcode::PUSH_INT);
@@ -260,13 +252,10 @@ fn world_log_output_matches_native_instruction_sequence() {
         .position(|string| string.data == b"MAPPED cable")
         .unwrap();
     ledger
-        .bind(crate::Symbol::new(Table::String, "log"), log_id as u32)
+        .bind(reference(Table::String, "log"), log_id as u32)
         .unwrap();
     ledger
-        .bind(
-            crate::Symbol::new(Table::String, "MAPPED cable"),
-            message_id as u32,
-        )
+        .bind(reference(Table::String, "MAPPED cable"), message_id as u32)
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     let id = native
@@ -286,9 +275,7 @@ fn round_to_multiple_uses_native_opcode() {
     let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["x".into()]).unwrap();
     let mut ledger = Ledger::default();
     for value in &compiled.strings {
-        ledger
-            .bind(crate::Symbol::new(Table::String, value), 1)
-            .unwrap();
+        ledger.bind(reference(Table::String, value), 1).unwrap();
     }
     let ours =
         byond_dmb::bytecode::decode(&link_proc(&compiled.code, &ledger).unwrap().words).unwrap();
@@ -358,7 +345,13 @@ fn safe_navigation_uses_native_cache_guards() {
         let compiled = compile_simple_proc_with_params(&item.children, &params).unwrap();
         let mut ledger = Ledger::default();
         ledger
-            .assign(Table::String, compiled.strings.clone())
+            .assign(
+                Table::String,
+                compiled
+                    .strings
+                    .iter()
+                    .map(|payload| SymRef::String(payload.id)),
+            )
             .unwrap();
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
@@ -462,7 +455,10 @@ fn multidimensional_local_array_matches_native_body() {
         compile_simple_proc_with_params(&ast.items[0].children, &["a".into(), "b".into()]).unwrap();
     let mut ledger = Ledger::default();
     ledger
-        .assign(Table::Class, compiled.class_paths.clone())
+        .assign(
+            Table::Class,
+            compiled.class_paths.iter().copied().map(SymRef::Type),
+        )
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
@@ -518,7 +514,13 @@ fn input_type_filters_and_choices_emit_native_prompt_operands() {
             compile_simple_proc_with_params(&ast.items[index].children, &params).unwrap();
         let mut ledger = Ledger::default();
         ledger
-            .assign(Table::String, compiled.strings.clone())
+            .assign(
+                Table::String,
+                compiled
+                    .strings
+                    .iter()
+                    .map(|payload| SymRef::String(payload.id)),
+            )
             .unwrap();
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         let ours = byond_dmb::bytecode::decode(&linked.words).unwrap();
@@ -569,7 +571,7 @@ fn raw_single_quote_text_matches_native() {
     assert_eq!(native.string(437), Some(b"a\\n[b]".as_slice()));
     let mut ledger = Ledger::default();
     ledger
-        .bind(crate::Symbol::new(Table::String, "a\\n[b]"), 437)
+        .bind(reference(Table::String, "a\\n[b]"), 437)
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     assert_eq!(linked.words, native.proc_code_words(0).unwrap());
@@ -592,10 +594,10 @@ fn escaped_apostrophe_and_angle_match_native() {
             let string_id = native
                 .strings
                 .iter()
-                .position(|entry| entry.data == compiled.string_bytes(key))
+                .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
                 .unwrap();
             ledger
-                .bind(crate::Symbol::new(Table::String, key), string_id as u32)
+                .bind(reference(Table::String, key), string_id as u32)
                 .unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -632,10 +634,10 @@ fn generator_builtin_matches_native() {
             let string_id = native
                 .strings
                 .iter()
-                .position(|entry| entry.data == compiled.string_bytes(key))
+                .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
                 .unwrap();
             ledger
-                .bind(crate::Symbol::new(Table::String, key), string_id as u32)
+                .bind(reference(Table::String, key), string_id as u32)
                 .unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -666,7 +668,7 @@ fn builtin_type_tags_match_native() {
             ("/particles", 23)
         };
         ledger
-            .bind(crate::Symbol::new(Table::Class, path), class_id)
+            .bind(reference(Table::Class, path), class_id)
             .unwrap();
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         assert_eq!(
@@ -694,10 +696,10 @@ fn pair_iteration_matches_native() {
             let string_id = native
                 .strings
                 .iter()
-                .position(|entry| entry.data == compiled.string_bytes(key))
+                .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
                 .unwrap();
             ledger
-                .bind(crate::Symbol::new(Table::String, key), string_id as u32)
+                .bind(reference(Table::String, key), string_id as u32)
                 .unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -758,10 +760,10 @@ fn alert_and_issaved_match_native() {
             let string_id = native
                 .strings
                 .iter()
-                .position(|entry| entry.data == compiled.string_bytes(key))
+                .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
                 .unwrap();
             ledger
-                .bind(crate::Symbol::new(Table::String, key), string_id as u32)
+                .bind(reference(Table::String, key), string_id as u32)
                 .unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -794,10 +796,10 @@ fn exception_type_matches_native() {
             ..LowerBindings::default()
         };
         let compiled =
-            compile_simple_proc_with_bindings(&ast.items[id].children, &bindings).unwrap();
+            compile_fixture_proc_with_bindings(&ast.items[id].children, &bindings).unwrap();
         let mut ledger = Ledger::default();
         ledger
-            .bind(crate::Symbol::new(Table::Class, "/exception"), 19)
+            .bind(reference(Table::Class, "/exception"), 19)
             .unwrap();
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         assert_eq!(

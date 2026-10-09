@@ -1,7 +1,7 @@
 //! Regression for the frozen Master.random_seed shared/instance divergence.
 #[test]
 fn inherited_class_static_access_emits_shared_slot_operands() {
-    use dm_codegen_byond::{ProcedureInputs, Symbol, Table};
+    use dm_codegen_byond::ProcedureInputs;
     use dm_ir::SymbolId;
     struct Source;
     impl dm_preprocess::SourceProvider for Source {
@@ -35,12 +35,10 @@ fn inherited_class_static_access_emits_shared_slot_operands() {
         let (symbol, slot) = lowered.slots.iter().next().unwrap();
         assert_eq!(slot.owner, SymbolId::of("/datum/base"));
         assert_eq!(slot.name, SymbolId::of("random_seed"));
-        assert_eq!(symbol.table, Table::Variable);
+        assert_eq!(*symbol, dm_ir::SymRef::VariableSlot(slot.symbol));
         // Explicit fixture index tests the actual serialized VM storage kind.
         let mut bindings = dm_codegen_byond::Ledger::default();
-        bindings
-            .bind(Symbol::new(Table::Variable, &symbol.key), 77)
-            .unwrap();
+        bindings.bind(*symbol, 77).unwrap();
         let code = dm_codegen_byond::link_proc(&lowered.procedure.code, &bindings).unwrap();
         assert!(code
             .words

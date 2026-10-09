@@ -1,53 +1,18 @@
-//! Shared BYOND operand emission. The semantic binder never chooses wire IDs.
-use crate::{
-    Item, LinkError, LinkedProc, Symbol, SymbolicProc, Table, ValueWord, VariableWord, Word,
-};
+//! Direct typed BYOND operand emission. Only final linking chooses wire IDs.
+use crate::{Item, LinkError, LinkedProc, SymbolicProc, Table, ValueWord, VariableWord, Word};
 pub use dm_ir::RelocationEncoding as OperandEncoding;
-use dm_ir::{RelocationKind, SymRef, SymbolicCode};
-use std::collections::BTreeMap;
+use dm_ir::{Relocation, RelocationKind, SymRef, SymbolicCode};
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct OperandSite {
     pub offset: u32,
     pub kind: RelocationKind,
     pub encoding: OperandEncoding,
 }
-fn kind(table: Table) -> RelocationKind {
-    match table {
-        Table::String => RelocationKind::String,
-        Table::Class => RelocationKind::Type,
-        Table::Proc => RelocationKind::Procedure,
-        Table::Variable => RelocationKind::Variable,
-        Table::List => RelocationKind::List,
-        Table::Resource => RelocationKind::Resource,
-        Table::Instance => RelocationKind::Instance,
-    }
-}
-impl OperandSite {
-    fn direct(offset: usize, table: Table) -> Result<Self, LinkError> {
-        Ok(Self {
-            offset: u32::try_from(offset).map_err(|_| LinkError::OffsetOverflow)?,
-            kind: kind(table),
-            encoding: OperandEncoding::Direct,
-        })
-    }
-    fn packed(offset: usize, table: Table, tag: u8) -> Result<Self, LinkError> {
-        Ok(Self {
-            encoding: OperandEncoding::PackedValue24 { tag },
-            ..Self::direct(offset, table)?
-        })
-    }
-}
-pub(crate) struct EncodedProc {
-    pub linked: LinkedProc,
-    pub sites: Vec<OperandSite>,
-    debug_relocations: Vec<dm_ir::Relocation>,
-}
-/// Frozen ABI words and the encoder-issued operand ledger. `code().link()`
-/// consumes the same typed encoding, including two-word packed values.
 pub struct FrozenProc {
     code: SymbolicCode,
     sites: Vec<OperandSite>,
-    labels: BTreeMap<String, u32>,
+    labels: Vec<Option<u32>>,
 }
 impl FrozenProc {
     pub fn code(&self) -> &SymbolicCode {
@@ -56,265 +21,298 @@ impl FrozenProc {
     pub fn sites(&self) -> &[OperandSite] {
         &self.sites
     }
-    pub fn labels(&self) -> &BTreeMap<String, u32> {
+    pub fn labels(&self) -> &[Option<u32>] {
         &self.labels
     }
 }
 #[derive(Debug)]
 pub enum FreezeError {
     Abi(LinkError),
-    Binder { symbol: Symbol, message: String },
     Relocation(dm_ir::RelocationError),
 }
 impl std::fmt::Display for FreezeError {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(formatter, "{self:?}")
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
     }
 }
 impl std::error::Error for FreezeError {}
-/// Freeze already-lowered operands. The caller supplies semantic identities for
-/// every existing symbol, including static slots and procedure/verb occurrences;
-/// this boundary does not perform resolution or manufacture those identities.
-/// Natural bounded freeze stages; callers may return a scope guard. The
-/// encoder owns scope boundaries and all paths share the same implementation.
 #[derive(Clone, Copy, Debug)]
 pub enum FreezeStage {
     Encoding,
     DecodeValidation,
-    Binding,
     SymbolicConstruction,
     SiteValidation,
 }
 
-pub fn freeze_proc(
-    proc: &SymbolicProc,
-    bind: impl FnMut(&Symbol) -> Result<SymRef, String>,
-) -> Result<FrozenProc, FreezeError> {
-    freeze_proc_observed(proc, bind, |_| ())
+pub fn freeze_proc(proc: &SymbolicProc) -> Result<FrozenProc, FreezeError> {
+    freeze_proc_observed(proc, |_| ())
 }
-
+/// References are resolver-issued before this boundary. This traversal emits
+/// zero placeholders and typed relocation sites together; there is no text
+/// ledger, binder, rewrite, relocation-sort or placeholder-clearing pass.
 pub fn freeze_proc_observed<G>(
     proc: &SymbolicProc,
-    mut bind: impl FnMut(&Symbol) -> Result<SymRef, String>,
     mut observe: impl FnMut(FreezeStage) -> G,
 ) -> Result<FrozenProc, FreezeError> {
-    let encoded = encode_internal_observed(proc, &mut |_| Ok(0), true, &mut observe)
-        .map_err(FreezeError::Abi)?;
-    let binding_guard = observe(FreezeStage::Binding);
-    let mut words = encoded.linked.words;
-    let mut relocations = encoded.debug_relocations;
-    for ((_, symbol), site) in encoded.linked.relocations.iter().zip(&encoded.sites) {
-        let reference = bind(symbol).map_err(|message| FreezeError::Binder {
-            symbol: symbol.clone(),
-            message,
-        })?;
-        if reference.kind() != site.kind {
-            return Err(FreezeError::Relocation(
-                dm_ir::RelocationError::KindMismatch {
-                    offset: site.offset,
-                    expected: site.kind,
-                    actual: reference.kind(),
-                },
-            ));
-        }
-        words[site.offset as usize] = 0;
-        if matches!(site.encoding, OperandEncoding::PackedValue24 { .. }) {
-            words[site.offset as usize + 1] = 0;
-        }
-        relocations.push(dm_ir::Relocation {
-            offset: site.offset,
-            reference,
-            encoding: site.encoding,
-        });
-    }
-    relocations.sort_by_key(|site| site.offset);
-    drop(binding_guard);
-    let code = {
-        let _guard = observe(FreezeStage::SymbolicConstruction);
-        SymbolicCode::new(words, relocations).map_err(FreezeError::Relocation)?
-    };
-    let site_guard = observe(FreezeStage::SiteValidation);
-    code.validate_encoded_sites_iter(encoded.sites.iter().map(|s| (s.offset, s.kind, s.encoding)))
-        .map_err(FreezeError::Relocation)?;
-    drop(site_guard);
-    Ok(FrozenProc {
-        code,
-        sites: encoded.sites,
-        labels: encoded.linked.labels,
-    })
-}
-pub(crate) fn encode(
-    proc: &SymbolicProc,
-    resolve: &mut impl FnMut(&Symbol) -> Result<u32, LinkError>,
-) -> Result<EncodedProc, LinkError> {
-    encode_internal(proc, resolve, false)
-}
-fn encode_internal(
-    proc: &SymbolicProc,
-    resolve: &mut impl FnMut(&Symbol) -> Result<u32, LinkError>,
-    allow_debug: bool,
-) -> Result<EncodedProc, LinkError> {
-    encode_internal_observed(proc, resolve, allow_debug, &mut |_| ())
-}
-fn encode_internal_observed<G>(
-    proc: &SymbolicProc,
-    resolve: &mut impl FnMut(&Symbol) -> Result<u32, LinkError>,
-    allow_debug: bool,
-    observe: &mut impl FnMut(FreezeStage) -> G,
-) -> Result<EncodedProc, LinkError> {
     let encoding_guard = observe(FreezeStage::Encoding);
-    let mut labels = BTreeMap::new();
-    let mut offset = 0usize;
-    for item in &proc.items {
-        match item {
-            Item::Label(label) => {
-                let at = u32::try_from(offset).map_err(|_| LinkError::OffsetOverflow)?;
-                if labels.insert(label.clone(), at).is_some() {
-                    return Err(LinkError::DuplicateLabel(label.clone()));
-                }
-            }
-            Item::Instruction(instruction) => {
-                offset = offset
-                    .checked_add(1 + instruction.operands.iter().map(Word::width).sum::<usize>())
-                    .ok_or(LinkError::OffsetOverflow)?;
-            }
-        }
-    }
-    let mut words = Vec::with_capacity(offset);
-    let mut relocations = Vec::new();
-    let mut sites = Vec::new();
-    let mut debug_sites = Vec::new();
-    let mut debug_relocations = Vec::new();
-    let mut branch_slots = Vec::new();
-    let mut starts = Vec::new();
+    let (labels, word_count) = label_offsets(proc).map_err(FreezeError::Abi)?;
+    let mut emission = Emission {
+        words: Vec::with_capacity(word_count),
+        ..Default::default()
+    };
+    let mut starts = Vec::with_capacity(proc.items.len());
+    let mut branches = Vec::new();
     for item in &proc.items {
         if let Item::Instruction(instruction) = item {
-            starts.push(words.len());
-            words.push(instruction.opcode);
+            starts.push(emission.words.len());
+            emission.words.push(instruction.opcode);
             for operand in &instruction.operands {
-                let slot = words.len();
                 match operand {
-                    Word::Immediate(value) => words.push(*value),
+                    Word::Immediate(value) => emission.words.push(*value),
                     Word::SourceFile(origin) | Word::SourceLine(origin) => {
-                        let expected = if matches!(operand, Word::SourceFile(_)) {
-                            0x84
-                        } else {
-                            0x85
-                        };
+                        let file = matches!(operand, Word::SourceFile(_));
+                        let expected = if file { 0x84 } else { 0x85 };
                         if instruction.opcode != expected || instruction.operands.len() != 1 {
-                            return Err(LinkError::Decode(
+                            return Err(FreezeError::Abi(LinkError::Decode(
                                 "debug source operand used outside its DBG instruction".into(),
-                            ));
+                            )));
                         }
-                        if !allow_debug {
-                            return Err(LinkError::MissingDebugOrigin(*origin));
-                        }
-                        let reference = match operand {
-                            Word::SourceFile(id) => SymRef::SourceFile(*id),
-                            Word::SourceLine(id) => SymRef::SourceLine(*id),
-                            _ => unreachable!(),
+                        let reference = if file {
+                            SymRef::SourceFile(*origin)
+                        } else {
+                            SymRef::SourceLine(*origin)
                         };
-                        let offset = u32::try_from(slot).map_err(|_| LinkError::OffsetOverflow)?;
-                        debug_sites.push(OperandSite {
-                            offset,
-                            kind: reference.kind(),
-                            encoding: OperandEncoding::Direct,
-                        });
-                        debug_relocations.push(dm_ir::Relocation {
-                            offset,
-                            reference,
-                            encoding: OperandEncoding::Direct,
-                        });
-                        words.push(0);
+                        emission
+                            .reference(reference, reference.kind(), OperandEncoding::Direct)
+                            .map_err(FreezeError::Abi)?;
                     }
-                    Word::Reference(symbol) => {
-                        relocations.push((slot, symbol.clone()));
-                        sites.push(OperandSite::direct(slot, symbol.table)?);
-                        words.push(resolve(symbol)?);
-                    }
+                    Word::Reference(reference) => emission
+                        .reference(*reference, reference.kind(), OperandEncoding::Direct)
+                        .map_err(FreezeError::Abi)?,
                     Word::Branch(label) => {
-                        branch_slots.push(slot);
-                        words.push(
-                            *labels
-                                .get(label)
-                                .ok_or_else(|| LinkError::MissingLabel(label.clone()))?,
-                        );
+                        branches.push(emission.words.len());
+                        let at = labels
+                            .get(label.0 as usize)
+                            .and_then(|offset| *offset)
+                            .ok_or(FreezeError::Abi(LinkError::MissingLabel(*label)))?;
+                        emission.words.push(at);
                     }
-                    Word::Value(ValueWord::Null) => words.extend([0, 0]),
-                    Word::Value(ValueWord::Number(bits)) => {
-                        words.extend([0x2a, bits >> 16, bits & 0xffff]);
+                    Word::Value(value) => emission.value(value).map_err(FreezeError::Abi)?,
+                    Word::Variable(variable) => {
+                        emission.variable(variable).map_err(FreezeError::Abi)?
                     }
-                    Word::Value(ValueWord::String(key)) => {
-                        let symbol = Symbol::new(Table::String, key);
-                        let id = resolve(&symbol)?;
-                        if id > 0x00ff_ffff {
-                            return Err(LinkError::TooManyRecords(Table::String));
-                        }
-                        sites.push(OperandSite::packed(slot, symbol.table, 6)?);
-                        relocations.push((slot, symbol));
-                        words.extend([6 | ((id >> 16) << 8), id & 0xffff]);
-                    }
-                    Word::Value(ValueWord::Resource(key)) => {
-                        let symbol = Symbol::new(Table::Resource, key);
-                        let id = resolve(&symbol)?;
-                        if id > 0x00ff_ffff {
-                            return Err(LinkError::TooManyRecords(Table::Resource));
-                        }
-                        sites.push(OperandSite::packed(slot, symbol.table, 12)?);
-                        relocations.push((slot, symbol));
-                        words.extend([12 | ((id >> 16) << 8), id & 0xffff]);
-                    }
-                    Word::Value(ValueWord::FileType) => words.extend([39, 0]),
-                    Word::Value(ValueWord::PrimitiveType(kind)) => {
-                        words.extend([u32::from(kind.tag()), 0])
-                    }
-                    Word::Value(ValueWord::ClassPath { path, tag }) => {
-                        let symbol = Symbol::new(Table::Class, path);
-                        let id = resolve(&symbol)?;
-                        if id > 0x00ff_ffff {
-                            return Err(LinkError::TooManyRecords(Table::Class));
-                        }
-                        sites.push(OperandSite::packed(slot, symbol.table, *tag)?);
-                        relocations.push((slot, symbol));
-                        words.extend([u32::from(*tag) | ((id >> 16) << 8), id & 0xffff]);
-                    }
-                    Word::Value(ValueWord::Instance(path)) => {
-                        let symbol = Symbol::new(Table::Instance, path);
-                        let id = resolve(&symbol)?;
-                        if id > 0x00ff_ffff {
-                            return Err(LinkError::TooManyRecords(Table::Instance));
-                        }
-                        sites.push(OperandSite::packed(slot, symbol.table, 41)?);
-                        relocations.push((slot, symbol));
-                        words.extend([41 | ((id >> 16) << 8), id & 0xffff]);
-                    }
-                    Word::Value(ValueWord::ProcPath(path)) => {
-                        let symbol = Symbol::new(Table::Proc, path);
-                        let id = resolve(&symbol)?;
-                        if id > 0x00ff_ffff {
-                            return Err(LinkError::TooManyRecords(Table::Proc));
-                        }
-                        sites.push(OperandSite::packed(slot, symbol.table, 38)?);
-                        relocations.push((slot, symbol));
-                        words.extend([38 | ((id >> 16) << 8), id & 0xffff]);
-                    }
-                    Word::Variable(variable) => encode_variable(
-                        variable,
-                        resolve,
-                        &mut words,
-                        &mut relocations,
-                        &mut sites,
-                    )?,
                 }
             }
         }
     }
     drop(encoding_guard);
-    let decode_guard = observe(FreezeStage::DecodeValidation);
+    {
+        let _guard = observe(FreezeStage::DecodeValidation);
+        validate_instructions(&emission.words, &starts, &branches).map_err(FreezeError::Abi)?;
+    }
+    let code = {
+        let _guard = observe(FreezeStage::SymbolicConstruction);
+        SymbolicCode::new(emission.words, emission.relocations).map_err(FreezeError::Relocation)?
+    };
+    {
+        let _guard = observe(FreezeStage::SiteValidation);
+        code.validate_encoded_sites_iter(
+            emission
+                .sites
+                .iter()
+                .map(|site| (site.offset, site.kind, site.encoding)),
+        )
+        .map_err(FreezeError::Relocation)?;
+    }
+    Ok(FrozenProc {
+        code,
+        sites: emission.sites,
+        labels,
+    })
+}
+
+fn label_offsets(proc: &SymbolicProc) -> Result<(Vec<Option<u32>>, usize), LinkError> {
+    let mut count = 0;
+    for item in &proc.items {
+        if let Item::Label(label) = item {
+            let index = usize::try_from(label.0).map_err(|_| LinkError::OffsetOverflow)?;
+            // Labels are dense procedure-local IDs. An externally forged sparse
+            // maximum must not turn a small input into a massive allocation.
+            if index >= proc.items.len() {
+                return Err(LinkError::InvalidLabel(*label));
+            }
+            count = count.max(index + 1);
+        }
+    }
+    let mut labels = vec![None; count];
+    let mut offset = 0usize;
+    for item in &proc.items {
+        match item {
+            Item::Label(label) => {
+                let at = u32::try_from(offset).map_err(|_| LinkError::OffsetOverflow)?;
+                if labels[label.0 as usize].replace(at).is_some() {
+                    return Err(LinkError::DuplicateLabel(*label));
+                }
+            }
+            Item::Instruction(instruction) => {
+                offset = offset.checked_add(1).ok_or(LinkError::OffsetOverflow)?;
+                for operand in &instruction.operands {
+                    offset = offset
+                        .checked_add(operand.width())
+                        .ok_or(LinkError::OffsetOverflow)?;
+                }
+                u32::try_from(offset).map_err(|_| LinkError::OffsetOverflow)?;
+            }
+        }
+    }
+    Ok((labels, offset))
+}
+#[derive(Default)]
+struct Emission {
+    words: Vec<u32>,
+    relocations: Vec<Relocation>,
+    sites: Vec<OperandSite>,
+}
+impl Emission {
+    fn reference(
+        &mut self,
+        reference: SymRef,
+        expected: RelocationKind,
+        encoding: OperandEncoding,
+    ) -> Result<(), LinkError> {
+        if reference.kind() != expected {
+            return Err(LinkError::ReferenceKind {
+                expected,
+                actual: reference.kind(),
+            });
+        }
+        let offset = u32::try_from(self.words.len()).map_err(|_| LinkError::OffsetOverflow)?;
+        self.sites.push(OperandSite {
+            offset,
+            kind: expected,
+            encoding,
+        });
+        self.relocations.push(Relocation {
+            offset,
+            reference,
+            encoding,
+        });
+        self.words.push(0);
+        if matches!(encoding, OperandEncoding::PackedValue24 { .. }) {
+            self.words.push(0);
+        }
+        Ok(())
+    }
+    fn packed(
+        &mut self,
+        reference: SymRef,
+        expected: RelocationKind,
+        tag: u8,
+    ) -> Result<(), LinkError> {
+        self.reference(reference, expected, OperandEncoding::PackedValue24 { tag })
+    }
+    fn value(&mut self, value: &ValueWord) -> Result<(), LinkError> {
+        match value {
+            ValueWord::Null => self.words.extend([0, 0]),
+            ValueWord::Number(bits) => self.words.extend([0x2a, bits >> 16, bits & 0xffff]),
+            ValueWord::String(id) => self.packed(SymRef::String(*id), RelocationKind::String, 6)?,
+            ValueWord::Resource(content) => {
+                self.packed(SymRef::Resource(*content), RelocationKind::Resource, 12)?
+            }
+            ValueWord::ClassPath { path, tag } => {
+                self.packed(SymRef::Type(*path), RelocationKind::Type, *tag)?
+            }
+            ValueWord::Instance(id) => {
+                self.packed(SymRef::Instance(*id), RelocationKind::Instance, 41)?
+            }
+            ValueWord::ProcPath(reference) => {
+                self.packed(*reference, RelocationKind::Procedure, 38)?
+            }
+            ValueWord::FileType => self.words.extend([39, 0]),
+            ValueWord::PrimitiveType(kind) => self.words.extend([u32::from(kind.tag()), 0]),
+        }
+        Ok(())
+    }
+    fn variable(&mut self, variable: &VariableWord) -> Result<(), LinkError> {
+        match variable {
+            VariableWord::Arg(id) => self.words.extend([0xffd9, *id]),
+            VariableWord::Local(id) => self.words.extend([0xffda, *id]),
+            VariableWord::Src => self.words.push(0xffce),
+            VariableWord::Usr => self.words.push(0xffcd),
+            VariableWord::World => self.words.push(0xffe5),
+            VariableWord::Args => self.words.push(0xffcf),
+            VariableWord::Caller => self.words.push(0xfff0),
+            VariableWord::Callee => self.words.push(0xfff1),
+            VariableWord::Null => self.words.push(0xffe6),
+            VariableWord::Dot => self.words.push(0xffd0),
+            VariableWord::Cache => self.words.push(0xffd8),
+            VariableWord::CacheKey => self.words.push(0xffe3),
+            VariableWord::CacheIndex => self.words.push(0xffe4),
+            VariableWord::Field(id) => self.reference(
+                SymRef::String(*id),
+                RelocationKind::String,
+                OperandEncoding::Direct,
+            )?,
+            VariableWord::StaticField(id) | VariableWord::DynamicProc(id) => {
+                self.words
+                    .push(if matches!(variable, VariableWord::StaticField(_)) {
+                        0xffe7
+                    } else {
+                        0xffdd
+                    });
+                self.reference(
+                    SymRef::String(*id),
+                    RelocationKind::String,
+                    OperandEncoding::Direct,
+                )?;
+            }
+            VariableWord::Global(reference) => {
+                self.words.push(0xffdb);
+                self.reference(
+                    *reference,
+                    RelocationKind::Variable,
+                    OperandEncoding::Direct,
+                )?;
+            }
+            VariableWord::StaticProc(reference) | VariableWord::StaticVerb(reference) => {
+                self.words
+                    .push(if matches!(variable, VariableWord::StaticVerb(_)) {
+                        0xffe0
+                    } else {
+                        0xffdf
+                    });
+                self.reference(
+                    *reference,
+                    RelocationKind::Procedure,
+                    OperandEncoding::Direct,
+                )?;
+            }
+            VariableWord::SetCache(a, b) => {
+                self.words.push(0xffdc);
+                self.variable(a)?;
+                self.variable(b)?;
+            }
+            VariableWord::Initial(value) => {
+                self.words.push(0xffe7);
+                self.variable(value)?;
+            }
+            VariableWord::IsSaved(value) => {
+                self.words.push(0xffe8);
+                self.variable(value)?;
+            }
+        }
+        Ok(())
+    }
+}
+fn validate_instructions(
+    words: &[u32],
+    starts: &[usize],
+    branches: &[usize],
+) -> Result<(), LinkError> {
     let mut decoded_offsets = Vec::with_capacity(starts.len());
     let mut legal_slots = Vec::new();
     byond_dmb::bytecode::visit_instructions(
-        &words,
+        words,
         |instruction| decoded_offsets.push(instruction.offset),
         |slot| legal_slots.push(slot),
     )
@@ -329,356 +327,279 @@ fn encode_internal_observed<G>(
             "decoded instruction count differs".into(),
         ));
     }
-    // Membership only: sorting does not affect emitted words or error order.
     legal_slots.sort_unstable();
-    for slot in branch_slots {
+    for &slot in branches {
         if legal_slots.binary_search(&slot).is_err() {
             return Err(LinkError::BranchOperandIsNotTarget { offset: slot });
         }
     }
-    drop(decoded_offsets);
-    drop(decode_guard);
-    sites.extend(debug_sites);
-    Ok(EncodedProc {
-        linked: LinkedProc {
-            words,
-            labels,
-            relocations,
-        },
-        sites,
-        debug_relocations,
-    })
-}
-
-fn encode_variable(
-    variable: &VariableWord,
-    resolve: &mut impl FnMut(&Symbol) -> Result<u32, LinkError>,
-    words: &mut Vec<u32>,
-    relocations: &mut Vec<(usize, Symbol)>,
-    sites: &mut Vec<OperandSite>,
-) -> Result<(), LinkError> {
-    match variable {
-        VariableWord::Arg(id) => words.extend([0xffd9, *id]),
-        VariableWord::Local(id) => words.extend([0xffda, *id]),
-        VariableWord::Src => words.push(0xffce),
-        VariableWord::Usr => words.push(0xffcd),
-        VariableWord::World => words.push(0xffe5),
-        VariableWord::Args => words.push(0xffcf),
-        VariableWord::Caller => words.push(0xfff0),
-        VariableWord::Callee => words.push(0xfff1),
-        VariableWord::Null => words.push(0xffe6),
-        VariableWord::Dot => words.push(0xffd0),
-        VariableWord::Cache => words.push(0xffd8),
-        VariableWord::CacheKey => words.push(0xffe3),
-        VariableWord::CacheIndex => words.push(0xffe4),
-        VariableWord::Field(key)
-        | VariableWord::StaticField(key)
-        | VariableWord::Global(key)
-        | VariableWord::DynamicProc(key) => {
-            let table = if matches!(variable, VariableWord::Global(_)) {
-                Table::Variable
-            } else {
-                Table::String
-            };
-            let symbol = Symbol::new(table, key);
-            let id = resolve(&symbol)?;
-            if matches!(variable, VariableWord::Global(_)) {
-                words.push(0xffdb);
-            }
-            if matches!(variable, VariableWord::DynamicProc(_)) {
-                words.push(0xffdd);
-            }
-            if matches!(variable, VariableWord::StaticField(_)) {
-                words.push(0xffe7);
-            }
-            sites.push(OperandSite::direct(words.len(), symbol.table)?);
-            relocations.push((words.len(), symbol));
-            words.push(id);
-        }
-        VariableWord::StaticProc(path) | VariableWord::StaticVerb(path) => {
-            let symbol = Symbol::new(Table::Proc, path);
-            let id = resolve(&symbol)?;
-            words.push(if matches!(variable, VariableWord::StaticVerb(_)) {
-                0xffe0
-            } else {
-                0xffdf
-            });
-            sites.push(OperandSite::direct(words.len(), symbol.table)?);
-            relocations.push((words.len(), symbol));
-            words.push(id);
-        }
-        VariableWord::SetCache(a, b) => {
-            words.push(0xffdc);
-            encode_variable(a, resolve, words, relocations, sites)?;
-            encode_variable(b, resolve, words, relocations, sites)?;
-        }
-        VariableWord::Initial(variable) => {
-            words.push(0xffe7);
-            encode_variable(variable, resolve, words, relocations, sites)?;
-        }
-        VariableWord::IsSaved(variable) => {
-            words.push(0xffe8);
-            encode_variable(variable, resolve, words, relocations, sites)?;
-        }
-    }
     Ok(())
+}
+pub(crate) fn link(
+    proc: &SymbolicProc,
+    resolve: impl FnMut(SymRef) -> Option<u32>,
+) -> Result<LinkedProc, LinkError> {
+    let frozen = freeze_proc(proc).map_err(|error| match error {
+        FreezeError::Abi(error) => error,
+        FreezeError::Relocation(error) => LinkError::Decode(format!("{error:?}")),
+    })?;
+    let words = frozen.code.link(resolve).map_err(|error| match error {
+        dm_ir::RelocationError::Unresolved(reference) => match reference {
+            SymRef::SourceFile(origin) | SymRef::SourceLine(origin) => {
+                LinkError::MissingDebugOrigin(origin)
+            }
+            _ => LinkError::MissingSymbol(reference),
+        },
+        dm_ir::RelocationError::PackedValueOverflow { offset, .. } => {
+            let reference = frozen
+                .code
+                .relocations()
+                .iter()
+                .find(|relocation| relocation.offset == offset)
+                .unwrap()
+                .reference;
+            LinkError::TooManyRecords(Table::of_reference(reference).unwrap())
+        }
+        _ => LinkError::Decode(format!("{error:?}")),
+    })?;
+    let relocations = frozen
+        .code
+        .relocations()
+        .iter()
+        .map(|site| (site.offset as usize, site.reference))
+        .collect();
+    Ok(LinkedProc {
+        words,
+        labels: frozen.labels,
+        relocations,
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Instruction, Ledger};
-
-    #[test]
-    fn debug_origins_are_typed_relocatable_and_branch_safe() {
-        let proc = SymbolicProc {
-            items: vec![
-                Item::Label("again".into()),
-                Item::Instruction(Instruction {
-                    opcode: 0x84,
-                    operands: vec![Word::SourceFile(0)],
-                }),
-                Item::Instruction(Instruction {
-                    opcode: 0x85,
-                    operands: vec![Word::SourceLine(0)],
-                }),
-                Item::Instruction(Instruction {
-                    opcode: 0xf,
-                    operands: vec![Word::Branch("again".into())],
-                }),
-            ],
-        };
-        assert!(matches!(
-            encode(&proc, &mut |_| Ok(0)),
-            Err(LinkError::MissingDebugOrigin(0))
-        ));
-        let frozen = freeze_proc(&proc, |_| Err("no table references".into())).unwrap();
-        let before = frozen.code().canonical_bytes();
-        let first = frozen
-            .code()
-            .link(|reference| match reference {
-                SymRef::SourceFile(0) => Some(9),
-                SymRef::SourceLine(0) => Some(100),
-                _ => None,
-            })
-            .unwrap();
-        let moved = frozen
-            .code()
-            .link(|reference| match reference {
-                SymRef::SourceFile(0) => Some(19),
-                SymRef::SourceLine(0) => Some(7),
-                _ => None,
-            })
-            .unwrap();
-        assert_eq!(first, vec![0x84, 9, 0x85, 100, 0xf, 0]);
-        assert_eq!(moved, vec![0x84, 19, 0x85, 7, 0xf, 0]);
-        assert_eq!(frozen.code().canonical_bytes(), before);
-        assert_eq!(byond_dmb::bytecode::decode(&moved).unwrap().len(), 3);
-        assert!(frozen.code().link(|_| None).is_err());
-    }
-
-    #[test]
-    fn list_primitive_has_zero_payload_without_type_relocation() {
-        let proc = SymbolicProc {
-            items: vec![
-                Item::Instruction(Instruction {
-                    opcode: 0x60,
-                    operands: vec![Word::Value(ValueWord::PrimitiveType(
-                        crate::NativePrimitiveType::List,
-                    ))],
-                }),
-                Item::Instruction(Instruction {
-                    opcode: 1,
-                    operands: vec![Word::Immediate(0)],
-                }),
-                Item::Instruction(Instruction {
-                    opcode: 0,
-                    operands: vec![],
-                }),
-            ],
-        };
-        let encoded = encode(&proc, &mut |_| {
-            panic!("primitive must not require an output table binding")
-        })
-        .unwrap();
-        assert_eq!(encoded.linked.words, [0x60, 40, 0, 1, 0, 0]);
-        assert!(encoded.sites.is_empty());
+    use crate::{Instruction, LabelId, Ledger, SymbolId};
+    fn instruction(opcode: u32, operands: Vec<Word>) -> Item {
+        Item::Instruction(Instruction { opcode, operands })
     }
     #[test]
-    fn savefile_primitive_has_zero_payload_without_type_relocation() {
+    fn debug_origins_and_numeric_branch_labels_are_direct_relocations() {
         let proc = SymbolicProc {
             items: vec![
-                Item::Instruction(Instruction {
-                    opcode: 0x60,
-                    operands: vec![Word::Value(ValueWord::PrimitiveType(
-                        crate::NativePrimitiveType::Savefile,
-                    ))],
-                }),
-                Item::Instruction(Instruction {
-                    opcode: 1,
-                    operands: vec![Word::Immediate(0)],
-                }),
-                Item::Instruction(Instruction {
-                    opcode: 0,
-                    operands: vec![],
-                }),
+                instruction(0x84, vec![Word::SourceFile(0)]),
+                instruction(0x85, vec![Word::SourceLine(0)]),
+                instruction(0xf, vec![Word::Branch(LabelId(0))]),
+                Item::Label(LabelId(0)),
+                instruction(0, vec![]),
             ],
         };
-        let encoded = encode(&proc, &mut |_| {
-            panic!("primitive must not require an output table binding")
-        })
-        .unwrap();
-        assert_eq!(encoded.linked.words, [0x60, 36, 0, 1, 0, 0]);
-        assert!(encoded.sites.is_empty());
-        assert_eq!(crate::NativePrimitiveType::from_path("/alist"), None);
-        assert_eq!(crate::NativePrimitiveType::from_path("/world"), None);
-    }
-    #[test]
-    fn packed_and_nested_operands_match_existing_linked_abi() {
-        let proc = SymbolicProc {
-            items: vec![
-                Item::Instruction(Instruction {
-                    opcode: byond_dmb::bytecode::opcode::PUSH_VAL,
-                    operands: vec![Word::Value(ValueWord::String("text".into()))],
-                }),
-                Item::Instruction(Instruction {
-                    opcode: 0x29,
-                    operands: vec![
-                        Word::Variable(VariableWord::SetCache(
-                            Box::new(VariableWord::Arg(0)),
-                            Box::new(VariableWord::StaticProc("/proc/x".into())),
-                        )),
-                        Word::Immediate(0),
-                    ],
-                }),
-                Item::Instruction(Instruction {
-                    opcode: 0xf,
-                    operands: vec![Word::Branch("end".into())],
-                }),
-                Item::Label("end".into()),
-                Item::Instruction(Instruction {
-                    opcode: 0,
-                    operands: vec![],
-                }),
-            ],
-        };
-        let mut ledger = Ledger::default();
-        ledger
-            .bind(Symbol::new(Table::String, "text"), 0x123456)
-            .unwrap();
-        ledger
-            .bind(Symbol::new(Table::Proc, "/proc/x"), 17)
-            .unwrap();
-        let expected = crate::link_proc(&proc, &ledger).unwrap();
-        let frozen = freeze_proc(&proc, |symbol| {
-            Ok(match symbol.table {
-                Table::String => SymRef::String(dm_ir::SymbolId::of(&symbol.key)),
-                Table::Proc => SymRef::Proc {
-                    owner: dm_ir::SymbolId::of("/"),
-                    name: dm_ir::SymbolId::of("x"),
-                    occurrence: 0,
-                },
-                _ => unreachable!(),
-            })
-        })
-        .unwrap();
+        let frozen = freeze_proc(&proc).unwrap();
         assert_eq!(
             frozen
                 .code()
-                .link(|reference| Some(match reference {
-                    SymRef::String(_) => 0x123456,
-                    SymRef::Proc { .. } => 17,
-                    _ => unreachable!(),
-                }))
-                .unwrap(),
-            expected.words
+                .relocations()
+                .iter()
+                .map(|site| site.reference)
+                .collect::<Vec<_>>(),
+            [SymRef::SourceFile(0), SymRef::SourceLine(0)]
         );
-        assert_eq!(frozen.labels(), &expected.labels);
-        assert!(frozen
-            .sites()
-            .iter()
-            .any(|site| matches!(site.encoding, OperandEncoding::PackedValue24 { .. })));
+        assert_eq!(frozen.code().words(), [0x84, 0, 0x85, 0, 0xf, 6, 0]);
+        assert_eq!(frozen.labels(), [Some(6)]);
+        assert_eq!(
+            frozen
+                .code()
+                .link(|reference| match reference {
+                    SymRef::SourceFile(_) => Some(10),
+                    SymRef::SourceLine(_) => Some(20),
+                    _ => None,
+                })
+                .unwrap(),
+            [0x84, 10, 0x85, 20, 0xf, 6, 0]
+        );
+    }
+    #[test]
+    fn packed_values_and_nested_selectors_emit_typed_sites_in_word_order() {
+        let text = SymbolId::of("payload");
+        let field = SymbolId::of("field");
+        let proc = SymbolicProc {
+            items: vec![
+                instruction(0x60, vec![Word::Value(ValueWord::String(text))]),
+                instruction(
+                    0x33,
+                    vec![Word::Variable(VariableWord::Initial(Box::new(
+                        VariableWord::Field(field),
+                    )))],
+                ),
+                instruction(0, vec![]),
+            ],
+        };
+        let frozen = freeze_proc(&proc).unwrap();
+        assert_eq!(frozen.code().words(), [0x60, 0, 0, 0x33, 0xffe7, 0, 0]);
+        assert_eq!(
+            frozen.code().relocations()[0],
+            Relocation {
+                offset: 1,
+                reference: SymRef::String(text),
+                encoding: OperandEncoding::PackedValue24 { tag: 6 }
+            }
+        );
+        assert_eq!(frozen.code().relocations()[1].offset, 5);
+        assert_eq!(
+            frozen.code().link(|_| Some(0x123456)).unwrap(),
+            [0x60, 0x1206, 0x3456, 0x33, 0xffe7, 0x123456, 0]
+        );
+    }
+    #[test]
+    fn wrong_typed_reference_kind_is_rejected_before_linking() {
+        let proc = SymbolicProc {
+            items: vec![instruction(
+                0x33,
+                vec![Word::Variable(VariableWord::Global(SymRef::String(
+                    SymbolId::of("bad"),
+                )))],
+            )],
+        };
         assert!(matches!(
-            freeze_proc(&proc, |_| Ok(SymRef::BuiltinGlobalVars)),
-            Err(FreezeError::Relocation(
-                dm_ir::RelocationError::KindMismatch { .. }
-            ))
+            freeze_proc(&proc),
+            Err(FreezeError::Abi(LinkError::ReferenceKind { .. }))
         ));
     }
     #[test]
-    fn freeze_observer_balances_scopes_and_preserves_wire_content_on_decode_failure() {
-        use std::{cell::RefCell, rc::Rc};
-        type Events = Rc<RefCell<Vec<(bool, &'static str)>>>;
-        struct Guard(Events, &'static str);
-        impl Drop for Guard {
-            fn drop(&mut self) {
-                self.0.borrow_mut().push((false, self.1));
-            }
-        }
-        let observer = |events: Events| {
-            move |stage| {
-                let name = match stage {
-                    FreezeStage::Encoding => "encoding",
-                    FreezeStage::DecodeValidation => "decode",
-                    FreezeStage::Binding => "binding",
-                    FreezeStage::SymbolicConstruction => "construction",
-                    FreezeStage::SiteValidation => "sites",
-                };
-                events.borrow_mut().push((true, name));
-                Guard(Rc::clone(&events), name)
-            }
+    fn procedure_namespace_and_mob_path_tag_remain_in_typed_relocations() {
+        let owner = SymbolId::of("/mob/example");
+        let name = SymbolId::of("call");
+        let reference = SymRef::Verb {
+            owner,
+            name,
+            occurrence: 3,
         };
         let proc = SymbolicProc {
             items: vec![
-                Item::Instruction(Instruction {
-                    opcode: 0x60,
-                    operands: vec![Word::Value(ValueWord::String("payload".into()))],
-                }),
-                Item::Instruction(Instruction {
-                    opcode: 0,
-                    operands: vec![],
-                }),
+                instruction(0x60, vec![Word::Value(ValueWord::ProcPath(reference))]),
+                instruction(
+                    0x60,
+                    vec![Word::Value(ValueWord::ClassPath {
+                        path: owner,
+                        tag: 8,
+                    })],
+                ),
+                instruction(0, vec![]),
             ],
         };
-        let bind = |symbol: &Symbol| Ok(SymRef::String(dm_ir::SymbolId::of(&symbol.key)));
-        let expected = freeze_proc(&proc, bind).unwrap();
-        let events = Events::default();
-        let observed = freeze_proc_observed(&proc, bind, observer(Rc::clone(&events))).unwrap();
+        let frozen = freeze_proc(&proc).unwrap();
+        assert_eq!(frozen.code().relocations()[0].reference, reference);
         assert_eq!(
-            observed.code().canonical_bytes(),
-            expected.code().canonical_bytes()
+            frozen.code().relocations()[1],
+            Relocation {
+                offset: 4,
+                reference: SymRef::Type(owner),
+                encoding: OperandEncoding::PackedValue24 { tag: 8 },
+            }
         );
-        assert_eq!(observed.sites(), expected.sites());
-        assert_eq!(observed.labels(), expected.labels());
-        assert_eq!(
-            *events.borrow(),
-            ["encoding", "decode", "binding", "construction", "sites"]
-                .into_iter()
-                .flat_map(|stage| [(true, stage), (false, stage)])
-                .collect::<Vec<_>>()
-        );
-
-        // PUSH_VAL without its packed operands reaches the independent decoder
-        // and fails there, before binding or symbolic construction can run.
-        let malformed = SymbolicProc {
-            items: vec![Item::Instruction(Instruction {
-                opcode: 0x60,
-                operands: vec![],
-            })],
+    }
+    #[test]
+    fn number_and_native_primitive_values_need_no_relocations() {
+        let bits = 1.5_f32.to_bits();
+        let proc = SymbolicProc {
+            items: vec![
+                instruction(0x60, vec![Word::Value(ValueWord::Number(bits))]),
+                instruction(
+                    0x60,
+                    vec![Word::Value(ValueWord::PrimitiveType(
+                        crate::NativePrimitiveType::List,
+                    ))],
+                ),
+                instruction(0, vec![]),
+            ],
         };
-        let events = Events::default();
-        let error = freeze_proc_observed(&malformed, bind, observer(Rc::clone(&events)))
-            .err()
-            .expect("malformed bytecode must fail");
-        assert!(matches!(error, FreezeError::Abi(LinkError::Decode(_))));
+        let frozen = freeze_proc(&proc).unwrap();
         assert_eq!(
-            *events.borrow(),
-            vec![
-                (true, "encoding"),
-                (false, "encoding"),
-                (true, "decode"),
-                (false, "decode")
-            ]
+            frozen.code().words(),
+            [0x60, 0x2a, bits >> 16, bits & 0xffff, 0x60, 40, 0, 0]
         );
+        assert!(frozen.code().relocations().is_empty());
+    }
+    #[test]
+    fn missing_label_and_debug_origin_are_reported_explicitly() {
+        let branch = SymbolicProc {
+            items: vec![instruction(0xf, vec![Word::Branch(LabelId(0))])],
+        };
+        assert!(matches!(
+            freeze_proc(&branch),
+            Err(FreezeError::Abi(LinkError::MissingLabel(LabelId(0))))
+        ));
+        let debug = SymbolicProc {
+            items: vec![
+                instruction(0x84, vec![Word::SourceFile(7)]),
+                instruction(0, vec![]),
+            ],
+        };
+        assert!(matches!(
+            crate::link_proc(&debug, &Ledger::default()),
+            Err(LinkError::MissingDebugOrigin(7))
+        ));
+    }
+    #[test]
+    fn malformed_instruction_and_illegal_branch_operand_are_rejected() {
+        let malformed = SymbolicProc {
+            items: vec![instruction(0, vec![Word::Immediate(1)])],
+        };
+        assert!(freeze_proc(&malformed).is_err());
+        let branch = SymbolicProc {
+            items: vec![
+                instruction(0x60, vec![Word::Branch(LabelId(0)), Word::Immediate(0)]),
+                Item::Label(LabelId(0)),
+                instruction(0, vec![]),
+            ],
+        };
+        assert!(matches!(
+            freeze_proc(&branch),
+            Err(FreezeError::Abi(LinkError::BranchOperandIsNotTarget { .. }))
+        ));
+    }
+    #[test]
+    fn sparse_and_duplicate_numeric_labels_are_rejected() {
+        let sparse = SymbolicProc {
+            items: vec![Item::Label(LabelId(u32::MAX))],
+        };
+        assert!(matches!(
+            freeze_proc(&sparse),
+            Err(FreezeError::Abi(LinkError::InvalidLabel(_)))
+        ));
+        let duplicate = SymbolicProc {
+            items: vec![Item::Label(LabelId(0)), Item::Label(LabelId(0))],
+        };
+        assert!(matches!(
+            freeze_proc(&duplicate),
+            Err(FreezeError::Abi(LinkError::DuplicateLabel(_)))
+        ));
+    }
+    #[test]
+    fn packed_limit_is_checked_by_final_typed_linking() {
+        let id = SymbolId::of("text");
+        let proc = SymbolicProc {
+            items: vec![
+                instruction(0x60, vec![Word::Value(ValueWord::String(id))]),
+                instruction(0, vec![]),
+            ],
+        };
+        let mut ledger = Ledger::default();
+        ledger.bind(SymRef::String(id), 0x1000000).unwrap();
+        assert!(matches!(
+            crate::link_proc(&proc, &ledger),
+            Err(LinkError::TooManyRecords(Table::String))
+        ));
+    }
+    #[test]
+    fn observation_does_not_change_frozen_code_or_relocation_sites() {
+        let proc = SymbolicProc {
+            items: vec![instruction(0, vec![])],
+        };
+        let mut observed = Vec::new();
+        let direct = freeze_proc(&proc).unwrap();
+        let measured = freeze_proc_observed(&proc, |stage| observed.push(stage)).unwrap();
+        assert_eq!(direct.code(), measured.code());
+        assert_eq!(direct.sites(), measured.sites());
+        assert_eq!(observed.len(), 4);
     }
 }

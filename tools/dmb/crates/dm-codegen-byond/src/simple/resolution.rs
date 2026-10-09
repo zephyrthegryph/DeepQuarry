@@ -20,7 +20,7 @@ impl Compiler<'_> {
             return Ok(class_tag(path));
         };
         let runtime_type = self.semantic(lookup.runtime_type(path))?;
-        let query = dm_ir::ResolveQuery::Ancestry(dm_ir::SymbolId::of(&runtime_type));
+        let query = dm_ir::ResolveQuery::Ancestry(runtime_type);
         match self.semantic(lookup.answer(query))? {
             dm_ir::ResolvedMeaning::Missing => Ok(None),
             dm_ir::ResolvedMeaning::Symbols(ancestors) => {
@@ -108,13 +108,98 @@ impl Compiler<'_> {
         }
         self.has_global(name)
     }
+    pub(super) fn declared_type_text(
+        &self,
+        query: dm_ir::ResolveQuery,
+    ) -> Result<Option<String>, LowerError> {
+        let lookup = self
+            .lookup
+            .expect("typed declaration lookup needs resolver");
+        let id = self.semantic(lookup.declared_type(query))?;
+        id.map(|id| self.semantic(lookup.text(query, id)))
+            .transpose()
+    }
+    pub(super) fn procedure_return_type_text(
+        &self,
+        query: dm_ir::ResolveQuery,
+    ) -> Result<Option<String>, LowerError> {
+        let lookup = self.lookup.expect("typed return lookup needs resolver");
+        let id = self.semantic(lookup.procedure_return_type(query))?;
+        id.map(|id| self.semantic(lookup.text(query, id)))
+            .transpose()
+    }
+    pub(super) fn global_proc(&self, name: &str) -> Result<SymRef, LowerError> {
+        match self.lookup {
+            Some(lookup) => self.semantic(lookup.procedure_literal(&format!("/proc/{name}"))),
+            None => self
+                .bindings
+                .global_proc(name)
+                .ok_or_else(|| error(name, "global procedure has no captured identity")),
+        }
+    }
+    pub(super) fn procedure_literal(&self, path: &str) -> Result<SymRef, LowerError> {
+        if let Some(lookup) = self.lookup {
+            return self.semantic(lookup.procedure_literal(path));
+        }
+        let (owner, name, verb) = if let Some((owner, name)) = path.rsplit_once("/proc/") {
+            (owner, name, false)
+        } else if let Some((owner, name)) = path.rsplit_once("/verb/") {
+            (owner, name, true)
+        } else {
+            return Err(error(path, "procedure literal has no namespace"));
+        };
+        let reference = if owner.is_empty() {
+            self.bindings.global_proc(name)
+        } else {
+            self.bindings.member_proc(owner, name)
+        }
+        .ok_or_else(|| error(path, "procedure literal has no captured identity"))?;
+        if verb != matches!(reference, SymRef::Verb { .. }) {
+            return Err(error(
+                path,
+                "procedure literal namespace differs from captured identity",
+            ));
+        }
+        Ok(reference)
+    }
+    pub(super) fn current_procedure_value(&self, statement: &str) -> Result<SymRef, LowerError> {
+        let identity = self.bindings.procedure_identity.ok_or_else(|| {
+            error(
+                statement,
+                "__PROC__ requires exact current procedure identity",
+            )
+        })?;
+        if let Some(lookup) = self.lookup {
+            return self.semantic(lookup.procedure_value_key(identity));
+        }
+        Ok(if identity.verb {
+            SymRef::Verb {
+                owner: identity.owner,
+                name: identity.name,
+                occurrence: identity.occurrence,
+            }
+        } else {
+            SymRef::Proc {
+                owner: identity.owner,
+                name: identity.name,
+                occurrence: identity.occurrence,
+            }
+        })
+    }
+
+    pub(super) fn global_variable(&self, name: &str) -> Result<SymRef, LowerError> {
+        self.bindings
+            .global_variable(name)
+            .ok_or_else(|| error(name, "global variable has no captured identity"))
+    }
+
     pub(super) fn field_type(&self, name: &str) -> Result<Option<String>, LowerError> {
         match (self.lookup, self.bindings.current_type_path.as_deref()) {
-            (Some(lookup), Some(owner)) => {
-                self.semantic(lookup.declared_type(dm_ir::ResolveQuery::DeclaredVarType {
+            (Some(_), Some(owner)) => {
+                self.declared_type_text(dm_ir::ResolveQuery::DeclaredVarType {
                     owner: dm_ir::SymbolId::of(owner),
                     name: dm_ir::SymbolId::of(name),
-                }))
+                })
             }
             (Some(_), None) => Ok(None),
             (None, _) => Ok(self.bindings.field_type(name).map(str::to_owned)),
@@ -122,9 +207,7 @@ impl Compiler<'_> {
     }
     pub(super) fn global_type(&self, name: &str) -> Result<Option<String>, LowerError> {
         match self.lookup {
-            Some(lookup) => self.semantic(
-                lookup.declared_type(dm_ir::ResolveQuery::GlobalVar(dm_ir::SymbolId::of(name))),
-            ),
+            Some(_) => self.declared_type_text(dm_ir::ResolveQuery::GlobalVar(SymbolId::of(name))),
             None => Ok(self.bindings.global_type(name).map(str::to_owned)),
         }
     }
@@ -134,12 +217,10 @@ impl Compiler<'_> {
         name: &str,
     ) -> Result<Option<String>, LowerError> {
         match self.lookup {
-            Some(lookup) => {
-                self.semantic(lookup.declared_type(dm_ir::ResolveQuery::DeclaredVarType {
-                    owner: dm_ir::SymbolId::of(owner),
-                    name: dm_ir::SymbolId::of(name),
-                }))
-            }
+            Some(_) => self.declared_type_text(dm_ir::ResolveQuery::DeclaredVarType {
+                owner: dm_ir::SymbolId::of(owner),
+                name: dm_ir::SymbolId::of(name),
+            }),
             None => Ok(self.bindings.member_type(owner, name).map(str::to_owned)),
         }
     }
@@ -147,21 +228,21 @@ impl Compiler<'_> {
         &self,
         owner: &str,
         name: &str,
-    ) -> Result<Option<String>, LowerError> {
+    ) -> Result<Option<SymRef>, LowerError> {
         match self.lookup {
             Some(lookup) => self.semantic(lookup.slot(dm_ir::ResolveQuery::VarStorage {
                 owner: dm_ir::SymbolId::of(owner),
                 name: dm_ir::SymbolId::of(name),
             })),
-            None => Ok(self.bindings.member_global(owner, name).map(str::to_owned)),
+            None => Ok(self.bindings.member_global(owner, name)),
         }
     }
-    pub(super) fn unique_member_global(&self, name: &str) -> Result<Option<String>, LowerError> {
+    pub(super) fn unique_member_global(&self, name: &str) -> Result<Option<SymRef>, LowerError> {
         match self.lookup {
             Some(lookup) => self.semantic(lookup.slot(dm_ir::ResolveQuery::UniqueStaticVar(
                 dm_ir::SymbolId::of(name),
             ))),
-            None => Ok(self.bindings.unique_member_global(name).map(str::to_owned)),
+            None => Ok(self.bindings.unique_member_global(name)),
         }
     }
     pub(super) fn fallback_member_global(
@@ -169,7 +250,7 @@ impl Compiler<'_> {
         object: &Expr,
         name: &str,
         via_colon: bool,
-    ) -> Result<Option<String>, LowerError> {
+    ) -> Result<Option<SymRef>, LowerError> {
         if via_colon {
             return Ok(None);
         }
@@ -195,10 +276,10 @@ impl Compiler<'_> {
         &self,
         owner: &str,
         name: &str,
-    ) -> Result<Option<String>, LowerError> {
+    ) -> Result<Option<SymRef>, LowerError> {
         match self.lookup {
             Some(lookup) => self.semantic(lookup.member_proc(owner, name)),
-            None => Ok(self.bindings.member_proc(owner, name).map(str::to_owned)),
+            None => Ok(self.bindings.member_proc(owner, name)),
         }
     }
     pub(super) fn has_declared_member_proc(
@@ -278,7 +359,7 @@ impl Compiler<'_> {
                     return Err(failure);
                 }
                 let label = self.label();
-                self.label_try_depths.insert(label.clone(), depth);
+                self.label_try_depths.insert(label, depth);
                 self.user_labels.insert(name.clone(), label);
                 self.user_label_iterator_depths
                     .insert(name.clone(), self.iterator_depth);

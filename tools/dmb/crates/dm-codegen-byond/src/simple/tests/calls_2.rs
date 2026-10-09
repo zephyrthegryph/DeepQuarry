@@ -22,16 +22,11 @@ fn builtin_arglist_matches_native() {
                 .position(|entry| entry.data == b"/generator")
                 .unwrap();
             ledger
-                .bind(
-                    crate::Symbol::new(Table::String, "/generator"),
-                    string_id as u32,
-                )
+                .bind(reference(Table::String, "/generator"), string_id as u32)
                 .unwrap();
         }
         if id == 2 {
-            ledger
-                .bind(crate::Symbol::new(Table::Class, "/datum"), 0)
-                .unwrap();
+            ledger.bind(reference(Table::Class, "/datum"), 0).unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         assert_eq!(
@@ -57,7 +52,7 @@ fn typed_member_call_uses_native_static_proc_reference() {
             "/datum/override_probe".into(),
             HashMap::from([(
                 "under_score".into(),
-                "/datum/override_probe/proc/under_score".into(),
+                reference(Table::Proc, "/datum/override_probe/proc/under_score"),
             )]),
         )]),
         ..SharedLowerBindings::default()
@@ -87,15 +82,15 @@ fn typed_member_call_uses_native_static_proc_reference() {
             .iter()
             .find(|item| item.header.contains(&format!("{name}(")))
             .unwrap();
-        let compiled = compile_simple_proc_with_bindings(&item.children, &bindings).unwrap();
+        let compiled = compile_fixture_proc_with_bindings(&item.children, &bindings).unwrap();
         let mut ledger = Ledger::default();
         if id == 6 {
             ledger
-                .bind(crate::Symbol::new(Table::Proc, target_path), target_id)
+                .bind(reference(Table::Proc, target_path), target_id)
                 .unwrap();
         } else {
             ledger
-                .bind(crate::Symbol::new(Table::String, "plain method"), 440)
+                .bind(reference(Table::String, "plain method"), 440)
                 .unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -115,8 +110,8 @@ fn callback_constructor_chain_lowers() {
         compile_simple_proc_with_params(&ast.items[0].children, &["message".into()]).unwrap();
     assert!(compiled
         .class_paths
-        .contains(&"/datum/callback/verb_callback".into()));
-    assert!(compiled.strings.contains(&"InvokeAsync".into()));
+        .contains(&SymbolId::of("/datum/callback/verb_callback")));
+    assert!(string_texts(&compiled).contains(&"InvokeAsync".into()));
 }
 
 #[test]
@@ -152,10 +147,10 @@ fn image_and_animate_calls_match_native_bytecode() {
             let id = native
                 .strings
                 .iter()
-                .position(|entry| entry.data == compiled.string_bytes(key))
+                .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
                 .unwrap();
             ledger
-                .bind(crate::Symbol::new(Table::String, key), id as u32)
+                .bind(reference(Table::String, key), id as u32)
                 .unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -184,22 +179,31 @@ fn safe_postfix_guards_cover_indices_members_and_calls_but_stop_at_groups() {
             .iter()
             .find(|item| item.header.starts_with(&format!("{path}(")))
             .unwrap();
-        let compiled = compile_simple_proc_with_bindings(
+        let compiled = compile_fixture_proc_with_bindings(
             &item.children,
             &LowerBindings {
                 parameters: vec!["L".into()],
                 parameter_types: HashMap::from([("L".into(), "/datum/chain_probe".into())]),
-                global_procs: BTreeSet::from(["index_key".into()]),
+                global_procs: HashMap::from([(
+                    "index_key".into(),
+                    reference(Table::Proc, "/proc/index_key"),
+                )]),
                 ..LowerBindings::default()
             },
         )
         .unwrap();
         let mut ledger = Ledger::default();
         ledger
-            .assign(Table::String, compiled.strings.clone())
+            .assign(
+                Table::String,
+                compiled
+                    .strings
+                    .iter()
+                    .map(|payload| SymRef::String(payload.id)),
+            )
             .unwrap();
         ledger
-            .assign(Table::Proc, ["/proc/index_key".into()])
+            .assign(Table::Proc, [reference(Table::Proc, "/proc/index_key")])
             .unwrap();
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         let id = native
@@ -252,12 +256,12 @@ fn renamed_verbs_use_native_verb_call_selectors() {
     let shared = Arc::new(SharedLowerBindings {
         member_procs: HashMap::from([(
             owner.into(),
-            HashMap::from([("halt_probe".into(), verb.into())]),
+            HashMap::from([("halt_probe".into(), reference(Table::Proc, verb))]),
         )]),
         ..SharedLowerBindings::default()
     });
     for (child, parameters) in [(1, vec![]), (2, vec!["M".into()])] {
-        let compiled = compile_simple_proc_with_bindings(
+        let compiled = compile_fixture_proc_with_bindings(
             &ast.items[0].children[child].children,
             &LowerBindings {
                 parameters,
@@ -269,7 +273,9 @@ fn renamed_verbs_use_native_verb_call_selectors() {
         )
         .unwrap();
         let mut ledger = Ledger::default();
-        ledger.assign(Table::Proc, [verb.into()]).unwrap();
+        ledger
+            .assign(Table::Proc, [reference(Table::Proc, verb)])
+            .unwrap();
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         assert!(linked.words.contains(&0xffe0));
         assert!(!linked.words.contains(&0xffdf));
@@ -303,7 +309,10 @@ fn current_and_inherited_members_shadow_global_procedures() {
     ))
     .unwrap();
     let shared = Arc::new(SharedLowerBindings {
-        global_procs: BTreeSet::from(["collision".into()]),
+        global_procs: HashMap::from([(
+            "collision".into(),
+            reference(Table::Proc, "/proc/collision"),
+        )]),
         known_member_procs: HashMap::from([(
             "/datum/shadow".into(),
             BTreeSet::from(["collision".into()]),
@@ -326,7 +335,7 @@ fn current_and_inherited_members_shadow_global_procedures() {
             opcode::CALL_GLOB,
         ),
     ] {
-        let compiled = compile_simple_proc_with_bindings(
+        let compiled = compile_fixture_proc_with_bindings(
             &ast.items[index].children,
             &LowerBindings {
                 current_type_path: Some(owner.into()),
@@ -367,12 +376,12 @@ fn bound_project_rejects_unknown_bare_calls_but_allows_dynamic_members() {
         shared: Some(Arc::new(SharedLowerBindings::default())),
         ..LowerBindings::default()
     };
-    let errors = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings).unwrap_err();
+    let errors = compile_fixture_proc_with_bindings(&ast.items[0].children, &bindings).unwrap_err();
     assert!(errors[0]
         .reason
         .contains("unresolved unqualified procedure: missing_builtin"));
     let dynamic = dm_syntax::parse("/proc/probe(receiver)\n    receiver.dynamic_method()\n");
-    assert!(compile_simple_proc_with_bindings(&dynamic.items[0].children, &bindings).is_ok());
+    assert!(compile_fixture_proc_with_bindings(&dynamic.items[0].children, &bindings).is_ok());
     let inherited = dm_syntax::parse("/datum/child/proc/probe()\n    declared_method()\n");
     let bindings = LowerBindings {
         current_type_path: Some("/datum/child".into()),
@@ -387,8 +396,8 @@ fn bound_project_rejects_unknown_bare_calls_but_allows_dynamic_members() {
         ..LowerBindings::default()
     };
     let compiled =
-        compile_simple_proc_with_bindings(&inherited.items[0].children, &bindings).unwrap();
-    assert!(compiled.strings.contains(&"declared method".into()));
+        compile_fixture_proc_with_bindings(&inherited.items[0].children, &bindings).unwrap();
+    assert!(string_texts(&compiled).contains(&"declared method".into()));
 }
 
 #[test]
@@ -442,10 +451,10 @@ fn chained_dynamic_and_external_calls_match_native_bytecode() {
             let id = native
                 .strings
                 .iter()
-                .position(|entry| entry.data == compiled.string_bytes(key))
+                .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
                 .unwrap();
             ledger
-                .bind(crate::Symbol::new(Table::String, key), id as u32)
+                .bind(reference(Table::String, key), id as u32)
                 .unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -479,10 +488,10 @@ fn named_filter_matches_native_bytecode() {
         let id = native
             .strings
             .iter()
-            .position(|entry| entry.data == compiled.string_bytes(key))
+            .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
             .unwrap();
         ledger
-            .bind(crate::Symbol::new(Table::String, key), id as u32)
+            .bind(reference(Table::String, key), id as u32)
             .unwrap();
     }
     let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -519,7 +528,13 @@ fn member_reads_writes_and_calls_link_through_receiver() {
         compile_simple_proc_with_params(&ast.items[0].children, &["obj".into()]).unwrap();
     let mut ledger = Ledger::default();
     ledger
-        .assign(Table::String, compiled.strings.clone())
+        .assign(
+            Table::String,
+            compiled
+                .strings
+                .iter()
+                .map(|payload| SymRef::String(payload.id)),
+        )
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
@@ -547,7 +562,13 @@ fn computed_receiver_call_preserves_cache_across_arguments() {
     let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["x".into()]).unwrap();
     let mut ledger = Ledger::default();
     ledger
-        .assign(Table::String, compiled.strings.clone())
+        .assign(
+            Table::String,
+            compiled
+                .strings
+                .iter()
+                .map(|payload| SymRef::String(payload.id)),
+        )
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
@@ -567,9 +588,7 @@ fn src_call_uses_native_compound_variable() {
     let ast = dm_syntax::parse("/proc/test()\n  return foo(1)\n");
     let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
     let mut ledger = Ledger::default();
-    ledger
-        .bind(crate::Symbol::new(Table::String, "foo"), 438)
-        .unwrap();
+    ledger.bind(reference(Table::String, "foo"), 438).unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     assert!(linked
         .words
@@ -592,10 +611,10 @@ fn named_icon_matches_native_fixture() {
         let id = native
             .strings
             .iter()
-            .position(|entry| entry.data == string.as_bytes())
+            .position(|entry| entry.data == string.bytes.as_ref())
             .unwrap();
         ledger
-            .bind(crate::Symbol::new(Table::String, string), id as u32)
+            .bind(reference(Table::String, string), id as u32)
             .unwrap();
     }
     let linked = link_proc(&compiled.code, &ledger).unwrap();

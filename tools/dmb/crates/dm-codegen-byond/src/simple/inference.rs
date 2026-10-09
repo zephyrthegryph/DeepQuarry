@@ -132,48 +132,43 @@ impl Compiler<'_> {
                     None => None,
                 }
             }
-            ExprKind::Call { callee, .. } if self.lookup.is_some() => {
-                let lookup = self.lookup.unwrap();
-                match &callee.kind {
-                    ExprKind::Ident(name) => {
-                        if crate::builtin_catalog::lookup(name).is_some() {
-                            return Ok(None);
-                        }
-                        if let Some(owner) = self.bindings.current_type_path.as_deref() {
-                            if self.has_declared_member_proc(owner, name)? {
-                                return self.semantic(lookup.procedure_return_type(
-                                    dm_ir::ResolveQuery::Proc {
-                                        owner: dm_ir::SymbolId::of(owner),
-                                        name: dm_ir::SymbolId::of(name),
-                                        verb: false,
-                                    },
-                                ));
-                            }
-                        }
-                        self.semantic(lookup.procedure_return_type(
-                            dm_ir::ResolveQuery::GlobalProc(dm_ir::SymbolId::of(name)),
-                        ))?
+            ExprKind::Call { callee, .. } if self.lookup.is_some() => match &callee.kind {
+                ExprKind::Ident(name) => {
+                    if crate::builtin_catalog::lookup(name).is_some() {
+                        return Ok(None);
                     }
-                    ExprKind::Member {
-                        object,
-                        selector,
-                        via_colon: false,
-                    }
-                    | ExprKind::SafeMember { object, selector } => {
-                        match self.inferred_expression_type(object)? {
-                            Some(owner) => self.semantic(lookup.procedure_return_type(
-                                dm_ir::ResolveQuery::Proc {
-                                    owner: dm_ir::SymbolId::of(&owner),
-                                    name: dm_ir::SymbolId::of(selector),
-                                    verb: false,
-                                },
-                            ))?,
-                            None => None,
+                    if let Some(owner) = self.bindings.current_type_path.as_deref() {
+                        if self.has_declared_member_proc(owner, name)? {
+                            return self.procedure_return_type_text(dm_ir::ResolveQuery::Proc {
+                                owner: dm_ir::SymbolId::of(owner),
+                                name: dm_ir::SymbolId::of(name),
+                                verb: false,
+                            });
                         }
                     }
-                    _ => None,
+                    self.procedure_return_type_text(dm_ir::ResolveQuery::GlobalProc(
+                        dm_ir::SymbolId::of(name),
+                    ))?
                 }
-            }
+                ExprKind::Member {
+                    object,
+                    selector,
+                    via_colon: false,
+                }
+                | ExprKind::SafeMember { object, selector } => {
+                    match self.inferred_expression_type(object)? {
+                        Some(owner) => {
+                            self.procedure_return_type_text(dm_ir::ResolveQuery::Proc {
+                                owner: dm_ir::SymbolId::of(&owner),
+                                name: dm_ir::SymbolId::of(selector),
+                                verb: false,
+                            })?
+                        }
+                        None => None,
+                    }
+                }
+                _ => None,
+            },
             _ => None,
         };
         let Some(path) = inferred else {
@@ -183,21 +178,38 @@ impl Compiler<'_> {
     }
     pub(super) fn normalize_inferred_type(&self, path: &str) -> Result<String, LowerError> {
         if let Some(lookup) = self.lookup {
-            return self.semantic(lookup.runtime_type(path));
+            let query = dm_ir::ResolveQuery::RuntimeType(SymbolId::of(path));
+            let id = self.semantic(lookup.runtime_type(path))?;
+            return self.semantic(lookup.text(query, id));
         }
-        Ok(self
-            .bindings
-            .shared
-            .as_ref()
-            .and_then(|shared| shared.modified_instances.get(path))
-            .cloned()
-            .unwrap_or_else(|| path.to_owned()))
+        if let Some(shared) = &self.bindings.shared {
+            if let Some(id) = shared.modified_instances.get(path) {
+                if *id == SymbolId::of(path) {
+                    return Ok(path.to_owned());
+                }
+                for candidate in shared
+                    .member_types
+                    .keys()
+                    .chain(shared.parent_types.keys())
+                    .chain(shared.known_member_fields.keys())
+                {
+                    if SymbolId::of(candidate) == *id {
+                        return Ok(candidate.clone());
+                    }
+                }
+                return Err(error(
+                    path,
+                    "modified runtime type spelling is not captured",
+                ));
+            }
+        }
+        Ok(path.to_owned())
     }
     pub(super) fn expression_member_global(
         &self,
         object: &Expr,
         name: &str,
-    ) -> Result<Option<String>, LowerError> {
+    ) -> Result<Option<SymRef>, LowerError> {
         match self.inferred_expression_type(object)? {
             Some(owner) => self.member_global(&owner, name),
             None => Ok(None),
@@ -207,13 +219,13 @@ impl Compiler<'_> {
         &self,
         object: &Expr,
         name: &str,
-    ) -> Result<Option<String>, LowerError> {
+    ) -> Result<Option<SymRef>, LowerError> {
         match self.inferred_expression_type(object)? {
             Some(owner) => self.member_proc(&owner, name),
             None => Ok(None),
         }
     }
-    pub(super) fn current_member_proc(&self, name: &str) -> Result<Option<String>, LowerError> {
+    pub(super) fn current_member_proc(&self, name: &str) -> Result<Option<SymRef>, LowerError> {
         match self.bindings.current_type_path.as_deref() {
             Some(owner) => self.member_proc(owner, name),
             None => Ok(None),
@@ -232,12 +244,15 @@ impl Compiler<'_> {
     ) -> Result<(), LowerError> {
         if dimensions.len() > 1 {
             let path = "/list".to_owned();
-            if self.seen_classes.insert(path.clone()) {
-                self.result.class_paths.push(path.clone());
+            if self.seen_classes.insert(SymbolId::of(&path)) {
+                self.result.class_paths.push(SymbolId::of(&path));
             }
             self.emit(
                 opcode::PUSH_VAL,
-                vec![Word::Value(ValueWord::ClassPath { path, tag: 40 })],
+                vec![Word::Value(ValueWord::ClassPath {
+                    path: SymbolId::of(&path),
+                    tag: 40,
+                })],
             );
         }
         for size in dimensions {
@@ -270,7 +285,7 @@ impl Compiler<'_> {
                         self.intern_string(name);
                         self.emit(
                             opcode::PUSH_VAL,
-                            vec![Word::Value(ValueWord::String(name.clone()))],
+                            vec![Word::Value(ValueWord::String(SymbolId::of(name)))],
                         );
                     } else {
                         self.expression(lhs, statement)?;

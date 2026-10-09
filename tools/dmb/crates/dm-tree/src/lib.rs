@@ -336,10 +336,19 @@ pub fn build_with_intrinsic_fields(
 }
 
 pub(crate) fn build_with_intrinsic_members(
+    symbols: SymbolTable,
+    skeletons: &[Skeleton],
+    fields: &[dm_ir::OpaqueFieldBase],
+    intrinsics: &[IntrinsicMember],
+) -> Result<SemanticTree, TreeError> {
+    build_with_intrinsic_members_inventory(symbols, skeletons, fields, intrinsics, true)
+}
+pub(crate) fn build_with_intrinsic_members_inventory(
     mut symbols: SymbolTable,
     skeletons: &[Skeleton],
     fields: &[dm_ir::OpaqueFieldBase],
     intrinsics: &[IntrinsicMember],
+    rebuild_inventory: bool,
 ) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
     let mut by_path = HashMap::new();
@@ -689,7 +698,9 @@ pub(crate) fn build_with_intrinsic_members(
     }
     tree.types = mutable_types.into();
     tree.members = members.into();
-    tree.rebuild_inventory();
+    if rebuild_inventory {
+        tree.rebuild_inventory();
+    }
     tree.declaration_targets = targets.into();
     tree.identity = declaration_identity(skeletons, fields);
     Ok(tree)

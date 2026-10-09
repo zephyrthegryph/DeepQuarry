@@ -41,3 +41,6 @@ fn frontend(source: &'static str) -> ColdFrontend {
 mod memo_replay;
 #[path = "lowering_tests/semantics.rs"]
 mod semantics;
+
+#[path = "lowering_tests/body_arena.rs"]
+mod body_arena;

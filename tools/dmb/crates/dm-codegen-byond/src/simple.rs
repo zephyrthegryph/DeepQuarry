@@ -1,8 +1,8 @@
 //! Direct lowering of a deliberately small DM procedure subset. Unsupported
 //! constructs are errors; the emitter must never silently change semantics.
 use crate::{
-    Instruction, Item as CodeItem, SymbolicProc, ValueWord, VariableWord, Word,
-    BUILTIN_GLOBAL_VARS_SYMBOL,
+    Instruction, Item as CodeItem, LabelId, StringPayload, StringRoster, SymRef, SymbolId,
+    SymbolicProc, ValueWord, VariableWord, Word,
 };
 use byond_dmb::bytecode::opcode;
 use dm_syntax::{
@@ -50,14 +50,11 @@ impl LowerError {
 pub struct SimpleProc {
     pub code: SymbolicProc,
     /// Every literal/field string referenced by `code`, in first-use order.
-    pub strings: Vec<String>,
-    /// Native format templates use non-UTF-8 control bytes; their symbolic keys
-    /// are present in `strings` and resolve to these exact payloads.
-    pub format_templates: HashMap<String, Vec<u8>>,
-    pub class_paths: Vec<String>,
+    pub strings: Vec<StringPayload>,
+    pub class_paths: Vec<SymbolId>,
     #[serde(default)]
-    pub instance_paths: Vec<String>,
-    pub resources: Vec<String>,
+    pub instance_paths: Vec<SymbolId>,
+    pub resources: Vec<u128>,
     pub local_count: u32,
     /// Local declaration names in native local-slot order. The DMB writer
     /// resolves these names to VarIDs and writes that list as proc metadata.
@@ -77,11 +74,11 @@ pub struct ArgumentMetadata {
 }
 
 impl SimpleProc {
-    pub fn string_bytes<'a>(&'a self, key: &'a str) -> &'a [u8] {
-        self.format_templates
-            .get(key)
-            .map(Vec::as_slice)
-            .unwrap_or_else(|| key.as_bytes())
+    pub fn string_bytes(&self, id: SymbolId) -> Option<&[u8]> {
+        self.strings
+            .iter()
+            .find(|payload| payload.id == id)
+            .map(|payload| payload.bytes.as_ref())
     }
     pub fn argument_metadata(&self) -> Vec<ArgumentMetadata> {
         self.argument_names
@@ -120,11 +117,14 @@ pub struct LowerBindings {
     pub readonly_parameters: BTreeSet<u32>,
     pub fields: BTreeSet<String>,
     pub globals: BTreeSet<String>,
+    /// Exact captured slots used by standalone lexical bindings.
+    pub global_variables: HashMap<String, SymRef>,
+    pub resource_ids: HashMap<String, u128>,
     /// Declared type paths used to resolve `new(args)` without an explicit path.
     pub field_types: HashMap<String, String>,
     pub global_types: HashMap<String, String>,
     /// Global procedure names resolvable to ProcIDs at link time.
-    pub global_procs: BTreeSet<String>,
+    pub global_procs: HashMap<String, SymRef>,
     /// Immutable project-wide names shared between procedure lowering jobs.
     #[serde(skip)]
     pub shared: Option<Arc<SharedLowerBindings>>,
@@ -134,28 +134,30 @@ pub struct LowerBindings {
 pub struct SharedLowerBindings {
     /// Stable modified-type aliases mapped to their original runtime type.
     #[serde(default)]
-    pub modified_instances: HashMap<String, String>,
+    pub modified_instances: HashMap<String, SymbolId>,
     /// Per-member semantic digests prepared once for portable lowering cache keys.
     #[serde(skip)]
     pub member_type_fingerprints: HashMap<String, String>,
     pub member_types: HashMap<String, HashMap<String, String>>,
     /// Class global/static members resolved directly to their shared variable slot.
     #[serde(default)]
-    pub member_globals: HashMap<String, HashMap<String, String>>,
+    pub member_globals: HashMap<String, HashMap<String, SymRef>>,
     /// Complete declared field inventory, including untyped instance fields.
     #[serde(default)]
     pub known_member_fields: HashMap<String, BTreeSet<String>>,
     /// Directly declared procedure paths by owner and source name.
-    pub member_procs: HashMap<String, HashMap<String, String>>,
+    pub member_procs: HashMap<String, HashMap<String, SymRef>>,
     /// Complete declaration inventory, separate from static call selection.
     #[serde(default)]
     pub known_member_procs: HashMap<String, BTreeSet<String>>,
     pub parent_types: HashMap<String, String>,
     pub fields: BTreeSet<String>,
     pub globals: BTreeSet<String>,
+    /// Exact captured slots used by standalone lexical bindings.
+    pub global_variables: HashMap<String, SymRef>,
     pub field_types: HashMap<String, String>,
     pub global_types: HashMap<String, String>,
-    pub global_procs: BTreeSet<String>,
+    pub global_procs: HashMap<String, SymRef>,
     /// Native predefined numeric names such as UNIX, when no lexical name shadows them.
     pub numeric_constants: HashMap<String, u32>,
     /// Native predefined string names such as UNIX, when no lexical name shadows them.
@@ -183,11 +185,24 @@ impl LowerBindings {
     }
 
     fn has_global_proc(&self, name: &str) -> bool {
-        self.global_procs.contains(name)
+        self.global_procs.contains_key(name)
             || self
                 .shared
                 .as_ref()
-                .is_some_and(|shared| shared.global_procs.contains(name))
+                .is_some_and(|shared| shared.global_procs.contains_key(name))
+    }
+
+    fn global_variable(&self, name: &str) -> Option<SymRef> {
+        self.global_variables
+            .get(name)
+            .copied()
+            .or_else(|| self.shared.as_ref()?.global_variables.get(name).copied())
+    }
+    fn global_proc(&self, name: &str) -> Option<SymRef> {
+        self.global_procs
+            .get(name)
+            .copied()
+            .or_else(|| self.shared.as_ref()?.global_procs.get(name).copied())
     }
 
     fn field_type(&self, name: &str) -> Option<&str> {
@@ -206,11 +221,7 @@ impl LowerBindings {
 
     fn member_type(&self, owner: &str, name: &str) -> Option<&str> {
         let shared = self.shared.as_ref()?;
-        let mut path = shared
-            .modified_instances
-            .get(owner)
-            .map(String::as_str)
-            .unwrap_or(owner);
+        let mut path = owner;
         for _ in 0..64 {
             if let Some(member) = shared
                 .member_types
@@ -224,59 +235,51 @@ impl LowerBindings {
         None
     }
 
-    fn member_global(&self, owner: &str, name: &str) -> Option<&str> {
+    fn member_global(&self, owner: &str, name: &str) -> Option<SymRef> {
         let shared = self.shared.as_ref()?;
-        let mut path = shared
-            .modified_instances
-            .get(owner)
-            .map(String::as_str)
-            .unwrap_or(owner);
+        let mut path = owner;
         for _ in 0..64 {
             if let Some(symbol) = shared
                 .member_globals
                 .get(path)
                 .and_then(|members| members.get(name))
             {
-                return Some(symbol);
+                return Some(*symbol);
             }
             path = shared.parent_types.get(path)?;
         }
         None
     }
 
-    fn unique_member_global(&self, name: &str) -> Option<&str> {
+    fn unique_member_global(&self, name: &str) -> Option<SymRef> {
         let shared = self.shared.as_ref()?;
         if shared.known_member_fields.iter().any(|(owner, members)| {
             members.contains(name) && self.member_global(owner, name).is_none()
         }) {
             return None;
         }
-        let mut found: Option<&str> = None;
+        let mut found: Option<SymRef> = None;
         for members in shared.member_globals.values() {
             if let Some(symbol) = members.get(name) {
-                if found.is_some_and(|previous| previous != symbol) {
+                if found.is_some_and(|previous| previous != *symbol) {
                     return None;
                 }
-                found = Some(symbol);
+                found = Some(*symbol);
             }
         }
         found
     }
 
-    fn member_proc(&self, owner: &str, name: &str) -> Option<&str> {
+    fn member_proc(&self, owner: &str, name: &str) -> Option<SymRef> {
         let shared = self.shared.as_ref()?;
-        let mut path = shared
-            .modified_instances
-            .get(owner)
-            .map(String::as_str)
-            .unwrap_or(owner);
+        let mut path = owner;
         for _ in 0..64 {
             if let Some(proc_path) = shared
                 .member_procs
                 .get(path)
                 .and_then(|members| members.get(name))
             {
-                return Some(proc_path);
+                return Some(*proc_path);
             }
             path = shared.parent_types.get(path)?;
         }
@@ -287,11 +290,7 @@ impl LowerBindings {
         let Some(shared) = self.shared.as_ref() else {
             return false;
         };
-        let mut path = shared
-            .modified_instances
-            .get(owner)
-            .map(String::as_str)
-            .unwrap_or(owner);
+        let mut path = owner;
         for _ in 0..64 {
             if shared
                 .known_member_procs
@@ -492,7 +491,7 @@ fn compile_with_lookup(
         locals: Vec::new(),
         local_slots: HashMap::new(),
         local_types: HashMap::new(),
-        seen_strings: BTreeSet::new(),
+        string_roster: StringRoster::default(),
         seen_classes: BTreeSet::new(),
         seen_resources: BTreeSet::new(),
         next_label: 0,
@@ -568,18 +567,20 @@ fn compile_with_lookup(
             };
             for operand in &mut instruction.operands {
                 if let Word::Value(ValueWord::ClassPath { path, .. }) = operand {
-                    let runtime_type = lookup.runtime_type(path).map_err(|error| vec![error])?;
+                    let runtime_type = lookup
+                        .runtime_type_symbol(*path)
+                        .map_err(|error| vec![error])?;
                     if runtime_type == *path {
-                        if let Some(primitive) = crate::NativePrimitiveType::from_path(path) {
-                            seen.insert(path.clone());
+                        if let Some(primitive) = crate::NativePrimitiveType::from_symbol(*path) {
+                            seen.insert(*path);
                             *operand = Word::Value(ValueWord::PrimitiveType(primitive));
                             continue;
                         }
                     }
                     if runtime_type != *path {
-                        let alias = path.clone();
-                        if seen.insert(alias.clone()) {
-                            compiler.result.instance_paths.push(alias.clone());
+                        let alias = *path;
+                        if seen.insert(alias) {
+                            compiler.result.instance_paths.push(alias);
                         }
                         *operand = Word::Value(ValueWord::Instance(alias));
                     }
@@ -591,10 +592,12 @@ fn compile_with_lookup(
             .class_paths
             .retain(|path| !seen.contains(path));
     } else if let Some(shared) = &bindings.shared {
-        compiler
-            .result
-            .class_paths
-            .retain(|path| !shared.modified_instances.contains_key(path));
+        compiler.result.class_paths.retain(|path| {
+            !shared
+                .modified_instances
+                .keys()
+                .any(|alias| SymbolId::of(alias) == *path)
+        });
         let mut seen = BTreeSet::new();
         for item in &mut compiler.result.code.items {
             let CodeItem::Instruction(instruction) = item else {
@@ -602,10 +605,14 @@ fn compile_with_lookup(
             };
             for operand in &mut instruction.operands {
                 if let Word::Value(ValueWord::ClassPath { path, .. }) = operand {
-                    if shared.modified_instances.contains_key(path) {
-                        let path = path.clone();
-                        if seen.insert(path.clone()) {
-                            compiler.result.instance_paths.push(path.clone());
+                    if shared
+                        .modified_instances
+                        .keys()
+                        .any(|alias| SymbolId::of(alias) == *path)
+                    {
+                        let path = *path;
+                        if seen.insert(path) {
+                            compiler.result.instance_paths.push(path);
                         }
                         *operand = Word::Value(ValueWord::Instance(path));
                     }
@@ -613,6 +620,7 @@ fn compile_with_lookup(
             }
         }
     }
+    compiler.result.strings = compiler.string_roster.into_payloads();
     Ok(compiler.result)
 }
 
@@ -782,20 +790,20 @@ struct Compiler<'a> {
     locals: Vec<String>,
     local_slots: HashMap<String, u32>,
     local_types: HashMap<String, String>,
-    seen_strings: BTreeSet<String>,
-    seen_classes: BTreeSet<String>,
-    seen_resources: BTreeSet<String>,
+    string_roster: StringRoster,
+    seen_classes: BTreeSet<SymbolId>,
+    seen_resources: BTreeSet<u128>,
     next_label: u32,
-    label_try_depths: HashMap<String, usize>,
-    user_labels: HashMap<String, String>,
+    label_try_depths: HashMap<LabelId, usize>,
+    user_labels: HashMap<String, LabelId>,
     user_label_iterator_depths: HashMap<String, usize>,
-    label_breaks: HashMap<String, String>,
+    label_breaks: HashMap<String, LabelId>,
     label_loop_depths: HashMap<String, usize>,
     label_iterator_depths: HashMap<String, usize>,
     try_depth: usize,
     /// (continue target, break target) for nested loops.
-    loops: Vec<(String, String)>,
-    breaks: Vec<String>,
+    loops: Vec<(LabelId, LabelId)>,
+    breaks: Vec<LabelId>,
     iterator_depth: usize,
 }
 

@@ -74,6 +74,23 @@ fn capture_impl(
     workers: usize,
     prefilter: bool,
 ) -> Result<StartupFacts, String> {
+    let executor = dm_exec::BuildExecutor::new(workers).map_err(|error| error.to_string())?;
+    capture_impl_with_executor(frontend, &executor, prefilter)
+}
+fn capture_impl_with_executor(
+    frontend: &ColdFrontend,
+    executor: &dm_exec::BuildExecutor,
+    prefilter: bool,
+) -> Result<StartupFacts, String> {
+    let bodies = dm_tree::frontend::BodyArena::new(frontend);
+    capture_impl_with_bodies(frontend, executor, &bodies, prefilter)
+}
+fn capture_impl_with_bodies(
+    frontend: &ColdFrontend,
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    prefilter: bool,
+) -> Result<StartupFacts, String> {
     let units = crate::driver_facts::unit_members(frontend).map_err(|e| e.to_string())?;
     let identities = units
         .into_iter()
@@ -107,37 +124,43 @@ fn capture_impl(
                 dm_tree::procedure_statics::capture_declarations(identity, &[])?,
             ));
         }
-        let parsed = frontend
-            .body(body)
-            .map_err(|e| format!("startup body: {e:?}"))?;
-        let plan = dm_tree::procedure_statics::capture_declarations(identity, &parsed.children)?;
+        let plan = bodies
+            .with_parsed(body, |parsed| {
+                dm_tree::procedure_statics::capture_declarations(identity, &parsed.item().children)
+            })
+            .map_err(|e| format!("startup body: {e:?}"))??;
         Ok::<_, String>((body.declaration, plan))
     };
-    let workers = workers.clamp(1, 8).min(frontend.bodies.len().max(1));
+    let workers = executor.workers().min(frontend.bodies.len().max(1));
     let chunk = frontend.bodies.len().div_ceil(workers).max(1);
-    let chunks = std::thread::scope(|scope| {
-        let handles: Vec<_> = frontend
-            .bodies
-            .chunks(chunk)
-            .map(|bodies| {
+    let chunks: Vec<_> = frontend.bodies.chunks(chunk).collect();
+    let results: Vec<_> = (0..chunks.len())
+        .map(|_| std::sync::Mutex::new(None))
+        .collect();
+    let scheduling = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        executor.scope(|scope| {
+            for (index, bodies) in chunks.iter().enumerate() {
                 let capture_body = &capture_body;
-                scope.spawn(move || {
-                    let _profile = dm_profile::stage("cold.startup_capture");
-                    bodies
-                        .iter()
-                        .map(capture_body)
-                        .collect::<Result<Vec<_>, String>>()
-                })
-            })
-            .collect();
-        handles
-            .into_iter()
-            .map(|handle| {
-                handle
-                    .join()
-                    .unwrap_or_else(|_| Err("startup capture worker panicked".into()))
-            })
-            .collect::<Vec<_>>()
+                let slot = &results[index];
+                scope.spawn(move |_| {
+                    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        let _profile = dm_profile::stage("cold.startup_capture");
+                        bodies
+                            .iter()
+                            .map(capture_body)
+                            .collect::<Result<Vec<_>, String>>()
+                    }))
+                    .unwrap_or_else(|_| Err("startup capture worker panicked".into()));
+                    *slot.lock().unwrap_or_else(|error| error.into_inner()) = Some(result);
+                });
+            }
+        });
+    }));
+    scheduling.map_err(|_| "startup capture scheduler panicked".to_string())?;
+    let chunks = results.into_iter().map(|slot| {
+        slot.into_inner()
+            .unwrap_or_else(|error| error.into_inner())
+            .unwrap_or_else(|| Err("startup capture job did not complete".into()))
     });
     let mut procedures = Vec::with_capacity(frontend.bodies.len());
     // Chunk order is source order, including deterministic first-error selection.
@@ -181,6 +204,53 @@ pub fn capture_with_spellings_and_workers<'a>(
         facts: capture_facts_with_spellings_and_workers(frontend, spellings, workers)?,
     })
 }
+/// Production path borrows the one executor owned by this build.
+pub fn capture_with_executor<'a>(
+    frontend: &'a ColdFrontend,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+) -> Result<CapturedStartup<'a>, String> {
+    Ok(CapturedStartup {
+        frontend,
+        revision: None,
+        facts: capture_facts_with_executor(frontend, spellings, executor)?,
+    })
+}
+pub fn capture_with_executor_and_bodies<'a>(
+    frontend: &'a ColdFrontend,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+) -> Result<CapturedStartup<'a>, String> {
+    Ok(CapturedStartup {
+        frontend,
+        revision: None,
+        facts: capture_facts_with_executor_and_bodies(frontend, spellings, executor, bodies)?,
+    })
+}
+pub fn capture_revision_facts_with_executor_and_bodies(
+    revision: &dm_tree::frontend::FrontendRevision,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+) -> Result<std::sync::Arc<StartupFacts>, String> {
+    let mut facts = capture_facts_with_executor_and_bodies(revision, spellings, executor, bodies)?;
+    std::sync::Arc::get_mut(&mut facts)
+        .expect("new startup facts are exclusively owned")
+        .issuance = Some(revision.issuance());
+    Ok(facts)
+}
+pub fn capture_revision_facts_with_executor(
+    revision: &dm_tree::frontend::FrontendRevision,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+) -> Result<std::sync::Arc<StartupFacts>, String> {
+    let mut facts = capture_facts_with_executor(revision, spellings, executor)?;
+    std::sync::Arc::get_mut(&mut facts)
+        .expect("new startup facts are exclusively owned")
+        .issuance = Some(revision.issuance());
+    Ok(facts)
+}
 pub fn capture_revision_facts_with_spellings_and_workers(
     revision: &dm_tree::frontend::FrontendRevision,
     spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
@@ -197,7 +267,24 @@ pub fn capture_facts_with_spellings_and_workers(
     spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
     workers: usize,
 ) -> Result<std::sync::Arc<StartupFacts>, String> {
-    let mut startup = capture_impl(frontend, workers, true)?;
+    let executor = dm_exec::BuildExecutor::new(workers).map_err(|error| error.to_string())?;
+    capture_facts_with_executor(frontend, spellings, &executor)
+}
+fn capture_facts_with_executor(
+    frontend: &ColdFrontend,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+) -> Result<std::sync::Arc<StartupFacts>, String> {
+    let bodies = dm_tree::frontend::BodyArena::new(frontend);
+    capture_facts_with_executor_and_bodies(frontend, spellings, executor, &bodies)
+}
+fn capture_facts_with_executor_and_bodies(
+    frontend: &ColdFrontend,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+) -> Result<std::sync::Arc<StartupFacts>, String> {
+    let mut startup = capture_impl_with_bodies(frontend, executor, bodies, true)?;
     let mut symbols = dm_ir::SymbolTable::overlay(startup.plan.symbols.clone());
     for (expected, bytes) in spellings {
         let text =
@@ -437,6 +524,31 @@ mod spelling_tests {
             assert_eq!(left.origins, right.origins);
             assert!(left.executable_body.is_empty() && right.executable_body.is_empty());
         }
+    }
+    #[test]
+    fn borrowed_executor_reuses_revision_capture_without_changing_facts() {
+        let revision = dm_tree::frontend::FrontendRevision::new(
+            dm_tree::frontend::build(Path::new("probe.dme"), &Source, &Default::default(), 1)
+                .unwrap(),
+        );
+        let executor = dm_exec::BuildExecutor::new(3).unwrap();
+        assert_eq!(executor.workers(), 3);
+        let first = capture_revision_facts_with_executor(&revision, &[], &executor).unwrap();
+        let second = capture_revision_facts_with_executor(&revision, &[], &executor).unwrap();
+        let serial = capture(&revision).unwrap();
+        assert_eq!(first.plan.identity, serial.plan.identity);
+        assert_eq!(first.plan.writes.as_ref(), second.plan.writes.as_ref());
+        assert_eq!(first.plan.origins.as_ref(), second.plan.origins.as_ref());
+        first
+            .view_revision(&revision)
+            .unwrap()
+            .validate_for(&revision)
+            .unwrap();
+        second
+            .view_revision(&revision)
+            .unwrap()
+            .validate_for(&revision)
+            .unwrap();
     }
     #[test]
     fn captured_alias_overlay_preserves_source_and_ledger_identity() {

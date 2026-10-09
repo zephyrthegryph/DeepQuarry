@@ -171,6 +171,29 @@ pub fn compose_projected_owned_with_symbols(
         symbols,
         Some((projection, values)),
         stage,
+        None,
+    )
+    .map(byond_dmb::dmb::EncodedDmb::into_bytes)
+}
+#[allow(clippy::too_many_arguments)] // Explicit captured composition inputs and request-owned executor.
+pub fn compose_projected_owned_with_symbols_on_executor(
+    engine_bytes: &[u8],
+    batch: FrozenBatch,
+    frontend: &dm_tree::frontend::ColdFrontend,
+    projection: &crate::class_projection::ClassProjection,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    stage: Option<&dyn NonTextOutputStage>,
+    symbols: &SymbolTable,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<byond_dmb::dmb::EncodedDmb, CompositionError> {
+    validate_projected(&batch, frontend, projection, stage)?;
+    compose_records_access(
+        engine_bytes,
+        BatchAccess::Owned(batch),
+        symbols,
+        Some((projection, values)),
+        stage,
+        Some(executor),
     )
 }
 /// Consuming counterpart to the bounded reference/global fixture writer.
@@ -179,5 +202,13 @@ pub fn compose_global_fixture_owned(
     batch: FrozenBatch,
     symbols: &SymbolTable,
 ) -> Result<Vec<u8>, CompositionError> {
-    compose_records_access(engine_bytes, BatchAccess::Owned(batch), symbols, None, None)
+    compose_records_access(
+        engine_bytes,
+        BatchAccess::Owned(batch),
+        symbols,
+        None,
+        None,
+        None,
+    )
+    .map(byond_dmb::dmb::EncodedDmb::into_bytes)
 }

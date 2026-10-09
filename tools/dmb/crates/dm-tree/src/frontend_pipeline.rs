@@ -38,7 +38,24 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
     config: FrontendConfig<'_>,
     memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
 ) -> Result<ColdFrontend, Vec<Diagnostic>> {
-    let workers = config.workers;
+    let executor = dm_exec::BuildExecutor::new(config.workers).map_err(|error| {
+        vec![internal(&format!(
+            "frontend executor creation failed: {error}"
+        ))]
+    })?;
+    build_with_executor(project, provider, defines, config, memo, &executor)
+}
+
+/// Build the frontend on the request's borrowed executor, including expansion
+/// and declaration parsing. Ordered directive traversal remains on the caller.
+pub fn build_with_executor<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    config: FrontendConfig<'_>,
+    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<ColdFrontend, Vec<Diagnostic>> {
     let total_start = Instant::now();
     let mut timings = FrontendTimings::default();
     let captured = Captured {
@@ -81,10 +98,7 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
         plan.regions.len(),
     );
     let profile_stage = dm_profile::stage("frontend.expansion");
-    let expanded = match memo {
-        Some(memo) => dm_preprocess::regions::expand_regions_text_with_memo(&plan, workers, memo),
-        None => expand_regions_text(&plan, workers),
-    };
+    let expanded = dm_preprocess::regions::expand_regions_text_with_executor(&plan, executor, memo);
     timings.expansion = stage_start.elapsed();
     observe(
         config,
@@ -187,7 +201,7 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
         allocation_ledger,
         declaration_errors,
         reuse_stats,
-    } = parse_declarations(&expanded, config, memo)?;
+    } = parse_declarations_with_executor(&expanded, config, memo, executor)?;
     timings.declaration_reuse = reuse_stats;
     diagnostics.extend(
         syntax_diagnostics
@@ -314,15 +328,19 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
     let profile_stage = dm_profile::stage("frontend.tree_resolution");
     let mut resolution_diagnostic = None;
     let snapshot = adapted
-        .finish_with_engine_observed(config.engine, |error, skeletons, origins| {
-            resolution_diagnostic = Some(resolution_error(
-                error,
-                skeletons,
-                origins,
-                &mapping,
-                config.engine.is_some(),
-            ));
-        })
+        .finish_with_engine_observed_on_executor(
+            config.engine,
+            |error, skeletons, origins| {
+                resolution_diagnostic = Some(resolution_error(
+                    error,
+                    skeletons,
+                    origins,
+                    &mapping,
+                    config.engine.is_some(),
+                ));
+            },
+            executor,
+        )
         .map_err(|_| {
             vec![resolution_diagnostic.expect("resolution failure must notify observer")]
         })?;

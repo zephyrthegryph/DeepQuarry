@@ -36,7 +36,7 @@ impl Compiler<'_> {
                     self.debug_current,
                 ))?;
                 if !self.result.instance_paths.contains(&alias) {
-                    self.result.instance_paths.push(alias.clone());
+                    self.result.instance_paths.push(alias);
                 }
                 self.emit(
                     opcode::PUSH_VAL,
@@ -96,9 +96,9 @@ impl Compiler<'_> {
                 self.condition(condition, statement)?;
                 let else_label = self.label();
                 let end_label = self.label();
-                self.emit(opcode::JZ, vec![Word::Branch(else_label.clone())]);
+                self.emit(opcode::JZ, vec![Word::Branch(else_label)]);
                 self.expression(then_value, statement)?;
-                self.emit(opcode::JMP, vec![Word::Branch(end_label.clone())]);
+                self.emit(opcode::JMP, vec![Word::Branch(end_label)]);
                 self.result.code.items.push(CodeItem::Label(else_label));
                 self.expression(else_value, statement)?;
                 self.result.code.items.push(CodeItem::Label(end_label));
@@ -118,7 +118,7 @@ impl Compiler<'_> {
                     self.intern_string(&value);
                     self.emit(
                         opcode::PUSH_VAL,
-                        vec![Word::Value(ValueWord::String(value))],
+                        vec![Word::Value(ValueWord::String(SymbolId::of(&value)))],
                     );
                 } else if literal.starts_with("@\"") && literal.ends_with('"') && literal.len() >= 3
                 {
@@ -126,7 +126,7 @@ impl Compiler<'_> {
                     self.intern_string(&value);
                     self.emit(
                         opcode::PUSH_VAL,
-                        vec![Word::Value(ValueWord::String(value))],
+                        vec![Word::Value(ValueWord::String(SymbolId::of(&value)))],
                     );
                 } else if (literal.starts_with('"') && literal.ends_with('"') && literal.len() >= 2)
                     || (literal.starts_with("{\"")
@@ -142,10 +142,7 @@ impl Compiler<'_> {
                         .map_err(|reason| error(statement, &reason))?;
                     if expressions.is_empty() {
                         let value = match String::from_utf8(template.clone()) {
-                            Ok(value) => {
-                                self.intern_string(&value);
-                                value
-                            }
+                            Ok(value) => self.intern_string(&value),
                             Err(_) => self.intern_format_template(template),
                         };
                         self.emit(
@@ -160,7 +157,7 @@ impl Compiler<'_> {
                         self.emit(
                             2,
                             vec![
-                                Word::Reference(crate::Symbol::new(crate::Table::String, key)),
+                                Word::Reference(SymRef::String(key)),
                                 Word::Immediate(expressions.len() as u32),
                             ],
                         );
@@ -171,7 +168,7 @@ impl Compiler<'_> {
                     self.intern_string(&value);
                     self.emit(
                         opcode::PUSH_VAL,
-                        vec![Word::Value(ValueWord::String(value))],
+                        vec![Word::Value(ValueWord::String(SymbolId::of(&value)))],
                     );
                 } else if literal.starts_with('\'') && literal.ends_with('\'') && literal.len() >= 2
                 {
@@ -184,10 +181,15 @@ impl Compiler<'_> {
                     }
                     let path = match self.lookup {
                         Some(lookup) => self.semantic(lookup.resource(path))?,
-                        None => path.to_owned(),
+                        None => *self.bindings.resource_ids.get(path).ok_or_else(|| {
+                            error(
+                                statement,
+                                "resource literal requires captured resource identity",
+                            )
+                        })?,
                     };
-                    if self.seen_resources.insert(path.clone()) {
-                        self.result.resources.push(path.clone());
+                    if self.seen_resources.insert(path) {
+                        self.result.resources.push(path);
                     }
                     self.emit(
                         opcode::PUSH_VAL,
@@ -209,7 +211,7 @@ impl Compiler<'_> {
                     self.intern_string(path);
                     self.emit(
                         opcode::PUSH_VAL,
-                        vec![Word::Value(ValueWord::String(path.clone()))],
+                        vec![Word::Value(ValueWord::String(SymbolId::of(path)))],
                     );
                     return Ok(());
                 }
@@ -218,10 +220,7 @@ impl Compiler<'_> {
                     || path.starts_with("/verb/")
                     || path.contains("/verb/")
                 {
-                    let value_path = match self.lookup {
-                        Some(lookup) => self.semantic(lookup.procedure_literal(path))?,
-                        None => path.clone(),
-                    };
+                    let value_path = self.procedure_literal(path)?;
                     self.emit(
                         opcode::PUSH_VAL,
                         vec![Word::Value(ValueWord::ProcPath(value_path))],
@@ -231,13 +230,13 @@ impl Compiler<'_> {
                 let tag = self
                     .class_tag(path)?
                     .ok_or_else(|| error(statement, "unsupported type path literal"))?;
-                if self.seen_classes.insert(path.clone()) {
-                    self.result.class_paths.push(path.clone());
+                if self.seen_classes.insert(SymbolId::of(path)) {
+                    self.result.class_paths.push(SymbolId::of(path));
                 }
                 self.emit(
                     opcode::PUSH_VAL,
                     vec![Word::Value(ValueWord::ClassPath {
-                        path: path.clone(),
+                        path: SymbolId::of(path),
                         tag,
                     })],
                 );
@@ -264,19 +263,7 @@ impl Compiler<'_> {
                             return Ok(());
                         }
                     }
-                    let path = if let Some(lookup) = self.lookup {
-                        let identity = self.bindings.procedure_identity.ok_or_else(|| {
-                            error(
-                                statement,
-                                "__PROC__ requires exact current procedure identity",
-                            )
-                        })?;
-                        self.semantic(lookup.procedure_value_key(identity))?
-                    } else {
-                        self.bindings.current_proc_path.clone().ok_or_else(|| {
-                            error(statement, "__PROC__ requires current procedure context")
-                        })?
-                    };
+                    let path = self.current_procedure_value(statement)?;
                     self.emit(
                         opcode::PUSH_VAL,
                         vec![Word::Value(ValueWord::ProcPath(path))],
@@ -303,14 +290,7 @@ impl Compiler<'_> {
                     && !self.has_visible_global(name)?
                 {
                     if name == "__PROC__" {
-                        let path = self
-                            .bindings
-                            .current_proc_path
-                            .as_ref()
-                            .ok_or_else(|| {
-                                error(statement, "__PROC__ requires current procedure context")
-                            })?
-                            .clone();
+                        let path = self.current_procedure_value(statement)?;
                         self.emit(
                             opcode::PUSH_VAL,
                             vec![Word::Value(ValueWord::ProcPath(path))],
@@ -323,12 +303,15 @@ impl Compiler<'_> {
                             let tag = self.class_tag(&path)?.ok_or_else(|| {
                                 error(statement, "__TYPE__ has unsupported owner type")
                             })?;
-                            if self.seen_classes.insert(path.clone()) {
-                                self.result.class_paths.push(path.clone());
+                            if self.seen_classes.insert(SymbolId::of(&path)) {
+                                self.result.class_paths.push(SymbolId::of(&path));
                             }
                             self.emit(
                                 opcode::PUSH_VAL,
-                                vec![Word::Value(ValueWord::ClassPath { path, tag })],
+                                vec![Word::Value(ValueWord::ClassPath {
+                                    path: SymbolId::of(&path),
+                                    tag,
+                                })],
                             );
                         } else {
                             self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
@@ -348,7 +331,7 @@ impl Compiler<'_> {
                         self.intern_string(&value);
                         self.emit(
                             opcode::PUSH_VAL,
-                            vec![Word::Value(ValueWord::String(value))],
+                            vec![Word::Value(ValueWord::String(SymbolId::of(&value)))],
                         );
                         return Ok(());
                     }
@@ -381,10 +364,10 @@ impl Compiler<'_> {
                                 }
                             ),
                         )? {
-                            VariableWord::Global(symbol.to_owned())
+                            VariableWord::Global(symbol)
                         } else {
                             self.intern_string(selector);
-                            VariableWord::Field(selector.clone())
+                            VariableWord::Field(SymbolId::of(selector))
                         }
                     }
                 };
@@ -398,18 +381,20 @@ impl Compiler<'_> {
                 self.intern_string(selector);
                 self.emit(
                     opcode::GET_VAR,
-                    vec![Word::Variable(VariableWord::StaticField(selector.clone()))],
+                    vec![Word::Variable(VariableWord::StaticField(SymbolId::of(
+                        selector,
+                    )))],
                 );
                 self.result.code.items.extend(safe_labels);
             }
             ExprKind::SafeMember { object, selector } => {
                 self.expression(object, statement)?;
                 let end = self.label();
-                self.emit(317, vec![Word::Branch(end.clone())]);
+                self.emit(317, vec![Word::Branch(end)]);
                 let variable = self
                     .expression_member_global(object, selector)?
-                    .map(|symbol| VariableWord::Global(symbol.to_owned()))
-                    .unwrap_or_else(|| VariableWord::Field(selector.clone()));
+                    .map(VariableWord::Global)
+                    .unwrap_or_else(|| VariableWord::Field(SymbolId::of(selector)));
                 if matches!(variable, VariableWord::Field(_)) {
                     self.intern_string(selector);
                 }
@@ -426,7 +411,7 @@ impl Compiler<'_> {
             ExprKind::SafeIndex { object, index } => {
                 self.expression(object, statement)?;
                 let end = self.label();
-                self.emit(317, vec![Word::Branch(end.clone())]);
+                self.emit(317, vec![Word::Branch(end)]);
                 self.emit(opcode::PUSH_CACHE, vec![]);
                 self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::Cache)]);
                 self.expression(index, statement)?;
@@ -492,11 +477,10 @@ impl Compiler<'_> {
                                     };
                                 let proc_selector =
                                     proc_selector.map(member_proc_selector).unwrap_or_else(|| {
-                                        VariableWord::DynamicProc(selector.replace('_', " "))
+                                        VariableWord::DynamicProc(
+                                            self.intern_string(&selector.replace('_', " ")),
+                                        )
                                     });
-                                if let VariableWord::DynamicProc(display) = &proc_selector {
-                                    self.intern_string(display);
-                                }
                                 self.emit(
                                     opcode::CALL,
                                     vec![
@@ -585,7 +569,7 @@ impl Compiler<'_> {
                         self.intern_string(selector);
                         self.emit(
                             opcode::SET_VAR,
-                            vec![Word::Variable(VariableWord::Field(selector.clone()))],
+                            vec![Word::Variable(VariableWord::Field(SymbolId::of(selector)))],
                         );
                         return Ok(());
                     }
@@ -604,7 +588,7 @@ impl Compiler<'_> {
                     } else {
                         opcode::JMP_AND
                     },
-                    vec![Word::Branch(end.clone())],
+                    vec![Word::Branch(end)],
                 );
                 self.assignment_value_preserving_cache(&variable, rhs, statement)?;
                 self.emit(opcode::SET_VAR_EXPR, vec![Word::Variable(variable)]);
@@ -654,7 +638,7 @@ impl Compiler<'_> {
                             } else {
                                 opcode::JMP_AND
                             },
-                            vec![Word::Branch(end.clone())],
+                            vec![Word::Branch(end)],
                         );
                         self.expression(next, statement)?;
                     }

@@ -2,12 +2,12 @@
 //! Runtime scheduling, default-record packing and table IDs remain linker policy.
 use crate::{
     lower_resolver::{ResolvedSlot, ResolverProc},
-    ProcedureInputs, Symbol, Table,
+    ProcedureInputs,
 };
 use byond_dmb::bytecode::opcode;
 use dm_ir::{
     InitializerTarget, InitializerValue, InitializerWrite, ResolveQuery, ResolvedMeaning, Resolver,
-    SymbolTable,
+    SymRef, SymbolTable,
 };
 #[derive(Debug)]
 pub enum InitializerError {
@@ -188,13 +188,13 @@ pub fn lower_scoped_assignments<R: Resolver>(
 
 fn attach_target_slots(
     code: &mut ResolverProc,
-    slots: Vec<(Symbol, ResolvedSlot)>,
+    slots: Vec<(SymRef, ResolvedSlot)>,
 ) -> Result<(), InitializerError> {
     // One scan per unit, rather than rescanning the common global initializer
     // for every write. Exact table/key identity remains the membership domain.
     let mut references = std::collections::HashSet::new();
-    code.procedure.code.for_each_reference(|table, name| {
-        references.insert(Symbol::new(table, name));
+    code.procedure.code.for_each_reference(|reference| {
+        references.insert(reference);
     });
     for (symbol, slot) in slots {
         if !references.contains(&symbol) {
@@ -337,7 +337,7 @@ fn admit_modified_rhs(value: &dm_syntax::Expr) -> Result<(), InitializerError> {
     Ok(())
 }
 
-type PreparedAssignment = (dm_syntax::Statement, Option<(Symbol, ResolvedSlot)>);
+type PreparedAssignment = (dm_syntax::Statement, Option<(SymRef, ResolvedSlot)>);
 fn prepare_assignment<R: Resolver>(
     target: &InitializerTarget,
     lexical_owner: dm_ir::SymbolId,
@@ -466,10 +466,7 @@ fn prepare_assignment<R: Resolver>(
             value: value.clone(),
         },
     };
-    let slot = target_slot.map(|slot| {
-        let key = crate::lower_resolver::shared_slot_key(owner_text, name_text);
-        (Symbol::new(Table::Variable, key), slot)
-    });
+    let slot = target_slot.map(|slot| (SymRef::VariableSlot(slot.symbol), slot));
     Ok((statement, slot))
 }
 
@@ -488,7 +485,7 @@ fn finish_initializer(code: &mut ResolverProc, instance: bool) -> Result<(), Ini
                                 Box::new(crate::VariableWord::Src),
                                 Box::new(crate::VariableWord::SetCache(
                                     Box::new(crate::VariableWord::Src),
-                                    Box::new(crate::VariableWord::Field(field.clone())),
+                                    Box::new(crate::VariableWord::Field(*field)),
                                 )),
                             ))];
                     }
@@ -627,7 +624,7 @@ mod tests {
             &Facts,
         )
         .unwrap();
-        assert!(result.procedure.code.items.iter().any(|item| matches!(item,crate::Item::Instruction(instruction) if instruction.opcode == opcode::SET_VAR && instruction.operands == [crate::Word::Variable(crate::VariableWord::SetCache(Box::new(crate::VariableWord::Src),Box::new(crate::VariableWord::Field("amount".into()))))])));
+        assert!(result.procedure.code.items.iter().any(|item| matches!(item,crate::Item::Instruction(instruction) if instruction.opcode == opcode::SET_VAR && instruction.operands == [crate::Word::Variable(crate::VariableWord::SetCache(Box::new(crate::VariableWord::Src),Box::new(crate::VariableWord::Field(dm_ir::SymbolId::of("amount")))))])));
         for source in ["C", "src.amount", "run()", "\"[amount]\""] {
             let value = dm_syntax::parse_expression(source).expr.unwrap();
             assert!(matches!(
@@ -739,7 +736,7 @@ mod tests {
             result
                 .code
                 .slots
-                .get(&Symbol::new(Table::Variable, "var/counter"))
+                .get(&SymRef::VariableSlot(SymbolId::of("exact-slot")))
                 .unwrap()
                 .symbol,
             SymbolId::of("exact-slot")
@@ -747,7 +744,7 @@ mod tests {
         assert!(!result
             .code
             .slots
-            .contains_key(&Symbol::new(Table::Variable, "counter")));
+            .contains_key(&SymRef::VariableSlot(SymbolId::of("counter"))));
         assert!(matches!(result.code.procedure.code.items.last(),
             Some(crate::Item::Instruction(ins)) if ins.opcode == opcode::END));
         assert!(!result.code.procedure.code.items.iter().any(
@@ -755,14 +752,11 @@ mod tests {
         ));
         let mut code = result.code;
         let before = code.procedure.code.clone();
-        let symbol = Symbol::new(Table::Variable, "var/counter");
+        let symbol = SymRef::VariableSlot(SymbolId::of("exact-slot"));
         let slot = code.slots[&symbol].clone();
         attach_target_slots(
             &mut code,
-            vec![
-                (symbol.clone(), slot.clone()),
-                (symbol.clone(), slot.clone()),
-            ],
+            vec![(symbol, slot.clone()), (symbol, slot.clone())],
         )
         .unwrap();
         assert_eq!(code.procedure.code, before);
@@ -774,7 +768,7 @@ mod tests {
             Err(InitializerError::Invalid(message)) if message.contains("conflicts"))
         );
         assert!(matches!(attach_target_slots(&mut code,
-            vec![(Symbol::new(Table::String, "counter"), slot)]),
+            vec![(SymRef::String(SymbolId::of("counter")), slot)]),
             Err(InitializerError::Invalid(message)) if message.contains("exact shared target")));
     }
     #[test]
@@ -808,7 +802,7 @@ mod tests {
         assert!(result.code.procedure.code.items.iter().any(|item|
             matches!(item, crate::Item::Instruction(ins) if ins.opcode == opcode::SET_VAR
                 && ins.operands == [crate::Word::Variable(crate::VariableWord::SetCache(
-                    Box::new(crate::VariableWord::Src), Box::new(crate::VariableWord::Field("amount".into()))))])));
+                    Box::new(crate::VariableWord::Src), Box::new(crate::VariableWord::Field(dm_ir::SymbolId::of("amount")))))])));
         assert!(!result.code.procedure.code.items.iter().any(
             |item| matches!(item, crate::Item::Instruction(ins) if ins.opcode == opcode::RET)
         ));
@@ -937,7 +931,7 @@ mod tests {
         );
         assert!(code.procedure.code.items.iter().any(|item|
             matches!(item,crate::Item::Instruction(ins) if ins.operands.contains(&crate::Word::Variable(crate::VariableWord::SetCache(
-                Box::new(crate::VariableWord::Src),Box::new(crate::VariableWord::Field("amount".into()))))))));
+                Box::new(crate::VariableWord::Src),Box::new(crate::VariableWord::Field(dm_ir::SymbolId::of("amount")))))))));
         let labels = code
             .procedure
             .code

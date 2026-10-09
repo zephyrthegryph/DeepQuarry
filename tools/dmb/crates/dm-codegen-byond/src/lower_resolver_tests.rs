@@ -249,8 +249,11 @@ fn captured_resource_context_is_demanded_without_filesystem_reads() {
         &host,
     )
     .unwrap();
-    assert_eq!(result.resources.get("assets/icon.dmi"), Some(&123));
-    assert_eq!(result.procedure.resources, ["assets/icon.dmi"]);
+    assert_eq!(
+        result.resources.get(&SymbolId::of("assets/icon.dmi")),
+        Some(&123)
+    );
+    assert_eq!(result.procedure.resources, [123]);
 }
 #[test]
 fn modified_alias_is_issued_as_instance_and_ordinary_type_stays_class() {
@@ -280,15 +283,21 @@ fn modified_alias_is_issued_as_instance_and_ordinary_type_stays_class() {
     )
     .unwrap();
     assert_eq!(
-        result.instances.get("/datum/modified"),
+        result.instances.get(&SymbolId::of("/datum/modified")),
         Some(&ResolvedInstance {
             alias: SymbolId::of("/datum/modified"),
             runtime_type: SymbolId::of("/datum")
         })
     );
-    assert_eq!(result.procedure.instance_paths, ["/datum/modified"]);
-    assert_eq!(result.procedure.class_paths, ["/datum/ordinary"]);
-    assert!(result.procedure.code.items.iter().any(|item|matches!(item,crate::Item::Instruction(instruction) if instruction.operands.iter().any(|word|matches!(word,crate::Word::Value(crate::ValueWord::Instance(path)) if path=="/datum/modified")))));
+    assert_eq!(
+        result.procedure.instance_paths,
+        [SymbolId::of("/datum/modified")]
+    );
+    assert_eq!(
+        result.procedure.class_paths,
+        [SymbolId::of("/datum/ordinary")]
+    );
+    assert!(result.procedure.code.items.iter().any(|item|matches!(item,crate::Item::Instruction(instruction) if instruction.operands.iter().any(|word|matches!(word,crate::Word::Value(crate::ValueWord::Instance(path)) if *path==SymbolId::of("/datum/modified"))))));
 }
 #[test]
 fn type_presence_cannot_substitute_for_unknown_runtime_alias_coverage() {
@@ -573,12 +582,12 @@ fn modified_literal_captures_ordered_assignments_and_emits_instance_reference() 
             .collect::<Vec<_>>(),
         ["a", "a", "b"]
     );
-    let crate::Table::Instance = symbol.table else {
+    let dm_ir::SymRef::Instance(_) = symbol else {
         panic!("wrong identity domain")
     };
     assert!(code.procedure.code.items.iter().any(|item| matches!(item,
         crate::Item::Instruction(instruction) if instruction.operands.iter().any(|word| matches!(word,
-            crate::Word::Value(crate::ValueWord::Instance(alias)) if alias == &captured.descriptor.alias())))));
+            crate::Word::Value(crate::ValueWord::Instance(alias)) if *alias == SymbolId::of(&captured.descriptor.alias()))))));
 }
 #[test]
 fn opaque_intrinsic_field_read_uses_presence_and_storage_only() {
@@ -789,6 +798,19 @@ fn positive_member_proc_does_not_require_opposite_namespace_absence() {
                 fingerprint: 2,
                 data: std::sync::Arc::new(Default::default()),
             },
+            Q::ProcedureValue {
+                owner,
+                name,
+                verb,
+                formal: true,
+            } if name == SymbolId::of("authored") || name == SymbolId::of("verb_only") => {
+                M::Value(dm_ir::SemanticValue::Procedure(dm_ir::ProcedureIdentity {
+                    owner,
+                    name,
+                    verb,
+                    occurrence: 7,
+                }))
+            }
             _ => M::Unsupported(query),
         },
     };
@@ -806,22 +828,33 @@ fn positive_member_proc_does_not_require_opposite_namespace_absence() {
     };
     assert_eq!(
         lookup.member_proc("/datum/probe", "authored").unwrap(),
-        Some("/datum/probe/proc/authored".into())
+        Some(dm_ir::SymRef::Proc {
+            owner: SymbolId::of("/datum/probe"),
+            name: SymbolId::of("authored"),
+            occurrence: 7
+        })
     );
     assert_eq!(
         lookup.member_proc("/datum/probe", "intrinsic").unwrap(),
         None
     );
-    assert_eq!(host.reads.lock().unwrap().len(), 2);
-    assert!(host
-        .reads
-        .lock()
-        .unwrap()
-        .iter()
-        .all(|query| matches!(query, Q::Proc { verb: false, .. })));
+    assert_eq!(host.reads.lock().unwrap().len(), 3);
+    assert!(host.reads.lock().unwrap().iter().all(|query| matches!(
+        query,
+        Q::Proc { verb: false, .. }
+            | Q::ProcedureValue {
+                verb: false,
+                formal: true,
+                ..
+            }
+    )));
     assert_eq!(
         lookup.member_proc("/datum/probe", "verb_only").unwrap(),
-        Some("/datum/probe/verb/verb_only".into())
+        Some(dm_ir::SymRef::Verb {
+            owner: SymbolId::of("/datum/probe"),
+            name: SymbolId::of("verb_only"),
+            occurrence: 7
+        })
     );
     assert!(lookup.member_proc("/datum/probe", "unknown").is_err());
 }

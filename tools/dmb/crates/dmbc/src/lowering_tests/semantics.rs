@@ -96,31 +96,21 @@ fn global_units_use_global_storage_against_the_real_tree() {
         ..Default::default()
     };
     bindings.globals.insert("counter".into());
-    let mut reference =
+    let slot = batch.units[0].code.slots.iter().next().unwrap().1;
+    bindings
+        .global_variables
+        .insert("counter".into(), dm_ir::SymRef::VariableSlot(slot.symbol));
+    let reference =
         dm_codegen_byond::compile_simple_proc_with_bindings(&body.children, &bindings).unwrap();
-    // String-only legacy bindings name globals by spelling. Resolver lowering
-    // names the exact root slot (var/counter), as certified by its sidecar.
-    // Canonicalize only that known reference operand before comparing code.
-    for item in &mut reference.code.items {
-        if let dm_codegen_byond::Item::Instruction(instruction) = item {
-            for operand in &mut instruction.operands {
-                if let dm_codegen_byond::Word::Variable(dm_codegen_byond::VariableWord::Global(
-                    name,
-                )) = operand
-                {
-                    assert_eq!(name.as_str(), "counter");
-                    *name = "var/counter".into();
-                }
-            }
-        }
-    }
     assert!(batch.units[0]
         .code
         .slots
         .iter()
-        .any(|(symbol, slot)| symbol.key == "var/counter"
-            && slot.owner == dm_ir::SymbolId::of("/")
-            && slot.name == dm_ir::SymbolId::of("counter")));
+        .any(
+            |(symbol, slot)| *symbol == dm_ir::SymRef::VariableSlot(slot.symbol)
+                && slot.owner == dm_ir::SymbolId::of("/")
+                && slot.name == dm_ir::SymbolId::of("counter")
+        ));
     let mut without_debug = batch.units[0].code.procedure.clone();
     without_debug.code.items.retain(|item| !matches!(item, dm_codegen_byond::Item::Instruction(instruction) if matches!(instruction.opcode,0x84|0x85)));
     assert_eq!(without_debug, reference);

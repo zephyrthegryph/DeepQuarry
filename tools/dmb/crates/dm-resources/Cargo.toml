@@ -6,6 +6,8 @@ license = "GPL-3.0-only"
 description = "Deterministic resource inputs for the Rust DM compiler"
 
 [dependencies]
+dm-exec = { path = "../dm-exec" }
+dm-profile = { path = "../dm-profile" }
 byond-dmb = { path = "../.." }
 sha2 = "0.10"
 dm-ir = { path = "../dm-ir" }

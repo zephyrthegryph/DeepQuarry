@@ -123,7 +123,7 @@ fn implicit_world_iterator_matches_native_bytecode() {
     let compiled = compile_simple_proc(&ast.items[1].children).unwrap();
     let mut ledger = Ledger::default();
     ledger
-        .bind(crate::Symbol::new(Table::Class, "/datum/thing"), 0)
+        .bind(reference(Table::Class, "/datum/thing"), 0)
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
@@ -140,7 +140,7 @@ fn typed_list_iterator_supplies_implicit_istype_path() {
     );
     assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
     let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["L".into()]).unwrap();
-    assert!(compiled.class_paths.contains(&"/datum/thing".to_string()));
+    assert!(compiled.class_paths.contains(&SymbolId::of("/datum/thing")));
 }
 
 #[test]
@@ -210,7 +210,7 @@ fn view_orange_and_turf_pick_match_native() {
                 .unwrap()
                 .operands[1];
             ledger
-                .bind(crate::Symbol::new(Table::Class, "/turf"), class_id)
+                .bind(reference(Table::Class, "/turf"), class_id)
                 .unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -242,9 +242,7 @@ fn labeled_loops_and_comparison_flags_match_native() {
         let compiled = compile_simple_proc_with_params(&item.children, &params).unwrap();
         let mut ledger = Ledger::default();
         if id == 16 {
-            ledger
-                .bind(crate::Symbol::new(Table::Class, "/datum"), 0)
-                .unwrap();
+            ledger.bind(reference(Table::Class, "/datum"), 0).unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         if id == 18 {
@@ -400,7 +398,13 @@ fn lists_sleep_and_boolean_branches_decode() {
     let compiled = compile_simple_proc(&associative.items[0].children).unwrap();
     let mut ledger = Ledger::default();
     ledger
-        .assign(Table::String, compiled.strings.clone())
+        .assign(
+            Table::String,
+            compiled
+                .strings
+                .iter()
+                .map(|payload| SymRef::String(payload.id)),
+        )
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     assert!(byond_dmb::bytecode::decode(&linked.words)
@@ -567,7 +571,7 @@ fn native_iterator_setup_matches_paired_fixture() {
     let mut ledger = Ledger::default();
     ledger
         .bind(
-            crate::Symbol::new(Table::Class, "/datum/iterator_probe"),
+            reference(Table::Class, "/datum/iterator_probe"),
             class_id as u32,
         )
         .unwrap();
@@ -627,20 +631,23 @@ fn try_catch_matches_native_fixture_shape() {
         .unwrap();
     let bindings = LowerBindings {
         parameters: vec!["x".into()],
-        global_procs: ["join_helper".into()].into(),
+        global_procs: HashMap::from([(
+            "join_helper".into(),
+            reference(Table::Proc, "/proc/join_helper"),
+        )]),
         ..LowerBindings::default()
     };
-    let compiled = compile_simple_proc_with_bindings(&item.children, &bindings).unwrap();
+    let compiled = compile_fixture_proc_with_bindings(&item.children, &bindings).unwrap();
     assert_eq!(compiled.local_names, ["e"]);
     let mut ledger = Ledger::default();
     for string in &compiled.strings {
         let id = native
             .strings
             .iter()
-            .position(|entry| entry.data == string.as_bytes())
+            .position(|entry| entry.data == string.bytes.as_ref())
             .unwrap();
         ledger
-            .bind(crate::Symbol::new(Table::String, string), id as u32)
+            .bind(reference(Table::String, string), id as u32)
             .unwrap();
     }
     let helper = native
@@ -649,10 +656,7 @@ fn try_catch_matches_native_fixture_shape() {
         .position(|proc| native.string(proc.strings[0]) == Some(b"/proc/join_helper".as_slice()))
         .unwrap();
     ledger
-        .bind(
-            crate::Symbol::new(Table::Proc, "/proc/join_helper"),
-            helper as u32,
-        )
+        .bind(reference(Table::Proc, "/proc/join_helper"), helper as u32)
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     let id = native
@@ -683,9 +687,7 @@ fn nested_try_throw_has_valid_targets_and_catch_slots() {
     assert_eq!(compiled.local_names, ["inner", "outer"]);
     let ledger = Ledger::default();
     let mut ledger = ledger;
-    ledger
-        .bind(crate::Symbol::new(Table::String, "inner"), 1)
-        .unwrap();
+    ledger.bind(reference(Table::String, "inner"), 1).unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
     assert_eq!(decoded.iter().filter(|ins| ins.opcode == 0x12c).count(), 2);
@@ -725,10 +727,13 @@ fn goto_exiting_try_uses_native_tryjmp() {
         .unwrap();
     let bindings = LowerBindings {
         parameters: vec!["x".into()],
-        global_procs: ["join_helper".into()].into(),
+        global_procs: HashMap::from([(
+            "join_helper".into(),
+            reference(Table::Proc, "/proc/join_helper"),
+        )]),
         ..LowerBindings::default()
     };
-    let compiled = compile_simple_proc_with_bindings(&item.children, &bindings).unwrap();
+    let compiled = compile_fixture_proc_with_bindings(&item.children, &bindings).unwrap();
     let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
         "../../../../../fixtures/translation/try_join_cleanup/probe.native.bin"
     ))
@@ -738,10 +743,10 @@ fn goto_exiting_try_uses_native_tryjmp() {
         let id = native
             .strings
             .iter()
-            .position(|entry| entry.data == string.as_bytes())
+            .position(|entry| entry.data == string.bytes.as_ref())
             .unwrap();
         ledger
-            .bind(crate::Symbol::new(Table::String, string), id as u32)
+            .bind(reference(Table::String, string), id as u32)
             .unwrap();
     }
     let helper = native
@@ -750,10 +755,7 @@ fn goto_exiting_try_uses_native_tryjmp() {
         .position(|proc| native.string(proc.strings[0]) == Some(b"/proc/join_helper".as_slice()))
         .unwrap();
     ledger
-        .bind(
-            crate::Symbol::new(Table::Proc, "/proc/join_helper"),
-            helper as u32,
-        )
+        .bind(reference(Table::Proc, "/proc/join_helper"), helper as u32)
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     let native_id = native

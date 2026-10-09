@@ -14,11 +14,16 @@ use std::sync::Mutex;
 use std::time::SystemTime;
 use xxhash_rust::xxh3::{xxh3_128, Xxh3};
 
+#[path = "publish_admission.rs"]
+mod admission;
 #[path = "publish_eviction.rs"]
 mod eviction;
 #[path = "publish_install.rs"]
 mod install;
+#[path = "publish_io.rs"]
+mod publication_io;
 pub use eviction::EvictionResult;
+use publication_io::{copy_hashed, write_owned, StagedPath};
 
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
@@ -128,6 +133,7 @@ impl OutputPair {
 pub struct PairStore {
     root: PathBuf,
     verified: Mutex<HashMap<u128, (OutputPair, Vec<crate::input_snapshot::Stamp>)>>,
+    verified_resources: Mutex<HashMap<(u64, u128), crate::input_snapshot::Stamp>>,
 }
 
 /// Content identity of an archive already owned by this store. A cold linker
@@ -207,6 +213,7 @@ impl PairStore {
         Ok(Self {
             root,
             verified: Mutex::new(HashMap::new()),
+            verified_resources: Mutex::new(HashMap::new()),
         })
     }
 
@@ -284,30 +291,7 @@ impl PairStore {
         if pair_stamps(&source)? != stamps || stable_pair_stamps(&source)? != stable {
             return Err(invalid("immutable pair changed during verification"));
         }
-        self.verified
-            .lock()
-            .map_err(|_| invalid("pair verification lock poisoned"))?
-            .insert(id, (pair.clone(), stable.clone()));
-        if let Some(boot) = boot {
-            if stable.iter().all(|stamp| stamp.file_id.is_some()) {
-                let receipt = BootVerification {
-                    schema: 1,
-                    boot,
-                    pair: pair.clone(),
-                    stamps: stable,
-                };
-                // A cache receipt failure must not turn a validated pair into a
-                // failed compilation. The next acquisition hashes it again.
-                if let Ok(directory) = self.temporary("verification") {
-                    let temp = directory.join("receipt.json");
-                    if write_json(&temp, &receipt).is_ok() {
-                        let _ = atomic_replace(&temp, &receipt_path);
-                    }
-                    let _ = fs::remove_file(&temp);
-                    let _ = fs::remove_dir(&directory);
-                }
-            }
-        }
+        self.remember_verified(&pair, stable)?;
         Ok(pair)
     }
 
@@ -340,8 +324,19 @@ impl PairStore {
     /// Writes only new immutable content. The last-three record is updated while
     /// the store lock is still held, closing the publication/eviction race.
     pub fn publish(&self, session: u128, dmb: &[u8], rsc: &[u8]) -> io::Result<OutputPair> {
+        self.publish_exact(session, dmb, rsc, false)
+    }
+
+    /// Exact requests authenticate existing store bytes even with valid boot receipts.
+    pub fn publish_exact(
+        &self,
+        session: u128,
+        dmb: &[u8],
+        rsc: &[u8],
+        exact: bool,
+    ) -> io::Result<OutputPair> {
         let pair = OutputPair::from_bytes(dmb, rsc);
-        self.publish_inner(session, dmb, pair, Some(rsc))
+        self.publish_inner(session, dmb, pair, Some(rsc), exact)
     }
 
     /// Compose a new DMB with a previously published archive. Authentication
@@ -352,13 +347,76 @@ impl PairStore {
         dmb: &[u8],
         resource: ResourceIdentity,
     ) -> io::Result<OutputPair> {
+        self.publish_with_resource_exact(session, dmb, resource, false)
+    }
+
+    pub fn publish_with_resource_exact(
+        &self,
+        session: u128,
+        dmb: &[u8],
+        resource: ResourceIdentity,
+        exact: bool,
+    ) -> io::Result<OutputPair> {
         let pair = OutputPair::from_hashes(
             dmb.len() as u64,
             xxh3_128(dmb),
             resource.bytes,
             resource.hash,
         );
-        self.publish_inner(session, dmb, pair, None)
+        self.publish_inner(session, dmb, pair, None, exact)
+    }
+
+    /// Publish the immutable encoder owner without hashing the DMB buffer again.
+    /// Its private byte/hash pairing cannot be manufactured from a mutable Vec.
+    pub fn publish_encoded_exact(
+        &self,
+        session: u128,
+        image: &byond_dmb::dmb::EncodedDmb,
+        rsc: &[u8],
+        exact: bool,
+    ) -> io::Result<OutputPair> {
+        let pair = OutputPair::from_hashes(
+            image.len() as u64,
+            image.content_hash(),
+            rsc.len() as u64,
+            xxh3_128(rsc),
+        );
+        self.publish_inner(session, image.bytes(), pair, Some(rsc), exact)
+    }
+
+    /// Both encoded owners supply immutable streaming hashes; neither buffer
+    /// is scanned again before writing the new immutable pair.
+    pub fn publish_images_exact(
+        &self,
+        session: u128,
+        image: &byond_dmb::dmb::EncodedDmb,
+        archive: &byond_dmb::rsc::EncodedRsc,
+        exact: bool,
+    ) -> io::Result<OutputPair> {
+        let pair = OutputPair::from_hashes(
+            image.len() as u64,
+            image.content_hash(),
+            archive.len() as u64,
+            archive.content_hash(),
+        );
+        self.publish_inner(session, image.bytes(), pair, Some(archive.bytes()), exact)
+    }
+
+    /// Reuse a stored resource identity with a certified immutable encoder owner.
+    pub fn publish_encoded_with_resource_exact(
+        &self,
+        session: u128,
+        image: &byond_dmb::dmb::EncodedDmb,
+        resource: ResourceIdentity,
+        exact: bool,
+    ) -> io::Result<OutputPair> {
+        let pair = OutputPair::from_hashes(
+            image.len() as u64,
+            image.content_hash(),
+            resource.bytes,
+            resource.hash,
+        );
+        self.publish_inner(session, image.bytes(), pair, None, exact)
     }
 
     fn publish_inner(
@@ -367,58 +425,69 @@ impl PairStore {
         dmb: &[u8],
         pair: OutputPair,
         rsc: Option<&[u8]>,
+        exact: bool,
     ) -> io::Result<OutputPair> {
         let _lock = self.lock()?;
         let destination = self.root.join("pairs").join(pair.name());
-        if let Ok(existing) = validate_directory(&destination, pair.id) {
+        if let Ok(existing) = self.verify_locked(pair.id, exact) {
             if existing != pair {
                 return Err(invalid("output pair identity collision"));
             }
             self.record_session(session, pair.id)?;
             return Ok(pair);
         }
-        let temp = self.temporary("pair")?;
-        dm_profile::io_call(
-            || fs::write(temp.join("deepquarry.dmb"), dmb),
-            |_| (0, dmb.len() as u64),
-        )?;
+        let temp_guard = StagedPath::new(self.temporary("pair")?);
+        let temp = temp_guard.path();
+        let dmb_stamp = write_owned(&temp.join("deepquarry.dmb"), dmb)?;
         #[cfg(test)]
         publication_fault("pair_dmb_written")?;
         let resource = self
             .root
             .join("resources")
             .join(format!("{:032x}-{}.rsc", pair.rsc_hash, pair.rsc_bytes));
-        if resource.exists() {
-            if file_identity(&resource)? != (pair.rsc_bytes, pair.rsc_hash) {
-                return Err(invalid("shared RSC bytes do not match identity"));
-            }
+        let identity = ResourceIdentity {
+            bytes: pair.rsc_bytes,
+            hash: pair.rsc_hash,
+        };
+        let resource_stamp = if resource.exists() {
+            self.authenticate_resource(&resource, identity, exact)?
         } else {
             let rsc =
                 rsc.ok_or_else(|| invalid("shared RSC identity is absent from this store"))?;
-            let staged = self.temporary("resource")?.join("archive.rsc");
-            dm_profile::io_call(|| fs::write(&staged, rsc), |_| (0, rsc.len() as u64))?;
+            let resource_guard = StagedPath::new(self.temporary("resource")?);
+            let staged = resource_guard.path().join("archive.rsc");
+            let stamp = write_owned(&staged, rsc)?;
             #[cfg(test)]
             publication_fault("resource_written")?;
-            if file_identity(&staged)? != (pair.rsc_bytes, pair.rsc_hash) {
-                return Err(invalid("new RSC bytes do not match identity"));
-            }
             let mut permissions = fs::metadata(&staged)?.permissions();
             permissions.set_readonly(true);
             fs::set_permissions(&staged, permissions)?;
-            fs::rename(staged, &resource)?;
+
+            fs::rename(&staged, &resource)?;
             #[cfg(test)]
             publication_fault("resource_renamed")?;
+            self.remember_resource(&resource, identity, &stamp)?
+        };
+        let rsc_stamp = if fs::hard_link(&resource, temp.join("deepquarry.rsc")).is_ok() {
+            resource_stamp.clone()
+        } else {
+            copy_hashed(
+                &resource,
+                &temp.join("deepquarry.rsc"),
+                (pair.rsc_bytes, pair.rsc_hash),
+            )?
+        };
+        use crate::input_snapshot::SnapshotProvider;
+        if crate::input_snapshot::FileSystemInputs.stamp(&resource)? != resource_stamp {
+            return Err(invalid("resource inode changed during pair publication"));
         }
-        if fs::hard_link(&resource, temp.join("deepquarry.rsc")).is_err() {
-            dm_profile::io_call(
-                || fs::copy(&resource, temp.join("deepquarry.rsc")),
-                |copied| (*copied, *copied),
-            )?;
-        }
-        write_json(&temp.join("pair.json"), &pair)?;
+        let manifest_stamp = write_json(&temp.join("pair.json"), &pair)?;
         #[cfg(test)]
         publication_fault("pair_manifest_written")?;
-        validate_directory(&temp, pair.id)?;
+        let owned_stamps = vec![manifest_stamp, dmb_stamp, rsc_stamp];
+        if stable_pair_stamps(temp)? != owned_stamps {
+            return Err(invalid("owned pair changed before sealing"));
+        }
         for name in ["deepquarry.dmb", "deepquarry.rsc", "pair.json"] {
             let path = temp.join(name);
             let mut permissions = fs::metadata(&path)?.permissions();
@@ -426,18 +495,18 @@ impl PairStore {
             fs::set_permissions(path, permissions)?;
         }
         if destination.exists() {
-            if validate_directory(&destination, pair.id).is_err() {
-                // Do not change attributes: existing hardlink readers may exist.
-                let quarantine = self.temporary("quarantine")?;
-                let name = quarantine.file_name().expect("temporary basename");
-                fs::rename(&destination, self.root.join("quarantine").join(name))?;
-                fs::rename(&temp, &destination)?;
-            }
-        } else {
-            fs::rename(&temp, &destination)?;
+            // Do not change attributes: existing hardlink readers may exist.
+            let quarantine = StagedPath::new(self.temporary("quarantine")?);
+            let name = quarantine.path().file_name().expect("temporary basename");
+            fs::rename(&destination, self.root.join("quarantine").join(name))?;
         }
+        fs::rename(temp, &destination)?;
         #[cfg(test)]
         publication_fault("pair_directory_renamed")?;
+        if stable_pair_stamps(&destination)? != owned_stamps {
+            return Err(invalid("owned pair inode changed during publication"));
+        }
+        self.remember_verified(&pair, owned_stamps)?;
         self.record_session(session, pair.id)?;
         #[cfg(test)]
         publication_fault("pair_session_committed")?;
@@ -457,7 +526,8 @@ impl PairStore {
         pairs.retain(|&id| id != pair);
         pairs.insert(0, pair);
         pairs.truncate(3);
-        let temp = self.temporary("session")?.join("record.json");
+        let staged = StagedPath::new(self.temporary("session")?);
+        let temp = staged.path().join("record.json");
         write_json(&temp, &pairs)?;
         #[cfg(test)]
         publication_fault("session_staged")?;
@@ -484,26 +554,25 @@ impl PairStore {
                 Err(error) => return Err(error),
             }
         };
+        let slot_cleanup = StagedPath::new(slot.clone());
         for name in ["deepquarry.dmb", "deepquarry.rsc"] {
             let destination = slot.join(name);
-            // fs::copy copies read-only permissions too. Create a writable new
-            // inode explicitly instead of clearing attributes on any shared file.
-            let mut input = File::open(source.join(name))?;
-            let mut output = OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .open(destination)?;
-            io::copy(&mut input, &mut output)?;
+            let expected = if name == "deepquarry.dmb" {
+                (pair.dmb_bytes, pair.dmb_hash)
+            } else {
+                (pair.rsc_bytes, pair.rsc_hash)
+            };
+            copy_hashed(&source.join(name), &destination, expected)?;
             #[cfg(test)]
             publication_fault("slot_copy_finished")?;
         }
         write_json(&slot.join("pair.json"), &pair)?;
         #[cfg(test)]
         publication_fault("slot_manifest_written")?;
-        validate_directory(&slot, id)?;
         fs::write(slot.join("slot-complete"), pair.name())?;
         #[cfg(test)]
         publication_fault("slot_complete_written")?;
+        slot_cleanup.preserve();
         Ok(slot)
     }
 
@@ -511,12 +580,23 @@ impl PairStore {
     /// authority. Publish RSC, DMB, then the marker; a crash can leave copies
     /// mismatched, and the next successful installation repairs them.
     pub fn install(&self, id: u128, dmb: &Path, rsc: &Path, marker: &Path) -> io::Result<()> {
+        self.install_exact(id, dmb, rsc, marker, false)
+    }
+
+    pub fn install_exact(
+        &self,
+        id: u128,
+        dmb: &Path,
+        rsc: &Path,
+        marker: &Path,
+        exact: bool,
+    ) -> io::Result<()> {
         if dmb == rsc || dmb == marker || rsc == marker {
             return Err(invalid("conventional output paths must be distinct"));
         }
         let _lock = self.lock()?;
         let source = self.root.join("pairs").join(format!("{id:032x}"));
-        let pair = self.verify_locked(id, false)?;
+        let pair = self.verify_locked(id, exact)?;
         install::resource(
             &source.join("deepquarry.rsc"),
             rsc,
@@ -532,6 +612,7 @@ impl PairStore {
         #[cfg(test)]
         publication_fault("install_dmb_replaced")?;
         let staged = temporary_file(marker)?;
+        let _cleanup = StagedPath::new(staged.clone());
         write_json(&staged, &pair)?;
         #[cfg(test)]
         publication_fault("install_marker_staged")?;
@@ -562,22 +643,10 @@ fn temporary_file(destination: &Path) -> io::Result<PathBuf> {
 fn replace_copy(source: &Path, destination: &Path, expected: (u64, u128)) -> io::Result<()> {
     let _profile = dm_profile::stage("publication.install_copy");
     let staged = temporary_file(destination)?;
-    {
-        let mut input = File::open(source)?;
-        let mut output = OpenOptions::new()
-            .write(true)
-            .truncate(true)
-            .open(&staged)?;
-        dm_profile::io_call(
-            || io::copy(&mut input, &mut output),
-            |copied| (*copied, *copied),
-        )?;
-        #[cfg(test)]
-        publication_fault("install_copy_staged")?;
-    }
-    if expected != file_identity(&staged)? {
-        return Err(invalid("conventional copy failed authentication"));
-    }
+    let _cleanup = StagedPath::new(staged.clone());
+    copy_hashed(source, &staged, expected)?;
+    #[cfg(test)]
+    publication_fault("install_copy_staged")?;
     atomic_replace(&staged, destination)
 }
 
@@ -613,9 +682,16 @@ fn atomic_replace(source: &Path, destination: &Path) -> io::Result<()> {
     }
 }
 
-fn write_json(path: &Path, value: &impl Serialize) -> io::Result<()> {
+fn write_json(path: &Path, value: &impl Serialize) -> io::Result<crate::input_snapshot::Stamp> {
     let bytes = serde_json::to_vec(value).map_err(invalid)?;
-    dm_profile::io_call(|| fs::write(path, &bytes), |_| (0, bytes.len() as u64))
+    use std::io::Write;
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(path)?;
+    dm_profile::io_call(|| file.write_all(&bytes), |_| (0, bytes.len() as u64))?;
+    publication_io::finish_owned(file, path)
 }
 
 fn invalid(error: impl std::fmt::Display) -> io::Error {
@@ -665,325 +741,5 @@ fn validate_directory(path: &Path, id: u128) -> io::Result<OutputPair> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn first_use_and_exact_pair_verification_reject_corruption() {
-        let store = store();
-        let pair = store.publish(1, b"program", b"assets").unwrap();
-        assert_eq!(store.verify(pair.id, false).unwrap(), pair);
-        assert_eq!(store.verify(pair.id, false).unwrap(), pair);
-        let path = store
-            .root
-            .join("pairs")
-            .join(pair.name())
-            .join("deepquarry.dmb");
-        let mut permissions = fs::metadata(&path).unwrap().permissions();
-        #[cfg(windows)]
-        #[expect(
-            clippy::permissions_set_readonly_false,
-            reason = "On Windows this clears only the read-only attribute; the Unix branch preserves mode bits."
-        )]
-        permissions.set_readonly(false);
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            permissions.set_mode(permissions.mode() | 0o200);
-        }
-        fs::set_permissions(&path, permissions).unwrap();
-        let mut file = OpenOptions::new().write(true).open(&path).unwrap();
-        use std::io::Write;
-        file.write_all(b"damaged").unwrap();
-        drop(file);
-        assert!(store.verify(pair.id, true).is_err());
-        let reopened = PairStore::open(&store.root).unwrap();
-        assert!(reopened.verify(pair.id, false).is_err());
-    }
-
-    fn interrupted<T>(point: &'static str, ordinal: usize, run: impl FnOnce() -> io::Result<T>) {
-        struct Clear;
-        impl Drop for Clear {
-            fn drop(&mut self) {
-                FAULT.with(|fault| *fault.borrow_mut() = None);
-            }
-        }
-        FAULT.with(|fault| *fault.borrow_mut() = Some((point, ordinal)));
-        let _clear = Clear;
-        let error = match run() {
-            Ok(_) => panic!("fault boundary was not reached: {point}"),
-            Err(error) => error,
-        };
-        assert!(
-            error
-                .to_string()
-                .contains("injected publication interruption"),
-            "{error}"
-        );
-    }
-
-    fn assert_slot(store: &PairStore, pair: &OutputPair) {
-        let slot = store.acquire(pair.id, store.root.join("slots")).unwrap();
-        assert_eq!(validate_directory(&slot, pair.id).unwrap(), *pair);
-        assert!(slot.join("slot-complete").exists());
-    }
-
-    #[test]
-    fn publication_fault_boundaries_preserve_authenticated_generations_and_release_lock() {
-        for point in [
-            "pair_dmb_written",
-            "resource_written",
-            "resource_renamed",
-            "pair_manifest_written",
-            "pair_directory_renamed",
-            "session_staged",
-            "pair_session_committed",
-        ] {
-            let store = store();
-            let old = store.publish(1, b"old-code", b"old-assets").unwrap();
-            let new = OutputPair::from_bytes(b"new-code", b"new-assets");
-            interrupted(point, 1, || store.publish(1, b"new-code", b"new-assets"));
-            assert_slot(&store, &old);
-            let destination = store.root.join("pairs").join(new.name());
-            if destination.exists() {
-                assert_eq!(validate_directory(&destination, new.id).unwrap(), new);
-            }
-            assert_eq!(store.publish(1, b"new-code", b"new-assets").unwrap(), new);
-            assert_slot(&store, &new);
-        }
-    }
-
-    #[test]
-    fn acquisition_fault_boundaries_never_mark_partial_slots_complete() {
-        for (point, ordinal) in [
-            ("slot_copy_finished", 1),
-            ("slot_copy_finished", 2),
-            ("slot_manifest_written", 1),
-            ("slot_complete_written", 1),
-        ] {
-            let store = store();
-            let pair = store.publish(1, b"code", b"assets").unwrap();
-            let slots = store.root.join("slots");
-            interrupted(point, ordinal, || store.acquire(pair.id, &slots));
-            for entry in fs::read_dir(&slots).unwrap() {
-                let path = entry.unwrap().path();
-                if path.join("slot-complete").exists() {
-                    assert_eq!(validate_directory(&path, pair.id).unwrap(), pair);
-                }
-            }
-            assert_slot(&store, &pair);
-        }
-    }
-
-    #[test]
-    fn conventional_fault_boundaries_keep_old_marker_and_repair_from_immutable_pair() {
-        for (point, ordinal) in [
-            ("install_copy_staged", 1),
-            ("install_copy_staged", 2),
-            ("install_rsc_replaced", 1),
-            ("install_dmb_replaced", 1),
-            ("install_marker_staged", 1),
-        ] {
-            let store = store();
-            let root = store.root.join("worktree");
-            let dmb = root.join("deepquarry.dmb");
-            let rsc = root.join("deepquarry.rsc");
-            let marker = root.join("deepquarry.pair");
-            let old = store.publish(1, b"old-code", b"old-assets").unwrap();
-            let new = store.publish(1, b"new-code", b"new-assets").unwrap();
-            store.install(old.id, &dmb, &rsc, &marker).unwrap();
-            interrupted(point, ordinal, || {
-                store.install(new.id, &dmb, &rsc, &marker)
-            });
-            let marked: OutputPair = serde_json::from_slice(&fs::read(&marker).unwrap()).unwrap();
-            assert_eq!(marked, old);
-            let copies = OutputPair::from_bytes(&fs::read(&dmb).unwrap(), &fs::read(&rsc).unwrap());
-            if copies != old {
-                assert_ne!(
-                    marked, copies,
-                    "mixed compatibility copies must not authenticate"
-                );
-            }
-            assert_slot(&store, &old);
-            assert_slot(&store, &new);
-            store.install(new.id, &dmb, &rsc, &marker).unwrap();
-            let marked: OutputPair = serde_json::from_slice(&fs::read(&marker).unwrap()).unwrap();
-            assert_eq!(marked, new);
-            assert_eq!(
-                OutputPair::from_bytes(&fs::read(&dmb).unwrap(), &fs::read(&rsc).unwrap()),
-                new
-            );
-        }
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn output_store_is_shared_by_destination_drive() {
-        let local = Path::new("C:/Users/demo/AppData/Local");
-        assert_eq!(
-            windows_store_path(Path::new("C:/work/a/project.dme"), local).unwrap(),
-            local.join("dmbd/pairs")
-        );
-        let first = windows_store_path(Path::new("E:/work/a/project.dme"), local).unwrap();
-        let second = windows_store_path(Path::new("E:/work/b/project.dme"), local).unwrap();
-        assert_eq!(first, second);
-        assert_eq!(first, Path::new("E:/").join(".dmbd/pairs"));
-        assert!(windows_store_path(Path::new("//server/share/project.dme"), local).is_err());
-    }
-
-    pub(super) fn store() -> PairStore {
-        let sequence = TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed);
-        PairStore::open(
-            std::env::temp_dir().join(format!("dmb-pair-test-{}-{sequence}", std::process::id())),
-        )
-        .unwrap()
-    }
-
-    #[test]
-    fn changing_dmb_reuses_resource_and_acquires_writable_copy() {
-        let store = store();
-        let first = store.publish(1, b"world-one", b"shared-resources").unwrap();
-        let second = store.publish(1, b"world-two", b"shared-resources").unwrap();
-        assert_ne!(first.id, second.id);
-        assert_eq!(
-            fs::read_dir(store.root.join("resources")).unwrap().count(),
-            1
-        );
-        let slot = store.acquire(second.id, store.root.join("slots")).unwrap();
-        assert_eq!(fs::read(slot.join("deepquarry.dmb")).unwrap(), b"world-two");
-        assert_eq!(
-            fs::read(slot.join("deepquarry.rsc")).unwrap(),
-            b"shared-resources"
-        );
-        fs::write(slot.join("deepquarry.rsc"), b"runtime writes").unwrap();
-        let pair = store.root.join("pairs").join(second.name());
-        assert_eq!(validate_directory(&pair, second.id).unwrap(), second);
-        assert!(slot.join("slot-complete").exists());
-    }
-
-    #[test]
-    fn archive_identity_composes_without_archive_input() {
-        let store = store();
-        let first = store.publish(1, b"first", b"assets").unwrap();
-        let resource = ResourceIdentity {
-            bytes: first.rsc_bytes,
-            hash: first.rsc_hash,
-        };
-        let second = store.publish_with_resource(1, b"second", resource).unwrap();
-        assert_eq!(second, OutputPair::from_bytes(b"second", b"assets"));
-        assert_eq!(
-            fs::read_dir(store.root.join("resources")).unwrap().count(),
-            1
-        );
-        let slots = store.root.join("slots");
-        let slot = store.acquire(second.id, slots).unwrap();
-        assert_eq!(fs::read(slot.join("deepquarry.rsc")).unwrap(), b"assets");
-        let missing = ResourceIdentity { hash: 0, bytes: 1 };
-        let absent = OutputPair::from_hashes(4, xxh3_128(b"next"), 1, 0);
-        assert!(store.publish_with_resource(1, b"next", missing).is_err());
-        assert!(!store.root.join("pairs").join(absent.name()).exists());
-    }
-
-    #[test]
-    fn duplicate_publication_and_session_history_are_coherent() {
-        let store = store();
-        let mut expected = Vec::new();
-        for byte in 0..5 {
-            let pair = store.publish(7, &[byte], b"resource").unwrap();
-            assert_eq!(store.publish(7, &[byte], b"resource").unwrap(), pair);
-            expected.insert(0, pair.id);
-        }
-        expected.truncate(3);
-        let actual: Vec<u128> = serde_json::from_slice(
-            &fs::read(
-                store
-                    .root
-                    .join("sessions/00000000000000000000000000000007.json"),
-            )
-            .unwrap(),
-        )
-        .unwrap();
-        assert_eq!(actual, expected);
-        assert_eq!(fs::read_dir(store.root.join("pairs")).unwrap().count(), 5);
-    }
-
-    #[test]
-    fn conventional_paths_replace_existing_copies_and_marker_last() {
-        let store = store();
-        let root = store.root.join("worktree");
-        let dmb = root.join("deepquarry.dmb");
-        let rsc = root.join("deepquarry.rsc");
-        let marker = root.join("deepquarry.pair");
-        let first = store.publish(3, b"first", b"assets-one").unwrap();
-        store.install(first.id, &dmb, &rsc, &marker).unwrap();
-        let second = store.publish(3, b"second", b"assets-two").unwrap();
-        store.install(second.id, &dmb, &rsc, &marker).unwrap();
-        assert_eq!(fs::read(&dmb).unwrap(), b"second");
-        assert_eq!(fs::read(&rsc).unwrap(), b"assets-two");
-        let actual: OutputPair = serde_json::from_slice(&fs::read(marker).unwrap()).unwrap();
-        assert_eq!(actual, second);
-    }
-
-    #[test]
-    fn reused_resource_keeps_marker_last_across_interrupted_dmb_install() {
-        let store = store();
-        let root = store.root.join("worktree");
-        let dmb = root.join("world.dmb");
-        let rsc = root.join("world.rsc");
-        let marker = root.join("world.pair");
-        let old = store.publish(1, b"old-code", b"same-assets").unwrap();
-        let new = store.publish(1, b"new-code", b"same-assets").unwrap();
-        store.install(old.id, &dmb, &rsc, &marker).unwrap();
-        interrupted("install_dmb_replaced", 1, || {
-            store.install(new.id, &dmb, &rsc, &marker)
-        });
-        let marked: OutputPair = serde_json::from_slice(&fs::read(&marker).unwrap()).unwrap();
-        assert_eq!(marked, old);
-        assert_eq!(fs::read(&rsc).unwrap(), b"same-assets");
-        store.install(new.id, &dmb, &rsc, &marker).unwrap();
-        let marked: OutputPair = serde_json::from_slice(&fs::read(marker).unwrap()).unwrap();
-        assert_eq!(marked, new);
-    }
-
-    #[test]
-    fn boot_receipt_reuses_across_stores_and_rejects_replaced_identity() {
-        let store = store();
-        let pair = store.publish(1, b"original", b"resource").unwrap();
-        assert_eq!(store.verify(pair.id, false).unwrap(), pair);
-        let next = PairStore::open(&store.root).unwrap();
-        assert_eq!(next.verify(pair.id, false).unwrap(), pair);
-        assert_eq!(next.verify(pair.id, true).unwrap(), pair);
-        let path = store
-            .root
-            .join("pairs")
-            .join(pair.name())
-            .join("deepquarry.dmb");
-        let replaced = path.with_extension("replacement");
-        fs::write(&replaced, b"corrupt!").unwrap();
-        fs::rename(&path, path.with_extension("old")).unwrap();
-        fs::rename(&replaced, &path).unwrap();
-        assert!(next.verify(pair.id, false).is_err());
-        assert!(PairStore::open(&store.root)
-            .unwrap()
-            .verify(pair.id, false)
-            .is_err());
-    }
-
-    #[test]
-    fn same_length_corruption_is_rejected_before_slot_exposure() {
-        let store = store();
-        let pair = store.publish(1, b"original", b"resource").unwrap();
-        let path = store.root.join("pairs").join(pair.name()).join("pair.json");
-        // Change an unlinked manifest by replacing its directory entry. Leave
-        // immutable inode permissions unchanged, as real acquisition must do.
-        let replacement = path.with_extension("replacement");
-        let mut false_manifest = pair.clone();
-        false_manifest.dmb_hash ^= 1;
-        write_json(&replacement, &false_manifest).unwrap();
-        fs::rename(&path, path.with_extension("original")).unwrap();
-        fs::rename(replacement, path).unwrap();
-        let slots = store.root.join("slots");
-        assert!(store.acquire(pair.id, &slots).is_err());
-        assert!(!slots.exists());
-    }
-}
+#[path = "publish_tests.rs"]
+mod tests;

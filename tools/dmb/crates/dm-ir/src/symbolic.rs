@@ -3,7 +3,9 @@
 use crate::SymbolId;
 use std::collections::{HashMap, HashSet};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum SymRef {
     ProcedureStatic(crate::ProcedureStaticIdentity),
     String(SymbolId),

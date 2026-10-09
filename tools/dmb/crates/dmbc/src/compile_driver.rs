@@ -220,6 +220,7 @@ pub fn compile_observed_with_memo<R: Resolver>(
         observer,
         memo,
         None,
+        None,
     )
 }
 
@@ -252,6 +253,41 @@ pub fn compile_revision_observed_with_memo<R: Resolver>(
         observer,
         memo,
         Some(frontend),
+        None,
+    )
+}
+
+/// Request hosts share this executor with input capture and the frontend.
+#[allow(clippy::too_many_arguments)]
+pub fn compile_revision_observed_with_memo_on_executor<R: Resolver>(
+    frontend: &dm_tree::frontend::FrontendRevision,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    executor: &dm_exec::BuildExecutor,
+    observer: Option<&cold::ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+) -> Result<cold::ColdOutput, cold::ColdError> {
+    compile_observed_input(
+        frontend,
+        resolver,
+        engine,
+        engine_bytes,
+        links,
+        values,
+        resource_context,
+        maps,
+        stage,
+        executor.workers(),
+        observer,
+        memo,
+        Some(frontend),
+        Some(executor),
     )
 }
 
@@ -270,7 +306,17 @@ fn compile_observed_input<R: Resolver>(
     observer: Option<&cold::ColdObserver<'_>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
     revision: Option<&dm_tree::frontend::FrontendRevision>,
+    executor: Option<&dm_exec::BuildExecutor>,
 ) -> Result<cold::ColdOutput, cold::ColdError> {
+    let owned_executor;
+    let executor = match executor {
+        Some(executor) => executor,
+        None => {
+            owned_executor = dm_exec::BuildExecutor::new(workers)
+                .map_err(|error| cold::ColdError::AbiPreparation(error.to_string()))?;
+            &owned_executor
+        }
+    };
     let order = crate::type_creation_order::collect(
         &frontend.allocation_ledger,
         &frontend.expanded.text,
@@ -310,5 +356,6 @@ fn compile_observed_input<R: Resolver>(
         observer,
         memo,
         revision,
+        executor,
     )
 }

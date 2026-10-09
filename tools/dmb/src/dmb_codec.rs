@@ -107,18 +107,6 @@ impl Writer {
             self.u32(value);
         }
     }
-    pub(super) fn table<T>(
-        &mut self,
-        items: &[T],
-        mut write: impl FnMut(&mut Self, &T),
-    ) -> io::Result<()> {
-        let count = u32::try_from(items.len()).map_err(|_| invalid("table exceeds u32 count"))?;
-        self.object(count);
-        for item in items {
-            write(self, item);
-        }
-        Ok(())
-    }
 }
 
 pub(super) fn compatibility_version(line: &[u8]) -> io::Result<u16> {

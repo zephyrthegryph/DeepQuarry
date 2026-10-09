@@ -24,6 +24,7 @@ use crate::lowering::{lower_frontend, AbiPolicy, LoweringConfig};
 use dm_codegen_byond::ProcedureInputs;
 use dm_ir::{ProcedureMetadata, ResolveQuery, ResolvedMeaning, Resolver};
 use dm_tree::frontend::{ColdFrontend, SourceLocation};
+use std::collections::BTreeMap;
 use std::path::Path;
 struct Source;
 impl dm_preprocess::SourceProvider for Source {
@@ -345,10 +346,35 @@ fn actual_lowered_string_body_freezes_and_links_without_legacy_ledger() {
 fn captured_binding_conflict_fails_before_table_assignment() {
     let frontend = frontend();
     let lowered = lower_frontend(&frontend, &Host, &Policy, LoweringConfig::default());
-    let mut bindings = ReferenceBindings::default();
-    bindings.references.insert(
-        Symbol::new(Table::String, "hello"),
-        SymRef::String(SymbolId::of("wrong")),
+    let bindings = ReferenceBindings::default();
+    let mut lowered = lowered;
+    let identity = lowered.units[0].identity;
+    let captured = unit_reference(identity);
+    let code = &mut lowered.units[0].code;
+    let literal = code
+        .procedure
+        .code
+        .items
+        .iter_mut()
+        .filter_map(|item| match item {
+            dm_codegen_byond::Item::Instruction(instruction) => Some(instruction),
+            _ => None,
+        })
+        .flat_map(|instruction| instruction.operands.iter_mut())
+        .find(|operand| matches!(operand, dm_codegen_byond::Word::Value(_)))
+        .unwrap();
+    *literal = dm_codegen_byond::Word::Value(dm_codegen_byond::ValueWord::ProcPath(captured));
+    // The used reference claims occurrence zero, while its captured semantic
+    // sidecar names a different occurrence. Admission must reject this pair
+    // before any dense table can license the otherwise valid procedure ID.
+    code.procedure_values.insert(
+        captured,
+        dm_ir::ProcedureIdentity {
+            owner: identity.owner,
+            name: identity.name,
+            verb: identity.namespace == Namespace::Verb,
+            occurrence: identity.occurrence + 1,
+        },
     );
     assert!(matches!(
         freeze_and_link_tables(
@@ -357,7 +383,7 @@ fn captured_binding_conflict_fails_before_table_assignment() {
             &bindings,
             LinkInventory::default()
         ),
-        Err(IntegrationError::Freeze { .. })
+        Err(IntegrationError::ConflictingBinding(reference)) if reference == captured
     ));
 }
 
@@ -550,15 +576,11 @@ fn parallel_fixture() -> (ColdFrontend, Vec<LoweredUnit>) {
     for unit in &mut lowered.units {
         // Inventory must preserve binary template payloads rather than their
         // UTF-8 symbolic keys, including companion artifacts and duplicates.
-        let key = "parallel-template".to_owned();
+        let payload = dm_ir::StringPayload::new(Arc::<[u8]>::from(&[0xff, 0x16, b'X'][..]));
         unit.code
             .procedure
             .strings
-            .extend([key.clone(), key.clone()]);
-        unit.code
-            .procedure
-            .format_templates
-            .insert(key, vec![0xff, 0x16, b'X']);
+            .extend([payload.clone(), payload]);
         unit.source_helpers
             .push(crate::argument_sources::LoweredHelper {
                 owner: unit.identity,

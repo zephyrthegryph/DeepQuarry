@@ -70,10 +70,12 @@ impl Compiler<'_> {
             let proc_selector = self
                 .expression_member_proc(object, selector)?
                 .map(member_proc_selector)
-                .unwrap_or_else(|| VariableWord::DynamicProc(selector.replace('_', " ")));
+                .unwrap_or_else(|| {
+                    VariableWord::DynamicProc(self.intern_string(&selector.replace('_', " ")))
+                });
             self.expression(object, statement)?;
             let end = self.label();
-            self.emit(317, vec![Word::Branch(end.clone())]);
+            self.emit(317, vec![Word::Branch(end)]);
             self.emit(opcode::PUSH_CACHE, vec![]);
             if named_arguments {
                 self.named_arguments(args, statement)?;
@@ -85,9 +87,6 @@ impl Compiler<'_> {
                 }
             }
             self.emit(opcode::POP_CACHE, vec![]);
-            if let VariableWord::DynamicProc(display) = &proc_selector {
-                self.intern_string(display);
-            }
             self.emit(
                 opcode::CALL,
                 vec![
@@ -115,13 +114,7 @@ impl Compiler<'_> {
                 }
                 if named_arguments {
                     self.named_arguments(args, statement)?;
-                    self.emit(
-                        0xcd,
-                        vec![Word::Reference(crate::Symbol::new(
-                            crate::Table::Proc,
-                            format!("/proc/{selector}"),
-                        ))],
-                    );
+                    self.emit(0xcd, vec![Word::Reference(self.global_proc(selector)?)]);
                 } else {
                     for arg in args {
                         self.expression(arg, statement)?;
@@ -130,10 +123,7 @@ impl Compiler<'_> {
                         opcode::CALL_GLOB,
                         vec![
                             Word::Immediate(args.len() as u32),
-                            Word::Reference(crate::Symbol::new(
-                                crate::Table::Proc,
-                                format!("/proc/{selector}"),
-                            )),
+                            Word::Reference(self.global_proc(selector)?),
                         ],
                     );
                 }
@@ -142,10 +132,9 @@ impl Compiler<'_> {
             let proc_selector = self
                 .expression_member_proc(object, selector)?
                 .map(member_proc_selector)
-                .unwrap_or_else(|| VariableWord::DynamicProc(selector.replace('_', " ")));
-            if let VariableWord::DynamicProc(display) = &proc_selector {
-                self.intern_string(display);
-            }
+                .unwrap_or_else(|| {
+                    VariableWord::DynamicProc(self.intern_string(&selector.replace('_', " ")))
+                });
             let mut safe_labels = Vec::new();
             if let Ok(owner) = self.variable_expr(object, statement) {
                 if named_arguments {

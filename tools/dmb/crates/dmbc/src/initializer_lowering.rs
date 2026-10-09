@@ -97,8 +97,12 @@ pub fn lower<R: Resolver>(
         host,
         resource_search_context,
         true,
-        None,
-        None,
+        LowerOptions {
+            observer: None,
+            memo: None,
+            parallel: None,
+            executor: None,
+        },
     )
 }
 
@@ -134,8 +138,12 @@ pub fn lower_captured_observed_memo<R: Resolver>(
         host,
         resource_search_context,
         false,
-        observer,
-        memo,
+        LowerOptions {
+            observer,
+            memo,
+            parallel: None,
+            executor: None,
+        },
     )
 }
 pub fn lower_captured_observed<R: Resolver>(
@@ -157,16 +165,62 @@ pub fn lower_captured_observed<R: Resolver>(
     )
 }
 
+pub struct InitializerExecution<'a> {
+    pub executor: &'a dm_exec::BuildExecutor,
+    pub evaluator: Option<initializer_policy::ParallelEvaluator<'a>>,
+    pub observer: Option<&'a InitializerObserver<'a>>,
+    pub memo: Option<&'a crate::lowering_memo::ProcedureMemo>,
+}
+struct LowerOptions<'a> {
+    observer: Option<&'a InitializerObserver<'a>>,
+    memo: Option<&'a crate::lowering_memo::ProcedureMemo>,
+    executor: Option<&'a dm_exec::BuildExecutor>,
+    parallel: Option<(
+        initializer_policy::ParallelEvaluator<'a>,
+        &'a dm_exec::BuildExecutor,
+    )>,
+}
+pub fn lower_captured_observed_memo_on_executor<R: Resolver>(
+    frontend: &ColdFrontend,
+    startup: &crate::startup::CapturedStartup<'_>,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    host: &R,
+    resource_search_context: Option<u128>,
+    execution: InitializerExecution<'_>,
+) -> Result<LoweredInitializers, InitializerLoweringError> {
+    startup.validate_for(frontend)?;
+    lower_plan(
+        (frontend, startup.plan()),
+        evaluator,
+        host,
+        resource_search_context,
+        false,
+        LowerOptions {
+            observer: execution.observer,
+            executor: Some(execution.executor),
+            memo: execution.memo,
+            parallel: execution
+                .evaluator
+                .map(|evaluator| (evaluator, execution.executor)),
+        },
+    )
+}
+
 fn lower_plan<R: Resolver>(
     captured: (&ColdFrontend, &InitializerPlan),
     evaluator: &dyn CapturedInitializerEvaluator,
     host: &R,
     resource_search_context: Option<u128>,
     validate_statics: bool,
-    observer: Option<&InitializerObserver<'_>>,
-    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    options: LowerOptions<'_>,
 ) -> Result<LoweredInitializers, InitializerLoweringError> {
     let (frontend, plan) = captured;
+    let LowerOptions {
+        observer,
+        memo,
+        parallel,
+        executor,
+    } = options;
     if frontend.snapshot.tree.identity() != plan.source.tree.identity()
         || frontend.snapshot.occurrences.tree_identity() != plan.source.occurrences.tree_identity()
         || plan.writes.len() != plan.origins.len()
@@ -186,12 +240,23 @@ fn lower_plan<R: Resolver>(
     let symbols = plan.symbols.as_ref();
     let measurement =
         crate::stage_measurements::Scope::new(observer, InitializerStage::Classification);
-    let classified = match initializer_policy::classify_with_token_mode(
-        &plan.writes,
-        symbols,
-        evaluator,
-        frontend.plan.final_macros.contains_key("DEBUG"),
-    ) {
+    let debug_defined = frontend.plan.final_macros.contains_key("DEBUG");
+    let classification = match parallel {
+        Some((context, executor)) => initializer_policy::classify_with_token_mode_on_executor(
+            &plan.writes,
+            symbols,
+            context,
+            debug_defined,
+            executor,
+        ),
+        None => initializer_policy::classify_with_token_mode(
+            &plan.writes,
+            symbols,
+            evaluator,
+            debug_defined,
+        ),
+    };
+    let classified = match classification {
         Ok(classified) => classified,
         Err(error) => {
             let ordinals = error
@@ -220,239 +285,265 @@ fn lower_plan<R: Resolver>(
     };
     measurement.complete();
     let measurement = crate::stage_measurements::Scope::new(observer, InitializerStage::Codegen);
-    let mut units = Vec::with_capacity(classified.groups.len());
-    for group in &classified.groups {
-        let mut assignments = Vec::with_capacity(group.writes.len());
-        let mut entries = Vec::with_capacity(group.writes.len());
-        let mut write_ordinals = Vec::with_capacity(group.writes.len());
-        for (index, &write_index) in group.writes.iter().enumerate() {
+    let lower_one = |index: usize| {
+        let _profile = dm_profile::stage("initializer.codegen_group");
+        lower_group(
+            frontend,
+            plan,
+            &classified,
+            &classified.groups[index],
+            host,
+            resource_search_context,
+            memo,
+        )
+    };
+    let units =
+        match executor.filter(|executor| executor.workers() > 1 && classified.groups.len() > 1) {
+            Some(executor) => {
+                parallel_groups::ordered_jobs(classified.groups.len(), executor, lower_one)
+                    .map_err(InitializerLoweringError::from)?
+                    .into_iter()
+                    .collect::<Result<Vec<_>, _>>()?
+            }
+            None => (0..classified.groups.len())
+                .map(lower_one)
+                .collect::<Result<Vec<_>, _>>()?,
+        };
+    measurement.complete();
+    Ok(LoweredInitializers { classified, units })
+}
+
+#[path = "initializer_parallel_groups.rs"]
+mod parallel_groups;
+
+fn lower_group<R: Resolver>(
+    frontend: &ColdFrontend,
+    plan: &InitializerPlan,
+    classified: &ClassifiedInitializers,
+    group: &initializer_policy::RuntimeGroup,
+    host: &R,
+    resource_search_context: Option<u128>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+) -> Result<LoweredInitializerUnit, InitializerLoweringError> {
+    let symbols = plan.symbols.as_ref();
+    let mut assignments = Vec::with_capacity(group.writes.len());
+    let mut entries = Vec::with_capacity(group.writes.len());
+    let mut write_ordinals = Vec::with_capacity(group.writes.len());
+    for (index, &write_index) in group.writes.iter().enumerate() {
+        let write = classified
+            .writes
+            .get(write_index)
+            .ok_or("initializer group write missing")?;
+        let origin = plan
+            .origins
+            .get(write.source_ordinal)
+            .ok_or("initializer origin missing")?;
+        let current = frontend
+            .snapshot
+            .occurrences
+            .get(origin.occurrence)
+            .ok_or("initializer current occurrence missing")?;
+        let expected_member = match &origin.kind {
+            dm_tree::initializers::InitializerOriginKind::Declaration(member) => *member,
+            dm_tree::initializers::InitializerOriginKind::ProcedureStatic { identity, .. } => {
+                let dm_tree::Target::Member(member) = current.target else {
+                    return Err("static origin is not a procedure".into());
+                };
+                let node = frontend
+                    .snapshot
+                    .tree
+                    .member(member)
+                    .ok_or("static procedure missing")?;
+                let owner = frontend
+                    .snapshot
+                    .tree
+                    .type_node(node.owner)
+                    .ok_or("static owner missing")?
+                    .path;
+                if owner != identity.procedure.owner
+                    || node.name != identity.procedure.name
+                    || (node.kind == dm_tree::MemberKind::Verb) != identity.procedure.verb
+                    || node.kind == dm_tree::MemberKind::Var
+                {
+                    return Err("static origin procedure differs".into());
+                }
+                member
+            }
+        };
+        if current.target != dm_tree::Target::Member(expected_member)
+            || current.provenance.span != origin.provenance.span
+            || current.provenance.include_occurrence != origin.provenance.include_occurrence
+            || current.provenance.region != origin.provenance.region
+            || current.provenance.expansion_stack != origin.provenance.expansion_stack
+        {
+            return Err("initializer source provenance differs from current occurrence".into());
+        }
+        let occurrence = frontend
+            .plan
+            .occurrences
+            .get(origin.provenance.include_occurrence as usize)
+            .ok_or("initializer include occurrence missing")?;
+        let file = frontend
+            .files
+            .get(origin.provenance.span.file.index())
+            .ok_or("initializer source file missing")?;
+        if file.path.as_ref() != occurrence.path.as_ref() || !file.captured {
+            return Err("initializer origin does not bind captured source".into());
+        }
+        let offset = origin.provenance.span.start as usize;
+        if offset > file.text.len() {
+            return Err("initializer source span out of bounds".into());
+        }
+        let line = file.line_starts.partition_point(|start| *start <= offset);
+        if let dm_tree::initializers::InitializerOriginKind::ProcedureStatic {
+            expanded_span, ..
+        } = &origin.kind
+        {
+            entries.push(frontend.origin(expanded_span.start)?);
+        } else {
+            entries.push(DebugOrigin {
+                semantic_path: occurrence.semantic_path.to_string(),
+                line: u32::try_from(line).map_err(|_| "initializer source line exceeds u32")?,
+            });
+        }
+        let mut value = value_expression(
+            write
+                .runtime_value
+                .as_ref()
+                .ok_or("initializer runtime value missing")?,
+        );
+        // Typed statements carry a local occurrence discriminator. The
+        // provider above binds it to captured source provenance, never to
+        // synthetic parser text or inferred source byte offsets.
+        value.span = dm_syntax::Span::new(index, index);
+        assignments.push((write.write.target.clone(), write.write.lexical_owner, value));
+        write_ordinals.push(write.source_ordinal);
+    }
+    let debug = CapturedOrigins {
+        origins: DebugOrigins { entries },
+    };
+    // Current classification and provenance are always validated above.
+    // Exact authored values and policy-issued array dimensions describe the
+    // executable inputs; local debug ordinals are reconstructed every build.
+    let context = || InitializerContext {
+        symbols,
+        resource_search_context,
+        debug: Some(&debug),
+    };
+    let map_error = |error| match error {
+        dm_codegen_byond::initializer::InitializerError::Unsupported(message) => {
+            InitializerLoweringError::Unsupported(message)
+        }
+        dm_codegen_byond::initializer::InitializerError::Invalid(message) => {
+            InitializerLoweringError::Invariant(message)
+        }
+        dm_codegen_byond::initializer::InitializerError::Lowering(errors) => {
+            match map_captured_lower_errors(errors, frontend, plan, &write_ordinals) {
+                Ok(diagnostics) => InitializerLoweringError::Diagnostics(diagnostics),
+                Err(error) => error,
+            }
+        }
+    };
+    let code = if let Some(memo) = memo {
+        let mut key = b"dmbc-anonymous-declaration-v2-relative-debug\0".to_vec();
+        key.extend_from_slice(&memo.policy.to_le_bytes());
+        key.extend_from_slice(
+            &serde_json::to_vec(&resource_search_context).map_err(|error| error.to_string())?,
+        );
+        for &write_index in &group.writes {
             let write = classified
                 .writes
                 .get(write_index)
                 .ok_or("initializer group write missing")?;
-            let origin = plan
-                .origins
-                .get(write.source_ordinal)
-                .ok_or("initializer origin missing")?;
-            let current = frontend
-                .snapshot
-                .occurrences
-                .get(origin.occurrence)
-                .ok_or("initializer current occurrence missing")?;
-            let expected_member = match &origin.kind {
-                dm_tree::initializers::InitializerOriginKind::Declaration(member) => *member,
-                dm_tree::initializers::InitializerOriginKind::ProcedureStatic {
-                    identity, ..
-                } => {
-                    let dm_tree::Target::Member(member) = current.target else {
-                        return Err("static origin is not a procedure".into());
-                    };
-                    let node = frontend
-                        .snapshot
-                        .tree
-                        .member(member)
-                        .ok_or("static procedure missing")?;
-                    let owner = frontend
-                        .snapshot
-                        .tree
-                        .type_node(node.owner)
-                        .ok_or("static owner missing")?
-                        .path;
-                    if owner != identity.procedure.owner
-                        || node.name != identity.procedure.name
-                        || (node.kind == dm_tree::MemberKind::Verb) != identity.procedure.verb
-                        || node.kind == dm_tree::MemberKind::Var
-                    {
-                        return Err("static origin procedure differs".into());
+            let bytes = write.write.canonical_bytes();
+            key.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
+            key.extend_from_slice(&bytes);
+            match write
+                .runtime_value
+                .as_ref()
+                .ok_or("initializer runtime value missing")?
+            {
+                RuntimeValue::Expression(_) => key.push(0),
+                RuntimeValue::SizedArray(dimensions) => {
+                    key.push(1);
+                    key.extend_from_slice(&(dimensions.len() as u64).to_le_bytes());
+                    for dimension in dimensions.iter() {
+                        key.extend_from_slice(&dimension.to_le_bytes());
                     }
-                    member
                 }
-            };
-            if current.target != dm_tree::Target::Member(expected_member)
-                || current.provenance.span != origin.provenance.span
-                || current.provenance.include_occurrence != origin.provenance.include_occurrence
-                || current.provenance.region != origin.provenance.region
-                || current.provenance.expansion_stack != origin.provenance.expansion_stack
-            {
-                return Err("initializer source provenance differs from current occurrence".into());
             }
-            let occurrence = frontend
-                .plan
-                .occurrences
-                .get(origin.provenance.include_occurrence as usize)
-                .ok_or("initializer include occurrence missing")?;
-            let file = frontend
-                .files
-                .get(origin.provenance.span.file.index())
-                .ok_or("initializer source file missing")?;
-            if file.path.as_ref() != occurrence.path.as_ref() || !file.captured {
-                return Err("initializer origin does not bind captured source".into());
-            }
-            let offset = origin.provenance.span.start as usize;
-            if offset > file.text.len() {
-                return Err("initializer source span out of bounds".into());
-            }
-            let line = file.line_starts.partition_point(|start| *start <= offset);
-            if let dm_tree::initializers::InitializerOriginKind::ProcedureStatic {
-                expanded_span,
-                ..
-            } = &origin.kind
-            {
-                entries.push(frontend.origin(expanded_span.start)?);
-            } else {
-                entries.push(DebugOrigin {
-                    semantic_path: occurrence.semantic_path.to_string(),
-                    line: u32::try_from(line).map_err(|_| "initializer source line exceeds u32")?,
-                });
-            }
-            let mut value = value_expression(
-                write
-                    .runtime_value
-                    .as_ref()
-                    .ok_or("initializer runtime value missing")?,
-            );
-            // Typed statements carry a local occurrence discriminator. The
-            // provider above binds it to captured source provenance, never to
-            // synthetic parser text or inferred source byte offsets.
-            value.span = dm_syntax::Span::new(index, index);
-            assignments.push((write.write.target.clone(), write.write.lexical_owner, value));
-            write_ordinals.push(write.source_ordinal);
         }
-        let debug = CapturedOrigins {
-            origins: DebugOrigins { entries },
-        };
-        // Current classification and provenance are always validated above.
-        // Exact authored values and policy-issued array dimensions describe the
-        // executable inputs; local debug ordinals are reconstructed every build.
-        let context = || InitializerContext {
-            symbols,
-            resource_search_context,
-            debug: Some(&debug),
-        };
-        let map_error = |error| match error {
-            dm_codegen_byond::initializer::InitializerError::Unsupported(message) => {
-                InitializerLoweringError::Unsupported(message)
+        for origin in &debug.origins.entries {
+            key.extend_from_slice(&(origin.semantic_path.len() as u64).to_le_bytes());
+            key.extend_from_slice(origin.semantic_path.as_bytes());
+        }
+        // Stored reads (including mandatory ancestry/override facts) are
+        // validated by the lookup. A hit does not build a second recorder.
+        let replay = memo.lookup_anonymous(&key, host, debug.origins.entries.len());
+        if let Some(errors) = replay.errors {
+            if errors.iter().all(|error| {
+                error
+                    .span
+                    .is_none_or(|span| span.start <= span.end && span.end < write_ordinals.len())
+            }) {
+                return Err(map_error(
+                    dm_codegen_byond::initializer::InitializerError::Lowering(errors),
+                ));
             }
-            dm_codegen_byond::initializer::InitializerError::Invalid(message) => {
-                InitializerLoweringError::Invariant(message)
-            }
-            dm_codegen_byond::initializer::InitializerError::Lowering(errors) => {
-                match map_captured_lower_errors(errors, frontend, plan, &write_ordinals) {
-                    Ok(diagnostics) => InitializerLoweringError::Diagnostics(diagnostics),
-                    Err(error) => error,
-                }
-            }
-        };
-        let code = if let Some(memo) = memo {
-            let mut key = b"dmbc-anonymous-declaration-v2-relative-debug\0".to_vec();
-            key.extend_from_slice(&memo.policy.to_le_bytes());
-            key.extend_from_slice(
-                &serde_json::to_vec(&resource_search_context).map_err(|error| error.to_string())?,
-            );
+        }
+        if let Some(code) = replay.code {
+            code
+        } else {
+            let recorder = crate::lowering_memo::RecordingResolver::new(host);
             for &write_index in &group.writes {
                 let write = classified
                     .writes
                     .get(write_index)
                     .ok_or("initializer group write missing")?;
-                let bytes = write.write.canonical_bytes();
-                key.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
-                key.extend_from_slice(&bytes);
-                match write
-                    .runtime_value
-                    .as_ref()
-                    .ok_or("initializer runtime value missing")?
-                {
-                    RuntimeValue::Expression(_) => key.push(0),
-                    RuntimeValue::SizedArray(dimensions) => {
-                        key.push(1);
-                        key.extend_from_slice(&(dimensions.len() as u64).to_le_bytes());
-                        for dimension in dimensions.iter() {
-                            key.extend_from_slice(&dimension.to_le_bytes());
-                        }
-                    }
+                recorder.resolve(dm_ir::ResolveQuery::Ancestry(write.write.lexical_owner));
+                if let Some(identity) = write.write.lexical_procedure {
+                    recorder.record_occurrence(identity);
                 }
             }
-            for origin in &debug.origins.entries {
-                key.extend_from_slice(&(origin.semantic_path.len() as u64).to_le_bytes());
-                key.extend_from_slice(origin.semantic_path.as_bytes());
-            }
-            // Stored reads (including mandatory ancestry/override facts) are
-            // validated by the lookup. A hit does not build a second recorder.
-            let replay = memo.lookup_anonymous(&key, host, debug.origins.entries.len());
-            if let Some(errors) = replay.errors {
-                if errors.iter().all(|error| {
-                    error.span.is_none_or(|span| {
-                        span.start <= span.end && span.end < write_ordinals.len()
-                    })
-                }) {
-                    return Err(map_error(
-                        dm_codegen_byond::initializer::InitializerError::Lowering(errors),
-                    ));
-                }
-            }
-            if let Some(code) = replay.code {
-                code
-            } else {
-                let recorder = crate::lowering_memo::RecordingResolver::new(host);
-                for &write_index in &group.writes {
-                    let write = classified
-                        .writes
-                        .get(write_index)
-                        .ok_or("initializer group write missing")?;
-                    recorder.resolve(dm_ir::ResolveQuery::Ancestry(write.write.lexical_owner));
-                    if let Some(identity) = write.write.lexical_procedure {
-                        recorder.record_occurrence(identity);
+            let code = dm_codegen_byond::initializer::lower_scoped_assignments(
+                &assignments,
+                context(),
+                &recorder,
+            )
+            .map_err(|error| {
+                if let dm_codegen_byond::initializer::InitializerError::Lowering(errors) = &error {
+                    if errors.iter().all(|error| {
+                        error.span.is_none_or(|span| {
+                            span.start <= span.end && span.end < write_ordinals.len()
+                        })
+                    }) {
+                        memo.remember_failure(
+                            &key,
+                            None,
+                            &recorder.reads(),
+                            errors,
+                            &recorder.domain_receipts(),
+                        );
                     }
                 }
-                let code = dm_codegen_byond::initializer::lower_scoped_assignments(
-                    &assignments,
-                    context(),
-                    &recorder,
-                )
-                .map_err(|error| {
-                    if let dm_codegen_byond::initializer::InitializerError::Lowering(errors) =
-                        &error
-                    {
-                        if errors.iter().all(|error| {
-                            error.span.is_none_or(|span| {
-                                span.start <= span.end && span.end < write_ordinals.len()
-                            })
-                        }) {
-                            memo.remember_failure(
-                                &key,
-                                None,
-                                &recorder.reads(),
-                                errors,
-                                &recorder.domain_receipts(),
-                            );
-                        }
-                    }
-                    map_error(error)
-                })?;
-                memo.remember_executable(
-                    &key,
-                    &recorder.reads(),
-                    &code,
-                    &recorder.domain_receipts(),
-                );
-                code
-            }
-        } else {
-            // Cold oracle path performs no cache key, serialization, extra
-            // ancestry reads or recording allocation.
-            dm_codegen_byond::initializer::lower_scoped_assignments(&assignments, context(), host)
-                .map_err(map_error)?
-        };
-        units.push(LoweredInitializerUnit {
-            scope: group
-                .receiver
-                .map(InitializerScope::Instance)
-                .unwrap_or(InitializerScope::Global),
-            write_ordinals,
-            code,
-            debug_origins: debug.origins,
-        });
-    }
-    measurement.complete();
-    Ok(LoweredInitializers { classified, units })
+                map_error(error)
+            })?;
+            memo.remember_executable(&key, &recorder.reads(), &code, &recorder.domain_receipts());
+            code
+        }
+    } else {
+        // Cold oracle path performs no cache key, serialization, extra
+        // ancestry reads or recording allocation.
+        dm_codegen_byond::initializer::lower_scoped_assignments(&assignments, context(), host)
+            .map_err(map_error)?
+    };
+    Ok(LoweredInitializerUnit {
+        scope: group
+            .receiver
+            .map(InitializerScope::Instance)
+            .unwrap_or(InitializerScope::Global),
+        write_ordinals,
+        code,
+        debug_origins: debug.origins,
+    })
 }

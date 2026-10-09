@@ -90,7 +90,9 @@ fn direct_discarded_calls_match_native_ownership_modes_and_pop_markers() {
                     parameters: parameters.iter().map(|name| (*name).into()).collect(),
                     ..Default::default()
                 };
-                bindings.global_procs.insert("getter".into());
+                bindings
+                    .global_procs
+                    .insert("getter".into(), reference(Table::Proc, "/proc/getter"));
                 for parameter in ["O", "P"] {
                     bindings
                         .parameter_types
@@ -105,23 +107,7 @@ fn direct_discarded_calls_match_native_ownership_modes_and_pop_markers() {
                     debug.then_some(&Debug as &dyn DebugSourceProvider),
                 )
                 .unwrap();
-                let frozen = crate::freeze_proc(&compiled.code, |symbol| {
-                    Ok(match symbol.table {
-                        Table::String => dm_ir::SymRef::String(dm_ir::SymbolId::of(&symbol.key)),
-                        Table::Class => dm_ir::SymRef::Type(dm_ir::SymbolId::of(&symbol.key)),
-                        Table::Proc => dm_ir::SymRef::Proc {
-                            owner: dm_ir::SymbolId::of("/"),
-                            name: dm_ir::SymbolId::of(symbol.key.rsplit('/').next().unwrap()),
-                            occurrence: 0,
-                        },
-                        _ => {
-                            return Err(format!(
-                                "unexpected ownership fixture reference: {symbol:?}"
-                            ))
-                        }
-                    })
-                })
-                .unwrap();
+                let frozen = crate::freeze_proc(&compiled.code).unwrap();
                 let words = frozen.code().words();
                 let decoded = byond_dmb::bytecode::decode(words).unwrap();
                 let calls = decoded
@@ -158,21 +144,51 @@ fn procedure_and_verb_constructors_use_native_proc_references() {
     let ast = dm_syntax::parse(include_str!(
         "../../../../../fixtures/native_compiler/proc_namespace.dm"
     ));
-    for (name, target, id) in [
-        ("new_verb", "/datum/namespace_probe/verb/third", 2),
-        ("new_proc", "/datum/namespace_probe/proc/first", 0),
+    let owner = SymbolId::of("/datum/namespace_probe");
+    for (name, member, captured, id) in [
+        (
+            "new_verb",
+            "third",
+            SymRef::Verb {
+                owner,
+                name: SymbolId::of("third"),
+                occurrence: 0,
+            },
+            2,
+        ),
+        (
+            "new_proc",
+            "first",
+            SymRef::Proc {
+                owner,
+                name: SymbolId::of("first"),
+                occurrence: 0,
+            },
+            0,
+        ),
     ] {
         let item = ast
             .items
             .iter()
             .find(|item| item.header == format!("/proc/{name}()"))
             .unwrap();
-        let compiled = compile_simple_proc(&item.children).unwrap();
+        let compiled = crate::compile_simple_proc_with_bindings(
+            &item.children,
+            &LowerBindings {
+                shared: Some(Arc::new(SharedLowerBindings {
+                    member_procs: HashMap::from([(
+                        "/datum/namespace_probe".into(),
+                        HashMap::from([(member.into(), captured)]),
+                    )]),
+                    ..Default::default()
+                })),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert!(compiled.class_paths.is_empty());
         let mut ledger = Ledger::default();
-        ledger
-            .bind(crate::Symbol::new(Table::Proc, target), id)
-            .unwrap();
+        ledger.bind(captured, id).unwrap();
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         let proc = native
             .procs
@@ -379,7 +395,10 @@ fn regex_calls_match_native_fixture() {
     }
     let raw = dm_syntax::parse("/proc/test()\n    return regex(@\"^\\w+$\", \"g\")\n");
     let compiled = compile_simple_proc(&raw.items[0].children).unwrap();
-    assert!(compiled.strings.iter().any(|value| value == "^\\w+$"));
+    assert!(compiled
+        .strings
+        .iter()
+        .any(|value| value.bytes.as_ref() == b"^\\w+$"));
 }
 
 #[test]
@@ -439,17 +458,30 @@ fn named_calls_follow_native_argument_list_shapes() {
             parameters: params,
             ..LowerBindings::default()
         };
-        bindings.global_procs.insert("f".into());
+        bindings
+            .global_procs
+            .insert("f".into(), reference(Table::Proc, "/proc/f"));
         let compiled =
-            compile_simple_proc_with_bindings(&ast.items[index].children, &bindings).unwrap();
+            compile_fixture_proc_with_bindings(&ast.items[index].children, &bindings).unwrap();
         let mut ledger = Ledger::default();
         ledger
-            .assign(Table::String, compiled.strings.clone())
+            .assign(
+                Table::String,
+                compiled
+                    .strings
+                    .iter()
+                    .map(|payload| SymRef::String(payload.id)),
+            )
             .unwrap();
         ledger
-            .assign(Table::Class, compiled.class_paths.clone())
+            .assign(
+                Table::Class,
+                compiled.class_paths.iter().copied().map(SymRef::Type),
+            )
             .unwrap();
-        ledger.assign(Table::Proc, vec!["/proc/f".into()]).unwrap();
+        ledger
+            .assign(Table::Proc, vec![reference(Table::Proc, "/proc/f")])
+            .unwrap();
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         let ours = byond_dmb::bytecode::decode(&linked.words).unwrap();
         let native_id = native
@@ -479,11 +511,14 @@ fn omitted_middle_call_argument_matches_native_bytecode() {
     ));
     assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
     let mut bindings = LowerBindings::default();
-    bindings.global_procs.insert("call_hole_target".into());
-    let compiled = compile_simple_proc_with_bindings(&ast.items[1].children, &bindings).unwrap();
+    bindings.global_procs.insert(
+        "call_hole_target".into(),
+        reference(Table::Proc, "/proc/call_hole_target"),
+    );
+    let compiled = compile_fixture_proc_with_bindings(&ast.items[1].children, &bindings).unwrap();
     let mut ledger = Ledger::default();
     ledger
-        .bind(crate::Symbol::new(Table::Proc, "/proc/call_hole_target"), 0)
+        .bind(reference(Table::Proc, "/proc/call_hole_target"), 0)
         .unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
@@ -538,10 +573,10 @@ fn quoted_named_argument_key_matches_native_image_call() {
         let string_id = native
             .strings
             .iter()
-            .position(|entry| entry.data == compiled.string_bytes(key))
+            .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
             .unwrap();
         ledger
-            .bind(crate::Symbol::new(Table::String, key), string_id as u32)
+            .bind(reference(Table::String, key), string_id as u32)
             .unwrap();
     }
     let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -570,10 +605,10 @@ fn member_arglist_and_colon_calls_match_native() {
             let string_id = native
                 .strings
                 .iter()
-                .position(|entry| entry.data == compiled.string_bytes(key))
+                .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
                 .unwrap();
             ledger
-                .bind(crate::Symbol::new(Table::String, key), string_id as u32)
+                .bind(reference(Table::String, key), string_id as u32)
                 .unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -602,10 +637,10 @@ fn icon_mixed_positional_and_named_args_match_native() {
         let string_id = native
             .strings
             .iter()
-            .position(|entry| entry.data == compiled.string_bytes(key))
+            .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
             .unwrap();
         ledger
-            .bind(crate::Symbol::new(Table::String, key), string_id as u32)
+            .bind(reference(Table::String, key), string_id as u32)
             .unwrap();
     }
     let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -623,24 +658,17 @@ fn global_namespace_call_and_vars_match_native() {
     ))
     .unwrap();
     let bindings = LowerBindings {
-        global_procs: BTreeSet::from(["foo".into()]),
+        global_procs: HashMap::from([("foo".into(), reference(Table::Proc, "/proc/foo"))]),
         ..LowerBindings::default()
     };
     for id in 1..3 {
         let compiled =
-            compile_simple_proc_with_bindings(&ast.items[id].children, &bindings).unwrap();
+            compile_fixture_proc_with_bindings(&ast.items[id].children, &bindings).unwrap();
         let mut ledger = Ledger::default();
         if id == 1 {
-            ledger
-                .bind(crate::Symbol::new(Table::Proc, "/proc/foo"), 0)
-                .unwrap();
+            ledger.bind(reference(Table::Proc, "/proc/foo"), 0).unwrap();
         } else {
-            ledger
-                .bind(
-                    crate::Symbol::new(Table::Variable, BUILTIN_GLOBAL_VARS_SYMBOL),
-                    177,
-                )
-                .unwrap();
+            ledger.bind(SymRef::BuiltinGlobalVars, 177).unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         assert_eq!(
@@ -667,10 +695,10 @@ fn named_safe_method_call_matches_native() {
         let string_id = native
             .strings
             .iter()
-            .position(|entry| entry.data == compiled.string_bytes(key))
+            .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
             .unwrap();
         ledger
-            .bind(crate::Symbol::new(Table::String, key), string_id as u32)
+            .bind(reference(Table::String, key), string_id as u32)
             .unwrap();
     }
     let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -689,27 +717,25 @@ fn src_and_global_arglist_calls_match_native() {
     .unwrap();
     let bindings = LowerBindings {
         parameters: vec!["L".into()],
-        global_procs: BTreeSet::from(["baz".into()]),
+        global_procs: HashMap::from([("baz".into(), reference(Table::Proc, "/proc/baz"))]),
         ..LowerBindings::default()
     };
     for (item, id) in [(1, 1), (3, 3)] {
         let compiled =
-            compile_simple_proc_with_bindings(&ast.items[item].children, &bindings).unwrap();
+            compile_fixture_proc_with_bindings(&ast.items[item].children, &bindings).unwrap();
         let mut ledger = Ledger::default();
         for key in &compiled.strings {
             let string_id = native
                 .strings
                 .iter()
-                .position(|entry| entry.data == compiled.string_bytes(key))
+                .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
                 .unwrap();
             ledger
-                .bind(crate::Symbol::new(Table::String, key), string_id as u32)
+                .bind(reference(Table::String, key), string_id as u32)
                 .unwrap();
         }
         if item == 3 {
-            ledger
-                .bind(crate::Symbol::new(Table::Proc, "/proc/baz"), 2)
-                .unwrap();
+            ledger.bind(reference(Table::Proc, "/proc/baz"), 2).unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         assert_eq!(
@@ -739,9 +765,7 @@ fn constructor_arglist_matches_native() {
         let compiled = compile_simple_proc_with_params(&ast.items[id].children, &params).unwrap();
         let mut ledger = Ledger::default();
         if id == 1 {
-            ledger
-                .bind(crate::Symbol::new(Table::Class, "/datum"), 0)
-                .unwrap();
+            ledger.bind(reference(Table::Class, "/datum"), 0).unwrap();
         }
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         assert_eq!(
@@ -767,7 +791,7 @@ fn call_member_aug_lowers_without_unsupported_target() {
         parameters: vec!["D".into(), "n".into()],
         ..LowerBindings::default()
     };
-    let compiled = compile_simple_proc_with_bindings(&item.children, &bindings).unwrap();
+    let compiled = compile_fixture_proc_with_bindings(&item.children, &bindings).unwrap();
     let opcodes: Vec<_> = compiled
         .code
         .items
@@ -823,12 +847,36 @@ fn parent_named_matches_native() {
         let id = native
             .strings
             .iter()
-            .position(|entry| entry.data == compiled.string_bytes(key))
+            .position(|entry| entry.data == compiled.string_bytes(key.id).unwrap())
             .unwrap();
         ledger
-            .bind(crate::Symbol::new(Table::String, key), id as u32)
+            .bind(reference(Table::String, key), id as u32)
             .unwrap();
     }
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     assert_eq!(linked.words, native.proc_code_words(1).unwrap());
+}
+
+#[test]
+fn global_call_preserves_captured_occurrence_identity() {
+    let ast = dm_syntax::parse("/proc/test()\n    return target()\n");
+    let captured = SymRef::Proc {
+        owner: SymbolId::of("/"),
+        name: SymbolId::of("target"),
+        occurrence: 37,
+    };
+    let bindings = LowerBindings {
+        global_procs: HashMap::from([("target".into(), captured)]),
+        ..Default::default()
+    };
+    let compiled = compile_fixture_proc_with_bindings(&ast.items[0].children, &bindings).unwrap();
+    let mut references = Vec::new();
+    compiled
+        .code
+        .for_each_reference(|reference| references.push(reference));
+    assert!(references.contains(&captured));
+    let mut ledger = Ledger::default();
+    ledger.bind(captured, 91).unwrap();
+    let linked = link_proc(&compiled.code, &ledger).unwrap();
+    assert!(linked.words.contains(&91));
 }

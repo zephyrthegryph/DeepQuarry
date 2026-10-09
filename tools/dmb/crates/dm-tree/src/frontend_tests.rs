@@ -824,3 +824,46 @@ fn procedure_literals_issue_exact_formal_and_effective_occurrences() {
 
 #[path = "frontend_parser_tests.rs"]
 mod parser_receipts;
+
+#[test]
+fn borrowed_executor_reuses_frontend_workers_across_requests() {
+    let mut text = String::new();
+    for index in 0..140 {
+        text.push_str(&format!(
+            "/datum/probe/proc/read_{index}()\n    // {}\n    return {index}\n",
+            "padding".repeat(150)
+        ));
+    }
+    let provider = Memory(BTreeMap::from([(PathBuf::from("project.dme"), text)]));
+    let reference = build(Path::new("project.dme"), &provider, &BTreeMap::new(), 1).unwrap();
+    let executor = dm_exec::BuildExecutor::new(3).unwrap();
+    for _ in 0..2 {
+        let result = build_with_executor(
+            Path::new("project.dme"),
+            &provider,
+            &BTreeMap::new(),
+            FrontendConfig {
+                workers: 99,
+                engine: None,
+                observer: None,
+            },
+            None,
+            &executor,
+        )
+        .unwrap();
+        assert_eq!(
+            reference.snapshot.tree.identity(),
+            result.snapshot.tree.identity()
+        );
+        assert_eq!(reference.emission_order, result.emission_order);
+        assert_eq!(reference.bodies.len(), result.bodies.len());
+        for (left, right) in reference.bodies.iter().zip(result.bodies.iter()) {
+            assert_eq!(left.expanded_span, right.expanded_span);
+            assert_eq!(
+                reference.location(left.expanded_span.start).unwrap().span,
+                result.location(right.expanded_span.start).unwrap().span
+            );
+        }
+    }
+    assert_eq!(executor.workers(), 3);
+}

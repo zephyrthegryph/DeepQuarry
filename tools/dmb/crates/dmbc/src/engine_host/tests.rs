@@ -221,7 +221,9 @@ fn pinned_receiver_methods_lower_dynamically_without_fabricated_abi() {
         vec![
             dm_codegen_byond::Word::Variable(dm_codegen_byond::VariableWord::SetCache(
                 Box::new(dm_codegen_byond::VariableWord::Arg(0)),
-                Box::new(dm_codegen_byond::VariableWord::DynamicProc("Copy".into())),
+                Box::new(dm_codegen_byond::VariableWord::DynamicProc(
+                    dm_ir::SymbolId::of("Copy")
+                )),
             )),
             dm_codegen_byond::Word::Immediate(2),
         ]
@@ -532,7 +534,12 @@ fn pinned_authored_variable_absence_preserves_global_and_field_shadow_domains() 
         )
         .unwrap();
         let expected = if path == root { shadow } else { global };
-        let expected_text = tree.symbols().text(expected).unwrap();
+        let expected_slot = code
+            .slots
+            .iter()
+            .find(|(_, slot)| slot.owner == root && slot.name == expected)
+            .unwrap()
+            .0;
         let globals: Vec<_> = code
             .procedure
             .code
@@ -545,16 +552,14 @@ fn pinned_authored_variable_absence_preserves_global_and_field_shadow_domains() 
                     .filter_map(|word| match word {
                         dm_codegen_byond::Word::Variable(
                             dm_codegen_byond::VariableWord::Global(name),
-                        ) => Some(name.as_str()),
+                        ) => Some(*name),
                         _ => None,
                     })
                     .collect::<Vec<_>>(),
                 _ => Vec::new(),
             })
             .collect();
-        // Resolver globals use canonical root-slot symbols, not the
-        // source spelling used by the legacy string-only encoder.
-        assert_eq!(globals, vec![format!("var/{expected_text}")]);
+        assert_eq!(globals, vec![*expected_slot]);
         assert!(code
             .slots
             .values()

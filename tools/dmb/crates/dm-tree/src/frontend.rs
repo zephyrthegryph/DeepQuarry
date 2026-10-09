@@ -8,8 +8,7 @@ mod parserwire;
 use crate::{MemberId, MemberKind, OccurrenceId, Skeleton, SnapshotError, Target, TreeSnapshot};
 use dm_ir::{FileId, Span, SymbolTable};
 use dm_preprocess::regions::{
-    expand_regions_text, plan_regions, DirectivePlan, ExpandedOrigin, ExpandedRegions,
-    MacroExpansion, NonTextKind,
+    plan_regions, DirectivePlan, ExpandedOrigin, ExpandedRegions, MacroExpansion, NonTextKind,
 };
 use dm_preprocess::SourceProvider;
 use dm_syntax::{AstFile, Item, ItemKind};
@@ -404,6 +403,10 @@ impl IssuedBodyInput<'_> {
     }
 }
 
+#[path = "body_arena.rs"]
+mod body_arena;
+pub use body_arena::{BodyArena, BodyArenaStorage};
+
 pub struct ParsedBody<'a> {
     item: Item,
     issuer: &'a ColdFrontend,
@@ -447,10 +450,12 @@ impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
 /// receive the ordered non-text ledger and terminal FILE_DIR domain afterward.
 #[path = "frontend_pipeline.rs"]
 mod pipeline;
-pub use pipeline::{build, build_with_config, build_with_expansion_memo};
+pub use pipeline::{build, build_with_config, build_with_executor, build_with_expansion_memo};
 #[path = "frontend_parse.rs"]
 mod declaration_parse;
-use declaration_parse::{parse_declarations, ParsedDeclarations};
+#[cfg(test)]
+use declaration_parse::parse_declarations;
+use declaration_parse::{parse_declarations_with_executor, ParsedDeclarations};
 
 #[path = "chunkfacts.rs"]
 mod chunkfacts;

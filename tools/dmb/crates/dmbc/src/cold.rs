@@ -2,14 +2,15 @@
 //! Admission is deliberately bounded by the production composer. A successful
 //! return means every declaration was admitted, rather than a partial artifact.
 use crate::{
-    composition::{compose_global_program, validate_global_program, CompositionError},
-    lowering::{lower_frontend, AbiPolicy, LoweringConfig, LoweringDiagnostic},
-    symbolic::{freeze_and_link_tables, IntegrationError, ReferenceBindings},
+    composition::{validate_global_program, CompositionError},
+    lowering::{AbiPolicy, LoweringConfig, LoweringDiagnostic},
+    symbolic::{IntegrationError, ReferenceBindings},
 };
 use dm_ir::Resolver;
 use dm_link::LinkInventory;
 use dm_tree::frontend::ColdFrontend;
 use std::time::{Duration, Instant};
+mod initializer_factory;
 
 #[derive(Clone, Copy, Debug)]
 pub enum ColdStage {
@@ -53,7 +54,7 @@ pub struct ColdTimings {
 }
 
 pub struct ColdOutput {
-    pub dmb: Vec<u8>,
+    pub dmb: byond_dmb::dmb::EncodedDmb,
     pub timings: ColdTimings,
     /// Owned exact startup stage output, available to resident hosts. The global
     /// fixture path has no captured declaration/static startup stage.
@@ -110,6 +111,8 @@ pub fn compile_captured_program<R: Resolver, P: AbiPolicy>(
     config: LoweringConfig,
 ) -> Result<ColdOutput, ColdError> {
     let total = Instant::now();
+    let executor = dm_exec::BuildExecutor::new(config.workers)
+        .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
     let captured = frontend.engine.as_ref().ok_or(ColdError::EngineMismatch)?;
     if captured.identity != links.engine.identity() {
         return Err(ColdError::EngineMismatch);
@@ -122,7 +125,8 @@ pub fn compile_captured_program<R: Resolver, P: AbiPolicy>(
     }
     validate_global_program(frontend).map_err(ColdError::Composition)?;
     let stage = Instant::now();
-    let batch = lower_frontend(frontend, resolver, policy, config);
+    let batch =
+        crate::lowering::lower_frontend_on_executor(frontend, resolver, policy, config, &executor);
     let lowering = stage.elapsed();
     if !batch.diagnostics.is_empty() {
         return Err(ColdError::Lowering(batch.diagnostics));
@@ -131,17 +135,20 @@ pub fn compile_captured_program<R: Resolver, P: AbiPolicy>(
         return Err(ColdError::NonAuthoritativeAbi);
     }
     let stage = Instant::now();
-    let frozen = freeze_and_link_tables(
+    let frozen = crate::symbolic::freeze_artifact_tables_with_executor(
         batch,
         frontend.snapshot.tree.symbols(),
         links.references,
         links.inventory,
+        Vec::new(),
+        &executor,
     )
     .map_err(ColdError::Linking)?;
     let symbolic_linking = stage.elapsed();
     let stage = Instant::now();
-    let dmb = compose_global_program(links.engine_bytes, &frozen, frontend)
-        .map_err(ColdError::Composition)?;
+    let dmb =
+        crate::composition::compose_global_program_encoded(links.engine_bytes, &frozen, frontend)
+            .map_err(ColdError::Composition)?;
     Ok(ColdOutput {
         dmb,
         startup: None,
@@ -239,6 +246,8 @@ pub fn compile_captured_classified_with_pinned_abi_memo<R: Resolver>(
     observer: Option<&ColdObserver<'_>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
 ) -> Result<ColdOutput, ColdError> {
+    let executor = dm_exec::BuildExecutor::new(config.workers)
+        .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
     compile_captured_classified_with_pinned_abi_memo_revision(
         frontend,
         resolver,
@@ -250,6 +259,7 @@ pub fn compile_captured_classified_with_pinned_abi_memo<R: Resolver>(
         observer,
         memo,
         None,
+        &executor,
     )
 }
 
@@ -265,32 +275,36 @@ pub(crate) fn compile_captured_classified_with_pinned_abi_memo_revision<R: Resol
     observer: Option<&ColdObserver<'_>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
     revision: Option<&dm_tree::frontend::FrontendRevision>,
+    executor: &dm_exec::BuildExecutor,
 ) -> Result<ColdOutput, ColdError> {
     let total = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::StartupCapture);
+    let bodies = dm_tree::frontend::BodyArena::new(frontend);
     let startup = match revision {
-        Some(revision) => crate::startup::capture_revision_facts_with_spellings_and_workers(
+        Some(revision) => crate::startup::capture_revision_facts_with_executor_and_bodies(
             revision,
             &links.inventory.spellings,
-            config.workers,
+            executor,
+            &bodies,
         )
         .and_then(|facts| facts.view_revision(revision)),
-        None => crate::startup::capture_with_spellings_and_workers(
+        None => crate::startup::capture_with_executor_and_bodies(
             frontend,
             &links.inventory.spellings,
-            config.workers,
+            executor,
+            &bodies,
         ),
     }
     .map_err(ColdError::Initializer)?;
     measurement.complete();
     let measurement = StageMeasurement::new(observer, ColdStage::AbiPreparation);
-    let prepared = crate::driver_facts::prepare_pinned_source_abi_with_startup(
+    let prepared = crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor(
         frontend,
         links.engine,
         resolver,
         &startup,
         declarations.resource_search_context,
-        config.workers,
+        executor,
     )
     .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
     if !prepared.prepared.diagnostics.is_empty() {
@@ -315,6 +329,8 @@ pub(crate) fn compile_captured_classified_with_pinned_abi_memo_revision<R: Resol
         &startup,
         observer,
         memo,
+        executor,
+        bodies,
     )?;
     output.timings.abi_preparation = abi_preparation;
     output.timings.total = total.elapsed();
@@ -334,10 +350,14 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
     map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
 ) -> Result<ColdOutput, ColdError> {
-    let startup = crate::startup::capture_with_spellings_and_workers(
+    let executor = dm_exec::BuildExecutor::new(config.workers)
+        .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+    let bodies = dm_tree::frontend::BodyArena::new(frontend);
+    let startup = crate::startup::capture_with_executor_and_bodies(
         frontend,
         &links.inventory.spellings,
-        config.workers,
+        &executor,
+        &bodies,
     )
     .map_err(ColdError::Initializer)?;
     compile_with_startup(
@@ -352,6 +372,8 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
         &startup,
         None,
         None,
+        &executor,
+        bodies,
     )
 }
 
@@ -368,6 +390,8 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     startup: &crate::startup::CapturedStartup<'_>,
     observer: Option<&ColdObserver<'_>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    executor: &dm_exec::BuildExecutor,
+    bodies: dm_tree::frontend::BodyArena<'_>,
 ) -> Result<ColdOutput, ColdError> {
     startup
         .validate_for(frontend)
@@ -396,6 +420,12 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         .map_err(ColdError::Initializer)?;
     let resolver = &static_resolver;
     let plan = startup.plan();
+    crate::heap_census::emit_if_enabled("startup.ready", |census| {
+        census.frontend(frontend);
+        census.startup(startup);
+        census.body_arena(&bodies);
+    })
+    .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
     let startup_evaluator = crate::startup::StartupEvaluator {
         resource_search_context: declarations.resource_search_context,
         ordinary: declarations.initializers,
@@ -406,6 +436,15 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         engine: links.engine,
         evaluator: &startup_evaluator,
     };
+    let parallel_factory = declarations
+        .initializers
+        .parallel_evaluator()
+        .map(|ordinary| initializer_factory::StartupParallelFactory {
+            ordinary,
+            resolver,
+            symbols: plan.symbols.as_ref(),
+            resource_search_context: declarations.resource_search_context,
+        });
     let initializer_observer = |event: crate::initializer_lowering::InitializerMeasurement| {
         if let Some(observer) = observer {
             observer(ColdMeasurement {
@@ -422,16 +461,25 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
             });
         }
     };
-    let initialization = crate::initializer_lowering::lower_captured_observed_memo(
+    let initialization = crate::initializer_lowering::lower_captured_observed_memo_on_executor(
         frontend,
         startup,
         &evaluator,
         resolver,
         declarations.resource_search_context,
-        observer.map(|_| {
-            &initializer_observer as &crate::initializer_lowering::InitializerObserver<'_>
-        }),
-        memo,
+        crate::initializer_lowering::InitializerExecution {
+            executor,
+            evaluator: parallel_factory.as_ref().map(|factory| {
+                crate::initializer_policy::ParallelEvaluator {
+                    factory,
+                    engine: Some(links.engine),
+                }
+            }),
+            observer: observer.map(|_| {
+                &initializer_observer as &crate::initializer_lowering::InitializerObserver<'_>
+            }),
+            memo,
+        },
     )
     .map_err(initializer_lowering_error)?;
     let projection = crate::class_projection::project_classified(
@@ -448,20 +496,40 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::ProcedureLowering);
     let batch = match memo {
-        Some(memo) => crate::lowering::lower_frontend_with_memo(
-            frontend, resolver, policy, config, startup, memo,
+        Some(memo) => crate::lowering::lower_frontend_with_memo_on_executor_and_bodies(
+            frontend,
+            resolver,
+            policy,
+            config,
+            startup,
+            memo,
+            crate::lowering::LoweringExecution::new(executor, &bodies),
         ),
-        None => crate::lowering::lower_frontend_with_statics(
-            frontend, resolver, policy, config, startup,
+        None => crate::lowering::lower_frontend_with_statics_on_executor_and_bodies(
+            frontend,
+            resolver,
+            policy,
+            config,
+            startup,
+            crate::lowering::LoweringExecution::new(executor, &bodies),
         ),
     };
     let lowering = stage.elapsed();
     if !batch.diagnostics.is_empty() {
         return Err(ColdError::Lowering(batch.diagnostics));
     }
+    crate::heap_census::emit_if_enabled("lowering.ready", |census| {
+        census.frontend(frontend);
+        census.startup(startup);
+        census.lowered(&batch);
+    })
+    .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
     batch
         .require_production_abi()
         .map_err(|_| ColdError::NonAuthoritativeAbi)?;
+    // Consume the request-local parse owner before linking/composition.
+    // Reusable startup facts never retain executable syntax.
+    drop(bodies);
     measurement.complete();
     // Discover anonymous descriptors only from actual emitted operand sites.
     // Recursive descriptor initializers append to one request-local graph.
@@ -548,20 +616,26 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         .map(Into::into)
         .chain(initialization_artifacts)
         .collect();
-    let frozen = crate::symbolic::freeze_artifact_tables_with_workers(
+    let frozen = crate::symbolic::freeze_artifact_tables_with_executor(
         batch,
         plan.symbols.as_ref(),
         links.references,
         inventory,
         initialization,
-        config.workers,
+        executor,
     )
     .map_err(ColdError::Linking)?;
     measurement.complete();
     let symbolic_linking = stage.elapsed();
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::Composition);
-    let dmb = crate::composition::compose_projected_owned_with_symbols(
+    crate::heap_census::emit_if_enabled("linking.ready", |census| {
+        census.frontend(frontend);
+        census.startup(startup);
+        census.frozen(&frozen);
+    })
+    .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
+    let dmb = crate::composition::compose_projected_owned_with_symbols_on_executor(
         links.engine_bytes,
         frozen,
         frontend,
@@ -569,6 +643,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         declarations.type_values,
         non_text,
         plan.symbols.as_ref(),
+        executor,
     )
     .map_err(ColdError::Composition)?;
     measurement.complete();

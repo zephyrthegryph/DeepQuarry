@@ -9,7 +9,7 @@ use dm_tree::{
     MemberKind,
 };
 use std::cell::RefCell;
-use std::{collections::BTreeMap, sync::Arc, thread};
+use std::{collections::BTreeMap, sync::Arc};
 #[derive(Default)]
 struct MemoCapture {
     debug: Vec<usize>,
@@ -221,6 +221,115 @@ pub fn lower_frontend_with_memo<R: Resolver, P: AbiPolicy>(
 ) -> LoweringBatch {
     lower_frontend_impl(frontend, host, policy, config, Some(startup), Some(memo))
 }
+/// One borrowed build executor and its issued request-local lazy body arena.
+#[derive(Clone, Copy)]
+pub struct LoweringExecution<'a, 'frontend> {
+    pub executor: &'a dm_exec::BuildExecutor,
+    pub bodies: &'a dm_tree::frontend::BodyArena<'frontend>,
+}
+impl<'a, 'frontend> LoweringExecution<'a, 'frontend> {
+    pub fn new(
+        executor: &'a dm_exec::BuildExecutor,
+        bodies: &'a dm_tree::frontend::BodyArena<'frontend>,
+    ) -> Self {
+        Self { executor, bodies }
+    }
+}
+pub fn lower_frontend_on_executor<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    executor: &dm_exec::BuildExecutor,
+) -> LoweringBatch {
+    let bodies = dm_tree::frontend::BodyArena::new(frontend);
+    lower_frontend_impl_on_execution(
+        frontend,
+        host,
+        policy,
+        config,
+        None,
+        None,
+        LoweringExecution::new(executor, &bodies),
+    )
+}
+/// Borrow the configured build executor; no stage-local pool is constructed.
+pub fn lower_frontend_with_statics_on_executor<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    startup: &crate::startup::CapturedStartup,
+    executor: &dm_exec::BuildExecutor,
+) -> LoweringBatch {
+    let bodies = dm_tree::frontend::BodyArena::new(frontend);
+    lower_frontend_impl_on_execution(
+        frontend,
+        host,
+        policy,
+        config,
+        Some(startup),
+        None,
+        LoweringExecution::new(executor, &bodies),
+    )
+}
+pub fn lower_frontend_with_memo_on_executor<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    startup: &crate::startup::CapturedStartup,
+    memo: &crate::lowering_memo::ProcedureMemo,
+    executor: &dm_exec::BuildExecutor,
+) -> LoweringBatch {
+    let bodies = dm_tree::frontend::BodyArena::new(frontend);
+    lower_frontend_impl_on_execution(
+        frontend,
+        host,
+        policy,
+        config,
+        Some(startup),
+        Some(memo),
+        LoweringExecution::new(executor, &bodies),
+    )
+}
+pub fn lower_frontend_with_statics_on_executor_and_bodies<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    startup: &crate::startup::CapturedStartup,
+    execution: LoweringExecution<'_, '_>,
+) -> LoweringBatch {
+    lower_frontend_impl_on_execution(
+        frontend,
+        host,
+        policy,
+        config,
+        Some(startup),
+        None,
+        execution,
+    )
+}
+pub fn lower_frontend_with_memo_on_executor_and_bodies<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    startup: &crate::startup::CapturedStartup,
+    memo: &crate::lowering_memo::ProcedureMemo,
+    execution: LoweringExecution<'_, '_>,
+) -> LoweringBatch {
+    lower_frontend_impl_on_execution(
+        frontend,
+        host,
+        policy,
+        config,
+        Some(startup),
+        Some(memo),
+        execution,
+    )
+}
 fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
     frontend: &ColdFrontend,
     host: &R,
@@ -229,8 +338,46 @@ fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
     startup: Option<&crate::startup::CapturedStartup>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
 ) -> LoweringBatch {
-    // At most eight workers and bounded chunks, independent of machine core count.
-    let workers = config.workers.clamp(1, 8);
+    let executor = match dm_exec::BuildExecutor::new(config.workers) {
+        Ok(executor) => executor,
+        Err(error) => {
+            return LoweringBatch {
+                units: Vec::new(),
+                diagnostics: frontend
+                    .bodies
+                    .iter()
+                    .map(|body| LoweringDiagnostic {
+                        kind: DiagnosticKind::Internal,
+                        identity: None,
+                        origin: body.source.clone(),
+                        message: format!("procedure lowering executor creation failed: {error}"),
+                    })
+                    .collect(),
+            }
+        }
+    };
+    let bodies = dm_tree::frontend::BodyArena::new(frontend);
+    lower_frontend_impl_on_execution(
+        frontend,
+        host,
+        policy,
+        config,
+        startup,
+        memo,
+        LoweringExecution::new(&executor, &bodies),
+    )
+}
+fn lower_frontend_impl_on_execution<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    startup: Option<&crate::startup::CapturedStartup>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    execution: LoweringExecution<'_, '_>,
+) -> LoweringBatch {
+    let executor = execution.executor;
+    let workers = executor.workers();
     let chunk = config.max_chunk.clamp(1, 256);
     let mut bodies: Vec<_> = frontend.bodies.iter().collect();
     bodies.sort_by_key(|body| {
@@ -247,56 +394,82 @@ fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
         .map(|_| std::sync::Mutex::new(None))
         .collect();
     let next = std::sync::atomic::AtomicUsize::new(0);
-    thread::scope(|scope| {
-        let mut handles = Vec::new();
-        for _ in 0..workers.min(slices.len()) {
-            let slices = &slices;
-            let results = &results;
-            let next = &next;
-            handles.push(scope.spawn(move || {
-                let _profile = dm_profile::stage("cold.procedure_lowering");
-                loop {
-                    let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                    let Some(slice) = slices.get(index) else {
-                        break;
-                    };
-                    let outcomes = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        slice
-                            .iter()
-                            .map(|body| lower_one_memo(frontend, body, host, policy, startup, memo))
-                            .collect::<Vec<_>>()
-                    }))
-                    .unwrap_or_else(|_| {
-                        slice
-                            .iter()
-                            .map(|body| {
-                                Err(vec![LoweringDiagnostic {
-                                    kind: DiagnosticKind::Internal,
-                                    identity: None,
-                                    origin: body.source.clone(),
-                                    message: "procedure lowering worker panicked".into(),
-                                }])
-                            })
-                            .collect()
-                    });
-                    *results[index]
-                        .lock()
-                        .unwrap_or_else(|error| error.into_inner()) = Some(outcomes);
-                }
-            }));
-        }
-        for handle in handles {
-            // A lowering panic is caught at the claimed chunk boundary above.
-            handle.join().expect("procedure scheduling worker panicked");
-        }
-    });
+    let scheduling = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        executor.scope(|scope| {
+            for _ in 0..workers.min(slices.len()) {
+                let slices = &slices;
+                let results = &results;
+                let next = &next;
+                scope.spawn(move |_| {
+                    let _profile = dm_profile::stage("cold.procedure_lowering");
+                    loop {
+                        let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        let Some(slice) = slices.get(index) else {
+                            break;
+                        };
+                        let outcomes =
+                            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                slice
+                                    .iter()
+                                    .map(|body| {
+                                        lower_one_memo(
+                                            frontend,
+                                            body,
+                                            host,
+                                            policy,
+                                            startup,
+                                            memo,
+                                            execution.bodies,
+                                        )
+                                    })
+                                    .collect::<Vec<_>>()
+                            }))
+                            .unwrap_or_else(|_| {
+                                slice
+                                    .iter()
+                                    .map(|body| {
+                                        Err(vec![LoweringDiagnostic {
+                                            kind: DiagnosticKind::Internal,
+                                            identity: None,
+                                            origin: body.source.clone(),
+                                            message: "procedure lowering worker panicked".into(),
+                                        }])
+                                    })
+                                    .collect()
+                            });
+                        *results[index]
+                            .lock()
+                            .unwrap_or_else(|error| error.into_inner()) = Some(outcomes);
+                    }
+                });
+            }
+        })
+    }));
+    // Every sibling job has joined before the scope propagates a panic. Missing
+    // slots become source-ordered internal diagnostics rather than escaping.
+    let scheduling_failed = scheduling.is_err();
     let mut batch = LoweringBatch::default();
-    for slot in results {
-        for outcome in slot
-            .into_inner()
-            .unwrap_or_else(|error| error.into_inner())
-            .expect("every procedure chunk completed")
-        {
+    for (index, slot) in results.into_iter().enumerate() {
+        let outcomes = slot.into_inner().unwrap_or_else(|error| error.into_inner());
+        let outcomes = outcomes.unwrap_or_else(|| {
+            slices[index]
+                .iter()
+                .map(|body| {
+                    Err(vec![LoweringDiagnostic {
+                        kind: DiagnosticKind::Internal,
+                        identity: None,
+                        origin: body.source.clone(),
+                        message: if scheduling_failed {
+                            "procedure scheduling worker panicked"
+                        } else {
+                            "procedure lowering job did not complete"
+                        }
+                        .into(),
+                    }])
+                })
+                .collect()
+        });
+        for outcome in outcomes {
             match outcome {
                 Ok(unit) => batch.units.push(unit),
                 Err(errors) => batch.diagnostics.extend(errors),
@@ -305,513 +478,11 @@ fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
     }
     batch
 }
-fn lower_one_memo<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
-    body: &BodyOccurrence,
-    host: &R,
-    policy: &P,
-    startup: Option<&crate::startup::CapturedStartup>,
-    memo: Option<&crate::lowering_memo::ProcedureMemo>,
-) -> Result<LoweredUnit, Vec<LoweringDiagnostic>> {
-    let Some(memo) = memo else {
-        return lower_one(frontend, body, host, policy, startup);
-    };
-    let key_start = std::time::Instant::now();
-    if startup.is_some_and(|capture| capture.validate_for(frontend).is_err()) {
-        return lower_one(frontend, body, host, policy, startup);
-    }
-    let Some(mut key) = crate::lowering_memo::key(frontend, body, memo.policy) else {
-        return lower_one(frontend, body, host, policy, startup);
-    };
-    // Frozen ABI policies are prepared before this stage. Their actual folded
-    // outputs must enter the key because no resolver call happens on replay.
-    let tree = &frontend.snapshot.tree;
-    let recording = crate::lowering_memo::RecordingResolver::new(host);
-    let ready = (|| {
-        let _profile = dm_profile::item("lowering.abi_key_prepare");
-        let node = tree.member(body.member)?;
-        let owner = tree.type_node(node.owner)?.path;
-        let occurrence = tree
-            .override_chain(body.member)
-            .iter()
-            .filter(|id| {
-                tree.member(**id).is_some_and(|entry| {
-                    entry.owner == node.owner && entry.kind == node.kind && entry.name == node.name
-                })
-            })
-            .count()
-            .checked_sub(1)?;
-        let identity = UnitIdentity {
-            owner,
-            name: node.name,
-            namespace: if node.kind == MemberKind::Verb {
-                Namespace::Verb
-            } else {
-                Namespace::Proc
-            },
-            occurrence: u32::try_from(occurrence).ok()?,
-        };
-        let issued = frontend.body_input(body).ok()?;
-        let context = AbiContext {
-            identity,
-            origin: &body.source,
-            resolver: &recording,
-            symbols: startup.map_or(tree.symbols(), |startup| startup.plan().symbols.as_ref()),
-        };
-        let metadata = node.metadata.procedure.as_ref()?;
-        let (parsed, prepared) = match policy.prepare_issued(metadata, &issued, &context).ok()? {
-            Some(replay) => {
-                memo.counts
-                    .issued_preparations
-                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                let prepared = replay.into_view();
-                crate::lowering_memo::prepared_replay_key(&mut key, &prepared)?;
-                (None, prepared)
-            }
-            None => {
-                memo.counts
-                    .parsed_preparations
-                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                let parsed = frontend.parse_body(body).ok()?;
-                let prepared = policy.prepare_captured(metadata, &parsed, &context).ok()?;
-                crate::lowering_memo::prepared_key(&mut key, &prepared, body.expanded_span.start)?;
-                (Some(parsed), prepared)
-            }
-        };
-        Some((
-            parsed,
-            prepared,
-            dm_ir::ProcedureIdentity {
-                owner: identity.owner,
-                name: identity.name,
-                verb: identity.namespace == Namespace::Verb,
-                occurrence: identity.occurrence,
-            },
-        ))
-    })();
-    let Some((parsed, prepared, identity)) = ready else {
-        return lower_one(frontend, body, host, policy, startup);
-    };
-    memo.counts.key_preparation_ns.fetch_add(
-        key_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
-        std::sync::atomic::Ordering::Relaxed,
-    );
-    let lookup_start = std::time::Instant::now();
-    let note = |outcome, reason, changed_query| {
-        memo.counts.lookup_ns.fetch_add(
-            lookup_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
-            std::sync::atomic::Ordering::Relaxed,
-        );
-        memo.note(crate::lowering_memo::MemoExplanation {
-            identity,
-            outcome,
-            reason,
-            changed_query,
-        });
-    };
-    use crate::lowering_memo::{MemoMissReason, MemoOutcome};
-    let (value, changed_query) = {
-        let _profile = dm_profile::item("lowering.resident_validate");
-        memo.values.lookup_explained(&key, host)
-    };
-    let mut miss = changed_query.map_or(MemoMissReason::NoExactVariant, |_| {
-        MemoMissReason::ReadMeaningChanged
-    });
-    if let Some(value) = value {
-        let _profile = dm_profile::item("lowering.resident_replay");
-        // AST-bearing private sidecars still contain expanded spans. Ordinary
-        // code contains only symbolic operands/debug ordinals and can move.
-        let previous = &value.unit;
-        let rebased = crate::lowering_memo::rebase_debug(frontend, body, &value.relative_debug);
-        let absolute_sidecars =
-            !previous.code.modified_instances.is_empty() || !previous.source_helpers.is_empty();
-        if rebased.as_ref().is_some_and(|origins| {
-            !absolute_sidecars
-                || (previous.origin.expanded_span == body.expanded_span
-                    && *origins == previous.debug_origins)
-        }) {
-            memo.counts
-                .resident_hits
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            let mut unit = previous.clone();
-            unit.debug_origins = rebased.expect("checked relative origins");
-            unit.origin = body.clone();
-            if let Some(member) = frontend.snapshot.tree.member(body.member) {
-                if let Some(metadata) = &member.metadata.procedure {
-                    unit.metadata = Arc::clone(metadata);
-                }
-                unit.effective =
-                    frontend
-                        .snapshot
-                        .tree
-                        .resolve(member.owner, member.name, member.kind)
-                        == Some(body.member);
-            }
-            note(MemoOutcome::ResidentHit, None, None);
-            return Ok(unit);
-        }
-        miss = MemoMissReason::UnrebasablePrivateSidecar;
-    }
-    let disk = memo.lookup_procedure(
-        &key,
-        identity,
-        crate::lowering_memo_wire::ProcedureReplayContext {
-            frontend,
-            body,
-            parsed: parsed.as_ref().map(|parsed| parsed.item()),
-        },
-        host,
-        &prepared,
-    );
-    if let Some(errors) = disk
-        .errors
-        .and_then(|errors| replay_errors(frontend, body, identity, errors))
-    {
-        memo.counts
-            .disk_hits
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        note(MemoOutcome::DiskHit, None, None);
-        return Err(errors);
-    }
-    if let Some(unit) = disk.unit {
-        memo.counts
-            .disk_hits
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        note(MemoOutcome::DiskHit, None, None);
-        return Ok(unit);
-    }
-    if let Some(reason) = disk.miss {
-        miss = reason;
-    }
-    let changed_query = changed_query.or(disk.changed_query);
-    if changed_query.is_some() {
-        miss = MemoMissReason::ReadMeaningChanged;
-    }
-    note(MemoOutcome::Recomputed, Some(miss), changed_query);
-    memo.counts
-        .recomputed
-        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    // Replay validates the stored complete read ledger (or its trusted domain
-    // receipt). Issue mandatory reads only when producing a new executable.
-    let occurrence_start = std::time::Instant::now();
-    {
-        let _profile = dm_profile::item("lowering.occurrence_reads");
-        recording.record_occurrence(identity);
-    }
-    memo.counts.occurrence_reads_ns.fetch_add(
-        occurrence_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
-        std::sync::atomic::Ordering::Relaxed,
-    );
-    let capture = RefCell::new(MemoCapture::default());
-    let result = lower_one_captured(
-        frontend,
-        body,
-        &recording,
-        policy,
-        startup,
-        Some(&capture),
-        parsed.map(|parsed| (parsed, prepared)),
-    );
-    if let Ok(unit) = &result {
-        let reads = recording.reads();
-        let relative_debug = capture.borrow().debug.clone();
-        if relative_debug.len() == unit.debug_origins.entries.len()
-            && crate::lowering_memo::rebase_debug(frontend, body, &relative_debug).as_ref()
-                == Some(&unit.debug_origins)
-        {
-            memo.queue_disk(
-                &key,
-                &reads,
-                unit,
-                &relative_debug,
-                &recording.domain_receipts(),
-            );
-            memo.remember(
-                key,
-                reads,
-                unit,
-                relative_debug,
-                recording.domain_receipts(),
-            );
-        }
-    } else if let Some(errors) = &capture.borrow().errors {
-        memo.remember_failure(
-            &key,
-            Some(identity),
-            &recording.reads(),
-            errors,
-            &recording.domain_receipts(),
-        );
-    }
-    result
-}
-fn lower_one<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
-    body: &BodyOccurrence,
-    host: &R,
-    policy: &P,
-    startup: Option<&crate::startup::CapturedStartup>,
-) -> Result<LoweredUnit, Vec<LoweringDiagnostic>> {
-    lower_one_captured(frontend, body, host, policy, startup, None, None)
-}
-fn lower_one_captured<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
-    body: &BodyOccurrence,
-    host: &R,
-    policy: &P,
-    startup: Option<&crate::startup::CapturedStartup>,
-    capture: Option<&RefCell<MemoCapture>>,
-    ready: Option<(dm_tree::frontend::ParsedBody<'_>, PreparedUnit)>,
-) -> Result<LoweredUnit, Vec<LoweringDiagnostic>> {
-    let tree = &frontend.snapshot.tree;
-    let error = |identity, message| {
-        vec![LoweringDiagnostic {
-            kind: DiagnosticKind::Internal,
-            identity,
-            origin: body.source.clone(),
-            message,
-        }]
-    };
-    if let Some(captured) = startup {
-        captured
-            .validate_for(frontend)
-            .map_err(|message| error(None, message))?;
-    }
-    let node = tree
-        .member(body.member)
-        .ok_or_else(|| error(None, "body member missing from immutable tree".into()))?;
-    let owner = tree
-        .type_node(node.owner)
-        .ok_or_else(|| error(None, "body owner missing from immutable tree".into()))?
-        .path;
-    let namespace = match node.kind {
-        MemberKind::Proc => Namespace::Proc,
-        MemberKind::Verb => Namespace::Verb,
-        MemberKind::Var => return Err(error(None, "variable cannot own a procedure body".into())),
-    };
-    let occurrence = tree
-        .override_chain(body.member)
-        .iter()
-        .filter(|id| {
-            tree.member(**id).is_some_and(|previous| {
-                previous.owner == node.owner
-                    && previous.kind == node.kind
-                    && previous.name == node.name
-            })
-        })
-        .count()
-        - 1;
-    let occurrence = u32::try_from(occurrence)
-        .map_err(|_| error(None, "procedure occurrence exceeds u32".into()))?;
-    let identity = UnitIdentity {
-        owner,
-        name: node.name,
-        namespace,
-        occurrence,
-    };
-    let unsupported = |message| {
-        vec![LoweringDiagnostic {
-            kind: DiagnosticKind::UnsupportedModel,
-            identity: Some(identity),
-            origin: body.source.clone(),
-            message,
-        }]
-    };
-    let metadata = node
-        .metadata
-        .procedure
-        .as_ref()
-        .ok_or_else(|| unsupported("procedure signature metadata unsupported".into()))?;
-    let symbols = startup.map_or(tree.symbols(), |captured| captured.plan().symbols.as_ref());
-    let (parsed, prepared) = if let Some(ready) = ready {
-        ready
-    } else {
-        let parsed = frontend.parse_body(body).map_err(|diagnostic| {
-            vec![LoweringDiagnostic {
-                kind: diagnostic.kind,
-                identity: Some(identity),
-                origin: diagnostic.location.unwrap_or_else(|| body.source.clone()),
-                message: diagnostic.message,
-            }]
-        })?;
-        let context = AbiContext {
-            identity,
-            symbols,
-            origin: &body.source,
-            resolver: host,
-        };
-        let prepared = policy
-            .prepare_captured(metadata, &parsed, &context)
-            .map_err(unsupported)?;
-        (parsed, prepared)
-    };
-    let parsed = parsed.item();
-    let procedure_identity = dm_ir::ProcedureIdentity {
-        owner: identity.owner,
-        name: identity.name,
-        verb: identity.namespace == Namespace::Verb,
-        occurrence: identity.occurrence,
-    };
-    let mut inputs = prepared.inputs;
-    if inputs
-        .procedure_identity
-        .is_some_and(|supplied| supplied != procedure_identity)
-    {
-        return Err(unsupported(
-            "procedure ABI identity differs from current body".into(),
-        ));
-    }
-    inputs.procedure_identity = Some(procedure_identity);
-    let executable_body = if let Some(startup) = startup {
-        let captured = startup
-            .procedure(body.declaration)
-            .ok_or_else(|| unsupported("procedure startup inventory missing".into()))?;
-        if captured.procedure != procedure_identity {
-            return Err(unsupported(
-                "procedure startup inventory differs from current body".into(),
-            ));
-        }
-        if captured.declarations.is_empty()
-            && captured.origins.is_empty()
-            && !dm_tree::procedure_statics::items_may_contain_stored_declarations(
-                &prepared.executable_body,
-            )
-        {
-            prepared.executable_body
-        } else {
-            let current =
-                dm_tree::procedure_statics::capture(procedure_identity, &prepared.executable_body)
-                    .map_err(unsupported)?;
-            if captured.procedure != current.procedure
-                || captured.declarations != current.declarations
-                || captured.origins != current.origins
-            {
-                return Err(unsupported(
-                    "procedure startup inventory differs from current body".into(),
-                ));
-            }
-            current.executable_body
-        }
-    } else {
-        if dm_tree::procedure_statics::items_may_contain_stored_declarations(
-            &prepared.executable_body,
-        ) {
-            let static_plan =
-                dm_tree::procedure_statics::capture(procedure_identity, &prepared.executable_body)
-                    .map_err(unsupported)?;
-            if !static_plan.declarations.is_empty() {
-                return Err(unsupported(
-                    "procedure statics require verified shared-slot/default/startup admission"
-                        .into(),
-                ));
-            }
-        }
-        prepared.executable_body
-    };
-    let owner_text = symbols
-        .text(owner)
-        .ok_or_else(|| error(Some(identity), "owner spelling missing".into()))?;
-    let name = symbols
-        .text(node.name)
-        .ok_or_else(|| error(Some(identity), "procedure spelling missing".into()))?;
-    inputs.current_type_path = (owner_text != "/").then(|| owner_text.into());
-    inputs.current_proc_path = Some(format!(
-        "{}/{}/{}",
-        owner_text.trim_end_matches('/'),
-        if namespace == Namespace::Verb {
-            "verb"
-        } else {
-            "proc"
-        },
-        name
-    ));
-    let debug = MemoDebugProvider {
-        original: FrontendDebugProvider::new(frontend, parsed.header_span.start),
-        base: body.expanded_span.start,
-        entry: parsed.header_span.start,
-        capture,
-    };
-    let code = {
-        let _profile = dm_profile::item("lowering.fresh_codegen");
-        compile_simple_proc_with_resolver_and_debug(
-            &executable_body,
-            &inputs,
-            symbols,
-            host,
-            Some(&debug),
-        )
-    }
-    .map_err(|errors| {
-        if let Some(capture) = capture {
-            let relative = errors
-                .iter()
-                .map(|error| {
-                    if error.kind == dm_codegen_byond::LowerErrorKind::Internal {
-                        return None;
-                    }
-                    let mut error = error.clone();
-                    if let Some(span) = &mut error.span {
-                        span.start = span.start.checked_sub(body.expanded_span.start)?;
-                        span.end = span.end.checked_sub(body.expanded_span.start)?;
-                        if span.end > body.expanded_span.end - body.expanded_span.start {
-                            return None;
-                        }
-                    }
-                    Some(error)
-                })
-                .collect::<Option<Vec<_>>>();
-            capture.borrow_mut().errors = relative;
-        }
-        errors
-            .into_iter()
-            .map(|e| LoweringDiagnostic {
-                kind: match e.kind {
-                    dm_codegen_byond::LowerErrorKind::SourceError => DiagnosticKind::SourceError,
-                    dm_codegen_byond::LowerErrorKind::UnsupportedModel => {
-                        DiagnosticKind::UnsupportedModel
-                    }
-                    dm_codegen_byond::LowerErrorKind::Internal => DiagnosticKind::Internal,
-                },
-                identity: Some(identity),
-                origin: e
-                    .span
-                    .and_then(|span| frontend.location(span.start))
-                    .unwrap_or_else(|| body.source.clone()),
-                message: if e.statement.is_empty() {
-                    e.reason
-                } else {
-                    format!("{}: {}", e.statement, e.reason)
-                },
-            })
-            .collect::<Vec<_>>()
-    })?;
-    let source_helpers = match prepared.abi.as_ref() {
-        Some(abi) => crate::argument_sources::lower_helpers(
-            crate::argument_sources::HelperInputs {
-                frontend,
-                parsed,
-                metadata,
-                owner: identity,
-                inputs: &inputs,
-                helpers: &abi.source_helpers,
-                symbols,
-            },
-            host,
-        )
-        .map_err(unsupported)?,
-        None => Vec::new(),
-    };
-    Ok(LoweredUnit {
-        identity,
-        effective: tree.resolve(node.owner, node.name, node.kind) == Some(body.member),
-        origin: body.clone(),
-        code,
-        metadata: Arc::clone(metadata),
-        abi: prepared.abi,
-        debug_origins: debug.original.finish(),
-        source_helpers,
-    })
-}
+mod body;
+mod memo;
+use body::{lower_one, lower_one_captured, LoweringCapture};
+use memo::lower_one_memo;
+
 /// A deterministic identity index for subsequent linking; duplicate structural
 /// identities are a driver/model error, never silently overwritten.
 impl LoweringBatch {

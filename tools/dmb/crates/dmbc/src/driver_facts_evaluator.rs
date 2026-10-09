@@ -464,7 +464,35 @@ impl CapturedConstantEvaluator for LexicalAbiEvaluator<'_> {
             .ok_or_else(|| AbiError("ABI setting is not a captured scalar".into()))
     }
 }
+impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<'_> {
+    fn with_evaluator(
+        &self,
+        engine: Option<&EngineSnapshot>,
+        operation: &mut dyn FnMut(&dyn CapturedInitializerEvaluator),
+    ) {
+        let evaluator = DriverEvaluator {
+            pure_calls: self.pure_calls,
+            resource_search_context: self.resource_search_context,
+            resolver: self.resolver,
+            symbols: self.symbols,
+        };
+        if let Some(engine) = engine {
+            operation(&crate::initializer_policy::EngineCapturedEvaluator {
+                engine,
+                evaluator: &evaluator,
+            });
+        } else {
+            operation(&evaluator);
+        }
+    }
+}
 impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
+    fn parallel_evaluator(&self) -> Option<crate::initializer_policy::ParallelEvaluator<'_>> {
+        Some(crate::initializer_policy::ParallelEvaluator {
+            factory: self,
+            engine: None,
+        })
+    }
     fn initializer_token_scalar(&self, value: &SemanticValue) -> Result<Vec<u8>, String> {
         let SemanticValue::Resource(path) = value else {
             return Ok(value.canonical_bytes());

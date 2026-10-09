@@ -1,7 +1,7 @@
 //! Output reachability is distinct from the complete analysis type universe.
 //! Unused virtual engine catalog skeletons do not acquire fabricated wire rows.
 use crate::{class_projection::ClassProjection, lowering::LoweringBatch};
-use dm_codegen_byond::{lower_resolver::ResolverProc, Table};
+use dm_codegen_byond::lower_resolver::ResolverProc;
 use dm_ir::{SemanticValue, SymbolId, SymbolTable};
 use dm_link::{Key, LinkInventory};
 use std::collections::{BTreeMap, HashSet};
@@ -159,12 +159,11 @@ pub fn admit(
         symbols: &SymbolTable,
     ) -> Result<(), String> {
         let mut failure = None;
-        code.procedure.code.for_each_reference(|table, path| {
-            if table == Table::Class {
-                let id = SymbolId::of(path);
-                if symbols.text(id) != Some(path) {
+        code.procedure.code.for_each_reference(|reference| {
+            if let dm_ir::SymRef::Type(id) = reference {
+                if symbols.text(id).is_none() {
                     failure = Some(format!(
-                        "referenced type spelling not collision checked: {path}"
+                        "referenced type spelling not collision checked: {id:?}"
                     ));
                 }
                 requests.push(id);

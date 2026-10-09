@@ -1,16 +1,16 @@
 //! Real lowering→shared encoder→canonical linker bridge, with explicit externals.
 use crate::lowering::{LoweredUnit, LoweringBatch, Namespace, UnitIdentity};
 use dm_codegen_byond::encoder::{freeze_proc_observed, FreezeStage};
-use dm_codegen_byond::{FrozenProc, Symbol, Table};
+use dm_codegen_byond::FrozenProc;
 use dm_ir::{SymRef, SymbolId, SymbolTable};
 use dm_link::{Entry, Key, LinkInventory, LinkTables, ProcedureImage, SlotAlias, SourceBindings};
-use std::{collections::BTreeMap, sync::Arc};
+use std::sync::Arc;
 
 /// External engine/class/proc/instance/list/resource facts must be captured by the
 /// caller. No legacy ledger, dense IDs or fabricated missing payloads are used.
 #[derive(Clone, Debug, Default)]
 pub struct ReferenceBindings {
-    pub references: BTreeMap<Symbol, SymRef>,
+    pub references: std::collections::BTreeSet<SymRef>,
 }
 pub struct FrozenUnit {
     pub lowered: FrozenUnitMetadata,
@@ -207,7 +207,7 @@ pub enum IntegrationError {
     LoweringFailed(usize),
     MissingSpelling(SymbolId),
     DuplicateUnit(UnitIdentity),
-    ConflictingBinding(Symbol),
+    ConflictingBinding(SymRef),
     Freeze { unit: UnitIdentity, message: String },
     Link(dm_link::LinkError),
 }
@@ -413,9 +413,29 @@ pub fn freeze_artifact_tables_with_workers(
     batch: LoweringBatch,
     symbols: &SymbolTable,
     external: &ReferenceBindings,
-    mut inventory: LinkInventory,
+    inventory: LinkInventory,
     initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
     workers: usize,
+) -> Result<FrozenBatch, IntegrationError> {
+    let executor = dm_exec::BuildExecutor::new(workers)
+        .map_err(|error| IntegrationError::InvalidInitializer(format!("executor: {error}")))?;
+    freeze_artifact_tables_with_executor(
+        batch,
+        symbols,
+        external,
+        inventory,
+        initialization,
+        &executor,
+    )
+}
+
+pub fn freeze_artifact_tables_with_executor(
+    batch: LoweringBatch,
+    symbols: &SymbolTable,
+    external: &ReferenceBindings,
+    mut inventory: LinkInventory,
+    initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
+    executor: &dm_exec::BuildExecutor,
 ) -> Result<FrozenBatch, IntegrationError> {
     if !batch.diagnostics.is_empty() {
         return Err(IntegrationError::LoweringFailed(batch.diagnostics.len()));
@@ -425,7 +445,7 @@ pub fn freeze_artifact_tables_with_workers(
         .map_err(IntegrationError::DuplicateUnit)?;
     let mut units = Vec::with_capacity(batch.units.len());
     let mut helpers = Vec::new();
-    let mut source_bindings = BTreeMap::new();
+    let mut source_bindings = std::collections::BTreeSet::new();
     let mut string_inventory = StringInventory::new(&inventory);
     for entry in &inventory.entries {
         if let Key::Type(id) = entry.key {
@@ -435,38 +455,20 @@ pub fn freeze_artifact_tables_with_workers(
             if SymbolId::of(path) != id {
                 return Err(IntegrationError::MissingSpelling(id));
             }
-            insert(
-                &mut source_bindings,
-                Symbol::new(Table::Class, path),
-                SymRef::Type(id),
-            )?;
+            source_bindings.insert(SymRef::Type(id));
         }
     }
     for unit in &batch.units {
         if !unit.effective {
             continue;
         }
-        let owner = symbols
-            .text(unit.identity.owner)
-            .ok_or(IntegrationError::MissingSpelling(unit.identity.owner))?;
-        let name = symbols
-            .text(unit.identity.name)
-            .ok_or(IntegrationError::MissingSpelling(unit.identity.name))?;
-        let path = format!(
-            "{}/{}/{}",
-            owner.trim_end_matches('/'),
-            if unit.identity.namespace == Namespace::Verb {
-                "verb"
-            } else {
-                "proc"
-            },
-            name
-        );
+        for symbol in [unit.identity.owner, unit.identity.name] {
+            symbols
+                .text(symbol)
+                .ok_or(IntegrationError::MissingSpelling(symbol))?;
+        }
         let reference = unit_reference(unit.identity);
-        if source_bindings
-            .insert(Symbol::new(Table::Proc, path), reference)
-            .is_some()
-        {
+        if !source_bindings.insert(reference) {
             return Err(IntegrationError::DuplicateUnit(unit.identity));
         }
     }
@@ -475,13 +477,13 @@ pub fn freeze_artifact_tables_with_workers(
     let freeze_detail =
         std::env::var_os("DMB_PROFILE_FREEZE_DETAIL").is_some_and(|value| value == "1");
     let freeze_profile = dm_profile::stage("linking.freeze_artifacts");
-    let contributions = parallel::freeze_units(
+    let contributions = parallel::freeze_units_with_executor(
         batch.units,
         symbols,
         &source_bindings,
         external,
         freeze_detail,
-        workers,
+        executor,
         |contribution| {
             contribution.replay(
                 &mut inventory,
@@ -657,23 +659,6 @@ fn procedure_content(lowered: &LoweredUnit, code_bytes: &[u8]) -> Arc<[u8]> {
     }
     bytes.into()
 }
-fn insert(
-    bindings: &mut BTreeMap<Symbol, SymRef>,
-    symbol: Symbol,
-    reference: SymRef,
-) -> Result<(), IntegrationError> {
-    match bindings.entry(symbol) {
-        std::collections::btree_map::Entry::Vacant(entry) => {
-            entry.insert(reference);
-        }
-        std::collections::btree_map::Entry::Occupied(mut entry) => {
-            if entry.insert(reference) != reference {
-                return Err(IntegrationError::ConflictingBinding(entry.key().clone()));
-            }
-        }
-    }
-    Ok(())
-}
 fn unit_reference(identity: UnitIdentity) -> SymRef {
     match identity.namespace {
         Namespace::Proc => SymRef::Proc {
@@ -813,7 +798,7 @@ impl InventorySink for SerialSink<'_> {
 fn freeze_artifact(
     code: &dm_codegen_byond::lower_resolver::ResolverProc,
     identity: UnitIdentity,
-    source_bindings: &BTreeMap<Symbol, SymRef>,
+    source_bindings: &std::collections::BTreeSet<SymRef>,
     external: &ReferenceBindings,
     inventory: &mut LinkInventory,
     strings: &mut StringInventory,

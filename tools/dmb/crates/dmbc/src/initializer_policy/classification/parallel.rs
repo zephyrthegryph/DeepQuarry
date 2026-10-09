@@ -1,0 +1,149 @@
+//! Per-type independent evaluation; token issuance and output ordering remain serial.
+use super::*;
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Mutex,
+};
+struct Bucket {
+    ordinals: Vec<usize>,
+    writes: Vec<InitializerWrite>,
+}
+fn map_buckets<T: Send>(
+    buckets: &[Bucket],
+    evaluator: ParallelEvaluator<'_>,
+    executor: &dm_exec::BuildExecutor,
+    operation: impl Fn(usize, &Bucket, &dyn CapturedInitializerEvaluator) -> T + Sync,
+) -> Result<Vec<T>, ClassificationError> {
+    let next = AtomicUsize::new(0);
+    let outputs: Vec<Mutex<Option<T>>> = (0..buckets.len()).map(|_| Mutex::new(None)).collect();
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        executor.scope(|scope| {
+            for _ in 0..executor.workers().min(buckets.len()) {
+                let next = &next;
+                let outputs = &outputs;
+                let operation = &operation;
+                scope.spawn(move |_| {
+                    let _stage = dm_profile::stage("initializer.classification");
+                    let mut calls = 0;
+                    evaluator
+                        .factory
+                        .with_evaluator(evaluator.engine, &mut |worker| {
+                            calls += 1;
+                            assert_eq!(calls, 1, "initializer factory invoked its operation twice");
+                            loop {
+                                let index = next.fetch_add(1, Ordering::Relaxed);
+                                let Some(bucket) = buckets.get(index) else {
+                                    break;
+                                };
+                                *outputs[index]
+                                    .lock()
+                                    .expect("initializer result lock poisoned") =
+                                    Some(operation(index, bucket, worker));
+                            }
+                        });
+                    assert_eq!(calls, 1, "initializer factory did not invoke its operation");
+                });
+            }
+        })
+    }))
+    .map_err(|_| ClassificationError {
+        issues: vec![ClassificationIssue {
+            source_ordinal: 0,
+            reason: "initializer classification worker panicked".into(),
+        }],
+    })?;
+    Ok(outputs
+        .into_iter()
+        .map(|output| {
+            output
+                .into_inner()
+                .expect("initializer result lock poisoned")
+                .expect("initializer evaluator factory must call its operation once")
+        })
+        .collect())
+}
+pub(in crate::initializer_policy) fn classify(
+    writes: &[InitializerWrite],
+    symbols: &SymbolTable,
+    evaluator: ParallelEvaluator<'_>,
+    debug_defined: bool,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<ClassifiedInitializers, ClassificationError> {
+    let mut buckets: Vec<Bucket> = Vec::new();
+    let mut indexes = std::collections::HashMap::new();
+    for (ordinal, write) in writes.iter().enumerate() {
+        let index = *indexes.entry(write.lexical_owner).or_insert_with(|| {
+            let index = buckets.len();
+            buckets.push(Bucket {
+                ordinals: Vec::new(),
+                writes: Vec::new(),
+            });
+            index
+        });
+        buckets[index].ordinals.push(ordinal);
+        buckets[index].writes.push(write.clone());
+    }
+    let facts = map_buckets(&buckets, evaluator, executor, |_, bucket, worker| {
+        modifier_facts_indexed(&bucket.writes, symbols, worker, Some(&bucket.ordinals))
+    })?;
+    let mut issues = Vec::new();
+    let mut admitted = Vec::with_capacity(facts.len());
+    for facts in facts {
+        match facts {
+            Ok(facts) => admitted.push(facts),
+            Err(error) => issues.extend(error.issues),
+        }
+    }
+    if !issues.is_empty() {
+        issues.sort_by_key(|issue| issue.source_ordinal);
+        return Err(ClassificationError { issues });
+    }
+    // No evaluation begins unless every modifier boundary was admitted.
+    let classified = map_buckets(&buckets, evaluator, executor, |index, bucket, worker| {
+        let mut ordinal = 0;
+        classify_pending(
+            &bucket.writes,
+            symbols,
+            worker,
+            &admitted[index],
+            &mut ordinal,
+        )
+        .map_err(|reason| ClassificationIssue {
+            source_ordinal: bucket.ordinals[ordinal],
+            reason,
+        })
+    })?;
+    let mut ordered: Vec<Option<PendingWrite>> = (0..writes.len()).map(|_| None).collect();
+    let mut errors = Vec::new();
+    for (bucket, result) in buckets.iter().zip(classified) {
+        match result {
+            Ok(pending) => {
+                for (ordinal, mut pending) in bucket.ordinals.iter().copied().zip(pending) {
+                    pending.write.source_ordinal = ordinal;
+                    ordered[ordinal] = Some(pending);
+                }
+            }
+            Err(error) => errors.push(error),
+        }
+    }
+    if let Some(error) = errors.into_iter().min_by_key(|error| error.source_ordinal) {
+        return Err(ClassificationError {
+            issues: vec![error],
+        });
+    }
+    let mut source_ordinal = 0;
+    finish_pending(
+        ordered
+            .into_iter()
+            .map(|pending| pending.expect("all successful initializer buckets cover source roster"))
+            .collect(),
+        debug_defined,
+        &mut source_ordinal,
+    )
+    .map_err(|reason| ClassificationError {
+        issues: vec![ClassificationIssue {
+            source_ordinal,
+            reason,
+        }],
+    })
+}
