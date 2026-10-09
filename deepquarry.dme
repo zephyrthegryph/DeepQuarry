@@ -5737,6 +5737,7 @@
 #include "code\engine\declare\explain.dm"
 #include "code\engine\declare\static_entries.dm"
 #include "code\library\loot\loot_entries.dm"
+#include "code\library\loot\loot_search.dm"
 #include "code\library\maps\map_resolver_entry.dm"
 #include "code\library\operations\admin_explain.dm"
 #include "code\engine\actions\act.dm"

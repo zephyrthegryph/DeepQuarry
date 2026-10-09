@@ -146,7 +146,7 @@
 
 /datum/unit_test/dq_timed_pin_w2/loot_pile_search/is_done()
 	var/obj/structure/loot_pile/P = target
-	return !QDELETED(P) && ("pinuser" in P.searchedby)
+	return !QDELETED(P) && loot_search_keys(P, STAT_LOOT_SEARCHED)["pinuser"]
 
 /datum/unit_test/dq_timed_pin_w2/loot_pile_search/extra_pin()
 	setup_scene()
@@ -172,7 +172,7 @@
 
 /datum/unit_test/dq_timed_pin_w2/trash_pile_search/is_done()
 	var/obj/structure/trash_pile/P = target
-	return !QDELETED(P) && ("pinuser" in P.searchedby)
+	return !QDELETED(P) && loot_search_keys(P, STAT_LOOT_SEARCHED)["pinuser"]
 
 /datum/unit_test/dq_timed_pin_w2/trash_pile_search/extra_pin()
 	setup_scene()

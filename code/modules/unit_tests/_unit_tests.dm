@@ -401,6 +401,7 @@
 #include "dq_look_sweep.dm"
 #include "dq_hit_pins.dm"
 #include "dq_loot_pins.dm"
+#include "dq_loot_search_tests.dm"
 #include "dq_static_entries_tests.dm"
 #include "dq_ui_pins.dm"
 #include "dq_ui_pins_admin.dm"

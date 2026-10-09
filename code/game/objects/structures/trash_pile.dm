@@ -6,8 +6,6 @@
 	density = TRUE
 	anchored = TRUE
 
-	// ALLOW(instance_list): d: passed to the lootable element, which adds the searcher's ckey to it in place
-	var/list/searchedby	= list()// Characters that have searched this trashpile, with values of searched time.
 	var/mob/living/hider		// A simple animal that might be hiding in the pile
 	var/obj/structure/mob_spawner/mouse_nest/mouse_nest = null
 
@@ -20,7 +18,7 @@ CAPABILITIES(/obj/structure/trash_pile)
 		asks(/datum/prompt/yes_no, fields = list("title" = "Are you sure you want to squeek?", "question" = "Are you -sure- you want to become a mouse?", "timeout" = 0), keeps = TARGET_PRESENT),
 		then(PROC_REF(mouse_confirmed)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
-	op("search", hand(), label("Search"), claims(), needs(req(/mob/living/carbon/human, of = ON_ACTOR, silent = TRUE)), begins(PROC_REF(search_begins)), wait(PROC_REF(search_time)), then(PROC_REF(searched)))
+	op("search", hand(), label("Search"), claims(), needs(req(/mob/living/carbon/human, of = ON_ACTOR, silent = TRUE)), needs(req_loot_unsearched(), req_loot_not_picked_clean()), begins(PROC_REF(search_begins)), wait(PROC_REF(search_time)), loot_rolls(unless = PROC_REF(hider_leaps_out)))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 	loot_search(table = /loot/trash_pile, wake_chance = 5)
 
@@ -134,16 +132,17 @@ MSG_DEF(trash_pile/searching, "You search through %T%.", "%U% searches through %
 /obj/structure/trash_pile/proc/search_time(datum/act/op/A)
 	return rand(4 SECONDS, 6 SECONDS)
 
-/obj/structure/trash_pile/proc/searched(datum/act/op/A)
+/// Whoever hides in the pile may leap out instead of the search yielding anything: TRUE when it did (the search ends there, nothing is rolled).
+/obj/structure/trash_pile/proc/hider_leaps_out(datum/act/op/A)
 	var/mob/user = A.actor
-	if(hider() && prob(50))
-		//If there was a hider, chance to reveal them
-		to_chat(hider(),span_danger("You've been discovered!"))
-		hider().forceMove(get_turf(src))
-		rel_clear(src, nameof(hider))
-		to_chat(user,span_danger("Some sort of creature leaps out of 	he [src]!"))
-	else
-		loot_pile_search(src, user, searchedby)
+	if(!(hider() && prob(50)))
+		return FALSE
+	//If there was a hider, chance to reveal them
+	to_chat(hider(),span_danger("You've been discovered!"))
+	hider().forceMove(get_turf(src))
+	rel_clear(src, nameof(hider))
+	to_chat(user,span_danger("Some sort of creature leaps out of 	he [src]!"))
+	return TRUE
 
 /obj/structure/mob_spawner/mouse_nest
 	name = "trash"

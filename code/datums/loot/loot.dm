@@ -1,14 +1,12 @@
 // One declared loot system (doc/rewrite/systems.md §8). Declarations: code/library/loot/loot_entries.dm.
 //
 // A type's loot(...) entry makes the shared /datum/loot_decl that loot_decl_for(path) answers. loot_spawn() rolls and creates, with a seeded /datum/loot_rng so map loot is reproducible per round seed. /obj/random is resolved at
-// map time through resolve_loot() (its map_resolver entry) and never becomes a live atom. loot_search() is the tiered roll used by searchable piles.
+// map time through resolve_loot() (its map_resolver entry) and never becomes a live atom. loot_search_roll() is the tiered roll of a search of a pile (code/library/loot/loot_search.dm).
 
 /// The round's loot seed: every map-time roll is seeded from it and the roll's position and type.
 GLOBAL_VAR_INIT(loot_seed, rand(0, LOOT_HASH_MOD - 1))
 /// Runtime rolls mix this serial in, so two runtime rolls on one tile differ.
 GLOBAL_VAR_INIT(loot_roll_serial, 0)
-/// How many times each depleting loot source has been searched, by REF.
-GLOBAL_LIST_EMPTY(loot_times_searched)
 
 // ---- declarations ----
 
@@ -338,30 +336,22 @@ CAPABILITIES(/obj/random)
 
 // ---- searchable loot ----
 
-/// Searches `source` (a pile with a loot_search() entry) for `L`: the tiered roll of loot piles. `searched_by`
-/// is the source's list of ckeys that searched it. The table and the percent chance a raccoon jumps out are the pile's loot_search() entry.
-/proc/loot_pile_search(obj/structure/source, mob/living/L, list/searched_by)
+/// The tiered roll of a search of `source` (a pile with a loot_search() entry) by `L`, when the search is allowed (loot_rolls(), after the requirements
+/// of loot_search.dm): the chance the table gives, then the searcher is marked, the tier is drawn (unlucky, uncommon, rare, the gamma pool, else the main
+/// table), and what it made is put on the pile's turf. The table and the percent chance a raccoon jumps out are the pile's loot_search() entry.
+/proc/loot_search_roll(obj/structure/source, mob/living/L)
 	var/table = loot_search_table(source.type)
 	var/wake_chance = loot_search_wake_chance(source.type)
 	var/datum/loot_decl/decl = loot_decl_for(table)
 	if(!decl)
 		return
-	var/source_ref = REF(source)
-	if(decl.loot_left)
-		var/looted_count = GLOB.loot_times_searched[source_ref]
-		if(looted_count >= decl.loot_left)
-			to_chat(L, span_warning("\The [source] has been picked clean."))
-			return
-
 	if(decl.chance < 100 && !prob(decl.chance))
 		to_chat(L, span_warning("Nothing in \the [source] really catches your eye..."))
 		return
 
-	if(L && islist(searched_by))
-		if((L.ckey in searched_by) && !decl.repeat_search)
-			to_chat(L, span_warning("You can't find anything else vaguely useful in \the [source].  Another set of eyes might, however."))
-			return
-		searched_by |= L.ckey
+	var/found_key = L?.ckey || LOOT_SEARCH_NO_KEY
+	if(L?.ckey)
+		hold(source, STAT_LOOT_SEARCHED, 1, source, key = L.ckey)
 
 	var/datum/loot_rng/rng = loot_rng_at(source, table)
 	var/datum/loot_entry/sub/tier = decl.main_table
@@ -411,8 +401,8 @@ CAPABILITIES(/obj/random)
 
 	if(!decl.loot_left)
 		return
-	GLOB.loot_times_searched[source_ref] = GLOB.loot_times_searched[source_ref] + 1
-	if(GLOB.loot_times_searched[source_ref] < decl.loot_left)
+	hold(source, STAT_LOOT_FOUND, (loot_search_keys(source, STAT_LOOT_FOUND)[found_key] || 0) + 1, source, key = found_key)
+	if(loot_search_found(source) < decl.loot_left)
 		return
 	to_chat(L, span_warning("You seem to have gotten the last of the spoils in \the [source]."))
 	if(decl.delete_on_depletion)

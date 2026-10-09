@@ -23,20 +23,14 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	unacidable = TRUE
 	var/list/icon_states_to_use // List of icon states the pile can choose from on initialization. If empty or null, it will stay the initial icon_state.
 
-	// ALLOW(instance_list): d: passed to the lootable element, which adds the searcher's ckey to it in place
-	var/list/searchedby = list()	// Keys that have searched this loot pile, with values of searched time.
-
 MSG_DEF(loot_pile/searching, "You search through %T%.", "%U% searches through %T%.")
 
 CAPABILITIES(/obj/structure/loot_pile)
-	op("search", hand(), label("Search"), claims(), needs(req(/mob/living, of = ON_ACTOR, silent = TRUE)), begins(MSG(loot_pile/searching)), wait(PROC_REF(search_time)), then(PROC_REF(searched)))
+	op("search", hand(), label("Search"), claims(), needs(req(/mob/living, of = ON_ACTOR, silent = TRUE)), needs(req_loot_unsearched(), req_loot_not_picked_clean()), begins(MSG(loot_pile/searching)), wait(PROC_REF(search_time)), loot_rolls())
 
 /// How long a search takes, drawn when it starts.
 /obj/structure/loot_pile/proc/search_time(datum/act/op/A)
 	return rand(4 SECONDS, 6 SECONDS)
-
-/obj/structure/loot_pile/proc/searched(datum/act/op/A)
-	loot_pile_search(src, A.actor, searchedby)
 
 /obj/structure/loot_pile/Initialize(mapload)
 	if(icon_states_to_use && length(icon_states_to_use))

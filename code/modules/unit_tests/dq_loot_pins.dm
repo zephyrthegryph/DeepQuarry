@@ -180,6 +180,8 @@
 	GLOB.loot_seed = saved_seed
 	GLOB.loot_roll_serial = saved_serial
 	own_turf_contents(T)
+	for(var/obj/effect/decal/cleanable/mess in range(4, T))
+		qdel(mess) // footprints and the like the rolled things left on the room's floor
 	var/report = dq_loot_pin_compare("rolls", rows, part)
 	TEST_ASSERT(isnull(report), report)
 
@@ -242,10 +244,15 @@
 	sortTim(., GLOBAL_PROC_REF(cmp_text_asc))
 
 /// One search of `pile` by `searcher` under the pin's rules; the row text of what it did.
-/datum/unit_test/dq_loot_search_pin/proc/pin_search(obj/structure/pile, mob/living/carbon/human/searcher, list/searched_by, turf/T)
+/datum/unit_test/dq_loot_search_pin/proc/pin_search(obj/structure/pile, mob/living/carbon/human/searcher, turf/T)
 	test_chat_clear()
 	var/list/before = contents_of(T).Copy()
-	loot_pile_search(pile, searcher, searched_by)
+	// The op's requirements refuse before the wait (dq_loot_search_op tests drive the op); here the refusal is the same message the requirement gives.
+	var/refusal = loot_search_refusal(pile, searcher)
+	if(refusal)
+		act_message_t(searcher, pile, refusal)
+	else
+		loot_search_roll(pile, searcher)
 	var/list/gained = list()
 	for(var/atom/movable/AM as anything in contents_of(T))
 		if(AM in before)
@@ -277,18 +284,17 @@
 			GLOB.loot_roll_serial = 0
 			var/list/steps = list()
 			var/obj/structure/pile = new pile_type(T)
-			var/list/searched_by = list()
 			var/total = 8
 			for(var/i in 1 to total)
 				if(QDELETED(pile))
 					break
 				searcher.ckey = "pinsearcher[i]"
-				steps += "search [i]: [pin_search(pile, searcher, searched_by, T)]"
+				steps += "search [i]: [pin_search(pile, searcher, T)]"
 			if(!QDELETED(pile))
 				searcher.ckey = "pinsearcher1"
-				steps += "again by 1: [pin_search(pile, searcher, searched_by, T)]"
+				steps += "again by 1: [pin_search(pile, searcher, T)]"
 				unlucky.ckey = "pinunlucky"
-				steps += "unlucky: [pin_search(pile, unlucky, searched_by, T)]"
+				steps += "unlucky: [pin_search(pile, unlucky, T)]"
 				qdel(pile)
 			rows["[pile_text] | seed [seed]"] = jointext(steps, " || ")
 			CHECK_TICK
