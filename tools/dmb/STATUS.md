@@ -801,3 +801,19 @@ retain the ordinary lowering fallback. Configuration-scoped daemon supersession
 preserves independent define/output requests and removes abandoned registrations.
 The integrated all-target locked workspace check passed in 21.10 s after fixing
 one helper-fixture import. New focused runtime fixtures remain to be executed.
+### Retained initializer migration — 9 October
+
+The per-write initializer owner now uses the shared exact-key artifact store and
+resolver-read ledger. Current-revision mode replaces prior semantic variants and
+prunes removed keys; cached values rebind current syntax, ordinals and issuance.
+Opaque pure-call providers decline reuse. Retained symbolic memory accounting is
+an explicit diagnostic traversal, rather than work on every request. Default CLI
+compilation now uses its embedded pinned engine, avoiding a build-directory dependency.
+
+Locked all-target workspace check passed in 31.63 s. Eight focused dm-session
+artifact fixtures and nine focused dmbc initializer/source-recipe/census fixtures
+passed. Two initial filter strings selected zero cases; corrected direct filters
+executed the intended fixtures (receipt initializer-direct-focused-20261009.json).
+No DM runtime tests or new DeepQuarry performance cohort were run. Full modifier
+fact admission, startup/ABI roster processing and output linking remain migration
+work; these results do not establish full BYOND parity or complete incrementalism.

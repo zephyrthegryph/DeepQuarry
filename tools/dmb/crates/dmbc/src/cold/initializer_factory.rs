@@ -11,6 +11,38 @@ pub(super) struct StartupParallelFactory<'a> {
     pub resource_search_context: Option<u128>,
 }
 impl InitializerEvaluatorFactory for StartupParallelFactory<'_> {
+    fn recording_policy_identity(&self) -> Option<u128> {
+        self.ordinary
+            .factory
+            .recording_policy_identity()
+            .map(|identity| identity ^ 0x42cf_bae1_1993_43db_017c_0f2a_0110_ab64)
+    }
+    fn with_recording_evaluator(
+        &self,
+        engine: Option<&crate::engine::EngineSnapshot>,
+        resolver: &dyn dm_ir::Resolver,
+        operation: &mut dyn FnMut(&dyn CapturedInitializerEvaluator),
+    ) -> bool {
+        self.ordinary.factory.with_recording_evaluator(
+            self.ordinary.engine,
+            resolver,
+            &mut |ordinary| {
+                let startup = crate::startup::StartupEvaluator {
+                    ordinary,
+                    resolver,
+                    symbols: self.symbols,
+                    resource_search_context: self.resource_search_context,
+                };
+                match engine {
+                    Some(engine) => operation(&EngineCapturedEvaluator {
+                        engine,
+                        evaluator: &startup,
+                    }),
+                    None => operation(&startup),
+                }
+            },
+        )
+    }
     fn with_evaluator(
         &self,
         engine: Option<&crate::engine::EngineSnapshot>,

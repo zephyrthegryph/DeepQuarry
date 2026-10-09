@@ -99,6 +99,7 @@ pub fn lower<R: Resolver>(
         true,
         LowerOptions {
             observer: None,
+            classification: None,
             memo: None,
             parallel: None,
             executor: None,
@@ -140,6 +141,7 @@ pub fn lower_captured_observed_memo<R: Resolver>(
         false,
         LowerOptions {
             observer,
+            classification: None,
             memo,
             parallel: None,
             executor: None,
@@ -170,8 +172,10 @@ pub struct InitializerExecution<'a> {
     pub evaluator: Option<initializer_policy::ParallelEvaluator<'a>>,
     pub observer: Option<&'a InitializerObserver<'a>>,
     pub memo: Option<&'a crate::lowering_memo::ProcedureMemo>,
+    pub classification: Option<initializer_policy::InitializerReuse<'a>>,
 }
 struct LowerOptions<'a> {
+    classification: Option<initializer_policy::InitializerReuse<'a>>,
     observer: Option<&'a InitializerObserver<'a>>,
     memo: Option<&'a crate::lowering_memo::ProcedureMemo>,
     executor: Option<&'a dm_exec::BuildExecutor>,
@@ -197,6 +201,7 @@ pub fn lower_captured_observed_memo_on_executor<R: Resolver>(
         false,
         LowerOptions {
             observer: execution.observer,
+            classification: execution.classification,
             executor: Some(execution.executor),
             memo: execution.memo,
             parallel: execution
@@ -216,6 +221,7 @@ fn lower_plan<R: Resolver>(
 ) -> Result<LoweredInitializers, InitializerLoweringError> {
     let (frontend, plan) = captured;
     let LowerOptions {
+        classification: reuse,
         observer,
         memo,
         parallel,
@@ -241,15 +247,27 @@ fn lower_plan<R: Resolver>(
     let measurement =
         crate::stage_measurements::Scope::new(observer, InitializerStage::Classification);
     let debug_defined = frontend.plan.final_macros.contains_key("DEBUG");
-    let classification = match parallel {
-        Some((context, executor)) => initializer_policy::classify_with_token_mode_on_executor(
-            &plan.writes,
-            symbols,
-            context,
-            debug_defined,
-            executor,
-        ),
-        None => initializer_policy::classify_with_token_mode(
+    let classification = match (parallel, reuse) {
+        (Some((context, executor)), Some(reuse)) => {
+            initializer_policy::classify_with_reuse_on_executor(
+                &plan.writes,
+                symbols,
+                context,
+                debug_defined,
+                executor,
+                reuse,
+            )
+        }
+        (Some((context, executor)), None) => {
+            initializer_policy::classify_with_token_mode_on_executor(
+                &plan.writes,
+                symbols,
+                context,
+                debug_defined,
+                executor,
+            )
+        }
+        (None, _) => initializer_policy::classify_with_token_mode(
             &plan.writes,
             symbols,
             evaluator,

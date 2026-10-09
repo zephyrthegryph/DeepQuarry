@@ -44,6 +44,11 @@ pub struct PureCallError {
     pub reason: String,
 }
 pub trait PureCalls: Sync {
+    /// Some only when every result depends exclusively on the arguments and
+    /// this immutable policy. Providers with external reads must decline.
+    fn immutable_policy_identity(&self) -> Option<u128> {
+        None
+    }
     fn identity(&self) -> u128;
     fn accepts(&self, name: &str) -> bool;
     fn evaluate(

@@ -2,6 +2,8 @@
 //! Table assignments and CurrentImage certificates are always issued later.
 use super::parallel::{BoundContribution, HelperContribution, OwnedStrings, Slots};
 use super::*;
+#[path = "retained_census.rs"]
+mod retained_census;
 
 /// Immutable procedure payload, independent of source positions and link tables.
 /// Its private constructor is reached only through the existing checked freezer.

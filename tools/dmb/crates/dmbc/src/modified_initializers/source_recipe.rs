@@ -42,6 +42,9 @@ impl PreparedSeed {
     }
 }
 impl SourceRecipe {
+    pub(crate) fn retained_census(&self, census: &mut crate::heap_census::HeapCensus) {
+        census.slice("session_symbolic.modified_canonical", &self.canonical, true);
+    }
     pub(crate) fn reissue(
         &self,
         parsed: &dm_tree::frontend::ParsedBody<'_>,

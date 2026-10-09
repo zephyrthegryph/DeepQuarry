@@ -32,6 +32,21 @@ pub enum BindingKnowledge {
 /// Evaluation is independent across type buckets; ordinal diagnostics and token
 /// issuance are merged by the caller in authored source order.
 pub trait InitializerEvaluatorFactory: Sync {
+    /// Certifies immutable non-resolver policy inputs. Opaque adapters decline
+    /// semantic retention even when they can construct an evaluator.
+    fn recording_policy_identity(&self) -> Option<u128> {
+        None
+    }
+    /// Return true only when every resolver-backed evaluation in the operation
+    /// uses this supplied recorder. Compatibility factories decline reuse.
+    fn with_recording_evaluator(
+        &self,
+        _engine: Option<&crate::engine::EngineSnapshot>,
+        _resolver: &dyn dm_ir::Resolver,
+        _operation: &mut dyn FnMut(&dyn CapturedInitializerEvaluator),
+    ) -> bool {
+        false
+    }
     fn with_evaluator(
         &self,
         engine: Option<&crate::engine::EngineSnapshot>,
@@ -619,6 +634,25 @@ pub fn classify(
 mod tests;
 
 mod classification;
+pub use classification::artifact::{InitializerArtifacts, InitializerReuse};
+
+pub fn classify_with_reuse_on_executor(
+    writes: &[InitializerWrite],
+    symbols: &SymbolTable,
+    evaluator: ParallelEvaluator<'_>,
+    debug_defined: bool,
+    executor: &dm_exec::BuildExecutor,
+    reuse: InitializerReuse<'_>,
+) -> Result<ClassifiedInitializers, ClassificationError> {
+    classification::parallel::classify_with_reuse(
+        writes,
+        symbols,
+        evaluator,
+        debug_defined,
+        executor,
+        Some(reuse),
+    )
+}
 
 pub fn classify_with_token_mode_on_executor(
     writes: &[InitializerWrite],

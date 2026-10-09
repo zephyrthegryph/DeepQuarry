@@ -16,7 +16,7 @@ fn source(c: &mut HeapCensus, location: &dm_tree::frontend::SourceLocation) {
         }
     }
 }
-fn answer(c: &mut HeapCensus, value: &ResolvedMeaning) {
+pub(super) fn answer(c: &mut HeapCensus, value: &ResolvedMeaning) {
     let owner = "resident_reads";
     match value {
         ResolvedMeaning::Symbols(values) => {

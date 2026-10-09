@@ -26,6 +26,7 @@ pub struct BuildHost {
     executor: Option<dm_exec::BuildExecutor>,
     procedures: Option<(u128, ProcedureValues)>,
     semantic: Option<dm_tree::frontend::RetainedSemanticTree>,
+    initializers: Option<(u128, Arc<crate::initializer_policy::InitializerArtifacts>)>,
     symbolic: Option<(
         u128,
         Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>,
@@ -57,6 +58,7 @@ impl Default for BuildHost {
             memo: Some(memo::ResidentMemo::default()),
             semantic: Some(dm_tree::frontend::RetainedSemanticTree::new()),
             symbolic: None,
+            initializers: None,
         }
     }
 }
@@ -70,7 +72,17 @@ impl BuildHost {
             memo: None,
             semantic: None,
             symbolic: None,
+            initializers: None,
         }
+    }
+
+    /// Explicit diagnostic traversal of the full symbolic store. Shared backing is
+    /// counted once; opaque allocator/index overhead remains identified as unknown.
+    /// This is not process-private memory and is not run on the lookup hot path.
+    pub fn symbolic_retention_stats(&self) -> Option<crate::lowering::SymbolicRetentionStats> {
+        self.symbolic
+            .as_ref()
+            .map(|(_, store)| store.retention_stats())
     }
 
     pub(crate) fn retains_artifacts(&self) -> bool {
@@ -103,12 +115,20 @@ impl BuildHost {
         {
             self.symbolic = Some((policy, Arc::new(Default::default())));
         }
+        if self
+            .initializers
+            .as_ref()
+            .is_none_or(|(previous, _)| *previous != policy)
+        {
+            self.initializers = Some((policy, Arc::new(Default::default())));
+        }
         let mut memo = crate::lowering_memo::ProcedureMemo::with_resident(
             policy,
             Arc::clone(&self.procedures.as_ref().unwrap().1),
             disk,
         );
         memo.symbolic = Some(Arc::clone(&self.symbolic.as_ref().unwrap().1));
+        memo.initializers = Some(Arc::clone(&self.initializers.as_ref().unwrap().1));
         Some(memo)
     }
 
@@ -199,6 +219,7 @@ impl BuildHost {
         }
         self.procedures = None;
         self.symbolic = None;
+        self.initializers = None;
         if self.semantic.is_some() {
             self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());
         }

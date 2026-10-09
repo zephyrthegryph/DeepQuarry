@@ -534,7 +534,7 @@ pub use completion::{
     lower_frontend_completed_input_on_execution, lower_frontend_completed_on_execution,
     CompletedLoweringBatch, CompletedUnit,
 };
-pub use symbolic_input::CompletedInput;
+pub use symbolic_input::{CompletedInput, SymbolicRetentionStats};
 fn compact_retained(unit: &mut LoweredUnit) {
     fn compact<T>(values: &mut Vec<T>) {
         if values.capacity() > values.len() {

@@ -91,7 +91,7 @@ pub fn run_build_with_host(
         project,
         mut defines,
         workers,
-        mut engine_template,
+        engine_template,
         mut bootstrap_catalog,
         progress_enabled,
         output_store,
@@ -126,21 +126,23 @@ pub fn run_build_with_host(
     }
     // These are caller-supplied source defines. No target ABI is inferred by the
     // reusable frontend; supply DM_VERSION/DM_BUILD explicitly when needed.
-    if command == BuildCommand::Compile && engine_template.is_none() {
-        engine_template = Some(
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/native_template.bin"),
-        );
+    let embedded_engine = command == BuildCommand::Compile && engine_template.is_none();
+    if embedded_engine {
         bootstrap_catalog = true;
     }
     drop(request_profile);
     let engine_input_profile = dm_profile::stage("engine_input");
-    let engine_bytes = engine_template
-        .as_ref()
-        .map(|path| {
-            dm_profile::io_call(|| std::fs::read(path), |bytes| (bytes.len() as u64, 0))
-                .map_err(|error| format!("engine template {}: {error}", path.display()))
-        })
-        .transpose()?;
+    let engine_bytes = if embedded_engine {
+        Some(include_bytes!("../../../fixtures/native_template.bin").to_vec())
+    } else {
+        engine_template
+            .as_ref()
+            .map(|path| {
+                dm_profile::io_call(|| std::fs::read(path), |bytes| (bytes.len() as u64, 0))
+                    .map_err(|error| format!("engine template {}: {error}", path.display()))
+            })
+            .transpose()?
+    };
     let engine_identity = engine_bytes
         .as_ref()
         .map_or(0, |bytes| xxhash_rust::xxh3::xxh3_128(bytes));
@@ -743,6 +745,11 @@ pub fn run_build_with_host(
                 census.output_resources("rsc.bytes", archive);
             }
         })?;
+        if progress_enabled {
+            if let Some(totals) = runner_report::initializer_totals(procedure_memo.as_ref()) {
+                dmbc::daemon_eprintln!("native initializer reuse: {totals}");
+            }
+        }
         drop(compilation_profile);
         let cache_flush_profile = dm_profile::stage("cache_flush");
         if let (Some(cache), Some(memo)) = (&memo_cache, &procedure_memo) {

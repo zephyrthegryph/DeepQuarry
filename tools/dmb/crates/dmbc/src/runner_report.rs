@@ -26,3 +26,18 @@ pub(super) fn explanations(
         serde_json::json!({"path":path,"occurrence":entry.identity.occurrence,"outcome":format!("{:?}",entry.outcome),"reason":entry.reason.map(|reason|format!("{reason:?}")),"changed_query":entry.changed_query})
     }).collect()
 }
+
+pub(super) fn initializer_totals(
+    memo: Option<&dmbc::lowering_memo::ProcedureMemo>,
+) -> Option<serde_json::Value> {
+    use std::sync::atomic::Ordering::Relaxed;
+    memo.and_then(|memo| memo.initializers.as_ref())
+        .map(|store| {
+            serde_json::json!({
+                "scope": "retained_session_total",
+                "hits": store.hits.load(Relaxed),
+                "recomputed": store.recomputed.load(Relaxed),
+                "declined": store.declined.load(Relaxed),
+            })
+        })
+}

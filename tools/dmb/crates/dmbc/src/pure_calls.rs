@@ -23,6 +23,9 @@ impl PinnedPureCalls {
     }
 }
 impl PureCalls for PinnedPureCalls {
+    fn immutable_policy_identity(&self) -> Option<u128> {
+        Some(self.identity)
+    }
     fn identity(&self) -> u128 {
         self.identity
     }

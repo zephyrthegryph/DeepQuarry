@@ -1,0 +1,283 @@
+//! Per-write semantics, independently admitted by the shared dependency ledger.
+//! Current declarations, ordinals and runtime syntax never escape into this store.
+use super::*;
+use dm_ir::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
+use std::sync::atomic::{AtomicU64, Ordering};
+#[cfg(test)]
+#[path = "artifact_tests.rs"]
+mod tests;
+
+#[derive(Clone)]
+enum RuntimeRecipe {
+    Expression,
+    SizedArray(Arc<[u16]>),
+}
+struct SemanticClassification {
+    default: DefaultValue,
+    phase: Option<Phase>,
+    runtime: Option<RuntimeRecipe>,
+    key: Option<Vec<u8>>,
+}
+pub struct InitializerArtifacts {
+    values: dm_session::ArtifactStore<SemanticClassification>,
+    pub hits: AtomicU64,
+    pub recomputed: AtomicU64,
+    pub declined: AtomicU64,
+}
+impl Default for InitializerArtifacts {
+    fn default() -> Self {
+        Self {
+            values: dm_session::ArtifactStore::current_revision(),
+            hits: AtomicU64::new(0),
+            recomputed: AtomicU64::new(0),
+            declined: AtomicU64::new(0),
+        }
+    }
+}
+impl InitializerArtifacts {
+    pub fn with_limit(bytes: usize) -> Self {
+        Self {
+            values: dm_session::ArtifactStore::with_limit(bytes),
+            hits: AtomicU64::new(0),
+            recomputed: AtomicU64::new(0),
+            declined: AtomicU64::new(0),
+        }
+    }
+}
+#[derive(Clone, Copy)]
+pub struct InitializerReuse<'a> {
+    pub store: &'a InitializerArtifacts,
+    pub resolver: &'a dyn Resolver,
+    pub policy: u128,
+    pub resource_search_context: Option<u128>,
+}
+struct ResolverView<'a>(&'a dyn Resolver);
+impl Resolver for ResolverView<'_> {
+    fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+        self.0.resolve(query)
+    }
+    fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
+        self.0.domain_version(domain)
+    }
+}
+pub(super) fn key(
+    write: &InitializerWrite,
+    fact: ModifierFact,
+    reuse: InitializerReuse<'_>,
+    factory_policy: u128,
+) -> Vec<u8> {
+    let mut key = b"dmbc-initializer-classification-v1\0".to_vec();
+    key.extend_from_slice(&reuse.policy.to_le_bytes());
+    key.extend_from_slice(&factory_policy.to_le_bytes());
+    match reuse.resource_search_context {
+        Some(context) => {
+            key.push(1);
+            key.extend_from_slice(&context.to_le_bytes());
+        }
+        None => key.push(0),
+    }
+    match fact {
+        ModifierFact::Known(flags) => {
+            key.push(0);
+            key.extend_from_slice(&flags.to_le_bytes());
+        }
+        ModifierFact::MutableInstance => key.push(1),
+        ModifierFact::Header(domain) => {
+            key.push(2);
+            key.extend_from_slice(domain.label().as_bytes());
+            key.push(0);
+        }
+    }
+    write.write_canonical(|bytes| key.extend_from_slice(bytes));
+    key
+}
+pub(super) fn retain_roster(reuse: InitializerReuse<'_>, keys: &[Vec<u8>]) {
+    reuse
+        .store
+        .values
+        .retain_current_keys(keys.iter().map(Vec::as_slice));
+}
+impl SemanticClassification {
+    fn capture(pending: &PendingWrite) -> Self {
+        Self {
+            default: pending.write.default.clone(),
+            phase: pending.write.phase,
+            runtime: pending
+                .write
+                .runtime_value
+                .as_ref()
+                .map(|value| match value {
+                    RuntimeValue::Expression(_) => RuntimeRecipe::Expression,
+                    RuntimeValue::SizedArray(dimensions) => {
+                        RuntimeRecipe::SizedArray(Arc::clone(dimensions))
+                    }
+                }),
+            key: pending.key.clone(),
+        }
+    }
+    fn bind(
+        &self,
+        write: &InitializerWrite,
+        symbols: &SymbolTable,
+        ordinal: usize,
+    ) -> Option<PendingWrite> {
+        // Canonical keys intentionally omit source offsets. Validate current
+        // token issuance/spelling before accepting scalar hits as well as ASTs.
+        if let InitializerValue::Expression(value) = &write.value {
+            value.source_text(symbols)?;
+        }
+        if let Some(array) = &write.declared_array {
+            for value in array.dimensions.iter().flatten() {
+                value.source_text(symbols)?;
+            }
+        }
+        let runtime_value = match &self.runtime {
+            None => None,
+            Some(RuntimeRecipe::SizedArray(dimensions)) => {
+                Some(RuntimeValue::SizedArray(Arc::clone(dimensions)))
+            }
+            Some(RuntimeRecipe::Expression) => {
+                let InitializerValue::Expression(value) = &write.value else {
+                    return None;
+                };
+                let text = value.source_text(symbols)?;
+                let parsed = dm_syntax::parse_expression(&text);
+                if !parsed.diagnostics.is_empty() {
+                    return None;
+                }
+                Some(RuntimeValue::Expression(Box::new(parsed.expr?)))
+            }
+        };
+        Some(PendingWrite {
+            write: ClassifiedWrite {
+                source_ordinal: ordinal,
+                write: write.clone(),
+                default: self.default.clone(),
+                phase: self.phase,
+                runtime_value,
+            },
+            key: self.key.clone(),
+        })
+    }
+}
+pub(super) fn classify_one(
+    write: &InitializerWrite,
+    symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    fact: ModifierFact,
+    ordinal: usize,
+    factory: ParallelEvaluator<'_>,
+    reuse: InitializerReuse<'_>,
+) -> Result<PendingWrite, String> {
+    let Some(factory_policy) = factory.factory.recording_policy_identity() else {
+        reuse.store.declined.fetch_add(1, Ordering::Relaxed);
+        let mut local = 0;
+        let mut pending = classify_pending(
+            std::iter::once(write),
+            symbols,
+            evaluator,
+            &[fact],
+            &mut local,
+        )?
+        .pop()
+        .ok_or("initializer classification produced no write")?;
+        pending.write.source_ordinal = ordinal;
+        return Ok(pending);
+    };
+    let key = key(write, fact, reuse, factory_policy);
+    let host = ResolverView(reuse.resolver);
+    let recorder = crate::lowering_memo::RecordingResolver::new(&host);
+    let mut result = None;
+    let mut hit = false;
+    let captured =
+        factory
+            .factory
+            .with_recording_evaluator(factory.engine, &recorder, &mut |worker| {
+                assert!(
+                    result.is_none(),
+                    "initializer recording factory invoked twice"
+                );
+                if let Some(value) = reuse.store.values.lookup(&key, &host) {
+                    if let Some(current) = value.bind(write, symbols, ordinal) {
+                        hit = true;
+                        result = Some(Ok(vec![current]));
+                        return;
+                    }
+                }
+                recorder.resolve(ResolveQuery::Ancestry(write.lexical_owner));
+                if let Some(identity) = write.lexical_procedure {
+                    recorder.record_occurrence(identity);
+                }
+                match write.target {
+                    InitializerTarget::Shared { owner, name, .. } => {
+                        recorder.resolve(ResolveQuery::DeclaredVarType { owner, name });
+                    }
+                    InitializerTarget::Instance {
+                        receiver_owner: owner,
+                        name,
+                        ..
+                    } => {
+                        recorder.resolve(ResolveQuery::DeclaredVarType { owner, name });
+                    }
+                    InitializerTarget::ProcedureStatic(identity) => {
+                        recorder.resolve(ResolveQuery::ProcedureStatic {
+                            procedure: identity.procedure,
+                            name: identity.name,
+                        });
+                    }
+                }
+                let mut local = 0;
+                result = Some(classify_pending(
+                    std::iter::once(write),
+                    symbols,
+                    worker,
+                    &[fact],
+                    &mut local,
+                ));
+            });
+    let mut pending = if captured {
+        result.ok_or("initializer recording factory omitted operation")??
+    } else {
+        let mut local = 0;
+        classify_pending(
+            std::iter::once(write),
+            symbols,
+            evaluator,
+            &[fact],
+            &mut local,
+        )?
+    }
+    .pop()
+    .ok_or("initializer classification produced no write")?;
+    pending.write.source_ordinal = ordinal;
+    if captured && hit {
+        reuse.store.hits.fetch_add(1, Ordering::Relaxed);
+    } else if captured {
+        let value = SemanticClassification::capture(&pending);
+        let reads = recorder.reads();
+        let versions = recorder.domain_receipts();
+        let dimensions = match &value.runtime {
+            Some(RuntimeRecipe::SizedArray(dimensions)) => Some(dimensions),
+            _ => None,
+        };
+        let admitted = crate::heap_census::resident_initializer_weight(
+            &value.default,
+            dimensions,
+            value.key.as_ref(),
+            &key,
+            &reads,
+            &versions,
+        )
+        .is_some_and(|weight| {
+            reuse
+                .store
+                .values
+                .insert_with(key.into(), reads, versions, weight, || value)
+        });
+        if !admitted {
+            reuse.store.declined.fetch_add(1, Ordering::Relaxed);
+        }
+        reuse.store.recomputed.fetch_add(1, Ordering::Relaxed);
+    }
+    Ok(pending)
+}

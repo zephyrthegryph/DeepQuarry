@@ -7,7 +7,10 @@ mod initializer_ledger;
 mod macro_environments;
 mod prepared;
 mod relocation_metrics;
+mod resident_initializer;
 pub(crate) mod resident_weight;
+mod session_symbolic;
+pub(crate) use resident_initializer::weight as resident_initializer_weight;
 mod typed_body;
 use std::{
     collections::{BTreeMap, BTreeSet, HashSet},
@@ -547,7 +550,12 @@ impl HeapCensus {
                     }
                     self.unknown(owner, "modified-instance Expr nested boxes/strings and private resource map nodes");
                 }
-                _ => (),
+                dm_ir::SemanticValue::ModifiedInstance(_)
+                | dm_ir::SemanticValue::Null
+                | dm_ir::SemanticValue::NumberBits(_)
+                | dm_ir::SemanticValue::Type(_)
+                | dm_ir::SemanticValue::Procedure(_)
+                | dm_ir::SemanticValue::Resource(_) => (),
             }
         }
     }

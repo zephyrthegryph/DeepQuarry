@@ -1,11 +1,20 @@
 //! Trusted completion handoff; symbolic reuse never reuses output certificates.
 use super::*;
 use crate::lowering_memo::{RecordingResolver, ResolverRead};
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc, Mutex,
+};
+#[path = "symbolic_retention.rs"]
+mod retained;
+pub use retained::SymbolicRetentionStats;
 
 #[derive(Default)]
 pub(crate) struct SessionSymbolicMemo {
     records: Mutex<BTreeMap<UnitIdentity, Arc<Record>>>,
+    admitted: AtomicU64,
+    reused: AtomicU64,
+    pruned: AtomicU64,
 }
 struct Record {
     key: Vec<u8>,
@@ -97,6 +106,7 @@ impl CompletedInput {
                     .lock()
                     .unwrap_or_else(|e| e.into_inner())
                     .insert(value.identity(), Arc::new(record));
+                admission.store.admitted.fetch_add(1, Ordering::Relaxed);
             }
         }
         Ok(value)
@@ -113,10 +123,11 @@ impl SessionSymbolicMemo {
                     .map(|source| source.identity)
             })
             .collect();
-        self.records
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .retain(|identity, _| identities.contains(identity));
+        let mut records = self.records.lock().unwrap_or_else(|e| e.into_inner());
+        let before = records.len();
+        records.retain(|identity, _| identities.contains(identity));
+        self.pruned
+            .fetch_add((before - records.len()) as u64, Ordering::Relaxed);
     }
     pub(super) fn lookup<R: Resolver>(
         &self,
@@ -169,6 +180,7 @@ impl SessionSymbolicMemo {
             &record.required_types,
             modified_seeds,
         )?;
+        self.reused.fetch_add(1, Ordering::Relaxed);
         Some(CompletedInput {
             inner: Input::Reused(contribution),
             admission: None,

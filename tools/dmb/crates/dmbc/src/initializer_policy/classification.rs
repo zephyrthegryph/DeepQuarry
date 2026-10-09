@@ -262,4 +262,5 @@ pub(super) fn classify_from_facts(
     )
 }
 
+pub(super) mod artifact;
 pub(super) mod parallel;

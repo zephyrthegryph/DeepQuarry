@@ -68,6 +68,27 @@ pub(in crate::initializer_policy) fn classify(
     debug_defined: bool,
     executor: &dm_exec::BuildExecutor,
 ) -> Result<ClassifiedInitializers, ClassificationError> {
+    classify_with_reuse(writes, symbols, evaluator, debug_defined, executor, None)
+}
+pub(in crate::initializer_policy) fn classify_with_reuse(
+    writes: &[InitializerWrite],
+    symbols: &SymbolTable,
+    evaluator: ParallelEvaluator<'_>,
+    debug_defined: bool,
+    executor: &dm_exec::BuildExecutor,
+    reuse: Option<artifact::InitializerReuse<'_>>,
+) -> Result<ClassifiedInitializers, ClassificationError> {
+    let factory_policy = evaluator.factory.recording_policy_identity();
+    if factory_policy.is_none() {
+        if let Some(reuse) = reuse {
+            artifact::retain_roster(reuse, &[]);
+            reuse
+                .store
+                .declined
+                .fetch_add(writes.len() as u64, Ordering::Relaxed);
+        }
+    }
+    let reuse = reuse.filter(|_| factory_policy.is_some());
     let mut buckets: Vec<Bucket> = Vec::new();
     let mut indexes = std::collections::HashMap::new();
     for (ordinal, write) in writes.iter().enumerate() {
@@ -100,17 +121,51 @@ pub(in crate::initializer_policy) fn classify(
         issues.sort_by_key(|issue| issue.source_ordinal);
         return Err(ClassificationError { issues });
     }
+    if let Some(reuse) = reuse {
+        let mut keys = Vec::with_capacity(writes.len());
+        for (bucket, facts) in buckets.iter().zip(&admitted) {
+            for (&ordinal, &fact) in bucket.ordinals.iter().zip(facts) {
+                keys.push(artifact::key(
+                    &writes[ordinal],
+                    fact,
+                    reuse,
+                    factory_policy.expect("certified reuse policy"),
+                ));
+            }
+        }
+        artifact::retain_roster(reuse, &keys);
+    }
     // No evaluation begins unless every modifier boundary was admitted.
     let classified = map_buckets(&buckets, evaluator, executor, |index, bucket, worker| {
         let mut ordinal = 0;
-        classify_pending(
-            bucket.ordinals.iter().map(|&ordinal| &writes[ordinal]),
-            symbols,
-            worker,
-            &admitted[index],
-            &mut ordinal,
-        )
-        .map_err(|reason| ClassificationIssue {
+        let result = if let Some(reuse) = reuse {
+            bucket
+                .ordinals
+                .iter()
+                .enumerate()
+                .map(|(local, &global)| {
+                    ordinal = local;
+                    artifact::classify_one(
+                        &writes[global],
+                        symbols,
+                        worker,
+                        admitted[index][local],
+                        global,
+                        evaluator,
+                        reuse,
+                    )
+                })
+                .collect()
+        } else {
+            classify_pending(
+                bucket.ordinals.iter().map(|&ordinal| &writes[ordinal]),
+                symbols,
+                worker,
+                &admitted[index],
+                &mut ordinal,
+            )
+        };
+        result.map_err(|reason| ClassificationIssue {
             source_ordinal: bucket.ordinals[ordinal],
             reason,
         })

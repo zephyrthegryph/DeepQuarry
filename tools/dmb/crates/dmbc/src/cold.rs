@@ -558,6 +558,16 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
                 &initializer_observer as &crate::initializer_lowering::InitializerObserver<'_>
             }),
             memo,
+            classification: memo.and_then(|memo| {
+                memo.initializers.as_ref().map(|store| {
+                    crate::initializer_policy::InitializerReuse {
+                        store: store.as_ref(),
+                        resolver,
+                        policy: memo.policy,
+                        resource_search_context: declarations.resource_search_context,
+                    }
+                })
+            }),
         },
     )
     .map_err(initializer_lowering_error)?;

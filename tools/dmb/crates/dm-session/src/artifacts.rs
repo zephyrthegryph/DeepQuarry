@@ -29,7 +29,14 @@ struct Resident<T> {
 /// reuse. Variants are insertion ordered; the oldest of at most four is evicted.
 pub struct ArtifactStore<T> {
     state: Mutex<Resident<T>>,
-    limit: usize,
+    retention: Retention,
+}
+#[derive(Clone, Copy)]
+enum Retention {
+    Budgeted(usize),
+    /// The caller supplies the complete current key roster before worker use.
+    /// One value per exact key; history is replaced rather than accumulated.
+    RetainedCurrentRevision,
 }
 impl<T> Default for ArtifactStore<T> {
     fn default() -> Self {
@@ -43,8 +50,36 @@ impl<T> ArtifactStore<T> {
                 buckets: BTreeMap::new(),
                 bytes: 0,
             }),
-            limit,
+            retention: Retention::Budgeted(limit),
         }
+    }
+    pub fn current_revision() -> Self {
+        Self {
+            state: Mutex::new(Resident {
+                buckets: BTreeMap::new(),
+                bytes: 0,
+            }),
+            retention: Retention::RetainedCurrentRevision,
+        }
+    }
+    /// Call once before parallel admission of the complete current roster.
+    /// Borrowed readers remain valid after their store entry is pruned.
+    pub fn retain_current_keys<'a>(&self, keys: impl IntoIterator<Item = &'a [u8]>) {
+        if !matches!(self.retention, Retention::RetainedCurrentRevision) {
+            return;
+        }
+        let keys: std::collections::BTreeSet<&[u8]> = keys.into_iter().collect();
+        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        state.buckets.retain(|_, bucket| {
+            bucket.retain(|entry| keys.contains(entry.key.as_ref()));
+            !bucket.is_empty()
+        });
+        state.bytes = state
+            .buckets
+            .values()
+            .flatten()
+            .map(|entry| entry.weight)
+            .sum();
     }
     pub fn admitted_bytes(&self) -> usize {
         self.state
@@ -53,7 +88,10 @@ impl<T> ArtifactStore<T> {
             .bytes
     }
     pub fn available_bytes(&self) -> usize {
-        self.limit.saturating_sub(self.admitted_bytes())
+        match self.retention {
+            Retention::Budgeted(limit) => limit.saturating_sub(self.admitted_bytes()),
+            Retention::RetainedCurrentRevision => 0,
+        }
     }
 }
 impl<T: Send + Sync> ArtifactStore<T> {
@@ -146,10 +184,36 @@ impl<T: Send + Sync> ArtifactStore<T> {
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
         // Resident storage evicts before admitting a new value. Results are
         // independently published; an oversized value needs no resident copy.
-        if weight > self.limit {
+        if let Retention::RetainedCurrentRevision = self.retention {
+            let mut removed = 0;
+            if let Some(bucket) = state.buckets.get_mut(&hash) {
+                bucket.retain(|entry| {
+                    if entry.key == key {
+                        removed += entry.weight;
+                        false
+                    } else {
+                        true
+                    }
+                });
+            }
+            state.bytes -= removed;
+            state.buckets.entry(hash).or_default().push(Variant {
+                key,
+                reads: reads.into(),
+                versions: versions.into(),
+                value: Arc::new(create()),
+                weight,
+            });
+            state.bytes += weight;
+            return true;
+        }
+        let Retention::Budgeted(limit) = self.retention else {
+            unreachable!()
+        };
+        if weight > limit {
             return false;
         }
-        while state.bytes.saturating_add(weight) > self.limit {
+        while state.bytes.saturating_add(weight) > limit {
             let Some(oldest_bucket) = state.buckets.keys().next().copied() else {
                 break;
             };
@@ -207,6 +271,100 @@ mod tests {
         fn drop(&mut self) {
             self.0.fetch_add(1, Ordering::SeqCst);
         }
+    }
+    #[test]
+    fn current_revision_replaces_same_key_and_prunes_deleted_readers_safely() {
+        let drops = Arc::new(AtomicUsize::new(0));
+        let store = ArtifactStore::current_revision();
+        let key: Arc<[u8]> = Arc::from(b"current".as_slice());
+        store.insert_with(Arc::clone(&key), vec![], vec![], 1, || {
+            Value(Arc::clone(&drops))
+        });
+        let reader = store.lookup(&key, &Host).unwrap();
+        store.insert_with(Arc::clone(&key), vec![], vec![], 2, || {
+            Value(Arc::clone(&drops))
+        });
+        assert_eq!(store.admitted_bytes(), 2);
+        assert_eq!(
+            store
+                .state
+                .lock()
+                .unwrap()
+                .buckets
+                .values()
+                .flatten()
+                .count(),
+            1
+        );
+        store.retain_current_keys(std::iter::empty());
+        assert_eq!(store.admitted_bytes(), 0);
+        assert_eq!(drops.load(Ordering::SeqCst), 1);
+        drop(reader);
+        assert_eq!(drops.load(Ordering::SeqCst), 2);
+    }
+    #[test]
+    fn current_revision_preserves_collision_siblings_on_exact_replacement() {
+        let store = ArtifactStore::current_revision();
+        let key: Arc<[u8]> = Arc::from(b"a".as_slice());
+        let hash = xxhash_rust::xxh3::xxh3_128(&key);
+        store.insert_with(Arc::clone(&key), vec![], vec![], 1, || 1u32);
+        // Force the bucket collision independently of the hashing implementation.
+        store
+            .state
+            .lock()
+            .unwrap()
+            .buckets
+            .get_mut(&hash)
+            .unwrap()
+            .push(Variant {
+                key: Arc::from(b"b".as_slice()),
+                reads: Arc::from([]),
+                versions: Arc::from([]),
+                value: Arc::new(9),
+                weight: 3,
+            });
+        store.state.lock().unwrap().bytes += 3;
+        store.insert_with(key, vec![], vec![], 2, || 2u32);
+        let state = store.state.lock().unwrap();
+        assert_eq!(state.bytes, 5);
+        let bucket = &state.buckets[&hash];
+        assert_eq!(bucket.len(), 2);
+        assert_eq!(
+            *bucket
+                .iter()
+                .find(|entry| entry.key.as_ref() == b"b")
+                .unwrap()
+                .value,
+            9
+        );
+    }
+    #[test]
+    fn current_revision_changed_read_replaces_the_prior_semantic_variant() {
+        struct Presence(bool);
+        impl Resolver for Presence {
+            fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {
+                ResolvedMeaning::Presence(self.0)
+            }
+        }
+        let store = ArtifactStore::current_revision();
+        let query = ResolveQuery::HasMemberVar {
+            owner: dm_ir::SymbolId::of("/x"),
+            name: dm_ir::SymbolId::of("value"),
+        };
+        let key: Arc<[u8]> = Arc::from(b"same-expression".as_slice());
+        let reads = |value| {
+            vec![ResolverRead {
+                domain: query.domain(),
+                query,
+                answer: ResolvedMeaning::Presence(value),
+            }]
+        };
+        store.insert_with(Arc::clone(&key), reads(false), vec![], 1, || 1u32);
+        assert!(store.lookup(&key, &Presence(true)).is_none());
+        store.insert_with(Arc::clone(&key), reads(true), vec![], 2, || 2u32);
+        assert_eq!(store.lookup(&key, &Presence(true)).as_deref(), Some(&2));
+        assert!(store.lookup(&key, &Presence(false)).is_none());
+        assert_eq!(store.admitted_bytes(), 2);
     }
     #[test]
     fn consumer_rejection_continues_to_older_read_valid_variant() {

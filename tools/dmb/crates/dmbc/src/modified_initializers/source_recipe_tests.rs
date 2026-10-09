@@ -40,6 +40,10 @@ fn seed(frontend: &dm_tree::frontend::ColdFrontend, host: &Host) -> PreparedSeed
             else {
                 panic!("expected return");
             };
+            let expr = match &expr.kind {
+                ExprKind::Group(inner) => inner.as_ref(),
+                _ => expr,
+            };
             let ExprKind::ObjectInitializer { object, fields } = &expr.kind else {
                 panic!("expected modifier");
             };
@@ -69,8 +73,9 @@ fn seed(frontend: &dm_tree::frontend::ColdFrontend, host: &Host) -> PreparedSeed
 }
 #[test]
 fn modifier_recipe_reissues_current_ast_and_resources_after_source_shift() {
-    let old = frontend("/obj/base\n/proc/p()\n    return /obj/base{amount=1;icon='x.dmi'}\n");
-    let moved = frontend("\n\n/obj/base\n/proc/p()\n    return /obj/base{amount=1;icon='x.dmi'}\n");
+    let old = frontend("/obj/base\n/proc/p()\n    return (/obj/base{amount=1;icon='x.dmi'})\n");
+    let moved =
+        frontend("\n\n/obj/base\n/proc/p()\n    return (/obj/base{amount=1;icon='x.dmi'})\n");
     let previous = seed(&old, &Host(7));
     let recipe = previous.source_recipe(old.bodies[0].expanded_span).unwrap();
     let mut wire_only = previous.clone();
@@ -162,4 +167,21 @@ fn modifier_recipe_reissues_current_ast_and_resources_after_source_shift() {
             .is_none());
     })
     .unwrap();
+}
+
+#[test]
+fn unparenthesized_return_modifier_remains_an_unsupported_frontend_form() {
+    let result = dm_tree::frontend::build(
+        std::path::Path::new("project.dme"),
+        &Source("/obj/base\n/proc/p()\n    return /obj/base{amount=1}\n"),
+        &Default::default(),
+        1,
+    );
+    let errors = match result {
+        Ok(_) => panic!("unsupported block must not issue a frontend"),
+        Err(errors) => errors,
+    };
+    assert!(errors.iter().any(|error| error
+        .message
+        .contains("a block following a return expression has unsupported semantics")));
 }

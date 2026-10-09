@@ -465,6 +465,35 @@ impl CapturedConstantEvaluator for LexicalAbiEvaluator<'_> {
     }
 }
 impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<'_> {
+    fn recording_policy_identity(&self) -> Option<u128> {
+        let pure = match self.pure_calls {
+            None => 0,
+            Some(calls) => calls.immutable_policy_identity()?,
+        };
+        Some(pure ^ 0x6a21_31c9_842a_9181_032c_bbec_672d_a904)
+    }
+    fn with_recording_evaluator(
+        &self,
+        engine: Option<&EngineSnapshot>,
+        resolver: &dyn Resolver,
+        operation: &mut dyn FnMut(&dyn CapturedInitializerEvaluator),
+    ) -> bool {
+        let evaluator = DriverEvaluator {
+            pure_calls: self.pure_calls,
+            resource_search_context: self.resource_search_context,
+            resolver,
+            symbols: self.symbols,
+        };
+        if let Some(engine) = engine {
+            operation(&crate::initializer_policy::EngineCapturedEvaluator {
+                engine,
+                evaluator: &evaluator,
+            });
+        } else {
+            operation(&evaluator);
+        }
+        true
+    }
     fn with_evaluator(
         &self,
         engine: Option<&EngineSnapshot>,
