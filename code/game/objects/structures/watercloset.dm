@@ -1082,7 +1082,7 @@ CAPABILITIES(/obj/structure/sink)
 	// a wash claims the sink: nobody else washes in it meanwhile; a silicon has no hands to wash
 	op("wash", hand(), label("Wash hands"), when(req_actor_kind(/mob/living/silicon, not = TRUE)),
 		needs(req(PROC_REF(hand_usable), because = PROC_REF(hand_refusal))), claims(), begins(MSG(sink/washing_hands)), plays(SFX_EFFECTS_SINK_LONG, at_start = TRUE), wait(4 SECONDS), on_interrupt(PROC_REF(wash_hands_stopped)), then(PROC_REF(interaction_wash)))
-	op("item", item(/obj/item), label("Use"), needs(req_unclaimed(because = MSG(sink/busy))), claims(), begins(PROC_REF(wash_item_begins)), wait(PROC_REF(wash_item_time)), on_interrupt(PROC_REF(wash_item_stopped)), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item), label("Use"), claims(), begins(PROC_REF(wash_item_begins)), wait(PROC_REF(wash_item_time)), on_interrupt(PROC_REF(wash_item_stopped)), then(PROC_REF(interaction_item)))
 	op("empty", item(/obj/item/reagent_containers), gesture(GESTURE_DRAG), label("Empty into sink"), then(PROC_REF(interaction_drag)))
 	op("sink_wash_gurgled_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Wash"), when(req(PROC_REF(holding_gurgled))), claims(), begins(MSG(sink/washing_gurgled)), wait(4 SECONDS), then(PROC_REF(wash_gurgled_done)), says(MSG(sink/washed_gurgled)))
 

@@ -17,7 +17,7 @@ MSG_DEF_SELF(lockpick/cannot_pick, span_warning("%T% can't be picked by %I%."))
 MSG_DEF(lockpick/picking, "You start to work on the lock of %T%...", "%U% starts working on the lock of %T%.")
 
 CAPABILITIES(/obj/item/lockpick)
-	op("pick", at_target(/obj/structure/simple_door), at_target(/obj/structure/fence/door), needs(req(PROC_REF(handy_user), silent = TRUE)), starts(PROC_REF(pick_started)), begins(PROC_REF(pick_begins)), wait(PROC_REF(pick_duration)), then(PROC_REF(picked)))
+	op("pick", at_target(/obj/structure/simple_door), at_target(/obj/structure/fence/door), priority(OP_PRIORITY_PART), answers(INTENT_USE), needs(req(PROC_REF(handy_user), silent = TRUE)), starts(PROC_REF(pick_started)), begins(PROC_REF(pick_begins)), wait(PROC_REF(pick_duration)), then(PROC_REF(picked)))
 
 /// No lockpicking for monkeys.
 /obj/item/lockpick/proc/handy_user(datum/act/op/A)
