@@ -441,6 +441,8 @@ timed_forms_converted = [
   "code/modules/recycling/disposal_machines.dm",
   "code/modules/vore/fluffstuff/custom_items.dm",
   "code/modules/xenoarcheaology/boulder.dm",
+  "code/game/objects/items/devices/paicard.dm",
+  "code/game/objects/items/weapons/tanks/tanks.dm",
 ]
 legacy_forms_converted = [
   "code/game/machinery/",

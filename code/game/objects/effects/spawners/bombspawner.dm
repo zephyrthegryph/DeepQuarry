@@ -121,7 +121,7 @@ MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt
 	rel_set(PT, nameof(PT.master), V)
 	rel_set(OT, nameof(OT.master), V)
 
-	PT.valve_welded = 1
+	PT.set_valve_welded(1)
 	// XGM exposed total_moles as a writable var; LINDA exposes it only
 	// as a computed proc. The total is implied by the adjust_gas calls above —
 	// dropping the assignment is correct, and update_values() is a no-op under
@@ -130,7 +130,7 @@ MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt
 	PT.air_contents.adjust_gas(GAS_CO2, (carbon) - LINDA_GAS_AMT(PT.air_contents, GAS_CO2))
 	heat_set(PT.air_contents, PLASMA_MINIMUM_BURN_TEMPERATURE+1)
 
-	OT.valve_welded = 1
+	OT.set_valve_welded(1)
 	OT.air_contents.adjust_gas(GAS_O2, (oxygen) - LINDA_GAS_AMT(OT.air_contents, GAS_O2))
 	heat_set(OT.air_contents, PLASMA_MINIMUM_BURN_TEMPERATURE+1)
 
