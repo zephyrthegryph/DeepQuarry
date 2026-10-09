@@ -11,7 +11,8 @@
 /datum/unit_test/dq_timed_pin_w8/paicard_open_panel/setup_scene()
 	user = person()
 	var/obj/item/paicard/card = allocate(/obj/item/paicard, get_step(user, NORTH))
-	allocate(/mob/living/silicon/pai, card)
+	var/mob/living/silicon/pai/personality = allocate(/mob/living/silicon/pai, card)
+	card.setPersonality(personality)
 	target = card
 	held = hold(/obj/item/tool/screwdriver)
 
