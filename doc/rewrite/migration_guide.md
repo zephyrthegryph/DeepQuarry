@@ -921,11 +921,11 @@ The re-run machinery (`om_ask`, `act_ask`/`rerun_ask`, `prompt_flow`/`flow_execu
 
 ```dm
 // BEFORE: laserpointer.dm:230
-OM_FIELD(/obj/item/laser_pointer, recharging, 0, CHANGE_EXPLICIT)
+TRACKED(/obj/item/laser_pointer, recharging)
 // AFTER: nothing. `recharging` disappears entirely (B12 derives it from `energy < max_energy`).
 
 // BEFORE: atmo_control.dm:714
-OM_FIELD(/obj/machinery/computer/general_air_control/fuel_injection, automation, 0, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/computer/general_air_control/fuel_injection, automation)
 // AFTER: a plain var; written only in act_ handlers (dispatched, so auto-marked)
 /obj/machinery/computer/general_air_control/fuel_injection
 	var/automation = FALSE
@@ -968,8 +968,8 @@ DECLARE_VERB(/obj/item/healthanalyzer/scroll, /obj/item/healthanalyzer/proc/togg
 
 ```dm
 // BEFORE: atmo_control.dm:714-745
-OM_FIELD(/obj/machinery/computer/general_air_control/fuel_injection, automation, 0, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injection, MACHINE_PIPELINE, "automation")
+TRACKED(/obj/machinery/computer/general_air_control/fuel_injection, automation)
+every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(fuel_step)), when = nameof(automation))
 /obj/machinery/computer/general_air_control/fuel_injection/machine_step()
 	if(!radio_connection())
 		return PROCESS_KILL
@@ -1035,7 +1035,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injectio
 
 ```dm
 // BEFORE: geiger.dm:131 (a replace-timer used as "reset if nothing for N")
-	om_after_replace(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger))
+	after(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger), key = "reset_danger")
 // AFTER: a timed value that reverts by itself
 	timed_set(src, nameof(perceived_danger), new_danger, for_time = TIME_WITHOUT_RADIATION_BEFORE_RESET, revert_to = RAD_LEVEL_NONE)
 ```
@@ -1093,7 +1093,7 @@ About 3,270 direct calls remain: 725 `qdel(src)` and about 2,500 `qdel(local)`. 
 	unobserve(target, /datum/notice/living_turf_collision, source)
 	if(target.throwing == source)
 		rel_clear(target, "throwing")
-... om_link(src, thrownthing, /datum/om/relation/throw_of)
+... rel_set(src, nameof(throwing), thrownthing)
 ... rel_set(src, "throwing", TT)
 // AFTER
 /atom/movable/relations()
@@ -1338,8 +1338,8 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 /obj/item/laser_pointer/ownership()
 	. = ..()
 	. += owns(nameof(diode), policy = OWN_CONTAINED)
-OM_FIELD(/obj/item/laser_pointer, recharging, 0, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/laser_pointer, PERIODIC_SLOW, "recharging")
+TRACKED(/obj/item/laser_pointer, recharging)
+every(2 SECONDS, then(PROC_REF(recharge_step)), when = nameof(recharging))
 ```
 
 **After:**

@@ -167,10 +167,10 @@
 /datum/unit_test/dq_timed_forms/periodic_work_ticks_under_test_time
 /datum/unit_test/dq_timed_forms/periodic_work_ticks_under_test_time/run_forms()
 	var/obj/tf_periodic/P = allocate(/obj/tf_periodic, run_loc_floor_bottom_left)
-	om_task_periodic(P, PERIODIC_SLOW)
+	cadence_start(P, PERIODIC_SLOW)
 	test_time(30 SECONDS)
 	TEST_ASSERT(P.steps >= 1, "a member of PERIODIC_SLOW stepped (stepped [P.steps] times)")
-	om_task_periodic_stop(P)
+	cadence_stop(P)
 
 /datum/unit_test/dq_timed_forms/a_refused_input_stops_nothing
 /datum/unit_test/dq_timed_forms/a_refused_input_stops_nothing/run_forms()

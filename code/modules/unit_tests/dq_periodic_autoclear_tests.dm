@@ -3,18 +3,18 @@
 // destroyed; the framework clears the view or owned var and raises the field's channel through
 // own_field_changed(), which re-evaluates the declaration. No body guard or ALLOW is involved.
 
-/// Technomancer core: DECLARE_PERIODIC_WHILE on the `wearer` relation view.
+/// Technomancer core: a should_run() cadence on the `wearer` relation view.
 /datum/unit_test/periodic_autoclear_technomancer_wearer
 
 /datum/unit_test/periodic_autoclear_technomancer_wearer/Run()
 	var/obj/item/technomancer_core/core = allocate(/obj/item/technomancer_core, test_floor())
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
-	TEST_ASSERT_NULL(core.periodic_pipe, "an unworn core runs nothing")
+	TEST_ASSERT(!condition_holds(core, nameof(core.wearer)), "an unworn core's upkeep is gated off")
 	rel_set(core, nameof(core.wearer), H)
-	TEST_ASSERT_EQUAL(core.periodic_pipe, PERIODIC_SLOW, "setting the wearer view starts the core's upkeep")
+	TEST_ASSERT(condition_holds(core, nameof(core.wearer)), "setting the wearer view opens the core's upkeep")
 	qdel(H)
 	TEST_ASSERT_NULL(core.wearer, "the wearer view is cleared when the wearer is destroyed")
-	TEST_ASSERT_NULL(core.periodic_pipe, "the auto-clear raised the field channel and stopped the upkeep")
+	TEST_ASSERT(!condition_holds(core, nameof(core.wearer)), "the auto-clear gated the upkeep off")
 
 /// Fusion core: every(when = owned_field) on the owned `owned_field`.
 /datum/unit_test/periodic_autoclear_fusion_owned_field
@@ -29,8 +29,8 @@
 	TEST_ASSERT_NULL(core.owned_field, "the owned field leaves its owner's var when it is destroyed")
 	TEST_ASSERT(!condition_holds(core, nameof(core.owned_field)), "the auto-clear gated the step off")
 
-/// Magnetic gun: DECLARE_PERIODIC_WHILE on capacitor_unsettled, derived from the owned `cell` and
-/// `capacitor` and the cross-entity input "capacitor.charge".
+/// Magnetic gun: the step has work while capacitor_unsettled(), which follows the owned `cell` and `capacitor` and the capacitor's charge;
+/// a destroyed part is cleared by the ownership framework, so the answer settles with no guard in the step.
 /datum/unit_test/periodic_autoclear_magnetic_parts
 
 /datum/unit_test/periodic_autoclear_magnetic_parts/Run()
@@ -39,15 +39,16 @@
 	TEST_ASSERT_NOTNULL(gun.cell, "the railgun spawns with a cell")
 	TEST_ASSERT_NOTNULL(gun.capacitor, "the railgun spawns with a capacitor")
 	gun.capacitor.set_charge(0)
-	TEST_ASSERT_EQUAL(gun.periodic_pipe, PERIODIC_SLOW, "draining the capacitor (a relayed input) starts charging")
+	TEST_ASSERT(gun.capacitor_unsettled(), "draining the capacitor leaves it something to charge")
+	TEST_ASSERT(gun.steps_now(), "and the step's gate is open")
 	qdel(gun.cell)
 	TEST_ASSERT_NULL(gun.cell, "the owned cell leaves the gun when it is destroyed")
-	TEST_ASSERT_NULL(gun.periodic_pipe, "the cell's auto-clear re-evaluated capacitor_unsettled and stopped the work")
+	TEST_ASSERT(!gun.capacitor_unsettled(), "without its cell a drained capacitor has nothing left to do")
 
 	// The capacitor is destroyed: nothing is left to charge.
 	var/obj/item/gun/magnetic/railgun/gun2 = allocate(/obj/item/gun/magnetic/railgun, test_floor())
 	gun2.capacitor.set_charge(0)
-	TEST_ASSERT_EQUAL(gun2.periodic_pipe, PERIODIC_SLOW, "a drained capacitor with a cell charges")
+	TEST_ASSERT(gun2.capacitor_unsettled(), "a drained capacitor with a cell charges")
 	qdel(gun2.capacitor)
 	TEST_ASSERT_NULL(gun2.capacitor, "the owned capacitor leaves the gun when it is destroyed")
-	TEST_ASSERT_NULL(gun2.periodic_pipe, "the capacitor's auto-clear re-evaluated capacitor_unsettled and stopped the work")
+	TEST_ASSERT(!gun2.capacitor_unsettled(), "with no capacitor nothing is left to charge")

@@ -483,7 +483,7 @@
 	if(!lastpuke)
 		lastpuke = TRUE
 		to_chat(src, span_warning("You feel nauseous..."))
-		after(src, 15 SECONDS, TYPE_PROC_REF(/datum, om_chat), with = list(span_warning("You feel like you're about to throw up!")))
+		after(src, 15 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(src, span_warning("You feel like you're about to throw up!")))
 		after(src, 25 SECONDS, PROC_REF(do_vomit), with = list(lost_nutrition, blood, stun, distance, message, toxic, purge))
 
 /// after() target: able to vomit again.

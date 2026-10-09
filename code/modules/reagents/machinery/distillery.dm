@@ -143,7 +143,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 		visible_message(span_infoplain(span_bold("\The [src]") + " rattles to life."))
 		reagents.handle_reactions()
 	else
-		after(user, 1 SECOND, TYPE_PROC_REF(/datum, om_chat), with = list(span_notice("Nothing happens..")))
+		after(user, 1 SECOND, GLOBAL_PROC_REF(to_chat), with = list(user, span_notice("Nothing happens..")))
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_toggle_power(datum/act/op/A)
 	var/mob/user = A.actor

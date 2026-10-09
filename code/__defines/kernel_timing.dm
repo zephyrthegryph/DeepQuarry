@@ -30,7 +30,7 @@
 #define KERNEL_AVG_SECONDS(average, current, current_duration) (KERNEL_AVG_OVER_TIME(average, current, 1 SECONDS, current_duration))
 
 // START_PROCESSING/STOP_PROCESSING are gone (roadmap S4): periodic work runs on object-model
-// pipelines, om_task_periodic()/om_task_periodic_stop() (code/__defines/om.dm, code/datums/om/periodic.dm).
+// pipelines, cadence_start()/cadence_stop() (code/engine/kernel/cadences.dm).
 
 /// Returns true if the kernel is initialized and running.
 /// Optional argument init_stage controls what stage the mc must have initialized to count as initialized. Defaults to INITSTAGE_MAX if not specified.

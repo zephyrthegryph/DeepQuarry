@@ -192,14 +192,14 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 				D.lifecycle_prerelease() // teardown that still reads the declared vars (links.dm)
 				D.on_destroy(force) // the type's destroy hook: back-vars, partners and handles still live
 				if(D.om_rec)
-					om_behaviours_on_destroy(D) // each attached behaviour's on_entity_destroy(E)
+					entity_behaviours_on_destroy(D) // each attached behaviour's on_entity_destroy(E)
 				if(ismovable(D))
 					dq_lifecycle_leave_own_slot(D) // slot-exit hooks see live back-refs
 				dq_lifecycle_clear_links(D)
 			if(DESTROY_STEP_TEARDOWN)
-				// Periodic work (om_task_periodic()), client screens, walk() loops, then the
+				// Periodic work (cadence_start()), client screens, walk() loops, then the
 				// object-model teardown: OM timers, hooks, tasks, deadlines, grants and
-				// behaviours (om_teardown_rest()) and OM handles. /datum/Destroy() (phase 7) only
+				// behaviours (entity_teardown_rest()) and OM handles. /datum/Destroy() (phase 7) only
 				// clears the tag, closes tgui windows and does reference-tracking bookkeeping.
 				dq_lifecycle_teardown(D)
 			if(DESTROY_STEP_EFFECTS)
@@ -301,12 +301,12 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 /// type overrides it today; the default does nothing. Must not sleep.
 // ---- Phase 5: teardown ----
 
-/// Ends any periodic work (om_task_periodic(), code/datums/om/periodic.dm),
+/// Ends any periodic work (cadence_start(), code/engine/kernel/cadences.dm),
 /// releases HUD/screen objects from any client they're shown to, stops walk()
 /// loops, and tears down the datum's object-model state.
 /proc/dq_lifecycle_teardown(datum/D)
 	if(D.periodic_pipe)
-		om_task_periodic_stop(D)
+		cadence_stop(D)
 	if(isatom(D))
 		var/atom/AT = D
 		AT.dq_lifecycle_release_screen()
@@ -323,16 +323,16 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 
 /// The object-model teardown (phase 5, and an aborted transaction): every OM
 /// timer, deadline, hook, task, grant and behaviour `D` has
-/// (om_teardown_rest(), code/datums/om/entity.dm), then its OM handles stop
+/// (entity_teardown_rest(), code/datums/om/entity.dm), then its OM handles stop
 /// resolving. Safe to call twice: both halves check their own state.
 /proc/dq_lifecycle_om_teardown(datum/D)
 	// Object model (code/datums/om/entity.dm): contributions and grants this
 	// datum holds anywhere, its own store, behaviours (on_stop), deadlines, tasks.
 	if(D.om_rec)
-		om_teardown_rest(D)
+		entity_teardown_rest(D)
 	// OM handles to D stop resolving (object_model_core.md §4.11).
 	if(D.om_hid)
-		om_handle_release(D)
+		entity_handle_release(D)
 	// Phase 4 may have aborted before native runtime ownership was disposed.
 	if(D.rx)
 		rx_teardown(D)

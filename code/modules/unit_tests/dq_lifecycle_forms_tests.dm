@@ -280,7 +280,7 @@ CAPABILITIES(/obj/item/dq_forms_timer)
 
 /// after_init(): the timer is armed when the holder initializes and fires once, after its delay.
 /datum/unit_test/dq_forms_after_init/Run()
-	om_test_begin()
+	scheduler_test_begin()
 	var/obj/item/dq_forms_timer/timer = new(dq_containment_floor())
 	TEST_ASSERT_EQUAL(timer.fired, 0, "the timer waits")
 	scheduler_advance(1)
@@ -290,7 +290,7 @@ CAPABILITIES(/obj/item/dq_forms_timer)
 	scheduler_advance(3)
 	TEST_ASSERT_EQUAL(timer.fired, 1, "and only once")
 	qdel(timer)
-	om_test_end()
+	scheduler_test_end()
 	var/obj/item/broken_gun/wreck = allocate(/obj/item/broken_gun, dq_containment_floor())
 	TEST_ASSERT(after_pending(wreck, "after_init:1"), "the worked conversion: a broken gun arms its self-check")
 

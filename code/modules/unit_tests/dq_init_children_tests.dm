@@ -44,9 +44,9 @@
 /datum/unit_test/dq_init_children/firefighting_foam_dissolves
 
 /datum/unit_test/dq_init_children/firefighting_foam_dissolves/Run()
-	om_test_begin()
+	scheduler_test_begin()
 	var/obj/effect/effect/foam/firefighting/foam = new(dq_containment_floor())
 	TEST_ASSERT(!QDELETED(foam), "the foam is there")
 	scheduler_advance(10)
 	TEST_ASSERT(QDELETED(foam), "it dissolved after its lifetime")
-	om_test_end()
+	scheduler_test_end()

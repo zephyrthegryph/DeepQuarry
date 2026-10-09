@@ -768,7 +768,6 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 	if(quantity > C.reagents.total_volume)
 		visible_message(span_notice("The [src] flashes an 'insufficient reagents' warning."))
-		// ALLOW(sys_om_after_rearm): a one-minute retry of the current step of a finite recipe sequence (step advances further down this proc), not periodic work over a state
 		after(src, 1 MINUTE, PROC_REF(perform_reaction), with = list(r_id, step))
 		return
 

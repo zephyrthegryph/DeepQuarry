@@ -482,7 +482,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 // SStimer's TIMER_UNIQUE and TIMER_OVERRIDE, as the key they really were: the owner, the
 // proc and its arguments. No extra state: the owner's timer list is the index. These live on
 // the scheduler; call them through the
-// om_after_unique() / om_after_replace() / om_cancel_calls() / om_timer_count() macros.
+// time_scheduler().after_unique() / time_scheduler().after_replace() / time_scheduler().cancel_calls() / time_scheduler().timer_count() macros.
 
 /// The position in rec.timers of a pending timer calling `proc_ref` with `call_args`, or 0.
 /datum/time_scheduler/proc/timer_find(datum/scheduler_record/rec, proc_ref, list/call_args)

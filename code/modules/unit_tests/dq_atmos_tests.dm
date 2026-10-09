@@ -5755,7 +5755,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	P.parent.air.set_volume(P.volume)
 	P.parent.air.multiply(P.volume / environment_volume)
 	P.set_leaking(TRUE)
-	var/pipe_ref = om_handle(P)
+	var/pipe_ref = entity_handle(P)
 	TEST_ASSERT_NOTNULL(pipe_ref, "open pipe could not create a weak reference")
 	// A settled network takes itself off SSair's pipenet queue (reconcile(), a5b6bb01d5); it no longer answers PROCESS_KILL.
 	var/datum/pipe_network/N = P.parent.network

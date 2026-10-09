@@ -5,14 +5,8 @@
 /datum/scheduler_queue_presentation()
 	appearance_queue(src)
 
-/datum/scheduler_evaluate_periodic()
-	sys_periodic_evaluate(src)
-
 /datum/time_scheduler/drain_presentation()
 	return appearance_drain(src)
-
-/datum/definition_registry/periodic_mask_for(path)
-	return sys_periodic_mask_for(path)
 
 /datum/native_watch/bind_native()
 	return SSvg.bind_datum(src)

@@ -3,42 +3,17 @@
 /datum/om/registry
 	parent_type = /datum/definition_registry
 
-/proc/om_registry()
-	RETURN_TYPE(/datum/om/registry)
-	return definition_registry(arglist(args))
 
-/proc/om_is_abstract(datum/om/D)
-	return definition_is_abstract(arglist(args))
 
-/proc/om_merge_assoc(list/a, list/b)
-	return definition_merge_assoc(arglist(args))
 
-/proc/om_stage_is_category(path, datum/om/registry/reg)
-	return definition_stage_is_category(arglist(args))
 
-/proc/om_type_depth(path)
-	return definition_type_depth(arglist(args))
 
-/proc/om_run_if_masks(spec, datum/om/pipeline/P, list/masks, negated)
-	return definition_run_if_masks(arglist(args))
 
-/proc/om_run_if_fact_names(spec, list/out)
-	return definition_run_if_fact_names(arglist(args))
 
-/proc/om_spec_list(spec)
-	return definition_spec_list(arglist(args))
 
-/proc/om_compile_related(list/table, datum/om/registry/reg, owner_name)
-	return definition_compile_related(arglist(args))
 
-/proc/om_topo_order(list/nodes, datum/om/registry/reg)
-	return definition_topo_order(arglist(args))
 
-/proc/om_kahn(list/succ, n)
-	return definition_kahn(arglist(args))
 
-/proc/om_reaches(list/succ, start, goal)
-	return definition_reaches(arglist(args))
 
 /datum/definition_registry/compatibility_type(path)
 	var/static/list/aliases

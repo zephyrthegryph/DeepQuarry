@@ -36,7 +36,7 @@
 	TEST_ASSERT_EQUAL(eggs.spiders_min, 2, "actual tested egg subtype retains its original minimum yield")
 	TEST_ASSERT_EQUAL(eggs.spiders_max, 6, "actual tested egg subtype retains its original maximum yield")
 	TEST_ASSERT_EQUAL(eggs.spider_type, product_type, "actual tested egg subtype retains its concrete hatch type")
-	TEST_ASSERT(om_timer_count(eggs) > 0, "actual initialization arms the real hatch deadline")
+	TEST_ASSERT(time_scheduler().timer_count(eggs) > 0, "actual initialization arms the real hatch deadline")
 	TEST_ASSERT_EQUAL(length(contents_of(container, /obj/effect/spider/spiderling)), 0, "actual fixture starts without hatched spiderlings")
 	var/faction_before = eggs.faction
 	eggs.hatch()
@@ -44,7 +44,7 @@
 	for(var/obj/effect/spider/spiderling/product as anything in products)
 		own(product)
 	TEST_ASSERT(QDELETED(eggs), "actual public hatching consumes the original mature egg cluster")
-	TEST_ASSERT_EQUAL(om_timer_count(eggs), 0, "actual hatch cleanup cancels the source deadline")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(eggs), 0, "actual hatch cleanup cancels the source deadline")
 	TEST_ASSERT(length(products) >= 2 && length(products) <= 6, "actual hatching creates within the original subtype count bounds")
 	for(var/obj/effect/spider/spiderling/product as anything in products)
 		TEST_ASSERT(!QDELETED(product), "actual hatching preserves each newly created product")

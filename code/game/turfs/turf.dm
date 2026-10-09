@@ -405,7 +405,7 @@ CAPABILITIES(/turf)
 		return
 
 	if(!get_gravity(source)) //Checked a different codebase for reference. Turns out it's only supposed to happen in no-gravity
-		after(source, 0.2 SECONDS, TYPE_PROC_REF(/atom/movable, om_step), with = list(turn(source.last_move, 180))) //This makes it float away after hitting a wall in 0G
+		source.drift(turn(source.last_move, 180), 1, 0.2 SECONDS) //This makes it float away after hitting a wall in 0G
 	if(isliving(source))
 		var/mob/living/M = source
 		M.turf_collision(src, throwingdatum?.speed)

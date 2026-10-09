@@ -195,3 +195,10 @@
 // #define adjust_static_vision_up_to(duration, up_to) adjust_timed_status_effect(duration, /datum/status_effect/static_vision, up_to)
 // #define set_static_vision(duration) set_timed_status_effect(duration, /datum/status_effect/static_vision)
 // #define set_static_vision_if_lower(duration) set_timed_status_effect(duration, /datum/status_effect/static_vision, TRUE)
+
+/// Deciseconds a fast status effect's sweep (SSstatus_fast) steps by, and the interval of that sweep.
+#define STATUS_EFFECT_FAST_STEP 2
+/// Deciseconds a normal status effect's sweep (SSstatus_normal) steps by, and the interval of that sweep.
+#define STATUS_EFFECT_NORMAL_STEP 10
+/// Deciseconds a priority status effect is told each server tick (SSstatus_priority).
+#define STATUS_EFFECT_PRIORITY_STEP 2

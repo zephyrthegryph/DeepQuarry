@@ -1,5 +1,5 @@
 // The planet system (was SSplanets). SSatoms depends on it, so it boots before the map's atoms (turfs register as
-// planet floors and walls in Initialize()). Each planet's clock, weather and sun run on its own PERIODIC_SLOW lane; the
+// planet floors and walls in Initialize()). Each planet's clock, weather and sun step themselves with an every() of 2 s; the
 // lighting and wall temperature changes they queue are applied here, every 2 s on the background lane, parked while
 // nothing is queued. The API is in planet_api.dm.
 SYSTEM_DEF(planets)
@@ -33,7 +33,7 @@ SYSTEM_DEF(planets)
 	for(var/P in planet_datums)
 		var/datum/planet/NP = new P()
 		planets += NP
-		om_task_periodic(NP, PERIODIC_SLOW)
+		NP.set_clock_running(TRUE)
 		for(var/index in 1 to length(NP.expected_z_levels))
 			var/Z = LAZYACCESS(NP.expected_z_levels, index)
 			if(!isnum(Z))

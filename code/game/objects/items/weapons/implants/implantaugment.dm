@@ -32,7 +32,7 @@
 		to_chat(H, span_notice("You feel a tingling sensation in your [part]."))
 		// A ledger move into the limb; the attach hook does the rest.
 		if(E && !(H.organ_in(NewOrgan.organ_tag)) && NewOrgan.replaced(H, E))
-			after(H, rand(1 SECONDS, 30 SECONDS), TYPE_PROC_REF(/datum, om_chat), with = list(span_alien("You feel a pressure in your [E] as the tingling fades, the lump caused by the implant now gone.")))
+			after(H, rand(1 SECONDS, 30 SECONDS), GLOBAL_PROC_REF(to_chat), with = list(H, span_alien("You feel a pressure in your [E] as the tingling fades, the lump caused by the implant now gone.")))
 
 			expire(1)
 
@@ -103,7 +103,7 @@ CAPABILITIES(/datum/prompt/choice/augment_location)
 	// A ledger move into the limb; the attach hook does the rest. An
 	// incompatible augment is deleted below, which detaches it again.
 	if(istype(E) && !(H.organ_in(NewOrgan.organ_tag)) && NewOrgan.replaced(H, E) && NewOrgan.check_verb_compatability())
-		after(H, rand(1 SECONDS, 30 SECONDS), TYPE_PROC_REF(/datum, om_chat), with = list(span_alien("You feel a pressure in your [E] as the tingling fades, the lump caused by the implant now gone.")))
+		after(H, rand(1 SECONDS, 30 SECONDS), GLOBAL_PROC_REF(to_chat), with = list(H, span_alien("You feel a pressure in your [E] as the tingling fades, the lump caused by the implant now gone.")))
 
 		expire(1)
 

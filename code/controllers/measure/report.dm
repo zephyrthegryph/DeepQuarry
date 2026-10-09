@@ -1,7 +1,7 @@
 // Kernel measurement: reading the numbers.
 //
 // One source feeds every surface: the "Kernel" view of the MC stat panel, the Tick Report admin verb,
-// om_diagnostics() and the benchmark metrics. Each reads a stats set (the live one, or a benchmark window)
+// scheduler_diagnostics() and the benchmark metrics. Each reads a stats set (the live one, or a benchmark window)
 // through km_report_systems() / km_report_input(), so they cannot disagree.
 
 // Columns of a km_rollup() row.
@@ -22,7 +22,7 @@
 /// counter bucket in the scheduler, so they cannot be attributed and are left out (km_unrolled_behaviours()).
 /proc/km_rollup(datum/om/scheduler/sched)
 	var/list/rows = new /list(KM_MAX_SYSTEMS)
-	var/datum/om/registry/reg = om_registry()
+	var/datum/om/registry/reg = definition_registry()
 	var/list/stats = sched.stats
 	for(var/datum/om/behaviour/B as anything in reg.behaviours)
 		if(!B || B.id >= OM_MAX_STAT_TYPES)
@@ -51,7 +51,7 @@
 /// How many registered behaviours km_rollup() cannot attribute (ids past the scheduler's stat table).
 /proc/km_unrolled_behaviours()
 	. = 0
-	for(var/datum/om/behaviour/B as anything in om_registry().behaviours)
+	for(var/datum/om/behaviour/B as anything in definition_registry().behaviours)
 		if(B && B.id >= OM_MAX_STAT_TYPES)
 			.++
 
@@ -154,7 +154,7 @@
 		"unrolled_behaviours" = km_unrolled_behaviours(),
 	)
 
-/// Everything the live set knows, as data (om_diagnostics(), tests): all systems, the input record and the meter.
+/// Everything the live set knows, as data (scheduler_diagnostics(), tests): all systems, the input record and the meter.
 /proc/km_diagnostics(datum/om/scheduler/sched)
 	var/datum/tick_meter/meter = sched?.meter || km_meter()
 	var/datum/km_stats_set/stats_set = meter.live

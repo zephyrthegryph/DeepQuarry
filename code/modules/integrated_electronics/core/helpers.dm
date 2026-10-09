@@ -27,7 +27,7 @@
 
 /// An IC ref: the OM handle of `D` in that wrapper. Null for a deleted datum.
 /proc/ic_ref(datum/D)
-	var/h = om_handle(D) // ALLOW(ownership): IC pin data are player-copyable text values passed pin to pin; a generation-checked weak ref is the only safe encoding
+	var/h = entity_handle(D)
 	return h && "[IC_REF_PREFIX][h]>"
 
 /// TRUE if `x` is an IC ref (ic_ref()), whether or not it still resolves.
@@ -38,7 +38,7 @@
 /proc/ic_ref_resolve(x)
 	if(!ic_is_ref(x))
 		return null
-	return om_resolve(copytext(x, length(IC_REF_PREFIX) + 1, -1)) // ALLOW(ownership): resolves an IC pin ref (see ic_ref())
+	return resolve_handle(copytext(x, length(IC_REF_PREFIX) + 1, -1))
 
 /obj/item/integrated_circuit/proc/set_pin_data(pin_type, pin_number, datum/new_data)
 	if (istype(new_data) && !ic_is_ref(new_data))

@@ -63,7 +63,7 @@ CAPABILITIES(/datum/dq_diag_owner_b)
 		CRASH("dq_diag direct")
 	catch(var/exception/e)
 		dq_report_caught(e, "dq_diag direct catch")
-	var/datum/om/scheduler/sched = om_scheduler()
+	var/datum/om/scheduler/sched = time_scheduler()
 	set_var(sched, "expect_errors", FALSE)
 	try
 		CRASH("dq_diag scheduler")
@@ -71,7 +71,7 @@ CAPABILITIES(/datum/dq_diag_owner_b)
 		sched.report_caught(e2, "dq_diag scheduler catch")
 
 	set_global("om_expect_sleep", TRUE)
-	om_guarded_call(null, /proc/dq_diag_sleep_then_throw, list())
+	deferred_guarded_call(null, /proc/dq_diag_sleep_then_throw, list())
 	set_global("om_expect_sleep", FALSE)
 	for(var/i in 1 to 20)
 		if(dq_diag_capture_has(GLOB.dq_caught_capture, "OM trampoline"))
@@ -193,7 +193,7 @@ CAPABILITIES(/datum/dq_diag_owner_b)
 GLOBAL_VAR_INIT(dq_diag_aborted_timer_fired, FALSE)
 
 /// Regression: an aborted destroy of a non-atom datum used to skip
-/// om_teardown_rest(), leaving live OM timers (and hooks, tasks) on a dead datum.
+/// entity_teardown_rest(), leaving live OM timers (and hooks, tasks) on a dead datum.
 /datum/unit_test/dq_lifecycle_diag_aborted_plain_teardown
 
 /datum/unit_test/dq_lifecycle_diag_aborted_plain_teardown/Run()

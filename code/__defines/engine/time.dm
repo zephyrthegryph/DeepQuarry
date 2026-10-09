@@ -2,7 +2,7 @@
 
 /// Stride of rec.timers: id, due (timer-clock ds), proc, args, handle positions, flags.
 /// Ids only grow and entries are only appended or cut, so the list is sorted by id
-/// (om_timer_index() binary-searches it).
+/// (timer_index() binary-searches it).
 #define OM_TIMER_STRIDE 6
 /// Timer flags (the record's 6th field): the proc is a global proc.
 #define OM_TIMER_GLOBAL (1<<0)

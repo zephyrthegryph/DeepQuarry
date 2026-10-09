@@ -288,13 +288,13 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 /datum/unit_test/dx_core_periodic_gate/Run()
 	var/obj/cap_fixture/dx_periodic/F = allocate(/obj/cap_fixture/dx_periodic)
 	refresh_flush()
-	TEST_ASSERT(!om_task_periodic_running(F), "not running while should_run() is FALSE")
+	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "not running while should_run() is FALSE")
 	F.set_gating(TRUE)
 	refresh_flush()
-	TEST_ASSERT(om_task_periodic_running(F), "running once should_run() is TRUE")
+	TEST_ASSERT((!isnull(F.periodic_pipe)), "running once should_run() is TRUE")
 	F.set_gating(FALSE)
 	refresh_flush()
-	TEST_ASSERT(!om_task_periodic_running(F), "stopped once should_run() is FALSE again")
+	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "stopped once should_run() is FALSE again")
 
 // ---------------------------------------------------------------- 7. hidden verbs
 

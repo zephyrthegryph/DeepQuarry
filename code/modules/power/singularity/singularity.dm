@@ -306,7 +306,7 @@ CAPABILITIES(/obj/singularity)
 
 	if(current_size >= STAGE_FIVE)//The superlarge one does not care about things in its way
 		step(src, movement_dir)
-		after(src, 0.1 SECONDS, TYPE_PROC_REF(/atom/movable, om_step), with = list(movement_dir))
+		drift(movement_dir, 1, 0.1 SECONDS)
 		return 1
 	else if(check_turfs_in(movement_dir))
 		last_failed_movement = 0//Reset this because we moved

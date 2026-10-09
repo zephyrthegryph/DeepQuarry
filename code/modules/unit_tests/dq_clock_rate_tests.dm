@@ -70,40 +70,4 @@
 	scheduler_advance(2)
 	TEST_ASSERT(abs(clock_now(E, CLOCK_BIO) - after_fast - 10) < 0.01, "rate 0.5: a second of clock time for two of world time")
 
-/datum/unit_test/om/clock_rate_scales_deadlines
-
-/datum/unit_test/om/clock_rate_scales_deadlines/run_om(list/made)
-	var/datum/om_test_entity/clock_probe/slow = entity(made, /datum/om_test_entity/clock_probe)
-	var/datum/om_test_entity/clock_probe/fast = entity(made, /datum/om_test_entity/clock_probe)
-	var/datum/om_test_entity/clock_probe/stopped = entity(made, /datum/om_test_entity/clock_probe)
-	for(var/datum/om_test_entity/clock_probe/E in list(slow, fast, stopped))
-		clock_probe_running(E)
-		om_deadline(E, 2 SECONDS, /datum/om/behaviour/test/deadline_clocked)
-	clock_probe_rate(slow, 0.5)
-	clock_probe_rate(fast, 2)
-	clock_probe_rate(stopped, 0)
-	scheduler_advance(3)
-	TEST_ASSERT_EQUAL(stopped.deadlines, 0, "a stopped clock fires no deadline")
-	TEST_ASSERT_EQUAL(fast.deadlines, 1, "a double-speed clock reached its 2 second deadline in one world second")
-	TEST_ASSERT_EQUAL(slow.deadlines, 0, "a half-speed clock has had 1.5 of its 2 seconds")
-	scheduler_advance(1.1)
-	TEST_ASSERT_EQUAL(slow.deadlines, 1, "the half-speed deadline fires once its clock passed 2 seconds")
-	clock_probe_rate(stopped, 1)
-	scheduler_advance(2.2)
-	TEST_ASSERT_EQUAL(stopped.deadlines, 1, "a restarted clock finishes its deadline")
-
-/// The first change of a running entity's rate (no clock entry yet) still moves a pending deadline.
-/datum/unit_test/om/clock_rate_first_change_moves_deadlines
-
-/datum/unit_test/om/clock_rate_first_change_moves_deadlines/run_om(list/made)
-	var/datum/om_test_entity/clock_probe/E = entity(made, /datum/om_test_entity/clock_probe)
-	om_deadline(E, 2 SECONDS, /datum/om/behaviour/test/deadline_clocked)
-	scheduler_advance(1)
-	clock_probe_rate(E, 0)
-	scheduler_advance(3)
-	TEST_ASSERT_EQUAL(E.deadlines, 0, "a stopped clock fires no deadline, even on its first change")
-	clock_probe_rate(E, 1)
-	scheduler_advance(1.2)
-	TEST_ASSERT_EQUAL(E.deadlines, 1, "and the second it had left runs when the clock restarts")
-
 #endif

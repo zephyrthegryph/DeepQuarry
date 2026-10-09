@@ -16,16 +16,6 @@
 	if(!length(registries))
 		registries = null
 
-/datum/lifecycle_decls/validate_periodic(datum/D)
-	if(sys_periodic)
-		sys_periodic = sys_periodic_validated(D, sys_periodic_table_for(owner_type))
-		var/datum/sys_periodic_table/table = sys_periodic
-		if(table?.while_def && periodic)
-			stack_trace("DECLARE_PERIODIC([owner_type]) and DECLARE_PERIODIC_WHILE on one type: the while-declaration wins; DECLARE_PERIODIC dropped")
-			periodic = null
-		if(sys_periodic && !isatom(D))
-			work |= DECL_WORK_INIT // a non-atom starts it from New() (lifecycle_decls_init())
-
 /mob/lifecycle_can_login()
 	return TRUE
 
@@ -45,8 +35,6 @@
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(D)
 	if(!decls || !(decls.work & DECL_WORK_INIT))
 		return
-	if(decls.sys_periodic && !isatom(D))
-		sys_periodic_start(D, decls.sys_periodic)
 	if(decls.gas)
 		decls.create_gas(D)
 	if(decls.work & DECL_WORK_APPEARANCE)
@@ -83,20 +71,12 @@
 			call(target, service[2])(A)
 	if(decls.binders)
 		lifecycle_decls_bind(A, decls)
-	if(decls.periodic)
-		om_task_periodic(A, decls.periodic)
 	for(var/hook_var in decls.expiry_hooks)
 		expiry_arm(A, hook_var, A.vars[hook_var], TRUE)
-	if(decls.sys_periodic)
-		sys_periodic_start(A, decls.sys_periodic)
 
 /// The inverse, from /atom/on_dematerialize(). Registries, behaviours and timers are left by
-/// the core (leave_registries(), om_teardown_rest()).
+/// the core (leave_registries(), entity_teardown_rest()).
 /proc/lifecycle_decls_dematerialize(atom/A, datum/lifecycle_decls/decls)
-	if(decls.periodic)
-		om_task_periodic_stop(A)
-	if(decls.sys_periodic)
-		sys_periodic_stop(A, decls.sys_periodic)
 	for(var/list/service in decls.services)
 		var/datum/target = GLOB.vars[service[1]]
 		if(target && service[3])

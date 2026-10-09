@@ -190,7 +190,7 @@
 	if(!length(appearance_emissives))
 		appearance_emissives = null
 	appearance_draws = !!(appearance_proc || appearance_layers || appearance_template || appearance_levels || appearance_emissives || appearance_slots)
-	var/list/fields = om_registry().fields_of(owner_type)
+	var/list/fields = definition_registry().fields_of(owner_type)
 	appearance_mask = 0
 	for(var/entry in appearance_proc_fields)
 		if(isnum(entry))

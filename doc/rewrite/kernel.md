@@ -990,7 +990,7 @@ The machine pipeline's "step" stage (deleted; a machine's work is `started_work(
 
 ```dm
 // game/machinery/floodlight.dm:17, 29-32 — a fourth start/stop vocabulary on top
-DECLARE_PERIODIC_WHILE(/obj/machinery/floodlight, MACHINE_PIPELINE, "on")
+every(2 SECONDS, then(PROC_REF(floodlight_step)), when = nameof(on))
 ...
 /obj/machinery/floodlight/machine_step()
 	if(!cell || (cell.charge < (use * CELLRATE)))
@@ -1122,8 +1122,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/floodlight, MACHINE_PIPELINE, "on")
 
 ```dm
 // modules/mob/mob_service.dm:17-19, 82-89 — the "mobs" service: a DECLARE_REPEAT, and death -> SSticker internals
-OM_FIELD(/datum/system/mobs, profiling, FALSE, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/system/mobs, 2 MINUTES, dump_profile, "profiling")
+TRACKED(/datum/system/mobs, profiling)
+every(2 MINUTES, then(PROC_REF(dump_profile)), when = nameof(profiling))
 ...
 /datum/system/mobs/proc/report_death(mob/living/L)
 	...
@@ -1291,36 +1291,31 @@ vocabularies below, and this is what they collapse to.
 
 ```dm
 // game/gamemodes/nuclear/pinpointer.dm:21-22, 38 — OM_FIELD + DECLARE_PERIODIC_WHILE + periodic_step()
-OM_FIELD(/obj/item/pinpointer, active, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/pinpointer, PERIODIC_SLOW, "active")
+TRACKED(/obj/item/pinpointer, active)
+every(2 SECONDS, then(PROC_REF(pinpointer_step)), when = nameof(active))
 ...
 /obj/item/pinpointer/periodic_step()
 ```
 
 ```dm
 // game/machinery/magnet.dm:31 — DECLARE_REPEAT with a string-named delay proc
-DECLARE_REPEAT(/obj/machinery/magnetic_module, "magnet_delay", magnetic_process, "on")
+every(PROC_REF(magnet_delay), then(PROC_REF(magnetic_process)), when = nameof(on))
 ```
 
 ```dm
 // datums/om/periodic.dm:33-47 — the imperative start the declarations wrap
 /proc/_om_periodic_start(datum/E, P)
 	...
-	if(!sys_periodic_allows(E, P))
-		return FALSE
 	E.periodic_pipe = P
 	E.datum_flags |= DF_ISPROCESSING
-	if(om_attached(E, P))
-		om_wake(E, P)
-	else
-		om_attach(E, P)
+	cadence_start(E, P)
 ```
 
 (The world lanes of the survey, `datums/om/world_lanes.dm`, are gone: the world services are systems with `every()` work items, phase 1S.)
 
 ```dm
 // datums/behaviours/radiation_countdown.dm:22 — a sixth: a self re-arming timer
-	om_after_replace(src, TIME_UNTIL_DELETION, TYPE_PROC_REF(/mob/living, radiation_countdown_clear))
+	after(src, TIME_UNTIL_DELETION, TYPE_PROC_REF(/mob/living, radiation_countdown_clear), key = "radiation_countdown")
 ```
 
 **After:** one vocabulary for items, machines, mobs and systems alike.

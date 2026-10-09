@@ -69,7 +69,7 @@
 	var/datum/om_test_entity/live = entity(made)
 	var/id = after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("gone", witness))
 	TEST_ASSERT(id, "om_after with a proc returns a timer id")
-	TEST_ASSERT(om_timer_pending(E, id), "the timer is pending")
+	TEST_ASSERT(timer_pending(E, id), "the timer is pending")
 	after(live, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("live", witness))
 	after(null, 1 SECONDS, /proc/om_test_global_hit, with = list(witness, "global"))
 	qdel(E)
@@ -78,7 +78,7 @@
 	TEST_ASSERT("live" in live.log, "a live owner's timer runs")
 	TEST_ASSERT("global" in witness.log, "the global owner runs unowned timers")
 	var/cancel_id = after(live, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("cancelled"))
-	TEST_ASSERT(om_cancel_timer(live, cancel_id), "cancel finds the timer")
+	TEST_ASSERT(timer_cancel(live, cancel_id), "cancel finds the timer")
 	scheduler_advance(2)
 	TEST_ASSERT(!("cancelled" in live.log), "a cancelled timer never runs")
 
@@ -87,13 +87,13 @@
 
 /datum/unit_test/om/timer_keyed/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
-	var/first = om_after_unique(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "once")
-	TEST_ASSERT_EQUAL(om_after_unique(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "once"), first, "a pending identical call is not scheduled twice")
-	om_after_unique(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "other")
-	TEST_ASSERT_EQUAL(om_timer_count(E), 2, "different arguments are a different key")
+	var/first = time_scheduler().after_unique(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "once")
+	TEST_ASSERT_EQUAL(time_scheduler().after_unique(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "once"), first, "a pending identical call is not scheduled twice")
+	time_scheduler().after_unique(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "other")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(E), 2, "different arguments are a different key")
 	scheduler_advance(0.6)
-	var/replaced = om_after_replace(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "once")
-	TEST_ASSERT(replaced != first && !om_timer_pending(E, first), "replace cancels the pending call")
+	var/replaced = time_scheduler().after_replace(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "once")
+	TEST_ASSERT(replaced != first && !timer_pending(E, first), "replace cancels the pending call")
 	scheduler_advance(0.6)
 	TEST_ASSERT(!("once" in E.log), "a replaced call restarts its delay")
 	TEST_ASSERT("other" in E.log, "the other key ran on time")
@@ -105,8 +105,8 @@
 	TEST_ASSERT_EQUAL(runs, 1, "the replaced call ran once")
 	after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("a"))
 	after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("b"))
-	TEST_ASSERT_EQUAL(om_cancel_calls(E, /datum/om_test_entity/proc/timer_hit), 2, "cancel_calls drops every call of the proc")
-	TEST_ASSERT_EQUAL(om_timer_count(E), 0, "nothing is left pending")
+	TEST_ASSERT_EQUAL(time_scheduler().cancel_calls(E, /datum/om_test_entity/proc/timer_hit), 2, "cancel_calls drops every call of the proc")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(E), 0, "nothing is left pending")
 
 /datum/unit_test/om/timer_follows_clock
 
@@ -272,21 +272,21 @@
 
 /datum/unit_test/om/handles_resolve/run_om(list/made)
 	var/datum/om_test_entity/A = entity(made)
-	var/h = om_handle(A)
+	var/h = entity_handle(A)
 	TEST_ASSERT(istext(h), "a handle is text")
-	TEST_ASSERT_EQUAL(om_handle(A), h, "the same datum gets the same handle")
-	TEST_ASSERT_EQUAL(om_resolve(h), A, "a handle resolves to its datum")
+	TEST_ASSERT_EQUAL(entity_handle(A), h, "the same datum gets the same handle")
+	TEST_ASSERT_EQUAL(resolve_handle(h), A, "a handle resolves to its datum")
 	var/id = copytext(h, 1, findtext(h, ":"))
 	qdel(A)
-	TEST_ASSERT_NULL(om_resolve(h), "a deleted datum's handle resolves to null")
+	TEST_ASSERT_NULL(resolve_handle(h), "a deleted datum's handle resolves to null")
 	var/datum/om_test_entity/B = entity(made)
-	var/hb = om_handle(B)
+	var/hb = entity_handle(B)
 	TEST_ASSERT_EQUAL(copytext(hb, 1, findtext(hb, ":")), id, "the freed id is reused")
 	TEST_ASSERT(hb != h, "with a new generation")
-	TEST_ASSERT_NULL(om_resolve(h), "the stale handle does not resolve to the id's new owner")
-	TEST_ASSERT_EQUAL(om_resolve(hb), B, "the new handle resolves")
-	TEST_ASSERT_NULL(om_resolve("junk"), "junk resolves to null")
-	TEST_ASSERT_NULL(om_resolve(null), "null resolves to null")
+	TEST_ASSERT_NULL(resolve_handle(h), "the stale handle does not resolve to the id's new owner")
+	TEST_ASSERT_EQUAL(resolve_handle(hb), B, "the new handle resolves")
+	TEST_ASSERT_NULL(resolve_handle("junk"), "junk resolves to null")
+	TEST_ASSERT_NULL(resolve_handle(null), "null resolves to null")
 
 // ---------------------------------------------------------------- sleep guard
 
@@ -309,7 +309,7 @@
 /datum/unit_test/om/sleeping_callee_is_caught
 
 /datum/unit_test/om/sleeping_callee_is_caught/run_om(list/made)
-	var/datum/om/scheduler/sched = om_scheduler()
+	var/datum/om/scheduler/sched = time_scheduler()
 	var/datum/om_test_entity/E = entity(made)
 	set_global("om_expect_sleep", TRUE)
 	var/before = sched.callees_slept
