@@ -19,13 +19,13 @@
 	for(var/line in own_audit(quiet = TRUE))
 		TEST_ASSERT(!(findtext(line, "dropped with a rec") && (findtext(line, "effect/system/explosion") || findtext(line, "effect/system/smoke_spread"))), "the audit found a dropped effect system: [line]")
 	test_time(30 SECONDS)
-	var/left = 0
+	var/list/left_over = list()
 	for(var/datum/effect/system/explosion/boom)
 		if(!QDELETED(boom))
-			left++
+			left_over += "[boom.type] expire pending [after_pending(boom, "lifecycle_lifetime_timer")]"
 	for(var/datum/effect/effect/system/smoke_spread/smoke)
 		if(!QDELETED(smoke))
-			left++
-	TEST_ASSERT_EQUAL(left, 0, "the systems deleted themselves once their smoke was out")
+			left_over += "[smoke.type] expire pending [after_pending(smoke, "lifecycle_lifetime_timer")] total_smoke [smoke.total_smoke]"
+	TEST_ASSERT(!length(left_over), "the systems deleted themselves once their smoke was out: [jointext(left_over, "; ")]")
 	for(var/line in own_audit(quiet = TRUE))
 		TEST_ASSERT(!findtext(line, "dropped with a rec"), "nothing is left for the audit: [line]")
