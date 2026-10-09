@@ -23,6 +23,12 @@
 # both a slow pin and some other test; --no-split-slow (or DQ_FOCUS_SPLIT=0) turns it off. It is never used with --bless or
 # --repeat. Pins that must share a world with another test should be run with --no-split-slow.
 #
+# Look pins (dq_look_state_pin, dq_look_tree_pin) run as DQ_LOOK_SHARDS (default 4; --look-shards=N) parallel worlds, each probing a
+# slice of the types, and only the types whose analyzer key changed since code/modules/unit_tests/snapshots/look_keys.txt;
+# --full probes every type. --look-order=reverse|shuffle:N reorders the types (the determinism proof) and --look-dump=DIR writes the
+# produced rows sorted under DIR/merged for `diff -r`. At most two look-pin runs execute at once on the machine (tools/dq_look_lock.sh;
+# the merge worktree goes first; DQ_LOOK_PIN_SLOTS=0 turns the cap off). --bless runs them unsharded and full.
+#
 # Every run fails when the world logged a runtime or a warning before its first test (the boot gate,
 # doc/rewrite/boot_gate.md); the build prints "BOOT GATE" with the first warnings when it trips.
 #
@@ -167,6 +173,10 @@ bless=0
 list_only=0
 all_types=""
 split_mode=auto
+look_shards="${DQ_LOOK_SHARDS:-4}"
+look_full=0
+look_order=""
+look_dump=""
 for arg in "$@"; do
 	case "$arg" in
 		--full-map) args+=("-DCITESTING_FULL_MAP") ;;
@@ -176,6 +186,13 @@ for arg in "$@"; do
 			;;
 		--list) list_only=1 ;;
 		--split-slow) split_mode=on ;;
+		--look-shards=*)
+			look_shards="${arg#--look-shards=}"
+			[[ "$look_shards" =~ ^[1-9][0-9]*$ ]] || { echo "--look-shards needs a positive integer, got '$look_shards'" >&2; exit 2; }
+			;;
+		--full) look_full=1 ;;
+		--look-order=*) look_order="${arg#--look-order=}" ;;
+		--look-dump=*) look_dump="${arg#--look-dump=}" ;;
 		--no-split-slow) split_mode=off ;;
 		--boot) tests+=("dq_boot_gate") ;;
 		--bless) export DQ_SNAPSHOT_BLESS=1; bless=1 ;;
@@ -258,37 +275,82 @@ fi
 focus_arg all "${tests[@]}"
 focus="$FOCUS_ARG"
 
-# Decide whether to split the slow pins into their own world.
-fast_group=()
+# ---- worlds ----
+# The selection becomes up to three kinds of world, all from one compiled .dmb (each a dm-test of its own: run slot, port, log dir,
+# spritesheet dir, results file):
+#   main   the tests that are not slow pins
+#   slow   slow tests that are not look pins (DQ_SLOW_TESTS names more), together in one world
+#   look   dq_look_state_pin / dq_look_tree_pin: DQ_LOOK_SHARDS (default 4, --look-shards=N) worlds, each probing its slice of the
+#          types (DQ_FOCUS_SHARD=i/N; the sweep tests ask sweep_owns()), so the pins finish in about a quarter of the time. Both
+#          pins ride in every look world, so each type is made once for both. Not used with --bless or --repeat; a new pin (an
+#          empty snapshot file) is recorded by an unsharded full run: --look-shards=1 --full (tools/dq_pin.sh passes both).
+# Look runs are incremental unless --full: `analyze look-keys` hashes everything that can change a type's rows, and only the types whose
+# key differs from code/modules/unit_tests/snapshots/look_keys.txt are probed. A passing run that covered both pins rewrites that file.
+# --full probes every type (the merge worktree and the nightly use it).
+look_pins=" dq_look_state_pin dq_look_tree_pin "
+main_group=()
 slow_group=()
+look_group=()
 for t in "${tests[@]}"; do
-	if [[ "$slow_tests" == *" $t "* ]]; then slow_group+=("$t"); else fast_group+=("$t"); fi
+	if [[ "$look_pins" == *" $t "* ]]; then look_group+=("$t")
+	elif [[ "$slow_tests" == *" $t "* ]]; then slow_group+=("$t")
+	else main_group+=("$t"); fi
 done
 do_split=0
 case "$split_mode" in
 	on) do_split=1 ;;
-	auto) if [ ${#fast_group[@]} -gt 0 ] && [ ${#slow_group[@]} -gt 0 ]; then do_split=1; fi ;;
+	auto) if [ ${#main_group[@]} -gt 0 ] && [ $(( ${#slow_group[@]} + ${#look_group[@]} )) -gt 0 ]; then do_split=1; fi ;;
 esac
 if [ "${DQ_FOCUS_SPLIT:-}" = "0" ] && [ "$split_mode" = "auto" ]; then do_split=0; fi
-if [ "$do_split" -eq 1 ] && { [ "$bless" -eq 1 ] || [ "$repeat" -gt 1 ]; }; then
+if [ "$bless" -eq 1 ] || [ "$repeat" -gt 1 ]; then
 	if [ "$split_mode" = "on" ]; then echo "--split-slow ignored: it is not used with --bless or --repeat" >&2; fi
 	do_split=0
 fi
-if [ "$do_split" -eq 1 ] && [ ${#fast_group[@]} -eq 0 ]; then
-	# Only slow pins: deal them alternately into the two worlds.
-	if [ ${#slow_group[@]} -lt 2 ]; then
-		do_split=0
-	else
-		slow_a=()
-		slow_b=()
-		for ((i = 0; i < ${#slow_group[@]}; i++)); do
-			if [ $((i % 2)) -eq 0 ]; then slow_a+=("${slow_group[$i]}"); else slow_b+=("${slow_group[$i]}"); fi
-		done
-		fast_group=("${slow_a[@]}")
-		slow_group=("${slow_b[@]}")
-	fi
+# A look run: the pins are worlds of their own (sharded) unless bless, repeat or an empty snapshot file makes them run as before.
+look_world=0
+if [ ${#look_group[@]} -gt 0 ] && [ "$bless" -eq 0 ] && [ "$repeat" -eq 1 ] && [ "$split_mode" != "off" ] && [ "${DQ_FOCUS_SPLIT:-}" != "0" ]; then
+	look_world=1
+	do_split=1
 fi
-if [ "$do_split" -eq 1 ] && [ ${#fast_group[@]} -eq 0 -o ${#slow_group[@]} -eq 0 ]; then do_split=0; fi # --split-slow with nothing to split
+# The cap on look-pin runs across the machine (tools/dq_look_lock.sh): any run that holds a look pin waits for a slot first.
+if [ ${#look_group[@]} -gt 0 ] && [ "${DQ_LOOK_PIN_SLOTS:-2}" != "0" ]; then
+	# shellcheck source=tools/dq_look_lock.sh
+	. tools/dq_look_lock.sh
+	trap 'look_lock_release; cleanup_files' EXIT
+	trap 'exit 130' INT TERM
+	look_lock_acquire
+fi
+
+LOOK_PARAMS=""
+LOOK_PLAN_FILE=""
+LOOK_STALE_COUNT=-1
+look_prepare() {
+	# The analyzer's plan: a key and a probe list per type. Without it (no engine, an old one) the pins run full and unnarrowed.
+	local bin plan keys stale universe
+	plan="data/look-plan.tsv"
+	keys="code/modules/unit_tests/snapshots/look_keys.txt"
+	if bin="$(bash tools/ci/analyze.sh 2>/dev/null)" && "$bin" look-keys --out "$plan" >/dev/null 2>&1 && [ -s "$plan" ]; then
+		LOOK_PLAN_FILE="$plan"
+		LOOK_PARAMS="look-plan=$plan"
+		universe="$(wc -l <"$plan" | tr -d ' ')"
+		if [ "$look_full" -eq 0 ] && [ -f "$keys" ]; then
+			stale="data/look-types.$$.txt"
+			focus_files+=("$stale")
+			awk -F'\t' 'NR == FNR { have[$1] = $2; next } have[$1] != $2 { print $1 }' "$keys" "$plan" >"$stale"
+			LOOK_STALE_COUNT="$(wc -l <"$stale" | tr -d ' ')"
+			echo "== look pins: $LOOK_STALE_COUNT of $universe types changed since the recorded keys (--full probes all)"
+			LOOK_PARAMS="$LOOK_PARAMS&look-types=$stale"
+		else
+			echo "== look pins: full run over $universe types"
+		fi
+	else
+		echo "== look pins: no analyzer plan (analyze look-keys unavailable): full, unnarrowed run"
+		look_full=1
+	fi
+	if [ -n "$look_order" ]; then LOOK_PARAMS="${LOOK_PARAMS:+$LOOK_PARAMS&}look-order=$look_order"; fi
+	if [ -n "$look_dump" ]; then LOOK_PARAMS="${LOOK_PARAMS:+$LOOK_PARAMS&}look-dump=$look_dump"; fi
+}
+if [ "$look_world" -eq 1 ]; then look_prepare; fi
 
 status_write running "tests=${#tests[@]}" "split=$do_split"
 
@@ -318,7 +380,7 @@ print_result() {
 	echo "FOCUSED RESULT: $passed passed, $failed failed$note (json: ${json:-none})$tail_note"
 	if [ "$rc" -ne 0 ]; then st=failed; fi
 	status_write "$st" "result=$passed passed, $failed failed$note" "passed=$passed" "failed=$failed" "json=${json:-}" "exit_code=$rc"
-	if [ "${failed:-0}" -gt 0 ] && [ -n "$json" ] && [ -f tools/dq_known_failures.sh ]; then
+	if [ "${failed:-0}" -gt 0 ] && [ -n "$json" ] && [ -f "$json" ] && [ -f tools/dq_known_failures.sh ]; then
 		bash tools/dq_known_failures.sh --check "$json" || true
 	fi
 	return 0
@@ -333,73 +395,146 @@ run_once() {
 	tools/build/build.sh dm-test "--focus=$focus" ${args[@]+"${args[@]}"}
 }
 
-# Two worlds from one compiled .dmb. World 1 (the rest) compiles; once it has launched its world, world 2 (the slow pins)
-# starts, hits the compile-hash cache (same defines, same tree) and boots as run2: own run slot, port, log dir,
-# spritesheet dir and results file. DQ_KEEP_DERIVED_DME=1 keeps the derived .dme world 1 would delete at its end.
-# Shared mutable files: none beyond what a sharded dm-test already shares (data/ is per worktree; tests write only
-# under their run slot); snapshot rewrites (--bless) are why --bless never splits.
-run_split() {
-	local began logA logB pidA pidB rcA rcB waited=0 focusA focusB jA jB
+# Several worlds from one compiled .dmb. The first world compiles; once it has launched its world ("Test world runN"), the rest start,
+# hit the compile-hash cache (same defines, same tree) and boot as run2, run3, ...: own run slot, port, log dir, spritesheet dir and
+# results file. DQ_KEEP_DERIVED_DME=1 keeps the derived .dme the first world would delete at its end. Shared mutable files: none beyond
+# what a sharded dm-test already shares (data/ is per worktree; tests write only under their run slot); snapshot rewrites (--bless)
+# are why --bless never splits.
+W_LABEL=()
+W_FOCUS=()
+W_SHARD=()
+W_PARAMS=()
+W_LOG=()
+W_PID=()
+W_RC=()
+add_world() { # label shard params tests...
+	local label="$1" shard="$2" params="$3"
+	shift 3
+	focus_arg "w${#W_LABEL[@]}" "$@"
+	W_LABEL+=("$label")
+	W_FOCUS+=("$FOCUS_ARG")
+	W_SHARD+=("$shard")
+	W_PARAMS+=("$params")
+}
+start_world() { # index
+	local i="$1" log="data/focused-runs/split.$$.$1.log"
+	W_LOG[$i]="$log"
+	(
+		if [ -n "${W_SHARD[$i]}" ]; then export DQ_FOCUS_SHARD="${W_SHARD[$i]}"; fi
+		if [ -n "${W_PARAMS[$i]}" ]; then export DQ_WORLD_PARAMS="${W_PARAMS[$i]}"; fi
+		exec tools/build/build.sh dm-test "--focus=${W_FOCUS[$i]}" "--label=focused-${W_LABEL[$i]}" ${args[@]+"${args[@]}"}
+	) >"$log" 2>&1 &
+	W_PID[$i]=$!
+}
+run_worlds() {
+	local began n i waited=0 running jsons=() rc=0 j shard
 	began="$(date +%s)"
-	logA="data/focused-runs/split.$$.main.log"
-	logB="data/focused-runs/split.$$.slow.log"
-	focus_arg main "${fast_group[@]}"
-	focusA="$FOCUS_ARG"
-	focus_arg slow "${slow_group[@]}"
-	focusB="$FOCUS_ARG"
-	echo "== split: world 1 (${#fast_group[@]}): ${fast_group[*]:0:10}"
-	echo "== split: world 2 (${#slow_group[@]}): ${slow_group[*]:0:10}"
+	W_LABEL=(); W_FOCUS=(); W_SHARD=(); W_PARAMS=()
+	if [ ${#main_group[@]} -gt 0 ]; then add_world main "" "" "${main_group[@]}"; fi
+	if [ ${#slow_group[@]} -gt 0 ]; then add_world slow "" "" "${slow_group[@]}"; fi
+	if [ "$look_world" -eq 1 ] && [ "$LOOK_STALE_COUNT" -ne 0 ]; then
+		n="$look_shards"
+		if [ "$LOOK_STALE_COUNT" -ge 0 ] && [ "$n" -gt 1 ]; then
+			# Little to probe: fewer worlds (a world costs a boot, about 30 seconds, for about 50 types).
+			n=$(( (LOOK_STALE_COUNT + 49) / 50 ))
+			[ "$n" -lt 1 ] && n=1
+			[ "$n" -gt "$look_shards" ] && n="$look_shards"
+		fi
+		for ((i = 0; i < n; i++)); do
+			shard=""
+			if [ "$n" -gt 1 ]; then shard="$i/$n"; fi
+			add_world "look$i" "$shard" "$LOOK_PARAMS" "${look_group[@]}"
+		done
+	elif [ ${#look_group[@]} -gt 0 ]; then
+		add_world look "" "" "${look_group[@]}"
+	fi
+	for ((i = 0; i < ${#W_LABEL[@]}; i++)); do echo "== worlds: ${W_LABEL[$i]}${W_SHARD[$i]:+ (slice ${W_SHARD[$i]})}"; done
 	export DQ_KEEP_DERIVED_DME=1
-	tools/build/build.sh dm-test "--focus=$focusA" "--label=focused-main" ${args[@]+"${args[@]}"} >"$logA" 2>&1 &
-	pidA=$!
-	# Wait for world 1 to finish compiling (it logs "Test world runN" when it launches), or to die.
-	while ! grep -q 'Test world run' "$logA" 2>/dev/null; do
-		if ! kill -0 "$pidA" 2>/dev/null; then break; fi
+	if [ ${#look_group[@]} -gt 0 ] || [ ${#slow_group[@]} -gt 0 ]; then
+		if [ -z "${DQ_FOCUS_TIMEOUT_MINUTES:-}" ]; then export DQ_FOCUS_TIMEOUT_MINUTES=45; fi
+	fi
+	start_world 0
+	# Wait for world 0 to finish compiling (it logs "Test world runN" when it launches), or to die.
+	while ! grep -q 'Test world run' "${W_LOG[0]}" 2>/dev/null; do
+		if ! kill -0 "${W_PID[0]}" 2>/dev/null; then break; fi
 		sleep 2
 	done
-	if ! grep -q 'Test world run' "$logA" 2>/dev/null; then
-		wait "$pidA"
-		rcA=$?
-		echo "== split: world 1 ended before launching its world (exit $rcA); world 2 not started"
-		cat "$logA"
-		cat "$logA" >"$combined_log"
+	if ! grep -q 'Test world run' "${W_LOG[0]}" 2>/dev/null; then
+		wait "${W_PID[0]}"
+		rc=$?
+		echo "== worlds: world 0 ended before launching its world (exit $rc); the others were not started"
+		cat "${W_LOG[0]}"
+		cat "${W_LOG[0]}" >"$combined_log"
 		unset DQ_KEEP_DERIVED_DME
-		return "$rcA"
+		return "$rc"
 	fi
-	if [ -z "${DQ_FOCUS_TIMEOUT_MINUTES:-}" ]; then export DQ_FOCUS_TIMEOUT_MINUTES=45; fi # the look pins run about 22 minutes
-	tools/build/build.sh dm-test "--focus=$focusB" "--label=focused-slow" ${args[@]+"${args[@]}"} >"$logB" 2>&1 &
-	pidB=$!
-	echo "== split: both worlds running (pids $pidA, $pidB)"
-	while kill -0 "$pidA" 2>/dev/null || kill -0 "$pidB" 2>/dev/null; do
+	for ((i = 1; i < ${#W_LABEL[@]}; i++)); do start_world "$i"; done
+	echo "== worlds: ${#W_LABEL[@]} running"
+	while true; do
+		running=0
+		for ((i = 0; i < ${#W_LABEL[@]}; i++)); do
+			if kill -0 "${W_PID[$i]}" 2>/dev/null; then running=$((running + 1)); fi
+		done
+		[ "$running" -eq 0 ] && break
 		sleep 5
 		waited=$((waited + 5))
-		if [ $((waited % 120)) -eq 0 ]; then
-			echo "== split: $(( $(date +%s) - began ))s elapsed: world 1 $(kill -0 "$pidA" 2>/dev/null && echo running || echo done), world 2 $(kill -0 "$pidB" 2>/dev/null && echo running || echo done)"
-		fi
+		if [ $((waited % 120)) -eq 0 ]; then echo "== worlds: $(( $(date +%s) - began ))s elapsed, $running of ${#W_LABEL[@]} still running"; fi
 	done
-	wait "$pidA"
-	rcA=$?
-	wait "$pidB"
-	rcB=$?
 	unset DQ_KEEP_DERIVED_DME
-	echo "================ world 1 (the rest), exit $rcA"
-	if [ "$rcA" -eq 0 ]; then tail -n 15 "$logA"; else cat "$logA"; fi
-	echo "================ world 2 (slow pins), exit $rcB"
-	if [ "$rcB" -eq 0 ]; then tail -n 15 "$logB"; else cat "$logB"; fi
-	cat "$logA" "$logB" >"$combined_log"
-	# Merge the two data/test-runs records into one.
-	jA="$(sed -n 's/.*(saved \(data\/test-runs\/[^)]*\.json\)).*/\1/p' "$logA" | tail -n 1)"
-	jB="$(sed -n 's/.*(saved \(data\/test-runs\/[^)]*\.json\)).*/\1/p' "$logB" | tail -n 1)"
-	SPLIT_JSON="$(node tools/dq_merge_test_runs.js "$jA" "$jB")" || echo "== split: could not merge the records ($jA, $jB)" >&2
-	if [ "$rcA" -ne 0 ] || [ "$rcB" -ne 0 ]; then return 1; fi
-	return 0
+	: >"$combined_log"
+	for ((i = 0; i < ${#W_LABEL[@]}; i++)); do
+		wait "${W_PID[$i]}"
+		W_RC[$i]=$?
+		echo "================ world ${W_LABEL[$i]}, exit ${W_RC[$i]}"
+		if [ "${W_RC[$i]}" -eq 0 ]; then tail -n 6 "${W_LOG[$i]}"; else cat "${W_LOG[$i]}"; rc=1; fi
+		cat "${W_LOG[$i]}" >>"$combined_log"
+		j="$(sed -n 's/.*(saved \(data\/test-runs\/[^)]*\.json\)).*/\1/p' "${W_LOG[$i]}" | tail -n 1)"
+		jsons+=("$j")
+	done
+	SPLIT_JSON="$(node tools/dq_merge_test_runs.js "${jsons[@]}")" || echo "== worlds: could not merge the records (${jsons[*]})" >&2
+	echo "== worlds: all done in $(( $(date +%s) - began ))s"
+	return "$rc"
 }
+
+# The dumps of a look run (look-dump=DIR): each world wrote DIR/shardN/<pin>/<root>.txt; the shard files of a root are joined and
+# sorted into DIR/merged/<pin>/<root>.txt, so two runs (in different orders or shard counts) compare with `diff -r`.
+look_dump_merge() {
+	if [ -z "$look_dump" ] || [ ! -d "$look_dump" ]; then return 0; fi
+	local f rel
+	rm -rf "$look_dump/merged"
+	for f in "$look_dump"/shard*/*/*.txt; do
+		[ -f "$f" ] || continue
+		rel="${f#"$look_dump"/}"
+		rel="${rel#*/}"
+		mkdir -p "$look_dump/merged/$(dirname "$rel")"
+		cat "$f" >>"$look_dump/merged/$rel"
+	done
+	while IFS= read -r f; do LC_ALL=C sort -o "$f" "$f"; done < <(find "$look_dump/merged" -name '*.txt' 2>/dev/null)
+	echo "== look dump merged under $look_dump/merged ($(find "$look_dump/merged" -name '*.txt' | wc -l | tr -d ' ') files)"
+}
+
+# A passing run that covered both pins records the plan's keys: those types' rows are what the snapshots say.
+look_keys_record() {
+	if [ "$look_world" -ne 1 ] || [ -z "$LOOK_PLAN_FILE" ] || [ ! -f "$LOOK_PLAN_FILE" ] || [ -n "$look_order" ]; then return 0; fi
+	if [[ " ${look_group[*]} " != *" dq_look_state_pin "* || " ${look_group[*]} " != *" dq_look_tree_pin "* ]]; then return 0; fi
+	cut -f1,2 "$LOOK_PLAN_FILE" >code/modules/unit_tests/snapshots/look_keys.txt
+	echo "== look pins: recorded $(wc -l <code/modules/unit_tests/snapshots/look_keys.txt | tr -d ' ') type keys in code/modules/unit_tests/snapshots/look_keys.txt (commit it with the snapshots)"
+}
+
+# A look run with no stale type and nothing else to run needs no world at all.
+if [ "$look_world" -eq 1 ] && [ "$LOOK_STALE_COUNT" -eq 0 ] && [ ${#main_group[@]} -eq 0 ] && [ ${#slow_group[@]} -eq 0 ]; then
+	echo "FOCUSED RESULT: 0 passed, 0 failed (look pins: no type changed since the recorded keys, nothing probed; --full probes all)"
+	status_write passed "result=look pins: nothing stale" "passed=0" "failed=0" "exit_code=0"
+	exit 0
+fi
 
 SPLIT_JSON=""
 set +e
 if [ "$do_split" -eq 1 ]; then
-	run_split
+	run_worlds
 	rc=$?
+	look_dump_merge
+	if [ "$rc" -eq 0 ]; then look_keys_record; fi
 	print_result "$combined_log" "$rc" "$SPLIT_JSON"
 	rm -f "$combined_log" data/focused-runs/split."$$".*.log
 	exit "$rc"
@@ -408,6 +543,14 @@ fi
 if [ "$repeat" -eq 1 ]; then
 	run_once 2>&1 | tee "$combined_log"
 	rc=${PIPESTATUS[0]}
+	if [ "$rc" -eq 0 ] && [ "$bless" -eq 1 ] && [ ${#look_group[@]} -gt 0 ]; then
+		# A blessed (unsharded, full, unnarrowed) run rewrote every look row: the keys now describe them.
+		look_world=1
+		if bin="$(bash tools/ci/analyze.sh 2>/dev/null)" && "$bin" look-keys --out data/look-plan.tsv >/dev/null 2>&1 && [ -s data/look-plan.tsv ]; then
+			LOOK_PLAN_FILE=data/look-plan.tsv
+			look_keys_record
+		fi
+	fi
 	print_result "$combined_log" "$rc"
 	rm -f "$combined_log"
 	exit "$rc"

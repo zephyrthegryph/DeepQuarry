@@ -13,15 +13,32 @@ const base = parts[0].r;
 const tests = {};
 const counts = { passed: 0, failed: 0, skipped: 0 };
 const failed = [];
+// A test that ran in several worlds (a sweep sliced across shards) is one entry: the worst status wins, durations and runtimes add.
+const rank = (status) => (status === 1 ? 2 : status === 0 ? 0 : 1);
 for (const { r } of parts) {
 	for (const [name, t] of Object.entries(r.tests || {})) {
-		tests[name] = t;
-		if (t.status === 0) counts.passed++;
-		else if (t.status === 1) {
-			counts.failed++;
-			failed.push(name);
-		} else counts.skipped++;
+		const have = tests[name];
+		if (!have) {
+			tests[name] = { ...t };
+			continue;
+		}
+		if (rank(t.status) > rank(have.status)) {
+			have.status = t.status;
+			have.message = t.message;
+		} else if (rank(t.status) === rank(have.status) && t.message && !have.message) {
+			have.message = t.message;
+		}
+		for (const k of ["duration_ds", "duration", "duration_s", "runtimes"]) {
+			if (typeof t[k] === "number") have[k] = (have[k] || 0) + t[k];
+		}
 	}
+}
+for (const [name, t] of Object.entries(tests)) {
+	if (t.status === 0) counts.passed++;
+	else if (t.status === 1) {
+		counts.failed++;
+		failed.push(name);
+	} else counts.skipped++;
 }
 const stamp = parts.map((x) => x.r.id.split("_")[0]).sort()[0];
 const record = {

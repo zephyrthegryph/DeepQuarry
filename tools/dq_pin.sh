@@ -57,4 +57,7 @@ for type in "${types[@]}"; do
 	echo "pinning $type -> $file"
 done
 [ "$remove" -eq 1 ] && exit 0
+case "$test" in
+	dq_look_state_pin|dq_look_tree_pin) exec bash tools/dq_focused_test.sh --look-shards=1 --full "$test" ;; # recording writes whole files: one world, every type
+esac
 exec bash tools/dq_focused_test.sh "$test"
