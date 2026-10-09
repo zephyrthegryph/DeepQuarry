@@ -184,13 +184,19 @@ pub fn run_build_with_host(
     let mut memo_policy = 0;
     drop(input_context_profile);
     let session_profile = dm_profile::stage("session_validation");
-    if command == BuildCommand::Compile && !no_cache {
+    let compiler = if command == BuildCommand::Compile && (!no_cache || host.retains_artifacts()) {
         let compiler = file_hash(&std::env::current_exe()?)?;
         let mut policy_bytes = b"native-lowering-policy-v1\0".to_vec();
         policy_bytes.extend_from_slice(&compiler.to_le_bytes());
         policy_bytes.extend_from_slice(&engine_identity.to_le_bytes());
         policy_bytes.push(u8::from(bootstrap_catalog));
         memo_policy = xxhash_rust::xxh3::xxh3_128(&policy_bytes);
+        Some(compiler)
+    } else {
+        None
+    };
+    if command == BuildCommand::Compile && !no_cache {
+        let compiler = compiler.expect("configured compiler identity");
         let configuration = dmbc::session::Configuration::new(
             project.parent().ok_or("manifest parent missing")?,
             &project,
@@ -297,7 +303,6 @@ pub fn run_build_with_host(
     if engine_capture.is_none() {
         host.clear_regions();
     }
-    let engine = engine_capture.as_ref().map(|capture| &capture.snapshot);
     let memo_cache = if command == BuildCommand::Compile && !no_cache {
         match dm_cache::Cache::user_default(dm_cache::Limits::default()) {
             Ok(cache) => Some(Arc::new(cache)),
@@ -336,16 +341,15 @@ pub fn run_build_with_host(
                 Ok(())
             }) as Arc<dmbc::lowering_memo::CachePublisher>
         });
-    let procedure_memo = cache_snapshot.clone().map(|snapshot| {
-        dmbc::lowering_memo::ProcedureMemo::with_disk_only(memo_policy, snapshot)
-            .with_explanation_limit(131072)
-            .with_publisher(
-                cache_publisher
-                    .as_ref()
-                    .expect("snapshot publisher")
-                    .clone(),
-            )
-    });
+    let procedure_memo = host
+        .procedure_memo(memo_policy, cache_snapshot.clone())
+        .map(|memo| {
+            let memo = memo.with_explanation_limit(131072);
+            match &cache_publisher {
+                Some(publisher) => memo.with_publisher(Arc::clone(publisher)),
+                None => memo,
+            }
+        });
     let expansion_memo = cache_snapshot.clone().map(|snapshot| {
         dmbc::expansion_memo::DiskExpansionMemo::new(memo_policy, snapshot).with_publisher(
             cache_publisher
@@ -354,13 +358,6 @@ pub fn run_build_with_host(
                 .clone(),
         )
     });
-    // --no-cache bypasses disk; this explicit host may still retain bounded,
-    // authoritatively validated region candidates between requests.
-    let frontend_memo = host.expansion_memo(
-        expansion_memo
-            .as_ref()
-            .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
-    );
     let map_memo = cache_snapshot.clone().map(|snapshot| {
         dmbc::map_memo::MapMemo::with_disk(memo_policy, 64 * 1024 * 1024, snapshot).with_publisher(
             cache_publisher
@@ -369,7 +366,9 @@ pub fn run_build_with_host(
                 .clone(),
         )
     });
-    let seed = engine.map(dmbc::engine::EngineSnapshot::frontend_seed);
+    let seed = engine_capture
+        .as_ref()
+        .map(|capture| capture.frontend_seed());
     drop(engine_profile);
     let frontend_context_profile = dm_profile::stage("request.frontend_context");
     let progress = |event: dm_tree::frontend::FrontendProgress| {
@@ -384,7 +383,13 @@ pub fn run_build_with_host(
     };
     // One request-local execution boundary spans input capture, parsing, ABI,
     // lowering and linking. Its Drop joins workers before the CLI profiler ends.
-    let executor = dm_exec::BuildExecutor::new(workers)?;
+    let (frontend_memo, execution) = host.execution(
+        workers,
+        expansion_memo
+            .as_ref()
+            .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
+    )?;
+    execution.run(|executor| -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     let input_preparation_seconds;
     let frontend_result = {
         let preparation_start = Instant::now();
@@ -393,7 +398,7 @@ pub fn run_build_with_host(
         let inputs = match dmbc::native_inputs::NativeInputs::prepare_with_executor(
             &project,
             &inputs_capture,
-            &executor,
+            executor,
         ) {
             Ok(inputs) => Some(inputs),
             Err(dmbc::native_inputs::NativeInputError::RequiredSourceRead { .. }) => None,
@@ -429,13 +434,13 @@ pub fn run_build_with_host(
             &defines,
             dm_tree::frontend::FrontendConfig {
                 workers,
-                engine: seed.as_ref(),
+                engine: seed,
                 observer: progress_enabled.then_some(&progress),
             },
             frontend_memo
                 .as_ref()
                 .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
-            &executor,
+            executor,
         )
     };
     let frontend_handoff_profile = dm_profile::stage("request.frontend_handoff");
@@ -534,12 +539,12 @@ pub fn run_build_with_host(
             destination: &resource_destination,
             outputs: &resource_outputs,
         });
-        let roots = engine
+        let roots = retained_engine
             .frontend_seed()
             .hierarchy
             .parents
-            .into_iter()
-            .map(|(id, _)| id)
+            .iter()
+            .map(|(id, _)| *id)
             .collect();
         let capture_observer = |measurement: dmbc::captured_non_text_driver::CaptureMeasurement| {
             if progress_enabled {
@@ -600,7 +605,7 @@ pub fn run_build_with_host(
                 Some(&capture_observer),
                 map_memo.as_ref(),
                 Some(&admit_resources),
-                &executor,
+                executor,
                 resource_sink
                     .as_ref()
                     .map(|sink| sink as &dyn dmbc::assets::ResourceArchiveSink),
@@ -657,7 +662,7 @@ pub fn run_build_with_host(
                 Some(nontext.resource_search_context),
                 artifacts,
                 Some(nontext.stage()),
-                &executor,
+                executor,
                 progress_enabled.then_some(&cold_observer),
                 procedure_memo.as_ref(),
             )?;
@@ -682,7 +687,7 @@ pub fn run_build_with_host(
             drop(symbols);
             drop(frontend);
             let output =
-                composition.compose(&executor, progress_enabled.then_some(&cold_observer))?;
+                composition.compose(executor, progress_enabled.then_some(&cold_observer))?;
             Ok::<_, dmbc::cold::ColdError>((output, publication, explanations))
         })();
         if progress_enabled && compile_result.is_err() {
@@ -920,6 +925,7 @@ pub fn run_build_with_host(
         body_rows: counts.body_rows,
         seconds: total.elapsed().as_secs_f64(),
     })
+    })?
 }
 
 fn file_hash(path: &std::path::Path) -> io::Result<u128> {

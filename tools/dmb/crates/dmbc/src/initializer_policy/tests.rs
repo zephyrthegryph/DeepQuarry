@@ -580,3 +580,94 @@ fn world_header_exception_is_exact_and_does_not_cover_runtime_fields() {
 
 #[path = "parallel_tests.rs"]
 mod parallel_tests;
+
+#[test]
+fn sparse_runtime_model_has_compact_slots_and_releases_evaluated_list_before_codegen() {
+    use std::sync::{Mutex, Weak};
+    type Entries = [(Option<SemanticValue>, SemanticValue)];
+    struct ListOwner {
+        last_list: Mutex<Option<Weak<Entries>>>,
+        argument_calls: std::sync::atomic::AtomicUsize,
+    }
+    impl CapturedInitializerEvaluator for ListOwner {
+        fn evaluate(&self, _: SymbolId, _: &SymbolicExpression) -> Result<Evaluation, String> {
+            let entries: Arc<Entries> =
+                Arc::from([(None, SemanticValue::NumberBits(2f32.to_bits()))]);
+            *self.last_list.lock().unwrap() = Some(Arc::downgrade(&entries));
+            Ok(Evaluation::Scalar(SemanticValue::List(entries)))
+        }
+        fn evaluate_ast_write(
+            &self,
+            _: &InitializerWrite,
+            ast: &dm_syntax::Expr,
+            _: &str,
+            _: &SymbolTable,
+        ) -> Result<Evaluation, String> {
+            assert!(
+                self.last_list
+                    .lock()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .upgrade()
+                    .is_none(),
+                "discarded evaluated list must not overlap runtime construction preparation"
+            );
+            self.argument_calls
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            assert_eq!(ast.kind, dm_syntax::ExprKind::Literal("2".into()));
+            Ok(Evaluation::Scalar(SemanticValue::NumberBits(
+                2f32.to_bits(),
+            )))
+        }
+    }
+    // A sparse ledger must not embed the full AST into every scalar write's slot.
+    assert!(std::mem::size_of::<RuntimeValue>() <= 3 * std::mem::size_of::<usize>());
+    assert!(std::mem::size_of::<Option<RuntimeValue>>() <= 3 * std::mem::size_of::<usize>());
+    let evaluator = ListOwner {
+        last_list: Mutex::new(None),
+        argument_calls: std::sync::atomic::AtomicUsize::new(0),
+    };
+    let mut symbols = SymbolTable::default();
+    let owner = symbols.intern("/").unwrap();
+    let name = symbols.intern("owned_list").unwrap();
+    let source = expression("list(2)", &mut symbols).unwrap();
+    let mut captured = write(owner, name, InitializerValue::Expression(source));
+    let classified = classify(std::slice::from_ref(&captured), &symbols, &evaluator).unwrap();
+    assert_eq!(classified.writes[0].phase, Some(Phase::LiteralAllocation));
+    assert!(matches!(
+        classified.writes[0].default,
+        DefaultValue::InitializerExpression { token: 0, .. }
+    ));
+    let Some(RuntimeValue::Expression(ast)) = &classified.writes[0].runtime_value else {
+        panic!("literal list must retain its one runtime AST");
+    };
+    assert_eq!(
+        ast.as_ref(),
+        &dm_syntax::parse_expression("list(2)").expr.unwrap()
+    );
+    assert_eq!(classified.groups[0].writes, [0]);
+    assert_eq!(
+        evaluator
+            .argument_calls
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1
+    );
+    captured.declaration_flags = Some(2);
+    let error = classify(&[captured], &symbols, &evaluator).unwrap_err();
+    assert!(error.contains("const initializer is not scalar"));
+    assert_eq!(
+        evaluator
+            .argument_calls
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1
+    );
+    assert!(evaluator
+        .last_list
+        .lock()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .upgrade()
+        .is_none());
+}

@@ -7,6 +7,7 @@ mod initializer_ledger;
 mod macro_environments;
 mod prepared;
 mod relocation_metrics;
+pub(crate) mod resident_weight;
 mod typed_body;
 use std::{
     collections::{BTreeMap, BTreeSet, HashSet},
@@ -43,16 +44,17 @@ pub struct HeapCensus {
     owners: BTreeMap<String, OwnerReport>,
     // Addresses stay private to this diagnostic, never become output identities.
     allocations: HashSet<usize>,
+    buffer_encounters: usize,
     collections: HashSet<usize>,
     frozen_code_metrics: relocation_metrics::RelocationMetrics,
 }
-
 impl HeapCensus {
     pub fn new(stage: impl Into<String>) -> Self {
         Self {
             stage: stage.into(),
             owners: BTreeMap::new(),
             allocations: HashSet::new(),
+            buffer_encounters: 0,
             collections: HashSet::new(),
             frozen_code_metrics: Default::default(),
         }
@@ -73,6 +75,7 @@ impl HeapCensus {
         self.owner(owner).unknown.insert(reason.into());
     }
     fn buffer(&mut self, owner: &str, pointer: usize, payload: usize, capacity: usize) -> bool {
+        self.buffer_encounters = self.buffer_encounters.saturating_add(1);
         if capacity == 0 {
             return false;
         }

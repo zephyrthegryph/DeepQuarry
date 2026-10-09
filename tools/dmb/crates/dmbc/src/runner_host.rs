@@ -4,17 +4,23 @@ use crate::{engine::EngineSnapshot, engine_link::EngineLinkFacts};
 use std::{
     collections::BTreeMap,
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, OnceLock},
 };
 
 #[path = "runner_host_memo.rs"]
 mod memo;
+
+type ProcedureValues =
+    Arc<crate::lowering_memo::LoweringMemo<crate::lowering_memo::CachedProcedure>>;
+type HostParts<'a> = (Option<memo::MemoView<'a>>, HostExecution<'a>);
 
 /// A single bounded engine slot. The CLI uses a temporary owner; a long-lived
 /// caller may reuse it across requests without retaining a build lease.
 pub struct BuildHost {
     engine: Option<Arc<RetainedEngine>>,
     memo: Option<memo::ResidentMemo>,
+    executor: Option<dm_exec::BuildExecutor>,
+    procedures: Option<(u128, ProcedureValues)>,
 }
 
 #[derive(Eq, PartialEq)]
@@ -30,12 +36,15 @@ pub(crate) struct RetainedEngine {
     pub(crate) bytes: Arc<[u8]>,
     pub(crate) snapshot: EngineSnapshot,
     links: Mutex<Option<EngineLinkFacts>>,
+    seed: OnceLock<dm_tree::frontend::EngineSeed>,
 }
 
 impl Default for BuildHost {
     fn default() -> Self {
         Self {
             engine: None,
+            executor: None,
+            procedures: None,
             memo: Some(memo::ResidentMemo::default()),
         }
     }
@@ -45,8 +54,40 @@ impl BuildHost {
     pub fn one_shot() -> Self {
         Self {
             engine: None,
+            executor: None,
+            procedures: None,
             memo: None,
         }
+    }
+
+    pub(crate) fn retains_artifacts(&self) -> bool {
+        self.memo.is_some()
+    }
+    pub(crate) fn procedure_memo(
+        &mut self,
+        policy: u128,
+        disk: Option<Arc<dm_cache::CacheSnapshot>>,
+    ) -> Option<crate::lowering_memo::ProcedureMemo> {
+        if self.memo.is_none() {
+            return disk.map(|snapshot| {
+                crate::lowering_memo::ProcedureMemo::with_disk_only(policy, snapshot)
+            });
+        }
+        if self
+            .procedures
+            .as_ref()
+            .is_none_or(|(previous, _)| *previous != policy)
+        {
+            self.procedures = Some((
+                policy,
+                Arc::new(crate::lowering_memo::LoweringMemo::default()),
+            ));
+        }
+        Some(crate::lowering_memo::ProcedureMemo::with_resident(
+            policy,
+            Arc::clone(&self.procedures.as_ref().unwrap().1),
+            disk,
+        ))
     }
 
     pub(crate) fn clear_regions(&mut self) {
@@ -55,6 +96,7 @@ impl BuildHost {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn expansion_memo<'a>(
         &'a self,
         disk: Option<&'a dyn dm_preprocess::regions::ExpansionMemo>,
@@ -63,6 +105,33 @@ impl BuildHost {
             Some(resident) => Some(resident.with_disk(disk)),
             None => disk.map(memo::MemoView::disk_only),
         }
+    }
+
+    pub(crate) fn execution<'a>(
+        &'a mut self,
+        workers: usize,
+        disk: Option<&'a dyn dm_preprocess::regions::ExpansionMemo>,
+    ) -> Result<HostParts<'a>, dm_exec::ExecutorError> {
+        let execution = if self.memo.is_some() {
+            if self
+                .executor
+                .as_ref()
+                .is_some_and(|pool| pool.workers() != workers.max(1))
+            {
+                drop(self.executor.take());
+            }
+            if self.executor.is_none() {
+                self.executor = Some(dm_exec::BuildExecutor::new_unbound(workers)?);
+            }
+            HostExecution::Retained(self.executor.as_mut().expect("retained pool"))
+        } else {
+            HostExecution::OneShot(dm_exec::BuildExecutor::new(workers)?)
+        };
+        let memo = match &self.memo {
+            Some(resident) => Some(resident.with_disk(disk)),
+            None => disk.map(memo::MemoView::disk_only),
+        };
+        Ok((memo, execution))
     }
 
     pub(crate) fn engine(
@@ -98,16 +167,41 @@ impl BuildHost {
             bytes: bytes.into(),
             snapshot,
             links: Mutex::new(None),
+            seed: OnceLock::new(),
         });
         if self.memo.is_some() {
             self.memo = Some(memo::ResidentMemo::default());
         }
+        self.procedures = None;
         self.engine = Some(Arc::clone(&retained));
         Ok(retained)
     }
 }
 
+pub(crate) enum HostExecution<'a> {
+    OneShot(dm_exec::BuildExecutor),
+    Retained(&'a mut dm_exec::BuildExecutor),
+}
+impl HostExecution<'_> {
+    pub(crate) fn run<R>(
+        self,
+        operation: impl FnOnce(&dm_exec::BuildExecutor) -> R,
+    ) -> Result<R, dm_exec::RequestError> {
+        match self {
+            Self::OneShot(executor) => Ok(operation(&executor)),
+            Self::Retained(executor) => {
+                let request = dm_profile::RequestContext::capture();
+                executor.with_request(request.as_ref(), operation)
+            }
+        }
+    }
+}
+
 impl RetainedEngine {
+    pub(crate) fn frontend_seed(&self) -> &dm_tree::frontend::EngineSeed {
+        self.seed.get_or_init(|| self.snapshot.frontend_seed())
+    }
+
     /// Return a mutable request overlay without altering the pinned baseline.
     /// First capture stays at the ordinary pipeline's linking-input boundary.
     pub(crate) fn link_overlay(&self) -> Result<EngineLinkFacts, String> {
@@ -138,6 +232,72 @@ mod tests {
         )
         .unwrap()
     }
+    fn worker_ids(
+        executor: &dm_exec::BuildExecutor,
+    ) -> std::collections::HashSet<std::thread::ThreadId> {
+        let barrier = std::sync::Barrier::new(executor.workers());
+        let ids = Mutex::new(std::collections::HashSet::new());
+        executor.scope(|scope| {
+            for _ in 0..executor.workers() {
+                let barrier = &barrier;
+                let ids = &ids;
+                scope.spawn(move |_| {
+                    ids.lock().unwrap().insert(std::thread::current().id());
+                    barrier.wait();
+                });
+            }
+        });
+        ids.into_inner().unwrap()
+    }
+    #[test]
+    fn procedure_facades_share_only_values_and_policy_change_replaces_store() {
+        let mut host = BuildHost::default();
+        let first = host.procedure_memo(1, None).unwrap();
+        first
+            .counts
+            .resident_hits
+            .store(7, std::sync::atomic::Ordering::Relaxed);
+        let second = host.procedure_memo(1, None).unwrap();
+        assert!(Arc::ptr_eq(&first.values, &second.values));
+        assert_eq!(
+            second
+                .counts
+                .resident_hits
+                .load(std::sync::atomic::Ordering::Relaxed),
+            0
+        );
+        let changed = host.procedure_memo(2, None).unwrap();
+        assert!(!Arc::ptr_eq(&first.values, &changed.values));
+        assert!(BuildHost::one_shot().procedure_memo(1, None).is_none());
+    }
+    #[test]
+    fn retained_requests_reuse_physical_workers_and_count_switch_replaces_them() {
+        let mut host = BuildHost::default();
+        assert!(host.executor.is_none());
+        let (_, execution) = host.execution(2, None).unwrap();
+        let first = execution.run(worker_ids).unwrap();
+        assert_eq!(first.len(), 2);
+        let (_, execution) = host.execution(2, None).unwrap();
+        let second = execution.run(worker_ids).unwrap();
+        assert_eq!(first, second);
+        let (_, execution) = host.execution(1, None).unwrap();
+        let changed = execution.run(worker_ids).unwrap();
+        assert_eq!(changed.len(), 1);
+        assert!(first.is_disjoint(&changed));
+    }
+    #[test]
+    fn retained_request_panic_unbinds_before_next_request() {
+        let mut host = BuildHost::default();
+        let failure = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let (_, execution) = host.execution(1, None).unwrap();
+            let _ = execution.run(|executor| {
+                executor.scope(|scope| scope.spawn(|_| panic!("scoped request failure")))
+            });
+        }));
+        assert!(failure.is_err());
+        let (_, execution) = host.execution(1, None).unwrap();
+        assert_eq!(execution.run(worker_ids).unwrap().len(), 1);
+    }
     #[test]
     fn one_shot_without_disk_has_no_memo_and_engine_capture_does_not_enable_it() {
         let mut host = BuildHost::one_shot();
@@ -161,6 +321,8 @@ mod tests {
         overlay.references.references.clear();
         let second = capture(&mut host, BTreeMap::new());
         assert!(Arc::ptr_eq(&first, &second));
+        assert!(std::ptr::eq(first.frontend_seed(), second.frontend_seed()));
+        assert_eq!(second.frontend_seed().identity, second.snapshot.identity());
         let independent = second.link_overlay().unwrap();
         assert_eq!(independent.inventory.entries.len(), expected_entries);
         assert_eq!(independent.references.references.len(), expected_references);

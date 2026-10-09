@@ -59,6 +59,15 @@ impl<T: Send + Sync> ArtifactStore<T> {
         key: &[u8],
         resolver: &R,
     ) -> (Option<Arc<T>>, Option<ResolveQuery>) {
+        self.visit_explained(key, resolver, &mut |_| true)
+    }
+    /// Consumer rejection continues to the next exact read-valid variant.
+    pub fn visit_explained<R: Resolver>(
+        &self,
+        key: &[u8],
+        resolver: &R,
+        accept: &mut dyn FnMut(&Arc<T>) -> bool,
+    ) -> (Option<Arc<T>>, Option<ResolveQuery>) {
         let hash = xxhash_rust::xxh3::xxh3_128(key);
         // Resolver work takes place outside the store lock, allowing parallel units.
         let candidates = {
@@ -88,7 +97,7 @@ impl<T: Send + Sync> ArtifactStore<T> {
             });
             if let Some(read) = mismatch {
                 changed = Some(read.query);
-            } else {
+            } else if accept(&value) {
                 return (Some(value), None);
             }
         }
@@ -176,6 +185,20 @@ mod tests {
         fn drop(&mut self) {
             self.0.fetch_add(1, Ordering::SeqCst);
         }
+    }
+    #[test]
+    fn consumer_rejection_continues_to_older_read_valid_variant() {
+        let store = ArtifactStore::default();
+        store.insert(Arc::from(b"exact".as_slice()), vec![], 1u32);
+        store.insert(Arc::from(b"exact".as_slice()), vec![], 2u32);
+        let mut visited = Vec::new();
+        let (value, changed) = store.visit_explained(b"exact", &Host, &mut |value| {
+            visited.push(**value);
+            **value == 1
+        });
+        assert_eq!(visited, [2, 1]);
+        assert_eq!(value.as_deref(), Some(&1));
+        assert!(changed.is_none());
     }
     #[test]
     fn artifact_readers_outlive_store_eviction_then_release_last_owner() {

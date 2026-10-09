@@ -55,7 +55,7 @@ impl DebugSourceProvider for CapturedOrigins {
 fn value_expression(value: &RuntimeValue) -> std::borrow::Cow<'_, dm_syntax::Expr> {
     use dm_syntax::{Expr, ExprKind, Span};
     match value {
-        RuntimeValue::Expression(value) => std::borrow::Cow::Borrowed(value),
+        RuntimeValue::Expression(value) => std::borrow::Cow::Borrowed(value.as_ref()),
         RuntimeValue::SizedArray(dimensions) => {
             // A policy-issued typed constructor; no DM source is generated.
             let span = Span::new(0, 0);

@@ -11,10 +11,26 @@ immutable DMB/RSC pair before installing the conventional manifest output paths:
 cargo run -j1 --manifest-path tools/dmb/Cargo.toml -p dmbc -- compile deepquarry.dme --workers 2 -DCITESTING=1 --progress
 ```
 
-This path is experimental and does not yet admit the complete project. Unsupported
-semantics fail before output publication. No daemon or incremental reuse is
-implemented in this path yet. The pinned target is BYOND 516.1687; the driver
+This path is experimental. Captured historical DeepQuarry builds complete and
+match independent fresh-native outputs; that does not establish BYOND runtime
+parity or current-master admission. Unsupported semantics fail before output
+publication. The CLI is one-shot; daemon activation and cross-revision semantic
+incremental compilation remain unfinished. The pinned target is BYOND 516.1687; the driver
 supplies its default version macros and accepts explicit source defines.
+
+### Shared request core
+
+`request_runner::run_build_with_host` uses the same frontend-through-publication
+pipeline as the CLI. An explicit retained `runner_host::BuildHost` owns one worker
+pool, exact authenticated engine inputs and bounded immutable artifact candidates.
+Each request binds fresh profiling context and current resolver/source/ABI facts;
+validated disk candidates can promote without republishing. Worker-count changes
+join and replace the pool. `BuildHost::one_shot()` bypasses resident retention.
+
+This core does not retain a frontend revision or reuse startup issuance across
+edits. It is a migration boundary for future transport and tooling, not a complete
+daemon. Phase 1 throughput and memory gates must close before daemon and disk-cache
+activation. See `STATUS.md` for measured results and validation scopes.
 
 On Windows, pairs share `%LOCALAPPDATA%/dmbd/pairs` on that drive and
 `<drive>:\.dmbd\pairs` on other drives.

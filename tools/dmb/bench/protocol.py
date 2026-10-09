@@ -793,6 +793,7 @@ def execute(h, args):
                                "source_edit_provenance": scenario.get("_edited_snapshot", {}).get("provenance"),
                                **profile_measurement(report, wall)}
                         row["stage_map"] = map_provenance[label]
+                        row["io_acceptance_methodology"] = h.IO_ACCEPTANCE_METHOD
                         row["domain_bound_methodology"] = h.DOMAIN_BOUND_METHOD
                         _, domain_notes, _ = h.domain_bound_adoption(row, stage_maps[label])
                         row["domain_bound_adoption"] = domain_notes
@@ -850,7 +851,10 @@ def execute(h, args):
                        "workers": workers, "runs": len(rows), "acceptance": acceptance, "reasons": reasons,
                        "measurement_admission": "passed" if len(rows) == 3 and all(row["measurement_admission"] == "passed" for row in rows) else "incomplete_or_failed",
                        "structural_no_regression": "passed" if len(rows) == 3 and all(row["structural_diff"].get("no_regression") in ("passed", "baseline_established") for row in rows) else "failed",
-                       "io_acceptance": io_acceptance, "io_reasons": io_reasons, **h.medians(rows)}
+                       "io_acceptance_methodology": h.IO_ACCEPTANCE_METHOD,
+                       "io_acceptance": io_acceptance, "io_reasons": io_reasons,
+                       "io_bytes_acceptance": io_acceptance, "io_bytes_reasons": io_reasons,
+                       **h.io_observations(rows), **h.medians(rows)}
             h.append(args.results, summary)
             summaries.append(summary)
         deltas = []

@@ -46,6 +46,7 @@ fn shared_cpu_boundaries_partition_nested_intervals_exactly() {
             calibration_cpu_s: None,
             note: "test",
         },
+        io_wait: io_wait::Ledger::default(),
         entries: Mutex::new(BTreeMap::new()),
         folded: Mutex::new(BTreeMap::new()),
         wall_folded: Mutex::new(BTreeMap::new()),

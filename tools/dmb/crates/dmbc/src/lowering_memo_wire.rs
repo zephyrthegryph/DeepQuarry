@@ -573,8 +573,15 @@ pub(crate) struct ProcedureReplayContext<'a> {
     pub parsed: Option<&'a dm_syntax::Item>,
 }
 #[derive(Default)]
+pub(crate) struct ResidentPromotion {
+    pub queries: Vec<ResolveQuery>,
+    pub versions: Vec<(dm_ir::ReadDomain, u128)>,
+    pub relative_debug: Vec<usize>,
+}
+#[derive(Default)]
 pub(crate) struct ProcedureLookup {
     pub unit: Option<LoweredUnit>,
+    pub resident: Option<ResidentPromotion>,
     pub errors: Option<Vec<dm_codegen_byond::LowerError>>,
     pub changed_query: Option<ResolveQuery>,
     pub miss: Option<crate::lowering_memo::MemoMissReason>,
@@ -682,6 +689,11 @@ impl Candidates {
                     return result;
                 }
                 Candidate::Executable(v) => {
+                    let promotion = ResidentPromotion {
+                        queries: v.reads.iter().map(|(query, _)| *query).collect(),
+                        versions: v.versions.clone(),
+                        relative_debug: v.relative_debug.clone(),
+                    };
                     match rebind(
                         *v,
                         context.frontend,
@@ -692,6 +704,7 @@ impl Candidates {
                     ) {
                         Ok(unit) => {
                             result.unit = Some(unit);
+                            result.resident = Some(promotion);
                             return result;
                         }
                         Err(reason) => {

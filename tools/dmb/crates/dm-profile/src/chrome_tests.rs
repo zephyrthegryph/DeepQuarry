@@ -133,3 +133,40 @@ fn queued_argument_snapshots_preserve_record_updates() {
     assert_eq!(events[1]["cat"], events[2]["cat"]);
     assert_eq!(events[1][".file"], events[2][".file"]);
 }
+#[test]
+fn dynamic_stage_label_has_one_shared_owner_and_exact_trace_text() {
+    struct Check(Arc<Mutex<Vec<bool>>>);
+    impl<S> Layer<S> for Check
+    where
+        S: Subscriber + for<'a> LookupSpan<'a>,
+    {
+        fn on_new_span(&self, _: &Attributes<'_>, id: &Id, context: Context<'_, S>) {
+            let span = context.span(id).unwrap();
+            let extensions = span.extensions();
+            let stage = extensions.get::<crate::names::StageName>().unwrap();
+            let arguments = extensions.get::<Arguments>().unwrap();
+            let Name::Shared(name) = &arguments.name else {
+                panic!("dynamic name must be shared")
+            };
+            self.0.lock().unwrap().push(Arc::ptr_eq(&stage.0, name));
+        }
+    }
+    let output = Buffer::default();
+    let shared = Arc::new(Mutex::new(Vec::new()));
+    let (chrome, guard) = build(output.clone(), 2).unwrap();
+    let subscriber = tracing_subscriber::registry()
+        .with(crate::names::Names)
+        .with(chrome)
+        .with(Check(Arc::clone(&shared)));
+    tracing::subscriber::with_default(subscriber, || {
+        let stage = "dynamic λ stage".to_owned();
+        let span = tracing::info_span!("compiler_stage", stage = stage.as_str());
+        let _entered = span.enter();
+    });
+    guard.finish().unwrap();
+    assert_eq!(*shared.lock().unwrap(), vec![true]);
+    let events: Vec<Value> = serde_json::from_slice(&output.0.lock().unwrap()).unwrap();
+    assert_eq!(events[1]["name"], "dynamic λ stage");
+    assert_eq!(events[2]["name"], "dynamic λ stage");
+    assert_eq!(events[1]["args"]["stage"], "\"dynamic λ stage\"");
+}

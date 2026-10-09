@@ -95,7 +95,17 @@ pub(super) fn lower_one_memo<R: Resolver, P: AbiPolicy>(
     use crate::lowering_memo::{MemoMissReason, MemoOutcome};
     let (value, changed_query) = {
         let _profile = dm_profile::item("lowering.resident_validate");
-        memo.values.lookup_explained(&key, host)
+        memo.values.visit_explained(&key, host, &mut |value| {
+            let previous = &value.unit;
+            let rebased = crate::lowering_memo::rebase_debug(frontend, body, &value.relative_debug);
+            let absolute =
+                !previous.code.modified_instances.is_empty() || !previous.source_helpers.is_empty();
+            rebased.as_ref().is_some_and(|origins| {
+                !absolute
+                    || (previous.origin.expanded_span == body.expanded_span
+                        && *origins == previous.debug_origins)
+            })
+        })
     };
     let mut miss = changed_query.map_or(MemoMissReason::NoExactVariant, |_| {
         MemoMissReason::ReadMeaningChanged
@@ -119,6 +129,7 @@ pub(super) fn lower_one_memo<R: Resolver, P: AbiPolicy>(
             let mut unit = previous.clone();
             unit.debug_origins = rebased.expect("checked relative origins");
             unit.origin = body.clone();
+            unit.abi = prepared.abi.clone();
             if let Some(member) = frontend.snapshot.tree.member(body.member) {
                 if let Some(metadata) = &member.metadata.procedure {
                     unit.metadata = Arc::clone(metadata);

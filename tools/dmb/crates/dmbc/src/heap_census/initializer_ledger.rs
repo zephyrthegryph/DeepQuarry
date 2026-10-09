@@ -24,7 +24,15 @@ impl HeapCensus {
                 }
                 match &fact.runtime_value {
                     Some(RuntimeValue::Expression(expression)) => {
-                        self.typed_expression("initializer_ledger.runtime_ast", expression)
+                        let owner = "initializer_ledger.runtime_ast";
+                        if self.buffer(
+                            owner,
+                            expression.as_ref() as *const dm_syntax::Expr as usize,
+                            std::mem::size_of::<dm_syntax::Expr>(),
+                            std::mem::size_of::<dm_syntax::Expr>(),
+                        ) {
+                            self.typed_expression(owner, expression);
+                        }
                     }
                     Some(RuntimeValue::SizedArray(dimensions)) => {
                         self.slice(owner, dimensions, true);
@@ -63,9 +71,9 @@ mod tests {
                 },
                 default: DefaultValue::Scalar(dm_ir::SemanticValue::Null),
                 phase: None,
-                runtime_value: Some(RuntimeValue::Expression(
+                runtime_value: Some(RuntimeValue::Expression(Box::new(
                     dm_syntax::parse_expression("list(1,2)").expr.unwrap(),
-                )),
+                ))),
             }],
             groups: vec![RuntimeGroup {
                 receiver: None,

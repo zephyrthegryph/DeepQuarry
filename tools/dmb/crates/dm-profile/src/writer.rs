@@ -49,6 +49,7 @@ mod tests {
     fn moved_writer_records_one_actual_worker_receipt_after_join() {
         let state = Arc::new(State {
             calibration: crate::clock::calibrate(),
+            io_wait: crate::io_wait::Ledger::default(),
             entries: Mutex::new(BTreeMap::new()),
             folded: Mutex::new(BTreeMap::new()),
             wall_folded: Mutex::new(BTreeMap::new()),

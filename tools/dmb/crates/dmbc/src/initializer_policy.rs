@@ -233,7 +233,7 @@ pub struct ClassifiedWrite {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RuntimeValue {
-    Expression(dm_syntax::Expr),
+    Expression(Box<dm_syntax::Expr>),
     SizedArray(Arc<[u16]>),
 }
 #[derive(Clone, Debug)]

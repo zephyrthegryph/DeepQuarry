@@ -90,8 +90,18 @@ fn procedure_memo_reuses_resident_and_disk_and_rebases_shifted_origins() {
             .counts
             .disk_hits
             .load(std::sync::atomic::Ordering::Relaxed),
-        4
+        2
     );
+    // Validated disk results are promoted without being published again. The
+    // shifted revision must replay those resident records and rebase origins.
+    assert_eq!(
+        restarted
+            .counts
+            .resident_hits
+            .load(std::sync::atomic::Ordering::Relaxed),
+        2
+    );
+    assert!(restarted.take_pending().is_empty());
     assert_eq!(
         cold.units[0].code.procedure,
         moved_batch.units[0].code.procedure

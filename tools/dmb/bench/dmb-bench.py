@@ -557,6 +557,7 @@ def gate(scenario, rows, history, stage_map):
 
 
 def io_gate(scenario, rows):
+    """Accept only the numeric read/write budgets explicitly defined in DESIGN."""
     if len(rows) != 3 or any(row.get("status") != "verified" for row in rows):
         return "incomplete", ["three successful oracle-verified runs required"]
     summary = medians(rows)
@@ -564,16 +565,37 @@ def io_gate(scenario, rows):
         return "not_evaluable", ["I/O byte counts unavailable"]
     target = TARGETS.get(scenario)
     failures = []
-    if target:
-        for key, limit in zip(("read_bytes", "write_bytes"), target[2:]):
-            if summary[key] > limit:
-                failures.append(key + " exceeds I/O budget")
+    if target is None:
+        return "diagnostic_only", ["scenario has no admitted I/O byte budget"]
+    for key, limit in zip(("read_bytes", "write_bytes"), target[2:]):
+        if summary[key] > limit:
+            failures.append(key + " exceeds I/O budget")
     if failures:
         return "failed", failures
-    if any(row.get("io_coverage") != "complete" or not row.get("stages") or any(not metric(stage.get("io_blocked_s")) for stage in row["stages"]) for row in rows):
-        return "not_evaluable", ["blocked I/O time unavailable; process-window bytes are not additive"]
     return "passed", []
 
+
+
+IO_ACCEPTANCE_METHOD = "numeric-byte-budgets-with-separate-wait-observations-v1"
+
+def io_observations(rows):
+    """Reporting completeness is independent of the explicit byte budgets.
+
+    Annotated non-CPU wait bounds are partial and cannot certify all storage
+    blocking. No blocked-time acceptance target exists in DESIGN section 6.0.
+    """
+    complete = bool(rows) and all(
+        row.get("io_coverage") == "complete" and row.get("stages") and
+        all(metric(stage.get("io_blocked_s")) for stage in row["stages"])
+        for row in rows)
+    observed = any(row.get("annotated_io_wait") is not None or
+                   any(metric(stage.get("io_blocked_s")) or
+                       metric(stage.get("io_call_elapsed_s"))
+                       for stage in row.get("stages", [])) for row in rows)
+    return {"blocked_io_observation": "complete" if complete else "partial" if observed else "unknown",
+            "blocked_io_budget": "not_specified_in_design",
+            "blocked_io_scope": "diagnostic_only_no_inferred_unobserved_wait",
+            "annotated_io_wait": [row.get("annotated_io_wait") for row in rows]}
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

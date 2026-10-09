@@ -64,7 +64,7 @@ pub enum ResidentRetention {
 pub struct ProcedureMemo {
     pub policy: u128,
     resident_retention: ResidentRetention,
-    pub values: LoweringMemo<CachedProcedure>,
+    pub values: Arc<LoweringMemo<CachedProcedure>>,
     disk: Option<Arc<dm_cache::CacheSnapshot>>,
     pending: Mutex<Pending>,
     pub counts: MemoCounts,
@@ -236,7 +236,7 @@ impl ProcedureMemo {
         Self {
             policy,
             resident_retention: ResidentRetention::Enabled,
-            values: LoweringMemo::default(),
+            values: Arc::new(LoweringMemo::default()),
             disk: None,
             pending: Mutex::new(Pending::default()),
             counts: MemoCounts::default(),
@@ -246,6 +246,17 @@ impl ProcedureMemo {
             publication_errors: Mutex::new(Vec::new()),
             explanation_limit: 256,
         }
+    }
+    /// Request-local facade: only immutable resident results survive requests.
+    pub fn with_resident(
+        policy: u128,
+        values: Arc<LoweringMemo<CachedProcedure>>,
+        disk: Option<Arc<dm_cache::CacheSnapshot>>,
+    ) -> Self {
+        let mut memo = Self::new(policy);
+        memo.values = values;
+        memo.disk = disk;
+        memo
     }
     pub fn with_disk(policy: u128, snapshot: impl Into<Arc<dm_cache::CacheSnapshot>>) -> Self {
         Self::with_disk_limits(policy, snapshot, MemoLimits::default())
@@ -258,7 +269,7 @@ impl ProcedureMemo {
         Self {
             policy,
             resident_retention: ResidentRetention::Enabled,
-            values: LoweringMemo::with_limit(limits.resident_bytes),
+            values: Arc::new(LoweringMemo::with_limit(limits.resident_bytes)),
             disk: Some(snapshot.into()),
             pending: Mutex::new(Pending::default()),
             counts: MemoCounts::default(),
@@ -337,7 +348,28 @@ impl ProcedureMemo {
             return Default::default();
         };
         let _profile = dm_profile::item("lowering.disk_validate_replay");
-        candidates.procedure(key, identity, context, host, prepared)
+        let mut result = candidates.procedure(key, identity, context, host, prepared);
+        if self.resident_retention == ResidentRetention::Enabled {
+            if let (Some(unit), Some(promotion)) = (&result.unit, result.resident.take()) {
+                let reads = promotion
+                    .queries
+                    .into_iter()
+                    .map(|query| ResolverRead {
+                        domain: query.domain(),
+                        answer: host.resolve(query),
+                        query,
+                    })
+                    .collect();
+                self.remember(
+                    key.to_vec(),
+                    reads,
+                    unit,
+                    promotion.relative_debug,
+                    promotion.versions,
+                );
+            }
+        }
+        result
     }
     pub(crate) fn queue_disk(
         &self,
@@ -546,33 +578,16 @@ impl ProcedureMemo {
             return;
         }
         let _profile = dm_profile::item("lowering.resident_store");
-        // Unsupported AST-bearing sidecars need their absolute occurrence until
-        // a dedicated rebasing wire is implemented. Resident reuse checks it.
-        let mut code_bytes = dm_wire::encode(0x0204_0003, &unit.code.procedure)
-            .map_or(usize::MAX, |bytes| bytes.len());
-        for helper in &unit.source_helpers {
-            code_bytes = code_bytes.saturating_add(
-                dm_wire::encode(0x0204_0003, &helper.code.procedure)
-                    .map_or(usize::MAX, |bytes| bytes.len()),
-            );
-        }
-        for descriptor in unit.code.modified_instances.values() {
-            code_bytes = code_bytes.saturating_add(descriptor.descriptor.canonical_bytes().len());
-        }
-        let read_bytes = reads
-            .iter()
-            .map(|read| read.answer.canonical_bytes().len())
-            .sum::<usize>();
-        let weight = code_bytes
-            .saturating_add(read_bytes)
-            .saturating_add(key.len())
-            .saturating_add(
-                versions
-                    .len()
-                    .saturating_mul(std::mem::size_of::<(ReadDomain, u128)>()),
-            )
-            .saturating_mul(4)
-            .saturating_add(8192);
+        let Some(weight) = crate::heap_census::resident_weight::procedure(
+            unit,
+            &relative_debug,
+            &key,
+            &reads,
+            &versions,
+        ) else {
+            self.counts.resident_dropped.fetch_add(1, Ordering::Relaxed);
+            return;
+        };
         if !self
             .values
             .insert_with(key.into(), reads, versions, weight, || CachedProcedure {

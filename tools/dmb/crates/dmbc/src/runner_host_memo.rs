@@ -191,7 +191,7 @@ impl ResidentMemo {
         }
     }
 }
-pub(super) struct MemoView<'a> {
+pub(crate) struct MemoView<'a> {
     resident: Option<&'a ResidentMemo>,
     disk: Option<&'a dyn ExpansionMemo>,
 }

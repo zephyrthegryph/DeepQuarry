@@ -1,6 +1,8 @@
 //! Opt-in verification journal. Replay never consults the live filesystem.
 //! Payloads live on disk; recording does not retain the asset corpus in RAM.
-use crate::input_snapshot::{FileSystemInputs, FolderListing, SnapshotProvider, Stamp};
+use crate::input_snapshot::{
+    CapturedInputRead, FileSystemInputs, FolderListing, SnapshotProvider, Stamp,
+};
 use dm_preprocess::regions::canonical_path;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -128,6 +130,10 @@ impl SnapshotProvider for Inputs {
         FileSystemInputs.stamp(path)
     }
     fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)> {
+        let (stamp, bytes, _) = self.read_verified(path)?.into_parts();
+        Ok((stamp, bytes))
+    }
+    fn read_verified(&self, path: &Path) -> io::Result<CapturedInputRead> {
         if let Self::Replay(journal) = self {
             let (stamp, hash) = {
                 let index = journal
@@ -150,20 +156,22 @@ impl SnapshotProvider for Inputs {
             if bytes.len() as u64 != stamp.size || xxhash_rust::xxh3::xxh3_128(&bytes) != hash {
                 return Err(invalid("verification payload checksum mismatch"));
             }
-            return Ok((stamp, bytes));
+            return Ok(CapturedInputRead::from_verified(stamp, bytes, hash));
         }
         let path = canonical_path(path);
         match self {
-            Self::Live => FileSystemInputs.read(&path),
+            Self::Live => FileSystemInputs.read_verified(&path),
             Self::Recording(journal) => {
-                let result = FileSystemInputs.read(&path);
+                let result = FileSystemInputs.read_verified(&path);
                 let mut index = journal
                     .index
                     .lock()
                     .map_err(|_| invalid("verification mutex poisoned"))?;
                 match result {
-                    Ok((stamp, bytes)) => {
-                        let hash = xxhash_rust::xxh3::xxh3_128(&bytes);
+                    Ok(read) => {
+                        let stamp = read.stamp();
+                        let bytes = read.bytes();
+                        let hash = read.content();
                         if index.negative.contains(&path)
                             || index
                                 .files
@@ -174,10 +182,10 @@ impl SnapshotProvider for Inputs {
                         }
                         let payload = journal.payload(hash);
                         if !payload.exists() {
-                            fs::write(payload, &bytes)?;
+                            fs::write(payload, bytes)?;
                         }
                         index.files.insert(path, (stamp.clone(), hash));
-                        Ok((stamp, bytes))
+                        Ok(read)
                     }
                     Err(error) if error.kind() == io::ErrorKind::NotFound => {
                         if index.files.contains_key(&path) {
@@ -323,6 +331,11 @@ mod tests {
         fs::write(&source, b"changed").unwrap();
         fs::write(&missing, b"new").unwrap();
         let replay = Inputs::replay(&journal).unwrap();
+        let authenticated = replay.read_verified(&source).unwrap();
+        assert_eq!(authenticated.stamp(), &stamp);
+        assert_eq!(authenticated.bytes(), b"old");
+        assert_eq!(authenticated.content(), xxhash_rust::xxh3::xxh3_128(b"old"));
+        assert_eq!(replay.digest(&source).unwrap().1, authenticated.content());
         assert_eq!(replay.read(&source).unwrap(), (stamp, b"old".to_vec()));
         assert_eq!(replay.list(&root).unwrap(), listing);
         assert_eq!(
@@ -339,6 +352,18 @@ mod tests {
         }
         assert_eq!(
             replay.read(&source).unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+        if let Inputs::Replay(journal) = &replay {
+            let (_, hash) = journal.index.lock().unwrap().files[&canonical_path(&source)].clone();
+            fs::write(journal.payload(hash), b"wrong length").unwrap();
+        }
+        assert_eq!(
+            replay.read_verified(&source).unwrap_err().to_string(),
+            "verification payload checksum mismatch"
+        );
+        assert_eq!(
+            replay.digest(&source).unwrap_err().kind(),
             io::ErrorKind::InvalidData
         );
         drop(replay);

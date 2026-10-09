@@ -685,7 +685,28 @@ compiled successfully, then failed one procedure-memo fixture: it expected four
 disk hits after replay, while the new promotion path produced two disk and two
 resident hits. The fixture now checks both counters, unchanged code, shifted
 source origins, zero recomputation and zero pending republication. Validation of
-this corrected batch is running. No new performance result is claimed for it.
+this corrected batch passed **1,642 ordinary workspace library tests**, zero
+failures, 276.150 s including compilation
+(`r6-workspace-tests-20261009-083744-27dc68a4.json`). Focused release
+executor/profiler validation passed **57 tests**, zero failures, 286.677 s
+including compilation (`r6-workspace-tests-20261009-084254-639ac7e6.json`).
+No complete release-workspace gate or DM runtime gate is claimed. No new
+performance result is claimed for the integrated batch.
+
+Subsequent source changes box only runtime expression roots, reducing the inline
+size of every initializer ledger/pending slot while retaining one AST owner.
+Evaluated list trees are released after const rejection before further runtime
+argument preparation. Census traversal counts the boxed root and nested buffers.
+Repeated positive input/folder lookups borrow stored canonical keys; aliases and
+negative admission retain full canonical validation. New focused ownership,
+error-order and alias fixtures are included. Ordinary library validation for
+these additions passed **1,644 tests**, zero failures, 77.458 s including
+compilation (`r6-workspace-tests-20261009-084755-6c2e18fd.json`). The Rust file-size
+gate passed. Release all-target workspace Clippy passed with warnings denied,
+64.991 s (`r6-workspace-tests-20261009-085302-4262ea53.json`), after correcting the
+reference-provider fixture to explicitly select its forwarding implementation.
+Six byte-budget/reporting fixtures and 22 benchmark protocol fixtures passed.
+Allocation and benchmark improvements are unmeasured.
 
 Daemon transport, cross-revision frontend/startup binding, semantic dependency
 reuse and six-worktree acceptance remain unfinished. Phase 1 gates remain open;

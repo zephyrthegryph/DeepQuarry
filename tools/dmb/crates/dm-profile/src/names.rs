@@ -1,14 +1,15 @@
 //! Preserve dynamic stage labels in Chrome's span names.
+use std::sync::Arc;
 use tracing::{
     field::{Field, Visit},
     span::{Attributes, Id},
     Subscriber,
 };
 use tracing_subscriber::{layer::Context, registry::LookupSpan, Layer};
-pub struct StageName(pub String);
+pub struct StageName(pub Arc<str>);
 pub struct Names;
 #[derive(Default)]
-struct Fields(Option<String>);
+struct Fields(Option<Arc<str>>);
 impl Visit for Fields {
     fn record_str(&mut self, field: &Field, value: &str) {
         if field.name() == "stage" {

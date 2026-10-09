@@ -9,6 +9,7 @@ pub(super) fn initialize(path: &Path) -> Result<ProfileGuard, String> {
     }
     let state = Arc::new(State {
         calibration: clock::calibrate(),
+        io_wait: io_wait::Ledger::default(),
         entries: Mutex::new(BTreeMap::new()),
         folded: Mutex::new(BTreeMap::new()),
         wall_folded: Mutex::new(BTreeMap::new()),

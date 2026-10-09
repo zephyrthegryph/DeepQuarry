@@ -282,7 +282,7 @@ where
             let name = span
                 .extensions()
                 .get::<super::names::StageName>()
-                .map(|name| Name::Shared(Arc::from(name.0.as_str())))
+                .map(|name| Name::Shared(Arc::clone(&name.0)))
                 .unwrap_or_else(|| Name::Static(span.metadata().name()));
             span.extensions_mut().insert(Arguments {
                 name,

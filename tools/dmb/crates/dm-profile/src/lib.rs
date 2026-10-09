@@ -125,6 +125,7 @@ pub struct Report {
     pub trace_output: trace_output::Metadata,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub domain_cpu_bounds: BTreeMap<String, DomainCpuBounds>,
+    pub annotated_io_wait: AnnotatedIoWait,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub domain_cpu_selectors: BTreeMap<String, Vec<String>>,
 }
@@ -150,6 +151,7 @@ struct Entry {
 }
 struct State {
     calibration: clock::Calibration,
+    io_wait: io_wait::Ledger,
     entries: Mutex<BTreeMap<&'static str, Entry>>,
     folded: Mutex<BTreeMap<(String, String), Vec<clock::CpuInterval>>>,
     wall_folded: Mutex<BTreeMap<String, u64>>,
@@ -165,6 +167,8 @@ struct Frame {
     last_wall: Instant,
 }
 mod chrome;
+mod io_wait;
+pub use io_wait::{io_call, AnnotatedIoWait};
 mod request;
 mod setup;
 pub use request::{RequestContext, RequestContextGuard};
@@ -376,37 +380,6 @@ pub fn record_io(
             }
         }
     });
-}
-/// Measure one synchronous I/O operation and its successfully returned byte count.
-/// Elapsed time includes kernel work, copying and scheduling; it is not evidence
-/// of time blocked on storage. Failed operations may have transferred partial
-/// bytes that their error does not expose, so those bytes are not fabricated.
-pub fn io_call<T>(
-    operation: impl FnOnce() -> std::io::Result<T>,
-    byte_counts: impl FnOnce(&T) -> (u64, u64),
-) -> std::io::Result<T> {
-    let Some(state) = request::active_state() else {
-        return operation();
-    };
-    let start = Instant::now();
-    let result = operation();
-    let elapsed = start.elapsed().as_secs_f64();
-    if let Ok(value) = &result {
-        let (read, written) = byte_counts(value);
-        record_io(read, written, None);
-    }
-    STACK.with(|stack| {
-        if let Some(frame) = stack.borrow().last() {
-            let mut entries = state.entries.lock().unwrap_or_else(|e| e.into_inner());
-            let report = &mut entries.entry(frame.name).or_default().report;
-            report.io_call_elapsed_s = Some(report.io_call_elapsed_s.unwrap_or(0.0) + elapsed);
-            report.io_calls = report.io_calls.saturating_add(1);
-            report.io_failed_calls = report
-                .io_failed_calls
-                .saturating_add(u64::from(result.is_err()));
-        }
-    });
-    result
 }
 impl Drop for StageGuard {
     fn drop(&mut self) {
@@ -833,6 +806,7 @@ impl ProfileGuard {
                     .map(|values| sum_bounds(values.into_iter()))
             };
         let report = Report {
+            annotated_io_wait: self.state.io_wait.report(),
             domain_cpu_bounds,
             domain_cpu_selectors: stage_domains::selectors(domains),
             trace_output,

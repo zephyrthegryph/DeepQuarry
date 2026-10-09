@@ -127,6 +127,12 @@ fn classify_pending<'a>(
                         if constant_binding {
                             return Err("const initializer is not scalar".into());
                         }
+                        // The evaluated tree is used only to distinguish literal-list
+                        // construction. Do not retain it while preparing the runtime
+                        // AST and evaluating constructor arguments again.
+                        let scalar_list =
+                            matches!(evaluation, Evaluation::Scalar(SemanticValue::List(_)));
+                        drop(evaluation);
                         let PreparedInitializerExpression { source: text, ast } = match prepared {
                             Some(prepared) => prepared,
                             None => {
@@ -145,8 +151,7 @@ fn classify_pending<'a>(
                         };
                         let expr = &ast;
                         let literal =
-                            matches!(evaluation, Evaluation::Scalar(SemanticValue::List(_)))
-                                || scalar_literal(expr, &write, symbols, &text, evaluator)?;
+                            scalar_list || scalar_literal(expr, &write, symbols, &text, evaluator)?;
                         let default = if let Some(key) =
                             crate::initializer_tokens::construction_key(
                                 expr, &text, &write, symbols, evaluator,
@@ -170,9 +175,9 @@ fn classify_pending<'a>(
             }
         };
         let runtime_value = if phase.is_some() {
-            Some(RuntimeValue::Expression(
+            Some(RuntimeValue::Expression(Box::new(
                 parsed_runtime.ok_or("runtime expression missing")?,
-            ))
+            )))
         } else {
             None
         };

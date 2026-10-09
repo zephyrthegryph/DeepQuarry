@@ -30,15 +30,23 @@ pub enum FolderListing {
     Present(Vec<String>),
 }
 
+#[path = "input_read.rs"]
+mod owned_read;
+pub use owned_read::CapturedInputRead;
+
 /// Provider reads must return the stamp of the bytes read (restat around the read
 /// or use a single open handle). An unstable read is an error, never a cache hit.
 pub trait SnapshotProvider {
     fn stamp(&self, path: &Path) -> io::Result<Stamp>;
     fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)>;
     fn list(&self, folder: &Path) -> io::Result<FolderListing>;
-    fn digest(&self, path: &Path) -> io::Result<(Stamp, u128)> {
+    fn read_verified(&self, path: &Path) -> io::Result<CapturedInputRead> {
         let (stamp, bytes) = self.read(path)?;
-        Ok((stamp, xxhash_rust::xxh3::xxh3_128(&bytes)))
+        Ok(CapturedInputRead::new(stamp, bytes))
+    }
+    fn digest(&self, path: &Path) -> io::Result<(Stamp, u128)> {
+        let read = self.read_verified(path)?;
+        Ok((read.stamp().clone(), read.content()))
     }
 }
 impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
@@ -47,6 +55,9 @@ impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
     }
     fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)> {
         (**self).read(path)
+    }
+    fn read_verified(&self, path: &Path) -> io::Result<CapturedInputRead> {
+        (**self).read_verified(path)
     }
     fn list(&self, path: &Path) -> io::Result<FolderListing> {
         (**self).list(path)
@@ -172,10 +183,9 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .map_err(|_| invalid("input capture mutex poisoned"))
     }
     fn read_recorded(&self, path: &Path) -> io::Result<Vec<u8>> {
-        let (stamp, bytes) = self.provider.read(path)?;
-        // The owned payload is stable while hashing. Only fact admission needs
-        // the shared ledger lock; source workers may hash their reads in parallel.
-        let content = xxhash_rust::xxh3::xxh3_128(&bytes);
+        let (stamp, bytes, content) = self.provider.read_verified(path)?.into_parts();
+        // The provider's immutable envelope already authenticates the exact bytes.
+        // Only fact admission needs the shared ledger lock.
         let mut snapshot = self
             .snapshot
             .lock()
@@ -188,6 +198,15 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         Ok(bytes)
     }
     pub fn record_search_folder(&self, path: &Path) -> io::Result<()> {
+        if self
+            .snapshot
+            .lock()
+            .map_err(|_| invalid("input capture mutex poisoned"))?
+            .folders
+            .contains_key(path)
+        {
+            return Ok(());
+        }
         let path = canonical_path(path);
         if self
             .snapshot
@@ -348,7 +367,7 @@ impl InputSnapshot {
         Ok(())
     }
     pub fn contains_file(&self, path: &Path) -> bool {
-        self.files.contains_key(&canonical_path(path))
+        self.files.contains_key(path) || self.files.contains_key(&canonical_path(path))
     }
     pub fn folders(&self) -> &BTreeMap<PathBuf, FolderListing> {
         &self.folders
@@ -371,6 +390,17 @@ impl InputSnapshot {
         stamp: Stamp,
         content: u128,
     ) -> io::Result<()> {
+        // Stored keys are admitted canonically. Repeated exact reads need only
+        // compare their authenticated facts, without allocating another path.
+        if let Some((stored, previous)) = self.files.get_key_value(path) {
+            if self.negative_files.contains(stored) {
+                return Err(invalid("negative input became present during capture"));
+            }
+            if previous.stamp != stamp || previous.content != content {
+                return Err(invalid("input changed during repeated capture"));
+            }
+            return Ok(());
+        }
         let path = canonical_path(path);
         if self.negative_files.contains(&path) {
             return Err(invalid("negative input became present during capture"));
@@ -394,6 +424,12 @@ impl InputSnapshot {
     /// lookups. IO/permission errors must propagate rather than become Missing.
     pub fn record_folder(&mut self, path: &Path, listing: FolderListing) -> io::Result<()> {
         check_listing(&listing)?;
+        if let Some((_, previous)) = self.folders.get_key_value(path) {
+            if previous != &listing {
+                return Err(invalid("resource folder changed during capture"));
+            }
+            return Ok(());
+        }
         let path = canonical_path(path);
         if let Some(previous) = self.folders.get(&path) {
             if previous != &listing {
