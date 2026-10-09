@@ -26,6 +26,7 @@ pub struct BuildHost {
     executor: Option<dm_exec::BuildExecutor>,
     procedures: Option<(u128, ProcedureValues)>,
     semantic: Option<dm_tree::frontend::RetainedSemanticTree>,
+    maps: Option<(u128, Arc<crate::map_memo::RetainedMaps>)>,
     initializers: Option<(u128, Arc<crate::initializer_policy::InitializerArtifacts>)>,
     startup: Option<(u128, Arc<crate::startup::StartupArtifacts>)>,
     abi: Option<(u128, Arc<crate::driver_facts::AbiArtifacts>)>,
@@ -60,6 +61,7 @@ impl Default for BuildHost {
             procedures: None,
             memo: Some(memo::ResidentMemo::default()),
             semantic: Some(dm_tree::frontend::RetainedSemanticTree::new()),
+            maps: None,
             symbolic: None,
             initializers: None,
             startup: None,
@@ -77,6 +79,7 @@ impl BuildHost {
             procedures: None,
             memo: None,
             semantic: None,
+            maps: None,
             symbolic: None,
             initializers: None,
             startup: None,
@@ -113,6 +116,33 @@ impl BuildHost {
 
     pub(crate) fn retains_artifacts(&self) -> bool {
         self.memo.is_some()
+    }
+    /// Retain map answers across requests; disk snapshots remain request-local.
+    pub(crate) fn map_memo(
+        &mut self,
+        policy: u128,
+        disk: Option<Arc<dm_cache::CacheSnapshot>>,
+    ) -> Option<crate::map_memo::MapMemo> {
+        if self.memo.is_none() {
+            return disk.map(|snapshot| {
+                crate::map_memo::MapMemo::with_disk(policy, 64 * 1024 * 1024, snapshot)
+            });
+        }
+        if self
+            .maps
+            .as_ref()
+            .is_none_or(|(previous, _)| *previous != policy)
+        {
+            self.maps = Some((
+                policy,
+                Arc::new(crate::map_memo::RetainedMaps::current_revision()),
+            ));
+        }
+        Some(crate::map_memo::MapMemo::with_resident(
+            policy,
+            Arc::clone(&self.maps.as_ref().unwrap().1),
+            disk,
+        ))
     }
     pub(crate) fn procedure_memo(
         &mut self,
@@ -274,6 +304,7 @@ impl BuildHost {
         self.startup = None;
         self.abi = None;
         self.initializer_fragments = None;
+        self.maps = None;
         if self.semantic.is_some() {
             self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());
         }
@@ -411,6 +442,20 @@ mod tests {
         host.clear_regions();
         assert!(host.expansion_memo(None).is_none());
         assert!(BuildHost::default().expansion_memo(None).is_some());
+    }
+    #[test]
+    fn maps_retain_one_policy_owner_without_retaining_request_disk_snapshots() {
+        let mut host = BuildHost::default();
+        capture(&mut host, BTreeMap::new());
+        assert!(host.map_memo(1, None).is_some());
+        let first = Arc::clone(&host.maps.as_ref().unwrap().1);
+        assert!(host.map_memo(1, None).is_some());
+        assert!(Arc::ptr_eq(&first, &host.maps.as_ref().unwrap().1));
+        assert!(host.map_memo(2, None).is_some());
+        assert!(!Arc::ptr_eq(&first, &host.maps.as_ref().unwrap().1));
+        capture(&mut host, BTreeMap::from([("MODE".into(), "1".into())]));
+        assert!(host.maps.is_none());
+        assert!(BuildHost::one_shot().map_memo(1, None).is_none());
     }
     #[test]
     fn exact_configuration_reuses_owner_and_request_overlay_is_independent() {

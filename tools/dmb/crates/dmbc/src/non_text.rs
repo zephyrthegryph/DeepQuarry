@@ -37,7 +37,13 @@ pub fn capture_with_map_memo<P: dm_preprocess::SourceProvider>(
     provider: &P,
     memo: Option<&crate::map_memo::MapMemo>,
 ) -> Result<CapturedNonText, Error> {
-    let inputs = dm_tree::non_text::capture(frontend, provider).map_err(Error::Capture)?;
+    let inputs = match memo {
+        Some(memo) => dm_tree::non_text::capture_with_sources(frontend, provider, &mut |path| {
+            memo.capture_source(provider, path)
+        }),
+        None => dm_tree::non_text::capture(frontend, provider),
+    }
+    .map_err(Error::Capture)?;
     let mut cached = BTreeMap::<Arc<PathBuf>, MapPlan>::new();
     let mut maps = Vec::new();
     let mut skins = Vec::new();

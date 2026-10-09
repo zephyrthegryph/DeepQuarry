@@ -177,7 +177,8 @@ pub fn run_build_with_host(
         (_, Some(directory)) => dmbc::frozen_inputs::Inputs::replay(directory)?,
         _ => dmbc::frozen_inputs::Inputs::Live,
     };
-    let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&input_provider, now_ns());
+    let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&input_provider, now_ns())
+        .with_exact_reuse(exact_inputs);
     let mut session = None;
     let mut pair_store = None;
     // Request-owned leases outlive the borrowed capture sink and cold compiler.
@@ -363,14 +364,12 @@ pub fn run_build_with_host(
                 .clone(),
         )
     });
-    let map_memo = cache_snapshot.clone().map(|snapshot| {
-        dmbc::map_memo::MapMemo::with_disk(memo_policy, 64 * 1024 * 1024, snapshot).with_publisher(
-            cache_publisher
-                .as_ref()
-                .expect("snapshot publisher")
-                .clone(),
-        )
-    });
+    let map_memo = host
+        .map_memo(memo_policy, cache_snapshot.clone())
+        .map(|memo| match &cache_publisher {
+            Some(publisher) => memo.with_publisher(Arc::clone(publisher)),
+            None => memo,
+        });
     let seed = engine_capture
         .as_ref()
         .map(|capture| capture.frontend_seed());

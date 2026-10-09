@@ -9,8 +9,14 @@ use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc, Mutex,
 };
+#[path = "map_memo_retained.rs"]
+mod retained;
 #[path = "map_memo_wire.rs"]
 mod wire;
+pub use retained::RetainedMaps;
+#[cfg(test)]
+#[path = "map_memo_retained_tests.rs"]
+mod retained_tests;
 
 const MAX_ENTRIES: usize = 1024;
 #[derive(Default)]
@@ -45,6 +51,9 @@ struct Resident {
     pending_bytes: usize,
 }
 pub struct MapMemo {
+    retained: Option<Arc<RetainedMaps>>,
+    retained_revision: u64,
+    current: Mutex<retained::CurrentRoster>,
     pub policy: u128,
     budget: usize,
     disk: Option<Arc<dm_cache::CacheSnapshot>>,
@@ -63,6 +72,9 @@ impl MapMemo {
     }
     pub fn new(policy: u128, byte_budget: usize) -> Self {
         Self {
+            retained: None,
+            retained_revision: 0,
+            current: Mutex::new(retained::CurrentRoster::default()),
             policy,
             budget: byte_budget,
             disk: None,
@@ -77,10 +89,9 @@ impl MapMemo {
         byte_budget: usize,
         disk: impl Into<Arc<dm_cache::CacheSnapshot>>,
     ) -> Self {
-        Self {
-            disk: Some(disk.into()),
-            ..Self::new(policy, byte_budget)
-        }
+        let mut memo = Self::new(policy, byte_budget);
+        memo.disk = Some(disk.into());
+        memo
     }
     /// One map record per bounded callback; the host may batch these records in
     /// its PublishSink. Publication never holds the resident mutex.
@@ -235,7 +246,12 @@ impl MapMemo {
         }
     }
     pub fn parse(&self, captured: CapturedMap) -> Result<MapPlan, MapDiagnostic> {
-        let key = parse_key(self.policy, &captured);
+        let key = self.parse_locator(&captured);
+        let retained_key: Arc<[u8]> = key.clone().into();
+        if let Some(plan) = self.retained_parse(&retained_key, &captured) {
+            self.counts.parse_hits.fetch_add(1, Ordering::Relaxed);
+            return Ok(plan);
+        }
         let hit = {
             let state = self
                 .resident
@@ -258,6 +274,7 @@ impl MapMemo {
         if let Some((plan, payload_len)) = self.disk(&key, false, |bytes| {
             wire::admit_parse(bytes, &key, captured.clone())
         }) {
+            self.admit_retained_parse(retained_key, &plan);
             let mut state = self
                 .resident
                 .lock()
@@ -274,6 +291,10 @@ impl MapMemo {
         }
         self.counts.parsed.fetch_add(1, Ordering::Relaxed);
         let plan = dm_tree::maps::plan(captured)?;
+        self.admit_retained_parse(retained_key, &plan);
+        if self.retained.is_some() && self.disk.is_none() && self.publisher.is_none() {
+            return Ok(plan);
+        }
         if let Some(bytes) = wire::encode_parse(&key, &plan) {
             let mut state = self
                 .resident
@@ -301,7 +322,17 @@ impl MapMemo {
         defaults: WorldDefaults,
         host: &R,
     ) -> Result<Projection, crate::map_projection::Error> {
-        let key = geometry_key(self.policy, maps, defaults);
+        let locator = retained::geometry_locator(self.policy, maps, defaults);
+        if let Some(value) = self.retained_geometry(&locator, maps, host) {
+            self.counts.geometry_hits.fetch_add(1, Ordering::Relaxed);
+            return Ok(value);
+        }
+        let persist = self.disk.is_some() || self.publisher.is_some() || self.retained.is_none();
+        let key = if persist {
+            geometry_key(self.policy, maps, defaults)
+        } else {
+            Vec::new()
+        };
         // Host queries and answer validation happen outside the memo lock.
         let candidates = {
             let state = self
@@ -327,6 +358,7 @@ impl MapMemo {
         if let Some(((value, reads), payload_len)) = self.disk(&key, true, |bytes| {
             wire::admit_geometry(bytes, &key, maps, defaults, host)
         }) {
+            self.admit_retained_geometry(locator, maps, &value, reads.clone(), Vec::new());
             let mut state = self
                 .resident
                 .lock()
@@ -350,6 +382,16 @@ impl MapMemo {
             &crate::map_projection::ResolverClassifier(&recording),
         )?;
         let reads = recording.reads();
+        self.admit_retained_geometry(
+            locator,
+            maps,
+            &value,
+            reads.clone(),
+            recording.domain_receipts(),
+        );
+        if !persist {
+            return Ok(value);
+        }
         if let Some(bytes) = wire::encode_geometry(&key, &value, &reads) {
             let mut state = self
                 .resident
@@ -388,6 +430,13 @@ fn frame(key: &mut Vec<u8>, bytes: &[u8]) {
     key.extend_from_slice(bytes);
 }
 fn parse_key(policy: u128, captured: &CapturedMap) -> Vec<u8> {
+    parse_key_with_identity(
+        policy,
+        captured,
+        xxhash_rust::xxh3::xxh3_128(captured.source.as_bytes()),
+    )
+}
+fn parse_key_with_identity(policy: u128, captured: &CapturedMap, source_identity: u128) -> Vec<u8> {
     let mut key = b"dmbc-map-parse-v1\0".to_vec();
     key.extend_from_slice(&policy.to_le_bytes());
     frame(
@@ -396,7 +445,7 @@ fn parse_key(policy: u128, captured: &CapturedMap) -> Vec<u8> {
             .to_string_lossy()
             .as_bytes(),
     );
-    key.extend_from_slice(&xxhash_rust::xxh3::xxh3_128(captured.source.as_bytes()).to_le_bytes());
+    key.extend_from_slice(&source_identity.to_le_bytes());
     key
 }
 fn geometry_key(policy: u128, maps: &[MapPlan], defaults: WorldDefaults) -> Vec<u8> {

@@ -103,8 +103,55 @@ impl MacroLookup for BTreeMap<String, Macro> {
     }
 }
 
+/// Immutable text paired with an opaque receipt issued by its source provider.
+/// The receipt is deliberately not a content hash or filesystem stamp API.
+#[derive(Clone)]
+pub struct RetainedText {
+    text: Arc<str>,
+    identity: u128,
+    receipt: Arc<dyn std::any::Any + Send + Sync>,
+}
+impl RetainedText {
+    pub fn text(&self) -> &Arc<str> {
+        &self.text
+    }
+    pub fn text_identity(&self) -> u128 {
+        self.identity
+    }
+    pub fn issued<T: std::any::Any + Send + Sync>(text: Arc<str>, receipt: T) -> Self {
+        let identity = xxhash_rust::xxh3::xxh3_128(text.as_bytes());
+        Self {
+            text,
+            identity,
+            receipt: Arc::new(receipt),
+        }
+    }
+    pub fn receipt<T: std::any::Any>(&self) -> Option<&T> {
+        self.receipt.downcast_ref()
+    }
+    /// Refresh a receipt after its provider has authenticated the same bytes.
+    pub fn reissued<T: std::any::Any + Send + Sync>(&self, receipt: T) -> Self {
+        Self {
+            text: self.text.clone(),
+            identity: self.identity,
+            receipt: Arc::new(receipt),
+        }
+    }
+}
+
 pub trait SourceProvider {
     fn read(&self, path: &Path) -> Result<String, String>;
+
+    /// Refresh a provider-issued immutable nontext capture. A provider must
+    /// validate its receipt against current input facts before returning it.
+    /// Ordinary providers decline and retain the existing read boundary.
+    fn retained_nontext(
+        &self,
+        _path: &Path,
+        _previous: Option<&RetainedText>,
+    ) -> Result<Option<RetainedText>, String> {
+        Ok(None)
+    }
 
     /// Optional immutable lexical preparation of the same captured bytes that
     /// `read` returns. Directive interpretation and include selection stay ordered.

@@ -33,6 +33,18 @@ pub fn capture<P: SourceProvider>(
     frontend: &ColdFrontend,
     provider: &P,
 ) -> Result<Arc<[NonTextInput]>, Vec<CaptureError>> {
+    capture_with_sources(frontend, provider, &mut |path| {
+        provider.read(path).map(Arc::from)
+    })
+}
+
+/// The caller supplies its provider-authenticated current source owner; include
+/// occurrences always come from this frontend rather than a retained revision.
+pub fn capture_with_sources<P: SourceProvider>(
+    frontend: &ColdFrontend,
+    _provider: &P,
+    source: &mut impl FnMut(&std::path::Path) -> Result<Arc<str>, String>,
+) -> Result<Arc<[NonTextInput]>, Vec<CaptureError>> {
     let mut sources = BTreeMap::<Arc<PathBuf>, Arc<str>>::new();
     let mut inputs = Vec::new();
     let mut errors = Vec::new();
@@ -55,9 +67,8 @@ pub fn capture<P: SourceProvider>(
         let source = if let Some(source) = sources.get(&path) {
             Arc::clone(source)
         } else {
-            match provider.read(&path) {
+            match source(&path) {
                 Ok(source) => {
-                    let source: Arc<str> = Arc::from(source);
                     sources.insert(path.clone(), source.clone());
                     source
                 }

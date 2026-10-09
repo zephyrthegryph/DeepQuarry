@@ -159,16 +159,25 @@ pub(crate) use handle::{isolated_output_stamp, stamp_handle};
 
 /// One capture owner shared by lexical workers and resource discovery. Records
 /// only actual reads; it retains no payload cache. Drop it after taking snapshot.
+#[path = "input_snapshot_nontext.rs"]
+mod nontext;
+
 pub struct RecordingInputs<P = FileSystemInputs> {
     provider: P,
     snapshot: Mutex<InputSnapshot>,
+    exact_reuse: bool,
 }
 impl<P: SnapshotProvider> RecordingInputs<P> {
     pub fn new(provider: P, scanned_ns: u128) -> Self {
         Self {
             provider,
             snapshot: Mutex::new(InputSnapshot::new(scanned_ns)),
+            exact_reuse: false,
         }
+    }
+    pub fn with_exact_reuse(mut self, exact: bool) -> Self {
+        self.exact_reuse = exact;
+        self
     }
     pub fn snapshot(&self) -> io::Result<InputSnapshot> {
         Ok(self
@@ -246,6 +255,13 @@ impl<P: SnapshotProvider> dm_preprocess::SourceProvider for RecordingInputs<P> {
         self.read_recorded(path)
             .map(decode_owned_source)
             .map_err(|error| error.to_string())
+    }
+    fn retained_nontext(
+        &self,
+        path: &Path,
+        previous: Option<&dm_preprocess::RetainedText>,
+    ) -> Result<Option<dm_preprocess::RetainedText>, String> {
+        self.retained_nontext_impl(path, previous)
     }
 }
 impl<P: SnapshotProvider> dm_resources::capture::CaptureProvider for RecordingInputs<P> {

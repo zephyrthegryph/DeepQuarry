@@ -12,7 +12,11 @@ mod resident_initializer;
 mod resident_initializer_fragment;
 pub(crate) use resident_abi::weight as resident_abi_weight;
 pub(crate) use resident_initializer_fragment::weight as resident_initializer_fragment_weight;
+mod resident_maps;
 mod resident_startup;
+pub(crate) use resident_maps::{
+    geometry_weight as resident_map_geometry_weight, plan_weight as resident_map_plan_weight,
+};
 pub(crate) use resident_startup::weight as resident_startup_weight;
 pub(crate) mod resident_weight;
 mod retained_declarations;
