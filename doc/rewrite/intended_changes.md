@@ -3947,3 +3947,20 @@ recycling panels, space vines and the maintenance vendor glow now draw through `
 Re-blessed rows of `obj.item.ghost_trap`, `obj.item.paicard`, `obj.item.tank` (and `.phoron`, `.jetpack`), `obj.item.toy.minigibber`. Nothing is lost from the base item ops: every key list still holds `pick_up_item`, `move_to_top` and `toggle_digestable`. The classes:
 * **A catch-all item or hand op narrowed.** The minigibber's `feed` took any held item and declined all but figures; it is now `item(/obj/item/toy/figure)` and `item(/obj/item/toy/character)` with a `when()`, so a screwdriver or any other item shows `nothing` instead of `Feed`. The ghost trap's `hand` op ("Use", it declined for every click that was not a release or a deactivation) is gone; a bare-hand click on a trap now reads `Pick up`, the base item's op the old op declined to. The tank's `tank_item` still takes every item; `attach_assembly` is new for an assembly holder (its refusal "You need to wire the device up first" is the op's `because`).
 * **New ops.** `deploy`, `deactivate`, `free_occupant` (ghost trap), `attach_assembly` (tank), `open_panel` and the seven `install_*` ops (pAI card), with `Install part` rows for each part type and its refusal when the socket is filled.
+
+## Re-land of leftovers and proj-hooks (rewrite/reland)
+
+* **Conversion pins, emag key rename** (`snapshots/pins/mob.living.silicon.robot.txt`, `mob.living.silicon.robot.platform.txt`; 33 rows). The leftovers lane's emag conversion replaced the single `emag`
+  interaction key with the ops `emag.subvert` and `emag.use`. Consequences, all one change: the `keys:` row changes; the "Emag" menu rows (the greyed "needs a cryptographic sequencer" entries for each
+  hand, and the sequencer's own "Emag" entry) are gone because the ops are not offered in the menu; a human clicking with a sequencer on the platform reads `Click: Use` where it read
+  `nothing` / `Click: Platform item`.
+* **Hit pins** (`snapshots/hit_pins/`, 174 rows, seven types: energy_field, plant, ammo_magazine.smart, assembly.mousetrap, gun.energy, gun.energy.chameleon, modular_computer). Every class has one cause or the next:
+  * `refresh_queued: 131071 -> 0` and `refresh_bits: N -> 0`: a thing made for the pin still has its first refresh pending when the trigger runs; the pin's drain after the hit flushes it (engine refresh, `code/engine/change/refresh.dm`),
+    so every trigger of those types now shows the flush, and the former `nothing` rows (emag, emp 2, explosion 3, projectile, thrown) became these rows.
+  * `icon_state`, `light_*`, `color`, `disguise_state` rows on `energy_field` (`shield` -> `shield_broken`), `plant` (`bush4-1` -> `mushroom7-0`), `gun.energy` (`energy` -> `energy50/75/100`) and `gun.energy.chameleon`
+    (`null` -> `deagle`): the same first flush draws the type's look for the first time; the old rows were recorded after a draw that had already landed (`energy100` -> `energy50`), now the base is the undrawn `energy`.
+    The values drawn are the type's initial look, unchanged.
+  * `plant` emag: `periodic_pipe: null -> /datum/cadence/plants` is now `growing: 0 -> 1` and `om_rec` (the growth `every()` is keyed on the tracked `growing`, the periodic pipe being retired).
+  * Nothing in these rows is a change in what a hit does. `dq_hit_pin` leaves `tools/ci/known_failures.txt`.
+* **Projectile hit action.** A projectile's hit action (the `/datum/act/hit/projectile` hooks) now starts in `bullet_act()` before the round's effects (stun, embed, autopsy, reagents), so an `instead()` hook
+  stops all of them, a zero-damage round (a taser dart) reaches the hook, and the hook runs once per hit (the damage packet reuses the open action: `projectile_hit_begin()` / `projectile_hit_end()`).

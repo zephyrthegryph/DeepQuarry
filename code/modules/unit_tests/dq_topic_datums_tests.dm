@@ -1,5 +1,5 @@
 // Window links (hrefs) of plain datums through the input inbox: a codex book's page links go to its tree, a vote's link opens its window, and an
-// admin-only game mode link is refused for a player. These read the same whether a link is a TOPIC_ACTION row or an op.
+// admin-only game mode link is refused for a player. These read the same for an op.
 
 /datum/unit_test/dq_topic_codex_navigation
 

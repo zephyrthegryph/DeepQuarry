@@ -40,12 +40,12 @@
 
 /mob/living/bullet_act(obj/item/projectile/P, def_zone)
 	if(reflect_projectile(P)) // REFLECTS (systems.md section 12)
+		projectile_hit_end() // a human's bullet_act() may have started the hit action already
 		return PROJECTILE_CONTINUE
-	// Declared projectile reactions run before the stun and on_hit(): a blocking one stops them too.
-	if(projectile_pre_reactions(P))
+	if(projectile_hit_begin(P)) // a hit hook took the round over: no effects
 		return 0
 	. = resolve_projectile_hit(P, def_zone)
-	end_projectile_reactions()
+	projectile_hit_end()
 
 /// The round's effects on a living target, after the declared reactions let it through.
 /mob/living/proc/resolve_projectile_hit(obj/item/projectile/P, def_zone)

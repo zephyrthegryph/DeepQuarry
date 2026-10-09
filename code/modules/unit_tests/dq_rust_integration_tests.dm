@@ -61,9 +61,9 @@
 /datum/unit_test/dq_rust_native_adapter_and_ffi_counter/Run()
 	var/before = GLOB.native_deliveries[NATIVE_SRC_GAS_EVENT] || 0
 	var/datum/gas_mixture/probe = new(100)
-	TEST_ASSERT(native_changed(probe, CHANGE_TURF_GAS_VISUAL, NATIVE_SRC_GAS_EVENT), "native_changed refused a live target")
+	TEST_ASSERT(native_changed(probe, CHANGE_EXPLICIT, NATIVE_SRC_GAS_EVENT), "native_changed refused a live target")
 	TEST_ASSERT_EQUAL(GLOB.native_deliveries[NATIVE_SRC_GAS_EVENT], before + 1, "delivery was not counted")
-	TEST_ASSERT(!native_changed(null, CHANGE_TURF_GAS_VISUAL), "native_changed accepted a null target")
+	TEST_ASSERT(!native_changed(null, CHANGE_EXPLICIT), "native_changed accepted a null target")
 	var/list/metrics = verdigris_metrics_list()
 	TEST_ASSERT_NOTNULL(metrics, "verdigris_metrics returned nothing")
 	TEST_ASSERT(metrics["ffi.calls_total"] > 0, "the FFI call counter is not counting")
