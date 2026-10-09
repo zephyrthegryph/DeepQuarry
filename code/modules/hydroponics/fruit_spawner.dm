@@ -5,8 +5,8 @@
 	icon_state = "no name"
 	var/seedtype = null
 
-MAP_RESOLVER(/obj/fruitspawner, GLOBAL_PROC_REF(resolve_fruitspawner))
-MAP_RESOLVER_VARS(/obj/fruitspawner, "seedtype")
+CAPABILITIES(/obj/fruitspawner)
+	map_resolver(GLOBAL_PROC_REF(resolve_fruitspawner), vars = list("seedtype"))
 
 /// MAP_RESOLVER for fruit spawners: one harvest of the seed, into the closet on the tile if any
 /// (or into what holds the spawner).
