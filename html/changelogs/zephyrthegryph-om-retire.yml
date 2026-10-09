@@ -3,3 +3,4 @@ delete-after: true
 changes:
   - refactor: "Leashes, reflectors, blob core chunks, poltergeist masks, talking artifacts, spreading plants, game modes, event containers, planets, the latency sweep and cult pylons run on type-level every() instead of the om_task_periodic cadences"
   - code_imp: "Deleted about 190 dead om_* forwards and five empty code/datums/om files; their names are banned"
+  - refactor: "Projectiles, thrown things, point vectors and status effects step on per-tick member systems; DECLARE_PERIODIC, DECLARE_PERIODIC_WHILE, DECLARE_REPEAT, OM_FIELD, om_attach, om_link and the other dead OM core forms are deleted with the tests that only exercised them"

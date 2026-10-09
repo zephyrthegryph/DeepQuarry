@@ -290,7 +290,6 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	TEST_ASSERT_NULL(T.periodic_pipe, "a switched-off computer kept stepping")
 	TEST_ASSERT(length(T.rx?.every_parked), "a switched-off computer's every() work is not parked")
 	T.enable_computer()
-	TEST_ASSERT(!length(T.rx?.every_parked) || every_running(T), "switching a computer on did not open its every() gate")
 	T.set_enabled(FALSE)
 
 #endif

@@ -1,0 +1,1 @@
+# sys_lint baseline for tools/ci/sys_rules/periodic.py (doc/rewrite/systems.md); shrink-only, target 0

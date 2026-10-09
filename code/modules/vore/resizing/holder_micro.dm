@@ -46,9 +46,6 @@
 		. += M.examine(user)
 
 CAPABILITIES(/obj/item/holder)
-	// harm intent on the holder itself squeezes what is inside, then (like every item used on it) the item hits the occupants
-	op("squeeze", in_hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Squeeze"), then(PROC_REF(holder_squeeze)))
-	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	drag_onto(PROC_REF(drop_input))
 	op("holder_pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(holder_pick_up)))
 	param(nameof(held_at_make), pos = 1, apply = PROC_REF(take_held), keep = FALSE)

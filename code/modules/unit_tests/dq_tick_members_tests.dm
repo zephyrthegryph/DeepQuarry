@@ -16,7 +16,7 @@
 /datum/status_effect/cadence_probe
 	id = "cadence_probe"
 	duration = 60 SECONDS
-	tick_interval = 1
+	tick_interval = STATUS_EFFECT_AUTO_TICK
 	alert_type = null
 	var/ticks = 0
 
