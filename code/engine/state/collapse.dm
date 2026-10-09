@@ -141,7 +141,7 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 	return refcount(nodes[i]) - state_accounted_refs(nodes[i], internal, internal_counts ? internal_counts[i] : null)
 
 /// References to `node` that its container, its contents and the subtree account for.
-/// Relation views naming it count too: collapse parks them (om_handle_park()) and they re-link
+/// Relation views naming it count too: collapse parks them (entity_handle_park()) and they re-link
 /// when the thing re-materializes. `internal_refs`: the subtree's references to it, when already counted.
 /proc/state_accounted_refs(datum/node, list/internal, internal_refs)
 	. = (isnull(internal_refs) ? state_internal_refs(node, internal) : internal_refs) + rel_incoming_refs(node)

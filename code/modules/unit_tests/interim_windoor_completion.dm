@@ -74,7 +74,7 @@
 	test_time(5 SECONDS)
 	TEST_ASSERT(built(frame, STAGE_WINDOOR_ASSEMBLY_BOARDED), "actual board insertion completes the installed-electronics stage")
 	TEST_ASSERT_EQUAL(frame.electronics, board, "real board insertion retains exact configured electronics")
-	var/frame_handle = om_handle(frame)
+	var/frame_handle = entity_handle(frame)
 	var/list/before = turf_contents_of_type(T, /obj/machinery/door/window)
 	var/obj/item/tool/crowbar/crowbar = allocate(/obj/item/tool/crowbar, T)
 	rc_click(actor, frame, crowbar, I_HELP, FALSE)
@@ -104,6 +104,6 @@
 	else
 		TEST_ASSERT_EQUAL(length(door.req_access), 1, "The all-access list must retain exactly the configured access")
 		TEST_ASSERT_EQUAL(door.req_access[1], ACCESS_SECURITY, "The all-access setting must survive construction")
-	TEST_ASSERT_NULL(om_resolve(frame_handle), "A structure assembly handle must terminate for its cross-family machinery successor")
+	TEST_ASSERT_NULL(resolve_handle(frame_handle), "A structure assembly handle must terminate for its cross-family machinery successor")
 	qdel(door)
 	TEST_ASSERT(QDELETED(board), "The successor must own and delete the transferred electronics")

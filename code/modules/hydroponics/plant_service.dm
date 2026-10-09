@@ -1,5 +1,5 @@
 /// The plant system (was SSplants): seed and gene data. It has no periodic work of its own: spreading plants grow on
-/// their own lane (PERIODIC_PLANTS, 7.5 s), started by add_plant(), and the growing set is the REGISTRY_GROWING_PLANTS
+/// their own every() (7.5 s, gated on `growing`), started by add_plant(), and the growing set is the REGISTRY_GROWING_PLANTS
 /// registry. It is a lazy system (outside the boot DAG): the planet system's initialize() calls SSplants.ready(), where
 /// SSplants used to initialize. The API is in plant_api.dm.
 SYSTEM_DEF(plants)

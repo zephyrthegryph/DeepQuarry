@@ -687,7 +687,6 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 	if(length(loaded) >= max_shells)
 		to_chat(user, span_warning("[src] is full."))
 		return
-	// ALLOW(sys_om_after_rearm): a finite sequence, not a loop over state: each run consumes one round from `rounds` (cut in place, so the list is the counter) and it ends when the list or the magazine runs out
 	after(src, 1 SECOND, PROC_REF(load_from_storage), with = list(user, rounds))
 
 /datum/task/timed/projectile_chamber_round

@@ -28,8 +28,9 @@ CAPABILITIES(/obj/item/spell/flame_tongue)
 	name = "flame"
 	eye_safety_modifier = 3
 
-/obj/item/weldingtool/spell/periodic_step()
-	return
+/// The spell welder never burns or regenerates fuel.
+/obj/item/weldingtool/spell/burner_active(datum/act/A)
+	return FALSE
 
 //Needed to make the spell welder have infinite fuel.  Don't worry, it uses energy instead.
 /obj/item/weldingtool/spell/remove_fuel()

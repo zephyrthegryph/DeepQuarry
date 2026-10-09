@@ -632,9 +632,6 @@ base_var	code/modules/mob/living/turfslip.dm	/mob/living/var/datum/turfslip/turf
 base_var	code/modules/mob/mind_host.dm	/obj/item/var/datum/mind_host/mind_host
 base_var	code/modules/mob/mob.dm	var/tmp/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")
 base_var	code/modules/mob/mob.dm	var/tmp/user_vars_remembered //not needed for manual editing, just stores the original vars from the above list to make sure they go back to normal later
-base_var	code/modules/mob/mob_chunks.dm	/atom/movable/var/tmp/list/proximity_chunks
-base_var	code/modules/mob/mob_chunks.dm	/atom/movable/var/tmp/proximity_mask = 0
-base_var	code/modules/mob/mob_chunks.dm	/atom/movable/var/tmp/proximity_lane
 base_var	code/modules/mob/mob_defines.dm	var/tmp/datum/persistent_client/persistent_client
 base_var	code/modules/mob/mob_defines.dm	var/datum/mind/mind
 base_var	code/modules/mob/mob_defines.dm	var/stat = CONSCIOUS //Whether a mob is alive or dead.

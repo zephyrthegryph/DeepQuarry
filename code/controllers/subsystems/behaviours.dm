@@ -19,8 +19,8 @@ SYSTEM_DEF(behaviours)
 	var/audit_forced = FALSE
 
 /datum/system/behaviours/initialize()
-	om_registry()
-	om_scheduler()
+	definition_registry()
+	time_scheduler()
 
 /// The audit (pipelines and sequences, sched_items.dm audit_step()) runs in unit test and TESTING builds always; on
 /// servers only with the OM_PIPELINE_AUDIT config flag or the admin verb (it is a debugging aid, not a feature).
@@ -59,7 +59,7 @@ ADMIN_VERB(toggle_pipeline_audit, R_DEBUG, "Toggle Pipeline Audit", "Turns the m
 	// sampled parked mob) was tick usage no system owned. It is charged to the OM core, where the scheduler's own
 	// bookkeeping lands, so a spike in the tick record names it instead of leaving it unexplained.
 	var/started = TICK_USAGE
-	om_pipeline_audit(sched, OM_AUDIT_PARKED_SAMPLE, OM_AUDIT_AWAKE_SAMPLE)
+	pipeline_pipeline_audit(sched, OM_AUDIT_PARKED_SAMPLE, OM_AUDIT_AWAKE_SAMPLE)
 	seq_audit(SEQ_AUDIT_PARKED_SAMPLE, SEQ_AUDIT_AWAKE_SAMPLE)
 	sleep_audit(64, TRUE)
 	km_meter().charge(KM_SYS_OM_CORE, TICK_USAGE_TO_MS(started))

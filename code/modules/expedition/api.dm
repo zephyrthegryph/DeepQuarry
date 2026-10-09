@@ -174,8 +174,8 @@
 	own_clear(site, nameof(site.overmap_sector), OWN_DELETE)
 	// Every relation view naming a turf on this z (payout turfs, landing turfs, rich edges) is
 	// cleared now, and again when the wiped z goes back into free_z (finish()).
-	var/dropped = om_drop_z(z)
-	log_world("Expedition: om_drop_z(z[z]) cleared [dropped] relation view(s) before teardown.")
+	var/dropped = relation_drop_z(z)
+	log_world("Expedition: relation_drop_z(z[z]) cleared [dropped] relation view(s) before teardown.")
 	teardown_z["[z]"] = TRUE
 	var/datum/expedition_teardown_job/job = new(site, reason)
 	job.execute()

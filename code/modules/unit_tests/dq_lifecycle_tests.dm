@@ -63,7 +63,7 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 	for(var/name in GLOB.vars)
 		if(name == "vars")
 			continue
-		// The OM handle table (om_handle()) is an id allocator, not a registration.
+		// The OM handle table (entity_handle()) is an id allocator, not a registration.
 		if(findtext(name, "om_handle_") == 1)
 			continue
 		// type -> registries, a per-type cache filled on a type's first
@@ -178,7 +178,7 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 /proc/dq_lifecycle_running(datum/D)
 	. = list()
 	// An armed expire() is the object's own declared lifetime, not running behaviour.
-	var/timers = om_timer_count(D)
+	var/timers = time_scheduler().timer_count(D)
 	if(ismovable(D))
 		var/atom/movable/AM = D
 		if(after_pending(AM, "lifecycle_lifetime_timer"))

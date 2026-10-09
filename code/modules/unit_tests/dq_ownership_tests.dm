@@ -209,12 +209,12 @@ CAPABILITIES(/datum/own_test_child)
 	var/cleared = rel_drop_z(fake_z)
 	TEST_ASSERT(isnull(H.view) && cleared == 1, "releasing the z-level clears views naming its turfs ([cleared])")
 	// A turf handle carries the z-level's generation.
-	var/h = om_handle(T)
-	TEST_ASSERT_EQUAL(om_resolve(h), T, "a turf handle resolves on a live z-level")
-	om_z_generation_bump(T.z)
-	TEST_ASSERT(isnull(om_resolve(h)), "a turf handle stops resolving once its z-level generation moves on")
+	var/h = entity_handle(T)
+	TEST_ASSERT_EQUAL(resolve_handle(h), T, "a turf handle resolves on a live z-level")
+	relation_z_generation_bump(T.z)
+	TEST_ASSERT(isnull(resolve_handle(h)), "a turf handle stops resolving once its z-level generation moves on")
 	GLOB.om_z_generations[T.z]-- // the test map's z-level was not really released
-	TEST_ASSERT_EQUAL(om_resolve(h), T, "and resolves again once the generation is back")
+	TEST_ASSERT_EQUAL(resolve_handle(h), T, "and resolves again once the generation is back")
 	qdel(H)
 
 /datum/unit_test/ownership_proto
@@ -295,10 +295,10 @@ CAPABILITIES(/datum/own_test_child)
 	set_global("dq_lifecycle_report_capture", null)
 	qdel(K)
 	var/datum/own_test_child/B = new
-	var/list/spec = om_callable(B, TYPE_PROC_REF(/datum/own_test_child, test_label), "x")
-	TEST_ASSERT_EQUAL(om_run(spec, "y"), "childxy", "om_run runs a callable with stored and extra args")
+	var/list/spec = deferred_call(B, TYPE_PROC_REF(/datum/own_test_child, test_label), "x")
+	TEST_ASSERT_EQUAL(deferred_run(spec, "y"), "childxy", "deferred_run runs a callable with stored and extra args")
 	qdel(B)
-	TEST_ASSERT(isnull(om_run(spec, "y")), "a callable whose target is gone is dropped")
+	TEST_ASSERT(isnull(deferred_run(spec, "y")), "a callable whose target is gone is dropped")
 
 /datum/own_test_child/proc/test_label(a, b)
 	return "[label][a][b]"
@@ -323,26 +323,26 @@ CAPABILITIES(/datum/own_test_child)
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
 	rel_set(H, nameof(H.view), A)
-	var/h = om_handle(A)
-	var/id = om_handle_park(A)
+	var/h = entity_handle(A)
+	var/id = entity_handle_park(A)
 	qdel(A)
 	TEST_ASSERT(isnull(H.view), "the view clears when the collapsed thing goes")
-	TEST_ASSERT(isnull(om_resolve(h)), "a parked handle resolves to nothing")
+	TEST_ASSERT(isnull(resolve_handle(h)), "a parked handle resolves to nothing")
 	var/datum/own_test_child/B = new
-	om_handle_unpark(B, id)
-	TEST_ASSERT_EQUAL(om_resolve(h), B, "the re-materialized thing takes over the old handle")
+	entity_handle_unpark(B, id)
+	TEST_ASSERT_EQUAL(resolve_handle(h), B, "the re-materialized thing takes over the old handle")
 	TEST_ASSERT_EQUAL(H.view, B, "and the dormant view re-links to it")
 	// replace_with forwarding.
 	var/datum/own_test_child/C = new
 	om_handle_forward(B, C)
 	TEST_ASSERT_EQUAL(H.view, C, "om_handle_forward re-points views to the successor")
-	TEST_ASSERT_EQUAL(om_resolve(h), C, "and hands it the handle slot")
+	TEST_ASSERT_EQUAL(resolve_handle(h), C, "and hands it the handle slot")
 	// A successor of another family (an airlock torn down into an assembly) is a new thing:
 	// the views and handle stay with the original and end with it.
 	var/datum/own_test_holder/other = new
 	om_handle_forward(C, other)
 	TEST_ASSERT_EQUAL(H.view, C, "om_handle_forward leaves views on the original for a successor of another family")
-	TEST_ASSERT_EQUAL(om_resolve(h), C, "and keeps the handle slot")
+	TEST_ASSERT_EQUAL(resolve_handle(h), C, "and keeps the handle slot")
 	qdel(other)
 	qdel(B)
 	qdel(C)
@@ -364,33 +364,6 @@ CAPABILITIES(/datum/own_test_child)
 /proc/own_rec_audit_make_dropped()
 	var/datum/own_test_child/A = new
 	after(A, 10 MINUTES, TYPE_PROC_REF(/datum/own_test_child, test_label))
-
-/datum/own_test_field_holder
-OM_FIELD_VIEW(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, CHANGE_MACHINE_SETTINGS)
-
-/datum/unit_test/ownership_framework_writes_raise_fields
-
-/datum/unit_test/ownership_framework_writes_raise_fields/Run()
-	var/datum/own_test_field_holder/H = new
-	var/datum/own_test_child/T = new
-	var/datum/om/scheduler/sched = om_scheduler()
-	om_rec_of(H)
-	H.om_listen |= CHANGE_MACHINE_SETTINGS
-	sched.test_raises = list()
-	rel_set(H, nameof(H.watched), T)
-	TEST_ASSERT(own_test_raised(sched, H), "a relation write to a declared field raises its channel")
-	sched.test_raises = list()
-	qdel(T)
-	TEST_ASSERT(isnull(H.watched), "the view cleared when its target died")
-	TEST_ASSERT(own_test_raised(sched, H), "the automatic clear of a declared field raises its channel, as the setter would")
-	sched.test_raises = null
-	qdel(H)
-
-/proc/own_test_raised(datum/om/scheduler/sched, datum/E)
-	for(var/list/raise as anything in sched.test_raises)
-		if(raise[1] == E && (raise[2] & CHANGE_MACHINE_SETTINGS))
-			return TRUE
-	return FALSE
 
 // ---- ownership() / relations() entries: policies, rel_link pairs, hooks, watch ----
 

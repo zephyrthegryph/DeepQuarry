@@ -76,11 +76,11 @@ CAPABILITIES(/datum/status_effect)
 	if(EXPIRY_ACTIVE(src, duration, CLOCK_WORLD) || EXPIRY_ACTIVE(src, tick_interval, CLOCK_WORLD)) //don't process if we don't care
 		switch(processing_speed)
 			if(STATUS_EFFECT_FAST_PROCESS)
-				om_task_periodic(src, PERIODIC_FAST)
+				SSstatus_fast.kernel_join(src)
 			if(STATUS_EFFECT_NORMAL_PROCESS)
-				om_task_periodic(src, PERIODIC_SECOND)
+				SSstatus_normal.kernel_join(src)
 			if(STATUS_EFFECT_PRIORITY)
-				om_task_periodic(src, PERIODIC_STATUS_EFFECTS)
+				SSstatus_priority.kernel_join(src)
 
 	update_particles()
 	return TRUE
@@ -107,7 +107,7 @@ CAPABILITIES(/datum/status_effect)
 // Status effect process. Handles adjusting its duration and ticks.
 // If you're adding processed effects, put them in [proc/tick]
 // instead of extending / overriding the process() proc.
-/datum/status_effect/periodic_step(delta)
+/datum/status_effect/proc/effect_step(delta)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	if(QDELETED(owner))

@@ -1,13 +1,13 @@
 // ---- The sweep (containment.md Â§4.7 "Sweep and hysteresis") ----
 
-/// Checks per PERIODIC_SLOW frame (2 s): 32 per 4 s, as the reactor sweep spent.
+/// Checks per sweep frame (2 s): 32 per 4 s, as the reactor sweep spent.
 #define LATENCY_SWEEP_BUDGET 16
 /// Time a sweep frame may spend (ms). A collapse check scans the subtree's references and costs
 /// 5-25 ms on a full locker, so an unbounded frame over 16 holders ran ~275 ms in one tick every
 /// 2 s on Southern Cross. Past the budget the frame stops and the next frame resumes at the same
 /// holder (refused atoms are on cooldown and collapsed ones are gone, so nothing repeats).
 #define LATENCY_SWEEP_MS_BUDGET 4
-/// References the sweep frame itself holds to the atom it checks (see periodic_step()).
+/// References the sweep frame itself holds to the atom it checks (see sweep_step()).
 #define LATENCY_SWEEP_FRAME_REFS 2
 /// Shortest wait before the sweep re-offers an atom latent_collapse() refused.
 #define LATENCY_REFUSAL_BACKOFF_MIN (1 MINUTES)
@@ -25,27 +25,30 @@ GLOBAL_LIST_EMPTY(latency_sweep_holders)
 		return
 	if(holder?.latent_contents_enabled())
 		GLOB.latency_sweep_holders[holder] = TRUE
-		if(!om_task_periodic_running(GLOB.latency_sweep))
-			om_task_periodic(GLOB.latency_sweep, PERIODIC_SLOW)
+		GLOB.latency_sweep.set_sweeping(TRUE)
 
 /proc/dq_latency_sweep_unregister(atom/holder)
 	GLOB.latency_sweep_holders -= holder
 
 /datum/latency_sweep
 	var/cursor = 0
+	/// A holder has registered: the every() below runs (it parks until the first one, never at global init).
+	var/sweeping = FALSE
+TRACKED(/datum/latency_sweep, sweeping)
+CAPABILITIES(/datum/latency_sweep)
+	every(2 SECONDS, then(PROC_REF(sweep_step)), when = nameof(sweeping))
 
 GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 
-// The sweep is a periodic lane member (object_model_core.md Â§4.10, PERIODIC_SLOW), not a
+// The sweep is an every() of 2 s, not a
 // reactor continuous declaration: budgeted collapse over latent holders (C10). It starts
 // with the first registered holder (never at global init, before the OM core exists) and
 // keeps running; a frame with no holders costs one length check.
 
-/// One lane frame: spends a fixed budget of checks across the registered
-/// holders, round-robin, collapsing whatever passes can_be_latent(). `delta`
-/// only matters for rate models; the sweep itself just spends its budget
-/// every frame.
-/datum/latency_sweep/periodic_step(delta)
+/// One sweep frame (every()): spends a fixed budget of checks across the registered
+/// holders, round-robin, collapsing whatever passes can_be_latent(). The sweep
+/// just spends its budget every frame.
+/datum/latency_sweep/proc/sweep_step(datum/act/timer/tick)
 	if(!CONFIG_GET(flag/latency_policy_enabled))
 		return
 	var/list/holders = GLOB.latency_sweep_holders

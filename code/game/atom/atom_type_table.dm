@@ -43,7 +43,7 @@
 		bits |= TYPE_TABLE_JOINS_REGISTRIES
 	if(dq_rules_for_type(thing.type))
 		bits |= TYPE_TABLE_HAS_RULES
-	if(om_type_has_decl(thing.type))
+	if(entity_type_has_decl(thing.type))
 		bits |= TYPE_TABLE_HAS_OM
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(thing)
 	if(decls && (decls.work & DECL_WORK_MATERIALIZE))

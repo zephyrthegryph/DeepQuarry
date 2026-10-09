@@ -51,7 +51,7 @@
 		if(own_audit_rec_dropped(rec))
 			var/owner_type = rec.owner.type
 			. += "dropped with a rec: [owner_type] is referenced only by its own OM record ([length(rec.timers) / OM_TIMER_STRIDE] timer\s); tearing it down"
-			om_teardown_rest(rec.owner)
+			entity_teardown_rest(rec.owner)
 	if(!quiet)
 		for(var/line in .)
 			OWN_REPORT("AUDIT: [line]")
@@ -105,7 +105,7 @@
 		// Armed like the entities the audit looks for (a pending timer), so the scheduler's own
 		// references to it (its deadline) are part of the measured overhead.
 		after(probe, 1 HOURS, TYPE_PROC_REF(/datum/own_audit_probe, noop))
-		var/datum/scheduler_record/rec = om_rec_of(probe)
+		var/datum/scheduler_record/rec = scheduler_record_of(probe)
 		var/internal = 1
 		for(var/name in rec.vars)
 			if(name == "owner" || name == "vars")
@@ -113,7 +113,7 @@
 			internal += state_count_refs_in(rec.vars[name], probe, 0)
 		// `probe` here stands in for the audit loop's own variable.
 		overhead = refcount(probe) - internal - 1
-		om_teardown_rest(probe)
+		entity_teardown_rest(probe)
 		spent(probe)
 	return overhead
 
@@ -126,7 +126,7 @@
 /proc/own_audit_periodic()
 	// Re-armed first: each finding is reported as a runtime (OWN_REPORT), which unwinds this proc,
 	// and a finding must not end the periodic audit for the rest of the run.
-	after(om_global_owner(), OWN_AUDIT_INTERVAL, GLOBAL_PROC_REF(own_audit_periodic))
+	after(timer_global_owner(), OWN_AUDIT_INTERVAL, GLOBAL_PROC_REF(own_audit_periodic))
 	var/list/lines = own_audit()
 	log_world("OWN AUDIT: [length(lines)] finding\s")
 

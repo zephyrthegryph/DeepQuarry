@@ -700,3 +700,8 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental)
 /datum/effect/effect/system/steam_trail_follow/proc/oldposition() as /turf
 	return oldposition
 
+
+/// Starts the effect `times` times, `interval` deciseconds apart, on the effect's own clock.
+/datum/effect/effect/system/proc/start_repeatedly(times, interval)
+	for(var/i in 0 to times - 1)
+		after(src, i * interval, PROC_REF(start))

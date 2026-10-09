@@ -72,7 +72,6 @@ DECLARE_APPEARANCE(/obj/item/dq_decl_probe, "mode", list("off" = list(APPEARANCE
 DECLARE_APPEARANCE(/obj/item/dq_decl_probe, "lid", list("1" = list(APPEARANCE_OVERLAYS = list("lid_beakerlarge"))))
 DECLARE_REGISTRY(/obj/item/dq_decl_probe, REGISTRY_DQ_DECL_TEST)
 DECLARE_BIND(/obj/item/dq_decl_probe, /datum/decl_binder/dq_decl_test)
-DECLARE_PERIODIC(/obj/item/dq_decl_probe, PERIODIC_SLOW)
 DESTROY_EFFECTS(/obj/item/dq_decl_probe, new /datum/destroy_effects_data(drop_contents = TRUE, debris = list(/obj/item/dq_decl_part/better = 2)))
 
 /obj/item/dq_decl_probe/Initialize(mapload)
@@ -82,9 +81,6 @@ DESTROY_EFFECTS(/obj/item/dq_decl_probe, new /datum/destroy_effects_data(drop_co
 
 /obj/item/dq_decl_probe/proc/timer_done(datum/act/A)
 	timer_fired = TRUE
-
-/obj/item/dq_decl_probe/periodic_step(delta)
-	return
 
 /// Adds to the parent's reagents (the old ..() chain added too) and tints.
 /obj/item/dq_decl_probe/sub
@@ -238,16 +234,14 @@ CAPABILITIES(/obj/item/dq_decl_probe/dry)
 /datum/unit_test/dq_decl_scheduling
 
 /datum/unit_test/dq_decl_scheduling/Run()
-	om_test_begin()
+	scheduler_test_begin()
 	var/obj/item/dq_decl_probe/probe = new(dq_containment_floor())
-	TEST_ASSERT(probe.periodic_pipe == PERIODIC_SLOW, "periodic work started at materialize")
 	TEST_ASSERT(!probe.timer_fired, "the timer waits")
 	scheduler_advance(3)
 	TEST_ASSERT(probe.timer_fired, "the declared timer fired")
 	probe.dematerialize()
-	TEST_ASSERT(isnull(probe.periodic_pipe), "periodic work stopped at dematerialize")
 	qdel(probe)
-	om_test_end()
+	scheduler_test_end()
 
 /datum/unit_test/dq_decl_destroy_effects
 

@@ -94,10 +94,10 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return GET_DECL(D.type)
 
 /proc/registry_om_decl(datum/D)
-	return (D in om_registry().decls) ? D : null
+	return (D in definition_registry().decls) ? D : null
 
 /proc/registry_om_stage(datum/D)
-	return om_registry().stage_by_type[D.type]
+	return definition_registry().stage_by_type[D.type]
 
 /proc/registry_material(datum/material/D)
 	return GLOB.name_to_material[D.name]

@@ -103,7 +103,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 		movement_dir = get_dir(src,target)
 
 	step(src, movement_dir)
-	after(src, 0.1 SECONDS, TYPE_PROC_REF(/atom/movable, om_step), with = list(movement_dir))
+	drift(movement_dir, 1, 0.1 SECONDS)
 	return 1
 
 /obj/singularity/narsie/large/move(force_move = 0)

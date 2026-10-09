@@ -67,7 +67,7 @@ CAPABILITIES(/datum/generated_station_materialization_job)
 		flight_plan().generation_progress = max(flight_plan().generation_progress, progress)
 	if(now)
 		return FALSE
-	if(force_yield || slice_usage >= tick_budget || om_scheduler().out_of_budget())
+	if(force_yield || slice_usage >= tick_budget || time_scheduler().out_of_budget())
 		// The phase returns its cursor and carries on in the next slice.
 		yield_count++
 		rustg_time_reset(timer_id)

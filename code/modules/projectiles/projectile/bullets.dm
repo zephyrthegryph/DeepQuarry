@@ -372,7 +372,7 @@
 
 	combustion = FALSE
 
-/obj/item/projectile/bullet/pistol/cap/periodic_step()
+/obj/item/projectile/bullet/pistol/cap/projectile_step()
 	moveToNullspace()
 	consume(src)
 
@@ -424,7 +424,7 @@
 	combustion = FALSE
 	hud_state = "pistol_light"
 
-/obj/item/projectile/bullet/cap/periodic_step()
+/obj/item/projectile/bullet/cap/projectile_step()
 	moveToNullspace()
 	consume(src)
 

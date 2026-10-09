@@ -14,7 +14,7 @@
 		cable.color = COLOR_BLUE
 		var/expected_amount = expected_lengths[cable_type]
 		TEST_ASSERT_EQUAL(cable.d1, expected_amount == 1 ? 0 : NORTH, "The stub and straight fixtures must parse distinct cable orientations")
-		var/old_handle = om_handle(cable)
+		var/old_handle = entity_handle(cable)
 		var/list/before = turf_contents_of_type(T, /obj/item/stack/cable_coil/heavyduty)
 		cable.welder_act_tool_done(actor, T)
 		// Register the actual material product before assertions can end the test.
@@ -26,4 +26,4 @@
 		TEST_ASSERT_EQUAL(coil.get_amount(), expected_amount, "Straight cable must return two lengths and a stub one")
 		TEST_ASSERT_EQUAL(coil.loc, T, "Recovered cable must remain on the actual cut floor")
 		TEST_ASSERT_EQUAL(coil.color, COLOR_BLUE, "Recovered cable must preserve its original color")
-		TEST_ASSERT_NULL(om_resolve(old_handle), "An installed cable handle must terminate for an item/stack successor")
+		TEST_ASSERT_NULL(resolve_handle(old_handle), "An installed cable handle must terminate for an item/stack successor")

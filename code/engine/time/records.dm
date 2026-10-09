@@ -96,8 +96,8 @@
 	if(!rec.table.appearance_scanned)
 		rec.table.appearance_scanned = TRUE
 		rec.table.appearance_mask = E.scheduler_presentation_mask()
-	if(rec.table.service_mask | rec.table.cache_mask | rec.table.appearance_mask | rec.table.sys_periodic_mask | rec.table.relay_mask)
-		E.om_listen |= rec.table.service_mask | rec.table.cache_mask | rec.table.appearance_mask | rec.table.sys_periodic_mask | rec.table.relay_mask
+	if(rec.table.service_mask | rec.table.cache_mask | rec.table.appearance_mask | rec.table.relay_mask)
+		E.om_listen |= rec.table.service_mask | rec.table.cache_mask | rec.table.appearance_mask | rec.table.relay_mask
 	if(rec.table.derived_relays)
 		scheduler_field_derived_relink(E, rec)
 	return rec
@@ -304,7 +304,7 @@
 
 /// Recomputed only when attachments, watches, forwards or derived storage change.
 /proc/entity_recompute_listen(datum/scheduler_record/rec)
-	var/slow = rec.table?.service_mask | rec.table?.sys_periodic_mask
+	var/slow = rec.table?.service_mask
 	var/mask = slow
 	for(var/datum/scheduled_behaviour/B as anything in rec.att)
 		mask |= B.interest
@@ -362,9 +362,6 @@
 	// so it runs before the repeat and bulk short cuts below).
 	if(rec.table.cache_mask & bits)
 		entity_cache_clear(E, rec.table.cache_change, null, bits)
-	// A declared periodic field changed: start or stop the declared work now (code/datums/sys/periodic.dm).
-	if(rec.table.sys_periodic_mask & bits)
-		E.scheduler_evaluate_periodic()
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	// Tests count raises (a status change must raise its channel once, not twice).
 	if(sched.test_raises)

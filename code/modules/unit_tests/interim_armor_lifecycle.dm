@@ -10,13 +10,13 @@
 	refusal.block_remove = TRUE
 	TEST_ASSERT(dq_ledger_removal_refusal(plate, user), "ordinary removal actually refuses the original insert")
 	var/datum/material/material = plate.material
-	var/handle = om_handle(plate)
+	var/handle = entity_handle(plate)
 	TEST_ASSERT_EQUAL(test_op_handler(plate, "wirecutter_used", user, tool), OP_OK, "cutting the insert succeeds")
 	TEST_ASSERT(QDELETED(plate), "cutting deletes the original despite ordinary removal refusal")
 	var/obj/item/clothing/accessory/material/makeshift/armguards/armor = user.get_active_hand()
 	TEST_ASSERT(istype(armor), "cutting puts the prepared arm guards into the released hand")
 	TEST_ASSERT_EQUAL(armor.material, material, "the prepared armor keeps the original material")
-	TEST_ASSERT_NULL(om_resolve(handle), "the original material-item identity ends across the clothing family")
+	TEST_ASSERT_NULL(resolve_handle(handle), "the original material-item identity ends across the clothing family")
 
 /// A floor insert never forces its prepared successor into either occupied hand.
 /datum/unit_test/interim_armor_insert_full_hands/Run()

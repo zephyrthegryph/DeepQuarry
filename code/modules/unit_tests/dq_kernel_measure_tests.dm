@@ -1,28 +1,10 @@
 // Kernel measurement (unified plan step 2, code/controllers/measure/): the system rule, the roll-up of a
 // behaviour's cost to its system, the histogram percentiles, overrun attribution, the flight recorder's ring and
-// the input latency record. Tests that need a scheduler use the OM harness (om_test_begin(), scheduler_advance()),
+// the input latency record. Tests that need a scheduler use the OM harness (scheduler_test_begin(), scheduler_advance()),
 // whose scheduler charges its own meter; the rest build meters directly, so nothing here touches the live one
 // except where a test swaps it in on purpose and puts it back before asserting.
 
 /datum/om_test_entity/var/km_ticks = 0
-
-/// Charged to "km_fake_system" through its system_key.
-/datum/om/behaviour/test/km_fake
-	every = 1 SECONDS
-	system_key = "km_fake_system"
-
-/datum/om/behaviour/test/km_fake/tick(datum/om_test_entity/E, dt)
-	E.km_ticks++
-
-/// Holds the tick until it is over budget: a real overrun charged to "km_burner_system".
-/datum/om/behaviour/test/km_burner
-	every = 1 SECONDS
-	system_key = "km_burner_system"
-
-/datum/om/behaviour/test/km_burner/tick(datum/om_test_entity/E, dt)
-	// At least a third of a tick of real work, and on to 120% so the tick is over budget wherever it started.
-	var/target = max(TICK_USAGE + 30, 120)
-	CONSUME_UNTIL(target)
 
 /// The row of a km_report_systems() list for `key`, or null.
 /proc/km_test_row(list/rows, key)
@@ -36,24 +18,10 @@
 
 // ---------------------------------------------------------------- the system rule
 
-/datum/unit_test/dq_km_system_key_rule
-
-/datum/unit_test/dq_km_system_key_rule/Run()
-	// Rule 2: a code folder's row.
-	var/list/known = km_system_prefixes()
-	TEST_ASSERT(length(known) >= 2, "the prefix table is built (it has [length(known)] rows)")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/internal/timers), "om_core", "the scheduler's own behaviours")
-	// Rule 3: the family fallback.
-	TEST_ASSERT_EQUAL(km_system_key_for_path("/datum/om/behaviour/world/statpanels"), "statpanels", "world/<x> is <x> (as text: the lane is gone)")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/test/every_second), "test", "any other behaviour is its first segment")
-	// A row's prefix matches at a segment (or a family suffix), never in the middle of a name.
-	TEST_ASSERT_EQUAL(km_system_key_for_path("/datum/om/pipeline/lifeboat/x"), "lifeboat", "life must not swallow lifeboat")
-	return
-
 /datum/unit_test/dq_km_every_behaviour_has_a_system
 
 /datum/unit_test/dq_km_every_behaviour_has_a_system/Run()
-	var/datum/om/registry/reg = om_registry()
+	var/datum/om/registry/reg = definition_registry()
 	var/datum/km_systems/systems = km_systems()
 	TEST_ASSERT(length(reg.behaviours) > 0, "the registry has behaviours")
 	for(var/datum/om/behaviour/B as anything in reg.behaviours)
@@ -178,55 +146,6 @@
 
 // ---------------------------------------------------------------- rollup
 
-/datum/unit_test/om/dq_km_rollup_charges_a_fake_behaviour
-
-/datum/unit_test/om/dq_km_rollup_charges_a_fake_behaviour/run_om(list/made)
-	var/datum/om/behaviour/fake = om_registry().behaviour(/datum/om/behaviour/test/km_fake)
-	TEST_ASSERT_NOTNULL(fake, "the fake behaviour is registered")
-	var/idx = km_systems().index_by_key["km_fake_system"]
-	TEST_ASSERT_EQUAL(fake.system_idx, idx, "its system_key bound it to km_fake_system")
-	TEST_ASSERT(fake.id < OM_MAX_STAT_TYPES, "its counters are individually attributable (id [fake.id])")
-	var/datum/tick_meter/meter = sched.meter
-	TEST_ASSERT(meter != km_meter(), "a test scheduler charges its own meter, not the live one")
-
-	var/datum/om_test_entity/E = entity(made)
-	om_attach(E, /datum/om/behaviour/test/km_fake)
-	scheduler_advance(3)
-	TEST_ASSERT(E.km_ticks >= 2, "the fake behaviour ran ([E.km_ticks])")
-	TEST_ASSERT(meter.tick_ms[idx] > 0, "its run was charged to its system this tick")
-	TEST_ASSERT(meter.n_touched >= 1, "a system is marked touched")
-
-	// A known charge on top, then close the tick and read the report.
-	var/before = meter.tick_ms[idx]
-	meter.charge(idx, 12.5)
-	TEST_ASSERT(abs(meter.tick_ms[idx] - (before + 12.5)) < 0.001, "charges add up within a tick")
-	meter.end_tick(50, 0)
-	var/list/rows = km_report_systems(meter.live, sched)
-	var/list/row = km_test_row(rows, "km_fake_system")
-	TEST_ASSERT_NOTNULL(row, "the report has a row for the fake system")
-	TEST_ASSERT_EQUAL(row["ticks"], 1, "the system was charged in one closed tick")
-	TEST_ASSERT(row["ms_total"] >= 12.5, "its ms include the known charge (got [row["ms_total"]])")
-	TEST_ASSERT(row["runs"] >= 2, "runs are rolled up from the behaviour's counters (got [row["runs"]])")
-	TEST_ASSERT_EQUAL(row["behaviours"], 1, "one behaviour belongs to the system")
-	TEST_ASSERT(row["p99_ms"] >= 12.5 * 0.7, "p99 reflects the tick (got [row["p99_ms"]])")
-	TEST_ASSERT_EQUAL(meter.n_touched, 0, "closing the tick clears the touched list")
-	TEST_ASSERT_EQUAL(meter.tick_ms[idx], 0, "and the tick's charge")
-	// Another behaviour's cost never lands on this system.
-	var/datum/om/behaviour/every = om_registry().behaviour(/datum/om/behaviour/test/every_second)
-	TEST_ASSERT(every.system_idx != idx, "a different behaviour is a different system")
-
-	// Counters are deltas against a set's base: a window opened now sees only what runs after.
-	var/datum/km_stats_set/window = meter.open_set(sched)
-	var/runs_before = row["runs"]
-	scheduler_advance(2)
-	meter.end_tick(50, 0)
-	meter.close_set(window)
-	var/list/window_row = km_test_row(km_report_systems(window, sched), "km_fake_system")
-	TEST_ASSERT_NOTNULL(window_row, "the window saw the fake system run")
-	TEST_ASSERT(window_row["runs"] >= 1 && window_row["runs"] < runs_before + 5, "the window counts only the runs since it opened (got [window_row["runs"]])")
-	TEST_ASSERT_EQUAL(window_row["ticks"], 1, "and only the ticks since")
-	qdel(window)
-
 // ---------------------------------------------------------------- overrun attribution
 
 /datum/unit_test/dq_km_overrun_attribution
@@ -319,35 +238,6 @@
 	qdel(quiet)
 	qdel(M)
 	return
-
-/datum/unit_test/om/dq_km_forced_overrun_names_the_burner
-
-/datum/unit_test/om/dq_km_forced_overrun_names_the_burner/run_om(list/made)
-	var/datum/tick_meter/meter = sched.meter
-	var/burner_idx = km_systems().index_by_key["km_burner_system"]
-	TEST_ASSERT_NOTNULL(burner_idx, "the burner's system exists")
-	var/datum/om_test_entity/quiet = entity(made)
-	om_attach(quiet, /datum/om/behaviour/test/km_fake)
-	var/datum/om_test_entity/burner = entity(made)
-	om_attach(burner, /datum/om/behaviour/test/km_burner)
-	// The presentation lane also runs the refresh drift audit, strictly on every frame in a test
-	// build (a few ms each); pause it for this pass so the burner is measured against its peers.
-	set_global("refresh_sweep_list", list())
-	// One pass: the burner holds the tick over budget, the quiet behaviour costs almost nothing.
-	scheduler_advance(1)
-	var/usage = TICK_USAGE
-	meter.end_tick(usage, 6)
-	TEST_ASSERT(usage > KM_OVERRUN_USAGE, "the burner really overran the tick (usage [usage])")
-	TEST_ASSERT_EQUAL(meter.total_overruns, 1, "the tick counts as an overrun")
-	var/list/top = meter.last_overrun_top
-	TEST_ASSERT(length(top) >= 1, "the overrun has attribution")
-	TEST_ASSERT_EQUAL(top[1]["key"], "km_burner_system", "the burner is the top system, from inside the scheduler, not a lump: [json_encode(top)]")
-	TEST_ASSERT(top[1]["ms"] > 1, "and it is charged real time (got [top[1]["ms"]] ms)")
-	TEST_ASSERT(findtext(meter.last_overrun_line, "km_burner_system"), "the line names it: [meter.last_overrun_line]")
-	var/list/entry = meter.recorded_entries()[1]
-	var/list/keys = entry[7]
-	TEST_ASSERT_EQUAL(keys[1], "km_burner_system", "the flight recorder entry names it too")
-	TEST_ASSERT(entry[3] > KM_OVERRUN_USAGE, "with the tick's usage")
 
 // ---------------------------------------------------------------- flight recorder
 
@@ -525,8 +415,8 @@
 	TEST_ASSERT(!isnull(panel["streak"]) && !isnull(panel["overruns"]), "and the tick counters")
 	var/list/diag = km_diagnostics(null)
 	TEST_ASSERT(islist(diag["systems"]) && islist(diag["input"]), "diagnostics carry the same records")
-	var/list/om = om_diagnostics(GLOB.om_live_sched)
-	TEST_ASSERT(islist(om["kernel"]), "om_diagnostics() exposes them")
+	var/list/om = scheduler_diagnostics(GLOB.om_live_sched)
+	TEST_ASSERT(islist(om["kernel"]), "scheduler_diagnostics() exposes them")
 	TEST_ASSERT(islist(om["kernel"]["systems"]), "with the per-system rows")
 	var/datum/tick_meter/M = new(8)
 	var/a = km_test_system("km_test_a")

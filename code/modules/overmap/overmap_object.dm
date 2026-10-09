@@ -95,7 +95,7 @@ CAPABILITIES(/obj/effect/overmap)
 		skybox_pixel_y = rand(200,600)
 	I.pixel_x = skybox_pixel_x
 	I.pixel_y = skybox_pixel_y
-	om_rec_of(src) // join the object model so the declared cache is cleared on CHANGE_EXPLICIT
+	scheduler_record_of(src) // join the object model so the declared cache is cleared on CHANGE_EXPLICIT
 	cached_skybox_image = I
 
 /obj/effect/overmap/proc/expire_skybox_representation()

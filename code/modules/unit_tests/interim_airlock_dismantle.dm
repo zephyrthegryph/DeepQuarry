@@ -23,7 +23,7 @@
 		rel_set(door, nameof(door.electronics), board)
 	else
 		TEST_ASSERT_NULL(door.electronics, "The generated-board case must start without installed electronics")
-	var/door_handle = om_handle(door)
+	var/door_handle = entity_handle(door)
 	var/list/before_frames = turf_contents_of_type(T, /obj/structure/door_assembly)
 	var/list/before_boards = turf_contents_of_type(T, /obj/item/airlock_electronics)
 	var/obj/item/tool/screwdriver/screwdriver = give_tool(actor, /obj/item/tool/screwdriver)
@@ -60,7 +60,7 @@
 	TEST_ASSERT_EQUAL(board.one_access, TRUE, "The one-access mode must survive")
 	TEST_ASSERT_EQUAL(length(board.conf_access), 1, "The configured access count must survive")
 	TEST_ASSERT_EQUAL(board.conf_access[1], ACCESS_SECURITY, "Security access must survive")
-	TEST_ASSERT_NULL(om_resolve(door_handle), "An airlock handle must terminate for its cross-family structure successor")
+	TEST_ASSERT_NULL(resolve_handle(door_handle), "An airlock handle must terminate for its cross-family structure successor")
 	qdel(frame)
 	TEST_ASSERT(!QDELETED(board), "The separate electronics must not become owned by the successor assembly")
 	TEST_ASSERT_EQUAL(board.loc, T, "Deleting the assembly must preserve the independent floor board")

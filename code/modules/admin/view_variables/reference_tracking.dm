@@ -252,4 +252,4 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 	return text_ref(src)
 
 /datum/callback/ref_search_details()
-	return "[text_ref(src)] (obj: [target_object()] proc: [delegate] args: [json_encode(arguments)] user: [om_resolve(user) || "null"])"
+	return "[text_ref(src)] (obj: [target_object()] proc: [delegate] args: [json_encode(arguments)] user: [resolve_handle(user) || "null"])"

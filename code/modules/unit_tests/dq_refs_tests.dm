@@ -1,7 +1,7 @@
 // Migration track 1c (doc/rewrite/lifecycle.md LC-refs): /datum/weakref is
 // gone. Live links are relations (code/datums/om/library.dm, read through
 // the accessor macros in code/__defines/om.dm); "remember who it was" refs
-// are OM handles (om_handle()/om_resolve()). One test per relation added, plus
+// are OM handles (entity_handle()/resolve_handle()). One test per relation added, plus
 // the handle behaviour weakrefs used to provide.
 
 // ---------------------------------------------------------------- handles
@@ -12,27 +12,27 @@
 
 /datum/unit_test/dq_refs_handle_is_weak/Run()
 	var/h = dq_refs_dropped_handle()
-	TEST_ASSERT(om_is_handle(h), "the datum got a handle")
+	TEST_ASSERT(is_entity_handle(h), "the datum got a handle")
 	// Resolving a handle whose target BYOND collected without qdel() is the
 	// misuse the detector reports; this test builds that case on purpose, so
 	// capture the report and check it fired instead of failing the run.
 	var/list/capture = list()
 	set_global("dq_lifecycle_report_capture", capture)
-	var/resolved = om_resolve(h)
+	var/resolved = resolve_handle(h)
 	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT_NULL(resolved, "a collected datum's handle resolves to null")
 	TEST_ASSERT(length(capture) == 1 && findtext(capture[1], "HANDLE TARGET COLLECTED WITHOUT QDEL"), "the collected target was reported: [json_encode(capture)]")
 	var/datum/E = new
-	TEST_ASSERT_NULL(om_resolve(h), "a new datum never answers an old handle")
-	TEST_ASSERT(om_handle(E) != h, "and gets a handle of its own")
+	TEST_ASSERT_NULL(resolve_handle(h), "a new datum never answers an old handle")
+	TEST_ASSERT(entity_handle(E) != h, "and gets a handle of its own")
 
 /// A handle to a datum nothing else references: it resolves while the datum
 /// is live, then BYOND collects the datum when this proc returns. (A helper,
 /// because TEST_ASSERT_* keeps its operands in locals.)
 /proc/dq_refs_dropped_handle()
 	var/datum/D = new
-	. = om_handle(D)
-	if(om_resolve(.) != D)
+	. = entity_handle(D)
+	if(resolve_handle(.) != D)
 		return null
 
 /// QDEL_IN past the GC filter queue defers through a handle: it still deletes
@@ -41,9 +41,9 @@
 
 /datum/unit_test/dq_refs_qdel_handle/Run()
 	var/obj/item/I = allocate(/obj/item/tape_roll)
-	qdel_handle(om_handle(I))
+	qdel_handle(entity_handle(I))
 	TEST_ASSERT(QDELETED(I), "qdel_handle() deletes what the handle names")
-	qdel_handle(om_handle(I)) // a deleted datum has no handle: a no-op
+	qdel_handle(entity_handle(I)) // a deleted datum has no handle: a no-op
 	qdel_handle("junk")
 
 /// IC refs: a reference on a circuit pin round-trips, and no sanitized string
@@ -57,7 +57,7 @@
 	TEST_ASSERT_EQUAL(ic_ref_resolve(r), I, "an IC ref resolves to its datum")
 	var/forged = sanitizeSafe(r, MAX_MESSAGE_LEN, 0, 0)
 	TEST_ASSERT(!ic_is_ref(forged), "sanitized pin text is never an IC ref")
-	TEST_ASSERT(!ic_is_ref(om_handle(I)), "a bare handle is not an IC ref")
+	TEST_ASSERT(!ic_is_ref(entity_handle(I)), "a bare handle is not an IC ref")
 	qdel(I)
 	TEST_ASSERT_NULL(ic_ref_resolve(r), "an IC ref to a deleted datum resolves to null")
 

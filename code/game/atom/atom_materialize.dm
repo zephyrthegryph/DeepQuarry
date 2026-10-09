@@ -78,7 +78,7 @@
 		dq_rules_on_materialize(src)
 	// Object model: attach the type's declared behaviours (code/datums/om/entity.dm).
 	if(table & TYPE_TABLE_HAS_OM)
-		om_start(src)
+		entity_start(src)
 	// Declared registries, service members, binds, behaviours, periodic work, timers
 	// (code/datums/lifecycle/declarations.dm), after the core joins above.
 	if(table & TYPE_TABLE_HAS_DECLS)
@@ -101,7 +101,7 @@
 	if(rule_binding)
 		dq_rules_on_dematerialize(src)
 	if(om_rec)
-		om_teardown_rest(src)
+		entity_teardown_rest(src)
 
 /// Creates `path` at `loc` and runs its Initialize() without materializing it.
 /// Extra arguments go to Initialize(). The result is a sandboxed object: it has

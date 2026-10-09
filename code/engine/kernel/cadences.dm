@@ -3,11 +3,11 @@
 // This replaces the polling processing subsystems (SSobj, SSprocessing, SSfastprocess, SSturfs,
 // SSburning, SSprojectiles, SSinstruments, SSpriority_effects, SSobj_tab_items). A datum with
 // periodic work defines periodic_step(delta) -- the body its old process() had -- and is started on
-// one of the cadences below with om_task_periodic(E, cadence). Its membership of that cadence IS the
+// one of the cadences below with cadence_start(E, cadence). Its membership of that cadence IS the
 // work: the kernel sweeps the cadence's members every interval (one work item per cadence, phase P,
 // on the cadence's lane), calling periodic_step(). periodic_step() returning PROCESS_KILL, or
-// om_task_periodic_stop(E), ends the membership and the entity costs nothing until the next
-// om_task_periodic(). That call is the type's wake rule: whatever made the work possible (lighting a
+// cadence_stop(E), ends the membership and the entity costs nothing until the next
+// cadence_start(). That call is the type's wake rule: whatever made the work possible (lighting a
 // cigarette, arming a grenade, a mob stepping on a trap) starts it; the work itself says when it
 // is done.
 //
@@ -20,13 +20,9 @@
 //   /datum/cadence/slow       every 2 s   (SSobj, SSturfs)          periodic_step(20)
 //   /datum/cadence/second     every 1 s   (SSprocessing, SSburning) periodic_step(10)
 //   /datum/cadence/fast       every 0.2 s (SSfastprocess)           periodic_step(2)
-//   /datum/cadence/plants     every 7.5 s (SSplants' vines)         periodic_step(75)
-//   /datum/cadence/reflectors every 0.5 s (SSreflector; machine clock) periodic_step(5)
-//   /datum/cadence/loot_icons every 0.5 s (SSlooting)               periodic_step(5)
 // Also on the slow lane now: alarm handlers, random events and their containers, working
 // shuttles, the game mode and planets (their subsystems schedule nothing any more).
-// Declared continuous lanes (each says why it must tick at frame rate):
-//   /datum/cadence/continuous/projectiles, .../throwing, .../instruments, .../status_effects, .../tab_items
+// Per-tick work (projectiles, throwing, priority status effects) is not a cadence: it is a members-swept every() of a system (code/controllers/subsystems/tick_members.dm).
 
 /// The cadence `E` is started on (a /datum/cadence type), or null when it has no periodic work.
 /// DF_ISPROCESSING mirrors it for code that only asks "is this running".
@@ -37,9 +33,6 @@
 		return FALSE
 	if(E.periodic_pipe == P)
 		return TRUE
-	// A DECLARE_PERIODIC_WHILE on this cadence whose state doesn't hold refuses (code/datums/sys/periodic.dm).
-	if(!E.compatibility_periodic_allowed(P))
-		return FALSE
 	// Moving to another cadence leaves the first one.
 	if(E.periodic_pipe)
 		member_leave(E.periodic_pipe, E, PERIODIC_SOURCE)
@@ -59,7 +52,7 @@
 /// One frame of periodic work: the body a process() override used to have. `delta` is the
 /// cadence's nominal step in the units the old subsystem passed (deciseconds for most; see the
 /// table above). Return PROCESS_KILL when there is nothing left to do until the next
-/// om_task_periodic(). Like the old process(), a body that sleeps doesn't hold up the frame.
+/// cadence_start(). Like the old process(), a body that sleeps doesn't hold up the frame.
 /datum/proc/periodic_step(delta)
 	set waitfor = FALSE // ALLOW(scheduler): core dispatch hook: guards the frame against a periodic_step() override that still sleeps
 	return PROCESS_KILL
@@ -103,68 +96,10 @@
 	every = 1 MINUTES
 	delta = 600
 
-/// Spreading plants (was SSplants' loop): one growth step every 7.5 s while a vine can grow.
-/datum/cadence/plants
-	name = "periodic (plants, 7.5 s)"
-	every = 7.5 SECONDS
-	delta = 75
-
-/// Reflectors (was SSreflector, 0.5 s): a reflector re-fires the beams it caught. It starts when
-/// it catches one (redirect_projectile()) and stops once it has fired.
-/datum/cadence/reflectors
-	name = "periodic (reflectors, 0.5 s)"
-	every = 0.5 SECONDS
-	delta = 5
-
-/// Loot panel icon generation (was SSlooting, 0.5 s): a panel with icons left to draw starts here and
-/// stops when its queue is empty. Lobby included, like the subsystem.
-/datum/cadence/loot_icons
-	name = "periodic (loot icons, 0.5 s)"
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-	every = 0.5 SECONDS
-	delta = 5
-
 /datum/cadence/fast
 	name = "periodic (0.2 s)"
 	every = 2
 	delta = 2
-
-/// Declared continuous lanes: movement and audio that visibly stutter at a coarser cadence.
-/datum/cadence/continuous
-	abstract_type = /datum/cadence/continuous
-	lane = LANE_URGENT
-
-/datum/cadence/continuous/projectiles
-	name = "continuous: projectiles"
-	continuous_why = "a projectile moves in pixel steps every server tick; a coarser cadence changes its speed and hit timing"
-	every = 0.1 // below one tick: every tick
-	delta = 1
-
-/datum/cadence/continuous/throwing
-	name = "continuous: throwing"
-	continuous_why = "a thrown atom moves `speed` tiles per server tick; a coarser cadence changes its flight and hit timing"
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
-	every = 0.1 // below one tick: every tick
-	delta = 1
-
-/datum/cadence/continuous/instruments
-	name = "continuous: instruments"
-	continuous_why = "a playing song schedules its notes at sub-tenth-second resolution"
-	every = 0.5
-	delta = 0.5
-
-/datum/cadence/continuous/status_effects
-	name = "continuous: priority status effects"
-	continuous_why = "priority status effects (movement-affecting ones) tick every other server tick"
-	every = 0.5
-	delta = 2
-
-/datum/cadence/continuous/tab_items
-	name = "continuous: stat tab items"
-	continuous_why = "stat-panel items refresh at 10 Hz for the viewer, lobby included"
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-	every = 1
-	delta = 0.1
 
 /// The shared definition of a cadence type (one instance per type, never written).
 /proc/cadence_def(path)
@@ -255,11 +190,7 @@
 		var/datum/cadence/def = cadence_def(P)
 		.["[def.name]"] = list("members" = members_total(P))
 
-/// A timer target that restarts periodic work on the slow lane (om_after(src, delay, /datum/proc/periodic_resume)).
+/// A timer target that restarts periodic work on the slow lane (after(src, delay, PROC_REF(periodic_resume))).
 /datum/proc/periodic_resume()
 	cadence_start(src, PERIODIC_SLOW)
 
-
-/// Legacy gates are a downstream cadence-admission policy.
-/datum/proc/compatibility_periodic_allowed(cadence)
-	return TRUE

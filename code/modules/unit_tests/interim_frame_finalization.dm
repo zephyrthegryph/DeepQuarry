@@ -39,13 +39,13 @@
 			installed += part
 	TEST_ASSERT_EQUAL(length(installed), 5, "The real autolathe board must require five stock parts")
 	TEST_ASSERT_NULL(interim_native_frame_reason(frame, actor, finish, tool), "Installed parts must satisfy finalization")
-	var/frame_handle = om_handle(frame)
+	var/frame_handle = entity_handle(frame)
 	var/completed = interim_native_frame_step(frame, actor, finish, tool)
 	// Register generated successors before any assertion can terminate the test.
 	own_turf_contents(T)
 	TEST_ASSERT(completed, "The complete frame must finish through the real construction edge")
 	TEST_ASSERT(QDELETED(frame), "Successful completion must delete the old frame")
-	TEST_ASSERT_NULL(om_resolve(frame_handle), "A frame handle must end when its successor belongs to the machinery family")
+	TEST_ASSERT_NULL(resolve_handle(frame_handle), "A frame handle must end when its successor belongs to the machinery family")
 	var/obj/machinery/autolathe/machine = locate_within(T, /obj/machinery/autolathe)
 	TEST_ASSERT(machine, "Successful completion must create the board's real machine type")
 	TEST_ASSERT_EQUAL(machine.circuit, board, "The successor must own the exact installed board")

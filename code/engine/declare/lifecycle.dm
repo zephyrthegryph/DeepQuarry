@@ -11,8 +11,8 @@
 // Order (also in the define file's header and the doc, keep all three in step):
 //   init:          starting occupants (owns_one / owns_many with starts =),
 //                  gas, appearance
-//   materialize:   registries, service members, binds, periodic, declared periodic work (sys_periodic)
-//   dematerialize: periodic stop, declared periodic stop, service leave, bind release
+//   materialize:   registries, service members, binds
+//   dematerialize: service leave, bind release
 //   destroy:       phase 1 bind release; phase 4 children (their DECLARE_REF kind);
 //                  phase 6 destroy effects
 
@@ -58,8 +58,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/list/services
 	/// /datum/decl_binder types.
 	var/list/binders
-	/// A periodic pipeline type, or null.
-	var/periodic
 	/// EXPIRY_ON_LAPSE: var name -> list(clock, proc_ref) (code/datums/sys/expiry.dm).
 	var/list/expiry_hooks
 	/// DECLARE_VERB: verb paths every instance has from init.
@@ -70,9 +68,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/list/verbs_if
 	/// DECLARE_VERB_HIDE: verb paths no instance has.
 	var/list/verbs_hidden
-	/// DECLARE_PERIODIC_WHILE / DECLARE_REPEAT: TRUE while declaring, then finish() resolves the
-	/// type's /datum/sys_periodic_table (code/datums/sys/periodic.dm), or null.
-	var/sys_periodic
 
 /datum/lifecycle_decls/New(owner_type)
 	src.owner_type = owner_type
@@ -84,12 +79,10 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	registries = null
 	services = null
 	binders = null
-	periodic = null
 	verbs_always = null
 	verbs_login = null
 	verbs_if = null
 	verbs_hidden = null
-	sys_periodic = null
 	return src
 
 /datum/lifecycle_decls/proc/set_gas(var_name, volume, temperature, list/gases)
@@ -104,9 +97,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 
 /datum/lifecycle_decls/proc/add_binder(binder)
 	LAZYOR(binders, binder)
-
-/datum/lifecycle_decls/proc/set_periodic(pipeline)
-	periodic = pipeline
 
 /// DECLARE_VERB family: `how` is VERB_DECL_ALWAYS/LOGIN/HIDE or a var name (DECLARE_VERB_IF).
 /// A later declaration of the same verb replaces the parent's.
@@ -125,9 +115,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			LAZYADD(verbs_login, verb_path)
 		if(VERB_DECL_HIDE)
 			LAZYADD(verbs_hidden, verb_path)
-
-/datum/lifecycle_decls/proc/add_sys_periodic()
-	sys_periodic = TRUE
 
 /// `skip_unset`: an unset (0) value is not armed at materialize (nothing to lapse; EMP_DISABLE).
 /datum/lifecycle_decls/proc/add_expiry_hook(var_name, clock, proc_ref, skip_unset = FALSE)
@@ -176,8 +163,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			expiry_hooks -= hook_var
 	if(!length(expiry_hooks))
 		expiry_hooks = null
-	validate_periodic(D)
-	if(registries || services || binders || periodic || expiry_hooks || (sys_periodic && isatom(D)))
+	if(registries || services || binders || expiry_hooks)
 		work |= DECL_WORK_MATERIALIZE
 	if(binders)
 		work |= DECL_WORK_UNBIND
@@ -200,9 +186,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	return FALSE
 
 /datum/lifecycle_decls/proc/validate_registries()
-	return
-
-/datum/lifecycle_decls/proc/validate_periodic(datum/D)
 	return
 
 /datum/proc/lifecycle_can_login()

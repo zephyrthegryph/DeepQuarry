@@ -250,11 +250,11 @@
 /// undoes it.
 /datum/system/proc/park_periodic()
 	periodic_parked = TRUE
-	om_task_periodic_stop(src) // ALLOW(sys_periodic_toggle): the kernel parks its own system cadence and its member driver's together: this is the park/wake pair itself, not content toggling work beside a state write
+	cadence_stop(src)
 	cancel_after(src, "step_yield")
 	if(member_driver)
 		member_driver.periodic_parked = TRUE
-		om_task_periodic_stop(member_driver)
+		cadence_stop(member_driver)
 		cancel_after(member_driver, "step_yield")
 
 /// Deciseconds between this system's periodic steps: its own periodic_interval, else its cadence's step
@@ -334,7 +334,7 @@
 	if(QDELETED(E) || !E.periodic_pipe)
 		return
 	if(periodic_step_result(E, E.periodic_step(delta), delta))
-		om_task_periodic_stop(E)
+		cadence_stop(E)
 
 /// Runlevel changed: every started system re-evaluates should_run() (its runlevels may now exclude it).
 /proc/kernel_runlevel_changed()

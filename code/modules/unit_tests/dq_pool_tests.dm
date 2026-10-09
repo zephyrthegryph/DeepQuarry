@@ -100,15 +100,15 @@ POOL_DECLARE(/datum/pool_test_item)
 	again.release()
 	pool_set_poison(was_poison)
 
-/// Pool stats appear in om_diagnostics().
+/// Pool stats appear in scheduler_diagnostics().
 /datum/unit_test/dq_pool/diagnostics
 
 /datum/unit_test/dq_pool/diagnostics/Run()
 	var/datum/pool_test_item/item = pool_take(/datum/pool_test_item)
 	item.release()
-	var/list/snapshot = om_diagnostics()
+	var/list/snapshot = scheduler_diagnostics()
 	var/list/pools = snapshot["pools"]
-	TEST_ASSERT(islist(pools), "om_diagnostics() reports pools")
+	TEST_ASSERT(islist(pools), "scheduler_diagnostics() reports pools")
 	var/list/row = pools["[/datum/pool_test_item]"]
 	TEST_ASSERT(islist(row), "each pooled type has a row")
 	TEST_ASSERT(row["taken"] >= 1, "the row counts takes")

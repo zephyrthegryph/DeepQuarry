@@ -238,6 +238,10 @@
 	//Internal use only
 	var/mob/living/simple_mob/my_mob
 	var/depleted = FALSE
+	/// Is it still rolling spawns? The every() below runs while it is.
+	var/spawning = FALSE
+
+TRACKED(/obj/sc_away_spawner, spawning)
 
 /obj/sc_away_spawner/Initialize(mapload)
 	. = ..()
@@ -246,9 +250,13 @@
 		log_mapping("Mob spawner at [x],[y],[z] ([get_area(src)]) had no mobs_to_pick_from set on it!")
 		flags |= ATOM_INITIALIZED
 		return INITIALIZE_HINT_QDEL
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_spawning(TRUE)
 
-/obj/sc_away_spawner/periodic_step()
+CAPABILITIES(/obj/sc_away_spawner)
+	every(2 SECONDS, then(PROC_REF(spawner_step)), when = nameof(spawning))
+
+/// Every 2 s while it has mobs left to roll: waits out a living mob and a watching player, then rolls a spawn.
+/obj/sc_away_spawner/proc/spawner_step(datum/act/A)
 	if(my_mob && my_mob.stat != DEAD)
 		return //No need
 
@@ -287,7 +295,7 @@
 */
 		return
 	else
-		om_task_periodic_stop(src)
+		set_spawning(FALSE)
 		depleted = TRUE
 		return
 
