@@ -151,13 +151,13 @@ MSG_DEF_SELF(edcln/start_attach_mop, "Attatching the mop to the frame...")
 CAPABILITIES(/obj/item/secbot_assembly/edCLN_assembly)
 	without(CAP_CONSTRUCTION)
 	construction(start(STAGE_BOT_FRAME_BARE), bot_frame_legs(),
-		stage(STAGE_EDCLN_BUCKETED, item(/obj/item/reagent_containers/glass/bucket), consumes(), wait(0), then(PROC_REF(bucket_added)), undo = null),
-		stage(STAGE_EDCLN_WELDED, tool(TOOL_WELDER), wait(0), then(PROC_REF(bucket_welded)), undo = null),
-		stage(STAGE_EDCLN_SENSING, item(/obj/item/assembly/prox_sensor), consumes(), wait(0), then(PROC_REF(sensor_added)), undo = null),
-		stage(STAGE_EDCLN_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), begins(MSG(bot_frame/start_wire)), then(PROC_REF(wired_up)), undo = null),
-		stage(STAGE_EDCLN_MOPED, item(/obj/item/mop), consumes(), wait(0), then(PROC_REF(mop_added)), undo = null),
-		stage(STAGE_EDCLN_ATTACHED, tool(TOOL_SCREWDRIVER), wait(4 SECONDS), begins(MSG(edcln/start_attach_mop)), then(PROC_REF(mop_attached)), undo = null),
-		stage(STAGE_EDCLN_FINISHED, item(/obj/item/cell), consumes(), wait(0), then(PROC_REF(finished)), undo = null))
+		stage(STAGE_EDCLN_BUCKETED, item(/obj/item/reagent_containers/glass/bucket), consumes(), wait(0), then(PROC_REF(bucket_added)), undo = NO_UNDO),
+		stage(STAGE_EDCLN_WELDED, tool(TOOL_WELDER), wait(0), then(PROC_REF(bucket_welded)), undo = NO_UNDO),
+		stage(STAGE_EDCLN_SENSING, item(/obj/item/assembly/prox_sensor), consumes(), wait(0), then(PROC_REF(sensor_added)), undo = NO_UNDO),
+		stage(STAGE_EDCLN_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), begins(MSG(bot_frame/start_wire)), then(PROC_REF(wired_up)), undo = NO_UNDO),
+		stage(STAGE_EDCLN_MOPED, item(/obj/item/mop), consumes(), wait(0), then(PROC_REF(mop_added)), undo = NO_UNDO),
+		stage(STAGE_EDCLN_ATTACHED, tool(TOOL_SCREWDRIVER), wait(4 SECONDS), begins(MSG(edcln/start_attach_mop)), then(PROC_REF(mop_attached)), undo = NO_UNDO),
+		stage(STAGE_EDCLN_FINISHED, item(/obj/item/cell), consumes(), wait(0), then(PROC_REF(finished)), undo = NO_UNDO))
 
 /obj/item/secbot_assembly/edCLN_assembly/proc/bucket_added(datum/act/op/A)
 	name = "bucket/legs/frame assembly"

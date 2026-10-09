@@ -56,7 +56,7 @@ GLOBAL_VAR_INIT(stage_defs_built, FALSE)
 /proc/ruined(cond, ENTRY_SLOTS)
 	return entry_make("graph_ruined", null, list("cond" = cond), entry_flatten(ENTRY_SLOT_LIST))
 
-/// The default of stage()'s undo =: "derive the way back from the input part". An explicit undo = null means no way back.
+/// The default of stage()'s undo =: "derive the way back from the input part". An explicit undo = NO_UNDO means no way back.
 #define UNDO_DERIVED "\[derived undo]"
 
 /// stage(STAGE_X, parts..., from =, undo =, key =): an edge into a stage. A name (text) first argument is the legacy stage() of a
@@ -99,7 +99,7 @@ GLOBAL_VAR_INIT(stage_defs_built, FALSE)
 	/// The build op key ("construction.build:door_finished").
 	var/op_key
 	var/list/parts
-	/// TRUE when the graph names an undo for this edge (undo = list(...) or undo = null).
+	/// TRUE when the graph names an undo for this edge (undo = list(...) or undo = NO_UNDO).
 	var/has_undo = FALSE
 	var/list/undo_parts
 	/// protrudes(...) among the stage's parts: list("space", "because"): while the instance is at this stage its space's door can't close.

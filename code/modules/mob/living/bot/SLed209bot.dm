@@ -73,9 +73,9 @@
 CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly/slime)
 	without(CAP_CONSTRUCTION)
 	construction(start(STAGE_BOT_FRAME_BARE), bot_frame_legs(), ed209_body(),
-		stage(STAGE_ED209_TASERED, item(/obj/item/gun/energy/taser/xeno), consumes(), wait(0), then(PROC_REF(xeno_taser_added)), undo = null),
+		stage(STAGE_ED209_TASERED, item(/obj/item/gun/energy/taser/xeno), consumes(), wait(0), then(PROC_REF(xeno_taser_added)), undo = NO_UNDO),
 		ed209_gun_attached(),
-		stage(STAGE_ED209_FINISHED, item(/obj/item/cell), consumes(), wait(0), then(PROC_REF(finished)), undo = null))
+		stage(STAGE_ED209_FINISHED, item(/obj/item/cell), consumes(), wait(0), then(PROC_REF(finished)), undo = NO_UNDO))
 
 /obj/item/secbot_assembly/ed209_assembly/slime/proc/xeno_taser_added(datum/act/op/A)
 	name = "xenotaser SL-ED-209 assembly"

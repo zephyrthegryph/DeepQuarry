@@ -121,3 +121,6 @@
 #define MECHA_PANEL_LOOSE   2
 #define MECHA_CELL_OPEN     3
 #define MECHA_CELL_OUT      4
+
+/// stage(..., undo = NO_UNDO): no way back. (A null undo reads as "not given" in DM, so the explicit none is an empty list.)
+#define NO_UNDO list()

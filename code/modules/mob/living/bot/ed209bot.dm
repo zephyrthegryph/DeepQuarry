@@ -106,23 +106,23 @@ MSG_DEF_SELF(ed209/start_attach_gun, "Now attaching the gun to the frame...")
 /// The ED-209 ladder from its armor to its wiring, which the SL-ED-209 assembly shares.
 /proc/ed209_body()
 	return list(
-		stage(STAGE_ED209_ARMOURED, item(/obj/item/clothing/suit/storage/vest), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, vest_added)), undo = null),
-		stage(STAGE_ED209_SHIELDED, tool(TOOL_WELDER), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, vest_welded)), undo = null),
-		stage(STAGE_ED209_HELMETED, item(/obj/item/clothing/head/helmet), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, helmet_added)), undo = null),
-		stage(STAGE_ED209_SENSING, item(/obj/item/assembly/prox_sensor), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, sensor_added)), undo = null),
-		stage(STAGE_ED209_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), begins(MSG(bot_frame/start_wire)), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, wired_up)), undo = null))
+		stage(STAGE_ED209_ARMOURED, item(/obj/item/clothing/suit/storage/vest), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, vest_added)), undo = NO_UNDO),
+		stage(STAGE_ED209_SHIELDED, tool(TOOL_WELDER), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, vest_welded)), undo = NO_UNDO),
+		stage(STAGE_ED209_HELMETED, item(/obj/item/clothing/head/helmet), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, helmet_added)), undo = NO_UNDO),
+		stage(STAGE_ED209_SENSING, item(/obj/item/assembly/prox_sensor), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, sensor_added)), undo = NO_UNDO),
+		stage(STAGE_ED209_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), begins(MSG(bot_frame/start_wire)), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, wired_up)), undo = NO_UNDO))
 
 /// Fixing the gun to the frame, which the SL-ED-209 assembly shares.
 /proc/ed209_gun_attached()
-	return stage(STAGE_ED209_ARMED, tool(TOOL_SCREWDRIVER), wait(4 SECONDS), begins(MSG(ed209/start_attach_gun)), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, gun_attached)), undo = null)
+	return stage(STAGE_ED209_ARMED, tool(TOOL_SCREWDRIVER), wait(4 SECONDS), begins(MSG(ed209/start_attach_gun)), then(TYPE_PROC_REF(/obj/item/secbot_assembly/ed209_assembly, gun_attached)), undo = NO_UNDO)
 
 CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
 	without(CAP_CONSTRUCTION)
 	construction(start(STAGE_BOT_FRAME_BARE), bot_frame_legs(), ed209_body(),
-		stage(STAGE_ED209_TASERED, item(/obj/item/gun/energy/taser), when(req(PROC_REF(plain_taser_held))), consumes(), wait(0), then(PROC_REF(taser_added)), undo = null),
+		stage(STAGE_ED209_TASERED, item(/obj/item/gun/energy/taser), when(req(PROC_REF(plain_taser_held))), consumes(), wait(0), then(PROC_REF(taser_added)), undo = NO_UNDO),
 		ed209_gun_attached(),
-		stage(STAGE_ED209_FINISHED, item(/obj/item/cell), consumes(), wait(0), then(PROC_REF(finished)), undo = null),
-		stage(STAGE_ED209_SWAPPED, item(/obj/item/gun/energy/taser/xeno), consumes(), wait(0), then(PROC_REF(swapped_to_slime)), from = STAGE_ED209_WIRED, undo = null))
+		stage(STAGE_ED209_FINISHED, item(/obj/item/cell), consumes(), wait(0), then(PROC_REF(finished)), undo = NO_UNDO),
+		stage(STAGE_ED209_SWAPPED, item(/obj/item/gun/energy/taser/xeno), consumes(), wait(0), then(PROC_REF(swapped_to_slime)), from = STAGE_ED209_WIRED, undo = NO_UNDO))
 
 /obj/item/secbot_assembly/ed209_assembly/proc/vest_added(datum/act/op/A)
 	name = "vest/legs/frame assembly"

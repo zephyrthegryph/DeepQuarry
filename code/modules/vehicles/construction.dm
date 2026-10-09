@@ -81,16 +81,16 @@ MSG_DEF_SELF(stage/quadbike/trailered, "It has been made into a trailer.")
 
 CAPABILITIES(/obj/item/vehicle_assembly/quadbike)
 	construction(start(STAGE_QUADBIKE_FRAME),
-		stage(STAGE_QUADBIKE_WHEELED, stack(/obj/item/stack/material/plastic, 8), wait(4 SECONDS), begins(MSG(vehicle/start_tires)), then(PROC_REF(tires_added)), undo = null),
-		stage(STAGE_QUADBIKE_LIT, item(/obj/item/stock_parts/console_screen), consumes(), wait(0), then(PROC_REF(lights_added)), undo = null),
-		stage(STAGE_QUADBIKE_CONTROLLED, item(/obj/item/stock_parts/spring), consumes(), wait(0), then(PROC_REF(controls_added)), undo = null),
-		stage(STAGE_QUADBIKE_WIRED, stack(/obj/item/stack/cable_coil, 2), wait(4 SECONDS), begins(MSG(vehicle/start_wire)), then(PROC_REF(wired_up)), undo = null),
-		stage(STAGE_QUADBIKE_POWERED, item(/obj/item/cell), wait(0), then(PROC_REF(power_added)), undo = null),
-		stage(STAGE_QUADBIKE_MOTORED, item(/obj/item/stock_parts/motor), consumes(), wait(0), then(PROC_REF(motor_added)), undo = null),
-		stage(STAGE_QUADBIKE_REINFORCED, stack(/obj/item/stack/material/plasteel, 2), wait(4 SECONDS), begins(MSG(vehicle/start_reinforce)), then(PROC_REF(reinforced)), undo = null),
-		stage(STAGE_QUADBIKE_FINISHED, tool(TOOL_WRENCH), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), undo = null),
-		stage(STAGE_QUADBIKE_FINISHED, tool(TOOL_SCREWDRIVER), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), from = STAGE_QUADBIKE_REINFORCED, key = "screwdriver", undo = null),
-		stage(STAGE_QUADBIKE_TRAILERED, stack(/obj/item/stack/material/steel, 5), wait(8 SECONDS), then(PROC_REF(to_trailer)), from = STAGE_QUADBIKE_LIT, undo = null))
+		stage(STAGE_QUADBIKE_WHEELED, stack(/obj/item/stack/material/plastic, 8), wait(4 SECONDS), begins(MSG(vehicle/start_tires)), then(PROC_REF(tires_added)), undo = NO_UNDO),
+		stage(STAGE_QUADBIKE_LIT, item(/obj/item/stock_parts/console_screen), consumes(), wait(0), then(PROC_REF(lights_added)), undo = NO_UNDO),
+		stage(STAGE_QUADBIKE_CONTROLLED, item(/obj/item/stock_parts/spring), consumes(), wait(0), then(PROC_REF(controls_added)), undo = NO_UNDO),
+		stage(STAGE_QUADBIKE_WIRED, stack(/obj/item/stack/cable_coil, 2), wait(4 SECONDS), begins(MSG(vehicle/start_wire)), then(PROC_REF(wired_up)), undo = NO_UNDO),
+		stage(STAGE_QUADBIKE_POWERED, item(/obj/item/cell), wait(0), then(PROC_REF(power_added)), undo = NO_UNDO),
+		stage(STAGE_QUADBIKE_MOTORED, item(/obj/item/stock_parts/motor), consumes(), wait(0), then(PROC_REF(motor_added)), undo = NO_UNDO),
+		stage(STAGE_QUADBIKE_REINFORCED, stack(/obj/item/stack/material/plasteel, 2), wait(4 SECONDS), begins(MSG(vehicle/start_reinforce)), then(PROC_REF(reinforced)), undo = NO_UNDO),
+		stage(STAGE_QUADBIKE_FINISHED, tool(TOOL_WRENCH), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), undo = NO_UNDO),
+		stage(STAGE_QUADBIKE_FINISHED, tool(TOOL_SCREWDRIVER), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), from = STAGE_QUADBIKE_REINFORCED, key = "screwdriver", undo = NO_UNDO),
+		stage(STAGE_QUADBIKE_TRAILERED, stack(/obj/item/stack/material/steel, 5), wait(8 SECONDS), then(PROC_REF(to_trailer)), from = STAGE_QUADBIKE_LIT, undo = NO_UNDO))
 
 /obj/item/vehicle_assembly/quadbike/proc/tires_added(datum/act/op/A)
 	return step_done(A, 1, "wheeled [initial(name)]", "You add tires to \the [src].")
@@ -156,9 +156,9 @@ MSG_DEF_SELF(stage/quadtrailer/finished, "It is finished.")
 
 CAPABILITIES(/obj/item/vehicle_assembly/quadtrailer)
 	construction(start(STAGE_QUADTRAILER_FRAME),
-		stage(STAGE_QUADTRAILER_FRAMED, item(/obj/item/vehicle_assembly/quadbike), consumes(), wait(0), needs(req(PROC_REF(spare_frame_fits), because = MSG(quadtrailer/too_advanced))), then(PROC_REF(framed)), undo = null),
-		stage(STAGE_QUADTRAILER_WIRED, stack(/obj/item/stack/cable_coil, 2), wait(4 SECONDS), begins(MSG(vehicle/start_wire)), then(PROC_REF(wired_up)), undo = null),
-		stage(STAGE_QUADTRAILER_FINISHED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(finished)), undo = null))
+		stage(STAGE_QUADTRAILER_FRAMED, item(/obj/item/vehicle_assembly/quadbike), consumes(), wait(0), needs(req(PROC_REF(spare_frame_fits), because = MSG(quadtrailer/too_advanced))), then(PROC_REF(framed)), undo = NO_UNDO),
+		stage(STAGE_QUADTRAILER_WIRED, stack(/obj/item/stack/cable_coil, 2), wait(4 SECONDS), begins(MSG(vehicle/start_wire)), then(PROC_REF(wired_up)), undo = NO_UNDO),
+		stage(STAGE_QUADTRAILER_FINISHED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(finished)), undo = NO_UNDO))
 
 /// A spare quadbike frame helps only until its control system is in.
 /obj/item/vehicle_assembly/quadtrailer/proc/spare_frame_fits(datum/act/op/A)
@@ -209,14 +209,14 @@ MSG_DEF_SELF(stage/spacebike/finished, "It is finished.")
 
 CAPABILITIES(/obj/item/vehicle_assembly/spacebike)
 	construction(start(STAGE_SPACEBIKE_FRAME),
-		stage(STAGE_SPACEBIKE_JETPACKED, inputs(item(/obj/item/tank/jetpack), item(/obj/item/borg/upgrade/advanced/jetpack)), consumes(), wait(0), then(PROC_REF(jetpack_added)), undo = null),
-		stage(STAGE_SPACEBIKE_WIRED, stack(/obj/item/stack/cable_coil, 2), wait(4 SECONDS), begins(MSG(vehicle/start_wire)), then(PROC_REF(wired_up)), undo = null),
-		stage(STAGE_SPACEBIKE_SEATED, stack(/obj/item/stack/material/plastic, 3), wait(4 SECONDS), begins(MSG(vehicle/start_seat)), then(PROC_REF(seat_added)), undo = null),
-		stage(STAGE_SPACEBIKE_LIT, item(/obj/item/stock_parts/console_screen), consumes(), wait(0), then(PROC_REF(lights_added)), undo = null),
-		stage(STAGE_SPACEBIKE_CONTROLLED, item(/obj/item/stock_parts/spring), consumes(), wait(0), then(PROC_REF(controls_added)), undo = null),
-		stage(STAGE_SPACEBIKE_POWERED, item(/obj/item/cell), wait(0), then(PROC_REF(power_added)), undo = null),
-		stage(STAGE_SPACEBIKE_FINISHED, tool(TOOL_WRENCH), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), undo = null),
-		stage(STAGE_SPACEBIKE_FINISHED, tool(TOOL_SCREWDRIVER), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), from = STAGE_SPACEBIKE_POWERED, key = "screwdriver", undo = null))
+		stage(STAGE_SPACEBIKE_JETPACKED, inputs(item(/obj/item/tank/jetpack), item(/obj/item/borg/upgrade/advanced/jetpack)), consumes(), wait(0), then(PROC_REF(jetpack_added)), undo = NO_UNDO),
+		stage(STAGE_SPACEBIKE_WIRED, stack(/obj/item/stack/cable_coil, 2), wait(4 SECONDS), begins(MSG(vehicle/start_wire)), then(PROC_REF(wired_up)), undo = NO_UNDO),
+		stage(STAGE_SPACEBIKE_SEATED, stack(/obj/item/stack/material/plastic, 3), wait(4 SECONDS), begins(MSG(vehicle/start_seat)), then(PROC_REF(seat_added)), undo = NO_UNDO),
+		stage(STAGE_SPACEBIKE_LIT, item(/obj/item/stock_parts/console_screen), consumes(), wait(0), then(PROC_REF(lights_added)), undo = NO_UNDO),
+		stage(STAGE_SPACEBIKE_CONTROLLED, item(/obj/item/stock_parts/spring), consumes(), wait(0), then(PROC_REF(controls_added)), undo = NO_UNDO),
+		stage(STAGE_SPACEBIKE_POWERED, item(/obj/item/cell), wait(0), then(PROC_REF(power_added)), undo = NO_UNDO),
+		stage(STAGE_SPACEBIKE_FINISHED, tool(TOOL_WRENCH), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), undo = NO_UNDO),
+		stage(STAGE_SPACEBIKE_FINISHED, tool(TOOL_SCREWDRIVER), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), from = STAGE_SPACEBIKE_POWERED, key = "screwdriver", undo = NO_UNDO))
 
 /obj/item/vehicle_assembly/spacebike/proc/jetpack_added(datum/act/op/A)
 	return step_done(A, 1, null, null)
@@ -283,15 +283,15 @@ MSG_DEF_SELF(stage/snowmobile/finished, "It is finished.")
 
 CAPABILITIES(/obj/item/vehicle_assembly/snowmobile)
 	construction(start(STAGE_SNOWMOBILE_FRAME),
-		stage(STAGE_SNOWMOBILE_TRACKED, stack(/obj/item/stack/material/steel, 6), wait(4 SECONDS), begins(MSG(vehicle/start_treads)), then(PROC_REF(treads_added)), undo = null),
-		stage(STAGE_SNOWMOBILE_LIT, item(/obj/item/stock_parts/console_screen), consumes(), wait(0), then(PROC_REF(lights_added)), undo = null),
-		stage(STAGE_SNOWMOBILE_CONTROLLED, item(/obj/item/stock_parts/spring), consumes(), wait(0), then(PROC_REF(controls_added)), undo = null),
-		stage(STAGE_SNOWMOBILE_WIRED, stack(/obj/item/stack/cable_coil, 2), wait(4 SECONDS), begins(MSG(vehicle/start_wire)), then(PROC_REF(wired_up)), undo = null),
-		stage(STAGE_SNOWMOBILE_POWERED, item(/obj/item/cell), wait(0), then(PROC_REF(power_added)), undo = null),
-		stage(STAGE_SNOWMOBILE_MOTORED, item(/obj/item/stock_parts/motor), consumes(), wait(0), then(PROC_REF(motor_added)), undo = null),
-		stage(STAGE_SNOWMOBILE_REINFORCED, stack(/obj/item/stack/material/plasteel, 2), wait(4 SECONDS), begins(MSG(vehicle/start_reinforce)), then(PROC_REF(reinforced)), undo = null),
-		stage(STAGE_SNOWMOBILE_FINISHED, tool(TOOL_WRENCH), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), undo = null),
-		stage(STAGE_SNOWMOBILE_FINISHED, tool(TOOL_SCREWDRIVER), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), from = STAGE_SNOWMOBILE_REINFORCED, key = "screwdriver", undo = null))
+		stage(STAGE_SNOWMOBILE_TRACKED, stack(/obj/item/stack/material/steel, 6), wait(4 SECONDS), begins(MSG(vehicle/start_treads)), then(PROC_REF(treads_added)), undo = NO_UNDO),
+		stage(STAGE_SNOWMOBILE_LIT, item(/obj/item/stock_parts/console_screen), consumes(), wait(0), then(PROC_REF(lights_added)), undo = NO_UNDO),
+		stage(STAGE_SNOWMOBILE_CONTROLLED, item(/obj/item/stock_parts/spring), consumes(), wait(0), then(PROC_REF(controls_added)), undo = NO_UNDO),
+		stage(STAGE_SNOWMOBILE_WIRED, stack(/obj/item/stack/cable_coil, 2), wait(4 SECONDS), begins(MSG(vehicle/start_wire)), then(PROC_REF(wired_up)), undo = NO_UNDO),
+		stage(STAGE_SNOWMOBILE_POWERED, item(/obj/item/cell), wait(0), then(PROC_REF(power_added)), undo = NO_UNDO),
+		stage(STAGE_SNOWMOBILE_MOTORED, item(/obj/item/stock_parts/motor), consumes(), wait(0), then(PROC_REF(motor_added)), undo = NO_UNDO),
+		stage(STAGE_SNOWMOBILE_REINFORCED, stack(/obj/item/stack/material/plasteel, 2), wait(4 SECONDS), begins(MSG(vehicle/start_reinforce)), then(PROC_REF(reinforced)), undo = NO_UNDO),
+		stage(STAGE_SNOWMOBILE_FINISHED, tool(TOOL_WRENCH), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), undo = NO_UNDO),
+		stage(STAGE_SNOWMOBILE_FINISHED, tool(TOOL_SCREWDRIVER), wait(2 SECONDS), begins(MSG(vehicle/start_finish)), then(PROC_REF(finished)), from = STAGE_SNOWMOBILE_REINFORCED, key = "screwdriver", undo = NO_UNDO))
 
 /obj/item/vehicle_assembly/snowmobile/proc/treads_added(datum/act/op/A)
 	return step_done(A, 1, "tracked [initial(name)]", "You add treads to \the [src].")

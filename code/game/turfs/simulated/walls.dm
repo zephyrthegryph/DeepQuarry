@@ -322,11 +322,12 @@ TRACKED(/turf/simulated/wall, thermite)
 	F.icon_state = "dmg[rand(1,4)]"
 	to_chat(user, span_warning("The thermite starts melting through the wall."))
 
-	after(src, 10 SECONDS, PROC_REF(thermitemelt_cleanup), with = list(O))
+	after(null, 10 SECONDS, GLOBAL_PROC_REF(thermite_cleanup), with = list(O)) // not on the wall: the turf is the plating by then
 //	F.sd_LumReset()		//TODO: ~Carn
 	return
 
-/turf/simulated/wall/proc/thermitemelt_cleanup(obj/effect/overlay/O)
+/// The thermite fire burns out.
+/proc/thermite_cleanup(obj/effect/overlay/O)
 	if(O)
 		dissolved(O)
 

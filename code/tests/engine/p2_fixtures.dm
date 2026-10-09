@@ -90,7 +90,7 @@ DAMAGE_REACTION(/obj/p2_hit/both, DAMAGE_EMP, PROC_REF(legacy_emp))
 
 CAPABILITIES(/obj/p2_frame)
 	construction(start(STAGE_DOOR_FRAME),
-		stage(STAGE_DOOR_WIRED, stack(/obj/item/stack/cable_coil, 5), undo = null),
+		stage(STAGE_DOOR_WIRED, stack(/obj/item/stack/cable_coil, 5), undo = NO_UNDO),
 		dismantle(tool(TOOL_CROWBAR), wait(0), becomes(/obj/item/p2_frame_item),
 			ruined(TYPE_PROC_REF(/obj/p2_frame, frame_ruined), becomes(/obj/item/p2_scrap))))
 

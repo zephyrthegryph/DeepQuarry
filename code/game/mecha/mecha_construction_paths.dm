@@ -145,7 +145,7 @@ GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, ST
 			parts += undone(TYPE_PROC_REF(/obj/item/mecha_parts, mecha_step_undone))
 			entries += stage(stage_ids[step + 1], parts, undo = list(tool(row["backkey"]), wait(0)))
 		else
-			entries += stage(stage_ids[step + 1], parts, undo = null)
+			entries += stage(stage_ids[step + 1], parts, undo = NO_UNDO)
 	return construction(entries)
 
 // ---------------------------------------------------------------------------

@@ -15,7 +15,7 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio)
 	on_change(nameof(consuming), ANY, then(PROC_REF(sync_slime_sprites)))
 	owns_one(nameof(slime_state), /datum/slime_state, starts = /datum/slime_state)
 	param(nameof(predecessor), pos = 1, apply = PROC_REF(inherit_made), keep = FALSE)
-	op("wrestle_off", hand(), ungated(), label("Wrestle it off"), when(PROC_REF(eating_someone)), then(PROC_REF(xenoslime_wrestle_off)))
+	op("wrestle_off", hand(), ungated(), priority(OP_PRIORITY_PART), label("Wrestle it off"), when(PROC_REF(eating_someone)), then(PROC_REF(xenoslime_wrestle_off)))
 
 
 /mob/living/simple_mob/slime/hear_say(list/message_pieces, verb = "says", italics = 0, mob/speaker = null, sound/speech_sound, sound_vol)

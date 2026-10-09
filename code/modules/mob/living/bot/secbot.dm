@@ -471,10 +471,10 @@ MSG_DEF_SELF(stage/secbot/finished, "It is finished.")
 CAPABILITIES(/obj/item/secbot_assembly)
 	op("secbot_assembly_rename", item(/obj/item/pen), label("Rename"), then(PROC_REF(secbot_assembly_rename)))
 	construction(start(STAGE_SECBOT_HELMET),
-		stage(STAGE_SECBOT_HOLED, tool(TOOL_WELDER), wait(0), then(PROC_REF(hole_welded)), undo = null),
-		stage(STAGE_SECBOT_SENSING, item(/obj/item/assembly/prox_sensor), consumes(), wait(0), then(PROC_REF(sensor_added)), undo = null),
-		stage(STAGE_SECBOT_ARMED, inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)), when(req(PROC_REF(robot_arm_held))), consumes(), wait(0), then(PROC_REF(arm_added)), undo = null),
-		stage(STAGE_SECBOT_FINISHED, item(/obj/item/melee/baton), consumes(), wait(0), then(PROC_REF(finished)), undo = null))
+		stage(STAGE_SECBOT_HOLED, tool(TOOL_WELDER), wait(0), then(PROC_REF(hole_welded)), undo = NO_UNDO),
+		stage(STAGE_SECBOT_SENSING, item(/obj/item/assembly/prox_sensor), consumes(), wait(0), then(PROC_REF(sensor_added)), undo = NO_UNDO),
+		stage(STAGE_SECBOT_ARMED, inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)), when(req(PROC_REF(robot_arm_held))), consumes(), wait(0), then(PROC_REF(arm_added)), undo = NO_UNDO),
+		stage(STAGE_SECBOT_FINISHED, item(/obj/item/melee/baton), consumes(), wait(0), then(PROC_REF(finished)), undo = NO_UNDO))
 
 /// Old attackby: name the bot with a pen.
 /obj/item/secbot_assembly/proc/secbot_assembly_rename(datum/act/op/A)
@@ -545,8 +545,8 @@ MSG_DEF_SELF(bot_frame/start_wire, "You start to wire %T%.")
 /// The two leg stages of a walking bot assembly's ladder.
 /proc/bot_frame_legs()
 	return list(
-		stage(STAGE_BOT_FRAME_ONE_LEG, inputs(item(/obj/item/robot_parts/l_leg), item(/obj/item/robot_parts/r_leg), item(/obj/item/organ/external/leg)), when(req(TYPE_PROC_REF(/obj/item/secbot_assembly, robot_leg_held))), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly, leg_one_added)), undo = null),
-		stage(STAGE_BOT_FRAME_TWO_LEGS, inputs(item(/obj/item/robot_parts/l_leg), item(/obj/item/robot_parts/r_leg), item(/obj/item/organ/external/leg)), when(req(TYPE_PROC_REF(/obj/item/secbot_assembly, robot_leg_held))), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly, leg_two_added)), undo = null))
+		stage(STAGE_BOT_FRAME_ONE_LEG, inputs(item(/obj/item/robot_parts/l_leg), item(/obj/item/robot_parts/r_leg), item(/obj/item/organ/external/leg)), when(req(TYPE_PROC_REF(/obj/item/secbot_assembly, robot_leg_held))), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly, leg_one_added)), undo = NO_UNDO),
+		stage(STAGE_BOT_FRAME_TWO_LEGS, inputs(item(/obj/item/robot_parts/l_leg), item(/obj/item/robot_parts/r_leg), item(/obj/item/organ/external/leg)), when(req(TYPE_PROC_REF(/obj/item/secbot_assembly, robot_leg_held))), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly, leg_two_added)), undo = NO_UNDO))
 
 /obj/item/secbot_assembly/proc/leg_one_added(datum/act/op/A)
 	name = "legs/frame assembly"
