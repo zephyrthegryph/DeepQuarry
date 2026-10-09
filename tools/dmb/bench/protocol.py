@@ -21,6 +21,12 @@ if _evidence_spec is None or _evidence_spec.loader is None:
 structural_evidence = importlib.util.module_from_spec(_evidence_spec)
 _evidence_spec.loader.exec_module(structural_evidence)
 
+_reuse_spec = importlib.util.spec_from_file_location("dmb_structural_reuse", Path(__file__).with_name("structural_reuse.py"))
+if _reuse_spec is None or _reuse_spec.loader is None:
+    raise ImportError("cannot load structural reuse")
+structural_reuse = importlib.util.module_from_spec(_reuse_spec)
+_reuse_spec.loader.exec_module(structural_reuse)
+
 
 _cached_spec = importlib.util.spec_from_file_location("dmb_cached_scenarios", Path(__file__).with_name("cached_scenarios.py"))
 if _cached_spec is None or _cached_spec.loader is None:
@@ -261,19 +267,50 @@ def structural(h, args, scenario, manifest, run_dir, snapshot_id, env):
         return {"complete": False, "tool_complete": False, "error": "BYOND semantic configuration is not admitted"}
     if pin.get("snapshot_id") != snapshot_id or pin.get("dmb_sha256") != h.sha(baseline):
         return {"complete": False, "error": "BYOND baseline does not pin this exact captured snapshot"}
-    command = [str(args.inspector.resolve()), "structural-diff", str(baseline), str(manifest),
-               str(report), snapshot_id]
-    code, wall, timeout = h.run(command, run_dir, run_dir / "structural", args.watchdog, env)
-    if code or timeout or not report.exists():
-        return {"complete": False, "error": "structural-diff invocation failed", "exit_code": code,
-                "watchdog": timeout, "wall_s": wall}
-    value = json.loads(report.read_text(encoding="utf-8"))
+    identity = structural_reuse.key(
+        inspector_sha256=h.sha(args.inspector), expected_dmb_sha256=h.sha(baseline),
+        actual_dmb_sha256=h.sha(manifest), actual_rsc_sha256=h.sha(manifest.with_suffix(".rsc")),
+        snapshot_id=snapshot_id, configuration_sha256=configuration_gate.digest(configuration))
+    registry = getattr(args, "structural_reports", None)
+    if registry is None:
+        registry = args.structural_reports = structural_reuse.Reports()
+    try:
+        reused = registry.lookup(identity)
+    except (OSError, ValueError, KeyError) as error:
+        return {"complete": False, "tool_complete": False,
+                "error": "structural reuse authentication failed: " + str(error)}
+    if reused is None:
+        command = [str(args.inspector.resolve()), "structural-diff", str(baseline), str(manifest),
+                   str(report), snapshot_id]
+        code, wall, timeout = h.run(command, run_dir, run_dir / "structural", args.watchdog, env)
+        if code or timeout or not report.exists():
+            return {"complete": False, "error": "structural-diff invocation failed", "exit_code": code,
+                    "watchdog": timeout, "wall_s": wall}
+        value = json.loads(report.read_text(encoding="utf-8"))
+        execution_mode = "executed"
+        origin_run = str(run_dir)
+    else:
+        value, descriptor = reused
+        report = Path(descriptor["report"])
+        execution_mode = "authenticated_same_inputs"
+        origin_run = descriptor["origin_run"]
+    current_identity = structural_reuse.key(
+        inspector_sha256=h.sha(args.inspector), expected_dmb_sha256=h.sha(baseline),
+        actual_dmb_sha256=h.sha(manifest), actual_rsc_sha256=h.sha(manifest.with_suffix(".rsc")),
+        snapshot_id=snapshot_id, configuration_sha256=configuration_gate.digest(configuration))
+    if current_identity != identity:
+        return {"complete": False, "tool_complete": False, "error": "structural inputs changed during proof evaluation"}
     if value.get("schema_version") != 1 or not isinstance(value.get("categories"), dict):
         return {"complete": False, "error": "invalid structural report schema"}
     if value.get("snapshot_id") != snapshot_id or value.get("traversal_complete") is not True:
         value["tool_complete"] = False
         value["complete"] = False
         value["error"] = "structural diff snapshot/traversal contract failed"
+    if reused is None and value.get("traversal_complete") is True and value.get("tool_complete") is True and exact_structural_evidence(value):
+        registry.remember(identity, report, run_dir)
+    value["structural_check"] = {"mode": execution_mode,
+        "key_sha256": structural_reuse.key_digest(identity), "origin_run": origin_run,
+        "origin_report_sha256": h.sha(report), **identity}
     value["semantic_configuration_sha256"] = configuration_gate.digest(configuration)
     value["parity_acceptance"] = "passed" if value.get("complete") is True and value.get("unexplained_discrepancies") == 0 else "failed"
     value["structural_measurement_admission"] = "passed" if value.get("tool_complete") is True else "failed"
@@ -324,7 +361,7 @@ def retain_small_evidence(h, run_dir, row):
     small.mkdir(exist_ok=True)
     if artifacts.exists():
         for path in artifacts.rglob("*"):
-            if path.is_file() and (path.name.endswith((".log", ".report.json", ".folded"))
+            if path.is_file() and (path.name.endswith((".log", ".report.json", ".folded", ".folded.gz", ".json.gz"))
                                    or path.name in ("receipt.json", "result.json")):
                 destination = small / path.relative_to(artifacts)
                 destination.parent.mkdir(parents=True, exist_ok=True)
@@ -468,6 +505,8 @@ def comparison_stage_map_paths(args):
 
 
 def execute(h, args):
+    # Reset even when an embedding caller reuses its argument object.
+    args.structural_reports = structural_reuse.Reports()
     root = args.project_root.resolve()
     output = require_e(args.output)
     cache = require_e(args.cache)
@@ -522,10 +561,11 @@ def execute(h, args):
     warmup = warm_inputs(h, root, expected, Path(initial_journal) if initial_journal else None)
     methodology = {Path(__file__).with_name(name).resolve(): h.sha(Path(__file__).with_name(name))
                    for name in ("dmb-bench.py", "protocol.py", "semantic_configuration.py",
-                                "edited_snapshot.py", "cached_scenarios.py", "closed_links.py", "structural_evidence.py", "watchdog.py")}
+                                "edited_snapshot.py", "cached_scenarios.py", "closed_links.py", "structural_evidence.py", "structural_reuse.py", "watchdog.py")}
     cohort = {"schema": 2, "measurement_revision": 6, "schedule": "ABABAB",
               "comparison": "self_noise_floor" if args.self_comparison else "previous_vs_new",
               "benchmark_methodology_sha256": {str(path): digest for path, digest in methodology.items()},
+              "structural_methodology": "cohort-local authenticated exact-input report reuse; first invocation per key; every row fresh oracle and admission",
               "binary_mode": args.binary_mode, "free_bytes_before": free, "warmup": warmup,
               "compilers": {name: {key: str(value) if isinstance(value, Path) else value
                                      for key, value in tool.items()} for name, tool in tools.items()},

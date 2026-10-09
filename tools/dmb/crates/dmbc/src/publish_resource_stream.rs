@@ -114,8 +114,38 @@ impl PairStore {
         resources: &[byond_dmb::rsc::NamedResourceView<'_>],
         exact: bool,
     ) -> io::Result<(ResourceIdentity, ResourcePin)> {
+        self.publish_resource_views_prepared(resources, exact, None)
+            .map(|(identity, pin, _)| (identity, pin))
+    }
+    /// Produce an isolated conventional resource staging file during the
+    /// canonical probe. Its destination is untouched until pair installation.
+    pub fn publish_resource_views_prepared(
+        &self,
+        resources: &[byond_dmb::rsc::NamedResourceView<'_>],
+        exact: bool,
+        conventional_rsc: Option<&Path>,
+    ) -> io::Result<(ResourceIdentity, ResourcePin, Option<PreparedOutputFile>)> {
         let _profile = dm_profile::stage("publication.resource_stream");
-        let (_, expected) = encode_into(io::sink(), resources)?;
+        // One aggregate observation avoids per-record profiler/syscall overhead.
+        // On secondary failure only successful certified bytes are attributed;
+        // partial failed writes remain in independent process IO counters.
+        let (expected, prepared) = dm_profile::io_call(
+            || {
+                let (probe, expected) =
+                    encode_into(prepared::ProbeOutput::new(conventional_rsc), resources)?;
+                Ok((expected, probe.finish(expected)))
+            },
+            |(expected, prepared)| {
+                (
+                    0,
+                    if prepared.is_some() {
+                        expected.bytes
+                    } else {
+                        0
+                    },
+                )
+            },
+        )?;
         let destination = self
             .root
             .join("resources")
@@ -124,7 +154,7 @@ impl PairStore {
             let _lock = self.lock()?;
             if destination.exists() {
                 self.authenticate_resource(&destination, expected, exact)?;
-                return Ok((expected, self.pin_resource(expected)?));
+                return Ok((expected, self.pin_resource(expected)?, prepared));
             }
         }
         #[cfg(test)]
@@ -162,7 +192,7 @@ impl PairStore {
             if crate::input_snapshot::FileSystemInputs.stamp(&destination)? != before {
                 return Err(invalid("shared resource changed during collision check"));
             }
-            return Ok((identity, self.pin_resource(identity)?));
+            return Ok((identity, self.pin_resource(identity)?, prepared));
         }
         let mut permissions = fs::metadata(&path)?.permissions();
         permissions.set_readonly(true);
@@ -173,7 +203,7 @@ impl PairStore {
         publication_fault("resource_stream_renamed")?;
         self.remember_resource(&destination, identity, &stamp)?;
         destination_cleanup.preserve();
-        Ok((identity, self.pin_resource(identity)?))
+        Ok((identity, self.pin_resource(identity)?, prepared))
     }
 }
 #[cfg(test)]

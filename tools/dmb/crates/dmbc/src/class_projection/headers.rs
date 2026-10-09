@@ -21,6 +21,7 @@ pub(crate) fn finalize_headers(
     finalize_headers_with_strings(dmb, engine_bytes, projection, tables, symbols, &mut pool)
 }
 
+#[cfg(test)]
 pub(crate) fn finalize_headers_with_strings(
     dmb: &mut Dmb,
     engine_bytes: &[u8],
@@ -28,6 +29,18 @@ pub(crate) fn finalize_headers_with_strings(
     tables: &dm_link::LinkTables,
     symbols: &dm_ir::SymbolTable,
     pool: &mut crate::composition::StringIndex,
+) -> Result<(), ProjectionError> {
+    finalize_headers_with_roster(dmb, engine_bytes, projection, tables, symbols, pool, None)
+}
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn finalize_headers_with_roster(
+    dmb: &mut Dmb,
+    engine_bytes: &[u8],
+    projection: &ClassProjection,
+    tables: &dm_link::LinkTables,
+    symbols: &dm_ir::SymbolTable,
+    pool: &mut crate::composition::StringIndex,
+    roster: Option<&MaterializedClassRoster>,
 ) -> Result<(), ProjectionError> {
     let engine = Dmb::from_bytes(engine_bytes)
         .map_err(|error| ProjectionError::Unsupported(format!("header engine {error}")))?;
@@ -41,25 +54,31 @@ pub(crate) fn finalize_headers_with_strings(
                 .map(|path| (path, id))
         })
         .collect::<HashMap<_, _>>();
-    let mut class_ids = HashMap::new();
-    for (id, record) in dmb.classes.iter().enumerate() {
-        let bytes = dmb.string(record.path_string_id()).ok_or_else(|| {
-            ProjectionError::Unsupported(format!(
-                "header class {id} missing path string {}",
-                record.path_string_id()
-            ))
-        })?;
-        let path = std::str::from_utf8(bytes).map_err(|_| {
-            ProjectionError::Unsupported(format!("header class {id} path is not UTF-8"))
-        })?;
-        let id = u32::try_from(id)
-            .map_err(|_| ProjectionError::Unsupported("header class count exceeds u32".into()))?;
-        if class_ids.insert(SymbolId::of(path), id).is_some() {
-            return Err(ProjectionError::Unsupported(format!(
-                "header duplicate class path {path}"
-            )));
+    let mut legacy_class_ids = HashMap::new();
+    if roster.is_none() {
+        for (id, record) in dmb.classes.iter().enumerate() {
+            let bytes = dmb.string(record.path_string_id()).ok_or_else(|| {
+                ProjectionError::Unsupported(format!(
+                    "header class {id} missing path string {}",
+                    record.path_string_id()
+                ))
+            })?;
+            let path = std::str::from_utf8(bytes).map_err(|_| {
+                ProjectionError::Unsupported(format!("header class {id} path is not UTF-8"))
+            })?;
+            let id = u32::try_from(id).map_err(|_| {
+                ProjectionError::Unsupported("header class count exceeds u32".into())
+            })?;
+            if legacy_class_ids.insert(SymbolId::of(path), id).is_some() {
+                return Err(ProjectionError::Unsupported(format!(
+                    "header duplicate class path {path}"
+                )));
+            }
         }
     }
+    let class_ids = roster
+        .map(|roster| &roster.ids)
+        .unwrap_or(&legacy_class_ids);
     let client_owners = routing::client_configuration_order(projection, tables)?
         .into_iter()
         .collect::<HashSet<_>>();
@@ -75,7 +94,7 @@ pub(crate) fn finalize_headers_with_strings(
         {
             continue;
         }
-        let id = projected_class_index(field.owner, tables, &class_ids, symbols)?;
+        let id = projected_class_index(field.owner, tables, class_ids, symbols)?;
         let name = symbols.text(field.name).ok_or_else(|| {
             ProjectionError::Unsupported(format!(
                 "header assignment missing field spelling {:?} owner {:?}",
@@ -96,7 +115,7 @@ pub(crate) fn finalize_headers_with_strings(
         .types
         .iter()
         .filter(|ty| !routing::separate_type_record(ty.path))
-        .map(|ty| projected_class_index(ty.path, tables, &class_ids, symbols))
+        .map(|ty| projected_class_index(ty.path, tables, class_ids, symbols))
         .collect::<Result<BTreeSet<_>, _>>()?;
     let order = parent_order(dmb, &ids)?;
     // Explicit source assignments outrank native subtype defaults, even when

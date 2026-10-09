@@ -32,6 +32,9 @@ mod resource_stream;
 pub use eviction::EvictionResult;
 use publication_io::{copy_hashed, write_owned, StagedPath};
 pub use resource_stream::ResourcePin;
+#[path = "publish_prepared.rs"]
+mod prepared;
+pub use prepared::PreparedOutputFile;
 
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
@@ -612,15 +615,36 @@ impl PairStore {
         marker: &Path,
         exact: bool,
     ) -> io::Result<InstallationReceipt> {
+        self.install_receipt_exact_with_prepared_resource(id, dmb, rsc, marker, exact, None)
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub fn install_receipt_exact_with_prepared_resource(
+        &self,
+        id: u128,
+        dmb: &Path,
+        rsc: &Path,
+        marker: &Path,
+        exact: bool,
+        prepared: Option<PreparedOutputFile>,
+    ) -> io::Result<InstallationReceipt> {
         destinations::distinct([dmb, rsc, marker])?;
         let _lock = self.lock()?;
         let source = self.root.join("pairs").join(format!("{id:032x}"));
         let pair = self.verify_locked(id, exact)?;
-        let rsc_receipt = install::resource_receipt(
-            &source.join("deepquarry.rsc"),
-            rsc,
-            (pair.rsc_bytes, pair.rsc_hash),
-        )?;
+        let rsc_receipt = match prepared {
+            Some(prepared) => prepared.adopt(
+                rsc,
+                ResourceIdentity {
+                    bytes: pair.rsc_bytes,
+                    hash: pair.rsc_hash,
+                },
+            )?,
+            None => install::resource_receipt(
+                &source.join("deepquarry.rsc"),
+                rsc,
+                (pair.rsc_bytes, pair.rsc_hash),
+            )?,
+        };
         #[cfg(test)]
         publication_fault("install_rsc_replaced")?;
         let dmb_receipt = install::conventional_receipt(

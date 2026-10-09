@@ -496,17 +496,21 @@ fn compose_records_access(
         let _profile = dm_profile::stage("composition.string_index_build");
         StringIndex::build(&dmb)?
     };
-    if let Some((plan, _)) = projection {
+    let class_roster = if let Some((plan, _)) = projection {
         let _profile = dm_profile::stage("composition.materialize_types");
-        crate::class_projection::materialize_types_with_strings(
-            &mut dmb,
-            plan,
-            &batch.tables,
-            symbols,
-            &mut string_index,
+        Some(
+            crate::class_projection::materialize_types_with_roster(
+                &mut dmb,
+                plan,
+                &batch.tables,
+                symbols,
+                &mut string_index,
+            )
+            .map_err(|e| unsupported(format!("class skeleton {e:?}")))?,
         )
-        .map_err(|e| unsupported(format!("class skeleton {e:?}")))?;
-    }
+    } else {
+        None
+    };
     // VM MobPath values use the mob table, not the class table. Allocate the
     // shared domain before admitting any compiler-owned procedure words.
     let mob_bindings = if let Some((plan, _)) = projection {
@@ -725,24 +729,26 @@ fn compose_records_access(
     drop(linked_records_profile);
     if let Some((plan, values)) = projection {
         let members_profile = dm_profile::stage("composition.member_records");
-        crate::class_projection::materialize_members_with_mob_bindings(
+        crate::class_projection::materialize_members_with_roster(
             &mut dmb,
             plan,
             (&batch.tables, mob_bindings),
             symbols,
             values,
             &mut string_index,
+            class_roster.as_ref(),
         )
         .map_err(|e| unsupported(format!("class members {e:?}")))?;
         drop(members_profile);
         let headers_profile = dm_profile::stage("composition.authored_headers");
-        crate::class_projection::finalize_headers_with_strings(
+        crate::class_projection::finalize_headers_with_roster(
             &mut dmb,
             engine_bytes,
             plan,
             &batch.tables,
             symbols,
             &mut string_index,
+            class_roster.as_ref(),
         )
         .map_err(|e| unsupported(format!("class headers {e:?}")))?;
         drop(headers_profile);
@@ -750,6 +756,7 @@ fn compose_records_access(
         crate::class_projection::materialize_callback_flags(&mut dmb, plan, &batch.tables)
             .map_err(|e| unsupported(format!("class callbacks {e:?}")))?;
     }
+    drop(class_roster);
     // The pool is valid only across writers that intern through this context.
     // Arbitrary non-text stages may mutate strings and must not reuse it.
     drop(string_index);

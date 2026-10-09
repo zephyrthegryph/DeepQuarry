@@ -4,6 +4,43 @@ Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 
 ## Latest admitted measurement
 
+The corrected-context control versus compact-code candidate completed an ABABAB
+cold comparison on 9 October: three runs per compiler, eight workers, empty
+compiler caches and warmed captured inputs. All six measurement, fresh native
+DMB/RSC/diagnostic oracle and structural no-regression gates passed. Phase 1
+exit targets remain **not met**.
+
+| Measurement | Control A | Candidate B | Budget |
+| --- | ---: | ---: | ---: |
+| Compiler child wall median | 12.029 s | 10.976 s | Context; CPU judged |
+| Critical CPU median | 9.266 s | 8.703 s | <= 15 s |
+| Critical CPU upper | 11.250 s | 10.688 s | <= 15 s |
+| Process CPU median | 29.141 s | 28.906 s | <= 40 s |
+| Peak private memory median | 2.167 GB | 1.654 GB | <= 1.5 GB |
+| Bytes read | 550 MB | 550 MB | <= 400 MB |
+| Bytes written | 655 MB | 655 MB | <= 600 MB |
+
+The candidate reduces median private memory by 513,232,896 bytes (23.7%) and
+child wall by about 8.8% in this paired cohort. Input, ABI/initializer and
+composition/publication stage CPU gates still fail; memory and both I/O gates
+also fail. This compares the combined source changes, not an isolated relocation
+experiment. Both binaries use corrected stage attribution and the same topology.
+
+Control compiler commit: `a1ee3bb252de6138919df465ce3f8dd4c1084670`.
+Candidate compiler commit: `b1236be6e9a893af68e87f5730565aeb2cf09292`.
+Candidate SHA-256: `8ff060e4695a14adc1efdabb23389944554c8fdd542cba2ae02758a951d867d0`.
+Build receipt: `E:/dq-cache/dmb-native-v2/source-compact-relocations-r6-20261009-011630.build.json`.
+Comparison: `E:/dmb-native-v2-phase0/r6-cohorts/paired-corrected-context-20261009-013454-8f706366/comparison.json`.
+Scope remains captured historical DeepQuarry `ac1af55...`, `comparison.dme`, test
+defines, eight workers and fresh CLI processes; no daemon or minimal-edit result.
+The first independent structural report is executed; later identical input/tool
+hashes reuse that authenticated report while every row runs its own fresh output
+and diagnostic oracle and recomputes its admission. Stable structural differences
+are no-regression evidence, not full semantic parity. Later tee/compression work
+is outside this frozen candidate.
+
+## Earlier corrected-context self-comparison
+
 Corrected context self-comparison completed on 9 October 2026. A and B run the
 **same frozen compiler**, ABABAB, three cold runs per label, eight workers, empty
 compiler caches and warmed captured inputs. All six measurement, fresh native
@@ -139,8 +176,25 @@ only after the shared receipt helper authenticates their hashes and file stamps,
 skipping the unchanged copy. This is output reuse, not a decoded engine cache.
 Owned certified word-buffer reuse and direct final-slice parallel DMB encoding
 remain implemented; the next optimized candidate must measure their combined
-effect with compact symbolic storage. Its diagnostic freeze/census and optimized
-acceptance comparison are pending.
+effect with compact symbolic storage. The compact-code captured-project diagnostic
+completed successfully in 132.323 s, with peak private memory 1,651,974,144 bytes
+and unchanged actual DMB/RSC hashes listed below. Actual retained relocation
+storage was 51,184,656 bytes at linking and 44,902,860 bytes at lowering; the linking
+payload reduction is therefore observed in the census, not merely estimated.
+Known retained totals were 713,616,653 bytes at lowering and 706,743,141 bytes at
+linking. These totals exclude unobserved allocator backing and worker temporaries.
+Evidence: `E:/dq-cache/dmb-native-v2/census-method-prototype-20261009-011320-stack8388608/`.
+This debug/census run is **not acceptance timing or acceptance memory evidence**.
+The optimized archived candidate completed the paired comparison above; Phase 1
+acceptance still fails memory, I/O and selected stage budgets. Later publication tee/compression changes are not validated by this
+snapshot.
+
+The later streaming-publication diagnostic `013354` preserved the same actual
+DMB/RSC hashes and observed 326,324,811 process read bytes versus 550,004,461
+previously, with peak private memory 1,660,530,688 bytes. This is debug/census
+evidence, **not an optimized acceptance measurement**; the paired candidate
+above excludes this later change. Evidence:
+`E:/dq-cache/dmb-native-v2/census-method-prototype-20261009-013354-stack8388608/`.
 Optional file-backed RSC publication streams encoding and hashing into immutable
 archives; unchanged archives use a hash-only probe and authenticated reuse.
 Request-owned resource pins survive until final pair publication. Sink I/O failures
@@ -168,8 +222,8 @@ timing**; the changed census traversal also prevents treating its runtime delta
 as a compiler speedup. It excludes the newer compact-code work.
 Evidence:
 `E:/dq-cache/dmb-native-v2/census-method-prototype-20261009-010310-stack8388608/`.
-An optimized acceptance comparison of these newer changes remains pending;
-the corrected self-cohort above does not measure them.
+The optimized paired comparison above measures the compact-code source batch;
+the earlier corrected self-cohort does not measure these newer changes.
 
 Whole-program structural diff: **1,853,923 differences**, unchanged in the admitted
 cohort: bytecode 1,636,088; globals 14; other 1,277; proc flags 14; proc table 8,983;

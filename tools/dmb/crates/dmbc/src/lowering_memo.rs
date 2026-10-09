@@ -2,7 +2,9 @@
 //! A matching complete issuer domain version certifies its recorded answers;
 //! changed or uncertified domains still recheck every exact semantic answer.
 pub const PROCEDURE_VERSION: u32 = 5;
-use dm_ir::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
+#[cfg(test)]
+use dm_ir::ResolvedMeaning;
+use dm_ir::{ReadDomain, ResolveQuery, Resolver};
 use std::collections::BTreeMap;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
@@ -31,7 +33,7 @@ pub struct MemoCounts {
     pub publication_ns: AtomicU64,
 }
 const PENDING_LIMIT: usize = 64 * 1024 * 1024;
-const RESIDENT_LIMIT: usize = 8 * 1024 * 1024;
+const RESIDENT_LIMIT: usize = dm_session::DEFAULT_RESIDENT_BYTES;
 #[derive(Clone, Copy)]
 pub struct MemoLimits {
     pub pending_bytes: usize,
@@ -708,244 +710,9 @@ pub(crate) fn key(
     Some(key)
 }
 
-/// Versions are immutable issuer facts. Missing/different receipts require every
-/// original positive or negative answer to be checked exactly.
-pub(crate) fn matching_domains<R: Resolver>(
-    versions: &[(ReadDomain, u128)],
-    resolver: &R,
-) -> std::collections::BTreeSet<ReadDomain> {
-    versions
-        .iter()
-        .filter_map(|&(domain, version)| {
-            (resolver.domain_version(domain) == Some(version)).then_some(domain)
-        })
-        .collect()
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ResolverRead {
-    pub domain: ReadDomain,
-    pub query: ResolveQuery,
-    pub answer: ResolvedMeaning,
-}
-
-pub struct RecordingResolver<'a, R: Resolver> {
-    resolver: &'a R,
-    reads: Mutex<BTreeMap<ResolveQuery, Vec<ResolverRead>>>,
-    versions: Mutex<BTreeMap<ReadDomain, Option<u128>>>,
-}
-impl<'a, R: Resolver> RecordingResolver<'a, R> {
-    pub fn new(resolver: &'a R) -> Self {
-        Self {
-            resolver,
-            reads: Mutex::new(BTreeMap::new()),
-            versions: Mutex::new(BTreeMap::new()),
-        }
-    }
-    pub fn reads(&self) -> Vec<ResolverRead> {
-        self.reads
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .values()
-            .flatten()
-            .cloned()
-            .collect()
-    }
-    pub fn domain_receipts(&self) -> Vec<(ReadDomain, u128)> {
-        self.versions
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .iter()
-            .filter_map(|(&domain, &version)| version.map(|version| (domain, version)))
-            .collect()
-    }
-    /// These reads are mandatory even for bodies that use no inherited names.
-    pub fn record_occurrence(&self, identity: dm_ir::ProcedureIdentity) {
-        self.resolve(ResolveQuery::Ancestry(identity.owner));
-        self.resolve(ResolveQuery::OverrideChain {
-            owner: identity.owner,
-            name: identity.name,
-            verb: identity.verb,
-        });
-    }
-}
-impl<R: Resolver> Resolver for RecordingResolver<'_, R> {
-    fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
-        self.resolver.domain_version(domain)
-    }
-    fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
-        self.versions
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .entry(query.domain())
-            .or_insert_with(|| self.resolver.domain_version(query.domain()));
-        let answer = self.resolver.resolve(query);
-        let mut reads = self.reads.lock().unwrap_or_else(|error| error.into_inner());
-        let answers = reads.entry(query).or_default();
-        if !answers.iter().any(|read| read.answer == answer) {
-            answers.push(ResolverRead {
-                domain: query.domain(),
-                query,
-                answer: answer.clone(),
-            });
-        }
-        answer
-    }
-}
-
-#[derive(Clone)]
-struct Variant<T> {
-    key: Arc<[u8]>,
-    reads: Arc<[ResolverRead]>,
-    versions: Arc<[(ReadDomain, u128)]>,
-    value: Arc<T>,
-    weight: usize,
-}
-struct Resident<T> {
-    buckets: BTreeMap<u128, Vec<Variant<T>>>,
-    bytes: usize,
-}
-
-/// Hashes choose buckets only; exact key bytes and all semantic answers authorize
-/// reuse. Variants are insertion ordered; the oldest of at most four is evicted.
-pub struct LoweringMemo<T> {
-    state: Mutex<Resident<T>>,
-    limit: usize,
-}
-impl<T> Default for LoweringMemo<T> {
-    fn default() -> Self {
-        Self::with_limit(RESIDENT_LIMIT)
-    }
-}
-impl<T> LoweringMemo<T> {
-    pub fn with_limit(limit: usize) -> Self {
-        Self {
-            state: Mutex::new(Resident {
-                buckets: BTreeMap::new(),
-                bytes: 0,
-            }),
-            limit,
-        }
-    }
-    pub fn admitted_bytes(&self) -> usize {
-        self.state
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .bytes
-    }
-    pub fn available_bytes(&self) -> usize {
-        self.limit.saturating_sub(self.admitted_bytes())
-    }
-}
-impl<T: Send + Sync> LoweringMemo<T> {
-    pub fn lookup<R: Resolver>(&self, key: &[u8], resolver: &R) -> Option<Arc<T>> {
-        self.lookup_explained(key, resolver).0
-    }
-    pub fn lookup_explained<R: Resolver>(
-        &self,
-        key: &[u8],
-        resolver: &R,
-    ) -> (Option<Arc<T>>, Option<ResolveQuery>) {
-        let hash = xxhash_rust::xxh3::xxh3_128(key);
-        // Resolver work takes place outside the store lock, allowing parallel units.
-        let candidates = {
-            let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-            state
-                .buckets
-                .get(&hash)
-                .into_iter()
-                .flatten()
-                .filter(|entry| entry.key.as_ref() == key)
-                .map(|entry| {
-                    (
-                        Arc::clone(&entry.reads),
-                        Arc::clone(&entry.versions),
-                        Arc::clone(&entry.value),
-                    )
-                })
-                .collect::<Vec<_>>()
-        };
-        let mut changed = None;
-        for (reads, versions, value) in candidates.into_iter().rev() {
-            let matching = matching_domains(&versions, resolver);
-            let mismatch = reads.iter().find(|read| {
-                !matching.contains(&read.domain)
-                    && resolver.resolve(read.query).canonical_bytes()
-                        != read.answer.canonical_bytes()
-            });
-            if let Some(read) = mismatch {
-                changed = Some(read.query);
-            } else {
-                return (Some(value), None);
-            }
-        }
-        (None, changed)
-    }
-    pub fn insert(&self, key: Arc<[u8]>, reads: Vec<ResolverRead>, value: T) {
-        let weight = key.len()
-            + std::mem::size_of::<T>()
-            + reads
-                .iter()
-                .map(|read| read.answer.canonical_bytes().len())
-                .sum::<usize>();
-        self.insert_with(key, reads, Vec::new(), weight, || value);
-    }
-    fn insert_with(
-        &self,
-        key: Arc<[u8]>,
-        reads: Vec<ResolverRead>,
-        versions: Vec<(ReadDomain, u128)>,
-        weight: usize,
-        create: impl FnOnce() -> T,
-    ) -> bool {
-        let hash = xxhash_rust::xxh3::xxh3_128(&key);
-        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-        // Resident storage evicts before admitting a new value. Results are
-        // independently published; an oversized value needs no resident copy.
-        if weight > self.limit {
-            return false;
-        }
-        while state.bytes.saturating_add(weight) > self.limit {
-            let Some(oldest_bucket) = state.buckets.keys().next().copied() else {
-                break;
-            };
-            let bucket = state.buckets.get_mut(&oldest_bucket).unwrap();
-            let removed = bucket.remove(0);
-            let empty = bucket.is_empty();
-            state.bytes -= removed.weight;
-            if empty {
-                state.buckets.remove(&oldest_bucket);
-            }
-        }
-        let bucket = state.buckets.entry(hash).or_default();
-        // A hash collision must not evict another exact key's independent variants.
-        if bucket.iter().filter(|entry| entry.key == key).count() >= 4 {
-            if let Some(index) = bucket.iter().position(|entry| entry.key == key) {
-                // Removing a variant releases accounted storage below.
-                let removed = bucket.remove(index);
-                let removed_weight = removed.weight;
-                bucket.push(Variant {
-                    key,
-                    reads: reads.into(),
-                    versions: versions.into(),
-                    value: Arc::new(create()),
-                    weight,
-                });
-                state.bytes = state.bytes - removed_weight + weight;
-                return true;
-            }
-        }
-        bucket.push(Variant {
-            key,
-            reads: reads.into(),
-            versions: versions.into(),
-            value: Arc::new(create()),
-            weight,
-        });
-        state.bytes += weight;
-        true
-    }
-}
+// Compatibility names preserve all existing procedure memo and wire consumers.
+pub(crate) use dm_session::matching_domains;
+pub use dm_session::{ArtifactStore as LoweringMemo, RecordingResolver, ResolverRead};
 
 #[cfg(test)]
 #[path = "lowering_memo/tests.rs"]

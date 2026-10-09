@@ -46,6 +46,18 @@ pub(crate) fn materialize_members_with_mob_bindings(
     value_types: &dyn TypeValuePolicy,
     pool: &mut crate::composition::StringIndex,
 ) -> Result<(), ProjectionError> {
+    materialize_members_with_roster(dmb, projection, domains, symbols, value_types, pool, None)
+}
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn materialize_members_with_roster(
+    dmb: &mut byond_dmb::dmb::Dmb,
+    projection: &ClassProjection,
+    domains: (&dm_link::LinkTables, dm_link::MobBindings),
+    symbols: &dm_ir::SymbolTable,
+    value_types: &dyn TypeValuePolicy,
+    pool: &mut crate::composition::StringIndex,
+    roster: Option<&MaterializedClassRoster>,
+) -> Result<(), ProjectionError> {
     let (tables, mobs) = domains;
     use byond_dmb::{dmb::Variable, ids::NONE};
     struct Values<'a> {
@@ -197,18 +209,25 @@ pub(crate) fn materialize_members_with_mob_bindings(
         )
         .map_err(ProjectionError::Unsupported)?;
     }
-    let mut classes = HashMap::new();
+    let mut legacy_classes = HashMap::new();
     let mut declarations = HashMap::new();
     for (index, class) in dmb.classes.iter().enumerate() {
-        let path = dmb
-            .string(class.path_string_id())
-            .ok_or(ProjectionError::MissingMember)?;
-        let owner = SymbolId::of_bytes(path);
-        if text(owner)?.as_bytes() != path || classes.insert(owner, index as u32).is_some() {
-            return Err(ProjectionError::Unsupported(
-                "ambiguous retained class paths".into(),
-            ));
-        }
+        let owner = if let Some(roster) = roster {
+            roster.owner(index).ok_or(ProjectionError::MissingMember)?
+        } else {
+            let path = dmb
+                .string(class.path_string_id())
+                .ok_or(ProjectionError::MissingMember)?;
+            let owner = SymbolId::of_bytes(path);
+            if text(owner)?.as_bytes() != path
+                || legacy_classes.insert(owner, index as u32).is_some()
+            {
+                return Err(ProjectionError::Unsupported(
+                    "ambiguous retained class paths".into(),
+                ));
+            }
+            owner
+        };
         for (variable, _) in dmb.class_variable_declarations(index).unwrap_or_default() {
             let record = dmb
                 .variables
@@ -227,6 +246,8 @@ pub(crate) fn materialize_members_with_mob_bindings(
             }
         }
     }
+
+    let classes = roster.map(|roster| &roster.ids).unwrap_or(&legacy_classes);
 
     fn list(dmb: &mut byond_dmb::dmb::Dmb, words: Vec<u32>) -> Result<u32, ProjectionError> {
         crate::composition::append_list(dmb, words)

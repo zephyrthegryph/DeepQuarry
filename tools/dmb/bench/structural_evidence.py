@@ -19,7 +19,7 @@ def compact(value):
               'semantic_coverage', 'total_discrepancies', 'unexplained_discrepancies',
               'parity_acceptance', 'structural_measurement_admission', 'native_pair_sha256',
               'no_regression', 'no_regression_basis', 'report', 'report_sha256',
-              'error', 'exit_code', 'watchdog', 'wall_s')
+              'error', 'exit_code', 'watchdog', 'wall_s', 'structural_check')
     result = {key: value[key] for key in fields if key in value}
     result['evidence_format'] = 'structural-report-reference-v1'
     for roster, signatures, count in (('categories', 'category_signatures', 'discrepancy_count'),

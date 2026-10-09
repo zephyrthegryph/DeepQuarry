@@ -6,6 +6,7 @@ mod clock;
 mod internal_observer;
 mod memory;
 mod names;
+mod trace_output;
 mod worker;
 mod writer;
 pub use allocator::CountingAllocator;
@@ -110,6 +111,7 @@ pub struct Report {
     pub stages: Vec<StageReport>,
     pub coverage_notes: Vec<String>,
     pub private_memory_sample_interval_ms: Option<u64>,
+    pub trace_output: trace_output::Metadata,
 }
 #[derive(Default)]
 struct Entry {
@@ -559,7 +561,8 @@ pub struct ProfileGuard {
     process: clock::Process,
     path: PathBuf,
     chrome: Option<tracing_chrome::FlushGuard>,
-    flame: Option<tracing_flame::FlushGuard<std::io::BufWriter<File>>>,
+    flame: Option<tracing_flame::FlushGuard<std::io::BufWriter<trace_output::TraceWriter>>>,
+    trace_outputs: trace_output::Outputs,
     memory_sampler: Option<memory::Sampler>,
 }
 pub fn artifact_path(path: &Path, suffix: &str) -> PathBuf {
@@ -578,8 +581,11 @@ pub fn initialize(path: &Path) -> Result<ProfileGuard, String> {
         wall_folded: Mutex::new(BTreeMap::new()),
     });
     let setup = internal_observer::InternalThreadObserver::new(Arc::clone(&state), "profile.setup");
+    let mut trace_outputs = trace_output::Outputs::from_environment().map_err(|e| e.to_string())?;
     let writer = writer::ObservedWriter::new(
-        File::create(path).map_err(|e| e.to_string())?,
+        trace_outputs
+            .writer(path, "chrome-json")
+            .map_err(|e| e.to_string())?,
         Arc::clone(&state),
     );
     let (chrome, chrome_guard) = tracing_chrome::ChromeLayerBuilder::new()
@@ -594,9 +600,11 @@ pub fn initialize(path: &Path) -> Result<ProfileGuard, String> {
             tracing_chrome::EventOrSpan::Event(event) => event.metadata().name().into(),
         }))
         .build();
-    let (flame, flame_guard) =
-        tracing_flame::FlameLayer::with_file(artifact_path(path, ".tracing.folded"))
-            .map_err(|e| e.to_string())?;
+    let flame_writer = trace_outputs
+        .writer(&artifact_path(path, ".tracing.folded"), "tracing-folded")
+        .map_err(|e| e.to_string())?;
+    let flame = tracing_flame::FlameLayer::new(std::io::BufWriter::new(flame_writer));
+    let flame_guard = flame.flush_on_drop();
     tracing_subscriber::registry()
         .with(names::Names)
         .with(chrome)
@@ -615,6 +623,7 @@ pub fn initialize(path: &Path) -> Result<ProfileGuard, String> {
         path: path.into(),
         chrome: Some(chrome_guard),
         flame: Some(flame_guard),
+        trace_outputs,
         memory_sampler,
     })
 }
@@ -647,7 +656,13 @@ impl ProfileGuard {
         // Drop sends the termination message and joins the Chrome writer. Its
         // direct lifetime CPU receipt must exist before the report snapshot.
         self.chrome.take();
+        let flame_result = self.flame.as_ref().map(|guard| guard.flush()).transpose();
         self.flame.take();
+        let trace_output = self
+            .trace_outputs
+            .finish()
+            .map_err(|error| error.to_string())?;
+        flame_result.map_err(|error| error.to_string())?;
         drop(shutdown);
         let process = clock::process();
         let measured_wall = self.start.elapsed().as_secs_f64();
@@ -845,6 +860,7 @@ impl ProfileGuard {
                     .map(|values| sum_bounds(values.into_iter()))
             };
         let report = Report {
+            trace_output,
             schema: 1,
             wall_s: measured_wall,
             wall_scope: "profile_elapsed_wall_interval",

@@ -8,21 +8,31 @@ use std::time::Instant;
 #[path = "runner_report.rs"]
 mod runner_report;
 
+#[derive(Default)]
+struct ResourceOutputs {
+    pins: Vec<dmbc::publish::ResourcePin>,
+    prepared: Option<dmbc::publish::PreparedOutputFile>,
+}
 struct OutputResourceSink<'a> {
     store: &'a dmbc::publish::PairStore,
     exact: bool,
-    pins: &'a std::sync::Mutex<Vec<dmbc::publish::ResourcePin>>,
+    destination: &'a std::path::Path,
+    outputs: &'a std::sync::Mutex<ResourceOutputs>,
 }
 impl dmbc::assets::ResourceArchiveSink for OutputResourceSink<'_> {
     fn retain(
         &self,
         rows: &[byond_dmb::rsc::NamedResourceView<'_>],
     ) -> io::Result<dmbc::publish::ResourceIdentity> {
-        let (identity, pin) = self.store.publish_resource_views_pinned(rows, self.exact)?;
-        self.pins
+        let (identity, pin, prepared) =
+            self.store
+                .publish_resource_views_prepared(rows, self.exact, Some(self.destination))?;
+        let mut outputs = self
+            .outputs
             .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .push(pin);
+            .unwrap_or_else(|error| error.into_inner());
+        outputs.pins.push(pin);
+        outputs.prepared = prepared;
         Ok(identity)
     }
 }
@@ -160,7 +170,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
     let mut pair_store = None;
     // Request-owned leases outlive the borrowed capture sink and cold compiler.
     // They are released only after the final immutable pair is published.
-    let resource_pins = std::sync::Mutex::new(Vec::new());
+    let resource_outputs = std::sync::Mutex::new(ResourceOutputs::default());
     let mut resource_prior = None;
     let mut memo_policy = 0;
     drop(input_context_profile);
@@ -504,10 +514,12 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
                 pair_store = dmbc::publish::PairStore::open(path).ok();
             }
         }
+        let resource_destination = output_project.with_extension("rsc");
         let resource_sink = pair_store.as_ref().map(|store| OutputResourceSink {
             store,
             exact: exact_inputs,
-            pins: &resource_pins,
+            destination: &resource_destination,
+            outputs: &resource_outputs,
         });
         let roots = engine
             .frontend_seed()
@@ -762,13 +774,16 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
                     exact_inputs,
                 )?,
         };
-        drop(resource_pins);
-        let installation = store.install_receipt_exact(
+        let ResourceOutputs { pins: _, prepared } = resource_outputs
+            .into_inner()
+            .unwrap_or_else(|error| error.into_inner());
+        let installation = store.install_receipt_exact_with_prepared_resource(
             pair.id,
             &output_project.with_extension("dmb"),
             &output_project.with_extension("rsc"),
             &output_project.with_extension("dmb-pair.json"),
             exact_inputs,
+            prepared,
         )?;
         input_provider.finish()?;
         if let (Some(cache), Some(snapshot), Some(session)) =

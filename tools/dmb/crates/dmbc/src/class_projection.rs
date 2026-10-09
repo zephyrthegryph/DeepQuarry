@@ -3,13 +3,15 @@
 //! additionally acquire VM footer slots, and field selectors remain strings.
 use crate::initializer_policy::DefaultValue;
 mod callbacks;
+mod class_roster;
 mod headers;
+pub(crate) use class_roster::MaterializedClassRoster;
 mod routing;
 pub use callbacks::materialize_callback_flags;
 use dm_ir::{SemanticValue, SymbolId, SymbolicExpression};
 use dm_link::Key;
 use dm_tree::{DefinitionMode, MemberKind, OccurrenceId, Target, TreeSnapshot};
-pub(super) use headers::finalize_headers_with_strings;
+pub(super) use headers::finalize_headers_with_roster;
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     sync::Arc,
@@ -465,6 +467,15 @@ pub(crate) fn materialize_types_with_strings(
     symbols: &dm_ir::SymbolTable,
     strings: &mut crate::composition::StringIndex,
 ) -> Result<(), ProjectionError> {
+    materialize_types_with_roster(dmb, projection, tables, symbols, strings).map(|_| ())
+}
+pub(crate) fn materialize_types_with_roster(
+    dmb: &mut byond_dmb::dmb::Dmb,
+    projection: &ClassProjection,
+    tables: &dm_link::LinkTables,
+    symbols: &dm_ir::SymbolTable,
+    strings: &mut crate::composition::StringIndex,
+) -> Result<MaterializedClassRoster, ProjectionError> {
     use byond_dmb::{dmb::Class, ids::NONE};
     let spelling = |symbol| {
         symbols.text(symbol).ok_or_else(|| {
@@ -580,15 +591,13 @@ pub(crate) fn materialize_types_with_strings(
     for (_, record) in constructed {
         dmb.classes.push(record);
     }
-    Ok(())
+    Ok(MaterializedClassRoster::issued(type_ids))
 }
 
 #[path = "class_projection/members.rs"]
 mod members;
 pub use members::materialize_members;
-pub(crate) use members::materialize_members_with_mob_bindings;
-#[cfg(test)]
-pub(crate) use members::materialize_members_with_strings;
+pub(crate) use members::materialize_members_with_roster;
 
 fn encoded_constant(kind: u8, value: u32) -> Result<Vec<u32>, ProjectionError> {
     if kind != 42 && value > 0x00ff_ffff {

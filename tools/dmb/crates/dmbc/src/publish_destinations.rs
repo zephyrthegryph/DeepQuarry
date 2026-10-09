@@ -2,7 +2,7 @@
 use super::*;
 use crate::input_snapshot::{FileSystemInputs, SnapshotProvider};
 
-fn absolute_identity(path: &Path) -> io::Result<PathBuf> {
+pub(super) fn absolute_identity(path: &Path) -> io::Result<PathBuf> {
     let absolute = std::path::absolute(path)?;
     let mut ancestor = absolute.clone();
     let mut tail = Vec::new();
@@ -29,11 +29,11 @@ fn absolute_identity(path: &Path) -> io::Result<PathBuf> {
     }
 }
 #[cfg(not(windows))]
-fn same_path(left: &Path, right: &Path) -> io::Result<bool> {
+pub(super) fn same_path(left: &Path, right: &Path) -> io::Result<bool> {
     Ok(left == right)
 }
 #[cfg(windows)]
-fn same_path(left: &Path, right: &Path) -> io::Result<bool> {
+pub(super) fn same_path(left: &Path, right: &Path) -> io::Result<bool> {
     use std::os::windows::ffi::OsStrExt;
     #[link(name = "kernel32")]
     extern "system" {

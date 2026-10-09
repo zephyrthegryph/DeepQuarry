@@ -24,6 +24,7 @@ dm-syntax = { path = "../dm-syntax" }
 
 byond-dmb = { path = "../.." }
 dm-ir = { path = "../dm-ir" }
+dm-session = { path = "../dm-session" }
 dm-cache = { path = "../dm-cache" }
 dm-wire = { path = "../dm-wire" }
 dm-codegen-byond = { path = "../dm-codegen-byond" }

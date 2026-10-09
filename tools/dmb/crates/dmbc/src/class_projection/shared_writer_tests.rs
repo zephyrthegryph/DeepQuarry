@@ -91,24 +91,28 @@ fn shared_string_writer_matches_wrappers_with_duplicates_reserved_slots_and_auth
     materialize_members(&mut independent, &projection, &tables, &symbols, &NoTypes).unwrap();
     headers::finalize_headers(&mut independent, bytes, &projection, &tables, &symbols).unwrap();
     let mut shared = crate::composition::StringIndex::build(&image).unwrap();
-    materialize_types_with_strings(&mut image, &projection, &tables, &symbols, &mut shared)
-        .unwrap();
-    materialize_members_with_strings(
+    let roster =
+        materialize_types_with_roster(&mut image, &projection, &tables, &symbols, &mut shared)
+            .unwrap();
+    let mobs = crate::mob_writer::materialize_projection(&mut image, &tables, &projection).unwrap();
+    materialize_members_with_roster(
         &mut image,
         &projection,
-        &tables,
+        (&tables, mobs),
         &symbols,
         &NoTypes,
         &mut shared,
+        Some(&roster),
     )
     .unwrap();
-    headers::finalize_headers_with_strings(
+    headers::finalize_headers_with_roster(
         &mut image,
         bytes,
         &projection,
         &tables,
         &symbols,
         &mut shared,
+        Some(&roster),
     )
     .unwrap();
     assert_eq!(
