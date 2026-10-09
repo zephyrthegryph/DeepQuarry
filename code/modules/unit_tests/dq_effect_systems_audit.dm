@@ -21,9 +21,11 @@
 	test_time(30 SECONDS)
 	var/left = 0
 	for(var/datum/effect/system/explosion/boom)
-		left++
+		if(!QDELETED(boom))
+			left++
 	for(var/datum/effect/effect/system/smoke_spread/smoke)
-		left++
+		if(!QDELETED(smoke))
+			left++
 	TEST_ASSERT_EQUAL(left, 0, "the systems deleted themselves once their smoke was out")
 	for(var/line in own_audit(quiet = TRUE))
 		TEST_ASSERT(!findtext(line, "dropped with a rec"), "nothing is left for the audit: [line]")
