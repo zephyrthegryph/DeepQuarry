@@ -402,7 +402,7 @@ fn lower_group<R: Resolver>(
             entries.push(frontend.origin(expanded_span.start)?);
         } else {
             entries.push(DebugOrigin {
-                semantic_path: occurrence.semantic_path.to_string(),
+                semantic_path: occurrence.semantic_path.clone(),
                 line: u32::try_from(line).map_err(|_| "initializer source line exceeds u32")?,
             });
         }

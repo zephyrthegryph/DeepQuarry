@@ -200,11 +200,10 @@ fn authored_call_return_annotation_types_nested_field_context() {
                     fingerprint: 1,
                     data: self.metadata.clone(),
                 },
-                Q::ProcedureValue {
+                Q::MethodProcedureValue {
                     owner,
                     name,
                     verb: false,
-                    formal: true,
                 } if owner == self.identity.owner && name == self.identity.name => {
                     M::Value(dm_ir::SemanticValue::Procedure(self.identity))
                 }
@@ -262,12 +261,15 @@ fn authored_call_return_annotation_types_nested_field_context() {
         }),
         Some(&identity)
     );
-    assert!(host.reads.lock().unwrap().contains(&Q::ProcedureValue {
-        owner: identity.owner,
-        name: identity.name,
-        verb: false,
-        formal: true
-    }));
+    assert!(host
+        .reads
+        .lock()
+        .unwrap()
+        .contains(&Q::MethodProcedureValue {
+            owner: identity.owner,
+            name: identity.name,
+            verb: false,
+        }));
     assert!(code
         .procedure
         .class_paths

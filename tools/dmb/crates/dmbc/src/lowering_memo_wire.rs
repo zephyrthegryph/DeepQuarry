@@ -222,7 +222,7 @@ pub(crate) fn encode(
             .debug_origins
             .entries
             .iter()
-            .map(|origin| (origin.semantic_path.clone(), origin.line))
+            .map(|origin| (origin.semantic_path.to_string(), origin.line))
             .collect(),
         abi,
         relative_debug: relative_debug.to_vec(),

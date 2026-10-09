@@ -16,10 +16,15 @@ use xxhash_rust::xxh3::{xxh3_128, Xxh3};
 
 #[path = "publish_admission.rs"]
 mod admission;
+#[path = "publish_destinations.rs"]
+mod destinations;
 #[path = "publish_eviction.rs"]
 mod eviction;
 #[path = "publish_install.rs"]
 mod install;
+#[path = "publish_receipt.rs"]
+mod receipt;
+pub use receipt::InstallationReceipt;
 #[path = "publish_io.rs"]
 mod publication_io;
 pub use eviction::EvictionResult;
@@ -591,20 +596,30 @@ impl PairStore {
         marker: &Path,
         exact: bool,
     ) -> io::Result<()> {
-        if dmb == rsc || dmb == marker || rsc == marker {
-            return Err(invalid("conventional output paths must be distinct"));
-        }
+        self.install_receipt_exact(id, dmb, rsc, marker, exact)
+            .map(|_| ())
+    }
+
+    pub fn install_receipt_exact(
+        &self,
+        id: u128,
+        dmb: &Path,
+        rsc: &Path,
+        marker: &Path,
+        exact: bool,
+    ) -> io::Result<InstallationReceipt> {
+        destinations::distinct([dmb, rsc, marker])?;
         let _lock = self.lock()?;
         let source = self.root.join("pairs").join(format!("{id:032x}"));
         let pair = self.verify_locked(id, exact)?;
-        install::resource(
+        let rsc_receipt = install::resource_receipt(
             &source.join("deepquarry.rsc"),
             rsc,
             (pair.rsc_bytes, pair.rsc_hash),
         )?;
         #[cfg(test)]
         publication_fault("install_rsc_replaced")?;
-        replace_copy(
+        let dmb_receipt = replace_copy_receipt(
             &source.join("deepquarry.dmb"),
             dmb,
             (pair.dmb_bytes, pair.dmb_hash),
@@ -613,10 +628,16 @@ impl PairStore {
         publication_fault("install_dmb_replaced")?;
         let staged = temporary_file(marker)?;
         let _cleanup = StagedPath::new(staged.clone());
-        write_json(&staged, &pair)?;
+        let (marker_stamp, marker_hash) = write_json_hashed(&staged, &pair)?;
         #[cfg(test)]
         publication_fault("install_marker_staged")?;
-        atomic_replace(&staged, marker)
+        atomic_replace(&staged, marker)?;
+        let marker_receipt =
+            receipt::InstalledFile::after_replace(marker, marker_stamp, marker_hash)?;
+        Ok(InstallationReceipt {
+            files: vec![rsc_receipt, dmb_receipt, marker_receipt],
+            exact,
+        })
     }
 }
 
@@ -640,14 +661,19 @@ fn temporary_file(destination: &Path) -> io::Result<PathBuf> {
     }
 }
 
-fn replace_copy(source: &Path, destination: &Path, expected: (u64, u128)) -> io::Result<()> {
+fn replace_copy_receipt(
+    source: &Path,
+    destination: &Path,
+    expected: (u64, u128),
+) -> io::Result<receipt::InstalledFile> {
     let _profile = dm_profile::stage("publication.install_copy");
     let staged = temporary_file(destination)?;
     let _cleanup = StagedPath::new(staged.clone());
-    copy_hashed(source, &staged, expected)?;
+    let stamp = copy_hashed(source, &staged, expected)?;
     #[cfg(test)]
     publication_fault("install_copy_staged")?;
-    atomic_replace(&staged, destination)
+    atomic_replace(&staged, destination)?;
+    receipt::InstalledFile::after_replace(destination, stamp, expected.1)
 }
 
 #[cfg(not(windows))]
@@ -683,7 +709,14 @@ fn atomic_replace(source: &Path, destination: &Path) -> io::Result<()> {
 }
 
 fn write_json(path: &Path, value: &impl Serialize) -> io::Result<crate::input_snapshot::Stamp> {
+    write_json_hashed(path, value).map(|(stamp, _)| stamp)
+}
+fn write_json_hashed(
+    path: &Path,
+    value: &impl Serialize,
+) -> io::Result<(crate::input_snapshot::Stamp, u128)> {
     let bytes = serde_json::to_vec(value).map_err(invalid)?;
+    let digest = xxh3_128(&bytes);
     use std::io::Write;
     let mut file = OpenOptions::new()
         .write(true)
@@ -691,7 +724,7 @@ fn write_json(path: &Path, value: &impl Serialize) -> io::Result<crate::input_sn
         .truncate(true)
         .open(path)?;
     dm_profile::io_call(|| file.write_all(&bytes), |_| (0, bytes.len() as u64))?;
-    publication_io::finish_owned(file, path)
+    Ok((publication_io::finish_owned(file, path)?, digest))
 }
 
 fn invalid(error: impl std::fmt::Display) -> io::Error {

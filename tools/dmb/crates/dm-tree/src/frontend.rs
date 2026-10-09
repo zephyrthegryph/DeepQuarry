@@ -342,6 +342,17 @@ impl ColdFrontend {
         .output(expanded_offset)
     }
 
+    /// Exact logical debug path/line without allocating diagnostic provenance.
+    /// Uses the same captured origin and validity checks as `location`.
+    pub fn debug_site(&self, expanded_offset: usize) -> Option<(Arc<str>, usize)> {
+        Mapping {
+            plan: &self.plan,
+            expanded: &self.expanded,
+            files: &self.files,
+            by_path: &self.source_by_path,
+        }
+        .debug_site(expanded_offset)
+    }
     pub fn source(&self, id: FileId) -> Option<&SourceFile> {
         self.files.get(id.index())
     }
@@ -529,6 +540,16 @@ impl Mapping<'_> {
             .origins
             .get(index)
             .or_else(|| self.expanded.origins.last())
+    }
+    fn debug_site(&self, offset: usize) -> Option<(Arc<str>, usize)> {
+        let origin = self.origin(offset)?;
+        let occurrence = self.plan.regions[origin.region].occurrence;
+        let file = *self.by_path.get(origin.origin.path.as_ref())?;
+        source_span(file, origin.source_span).ok()?;
+        Some((
+            self.plan.occurrences[occurrence].semantic_path.clone(),
+            origin.origin.source_line,
+        ))
     }
     fn output(&self, offset: usize) -> Option<SourceLocation> {
         let origin = self.origin(offset)?;

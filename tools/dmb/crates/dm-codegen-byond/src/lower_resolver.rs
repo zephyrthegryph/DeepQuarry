@@ -304,6 +304,7 @@ impl ProjectResolver<'_> {
             | Q::VarStorage { owner, name }
             | Q::Proc { owner, name, .. }
             | Q::ProcedureValue { owner, name, .. }
+            | Q::MethodProcedureValue { owner, name, .. }
             | Q::OverrideChain { owner, name, .. }
             | Q::Constant { owner, name }
             | Q::StaticVar { owner, name }
@@ -442,17 +443,28 @@ impl ProjectResolver<'_> {
             }
             M::Member { owner, name, .. } if name == name_id => {
                 let verb = namespace == "verb";
-                let value_query = Q::ProcedureValue {
-                    owner,
-                    name,
-                    verb,
-                    formal: true,
-                };
+                // Method dispatch uses its inherited formal anchor, unlike a
+                // strict explicit procedure literal at this effective owner.
+                let value_query = Q::MethodProcedureValue { owner, name, verb };
                 match self.answer(value_query)? {
+                    M::IntrinsicProc {
+                        declaring_owner,
+                        name: resolved_name,
+                    } if !verb && resolved_name == name => {
+                        self.text(value_query, declaring_owner)?;
+                        Ok(None)
+                    }
+                    M::RetainedProc {
+                        declaring_owner,
+                        name: resolved_name,
+                        verb: resolved_verb,
+                        ..
+                    } if resolved_name == name && resolved_verb == verb => {
+                        self.text(value_query, declaring_owner)?;
+                        Ok(None)
+                    }
                     M::Value(SemanticValue::Procedure(identity))
-                        if identity.owner == owner
-                            && identity.name == name
-                            && identity.verb == verb =>
+                        if identity.name == name && identity.verb == verb =>
                     {
                         self.procedure_value_key(identity).map(Some)
                     }

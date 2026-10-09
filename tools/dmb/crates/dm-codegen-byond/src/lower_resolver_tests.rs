@@ -20,6 +20,82 @@ fn lower(
     crate::compile_simple_proc_with_resolver(&ast.items[0].children, &inputs, symbols, host)
 }
 #[test]
+fn method_native_dispatch_requires_exact_certified_name_and_namespace() {
+    struct NativeHost(u8);
+    impl Resolver for NativeHost {
+        fn resolve(&self, query: Q) -> M {
+            let owner = SymbolId::of("/datum/probe");
+            let name = SymbolId::of("callback");
+            match query {
+                Q::HasMemberProc {
+                    owner: found,
+                    name: selector,
+                } if found == owner && selector == name => M::Presence(true),
+                Q::Proc {
+                    owner: found,
+                    name: selector,
+                    verb: false,
+                } if found == owner && selector == name => M::Member {
+                    owner,
+                    name,
+                    fingerprint: 1,
+                    data: Arc::new(Default::default()),
+                },
+                Q::MethodProcedureValue {
+                    owner: found,
+                    name: selector,
+                    verb: false,
+                } if found == owner && selector == name => match self.0 {
+                    0 => M::IntrinsicProc {
+                        declaring_owner: owner,
+                        name,
+                    },
+                    1 => M::RetainedProc {
+                        declaring_owner: owner,
+                        name,
+                        verb: false,
+                        engine_identity: 1,
+                        wire_proc: 3,
+                    },
+                    2 => M::IntrinsicProc {
+                        declaring_owner: owner,
+                        name: SymbolId::of("wrong"),
+                    },
+                    3 => M::RetainedProc {
+                        declaring_owner: owner,
+                        name,
+                        verb: true,
+                        engine_identity: 1,
+                        wire_proc: 3,
+                    },
+                    _ => M::Unsupported(query),
+                },
+                _ => M::Unsupported(query),
+            }
+        }
+    }
+    let mut symbols = SymbolTable::default();
+    symbols.intern("/datum/probe").unwrap();
+    symbols.intern("callback").unwrap();
+    let ast = dm_syntax::parse("/proc/probe()\n    callback()\n");
+    for mode in 0..5 {
+        let result = crate::compile_simple_proc_with_resolver(
+            &ast.items[0].children,
+            &ProcedureInputs {
+                current_type_path: Some("/datum/probe".into()),
+                ..Default::default()
+            },
+            &symbols,
+            &NativeHost(mode),
+        );
+        if mode < 2 {
+            assert!(result.unwrap().procedure_values.is_empty());
+        } else {
+            assert!(result.is_err(), "uncertified method answer mode {mode}");
+        }
+    }
+}
+#[test]
 fn typed_list_contexts_query_container_runtime_type() {
     let mut symbols = SymbolTable::default();
     symbols.intern("/list").unwrap();
@@ -761,6 +837,7 @@ fn known_untyped_is_distinct_from_unknown_type_or_storage() {
 fn positive_member_proc_does_not_require_opposite_namespace_absence() {
     let mut symbols = SymbolTable::default();
     symbols.intern("/datum/probe").unwrap();
+    symbols.intern("/datum/base").unwrap();
     for name in ["authored", "intrinsic", "verb_only", "unknown"] {
         symbols.intern(name).unwrap();
     }
@@ -798,14 +875,12 @@ fn positive_member_proc_does_not_require_opposite_namespace_absence() {
                 fingerprint: 2,
                 data: std::sync::Arc::new(Default::default()),
             },
-            Q::ProcedureValue {
-                owner,
-                name,
-                verb,
-                formal: true,
-            } if name == SymbolId::of("authored") || name == SymbolId::of("verb_only") => {
+            Q::MethodProcedureValue { owner, name, verb }
+                if owner == SymbolId::of("/datum/probe")
+                    && (name == SymbolId::of("authored") || name == SymbolId::of("verb_only")) =>
+            {
                 M::Value(dm_ir::SemanticValue::Procedure(dm_ir::ProcedureIdentity {
-                    owner,
+                    owner: SymbolId::of("/datum/base"),
                     name,
                     verb,
                     occurrence: 7,
@@ -829,7 +904,7 @@ fn positive_member_proc_does_not_require_opposite_namespace_absence() {
     assert_eq!(
         lookup.member_proc("/datum/probe", "authored").unwrap(),
         Some(dm_ir::SymRef::Proc {
-            owner: SymbolId::of("/datum/probe"),
+            owner: SymbolId::of("/datum/base"),
             name: SymbolId::of("authored"),
             occurrence: 7
         })
@@ -841,17 +916,12 @@ fn positive_member_proc_does_not_require_opposite_namespace_absence() {
     assert_eq!(host.reads.lock().unwrap().len(), 3);
     assert!(host.reads.lock().unwrap().iter().all(|query| matches!(
         query,
-        Q::Proc { verb: false, .. }
-            | Q::ProcedureValue {
-                verb: false,
-                formal: true,
-                ..
-            }
+        Q::Proc { verb: false, .. } | Q::MethodProcedureValue { verb: false, .. }
     )));
     assert_eq!(
         lookup.member_proc("/datum/probe", "verb_only").unwrap(),
         Some(dm_ir::SymRef::Verb {
-            owner: SymbolId::of("/datum/probe"),
+            owner: SymbolId::of("/datum/base"),
             name: SymbolId::of("verb_only"),
             occurrence: 7
         })

@@ -119,6 +119,50 @@ impl dm_ir::Resolver for SemanticTree {
                     })
                     .unwrap_or(M::Missing)
             }
+            Q::MethodProcedureValue { owner, name, verb } => {
+                let kind = if verb {
+                    MemberKind::Verb
+                } else {
+                    MemberKind::Proc
+                };
+                self.lookup_type(owner)
+                    .and_then(|id| self.resolve(id, name, kind))
+                    .and_then(|head| {
+                        // The chain is source-certified, including inherited
+                        // links and implicit-before-formal normalization. Use
+                        // the actual formal anchor, never receiver spelling or
+                        // a guessed occurrence zero.
+                        self.override_chain(head).into_iter().find(|id| {
+                            self.member(*id)
+                                .is_some_and(|node| node.definition == DefinitionMode::Declare)
+                        })
+                    })
+                    .and_then(|id| {
+                        let node = self.member(id)?;
+                        node.metadata.procedure.as_ref()?;
+                        let occurrence = self
+                            .override_chain(id)
+                            .into_iter()
+                            .filter(|previous| {
+                                self.member(*previous).is_some_and(|other| {
+                                    other.owner == node.owner
+                                        && other.name == node.name
+                                        && other.kind == node.kind
+                                })
+                            })
+                            .count()
+                            .checked_sub(1)?;
+                        Some(M::Value(dm_ir::SemanticValue::Procedure(
+                            dm_ir::ProcedureIdentity {
+                                owner: self.types[node.owner.index()].path,
+                                name: node.name,
+                                verb: node.kind == MemberKind::Verb,
+                                occurrence: u32::try_from(occurrence).ok()?,
+                            },
+                        )))
+                    })
+                    .unwrap_or(M::Missing)
+            }
             Q::GlobalVar(name) => member(root, name, MemberKind::Var),
             Q::GlobalProc(name) => member(root, name, MemberKind::Proc),
             Q::OverrideChain { owner, name, verb } => {
@@ -225,3 +269,7 @@ impl dm_ir::Resolver for SemanticTree {
         self.complete_answer(query, result)
     }
 }
+
+#[cfg(test)]
+#[path = "resolver_method_tests.rs"]
+mod method_tests;

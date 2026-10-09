@@ -1,0 +1,255 @@
+//! Compact procedure completion: discard rich IR on its producing worker.
+use super::*;
+use crate::debug_sources::DebugOrigins;
+use dm_codegen_byond::lower_resolver::ResolverProc;
+
+pub use crate::modified_initializers::PreparedSeed as PreparedModifiedSeed;
+pub struct PreparedContribution {
+    identity: UnitIdentity,
+    effective: bool,
+    contribution: parallel::Contribution,
+    required_types: Vec<SymbolId>,
+    modified_seeds: Vec<PreparedModifiedSeed>,
+}
+impl PreparedContribution {
+    pub(crate) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
+        self.contribution.census(census);
+        census.vec_payload("prepared_type_requests", &self.required_types);
+        census.vec_payload("prepared_modified_seeds", &self.modified_seeds);
+        for seed in &self.modified_seeds {
+            seed.census(census);
+        }
+    }
+
+    pub fn identity(&self) -> UnitIdentity {
+        self.identity
+    }
+    pub fn effective(&self) -> bool {
+        self.effective
+    }
+    pub fn required_types(&self) -> &[SymbolId] {
+        &self.required_types
+    }
+    pub fn modified_seeds(&self) -> &[PreparedModifiedSeed] {
+        &self.modified_seeds
+    }
+    pub fn take_modified_seeds(&mut self) -> Vec<PreparedModifiedSeed> {
+        std::mem::take(&mut self.modified_seeds)
+    }
+    pub fn take_required_types(&mut self) -> Vec<SymbolId> {
+        std::mem::take(&mut self.required_types)
+    }
+}
+fn sidecars(
+    code: &ResolverProc,
+    debug: &DebugOrigins,
+    symbols: &SymbolTable,
+    types: &mut Vec<SymbolId>,
+    seeds: &mut Vec<PreparedModifiedSeed>,
+) -> Result<(), IntegrationError> {
+    crate::required_types::append_code_requests(code, types, symbols)
+        .map_err(IntegrationError::InvalidInitializer)?;
+    let mut instances = Vec::new();
+    code.procedure.code.for_each_reference(|reference| {
+        if matches!(reference, SymRef::Instance(_)) {
+            instances.push(reference);
+        }
+    });
+    let mut seen = std::collections::BTreeSet::new();
+    for reference in instances {
+        let Some(captured) = code.modified_instances.get(&reference) else {
+            continue;
+        };
+        if !seen.insert(reference) {
+            continue;
+        }
+        seeds.push(
+            crate::modified_initializers::prepare_seed(reference, captured, debug)
+                .map_err(IntegrationError::InvalidInitializer)?,
+        );
+    }
+    Ok(())
+}
+pub fn prepare_contribution(
+    unit: LoweredUnit,
+    symbols: &SymbolTable,
+    source_bindings: &std::collections::BTreeSet<SymRef>,
+    external: &ReferenceBindings,
+    freeze_detail: bool,
+) -> Result<PreparedContribution, IntegrationError> {
+    let identity = unit.identity;
+    let effective = unit.effective;
+    let mut required_types = Vec::new();
+    let mut modified_seeds = Vec::new();
+    sidecars(
+        &unit.code,
+        &unit.debug_origins,
+        symbols,
+        &mut required_types,
+        &mut modified_seeds,
+    )?;
+    for helper in &unit.source_helpers {
+        sidecars(
+            &helper.code,
+            &helper.debug_origins,
+            symbols,
+            &mut required_types,
+            &mut modified_seeds,
+        )?;
+    }
+    let contribution =
+        parallel::freeze_unit(unit, symbols, source_bindings, external, freeze_detail)?;
+    if required_types.capacity() > required_types.len() {
+        required_types.shrink_to_fit();
+    }
+    if modified_seeds.capacity() > modified_seeds.len() {
+        modified_seeds.shrink_to_fit();
+    }
+    Ok(PreparedContribution {
+        identity,
+        effective,
+        contribution,
+        required_types,
+        modified_seeds,
+    })
+}
+/// Replay pre-frozen contributions in the same source order as ordinary lowering.
+pub fn link_prepared_artifact_tables(
+    contributions: Vec<PreparedContribution>,
+    symbols: &SymbolTable,
+    external: &ReferenceBindings,
+    mut inventory: LinkInventory,
+    initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
+) -> Result<FrozenBatch, IntegrationError> {
+    let mut units = Vec::with_capacity(contributions.len());
+    let mut helpers = Vec::new();
+    let mut source_bindings = std::collections::BTreeSet::new();
+    let mut string_inventory = StringInventory::new(&inventory);
+    for entry in &inventory.entries {
+        if let Key::Type(id) = entry.key {
+            let path = symbols
+                .text(id)
+                .ok_or(IntegrationError::MissingSpelling(id))?;
+            if SymbolId::of(path) != id {
+                return Err(IntegrationError::MissingSpelling(id));
+            }
+            source_bindings.insert(SymRef::Type(id));
+        }
+    }
+    let mut identities = std::collections::BTreeSet::new();
+    for unit in &contributions {
+        if !identities.insert(unit.identity) {
+            return Err(IntegrationError::DuplicateUnit(unit.identity));
+        }
+        if unit.effective {
+            source_bindings.insert(unit_reference(unit.identity));
+        }
+    }
+    for prepared in contributions {
+        prepared.contribution.replay(
+            &mut inventory,
+            &mut string_inventory,
+            symbols,
+            &mut units,
+            &mut helpers,
+        );
+    }
+    let freeze_detail =
+        std::env::var_os("DMB_PROFILE_FREEZE_DETAIL").is_some_and(|value| value == "1");
+    finish_frozen_inventory(
+        FrozenInventory {
+            inventory,
+            string_inventory,
+            units,
+            helpers,
+            source_bindings,
+        },
+        symbols,
+        external,
+        initialization,
+        freeze_detail,
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn consuming_early_freeze_matches_legacy_order_and_images() {
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &std::path::Path) -> Result<String, String> {
+                Ok(
+                    "/proc/first()\n    return \"first\"\n/proc/second()\n    return \"second\"\n"
+                        .into(),
+                )
+            }
+        }
+        struct Policy;
+        impl crate::lowering::AbiPolicy for Policy {
+            fn inputs(
+                &self,
+                _: UnitIdentity,
+                _: &dm_ir::ProcedureMetadata,
+                _: &SymbolTable,
+                _: &dm_tree::frontend::SourceLocation,
+            ) -> Result<dm_codegen_byond::ProcedureInputs, String> {
+                Ok(Default::default())
+            }
+        }
+        let frontend = dm_tree::frontend::build(
+            std::path::Path::new("project.dme"),
+            &Source,
+            &Default::default(),
+            1,
+        )
+        .unwrap();
+        let tree = frontend.snapshot.tree.as_ref();
+        let batch = crate::lowering::lower_frontend(&frontend, tree, &Policy, Default::default());
+        assert!(batch.diagnostics.is_empty());
+        let external = ReferenceBindings::default();
+        let legacy = freeze_and_link_tables(
+            crate::lowering::LoweringBatch {
+                units: batch.units.clone(),
+                diagnostics: Vec::new(),
+            },
+            tree.symbols(),
+            &external,
+            LinkInventory::default(),
+        )
+        .unwrap();
+        let bindings = batch
+            .units
+            .iter()
+            .filter(|unit| unit.effective)
+            .map(|unit| unit_reference(unit.identity))
+            .collect();
+        let prepared = batch
+            .units
+            .into_iter()
+            .map(|unit| {
+                prepare_contribution(unit, tree.symbols(), &bindings, &external, false).unwrap()
+            })
+            .collect();
+        let early = link_prepared_artifact_tables(
+            prepared,
+            tree.symbols(),
+            &external,
+            LinkInventory::default(),
+            Vec::new(),
+        )
+        .unwrap();
+        assert_eq!(legacy.tables.assignments(), early.tables.assignments());
+        assert_eq!(legacy.units.len(), early.units.len());
+        for index in 0..legacy.units.len() {
+            assert_eq!(
+                legacy.units[index].lowered.identity,
+                early.units[index].lowered.identity
+            );
+            assert_eq!(
+                legacy.link_unit(index, &SourceBindings::default()).unwrap(),
+                early.link_unit(index, &SourceBindings::default()).unwrap()
+            );
+        }
+    }
+}

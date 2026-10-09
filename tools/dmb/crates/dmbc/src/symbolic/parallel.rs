@@ -1,19 +1,15 @@
 //! Bounded immutable unit freezing with deterministic ordered inventory replay.
 use super::*;
 
-enum Op {
-    Slot(SlotAlias),
-    Entry(Entry),
-}
 #[derive(Default)]
-struct Ops(Vec<Op>);
-impl InventorySink for Ops {
+struct Slots(Vec<SlotAlias>);
+impl InventorySink for Slots {
     // Freezing emits only procedure.strings (see freezing.rs). Retain that
     // exact ordered roster by moving its buffers after successful validation,
     // rather than copying every occurrence into an Arc before deduplication.
     fn string(&mut self, _id: SymbolId, _bytes: &[u8]) {}
     fn slot(&mut self, alias: SlotAlias) {
-        self.0.push(Op::Slot(alias));
+        self.0.push(alias);
     }
 }
 struct OwnedStrings(Vec<dm_ir::StringPayload>);
@@ -30,15 +26,62 @@ impl OwnedStrings {
 struct HelperContribution {
     helper: FrozenHelper,
     strings: OwnedStrings,
-    ops: Ops,
+    slots: Slots,
+    content: Arc<[u8]>,
 }
 pub(super) struct Contribution {
     unit: FrozenUnit,
     strings: OwnedStrings,
     helpers: Vec<HelperContribution>,
-    ops: Ops,
+    slots: Slots,
+    content: Arc<[u8]>,
+}
+fn compact_vec<T>(values: &mut Vec<T>) {
+    if values.capacity() > values.len() {
+        values.shrink_to_fit();
+    }
+}
+fn compact_names(values: &mut Vec<String>) {
+    for value in values.iter_mut() {
+        if value.capacity() > value.len() {
+            value.shrink_to_fit();
+        }
+    }
+    compact_vec(values);
 }
 impl Contribution {
+    /// Only retained completion payloads are compacted; discarded rich IR is untouched.
+    fn compact_retained(&mut self) {
+        let frame = &mut self.unit.lowered.frame;
+        compact_names(&mut frame.local_names);
+        compact_names(&mut frame.argument_names);
+        compact_vec(&mut frame.argument_type_flags);
+        compact_vec(&mut self.unit.lowered.debug_origins.entries);
+        compact_vec(&mut self.strings.0);
+        compact_vec(&mut self.slots.0);
+        for helper in &mut self.helpers {
+            compact_names(&mut helper.helper.local_names);
+            compact_vec(&mut helper.helper.debug_origins.entries);
+            compact_vec(&mut helper.strings.0);
+            compact_vec(&mut helper.slots.0);
+        }
+        compact_vec(&mut self.helpers);
+    }
+
+    pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
+        census.prepared_unit(&self.unit);
+        census.prepared_strings(&self.strings.0);
+        census.vec_payload("prepared_inventory.slots", &self.slots.0);
+        census.prepared_entry_bytes(&self.content);
+        census.vec_payload("prepared_helpers", &self.helpers);
+        for helper in &self.helpers {
+            census.prepared_helper(&helper.helper);
+            census.prepared_strings(&helper.strings.0);
+            census.vec_payload("prepared_inventory.slots", &helper.slots.0);
+            census.prepared_entry_bytes(&helper.content);
+        }
+    }
+
     pub(super) fn replay(
         self,
         inventory: &mut LinkInventory,
@@ -62,39 +105,45 @@ impl Contribution {
             );
         }
         append_debug_inventory(&self.unit.lowered.debug_origins, inventory, strings);
-        replay_ops(self.ops, inventory);
+        replay_inventory(
+            self.slots,
+            unit_key(self.unit.lowered.identity),
+            self.content,
+            inventory,
+        );
         units.push(self.unit);
         for contribution in self.helpers {
             contribution.strings.replay(inventory, strings);
             append_debug_inventory(&contribution.helper.debug_origins, inventory, strings);
-            replay_ops(contribution.ops, inventory);
+            replay_inventory(
+                contribution.slots,
+                helper_key(contribution.helper.owner, contribution.helper.argument),
+                contribution.content,
+                inventory,
+            );
             helpers.push(contribution.helper);
         }
     }
 }
-fn replay_ops(ops: Ops, inventory: &mut LinkInventory) {
-    for op in ops.0 {
-        match op {
-            Op::Slot(alias) => inventory.slots.push(alias),
-            Op::Entry(entry) => inventory.entries.push(entry),
-        }
-    }
+fn replay_inventory(slots: Slots, key: Key, content: Arc<[u8]>, inventory: &mut LinkInventory) {
+    inventory.slots.extend(slots.0);
+    inventory.entries.push(Entry { key, content });
 }
-fn freeze_unit(
+pub(super) fn freeze_unit(
     mut lowered: LoweredUnit,
     symbols: &SymbolTable,
     source_bindings: &std::collections::BTreeSet<SymRef>,
     external: &ReferenceBindings,
     freeze_detail: bool,
 ) -> Result<Contribution, IntegrationError> {
-    let mut ops = Ops::default();
+    let mut slots = Slots::default();
     let mut helpers = Vec::new();
     let frozen = freezing::freeze_artifact_to_sink(
         &lowered.code,
         lowered.identity,
         source_bindings,
         external,
-        &mut ops,
+        &mut slots,
         freeze_detail,
     )?;
     for id in [lowered.identity.owner, lowered.identity.name] {
@@ -104,10 +153,7 @@ fn freeze_unit(
     }
     // Exact frozen code content is known. Remaining proc metadata belongs
     // to explicit emitter policy, separately retained in LoweredUnit.
-    ops.0.push(Op::Entry(Entry {
-        key: unit_key(lowered.identity),
-        content: procedure_content(&lowered, &frozen.code().canonical_bytes()),
-    }));
+    let content = procedure_content(&lowered, &frozen.code().canonical_bytes());
     let strings = OwnedStrings::take(&mut lowered.code.procedure);
     for mut helper in std::mem::take(&mut lowered.source_helpers) {
         if helper.owner != lowered.identity || !helper.code.procedure.argument_names.is_empty() {
@@ -116,16 +162,15 @@ fn freeze_unit(
                 message: "invalid companion owner/formal frame".into(),
             });
         }
-        let mut helper_ops = Ops::default();
+        let mut helper_slots = Slots::default();
         let frozen_helper = freezing::freeze_artifact_to_sink(
             &helper.code,
             helper.owner,
             source_bindings,
             external,
-            &mut helper_ops,
+            &mut helper_slots,
             freeze_detail,
         )?;
-        let key = helper_key(helper.owner, helper.argument);
         let mut content = b"dm-argument-source-v1\0".to_vec();
         let code = frozen_helper.code().canonical_bytes();
         content.extend_from_slice(&(code.len() as u64).to_le_bytes());
@@ -134,14 +179,11 @@ fn freeze_unit(
             content.extend_from_slice(&(name.len() as u64).to_le_bytes());
             content.extend_from_slice(name.as_bytes());
         }
-        helper_ops.0.push(Op::Entry(Entry {
-            key,
-            content: content.into(),
-        }));
         let helper_strings = OwnedStrings::take(&mut helper.code.procedure);
         helpers.push(HelperContribution {
             strings: helper_strings,
-            ops: helper_ops,
+            slots: helper_slots,
+            content: content.into(),
             helper: FrozenHelper {
                 owner: helper.owner,
                 argument: helper.argument,
@@ -159,12 +201,15 @@ fn freeze_unit(
         frozen: Arc::new(frozen),
         current_image: None,
     };
-    Ok(Contribution {
+    let mut contribution = Contribution {
         unit,
         strings,
         helpers,
-        ops,
-    })
+        slots,
+        content,
+    };
+    contribution.compact_retained();
+    Ok(contribution)
 }
 
 /// At most one outstanding owned unit per worker; results cannot accumulate a
@@ -300,5 +345,37 @@ mod tests {
             Key::String(SymbolId::of("literal"))
         );
         assert_eq!(inventory.entries[1].content.as_ref(), &[0xff, 0x16, b'X']);
+    }
+}
+
+#[cfg(test)]
+mod inventory_tests {
+    use super::*;
+    #[test]
+    fn compact_inventory_preserves_slots_and_exact_entry_content() {
+        let first = SlotAlias {
+            symbol: SymbolId::of("slot-a"),
+            owner: SymbolId::of("/datum/a"),
+            name: SymbolId::of("a"),
+        };
+        let second = SlotAlias {
+            symbol: SymbolId::of("slot-b"),
+            owner: SymbolId::of("/datum/b"),
+            name: SymbolId::of("b"),
+        };
+        let key = unit_key(UnitIdentity {
+            owner: SymbolId::of("/datum/a"),
+            name: SymbolId::of("run"),
+            namespace: Namespace::Proc,
+            occurrence: 7,
+        });
+        let content: Arc<[u8]> = Arc::from(&b"exact retained content"[..]);
+        let original = Arc::clone(&content);
+        let mut inventory = LinkInventory::default();
+        replay_inventory(Slots(vec![first, second]), key, content, &mut inventory);
+        assert_eq!(inventory.slots, vec![first, second]);
+        assert_eq!(inventory.entries.len(), 1);
+        assert_eq!(inventory.entries[0].key, key);
+        assert!(Arc::ptr_eq(&inventory.entries[0].content, &original));
     }
 }

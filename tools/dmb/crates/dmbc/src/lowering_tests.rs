@@ -44,3 +44,12 @@ mod semantics;
 
 #[path = "lowering_tests/body_arena.rs"]
 mod body_arena;
+
+#[path = "lowering_tests/inherited_call_capture.rs"]
+mod inherited_call_capture;
+
+#[path = "lowering_tests/completion.rs"]
+mod completion;
+
+#[path = "lowering_tests/disk_only.rs"]
+mod disk_only;

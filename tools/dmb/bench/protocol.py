@@ -21,6 +21,13 @@ if _evidence_spec is None or _evidence_spec.loader is None:
 structural_evidence = importlib.util.module_from_spec(_evidence_spec)
 _evidence_spec.loader.exec_module(structural_evidence)
 
+
+_cached_spec = importlib.util.spec_from_file_location("dmb_cached_scenarios", Path(__file__).with_name("cached_scenarios.py"))
+if _cached_spec is None or _cached_spec.loader is None:
+    raise ImportError("cannot load cached scenario protocol")
+cached_scenarios = importlib.util.module_from_spec(_cached_spec)
+_cached_spec.loader.exec_module(cached_scenarios)
+
 MARKER = ".dmb-benchmark-owned.json"
 MIN_FREE = 25 * 1024**3
 STRUCTURAL_CATEGORIES = frozenset(("type_set", "type_headers", "variable_defaults", "procedure_table", "procedure_flags", "globals", "strings_by_use", "bytecode", "other"))
@@ -120,8 +127,8 @@ def authenticate_replay_closure(h, root, scenario, journal, byond_pin):
     """Admit only harness-enforced cold replay; payload verification stays in Rust."""
     if journal is None:
         return {"mode": "full_physical_source_sha256", "pinned": {}}
-    if scenario["name"] not in ("cold", "cold-body-edit") or scenario.get("edits"):
-        raise ValueError("journal-only closure requires no-cache cold replay without live edits")
+    if scenario["name"] not in {"cold", "cold-body-edit", *cached_scenarios.SEQUENCE} or scenario.get("edits"):
+        raise ValueError("journal-only closure requires authenticated replay without live edits")
     journal = Path(journal).resolve()
     index_path, checksum_path = journal / "index.json", journal / "index.hash"
     digest = h.sha(index_path)
@@ -452,6 +459,14 @@ def protocol_quality(h, row, stage_map):
     return errors
 
 
+def comparison_stage_map_paths(args):
+    # Self comparison runs the current binary twice. A supplied historical map
+    # must not attach the previous topology to that same current executable.
+    previous = args.stage_map if args.self_comparison else (
+        getattr(args, "previous_stage_map", None) or args.stage_map)
+    return {"A": previous, "B": args.stage_map}
+
+
 def execute(h, args):
     root = args.project_root.resolve()
     output = require_e(args.output)
@@ -467,7 +482,7 @@ def execute(h, args):
     scenarios = json.loads(args.scenarios.read_text(encoding="utf-8"))
     if not scenarios or len({value["name"] for value in scenarios}) != len(scenarios):
         raise ValueError("scenario names must be unique and nonempty")
-    if any(value["name"] not in set(h.TARGETS) | {"cold-body-edit"} for value in scenarios):
+    if any(value["name"] not in set(h.TARGETS) | {"cold-body-edit", *cached_scenarios.SEQUENCE} for value in scenarios):
         raise ValueError("unknown benchmark scenario")
     forbidden = {"--workers", "--trace", "--verify", "--record-inputs", "--replay-inputs",
                  "--artifact-directory", "--no-cache", "--output-store"}
@@ -481,19 +496,20 @@ def execute(h, args):
         scenario["_semantic_configuration"] = configuration
         scenario["_configuration_evidence"] = evidence
         scenario["_engine_path"] = engine_path
-        if scenario["name"] == "cold-body-edit":
+        if scenario["name"] in {"cold-body-edit", *cached_scenarios.EDITED}:
             edit_spec = importlib.util.spec_from_file_location("dmb_edited_snapshot", Path(__file__).with_name("edited_snapshot.py"))
             edit_module = importlib.util.module_from_spec(edit_spec)
             edit_spec.loader.exec_module(edit_module)
             scenario["_edited_snapshot"] = edit_module.authenticate(h, scenario, args.input_journal, byond_pin)
             if h.sha(Path(scenario.get("byond_dmb", args.byond_dmb))) != byond_pin.get("dmb_sha256"):
                 raise ValueError("edited BYOND output hash mismatch")
-        elif scenario["name"] != "cold":
+        elif scenario["name"] not in {"cold", *cached_scenarios.PARENT}:
             raise ValueError("revision6 initial cohort supports cold only; authenticated resident/edit warm-up protocol is not yet implemented")
         journal = scenario.get("input_journal", args.input_journal)
         scenario["_closure_validation"] = authenticate_replay_closure(h, root, scenario, journal, byond_pin)
         if args.input_journal and scenario.get("edits"):
             raise ValueError("captured replay edits require a separately pinned scenario journal")
+    cached_scenarios.validate(scenarios, args.input_journal, args.worker_counts)
     free = free_space(output, args.min_free_bytes)
     free_space(cache, args.min_free_bytes)
     output = owned_directory(output, output.parent)
@@ -506,7 +522,7 @@ def execute(h, args):
     warmup = warm_inputs(h, root, expected, Path(initial_journal) if initial_journal else None)
     methodology = {Path(__file__).with_name(name).resolve(): h.sha(Path(__file__).with_name(name))
                    for name in ("dmb-bench.py", "protocol.py", "semantic_configuration.py",
-                                "edited_snapshot.py", "closed_links.py", "structural_evidence.py", "watchdog.py")}
+                                "edited_snapshot.py", "cached_scenarios.py", "closed_links.py", "structural_evidence.py", "watchdog.py")}
     cohort = {"schema": 2, "measurement_revision": 6, "schedule": "ABABAB",
               "comparison": "self_noise_floor" if args.self_comparison else "previous_vs_new",
               "benchmark_methodology_sha256": {str(path): digest for path, digest in methodology.items()},
@@ -523,9 +539,20 @@ def execute(h, args):
                  args.byond_snapshot.resolve(), *[tool["path"] for tool in tools.values()]}
     if args.input_journal:
         protected.add(args.input_journal.resolve())
-    stage_map = json.loads(args.stage_map.read_text()) if args.stage_map else {}
-    if args.stage_map:
-        protected.add(args.stage_map.resolve())
+    map_paths = comparison_stage_map_paths(args)
+    stage_maps = {}
+    map_provenance = {}
+    for label, path in map_paths.items():
+        stage_maps[label] = json.loads(path.read_text(encoding="utf-8-sig")) if path else {}
+        map_provenance[label] = {"compiler_sha256": tools[label]["sha256"],
+                                 "path": str(path.resolve()) if path else None,
+                                 "sha256": h.sha(path) if path else None,
+                                 "domains": stage_maps[label],
+                                 "coverage_policy": "exact_declared_critical_chain_once"}
+        if path:
+            protected.add(path.resolve())
+    cohort["stage_maps"] = map_provenance
+    write(output / "receipt.json", cohort)
     if args.structural_baseline:
         protected.add(args.structural_baseline.resolve())
     if args.native_baseline:
@@ -642,7 +669,7 @@ def execute(h, args):
                         row = {"schema": h.SCHEMA, "kind": "run", "measurement_revision": 6,
                                "commit": snapshot["commit"], "compiler_sha256": tool["sha256"],
                                "compiler_metadata": tool["metadata"], "comparison_label": label,
-                               "scenario": scenario["name"], "workers": workers, "repeat": repeat+1,
+                               "scenario": scenario["name"], "cache_protocol": scenario.get("_cache_protocol"), "workers": workers, "repeat": repeat+1,
                                "wall_s": wall, "exit_code": code, "status": "watchdog" if timeout else "verified" if verified else "failed",
                                "oracle": "passed" if verified else "not_passed", "snapshot_id": snapshot_id,
                                "source_closure_validation": {key: value for key, value in scenario["_closure_validation"].items() if key != "pinned"},
@@ -658,15 +685,20 @@ def execute(h, args):
                                "unmeasured_warmup": run_warmup,
                                "source_edit_provenance": scenario.get("_edited_snapshot", {}).get("provenance"),
                                **profile_measurement(report, wall)}
+                        row["stage_map"] = map_provenance[label]
                         row["allocation_counting"] = report.get("allocation_counting", False)
                         if row["allocation_counting"] != (args.binary_mode == "counting"):
                             row["profile_error"] = "binary allocation mode disagrees with pinned profile metadata"
                         write(directory / "receipt.json", row)
                         collected[(label, workers, scenario["name"])].append(row)
-                        row["measurement_errors"] = h.cpu_quality(row) + protocol_quality(h, row, stage_map)
+                        row["measurement_errors"] = h.cpu_quality(row) + protocol_quality(h, row, stage_maps[label])
                         row["measurement_admission"] = "passed" if verified and not row["measurement_errors"] and diff.get("structural_measurement_admission") == "passed" else "failed"
                         passed = row["measurement_admission"] == "passed" and diff.get("no_regression") in ("passed", "baseline_established")
                         row["phase0_admission"] = "passed" if passed else "failed"
+                        if scenario["name"] in cached_scenarios.SEQUENCE:
+                            row["performance_admission"] = "not_admitted_diagnostic_disk_cache_trace"
+                            row["cache_sequence_admission"] = "passed" if passed else "failed"
+
                         write(directory / "receipt.json", row)
                         h.append(args.results, row)
                         failed |= not passed
@@ -674,8 +706,16 @@ def execute(h, args):
                             cleanup_verified_outputs(h, directory, row, protected)
                             retention = trim_complete_evidence(h, output, protected)
                             write(output / "retention.json", retention)
+                        if scenario["name"] in cached_scenarios.SEQUENCE and not passed:
+                            # Later phases cannot claim a populated parent cache
+                            # after a failed population/oracle/admission boundary.
+                            cohort.setdefault("aborted_cache_sequences", []).append({
+                                "compiler": label, "workers": workers, "repeat": repeat + 1,
+                                "failed_phase": scenario["name"], "remaining_phases_not_run": True})
+                            write(output / "receipt.json", cohort)
+                            break
                     round_rows = [rows[-1] for (key_label, key_workers, _), rows in collected.items()
-                                  if key_label == label and key_workers == workers and rows]
+                                  if key_label == label and key_workers == workers and rows and rows[-1]["repeat"] == repeat + 1]
                     cleanup = cleanup_completed_round(round_cache, cache, round_rows, len(scenarios), protected)
                     if cleanup is not None:
                         cohort.setdefault("round_cache_cleanup", []).append(cleanup)
@@ -683,19 +723,23 @@ def execute(h, args):
                     free_space(output, args.min_free_bytes)
         summaries = []
         for (label, workers, name), rows in collected.items():
-            if name == "cold-body-edit":
+            if name in cached_scenarios.SEQUENCE:
+                acceptance, reasons = "diagnostic_only", ["fresh CLI disk-cache trace; performance targets not admitted"]
+            elif name == "cold-body-edit":
                 acceptance, reasons = "diagnostic_only", ["edited-source cold trace; no incremental latency target"]
             elif args.binary_mode == "acceptance" and workers == 8:
-                acceptance, reasons = h.gate(name, rows, [], stage_map)
+                acceptance, reasons = h.gate(name, rows, [], stage_maps[label])
             else:
                 acceptance, reasons = "diagnostic_only", []
             io_acceptance, io_reasons = h.io_gate(name, rows)
+            if name in cached_scenarios.SEQUENCE:
+                io_acceptance, io_reasons = "diagnostic_only", ["disk-cache cohort has no admitted I/O target"]
             summary = {"schema": h.SCHEMA, "kind": "median", "measurement_revision": 6,
                        "compiler_sha256": tools[label]["sha256"], "comparison_label": label,
                        "comparison": cohort["comparison"], "commit": snapshot["commit"], "scenario": name,
                        "workers": workers, "runs": len(rows), "acceptance": acceptance, "reasons": reasons,
-                       "measurement_admission": "passed" if all(row["measurement_admission"] == "passed" for row in rows) else "failed",
-                       "structural_no_regression": "passed" if all(row["structural_diff"].get("no_regression") in ("passed", "baseline_established") for row in rows) else "failed",
+                       "measurement_admission": "passed" if len(rows) == 3 and all(row["measurement_admission"] == "passed" for row in rows) else "incomplete_or_failed",
+                       "structural_no_regression": "passed" if len(rows) == 3 and all(row["structural_diff"].get("no_regression") in ("passed", "baseline_established") for row in rows) else "failed",
                        "io_acceptance": io_acceptance, "io_reasons": io_reasons, **h.medians(rows)}
             h.append(args.results, summary)
             summaries.append(summary)

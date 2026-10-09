@@ -6,7 +6,7 @@ use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver, SymbolTable};
 use dm_tree::{frontend::ColdFrontend, maps::MapPlan};
 use std::{cell::RefCell, collections::BTreeMap, sync::Arc};
 struct Origins<'a> {
-    path: &'a str,
+    path: &'a Arc<str>,
     line_starts: &'a [usize],
     source_length: usize,
     entry: usize,
@@ -54,7 +54,7 @@ impl DebugOriginProvider for Origins<'_> {
         }
         let line = self.line_starts.partition_point(|start| *start <= offset);
         Ok(DebugOrigin {
-            semantic_path: self.path.to_owned(),
+            semantic_path: self.path.clone(),
             line: u32::try_from(line).map_err(|_| "map debug line overflow")?,
         })
     }

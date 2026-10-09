@@ -3,6 +3,8 @@
 mod constants;
 #[path = "intrinsic_methods.rs"]
 mod intrinsic_methods;
+mod pinned_facts;
+pub use pinned_facts::{PinnedHostFacts, PinnedSource};
 use dm_ir::{
     ResolveQuery as Q, ResolvedMeaning as M, Resolver, SemanticValue, SymbolId, SymbolTable,
 };

@@ -56,35 +56,10 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
     let node = tree
         .member(body.member)
         .ok_or_else(|| error(None, "body member missing from immutable tree".into()))?;
-    let owner = tree
-        .type_node(node.owner)
-        .ok_or_else(|| error(None, "body owner missing from immutable tree".into()))?
-        .path;
-    let namespace = match node.kind {
-        MemberKind::Proc => Namespace::Proc,
-        MemberKind::Verb => Namespace::Verb,
-        MemberKind::Var => return Err(error(None, "variable cannot own a procedure body".into())),
-    };
-    let occurrence = tree
-        .override_chain(body.member)
-        .iter()
-        .filter(|id| {
-            tree.member(**id).is_some_and(|previous| {
-                previous.owner == node.owner
-                    && previous.kind == node.kind
-                    && previous.name == node.name
-            })
-        })
-        .count()
-        - 1;
-    let occurrence = u32::try_from(occurrence)
-        .map_err(|_| error(None, "procedure occurrence exceeds u32".into()))?;
-    let identity = UnitIdentity {
-        owner,
-        name: node.name,
-        namespace,
-        occurrence,
-    };
+    let source_identity =
+        source_unit_identity(frontend, body).map_err(|message| error(None, message))?;
+    let identity = source_identity.identity;
+    let owner = identity.owner;
     let unsupported = |message| {
         vec![LoweringDiagnostic {
             kind: DiagnosticKind::UnsupportedModel,
@@ -193,7 +168,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
     inputs.current_proc_path = Some(format!(
         "{}/{}/{}",
         owner_text.trim_end_matches('/'),
-        if namespace == Namespace::Verb {
+        if identity.namespace == Namespace::Verb {
             "verb"
         } else {
             "proc"
@@ -278,7 +253,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
     };
     Ok(LoweredUnit {
         identity,
-        effective: tree.resolve(node.owner, node.name, node.kind) == Some(body.member),
+        effective: source_identity.effective,
         origin: body.clone(),
         code,
         metadata: Arc::clone(metadata),

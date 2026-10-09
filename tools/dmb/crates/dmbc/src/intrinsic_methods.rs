@@ -11,6 +11,18 @@ pub(super) struct IntrinsicMethods {
 }
 
 impl IntrinsicMethods {
+    pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
+        let owner = "host.intrinsic_methods";
+        census.collection_entries::<((SymbolId, SymbolId), Arc<[u8]>)>(
+            owner,
+            &self.methods as *const _ as usize,
+            self.methods.len(),
+        );
+        for bytes in self.methods.values() {
+            census.slice(owner, bytes, true);
+        }
+    }
+
     pub(super) fn capture(
         source: Arc<dm_tree::SemanticTree>,
         catalog: &serde_json::Value,
@@ -43,10 +55,12 @@ impl IntrinsicMethods {
             // These exact native receiver-call controls certify procedure
             // presence even though the catalog retains opaque implementation
             // bytes. Those bytes are never lowered or used as an ABI signature.
-            let observed_receiver = matches!(
-                (owner, name),
-                ("/client", "MeasureText") | ("/atom", "Enter" | "Uncross")
-            );
+            let observed_receiver =
+                matches!(
+                    (owner, name),
+                    ("/client", "MeasureText") | ("/atom", "Enter" | "Uncross")
+                ) || crate::native_callbacks::lookup(SymbolId::of(owner), SymbolId::of(name))
+                    .is_some_and(|fact| fact.kind == dm_tree::MemberKind::Proc);
             if !observed_receiver
                 && (record["Bytecode"].as_str() != Some("")
                     || !record["SourceInfo"]
@@ -90,7 +104,8 @@ impl IntrinsicMethods {
     }
     pub(super) fn resolve(&self, query: ResolveQuery) -> Option<ResolvedMeaning> {
         let (owner, name, verb) = match query {
-            ResolveQuery::Proc { owner, name, verb } => (owner, name, Some(verb)),
+            ResolveQuery::Proc { owner, name, verb }
+            | ResolveQuery::MethodProcedureValue { owner, name, verb } => (owner, name, Some(verb)),
             ResolveQuery::HasMemberProc { owner, name } => (owner, name, None),
             _ => return None,
         };
@@ -123,6 +138,43 @@ impl IntrinsicMethods {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn certified_callbacks_admit_opaque_bodies_without_source_occurrences() {
+        let engine = crate::engine::EngineSnapshot::from_bytes(
+            include_bytes!("../../../fixtures/native_template.bin"),
+            1,
+        )
+        .unwrap()
+        .with_bootstrap_catalog()
+        .unwrap();
+        let source = Arc::new(engine.build_tree(engine.symbols().clone(), &[]).unwrap());
+        let catalog = serde_json::from_slice(include_bytes!(
+            "../../../fixtures/native_template_nativebuiltins_5161687.json"
+        ))
+        .unwrap();
+        let methods = IntrinsicMethods::capture(source, &catalog).unwrap();
+        for (owner, name) in [
+            ("/atom/movable", "Move"),
+            ("/client", "Click"),
+            ("/atom", "Exit"),
+            ("/atom", "Cross"),
+        ] {
+            let owner = SymbolId::of(owner);
+            let name = SymbolId::of(name);
+            assert!(
+                matches!(methods.resolve(ResolveQuery::MethodProcedureValue { owner, name, verb: false }),
+                Some(ResolvedMeaning::IntrinsicProc { declaring_owner, name: selected }) if declaring_owner == owner && selected == name)
+            );
+            assert!(methods
+                .resolve(ResolveQuery::ProcedureValue {
+                    owner,
+                    name,
+                    verb: false,
+                    formal: true
+                })
+                .is_none());
+        }
+    }
     #[test]
     fn native_receiver_calls_admit_only_exact_opaque_catalog_methods() {
         use sha2::{Digest, Sha256};
@@ -160,10 +212,10 @@ mod tests {
         let image =
             byond_dmb::dmb::Dmb::from_bytes(&std::fs::read(root.join("probe.native.bin")).unwrap())
                 .unwrap();
-        for (index, owner, name, selector) in [
-            (0, "/client", "MeasureText", 293),
-            (1, "/atom", "Enter", 2),
-            (2, "/atom/movable", "Uncross", 232),
+        for (index, owner, name, selector, expected_owner) in [
+            (0, "/client", "MeasureText", 293, "/client"),
+            (1, "/atom", "Enter", 2, "/atom"),
+            (2, "/atom/movable", "Uncross", 232, "/atom"),
         ] {
             assert_eq!(image.string(selector), Some(name.as_bytes()));
             let words = image.proc_code_words(index).unwrap();
@@ -179,6 +231,24 @@ mod tests {
                 }),
                 Some(ResolvedMeaning::IntrinsicProc { .. })
             ));
+            assert!(matches!(
+                methods.resolve(ResolveQuery::MethodProcedureValue {
+                    owner: SymbolId::of(owner),
+                    name: SymbolId::of(name),
+                    verb: false
+                }),
+                Some(ResolvedMeaning::IntrinsicProc { declaring_owner, name: captured })
+                    if declaring_owner == SymbolId::of(expected_owner) && captured == SymbolId::of(name)
+            ));
+            // Source literal paths cannot acquire an invented native body.
+            assert!(methods
+                .resolve(ResolveQuery::ProcedureValue {
+                    owner: SymbolId::of(owner),
+                    name: SymbolId::of(name),
+                    verb: false,
+                    formal: true
+                })
+                .is_none());
         }
     }
     #[test]

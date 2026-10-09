@@ -197,6 +197,7 @@ impl SemanticTree {
             | Q::ProcedureValue {
                 owner, name, verb, ..
             }
+            | Q::MethodProcedureValue { owner, name, verb }
             | Q::OverrideChain { owner, name, verb } => Some((
                 owner,
                 name,

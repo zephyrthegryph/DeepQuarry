@@ -88,6 +88,15 @@ pub enum ResolveQuery {
         path: SymbolId,
         search_context: u128,
     },
+    // Append new variants: persisted serde enum indices must remain stable.
+    /// Runtime method dispatch anchors to the nearest inherited source formal,
+    /// which may belong to an ancestor of the selected receiver declaration.
+    /// Unlike a literal path, this does not require an own formal declaration.
+    MethodProcedureValue {
+        owner: SymbolId,
+        name: SymbolId,
+        verb: bool,
+    },
 }
 
 impl ResolveQuery {

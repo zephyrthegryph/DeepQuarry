@@ -24,7 +24,7 @@ not a benchmark of current master or warm edits.
 Evidence: `E:/dmb-native-v2-phase0/r6-cohorts/self-pool-20261008-193650/`.
 Source archive: `042a29a6d88ac48bd9d274a91fff4a78281b36d446457281298e80a3377eed3c`.
 
-## Implemented candidate awaiting output benchmark — 8 October, 20:43
+## Implemented candidate awaiting output benchmark â€” 8 October, 20:43
 
 Typed `SymRef` operands and numeric branch IDs now flow directly through lowering,
 encoding and linking; exact binary string payloads share an interned roster.
@@ -49,8 +49,34 @@ all compiler libraries are green. No DreamDaemon or DM test runs were made.
 
 Frozen source archive:
 `848b95d470abb6ea37232ae997077dff0201944e4edf2ffcfdd7e1ba9fe240cc`.
-Release build and full output comparison are pending. These changes are outside
-the accepted pool benchmark above; no speedup or memory reduction is claimed yet.
+The native method fixes now compile the complete captured DeepQuarry project.
+The unoptimized diagnostic succeeded in 207.38 s; the frozen release diagnostic
+with heap census succeeded in 32.56 s using the default worker stack. These are
+successful output diagnostics, not accepted throughput comparisons. The new
+ABABAB comparison is running against the previous accepted compiler. Its first
+control run passed the fresh output oracle but failed stage-mapping accounting;
+the independent CPU ratio bounds passed. Measurement admission remains failed
+until that accounting issue is explained; no tolerances have been relaxed.
+
+1,456 ordinary workspace library tests passed after the method/provider/publication
+fixes (8 October, 21:43), and release all-target Clippy passed. New early-freeze,
+capacity-compaction and shared-debug-path changes are implemented but await their
+own validation; those changes are excluded from the frozen benchmark candidate.
+The retained frontend census fell from 596.6 MiB to 557.5 MiB after macro-trace
+compaction; process peak-memory improvement remains unmeasured.
+
+Frozen candidate archive:
+`f17e02dc6c0feac78151c77a5ac910f7654c5d2991c43d3f05e03fec437ca9b9`.
+Compiler SHA-256:
+`d734d632386c127ee457db74eb110657aecf5445c801cc27728dab1dcb4ef860`.
+Evidence: `E:/dq-cache/dmb-native-v2/census-20261008-214351/` and
+`E:/dmb-native-v2-phase0/r6-cohorts/compare-throughput-20261008-214351/`.
+No accepted speedup or process-memory reduction is claimed yet.
+
+Changed requests still reconstruct the frontend, scalar facts and linked image.
+Disk procedure/expansion/map memos are present, but a retained daemon session
+pipeline is not implemented. The accepted 20.93 s figure is a full build, not
+an unchanged or minimal-edit measurement. Phase 2 edit targets remain open.
 
 Updated 8 October 2026. Binding plan: DESIGN.md revision 6.
 
@@ -189,3 +215,36 @@ The acceptance candidate is being frozen for the whole-program comparison.
 
 Structured evidence: `phase0/results.jsonl` and `bench/results.jsonl`.
 Earlier narratives: [r5 close-out archive](archive/STATUS-r5-closeout.md).
+
+## 8 October: consuming procedure completion
+
+The production worker now lowers, captures its memo receipt, and consumes each
+procedure into its typed frozen contribution before returning. The coordinator
+retains compact contributions rather than the whole rich instruction forest.
+Required-type admission and modified-instance discovery use the same ordered
+collectors as the compatibility path; source bindings and prepared initializer
+sidecars are released or moved at their last use. Fresh CLI memo storage now
+keeps disk publication/replay but skips request-local resident RichIR clones.
+
+The full captured DeepQuarry diagnostic completed successfully in 205.58 seconds
+using the unoptimized diagnostic binary and heap census. This is **not** an
+acceptance speed measurement. Its DMB and RSC SHA-256 hashes match the previous
+successful diagnostic exactly. Known retained container capacity at
+`lowering.ready` fell from 1,114.8 MiB to 755.8 MiB, approximately 359 MiB less.
+This census excludes allocator overhead and unknown backing; it is not peak RSS.
+
+The first optimized A/B pair passed its fresh-output oracle but failed exact
+stage-map coverage, so the cohort was stopped and its receipts preserved.
+Per-binary pinned maps and self-comparison selection are repaired; 30 focused
+Python harness checks pass. No new accepted speedup is claimed. The last accepted
+full-project median remains 20.93 seconds on the captured historical project.
+
+The final ordinary library run passed 1,466 checks in 89.91 seconds, with zero
+failures or ignored checks. Release-profile whole-workspace/all-target Clippy
+passes with warnings denied (133.49 seconds). Parallel final instruction
+validation uses the shared executor with ordered error reduction. The narrow
+debug-site accessor preserves macro/include/offset semantics without constructing
+temporary include chains. These latest changes await frozen throughput evidence.
+The retained daemon, structural-edit incremental pipeline, disk artifact replay,
+runtime baseline and production readiness remain open. Phase 1 must close before
+daemon or new disk-cache work resumes, as required by the review.

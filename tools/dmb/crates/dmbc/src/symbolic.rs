@@ -81,7 +81,7 @@ impl BytecodeFeatures {
 struct CurrentImage {
     frozen: Arc<FrozenProc>,
     tables: LinkTables,
-    paths: Vec<String>,
+    paths: Vec<Arc<str>>,
     origins: Vec<(usize, u32)>,
     image: ProcedureImage,
     features: BytecodeFeatures,
@@ -106,7 +106,7 @@ impl CurrentImage {
             .iter()
             .map(|origin| {
                 let index = *indexes
-                    .entry(origin.semantic_path.as_str())
+                    .entry(origin.semantic_path.as_ref())
                     .or_insert_with(|| {
                         let index = paths.len();
                         paths.push(origin.semantic_path.clone());
@@ -495,6 +495,42 @@ pub fn freeze_artifact_tables_with_executor(
         },
     );
     contributions?;
+    drop(freeze_profile);
+    finish_frozen_inventory(
+        FrozenInventory {
+            inventory,
+            string_inventory,
+            units,
+            helpers,
+            source_bindings,
+        },
+        symbols,
+        external,
+        initialization,
+        freeze_detail,
+    )
+}
+struct FrozenInventory {
+    inventory: LinkInventory,
+    string_inventory: StringInventory,
+    units: Vec<FrozenUnit>,
+    helpers: Vec<FrozenHelper>,
+    source_bindings: std::collections::BTreeSet<SymRef>,
+}
+fn finish_frozen_inventory(
+    state: FrozenInventory,
+    symbols: &SymbolTable,
+    external: &ReferenceBindings,
+    initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
+    freeze_detail: bool,
+) -> Result<FrozenBatch, IntegrationError> {
+    let FrozenInventory {
+        mut inventory,
+        mut string_inventory,
+        mut units,
+        mut helpers,
+        source_bindings,
+    } = state;
     let mut initializers = Vec::with_capacity(initialization.len());
     let mut initialization_keys = std::collections::BTreeSet::new();
     for unit in initialization {
@@ -582,7 +618,7 @@ pub fn freeze_artifact_tables_with_executor(
             local_names: unit.code.procedure.local_names.clone(),
         });
     }
-    drop(freeze_profile);
+
     drop(source_bindings);
     drop(string_inventory);
     let tables = {
@@ -763,7 +799,7 @@ fn append_debug_inventory(
     // only one inventory entry. Compare the full spelling, never just its hash.
     let mut paths = std::collections::HashSet::new();
     for origin in &origins.entries {
-        if !paths.insert(origin.semantic_path.as_str()) {
+        if !paths.insert(origin.semantic_path.as_ref()) {
             continue;
         }
         let symbol = SymbolId::of(&origin.semantic_path);
@@ -815,6 +851,10 @@ fn freeze_artifact(
 }
 mod freezing;
 mod parallel;
+mod prepared_contribution;
+pub use prepared_contribution::{
+    link_prepared_artifact_tables, prepare_contribution, PreparedContribution, PreparedModifiedSeed,
+};
 
 #[cfg(test)]
 #[path = "symbolic_tests.rs"]

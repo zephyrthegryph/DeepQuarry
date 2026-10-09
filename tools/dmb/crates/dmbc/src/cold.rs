@@ -495,60 +495,90 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     let mut inventory = links.inventory;
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::ProcedureLowering);
-    let batch = match memo {
-        Some(memo) => crate::lowering::lower_frontend_with_memo_on_executor_and_bodies(
-            frontend,
-            resolver,
-            policy,
-            config,
-            startup,
-            memo,
-            crate::lowering::LoweringExecution::new(executor, &bodies),
-        ),
-        None => crate::lowering::lower_frontend_with_statics_on_executor_and_bodies(
-            frontend,
-            resolver,
-            policy,
-            config,
-            startup,
-            crate::lowering::LoweringExecution::new(executor, &bodies),
-        ),
+    let roster = crate::lowering::source_unit_roster(frontend).map_err(ColdError::Lowering)?;
+    let mut source_bindings: std::collections::BTreeSet<_> = frontend
+        .snapshot
+        .tree
+        .types()
+        .iter()
+        .map(|node| dm_ir::SymRef::Type(node.path))
+        .collect();
+    for source in roster.into_iter().filter(|source| source.effective) {
+        let identity = source.identity;
+        source_bindings.insert(match identity.namespace {
+            crate::lowering::Namespace::Proc => dm_ir::SymRef::Proc {
+                owner: identity.owner,
+                name: identity.name,
+                occurrence: identity.occurrence,
+            },
+            crate::lowering::Namespace::Verb => dm_ir::SymRef::Verb {
+                owner: identity.owner,
+                name: identity.name,
+                occurrence: identity.occurrence,
+            },
+        });
+    }
+    let freeze_detail =
+        std::env::var_os("DMB_PROFILE_FREEZE_DETAIL").is_some_and(|value| value == "1");
+    let complete = |unit: crate::lowering::LoweredUnit| {
+        unit.require_production_abi()
+            .map_err(|_| ColdError::NonAuthoritativeAbi)?;
+        crate::symbolic::prepare_contribution(
+            unit,
+            plan.symbols.as_ref(),
+            &source_bindings,
+            links.references,
+            freeze_detail,
+        )
+        .map_err(ColdError::Linking)
     };
+    let batch = crate::lowering::lower_frontend_completed_on_execution(
+        frontend,
+        resolver,
+        policy,
+        config,
+        Some(startup),
+        memo,
+        crate::lowering::LoweringExecution::new(executor, &bodies),
+        &complete,
+    );
+    // Completion has consumed all rich units and its borrowed binding roster.
+    drop(source_bindings);
     let lowering = stage.elapsed();
     if !batch.diagnostics.is_empty() {
         return Err(ColdError::Lowering(batch.diagnostics));
     }
+    batch
+        .identity_index()
+        .map_err(|identity| ColdError::Linking(IntegrationError::DuplicateUnit(identity)))?;
+    if let Some((_, error)) = batch.completion_errors.into_iter().next() {
+        return Err(error);
+    }
+    let mut contributions: Vec<_> = batch.units.into_iter().map(|unit| unit.value).collect();
     crate::heap_census::emit_if_enabled("lowering.ready", |census| {
         census.frontend(frontend);
         census.startup(startup);
-        census.lowered(&batch);
+        census.prepared(&contributions);
     })
     .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
-    batch
-        .require_production_abi()
-        .map_err(|_| ColdError::NonAuthoritativeAbi)?;
+    let body_types: Vec<_> = contributions
+        .iter_mut()
+        .flat_map(crate::symbolic::PreparedContribution::take_required_types)
+        .collect();
+    let body_seeds: Vec<_> = contributions
+        .iter_mut()
+        .flat_map(crate::symbolic::PreparedContribution::take_modified_seeds)
+        .collect();
     // Consume the request-local parse owner before linking/composition.
     // Reusable startup facts never retain executable syntax.
     drop(bodies);
     measurement.complete();
     // Discover anonymous descriptors only from actual emitted operand sites.
     // Recursive descriptor initializers append to one request-local graph.
-    let seeds = batch
+    let seeds = initialization
         .units
         .iter()
-        .flat_map(|unit| {
-            std::iter::once((&unit.code, &unit.debug_origins)).chain(
-                unit.source_helpers
-                    .iter()
-                    .map(|helper| (&helper.code, &helper.debug_origins)),
-            )
-        })
-        .chain(
-            initialization
-                .units
-                .iter()
-                .map(|unit| (&unit.code, &unit.debug_origins)),
-        )
+        .map(|unit| (&unit.code, &unit.debug_origins))
         .chain(
             map_initializers
                 .iter()
@@ -559,7 +589,8 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
             .map_err(ColdError::Initializer)?;
     // Projection/default capture own their results; release the runtime AST ledger.
     drop(initialization.classified);
-    let modified = crate::modified_initializers::collect_with_defaults(
+    let modified = crate::modified_initializers::collect_owned_prepared_with_defaults(
+        body_seeds,
         seeds,
         &modified_defaults,
         plan.symbols.as_ref(),
@@ -587,11 +618,11 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     let non_text_types = non_text
         .map(|stage| stage.required_types())
         .unwrap_or_default();
-    let (projection, source_type_order) = crate::required_types::admit(
+    let (projection, source_type_order) = crate::required_types::admit_prepared(
         projection,
-        crate::required_types::Inputs {
+        crate::required_types::PreparedInputs {
             source_order: declarations.source_type_order,
-            bodies: &batch,
+            body_type_requests: &body_types,
             initializers: &initialization.units,
             maps: &initialization_artifacts,
             inventory: &inventory,
@@ -600,6 +631,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         },
     )
     .map_err(ColdError::Initializer)?;
+    drop(body_types);
     crate::class_inventory::contribute(
         &projection,
         plan.symbols.as_ref(),
@@ -616,13 +648,12 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         .map(Into::into)
         .chain(initialization_artifacts)
         .collect();
-    let frozen = crate::symbolic::freeze_artifact_tables_with_executor(
-        batch,
+    let frozen = crate::symbolic::link_prepared_artifact_tables(
+        contributions,
         plan.symbols.as_ref(),
         links.references,
         inventory,
         initialization,
-        executor,
     )
     .map_err(ColdError::Linking)?;
     measurement.complete();

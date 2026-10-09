@@ -5,7 +5,7 @@ from pathlib import Path
 
 def authenticate(h, scenario, parent_journal, byond_pin):
     if scenario.get("edits") or not parent_journal:
-        raise ValueError("cold-body-edit requires immutable parent journal and no live edits")
+        raise ValueError("captured derivative requires immutable parent journal and no live edits")
     receipt = Path(scenario["variant_receipt"]).resolve()
     if h.sha(receipt) != scenario["variant_receipt_sha256"]:
         raise ValueError("edited receipt hash mismatch")
@@ -59,4 +59,4 @@ def authenticate(h, scenario, parent_journal, byond_pin):
     return {"journal": journal, "snapshot_id": variant["index_sha256"], "pinned": pinned,
             "provenance": {"variant_receipt": str(receipt), "variant_receipt_sha256": scenario["variant_receipt_sha256"],
                            "parent_snapshot_id": variant["original_index_sha256"], "overlay_sha256": variant["overlay_sha256"],
-                           "measurement_scope": "edited_source_cold_trace_not_incremental_latency"}}
+                           "measurement_scope": "fresh_cli_disk_cache_edit_latency_not_daemon" if scenario.get("name") == "edited-cached" else "edited_source_cold_trace_not_incremental_latency"}}

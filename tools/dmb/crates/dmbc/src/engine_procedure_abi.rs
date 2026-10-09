@@ -12,6 +12,14 @@ pub(crate) struct RetainedMethods {
     entries: std::collections::BTreeMap<(dm_ir::SymbolId, dm_ir::SymbolId, bool), u32>,
 }
 impl RetainedMethods {
+    pub(crate) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
+        census.collection_entries::<((dm_ir::SymbolId, dm_ir::SymbolId, bool), u32)>(
+            "host.retained_methods",
+            &self.entries as *const _ as usize,
+            self.entries.len(),
+        );
+    }
+
     pub(crate) fn capture(
         engine: &super::EngineSnapshot,
         source: std::sync::Arc<dm_tree::SemanticTree>,
@@ -48,7 +56,9 @@ impl RetainedMethods {
         use dm_ir::{ResolveQuery as Q, ResolvedMeaning as M};
         let (owner, name, verb) = match query {
             Q::HasMemberProc { owner, name } => (owner, name, None),
-            Q::Proc { owner, name, verb } => (owner, name, Some(verb)),
+            Q::Proc { owner, name, verb } | Q::MethodProcedureValue { owner, name, verb } => {
+                (owner, name, Some(verb))
+            }
             _ => return None,
         };
         let mut current = self.source.lookup_type(owner)?;

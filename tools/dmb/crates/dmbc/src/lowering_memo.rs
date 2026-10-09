@@ -51,9 +51,17 @@ struct Pending {
     bytes: usize,
 }
 
+/// One-shot CLI requests publish disk records without retaining duplicate rich IR.
+/// Retained sessions may enable bounded resident replay explicitly.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ResidentRetention {
+    Enabled,
+    DiskOnly,
+}
 /// Caller-issued compiler/ABI/emission policy identity, never whole-tree identity.
 pub struct ProcedureMemo {
     pub policy: u128,
+    resident_retention: ResidentRetention,
     pub values: LoweringMemo<CachedProcedure>,
     disk: Option<Arc<dm_cache::CacheSnapshot>>,
     pending: Mutex<Pending>,
@@ -225,6 +233,7 @@ impl ProcedureMemo {
     pub fn new(policy: u128) -> Self {
         Self {
             policy,
+            resident_retention: ResidentRetention::Enabled,
             values: LoweringMemo::default(),
             disk: None,
             pending: Mutex::new(Pending::default()),
@@ -246,6 +255,7 @@ impl ProcedureMemo {
     ) -> Self {
         Self {
             policy,
+            resident_retention: ResidentRetention::Enabled,
             values: LoweringMemo::with_limit(limits.resident_bytes),
             disk: Some(snapshot.into()),
             pending: Mutex::new(Pending::default()),
@@ -256,6 +266,14 @@ impl ProcedureMemo {
             publication_errors: Mutex::new(Vec::new()),
             explanation_limit: 256,
         }
+    }
+    pub fn with_disk_only(policy: u128, snapshot: impl Into<Arc<dm_cache::CacheSnapshot>>) -> Self {
+        let mut memo = Self::with_disk(policy, snapshot);
+        memo.resident_retention = ResidentRetention::DiskOnly;
+        memo
+    }
+    pub fn resident_retention(&self) -> ResidentRetention {
+        self.resident_retention
     }
     fn record_key(key: &[u8]) -> dm_cache::RecordKey {
         dm_cache::RecordKey {
@@ -520,6 +538,11 @@ impl ProcedureMemo {
         relative_debug: Vec<usize>,
         versions: Vec<(ReadDomain, u128)>,
     ) {
+        if self.resident_retention == ResidentRetention::DiskOnly {
+            // Avoid weight serialization and RichIR clone for a request-local
+            // cache. Disk publication occurred independently before this call.
+            return;
+        }
         let _profile = dm_profile::item("lowering.resident_store");
         // Unsupported AST-bearing sidecars need their absolute occurrence until
         // a dedicated rebasing wire is implemented. Resident reuse checks it.

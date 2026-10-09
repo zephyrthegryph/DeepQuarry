@@ -114,6 +114,85 @@ pub struct UnitIdentity {
     pub namespace: Namespace,
     pub occurrence: u32,
 }
+/// Authenticated source identity before any rich procedure IR is allocated.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SourceUnitIdentity {
+    pub identity: UnitIdentity,
+    pub effective: bool,
+}
+pub fn source_unit_identity(
+    frontend: &ColdFrontend,
+    body: &BodyOccurrence,
+) -> Result<SourceUnitIdentity, String> {
+    frontend.body_input(body).map_err(|error| error.message)?;
+    let tree = &frontend.snapshot.tree;
+    let node = tree
+        .member(body.member)
+        .ok_or("body member missing from immutable tree")?;
+    let owner = tree
+        .type_node(node.owner)
+        .ok_or("body owner missing from immutable tree")?
+        .path;
+    let namespace = match node.kind {
+        MemberKind::Proc => Namespace::Proc,
+        MemberKind::Verb => Namespace::Verb,
+        MemberKind::Var => return Err("variable cannot own a procedure body".into()),
+    };
+    let occurrence = tree
+        .override_chain(body.member)
+        .into_iter()
+        .filter(|id| {
+            tree.member(*id).is_some_and(|previous| {
+                previous.owner == node.owner
+                    && previous.kind == node.kind
+                    && previous.name == node.name
+            })
+        })
+        .count()
+        .checked_sub(1)
+        .ok_or("procedure occurrence chain is empty")?;
+    Ok(SourceUnitIdentity {
+        identity: UnitIdentity {
+            owner,
+            name: node.name,
+            namespace,
+            occurrence: u32::try_from(occurrence)
+                .map_err(|_| "procedure occurrence exceeds u32")?,
+        },
+        effective: tree.resolve(node.owner, node.name, node.kind) == Some(body.member),
+    })
+}
+/// Same authored ordering as the completion scheduler, without lowering bodies.
+pub fn source_unit_roster(
+    frontend: &ColdFrontend,
+) -> Result<Vec<SourceUnitIdentity>, Vec<LoweringDiagnostic>> {
+    let mut bodies: Vec<_> = frontend.bodies.iter().collect();
+    bodies.sort_by_key(|body| {
+        (
+            body.source.encounter_ordinal,
+            body.expanded_span.start,
+            body.declaration.0,
+        )
+    });
+    let mut units = Vec::with_capacity(bodies.len());
+    let mut diagnostics = Vec::new();
+    for body in bodies {
+        match source_unit_identity(frontend, body) {
+            Ok(unit) => units.push(unit),
+            Err(message) => diagnostics.push(LoweringDiagnostic {
+                kind: DiagnosticKind::Internal,
+                identity: None,
+                origin: body.source.clone(),
+                message,
+            }),
+        }
+    }
+    if diagnostics.is_empty() {
+        Ok(units)
+    } else {
+        Err(diagnostics)
+    }
+}
 /// Converts signature/default/annotation semantics using one pinned compiler ABI.
 /// Reject unsupported flags/value-source/default decoding rather than guessing.
 pub trait AbiPolicy: Sync {
@@ -376,107 +455,47 @@ fn lower_frontend_impl_on_execution<R: Resolver, P: AbiPolicy>(
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
     execution: LoweringExecution<'_, '_>,
 ) -> LoweringBatch {
-    let executor = execution.executor;
-    let workers = executor.workers();
-    let chunk = config.max_chunk.clamp(1, 256);
-    let mut bodies: Vec<_> = frontend.bodies.iter().collect();
-    bodies.sort_by_key(|body| {
-        (
-            body.source.encounter_ordinal,
-            body.expanded_span.start,
-            body.declaration.0,
-        )
-    });
-    // Only final outputs occupy indexed slots. Each worker holds at most one
-    // bounded chunk; publication remains inside the existing memo producer.
-    let slices: Vec<_> = bodies.chunks(chunk).collect();
-    let results: Vec<_> = (0..slices.len())
-        .map(|_| std::sync::Mutex::new(None))
-        .collect();
-    let next = std::sync::atomic::AtomicUsize::new(0);
-    let scheduling = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        executor.scope(|scope| {
-            for _ in 0..workers.min(slices.len()) {
-                let slices = &slices;
-                let results = &results;
-                let next = &next;
-                scope.spawn(move |_| {
-                    let _profile = dm_profile::stage("cold.procedure_lowering");
-                    loop {
-                        let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        let Some(slice) = slices.get(index) else {
-                            break;
-                        };
-                        let outcomes =
-                            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                                slice
-                                    .iter()
-                                    .map(|body| {
-                                        lower_one_memo(
-                                            frontend,
-                                            body,
-                                            host,
-                                            policy,
-                                            startup,
-                                            memo,
-                                            execution.bodies,
-                                        )
-                                    })
-                                    .collect::<Vec<_>>()
-                            }))
-                            .unwrap_or_else(|_| {
-                                slice
-                                    .iter()
-                                    .map(|body| {
-                                        Err(vec![LoweringDiagnostic {
-                                            kind: DiagnosticKind::Internal,
-                                            identity: None,
-                                            origin: body.source.clone(),
-                                            message: "procedure lowering worker panicked".into(),
-                                        }])
-                                    })
-                                    .collect()
-                            });
-                        *results[index]
-                            .lock()
-                            .unwrap_or_else(|error| error.into_inner()) = Some(outcomes);
-                    }
-                });
-            }
-        })
-    }));
-    // Every sibling job has joined before the scope propagates a panic. Missing
-    // slots become source-ordered internal diagnostics rather than escaping.
-    let scheduling_failed = scheduling.is_err();
-    let mut batch = LoweringBatch::default();
-    for (index, slot) in results.into_iter().enumerate() {
-        let outcomes = slot.into_inner().unwrap_or_else(|error| error.into_inner());
-        let outcomes = outcomes.unwrap_or_else(|| {
-            slices[index]
-                .iter()
-                .map(|body| {
-                    Err(vec![LoweringDiagnostic {
-                        kind: DiagnosticKind::Internal,
-                        identity: None,
-                        origin: body.source.clone(),
-                        message: if scheduling_failed {
-                            "procedure scheduling worker panicked"
-                        } else {
-                            "procedure lowering job did not complete"
-                        }
-                        .into(),
-                    }])
-                })
-                .collect()
-        });
-        for outcome in outcomes {
-            match outcome {
-                Ok(unit) => batch.units.push(unit),
-                Err(errors) => batch.diagnostics.extend(errors),
-            }
+    let completed = lower_frontend_completed_on_execution(
+        frontend,
+        host,
+        policy,
+        config,
+        startup,
+        memo,
+        execution,
+        &|mut unit| {
+            compact_retained(&mut unit);
+            Ok::<_, std::convert::Infallible>(unit)
+        },
+    );
+    if let Some((_, impossible)) = completed.completion_errors.into_iter().next() {
+        match impossible {}
+    }
+    LoweringBatch {
+        units: completed.units.into_iter().map(|unit| unit.value).collect(),
+        diagnostics: completed.diagnostics,
+    }
+}
+mod completion;
+pub use completion::{
+    lower_frontend_completed_on_execution, CompletedLoweringBatch, CompletedUnit,
+};
+fn compact_retained(unit: &mut LoweredUnit) {
+    fn compact<T>(values: &mut Vec<T>) {
+        if values.capacity() > values.len() {
+            values.shrink_to_fit();
         }
     }
-    batch
+    fn debug(origins: &mut DebugOrigins) {
+        compact(&mut origins.entries);
+    }
+    unit.code.compact_retained();
+    debug(&mut unit.debug_origins);
+    for helper in &mut unit.source_helpers {
+        helper.code.compact_retained();
+        debug(&mut helper.debug_origins);
+    }
+    compact(&mut unit.source_helpers);
 }
 mod body;
 mod memo;
@@ -490,27 +509,7 @@ impl LoweringBatch {
     /// authoritative metadata and actual linked argument-source artifacts.
     pub fn require_production_abi(&self) -> Result<(), String> {
         for unit in &self.units {
-            let abi = unit.abi.as_ref().ok_or_else(|| {
-                format!(
-                    "authoritative procedure ABI missing for {:?}",
-                    unit.identity
-                )
-            })?;
-            if abi.source_helpers.len() != unit.source_helpers.len()
-                || abi
-                    .source_helpers
-                    .iter()
-                    .zip(unit.source_helpers.iter())
-                    .any(|(expected, actual)| {
-                        actual.owner != unit.identity
-                            || usize::try_from(actual.argument).ok() != Some(expected.argument)
-                    })
-            {
-                return Err(format!(
-                    "argument-source helper lowering is incomplete for {:?}",
-                    unit.identity
-                ));
-            }
+            unit.require_production_abi()?;
         }
         Ok(())
     }
@@ -528,3 +527,30 @@ impl LoweringBatch {
 #[cfg(test)]
 #[path = "lowering_tests.rs"]
 mod tests;
+
+impl LoweredUnit {
+    pub fn require_production_abi(&self) -> Result<(), String> {
+        let abi = self.abi.as_ref().ok_or_else(|| {
+            format!(
+                "authoritative procedure ABI missing for {:?}",
+                self.identity
+            )
+        })?;
+        if abi.source_helpers.len() != self.source_helpers.len()
+            || abi
+                .source_helpers
+                .iter()
+                .zip(self.source_helpers.iter())
+                .any(|(expected, actual)| {
+                    actual.owner != self.identity
+                        || usize::try_from(actual.argument).ok() != Some(expected.argument)
+                })
+        {
+            return Err(format!(
+                "argument-source helper lowering is incomplete for {:?}",
+                self.identity
+            ));
+        }
+        Ok(())
+    }
+}

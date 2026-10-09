@@ -26,27 +26,7 @@ pub(super) fn lower_one_memo<R: Resolver, P: AbiPolicy>(
     let ready = (|| {
         let _profile = dm_profile::item("lowering.abi_key_prepare");
         let node = tree.member(body.member)?;
-        let owner = tree.type_node(node.owner)?.path;
-        let occurrence = tree
-            .override_chain(body.member)
-            .iter()
-            .filter(|id| {
-                tree.member(**id).is_some_and(|entry| {
-                    entry.owner == node.owner && entry.kind == node.kind && entry.name == node.name
-                })
-            })
-            .count()
-            .checked_sub(1)?;
-        let identity = UnitIdentity {
-            owner,
-            name: node.name,
-            namespace: if node.kind == MemberKind::Verb {
-                Namespace::Verb
-            } else {
-                Namespace::Proc
-            },
-            occurrence: u32::try_from(occurrence).ok()?,
-        };
+        let identity = source_unit_identity(frontend, body).ok()?.identity;
         let issued = frontend.body_input(body).ok()?;
         let context = AbiContext {
             identity,

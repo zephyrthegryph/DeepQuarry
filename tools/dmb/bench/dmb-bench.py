@@ -450,7 +450,7 @@ def medians(rows):
     result = {}
     for key in ("wall_s", "child_wall_s", "profile_wall_s", "critical_path_cpu_s", "total_cpu_s", "read_bytes", "write_bytes", "peak_private_bytes"):
         values = [row.get(key) for row in rows]
-        valid = all(metric(v) for v in values)
+        valid = bool(values) and all(metric(v) for v in values)
         if key in ("read_bytes", "write_bytes", "peak_private_bytes"):
             valid = valid and all(type(v) is int for v in values)
         result[key] = statistics.median(values) if valid else None
@@ -462,7 +462,7 @@ def medians(rows):
     # Existing rows keep their recorded wall metric/scope. Missing child wall
     # cannot be reconstructed from profiler wall and must remain unavailable.
     upper = [cpu_upper(row, "critical_path_cpu_s", "critical_path_cpu_bounds_s") for row in rows]
-    result["critical_path_cpu_budget_upper_s"] = statistics.median(upper) if all(metric(v) for v in upper) else None
+    result["critical_path_cpu_budget_upper_s"] = statistics.median(upper) if upper and all(metric(v) for v in upper) else None
     result["cpu_acceptance_basis"] = ("uncertainty_upper_bound" if any(
         row.get("cpu_bounds_method") == "paired_thread_cpu_quantization" for row in rows) else "calibrated_scalar")
     return result
@@ -584,6 +584,7 @@ def main():
     parser.add_argument("--min-free-bytes", type=int, default=25 * 1024**3)
     parser.add_argument("--worker-counts", type=int, nargs="+", default=[8])
     parser.add_argument("--stage-map", type=Path)
+    parser.add_argument("--previous-stage-map", type=Path, help="Explicit CPU domain map for the previous compiler; defaults to --stage-map")
     parser.add_argument("--inspector", type=Path, required=True)
     parser.add_argument("--byond-dmb", type=Path, required=True)
     parser.add_argument("--byond-snapshot", type=Path, required=True,

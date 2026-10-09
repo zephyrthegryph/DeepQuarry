@@ -15,11 +15,67 @@ pub struct Inputs<'a> {
     pub symbols: &'a SymbolTable,
     pub non_text_types: &'a [SymbolId],
 }
+pub struct PreparedInputs<'a> {
+    pub source_order: &'a [SymbolId],
+    pub body_type_requests: &'a [SymbolId],
+    pub initializers: &'a [crate::initializer_lowering::LoweredInitializerUnit],
+    pub maps: &'a [crate::initialization_artifact::InitializationArtifact],
+    pub inventory: &'a LinkInventory,
+    pub symbols: &'a SymbolTable,
+    pub non_text_types: &'a [SymbolId],
+}
+enum BodyRequirements<'a> {
+    Rich(&'a LoweringBatch),
+    Prepared(&'a [SymbolId]),
+}
+struct CommonInputs<'a> {
+    source_order: &'a [SymbolId],
+    bodies: BodyRequirements<'a>,
+    initializers: &'a [crate::initializer_lowering::LoweredInitializerUnit],
+    maps: &'a [crate::initialization_artifact::InitializationArtifact],
+    inventory: &'a LinkInventory,
+    symbols: &'a SymbolTable,
+    non_text_types: &'a [SymbolId],
+}
 pub fn admit(
-    mut projection: ClassProjection,
+    projection: ClassProjection,
     inputs: Inputs<'_>,
 ) -> Result<(ClassProjection, Vec<SymbolId>), String> {
-    let Inputs {
+    admit_common(
+        projection,
+        CommonInputs {
+            source_order: inputs.source_order,
+            bodies: BodyRequirements::Rich(inputs.bodies),
+            initializers: inputs.initializers,
+            maps: inputs.maps,
+            inventory: inputs.inventory,
+            symbols: inputs.symbols,
+            non_text_types: inputs.non_text_types,
+        },
+    )
+}
+pub fn admit_prepared(
+    projection: ClassProjection,
+    inputs: PreparedInputs<'_>,
+) -> Result<(ClassProjection, Vec<SymbolId>), String> {
+    admit_common(
+        projection,
+        CommonInputs {
+            source_order: inputs.source_order,
+            bodies: BodyRequirements::Prepared(inputs.body_type_requests),
+            initializers: inputs.initializers,
+            maps: inputs.maps,
+            inventory: inputs.inventory,
+            symbols: inputs.symbols,
+            non_text_types: inputs.non_text_types,
+        },
+    )
+}
+fn admit_common(
+    mut projection: ClassProjection,
+    inputs: CommonInputs<'_>,
+) -> Result<(ClassProjection, Vec<SymbolId>), String> {
+    let CommonInputs {
         source_order,
         bodies,
         initializers,
@@ -153,43 +209,22 @@ pub fn admit(
             values(value, &mut requests);
         }
     }
-    fn code(
-        code: &ResolverProc,
-        requests: &mut Vec<SymbolId>,
-        symbols: &SymbolTable,
-    ) -> Result<(), String> {
-        let mut failure = None;
-        code.procedure.code.for_each_reference(|reference| {
-            if let dm_ir::SymRef::Type(id) = reference {
-                if symbols.text(id).is_none() {
-                    failure = Some(format!(
-                        "referenced type spelling not collision checked: {id:?}"
-                    ));
+    match bodies {
+        BodyRequirements::Rich(bodies) => {
+            for unit in &bodies.units {
+                append_code_requests(&unit.code, &mut requests, symbols)?;
+                for helper in &unit.source_helpers {
+                    append_code_requests(&helper.code, &mut requests, symbols)?;
                 }
-                requests.push(id);
             }
-        });
-        // Modified alias identities do not invent class rows; their explicitly
-        // resolved runtime class is a real dependency of the instance artifact.
-        for instance in code.instances.values() {
-            requests.push(instance.runtime_type);
         }
-        for instance in code.modified_instances.values() {
-            requests.push(instance.descriptor.runtime_type());
-        }
-        failure.map_or(Ok(()), Err)
-    }
-    for unit in &bodies.units {
-        code(&unit.code, &mut requests, symbols)?;
-        for helper in &unit.source_helpers {
-            code(&helper.code, &mut requests, symbols)?;
-        }
+        BodyRequirements::Prepared(prepared) => requests.extend_from_slice(prepared),
     }
     for unit in initializers {
-        code(&unit.code, &mut requests, symbols)?;
+        append_code_requests(&unit.code, &mut requests, symbols)?;
     }
     for unit in maps {
-        code(&unit.code, &mut requests, symbols)?;
+        append_code_requests(&unit.code, &mut requests, symbols)?;
     }
     // Non-text descriptor producers already issue exact semantic type keys.
     // Preserve their caller-provided order when available, never sort hashes.
@@ -214,6 +249,33 @@ pub fn admit(
         .collect::<Vec<_>>()
         .into();
     Ok((projection, order))
+}
+
+pub(crate) fn append_code_requests(
+    code: &ResolverProc,
+    requests: &mut Vec<SymbolId>,
+    symbols: &SymbolTable,
+) -> Result<(), String> {
+    let mut failure = None;
+    code.procedure.code.for_each_reference(|reference| {
+        if let dm_ir::SymRef::Type(id) = reference {
+            if symbols.text(id).is_none() {
+                failure = Some(format!(
+                    "referenced type spelling not collision checked: {id:?}"
+                ));
+            }
+            requests.push(id);
+        }
+    });
+    // Modified alias identities do not invent class rows; their explicitly
+    // resolved runtime class is a real dependency of the instance artifact.
+    for instance in code.instances.values() {
+        requests.push(instance.runtime_type);
+    }
+    for instance in code.modified_instances.values() {
+        requests.push(instance.descriptor.runtime_type());
+    }
+    failure.map_or(Ok(()), Err)
 }
 
 #[cfg(test)]

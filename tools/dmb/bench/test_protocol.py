@@ -292,6 +292,15 @@ class SignatureChecks(unittest.TestCase):
 
 
 class MeasurementCompositionChecks(unittest.TestCase):
+    def test_stage_topology_is_selected_for_the_actual_binary(self):
+        args = SimpleNamespace(stage_map=Path("current.json"),
+                               previous_stage_map=Path("previous.json"), self_comparison=False)
+        self.assertEqual(protocol.comparison_stage_map_paths(args),
+                         {"A": Path("previous.json"), "B": Path("current.json")})
+        args.self_comparison = True
+        self.assertEqual(protocol.comparison_stage_map_paths(args),
+                         {"A": Path("current.json"), "B": Path("current.json")})
+
     def test_profile_wall_does_not_replace_measured_child_lifetime(self):
         source = {"schema": 1, "wall_s": 2.0, "wall_scope": "profile_elapsed_wall_interval", "total_cpu_s": 3.0}
         merged = protocol.profile_measurement(source, 5.0)
@@ -312,9 +321,9 @@ class ReplayClosureChecks(unittest.TestCase):
     def test_live_mode_keeps_physical_validation_and_non_cold_replay_refused(self):
         helper = SimpleNamespace()
         self.assertEqual(protocol.authenticate_replay_closure(helper, self.root, {"name": "cold"}, None, {})["mode"], "full_physical_source_sha256")
-        with self.assertRaisesRegex(ValueError, "no-cache cold replay"):
+        with self.assertRaisesRegex(ValueError, "authenticated replay without live edits"):
             protocol.authenticate_replay_closure(helper, self.root, {"name": "body-edit"}, self.root, {})
-        with self.assertRaisesRegex(ValueError, "no-cache cold replay"):
+        with self.assertRaisesRegex(ValueError, "authenticated replay without live edits"):
             protocol.authenticate_replay_closure(helper, self.root, {"name": "cold", "edits": [{}]}, self.root, {})
 
     def test_journal_identity_and_topology_pinned_before_compile(self):
@@ -379,6 +388,23 @@ class SemanticConfigurationChecks(unittest.TestCase):
             gate.command_configuration("comparison.dme", ["-D9invalid"], sha)
         with self.assertRaisesRegex(ValueError, "explicit engine"):
             gate.command_configuration("comparison.dme", ["-DOK"], sha)
+
+
+
+class StageTopologyChecks(unittest.TestCase):
+    def test_each_explicit_binary_map_must_cover_its_own_chain_once(self):
+        harness = SimpleNamespace(STAGE_BUDGETS={"input": 1, "lowering": 1})
+        old = {"input": ["input"], "lowering": ["lowering"]}
+        new = {"input": ["input"], "lowering": ["lowering", "worker"]}
+        old_row = {"critical_path_stages": ["input", "lowering"]}
+        new_row = {"critical_path_stages": ["input", "lowering", "worker"]}
+        self.assertEqual(protocol.protocol_quality(harness, old_row, old), [])
+        self.assertEqual(protocol.protocol_quality(harness, new_row, new), [])
+        self.assertIn("stage mapping must cover the critical chain once",
+                      protocol.protocol_quality(harness, old_row, new))
+        duplicate = {"input": ["input"], "lowering": ["input", "lowering"]}
+        self.assertIn("stage mapping must cover the critical chain once",
+                      protocol.protocol_quality(harness, old_row, duplicate))
 
 
 if __name__ == "__main__":

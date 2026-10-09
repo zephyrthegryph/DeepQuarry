@@ -2,6 +2,8 @@
 //! not allocator metadata, private memory, or a fabricated total heap size.
 //! A boundary shares one census, so Arc aliases and nested buffers count once.
 use serde::Serialize;
+mod dmb_image;
+mod prepared;
 use std::{
     collections::{BTreeMap, BTreeSet, HashSet},
     io::{self, Write},
@@ -36,6 +38,7 @@ pub struct HeapCensus {
     owners: BTreeMap<String, OwnerReport>,
     // Addresses stay private to this diagnostic, never become output identities.
     allocations: HashSet<usize>,
+    collections: HashSet<usize>,
 }
 
 impl HeapCensus {
@@ -44,6 +47,7 @@ impl HeapCensus {
             stage: stage.into(),
             owners: BTreeMap::new(),
             allocations: HashSet::new(),
+            collections: HashSet::new(),
         }
     }
     fn owner(&mut self, name: &str) -> &mut OwnerReport {
@@ -76,6 +80,23 @@ impl HeapCensus {
         }
         first
     }
+    /// Collection entries are logical lower bounds, not invented allocator capacities.
+    pub(crate) fn collection_entries<T>(&mut self, owner: &str, address: usize, len: usize) {
+        if len == 0 {
+            return;
+        }
+        let first = self.collections.insert(address);
+        let row = self.owner(owner);
+        row.observed_items += len as u64;
+        if first {
+            let bytes = len.saturating_mul(size_of::<T>()) as u64;
+            row.unique_payload_bytes += bytes;
+            row.unknown_capacity_payload_bytes += bytes;
+        } else {
+            row.shared_encounters += 1;
+        }
+        row.unknown.insert("collection node/bucket backing capacity unavailable; entry bytes are logical lower bounds".into());
+    }
     /// Vec backing contains inline element descriptors. Nested heap buffers are
     /// counted separately, without adding those descriptors again.
     pub fn vec_payload<T>(&mut self, owner: &str, values: &Vec<T>) -> bool {
@@ -87,7 +108,7 @@ impl HeapCensus {
             values.capacity().saturating_mul(size_of::<T>()),
         )
     }
-    fn slice<T>(&mut self, owner: &str, values: &[T], exact_capacity: bool) -> bool {
+    pub(crate) fn slice<T>(&mut self, owner: &str, values: &[T], exact_capacity: bool) -> bool {
         self.owner(owner).observed_items += values.len() as u64;
         if !exact_capacity {
             self.unknown(
@@ -124,7 +145,7 @@ impl HeapCensus {
     pub fn arc_text(&mut self, owner: &str, value: &Arc<str>) {
         self.buffer(owner, value.as_ptr() as usize, value.len(), value.len());
     }
-    fn arc_object<T>(&mut self, owner: &str, value: &Arc<T>) -> bool {
+    pub(crate) fn arc_object<T>(&mut self, owner: &str, value: &Arc<T>) -> bool {
         self.buffer(
             owner,
             Arc::as_ptr(value) as usize,
@@ -411,7 +432,17 @@ impl HeapCensus {
         if !self.arc_object(owner, metadata) {
             return;
         }
-        self.slice(owner, &metadata.signature.parameters, true);
+        let signature_owner = if owner == "semantic_metadata" {
+            "semantic_metadata.signature"
+        } else {
+            owner
+        };
+        let settings_owner = if owner == "semantic_metadata" {
+            "semantic_metadata.settings"
+        } else {
+            owner
+        };
+        self.slice(signature_owner, &metadata.signature.parameters, true);
         for parameter in metadata.signature.parameters.iter() {
             for expression in [
                 &parameter.default,
@@ -421,31 +452,31 @@ impl HeapCensus {
             .into_iter()
             .flatten()
             {
-                self.expression(owner, expression);
+                self.expression(signature_owner, expression);
             }
             if let Some(array) = &parameter.array {
-                self.array(owner, array);
+                self.array(signature_owner, array);
             }
         }
         if let Some(expression) = &metadata.signature.return_annotation {
-            self.expression(owner, expression);
+            self.expression(signature_owner, expression);
         }
         let mut pending = vec![metadata.settings.as_ref()];
         while let Some(nodes) = pending.pop() {
-            if !self.slice(owner, nodes, true) {
+            if !self.slice(settings_owner, nodes, true) {
                 continue;
             }
             for node in nodes {
                 match node {
                     dm_ir::ProcedureSettingNode::Setting(setting) => {
-                        self.expression(owner, &setting.value)
+                        self.expression(settings_owner, &setting.value)
                     }
                     dm_ir::ProcedureSettingNode::Conditional {
                         condition,
                         then_branch,
                         else_branch,
                     } => {
-                        self.expression(owner, condition);
+                        self.expression(settings_owner, condition);
                         pending.push(then_branch);
                         pending.push(else_branch);
                     }
@@ -453,7 +484,7 @@ impl HeapCensus {
                         canonical_header,
                         children,
                     } => {
-                        self.expression(owner, canonical_header);
+                        self.expression(settings_owner, canonical_header);
                         pending.push(children);
                     }
                 }
@@ -462,7 +493,7 @@ impl HeapCensus {
     }
     fn declaration(&mut self, declaration: &dm_ir::DeclarationMeaning) {
         let owner = "semantic_metadata";
-        self.slice(owner, &declaration.canonical, true);
+        self.slice("semantic_metadata.canonical", &declaration.canonical, true);
         for expression in [&declaration.initializer, &declaration.declared_initializer]
             .into_iter()
             .flatten()
@@ -479,7 +510,7 @@ impl HeapCensus {
             self.semantic_value(owner, value);
         }
     }
-    fn semantic_value(&mut self, owner: &str, value: &dm_ir::SemanticValue) {
+    pub(crate) fn semantic_value(&mut self, owner: &str, value: &dm_ir::SemanticValue) {
         let mut pending = vec![value];
         while let Some(value) = pending.pop() {
             match value {
@@ -560,7 +591,7 @@ impl HeapCensus {
     fn debug(&mut self, owner: &str, debug: &crate::debug_sources::DebugOrigins) {
         if self.vec_payload(owner, &debug.entries) {
             for entry in &debug.entries {
-                self.string(owner, &entry.semantic_path);
+                self.arc_text(owner, &entry.semantic_path);
             }
         }
     }
@@ -711,30 +742,7 @@ impl HeapCensus {
         self.unknown("link_tables", "private Arc/BTreeMap node backing, slot maps, and cached CurrentImage words/certificates");
     }
     pub fn dmb(&mut self, dmb: &byond_dmb::dmb::Dmb) {
-        let owner = "dmb_tables";
-        self.vec_payload(owner, &dmb.grid);
-        self.vec_payload(owner, &dmb.classes);
-        self.vec_payload(owner, &dmb.mobs);
-        self.vec_payload(owner, &dmb.procs);
-        self.vec_payload(owner, &dmb.variables);
-        self.vec_payload(owner, &dmb.proc_references);
-        self.vec_payload(owner, &dmb.instances);
-        self.vec_payload(owner, &dmb.map_objects);
-        self.vec_payload(owner, &dmb.resources);
-        self.vec_payload(owner, &dmb.strings);
-        for string in &dmb.strings {
-            self.vec_payload("dmb_string_payloads", &string.data);
-        }
-        self.vec_payload(owner, &dmb.lists);
-        for list in &dmb.lists {
-            self.vec_payload("dmb_list_words", list);
-        }
-        self.vec_payload(owner, &dmb.world.client_script_files);
-        self.vec_payload(owner, &dmb.header.version_line);
-        self.vec_payload(owner, &dmb.header.compatibility_line);
-        if let Some(bytes) = &dmb.header.executor_line {
-            self.vec_payload(owner, bytes);
-        }
+        self.dmb_image(dmb);
     }
     pub fn resources(&mut self, captured: &dm_resources::capture::CapturedResources) {
         self.resource_set(&captured.resources);

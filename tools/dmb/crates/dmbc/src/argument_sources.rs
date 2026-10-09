@@ -158,7 +158,7 @@ pub fn lower_helpers<R: Resolver>(
             .ok_or("source helper expression origin missing")?;
         let debug_origins = DebugOrigins {
             entries: vec![DebugOrigin {
-                semantic_path: origin.semantic_path.to_string(),
+                semantic_path: origin.semantic_path.clone(),
                 line: u32::try_from(origin.line).map_err(|_| "source helper line exceeds u32")?,
             }],
         };
@@ -239,7 +239,7 @@ pub(crate) fn rebase_cached_helper(
         code,
         debug_origins: DebugOrigins {
             entries: vec![DebugOrigin {
-                semantic_path: origin.semantic_path.to_string(),
+                semantic_path: origin.semantic_path.clone(),
                 line: u32::try_from(origin.line).map_err(|_| "helper line exceeds u32")?,
             }],
         },

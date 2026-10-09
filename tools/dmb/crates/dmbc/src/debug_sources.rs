@@ -3,12 +3,14 @@
 //! Symbolic code records only an ordinal. The current source occurrence supplies
 //! exact semantic path spelling and absolute line at link time. No filesystem
 //! reads, global binding clones, or absolute paths participate in code identity.
-use dm_tree::frontend::{ColdFrontend, SourceLocation};
-use std::{cell::RefCell, collections::BTreeMap};
+use dm_tree::frontend::ColdFrontend;
+#[cfg(test)]
+use dm_tree::frontend::SourceLocation;
+use std::{cell::RefCell, collections::BTreeMap, sync::Arc};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DebugOrigin {
-    pub semantic_path: String,
+    pub semantic_path: Arc<str>,
     pub line: u32,
 }
 
@@ -24,15 +26,20 @@ pub trait DebugOriginProvider {
 }
 impl DebugOriginProvider for ColdFrontend {
     fn origin(&self, expanded_offset: usize) -> Result<DebugOrigin, String> {
-        let location = self.location(expanded_offset).ok_or_else(|| {
+        let (semantic_path, line) = self.debug_site(expanded_offset).ok_or_else(|| {
             format!("missing captured source origin at expanded offset {expanded_offset}")
         })?;
-        origin_from_location(&location)
+        Ok(DebugOrigin {
+            semantic_path,
+            line: u32::try_from(line)
+                .map_err(|_| "source line exceeds BYOND debug operand range".to_string())?,
+        })
     }
 }
+#[cfg(test)]
 fn origin_from_location(location: &SourceLocation) -> Result<DebugOrigin, String> {
     Ok(DebugOrigin {
-        semantic_path: location.semantic_path.to_string(),
+        semantic_path: location.semantic_path.clone(),
         line: u32::try_from(location.line)
             .map_err(|_| "source line exceeds BYOND debug operand range".to_string())?,
     })
@@ -111,6 +118,69 @@ impl DebugOrigins {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn narrow_debug_projection_matches_full_provenance_at_origin_boundaries() {
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, path: &std::path::Path) -> Result<String, String> {
+                if path.file_name().is_some_and(|name| name == "included.dm") {
+                    Ok("#define NUMBER 17\n/proc/included()\n    return NUMBER\n".into())
+                } else {
+                    Ok("#include \"included.dm\"\n/proc/root()\n    return 2\n".into())
+                }
+            }
+        }
+        let frontend = dm_tree::frontend::build(
+            std::path::Path::new("project.dme"),
+            &Source,
+            &BTreeMap::new(),
+            1,
+        )
+        .unwrap();
+        let mut offsets = vec![0, frontend.expanded.text.len(), usize::MAX];
+        for origin in &frontend.expanded.origins {
+            offsets.push(origin.output_span.start);
+            offsets.push(origin.output_span.end);
+            offsets.push(origin.output_span.end.saturating_sub(1));
+        }
+        for offset in offsets {
+            let narrow = frontend.debug_site(offset);
+            let full = frontend.location(offset);
+            assert_eq!(narrow.is_some(), full.is_some(), "offset {offset}");
+            if let (Some((path, line)), Some(location)) = (narrow, full) {
+                assert!(Arc::ptr_eq(&path, &location.semantic_path));
+                assert_eq!(line, location.line);
+                let debug = frontend.origin(offset).unwrap();
+                assert_eq!(debug.semantic_path, location.semantic_path);
+                assert_eq!(debug.line as usize, location.line);
+            }
+        }
+    }
+    #[test]
+    fn captured_debug_sites_share_the_source_path_allocation() {
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &std::path::Path) -> Result<String, String> {
+                Ok("/proc/probe()\n    return 1\n".into())
+            }
+        }
+        let frontend = dm_tree::frontend::build(
+            std::path::Path::new("project.dme"),
+            &Source,
+            &BTreeMap::new(),
+            1,
+        )
+        .unwrap();
+        let location = &frontend.bodies[0].source;
+        let first = origin_from_location(location).unwrap();
+        let second = origin_from_location(location).unwrap();
+        assert!(Arc::ptr_eq(&first.semantic_path, &location.semantic_path));
+        assert!(Arc::ptr_eq(&first.semantic_path, &second.semantic_path));
+        assert_eq!(
+            first.semantic_path.as_bytes(),
+            location.semantic_path.as_bytes()
+        );
+    }
     #[test]
     fn rebasing_does_not_change_file_identity() {
         let first = DebugOrigins {

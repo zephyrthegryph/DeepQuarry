@@ -833,35 +833,7 @@ fn compose_records_access(
     }
     let final_validation = dm_profile::stage("composition.final_instruction_validation");
     let feature_images = batch.certified_features();
-    let mut external = false;
-    let mut debug = false;
-    for index in 0..dmb.procs.len() {
-        if dmb.is_reserved_proc_slot(index) {
-            continue;
-        }
-        let words = dmb
-            .proc_code_words(index)
-            .ok_or_else(|| unsupported("missing procedure code"))?;
-        if let Some(&(certified_words, features)) = feature_images.get(&(index as u32)) {
-            if certified_words == words {
-                external |= features.external;
-                debug |= features.debug;
-                continue;
-            }
-        }
-        byond_dmb::bytecode::visit_instructions(words, |instruction| {
-            external |= matches!(instruction.name, "LoadExt" | "CallExt");
-            debug |= matches!(instruction.name, "DbgFile" | "DbgLine");
-        }, |_| {})
-            .map_err(|e| {
-                let proc_record=&dmb.procs[index];
-                let path=dmb.string(proc_record.strings[0]).map(String::from_utf8_lossy);
-                let name=dmb.string(proc_record.strings[1]).map(String::from_utf8_lossy);
-                let start=e.offset.saturating_sub(4).min(words.len());
-                let end=e.offset.saturating_add(8).min(words.len());
-                unsupported(format!("invalid composed bytecode: proc={index}, path={path:?}, name={name:?}, error={e:?}, words[{start}..{end}]={:?}",&words[start..end]))
-            })?;
-    }
+    let (external, debug) = final_instructions::validate(&dmb, &feature_images, executor)?;
     drop(feature_images);
     drop(final_validation);
     // All output-stage and final instruction checks are complete. Consuming
@@ -968,6 +940,7 @@ fn emit_anonymous(
 #[path = "composition/tests.rs"]
 mod tests;
 
+mod final_instructions;
 mod owned;
 pub use owned::{
     compose_global_fixture_owned, compose_projected_owned_with_symbols,

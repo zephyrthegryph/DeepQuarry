@@ -18,6 +18,7 @@ pub mod initializer;
 pub mod lower_resolver;
 pub mod parameter_abi;
 pub mod procedure_abi;
+mod retained_capacity;
 mod simple;
 pub mod typed_scopes;
 pub use lower_resolver::ProcedureInputs;

@@ -299,7 +299,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             }) as Arc<dmbc::lowering_memo::CachePublisher>
         });
     let procedure_memo = cache_snapshot.clone().map(|snapshot| {
-        dmbc::lowering_memo::ProcedureMemo::with_disk(memo_policy, snapshot)
+        dmbc::lowering_memo::ProcedureMemo::with_disk_only(memo_policy, snapshot)
             .with_explanation_limit(131072)
             .with_publisher(
                 cache_publisher
@@ -435,23 +435,28 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             dmbc::engine_host::Completeness::Partial,
         )
         .map_err(|error| format!("runtime type catalog: {error:?}"))?;
+        let pinned_facts =
+            dmbc::engine_host::PinnedHostFacts::capture(engine, &frontend, &constants, &runtime)?;
         let source_host = dmbc::engine_host::EngineResolverHost::new(
             frontend.snapshot.tree.clone(),
             constants.clone(),
             runtime.clone(),
         )
-        .with_pinned_callables(engine, &frontend)?
-        .with_pinned_variables(engine, &frontend)?;
+        .with_pinned_facts(engine, &frontend, Arc::clone(&pinned_facts))?;
         let scalar = dmbc::compile_driver::scalars(
             &frontend,
             engine,
             &source_host,
             source_host.configuration_identity(),
         );
+        drop(source_host);
         let defaults = dmbc::compile_driver::map_defaults(&scalar)?;
         let host = dmbc::engine_host::EngineResolverHost::new(Arc::new(scalar), constants, runtime)
-            .with_pinned_callables(engine, &frontend)?
-            .with_pinned_variables(engine, &frontend)?;
+            .with_pinned_facts(engine, &frontend, pinned_facts)?;
+        dmbc::heap_census::emit_if_enabled("captured_facts.ready", |census| {
+            census.frontend(&frontend);
+            host.census(census);
+        })?;
         let facts_seconds = facts_started.elapsed().as_secs_f64();
         drop(facts_profile);
         let nontext_context_profile = dm_profile::stage("request.nontext_context");
@@ -688,7 +693,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
                     exact_inputs,
                 )?,
         };
-        store.install_exact(
+        let installation = store.install_receipt_exact(
             pair.id,
             &output_project.with_extension("dmb"),
             &output_project.with_extension("rsc"),
@@ -724,10 +729,7 @@ pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::err
             );
             if inputs.restat(&publication_proofs)?.unchanged() {
                 let mut outputs = dmbc::input_snapshot::InputSnapshot::new(now_ns());
-                for extension in ["dmb", "rsc", "dmb-pair.json"] {
-                    let path = project.with_extension(extension);
-                    capture_output_digest(&mut outputs, &path)?;
-                }
+                installation.record_outputs(&mut outputs)?;
                 let asset_paths = publication
                     .resource_catalog
                     .record()

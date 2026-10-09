@@ -254,6 +254,12 @@ pub(super) fn expand_region(
                     }
                 }
             };
+            // Traces survive through analysis and lowering. Release growth
+            // slack before publishing immutable backing shared by emitted lines.
+            for expansion in &mut macro_expansions {
+                expansion.replacement_chain.shrink_to_fit();
+            }
+            macro_expansions.shrink_to_fit();
             let macro_expansions = Arc::new(macro_expansions);
             // The terminal separator is not another emitted line. Interior
             // empty lines are source content, including inside block strings.
@@ -298,12 +304,14 @@ mod tests {
             let output = expand_region(&plan, index, None);
             let mut expected = String::new();
             let mut origins = Vec::new();
+            let mut traces = Vec::new();
             for segment in &region.segments {
                 for line in &segment.lines {
                     let source = line.text.trim_end_matches(['\r', '\n']);
                     if source.bytes().all(|byte| matches!(byte, b' ' | b'\t')) {
                         blank_count += 1;
                     }
+                    let mut trace = Vec::new();
                     let text = expand_traced(
                         source,
                         &segment.macros,
@@ -311,7 +319,17 @@ mod tests {
                             file_name: &plan.semantic_path(region.occurrence),
                             line: line.source_line,
                         },
-                        &mut |_, _, _| {},
+                        &mut |name, invocation_span, chain| {
+                            trace.push(MacroExpansion {
+                                name: name.to_owned(),
+                                invocation_span,
+                                replacement_chain: chain
+                                    .iter()
+                                    .map(|name| (*name).to_owned())
+                                    .collect(),
+                                definition: segment.macros.definition_origin(name).cloned(),
+                            });
+                        },
                     )
                     .unwrap();
                     for part in text.strip_suffix('\n').unwrap_or(&text).split('\n') {
@@ -323,11 +341,20 @@ mod tests {
                             line.source_line,
                             line.source_span,
                         ));
+                        traces.push(format!("{trace:?}"));
                     }
                 }
             }
             assert_eq!(output.text, expected);
             assert!(output.diagnostics.is_empty());
+            assert_eq!(
+                output
+                    .lines
+                    .iter()
+                    .map(|(_, _, _, trace)| format!("{trace:?}"))
+                    .collect::<Vec<_>>(),
+                traces,
+            );
             assert_eq!(
                 output
                     .lines
@@ -381,6 +408,10 @@ mod tests {
         }
         assert_eq!(offset, serial.text.len());
         assert_eq!(serial.origins[0].macro_expansions[0].name, "VALUE");
+        assert!(Arc::ptr_eq(
+            &serial.origins[1].macro_expansions,
+            &serial.origins[2].macro_expansions,
+        ));
         assert_eq!(
             serial.origins[4].macro_expansions[0]
                 .definition

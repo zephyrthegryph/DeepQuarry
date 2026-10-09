@@ -19,6 +19,34 @@ pub struct Collected {
 struct Origins {
     entries: Vec<DebugOrigin>,
 }
+/// Exact operand seed whose source ordinals were resolved before rich IR was released.
+#[derive(Clone)]
+pub struct PreparedSeed {
+    reference: SymRef,
+    captured: CapturedModifiedInstance,
+    origins: DebugOrigins,
+}
+impl PreparedSeed {
+    pub(crate) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
+        census.prepared_modified(&self.captured, &self.origins);
+    }
+}
+pub(crate) fn prepare_seed(
+    reference: SymRef,
+    captured: &CapturedModifiedInstance,
+    debug: &DebugOrigins,
+) -> Result<PreparedSeed, String> {
+    if reference != SymRef::Instance(SymbolId::of(&captured.descriptor.alias())) {
+        return Err("modified symbol differs from issued descriptor".into());
+    }
+    Ok(PreparedSeed {
+        reference,
+        captured: captured.clone(),
+        origins: DebugOrigins {
+            entries: origins(captured, debug)?.entries,
+        },
+    })
+}
 /// Resource facts were captured before descriptor identity was issued. Repeated
 /// lowering may verify them, but cannot silently substitute a changed payload.
 struct ResourceProofHost<'a, R> {
@@ -117,6 +145,27 @@ fn enqueue(
     }
     Ok(())
 }
+fn enqueue_defaults(
+    defaults: &[(SymRef, CapturedModifiedInstance, DebugOrigins)],
+    seen: &mut HashMap<SymRef, Arc<[u8]>>,
+    pending: &mut VecDeque<(SymRef, CapturedModifiedInstance, Origins)>,
+) -> Result<(), String> {
+    for (symbol, captured, debug) in defaults {
+        if *symbol != SymRef::Instance(SymbolId::of(&captured.descriptor.alias())) {
+            return Err("modified default alias differs from issued descriptor".into());
+        }
+        let bytes: Arc<[u8]> = Arc::from(captured.descriptor.canonical_bytes());
+        if let Some(old) = seen.get(symbol) {
+            if old != &bytes {
+                return Err("modified default identity collision".into());
+            }
+            continue;
+        }
+        seen.insert(*symbol, bytes);
+        pending.push_back((*symbol, captured.clone(), origins(captured, debug)?));
+    }
+    Ok(())
+}
 /// Operand first-use order is explicit. Each new descriptor is lowered once;
 /// nested sidecars append to the same FIFO until the exact graph is closed.
 pub fn collect<'a, R: Resolver>(
@@ -136,23 +185,71 @@ pub fn collect_with_defaults<'a, R: Resolver>(
 ) -> Result<Collected, String> {
     let mut seen = HashMap::new();
     let mut pending = VecDeque::new();
-    for (symbol, captured, debug) in defaults {
-        if *symbol != SymRef::Instance(SymbolId::of(&captured.descriptor.alias())) {
-            return Err("modified default alias differs from issued descriptor".into());
-        }
-        let bytes: Arc<[u8]> = Arc::from(captured.descriptor.canonical_bytes());
-        if let Some(old) = seen.get(symbol) {
-            if old != &bytes {
-                return Err("modified default identity collision".into());
-            }
-            continue;
-        }
-        seen.insert(*symbol, bytes);
-        pending.push_back((*symbol, captured.clone(), origins(captured, debug)?));
-    }
+    enqueue_defaults(defaults, &mut seen, &mut pending)?;
     for (code, debug) in seeds {
         enqueue(code, debug, &mut seen, &mut pending)?;
     }
+    finish_collection(seen, pending, symbols, host, calls)
+}
+/// Consume compact body seeds before initializer/map seeds in their original order.
+pub fn collect_prepared_with_defaults<'a, R: Resolver>(
+    prepared: impl IntoIterator<Item = &'a PreparedSeed>,
+    trailing: impl IntoIterator<Item = (&'a ResolverProc, &'a DebugOrigins)>,
+    defaults: &[(SymRef, CapturedModifiedInstance, DebugOrigins)],
+    symbols: &SymbolTable,
+    host: &R,
+    calls: Option<&dyn dm_tree::constants::PureCalls>,
+) -> Result<Collected, String> {
+    collect_owned_prepared_with_defaults(
+        prepared.into_iter().cloned(),
+        trailing,
+        defaults,
+        symbols,
+        host,
+        calls,
+    )
+}
+/// Move request-local captured sidecars into the same FIFO without copying their origins.
+pub fn collect_owned_prepared_with_defaults<'a, R: Resolver>(
+    prepared: impl IntoIterator<Item = PreparedSeed>,
+    trailing: impl IntoIterator<Item = (&'a ResolverProc, &'a DebugOrigins)>,
+    defaults: &[(SymRef, CapturedModifiedInstance, DebugOrigins)],
+    symbols: &SymbolTable,
+    host: &R,
+    calls: Option<&dyn dm_tree::constants::PureCalls>,
+) -> Result<Collected, String> {
+    let mut seen = HashMap::new();
+    let mut pending = VecDeque::new();
+    enqueue_defaults(defaults, &mut seen, &mut pending)?;
+    for seed in prepared {
+        let bytes = seed.captured.descriptor.canonical_bytes();
+        if let Some(previous) = seen.get(&seed.reference) {
+            if previous.as_ref() != bytes {
+                return Err("modified alias collision".into());
+            }
+            continue;
+        }
+        seen.insert(seed.reference, Arc::from(bytes));
+        pending.push_back((
+            seed.reference,
+            seed.captured,
+            Origins {
+                entries: seed.origins.entries,
+            },
+        ));
+    }
+    for (code, debug) in trailing {
+        enqueue(code, debug, &mut seen, &mut pending)?;
+    }
+    finish_collection(seen, pending, symbols, host, calls)
+}
+fn finish_collection<R: Resolver>(
+    mut seen: HashMap<SymRef, Arc<[u8]>>,
+    mut pending: VecDeque<(SymRef, CapturedModifiedInstance, Origins)>,
+    symbols: &SymbolTable,
+    host: &R,
+    calls: Option<&dyn dm_tree::constants::PureCalls>,
+) -> Result<Collected, String> {
     let mut result = Collected {
         descriptors: Vec::new(),
         artifacts: Vec::new(),
@@ -264,7 +361,7 @@ pub fn default_seeds(
                 return Err("modified default source provenance mismatch".into());
             }
             DebugOrigin {
-                semantic_path: occurrence.semantic_path.to_string(),
+                semantic_path: occurrence.semantic_path.clone(),
                 line: u32::try_from(file.line_starts.partition_point(|start| *start <= offset))
                     .map_err(|_| "modified default line overflow")?,
             }
@@ -459,6 +556,33 @@ mod resource_tests {
         )
         .unwrap();
         assert_eq!(output.artifacts.len(), 1);
+        let prepared = prepare_seed(defaults[0].0, &defaults[0].1, &defaults[0].2).unwrap();
+        let prepared_output = collect_prepared_with_defaults(
+            [&prepared, &prepared],
+            std::iter::empty(),
+            &[],
+            &symbols,
+            &Host { content: 99 },
+            None,
+        )
+        .unwrap();
+        assert_eq!(prepared_output.artifacts.len(), 1);
+        assert_eq!(
+            prepared_output.artifacts[0].debug_origins,
+            output.artifacts[0].debug_origins
+        );
+        assert_eq!(
+            dm_codegen_byond::encoder::freeze_proc(
+                &prepared_output.artifacts[0].code.procedure.code
+            )
+            .unwrap()
+            .code()
+            .canonical_bytes(),
+            dm_codegen_byond::encoder::freeze_proc(&output.artifacts[0].code.procedure.code)
+                .unwrap()
+                .code()
+                .canonical_bytes(),
+        );
         assert_eq!(
             output.artifacts[0]
                 .code
