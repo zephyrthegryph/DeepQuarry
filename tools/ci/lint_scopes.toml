@@ -823,6 +823,13 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "/datum/interaction/entry_item = an op(...) in the type CAPABILITIES block",
+  "/datum/interaction/entry_hand = an op(...) in the type CAPABILITIES block",
+  "/datum/interaction/entry_hand/ungated = an op(...) in the type CAPABILITIES block",
+  "/datum/interaction/entry_alt = an op(...) in the type CAPABILITIES block",
+  "/datum/interaction/entry_drag = an op(...) in the type CAPABILITIES block",
+  "/datum/interaction/entry_self = an op(...) in the type CAPABILITIES block",
+  "/datum/interaction/entry_verb = an op(...) in the type CAPABILITIES block",
   "om_run = then(PROC_REF(x)): a part is already a deferred call",
   "om_emit_examine = PUBLISH_LEGACY(A, /datum/notice/examine, user, texts)",
   "om_emit_moved = PUBLISH_LEGACY(AM, /datum/notice/moved, old_loc, direction, forced)",
