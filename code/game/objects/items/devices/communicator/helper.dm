@@ -451,7 +451,7 @@
 // code\game\machinery\computer\supply.dm, starting at line 130
 /obj/item/commcard/proc/get_supply_orders()
 	var/orders[0]
-	for(var/datum/supply_order/S in SSsupply.order_history)
+	for(var/datum/supply_order/S in supply_order_history())
 		orders[++orders.len] = list(
 				"ref" = "\ref[S]",
 				"status" = S.status,
@@ -474,7 +474,7 @@
 // code\game\machinery\computer\supply.dm, starting at line 147
 /obj/item/commcard/proc/get_supply_receipts()
 	var/receipts[0]
-	for(var/datum/exported_crate/E in SSsupply.exported_crates)
+	for(var/datum/exported_crate/E in supply_exported_crates())
 		receipts[++receipts.len] = list(
 				"ref" = "\ref[E]",
 				"contents" = E.contents,
@@ -492,8 +492,8 @@
 // code\game\machinery\computer\supply.dm, starting at line 147
 /obj/item/commcard/proc/get_supply_pack_list()
 	var/supply_packs[0]
-	for(var/pack_name in SSsupply.supply_pack)
-		var/datum/supply_pack/P = SSsupply.supply_pack[pack_name]
+	for(var/pack_name in supply_supply_pack())
+		var/datum/supply_pack/P = supply_supply_pack()[pack_name]
 		if(P.group == internal_data["supply_category"])
 			var/list/pack = list(
 					"name" = P.name,

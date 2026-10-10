@@ -69,7 +69,7 @@ CAPABILITIES(/datum/tgui_module/late_choices)
 	if(SSemergency_shuttle?.going_to_centcom())
 		data["evac"] = "Gone"
 	else if(SSemergency_shuttle?.online())
-		if(SSemergency_shuttle.evac)
+		if(emergency_shuttle_evac())
 			data["evac"] = "Emergency"
 		else
 			data["evac"] = "Crew Transfer"
@@ -78,7 +78,7 @@ CAPABILITIES(/datum/tgui_module/late_choices)
 
 	var/list/jobs = list()
 
-	for(var/datum/job/job in SSjob.occupations)
+	for(var/datum/job/job in job_occupations())
 		if(job && user.IsJobAvailable(job.title))
 			// Check for jobs with minimum age requirements
 			if(!character_old_enough_for_job(user.client.prefs, job))

@@ -834,7 +834,7 @@
 ADMIN_VERB(show_generated_station_architecture, R_DEBUG, "Show Generated Station Architecture", "Show the architecture diagnostic map of the generated station on your z-level.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	var/datum/expedition_site/found_site
 	for(var/key in SSexpedition?.sites)
-		var/datum/expedition_site/site = SSexpedition.sites[key]
+		var/datum/expedition_site/site = expedition_sites()[key]
 		if(site.z_level == user.mob?.z && site.station_materialization)
 			found_site = site
 			break

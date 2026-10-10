@@ -4,8 +4,8 @@
 /datum/autowiki/techweb/generate()
 	var/output = ""
 
-	for (var/node_id in sortList(SSresearch.techweb_nodes, GLOBAL_PROC_REF(sort_research_nodes)))
-		var/datum/techweb_node/node = SSresearch.techweb_nodes[node_id]
+	for (var/node_id in sortList(research_techweb_nodes(), GLOBAL_PROC_REF(sort_research_nodes)))
+		var/datum/techweb_node/node = research_techweb_nodes()[node_id]
 		if (!node.show_on_wiki)
 			continue
 
@@ -28,7 +28,7 @@
 	var/output = ""
 
 	for (var/design_id in design_ids)
-		var/datum/design_techweb/design = SSresearch.techweb_designs[design_id]
+		var/datum/design_techweb/design = research_techweb_designs()[design_id]
 		output += include_template("Autowiki/TechwebEntryDesign", list(
 			"name" = escape_value(design.name),
 			"description" = escape_value(design.get_description()),
@@ -40,7 +40,7 @@
 	var/output = ""
 
 	for (var/prereq_id in prereq_ids)
-		var/datum/techweb_node/node = SSresearch.techweb_nodes[prereq_id]
+		var/datum/techweb_node/node = research_techweb_nodes()[prereq_id]
 		output += include_template("Autowiki/TechwebEntryPrerequisite", list(
 			"name" = escape_value(node.display_name),
 		))
@@ -54,8 +54,8 @@
 	return node.experimental
 
 /proc/sort_research_nodes(node_id_a, node_id_b)
-	var/datum/techweb_node/node_a = SSresearch.techweb_nodes[node_id_a]
-	var/datum/techweb_node/node_b = SSresearch.techweb_nodes[node_id_b]
+	var/datum/techweb_node/node_a = research_techweb_nodes()[node_id_a]
+	var/datum/techweb_node/node_b = research_techweb_nodes()[node_id_b]
 
 	var/prereq_difference = length(node_a.prereq_ids) - length(node_b.prereq_ids)
 	if (prereq_difference != 0)

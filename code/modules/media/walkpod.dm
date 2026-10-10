@@ -176,7 +176,7 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 
 // UI
 /obj/item/walkpod/proc/getTracksList()
-	return SSmedia_tracks.jukebox_tracks
+	return media_tracks_jukebox_tracks()
 
 /obj/item/walkpod/ui_data(datum/act/eval/A)
 	var/list/data = list()

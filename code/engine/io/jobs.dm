@@ -84,7 +84,7 @@
 		J.preset_error = "No connection!"
 		return null
 	var/list/arguments = J.request[2]
-	var/id = rustg_sql_query_async(SSdbcore.connection, J.request[1], json_encode(arguments || list()))
+	var/id = rustg_sql_query_async(dbcore_connection(), J.request[1], json_encode(arguments || list()))
 	if(!id)
 		J.preset_error = "sql start failed"
 		return null

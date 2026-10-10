@@ -11,8 +11,8 @@
 	var/list/contracts = list()
 	var/datum/money_account/account = pda().id ? get_account(pda().id.associated_account_number) : null
 	if(account)
-		for(var/id in SScontracts.contracts_by_id)
-			var/datum/contract/contract = SScontracts.contracts_by_id[id]
+		for(var/id in contracts_contracts_by_id())
+			var/datum/contract/contract = contracts_contracts_by_id()[id]
 			var/personal_contract = contract.scope == CONTRACT_SCOPE_PERSONAL && contract.owner_account_number == account.account_number
 			var/datum/contract/social/social = contract
 			var/social_opportunity = istype(social) && social.account_can_participate(account)
@@ -56,19 +56,19 @@ CAPABILITIES(/datum/data/pda/app/contracts)
 /datum/data/pda/app/contracts/proc/ui_act_contract_stakeholder_propose(datum/act/op/A, id, role, weight)
 	var/mob/user = A.actor
 	var/datum/money_account/account = holder_account(user)
-	var/datum/contract/social/social = SScontracts.contracts_by_id[id]
+	var/datum/contract/social/social = contracts_contracts_by_id()[id]
 	return account && istype(social) && social.propose_stakeholder(account, role, weight)
 
 /datum/data/pda/app/contracts/proc/ui_act_contract_stakeholder_withdraw(datum/act/op/A, id, role)
 	var/mob/user = A.actor
 	var/datum/money_account/account = holder_account(user)
-	var/datum/contract/social/social = SScontracts.contracts_by_id[id]
+	var/datum/contract/social/social = contracts_contracts_by_id()[id]
 	return account && istype(social) && social.withdraw_stakeholder(account, role)
 
 /datum/data/pda/app/contracts/proc/ui_act_contract_decline(datum/act/op/A, id)
 	var/mob/user = A.actor
 	var/datum/money_account/account = holder_account(user)
-	var/datum/contract/contract = SScontracts.contracts_by_id[id]
+	var/datum/contract/contract = contracts_contracts_by_id()[id]
 	if(!account || !contract)
 		return FALSE
 	if(contract.scope != CONTRACT_SCOPE_PERSONAL || contract.owner_account_number != account.account_number)
@@ -78,7 +78,7 @@ CAPABILITIES(/datum/data/pda/app/contracts)
 /datum/data/pda/app/contracts/proc/ui_act_contract_accept(datum/act/op/A, id)
 	var/mob/user = A.actor
 	var/datum/money_account/account = holder_account(user)
-	var/datum/contract/contract = SScontracts.contracts_by_id[id]
+	var/datum/contract/contract = contracts_contracts_by_id()[id]
 	if(!account || !contract)
 		return FALSE
 	if(contract.scope != CONTRACT_SCOPE_PERSONAL || contract.owner_account_number != account.account_number)

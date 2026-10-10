@@ -81,7 +81,7 @@
 
 /// The console's guard on every button, and on the answer to a question one of them asked: the shuttle is still linked (a print, a warning).
 /obj/machinery/computer/shuttle_control/proc/console_gate(mob/user)
-	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(skip_act)
 		return FALSE
 	add_fingerprint(user)
@@ -94,7 +94,7 @@
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(can_move(shuttle, user))
 		shuttle.launch(src, user)
 	return TRUE
@@ -103,7 +103,7 @@
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(can_move(shuttle, user))
 		shuttle.force_launch(src, user)
 	return TRUE
@@ -112,7 +112,7 @@
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/shuttle = shuttles_shuttles()[shuttle_tag]
 	shuttle.cancel_launch(src, user)
 	return TRUE
 
@@ -124,7 +124,7 @@
 	shuttle_codes_stage(ui, user, FALSE)
 
 /obj/machinery/computer/shuttle_control/proc/shuttle_codes_stage(datum/tgui/ui, mob/actor, answered, newcode)
-	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(!answered)
 		open_request(ui, /datum/prompt/text/shuttle_docking_codes, TYPE_PROC_REF(/datum/tgui, shuttle_codes_entered), answerer = actor, default = shuttle.docking_codes, captured = list())
 		return
@@ -188,7 +188,7 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control)
 
 /// /obj/machinery/computer/shuttle_control's window data.
 /obj/machinery/computer/shuttle_control/proc/ui_data_obj_machinery_computer_shuttle_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(!istype(shuttle))
 		to_chat(user, span_warning("Unable to establish link with the shuttle."))
 		return

@@ -142,7 +142,7 @@
 	var/list/highs = get_jobs_at_priority("high")
 	if(!length(highs))
 		return null
-	for(var/datum/job/job in SSjob.occupations)
+	for(var/datum/job/job in job_occupations())
 		if(job.title in highs)
 			return job
 	return null

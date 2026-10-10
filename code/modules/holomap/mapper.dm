@@ -279,13 +279,13 @@ TRACKED(/obj/item/mapping_unit, updating)
 		map_app.layer = HUD_LAYER
 		map_app.color = map_color
 
-		if(!SSholomaps.holoMiniMaps[T_z])
+		if(!holomaps_holoMiniMaps()[T_z])
 			var/atom/movable/screen/mapper/map/baddo = LAZYACCESS(map_image_cache, "bad")
 			map_app.icon = icon(baddo.icon)
 			badmap = TRUE
 		// SSholomaps did map it and we're allowed to see it
 		else
-			map_app.icon = icon(SSholomaps.holoMiniMaps[T.z])
+			map_app.icon = icon(holomaps_holoMiniMaps()[T.z])
 
 			// Apply markers
 			for(var/marker in GLOB.holomap_markers)

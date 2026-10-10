@@ -376,7 +376,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	explosion(center, devastation, devastation * 2, devastation * 3, 0, FALSE, 0)
 	// Resolve: explosions idle, then lighting queues empty.
 	var/deadline = REALTIMEOFDAY + 3000
-	while(SSexplosions.awake || SSexplosions.pending_blast_count())
+	while(explosions_awake() || SSexplosions.pending_blast_count())
 		if(REALTIMEOFDAY > deadline)
 			fail("explosion did not resolve within 300s")
 		stoplag()

@@ -35,9 +35,9 @@ ADMIN_VERB(air_report, R_DEBUG, "Show Air Report", "Displays the current atmos s
 
 ADMIN_VERB(radio_report, R_DEBUG, "Radio report", "Displays a radio report.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	var/output = "<b>Radio Report</b><hr>"
-	for (var/fq in SSradio.frequencies)
+	for (var/fq in radio_frequencies())
 		output += "<b>Freq: [fq]</b><br>"
-		var/datum/radio_frequency/fqs = SSradio.frequencies[fq]
+		var/datum/radio_frequency/fqs = radio_frequencies()[fq]
 		if (!fqs)
 			output += "&nbsp;&nbsp;<b>ERROR</b><br>"
 			continue

@@ -98,7 +98,7 @@ MSG_DEF(generated_station_upload_terminal/uploading, span_notice("You begin uplo
 	uploaded = TRUE
 	var/datum/generated_station_simulation/simulation = generated_station_runtime(station_id)
 	for(var/key in SSexpedition?.sites)
-		var/datum/expedition_site/candidate = SSexpedition.sites[key]
+		var/datum/expedition_site/candidate = expedition_sites()[key]
 		if(candidate.station_simulation == simulation)
 			candidate.station_director?.set_department_connected("ai-1", FALSE)
 			break

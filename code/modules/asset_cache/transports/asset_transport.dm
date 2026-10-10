@@ -39,8 +39,8 @@
 		ACI = new(asset_name, asset, file_hash, dmi_file_path)
 		if (!ACI || !ACI.hash)
 			CRASH("ERROR: Invalid asset: [asset_name]:[asset]:[ACI]")
-	if (SSassets.cache[asset_name])
-		var/datum/asset_cache_item/OACI = SSassets.cache[asset_name]
+	if (assets_cache()[asset_name])
+		var/datum/asset_cache_item/OACI = assets_cache()[asset_name]
 		OACI.legacy = ACI.legacy = (ACI.legacy|OACI.legacy)
 		OACI.namespace_parent = ACI.namespace_parent = (ACI.namespace_parent | OACI.namespace_parent)
 		OACI.namespace = OACI.namespace || ACI.namespace
@@ -66,7 +66,7 @@
 /// asset_cache_item - asset cache item datum for the asset, optional, overrides asset_name
 /datum/asset_transport/proc/get_asset_url(asset_name, datum/asset_cache_item/asset_cache_item)
 	if (!istype(asset_cache_item))
-		asset_cache_item = SSassets.cache[asset_name]
+		asset_cache_item = assets_cache()[asset_name]
 	if (!istype(asset_cache_item))
 		return null
 	// To ensure code that breaks on cdns breaks in local testing, we only
@@ -103,7 +103,7 @@
 
 	for (var/asset_name in asset_list)
 		var/datum/asset_cache_item/ACI = asset_list[asset_name]
-		if (!istype(ACI) && !(ACI = SSassets.cache[asset_name]))
+		if (!istype(ACI) && !(ACI = assets_cache()[asset_name]))
 			log_asset("ERROR: can't send asset `[asset_name]`: unregistered or invalid state: `[ACI]`")
 			continue
 		var/asset_file = ACI.resource

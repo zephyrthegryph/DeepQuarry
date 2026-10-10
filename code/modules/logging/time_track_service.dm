@@ -181,16 +181,16 @@ SYSTEM_DEF(time_track)
 			SSair.fire_cost,
 			SSair.ticks,
 			SSair.tick_overrun,
-			SSmachines.cost_machinery,
-			SSmachines.cost_powernets,
+			machines_cost_machinery(),
+			machines_cost_powernets(),
 			0, // power objects: gone (powersinks drain on their own periodic step)
 			0, // parked machines: none (a machine's work is a stat-gated every())
-			length(SSmachines.power_grids),
+			length(machines_power_grids()),
 			SSmachines.fire_cost,
 			SSmachines.times_fired,
 			0, // tick overrun: the machine service runs inside SSbehaviours' budget
-			SSmachines.gas_dirty_last,
-			SSmachines.gas_woken_last,
+			machines_gas_dirty_last(),
+			machines_gas_woken_last(),
 			SSbehaviours.fire_cost,
 			SSbehaviours.ticks,
 			SSbehaviours.tick_overrun,

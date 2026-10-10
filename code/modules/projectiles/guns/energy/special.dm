@@ -104,7 +104,7 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 
 /// Old Select Gene verb.
 /obj/item/gun/energy/floragun/proc/floragun_verb_select_gene_k108_choices(datum/act/op/A)
-	return SSplants.plant_gene_datums
+	return plants_plant_gene_datums()
 
 /obj/item/gun/energy/floragun/proc/floragun_verb_select_gene(datum/act/op/A)
 	var/mob/user = A.actor
@@ -113,7 +113,7 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	if(!genemask)
 		return
 
-	gene_static = SSplants.plant_gene_datums[genemask]
+	gene_static = plants_plant_gene_datums()[genemask]
 
 	to_chat(user, span_info("You set the [src]'s targeted genetic area to [genemask]."))
 

@@ -278,7 +278,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 	halted = 1
 
 /obj/effect/overmap/visitable/ship/proc/unhalt()
-	if(!SSshuttles.overmap_halted)
+	if(!shuttles_overmap_halted())
 		halted = 0
 
 /obj/effect/overmap/visitable/ship/populate_sector_objects()

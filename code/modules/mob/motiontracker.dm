@@ -32,10 +32,10 @@
 	var/turf/T = event.echo_turf_location
 	if(!client || !wants_to_see_motion_echos || stat || is_deaf())
 		return
-	if(!isatom(echo_source) || get_dist(src,echo_source) > SSmotiontracker.max_range || src.z != echo_source.z)
+	if(!isatom(echo_source) || get_dist(src,echo_source) > motiontracker_max_range() || src.z != echo_source.z)
 		return
 	// Blind characters see all pings around them. Otherwise remove the closest, or any we can see. Pings behind walls or in the dark are always visible
-	if(!is_blind() && (get_dist(src,echo_source) < SSmotiontracker.min_range || (T.get_lumcount() >= 0.20 && can_see(src, T, 7)) ))
+	if(!is_blind() && (get_dist(src,echo_source) < motiontracker_min_range() || (T.get_lumcount() >= 0.20 && can_see(src, T, 7)) ))
 		return
 	var/echos = 1
 	if(prob(30))

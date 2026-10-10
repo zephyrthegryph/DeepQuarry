@@ -203,8 +203,8 @@ TRACKED(/datum/changeling, camo_draining)
 		absorbDNA(newDNA)
 
 		//Code to make it so our BR is marked as a changeling body, so it can't be stolen.
-		for(var/key in SStranscore.databases)
-			var/datum/transcore_db/db = SStranscore.databases[key]
+		for(var/key in transcore_databases())
+			var/datum/transcore_db/db = transcore_databases()[key]
 			if(H.mind.name in db.body_scans)
 				var/datum/transhuman/body_record/BR = db.body_scans[H.mind.name]
 				BR.changeling_locked = TRUE

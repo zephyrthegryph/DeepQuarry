@@ -110,8 +110,8 @@ CAPABILITIES(/datum/uplink_random_selection)
 
 #ifdef DEBUG
 /proc/debug_uplink_purchage_log()
-	for(var/antag_type in SSantag.all_antag_types)
-		var/datum/antagonist/A = SSantag.all_antag_types[antag_type]
+	for(var/antag_type in antag_all_antag_types())
+		var/datum/antagonist/A = antag_all_antag_types()[antag_type]
 		A.print_player_summary()
 
 /proc/debug_uplink_item_assoc_list()

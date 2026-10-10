@@ -26,16 +26,16 @@
 	. = ..()
 	. += ""
 
-	. += "Game Mode: [SSticker.hide_mode ? "Secret" : "[config.mode_names[GLOB.master_mode]]"]"
+	. += "Game Mode: [ticker_hide_mode() ? "Secret" : "[config.mode_names[GLOB.master_mode]]"]"
 
 	// if(GLOB.vote_service.mode)
 	// 	. += "Vote: [capitalize(GLOB.vote_service.mode)] Time Left: [GLOB.vote_service.time_remaining] s"
 
-	if(SSticker.current_state == GAME_STATE_STARTUP)
+	if(ticker_current_state() == GAME_STATE_STARTUP)
 		. += "Time To Start: Server Initializing"
 
-	else if(SSticker.current_state == GAME_STATE_PREGAME)
-		. += "Time To Start: [round(SSticker.timeLeft / 10, 1)][GLOB.round_progressing ? "" : " (DELAYED)"]"
+	else if(ticker_current_state() == GAME_STATE_PREGAME)
+		. += "Time To Start: [round(ticker_timeLeft() / 10, 1)][GLOB.round_progressing ? "" : " (DELAYED)"]"
 		. += "Players: [totalPlayers]"
 		. += "Players Ready: [totalPlayersReady]"
 		totalPlayers = 0
@@ -143,7 +143,7 @@
 		return 0
 	if(spawning || QDELETED(src))
 		return 0
-	if(!SSticker || SSticker.current_state != GAME_STATE_PLAYING)
+	if(!SSticker || ticker_current_state() != GAME_STATE_PLAYING)
 		to_chat(src, span_red("The round is either not ready, or has already finished..."))
 		return 0
 	if(!CONFIG_GET(flag/enter_allowed))
@@ -288,7 +288,7 @@
 	spent(src) // Delete new_player mob
 
 /mob/new_player/proc/AnnounceCyborg(mob/living/character, rank, join_message, channel, zlevel)
-	if (SSticker.current_state == GAME_STATE_PLAYING)
+	if (ticker_current_state() == GAME_STATE_PLAYING)
 		var/list/zlevels = zlevel ? using_map.get_map_levels(zlevel, TRUE, om_range = DEFAULT_OVERMAP_RANGE) : null
 		if(character.mind.role_alt_title)
 			rank = character.mind.role_alt_title
@@ -506,7 +506,7 @@
 			to_chat(src, span_warning("Some of your traits are not usable by your character type (synthetic traits on organic, or vice versa)."))
 	// start
 	if(J.camp_protection && round_duration_in_ds < CONFIG_GET(number/job_camp_time_limit))
-		if(length(SSjob.restricted_keys))
+		if(length(job_restricted_keys()))
 			var/list/check = LAZYACCESS(SSjob.restricted_keys, J.title)
 			if(client.ckey in check)
 				to_chat(src, span_danger("[J.title] is not presently selectable because you played as it last round. It will become available to you in [round((CONFIG_GET(number/job_camp_time_limit) - round_duration_in_ds) / 600)] minutes, if slots remain open."))

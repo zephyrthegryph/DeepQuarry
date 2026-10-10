@@ -26,10 +26,10 @@
 // Return shuttle_tag of shuttle of current area
 /obj/item/circuitboard/shuttle_console/proc/auto_detect_shuttle(obj/machinery/computer/shuttle_control/M)
 	var/area/A = get_area(M)
-	if(!A || !(A in SSshuttles.shuttle_areas))
+	if(!A || !(A in shuttles_shuttle_areas()))
 		return // Definately not on a shuttle
-	for(var/shuttle_name in SSshuttles.shuttles)
-		var/datum/shuttle/S = SSshuttles.shuttles[shuttle_name]
+	for(var/shuttle_name in shuttles_shuttles())
+		var/datum/shuttle/S = shuttles_shuttles()[shuttle_name]
 		if(A in S.find_childfree_areas())
 			// Found the owning shuttle! Return it if its a valid type
 			return (S.category == shuttle_category) ? S.name : null

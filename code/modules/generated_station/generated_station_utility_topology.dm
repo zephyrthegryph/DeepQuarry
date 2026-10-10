@@ -194,7 +194,7 @@ CAPABILITIES(/datum/generated_station_utility_topology)
 
 /proc/generated_station_utility_topology(station_id)
 	for(var/key in SSexpedition?.sites)
-		var/datum/expedition_site/site = SSexpedition.sites[key]
+		var/datum/expedition_site/site = expedition_sites()[key]
 		if(site.station_spec?.id == station_id)
 			return site.station_utilities
 	return null

@@ -42,10 +42,10 @@ SYSTEM_DEF(statpanels)
 			"Round Time: [roundduration2text()]",
 			"Station Date: [stationdate2text()], [capitalize(GLOB.world_time_season)]",
 			"Station Time: [stationtime2text()]",
-			"Time Dilation: [round(SStime_track.time_dilation_current,1)]% AVG:([round(SStime_track.time_dilation_avg_fast,1)]%, [round(SStime_track.time_dilation_avg,1)]%, [round(SStime_track.time_dilation_avg_slow,1)]%)"
+			"Time Dilation: [round(time_track_time_dilation_current(),1)]% AVG:([round(time_track_time_dilation_avg_fast(),1)]%, [round(time_track_time_dilation_avg(),1)]%, [round(time_track_time_dilation_avg_slow(),1)]%)"
 		)
 
-		if(SSemergency_shuttle.evac)
+		if(emergency_shuttle_evac())
 			var/ETA = SSemergency_shuttle.get_status_panel_eta()
 			if(ETA)
 				global_data += "[ETA]"
@@ -55,7 +55,7 @@ SYSTEM_DEF(statpanels)
 			if(reboot_time)
 				global_data += "Reboot: [DisplayTimeText(reboot_time, 1)]"
 		// admin must have delayed round end
-		else if(SSticker.ready_for_reboot)
+		else if(ticker_ready_for_reboot())
 			global_data += "Reboot: DELAYED"
 
 		src.currentrun = GLOB.clients.Copy()
@@ -188,10 +188,10 @@ SYSTEM_DEF(statpanels)
 		"target_tps" = world.fps,
 		"current_usage" = history.len ? history[history.len] : 0,
 		"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
-		"tidi" = SStime_track.time_dilation_current,
-		"tidi_fast" = SStime_track.time_dilation_avg_fast,
-		"tidi_medium" = SStime_track.time_dilation_avg,
-		"tidi_slow" = SStime_track.time_dilation_avg_slow,
+		"tidi" = time_track_time_dilation_current(),
+		"tidi_fast" = time_track_time_dilation_avg_fast(),
+		"tidi_medium" = time_track_time_dilation_avg(),
+		"tidi_slow" = time_track_time_dilation_avg_slow(),
 		"window_5s" = Kernel.performance_window(5),
 		"window_30s" = Kernel.performance_window(30),
 		"window_5m" = Kernel.performance_window(300),

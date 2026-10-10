@@ -104,7 +104,7 @@ CAPABILITIES(/datum/contract/social)
 	)
 
 /datum/contract/social/proc/offer_social_personal_contract(side_definition_id, mob/living/accepting_user)
-	var/datum/contract_definition/personal_outcome/definition = SScontracts.definitions[side_definition_id]
+	var/datum/contract_definition/personal_outcome/definition = contracts_definitions()[side_definition_id]
 	if(!istype(definition) || state != CONTRACT_ACTIVE)
 		return FALSE
 	var/list/eligible_players = list()
@@ -573,7 +573,7 @@ CAPABILITIES(/datum/contract/social)
 		return
 	// Inside a bulk batch (an explosion epoch) hits accumulate per atom and
 	// publish once when the batch ends (damage_batch.dm).
-	if(SScontracts.contract_batch_depth > 0)
+	if(contracts_contract_batch_depth() > 0)
 		if(contract_atom_is_station_infrastructure(source))
 			SScontracts.queue_damage_report(source, amount)
 		return

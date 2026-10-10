@@ -43,7 +43,7 @@
 	var/datum/generated_station_simulation/simulation = generated_station_runtime(station_id)
 	var/datum/expedition_site/site
 	for(var/key in SSexpedition?.sites)
-		var/datum/expedition_site/candidate = SSexpedition.sites[key]
+		var/datum/expedition_site/candidate = expedition_sites()[key]
 		if(candidate.station_simulation == simulation)
 			site = candidate
 			break

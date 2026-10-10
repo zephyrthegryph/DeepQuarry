@@ -51,7 +51,7 @@
 	var/list/wanted = allowed_assets
 	if(!wanted)
 		wanted = list()
-		for(var/filename in SStgui.chunk_files)
+		for(var/filename in tgui_chunk_files())
 			wanted[filename] = TRUE
 	for(var/filename in wanted)
 		if(fexists("[asset_directory]/[filename]"))

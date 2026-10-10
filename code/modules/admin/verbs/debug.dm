@@ -255,7 +255,7 @@ ADMIN_VERB(cmd_display_init_log, R_DEBUG, "Display Initialize() Log", "Displays 
 	dq_admin_report_html(user, "Initialize() Log", replacetext(SSatoms.InitLog(), "\n", "<br>"))
 
 ADMIN_VERB(cmd_display_overlay_log, R_DEBUG, "Display overlay Log", "Display SSoverlays log of everything that's passed through it.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	render_stats(SSoverlays.stats, user)
+	render_stats(overlays_stats(), user)
 
 // Render stats list for round-end statistics.
 /proc/render_stats(list/stats, user, sort = /proc/cmp_generic_stat_item_time)
@@ -658,7 +658,7 @@ ADMIN_VERB(view_runtimes, R_DEBUG, "View Runtimes", "Opens the runtime viewer.",
 			open_request(user.mob, /datum/prompt/choice, null, answerer = user.mob, question = "[warning]. Proceed with caution. If you really need to see the runtimes, download the runtime log and view it in a text editor.", title = "HEED THIS WARNING CAREFULLY MORTAL", choices = list("Ok"), buttons = TRUE, timeout = 0)
 
 ADMIN_VERB(change_weather, R_DEBUG|R_EVENT, "Change Weather", "Changes the current weather.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_ask(user, "a8", args, /datum/prompt/choice, question = "Which planet do you want to modify the weather on?", title = "Change Weather", choices = SSplanets.planets)
+	var/datum/planet/planet = verb_ask(user, "a8", args, /datum/prompt/choice, question = "Which planet do you want to modify the weather on?", title = "Change Weather", choices = planets_planets())
 	if(isnull(planet))
 		return
 	if(!istype(planet))
@@ -680,7 +680,7 @@ ADMIN_VERB(toggle_firework_override, R_DEBUG|R_EVENT, "Toggle Weather Firework O
 	if(istype(resumed, /datum/prompt/choice/admin_firework_override) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(firework_override_answered))
 		planet = resumed.value
 	else
-		open_request(src, /datum/prompt/choice/admin_firework_override, PROC_REF(firework_override_answered), answerer = user.mob, question = "Which planet do you want to toggle firework effects on?", title = "Change Weather", choices = SSplanets.planets)
+		open_request(src, /datum/prompt/choice/admin_firework_override, PROC_REF(firework_override_answered), answerer = user.mob, question = "Which planet do you want to toggle firework effects on?", title = "Change Weather", choices = planets_planets())
 		return
 	if(isnull(planet))
 		return
@@ -691,7 +691,7 @@ ADMIN_VERB(toggle_firework_override, R_DEBUG|R_EVENT, "Toggle Weather Firework O
 		log_admin(log)
 
 ADMIN_VERB(change_time, R_DEBUG|R_EVENT, "Change Planet Time", "Changes the time of a planet.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_ask(user, "a11", args, /datum/prompt/choice, question = "Which planet do you want to modify time on?", title = "Change Time", choices = SSplanets.planets)
+	var/datum/planet/planet = verb_ask(user, "a11", args, /datum/prompt/choice, question = "Which planet do you want to modify time on?", title = "Change Time", choices = planets_planets())
 	if(isnull(planet))
 		return
 	if(!istype(planet))

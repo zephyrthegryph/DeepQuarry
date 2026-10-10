@@ -52,7 +52,7 @@
 	new /obj/structure/meteorite(current)
 
 	var/datum/planet/impacted
-	for(var/datum/planet/P in SSplanets.planets)
+	for(var/datum/planet/P in planets_planets())
 		if(current.z in P.expected_z_levels)
 			impacted = P
 			break

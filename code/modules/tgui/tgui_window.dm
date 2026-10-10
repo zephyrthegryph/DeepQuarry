@@ -146,7 +146,7 @@
 	// Scoped to pooled windows only — dedicated windows (lobby, media, tooltip)
 	// manage their own visibility and are left alone.
 	// Generate page html
-	var/html = asset_generation()?.basehtml || SStgui.basehtml
+	var/html = asset_generation()?.basehtml || tgui_basehtml()
 	html = replacetextEx(html, "\[tgui:windowId]", id)
 	html = replacetextEx(html, "\[tgui:strictMode]", strict_mode)
 	// Inject assets

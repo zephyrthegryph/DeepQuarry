@@ -127,7 +127,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 		return
 
 	//Update shuttle destination.
-	var/datum/shuttle/autodock/ferry/S = SSshuttles.shuttles["Belter"]
+	var/datum/shuttle/autodock/ferry/S = shuttles_shuttles()["Belter"]
 	rel_set(S, nameof(S.landmark_offsite), ZM_target.myshuttle_landmark())
 	rel_set(S, nameof(S.next_location), S.get_location_waypoint(!S.location))
 
@@ -154,7 +154,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	if(GLOB.rm_controller.current_zone() && GLOB.rm_controller.current_zone().is_occupied())
 		return // Not usable if shuttle is in occupied zone
 	// Okay do it
-	var/datum/shuttle/autodock/ferry/S = SSshuttles.shuttles["Belter"]
+	var/datum/shuttle/autodock/ferry/S = shuttles_shuttles()["Belter"]
 	S.launch(user)
 
 /obj/item/circuitboard/roguezones

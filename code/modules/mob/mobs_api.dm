@@ -7,7 +7,7 @@
 		return
 	if(!L.key || !L.mind)
 		return
-	if(!SSticker || !SSticker.mode)
+	if(!SSticker || !ticker_mode())
 		return
 	SSticker.mode.check_win()
 

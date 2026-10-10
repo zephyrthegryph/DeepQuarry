@@ -172,7 +172,7 @@
 /client/proc/playtitlemusic()
 	if(!SSticker || !SSmedia_tracks.lobby_tracks.len || !media)	return
 	if(prefs?.read_preference(/datum/preference/toggle/play_lobby_music))
-		var/datum/track/T = pick(SSmedia_tracks.lobby_tracks)
+		var/datum/track/T = pick(media_tracks_lobby_tracks())
 		media.push_music(T.url, world.time, 0.35)
 		to_chat(src,span_notice("Lobby music: " + span_bold("[T.title]") + " by " + span_bold("[T.artist]") + "."))
 

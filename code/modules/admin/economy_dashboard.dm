@@ -66,7 +66,7 @@ CAPABILITIES(/datum/economy_dashboard)
 	var/personal_orders = 0
 	var/personal_order_spend = 0
 	var/pending_personal_orders = 0
-	for(var/datum/supply_order/order in SSsupply.order_history)
+	for(var/datum/supply_order/order in supply_order_history())
 		if(!order.personal_order)
 			continue
 		personal_orders++
@@ -80,7 +80,7 @@ CAPABILITIES(/datum/economy_dashboard)
 	var/covert_market_volume = 0
 	var/covert_market_traces = 0
 	var/covert_market_detections = 0
-	for(var/datum/cargo_market_transaction/market_transaction in SSsupply.market_transactions)
+	for(var/datum/cargo_market_transaction/market_transaction in supply_market_transactions())
 		if(market_transaction.transaction_type == CARGO_MARKET_BUY)
 			market_purchase_volume += market_transaction.value
 		else if(market_transaction.transaction_type == CARGO_MARKET_SELL)
@@ -91,13 +91,13 @@ CAPABILITIES(/datum/economy_dashboard)
 			if(market_transaction.detected)
 				covert_market_detections++
 	var/market_listing_stock = 0
-	for(var/listing_id in SSsupply.market_listings)
-		var/datum/cargo_market_listing/listing = SSsupply.market_listings?[listing_id]
+	for(var/listing_id in supply_market_listings())
+		var/datum/cargo_market_listing/listing = supply_market_listings()?[listing_id]
 		market_listing_stock += listing.stock
 	var/market_target_units = 0
 	var/market_fulfilled_units = 0
-	for(var/bid_id in SSsupply.market_bids)
-		var/datum/cargo_market_bid/bid = SSsupply.market_bids?[bid_id]
+	for(var/bid_id in supply_market_bids())
+		var/datum/cargo_market_bid/bid = supply_market_bids()?[bid_id]
 		market_target_units += bid.target_units
 		market_fulfilled_units += bid.fulfilled_units
 	var/agent_contracts_completed = 0
@@ -131,20 +131,20 @@ CAPABILITIES(/datum/economy_dashboard)
 		"personal_zero_balance" = personal_zero_balance,
 		"personal_low_balance" = personal_low_balance,
 		"department_savings" = department_savings,
-		"currency_created" = SSsupply.currency_created,
-		"currency_destroyed" = SSsupply.currency_destroyed,
-		"currency_refunded" = SSsupply.currency_refunded,
-		"currency_sink_refunded" = SSsupply.currency_sink_refunded,
-		"currency_internal_refunded" = SSsupply.currency_internal_refunded,
-		"net_currency_flow" = SSsupply.currency_created - SSsupply.currency_destroyed + SSsupply.currency_sink_refunded,
-		"currency_sources" = ranked_ledger_rows(SSsupply.currency_sources),
-		"currency_sinks" = ranked_ledger_rows(SSsupply.currency_sinks),
+		"currency_created" = supply_currency_created(),
+		"currency_destroyed" = supply_currency_destroyed(),
+		"currency_refunded" = supply_currency_refunded(),
+		"currency_sink_refunded" = supply_currency_sink_refunded(),
+		"currency_internal_refunded" = supply_currency_internal_refunded(),
+		"net_currency_flow" = supply_currency_created() - supply_currency_destroyed() + supply_currency_sink_refunded(),
+		"currency_sources" = ranked_ledger_rows(supply_currency_sources()),
+		"currency_sinks" = ranked_ledger_rows(supply_currency_sinks()),
 		"projected_payroll" = projected_payroll,
 		"last_payroll_due" = last_payroll_due,
 		"last_payroll_paid" = last_payroll_paid,
 		"unpaid_wages" = max(0, last_payroll_due - last_payroll_paid),
-		"allocation_policy" = SSsupply.allocation_policy,
-		"service_subsidies" = SSsupply.service_subsidies,
+		"allocation_policy" = supply_allocation_policy(),
+		"service_subsidies" = supply_service_subsidies(),
 		"service_invoice_count" = service_sales["invoice_count"],
 		"service_sales_gross" = service_sales["gross_billed"],
 		"service_sales_net" = service_sales["net_billed"],
@@ -154,11 +154,11 @@ CAPABILITIES(/datum/economy_dashboard)
 		"personal_orders" = personal_orders,
 		"personal_order_spend" = personal_order_spend,
 		"pending_personal_orders" = pending_personal_orders,
-		"market_generation" = SSsupply.market_generation,
-		"market_counterparties" = length(SSsupply.market_counterparties),
-		"market_listings" = length(SSsupply.market_listings),
+		"market_generation" = supply_market_generation(),
+		"market_counterparties" = length(supply_market_counterparties()),
+		"market_listings" = length(supply_market_listings()),
 		"market_listing_stock" = market_listing_stock,
-		"market_bids" = length(SSsupply.market_bids),
+		"market_bids" = length(supply_market_bids()),
 		"market_target_units" = market_target_units,
 		"market_fulfilled_units" = market_fulfilled_units,
 		"market_purchase_volume" = market_purchase_volume,

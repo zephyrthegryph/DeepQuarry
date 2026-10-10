@@ -727,7 +727,7 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	if (!isicon(icon2collapse))
 		if (isfile(thing)) //special snowflake
 			var/name = SANITIZE_FILENAME("[generate_asset_name(thing)].png")
-			if (!SSassets.cache[name])
+			if (!assets_cache()[name])
 				SSassets.transport.register_asset(name, thing)
 			for (var/thing2 in targets)
 				SSassets.transport.send_assets(thing2, name)
@@ -769,7 +769,7 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	var/file_hash = name_and_ref[2]
 	key = "[name_and_ref[3]].png"
 
-	if(!SSassets.cache[key])
+	if(!assets_cache()[key])
 		SSassets.transport.register_asset(key, rsc_ref, file_hash, icon_path)
 	for (var/client_target in targets)
 		SSassets.transport.send_assets(client_target, key)
