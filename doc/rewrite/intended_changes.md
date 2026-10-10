@@ -4098,3 +4098,21 @@ Every site that declared `DECLARE_INTERACTIONS`, `EXTEND_INTERACTIONS` or a `/da
   - The i7 snapshots record the legacy resolver's ids and blocked reasons: the construction edges, the silicon equip-module spec and the disposal ids are ops now.
   - The look state pin gains the cyborg `shell` rows (`shell=1`/`2` drops the eyes, `shell=0` brings them back; `robot_look.dm` draws `!shell || deployed`): the robot's analyzer key moved with
     this branch, so the type was probed again and its recorded rows, never extended since the shell state was tracked, were completed.
+
+## The hand gate audit
+
+Every `hand()` op is refused for an actor who is unconscious or stunned (`op_hand_capable()`); without `ungated()` one on a machine is also refused for a machine that does not work and an actor who is lying down or lacks the dexterity (`op_hand_refusal()`). The user kept the gate on all `hand()` ops. Audit by `dq_hand_gate_audit/escapes_are_not_hand_ops` over the tables built in a test world: **1308 hand ops, 395 `ungated()`, 913 behind the machine half**.
+
+The old rule (the click path in `code/modules/keybindings/adapters.dm`, `/datum/input_adapter/hands/use`): a click is dropped for an actor with `stat`, paralysed or stunned; a restrained actor's click never reaches an empty-hand interaction (`RestrainedClickOn`, adjacent mobs only). The actor half of the new gate is that same rule, and the physical `STAT_CAN_ACT` gate already refused a stunned, weakened, paralysed, sleeping or unconscious actor for every physical binding before it. So no hand op is newly blocked for a down actor.
+
+| Class | Ops | Verdict |
+|---|---|---|
+| (a) Touching or using a thing: consoles, machines, doors, closet door, chair unbuckle by hand, stasis cage release, pets, hugs | all 1308 hand ops | Correct to block for stunned, paralysed and unconscious actors; the old click did. A restrained actor never reached them by click and still does not. |
+| (b) Resist out of cuffs (`cuff_remove`, `cuff_break`) | `ai()`, started by `resist()` with `ORIGIN_SYSTEM` | Not hand ops: the gate never sees them. Pinned for a cuffed, conscious mob. |
+| (b) Unbuckle from a bed or chair while restrained (`buckle_escape`) | `ai()`, `ORIGIN_SYSTEM` | Not a hand op. A buckled, cuffed, conscious (or stunned) mob can start it; the by-hand `unbuckle` is a click and was never reachable restrained. |
+| (b) Break out of a sealed closet (`break_out`) | `ai()`, `ORIGIN_SYSTEM` | Not a hand op. A cuffed mob inside can break out. |
+| (b) Straight jacket (`jacket_escape`), grab release (`resist_grab`), fire (`resist_fire`) | `ai()` or plain procs | Not hand ops; unchanged. |
+| Escape from a container interior (`interior` capability `escape`) | `inside()` | Not a hand op and not touched here: it carries the `STAT_CAN_ACT` gate, as before. |
+| Unconscious actor resisting | verb rule (`incapacitated(INCAPACITATION_KNOCKOUT)`) | Unchanged: refused, pinned. |
+
+Result: no `ungated()` or narrower gate was needed. The cases the audit worried about are system-origin escapes, outside the hand gate by construction; `escapes_are_not_hand_ops` fails if one of them is ever bound to `hand()`.
