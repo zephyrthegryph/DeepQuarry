@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import fs from 'node:fs';
+import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { compareEvidence } from './compare_normal_suites';
 
@@ -55,6 +56,29 @@ test('authenticated synthetic matching receipts remain preliminary', () => fixtu
   expect(result.matches).toBe(true);
   expect(result.inputClosureAuthenticated).toBe(false);
   expect(result.acceptedRuntimeBaseline).toBe(false);
+}));
+
+test('native continuation independently authenticates its generation and original reference plan', () => fixture(({ native, referenceHash, nativeFile, write, referenceFile }) => {
+  const directory = path.dirname(nativeFile);
+  const executable = path.join(directory, 'compiler.exe'); fs.writeFileSync(executable, 'synthetic compiler');
+  native.compilation.compiler.executable = executable; native.compilation.compiler.sha256 = sha('synthetic compiler');
+  const dmb = path.join(directory, 'pair.dmb'), rsc = path.join(directory, 'pair.rsc');
+  fs.writeFileSync(dmb, 'x'); fs.writeFileSync(rsc, '');
+  const prefixHash = write();
+  const prefixPath = path.join(directory, 'prefix.json'); fs.copyFileSync(nativeFile, prefixPath);
+  const doc = { schema: 1, kind: 'historical_normal_suite_resume', inputClosureAuthenticated: false,
+    compilation: native.compilation, runtimeIdentity: runtime, evidence: { path: prefixPath, sha256: prefixHash },
+    pair: { dmb, rsc, dmbSha256: sha('x'), rscSha256: sha(''), dmbBytes: 1, rscBytes: 0 },
+    nativeOutput: { kind: 'native_pair', compiler: executable, store: directory, outputProject: path.join(directory, 'absent.dme'), ...native.compilation.nativePair! } };
+  const checkpoint = path.join(directory, 'checkpoint.json'); const bytes = JSON.stringify(doc); fs.writeFileSync(checkpoint, bytes);
+  const resumed = { ...native, continuation: { checkpoint, sha256: sha(bytes) } };
+  const compare = () => { const content = JSON.stringify(resumed); fs.writeFileSync(nativeFile, content);
+    return compareEvidence(referenceFile, referenceHash, nativeFile, sha(content)); };
+  const result = compare();
+  expect(result.matches).toBe(true); expect(result.nativeGenerationIdentityAuthenticated).toBe(true);
+  expect(result.historicalByondGeneration).toBeNull(); expect(result.inputClosureAuthenticated).toBe(false);
+  resumed.batches[0].run.results[name].runtimes = 1;
+  expect(compare).toThrow('completed prefix');
 }));
 test('preserves runtime differences even when status passes', () => fixture(({ native, compare }) => {
   native.batches[0].run.results[name].runtimes = 1;

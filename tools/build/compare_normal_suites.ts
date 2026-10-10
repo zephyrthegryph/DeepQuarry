@@ -101,7 +101,7 @@ export function compareEvidence(referenceFile: string, referenceSha256: string, 
     const continuation = reference.continuation;
     if (!continuation || typeof continuation.checkpoint !== 'string' || typeof continuation.sha256 !== 'string') throw new Error('malformed reference continuation');
     const previous = loadNormalResume<Run>(continuation.checkpoint, continuation.sha256, reference.batchSize);
-    if (!equal(previous.checkpoint.compilation, reference.compilation)
+    if (previous.output.kind !== 'conventional' || !equal(previous.checkpoint.compilation, reference.compilation)
       || !sameSuiteRuntime(previous.checkpoint.runtimeIdentity, reference.inventory.runtimeIdentity)
       || !equal(previous.plan, left.inventory)
       || !equal(previous.batches, reference.batches.map(batch => batch.requested))
@@ -110,11 +110,26 @@ export function compareEvidence(referenceFile: string, referenceSha256: string, 
     }
     historicalByondGeneration = { checkpoint: previous.checkpointPath, sha256: previous.checkpointSha256, pair: previous.checkpoint.pair };
   }
+  let historicalNativeGeneration = null as null | { checkpoint: string; sha256: string; pairId: string };
+  if (native.continuation !== undefined) {
+    const continuation = native.continuation;
+    if (!continuation || typeof continuation.checkpoint !== 'string' || typeof continuation.sha256 !== 'string') throw new Error('malformed native continuation');
+    const previous = loadNormalResume<Run>(continuation.checkpoint, continuation.sha256, native.batchSize);
+    if (previous.output.kind !== 'native_pair' || !equal(previous.checkpoint.compilation, native.compilation)
+      || !sameSuiteRuntime(previous.checkpoint.runtimeIdentity, native.inventory.runtimeIdentity)
+      || !equal(previous.plan, right.inventory) || previous.originalPlan?.sha256 !== referenceSha256
+      || !equal(previous.batches, native.batches.map(batch => batch.requested))
+      || !equal(previous.completed, native.batches.slice(0, previous.completed.length))) {
+      throw new Error('native continuation does not bind this generation/reference plan/completed prefix');
+    }
+    historicalNativeGeneration = { checkpoint: previous.checkpointPath, sha256: previous.checkpointSha256, pairId: previous.output.pairId };
+  }
   const comparison = compareNormalSuiteResults(left, right);
   const referenceClean = reference.inventory.clean && reference.batches.every(batch => batch.run.clean);
   const nativeClean = native.inventory.clean && native.batches.every(batch => batch.run.clean);
   return { schema: 1, kind: 'preliminary_normal_suite_comparison', inputClosureAuthenticated: false,
     generationIdentityAuthenticated: historicalByondGeneration !== null, historicalByondGeneration,
+    nativeGenerationIdentityAuthenticated: historicalNativeGeneration !== null, historicalNativeGeneration,
     referenceClean, nativeClean,
     acceptedRuntimeBaseline: false, evidence: {
       reference: { path: path.resolve(referenceFile), sha256: referenceSha256 },

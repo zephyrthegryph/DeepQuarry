@@ -59,7 +59,7 @@ import {
   type WorldBenchDocument,
   writeJson,
 } from './lib/bench';
-import { loadNormalResume } from './lib/normal_suite_resume';
+import { loadNormalResume, verifyResumeAcquiredPair } from './lib/normal_suite_resume';
 import { normalSuiteBatches, exactNormalUnion, bindNormalPlan, sameSuiteRuntime, suiteRowSucceeded, type RuntimeIdentity, type IssuedNormalInventory } from './lib/normal_suite_plan';
 import { renderReport } from './lib/bench_report';
 import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
@@ -766,7 +766,7 @@ async function runIsolatedTestWorld(
   dmVersion: string | null,
   worldParams: Record<string, string>,
   focus: string[] | null,
-  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; compiledOutput?: CompiledOutput; issueInventory?: boolean; exactBatch?: boolean } = {},
+  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; compiledOutput?: CompiledOutput; issueInventory?: boolean; exactBatch?: boolean; onPreparedOutput?: (dmb: string) => void } = {},
 ): Promise<IsolatedRun> {
   const compiled = options.compiledOutput ?? currentCompiledOutput(dmbFile, compilerMode() === 'native');
   const compilerReceipt = beginCompilerReceipt('data/compiler-attempts', compiled);
@@ -833,7 +833,7 @@ async function runIsolatedTestWorld(
           watchdogFile: resultsFile,
           watchdogTimeoutMs: options.watchdogTimeoutMs ?? (focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined),
           onSpawn: options.sampler ? (pid) => options.sampler?.start(pid) : undefined,
-          onPreparedOutput: (dmb) => compilerReceipt.prepared(dmb),
+          onPreparedOutput: (dmb) => { options.onPreparedOutput?.(dmb); compilerReceipt.prepared(dmb); },
           watchdogMaximumMs: options.issueInventory || options.exactBatch ? 300_000 : undefined,
           onRuntimeIdentity: options.issueInventory || options.exactBatch ? identity => { runtimeIdentity = identity; } : undefined,
         },
@@ -1644,9 +1644,10 @@ async function runNormalBatches(get: any, batchSize: number): Promise<void> {
   const output = resume?.output ?? await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
   const id = runIdentity('normal-batches');
   const evidenceFile = `data/normal-suite/${id.id}-${randomUUID()}.json`;
-  const evidence: { schema: number; status: string; compilation: unknown; batchSize: number; inventory?: IsolatedRun; plan?: { path: string | null; sha256: string | null; eligibleOrder: string[]; observedOrderDiffers: boolean };
+  const evidence: { schema: number; status: string; compilation: unknown; nativeOutput?: CompiledOutput; batchSize: number; inventory?: IsolatedRun; plan?: { path: string | null; sha256: string | null; eligibleOrder: string[]; observedOrderDiffers: boolean };
     batches: { requested: string[]; run: IsolatedRun }[]; continuation?: unknown; inputClosureAuthenticated: false; selectionProtocol: string; error?: string } = {
-    schema: 1, status: 'issuing_inventory', batchSize, compilation: output.provenance ?? null, batches: resume ? [...resume.completed] : [], inputClosureAuthenticated: false, selectionProtocol: 'normal-select-v1',
+    schema: 1, status: 'issuing_inventory', batchSize, compilation: output.provenance ?? null, nativeOutput: output.kind === 'native_pair' ? output : undefined,
+    batches: resume ? [...resume.completed] : [], inputClosureAuthenticated: false, selectionProtocol: 'normal-select-v1',
     continuation: resume ? { checkpoint: resume.checkpointPath, sha256: resume.checkpointSha256, scope: 'historical same compiled generation; current source closure is not authenticated' } : undefined };
   writeJson(evidenceFile, evidence);
   try {
@@ -1665,14 +1666,15 @@ async function runNormalBatches(get: any, batchSize: number): Promise<void> {
       if (!previous.inventory?.inventory || previous.batchSize !== batchSize) throw new Error('captured plan lacks issued inventory or identical batch size');
       plan = bindNormalPlan(issued.inventory, previous.inventory.inventory);
     }
-    evidence.plan = { path: previousPath ?? null, sha256: previousPath ? String(get(NormalPlanSha256Parameter)).toLowerCase() : null,
+    evidence.plan = { path: previousPath ?? resume?.originalPlan?.path ?? null, sha256: previousPath ? String(get(NormalPlanSha256Parameter)).toLowerCase() : resume?.originalPlan?.sha256 ?? null,
       eligibleOrder: plan.eligible, observedOrderDiffers: JSON.stringify(plan.eligible) !== JSON.stringify(issued.inventory.eligible) };
     const batches = normalSuiteBatches(plan, batchSize);
     evidence.status = 'running'; writeJson(evidenceFile, evidence);
     for (let index = evidence.batches.length; index < batches.length; index++) {
       const requested = batches[index];
       const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), { 'test-tier': 'normal' }, requested,
-        { compiledOutput: output, exactBatch: true, watchdogTimeoutMs: 300_000, label: `normal batch${index + 1}/${batches.length}` });
+        { compiledOutput: output, exactBatch: true, onPreparedOutput: resume ? (dmb) => verifyResumeAcquiredPair(resume.checkpoint, dmb) : undefined,
+          watchdogTimeoutMs: 300_000, label: `normal batch${index + 1}/${batches.length}` });
       evidence.batches.push({ requested, run }); writeJson(evidenceFile, evidence);
       if (!sameSuiteRuntime(run.runtimeIdentity, issued.runtimeIdentity)) throw new Error('DreamDaemon identity/security changed');
       if (!run.results || run.killedByWatchdog) throw new Error('batch exited without complete results');
