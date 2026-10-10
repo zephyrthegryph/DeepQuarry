@@ -276,14 +276,11 @@
 	user.update_mob_action_buttons()
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/compact)
-	op("compact_shotgun_verb_toggle_stock", menu(), label("Toggle stock"), needs(carried()), then(PROC_REF(compact_shotgun_verb_toggle_stock)))
+	op("compact_shotgun_verb_toggle_stock", menu(), label("Toggle stock"), needs(carried(), req_actor_kind(/mob/living/silicon, not = TRUE, because = /datum/msg/req_silent)), then(PROC_REF(compact_shotgun_verb_toggle_stock)))
 
 /// Old Toggle stock verb.
 /obj/item/gun/projectile/shotgun/compact/proc/compact_shotgun_verb_toggle_stock(datum/act/op/A)
 	var/mob/user = A.actor
-	if(issilicon(user))
-		return
-
 	if (isliving(user))
 		toggle_stock()
 	else

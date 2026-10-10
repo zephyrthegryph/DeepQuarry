@@ -241,7 +241,7 @@ MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained()) // ALLOW(reads): the person is read when a button is pressed, never from a cached menu
 		return FALSE
-	return get_dist(src, user) <= 1 || isAI(user)
+	return get_dist(src, user) <= 1 || istype(user, /mob/living/silicon/ai)
 
 /// Whoever presses a button leaves their prints on the bomb.
 /obj/machinery/nuclearbomb/proc/ui_fingerprint(datum/act/op/A)

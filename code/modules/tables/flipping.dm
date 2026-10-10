@@ -34,7 +34,7 @@
 		return FALSE
 	if(user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_SLEEPING) || user.lying || user.has_status(STAT_WEAKENED)) // ALLOW(reads): posture is read when the touch is tried; a cached menu entry is advisory
 		return FALSE
-	return !isAI(user)
+	return TRUE
 
 /// Flipping asks the same (a mob nobody wants flipping tables, an ambient pest, is turned away by the effect).
 /obj/structure/table/proc/actor_can_flip(datum/act/op/A)

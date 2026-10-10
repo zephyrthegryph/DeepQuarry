@@ -2139,7 +2139,7 @@ CAPABILITIES(/obj/item/toy/redbutton)
 		act_message(user, null, MSG_SELF(span_notice("You press the button, it plays a loud noise!")), MSG_OTHERS(span_warning("%U% presses the big red button.")), MSG_BLIND(span_notice("The button clicks loudly.")))
 		play_sfx(src, SFX_EFFECTS_EXPLOSIONFAR)
 		for(var/mob/M in range(10, src)) // Checks range
-			if(!M.stat && !isAI(M)) // Checks to make sure whoever's getting shaken is alive/not the AI
+			if(!M.stat && !istype(M, /mob/living/silicon/ai)) // Checks to make sure whoever's getting shaken is alive/not the AI
 				after(M, 0.2 SECONDS, GLOBAL_PROC_REF(shake_camera), with = list(M, 2, 1))
 	else
 		to_chat(user, span_warning("Nothing happens."))

@@ -53,7 +53,7 @@ CAPABILITIES(/obj/item/healthanalyzer)
 		var/mob/living/carbon/human/H = A.actor
 		var/datum/xenochimera/state = H.xenochimera
 		return !state?.feral && H.species?.has_fine_manipulation // ALLOW(reads): current dexterity is queried before instant scanning; advisory menu state cannot authorize an effect because the requirement is checked again
-	if(issilicon(A.actor))
+	if(istype(A.actor, /mob/living/silicon))
 		return TRUE
 	if(istype(A.actor, /mob/living/simple_mob))
 		var/mob/living/simple_mob/S = A.actor

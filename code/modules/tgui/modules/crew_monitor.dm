@@ -26,16 +26,14 @@ CAPABILITIES(/datum/tgui_module/crew_monitor)
 	interface("CrewMonitor")
 	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
 	extend(TAG_UI, needs(req_bool(PROC_REF(ui_in_range), because = MSG(crew_monitor/out_of_range))))
-	op("track", ui_act("track", arg("track", schema_ref(/mob/living/carbon/human))), then(PROC_REF(ui_act_track)))
+	op("track", ui_act("track", arg("track", schema_ref(/mob/living/carbon/human))), needs(req_actor_kind(/mob/living/silicon/ai, because = /datum/msg/req_silent)), then(PROC_REF(ui_act_track)))
 	op("setZLevel", ui_act("setZLevel", arg("mapZLevel", num())), then(PROC_REF(ui_act_setzlevel)))
 
 /datum/tgui_module/crew_monitor/proc/ui_act_track(datum/act/op/A, mob/living/carbon/human/track)
-	var/mob/user = A.actor
-	if(isAI(user))
-		var/mob/living/silicon/ai/AI = user
-		var/mob/living/carbon/human/H = track
-		if(istype(H) && hassensorlevel(H, SUIT_SENSOR_TRACKING))
-			AI.ai_actual_track(H)
+	var/mob/living/silicon/ai/AI = A.actor
+	var/mob/living/carbon/human/H = track
+	if(istype(H) && hassensorlevel(H, SUIT_SENSOR_TRACKING))
+		AI.ai_actual_track(H)
 	return TRUE
 
 /datum/tgui_module/crew_monitor/proc/ui_act_setzlevel(datum/act/op/A, mapZLevel)
@@ -57,7 +55,7 @@ CAPABILITIES(/datum/tgui_module/crew_monitor)
 	var/mob/user = A.actor
 	var/list/data = list()
 
-	data["isAI"] = isAI(user)
+	data["isAI"] = istype(user, /mob/living/silicon/ai)
 
 	var/z = get_z(user)
 	var/list/map_levels = uniqueList(using_map.get_visible_map_levels(z, TRUE))
