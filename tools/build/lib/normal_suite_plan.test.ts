@@ -14,6 +14,8 @@ test('all and exhaustive inventories retain actual tiers and exact pre-tier omis
   expect(() => bindSuitePlan(all, exhaustive)).toThrow('tier');
   expect(() => suiteBatches({ ...exhaustive, preTierCount: 3 }, 1)).toThrow('coverage');
   expect(() => suiteBatches({ ...all, tierExcluded: [{ name: '/datum/unit_test/x', tier: 'normal' }] }, 1)).toThrow('exclusion');
+  expect(() => suiteBatches({ ...all, excluded: [{ ...inventory.excluded[0], reason: 'exhaustive' }] }, 1))
+    .toThrow('permanent ineligibility');
   expect(exactSuiteUnion(exhaustive, [{ requested: exhaustive.eligible, results: {
     [exhaustive.eligible[0]]: { status: 1 }, issued_framework: { status: 0 },
   } }]).tests[exhaustive.eligible[0]].status).toBe(1);

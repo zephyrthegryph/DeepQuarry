@@ -32,6 +32,9 @@ export function suiteBatches(inventory: IssuedSuiteInventory, batchSize: number)
   for (const row of inventory.excluded) {
     if (!row.name.startsWith('/datum/unit_test/') || seen.has(row.name)
       || !['abstract', 'focus_only', 'exhaustive'].includes(row.reason)) throw new Error('invalid/overlapping exclusion');
+    if (row.reason === 'exhaustive' && (inventory.tier !== 'normal' || inventory.preTierCount !== undefined)) {
+      throw new Error('tier exclusion cannot be hidden as permanent ineligibility');
+    }
     seen.add(row.name);
   }
   if (inventory.tier !== 'normal' || inventory.preTierCount !== undefined || inventory.tierExcluded !== undefined) {
