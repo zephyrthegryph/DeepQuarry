@@ -187,8 +187,13 @@ impl Compiler<'_> {
                 ))],
             );
         }
-        if let Some(choices) = choices {
-            self.expression(choices, statement)?;
+        let (radius, selection, evaluate_choices) = if special == 0 {
+            self.input_selection(choices, statement)?
+        } else {
+            (0, if choices.is_some() { 64 } else { 0 }, choices.is_some())
+        };
+        if evaluate_choices {
+            self.expression(choices.expect("selection expression exists"), statement)?;
         }
         for arg in args {
             if matches!(&arg.kind, ExprKind::Binary { op, .. } if op == "=") {
@@ -203,12 +208,92 @@ impl Compiler<'_> {
             if special != 0 { 0xc6 } else { 0xc1 },
             vec![
                 Word::Immediate(if special != 0 { 0 } else { mask }),
-                Word::Immediate(0),
-                Word::Immediate(if choices.is_some() { 64 } else { 0 }),
+                Word::Immediate(radius),
+                Word::Immediate(selection),
             ],
         );
         self.emit(0xba, vec![]);
         Ok(())
+    }
+
+    // Native 516.1687 distinguishes reserved selection forms from evaluated lists.
+    // Radius 125 means the default view; 127 accompanies world/usr selection.
+    fn input_selection(
+        &mut self,
+        choices: Option<&Expr>,
+        statement: &str,
+    ) -> Result<(u32, u32, bool), LowerError> {
+        let Some(choices) = choices else {
+            return Ok((0, 0, false));
+        };
+        if let ExprKind::Ident(name) = &choices.kind {
+            if matches!(name.as_str(), "world" | "usr") {
+                match self.variable_for_node(choices, name, statement)? {
+                    VariableWord::World => return Ok((127, 16, false)),
+                    VariableWord::Usr => return Ok((127, 8, false)),
+                    _ => {} // A current lexical binding remains an evaluated choice.
+                }
+            }
+        }
+        if let ExprKind::Call { callee, args } = &choices.kind {
+            if let ExprKind::Ident(name) = &callee.kind {
+                // These are reserved builtin names, not authored callable selectors.
+                if matches!(name.as_str(), "view" | "oview") && args.len() == 2 {
+                    for (radius, center) in [(&args[0], &args[1]), (&args[1], &args[0])] {
+                        let (ExprKind::Literal(text), ExprKind::Ident(center_name)) =
+                            (&radius.kind, &center.kind)
+                        else {
+                            continue;
+                        };
+                        let Some(radius) = text.parse::<u32>().ok().filter(|value| *value <= 127)
+                        else {
+                            continue;
+                        };
+                        if center_name == "usr"
+                            && matches!(
+                                self.variable_for_node(center, center_name, statement)?,
+                                VariableWord::Usr
+                            )
+                        {
+                            self.record_selection(
+                                callee,
+                                name,
+                                dm_ir::SelectedMeaning::IntrinsicCall(SymbolId::of(name)),
+                            );
+                            return Ok((radius, if name == "view" { 1 } else { 2 }, false));
+                        }
+                        // Literal radius metadata survives an evaluated dynamic center.
+                        // The entire original call still runs, in its authored argument order.
+                        return Ok((radius, 64, true));
+                    }
+                }
+                if matches!(name.as_str(), "view" | "oview") && args.len() <= 1 {
+                    let radius = if args.is_empty() {
+                        Some(125)
+                    } else {
+                        match &args[0].kind {
+                            ExprKind::Literal(text) => {
+                                text.parse::<u32>().ok().filter(|value| *value <= 127)
+                            }
+                            _ => None,
+                        }
+                    };
+                    if let Some(radius) = radius {
+                        self.record_selection(
+                            callee,
+                            name,
+                            dm_ir::SelectedMeaning::IntrinsicCall(SymbolId::of(name)),
+                        );
+                        return Ok((radius, if name == "view" { 1 } else { 2 }, false));
+                    }
+                    // A dynamic view is evaluated normally, retaining native default-radius metadata.
+                    if matches!(&args[0].kind, ExprKind::Ident(_)) {
+                        return Ok((125, 64, true));
+                    }
+                }
+            }
+        }
+        Ok((0, 64, true))
     }
 
     pub(super) fn input_form<'b>(&self, expr: &'b Expr) -> Option<(&'b [Expr], &'b [String])> {

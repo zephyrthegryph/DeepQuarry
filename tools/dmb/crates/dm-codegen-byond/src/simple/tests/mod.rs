@@ -10,6 +10,8 @@ mod calls_2;
 mod control_flow_1;
 mod control_flow_2;
 mod expressions;
+mod input_selection;
+mod input_selection_centers;
 mod objects_1;
 mod objects_2;
 mod strings;

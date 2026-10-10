@@ -26,7 +26,7 @@ pub(super) fn fixed_word_role(opcode: u32, index: usize) -> FixedWordRole {
         // bits are checked contextually below.
         (0x52, 0) => Scalar,
         // inference.rs input first word is the accepted type-mask; third is
-        // selection-list flags. The middle fixed zero lacks a general contract.
+        // selection-list flags. The middle radius needs a proved selector shape.
         (0xc1 | 0xc6, 0 | 2) => Scalar,
         // DbgLine is a source-line number; retained for shape completeness.
         (0x85, 0) => Scalar,
@@ -77,6 +77,15 @@ pub(super) fn contextual_fixed_word_is_scalar(
         // calls_intrinsics.rs and od_lower/call.rs both encode orange's category
         // sentinel 0xae; unknown ORange selectors remain uncovered.
         || (opcode == 0xad && index == 0 && raw_words.first() == Some(&0xae))
+        // Pinned native input_selection fixture: view/oview encode their literal
+        // radius here; world/usr encode the numeric unrestricted sentinel127.
+        // Other selectors (including generic lists and InputColor) stay unknown.
+        || (opcode == 0xc1 && index == 1 && raw_words.len() == 3
+            && match raw_words[2] {
+                1 | 2 => raw_words[1] <= 127,
+                8 | 16 => raw_words[1] == 127,
+                _ => false,
+            })
 }
 
 #[cfg(test)]
@@ -91,7 +100,7 @@ mod tests {
         assert!(!fixed_word_is_scalar(0xcd, 0));
         assert!(fixed_word_is_scalar(0x5e, 0)); // Authoritative argument count.
         assert!(!fixed_word_is_scalar(0x5e, 1));
-        assert!(!fixed_word_is_scalar(0xc1, 1)); // Input reserved word remains unproven.
+        assert!(!fixed_word_is_scalar(0xc1, 1)); // Selector-free Input middle remains unproven.
         assert!(!fixed_word_is_scalar(0x1a, 1)); // Invalid extra fixed operand.
         assert!(!fixed_word_is_scalar(0xdead, 0));
         assert!(fixed_word_is_scalar(0x29, 1));
@@ -109,5 +118,36 @@ mod tests {
         assert!(!contextual_fixed_word_is_scalar(0xa9, 1, &[5]));
         assert!(contextual_fixed_word_is_scalar(0xad, 0, &[0xae]));
         assert!(!contextual_fixed_word_is_scalar(0xad, 0, &[0x100]));
+    }
+}
+
+#[cfg(test)]
+mod input_selection_tests {
+    use super::*;
+    #[test]
+    fn input_radius_coverage_requires_proved_selection_shape() {
+        for words in [
+            [2, 127, 16],
+            [2, 127, 8],
+            [2, 5, 1],
+            [2, 7, 2],
+            [2, 0, 1],
+            [2, 125, 1],
+        ] {
+            assert!(contextual_fixed_word_is_scalar(0xc1, 1, &words));
+        }
+        for words in [
+            [2, 0, 0],
+            [2, 0, 64],
+            [2, 125, 64],
+            [2, 128, 1],
+            [2, 0, 16],
+            [2, 127, 32],
+        ] {
+            assert!(!contextual_fixed_word_is_scalar(0xc1, 1, &words));
+        }
+        assert!(!contextual_fixed_word_is_scalar(0xc1, 1, &[2, 5]));
+        assert!(!contextual_fixed_word_is_scalar(0xc6, 1, &[2, 5, 1]));
+        assert!(!contextual_fixed_word_is_scalar(0xc1, 3, &[2, 5, 1]));
     }
 }
