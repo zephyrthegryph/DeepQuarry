@@ -10,19 +10,11 @@
 	circuit = /obj/item/circuitboard/industrial_reagent_pump
 
 CAPABILITIES(/obj/machinery/reagent_refinery/pump)
+	default_parts()
+	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/input, /datum/hose_connector/input, /datum/hose_connector/output))
 	climb()
 	op("reagent_pump_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(transfer_amount_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "amount"), then(PROC_REF(interaction_set_transfer_amount)))
 	op("reagent_pump_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(transfer_amount_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "amount"), then(PROC_REF(interaction_set_transfer_amount)))
-
-/obj/machinery/reagent_refinery/pump/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
-	add_hose_connector(/datum/hose_connector/input)
-	add_hose_connector(/datum/hose_connector/input)
-	add_hose_connector(/datum/hose_connector/input)
-	add_hose_connector(/datum/hose_connector/output)
-
 
 /obj/machinery/reagent_refinery/pump/refinery_step()
 	if(!anchored)

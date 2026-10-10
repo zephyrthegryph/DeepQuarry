@@ -47,11 +47,8 @@ CAPABILITIES(/obj/machinery/pda_multicaster)
 			soundloop.mid_length = 30
 	update_power()
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/pda_multicaster/prebuilt/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
+CAPABILITIES(/obj/machinery/pda_multicaster/prebuilt)
+	default_parts()
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/pda_multicaster/draw(datum/look/look)

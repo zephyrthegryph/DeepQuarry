@@ -208,10 +208,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary
 	name = "Stationary Air Scrubber"
-
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary/Initialize(mapload)
-	. = ..()
-	desc += "This one seems to be tightly secured with large bolts."
+	desc = "A larger variation of the portable scrubber, for industrial scrubbing of air. Must be turned on from a remote terminal.This one seems to be tightly secured with large bolts."
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary)
 	extend("anchor", needs(req_bool(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, never), because = MSG(huge_portable/bolted))))

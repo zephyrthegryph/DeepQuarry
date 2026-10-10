@@ -661,11 +661,7 @@ CAPABILITIES(/obj/item/radio/headset)
 	icon_state = "syndie_headset"
 	syndie = 1
 	ks1type = /obj/item/encryptionkey/raider
-
-/obj/item/radio/headset/raider/Initialize(mapload)
-	. = ..()
-	// Just the data; on_materialize() (C5) registers it with SSradio.
-	frequency = RAID_FREQ
+	frequency = RAID_FREQ // just the data; on_materialize() (C5) registers it with SSradio
 
 /obj/item/radio/headset/binary
 	ks1type = /obj/item/encryptionkey/binary
