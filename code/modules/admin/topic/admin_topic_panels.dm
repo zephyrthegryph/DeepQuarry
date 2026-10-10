@@ -43,7 +43,7 @@
 
 /datum/admins/proc/topic_call_shuttle(datum/act/op/A, href_call_shuttle)
 	var/mob/user = A.actor
-	if(SSticker.mode.name == "blob")
+	if(round_mode().name == "blob")
 		tgui_alert_async(user, "You can't call the shuttle during blob!")
 		return
 
@@ -124,7 +124,7 @@ MSG_DEF_SELF(admin_topic/round_started, "The game has already started.")
 MSG_DEF_SELF(admin_topic/not_secret, "The game mode has to be secret!")
 
 /datum/admins/proc/round_not_started(datum/act/op/A)
-	return !(SSticker && SSticker.mode)
+	return !(SSticker && round_mode())
 
 /datum/admins/proc/round_is_secret(datum/act/op/A)
 	return GLOB.master_mode == "secret"
@@ -188,7 +188,7 @@ MSG_DEF_SELF(admin_topic/not_secret, "The game mode has to be secret!")
 /datum/admins/proc/admin_set_master_mode(mob/user, mode)
 	if(!check_rights_for(user?.client, R_ADMIN|R_SERVER|R_EVENT) || !mode)
 		return
-	if(SSticker && SSticker.mode)
+	if(SSticker && round_mode())
 		tgui_alert_async(user, "The game has already started.")
 		return
 	GLOB.master_mode = mode
@@ -202,7 +202,7 @@ MSG_DEF_SELF(admin_topic/not_secret, "The game mode has to be secret!")
 /datum/admins/proc/admin_set_secret_force_mode(mob/user, mode)
 	if(!check_rights_for(user?.client, R_ADMIN|R_SERVER|R_EVENT) || !mode)
 		return
-	if(SSticker && SSticker.mode)
+	if(SSticker && round_mode())
 		tgui_alert_async(user, "The game has already started.")
 		return
 	if(GLOB.master_mode != "secret")

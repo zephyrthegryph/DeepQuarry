@@ -363,7 +363,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	// Try to figure out what time to use
 
 	// Special cases, can never respawn
-	if(SSticker?.mode?.deny_respawn)
+	if(round_mode()?.deny_respawn)
 		time = -1
 	else if(!CONFIG_GET(flag/abandon_allowed))
 		time = -1
@@ -371,7 +371,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		time = -1
 
 	// Special case for observing before game start
-	else if(SSticker?.current_state <= GAME_STATE_SETTING_UP)
+	else if(round_game_state() <= GAME_STATE_SETTING_UP)
 		time = 1 MINUTE
 
 	// Wasn't given a time, use the config time

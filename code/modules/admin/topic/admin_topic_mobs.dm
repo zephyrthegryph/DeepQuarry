@@ -438,7 +438,7 @@ MSG_DEF_SELF(admin_topic/jump_disabled, "Admin jumping disabled")
 
 /datum/admins/proc/topic_traitor(datum/act/op/A, href_traitor)
 	var/mob/user = A.actor
-	if(!SSticker || !SSticker.mode)
+	if(!SSticker || !round_mode())
 		tgui_alert_async(user, "The game hasn't started yet!")
 		return
 	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_traitor_panel, href_traitor)

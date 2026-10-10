@@ -125,7 +125,7 @@ CAPABILITIES(/datum/secrets_menu)
 /datum/secrets_menu/proc/ui_act_show_game_mode(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	if (SSticker.mode) tgui_alert_async(holder(), "The game mode is [SSticker.mode.name]")
+	if (round_mode()) tgui_alert_async(holder(), "The game mode is [round_mode().name]")
 	else tgui_alert_async(holder(), "For some reason there's a ticker, but not a game mode")
 
 //Buttons for debug.

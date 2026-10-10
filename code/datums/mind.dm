@@ -141,7 +141,7 @@ CAPABILITIES(/datum/mind)
 	return  // body provided by modular override
 
 /datum/mind/proc/edit_memory(mob/user)
-	if(!SSticker || !SSticker.mode)
+	if(!SSticker || !round_mode())
 		tgui_alert_async(user, "Not before round-start!", "Alert")
 		return
 	// fully structured TGUI panel; see

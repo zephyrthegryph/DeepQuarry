@@ -92,7 +92,7 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 		if((istype(resumed, /datum/prompt/choice/admin_response_team_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(response_team_replay_answered))
 			replay_answers = resumed.captured.Copy()
 			replay_answers[resumed.step_name] = resumed.value
-	if(SSticker.current_state <= GAME_STATE_PREGAME)
+	if(round_game_state() <= GAME_STATE_PREGAME)
 		to_chat(user, span_danger("The round hasn't started yet!"))
 		return
 	if(GLOB.send_emergency_team)

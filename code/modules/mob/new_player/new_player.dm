@@ -31,10 +31,10 @@
 	// if(GLOB.vote_service.mode)
 	// 	. += "Vote: [capitalize(GLOB.vote_service.mode)] Time Left: [GLOB.vote_service.time_remaining] s"
 
-	if(SSticker.current_state == GAME_STATE_STARTUP)
+	if(round_game_state() == GAME_STATE_STARTUP)
 		. += "Time To Start: Server Initializing"
 
-	else if(SSticker.current_state == GAME_STATE_PREGAME)
+	else if(round_game_state() == GAME_STATE_PREGAME)
 		. += "Time To Start: [round(SSticker.timeLeft / 10, 1)][GLOB.round_progressing ? "" : " (DELAYED)"]"
 		. += "Players: [totalPlayers]"
 		. += "Players Ready: [totalPlayersReady]"
@@ -143,7 +143,7 @@
 		return 0
 	if(spawning || QDELETED(src))
 		return 0
-	if(!SSticker || SSticker.current_state != GAME_STATE_PLAYING)
+	if(!SSticker || round_game_state() != GAME_STATE_PLAYING)
 		to_chat(src, span_red("The round is either not ready, or has already finished..."))
 		return 0
 	if(!CONFIG_GET(flag/enter_allowed))
@@ -215,7 +215,7 @@
 		character = character.AIize(move = FALSE) // Dupe of code in /datum/system/ticker/proc/create_characters() for non-latespawn, unify?
 
 		AnnounceCyborg(character, rank, "has been transferred to the empty core in \the [character.loc.loc]")
-		SSticker.mode.latespawn(character)
+		round_mode().latespawn(character)
 
 		spent(C) //Deletes empty core (really?)
 		spent(src) //Deletes new_player
@@ -231,7 +231,7 @@
 		var/atom/movable/_tmp_buck_33 = character?.buckled_to()
 		_tmp_buck_33.set_dir(character.dir)
 
-	SSticker.mode.latespawn(character)
+	round_mode().latespawn(character)
 
 	if(rank == JOB_OUTSIDER)
 		log_and_message_admins("has joined the round as non-crew. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>)",character)
@@ -288,7 +288,7 @@
 	spent(src) // Delete new_player mob
 
 /mob/new_player/proc/AnnounceCyborg(mob/living/character, rank, join_message, channel, zlevel)
-	if (SSticker.current_state == GAME_STATE_PLAYING)
+	if (round_game_state() == GAME_STATE_PLAYING)
 		var/list/zlevels = zlevel ? using_map.get_map_levels(zlevel, TRUE, om_range = DEFAULT_OVERMAP_RANGE) : null
 		if(character.mind.role_alt_title)
 			rank = character.mind.role_alt_title

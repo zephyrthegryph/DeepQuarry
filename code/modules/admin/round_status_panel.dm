@@ -55,7 +55,7 @@
 // ALLOW(sys_tgui_data_override): the foundation UI form: a tgui_data override on purpose, like the APC and the vendor
 /datum/round_status_panel/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
-	.["mode_name"] = SSticker?.mode?.name || "(none)"
+	.["mode_name"] = round_mode()?.name || "(none)"
 	.["round_duration"] = roundduration2text()
 	.["delay_end"] = !!SSticker?.delay_end
 
@@ -95,7 +95,7 @@
 /datum/round_status_panel/proc/act_call_shuttle(mob/user)
 	if(!admin_require(user.client, R_ADMIN|R_EVENT, "round_status_panel:call_shuttle"))
 		return FALSE
-	if(SSticker?.mode?.name == "blob")
+	if(round_mode()?.name == "blob")
 		return refuse(user, "You can't call the shuttle during blob!")
 	if(!SSticker || !SSemergency_shuttle.location())
 		return FALSE
@@ -163,7 +163,7 @@
 	var/mob/M = ui_ref(ref, null, /mob)
 	if(!M)
 		return TRUE
-	if(!SSticker || !SSticker.mode)
+	if(!SSticker || !round_mode())
 		return refuse(user, "The game hasn't started yet!")
 	if(user.client)
 		SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_traitor_panel, M)
@@ -174,7 +174,7 @@
 	var/datum/round_status_panel/round_status_panel
 
 /datum/admins/proc/open_round_status_panel(mob/user)
-	if(!(SSticker && SSticker.current_state >= GAME_STATE_PLAYING))
+	if(!(SSticker && round_game_state() >= GAME_STATE_PLAYING))
 		tgui_alert_async(user, "The game hasn't started yet!")
 		return
 	if(!round_status_panel)

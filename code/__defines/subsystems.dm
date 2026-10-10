@@ -69,7 +69,7 @@
 
 #define RUNLEVELS_DEFAULT (RUNLEVEL_SETUP | RUNLEVEL_GAME | RUNLEVEL_POSTGAME)
 
-//SSticker.current_state values
+//round_game_state() values
 /// Game is loading
 #define GAME_STATE_STARTUP 0
 /// Game is loaded and in pregame lobby

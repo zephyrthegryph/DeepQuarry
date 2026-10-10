@@ -44,8 +44,8 @@
 	data["server_name"] = displayed_name
 	data["map"] = using_map.full_name
 	data["station_time"] = stationtime2text()
-	data["display_loading"] = SSticker.current_state == GAME_STATE_STARTUP
-	data["round_start"] = !SSticker.mode || SSticker.current_state <= GAME_STATE_PREGAME
+	data["display_loading"] = round_game_state() == GAME_STATE_STARTUP
+	data["round_start"] = !round_mode() || round_game_state() <= GAME_STATE_PREGAME
 	data["round_time"] = roundduration2text()
 	data["new_news"] = client?.check_for_new_server_news()
 	data["can_submit_feedback"] = SSsqlite.can_submit_feedback(client)
@@ -53,7 +53,7 @@
 	data["new_station_news"] = client.prefs.lastlorenews != GLOB.news_data.newsindex
 	data["new_changelog"] = read_preference(/datum/preference/text/lastchangelog) != GLOB.changelog_hash
 	data["can_start_now"] = client.is_localhost() && check_rights_for(client, R_SERVER)
-	data["immediate_start"] = SSticker.start_immediately || SSticker.current_state > GAME_STATE_PREGAME
+	data["immediate_start"] = SSticker.start_immediately || round_game_state() > GAME_STATE_PREGAME
 
 	return data
 
@@ -72,7 +72,7 @@
 /mob/new_player/proc/ui_act_ready(datum/act/op/A)
 	if(!ready && client?.login_hold_refuses()) // the login gate is still checking them
 		return TRUE
-	if(!SSticker || SSticker.current_state <= GAME_STATE_PREGAME)
+	if(!SSticker || round_game_state() <= GAME_STATE_PREGAME)
 		ready = !ready
 	else
 		ready = 0
@@ -86,7 +86,7 @@
 	var/mob/user = A.actor
 	if(client?.login_hold_refuses())
 		return TRUE
-	if(!SSticker || SSticker.current_state != GAME_STATE_PLAYING)
+	if(!SSticker || round_game_state() != GAME_STATE_PLAYING)
 		to_chat(user, span_red("The round is either not ready, or has already finished..."))
 		return TRUE
 
@@ -104,7 +104,7 @@
 		return FALSE
 	if(client?.login_hold_refuses())
 		return TRUE
-	if(!SSticker || SSticker.current_state == GAME_STATE_STARTUP)
+	if(!SSticker || round_game_state() == GAME_STATE_STARTUP)
 		to_chat(src, span_warning("The game is still setting up, please try again later."))
 		return TRUE
 	if(A.step_value("observe") != "Yes")
@@ -141,7 +141,7 @@
 		return FALSE
 
 	SSticker.start_immediately = TRUE
-	if(SSticker.current_state == GAME_STATE_STARTUP)
+	if(round_game_state() == GAME_STATE_STARTUP)
 		to_chat(user, span_admin("The server is still setting up, but the round will be started as soon as possible."))
 
 /datum/prompt/choice/lobby_observe

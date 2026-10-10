@@ -664,8 +664,8 @@ CAPABILITIES(/atom/movable/overlay)
 			new_y = TRANSITIONEDGE + 1
 			new_x = rand(TRANSITIONEDGE + 2, world.maxx - TRANSITIONEDGE - 2)
 
-		if(SSticker && istype(SSticker.mode, /datum/game_mode/nuclear)) //only really care if the game mode is nuclear
-			var/datum/game_mode/nuclear/G = SSticker.mode
+		if(SSticker && istype(round_mode(), /datum/game_mode/nuclear)) //only really care if the game mode is nuclear
+			var/datum/game_mode/nuclear/G = round_mode()
 			G.check_nuke_disks()
 
 		var/turf/T = locate(new_x, new_y, new_z)

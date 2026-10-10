@@ -2,7 +2,7 @@
 	set category = VERB_CAT_FUN_EVENT_KIT
 	set name = "Create AI Triumvirate"
 
-	if(SSticker.current_state > GAME_STATE_PREGAME)
+	if(round_game_state() > GAME_STATE_PREGAME)
 		to_chat(usr, "This option is currently only usable during pregame. This may change at a later date.")
 		return
 

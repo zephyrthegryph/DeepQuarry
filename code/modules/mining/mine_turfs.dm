@@ -154,7 +154,7 @@ CAPABILITIES(/turf/simulated/mineral)
 
 /turf/simulated/mineral/proc/update_general()
 	recalculate_directional_opacity()
-	if(SSticker && SSticker.current_state == GAME_STATE_PLAYING)
+	if(SSticker && round_game_state() == GAME_STATE_PLAYING)
 		reconsider_lights()
 		if(SSair)
 			SSair.mark_for_update(src)

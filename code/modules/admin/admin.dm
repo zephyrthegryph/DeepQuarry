@@ -436,13 +436,13 @@ ADMIN_VERB(toggletraitorscaling, R_ADMIN, "Toggle traitor scaling", "Toggle trai
 	feedback_add_details("admin_verb","TTS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(startnow, R_SERVER|R_EVENT, "Start Now", "Start the round ASAP.", ADMIN_CATEGORY_SERVER_GAME)
-	if(SSticker.current_state > GAME_STATE_PREGAME)
+	if(round_game_state() > GAME_STATE_PREGAME)
 		to_chat(user, span_warning("Error: Start Now: Game has already started."))
 		return
 	if(!SSticker.start_immediately)
 		SSticker.start_immediately = TRUE
 		var/msg = ""
-		if(SSticker.current_state == GAME_STATE_STARTUP)
+		if(round_game_state() == GAME_STATE_STARTUP)
 			msg = " (The server is still setting up, but the round will be started as soon as possible.)"
 
 		log_admin("[key_name(user)] has started the game.[msg]")
@@ -519,7 +519,7 @@ ADMIN_VERB(toggle_space_ninja, R_FUN|R_SERVER, "Toggle Space Ninjas", "Toggle sp
 	feedback_add_details("admin_verb","TSN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(delay, R_SERVER|R_EVENT|R_ADMIN|R_MOD, "Delay", "Delay the game start/end.", ADMIN_CATEGORY_SERVER_GAME)
-	if (SSticker.current_state >= GAME_STATE_PLAYING)
+	if (round_game_state() >= GAME_STATE_PLAYING)
 		// Tell the ticker to delay/resume
 		SSticker.toggle_delay()
 
@@ -567,7 +567,7 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 ////////////////////////////////////////////////////////////////////////////////////////////////ADMIN HELPER PROCS
 
 /proc/is_special_character(character) // returns 1 for special characters and 2 for heroes of gamemode
-	if(!SSticker|| !SSticker.mode)
+	if(!SSticker|| !round_mode())
 		return 0
 	var/datum/mind/M
 	if (ismob(character))
@@ -577,8 +577,8 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 		M = character
 
 	if(M)
-		if(SSticker.mode.antag_templates && SSticker.mode.antag_templates.len)
-			for(var/datum/antagonist/antag in SSticker.mode.antag_templates)
+		if(round_mode().antag_templates && round_mode().antag_templates.len)
+			for(var/datum/antagonist/antag in round_mode().antag_templates)
 				if(antag.is_antagonist(M))
 					return 2
 		if(M.special_role)
@@ -885,7 +885,7 @@ ADMIN_VERB(force_antag_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Template Spawn",
 		if((istype(resumed, /datum/prompt/choice/admin_force_antag_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(force_antag_latespawn_replay_answered))
 			replay_answers = resumed.captured.Copy()
 			replay_answers[resumed.step_name] = resumed.value
-	if(!SSticker|| !SSticker.mode)
+	if(!SSticker|| !round_mode())
 		to_chat(user, span_warning("Mode has not started."))
 		return
 
@@ -904,12 +904,12 @@ ADMIN_VERB(force_antag_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Template Spawn",
 	antag.attempt_late_spawn()
 
 ADMIN_VERB(force_mode_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Mode Spawn", "Force autotraitor to proc.", ADMIN_CATEGORY_EVENTS)
-	if(!SSticker|| !SSticker.mode)
+	if(!SSticker|| !round_mode())
 		to_chat(user, span_warning("Mode has not started."))
 		return
 
 	log_and_message_admins("attempting to force mode autospawn.", user.mob)
-	SSticker.mode.try_latespawn()
+	round_mode().try_latespawn()
 
 ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyze", "Paralyzes a player. Or unparalyses them.", ADMIN_CATEGORY_EVENTS, mob/living/living_target in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	return toggle_paralyze(user, living_target)

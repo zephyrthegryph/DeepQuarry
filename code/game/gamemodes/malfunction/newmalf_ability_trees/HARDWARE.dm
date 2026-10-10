@@ -134,5 +134,5 @@
 			if(1)	//on a z-level 1 turf.
 				M.set_stat(DEAD)
 
-	if(SSticker?.mode)
-		SSticker.mode.station_was_nuked = 1
+	if(round_mode())
+		round_mode().station_was_nuked = 1

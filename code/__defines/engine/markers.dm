@@ -49,8 +49,9 @@
 #define ACTION(name, fields...)
 /// A composed stat: declares the var, its base and the id STAT_<NAME> (section 5).
 #define STAT(T, name, rule, params...)
-/// A reactive read of private system state, declared in code/contracts/accessors (section 7).
-#define SYSTEM_ACCESSOR(system, name, key)
+/// A reactive read of private system state, declared in code/contracts/accessors (section 7). An optional fourth argument, the var's type
+/// path, makes the accessor typed (`/proc/name() as /type`), so a caller reads through it: `round_mode().name`.
+#define SYSTEM_ACCESSOR(system, name, key, type...)
 /// A resource and its adapter (section 9, X2).
 #define RESOURCE_DEF(res, params...)
 /// A section of a CAPABILITIES block (section 1): `section(name, "doc")` on its own line groups the entries after it, up to the next section or

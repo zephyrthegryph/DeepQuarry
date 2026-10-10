@@ -363,7 +363,7 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 	// Machinery initialization and pregame setup can legitimately publish
 	// transient state. They are useful to active contracts in tests, but must
 	// never manufacture live-round opportunities.
-	if(!contract_unit_test_mode() && (!SSticker || SSticker.current_state < GAME_STATE_PLAYING))
+	if(!contract_unit_test_mode() && (!SSticker || round_game_state() < GAME_STATE_PLAYING))
 		return FALSE
 	var/list/rules = opportunity_rules_by_event?[event?.event_type]
 	if(!length(rules))

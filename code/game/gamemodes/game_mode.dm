@@ -126,8 +126,8 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	var/mob/user = A.actor
 	var/datum/antagonist/antag = SSantag.all_antag_types[A.step_value("type")]
 	if(antag)
-		if(!(antag in SSticker.mode.antag_templates))
-			rel_add(SSticker.mode, nameof(/datum/game_mode::antag_templates), antag)
+		if(!(antag in round_mode().antag_templates))
+			rel_add(round_mode(), nameof(/datum/game_mode::antag_templates), antag)
 		message_admins("Admin [key_name_admin(user)] added [antag.role_text] template to game mode.")
 
 /datum/game_mode/proc/game_mode_option_prompt(option)
@@ -246,8 +246,8 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 
 	feedback_set_details("round_start","[time2text(world.realtime)]")
 	SSdbcore.SetRoundStart() // an io_job write; returns at once
-	if(SSticker && SSticker.mode)
-		feedback_set_details("game_mode","[SSticker.mode]")
+	if(SSticker && round_mode())
+		feedback_set_details("game_mode","[round_mode()]")
 	feedback_set_details("server_ip","[world.internet_address]:[world.port]")
 	return 1
 
@@ -451,7 +451,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 		return candidates
 
 	// If this is being called post-roundstart then it doesn't care about ready status.
-	if(SSticker && SSticker.current_state == GAME_STATE_PLAYING)
+	if(SSticker && round_game_state() == GAME_STATE_PLAYING)
 		for(var/mob/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(!player.client)
 				continue
@@ -596,16 +596,16 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	set name = "Check Round Info"
 	set category = VERB_CAT_OOC_GAME
 
-	if(!SSticker|| !SSticker.mode)
+	if(!SSticker|| !round_mode())
 		to_chat(usr, span_warning("Something is terribly wrong; there is no gametype."))
 		return
 
 	if(GLOB.master_mode != "secret")
-		to_chat(usr, span_boldnotice("The roundtype is [capitalize(SSticker.mode.name)]"))
-		if(SSticker.mode.round_description)
-			to_chat(usr, span_notice(span_italics("[SSticker.mode.round_description]")))
-		if(SSticker.mode.extended_round_description)
-			to_chat(usr, span_notice("[SSticker.mode.extended_round_description]"))
+		to_chat(usr, span_boldnotice("The roundtype is [capitalize(round_mode().name)]"))
+		if(round_mode().round_description)
+			to_chat(usr, span_notice(span_italics("[round_mode().round_description]")))
+		if(round_mode().extended_round_description)
+			to_chat(usr, span_notice("[round_mode().extended_round_description]"))
 	else
 		to_chat(usr, span_notice(span_italics("Shhhh") + ". It's a secret."))
 	return

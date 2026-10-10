@@ -39,6 +39,8 @@ SYSTEM_ACCESSOR(machines, machine_profile_gas_wake_scan_last_ms, nameof(gas_wake
 SYSTEM_ACCESSOR(machines, machine_profile_gas_woken_last, nameof(gas_woken_last))
 SYSTEM_ACCESSOR(machines, machine_profile_gas_dead_last, nameof(gas_dead_last))
 SYSTEM_ACCESSOR(ticker, round_game_state, nameof(current_state))
+/// The round's game mode (null before the round sets one up): a typed accessor, so a caller reads through it (`round_mode()?.name`).
+SYSTEM_ACCESSOR(ticker, round_mode, nameof(mode), /datum/game_mode)
 SYSTEM_ACCESSOR(supply, supply_money_per_point, nameof(points_per_money))
 SYSTEM_ACCESSOR(nerdle, nerdle_round_word, nameof(target_word))
 SYSTEM_ACCESSOR(nerdle, nerdle_player_count, nameof(total_players))

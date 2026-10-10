@@ -54,7 +54,7 @@ CAPABILITIES(/obj/machinery/drone_fabricator)
 	return PROCESS_KILL
 
 /obj/machinery/drone_fabricator/proc/update_drone_progress()
-	if(SSticker.current_state < GAME_STATE_PLAYING || !produce_drones)
+	if(round_game_state() < GAME_STATE_PLAYING || !produce_drones)
 		return drone_progress
 	if(power_lost())
 		icon_state = "drone_fab_nopower"

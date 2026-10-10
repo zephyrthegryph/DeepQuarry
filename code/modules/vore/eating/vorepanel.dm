@@ -16,7 +16,7 @@
 	set name = "Vore Panel"
 	set category = VERB_CAT_IC_VORE
 
-	if(SSticker.current_state == GAME_STATE_STARTUP)
+	if(round_game_state() == GAME_STATE_STARTUP)
 		return
 
 	if(!isliving(src))

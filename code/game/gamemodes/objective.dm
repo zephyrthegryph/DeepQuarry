@@ -540,11 +540,11 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	target_amount = rand (lowbound,highbound)
 	if (SSticker)
 		var/n_p = 1 //autowin
-		if (SSticker.current_state == GAME_STATE_SETTING_UP)
+		if (round_game_state() == GAME_STATE_SETTING_UP)
 			for(var/mob/new_player/P in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(P.client && P.ready && P.mind!=owner)
 					n_p ++
-		else if (SSticker.current_state == GAME_STATE_PLAYING)
+		else if (round_game_state() == GAME_STATE_PLAYING)
 			for(var/mob/living/carbon/human/P in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				var/datum/changeling/comp = P.get_changeling_state()
 				if(P.client && !(comp) && P.mind!=owner)

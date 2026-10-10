@@ -48,7 +48,7 @@ CAPABILITIES(/datum/admin_trader_dispatch_review)
 	if(!user || QDELETED(user.mob))
 		return
 	rel_set(src, nameof(actor), user.mob)
-	if(SSticker.current_state <= GAME_STATE_PREGAME)
+	if(round_game_state() <= GAME_STATE_PREGAME)
 		to_chat(user, span_danger("The round hasn't started yet!"))
 		return
 	if(GLOB.send_beruang)
