@@ -11,12 +11,9 @@
 	default_max_vol = 60 // smoll
 
 CAPABILITIES(/obj/machinery/reagent_refinery/pipe)
+	after_init(0, then(PROC_REF(apply_default_parts)))
 	without("reagent_refinery_set_transfer_amount")
 	climb()
-
-/obj/machinery/reagent_refinery/pipe/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 /obj/machinery/reagent_refinery/pipe/refinery_step()
 	if(!anchored)

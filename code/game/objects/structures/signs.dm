@@ -372,13 +372,6 @@ CAPABILITIES(/obj/item/sign)
 	icon = 'icons/obj/decals_directions.dmi'
 	//TODO: set up overlay systems, inc. interactions (e.g. vines clear w/ plantbgone or fire, snow can be brushed off or melted, and so on)
 
-//disabled this proc, it serves no purpose except to overwrite the description that already exists. may have been intended for making your own signs?
-//seems to defeat the point of having a generic directional sign that mappers could edit and use in POIs? left it here in case something breaks.
-/*
-/obj/structure/sign/directions/Initialize(mapload)
-	. = ..()
-	desc = "A direction sign, pointing out the way to \the [src]."
-*/
 
 //Also floor/level/deck signs in the same vein. Naming conventions!
 /obj/structure/sign/levels

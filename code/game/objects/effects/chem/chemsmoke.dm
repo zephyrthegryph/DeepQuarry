@@ -8,11 +8,12 @@
 	pass_flags = PASSTABLE | PASSGRILLE | PASSGLASS //PASSGLASS is fine here, it's just so the visual effect can "flow" around glass
 
 CAPABILITIES(/obj/effect/effect/smoke/chem)
+	after_init(0, then(PROC_REF(init_wake_hydroponics)))
 	reagents(500)
 
-/obj/effect/effect/smoke/chem/Initialize(mapload)
-	. = ..()
+/obj/effect/effect/smoke/chem/proc/init_wake_hydroponics(datum/act/timer/A)
 	wake_nearby_hydroponics()
+
 
 /obj/effect/effect/smoke/chem/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

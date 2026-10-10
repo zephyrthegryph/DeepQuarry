@@ -150,8 +150,10 @@
 		user.forceMove(get_turf(target()))
 	return OP_OK
 
-/obj/structure/redgate/away/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/redgate/away)
+	after_init(0, then(PROC_REF(check_partner)))
+
+/obj/structure/redgate/away/proc/check_partner(datum/act/timer/A)
 	if(!find_partner())
 		log_and_message_admins("An away redgate spawned but wasn't able to find a gateway to link to. If this appeared at roundstart, something has gone wrong, otherwise if you spawn another gate they should connect.")
 

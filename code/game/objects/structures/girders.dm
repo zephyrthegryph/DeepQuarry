@@ -79,9 +79,12 @@ TRACKED(/obj/structure/girder, material_processing)
 	anchored = FALSE
 	cover = 25
 
-/obj/structure/girder/displaced/Initialize(mapload, material_key)
-	. = ..()
+CAPABILITIES(/obj/structure/girder/displaced)
+	after_init(0, then(PROC_REF(init_displace)))
+
+/obj/structure/girder/displaced/proc/init_displace(datum/act/timer/A)
 	displace()
+
 
 /obj/structure/girder/proc/displace()
 	name = "displaced [girder_material.display_name] [initial(name)]"

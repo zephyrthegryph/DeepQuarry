@@ -195,14 +195,14 @@ CAPABILITIES(/obj/item/pen/reagent)
 	var/active_icon_state
 	var/default_icon_state
 
-/obj/item/pen/blade/Initialize(mapload)
-	. = ..()
-	active_icon_state = "[icon_state]-x"
-	default_icon_state = icon_state
-
 // Its alt-click comes before the pen's own (the old EXTEND listed the child's specs first).
 CAPABILITIES(/obj/item/pen/blade)
+	after_init(0, then(PROC_REF(remember_icon_states)))
 	op("pen_toggle_blade", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle blade"), then(PROC_REF(interaction_toggle_blade)))
+
+/obj/item/pen/blade/proc/remember_icon_states(datum/act/timer/A)
+	active_icon_state = "[icon_state]-x"
+	default_icon_state = icon_state
 
 /// Old click_alt: the pen's click, then the blade toggles.
 /obj/item/pen/blade/proc/interaction_toggle_blade(datum/act/op/A)

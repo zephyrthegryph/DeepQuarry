@@ -16,6 +16,7 @@
 	var/separate_force_canister = FALSE
 
 CAPABILITIES(/obj/machinery/smart_centrifuge)
+	after_init(0, then(PROC_REF(finish_setup)))
 	reagents(CARGOTANKER_VOLUME)
 	op("centrifuge_attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), when(nameof(working)), then(PROC_REF(interaction_attackby)))
 	op("centrifuge_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
@@ -31,8 +32,8 @@ TRACKED_BRIDGED(/obj/machinery/smart_centrifuge, working, CHANGE_MACHINE_SETTING
 /obj/machinery/smart_centrifuge/proc/separate_delay_of(datum/act/A)
 	return separate_delay
 
-/obj/machinery/smart_centrifuge/Initialize(mapload)
-	. = ..()
+/// Opens the container and applies the default parts once init is complete.
+/obj/machinery/smart_centrifuge/proc/finish_setup(datum/act/timer/A)
 	flags |= OPENCONTAINER
 	default_apply_parts()
 

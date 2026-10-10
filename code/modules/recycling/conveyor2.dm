@@ -229,6 +229,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 /obj/machinery/conveyor_switch/var/operated = FALSE
 TRACKED_BRIDGED(/obj/machinery/conveyor_switch, operated, CHANGE_MACHINE_SETTINGS)
 CAPABILITIES(/obj/machinery/conveyor_switch)
+	after_init(0, then(PROC_REF(init_update)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operated), wakes_on = list(nameof(operated)))
 	ref_many(nameof(conveyors), /obj/machinery/conveyor, by = nameof(id))
 	ref_many(nameof(linked_switches), /obj/machinery/conveyor_switch, by = nameof(id))
@@ -241,9 +242,9 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set one-way"), then(PROC_REF(wrench_used)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Adjust speed"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wirecutter_used)))
 
-/obj/machinery/conveyor_switch/Initialize(mapload)
-	. = ..()
+/obj/machinery/conveyor_switch/proc/init_update(datum/act/timer/A)
 	update()
+
 
 /obj/machinery/conveyor_switch/proc/toggle_speed(forced)
 	speed_active = !speed_active // switching gears

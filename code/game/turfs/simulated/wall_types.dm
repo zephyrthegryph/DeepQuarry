@@ -124,9 +124,12 @@ TYPE_TABLE(/turf/simulated/wall/log_sif, wall_forced_materials, list(MAT_SIFLOG)
 	light_on = TRUE
 	block_tele = TRUE // Will be used for dungeons so this is needed to stop cheesing with handteles.
 
-/turf/simulated/shuttle/wall/alien/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/turf/simulated/shuttle/wall/alien)
+	after_init(0, then(PROC_REF(init_alien_light)))
+
+/turf/simulated/shuttle/wall/alien/proc/init_alien_light(datum/act/timer/A)
 	update_light()
+
 
 /turf/simulated/shuttle/wall/Initialize(mapload)
 	. = ..()

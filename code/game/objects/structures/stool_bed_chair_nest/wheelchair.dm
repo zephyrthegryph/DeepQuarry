@@ -15,9 +15,6 @@
 	var/min_mob_buckle_size = MOB_SMALL
 	var/max_mob_buckle_size = MOB_LARGE
 
-/obj/structure/bed/chair/wheelchair/Initialize(mapload, new_material, new_padding_material)
-	. = ..()
-
 /obj/structure/bed/chair/wheelchair/motor
 	name = "electric wheelchair"
 	desc = "A motorized wheelchair controlled with a joystick on one armrest"

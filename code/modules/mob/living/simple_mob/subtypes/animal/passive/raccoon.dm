@@ -36,8 +36,10 @@
 	pain_emote_1p = list("chitter")
 	pain_emote_3p = list("chitters")
 
-/mob/living/simple_mob/animal/passive/raccoon/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/animal/passive/raccoon)
+	after_init(0, then(PROC_REF(raccoon_ghostjoin_ready)))
+
+/mob/living/simple_mob/animal/passive/raccoon/proc/raccoon_ghostjoin_ready(datum/act/timer/A)
 	set_ghostjoin(1)
 
 /datum/say_list/raccoon

@@ -32,8 +32,10 @@ GLOBAL_VAR_INIT(ntnet_card_uid, 1)
 	if(ethernet)
 		to_chat(user, "OpenEth (Physical Connection) - Physical network connection port")
 
-/obj/item/computer_hardware/network_card/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/computer_hardware/network_card)
+	after_init(0, then(PROC_REF(assign_identification_id)))
+
+/obj/item/computer_hardware/network_card/proc/assign_identification_id(datum/act/timer/A)
 	identification_id = GLOB.ntnet_card_uid
 	GLOB.ntnet_card_uid++
 

@@ -9,9 +9,9 @@
 	var/teleport_distance = 4
 	danger_mult = 1.1
 
-/obj/effect/anomaly/bluespace/Initialize(mapload, new_lifespan)
-	. = ..()
+/obj/effect/anomaly/bluespace/proc/init_wibbly_filters(datum/act/timer/A)
 	apply_wibbly_filters(src)
+
 
 /obj/effect/anomaly/bluespace/anomalyEffect()
 	..()
@@ -21,6 +21,7 @@
 			do_teleport(M, locate(M.x, M.y, M.z), teleport_distance, channel = TELEPORT_CHANNEL_BLUESPACE)
 
 CAPABILITIES(/obj/effect/anomaly/bluespace)
+	after_init(0, then(PROC_REF(init_wibbly_filters)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 
 /// Something walked into it (the bump action's notice).
@@ -91,9 +92,12 @@ CAPABILITIES(/obj/effect/anomaly/bluespace)
 	teleport_distance = 12
 	anomaly_core = null
 
-/obj/effect/anomaly/bluespace/big/Initialize(mapload, new_lifespan)
-	. = ..()
+CAPABILITIES(/obj/effect/anomaly/bluespace/big)
+	after_init(0, then(PROC_REF(init_enlarge)))
+
+/obj/effect/anomaly/bluespace/big/proc/init_enlarge(datum/act/timer/A)
 	transform *= 3
+
 
 /obj/effect/temp_visual/circle_wave/bluespace
 	color = COLOR_BLUE_LIGHT

@@ -52,6 +52,7 @@ TRACKED(/obj/item/paicard, emitter)
 TRACKED(/obj/item/paicard, speech_synthesizer)
 
 CAPABILITIES(/obj/item/paicard)
+	after_init(0, then(PROC_REF(paicard_after_init)))
 	ref_one(nameof(pai), /mob/living/silicon/pai)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	blast_contents()
@@ -106,8 +107,7 @@ CAPABILITIES(/obj/item/paicard)
 	if(istype(rig))
 		rig.forced_move(direction, user)
 
-/obj/item/paicard/Initialize(mapload)
-	. = ..()
+/obj/item/paicard/proc/paicard_after_init(datum/act/timer/A)
 	setEmotion(16)
 
 // the pAI dies with its card (no throwing friend pAIs into the singularity to respawn).

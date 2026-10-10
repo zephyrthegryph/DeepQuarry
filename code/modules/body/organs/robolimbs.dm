@@ -504,8 +504,10 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 
 TRACKED(/obj/item/disk/limb, company)
 
-/obj/item/disk/limb/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/disk/limb)
+	after_init(0, then(PROC_REF(limb_disk_named)))
+
+/obj/item/disk/limb/proc/limb_disk_named(datum/act/timer/A)
 	if(company)
 		name = "[company] [initial(name)]"
 
@@ -560,8 +562,10 @@ TRACKED(/obj/item/disk/limb, company)
 
 TRACKED(/obj/item/disk/species, species)
 
-/obj/item/disk/species/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/disk/species)
+	after_init(0, then(PROC_REF(species_disk_named)))
+
+/obj/item/disk/species/proc/species_disk_named(datum/act/timer/A)
 	if(species)
 		name = "[species] [initial(name)]"
 

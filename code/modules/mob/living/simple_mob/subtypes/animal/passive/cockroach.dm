@@ -42,8 +42,7 @@
 
 	var/squish_chance = 25
 
-/mob/living/simple_mob/animal/passive/cockroach/Initialize(mapload)
-	. = ..()
+/mob/living/simple_mob/animal/passive/cockroach/proc/cockroach_pest_ready(datum/act/timer/A)
 	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
 
 //Deletes the body upon death
@@ -77,6 +76,7 @@
 				act_message(src, null, null, MSG_OTHERS(span_notice("%U% avoids getting crushed.")))
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cockroach)
+	after_init(0, then(PROC_REF(cockroach_pest_ready)))
 	extend(/datum/act/hit/explosion, instead()) // Explosions are a terrible way to handle a cockroach.
 
 //Custom stain so it's not "spiderling remains"

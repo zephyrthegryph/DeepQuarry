@@ -42,6 +42,7 @@
 	"}
 
 CAPABILITIES(/obj/machinery/account_database)
+	after_init(0, then(PROC_REF(assign_machine_id)))
 	climb()
 	op("insert_card", ui_act(), then(PROC_REF(ui_act_insert_card)))
 	interface("AccountsTerminal")
@@ -59,9 +60,8 @@ CAPABILITIES(/obj/machinery/account_database)
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 	display_disconnect_op()
 
-/obj/machinery/account_database/Initialize(mapload)
+/obj/machinery/account_database/proc/assign_machine_id(datum/act/timer/A)
 	machine_id = "[station_name()] Acc. DB #[GLOB.num_financial_terminals++]"
-	. = ..()
 
 /obj/machinery/account_database/proc/interaction_insert_card(datum/act/op/A)
 	var/mob/user = A.actor

@@ -512,9 +512,12 @@ TRACKED(/obj/machinery/readybutton, ready)
 	meat_amount = 0
 	meat_type = null
 
-/mob/living/simple_mob/animal/space/carp/holodeck/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holodeck)
+	after_init(0, then(PROC_REF(init_hologram_light)))
+
+/mob/living/simple_mob/animal/space/carp/holodeck/proc/init_hologram_light(datum/act/timer/A)
 	set_light(2) //hologram lighting
+
 
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/set_safety(safe)
 	if (safe)

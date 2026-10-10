@@ -22,10 +22,12 @@
 
 	var/list/clothing_possibilities
 
-/obj/structure/ghost_pod/ghost_activated/human/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/human)
+	after_init(0, then(PROC_REF(init_clothing_setup)))
 
+/obj/structure/ghost_pod/ghost_activated/human/proc/init_clothing_setup(datum/act/timer/A)
 	handle_clothing_setup()
+
 
 /obj/structure/ghost_pod/ghost_activated/human/proc/handle_clothing_setup()
 	clothing_possibilities = list()
@@ -144,10 +146,12 @@
 
 	var/list/clothing_possibilities
 
-/obj/structure/ghost_pod/manual/human/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/ghost_pod/manual/human)
+	after_init(0, then(PROC_REF(init_clothing_setup)))
 
+/obj/structure/ghost_pod/manual/human/proc/init_clothing_setup(datum/act/timer/A)
 	handle_clothing_setup()
+
 
 /obj/structure/ghost_pod/manual/human/proc/handle_clothing_setup()
 	clothing_possibilities = list()

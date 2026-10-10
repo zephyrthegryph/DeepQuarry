@@ -217,6 +217,8 @@
 /mob/living/simple_mob/vore/squirrel/big
 	do_seasons = FALSE
 
-/mob/living/simple_mob/vore/squirrel/big/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/vore/squirrel/big)
+	after_init(0, then(PROC_REF(big_squirrel_winter)))
+
+/mob/living/simple_mob/vore/squirrel/big/proc/big_squirrel_winter(datum/act/timer/A)
 	winterize()

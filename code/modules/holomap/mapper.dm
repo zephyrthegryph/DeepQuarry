@@ -435,14 +435,14 @@ TRACKED(/obj/item/mapping_unit, updating)
 
 REGISTRY_MEMBERSHIP(/obj/item/holomap_beacon, REGISTRY_MAPPING_BEACONS)
 
-/obj/item/holomap_beacon/Initialize(mapload)
-	. = ..()
+/obj/item/holomap_beacon/proc/join_mapped_beacon(datum/act/timer/A)
 	if(in_list) // mapped in turned on
 		in_list = TRUE
 		registry_join(REGISTRY_MAPPING_BEACONS, src)
 		icon_state = initial(icon_state) + (in_list ? "_on" : "")
 
 CAPABILITIES(/obj/item/holomap_beacon)
+	after_init(0, then(PROC_REF(join_mapped_beacon)))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

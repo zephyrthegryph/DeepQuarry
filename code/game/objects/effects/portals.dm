@@ -1,6 +1,7 @@
 REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 
 /obj/effect/portal
+	lifecycle_lifetime = 30 SECONDS
 	name = "portal"
 	desc = "Looks unstable. Best to test it with the clown."
 	icon = 'icons/obj/stationobjs.dmi'
@@ -48,10 +49,6 @@ CAPABILITIES(/obj/effect/portal)
 		return OP_OK	//do not send ghosts, zshadows, ai eyes, etc
 	teleport(user)
 	return OP_OK
-
-/obj/effect/portal/Initialize(mapload)
-	. = ..()
-	expire(30 SECONDS)
 
 /obj/effect/portal/proc/teleport(atom/movable/M as mob|obj)
 	if(istype(M, /obj/effect)) //sparks don't teleport

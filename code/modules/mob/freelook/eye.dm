@@ -25,8 +25,7 @@
 	var/use_static = TRUE
 	var/static_visibility_range = 16
 
-/mob/observer/eye/Initialize(mapload)
-	. = ..()
+/mob/observer/eye/proc/eye_godmode_ready(datum/act/timer/A)
 	enable_godmode()
 
 // ---------------------------------------------------------------- relations
@@ -46,6 +45,7 @@
 	var/mob/active_looker
 
 CAPABILITIES(/mob/observer/eye)
+	after_init(0, then(PROC_REF(eye_godmode_ready)))
 	ref_one(nameof(eye_looker), /mob, on_unlink = PROC_REF(looker_lost))
 	ref_one(nameof(active_looker), /mob)
 

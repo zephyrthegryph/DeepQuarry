@@ -10,9 +10,8 @@
 	circuit = /obj/item/circuitboard/industrial_reagent_hub
 	default_max_vol = 0
 
-/obj/machinery/reagent_refinery/hub/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+CAPABILITIES(/obj/machinery/reagent_refinery/hub)
+	after_init(0, then(PROC_REF(apply_default_parts)))
 
 /obj/machinery/reagent_refinery/hub/refinery_step()
 	if(!anchored)

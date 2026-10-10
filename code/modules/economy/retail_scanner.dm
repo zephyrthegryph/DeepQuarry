@@ -35,8 +35,7 @@
 // Claim machine ID
 REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 
-/obj/item/retail_scanner/Initialize(mapload)
-	. = ..()
+/obj/item/retail_scanner/proc/set_up_scanner(datum/act/timer/A)
 	machine_id = "[station_name()] RETAIL #[GLOB.num_financial_terminals++]"
 	if(locate_within(loc, /obj/structure/table))
 		pixel_y = 3
@@ -61,6 +60,7 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 	src.pixel_y = 0
 
 CAPABILITIES(/obj/item/retail_scanner)
+	after_init(0, then(PROC_REF(set_up_scanner)))
 	op("controls", in_hand(), label("Open retail scanner"), then(PROC_REF(retail_scanner_controls_opened)))
 	interface("RetailScanner")
 	without("ui_open")

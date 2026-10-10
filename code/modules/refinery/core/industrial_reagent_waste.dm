@@ -11,14 +11,10 @@
 	default_max_vol = CARGOTANKER_VOLUME
 
 CAPABILITIES(/obj/machinery/reagent_refinery/waste_processor)
+	after_init(0, then(PROC_REF(apply_default_parts)))
 	climb()
 	op("waste_processor_drain_trolley", item(/obj/vehicle/train/trolley_tank), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Drain into processor"), then(PROC_REF(interaction_drain_trolley)))
 	op("waste_processor_drain_container", inputs(item(/obj/item/reagent_containers/glass), item(/obj/item/reagent_containers/food/drinks/glass2), item(/obj/item/reagent_containers/food/drinks/shaker)), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Dump into processor"), then(PROC_REF(interaction_drain_container)))
-
-/obj/machinery/reagent_refinery/waste_processor/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	flags |= NOREACT
 
 /obj/machinery/reagent_refinery/waste_processor/refinery_step()
 	if(!anchored)
@@ -84,3 +80,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/waste)
 /// A waste processor does not feed anything.
 /obj/machinery/reagent_refinery/waste_processor/hub_intake(back)
 	return FALSE
+
+/obj/machinery/reagent_refinery/waste_processor/apply_default_parts(datum/act/timer/A)
+	. = ..()
+	flags |= NOREACT

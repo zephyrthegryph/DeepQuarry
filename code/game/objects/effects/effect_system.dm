@@ -575,6 +575,7 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental)
 			)
 
 /obj/effect/effect/teleport_greyscale
+	lifecycle_lifetime = 2 SECONDS
 	name = "teleportation"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "teleport_greyscale"
@@ -582,10 +583,6 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental)
 	mouse_opacity = 0
 	plane = MOB_PLANE
 	layer = ABOVE_MOB_LAYER
-
-/obj/effect/effect/teleport_greyscale/Initialize(mapload)
-	. = ..()
-	expire(2 SECONDS)
 
 /datum/effect/effect/system/teleport_greyscale
 	var/color = "#FFFFFF"

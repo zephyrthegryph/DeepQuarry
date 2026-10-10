@@ -214,8 +214,10 @@
 	parent_organ = BP_TORSO
 	vital = TRUE
 
-/obj/item/organ/internal/brain/cephalon/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/organ/internal/brain/cephalon)
+	after_init(0, then(PROC_REF(cephalon_vital_ready)))
+
+/obj/item/organ/internal/brain/cephalon/proc/cephalon_vital_ready(datum/act/timer/A)
 	if(!owner || !HAS_SYNTHETIC_BIOLOGY(owner))
 		vital = FALSE
 

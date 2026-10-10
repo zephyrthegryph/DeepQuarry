@@ -55,6 +55,7 @@
 	var/list/weather_areas = list()	//We'll call a proc on these areas when we eat, don't worry!
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
+	after_init(0, then(PROC_REF(stardog_light_ready)))
 	verb_entry(/mob/living/simple_mob/proc/set_name, hidden = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/set_desc, hidden = TRUE)
 	// What the dog does on its own for a while (eating the weather it floats in, going down to a place and back up): the dog is still for as long as it takes.
@@ -176,8 +177,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	to_chat(src, span_warning("You can't do that."))
 	return
 
-/mob/living/simple_mob/vore/overmap/stardog/Initialize(mapload)
-	. = ..()
+/mob/living/simple_mob/vore/overmap/stardog/proc/stardog_light_ready(datum/act/timer/A)
 	child_om_marker?.set_light(5, 1, "#ff8df5")
 
 /mob/living/simple_mob/vore/overmap/stardog/relations()
@@ -848,8 +848,7 @@ CAPABILITIES(/obj/structure/flora/tree/fur/wall)
 	var/mob/living/simple_mob/vore/overmap/stardog/host
 	var/mob/living/controller
 
-/obj/structure/control_pod/Initialize(mapload)
-	. = ..()
+/obj/structure/control_pod/proc/control_pod_setup(datum/act/timer/A)
 	set_up()
 
 /obj/structure/control_pod/proc/set_up()
@@ -869,6 +868,7 @@ MSG_DEF(control_pod/reaching, span_notice("You reach out to touch %T%..."), span
 MSG_DEF(control_pod/pulls_back, span_warning("You pull back from %T%."), span_warning("%U% pulls back from %T%."))
 
 CAPABILITIES(/obj/structure/control_pod)
+	after_init(0, then(PROC_REF(control_pod_setup)))
 	op("hand", hand(), label("Use"), needs(req(PROC_REF(pod_free), because = PROC_REF(pod_busy_text))), starts(PROC_REF(control_started)), begins(MSG(control_pod/reaching)), wait(10 SECONDS), on_interrupt(PROC_REF(control_failed)), then(PROC_REF(control_done)))
 
 /// Nobody is in the pod.

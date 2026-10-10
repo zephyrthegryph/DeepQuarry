@@ -263,8 +263,10 @@ CAPABILITIES(/obj/item/cartridge/rd)
 	programs = list(new/datum/data/pda/utility/toggle_door)
 	messenger_plugins = list(new/datum/data/pda/messenger_plugin/virus/detonate)
 
-/obj/item/cartridge/syndicate/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/cartridge/syndicate)
+	after_init(0, then(PROC_REF(set_remote_door)))
+
+/obj/item/cartridge/syndicate/proc/set_remote_door(datum/act/timer/A)
 	var/datum/data/pda/utility/toggle_door/D = LAZYACCESS(programs, 1)
 	if(istype(D))
 		D.remote_door_id = initial_remote_door_id
@@ -329,13 +331,13 @@ CAPABILITIES(/obj/item/cartridge/rd)
 	var/obj/item/storage/internal/hold
 
 CAPABILITIES(/obj/item/cartridge/storage)
+	after_init(0, then(PROC_REF(size_hold)))
 	owns_one(nameof(hold), starts = /obj/item/storage/internal)
 	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Store"), then(PROC_REF(interaction_store)))
 	op("hand", hand(), label("Use"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hand)))
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))
 
-/obj/item/cartridge/storage/Initialize(mapload)
-	. = ..()
+/obj/item/cartridge/storage/proc/size_hold(datum/act/timer/A)
 	hold.max_storage_space = slots * 2
 
 

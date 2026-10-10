@@ -12,9 +12,9 @@
 	var/interference = FALSE
 	var/icon/plant = null
 
-/obj/machinery/holoplant/Initialize(mapload)
-	. = ..()
+/obj/machinery/holoplant/proc/init_activate(datum/act/timer/A)
 	activate()
+
 
 /// Old attack_hand: switch the projection on or off (not while it flickers).
 /obj/machinery/holoplant/proc/interaction_toggle(datum/act/op/A)
@@ -78,6 +78,7 @@
 	return getHologramIcon(plant_icon, 0)
 
 CAPABILITIES(/obj/machinery/holoplant)
+	after_init(0, then(PROC_REF(init_activate)))
 	on_change(nameof(anchored), ANY, then(PROC_REF(anchoring_changed)))
 	emag(then(PROC_REF(on_emag)))
 	op("toggle", hand(), label("Toggle"), needs(req_is(nameof(anchored), TRUE, because = MSG(holoplant/unanchored))), then(PROC_REF(interaction_toggle)))

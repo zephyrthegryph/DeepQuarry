@@ -58,6 +58,10 @@ CAPABILITIES(/obj/machinery/reagent_refinery)
 	op("reagent_refinery_set_transfer_amount", menu(), label("Set transfer amount"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(transfer_amount_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "amount"), then(PROC_REF(interaction_set_transfer_amount)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Secure"), then(PROC_REF(wrench_used)))
 
+/// Applies the machine's default parts once its init is complete (after_init() in the types that declare it).
+/obj/machinery/reagent_refinery/proc/apply_default_parts(datum/act/timer/A)
+	default_apply_parts()
+
 /obj/machinery/reagent_refinery/proc/work_step(datum/act/timer/A)
 	var/before = reagents ? reagents.total_volume : 0
 	refinery_step()

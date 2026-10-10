@@ -6,9 +6,9 @@
 	var/boing = FALSE
 	var/object_launch_prob = 20
 
-/obj/effect/anomaly/grav/Initialize(mapload, new_lifespan)
-	. = ..()
+/obj/effect/anomaly/grav/proc/init_wibbly_filters(datum/act/timer/A)
 	apply_wibbly_filters(src)
+
 
 /obj/effect/anomaly/grav/anomalyEffect(seconds_per_tick)
 	..()
@@ -49,6 +49,7 @@
 	gravShock(A)
 
 CAPABILITIES(/obj/effect/anomaly/grav)
+	after_init(0, then(PROC_REF(init_wibbly_filters)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 
 /// Something walked into it (the bump action's notice).

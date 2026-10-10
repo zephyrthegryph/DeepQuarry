@@ -211,8 +211,7 @@
 
 TRACKED(/obj/machinery/department_storefront, department_id)
 
-/obj/machinery/department_storefront/Initialize(mapload)
-	. = ..()
+/obj/machinery/department_storefront/proc/set_up_storefront(datum/act/timer/A)
 	machine_id = "[station_name()] STOREFRONT #[GLOB.num_financial_terminals++]"
 	stock_prices = list()
 	stock_suggested_prices = list()
@@ -269,6 +268,7 @@ TRACKED(/obj/machinery/department_storefront, department_id)
 	return max(5, round(item.w_class * 5))
 
 CAPABILITIES(/obj/machinery/department_storefront)
+	after_init(0, then(PROC_REF(set_up_storefront)))
 	interface("DepartmentStorefront")
 	without("ui_open")
 	op("buy", ui_act("buy", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_buy)))

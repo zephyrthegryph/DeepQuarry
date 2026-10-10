@@ -23,8 +23,10 @@
 	icon_state = "large"
 	anchored = TRUE
 
-/obj/effect/meteor_falling/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/effect/meteor_falling)
+	after_init(0, then(PROC_REF(start_falling)))
+
+/obj/effect/meteor_falling/proc/start_falling(datum/act/timer/A)
 	SpinAnimation()
 	meteor_fall()
 

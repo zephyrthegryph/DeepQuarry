@@ -47,8 +47,10 @@
 	organ_names = /datum/decl/mob_organ_names/viscerator
 
 
-/mob/living/simple_mob/mechanical/viscerator/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator)
+	after_init(0, then(PROC_REF(viscerator_swarm_ready)))
+
+/mob/living/simple_mob/mechanical/viscerator/proc/viscerator_swarm_ready(datum/act/timer/A)
 	enable_swarming()
 
 /mob/living/simple_mob/mechanical/viscerator

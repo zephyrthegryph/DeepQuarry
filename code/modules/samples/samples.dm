@@ -264,8 +264,11 @@ TYPE_TABLE(/obj/item/research_sample/rare, research_sample_resources, list(/obj/
 
 TYPE_TABLE(/obj/item/research_sample/bluespace, research_sample_resources, list(/obj/item/bluespace_crystal))
 
-/obj/item/research_sample/bluespace/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/research_sample/bluespace)
+	after_init(0, then(PROC_REF(start_glowing)))
+
+/// The sample glows from the start.
+/obj/item/research_sample/bluespace/proc/start_glowing(datum/act/timer/A)
 	set_light(1, 3, lightcolor)
 
 //catalogue data

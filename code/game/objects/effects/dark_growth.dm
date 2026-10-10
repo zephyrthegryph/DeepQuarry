@@ -112,11 +112,12 @@ CAPABILITIES(/obj/effect/dark/floor)
 	light_range = 3
 	var/node_range = 9
 
-/obj/structure/prop/dark_node/Initialize(mapload)
-	. = ..()
+/obj/structure/prop/dark_node/proc/init_dark_light(datum/act/timer/A)
 	set_light(light_range, -20, "#FFFFFF")
 
+
 CAPABILITIES(/obj/structure/prop/dark_node)
+	after_init(0, then(PROC_REF(init_dark_light)))
 	every(2 SECONDS, then(PROC_REF(dark_node_step)))
 
 // its dark tiles unlink and wither.

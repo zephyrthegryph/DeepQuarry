@@ -5,8 +5,7 @@
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 	no_vore = TRUE //Dummies don't need bellies.
 
-/mob/living/carbon/human/dummy/Initialize(mapload)
-	. = ..()
+/mob/living/carbon/human/dummy/proc/dummy_godmode_ready(datum/act/timer/A)
 	enable_godmode()
 
 /// Preview dummies are in no mob registry.
@@ -152,4 +151,5 @@ TYPE_TABLE(/mob/living/carbon/human/sparkledog, forced_initial_species, SPECIES_
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/carbon/human/dummy)
+	after_init(0, then(PROC_REF(dummy_godmode_ready)))
 	immune_to_incapacitation()

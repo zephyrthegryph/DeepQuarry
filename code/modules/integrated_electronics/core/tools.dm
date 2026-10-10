@@ -292,7 +292,10 @@ CAPABILITIES(/obj/item/storage/bag/circuits)
 //Emp'ing this one bag causes a recursion loop of over 700 emp_act's,
 //Which is enough to trigger byond's recursion level protection
 
-/obj/item/storage/bag/circuits/basic/Initialize(mapload)
+CAPABILITIES(/obj/item/storage/bag/circuits/basic)
+	after_init(0, then(PROC_REF(stock_kit)))
+
+/obj/item/storage/bag/circuits/basic/proc/stock_kit(datum/act/timer/A)
 	emp_protection_flags |= EMP_PROTECT_SELF
 	new /obj/item/storage/bag/circuits/mini/arithmetic(src)
 	new /obj/item/storage/bag/circuits/mini/trig(src)
@@ -315,9 +318,11 @@ CAPABILITIES(/obj/item/storage/bag/circuits)
 	new /obj/item/integrated_electronics/debugger(src)
 	new /obj/item/integrated_electronics/detailer(src)
 	make_exact_fit()
-	. = ..()
 
-/obj/item/storage/bag/circuits/all/Initialize(mapload)
+CAPABILITIES(/obj/item/storage/bag/circuits/all)
+	after_init(0, then(PROC_REF(stock_kit)))
+
+/obj/item/storage/bag/circuits/all/proc/stock_kit(datum/act/timer/A)
 	new /obj/item/storage/bag/circuits/mini/arithmetic/all(src)
 	new /obj/item/storage/bag/circuits/mini/trig/all(src)
 	new /obj/item/storage/bag/circuits/mini/input/all(src)
@@ -341,7 +346,6 @@ CAPABILITIES(/obj/item/storage/bag/circuits)
 	new /obj/item/integrated_electronics/detailer(src)
 	new /obj/item/tool/crowbar(src)
 	make_exact_fit()
-	. = ..()
 
 /obj/item/storage/bag/circuits/mini
 	name = "circuit box"
@@ -349,12 +353,25 @@ CAPABILITIES(/obj/item/storage/bag/circuits)
 	w_class = ITEMSIZE_SMALL
 	display_contents_with_number = 1
 	var/spawn_flags_to_use = IC_SPAWN_DEFAULT
-
+	/// The circuit types this box stocks, four of each spawnable one (a shared constant list).
+	var/list/circuit_kinds
 
 CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 	configure(storage(accepts = list(/obj/item/integrated_circuit)))
+	after_init(0, then(PROC_REF(fill_circuits)))
+
+/obj/item/storage/bag/circuits/mini/proc/fill_circuits(datum/act/timer/A)
+	for(var/kind in circuit_kinds)
+		for(var/obj/item/integrated_circuit/IC in GLOB.all_integrated_circuits)
+			if(!istype(IC, kind))
+				continue
+			if(IC.spawn_flags & spawn_flags_to_use)
+				for(var/i = 1 to 4)
+					new IC.type(src)
+	make_exact_fit()
 
 /obj/item/storage/bag/circuits/mini/arithmetic
+	circuit_kinds = list(/obj/item/integrated_circuit/arithmetic)
 	name = "arithmetic circuit box"
 	desc = "Warning: Contains math."
 	icon_state = "box_arithmetic"
@@ -362,16 +379,10 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /obj/item/storage/bag/circuits/mini/arithmetic/all // Don't believe this will ever be needed.
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/arithmetic/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/arithmetic/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/trig
+	circuit_kinds = list(/obj/item/integrated_circuit/trig)
 	name = "trig circuit box"
 	desc = "Danger: Contains more math."
 	icon_state = "box_trig"
@@ -379,16 +390,10 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /obj/item/storage/bag/circuits/mini/trig/all // Ditto
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/trig/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/trig/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/input
+	circuit_kinds = list(/obj/item/integrated_circuit/input)
 	name = "input circuit box"
 	desc = "Tell these circuits everything you know."
 	icon_state = "box_input"
@@ -396,16 +401,10 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /obj/item/storage/bag/circuits/mini/input/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/input/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/input/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/output
+	circuit_kinds = list(/obj/item/integrated_circuit/output)
 	name = "output circuit box"
 	desc = "Circuits to interface with the world beyond itself."
 	icon_state = "box_output"
@@ -413,16 +412,10 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /obj/item/storage/bag/circuits/mini/output/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/output/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/output/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/memory
+	circuit_kinds = list(/obj/item/integrated_circuit/memory)
 	name = "memory circuit box"
 	desc = "Machines can be quite forgetful without these."
 	icon_state = "box_memory"
@@ -430,16 +423,10 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /obj/item/storage/bag/circuits/mini/memory/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/memory/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/memory/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/logic
+	circuit_kinds = list(/obj/item/integrated_circuit/logic)
 	name = "logic circuit box"
 	desc = "May or may not be Turing complete."
 	icon_state = "box_logic"
@@ -447,16 +434,10 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /obj/item/storage/bag/circuits/mini/logic/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/logic/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/logic/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/time
+	circuit_kinds = list(/obj/item/integrated_circuit/time)
 	name = "time circuit box"
 	desc = "No time machine parts, sadly."
 	icon_state = "box_time"
@@ -464,16 +445,10 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /obj/item/storage/bag/circuits/mini/time/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/time/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/time/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/reagents
+	circuit_kinds = list(/obj/item/integrated_circuit/reagent)
 	name = "reagent circuit box"
 	desc = "Unlike most electronics, these circuits are supposed to come in contact with liquids."
 	icon_state = "box_reagents"
@@ -481,16 +456,10 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /obj/item/storage/bag/circuits/mini/reagents/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/reagents/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/reagent/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/transfer
+	circuit_kinds = list(/obj/item/integrated_circuit/transfer)
 	name = "transfer circuit box"
 	desc = "Useful for moving data representing something arbitrary to another arbitrary virtual place."
 	icon_state = "box_transfer"
@@ -498,16 +467,10 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /obj/item/storage/bag/circuits/mini/transfer/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/transfer/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/transfer/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/converter
+	circuit_kinds = list(/obj/item/integrated_circuit/converter)
 	name = "converter circuit box"
 	desc = "Transform one piece of data to another type of data with these."
 	icon_state = "box_converter"
@@ -515,15 +478,9 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /obj/item/storage/bag/circuits/mini/converter/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/converter/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/converter/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 /obj/item/storage/bag/circuits/mini/smart
+	circuit_kinds = list(/obj/item/integrated_circuit/smart)
 	name = "smart box"
 	desc = "Sentience not included."
 	icon_state = "box_ai"
@@ -531,15 +488,9 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /obj/item/storage/bag/circuits/mini/smart/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/smart/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/smart/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 /obj/item/storage/bag/circuits/mini/manipulation
+	circuit_kinds = list(/obj/item/integrated_circuit/manipulation)
 	name = "manipulation box"
 	desc = "Make your machines actually useful with these."
 	icon_state = "box_manipulation"
@@ -547,16 +498,10 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /obj/item/storage/bag/circuits/mini/manipulation/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/manipulation/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/manipulation/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/power
+	circuit_kinds = list(/obj/item/integrated_circuit/passive/power, /obj/item/integrated_circuit/power)
 	name = "power circuit box"
 	desc = "Electronics generally require electricity."
 	icon_state = "box_power"
@@ -564,17 +509,6 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /obj/item/storage/bag/circuits/mini/power/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/power/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/passive/power/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	for(var/obj/item/integrated_circuit/power/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 /// The selected_io this refers to (a relation view: null once that is deleted).
 /obj/item/multitool/proc/selected_io() as /datum/integrated_io

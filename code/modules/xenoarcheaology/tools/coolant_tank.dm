@@ -6,15 +6,12 @@
 	icon_state = "coolanttank"
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/coolanttank/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_COOLANT, 1000)
-
 /obj/structure/reagent_dispensers/coolanttank/bullet_act(obj/item/projectile/Proj)
 	if(Proj.get_structure_damage())
 		explode()
 
 CAPABILITIES(/obj/structure/reagent_dispensers/coolanttank)
+	configure(reagents(add = list(REAGENT_ID_COOLANT = 1000)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
 
 /// A blast bursts the tank.
