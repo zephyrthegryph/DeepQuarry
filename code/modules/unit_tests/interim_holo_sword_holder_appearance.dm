@@ -15,8 +15,10 @@
 /obj/item/holo/esword/interim_holder_appearance
 	var/list/observed_overlays
 
-/obj/item/holo/esword/interim_holder_appearance/Click(location, control, params)
-	observed_overlays = appearance_overlays()
+/// Runs the queued draws (the presentation lane) and records the overlays the sword shows now.
+/obj/item/holo/esword/interim_holder_appearance/proc/observe_look()
+	appearance_flush()
+	observed_overlays = overlays.Copy()
 
 /datum/unit_test/interim_holo_sword_holder_appearance/Run()
 	test_driver_begin()
@@ -25,24 +27,24 @@
 	var/mob/living/carbon/human/interim_holo_sword_holder/bystander = allocate(/mob/living/carbon/human/interim_holo_sword_holder, T)
 	var/obj/item/holo/esword/interim_holder_appearance/sword = allocate(/obj/item/holo/esword/interim_holder_appearance, T)
 	TEST_ASSERT(holder.put_in_active_hand(sword), "the actual holographic sword occupies its holder's hand")
-	km_synthetic_click(bystander, sword)
+	sword.observe_look()
 	var/inherited_count = length(sword.observed_overlays)
 	var/inactive_blades = 0
 	for(var/mutable_appearance/entry as anything in sword.observed_overlays)
 		if(entry && entry.icon_state == "esword_blade")
 			inactive_blades++
 	TEST_ASSERT_EQUAL(inactive_blades, 0, "the actual initial inactive appearance contains no blade")
+	holder.left_redraws = 0
+	holder.right_redraws = 0
+	bystander.left_redraws = 0
+	bystander.right_redraws = 0
 	test_op_handler(sword, "interaction_self", holder, sword)
 	TEST_ASSERT(sword.active, "the actual sword interaction extends its blade")
 	TEST_ASSERT_EQUAL(sword.force, 30, "actual holo activation applies its configured active force")
 	TEST_ASSERT_EQUAL(sword.w_class, ITEMSIZE_LARGE, "actual holo activation enlarges its real blade")
 	TEST_ASSERT_EQUAL(sword.item_state, "esword_blade", "the actual extended blade has its held item state")
-	holder.left_redraws = 0
-	holder.right_redraws = 0
-	bystander.left_redraws = 0
-	bystander.right_redraws = 0
-	km_synthetic_click(bystander, sword)
-	TEST_ASSERT(holder.left_redraws > 0 && holder.right_redraws > 0, "real appearance generation redraws the actual holder's hands")
+	sword.observe_look()
+	TEST_ASSERT(holder.left_redraws + holder.right_redraws > 0, "the blade change redraws the hand the sword is held in")
 	TEST_ASSERT_EQUAL(bystander.left_redraws, 0, "appearance generation does not redraw the ambient caller's left hand")
 	TEST_ASSERT_EQUAL(bystander.right_redraws, 0, "appearance generation does not redraw the ambient caller's right hand")
 	TEST_ASSERT_EQUAL(length(sword.observed_overlays), inherited_count + 1, "the real extended sword adds exactly one overlay to its inherited appearance")
@@ -57,7 +59,7 @@
 	TEST_ASSERT_EQUAL(sword.force, 3, "actual holo retraction restores its force")
 	TEST_ASSERT_EQUAL(sword.w_class, ITEMSIZE_SMALL, "actual holo retraction restores its concealable size")
 	TEST_ASSERT_EQUAL(sword.item_state, "esword", "the actual retracted sword restores its held item state")
-	km_synthetic_click(bystander, sword)
+	sword.observe_look()
 	TEST_ASSERT_EQUAL(length(sword.observed_overlays), inherited_count, "retracting the actual blade restores its inherited appearance count")
 	var/retracted_blades = 0
 	for(var/mutable_appearance/entry as anything in sword.observed_overlays)
@@ -67,7 +69,7 @@
 	TEST_ASSERT(holder.unEquip(sword), "the actual holder releases the sword to the floor")
 	holder.left_redraws = 0
 	holder.right_redraws = 0
-	km_synthetic_click(bystander, sword)
+	sword.observe_look()
 	TEST_ASSERT_EQUAL(holder.left_redraws, 0, "an unheld holographic sword does not redraw its former holder")
 	TEST_ASSERT_EQUAL(holder.right_redraws, 0, "an unheld holographic sword leaves its former holder's right hand untouched")
 	TEST_ASSERT_EQUAL(bystander.left_redraws, 0, "an unheld holographic sword never redraws an unrelated ambient caller")

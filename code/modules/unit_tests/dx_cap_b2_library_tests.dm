@@ -56,14 +56,16 @@ CAPABILITIES(/obj/machinery/transportpod/dx_b2)
 
 // ---- cap_access ----
 
-/// The drone console's open op needs a credential: none refuses, a held card with the access passes, a map edit of
-/// the console's req_access wins over the default, and the window's status asks the same providers.
+/// The drone console's open op needs a credential (`extend("ui_open", needs(req_access()))`): none refuses, a held card with the access passes, a
+/// map edit of the console's req_access wins over the default, and the window's status asks the same providers.
 /datum/unit_test/dx_cap_access_console/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/machinery/computer/drone_control/C = allocate(/obj/machinery/computer/drone_control, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	TEST_ASSERT_NOTNULL(cap_of(C, /datum/capability/require/access), "the console declares cap_access()")
-	TEST_ASSERT_NOTNULL(test_op(H, C, "open_console"), "no credential: refused")
+	TEST_ASSERT(op_known_anywhere(null, C, null, "ui_open"), "the console's open op is declared")
+	var/datum/op_result/denied = own(test_click(H, C, null))
+	TEST_ASSERT_EQUAL(denied?.outcome, ACT_REFUSED, "no credential: refused")
 	TEST_ASSERT(!access_allowed(C, H), "access_allowed() agrees")
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, T)
 	card.access = list(ACCESS_ENGINE_EQUIP)
@@ -71,9 +73,11 @@ CAPABILITIES(/obj/machinery/transportpod/dx_b2)
 	TEST_ASSERT(access_allowed(C, H, card), "access_allowed() takes the held card")
 	dq_test_wear_id(H, card)
 	TEST_ASSERT_EQUAL(access_credential(C, H, null, list(ACCESS_ENGINE_EQUIP), null, list(/obj/item/card/id)), H, "a worn ID makes the actor the provider")
-	TEST_ASSERT_NULL(test_op(H, C, "open_console"), "an empty hand with a worn ID opens it")
+	var/datum/op_result/opened = own(test_click(H, C, null))
+	TEST_ASSERT_EQUAL(opened?.outcome, ACT_COMMITTED, "an empty hand with a worn ID opens it (reason=[opened?.reason])")
 	C.req_access = list(ACCESS_CAPTAIN)
-	TEST_ASSERT_NOTNULL(test_op(H, C, "open_console"), "the instance's own req_access wins")
+	var/datum/op_result/wrong = own(test_click(H, C, null))
+	TEST_ASSERT_EQUAL(wrong?.outcome, ACT_REFUSED, "the instance's own req_access wins")
 	TEST_ASSERT_EQUAL(access_credential(C, H, null, null, null), H, "nothing required: the actor is the provider")
 
 /// The lock asks the same providers (cap_lock_credential() over access_credential()).

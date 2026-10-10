@@ -201,14 +201,14 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 	var/energy_cost = ask.energy_cost
 	var/obj/item/transmute_product = ask.choices[A.answer.value]
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to change the form of %I%."), item = I)
-	perform_op(src, src, "lleill_transmute", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("item" = I, "energy_cost" = energy_cost, "product" = transmute_product))
+	perform_op(src, src, "lleill_transmute", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("item" = I, "product" = transmute_product, "cost" = energy_cost))
 
 /mob/living/carbon/human/proc/lleill_transmute_human_done(datum/act/op/A)
-	var/energy_cost = A.arg("energy_cost")
+	var/energy_cost = A.arg("cost")
 	var/obj/item/I = A.arg("item")
 	var/obj/item/transmute_product = A.arg("product")
 	if(QDELETED(I))
-		return OP_OK
+		return
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " transmutes %I% into \the [transmute_product.name]."), item = I)
 	consume(I, src)
 	var/spawnloc = get_turf(src)
@@ -217,12 +217,9 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.lleill_energy -= energy_cost
 	species.update_lleill_hud(src)
-	return OP_OK
 
 /mob/living/carbon/human/proc/lleill_transmute_human_failed(datum/act/op/A)
-	var/obj/item/I = A.arg("item")
-	act_message(src, null, others = span_infoplain(span_bold("%U%") + " leaves %I% in its original form."), item = I)
-	return OP_OK
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " leaves %I% in its original form."), item = A.arg("item"))
 
 /datum/power/lleill/rings
 	name = "Glamour Rings"
@@ -562,29 +559,33 @@ CAPABILITIES(/datum/lleill_contact_review)
 		act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " boops %T% on the nose."))
 	if(contact_type == "Custom")
 		src.visible_message(span_infoplain("[custom_text]"))
-	perform_op(src, chosen_target, "lleill_contact", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+	perform_op(src, src, "lleill_contact", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("partner" = chosen_target, "from" = chosen_target.loc))
 	species.update_lleill_hud(src)
 
-/// Both run on the contacted person (the op's holder); the lleill is the actor.
 /mob/living/carbon/human/proc/lleill_contact_broken(datum/act/op/A)
-	var/mob/living/carbon/human/lleill = A.actor
-	act_message(lleill, src, others = span_infoplain(span_bold("%U%") + " and %T% break contact before energy has been transferred."))
-	return OP_OK
+	var/mob/living/carbon/human/chosen_target = A.arg("partner")
+	if(QDELETED(chosen_target))
+		return
+	act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " and %T% break contact before energy has been transferred."))
 
 /mob/living/carbon/human/proc/lleill_contact_done(datum/act/op/A)
-	var/mob/living/carbon/human/lleill = A.actor
-	act_message(lleill, src, others = span_infoplain(span_bold("%U%") + " and %T% complete their contact."))
-	rel_private(lleill, nameof(species)) // per-mob change: never mutate the shared species
-	lleill.species.lleill_energy = lleill.species.lleill_energy_max
-	lleill.adjust_nutrition((nutrition / 2))
-	to_chat(lleill, span_warning("You feel revitalised."))
-	set_tiredness(tiredness + 70)
-	set_nutrition(max((nutrition / 2),75))
-	remove_blood(40) //removes enough blood to make them feel a bit woozy, mostly just for flavour
-	status_adjust(STAT_BLURRY, 20)
-	to_chat(src, span_warning("You feel considerably weakened for the moment."))
-	lleill.species.update_lleill_hud(lleill)
-	return OP_OK
+	var/mob/living/carbon/human/chosen_target = A.arg("partner")
+	if(QDELETED(chosen_target))
+		return
+	if(chosen_target.loc != A.arg("from") || !Adjacent(chosen_target))
+		lleill_contact_broken(A)
+		return
+	act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " and %T% complete their contact."))
+	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
+	species.lleill_energy = species.lleill_energy_max
+	adjust_nutrition((chosen_target.nutrition / 2))
+	to_chat(src, span_warning("You feel revitalised."))
+	chosen_target.set_tiredness(chosen_target.tiredness + 70)
+	chosen_target.set_nutrition(max((chosen_target.nutrition / 2),75))
+	chosen_target.remove_blood(40) //removes enough blood to make them feel a bit woozy, mostly just for flavour
+	chosen_target.status_adjust(STAT_BLURRY, 20)
+	to_chat(chosen_target, span_warning("You feel considerably weakened for the moment."))
+	species.update_lleill_hud(src)
 
 /datum/power/lleill/alchemy
 	name = "Alchemy (25)"
@@ -623,20 +624,18 @@ CAPABILITIES(/datum/lleill_contact_review)
 		return
 	else
 		act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to change the form of %I%."), item = I)
-		perform_op(src, src, "lleill_alchemy", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("item" = I, "product" = transmute_product, "energy_cost" = energy_cost))
+		perform_op(src, src, "lleill_alchemy", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("item" = I, "product" = transmute_product, "cost" = energy_cost))
 	species.update_lleill_hud(src)
 
 /mob/living/carbon/human/proc/lleill_alchemy_stopped(datum/act/op/A)
-	var/obj/item/potion_material/I = A.arg("item")
-	act_message(src, null, others = span_infoplain(span_bold("%U%") + " leaves %I% in its original form."), item = I)
-	return OP_OK
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " leaves %I% in its original form."), item = A.arg("item"))
 
 /mob/living/carbon/human/proc/lleill_alchemy_done(datum/act/op/A)
 	var/obj/item/potion_material/I = A.arg("item")
 	var/transmute_product = A.arg("product")
-	var/energy_cost = A.arg("energy_cost")
+	var/energy_cost = A.arg("cost")
 	if(QDELETED(I))
-		return OP_OK
+		return
 	var/obj/item/reagent_containers/glass/bottle/potion/product = transmute_product
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " transmutes %I% into \the [initial(product.name)]."), item = I)
 	consume(I, src)
@@ -646,7 +645,6 @@ CAPABILITIES(/datum/lleill_contact_review)
 	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.lleill_energy -= energy_cost
 	species.update_lleill_hud(src)
-	return OP_OK
 
 /datum/power/lleill/beastform
 	name = "Beast Form (100)"
@@ -736,24 +734,22 @@ CAPABILITIES(/datum/lleill_contact_review)
 		return
 
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins significantly shifting their form."))
-	perform_op(src, src, "lleill_beast_form", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("energy_cost" = energy_cost, "beast_options" = beast_options, "chosen_beast" = chosen_beast))
+	perform_op(src, src, "lleill_beast_form", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("beast" = chosen_beast, "options" = beast_options, "cost" = energy_cost))
 	return TRUE
 
 /mob/living/carbon/human/proc/lleill_beast_form_human_done(datum/act/op/A)
-	var/energy_cost = A.arg("energy_cost")
-	var/list/beast_options = A.arg("beast_options")
-	var/chosen_beast = A.arg("chosen_beast")
+	var/energy_cost = A.arg("cost")
+	var/list/beast_options = A.arg("options")
+	var/chosen_beast = A.arg("beast")
 
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	src.overlays += coolanimation
 	after(src, 1 SECOND, PROC_REF(finish_beast_shift), with = list(coolanimation, chosen_beast, beast_options[chosen_beast], energy_cost))
 	species.update_lleill_hud(src)
-	return OP_OK
 
 /mob/living/carbon/human/proc/lleill_beast_form_human_failed(datum/act/op/A)
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " ceases shifting their form."))
-	return OP_OK
 
 /mob/living/carbon/human/proc/spawn_beast_mob(chosen_beast)
 	var/tf_type = chosen_beast
@@ -775,14 +771,12 @@ CAPABILITIES(/datum/lleill_contact_review)
 	perform_op(src, src, "revert_beast_form", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return TRUE
 
-/mob/living/proc/revert_beast_form_done(datum/act/op/A)
+/mob/living/proc/revert_beast_form_living_done(datum/act/op/A)
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " has reverted to their original form."))
 	revert_beast_tf()
-	return OP_OK
 
-/mob/living/proc/revert_beast_form_failed(datum/act/op/A)
+/mob/living/proc/revert_beast_form_living_failed(datum/act/op/A)
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " ceases shifting their form."))
-	return OP_OK
 
 /mob/living/proc/revert_beast_tf()
 	if(!tf_mob_holder)
@@ -899,19 +893,8 @@ CAPABILITIES(/datum/lleill_contact_review)
 		return
 
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins significantly shifting their form."))
-	perform_op(src, src, "hanner_beast_form", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("energy_cost" = energy_cost, "beast_options" = beast_options, "chosen_beast" = chosen_beast))
+	perform_op(src, src, "lleill_beast_form", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("beast" = chosen_beast, "options" = beast_options, "cost" = energy_cost))
 	return TRUE
-
-/mob/living/carbon/human/proc/hanner_beast_form_human_done(datum/act/op/A)
-	var/energy_cost = A.arg("energy_cost")
-	var/list/beast_options = A.arg("beast_options")
-	var/chosen_beast = A.arg("chosen_beast")
-
-	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
-	coolanimation.plane = PLANE_LIGHTING_ABOVE
-	src.overlays += coolanimation
-	after(src, 1 SECOND, PROC_REF(finish_beast_shift), with = list(coolanimation, chosen_beast, beast_options[chosen_beast], energy_cost))
-	return OP_OK
 
 /// The end of a beast shift, a second after the animation starts.
 /mob/living/carbon/human/proc/finish_beast_shift(image/coolanimation, chosen_beast, beast_type, energy_cost)
@@ -927,6 +910,3 @@ CAPABILITIES(/datum/lleill_contact_review)
 		transfer_mob_identity(new_mob)
 		new_mob.visible_message(span_infoplain(span_bold("\The [src]") + " has transformed into \the [chosen_beast]!"))
 
-/mob/living/carbon/human/proc/hanner_beast_form_human_failed(datum/act/op/A)
-	act_message(src, null, others = span_infoplain(span_bold("%U%") + " ceases shifting their form."))
-	return OP_OK

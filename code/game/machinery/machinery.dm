@@ -158,7 +158,7 @@ CAPABILITIES(/obj/machinery)
 	// The grid's reading: the machine has power while its area's channel is energized (the area's tracked channel vars, one hop through power_area).
 	// The area's channel flip reaches every machine through this read, settled by area.power_change() before the machines are told. A type that
 	// runs on its own supply, or delays its loss, drops this entry by its key and says its own.
-	contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_power), key = "area_power", reason = MSG(power/unpowered), reads = list("power_forced", "power_channel", "power_area.power_equip", "power_area.power_light", "power_area.power_environ"))
+	contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_power), key = "area_power", reason = MSG(power/unpowered), reads = list("power_forced", "power_channel", "power_area.requires_power", "power_area.power_equip", "power_area.power_light", "power_area.power_environ"))
 	contributes(STAT_OPERABLE, STAT_HAS_POWER, key = "power_operable")
 	// The machine's draw is a contribution to its area's demand on the channel it is on (doc/rewrite/power_grid.md): no tally to keep.
 	links(/obj/machinery::power_area, /area::power_machines, b_many = TRUE)

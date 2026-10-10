@@ -90,7 +90,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 	verb_entry(/mob/living/proc/set_size, login = TRUE)
 	verb_entry(/mob/living/proc/polymorph, login = TRUE)
-	op("polymorph_shift", ai(), takes("beast_options", "chosen_beast"), wait(10 SECONDS), on_interrupt(PROC_REF(polymorph_living_failed)), then(PROC_REF(polymorph_living_done)))
 	verb_entry(/mob/living/proc/glamour_invisibility, login = TRUE)
 
 /mob/living/simple_mob/vore/ddraig/Login()
@@ -342,12 +341,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 		return
 
 	act_message(src, null, null, MSG_OTHERS("<b>%U%</b> begins significantly shifting their form."))
-	perform_op(src, src, "polymorph_shift", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("beast_options" = beast_options, "chosen_beast" = chosen_beast))
+	perform_op(src, src, "polymorph", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("beast" = chosen_beast, "options" = beast_options))
 	return TRUE
 
 /mob/living/proc/polymorph_living_done(datum/act/op/A)
-	var/list/beast_options = A.arg("beast_options")
-	var/chosen_beast = A.arg("chosen_beast")
+	var/list/beast_options = A.arg("options")
+	var/chosen_beast = A.arg("beast")
 
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
@@ -356,7 +355,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 
 /mob/living/proc/polymorph_living_failed(datum/act/op/A)
 	act_message(src, null, null, MSG_OTHERS("<b>%U%</b> ceases shifting their form."))
-	return 0
 
 /mob/living/proc/spawn_polymorph_mob(chosen_beast)
 	var/tf_type = chosen_beast

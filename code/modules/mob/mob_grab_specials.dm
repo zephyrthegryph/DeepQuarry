@@ -288,12 +288,12 @@ TRACKED(/obj/item/grab, inspect_zone)
 		return
 
 	act_message(attacker, target, others = span_danger("%U% starts forcing %T% to the ground!"))
-	perform_op(attacker, src, "pin_down", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+	perform_op(attacker, src, "pin_down", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("victim" = target, "from" = target.loc))
 
 /obj/item/grab/proc/pin_down_grab_done(datum/act/op/A)
+	var/mob/target = A.arg("victim")
 	var/mob/attacker = A.actor
-	var/mob/target = grab_target()
-	if(!(target))
+	if(QDELETED(target) || target.loc != A.arg("from"))
 		return
 	note_action()
 	act_message(attacker, target, others = span_danger("%U% forces %T% to the ground!"))

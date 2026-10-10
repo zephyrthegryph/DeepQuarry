@@ -212,13 +212,22 @@
 		return
 	if(istype(src?.buckled_to(),/obj/structure/bed/chair/office)) // WEEEE!!!
 		play_sfx(src, SFX_EFFECTS_ROLL)
-	// One quarter turn every `speed` deciseconds until the time runs out (spin_step re-arms itself while a whole turn is left).
-	if(spintime >= speed)
-		after(src, speed, PROC_REF(spin_step), with = list(spintime, speed, dir))
+	if(spintime < speed)
+		return
+	perform_op(src, src, "spin", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("left" = spintime, "speed" = speed, "facing" = dir))
 
-/// One quarter turn of a spin; `left` is the time still to spin, `facing` the direction it turned to last.
-/mob/proc/spin_step(left, speed, facing)
-	var/D = facing
+/// Spinning: one quarter turn every `speed` deciseconds until `left` runs out.
+/mob/proc/spin_lap_time(datum/act/op/A)
+	return A.arg("speed")
+
+/// Another quarter turn while there is time for one.
+/mob/proc/spin_more(datum/act/op/A)
+	return A.arg("left") >= A.arg("speed")
+
+/// A lap is over: the next quarter turn.
+/mob/proc/spin_step(datum/act/op/A)
+	var/speed = A.arg("speed")
+	var/D = A.arg("facing")
 	switch(D)
 		if(NORTH)
 			D = EAST
@@ -228,11 +237,10 @@
 			D = SOUTH
 		if(WEST)
 			D = NORTH
+	LAZYSET(A.args, "facing", D)
 	set_dir(D)
 	if(istype(src?.buckled_to(),/obj/structure/bed/chair/office))
 		var/obj/structure/bed/chair/office/O = src?.buckled_to()
 		O.dir = D
 		O.set_dir(D)
-	left -= speed
-	if(left >= speed)
-		after(src, speed, PROC_REF(spin_step), with = list(left, speed, D))
+	LAZYSET(A.args, "left", A.arg("left") - speed)

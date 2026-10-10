@@ -118,16 +118,12 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 
 /mob/living/var/ventcrawl_layer = 3
 
-/obj/machinery/atmospherics/proc/ventcrawl_enter_time(datum/act/op/A)
-	var/mob/living/crawler = A.actor
-	return crawler.vent_crawl_time
+/mob/living/proc/ventcrawl_time(datum/act/op/A)
+	return A.arg("time")
 
-/obj/machinery/atmospherics/proc/ventcrawl_entered(datum/act/op/A)
-	var/mob/living/crawler = A.actor
-	crawler.ventcrawl_in_done(src)
-
-/mob/living/proc/ventcrawl_in_done(obj/machinery/atmospherics/unary/vent_found)
-	if(!can_ventcrawl())
+/mob/living/proc/ventcrawl_in_done(datum/act/op/A)
+	var/obj/machinery/atmospherics/unary/vent_found = A.arg("vent")
+	if(QDELETED(vent_found) || !can_ventcrawl())
 		return
 
 	act_message(src, null, MSG_SELF(span_infoplain("You climb into the ventilation system.")), \
@@ -137,7 +133,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 	add_ventcrawl(vent_found)
 
 /mob/living/proc/handle_ventcrawl(atom/clicked_on)
-	if(!can_ventcrawl() || op_pending_for(src, "ventcrawl_enter"))
+	if(!can_ventcrawl() || op_claimed(src))
 		return
 
 	var/obj/machinery/atmospherics/unary/vent_found
@@ -188,7 +184,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 
 			// Handle animation delay
 			fade_towards(vent_found, vent_crawl_time)
-			perform_op(src, vent_found, "ventcrawl_enter", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+			perform_op(src, src, "ventcrawl_in", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("vent" = vent_found, "time" = vent_crawl_time))
 		else
 			to_chat(src, "This vent is not connected to anything.")
 

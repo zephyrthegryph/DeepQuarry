@@ -873,7 +873,8 @@
 	var/obj/machinery/fusion_fuel_injector/I = allocate(/obj/machinery/fusion_fuel_injector, run[1])
 	var/area/room = get_area(run[1])
 	var/area_required = room.requires_power
-	room.requires_power = FALSE
+	room.set_requires_power(FALSE)
+	room.power_change() // the machines of the area learn of it, as a holodeck switch does
 	I.power_change()
 	var/obj/item/fuel_assembly/rod = allocate(/obj/item/fuel_assembly, run[1])
 	rod.rod_quantities = list(REAGENT_ID_DEUTERIUM = 3000000)
@@ -886,7 +887,8 @@
 	for(var/obj/effect/accelerated_particle/P in range(12, I))
 		qdel(P)
 	I.StopInjecting()
-	room.requires_power = area_required
+	room.set_requires_power(area_required)
+	room.power_change() // the machines of the area learn of it, as a holodeck switch does
 
 /// The hydromagnetic trap takes 20 W per K from a field within 7 tiles once its plasma is above 10000 K.
 /datum/unit_test/dq_pp/fusion_trap_threshold
@@ -1215,7 +1217,8 @@
 	var/obj/machinery/compressor/C = pair[1]
 	var/area/room = get_area(C)
 	var/required = room.requires_power
-	room.requires_power = FALSE
+	room.set_requires_power(FALSE)
+	room.power_change() // the machines of the area learn of it, as a holodeck switch does
 	C.power_change()
 	C.set_starter(TRUE)
 	C.rpm = 0
@@ -1226,7 +1229,8 @@
 	var/expected = 100 - (100 * 100) / (500000 * C.efficiency)
 	TEST_ASSERT(pp_close(C.rpm, expected, 0.0001), "a step moves it a tenth of the way, less friction: [C.rpm], expected [expected]")
 	C.set_starter(FALSE)
-	room.requires_power = required
+	room.set_requires_power(required)
+	room.power_change() // the machines of the area learn of it, as a holodeck switch does
 
 #undef PP_COMP_STEP
 #undef PP_TURB_STEP

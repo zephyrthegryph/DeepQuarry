@@ -354,7 +354,8 @@
 	var/datum/wires_test_adapter/W = p2_apc_wires(A)
 	var/mob/living/carbon/human/H = p2_actor()
 	p2_cable(run_loc_floor_bottom_left)
-	p2_area.requires_power = TRUE
+	p2_area.set_requires_power(TRUE)
+	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	A.connect_to_network()
 	Tm.set_power_supply(1000000)
 	p2_apc_resync(A)
@@ -380,7 +381,8 @@
 	var/obj/machinery/power/terminal/Tm = A.terminal
 	var/mob/living/carbon/human/H = p2_actor()
 	p2_cable(run_loc_floor_bottom_left)
-	p2_area.requires_power = TRUE
+	p2_area.set_requires_power(TRUE)
+	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	A.connect_to_network()
 	Tm.set_power_supply(1000000)
 	p2_apc_resync(A)

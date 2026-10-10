@@ -113,21 +113,28 @@
 
 	if(src.stat)
 		to_chat(src, span_warning("You can't vomit rainbows in this condition!"))
+		return
 
-	var/list/targets = list()
-	for(var/mob/living/carbon/human/M in oview(7,src))
-		if(M.z != src.z || get_dist(src,M) > 7)
-			continue
-		if(src == M)
-			continue
-		targets |= M
-
-	if(!targets)
+	if(!length(rainbow_targets()))
 		to_chat(src, span_warning("There is nobody next to you."))
 		return
 
-	open_request(src, /datum/prompt/choice/rainbow_target, PROC_REF(rainbow_target_chosen), answerer = src, choices = targets)
+	// The op asks who, then charges for five seconds while keeping the one picked (code/library/mob/living_abilities.dm).
+	perform_op(src, src, "healing_rainbows", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return TRUE
+
+/// Everyone in sight who can be healed with a rainbow.
+/mob/living/proc/rainbow_targets()
+	. = list()
+	for(var/mob/living/carbon/human/M in oview(7, src))
+		if(M.z != src.z || get_dist(src, M) > 7)
+			continue
+		if(src == M)
+			continue
+		. |= M
+
+/mob/living/proc/rainbow_choices(datum/act/op/A)
+	return rainbow_targets()
 
 /// Re-checked on the answer: still conscious, and next to the one picked.
 /datum/prompt/choice/rainbow_target
@@ -147,26 +154,15 @@
 		return "gone"
 	return answerer.Adjacent(selected) ? null : "too far away"
 
-/mob/living/proc/rainbow_target_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	return apply_rainbow_target_chosen(A)
-
-/mob/living/proc/apply_rainbow_target_chosen(datum/act/request/A)
-	var/mob/living/carbon/human/chosen_target = A.answer.value
-
+/// The charge begins: the onlookers are told.
+/mob/living/proc/rainbows_started(datum/act/op/A)
 	act_message(src, null, others = span_warning("%U% begins chargin' their lazor!"))
-	perform_op(src, chosen_target, "healing_rainbows", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
-	return TRUE
 
-/// Runs on the one targeted (the op's holder); the one firing is the actor.
-/mob/living/carbon/human/proc/healing_rainbows_living_done(datum/act/op/A)
-	var/mob/living/shooter = A.actor
-	var/mob/living/carbon/human/chosen_target = src
-	if(chosen_target.z != shooter.z || get_dist(shooter,chosen_target) > 7)
-		return OP_OK
-	act_message(shooter, chosen_target, others = span_warning("%U% fires their lazor at %T%!"))
-	var/obj/item/projectile/P = new /obj/item/projectile/beam/sparkledog(get_turf(shooter))
-	play_sfx(shooter, SFX_WEAPONS_SPARKLE)
-	P.launch_projectile(chosen_target, BP_TORSO, shooter)
-	return OP_OK
+/mob/living/proc/healing_rainbows_living_done(datum/act/op/A)
+	var/mob/living/carbon/human/chosen_target = A.answer_target()
+	if(!istype(chosen_target) || chosen_target.z != src.z || get_dist(src,chosen_target) > 7)
+		return
+	act_message(src, chosen_target, others = span_warning("%U% fires their lazor at %T%!"))
+	var/obj/item/projectile/P = new /obj/item/projectile/beam/sparkledog(get_turf(src))
+	play_sfx(src, SFX_WEAPONS_SPARKLE)
+	P.launch_projectile(chosen_target, BP_TORSO, src)

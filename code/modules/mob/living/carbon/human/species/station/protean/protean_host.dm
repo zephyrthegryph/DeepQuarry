@@ -17,19 +17,20 @@
 		to_chat(H, span_warning("You can only do this while standing."))
 		return
 	to_chat(H, span_notice("You rapidly condense into your module."))
-	perform_op(H, H, "protean_hardsuit", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("power" = src, "forms" = F))
+	perform_op(H, src, "hardsuit_condense", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("forms" = F))
 	return TRUE
 
-/mob/living/carbon/human/proc/protean_hardsuit_done(datum/act/op/A)
-	var/datum/protean_power/hardsuit/power = A.arg("power")
-	var/datum/forms/protean/F = A.arg("forms")
-	if(power && power.can_use(src, F) && F.form_control_check())
-		F.enter_rig()
-	return OP_OK
+CAPABILITIES(/datum/protean_power/hardsuit)
+	op("hardsuit_condense", ai(), needs(req_capable()), takes("forms"), wait(2 SECONDS), on_interrupt(PROC_REF(activate_hardsuit_failed)), then(PROC_REF(activate_hardsuit_done)))
 
-/mob/living/carbon/human/proc/protean_hardsuit_failed(datum/act/op/A)
-	to_chat(src, span_warning("You must remain still to condense!"))
-	return OP_OK
+/datum/protean_power/hardsuit/proc/activate_hardsuit_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
+	var/datum/forms/protean/F = A.arg("forms")
+	if(!QDELETED(F) && can_use(H, F) && F.form_control_check())
+		F.enter_rig()
+
+/datum/protean_power/hardsuit/proc/activate_hardsuit_failed(datum/act/op/A)
+	to_chat(A.actor, span_warning("You must remain still to condense!"))
 
 /mob/living/carbon/human/proc/nano_rig_transform()
 	set name = "Modify Form - Hardsuit"
@@ -68,27 +69,27 @@
 		to_chat(H, span_warning("You need a more aggressive grab to do this!"))
 		return
 	act_message(H, target, MSG_SELF(span_danger("You attempt to latch onto %T%!")), MSG_OTHERS(span_warning("%U% is attempting to latch onto %T%!")))
-	perform_op(H, target, "protean_latch", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("power" = src, "forms" = F, "grab" = G))
+	perform_op(H, src, "latch_host", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("forms" = F, "grab" = G, "host" = target))
 	return TRUE
 
-/// Runs on the host being latched onto (the op's holder); the protean is the actor.
-/mob/living/carbon/human/proc/protean_latch_done(datum/act/op/A)
+CAPABILITIES(/datum/protean_power/latch_host)
+	op("latch_host", ai(), needs(req_capable()), takes("forms", "grab", "host"), wait(5 SECONDS), then(PROC_REF(activate_latch_host_done2)))
+
+/datum/protean_power/latch_host/proc/activate_latch_host_done2(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.actor
-	var/datum/protean_power/latch_host/power = A.arg("power")
 	var/datum/forms/protean/F = A.arg("forms")
 	var/obj/item/grab/G = A.arg("grab")
-	var/mob/living/carbon/human/target = src
-	if(QDELETED(G) || G.loc != H || G.state < GRAB_AGGRESSIVE || !power || !power.can_use(H, F))
-		return OP_OK
+	var/mob/living/carbon/human/target = A.arg("host")
+	if(QDELETED(G) || QDELETED(F) || QDELETED(target) || G.loc != H || G.state < GRAB_AGGRESSIVE || !can_use(H, F))
+		return
 	if(target.get_equipped_item(SLOT_ID_BACK))
 		target.drop_from_inventory(target.get_equipped_item(SLOT_ID_BACK))
 	act_message(H, target, MSG_SELF(span_danger("You latch yourself onto %T%!")), MSG_OTHERS(span_danger("%U% latched onto %T%!")))
 	target.status_at_least(STAT_WEAKENED, 3)
 	if(!F.enter_rig())
-		return OP_OK
+		return
 	target.equip_to_slot(F.rig, SLOT_ID_BACK)
 	log_game("PROTEAN: [key_name(H)] latched onto [key_name(target)] at [AREACOORD(target)]")
-	return OP_OK
 
 /mob/living/carbon/human/proc/nano_latch()
 	set name = "Latch/Unlatch host"

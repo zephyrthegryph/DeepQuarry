@@ -30,11 +30,12 @@
 				break
 
 CAPABILITIES(/obj/structure/ladder)
+	// Climbing it (climbLadder()): the climber stays beside it for the climb time.
+	op("climb_ladder", ai(), needs(req_capable()), takes("target_ladder", "time"), wait(PROC_REF(ladder_climb_time)), then(PROC_REF(climb_done)))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	links(/obj/structure/ladder::target_down, /obj/structure/ladder::target_up)
 	op("hand", hand(), label("Use"), ungated(), needs(req_capable()), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = cond_all(nameof(target_down), nameof(target_up))), then(PROC_REF(interaction_hand)))
 	op("deconstruct", tool(TOOL_WELDER), label("Deconstruct"), needs(req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(deconstruct_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(deconstruct_done)))
-	op("climb", ai(), reach(REACH_ADJACENT), takes("destination"), wait(PROC_REF(climb_wait)), then(PROC_REF(climb_done)))
 	op("ladder_ghost_climb", observer(), label("Climb"), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = cond_all(nameof(target_down), nameof(target_up))), then(PROC_REF(ladder_ghost_climb)))
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
@@ -150,24 +151,27 @@ CAPABILITIES(/obj/structure/ladder)
 
 	target_ladder.audible_message(span_notice("You hear something coming [direction] \the [src]"), runemessage = "clank clank")
 
-	perform_op(M, src, "climb", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("destination" = target_ladder))
+	var/climb_modifier = 1
+	if(ishuman(M))
+		var/mob/living/carbon/human/MS = M
+		climb_modifier = MS.species.climb_mult
+
+	perform_op(M, src, "climb_ladder", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target_ladder" = target_ladder, "time" = climb_time * climb_modifier))
 	return FALSE
 
 /// How long the climb takes: the ladder's time scaled by the climber's species.
-/obj/structure/ladder/proc/climb_wait(datum/act/op/A)
-	var/climb_modifier = 1
-	if(ishuman(A.actor))
-		var/mob/living/carbon/human/MS = A.actor
-		climb_modifier = MS.species.climb_mult
-	return climb_time * climb_modifier
+/obj/structure/ladder/proc/ladder_climb_time(datum/act/op/A)
+	return A.arg("time")
 
 /obj/structure/ladder/proc/climb_done(datum/act/op/A)
 	var/mob/M = A.actor
-	var/obj/target_ladder = A.arg("destination")
+	var/obj/target_ladder = A.arg("target_ladder")
+	if(QDELETED(target_ladder))
+		return
 	var/turf/T = get_turf(target_ladder)
-	for(var/atom/B in turf_contents_of_type(T, /atom))
-		if(!B.CanPass(M, M.loc, 1.5, 0))
-			to_chat(M, span_notice("\The [B] is blocking \the [src]."))
+	for(var/atom/blocker in turf_contents_of_type(T, /atom))
+		if(!blocker.CanPass(M, M.loc, 1.5, 0))
+			to_chat(M, span_notice("\The [blocker] is blocking \the [src]."))
 			return
 	M.forceMove(T) // Fixes adminspawned ladders
 

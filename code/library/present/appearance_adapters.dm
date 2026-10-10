@@ -22,8 +22,8 @@
 	if(!ismob(M))
 		return
 	var/datum/om/relation/slot/body/def = dq_ledger(M)?.def_by_id(M.inventory_slot_id(I))
-	if(istype(def) && def.redraw)
-		call(M, def.redraw)()
+	if(istype(def))
+		def.redraw_on(M)
 
 /atom/movable/look_changed_sprite(old_icon, old_state)
 	look_resync_emissive_blocker(src, old_icon, old_state)

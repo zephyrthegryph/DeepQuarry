@@ -45,7 +45,8 @@
 
 /// The area of the block went dark or lit again (its equipment channel), and the machines in it heard.
 /proc/mft_area_power(area/A, on)
-	A.requires_power = TRUE
+	A.set_requires_power(TRUE)
+	A.power_change() // the machines of the area learn of it, as a holodeck switch does
 	A.power_equip = on
 	for(var/obj/machinery/M in A)
 		M.power_change()
@@ -62,10 +63,12 @@
 	mft_area = get_area(run_loc_floor_bottom_left)
 	mft_requires = mft_area.requires_power
 	mft_equip = mft_area.power_equip
-	mft_area.requires_power = FALSE
+	mft_area.set_requires_power(FALSE)
+	mft_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	mft_area.power_equip = TRUE
 	..()
-	mft_area.requires_power = mft_requires
+	mft_area.set_requires_power(mft_requires)
+	mft_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	mft_area.power_equip = mft_equip
 
 /// A turret placed and working.

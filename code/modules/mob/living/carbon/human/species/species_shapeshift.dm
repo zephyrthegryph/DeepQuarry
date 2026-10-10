@@ -761,16 +761,12 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_regenerate_answered(flavour, oocnotes)
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
 	act_message(src, null, MSG_SELF(span_danger("You begin to reform.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
-	perform_op(src, src, "shapeshifter_regenerate", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("flavour" = flavour, "oocnotes" = oocnotes))
+	perform_op(src, src, "shapeshifter_regenerate", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("flavour" = flavour, "oocnotes" = oocnotes))
 
 /mob/living/carbon/human/proc/shapeshifter_regenerate_human_done(datum/act/op/A)
-	var/mob/living/character = A.actor
-	var/flavour = A.arg("flavour")
-	var/oocnotes = A.arg("oocnotes")
-	if(character.client.prefs)	//Make sure we didn't d/c
-		character.client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, FALSE, FALSE)
-		act_message(character, null, MSG_SELF(span_danger("You have reformed.")), MSG_OTHERS(span_notify("%U% adopts a new form!")))
-	return OP_OK
+	if(client?.prefs)	//Make sure we didn't d/c
+		client.prefs.vanity_copy_to(src, FALSE, A.arg("flavour"), A.arg("oocnotes"), FALSE, FALSE)
+		act_message(src, null, MSG_SELF(span_danger("You have reformed.")), MSG_OTHERS(span_notify("%U% adopts a new form!")))
 
 /mob/living/carbon/human/proc/shapeshifter_copy_body()
 	set name = "Copy Form"
@@ -913,20 +909,19 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 
 	to_chat(src, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
 	act_message(src, victim, MSG_SELF(span_danger("You begin to reassemble into %T%.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
-	perform_op(src, victim, "shapeshifter_copy_body", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("flavour" = flavour))
+	perform_op(src, src, "shapeshifter_copy_body", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = victim, "flavour" = flavour, "from" = victim.loc))
 
-/// Runs on the victim (the op's holder); the copier is the actor.
 /mob/living/carbon/human/proc/copy_body_done(datum/act/op/A)
-	var/mob/living/carbon/human/victim = A.target
+	var/mob/living/carbon/human/victim = A.arg("victim")
 	var/flavour = A.arg("flavour")
-	var/mob/living/carbon/human/copier = A.actor
-	if (!copier.copy_body_gripping(victim))
-		to_chat(copier, span_warning("You lost your grip on [victim]!"))
-		return OP_OK
-	if(copier.client)	//Make sure we didn't d/c
-		copier.transform_into_other_human(victim, new /datum/human_transform_options(copy_flavour = flavour, apply_bloodtype = FALSE))
-		act_message(copier, victim, MSG_SELF(span_danger("You have reassembled into %T%.")), MSG_OTHERS(span_notify("%U% adopts the form of %T%!")))
-	return OP_OK
+	if(QDELETED(victim) || victim.loc != A.arg("from"))
+		return
+	if (!copy_body_gripping(victim))
+		to_chat(src, span_warning("You lost your grip on [victim]!"))
+		return
+	if(client)	//Make sure we didn't d/c
+		transform_into_other_human(victim, new /datum/human_transform_options(copy_flavour = flavour, apply_bloodtype = FALSE))
+		act_message(src, victim, MSG_SELF(span_danger("You have reassembled into %T%.")), MSG_OTHERS(span_notify("%U% adopts the form of %T%!")))
 
 
 /mob/living/carbon/human/proc/shapeshifter_reassemble()
@@ -944,15 +939,12 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 /mob/living/carbon/human/proc/shapeshifter_reassemble_answered(flavour, oocnotes)
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
 	act_message(src, null, MSG_SELF(span_danger("You begin to reform.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
-	perform_op(src, src, "shapeshifter_reassemble", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("flavour" = flavour, "oocnotes" = oocnotes))
+	perform_op(src, src, "shapeshifter_reassemble", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("flavour" = flavour, "oocnotes" = oocnotes))
 
 /mob/living/carbon/human/proc/shapeshifter_reassemble_human_done(datum/act/op/A)
-	var/flavour = A.arg("flavour")
-	var/oocnotes = A.arg("oocnotes")
 	if (client?.prefs)
-		client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, FALSE)
+		client.prefs.vanity_copy_to(src, FALSE, A.arg("flavour"), A.arg("oocnotes"), FALSE)
 		act_message(src, null, MSG_SELF(span_danger("You have reformed.")), MSG_OTHERS(span_notify("%U% adopts a new form!")))
-	return OP_OK
 
 /// Sets one colour channel set of an ears/tail/wings accessory. `slot` is "" / "2" / "3"; `rgb` is a hex2rgb() list.
 /mob/living/carbon/human/proc/set_accessory_color(kind, slot, list/rgb)

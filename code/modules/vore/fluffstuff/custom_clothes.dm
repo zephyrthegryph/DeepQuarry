@@ -1972,9 +1972,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/fluff/nikki, equip_spec, dq_spec_join(..(), 
 	var/obj/item/perfect_tele/translocator = null // The translocator installed inside, if there is one. Gotta go out and get it first!
 
 CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
+	// Climbing into the hat (hat_warp()): five seconds beside the one going in.
+	op("nikki_hat_warp", ai(), takes("victim", "proximity", "from"), wait(5 SECONDS), then(PROC_REF(hat_warp_done)))
 	owns_one(nameof(translocator), /obj/item/perfect_tele)
 	op("nikki_hat_equip", item(/obj/item/perfect_tele), when(PROC_REF(hat_in_off_hand)), priority(OP_PRIORITY_NORMAL), label("Slip a translocator in"), begins(PROC_REF(equip_text)), wait(2 SECONDS), then(PROC_REF(translocator_equip_done)))
-	op("nikki_hat_warp", ai(), takes("target", "proximity_flag"), wait(5 SECONDS), then(PROC_REF(hat_warp_done)))
 	op("nikki_hat_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Nikki hat item"), then(PROC_REF(nikki_hat_item)))
 	op("nikki_hat_unload_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Nikki hat unload hand"), then(PROC_REF(nikki_hat_unload_hand)))
 	op("nikki_hat_unequip_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Remove translocator"), then(PROC_REF(nikki_hat_unequip_alt)))
@@ -2125,12 +2126,11 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 			return
 
 /obj/item/clothing/head/fluff/nikki/proc/hat_warp_done(datum/act/op/A)
-	var/mob/living/target = A.arg("target")
+	var/mob/living/target = A.arg("victim")
 	var/mob/user = A.actor
-	var/proximity_flag = A.arg("proximity_flag")
-	if(QDELETED(target) || !user.Adjacent(target)) // the one being guided in got away
+	if(QDELETED(target) || target.loc != A.arg("from"))
 		return
-	translocator?.afterattack(target, user, proximity_flag)
+	translocator?.afterattack(target, user, A.arg("proximity"))
 
 /obj/item/clothing/head/fluff/nikki/afterattack(mob/living/target, mob/user, proximity_flag, click_parameters, stance = I_HURT)
 	// If the hat is willing to cooperate with the holder...
@@ -2139,13 +2139,13 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 		switch(stance)
 			if (I_HELP)
 				act_message(user, target, others = span_notice("%U% guides %T% to the bottomless hole within \the [src]. They begin to climb inside..."))
-				perform_op(user, src, "nikki_hat_warp", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target, "proximity_flag" = proximity_flag))
+				perform_op(user, src, "nikki_hat_warp", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("victim" = target, "proximity" = proximity_flag, "from" = target.loc))
 			if (I_DISARM)
 				act_message(user, src, others = span_danger("%U% plops %T% onto \the [target]'s head!"))
 				translocator.afterattack(target, user, proximity_flag)
 			if (I_GRAB)
 				act_message(user, target, others = span_danger("%U% begins stuffing %T% into \the [src]!"))
-				perform_op(user, src, "nikki_hat_warp", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target, "proximity_flag" = proximity_flag))
+				perform_op(user, src, "nikki_hat_warp", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("victim" = target, "proximity" = proximity_flag, "from" = target.loc))
 			if (I_HURT)
 				act_message(user, src, others = span_danger("%U% swipes %T% over \the [target]!"))
 				translocator.afterattack(target, user, proximity_flag)

@@ -429,6 +429,7 @@
 #include "dx_cap_two_handed_tests.dm"
 #include "dx_cap_writable_tests.dm"
 #include "dq_ability_tests.dm"
+#include "dq_living_ability_tests.dm"
 #include "dq_sys_sfx_tests.dm"
 #include "dq_sys_grants_tests.dm"
 #include "dq_tick_members_tests.dm"

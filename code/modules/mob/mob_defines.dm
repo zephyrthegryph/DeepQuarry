@@ -264,6 +264,12 @@ CAPABILITIES(/mob)
 	op("zmove_timed", ai(), takes("duration", "direction", "start", "destination", "done_message", "needs_flight", "fail_message"), wait(PROC_REF(zmove_time)), on_interrupt(PROC_REF(zmove_timed_interrupted)), then(PROC_REF(zmove_timed_done)))
 	op("yank_out", ai(), reach(REACH_ADJACENT), takes("selection", "self"), wait(3 SECONDS), then(PROC_REF(yank_out_done)))
 	on_notice(/datum/notice/belly_changed, then(PROC_REF(belly_changed)))
+	// Pulling an embedded object out (mob.dm): the one pulling stays next to the body for three seconds.
+	op("yank_out", ai(), needs(req_capable()), takes("selection", "self"), wait(3 SECONDS), then(PROC_REF(yank_out_done)))
+	// A timed move between levels: diving, swimming, climbing a lattice or flying up (multiz/movement.dm).
+	op("zmove", ai(), needs(req_capable()), takes("time", "direction", "start", "destination", "done", "failed", "flight"), wait(PROC_REF(zmove_time)), on_interrupt(PROC_REF(zmove_timed_failed)), then(PROC_REF(zmove_timed_done)))
+	// A spin (animations.dm): a quarter turn every lap, whatever the mob does meanwhile; not an action, so it keeps nothing and holds nothing.
+	op("spin", ai(), claims(0), takes("left", "speed", "facing"), wait(PROC_REF(spin_lap_time), keeps = 0, repeats = PROC_REF(spin_more), after_step = PROC_REF(spin_step)))
 	mob_state()
 	ref_one(nameof(teleop))
 	telekinetic_reach()

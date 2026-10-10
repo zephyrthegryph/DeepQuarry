@@ -19,94 +19,90 @@
 	var/active_icon = "armor_broken"
 	var/list/target_components = list(ROBOT_SLOT_ARMOUR) // ALLOW(instance_list): d: edited in place per instance (4 writers)
 	var/repairing = FALSE
-	var/repair_powered = FALSE
 	flags = NOBLUDGEON
 
-MSG_DEF_SELF(self_repair/destroyed_only, "Repair system initialization failed. Can't repair destroyed plating or wiring.")
-MSG_DEF_SELF(self_repair/no_damage, "No structural or wiring damage detected.")
-MSG_DEF_SELF(self_repair/no_power, "Not enough power to initialize the repair system.")
-
-// Using it starts one repair: every damaged component gets repair_amount per lap of repair_time while the cyborg stands still, one power draw per
-// component per lap, until none is damaged or the cell cannot pay. Moving ends it.
 CAPABILITIES(/obj/item/self_repair_system)
-	op("self", in_hand(), needs(req(PROC_REF(repair_has_work), because = MSG(self_repair/no_damage)), req(PROC_REF(repair_not_only_destroyed), because = MSG(self_repair/destroyed_only))),
-		starts(PROC_REF(repair_started)), wait(PROC_REF(repair_lap_time), repeats = PROC_REF(repair_more), after_step = PROC_REF(repair_lap)), on_interrupt(PROC_REF(repair_ended)), then(PROC_REF(repair_ended)))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	// The repair itself: every component being mended is worked on each lap, until none is damaged or power runs short. The borg stays still for it.
+	op("self_repair", ai(), needs(req_capable()), takes("components"), starts(PROC_REF(self_repair_started)), wait(PROC_REF(self_repair_interval), repeats = PROC_REF(self_repair_more), after_step = PROC_REF(self_repair_lap)), on_interrupt(PROC_REF(self_repair_finished)), then(PROC_REF(self_repair_finished)))
 
-/// The components of the cyborg that this system can repair and that are damaged.
-/obj/item/self_repair_system/proc/repairable_of(mob/living/silicon/robot/R)
-	var/list/found = list()
-	if(!istype(R))
-		return found
-	for(var/target_slot in target_components)
-		var/datum/robot_component/C = R.get_component(target_slot)
-		if(C && C.installed != ROBOT_PART_DESTROYED && C.get_total_damage() > 0)
-			found += C
-	return found
+MSG_DEF_SELF(self_repair/nothing, "The repair system has nothing it can mend.")
 
-/obj/item/self_repair_system/proc/repair_has_work(datum/act/op/A)
-	return !!length(repairable_of(A.actor))
-
-/// Fails only when everything damaged is a destroyed component (nothing repairable but something destroyed).
-/obj/item/self_repair_system/proc/repair_not_only_destroyed(datum/act/op/A)
-	var/mob/living/silicon/robot/R = A.actor
-	if(!istype(R))
-		return FALSE
-	if(length(repairable_of(R)))
+/// Old attack_self.
+/obj/item/self_repair_system/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	if(repairing)
 		return TRUE
+	var/mob/living/silicon/robot/R = user
+	var/destroyed_components = FALSE
+	var/list/repairable_components = list()
 	for(var/target_slot in target_components)
 		var/datum/robot_component/C = R.get_component(target_slot)
-		if(C?.installed == ROBOT_PART_DESTROYED)
-			return FALSE
+		if(!C)
+			continue
+		if(C.installed == ROBOT_PART_DESTROYED)
+			destroyed_components = TRUE
+		else if (C.get_total_damage() > 0)
+			repairable_components += C
+	if(!repairable_components.len && destroyed_components)
+		to_chat(R, span_warning("Repair system initialization failed. Can't repair destroyed [target_components.len == 1 ? "[R.get_component(target_components[1])]'s" : "component's"] plating or wiring."))
+		return TRUE
+	if(!repairable_components.len)
+		to_chat(R, span_warning("No structural or wiring damage detected [target_components.len == 1 ? "in [R.get_component(target_components[1])]" : ""]."))
+		return TRUE
+	if(destroyed_components)
+		to_chat(R, span_warning("WARNING! Destroyed modules detected. Those can not be repaired!"))
+	for(var/datum/robot_component/C as anything in repairable_components)
+		to_chat(R, span_notice("Repair system initializated. Repairing plating and wiring of [C]."))
+	perform_op(R, src, "self_repair", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("components" = repairable_components))
 	return TRUE
 
-/obj/item/self_repair_system/proc/repair_lap_time(datum/act/op/A)
-	return repair_time
-
-/// Pays the power for the next lap; every component being repaired costs a draw.
-/obj/item/self_repair_system/proc/repair_pay(mob/living/silicon/robot/R)
-	if(!R.cell)
+/// Whether `C` can go on being mended for another lap: it is still there, the cell holds up, there is damage left and the power was paid. Says why not.
+/obj/item/self_repair_system/proc/self_repair_gate(mob/living/silicon/robot/R, datum/robot_component/C)
+	if(!C || !R.cell)
 		return FALSE
-	for(var/datum/robot_component/C as anything in repairable_of(R))
-		if(!R.draw_power(ROBOT_CELL_JOULES(power_tick), src, ROBOT_CELL_JOULES(500))) //We don't want to drain ourselves too far down during exploration
-			to_chat(R, span_warning("Not enough power to initialize the repair system."))
-			return FALSE
+	if(C.get_total_damage() <= 0)
+		to_chat(R, span_notice("Repair of [C] completed."))
+		return FALSE
+	if(!R.draw_power(ROBOT_CELL_JOULES(power_tick), src, ROBOT_CELL_JOULES(500))) //We don't want to drain ourselves too far down during exploration
+		to_chat(R, span_warning("Not enough power to initialize the repair system."))
+		return FALSE
 	return TRUE
 
-/obj/item/self_repair_system/proc/repair_started(datum/act/op/A)
+/// The first lap's power is paid as the repair starts; a component that fails the gate is dropped, and with none left nothing starts.
+/obj/item/self_repair_system/proc/self_repair_started(datum/act/op/A)
 	var/mob/living/silicon/robot/R = A.actor
-	for(var/target_slot in target_components)
-		var/datum/robot_component/C = R.get_component(target_slot)
-		if(C?.installed == ROBOT_PART_DESTROYED)
-			to_chat(R, span_warning("WARNING! Destroyed modules detected. Those can not be repaired!"))
-			break
+	var/list/components = A.arg("components")
+	for(var/datum/robot_component/C as anything in components.Copy())
+		if(!self_repair_gate(R, C))
+			components -= C
+	if(!length(components))
+		return /datum/msg/self_repair/nothing
 	icon_state = active_icon
 	repairing = TRUE
-	for(var/datum/robot_component/C as anything in repairable_of(R))
-		to_chat(R, span_notice("Repair system initializated. Repairing plating and wiring of [C]."))
-	if(!repair_pay(R))
-		repair_powered = FALSE
-		return MSG(self_repair/no_power)
-	repair_powered = TRUE
 
-/// Another lap follows while something is damaged and the last payment went through.
-/obj/item/self_repair_system/proc/repair_more(datum/act/op/A)
-	return read_once(repair_powered)
+/obj/item/self_repair_system/proc/self_repair_interval(datum/act/op/A)
+	return repair_time
 
-/// One lap done: heal every damaged component, then pay for the next lap.
-/obj/item/self_repair_system/proc/repair_lap(datum/act/op/A)
+/// A lap is over: everything still being mended heals a little, and pays for the next lap.
+/obj/item/self_repair_system/proc/self_repair_lap(datum/act/op/A)
 	var/mob/living/silicon/robot/R = A.actor
-	for(var/datum/robot_component/C as anything in repairable_of(R))
-		R.mend(TREAT_PLATING_REPAIR, repair_amount, C)
-		R.mend(TREAT_WIRING_REPAIR, repair_amount, C)
-		if(C.get_total_damage() <= 0)
-			to_chat(R, span_notice("Repair of [C] completed."))
-	repair_powered = length(repairable_of(R)) && repair_pay(R)
+	var/list/components = A.arg("components")
+	for(var/datum/robot_component/C as anything in components.Copy())
+		if(C)
+			R.mend(TREAT_PLATING_REPAIR, repair_amount, C)
+			R.mend(TREAT_WIRING_REPAIR, repair_amount, C)
+		if(!self_repair_gate(R, C))
+			components -= C
 
-/obj/item/self_repair_system/proc/repair_ended(datum/act/op/A)
+/// Another lap while any component is still being mended.
+/obj/item/self_repair_system/proc/self_repair_more(datum/act/op/A)
+	return length(A.arg("components")) > 0
+
+/// However it ended, the system is idle again.
+/obj/item/self_repair_system/proc/self_repair_finished(datum/act/op/A)
 	repairing = FALSE
-	repair_powered = FALSE
 	icon_state = disabled_icon
-	return OP_OK
 
 // To repair multiple modules
 /obj/item/self_repair_system/advanced

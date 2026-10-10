@@ -143,13 +143,13 @@
 	var/obj/item/organ/external/E = get_active_hand()
 	if(!check_can_attach_modular_limb(E))
 		return FALSE
-	perform_op(src, src, "attach_limb", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("limb" = E))
+	perform_op(src, src, "attach_limb", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("limb" = E))
 	return TRUE
 
 /mob/living/carbon/human/proc/attach_limb_verb_human_done(datum/act/op/A)
 	var/obj/item/organ/external/E = A.arg("limb")
 	if(!check_can_attach_modular_limb(E))
-		return OP_OK
+		return FALSE
 
 	COOLDOWN_START(src, last_special, 2 SECONDS)
 	drop_from_inventory(E)
@@ -228,7 +228,7 @@
 				to_chat(src, span_warning("Your [parent.name] is too damaged to detach anything from it."))
 		return
 	var/obj/item/organ/external/E = A.answer.value
-	perform_op(src, src, "detach_limb", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("limb" = E))
+	perform_op(src, src, "detach_limb", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("limb" = E))
 
 #undef DETACH_LIMB_STATE
 #undef DETACH_LIMB_DAMAGE
@@ -237,11 +237,11 @@
 /mob/living/carbon/human/proc/detach_limb_verb_human_done(datum/act/op/A)
 	var/obj/item/organ/external/E = A.arg("limb")
 	if(!check_can_detach_modular_limb(E))
-		return OP_OK
+		return FALSE
 
 	COOLDOWN_START(src, last_special, 2 SECONDS)
 	E.removed(src)
 	E.dropInto(loc)
 	put_in_hands(E)
 	act_message(src, null, MSG_SELF(span_notice("You detach your [E.name]!")), MSG_OTHERS(span_notice("%U% detaches %THEIR% [E.name]!")))
-	return OP_OK
+	return TRUE

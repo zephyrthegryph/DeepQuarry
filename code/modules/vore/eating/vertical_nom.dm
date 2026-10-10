@@ -32,18 +32,11 @@
 
 	open_request(src, /datum/prompt/choice/vertical_nom_target, PROC_REF(vertical_nom_answered), answerer = src, choices = targets)
 
-/// The nom op runs on the victim (src); the one eating from above is the actor.
-/mob/living/proc/vertical_nom_finished(datum/act/op/A)
-	var/mob/living/pred = A.actor
-	var/mob/living/target = src
-	var/starting_loc = A.arg("starting_loc")
-	if(QDELETED(pred))
-		return OP_FAILED
-	pred.vertical_nom_done(target, starting_loc)
-	return OP_OK
-
-/mob/living/proc/vertical_nom_done(mob/living/target, starting_loc)
-	if(target.loc != starting_loc)
+/mob/living/proc/vertical_nom_done(datum/act/op/A)
+	var/mob/living/target = A.arg("prey")
+	if(QDELETED(target))
+		return
+	if(target.loc != A.arg("from"))
 		to_chat(target, span_vwarning("You have interrupted whatever that was..."))
 		to_chat(src, span_vnotice("They got away."))
 		return
@@ -65,9 +58,8 @@
 		return
 	var/mob/living/target = context.answer.value
 	to_chat(target, span_vwarning("You feel yourself being pulled up by something... Or someone?!"))
-	var/starting_loc = target.loc
 
-	perform_op(src, target, "vertical_nom", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("starting_loc" = starting_loc))
+	perform_op(src, src, "vertical_nom", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("prey" = target, "from" = target.loc))
 	SStgui.update_uis(src)
 
 /datum/prompt/choice/vertical_nom_target

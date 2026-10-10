@@ -357,6 +357,15 @@
 			for(var/atom/movable/AM as anything in contents_of(near))
 				found += "[near.x - x],[near.y - y] [AM.type]"
 		sortTim(found, GLOBAL_PROC_REF(cmp_text_asc))
+		// Rolled outcomes: whether a hole opens and how many gibs land follow the rng, and other work in the world draws from it while the fixture loads, so
+		// the row records what can appear, not what this load rolled.
+		if(type == "/obj/effect/mouse_hole_spawner")
+			found -= "0,0 /obj/structure/micro_tunnel"
+		else if(findtext(type, "/obj/effect/gibspawner/") == 1)
+			var/list/distinct = list()
+			for(var/entry in found)
+				distinct |= entry
+			found = distinct
 		var/decals = 0
 		if(istype(center, /turf/simulated/floor))
 			var/turf/simulated/floor/F = center

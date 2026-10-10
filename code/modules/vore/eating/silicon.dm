@@ -55,17 +55,12 @@
 
 	hologram.visible_message("[hologram] starts engulfing [prey] in hardlight holograms!")
 	to_chat(src, span_vnotice("You begin engulfing [prey] in hardlight holograms.")) //Can't be part of the above, because the above is from the hologram.
-	perform_op(eyeobj, prey, "holo_nom", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("holo_ai" = src))
+	perform_op(eyeobj, src, "holo_nom", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("prey" = prey, "from" = prey.loc))
 
-/// The holo nom op runs on the prey (src); the AI's eye is the actor and the AI itself travels as the "holo_ai" value.
-/mob/living/proc/holo_nom_finished(datum/act/op/A)
-	var/mob/living/silicon/ai/engulfer = A.arg("holo_ai")
-	if(!istype(engulfer) || QDELETED(engulfer))
-		return OP_FAILED
-	engulfer.holo_nom_done(src)
-	return OP_OK
-
-/mob/living/silicon/ai/proc/holo_nom_done(mob/living/prey)
+/mob/living/silicon/ai/proc/holo_nom_done(datum/act/op/A)
+	var/mob/living/prey = A.arg("prey")
+	if(QDELETED(prey) || prey.loc != A.arg("from"))
+		return
 	//Didn't move and still projecting and effect exists and no other bellied people
 	if(holo && LAZYACCESS(holo.masters, src))
 		feed_grabbed_to_self(src, prey)

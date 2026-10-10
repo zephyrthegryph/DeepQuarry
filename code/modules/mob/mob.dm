@@ -878,6 +878,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/embedded_needs_process()
 	return (LAZYLEN(embedded) > 0)
 
+/// What pulling an embedded object out costs the body it was in (a human's limb and blood, a robot's wiring); `U` is the one pulling.
+/mob/proc/yank_out_tear(obj/item/selection, mob/U)
+	return
+
 /mob/proc/yank_out_done(datum/act/op/A)
 	var/mob/U = A.actor
 	var/obj/item/selection = A.arg("selection")
@@ -898,33 +902,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		revoke(src, granted_verb(/mob/proc/yank_out_object), src) // embed() grants it
 		clear_alert("embeddedobject")
 
-	if(ishuman(src))
-		var/mob/living/carbon/human/H = src
-		var/obj/item/organ/external/affected
-
-		for(var/obj/item/organ/external/organ in H.organs) //Grab the organ holding the implant.
-			for(var/obj/item/O in organ.implants)
-				if(O == selection)
-					affected = organ
-
-		rel_remove(affected, nameof(affected.implants), selection)
-		H.adjust_shock(20, "implant extraction")
-		H.injure(INJURY_CUT, selection.w_class * 3, affected.organ_tag, selection, 0, null, INJURE_IGNORE_RESISTANCE) // Embedded object extraction
-
-		if(prob(selection.w_class * 5) && (!affected.is_robotic())) //I'M SO ANEMIC I COULD JUST -DIE-.
-			affected.add_wound(new /datum/affliction/wound/internal_bleeding(affected, min(selection.w_class * 5, 15)))
-			affected.update_damages()
-			H.custom_pain("Something tears wetly in your [affected] as [selection] is pulled free!", 50)
-
-		if (ishuman(U))
-			var/mob/living/carbon/human/human_user = U
-			human_user.bloody_hands(H)
-
-	else if(istype(src, /mob/living/silicon/robot))
-		var/mob/living/silicon/robot/R = src
-		LAZYREMOVE(R.embedded, selection)
-		R.injure(INJURY_CUT, 5, null, selection)
-		R.injure(INJURY_ELECTRIC, 10, null, selection) // Torn wiring shorts out.
+	yank_out_tear(selection, U)
 
 	selection.forceMove(get_turf(src))
 	U.put_in_hands(selection)

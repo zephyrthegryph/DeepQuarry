@@ -715,7 +715,6 @@ MSG_DEF_SELF(robot_tool/no_wiring, "You can't reach the wiring.")
 MSG_DEF_SELF(robot_tool/no_bolt, "There is no restraining bolt installed.")
 MSG_DEF_SELF(robot_tool/self_repair, "You lack the reach to be able to repair yourself.")
 MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
-MSG_DEF_SELF(robot_tool/mmi_lever, "You jam the crowbar into the robot and begin levering its brain.")
 
 /// The cyborg's own item, tool and touch ops (called from CAPABILITIES(/mob/living/silicon/robot), library/mob/hands.dm). They sit above the
 /// living-mob defaults (a hit); the crowbar and welder answer outside harm intent, where the old interactions were stance-declared (they strike in combat mode).
@@ -728,8 +727,6 @@ MSG_DEF_SELF(robot_tool/mmi_lever, "You jam the crowbar into the robot and begin
 		op("robot_punch", hand(), ungated(), when(req_empty_hand()), stance(I_HURT), label("Punch"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_hurt))),
 		op("deploy_shell", remote(), label("Deploy to shell"), priority(OP_PRIORITY_NORMAL - 1), when(TYPE_PROC_REF(/mob/living/silicon/robot, shell_open_to_ai)), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_ai_deploy_shell))),
 		op("robot_pry", tool(TOOL_CROWBAR), stance(I_HELP, I_DISARM, I_GRAB), label("Pry the cover or a part"), wait(0), then(TYPE_PROC_REF(/mob/living/silicon/robot, interaction_crowbar))),
-		op("robot_extract_mmi", tool(TOOL_CROWBAR), stance(I_HELP, I_DISARM, I_GRAB), label("Lever out the brain"), priority(OP_PRIORITY_TAKE_OUT), when(TYPE_PROC_REF(/mob/living/silicon/robot, mmi_leverable)),
-			begins(MSG(robot_tool/mmi_lever)), wait(3 SECONDS), then(TYPE_PROC_REF(/mob/living/silicon/robot, extract_mmi_robot_done))),
 		op("robot_weld_repair", tool(TOOL_WELDER), stance(I_HELP, I_DISARM, I_GRAB), label("Weld the dents"), costs(RES_FUEL, 0), wait(0),
 			needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, repairing_another), because = MSG(robot_tool/self_repair)), req(TYPE_PROC_REF(/mob/living/silicon/robot, has_dents), because = MSG(robot_tool/no_dents))),
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, interaction_weld_repair))),
@@ -947,7 +944,7 @@ MSG_DEF_SELF(robot_tool/mmi_lever, "You jam the crowbar into the robot and begin
 		close_cover(user)
 		return OP_OK
 	if(wiresexposed && wires_all_cut(src))
-		to_chat(user, span_filter_notice("\The [src] has no brain to remove."))
+		extract_mmi(user)
 		return OP_OK
 	pry_component(user)
 	return OP_OK
@@ -965,15 +962,25 @@ MSG_DEF_SELF(robot_tool/mmi_lever, "You jam the crowbar into the robot and begin
 	set_opened(FALSE)
 	return TRUE
 
-/// The extract_mmi op's condition: cell out, wires exposed and all cut, with a brain to lever out.
-/mob/living/silicon/robot/proc/mmi_leverable(datum/act/A)
-	return opened && !cell && wiresexposed && wires_all_cut(src) && !!mmi
-
 /// Cell out, wires exposed and all cut: lever out the MMI, leaving a damaged chassis.
+/mob/living/silicon/robot/proc/extract_mmi(mob/user)
+	if(!mmi)
+		to_chat(user, span_filter_notice("\The [src] has no brain to remove."))
+		return FALSE
+	to_chat(user, span_filter_notice("You jam the crowbar into the robot and begin levering [mmi]."))
+	perform_op(user, src, "extract_mmi", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
+	return TRUE
+
+/// A yanked object tears the wiring it was in.
+/mob/living/silicon/robot/yank_out_tear(obj/item/selection, mob/U)
+	LAZYREMOVE(embedded, selection)
+	injure(INJURY_CUT, 5, null, selection)
+	injure(INJURY_ELECTRIC, 10, null, selection) // Torn wiring shorts out.
+
 /mob/living/silicon/robot/proc/extract_mmi_robot_done(datum/act/op/A)
 	var/mob/user = A.actor
 	if(QDELETED(src) || !mmi || !opened || cell || !wiresexposed || !wires_all_cut(src))
-		return OP_OK
+		return FALSE
 	to_chat(user, span_filter_notice("You damage some parts of the chassis, but eventually manage to rip out [mmi]!"))
 	var/obj/item/robot_parts/robot_suit/C = new/obj/item/robot_parts/robot_suit(loc)
 	rel_set(C, nameof(C.l_leg), new/obj/item/robot_parts/l_leg(C))
@@ -982,7 +989,7 @@ MSG_DEF_SELF(robot_tool/mmi_lever, "You jam the crowbar into the robot and begin
 	rel_set(C, nameof(C.r_arm), new/obj/item/robot_parts/r_arm(C))
 	new/obj/item/robot_parts/chest(loc)
 	spent(src, user)
-	return OP_OK
+	return TRUE
 
 /// Pry an external part (or its fried remains) out of its slot. The part
 /// takes its damage with it.

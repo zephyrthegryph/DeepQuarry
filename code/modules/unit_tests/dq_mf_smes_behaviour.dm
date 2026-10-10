@@ -28,7 +28,8 @@
 	TEST_ASSERT(S.input_attempt && S.output_attempt, "(input and output on)")
 	var/area/load_area = get_area(p2_load_spot())
 	var/requires = load_area.requires_power
-	load_area.requires_power = TRUE
+	load_area.set_requires_power(TRUE)
+	load_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	var/obj/machinery/power/apc/A = allocate(/obj/machinery/power/apc/p2_test, p2_load_spot())
 	A.connect_to_network()
 	p2_apc_load(A, 20000)
@@ -45,7 +46,8 @@
 	data = p2_smes_data(S, H)
 	TEST_ASSERT_EQUAL(data["inputting"], 0, "input off: nothing in")
 	p2_apc_load(A, -20000)
-	load_area.requires_power = requires
+	load_area.set_requires_power(requires)
+	load_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	qdel(A)
 
 /// With no supply behind the terminal and input on, the unit shows it is trying (1), not flowing (2).
@@ -70,7 +72,8 @@
 	TEST_ASSERT(!p2_smes_noisy(S), "no load: silent")
 	var/area/load_area = get_area(p2_load_spot())
 	var/requires = load_area.requires_power
-	load_area.requires_power = TRUE
+	load_area.set_requires_power(TRUE)
+	load_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	var/obj/machinery/power/apc/A = allocate(/obj/machinery/power/apc/p2_test, p2_load_spot())
 	A.connect_to_network()
 	p2_apc_load(A, 20000)
@@ -81,7 +84,8 @@
 	TEST_ASSERT(data["outputUsed"] > 0, "into the load ([data["outputUsed"]])")
 	TEST_ASSERT(p2_smes_noisy(S), "and the unit hums")
 	p2_apc_load(A, -20000)
-	load_area.requires_power = requires
+	load_area.set_requires_power(requires)
+	load_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	qdel(A)
 
 /// A unit broken by damage stays broken when a terminal is built for it; a unit that only lacked a terminal works once one is built.

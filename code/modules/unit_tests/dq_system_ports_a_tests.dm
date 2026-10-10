@@ -97,8 +97,12 @@
 	TEST_ASSERT_EQUAL(SSasset_loading.periodic_runlevels, RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT, "asset loading lost its lobby runlevel")
 	var/list/saved_queue = SSasset_loading.generate_queue
 	var/saved_len = SSasset_loading.last_queue_len
+	// A world that is still building spritesheets in the background (rust-g jobs) holds `assets_generating` up, and the loader does not park until
+	// they end: this test is about the queue, so it runs with none in flight.
+	var/saved_generating = SSasset_loading.assets_generating
 	SSasset_loading.generate_queue = list()
 	SSasset_loading.last_queue_len = 0
+	SSasset_loading.assets_generating = 0
 	TEST_ASSERT_EQUAL(SSasset_loading.generate_step(0), STEP_PARK, "an idle asset loader must park")
 	var/datum/asset/dq_system_probe/probe = new
 	W.parked = TRUE
@@ -117,6 +121,7 @@
 	TEST_ASSERT_EQUAL(length(SSasset_loading.generate_queue), 0, "dequeue_asset() left the asset queued")
 	SSasset_loading.generate_queue = saved_queue
 	SSasset_loading.last_queue_len = saved_len
+	SSasset_loading.assets_generating = saved_generating
 	W.parked = FALSE
 	qdel(probe)
 
