@@ -47,14 +47,15 @@ fn flags(value: &PreparedPinnedSourceAbi) -> Vec<u32> {
 }
 #[test]
 fn child_abi_inherits_original_formal_settings_not_effective_parent_override() {
-    let engine = EngineSnapshot::from_bytes(
-        include_bytes!("../../../../fixtures/native_template.bin"),
+    let engine_owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
         1,
+        true,
+        0,
     )
-    .unwrap()
-    .with_bootstrap_catalog()
     .unwrap();
-    let store = AbiArtifacts::default();
+    let engine = &engine_owner.snapshot;
+    let store = AbiArtifacts::with_engine_owner(Arc::clone(&engine_owner));
     let front = frontend(SOURCE, &engine);
     let first = prepared(&front, &engine, Some(&store));
     same(&first, &prepared(&front, &engine, None));
@@ -73,13 +74,14 @@ fn child_abi_inherits_original_formal_settings_not_effective_parent_override() {
 
 #[test]
 fn original_formal_waitfor_zero_remains_inherited_and_child_explicit_setting_wins() {
-    let engine = EngineSnapshot::from_bytes(
-        include_bytes!("../../../../fixtures/native_template.bin"),
+    let engine_owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
         1,
+        true,
+        0,
     )
-    .unwrap()
-    .with_bootstrap_catalog()
     .unwrap();
+    let engine = &engine_owner.snapshot;
     let front = frontend("/datum/base/proc/check()\n    set waitfor = 0\n    return 1\n/datum/child\n    parent_type = /datum/base\n/datum/child/check()\n    return\n/datum/explicit\n    parent_type = /datum/base\n/datum/explicit/check()\n    set waitfor = 1\n    return\n", &engine);
     let result = prepared(&front, &engine, None);
     assert!(result.prepared.diagnostics.is_empty());

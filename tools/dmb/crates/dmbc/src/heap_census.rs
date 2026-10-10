@@ -21,6 +21,7 @@ pub(crate) use resident_map_outputs::weight as resident_map_outputs_weight;
 mod prepared;
 mod prepared_inputs;
 mod relocation_metrics;
+#[cfg(test)]
 mod resident_abi;
 mod resident_initializer;
 pub(crate) use prepared_inputs::inspect as prepared_input_census;
@@ -29,7 +30,7 @@ pub(crate) use resident_owner_projection::{
     inspect as owner_projection_census, weight as resident_owner_projection_weight,
 };
 mod resident_initializer_fragment;
-pub(crate) use resident_abi::weight as resident_abi_weight;
+
 mod expansion_inputs;
 mod latest_images;
 mod resident_maps;

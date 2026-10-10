@@ -10,13 +10,14 @@ impl dm_preprocess::SourceProvider for Source {
 }
 #[test]
 fn abi_roster_releases_bodies_and_current_consumer_matches_artifact_path() {
-    let engine = EngineSnapshot::from_bytes(
-        include_bytes!("../../../../fixtures/native_template.bin"),
+    let engine_owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
         1,
+        true,
+        0,
     )
-    .unwrap()
-    .with_bootstrap_catalog()
     .unwrap();
+    let engine = &engine_owner.snapshot;
     let seed = engine.frontend_seed();
     let front = dm_tree::frontend::build_with_config(
         Path::new("abi-body.dme"),
@@ -31,7 +32,7 @@ fn abi_roster_releases_bodies_and_current_consumer_matches_artifact_path() {
     .unwrap();
     let startup = crate::startup::capture(&front).unwrap();
     let executor = dm_exec::BuildExecutor::new(1).unwrap();
-    let store = AbiArtifacts::default();
+    let store = AbiArtifacts::with_engine_owner(Arc::clone(&engine_owner));
     let prepare = |artifacts| {
         prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
             &front,

@@ -9,6 +9,7 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     io,
     path::PathBuf,
+    sync::Arc,
 };
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct AliasRecord {
@@ -25,7 +26,7 @@ pub struct CatalogRecord {
 }
 #[derive(Clone, Debug)]
 pub struct ResourceCatalog {
-    record: CatalogRecord,
+    record: Arc<CatalogRecord>,
     identity: u128,
 }
 fn invalid(message: &str) -> io::Error {
@@ -46,7 +47,10 @@ impl ResourceCatalog {
         let identity = xxhash_rust::xxh3::xxh3_128(
             &serde_json::to_vec(&record).expect("resource catalog serialization"),
         );
-        Self { record, identity }
+        Self {
+            record: Arc::new(record),
+            identity,
+        }
     }
     pub fn identity(&self) -> u128 {
         self.identity
@@ -54,8 +58,15 @@ impl ResourceCatalog {
     pub fn record(&self) -> &CatalogRecord {
         &self.record
     }
+    /// The immutable admitted metadata owner; clones share all catalog payloads.
+    pub fn shared_record(&self) -> &Arc<CatalogRecord> {
+        &self.record
+    }
     pub fn restore(record: CatalogRecord, issued_identity: u128) -> io::Result<Self> {
-        let bytes = serde_json::to_vec(&record).map_err(io::Error::other)?;
+        Self::restore_shared(Arc::new(record), issued_identity)
+    }
+    pub fn restore_shared(record: Arc<CatalogRecord>, issued_identity: u128) -> io::Result<Self> {
+        let bytes = serde_json::to_vec(record.as_ref()).map_err(io::Error::other)?;
         if bytes.len() > 32 * 1024 * 1024
             || xxhash_rust::xxh3::xxh3_128(&bytes) != issued_identity
             || record.version != 1

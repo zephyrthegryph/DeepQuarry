@@ -632,11 +632,19 @@ pub(crate) fn build_with_intrinsic_members_indexed(
                 metadata,
                 content,
             } => {
-                if tree.symbols.text(*name).is_none() {
+                let local = local_members.as_ref().map(|local| local[members.len()]);
+                if let Some(local) = local {
+                    if let Some((key, failure)) =
+                        local_owners.as_ref().unwrap()[owner].first_failure
+                    {
+                        if key == local.key {
+                            return Err(failure.error());
+                        }
+                    }
+                } else if tree.symbols.text(*name).is_none() {
                     return Err(TreeError::UnknownSymbol(*name));
                 }
                 let owner_id = tree.by_path[owner];
-                let local = local_members.as_ref().map(|local| local[members.len()]);
                 let kind = local.map(|member| member.kind).unwrap_or_else(|| {
                     callable_namespace::effective_kind(
                         &tree,
@@ -650,15 +658,13 @@ pub(crate) fn build_with_intrinsic_members_indexed(
                 });
                 let key = (owner_id, *name, kind);
                 let previous = tree.direct.get(&key).copied();
-                let duplicate = local
-                    .map(|member| member.duplicate_formal)
-                    .unwrap_or_else(|| {
-                        *mode == DefinitionMode::Declare
-                            && groups.get(&key).is_some_and(|ids| {
-                                ids.iter()
-                                    .any(|id| modes[id.index()] == DefinitionMode::Declare)
-                            })
-                    });
+                let duplicate = local.is_none() && {
+                    *mode == DefinitionMode::Declare
+                        && groups.get(&key).is_some_and(|ids| {
+                            ids.iter()
+                                .any(|id| modes[id.index()] == DefinitionMode::Declare)
+                        })
+                };
                 if duplicate {
                     return Err(TreeError::Duplicate {
                         owner: *owner,

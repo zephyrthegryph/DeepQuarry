@@ -57,6 +57,7 @@ impl Tokens {
         shared.insert(Arc::clone(&key), None);
         key
     }
+    #[cfg(test)]
     pub fn issue(&mut self, key: Vec<u8>) -> Result<(u32, Arc<[u8]>), String> {
         self.issue_shared(key.into())
     }

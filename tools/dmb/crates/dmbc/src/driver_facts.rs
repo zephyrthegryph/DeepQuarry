@@ -46,7 +46,7 @@ mod evaluator;
 pub use evaluator::DriverEvaluator;
 use evaluator::LexicalAbiEvaluator;
 #[path = "driver_facts/abi_artifacts.rs"]
-mod abi_artifacts;
+pub(crate) mod abi_artifacts;
 pub use abi_artifacts::AbiArtifacts;
 
 /// Captured boundary facts are explicit; a missing entry never means Fresh.

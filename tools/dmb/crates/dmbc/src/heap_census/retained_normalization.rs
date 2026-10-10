@@ -55,7 +55,8 @@ pub(super) fn answer(census: &mut HeapCensus, value: &SourceAnswer) {
                 }
             }
         }
-        SourceAnswer::SelectedPredecessor(_)
+        SourceAnswer::SymbolPresence(_)
+        | SourceAnswer::SelectedPredecessor(_)
         | SourceAnswer::Parent(_)
         | SourceAnswer::CallableAnchor(_) => (),
     }
@@ -111,12 +112,12 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
             census.buffer("retained_normalization.values", address, size, size);
             for read in reads.iter() {
                 match read.query {
-                    SourceQuery::Owner { owner: _ } | SourceQuery::OwnerShape { owner: _ } | SourceQuery::SelectedPredecessor { owner: _, name: _, kind: _ }
+                    SourceQuery::SymbolPresence { name: _ } | SourceQuery::Owner { owner: _ } | SourceQuery::OwnerShape { owner: _ } | SourceQuery::SelectedPredecessor { owner: _, name: _, kind: _ }
                     | SourceQuery::Parent { path: _ } | SourceQuery::Family { owner: _, name: _, kind: _ }
                     | SourceQuery::CallableAnchor { owner: _, name: _ } | SourceQuery::OpaqueField { owner: _, name: _ } => (),
                 }
                 match read.domain {
-                    SourceDomain::ParentGraph | SourceDomain::AuthoredDeclarations
+                    SourceDomain::SymbolCatalog | SourceDomain::ParentGraph | SourceDomain::AuthoredDeclarations
                     | SourceDomain::CallableNamespace | SourceDomain::EngineDeclarations => (),
                 }
                 answer(census, &read.answer);

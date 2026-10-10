@@ -17,7 +17,7 @@ mod memo;
 pub(crate) mod query_snapshot;
 #[path = "runner_host_resources.rs"]
 pub(crate) mod resources;
-pub(crate) use engine_payload::EnginePayloads;
+pub(crate) use engine_payload::{EnginePayload, EnginePayloads};
 #[path = "runner_executor_pool.rs"]
 mod executor_pool;
 pub(crate) use executor_pool::ExecutorPools;
@@ -85,6 +85,11 @@ struct EngineConfiguration {
 pub(crate) struct RetainedEngine {
     configuration: EngineConfiguration,
     payload: Arc<engine_payload::EnginePayload>,
+}
+impl RetainedEngine {
+    pub(crate) fn abi_engine_owner(&self) -> Arc<EnginePayload> {
+        Arc::clone(&self.payload)
+    }
 }
 impl std::ops::Deref for RetainedEngine {
     type Target = engine_payload::EnginePayload;
@@ -389,7 +394,13 @@ impl BuildHost {
             .as_ref()
             .is_none_or(|(previous, _)| *previous != policy)
         {
-            self.abi = Some((policy, Arc::new(Default::default())));
+            let artifacts = self.engine.as_ref().map_or_else(
+                crate::driver_facts::AbiArtifacts::default,
+                |engine| {
+                    crate::driver_facts::AbiArtifacts::with_engine_owner(engine.abi_engine_owner())
+                },
+            );
+            self.abi = Some((policy, Arc::new(artifacts)));
         }
         memo.abi = Some(Arc::clone(&self.abi.as_ref().unwrap().1));
         if self

@@ -9,21 +9,55 @@ use dm_resources::{
     catalog::{CatalogRecord, ResourceCatalog},
 };
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeSet, io};
+use std::{
+    collections::BTreeSet,
+    io,
+    sync::{Arc, OnceLock},
+};
 pub struct ObservedValidation {
     pub exact: bool,
     pub now: u128,
 }
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ResourceManifest {
     version: u32,
     policy: u128,
-    catalog: CatalogRecord,
+    #[serde(with = "catalog_wire")]
+    catalog: Arc<CatalogRecord>,
     catalog_identity: u128,
     inputs: InputSnapshot,
     order: Vec<usize>,
     archive: ResourceIdentity,
+    #[serde(skip)]
+    admitted_catalog: OnceLock<ResourceCatalog>,
 }
+// Preserve the legacy record object on disk without requiring serde's rc feature.
+mod catalog_wire {
+    use super::*;
+    pub fn serialize<S: serde::Serializer>(
+        value: &Arc<CatalogRecord>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        value.as_ref().serialize(serializer)
+    }
+    pub fn deserialize<'de, D: serde::Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Arc<CatalogRecord>, D::Error> {
+        CatalogRecord::deserialize(deserializer).map(Arc::new)
+    }
+}
+impl PartialEq for ResourceManifest {
+    fn eq(&self, other: &Self) -> bool {
+        self.version == other.version
+            && self.policy == other.policy
+            && self.catalog == other.catalog
+            && self.catalog_identity == other.catalog_identity
+            && self.inputs == other.inputs
+            && self.order == other.order
+            && self.archive == other.archive
+    }
+}
+impl Eq for ResourceManifest {}
 pub struct ValidatedResources {
     pub(crate) catalog: ResourceCatalog,
     pub(crate) inputs: InputSnapshot,
@@ -87,16 +121,20 @@ impl ResourceManifest {
         Ok(Self {
             version: 1,
             policy,
-            catalog: catalog.record().clone(),
+            catalog: Arc::clone(catalog.shared_record()),
             catalog_identity: catalog.identity(),
             inputs,
             order,
             archive,
+            admitted_catalog: OnceLock::from(catalog.clone()),
         })
     }
     pub(crate) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         crate::runner_host::resources::inspect_snapshot(&self.inputs, census);
         census.vec_payload("resources.archive_order", &self.order);
+        if !census.arc_object("resources.catalog", &self.catalog) {
+            return;
+        }
         census.vec_payload("resources.aliases", &self.catalog.aliases);
         for alias in &self.catalog.aliases {
             census.string("resources.aliases", &alias.name);
@@ -153,7 +191,23 @@ impl ResourceManifest {
             return Ok(None);
         }
         let catalog = match measured(observer, ResourceValidationStage::CatalogRestore, || {
-            ResourceCatalog::restore(self.catalog.clone(), self.catalog_identity)
+            if let Some(catalog) = self.admitted_catalog.get() {
+                if !Arc::ptr_eq(catalog.shared_record(), &self.catalog)
+                    || catalog.identity() != self.catalog_identity
+                {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "resource catalog cached owner/identity differs",
+                    ));
+                }
+                return Ok(catalog.clone());
+            }
+            let restored =
+                ResourceCatalog::restore_shared(Arc::clone(&self.catalog), self.catalog_identity)?;
+            // Concurrent first admissions may restore independently; only one immutable
+            // owner is retained. Every later request still performs current admission below.
+            let _ = self.admitted_catalog.set(restored);
+            Ok::<_, io::Error>(self.admitted_catalog.get().unwrap().clone())
         }) {
             Ok(value) => value,
             Err(_) => return Ok(None),
@@ -369,6 +423,60 @@ mod tests {
             &owner.hint(&configuration).unwrap()
         ));
         let demand = dm_resources::capture::discover_demand(&plan, &expanded, &[], &[]).unwrap();
+        assert!(Arc::ptr_eq(&manifest.catalog, catalog.shared_record()));
+        let clone = manifest.clone();
+        assert!(Arc::ptr_eq(&clone.catalog, &manifest.catalog));
+        // The durable wire remains the old record object, not a cache envelope.
+        let wire = serde_json::to_vec(&manifest).unwrap();
+        let restored: ResourceManifest = serde_json::from_slice(&wire).unwrap();
+        assert!(restored.admitted_catalog.get().is_none());
+        assert_eq!(serde_json::to_vec(&restored).unwrap(), wire);
+        for candidate in [&manifest, &restored] {
+            let first = candidate
+                .validate(3, &demand, &provider, true, 20_000_000_000, |_| Ok(true))
+                .unwrap()
+                .unwrap();
+            let second = candidate
+                .validate(3, &demand, &provider, true, 20_000_000_000, |_| Ok(true))
+                .unwrap()
+                .unwrap();
+            assert!(Arc::ptr_eq(
+                first.catalog.shared_record(),
+                second.catalog.shared_record()
+            ));
+            assert!(Arc::ptr_eq(
+                first.catalog.shared_record(),
+                &candidate.catalog
+            ));
+            assert!(candidate
+                .validate(3, &demand, &provider, true, 20_000_000_000, |_| Ok(false))
+                .unwrap()
+                .is_none());
+        }
+        let mut changed_owner = manifest.clone();
+        Arc::make_mut(&mut changed_owner.catalog).aliases[0].name = "changed.txt".into();
+        assert!(changed_owner
+            .validate(3, &demand, &provider, true, 20_000_000_000, |_| Ok(true))
+            .unwrap()
+            .is_none());
+        let mut changed_identity = manifest.clone();
+        changed_identity.catalog_identity ^= 1;
+        assert!(changed_identity
+            .validate(3, &demand, &provider, true, 20_000_000_000, |_| Ok(true))
+            .unwrap()
+            .is_none());
+        // Deserialize exact bytes: serde_json::Value would round large u128 pins.
+        let mut invalid_catalog: ResourceManifest = serde_json::from_slice(&wire).unwrap();
+        Arc::make_mut(&mut invalid_catalog.catalog).aliases[0].name = "changed.txt".into();
+        assert!(invalid_catalog
+            .validate(3, &demand, &provider, true, 20_000_000_000, |_| Ok(true))
+            .unwrap()
+            .is_none());
+        let mut invalid_order: ResourceManifest = serde_json::from_slice(&wire).unwrap();
+        invalid_order.order = vec![0, 0];
+        assert!(invalid_order
+            .validate(3, &demand, &provider, true, 20_000_000_000, |_| Ok(true))
+            .is_err());
         let stages = std::cell::RefCell::new(Vec::new());
         let observer = |measurement: ResourceValidationMeasurement| {
             assert!(measurement.seconds.is_finite() && measurement.seconds >= 0.0);

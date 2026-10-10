@@ -29,7 +29,7 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
             // owners; adding a field requires revisiting this accounting.
             for row in rows.iter().flatten() {
                 let dm_tree::owner_local_shape::LocalMember {
-                    key: _, kind: _, previous: _, duplicate_formal: _,
+                    key: _, kind: _, previous: _,
                 } = row;
             }
         }

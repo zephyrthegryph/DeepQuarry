@@ -7,29 +7,46 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Mutex,
 };
+#[path = "abi_observations.rs"]
+pub(crate) mod observations;
+use observations::{Answer, Domain, Query};
 pub(crate) struct Artifact {
     pub(crate) canonical: Option<Arc<crate::procedure_policy::PreparedCanonical>>,
     pub(crate) inputs: Arc<ProcedureInputs>,
     pub(crate) abi: Arc<PreparedAbi>,
 }
 pub struct AbiArtifacts {
-    store: dm_session::ArtifactStore<Artifact>,
+    store: dm_session::ObservedArtifactStore<Artifact, Query, Answer, Domain>,
+    engine_owner: Option<Arc<crate::runner_host::EnginePayload>>,
     reused: AtomicUsize,
     recomputed: AtomicUsize,
 }
 impl Default for AbiArtifacts {
     fn default() -> Self {
         Self {
-            store: dm_session::ArtifactStore::current_revision(),
+            store: dm_session::ObservedArtifactStore::current_revision(),
+            engine_owner: None,
             reused: AtomicUsize::new(0),
             recomputed: AtomicUsize::new(0),
         }
     }
 }
 impl AbiArtifacts {
+    pub(crate) fn with_engine_owner(engine_owner: Arc<crate::runner_host::EnginePayload>) -> Self {
+        Self {
+            engine_owner: Some(engine_owner),
+            ..Self::default()
+        }
+    }
+
+    pub(crate) fn engine_owner(&self) -> Option<&Arc<crate::runner_host::EnginePayload>> {
+        self.engine_owner.as_ref()
+    }
     pub(crate) fn visit_storage(
         &self,
-        visitor: impl FnMut(dm_session::ArtifactStorageView<'_, Artifact>),
+        visitor: impl FnMut(
+            dm_session::ObservedArtifactStorageView<'_, Artifact, Query, Answer, Domain>,
+        ),
     ) {
         self.store.visit_storage(visitor);
     }
@@ -53,67 +70,6 @@ impl Resolver for BorrowedResolver<'_> {
     fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
         self.0.domain_version(domain)
     }
-}
-fn bytes(out: &mut Vec<u8>, bytes: &[u8]) {
-    out.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
-    out.extend_from_slice(bytes);
-}
-fn layout_bytes(layout: &ProcLayout) -> Vec<u8> {
-    PreparedAbi {
-        layout: layout.clone(),
-        argument_sources: Vec::new(),
-        source_helpers: Vec::new(),
-    }
-    .canonical_bytes()
-}
-#[allow(clippy::too_many_arguments)] // Exact inherited boundary and current authenticated metadata are independent inputs.
-fn key(
-    identity: UnitIdentity,
-    metadata: &dm_ir::ProcedureMetadata,
-    engine: &EngineSnapshot,
-    boundary: Option<&BoundaryAbi>,
-    predecessor: Option<&PreparedAbi>,
-    resource: Option<u128>,
-    lexical: bool,
-) -> Vec<u8> {
-    let mut out = b"dm-process-abi-artifact-v2\0".to_vec();
-    out.extend_from_slice(&engine.identity().to_le_bytes());
-    out.extend_from_slice(&identity.owner.bits().to_le_bytes());
-    out.extend_from_slice(&identity.name.bits().to_le_bytes());
-    out.push(u8::from(identity.namespace == Namespace::Verb));
-    out.extend_from_slice(&identity.occurrence.to_le_bytes());
-    bytes(&mut out, &metadata.canonical_bytes());
-    out.push(u8::from(lexical));
-    out.push(u8::from(resource.is_some()));
-    if let Some(resource) = resource {
-        out.extend_from_slice(&resource.to_le_bytes());
-    }
-    out.push(u8::from(predecessor.is_some()));
-    if let Some(predecessor) = predecessor {
-        bytes(&mut out, &predecessor.canonical_bytes());
-    }
-    match boundary {
-        None => out.push(0),
-        Some(BoundaryAbi::Fresh) => out.push(1),
-        Some(BoundaryAbi::CertifiedIntrinsic(receipt)) => {
-            out.push(2);
-            out.extend_from_slice(&receipt.engine_identity.to_le_bytes());
-            out.extend_from_slice(&receipt.owner.bits().to_le_bytes());
-            out.extend_from_slice(&receipt.name.bits().to_le_bytes());
-            bytes(&mut out, &layout_bytes(&receipt.layout));
-        }
-        Some(BoundaryAbi::Engine { owner, name, kind }) => {
-            out.push(3);
-            out.extend_from_slice(&owner.bits().to_le_bytes());
-            out.extend_from_slice(&name.bits().to_le_bytes());
-            out.push(match kind {
-                MemberKind::Proc => 0,
-                MemberKind::Verb => 1,
-                MemberKind::Var => 2,
-            });
-        }
-    }
-    out
 }
 #[allow(clippy::too_many_arguments)] // This is the single optional artifact adapter around current ABI preparation.
 pub(super) fn prepare(
@@ -146,34 +102,53 @@ pub(super) fn prepare(
     let predecessor = inherited
         .source_predecessor(*member)?
         .and_then(|previous| inherited.source_layouts.get(&previous));
-    let mut encoded_key = key(
-        context.identity,
-        metadata,
-        inherited.engine,
-        inherited.boundaries.get(&context.identity),
-        predecessor.map(|abi| abi.as_ref()),
-        resource,
-        lexical,
-    );
     let pure_policy = evaluator
         .pure_calls
         .map(|calls| calls.immutable_policy_identity());
-    let reusable = !matches!(pure_policy, Some(None));
-    match pure_policy {
-        None => encoded_key.push(0),
-        Some(Some(identity)) => {
-            encoded_key.push(1);
-            encoded_key.extend_from_slice(&identity.to_le_bytes());
-        }
-        Some(None) => encoded_key.push(2),
-    }
-    let key: Arc<[u8]> = encoded_key.into();
-    keys.lock()
-        .unwrap_or_else(|error| error.into_inner())
-        .push(Arc::clone(&key));
+    let current = store
+        .engine_owner
+        .as_ref()
+        .filter(|owner| std::ptr::eq(&owner.snapshot, inherited.engine))
+        .filter(|_| !matches!(pure_policy, Some(None)))
+        .map(|engine| {
+            let current_metadata = inherited
+                .frontend
+                .snapshot
+                .tree
+                .member(*member)
+                .and_then(|node| node.metadata.procedure.as_ref())
+                .ok_or_else(|| AbiError::invariant("current ABI metadata missing"))?;
+            if !std::ptr::eq(current_metadata.as_ref(), metadata)
+                && current_metadata.canonical_bytes() != metadata.canonical_bytes()
+            {
+                return Err(AbiError::unsupported(
+                    "ABI metadata differs from current declaration",
+                ));
+            }
+            Ok(observations::Current {
+                inputs: Arc::new(observations::Inputs {
+                    metadata: Arc::clone(current_metadata),
+                    predecessor: predecessor.cloned(),
+                    engine: Arc::clone(engine),
+                    boundary: observations::Boundary::capture(
+                        inherited.boundaries.get(&context.identity),
+                    ),
+                    resource,
+                    evaluation_resource: evaluator.resource_search_context,
+                    lexical,
+                    pure_policy: pure_policy.flatten(),
+                }),
+                resolver: evaluator.resolver,
+            })
+        })
+        .transpose()?;
+    let key = observations::locator(context.identity);
     let base = BorrowedResolver(evaluator.resolver);
-    if reusable {
-        if let Some(artifact) = store.store.lookup(&key, &base) {
+    if let Some(current) = &current {
+        if let Some(artifact) = store.store.lookup(&key, current) {
+            keys.lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .push(Arc::clone(&key));
             store.reused.fetch_add(1, Ordering::Relaxed);
             return Ok(PreparedUnit {
                 canonical: artifact.canonical.clone(),
@@ -214,25 +189,36 @@ pub(super) fn prepare(
     let mut unit = policy.prepare_view(metadata, parsed, &recorded_context)?;
     store.recomputed.fetch_add(1, Ordering::Relaxed);
     unit.issue_canonical();
-    if reusable {
+    if let Some(current) = current {
         let abi = Arc::clone(
             unit.abi
                 .as_ref()
-                .ok_or_else(|| AbiError::unsupported("production ABI missing"))?,
+                .ok_or_else(|| AbiError::invariant("production ABI missing"))?,
         );
-        let inputs = unit.inputs.clone();
-        let reads = recording.reads();
-        let versions = recording.domain_receipts();
-        if let Some(weight) =
-            crate::heap_census::resident_abi_weight(&inputs, &abi, &key, &reads, &versions)
+        let inputs = Arc::clone(&unit.inputs);
+        let reads = observations::reads(current.inputs, recording.reads());
+        let versions = recording
+            .domain_receipts()
+            .into_iter()
+            .map(|(domain, version)| (Domain::Semantic(domain), version))
+            .collect();
+        // Current-roster mode has no byte admission budget. This is an inline
+        // accounting charge only; opt-in census separately walks actual owners.
+        let charge = std::mem::size_of::<Artifact>()
+            + std::mem::size_of::<observations::Inputs>()
+            + key.len();
+        if store
+            .store
+            .insert_with_owned(Arc::clone(&key), reads, versions, charge, || Artifact {
+                inputs,
+                abi,
+                canonical: unit.canonical.clone(),
+            })
+            .is_some()
         {
-            store
-                .store
-                .insert_with(key, reads, versions, weight, || Artifact {
-                    inputs,
-                    abi,
-                    canonical: unit.canonical.clone(),
-                });
+            keys.lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .push(key);
         }
     }
     unit.executable_body = Vec::new();
@@ -240,100 +226,8 @@ pub(super) fn prepare(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn retained_key_seals_boundary_predecessor_metadata_and_resource_context() {
-        let engine = EngineSnapshot::from_bytes(
-            include_bytes!("../../../../fixtures/native_template.bin"),
-            1,
-        )
-        .unwrap();
-        let identity = UnitIdentity {
-            owner: SymbolId::of("/datum/a"),
-            name: SymbolId::of("p"),
-            namespace: Namespace::Proc,
-            occurrence: 0,
-        };
-        let mut metadata = dm_ir::ProcedureMetadata {
-            signature: dm_ir::ProcedureSignature {
-                parameters: Arc::from([]),
-                variadic: false,
-                return_annotation: None,
-            },
-            settings: Arc::from([]),
-        };
-        let fresh = BoundaryAbi::Fresh;
-        let original = key(identity, &metadata, &engine, Some(&fresh), None, None, true);
-        assert_ne!(
-            original,
-            key(identity, &metadata, &engine, None, None, None, true)
-        );
-        assert_ne!(
-            original,
-            key(
-                identity,
-                &metadata,
-                &engine,
-                Some(&fresh),
-                None,
-                Some(0),
-                true
-            )
-        );
-        metadata.signature.variadic = true;
-        assert_ne!(
-            original,
-            key(identity, &metadata, &engine, Some(&fresh), None, None, true)
-        );
-        let mut predecessor = PreparedAbi {
-            layout: ProcLayout::default(),
-            argument_sources: Vec::new(),
-            source_helpers: Vec::new(),
-        };
-        let base = key(
-            identity,
-            &metadata,
-            &engine,
-            Some(&fresh),
-            Some(&predecessor),
-            None,
-            true,
-        );
-        predecessor.argument_sources.push(
-            dm_codegen_byond::procedure_abi::ArgumentSource::Builtin {
-                kind: 1,
-                parameter: 2,
-            },
-        );
-        assert_ne!(
-            base,
-            key(
-                identity,
-                &metadata,
-                &engine,
-                Some(&fresh),
-                Some(&predecessor),
-                None,
-                true
-            )
-        );
-        let mut changed = identity;
-        changed.occurrence = 1;
-        assert_ne!(
-            base,
-            key(
-                changed,
-                &metadata,
-                &engine,
-                Some(&fresh),
-                Some(&predecessor),
-                None,
-                true
-            )
-        );
-    }
-}
+#[path = "abi_observations_tests.rs"]
+mod tests;
 
 #[cfg(test)]
 #[path = "abi_artifacts_production_tests.rs"]

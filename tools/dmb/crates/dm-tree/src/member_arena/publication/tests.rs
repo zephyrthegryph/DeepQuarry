@@ -196,6 +196,7 @@ fn failed_structural_binding_preserves_fresh_diagnostics_and_recovery() {
         "/obj/base/proc/test()\n    return 1\n/obj/base/proc/test()\n    return 2\n",
         "/obj/base\n    parent_type = /obj/missing\n",
         "/obj/base\n    absent = 2\n",
+        "/obj/z/var/value = 1\n/obj/a/var/other = 1\n/obj/z/var/value = 2\n/obj/a/var/other = 2\n",
     ] {
         let retained = match try_build(invalid, &mut state, &executor) {
             Err(errors) => errors,
@@ -224,5 +225,20 @@ fn failed_structural_binding_preserves_fresh_diagnostics_and_recovery() {
         let recovered = build(valid, &mut state, &executor);
         let fresh = build(valid, &mut RetainedSemanticTree::default(), &executor);
         same_current(&recovered.snapshot.tree, &fresh.snapshot.tree);
+    }
+}
+
+#[test]
+fn owner_validation_rebinds_appended_members_and_callable_namespace_changes() {
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let mut state = RetainedSemanticTree::default();
+    for source in [
+        "/obj/base/proc/action()\n    return 1\n/obj/child\n    parent_type = /obj/base\n/obj/child/action()\n    return 2\n",
+        "/obj/base/verb/action()\n    return 1\n/obj/child\n    parent_type = /obj/base\n/obj/child/action()\n    return 2\n",
+        "/obj/base/verb/action()\n    return 1\n/obj/child\n    parent_type = /obj/base\n/obj/child/action()\n    return 2\n/obj/base/var/added = 3\n/obj/base/proc/extra()\n    return 4\n",
+    ] {
+        let retained = build(source, &mut state, &executor);
+        let fresh = build(source, &mut RetainedSemanticTree::default(), &executor);
+        same_current(&retained.snapshot.tree, &fresh.snapshot.tree);
     }
 }

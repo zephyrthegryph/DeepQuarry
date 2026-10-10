@@ -10,16 +10,35 @@ use std::{
     collections::BTreeMap,
     sync::atomic::{AtomicUsize, Ordering},
 };
+#[cfg(test)]
+mod validation_tests;
 #[derive(Clone, Copy, Debug)]
 pub struct LocalMember {
     pub key: DeclarationKey,
     pub kind: MemberKind,
     pub previous: Option<DeclarationKey>,
-    pub duplicate_formal: bool,
 }
 pub struct LocalOwner {
     pub rows: Arc<[Option<LocalMember>]>,
     pub selectors: Arc<[((SymbolId, MemberKind), DeclarationKey)]>,
+    pub(crate) first_failure: Option<(DeclarationKey, LocalValidationFailure)>,
+}
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum LocalValidationFailure {
+    UnknownSymbol(SymbolId),
+    Duplicate {
+        owner: SymbolId,
+        name: SymbolId,
+        kind: MemberKind,
+    },
+}
+impl LocalValidationFailure {
+    pub(crate) fn error(self) -> TreeError {
+        match self {
+            Self::UnknownSymbol(name) => TreeError::UnknownSymbol(name),
+            Self::Duplicate { owner, name, kind } => TreeError::Duplicate { owner, name, kind },
+        }
+    }
 }
 pub(crate) type LocalOwners = BTreeMap<SymbolId, Arc<LocalOwner>>;
 type Store = ObservedArtifactStore<LocalOwner, SourceQuery, SourceAnswer, SourceDomain>;
@@ -36,7 +55,7 @@ impl Default for RetainedOwnerShapes {
     }
 }
 fn key(owner: SymbolId) -> Arc<[u8]> {
-    let mut value = b"owner-local-shape-v1".to_vec();
+    let mut value = b"owner-local-shape-v2".to_vec();
     value.extend_from_slice(&owner.bits().to_le_bytes());
     value.into()
 }
@@ -136,8 +155,18 @@ impl RetainedOwnerShapes {
             let mut rows = vec![None; contribution.shared_shape().len()];
             let mut groups = BTreeMap::<(SymbolId, MemberKind), Vec<usize>>::new();
             let mut formal = std::collections::BTreeSet::new();
+            let mut first_failure = None;
             for (index, shape) in contribution.shared_shape().iter().enumerate() {
                 if let DeclarationFamily::Member { name, kind } = shape.key.family {
+                    let present = crate::owner_normalization::observe(
+                        &host,
+                        &ledger,
+                        SourceQuery::SymbolPresence { name },
+                    );
+                    if present == SourceAnswer::SymbolPresence(false) && first_failure.is_none() {
+                        first_failure =
+                            Some((shape.key, LocalValidationFailure::UnknownSymbol(name)));
+                    }
                     let mode = shape.mode.expect("member shape has definition mode");
                     let kind = callable_namespace::effective_kind_from(
                         CallableRequest {
@@ -154,11 +183,20 @@ impl RetainedOwnerShapes {
                     );
                     let duplicate_formal =
                         mode == DefinitionMode::Declare && !formal.insert((name, kind));
+                    if duplicate_formal && first_failure.is_none() {
+                        first_failure = Some((
+                            shape.key,
+                            LocalValidationFailure::Duplicate {
+                                owner: *owner,
+                                name,
+                                kind,
+                            },
+                        ));
+                    }
                     rows[index] = Some(LocalMember {
                         key: shape.key,
                         kind,
                         previous: None,
-                        duplicate_formal,
                     });
                     groups.entry((name, kind)).or_default().push(index);
                 }
@@ -184,18 +222,18 @@ impl RetainedOwnerShapes {
             // exposed to census; zero does not stand for an estimated heap size.
             let rows: Arc<[_]> = rows.into();
             let selectors: Arc<[_]> = selectors.into();
-            let payload = Arc::new(LocalOwner {
-                rows: Arc::clone(&rows),
-                selectors: Arc::clone(&selectors),
-            });
-            self.store.insert_with(
+            let payload = self.store.insert_with_owned(
                 key(*owner),
                 ledger.reads(),
                 ledger.domain_receipts(),
                 0,
-                || LocalOwner { rows, selectors },
+                || LocalOwner {
+                    rows,
+                    selectors,
+                    first_failure,
+                },
             );
-            result.insert(*owner, payload);
+            result.insert(*owner, payload.expect("current roster is not budgeted"));
         }
         result
     }

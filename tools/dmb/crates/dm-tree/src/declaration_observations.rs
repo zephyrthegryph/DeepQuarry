@@ -8,6 +8,9 @@ use dm_ir::{OpaqueFieldBase, SymbolId};
 use std::sync::Arc;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SourceQuery {
+    SymbolPresence {
+        name: SymbolId,
+    },
     OwnerShape {
         owner: SymbolId,
     },
@@ -38,6 +41,7 @@ pub enum SourceQuery {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SourceDomain {
+    SymbolCatalog,
     ParentGraph,
     AuthoredDeclarations,
     CallableNamespace,
@@ -46,6 +50,7 @@ pub enum SourceDomain {
 impl SourceQuery {
     pub fn domain(self) -> SourceDomain {
         match self {
+            Self::SymbolPresence { .. } => SourceDomain::SymbolCatalog,
             Self::Parent { .. } => SourceDomain::ParentGraph,
             Self::OwnerShape { .. }
             | Self::Owner { .. }
@@ -100,6 +105,7 @@ impl PartialEq for OwnerAnswer {
 impl Eq for OwnerAnswer {}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SourceAnswer {
+    SymbolPresence(bool),
     OwnerShape(Option<Arc<[crate::declaration_contributions::DeclarationShape]>>),
     Owner(OwnerAnswer),
     SelectedPredecessor(Option<DeclarationKey>),
@@ -119,6 +125,9 @@ pub(crate) struct DeclarationHost<'a> {
 impl DeclarationHost<'_> {
     pub fn answer(&self, query: SourceQuery) -> SourceAnswer {
         match query {
+            SourceQuery::SymbolPresence { name } => {
+                SourceAnswer::SymbolPresence(self.tree.symbols.text(name).is_some())
+            }
             SourceQuery::OwnerShape { owner } => SourceAnswer::OwnerShape(
                 self.declarations
                     .owner(owner)

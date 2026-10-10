@@ -80,14 +80,15 @@ fn same(retained: &PreparedPinnedSourceAbi, fresh: &PreparedPinnedSourceAbi) {
 }
 #[test]
 fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_signature() {
-    let engine = EngineSnapshot::from_bytes(
-        include_bytes!("../../../../fixtures/native_template.bin"),
+    let engine_owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
         1,
+        true,
+        0,
     )
-    .unwrap()
-    .with_bootstrap_catalog()
     .unwrap();
-    let store = AbiArtifacts::default();
+    let engine = &engine_owner.snapshot;
+    let store = AbiArtifacts::with_engine_owner(Arc::clone(&engine_owner));
     let original=frontend("/var/const/C = 7\n/datum/base/proc/p(x=C)\n    set invisibility = C\n    return x\n/datum/base/child/p(x=C)\n    return ..()\n",&engine);
     let before = prepared(&original, &engine, Some(&store));
     same(&before, &prepared(&original, &engine, None));
@@ -146,13 +147,14 @@ fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_sign
 
 #[test]
 fn authored_setting_error_and_blocked_override_preserve_source_diagnostics() {
-    let engine = EngineSnapshot::from_bytes(
-        include_bytes!("../../../../fixtures/native_template.bin"),
+    let engine_owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
         1,
+        true,
+        0,
     )
-    .unwrap()
-    .with_bootstrap_catalog()
     .unwrap();
+    let engine = &engine_owner.snapshot;
     let front=frontend("/datum/base/proc/p()\n    set invisibility = 200\n    return 1\n/datum/base/child/p()\n    return ..()\n",&engine);
     let batch = prepared(&front, &engine, None);
     assert_eq!(batch.prepared.diagnostics.len(), 2);
@@ -162,6 +164,64 @@ fn authored_setting_error_and_blocked_override_preserve_source_diagnostics() {
         .all(|diagnostic| diagnostic.kind == dm_tree::frontend::DiagnosticKind::SourceError));
     assert!(diagnostics[0].message.contains("invisibility exceeds 127"));
     assert_eq!(diagnostics[0].origin.line, 1);
+}
+
+fn stored_entries(store: &AbiArtifacts) -> usize {
+    let mut entries = 0;
+    store.visit_storage(|view| {
+        if let dm_session::ObservedArtifactStorageView::Store { entries: n, .. } = view {
+            entries = n
+        }
+    });
+    entries
+}
+#[test]
+fn typed_abi_requires_actual_engine_owner_and_prunes_failed_or_deleted_units() {
+    let owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+        1,
+        true,
+        0,
+    )
+    .unwrap();
+    let engine = &owner.snapshot;
+    let front = frontend("/datum/base/proc/p(x=7)\n    return x\n", engine);
+    let store = AbiArtifacts::with_engine_owner(Arc::clone(&owner));
+    same(
+        &prepared(&front, engine, Some(&store)),
+        &prepared(&front, engine, None),
+    );
+    assert_eq!(stored_entries(&store), 1);
+    let foreign = (*engine).clone();
+    same(
+        &prepared(&front, &foreign, Some(&store)),
+        &prepared(&front, &foreign, None),
+    );
+    assert_eq!(
+        store.totals().0,
+        0,
+        "equal digest/decoded data without the issued physical owner cannot admit"
+    );
+    assert_eq!(stored_entries(&store), 0);
+    let bare = AbiArtifacts::default();
+    same(
+        &prepared(&front, engine, Some(&bare)),
+        &prepared(&front, engine, None),
+    );
+    assert_eq!(stored_entries(&bare), 0);
+    prepared(&front, engine, Some(&store));
+    let broken=frontend("/datum/base/proc/p(x=7)\n    set invisibility = 200\n    return x\n/datum/base/child/p()\n    return ..()\n",engine);
+    let failed = prepared(&broken, engine, Some(&store));
+    assert_eq!(failed.prepared.diagnostics.len(), 2);
+    assert_eq!(
+        stored_entries(&store),
+        0,
+        "failed current outcomes cannot retain old ABI answers"
+    );
+    prepared(&front, engine, Some(&store));
+    let deleted = frontend("/datum/other\n", engine);
+    prepared(&deleted, engine, Some(&store));
+    assert_eq!(stored_entries(&store), 0);
 }
 
 #[path = "formal_abi_tests.rs"]
