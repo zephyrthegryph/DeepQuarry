@@ -103,3 +103,13 @@
 	TEST_ASSERT(F.oil?.get_reagent_amount(REAGENT_ID_COOKINGOIL) > 0, "the fryer starts with oil")
 	var/obj/machinery/clonepod/transhuman/full/P = allocate(/obj/machinery/clonepod/transhuman/full, T)
 	TEST_ASSERT_EQUAL(length(P.containers), P.container_limit, "a full grower pod starts with its biomass")
+
+/// reagents(contents_from =) for produce: the seed's chemicals at its potency, the nutriment tasting of the plant; the wish soup's rolled wish.
+/datum/unit_test/dq_decl_seed_contents/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/reagent_containers/food/snacks/grown/G = allocate(/obj/item/reagent_containers/food/snacks/grown, T, "apple")
+	TEST_ASSERT(G.reagents.has_reagent(REAGENT_ID_NUTRIMENT), "an apple holds its seed's nutriment")
+	var/datum/reagent/N = G.reagents.get_reagent(REAGENT_ID_NUTRIMENT)
+	TEST_ASSERT(islist(N?.data) && N.data[G.seed().seed_name], "the nutriment tastes of the plant")
+	var/obj/item/reagent_containers/food/snacks/wishsoup/W = allocate(/obj/item/reagent_containers/food/snacks/wishsoup, T)
+	TEST_ASSERT_EQUAL(W.reagents.has_reagent(REAGENT_ID_NUTRIMENT), W.wished, "a wish soup holds nutriment exactly when its wish came true")

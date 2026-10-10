@@ -148,7 +148,6 @@ initialize	code/game/objects/effects/chem/foam.dm	/obj/structure/foamedmetal/Ini
 initialize	code/game/objects/effects/countdown.dm	/obj/effect/countdown/Initialize(mapload)
 initialize	code/game/objects/effects/decals/Cleanable/humans.dm	/obj/effect/decal/cleanable/blood/Initialize(mapload, _age)
 initialize	code/game/objects/effects/decals/Cleanable/humans.dm	/obj/effect/decal/cleanable/blood/drip/Initialize(mapload)
-initialize	code/game/objects/effects/decals/Cleanable/humans.dm	/obj/effect/decal/cleanable/mucus/mapped/Initialize(mapload)
 initialize	code/game/objects/effects/decals/Cleanable/misc.dm	/obj/effect/decal/cleanable/vomit/old/Initialize(mapload, list/datum/affliction/contagion/diseases)
 initialize	code/game/objects/effects/decals/Cleanable/misc.dm	/obj/effect/decal/cleanable/blood/old/Initialize(mapload, list/datum/affliction/contagion/diseases)
 initialize	code/game/objects/effects/effect_system.dm	/obj/effect/effect/sparks/Initialize(mapload)

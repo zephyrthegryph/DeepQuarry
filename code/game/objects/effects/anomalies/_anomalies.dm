@@ -27,6 +27,7 @@
 	proximity_tracked = TRUE
 
 CAPABILITIES(/obj/effect/anomaly)
+	after_init(nameof(lifespan), then(PROC_REF(lifespan_over)))
 	every(2 SECONDS, then(PROC_REF(anomaly_step)), when = STAT_RELEVANCE)
 	owns_one(nameof(anomaly_core), /obj/item/assembly/signaler/anomaly, starts = PROC_REF(make_core))
 	owns_one(nameof(stats), /datum/anomaly_stats)
@@ -66,10 +67,9 @@ CAPABILITIES(/obj/effect/anomaly)
 	if(immortal)
 		return
 	countdown.start()
-	after(src, lifespan, PROC_REF(lifespan_over))
 
 /// The anomaly's lifespan ended (its timer): it detonates whether or not anyone is near.
-/obj/effect/anomaly/proc/lifespan_over()
+/obj/effect/anomaly/proc/lifespan_over(datum/act/A)
 	if(immortal || QDELETED(src))
 		return
 	if(loc)
