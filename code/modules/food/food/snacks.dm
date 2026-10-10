@@ -59,10 +59,9 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/reagent_containers/food/snacks/Initialize(mapload)
-	. = ..()
-	if(nutriment_amt)
-		reagents.add_reagent(REAGENT_ID_NUTRIMENT,(nutriment_amt*2),nutriment_desc)
+/// The nutriment a snack starts with: two units per point of `nutriment_amt`.
+/obj/item/reagent_containers/food/snacks/proc/nutriment_units()
+	return nutriment_amt * 2
 
 //Placeholder for effect that trigger on eating that aren't tied to reagents.
 /obj/item/reagent_containers/food/snacks/proc/On_Consume(mob/living/eater, mob/living/feeder)
@@ -149,6 +148,7 @@
 // off a table) may be hidden in it; a fork or spoon scoops it up; held to an open container of batter it is coated; and an egg or a fruit with `opens_into`
 // is emptied into an open container. Whatever is stuffed inside it drops out when it is destroyed.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks)
+	configure(reagents(last = list(REAGENT_ID_NUTRIMENT = PROC_REF(nutriment_units)), data = list(REAGENT_ID_NUTRIMENT = nameof(nutriment_desc))))
 	edible( 
 		bite = nameof(bitesize),
 		taken = nameof(bitecount),
@@ -680,9 +680,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/choc_sprinkles/jelly
 	icon_state = "donut_meat"
 	desc = "This donut has ... meat? Is it made of meat?!"
 	overlay_state = "donut_meat_inbox"
-/obj/item/reagent_containers/food/snacks/donut/meat/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 3, nutriment_desc)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/meat)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3), data = list(REAGENT_ID_PROTEIN = nameof(nutriment_desc))))
 
 /obj/item/reagent_containers/food/snacks/donut/laugh
 	nutriment_amt = 4.5
@@ -4186,14 +4185,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawmeatball)
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotdog)
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
-///obj/item/reagent_containers/food/snacks/hotdog/old (Commented out on 4/23/2021 to make room for ancient hotdog)
-//	name = "old hotdog"
-//	desc = "Covered in mold.  You're not gonna eat that, are you?"
-//
-///obj/item/reagent_containers/food/snacks/hotdog/old/Initialize(mapload)
-//	. = ..()
-//	reagents.add_reagent(REAGENT_ID_MOLD, 6)
-
 /obj/item/reagent_containers/food/snacks/flatbread
 	name = "flatbread"
 	desc = "Bland but filling."
@@ -6452,21 +6443,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/driedfish)
 	center_of_mass_y = 4
 	nutriment_desc = list("dried raisins" = 6)
 	nutriment_amt = 6
-
-///obj/item/reagent_containers/food/snacks/spacetwinkie (Commented out to replace with packaged version 04/14/2021)
-//	name = "Spacer Snack Cake"
-//	icon = 'icons/obj/food_snacks.dmi'
-//	icon_state = "space_twinkie"
-//	desc = "Guaranteed to survive longer than you will."
-//	description_fluff = "Despite Spacer advertisements consistently portraying their snack cakes as life-saving, tear-jerking survival food for spacers in all kinds of dramatic scenarios, the Spacer Snack Cake has been statistically proven to lower survival rates on all missions where it is present."
-//	filling_color = "#FFE591"
-//	center_of_mass_x = 15
-//	center_of_mass_y = 11
-//	bitesize = 2
-//
-///obj/item/reagent_containers/food/snacks/spacetwinkie/Initialize(mapload)
-//	. = ..()
-//	reagents.add_reagent(REAGENT_ID_SUGAR, 4)
 
 /obj/item/reagent_containers/food/snacks/cheesiehonkers
 	name = "Cheesie Honkers"

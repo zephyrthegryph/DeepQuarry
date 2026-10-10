@@ -8,6 +8,7 @@
 /// The leather hung on the rack.
 /obj/structure/tanning_rack/var/obj/item/stack/wetleather/drying
 CAPABILITIES(/obj/structure/tanning_rack)
+	silicon_hand(robots = TRUE) // attack_hand has the adjacency checks
 	ref_one(nameof(drying))
 	/// Holds wet leather: dries it every 2 s (starting from wetness 30 it takes about a minute); the gate is polled, the leather's wetness is another entity's state.
 	every(2 SECONDS, then(PROC_REF(tanning_rack_step)), when = nameof(drying))
@@ -70,9 +71,6 @@ CAPABILITIES(/obj/structure/tanning_rack)
 			S.forceMove(get_turf(src))
 		rel_clear(src, nameof(drying))
 	return OP_OK
-
-/obj/structure/tanning_rack
-	silicon_use = ROBOT_USE_HAND // attack_hand has the adjacency checks
 
 /// the drying this refers to (a relation view: null once it is deleted).
 /obj/structure/tanning_rack/proc/drying() as /obj/item/stack/wetleather

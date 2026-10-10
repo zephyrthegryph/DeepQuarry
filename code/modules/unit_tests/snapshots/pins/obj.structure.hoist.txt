@@ -68,5 +68,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, hand, hoist_verb_collapse, melee_hit
+keys: drag_buckle, hand, hoist_verb_collapse, melee_hit, silicon_hand
 

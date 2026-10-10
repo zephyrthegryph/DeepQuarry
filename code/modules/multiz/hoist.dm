@@ -130,6 +130,7 @@ CAPABILITIES(/obj/effect/hoist_hook)
 	var/obj/effect/hoist_hook/source_hook
 
 CAPABILITIES(/obj/structure/hoist)
+	silicon_hand(robots = TRUE)
 	owns_one(nameof(source_hook), /obj/effect/hoist_hook)
 	param(nameof(dir), pos = 1, apply = PROC_REF(hang_hook))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(hoist_blast_break)))
@@ -185,9 +186,6 @@ CAPABILITIES(/obj/structure/hoist)
 	if(prob(100 / packet.severity))
 		source_hoist().break_hoist()
 	return OP_OK
-
-/obj/structure/hoist
-	silicon_use = ROBOT_USE_HAND
 
 /// Requirement: TRUE, or why this user can't work the hoist. Non-humanoids are turned away silently by the effect.
 /obj/structure/hoist/proc/can_work_hoist(mob/living/user, atom/target, obj/item/held)

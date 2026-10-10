@@ -4,8 +4,10 @@ human|none click: Click: Toggle automatic control
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
 robot|none menu: Toggle automatic control
+robot|none menu: Use
 robot|none click: Click: Toggle automatic control
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -71,5 +73,5 @@ human|/obj/item/pipe_painter menu: Painter
 human|/obj/item/pipe_painter menu: Toggle automatic control
 human|/obj/item/pipe_painter menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pipe_painter click: Click: Painter
-keys: circuit, drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, manual, melee_hit, painter, robot_remote_blocked, unwrench
+keys: circuit, drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, manual, melee_hit, painter, robot_remote_blocked, silicon_hand, unwrench
 

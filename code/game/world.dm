@@ -383,7 +383,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			"mc_iteration" = Kernel?.iteration, "mc_last_run" = Kernel?.last_run, "mc_sleep_delta" = Kernel?.sleep_delta,
 			"mc_processing" = Kernel?.processing, "mc_runlevel" = Kernel?.current_runlevel, "mc_init_stage" = Kernel?.init_stage_completed,
 			"mc_tickdrift" = Kernel?.tickdrift, "watchdog_lasttick" = Kernel?.watchdog?.lasttick,
-			"ticker_state" = SSticker?.current_state, "ticker_last_fire" = SSticker?.last_fire, "profiler_last_sample" = SSprofiler?.last_fire,
+			"ticker_state" = round_game_state(), "ticker_last_fire" = SSticker?.last_fire, "profiler_last_sample" = SSprofiler?.last_fire,
 		)
 		return json_encode(d)
 	// Localhost-only census of the OM deadline wheel: entries per bucket, how many are still live

@@ -99,10 +99,12 @@ CAPABILITIES(/obj/effect/dummy/lighting_obj)
 /obj/effect/dummy/lighting_obj/moblight
 	name = "mob lighting fx"
 
-/obj/effect/dummy/lighting_obj/moblight/Initialize(mapload, _color, _range, _power, _duration)
-	. = ..()
-	if(!ismob(loc))
-		return INITIALIZE_HINT_QDEL
+/// A mob's light lives on a mob (keeps_if()): a condition.
+/obj/effect/dummy/lighting_obj/moblight/proc/on_a_mob()
+	return ismob(loc)
+
+CAPABILITIES(/obj/effect/dummy/lighting_obj/moblight)
+	keeps_if(PROC_REF(on_a_mob))
 
 /obj/effect/dummy/lighting_obj/moblight/fire
 	name = "fire"

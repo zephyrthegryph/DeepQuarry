@@ -6,7 +6,6 @@
 			V.leaks_changed()
 
 /obj/machinery/atmospherics/valve/shutoff
-	silicon_use = SILICON_USE_HAND
 	icon = 'icons/atmos/clamp.dmi'
 	icon_state = "map_vclamp0"
 	pipe_state = "vclamp"
@@ -34,6 +33,7 @@ MSG_DEF_SELF(shutoff/closed, "You manually close the valve.")
 TRACKED(/obj/machinery/atmospherics/valve/shutoff, close_on_leaks)
 
 CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
+	silicon_hand()
 	membership(joins = REGISTRY_SHUTOFF_VALVES)
 	without("toggle")
 	op("circuit", hand(), label("Toggle automatic control"), wait(0), says(PROC_REF(circuit_message)), then(PROC_REF(circuit_toggled)))

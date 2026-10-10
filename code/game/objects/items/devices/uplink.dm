@@ -49,11 +49,9 @@
 	var/exploit_id								// Id of the current exploit record we are viewing
 	var/selected_cat
 
-// The hidden uplink MUST be inside an obj/item's contents.
-/obj/item/uplink/hidden/Initialize(mapload)
-	. = ..()
-	if(!isitem(loc))
-		return INITIALIZE_HINT_QDEL
+/// The hidden uplink MUST be inside an obj/item's contents (keeps_if()): a condition.
+/obj/item/uplink/hidden/proc/inside_an_item()
+	return isitem(loc)
 
 /// The deciseconds to the next discount.
 /obj/item/uplink/hidden/proc/offer_delay(datum/act/A)
@@ -202,6 +200,7 @@
 	SStgui.close_uis(src)
 
 CAPABILITIES(/obj/item/uplink/hidden)
+	keeps_if(PROC_REF(inside_an_item))
 	every(PROC_REF(offer_delay), then(PROC_REF(next_offer)))
 	op("compact_toggle", ui_act(), then(PROC_REF(ui_act_compact_toggle)))
 	interface("Uplink", title = "Remote Uplink", state = nameof(GLOB.tgui_deep_inventory_state))

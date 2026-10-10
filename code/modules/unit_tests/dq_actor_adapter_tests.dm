@@ -30,6 +30,15 @@ CAPABILITIES(/obj/dq_actor_probe)
 	return OP_OK
 
 /// The keys of the ops `actor` could pick from `target`'s menu now (the refused ones left out), sorted and comma-separated.
+/// The op `key` performed by `actor` on `target` as its click would (ORIGIN_CLICK): the handlers it recorded.
+/datum/unit_test/proc/dq_actor_op(mob/actor, atom/target, key)
+	GLOB.dq_actor_calls.Cut()
+	var/datum/op_result/R = perform_op(actor, target, key, origin = ORIGIN_CLICK, authority = actor.click_authority())
+	test_time(1 SECONDS)
+	if(!length(GLOB.dq_actor_calls))
+		return "refused: [R?.reason]"
+	return jointext(GLOB.dq_actor_calls, ",")
+
 /datum/unit_test/proc/dq_actor_offered(mob/actor, atom/target, obj/item/held)
 	var/list/keys = list()
 	for(var/list/row as anything in op_menu(actor, target, held))
@@ -82,6 +91,8 @@ CAPABILITIES(/obj/dq_actor_probe)
 		GLOB.op_click_resolved[user] = TRUE
 	GLOB.input_router.route_click(user, target, params)
 	GLOB.op_click_resolved -= user
+	if(ops_first)
+		test_time(1 SECONDS) // an op's effect (a silicon_hand() forward) runs in the op pipeline, not inside the click
 	return jointext(GLOB.dq_actor_calls, ",")
 
 // ---- Capability filtering ----
@@ -169,7 +180,8 @@ CAPABILITIES(/obj/dq_actor_probe)
 	// Were `return attack_hand(user)`.
 	TEST_ASSERT_EQUAL(dq_actor_click(AI, allocate(/obj/machinery/button/dq_actor_probe, T)), "attack_hand", "button: the AI's Use is the hand's")
 	TEST_ASSERT_EQUAL(dq_actor_click(AI, allocate(/obj/machinery/firealarm/dq_actor_probe, T)), "attack_hand", "fire alarm: the AI's Use is the hand's")
-	TEST_ASSERT_EQUAL(dq_actor_click(AI, allocate(/obj/structure/privacyswitch/dq_actor_probe, T)), "attack_hand", "privacy switch (not a machine): the AI's Use is the hand's")
+	// silicon_hand(): the switch's own remote() op now, not the adapter's fallback.
+	TEST_ASSERT_EQUAL(dq_actor_op(AI, allocate(/obj/structure/privacyswitch/dq_actor_probe, T), "silicon_hand"), "attack_hand", "privacy switch (not a machine): the AI's Use is the hand's")
 	// Were `tgui_interact(user)`.
 	TEST_ASSERT_EQUAL(dq_actor_click(AI, allocate(/obj/machinery/door/airlock/dq_actor_probe, T)), "tgui_interact", "airlock: the AI's Use opens the UI, not the hand's Use")
 	// The turret control opens through its interface's remote() binding now, which needs the AI to see it (a camera); dq_silicon_entry_tests covers it.
@@ -183,18 +195,19 @@ CAPABILITIES(/obj/dq_actor_probe)
 	var/turf/T = test_floor()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	// Was `attack_hand(M)`.
-	TEST_ASSERT_EQUAL(dq_actor_click(R, allocate(/obj/structure/ladder/dq_actor_probe, T), ops_first = FALSE), "attack_hand", "ladder: the cyborg's Use is the hand's")
+	// silicon_hand(robots = TRUE), an op with a remote() binding now: the adapter's fallback is not involved.
+	TEST_ASSERT_EQUAL(dq_actor_op(R, allocate(/obj/structure/ladder/dq_actor_probe, T), "silicon_hand"), "attack_hand", "ladder: the cyborg's Use is the hand's")
 	// Was `if(Adjacent(user)) attack_hand(user)`.
 	var/obj/structure/closet/dq_actor_probe/closet = allocate(/obj/structure/closet/dq_actor_probe, T)
-	TEST_ASSERT_EQUAL(dq_actor_click(R, closet, ops_first = FALSE), "attack_hand", "closet, adjacent: the cyborg's Use is the hand's")
+	TEST_ASSERT_EQUAL(dq_actor_op(R, closet, "silicon_hand"), "attack_hand", "closet, adjacent: the cyborg's Use is the hand's (silicon_hand(adjacent = TRUE))")
 	var/turf/far = locate(T.x + 3, T.y, T.z)
 	if(far)
 		closet.forceMove(far)
-		TEST_ASSERT_EQUAL(dq_actor_click(R, closet, ops_first = FALSE), "", "closet, at range: nothing, and no AI-style interfacing")
+		TEST_ASSERT(dq_actor_op(R, closet, "silicon_hand") != "attack_hand", "closet, at range: nothing, and no AI-style interfacing")
 		closet.forceMove(T)
 	// The AI-style forwards reach the cyborg through attack_robot -> attack_ai. A cyborg
 	// looking through a camera can't control machines remotely (a cyborg with no client is not blocked: only a player's click or a script reaches it).
-	TEST_ASSERT_EQUAL(dq_actor_click(R, allocate(/obj/structure/privacyswitch/dq_actor_probe, T), ops_first = FALSE), "attack_hand", "privacy switch: the cyborg interfaces like the AI")
+	TEST_ASSERT_EQUAL(dq_actor_op(R, allocate(/obj/structure/privacyswitch/dq_actor_probe, T), "silicon_hand"), "attack_hand", "privacy switch: the cyborg interfaces like the AI")
 	TEST_ASSERT_EQUAL(dq_actor_click(R, allocate(/obj/machinery/button/dq_actor_probe, T), ops_first = FALSE), "attack_hand", "button: a cyborg not looking through a camera controls a machine like the AI")
 
 /// A ghost's Use on types whose attack_ghost only called tgui_interact.

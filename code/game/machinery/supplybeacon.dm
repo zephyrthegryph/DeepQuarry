@@ -30,7 +30,6 @@ CAPABILITIES(/obj/item/supply_beacon)
 	consume(src, user)
 
 /obj/machinery/power/supply_beacon
-	silicon_use = ROBOT_USE_HAND_ADJACENT
 	name = "supply beacon"
 	desc = "A bulky moonshot supply beacon. Someone has been messing with the wiring."
 	icon = 'icons/obj/supplybeacon.dmi'
@@ -49,6 +48,7 @@ CAPABILITIES(/obj/item/supply_beacon)
 TRACKED_BRIDGED(/obj/machinery/power/supply_beacon, expended, CHANGE_MACHINE_SETTINGS)
 /// Draws power (and arms the drop) while switched on and not yet spent.
 CAPABILITIES(/obj/machinery/power/supply_beacon)
+	silicon_hand(adjacent = TRUE)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(use_power), cond_not(nameof(expended))), wakes_on = list(nameof(use_power), nameof(expended)))
 	rolls(nameof(drop_type), PROC_REF(roll_drop_type), when = cond_not(nameof(drop_type)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))

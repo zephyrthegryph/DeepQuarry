@@ -135,7 +135,7 @@
 		// The HUD, sight and look follow set_stat(DEAD) by themselves (it published nameof(stat)).
 
 	// 8. Antagonist bookkeeping.
-	SSticker?.mode?.check_win()
+	ticker_mode()?.check_win()
 
 	// 9. Final: every side effect is done. The destroy framework's delete_on_death hangs here
 	// (lifecycle_on_death_finalized(), code/datums/lifecycle/verbs.dm), after the listeners.

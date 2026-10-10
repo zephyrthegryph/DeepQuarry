@@ -141,6 +141,6 @@ CAPABILITIES(/datum/game_mode)
 	if(!SSticker || !ticker_mode())
 		tgui_alert_async(user, "Not before roundstart!", "Alert")
 		return
-	if(!SSticker.mode.tgui_game_mode_panel)
+	if(!ticker_mode().tgui_game_mode_panel)
 		rel_set(ticker_mode(), nameof(/datum/game_mode::tgui_game_mode_panel), new /datum/game_mode_panel(ticker_mode()))
-	SSticker.mode.tgui_game_mode_panel.tgui_interact(user)
+	ticker_mode().tgui_game_mode_panel.tgui_interact(user)

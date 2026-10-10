@@ -398,7 +398,7 @@ SYSTEM_DEF(job)
 
 			// Loop through all jobs
 			for(var/datum/job/job in shuffledoccupations) // SHUFFLE ME BABY
-				if(!job || LAZYFIND(SSticker.mode.disabled_jobs, job.title) )
+				if(!job || LAZYFIND(ticker_mode().disabled_jobs, job.title) )
 					continue
 
 				if(jobban_isbanned(player, job.title))
@@ -612,7 +612,7 @@ SYSTEM_DEF(job)
 
 		// TWEET PEEP
 		if(rank == JOB_SITE_MANAGER && announce)
-			var/sound/announce_sound = (SSticker.current_state <= GAME_STATE_SETTING_UP) ? null : sound('sound/misc/boatswain.ogg', volume=20)
+			var/sound/announce_sound = (round_game_state() <= GAME_STATE_SETTING_UP) ? null : sound('sound/misc/boatswain.ogg', volume=20)
 			GLOB.captain_announcement.Announce("All hands, [alt_title ? alt_title : JOB_SITE_MANAGER] [human_mob.real_name] on deck!", new_sound = announce_sound, zlevel = human_mob.z)
 
 		//Deferred item spawning.

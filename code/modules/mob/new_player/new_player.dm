@@ -215,7 +215,7 @@
 		character = character.AIize(move = FALSE) // Dupe of code in /datum/system/ticker/proc/create_characters() for non-latespawn, unify?
 
 		AnnounceCyborg(character, rank, "has been transferred to the empty core in \the [character.loc.loc]")
-		SSticker.mode.latespawn(character)
+		ticker_mode().latespawn(character)
 
 		spent(C) //Deletes empty core (really?)
 		spent(src) //Deletes new_player
@@ -231,7 +231,7 @@
 		var/atom/movable/_tmp_buck_33 = character?.buckled_to()
 		_tmp_buck_33.set_dir(character.dir)
 
-	SSticker.mode.latespawn(character)
+	ticker_mode().latespawn(character)
 
 	if(rank == JOB_OUTSIDER)
 		log_and_message_admins("has joined the round as non-crew. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>)",character)

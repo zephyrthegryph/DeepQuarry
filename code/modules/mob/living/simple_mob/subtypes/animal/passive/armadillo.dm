@@ -120,7 +120,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo)
 	name = "Torta"
 	desc = "A small, armored mammal. It seems to be territorial and protective of the dorms."
 
-
 /datum/say_list/armadillo
 	emote_hear = list("churrs","rumbles","chirrs")
 	emote_see = list("rolls in place", "shuffles", "scritches at something")

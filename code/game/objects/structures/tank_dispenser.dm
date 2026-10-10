@@ -1,7 +1,6 @@
 #define TANK_DISPENSER_CAPACITY 10
 
 /obj/structure/dispenser
-	silicon_use = ROBOT_USE_HAND_ADJACENT
 	name = "tank storage unit"
 	desc = "A simple yet bulky storage device for gas tanks. Has room for up to ten oxygen tanks, and ten phoron tanks."
 	icon = 'icons/obj/objects_vr.dmi'
@@ -58,6 +57,7 @@
 			look.overlay("phoron-5")
 
 CAPABILITIES(/obj/structure/dispenser)
+	silicon_hand(adjacent = TRUE)
 	interface("TankDispenser", state = nameof(GLOB.tgui_physical_state))
 	op("phoron", ui_act("phoron"), then(PROC_REF(ui_act_phoron)))
 	op("oxygen", ui_act("oxygen"), then(PROC_REF(ui_act_oxygen)))

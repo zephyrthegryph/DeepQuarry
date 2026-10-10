@@ -4,7 +4,9 @@
 //! only way content reads a system's private state. This emits the accessor proc:
 //! `name()` returns `var` of the system's singleton, so a call is a plain typed read, and the
 //! reads engine follows a call of it to that var (`ReadKind::System`), which is how a stat that
-//! calls `night_shift_active()` is marked when `night` changes.
+//! calls `night_shift_active()` is marked when `night` changes. A fourth argument, a type path, makes the accessor typed:
+//! `SYSTEM_ACCESSOR(ticker, ticker_mode, nameof(mode), /datum/game_mode)` emits `/proc/ticker_mode() as /datum/game_mode`, so a
+//! caller reads a field through it (`ticker_mode().name`) where the system's var held an object.
 
 use std::collections::HashSet;
 
@@ -40,7 +42,7 @@ impl Generator for SystemAccessors {
                 SYSTEM_INSTANCE.replace("{system}", system)
             }
         };
-        let mut rows: Vec<(String, String, String, String, u32)> = Vec::new();
+        let mut rows: Vec<(String, String, String, String, u32, Option<String>)> = Vec::new();
         for m in cx.markers("SYSTEM_ACCESSOR") {
             let (Some(system), Some(name), Some(key)) = (m.args.first(), m.args.get(1), m.args.get(2)) else {
                 out.diag(&m.rel, m.line, "SYSTEM_ACCESSOR(system, name, nameof(var)) needs three arguments");
@@ -55,7 +57,15 @@ impl Generator for SystemAccessors {
                 out.diag(&m.rel, m.line, format!("accessor `{}`: system `{}` has no var `{}` (looked at {})", name, system, var, system_types(system).join(", ")));
                 continue;
             }
-            rows.push((name.clone(), system.clone(), var, m.rel.clone(), m.line));
+            let typed = match m.args.get(3).map(|t| t.trim().to_string()) {
+                None => None,
+                Some(t) if t.starts_with('/') && t[1..].chars().all(|c| c.is_alphanumeric() || c == '_' || c == '/') => Some(t),
+                Some(t) => {
+                    out.diag(&m.rel, m.line, format!("accessor `{}`: the fourth argument is the var's type path, not `{}`", name, t));
+                    continue;
+                }
+            };
+            rows.push((name.clone(), system.clone(), var, m.rel.clone(), m.line, typed));
         }
         rows.sort();
         for w in rows.windows(2) {
@@ -66,11 +76,20 @@ impl Generator for SystemAccessors {
         rows.dedup_by(|a, b| a.0 == b.0);
         // An accessor declared in a test-only file (`test_only`) exists only in a test build.
         let (tests, content): (Vec<_>, Vec<_>) = rows.into_iter().partition(|r| crate::sem::gen::test_only(&r.3));
-        let emit = |out: &mut GenOut, rows: Vec<(String, String, String, String, u32)>| {
-            for (name, system, var, rel, line) in rows {
-                out.doc(format!("SYSTEM_ACCESSOR({}, {}, nameof({})) at {}:{}: the {} system's `{}`, read as a plain var.", system, name, var, rel, line, system, var));
-                out.line(format!("/proc/{}()", name));
-                out.line(format!("\treturn {}.{}", instance(&system), var));
+        let emit = |out: &mut GenOut, rows: Vec<(String, String, String, String, u32, Option<String>)>| {
+            for (name, system, var, rel, line, typed) in rows {
+                match &typed {
+                    Some(t) => {
+                        out.doc(format!("SYSTEM_ACCESSOR({}, {}, nameof({}), {}) at {}:{}: the {} system's `{}`, read as a typed var.", system, name, var, t, rel, line, system, var));
+                        out.line(format!("/proc/{}() as {}", name, t));
+                        out.line(format!("	RETURN_TYPE({})", t));
+                    }
+                    None => {
+                        out.doc(format!("SYSTEM_ACCESSOR({}, {}, nameof({})) at {}:{}: the {} system's `{}`, read as a plain var.", system, name, var, rel, line, system, var));
+                        out.line(format!("/proc/{}()", name));
+                    }
+                }
+                out.line(format!("	return {}?.{}", instance(&system), var));
                 out.blank();
             }
         };

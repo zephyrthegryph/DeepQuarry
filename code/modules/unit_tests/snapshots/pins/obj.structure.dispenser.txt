@@ -1,6 +1,7 @@
 human|none menu: Ui open
 human|none click: Click: Ui open
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
 ai|none click: Click: Ui open
@@ -68,5 +69,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, melee_hit, oxygen, phoron, store, store_harm, ui_open, use_wrench
+keys: drag_buckle, melee_hit, oxygen, phoron, silicon_hand, store, store_harm, ui_open, use_wrench
 

@@ -11,8 +11,10 @@ robot|none menu: Help
 robot|none menu: Punch
 robot|none menu: Shove
 robot|none menu: Take hold
-robot|none click: Click: Help
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Disarm
 ghost|none menu: Grab
 ghost|none click: nothing
@@ -130,5 +132,5 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use on
 human|/obj/item/card/emag click: Click: Use
-keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, bot_item, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, eject_pai, eject_pai_blocked, emag.subvert, emag.use, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, hold, injection, lend_prey_control, melee_swing, polymorph, revert_beast_form, shred_limb, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, work, yank_out, zmove
+keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, bot_item, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, eject_pai, eject_pai_blocked, emag.subvert, emag.use, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, hold, injection, lend_prey_control, melee_swing, polymorph, revert_beast_form, shred_limb, silicon_hand, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, work, yank_out, zmove
 

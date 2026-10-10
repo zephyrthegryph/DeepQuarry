@@ -61,3 +61,38 @@
 
 /mob/living/silicon/ai/reach_view_sees(atom/target)
 	return has_camera_sight(target)
+
+// ---- a silicon's plain click on a type: the forms of the old `silicon_use` var ----
+//
+//   CAPABILITIES(/obj/structure/morgue)
+//       silicon_hand(robots = TRUE, adjacent = TRUE)   // the old ROBOT_USE_HAND_ADJACENT: a cyborg next to it uses it as a hand would
+//
+//   CAPABILITIES(/obj/machinery/navbeacon)
+//       silicon_ui()                                   // the old SILICON_USE_UI: a silicon's click opens the window
+//
+// Each is one remote() op one tier below the type's own ops, so a type's own remote controls still answer first.
+
+/// silicon_hand(robots =, adjacent =): a silicon's click is the hand's Use (attack_hand) over its link. `robots` keeps it to cyborgs (the old
+/// ROBOT_USE_HAND), `adjacent` to a cyborg next to it (ROBOT_USE_HAND_ADJACENT); with neither it is every silicon's (SILICON_USE_HAND).
+/proc/silicon_hand(robots = FALSE, adjacent = FALSE)
+	var/list/parts = list(remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"))
+	if(robots || adjacent)
+		parts += when(req_actor_kind(/mob/living/silicon/robot))
+	if(adjacent)
+		parts += needs(req_adjacent())
+	parts += then(GLOBAL_PROC_REF(silicon_hand_used))
+	return op("silicon_hand", parts)
+
+/// silicon_ui(): a silicon's click opens the type's window (the old SILICON_USE_UI).
+/proc/silicon_ui()
+	return op("silicon_ui", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(GLOBAL_PROC_REF(silicon_ui_used)))
+
+/// silicon_hand()'s effect: the hand's Use, as the old silicon fallback called it.
+/proc/silicon_hand_used(datum/act/op/A)
+	var/atom/holder = A.holder
+	holder.attack_hand(A.actor)
+
+/// silicon_ui()'s effect: the type's window.
+/proc/silicon_ui_used(datum/act/op/A)
+	var/atom/holder = A.holder
+	holder.tgui_interact(A.actor)

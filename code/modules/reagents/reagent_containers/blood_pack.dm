@@ -32,8 +32,14 @@
 	if(blood_type != null)
 		label_text = "[blood_type]"
 		update_iv_label()
-		// B17: stock packs are human blood; without "species" they matched every species.
-		reagents.add_reagent(reag_id, 200, list("donor"=null,"viruses"=null,"species"=blood_species,"blood_colour"=blood_colour,"blood_DNA"=null,"blood_type"=blood_type,"resistances"=null,"trace_chem"=null,"changeling"=FALSE))
+
+/// A typed pack starts full of its stock blood; an untyped one starts empty.
+/obj/item/reagent_containers/blood/proc/stock_blood_units()
+	return blood_type != null ? 200 : 0
+
+/// Stock blood's data. B17: stock packs are human blood; without "species" they matched every species.
+/obj/item/reagent_containers/blood/proc/stock_blood_data()
+	return list("donor"=null,"viruses"=null,"species"=blood_species,"blood_colour"=blood_colour,"blood_DNA"=null,"blood_type"=blood_type,"resistances"=null,"trace_chem"=null,"changeling"=FALSE)
 
 /// A pack shows how full it is: it follows the level its holder tracks.
 /obj/item/reagent_containers/blood/draw(datum/look/look)
@@ -53,6 +59,7 @@
 // A blood pack is a sealed holder of its volume (a syringe draws from it; an IV drip and a stand have their own ways in). A pen labels it (up to fifty
 // characters; the name shows ten); in a hostile stance, using it in hand drinks a tenth of it, a feeding for the one who lives on blood.
 CAPABILITIES(/obj/item/reagent_containers/blood)
+	configure(reagents(starts_from = list(nameof(reag_id) = PROC_REF(stock_blood_units)), data = list(nameof(reag_id) = PROC_REF(stock_blood_data))))
 	reagent_container(
 		volume = nameof(volume),
 		needle = TRUE,

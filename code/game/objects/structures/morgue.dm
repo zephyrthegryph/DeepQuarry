@@ -23,6 +23,7 @@
 	unacidable = TRUE
 
 CAPABILITIES(/obj/structure/morgue)
+	silicon_hand(adjacent = TRUE)
 	blast_contents()
 	owns_one(nameof(connected), /obj/structure/m_tray)
 	op("use", hand(), label("Use"), then(PROC_REF(interaction_hand)))
@@ -61,9 +62,6 @@ CAPABILITIES(/obj/structure/morgue)
 	for(var/atom/movable/A as anything in contents)
 		A.forceMove(loc)
 	return ..()
-
-/obj/structure/morgue
-	silicon_use = ROBOT_USE_HAND_ADJACENT
 
 /// Old attack_hand: pull the tray out, or push it back in.
 /obj/structure/morgue/proc/interaction_hand(datum/act/op/A)
@@ -144,10 +142,8 @@ CAPABILITIES(/obj/structure/morgue)
 
 // The morgue owns its tray (implicit OWN, deleted with it); the tray names its morgue (one-sided REL).
 
-/obj/structure/m_tray
-	silicon_use = ROBOT_USE_HAND_ADJACENT
-
 CAPABILITIES(/obj/structure/m_tray)
+	silicon_hand(adjacent = TRUE)
 	op("push_in", hand(), label("Push in"), then(PROC_REF(interaction_hand)))
 	op("place", item(/atom/movable), gesture(GESTURE_DRAG), label("Place on tray"), then(PROC_REF(interaction_drag)))
 

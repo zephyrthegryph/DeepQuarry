@@ -15,8 +15,10 @@ robot|none menu: Punch
 robot|none menu: Shove
 robot|none menu: Take hold
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Open controls
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none menu: Disarm
 ghost|none menu: Grab
@@ -169,5 +171,5 @@ human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use on
 human|/obj/item/card/emag click: Click: Use
-keys: absorb_devour, attack_variants.disarm, attack_variants.grab, autoret, beacon_insert, body_writing, butcher, cargotypes, climb_down, climb_wall, destination, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, eject_pai, eject_pai_blocked, emag.subvert, emag.use, go, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, hold, home, injection, lend_prey_control, melee_swing, mulebot_drag, mulebot_item, open_ui, polymorph, power, revert_beast_form, safety, sethome, shred_limb, spin, stop, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, ui_open, unload, ventcrawl_in, vertical_nom, work, yank_out, zmove
+keys: absorb_devour, attack_variants.disarm, attack_variants.grab, autoret, beacon_insert, body_writing, butcher, cargotypes, climb_down, climb_wall, destination, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, eject_pai, eject_pai_blocked, emag.subvert, emag.use, go, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, hold, home, injection, lend_prey_control, melee_swing, mulebot_drag, mulebot_item, open_ui, polymorph, power, revert_beast_form, safety, sethome, shred_limb, silicon_hand, spin, stop, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, ui_open, unload, ventcrawl_in, vertical_nom, work, yank_out, zmove
 

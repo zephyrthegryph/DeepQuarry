@@ -40,6 +40,7 @@
 	flags = REMOTEVIEW_ON_ENTER
 
 CAPABILITIES(/obj/machinery/disposal)
+	silicon_ui()
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(air_contents), /datum/gas_mixture)
 	owns_many(nameof(intake_watches), /datum/native_watch/gas)
@@ -457,7 +458,6 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	sync_occupied()
 
 /obj/machinery/disposal
-	silicon_use = SILICON_USE_UI
 /*
 /obj/machinery/disposal/attack_paw()
 	if(broken_now())

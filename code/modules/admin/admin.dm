@@ -577,8 +577,8 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 		M = character
 
 	if(M)
-		if(SSticker.mode.antag_templates && SSticker.mode.antag_templates.len)
-			for(var/datum/antagonist/antag in SSticker.mode.antag_templates)
+		if(ticker_mode().antag_templates && ticker_mode().antag_templates.len)
+			for(var/datum/antagonist/antag in ticker_mode().antag_templates)
 				if(antag.is_antagonist(M))
 					return 2
 		if(M.special_role)
@@ -909,7 +909,7 @@ ADMIN_VERB(force_mode_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Mode Spawn", "For
 		return
 
 	log_and_message_admins("attempting to force mode autospawn.", user.mob)
-	SSticker.mode.try_latespawn()
+	ticker_mode().try_latespawn()
 
 ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyze", "Paralyzes a player. Or unparalyses them.", ADMIN_CATEGORY_EVENTS, mob/living/living_target in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	return toggle_paralyze(user, living_target)

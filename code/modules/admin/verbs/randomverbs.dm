@@ -1083,7 +1083,7 @@ ADMIN_VERB(admin_call_shuttle, R_ADMIN|R_SERVER, "Call Shuttle", "Calls the emer
 	var/datum/prompt/choice/admin_call_shuttle/ask = A.answer
 	if(ask.value != "Yes")
 		return
-	if(SSticker.mode.auto_recall_shuttle)
+	if(ticker_mode().auto_recall_shuttle)
 		open_request(src, /datum/prompt/choice/admin_call_shuttle, PROC_REF(admin_shuttle_recall_confirmed), answerer = src, rights = ask.rights, buttons = TRUE, choices = list("Confirm", "Cancel"), title = "Shuttle Call", question = "The shuttle will just return if you call it. Call anyway?")
 		return
 	ask_admin_shuttle_kind(ask.rights, FALSE)
@@ -1144,7 +1144,7 @@ ADMIN_VERB(admin_deny_shuttle, R_ADMIN, "Toggle Deny Shuttle", "Prevents the shu
 	message_admins("[key_name_admin(user)] has [emergency_shuttle_deny_shuttle() ? "denied" : "allowed"] the shuttle to be called.")
 
 ADMIN_VERB(everyone_random, R_FUN, "Make Everyone Random", "Make everyone have a random appearance. You can only use this before rounds!", ADMIN_CATEGORY_FUN_DO_NOT)
-	if (SSticker && SSticker.mode)
+	if (SSticker && ticker_mode())
 		to_chat(user, "Nope you can't do this, the game's already started. This only works before rounds!")
 		return
 
@@ -1164,7 +1164,7 @@ ADMIN_VERB(everyone_random, R_FUN, "Make Everyone Random", "Make everyone have a
 		return
 	var/client/user = A.request.answerer.client
 	var/notifyplayers = A.answer.value
-	if(notifyplayers == "Cancel" || (SSticker && SSticker.mode))
+	if(notifyplayers == "Cancel" || (SSticker && ticker_mode()))
 		return
 
 	log_admin("Admin [key_name(user)] has forced the players to have random appearances.")

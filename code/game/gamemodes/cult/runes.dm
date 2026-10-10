@@ -739,7 +739,7 @@ TRACKED(/obj/effect/rune, manifesting)
 			if(lamb.species.rarity_value > 3)
 				worth = 1
 
-		if (SSticker.mode.name == "cult")
+		if (ticker_mode().name == "cult")
 			if(H.mind == GLOB.cult.sacrifice_target())
 				if(cultsinrange.len >= 3)
 					registry_join(REGISTRY_SACRIFICED, H.mind)

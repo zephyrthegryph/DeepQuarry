@@ -19,6 +19,7 @@
 	active_power_usage = 120 // No idea what the realistic amount would be.
 
 CAPABILITIES(/obj/machinery/oxygen_pump)
+	silicon_ui()
 	ref_one(nameof(breather), /mob/living/carbon)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(breather), wakes_on = list(nameof(breather)))
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
@@ -111,9 +112,6 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 		rel_clear(src, nameof(breather))
 		set_use_power(USE_POWER_IDLE)
 	return TRUE
-
-/obj/machinery/oxygen_pump
-	silicon_use = SILICON_USE_UI
 
 /obj/machinery/oxygen_pump/proc/attach_mask(mob/living/carbon/C)
 	if(C && istype(C))

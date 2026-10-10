@@ -43,6 +43,7 @@ TRACKED(/obj/machinery/dnaforensics, scanning)
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/dnaforensics)
+	silicon_ui()
 	ref_one(nameof(bloodsamp), /obj/item/forensics/swab)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(scanning), wakes_on = list(nameof(scanning)))
 	interface("DNAForensics", title = "QuikScan DNA Analyzer")
@@ -140,9 +141,6 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 		P.forceMove(loc)
 		set_scanning(FALSE)
 	return
-
-/obj/machinery/dnaforensics
-	silicon_use = SILICON_USE_UI
 
 MSG_DEF_SELF(dnaforensics/sample_loaded, "there is a sample in the machine")
 MSG_DEF_SELF(dnaforensics/scanning, "it is busy scanning right now")

@@ -1,6 +1,7 @@
 human|none menu: Open
 human|none click: Click: Open
 robot|none menu: Open
+robot|none menu: Use
 robot|none click: Click: Open
 ai|none click: nothing
 ghost|none menu: Inhabit (refused: It is not open to spirits right now.)
@@ -57,5 +58,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Open
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Open
-keys: drag_buckle, inhabit, melee_hit, open
+keys: drag_buckle, inhabit, melee_hit, open, silicon_hand
 

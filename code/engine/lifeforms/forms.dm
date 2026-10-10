@@ -15,6 +15,7 @@
 //	starts_as(STATE) · derives(target, PROC_REF, from =) an op's effects at creation; a tracked computed value           derives.dm
 //	lives_while(scope, watches =) · on_ending(PROC_REF)  a scoped lifetime; spent()/consumed()/destroyed()/dissolved()  lifetimes.dm
 //	click_on/drag_onto/hover(op) · tooltip(PROC_REF)     input with an actor bound to ops; with_actor(actor, CALLBACK)   input.dm
+//	keeps_if(PROC_REF(cond), warn =)                      an atom discarded at init (INITIALIZE_HINT_QDEL) unless cond holds keeps_if.dm
 //
 // This file is the shared part: the per-type plan (which forms a type declares, in order, resolved once), the lifecycle dispatch the declaration
 // engine calls (preinit, init, destroy), and the change watch the forms that follow a var use (registry keys, radio frequencies, derives inputs,
@@ -46,6 +47,7 @@
 	var/list/lives_while
 	var/list/on_ending
 	var/list/inputs
+	var/list/keeps_if
 	var/datum/centry/tooltip
 	/// var name -> list of /datum/centry of the forms that follow that var (registry keys, radio frequencies, derives inputs, lives_while).
 	var/list/watch
@@ -78,7 +80,7 @@
 		ENTRY_ROLLS = "rolls", ENTRY_PARAM = "params", ENTRY_BUILT_FROM = "built_from", ENTRY_REGISTRY = "registries",
 		ENTRY_RADIO_LISTEN = "radios", ENTRY_ADJACENCY = "adjacencies", ENTRY_PER_TYPE = "per_types", ENTRY_VARIANTS = "variants", ENTRY_CONTAINS = "contains",
 		ENTRY_KNOWS = "knows", ENTRY_STARTS_AS = "starts_as", ENTRY_DERIVES = "derives", ENTRY_LIVES_WHILE = "lives_while",
-		ENTRY_ON_ENDING = "on_ending", ENTRY_INPUT = "inputs")
+		ENTRY_ON_ENDING = "on_ending", ENTRY_INPUT = "inputs", ENTRY_KEEPS_IF = "keeps_if")
 	return kinds
 
 /proc/lifeform_plan_build(datum/type_table/T, datum/D)
@@ -127,7 +129,7 @@
 				LAZYADD(P.param_applies, C) // ALLOW(ownership): a per-type plan indexes compiled entries of its own table, never freed
 		if(E.args["keep"] == FALSE)
 			LAZYADD(P.param_drops, C) // ALLOW(ownership): a per-type plan indexes compiled entries of its own table, never freed
-	P.init = !!(P.contains || P.knows || P.param_applies || P.param_drops || P.starts_as || P.derives || P.registries || P.radios || P.adjacencies || P.lives_while)
+	P.init = !!(P.keeps_if || P.contains || P.knows || P.param_applies || P.param_drops || P.starts_as || P.derives || P.registries || P.radios || P.adjacencies || P.lives_while)
 	for(var/kind_list in list(P.registries, P.radios, P.derives, P.lives_while, P.adjacencies))
 		for(var/datum/centry/C as anything in kind_list)
 			var/datum/entry/E = C.item
@@ -190,6 +192,8 @@
 	var/datum/lifeform_plan/P = lifeform_plan_of(holder)
 	if(!P.init)
 		return
+	if(P.keeps_if)
+		keeps_if_init(holder, P)
 	if(P.contains)
 		roll_creator_push(holder) // what it creates rolls from its stream
 		contains_init(holder, P)

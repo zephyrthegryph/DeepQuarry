@@ -1,6 +1,7 @@
 human|none menu: Search
 human|none click: Click: Search
 robot|none menu: Search
+robot|none menu: Use
 robot|none click: Click: Search
 ai|none click: nothing
 ghost|none click: nothing
@@ -56,5 +57,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Search
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Search
-keys: drag_buckle, melee_hit, search
+keys: drag_buckle, melee_hit, search, silicon_hand
 

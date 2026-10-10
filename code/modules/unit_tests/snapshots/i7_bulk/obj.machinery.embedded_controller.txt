@@ -4,8 +4,10 @@ human|none click: Click: Embedded controller open ui
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Embedded controller open ui
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Embedded controller open ui
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Embedded controller open ui
@@ -60,5 +62,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Ui open
 human|/obj/item click: Click: Embedded controller open ui
-keys: drag_buckle, embedded_controller_open_ui, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, program_command, robot_remote_blocked, ui_open
+keys: drag_buckle, embedded_controller_open_ui, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, program_command, robot_remote_blocked, silicon_ui, ui_open
 

@@ -9,6 +9,7 @@
 	on = 1
 
 CAPABILITIES(/obj/machinery/embedded_controller)
+	silicon_ui()
 	started_work(step = PROC_REF(work_step))
 	owns_one(nameof(program), /datum/embedded_program)
 	interface("EmbeddedController")
@@ -61,9 +62,6 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 /obj/machinery/embedded_controller/power_change()
 	. = ..()
 	work_start(src)
-
-/obj/machinery/embedded_controller
-	silicon_use = SILICON_USE_UI
 
 /// Old attack_hand: a tool user opens the window.
 /obj/machinery/embedded_controller/proc/interaction_open_ui_impl(datum/act/op/A)

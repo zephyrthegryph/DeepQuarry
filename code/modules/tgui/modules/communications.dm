@@ -502,7 +502,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 		to_chat(user, "The emergency shuttle is already on its way.")
 		return
 
-	if(SSticker.mode.name == "blob")
+	if(ticker_mode().name == "blob")
 		to_chat(user, "Under directive 7-10, [station_name()] is quarantined until further notice.")
 		return
 
@@ -540,11 +540,11 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 			to_chat(user, "The shuttle is refueling. Please wait another [round((SHIFT_CHANGE_GRACE - into_round) / (1 MINUTE))] minutes before trying again.")
 			return
 
-		if(SSticker.mode.auto_recall_shuttle)
+		if(ticker_mode().auto_recall_shuttle)
 			//New version pretends to call the shuttle but cause the shuttle to return after a random duration.
 			SSemergency_shuttle.auto_recall = TRUE
 
-		if(SSticker.mode.name == "blob" || SSticker.mode.name == "epidemic")
+		if(ticker_mode().name == "blob" || ticker_mode().name == "epidemic")
 			to_chat(user, "Under directive 7-10, [station_name()] is quarantined until further notice.")
 			return
 
@@ -564,7 +564,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 /proc/cancel_call_proc(mob/user)
 	if (!( SSticker ) || !SSemergency_shuttle.can_recall())
 		return
-	if((SSticker.mode.name == "blob")||(SSticker.mode.name == "Meteor"))
+	if((ticker_mode().name == "blob")||(ticker_mode().name == "Meteor"))
 		return
 
 	if(!SSemergency_shuttle.going_to_centcom()) //check that shuttle isn't already heading to CentCom

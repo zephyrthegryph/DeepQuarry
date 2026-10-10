@@ -30,10 +30,8 @@
 		else
 			act_message(user, null, others = span_infoplain(span_bold("%U%") + " presses the lift button."))
 
-/obj/structure/lift
-	silicon_use = SILICON_USE_HAND
-
 CAPABILITIES(/obj/structure/lift)
+	silicon_hand()
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	param(nameof(lift), pos = 1)
 	op("hammer", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Hammer on it"), then(PROC_REF(interaction_hammer)))

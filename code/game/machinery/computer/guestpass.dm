@@ -81,9 +81,6 @@ CAPABILITIES(/obj/item/card/id/guest)
 		EXPIRY_STAMP(src, expiration_time, CLOCK_WORLD)
 		set_expired(TRUE)
 
-/obj/item/card/id/guest/Initialize(mapload)
-	. = ..()
-
 /// The pass turns red when its expiry lapses, however it was made (terminal, admin spawn, map).
 EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(pass_lapsed))
 
