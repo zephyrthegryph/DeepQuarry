@@ -1,3 +1,4 @@
+import { bindCompilerInvocation, type CompilerInvocation } from './compiler_invocation';
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -207,17 +208,18 @@ async function testDmVersion(dmPath: string) {
 }
 
 export type ByondCompilationResult = {
-  readonly invocation: { readonly command: readonly string[]; readonly version: number; readonly build: number; readonly compilerIdentity?: DreamMakerIdentity; readonly orderedDefines?: readonly string[] };
+  readonly invocation: { readonly command: readonly string[]; readonly version: number; readonly build: number; readonly compilerIdentity?: DreamMakerIdentity; readonly orderedDefines?: readonly string[]; readonly workingDirectory?: string };
   readonly snapshot?: AuthenticatedByondSnapshot;
 };
 
 export async function DreamMaker(
   dmeFile: string,
   options: DreamMakerOptions = {},
+  invocation?: CompilerInvocation,
 ): Promise<CompiledOutput> {
   // A future core-issued closed snapshot can route both backends through the
   // same owned project. Until that issuer exists, selection passes no override.
-  const output = await selectedCompiler(dmeFile, options, (capturedProject, prepared) => compileByond(capturedProject ?? dmeFile, options, prepared), Juke.exec, () => prepareDreamMaker(options));
+  const output = await selectedCompiler(dmeFile, options, (capturedProject, prepared, bound) => compileByond(capturedProject ?? dmeFile, options, prepared, bound), Juke.exec, () => prepareDreamMaker(options), invocation);
   rememberCompiledOutput(dmeFile, output);
   return output;
 }
@@ -226,6 +228,7 @@ async function compileByond(
   dmeFile: string,
   options: DreamMakerOptions,
   prepared?: PreparedDreamMaker,
+  invocation?: CompilerInvocation,
 ): Promise<ByondCompilationResult> {
   if (options.namedDmVersion !== null) {
     Juke.logger.info('Using named byond version:', options.namedDmVersion);
@@ -237,7 +240,9 @@ async function compileByond(
   checkDreamMakerIdentity(compiler);
   const dmPath = compiler.executable;
   // Get project basename
-  const dmeBaseName = dmeFile.replace(/\.dme$/, '');
+  const bound = bindCompilerInvocation(invocation, options.defines ?? []);
+  const outputProject = bound ? path.join(bound.root, bound.relativeManifest) : dmeFile;
+  const dmeBaseName = outputProject.replace(/\.dme$/, '');
   // Make sure output files are writable
   const testOutputFile = (name: string) => {
     try {
@@ -264,7 +269,7 @@ async function compileByond(
   testOutputFile(`${dmeBaseName}.rsc`);
 
   const runWithWarningChecks = async (dmPath: string, args: string[]) => {
-    const execReturn = await Juke.exec(dmPath, args);
+    const execReturn = await Juke.exec(dmPath, args, bound ? { cwd: bound.root } : undefined);
     if (options.warningsAsErrors) {
       const ignoredWarningCodes = options.ignoreWarningCodes ?? [];
       if (ignoredWarningCodes.length > 0) {
@@ -300,7 +305,7 @@ async function compileByond(
   ]);
   checkDreamMakerIdentity(compiler);
   return { invocation: { command: [dmPath, ...defines.map(def => `-D${def}`), dmeFile], version: compiler.version, build: compiler.build,
-    compilerIdentity: compiler.identity, orderedDefines: compiler.defines } };
+    compilerIdentity: compiler.identity, orderedDefines: compiler.defines, ...(bound ? { workingDirectory: bound.root } : {}) } };
 }
 
 type DDOptions = {

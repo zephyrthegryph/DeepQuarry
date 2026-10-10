@@ -8,6 +8,8 @@ import { captureShadowOutputPair } from './shadow_output';
 import type { ByondCompilationResult, DreamMakerOptions, PreparedDreamMaker } from './byond';
 import { conventionalOutput, createNativeRequestDirectory, parseCompileResult, readNativeResult, withCompiledOutput, type CompiledOutput, type NativePairOutput } from './native_pair';
 
+import { bindCompilerInvocation, type CompilerInvocation } from './compiler_invocation';
+
 type CompilerMode = 'byond' | 'native' | 'shadow';
 const structuralCategories = ['type_set', 'type_headers', 'variable_defaults', 'procedure_table', 'procedure_flags', 'globals', 'strings_by_use', 'bytecode', 'other'];
 export type ShadowAdmission = { status: 'parity' | 'invalid_report' | 'incomplete' | 'differences'; reason: string };
@@ -48,7 +50,7 @@ export function classifyShadowReport(value: unknown, snapshot: string): ShadowAd
   if (total !== 0 || value.unexplained_discrepancies !== 0) return { status: 'differences', reason: `${total} structural discrepancies (${value.unexplained_discrepancies} unexplained)` };
   return { status: 'parity', reason: 'complete named structural comparison with zero discrepancies' };
 }
-export type CompilerExecutor = (executable: string, args: string[], options?: { throw?: boolean }) => Promise<{ code: number | null; combined: string }>;
+export type CompilerExecutor = (executable: string, args: string[], options?: { throw?: boolean; cwd?: string }) => Promise<{ code: number | null; combined: string }>;
 export function compilerMode(): CompilerMode {
   const mode = process.env.DQ_COMPILER ?? 'byond';
   if (mode !== 'byond' && mode !== 'native' && mode !== 'shadow') {
@@ -74,7 +76,7 @@ export function compilerCacheIdentity(): string {
   hash.update(process.env.DQ_NATIVE_WORKERS ?? '8');
   return hash.digest('hex');
 }
-function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: string): [string, string[]] {
+function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: string, invocation?: CompilerInvocation): [string, string[]] {
   // The native CLI currently has no equivalent version selector or warning
   // policy. Never turn a successful native process into silent policy loss.
   const unsupported = [
@@ -94,22 +96,22 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
   if (!/^[1-9][0-9]*$/.test(workers) || !Number.isSafeInteger(Number(workers))) {
     throw new Error('DQ_NATIVE_WORKERS must be a positive integer.');
   }
-  const args = ['compile', path.resolve(dme), '--engine-template', path.resolve(template), '--bootstrap-catalog', '--workers', workers];
+  const args = ['compile', invocation?.relativeManifest ?? path.resolve(dme), '--engine-template', path.resolve(template), '--bootstrap-catalog', '--workers', workers];
   for (const define of options.defines ?? []) args.push(`-D${define}`);
   if (artifacts) args.push('--artifact-directory', artifacts, '--output-store', path.join(artifacts, 'store'), '--exact-inputs', '--no-cache');
   return [executable, args];
 }
 class NativeResultError extends Error {}
-async function nativeCompile(dme: string, options: DreamMakerOptions, execute: CompilerExecutor, artifacts?: string): Promise<{ code: number | null; combined: string; output?: NativePairOutput }> {
-  const [executable, args] = nativeCommand(dme, options, artifacts);
+async function nativeCompile(dme: string, options: DreamMakerOptions, execute: CompilerExecutor, artifacts?: string, invocation?: CompilerInvocation): Promise<{ code: number | null; combined: string; output?: NativePairOutput }> {
+  const [executable, args] = nativeCommand(dme, options, artifacts, invocation);
   const owned = createNativeRequestDirectory('compile-result');
   const receipt = path.join(owned, 'result.json');
   args.push('--compile-result-file', receipt);
   if (!artifacts && process.env.DQ_NATIVE_OUTPUT_STORE) args.push('--output-store', path.resolve(process.env.DQ_NATIVE_OUTPUT_STORE));
   try {
-    const result = await execute(executable, args, { throw: false });
+    const result = await execute(executable, args, { throw: false, ...(invocation ? { cwd: invocation.root } : {}) });
     if (result.code !== 0) return result;
-    const outputProject = artifacts ? path.join(artifacts, path.basename(dme)) : dme;
+    const outputProject = artifacts ? path.join(artifacts, path.basename(dme)) : invocation ? path.join(invocation.root, invocation.relativeManifest) : dme;
     try { return { ...result, output: parseCompileResult(readNativeResult(receipt), executable, outputProject) }; }
     catch (error) { throw new NativeResultError(`Native compile succeeded without an authenticated pair result: ${error}`); }
   } finally {
@@ -121,19 +123,22 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
     } catch (error) { Juke.logger.warn(`Native result cleanup preserved ${owned}: ${error}`); }
   }
 }
-export async function selectedCompiler(dme: string, options: DreamMakerOptions, byond: (capturedProject?: string, prepared?: PreparedDreamMaker) => Promise<ByondCompilationResult | void>, execute: CompilerExecutor = Juke.exec, prepareByond?: () => Promise<PreparedDreamMaker>): Promise<CompiledOutput> {
+export async function selectedCompiler(dme: string, options: DreamMakerOptions, byond: (capturedProject?: string, prepared?: PreparedDreamMaker, invocation?: CompilerInvocation) => Promise<ByondCompilationResult | void>, execute: CompilerExecutor = Juke.exec, prepareByond?: () => Promise<PreparedDreamMaker>, capturedInvocation?: CompilerInvocation): Promise<CompiledOutput> {
   const mode = compilerMode();
-  if (mode === 'byond') { await byond(); return conventionalOutput(dme); }
+  const invocation = bindCompilerInvocation(capturedInvocation, options.defines ?? []);
+  if (invocation && mode === 'shadow') throw new Error('Captured shadow invocation requires independent output namespace authority; not yet supported.');
+  const outputProject = invocation ? path.join(invocation.root, invocation.relativeManifest) : dme;
+  if (mode === 'byond') { await byond(invocation?.relativeManifest, undefined, invocation); return conventionalOutput(outputProject); }
   if (mode === 'native') {
-    const result = await nativeCompile(dme, options, execute);
+    const result = await nativeCompile(dme, options, execute, undefined, invocation);
     if (result.code === 0) return result.output!;
     // Only the typed compiler internal failure status admits fallback.
     // Setup, transport, source, cancellation and infrastructure failures retain
     // their original error/status and never invoke another compiler.
     if (result.code !== 70) throw new Juke.ExitCode(result.code ?? 1);
     Juke.logger.warn('Native fallback to DreamMaker: native compiler exited 70; diagnostics are above.');
-    await byond();
-    return conventionalOutput(dme);
+    await byond(invocation?.relativeManifest, undefined, invocation);
+    return conventionalOutput(outputProject);
   }
   // Validate native option admission before any BYOND version/preparation child.
   nativeCommand(dme, options);
