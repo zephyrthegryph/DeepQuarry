@@ -59,6 +59,9 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
 	echo "dq_merge_gates: REFUSED: uncommitted changes to tracked files; commit the merge first (the stamp names an exact HEAD)" >&2
 	exit 1
 fi
+# look_keys.txt must match the merged tree before the HEAD is stamped: regenerate it and commit it as part of the merge.
+tools/build/build.sh gen || { echo "dq_merge_gates: gen failed" >&2; exit 1; }
+bash tools/ci/check_look_keys_format.sh --commit || { echo "dq_merge_gates: look_keys regeneration failed" >&2; exit 1; }
 sha="$(git rev-parse HEAD)"
 short="${sha:0:12}"
 mkdir -p data/merge-gates

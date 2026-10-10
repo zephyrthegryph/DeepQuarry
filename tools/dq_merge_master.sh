@@ -19,6 +19,7 @@ cd "$(git rev-parse --show-toplevel)"
 GEN_RE='^(code/engine/_generated/|code/_generated/reads\.dm$|tgui/packages/tgui/interfaces/generated/)'
 GEN_PATHS=(code/engine/_generated code/_generated/reads.dm tgui/packages/tgui/interfaces/generated)
 
+LOOK_KEYS=code/modules/unit_tests/snapshots/look_keys.txt
 ref="${1:-}"
 if [ -z "$ref" ]; then
 	git fetch -q origin || { echo "dq_merge_master: git fetch failed" >&2; exit 1; }
@@ -33,6 +34,13 @@ if [ "$merge_rc" -ne 0 ]; then
 	if [ ${#conflicted[@]} -eq 0 ]; then
 		echo "dq_merge_master: git merge failed without conflicts (see above)" >&2
 		exit "$merge_rc"
+	fi
+	if printf '%s
+' "${conflicted[@]}" | grep -qxF "$LOOK_KEYS"; then
+		echo "dq_merge_master: $LOOK_KEYS conflicted; taking our side for now, regenerating it after the merge"
+		git show ":2:$LOOK_KEYS" >"$LOOK_KEYS" && git add -- "$LOOK_KEYS"
+		mapfile -t conflicted < <(printf '%s
+' "${conflicted[@]}" | grep -vxF "$LOOK_KEYS")
 	fi
 	gen=()
 	for f in "${conflicted[@]}"; do
@@ -67,4 +75,6 @@ elif [ ${#tracked[@]} -gt 0 ]; then
 fi
 
 echo "dq_merge_master: merged $ref; regenerating"
-exec tools/build/build.sh gen
+tools/build/build.sh gen || exit 1
+# look_keys.txt is a pure function of the tree: never hand-merged, always regenerated after the merge.
+bash tools/ci/check_look_keys_format.sh --commit

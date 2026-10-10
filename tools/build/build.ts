@@ -632,13 +632,30 @@ const analyzeSharedTargetDir = (): string | null => {
   if (!env || env === 'off' || env === '0') return null;
   return path.resolve(env);
 };
+const analyzeWalk = (dir: string): string[] => {
+  const out: string[] = [];
+  let entries: fs.Dirent[] = [];
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return out;
+  }
+  for (const entry of entries) {
+    const full = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) out.push(...analyzeWalk(full));
+    else out.push(full);
+  }
+  return out;
+};
 const analyzeSourceKey = (): string => {
-  const hash = createHash('sha256').update(`analyze-v1|${ANALYZE_PROFILE}|${process.platform}|${process.arch}|`);
+  const hash = createHash('sha256').update(`analyze-v2|${ANALYZE_PROFILE}|${process.platform}|${process.arch}|`);
   const files = [
     'tools/analyze/Cargo.toml',
     'tools/analyze/Cargo.lock',
     'tools/analyze/build.rs',
-    ...Juke.glob('tools/analyze/src/**/*.rs'),
+    // Every file under src/ (not only .rs) and fixtures/ (include_str! embeds them), so no source change can reuse a stale binary.
+    ...analyzeWalk('tools/analyze/src'),
+    ...analyzeWalk('tools/analyze/fixtures'),
   ]
     .map((f) => f.replace(/\\/g, '/'))
     .sort();
