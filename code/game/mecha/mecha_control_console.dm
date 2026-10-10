@@ -38,7 +38,7 @@
 CAPABILITIES(/obj/machinery/computer/mecha)
 	interface("MechaControlConsole")
 	without("ui_open")
-	op("send_message", ui_act("send_message", arg("mt", schema_ref(/obj/item/mecha_parts/mecha_tracking))), needs(req_bool(PROC_REF(beacon_named), silent = TRUE)),
+	op("send_message", ui_act("send_message", arg("mt", schema_ref(/obj/item/mecha_parts/mecha_tracking))), needs(req(PROC_REF(beacon_named), silent = TRUE)),
 		asks(/datum/prompt/text/mecha_tracker_message, step = "message"), then(PROC_REF(ui_act_send_message)))
 	op("shock", ui_act("shock", arg("mt", schema_ref(/obj/item/mecha_parts/mecha_tracking))), then(PROC_REF(ui_act_shock)))
 	op("get_log", ui_act("get_log", arg("mt", schema_ref(/obj/item/mecha_parts/mecha_tracking))), then(PROC_REF(ui_act_get_log)))
@@ -46,7 +46,7 @@ CAPABILITIES(/obj/machinery/computer/mecha)
 
 /// A beacon button names a beacon.
 /obj/machinery/computer/mecha/proc/beacon_named(datum/act/op/A)
-	return !isnull(A.args["mt"])
+	return (!isnull(A.args["mt"])) ? null : MSG(req_failed)
 
 /obj/machinery/computer/mecha/proc/ui_act_send_message(datum/act/op/A, obj/item/mecha_parts/mecha_tracking/mt)
 	if(!istype(mt))

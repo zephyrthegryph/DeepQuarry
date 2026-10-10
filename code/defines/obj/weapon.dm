@@ -210,7 +210,7 @@ MSG_DEF_SELF(camera_bug/none, "No bugged functioning cameras found.")
 
 /// Using it asks which bugged camera to watch (the old attack_self).
 CAPABILITIES(/obj/item/camera_bug)
-	op("use", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req_bool(PROC_REF(has_bugged_cameras), because = MSG(camera_bug/none))), asks(/datum/prompt/choice, fields = list("question" = "Select the camera to observe", "title" = "Select Camera", "choices" = computed(PROC_REF(camera_choices)), "timeout" = 0), step = "k232"), then(PROC_REF(interaction_self)))
+	op("use", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(has_bugged_cameras), because = MSG(camera_bug/none))), asks(/datum/prompt/choice, fields = list("question" = "Select the camera to observe", "title" = "Select Camera", "choices" = computed(PROC_REF(camera_choices)), "timeout" = 0), step = "k232"), then(PROC_REF(interaction_self)))
 
 /// The functioning bugged cameras.
 /obj/item/camera_bug/proc/bugged_cameras()
@@ -222,7 +222,7 @@ CAPABILITIES(/obj/item/camera_bug)
 
 /// Requirement: some bugged camera works.
 /obj/item/camera_bug/proc/has_bugged_cameras(datum/act/op/A)
-	return length(bugged_cameras()) > 0
+	return (length(bugged_cameras()) > 0) ? null : MSG(camera_bug/none)
 
 /// The question's choices: the c_tags of the bugged cameras.
 /obj/item/camera_bug/proc/camera_choices(datum/act/op/A)

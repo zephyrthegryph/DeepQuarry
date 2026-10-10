@@ -86,7 +86,7 @@ MSG_DEF_SELF(start/interaction/window_repair, "You begin repairing %T%...")
 
 /// Requirement for weld repair: the window is damaged.
 /obj/structure/window/proc/is_damaged(datum/act/op/A)
-	return get_integrity_damage() > 0
+	return (get_integrity_damage() > 0) ? null : MSG(window/undamaged)
 
 /obj/structure/window/proc/weld_repair(datum/act/op/A)
 	repair_damage(max_integrity)

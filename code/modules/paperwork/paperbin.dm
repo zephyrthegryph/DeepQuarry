@@ -44,7 +44,7 @@
 
 CAPABILITIES(/obj/item/paper_bin)
 	// a hand that cannot move takes nothing; with no custom paper in the bin it asks which paper
-	op("take_paper", hand(), ungated(), needs(req_bool(PROC_REF(hand_usable), because = PROC_REF(hand_unusable_reason))),
+	op("take_paper", hand(), ungated(), needs(req(PROC_REF(hand_usable))),
 		asks(/datum/prompt/choice, fields = list("question" = "Do you take regular paper, or Carbon copy paper?", "title" = "Paper type request", "choices" = list("Regular", "Carbon-Copy", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "k52", when = PROC_REF(no_custom_paper)),
 		then(PROC_REF(interaction_hand)))
 	op("put_paper", item(/obj/item/paper), then(PROC_REF(interaction_item)))
@@ -61,11 +61,10 @@ CAPABILITIES(/obj/item/paper_bin)
 	return (temp && !temp.is_usable()) ? temp : null
 
 /obj/item/paper_bin/proc/hand_usable(datum/act/op/A)
-	return isnull(unusable_hand(A.actor))
-
-/obj/item/paper_bin/proc/hand_unusable_reason(datum/act/op/A)
 	var/obj/item/organ/external/temp = unusable_hand(A.actor)
-	return "You try to move your [temp?.name], but cannot!"
+	if(isnull(temp))
+		return null
+	return "You try to move your [temp.name], but cannot!"
 
 /// The paper question is asked only when there is no custom paper on top.
 /obj/item/paper_bin/proc/no_custom_paper(datum/act/op/A)

@@ -129,7 +129,7 @@ CAPABILITIES(/obj/machinery/shieldgen)
 	op("shieldgen_repair", stack(/obj/item/stack/cable_coil, 1), priority(OP_PRIORITY_DEFAULT - 1), label("Repair wiring"), when(req(PROC_REF(needs_repair_holds))), begins(MSG(shieldgen/rewiring)), wait(3 SECONDS), then(PROC_REF(rewire_done)))
 	op("shieldgen_toggle_lock", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle lock"), then(PROC_REF(interaction_toggle_lock)))
 	op("shieldgen_insert_cell", item(/obj/item/cell), priority(OP_PRIORITY_DEFAULT - 1), label("Insert cell"), then(PROC_REF(interaction_insert_cell)))
-	op("shieldgen_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req_bool(PROC_REF(unlocked_holds), because = PROC_REF(unlocked_refusal)), req_bool(PROC_REF(panel_closed_holds), because = PROC_REF(panel_closed_refusal))), then(PROC_REF(interaction_toggle)))
+	op("shieldgen_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(unlocked_holds)), req(PROC_REF(panel_closed_holds))), then(PROC_REF(interaction_toggle)))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(shieldgen_blast_malfunction)))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(emp_scramble))))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
@@ -236,23 +236,19 @@ CAPABILITIES(/obj/machinery/shieldgen)
 /// Requirement (was REQ_* unlocked): the legacy check answers TRUE to pass.
 /obj/machinery/shieldgen/proc/unlocked_holds(datum/act/op/A)
 	var/answer = unlocked(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, "the machine is locked, you are unable to use it")
 
 /// Why unlocked_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/shieldgen/proc/unlocked_refusal(datum/act/op/A)
-	var/answer = unlocked(A.actor, src, A.held)
-	return istext(answer) ? answer : "the machine is locked, you are unable to use it"
-
 /// Requirement (was REQ_* panel_closed): the legacy check answers TRUE to pass.
 /obj/machinery/shieldgen/proc/panel_closed_holds(datum/act/op/A)
 	var/answer = panel_closed(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, "the panel must be closed before operating this machine")
 
 /// Why panel_closed_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/shieldgen/proc/panel_closed_refusal(datum/act/op/A)
-	var/answer = panel_closed(A.actor, src, A.held)
-	return istext(answer) ? answer : "the panel must be closed before operating this machine"
-
 /obj/machinery/shieldgen/proc/unlocked(mob/actor, atom/target, obj/item/held)
 	return !locked
 

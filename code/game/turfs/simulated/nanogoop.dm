@@ -43,15 +43,15 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 	ref_one(nameof(moblink), /mob/living)
 	ref_one(nameof(linkedsmes), /obj/machinery/power/smes)
-	op("nanites_hand", hand(), ungated(), label("Interface"), when(req_bool(PROC_REF(hand_interface_ok))), asks(/datum/prompt/choice/nanite_state, fields = list("ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE), step = "state"), asks(/datum/prompt/choice/nanite_targets, fields = list("ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE), step = "targets", when = PROC_REF(state_is_on)), then(PROC_REF(nanites_hand_chosen)))
+	op("nanites_hand", hand(), ungated(), label("Interface"), when(req(PROC_REF(hand_interface_ok))), asks(/datum/prompt/choice/nanite_state, fields = list("ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE), step = "state"), asks(/datum/prompt/choice/nanite_targets, fields = list("ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE), step = "targets", when = PROC_REF(state_is_on)), then(PROC_REF(nanites_hand_chosen)))
 	// Taking the pool over (or letting go of it) is three seconds of the interfacing actor (nanite_interface_chosen).
 	op("nanites_interface_on", ai(), takes("choice"), wait(3 SECONDS), then(PROC_REF(nanites_interface_on_done)))
 	op("nanites_interface_off", ai(), wait(3 SECONDS), then(PROC_REF(nanites_interface_off_done)))
-	op("nanites_ai", remote(), label("Interface"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(req_bool(PROC_REF(ai_interface_ok))), asks(/datum/prompt/choice/nanite_state, fields = list("from_ai" = TRUE), step = "state"), asks(/datum/prompt/choice/nanite_targets, fields = list("from_ai" = TRUE), step = "targets", when = PROC_REF(state_is_on)), then(PROC_REF(nanites_ai_chosen)))
+	op("nanites_ai", remote(), label("Interface"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(req(PROC_REF(ai_interface_ok))), asks(/datum/prompt/choice/nanite_state, fields = list("from_ai" = TRUE), step = "state"), asks(/datum/prompt/choice/nanite_targets, fields = list("from_ai" = TRUE), step = "targets", when = PROC_REF(state_is_on)), then(PROC_REF(nanites_ai_chosen)))
 
 /// Old attack_hand: a protean (a human with a NIF) may interface with the pool while nobody else holds it.
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/hand_interface_ok(datum/act/op/A)
-	return read_once(hand_interface_open(A.actor)) // who holds the goop and who stands where is asked when the click is made
+	return (read_once(hand_interface_open(A.actor))) ? null : MSG(req_failed) // who holds the goop and who stands where is asked when the click is made
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/hand_interface_open(mob/living/user)
 	var/mob/living/nutrienttarget = moblink
@@ -68,7 +68,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 /// Old attack_ai. Cyborgs (shells included) never reached it: turfs send their Use to
 /// attack_hand (silicon_hand(robots = TRUE)), so they fall through to the hand op.
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/ai_interface_ok(datum/act/op/A)
-	return read_once(ai_interface_open(A.actor)) // who holds the goop and who stands near it is asked when the click is made
+	return (read_once(ai_interface_open(A.actor))) ? null : MSG(req_failed) // who holds the goop and who stands near it is asked when the click is made
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/ai_interface_open(mob/user)
 	var/mob/living/nutrienttarget = moblink

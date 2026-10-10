@@ -224,13 +224,11 @@ TRACKED(/obj/machinery/department_storefront, department_id)
 /// Requirement (was REQ_* can_stock): the legacy check answers TRUE to pass.
 /obj/machinery/department_storefront/proc/can_stock_holds(datum/act/op/A)
 	var/answer = can_stock(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why can_stock_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/department_storefront/proc/can_stock_refusal(datum/act/op/A)
-	var/answer = can_stock(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/machinery/department_storefront/proc/interaction_id_fallthrough(datum/act/op/A)
 	return OP_DECLINE
 
@@ -276,7 +274,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	op("set_price", ui_act("set_price", arg("price", num()), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_set_price)))
 	op("set_markup", ui_act("set_markup", arg("markup", num())), then(PROC_REF(ui_act_set_markup)))
 	op("storefront_id_fallthrough", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_id_fallthrough)))
-	op("storefront_stock", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Stock"), needs(req_bool(PROC_REF(can_stock_holds), because = PROC_REF(can_stock_refusal))), then(PROC_REF(interaction_stock)))
+	op("storefront_stock", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Stock"), needs(req(PROC_REF(can_stock_holds))), then(PROC_REF(interaction_stock)))
 
 /// /obj/machinery/department_storefront's window data.
 /obj/machinery/department_storefront/ui_data(datum/act/eval/A)

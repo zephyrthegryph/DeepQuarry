@@ -233,7 +233,7 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operated), wakes_on = list(nameof(operated)))
 	ref_many(nameof(conveyors), /obj/machinery/conveyor, by = nameof(id))
 	ref_many(nameof(linked_switches), /obj/machinery/conveyor_switch, by = nameof(id))
-	op("conveyor_switch_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req_bool(PROC_REF(lets_in_holds), because = PROC_REF(lets_in_refusal))), then(PROC_REF(interaction_toggle)))
+	op("conveyor_switch_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(lets_in_holds))), then(PROC_REF(interaction_toggle)))
 	// the panel's tools: with the panel shut the welder, multitool and wirecutters take the click and do nothing
 	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), wait(2 SECONDS), label("Deconstruct"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(welded_apart)))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ID"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),
@@ -278,13 +278,11 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 /// Requirement (was REQ_* lets_in): the legacy check answers TRUE to pass.
 /obj/machinery/conveyor_switch/proc/lets_in_holds(datum/act/op/A)
 	var/answer = lets_in(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, "access denied")
 
 /// Why lets_in_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/conveyor_switch/proc/lets_in_refusal(datum/act/op/A)
-	var/answer = lets_in(A.actor, src, A.held)
-	return istext(answer) ? answer : "access denied"
-
 // attack with hand, switch position. Old attack_hand never called ..(), so ungated.
 
 /obj/machinery/conveyor_switch/proc/lets_in(mob/actor, atom/target, obj/item/held)

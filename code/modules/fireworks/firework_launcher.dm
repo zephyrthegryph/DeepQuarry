@@ -34,9 +34,9 @@
 CAPABILITIES(/obj/machinery/firework_launcher)
 	default_parts()
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
-	op("load_star", item(/obj/item/firework_star), priority(OP_PRIORITY_DEFAULT - 1), label("Insert firework star"), needs(req_bool(PROC_REF(can_load_star_holds), because = PROC_REF(can_load_star_refusal))), then(PROC_REF(interaction_load_star)))
-	op("eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Firework Star"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_eject)))
-	op("launch", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Launch"), needs(req_bool(PROC_REF(can_launch_holds), because = PROC_REF(can_launch_refusal))), then(PROC_REF(interaction_launch)))
+	op("load_star", item(/obj/item/firework_star), priority(OP_PRIORITY_DEFAULT - 1), label("Insert firework star"), needs(req(PROC_REF(can_load_star_holds))), then(PROC_REF(interaction_load_star)))
+	op("eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Firework Star"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds))), then(PROC_REF(interaction_eject)))
+	op("launch", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Launch"), needs(req(PROC_REF(can_launch_holds))), then(PROC_REF(interaction_launch)))
 
 /// Requirement: the launcher is empty.
 /obj/machinery/firework_launcher/proc/can_load_star(mob/user, atom/target, obj/item/held)
@@ -48,13 +48,11 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 /// Requirement (was REQ_* can_load_star): the legacy check answers TRUE to pass.
 /obj/machinery/firework_launcher/proc/can_load_star_holds(datum/act/op/A)
 	var/answer = can_load_star(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why can_load_star_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/firework_launcher/proc/can_load_star_refusal(datum/act/op/A)
-	var/answer = can_load_star(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/machinery/firework_launcher/proc/interaction_load_star(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/firework_star/O = A.held
@@ -68,13 +66,11 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 /// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
 /obj/machinery/firework_launcher/proc/dq_actor_can_act_holds(datum/act/op/A)
 	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, "you can't do that right now")
 
 /// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/firework_launcher/proc/dq_actor_can_act_refusal(datum/act/op/A)
-	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return istext(answer) ? answer : "you can't do that right now"
-
 /obj/machinery/firework_launcher/proc/interaction_eject(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!loaded_star())
@@ -107,13 +103,11 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 /// Requirement (was REQ_* can_launch): the legacy check answers TRUE to pass.
 /obj/machinery/firework_launcher/proc/can_launch_holds(datum/act/op/A)
 	var/answer = can_launch(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why can_launch_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/firework_launcher/proc/can_launch_refusal(datum/act/op/A)
-	var/answer = can_launch(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/machinery/firework_launcher/proc/interaction_launch(datum/act/op/A)
 	var/mob/user = A.actor
 	var/datum/planet/P = get_planet()

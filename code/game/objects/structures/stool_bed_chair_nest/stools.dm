@@ -122,18 +122,15 @@ TRACKED(/obj/item/stool, base_icon)
 
 CAPABILITIES(/obj/item/stool)
 	op("pad", stack(/obj/item/stack, 1), wait(0), label("Pad"),
-		needs(req_bool(PROC_REF(can_be_padded), because = PROC_REF(padding_refusal))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))
+		needs(req(PROC_REF(can_be_padded))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))
 	op("unpad", tool(TOOL_WIRECUTTER), wait(0), label("Remove padding"),
-		needs(req_bool(PROC_REF(has_padding), because = MSG(bed/no_padding))), then(PROC_REF(unpadded)), says(MSG(bed/unpadded)))
+		needs(req(PROC_REF(has_padding), because = MSG(bed/no_padding))), then(PROC_REF(unpadded)), says(MSG(bed/unpadded)))
 	op("dismantle", tool(TOOL_WRENCH), wait(0), label("Dismantle"), then(PROC_REF(taken_apart)))
 	param(nameof(material_key), pos = 1)
 	param(nameof(padding_key), pos = 2, apply = PROC_REF(make_of))
 
 /obj/item/stool/proc/can_be_padded(datum/act/op/A)
-	return !padding_material && !isnull(padding_type_of(A.held)) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
-
-/obj/item/stool/proc/padding_refusal(datum/act/op/A)
-	return padding_material ? /datum/msg/bed/already_padded : /datum/msg/bed/not_padding
+	return (!padding_material && !isnull(padding_type_of(A.held))) ? null : padding_material ? /datum/msg/bed/already_padded : /datum/msg/bed/not_padding // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
 
 /// A stack of padding goes on: the sheet is spent by the op.
 /obj/item/stool/proc/padded_with(datum/act/op/A)
@@ -144,7 +141,7 @@ CAPABILITIES(/obj/item/stool)
 	return OP_OK
 
 /obj/item/stool/proc/has_padding(datum/act/A)
-	return !!padding_material // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
+	return (!!padding_material) ? null : MSG(bed/no_padding) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
 
 /obj/item/stool/proc/unpadded(datum/act/op/A)
 	playsound(src, A.held.usesound, 50, 1)

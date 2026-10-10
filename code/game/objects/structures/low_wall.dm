@@ -43,7 +43,7 @@ TRACKED(/obj/structure/low_wall, material)
 CAPABILITIES(/obj/structure/low_wall)
 	smoothing()
 	climb()
-	op("use_wrench", tool(TOOL_WRENCH), needs(req_bool(PROC_REF(nothing_on_the_wall), because = PROC_REF(fixture_refusal))), begins(MSG(low_wall/disassembling)),
+	op("use_wrench", tool(TOOL_WRENCH), needs(req(PROC_REF(nothing_on_the_wall))), begins(MSG(low_wall/disassembling)),
 		plays(SFX_ITEMS_RATCHET, at_start = TRUE, volume = 2), wait(4 SECONDS), then(PROC_REF(wrench_act_done)))
 	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
 	op("build_grille", stack(/obj/item/stack/rods, 2), label("Use"), needs(req(PROC_REF(grille_supported)), req(PROC_REF(grille_clear))),
@@ -100,12 +100,10 @@ MSG_DEF_SELF(low_wall/assembling_window, span_notice("Assembling window..."))
 	return null
 
 /obj/structure/low_wall/proc/nothing_on_the_wall(datum/act/op/A)
-	return isnull(fixture_on_the_wall())
-
-/obj/structure/low_wall/proc/fixture_refusal(datum/act/op/A)
-	if(istype(fixture_on_the_wall(), /obj/structure/window))
-		return span_notice("There is still a window on the low wall!")
-	return span_notice("There is still a grille on the low wall!")
+	var/obj/structure/fixture = fixture_on_the_wall()
+	if(isnull(fixture))
+		return null
+	return istype(fixture, /obj/structure/window) ? span_notice("There is still a window on the low wall!") : span_notice("There is still a grille on the low wall!")
 
 /obj/structure/low_wall/proc/wrench_act_done(datum/act/op/A)
 	to_chat(A.actor, span_notice("You disassembled the low wall!"))

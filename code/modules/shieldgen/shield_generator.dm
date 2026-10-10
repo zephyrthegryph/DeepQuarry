@@ -85,7 +85,7 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wirecutter_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
-	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), needs(req_bool(PROC_REF(can_replace_parts_holds), because = PROC_REF(can_replace_parts_refusal))), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), needs(req(PROC_REF(can_replace_parts_holds))), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 	extend("machine_anchor", needs(req_is(nameof(offline_for), FALSE, because = MSG(shield_generator/cooling)), req_is(nameof(running), FALSE, because = MSG(shield_generator/running))))
 	extend("machine_unanchor", needs(req_is(nameof(offline_for), FALSE, because = MSG(shield_generator/cooling)), req_is(nameof(running), FALSE, because = MSG(shield_generator/running))))
@@ -420,13 +420,11 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 /// Requirement (was REQ_* can_replace_parts): the legacy check answers TRUE to pass.
 /obj/machinery/power/shield_generator/proc/can_replace_parts_holds(datum/act/op/A)
 	var/answer = can_replace_parts(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why can_replace_parts_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/power/shield_generator/proc/can_replace_parts_refusal(datum/act/op/A)
-	var/answer = can_replace_parts(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/machinery/power/shield_generator/proc/can_replace_parts(mob/actor, atom/target, obj/item/held)
 	if(offline_for)
 		return "wait until it cools down from emergency shutdown first"

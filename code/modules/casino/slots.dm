@@ -36,7 +36,7 @@
 CAPABILITIES(/obj/machinery/slot_machine)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
-	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert chip"), needs(req_bool(PROC_REF(not_running_holds), because = PROC_REF(not_running_refusal)), req_is(nameof(anchored), TRUE, because = MSG(slot_machine/unanchored))), then(PROC_REF(interaction_attackby)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert chip"), needs(req(PROC_REF(not_running_holds)), req_is(nameof(anchored), TRUE, because = MSG(slot_machine/unanchored))), then(PROC_REF(interaction_attackby)))
 
 TRACKED(/obj/machinery/slot_machine, ispowered)
 TRACKED(/obj/machinery/slot_machine, isbroken)
@@ -71,13 +71,11 @@ TRACKED(/obj/machinery/slot_machine, slot_phase)
 /// Requirement (was REQ_* not_running): the legacy check answers TRUE to pass.
 /obj/machinery/slot_machine/proc/not_running_holds(datum/act/op/A)
 	var/answer = not_running(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, "the slot machine is currently running")
 
 /// Why not_running_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/slot_machine/proc/not_running_refusal(datum/act/op/A)
-	var/answer = not_running(A.actor, src, A.held)
-	return istext(answer) ? answer : "the slot machine is currently running"
-
 MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 
 /// Requirement: the reels aren't spinning.
@@ -185,7 +183,7 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 CAPABILITIES(/obj/machinery/station_slot_machine)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
-	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert cash"), needs(req_bool(PROC_REF(not_running_holds), because = PROC_REF(not_running_refusal)), req_is(nameof(anchored), TRUE, because = MSG(station_slot_machine/unanchored))), then(PROC_REF(interaction_attackby)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert cash"), needs(req(PROC_REF(not_running_holds)), req_is(nameof(anchored), TRUE, because = MSG(station_slot_machine/unanchored))), then(PROC_REF(interaction_attackby)))
 
 TRACKED(/obj/machinery/station_slot_machine, ispowered)
 TRACKED(/obj/machinery/station_slot_machine, isbroken)
@@ -220,13 +218,11 @@ TRACKED(/obj/machinery/station_slot_machine, slot_phase)
 /// Requirement (was REQ_* not_running): the legacy check answers TRUE to pass.
 /obj/machinery/station_slot_machine/proc/not_running_holds(datum/act/op/A)
 	var/answer = not_running(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, "the slot machine is currently running")
 
 /// Why not_running_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/station_slot_machine/proc/not_running_refusal(datum/act/op/A)
-	var/answer = not_running(A.actor, src, A.held)
-	return istext(answer) ? answer : "the slot machine is currently running"
-
 MSG_DEF_SELF(station_slot_machine/unanchored, "the slot machine isn't secured")
 
 /// Requirement: the reels aren't spinning.

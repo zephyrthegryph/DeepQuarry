@@ -27,7 +27,7 @@
 
 CAPABILITIES(/obj/structure/filingcabinet)
 	climb()
-	op("interaction_hand", hand(), ungated(), needs(req_bool(PROC_REF(has_files), because = MSG(filingcabinet/empty))), then(PROC_REF(interaction_hand)))
+	op("interaction_hand", hand(), ungated(), needs(req(PROC_REF(has_files), because = MSG(filingcabinet/empty))), then(PROC_REF(interaction_hand)))
 	op("interaction_item", item(/obj/item), then(PROC_REF(interaction_item)))
 	op("interaction_tk", tk(), then(PROC_REF(interaction_tk)))
 	interface("FileCabinet", state = nameof(GLOB.tgui_physical_state))
@@ -78,7 +78,7 @@ MSG_DEF_SELF(filingcabinet/empty, "It's empty.")
 
 /// Requirement: the cabinet holds something to browse.
 /obj/structure/filingcabinet/proc/has_files(datum/act/op/A)
-	return length(contents) > 0 // ALLOW(reads, spatial): what the cabinet holds is read when it is opened, never cached; a plain count of its own contents
+	return (length(contents) > 0) ? null : MSG(filingcabinet/empty) // ALLOW(reads, spatial): what the cabinet holds is read when it is opened, never cached; a plain count of its own contents
 
 /// Old attack_hand.
 /obj/structure/filingcabinet/proc/interaction_hand(datum/act/op/A)
@@ -166,7 +166,7 @@ CAPABILITIES(/obj/structure/filingcabinet/security)
 /// Old attack_hand: fill the records, then the cabinet's own use (its "It's empty." stays the base requirement's, asked of the filled cabinet).
 /obj/structure/filingcabinet/security/proc/security_interaction_hand(datum/act/op/A)
 	populate()
-	if(!has_files(A))
+	if(!isnull(has_files(A)))
 		to_chat(A.actor, span_warning("It's empty."))
 		return OP_OK
 	return interaction_hand(A)
@@ -213,7 +213,7 @@ CAPABILITIES(/obj/structure/filingcabinet/medical)
 /// Old attack_hand: fill the records, then the cabinet's own use (its "It's empty." stays the base requirement's, asked of the filled cabinet).
 /obj/structure/filingcabinet/medical/proc/medical_interaction_hand(datum/act/op/A)
 	populate()
-	if(!has_files(A))
+	if(!isnull(has_files(A)))
 		to_chat(A.actor, span_warning("It's empty."))
 		return OP_OK
 	return interaction_hand(A)

@@ -128,7 +128,7 @@ CAPABILITIES(/obj/structure/reflector)
 		begins(MSG(reflector/dismantling)), wait(2 SECONDS), then(PROC_REF(dismantled)))
 	op("weld_down", lit_welder(fuel = 1), label("Weld to the floor"), when(req(PROC_REF(not_anchored))), begins(MSG(reflector/welding_down), blind = span_hear("You hear welding.")), wait(2 SECONDS), then(PROC_REF(welded_down)))
 	op("cut_free", lit_welder(fuel = 1), label("Cut free"), when(nameof(anchored)), priority(OP_PRIORITY_PART + 1), then(PROC_REF(cut_free)))
-	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Rotate"), when(req_bool(PROC_REF(reflector_finished_holds))), then(PROC_REF(interaction_alt)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Rotate"), when(req(PROC_REF(reflector_finished_holds))), then(PROC_REF(interaction_alt)))
 
 /obj/structure/reflector/proc/reflector_not_admin(datum/act/op/A)
 	return admin ? /datum/msg/req_failed : null
@@ -215,7 +215,7 @@ MSG_DEF(reflector/welding_down, span_notice("You start to weld %T% to the floor.
 /// Requirement (was REQ_* reflector_finished): the legacy check answers TRUE to pass.
 /obj/structure/reflector/proc/reflector_finished_holds(datum/act/op/A)
 	var/answer = reflector_finished(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	return (!istext(answer) && !!answer) ? null : MSG(req_failed)
 
 /obj/structure/reflector/proc/interaction_alt(datum/act/op/A)
 	var/mob/user = A.actor

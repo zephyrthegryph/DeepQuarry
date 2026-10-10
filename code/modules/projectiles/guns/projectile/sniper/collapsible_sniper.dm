@@ -3,14 +3,14 @@
 /obj/item/gun/projectile/heavysniper/collapsible
 
 CAPABILITIES(/obj/item/gun/projectile/heavysniper/collapsible)
-	op("collapsible_sniper_verb_take_down", menu(), label("Disassemble Rifle"), needs(carried(), req_bool(PROC_REF(rifle_empty), because = MSG(sniper/empty_first))), begins(MSG(sniper/removing_barrel)), wait(4 SECONDS), then(PROC_REF(barrel_removed)))
+	op("collapsible_sniper_verb_take_down", menu(), label("Disassemble Rifle"), needs(carried(), req(PROC_REF(rifle_empty), because = MSG(sniper/empty_first))), begins(MSG(sniper/removing_barrel)), wait(4 SECONDS), then(PROC_REF(barrel_removed)))
 
 MSG_DEF_SELF(sniper/empty_first, span_warning("You need to empty the rifle to break it down."))
 MSG_DEF_SELF(sniper/removing_barrel, span_warning("You begin removing %T%'s barrel."))
 
 /// Requirement: no round is chambered.
 /obj/item/gun/projectile/heavysniper/collapsible/proc/rifle_empty(datum/act/op/A)
-	return !chambered
+	return (!chambered) ? null : MSG(sniper/empty_first)
 
 /obj/item/gun/projectile/heavysniper/proc/barrel_removed(datum/act/op/A)
 	var/mob/user = A.actor

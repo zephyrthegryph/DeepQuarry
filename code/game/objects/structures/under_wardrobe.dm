@@ -11,7 +11,7 @@ CAPABILITIES(/obj/structure/undies_wardrobe)
 	op("remove_underwear", ui_act("remove_underwear", arg("category")), then(PROC_REF(ui_act_remove_underwear)))
 	op("change_underwear", ui_act("change_underwear", arg("category")), then(PROC_REF(ui_act_change_underwear)))
 	op("tweak", ui_act("tweak", arg("category"), arg("tweak")), then(PROC_REF(ui_act_tweak)))
-	extend(TAG_UI, needs(req_bool(PROC_REF(user_is_human), because = MSG(undies_wardrobe/not_human))))
+	extend(TAG_UI, needs(req(PROC_REF(user_is_human), because = MSG(undies_wardrobe/not_human))))
 	extend("ui_open", needs(req(PROC_REF(can_browse))))
 
 /// Requirement: only someone who wears underwear finds anything in here.
@@ -34,7 +34,7 @@ MSG_DEF_SELF(undies_wardrobe/not_human, "You can't use that.")
 
 /// Only a human works the window.
 /obj/structure/undies_wardrobe/proc/user_is_human(datum/act/op/A)
-	return ishuman(A.actor)
+	return (ishuman(A.actor)) ? null : MSG(undies_wardrobe/not_human)
 
 /obj/structure/undies_wardrobe/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

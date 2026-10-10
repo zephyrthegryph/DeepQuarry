@@ -27,7 +27,7 @@ CAPABILITIES(/obj/structure/grille)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("hand", hand(), label("Kick"), then(PROC_REF(interaction_hand)))
 	op("place_window", stack(/obj/item/stack/material, 1), label("Place a window"), priority(OP_PRIORITY_PART),
-		needs(req_bool(PROC_REF(window_sheet_held), silent = TRUE), req_bool(PROC_REF(window_reachable), because = MSG(grille/cant_reach)), req_bool(PROC_REF(no_window_that_way), because = MSG(grille/window_there))),
+		needs(req(PROC_REF(window_sheet_held), silent = TRUE), req(PROC_REF(window_reachable), because = MSG(grille/cant_reach)), req(PROC_REF(no_window_that_way), because = MSG(grille/window_there))),
 		begins(MSG(grille/placing_window)), wait(2 SECONDS), then(PROC_REF(window_placed)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
@@ -38,7 +38,7 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 /// A sheet of a material that makes windows.
 /obj/structure/grille/proc/window_sheet_held(datum/act/op/A)
 	var/obj/item/stack/material/ST = A.held
-	return !!read_once(ST.material?.created_window)
+	return (!!read_once(ST.material?.created_window)) ? null : MSG(req_failed)
 
 /// The way a window would face when placed from where the builder stands (only the cardinal ones work), or null.
 /obj/structure/grille/proc/window_dir_for(mob/user)
@@ -51,14 +51,14 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	return null
 
 /obj/structure/grille/proc/window_reachable(datum/act/op/A)
-	return !isnull(read_once(window_dir_for(A.actor)))
+	return (!isnull(read_once(window_dir_for(A.actor)))) ? null : MSG(grille/cant_reach)
 
 /obj/structure/grille/proc/no_window_that_way(datum/act/op/A)
 	var/dir_to_set = read_once(window_dir_for(A.actor))
 	for(var/obj/structure/window/WINDOW in read_once(contents_of(loc)))
 		if(read_once(WINDOW.dir) == dir_to_set)
-			return FALSE
-	return TRUE
+			return MSG(grille/window_there)
+	return null
 
 /// A blob's hit destroys the grille outright.
 /obj/structure/grille/proc/blob_destroys(datum/act/hit/blob/A)

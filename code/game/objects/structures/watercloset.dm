@@ -49,7 +49,7 @@ CAPABILITIES(/obj/structure/toilet)
 	owns_one(nameof(teleplumb_crystal), /obj/item, starts = PROC_REF(make_teleplumb_crystal))
 	ref_one(nameof(swirlie_mob), /mob/living)
 	ref_one(nameof(teleplumb_dest))
-	op("use_wrench", tool(TOOL_WRENCH), wait(5 SECONDS), needs(req_bool(PROC_REF(cistern_open), silent = TRUE), req_bool(PROC_REF(not_refilling), because = MSG(toilet/refilling))), begins(MSG(toilet/dismantling)), then(PROC_REF(wrench_act_done)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(5 SECONDS), needs(req(PROC_REF(cistern_open), silent = TRUE), req(PROC_REF(not_refilling), because = MSG(toilet/refilling))), begins(MSG(toilet/dismantling)), then(PROC_REF(wrench_act_done)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(3 SECONDS), begins(PROC_REF(crowbar_begins)), plays(SFX_EFFECTS_STONEDOOR_OPENCLOSE, at_start = TRUE), then(PROC_REF(crowbar_act_done)))
 	rolls(nameof(open), range_of(0, 1))   // the lid starts up or down
 	// the old attack_hand: slam the swirlie victim, loot the cistern (a person may take the teleplumbing crystal from an empty one, after a yes), or the lid
@@ -583,10 +583,10 @@ MSG_DEF_SELF(toilet/refilling, span_notice("Wait for %T% to finish refilling..."
 	set_cistern(!cistern)
 
 /obj/structure/toilet/proc/cistern_open(datum/act/op/A)
-	return cistern
+	return (cistern) ? null : MSG(req_failed)
 
 /obj/structure/toilet/proc/not_refilling(datum/act/op/A)
-	return !refilling
+	return (!refilling) ? null : MSG(toilet/refilling)
 
 /obj/structure/toilet/proc/wrench_act_done(datum/act/op/A)
 	var/mob/user = A.actor

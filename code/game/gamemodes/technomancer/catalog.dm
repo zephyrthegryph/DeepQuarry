@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 	op("item_choice", ui_act("item_choice", arg("name", schema_text(4096))), then(PROC_REF(ui_act_item_choice)))
 	op("refund_functions", ui_act("refund_functions"), then(PROC_REF(ui_act_refund_functions)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
-	op("item", item(/obj/item), label("Use"), needs(req_bool(PROC_REF(can_refund_holds), because = PROC_REF(can_refund_refusal))), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(can_refund_holds))), then(PROC_REF(interaction_item)))
 
 /obj/item/technomancer_catalog/apprentice
 	name = "apprentice's catalog"
@@ -285,13 +285,11 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 /// Requirement (was REQ_* can_refund): the legacy check answers TRUE to pass.
 /obj/item/technomancer_catalog/proc/can_refund_holds(datum/act/op/A)
 	var/answer = can_refund(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why can_refund_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/technomancer_catalog/proc/can_refund_refusal(datum/act/op/A)
-	var/answer = can_refund(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/item/technomancer_catalog/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/atom/movable/AM = A.held

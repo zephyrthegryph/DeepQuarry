@@ -94,13 +94,11 @@ MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 /// Requirement: the panel can be opened.
 /obj/machinery/keycard_auth/proc/can_open_panel_holds(datum/act/op/A)
 	var/answer = can_open_panel(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why can_open_panel_holds refuses: the check's own text.
-/obj/machinery/keycard_auth/proc/can_open_panel_refusal(datum/act/op/A)
-	var/answer = can_open_panel(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /// Requirement: the device is powered.
 /obj/machinery/keycard_auth/proc/swipe_powered(datum/act/op/A)
 	return (operable()) ? null : MSG(keycard_auth/unpowered)
@@ -120,7 +118,7 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("keycard_auth_silicon_refuse", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(keycard_auth_silicon_refuse)))
 	op("keycard_auth_swipe", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Swipe"), needs(req(PROC_REF(swipe_powered))), then(PROC_REF(interaction_swipe)))
-	op("keycard_auth_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), needs(req_bool(PROC_REF(can_open_panel_holds), because = PROC_REF(can_open_panel_refusal))), then(PROC_REF(interaction_open_ui_impl)))
+	op("keycard_auth_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), needs(req(PROC_REF(can_open_panel_holds))), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/keycard_auth/ui_data(datum/act/eval/A)
 	var/list/data = list()

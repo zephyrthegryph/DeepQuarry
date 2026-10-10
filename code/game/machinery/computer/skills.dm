@@ -258,7 +258,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("del_all", ui_act("del_all"), then(PROC_REF(ui_act_del_all)))
 	op("sync_r", ui_act("sync_r"), then(PROC_REF(ui_act_sync_r)))
-	op("edit_notes", ui_act("edit_notes"), needs(req_adjacent(), req_bool(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default))), step = "notes"), asks(/datum/prompt/yes_no/record_notes_delete, fields = list("record" = computed(PROC_REF(notes_record)), "timeout" = 0), step = "delete_notes", when = PROC_REF(notes_empty)), then(PROC_REF(ui_act_edit_notes)))
+	op("edit_notes", ui_act("edit_notes"), needs(req_adjacent(), req(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default))), step = "notes"), asks(/datum/prompt/yes_no/record_notes_delete, fields = list("record" = computed(PROC_REF(notes_record)), "timeout" = 0), step = "delete_notes", when = PROC_REF(notes_empty)), then(PROC_REF(ui_act_edit_notes)))
 	op("del_r", ui_act("del_r"), then(PROC_REF(ui_act_del_r)))
 	op("d_rec", ui_act("d_rec", arg("d_rec")), then(PROC_REF(ui_act_d_rec)))
 	op("new", ui_act("new"), then(PROC_REF(ui_act_new)))
@@ -745,7 +745,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 
 /// The operator is logged in (the old handlers each refused without it).
 /obj/machinery/computer/skills/proc/records_authenticated(datum/act/op/A)
-	return !!authenticated // ALLOW(reads): who is logged in is asked when the button is pressed and again when the answer arrives, never cached
+	return (!!authenticated) ? null : MSG(records/not_authenticated) // ALLOW(reads): who is logged in is asked when the button is pressed and again when the answer arrives, never cached
 
 /obj/machinery/computer/skills/proc/ui_act_del_r(datum/act/op/A)
 	. = TRUE

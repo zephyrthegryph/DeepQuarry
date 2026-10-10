@@ -46,7 +46,7 @@ CAPABILITIES(/obj/structure/flora/tree)
 	without("uproot")
 	op("dig_stump", item(/obj/item/shovel), label("Dig up the stump"), when(nameof(is_stump)), priority(OP_PRIORITY_PART), wait(5 SECONDS), then(PROC_REF(chop_done)))
 	op("tree_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_hit)))
-	op("search_sticks", hand(), ungated(), label("Search for sticks"), needs(req_bool(PROC_REF(has_sticks), because = MSG(tree/no_sticks))), begins(MSG(tree/searching_sticks)), wait(5 SECONDS), then(PROC_REF(sticks_found)))
+	op("search_sticks", hand(), ungated(), label("Search for sticks"), needs(req(PROC_REF(has_sticks), because = MSG(tree/no_sticks))), begins(MSG(tree/searching_sticks)), wait(5 SECONDS), then(PROC_REF(sticks_found)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tree_blast))))
 
 /// Old attackby: harvest (flora's own harvest), dig up a stump, or take a hit.
@@ -192,14 +192,14 @@ CAPABILITIES(/obj/structure/flora/tree)
 TRACKED(/obj/structure/flora/tree/pine/xmas/presents, ckeys_that_took)
 
 CAPABILITIES(/obj/structure/flora/tree/pine/xmas/presents)
-	op("take_present", hand(), label("Take a present"), priority(OP_PRIORITY_NORMAL + 1), needs(req_bool(PROC_REF(can_take_present), because = MSG(xmas_presents/none_left))), then(PROC_REF(interaction_hand)))
+	op("take_present", hand(), label("Take a present"), priority(OP_PRIORITY_NORMAL + 1), needs(req(PROC_REF(can_take_present), because = MSG(xmas_presents/none_left))), then(PROC_REF(interaction_hand)))
 
 /obj/structure/flora/tree/pine/xmas/presents/choose_icon_state(datum/roller/R)
 	return "pinepresents"
 
 /// Requirement: one present per player.
 /obj/structure/flora/tree/pine/xmas/presents/proc/can_take_present(datum/act/op/A)
-	return !read_once(present_taken(A.actor)) // a player's key is fixed while it plays
+	return (!read_once(present_taken(A.actor))) ? null : MSG(xmas_presents/none_left) // a player's key is fixed while it plays
 
 /// Has `user`'s player already taken a present from this tree?
 /obj/structure/flora/tree/pine/xmas/presents/proc/present_taken(mob/user)

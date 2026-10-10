@@ -41,7 +41,7 @@ CAPABILITIES(/obj/structure/fitness/punchingbag)
 
 CAPABILITIES(/obj/structure/fitness/weightlifter)
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
-	op("lift", hand(), label("Lift"), when(req_actor_kind(/mob/living/carbon/human)), needs(req_bool(PROC_REF(can_lift), because = PROC_REF(lift_refusal))), claims(), begins(PROC_REF(lift_begins)), wait(PROC_REF(lift_time)), on_interrupt(PROC_REF(lift_interrupted)), then(PROC_REF(lifted)))
+	op("lift", hand(), label("Lift"), when(req_actor_kind(/mob/living/carbon/human)), needs(req(PROC_REF(can_lift))), claims(), begins(PROC_REF(lift_begins)), wait(PROC_REF(lift_time)), on_interrupt(PROC_REF(lift_interrupted)), then(PROC_REF(lifted)))
 
 /obj/structure/fitness/weightlifter/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -52,10 +52,7 @@ CAPABILITIES(/obj/structure/fitness/weightlifter)
 
 /// Requirement: the person can lift right now.
 /obj/structure/fitness/weightlifter/proc/can_lift(datum/act/op/A)
-	return read_once(isnull(weightlift_refusal(A.actor))) // nutrition and weight are asked when the lift starts
-
-/obj/structure/fitness/weightlifter/proc/lift_refusal(datum/act/op/A)
-	return weightlift_refusal(A.actor)
+	return read_once(weightlift_refusal(A.actor)) // nutrition and weight are asked when the lift starts
 
 /// Why `user` can't use the weight machine now, or null: on it, fed, heavy enough, and nobody else on it.
 /obj/structure/fitness/weightlifter/proc/weightlift_refusal(mob/lifter)

@@ -20,7 +20,7 @@ CAPABILITIES(/obj/structure/mirror)
 	op("use", hand(), label("Use"), then(PROC_REF(mirror_open_ui)))
 	op("silicon_use", remote(), label("Use"), needs(req_adjacent()), then(PROC_REF(mirror_open_ui)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
-	op("add_glass", stack(/obj/item/stack/material/glass, 2), label("Add glass"), when(req_bool(PROC_REF(frame_empty))), begins(MSG(mirror/adding_glass)), wait(2 SECONDS), then(PROC_REF(glass_added)))
+	op("add_glass", stack(/obj/item/stack/material/glass, 2), label("Add glass"), when(req(PROC_REF(frame_empty))), begins(MSG(mirror/adding_glass)), wait(2 SECONDS), then(PROC_REF(glass_added)))
 	param(nameof(dir), pos = 1)
 	param(nameof(building), pos = 2)
 
@@ -84,7 +84,7 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 
 /// A frame without glass takes it.
 /obj/structure/mirror/proc/frame_empty(datum/act/op/A)
-	return !glass
+	return (!glass) ? null : MSG(req_failed)
 
 /obj/structure/mirror/proc/glass_added(datum/act/op/A)
 	shattered = 0

@@ -46,8 +46,8 @@
 	return 1
 
 CAPABILITIES(/obj/item/sample)
-	op("merge_sample", item(/obj/item/sample), label("Combine evidence"), when(req_bool(PROC_REF(matching_sample))),
-		needs(req_bool(PROC_REF(sample_releasable), because = PROC_REF(sample_release_refusal))), then(PROC_REF(sample_merged)))
+	op("merge_sample", item(/obj/item/sample), label("Combine evidence"), when(req(PROC_REF(matching_sample))),
+		needs(req(PROC_REF(sample_releasable))), then(PROC_REF(sample_merged)))
 	param(nameof(taken_from), pos = 1, apply = PROC_REF(copy_from), keep = FALSE)
 
 /// Compiled DM type identities are immutable; this helper reads no mutable entity state.
@@ -56,13 +56,11 @@ CAPABILITIES(/obj/item/sample)
 	return target.type == donor.type
 
 /obj/item/sample/proc/matching_sample(datum/act/op/A)
-	return forensic_sample_same_type(src, A.held)
+	return (forensic_sample_same_type(src, A.held)) ? null : MSG(req_failed)
 
 /obj/item/sample/proc/sample_releasable(datum/act/op/A)
-	return isnull(A.held.loc?.release_refusal(A.held, A.actor)) // ALLOW(reads): current donor custody is queried without caching immediately before its checked release
-
-/obj/item/sample/proc/sample_release_refusal(datum/act/op/A)
-	return A.held.loc?.release_refusal(A.held, A.actor) || /datum/msg/op/not_available
+	var/why = A.held.loc?.release_refusal(A.held, A.actor) // ALLOW(reads): current donor custody is queried without caching immediately before its checked release
+	return isnull(why) ? null : (why || MSG(op/not_available))
 
 /obj/item/sample/proc/sample_merged(datum/act/op/A)
 	var/obj/item/sample/donor = A.held

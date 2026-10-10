@@ -63,7 +63,7 @@ CAPABILITIES(/obj/machinery/power/quantumpad)
 	op("quantumpad_ghost_travel", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("Travel"), then(PROC_REF(quantumpad_ghost_travel)))
 	op("quantumpad_boost", item(/obj/item/quantum_pad_booster), priority(OP_PRIORITY_DEFAULT - 1), label("Install booster"), then(PROC_REF(interaction_boost)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 2), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
-	op("quantumpad_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(panel_closed_holds), because = MSG(quantumpad/panel_open))), then(PROC_REF(interaction_use)))
+	op("quantumpad_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(panel_closed_holds), because = MSG(quantumpad/panel_open))), then(PROC_REF(interaction_use)))
 	extend("machine_panel", then(PROC_REF(panel_worked)))
 	extend("machine_panel_close", then(PROC_REF(panel_worked)))
 	default_parts()
@@ -104,7 +104,7 @@ MSG_DEF_SELF(quantumpad/panel_open, "the panel must be closed before operating t
 
 /// Requirement: the panel is closed.
 /obj/machinery/power/quantumpad/proc/panel_closed_holds(datum/act/op/A)
-	return !panel_open
+	return (!panel_open) ? null : MSG(quantumpad/panel_open)
 
 /// Old attack_hand: standard gated pattern (`. = ..(); if(.) return`).
 /obj/machinery/power/quantumpad/proc/interaction_use(datum/act/op/A)
