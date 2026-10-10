@@ -10484,7 +10484,7 @@
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/screwdriver	f82d872f7679dd3e	blueprint,carried_afflictions,chassis,economic_adoption,identity,mind_host,my_tool,parts_mask,possessed_voice
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/welding	58d0967ad6d53073	blueprint,carried_afflictions,chassis,economic_adoption,identity,mind_host,my_tool,parts_mask,possessed_voice
 /obj/item/mecha_parts/mecha_equipment/tool/rcd	0e8692accc80ea49	blueprint,carried_afflictions,chassis,economic_adoption,identity,mind_host,my_rcd,parts_mask,possessed_voice
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper	33c1a2f7fd769646	*
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper	d2f8e33a0265f448	*
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun	27753c4647db85fb	blueprint,carried_afflictions,chassis,economic_adoption,energy_drain,equip_ready,identity,max_volume,mind_host,parts_mask,possessed_voice,processed_reagents,synth_speed,synthesizing,syringes
 /obj/item/mecha_parts/mecha_equipment/weapon	be0da1ea0756af41	blueprint,carried_afflictions,chassis,economic_adoption,identity,mind_host,parts_mask,possessed_voice
 /obj/item/mecha_parts/mecha_equipment/weapon/ballistic	83d4b4e93c84205b	blueprint,carried_afflictions,chassis,economic_adoption,identity,mind_host,parts_mask,possessed_voice
@@ -11246,7 +11246,7 @@
 /obj/item/paper/hydroponics	6ed8a370307280a2	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
 /obj/item/paper/jobs	a0c1a6415e02a033	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
 /obj/item/paper/k14	e3b0095f107f43ba	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
-/obj/item/paper/khcrystal_manual	edd345405a7a8a36	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
+/obj/item/paper/khcrystal_manual	18b7ea7b82856c52	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
 /obj/item/paper/manifest	1234a656a2f831ef	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
 /obj/item/paper/monitorkey	4bc99584c2669d20	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,info_links,mind_host,possessed_voice,stamp_marks
 /obj/item/paper/pamphlet	53974c780e640f1a	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
