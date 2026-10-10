@@ -1,5 +1,7 @@
 //! Typed statements lowering over the shared compiler context.
 use super::*;
+#[path = "typed_delete.rs"]
+mod deletion;
 
 impl Compiler<'_> {
     pub(super) fn typed_statements_inner(
@@ -134,8 +136,9 @@ impl Compiler<'_> {
                     let ExprKind::Call { args, .. } = &value.kind else {
                         unreachable!()
                     };
-                    self.expression(&args[0], &statement.raw_header)?;
-                    self.emit(0x0c, vec![]);
+                    if self.typed_delete(&args[0], &statement.raw_header)? {
+                        break;
+                    }
                 }
                 StatementKind::Expression(value) if matches!(&value.kind, ExprKind::Binary { op, .. } if op == "<<") =>
                 {
@@ -773,7 +776,11 @@ impl Compiler<'_> {
                         .get(&target)
                         .is_some_and(|depth| self.try_depth > *depth);
                     self.emit(
-                        if leaves_try { 0x12e } else { opcode::JMP },
+                        if self.try_depth > 0 || leaves_try {
+                            0x12e
+                        } else {
+                            opcode::JMP
+                        },
                         vec![Word::Branch(target)],
                     );
                 }
@@ -797,10 +804,17 @@ impl Compiler<'_> {
                         self.emit(opcode::ITER_POP, vec![]);
                     }
                     self.emit(
-                        if leaves_try { 0x12e } else { opcode::JMP },
+                        if self.try_depth > 0 || leaves_try {
+                            0x12e
+                        } else {
+                            opcode::JMP
+                        },
                         vec![Word::Branch(target)],
                     );
                 }
+                // Authored transfers inside Try use native cleanup handlers even
+                // for same-frame destinations. TryJmp checks target minus one;
+                // a loop at the first protected word exits that exception frame.
                 StatementKind::Continue => {
                     let target = self
                         .loops
@@ -812,7 +826,11 @@ impl Compiler<'_> {
                         .get(&target)
                         .is_some_and(|depth| self.try_depth > *depth);
                     self.emit(
-                        if leaves_try { 0x12f } else { opcode::JMP_LOOP },
+                        if self.try_depth > 0 || leaves_try {
+                            0x12f
+                        } else {
+                            opcode::JMP_LOOP
+                        },
                         vec![Word::Branch(target)],
                     );
                 }
@@ -840,7 +858,11 @@ impl Compiler<'_> {
                         self.emit(opcode::ITER_POP, vec![]);
                     }
                     self.emit(
-                        if leaves_try { 0x12f } else { opcode::JMP_LOOP },
+                        if self.try_depth > 0 || leaves_try {
+                            0x12f
+                        } else {
+                            opcode::JMP_LOOP
+                        },
                         vec![Word::Branch(target)],
                     );
                 }

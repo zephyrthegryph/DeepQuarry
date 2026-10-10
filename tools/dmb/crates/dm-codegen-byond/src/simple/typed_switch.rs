@@ -3,12 +3,36 @@ use super::*;
 #[path = "typed_switch_overlap.rs"]
 mod overlap;
 
+// Pure bounded bitwise constants use DM's 24-bit numeric domain. Broader
+// expressions retain the runtime fallback; no resolver calls occur in preflight.
+fn switch_number(expr: &Expr) -> Option<f32> {
+    if let Some(number) = fold_number(expr) {
+        return Some(number);
+    }
+    match &expr.kind {
+        ExprKind::Group(inner) => switch_number(inner),
+        ExprKind::Binary { op, lhs, rhs } if op == "|" => {
+            let a = switch_number(lhs)?;
+            let b = switch_number(rhs)?;
+            let exact = |value: f32| {
+                value.is_finite() && value.fract() == 0.0 && (0.0..=16_777_215.0).contains(&value)
+            };
+            if !exact(a) || !exact(b) {
+                return None;
+            }
+            Some(((a as u32 | b as u32) & 0x00ff_ffff) as f32)
+        }
+        _ => None,
+    }
+}
+
 fn eligible(expr: &Expr) -> bool {
-    if fold_number(expr).is_some() {
+    if switch_number(expr).is_some() {
         return true;
     }
     match &expr.kind {
         ExprKind::Group(inner) => eligible(inner),
+        ExprKind::TypePath(_) => true,
         ExprKind::Literal(raw) if raw == "null" || raw == "TRUE" || raw == "FALSE" => true,
         ExprKind::Literal(raw) if !raw.starts_with("@'") => {
             matches!(decode_constant_string_literal(raw), Ok(Some(_)))
@@ -21,6 +45,9 @@ impl Compiler<'_> {
     // Use the ordinary expression producer, including string interning and
     // constant folding. Preflight limits it to one immutable value instruction.
     fn switch_value(&mut self, expr: &Expr, text: &str) -> Result<ValueWord, LowerError> {
+        if let Some(number) = switch_number(expr) {
+            return Ok(ValueWord::Number(number.to_bits()));
+        }
         let start = self.result.code.items.len();
         self.expression(expr, text)?;
         let emitted = self.result.code.items.split_off(start);
@@ -58,7 +85,7 @@ impl Compiler<'_> {
                 case.alternatives.iter().all(|alt| match alt {
                     SwitchAlternative::Exact(value) => eligible(value),
                     SwitchAlternative::Range(low, high) => {
-                        fold_number(low).is_some() && fold_number(high).is_some()
+                        switch_number(low).is_some() && switch_number(high).is_some()
                     }
                 })
             })
@@ -73,12 +100,13 @@ impl Compiler<'_> {
             for alternative in &case.alternatives {
                 match alternative {
                     SwitchAlternative::Exact(value) => {
-                        if let Some(number) = fold_number(value) {
+                        if let Some(number) = switch_number(value) {
                             numeric_exact.push(number);
                         }
                     }
                     SwitchAlternative::Range(low, high) => {
-                        let (low, high) = (fold_number(low).unwrap(), fold_number(high).unwrap());
+                        let (low, high) =
+                            (switch_number(low).unwrap(), switch_number(high).unwrap());
                         if !low.is_finite() || !high.is_finite() || low > high {
                             return Ok(false);
                         }

@@ -15,6 +15,8 @@ mod input_selection_centers;
 mod objects_1;
 mod objects_2;
 mod strings;
+mod typed_delete_native;
+mod typed_native_control;
 
 // Explicit identities for these small standalone fixture declaration tables.
 // Production lowering receives resolver-issued references instead.
