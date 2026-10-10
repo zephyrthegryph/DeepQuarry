@@ -67,7 +67,7 @@ TRACKED(/obj/machinery/computer/message_monitor, emag)
 
 CAPABILITIES(/obj/machinery/computer/message_monitor)
 	ref_one(nameof(linkedServer), /obj/machinery/message_server)
-	extend("disconnect", needs(req(PROC_REF(cool_enough), because = MSG(message_monitor/too_hot))))
+	extend("disconnect", needs(req_bool(PROC_REF(cool_enough), because = MSG(message_monitor/too_hot))))
 	after_init(0, then(PROC_REF(link_default_server)))
 	interface("MessageMonitor")
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))

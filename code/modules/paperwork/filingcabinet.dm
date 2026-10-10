@@ -27,7 +27,7 @@
 
 CAPABILITIES(/obj/structure/filingcabinet)
 	climb()
-	op("interaction_hand", hand(), ungated(), needs(req(PROC_REF(has_files), because = MSG(filingcabinet/empty))), then(PROC_REF(interaction_hand)))
+	op("interaction_hand", hand(), ungated(), needs(req_bool(PROC_REF(has_files), because = MSG(filingcabinet/empty))), then(PROC_REF(interaction_hand)))
 	op("interaction_item", item(/obj/item), then(PROC_REF(interaction_item)))
 	op("interaction_tk", tk(), then(PROC_REF(interaction_tk)))
 	interface("FileCabinet", state = nameof(GLOB.tgui_physical_state))

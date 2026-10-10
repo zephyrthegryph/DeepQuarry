@@ -421,7 +421,7 @@ CAPABILITIES(/obj/structure/holohoop)
 CAPABILITIES(/obj/machinery/readybutton)
 	op("readybutton_silicon_refuse", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(readybutton_silicon_refuse)))
 	op("readybutton_touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_touch)))
-	op("readybutton_press", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Press"), needs(req(PROC_REF(can_press_holds), because = PROC_REF(can_press_refusal))), then(PROC_REF(interaction_press)))
+	op("readybutton_press", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Press"), needs(req_bool(PROC_REF(can_press_holds), because = PROC_REF(can_press_refusal))), then(PROC_REF(interaction_press)))
 
 /// Old attack_ai: refuse silicons.
 /obj/machinery/readybutton/proc/readybutton_silicon_refuse(datum/act/op/A)

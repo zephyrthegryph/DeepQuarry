@@ -196,7 +196,7 @@ MSG_DEF_SELF(nifsoft/uploading_self, span_notice("You upload %I% into your NIF."
 
 CAPABILITIES(/obj/item/disk/nifsoft)
 	op("upload", at_target(/mob/living/carbon/human), when(req_actor_kind(/mob/living/carbon/human)), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Upload"),
-		needs(req_adjacent(), req(PROC_REF(upload_ready), because = PROC_REF(upload_refusal))),
+		needs(req_adjacent(), req_bool(PROC_REF(upload_ready), because = PROC_REF(upload_refusal))),
 		begins(PROC_REF(upload_begins)), starts(PROC_REF(upload_started)), wait(PROC_REF(upload_time)), on_interrupt(PROC_REF(upload_failed)), then(PROC_REF(upload_done)))
 
 /// Requirement: the target has a NIF that is up and running (what a click decides on).

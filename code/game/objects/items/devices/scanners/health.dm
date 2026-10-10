@@ -43,7 +43,7 @@ TRACKED(/obj/item/healthanalyzer, guide)
 CAPABILITIES(/obj/item/healthanalyzer)
 	held_verb(/obj/item/healthanalyzer/proc/toggle_guidance, SLOT_ANY_CARRIED)
 	op("scan_patient", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Scan vitals"),
-		needs(req_adjacent(), req(PROC_REF(scanner_dexterity), because = PROC_REF(dexterity_refusal))), then(PROC_REF(patient_scanned)))
+		needs(req_adjacent(), req_bool(PROC_REF(scanner_dexterity), because = PROC_REF(dexterity_refusal))), then(PROC_REF(patient_scanned)))
 	op("toggle_advanced", menu(), label("Toggle Advanced Scan"), when(PROC_REF(advanced_profile)), needs(carried()), then(PROC_REF(advanced_toggled)))
 	op("toggle_guidance", menu(), label("Toggle Guidance"), needs(carried()), then(PROC_REF(guidance_toggled)))
 

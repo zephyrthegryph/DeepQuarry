@@ -108,7 +108,7 @@ CAPABILITIES(/obj/item/sleevemate)
 	op("mindupload_wait", ai(), takes("subject"), wait(35 SECONDS), then(PROC_REF(Topic_timed_done4)))
 	ref_one(nameof(stored_mind), /datum/mind)
 	// the old attack_self: what to do with the stored mind
-	op("manage_mind", in_hand(), needs(req(PROC_REF(can_manage_mind), because = MSG(sleevemate/empty))),
+	op("manage_mind", in_hand(), needs(req_bool(PROC_REF(can_manage_mind), because = MSG(sleevemate/empty))),
 		asks(/datum/prompt/choice, fields = list("title" = computed(PROC_REF(stored_title)), "question" = "What would you like to do?", "choices" = list("Delete", "Backup", "Cancel"), "buttons" = TRUE, "timeout" = 0)),
 		then(PROC_REF(stored_mind_action)))
 	emag(list(asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(hack_question)), "choices" = list("Body Snatcher", "Mind Binder"), "timeout" = 0)), then(PROC_REF(hack_chosen))), repeatable = TRUE, powered = FALSE)

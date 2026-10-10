@@ -124,9 +124,10 @@ CAPABILITIES(/obj/item/stack/medical)
 		return
 	perform_op(user, src, "treat_wounds", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = H, "limb" = affecting, "wounds" = wounds, "cursor" = list(1)))
 
+/// Null-or-reason requirement callback: null allows, a reason refuses.
 /obj/item/stack/medical/proc/wound_work_left(datum/act/op/A)
 	var/obj/item/organ/external/affecting = A.arg("limb")
-	return !QDELETED(affecting) && !read_once(wound_fully_treated(affecting))
+	return (!QDELETED(affecting) && !read_once(wound_fully_treated(affecting))) ? null : MSG(req_failed)
 
 /// A lap takes as long as the wound is bad.
 /obj/item/stack/medical/proc/wound_lap_time(datum/act/op/A)

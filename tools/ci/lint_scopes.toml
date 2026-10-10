@@ -1574,3 +1574,7 @@ folders = [
 # Generated scaffolding is derived build output; source dependencies remain checked.
 [lint.engine_layering]
 exempt_prefixes = ["code/engine/_generated/"]
+
+[lint.requirement_bool]
+# Only transitional boolean callbacks count; generated copies and test fixtures do not.
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/engine/_generated/"]

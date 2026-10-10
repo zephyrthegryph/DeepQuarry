@@ -44,7 +44,7 @@ CAPABILITIES(/obj/item/flashlight)
 	every(2 SECONDS, then(PROC_REF(flashlight_step)), when = cond_all(nameof(on), nameof(power_use)))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
 	drag_onto(PROC_REF(mousedrop_input))
-	op("switch", in_hand(), needs(req(PROC_REF(can_switch), because = PROC_REF(switch_refusal))), then(PROC_REF(interaction_self)))
+	op("switch", in_hand(), needs(req_bool(PROC_REF(can_switch), because = PROC_REF(switch_refusal))), then(PROC_REF(interaction_self)))
 	// held in the other hand, an empty hand takes the cell out (otherwise the click declines to pick up); a device cell goes in
 	op("take_cell", hand(), label("Remove cell"), then(PROC_REF(interaction_hand)))
 	op("insert_cell", item(/obj/item/cell), label("Install cell"), when(nameof(power_use)), then(PROC_REF(interaction_item)))

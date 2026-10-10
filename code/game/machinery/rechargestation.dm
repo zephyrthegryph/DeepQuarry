@@ -168,19 +168,10 @@
 	go_out()
 	return
 
-/// Requirement (was REQ_* is_vacant): the legacy check answers TRUE to pass.
-/obj/machinery/recharge_station/proc/is_vacant_holds(datum/act/op/A)
-	var/answer = is_vacant(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Requirement (was REQ_* grab_holds_living): the legacy check answers TRUE to pass.
-/obj/machinery/recharge_station/proc/grab_holds_living_holds(datum/act/op/A)
-	var/answer = grab_holds_living(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/obj/machinery/recharge_station/proc/is_vacant(mob/actor, atom/target, obj/item/held)
-	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
-	return !occupant
+/obj/machinery/recharge_station/proc/is_vacant(datum/act/op/A)
+	if(!slot_item(OCCUPANT_SLOT_RECHARGE_STATION))
+		return null
+	return /datum/msg/req_failed
 
 /obj/machinery/recharge_station/proc/interaction_part_replacement_impl(datum/act/op/A)
 	var/mob/user = A.actor
@@ -189,11 +180,13 @@
 		return OP_OK
 	return OP_DECLINE
 
-/obj/machinery/recharge_station/proc/grab_holds_living(mob/actor, atom/target, obj/item/held)
-	if(get_dist(src, actor) >= 2)
-		return FALSE
-	var/obj/item/grab/G = held
-	return isliving(G?.grab_target())
+/obj/machinery/recharge_station/proc/grab_holds_living(datum/act/op/A)
+	if(get_dist(src, A.actor) >= 2)
+		return /datum/msg/req_failed
+	var/obj/item/grab/G = A.held
+	if(isliving(G?.grab_target()))
+		return null
+	return /datum/msg/req_failed
 
 /obj/machinery/recharge_station/proc/interaction_insert_grab(datum/act/op/A)
 	var/mob/user = A.actor
@@ -294,11 +287,11 @@ CAPABILITIES(/obj/machinery/recharge_station)
 	ref_one(nameof(cell), /obj/item/cell) // component_parts owns the cell
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(cell), gate = PROC_REF(unbroken), wakes_on = list(STAT_OPERABLE, nameof(cell)), unpowered = TRUE)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
-	extend("machine_panel", needs(req(PROC_REF(station_empty), silent = TRUE)))
-	extend("machine_panel_close", needs(req(PROC_REF(station_empty), silent = TRUE)))
-	extend("machine_deconstruct", needs(req(PROC_REF(station_empty), silent = TRUE)))
-	op("recharge_station_part_replacement", inputs(item(/obj/item/storage/part_replacer), menu()), needs(req(/obj/item/storage/part_replacer, because = MSG(recharge_station/needs_parts)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), when(req(PROC_REF(is_vacant_holds))), then(PROC_REF(interaction_part_replacement_impl)))
-	op("recharge_station_insert_grab", inputs(item(/obj/item/grab), menu()), needs(req(/obj/item/grab, because = MSG(recharge_station/needs_grab)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Put in recharger"), when(req(PROC_REF(is_vacant_holds))), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(grab_holds_living_holds)))), needs(req(PROC_REF(grab_holds_living_holds), because = MSG(recharge_station/needs_living_grab))), then(PROC_REF(interaction_insert_grab)))
+	extend("machine_panel", needs(req_bool(PROC_REF(station_empty), silent = TRUE)))
+	extend("machine_panel_close", needs(req_bool(PROC_REF(station_empty), silent = TRUE)))
+	extend("machine_deconstruct", needs(req_bool(PROC_REF(station_empty), silent = TRUE)))
+	op("recharge_station_part_replacement", inputs(item(/obj/item/storage/part_replacer), menu()), needs(req(/obj/item/storage/part_replacer, because = MSG(recharge_station/needs_parts)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), when(req(PROC_REF(is_vacant))), then(PROC_REF(interaction_part_replacement_impl)))
+	op("recharge_station_insert_grab", inputs(item(/obj/item/grab), menu()), needs(req(/obj/item/grab, because = MSG(recharge_station/needs_grab)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Put in recharger"), when(req(PROC_REF(is_vacant))), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(grab_holds_living)))), needs(req(PROC_REF(grab_holds_living), because = MSG(recharge_station/needs_living_grab))), then(PROC_REF(interaction_insert_grab)))
 	op("recharge_station_drag_insert", inputs(item(/mob), menu()), needs(req(/mob, because = MSG(recharge_station/needs_mob)), req_adjacent(), req_capable()), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put in recharger"), then(PROC_REF(interaction_drag_insert)))
 	op("recharge_station_eject", menu(), label("Eject Recharger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
 	op("recharge_station_enter", menu(), label("Enter Recharger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_enter)))

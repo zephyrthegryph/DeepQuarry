@@ -239,12 +239,10 @@ timer is `after(owner, delay, handler, key =, clock =, with =)` (A1 removed the 
 ## A3. Capabilities
 
 ```dm
-/obj/machinery/thing/capabilities()
-	. = ..()                        // list order = menu order = examine order = draw order
-	. += machine_basics(board = /obj/item/circuitboard/thing, wires = /datum/wires/thing)
-	. += cap_hand("Toggle", PROC_REF(toggle))
-	. = without(., /datum/capability/anchor)                  // drop an inherited one
-	. = replace(., /datum/capability/cover, cap_cover(open_tool = TOOL_WRENCH))
+CAPABILITIES(/obj/machinery/thing)
+	machine_basics(board = /obj/item/circuitboard/thing)
+	cover(open = tool(TOOL_WRENCH))
+	op("toggle", hand(), label("Toggle"), then(PROC_REF(toggle)))
 ```
 
 **Bespoke entries** [built]:
@@ -687,11 +685,11 @@ the megaphone, the medical records console and the desk bell, is [operations_and
 	opened = 1
 	update_icon()
 // AFTER
-	. += cap_cover(open_tool = TOOL_CROWBAR, needs = PROC_REF(cover_unlocked))    // or the maintenance_hatch bundle (in progress)
-/obj/machinery/power/apc/proc/cover_unlocked(mob/user)
-	if(!coverlocked || (stat & MAINT) || cell?.percent() <= 15)
-		return TRUE
-	return "The cover is locked and cannot be opened."
+CAPABILITIES(/obj/machinery/power/apc)
+	cover(open = tool(TOOL_CROWBAR))
+	extend("cover.open", needs(req(PROC_REF(cover_latch_reason))))
+// cover_latch_reason(A) returns null when the cover can open, otherwise its refusal.
+// The complete APC uses maintenance_hatch() for its cover, panel and wires.
 ```
 
 **Traps:**
@@ -713,16 +711,16 @@ the megaphone, the medical records console and the desk bell, is [operations_and
 				emagged = 1
 				locked = 0
 // AFTER
-	. += cap_emag(say = "You short out the APC's interface.", effect = PROC_REF(on_emag), blocked_by = COVER|PANEL)
-/obj/machinery/power/apc/proc/on_emag(mob/user)
-	cap_set(src, CAP_LOCKED, FALSE)
-	return TRUE            // FALSE refuses, and the emagged bit stays clear
+CAPABILITIES(/obj/machinery/power/apc)
+	emag(list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)), say = MSG(apc/emagged))
+	extend("emag.use", needs(req_closed(SPACE_HATCH), req_closed(SPACE_PANEL)))
+// Refusals belong in needs(req(...)); effects run only after requirements allow the operation.
 ```
 
 **Traps:**
 - Delete the `emagged` var and every `if(emagged)`; use `is_emagged(src)`.
-- The effect runs **before** the bit is set, and can refuse.
-- Repeatable emags use `mode = EMAG_REPEATABLE`.
+- Put refusal checks in requirements; effects run after they allow the operation.
+- Repeatable emags use `repeatable = TRUE`.
 
 ## B4. Requirements → `needs`
 

@@ -69,6 +69,26 @@ fn generated_reads_on_fixture_handlers_are_exact() {
 }
 
 #[test]
+fn requirement_protocol_preserves_reads_and_validates_each_callback_return_shape() {
+    let engine = engine_on(&fixture("sem__requirement_protocol"));
+    let analysis = dq_analyze::sem::handlers::analyzed(&engine.tree).expect("requirement handlers analyzed");
+    let handler = |name: &str| analysis.handlers.iter().find(|handler| handler.h.proc == name).expect("fixture callback resolved");
+    for name in ["null_answer", "bare_answer", "text_answer", "datum_answer", "old_boolean", "old_reason"] {
+        assert!(handler(name).proc_found, "{} resolves", name);
+        assert!(handler(name).returns.is_empty(), "{}: {:?}", name, handler(name).returns);
+    }
+    for name in ["boolean_answer", "list_answer", "old_text"] {
+        assert_eq!(handler(name).returns.len(), 1, "{} has one invalid return", name);
+    }
+    assert_eq!(handler("old_boolean").h.role, dq_analyze::sem::hooks::Role::BooleanRequirement);
+    assert_eq!(handler("old_reason").h.role, dq_analyze::sem::hooks::Role::Reason);
+    for name in ["text_answer", "old_boolean"] {
+        let reads = handler(name).set.as_ref().expect("callback reads analyzed");
+        assert!(reads.reads.iter().any(|read| read.var == "available"), "{} keeps tracked reads", name);
+    }
+}
+
+#[test]
 fn a_cycle_is_named_and_has_no_order() {
     let engine = engine_on(&fixture("sem__reads"));
     let sem = dq_analyze::sem::sem_for(&engine.tree).expect("model");

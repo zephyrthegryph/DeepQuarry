@@ -138,11 +138,13 @@ CAPABILITIES(/obj/machinery/computer/pod)
 	req_access = list(ACCESS_SYNDICATE)
 
 CAPABILITIES(/obj/machinery/computer/pod/old/syndicate)
-	extend("ui_open", needs(req(PROC_REF(lets_in_holds), because = MSG(pod/access_denied))))
-	extend("open_ui_impl", needs(req(PROC_REF(lets_in_holds), because = MSG(pod/access_denied))))
+	extend("ui_open", needs(req(PROC_REF(lets_in))))
+	extend("open_ui_impl", needs(req(PROC_REF(lets_in))))
 
-/obj/machinery/computer/pod/old/syndicate/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
+/obj/machinery/computer/pod/old/syndicate/proc/lets_in(datum/act/op/A)
+	if(allowed(A.actor))
+		return null
+	return MSG(pod/access_denied)
 
 /obj/machinery/computer/pod/old/swf
 	name = "Magix System IV"
@@ -151,6 +153,3 @@ CAPABILITIES(/obj/machinery/computer/pod/old/syndicate)
 /// connected (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/pod/proc/connected() as /obj/machinery/mass_driver
 	return connected
-
-/obj/machinery/computer/pod/old/syndicate/proc/lets_in_holds(datum/act/op/A)
-	return lets_in(A.actor, src, A.held)

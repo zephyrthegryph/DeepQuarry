@@ -95,7 +95,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled))))
 	owns_one(nameof(electronics), /obj/item)
 	op("rename", item(/obj/item/pen), label("Rename"), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed)))
-	op("rename_robot", hand(), label("Rename"), when(req(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed)))
+	op("rename_robot", hand(), label("Rename"), when(req_bool(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed)))
 	op("flip", menu(), label("Flip Windoor Assembly"), wait(0), then(PROC_REF(flipped)))
 	extend("construction.dismantle", needs(req_not(req_built(STAGE_WINDOOR_ASSEMBLY_SECURED, because = MSG(windoor_assembly/bolted_down)), because = MSG(windoor_assembly/bolted_down))))
 	param(nameof(start_dir), pos = 1)
@@ -153,7 +153,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 
 /// The electronics in it are not a burnt out board.
 /obj/structure/windoor_assembly/proc/board_whole(datum/act/A)
-	return !istype(electronics, /obj/item/circuitboard/broken)
+	return istype(electronics, /obj/item/circuitboard/broken) ? /datum/msg/windoor_assembly/broken_board : null
 
 /// A loose bare frame comes apart into its glass.
 /obj/structure/windoor_assembly/proc/disassembled(datum/act/op/A)

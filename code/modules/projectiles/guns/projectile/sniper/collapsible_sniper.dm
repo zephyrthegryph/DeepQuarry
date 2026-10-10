@@ -3,7 +3,7 @@
 /obj/item/gun/projectile/heavysniper/collapsible
 
 CAPABILITIES(/obj/item/gun/projectile/heavysniper/collapsible)
-	op("collapsible_sniper_verb_take_down", menu(), label("Disassemble Rifle"), needs(carried(), req(PROC_REF(rifle_empty), because = MSG(sniper/empty_first))), begins(MSG(sniper/removing_barrel)), wait(4 SECONDS), then(PROC_REF(barrel_removed)))
+	op("collapsible_sniper_verb_take_down", menu(), label("Disassemble Rifle"), needs(carried(), req_bool(PROC_REF(rifle_empty), because = MSG(sniper/empty_first))), begins(MSG(sniper/removing_barrel)), wait(4 SECONDS), then(PROC_REF(barrel_removed)))
 
 MSG_DEF_SELF(sniper/empty_first, span_warning("You need to empty the rifle to break it down."))
 MSG_DEF_SELF(sniper/removing_barrel, span_warning("You begin removing %T%'s barrel."))
@@ -69,7 +69,7 @@ TRACKED(/obj/item/sniper_rifle_part, part_count)
 MSG_DEF_SELF(sniper_part/last_part, "you can't disassemble this further")
 
 CAPABILITIES(/obj/item/sniper_rifle_part)
-	op("use", in_hand(), needs(req(PROC_REF(can_disassemble_holds), because = MSG(sniper_part/last_part))), begins(MSG(sniper_part/disassembling)), wait(4 SECONDS), then(PROC_REF(disassembled)))
+	op("use", in_hand(), needs(req_bool(PROC_REF(can_disassemble_holds), because = MSG(sniper_part/last_part))), begins(MSG(sniper_part/disassembling)), wait(4 SECONDS), then(PROC_REF(disassembled)))
 	op("add_part", item(/obj/item/sniper_rifle_part), begins(PROC_REF(adding_text)), wait(3 SECONDS), then(PROC_REF(part_added)))
 
 MSG_DEF_SELF(sniper_part/disassembling, span_notice("You start disassembling %T%."))

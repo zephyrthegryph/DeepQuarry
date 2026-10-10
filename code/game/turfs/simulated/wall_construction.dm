@@ -66,12 +66,12 @@ MSG_DEF_SELF(wall/repaired, "You finish repairing the damage to %T%.")
 /// A worker who is dexterous.
 /turf/simulated/wall/proc/worker_dexterous(datum/act/op/A)
 	var/mob/actor = A.actor
-	return actor.IsAdvancedToolUser()
+	return actor.IsAdvancedToolUser() ? null : MSG(wall/clumsy)
 
 /// A worker who stands on a turf, not inside something.
 /turf/simulated/wall/proc/worker_standing(datum/act/op/A)
 	var/mob/actor = A.actor
-	return isturf(actor.loc)
+	return isturf(actor.loc) ? null : MSG(wall/inside)
 
 /// No reinforcement layers are left to go through: a plain wall, or a reinforced one with no stage.
 /turf/simulated/wall/proc/is_plain(datum/act/A)

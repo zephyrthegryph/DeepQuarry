@@ -50,9 +50,6 @@ base_var	code/datums/behaviours/swarming.dm	var/swarm_offset_y = 0
 base_var	code/datums/behaviours/swarming.dm	var/is_swarming = FALSE
 base_var	code/datums/behaviours/swarming.dm	var/list/atom/movable/swarm_members
 base_var	code/datums/behaviours/tethered_item.dm	var/tether_path
-base_var	code/datums/capabilities/library/assembly.dm	var/obj/item/assembly/attached_assembly
-base_var	code/datums/capabilities/library/signaler.dm	var/cap_signal_frequency
-base_var	code/datums/capabilities/library/signaler.dm	var/cap_signal_code
 base_var	code/datums/character_identity.dm	var/datum/character_identity/own_identity = new
 base_var	code/datums/character_identity.dm	var/datum/character_identity/identity
 base_var	code/datums/lifecycle/verbs.dm	/atom/movable/var/lifecycle_lifetime = 0

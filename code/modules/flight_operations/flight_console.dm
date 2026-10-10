@@ -245,7 +245,7 @@ CAPABILITIES(/obj/machinery/computer/ship)
 	op("topic_sync", topic("sync"), then(PROC_REF(topic_sync)))
 	op("ship_silicon_use", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(ai_control), TRUE, because = MSG(ship/ai_denied))), then(PROC_REF(ship_silicon_use)))
 	op("ship_ghost_view", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("View"), then(PROC_REF(ship_ghost_view)))
-	op("ship_console_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(ship_access_holds), because = MSG(ship/access_denied)), any_of(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(ship/access_denied)), req_is(nameof(ai_control), TRUE, because = MSG(ship/access_denied)))), then(PROC_REF(interaction_use)))
+	op("ship_console_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(ship_access_holds), because = MSG(ship/access_denied)), any_of(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(ship/access_denied)), req_is(nameof(ai_control), TRUE, because = MSG(ship/access_denied)))), then(PROC_REF(interaction_use)))
 
 /// Helm and navigation consoles show the Flight Operations UI.
 /obj/machinery/computer/ship/proc/flight_operations()

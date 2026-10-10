@@ -62,13 +62,12 @@ GLOBAL_VAR(bomb_set)
 				attack_hand(M)
 	return PROCESS_KILL
 
-/obj/machinery/nuclearbomb/proc/is_extended(mob/actor, atom/target, obj/item/held)
-	return extended // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+TRACKED(/obj/machinery/nuclearbomb, extended)
 
-/// Requirement (was REQ_* is_extended): the legacy check answers TRUE to pass.
-/obj/machinery/nuclearbomb/proc/is_extended_holds(datum/act/op/A)
-	var/answer = is_extended(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+/obj/machinery/nuclearbomb/proc/is_extended(datum/act/op/A)
+	if(extended)
+		return null
+	return /datum/msg/req_failed
 
 /obj/machinery/nuclearbomb/proc/interaction_insert_disk(datum/act/op/A)
 	var/mob/user = A.actor
@@ -210,7 +209,7 @@ GLOBAL_VAR(bomb_set)
 		if(!lighthack)
 			flick("nuclearbombc", src)
 			icon_state = "nuclearbomb1"
-		extended = 1
+		set_extended(1)
 	return TRUE
 
 CAPABILITIES(/obj/machinery/nuclearbomb)
@@ -224,15 +223,15 @@ CAPABILITIES(/obj/machinery/nuclearbomb)
 	op("anchor", ui_act("anchor"), then(PROC_REF(ui_act_anchor)))
 	op("wire", ui_act("wire", arg("wire", schema_text(4096))), then(PROC_REF(ui_act_wire)))
 	op("pulse", ui_act("pulse", arg("wire", schema_text(4096))), then(PROC_REF(ui_act_pulse)))
-	extend(TAG_UI, needs(req(PROC_REF(bomb_reachable), because = MSG(nuclearbomb/unreachable))))
+	extend(TAG_UI, needs(req_bool(PROC_REF(bomb_reachable), because = MSG(nuclearbomb/unreachable))))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
-	op("insert_disk", item(/obj/item/disk/nuclear), priority(OP_PRIORITY_DEFAULT - 1), label("Insert authentication disk"), when(req(PROC_REF(is_extended_holds))), then(PROC_REF(interaction_insert_disk)))
+	op("insert_disk", item(/obj/item/disk/nuclear), priority(OP_PRIORITY_DEFAULT - 1), label("Insert authentication disk"), when(req(PROC_REF(is_extended))), then(PROC_REF(interaction_insert_disk)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
-	op("make_deployable", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Make Deployable"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal)), req(PROC_REF(can_make_deployable_holds), because = PROC_REF(can_make_deployable_refusal))), then(PROC_REF(interaction_make_deployable)))
+	op("make_deployable", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Make Deployable"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act)), req(PROC_REF(can_make_deployable))), then(PROC_REF(interaction_make_deployable)))
 	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(wire_tool_used)))
 
 MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
@@ -433,32 +432,13 @@ MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 	tgui_interact(user)
 
 /// Requirement: only something with hands can adjust the panels.
-/obj/machinery/nuclearbomb/proc/can_make_deployable(mob/user, atom/target, obj/item/held)
-	if(!user.canmove || user.stat || user.restrained()) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
-		return TRUE // the effect declines silently
+/obj/machinery/nuclearbomb/proc/can_make_deployable(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!read_once(user.canmove) || user.stat || user.restrained())
+		return null // the effect declines silently
 	if(!ishuman(user))
 		return "you don't have the dexterity to do this"
-	return TRUE
-
-/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
-/obj/machinery/nuclearbomb/proc/dq_actor_can_act_holds(datum/act/op/A)
-	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/nuclearbomb/proc/dq_actor_can_act_refusal(datum/act/op/A)
-	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return istext(answer) ? answer : "you can't do that right now"
-
-/// Requirement (was REQ_* can_make_deployable): the legacy check answers TRUE to pass.
-/obj/machinery/nuclearbomb/proc/can_make_deployable_holds(datum/act/op/A)
-	var/answer = can_make_deployable(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_make_deployable_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/nuclearbomb/proc/can_make_deployable_refusal(datum/act/op/A)
-	var/answer = can_make_deployable(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	return null
 
 /obj/machinery/nuclearbomb/proc/interaction_make_deployable(datum/act/op/A)
 	var/mob/user = A.actor
@@ -579,3 +559,10 @@ REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 /// auth (a relation view: it reads null once the target is deleted).
 /obj/machinery/nuclearbomb/proc/auth() as /obj/item/disk/nuclear
 	return auth
+
+/obj/machinery/nuclearbomb/proc/dq_actor_can_act(datum/act/op/A)
+	var/mob/actor = A.actor
+	READS_FROM(actor)
+	if(!isliving(actor) || actor.incapacitated())
+		return "you can't do that right now"
+	return null

@@ -287,11 +287,11 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/atmos_filter)
 	pipe_device_window("OmniFilter")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("configure", ui_act("configure"), then(PROC_REF(ui_act_configure)))
-	op("set_flow_rate", ui_act("set_flow_rate"), needs(req(PROC_REF(configurable), silent = TRUE)),
+	op("set_flow_rate", ui_act("set_flow_rate"), needs(req_bool(PROC_REF(configurable), silent = TRUE)),
 		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(set_flow_rate_question)), "title" = "Flow Rate Control", "default" = nameof(set_flow_rate), "max_value" = nameof(max_flow_rate), "timeout" = 0), step = "k236"),
 		then(PROC_REF(ui_act_set_flow_rate)))
-	op("switch_mode", ui_act("switch_mode", arg("dir"), arg("mode", schema_text(4096))), needs(req(PROC_REF(configurable), silent = TRUE)), then(PROC_REF(ui_act_switch_mode)))
-	op("switch_filter", ui_act("switch_filter", arg("dir")), needs(req(PROC_REF(configurable), silent = TRUE)),
+	op("switch_mode", ui_act("switch_mode", arg("dir"), arg("mode", schema_text(4096))), needs(req_bool(PROC_REF(configurable), silent = TRUE)), then(PROC_REF(ui_act_switch_mode)))
+	op("switch_filter", ui_act("switch_filter", arg("dir")), needs(req_bool(PROC_REF(configurable), silent = TRUE)),
 		asks(/datum/prompt/choice, fields = list("question" = "Select filter mode:", "title" = "Change filter", "choices" = list("None", GASNAME_O2, GASNAME_N2, GASNAME_CO2, GASNAME_PHORON, GASNAME_N2O, GASNAME_CH4), "timeout" = 0), step = "k247"),
 		then(PROC_REF(ui_act_switch_filter)))
 	ref_one(nameof(input))

@@ -30,7 +30,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger)
 	when(nameof(leads_pair), heat_link(HEAT_PORT(1), nameof(partner), nameof(exchange_conductance)))
 	links(/obj/machinery/atmospherics/unary/heat_exchanger::partner, /obj/machinery/atmospherics/unary/heat_exchanger::partner)
 	pipe_device_unwrench()
-	extend("unwrench", needs(req(PROC_REF(floor_clear), because = MSG(air_device/plating))))
+	extend("unwrench", needs(req_bool(PROC_REF(floor_clear), because = MSG(air_device/plating))))
 
 /obj/machinery/atmospherics/unary/heat_exchanger/draw(datum/look/look)
 	..()

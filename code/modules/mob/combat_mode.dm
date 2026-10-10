@@ -212,7 +212,7 @@ CAPABILITY_DEF(attack_variants, CAP_ATTACK_VARIANTS, key = NONE)
 
 /// The actor is somebody else.
 /mob/living/proc/attack_variant_not_self(datum/act/op/A)
-	return A.actor != src
+	return (A.actor != src) ? null : /datum/msg/req_failed
 
 /mob/living/proc/attack_variant_disarm(datum/act/op/A)
 	A.actor.use_attack_variant(src, ATTACK_VARIANT_DISARM)

@@ -111,6 +111,8 @@ brings (`WIRE_DEF` in `code/library/machine/wires.dm`), declare that capability 
 `STAT`, delete its `var/` and `TRACKED` lines, and turn its other writers into holds with a source of their own); keep `on_wire()` only for the
 type's own wires and for a real deviation on a shared one. Never write a timed pulse with `after()`: it is the capability's `pulse_lasts`.
 
+A custom requirement is `req(PROC_REF(x))`, where `x(datum/act/op/A)` returns null to allow or text/a `/datum/msg` path or instance to refuse. Its returned reason is shown in the menu and refusal; `because =` overrides the wording. Empty text refuses silently. Combine requirements with `all_of`/`any_of`; their `holds()` and engine stage `require()` remain boolean views, while `check()` exposes null-or-reason. Existing boolean callbacks use the explicit transitional `req_bool(...)`, counted by the shrink-only `requirement_bool` ratchet. Merge their predicate and separate refusal into one requirement rather than renaming a legacy helper.
+
 A condition is `x(datum/act/A)` (or `datum/act/op/A` when it reads `A.actor`/`A.held`), returns TRUE/FALSE, and **never writes, publishes or talks** (the
 purity guard fails a test build). A refusal reason is a `MSG_DEF` type, or a proc returning one for a reason that depends on state.
 

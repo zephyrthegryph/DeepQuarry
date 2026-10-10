@@ -24,7 +24,7 @@ MSG_DEF_SELF(belt/under_suit, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/storage/belt)
 	configure(storage(max_size = ITEMSIZE_NORMAL))
-	op("layer", menu(), label("Switch Belt Layer"), needs(carried(), req(PROC_REF(can_switch_layer), because = MSG(belt/under_suit))), then(PROC_REF(toggle_layer_effect)))
+	op("layer", menu(), label("Switch Belt Layer"), needs(carried(), req_bool(PROC_REF(can_switch_layer), because = MSG(belt/under_suit))), then(PROC_REF(toggle_layer_effect)))
 
 /// Some belts are only ever worn under the suit.
 /obj/item/storage/belt/proc/can_switch_layer(datum/act/op/A)

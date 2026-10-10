@@ -37,7 +37,7 @@ TRACKED(/obj/item/batterer, max_uses)
 MSG_DEF_SELF(batterer/burnt, "the mind batterer has been burnt out")
 
 CAPABILITIES(/obj/item/batterer)
-	op("batter", in_hand(), label("Trigger mind batterer"), needs(req(PROC_REF(batter_available), because = MSG(batterer/burnt))), then(PROC_REF(batter_triggered)))
+	op("batter", in_hand(), label("Trigger mind batterer"), needs(req_bool(PROC_REF(batter_available), because = MSG(batterer/burnt))), then(PROC_REF(batter_triggered)))
 
 /obj/item/batterer/proc/batter_available(datum/act/op/A)
 	return times_used < max_uses

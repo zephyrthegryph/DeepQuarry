@@ -136,7 +136,7 @@ CAPABILITIES(/obj/item/multitool)
 /obj/item/multitool/proc/calibratable(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
 	var/obj/item/organ/external/E = aimed_limb(A)
-	return !!E && !!(read_once(H.body.biology_of(E)) & treatment_tag_biology(TREAT_CALIBRATION))
+	return (!!E && !!(read_once(H.body.biology_of(E)) & treatment_tag_biology(TREAT_CALIBRATION))) ? null : MSG(req_failed)
 
 /obj/item/multitool/proc/recalibrate_text(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target

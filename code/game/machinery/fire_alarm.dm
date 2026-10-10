@@ -45,7 +45,7 @@ TRACKED_BRIDGED(/obj/machinery/firealarm, timing, CHANGE_MACHINE_SETTINGS)
 
 CAPABILITIES(/obj/machinery/firealarm)
 	op("firealarm_trigger", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Trigger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_firealarm_trigger)))
-	op("firealarm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req(PROC_REF(firealarm_use_ready), silent = TRUE)), then(PROC_REF(interaction_firealarm_use)))
+	op("firealarm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req_bool(PROC_REF(firealarm_use_ready), silent = TRUE)), then(PROC_REF(interaction_firealarm_use)))
 	started_work(step = PROC_REF(work_step), when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
 	owns_one(nameof(causality), /datum/looping_sound/alarm/sm_causality_alarm)
 	owns_one(nameof(critalarm), /datum/looping_sound/alarm/sm_critical_alarm)
@@ -55,7 +55,7 @@ CAPABILITIES(/obj/machinery/firealarm)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(firealarm_emp))))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
-	op("cut_out", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Cut the wires"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wires_cut_out)))
+	op("cut_out", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Cut the wires"), needs(req_bool(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wires_cut_out)))
 
 /obj/machinery/firealarm/alarms_hidden
 	alarms_hidden = TRUE
@@ -286,7 +286,7 @@ CAPABILITIES(/obj/machinery/partyalarm)
 	op("alarm", ui_act("alarm"), then(PROC_REF(ui_act_alarm)))
 	op("time", ui_act("time", arg("value", num())), then(PROC_REF(ui_act_time)))
 	op("tp", ui_act("tp", arg("value", num())), then(PROC_REF(ui_act_tp)))
-	extend(TAG_UI, needs(req(PROC_REF(button_usable), because = MSG(partyalarm/unusable))))
+	extend(TAG_UI, needs(req_bool(PROC_REF(button_usable), because = MSG(partyalarm/unusable))))
 	op("partyalarm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_partyalarm_use)))
 
 MSG_DEF_SELF(partyalarm/unusable, "You can't work the button.")

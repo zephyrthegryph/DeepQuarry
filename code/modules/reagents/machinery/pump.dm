@@ -22,7 +22,7 @@
 /// Pumps every machine frame while on (set_pump_on()).
 CAPABILITIES(/obj/machinery/pump)
 	op("insert_cell", item(/obj/item/cell), label("Insert power cell"),
-		needs(req(PROC_REF(battery_panel_open), because = PROC_REF(battery_panel_shut_reason)), req(PROC_REF(no_cell), because = MSG(pump/has_cell))),
+		needs(req_bool(PROC_REF(battery_panel_open), because = PROC_REF(battery_panel_shut_reason)), req_bool(PROC_REF(no_cell), because = MSG(pump/has_cell))),
 		then(PROC_REF(cell_inserted)))
 	op("use", hand(), ungated(), label("Use"), then(PROC_REF(touched)))
 	op("silicon_toggle", remote(), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle"), then(PROC_REF(pump_silicon_toggle)))

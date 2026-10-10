@@ -145,7 +145,7 @@ MSG_DEF_SELF(modular_computer/welding, "You begin repairing damage to %T%...")
 MSG_DEF_SELF(modular_computer/welded, "You repair %T%.")
 
 /obj/item/modular_computer/proc/needs_repair(datum/act/op/A)
-	return get_integrity_damage() > 0
+	return get_integrity_damage() > 0 ? null : MSG(modular_computer/no_repairs)
 
 /// A weld takes a second for every ten points of damage, and a unit of fuel for every 75, both read when it starts.
 /obj/item/modular_computer/proc/weld_time(datum/act/op/A)

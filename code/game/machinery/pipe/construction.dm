@@ -151,10 +151,10 @@ MSG_DEF(pipe_item/fastened, "You fasten %T%.", "%U% fastens %T%.")
 
 CAPABILITIES(/obj/item/pipe)
 	op("rotate", in_hand(), label("Rotate"), wait(0), then(PROC_REF(rotated)))
-	op("flip", menu(), label("Flip Pipe"), wait(0), needs(req(PROC_REF(actor_able), because = MSG(pipe_item/cannot_flip))), then(PROC_REF(flipped)))
-	op("line", stack(/obj/item/stack/material, 1), label("Form material"), wait(0), needs(req(PROC_REF(unlined), because = MSG(pipe_item/lined))), then(PROC_REF(lined)))
+	op("flip", menu(), label("Flip Pipe"), wait(0), needs(req_bool(PROC_REF(actor_able), because = MSG(pipe_item/cannot_flip))), then(PROC_REF(flipped)))
+	op("line", stack(/obj/item/stack/material, 1), label("Form material"), wait(0), needs(req_bool(PROC_REF(unlined), because = MSG(pipe_item/lined))), then(PROC_REF(lined)))
 	op("fasten", tool(TOOL_WRENCH), label("Fasten"), wait(0),
-		needs(req(PROC_REF(on_floor), because = MSG(pipe_item/not_on_floor)), req(PROC_REF(tile_free), because = PROC_REF(tile_refusal))),
+		needs(req_bool(PROC_REF(on_floor), because = MSG(pipe_item/not_on_floor)), req_bool(PROC_REF(tile_free), because = PROC_REF(tile_refusal))),
 		says(MSG(pipe_item/fastened)), then(PROC_REF(fastened)))
 	param(nameof(pipe_type), pos = 1)
 	param(nameof(dir), pos = 2)
@@ -294,7 +294,7 @@ MSG_DEF_SELF(pipe_meter/no_pipe, "You need to fasten it to a pipe!")
 MSG_DEF_SELF(pipe_meter/fastened, "You fasten the meter to the pipe.")
 
 CAPABILITIES(/obj/item/pipe_meter)
-	op("fasten", tool(TOOL_WRENCH), label("Fasten"), wait(0), needs(req(PROC_REF(pipe_here), because = MSG(pipe_meter/no_pipe))), says(MSG(pipe_meter/fastened)), then(PROC_REF(fastened)))
+	op("fasten", tool(TOOL_WRENCH), label("Fasten"), wait(0), needs(req_bool(PROC_REF(pipe_here), because = MSG(pipe_meter/no_pipe))), says(MSG(pipe_meter/fastened)), then(PROC_REF(fastened)))
 
 /obj/item/pipe_meter/proc/pipe_here(datum/act/A)
 	for(var/obj/machinery/atmospherics/pipe/P in contents_of(loc)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look

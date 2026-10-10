@@ -27,7 +27,7 @@ CAPABILITIES(/obj/machinery/reagentgrinder)
 	owns_one(nameof(beaker), /obj/item/reagent_containers, starts = /obj/item/reagent_containers/glass/beaker/large)
 	op("use", item(/obj/item), label("Use"), then(PROC_REF(item_used)))
 	op("replace_beaker", hand(), ungated(), gesture(GESTURE_ALT), label("Replace beaker"), needs(req_adjacent()), then(PROC_REF(beaker_replaced)))
-	op("interact", hand(), ungated(), label("Use"), needs(req(PROC_REF(menu_available), silent = TRUE)),
+	op("interact", hand(), ungated(), label("Use"), needs(req_bool(PROC_REF(menu_available), silent = TRUE)),
 		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(radial_choices)), "radial" = TRUE, "autopick_single_option" = FALSE, "timeout" = 0), step = "choice"),
 		then(PROC_REF(radial_chosen)))
 	default_parts()

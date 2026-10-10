@@ -17,7 +17,7 @@ TRACKED(/obj/item/teleportation_scroll, uses)
 
 CAPABILITIES(/obj/item/teleportation_scroll)
 	// the old attack_self: how many uses are left, then where to (a person, free, with a use left)
-	op("read", in_hand(), needs(req(PROC_REF(can_read), because = MSG(teleportation_scroll/unreadable))),
+	op("read", in_hand(), needs(req_bool(PROC_REF(can_read), because = MSG(teleportation_scroll/unreadable))),
 		asks(/datum/prompt/choice, fields = list("title" = "Teleportation Scroll", "question" = computed(PROC_REF(uses_question)), "choices" = list("Teleport", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "teleport"),
 		asks(/datum/prompt/choice, fields = list("title" = "Teleportation Scroll", "question" = "Area to jump to:", "choices" = computed(PROC_REF(area_choices)), "timeout" = 0), step = "area", when = PROC_REF(teleport_chosen)),
 		then(PROC_REF(area_chosen)))

@@ -303,7 +303,7 @@ CAPABILITIES(/obj/item/bedsheet/pillow/exercise)
 	icon_state = "dumbbell"
 
 CAPABILITIES(/obj/item/entrepreneur/dumbbell)
-	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_exercise_holds), because = PROC_REF(can_exercise_refusal))), wait(3 SECONDS), then(PROC_REF(exercise_done)))
+	op("self", in_hand(), label("Use"), needs(req_bool(PROC_REF(can_exercise_holds), because = PROC_REF(can_exercise_refusal))), wait(3 SECONDS), then(PROC_REF(exercise_done)))
 
 /// Requirement: the user isn't too hungry to exercise.
 /obj/item/entrepreneur/dumbbell/proc/can_exercise(mob/user, atom/target, obj/item/held)
@@ -457,9 +457,9 @@ CAPABILITIES(/obj/item/entrepreneur/emf)
 	var/accurate = FALSE
 
 CAPABILITIES(/obj/item/entrepreneur/spirit_board)
-	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(can_slide_holds), because = PROC_REF(can_slide_refusal))), wait(3 SECONDS), then(PROC_REF(spirit_slide_done)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), needs(req_bool(PROC_REF(can_slide_holds), because = PROC_REF(can_slide_refusal))), wait(3 SECONDS), then(PROC_REF(spirit_slide_done)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "What should it land on next?", "title" = "Next result", "choices" = nameof(possible_results), "timeout" = 0), step = "k451", when = PROC_REF(alt_asks)), then(PROC_REF(interaction_alt)))
-	op("spirit_board_ghost_guide", observer(), label("Guide"), needs(req(PROC_REF(can_ghost_guide_holds), because = PROC_REF(can_ghost_guide_refusal))), asks(/datum/prompt/choice, fields = list("question" = "What should it land on next?", "title" = "Next result", "choices" = nameof(possible_results), "timeout" = 0), step = "k459", when = PROC_REF(ghost_asks)), then(PROC_REF(spirit_board_ghost_guide)))
+	op("spirit_board_ghost_guide", observer(), label("Guide"), needs(req_bool(PROC_REF(can_ghost_guide_holds), because = PROC_REF(can_ghost_guide_refusal))), asks(/datum/prompt/choice, fields = list("question" = "What should it land on next?", "title" = "Next result", "choices" = nameof(possible_results), "timeout" = 0), step = "k459", when = PROC_REF(ghost_asks)), then(PROC_REF(spirit_board_ghost_guide)))
 
 /// Requirement: a drink container to slide across the board (a non-living user is ignored silently by the effect).
 /obj/item/entrepreneur/spirit_board/proc/can_slide_holds(datum/act/op/A)

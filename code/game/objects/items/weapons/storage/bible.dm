@@ -40,10 +40,10 @@ GLOBAL_LIST_INIT(bibleitemstates, list(
 // skin from a ring around the user, a later one invokes the religion.
 CAPABILITIES(/obj/item/storage/bible)
 	op("page_turn", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), label("Put in"), then(PROC_REF(turn_page)), passes())
-	op("skin", in_hand(), when(req(PROC_REF(chaplain_unconfigured))), label("Choose a bible"),
+	op("skin", in_hand(), when(req_bool(PROC_REF(chaplain_unconfigured))), label("Choose a bible"),
 		asks(/datum/prompt/choice, fields = list("question" = "Choose a bible", "choices" = computed(PROC_REF(skin_choices)), "radial" = TRUE, "radius" = 40)),
 		then(PROC_REF(skin_chosen)))
-	op("invoke", in_hand(), priority(above("skin")), when(req(PROC_REF(chaplain_configured))), label("Invoke"), then(PROC_REF(invoke_religion)))
+	op("invoke", in_hand(), priority(above("skin")), when(req_bool(PROC_REF(chaplain_configured))), label("Invoke"), then(PROC_REF(invoke_religion)))
 
 /// What a bible asks of its user: 0 not a chaplain with a religion, 1 a religion whose bible is not yet chosen, 2 one that has it. The role and the religion
 /// are the mind's own state, read when the op resolves.

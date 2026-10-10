@@ -41,9 +41,9 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	owns_one(nameof(air_temporary), /datum/gas_mixture)
 	owns_many(nameof(leak_watches), /datum/native_watch/gas)
 	op("unwrench", tool(TOOL_WRENCH), wait(1 SECOND), when(PROC_REF(wrenchable)),
-		needs(req(PROC_REF(floor_clear), because = MSG(pipe/plating)), req(PROC_REF(unwrench_safe), because = MSG(pipe/exerted))),
+		needs(req_bool(PROC_REF(floor_clear), because = MSG(pipe/plating)), req_bool(PROC_REF(unwrench_safe), because = MSG(pipe/exerted))),
 		begins(PROC_REF(unwrench_warning)), says(MSG(pipe/unfastened)), then(PROC_REF(pipe_unwrenched)))
-	op("seal", tool(TOOL_WELDER), wait(4 SECONDS), needs(req(PROC_REF(cracked), because = MSG(pipe/not_cracked))), says(MSG(pipe/sealed)), then(PROC_REF(crack_sealed)))
+	op("seal", tool(TOOL_WELDER), wait(4 SECONDS), needs(req_bool(PROC_REF(cracked), because = MSG(pipe/not_cracked))), says(MSG(pipe/sealed)), then(PROC_REF(crack_sealed)))
 
 /obj/machinery/atmospherics/pipe/drain_power()
 	return -1

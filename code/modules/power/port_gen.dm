@@ -333,11 +333,11 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	part_replacement()
 	extend("part_replacement.replace", needs(req_is(nameof(active), FALSE, because = MSG(pacman/running))))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
-	op("add_fuel", item(/obj/item/stack/material), label("Add fuel"), wait(0), when(req(PROC_REF(sheet_match))),
-		needs(req(PROC_REF(has_room), because = MSG(pacman/full))), then(PROC_REF(sheets_added)))
+	op("add_fuel", item(/obj/item/stack/material), label("Add fuel"), wait(0), when(req_bool(PROC_REF(sheet_match))),
+		needs(req_bool(PROC_REF(has_room), because = MSG(pacman/full))), then(PROC_REF(sheets_added)))
 	interface("PortableGenerator")
 	extend("ui_open", when(nameof(anchored)))
-	extend(TAG_UI, needs(req(PROC_REF(not_broken), because = MSG(pacman/broken))))
+	extend(TAG_UI, needs(req_bool(PROC_REF(not_broken), because = MSG(pacman/broken))))
 	op("toggle_power", ui_act("toggle_power"), then(PROC_REF(ui_act_toggle_power)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("lower_power", ui_act("lower_power"), then(PROC_REF(ui_act_lower_power)))
@@ -960,8 +960,8 @@ TRACKED(/obj/machinery/power/port_gen/large_altevian, max_sheets)
 
 // The altevian reactor: its sheets, a hand (or a silicon's touch) that switches it, and its fuel gauge.
 CAPABILITIES(/obj/machinery/power/port_gen/large_altevian)
-	op("add_fuel", item(/obj/item/stack/material), label("Add fuel"), wait(0), when(req(PROC_REF(sheet_match))),
-		needs(req(PROC_REF(has_room), because = MSG(pacman/full))), then(PROC_REF(sheets_added)))
+	op("add_fuel", item(/obj/item/stack/material), label("Add fuel"), wait(0), when(req_bool(PROC_REF(sheet_match))),
+		needs(req_bool(PROC_REF(has_room), because = MSG(pacman/full))), then(PROC_REF(sheets_added)))
 	op("toggle", hand(), label("Toggle"), wait(0), when(req_empty_hand()), when(nameof(anchored)), then(PROC_REF(toggled)))
 	extend("toggle", binds(remote()))
 

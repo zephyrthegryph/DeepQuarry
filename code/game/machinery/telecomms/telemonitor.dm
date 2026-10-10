@@ -17,7 +17,7 @@ TRACKED(/obj/machinery/computer/telecomms, temp)
 /// The entries of a console that probes its network: the buttons, the network question, the status line and the emag.
 /proc/tcomms_probe_console()
 	return list(
-		op("scan", ui_act("scan"), needs(req(TYPE_PROC_REF(/obj/machinery/computer/telecomms, buffer_empty), because = MSG(tcomms_console/buffer_full))), then(TYPE_PROC_REF(/obj/machinery/computer/telecomms, probe_scan))),
+		op("scan", ui_act("scan"), needs(req_bool(TYPE_PROC_REF(/obj/machinery/computer/telecomms, buffer_empty), because = MSG(tcomms_console/buffer_full))), then(TYPE_PROC_REF(/obj/machinery/computer/telecomms, probe_scan))),
 		op("view", ui_act("view", arg("id", schema_text(4096))), then(TYPE_PROC_REF(/obj/machinery/computer/telecomms, ui_act_view))),
 		op("mainmenu", ui_act("mainmenu"), then(TYPE_PROC_REF(/obj/machinery/computer/telecomms, ui_act_mainmenu))),
 		op("release", ui_act("release"), then(TYPE_PROC_REF(/obj/machinery/computer/telecomms, ui_act_release))),

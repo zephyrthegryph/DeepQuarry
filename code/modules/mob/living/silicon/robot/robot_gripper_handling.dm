@@ -89,7 +89,7 @@ TRACKED(/obj/item/gripper, shown_item)
 /// The pocket ring's requirement: not mid-use of the gripper and not holding a special-handling item (which answers its own self-use). A second ring on the
 /// same gripper is the engine's: the ring claims the gripper (claims(CLAIM_TARGET)), and is_in_use() reads that claim for every other use.
 /obj/item/gripper/proc/pocket_menu_holds(datum/act/op/A)
-	return read_once(!special_handling && !gripper_in_use)
+	return read_once(!special_handling && !gripper_in_use) ? null : pocket_menu_refusal(A)
 
 /// Why the ring is refused: nothing for special handling (silent, as before), else how the gripper is busy.
 /obj/item/gripper/proc/pocket_menu_refusal(datum/act/op/A)

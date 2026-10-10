@@ -15,8 +15,8 @@ MSG_DEF_SELF(upload/module_required, "needs a AI module")
 
 CAPABILITIES(/obj/machinery/computer/aiupload)
 	op("access_internals", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Access Computer's Internals"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_access_internals)))
-	op("install_module", inputs(item(/obj/item/aiModule), menu()), priority(OP_PRIORITY_DEFAULT), label("Install module"), needs(req(/obj/item, because = MSG(upload/item_required)), req_adjacent(), req_capable(), req(PROC_REF(can_connect_holds), because = PROC_REF(can_connect_refusal))), then(PROC_REF(interaction_install)))
-	op("select_ai", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Select AI"), needs(req(PROC_REF(can_select_ai_holds), because = PROC_REF(can_select_ai_refusal))),
+	op("install_module", inputs(item(/obj/item/aiModule), menu()), priority(OP_PRIORITY_DEFAULT), label("Install module"), needs(req(/obj/item, because = MSG(upload/item_required)), req_adjacent(), req_capable(), req(PROC_REF(can_connect))), then(PROC_REF(interaction_install)))
+	op("select_ai", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Select AI"), needs(req(PROC_REF(can_select_ai))),
 		asks(/datum/prompt/choice/ai_upload_selection, fields = list("title" = "AI selection", "question" = "AI signals detected:"), step = "selection"), then(PROC_REF(interaction_select_ai)))
 	op("observer_view", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("View"), then(TYPE_PROC_REF(/atom, op_swallow)))
 /obj/machinery/computer/aiupload/proc/interaction_access_internals(datum/act/op/A)
@@ -32,18 +32,19 @@ CAPABILITIES(/obj/machinery/computer/aiupload)
 	return TRUE
 
 /// Requirement: the console only reaches the station's contact levels.
-/obj/machinery/computer/aiupload/proc/can_connect(mob/user, atom/target, obj/item/held)
+/obj/machinery/computer/aiupload/proc/can_connect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(using_map && !(read_once(user.z) in using_map.contact_levels))
 		return "unable to establish a connection, you're too far away from the station"
-	return TRUE
+	return null
 
-/// Requirement: TRUE, or why no AI can be selected.
-/obj/machinery/computer/aiupload/proc/can_select_ai(mob/user, atom/target, obj/item/held)
+/// Requirement: null, or why no AI can be selected.
+/obj/machinery/computer/aiupload/proc/can_select_ai(datum/act/op/A)
 	if(power_lost())
 		return "the upload computer has no power"
 	if(broken_now())
 		return "the upload computer is broken"
-	return TRUE
+	return null
 
 /obj/machinery/computer/aiupload/proc/interaction_install(datum/act/op/A)
 	var/mob/user = A.actor
@@ -75,7 +76,7 @@ CAPABILITIES(/obj/machinery/computer/aiupload)
 
 CAPABILITIES(/obj/machinery/computer/borgupload)
 	op("install_module", inputs(item(/obj/item/aiModule), menu()), priority(OP_PRIORITY_DEFAULT), label("Install module"), needs(req(/obj/item/aiModule, because = MSG(upload/module_required)), req_adjacent(), req_capable()), then(PROC_REF(interaction_install)))
-	op("select_borg", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Select cyborg"), needs(req(PROC_REF(can_select_borg_holds), because = PROC_REF(can_select_borg_refusal))),
+	op("select_borg", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Select cyborg"), needs(req(PROC_REF(can_select_borg))),
 		asks(/datum/prompt/choice/borg_upload_selection, fields = list("title" = "Borg selection", "question" = "Unshackled borg signals detected:"), step = "selection"), then(PROC_REF(interaction_select_borg)))
 	op("observer_view", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("View"), then(TYPE_PROC_REF(/atom, op_swallow)))
 /obj/machinery/computer/borgupload/proc/interaction_install(datum/act/op/A)
@@ -84,13 +85,13 @@ CAPABILITIES(/obj/machinery/computer/borgupload)
 	module.install(src, user)
 	return TRUE
 
-/// Requirement: TRUE, or why no cyborg can be selected.
-/obj/machinery/computer/borgupload/proc/can_select_borg(mob/user, atom/target, obj/item/held)
+/// Requirement: null, or why no cyborg can be selected.
+/obj/machinery/computer/borgupload/proc/can_select_borg(datum/act/op/A)
 	if(power_lost())
 		return "the upload computer has no power"
 	if(broken_now())
 		return "the upload computer is broken"
-	return TRUE
+	return null
 
 /obj/machinery/computer/borgupload/proc/interaction_select_borg(datum/act/op/A)
 	var/mob/user = A.actor
@@ -108,25 +109,6 @@ CAPABILITIES(/obj/machinery/computer/borgupload)
 /obj/machinery/computer/borgupload/proc/current() as /mob/living/silicon/robot
 	return current
 
-
-/obj/machinery/computer/aiupload/proc/can_select_ai_holds(datum/act/op/A)
-	return can_select_ai(A.actor, src, A.held) == TRUE
-
-/obj/machinery/computer/aiupload/proc/can_select_ai_refusal(datum/act/op/A)
-	return can_select_ai(A.actor, src, A.held)
-
-/obj/machinery/computer/aiupload/proc/can_connect_holds(datum/act/op/A)
-	return can_connect(A.actor, src, A.held) == TRUE
-
-/obj/machinery/computer/aiupload/proc/can_connect_refusal(datum/act/op/A)
-	return can_connect(A.actor, src, A.held)
-
-
-/obj/machinery/computer/borgupload/proc/can_select_borg_holds(datum/act/op/A)
-	return can_select_borg(A.actor, src, A.held) == TRUE
-
-/obj/machinery/computer/borgupload/proc/can_select_borg_refusal(datum/act/op/A)
-	return can_select_borg(A.actor, src, A.held)
 
 /// Current registry candidates are request fields, not a cached world output.
 /datum/prompt/choice/ai_upload_selection

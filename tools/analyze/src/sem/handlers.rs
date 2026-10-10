@@ -27,7 +27,7 @@ pub struct Analyzed {
     pub def: Option<(String, u32)>,
     pub params: Vec<Vec<String>>,
     pub set: Option<ReadSet>,
-    /// Boolean-return violations of the top-level body (conditions and requirements).
+    /// Return-protocol violations of the top-level body (conditions and requirements).
     pub returns: Vec<super::checks::Found>,
     /// Reads of a var that is not tracked, a relation, a stat, a derived value or constant:
     /// (read key, var, owner type, file, line).
@@ -102,6 +102,10 @@ fn compute(tree: &Tree) -> Analysis {
                 if h.role.boolean() {
                     if let Some(code) = b.code {
                         super::checks::boolean_returns(code, &mut returns);
+                    }
+                } else if h.role == hooks::Role::Requirement {
+                    if let Some(code) = b.code {
+                        super::checks::requirement_returns(code, &mut returns);
                     }
                 }
                 (true, Some((b.file, b.line)), params, returns)

@@ -27,7 +27,7 @@ CAPABILITIES(/obj/item/radio/headset)
 	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))
 	interface("Radio", state = nameof(GLOB.tgui_inventory_state))
 	without("ui_open")
-	op("item", item(/obj/item/encryptionkey), label("Insert key"), needs(req(PROC_REF(can_insert_key_holds), because = PROC_REF(can_insert_key_refusal))), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item/encryptionkey), label("Insert key"), needs(req_bool(PROC_REF(can_insert_key_holds), because = PROC_REF(can_insert_key_refusal))), then(PROC_REF(interaction_item)))
 
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()

@@ -36,23 +36,17 @@ TRACKED_BRIDGED(/obj/machinery/computer/prison_shuttle, in_flight, CHANGE_MACHIN
  * they used to fire even when the console itself was unpowered/broken. The machinery hand gate
  * now always runs first (see machine_hand) and those checks are can_open_console(), after it.
  */
-/// Requirement: TRUE, or why the console can't be used.
-/obj/machinery/computer/prison_shuttle/proc/can_open_console(mob/user, atom/target, obj/item/held)
-	if(!allowed(user) && !hacked) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+TRACKED(/obj/machinery/computer/prison_shuttle, hacked)
+TRACKED(/obj/machinery/computer/prison_shuttle, prison_break)
+
+/// Requirement: null, or why the console can't be used.
+/obj/machinery/computer/prison_shuttle/proc/can_open_console(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!allowed(user) && !hacked)
 		return "access denied"
-	if(prison_break) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+	if(prison_break)
 		return "unable to locate shuttle"
-	return TRUE
-
-/// Requirement (was REQ_* can_open_console): the legacy check answers TRUE to pass.
-/obj/machinery/computer/prison_shuttle/proc/can_open_console_holds(datum/act/op/A)
-	var/answer = can_open_console(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_open_console_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/computer/prison_shuttle/proc/can_open_console_refusal(datum/act/op/A)
-	var/answer = can_open_console(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	return null
 
 /obj/machinery/computer/prison_shuttle/proc/interaction_open_ui_impl(datum/act/op/A)
 	var/mob/user = A.actor
@@ -62,11 +56,11 @@ TRACKED_BRIDGED(/obj/machinery/computer/prison_shuttle, in_flight, CHANGE_MACHIN
 
 CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 	interface("PrisonShuttleConsole", title = "Prison Shuttle")
-	extend("ui_open", needs(req(PROC_REF(can_open_console_holds), because = PROC_REF(can_open_console_refusal))), then(PROC_REF(record_window_open)))
+	extend("ui_open", needs(req(PROC_REF(can_open_console))), then(PROC_REF(record_window_open)))
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
 	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
 	every(0.5 SECONDS, then(PROC_REF(prison_process)), when = nameof(in_flight))
-	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_open_console_holds), because = PROC_REF(can_open_console_refusal))), then(PROC_REF(interaction_open_ui_impl)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_open_console))), then(PROC_REF(interaction_open_ui_impl)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /obj/machinery/computer/prison_shuttle/ui_data(datum/act/eval/A)
@@ -124,9 +118,9 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 			if (!GLOB.prison_shuttle_moving_to_prison || !GLOB.prison_shuttle_moving_to_station)
 				GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
 			set_in_flight(TRUE)
-			prison_break = 1
+			set_prison_break(1)
 		if(1)
-			prison_break = 0
+			set_prison_break(0)
 
 
 /obj/machinery/computer/prison_shuttle/proc/post_signal(command)
@@ -215,7 +209,7 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 /obj/machinery/computer/prison_shuttle/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!hacked)
-		hacked = 1
+		set_hacked(1)
 		to_chat(user, span_notice("You disable the lock."))
 		return OP_OK
 	return OP_DECLINE

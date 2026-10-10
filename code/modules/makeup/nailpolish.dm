@@ -73,8 +73,9 @@ MSG_DEF_SELF(nailpolish/missing_limb, "%T% is missing that limb!")
 MSG_DEF_SELF(nailpolish/already_polished, "%T% already has nail polish on that limb!")
 MSG_DEF_SELF(nailpolish/no_nails, "You can't find any nails on that limb to paint.")
 
+/// Null-or-reason requirement callback: null allows, a reason refuses.
 /obj/item/nailpolish/proc/polish_is_open(datum/act/op/A)
-	return open
+	return (open) ? null : MSG(req_failed)
 
 /// The limb aimed at must be there, bare and have nails to paint; it and the polish are fixed now.
 /obj/item/nailpolish/proc/paint_started(datum/act/op/A)
@@ -148,8 +149,9 @@ CAPABILITIES(/obj/item/nailpolish_remover)
 MSG_DEF_SELF(nailpolish/remover_missing_limb, "%T% is missing that limb!")
 MSG_DEF_SELF(nailpolish/nothing_to_remove, "%T% has no nail polish to remove on that limb!")
 
+/// Null-or-reason requirement callback: null allows, a reason refuses.
 /obj/item/nailpolish_remover/proc/remover_is_open(datum/act/op/A)
-	return open
+	return (open) ? null : MSG(req_failed)
 
 /// The limb aimed at must be there and carry polish; it is fixed now.
 /obj/item/nailpolish_remover/proc/remove_started(datum/act/op/A)

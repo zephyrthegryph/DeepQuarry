@@ -21,10 +21,10 @@ MSG_DEF_SELF(mob_attacks/no_hands, "You can't pick things up.")
 /datum/capability/lib/mob_attacks/entries()
 	return list(
 		op("melee", inputs(ai()), reach(REACH_ADJACENT), label("Attack"),
-			needs(req_capable(), req_conscious(), req_adjacent(), req(CAP_PROC(ready), because = MSG(mob_attacks/cooling))),
+			needs(req_capable(), req_conscious(), req_adjacent(), req_bool(CAP_PROC(ready), because = MSG(mob_attacks/cooling))),
 			then(CAP_PROC(melee))),
 		op("shoot", inputs(ai()), reach(REACH_VIEW), label("Shoot"),
-			needs(req_capable(), req_conscious(), req(CAP_PROC(ready), because = MSG(mob_attacks/cooling)), req(CAP_PROC(has_shot), because = MSG(mob_attacks/no_shot))),
+			needs(req_capable(), req_conscious(), req_bool(CAP_PROC(ready), because = MSG(mob_attacks/cooling)), req_bool(CAP_PROC(has_shot), because = MSG(mob_attacks/no_shot))),
 			then(CAP_PROC(shoot))),
 		// One step to a turf (or toward an atom): every tactic that repositions the mob (approach, flee, kite, juke, wander, follow, home) uses it.
 		op("step", inputs(ai()), reach(REACH_ANY), label("Step"),
@@ -35,14 +35,14 @@ MSG_DEF_SELF(mob_attacks/no_hands, "You can't pick things up.")
 			then(CAP_PROC(special))),
 		// A held gun fired at the target (held = the gun).
 		op("fire", inputs(ai()), reach(REACH_VIEW), label("Fire"),
-			needs(req_capable(), req_conscious(), req(CAP_PROC(ready), because = MSG(mob_attacks/cooling)), req(CAP_PROC(has_gun), because = MSG(mob_attacks/no_item))),
+			needs(req_capable(), req_conscious(), req_bool(CAP_PROC(ready), because = MSG(mob_attacks/cooling)), req_bool(CAP_PROC(has_gun), because = MSG(mob_attacks/no_item))),
 			then(CAP_PROC(fire))),
 		// A held grenade primed and thrown at a turf (held = the grenade).
 		op("throw", inputs(ai()), reach(REACH_ANY), label("Throw"),
-			needs(req_capable(), req_conscious(), req(CAP_PROC(ready), because = MSG(mob_attacks/cooling)), req(CAP_PROC(has_grenade), because = MSG(mob_attacks/no_item))),
+			needs(req_capable(), req_conscious(), req_bool(CAP_PROC(ready), because = MSG(mob_attacks/cooling)), req_bool(CAP_PROC(has_grenade), because = MSG(mob_attacks/no_item))),
 			then(CAP_PROC(throw_it))),
 		op("pickup", inputs(ai()), reach(REACH_ADJACENT), label("Pick up"),
-			needs(req_capable(), req_conscious(), req_adjacent(), req(CAP_PROC(can_pick_up), because = MSG(mob_attacks/no_hands))),
+			needs(req_capable(), req_conscious(), req_adjacent(), req_bool(CAP_PROC(can_pick_up), because = MSG(mob_attacks/no_hands))),
 			then(CAP_PROC(pick_up))),
 		// The mob's warning cry: the shout is the action (who hears it reacts through their own brain).
 		op("alarm", inputs(ai()), reach(REACH_ANY), label("Sound the alarm"),

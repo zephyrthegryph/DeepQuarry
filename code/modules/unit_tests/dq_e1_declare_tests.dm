@@ -157,7 +157,7 @@
 /datum/unit_test/dq_e1/table_accepts_a_legacy_constructor
 
 /datum/unit_test/dq_e1/table_accepts_a_legacy_constructor/run_e1()
-	var/datum/capability/legacy = cap_cover()
+	var/datum/capability/legacy = new /datum/capability
 	var/datum/type_table/T = table_compile(/obj/e1_fixture, null, list(legacy, e1_solo()), "legacy.dm:1")
 	TEST_ASSERT_EQUAL(length(reports()), 0, "a legacy capability beside an engine one is accepted: [json_encode(reports())]")
 	TEST_ASSERT_EQUAL(length(compiled_entries(T, ENTRY_CAPABILITY)), 2, "both are in the table")

@@ -96,7 +96,7 @@ CAPABILITIES(/obj/item/canvas)
 	interface("Canvas")
 	op("paint", ui_act("paint", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_paint)))
 	op("finalize", ui_act("finalize"), then(PROC_REF(ui_act_finalize)))
-	extend(TAG_UI, needs(req(PROC_REF(canvas_open), because = MSG(canvas/finished))))
+	extend(TAG_UI, needs(req_bool(PROC_REF(canvas_open), because = MSG(canvas/finished))))
 	op("view", in_hand(), then(PROC_REF(interaction_self)))
 	op("base_color", item(/obj/item/paint_palette), label("Fill"),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Confirm Color Fill", "question" = "Adjusting the base color of this canvas will replace ALL pixels with the selected color. Are you sure?", "timeout" = 0), step = "sure"),

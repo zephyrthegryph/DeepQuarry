@@ -239,7 +239,7 @@ CAPABILITIES(/obj/item/book)
 	op("scan", item(/obj/item/barcodescanner), priority(OP_PRIORITY_DEFAULT - 3), when(req_is(nameof(carved), FALSE)), then(PROC_REF(interaction_scan)))
 	op("carve", item(/obj/item/material/knife), priority(OP_PRIORITY_DEFAULT - 4), when(req_is(nameof(carved), FALSE)), begins(PROC_REF(carve_text)), wait(3 SECONDS), then(PROC_REF(carve_done)))
 	op("carve_cutters", tool(TOOL_WIRECUTTER), when(req_is(nameof(carved), FALSE)), begins(PROC_REF(carve_text)), wait(3 SECONDS), then(PROC_REF(carve_done)))
-	op("carve_cutters_blocked", tool(TOOL_WIRECUTTER), when(req_is(nameof(carved))), priority(OP_PRIORITY_PART + 1), needs(req(PROC_REF(never), silent = TRUE)))
+	op("carve_cutters_blocked", tool(TOOL_WIRECUTTER), when(req_is(nameof(carved))), priority(OP_PRIORITY_PART + 1), needs(req_bool(PROC_REF(never), silent = TRUE)))
 
 TRACKED(/obj/item/book, carved)
 TRACKED(/obj/item/book, unique)

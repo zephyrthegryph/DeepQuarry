@@ -44,7 +44,7 @@ TRACKED(/obj/e0_fixture/p1_impure, steady)
 
 CAPABILITIES(/obj/e0_fixture/p1_impure)
 	op("writes", hand(), when(PROC_REF(writes_in_condition)), then(PROC_REF(ran)))
-	op("touches", menu(), needs(req(PROC_REF(writes_in_requirement), because = MSG(p1/not_ready))), then(PROC_REF(ran)))
+	op("touches", menu(), needs(req_bool(PROC_REF(writes_in_requirement), because = MSG(p1/not_ready))), then(PROC_REF(ran)))
 	op("clean", item(/obj/item/e2_key), when(PROC_REF(reads_only)), then(PROC_REF(ran)))
 
 /obj/e0_fixture/p1_impure/proc/writes_in_condition(datum/act/A)

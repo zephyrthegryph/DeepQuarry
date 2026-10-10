@@ -142,18 +142,19 @@ STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 
 
 
-/// Requirement for putting a grabbed mob in: TRUE, or why not.
-/obj/machinery/suit_cycler/proc/can_insert_grabbed(mob/user, atom/target, obj/item/grab/G)
+/// Requirement for putting a grabbed mob in: null, or why not.
+/obj/machinery/suit_cycler/proc/can_insert_grabbed(datum/act/op/A)
+	var/obj/item/grab/G = A.held
 	var/mob/grabbed = G?.grab_target()
 	if(!ismob(grabbed))
-		return TRUE // the effect declines silently
+		return null // the effect declines silently
 	if(locked)
 		return "the suit cycler is locked"
 	if(contents_count(src) > 0 || has_latent()) // ALLOW(latent): latent entries checked
 		return "there is no room inside the cycler for [grabbed.name]"
-	return TRUE
+	return null
 
-/// Requirement shared by the helmet and suit slots: TRUE, or why `item` can't be fitted.
+/// Requirement shared by the helmet and suit slots: null, or why `item` can't be fitted.
 /obj/machinery/suit_cycler/proc/can_fit_part(obj/item/clothing/item, occupied, part_name, no_cycle)
 	if(locked)
 		return "the suit cycler is locked"
@@ -164,63 +165,63 @@ STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 	// Refitting is immediate; sample the item's current custom appearance.
 	if(read_once(item.icon_override) == CUSTOM_ITEM_MOB)
 		return "you cannot refit a customised voidsuit"
-	return TRUE
+	return null
 
 /// Requirement for fitting a helmet.
-/obj/machinery/suit_cycler/proc/can_insert_helmet(mob/user, atom/target, obj/item/clothing/head/helmet/space/void/IH)
+/obj/machinery/suit_cycler/proc/can_insert_helmet(datum/act/op/A)
+	var/obj/item/clothing/head/helmet/space/void/IH = A.held
 	if(!istype(IH))
-		return TRUE
-	. = can_fit_part(IH, helmet, "helmet", IH.no_cycle)
-	if(. != TRUE)
-		return
+		return null
+	var/reason = can_fit_part(IH, helmet, "helmet", IH.no_cycle)
+	if(reason)
+		return reason
 	//Make it so autolok suits can't be refitted in a cycler
 	if(istype(IH, /obj/item/clothing/head/helmet/space/void/autolok))
 		return "you cannot refit an autolok helmet (you shouldn't even be able to remove it in the first place, inform an admin)"
 	//Ditto the Mk7
 	if(istype(IH, /obj/item/clothing/head/helmet/space/void/responseteam))
 		return "the Mark VII Emergency Response Helmet is not compatible with the refitting system (inform an admin)"
-	return TRUE
+	return null
 
 /// Requirement for fitting a voidsuit.
-/obj/machinery/suit_cycler/proc/can_insert_suit(mob/user, atom/target, obj/item/clothing/suit/space/void/IS)
+/obj/machinery/suit_cycler/proc/can_insert_suit(datum/act/op/A)
+	var/obj/item/clothing/suit/space/void/IS = A.held
 	if(!istype(IS))
-		return TRUE
-	. = can_fit_part(IS, suit, "voidsuit", IS.no_cycle)
-	if(. != TRUE)
-		return
+		return null
+	var/reason = can_fit_part(IS, suit, "voidsuit", IS.no_cycle)
+	if(reason)
+		return reason
 	//Make it so autolok suits can't be refitted in a cycler
 	if(istype(IS, /obj/item/clothing/suit/space/void/autolok))
 		return "you cannot refit an autolok suit"
 	//Ditto the Mk7
 	if(istype(IS, /obj/item/clothing/suit/space/void/responseteam))
 		return "the Mark VII Emergency Response Suit is not compatible with the refitting system"
-	return TRUE
+	return null
 
-/// A live machine shocks the hand at it, and that ends the click; else the grab must hold somebody.
-/obj/machinery/suit_cycler/proc/insert_grab_started(datum/act/op/A)
-	var/mob/user = A.actor
+/obj/machinery/suit_cycler/proc/insertion_shock(datum/act/op/A)
+	if(shock_live(src) && shock(A.actor, 100))
+		return /datum/msg/op/stopped
 	var/obj/item/grab/G = A.held
-	if(shock_live(src) && shock(user, 100))
-		return MSG(suit_cycler/shocked)
 	if(!ismob(G?.grab_target()))
-		return MSG(suit_cycler/needs_grab)
+		return /datum/msg/req_silent
 
-/obj/machinery/suit_cycler/proc/insert_grab_begins(datum/act/op/A)
+/obj/machinery/suit_cycler/proc/insertion_message(datum/act/op/A)
 	var/obj/item/grab/G = A.held
-	return msg_text(null, span_notice("[A.actor] starts putting [G?.grab_target()] into the suit cycler."))
+	var/mob/grabbed = G?.grab_target()
+	return msg_text(null, span_notice("%U% starts putting [grabbed.name] into the suit cycler."))
 
 /obj/machinery/suit_cycler/proc/interaction_insert_grab(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/grab/G = A.held
 	if(!G || !G?.grab_target())
-		return OP_REFUSED
+		return TRUE
 	var/mob/M = G?.grab_target()
 	if(!move_into(src, OCCUPANT_SLOT_SUIT_CYCLER, M))
-		return OP_REFUSED
+		return TRUE
 
 	add_fingerprint(user)
 	consume(G, user)
-	return OP_OK
 
 /obj/machinery/suit_cycler/proc/interaction_insert_helmet(datum/act/op/A)
 	var/mob/user = A.actor
@@ -295,14 +296,13 @@ STAT(/obj/machinery/suit_cycler, safeties, ALL)
 
 MSG_DEF_SELF(suit_cycler/cannot_leave, "you can't do that right now")
 MSG_DEF_SELF(suit_cycler/needs_grab, "needs a grab")
-MSG_DEF_SELF(suit_cycler/shocked, "The machine arcs at you.")
 MSG_DEF_SELF(suit_cycler/needs_helmet, "needs a void helmet")
 MSG_DEF_SELF(suit_cycler/needs_suit, "needs a voidsuit")
 
 CAPABILITIES(/obj/machinery/suit_cycler)
-	op("cycler_insert_grab", inputs(item(/obj/item/grab), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Put in cycler"), needs(req(/obj/item/grab, because = MSG(suit_cycler/needs_grab)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_grabbed_holds), because = PROC_REF(can_insert_grabbed_refusal))), starts(PROC_REF(insert_grab_started)), begins(PROC_REF(insert_grab_begins)), wait(2 SECONDS), then(PROC_REF(interaction_insert_grab)))
-	op("cycler_insert_helmet", inputs(item(/obj/item/clothing/head/helmet/space/void), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Fit helmet"), when(PROC_REF(cycler_helmet_offered)), needs(req(/obj/item/clothing/head/helmet/space/void, because = MSG(suit_cycler/needs_helmet)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_helmet_holds), because = PROC_REF(can_insert_helmet_refusal))), then(PROC_REF(interaction_insert_helmet)))
-	op("cycler_insert_suit", inputs(item(/obj/item/clothing/suit/space/void), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Fit voidsuit"), needs(req(/obj/item/clothing/suit/space/void, because = MSG(suit_cycler/needs_suit)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_suit_holds), because = PROC_REF(can_insert_suit_refusal))), then(PROC_REF(interaction_insert_suit)))
+	op("cycler_insert_grab", inputs(item(/obj/item/grab), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Put in cycler"), needs(req(/obj/item/grab, because = MSG(suit_cycler/needs_grab)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_grabbed))), starts(PROC_REF(insertion_shock)), begins(PROC_REF(insertion_message)), wait(2 SECONDS), then(PROC_REF(interaction_insert_grab)))
+	op("cycler_insert_helmet", inputs(item(/obj/item/clothing/head/helmet/space/void), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Fit helmet"), when(PROC_REF(cycler_helmet_offered)), needs(req(/obj/item/clothing/head/helmet/space/void, because = MSG(suit_cycler/needs_helmet)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_helmet))), then(PROC_REF(interaction_insert_helmet)))
+	op("cycler_insert_suit", inputs(item(/obj/item/clothing/suit/space/void), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Fit voidsuit"), needs(req(/obj/item/clothing/suit/space/void, because = MSG(suit_cycler/needs_suit)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_suit))), then(PROC_REF(interaction_insert_suit)))
 	op("cycler_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 	op("cycler_leave", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Cycler"), needs(req_adjacent(), req_capable(), req(PROC_REF(cycler_actor_can_act), because = MSG(suit_cycler/cannot_leave))), then(PROC_REF(interaction_leave)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cycler_has_work), wakes_on = list(nameof(active), nameof(irradiating)))
@@ -602,26 +602,13 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	set_locked(!locked)
 
 
-/obj/machinery/suit_cycler/proc/can_insert_grabbed_holds(datum/act/op/A)
-	return can_insert_grabbed(A.actor, src, A.held) == TRUE
-
-/obj/machinery/suit_cycler/proc/can_insert_grabbed_refusal(datum/act/op/A)
-	return can_insert_grabbed(A.actor, src, A.held)
-
-/obj/machinery/suit_cycler/proc/can_insert_helmet_holds(datum/act/op/A)
-	return can_insert_helmet(A.actor, src, A.held) == TRUE
-
-/obj/machinery/suit_cycler/proc/can_insert_helmet_refusal(datum/act/op/A)
-	return can_insert_helmet(A.actor, src, A.held)
-
-/obj/machinery/suit_cycler/proc/can_insert_suit_holds(datum/act/op/A)
-	return can_insert_suit(A.actor, src, A.held) == TRUE
-
-/obj/machinery/suit_cycler/proc/can_insert_suit_refusal(datum/act/op/A)
-	return can_insert_suit(A.actor, src, A.held)
-
 /obj/machinery/suit_cycler/proc/cycler_helmet_offered(datum/act/op/A)
 	return !istype(A.held, /obj/item/clothing/head/helmet/space/rig)
 
+
 /obj/machinery/suit_cycler/proc/cycler_actor_can_act(datum/act/op/A)
-	return dq_actor_can_act(A.actor, src, A.held) == TRUE
+	var/mob/actor = A.actor
+	READS_FROM(actor)
+	if(!isliving(actor) || actor.incapacitated())
+		return "you can't do that right now"
+	return null

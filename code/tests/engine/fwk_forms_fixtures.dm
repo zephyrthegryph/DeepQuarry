@@ -63,7 +63,7 @@ CAPABILITIES(/obj/fwk_site)
 	broke_laps = A.laps()
 
 /obj/fwk_site/proc/never_ok(datum/act/op/A)
-	return FALSE
+	return MSG(fwk/too_quick)
 
 /obj/fwk_site/proc/hook_time(datum/act/op/A)
 	return A.arg("time") || 1 SECOND

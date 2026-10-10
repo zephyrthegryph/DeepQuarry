@@ -18,7 +18,7 @@ TRACKED(/obj/item/universal_translator, langset_static)
 
 CAPABILITIES(/obj/item/universal_translator)
 	op("enable", in_hand(), label("Enable translator"), when(cond_not(nameof(translation_enabled))),
-		needs(carried(), req(PROC_REF(language_supported), because = PROC_REF(language_refusal))),
+		needs(carried(), req_bool(PROC_REF(language_supported), because = PROC_REF(language_refusal))),
 		asks(/datum/prompt/choice/translator_language, fields = list("timeout" = 0), keeps = 0),
 		then(PROC_REF(language_picked)))
 	op("disable", in_hand(), label("Disable translator"), when(nameof(translation_enabled)), then(PROC_REF(disabled)))

@@ -129,7 +129,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
 	climb()
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
 	op("hand", hand(), label("Use"), ungated(), when(PROC_REF(has_rig)), begins(MSG(fueltank/detaching)), wait(2 SECONDS), then(PROC_REF(detach_rig_done)))
-	op("fueltank_interaction_item", item(/obj/item/assembly_holder), needs(req(PROC_REF(no_rig), because = MSG(fueltank/in_the_way))),
+	op("fueltank_interaction_item", item(/obj/item/assembly_holder), needs(req_bool(PROC_REF(no_rig), because = MSG(fueltank/in_the_way))),
 		begins(MSG(fueltank/rigging)), wait(2 SECONDS), then(PROC_REF(rig_assembly_done)))
 
 /obj/structure/reagent_dispensers/fueltank/high
@@ -363,9 +363,9 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	climb()
 	op("interaction_hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
 	op("unfasten_jug", tool(TOOL_WRENCH), when(nameof(bottle)), starts(PROC_REF(jug_started)), wait(2 SECONDS), then(PROC_REF(unfasten_jug_done)))
-	op("bottle", item(/obj/item/reagent_containers/glass/cooler_bottle), needs(req(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req(PROC_REF(cooler_no_bottle), because = MSG(water_cooler/has_bottle))),
+	op("bottle", item(/obj/item/reagent_containers/glass/cooler_bottle), needs(req_bool(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req_bool(PROC_REF(cooler_no_bottle), because = MSG(water_cooler/has_bottle))),
 		begins(MSG(water_cooler/screwing)), wait(2 SECONDS), then(PROC_REF(bottle_done)))
-	op("cupholder", stack(/obj/item/stack/material/plastic, 1), needs(req(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req(PROC_REF(cooler_no_cupholder), because = MSG(water_cooler/has_cupholder))),
+	op("cupholder", stack(/obj/item/stack/material/plastic, 1), needs(req_bool(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req_bool(PROC_REF(cooler_no_cupholder), because = MSG(water_cooler/has_cupholder))),
 		begins(MSG(water_cooler/attaching)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(cupholder_done)))
 
 /obj/structure/reagent_dispensers/water_cooler/Initialize(mapload)

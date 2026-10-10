@@ -157,7 +157,7 @@ CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
 
 /// A xenotaser belongs to the SL-ED-209 assembly: the plain taser step does not take one.
 /obj/item/secbot_assembly/ed209_assembly/proc/plain_taser_held(datum/act/op/A)
-	return istype(A.held, /obj/item/gun/energy/taser) && !istype(A.held, /obj/item/gun/energy/taser/xeno)
+	return (istype(A.held, /obj/item/gun/energy/taser) && !istype(A.held, /obj/item/gun/energy/taser/xeno)) ? null : /datum/msg/req_failed
 
 /obj/item/secbot_assembly/ed209_assembly/proc/taser_added(datum/act/op/A)
 	name = "taser ED-209 assembly"

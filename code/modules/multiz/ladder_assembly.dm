@@ -33,7 +33,7 @@ MSG_DEF_SELF(ladder_assembly/on_shuttle, span_warning("%T% cannot be constructed
 
 /// Requirement: the assembly does not stand on a shuttle.
 /obj/structure/ladder_assembly/proc/not_on_shuttle(datum/act/op/A)
-	return read_once(!istype(get_area(src), /area/shuttle))
+	return (read_once(!istype(get_area(src), /area/shuttle))) ? null : /datum/msg/req_failed
 
 /obj/structure/ladder_assembly/proc/bolts_needed(datum/act/op/A)
 	to_chat(A.actor, span_warning("The reinforcing bolts need to be secured."))

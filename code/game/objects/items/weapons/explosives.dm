@@ -74,8 +74,8 @@ CAPABILITIES(/obj/item/plastique)
 /obj/item/plastique/proc/timer_item_in_hands(datum/act/op/A)
 	var/mob/living/actor = A.actor
 	if(!istype(actor))
-		return FALSE
-	return actor.item_is_in_hands(src)
+		return /datum/msg/op/not_available
+	return actor.item_is_in_hands(src) ? null : /datum/msg/op/not_available
 
 /obj/item/plastique/proc/timer_set(datum/act/op/A)
 	var/datum/prompt/number/R = A.answer

@@ -63,15 +63,15 @@ MSG_DEF_SELF(mecha/fix_wiring, "You replace the fused wires.")
 
 /// The mech has a power cell to take out or screw in.
 /obj/mecha/proc/maintenance_has_cell(datum/act/A)
-	return cell ? TRUE : FALSE
+	return cell ? null : MSG(mecha/no_cell)
 
 /// The power unit hatch is open (short-circuit wiring is behind it).
 /obj/mecha/proc/maintenance_hatch_open(datum/act/A)
-	return state >= MECHA_CELL_OPEN
+	return state >= MECHA_CELL_OPEN ? null : MSG(mecha/hatch_closed)
 
 /// The securing bolts are undone (components are reachable).
 /obj/mecha/proc/maintenance_panel_loose(datum/act/A)
-	return state >= MECHA_PANEL_LOOSE
+	return state >= MECHA_PANEL_LOOSE ? null : MSG(mecha/panel_shut)
 
 // ---- the steps ----
 
@@ -176,7 +176,7 @@ MSG_DEF_SELF(mecha/fix_wiring, "You replace the fused wires.")
 /// The extinguisher has enough foam left.
 /obj/mecha/proc/extinguisher_has_foam(datum/act/op/A)
 	var/obj/item/extinguisher/held = A.held
-	return istype(held) && held.reagents && held.reagents.total_volume >= MECHA_EXTINGUISH_FOAM
+	return (istype(held) && held.reagents && held.reagents.total_volume >= MECHA_EXTINGUISH_FOAM) ? null : MSG(mecha/extinguisher_empty)
 
 /obj/mecha/proc/extinguish_internal_fire(datum/act/op/A)
 	var/obj/item/extinguisher/held = A.held

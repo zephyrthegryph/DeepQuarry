@@ -33,9 +33,9 @@ CAPABILITIES(/obj/item/ammo_magazine/smart)
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	op("smart_item", item(/obj/item), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(smart_interaction_item)))
 	op("smart_cell_in", item(/obj/item/cell/device), priority(OP_PRIORITY_NORMAL + 2), label("Install the cell"),
-		needs(req(PROC_REF(no_cell_yet), because = PROC_REF(cell_present_text))), starts(PROC_REF(realize_rounds)), begins(MSG(smartmag/inserting)), wait(2.5 SECONDS), then(PROC_REF(cell_installed)))
+		needs(req_bool(PROC_REF(no_cell_yet), because = PROC_REF(cell_present_text))), starts(PROC_REF(realize_rounds)), begins(MSG(smartmag/inserting)), wait(2.5 SECONDS), then(PROC_REF(cell_installed)))
 	// You can remove the power cell from the magazine by hand, but it's way slower than using a screwdriver
-	op("smart_cell_out", hand(), ungated(), priority(OP_PRIORITY_NORMAL + 1), label("Remove the cell"), when(req(PROC_REF(cell_removable))),
+	op("smart_cell_out", hand(), ungated(), priority(OP_PRIORITY_NORMAL + 1), label("Remove the cell"), when(req_bool(PROC_REF(cell_removable))),
 		starts(PROC_REF(realize_rounds)), begins(PROC_REF(struggle_text)), wait(4 SECONDS), then(PROC_REF(cell_removed)))
 	op("clear_data", menu(), label("Clear Ammo Data"), needs(carried(), req_empty(nameof(stored_ammo), because = MSG(smartmag/not_empty))), then(PROC_REF(smartmag_verb_clear_data)))
 

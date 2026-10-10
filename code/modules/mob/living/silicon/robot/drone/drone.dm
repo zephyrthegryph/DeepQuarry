@@ -229,7 +229,7 @@ CAPABILITY_DEF(drone_shell, CAP_DRONE_SHELL, key = NONE)
 			then(TYPE_PROC_REF(/mob/living/silicon/robot/drone, ability_pick_shell))))
 
 /mob/living/silicon/robot/drone/proc/can_pick_shell_now(datum/act/op/A)
-	return can_pick_shell
+	return (can_pick_shell) ? null : /datum/msg/req_failed
 
 /// A drone is never named by its player.
 /mob/living/silicon/robot/drone/may_pick_name()
