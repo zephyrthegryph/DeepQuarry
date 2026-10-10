@@ -323,3 +323,33 @@ test('shadow unsupported policy rejects before prepared DreamMaker callback', as
   expect(prepared).toBe(0);
   expect(executed).toBe(0);
 });
+
+
+test('shadow cancellation preserves status and evidence without BYOND or inspector', async () => {
+  process.env.DQ_COMPILER = 'shadow';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  process.env.DQ_DMB_INSPECT = 'fixture-inspector';
+  fs.mkdirSync('E:/dq-cache', { recursive: true });
+  const ownedRoot = fs.mkdtempSync('E:/dq-cache/shadow-cancel-fixture-');
+  process.env.DQ_SHADOW_ROOT = ownedRoot;
+  let byondCalls = 0;
+  const children: string[] = [];
+  try {
+    const failure = await selectedCompiler('project.dme', {}, async () => { byondCalls++; },
+      async executable => {
+        children.push(executable);
+        return { code: 75, combined: 'native request cancelled by newer request' };
+      }).then(() => null, error => error);
+    expect(failure).toBeInstanceOf(Juke.ExitCode);
+    expect(failure.code).toBe(75);
+    expect(byondCalls).toBe(0);
+    expect(children).toEqual(['native-compiler']);
+    const artifacts = fs.readdirSync(ownedRoot).filter(name => name.startsWith('shadow-'));
+    expect(artifacts).toHaveLength(1);
+    expect(fs.readFileSync(path.join(ownedRoot, artifacts[0], 'native.log'), 'utf8'))
+      .toBe('native request cancelled by newer request');
+  } finally {
+    fs.rmSync(ownedRoot, { recursive: true, force: true });
+  }
+});
