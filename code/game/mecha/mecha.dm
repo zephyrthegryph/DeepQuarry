@@ -491,7 +491,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 TRACKED(/obj/mecha, current_processes)
 /// Derived field: the cabin simulation has something to advance -- a pilot, or inertial movement /
 /// internal damage. An empty parked mech with neither does not tick. Pilot entry/exit raise the
-/// relation channels (the pilot slot's om_link/om_unlink).
+/// relation channels (the pilot slot's link).
 /// The every() gate: the cabin simulation has something to advance.
 /obj/mecha/proc/cabin_gate(datum/act/A)
 	return pilot_of() || (current_processes & (MECHA_PROC_MOVEMENT | MECHA_PROC_DAMAGE))

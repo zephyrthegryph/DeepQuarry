@@ -503,15 +503,17 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			// last look set (overlays, filters, vis_contents, base properties).
 			L.apply_to(A)
 			rx_of(A).look_key = null
+			if(engine?.look_watchers)
+				look_published(A, engine)
 		// A draw that shows nothing yet may still have read other entities (look.watch()): their changes are what bring its layers in.
-		if(apply && (L.watched || capability_data(A)?[/datum/cap_engine_state]))
-			look_watch_sync(A, L.watched, L.neighbour_types)
+		if(apply && (L.watched || L.watched_looks || capability_data(A)?[/datum/cap_engine_state]))
+			look_watch_sync(A, L.watched, L.neighbour_types, L.watched_looks)
 		return null
 	var/key = L.change_key()
 	if(apply)
 		// What the draw read of other entities: a change on any of them redraws A (kept in line with every draw, applied or not).
-		if(L.watched || capability_data(A)?[/datum/cap_engine_state])
-			look_watch_sync(A, L.watched, L.neighbour_types)
+		if(L.watched || L.watched_looks || capability_data(A)?[/datum/cap_engine_state])
+			look_watch_sync(A, L.watched, L.neighbour_types, L.watched_looks)
 		if(key != A.rx?.look_key)
 			var/atom/outer = GLOB.refresh_applying
 			GLOB.refresh_applying = A
@@ -521,6 +523,9 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			// The effects the draw named run once the refresh is over (look_effects_run()): they may write state.
 			if(L.effects)
 				GLOB.look_effects_due += list(list(A, L.effects))
+			// The atoms whose draw composes this one's look hear that it changed (look.watch_look()).
+			if(engine?.look_watchers)
+				look_published(A, engine)
 	return key
 
 /// Brings A's derived verb hides in line with hidden_verbs(). The verb store stays the only writer of a
@@ -732,8 +737,8 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 
 /// Brings `A`'s subscriptions to other entities in line with what its draw reads now (`keys`: own keys, null for none). The record is kept
 /// in the atom's engine state, which only an atom that has watched something (or kept a cooldown or a flash) owns.
-/proc/look_watch_sync(atom/A, list/keys, list/neighbour_types)
-	var/datum/cap_engine_state/engine = keys ? cap_engine_state_make(A) : cap_engine_state_of(A)
+/proc/look_watch_sync(atom/A, list/keys, list/neighbour_types, list/look_keys)
+	var/datum/cap_engine_state/engine = (keys || look_keys) ? cap_engine_state_make(A) : cap_engine_state_of(A)
 	if(!engine)
 		return
 	var/list/was = engine.look_watching
@@ -749,6 +754,58 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 				rel_observe(seen, A)
 	engine.look_watching = keys
 	engine.look_neighbour_types = neighbour_types
+	// look.watch_look(): the atoms whose look this draw composes. Only their look_published() reaches A, never their other changes.
+	var/list/was_looks = engine.look_watching_looks
+	for(var/key in was_looks)
+		if(!(key in look_keys))
+			var/atom/gone_look = own_locate(key)
+			if(isatom(gone_look))
+				look_unsubscribe(gone_look, A)
+	for(var/key in look_keys)
+		if(!(key in was_looks))
+			var/atom/seen_look = own_locate(key)
+			if(isatom(seen_look))
+				look_subscribe(seen_look, A)
+	engine.look_watching_looks = look_keys
+
+/// `watcher`'s draw composes `target`'s look: look_published(target) marks it. One call, one count; look_unsubscribe() takes it back.
+/proc/look_subscribe(atom/target, atom/watcher)
+	var/datum/cap_engine_state/theirs = cap_engine_state_make(target)
+	var/key = OWN_KEY(watcher)
+	LAZYINITLIST(theirs.look_watchers)
+	theirs.look_watchers[key] = (theirs.look_watchers[key] || 0) + 1
+
+/proc/look_unsubscribe(atom/target, atom/watcher)
+	var/datum/cap_engine_state/theirs = cap_engine_state_of(target)
+	if(!theirs?.look_watchers)
+		return
+	var/key = OWN_KEY(watcher)
+	var/count = theirs.look_watchers[key]
+	if(count > 1)
+		theirs.look_watchers[key] = count - 1
+	else
+		theirs.look_watchers -= key
+		UNSETEMPTY(theirs.look_watchers)
+
+/**
+ * `A` shows a different look now (refresh_look applied one, or a mob's worn layers changed): the atoms whose draw composes it (look.watch_look())
+ * are marked, and nobody else. A watcher that is gone is dropped from the record here. `engine` is A's engine record when the caller has it.
+ */
+/proc/look_published(atom/A, datum/cap_engine_state/engine)
+	engine = engine || cap_engine_state_of(A)
+	if(!engine?.look_watchers)
+		return
+	engine.look_serial++
+	var/list/gone
+	for(var/key in engine.look_watchers)
+		var/atom/watcher = own_locate(key)
+		if(!isatom(watcher) || QDELING(watcher))
+			LAZYADD(gone, key)
+			continue
+		state_changed(watcher)
+	if(gone)
+		engine.look_watchers -= gone
+		UNSETEMPTY(engine.look_watchers)
 
 /// A mover entered or left an atom some draw watches through look.neighbours() (a turf): the watchers that look for a type the mover is redraw.
 /proc/look_neighbour_moved(atom/T, atom/movable/mover)

@@ -142,6 +142,20 @@
 	thing.containment_move(destination)
 	return thing.loc == destination
 
+/**
+ * The slot-link form: `thing` stops holding the slot it is in and is filed under this holder's default slot, without being moved. A machine whose
+ * occupant came out as remains (a gibbed synthetic's wreck) keeps them physically inside, but they are no longer "the occupant": the occupant slot
+ * empties, its occupancy is published and the slot hooks of both slots run, as for any other reslot. Returns TRUE when the thing was released; FALSE
+ * when it is not in this holder, or already is in the default slot.
+ */
+/atom/proc/slot_release(atom/movable/thing)
+	var/datum/ledger/L = dq_ledger_peek(src)
+	var/list/entry = L?.entries[thing]
+	if(!entry || thing.loc != src || entry[LEDGER_E_SLOT] == L.default_id)
+		return FALSE
+	L.reslot(thing, L.default_id, LEDGER_MOVE_FORCED)
+	return TRUE
+
 /// LEDGER_MOVE_FORCED's move: straight to the commit, no refusal checked and
 /// no pre signal sent on either side. If `destination` has slots, `thing`
 /// lands in `slot_id` (null: its default slot); otherwise this is a plain

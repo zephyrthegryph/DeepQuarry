@@ -54,7 +54,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	name = "VR pod"
 
 /// Derived field: the pod holds someone. The occupant slot's link/unlink raises
-/// CHANGE_RELATION_ADDED/REMOVED on the pod (om_link/om_unlink).
+/// CHANGE_RELATION_ADDED/REMOVED on the pod (the occupant slot link).
 /obj/machinery/vr_sleeper/proc/vr_occupied()
 	return slot_item(OCCUPANT_SLOT_VR_POD) ? TRUE : FALSE
 

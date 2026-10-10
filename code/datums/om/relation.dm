@@ -5,9 +5,6 @@
 	abstract_type = /datum/om/behaviour/internal/edge_refresh
 
 
-/proc/om_unlink(datum/source, datum/target, rel_path)
-	return relation_unlink(arglist(args))
-
 
 
 

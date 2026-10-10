@@ -49,6 +49,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 /mob/living/carbon/human/proc/apply_layer(cache_index)
 	if((. = overlays_standing[cache_index]))
 		add_overlay(.)
+		look_published(src) // a draw that composes this mob's look (look.watch_look()) hears of the changed layer
 
 //Remove an entry from overlays, and from the list
 /mob/living/carbon/human/proc/remove_layer(cache_index)
@@ -56,6 +57,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	if(I)
 		cut_overlay(I)
 		overlays_standing[cache_index] = null
+		look_published(src)
 
 /mob/living/carbon/human
 	var/list/overlays_standing[TOTAL_LAYERS] // ALLOW(instance_list): d: per-mob overlays_standing, filled at runtime; mobs are few

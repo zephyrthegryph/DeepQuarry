@@ -86,7 +86,7 @@ CAPABILITIES(/obj/machinery/implantchair)
 		return
 	if(M == occupant) // so that the guy inside can't eject himself -Agouri
 		return
-	// The occupant slot's own om_unlink (C8 step 2) clears `occupant` as soon
+	// The occupant slot's own unlink (C8 step 2) clears `occupant` as soon
 	// as slot_remove() takes effect, so the mob to implant is captured first.
 	var/mob/living/carbon/leaving = occupant
 	slot_remove(leaving, get_turf(src))

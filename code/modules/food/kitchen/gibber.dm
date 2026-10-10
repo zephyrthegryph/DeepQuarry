@@ -298,8 +298,8 @@ CAPABILITIES(/obj/machinery/gibber)
 	occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER) // re-fetch: this runs after a delay, so the slot may have changed since capture
 	if(occupant) // gib() may not always hard-delete (e.g. a synthetic's remains): the
 		// remains stay physically in the slot, but are no longer "the occupant" --
-		// unlink without a ledger move (the remains stay physically where they are).
-		om_unlink(occupant, src, /datum/om/relation/slot/occupant/gibber)
+		// release the slot's claim without a move (the remains stay physically where they are, in the default slot).
+		slot_release(occupant)
 	play_sfx(src, SFX_EFFECTS_SPLAT)
 	set_operating(0)
 	if(LAZYLEN(byproducts))
