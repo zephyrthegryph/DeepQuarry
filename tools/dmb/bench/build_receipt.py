@@ -17,9 +17,12 @@ def authenticate(path, executable, sha):
     if value.get("binary_sha256") != digest:
         raise ValueError("build receipt executable SHA mismatch")
     level = value.get("dmbc_opt_level")
+    tree_level = value.get("dm_tree_opt_level")
     units = value.get("dmbc_codegen_units")
     if level is not None and (type(level) is not int or level not in (0, 1, 2, 3)):
         raise ValueError("invalid build receipt optimization level")
+    if tree_level is not None and (type(tree_level) is not int or tree_level not in (0, 1, 2, 3)):
+        raise ValueError("invalid build receipt dm-tree optimization level")
     if units is not None and (type(units) is not int or units <= 0):
         raise ValueError("invalid build receipt codegen units")
     for field in ("lto", "acceptance_profile"):
@@ -27,6 +30,7 @@ def authenticate(path, executable, sha):
             raise ValueError("invalid build receipt " + field)
     return {"path": str(path), "sha256": before, "compiler_sha256": digest,
             "commit": value.get("commit"), "dmbc_opt_level": level,
+            "dm_tree_opt_level": tree_level,
             "dmbc_codegen_units": units, "lto": value.get("lto"),
             "declared_acceptance_profile": value.get("acceptance_profile"),
             "benchmark_acceptance_admitted": False,

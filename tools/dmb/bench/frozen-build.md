@@ -13,3 +13,8 @@ A timed-out build publishes no executable. Rerun the same commit to finish the
 remaining crates. The prototype release profile disables LTO and is not a
 revision-6 performance acceptance profile. Build preparation is excluded from
 compiler benchmark measurements.
+
+`--tree-opt-level` permits an explicitly recorded prototype optimization level
+for `dm-tree` when its Rust build exceeds the watchdog. It does not alter the
+compiler snapshot. The build command and receipt pin both package profiles;
+benchmark admission exports them and remains outside performance acceptance.
