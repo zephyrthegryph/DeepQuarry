@@ -15,6 +15,7 @@
 	var/written_by
 	var/paper_type = /obj/item/paper/sticky
 TRACKED(/obj/item/sticky_pad, written_text)
+TRACKED(/obj/item/sticky_pad, papers)
 
 /// The look (the draw sweep: from its template).
 /obj/item/sticky_pad/draw(datum/look/look)
@@ -61,7 +62,6 @@ MSG_DEF_SELF(sticky_pad/full, span_warning("There is no room left on the pad."))
 		set_written_text("[written_text] [text]")
 	else
 		set_written_text(text)
-	changed(src)
 	SStgui.update_uis(src)
 	return OP_PASS
 
@@ -80,11 +80,9 @@ MSG_DEF_SELF(sticky_pad/full, span_warning("There is no room left on the pad."))
 	set_written_text(null)
 	user.put_in_hands(paper)
 	to_chat(user, span_notice("You pull \the [paper] off \the [src]."))
-	papers--
+	set_papers(papers - 1)
 	if(papers <= 0)
 		consume(src, user)
-	else
-		changed(src)
 	return OP_OK
 
 CAPABILITIES(/obj/item/sticky_pad)

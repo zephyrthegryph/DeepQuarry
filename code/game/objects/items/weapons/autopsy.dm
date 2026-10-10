@@ -167,7 +167,7 @@ CAPABILITIES(/datum/autopsy_data_scanner)
 		return
 	var/obj/item/paper/P = new(usr_mob.loc)
 	P.name = "Autopsy Data ([target_name])"
-	P.info = "<tt>[scan_data]</tt>"
+	P.set_info("<tt>[scan_data]</tt>")
 	P.icon_state = "paper_words"
 
 	if(istype(usr_mob, /mob/living/carbon))

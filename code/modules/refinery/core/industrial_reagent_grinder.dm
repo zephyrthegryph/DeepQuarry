@@ -105,8 +105,6 @@
 		play_sfx(src, SFX_ITEMS_POSTER_BEING_CREATED)
 		play_sfx(src, SFX_ITEMS_ELECTRONIC_ASSEMBLY_EMPTYING)
 		play_sfx(src, SFX_EFFECTS_METALSCRAPE2)
-		if(holdingitems.len == 0)
-			changed(src)
 
 	refinery_transfer()
 

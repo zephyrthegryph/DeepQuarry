@@ -600,7 +600,6 @@ CAPABILITIES(/obj/structure/window/reinforced/polarized)
 	if(id && istype(multitool))
 		to_chat(user, span_notice("You store \the [src] ID ('[id]') in \the [multitool]'s buffer!"))
 		rel_set(multitool, nameof(multitool.connectable), src)
-		changed(multitool)
 
 MSG_DEF(windowtint/wires_cut, "You have cut the wires inside %T%.", "%U% has cut the wires inside %T%!")
 

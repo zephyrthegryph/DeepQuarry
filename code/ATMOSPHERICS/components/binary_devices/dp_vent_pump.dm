@@ -100,7 +100,6 @@
 			add_underlay(T, node2, dir)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/hide(i)
-	changed(src)
 	update_underlays()
 
 /// Its flow law is a Rust device edge (the same shape as the vent pump's): the port it works through and the
@@ -255,7 +254,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
 		return //do not update_icon
 
 	after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
-	changed(src)
 
 #undef EXTERNAL_PRESSURE_BOUND
 #undef INTERNAL_PRESSURE_BOUND

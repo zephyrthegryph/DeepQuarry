@@ -58,6 +58,9 @@ latent entry made or used (`latent_set_count()`), and the holder declaring its g
 (`code/engine/refs/containment/api.dm`) is the atom proc behind `contents_of()`: with a ledger it reads the ledger; without one it answers from the
 declared generator when the holder has not declared it yet, else it opens the ledger. It never rolls the generator into things and never materializes.
 
+A gotcha of the builders' own calls: a state whose name is also a named argument of the call (`look_overlay_image(icon, "color", color = x)`) loses its state, because BYOND reads the
+positional string as a key. Name the state (`icon_state = "color"`). `dq_draw_final_overlay_image_keeps_a_state_named_color` pins the named form.
+
 ## 3. Checks and tooling
 
 - **Outputs have no side effects:** `draw()` is a reactive proc (`dx_reactive_write` flags a state write, `to_chat`

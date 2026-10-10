@@ -87,5 +87,5 @@ GLOBAL_DATUM_INIT(gear_tweak_item_tf_spawn, /datum/gear_tweak/item_tf_spawn, new
 		return
 	if(!istype(I))
 		return
-	I.spawn_mob_type = simplemob_list[metadata]
+	I.set_spawn_mob_type(simplemob_list[metadata])
 	I.spawn_mob_name = metadata

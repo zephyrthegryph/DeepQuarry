@@ -226,7 +226,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 		msg = strip_html_properly(msg)
 		var/obj/item/paper/R = new(src.loc)
 		R.name = "[department] Message"
-		R.info = "<H3>[department] Requests Console</H3><div>[msg]</div>"
+		R.set_info("<H3>[department] Requests Console</H3><div>[msg]</div>")
 		. = TRUE
 
 //Handle screen switching

@@ -118,7 +118,7 @@
 	SScontracts.bind_evidence_subject(evidence_id, report.target_ref)
 	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	paper.name = "signed case registry consent - [subject.real_name]"
-	paper.info += "<br><b>Status:</b> Consent registered.<br><b>Filing instruction:</b> Bundle this form with the completed case narrative and longitudinal body scans, then fax it to [CONTRACT_FAX_CASE_REGISTRY]."
+	paper.set_info(paper.info + ("<br><b>Status:</b> Consent registered.<br><b>Filing instruction:</b> Bundle this form with the completed case narrative and longitudinal body scans, then fax it to [CONTRACT_FAX_CASE_REGISTRY]."))
 	paper.updateinfolinks()
 	to_chat(subject, span_notice("Your consent to the VeyMed clinical case report is registered."))
 	emit_contract_event(CONTRACT_EVENT_DOCUMENT_SIGNED, list(

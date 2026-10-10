@@ -92,7 +92,7 @@
 /obj/mecha/combat/scarab state: scarab_militia-open
 /obj/mecha/combat/scarab dir: 2
 /obj/mecha/combat/hades icon: icons/mecha/mechas.dmi
-/obj/mecha/combat/hades state: hades-open
+/obj/mecha/combat/hades state: hades_broken-open
 /obj/mecha/combat/hades dir: 2
 /obj/mecha/medical icon: icons/mecha/mecha.dmi
 /obj/mecha/medical state: -open

@@ -32,14 +32,13 @@ CAPABILITIES(/obj/item/paper/carbon)
 		// <font>
 		copycontents = replacetext(copycontents, "<font face=\"[c.deffont]\" color=", "<font face=\"[c.deffont]\" nocolor=")	//state of the art techniques in action
 		copycontents = replacetext(copycontents, "<font face=\"[c.crayonfont]\" color=", "<font face=\"[c.crayonfont]\" nocolor=")	//This basically just breaks the existing color tag, which we need to do because the innermost tag takes priority.
-		copy.info += copycontents
-		copy.info += "</font>"
+		copy.set_info(copy.info + (copycontents))
+		copy.set_info(copy.info + ("</font>"))
 		copy.name = "Copy - " + c.name
 		copy.fields = c.fields
 		copy.updateinfolinks()
 		to_chat(user, span_notice("You tear off the carbon-copy!"))
 		c.set_copied(1)
 		copy.set_iscopy(1)
-		changed(copy)
 	else
 		to_chat(user, "There are no more carbon copies attached to this paper!")

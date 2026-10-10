@@ -72,9 +72,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	if(check_for_obstacles())
 		rel_clear(src, nameof(node))
 
-	if(node)
-		changed(src)
-
 /// Unconnected, connected and idle, or working.
 /obj/machinery/atmospherics/unary/freezer/draw(datum/look/look)
 	..()

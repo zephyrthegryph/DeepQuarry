@@ -125,7 +125,7 @@
 	new /obj/random/toy(spawnloc)
 	new /obj/item/clothing/head/paper_crown(spawnloc)
 	var/obj/item/paper/cracker_joke/J = new(spawnloc)
-	J.info = joke
+	J.set_info(joke)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 

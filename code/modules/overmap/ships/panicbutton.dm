@@ -11,6 +11,7 @@
 	var/glass = TRUE
 	var/launched = FALSE
 TRACKED(/obj/structure/panic_button, launched)
+TRACKED(/obj/structure/panic_button, glass)
 
 // In case we're annihilated by a meteor
 // an unlaunched button launches.
@@ -58,9 +59,8 @@ CAPABILITIES(/obj/structure/panic_button)
 	else if(glass)
 		if(smash)
 			user.automatic_custom_emote(VISIBLE_MESSAGE, "smashes the glass on [src]!")
-			glass = FALSE
+			set_glass(FALSE)
 			play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS, volume = 0, vary = FALSE)
-			changed(src)
 		else
 			user.automatic_custom_emote(VISIBLE_MESSAGE, "pats [src] in a friendly manner.")
 			to_chat(user, span_warning("If you're trying to break the glass, you'll have to hit it harder than that..."))
@@ -69,7 +69,6 @@ CAPABILITIES(/obj/structure/panic_button)
 		user.automatic_custom_emote(VISIBLE_MESSAGE, "pushes the button on [src]!")
 		launch(user)
 		playsound(src, get_sfx(SFX_BUTTON))
-		changed(src)
 	return OP_OK
 
 /obj/structure/panic_button/proc/launch(mob/living/user)

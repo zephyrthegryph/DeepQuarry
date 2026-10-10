@@ -11,8 +11,7 @@
 
 /obj/structure/stairs/Initialize(mapload)
 	. = ..()
-	if(check_integrity())
-		update_icon()
+	check_integrity()
 
 // Returns TRUE if the stairs are a complete and connected unit, FALSE if a piece is missing or obstructed
 // Will attempt to reconnect broken pieces

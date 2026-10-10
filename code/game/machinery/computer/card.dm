@@ -273,13 +273,13 @@ CAPABILITIES(/obj/machinery/computer/card)
 	var/obj/item/paper/P = new(loc)
 	if(mode)
 		P.name = text("crew manifest ([])", stationtime2text())
-		P.info = {"<h4>Crew Manifest</h4>
+		P.set_info({"<h4>Crew Manifest</h4>
 			<br>
 			[GLOB.data_core ? GLOB.data_core.get_manifest(0) : ""]
-		"}
+		"})
 	else if(modify)
 		P.name = "access report"
-		P.info = {"<h4>Access Report</h4>
+		P.set_info({"<h4>Access Report</h4>
 			<u>Prepared By:</u> [scan?.registered_name || "Unknown"]<br>
 			<u>For:</u> [modify.registered_name ? modify.registered_name : "Unregistered"]<br>
 			<hr>
@@ -287,10 +287,10 @@ CAPABILITIES(/obj/machinery/computer/card)
 			<u>Account Number:</u> #[modify.associated_account_number]<br>
 			<u>Blood Type:</u> [modify.blood_type]<br><br>
 			<u>Access:</u><br>
-		"}
+		"})
 
 		for(var/A in modify.access)
-			P.info += "  [SSaccess.get_access_desc(A)]"
+			P.set_info(P.info + ("  [SSaccess.get_access_desc(A)]"))
 
 /obj/machinery/computer/card/ownership()
 	. = ..()

@@ -508,19 +508,19 @@ MSG_DEF_SELF(records/not_authenticated, "You must log in first.")
  */
 /obj/machinery/computer/med_data/proc/print_finish()
 	var/obj/item/paper/P = new(loc)
-	P.info = "<center>" + span_bold("Medical Record") + "</center><br>"
+	P.set_info("<center>" + span_bold("Medical Record") + "</center><br>")
 	if(istype(active1(), /datum/data/record) && (active1() in GLOB.data_core.general))
-		P.info += {"Name: [active1().fields["name"]] ID: [active1().fields["id"]]
+		P.set_info(P.info + ({"Name: [active1().fields["name"]] ID: [active1().fields["id"]]
 		<br>\nSex: [active1().fields["sex"]]
 		<br>\nSpecies: [active1().fields["species"]]
 		<br>\nAge: [active1().fields["age"]]
 		<br>\nFingerprint: [active1().fields["fingerprint"]]
 		<br>\nPhysical Status: [active1().fields["p_stat"]]
-		<br>\nMental Status: [active1().fields["m_stat"]]<br>"}
+		<br>\nMental Status: [active1().fields["m_stat"]]<br>"}))
 	else
-		P.info += span_bold("General Record Lost!") + "<br>"
+		P.set_info(P.info + (span_bold("General Record Lost!") + "<br>"))
 	if(istype(active2(), /datum/data/record) && (active2() in GLOB.data_core.medical))
-		P.info += {"<br>\n<center><b>Medical Data</b></center>
+		P.set_info(P.info + ({"<br>\n<center><b>Medical Data</b></center>
 		<br>\nGender Identity: [active2().fields["id_gender"]]
 		<br>\nBlood Type: [active2().fields["b_type"]]
 		<br>\nBlood Basis: [active2().fields["blood_reagent"]]
@@ -536,12 +536,12 @@ MSG_DEF_SELF(records/not_authenticated, "You must log in first.")
 		<br>\nImportant Notes:
 		<br>\n\t[active2().fields["notes"]]<br>\n
 		<br>\n
-		<center><b>Comments/Log</b></center><br>"}
+		<center><b>Comments/Log</b></center><br>"}))
 		for(var/c in active2().fields["comments"])
-			P.info += "[c["header"]]<br>[c["text"]]<br>"
+			P.set_info(P.info + ("[c["header"]]<br>[c["text"]]<br>"))
 	else
-		P.info += span_bold("Medical Record Lost!") + "<br>"
-	P.info += "</tt>"
+		P.set_info(P.info + (span_bold("Medical Record Lost!") + "<br>"))
+	P.set_info(P.info + ("</tt>"))
 	P.name = "paper - 'Medical Record: [active1().fields["name"]]'"
 	printing = FALSE
 	SStgui.update_uis(src)

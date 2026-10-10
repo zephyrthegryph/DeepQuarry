@@ -571,19 +571,19 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
  */
 /obj/machinery/computer/secure_data/proc/print_finish()
 	var/obj/item/paper/P = new(loc)
-	P.info = "<center>" + span_bold("Security Record") + "</center><br>"
+	P.set_info("<center>" + span_bold("Security Record") + "</center><br>")
 	if(istype(active1(), /datum/data/record) && (active1() in GLOB.data_core.general))
-		P.info += {"Name: [active1().fields["name"]] ID: [active1().fields["id"]]
+		P.set_info(P.info + ({"Name: [active1().fields["name"]] ID: [active1().fields["id"]]
 		<br>\nSex: [active1().fields["sex"]]
 		<br>\nSpecies: [active1().fields["species"]]
 		<br>\nAge: [active1().fields["age"]]
 		<br>\nFingerprint: [active1().fields["fingerprint"]]
 		<br>\nPhysical Status: [active1().fields["p_stat"]]
-		<br>\nMental Status: [active1().fields["m_stat"]]<br>"}
+		<br>\nMental Status: [active1().fields["m_stat"]]<br>"}))
 	else
-		P.info += span_bold("General Record Lost!") + "<br>"
+		P.set_info(P.info + (span_bold("General Record Lost!") + "<br>"))
 	if(istype(active2(), /datum/data/record) && (active2() in GLOB.data_core.security))
-		P.info += {"<br>\n<center><b>Security Data</b></center>
+		P.set_info(P.info + ({"<br>\n<center><b>Security Data</b></center>
 		<br>\nCriminal Status: [active2().fields["criminal"]]<br>\n
 		<br>\nMinor Crimes: [active2().fields["mi_crim"]]
 		<br>\nDetails: [active2().fields["mi_crim_d"]]<br>\n
@@ -592,12 +592,12 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		<br>\nImportant Notes:
 		<br>\n\t[active2().fields["notes"]]<br>\n
 		<br>\n
-		<center><b>Comments/Log</b></center><br>"}
+		<center><b>Comments/Log</b></center><br>"}))
 		for(var/c in active2().fields["comments"])
-			P.info += "[c["header"]]<br>[c["text"]]<br>"
+			P.set_info(P.info + ("[c["header"]]<br>[c["text"]]<br>"))
 	else
-		P.info += span_bold("Security Record Lost!") + "<br>"
-	P.info += "</tt>"
+		P.set_info(P.info + (span_bold("Security Record Lost!") + "<br>"))
+	P.set_info(P.info + ("</tt>"))
 	P.name = "paper - 'Security Record: [active1().fields["name"]]'"
 	printing = FALSE
 	SStgui.update_uis(src)

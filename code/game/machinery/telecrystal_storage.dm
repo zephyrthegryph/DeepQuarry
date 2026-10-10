@@ -19,7 +19,7 @@
 		own_take_member(src, nameof(item_records), I)
 		spent(I)
 	else
-		I.amount += mod
+		I.set_amount(I.amount + (mod))
 
 /obj/machinery/smartfridge/tcrystal/stock(obj/item/stack/telecrystal/O)
 	var/hasRecord = FALSE	//Check to see if this passes or not.

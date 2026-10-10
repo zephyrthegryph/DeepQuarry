@@ -31,6 +31,8 @@
 CAPABILITIES(/datum/stored_item)
 	ref_many(nameof(instances)) // the stock ledger holds the actual products
 
+TRACKED(/datum/stored_item, amount)
+
 /datum/stored_item/New(stored, path, name = null, amount = 0)
 	src.item_path = path
 
@@ -40,7 +42,7 @@ CAPABILITIES(/datum/stored_item)
 	else
 		src.item_name = name
 
-	src.amount  = amount
+	src.set_amount(amount)
 	src.stored = stored
 
 	..()
@@ -66,7 +68,7 @@ CAPABILITIES(/datum/stored_item)
 /datum/stored_item/proc/materialize_all(loc)
 	for(var/i in 1 to amount)
 		materialize(loc)
-	amount = 0
+	set_amount(0)
 
 /datum/stored_item/proc/get_product(product_location)
 	if(!get_amount() || !product_location)
@@ -77,7 +79,7 @@ CAPABILITIES(/datum/stored_item)
 		rel_remove(src, nameof(instances), product)
 		product.forceMove(product_location)
 	else
-		amount--
+		set_amount(amount - 1)
 		product = materialize(product_location)
 	if(istype(product, /obj/item))
 		var/obj/item/our_item = product
@@ -105,7 +107,7 @@ CAPABILITIES(/datum/stored_item)
 			return FALSE
 	else if(hash != dq_stock_pristine_hash(item_path, variant))
 		return FALSE
-	amount += collapse_units(product)
+	set_amount(amount + (collapse_units(product)))
 	consumed(product, src)
 	return TRUE
 
@@ -125,7 +127,7 @@ CAPABILITIES(/datum/stored_item)
 
 /// Restock: adds latent copies. Nothing is created.
 /datum/stored_item/proc/refill_products(refill_amount)
-	amount += max(0, refill_amount)
+	set_amount(amount + (max(0, refill_amount)))
 
 /// A var of one of this record's items, without keeping anything made.
 /datum/stored_item/proc/sample_var(var_name)
@@ -183,7 +185,7 @@ CAPABILITIES(/datum/stored_item)
 	var/max_amount = initial(proto.max_amount) || 50
 	while(amount > 0)
 		var/n = min(amount, max_amount)
-		amount -= n
+		set_amount(amount - (n))
 		materialize(loc, n)
 
 /datum/stored_item/stack/get_product(product_location, count)
@@ -194,7 +196,7 @@ CAPABILITIES(/datum/stored_item)
 	count = min(count, max_amount) // We won't vend more than one full stack per call
 	if(amount > 0)
 		var/n = min(count, amount)
-		amount -= n
+		set_amount(amount - (n))
 		return materialize(product_location, n)
 	if(!LAZYLEN(instances))
 		return null

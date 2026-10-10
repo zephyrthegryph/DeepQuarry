@@ -47,6 +47,10 @@
 	/// Whether it was running when the EMP took it down (it restarts when the outage lapses).
 	var/emp_was_on = FALSE
 
+TRACKED(/obj/vehicle, on)
+TRACKED(/obj/vehicle, open)
+TRACKED(/obj/vehicle, paint_color)
+
 /// A vehicle runs unless a pulse knocked its engine out (emp_disable() holds it down).
 STAT(/obj/vehicle, operable, ALL, virtual = TRUE)
 
@@ -134,8 +138,7 @@ CAPABILITIES(/obj/vehicle)
 		return ..()
 	if(locked)
 		return ITEM_INTERACT_BLOCKING
-	open = !open
-	changed(src)
+	set_open(!open)
 	to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
@@ -209,11 +212,10 @@ CAPABILITIES(/obj/vehicle)
 		return FALSE
 	if(on)
 		return FALSE
-	on = 1
+	set_on(1)
 	play_sfx(src, SFX_EFFECTS_VEHICLE_IGNITION_CAR) // New sound effects.
 	soundloop.start()
 	set_light(initial(light_range))
-	changed(src)
 	return TRUE
 
 /obj/vehicle/proc/turn_off()
@@ -221,11 +223,10 @@ CAPABILITIES(/obj/vehicle)
 		return FALSE
 	if(!mechanical)
 		return FALSE
-	on = 0
+	set_on(0)
 	play_sfx(src, SFX_EFFECTS_VEHICLE_ENGINE_OFF) // New sound effects.
 	soundloop.stop()
 	set_light(0)
-	changed(src)
 
 /obj/vehicle/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor
@@ -261,7 +262,6 @@ CAPABILITIES(/obj/vehicle)
 
 		if(cell)
 			cell.forceMove(Tsec)
-			cell.update_icon()
 			rel_take(src, nameof(cell))
 
 	destroyed(src, null, "explosion")

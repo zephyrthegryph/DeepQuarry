@@ -59,38 +59,6 @@ dx_appearance_side_effect	code/game/machinery/spaceheater.dm	set_light_on(TRUE)
 dx_appearance_side_effect	code/game/machinery/spaceheater.dm	set_light_color("#00ccff")
 dx_appearance_side_effect	code/game/machinery/spaceheater.dm	set_light(3)
 dx_appearance_side_effect	code/game/machinery/spaceheater.dm	set_light_on(TRUE)
-dx_appearance_side_effect	code/game/mecha/combat/fighter.dm	stripe1_overlay = image("gunpod_stripes1")
-dx_appearance_side_effect	code/game/mecha/combat/fighter.dm	stripe1_overlay.color = stripe1_color
-dx_appearance_side_effect	code/game/mecha/combat/fighter.dm	stripe2_overlay = image("gunpod_stripes2")
-dx_appearance_side_effect	code/game/mecha/combat/fighter.dm	stripe2_overlay.color = stripe2_color
-dx_appearance_side_effect	code/game/mecha/mecha_appearance.dm	initial_icon = initial(icon_state)
-dx_appearance_side_effect	code/game/mecha/mecha_appearance.dm	pilot_image = getCompoundIcon(occupant)
-dx_appearance_side_effect	code/game/mecha/mecha_appearance.dm	Pilot.pixel_y = pilot_lift
-dx_appearance_side_effect	code/game/mecha/mecha_appearance.dm	pilot_image = null
-dx_appearance_side_effect	code/game/mecha/mecha_appearance.dm	face_overlay = new(src.icon, icon_state = face_state)
-dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	base_paint_mask = image(icon, "[initial_icon]-mask+base", src.layer + 1)
-dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	base_paint_mask.color = base_paint
-dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	front_paint_mask = image(icon, "[initial_icon]-mask+front", src.layer + 1)
-dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	front_paint_mask.color = front_paint
-dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	engine_paint_mask = image(icon, "[initial_icon]-mask+engine", src.layer + 1)
-dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	engine_paint_mask.color = engine_paint
-dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	central_paint_mask = image(icon, "[initial_icon]-mask+central", src.layer + 2)
-dx_appearance_side_effect	code/game/mecha/space/shuttle.dm	central_paint_mask.color = central_paint
-dx_appearance_side_effect	code/modules/clothing/spacesuits/rig/rig.dm	mob_icon = icon(icon = species_icon, icon_state = "[icon_state]")
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.appearance = inserted_item.appearance;
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.icon = src.icon
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.icon_state = "hepme" //the creature deserves its horrible end
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.vis_flags = VIS_INHERIT_ID //gotta reapply
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.plane = src.plane
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.layer = src.layer - 0.1
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.pixel_x = item_offset_x
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.pixel_y = item_offset_y
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.transform = scaleMatrix
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.icon = null
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.icon_state = "fsdfsd"
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.overlays = null
-dx_appearance_side_effect	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay.underlays = null
 dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	overlays?.Cut()
 dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	underlays?.Cut()
 dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	filters = null
@@ -100,12 +68,6 @@ dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote
 dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	name = "Voodoo doll of " + owner.name
 dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	desc = "A small, marketable doll that looks suspiciously like [owner]... "
 dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	tail_image.filters += filter(type="alpha", flags = MASK_INVERSE)
-dx_appearance_side_effect	code/modules/makeup/nailpolish.dm	top_underlay.icon_state = "top[open ? "-open" : ""]"
-dx_appearance_side_effect	code/modules/makeup/nailpolish.dm	color_underlay.icon_state = "color[open ? "-open" : ""]"
-dx_appearance_side_effect	code/modules/makeup/nailpolish.dm	color_underlay.color = colour
-dx_appearance_side_effect	code/modules/mining/mine_turfs.dm	name = "[mineral().display_name] deposit"
-dx_appearance_side_effect	code/modules/mining/mine_turfs.dm	name = "rock"
-dx_appearance_side_effect	code/modules/mining/mine_turfs.dm	name = floor_name
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	material_layer = image(icon, "[initial(icon_state)]-material")
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	material_glow = image(icon, "[initial(icon_state)]-material-glow")
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	material_glow.plane = PLANE_LIGHTING_ABOVE

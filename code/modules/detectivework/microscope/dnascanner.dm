@@ -135,8 +135,8 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 				data += span_blue("Blood type: [bloodsamp().dna[blood]]<br>\nDNA: [blood]<br><br>")
 		else
 			data += "No DNA found.<br>"
-		P.info = span_bold("[src] analysis report #[report_num]") + "<br>"
-		P.info += span_bold("Scanned item:") + "<br>[bloodsamp().name]<br>[bloodsamp().desc]<br><br>" + data
+		P.set_info(span_bold("[src] analysis report #[report_num]") + "<br>")
+		P.set_info(P.info + (span_bold("Scanned item:") + "<br>[bloodsamp().name]<br>[bloodsamp().desc]<br><br>" + data))
 		P.forceMove(loc)
 		set_scanning(FALSE)
 	return

@@ -3937,6 +3937,59 @@ recycling panels, space vines and the maintenance vendor glow now draw through `
 * **Pump state pin** (`look_states/obj.machinery.pump.txt`, `on=1` and `on=2`): the running pump's rows change from the `pump-running-tank` / `pump-running-glass` layers (named from the state the previous redraw left) to the
   `pump` -> `pump-running` base state, with the tank and glass layers named from the type's own state and so unchanged. Harness: the bless also wrote a lone newline into empty files (six `look_states/` files); restored.
 
+## Draw final: rig, mecha, mineral turfs, paper and the last `changed(src)` calls (rewrite/draw-final)
+
+The hardsuit and the protean rig, nail polish, the mecha and its equipment, mineral turfs, the maintenance recycler, pill bottles, capture crystals, paper `info`, the net and the jar,
+and the small items below draw from tracked state, slots and relations. Left as they were, with the reason: the remote scene tool and voodoo doll (the doll composes another mob's
+whole look and would have to hear every change of that mob), the compass holder, the omni devices' port icons, the quantum pad (reads `power_region`), and `code/game/machinery` and
+`code/modules/power` (the machinery lane).
+
+* **Hardsuit.** The `mob_icon` cache is gone: `get_worn_icon_file()` answers the species' sheet, else the rig's `default_mob_icon` (null for a protean rig: no forced sprite, as the
+  empty icon it built before). The rig itself draws nothing of its own. The pieces' sealed or retracted state is still their own `icon_state`, so the wearer redraws the shoes, gloves,
+  head, suit and back slots through `refresh_worn_pieces()` where the old redraw did (reset, cut, a finished seal, putting it on). The chestpiece of a deployed suit draws the overlay of each
+  installed module (`master_rig`, `look.watch()`); a module's `suit_overlay` is tracked and `refresh_suit_overlay()` writes it through `set_suit_overlay()`. Installing or removing a module
+  redraws the chest through the relation; `rig_attackby.dm` and the protean install and removal no longer ask.
+* **Nail polish.** `open` and `colour` are tracked (the remover's `open` too: it was drawn from a plain var); the colour and top layers are underlays of the look.
+* **Mecha.** `initial_icon` (a paint kit sets it), `show_pilot`, `face_state` and `pilot_lift` are tracked; the base state is `mecha_base_state()` (the type's own state when `initial_icon` is
+  empty; it was written by the first draw). The pilot is read from the pilot slot: a mech that shows its pilot watches it, any other only asks whether the slot is occupied. The pilot picture and
+  the face are layers of the look; each piece of equipment adds its own through `equip_look()`: the repair droid shows `repair_droid_a` while it works (it showed the idle layer until the next
+  redraw), the shield drone and the crisis drone (`enabled` is tracked) are drawn from their state. The gunpod's stripes and the shuttle craft's hull paint are tracked colours. The raw
+  `add_overlay()`/`cut_overlay()` calls of equipment attach, detach and destroy are gone.
+* **Mineral turfs.** Rock and sand draw from `rock_edges` (the adjacency index: open sides, sides facing space, sides facing rock), `sand_dug`, `overlay_detail`, the two archaeology
+  overlays and `mineral_static`. Ore no longer spreads each time the rock is redrawn (the old provider called `MineralSpread()` from the draw: once at creation through `sim_after_init()`
+  and once from each spread target stay); the archaeology and excavation marks are drawn once, not once per side. The cave carver, the expedition template and the rogueminer zone
+  no longer sweep their turfs for `update_icon()`: density, the masks and the tracked marks redraw each turf.
+* **Maintenance recycler.** The item inside is a layer of the machine's look (`look.watch()`), shrunk and offset between the underlay and the machine; the `item_overlay` object and the
+  underlay written at `Initialize()` are gone. The hatch and the screen stay objects of their own (they flick).
+* **Pill bottle:** `wrapper_color` is tracked and the wrapper is drawn from it (a chem master recolouring it redrew nothing; it cut the overlays).
+* **Capture crystal:** the recharge is a tracked `recharging` set when the cooldown starts and cleared by a timer when it ends (the timer called `update_icon()`, a no-op on a drawn type);
+  `spawn_mob_type` is tracked; the bound creature is watched and its place read from `loc`.
+* **Paper.** `info` is tracked and every writer goes through `set_info()` (the tracked lint listed 219 sites: printers, forms, the ATM, accounts, the noticeboard, the photocopier ...). The sites in
+  `code/game/machinery` (card, medical, security, skills, supply, message, adv_med, pandemic, bomb_tester, guestpass, requests console, telecrystal storage) are the same one-line rewrite;
+  they are in that lane's files only because the lint is hard. The five `changed(src)` calls of `paper.dm` and the admin fax are gone.
+* **Net and jar** declare a slot (`CONTAINER_SLOT_NET`, `CONTAINER_SLOT_JAR`) and draw what it holds through `look.things_in()`; the five `changed(src)` calls of the net are gone.
+* **Tracked, with the writers behind setters, and the `changed(src)` after them gone:** the grille's `destroyed`, a snow turf's footprints (the same copy-on-write list as the floor snow; the footprint
+  overlay now names its icon, state and direction: the old `image(icon, "footprint1", dir)` passed the state as the location), a vehicle's `on`, `open` and `paint_color`, the panic button's `glass`,
+  the ready button's `ready`, the sticky pad's `papers`, the NIF's `stat`, the old two-handed weapon's `wielded`, the spaceflare's `active`, the mech fabricator's `being_built`, the server's `working`,
+  the refinery reactor's `toggle_mode`, a sorting junction's `panel_open`, a railing's `icon_modifier` (the nanite goop wrote the state by hand and asked `update_icon()`), the algae farm's
+  readout (its `ALLOW(derived_reads)` is gone), a stored item's `amount` (a smartfridge draws its fill from the records it watches).
+* **Redundant calls removed:** a dispatched call (an op, a timer, a periodic step) re-runs the draws of what it touched, so the `changed(src)` after one never did anything; those after
+  `rel_set()` / `rel_add()` / `move_into()` of something the draw reads were redundant too. They go from the distillery, the grinder, the walkpod, the police tape, the multitool, the DNA console,
+  the unary and binary pipe bases, the vent scrubber and the smartfridge; the pump's target-reached hook, the tether host's and handheld's `update_icon()` calls and the defib kit's `paddles in contents`
+  (now `look.watch(paddles)` and `paddles.loc == src`) are part of it. `update_icon()` calls on types that are all drawn were deleted (`look_sweep dead` with the unit-test probe types ignored, and by hand:
+  the electrovore and turf-transparency behaviours, turf changing, the inducer, blood reveal, stairs, the cargo and vehicle cells, syringes, pill bottles, casino collars, space vines, the turbolift panel).
+* **Look ratchet:** `look_converted` now holds 230 more folders (every folder of `code/game`, `code/modules`, `code/datums` and `code/library` that has no `update_icon()` call and no legacy
+  appearance declaration left, machinery and power excepted).
+* **Pins blessed (`look_trees/`):** one row, by hand: `obj.mecha.combat.hades` `state: hades-open` becomes `hades_broken-open`. The type sets `initial_icon = "hades_broken"`, `Initialize()` writes
+  `icon_state += "-open"` and the legacy provider never ran in the frozen sweep (a mech was drawn only when something asked); every mech now draws at creation from `mecha_base_state()`, and
+  the other mechs' rows are the same state either way. No `look_states` row moved. Nail polish, the rock and the sand keep their rows (the sand's detail overlay draws from its decals state:
+  the legacy provider added the decals *file* as an overlay, which drew nothing; a tile that rolled a detail now shows it).
+* **Found by the new tests (no change to the framework, a note for the next conversion):** a `null` argument takes the proc's default in DM, so `look.overlay("state", maybe_null)` always draws:
+  the sand's dug mark read `sand_dug` (null until dug) and drew on every sand tile until it was written `!!sand_dug`. The distillery's input and output layers
+  (`look.overlay("...-input", InputBeaker)`) have that shape and still draw with no beaker (the pin rows record it; not changed here). A state named `color` beside a named `color =` loses its state when it
+  is passed positionally (`look.md`; `dq_draw_final_overlay_image_keeps_a_state_named_color`).
+* **Removed behaviour:** `EO.update_icon()` in the NIF's medichines was tested for a return value the base proc never gave, so `UpdateDamageIcon()` never ran; both lines are gone.
+
 ## Timed actions wave 9 (rewrite/timed)
 
 * **Lockpick on a simple door.** The legacy pick worked from the lockpick's `afterattack()` after the door's item handler ran. The door's handler hit the door with the pick first (`breakable`); it now returns `OP_PASS` for a lockpick so the pick's own `pick` op works the lock and the door is no longer struck.
@@ -4045,3 +4098,21 @@ Every site that declared `DECLARE_INTERACTIONS`, `EXTEND_INTERACTIONS` or a `/da
   - The i7 snapshots record the legacy resolver's ids and blocked reasons: the construction edges, the silicon equip-module spec and the disposal ids are ops now.
   - The look state pin gains the cyborg `shell` rows (`shell=1`/`2` drops the eyes, `shell=0` brings them back; `robot_look.dm` draws `!shell || deployed`): the robot's analyzer key moved with
     this branch, so the type was probed again and its recorded rows, never extended since the shell state was tracked, were completed.
+
+## The hand gate audit
+
+Every `hand()` op is refused for an actor who is unconscious or stunned (`op_hand_capable()`); without `ungated()` one on a machine is also refused for a machine that does not work and an actor who is lying down or lacks the dexterity (`op_hand_refusal()`). The user kept the gate on all `hand()` ops. Audit by `dq_hand_gate_audit/escapes_are_not_hand_ops` over the tables built in a test world: **1308 hand ops, 395 `ungated()`, 913 behind the machine half**.
+
+The old rule (the click path in `code/modules/keybindings/adapters.dm`, `/datum/input_adapter/hands/use`): a click is dropped for an actor with `stat`, paralysed or stunned; a restrained actor's click never reaches an empty-hand interaction (`RestrainedClickOn`, adjacent mobs only). The actor half of the new gate is that same rule, and the physical `STAT_CAN_ACT` gate already refused a stunned, weakened, paralysed, sleeping or unconscious actor for every physical binding before it. So no hand op is newly blocked for a down actor.
+
+| Class | Ops | Verdict |
+|---|---|---|
+| (a) Touching or using a thing: consoles, machines, doors, closet door, chair unbuckle by hand, stasis cage release, pets, hugs | all 1308 hand ops | Correct to block for stunned, paralysed and unconscious actors; the old click did. A restrained actor never reached them by click and still does not. |
+| (b) Resist out of cuffs (`cuff_remove`, `cuff_break`) | `ai()`, started by `resist()` with `ORIGIN_SYSTEM` | Not hand ops: the gate never sees them. Pinned for a cuffed, conscious mob. |
+| (b) Unbuckle from a bed or chair while restrained (`buckle_escape`) | `ai()`, `ORIGIN_SYSTEM` | Not a hand op. A buckled, cuffed, conscious (or stunned) mob can start it; the by-hand `unbuckle` is a click and was never reachable restrained. |
+| (b) Break out of a sealed closet (`break_out`) | `ai()`, `ORIGIN_SYSTEM` | Not a hand op. A cuffed mob inside can break out. |
+| (b) Straight jacket (`jacket_escape`), grab release (`resist_grab`), fire (`resist_fire`) | `ai()` or plain procs | Not hand ops; unchanged. |
+| Escape from a container interior (`interior` capability `escape`) | `inside()` | Not a hand op and not touched here: it carries the `STAT_CAN_ACT` gate, as before. |
+| Unconscious actor resisting | verb rule (`incapacitated(INCAPACITATION_KNOCKOUT)`) | Unchanged: refused, pinned. |
+
+Result: no `ungated()` or narrower gate was needed. The cases the audit worried about are system-origin escapes, outside the hand gate by construction; `escapes_are_not_hand_ops` fails if one of them is ever bound to `hand()`.

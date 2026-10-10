@@ -460,9 +460,7 @@ CAPABILITIES(/obj/machinery/readybutton)
 		to_chat(user, "The event has already begun!")
 		return OP_OK
 
-	ready = !ready
-
-	changed(src)
+	set_ready(!ready)
 
 	var/numbuttons = 0
 	var/numready = 0
@@ -474,6 +472,8 @@ CAPABILITIES(/obj/machinery/readybutton)
 	if(numbuttons == numready)
 		begin_event()
 	return OP_OK
+
+TRACKED(/obj/machinery/readybutton, ready)
 
 /// The look (the draw sweep: from its layers).
 /obj/machinery/readybutton/draw(datum/look/look)

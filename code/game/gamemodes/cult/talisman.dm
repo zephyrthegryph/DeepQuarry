@@ -113,7 +113,7 @@ CAPABILITIES(/obj/item/paper/talisman)
 		if("teleport")
 			var/obj/item/paper/talisman/new_talisman = new /obj/item/paper/talisman(T)
 			new_talisman.imbue = "[pick("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri", "orkan", "allaq")]"
-			new_talisman.info = "[new_talisman.imbue]"
+			new_talisman.set_info("[new_talisman.imbue]")
 		if("emp", "conceal", "communicate", "runestun", "armor")
 			var/obj/item/paper/talisman/new_talisman = new /obj/item/paper/talisman(T)
 			new_talisman.imbue = rune

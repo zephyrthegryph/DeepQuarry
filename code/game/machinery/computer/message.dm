@@ -43,7 +43,7 @@ MSG_DEF_SELF(message_monitor/too_hot, "It is too hot to mess with!")
 			var/obj/item/paper/monitorkey/MK = new/obj/item/paper/monitorkey
 			MK.forceMove(loc)
 			// Will help make emagging the console not so easy to get away with.
-			MK.info += "<br><br>" + span_red("£%@%(*$%&(£&?*(%&£/{}")
+			MK.set_info(MK.info + ("<br><br>" + span_red("£%@%(*$%&(£&?*(%&£/{}")))
 			after(src, 100*length(linkedServer().decryptkey), PROC_REF(UnmagConsole))
 			temp = rebootmsg
 			changed(src)
@@ -460,7 +460,7 @@ CAPABILITIES(/obj/item/paper/monitorkey)
 /obj/item/paper/monitorkey/proc/write_daily_key(datum/act/timer/A)
 	for(var/obj/machinery/message_server/server in REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
 		if(!isnull(server.decryptkey))
-			info = "<center><h2>Daily Key Reset</h2></center><br>The new message monitor key is '[server.decryptkey]'.<br>Please keep this a secret and away from the clown.<br>If necessary, change the password to a more secure one."
+			set_info("<center><h2>Daily Key Reset</h2></center><br>The new message monitor key is '[server.decryptkey]'.<br>Please keep this a secret and away from the clown.<br>If necessary, change the password to a more secure one.")
 			info_links = info
 			icon_state = "paper_words"
 			break

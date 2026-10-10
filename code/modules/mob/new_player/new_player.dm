@@ -180,7 +180,7 @@
 			var/mob/living/carrier = join_props["carrier"]
 			var/vorgans = join_props["vorgans"]
 			rel_set(cryst, nameof(cryst.bound_mob), new cryst.spawn_mob_type(cryst))
-			cryst.spawn_mob_type = null
+			cryst.set_spawn_mob_type(null)
 			cryst.bound_mob.key = src.key
 			log_and_message_admins("[key_name_admin(src)] joined [cryst.bound_mob] inside a capture crystal [ADMIN_FLW(cryst.bound_mob)]")
 			if(vorgans)
@@ -191,7 +191,6 @@
 				//Something went wrong, but lets try to do as much as we can.
 				cryst.bound_mob.capture_caught = TRUE
 				cryst.persist_storable = FALSE
-			changed(cryst)
 			spent(src)
 			return
 
@@ -263,7 +262,6 @@
 		var/mob/living/carrier = join_props["carrier"]
 		cryst.capture(character, carrier)
 		character.forceMove(cryst)
-		changed(cryst)
 	else if(itemtf)
 		character.tf_into(itemtf, TRUE, itemtf.name)
 	else if(prey)

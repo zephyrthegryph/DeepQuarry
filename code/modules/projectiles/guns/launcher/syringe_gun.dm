@@ -81,7 +81,6 @@ CAPABILITIES(/obj/item/syringe_cartridge)
 					add_attack_logs(thrower,L,"Shot with [src.name] containing [contained], trasferred [trans] units")
 
 		syringe().break_syringe(iscarbon(hit_atom)? hit_atom : null)
-		syringe().update_icon()
 
 	set_in_flight(FALSE) //back to the resting sprite
 
