@@ -34,7 +34,7 @@ intended_changes.md; click choices did not change.
 
 The real laundry-basket lift test now asserts the occupied-second-hand refusal;
 the natural-weapon test checks the self-attack refusal after its cooldown ends.
-Lane-ready merged origin/master at `59dbe6b9a0`. Production compilation passed
+Lane-ready merged origin/master at `87ecdb82a4`. Production compilation passed
 with zero errors (39 existing DreamMaker warnings), DreamChecker found zero
 diagnostics, and all ratchets passed. The combined focused batch passed 45 of
 46 test types; its sole failure was the master-origin oxygen-pump pin drift.
