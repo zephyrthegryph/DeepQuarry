@@ -2,7 +2,7 @@
 use super::{Observation, ObservationHost, Receipt, ReceiptStorageView};
 use std::{
     collections::BTreeMap,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, OnceLock},
 };
 
 struct Verdict<Q, A, D> {
@@ -15,6 +15,7 @@ struct Verdict<Q, A, D> {
 pub struct ReceiptAdmission<'host, Q, A, D, H> {
     host: &'host H,
     leaves: Mutex<BTreeMap<(usize, usize), Verdict<Q, A, D>>>,
+    versions: Mutex<BTreeMap<D, Arc<OnceLock<Option<u128>>>>>,
 }
 impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
     ReceiptAdmission<'host, Q, A, D, H>
@@ -23,7 +24,61 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
         Self {
             host,
             leaves: Mutex::new(BTreeMap::new()),
+            versions: Mutex::new(BTreeMap::new()),
         }
+    }
+    /// Memoize only the immutable host's current certificate, not a candidate's
+    /// accepted verdict. Unavailable certificates are equally request-local.
+    /// Host callbacks run outside the map lock; each domain's cell is initialized
+    /// once even when workers concurrently visit different artifact candidates.
+    pub fn certified_domains(&self, versions: &[(D, u128)]) -> std::collections::BTreeSet<D>
+    where
+        D: Clone,
+    {
+        super::certified_domains(versions, |domain| {
+            let cell = self
+                .versions
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .entry(domain.clone())
+                .or_insert_with(|| Arc::new(OnceLock::new()))
+                .clone();
+            *cell.get_or_init(|| self.host.version(domain))
+        })
+    }
+    /// The ordinary artifact admission rule with request-shared certificate
+    /// checks. Every uncertified answer is replayed in canonical order, including
+    /// observable hosts. Partial or certificate-only success never seeds the
+    /// full-answer leaf verdict cache used by `first_changed`.
+    pub fn first_changed_receipted(
+        &self,
+        receipt: &Receipt<Q, A, D>,
+        versions: &[(D, u128)],
+        mut admitted: impl FnMut(&Arc<[Observation<Q, A, D>]>),
+    ) -> Option<Q>
+    where
+        D: Clone,
+    {
+        let certified = self.certified_domains(versions);
+        let mut changed = None;
+        receipt.visit_storage(|view| {
+            if changed.is_some() {
+                return;
+            }
+            if let ReceiptStorageView::Flat(leaf) = view {
+                changed = super::first_changed_iter(
+                    leaf.iter(),
+                    &certified,
+                    |query| self.host.answer(query),
+                    |current, previous| self.host.equivalent(current, previous),
+                )
+                .cloned();
+                if changed.is_none() {
+                    admitted(leaf);
+                }
+            }
+        });
+        changed
     }
     /// Every accepted leaf reaches the observer, including memo hits. A recording
     /// adapter can preserve the shared leaf directly without dropping read edges.
@@ -97,3 +152,7 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
 #[cfg(test)]
 #[path = "receipt_admission_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "request_certificate_tests.rs"]
+mod request_certificate_tests;

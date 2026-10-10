@@ -191,6 +191,51 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         resolver: &R,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
+        // One-shot users need no request certificate map or extra owner cells.
+        // Both routes preserve the same exact-key candidate loop and replay core.
+        self.visit_receipted_with(
+            key,
+            &mut |reads, versions| {
+                let matching = crate::observations::certified_domains(versions, |domain| {
+                    resolver.version(domain)
+                });
+                crate::observations::first_changed_iter(
+                    reads.iter(),
+                    &matching,
+                    |query| resolver.answer(query),
+                    |current, previous| resolver.equivalent(current, previous),
+                )
+                .cloned()
+            },
+            accept,
+        )
+    }
+    /// Reuse one immutable request's certificate checks across exact-key visits.
+    /// Producer-local inputs remain ordinary recorded queries and must be
+    /// answered by this host; consumers with per-unit adapters can instead use
+    /// `visit_receipted_with` and `request.certified_domains` for their guard.
+    /// No validity is retained across requests or installed into store history.
+    pub fn visit_receipted_in<R: ObservationHost<Q, A, D>>(
+        &self,
+        key: &[u8],
+        request: &crate::ReceiptAdmission<'_, Q, A, D, R>,
+        accept: &mut dyn FnMut(&Arc<T>) -> bool,
+    ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
+        self.visit_receipted_with(
+            key,
+            &mut |reads, versions| request.first_changed_receipted(reads, versions, |_| {}),
+            accept,
+        )
+    }
+    /// The callback must validate the entire candidate receipt against the current
+    /// immutable host before returning None. Candidate order and consumer rejection
+    /// are identical to ordinary replay; callbacks run outside the store lock.
+    pub fn visit_receipted_with(
+        &self,
+        key: &[u8],
+        validate: &mut dyn FnMut(&Receipt<Q, A, D>, &[(D, u128)]) -> Option<Q>,
+        accept: &mut dyn FnMut(&Arc<T>) -> bool,
+    ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
         let hash = xxhash_rust::xxh3::xxh3_128(key);
         // Resolver work takes place outside the store lock, allowing parallel units.
         let candidates = {
@@ -213,15 +258,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         };
         let mut changed = None;
         for (reads, versions, value, weight) in candidates.into_iter().rev() {
-            let matching = crate::observations::certified_domains(&versions, |domain| {
-                resolver.version(domain)
-            });
-            let mismatch = crate::observations::first_changed_iter(
-                reads.iter(),
-                &matching,
-                |query| resolver.answer(query),
-                |current, previous| resolver.equivalent(current, previous),
-            );
+            let mismatch = validate(&reads, &versions);
             if let Some(query) = mismatch {
                 changed = Some(query.clone());
             } else if accept(&value) {
@@ -393,6 +430,45 @@ mod tests {
         fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {
             ResolvedMeaning::Missing
         }
+    }
+    #[test]
+    fn custom_receipt_validation_preserves_rejection_and_old_replay() {
+        let store: ObservedArtifactStore<usize, u32, bool, ()> =
+            ObservedArtifactStore::current_revision();
+        let key: Arc<[u8]> = Arc::from(b"validated".as_slice());
+        assert!(store
+            .insert_with_owned(
+                key.clone(),
+                vec![Observation {
+                    query: 1,
+                    domain: (),
+                    answer: false
+                }],
+                vec![],
+                0,
+                || 7
+            )
+            .is_some());
+        let (value, changed) = store.visit_receipted_with(
+            &key,
+            &mut |reads, _| {
+                assert_eq!(reads.len(), 1);
+                Some(1)
+            },
+            &mut |_| panic!("rejected proof cannot reach consumer"),
+        );
+        assert!(value.is_none());
+        assert_eq!(changed, Some(1));
+        struct Current;
+        impl ObservationHost<u32, bool, ()> for Current {
+            fn answer(&self, _: &u32) -> bool {
+                false
+            }
+        }
+        assert_eq!(*store.lookup(&key, &Current).unwrap(), 7);
+        let (value, changed) = store.visit_receipted_with(&key, &mut |_, _| None, &mut |_| false);
+        assert!(value.is_none());
+        assert_eq!(changed, None);
     }
     struct Value(Arc<AtomicUsize>);
     #[test]
