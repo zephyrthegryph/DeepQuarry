@@ -84,6 +84,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLE
 CAPABILITIES(/obj/structure/event_collector_blocker)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	// One repair step (interaction_item() checks the tool and starts this): the user keeps the tool and stays two seconds.
+	op("repair_step", ai(), takes("step_count"), wait(2 SECONDS), then(PROC_REF(repair_step_done)))
 
 /// Old attack_hand.
 /obj/structure/event_collector_blocker/proc/interaction_hand(datum/act/op/A)
@@ -94,16 +96,10 @@ CAPABILITIES(/obj/structure/event_collector_blocker)
 	return OP_DECLINE
 
 
-/datum/task/timed/event_collector_blocker_repair_step
-	duration = 2 SECONDS
-	complete_proc = /obj/structure/event_collector_blocker/proc/repair_step_done
-	var/obj/item/O
-	var/step_count
-
-/obj/structure/event_collector_blocker/proc/repair_step_done(datum/task/timed/event_collector_blocker_repair_step/task)
-	var/obj/item/O = task.O
-	var/mob/user = task.actor
-	var/step_count = task.step_count
+/obj/structure/event_collector_blocker/proc/repair_step_done(datum/act/op/A)
+	var/obj/item/O = A.held
+	var/mob/user = A.actor
+	var/step_count = A.arg("step_count")
 	if(active_repair_steps.len != step_count)
 		return
 	post_repair_handling(O,active_repair_steps[active_repair_steps.len],user)
@@ -120,7 +116,7 @@ CAPABILITIES(/obj/structure/event_collector_blocker)
 		if(active_repair_steps.len >= 1)
 			if(O.has_tool_quality(active_repair_steps[active_repair_steps.len]))
 				if(!pre_repair_handling(O,active_repair_steps[active_repair_steps.len],user)) return OP_PASS
-				task_start(/datum/task/timed/event_collector_blocker_repair_step, user, src, O = O, step_count = active_repair_steps.len)
+				perform_op(user, src, "repair_step", O, ORIGIN_SYSTEM, with = list("step_count" = active_repair_steps.len))
 			else
 				to_chat(user,span_notice("this doesn't look like the right tool for the job..."))
 	return OP_PASS

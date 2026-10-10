@@ -30,13 +30,9 @@
 	if(istype(M) && ((locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode)) || (locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/resinspinner/replicant))))
 		to_chat(M, "\The [W] shudders under your touch, starting to become porous.")
 		play_sfx(W, SFX_EFFECTS_ATTACKBLOB)
-		task_timed(L, 5 SECONDS, W, null, GLOBAL_PROC_REF(resin_wall_dissolve), list(W))
+		perform_op(L, W, "wall_dissolve", origin = ORIGIN_SYSTEM)
 		return TRUE
 	return FALSE
-
-/proc/resin_wall_dissolve(turf/simulated/wall/W)
-	play_sfx(W, SFX_EFFECTS_ATTACKBLOB, 2)
-	W.dismantle_wall()
 
 /datum/material/resin/generate_recipes()
 	var/list/recipes = list(

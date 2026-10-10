@@ -28,6 +28,10 @@
 	/// How long one application takes.
 	var/apply_time = 3 SECONDS
 
+CAPABILITIES(/obj/item/stack/medical/field)
+	// Applied to a limb (attack() checks and starts it): the user stays still for apply_time.
+	op("field_apply", ai(), takes("patient", "limb"), wait(PROC_REF(field_apply_time)), on_interrupt(PROC_REF(field_apply_failed)), then(PROC_REF(field_apply_done)))
+
 /obj/item/stack/medical/field/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(..() == ITEM_INTERACT_FAILURE)
 		return ITEM_INTERACT_FAILURE
@@ -41,24 +45,21 @@
 		balloon_alert(user, "\the [src] doesn't go on the [affecting.name]!")
 		return ITEM_INTERACT_FAILURE
 	user.balloon_alert_visible("[user] starts applying \the [src] to [H == user ? "their" : "[H]'s"] [affecting.name].", "applying \the [src] to the [affecting.name].")
-	task_start(/datum/task/timed/field_field_apply, user, affecting, duration = apply_time, H = H)
+	perform_op(user, src, "field_apply", src, ORIGIN_SYSTEM, with = list("patient" = H, "limb" = affecting))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/stack/medical/field/proc/field_apply_failed(datum/task/timed/field_field_apply/task)
-	var/mob/living/user = task.actor
-	balloon_alert(user, "stand still to apply \the [src]!")
+/obj/item/stack/medical/field/proc/field_apply_time(datum/act/op/A)
+	return apply_time
 
-/datum/task/timed/field_field_apply
-	complete_proc = /obj/item/stack/medical/field/proc/field_apply_done
-	cancel_proc = /obj/item/stack/medical/field/proc/field_apply_failed
-	var/mob/living/carbon/human/H
+/obj/item/stack/medical/field/proc/field_apply_failed(datum/act/op/A)
+	balloon_alert(A.actor, "stand still to apply \the [src]!")
 
-/obj/item/stack/medical/field/proc/field_apply_done(datum/task/timed/field_field_apply/task)
-	var/mob/living/user = task.actor
-	var/mob/living/carbon/human/H = task.H
-	var/obj/item/organ/external/affecting = task.target
+/obj/item/stack/medical/field/proc/field_apply_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/human/H = A.arg("patient")
+	var/obj/item/organ/external/affecting = A.arg("limb")
 	// Re-validate after the delay.
-	if(!get_amount() || affecting.owner != H || !user.Adjacent(H))
+	if(QDELETED(H) || QDELETED(affecting) || !get_amount() || affecting.owner != H || !user.Adjacent(H))
 		return
 	if(!apply_to_limb(H, affecting, user))
 		balloon_alert(user, "\the [src] does nothing for the [affecting.name].")

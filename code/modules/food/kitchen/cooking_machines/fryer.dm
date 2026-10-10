@@ -40,6 +40,8 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 	owns_one(nameof(fry_loop), /datum/looping_sound/deep_fryer)
 	owns_one(nameof(oil), /datum/reagents/oil_reagents)
 	op("fryer_interaction_oil", item(/obj/item), then(PROC_REF(fryer_interaction_oil)))
+	// A grabbed mob shoved in: the victim has to stay in reach of the user for the two seconds.
+	op("fry_mob", ai(), takes("victim"), wait(2 SECONDS), on_interrupt(PROC_REF(cook_mob_stopped)), then(PROC_REF(cook_mob_done)))
 
 ///Reagent subtype for the fryer.
 /datum/reagents/oil_reagents
@@ -205,15 +207,17 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 
 	fry_loop.start(src)
 
-	task_timed(user, 2 SECONDS, victim, src, PROC_REF(cook_mob_done), list(victim, user), on_fail = PROC_REF(cook_mob_stopped))
+	perform_op(user, src, "fry_mob", null, ORIGIN_SYSTEM, with = list("victim" = victim))
 
-/obj/machinery/appliance/cooker/fryer/proc/cook_mob_stopped()
+/obj/machinery/appliance/cooker/fryer/proc/cook_mob_stopped(datum/act/op/A)
 	set_cooking(FALSE)
 	icon_state = off_icon
 	fry_loop.stop(src)
 
-/obj/machinery/appliance/cooker/fryer/proc/cook_mob_done(mob/living/victim, mob/user)
-	if(!victim || !victim.Adjacent(user))
+/obj/machinery/appliance/cooker/fryer/proc/cook_mob_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/victim = A.arg("victim")
+	if(QDELETED(victim) || !victim.Adjacent(user))
 		to_chat(user, span_danger("Your victim slipped free!"))
 		set_cooking(FALSE)
 		icon_state = off_icon

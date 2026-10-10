@@ -4116,3 +4116,15 @@ The old rule (the click path in `code/modules/keybindings/adapters.dm`, `/datum/
 | Unconscious actor resisting | verb rule (`incapacitated(INCAPACITATION_KNOCKOUT)`) | Unchanged: refused, pinned. |
 
 Result: no `ungated()` or narrower gate was needed. The cases the audit worried about are system-origin escapes, outside the hand gate by construction; `escapes_are_not_hand_ops` fails if one of them is ever bound to `hand()`.
+
+## Timed actions round 3 (rewrite/timed3-E)
+
+* **Walls, fryer, scanner, nail polish (class: message wording and cancel timing).**
+  * Resin wall dissolve (`wall_dissolve`), fryer `fry_mob`: the victim walking away no longer cancels the wait; the end re-checks reach and says "slipped free" (fryer; before: silent cancel).
+  * Nail polish and remover: the refusals read "%T% already has nail polish on that limb!" / "... missing that limb!" / "... no nail polish to remove on that limb!" (static message templates; the limb name is no longer in the line). The same ops now apply to every intent that used `attack()` (use and harm).
+  * Fishing: a second cast on water that is being fished is refused as in use (`claims()`), where before the click fell through to the next op.
+  * Cash register wrench: anchoring takes two seconds as before; the tool sound at the start is the op's (was `use_tool`).
+  * Crafting: the "busy" flag of the window is `op_claimed()`; a craft of time 0 skips the pre-wait checks and reports a changed material at the end.
+  * Hide scraping: the count message is said once at the end or on interrupt (same as before) from `A.laps()`.
+  * Spinning (`/mob/proc/spin`) is a chain of `after()` calls, not a task: same turns at the same times.
+

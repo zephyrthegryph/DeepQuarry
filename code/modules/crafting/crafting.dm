@@ -213,10 +213,8 @@
 		return  ", missing machinery."
 	return
 
-/// Crafts `R`. Returns the text of a failure; for a mob, a timed action that calls `on_built`
-/// on this component with (crafter, recipe, item or failure text) and returns null; for
-/// anything else, the item at once.
-/datum/personal_crafting/proc/construct_item(atom/a, datum/crafting_recipe/R, list/material_choices, on_built, busy)
+/// Can `R` be crafted now, before the timed part starts? Returns the text of the failure, or null.
+/datum/personal_crafting/proc/craft_precheck(atom/a, datum/crafting_recipe/R, list/material_choices)
 	var/list/surroundings = get_surroundings(a,R.blacklist)
 	. = check_requirements(a, R, surroundings)
 	if(.)
@@ -230,34 +228,7 @@
 		for(var/content in get_turf(a))
 			if(istype(content, R.result))
 				return ", object already present."
-
-	//If we're a mob it's a timed action; non mobs will instead instantly construct the item
-	if(ismob(a))
-		var/started = task_start(/datum/task/timed/craft, a, null, duration = R.time, recipe = R, material_choices = material_choices, on_built = on_built, busy = busy)
-		return istext(started) ? "." : null
-	return construct_item_now(a, R, material_choices, null)
-
-/// A mob crafting `recipe`: on_built, a proc on the crafting component, hears how it went.
-/datum/task/timed/craft
-	complete_proc = /datum/personal_crafting/proc/craft_done
-	cancel_proc = /datum/personal_crafting/proc/craft_interrupted
-	var/datum/crafting_recipe/recipe
-	var/list/material_choices
-	var/on_built
-
-/datum/personal_crafting/proc/craft_interrupted(datum/task/timed/craft/task)
-	if(task.on_built)
-		call(src, task.on_built)(task.actor, task.recipe, ".")
-
-/datum/personal_crafting/proc/craft_done(datum/task/timed/craft/task)
-	var/result = construct_item_checked(task.actor, task.recipe, task.material_choices)
-	if(task.on_built)
-		call(src, task.on_built)(task.actor, task.recipe, result)
-
-/datum/personal_crafting/proc/construct_item_now(atom/a, datum/crafting_recipe/R, list/material_choices, on_built)
-	. = construct_item_checked(a, R, material_choices)
-	if(on_built)
-		call(src, on_built)(a, R, .)
+	return null
 
 /datum/personal_crafting/proc/construct_item_checked(atom/a, datum/crafting_recipe/R, list/material_choices)
 	var/datum/material_template/blueprint = material_template_singleton(R.material_template)
@@ -482,7 +453,7 @@
 			cur_subcategory = CAT_NONE
 
 	var/list/data = list()
-	data["busy"] = task_busy(src)
+	data["busy"] = op_claimed(src)
 	var/list/material_choices = list()
 	var/list/seen_materials = list()
 	var/list/surroundings = get_surroundings(user)
@@ -550,19 +521,12 @@
 	data["crafting_recipes"] = crafting_recipes
 	return data
 
-/datum/personal_crafting/proc/ui_act_make(datum/act/op/A, materialSlots, recipe)
-	var/mob/user = A.actor
-	if(!isnull(recipe) && !(recipe in GLOB.crafting_recipes))
-		return FALSE
-	if(isnull(recipe))
-		return FALSE
-	do_make(user, recipe, materialSlots)
-
 CAPABILITIES(/datum/personal_crafting)
 	op("toggle_recipes", ui_act(), then(PROC_REF(ui_act_toggle_recipes)))
 	op("toggle_compact", ui_act(), then(PROC_REF(ui_act_toggle_compact)))
 	interface("PersonalCrafting", state = nameof(GLOB.tgui_not_incapacitated_turf_state))
-	op("make", ui_act("make", arg("materialSlots"), arg("recipe", schema_ref())), then(PROC_REF(ui_act_make)))
+	// Crafting takes the recipe's time, standing still; the component is claimed (busy) until it ends.
+	op("make", ui_act("make", arg("materialSlots"), arg("recipe", schema_ref())), claims(), starts(PROC_REF(make_started)), wait(PROC_REF(make_time)), on_interrupt(PROC_REF(make_interrupted)), then(PROC_REF(make_done)))
 	op("set_category", ui_act("set_category", arg("category", schema_text(4096)), arg("subcategory", schema_text(4096))), then(PROC_REF(ui_act_set_category)))
 
 /datum/personal_crafting/proc/ui_act_toggle_recipes(datum/act/op/A)
@@ -578,16 +542,48 @@ CAPABILITIES(/datum/personal_crafting)
 	cur_subcategory = subcategory || ""
 	. = TRUE
 
-/datum/personal_crafting/proc/do_make(mob/user, datum/crafting_recipe/TR, list/material_choices)
-	if(task_busy(src))
-		return
-	// The crafting's timed action claims this component: busy (task_busy()) until it ends.
-	var/result = construct_item(user, TR, material_choices, PROC_REF(make_finished), src)
-	tgui_interact(user)
-	if(!isnull(result))
-		make_finished(user, TR, result)
+/// The recipe the window sent, or null when it is not one of the known recipes.
+/datum/personal_crafting/proc/make_recipe(datum/act/op/A)
+	var/datum/crafting_recipe/R = A.arg("recipe")
+	if(isnull(R) || !(R in GLOB.crafting_recipes))
+		return null
+	return R
 
-/// The end of do_make(): the item, or the text of why it failed.
+/// How long the recipe takes.
+/datum/personal_crafting/proc/make_time(datum/act/op/A)
+	var/datum/crafting_recipe/R = make_recipe(A)
+	return R ? R.time : 0
+
+/// The craft begins: what is missing now is said at once and nothing starts.
+/datum/personal_crafting/proc/make_started(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/crafting_recipe/R = make_recipe(A)
+	if(!R)
+		return MSG(req_silent)
+	var/failure = craft_precheck(user, R, A.arg("materialSlots"))
+	if(failure)
+		make_finished(user, R, failure)
+		tgui_interact(user)
+		return MSG(req_silent)
+	tgui_interact(user)
+
+/// The user moved or lost the craft some other way: a failed construction.
+/datum/personal_crafting/proc/make_interrupted(datum/act/op/A)
+	var/datum/crafting_recipe/R = make_recipe(A)
+	if(R)
+		make_finished(A.actor, R, ".")
+	tgui_interact(A.actor)
+
+/// The time is up: the item, or the text of why it failed.
+/datum/personal_crafting/proc/make_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/crafting_recipe/R = make_recipe(A)
+	if(!R)
+		return
+	make_finished(user, R, construct_item_checked(user, R, A.arg("materialSlots")))
+	tgui_interact(user)
+
+/// The end of a craft: the item, or the text of why it failed.
 /datum/personal_crafting/proc/make_finished(mob/user, datum/crafting_recipe/TR, atom/movable/result)
 	if(!istext(result)) //We made an item and didn't get a fail message
 		if(ismob(user) && isitem(result)) //In case the user is actually possessing a non mob like a machine

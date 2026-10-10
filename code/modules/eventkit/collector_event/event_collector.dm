@@ -56,6 +56,8 @@ TRACKED(/obj/structure/event_collector, awaiting_next_recipe)
 CAPABILITIES(/obj/structure/event_collector)
 	every(2 SECONDS, then(PROC_REF(event_collector_step)), when = nameof(awaiting_next_recipe))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
+	// Putting the item in (interaction_item() checks it and starts this): the user keeps the item and stays for step_insertion_time.
+	op("insert", ai(), takes("stored_index"), wait(PROC_REF(insert_time)), on_interrupt(PROC_REF(insert_gave_up)), then(PROC_REF(insert_done)))
 
 //list of items that can make up a recipe.
 TYPE_TABLE_DECLARE(/obj/structure/event_collector, event_collector_ingredients, list( \
@@ -216,23 +218,19 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 		//put it in
 		act_message(user, src, others = "%U% begins to [pick(step_initiation_verbs)] %I% into %T%", item = O)
 		//wait a second or two
-		task_start(/datum/task/timed/event_collector_insert, user, src, duration = step_insertion_time, O = O, stored_index = stored_index)
+		perform_op(user, src, "insert", O, ORIGIN_SYSTEM, with = list("stored_index" = stored_index))
 	return OP_PASS
 
-/obj/structure/event_collector/proc/insert_gave_up(datum/task/timed/event_collector_insert/task)
-	var/mob/user = task.actor
-	act_message(user, null, others = "%U% gives up!") //shitty, change later
+/obj/structure/event_collector/proc/insert_time(datum/act/op/A)
+	return step_insertion_time
 
-/datum/task/timed/event_collector_insert
-	complete_proc = /obj/structure/event_collector/proc/insert_done
-	cancel_proc = /obj/structure/event_collector/proc/insert_gave_up
-	var/obj/item/O
-	var/stored_index
+/obj/structure/event_collector/proc/insert_gave_up(datum/act/op/A)
+	act_message(A.actor, null, others = "%U% gives up!") //shitty, change later
 
-/obj/structure/event_collector/proc/insert_done(datum/task/timed/event_collector_insert/task)
-	var/obj/item/O = task.O
-	var/mob/user = task.actor
-	var/stored_index = task.stored_index
+/obj/structure/event_collector/proc/insert_done(datum/act/op/A)
+	var/obj/item/O = A.held
+	var/mob/user = A.actor
+	var/stored_index = A.arg("stored_index")
 	if(stored_index > length(active_recipe))
 		return
 	act_message(user, src, others = "%U% [pick(step_insertion_verbs)] %I% into %T%!", item = O)

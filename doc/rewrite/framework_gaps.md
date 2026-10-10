@@ -209,6 +209,16 @@ Status: **DONE** = built in code/engine (or code/library) and documented in fina
 | K25 (DONE, rewrite/fw-gaps-k: `costs(RES_X, PROC_REF(amount), locked = TRUE)` (the handler form already existed; `locked` reads it once when the wait starts); converted the modular computer weld repair) | a wait whose length or cost is computed at the end | RCD, RPD, RMS, the medical stack, `costs(RES_X, n)` with n from the target (cell charge to drain, proportional fuel). | `costs(RES_X, PROC_REF(amount))` evaluated when the wait starts and committed at the end. |
 | K26 | tasks that are not an actor's action | Transit pod movement, the dog-borg self-repair re-arm, the NTSL script task, the component paste repair. | `after()` / `every()` on the pod and borg; the sites are small systems, not ops. Not a framework gap, only unconverted. |
 
+### KT3. Found converting timed actions, round 3 group E (rewrite/timed3-E)
+
+All sites of the group were converted; these are the places where the form fits but not exactly.
+
+| ID | Where | Problem | Proposal |
+|---|---|---|---|
+| KE1 | `on_interrupt()` that continues the work (detective scanner stages) | The pending op is still active while `on_interrupt()` runs (`cancel()` calls it before `end_pending()`), so a `perform_op(..., ORIGIN_SYSTEM)` for the next stage is refused (`BUSY_REFUSE`). The scanner defers the follow-up with `after(src, 0, ...)`. | Run the interrupted handler after `end_pending()`, or document that a follow-up from `on_interrupt()` goes through `after(0)`. |
+| KE2 | `takes("victim")` as a keep (fryer `fry_mob`) | The op is on the fryer and the victim is a value, so the victim walking away is not a keep (the old task had the victim as its target and was cancelled by it moving). The done handler re-checks `Adjacent`. | `takes("victim", keeps = ADJACENT | TARGET_PRESENT)` or `keeps_answer` for a taken value (K22 for `takes()`). |
+| KE3 | `wait()` with a start that can refuse (crafting `make`) | `starts()` runs only for a wait that lasts, so a recipe with `time = 0` skips the pre-wait checks (the done handler re-checks and says the failure). | `starts()` for an instant wait, or a `needs()` that may read `A.arg()` of a `ui_act` arg and name a dynamic text. |
+
 ## K. Relations conversion (rewrite/relations, prefix KR)
 
 Counts on origin/master eac3bc655d: `om_link(` 51 lines in 26 files, of which 30 production calls in 22 files (the rest are the OM core and tests); `om_attach(` 51 lines in 10 files, all the OM core (`entity.dm`, `relation.dm`, `ui.dm`, `tgui.dm`), benchmarks and tests (no non-AI production caller; looping sounds are the om-leftovers lane). The 17 `/datum/om/relation/*` types outside the slot ledger were the work.
