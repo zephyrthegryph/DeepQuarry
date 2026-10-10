@@ -209,6 +209,12 @@ Status: **DONE** = built in code/engine (or code/library) and documented in fina
 | K25 (DONE, rewrite/fw-gaps-k: `costs(RES_X, PROC_REF(amount), locked = TRUE)` (the handler form already existed; `locked` reads it once when the wait starts); converted the modular computer weld repair) | a wait whose length or cost is computed at the end | RCD, RPD, RMS, the medical stack, `costs(RES_X, n)` with n from the target (cell charge to drain, proportional fuel). | `costs(RES_X, PROC_REF(amount))` evaluated when the wait starts and committed at the end. |
 | K26 | tasks that are not an actor's action | Transit pod movement, the dog-borg self-repair re-arm, the NTSL script task, the component paste repair. | `after()` / `every()` on the pod and borg; the sites are small systems, not ops. Not a framework gap, only unconverted. |
 
+### KT3. Found converting timed actions round 3 (rewrite/timed3-F, prefix KF)
+
+| ID | Where | Problem | Change |
+|---|---|---|---|
+| KF1 | `/mob/living` timed abilities (K23 in practice) | Five sites are on `/mob/living` with a non-human target or none: `butchering.dm` (`harvest`, `handle_butcher`: a dead animal of any `/mob/living` type, `claims`), `melee_swing.dm` (`begin_melee_swing`: the swinger itself, any mob), `lleill_abilities.dm` `revert_beast_form` and `station_special_abilities.dm` `mobegglaying` (the actor itself, a beast mob that is not a human), and `absorb_devour_chosen` (a `/mob/living` target and pred). The op has to be looked up on the target, and the one `CAPABILITIES(/mob/living)` is the protected combat_ai file (K23). Left on `task_timed()`/`task_start()`. | Adopt `proposals/mob_living_root.md` (one `living_abilities()` line in that block, ops in `code/library/mob/living.dm`); then these become `ai()`/`menu()` ops with `claims()` (butchering: `wait(t, repeats =)`), no new framework form. |
+
 ## K. Relations conversion (rewrite/relations, prefix KR)
 
 Counts on origin/master eac3bc655d: `om_link(` 51 lines in 26 files, of which 30 production calls in 22 files (the rest are the OM core and tests); `om_attach(` 51 lines in 10 files, all the OM core (`entity.dm`, `relation.dm`, `ui.dm`, `tgui.dm`), benchmarks and tests (no non-AI production caller; looping sounds are the om-leftovers lane). The 17 `/datum/om/relation/*` types outside the slot ledger were the work.

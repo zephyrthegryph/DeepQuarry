@@ -157,75 +157,66 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		to_chat(src, span_warning("This is going to cause [B] to keep bleeding!"))
 		to_chat(B, span_danger("You are going to keep bleeding from this bite!"))
 
-	task_start(/datum/task/timed/human_bloodsuck_human, src, B, noise = noise, bleed = bleed)
+	perform_op(src, B, "bloodsuck", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("noise" = noise, "bleed" = bleed))
 
-/datum/task/timed/human_bloodsuck_human
-	duration = 30 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/bloodsuck_human_done
-	var/noise
-	var/bleed
-
-/mob/living/carbon/human/proc/bloodsuck_human_done(datum/task/timed/human_bloodsuck_human/task)
-	var/mob/living/carbon/human/B = task.target
-	var/noise = task.noise
-	var/bleed = task.bleed
-	if(!Adjacent(B)) return
+/// Runs on the bitten person (the op's holder); the biter is the actor.
+/mob/living/carbon/human/proc/bloodsuck_human_done(datum/act/op/A)
+	var/mob/living/carbon/human/biter = A.actor
+	var/mob/living/carbon/human/B = src
+	var/noise = A.arg("noise")
+	var/bleed = A.arg("bleed")
+	if(!biter.Adjacent(B))
+		return OP_OK
 	if(noise)
-		act_message(src, B, others = span_infoplain(span_red(span_bold("%U% suddenly extends their fangs and plunges them down into %T%'s neck!"))))
+		act_message(biter, B, others = span_infoplain(span_red(span_bold("%U% suddenly extends their fangs and plunges them down into %T%'s neck!"))))
 	else
-		act_message(src, B, others = span_infoplain(span_red(span_italics("%U% suddenly extends their fangs and plunges them down into %T%'s neck!"))), range = 1)
+		act_message(biter, B, others = span_infoplain(span_red(span_italics("%U% suddenly extends their fangs and plunges them down into %T%'s neck!"))), range = 1)
 	if(bleed)
-		B.injure(INJURY_PIERCE, 10, BP_HEAD, src)
+		B.injure(INJURY_PIERCE, 10, BP_HEAD, biter)
 		var/obj/item/organ/external/E = B.get_organ(BP_HEAD)
 		if(!(E.status & ORGAN_BLEEDING))
 			E.set_status(E.status | ORGAN_BLEEDING) //If 10 points of piercing didn't make the organ bleed, we are making it bleed.
 
 
 	else
-		B.injure(INJURY_PIERCE, 5, BP_HEAD, src) //You're getting fangs pushed into your neck. What do you expect????
+		B.injure(INJURY_PIERCE, 5, BP_HEAD, biter) //You're getting fangs pushed into your neck. What do you expect????
 
 
 	if(!noise && !bleed) //If we're quiet and careful, there should be no blood to serve as evidence
 		B.remove_blood(82) //Removing in one go since we dont want splatter
-		adjust_nutrition(410) //We drink it all, not letting any go to waste!
+		biter.adjust_nutrition(410) //We drink it all, not letting any go to waste!
 	else //Otherwise, we're letting blood drop to the floor
 		B.drip(80) //Remove enough blood to make them a bit woozy, but not take oxyloss.
-		adjust_nutrition(400)
+		biter.adjust_nutrition(400)
 		after(B, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), with = list(1))
 		after(B, 10 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), with = list(1))
+	return OP_OK
 
-/// One stage of a drain through a grab (succubus_drain(), slime_feed()): five seconds holding
-/// the target, then the next stage.
-/datum/task/timed/grab_drain
-	duration = 5 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/grab_drain_held
-	cancel_proc = /mob/living/carbon/human/proc/grab_drain_interrupted
-	var/obj/item/grab/grab
-	var/stage
-	/// A proc on the drainer: (target, stage) runs that stage and returns the next, or 0 when done.
-	var/stage_proc
-	/// The grab state the drain needs (0: any grab).
-	var/needed_grab = 0
-	/// "draining", "feeding": for the interruption message.
-	var/what
-
-/// Runs stage `stage` of a drain, and holds the grab for the next one.
+/// Runs stage `stage` of a drain, and holds the grab for the next one (the "grab_drain" op: five seconds holding the target, then the next stage).
+/// stage_proc is a proc on the drainer: (target, stage) runs that stage and returns the next, or 0 when done. needed_grab is the grab state the
+/// drain needs (0: any grab); what is "draining" or "feeding" for the interruption message.
 /mob/living/carbon/human/proc/grab_drain_step(mob/living/carbon/human/T, obj/item/grab/G, stage, stage_proc, needed_grab, what)
 	stage = call(src, stage_proc)(T, stage)
 	if(!stage)
 		return
-	task_start(/datum/task/timed/grab_drain, src, T, grab = G, stage = stage, stage_proc = stage_proc, needed_grab = needed_grab, what = what)
+	perform_op(src, T, "grab_drain", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("grab" = G, "stage" = stage, "stage_proc" = stage_proc, "needed_grab" = needed_grab, "what" = what))
 
-/mob/living/carbon/human/proc/grab_drain_held(datum/task/timed/grab_drain/task)
-	var/obj/item/grab/G = task.grab
-	if(QDELETED(G) || (task.needed_grab ? G.state != task.needed_grab : !G.state))
-		grab_drain_interrupted(task)
-		return
-	grab_drain_step(task.target, G, task.stage + 1, task.stage_proc, task.needed_grab, task.what)
+/// Runs on the target (the op's holder); the drainer is the actor.
+/mob/living/carbon/human/proc/grab_drain_held(datum/act/op/A)
+	var/mob/living/carbon/human/drainer = A.actor
+	var/obj/item/grab/G = A.arg("grab")
+	var/needed_grab = A.arg("needed_grab")
+	if(QDELETED(G) || (needed_grab ? G.state != needed_grab : !G.state))
+		grab_drain_interrupted(A)
+		return OP_OK
+	drainer.grab_drain_step(src, G, A.arg("stage") + 1, A.arg("stage_proc"), needed_grab, A.arg("what"))
+	return OP_OK
 
-/mob/living/carbon/human/proc/grab_drain_interrupted(datum/task/timed/grab_drain/task)
-	to_chat(src, span_warning("Your [task.what] of [task.target] has been interrupted!"))
-	absorbing_prey = FALSE
+/mob/living/carbon/human/proc/grab_drain_interrupted(datum/act/op/A)
+	var/mob/living/carbon/human/drainer = A.actor
+	to_chat(drainer, span_warning("Your [A.arg("what")] of [src] has been interrupted!"))
+	drainer.absorbing_prey = FALSE
+	return OP_OK
 
 //Welcome to the adapted changeling absorb code.
 /mob/living/carbon/human/proc/succubus_drain()
@@ -698,35 +689,36 @@ CAPABILITIES(/datum/shred_limb_review)
 	COOLDOWN_START(src, last_special, vore_shred_time)
 	act_message(src, T, others = span_danger("%U% appears to be preparing to do something to %T%!")) //Let everyone know that bad times are ahead
 
-	task_start(/datum/task/timed/living_shred_limb_living, src, T, duration = vore_shred_time, T_ext = T_ext, T_int = T_int, B = B)
+	perform_op(src, T, "shred_limb", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("T_ext" = T_ext, "T_int" = T_int, "belly" = B))
 
-/datum/task/timed/living_shred_limb_living
-	complete_proc = /mob/living/proc/shred_limb_living_done
-	var/obj/item/organ/external/T_ext
-	var/obj/item/organ/internal/T_int
-	var/obj/belly/B
+/// How long the shredding takes: the shredder's vore_shred_time.
+/mob/living/carbon/human/proc/shred_limb_time(datum/act/op/A)
+	var/mob/living/shredder = A.actor
+	return shredder.vore_shred_time
 
-/mob/living/proc/shred_limb_living_done(datum/task/timed/living_shred_limb_living/task)
-	var/mob/living/carbon/human/T = task.target
-	var/obj/item/organ/external/T_ext = task.T_ext
-	var/obj/item/organ/internal/T_int = task.T_int
-	var/obj/belly/B = task.B
-	if(can_shred(T) != T)
-		to_chat(src,span_warning("Looks like you lost your chance..."))
+/// Runs on the one being shredded (the op's holder); the shredder is the actor.
+/mob/living/carbon/human/proc/shred_limb_living_done(datum/act/op/A)
+	var/mob/living/shredder = A.actor
+	var/mob/living/carbon/human/T = src
+	var/obj/item/organ/external/T_ext = A.arg("T_ext")
+	var/obj/item/organ/internal/T_int = A.arg("T_int")
+	var/obj/belly/B = A.arg("belly")
+	if(shredder.can_shred(T) != T)
+		to_chat(shredder,span_warning("Looks like you lost your chance..."))
 		return
 
 // T.apply_body_effect(/datum/body_effect/gory_devourment, 10 SECONDS) // Don't need this because we don't do resleeving sickness.
 
 	//Removing an internal organ
 	if(T_int && T_int.damage >= 25) //Internal organ and it's been severely damaged
-		T.injure(INJURY_CUT, 15, T_ext.organ_tag, src) //Damage the external organ they're going through.
+		T.injure(INJURY_CUT, 15, T_ext.organ_tag, shredder) //Damage the external organ they're going through.
 		T_int.removed()
 		if(B)
 			T_int.forceMove(B) //Move to pred's gut
-			act_message(src, T, others = span_danger("%U% severely damages [T_int.name] of %T%!"))
+			act_message(shredder, T, others = span_danger("%U% severely damages [T_int.name] of %T%!"))
 		else
 			T_int.forceMove(T.loc)
-			act_message(src, T, MSG_SELF(span_warning("You tear out %T%'s [T_int.name]!")), \
+			act_message(shredder, T, MSG_SELF(span_warning("You tear out %T%'s [T_int.name]!")), \
 				MSG_OTHERS(span_danger("%U% severely damages [T_ext.name] of %T%, resulting in their [T_int.name] coming out!")))
 
 	//Removing an external organ
@@ -735,23 +727,24 @@ CAPABILITIES(/datum/shred_limb_review)
 
 		//Is it groin/chest? You can't remove those.
 		if(T_ext.cannot_amputate)
-			T.injure(INJURY_CUT, 25, T_ext.organ_tag, src)
-			act_message(src, T, others = span_danger("%U% severely damages %T%'s [T_ext.name]!"))
+			T.injure(INJURY_CUT, 25, T_ext.organ_tag, shredder)
+			act_message(shredder, T, others = span_danger("%U% severely damages %T%'s [T_ext.name]!"))
 		else if(B)
 			T_ext.forceMove(B)
-			act_message(src, T, others = span_warning("%U% swallows %T%'s [T_ext.name] into their [lowertext(B.name)]!"))
+			act_message(shredder, T, others = span_warning("%U% swallows %T%'s [T_ext.name] into their [lowertext(B.name)]!"))
 		else
 			T_ext.forceMove(T.loc)
-			act_message(src, T, MSG_SELF(span_warning("You tear off %T%'s [T_ext.name]!")), MSG_OTHERS(span_warning("%U% tears off %T%'s [T_ext.name]!")))
+			act_message(shredder, T, MSG_SELF(span_warning("You tear off %T%'s [T_ext.name]!")), MSG_OTHERS(span_warning("%U% tears off %T%'s [T_ext.name]!")))
 
 	//Not targeting an internal organ w/ > 25 damage , and the limb doesn't have < 25 damage.
 	else
 		if(T_int)
-			T.injure(INJURY_CUT, 25, T_int, src, affliction = /datum/affliction/lesion/laceration)
-		T.injure(INJURY_CUT, 25, T_ext.organ_tag, src)
-		act_message(src, T, others = span_danger("%U% severely damages %T%'s [T_ext.name]!"))
+			T.injure(INJURY_CUT, 25, T_int, shredder, affliction = /datum/affliction/lesion/laceration)
+		T.injure(INJURY_CUT, 25, T_ext.organ_tag, shredder)
+		act_message(shredder, T, others = span_danger("%U% severely damages %T%'s [T_ext.name]!"))
 
-	add_attack_logs(src,T,"Shredded (hardvore)")
+	add_attack_logs(shredder,T,"Shredded (hardvore)")
+	return OP_OK
 
 /mob/living/proc/shred_limb_temp()
 	set name = "Damage/Remove Prey's Organ (beartrap)"
@@ -1445,14 +1438,18 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 		return
 
 	act_message(src, target, others = span_warning("%U% is preparing to [trait_injection_verb] %T%!"))
-	task_timed(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(injection_living_done), done_args = list(target, synth))
+	perform_op(src, target, "trait_injection", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("synth" = synth))
 
-/mob/living/proc/injection_living_done(mob/living/target, synth)
-	add_attack_logs(src,target,"Injection trait ([trait_injection_selected], [trait_injection_amount])")
-	if(target.reagents && (trait_injection_amount > 0) && !synth)
-		target.reagents.add_reagent(trait_injection_selected, trait_injection_amount)
-	var/ourmsg = "[src] manages to [trait_injection_verb] [target] "
-	switch(zone_sel.selecting)
+/// Runs on the one injected (the op's holder); the injector is the actor.
+/mob/living/carbon/proc/injection_living_done(datum/act/op/A)
+	var/mob/living/injector = A.actor
+	var/mob/living/target = src
+	var/synth = A.arg("synth")
+	add_attack_logs(injector,target,"Injection trait ([injector.trait_injection_selected], [injector.trait_injection_amount])")
+	if(target.reagents && (injector.trait_injection_amount > 0) && !synth)
+		target.reagents.add_reagent(injector.trait_injection_selected, injector.trait_injection_amount)
+	var/ourmsg = "[injector] manages to [injector.trait_injection_verb] [target] "
+	switch(injector.zone_sel.selecting)
 		if(BP_HEAD)
 			ourmsg += "on the head!"
 		if(BP_TORSO)
@@ -1471,7 +1468,8 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 			ourmsg += "on the mouth!"
 		if("eyes")
 			ourmsg += "on the eyes!"
-	visible_message(span_warning(ourmsg))
+	injector.visible_message(span_warning(ourmsg))
+	return OP_OK
 
 //succuby bite is back baby
 /mob/living/proc/succubus_bite()
@@ -1553,24 +1551,29 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 	var/choice = A.answer.value
 	act_message(src, T, others = span_bolddanger("%U% moves their head next to %T%'s neck, seemingly looking for something!"))
 
-	task_timed(src, 30 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_bite_living_done), done_args = list(T, choice))
+	perform_op(src, T, "succubus_bite", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("choice" = choice))
 
-/mob/living/proc/succubus_bite_living_done(mob/living/carbon/human/T, choice)
+/// Runs on the one bitten (the op's holder); the biter is the actor.
+/mob/living/carbon/human/proc/succubus_bite_living_done(datum/act/op/A)
+	var/mob/living/biter = A.actor
+	var/mob/living/carbon/human/T = src
+	var/choice = A.arg("choice")
 	if(choice == REAGENT_APHRODISIAC)
-		src.show_message(span_warning("You sink your fangs into [T] and inject your aphrodisiac!"))
-		act_message(src, T, others = span_red("%U% sinks their fangs into %T%!"))
+		biter.show_message(span_warning("You sink your fangs into [T] and inject your aphrodisiac!"))
+		act_message(biter, T, others = span_red("%U% sinks their fangs into %T%!"))
 		T.bloodstr.add_reagent(REAGENT_ID_APHRODIAC_FLUID,100)
-		return 0
+		return OP_OK
 	else if(choice == "Numbing")
-		src.show_message(span_warning("You sink your fangs into [T] and inject your poison!"))
-		act_message(src, T, others = span_red("%U% sinks their fangs into %T%!"))
+		biter.show_message(span_warning("You sink your fangs into [T] and inject your poison!"))
+		act_message(biter, T, others = span_red("%U% sinks their fangs into %T%!"))
 		T.bloodstr.add_reagent(REAGENT_ID_NUMBING_FLUID,20) //Poisons should work when more units are injected
 	else if(choice == "Paralyzing")
-		src.show_message(span_warning("You sink your fangs into [T] and inject your poison!"))
-		act_message(src, T, others = span_red("%U% sinks their fangs into %T%!"))
+		biter.show_message(span_warning("You sink your fangs into [T] and inject your poison!"))
+		act_message(biter, T, others = span_red("%U% sinks their fangs into %T%!"))
 		T.bloodstr.add_reagent(REAGENT_ID_PARALYZE_FLUID,20) //Poisons should work when more units are injected
 	else
-		return //Should never happen
+		return OP_OK //Should never happen
+	return OP_OK
 
 /datum/reagent/succubi_aphrodisiac
 	name = REAGENT_APHRODISIAC

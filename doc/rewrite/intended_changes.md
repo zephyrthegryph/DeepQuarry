@@ -4116,3 +4116,15 @@ The old rule (the click path in `code/modules/keybindings/adapters.dm`, `/datum/
 | Unconscious actor resisting | verb rule (`incapacitated(INCAPACITATION_KNOCKOUT)`) | Unchanged: refused, pinned. |
 
 Result: no `ungated()` or narrower gate was needed. The cases the audit worried about are system-origin escapes, outside the hand gate by construction; `escapes_are_not_hand_ops` fails if one of them is ever bound to `hand()`.
+
+
+## Timed actions round 3 (rewrite/timed3-F)
+
+Classes: (a) held-item and incapacitation keeps become the `ai()` op defaults, (b) a message that named a runtime value is generic, (c) several parallel timers become one repeating wait.
+
+* Cyborg brain extraction (`robot_extract_mmi` op on the crowbar): the start line no longer names the brain ("begin levering its brain" instead of the MMI's name). (b)
+* Dogborg and cyborg self repair (`self_repair_system`, op `self`): the refusals "can't repair destroyed [component]'s plating" and "no damage detected [in component]" no longer name the component; the old code ran one independent timer per component, the op runs one repeating wait that heals every damaged component each lap and pays power for each component each lap, and ends when none is damaged, the cell cannot pay, or the cyborg moves. The "Repair of [C] completed" line is said at the lap the component is whole. (b) (c)
+* Lleill transmute and alchemy: a dropped or swapped item ends the wait through the HELD keep, and the item being deleted ends the action silently at the end of the wait. (a)
+* Protean, shapeshifter, bloodsuck, shred limb, injection, succubus bite, rainbows, relocate joint, hand games, modular limbs, lleill contact: the old task cancelled on any change of the actor's active hand or a stun; the `ai()` op keeps the actor in place, the target present and the actor alive. A swapped hand item no longer cancels these waits. (a)
+* Hand games and rainbows: the old task cancelled when the other party took a single step; the ops keep the other party within 2 tiles (7 for rainbows) instead. (a)
+* Left on the legacy form (KF1): butchering, melee swing windup, revert beast form, egg laying, underwater absorb devour.

@@ -1821,23 +1821,16 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	else
 		to_chat(U, span_warning("You begin to relocate [S]'s [current_limb.joint]..."))
 
-	task_start(/datum/task/timed/human_relocate_human, U, src, receiver = src, S = S, self = self, current_limb = current_limb)
+	perform_op(U, src, "relocate_joint", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("limb" = current_limb))
 	return TRUE
 
-/datum/task/timed/human_relocate_human
-	duration = 3 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/relocate_human_done
-	var/mob/S
-	var/self
-	var/obj/item/organ/external/current_limb
-
-/mob/living/carbon/human/proc/relocate_human_done(datum/task/timed/human_relocate_human/task)
-	var/mob/S = task.S
-	var/mob/U = task.actor
-	var/self = task.self
-	var/obj/item/organ/external/current_limb = task.current_limb
+/mob/living/carbon/human/proc/relocate_human_done(datum/act/op/A)
+	var/mob/S = src
+	var/mob/U = A.actor
+	var/self = (U == src)
+	var/obj/item/organ/external/current_limb = A.arg("limb")
 	if(!current_limb || !S || !U)
-		return
+		return OP_OK
 
 	if(self)
 		to_chat(src, span_danger("You pop your [current_limb.joint] back in!"))
@@ -1845,6 +1838,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		to_chat(U, span_danger("You pop [S]'s [current_limb.joint] back in!"))
 		to_chat(S, span_danger("[U] pops your [current_limb.joint] back in!"))
 	current_limb.relocate()
+	return OP_OK
 
 /mob/living/carbon/human/drop_from_inventory(obj/item/W, atom/target = null)
 	if(W in organs)

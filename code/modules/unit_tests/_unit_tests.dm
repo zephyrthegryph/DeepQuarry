@@ -606,6 +606,7 @@
 #include "dq_timed_pin_w10_behaviour.dm"
 #include "dq_timed_pin_w7_behaviour.dm"
 #include "dq_timed_pin_w2_behaviour.dm"
+#include "dq_timed_pin_w11F_behaviour.dm"
 #include "dq_proximity_tests.dm"
 #include "dq_fwg3_inputs.dm"
 #include "dq_medical_pods_behaviour.dm"

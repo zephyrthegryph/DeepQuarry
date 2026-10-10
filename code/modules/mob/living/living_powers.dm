@@ -156,13 +156,17 @@
 	var/mob/living/carbon/human/chosen_target = A.answer.value
 
 	act_message(src, null, others = span_warning("%U% begins chargin' their lazor!"))
-	task_timed(src, 5 SECONDS, target = chosen_target, receiver = src, on_done = PROC_REF(healing_rainbows_living_done), done_args = list(chosen_target))
+	perform_op(src, chosen_target, "healing_rainbows", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 
-/mob/living/proc/healing_rainbows_living_done(mob/living/carbon/human/chosen_target)
-	if(chosen_target.z != src.z || get_dist(src,chosen_target) > 7)
-		return
-	act_message(src, chosen_target, others = span_warning("%U% fires their lazor at %T%!"))
-	var/obj/item/projectile/P = new /obj/item/projectile/beam/sparkledog(get_turf(src))
-	play_sfx(src, SFX_WEAPONS_SPARKLE)
-	P.launch_projectile(chosen_target, BP_TORSO, src)
+/// Runs on the one targeted (the op's holder); the one firing is the actor.
+/mob/living/carbon/human/proc/healing_rainbows_living_done(datum/act/op/A)
+	var/mob/living/shooter = A.actor
+	var/mob/living/carbon/human/chosen_target = src
+	if(chosen_target.z != shooter.z || get_dist(shooter,chosen_target) > 7)
+		return OP_OK
+	act_message(shooter, chosen_target, others = span_warning("%U% fires their lazor at %T%!"))
+	var/obj/item/projectile/P = new /obj/item/projectile/beam/sparkledog(get_turf(shooter))
+	play_sfx(shooter, SFX_WEAPONS_SPARKLE)
+	P.launch_projectile(chosen_target, BP_TORSO, shooter)
+	return OP_OK
